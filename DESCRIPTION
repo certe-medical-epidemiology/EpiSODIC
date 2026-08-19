@@ -1,0 +1,52 @@
+Package: EpiSODE
+Type: Package
+Title: Epidemiological Signal Observation and Detection Engine
+Version: 0.1.0
+Authors@R: c(
+    person("Matthijs S.", "Berends", , "m.s.berends@umcg.nl", role = c("aut", "cre")))
+Description: An automated surveillance system that detects aberrations in
+    laboratory-confirmed infections across all pathogens, presents them to a
+    small board of epidemiologists as a ranked list of dossiers, records
+    their formal assessment with a full audit trail, and produces outbreak
+    reports for clinical colleagues. Ships with a synthetic demo data set so
+    the whole system can be run without access to any Certe infrastructure.
+License: GPL-2
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Depends:
+    R (>= 4.1.0)
+Imports:
+    DBI,
+    dbplyr,
+    dplyr,
+    yaml,
+    rlang,
+    jsonlite,
+    digest
+Suggests:
+    RSQLite,
+    RMariaDB,
+    shiny,
+    bslib,
+    sodium,
+    testthat (>= 3.0.0),
+    certestats,
+    certedb,
+    certegis,
+    certeplot2,
+    certestyle,
+    AMR,
+    EpiEstim,
+    surveillance,
+    quarto
+Config/testthat/edition: 3
+Remotes:
+    certe-medical-epidemiology/certestats,
+    certe-medical-epidemiology/certedb,
+    certe-medical-epidemiology/certegis,
+    certe-medical-epidemiology/certeplot2,
+    certe-medical-epidemiology/certestyle
+URL: https://github.com/certe-medical-epidemiology/episode
+BugReports: https://github.com/certe-medical-epidemiology/episode/issues
