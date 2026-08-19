@@ -37,13 +37,12 @@ Imports:
     rlang,
     jsonlite,
     digest,
-    stats,
-    utils,
     surveillance,
     shiny,
     bslib,
     ggplot2
 Suggests:
+    AMR (>= 2.0.0),
     RMariaDB,
     sodium,
     testthat (>= 3.0.0),

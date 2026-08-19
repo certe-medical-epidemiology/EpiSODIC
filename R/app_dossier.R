@@ -40,10 +40,13 @@ episode_ui_dossier <- function(con, cluster_id, lang = "nl") {
 #' @noRd
 episode_ui_dossier_header <- function(obj, state, lang = "nl") {
   pal <- episode_palette()
+  if (isTRUE(requireNamespace("AMR", quietly = TRUE))) {
+    obj$pathogen[obj$pathogen %in% AMR::microorganisms$fullname] <- paste0("<i>", obj$pathogen[obj$pathogen %in% AMR::microorganisms$fullname], "</i>")
+  }
   shiny::tagList(
     shiny::tags$div(
       style = "display:flex;align-items:center;gap:10px;flex-wrap:wrap;",
-      shiny::tags$h1(class = "episode-dossier-title", obj$pathogen),
+      shiny::tags$h1(class = "episode-dossier-title", shiny::HTML(obj$pathogen)),
       episode_ui_chip(episode_tr(paste0("level.", obj$level), lang = lang), pal$petrol),
       episode_ui_chip(episode_tr(paste0("state.", state), lang = lang), episode_ui_state_colour(state)),
       if (isTRUE(obj$changed_since_assessment)) episode_ui_chip(episode_tr("dossier.changed_badge", lang = lang), pal$yellowD)

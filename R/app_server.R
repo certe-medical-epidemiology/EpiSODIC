@@ -113,13 +113,16 @@ episode_ui_rail <- function(open, selected_id, lang = "nl") {
     if (nrow(open) == 0) {
       shiny::tags$div(style = "padding:14px;font-size:12.5px;color:var(--episode-muted);", episode_tr("rail.empty", lang = lang))
     } else {
+      if (isTRUE(requireNamespace("AMR", quietly = TRUE))) {
+        open$pathogen[open$pathogen %in% AMR::microorganisms$fullname] <- paste0("<i>", open$pathogen[open$pathogen %in% AMR::microorganisms$fullname], "</i>")
+      }
       lapply(seq_len(nrow(open)), function(i) {
         row <- open[i, ]
         active <- identical(row$cluster_id, selected_id)
         shiny::tags$div(
           class = paste("episode-rail-item", if (active) "active" else ""),
           onclick = sprintf("Shiny.setInputValue('rail_select', %d, {priority: 'event'})", row$cluster_id),
-          shiny::tags$div(class = "episode-rail-pathogen", row$pathogen),
+          shiny::tags$div(class = "episode-rail-pathogen", shiny::HTML(row$pathogen)),
           shiny::tags$div(class = "episode-rail-meta", row$level_label),
           shiny::tags$div(class = "episode-rail-meta",
                            episode_count_phrase(row$n_cases, episode_tr("unit.case", lang = lang), episode_tr("unit.cases", lang = lang)),
