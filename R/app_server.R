@@ -32,6 +32,10 @@ episode_app_server_factory <- function(db_path, lang = "nl") {
 
     current_user <- episode_app_server_auth(input, output, session, con, lang = lang)
 
+    output$auth_control <- shiny::renderUI({
+      episode_ui_auth_control(current_user(), lang = lang)
+    })
+
     output$status_strip <- shiny::renderUI({
       episode_ui_status_strip(episode_app_status(con), lang = lang)
     })
