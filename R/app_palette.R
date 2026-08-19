@@ -89,22 +89,27 @@ episode_palette_from_certestyle <- function(cc) {
   # certestyle::certe.colours exposes its own (Dutch) hue names; mapped
   # explicitly here rather than by name-matching, since we do not control
   # that external package's naming. Any hue it does not provide falls back
-  # to our own shipped default for that hue.
+  # to our own shipped default for that hue. cc may be a named character
+  # vector rather than a list (certestyle's actual return type), so `$`
+  # is not safe here - a small name-based getter handles both.
+  cc_get <- function(name) {
+    if (!is.null(names(cc)) && name %in% names(cc)) unname(cc[[name]]) else NULL
+  }
   defaults <- episode_palette_config_resolve()
   base <- list(
-    blue = cc$blauw %||% defaults$blue, blue_dark = cc$blauw0 %||% defaults$blue_dark,
-    blue_light = cc$blauw2 %||% defaults$blue_light, blue_pale = cc$blauw3 %||% defaults$blue_pale,
-    blue_paler = cc$blauw4 %||% defaults$blue_paler, blue_palest = cc$blauw5 %||% defaults$blue_palest,
-    blue_faintest = cc$blauw6 %||% defaults$blue_faintest,
-    green = cc$groen %||% defaults$green, green_dark = cc$groen0 %||% defaults$green_dark,
-    green_pale = cc$groen3 %||% defaults$green_pale, green_palest = cc$groen5 %||% defaults$green_palest,
-    pink = cc$roze %||% defaults$pink, pink_dark = cc$roze0 %||% defaults$pink_dark,
-    pink_pale = cc$roze3 %||% defaults$pink_pale, pink_palest = cc$roze5 %||% defaults$pink_palest,
-    yellow = cc$geel %||% defaults$yellow, yellow_dark = cc$geel0 %||% defaults$yellow_dark,
-    yellow_pale = cc$geel3 %||% defaults$yellow_pale, yellow_palest = cc$geel5 %||% defaults$yellow_palest,
-    lilac = cc$lila %||% defaults$lilac, lilac_dark = cc$lila0 %||% defaults$lilac_dark,
-    lilac_pale = cc$lila3 %||% defaults$lilac_pale,
-    brown = cc$bruin %||% defaults$brown, brown_dark = cc$bruin0 %||% defaults$brown_dark,
+    blue = cc_get("blauw") %||% defaults$blue, blue_dark = cc_get("blauw0") %||% defaults$blue_dark,
+    blue_light = cc_get("blauw2") %||% defaults$blue_light, blue_pale = cc_get("blauw3") %||% defaults$blue_pale,
+    blue_paler = cc_get("blauw4") %||% defaults$blue_paler, blue_palest = cc_get("blauw5") %||% defaults$blue_palest,
+    blue_faintest = cc_get("blauw6") %||% defaults$blue_faintest,
+    green = cc_get("groen") %||% defaults$green, green_dark = cc_get("groen0") %||% defaults$green_dark,
+    green_pale = cc_get("groen3") %||% defaults$green_pale, green_palest = cc_get("groen5") %||% defaults$green_palest,
+    pink = cc_get("roze") %||% defaults$pink, pink_dark = cc_get("roze0") %||% defaults$pink_dark,
+    pink_pale = cc_get("roze3") %||% defaults$pink_pale, pink_palest = cc_get("roze5") %||% defaults$pink_palest,
+    yellow = cc_get("geel") %||% defaults$yellow, yellow_dark = cc_get("geel0") %||% defaults$yellow_dark,
+    yellow_pale = cc_get("geel3") %||% defaults$yellow_pale, yellow_palest = cc_get("geel5") %||% defaults$yellow_palest,
+    lilac = cc_get("lila") %||% defaults$lilac, lilac_dark = cc_get("lila0") %||% defaults$lilac_dark,
+    lilac_pale = cc_get("lila3") %||% defaults$lilac_pale,
+    brown = cc_get("bruin") %||% defaults$brown, brown_dark = cc_get("bruin0") %||% defaults$brown_dark,
     white = defaults$white
   )
   c(base, episode_palette_semantic(base))

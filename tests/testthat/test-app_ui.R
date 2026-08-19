@@ -22,7 +22,10 @@ test_that("an instance palette override propagates into both base hues and deriv
 })
 
 test_that("episode_palette_from_certestyle() maps certestyle's own (Dutch) key names onto our base hues, falling back per-hue when absent", {
-  fake_cc <- list(blauw = "#000001", geel = "#000002")  # only two of the hues certestyle would normally provide
+  # certestyle::certe.colours is a named character vector, not a list -
+  # matched here so a regression to `cc$name` (invalid on an atomic
+  # vector) fails this test rather than only failing for real users.
+  fake_cc <- c(blauw = "#000001", geel = "#000002")  # only two of the hues certestyle would normally provide
   pal <- episode_palette_from_certestyle(fake_cc)
 
   expect_equal(pal$blue, "#000001")
