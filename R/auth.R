@@ -124,7 +124,12 @@ episode_auth_change_password <- function(con, user_id, new_password) {
 #' by default so the first real sign-in forces a password of the
 #' account holder's own choosing (see [episode_auth_change_password()]).
 #'
-#' @param con A [DBI::DBIConnection-class].
+#' Takes `db_path` rather than an open connection - opened and closed here
+#' via [episode_db_open()] - so provisioning an account is one call at the
+#' console, without first having to construct a `con` by hand.
+#'
+#' @param db_path Path to an existing SQLite database. Defaults to the
+#'   `EPISODE_DB` environment variable.
 #' @param username,full_name,email The new account's fields.
 #' @param password An initial plaintext password (hashed here, never
 #'   stored or logged as plaintext) - a temporary one the holder is
@@ -132,8 +137,11 @@ episode_auth_change_password <- function(con, user_id, new_password) {
 #' @param role One of `"assessor"`, `"admin"`.
 #' @return Invisibly, the new `user_id`.
 #' @export
-episode_provision_user <- function(con, username, full_name, email, password, role = "assessor") {
+episode_provision_user <- function(db_path = Sys.getenv("EPISODE_DB", unset = NA),
+                                    username, full_name, email, password, role = "assessor") {
   rlang::check_installed("sodium")
+  con <- episode_db_open(db_path)
+  on.exit(DBI::dbDisconnect(con))
   invisible(episode_db_app_user_insert(
     con, username = username, full_name = full_name, email = email,
     password_hash = sodium::password_store(password), role = role

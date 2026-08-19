@@ -54,3 +54,20 @@ test_that("every key used in code exists in both language files", {
   missing <- setdiff(used_keys, names(nl))
   expect_equal(missing, character(0))
 })
+
+test_that("episode_format_date_range() collapses shared month/year, in order regardless of input order", {
+  expect_equal(episode_format_date_range("2025-01-07", "2025-01-15", lang = "nl"), "7-15 jan. 2025")
+  expect_equal(episode_format_date_range("2025-01-15", "2025-01-07", lang = "nl"), "7-15 jan. 2025")  # swapped input, same output
+  expect_equal(episode_format_date_range("2025-01-07", "2025-01-07", lang = "nl"), "7 jan. 2025")  # single day, no range dash
+  expect_equal(episode_format_date_range("2025-11-28", "2025-12-03", lang = "nl"), "28 nov. - 3 dec. 2025")
+  expect_equal(episode_format_date_range("2024-12-28", "2025-01-03", lang = "nl"), "28 dec. 2024 - 3 jan. 2025")
+})
+
+test_that("episode_format_date_range() uses English month abbreviations for lang = 'en'", {
+  expect_equal(episode_format_date_range("2025-01-07", "2025-01-15", lang = "en"), "7-15 Jan 2025")
+})
+
+test_that("episode_format_date_range() falls back cleanly on unparseable input", {
+  expect_equal(episode_format_date_range(NA, "2025-01-15", lang = "en"), episode_tr("misc.unknown", lang = "en"))
+  expect_equal(episode_format_date_range("not-a-date", "2025-01-15", lang = "en"), episode_tr("misc.unknown", lang = "en"))
+})

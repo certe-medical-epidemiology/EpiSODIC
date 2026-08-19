@@ -12,10 +12,10 @@
   "rail.count_suffix": "new or active",
   "rail.empty": "No open clusters.",
 
-  "dossier.stat.observed": "Observed",
+  "dossier.stat.observed": "Confirmed",
   "dossier.stat.observed_sub": "expected {expected}",
   "dossier.stat.ratio": "Ratio O/E",
-  "dossier.stat.ratio_sub": "observed / expected",
+  "dossier.stat.ratio_sub": "confirmed / expected",
   "dossier.stat.density": "Incidence density",
   "dossier.stat.density_sub": "baseline {baseline} per 1,000 patient-days",
   "dossier.stat.doubling": "Doubling time",
@@ -24,7 +24,8 @@
   "dossier.stat.unique_patients": "Unique patients",
   "dossier.stat.unique_patients_sub": "{isolates_phrase}, 1 per episode",
   "dossier.stat.case_free": "Case-free",
-  "dossier.stat.case_free_value": "{since} / {need} d",
+  "dossier.stat.case_free_value": "{since} d",
+  "dossier.stat.case_free_sub": "threshold {need} d",
   "dossier.stat.priority": "Priority",
   "dossier.stat.priority_sub": "composite score",
 
@@ -86,8 +87,8 @@
   "panel.demography.female": "female →",
 
   "panel.geo.title": "Geographic spread",
-  "panel.geo.aside": "PC4",
-  "panel.geo.unit": "The app shows a PC4 choropleth here via certegis.",
+  "panel.geo.aside": "PC",
+  "panel.geo.unit": "The app shows a PC choropleth here via certegis.",
   "panel.geo.empty": "No postcode data available.",
 
   "panel.places.title_ward": "Ward",
@@ -103,7 +104,7 @@
   "panel.linelist.col.date": "Sample date",
   "panel.linelist.col.sex": "Sex",
   "panel.linelist.col.age": "Age",
-  "panel.linelist.col.pc4": "PC4",
+  "panel.linelist.col.pc4": "PC",
   "panel.linelist.col.ward": "Ward",
   "panel.linelist.col.specialism": "Specialism",
 
@@ -155,9 +156,9 @@
   "interpretation.fragment.magnitude.moderate_ratio": "{obs_phrase} against an expectation of {expected}, a ratio of {ratio}, a moderate excess over baseline.",
   "interpretation.fragment.magnitude.default": "{obs_phrase} recorded for this stream.",
 
-  "interpretation.fragment.concentration.high": "{dominant_n} of the {total_n} cases ({dominant_share_pct}%) come from {dominant_label}, pointing to strong place-based clustering.",
-  "interpretation.fragment.concentration.moderate": "{dominant_n} of the {total_n} cases ({dominant_share_pct}%) come from {dominant_label}, a moderate concentration.",
-  "interpretation.fragment.concentration.diffuse": "Cases are spread across several locations; the largest, {dominant_label}, accounts for only {dominant_share_pct}% of the cluster.",
+  "interpretation.fragment.concentration.high": "{dominant_n} of the {total_n} cases ({dominant_share_pct}%) come from postal code {dominant_label}, pointing to strong place-based clustering.",
+  "interpretation.fragment.concentration.moderate": "{dominant_n} of the {total_n} cases ({dominant_share_pct}%) come from postal code {dominant_label}, a moderate concentration.",
+  "interpretation.fragment.concentration.diffuse": "Cases are spread across several postal-code areas; the area with the most cases, postal code {dominant_label}, accounts for only {dominant_share_pct}% of the cluster.",
 
   "interpretation.fragment.denominator.rising_volume_flat_positivity": "Test volume rose from {test_first} to {test_last} tests per week, while positivity stayed nearly flat ({positivity_first_pct}% to {positivity_last_pct}%). Part of the rise is therefore attributable to test volume, not incidence.",
   "interpretation.fragment.denominator.rising_positivity": "Positivity rose from {positivity_first_pct}% to {positivity_last_pct}% at a comparable test volume. The rise is therefore not attributable to test volume.",
@@ -211,6 +212,7 @@
   "assessment.close_button": "Close cluster",
   "assessment.close_confirm": "Close this cluster? This is separate from its classification.",
   "assessment.mute_button": "Mute stream",
+  "assessment.mute_intro": "Temporarily suppresses new detections for this stream - for a known seasonal peak or screening campaign, say - so the same cause is not flagged again and again.",
   "assessment.mute_title": "Mute stream",
   "assessment.mute_reason_label": "Reason",
   "assessment.mute_reason.seasonal": "seasonal",

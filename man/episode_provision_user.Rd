@@ -5,7 +5,7 @@
 \title{Provision an assessor account}
 \usage{
 episode_provision_user(
-  con,
+  db_path = Sys.getenv("EPISODE_DB", unset = NA),
   username,
   full_name,
   email,
@@ -14,7 +14,8 @@ episode_provision_user(
 )
 }
 \arguments{
-\item{con}{A \link[DBI:DBIConnection-class]{DBI::DBIConnection}.}
+\item{db_path}{Path to an existing SQLite database. Defaults to the
+\code{EPISODE_DB} environment variable.}
 
 \item{username, full_name, email}{The new account's fields.}
 
@@ -35,4 +36,9 @@ themselves. This is that provisioning step: hashes \code{password} with
 \code{sodium::password_store()} and inserts the account, \code{must_change = 1}
 by default so the first real sign-in forces a password of the
 account holder's own choosing (see \code{\link[=episode_auth_change_password]{episode_auth_change_password()}}).
+}
+\details{
+Takes \code{db_path} rather than an open connection - opened and closed here
+via \code{\link[=episode_db_open]{episode_db_open()}} - so provisioning an account is one call at the
+console, without first having to construct a \code{con} by hand.
 }

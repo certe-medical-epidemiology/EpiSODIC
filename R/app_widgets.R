@@ -55,6 +55,49 @@ episode_ui_code_join <- function(detectors, sep = ", ") {
   paste(sprintf("<code>%s</code>", escaped), collapse = sep)
 }
 
+#' A vertical list of colour-coded buttons standing in for a `<select>`
+#'
+#' Used for the classification and mute-reason pickers on the assessment
+#' form (`episode_ui_assessment_form()`) - matching `episode-mockup.jsx`'s
+#' own design (a labelled, coloured button per option, filled once
+#' selected) rather than a plain dropdown, so the option and its meaning
+#' are both visible at once instead of hidden behind a click.
+#'
+#' Selection is plain inline `onclick` JS (consistent with the rest of this
+#' app's forms, e.g. `episode_ui_nav_link()`), writing into a hidden
+#' `input_id` element that the submit button's own onclick reads - no new
+#' JS file, no new dependency.
+#'
+#' @param input_id The id of the hidden input the selected value is
+#'   written to.
+#' @param options A list of `list(value, label, colour, hint = NULL)`.
+#' @param selected The initially-selected value, or `NULL`/`""` for none.
+#' @return A `shiny::tags$div`.
+#' @keywords internal
+#' @noRd
+episode_ui_picker <- function(input_id, options, selected = NULL) {
+  selected <- selected %||% ""
+  shiny::tags$div(
+    class = "episode-picker",
+    shiny::tags$input(type = "hidden", id = input_id, value = selected),
+    lapply(options, function(opt) {
+      active <- identical(opt$value, selected) && nzchar(selected)
+      shiny::tags$button(
+        type = "button",
+        class = if (active) "episode-picker-btn active" else "episode-picker-btn",
+        style = if (active) sprintf("background:%s;border-color:%s;", opt$colour, opt$colour) else "",
+        `data-value` = opt$value, `data-colour` = opt$colour, `data-input` = input_id,
+        onclick = sprintf(
+          "document.getElementById('%s').value=this.dataset.value; document.querySelectorAll('[data-input=\"%s\"]').forEach(function(b){b.classList.remove('active');b.style.background='';b.style.borderColor='';}); this.classList.add('active'); this.style.background=this.dataset.colour; this.style.borderColor=this.dataset.colour;",
+          input_id, input_id
+        ),
+        opt$label,
+        if (!is.null(opt$hint)) shiny::tags$div(class = "episode-picker-hint", opt$hint)
+      )
+    })
+  )
+}
+
 #' @rdname app_widgets
 #' @param text Chip text.
 #' @param colour A hex colour.
@@ -184,6 +227,21 @@ episode_ui_state_colour <- function(state) {
   switch(state,
     new = pal$primary, assessing = pal$primary, monitoring = pal$danger,
     closable = pal$warning_dark, closed = pal$success_dark, reassess = pal$tertiary_dark,
+    pal$muted
+  )
+}
+
+#' @rdname app_widgets
+#' @param verdict One of `episode_ui_assessment_form()`'s verdict keys
+#'   (`"artefact"`, `"expected_variation"`, `"cluster_not_yet"`,
+#'   `"possible_epidemic"`, `"confirmed_epidemic"`).
+#' @export
+episode_ui_verdict_colour <- function(verdict) {
+  pal <- episode_palette()
+  switch(verdict,
+    artefact = pal$muted, expected_variation = pal$muted,
+    cluster_not_yet = pal$success_dark, possible_epidemic = pal$warning_dark,
+    confirmed_epidemic = pal$danger,
     pal$muted
   )
 }

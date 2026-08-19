@@ -115,7 +115,8 @@ episode_ui_stat_grid <- function(obj, lang = "nl") {
   if (!is.na(obj$case_free$need)) {
     stats <- c(stats, list(episode_ui_stat(
       episode_tr("dossier.stat.case_free", lang = lang),
-      episode_tr("dossier.stat.case_free_value", since = obj$case_free$since, need = obj$case_free$need, lang = lang)
+      episode_tr("dossier.stat.case_free_value", since = obj$case_free$since, lang = lang),
+      episode_tr("dossier.stat.case_free_sub", need = obj$case_free$need, lang = lang)
     )))
   }
   stats <- c(stats, list(episode_ui_stat(episode_tr("dossier.stat.priority", lang = lang), round(obj$priority_score, 0),
@@ -299,7 +300,8 @@ episode_ui_settings_panel <- function(con, cluster_id, lang = "nl") {
       episode_tr(if (!is.null(settings$population_offset)) "panel.settings.population_offset_patient_days" else "panel.settings.population_offset_none", lang = lang)),
     list(episode_tr("panel.settings.case_free_days", lang = lang), as.character(settings$case_free_days)),
     list(episode_tr("panel.settings.last_run", lang = lang),
-      episode_tr("panel.settings.last_run_value", when = settings$last_run_when %||% episode_tr("misc.unknown", lang = lang),
+      episode_tr("panel.settings.last_run_value",
+                 when = if (is.null(settings$last_run_when) || is.na(settings$last_run_when)) episode_tr("misc.unknown", lang = lang) else episode_ui_format_datetime(settings$last_run_when, fmt = "%d-%m-%Y %H:%M"),
                  host = settings$last_run_host %||% episode_tr("misc.unknown", lang = lang), lang = lang)),
     list(episode_tr("panel.settings.pkg_versions", lang = lang), settings$pkg_versions %||% episode_tr("misc.unknown", lang = lang))
   )
@@ -371,19 +373,28 @@ episode_ui_timeline_entry <- function(row, lang = "nl") {
 #' @keywords internal
 #' @noRd
 episode_ui_assessment_form <- function(cluster_id, obj, lang = "nl") {
+  pal <- episode_palette()
   verdicts <- c("cluster_not_yet", "possible_epidemic", "confirmed_epidemic",
                 "expected_variation", "artefact")
   mute_reasons <- c("seasonal", "screening_campaign", "method_change", "known_source", "other")
+
+  verdict_options <- c(
+    list(list(value = "", label = episode_tr("assessment.verdict_none", lang = lang), colour = pal$muted)),
+    lapply(verdicts, function(v) list(
+      value = v, label = episode_tr(paste0("verdict.", v), lang = lang),
+      hint = episode_tr(paste0("verdict.", v, ".hint"), lang = lang),
+      colour = episode_ui_verdict_colour(v)
+    ))
+  )
+  mute_options <- lapply(mute_reasons, function(r) list(
+    value = r, label = episode_tr(paste0("assessment.mute_reason.", r), lang = lang), colour = pal$secondary
+  ))
 
   shiny::tags$div(
     class = "episode-panel-body", style = "border-top:1px solid var(--episode-rule);padding:16px;",
     shiny::tags$div(class = "episode-form-group",
                      shiny::tags$label(class = "episode-form-label", episode_tr("assessment.verdict_label", lang = lang)),
-                     shiny::tags$select(
-                       id = "assess_verdict",
-                       shiny::tags$option(value = "", episode_tr("assessment.verdict_none", lang = lang)),
-                       lapply(verdicts, function(v) shiny::tags$option(value = v, episode_tr(paste0("verdict.", v), lang = lang)))
-                     )),
+                     episode_ui_picker("assess_verdict", verdict_options)),
     shiny::tags$div(class = "episode-form-group",
                      shiny::tags$label(class = "episode-form-label", episode_tr("assessment.rationale_label", lang = lang)),
                      shiny::tags$textarea(id = "assess_rationale", rows = 3,
@@ -417,13 +428,11 @@ episode_ui_assessment_form <- function(cluster_id, obj, lang = "nl") {
       )
     ),
     shiny::tags$hr(),
+    shiny::tags$p(class = "episode-form-hint", episode_tr("assessment.mute_intro", lang = lang)),
     shiny::tags$div(
       class = "episode-form-group",
       shiny::tags$label(class = "episode-form-label", episode_tr("assessment.mute_title", lang = lang)),
-      shiny::tags$select(
-        id = "mute_reason",
-        lapply(mute_reasons, function(r) shiny::tags$option(value = r, episode_tr(paste0("assessment.mute_reason.", r), lang = lang)))
-      )
+      episode_ui_picker("mute_reason", mute_options, selected = mute_reasons[1])
     ),
     shiny::tags$div(style = "display:flex;gap:8px;",
                      shiny::tags$div(class = "episode-form-group", style = "flex:1;",

@@ -7,6 +7,19 @@ test_that("episode_ui_dossier() and episode_ui_assessment_rail() render the fixt
   expect_s3_class(episode_ui_assessment_rail(env$con, env$cluster_id, lang = "nl"), "shiny.tag")
 })
 
+test_that("episode_ui_assessment_rail() renders the classification and mute pickers as coloured buttons, not <select>, with a mute intro paragraph", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  fake_user <- data.frame(user_id = 1L, username = "jdoe", full_name = "Jane Doe", stringsAsFactors = FALSE)
+
+  rendered <- as.character(episode_ui_assessment_rail(env$con, env$cluster_id, lang = "nl", current_user = fake_user))
+  expect_false(grepl("<select", rendered, fixed = TRUE))
+  expect_true(grepl("episode-picker-btn", rendered, fixed = TRUE))
+  expect_true(grepl(episode_tr("verdict.possible_epidemic", lang = "nl"), rendered, fixed = TRUE))
+  expect_true(grepl(episode_tr("assessment.mute_reason.seasonal", lang = "nl"), rendered, fixed = TRUE))
+  expect_true(grepl(episode_tr("assessment.mute_intro", lang = "nl"), rendered, fixed = TRUE))
+})
+
 test_that("episode_ui_geo_panel() shows the full per-PC4 breakdown, not just the dominant PC4", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))

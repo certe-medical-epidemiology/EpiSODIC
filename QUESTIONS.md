@@ -426,6 +426,72 @@ decisions survives.
     epidemiologist reading an unfamiliar detector name on a dossier has
     somewhere in the app itself to look it up.
 
+39. **`episode_provision_user()` and `episode_run_app()` now take
+    `db_path` defaulting to the `EPISODE_DB` environment variable**,
+    rather than requiring the caller to construct a `con` (or pass a
+    literal path every time) by hand. `episode_db_open()` is the new
+    shared utility - resolves `EPISODE_DB`, connects, and gives a clear
+    error if neither is set - so provisioning an account is one call at
+    the console. Documented alongside `EPISODE_CONFIG` and
+    `EPISODE_PALETTE_CONFIG` (previously used but never written down) in
+    a new README "Environment variables" section.
+
+40. **The classification and mute-reason pickers were rebuilt as
+    colour-coded button lists**, matching `episode-mockup.jsx`'s design,
+    replacing the `<select>` elements substituted in during M3 - a
+    dropdown hides the mapping between an option and its meaning behind
+    a click, where the mockup's own design puts option, colour and hint
+    text in view at once. `episode_ui_picker()` is a small reusable
+    building block (plain inline `onclick`, consistent with the rest of
+    the app's forms - no new JS file). Added a one-line `<p>` above the
+    mute picker explaining what muting actually does, since "Stream
+    dempen" alone does not say why or when to use it.
+
+41. **Two real bugs found via user testing of the M3 UI**: the rail
+    list's ratio line rendered literally "ratio NA" for any cluster
+    detected by a rule-based detector (`same_place`, `rare_trigger`),
+    which carries no `expected`/`ratio` at all - fixed by omitting the
+    ratio segment when it is `NA` rather than formatting it anyway. And
+    `episode_ui_format_datetime()` parsed a stored UTC timestamp with
+    `as.POSIXct(iso, tz = "UTC")` but then called `format()` without an
+    explicit `tz`, which uses the *parsed object's own* `tzone`
+    attribute (still `"UTC"`) rather than the system's - every displayed
+    time (status strip, assessment timeline, and the Activity/Archive
+    tabs, which had not been going through this formatter at all) was
+    silently shown in UTC labelled as if local. Fixed by passing an
+    explicit `tz` argument (defaulting to `Sys.timezone()`, exposed as a
+    parameter rather than hardcoded so tests can pass a fixed zone -
+    `Sys.timezone()` caches its result for the R session, so
+    `Sys.setenv(TZ = ...)` after the first call has no effect on it).
+
+42. **Several dossier/interpretation wordings tightened on user
+    feedback**: the top metrics card's "Waargenomen"/"Observed" label was
+    ambiguous next to "verwacht"/"expected" (found vs. lab-confirmed vs.
+    statistically expected all read plausibly) - renamed to
+    "Vastgesteld"/"Confirmed". The case-free stat showed two raw numbers
+    separated by a slash with no indication which was which
+    (`"1462 / 21 d"`); split into a value ("1462 d") and a sub-label
+    ("drempel 21 d"/"threshold 21 d") using the existing stat-tile
+    pattern. "PC4" was relabelled "PC" everywhere user-facing (the
+    underlying `pc4` column and ingestion contract are unchanged - this
+    is a label-only change, not a granularity change, so an operator
+    supplying coarser or finer postcodes is not misled by a label that
+    implies exactly four digits). The concentration interpretation
+    fragments named a PC4 value bare (`"de grootste locatie, 7228,
+    omvat..."`, ambiguous with an actual named place) - now prefixed
+    "postcode" everywhere a PC value appears in prose. "Locatie" was
+    also dropped from the diffuse-concentration fragment's own wording
+    (Certe's own jargon uses "locatie" for a physical centre/institution,
+    a different concept from a PC-based geographic area) in favour of
+    "het hoogst epidemische gebied"/"the area with the most cases".
+
+43. **Added `episode_format_date_range()`**, collapsing a cluster's
+    `first_day`/`last_day` into `"7-15 jan. 2025"` rather than repeating
+    the month and year per endpoint, falling back a step at a time as
+    the range widens (same month, same year, different years) and
+    collapsing to a single date for a one-day cluster. Used on the rail
+    list, which previously showed no date range at all.
+
 ## Architecture concerns raised during implementation
 
 1. **`episode_stream` is missing a `ward` column** (see item 20 above).

@@ -121,13 +121,39 @@ episode_ui_status_strip <- function(status, lang = "nl") {
   )
 }
 
+#' Format a UTC-stored ISO timestamp for display, converted to local time
+#'
+#' Every timestamp in the database is stored as UTC (`episode_now()`),
+#' deliberately - a single unambiguous instant, independent of server or
+#' viewer timezone. Display is the other half of that deal: this always
+#' converts to `Sys.timezone()` before formatting, so a viewer never sees
+#' a bare UTC/"Z" timestamp. `Sys.timezone()` rather than
+#' `as.POSIXlt(Sys.time())$zone`, since it returns the IANA zone name
+#' `format()`'s own `tz` argument expects and handles DST transitions
+#' correctly for any instant, not just "now" - `as.POSIXlt(x)$zone` gives
+#' only the abbreviation for one already-resolved instant.
+#'
+#' Note that `as.POSIXct(iso, tz = "UTC")` alone is not enough: the
+#' resulting object's own `tzone` attribute stays `"UTC"`, and
+#' `format()` without an explicit `tz` argument formats in *that* stored
+#' zone, not the system's - this silently produced UTC times labelled as
+#' if they were local (QUESTIONS.md).
+#'
+#' @param iso An ISO-8601 UTC string (`episode_now()`'s format), or `NA`.
+#' @param fmt A `format()`/`strftime()` format string.
+#' @param tz Target IANA timezone. Defaults to `Sys.timezone()`; exposed as
+#'   an argument (rather than hardcoded) mainly so tests can pass a fixed
+#'   zone - `Sys.timezone()` caches its result for the R session, so
+#'   `Sys.setenv(TZ = ...)` after that first call has no effect on it.
+#' @return A character string in local time, or `episode_tr("misc.unknown")`
+#'   for `NA`/`NULL`, or `iso` itself if it does not parse.
 #' @keywords internal
 #' @noRd
-episode_ui_format_datetime <- function(iso) {
+episode_ui_format_datetime <- function(iso, fmt = "%H:%M", tz = Sys.timezone()) {
   if (is.null(iso) || is.na(iso)) return(episode_tr("misc.unknown"))
   parsed <- tryCatch(as.POSIXct(iso, format = "%Y-%m-%dT%H:%M:%OSZ", tz = "UTC"), error = function(e) NA)
   if (is.na(parsed)) return(iso)
-  format(parsed, "%H:%M")
+  format(parsed, fmt, tz = tz)
 }
 
 #' @keywords internal
@@ -157,9 +183,11 @@ episode_ui_rail <- function(open, selected_id, lang = "nl") {
           ),
           shiny::tags$div(class = "episode-rail-pathogen", shiny::HTML(episode_ui_italicise_taxon(row$pathogen))),
           shiny::tags$div(class = "episode-rail-meta", row$level_label),
-          shiny::tags$div(class = "episode-rail-meta",
-                           episode_count_phrase(row$n_cases, episode_tr("unit.case", lang = lang), episode_tr("unit.cases", lang = lang)),
-                           sprintf(" \u00b7 ratio %s", round(row$ratio, 1))),
+          shiny::tags$div(class = "episode-rail-meta", episode_format_date_range(row$first_day, row$last_day, lang = lang)),
+          shiny::tags$div(class = "episode-rail-meta", paste(c(
+            episode_count_phrase(row$n_cases, episode_tr("unit.case", lang = lang), episode_tr("unit.cases", lang = lang)),
+            if (!is.na(row$ratio)) sprintf("ratio %s", round(row$ratio, 1))
+          ), collapse = " \u00b7 ")),
           shiny::tags$div(class = "episode-rail-state", episode_ui_state_dot(row$state), row$state_label)
         )
       })

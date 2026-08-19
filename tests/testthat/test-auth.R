@@ -8,15 +8,40 @@ auth_test_user <- function(con, password = "initial123", must_change = TRUE) {
   user_id
 }
 
-test_that("episode_provision_user() creates an account that can immediately log in and is flagged must_change", {
-  con <- episode_test_db()
-  on.exit(DBI::dbDisconnect(con))
+test_that("episode_provision_user() takes a db_path (not an open connection) and creates an account that can immediately log in, flagged must_change", {
+  db_path <- tempfile(fileext = ".sqlite")
+  DBI::dbDisconnect(episode_db_create(db_path))
 
-  episode_provision_user(con, "jdoe", "Jane Doe", "j@x.nl", "a-temporary-password")
+  episode_provision_user(db_path, "jdoe", "Jane Doe", "j@x.nl", "a-temporary-password")
+
+  con <- episode_db_connect(db_path)
+  on.exit(DBI::dbDisconnect(con))
   result <- episode_auth_login(con, "jdoe", "a-temporary-password")
   expect_true(result$ok)
   expect_equal(result$user$full_name, "Jane Doe")
   expect_true(result$must_change)
+})
+
+test_that("episode_provision_user() falls back to the EPISODE_DB environment variable when db_path is not given", {
+  db_path <- tempfile(fileext = ".sqlite")
+  DBI::dbDisconnect(episode_db_create(db_path))
+  old_env <- Sys.getenv("EPISODE_DB", unset = NA)
+  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODE_DB") else Sys.setenv(EPISODE_DB = old_env))
+  Sys.setenv(EPISODE_DB = db_path)
+
+  episode_provision_user(username = "asmith", full_name = "Ann Smith", email = "a@x.nl", password = "pw123456")
+
+  con <- episode_db_connect(db_path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE)
+  expect_true(episode_auth_login(con, "asmith", "pw123456")$ok)
+})
+
+test_that("episode_db_open() errors clearly when neither db_path nor EPISODE_DB is given", {
+  old_env <- Sys.getenv("EPISODE_DB", unset = NA)
+  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODE_DB") else Sys.setenv(EPISODE_DB = old_env))
+  Sys.unsetenv("EPISODE_DB")
+
+  expect_error(episode_db_open(), "EPISODE_DB")
 })
 
 test_that("episode_auth_login() rejects an unknown username or wrong password without distinguishing", {

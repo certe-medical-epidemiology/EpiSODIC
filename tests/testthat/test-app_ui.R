@@ -1,3 +1,33 @@
+test_that("episode_ui_format_datetime() converts stored UTC to the target timezone, not literal UTC", {
+  # January: CET is UTC+1, no DST ambiguity. tz is passed explicitly rather
+  # than via Sys.setenv(TZ = ...): Sys.timezone() caches its result for the
+  # R session, so changing the env var after the first call has no effect.
+  expect_equal(episode_ui_format_datetime("2025-01-15T10:00:00Z", tz = "Europe/Amsterdam"), "11:00")
+  expect_equal(episode_ui_format_datetime("2025-01-15T10:00:00Z", fmt = "%d-%m-%Y %H:%M", tz = "Europe/Amsterdam"), "15-01-2025 11:00")
+  expect_equal(episode_ui_format_datetime("2025-01-15T10:00:00Z", tz = "UTC"), "10:00")
+})
+
+test_that("episode_ui_format_datetime() returns 'unknown' for NA/NULL and the raw string for unparseable input", {
+  expect_equal(episode_ui_format_datetime(NA), episode_tr("misc.unknown"))
+  expect_equal(episode_ui_format_datetime(NULL), episode_tr("misc.unknown"))
+  expect_equal(episode_ui_format_datetime("not-a-timestamp"), "not-a-timestamp")
+})
+
+test_that("episode_ui_rail() omits the ratio segment (not 'ratio NA') for a detector with no ratio, and shows a date range", {
+  open <- data.frame(
+    cluster_id = 1L, pathogen = "Norovirus", level_label = "L1", state = "new", state_label = "Nieuw",
+    n_cases = 3L, ratio = NA_real_, first_day = "2025-01-07", last_day = "2025-01-15",
+    stringsAsFactors = FALSE
+  )
+  html <- as.character(episode_ui_rail(open, selected_id = NULL, lang = "nl"))
+  expect_false(grepl("ratio NA", html, fixed = TRUE))
+  expect_true(grepl("7-15 jan. 2025", html, fixed = TRUE))
+
+  open$ratio <- 2.3456
+  html <- as.character(episode_ui_rail(open, selected_id = NULL, lang = "nl"))
+  expect_true(grepl("ratio 2.3", html, fixed = TRUE))
+})
+
 test_that("episode_palette() and episode_brand_bar() return usable hex colours, role-named", {
   pal <- episode_palette()
   expect_type(pal, "list")

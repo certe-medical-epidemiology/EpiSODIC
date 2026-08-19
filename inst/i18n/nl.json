@@ -12,10 +12,10 @@
   "rail.count_suffix": "nieuw of actief",
   "rail.empty": "Geen openstaande clusters.",
 
-  "dossier.stat.observed": "Waargenomen",
+  "dossier.stat.observed": "Vastgesteld",
   "dossier.stat.observed_sub": "verwacht {expected}",
   "dossier.stat.ratio": "Ratio O/V",
-  "dossier.stat.ratio_sub": "waargenomen / verwacht",
+  "dossier.stat.ratio_sub": "vastgesteld / verwacht",
   "dossier.stat.density": "Incidentiedichtheid",
   "dossier.stat.density_sub": "basislijn {baseline} per 1.000 verpleegdagen",
   "dossier.stat.doubling": "Verdubbelingstijd",
@@ -24,7 +24,8 @@
   "dossier.stat.unique_patients": "Unieke patiënten",
   "dossier.stat.unique_patients_sub": "{isolates_phrase}, 1 per episode",
   "dossier.stat.case_free": "Casusvrij",
-  "dossier.stat.case_free_value": "{since} / {need} d",
+  "dossier.stat.case_free_value": "{since} d",
+  "dossier.stat.case_free_sub": "drempel {need} d",
   "dossier.stat.priority": "Prioriteit",
   "dossier.stat.priority_sub": "samengestelde score",
 
@@ -86,8 +87,8 @@
   "panel.demography.female": "vrouw →",
 
   "panel.geo.title": "Geografische spreiding",
-  "panel.geo.aside": "PC4",
-  "panel.geo.unit": "In de app staat hier de PC4-choropleth via certegis.",
+  "panel.geo.aside": "PC",
+  "panel.geo.unit": "In de app staat hier de PC-choropleth via certegis.",
   "panel.geo.empty": "Geen postcodegegevens beschikbaar.",
 
   "panel.places.title_ward": "Afdeling",
@@ -103,7 +104,7 @@
   "panel.linelist.col.date": "Afname",
   "panel.linelist.col.sex": "Geslacht",
   "panel.linelist.col.age": "Leeftijd",
-  "panel.linelist.col.pc4": "PC4",
+  "panel.linelist.col.pc4": "PC",
   "panel.linelist.col.ward": "Afdeling",
   "panel.linelist.col.specialism": "Specialisme",
 
@@ -155,9 +156,9 @@
   "interpretation.fragment.magnitude.moderate_ratio": "{obs_phrase} tegen een verwachting van {expected}, een ratio van {ratio} en daarmee een gematigde overschrijding van de basislijn.",
   "interpretation.fragment.magnitude.default": "{obs_phrase} geregistreerd voor deze stream.",
 
-  "interpretation.fragment.concentration.high": "{dominant_n} van de {total_n} gevallen ({dominant_share_pct}%) zijn afkomstig van {dominant_label}, wat wijst op sterke plaatsgebonden clustering.",
-  "interpretation.fragment.concentration.moderate": "{dominant_n} van de {total_n} gevallen ({dominant_share_pct}%) zijn afkomstig van {dominant_label}, een gematigde concentratie.",
-  "interpretation.fragment.concentration.diffuse": "De gevallen zijn verspreid over meerdere locaties; de grootste locatie, {dominant_label}, omvat slechts {dominant_share_pct}% van het cluster.",
+  "interpretation.fragment.concentration.high": "{dominant_n} van de {total_n} gevallen ({dominant_share_pct}%) zijn afkomstig uit postcode {dominant_label}, wat wijst op sterke plaatsgebonden clustering.",
+  "interpretation.fragment.concentration.moderate": "{dominant_n} van de {total_n} gevallen ({dominant_share_pct}%) zijn afkomstig uit postcode {dominant_label}, een gematigde concentratie.",
+  "interpretation.fragment.concentration.diffuse": "De gevallen zijn verspreid over meerdere postcodegebieden; het hoogst epidemische gebied, postcode {dominant_label}, omvat slechts {dominant_share_pct}% van het cluster.",
 
   "interpretation.fragment.denominator.rising_volume_flat_positivity": "Het testvolume steeg van {test_first} naar {test_last} bepalingen per week, terwijl de positiviteit nagenoeg gelijk bleef ({positivity_first_pct}% naar {positivity_last_pct}%). Een deel van de toename is daarmee toe te schrijven aan testvolume, niet aan incidentie.",
   "interpretation.fragment.denominator.rising_positivity": "De positiviteit steeg van {positivity_first_pct}% naar {positivity_last_pct}% bij een vergelijkbaar testvolume. De toename is dus niet toe te schrijven aan testvolume.",
@@ -211,6 +212,7 @@
   "assessment.close_button": "Cluster afsluiten",
   "assessment.close_confirm": "Dit cluster afsluiten? Dit staat los van de classificatie.",
   "assessment.mute_button": "Stream dempen",
+  "assessment.mute_intro": "Onderdrukt tijdelijk nieuwe detecties voor deze stream, bijvoorbeeld tijdens een bekende seizoenspiek of screeningscampagne, zodat dezelfde oorzaak niet telkens opnieuw wordt gesignaleerd.",
   "assessment.mute_title": "Stream dempen",
   "assessment.mute_reason_label": "Reden",
   "assessment.mute_reason.seasonal": "seizoensgebonden",

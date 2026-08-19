@@ -10,6 +10,7 @@
 \alias{episode_ui_pyramid}
 \alias{episode_ui_state_dot}
 \alias{episode_ui_state_colour}
+\alias{episode_ui_verdict_colour}
 \title{Small reusable UI building blocks}
 \usage{
 episode_ui_chip(text, colour, filled = FALSE)
@@ -27,6 +28,8 @@ episode_ui_pyramid(demo, lang = "nl")
 episode_ui_state_dot(state)
 
 episode_ui_state_colour(state)
+
+episode_ui_verdict_colour(verdict)
 }
 \arguments{
 \item{text}{Chip text.}
@@ -60,6 +63,10 @@ episode_ui_state_colour(state)
 \item{lang}{Session language, for the axis labels.}
 
 \item{state}{One of \code{\link[=episode_derive_state]{episode_derive_state()}}'s state strings.}
+
+\item{verdict}{One of \code{episode_ui_assessment_form()}'s verdict keys
+(\code{"artefact"}, \code{"expected_variation"}, \code{"cluster_not_yet"},
+\code{"possible_epidemic"}, \code{"confirmed_epidemic"}).}
 }
 \description{
 Thin \code{shiny::tags} wrappers mirroring \code{episode-mockup.jsx}'s primitive

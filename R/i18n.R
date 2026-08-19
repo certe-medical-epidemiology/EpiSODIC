@@ -102,3 +102,47 @@ episode_count_phrase <- function(n, singular, plural, with_number = TRUE) {
   word <- if (n == 1) singular else plural
   if (with_number) paste(n, word) else word
 }
+
+#' Format a date range compactly, collapsing shared month/year
+#'
+#' `"7-15 jan. 2025"` rather than `"2025-01-07 to 2025-01-15"`: shared
+#' month and year are stated once, not repeated per endpoint. Falls back
+#' one step at a time as the range widens (same month -> same year ->
+#' different years), and collapses to a single date when `x` and `y` are
+#' the same day (a one-day cluster should not read "7-7 jan. 2025").
+#'
+#' @param x,y Range endpoints - `Date`, or a string `as.Date()` accepts.
+#'   Order does not matter; the earlier date is always shown first.
+#' @param lang Session language, `"nl"` (default) or `"en"`.
+#' @return A character string, or `episode_tr("misc.unknown", lang =
+#'   lang)` if either endpoint fails to parse.
+#' @export
+episode_format_date_range <- function(x, y, lang = "nl") {
+  x <- tryCatch(as.Date(x), error = function(e) NA)
+  y <- tryCatch(as.Date(y), error = function(e) NA)
+  if (length(x) != 1 || length(y) != 1 || is.na(x) || is.na(y)) {
+    return(episode_tr("misc.unknown", lang = lang))
+  }
+  if (y < x) {
+    tmp <- x; x <- y; y <- tmp
+  }
+
+  months <- if (lang == "nl") {
+    c("jan.", "feb.", "mrt.", "apr.", "mei", "jun.", "jul.", "aug.", "sep.", "okt.", "nov.", "dec.")
+  } else {
+    month.abb
+  }
+  mon <- function(d) months[as.integer(format(d, "%m"))]
+  day <- function(d) as.integer(format(d, "%d"))
+  yr <- function(d) format(d, "%Y")
+
+  if (identical(x, y)) {
+    sprintf("%d %s %s", day(x), mon(x), yr(x))
+  } else if (format(x, "%Y-%m") == format(y, "%Y-%m")) {
+    sprintf("%d-%d %s %s", day(x), day(y), mon(x), yr(x))
+  } else if (yr(x) == yr(y)) {
+    sprintf("%d %s - %d %s %s", day(x), mon(x), day(y), mon(y), yr(x))
+  } else {
+    sprintf("%d %s %s - %d %s %s", day(x), mon(x), yr(x), day(y), mon(y), yr(y))
+  }
+}

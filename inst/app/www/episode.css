@@ -480,6 +480,28 @@ dl.episode-settings dd { margin: 0; }
   color: #fff;
 }
 
+.episode-picker { margin-bottom: 12px; }
+.episode-picker-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: var(--episode-font);
+  font-size: 12px;
+  padding: 7px 10px;
+  margin-bottom: 4px;
+  border-radius: 3px;
+  border: 1px solid var(--episode-border);
+  background: var(--episode-surface);
+  color: var(--episode-ink);
+  cursor: pointer;
+}
+.episode-picker-btn.active { color: #fff; }
+.episode-picker-hint {
+  font-size: 10.5px;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
 .episode-locked-panel {
   padding: 22px 16px;
   text-align: center;

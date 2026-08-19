@@ -46,7 +46,7 @@ episode_ui_archive_screen <- function(archive, lang = "nl") {
               shiny::tags$td(row$place),
               shiny::tags$td(row$n_cases),
               shiny::tags$td(round(row$priority_score, 0)),
-              shiny::tags$td(if (is.na(row$closed_at)) episode_tr("misc.unknown", lang = lang) else row$closed_at)
+              shiny::tags$td(if (is.na(row$closed_at)) episode_tr("misc.unknown", lang = lang) else episode_ui_format_datetime(row$closed_at, fmt = "%d-%m-%Y"))
             )
           })
         )
@@ -83,7 +83,7 @@ episode_ui_activity_screen <- function(activity, lang = "nl") {
             row <- activity[i, ]
             shiny::tags$tr(
               class = if (isTRUE(row$is_system)) "episode-activity-row system" else "episode-activity-row",
-              shiny::tags$td(row$at),
+              shiny::tags$td(episode_ui_format_datetime(row$at, fmt = "%d-%m-%Y %H:%M")),
               shiny::tags$td(row$actor),
               shiny::tags$td(row$action),
               shiny::tags$td(if (is.na(row$target)) episode_tr("misc.dash", lang = lang) else row$target)

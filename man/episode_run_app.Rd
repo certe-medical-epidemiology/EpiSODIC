@@ -4,10 +4,15 @@
 \alias{episode_run_app}
 \title{Run the EpiSODE Shiny app}
 \usage{
-episode_run_app(db_path, lang = "nl", ...)
+episode_run_app(
+  db_path = Sys.getenv("EPISODE_DB", unset = NA),
+  lang = "nl",
+  ...
+)
 }
 \arguments{
-\item{db_path}{Path to the SQLite database.}
+\item{db_path}{Path to the SQLite database. Defaults to the
+\code{EPISODE_DB} environment variable.}
 
 \item{lang}{Default session language, \code{"nl"} (default) or \code{"en"}.}
 

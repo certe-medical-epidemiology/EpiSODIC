@@ -63,6 +63,30 @@ episode_db_connect <- function(path) {
   con
 }
 
+#' Open a connection to `db_path`, or the `EPISODE_DB` environment variable
+#'
+#' A thin wrapper around [episode_db_connect()] for entry points that take
+#' `db_path` rather than an already-open connection (e.g.
+#' [episode_provision_user()]) - centralises the `EPISODE_DB` default and
+#' the "neither was given" error in one place, rather than duplicating the
+#' resolve-then-connect logic in every such entry point.
+#'
+#' @param db_path Path to an existing SQLite database. Defaults to the
+#'   `EPISODE_DB` environment variable.
+#' @return An open [DBI::DBIConnection-class]; the caller is responsible
+#'   for disconnecting it.
+#' @export
+episode_db_open <- function(db_path = Sys.getenv("EPISODE_DB", unset = NA)) {
+  if (is.na(db_path) || !nzchar(db_path)) {
+    stop(
+      "No database path given and EPISODE_DB is not set. Pass db_path ",
+      "explicitly, or set the EPISODE_DB environment variable.",
+      call. = FALSE
+    )
+  }
+  episode_db_connect(db_path)
+}
+
 #' @keywords internal
 #' @noRd
 episode_db_pragmas <- function(con) {

@@ -117,14 +117,33 @@ the four assessor accounts are provisioned by whoever administers the
 database, not created by assessors themselves or by the app.
 
 ```r
+Sys.setenv(EPISODE_DB = "/path/to/episode.sqlite")  # or pass db_path explicitly below
+
 episode_provision_user(
-  con, username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
+  username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
   password = "a-temporary-password"
 )
 ```
 
-The account is created with `must_change = TRUE`, so its first real
-sign-in forces the holder to set their own password before continuing.
+`episode_provision_user()` takes `db_path` (defaulting to `EPISODE_DB`,
+see "Environment variables" below), not an open connection - it opens and
+closes its own via `episode_db_open()`, so provisioning an account is one
+call at the console. The account is created with `must_change = TRUE`, so
+its first real sign-in forces the holder to set their own password before
+continuing.
+
+## Environment variables
+
+Every `EPISODE_*` variable is optional; each entry point works fine with
+the equivalent argument passed explicitly instead. Environment variables
+exist so an operator can configure a running instance (a systemd unit, a
+Docker container) without editing R code.
+
+| Variable | Used by | Meaning |
+|---|---|---|
+| `EPISODE_DB` | `episode_run_app()`, `episode_provision_user()` (`db_path` argument) | Path to the instance's SQLite database. |
+| `EPISODE_CONFIG` | `episode_run_cron()` (`episode_config_path` argument) | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`'s shipped defaults. |
+| `EPISODE_PALETTE_CONFIG` | `episode_palette()` (`palette_config_path` argument) | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`'s shipped defaults. Deliberately separate from `EPISODE_CONFIG`: colour is a display concern, never part of `episode_config_hash()`'s detection-reproducibility guarantee. |
 
 ## Licence
 
