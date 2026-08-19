@@ -26,13 +26,14 @@
 #'   criterion has fired for this cluster's stream (see
 #'   `R/reconcile_closure.R`). Ignored unless the latest verdict is a
 #'   non-terminal epidemic verdict.
-#' @param explicitly_closed Logical, `TRUE` if the latest event is a
-#'   closure act (ARCHITECTURE.md section 6.1: "Closure is an act, not a
-#'   classification"; represented here as an event whose `verdict` is
-#'   non-`NA` and whose rationale records the closure, or, for M1's purposes,
-#'   by the caller passing `TRUE` when it knows closure was recorded via
-#'   `episode_cluster_state`. See `QUESTIONS.md` for how M3 will represent
-#'   this on the event itself).
+#' @param explicitly_closed Logical, `TRUE` if a person closed this cluster
+#'   as an act distinct from any classification (ARCHITECTURE.md section
+#'   6.1: "Closure is an act, not a classification") - represented as an
+#'   `episode_cluster_state` row with `trigger = "closure"` (a person) or
+#'   `"system"` (cron auto-close), not as a new assessment event; see
+#'   `episode_app_explicitly_closed()`. Checked even when `events` has zero
+#'   rows: a cluster the cron auto-closed without anyone ever assessing it
+#'   still has no assessment events (ARCHITECTURE.md section 6, step 5).
 #' @param today The current date, for evaluating `snooze_until`.
 #' @return One of `"new"`, `"assessing"`, `"monitoring"`, `"closable"`,
 #'   `"closed"`, `"reassess"`.
@@ -41,7 +42,12 @@ episode_derive_state <- function(events, changed_since_assessment = FALSE,
                                   closure_criterion_met = FALSE,
                                   explicitly_closed = FALSE, today = Sys.Date()) {
   if (nrow(events) == 0) {
-    return("new")
+    # A cluster the cron auto-closed without anyone ever assessing it
+    # (ARCHITECTURE.md section 6, step 5: "no assessment exists" is itself
+    # eligible for auto-closure) still has zero assessment events - so
+    # explicitly_closed must be checked even here, or such a cluster would
+    # read as "new" forever and never leave the open rail.
+    return(if (isTRUE(explicitly_closed)) "closed" else "new")
   }
 
   latest <- events[nrow(events), ]

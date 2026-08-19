@@ -28,11 +28,15 @@ test_that("explicit closure wins over any classification history", {
   expect_equal(episode_derive_state(events_one(verdict = NA_character_), explicitly_closed = TRUE), "closed")
 })
 
-test_that("a cluster with no assessment history at all is Nieuw (new), even if explicitly_closed is passed", {
-  # explicitly_closed with zero events cannot arise from real use (closure is
-  # always recorded as an event), so "no history" (nrow(events) == 0) takes
-  # priority: there is nothing to have closed.
-  expect_equal(episode_derive_state(events_none(), explicitly_closed = TRUE), "new")
+test_that("a cluster with no assessment history is closed if explicitly_closed, new otherwise", {
+  # This does arise from real use: the cron auto-closes a cluster with no
+  # assessment at all after close_after_runs (ARCHITECTURE.md section 6,
+  # step 5), which never creates an assessment event - only an
+  # episode_cluster_state row (trigger = "system"). Without checking
+  # explicitly_closed here too, such a cluster would read as "new" forever
+  # and never leave the open rail.
+  expect_equal(episode_derive_state(events_none(), explicitly_closed = TRUE), "closed")
+  expect_equal(episode_derive_state(events_none(), explicitly_closed = FALSE), "new")
 })
 
 test_that("snoozed cluster with a non-terminal verdict is In beoordeling (assessing)", {
@@ -125,7 +129,7 @@ test_that("exhaustive: every (verdict-class x changed x closure x snooze x expli
             explicitly_closed = explicit
           )
           expected <- if (vc_name == "none") {
-            "new"
+            if (explicit) "closed" else "new"
           } else if (explicit) {
             "closed"
           } else if (vc_name == "terminal") {

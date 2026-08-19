@@ -269,6 +269,89 @@ decisions survives.
     restrictions") for an unmodified stock license - confirmed by trying
     it and reverting.
 
+## New in M3
+
+28. **Palette translated to English and made operator-configurable**
+    (post-M2 follow-up, before M3 proper). Dutch hue names (`blauw`,
+    `groen`, `roze`, `geel`, `lila`, `bruin`) removed from R; the
+    fallback palette moved from hardcoded R literals into
+    `inst/config/palette.yaml`, resolved the same defaults-then-override
+    way as `episode_config_resolve()` but through its own file and
+    `EPISODE_PALETTE_CONFIG` env var (deliberately never touching
+    `config_hash` - colour is a display concern, not detection
+    reproducibility). Semantic role colours (`ink`, `petrol`, `carmine`...)
+    are now derived from the base hues in one place
+    (`episode_palette_semantic()`) rather than duplicated as separate
+    literals, fixing a latent bug where a `certestyle` override only ever
+    touched the raw hue keys and left the semantic tokens - the ones the
+    CSS actually reads - on the shipped defaults. `episode_palette_from_
+    certestyle()` now reads through a name-based getter rather than `$`,
+    since `certestyle::certe.colours` is a named character vector, not a
+    list (`$` is invalid on an atomic vector - this crashed
+    `episode_run_app()` for anyone with `certestyle` actually installed,
+    caught only once tested against the real package). The shipped
+    default palette itself uses generic, organisation-neutral colours,
+    not Certe's own house colours, since that file is what a stranger
+    cloning the repository sees; a real Certe instance gets Certe's
+    actual colours from `certestyle` when installed.
+
+29. **Account bookkeeping (`episode_app_user`'s `password_hash`,
+    `must_change`, `last_login_at`) is insert-only, event-sourced via a
+    new `episode_app_user_event` table**, not `UPDATE`. Standing brief
+    hard rule 7 ("the app only ever inserts... do not add any [locking]")
+    reads as unconditional, and MILESTONES.md M3's own "done when" line
+    calls for verifying by inspection that the app issues no UPDATE or
+    DELETE statements at all - a bar now enforced by an automated test
+    (`test-insert_only.R`), scoped to the app's own write surface (not
+    the cron, which legitimately UPDATEs the facts it owns per
+    ARCHITECTURE.md section 5.0). The "current" password hash is the most
+    recent `password_change` event's, falling back to the account row's
+    own initial value; "current" `must_change` and `last_login_at` are
+    derived the same way - mirroring the pattern `episode_cluster_state`
+    already established for cluster state.
+
+30. **Closure (ARCHITECTURE.md section 6.1, "closure is an act, not a
+    classification") is represented as an `episode_cluster_state` row**
+    (`trigger = "closure"` for a person, `"system"` for cron auto-close),
+    not as a new `episode_assessment_event`: the classification being
+    closed already carries its own rationale, and closure records that
+    it is over, not what it was. Found and fixed a real bug while wiring
+    this: `episode_derive_state()` checked `nrow(events) == 0` before
+    ever looking at `explicitly_closed`, so a cluster the cron
+    auto-closes without anyone ever assessing it (ARCHITECTURE.md
+    section 6, step 5 - "no assessment exists" is itself eligible for
+    auto-closure) would read as "new" forever and never leave the open
+    rail, since such a cluster genuinely has zero assessment events.
+    Reordered so `explicitly_closed` is checked even when `events` is
+    empty; updated the existing test that had asserted the old
+    (incorrect) behaviour, and added a regression test for the cron
+    auto-close case specifically.
+
+31. **Mute revocation (`episode_stream_mute.revoked_at`) is left
+    unimplemented in M3.** MILESTONES.md's M3 scope says "mute with
+    reason and expiry", not "revoke early"; wiring `revoked_at` would
+    need either an `UPDATE` (against the insert-only rule) or its own
+    event-sourced redesign of the mute table, neither of which is asked
+    for yet. The column stays in the schema, always `NULL`, until a
+    milestone actually needs it.
+
+32. **The cool-down escape hatch (`cooldown_reopen_ratio` in
+    `inst/config/default.yaml`, ARCHITECTURE.md section 6.5) is still
+    unimplemented.** Spotted while wiring `explicitly_closed`: a cluster
+    closed as artefact or normal variation is supposed to reopen as
+    Herbeoordeling nodig if the excess later grows by a material margin,
+    but nothing in `R/reconcile.R` currently checks for this - the
+    config value is defined and unused. This is cron/reconciliation
+    logic (M1 scope), not app/UI (M3 scope), so left as a flagged gap
+    rather than fixed in passing.
+
+33. **The classification form's "close cluster" confirmation passes the
+    translated prompt through a `data-confirm` HTML attribute** (escaped
+    by `shiny::tags` the same way any other attribute value is) rather
+    than interpolating it into the `onclick` JS string directly - the
+    earlier draft did that and would have broken on any future i18n
+    string containing an apostrophe.
+
 ## Architecture concerns raised during implementation
 
 1. **`episode_stream` is missing a `ward` column** (see item 20 above).

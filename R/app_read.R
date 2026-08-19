@@ -40,7 +40,8 @@ episode_app_open_clusters <- function(con, lang = "nl") {
 #'
 #' Thin wrapper around [episode_derive_state()] that fetches the inputs
 #' from the database: the cluster's assessment events, its
-#' `changed_since_assessment` flag, and the closure criterion.
+#' `changed_since_assessment` flag, the closure criterion, and whether it
+#' has been explicitly closed.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
@@ -70,8 +71,39 @@ episode_app_derive_state_for_cluster <- function(con, cluster_id) {
 
   episode_derive_state(
     events, changed_since_assessment = as.logical(cluster$changed_since_assessment),
-    closure_criterion_met = closure_met
+    closure_criterion_met = closure_met,
+    explicitly_closed = episode_app_explicitly_closed(con, cluster_id, events)
   )
+}
+
+#' Whether a person explicitly closed a cluster (ARCHITECTURE.md section 6.1)
+#'
+#' A non-terminal verdict (`cluster_not_yet`, `possible_epidemic`,
+#' `confirmed_epidemic`) can be closed by an assessor's decision alone,
+#' without the classification itself changing - "an epidemic closes when
+#' a person says so, whether or not any criterion has fired". That act is
+#' recorded as an `episode_cluster_state` row (`trigger = "closure"`), not
+#' as a new assessment event (the classification's own rationale already
+#' exists; closure records that it is over, not what it was). It counts
+#' as still in effect only if nothing has happened since - in practice, no
+#' newer assessment event exists.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A cluster id.
+#' @param events This cluster's assessment events, as returned by
+#'   [episode_db_assessment_events()] (avoids a redundant query when the
+#'   caller already has them).
+#' @return A single logical.
+#' @keywords internal
+#' @noRd
+episode_app_explicitly_closed <- function(con, cluster_id, events) {
+  states <- episode_db_cluster_states(con, cluster_id)
+  closures <- states[states$trigger %in% c("closure", "system") & states$state == "closed", ]
+  if (nrow(closures) == 0) return(FALSE)
+  latest_closure_at <- closures$entered_at[nrow(closures)]
+  if (nrow(events) == 0) return(TRUE)
+  latest_event_at <- events$created_at[nrow(events)]
+  latest_closure_at >= latest_event_at
 }
 
 #' Build the cluster object consumed by the interpretation engine and the dossier

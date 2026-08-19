@@ -7,10 +7,13 @@
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
 #' @param lang Session language.
+#' @param current_user The session's signed-in user row, or `NULL` for an
+#'   anonymous viewer (ARCHITECTURE.md section 12: read access is
+#'   anonymous, but the line list is the one panel gated on it).
 #' @return A `shiny::tagList`.
 #' @keywords internal
 #' @noRd
-episode_ui_dossier <- function(con, cluster_id, lang = "nl") {
+episode_ui_dossier <- function(con, cluster_id, lang = "nl", current_user = NULL) {
   obj <- episode_cluster_object(con, cluster_id, lang = lang)
   state <- episode_app_derive_state_for_cluster(con, cluster_id)
   pal <- episode_palette()
@@ -31,8 +34,30 @@ episode_ui_dossier <- function(con, cluster_id, lang = "nl") {
     ),
     episode_ui_places_panel(con, cluster_id, obj, lang = lang),
     episode_ui_resistance_panel(lang = lang),
-    episode_ui_linelist_panel(con, cluster_id, obj, lang = lang),
+    if (is.null(current_user)) {
+      episode_ui_linelist_locked_panel(lang = lang)
+    } else {
+      episode_ui_linelist_panel(con, cluster_id, obj, lang = lang)
+    },
     episode_ui_settings_panel(con, cluster_id, lang = lang)
+  )
+}
+
+#' The line list panel's locked state for anonymous viewers
+#'
+#' "Render it as a locked panel explaining that signing in reveals it,
+#' not as an absent tab" (MILESTONES.md M3) - so it stays in the same
+#' position in the panel order either way.
+#' @keywords internal
+#' @noRd
+episode_ui_linelist_locked_panel <- function(lang = "nl") {
+  episode_ui_panel(
+    episode_tr("linelist.locked_title", lang = lang),
+    shiny::tags$div(
+      class = "episode-locked-panel",
+      shiny::tags$span(class = "episode-lock-icon", "\U0001F512"),
+      shiny::tags$p(episode_tr("linelist.locked_message", lang = lang))
+    )
   )
 }
 
@@ -281,23 +306,135 @@ episode_ui_settings_panel <- function(con, cluster_id, lang = "nl") {
   )
 }
 
-#' The right-hand assessment rail (read-only in M2: no login, no writes)
+#' The right-hand assessment rail
 #'
-#' Shows only the timeline ("Verloop"), matching what an anonymous M2
-#' reader is entitled to see. The classification form itself is M3 scope
-#' (ARCHITECTURE.md section 12: "Login only to classify").
+#' The timeline ("Verloop") is always visible, to anonymous viewers too
+#' (ARCHITECTURE.md section 10.2: "assessments rendered as an append-only
+#' timeline"). The classification form, closure and mute actions render
+#' only for a signed-in user - "login only to classify" (ARCHITECTURE.md
+#' section 12).
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A cluster id.
+#' @param lang Session language.
+#' @param current_user The session's signed-in user row, or `NULL`.
 #' @keywords internal
 #' @noRd
-episode_ui_assessment_rail <- function(con, cluster_id, lang = "nl") {
+episode_ui_assessment_rail <- function(con, cluster_id, lang = "nl", current_user = NULL) {
   obj <- episode_cluster_object(con, cluster_id, lang = lang)
+  timeline <- episode_app_assessment_timeline(con, cluster_id, lang = lang)
+
   shiny::tags$div(
     class = "episode-assessment-rail",
     shiny::tags$div(
       class = "episode-verloop",
       shiny::tags$div(class = "episode-verloop-title", episode_tr("verloop.title", lang = lang)),
-      shiny::tags$p(class = "episode-verloop-empty",
-                    episode_tr("verloop.not_assessed", first = obj$first_day,
-                               detectors = paste(obj$detectors, collapse = " en "), lang = lang))
+      if (nrow(timeline) == 0) {
+        shiny::tags$p(class = "episode-verloop-empty",
+                      episode_tr("verloop.not_assessed", first = obj$first_day,
+                                 detectors = paste(obj$detectors, collapse = " en "), lang = lang))
+      } else {
+        lapply(rev(seq_len(nrow(timeline))), function(i) episode_ui_timeline_entry(timeline[i, ], lang = lang))
+      }
+    ),
+    if (!is.null(current_user)) episode_ui_assessment_form(cluster_id, obj, lang = lang)
+  )
+}
+
+#' One row of the assessment timeline
+#' @keywords internal
+#' @noRd
+episode_ui_timeline_entry <- function(row, lang = "nl") {
+  shiny::tags$div(
+    class = "episode-timeline-entry",
+    shiny::tags$div(class = "episode-timeline-meta",
+                     sprintf("%s \u00b7 %s", episode_ui_format_datetime(row$at), row$actor)),
+    if (row$kind == "closure") {
+      shiny::tags$div(episode_tr("activity.action_closed", lang = lang))
+    } else {
+      shiny::tagList(
+        if (!is.na(row$verdict_label)) {
+          shiny::tags$div(class = "episode-timeline-verdict", row$verdict_label)
+        },
+        if (!is.na(row$rationale) && nzchar(row$rationale)) {
+          shiny::tags$div(class = "episode-timeline-rationale", row$rationale)
+        }
+      )
+    }
+  )
+}
+
+#' The classification form, closure and mute actions for a signed-in user
+#' @keywords internal
+#' @noRd
+episode_ui_assessment_form <- function(cluster_id, obj, lang = "nl") {
+  verdicts <- c("cluster_not_yet", "possible_epidemic", "confirmed_epidemic",
+                "expected_variation", "artefact")
+  mute_reasons <- c("seasonal", "screening_campaign", "method_change", "known_source", "other")
+
+  shiny::tags$div(
+    class = "episode-panel-body", style = "border-top:1px solid var(--episode-rule);padding:16px;",
+    shiny::tags$div(class = "episode-form-group",
+                     shiny::tags$label(class = "episode-form-label", episode_tr("assessment.verdict_label", lang = lang)),
+                     shiny::tags$select(
+                       id = "assess_verdict",
+                       shiny::tags$option(value = "", episode_tr("assessment.verdict_none", lang = lang)),
+                       lapply(verdicts, function(v) shiny::tags$option(value = v, episode_tr(paste0("verdict.", v), lang = lang)))
+                     )),
+    shiny::tags$div(class = "episode-form-group",
+                     shiny::tags$label(class = "episode-form-label", episode_tr("assessment.rationale_label", lang = lang)),
+                     shiny::tags$textarea(id = "assess_rationale", rows = 3,
+                                           placeholder = episode_tr("assessment.rationale_placeholder", lang = lang))),
+    shiny::tags$div(class = "episode-form-group", style = "display:flex;gap:16px;font-size:12px;",
+                     shiny::tags$label(shiny::tags$input(type = "checkbox", id = "assess_wpg"), " ",
+                                        episode_tr("assessment.wpg_label", lang = lang)),
+                     shiny::tags$label(shiny::tags$input(type = "checkbox", id = "assess_ggd"), " ",
+                                        episode_tr("assessment.ggd_label", lang = lang))),
+    shiny::tags$div(class = "episode-form-group",
+                     shiny::tags$label(class = "episode-form-label", episode_tr("assessment.snooze_label", lang = lang)),
+                     shiny::tags$input(type = "date", id = "assess_snooze")),
+    shiny::tags$div(id = "assess_error"),
+    shiny::tags$div(
+      class = "episode-form-actions",
+      shiny::tags$button(
+        class = "episode-btn episode-btn-primary",
+        onclick = sprintf(
+          "Shiny.setInputValue('assess_submit', {cluster_id: %d, verdict: document.getElementById('assess_verdict').value, rationale: document.getElementById('assess_rationale').value, wpg: document.getElementById('assess_wpg').checked, ggd: document.getElementById('assess_ggd').checked, snooze: document.getElementById('assess_snooze').value}, {priority: 'event'})",
+          cluster_id
+        ),
+        episode_tr("assessment.submit", lang = lang)
+      ),
+      shiny::tags$button(
+        class = "episode-btn", `data-confirm` = episode_tr("assessment.close_confirm", lang = lang),
+        onclick = sprintf(
+          "if(confirm(this.dataset.confirm)){ Shiny.setInputValue('assess_close', %d, {priority: 'event'}) }",
+          cluster_id
+        ),
+        episode_tr("assessment.close_button", lang = lang)
+      )
+    ),
+    shiny::tags$hr(),
+    shiny::tags$div(
+      class = "episode-form-group",
+      shiny::tags$label(class = "episode-form-label", episode_tr("assessment.mute_title", lang = lang)),
+      shiny::tags$select(
+        id = "mute_reason",
+        lapply(mute_reasons, function(r) shiny::tags$option(value = r, episode_tr(paste0("assessment.mute_reason.", r), lang = lang)))
+      )
+    ),
+    shiny::tags$div(style = "display:flex;gap:8px;",
+                     shiny::tags$div(class = "episode-form-group", style = "flex:1;",
+                                      shiny::tags$label(class = "episode-form-label", episode_tr("assessment.mute_from_label", lang = lang)),
+                                      shiny::tags$input(type = "date", id = "mute_from", value = as.character(Sys.Date()))),
+                     shiny::tags$div(class = "episode-form-group", style = "flex:1;",
+                                      shiny::tags$label(class = "episode-form-label", episode_tr("assessment.mute_until_label", lang = lang)),
+                                      shiny::tags$input(type = "date", id = "mute_until"))),
+    shiny::tags$button(
+      class = "episode-btn",
+      onclick = sprintf(
+        "Shiny.setInputValue('assess_mute_submit', {stream_id: %d, reason: document.getElementById('mute_reason').value, muted_from: document.getElementById('mute_from').value, muted_until: document.getElementById('mute_until').value}, {priority: 'event'})",
+        obj$stream_id
+      ),
+      episode_tr("assessment.mute_submit", lang = lang)
     )
   )
 }

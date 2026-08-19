@@ -40,11 +40,11 @@ Imports:
     surveillance,
     shiny,
     bslib,
-    ggplot2
+    ggplot2,
+    sodium
 Suggests:
     AMR (>= 2.0.0),
     RMariaDB,
-    sodium,
     testthat (>= 3.0.0),
     certegis,
     certeplot2,

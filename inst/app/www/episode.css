@@ -410,3 +410,118 @@ dl.episode-settings dd { margin: 0; }
 .episode-streams-screen {
   padding: 18px 24px 40px;
 }
+
+/* M3: auth, classification form, archive, activity */
+.episode-auth-link {
+  font-size: 11.5px;
+  color: #BDD0DA;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.episode-auth-link:hover { color: #fff; }
+
+.episode-form-group { margin-bottom: 12px; }
+.episode-form-label {
+  display: block;
+  font-size: 10.5px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--episode-muted);
+  margin-bottom: 4px;
+}
+.episode-form-group input[type="text"],
+.episode-form-group input[type="password"],
+.episode-form-group input[type="date"],
+.episode-form-group textarea,
+.episode-form-group select {
+  width: 100%;
+  font-family: var(--episode-font);
+  font-size: 12.5px;
+  padding: 6px 8px;
+  border: 1px solid var(--episode-rule);
+  border-radius: 3px;
+  background: var(--episode-surface);
+  color: var(--episode-ink);
+}
+.episode-form-hint {
+  font-size: 10.5px;
+  color: var(--episode-faint);
+  margin-top: 3px;
+}
+.episode-form-error {
+  font-size: 11.5px;
+  color: var(--episode-carmine);
+  margin-top: 6px;
+}
+.episode-form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.episode-btn {
+  font-family: var(--episode-font);
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 3px;
+  border: 1px solid var(--episode-rule);
+  background: var(--episode-surface);
+  color: var(--episode-ink);
+  cursor: pointer;
+}
+.episode-btn-primary {
+  background: var(--episode-petrol);
+  border-color: var(--episode-petrol);
+  color: #fff;
+}
+.episode-btn-danger {
+  background: var(--episode-carmine);
+  border-color: var(--episode-carmine);
+  color: #fff;
+}
+
+.episode-locked-panel {
+  padding: 22px 16px;
+  text-align: center;
+  color: var(--episode-muted);
+}
+.episode-locked-panel .episode-lock-icon {
+  font-size: 20px;
+  margin-bottom: 6px;
+  display: block;
+}
+.episode-locked-panel p { font-size: 12.5px; line-height: 1.5; }
+
+.episode-timeline-entry {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--episode-rule);
+  font-size: 12px;
+}
+.episode-timeline-entry:last-child { border-bottom: none; }
+.episode-timeline-meta {
+  font-size: 10.5px;
+  color: var(--episode-faint);
+  margin-bottom: 3px;
+}
+.episode-timeline-verdict {
+  display: inline-block;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.episode-timeline-rationale {
+  color: var(--episode-ink);
+  line-height: 1.5;
+}
+
+.episode-search-input {
+  width: 320px;
+  max-width: 100%;
+  font-family: var(--episode-font);
+  font-size: 12.5px;
+  padding: 6px 10px;
+  border: 1px solid var(--episode-rule);
+  border-radius: 3px;
+  margin-bottom: 16px;
+}
+
+.episode-activity-row.system { opacity: 0.65; font-style: italic; }

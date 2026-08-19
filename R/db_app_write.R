@@ -30,6 +30,7 @@
 #' @param version_no The report's version number.
 #' @param username,full_name,email,password_hash New user's fields.
 #' @param role One of `"assessor"`, `"admin"`.
+#' @param event_type One of `"login"`, `"password_change"`.
 #' @name db_app_write
 NULL
 
@@ -107,6 +108,18 @@ episode_db_app_user_insert <- function(con, username, full_name, email, password
       (username, full_name, email, password_hash, role, is_active, must_change, created_at)
      VALUES (?, ?, ?, ?, ?, 1, 1, ?)",
     params = list(username, full_name, email, password_hash, role, episode_now())
+  )
+  DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+}
+
+#' @rdname db_app_write
+#' @export
+episode_db_app_user_event_insert <- function(con, user_id, event_type, password_hash = NA) {
+  DBI::dbExecute(
+    con,
+    "INSERT INTO episode_app_user_event (user_id, created_at, event_type, password_hash)
+     VALUES (?, ?, ?, ?)",
+    params = list(user_id, episode_now(), event_type, password_hash)
   )
   DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
 }

@@ -14,7 +14,13 @@
 \alias{episode_db_clusters_for_stream}
 \alias{episode_db_cluster_cases}
 \alias{episode_db_assessment_events}
+\alias{episode_db_cluster_states}
+\alias{episode_db_stream_mutes}
+\alias{episode_db_user_by_username}
+\alias{episode_db_user_by_id}
+\alias{episode_db_app_user_events}
 \alias{episode_db_detections_for_run}
+\alias{episode_db_runs}
 \alias{episode_db_latest_run}
 \alias{episode_db_stream_trend}
 \alias{episode_db_denominator_for_pathogen}
@@ -44,7 +50,19 @@ episode_db_cluster_cases(con, cluster_id)
 
 episode_db_assessment_events(con, cluster_id)
 
+episode_db_cluster_states(con, cluster_id)
+
+episode_db_stream_mutes(con, stream_id)
+
+episode_db_user_by_username(con, username)
+
+episode_db_user_by_id(con, user_id)
+
+episode_db_app_user_events(con, user_id)
+
 episode_db_detections_for_run(con, run_id)
+
+episode_db_runs(con, limit = 200)
 
 episode_db_latest_run(con, status = NULL)
 
@@ -69,7 +87,13 @@ episode_db_denominator_for_pathogen(con, pathogen)
 
 \item{cluster_id}{A single \code{cluster_id}.}
 
+\item{username}{A single username.}
+
+\item{user_id}{A single \code{user_id}.}
+
 \item{run_id}{A single \code{run_id}.}
+
+\item{limit}{Maximum number of rows to return, most recent first.}
 
 \item{status}{If given, only the latest run with this \code{status}.}
 }

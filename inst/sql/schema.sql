@@ -324,6 +324,24 @@ CREATE TABLE episode_app_user (
   created_at    TEXT NOT NULL
 );
 
+-- Account bookkeeping that would otherwise need an UPDATE (a fresh
+-- password_hash on change, a bumped last_login_at on every login) is kept
+-- insert-only instead, the same event-sourced pattern episode_cluster_state
+-- already uses for cluster state: the "current" password hash is the most
+-- recent password_change event's, falling back to episode_app_user's own
+-- initial password_hash if no such event exists yet; "current" last_login_at
+-- is the most recent login event. See QUESTIONS.md for why (standing brief
+-- hard rule 7: the app only ever inserts).
+CREATE TABLE episode_app_user_event (
+  event_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id       INTEGER NOT NULL REFERENCES episode_app_user(user_id),
+  created_at    TEXT NOT NULL,
+  event_type    TEXT NOT NULL CHECK (event_type IN ('login', 'password_change')),
+  password_hash TEXT  -- set only for password_change events
+);
+
+CREATE INDEX idx_episode_app_user_event_user ON episode_app_user_event(user_id);
+
 -- app, and cron for pre-renders
 CREATE TABLE episode_report_render (
   report_id   INTEGER PRIMARY KEY AUTOINCREMENT,

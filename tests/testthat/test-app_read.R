@@ -16,6 +16,42 @@ test_that("a cluster with an assessment event is excluded once closed, included 
   expect_equal(nrow(open), 0)  # artefact is terminal -> closed -> not open
 })
 
+test_that("a non-terminal verdict explicitly closed via episode_cluster_state (trigger = closure) reads as closed", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  episode_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
+  episode_db_assessment_event_insert(env$con, env$cluster_id, user_id = 1L,
+                                      verdict = "possible_epidemic", rationale = "test")
+  expect_equal(episode_app_derive_state_for_cluster(env$con, env$cluster_id), "closable")
+
+  episode_db_cluster_state_insert(env$con, cluster_id = env$cluster_id, state = "closed",
+                                   trigger = "closure", user_id = 1L)
+  expect_equal(episode_app_derive_state_for_cluster(env$con, env$cluster_id), "closed")
+})
+
+test_that("a later assessment event re-opens a cluster that was previously explicitly closed", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  episode_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
+  episode_db_assessment_event_insert(env$con, env$cluster_id, user_id = 1L,
+                                      verdict = "possible_epidemic", rationale = "test")
+  episode_db_cluster_state_insert(env$con, cluster_id = env$cluster_id, state = "closed",
+                                   trigger = "closure", user_id = 1L)
+  expect_equal(episode_app_derive_state_for_cluster(env$con, env$cluster_id), "closed")
+
+  Sys.sleep(1.1)  # created_at has second resolution; ensure strict ordering
+  episode_db_assessment_event_insert(env$con, env$cluster_id, user_id = 1L,
+                                      verdict = "confirmed_epidemic", rationale = "reopened")
+  expect_equal(episode_app_derive_state_for_cluster(env$con, env$cluster_id), "closable")
+})
+
+test_that("a cron auto-close (trigger = system) with no classification at all reads as closed", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  episode_db_cluster_state_insert(env$con, cluster_id = env$cluster_id, state = "closed", trigger = "system")
+  expect_equal(episode_app_derive_state_for_cluster(env$con, env$cluster_id), "closed")
+})
+
 test_that("episode_cluster_object() populates concentration, density and case_free", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))

@@ -1,0 +1,61 @@
+#' Authentication server logic
+#'
+#' Wires the login modal, the forced first-login password change, and
+#' sign-out. Returns the session's `current_user` reactive so the rest of
+#' the server can read it (`NULL` for an anonymous viewer).
+#'
+#' @param input,output,session The Shiny server function's own arguments.
+#' @param con A [DBI::DBIConnection-class].
+#' @param lang Session language.
+#' @return A `shiny::reactiveVal` holding the signed-in user's account row,
+#'   or `NULL`.
+#' @keywords internal
+#' @noRd
+episode_app_server_auth <- function(input, output, session, con, lang = "nl") {
+  current_user <- shiny::reactiveVal(NULL)
+
+  shiny::observeEvent(input$auth_show_login, {
+    shiny::showModal(episode_ui_login_modal(lang = lang))
+  })
+
+  shiny::observeEvent(input$auth_cancel_login, shiny::removeModal())
+
+  shiny::observeEvent(input$auth_login_submit, {
+    username <- input$auth_username_val %||% ""
+    password <- input$auth_password_val %||% ""
+    result <- episode_auth_login(con, username, password)
+    if (!isTRUE(result$ok)) {
+      shiny::showModal(episode_ui_login_modal(error = TRUE, lang = lang))
+      return(invisible(NULL))
+    }
+    current_user(result$user)
+    if (isTRUE(result$must_change)) {
+      shiny::showModal(episode_ui_must_change_modal(lang = lang))
+    } else {
+      shiny::removeModal()
+    }
+  })
+
+  shiny::observeEvent(input$auth_signout, current_user(NULL))
+
+  shiny::observeEvent(input$auth_change_password_submit, {
+    new_pw <- input$auth_new_password_val %||% ""
+    confirm_pw <- input$auth_confirm_password_val %||% ""
+    user <- current_user()
+    shiny::req(user)
+
+    if (nchar(new_pw) < 8) {
+      shiny::showModal(episode_ui_must_change_modal(error = episode_tr("auth.password_too_short", lang = lang), lang = lang))
+      return(invisible(NULL))
+    }
+    if (!identical(new_pw, confirm_pw)) {
+      shiny::showModal(episode_ui_must_change_modal(error = episode_tr("auth.password_mismatch", lang = lang), lang = lang))
+      return(invisible(NULL))
+    }
+
+    episode_auth_change_password(con, user$user_id, new_pw)
+    shiny::removeModal()
+  })
+
+  current_user
+}

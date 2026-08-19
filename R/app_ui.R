@@ -31,11 +31,17 @@ episode_app_ui <- function(lang = "nl") {
         shiny::tags$div(
           class = "episode-nav",
           episode_ui_nav_link("clusters", episode_tr("nav.clusters", lang = lang)),
-          episode_ui_nav_link("streams", episode_tr("nav.streams", lang = lang))
+          episode_ui_nav_link("streams", episode_tr("nav.streams", lang = lang)),
+          episode_ui_nav_link("archive", episode_tr("nav.archive", lang = lang)),
+          episode_ui_nav_link("activity", episode_tr("nav.activity", lang = lang))
         ),
         shiny::tags$span(class = "episode-demodata", episode_tr("app.demodata", lang = lang))
       ),
-      shiny::uiOutput("status_strip", inline = TRUE)
+      shiny::tags$div(
+        style = "display:flex;align-items:center;gap:14px;",
+        shiny::uiOutput("status_strip", inline = TRUE),
+        shiny::uiOutput("auth_control", inline = TRUE)
+      )
     ),
     shiny::tags$div(
       class = "episode-brandbar",

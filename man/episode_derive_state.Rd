@@ -24,13 +24,14 @@ criterion has fired for this cluster's stream (see
 \code{R/reconcile_closure.R}). Ignored unless the latest verdict is a
 non-terminal epidemic verdict.}
 
-\item{explicitly_closed}{Logical, \code{TRUE} if the latest event is a
-closure act (ARCHITECTURE.md section 6.1: "Closure is an act, not a
-classification"; represented here as an event whose \code{verdict} is
-non-\code{NA} and whose rationale records the closure, or, for M1's purposes,
-by the caller passing \code{TRUE} when it knows closure was recorded via
-\code{episode_cluster_state}. See \code{QUESTIONS.md} for how M3 will represent
-this on the event itself).}
+\item{explicitly_closed}{Logical, \code{TRUE} if a person closed this cluster
+as an act distinct from any classification (ARCHITECTURE.md section
+6.1: "Closure is an act, not a classification") - represented as an
+\code{episode_cluster_state} row with \code{trigger = "closure"} (a person) or
+\code{"system"} (cron auto-close), not as a new assessment event; see
+\code{episode_app_explicitly_closed()}. Checked even when \code{events} has zero
+rows: a cluster the cron auto-closed without anyone ever assessing it
+still has no assessment events (ARCHITECTURE.md section 6, step 5).}
 
 \item{today}{The current date, for evaluating \code{snooze_until}.}
 }

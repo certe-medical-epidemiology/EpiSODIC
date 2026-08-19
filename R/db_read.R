@@ -125,6 +125,58 @@ episode_db_assessment_events <- function(con, cluster_id) {
 }
 
 #' @rdname db_read
+#' @export
+episode_db_cluster_states <- function(con, cluster_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episode_cluster_state WHERE cluster_id = ? ORDER BY entered_at, state_id",
+    params = list(cluster_id)
+  )
+}
+
+#' @rdname db_read
+#' @export
+episode_db_stream_mutes <- function(con, stream_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episode_stream_mute WHERE stream_id = ? ORDER BY created_at",
+    params = list(stream_id)
+  )
+}
+
+#' @rdname db_read
+#' @param username A single username.
+#' @export
+episode_db_user_by_username <- function(con, username) {
+  res <- DBI::dbGetQuery(
+    con, "SELECT * FROM episode_app_user WHERE username = ?",
+    params = list(username)
+  )
+  if (nrow(res) == 0) NULL else res[1, ]
+}
+
+#' @rdname db_read
+#' @param user_id A single `user_id`.
+#' @export
+episode_db_user_by_id <- function(con, user_id) {
+  res <- DBI::dbGetQuery(
+    con, "SELECT * FROM episode_app_user WHERE user_id = ?",
+    params = list(user_id)
+  )
+  if (nrow(res) == 0) NULL else res[1, ]
+}
+
+#' @rdname db_read
+#' @export
+episode_db_app_user_events <- function(con, user_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episode_app_user_event WHERE user_id = ? ORDER BY created_at, event_id",
+    params = list(user_id)
+  )
+}
+
+#' @rdname db_read
 #' @param run_id A single `run_id`.
 #' @export
 episode_db_detections_for_run <- function(con, run_id) {
@@ -132,6 +184,16 @@ episode_db_detections_for_run <- function(con, run_id) {
     con,
     "SELECT * FROM episode_detection WHERE run_id = ?",
     params = list(run_id)
+  )
+}
+
+#' @rdname db_read
+#' @param limit Maximum number of rows to return, most recent first.
+#' @export
+episode_db_runs <- function(con, limit = 200) {
+  DBI::dbGetQuery(
+    con, "SELECT * FROM episode_detection_run ORDER BY run_id DESC LIMIT ?",
+    params = list(limit)
   )
 }
 

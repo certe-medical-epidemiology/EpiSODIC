@@ -1,0 +1,96 @@
+#' Archive and Activity screens
+#'
+#' Read-only, reached from the top navigation (ARCHITECTURE.md section
+#' 10). Neither needs a sign-in: "last winter's assessment is the best
+#' prior for this winter's cluster" is exactly as true for an anonymous
+#' viewer as for an assessor.
+#' @name app_archive
+NULL
+
+#' The Archive screen
+#'
+#' @param archive A data frame from [episode_app_archive()].
+#' @param lang Session language.
+#' @return A `shiny::tags` element.
+#' @keywords internal
+#' @noRd
+episode_ui_archive_screen <- function(archive, lang = "nl") {
+  shiny::tags$div(
+    class = "episode-streams-screen",
+    shiny::tags$h1(style = "font-size:22px;font-weight:600;margin-bottom:4px;", episode_tr("archive.title", lang = lang)),
+    shiny::tags$p(style = "font-size:12.5px;color:var(--episode-muted);margin-bottom:16px;", episode_tr("archive.note", lang = lang)),
+    shiny::tags$input(
+      type = "text", class = "episode-search-input", id = "archive_search_input",
+      placeholder = episode_tr("archive.search_placeholder", lang = lang),
+      oninput = "Shiny.setInputValue('archive_search', this.value, {priority: 'event'})"
+    ),
+    if (nrow(archive) == 0) {
+      shiny::tags$p(class = "episode-panel-empty", episode_tr("archive.empty", lang = lang))
+    } else {
+      shiny::tags$table(
+        class = "episode-table",
+        shiny::tags$thead(shiny::tags$tr(
+          shiny::tags$th(episode_tr("archive.col.pathogen", lang = lang)),
+          shiny::tags$th(episode_tr("archive.col.level", lang = lang)),
+          shiny::tags$th(episode_tr("archive.col.place", lang = lang)),
+          shiny::tags$th(episode_tr("archive.col.cases", lang = lang)),
+          shiny::tags$th(episode_tr("archive.col.priority", lang = lang)),
+          shiny::tags$th(episode_tr("archive.col.closed_at", lang = lang))
+        )),
+        shiny::tags$tbody(
+          lapply(seq_len(nrow(archive)), function(i) {
+            row <- archive[i, ]
+            shiny::tags$tr(
+              shiny::tags$td(shiny::HTML(episode_ui_italicise_taxon(row$pathogen))),
+              shiny::tags$td(row$level_label),
+              shiny::tags$td(row$place),
+              shiny::tags$td(row$n_cases),
+              shiny::tags$td(round(row$priority_score, 0)),
+              shiny::tags$td(if (is.na(row$closed_at)) episode_tr("misc.unknown", lang = lang) else row$closed_at)
+            )
+          })
+        )
+      )
+    }
+  )
+}
+
+#' The Activity screen
+#'
+#' @param activity A data frame from [episode_app_activity_log()].
+#' @param lang Session language.
+#' @return A `shiny::tags` element.
+#' @keywords internal
+#' @noRd
+episode_ui_activity_screen <- function(activity, lang = "nl") {
+  shiny::tags$div(
+    class = "episode-streams-screen",
+    shiny::tags$h1(style = "font-size:22px;font-weight:600;margin-bottom:4px;", episode_tr("activity.title", lang = lang)),
+    shiny::tags$p(style = "font-size:12.5px;color:var(--episode-muted);margin-bottom:16px;", episode_tr("activity.note", lang = lang)),
+    if (nrow(activity) == 0) {
+      shiny::tags$p(class = "episode-panel-empty", episode_tr("activity.empty", lang = lang))
+    } else {
+      shiny::tags$table(
+        class = "episode-table",
+        shiny::tags$thead(shiny::tags$tr(
+          shiny::tags$th(episode_tr("activity.col.time", lang = lang)),
+          shiny::tags$th(episode_tr("activity.col.actor", lang = lang)),
+          shiny::tags$th(episode_tr("activity.col.action", lang = lang)),
+          shiny::tags$th(episode_tr("activity.col.target", lang = lang))
+        )),
+        shiny::tags$tbody(
+          lapply(seq_len(nrow(activity)), function(i) {
+            row <- activity[i, ]
+            shiny::tags$tr(
+              class = if (isTRUE(row$is_system)) "episode-activity-row system" else "episode-activity-row",
+              shiny::tags$td(row$at),
+              shiny::tags$td(row$actor),
+              shiny::tags$td(row$action),
+              shiny::tags$td(if (is.na(row$target)) episode_tr("misc.dash", lang = lang) else row$target)
+            )
+          })
+        )
+      )
+    }
+  )
+}

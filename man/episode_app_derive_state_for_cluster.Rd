@@ -17,5 +17,6 @@ One of \code{\link[=episode_derive_state]{episode_derive_state()}}'s state strin
 \description{
 Thin wrapper around \code{\link[=episode_derive_state]{episode_derive_state()}} that fetches the inputs
 from the database: the cluster's assessment events, its
-\code{changed_since_assessment} flag, and the closure criterion.
+\code{changed_since_assessment} flag, the closure criterion, and whether it
+has been explicitly closed.
 }

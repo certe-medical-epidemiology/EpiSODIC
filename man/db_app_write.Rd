@@ -7,6 +7,7 @@
 \alias{episode_db_cluster_state_insert}
 \alias{episode_db_report_render_insert}
 \alias{episode_db_app_user_insert}
+\alias{episode_db_app_user_event_insert}
 \title{App-side writers}
 \usage{
 episode_db_assessment_event_insert(
@@ -60,6 +61,8 @@ episode_db_app_user_insert(
   password_hash,
   role = "assessor"
 )
+
+episode_db_app_user_event_insert(con, user_id, event_type, password_hash = NA)
 }
 \arguments{
 \item{con}{A \link[DBI:DBIConnection-class]{DBI::DBIConnection}.}
@@ -107,6 +110,8 @@ episode_db_app_user_insert(
 \item{username, full_name, email, password_hash}{New user's fields.}
 
 \item{role}{One of \code{"assessor"}, \code{"admin"}.}
+
+\item{event_type}{One of \code{"login"}, \code{"password_change"}.}
 }
 \description{
 The app owns the judgements (ARCHITECTURE.md section 5.0) and only ever

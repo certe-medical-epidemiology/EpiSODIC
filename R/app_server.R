@@ -30,6 +30,8 @@ episode_app_server_factory <- function(db_path, lang = "nl") {
     })
     shiny::observeEvent(input$rail_select, selected_cluster_id(input$rail_select))
 
+    current_user <- episode_app_server_auth(input, output, session, con, lang = lang)
+
     output$status_strip <- shiny::renderUI({
       episode_ui_status_strip(episode_app_status(con), lang = lang)
     })
@@ -37,6 +39,10 @@ episode_app_server_factory <- function(db_path, lang = "nl") {
     output$main_view <- shiny::renderUI({
       if (view() == "streams") {
         episode_ui_streams_screen(episode_app_streams_screen(con), lang = lang)
+      } else if (view() == "archive") {
+        shiny::uiOutput("archive_screen")
+      } else if (view() == "activity") {
+        episode_ui_activity_screen(episode_app_activity_log(con, lang = lang), lang = lang)
       } else {
         shiny::tags$div(
           class = "episode-body",
@@ -59,18 +65,29 @@ episode_app_server_factory <- function(db_path, lang = "nl") {
 
     output$dossier_pane <- shiny::renderUI({
       cluster_id <- selected_cluster_id()
+      current_user()  # re-render on sign in/out (line list lock, classification form)
       if (is.null(cluster_id)) {
         return(shiny::tags$div(class = "episode-dossier",
                                 shiny::tags$p(episode_tr("rail.empty", lang = lang))))
       }
-      episode_ui_dossier(con, cluster_id, lang = lang)
+      episode_ui_dossier(con, cluster_id, lang = lang, current_user = current_user())
     })
 
     output$assessment_pane <- shiny::renderUI({
       cluster_id <- selected_cluster_id()
+      user <- current_user()
       if (is.null(cluster_id)) return(NULL)
-      episode_ui_assessment_rail(con, cluster_id, lang = lang)
+      episode_ui_assessment_rail(con, cluster_id, lang = lang, current_user = user)
     })
+
+    archive_query <- shiny::reactiveVal("")
+    shiny::observeEvent(input$archive_search, archive_query(input$archive_search))
+    output$archive_screen <- shiny::renderUI({
+      episode_ui_archive_screen(episode_app_archive(con, query = archive_query(), lang = lang), lang = lang)
+    })
+
+    episode_app_server_assessment_actions(input, output, session, con, lang = lang,
+                                           current_user = current_user, selected_cluster_id = selected_cluster_id)
   }
 }
 
