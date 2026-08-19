@@ -13,8 +13,6 @@
 #'   database. The caller is responsible for disconnecting it.
 #' @export
 episode_db_create <- function(path, overwrite = FALSE) {
-  rlang::check_installed("RSQLite")
-
   if (file.exists(path)) {
     if (overwrite) {
       file.remove(path)
@@ -57,7 +55,6 @@ episode_db_create <- function(path, overwrite = FALSE) {
 #' @return An open [DBI::DBIConnection-class].
 #' @export
 episode_db_connect <- function(path) {
-  rlang::check_installed("RSQLite")
   if (!file.exists(path)) {
     stop("No database file found at '", path, "'.", call. = FALSE)
   }

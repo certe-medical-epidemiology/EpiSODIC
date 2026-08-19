@@ -31,6 +31,7 @@ Depends:
     R (>= 4.1.0)
 Imports:
     DBI,
+    RSQLite,
     dplyr,
     yaml,
     rlang,
@@ -43,7 +44,6 @@ Imports:
     bslib,
     ggplot2
 Suggests:
-    RSQLite,
     RMariaDB,
     sodium,
     testthat (>= 3.0.0),
