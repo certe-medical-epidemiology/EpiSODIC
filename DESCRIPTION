@@ -16,7 +16,8 @@ Authors@R: c(
            role = c("aut"),
            email = "e.dijkstra@certe.nl"),
     person(given = "Certe Medical Diagnostics & Advice Foundation",
-           role = c("cph", "fnd")))
+           role = c("cph", "fnd"),
+           comment = c(ROR = "04m8g8w48")))
 Description: An automated surveillance system that detects aberrations in
     laboratory-confirmed infections across all pathogens, presents them to a
     small board of epidemiologists as a ranked list of dossiers, records
