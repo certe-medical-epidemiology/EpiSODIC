@@ -54,9 +54,9 @@
   "statusverloop.title": "Status trajectory",
   "statusverloop.now": "now",
 
-  "panel.duiding.title": "Interpretation",
-  "panel.duiding.aside": "automatically generated",
-  "panel.duiding.empty": "No interpretation available yet for this cluster.",
+  "panel.interpretation.title": "Interpretation",
+  "panel.interpretation.aside": "automatically generated",
+  "panel.interpretation.empty": "No interpretation available yet for this cluster.",
 
   "panel.epicurve.title": "Epidemic curve",
   "panel.epicurve.note": "The shaded zone covers the last {days_phrase}: the empirical reporting delay from the reporting triangle. Cases with a sample date in this window are not yet fully reported. A falling tail here is not a decline.",
@@ -147,25 +147,25 @@
   "misc.none": "none",
   "misc.dash": "—",
 
-  "duiding.fragment.magnitude.rare_trigger": "{obs_phrase} reported within this cluster. No statistical signal threshold applies to this pathogen: detection comes from the curated trigger list, which picks up every reported case regardless of baseline.",
-  "duiding.fragment.magnitude.high_ratio": "{obs_phrase} against an expectation of {expected}: a ratio of {ratio}.",
-  "duiding.fragment.magnitude.moderate_ratio": "{obs_phrase} against an expectation of {expected}, a ratio of {ratio}, a moderate excess over baseline.",
-  "duiding.fragment.magnitude.default": "{obs_phrase} recorded for this stream.",
+  "interpretation.fragment.magnitude.rare_trigger": "{obs_phrase} reported within this cluster. No statistical signal threshold applies to this pathogen: detection comes from the curated trigger list, which picks up every reported case regardless of baseline.",
+  "interpretation.fragment.magnitude.high_ratio": "{obs_phrase} against an expectation of {expected}: a ratio of {ratio}.",
+  "interpretation.fragment.magnitude.moderate_ratio": "{obs_phrase} against an expectation of {expected}, a ratio of {ratio}, a moderate excess over baseline.",
+  "interpretation.fragment.magnitude.default": "{obs_phrase} recorded for this stream.",
 
-  "duiding.fragment.concentration.high": "{dominant_n} of the {total_n} cases ({dominant_share_pct}%) come from {dominant_label}, pointing to strong place-based clustering.",
-  "duiding.fragment.concentration.moderate": "{dominant_n} of the {total_n} cases ({dominant_share_pct}%) come from {dominant_label}, a moderate concentration.",
-  "duiding.fragment.concentration.diffuse": "Cases are spread across several locations; the largest, {dominant_label}, accounts for only {dominant_share_pct}% of the cluster.",
+  "interpretation.fragment.concentration.high": "{dominant_n} of the {total_n} cases ({dominant_share_pct}%) come from {dominant_label}, pointing to strong place-based clustering.",
+  "interpretation.fragment.concentration.moderate": "{dominant_n} of the {total_n} cases ({dominant_share_pct}%) come from {dominant_label}, a moderate concentration.",
+  "interpretation.fragment.concentration.diffuse": "Cases are spread across several locations; the largest, {dominant_label}, accounts for only {dominant_share_pct}% of the cluster.",
 
-  "duiding.fragment.denominator.rising_volume_flat_positivity": "Test volume rose from {test_first} to {test_last} tests per week, while positivity stayed nearly flat ({positivity_first_pct}% to {positivity_last_pct}%). Part of the rise is therefore attributable to test volume, not incidence.",
-  "duiding.fragment.denominator.rising_positivity": "Positivity rose from {positivity_first_pct}% to {positivity_last_pct}% at a comparable test volume. The rise is therefore not attributable to test volume.",
-  "duiding.fragment.denominator.stable": "Test volume and positivity are stable over the shown period ({positivity_first_pct}% to {positivity_last_pct}%).",
+  "interpretation.fragment.denominator.rising_volume_flat_positivity": "Test volume rose from {test_first} to {test_last} tests per week, while positivity stayed nearly flat ({positivity_first_pct}% to {positivity_last_pct}%). Part of the rise is therefore attributable to test volume, not incidence.",
+  "interpretation.fragment.denominator.rising_positivity": "Positivity rose from {positivity_first_pct}% to {positivity_last_pct}% at a comparable test volume. The rise is therefore not attributable to test volume.",
+  "interpretation.fragment.denominator.stable": "Test volume and positivity are stable over the shown period ({positivity_first_pct}% to {positivity_last_pct}%).",
 
-  "duiding.fragment.demography.shifted": "The age distribution has shifted towards the {dominant_band} group, against a baseline of {baseline_band}.",
+  "interpretation.fragment.demography.shifted": "The age distribution has shifted towards the {dominant_band} group, against a baseline of {baseline_band}.",
 
-  "duiding.fragment.completeness.warning": "Note: the last {incomplete_days_phrase} are incomplete due to reporting delay. The true count is likely higher.",
+  "interpretation.fragment.completeness.warning": "Note: the last {incomplete_days_phrase} are incomplete due to reporting delay. The true count is likely higher.",
 
-  "duiding.fragment.recommendation.rare_trigger": "This is a pathogen on the curated trigger list; assess promptly and check the statutory notification duty.",
-  "duiding.fragment.recommendation.high_priority": "The combination of size and concentration warrants considering classification as a (possible) epidemic and coordination with infection prevention or public health.",
-  "duiding.fragment.recommendation.moderate_priority": "Monitor this cluster's development; a classification of cluster without epidemic may be appropriate as long as no further signs of spread emerge.",
-  "duiding.fragment.recommendation.default": "Assess this cluster on the basis of the data above; there is not yet sufficient evidence for urgent follow-up."
+  "interpretation.fragment.recommendation.rare_trigger": "This is a pathogen on the curated trigger list; assess promptly and check the statutory notification duty.",
+  "interpretation.fragment.recommendation.high_priority": "The combination of size and concentration warrants considering classification as a (possible) epidemic and coordination with infection prevention or public health.",
+  "interpretation.fragment.recommendation.moderate_priority": "Monitor this cluster's development; a classification of cluster without epidemic may be appropriate as long as no further signs of spread emerge.",
+  "interpretation.fragment.recommendation.default": "Assess this cluster on the basis of the data above; there is not yet sufficient evidence for urgent follow-up."
 }

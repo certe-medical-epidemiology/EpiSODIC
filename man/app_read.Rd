@@ -9,6 +9,6 @@ database (ARCHITECTURE.md section 3.3: "the app performs cheap reads
 only"). Nothing here recomputes a statistical model; anything
 expensive (Farrington, reconciliation, priority scoring) has already
 happened in the cron and is simply looked up. This is the layer that
-turns raw tables into the shapes the Shiny UI and the Duiding engine
+turns raw tables into the shapes the Shiny UI and the interpretation engine
 consume.
 }

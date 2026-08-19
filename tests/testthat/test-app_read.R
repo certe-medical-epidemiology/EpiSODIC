@@ -32,11 +32,11 @@ test_that("episode_cluster_object() populates concentration, density and case_fr
   expect_true(obj$rt_applicable)
 })
 
-test_that("episode_cluster_object() feeds directly into episode_duiding_generate() without error", {
+test_that("episode_cluster_object() feeds directly into episode_interpretation_generate() without error", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   obj <- episode_cluster_object(env$con, env$cluster_id)
-  result <- episode_duiding_generate(obj)
+  result <- episode_interpretation_generate(obj)
   expect_true(length(result$text) >= 2)  # at least magnitude + recommendation
   expect_true("concentration.high" %in% result$fired || "concentration.moderate" %in% result$fired)
 })

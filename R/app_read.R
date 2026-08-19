@@ -5,7 +5,7 @@
 #' only"). Nothing here recomputes a statistical model; anything
 #' expensive (Farrington, reconciliation, priority scoring) has already
 #' happened in the cron and is simply looked up. This is the layer that
-#' turns raw tables into the shapes the Shiny UI and the Duiding engine
+#' turns raw tables into the shapes the Shiny UI and the interpretation engine
 #' consume.
 #' @name app_read
 NULL
@@ -74,7 +74,7 @@ episode_app_derive_state_for_cluster <- function(con, cluster_id) {
   )
 }
 
-#' Build the cluster object consumed by the Duiding engine and the dossier
+#' Build the cluster object consumed by the interpretation engine and the dossier
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
@@ -82,7 +82,7 @@ episode_app_derive_state_for_cluster <- function(con, cluster_id) {
 #' @return A list; see the source for exactly which fields are populated
 #'   and from where. Optional sections (`concentration`, `denominator`,
 #'   `demography`) are `NULL` when there is not enough data to compute
-#'   them, which is also what makes the corresponding Duiding slots and
+#'   them, which is also what makes the corresponding interpretation slots and
 #'   dossier panels skip themselves.
 #' @export
 episode_cluster_object <- function(con, cluster_id, lang = "nl") {

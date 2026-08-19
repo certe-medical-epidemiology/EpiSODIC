@@ -1,7 +1,7 @@
 #' The dossier pane
 #'
 #' Assembles the full cluster dossier: header, stat grid, status
-#' trajectory band, Duiding, then the analytical panels in the order
+#' trajectory band, interpretation, then the analytical panels in the order
 #' `episode-mockup.jsx` and MILESTONES.md M2 specify.
 #'
 #' @param con A [DBI::DBIConnection-class].
@@ -20,7 +20,7 @@ episode_ui_dossier <- function(con, cluster_id, lang = "nl") {
     episode_ui_dossier_header(obj, state, lang = lang),
     episode_ui_stat_grid(obj, lang = lang),
     episode_ui_trajectory(obj, state, lang = lang),
-    episode_ui_duiding_panel(obj, lang = lang),
+    episode_ui_interpretation_panel(obj, lang = lang),
     episode_ui_epicurve_panel(con, cluster_id, obj, lang = lang),
     episode_ui_trend_panel(con, obj, lang = lang),
     episode_ui_denominator_panel(obj, lang = lang),
@@ -119,18 +119,18 @@ episode_ui_trajectory <- function(obj, state, lang = "nl") {
 
 #' @keywords internal
 #' @noRd
-episode_ui_duiding_panel <- function(obj, lang = "nl") {
-  generated <- episode_duiding_generate(obj, lang = lang)
+episode_ui_interpretation_panel <- function(obj, lang = "nl") {
+  generated <- episode_interpretation_generate(obj, lang = lang)
   paragraphs <- generated$text[!startsWith(generated$fired, "recommendation.")]
   recommendation <- generated$text[startsWith(generated$fired, "recommendation.")]
   pal <- episode_palette()
 
   episode_ui_panel(
-    episode_tr("panel.duiding.title", lang = lang), aside = episode_tr("panel.duiding.aside", lang = lang),
+    episode_tr("panel.interpretation.title", lang = lang), aside = episode_tr("panel.interpretation.aside", lang = lang),
     shiny::tags$div(
-      class = "episode-duiding",
+      class = "episode-interpretation",
       if (length(paragraphs) == 0) {
-        shiny::tags$p(class = "episode-panel-empty", episode_tr("panel.duiding.empty", lang = lang))
+        shiny::tags$p(class = "episode-panel-empty", episode_tr("panel.interpretation.empty", lang = lang))
       } else {
         lapply(paragraphs, shiny::tags$p)
       },

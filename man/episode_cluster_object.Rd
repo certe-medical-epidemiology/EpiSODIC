@@ -2,7 +2,7 @@
 % Please edit documentation in R/app_read.R
 \name{episode_cluster_object}
 \alias{episode_cluster_object}
-\title{Build the cluster object consumed by the Duiding engine and the dossier}
+\title{Build the cluster object consumed by the interpretation engine and the dossier}
 \usage{
 episode_cluster_object(con, cluster_id, lang = "nl")
 }
@@ -17,9 +17,9 @@ episode_cluster_object(con, cluster_id, lang = "nl")
 A list; see the source for exactly which fields are populated
 and from where. Optional sections (\code{concentration}, \code{denominator},
 \code{demography}) are \code{NULL} when there is not enough data to compute
-them, which is also what makes the corresponding Duiding slots and
+them, which is also what makes the corresponding interpretation slots and
 dossier panels skip themselves.
 }
 \description{
-Build the cluster object consumed by the Duiding engine and the dossier
+Build the cluster object consumed by the interpretation engine and the dossier
 }

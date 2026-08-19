@@ -54,9 +54,9 @@
   "statusverloop.title": "Statusverloop",
   "statusverloop.now": "nu",
 
-  "panel.duiding.title": "Duiding",
-  "panel.duiding.aside": "automatisch opgesteld",
-  "panel.duiding.empty": "Nog geen duiding beschikbaar voor dit cluster.",
+  "panel.interpretation.title": "Duiding",
+  "panel.interpretation.aside": "automatisch opgesteld",
+  "panel.interpretation.empty": "Nog geen duiding beschikbaar voor dit cluster.",
 
   "panel.epicurve.title": "Epidemische curve",
   "panel.epicurve.note": "De gearceerde zone beslaat de laatste {days_phrase}: de empirische rapportagevertraging uit de rapportagedriehoek. Gevallen met een afnamedatum in dit venster zijn nog niet volledig binnen. Een dalende staart is hier geen afname.",
@@ -147,25 +147,25 @@
   "misc.none": "geen",
   "misc.dash": "—",
 
-  "duiding.fragment.magnitude.rare_trigger": "{obs_phrase} gerapporteerd binnen dit cluster. Voor deze verwekker geldt geen statistische signaalgrens: de detectie komt van de curatieve triggerlijst, waarbij elk gerapporteerd geval wordt opgepakt ongeacht basislijn.",
-  "duiding.fragment.magnitude.high_ratio": "{obs_phrase} tegen een verwachting van {expected}: een ratio van {ratio}.",
-  "duiding.fragment.magnitude.moderate_ratio": "{obs_phrase} tegen een verwachting van {expected}, een ratio van {ratio} en daarmee een gematigde overschrijding van de basislijn.",
-  "duiding.fragment.magnitude.default": "{obs_phrase} geregistreerd voor deze stream.",
+  "interpretation.fragment.magnitude.rare_trigger": "{obs_phrase} gerapporteerd binnen dit cluster. Voor deze verwekker geldt geen statistische signaalgrens: de detectie komt van de curatieve triggerlijst, waarbij elk gerapporteerd geval wordt opgepakt ongeacht basislijn.",
+  "interpretation.fragment.magnitude.high_ratio": "{obs_phrase} tegen een verwachting van {expected}: een ratio van {ratio}.",
+  "interpretation.fragment.magnitude.moderate_ratio": "{obs_phrase} tegen een verwachting van {expected}, een ratio van {ratio} en daarmee een gematigde overschrijding van de basislijn.",
+  "interpretation.fragment.magnitude.default": "{obs_phrase} geregistreerd voor deze stream.",
 
-  "duiding.fragment.concentration.high": "{dominant_n} van de {total_n} gevallen ({dominant_share_pct}%) zijn afkomstig van {dominant_label}, wat wijst op sterke plaatsgebonden clustering.",
-  "duiding.fragment.concentration.moderate": "{dominant_n} van de {total_n} gevallen ({dominant_share_pct}%) zijn afkomstig van {dominant_label}, een gematigde concentratie.",
-  "duiding.fragment.concentration.diffuse": "De gevallen zijn verspreid over meerdere locaties; de grootste locatie, {dominant_label}, omvat slechts {dominant_share_pct}% van het cluster.",
+  "interpretation.fragment.concentration.high": "{dominant_n} van de {total_n} gevallen ({dominant_share_pct}%) zijn afkomstig van {dominant_label}, wat wijst op sterke plaatsgebonden clustering.",
+  "interpretation.fragment.concentration.moderate": "{dominant_n} van de {total_n} gevallen ({dominant_share_pct}%) zijn afkomstig van {dominant_label}, een gematigde concentratie.",
+  "interpretation.fragment.concentration.diffuse": "De gevallen zijn verspreid over meerdere locaties; de grootste locatie, {dominant_label}, omvat slechts {dominant_share_pct}% van het cluster.",
 
-  "duiding.fragment.denominator.rising_volume_flat_positivity": "Het testvolume steeg van {test_first} naar {test_last} bepalingen per week, terwijl de positiviteit nagenoeg gelijk bleef ({positivity_first_pct}% naar {positivity_last_pct}%). Een deel van de toename is daarmee toe te schrijven aan testvolume, niet aan incidentie.",
-  "duiding.fragment.denominator.rising_positivity": "De positiviteit steeg van {positivity_first_pct}% naar {positivity_last_pct}% bij een vergelijkbaar testvolume. De toename is dus niet toe te schrijven aan testvolume.",
-  "duiding.fragment.denominator.stable": "Het testvolume en de positiviteit zijn stabiel over de weergegeven periode ({positivity_first_pct}% naar {positivity_last_pct}%).",
+  "interpretation.fragment.denominator.rising_volume_flat_positivity": "Het testvolume steeg van {test_first} naar {test_last} bepalingen per week, terwijl de positiviteit nagenoeg gelijk bleef ({positivity_first_pct}% naar {positivity_last_pct}%). Een deel van de toename is daarmee toe te schrijven aan testvolume, niet aan incidentie.",
+  "interpretation.fragment.denominator.rising_positivity": "De positiviteit steeg van {positivity_first_pct}% naar {positivity_last_pct}% bij een vergelijkbaar testvolume. De toename is dus niet toe te schrijven aan testvolume.",
+  "interpretation.fragment.denominator.stable": "Het testvolume en de positiviteit zijn stabiel over de weergegeven periode ({positivity_first_pct}% naar {positivity_last_pct}%).",
 
-  "duiding.fragment.demography.shifted": "De leeftijdsverdeling is verschoven naar de groep {dominant_band}, af te zetten tegen de basislijn {baseline_band}.",
+  "interpretation.fragment.demography.shifted": "De leeftijdsverdeling is verschoven naar de groep {dominant_band}, af te zetten tegen de basislijn {baseline_band}.",
 
-  "duiding.fragment.completeness.warning": "Let op: de laatste {incomplete_days_phrase} zijn onvolledig door de rapportagevertraging. Het werkelijke aantal ligt vermoedelijk hoger.",
+  "interpretation.fragment.completeness.warning": "Let op: de laatste {incomplete_days_phrase} zijn onvolledig door de rapportagevertraging. Het werkelijke aantal ligt vermoedelijk hoger.",
 
-  "duiding.fragment.recommendation.rare_trigger": "Dit betreft een verwekker van de curatieve triggerlijst; beoordeel per direct en toets de meldingsplicht op grond van de Wet publieke gezondheid.",
-  "duiding.fragment.recommendation.high_priority": "De combinatie van omvang en concentratie rechtvaardigt overweging van classificatie als (mogelijke) epidemie en afstemming met infectiepreventie of de GGD.",
-  "duiding.fragment.recommendation.moderate_priority": "Volg de ontwikkeling van dit cluster; een classificatie als cluster zonder epidemie kan op zijn plaats zijn zolang er geen verdere aanwijzingen voor verspreiding ontstaan.",
-  "duiding.fragment.recommendation.default": "Beoordeel dit cluster op basis van de bovenstaande gegevens; er zijn vooralsnog onvoldoende aanwijzingen voor dringende opvolging."
+  "interpretation.fragment.recommendation.rare_trigger": "Dit betreft een verwekker van de curatieve triggerlijst; beoordeel per direct en toets de meldingsplicht op grond van de Wet publieke gezondheid.",
+  "interpretation.fragment.recommendation.high_priority": "De combinatie van omvang en concentratie rechtvaardigt overweging van classificatie als (mogelijke) epidemie en afstemming met infectiepreventie of de GGD.",
+  "interpretation.fragment.recommendation.moderate_priority": "Volg de ontwikkeling van dit cluster; een classificatie als cluster zonder epidemie kan op zijn plaats zijn zolang er geen verdere aanwijzingen voor verspreiding ontstaan.",
+  "interpretation.fragment.recommendation.default": "Beoordeel dit cluster op basis van de bovenstaande gegevens; er zijn vooralsnog onvoldoende aanwijzingen voor dringende opvolging."
 }
