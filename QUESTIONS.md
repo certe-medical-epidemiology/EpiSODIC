@@ -213,6 +213,62 @@ decisions survives.
     clusters()` detector value) is removed from the `episode_detection.
     detector` CHECK constraint since nothing produces it any more.
 
+## New in M2
+
+23. **Static `ggplot2` charts rather than an interactive htmlwidgets
+    stack.** `episode-mockup.jsx` uses Recharts (an SVG/React charting
+    library) for the epi curve, long trend and denominator charts.
+    MILESTONES.md M2 asks for "Shiny with bslib" but does not mandate a
+    specific plotting approach, and ARCHITECTURE.md section 3.3 is
+    explicit that the app must only ever do cheap reads, never recompute
+    anything expensive at render time. `ggplot2` is already a near-certain
+    transitive dependency of the R ecosystem this runs in, needs no extra
+    JS toolchain, and its output is deterministic and easy to test outside
+    a browser (`expect_s3_class(..., "ggplot")`, as `test-app_ui.R` does).
+    An htmlwidgets library (plotly, echarts4r) would get closer to the
+    mockup's exact interactivity (hover tooltips, zoom) but adds a
+    dependency and a browser-only testing story for comparatively little
+    gain in a read-only M2. Revisit if a future milestone asks for
+    interactive drill-down on the charts themselves.
+
+24. **`bslib` is used only for the Bootstrap/CSS reset and font-loading
+    helper (`bslib::page_fluid()` + `bslib::bs_theme()`), not for its
+    component library.** All visual design (header, nav, panels, chips,
+    bars, pyramid) is bespoke `shiny::tags` styled by
+    `inst/app/www/episode.css`, matching `episode-mockup.jsx` pixel-for-
+    pixel rather than bslib's own Bootstrap look. This is what
+    MILESTONES.md M2's "Shiny with bslib" literally asks for (bslib as
+    the framework the app is built on) without constraining the app to
+    look like generic Bootstrap.
+
+25. **`episode_cluster_object()`'s `concentration` field now carries a full
+    per-PC4 breakdown** (`concentration$rows`, a `data.frame(label, n)`
+    covering every PC4 the cluster's cases touch), not only the dominant
+    PC4's label/count/share. The geography panel (`episode_ui_geo_panel()`)
+    needs the whole distribution to draw a bar chart; only ever exposing
+    the single dominant row would have made that panel structurally unable
+    to show anything but one bar.
+
+26. **`episode_triangle_completeness()` returns an empty completeness
+    frame instead of erroring** when every reporting-triangle row falls
+    outside the `max_lag_days` window - the situation on a database's very
+    first-ever cron run, where every case's only observed `run_date` is
+    "today" regardless of how old its `sample_date` is, so lag is huge for
+    anything but the most recent cases. `stats::aggregate()` errors
+    ("no rows to aggregate") on a zero-row input rather than returning a
+    zero-row result; guarded the same way `episode_app_denominator_series()`
+    already guards its own `stats::aggregate()` call.
+
+27. **Removed the top-level `LICENSE` file.** It was an unmodified copy of
+    the stock GPL-2 text, which `DESCRIPTION`'s `License: GPL-2` (no
+    `+ file LICENSE`) already fully specifies without needing a physical
+    copy in the package; its presence produced R CMD check's "LICENSE not
+    mentioned in DESCRIPTION" NOTE. `License: GPL-2 + file LICENSE` is for
+    a *modified* license text (e.g. with additional restrictions), which
+    would itself trigger a different NOTE ("License components with
+    restrictions") for an unmodified stock license - confirmed by trying
+    it and reverting.
+
 ## Architecture concerns raised during implementation
 
 1. **`episode_stream` is missing a `ward` column** (see item 20 above).
