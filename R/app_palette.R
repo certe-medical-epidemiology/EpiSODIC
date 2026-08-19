@@ -60,13 +60,14 @@ episode_palette_fallback <- function() {
 #' @keywords internal
 #' @noRd
 episode_palette_from_certestyle <- function(cc) {
-  # certestyle::certe.colours exposes its own (Dutch) hue names, one real
-  # hue per role so none of Certe's own colours get merged with another;
-  # mapped explicitly here rather than by name-matching, since we do not
-  # control that external package's naming. Any hue it does not provide
-  # falls back to our own shipped default for that role. cc may be a
-  # named character vector rather than a list (certestyle's actual return
-  # type), so `$` is not safe here - a small name-based getter handles both.
+  # certestyle::certe.colours exposes its own hue names, each prefixed
+  # "certe" (certeblauw, certeblauw0, certeblauw2, ... - verified against
+  # certe-medical-epidemiology/certestyle's R/certe_colours.R, not
+  # guessed), one real hue per role so none of Certe's own colours get
+  # merged with another. Any hue it does not provide falls back to our
+  # own shipped default for that role. cc may be a named character
+  # vector rather than a list (certestyle's actual return type), so `$`
+  # is not safe here - a small name-based getter handles both.
   cc_get <- function(name) {
     if (!is.null(names(cc)) && name %in% names(cc)) unname(cc[[name]]) else NULL
   }
@@ -74,13 +75,13 @@ episode_palette_from_certestyle <- function(cc) {
   list(
     ink = defaults$ink, muted = defaults$muted, faint = defaults$faint,
     border = defaults$border, bg_subtle = defaults$bg_subtle, bg = defaults$bg, surface = defaults$surface,
-    primary = cc_get("blauw") %||% defaults$primary, primary_dark = cc_get("blauw0") %||% defaults$primary_dark,
-    primary_light = cc_get("blauw2") %||% defaults$primary_light, primary_tint = cc_get("blauw5") %||% defaults$primary_tint,
-    secondary = cc_get("lila") %||% defaults$secondary, secondary_dark = cc_get("lila0") %||% defaults$secondary_dark,
-    tertiary = cc_get("bruin") %||% defaults$tertiary, tertiary_dark = cc_get("bruin0") %||% defaults$tertiary_dark,
-    success = cc_get("groen") %||% defaults$success, success_dark = cc_get("groen0") %||% defaults$success_dark,
-    warning = cc_get("geel") %||% defaults$warning, warning_dark = cc_get("geel0") %||% defaults$warning_dark,
-    danger = cc_get("roze") %||% defaults$danger, danger_dark = cc_get("roze0") %||% defaults$danger_dark
+    primary = cc_get("certeblauw") %||% defaults$primary, primary_dark = cc_get("certeblauw0") %||% defaults$primary_dark,
+    primary_light = cc_get("certeblauw2") %||% defaults$primary_light, primary_tint = cc_get("certeblauw5") %||% defaults$primary_tint,
+    secondary = cc_get("certelila") %||% defaults$secondary, secondary_dark = cc_get("certelila0") %||% defaults$secondary_dark,
+    tertiary = cc_get("certebruin") %||% defaults$tertiary, tertiary_dark = cc_get("certebruin0") %||% defaults$tertiary_dark,
+    success = cc_get("certegroen") %||% defaults$success, success_dark = cc_get("certegroen0") %||% defaults$success_dark,
+    warning = cc_get("certegeel") %||% defaults$warning, warning_dark = cc_get("certegeel0") %||% defaults$warning_dark,
+    danger = cc_get("certeroze") %||% defaults$danger, danger_dark = cc_get("certeroze0") %||% defaults$danger_dark
   )
 }
 
