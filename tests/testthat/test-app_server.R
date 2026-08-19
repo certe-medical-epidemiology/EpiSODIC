@@ -29,3 +29,16 @@ test_that("output$auth_control actually renders the sign-in link (anonymous) and
     expect_false(grepl("Aangemeld als", rendered))
   })
 })
+
+test_that("output$main_view actually renders the info screen when nav_view is set to 'info'", {
+  db_path <- tempfile(fileext = ".sqlite")
+  episode_db_create(db_path)
+
+  server <- episode_app_server_factory(db_path, lang = "nl")
+  shiny::testServer(server, {
+    session$setInputs(nav_view = "info")
+    session$flushReact()
+    rendered <- paste(output$main_view, collapse = "\n")
+    expect_true(grepl("<code>same_place</code>", rendered, fixed = TRUE))
+  })
+})

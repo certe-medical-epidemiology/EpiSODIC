@@ -6,6 +6,7 @@
   "nav.streams": "Streams",
   "nav.archive": "Archief",
   "nav.activity": "Activiteit",
+  "nav.info": "Info",
 
   "rail.title": "Openstaande clusters",
   "rail.count_suffix": "nieuw of actief",
@@ -66,11 +67,11 @@
 
   "panel.trend.title": "Meerjarige trend",
   "panel.trend.aside": "{weeks} weken",
-  "panel.trend.note": "Waargenomen aantallen tegen de verwachting en de signaalgrens uit farringtonFlexible. Bedoeld om te zien of de huidige toename binnen het normale seizoenspatroon valt.",
+  "panel.trend.note": "Waargenomen aantallen tegen de verwachting en de signaalgrens uit <code>farringtonFlexible</code>. Bedoeld om te zien of de huidige toename binnen het normale seizoenspatroon valt.",
   "panel.trend.legend_observed": "Waargenomen",
   "panel.trend.legend_expected": "Verwacht",
   "panel.trend.legend_upperbound": "Signaalgrens",
-  "panel.trend.unavailable": "Nog geen trendgegevens beschikbaar; de stream heeft onvoldoende basislijn voor farringtonFlexible.",
+  "panel.trend.unavailable": "Nog geen trendgegevens beschikbaar; de stream heeft onvoldoende basislijn voor <code>farringtonFlexible</code>.",
 
   "panel.denominator.title": "Noemer en positiviteit",
   "panel.denominator.aside": "per week",
@@ -252,5 +253,29 @@
   "activity.action_login": "aangemeld",
   "activity.action_run_success": "detectierun geslaagd",
   "activity.action_run_failed": "detectierun mislukt",
-  "activity.target_cluster": "{pathogen} (cluster #{id})"
+  "activity.target_cluster": "{pathogen} (cluster #{id})",
+
+  "info.title": "Info",
+  "info.intro": "Achtergrond bij de detectiealgoritmen, clusterstatussen en het toegangsmodel van EpiSODE.",
+  "info.algorithms.title": "Detectiealgoritmen",
+  "info.algorithms.note": "Een cluster kan door meer dan een algoritme tegelijk zijn gedetecteerd; zie \"gedetecteerd door\" op het dossier.",
+  "info.algorithms.col.name": "Naam",
+  "info.algorithms.col.type": "Type",
+  "info.algorithms.col.how": "Werking",
+  "info.algorithms.type.baseline": "Statistisch (basislijnmodel)",
+  "info.algorithms.type.rule": "Regelgebaseerd",
+  "info.algorithms.farrington": "Vergelijkt het waargenomen aantal gevallen per week met een verwachting op basis van historische data (surveillance::farringtonFlexible). Signaleert wanneer het waargenomen aantal boven de berekende signaalgrens uitkomt; vereist voldoende basislijngeschiedenis om te kunnen draaien.",
+  "info.algorithms.same_place": "Signaleert wanneer n of meer gevallen van dezelfde verwekker binnen k dagen op dezelfde plek voorkomen. Binnen ziekenhuizen draait dit op afdelingsniveau; daarbuiten (zorginstelling, huisartsenpost, huisartsenpraktijk) op instellingsniveau. Heeft geen basislijn nodig.",
+  "info.algorithms.rare_trigger": "Voor een vaste lijst zeldzame-maar-ernstige verwekkers is elk gerapporteerd geval op zich al meldenswaardig; een basislijnmodel zou hier alleen stilte opleveren. Signaleert direct bij het bereikte minimumaantal, ongeacht basislijn.",
+  "info.states.title": "Clusterstatussen",
+  "info.states.new": "Net gedetecteerd, nog niet beoordeeld door een assessor.",
+  "info.states.assessing": "In beoordeling; een assessor is bezig het cluster te classificeren.",
+  "info.states.monitoring": "Beoordeeld en actief gevolgd; nog geen aanleiding om af te sluiten.",
+  "info.states.closable": "De signalen zijn voldoende afgenomen om af te sluiten, wachtend op bevestiging.",
+  "info.states.reassess": "Eerder afgesloten, maar opnieuw gegroeid boven de drempel; vraagt herbeoordeling.",
+  "info.states.closed": "Afgesloten door een assessor of automatisch door het systeem na een periode zonder nieuwe gevallen.",
+  "info.states.col.state": "Status",
+  "info.states.col.meaning": "Betekenis",
+  "info.access.title": "Toegang",
+  "info.access.body": "Lezen is anoniem: iedereen die de app bereikt kan clusters, streams en het archief bekijken zonder aan te melden. Aanmelden is alleen nodig om een cluster te classificeren, te sluiten of een stream te dempen - elke schrijfactie wordt aan de aangemelde gebruiker toegeschreven."
 }

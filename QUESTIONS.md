@@ -388,6 +388,44 @@ decisions survives.
     section 12 describes accounts as externally provisioned), so this is
     the intended permanent entry point, not a stopgap.
 
+36. **`certestyle::certe.colours`'s real key names are prefixed
+    "certe"** (`certeblauw`, `certegeel`, ... - verified against
+    `certe-medical-epidemiology/certestyle`'s own `R/certe_colours.R`,
+    since guessing at Certe-internal naming had already caused two prior
+    bugs in this file). `episode_palette_from_certestyle()` had been
+    looking up the bare hue word, which never matched, so a real Certe
+    instance with `certestyle` installed silently got the shipped
+    fallback palette instead of Certe's actual colours the entire time -
+    this is also the real explanation for the earlier "the fallback
+    looks too similar to Certe's colours" report (item 34): there was
+    never a second palette to compare against, only the fallback shown
+    twice.
+
+37. **Every detection-algorithm identifier surfaced to the user
+    (`same_place`, `rare_trigger`, `farringtonFlexible`) now renders in
+    `<code>`**, on the dossier's "detected by" line, the settings panel,
+    the empty-timeline notice, and the trend panel's notes - these are
+    names from the codebase, not prose, and reading as plain text (as
+    they did before) made them look like typos or garbled Dutch rather
+    than deliberate identifiers. Implemented as `episode_ui_code_join()`,
+    escaping first so it is always safe to pass through `shiny::HTML()`;
+    building the substituted string via `episode_tr()` and then wrapping
+    the whole result in `shiny::HTML()` at the render call, since
+    `episode_tr()` itself does plain string substitution with no HTML
+    awareness. One caller (`episode_ui_settings_panel()`'s row list) had
+    to switch from `c(label, value)` to `list(label, value)`, since `c()`
+    silently strips an `shiny::HTML()` value's class when combined with a
+    plain string, which would have made that one row's `<code>` tags
+    render as visible literal text instead of applying.
+
+38. **Added an "Info" screen** (`R/app_info.R`, nav entry, no `con`
+    dependency since its content is static) explaining the three
+    detection algorithms in a table (what each is, statistical vs.
+    rule-based, how it decides to fire), the six cluster states, and the
+    anonymous-read / sign-in-to-classify access model - so an
+    epidemiologist reading an unfamiliar detector name on a dossier has
+    somewhere in the app itself to look it up.
+
 ## Architecture concerns raised during implementation
 
 1. **`episode_stream` is missing a `ward` column** (see item 20 above).

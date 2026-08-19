@@ -35,6 +35,26 @@ episode_ui_italicise_taxon <- function(pathogen) {
   escaped
 }
 
+#' Render a list of detector names as inline code, joined by a separator
+#'
+#' A detector name (`farrington`, `same_place`, `rare_trigger`, ...) is an
+#' identifier from the codebase, not prose - rendered in `<code>` so it
+#' reads as one, wherever it appears in a sentence or table (dossier meta
+#' line, settings panel, timeline). Text is HTML-escaped before any tag is
+#' added, so the result is always safe to pass to [shiny::HTML()].
+#'
+#' @param detectors A character vector of detector names.
+#' @param sep Separator between entries.
+#' @return A single character string, safe to pass to [shiny::HTML()].
+#' @keywords internal
+#' @noRd
+episode_ui_code_join <- function(detectors, sep = ", ") {
+  escaped <- gsub("&", "&amp;", detectors, fixed = TRUE)
+  escaped <- gsub("<", "&lt;", escaped, fixed = TRUE)
+  escaped <- gsub(">", "&gt;", escaped, fixed = TRUE)
+  paste(sprintf("<code>%s</code>", escaped), collapse = sep)
+}
+
 #' @rdname app_widgets
 #' @param text Chip text.
 #' @param colour A hex colour.

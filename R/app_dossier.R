@@ -82,7 +82,8 @@ episode_ui_dossier_header <- function(obj, state, lang = "nl") {
       shiny::tags$span(style = "color:var(--episode-faint);", "\u00b7"),
       shiny::tags$span(episode_tr("dossier.meta.first_last", first = obj$first_day, last = obj$last_day, lang = lang)),
       shiny::tags$span(style = "color:var(--episode-faint);", "\u00b7"),
-      shiny::tags$span(episode_tr("dossier.meta.detected_by", detectors = paste(obj$detectors, collapse = " en "), lang = lang))
+      shiny::tags$span(shiny::HTML(episode_tr("dossier.meta.detected_by",
+                                               detectors = episode_ui_code_join(obj$detectors, sep = " en "), lang = lang)))
     )
   )
 }
@@ -185,12 +186,12 @@ episode_ui_epicurve_panel <- function(con, cluster_id, obj, lang = "nl") {
 episode_ui_trend_panel <- function(con, obj, lang = "nl") {
   trend <- episode_app_trend(con, obj$stream_id)
   if (nrow(trend) < 4) {
-    return(episode_ui_panel_empty(episode_tr("panel.trend.title", lang = lang), episode_tr("panel.trend.unavailable", lang = lang)))
+    return(episode_ui_panel_empty(episode_tr("panel.trend.title", lang = lang), shiny::HTML(episode_tr("panel.trend.unavailable", lang = lang))))
   }
   episode_ui_panel(
     episode_tr("panel.trend.title", lang = lang),
     aside = episode_tr("panel.trend.aside", weeks = nrow(trend), lang = lang),
-    note = episode_tr("panel.trend.note", lang = lang),
+    note = shiny::HTML(episode_tr("panel.trend.note", lang = lang)),
     shiny::renderPlot(episode_ui_trend_chart(trend, lang = lang), height = 230)
   )
 }
@@ -288,21 +289,24 @@ episode_ui_linelist_panel <- function(con, cluster_id, obj, lang = "nl") {
 #' @noRd
 episode_ui_settings_panel <- function(con, cluster_id, lang = "nl") {
   settings <- episode_app_detection_settings(con, cluster_id)
+  # list(), not c(): a shiny::HTML() value (the detectors row) loses its
+  # "html" class and gets escaped as literal text if combined with a
+  # plain string via c() - list() keeps each element intact.
   rows <- list(
-    c(episode_tr("panel.settings.detectors", lang = lang), paste(settings$detectors, collapse = ", ")),
-    c(episode_tr("panel.settings.aggregation", lang = lang), episode_tr("panel.settings.aggregation_value", lang = lang)),
-    c(episode_tr("panel.settings.population_offset", lang = lang),
+    list(episode_tr("panel.settings.detectors", lang = lang), shiny::HTML(episode_ui_code_join(settings$detectors))),
+    list(episode_tr("panel.settings.aggregation", lang = lang), episode_tr("panel.settings.aggregation_value", lang = lang)),
+    list(episode_tr("panel.settings.population_offset", lang = lang),
       episode_tr(if (!is.null(settings$population_offset)) "panel.settings.population_offset_patient_days" else "panel.settings.population_offset_none", lang = lang)),
-    c(episode_tr("panel.settings.case_free_days", lang = lang), as.character(settings$case_free_days)),
-    c(episode_tr("panel.settings.last_run", lang = lang),
+    list(episode_tr("panel.settings.case_free_days", lang = lang), as.character(settings$case_free_days)),
+    list(episode_tr("panel.settings.last_run", lang = lang),
       episode_tr("panel.settings.last_run_value", when = settings$last_run_when %||% episode_tr("misc.unknown", lang = lang),
                  host = settings$last_run_host %||% episode_tr("misc.unknown", lang = lang), lang = lang)),
-    c(episode_tr("panel.settings.pkg_versions", lang = lang), settings$pkg_versions %||% episode_tr("misc.unknown", lang = lang))
+    list(episode_tr("panel.settings.pkg_versions", lang = lang), settings$pkg_versions %||% episode_tr("misc.unknown", lang = lang))
   )
   episode_ui_panel(
     episode_tr("panel.settings.title", lang = lang),
     shiny::tags$dl(class = "episode-settings",
-                    lapply(rows, function(r) shiny::tags$div(shiny::tags$dt(r[1]), shiny::tags$dd(r[2]))))
+                    lapply(rows, function(r) shiny::tags$div(shiny::tags$dt(r[[1]]), shiny::tags$dd(r[[2]]))))
   )
 }
 
@@ -330,8 +334,8 @@ episode_ui_assessment_rail <- function(con, cluster_id, lang = "nl", current_use
       shiny::tags$div(class = "episode-verloop-title", episode_tr("verloop.title", lang = lang)),
       if (nrow(timeline) == 0) {
         shiny::tags$p(class = "episode-verloop-empty",
-                      episode_tr("verloop.not_assessed", first = obj$first_day,
-                                 detectors = paste(obj$detectors, collapse = " en "), lang = lang))
+                      shiny::HTML(episode_tr("verloop.not_assessed", first = obj$first_day,
+                                              detectors = episode_ui_code_join(obj$detectors, sep = " en "), lang = lang)))
       } else {
         lapply(rev(seq_len(nrow(timeline))), function(i) episode_ui_timeline_entry(timeline[i, ], lang = lang))
       }

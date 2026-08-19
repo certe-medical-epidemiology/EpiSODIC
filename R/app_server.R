@@ -47,6 +47,8 @@ episode_app_server_factory <- function(db_path, lang = "nl") {
         shiny::uiOutput("archive_screen")
       } else if (view() == "activity") {
         episode_ui_activity_screen(episode_app_activity_log(con, lang = lang), lang = lang)
+      } else if (view() == "info") {
+        episode_ui_info_screen(lang = lang)
       } else {
         shiny::tags$div(
           class = "episode-body",

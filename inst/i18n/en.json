@@ -6,6 +6,7 @@
   "nav.streams": "Streams",
   "nav.archive": "Archive",
   "nav.activity": "Activity",
+  "nav.info": "Info",
 
   "rail.title": "Open clusters",
   "rail.count_suffix": "new or active",
@@ -66,11 +67,11 @@
 
   "panel.trend.title": "Multi-year trend",
   "panel.trend.aside": "{weeks} weeks",
-  "panel.trend.note": "Observed counts against the expectation and the signal threshold from farringtonFlexible. Meant to show whether the current rise falls within the normal seasonal pattern.",
+  "panel.trend.note": "Observed counts against the expectation and the signal threshold from <code>farringtonFlexible</code>. Meant to show whether the current rise falls within the normal seasonal pattern.",
   "panel.trend.legend_observed": "Observed",
   "panel.trend.legend_expected": "Expected",
   "panel.trend.legend_upperbound": "Signal threshold",
-  "panel.trend.unavailable": "No trend data available yet; this stream has insufficient baseline history for farringtonFlexible.",
+  "panel.trend.unavailable": "No trend data available yet; this stream has insufficient baseline history for <code>farringtonFlexible</code>.",
 
   "panel.denominator.title": "Denominator and positivity",
   "panel.denominator.aside": "per week",
@@ -252,5 +253,29 @@
   "activity.action_login": "signed in",
   "activity.action_run_success": "detection run succeeded",
   "activity.action_run_failed": "detection run failed",
-  "activity.target_cluster": "{pathogen} (cluster #{id})"
+  "activity.target_cluster": "{pathogen} (cluster #{id})",
+
+  "info.title": "Info",
+  "info.intro": "Background on EpiSODE's detection algorithms, cluster states and access model.",
+  "info.algorithms.title": "Detection algorithms",
+  "info.algorithms.note": "A cluster can be detected by more than one algorithm at once; see \"detected by\" on the dossier.",
+  "info.algorithms.col.name": "Name",
+  "info.algorithms.col.type": "Type",
+  "info.algorithms.col.how": "How it works",
+  "info.algorithms.type.baseline": "Statistical (baseline model)",
+  "info.algorithms.type.rule": "Rule-based",
+  "info.algorithms.farrington": "Compares the observed weekly case count against an expectation built from historical data (surveillance::farringtonFlexible). Signals when the observed count exceeds the computed threshold; needs sufficient baseline history to run at all.",
+  "info.algorithms.same_place": "Signals when n or more cases of the same organism occur at the same place within k days. Runs at ward level inside hospitals; at institution level everywhere else (long-term care, out-of-hours service, general practice). Needs no baseline.",
+  "info.algorithms.rare_trigger": "For a fixed list of rare-but-serious organisms, a single reported case is notable on its own; a baseline model would only produce silence here. Signals immediately once the configured minimum is reached, regardless of baseline.",
+  "info.states.title": "Cluster states",
+  "info.states.new": "Just detected, not yet assessed by anyone.",
+  "info.states.assessing": "Under assessment; an assessor is classifying the cluster.",
+  "info.states.monitoring": "Assessed and actively tracked; no reason yet to close it.",
+  "info.states.closable": "Signals have subsided enough to close, awaiting confirmation.",
+  "info.states.reassess": "Previously closed, but grown again past the threshold; needs reassessment.",
+  "info.states.closed": "Closed by an assessor, or automatically by the system after a period with no new cases.",
+  "info.states.col.state": "State",
+  "info.states.col.meaning": "Meaning",
+  "info.access.title": "Access",
+  "info.access.body": "Reading is anonymous: anyone who reaches the app can view clusters, streams and the archive without signing in. Signing in is only needed to classify a cluster, close it, or mute a stream - every write is attributed to the signed-in user."
 }

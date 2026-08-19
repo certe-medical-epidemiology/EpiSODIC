@@ -39,6 +39,23 @@ test_that("episode_palette_from_certestyle() maps certestyle's own key names ont
   expect_false(identical(pal$primary, pal$warning))
 })
 
+test_that("episode_ui_code_join() wraps each item in <code> and escapes, HTML-safe", {
+  expect_equal(episode_ui_code_join(c("same_place", "farrington"), sep = " en "),
+               "<code>same_place</code> en <code>farrington</code>")
+  expect_equal(episode_ui_code_join("a&b<c>"), "<code>a&amp;b&lt;c&gt;</code>")
+})
+
+test_that("episode_ui_info_screen() renders in both languages and names every detector and state in code style", {
+  for (lang in c("nl", "en")) {
+    html <- as.character(episode_ui_info_screen(lang))
+    expect_true(grepl("<code>farringtonFlexible</code>", html, fixed = TRUE))
+    expect_true(grepl("<code>same_place</code>", html, fixed = TRUE))
+    expect_true(grepl("<code>rare_trigger</code>", html, fixed = TRUE))
+    # a translation miss falls through to episode_tr()'s "[[key]]" placeholder
+    expect_false(grepl("[[", html, fixed = TRUE))
+  }
+})
+
 test_that("app widgets render to shiny tags without error, including empty-data edge cases", {
   expect_s3_class(episode_ui_chip("Norovirus", "#4A647D", filled = TRUE), "shiny.tag")
   expect_s3_class(episode_ui_panel("Title", shiny::tags$p("body")), "shiny.tag")
