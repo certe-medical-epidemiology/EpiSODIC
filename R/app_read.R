@@ -146,12 +146,12 @@ episode_cluster_object <- function(con, cluster_id, lang = "nl") {
 #' @noRd
 episode_app_place_label <- function(stream, institution, lang = "nl") {
   care_line_suffix <- if (!is.na(stream$care_line)) {
-    paste0(" · ", episode_tr(paste0("careline.", stream$care_line), lang = lang))
+    paste0(" \u00b7 ", episode_tr(paste0("careline.", stream$care_line), lang = lang))
   } else {
     ""
   }
   if (stream$level == "pathogen_ward" && !is.null(institution)) {
-    return(paste0(institution$display_name, " · afdeling ", stream$ward))
+    return(paste0(institution$display_name, " \u00b7 afdeling ", stream$ward))
   }
   if (stream$level == "pathogen_institution" && !is.null(institution)) {
     return(institution$display_name)
@@ -227,7 +227,8 @@ episode_app_concentration <- function(cases, level) {
     dominant_label = names(tab)[1],
     dominant_n = as.integer(tab[1]),
     dominant_share = as.numeric(tab[1]) / nrow(cases),
-    total = nrow(cases)
+    total = nrow(cases),
+    rows = data.frame(label = names(tab), n = as.integer(tab), row.names = NULL)
   )
 }
 

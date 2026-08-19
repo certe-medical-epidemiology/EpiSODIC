@@ -38,12 +38,13 @@ Imports:
     digest,
     stats,
     utils,
-    surveillance
+    surveillance,
+    shiny,
+    bslib,
+    ggplot2
 Suggests:
     RSQLite,
     RMariaDB,
-    shiny,
-    bslib,
     sodium,
     testthat (>= 3.0.0),
     certegis,

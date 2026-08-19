@@ -62,6 +62,9 @@ episode_triangle_completeness <- function(con, stream_id, max_lag_days = 21) {
   names(final_counts)[2] <- "final_n"
   merged <- merge(triangle, final_counts, by = "sample_date")
   merged <- merged[merged$final_n > 0 & merged$lag_days >= 0 & merged$lag_days <= max_lag_days, ]
+  if (nrow(merged) == 0) {
+    return(data.frame(lag_days = integer(0), completeness = numeric(0)))
+  }
   merged$share <- merged$n_cases / merged$final_n
 
   by_lag <- stats::aggregate(share ~ lag_days, merged, stats::median)
