@@ -2,24 +2,29 @@
 % Please edit documentation in R/app_palette.R
 \name{episode_palette}
 \alias{episode_palette}
-\title{Certe colour palette}
+\title{The application colour palette}
 \usage{
 episode_palette()
 }
 \value{
-A named list of hex colour strings. See the source for the
-full set; the semantic roles used throughout the app are \code{ink}
-(default text), \code{muted} (secondary text/labels), \code{faint} (tertiary),
-\code{rule}/\code{track}/\code{paper}/\code{surface} (structural greys), and the named
-hues (\code{petrol}, \code{carmine}, \code{pink}, \code{olive}, \code{yellow}, \code{lilac}).
+A named list of hex colour strings: the base hues (\code{blue},
+\code{green}, \code{pink}, \code{yellow}, \code{lilac}, \code{brown}, each with \verb{_dark}/
+\verb{_light}/\verb{_pale} steps where the UI needs them) plus the semantic
+roles used throughout the app - \code{ink} (default text), \code{muted}
+(secondary text/labels), \code{faint} (tertiary), \code{rule}/\code{track}/\code{paper}/
+\code{surface} (structural greys), and \code{petrol}/\code{carmine}/\code{pink}/\code{olive}/
+\code{yellow}/\code{lilac} (matching \code{episode-mockup.jsx}'s \code{C} object).
 }
 \description{
 Uses \code{certestyle::certe.colours} when installed (ARCHITECTURE.md
-section 10.1, MILESTONES.md M2), with darker variants for text where
-the saturated colour fails contrast, exactly as M2 specifies. Since
-\code{certestyle} is Certe-internal and therefore only in \code{Suggests}
-(standing brief section 2), a fallback copy of the exact same hex
-values ships here too, so the app looks identical whether or not
-\code{certestyle} is installed - a stranger cloning the repository gets the
-real Certe look, not a generic Bootstrap theme.
+section 10.1, MILESTONES.md M2). Since \code{certestyle} is Certe-internal
+and therefore only in \code{Suggests} (standing brief section 2), a
+shipped-default palette covers everyone else - not hardcoded in R, but
+read from \code{inst/config/palette.yaml}, the same defaults-then-instance-
+override pattern \code{\link[=episode_config_resolve]{episode_config_resolve()}} uses for detection
+configuration (deliberately a \emph{separate} file and env var,
+\code{EPISODE_PALETTE_CONFIG}: colours must never affect \code{config_hash},
+which is about detection reproducibility, not display). Any
+organisation can therefore run EpiSODE in its own house colours,
+certestyle installed or not.
 }

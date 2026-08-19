@@ -1,0 +1,42 @@
+# EpiSODE's shipped default UI palette.
+#
+# Deliberately a separate file from default.yaml: this is a display-only
+# concern (the app's colours), not part of detection configuration, so it
+# must never affect episode_config_hash()/config_snapshot (ARCHITECTURE.md
+# section 7.4-7.5's reproducibility guarantee is about detection results,
+# not colour swatches). Resolved the same way: this file's values are the
+# defaults, an operator overrides them by pointing EPISODE_PALETTE_CONFIG
+# at their own YAML with only the keys they want to change - any
+# organisation can run EpiSODE in its own house colours without installing
+# certestyle (Certe-internal; QUESTIONS.md item 22).
+#
+# If certestyle IS installed, its colours are used instead of this file's
+# values - see episode_palette_from_certestyle() in R/app_palette.R.
+#
+# Each hue has a base tone and, where the UI needs one, darker/lighter/
+# paler steps for text-on-tint contrast and tint backgrounds.
+blue: "#4A647D"
+blue_dark: "#3A4D5D"
+blue_light: "#69849C"
+blue_pale: "#97AABB"
+blue_paler: "#C5D0DB"
+blue_palest: "#E2E7EC"
+blue_faintest: "#F6F7F8"
+green: "#93984C"
+green_dark: "#5A5D33"
+green_pale: "#C9CCA5"
+green_palest: "#EEEFE4"
+pink: "#B4527F"
+pink_dark: "#7F3C5B"
+pink_pale: "#D5ACBF"
+pink_palest: "#F2E6EB"
+yellow: "#E4D559"
+yellow_dark: "#D4C230"
+yellow_pale: "#ECE6B1"
+yellow_palest: "#F9F7E8"
+lilac: "#CEB9D6"
+lilac_dark: "#BEA5C7"
+lilac_pale: "#E6DDE9"
+brown: "#998961"
+brown_dark: "#675D45"
+white: "#FFFFFF"

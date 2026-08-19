@@ -162,8 +162,8 @@ episode_ui_state_dot <- function(state) {
 episode_ui_state_colour <- function(state) {
   pal <- episode_palette()
   switch(state,
-    new = pal$blauw, assessing = pal$blauw, monitoring = pal$roze %||% pal$pink,
-    closable = pal$geel0, closed = pal$groen0, reassess = pal$bruin0,
+    new = pal$blue, assessing = pal$blue, monitoring = pal$pink,
+    closable = pal$yellow_dark, closed = pal$green_dark, reassess = pal$brown_dark,
     pal$muted
   )
 }

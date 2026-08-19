@@ -9,6 +9,29 @@ test_that("episode_palette() and episode_brand_bar() return usable hex colours",
   expect_true(all(grepl("^#[0-9A-Fa-f]{6}$", bar)))
 })
 
+test_that("an instance palette override propagates into both base hues and derived semantic roles", {
+  override_path <- tempfile(fileext = ".yaml")
+  yaml::write_yaml(list(blue = "#123456"), override_path)
+
+  base <- episode_palette_config_resolve(override_path)
+  pal <- c(base, episode_palette_semantic(base))
+  expect_equal(pal$blue, "#123456")
+  expect_equal(pal$muted, "#123456")   # derived from base$blue
+  expect_equal(pal$petrol, "#123456")  # derived from base$blue
+  expect_false(identical(pal$blue_dark, "#123456"))  # untouched keys keep the shipped default
+})
+
+test_that("episode_palette_from_certestyle() maps certestyle's own (Dutch) key names onto our base hues, falling back per-hue when absent", {
+  fake_cc <- list(blauw = "#000001", geel = "#000002")  # only two of the hues certestyle would normally provide
+  pal <- episode_palette_from_certestyle(fake_cc)
+
+  expect_equal(pal$blue, "#000001")
+  expect_equal(pal$petrol, "#000001")  # semantic role derived from the mapped hue
+  expect_equal(pal$yellow, "#000002")
+  # a hue certestyle didn't supply falls back to our own shipped default, not NULL
+  expect_equal(pal$green, episode_palette_config_resolve()$green)
+})
+
 test_that("app widgets render to shiny tags without error, including empty-data edge cases", {
   expect_s3_class(episode_ui_chip("Norovirus", "#4A647D", filled = TRUE), "shiny.tag")
   expect_s3_class(episode_ui_panel("Title", shiny::tags$p("body")), "shiny.tag")
