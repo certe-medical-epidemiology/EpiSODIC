@@ -11,39 +11,52 @@
 # certestyle (Certe-internal; QUESTIONS.md item 22).
 #
 # If certestyle IS installed, its colours are used instead of this file's
-# values - see episode_palette_from_certestyle() in R/app_palette.R.
+# values - see episode_palette_from_certestyle() in R/app_palette.R, which
+# maps Certe's six real hues (blauw/groen/roze/geel/lila/bruin) onto the
+# six semantic roles below, one each, so a real Certe instance keeps every
+# one of its own hues distinct rather than merging any two together.
 #
-# Each hue has a base tone and, where the UI needs one, darker/lighter/
-# paler steps for text-on-tint contrast and tint backgrounds. Deliberately
-# a bold, high-contrast palette (deep violet, emerald, hot magenta, amber,
-# fuchsia, burnt orange) with maximum hue distance from Certe's own muted
-# blue-grey/olive/dusty-rose/mustard/lavender house style - not a close
-# cousin of it, so nobody mistakes a stranger's default clone of this
-# repository for a real Certe instance at a glance. An actual Certe
-# instance gets its real colours from certestyle when installed (see
-# episode_palette_from_certestyle()), not from these shipped defaults.
-blue: "#5B21B6"
-blue_dark: "#3B0F80"
-blue_light: "#8B5CF6"
-blue_pale: "#C4B5FD"
-blue_paler: "#E4DAFB"
-blue_palest: "#F3EEFE"
-blue_faintest: "#FAF8FF"
-green: "#059669"
-green_dark: "#065F46"
-green_pale: "#6EE7B7"
-green_palest: "#ECFDF5"
-pink: "#DB2777"
-pink_dark: "#9D174D"
-pink_pale: "#F9A8D4"
-pink_palest: "#FCE7F3"
-yellow: "#F59E0B"
-yellow_dark: "#B45309"
-yellow_pale: "#FCD34D"
-yellow_palest: "#FFFBEB"
-lilac: "#C026D3"
-lilac_dark: "#86198F"
-lilac_pale: "#F0ABFC"
-brown: "#EA580C"
-brown_dark: "#9A3412"
-white: "#FFFFFF"
+# Named by role (Bootstrap-style), not by raw hue word - a config key
+# should say what a colour is *for*, not what it looks like.
+#
+# Neutrals: text, borders and backgrounds are their own true grey scale,
+# independent of whichever hue is "primary" - so body text is never
+# tinted by the brand colour (this used to derive "ink" etc. straight
+# from the primary hue's own dark step, which looked fine when primary
+# happened to be a muted blue-grey but became visibly wrong the moment
+# primary became a saturated colour: every letter of body text was
+# rendered in it).
+ink: "#1F2430"
+muted: "#5B6472"
+faint: "#9AA3B2"
+border: "#D8DCE3"
+bg_subtle: "#EEF0F4"
+bg: "#F7F8FA"
+surface: "#FFFFFF"
+
+# Brand / semantic roles. Deliberately a bold, high-contrast set with
+# maximum hue distance from Certe's own muted house style, so a
+# stranger's default clone of this repository is unmistakably not a real
+# Certe instance at a glance - primary is a calm forest green rather than
+# Certe's blue-grey (a first attempt used violet, which read as far too
+# heavy for a header/primary colour; green sits easier on the eye at that
+# size while staying just as clearly distinct).
+primary: "#2E8B57"
+primary_dark: "#1F5C3A"
+primary_light: "#4FAE7C"
+primary_tint: "#DCF3E7"
+
+secondary: "#7C3AED"
+secondary_dark: "#5B21B6"
+
+tertiary: "#C2703D"
+tertiary_dark: "#8A4B24"
+
+success: "#0E8074"
+success_dark: "#0B5C54"
+
+warning: "#D9971F"
+warning_dark: "#A66B12"
+
+danger: "#C23B72"
+danger_dark: "#8A2851"

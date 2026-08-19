@@ -11,13 +11,13 @@
 
 body {
   font-family: var(--episode-font);
-  background: var(--episode-paper);
+  background: var(--episode-bg);
   color: var(--episode-ink);
   font-size: 13px;
 }
 
 .episode-header {
-  background: var(--episode-petrolD);
+  background: var(--episode-primary-dark);
   color: #fff;
   padding: 0 16px;
   height: 40px;
@@ -31,7 +31,7 @@ body {
   font-size: 15px;
 }
 .episode-header .episode-brand .episode-brand-accent {
-  color: var(--episode-lilac);
+  color: var(--episode-secondary);
 }
 .episode-nav {
   display: flex;
@@ -86,13 +86,13 @@ body {
 .episode-rail {
   width: 250px;
   background: var(--episode-surface);
-  border-right: 1px solid var(--episode-rule);
+  border-right: 1px solid var(--episode-border);
   overflow-y: auto;
   flex-shrink: 0;
 }
 .episode-rail-header {
   padding: 12px 14px;
-  border-bottom: 1px solid var(--episode-rule);
+  border-bottom: 1px solid var(--episode-border);
 }
 .episode-rail-title {
   font-size: 10.5px;
@@ -113,12 +113,12 @@ body {
   border: none;
   background: transparent;
   border-left: 3px solid transparent;
-  border-bottom: 1px solid var(--episode-rule);
+  border-bottom: 1px solid var(--episode-border);
   cursor: pointer;
 }
 .episode-rail-item.active {
-  background: var(--episode-tint);
-  border-left-color: var(--episode-petrol);
+  background: var(--episode-primary-tint);
+  border-left-color: var(--episode-primary);
 }
 .episode-rail-item .episode-rail-pathogen {
   font-size: 13px;
@@ -176,7 +176,7 @@ body {
 
 .episode-statgrid {
   background: var(--episode-surface);
-  border: 1px solid var(--episode-rule);
+  border: 1px solid var(--episode-border);
   border-radius: 2px;
   padding: 18px;
   margin: 16px 0;
@@ -205,7 +205,7 @@ body {
 
 .episode-trajectory {
   background: var(--episode-surface);
-  border: 1px solid var(--episode-rule);
+  border: 1px solid var(--episode-border);
   border-radius: 2px;
   padding: 14px 18px;
   margin-bottom: 16px;
@@ -237,13 +237,13 @@ body {
 
 .episode-panel {
   background: var(--episode-surface);
-  border: 1px solid var(--episode-rule);
+  border: 1px solid var(--episode-border);
   border-radius: 2px;
   margin-bottom: 16px;
 }
 .episode-panel-header {
   padding: 12px 18px;
-  border-bottom: 1px solid var(--episode-rule);
+  border-bottom: 1px solid var(--episode-border);
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -284,8 +284,8 @@ body {
   gap: 9px;
   margin-top: 14px;
   padding: 12px;
-  background: var(--episode-soft);
-  border-left: 3px solid var(--episode-petrol);
+  background: var(--episode-primary-tint);
+  border-left: 3px solid var(--episode-primary);
   border-radius: 2px;
   font-size: 13px;
   line-height: 1.6;
@@ -308,12 +308,12 @@ body {
 }
 .episode-bar-track {
   flex: 1;
-  background: var(--episode-track);
+  background: var(--episode-bg-subtle);
   height: 14px;
 }
 .episode-bar-fill {
   height: 100%;
-  background: var(--episode-petrol);
+  background: var(--episode-primary);
 }
 .episode-bar-value {
   width: 30px;
@@ -337,8 +337,8 @@ body {
 .episode-pyramid-side-right {
   flex: 1;
 }
-.episode-pyramid-bar-m { height: 15px; background: var(--episode-petrol); }
-.episode-pyramid-bar-f { height: 15px; background: var(--episode-lilac); }
+.episode-pyramid-bar-m { height: 15px; background: var(--episode-primary); }
+.episode-pyramid-bar-f { height: 15px; background: var(--episode-secondary); }
 .episode-pyramid-band {
   width: 56px;
   text-align: center;
@@ -359,11 +359,11 @@ table.episode-table th {
   font-size: 11px;
   color: var(--episode-muted);
   padding: 5px 8px 8px 0;
-  border-bottom: 1px solid var(--episode-rule);
+  border-bottom: 1px solid var(--episode-border);
 }
 table.episode-table td {
   padding: 6px 8px 6px 0;
-  border-bottom: 1px solid var(--episode-rule);
+  border-bottom: 1px solid var(--episode-border);
   font-variant-numeric: tabular-nums;
 }
 
@@ -373,7 +373,7 @@ dl.episode-settings {
 dl.episode-settings > div {
   display: flex;
   padding: 6px 0;
-  border-bottom: 1px solid var(--episode-rule);
+  border-bottom: 1px solid var(--episode-border);
   gap: 16px;
 }
 dl.episode-settings dt {
@@ -402,7 +402,7 @@ dl.episode-settings dd { margin: 0; }
 .episode-assessment-rail {
   width: 330px;
   background: var(--episode-surface);
-  border-left: 1px solid var(--episode-rule);
+  border-left: 1px solid var(--episode-border);
   flex-shrink: 0;
   overflow-y: auto;
 }
@@ -439,7 +439,7 @@ dl.episode-settings dd { margin: 0; }
   font-family: var(--episode-font);
   font-size: 12.5px;
   padding: 6px 8px;
-  border: 1px solid var(--episode-rule);
+  border: 1px solid var(--episode-border);
   border-radius: 3px;
   background: var(--episode-surface);
   color: var(--episode-ink);
@@ -451,7 +451,7 @@ dl.episode-settings dd { margin: 0; }
 }
 .episode-form-error {
   font-size: 11.5px;
-  color: var(--episode-carmine);
+  color: var(--episode-danger-dark);
   margin-top: 6px;
 }
 .episode-form-actions {
@@ -464,19 +464,19 @@ dl.episode-settings dd { margin: 0; }
   font-size: 12px;
   padding: 6px 14px;
   border-radius: 3px;
-  border: 1px solid var(--episode-rule);
+  border: 1px solid var(--episode-border);
   background: var(--episode-surface);
   color: var(--episode-ink);
   cursor: pointer;
 }
 .episode-btn-primary {
-  background: var(--episode-petrol);
-  border-color: var(--episode-petrol);
+  background: var(--episode-primary);
+  border-color: var(--episode-primary);
   color: #fff;
 }
 .episode-btn-danger {
-  background: var(--episode-carmine);
-  border-color: var(--episode-carmine);
+  background: var(--episode-danger-dark);
+  border-color: var(--episode-danger-dark);
   color: #fff;
 }
 
@@ -494,7 +494,7 @@ dl.episode-settings dd { margin: 0; }
 
 .episode-timeline-entry {
   padding: 10px 0;
-  border-bottom: 1px solid var(--episode-rule);
+  border-bottom: 1px solid var(--episode-border);
   font-size: 12px;
 }
 .episode-timeline-entry:last-child { border-bottom: none; }
@@ -519,7 +519,7 @@ dl.episode-settings dd { margin: 0; }
   font-family: var(--episode-font);
   font-size: 12.5px;
   padding: 6px 10px;
-  border: 1px solid var(--episode-rule);
+  border: 1px solid var(--episode-border);
   border-radius: 3px;
   margin-bottom: 16px;
 }

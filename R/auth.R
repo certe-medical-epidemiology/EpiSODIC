@@ -113,3 +113,29 @@ episode_auth_change_password <- function(con, user_id, new_password) {
   episode_db_app_user_event_insert(con, user_id, "password_change", password_hash = hash)
   invisible(NULL)
 }
+
+#' Provision an assessor account
+#'
+#' There is deliberately no in-app account management screen - "four
+#' accounts" (ARCHITECTURE.md section 12) are provisioned outside the app,
+#' by whoever administers the database, not created by assessors
+#' themselves. This is that provisioning step: hashes `password` with
+#' `sodium::password_store()` and inserts the account, `must_change = 1`
+#' by default so the first real sign-in forces a password of the
+#' account holder's own choosing (see [episode_auth_change_password()]).
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param username,full_name,email The new account's fields.
+#' @param password An initial plaintext password (hashed here, never
+#'   stored or logged as plaintext) - a temporary one the holder is
+#'   expected to change at first sign-in.
+#' @param role One of `"assessor"`, `"admin"`.
+#' @return Invisibly, the new `user_id`.
+#' @export
+episode_provision_user <- function(con, username, full_name, email, password, role = "assessor") {
+  rlang::check_installed("sodium")
+  invisible(episode_db_app_user_insert(
+    con, username = username, full_name = full_name, email = email,
+    password_hash = sodium::password_store(password), role = role
+  ))
+}

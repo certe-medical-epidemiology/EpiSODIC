@@ -108,6 +108,24 @@ situation, simply never call this, and positivity panels stay blank for
 your streams. See `episode_denominator_source_synthetic()` for a worked
 example.
 
+## Accounts
+
+Read access is anonymous - the app opens read-only for anyone who reaches
+it (ARCHITECTURE.md section 12). Signing in is only needed to classify a
+cluster, and there is deliberately no in-app account management screen:
+the four assessor accounts are provisioned by whoever administers the
+database, not created by assessors themselves or by the app.
+
+```r
+episode_provision_user(
+  con, username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
+  password = "a-temporary-password"
+)
+```
+
+The account is created with `must_change = TRUE`, so its first real
+sign-in forces the holder to set their own password before continuing.
+
 ## Licence
 
-GPL-2, see `LICENSE`.
+GPL-2.

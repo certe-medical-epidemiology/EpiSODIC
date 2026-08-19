@@ -101,7 +101,7 @@ episode_ui_stat <- function(label, value, sub = NULL, colour = NULL) {
 episode_ui_bars <- function(rows, unit = NULL, colour = NULL) {
   if (nrow(rows) == 0) return(shiny::tags$p(class = "episode-panel-empty", "..."))
   pal <- episode_palette()
-  colour <- colour %||% pal$petrol
+  colour <- colour %||% pal$primary
   max_n <- max(rows$n, 1)
   bars <- lapply(seq_len(nrow(rows)), function(i) {
     shiny::tags$div(
@@ -162,8 +162,8 @@ episode_ui_state_dot <- function(state) {
 episode_ui_state_colour <- function(state) {
   pal <- episode_palette()
   switch(state,
-    new = pal$blue, assessing = pal$blue, monitoring = pal$pink,
-    closable = pal$yellow_dark, closed = pal$green_dark, reassess = pal$brown_dark,
+    new = pal$primary, assessing = pal$primary, monitoring = pal$danger,
+    closable = pal$warning_dark, closed = pal$success_dark, reassess = pal$tertiary_dark,
     pal$muted
   )
 }

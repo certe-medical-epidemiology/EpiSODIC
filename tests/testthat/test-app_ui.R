@@ -1,7 +1,7 @@
-test_that("episode_palette() and episode_brand_bar() return usable hex colours", {
+test_that("episode_palette() and episode_brand_bar() return usable hex colours, role-named", {
   pal <- episode_palette()
   expect_type(pal, "list")
-  expect_true(all(c("ink", "muted", "petrol", "carmine") %in% names(pal)))
+  expect_true(all(c("ink", "muted", "primary", "secondary", "tertiary", "success", "warning", "danger") %in% names(pal)))
   expect_true(all(grepl("^#[0-9A-Fa-f]{6}$", unlist(pal))))
 
   bar <- episode_brand_bar()
@@ -9,30 +9,29 @@ test_that("episode_palette() and episode_brand_bar() return usable hex colours",
   expect_true(all(grepl("^#[0-9A-Fa-f]{6}$", bar)))
 })
 
-test_that("an instance palette override propagates into both base hues and derived semantic roles", {
+test_that("an instance palette override propagates, other roles keep the shipped default", {
   override_path <- tempfile(fileext = ".yaml")
-  yaml::write_yaml(list(blue = "#123456"), override_path)
+  yaml::write_yaml(list(primary = "#123456"), override_path)
 
-  base <- episode_palette_config_resolve(override_path)
-  pal <- c(base, episode_palette_semantic(base))
-  expect_equal(pal$blue, "#123456")
-  expect_equal(pal$muted, "#123456")   # derived from base$blue
-  expect_equal(pal$petrol, "#123456")  # derived from base$blue
-  expect_false(identical(pal$blue_dark, "#123456"))  # untouched keys keep the shipped default
+  pal <- episode_palette_config_resolve(override_path)
+  expect_equal(pal$primary, "#123456")
+  expect_false(identical(pal$primary_dark, "#123456"))  # untouched keys keep the shipped default
+  expect_false(identical(pal$secondary, "#123456"))
 })
 
-test_that("episode_palette_from_certestyle() maps certestyle's own (Dutch) key names onto our base hues, falling back per-hue when absent", {
+test_that("episode_palette_from_certestyle() maps certestyle's own (Dutch) key names onto our role names, one hue per role, falling back per-role when absent", {
   # certestyle::certe.colours is a named character vector, not a list -
   # matched here so a regression to `cc$name` (invalid on an atomic
   # vector) fails this test rather than only failing for real users.
   fake_cc <- c(blauw = "#000001", geel = "#000002")  # only two of the hues certestyle would normally provide
   pal <- episode_palette_from_certestyle(fake_cc)
 
-  expect_equal(pal$blue, "#000001")
-  expect_equal(pal$petrol, "#000001")  # semantic role derived from the mapped hue
-  expect_equal(pal$yellow, "#000002")
-  # a hue certestyle didn't supply falls back to our own shipped default, not NULL
-  expect_equal(pal$green, episode_palette_config_resolve()$green)
+  expect_equal(pal$primary, "#000001")   # blauw
+  expect_equal(pal$warning, "#000002")   # geel
+  # a role certestyle didn't supply falls back to our own shipped default, not NULL
+  expect_equal(pal$success, episode_palette_config_resolve()$success)
+  # each of Certe's real hues keeps its own role - none merged into another
+  expect_false(identical(pal$primary, pal$warning))
 })
 
 test_that("app widgets render to shiny tags without error, including empty-data edge cases", {

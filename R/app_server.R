@@ -103,14 +103,14 @@ episode_ui_status_strip <- function(status, lang = "nl") {
   }
   pal <- episode_palette()
   if (identical(status$status, "success")) {
-    dot_colour <- pal$yellow
+    dot_colour <- pal$warning
     text <- episode_tr(
       "status.run_ok", lang = lang, time = episode_ui_format_datetime(status$finished_at),
       streams_phrase = episode_count_phrase(status$n_streams %||% 0, episode_tr("unit.stream", lang = lang), episode_tr("unit.streams", lang = lang)),
       clusters_phrase = episode_count_phrase(status$n_clusters_open %||% 0, episode_tr("unit.cluster", lang = lang), episode_tr("unit.clusters", lang = lang))
     )
   } else {
-    dot_colour <- pal$carmine
+    dot_colour <- pal$danger_dark
     text <- episode_tr("status.run_failed", lang = lang, time = episode_ui_format_datetime(status$finished_at))
   }
   shiny::tags$div(

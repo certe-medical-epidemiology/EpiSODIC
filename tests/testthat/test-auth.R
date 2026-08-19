@@ -8,6 +8,17 @@ auth_test_user <- function(con, password = "initial123", must_change = TRUE) {
   user_id
 }
 
+test_that("episode_provision_user() creates an account that can immediately log in and is flagged must_change", {
+  con <- episode_test_db()
+  on.exit(DBI::dbDisconnect(con))
+
+  episode_provision_user(con, "jdoe", "Jane Doe", "j@x.nl", "a-temporary-password")
+  result <- episode_auth_login(con, "jdoe", "a-temporary-password")
+  expect_true(result$ok)
+  expect_equal(result$user$full_name, "Jane Doe")
+  expect_true(result$must_change)
+})
+
 test_that("episode_auth_login() rejects an unknown username or wrong password without distinguishing", {
   con <- episode_test_db()
   on.exit(DBI::dbDisconnect(con))

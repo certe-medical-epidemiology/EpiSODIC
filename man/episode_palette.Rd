@@ -7,13 +7,13 @@
 episode_palette()
 }
 \value{
-A named list of hex colour strings: the base hues (\code{blue},
-\code{green}, \code{pink}, \code{yellow}, \code{lilac}, \code{brown}, each with \verb{_dark}/
-\verb{_light}/\verb{_pale} steps where the UI needs them) plus the semantic
-roles used throughout the app - \code{ink} (default text), \code{muted}
-(secondary text/labels), \code{faint} (tertiary), \code{rule}/\code{track}/\code{paper}/
-\code{surface} (structural greys), and \code{petrol}/\code{carmine}/\code{pink}/\code{olive}/
-\code{yellow}/\code{lilac} (matching \code{episode-mockup.jsx}'s \code{C} object).
+A named list of hex colour strings: the neutrals (\code{ink}
+default text, \code{muted} secondary text, \code{faint} tertiary, \code{border},
+\code{bg_subtle}, \code{bg}, \code{surface} - a true grey scale, independent of
+whichever hue is \code{primary}) and the semantic roles \code{primary}
+(+\verb{_dark}/\verb{_light}/\verb{_tint}), \code{secondary} (+\verb{_dark}), \code{tertiary}
+(+\verb{_dark}), \code{success} (+\verb{_dark}), \code{warning} (+\verb{_dark}), \code{danger}
+(+\verb{_dark}).
 }
 \description{
 Uses \code{certestyle::certe.colours} when installed (ARCHITECTURE.md

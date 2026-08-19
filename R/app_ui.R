@@ -64,6 +64,11 @@ episode_ui_nav_link <- function(view, label) {
 #' @keywords internal
 #' @noRd
 episode_app_palette_css <- function(pal) {
-  vars <- vapply(names(pal), function(n) sprintf("--episode-%s: %s;", n, pal[[n]]), character(1))
+  # CSS custom property names conventionally use hyphens, not underscores
+  # (episode_palette()'s own list names, e.g. "primary_tint", follow R's
+  # convention instead); translated here so the stylesheet's var(--episode-
+  # primary-tint) references match what actually gets defined.
+  css_names <- gsub("_", "-", names(pal), fixed = TRUE)
+  vars <- vapply(seq_along(pal), function(i) sprintf("--episode-%s: %s;", css_names[i], pal[[i]]), character(1))
   paste0(":root {\n", paste(vars, collapse = "\n"), "\n}")
 }

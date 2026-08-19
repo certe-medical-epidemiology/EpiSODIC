@@ -69,9 +69,9 @@ episode_ui_dossier_header <- function(obj, state, lang = "nl") {
     shiny::tags$div(
       style = "display:flex;align-items:center;gap:10px;flex-wrap:wrap;",
       shiny::tags$h1(class = "episode-dossier-title", shiny::HTML(episode_ui_italicise_taxon(obj$pathogen))),
-      episode_ui_chip(episode_tr(paste0("level.", obj$level), lang = lang), pal$petrol),
+      episode_ui_chip(episode_tr(paste0("level.", obj$level), lang = lang), pal$primary),
       episode_ui_chip(episode_tr(paste0("state.", state), lang = lang), episode_ui_state_colour(state)),
-      if (isTRUE(obj$changed_since_assessment)) episode_ui_chip(episode_tr("dossier.changed_badge", lang = lang), pal$yellowD)
+      if (isTRUE(obj$changed_since_assessment)) episode_ui_chip(episode_tr("dossier.changed_badge", lang = lang), pal$tertiary_dark)
     ),
     shiny::tags$div(
       class = "episode-dossier-meta",
@@ -94,7 +94,7 @@ episode_ui_stat_grid <- function(obj, lang = "nl") {
   stats <- list(
     episode_ui_stat(episode_tr("dossier.stat.observed", lang = lang), obj$n_cases,
                      episode_tr("dossier.stat.observed_sub", expected = round(obj$expected %||% NA, 1), lang = lang),
-                     colour = pal$carmine)
+                     colour = pal$danger_dark)
   )
   if (!is.na(obj$ratio)) {
     stats <- c(stats, list(episode_ui_stat(episode_tr("dossier.stat.ratio", lang = lang), round(obj$ratio, 1),
