@@ -143,7 +143,85 @@ episode_db_run_finish(
 
 \item{pathogen_config}{A data frame matching \code{inst/config/pathogen_config.csv}.}
 
-\item{institution_key, display_name, institution_type, care_line, municipality, pc4, n_beds, is_monitored}{Columns of \code{episode_institution}, see ARCHITECTURE.md section 5.4.1.}
+\item{institution_key, display_name, institution_type, municipality, is_monitored}{Columns of \code{episode_institution}, see ARCHITECTURE.md section 5.4.1.}
+
+\item{care_line}{One of \code{"first"}, \code{"second"}, \code{"other"}, \code{"unknown"}, or \code{NA}.}
+
+\item{pc4}{A PC4 postcode, or \code{NA}.}
+
+\item{institution_id}{An \code{episode_institution} id.}
+
+\item{period_start, period_end}{Activity period bounds (dates).}
+
+\item{patient_days, admissions, n_beds}{Activity counts, or \code{NA}.}
+
+\item{source}{Free-text provenance, or \code{NA}.}
+
+\item{stream_key}{A 40-character \code{stream_key}.}
+
+\item{level}{One of the five lattice levels.}
+
+\item{mo_code, mo_name, mo_rank}{Pathogen identity fields.}
+
+\item{region_code}{A region code, or \code{NA}.}
+
+\item{ward}{A ward, for \code{pathogen_ward} streams, or \code{NA}.}
+
+\item{denominator}{One of \code{"none"}, \code{"tests"}, \code{"population"}, \code{"patient_days"}.}
+
+\item{severity_weight}{A severity weight, 0-1.}
+
+\item{observed_date}{The date this stream was observed on, updates \code{first_seen}/\code{last_seen}.}
+
+\item{cases}{A data frame of cases to insert (\code{episode_ingest_run()}'s deduplicated batch).}
+
+\item{run_id}{A \code{run_id}.}
+
+\item{stream_id}{A \code{stream_id}.}
+
+\item{sample_date, run_date}{Reporting-triangle dates.}
+
+\item{n_cases}{A case count.}
+
+\item{detector}{One of the detector enum values.}
+
+\item{first_day, last_day}{A detection or cluster interval.}
+
+\item{expected, upperbound}{Statistical detector output, or \code{NA}.}
+
+\item{params_json}{JSON-serialised detector attributes.}
+
+\item{cluster_id}{A \code{cluster_id}, or \code{NA}.}
+
+\item{detection_id}{A \code{detection_id}.}
+
+\item{excess, ratio}{Cluster statistics, or \code{NA}.}
+
+\item{priority_score}{A priority score, 0-100.}
+
+\item{detector_agreement}{Count of distinct detectors that fired.}
+
+\item{changed_since_assessment}{Logical, or \code{NULL} to leave unchanged.}
+
+\item{merged_into}{The surviving \code{cluster_id} this cluster merged into.}
+
+\item{case_id}{A \code{case_id}.}
+
+\item{host, account}{Recorded on \code{episode_detection_run}.}
+
+\item{attempt_no}{The run's attempt number.}
+
+\item{status}{One of \code{episode_detection_run.status}.}
+
+\item{n_streams, n_detections, n_signals_new, n_signals_updated}{Run summary counts.}
+
+\item{code_version}{The installed EpiSODE version.}
+
+\item{pkg_versions}{JSON-serialised package versions.}
+
+\item{config_hash, config_snapshot}{The resolved configuration's hash and snapshot.}
+
+\item{error_text}{Error text for a failed run, or \code{NA}.}
 }
 \value{
 The \code{institution_id} of the inserted or existing row.

@@ -77,6 +77,7 @@ episode_reconcile_stream <- function(con, stream_id, detections, case_free_days,
         episode_db_clusters_for_stream(con, stream_id)$cluster_id == cluster_id, ])
       matched_cluster_ids <- c(matched_cluster_ids, as.character(cluster_id))
       episode_reconcile_link_detections(con, detections, candidate, cluster_id)
+      episode_reconcile_link_cases(con, stream_id, cluster_id, candidate$first_day, candidate$last_day)
     } else if (length(matches) == 1) {
       cluster_id <- open_clusters$cluster_id[matches]
       existing <- open_clusters[matches, ]
@@ -100,6 +101,7 @@ episode_reconcile_stream <- function(con, stream_id, detections, case_free_days,
       n_updated <- n_updated + 1L
       matched_cluster_ids <- c(matched_cluster_ids, as.character(cluster_id))
       episode_reconcile_link_detections(con, detections, candidate, cluster_id)
+      episode_reconcile_link_cases(con, stream_id, cluster_id, as.character(new_first), as.character(new_last))
     } else {
       survivor_idx <- matches[which.min(as.Date(open_clusters$opened_at[matches]))]
       survivor_id <- open_clusters$cluster_id[survivor_idx]
@@ -125,6 +127,7 @@ episode_reconcile_stream <- function(con, stream_id, detections, case_free_days,
       n_updated <- n_updated + 1L
       matched_cluster_ids <- c(matched_cluster_ids, as.character(survivor_id))
       episode_reconcile_link_detections(con, detections, candidate, survivor_id)
+      episode_reconcile_link_cases(con, stream_id, survivor_id, as.character(all_first), as.character(all_last))
     }
   }
 
@@ -232,6 +235,35 @@ episode_reconcile_find_matches <- function(open_clusters, candidate, case_free_d
     as.Date(open_clusters$last_day) >= cand_first - case_free_days
 
   which(overlaps & still_open)
+}
+
+#' Link the individual cases within a cluster's interval to that cluster
+#'
+#' Populates `episode_cluster_case`, which nothing else in the reconciliation
+#' loop writes to otherwise. This is part of the handoff contract (standing
+#' brief, "the cron's writes are all the app needs": the line list panel
+#' (M2) and the report's `case_ids` (M4) both read from this table rather
+#' than recomputing a stream/date filter at read time).
+#' @keywords internal
+#' @noRd
+episode_reconcile_link_cases <- function(con, stream_id, cluster_id, first_day, last_day) {
+  tryCatch({
+    stream <- DBI::dbGetQuery(con, "SELECT mo_code, institution_id FROM episode_stream WHERE stream_id = ?",
+                               params = list(stream_id))
+    if (nrow(stream) == 0) stop("no such stream")
+    cases <- DBI::dbGetQuery(
+      con,
+      "SELECT case_id FROM episode_case
+       WHERE mo_code = ? AND sample_date >= ? AND sample_date <= ?
+         AND (institution_id IS ? OR ? IS NULL)",
+      params = list(stream$mo_code[1], first_day, last_day,
+                    stream$institution_id[1], stream$institution_id[1])
+    )
+    for (case_id in cases$case_id) {
+      episode_db_cluster_case_link(con, cluster_id, case_id)
+    }
+  }, error = function(e) invisible(NULL))
+  invisible(NULL)
 }
 
 #' Count distinct cases within a first_day/last_day interval for a stream

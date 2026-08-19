@@ -22,6 +22,9 @@ episode_detect_farrington(
 \code{sample_date}.}
 
 \item{stream_id}{The stream these cases belong to.}
+
+\item{population_offset}{Patient-day offset, see \code{QUESTIONS.md} item 10
+(unverified whether \code{certestats::detect_farrington()} exposes this).}
 }
 \value{
 A data frame of detection records (possibly zero rows if

@@ -83,6 +83,7 @@ episode_db_cases_for_mo <- function(con, mo_code) {
 }
 
 #' @rdname db_read
+#' @param open_only If `TRUE`, exclude clusters with `merged_into` set.
 #' @export
 episode_db_clusters <- function(con, open_only = FALSE) {
   sql <- "SELECT * FROM episode_cluster"
@@ -125,6 +126,7 @@ episode_db_assessment_events <- function(con, cluster_id) {
 }
 
 #' @rdname db_read
+#' @param run_id A single `run_id`.
 #' @export
 episode_db_detections_for_run <- function(con, run_id) {
   DBI::dbGetQuery(
@@ -135,6 +137,7 @@ episode_db_detections_for_run <- function(con, run_id) {
 }
 
 #' @rdname db_read
+#' @param status If given, only the latest run with this `status`.
 #' @export
 episode_db_latest_run <- function(con, status = NULL) {
   sql <- "SELECT * FROM episode_detection_run"

@@ -8,12 +8,51 @@
 #' `episode_cluster_case`, `episode_detection_run` and (for pre-renders)
 #' `episode_report_render`. See `R/db_app_write.R` for the insert-only
 #' counterparts.
+#' @param con A [DBI::DBIConnection-class].
+#' @param pathogen_config A data frame matching `inst/config/pathogen_config.csv`.
+#' @param institution_id An `episode_institution` id.
+#' @param period_start,period_end Activity period bounds (dates).
+#' @param patient_days,admissions,n_beds Activity counts, or `NA`.
+#' @param source Free-text provenance, or `NA`.
+#' @param stream_key A 40-character `stream_key`.
+#' @param level One of the five lattice levels.
+#' @param mo_code,mo_name,mo_rank Pathogen identity fields.
+#' @param care_line One of `"first"`, `"second"`, `"other"`, `"unknown"`, or `NA`.
+#' @param region_code A region code, or `NA`.
+#' @param pc4 A PC4 postcode, or `NA`.
+#' @param ward A ward, for `pathogen_ward` streams, or `NA`.
+#' @param denominator One of `"none"`, `"tests"`, `"population"`, `"patient_days"`.
+#' @param severity_weight A severity weight, 0-1.
+#' @param observed_date The date this stream was observed on, updates `first_seen`/`last_seen`.
+#' @param cases A data frame of cases to insert (`episode_ingest_run()`'s deduplicated batch).
+#' @param run_id A `run_id`.
+#' @param stream_id A `stream_id`.
+#' @param sample_date,run_date Reporting-triangle dates.
+#' @param n_cases A case count.
+#' @param detector One of the detector enum values.
+#' @param first_day,last_day A detection or cluster interval.
+#' @param expected,upperbound Statistical detector output, or `NA`.
+#' @param params_json JSON-serialised detector attributes.
+#' @param cluster_id A `cluster_id`, or `NA`.
+#' @param detection_id A `detection_id`.
+#' @param excess,ratio Cluster statistics, or `NA`.
+#' @param priority_score A priority score, 0-100.
+#' @param detector_agreement Count of distinct detectors that fired.
+#' @param changed_since_assessment Logical, or `NULL` to leave unchanged.
+#' @param merged_into The surviving `cluster_id` this cluster merged into.
+#' @param case_id A `case_id`.
+#' @param host,account Recorded on `episode_detection_run`.
+#' @param attempt_no The run's attempt number.
+#' @param status One of `episode_detection_run.status`.
+#' @param n_streams,n_detections,n_signals_new,n_signals_updated Run summary counts.
+#' @param code_version The installed EpiSODE version.
+#' @param pkg_versions JSON-serialised package versions.
+#' @param config_hash,config_snapshot The resolved configuration's hash and snapshot.
+#' @param error_text Error text for a failed run, or `NA`.
 #' @name db_cron_write
 NULL
 
 #' @rdname db_cron_write
-#' @param con A [DBI::DBIConnection-class].
-#' @param pathogen_config A data frame matching `inst/config/pathogen_config.csv`.
 #' @export
 episode_db_pathogen_config_load <- function(con, pathogen_config) {
   for (i in seq_len(nrow(pathogen_config))) {
@@ -55,7 +94,7 @@ episode_db_pathogen_config_load <- function(con, pathogen_config) {
 }
 
 #' @rdname db_cron_write
-#' @param institution_key,display_name,institution_type,care_line,municipality,pc4,n_beds,is_monitored
+#' @param institution_key,display_name,institution_type,municipality,is_monitored
 #'   Columns of `episode_institution`, see ARCHITECTURE.md section 5.4.1.
 #' @return The `institution_id` of the inserted or existing row.
 #' @export

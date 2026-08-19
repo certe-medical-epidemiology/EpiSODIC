@@ -57,9 +57,15 @@ episode_db_latest_run(con, status = NULL)
 
 \item{institution_key}{A single \code{institution_key}.}
 
+\item{open_only}{If \code{TRUE}, exclude clusters with \code{merged_into} set.}
+
 \item{stream_id}{A single \code{stream_id}.}
 
 \item{cluster_id}{A single \code{cluster_id}.}
+
+\item{run_id}{A single \code{run_id}.}
+
+\item{status}{If given, only the latest run with this \code{status}.}
 }
 \description{
 Plain \code{DBI}-based readers used by both the cron and the app. Read-only:

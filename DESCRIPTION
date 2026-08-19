@@ -3,7 +3,20 @@ Type: Package
 Title: Epidemiological Signal Observation and Detection Engine
 Version: 0.1.0
 Authors@R: c(
-    person("Matthijs S.", "Berends", , "m.s.berends@umcg.nl", role = c("aut", "cre")))
+    person(given = c("Matthijs", "S."),
+           family = "Berends",
+           role = c("aut", "cre"),
+           email = "m.berends@certe.nl"),
+    person(given = c("Erwin", "E.", "A."),
+           family = "Hassing",
+           role = c("aut"),
+           email = "e.hassing@certe.nl"),
+    person(given = c("Erwin"),
+           family = "Dijkstra",
+           role = c("aut"),
+           email = "e.dijkstra@certe.nl"),
+    person(given = "Certe Medical Diagnostics & Advice Foundation",
+           role = c("cph", "fnd")))
 Description: An automated surveillance system that detects aberrations in
     laboratory-confirmed infections across all pathogens, presents them to a
     small board of epidemiologists as a ranked list of dossiers, records
@@ -12,13 +25,11 @@ Description: An automated surveillance system that detects aberrations in
     the whole system can be run without access to any Certe infrastructure.
 License: GPL-2
 Encoding: UTF-8
-LazyData: true
 Roxygen: list(markdown = TRUE)
 Depends:
     R (>= 4.1.0)
 Imports:
     DBI,
-    dbplyr,
     dplyr,
     yaml,
     rlang,

@@ -63,6 +63,50 @@ episode_db_app_user_insert(
 }
 \arguments{
 \item{con}{A \link[DBI:DBIConnection-class]{DBI::DBIConnection}.}
+
+\item{cluster_id}{A cluster id.}
+
+\item{user_id}{An \code{episode_app_user} id, or \code{NA} for a system-authored row.}
+
+\item{verdict}{One of the five classification values, or \code{NA}.}
+
+\item{rationale}{Mandatory free-text rationale (ARCHITECTURE.md section 5.6).}
+
+\item{wpg_notifiable, ggd_informed}{Logical or \code{NA}.}
+
+\item{ggd_note}{Free text, or \code{NA}.}
+
+\item{snooze_until}{A date, or \code{NA}.}
+
+\item{supersedes}{An earlier \code{event_id} this event supersedes, or \code{NA}.}
+
+\item{stream_id}{A stream id.}
+
+\item{muted_from, muted_until}{Mute window bounds (dates).}
+
+\item{reason}{One of the mute reasons in \code{episode_stream_mute.reason}.}
+
+\item{note}{Free text, or \code{NA}.}
+
+\item{state}{One of the \code{episode_cluster_state.state} values.}
+
+\item{trigger}{One of the \code{episode_cluster_state.trigger} values.}
+
+\item{event_id}{The assessment event that caused this transition, or \code{NA}.}
+
+\item{file_path}{Path to the rendered report file.}
+
+\item{file_sha256}{SHA-256 hex digest of the rendered file.}
+
+\item{params_json}{JSON-serialised render parameters.}
+
+\item{case_ids_json}{JSON-serialised array of included case ids.}
+
+\item{version_no}{The report's version number.}
+
+\item{username, full_name, email, password_hash}{New user's fields.}
+
+\item{role}{One of \code{"assessor"}, \code{"admin"}.}
 }
 \description{
 The app owns the judgements (ARCHITECTURE.md section 5.0) and only ever

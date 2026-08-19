@@ -7,11 +7,33 @@
 #' visible in the timeline. Nothing in this file contains an `UPDATE` or a
 #' `DELETE` statement; that absence is load-bearing and should be verified
 #' by inspection, per MILESTONES.md M3's definition of done.
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A cluster id.
+#' @param user_id An `episode_app_user` id, or `NA` for a system-authored row.
+#' @param verdict One of the five classification values, or `NA`.
+#' @param rationale Mandatory free-text rationale (ARCHITECTURE.md section 5.6).
+#' @param wpg_notifiable,ggd_informed Logical or `NA`.
+#' @param ggd_note Free text, or `NA`.
+#' @param snooze_until A date, or `NA`.
+#' @param supersedes An earlier `event_id` this event supersedes, or `NA`.
+#' @param stream_id A stream id.
+#' @param muted_from,muted_until Mute window bounds (dates).
+#' @param reason One of the mute reasons in `episode_stream_mute.reason`.
+#' @param note Free text, or `NA`.
+#' @param state One of the `episode_cluster_state.state` values.
+#' @param trigger One of the `episode_cluster_state.trigger` values.
+#' @param event_id The assessment event that caused this transition, or `NA`.
+#' @param file_path Path to the rendered report file.
+#' @param file_sha256 SHA-256 hex digest of the rendered file.
+#' @param params_json JSON-serialised render parameters.
+#' @param case_ids_json JSON-serialised array of included case ids.
+#' @param version_no The report's version number.
+#' @param username,full_name,email,password_hash New user's fields.
+#' @param role One of `"assessor"`, `"admin"`.
 #' @name db_app_write
 NULL
 
 #' @rdname db_app_write
-#' @param con A [DBI::DBIConnection-class].
 #' @export
 episode_db_assessment_event_insert <- function(con, cluster_id, user_id, verdict = NA,
                                                 rationale, wpg_notifiable = NA,

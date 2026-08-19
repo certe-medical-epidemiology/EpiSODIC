@@ -133,6 +133,19 @@ decisions survives.
     `R/detect_same_place.R`). This is a schema change relative to the
     literal DDL in the architecture document and should be reviewed.
 
+21. **`dbplyr` dropped from `Imports` for now.** The standing brief (section
+    4, "Dependencies") names `dbplyr` alongside `dplyr` as a lean-Imports
+    baseline. Nothing in M1 uses lazy `tbl()`/`dbplyr` queries yet (the
+    repository layer is plain parameterised `DBI::dbGetQuery()`/
+    `dbExecute()`, per the standing brief's own "no SQL anywhere else in
+    the package" rule, which the M1 order-of-work interprets as "keep the
+    SQL in `R/db_*.R`", not "use dbplyr specifically"). `R CMD check`
+    flags an Imports entry with no corresponding `::` call as a NOTE, so
+    `dbplyr` was removed from `DESCRIPTION` rather than shipping an
+    unused dependency; it should be added back in M2 when the Shiny app's
+    read paths are built (ARCHITECTURE.md section 3.3, "cheap reads
+    only" favours lazy `dbplyr` queries over materialising full tables).
+
 ## Architecture concerns raised during implementation
 
 1. **`episode_stream` is missing a `ward` column** (see item 20 above).

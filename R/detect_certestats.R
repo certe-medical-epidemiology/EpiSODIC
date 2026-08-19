@@ -18,6 +18,8 @@
 #' @param cases_for_stream A data frame of a single stream's cases, with
 #'   `sample_date`.
 #' @param stream_id The stream these cases belong to.
+#' @param population_offset Patient-day offset, see `QUESTIONS.md` item 10
+#'   (unverified whether `certestats::detect_farrington()` exposes this).
 #' @return A data frame of detection records (possibly zero rows if
 #'   `certestats` is unavailable or found nothing).
 #' @name detect_certestats
