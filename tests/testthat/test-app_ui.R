@@ -28,6 +28,18 @@ test_that("app widgets render to shiny tags without error, including empty-data 
   expect_type(episode_ui_state_colour("unknown_state"), "character")
 })
 
+test_that("episode_ui_italicise_taxon() HTML-escapes unconditionally", {
+  out <- episode_ui_italicise_taxon(c("A&B <weird>", "Influenza A"))
+  expect_equal(out[1], "A&amp;B &lt;weird&gt;")
+})
+
+test_that("episode_ui_italicise_taxon() italicises AMR-recognised binomials, leaves other names alone", {
+  skip_if_not_installed("AMR")
+  out <- episode_ui_italicise_taxon(c("Escherichia coli", "Influenza A"))
+  expect_equal(out[1], "<i>Escherichia coli</i>")
+  expect_equal(out[2], "Influenza A")  # not a binomial AMR recognises -> unitalicised
+})
+
 test_that("episode_app_ui() assembles a full page without error, in both languages", {
   expect_s3_class(episode_app_ui("nl"), "shiny.tag.list")
   expect_s3_class(episode_app_ui("en"), "shiny.tag.list")
