@@ -73,34 +73,33 @@ episode_ui_rt_chart <- function(rt, lang = "nl") {
     episode_chart_theme()
 }
 
-#' A PC4 choropleth via `certegis`, guarded for absence
+#' A PC choropleth, guarded for absence of geographic data
 #'
-#' ARCHITECTURE.md section 9: "Geography. PC4 choropleth via `certegis`...
-#' A second panel breaks the cluster down by institution... which is
-#' usually more informative" - the bar breakdown (`episode_ui_bars()`) is
-#' that second panel and stays regardless; this is the map itself,
-#' additive when `certegis` (Certe-internal-adjacent, CRAN-external,
-#' `Suggests`-only) and the `sf` package it depends on are actually
-#' installed. `certegis::add_map()` right-joins case counts onto its
-#' bundled PC4 geometry (`data.frame(postcode = ..., n = ...) |>
-#' add_map()`, its own documented usage) and returns an `sf` object;
-#' plotted here with `ggplot2::geom_sf()` rather than a `certegis`-owned
-#' plot function, since none exists - `certegis` only supplies the
-#' geometry join, plotting is left to the caller.
+#' ARCHITECTURE.md section 9: "Geography. PC4 choropleth... A second
+#' panel breaks the cluster down by institution... which is usually more
+#' informative" - the bar breakdown (`episode_ui_bars()`) is that second
+#' panel and stays regardless; this is the map itself, additive when both
+#' `sf` and a geographic dataset (`R/geo_data.R`) are actually available.
+#' Deliberately not built on `certegis` (see `R/geo_data.R`'s own docs and
+#' QUESTIONS.md): geography here is operator-suppliable, not
+#' Netherlands-only, matching how every other domain concept in this
+#' codebase already works.
 #'
 #' @param rows A data frame from `episode_app_concentration()$rows`
-#'   (`label` = PC4, `n` = case count).
-#' @return A `ggplot` object, or `NULL` if `certegis`/`sf` are not
-#'   installed or the join/plot fails for any reason (e.g. a PC4 not in
-#'   `certegis`'s bundled geometry - synthetic demo PC4s are drawn from a
-#'   fixed pool that does not promise to match real postcode boundaries).
+#'   (`label` = a PC value, `n` = case count).
+#' @return A `ggplot` object, or `NULL` if no geographic data is
+#'   available at all, or the join/plot fails for any reason (e.g. a PC
+#'   value not in the reference geometry - synthetic demo PC4s are drawn
+#'   from a fixed pool that does not promise to match real postcode
+#'   boundaries).
 #' @keywords internal
 #' @noRd
 episode_ui_geo_map_chart <- function(rows) {
-  if (!requireNamespace("certegis", quietly = TRUE) || nrow(rows) == 0) return(NULL)
+  if (nrow(rows) == 0) return(NULL)
   pal <- episode_palette()
   tryCatch({
-    geo <- certegis::add_map(data.frame(postcode = as.numeric(rows$label), n = rows$n), crop_certe = FALSE)
+    geo <- episode_geo_join(rows)
+    if (is.null(geo)) return(NULL)
     ggplot2::ggplot(geo) +
       ggplot2::geom_sf(ggplot2::aes(fill = .data$n), colour = pal$border, linewidth = 0.1) +
       ggplot2::scale_fill_gradient(low = pal$primary_tint, high = pal$primary, na.value = pal$bg_subtle) +

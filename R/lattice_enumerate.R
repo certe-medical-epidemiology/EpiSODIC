@@ -8,12 +8,14 @@
 #'
 #' L3 (Gebied) is approximated in this milestone as the PC4's first two
 #' digits, a coarse but deterministic contiguous grouping; a proper
-#' PC4-to-Gebied lookup depends on `certegis` (M5, ARCHITECTURE.md section
-#' 9). L4 (Provincie) is derived from the PC4 ranges used by the synthetic
-#' generator (9xxx Groningen, 8xxx Fryslan, 7xxx Drenthe) and is therefore
-#' specific to the bundled demo data; a real deployment needs the actual
-#' PC4-to-province mapping, which is a `QUESTIONS.md`-worthy gap left for
-#' when real data exists.
+#' PC-to-Gebied lookup needs an operator-supplied region reference table,
+#' the same shape of solution as `R/geo_data.R`'s `EPISODE_GEO_DATA`
+#' contract but not yet built (ARCHITECTURE.md section 9). L4 (Provincie)
+#' is derived from the PC4 ranges used by the synthetic generator (9xxx
+#' Groningen, 8xxx Fryslan, 7xxx Drenthe) and is therefore specific to the
+#' bundled demo data; a real deployment needs the actual PC-to-province
+#' mapping, which is a `QUESTIONS.md`-worthy gap left for when real data
+#' exists.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cases A data frame of newly-ingested (or all) cases, with at least

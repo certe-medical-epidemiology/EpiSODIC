@@ -658,6 +658,40 @@ decisions survives.
     filter), consistent with how `pathogen` is treated as unconstrained
     free text everywhere else in this codebase.
 
+11. **Geography (the choropleth panel) no longer depends on `certegis`.**
+    The first version of `episode_ui_geo_map_chart()` called
+    `certegis::add_map()` directly - Certe's own package, useful only to
+    a Dutch operator, which is inconsistent with every other domain
+    concept in this codebase (`pathogen`, institution types, region
+    codes) already being operator-defined values rather than something
+    baked in. Replaced with a generic, country-agnostic contract in
+    `R/geo_data.R`: any `sf` object with a `pc4` column (matching
+    whatever an operator's own `episode_case.pc4` values are - real
+    Dutch postcodes, zip codes, municipality codes, anything; this
+    package never validates or interprets that column beyond joining
+    it) and a `geometry` column. EpiSODE ships a Netherlands PC4 default
+    (`inst/extdata/geo_postcodes4_nl.rds`, geometry only - population
+    and area columns were dropped, not needed for the choropleth and
+    not ours to redistribute beyond it - copied from `certegis` under
+    the same GPL-2 licence, provenance in `data-raw/
+    geo_postcodes4_nl.R`), overridable per-instance via `EPISODE_GEO_DATA`,
+    the same shape of solution `EPISODE_CONFIG`/`EPISODE_PALETTE_CONFIG`
+    already establish. `sf`/GDAL/GEOS/PROJ are a real system-level
+    dependency beyond what CRAN alone supplies - this sandbox has none
+    of them installed (`sf` itself fails to install here), which is
+    exactly why the whole feature was already, and remains, guarded
+    end-to-end: no `sf` means the geography panel silently falls back
+    to the existing PC bar breakdown. `tests/testthat/test-geo_data.R`
+    is consequently guarded with `skip_if_not_installed("sf")` and was
+    never run against a real `sf` install in this environment - only
+    the "no `sf` installed" fallback path is exercised here. Region
+    *naming* (Gebied/Provincie labels in `R/lattice_enumerate.R`,
+    `R/app_read.R`) is a related but distinct, still-open gap: it also
+    mentioned `certegis` before this change and has been reworded to
+    point at the same operator-suppliable-data pattern, but no such
+    region-reference contract has actually been built yet - only the
+    choropleth's geometry contract was in scope for this change.
+
 ## Parked for a future milestone
 
 1. **Cluster volume for endemic organisms at a single place.**

@@ -206,7 +206,8 @@ episode_app_place_label <- function(stream, institution, lang = "nl") {
 #' `region_code` values (`"GEBIED-97"`, `"PROV_GRONINGEN"`,
 #' `"NOORD_NEDERLAND"`) are internal synthetic-demo constructs, not real
 #' place names; a real deployment resolves proper Gebied/Provincie naming
-#' via `certegis` (M5). This only tidies punctuation so the demo is
+#' from its own operator-supplied region reference data (see
+#' `R/lattice_enumerate.R`). This only tidies punctuation so the demo is
 #' legible in the meantime.
 #' @keywords internal
 #' @noRd

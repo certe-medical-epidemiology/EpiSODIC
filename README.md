@@ -30,9 +30,11 @@ remotes::install_github("certe-medical-epidemiology/episode")
 EpiSODE's detection engine has **no dependency on any laboratory system,
 data warehouse, or Certe-internal package**. Every detector runs on
 open-source, CRAN-hosted packages (`surveillance` for Farrington). Certe
-packages (`certegis`, `certeplot2`, `certestyle`) are optional and only
-used by the interface (M2+) for geography and house-style rendering; without
-them EpiSODE still runs completely on its bundled synthetic demo data.
+packages (`certeplot2`, `certestyle`) are optional and only used by the
+interface (M2+) for house-style rendering; without them EpiSODE still runs
+completely on its bundled synthetic demo data. Geography (the choropleth
+panel) is not Certe-specific at all - see "Geographic reference data"
+below.
 
 ## Data format
 
@@ -131,6 +133,22 @@ perfectly synchronised. See
 There is no ward-level (L1) equivalent in the schema, so L1 detection is
 never normalised, only L2.
 
+### Geographic reference data (optional)
+
+The dossier's geography panel shows a choropleth when both the `sf`
+package and a geographic reference dataset are available; otherwise it
+falls back to a plain bar breakdown by PC value, exactly as if this
+feature did not exist. EpiSODE ships a Netherlands PC4 default
+(`inst/extdata/geo_postcodes4_nl.rds`, geometry only, sourced from
+`certegis` under the same GPL-2 licence - see `data-raw/
+geo_postcodes4_nl.R` for provenance), but geography is not
+Netherlands-specific: point `EPISODE_GEO_DATA` at your own `.rds` file
+holding an [`sf`](https://r-spatial.github.io/sf/) object with a `pc4`
+column (matching whatever your own `episode_case.pc4` values are -
+postcodes, zip codes, municipality codes, anything) and a `geometry`
+column, and it is used instead. See `R/geo_data.R` for the exact
+contract.
+
 ## Accounts
 
 Read access is anonymous - the app opens read-only for anyone who reaches
@@ -167,6 +185,7 @@ Docker container) without editing R code.
 | `EPISODE_DB` | `episode_run_app()`, `episode_provision_user()` (`db_path` argument) | Path to the instance's SQLite database. |
 | `EPISODE_CONFIG` | `episode_run_cron()` (`episode_config_path` argument) | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`'s shipped defaults. |
 | `EPISODE_PALETTE_CONFIG` | `episode_palette()` (`palette_config_path` argument) | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`'s shipped defaults. Deliberately separate from `EPISODE_CONFIG`: colour is a display concern, never part of `episode_config_hash()`'s detection-reproducibility guarantee. |
+| `EPISODE_GEO_DATA` | `episode_geo_source_resolve()` (`path` argument) | Path to an `.rds` file holding an operator's own geographic reference data (an `sf` object with `pc4`/`geometry` columns), overriding the shipped Netherlands PC4 default. See "Geographic reference data" above. |
 
 ## Licence
 

@@ -89,7 +89,7 @@
 
   "panel.geo.title": "Geografische spreiding",
   "panel.geo.aside": "PC",
-  "panel.geo.unit": "In de app staat hier de PC-choropleth via certegis.",
+  "panel.geo.unit": "Een kaartweergave verschijnt hier zodra geografische referentiedata is geconfigureerd (EPISODE_GEO_DATA).",
   "panel.geo.empty": "Geen postcodegegevens beschikbaar.",
 
   "panel.places.title_ward": "Afdeling",

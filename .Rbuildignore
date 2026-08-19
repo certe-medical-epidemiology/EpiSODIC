@@ -6,3 +6,4 @@ MILESTONES\.md
 episode\-mockup\.jsx
 QUESTIONS.md
 run_test\.R
+^data-raw$

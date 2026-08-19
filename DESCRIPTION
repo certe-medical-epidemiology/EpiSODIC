@@ -46,15 +46,14 @@ Suggests:
     AMR (>= 2.0.0),
     RMariaDB,
     testthat (>= 3.0.0),
-    certegis,
     certeplot2,
     certestyle,
     EpiEstim,
     quarto,
-    mem
+    mem,
+    sf
 Config/testthat/edition: 3
 Remotes:
-    certe-medical-epidemiology/certegis,
     certe-medical-epidemiology/certeplot2,
     certe-medical-epidemiology/certestyle
 URL: https://github.com/certe-medical-epidemiology/episode

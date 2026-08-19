@@ -235,8 +235,8 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, denomin
 #' L1/L2 streams filter on `pathogen` and `institution_id` (and `ward` for
 #' L1). L3-L5 streams filter on `pathogen` and sample date only, an
 #' approximation documented in `QUESTIONS.md` alongside the L3/L4 region
-#' derivation itself (`R/lattice_enumerate.R`); a real PC4-to-region join
-#' (via `certegis`, M5) would tighten this.
+#' derivation itself (`R/lattice_enumerate.R`); a real operator-supplied
+#' PC-to-region join would tighten this.
 #'
 #' @param cases All currently known cases.
 #' @param stream A single-row stream (from `episode_db_streams()`).
