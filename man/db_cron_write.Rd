@@ -9,6 +9,7 @@
 \alias{episode_db_case_insert_new}
 \alias{episode_db_reporting_triangle_upsert}
 \alias{episode_db_denominator_upsert}
+\alias{episode_db_stream_trend_upsert}
 \alias{episode_db_detection_insert}
 \alias{episode_db_detection_set_cluster}
 \alias{episode_db_cluster_insert}
@@ -76,6 +77,15 @@ episode_db_denominator_upsert(
   care_line,
   area_code = NA,
   n_tests
+)
+
+episode_db_stream_trend_upsert(
+  con,
+  stream_id,
+  week_start,
+  n_cases,
+  expected = NA,
+  upperbound = NA
 )
 
 episode_db_detection_insert(
@@ -196,11 +206,14 @@ item 22); used verbatim as the stream's identity, no taxonomy resolved.}
 
 \item{n_tests}{A test count, for the optional positivity metadata table.}
 
+\item{week_start}{A week-start date (chart-cache row for the multi-year
+trend panel, see \code{R/detect_farrington.R}).}
+
+\item{expected, upperbound}{Statistical detector output, or \code{NA}.}
+
 \item{detector}{One of the detector enum values.}
 
 \item{first_day, last_day}{A detection or cluster interval.}
-
-\item{expected, upperbound}{Statistical detector output, or \code{NA}.}
 
 \item{params_json}{JSON-serialised detector attributes.}
 

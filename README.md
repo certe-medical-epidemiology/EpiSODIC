@@ -62,6 +62,20 @@ lists the exact allow-listed columns; the ones that need explanation:
 | `institution_type` | One of `hospital`, `ltc_institution`, `gp_municipality`, `ooh_service`, `other`. |
 | `ward` | Only meaningful (and only used) for hospitals. |
 
+`institution_type` values, beyond the self-explanatory `hospital`:
+
+- `ltc_institution` — a long-term care institution (nursing home, residential
+  care), kept as a first-class institution like a hospital.
+- `gp_municipality` — a general practice. Stored as the municipality the
+  practice is in, not the practice's own identity: a single-handed GP
+  practice is not a transmission unit, and its name adds identifiability
+  without adding epidemiological information (see `ARCHITECTURE.md` section
+  5.4.1 for the full reasoning).
+- `ooh_service` — an out-of-hours GP service (*huisartsenpost*), kept as a
+  first-class institution like a hospital.
+- `other` — anything that doesn't fit the above; institution identity is
+  dropped (stored as `NULL`) for this category.
+
 **Deduplication is EpiSODE's job, not yours.** Send every positive result;
 EpiSODE collapses isolates for the same patient and pathogen into one case
 per episode, using the episode length configured per pathogen in

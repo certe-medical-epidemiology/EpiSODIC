@@ -148,3 +148,21 @@ episode_db_latest_run <- function(con, status = NULL) {
   }
   if (nrow(res) == 0) NULL else res[1, ]
 }
+
+#' @rdname db_read
+#' @export
+episode_db_stream_trend <- function(con, stream_id) {
+  DBI::dbGetQuery(
+    con, "SELECT * FROM episode_stream_trend WHERE stream_id = ? ORDER BY week_start",
+    params = list(stream_id)
+  )
+}
+
+#' @rdname db_read
+#' @export
+episode_db_denominator_for_pathogen <- function(con, pathogen) {
+  DBI::dbGetQuery(
+    con, "SELECT * FROM episode_denominator WHERE pathogen = ? ORDER BY sample_date",
+    params = list(pathogen)
+  )
+}

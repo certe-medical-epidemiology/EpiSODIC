@@ -250,6 +250,25 @@ CREATE TABLE episode_reporting_triangle (
 );
 
 -- ---------------------------------------------------------------------
+-- Weekly Farrington trend points (cron). Not in ARCHITECTURE.md's original
+-- schema: added during M2 because the multi-year trend panel needs a
+-- continuous expected/upperbound band across many weeks, and the app may
+-- only ever perform cheap reads (section 3.3) - it cannot recompute
+-- farringtonFlexible() at render time. One row per stream per evaluated
+-- week; episode_detection/episode_cluster remain the only tables that
+-- drive reconciliation, this is purely a chart data cache. See
+-- QUESTIONS.md.
+-- ---------------------------------------------------------------------
+CREATE TABLE episode_stream_trend (
+  stream_id  INTEGER NOT NULL REFERENCES episode_stream(stream_id),
+  week_start TEXT NOT NULL,
+  n_cases    INTEGER NOT NULL,
+  expected   REAL,
+  upperbound REAL,
+  PRIMARY KEY (stream_id, week_start)
+);
+
+-- ---------------------------------------------------------------------
 -- 5.7.1 Denominators / positivity metadata (cron)
 --
 -- Deliberately supplied by the operator as pre-aggregated counts, not as a

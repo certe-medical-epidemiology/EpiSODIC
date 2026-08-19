@@ -16,6 +16,8 @@
 \alias{episode_db_assessment_events}
 \alias{episode_db_detections_for_run}
 \alias{episode_db_latest_run}
+\alias{episode_db_stream_trend}
+\alias{episode_db_denominator_for_pathogen}
 \title{Shared read helpers}
 \usage{
 episode_db_pathogen_config(con)
@@ -45,6 +47,10 @@ episode_db_assessment_events(con, cluster_id)
 episode_db_detections_for_run(con, run_id)
 
 episode_db_latest_run(con, status = NULL)
+
+episode_db_stream_trend(con, stream_id)
+
+episode_db_denominator_for_pathogen(con, pathogen)
 }
 \arguments{
 \item{con}{A \link[DBI:DBIConnection-class]{DBI::DBIConnection}.}

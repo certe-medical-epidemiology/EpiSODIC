@@ -268,6 +268,34 @@ episode_db_denominator_upsert <- function(con, pathogen, sample_date, care_line,
 }
 
 #' @rdname db_cron_write
+#' @param week_start A week-start date (chart-cache row for the multi-year
+#'   trend panel, see `R/detect_farrington.R`).
+#' @export
+episode_db_stream_trend_upsert <- function(con, stream_id, week_start, n_cases, expected = NA,
+                                            upperbound = NA) {
+  existing <- DBI::dbGetQuery(
+    con, "SELECT 1 FROM episode_stream_trend WHERE stream_id = ? AND week_start = ?",
+    params = list(stream_id, week_start)
+  )
+  if (nrow(existing) > 0) {
+    DBI::dbExecute(
+      con,
+      "UPDATE episode_stream_trend SET n_cases = ?, expected = ?, upperbound = ?
+       WHERE stream_id = ? AND week_start = ?",
+      params = list(n_cases, expected, upperbound, stream_id, week_start)
+    )
+  } else {
+    DBI::dbExecute(
+      con,
+      "INSERT INTO episode_stream_trend (stream_id, week_start, n_cases, expected, upperbound)
+       VALUES (?, ?, ?, ?, ?)",
+      params = list(stream_id, week_start, n_cases, expected, upperbound)
+    )
+  }
+  invisible(NULL)
+}
+
+#' @rdname db_cron_write
 #' @export
 episode_db_detection_insert <- function(con, run_id, stream_id, detector, first_day, last_day,
                                          n_cases, expected = NA, upperbound = NA, params_json,

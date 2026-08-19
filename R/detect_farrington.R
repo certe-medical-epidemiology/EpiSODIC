@@ -39,23 +39,7 @@ episode_detect_farrington <- function(cases_for_stream, stream_id, config, run_d
     return(empty)  # insufficient baseline history for the configured b
   }
 
-  sts_obj <- surveillance::sts(
-    observed = weekly$counts,
-    start = c(as.integer(format(weekly$week_start[1], "%Y")), 1),
-    frequency = 52
-  )
-
-  control <- list(
-    range = length(weekly$counts), b = fc$b, w = fc$w, reweight = isTRUE(fc$reweight),
-    weightsThreshold = fc$weightsThreshold, trend = isTRUE(fc$trend),
-    pastWeeksNotIncluded = fc$pastWeeksNotIncluded, limit54 = unlist(fc$limit54),
-    alpha = fc$alpha
-  )
-
-  result <- tryCatch(
-    suppressWarnings(surveillance::farringtonFlexible(sts_obj, control = control)),
-    error = function(e) NULL
-  )
+  result <- episode_farrington_fit(weekly, range_idx = length(weekly$counts), fc = fc)
   if (is.null(result) || !isTRUE(as.logical(result@alarm[1, 1]))) return(empty)
 
   current_week_start <- weekly$week_start[length(weekly$week_start)]
@@ -67,6 +51,86 @@ episode_detect_farrington <- function(cases_for_stream, stream_id, config, run_d
     expected = as.numeric(result@control$expected[1, 1]),
     upperbound = as.numeric(result@upperbound[1, 1]),
     params = list(b = fc$b, w = fc$w, alpha = fc$alpha)
+  )
+}
+
+#' Weekly Farrington trend points, for the multi-year trend panel
+#'
+#' The app performs cheap reads only (ARCHITECTURE.md section 3.3) and
+#' cannot re-run `farringtonFlexible()` at render time, so the cron must
+#' persist a continuous expected/upperbound series rather than only the
+#' current week's alarm status (see `episode_detect_farrington()` and
+#' `QUESTIONS.md`). This function returns that series; the caller
+#' (`episode_run_cron()`) is responsible for upserting it into
+#' `episode_stream_trend`.
+#'
+#' Only the trailing `n_weeks_to_compute` weeks are (re-)evaluated per call,
+#' not the whole history: on a normal nightly run that is 1 (today's week
+#' alone), which is cheap. A fresh stream with no trend rows yet gets a
+#' larger backfill (bounded by `max_backfill_weeks`) so the panel is not
+#' empty on first render, at the cost of a heavier one-off computation.
+#'
+#' @param cases_for_stream A data frame of a single stream's cases.
+#' @param config The resolved configuration; uses `config$farrington`.
+#' @param run_date The date to treat as "today".
+#' @param n_weeks_existing How many trend weeks are already persisted for
+#'   this stream (from `episode_db_stream_trend()`); determines how much
+#'   backfill is attempted.
+#' @param max_backfill_weeks Cap on how many weeks a single call will ever
+#'   (re-)compute, to bound cron run time. Matches the multi-year trend
+#'   panel's own display window.
+#' @return A data frame with `week_start`, `n_cases`, `expected`,
+#'   `upperbound` (zero rows if ineligible).
+#' @export
+episode_farrington_trend <- function(cases_for_stream, config, run_date = Sys.Date(),
+                                      n_weeks_existing = 0L, max_backfill_weeks = 156L) {
+  empty <- data.frame(week_start = as.Date(character(0)), n_cases = integer(0),
+                       expected = numeric(0), upperbound = numeric(0), stringsAsFactors = FALSE)
+
+  dates <- as.Date(cases_for_stream$sample_date)
+  if (length(dates) == 0) return(empty)
+
+  fc <- config$farrington
+  weekly <- episode_weekly_bins(dates, run_date)
+
+  min_weeks_required <- (fc$b + 1) * 52
+  if (length(weekly$counts) < min_weeks_required) return(empty)
+
+  n_weeks_to_compute <- if (n_weeks_existing == 0) max_backfill_weeks else 1L
+  range_idx <- seq(
+    max(min_weeks_required, length(weekly$counts) - n_weeks_to_compute + 1),
+    length(weekly$counts)
+  )
+
+  result <- episode_farrington_fit(weekly, range_idx = range_idx, fc = fc)
+  if (is.null(result)) return(empty)
+
+  data.frame(
+    week_start = weekly$week_start[range_idx],
+    n_cases = as.integer(result@observed[, 1]),
+    expected = as.numeric(result@control$expected[, 1]),
+    upperbound = as.numeric(result@upperbound[, 1]),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' @keywords internal
+#' @noRd
+episode_farrington_fit <- function(weekly, range_idx, fc) {
+  sts_obj <- surveillance::sts(
+    observed = weekly$counts,
+    start = c(as.integer(format(weekly$week_start[1], "%Y")), 1),
+    frequency = 52
+  )
+  control <- list(
+    range = range_idx, b = fc$b, w = fc$w, reweight = isTRUE(fc$reweight),
+    weightsThreshold = fc$weightsThreshold, trend = isTRUE(fc$trend),
+    pastWeeksNotIncluded = fc$pastWeeksNotIncluded, limit54 = unlist(fc$limit54),
+    alpha = fc$alpha
+  )
+  tryCatch(
+    suppressWarnings(surveillance::farringtonFlexible(sts_obj, control = control)),
+    error = function(e) NULL
   )
 }
 

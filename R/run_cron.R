@@ -124,6 +124,18 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, denomin
         stream_detections,
         episode_detect_farrington(stream_cases, stream$stream_id, config, run_date)
       )
+
+      # trend cache for the multi-year trend panel (M2); see
+      # episode_farrington_trend()'s own docs for the backfill-once,
+      # top-up-thereafter strategy.
+      n_existing_trend <- nrow(episode_db_stream_trend(con, stream$stream_id))
+      trend <- episode_farrington_trend(stream_cases, config, run_date, n_weeks_existing = n_existing_trend)
+      for (k in seq_len(nrow(trend))) {
+        episode_db_stream_trend_upsert(
+          con, stream_id = stream$stream_id, week_start = as.character(trend$week_start[k]),
+          n_cases = trend$n_cases[k], expected = trend$expected[k], upperbound = trend$upperbound[k]
+        )
+      }
     }
 
     if (nrow(stream_detections) == 0) next
