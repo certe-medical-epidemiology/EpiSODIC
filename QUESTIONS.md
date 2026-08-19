@@ -352,6 +352,42 @@ decisions survives.
     earlier draft did that and would have broken on any future i18n
     string containing an apostrophe.
 
+34. **The shipped default palette went through two redesigns after M3
+    shipped, both from direct user feedback.** The first shipped default
+    (muted teal/blue/rose/amber) turned out to be visually
+    indistinguishable from Certe's real house colours even with
+    `certestyle` genuinely installed - the fallback exists precisely so
+    an uninstalled/misconfigured `certestyle` is obviously different
+    from the real thing, and it wasn't. A bolder violet-led scheme fixed
+    that, but read as "too heavy on the eyes": the neutral text/border/
+    background colours had been deriving from the brand hue instead of
+    standing independently, so body text was literally rendered in a
+    tint of whatever colour happened to be primary. The current palette
+    fixes both: primary is now a forest green rather than violet, and
+    neutrals (`ink`/`muted`/`border`/`bg`) are defined independently of
+    any brand hue. Raw hue-word keys (`blue`/`green`/`pink`/`yellow`/
+    `lilac`/`brown`) were also renamed to Bootstrap-style semantic roles
+    (`primary`/`secondary`/`tertiary`/`success`/`warning`/`danger`) on
+    request, each still mapped to one of `certestyle`'s six real hues
+    when installed. This surfaced a real bug along the way:
+    `episode_app_palette_css()` generated CSS custom property names from
+    R's list names verbatim (e.g. `--episode-primary_tint`, underscored),
+    but the stylesheet's `var()` references use the CSS convention
+    (hyphenated, `--episode-primary-tint`) - every multi-word role's
+    colour was silently not applying in the browser despite all R-side
+    logic and automated tests passing, since nothing checked the two
+    naming conventions actually matched. No test currently guards this;
+    flagging as a gap rather than adding one speculatively.
+
+35. **`episode_provision_user()` did not exist until asked for
+    directly.** M3's own completion summary claimed "four accounts,
+    login only to classify" as delivered, but no code path actually
+    created an account - only ad hoc test/verification setup did. Added
+    as an exported function plus a README "Accounts" section; there is
+    still deliberately no in-app account management screen (ARCHITECTURE.md
+    section 12 describes accounts as externally provisioned), so this is
+    the intended permanent entry point, not a stopgap.
+
 ## Architecture concerns raised during implementation
 
 1. **`episode_stream` is missing a `ward` column** (see item 20 above).
