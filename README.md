@@ -1,6 +1,6 @@
 # EpiSODE
 
-**Epidemiological Signal Observation and Detection Engine**
+**Epi**demiological **S**ignal **O**bservation and **D**etection **E**ngine
 
 EpiSODE is an outbreak cluster detection and assessment system for a
 department of medical epidemiology. It ingests laboratory-confirmed

@@ -15,10 +15,8 @@
 #
 # Regenerate by cloning certe-medical-epidemiology/certegis and running:
 #
-# e <- new.env()
-# load("certegis/data/geo_postcodes4.rda", envir = e)
-# geo <- get(ls(e)[1], envir = e)
-# geo <- geo[, c("postcode", "geometry"), drop = FALSE]
-# names(geo)[names(geo) == "postcode"] <- "pc4"
-# geo$pc4 <- as.character(geo$pc4)
-# saveRDS(geo, "inst/extdata/geo_postcodes4_nl.rds", compress = "xz")
+geo <- certegis::geo_postcodes4
+geo <- geo[, c("postcode", "geometry"), drop = FALSE]
+names(geo)[names(geo) == "postcode"] <- "pc4"
+geo$pc4 <- as.character(geo$pc4)
+saveRDS(geo, "inst/extdata/geo_postcodes4_nl.rds", compress = "xz")
