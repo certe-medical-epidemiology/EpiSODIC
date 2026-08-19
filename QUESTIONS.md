@@ -492,6 +492,40 @@ decisions survives.
     collapsing to a single date for a one-day cluster. Used on the rail
     list, which previously showed no date range at all.
 
+## Parked for a future milestone
+
+1. **Cluster volume for endemic organisms at a single place.**
+   `same_place` has no eligibility/baseline gate by design (ARCHITECTURE.md
+   section 7.2: it exists precisely to catch rare-pathogen bumps a
+   baseline model can't see, so it needs none to fire). For an endemic
+   organism like *Clostridioides difficile* at a busy institution, the
+   default `n_cases: 3` / `k_days: 14` threshold gets crossed repeatedly
+   as routine background noise - each bump becomes its own cluster once
+   it is more than `case_free_days` past the last one, so the rail can
+   fill with tens of small, quickly-resolved clusters of the same
+   pathogen at the same place. This is not a reconciliation bug (nothing
+   is being wrongly kept apart that `case_free_days` should have merged);
+   it is `same_place` doing exactly what it is configured to do, at a
+   volume that turned out to be a real workflow problem in testing.
+
+   Two directions were discussed and deliberately parked rather than
+   built, to see how the volume actually behaves in real use before
+   committing to either:
+   - **Raise the `same_place` threshold** for high-baseline organisms
+     (e.g. `n_cases: 5` for *C. difficile*) - a one-line config change,
+     cheapest to try first.
+   - **A "series" grouping layered on top of clusters** (not a
+     reconciliation-level merge, and not a change to `case_free_days`'s
+     own closure semantics): clusters sharing a `stream_id` within a new,
+     longer `series_gap_days` window would show as one row on the rail
+     (aggregate case count and date span), expandable to each
+     sub-cluster's own full timeline; classifying the open one would
+     flag - not silently apply to - a later cluster that joins the same
+     series while its last classification was `artefact`/
+     `expected_variation`/`cluster_not_yet`, needing one click to
+     confirm rather than a full re-assessment from zero. Real schema and
+     UI work; not started.
+
 ## Architecture concerns raised during implementation
 
 1. **`episode_stream` is missing a `ward` column** (see item 20 above).
