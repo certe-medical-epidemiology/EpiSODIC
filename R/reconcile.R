@@ -2,9 +2,9 @@
 #'
 #' Run per stream, after detection, inside the run transaction
 #' (ARCHITECTURE.md section 6). This is the load-bearing algorithm of the
-#' whole system: neither `certestats` function emits a stable cluster
-#' identity, so mapping today's detections onto persistent, real-world
-#' clusters is what makes the rest of the application possible.
+#' whole system: no detector emits a stable cluster identity on its own, so
+#' mapping today's detections onto persistent, real-world clusters is what
+#' makes the rest of the application possible.
 #'
 #' Algorithm, matching section 6 verbatim:
 #'
@@ -248,15 +248,15 @@ episode_reconcile_find_matches <- function(open_clusters, candidate, case_free_d
 #' @noRd
 episode_reconcile_link_cases <- function(con, stream_id, cluster_id, first_day, last_day) {
   tryCatch({
-    stream <- DBI::dbGetQuery(con, "SELECT mo_code, institution_id FROM episode_stream WHERE stream_id = ?",
+    stream <- DBI::dbGetQuery(con, "SELECT pathogen, institution_id FROM episode_stream WHERE stream_id = ?",
                                params = list(stream_id))
     if (nrow(stream) == 0) stop("no such stream")
     cases <- DBI::dbGetQuery(
       con,
       "SELECT case_id FROM episode_case
-       WHERE mo_code = ? AND sample_date >= ? AND sample_date <= ?
+       WHERE pathogen = ? AND sample_date >= ? AND sample_date <= ?
          AND (institution_id IS ? OR ? IS NULL)",
-      params = list(stream$mo_code[1], first_day, last_day,
+      params = list(stream$pathogen[1], first_day, last_day,
                     stream$institution_id[1], stream$institution_id[1])
     )
     for (case_id in cases$case_id) {
@@ -277,15 +277,15 @@ episode_reconcile_link_cases <- function(con, stream_id, cluster_id, first_day, 
 #' @noRd
 episode_reconcile_case_count <- function(con, stream_id, first_day, last_day, existing, candidate) {
   tryCatch({
-    stream <- DBI::dbGetQuery(con, "SELECT mo_code, institution_id FROM episode_stream WHERE stream_id = ?",
+    stream <- DBI::dbGetQuery(con, "SELECT pathogen, institution_id FROM episode_stream WHERE stream_id = ?",
                                params = list(stream_id))
     if (nrow(stream) == 0) stop("no such stream")
     res <- DBI::dbGetQuery(
       con,
       "SELECT COUNT(*) AS n FROM episode_case
-       WHERE mo_code = ? AND sample_date >= ? AND sample_date <= ?
+       WHERE pathogen = ? AND sample_date >= ? AND sample_date <= ?
          AND (institution_id IS ? OR ? IS NULL)",
-      params = list(stream$mo_code[1], as.character(first_day), as.character(last_day),
+      params = list(stream$pathogen[1], as.character(first_day), as.character(last_day),
                     stream$institution_id[1], stream$institution_id[1])
     )
     as.integer(res$n[1])

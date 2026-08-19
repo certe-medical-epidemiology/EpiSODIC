@@ -15,8 +15,8 @@ episode_cases_for_stream(cases, stream)
 The subset of \code{cases} belonging to \code{stream}.
 }
 \description{
-L1/L2 streams filter on \code{mo_code} and \code{institution_id} (and \code{ward} for
-L1). L3-L5 streams filter on \code{mo_code} and sample date only, an
+L1/L2 streams filter on \code{pathogen} and \code{institution_id} (and \code{ward} for
+L1). L3-L5 streams filter on \code{pathogen} and sample date only, an
 approximation documented in \code{QUESTIONS.md} alongside the L3/L4 region
 derivation itself (\code{R/lattice_enumerate.R}); a real PC4-to-region join
 (via \code{certegis}, M5) would tighten this.

@@ -37,28 +37,27 @@ decisions survives.
    rule-based (`same_place`) only, consistent with the architecture's own
    fallback.
 9. **Which machine runs the app long term.** Not an M1 concern.
-10. **Upstream fixes to `certestats`** (`print(n_cl)` debug call,
-    `populationOffset` exposure). Deferred to M5 per the milestone note;
-    M1's `certestats` wrapper is guarded with `requireNamespace()` and is
-    not exercised unless the package is installed, so this cannot be
-    verified in this environment. Flagged for verification once
-    `certestats` is available.
+10. **RESOLVED, superseded by item 22.** `certestats` is no longer a
+    dependency at all (its Farrington glue is now owned directly by
+    EpiSODE on top of `surveillance`, CRAN). The `print(n_cl)` debug call
+    and `populationOffset` exposure questions are moot for that reason;
+    `populationOffset`/patient-day normalisation on the in-house Farrington
+    wrapper is still M5 scope (`R/detect_farrington.R`'s `sts()` call does
+    not yet pass a population offset).
 
 ## New in M1
 
-11. **Diver column names.** `certedb::get_diver_data()` is unavailable in
-    this environment. `R/ingest_interface.R` defines the ingestion contract
-    (an allow-listed column set matching architecture section 5.4/5.4.1) and
-    `R/ingest_synthetic.R` is the only implementation shipped. No Diver
-    column name is invented or assumed; a real `get_diver_data()` adapter
-    is left as a documented extension point (`episode_ingest_source`).
-12. **`AMR::get_episode()` availability.** `AMR` is listed in `Suggests`.
-    Deduplication in `R/ingest_dedup.R` calls it via `requireNamespace()`
-    and falls back to a simple documented equivalent (group by patient and
-    organism, collapse isolates within `episode_days` of the previous one
-    in the group) if `AMR` is not installed, so the demo works without it.
-    This fallback is a documented approximation, not a replacement; flagged
-    for review once `AMR::get_episode()` behaviour can be compared directly.
+11. **Diver column names / `certedb` boundary.** RESOLVED by item 22:
+    `certedb::get_diver_data()` (and any other source system) is now
+    explicitly and permanently outside this package's scope, not merely
+    "unavailable in this environment". `R/ingest_interface.R` defines the
+    ingestion contract; the operator's own transform step, run before
+    `episode_run_cron()`, is the only thing that ever touches Diver.
+12. **`AMR::get_episode()` availability.** RESOLVED: `AMR` is no longer a
+    dependency at all (item 22 - `pathogen` is a free-text string `AMR`
+    cannot resolve for viruses anyway). `R/ingest_dedup.R`'s own
+    implementation of `AMR::get_episode()`'s documented default-case
+    algorithm is now the only implementation, not a fallback.
 13. **SQLite `ENUM` mapping.** Architecture section 5 maps `ENUM(...)` to
     `TEXT` with a `CHECK` constraint. Implemented literally in
     `inst/sql/schema.sql`.
@@ -82,30 +81,15 @@ decisions survives.
 17. **`case_free_days` default per organism where not curated.** Schema
     default is 14 (per column default). Used as the fallback in
     `pathogen_config.csv` rows that do not warrant a specific override.
-18. **`mo_code` values in `pathogen_config.csv`.** The architecture keys
-    streams on `AMR::as.mo()` output (section 5.1) but `AMR` cannot be
-    exercised in this environment to generate real codes. The shipped
-    `inst/config/pathogen_config.csv` uses placeholder codes of the shape
-    `<kingdom>_<NAME>` (e.g. `B_SALMONELLA`, `V_NOROVIRUS`) that are
-    deliberately **not** presented as real `AMR` codes. `R/mo_lookup.R`
-    resolves these through `AMR::as.mo()` at ingestion time when `AMR` is
-    installed, replacing the placeholder with the real code and rank, and
-    falls back to using the placeholder verbatim (with `mo_rank` taken from
-    the config file) when `AMR` is unavailable, so the demo still runs.
-    This needs revisiting against real `AMR::as.mo()` output once available.
-19. **`certestats::detect_disease_clusters()` / `detect_farrington()` return
-    shape.** `R/detect_certestats.R` guesses a plausible return shape (a
-    list of cluster objects with `first_day`/`last_day`/`n_cases` for the
-    former; a data frame with `alarm`/`date`/`observed`/`expected`/
-    `upperbound` columns for the latter, matching the `sts`-like
-    conventions of the `surveillance` package `certestats` builds on).
-    Neither function can be installed or inspected in this environment, so
-    this is unverified and marked clearly as such; both call sites are
-    guarded by `requireNamespace("certestats")` and return zero detections
-    when the package is absent, so the demo and the test suite never
-    exercise this code path. Must be corrected against the real source
-    before this wrapper is trusted in production, per MILESTONES.md M1
-    step 8 and `ARCHITECTURE.md` section 7.1's own verification note.
+18. **RESOLVED, superseded by item 22.** `mo_code`/`AMR::as.mo()` is gone
+    entirely; `pathogen_config.csv` is keyed on the raw `pathogen` string.
+19. **RESOLVED.** `certestats::detect_disease_clusters()` was inspected
+    directly (its source was fetched and read in full) and retired rather
+    than ported - see item 22 for the reasoning. `certestats::
+    detect_farrington()`'s presumed shape no longer matters: EpiSODE calls
+    `surveillance::farringtonFlexible()` directly now
+    (`R/detect_farrington.R`), a real CRAN dependency this environment can
+    install, run and test against directly rather than guess about.
 
 19b. **Priority score `rescale()` function.** Section 8.1 names
     `rescale(...)` for several components but does not define it. Adopted
@@ -114,9 +98,10 @@ decisions survives.
     scope; this is a placeholder shape, not a calibrated function.
 
 20. **`episode_stream` has no `ward` column.** ARCHITECTURE.md section 5.1's
-    `episode_stream` DDL carries `level`, `mo_code`, `mo_name`, `mo_rank`,
-    `care_line`, `region_code`, `institution_id`, `denominator`,
-    `severity_weight`. It does not carry a `ward` column, yet section 7's
+    `episode_stream` DDL carries `level`, `mo_code` (now `pathogen`, item
+    22), `mo_name`, `mo_rank`, `care_line`, `region_code`,
+    `institution_id`, `denominator`, `severity_weight`. It does not carry
+    a `ward` column, yet section 7's
     lattice table defines L1 (`pathogen_ward`) as "Ward or specialism" and
     section 7.2 says the `same_place` rule "runs on ward rather than
     institution" for hospitals. Without a `ward` column, two different
@@ -145,6 +130,88 @@ decisions survives.
     unused dependency; it should be added back in M2 when the Shiny app's
     read paths are built (ARCHITECTURE.md section 3.3, "cheap reads
     only" favours lazy `dbplyr` queries over materialising full tables).
+
+22. **Detection pipeline decoupled from every Certe package; `mo_code` ->
+    `pathogen`.** Decided directly with the architecture's author
+    mid-session (not a solo assumption; recorded here per the standing
+    brief's instruction to log every deliberate deviation, decided or
+    not). Four changes, made together:
+
+    a. **`certestats` retired, not wrapped.** Its source was fetched and
+       read in full
+       (`https://raw.githubusercontent.com/certe-medical-epidemiology/certestats/main/R/detect_disease_clusters.R`
+       and `moving_average.R`). `detect_disease_clusters()` is a
+       moving-average-vs-historic-percentile heuristic (trailing 7-day
+       moving average, threshold set as the 97.5th percentile of historic
+       moving averages with optional boxplot-based outlier removal,
+       `AMR::get_episode()` for episode grouping, several hand-tuned
+       constants: `threshold_percentile`, `remove_outliers_coefficient`,
+       `minimum_case_fraction_in_period`). Its author agreed it is
+       "arbitrary and not great". Rather than port it, it is retired
+       outright: what it was trying to catch (an unexpected rise against
+       history) is what Farrington does with actual statistical grounding,
+       and running both would be the same detection angle twice, not two
+       angles. `certestats::detect_farrington()` was never inspected
+       (assumed to be a thin linelist-to-`sts` wrapper around
+       `surveillance::farringtonFlexible()`, which is a reasonable
+       inference but unverified); it is replaced by EpiSODE owning that
+       glue directly (`R/detect_farrington.R`), which also means it can
+       finally be installed and tested in this environment, unlike the old
+       wrapper which could only ever return zero detections here.
+    b. **`AMR` dropped entirely**, not just made optional. `AMR::as.mo()`
+       only resolves non-viral taxonomy, and this system must detect
+       clusters of anything a lab reports (including viruses), so pathogen
+       identity is now the raw lab-provided `pathogen` string, used
+       verbatim, never resolved against any taxonomy. `R/mo_lookup.R` is
+       deleted. `AMR::get_episode()`'s role (episode grouping for
+       deduplication) is filled by `R/ingest_dedup.R`'s own direct
+       implementation of that function's documented algorithm, which no
+       longer needs to be called a "fallback" since it is the only
+       implementation.
+    c. **`certedb` was already outside the package** (the ingestion
+       interface was designed that way from the start of M1), but the
+       boundary is now explicit and permanent rather than an artefact of
+       "unavailable in this sandbox": EpiSODE never calls a data source
+       itself, on principle, so that labs/operators own extraction and
+       transform and EpiSODE owns detection and assessment only. See
+       `README.md`'s data format section.
+    d. **Positivity/denominators decoupled from detection and made
+       optional.** The `positive`/negative-test question was discussed at
+       length: patient-day normalisation (L1/L2 incidence density) needs
+       no negatives at all (`episode_case`, already deduplicated, is the
+       numerator; `episode_institution_activity.patient_days` is the
+       denominator, from hospital admin systems, unrelated to the lab
+       feed). Test-level % positivity is a different, optional feature:
+       ARCHITECTURE.md section 8.2 already scoped it as an interpretive
+       aid, not a detection input, and a raw per-test linelist (including
+       negatives) would mean millions of rows for something that is only
+       ever a sanity check. Resolution: the mandatory ingestion contract
+       (`episode_ingest_columns`) is positives-only, no `positive` column
+       at all. `episode_denominator` (keyed on `pathogen` now, not
+       `determination`) is fed by a *separate, optional, pre-aggregated*
+       source (`R/ingest_denominator.R`,
+       `episode_denominator_ingest_run()`) that an operator supplies only
+       if they can produce it (trivial for multiplex PCR panels with a
+       fixed target list; not meaningful for open-ended culture results).
+       `episode_mo_determination` is dropped: the determination-to-
+       organism mapping it encoded is lab-specific expert knowledge that
+       now belongs in the operator's own transform step, not inside
+       EpiSODE.
+
+    Net effect on `DESCRIPTION`: `certestats`, `certedb` and `AMR` are gone
+    from `Suggests`/`Remotes` entirely (not merely optional); `surveillance`
+    moved from `Suggests` to a hard `Imports` (CRAN, no Certe dependency).
+    `certegis`/`certeplot2`/`certestyle` are unaffected (M2+ interface
+    concerns, not detection).
+
+    Rare-but-serious detection (ARCHITECTURE.md section 8, item 2) was
+    also implemented in this pass (`R/detect_rare_trigger.R`,
+    `episode_detection.detector` already had `'rare_trigger'` in its enum
+    from the original M1 schema but nothing produced it): a curated list
+    in `inst/config/default.yaml`, matched case-insensitively against
+    `pathogen`, any occurrence fires. `'clusters'` (the `detect_disease_
+    clusters()` detector value) is removed from the `episode_detection.
+    detector` CHECK constraint since nothing produces it any more.
 
 ## Architecture concerns raised during implementation
 

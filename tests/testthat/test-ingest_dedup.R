@@ -1,12 +1,12 @@
 pathogen_config_fixture <- data.frame(
-  mo_code = "TEST_MO", episode_days = 30, stringsAsFactors = FALSE
+  pathogen = "Test organism", episode_days = 30, stringsAsFactors = FALSE
 )
 
-raw_case <- function(source_key, patient_key, sample_date, mo_code = "TEST_MO") {
+raw_case <- function(source_key, patient_key, sample_date, pathogen = "Test organism") {
   data.frame(
     source_key = source_key, patient_key = patient_key, sample_date = sample_date,
-    receipt_date = sample_date, mo_code = mo_code, determination = "DET",
-    material = "faeces", care_line = "second", institution_key = "HOSP-01",
+    receipt_date = sample_date, pathogen = pathogen,
+    care_line = "second", institution_key = "HOSP-01",
     institution_display_name = "Hospital", institution_type = "hospital",
     municipality = NA_character_, ward = "ICU", specialism = "Interne",
     pc4 = "9711", sex = "M", age = 40L, stringsAsFactors = FALSE
@@ -39,19 +39,31 @@ test_that("different patients are never merged", {
   expect_equal(nrow(deduped), 2)
 })
 
-test_that("different organisms for the same patient are never merged", {
+test_that("different pathogens for the same patient are never merged", {
   raw <- rbind(
-    raw_case("K1", "P1", "2025-01-01", mo_code = "TEST_MO"),
-    raw_case("K2", "P1", "2025-01-01", mo_code = "OTHER_MO")
+    raw_case("K1", "P1", "2025-01-01", pathogen = "Test organism"),
+    raw_case("K2", "P1", "2025-01-01", pathogen = "Other organism")
   )
   deduped <- episode_dedup(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 2)
 })
 
-test_that("an organism missing from pathogen_config falls back to the schema default of 30 days", {
+test_that("the same isolate tagged under two pathogen values (e.g. E. coli and ETEC) is not merged", {
+  # deliberately mirrors the operator's own transform: one ETEC isolate can
+  # legitimately appear as two rows, "Escherichia coli" and "ETEC", so each
+  # is watched on its own (QUESTIONS.md item 22)
   raw <- rbind(
-    raw_case("K1", "P1", "2025-01-01", mo_code = "UNKNOWN_MO"),
-    raw_case("K2", "P1", "2025-01-20", mo_code = "UNKNOWN_MO")
+    raw_case("K1", "P1", "2025-01-01", pathogen = "Escherichia coli"),
+    raw_case("K1-ETEC", "P1", "2025-01-01", pathogen = "ETEC")
+  )
+  deduped <- episode_dedup(raw, pathogen_config_fixture)
+  expect_equal(nrow(deduped), 2)
+})
+
+test_that("a pathogen missing from pathogen_config falls back to the schema default of 30 days", {
+  raw <- rbind(
+    raw_case("K1", "P1", "2025-01-01", pathogen = "Unknown organism"),
+    raw_case("K2", "P1", "2025-01-20", pathogen = "Unknown organism")
   )
   deduped <- episode_dedup(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 1)

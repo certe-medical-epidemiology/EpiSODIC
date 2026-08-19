@@ -12,8 +12,8 @@
 #' literal string `"NA"`, joined with `"|"` in a fixed field order.
 #'
 #' @param level One of the five lattice levels, e.g. `"pathogen_ward"`.
-#' @param mo_code The pathogen code (`AMR::as.mo()` output or the
-#'   placeholder equivalent, see `R/mo_lookup.R`).
+#' @param pathogen The raw lab-provided pathogen string, used as-is (no
+#'   taxonomy resolution). See `QUESTIONS.md` item 22.
 #' @param care_line One of `"first"`, `"second"`, `"other"`, `"unknown"`, or
 #'   `NA` if care line does not apply at this level.
 #' @param region_code The region/area code, or `NA`.
@@ -23,11 +23,11 @@
 #'   `QUESTIONS.md` item 20 for why it was added.
 #' @return A 40-character lowercase hex SHA-1 digest.
 #' @export
-episode_stream_key <- function(level, mo_code, care_line = NA, region_code = NA,
+episode_stream_key <- function(level, pathogen, care_line = NA, region_code = NA,
                                 institution_id = NA, ward = NA) {
-  stopifnot(length(level) == 1, length(mo_code) == 1)
+  stopifnot(length(level) == 1, length(pathogen) == 1)
   fields <- vapply(
-    list(level, mo_code, care_line, region_code, institution_id, ward),
+    list(level, pathogen, care_line, region_code, institution_id, ward),
     function(x) if (is.na(x)) "NA" else as.character(x),
     character(1)
   )

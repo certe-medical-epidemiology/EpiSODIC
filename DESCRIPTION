@@ -36,7 +36,8 @@ Imports:
     jsonlite,
     digest,
     stats,
-    utils
+    utils,
+    surveillance
 Suggests:
     RSQLite,
     RMariaDB,
@@ -44,19 +45,13 @@ Suggests:
     bslib,
     sodium,
     testthat (>= 3.0.0),
-    certestats,
-    certedb,
     certegis,
     certeplot2,
     certestyle,
-    AMR,
     EpiEstim,
-    surveillance,
     quarto
 Config/testthat/edition: 3
 Remotes:
-    certe-medical-epidemiology/certestats,
-    certe-medical-epidemiology/certedb,
     certe-medical-epidemiology/certegis,
     certe-medical-epidemiology/certeplot2,
     certe-medical-epidemiology/certestyle

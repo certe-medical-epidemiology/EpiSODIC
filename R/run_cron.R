@@ -11,13 +11,21 @@
 #' `episode_detection_run` so that any result is explainable from the
 #' database alone (ARCHITECTURE.md section 7.4).
 #'
+#' `certedb`/Diver access is deliberately never called from inside this
+#' package (`QUESTIONS.md` item 22): `get_diver_data()` is the operator's
+#' own step, run before `episode_run_cron()`, transforming Diver's columns
+#' into `episode_ingest_columns`. See `README.md` for the raw data contract.
+#'
 #' @param db_path Path to the SQLite database file. Created if it does not
 #'   exist.
 #' @param ingest_source_fn A zero- or one-argument function returning a
 #'   data frame satisfying the ingestion interface. Defaults to the bundled
 #'   synthetic generator, the only implementation shipped in this
-#'   environment (`certedb::get_diver_data()` cannot be called here; see
-#'   `QUESTIONS.md` item 11).
+#'   environment.
+#' @param denominator_source_fn An optional zero-argument function returning
+#'   the pre-aggregated positivity metadata data frame (`pathogen`,
+#'   `sample_date`, `care_line`, `area_code`, `n_tests`), or `NULL` (the
+#'   default) if the operator has none to supply. See `QUESTIONS.md` item 22.
 #' @param episode_config_path Passed to [episode_config_resolve()].
 #' @param host,account Recorded on `episode_detection_run`; default to the
 #'   process's own host/account (ARCHITECTURE.md section 12: this is not an
@@ -28,6 +36,7 @@
 #' @export
 episode_run_cron <- function(db_path,
                               ingest_source_fn = episode_ingest_source_synthetic,
+                              denominator_source_fn = NULL,
                               episode_config_path = Sys.getenv("EPISODE_CONFIG", unset = NA),
                               host = Sys.info()[["nodename"]],
                               account = Sys.info()[["user"]],
@@ -42,7 +51,7 @@ episode_run_cron <- function(db_path,
 
   result <- tryCatch({
     DBI::dbBegin(con)
-    stats <- episode_run_cron_body(con, run_id, config, ingest_source_fn, run_date)
+    stats <- episode_run_cron_body(con, run_id, config, ingest_source_fn, denominator_source_fn, run_date)
     DBI::dbCommit(con)
     stats
   }, error = function(e) {
@@ -69,7 +78,7 @@ episode_run_cron <- function(db_path,
 
 #' @keywords internal
 #' @noRd
-episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, run_date) {
+episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, denominator_source_fn, run_date) {
   pathogen_config_path <- system.file("config", "pathogen_config.csv", package = "EpiSODE")
   if (identical(pathogen_config_path, "")) {
     pathogen_config_path <- file.path("inst", "config", "pathogen_config.csv")
@@ -80,19 +89,23 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, run_dat
   raw <- ingest_source_fn()
   episode_ingest_run(con, raw, pathogen_config, run_id)
 
+  if (!is.null(denominator_source_fn)) {
+    episode_denominator_ingest_run(con, denominator_source_fn())
+  }
+
   cases_all <- episode_db_cases(con)
   institutions <- episode_db_institutions(con)
 
   episode_lattice_enumerate(con, cases_all, institutions)
 
-  streams <- episode_db_streams(con)
   n_detections_total <- 0L
   n_new_total <- 0L
   n_updated_total <- 0L
 
   same_place_detections <- episode_detect_same_place(con, cases_all, institutions, config)
+  rare_trigger_detections <- episode_detect_rare_trigger(con, cases_all, institutions, config)
 
-  streams <- episode_db_streams(con)  # refresh: same_place may have created streams
+  streams <- episode_db_streams(con)  # refresh: same_place/rare_trigger may have created streams
 
   for (i in seq_len(nrow(streams))) {
     stream <- streams[i, ]
@@ -100,14 +113,16 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, run_dat
 
     episode_triangle_update(con, stream$stream_id, stream_cases, as.character(run_date))
 
-    stream_detections <- same_place_detections[same_place_detections$stream_id == stream$stream_id, ]
+    stream_detections <- rbind(
+      same_place_detections[same_place_detections$stream_id == stream$stream_id, ],
+      rare_trigger_detections[rare_trigger_detections$stream_id == stream$stream_id, ]
+    )
 
     if (nrow(stream_cases) > 0 &&
         episode_eligibility_gate(stream_cases, run_date, config)) {
       stream_detections <- rbind(
         stream_detections,
-        episode_detect_clusters(con, stream_cases, stream$stream_id),
-        episode_detect_farrington(con, stream_cases, stream$stream_id)
+        episode_detect_farrington(stream_cases, stream$stream_id, config, run_date)
       )
     }
 
@@ -125,7 +140,7 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, run_dat
     stream_detections$detection_id <- detection_ids
     n_detections_total <- n_detections_total + nrow(stream_detections)
 
-    pc <- pathogen_config[pathogen_config$mo_code == stream$mo_code, ]
+    pc <- pathogen_config[pathogen_config$pathogen == stream$pathogen, ]
     case_free_days <- if (nrow(pc) > 0) pc$case_free_days[1] else config$reconciliation$case_free_days_default
 
     weights <- config$priority_score$weights
@@ -137,7 +152,7 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, run_dat
         episode_priority_score(
           excess = NA, ratio = candidate$n_cases / max(candidate$n_cases, 1),
           severity_weight = if (nrow(pc) > 0) pc$severity_weight[1] else 1,
-          detector_agreement = candidate$detector_agreement, n_detectors = 6,
+          detector_agreement = candidate$detector_agreement, n_detectors = 4,
           weights = weights
         )
       },
@@ -162,8 +177,8 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, run_dat
 
 #' Filter a data frame of cases down to those belonging to one stream
 #'
-#' L1/L2 streams filter on `mo_code` and `institution_id` (and `ward` for
-#' L1). L3-L5 streams filter on `mo_code` and sample date only, an
+#' L1/L2 streams filter on `pathogen` and `institution_id` (and `ward` for
+#' L1). L3-L5 streams filter on `pathogen` and sample date only, an
 #' approximation documented in `QUESTIONS.md` alongside the L3/L4 region
 #' derivation itself (`R/lattice_enumerate.R`); a real PC4-to-region join
 #' (via `certegis`, M5) would tighten this.
@@ -173,7 +188,7 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, run_dat
 #' @return The subset of `cases` belonging to `stream`.
 #' @export
 episode_cases_for_stream <- function(cases, stream) {
-  matches <- cases$mo_code == stream$mo_code
+  matches <- cases$pathogen == stream$pathogen
   if (!is.na(stream$institution_id)) {
     matches <- matches & !is.na(cases$institution_id) & cases$institution_id == stream$institution_id
   }
@@ -186,7 +201,7 @@ episode_cases_for_stream <- function(cases, stream) {
 #' @keywords internal
 #' @noRd
 episode_pkg_versions <- function() {
-  pkgs <- c("EpiSODE", "certestats", "AMR", "EpiEstim", "surveillance")
+  pkgs <- c("EpiSODE", "surveillance", "EpiEstim")
   versions <- lapply(pkgs, function(p) {
     if (requireNamespace(p, quietly = TRUE)) as.character(utils::packageVersion(p)) else NA
   })

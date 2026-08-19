@@ -99,10 +99,11 @@ episode_synthetic_pc4_pool <- function() {
 episode_synthetic_organism_profiles <- function() {
   # amplitude/phase describe a sinusoidal seasonal baseline; phase_day is the
   # day-of-year of peak incidence. mean_daily is the region-wide baseline
-  # mean before seasonality is applied.
+  # mean before seasonality is applied. pathogen values match
+  # inst/config/pathogen_config.csv exactly, as raw lab-provided strings.
   data.frame(
-    mo_code = c("V_NOROVIRUS", "V_INFLUENZA_A", "B_CAMPYLOBACTER", "B_SALMONELLA",
-                "V_RSV", "B_CLOSTRIDIOIDES_DIFFICILE", "B_MRSA", "P_GIARDIA"),
+    pathogen = c("Norovirus", "Influenza A", "Campylobacter", "Salmonella",
+                 "RSV", "Clostridioides difficile", "MRSA", "Giardia lamblia"),
     mean_daily = c(1.2, 1.0, 0.9, 0.4, 0.7, 0.5, 0.15, 0.2),
     amplitude = c(0.7, 0.9, 0.4, 0.3, 0.9, 0.1, 0.05, 0.1),
     phase_day = c(15, 15, 200, 210, 350, 180, 180, 200),  # ~mid-Jan, mid-Jul etc.
@@ -125,12 +126,10 @@ episode_synthetic_baseline_cases <- function(dates, institutions, pc4_pool, orga
     inst_idx <- sample(seq_len(nrow(institutions)), n_total, replace = TRUE)
     inst <- institutions[inst_idx, ]
     rows[[i]] <- data.frame(
-      patient_key = sprintf("PT-%s-%06d", org$mo_code, sample.int(1e7, n_total)),
+      patient_key = sprintf("PT-%s-%06d", make.names(org$pathogen), sample.int(1e7, n_total)),
       sample_date = as.character(case_dates),
       receipt_date = as.character(case_dates + sample(0:3, n_total, replace = TRUE, prob = c(0.6, 0.25, 0.1, 0.05))),
-      mo_code = org$mo_code,
-      determination = paste0("DET-", substr(org$mo_code, 1, 3)),
-      material = sample(c("faeces", "urine", "sputum", "wound", "blood"), n_total, replace = TRUE),
+      pathogen = org$pathogen,
       care_line = inst$care_line,
       institution_key = inst$institution_key,
       institution_display_name = inst$institution_display_name,
@@ -165,9 +164,7 @@ episode_synthetic_outbreak_point_source <- function(institutions, end_date, n_ca
     patient_key = sprintf("PT-OUTBREAK-PS-%03d", seq_len(n_cases)),
     sample_date = as.character(case_dates),
     receipt_date = as.character(case_dates + 1),
-    mo_code = "V_NOROVIRUS",
-    determination = "DET-V_N",
-    material = "faeces",
+    pathogen = "Norovirus",
     care_line = "second",
     institution_key = hospital$institution_key,
     institution_display_name = hospital$institution_display_name,
@@ -189,7 +186,7 @@ episode_synthetic_outbreak_propagated <- function(pc4_pool, end_date, n_generati
                                                     cases_per_generation = c(2, 4, 6, 3)) {
   epi_pc4 <- sample(pc4_pool, 1)
   start_date <- end_date - 90
-  serial_interval <- 20  # B_BORDETELLA_PERTUSSIS-like, days
+  serial_interval <- 20  # Bordetella pertussis-like, days
 
   rows <- list()
   gen_start <- start_date
@@ -200,9 +197,7 @@ episode_synthetic_outbreak_propagated <- function(pc4_pool, end_date, n_generati
       patient_key = sprintf("PT-OUTBREAK-PROP-G%d-%03d", g, seq_len(n)),
       sample_date = as.character(case_dates),
       receipt_date = as.character(case_dates + 1),
-      mo_code = "B_BORDETELLA_PERTUSSIS",
-      determination = "DET-B_B",
-      material = "sputum",
+      pathogen = "Bordetella pertussis",
       care_line = "first",
       institution_key = "GP-01",
       institution_display_name = "Groningen",

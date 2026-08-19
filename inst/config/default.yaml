@@ -28,7 +28,8 @@ effect_size_floor:
 
 # same_place rule-based detector, ARCHITECTURE.md section 7.2.
 # Defaults of n = 3 within 14 days, tightened per organism for the ones
-# that matter. mo_code values here match inst/config/pathogen_config.csv.
+# that matter. Keys are raw `pathogen` strings, matching
+# inst/config/pathogen_config.csv and whatever the operator's lab feed uses.
 same_place:
   # NOTE: keys are n_cases/k_days rather than the architecture's own "n"
   # because YAML 1.1 parses a bare unquoted `n:` key as the boolean FALSE
@@ -36,12 +37,50 @@ same_place:
   default_n_cases: 3
   default_k_days: 14
   overrides:
-    B_CLOSTRIDIOIDES_DIFFICILE: {n_cases: 3, k_days: 14}
-    B_MRSA: {n_cases: 3, k_days: 14}
-    B_VRE: {n_cases: 3, k_days: 14}
-    B_CPE: {n_cases: 2, k_days: 14}
-    V_NOROVIRUS: {n_cases: 3, k_days: 7}
-    B_LEGIONELLA: {n_cases: 2, k_days: 14}
+    Clostridioides difficile: {n_cases: 3, k_days: 14}
+    MRSA: {n_cases: 3, k_days: 14}
+    VRE: {n_cases: 3, k_days: 14}
+    Carbapenemase-producing Enterobacterales: {n_cases: 2, k_days: 14}
+    Norovirus: {n_cases: 3, k_days: 7}
+    Legionella: {n_cases: 2, k_days: 14}
+
+# Farrington detector (surveillance::farringtonFlexible()), replacing the
+# certestats wrapper - see QUESTIONS.md for the switch from certestats to
+# depending on `surveillance` (CRAN) directly.
+farrington:
+  aggregation: week        # cases are aggregated to weekly counts before fitting
+  b: 3                     # number of years of history to compare against
+                            # (3, not the more conventional 5, so the bundled
+                            # 5-year demo has margin to actually fire; raise
+                            # this in a real instance with more history)
+  w: 3                     # half-window (weeks) around the same calendar week in each reference year
+  reweight: true
+  weightsThreshold: 2.58
+  trend: true
+  pastWeeksNotIncluded: 26 # exclude the trailing window from the noise-level estimate (surveillance default guidance)
+  limit54: [5, 4]          # noPeriods-style low-count safeguard: [cases, period_weeks]
+  alpha: 0.05
+
+# rare_trigger: a curated absolute-rarity list, ARCHITECTURE.md section 8,
+# item 2 ("Rare-but-serious path"). A single case of any pathogen listed
+# here fires a detection; no baseline is computed at all. Match is against
+# the raw `pathogen` string, case-insensitively.
+#
+# Deliberately excludes Bordetella pertussis despite it being one of the
+# architecture's own examples elsewhere: it is also rt_applicable in
+# pathogen_config.csv (endemic, seasonal, tracked via Rt/Farrington), and
+# putting it on both lists means every sporadic case fires rare_trigger
+# redundantly with what the statistical detectors already cover. A pathogen
+# belongs here when a single case is ALWAYS notable regardless of context
+# (no meaningful "expected baseline" exists for it at all), not merely when
+# it is serious.
+rare_trigger:
+  pathogens:
+    - Neisseria meningitidis
+    - Corynebacterium diphtheriae
+    - Carbapenemase-producing Enterobacterales
+    - Candida auris
+  min_cases: 1
 
 # Priority score weights, ARCHITECTURE.md section 8.1. Sum to 1.00.
 priority_score:

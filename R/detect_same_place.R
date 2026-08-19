@@ -11,7 +11,7 @@
 #' `episode_stream`/`episode_cluster` tables as every other detector.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param cases A data frame of cases to scan, with `mo_code`,
+#' @param cases A data frame of cases to scan, with `pathogen`,
 #'   `institution_id`, `ward`, `sample_date`.
 #' @param institutions A data frame from `episode_db_institutions()`.
 #' @param config The resolved configuration; uses `config$same_place`.
@@ -32,7 +32,7 @@ episode_detect_same_place <- function(con, cases, institutions, config) {
   if (any(is_hospital, na.rm = TRUE)) {
     ward_cases <- cases[which(is_hospital), ]
     hits$ward <- episode_same_place_scan(
-      ward_cases, group_cols = c("mo_code", "institution_id", "ward"), config = config,
+      ward_cases, group_cols = c("pathogen", "institution_id", "ward"), config = config,
       stream_level = "pathogen_ward", con = con
     )
   }
@@ -40,7 +40,7 @@ episode_detect_same_place <- function(con, cases, institutions, config) {
   non_hospital <- cases[which(!is_hospital), ]
   if (nrow(non_hospital) > 0) {
     hits$institution <- episode_same_place_scan(
-      non_hospital, group_cols = c("mo_code", "institution_id"), config = config,
+      non_hospital, group_cols = c("pathogen", "institution_id"), config = config,
       stream_level = "pathogen_institution", con = con
     )
   }
@@ -62,8 +62,8 @@ episode_same_place_scan <- function(cases, group_cols, config, stream_level, con
   records <- list()
   for (g in groups) {
     grp <- cases[g, ]
-    mo_code <- grp$mo_code[1]
-    rule <- episode_same_place_rule(config, mo_code)
+    pathogen <- grp$pathogen[1]
+    rule <- episode_same_place_rule(config, pathogen)
     dates <- sort(as.Date(grp$sample_date))
 
     windows <- episode_same_place_hit_windows(dates, n = rule$n, k_days = rule$k_days)
@@ -73,15 +73,13 @@ episode_same_place_scan <- function(cases, group_cols, config, stream_level, con
     ward <- if ("ward" %in% group_cols) grp$ward[1] else NA
 
     stream_key <- episode_stream_key(
-      level = stream_level, mo_code = mo_code, care_line = NA,
+      level = stream_level, pathogen = pathogen, care_line = NA,
       region_code = NA, institution_id = institution_id,
       ward = if (stream_level == "pathogen_ward") ward else NA
     )
-    resolved <- episode_mo_resolve(mo_code, mo_code, "species")
     stream_id <- episode_db_stream_upsert(
-      con, stream_key = stream_key, level = stream_level, mo_code = resolved$mo_code,
-      mo_name = resolved$mo_name, mo_rank = resolved$mo_rank, care_line = NA,
-      region_code = NA, institution_id = institution_id,
+      con, stream_key = stream_key, level = stream_level, pathogen = pathogen,
+      care_line = NA, region_code = NA, institution_id = institution_id,
       ward = if (stream_level == "pathogen_ward") ward else NA,
       denominator = "none", observed_date = as.character(max(dates))
     )
@@ -102,9 +100,9 @@ episode_same_place_scan <- function(cases, group_cols, config, stream_level, con
 
 #' @keywords internal
 #' @noRd
-episode_same_place_rule <- function(config, mo_code) {
+episode_same_place_rule <- function(config, pathogen) {
   sp <- config$same_place
-  override <- sp$overrides[[mo_code]]
+  override <- sp$overrides[[pathogen]]
   if (!is.null(override)) {
     list(n = override$n_cases, k_days = override$k_days)
   } else {

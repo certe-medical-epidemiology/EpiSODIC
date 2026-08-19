@@ -24,8 +24,8 @@ episode_ingest_run <- function(con, raw, pathogen_config, run_id) {
   cases <- deduped
   cases$institution_id <- institution_lookup[cases$institution_key]
   cases <- cases[, c(
-    "source_key", "patient_key", "sample_date", "receipt_date", "mo_code",
-    "determination", "material", "care_line", "institution_id", "ward",
+    "source_key", "patient_key", "sample_date", "receipt_date", "pathogen",
+    "care_line", "institution_id", "ward",
     "specialism", "pc4", "sex", "age"
   )]
 

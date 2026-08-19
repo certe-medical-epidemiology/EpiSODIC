@@ -70,20 +70,12 @@ test_that("episode_priority_score() renormalises weights when density_ratio is N
   expect_true(is.finite(without_density))
 })
 
-test_that("episode_mo_resolve() falls back to the placeholder code/name when AMR is unavailable", {
-  skip_if(requireNamespace("AMR", quietly = TRUE), "AMR is installed; fallback path not exercised")
-  resolved <- episode_mo_resolve("B_TESTORG", "Test organism", "species")
-  expect_equal(resolved$mo_code, "B_TESTORG")
-  expect_equal(resolved$mo_name, "Test organism")
-  expect_equal(resolved$mo_rank, "species")
-})
-
 test_that("episode_triangle_update() and episode_triangle_completeness() round-trip", {
   con <- episode_test_db()
   on.exit(DBI::dbDisconnect(con))
   stream_id <- episode_db_stream_upsert(
-    con, stream_key = episode_stream_key("pathogen_region", "TEST_MO"), level = "pathogen_region",
-    mo_code = "TEST_MO", mo_name = "Test", mo_rank = "species", observed_date = "2025-01-05"
+    con, stream_key = episode_stream_key("pathogen_region", "Test organism"), level = "pathogen_region",
+    pathogen = "Test organism", observed_date = "2025-01-05"
   )
   cases <- data.frame(sample_date = c("2025-01-01", "2025-01-01", "2025-01-02"))
   episode_triangle_update(con, stream_id, cases, run_date = "2025-01-05")
@@ -95,6 +87,36 @@ test_that("episode_triangle_update() and episode_triangle_completeness() round-t
 
   completeness <- episode_triangle_completeness(con, stream_id)
   expect_true(all(completeness$completeness >= 0 & completeness$completeness <= 1))
+})
+
+test_that("episode_db_denominator_upsert() and episode_denominator_ingest_run() round-trip", {
+  con <- episode_test_db()
+  on.exit(DBI::dbDisconnect(con))
+
+  episode_db_denominator_upsert(con, pathogen = "Norovirus", sample_date = "2025-01-06",
+                                 care_line = "second", area_code = NA, n_tests = 40)
+  # upsert: same key, different n_tests, must update not duplicate
+  episode_db_denominator_upsert(con, pathogen = "Norovirus", sample_date = "2025-01-06",
+                                 care_line = "second", area_code = NA, n_tests = 55)
+
+  rows <- DBI::dbGetQuery(con, "SELECT * FROM episode_denominator")
+  expect_equal(nrow(rows), 1)
+  expect_equal(rows$n_tests[1], 55)
+
+  denom <- episode_denominator_source_synthetic(
+    start_date = as.Date("2024-01-01"), end_date = as.Date("2024-02-28"), seed = 1
+  )
+  n_written <- episode_denominator_ingest_run(con, denom)
+  expect_equal(n_written, nrow(denom))
+  rows_after <- DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM episode_denominator")
+  expect_gt(rows_after$n, 1)
+})
+
+test_that("episode_denominator_ingest_run() rejects a source missing required columns", {
+  con <- episode_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  bad <- data.frame(pathogen = "Norovirus", sample_date = "2025-01-01")
+  expect_error(episode_denominator_ingest_run(con, bad), "missing required")
 })
 
 test_that("episode_split_sql_statements() splits on semicolons and drops comments", {

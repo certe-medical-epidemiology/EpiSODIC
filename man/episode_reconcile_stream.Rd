@@ -47,9 +47,9 @@ Invisibly, a list with \code{n_new}, \code{n_updated}, \code{n_merged}.
 \description{
 Run per stream, after detection, inside the run transaction
 (ARCHITECTURE.md section 6). This is the load-bearing algorithm of the
-whole system: neither \code{certestats} function emits a stable cluster
-identity, so mapping today's detections onto persistent, real-world
-clusters is what makes the rest of the application possible.
+whole system: no detector emits a stable cluster identity on its own, so
+mapping today's detections onto persistent, real-world clusters is what
+makes the rest of the application possible.
 }
 \details{
 Algorithm, matching section 6 verbatim:

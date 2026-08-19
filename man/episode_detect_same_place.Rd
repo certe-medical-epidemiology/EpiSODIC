@@ -9,7 +9,7 @@ episode_detect_same_place(con, cases, institutions, config)
 \arguments{
 \item{con}{A \link[DBI:DBIConnection-class]{DBI::DBIConnection}.}
 
-\item{cases}{A data frame of cases to scan, with \code{mo_code},
+\item{cases}{A data frame of cases to scan, with \code{pathogen},
 \code{institution_id}, \code{ward}, \code{sample_date}.}
 
 \item{institutions}{A data frame from \code{episode_db_institutions()}.}

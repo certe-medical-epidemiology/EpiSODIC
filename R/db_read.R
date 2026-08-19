@@ -15,13 +15,13 @@ episode_db_pathogen_config <- function(con) {
 }
 
 #' @rdname db_read
-#' @param mo_code A single pathogen code.
+#' @param pathogen A single raw pathogen string.
 #' @export
-episode_db_pathogen_config_get <- function(con, mo_code) {
+episode_db_pathogen_config_get <- function(con, pathogen) {
   res <- DBI::dbGetQuery(
     con,
-    "SELECT * FROM episode_pathogen_config WHERE mo_code = ?",
-    params = list(mo_code)
+    "SELECT * FROM episode_pathogen_config WHERE pathogen = ?",
+    params = list(pathogen)
   )
   if (nrow(res) == 0) NULL else res[1, ]
 }
@@ -72,13 +72,12 @@ episode_db_cases <- function(con) {
 }
 
 #' @rdname db_read
-#' @param mo_code A single pathogen code.
 #' @export
-episode_db_cases_for_mo <- function(con, mo_code) {
+episode_db_cases_for_pathogen <- function(con, pathogen) {
   DBI::dbGetQuery(
     con,
-    "SELECT * FROM episode_case WHERE mo_code = ? ORDER BY sample_date",
-    params = list(mo_code)
+    "SELECT * FROM episode_case WHERE pathogen = ? ORDER BY sample_date",
+    params = list(pathogen)
   )
 }
 

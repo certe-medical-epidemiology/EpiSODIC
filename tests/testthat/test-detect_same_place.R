@@ -1,7 +1,7 @@
-same_place_case <- function(source_key, sample_date, institution_id, mo_code = "TEST_MO",
+same_place_case <- function(source_key, sample_date, institution_id, pathogen = "Test organism",
                              ward = "ICU") {
   data.frame(
-    source_key = source_key, mo_code = mo_code, institution_id = institution_id, ward = ward,
+    source_key = source_key, pathogen = pathogen, institution_id = institution_id, ward = ward,
     sample_date = sample_date, stringsAsFactors = FALSE
   )
 }
@@ -65,9 +65,9 @@ test_that("a per-organism override tightens the threshold (norovirus: n=3 within
   institutions <- same_place_add_institution(con)
   id <- institutions$institution_id[1]
   cases <- rbind(
-    same_place_case("K1", "2025-01-01", id, mo_code = "V_NOROVIRUS"),
-    same_place_case("K2", "2025-01-09", id, mo_code = "V_NOROVIRUS"),  # 8 days later: outside 7-day window
-    same_place_case("K3", "2025-01-10", id, mo_code = "V_NOROVIRUS")
+    same_place_case("K1", "2025-01-01", id, pathogen = "Norovirus"),
+    same_place_case("K2", "2025-01-09", id, pathogen = "Norovirus"),  # 8 days later: outside 7-day window
+    same_place_case("K3", "2025-01-10", id, pathogen = "Norovirus")
   )
   config <- episode_test_config()
   result <- episode_detect_same_place(con, cases, institutions, config)

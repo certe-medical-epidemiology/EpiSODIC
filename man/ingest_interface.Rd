@@ -9,16 +9,29 @@ episode_ingest_columns
 }
 \description{
 Defines the contract that any raw case data source must satisfy before
-\code{episode_ingest()} (see \code{R/ingest_dedup.R}) can turn it into rows of
-\code{episode_case} and \code{episode_reporting_triangle}. \code{certedb::get_diver_data()}
-cannot be called in this environment; the only implementation shipped is
-\code{episode_ingest_source_synthetic()} (see \code{R/ingest_synthetic.R}). A real
-Diver-backed adapter is a future extension point that must return a data
-frame with the same shape.
+\code{episode_ingest_run()} (see \code{R/ingest_pipeline.R}) can turn it into rows
+of \code{episode_case}. This is the entire boundary between EpiSODE and
+whatever laboratory or hospital system an operator runs: EpiSODE never
+calls \code{certedb::get_diver_data()} or any other data source itself
+(\code{QUESTIONS.md} item 22, \code{README.md}'s data format section) - the
+operator's own cron script extracts and transforms into exactly this
+shape, then calls \code{\link[=episode_run_cron]{episode_run_cron()}} with a function that returns it.
+The only implementation shipped in this package is the synthetic
+generator (\code{R/ingest_synthetic.R}), used for the bundled demo.
 }
 \details{
-The allow-listed columns below are exactly the fields ARCHITECTURE.md
-sections 5.4 and 5.4.1 name. Nothing else may be requested from Diver
-(standing brief, section 3: no patient data beyond this, no named
-clinician fields, ever).
+\strong{Mandatory, drives all detection: one row per confirmed-positive
+isolate/result.} \code{pathogen} is a raw, lab-provided string, used
+verbatim - never resolved against \code{AMR::as.mo()} or any other taxonomy,
+since \code{AMR} only covers non-viral organisms and this system must detect
+clusters of anything a lab reports (see \code{QUESTIONS.md} item 22). The same
+underlying isolate can legitimately appear more than once under
+different \code{pathogen} values when that is epidemiologically useful (an
+ETEC isolate as both \code{"Escherichia coli"} and \code{"ETEC"}, so each is
+watched on its own), and it is entirely the operator's transform step
+that decides this, not EpiSODE.
+
+\strong{No \code{positive}/test-outcome column, and no raw negatives.} Positivity
+is handled separately as small, optional, pre-aggregated metadata (see
+\code{R/ingest_denominator.R}); the mandatory feed here is positives only.
 }

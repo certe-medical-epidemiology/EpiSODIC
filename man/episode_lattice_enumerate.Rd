@@ -10,7 +10,7 @@ episode_lattice_enumerate(con, cases, institutions)
 \item{con}{A \link[DBI:DBIConnection-class]{DBI::DBIConnection}.}
 
 \item{cases}{A data frame of newly-ingested (or all) cases, with at least
-\code{mo_code}, \code{sample_date}, \code{care_line}, \code{institution_id}, \code{pc4}.}
+\code{pathogen}, \code{sample_date}, \code{care_line}, \code{institution_id}, \code{pc4}.}
 
 \item{institutions}{A data frame from \code{episode_db_institutions()}.}
 }

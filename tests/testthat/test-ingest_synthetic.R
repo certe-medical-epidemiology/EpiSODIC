@@ -14,7 +14,7 @@ test_that("the same seed reproduces identical data", {
     start_date = as.Date("2024-01-01"), end_date = as.Date("2024-03-31"), seed = 7
   )
   expect_equal(nrow(raw1), nrow(raw2))
-  expect_equal(sum(as.integer(as.factor(raw1$mo_code))), sum(as.integer(as.factor(raw2$mo_code))))
+  expect_equal(sum(as.integer(as.factor(raw1$pathogen))), sum(as.integer(as.factor(raw2$pathogen))))
 })
 
 test_that("the injected point-source outbreak is present as a tight ward-level cluster", {
@@ -36,4 +36,13 @@ test_that("the injected propagated outbreak spans generation-interval-spaced wav
   expect_equal(nrow(outbreak), 15)
   span <- diff(range(as.Date(outbreak$sample_date)))
   expect_gt(as.numeric(span), 40)  # spread across generations, propagated shape
+})
+
+test_that("episode_denominator_source_synthetic() produces a valid denominator source", {
+  denom <- episode_denominator_source_synthetic(
+    start_date = as.Date("2024-01-01"), end_date = as.Date("2024-12-31"), seed = 3
+  )
+  expect_true(all(c("pathogen", "sample_date", "care_line", "area_code", "n_tests") %in% names(denom)))
+  expect_gt(nrow(denom), 0)
+  expect_true(all(denom$n_tests >= 0))
 })

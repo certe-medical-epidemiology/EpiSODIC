@@ -21,8 +21,8 @@ reconcile_setup <- function() {
   institution_id <- DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
 
   stream_id <- episode_db_stream_upsert(
-    con, stream_key = episode_stream_key("pathogen_institution", "TEST_MO", institution_id = institution_id),
-    level = "pathogen_institution", mo_code = "TEST_MO", mo_name = "Test organism", mo_rank = "species",
+    con, stream_key = episode_stream_key("pathogen_institution", "Test organism", institution_id = institution_id),
+    level = "pathogen_institution", pathogen = "Test organism",
     institution_id = institution_id, observed_date = "2025-01-01"
   )
 
@@ -39,8 +39,8 @@ reconcile_detect <- function(env, run_id, first_day, last_day, n_cases, detector
     source_key <- sprintf("CASE-%s-%d-%d", first_day, run_id, i)
     DBI::dbExecute(
       env$con,
-      "INSERT INTO episode_case (source_key, patient_key, sample_date, mo_code, care_line,
-        institution_id, first_seen_run) VALUES (?, ?, ?, 'TEST_MO', 'second', ?, ?)",
+      "INSERT INTO episode_case (source_key, patient_key, sample_date, pathogen, care_line,
+        institution_id, first_seen_run) VALUES (?, ?, ?, 'Test organism', 'second', ?, ?)",
       params = list(source_key, source_key, dates[i], env$institution_id, run_id)
     )
   }
@@ -234,7 +234,7 @@ test_that("a failed run inside the cron transaction leaves no partial state", {
     raw <- episode_ingest_source_synthetic(
       start_date = as.Date("2024-01-01"), end_date = as.Date("2024-01-05")
     )
-    raw$mo_code <- NULL  # violates the ingestion interface, forces an error mid-run
+    raw$pathogen <- NULL  # violates the ingestion interface, forces an error mid-run
     raw
   }
 

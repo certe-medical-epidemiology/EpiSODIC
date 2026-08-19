@@ -4,7 +4,7 @@
 #' These functions are the only place in the package that write to
 #' `episode_stream`, `episode_institution`, `episode_institution_activity`,
 #' `episode_case`, `episode_reporting_triangle`, `episode_denominator`,
-#' `episode_mo_determination`, `episode_detection`, `episode_cluster`,
+#' `episode_detection`, `episode_cluster`,
 #' `episode_cluster_case`, `episode_detection_run` and (for pre-renders)
 #' `episode_report_render`. See `R/db_app_write.R` for the insert-only
 #' counterparts.
@@ -16,7 +16,8 @@
 #' @param source Free-text provenance, or `NA`.
 #' @param stream_key A 40-character `stream_key`.
 #' @param level One of the five lattice levels.
-#' @param mo_code,mo_name,mo_rank Pathogen identity fields.
+#' @param pathogen The raw lab-provided pathogen string (see `QUESTIONS.md`
+#'   item 22); used verbatim as the stream's identity, no taxonomy resolved.
 #' @param care_line One of `"first"`, `"second"`, `"other"`, `"unknown"`, or `NA`.
 #' @param region_code A region code, or `NA`.
 #' @param pc4 A PC4 postcode, or `NA`.
@@ -29,6 +30,8 @@
 #' @param stream_id A `stream_id`.
 #' @param sample_date,run_date Reporting-triangle dates.
 #' @param n_cases A case count.
+#' @param n_tests A test count, for the optional positivity metadata table.
+#' @param area_code An area code, for the optional positivity metadata table.
 #' @param detector One of the detector enum values.
 #' @param first_day,last_day A detection or cluster interval.
 #' @param expected,upperbound Statistical detector output, or `NA`.
@@ -57,17 +60,17 @@ NULL
 episode_db_pathogen_config_load <- function(con, pathogen_config) {
   for (i in seq_len(nrow(pathogen_config))) {
     row <- pathogen_config[i, ]
-    existing <- episode_db_pathogen_config_get(con, row$mo_code)
+    existing <- episode_db_pathogen_config_get(con, row$pathogen)
     if (is.null(existing)) {
       DBI::dbExecute(
         con,
         "INSERT INTO episode_pathogen_config
-          (mo_code, episode_days, incub_min_days, incub_max_days, case_free_days,
+          (pathogen, episode_days, incub_min_days, incub_max_days, case_free_days,
            cooldown_days, rt_applicable, si_mean_days, si_sd_days, si_dist,
            mem_applicable, severity_weight, source_ref)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         params = list(
-          row$mo_code, row$episode_days, row$incub_min_days, row$incub_max_days,
+          row$pathogen, row$episode_days, row$incub_min_days, row$incub_max_days,
           row$case_free_days, row$cooldown_days, as.integer(row$rt_applicable),
           row$si_mean_days, row$si_sd_days, row$si_dist,
           as.integer(row$mem_applicable), row$severity_weight, row$source_ref
@@ -80,12 +83,12 @@ episode_db_pathogen_config_load <- function(con, pathogen_config) {
           episode_days = ?, incub_min_days = ?, incub_max_days = ?, case_free_days = ?,
           cooldown_days = ?, rt_applicable = ?, si_mean_days = ?, si_sd_days = ?,
           si_dist = ?, mem_applicable = ?, severity_weight = ?, source_ref = ?
-         WHERE mo_code = ?",
+         WHERE pathogen = ?",
         params = list(
           row$episode_days, row$incub_min_days, row$incub_max_days, row$case_free_days,
           row$cooldown_days, as.integer(row$rt_applicable), row$si_mean_days, row$si_sd_days,
           row$si_dist, as.integer(row$mem_applicable), row$severity_weight, row$source_ref,
-          row$mo_code
+          row$pathogen
         )
       )
     }
@@ -155,7 +158,7 @@ episode_db_institution_activity_upsert <- function(con, institution_id, period_s
 
 #' @rdname db_cron_write
 #' @export
-episode_db_stream_upsert <- function(con, stream_key, level, mo_code, mo_name, mo_rank,
+episode_db_stream_upsert <- function(con, stream_key, level, pathogen,
                                       care_line = NA, region_code = NA, institution_id = NA,
                                       ward = NA, denominator = "none", severity_weight = 1.00,
                                       observed_date) {
@@ -165,19 +168,18 @@ episode_db_stream_upsert <- function(con, stream_key, level, mo_code, mo_name, m
     last_seen <- max(existing$last_seen, observed_date)
     DBI::dbExecute(
       con,
-      "UPDATE episode_stream SET mo_name = ?, mo_rank = ?, first_seen = ?, last_seen = ?
-       WHERE stream_key = ?",
-      params = list(mo_name, mo_rank, first_seen, last_seen, stream_key)
+      "UPDATE episode_stream SET first_seen = ?, last_seen = ? WHERE stream_key = ?",
+      params = list(first_seen, last_seen, stream_key)
     )
     return(existing$stream_id)
   }
   DBI::dbExecute(
     con,
     "INSERT INTO episode_stream
-      (stream_key, level, mo_code, mo_name, mo_rank, care_line, region_code, institution_id,
+      (stream_key, level, pathogen, care_line, region_code, institution_id,
        ward, denominator, severity_weight, is_active, first_seen, last_seen, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)",
-    params = list(stream_key, level, mo_code, mo_name, mo_rank, care_line, region_code,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)",
+    params = list(stream_key, level, pathogen, care_line, region_code,
                   institution_id, ward, denominator, severity_weight, observed_date, observed_date,
                   episode_now())
   )
@@ -197,12 +199,12 @@ episode_db_case_insert_new <- function(con, cases, run_id) {
     DBI::dbExecute(
       con,
       "INSERT INTO episode_case
-        (source_key, patient_key, sample_date, receipt_date, mo_code, determination, material,
+        (source_key, patient_key, sample_date, receipt_date, pathogen,
          care_line, institution_id, ward, specialism, pc4, sex, age, first_seen_run)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       params = list(
-        row$source_key, row$patient_key, row$sample_date, row$receipt_date, row$mo_code,
-        row$determination, row$material, row$care_line, row$institution_id, row$ward,
+        row$source_key, row$patient_key, row$sample_date, row$receipt_date, row$pathogen,
+        row$care_line, row$institution_id, row$ward,
         row$specialism, row$pc4, row$sex, row$age, run_id
       )
     )
@@ -232,6 +234,34 @@ episode_db_reporting_triangle_upsert <- function(con, stream_id, sample_date, ru
       "INSERT INTO episode_reporting_triangle (stream_id, sample_date, run_date, n_cases)
        VALUES (?, ?, ?, ?)",
       params = list(stream_id, sample_date, run_date, n_cases)
+    )
+  }
+  invisible(NULL)
+}
+
+#' @rdname db_cron_write
+#' @export
+episode_db_denominator_upsert <- function(con, pathogen, sample_date, care_line, area_code = NA,
+                                           n_tests) {
+  existing <- DBI::dbGetQuery(
+    con,
+    "SELECT 1 FROM episode_denominator
+     WHERE pathogen = ? AND sample_date = ? AND care_line = ? AND area_code IS ?",
+    params = list(pathogen, sample_date, care_line, area_code)
+  )
+  if (nrow(existing) > 0) {
+    DBI::dbExecute(
+      con,
+      "UPDATE episode_denominator SET n_tests = ?
+       WHERE pathogen = ? AND sample_date = ? AND care_line = ? AND area_code IS ?",
+      params = list(n_tests, pathogen, sample_date, care_line, area_code)
+    )
+  } else {
+    DBI::dbExecute(
+      con,
+      "INSERT INTO episode_denominator (pathogen, sample_date, care_line, area_code, n_tests)
+       VALUES (?, ?, ?, ?, ?)",
+      params = list(pathogen, sample_date, care_line, area_code, n_tests)
     )
   }
   invisible(NULL)

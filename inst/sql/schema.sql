@@ -24,9 +24,7 @@ CREATE TABLE episode_stream (
   level           TEXT NOT NULL CHECK (level IN (
                     'pathogen_ward', 'pathogen_institution', 'pathogen_area',
                     'pathogen_province', 'pathogen_region')),
-  mo_code         TEXT NOT NULL,
-  mo_name         TEXT NOT NULL,
-  mo_rank         TEXT NOT NULL,
+  pathogen        TEXT NOT NULL,  -- raw lab-provided string, see QUESTIONS.md item 22
   care_line       TEXT CHECK (care_line IN ('first', 'second', 'other', 'unknown')),
   region_code     TEXT,
   institution_id  INTEGER REFERENCES episode_institution(institution_id),
@@ -40,7 +38,7 @@ CREATE TABLE episode_stream (
   created_at      TEXT NOT NULL
 );
 
-CREATE INDEX idx_episode_stream_mo ON episode_stream(mo_code);
+CREATE INDEX idx_episode_stream_pathogen ON episode_stream(pathogen);
 CREATE INDEX idx_episode_stream_active ON episode_stream(is_active);
 
 -- ---------------------------------------------------------------------
@@ -122,7 +120,7 @@ CREATE TABLE episode_institution_activity (
 -- not written by either process at runtime, loaded from CSV)
 -- ---------------------------------------------------------------------
 CREATE TABLE episode_pathogen_config (
-  mo_code         TEXT NOT NULL PRIMARY KEY,
+  pathogen        TEXT NOT NULL PRIMARY KEY,  -- matches episode_case.pathogen exactly
   episode_days    INTEGER NOT NULL DEFAULT 30,
   incub_min_days  REAL,
   incub_max_days  REAL,
@@ -146,9 +144,7 @@ CREATE TABLE episode_case (
   patient_key    TEXT NOT NULL,
   sample_date    TEXT NOT NULL,
   receipt_date   TEXT,
-  mo_code        TEXT NOT NULL,
-  determination  TEXT,
-  material       TEXT,
+  pathogen       TEXT NOT NULL,  -- raw lab-provided string, see QUESTIONS.md item 22
   care_line      TEXT NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'other', 'unknown')),
   institution_id INTEGER REFERENCES episode_institution(institution_id),
   ward           TEXT,
@@ -160,7 +156,7 @@ CREATE TABLE episode_case (
 );
 
 CREATE INDEX idx_episode_case_sample_date ON episode_case(sample_date);
-CREATE INDEX idx_episode_case_mo ON episode_case(mo_code);
+CREATE INDEX idx_episode_case_pathogen ON episode_case(pathogen);
 CREATE INDEX idx_episode_case_patient ON episode_case(patient_key);
 CREATE INDEX idx_episode_case_institution ON episode_case(institution_id);
 
@@ -173,7 +169,7 @@ CREATE TABLE episode_detection (
   stream_id    INTEGER NOT NULL REFERENCES episode_stream(stream_id),
   cluster_id   INTEGER REFERENCES episode_cluster(cluster_id),
   detector     TEXT NOT NULL CHECK (detector IN (
-                 'clusters', 'farrington', 'ears', 'mem', 'rare_trigger', 'same_place')),
+                 'farrington', 'ears', 'mem', 'rare_trigger', 'same_place')),
   first_day    TEXT NOT NULL,
   last_day     TEXT NOT NULL,
   n_cases      INTEGER NOT NULL,
@@ -254,21 +250,25 @@ CREATE TABLE episode_reporting_triangle (
 );
 
 -- ---------------------------------------------------------------------
--- 5.7.1 Denominators (cron)
+-- 5.7.1 Denominators / positivity metadata (cron)
+--
+-- Deliberately supplied by the operator as pre-aggregated counts, not as a
+-- raw per-test linelist: see QUESTIONS.md item 22. Optional entirely - a
+-- site that cannot produce it (e.g. culture-only, no closed target list to
+-- report negatives against) simply never writes rows here, and positivity
+-- panels stay blank for its streams. Keyed on `pathogen` directly rather
+-- than on a lab `determination` code, so the determination-to-organism
+-- mapping (which organisms a given test method can detect) is the
+-- operator's own transform-time knowledge, not something EpiSODE encodes
+-- (episode_mo_determination from earlier drafts is dropped).
 -- ---------------------------------------------------------------------
 CREATE TABLE episode_denominator (
-  determination TEXT NOT NULL,
+  pathogen      TEXT NOT NULL,
   sample_date   TEXT NOT NULL,
   care_line     TEXT NOT NULL CHECK (care_line IN ('first', 'second', 'other', 'unknown')),
   area_code     TEXT,
   n_tests       INTEGER NOT NULL,
-  PRIMARY KEY (determination, sample_date, care_line, area_code)
-);
-
-CREATE TABLE episode_mo_determination (
-  mo_code       TEXT NOT NULL,
-  determination TEXT NOT NULL,
-  PRIMARY KEY (mo_code, determination)
+  PRIMARY KEY (pathogen, sample_date, care_line, area_code)
 );
 
 -- ---------------------------------------------------------------------

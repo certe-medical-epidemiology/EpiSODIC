@@ -7,6 +7,7 @@
 episode_run_cron(
   db_path,
   ingest_source_fn = episode_ingest_source_synthetic,
+  denominator_source_fn = NULL,
   episode_config_path = Sys.getenv("EPISODE_CONFIG", unset = NA),
   host = Sys.info()[["nodename"]],
   account = Sys.info()[["user"]],
@@ -20,8 +21,12 @@ exist.}
 \item{ingest_source_fn}{A zero- or one-argument function returning a
 data frame satisfying the ingestion interface. Defaults to the bundled
 synthetic generator, the only implementation shipped in this
-environment (\code{certedb::get_diver_data()} cannot be called here; see
-\code{QUESTIONS.md} item 11).}
+environment.}
+
+\item{denominator_source_fn}{An optional zero-argument function returning
+the pre-aggregated positivity metadata data frame (\code{pathogen},
+\code{sample_date}, \code{care_line}, \code{area_code}, \code{n_tests}), or \code{NULL} (the
+default) if the operator has none to supply. See \code{QUESTIONS.md} item 22.}
 
 \item{episode_config_path}{Passed to \code{\link[=episode_config_resolve]{episode_config_resolve()}}.}
 
@@ -47,4 +52,9 @@ Configuration is read from \code{EPISODE_CONFIG} (standing brief hard rule 2);
 the resolved configuration's hash and full snapshot are written to
 \code{episode_detection_run} so that any result is explainable from the
 database alone (ARCHITECTURE.md section 7.4).
+
+\code{certedb}/Diver access is deliberately never called from inside this
+package (\code{QUESTIONS.md} item 22): \code{get_diver_data()} is the operator's
+own step, run before \code{episode_run_cron()}, transforming Diver's columns
+into \code{episode_ingest_columns}. See \code{README.md} for the raw data contract.
 }

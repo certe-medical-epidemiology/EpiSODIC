@@ -6,7 +6,7 @@
 \usage{
 episode_stream_key(
   level,
-  mo_code,
+  pathogen,
   care_line = NA,
   region_code = NA,
   institution_id = NA,
@@ -16,8 +16,8 @@ episode_stream_key(
 \arguments{
 \item{level}{One of the five lattice levels, e.g. \code{"pathogen_ward"}.}
 
-\item{mo_code}{The pathogen code (\code{AMR::as.mo()} output or the
-placeholder equivalent, see \code{R/mo_lookup.R}).}
+\item{pathogen}{The raw lab-provided pathogen string, used as-is (no
+taxonomy resolution). See \code{QUESTIONS.md} item 22.}
 
 \item{care_line}{One of \code{"first"}, \code{"second"}, \code{"other"}, \code{"unknown"}, or
 \code{NA} if care line does not apply at this level.}

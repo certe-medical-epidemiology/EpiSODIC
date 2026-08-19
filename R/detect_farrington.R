@@ -1,0 +1,90 @@
+#' Farrington detector
+#'
+#' Wraps `surveillance::farringtonFlexible()` directly (CRAN, `Imports`, no
+#' Certe dependency), replacing the earlier `certestats::detect_farrington()`
+#' wrapper. `certestats` was only ever a thin linelist-to-`sts` adapter
+#' around this exact function; owning that glue removes the last
+#' Certe-specific package from the detection path and, unlike the
+#' `certestats` wrapper it replaces, can actually be installed and tested in
+#' any environment, CI included.
+#'
+#' Case dates are aggregated into weekly bins (Monday-starting), which is
+#' standard practice for Farrington-style surveillance; `frequency = 52` is
+#' used for the underlying `sts` object, the conventional approximation
+#' (a true year is ~52.18 weeks, so bin-to-calendar alignment drifts
+#' slightly over many years - a documented, widely-accepted simplification,
+#' not an EpiSODE-specific one). Detection is only evaluated for the most
+#' recent complete week relative to `run_date`.
+#'
+#' @param cases_for_stream A data frame of a single stream's cases, with
+#'   `sample_date`.
+#' @param stream_id The stream these cases belong to.
+#' @param config The resolved configuration; uses `config$farrington`.
+#' @param run_date The date to treat as "today"; the most recent week
+#'   evaluated is the one containing this date.
+#' @return A data frame of detection records (zero or one row: Farrington
+#'   evaluates only the current week, per ARCHITECTURE.md section 7).
+#' @export
+episode_detect_farrington <- function(cases_for_stream, stream_id, config, run_date = Sys.Date()) {
+  empty <- episode_detection_record(integer(0), character(0), character(0), character(0), integer(0))
+
+  dates <- as.Date(cases_for_stream$sample_date)
+  if (length(dates) == 0) return(empty)
+
+  fc <- config$farrington
+  weekly <- episode_weekly_bins(dates, run_date)
+
+  min_weeks_required <- (fc$b + 1) * 52
+  if (length(weekly$counts) < min_weeks_required) {
+    return(empty)  # insufficient baseline history for the configured b
+  }
+
+  sts_obj <- surveillance::sts(
+    observed = weekly$counts,
+    start = c(as.integer(format(weekly$week_start[1], "%Y")), 1),
+    frequency = 52
+  )
+
+  control <- list(
+    range = length(weekly$counts), b = fc$b, w = fc$w, reweight = isTRUE(fc$reweight),
+    weightsThreshold = fc$weightsThreshold, trend = isTRUE(fc$trend),
+    pastWeeksNotIncluded = fc$pastWeeksNotIncluded, limit54 = unlist(fc$limit54),
+    alpha = fc$alpha
+  )
+
+  result <- tryCatch(
+    suppressWarnings(surveillance::farringtonFlexible(sts_obj, control = control)),
+    error = function(e) NULL
+  )
+  if (is.null(result) || !isTRUE(as.logical(result@alarm[1, 1]))) return(empty)
+
+  current_week_start <- weekly$week_start[length(weekly$week_start)]
+  episode_detection_record(
+    stream_id = stream_id, detector = "farrington",
+    first_day = as.character(current_week_start),
+    last_day = as.character(current_week_start + 6),
+    n_cases = as.integer(result@observed[1, 1]),
+    expected = as.numeric(result@control$expected[1, 1]),
+    upperbound = as.numeric(result@upperbound[1, 1]),
+    params = list(b = fc$b, w = fc$w, alpha = fc$alpha)
+  )
+}
+
+#' Aggregate case dates into Monday-starting weekly counts
+#'
+#' @param dates A `Date` vector of sample dates.
+#' @param run_date The last date to cover; the final bin is the week
+#'   containing this date, even if it has no cases yet (a zero-count current
+#'   week is a legitimate, informative data point for Farrington).
+#' @return A list with `week_start` (a `Date` vector, one per bin) and
+#'   `counts` (an integer vector, same length).
+#' @keywords internal
+#' @noRd
+episode_weekly_bins <- function(dates, run_date) {
+  floor_to_monday <- function(d) d - (as.integer(format(d, "%u")) - 1)
+  first_week <- floor_to_monday(min(dates))
+  last_week <- floor_to_monday(as.Date(run_date))
+  week_start <- seq(first_week, last_week, by = "week")
+  counts <- vapply(week_start, function(ws) sum(dates >= ws & dates < ws + 7), integer(1))
+  list(week_start = week_start, counts = counts)
+}

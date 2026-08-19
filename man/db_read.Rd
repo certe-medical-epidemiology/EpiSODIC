@@ -9,7 +9,7 @@
 \alias{episode_db_institutions}
 \alias{episode_db_institution_get}
 \alias{episode_db_cases}
-\alias{episode_db_cases_for_mo}
+\alias{episode_db_cases_for_pathogen}
 \alias{episode_db_clusters}
 \alias{episode_db_clusters_for_stream}
 \alias{episode_db_cluster_cases}
@@ -20,7 +20,7 @@
 \usage{
 episode_db_pathogen_config(con)
 
-episode_db_pathogen_config_get(con, mo_code)
+episode_db_pathogen_config_get(con, pathogen)
 
 episode_db_streams(con, active_only = TRUE)
 
@@ -32,7 +32,7 @@ episode_db_institution_get(con, institution_key)
 
 episode_db_cases(con)
 
-episode_db_cases_for_mo(con, mo_code)
+episode_db_cases_for_pathogen(con, pathogen)
 
 episode_db_clusters(con, open_only = FALSE)
 
@@ -49,7 +49,7 @@ episode_db_latest_run(con, status = NULL)
 \arguments{
 \item{con}{A \link[DBI:DBIConnection-class]{DBI::DBIConnection}.}
 
-\item{mo_code}{A single pathogen code.}
+\item{pathogen}{A single raw pathogen string.}
 
 \item{active_only}{If \code{TRUE} (default), only streams with \code{is_active = 1}.}
 

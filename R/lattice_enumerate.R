@@ -17,7 +17,7 @@
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cases A data frame of newly-ingested (or all) cases, with at least
-#'   `mo_code`, `sample_date`, `care_line`, `institution_id`, `pc4`.
+#'   `pathogen`, `sample_date`, `care_line`, `institution_id`, `pc4`.
 #' @param institutions A data frame from `episode_db_institutions()`.
 #' @return A data frame of `stream_id` values touched by this run, one row
 #'   per (stream, level) combination created or refreshed.
@@ -32,7 +32,7 @@ episode_lattice_enumerate <- function(con, cases, institutions) {
   if (nrow(l1) > 0) {
     touched$l1 <- episode_lattice_upsert_group(
       con, l1, level = "pathogen_ward",
-      group_cols = c("mo_code", "institution_id", "ward"),
+      group_cols = c("pathogen", "institution_id", "ward"),
       care_line_col = "care_line", institution_col = "institution_id", ward_col = "ward",
       denominator = "patient_days"
     )
@@ -44,7 +44,7 @@ episode_lattice_enumerate <- function(con, cases, institutions) {
   if (nrow(l2) > 0) {
     touched$l2 <- episode_lattice_upsert_group(
       con, l2, level = "pathogen_institution",
-      group_cols = c("mo_code", "institution_id"),
+      group_cols = c("pathogen", "institution_id"),
       care_line_col = "care_line", institution_col = "institution_id",
       denominator = "patient_days"
     )
@@ -56,7 +56,7 @@ episode_lattice_enumerate <- function(con, cases, institutions) {
     l3$.region_code <- paste0("GEBIED-", substr(l3$pc4, 1, 2))
     touched$l3 <- episode_lattice_upsert_group(
       con, l3, level = "pathogen_area",
-      group_cols = c("mo_code", ".region_code"),
+      group_cols = c("pathogen", ".region_code"),
       region_col = ".region_code", denominator = "population"
     )
   }
@@ -69,7 +69,7 @@ episode_lattice_enumerate <- function(con, cases, institutions) {
     if (nrow(l4) > 0) {
       touched$l4 <- episode_lattice_upsert_group(
         con, l4, level = "pathogen_province",
-        group_cols = c("mo_code", ".region_code"),
+        group_cols = c("pathogen", ".region_code"),
         region_col = ".region_code", denominator = "population"
       )
     }
@@ -80,7 +80,7 @@ episode_lattice_enumerate <- function(con, cases, institutions) {
   l5$.region_code <- "NOORD_NEDERLAND"
   touched$l5 <- episode_lattice_upsert_group(
     con, l5, level = "pathogen_region",
-    group_cols = c("mo_code", ".region_code"),
+    group_cols = c("pathogen", ".region_code"),
     region_col = ".region_code", denominator = "population"
   )
 
@@ -118,18 +118,15 @@ episode_lattice_upsert_group <- function(con, cases, level, group_cols, care_lin
     ward <- if (!is.null(ward_col)) row[[ward_col]] else NA
 
     stream_key <- episode_stream_key(
-      level = level, mo_code = row$mo_code, care_line = care_line,
+      level = level, pathogen = row$pathogen, care_line = care_line,
       region_code = region_code, institution_id = institution_id, ward = ward
     )
 
-    resolved <- episode_mo_resolve(row$mo_code, row$mo_code, "species")
-
     max_date <- max(cases$sample_date[g])
     ids[i] <- episode_db_stream_upsert(
-      con, stream_key = stream_key, level = level, mo_code = resolved$mo_code,
-      mo_name = resolved$mo_name, mo_rank = resolved$mo_rank, care_line = care_line,
-      region_code = region_code, institution_id = institution_id, ward = ward,
-      denominator = denominator, observed_date = as.character(max_date)
+      con, stream_key = stream_key, level = level, pathogen = row$pathogen,
+      care_line = care_line, region_code = region_code, institution_id = institution_id,
+      ward = ward, denominator = denominator, observed_date = as.character(max_date)
     )
     i <- i + 1L
   }

@@ -8,6 +8,7 @@
 \alias{episode_db_stream_upsert}
 \alias{episode_db_case_insert_new}
 \alias{episode_db_reporting_triangle_upsert}
+\alias{episode_db_denominator_upsert}
 \alias{episode_db_detection_insert}
 \alias{episode_db_detection_set_cluster}
 \alias{episode_db_cluster_insert}
@@ -48,9 +49,7 @@ episode_db_stream_upsert(
   con,
   stream_key,
   level,
-  mo_code,
-  mo_name,
-  mo_rank,
+  pathogen,
   care_line = NA,
   region_code = NA,
   institution_id = NA,
@@ -68,6 +67,15 @@ episode_db_reporting_triangle_upsert(
   sample_date,
   run_date,
   n_cases
+)
+
+episode_db_denominator_upsert(
+  con,
+  pathogen,
+  sample_date,
+  care_line,
+  area_code = NA,
+  n_tests
 )
 
 episode_db_detection_insert(
@@ -161,7 +169,8 @@ episode_db_run_finish(
 
 \item{level}{One of the five lattice levels.}
 
-\item{mo_code, mo_name, mo_rank}{Pathogen identity fields.}
+\item{pathogen}{The raw lab-provided pathogen string (see \code{QUESTIONS.md}
+item 22); used verbatim as the stream's identity, no taxonomy resolved.}
 
 \item{region_code}{A region code, or \code{NA}.}
 
@@ -182,6 +191,10 @@ episode_db_run_finish(
 \item{sample_date, run_date}{Reporting-triangle dates.}
 
 \item{n_cases}{A case count.}
+
+\item{area_code}{An area code, for the optional positivity metadata table.}
+
+\item{n_tests}{A test count, for the optional positivity metadata table.}
 
 \item{detector}{One of the detector enum values.}
 
@@ -231,7 +244,7 @@ The cron owns the facts (ARCHITECTURE.md section 5.0) and may upsert.
 These functions are the only place in the package that write to
 \code{episode_stream}, \code{episode_institution}, \code{episode_institution_activity},
 \code{episode_case}, \code{episode_reporting_triangle}, \code{episode_denominator},
-\code{episode_mo_determination}, \code{episode_detection}, \code{episode_cluster},
+\code{episode_detection}, \code{episode_cluster},
 \code{episode_cluster_case}, \code{episode_detection_run} and (for pre-renders)
 \code{episode_report_render}. See \code{R/db_app_write.R} for the insert-only
 counterparts.

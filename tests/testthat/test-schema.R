@@ -7,7 +7,7 @@ test_that("episode_db_create() builds every expected table", {
     "episode_institution", "episode_institution_activity", "episode_pathogen_config",
     "episode_case", "episode_detection", "episode_cluster", "episode_cluster_case",
     "episode_assessment_event", "episode_reporting_triangle", "episode_denominator",
-    "episode_mo_determination", "episode_cluster_state", "episode_app_user",
+    "episode_cluster_state", "episode_app_user",
     "episode_report_render"
   ) %in% tables))
 })

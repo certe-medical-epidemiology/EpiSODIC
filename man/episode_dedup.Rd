@@ -12,8 +12,8 @@ episode_dedup(raw, pathogen_config)
 
 \item{pathogen_config}{A data frame from \code{inst/config/pathogen_config.csv}
 (or \code{episode_db_pathogen_config()}), providing \code{episode_days} per
-\code{mo_code}. A pathogen not present in this table uses the schema default
-of 30 days.}
+\code{pathogen}. A pathogen not present in this table uses the schema
+default of 30 days.}
 }
 \value{
 \code{raw}, with one row per patient per episode (the earliest
@@ -22,12 +22,13 @@ architecture's anchor).
 }
 \description{
 One isolate per patient per episode, using episode lengths from
-\code{episode_pathogen_config} (standing brief hard rule 5). Deduplication
-uses \code{AMR::get_episode()} when \code{AMR} is installed. Without it (see
-\code{QUESTIONS.md} item 12), a documented fallback is used: isolates for the
-same patient and organism are sorted by sample date, and a new episode
-starts whenever the gap since the previous isolate in the group exceeds
-\code{episode_days}. This is \code{AMR::get_episode()}'s own documented algorithm
-for the default (non-combination) case, so the fallback is an accurate
-equivalent for that case, not merely an approximation of unknown quality.
+\code{episode_pathogen_config} (standing brief hard rule 5). \code{AMR::as.mo()}
+only resolves non-viral taxonomy, and this package now treats \code{pathogen}
+as an arbitrary lab-provided string that can be anything (a virus, a
+resistance phenotype like "ETEC", a genus), so \code{AMR} is not a dependency
+at all (see \code{QUESTIONS.md} item 22). Episode grouping uses a direct
+implementation of \code{AMR::get_episode()}'s own documented algorithm for the
+default (non-combination) case: isolates for the same patient and
+pathogen are sorted by sample date, and a new episode starts whenever the
+gap since the previous isolate in the group exceeds \code{episode_days}.
 }

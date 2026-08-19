@@ -1,25 +1,39 @@
 #' Ingestion interface
 #'
 #' Defines the contract that any raw case data source must satisfy before
-#' `episode_ingest()` (see `R/ingest_dedup.R`) can turn it into rows of
-#' `episode_case` and `episode_reporting_triangle`. `certedb::get_diver_data()`
-#' cannot be called in this environment; the only implementation shipped is
-#' `episode_ingest_source_synthetic()` (see `R/ingest_synthetic.R`). A real
-#' Diver-backed adapter is a future extension point that must return a data
-#' frame with the same shape.
+#' `episode_ingest_run()` (see `R/ingest_pipeline.R`) can turn it into rows
+#' of `episode_case`. This is the entire boundary between EpiSODE and
+#' whatever laboratory or hospital system an operator runs: EpiSODE never
+#' calls `certedb::get_diver_data()` or any other data source itself
+#' (`QUESTIONS.md` item 22, `README.md`'s data format section) - the
+#' operator's own cron script extracts and transforms into exactly this
+#' shape, then calls [episode_run_cron()] with a function that returns it.
+#' The only implementation shipped in this package is the synthetic
+#' generator (`R/ingest_synthetic.R`), used for the bundled demo.
 #'
-#' The allow-listed columns below are exactly the fields ARCHITECTURE.md
-#' sections 5.4 and 5.4.1 name. Nothing else may be requested from Diver
-#' (standing brief, section 3: no patient data beyond this, no named
-#' clinician fields, ever).
+#' **Mandatory, drives all detection: one row per confirmed-positive
+#' isolate/result.** `pathogen` is a raw, lab-provided string, used
+#' verbatim - never resolved against `AMR::as.mo()` or any other taxonomy,
+#' since `AMR` only covers non-viral organisms and this system must detect
+#' clusters of anything a lab reports (see `QUESTIONS.md` item 22). The same
+#' underlying isolate can legitimately appear more than once under
+#' different `pathogen` values when that is epidemiologically useful (an
+#' ETEC isolate as both `"Escherichia coli"` and `"ETEC"`, so each is
+#' watched on its own), and it is entirely the operator's transform step
+#' that decides this, not EpiSODE.
+#'
+#' **No `positive`/test-outcome column, and no raw negatives.** Positivity
+#' is handled separately as small, optional, pre-aggregated metadata (see
+#' `R/ingest_denominator.R`); the mandatory feed here is positives only.
+#'
 #' @name ingest_interface
 NULL
 
 #' @rdname ingest_interface
 #' @export
 episode_ingest_columns <- c(
-  "source_key", "patient_key", "sample_date", "receipt_date", "mo_code",
-  "determination", "material", "care_line", "institution_key",
+  "source_key", "patient_key", "sample_date", "receipt_date", "pathogen",
+  "care_line", "institution_key",
   "institution_display_name", "institution_type", "municipality",
   "ward", "specialism", "pc4", "sex", "age"
 )
