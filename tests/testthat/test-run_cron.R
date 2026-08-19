@@ -63,6 +63,32 @@ test_that("episode_run_cron() writes denominator rows only when a denominator_so
   expect_gt(DBI::dbGetQuery(con_with, "SELECT COUNT(*) n FROM episode_denominator")$n, 0)
 })
 
+test_that("episode_run_cron() writes institution activity rows only when institution_activity_source_fn is supplied", {
+  small_source <- function() {
+    episode_ingest_source_synthetic(
+      start_date = as.Date("2024-06-01"), end_date = as.Date("2024-06-30"), seed = 11
+    )
+  }
+
+  path_without <- tempfile(fileext = ".sqlite")
+  episode_run_cron(path_without, ingest_source_fn = small_source, run_date = as.Date("2024-06-30"))
+  con_without <- episode_db_connect(path_without)
+  on.exit(DBI::dbDisconnect(con_without))
+  expect_equal(DBI::dbGetQuery(con_without, "SELECT COUNT(*) n FROM episode_institution_activity")$n, 0)
+
+  path_with <- tempfile(fileext = ".sqlite")
+  episode_run_cron(path_with, ingest_source_fn = small_source,
+                    institution_activity_source_fn = function(institutions) {
+                      episode_synthetic_institution_activity_source(
+                        institutions, start_date = as.Date("2024-06-01"), end_date = as.Date("2024-06-30")
+                      )
+                    },
+                    run_date = as.Date("2024-06-30"))
+  con_with <- episode_db_connect(path_with)
+  on.exit(DBI::dbDisconnect(con_with), add = TRUE)
+  expect_gt(DBI::dbGetQuery(con_with, "SELECT COUNT(*) n FROM episode_institution_activity")$n, 0)
+})
+
 test_that("episode_lattice_enumerate() creates distinct streams per level", {
   con <- episode_test_db()
   on.exit(DBI::dbDisconnect(con))

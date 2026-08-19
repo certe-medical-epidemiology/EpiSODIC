@@ -67,6 +67,15 @@ episode_derive_state <- function(events, changed_since_assessment = FALSE,
 
   terminal_verdicts <- c("artefact", "expected_variation")
   if (latest$verdict %in% terminal_verdicts) {
+    # ARCHITECTURE.md section 6.5's cool-down escape hatch: a stream closed
+    # as artefact/normal variation that later re-exceeds what that verdict
+    # was based on must not stay silently "closed" - reconciliation flags
+    # this via the same changed_since_assessment column it already uses
+    # for non-terminal verdicts (R/reconcile.R), so the only change needed
+    # here is to stop treating a terminal verdict as unconditionally final.
+    if (isTRUE(changed_since_assessment)) {
+      return("reassess")
+    }
     return("closed")
   }
 

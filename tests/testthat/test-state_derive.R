@@ -55,15 +55,21 @@ test_that("an expired snooze does not suppress the verdict-derived state", {
   )
 })
 
-test_that("terminal verdicts (artefact, expected_variation) are always Afgesloten (closed)", {
+test_that("terminal verdicts (artefact, expected_variation) are Afgesloten (closed), unless the cool-down escape hatch flagged them changed", {
   expect_equal(episode_derive_state(events_one(verdict = "artefact")), "closed")
   expect_equal(episode_derive_state(events_one(verdict = "expected_variation")), "closed")
-  # even if the data changed since assessment or the closure criterion fired
-  expect_equal(
-    episode_derive_state(events_one(verdict = "artefact"), changed_since_assessment = TRUE), "closed"
-  )
+  # closure_criterion_met alone (not the escape hatch) leaves a terminal verdict closed
   expect_equal(
     episode_derive_state(events_one(verdict = "expected_variation"), closure_criterion_met = TRUE), "closed"
+  )
+  # changed_since_assessment on a terminal verdict IS the cool-down escape
+  # hatch (ARCHITECTURE.md section 6.5) - it must surface as Herbeoordeling
+  # nodig (reassess), not stay silently closed
+  expect_equal(
+    episode_derive_state(events_one(verdict = "artefact"), changed_since_assessment = TRUE), "reassess"
+  )
+  expect_equal(
+    episode_derive_state(events_one(verdict = "expected_variation"), changed_since_assessment = TRUE), "reassess"
   )
 })
 
@@ -133,7 +139,7 @@ test_that("exhaustive: every (verdict-class x changed x closure x snooze x expli
           } else if (explicit) {
             "closed"
           } else if (vc_name == "terminal") {
-            "closed"
+            if (changed) "reassess" else "closed"  # cool-down escape hatch, ARCHITECTURE.md section 6.5
           } else if (changed) {
             "reassess"
           } else if (closure) {

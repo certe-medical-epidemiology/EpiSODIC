@@ -61,6 +61,55 @@ episode_ui_trend_chart <- function(trend, lang = "nl") {
 }
 
 #' @rdname app_charts
+#' @param rt A data frame from `episode_compute_rt()`.
+#' @export
+episode_ui_rt_chart <- function(rt, lang = "nl") {
+  pal <- episode_palette()
+  ggplot2::ggplot(rt, ggplot2::aes(x = .data$window_end)) +
+    ggplot2::geom_hline(yintercept = 1, colour = pal$faint, linewidth = 0.4, linetype = "dashed") +
+    ggplot2::geom_ribbon(ggplot2::aes(ymin = .data$lower, ymax = .data$upper), fill = pal$primary_tint, alpha = 0.5) +
+    ggplot2::geom_line(ggplot2::aes(y = .data$mean), colour = pal$primary, linewidth = 0.9) +
+    ggplot2::labs(y = "Rt") +
+    episode_chart_theme()
+}
+
+#' A PC4 choropleth via `certegis`, guarded for absence
+#'
+#' ARCHITECTURE.md section 9: "Geography. PC4 choropleth via `certegis`...
+#' A second panel breaks the cluster down by institution... which is
+#' usually more informative" - the bar breakdown (`episode_ui_bars()`) is
+#' that second panel and stays regardless; this is the map itself,
+#' additive when `certegis` (Certe-internal-adjacent, CRAN-external,
+#' `Suggests`-only) and the `sf` package it depends on are actually
+#' installed. `certegis::add_map()` right-joins case counts onto its
+#' bundled PC4 geometry (`data.frame(postcode = ..., n = ...) |>
+#' add_map()`, its own documented usage) and returns an `sf` object;
+#' plotted here with `ggplot2::geom_sf()` rather than a `certegis`-owned
+#' plot function, since none exists - `certegis` only supplies the
+#' geometry join, plotting is left to the caller.
+#'
+#' @param rows A data frame from `episode_app_concentration()$rows`
+#'   (`label` = PC4, `n` = case count).
+#' @return A `ggplot` object, or `NULL` if `certegis`/`sf` are not
+#'   installed or the join/plot fails for any reason (e.g. a PC4 not in
+#'   `certegis`'s bundled geometry - synthetic demo PC4s are drawn from a
+#'   fixed pool that does not promise to match real postcode boundaries).
+#' @keywords internal
+#' @noRd
+episode_ui_geo_map_chart <- function(rows) {
+  if (!requireNamespace("certegis", quietly = TRUE) || nrow(rows) == 0) return(NULL)
+  pal <- episode_palette()
+  tryCatch({
+    geo <- certegis::add_map(data.frame(postcode = as.numeric(rows$label), n = rows$n), crop_certe = FALSE)
+    ggplot2::ggplot(geo) +
+      ggplot2::geom_sf(ggplot2::aes(fill = .data$n), colour = pal$border, linewidth = 0.1) +
+      ggplot2::scale_fill_gradient(low = pal$primary_tint, high = pal$primary, na.value = pal$bg_subtle) +
+      episode_chart_theme() +
+      ggplot2::theme(axis.text = ggplot2::element_blank(), panel.grid.major.y = ggplot2::element_blank())
+  }, error = function(e) NULL)
+}
+
+#' @rdname app_charts
 #' @param series A data frame from `episode_app_denominator_series()`.
 #' @export
 episode_ui_denominator_chart <- function(series, lang = "nl") {

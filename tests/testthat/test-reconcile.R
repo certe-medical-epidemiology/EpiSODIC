@@ -248,3 +248,110 @@ test_that("a failed run inside the cron transaction leaves no partial state", {
   expect_equal(n_streams_after, n_streams_before)
   expect_equal(n_cases_after, n_cases_before)
 })
+
+# ARCHITECTURE.md section 6.5's cool-down escape hatch: a candidate more
+# than case_free_days but within cooldown_days of a terminal-verdict
+# (artefact/expected_variation) closed cluster is absorbed into it rather
+# than opening a new cluster - and, only if its excess materially exceeds
+# what the terminal verdict was based on, flags changed_since_assessment
+# so it surfaces as Herbeoordeling nodig (state_derive.R).
+
+test_that("a candidate within cooldown_days of a terminal-verdict cluster is absorbed, not opened as new", {
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  terminal_verdict <- function(cluster_id) "artefact"
+
+  run1 <- episode_db_run_start(env$con, "h", "a")
+  det1 <- reconcile_detect(env, run1, "2025-01-01", "2025-01-03", 3)
+  reconcile_run(env, run1, det1, case_free_days = 14)
+  original_id <- episode_db_clusters_for_stream(env$con, env$stream_id)$cluster_id[1]
+
+  # 20 days after the cluster's last_day: past case_free_days (14) but
+  # within cooldown_days (21), and the candidate is only 2 cases - well
+  # under the 1.5x escape-hatch ratio against the original 3.
+  run2 <- episode_db_run_start(env$con, "h", "a")
+  det2 <- reconcile_detect(env, run2, "2025-01-23", "2025-01-23", 2)
+  episode_reconcile_stream(
+    env$con, env$stream_id, det2, case_free_days = 14, run_id = run2,
+    close_after_runs = 14, priority_score_fn = noop_priority_score,
+    has_assessment_fn = function(id) TRUE, verdict_fn = terminal_verdict,
+    cooldown_days = 21, cooldown_reopen_ratio = 1.5
+  )
+
+  clusters <- episode_db_clusters_for_stream(env$con, env$stream_id)
+  expect_equal(nrow(clusters), 1)  # absorbed, not a second cluster
+  expect_equal(clusters$cluster_id[1], original_id)
+  expect_equal(clusters$last_day[1], "2025-01-23")
+  expect_false(as.logical(clusters$changed_since_assessment[1]))  # below the reopen bar
+})
+
+test_that("a candidate within cooldown_days that materially exceeds the terminal verdict reopens as changed", {
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  terminal_verdict <- function(cluster_id) "expected_variation"
+
+  run1 <- episode_db_run_start(env$con, "h", "a")
+  det1 <- reconcile_detect(env, run1, "2025-01-01", "2025-01-03", 3)
+  reconcile_run(env, run1, det1, case_free_days = 14)
+  original_id <- episode_db_clusters_for_stream(env$con, env$stream_id)$cluster_id[1]
+
+  # 10 new cases >= 3 * 1.5 -> clears the "half again" escape-hatch bar
+  run2 <- episode_db_run_start(env$con, "h", "a")
+  det2 <- reconcile_detect(env, run2, "2025-01-23", "2025-01-25", 10)
+  episode_reconcile_stream(
+    env$con, env$stream_id, det2, case_free_days = 14, run_id = run2,
+    close_after_runs = 14, priority_score_fn = noop_priority_score,
+    has_assessment_fn = function(id) TRUE, verdict_fn = terminal_verdict,
+    cooldown_days = 21, cooldown_reopen_ratio = 1.5
+  )
+
+  clusters <- episode_db_clusters_for_stream(env$con, env$stream_id)
+  expect_equal(nrow(clusters), 1)
+  expect_equal(clusters$cluster_id[1], original_id)
+  expect_true(as.logical(clusters$changed_since_assessment[1]))
+
+  # and that this actually surfaces as "reassess" through the full derive-state path
+  events <- data.frame(event_id = 1L, verdict = "expected_variation", snooze_until = NA,
+                        created_at = "2025-01-04T00:00:00Z")
+  state <- episode_derive_state(events, changed_since_assessment = TRUE)
+  expect_equal(state, "reassess")
+})
+
+test_that("a candidate beyond cooldown_days entirely opens a new cluster as usual", {
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  terminal_verdict <- function(cluster_id) "artefact"
+
+  run1 <- episode_db_run_start(env$con, "h", "a")
+  det1 <- reconcile_detect(env, run1, "2025-01-01", "2025-01-03", 3)
+  reconcile_run(env, run1, det1, case_free_days = 14)
+
+  run2 <- episode_db_run_start(env$con, "h", "a")
+  det2 <- reconcile_detect(env, run2, "2025-03-01", "2025-03-01", 3)  # far past cooldown_days
+  episode_reconcile_stream(
+    env$con, env$stream_id, det2, case_free_days = 14, run_id = run2,
+    close_after_runs = 14, priority_score_fn = noop_priority_score,
+    has_assessment_fn = function(id) TRUE, verdict_fn = terminal_verdict,
+    cooldown_days = 21, cooldown_reopen_ratio = 1.5
+  )
+
+  clusters <- episode_db_clusters_for_stream(env$con, env$stream_id)
+  expect_equal(nrow(clusters), 2)  # a genuinely new cluster, not absorbed
+})
+
+test_that("cooldown_days = NA disables the escape hatch entirely, for backward compatibility", {
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  run1 <- episode_db_run_start(env$con, "h", "a")
+  det1 <- reconcile_detect(env, run1, "2025-01-01", "2025-01-03", 3)
+  reconcile_run(env, run1, det1, case_free_days = 14)
+
+  run2 <- episode_db_run_start(env$con, "h", "a")
+  det2 <- reconcile_detect(env, run2, "2025-01-23", "2025-01-23", 2)
+  reconcile_run(env, run2, det2, case_free_days = 14, has_assessment_fn = function(id) TRUE,
+                verdict_fn = function(id) "artefact")  # cooldown_days left at its NA default
+
+  clusters <- episode_db_clusters_for_stream(env$con, env$stream_id)
+  expect_equal(nrow(clusters), 2)  # opens as new, exactly the pre-existing behaviour
+})

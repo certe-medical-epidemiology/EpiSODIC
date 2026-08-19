@@ -7,6 +7,24 @@ test_that("episode_ui_dossier() and episode_ui_assessment_rail() render the fixt
   expect_s3_class(episode_ui_assessment_rail(env$con, env$cluster_id, lang = "nl"), "shiny.tag")
 })
 
+test_that("episode_ui_dossier() renders the new M5 panels (Rt, similar clusters, report) with their expected content", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  fake_user <- data.frame(user_id = 1L, username = "jdoe", full_name = "Jane Doe", stringsAsFactors = FALSE)
+
+  html_anon <- as.character(episode_ui_dossier(env$con, env$cluster_id, lang = "nl"))
+  expect_true(grepl(episode_tr("panel.rt.title", lang = "nl"), html_anon, fixed = TRUE))
+  expect_true(grepl(episode_tr("panel.similar.title", lang = "nl"), html_anon, fixed = TRUE))
+  expect_true(grepl(episode_tr("panel.report.title", lang = "nl"), html_anon, fixed = TRUE))
+  expect_true(grepl(episode_tr("panel.report.empty", lang = "nl"), html_anon, fixed = TRUE))
+  # anonymous viewer gets no render button
+  expect_false(grepl("report_render_submit", html_anon, fixed = TRUE))
+
+  html_signed_in <- as.character(episode_ui_dossier(env$con, env$cluster_id, lang = "nl", current_user = fake_user))
+  expect_true(grepl("report_render_submit", html_signed_in, fixed = TRUE))
+  expect_true(grepl(episode_tr("panel.report.render_button", lang = "nl"), html_signed_in, fixed = TRUE))
+})
+
 test_that("episode_ui_assessment_rail() renders the classification and mute pickers as coloured buttons, not <select>, with a mute intro paragraph", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))

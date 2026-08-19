@@ -26,6 +26,15 @@
 #'   the pre-aggregated positivity metadata data frame (`pathogen`,
 #'   `sample_date`, `care_line`, `area_code`, `n_tests`), or `NULL` (the
 #'   default) if the operator has none to supply. See `QUESTIONS.md` item 22.
+#' @param institution_activity_source_fn An optional one-argument function
+#'   (`institutions`, the current `episode_db_institutions()` data frame,
+#'   so a real implementation can key its own hospital system's export by
+#'   the same institutions this run already knows about) returning weekly
+#'   patient-days (`institution_key`, `period_start`, `period_end`,
+#'   `patient_days`), or `NULL` (the default) if the operator has none to
+#'   supply. Powers L2 patient-day normalisation (ARCHITECTURE.md section
+#'   7.1); without it, L1/L2 Farrington detection uses raw counts,
+#'   unnormalised, exactly as before this was added.
 #' @param episode_config_path Passed to [episode_config_resolve()].
 #' @param host,account Recorded on `episode_detection_run`; default to the
 #'   process's own host/account (ARCHITECTURE.md section 12: this is not an
@@ -37,6 +46,7 @@
 episode_run_cron <- function(db_path,
                               ingest_source_fn = episode_ingest_source_synthetic,
                               denominator_source_fn = NULL,
+                              institution_activity_source_fn = NULL,
                               episode_config_path = Sys.getenv("EPISODE_CONFIG", unset = NA),
                               host = Sys.info()[["nodename"]],
                               account = Sys.info()[["user"]],
@@ -51,7 +61,8 @@ episode_run_cron <- function(db_path,
 
   result <- tryCatch({
     DBI::dbBegin(con)
-    stats <- episode_run_cron_body(con, run_id, config, ingest_source_fn, denominator_source_fn, run_date)
+    stats <- episode_run_cron_body(con, run_id, config, ingest_source_fn, denominator_source_fn,
+                                    institution_activity_source_fn, run_date)
     DBI::dbCommit(con)
     stats
   }, error = function(e) {
@@ -78,7 +89,8 @@ episode_run_cron <- function(db_path,
 
 #' @keywords internal
 #' @noRd
-episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, denominator_source_fn, run_date) {
+episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, denominator_source_fn,
+                                   institution_activity_source_fn, run_date) {
   pathogen_config_path <- system.file("config", "pathogen_config.csv", package = "EpiSODE")
   if (identical(pathogen_config_path, "")) {
     pathogen_config_path <- file.path("inst", "config", "pathogen_config.csv")
@@ -95,6 +107,10 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, denomin
 
   cases_all <- episode_db_cases(con)
   institutions <- episode_db_institutions(con)
+
+  if (!is.null(institution_activity_source_fn)) {
+    episode_institution_activity_ingest_run(con, institution_activity_source_fn(institutions))
+  }
 
   episode_lattice_enumerate(con, cases_all, institutions)
 
@@ -118,18 +134,42 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, denomin
       rare_trigger_detections[rare_trigger_detections$stream_id == stream$stream_id, ]
     )
 
+    # ARCHITECTURE.md section 7.3: MEM runs on pathogen_region (L5) streams
+    # only, for organisms flagged mem_applicable - see episode_detect_mem()'s
+    # own docs for why L5 rather than every level.
+    pc_mem <- pathogen_config[pathogen_config$pathogen == stream$pathogen, ]
+    if (nrow(pc_mem) > 0 && isTRUE(as.logical(pc_mem$mem_applicable[1])) &&
+        identical(stream$level, "pathogen_region")) {
+      stream_detections <- rbind(stream_detections, episode_detect_mem(stream_cases, stream$stream_id, run_date))
+    }
+
     if (nrow(stream_cases) > 0 &&
         episode_eligibility_gate(stream_cases, run_date, config)) {
+      # ARCHITECTURE.md section 7.6: a period this stream's own history
+      # shows was a confirmed epidemic must not silently raise next
+      # winter's baseline. Excluded from the cases fed to Farrington only
+      # (same_place/rare_trigger detect on raw counts and do not baseline
+      # at all, so they are unaffected).
+      excluded_windows <- episode_baseline_excluded_windows(con, stream$stream_id)
+      farrington_cases <- episode_baseline_exclude_cases(stream_cases, excluded_windows)
+
+      # ARCHITECTURE.md section 7.1: patient-day normalisation at L2. Both
+      # calls below build identical weekly bins from the same
+      # (farrington_cases, run_date), so one population vector serves both.
+      weekly_weeks <- episode_weekly_bins(as.Date(farrington_cases$sample_date), run_date)$week_start
+      population <- episode_farrington_population_vector(con, stream$institution_id, stream$level, weekly_weeks)
+
       stream_detections <- rbind(
         stream_detections,
-        episode_detect_farrington(stream_cases, stream$stream_id, config, run_date)
+        episode_detect_farrington(farrington_cases, stream$stream_id, config, run_date, population = population)
       )
 
       # trend cache for the multi-year trend panel (M2); see
       # episode_farrington_trend()'s own docs for the backfill-once,
       # top-up-thereafter strategy.
       n_existing_trend <- nrow(episode_db_stream_trend(con, stream$stream_id))
-      trend <- episode_farrington_trend(stream_cases, config, run_date, n_weeks_existing = n_existing_trend)
+      trend <- episode_farrington_trend(farrington_cases, config, run_date, n_weeks_existing = n_existing_trend,
+                                         population = population)
       for (k in seq_len(nrow(trend))) {
         episode_db_stream_trend_upsert(
           con, stream_id = stream$stream_id, week_start = as.character(trend$week_start[k]),
@@ -154,17 +194,20 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, denomin
 
     pc <- pathogen_config[pathogen_config$pathogen == stream$pathogen, ]
     case_free_days <- if (nrow(pc) > 0) pc$case_free_days[1] else config$reconciliation$case_free_days_default
+    cooldown_days <- if (nrow(pc) > 0) pc$cooldown_days[1] else NA
 
     weights <- config$priority_score$weights
     reconcile_result <- episode_reconcile_stream(
       con, stream_id = stream$stream_id, detections = stream_detections,
       case_free_days = case_free_days, run_id = run_id,
       close_after_runs = config$reconciliation$close_after_runs,
+      cooldown_days = cooldown_days,
+      cooldown_reopen_ratio = config$reconciliation$cooldown_reopen_ratio %||% NA,
       priority_score_fn = function(candidate) {
         episode_priority_score(
           excess = NA, ratio = candidate$n_cases / max(candidate$n_cases, 1),
           severity_weight = if (nrow(pc) > 0) pc$severity_weight[1] else 1,
-          detector_agreement = candidate$detector_agreement, n_detectors = 4,
+          detector_agreement = candidate$detector_agreement, n_detectors = 4,  # farrington, same_place, rare_trigger, mem
           weights = weights
         )
       },

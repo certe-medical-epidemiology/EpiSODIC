@@ -89,6 +89,21 @@ episode_interpretation_fragments <- function() {
          condition = function(cl) !is.null(cl$n_cases),
          key = "interpretation.fragment.magnitude.default"),
 
+    # -- curve_shape ------------------------------------------------------
+    # "The first question in any outbreak investigation... redirects the
+    # enquiry from person-to-person spread towards a common exposure"
+    # (ARCHITECTURE.md section 9) - stated in the Duiding, not a separate
+    # dossier panel; see episode_classify_curve_shape().
+    list(id = "curve_shape.point_source", slot = "curve_shape",
+         condition = function(cl) identical(cl$curve_shape %||% NA, "point_source"),
+         key = "interpretation.fragment.curve_shape.point_source"),
+    list(id = "curve_shape.propagated", slot = "curve_shape",
+         condition = function(cl) identical(cl$curve_shape %||% NA, "propagated"),
+         key = "interpretation.fragment.curve_shape.propagated"),
+    list(id = "curve_shape.ambiguous", slot = "curve_shape",
+         condition = function(cl) identical(cl$curve_shape %||% NA, "ambiguous"),
+         key = "interpretation.fragment.curve_shape.ambiguous"),
+
     # -- concentration ------------------------------------------------------
     list(id = "concentration.high", slot = "concentration",
          condition = function(cl) isTRUE((cl$concentration$dominant_share %||% 0) >= 0.7),
@@ -146,7 +161,7 @@ episode_interpretation_fragments <- function() {
 
 #' @rdname interpretation
 #' @export
-episode_interpretation_slots <- c("magnitude", "concentration", "denominator", "demography", "completeness", "recommendation")
+episode_interpretation_slots <- c("magnitude", "curve_shape", "concentration", "denominator", "demography", "completeness", "recommendation")
 
 #' Generate the interpretation for a cluster
 #'

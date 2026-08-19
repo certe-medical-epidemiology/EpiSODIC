@@ -8,7 +8,8 @@ episode_detect_farrington(
   cases_for_stream,
   stream_id,
   config,
-  run_date = Sys.Date()
+  run_date = Sys.Date(),
+  population = NULL
 )
 }
 \arguments{
@@ -21,6 +22,13 @@ episode_detect_farrington(
 
 \item{run_date}{The date to treat as "today"; the most recent week
 evaluated is the one containing this date.}
+
+\item{population}{An optional numeric vector of weekly population
+(patient-days) aligned to \code{episode_weekly_bins()}'s own weeks, from
+\code{\link[=episode_farrington_population_vector]{episode_farrington_population_vector()}}. \code{NULL} (default) fits on
+raw counts, unnormalised - the only behaviour possible before
+ARCHITECTURE.md section 7.1's patient-day normalisation existed, and
+still what every stream without institution activity data gets.}
 }
 \value{
 A data frame of detection records (zero or one row: Farrington

@@ -1,9 +1,10 @@
 {
   "app.title": "EpiSODE",
+  "app.full_name": "Epidemiological Signal Observation and Detection Engine",
   "app.demodata": "Demodata",
 
   "nav.clusters": "Clusters",
-  "nav.streams": "Streams",
+  "nav.streams": "Signaleringsreeksen",
   "nav.archive": "Archief",
   "nav.activity": "Activiteit",
   "nav.info": "Info",
@@ -72,7 +73,7 @@
   "panel.trend.legend_observed": "Waargenomen",
   "panel.trend.legend_expected": "Verwacht",
   "panel.trend.legend_upperbound": "Signaalgrens",
-  "panel.trend.unavailable": "Nog geen trendgegevens beschikbaar; de stream heeft onvoldoende basislijn voor <code>farringtonFlexible</code>.",
+  "panel.trend.unavailable": "Nog geen trendgegevens beschikbaar; de signaleringsreeks heeft onvoldoende basislijn voor <code>farringtonFlexible</code>.",
 
   "panel.denominator.title": "Noemer en positiviteit",
   "panel.denominator.aside": "per week",
@@ -120,9 +121,9 @@
   "panel.settings.last_run_value": "{when} · {host}",
   "panel.settings.pkg_versions": "Pakketversies",
 
-  "streams.title": "Streams",
+  "streams.title": "Signaleringsreeksen",
   "streams.note": "De configuratie zoals vastgelegd bij de laatste detectierun, niet zoals momenteel op schijf.",
-  "streams.col.stream": "Stream",
+  "streams.col.stream": "Signaleringsreeks",
   "streams.col.level": "Niveau",
   "streams.col.denominator": "Noemer",
   "streams.col.first_seen": "Eerst gezien",
@@ -134,8 +135,8 @@
   "status.no_run": "Nog geen detectierun uitgevoerd",
   "status.completeness": "Volledigheid {pct}% ({days_phrase})",
 
-  "unit.stream": "stream",
-  "unit.streams": "streams",
+  "unit.stream": "signaleringsreeks",
+  "unit.streams": "signaleringsreeksen",
   "unit.cluster": "cluster",
   "unit.clusters": "clusters",
   "unit.case": "geval",
@@ -154,7 +155,7 @@
   "interpretation.fragment.magnitude.rare_trigger": "{obs_phrase} gerapporteerd binnen dit cluster. Voor deze verwekker geldt geen statistische signaalgrens: de detectie komt van de curatieve triggerlijst, waarbij elk gerapporteerd geval wordt opgepakt ongeacht basislijn.",
   "interpretation.fragment.magnitude.high_ratio": "{obs_phrase} tegen een verwachting van {expected}: een ratio van {ratio}.",
   "interpretation.fragment.magnitude.moderate_ratio": "{obs_phrase} tegen een verwachting van {expected}, een ratio van {ratio} en daarmee een gematigde overschrijding van de basislijn.",
-  "interpretation.fragment.magnitude.default": "{obs_phrase} geregistreerd voor deze stream.",
+  "interpretation.fragment.magnitude.default": "{obs_phrase} geregistreerd voor deze signaleringsreeks.",
 
   "interpretation.fragment.concentration.high": "{dominant_n} van de {total_n} gevallen ({dominant_share_pct}%) zijn afkomstig uit postcode {dominant_label}, wat wijst op sterke plaatsgebonden clustering.",
   "interpretation.fragment.concentration.moderate": "{dominant_n} van de {total_n} gevallen ({dominant_share_pct}%) zijn afkomstig uit postcode {dominant_label}, een gematigde concentratie.",
@@ -208,9 +209,9 @@
   "assessment.submit": "Beoordeling vastleggen",
   "assessment.close_button": "Cluster afsluiten",
   "assessment.close_confirm": "Dit cluster afsluiten? Dit staat los van de classificatie.",
-  "assessment.mute_button": "Stream dempen",
-  "assessment.mute_intro": "Onderdrukt tijdelijk nieuwe detecties voor deze stream, bijvoorbeeld tijdens een bekende seizoenspiek of screeningscampagne, zodat dezelfde oorzaak niet telkens opnieuw wordt gesignaleerd.",
-  "assessment.mute_title": "Stream dempen",
+  "assessment.mute_button": "Signaleringsreeks dempen",
+  "assessment.mute_intro": "Onderdrukt tijdelijk nieuwe detecties voor deze signaleringsreeks, bijvoorbeeld tijdens een bekende seizoenspiek of screeningscampagne, zodat dezelfde oorzaak niet telkens opnieuw wordt gesignaleerd.",
+  "assessment.mute_title": "Signaleringsreeks dempen",
   "assessment.mute_reason_label": "Reden",
   "assessment.mute_reason.seasonal": "seizoensgebonden",
   "assessment.mute_reason.screening_campaign": "screeningscampagne",
@@ -248,7 +249,7 @@
   "activity.action_note": "notitie toegevoegd",
   "activity.action_classified": "geclassificeerd",
   "activity.action_closed": "cluster afgesloten",
-  "activity.action_muted": "stream gedempt",
+  "activity.action_muted": "signaleringsreeks gedempt",
   "activity.action_login": "aangemeld",
   "activity.action_run_success": "detectierun geslaagd",
   "activity.action_run_failed": "detectierun mislukt",
@@ -276,5 +277,27 @@
   "info.states.col.state": "Status",
   "info.states.col.meaning": "Betekenis",
   "info.access.title": "Toegang",
-  "info.access.body": "Lezen is anoniem: iedereen die de app bereikt kan clusters, streams en het archief bekijken zonder aan te melden. Aanmelden is alleen nodig om een cluster te classificeren, te sluiten of een stream te dempen - elke schrijfactie wordt aan de aangemelde gebruiker toegeschreven."
+  "info.access.body": "Lezen is anoniem: iedereen die de app bereikt kan clusters, signaleringsreeksen en het archief bekijken zonder aan te melden. Aanmelden is alleen nodig om een cluster te classificeren, te sluiten of een signaleringsreeks te dempen - elke schrijfactie wordt aan de aangemelde gebruiker toegeschreven.",
+
+  "streams.col.baseline_excluded": "Basislijn uitgesloten",
+
+  "interpretation.fragment.curve_shape.point_source": "Alle gevallen vallen binnen een enkele maximale incubatieperiode, wat wijst op een puntbron: een gedeelde blootstelling op of rond een moment, eerder dan verspreiding van mens op mens.",
+  "interpretation.fragment.curve_shape.propagated": "De gevallen strekken zich uit over aanzienlijk meer dan een maximale incubatieperiode, wat wijst op verspreiding van mens op mens eerder dan een enkele gedeelde blootstelling.",
+  "interpretation.fragment.curve_shape.ambiguous": "De spreiding van gevallen in de tijd past niet eenduidig bij een puntbron of bij verspreiding van mens op mens; nader onderzoek naar de blootstelling is nodig om dit te onderscheiden.",
+
+  "panel.rt.title": "Effectief reproductiegetal (Rt)",
+  "panel.rt.note": "Tijdsafhankelijk effectief reproductiegetal (niet R0), berekend over 7-daagse voortschrijdende vensters. Vensters binnen de nog onvolledige rapportageperiode zijn weggelaten.",
+  "panel.rt.unavailable": "Onvoldoende gegevens om Rt te berekenen voor deze verwekker.",
+
+  "panel.similar.title": "Vergelijkbare clusters",
+  "panel.similar.unavailable": "Geen vergelijkbare afgesloten clusters gevonden voor deze verwekker.",
+  "panel.similar.col.place": "Plaats",
+  "panel.similar.col.cases": "Gevallen",
+  "panel.similar.col.verdict": "Classificatie",
+  "panel.similar.col.closed_at": "Afgesloten op",
+
+  "panel.report.title": "Uitbraakrapport",
+  "panel.report.empty": "Nog geen rapport gerenderd voor dit cluster.",
+  "panel.report.version_line": "Versie {version} - {when}",
+  "panel.report.render_button": "Rapport genereren"
 }

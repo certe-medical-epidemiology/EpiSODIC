@@ -16,8 +16,9 @@ for the build plan.
 
 ## Status
 
-Under active development. Milestone 1 (core detection engine, no interface)
-is in progress.
+Under active development. Milestones 1-5 (detection engine, interface,
+assessment/authentication, reporting, analytical depth) are implemented.
+Milestone 6 (calibration and performance) is next.
 
 ## Installation
 
@@ -107,6 +108,28 @@ closed list of things a negative result could have been - if that is your
 situation, simply never call this, and positivity panels stay blank for
 your streams. See `episode_denominator_source_synthetic()` for a worked
 example.
+
+### Institution activity (optional)
+
+If, and only if, you can produce it: weekly patient-days per hospital,
+used to normalise L2 (institution-level) Farrington detection by
+occupancy rather than raw counts - a busy February and a quiet August at
+identical transmission-per-patient-day should not read as different
+signal strengths. Also optional; without it, L1/L2 detection uses raw
+counts exactly as it always has.
+
+| Column | Meaning |
+|---|---|
+| `institution_key` | Matches the cases feed. |
+| `period_start`, `period_end` | The activity period this row covers (typically a week). |
+| `patient_days` | Total patient-days across the institution for that period. |
+
+Rows whose `institution_key` does not match a known institution are
+skipped, not an error - an activity feed and a case feed need not be
+perfectly synchronised. See
+`episode_synthetic_institution_activity_source()` for a worked example.
+There is no ward-level (L1) equivalent in the schema, so L1 detection is
+never normalised, only L2.
 
 ## Accounts
 

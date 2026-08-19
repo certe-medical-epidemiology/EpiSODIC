@@ -10,6 +10,7 @@ episode_closure_criterion_met(
   case_free_days,
   incub_max_days = NA,
   mem_applicable = FALSE,
+  mem_status = NULL,
   today = Sys.Date()
 )
 }
@@ -20,8 +21,16 @@ episode_closure_criterion_met(
 
 \item{case_free_days, incub_max_days}{From \code{episode_pathogen_config}.}
 
-\item{mem_applicable}{From \code{episode_pathogen_config}; MEM-based closure
-is not evaluated in M1, see above.}
+\item{mem_applicable}{From \code{episode_pathogen_config}.}
+
+\item{mem_status}{\code{episode_mem_status()}'s own output for this stream,
+or \code{NULL} if \code{mem_applicable} is \code{FALSE} or MEM could not be
+computed (no \code{mem} package, off-season, insufficient history) - in
+which case a \code{mem_applicable} stream never closes via this criterion
+at all, rather than falling back to case-free days (a seasonal
+pathogen's case-free interval is not epidemiologically meaningful:
+the whole point of MEM is that "has the epidemic started/ended" is a
+different question from "has it been quiet for N days").}
 
 \item{today}{The date to evaluate the criterion as of.}
 }
@@ -32,9 +41,6 @@ is not evaluated in M1, see above.}
 Which criterion prompts closure differs by stream kind (ARCHITECTURE.md
 section 6.3): a case-free interval for most streams, two maximum
 incubation periods for a confirmed epidemic, and the MEM post-epidemic
-threshold for seasonal streams flagged \code{mem_applicable}. MEM is M5 scope
-(ARCHITECTURE.md section 7.3, MILESTONES.md M5); this function
-implements the case-free/incubation-period branch only and always
-returns \code{FALSE} for \code{mem_applicable} streams, since M1 has no MEM
-computation to evaluate against.
+threshold for seasonal streams flagged \code{mem_applicable}
+(ARCHITECTURE.md section 7.3, \code{episode_mem_status()}).
 }

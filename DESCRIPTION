@@ -50,7 +50,8 @@ Suggests:
     certeplot2,
     certestyle,
     EpiEstim,
-    quarto
+    quarto,
+    mem
 Config/testthat/edition: 3
 Remotes:
     certe-medical-epidemiology/certegis,

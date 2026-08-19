@@ -94,6 +94,8 @@ episode_app_server_factory <- function(db_path, lang = "nl") {
 
     episode_app_server_assessment_actions(input, output, session, con, lang = lang,
                                            current_user = current_user, selected_cluster_id = selected_cluster_id)
+    episode_app_server_report(input, output, session, con, db_path = db_path, lang = lang,
+                               current_user = current_user, selected_cluster_id = selected_cluster_id)
   }
 }
 

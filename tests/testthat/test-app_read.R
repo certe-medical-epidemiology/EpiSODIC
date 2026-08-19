@@ -149,3 +149,79 @@ test_that("episode_app_trend() and episode_app_denominator_series() handle absen
   series <- episode_app_denominator_series(env$con, "Norovirus", episode_db_cluster_cases(env$con, env$cluster_id))
   expect_equal(nrow(series), 0)  # no denominator rows supplied
 })
+
+test_that("episode_cluster_object() populates curve_shape from the fixture's tightly-bunched cases", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  obj <- episode_cluster_object(env$con, env$cluster_id)
+  # fixture cases span 2025-01-10 to 2025-01-13 (3 days), incub_max_days = 3
+  expect_equal(obj$curve_shape, "point_source")
+})
+
+test_that("episode_cluster_object()'s rt field is NULL with too little history, without erroring", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  obj <- episode_cluster_object(env$con, env$cluster_id)
+  expect_true(obj$rt_applicable)  # fixture pathogen config sets rt_applicable = 1
+  expect_null(obj$rt)  # only 4 days of case history - not enough for one Rt window
+})
+
+test_that("episode_app_density() computes a historical baseline density, not just the current value", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  # add more activity periods covering the fixture's case history (2025-01-10..13)
+  episode_db_institution_activity_upsert(env$con, institution_id = env$institution_id,
+                                          period_start = "2024-12-01", period_end = "2024-12-31", patient_days = 900)
+
+  stream <- DBI::dbGetQuery(env$con, "SELECT * FROM episode_stream WHERE stream_id = ?", params = list(env$stream_id))[1, ]
+  cases <- episode_db_cluster_cases(env$con, env$cluster_id)
+  density <- episode_app_density(env$con, stream, cases)
+
+  expect_false(is.null(density))
+  expect_false(is.na(density$value))
+  expect_false(is.na(density$baseline))
+})
+
+test_that("episode_farrington_population_vector() is NULL for non-institution levels and levels with no activity data", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  weeks <- as.Date("2025-01-06") + (0:3) * 7
+  expect_null(episode_farrington_population_vector(env$con, NA, "pathogen_ward", weeks))
+  expect_null(episode_farrington_population_vector(env$con, env$institution_id, "pathogen_ward", weeks))  # L1: no ward-level activity table
+})
+
+test_that("episode_farrington_population_vector() returns a weekly vector for a pathogen_institution stream with activity data", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  weeks <- as.Date(c("2025-01-06", "2025-01-13", "2025-06-01"))  # last week outside the fixture's activity period
+  pop <- episode_farrington_population_vector(env$con, env$institution_id, "pathogen_institution", weeks)
+
+  expect_length(pop, 3)
+  expect_equal(pop[1], 1000)  # fixture activity: 2025-01-01..31, patient_days = 1000
+  expect_equal(pop[3], 1000)  # falls back to the median when no period covers the week
+})
+
+test_that("episode_app_similar_clusters() finds no precedent when there is no closed cluster of the same pathogen", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  similar <- episode_app_similar_clusters(env$con, env$cluster_id)
+  expect_equal(nrow(similar), 0)  # the only other cluster of this pathogen is itself, and it isn't closed
+})
+
+test_that("episode_app_similar_clusters() finds a closed same-pathogen cluster and excludes the target itself", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  other_id <- episode_db_cluster_insert(
+    env$con, stream_id = env$stream_id, first_day = "2024-01-10", last_day = "2024-01-13",
+    n_cases = 5, priority_score = 60, detector_agreement = 1, run_id = env$run_id
+  )
+  user_id <- episode_db_app_user_insert(env$con, "jdoe", "Jane Doe", "j@x.nl", "hash")
+  episode_db_assessment_event_insert(env$con, other_id, user_id, verdict = "artefact", rationale = "t")
+  episode_db_cluster_state_insert(env$con, other_id, state = "closed", trigger = "closure", user_id = user_id)
+
+  similar <- episode_app_similar_clusters(env$con, env$cluster_id)
+  expect_equal(nrow(similar), 1)
+  expect_equal(similar$cluster_id[1], other_id)
+  expect_equal(similar$verdict_label[1], episode_tr("verdict.artefact"))
+})

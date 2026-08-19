@@ -29,6 +29,9 @@ body {
   font-weight: 600;
   letter-spacing: 0.4px;
   font-size: 15px;
+  cursor: help;
+  border-bottom: 1px dotted var(--episode-faint);
+  padding-bottom: 1px;
 }
 .episode-header .episode-brand .episode-brand-accent {
   color: var(--episode-secondary);

@@ -492,6 +492,172 @@ decisions survives.
     collapsing to a single date for a one-day cluster. Used on the rail
     list, which previously showed no date range at all.
 
+## New in M4 and M5
+
+1. **`episode_report_render()`, the report itself, and its schema were
+   partly pre-scaffolded from earlier work** - `episode_report_render`'s
+   table and `episode_db_report_render_insert()` already existed in the
+   schema/write layer, unused. M4 added the missing half: gathering the
+   data (reusing the same read models the app itself uses - `episode_
+   cluster_object()`, `episode_app_epi_curve()`, `episode_app_linelist()`,
+   `episode_app_similar_clusters()`), the Quarto template
+   (`inst/report/cluster_report.qmd`), version numbering (`max(existing)
+   + 1`, not a running counter, so a version can never collide even if
+   rows are inspected out of order), a SHA-256 of the rendered file, and
+   a dossier panel with a render-on-demand button for signed-in users.
+   `episode_quarto_available()` guards on both the `quarto` R package
+   *and* the separate Quarto CLI binary - `quarto::quarto_path()` returns
+   `NULL` rather than erroring when the CLI is missing, which the R
+   package alone does not make obvious, and is exactly the situation in
+   this development environment (verified directly: `quarto` R package
+   installs cleanly, the CLI does not exist here at all).
+
+2. **Line-list inclusion is a render-time parameter
+   (`include_linelist`)**, independent of the *rendering* user's later
+   session, matching how the live app already gates the panel on the
+   *viewing* session (ARCHITECTURE.md section 9) - the two are
+   deliberately different mechanisms for different audiences (a
+   signed-in assessor rendering a report is not the same question as an
+   anonymous viewer of the live app).
+
+3. **Small-count suppression (`episode_report_suppress_small_counts()`)
+   replaces a count with `"<threshold"` rather than blanking it or
+   rounding to a bucket** - the simplest disclosure-control convention,
+   easy for the reader to reconstruct as "somewhere between 1 and
+   threshold-1" without a lookup table. Applied only to the report's
+   geography breakdown (the one table ARCHITECTURE.md section 9
+   specifically calls out); the live app's own geography panel is
+   unaffected, matching "configurable for reports leaving the
+   department" - a live in-app view is not leaving the department.
+
+4. **The cool-down escape hatch (ARCHITECTURE.md section 6.5) surfaced a
+   deeper pre-existing gap while implementing it: `cooldown_days` had
+   never been read anywhere in reconciliation at all**, despite being a
+   real schema/config column since M1 - there was no cool-down
+   suppression to build an escape hatch *onto*. Implemented both
+   together: `episode_reconcile_find_cooldown_match()` only runs for a
+   candidate that found zero ordinary matches (i.e. already outside
+   `case_free_days`), looks one step further to `cooldown_days`, and
+   absorbs it into a terminal-verdict (`artefact`/`expected_variation`)
+   closed cluster rather than opening a new one - flagging
+   `changed_since_assessment` only when the candidate's case count
+   clears `cooldown_reopen_ratio` ("half again") against the closed
+   cluster's own count. This also surfaced a second, independent latent
+   bug: `episode_derive_state()` treated a terminal verdict as
+   unconditionally "closed" regardless of `changed_since_assessment`, so
+   even the *pre-existing* case-free-days-driven update path (which
+   already set the flag correctly) had no way to surface it in the UI -
+   fixed with a one-line change reusing the exact mechanism already
+   built for non-terminal verdicts, rather than inventing new
+   `episode_cluster_state` choreography.
+
+5. **Baseline feedback (`episode_baseline_excluded_windows()`)
+   excludes a stream's own confirmed-epidemic periods from what gets fed
+   to Farrington**, both for detection and for the persisted trend
+   series, and is listed on the Streams screen per ARCHITECTURE.md
+   section 7.6's own requirement. The exclusion removes the affected
+   case rows from the series entirely, covering the whole window
+   regardless of which historical weeks `farringtonFlexible()`'s own
+   `b`/`w` reference-selection actually reads for a given evaluated week
+   - simpler than trying to track exactly which weeks Farrington would
+   have referenced, and the plain-language architecture text ("excluded
+   from the baseline") does not specify anything more precise than that.
+
+6. **Patient-day normalisation (ARCHITECTURE.md section 7.1) is
+   implemented at L2 (institution) only, never L1 (ward)** - there is no
+   ward-level activity table in the schema, and section 7 itself only
+   promises ward patient-days "if obtainable"; they are not. L1 detection
+   is unaffected (still raw counts, exactly as before this existed).
+   `episode_synthetic_institution_activity_source()` is a new, entirely
+   optional data source (mirroring `episode_denominator_source_synthetic()`'s
+   own established pattern) - `episode_run_cron()`'s new
+   `institution_activity_source_fn` parameter defaults to `NULL`, so no
+   existing caller's behaviour changes unless it opts in. Confirmed by
+   direct inspection that `surveillance::sts()` accepts a `population`
+   argument and `farringtonFlexible()`'s control list accepts
+   `populationOffset`, resolving the "implementation note requiring
+   verification" ARCHITECTURE.md section 7.1 itself flagged as unverified
+   when this codebase depended on `certestats`'s wrapper - moot now that
+   `surveillance::farringtonFlexible()` is called directly (`QUESTIONS.md`'s
+   own R-milestone item about dropping `certestats`).
+
+7. **Curve-shape classification (`episode_classify_curve_shape()`) is a
+   Duiding fragment, not a dossier panel** - re-reading ARCHITECTURE.md
+   section 9 closely: it says curve shape is "stated in the Duiding, with
+   an intermediate verdict where the evidence is ambiguous", not that it
+   gets its own visual panel the way Rt or geography do. The `2 ×
+   incub_max_days` boundary between "propagated" and "ambiguous" is not a
+   value the architecture specifies numerically (only "the first question
+   in any outbreak investigation" and "an intermediate verdict" are
+   given) - a documented judgement call, flagged for calibration
+   alongside the codebase's other provisional M1-era thresholds (M6).
+
+8. **MEM (`episode_detect_mem()`, the `mem` CRAN package - added to
+   `Suggests`) runs only on `pathogen_region` (L5) streams**, for
+   organisms flagged `mem_applicable` (Influenza A/B, RSV in the shipped
+   `pathogen_config.csv`) - it needs a stable, population-level weekly
+   series across several historical seasons to fit at all, which no ward
+   or single institution has the volume to support, and ARCHITECTURE.md
+   itself frames seasonal surveillance as a population-level question.
+   `same_place` and Farrington are unaffected at every other level.
+   Verified against the real `mem` package (installed and exercised
+   directly, not guessed at from documentation alone - the same lesson
+   the `certestyle` naming mistake taught earlier in this project):
+   - **Season convention**: `mem`'s own bundled `flucyl` example data
+     confirms the northern-hemisphere week-40-to-week-20 convention
+     ARCHITECTURE.md section 7.3 describes, with row labels `"40".."52",
+     "1".."20"` (33 weeks) and column labels `"YYYY/YYYY"`. Week 53 (some
+     years have one) is folded into week 52 - `mem`'s own guidance
+     ("accommodate week 53") describes a distinct-column treatment this
+     does not attempt; a documented simplification.
+   - **Threshold extraction**: `memmodel()`'s help text states "pre.post.
+     intervals... Threhold is the upper limit of the confidence
+     interval" - confirmed this means column 3 (not column 2, the point
+     estimate) of the returned 2x3 matrix, via direct inspection of a
+     fitted model's structure against that documentation.
+   - Requires at least 2 complete prior seasons before firing at all
+     (`min_seasons`), mirroring Farrington's own `b`-parameter baseline
+     requirement; returns `NULL`/an empty detection record for an
+     off-season date, no case data, `mem` not installed, or insufficient
+     seasons, at every call site (`episode_detect_mem()`,
+     `episode_mem_status()`, and the closure criterion via
+     `episode_closure_criterion_met(mem_applicable = TRUE, mem_status =
+     NULL)`) - a `mem_applicable` stream simply never closes via this
+     criterion when MEM cannot be computed, rather than silently falling
+     back to a case-free-days threshold that is not epidemiologically
+     meaningful for a seasonal pathogen (ARCHITECTURE.md section 6.3).
+   - End-to-end verified against a real cron run with realistic synthetic
+     seasonal data: fires during peak season (mid-January), does not fire
+     off-season or with only one season of history.
+
+9. **Rt (`episode_compute_rt()`, `EpiEstim::estimate_R()`) uses
+   `method = "parametric_si"` unconditionally** - `si_dist`
+   (`gamma`/`lognormal`) is recorded in `episode_pathogen_config` but not
+   yet used to select a distribution family, since `EpiEstim`'s
+   parametric method only ever fits a Gamma-shaped serial interval
+   (mean/sd parameterised) regardless of the literature source's own
+   distributional assumption. A known simplification, not a silent one.
+   Estimates whose window ends within `incomplete_days` (from
+   `episode_app_completeness()`, the same reporting-triangle-derived
+   figure the epi curve's own shading already uses) of the run date are
+   withheld from the returned series entirely - not shown-and-captioned -
+   since the trailing days are under-ascertained by construction and an
+   Rt estimate ending there would read a reporting artefact as a real
+   transmission change.
+
+10. **Historical analogue matching (`episode_app_similar_clusters()`,
+    "Vergelijkbare clusters") uses an unweighted sum of four `[0, 1]`
+    similarity scores** (level match, log-ratio size similarity,
+    circular day-of-year season distance, duration similarity) -
+    ARCHITECTURE.md section 10.1 specifies the matching *dimensions*
+    (organism, level, size, season, duration) but not a weighting
+    scheme between them, so this is a documented judgement call rather
+    than a tuned model, flagged alongside the codebase's other
+    provisional M1-era numeric choices for M6 calibration. Organism
+    match is exact-string and mandatory (not a scored dimension, a
+    filter), consistent with how `pathogen` is treated as unconstrained
+    free text everywhere else in this codebase.
+
 ## Parked for a future milestone
 
 1. **Cluster volume for endemic organisms at a single place.**

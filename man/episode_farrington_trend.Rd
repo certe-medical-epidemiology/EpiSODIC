@@ -9,7 +9,8 @@ episode_farrington_trend(
   config,
   run_date = Sys.Date(),
   n_weeks_existing = 0L,
-  max_backfill_weeks = 156L
+  max_backfill_weeks = 156L,
+  population = NULL
 )
 }
 \arguments{
@@ -26,6 +27,8 @@ backfill is attempted.}
 \item{max_backfill_weeks}{Cap on how many weeks a single call will ever
 (re-)compute, to bound cron run time. Matches the multi-year trend
 panel's own display window.}
+
+\item{population}{See \code{\link[=episode_detect_farrington]{episode_detect_farrington()}}.}
 }
 \value{
 A data frame with \code{week_start}, \code{n_cases}, \code{expected},

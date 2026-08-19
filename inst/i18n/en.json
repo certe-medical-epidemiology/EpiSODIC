@@ -1,5 +1,6 @@
 {
   "app.title": "EpiSODE",
+  "app.full_name": "Epidemiological Signal Observation and Detection Engine",
   "app.demodata": "Demo data",
 
   "nav.clusters": "Clusters",
@@ -276,5 +277,27 @@
   "info.states.col.state": "State",
   "info.states.col.meaning": "Meaning",
   "info.access.title": "Access",
-  "info.access.body": "Reading is anonymous: anyone who reaches the app can view clusters, streams and the archive without signing in. Signing in is only needed to classify a cluster, close it, or mute a stream - every write is attributed to the signed-in user."
+  "info.access.body": "Reading is anonymous: anyone who reaches the app can view clusters, streams and the archive without signing in. Signing in is only needed to classify a cluster, close it, or mute a stream - every write is attributed to the signed-in user.",
+
+  "streams.col.baseline_excluded": "Baseline excluded",
+
+  "interpretation.fragment.curve_shape.point_source": "All cases fall within a single maximum incubation period, pointing to a point source: a shared exposure around one moment, rather than person-to-person spread.",
+  "interpretation.fragment.curve_shape.propagated": "Cases span considerably more than one maximum incubation period, pointing to person-to-person spread rather than a single shared exposure.",
+  "interpretation.fragment.curve_shape.ambiguous": "The spread of cases over time does not clearly fit either a point source or person-to-person spread; further investigation of the exposure is needed to distinguish between them.",
+
+  "panel.rt.title": "Effective reproduction number (Rt)",
+  "panel.rt.note": "Time-varying effective reproduction number (not R0), computed over 7-day sliding windows. Windows within the still-incomplete reporting period are withheld.",
+  "panel.rt.unavailable": "Insufficient data to compute Rt for this organism.",
+
+  "panel.similar.title": "Similar clusters",
+  "panel.similar.unavailable": "No similar closed clusters found for this organism.",
+  "panel.similar.col.place": "Place",
+  "panel.similar.col.cases": "Cases",
+  "panel.similar.col.verdict": "Classification",
+  "panel.similar.col.closed_at": "Closed on",
+
+  "panel.report.title": "Outbreak report",
+  "panel.report.empty": "No report rendered yet for this cluster.",
+  "panel.report.version_line": "Version {version} - {when}",
+  "panel.report.render_button": "Generate report"
 }

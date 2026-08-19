@@ -24,6 +24,8 @@
 \alias{episode_db_latest_run}
 \alias{episode_db_stream_trend}
 \alias{episode_db_denominator_for_pathogen}
+\alias{episode_db_reports_for_cluster}
+\alias{episode_db_institution_activity}
 \title{Shared read helpers}
 \usage{
 episode_db_pathogen_config(con)
@@ -69,6 +71,10 @@ episode_db_latest_run(con, status = NULL)
 episode_db_stream_trend(con, stream_id)
 
 episode_db_denominator_for_pathogen(con, pathogen)
+
+episode_db_reports_for_cluster(con, cluster_id)
+
+episode_db_institution_activity(con, institution_id)
 }
 \arguments{
 \item{con}{A \link[DBI:DBIConnection-class]{DBI::DBIConnection}.}
@@ -96,6 +102,8 @@ episode_db_denominator_for_pathogen(con, pathogen)
 \item{limit}{Maximum number of rows to return, most recent first.}
 
 \item{status}{If given, only the latest run with this \code{status}.}
+
+\item{institution_id}{An \code{episode_institution} id.}
 }
 \description{
 Plain \code{DBI}-based readers used by both the cron and the app. Read-only:

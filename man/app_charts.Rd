@@ -4,12 +4,15 @@
 \alias{app_charts}
 \alias{episode_ui_epi_curve_chart}
 \alias{episode_ui_trend_chart}
+\alias{episode_ui_rt_chart}
 \alias{episode_ui_denominator_chart}
 \title{Chart panels}
 \usage{
 episode_ui_epi_curve_chart(curve, lang = "nl")
 
 episode_ui_trend_chart(trend, lang = "nl")
+
+episode_ui_rt_chart(rt, lang = "nl")
 
 episode_ui_denominator_chart(series, lang = "nl")
 }
@@ -19,6 +22,8 @@ episode_ui_denominator_chart(series, lang = "nl")
 \item{lang}{Session language.}
 
 \item{trend}{A data frame from \code{episode_app_trend()}.}
+
+\item{rt}{A data frame from \code{episode_compute_rt()}.}
 
 \item{series}{A data frame from \code{episode_app_denominator_series()}.}
 }

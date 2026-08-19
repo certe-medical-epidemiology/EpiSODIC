@@ -22,10 +22,17 @@
 #' @param config The resolved configuration; uses `config$farrington`.
 #' @param run_date The date to treat as "today"; the most recent week
 #'   evaluated is the one containing this date.
+#' @param population An optional numeric vector of weekly population
+#'   (patient-days) aligned to `episode_weekly_bins()`'s own weeks, from
+#'   [episode_farrington_population_vector()]. `NULL` (default) fits on
+#'   raw counts, unnormalised - the only behaviour possible before
+#'   ARCHITECTURE.md section 7.1's patient-day normalisation existed, and
+#'   still what every stream without institution activity data gets.
 #' @return A data frame of detection records (zero or one row: Farrington
 #'   evaluates only the current week, per ARCHITECTURE.md section 7).
 #' @export
-episode_detect_farrington <- function(cases_for_stream, stream_id, config, run_date = Sys.Date()) {
+episode_detect_farrington <- function(cases_for_stream, stream_id, config, run_date = Sys.Date(),
+                                       population = NULL) {
   empty <- episode_detection_record(integer(0), character(0), character(0), character(0), integer(0))
 
   dates <- as.Date(cases_for_stream$sample_date)
@@ -39,7 +46,7 @@ episode_detect_farrington <- function(cases_for_stream, stream_id, config, run_d
     return(empty)  # insufficient baseline history for the configured b
   }
 
-  result <- episode_farrington_fit(weekly, range_idx = length(weekly$counts), fc = fc)
+  result <- episode_farrington_fit(weekly, range_idx = length(weekly$counts), fc = fc, population = population)
   if (is.null(result) || !isTRUE(as.logical(result@alarm[1, 1]))) return(empty)
 
   current_week_start <- weekly$week_start[length(weekly$week_start)]
@@ -79,11 +86,13 @@ episode_detect_farrington <- function(cases_for_stream, stream_id, config, run_d
 #' @param max_backfill_weeks Cap on how many weeks a single call will ever
 #'   (re-)compute, to bound cron run time. Matches the multi-year trend
 #'   panel's own display window.
+#' @param population See [episode_detect_farrington()].
 #' @return A data frame with `week_start`, `n_cases`, `expected`,
 #'   `upperbound` (zero rows if ineligible).
 #' @export
 episode_farrington_trend <- function(cases_for_stream, config, run_date = Sys.Date(),
-                                      n_weeks_existing = 0L, max_backfill_weeks = 156L) {
+                                      n_weeks_existing = 0L, max_backfill_weeks = 156L,
+                                      population = NULL) {
   empty <- data.frame(week_start = as.Date(character(0)), n_cases = integer(0),
                        expected = numeric(0), upperbound = numeric(0), stringsAsFactors = FALSE)
 
@@ -102,7 +111,7 @@ episode_farrington_trend <- function(cases_for_stream, config, run_date = Sys.Da
     length(weekly$counts)
   )
 
-  result <- episode_farrington_fit(weekly, range_idx = range_idx, fc = fc)
+  result <- episode_farrington_fit(weekly, range_idx = range_idx, fc = fc, population = population)
   if (is.null(result)) return(empty)
 
   data.frame(
@@ -116,22 +125,64 @@ episode_farrington_trend <- function(cases_for_stream, config, run_date = Sys.Da
 
 #' @keywords internal
 #' @noRd
-episode_farrington_fit <- function(weekly, range_idx, fc) {
+episode_farrington_fit <- function(weekly, range_idx, fc, population = NULL) {
+  use_population <- !is.null(population) && length(population) == length(weekly$counts)
   sts_obj <- surveillance::sts(
     observed = weekly$counts,
     start = c(as.integer(format(weekly$week_start[1], "%Y")), 1),
-    frequency = 52
+    frequency = 52,
+    population = if (use_population) population else NULL
   )
   control <- list(
     range = range_idx, b = fc$b, w = fc$w, reweight = isTRUE(fc$reweight),
     weightsThreshold = fc$weightsThreshold, trend = isTRUE(fc$trend),
     pastWeeksNotIncluded = fc$pastWeeksNotIncluded, limit54 = unlist(fc$limit54),
-    alpha = fc$alpha
+    alpha = fc$alpha, populationOffset = use_population
   )
   tryCatch(
     suppressWarnings(surveillance::farringtonFlexible(sts_obj, control = control)),
     error = function(e) NULL
   )
+}
+
+#' Build a weekly patient-days vector aligned to Farrington's weekly bins
+#'
+#' ARCHITECTURE.md section 7.1: institution streams (L2) should use
+#' `farringtonFlexible()`'s `populationOffset` with weekly patient-days
+#' rather than raw counts, since occupancy varies seasonally and a
+#' count-based baseline would alarm on a busy February and stay silent
+#' through a quiet August at identical transmission-per-patient-day. `NULL`
+#' when `institution_id` is `NA` (non-institution streams) or no activity
+#' data exists at all for it - callers pass `NULL` straight through to
+#' [episode_detect_farrington()]/[episode_farrington_trend()], which then
+#' fit on raw counts exactly as before this existed.
+#'
+#' Only `episode_institution_activity` (L2, whole-institution) exists in
+#' the schema - there is no ward-level (L1) activity table, so L1 streams
+#' always get `NULL` here regardless of `institution_id`; ARCHITECTURE.md
+#' section 7 itself only promises ward patient-days "if obtainable", and
+#' they are not (see QUESTIONS.md).
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param institution_id An `episode_institution` id, or `NA`.
+#' @param level A stream's `level`, from `episode_stream`.
+#' @param week_start The `Date` vector from `episode_weekly_bins()`.
+#' @return A numeric vector the same length as `week_start`, or `NULL`.
+#' @export
+episode_farrington_population_vector <- function(con, institution_id, level, week_start) {
+  if (!identical(level, "pathogen_institution") || is.na(institution_id)) return(NULL)
+  activity <- episode_db_institution_activity(con, institution_id)
+  if (nrow(activity) == 0) return(NULL)
+
+  activity_start <- as.Date(activity$period_start)
+  activity_end <- as.Date(activity$period_end)
+  fallback <- stats::median(activity$patient_days, na.rm = TRUE)
+
+  vapply(week_start, function(ws) {
+    hit <- which(activity_start <= ws & activity_end >= ws)
+    if (length(hit) == 0 || is.na(activity$patient_days[hit[1]])) return(fallback)
+    activity$patient_days[hit[1]]
+  }, numeric(1))
 }
 
 #' Aggregate case dates into Monday-starting weekly counts

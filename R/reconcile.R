@@ -46,12 +46,20 @@
 #' @param has_assessment_fn A function `(cluster_id) -> logical(1)`,
 #'   `TRUE` if the cluster carries any assessment event.
 #' @param verdict_fn A function `(cluster_id) -> character(1) or NA`, the
-#'   latest verdict for a cluster, used to decide auto-closure eligibility.
+#'   latest verdict for a cluster, used to decide auto-closure eligibility
+#'   and, together with `cooldown_days`, the cool-down escape hatch.
+#' @param cooldown_days The organism's cool-down interval, from
+#'   `episode_pathogen_config` (ARCHITECTURE.md section 6.5). `NA`
+#'   (default) disables the cool-down/escape-hatch check entirely, for
+#'   callers (and existing tests) that predate it.
+#' @param cooldown_reopen_ratio From `config$reconciliation$
+#'   cooldown_reopen_ratio` ("half again", ARCHITECTURE.md section 6.5).
+#'   Ignored when `cooldown_days` is `NA`.
 #' @return Invisibly, a list with `n_new`, `n_updated`, `n_merged`.
 #' @export
 episode_reconcile_stream <- function(con, stream_id, detections, case_free_days, run_id,
                                       close_after_runs, priority_score_fn, has_assessment_fn,
-                                      verdict_fn) {
+                                      verdict_fn, cooldown_days = NA, cooldown_reopen_ratio = NA) {
   n_new <- 0L
   n_updated <- 0L
   n_merged <- 0L
@@ -65,7 +73,40 @@ episode_reconcile_stream <- function(con, stream_id, detections, case_free_days,
     candidate <- candidates[i, ]
     matches <- episode_reconcile_find_matches(open_clusters, candidate, case_free_days)
 
-    if (length(matches) == 0) {
+    cooldown_match <- if (length(matches) == 0 && !is.na(cooldown_days)) {
+      episode_reconcile_find_cooldown_match(open_clusters, candidate, case_free_days,
+                                             cooldown_days, cooldown_reopen_ratio, verdict_fn)
+    } else {
+      NULL
+    }
+
+    if (length(matches) == 0 && !is.null(cooldown_match)) {
+      cluster_id <- cooldown_match$cluster_id
+      existing <- open_clusters[open_clusters$cluster_id == cluster_id, ]
+      new_first <- min(as.Date(existing$first_day), as.Date(candidate$first_day))
+      new_last <- max(as.Date(existing$last_day), as.Date(candidate$last_day))
+      new_n <- episode_reconcile_case_count(con, stream_id, new_first, new_last, existing, candidate)
+
+      episode_db_cluster_update(
+        con, cluster_id = cluster_id, first_day = as.character(new_first),
+        last_day = as.character(new_last), n_cases = new_n,
+        priority_score = priority_score_fn(candidate),
+        detector_agreement = max(existing$detector_agreement, candidate$detector_agreement),
+        run_id = run_id,
+        # Only a genuine escape-hatch hit (excess materially exceeds what
+        # the terminal verdict was based on) flags changed_since_assessment;
+        # a candidate absorbed within cool-down that does NOT clear that
+        # bar is exactly the "tail of a resolved outbreak" cool-down exists
+        # to suppress (ARCHITECTURE.md section 6.5) - its cases are still
+        # linked to the cluster (nothing is discarded), but no reassessment
+        # prompt fires for it.
+        changed_since_assessment = if (cooldown_match$reopen) TRUE else NULL
+      )
+      n_updated <- n_updated + 1L
+      matched_cluster_ids <- c(matched_cluster_ids, as.character(cluster_id))
+      episode_reconcile_link_detections(con, detections, candidate, cluster_id)
+      episode_reconcile_link_cases(con, stream_id, cluster_id, as.character(new_first), as.character(new_last))
+    } else if (length(matches) == 0) {
       cluster_id <- episode_db_cluster_insert(
         con, stream_id = stream_id, first_day = candidate$first_day,
         last_day = candidate$last_day, n_cases = candidate$n_cases,
@@ -235,6 +276,72 @@ episode_reconcile_find_matches <- function(open_clusters, candidate, case_free_d
     as.Date(open_clusters$last_day) >= cand_first - case_free_days
 
   which(overlaps & still_open)
+}
+
+#' The cool-down escape hatch (ARCHITECTURE.md section 6.5)
+#'
+#' Only called for a candidate with zero ordinary matches (i.e. outside
+#' `case_free_days` of every open cluster in the stream, so it would
+#' otherwise become a brand-new cluster). Looks one step further, to
+#' `cooldown_days`, for a cluster whose latest verdict was terminal
+#' (`artefact`/`expected_variation`) and, if found, absorbs the candidate
+#' into it instead of opening a new one - "so that the tail of a resolved
+#' outbreak does not immediately reopen as a fresh one". Whether that
+#' absorption also reopens the cluster as Herbeoordeling nodig
+#' (`reopen = TRUE`, surfaced via `changed_since_assessment` by the
+#' caller) depends on whether the candidate's excess "exceeds the excess
+#' on which that judgement was made by a material margin" - approximated
+#' here as `candidate$n_cases` against the closed cluster's own `n_cases`
+#' scaled by `cooldown_reopen_ratio`, since `n_cases` is always available
+#' (unlike `ratio`, which only Farrington-detected clusters carry) and is
+#' exactly the quantity the terminal verdict was actually judged against.
+#'
+#' @param open_clusters A data frame from `episode_db_clusters_for_stream()`.
+#' @param candidate A single-row candidate episode.
+#' @param case_free_days The organism's case-free interval - the inner
+#'   bound of the cool-down window (a candidate this close would already
+#'   have matched ordinarily; this function only ever sees ones that did not).
+#' @param cooldown_days The organism's cool-down interval - the outer bound.
+#' @param cooldown_reopen_ratio From `config$reconciliation$
+#'   cooldown_reopen_ratio`. `NA` disables the reopen check (every
+#'   cool-down absorption is then silent, never flagged).
+#' @param verdict_fn A function `(cluster_id) -> character(1) or NA`.
+#' @return `NULL` if no eligible cluster is found, else a list with
+#'   `cluster_id` and `reopen` (logical).
+#' @keywords internal
+#' @noRd
+episode_reconcile_find_cooldown_match <- function(open_clusters, candidate, case_free_days,
+                                                    cooldown_days, cooldown_reopen_ratio, verdict_fn) {
+  if (nrow(open_clusters) == 0) return(NULL)
+  still_present <- is.na(open_clusters$merged_into)
+  if (!any(still_present)) return(NULL)
+
+  cand_first <- as.Date(candidate$first_day)
+  cand_last <- as.Date(candidate$last_day)
+
+  # Strictly beyond case_free_days (else episode_reconcile_find_matches()
+  # would already have matched it) but within cooldown_days.
+  in_cooldown_window <- as.Date(open_clusters$last_day) < cand_first - case_free_days &
+    as.Date(open_clusters$last_day) >= cand_first - cooldown_days
+
+  idx <- which(in_cooldown_window & still_present)
+  if (length(idx) == 0) return(NULL)
+  idx <- idx[which.max(as.Date(open_clusters$last_day[idx]))]  # nearest in time
+  cluster_id <- open_clusters$cluster_id[idx]
+
+  verdict <- verdict_fn(cluster_id)
+  if (is.na(verdict) || !verdict %in% c("artefact", "expected_variation")) return(NULL)
+
+  reopen <- FALSE
+  if (!is.na(cooldown_reopen_ratio)) {
+    existing_n <- open_clusters$n_cases[idx]
+    if (!is.na(existing_n) && existing_n > 0 &&
+        candidate$n_cases >= existing_n * cooldown_reopen_ratio) {
+      reopen <- TRUE
+    }
+  }
+
+  list(cluster_id = cluster_id, reopen = reopen)
 }
 
 #' Link the individual cases within a cluster's interval to that cluster

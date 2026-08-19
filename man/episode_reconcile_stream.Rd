@@ -13,7 +13,9 @@ episode_reconcile_stream(
   close_after_runs,
   priority_score_fn,
   has_assessment_fn,
-  verdict_fn
+  verdict_fn,
+  cooldown_days = NA,
+  cooldown_reopen_ratio = NA
 )
 }
 \arguments{
@@ -39,7 +41,16 @@ does not depend on \code{R/score_*.R} implementation details.}
 \code{TRUE} if the cluster carries any assessment event.}
 
 \item{verdict_fn}{A function \verb{(cluster_id) -> character(1) or NA}, the
-latest verdict for a cluster, used to decide auto-closure eligibility.}
+latest verdict for a cluster, used to decide auto-closure eligibility
+and, together with \code{cooldown_days}, the cool-down escape hatch.}
+
+\item{cooldown_days}{The organism's cool-down interval, from
+\code{episode_pathogen_config} (ARCHITECTURE.md section 6.5). \code{NA}
+(default) disables the cool-down/escape-hatch check entirely, for
+callers (and existing tests) that predate it.}
+
+\item{cooldown_reopen_ratio}{From \code{config$reconciliation$ cooldown_reopen_ratio} ("half again", ARCHITECTURE.md section 6.5).
+Ignored when \code{cooldown_days} is \code{NA}.}
 }
 \value{
 Invisibly, a list with \code{n_new}, \code{n_updated}, \code{n_merged}.

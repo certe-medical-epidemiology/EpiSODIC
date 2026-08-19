@@ -228,3 +228,22 @@ episode_db_denominator_for_pathogen <- function(con, pathogen) {
     params = list(pathogen)
   )
 }
+
+#' @rdname db_read
+#' @export
+episode_db_reports_for_cluster <- function(con, cluster_id) {
+  DBI::dbGetQuery(
+    con, "SELECT * FROM episode_report_render WHERE cluster_id = ? ORDER BY version_no",
+    params = list(cluster_id)
+  )
+}
+
+#' @rdname db_read
+#' @param institution_id An `episode_institution` id.
+#' @export
+episode_db_institution_activity <- function(con, institution_id) {
+  DBI::dbGetQuery(
+    con, "SELECT * FROM episode_institution_activity WHERE institution_id = ? ORDER BY period_start",
+    params = list(institution_id)
+  )
+}

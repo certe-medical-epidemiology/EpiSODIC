@@ -25,6 +25,7 @@ episode_ui_dossier <- function(con, cluster_id, lang = "nl", current_user = NULL
     episode_ui_trajectory(obj, state, lang = lang),
     episode_ui_interpretation_panel(obj, lang = lang),
     episode_ui_epicurve_panel(con, cluster_id, obj, lang = lang),
+    episode_ui_rt_panel(obj, lang = lang),
     episode_ui_trend_panel(con, obj, lang = lang),
     episode_ui_denominator_panel(obj, lang = lang),
     shiny::tags$div(
@@ -34,6 +35,8 @@ episode_ui_dossier <- function(con, cluster_id, lang = "nl", current_user = NULL
     ),
     episode_ui_places_panel(con, cluster_id, obj, lang = lang),
     episode_ui_resistance_panel(lang = lang),
+    episode_ui_similar_clusters_panel(con, cluster_id, lang = lang),
+    episode_ui_report_panel(con, cluster_id, current_user, lang = lang),
     if (is.null(current_user)) {
       episode_ui_linelist_locked_panel(lang = lang)
     } else {
@@ -199,6 +202,55 @@ episode_ui_trend_panel <- function(con, obj, lang = "nl") {
 
 #' @keywords internal
 #' @noRd
+episode_ui_rt_panel <- function(obj, lang = "nl") {
+  # "Suppressed entirely where rt_applicable is false" (ARCHITECTURE.md
+  # section 9) - not even an empty-state panel, unlike a section that is
+  # merely awaiting more data.
+  if (!isTRUE(obj$rt_applicable)) return(NULL)
+  if (is.null(obj$rt) || nrow(obj$rt) == 0) {
+    return(episode_ui_panel_empty(episode_tr("panel.rt.title", lang = lang), episode_tr("panel.rt.unavailable", lang = lang)))
+  }
+  episode_ui_panel(
+    episode_tr("panel.rt.title", lang = lang),
+    note = episode_tr("panel.rt.note", lang = lang),
+    shiny::renderPlot(episode_ui_rt_chart(obj$rt, lang = lang), height = 200)
+  )
+}
+
+#' @keywords internal
+#' @noRd
+episode_ui_similar_clusters_panel <- function(con, cluster_id, lang = "nl") {
+  similar <- episode_app_similar_clusters(con, cluster_id, lang = lang)
+  if (nrow(similar) == 0) {
+    return(episode_ui_panel_empty(episode_tr("panel.similar.title", lang = lang), episode_tr("panel.similar.unavailable", lang = lang)))
+  }
+  episode_ui_panel(
+    episode_tr("panel.similar.title", lang = lang),
+    shiny::tags$table(
+      class = "episode-table",
+      shiny::tags$thead(shiny::tags$tr(
+        shiny::tags$th(episode_tr("panel.similar.col.place", lang = lang)),
+        shiny::tags$th(episode_tr("panel.similar.col.cases", lang = lang)),
+        shiny::tags$th(episode_tr("panel.similar.col.verdict", lang = lang)),
+        shiny::tags$th(episode_tr("panel.similar.col.closed_at", lang = lang))
+      )),
+      shiny::tags$tbody(
+        lapply(seq_len(nrow(similar)), function(i) {
+          row <- similar[i, ]
+          shiny::tags$tr(
+            shiny::tags$td(paste0(row$level_label, " \u00b7 ", row$place)),
+            shiny::tags$td(row$n_cases),
+            shiny::tags$td(if (is.na(row$verdict_label)) episode_tr("misc.dash", lang = lang) else row$verdict_label),
+            shiny::tags$td(if (is.na(row$closed_at)) episode_tr("misc.unknown", lang = lang) else episode_ui_format_datetime(row$closed_at, fmt = "%d-%m-%Y"))
+          )
+        })
+      )
+    )
+  )
+}
+
+#' @keywords internal
+#' @noRd
 episode_ui_denominator_panel <- function(obj, lang = "nl") {
   if (is.null(obj$denominator) || is.null(obj$denominator$series) || nrow(obj$denominator$series) < 2) {
     return(episode_ui_panel_empty(episode_tr("panel.denominator.title", lang = lang), episode_tr("panel.denominator.unavailable", lang = lang)))
@@ -229,9 +281,14 @@ episode_ui_geo_panel <- function(obj, lang = "nl") {
     return(episode_ui_panel_empty(episode_tr("panel.geo.title", lang = lang), episode_tr("panel.geo.empty", lang = lang),
                                    aside = episode_tr("panel.geo.aside", lang = lang)))
   }
+  map_chart <- episode_ui_geo_map_chart(obj$concentration$rows)
   episode_ui_panel(
     episode_tr("panel.geo.title", lang = lang), aside = episode_tr("panel.geo.aside", lang = lang),
-    episode_ui_bars(utils::head(obj$concentration$rows, 8), unit = episode_tr("panel.geo.unit", lang = lang))
+    if (is.null(map_chart)) {
+      episode_ui_bars(utils::head(obj$concentration$rows, 8), unit = episode_tr("panel.geo.unit", lang = lang))
+    } else {
+      shiny::renderPlot(map_chart, height = 260)
+    }
   )
 }
 
@@ -283,6 +340,46 @@ episode_ui_linelist_panel <- function(con, cluster_id, obj, lang = "nl") {
         })
       )
     )
+  )
+}
+
+#' The report panel: existing versions plus a render-on-demand button
+#'
+#' "The cron pre-renders for every cluster with a verdict of
+#' possible_epidemic or above; assessors can re-render on demand,
+#' producing a new version" (ARCHITECTURE.md section 11). The button only
+#' renders for a signed-in user, matching every other write action; the
+#' version list itself is visible to anyone, since a rendered report's
+#' existence is not sensitive the way its line-list *contents* are.
+#' @keywords internal
+#' @noRd
+episode_ui_report_panel <- function(con, cluster_id, current_user, lang = "nl") {
+  reports <- episode_db_reports_for_cluster(con, cluster_id)
+  episode_ui_panel(
+    episode_tr("panel.report.title", lang = lang),
+    if (nrow(reports) == 0) {
+      shiny::tags$p(class = "episode-panel-empty", episode_tr("panel.report.empty", lang = lang))
+    } else {
+      shiny::tags$ul(
+        style = "font-size:12.5px;padding-left:18px;",
+        lapply(rev(seq_len(nrow(reports))), function(i) {
+          row <- reports[i, ]
+          shiny::tags$li(episode_tr("panel.report.version_line", version = row$version_no,
+                                     when = episode_ui_format_datetime(row$rendered_at, fmt = "%d-%m-%Y %H:%M"),
+                                     lang = lang))
+        })
+      )
+    },
+    if (!is.null(current_user)) {
+      shiny::tagList(
+        shiny::uiOutput("report_render_error"),
+        shiny::tags$button(
+          class = "episode-btn",
+          onclick = sprintf("Shiny.setInputValue('report_render_submit', %d, {priority: 'event'})", cluster_id),
+          episode_tr("panel.report.render_button", lang = lang)
+        )
+      )
+    }
   )
 }
 
@@ -469,15 +566,23 @@ episode_ui_streams_screen <- function(screen, lang = "nl") {
           shiny::tags$th(episode_tr("streams.col.level", lang = lang)),
           shiny::tags$th(episode_tr("streams.col.denominator", lang = lang)),
           shiny::tags$th(episode_tr("streams.col.first_seen", lang = lang)),
-          shiny::tags$th(episode_tr("streams.col.last_seen", lang = lang))
+          shiny::tags$th(episode_tr("streams.col.last_seen", lang = lang)),
+          shiny::tags$th(episode_tr("streams.col.baseline_excluded", lang = lang))
         )),
         shiny::tags$tbody(
           lapply(seq_len(nrow(streams)), function(i) {
             row <- streams[i, ]
+            excluded <- if (!is.null(streams$baseline_excluded)) streams$baseline_excluded[[i]] else NULL
+            excluded_text <- if (is.null(excluded) || nrow(excluded) == 0) {
+              episode_tr("misc.dash", lang = lang)
+            } else {
+              paste(sprintf("%s \u2013 %s", excluded$first_day, excluded$last_day), collapse = "; ")
+            }
             shiny::tags$tr(
               shiny::tags$td(shiny::HTML(episode_ui_italicise_taxon(row$pathogen))),
               shiny::tags$td(episode_tr(paste0("level.", row$level), lang = lang)),
-              shiny::tags$td(row$denominator), shiny::tags$td(row$first_seen), shiny::tags$td(row$last_seen)
+              shiny::tags$td(row$denominator), shiny::tags$td(row$first_seen), shiny::tags$td(row$last_seen),
+              shiny::tags$td(excluded_text)
             )
           })
         )

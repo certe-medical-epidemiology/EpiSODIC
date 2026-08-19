@@ -62,9 +62,15 @@ episode_app_derive_state_for_cluster <- function(con, cluster_id) {
                                params = list(cluster$stream_id))
     pc <- episode_db_pathogen_config_get(con, stream$pathogen[1])
     if (!is.null(pc)) {
+      mem_status <- NULL
+      if (isTRUE(as.logical(pc$mem_applicable))) {
+        stream_cases <- episode_db_cases_for_pathogen(con, stream$pathogen[1])
+        mem_status <- episode_mem_status(stream_cases)
+      }
       closure_met <- episode_closure_criterion_met(
         cluster$last_day, latest_verdict, case_free_days = pc$case_free_days,
-        incub_max_days = pc$incub_max_days, mem_applicable = as.logical(pc$mem_applicable)
+        incub_max_days = pc$incub_max_days, mem_applicable = as.logical(pc$mem_applicable),
+        mem_status = mem_status
       )
     }
   }
@@ -140,6 +146,7 @@ episode_cluster_object <- function(con, cluster_id, lang = "nl") {
   )$detector
 
   place <- episode_app_place_label(stream, institution, lang = lang)
+  completeness <- episode_app_completeness(con, stream$stream_id)
 
   list(
     id = cluster$cluster_id,
@@ -161,7 +168,7 @@ episode_cluster_object <- function(con, cluster_id, lang = "nl") {
     concentration = episode_app_concentration(cases, stream$level),
     denominator = episode_app_denominator_summary(con, stream$pathogen, cases),
     demography = episode_app_demography_shift(con, stream$stream_id, cases),
-    completeness = episode_app_completeness(con, stream$stream_id),
+    completeness = completeness,
     unique_patients = length(unique(cases$patient_key)),
     n_isolates = nrow(cases),
     case_free = list(
@@ -170,7 +177,9 @@ episode_cluster_object <- function(con, cluster_id, lang = "nl") {
     ),
     rt_applicable = if (!is.null(pc)) as.logical(pc$rt_applicable) else FALSE,
     case_free_days = if (!is.null(pc)) pc$case_free_days else NA_integer_,
-    mem_applicable = if (!is.null(pc)) as.logical(pc$mem_applicable) else FALSE
+    mem_applicable = if (!is.null(pc)) as.logical(pc$mem_applicable) else FALSE,
+    curve_shape = if (!is.null(pc)) episode_classify_curve_shape(cases, pc$incub_max_days) else NA_character_,
+    rt = if (!is.null(pc)) episode_compute_rt(cases, pc, incomplete_days = completeness$incomplete_days %||% 0L) else NULL
   )
 }
 
@@ -211,14 +220,33 @@ episode_app_format_region <- function(region_code) {
 #' @noRd
 episode_app_density <- function(con, stream, cases) {
   if (is.na(stream$institution_id) || nrow(cases) == 0) return(NULL)
-  activity <- DBI::dbGetQuery(
-    con, "SELECT * FROM episode_institution_activity WHERE institution_id = ? ORDER BY period_start DESC LIMIT 1",
-    params = list(stream$institution_id)
+  activity <- episode_db_institution_activity(con, stream$institution_id)
+  if (nrow(activity) == 0) return(NULL)
+  latest <- activity[nrow(activity), ]
+  if (is.na(latest$patient_days) || latest$patient_days == 0) return(NULL)
+
+  # Historical baseline: this stream's own long-run density, all known
+  # cases against the sum of patient-days over the same calendar span -
+  # not a fitted model (that is farringtonFlexible's own populationOffset
+  # baseline, M5), just the descriptive rate the cluster's own density is
+  # being read against.
+  all_cases <- DBI::dbGetQuery(
+    con, "SELECT sample_date FROM episode_case WHERE pathogen = ? AND institution_id = ?",
+    params = list(stream$pathogen, stream$institution_id)
   )
-  if (nrow(activity) == 0 || is.na(activity$patient_days[1]) || activity$patient_days[1] == 0) return(NULL)
+  baseline <- NA_real_
+  if (nrow(all_cases) >= 5) {
+    span_start <- min(as.Date(all_cases$sample_date))
+    span_activity <- activity[as.Date(activity$period_end) >= span_start, ]
+    total_patient_days <- sum(span_activity$patient_days, na.rm = TRUE)
+    if (total_patient_days > 0) {
+      baseline <- round(nrow(all_cases) / total_patient_days * 1000, 2)
+    }
+  }
+
   list(
-    value = round(nrow(cases) / activity$patient_days[1] * 1000, 2),
-    baseline = NA  # historical baseline density: M5 (patient-day normalisation), see QUESTIONS.md
+    value = round(nrow(cases) / latest$patient_days * 1000, 2),
+    baseline = baseline
   )
 }
 
@@ -447,6 +475,14 @@ episode_app_streams_screen <- function(con) {
     jsonlite::fromJSON(run$config_snapshot)
   } else {
     NULL
+  }
+  # ARCHITECTURE.md section 7.6: "the excluded windows are listed on the
+  # Streams screen so that a baseline is never quietly different from
+  # what an assessor expects."
+  if (nrow(streams) > 0) {
+    streams$baseline_excluded <- lapply(streams$stream_id, function(sid) {
+      episode_baseline_excluded_windows(con, sid)
+    })
   }
   list(streams = streams, config_snapshot = config_snapshot, run = run)
 }

@@ -60,7 +60,7 @@ test_that("episode_app_activity_log() surfaces assessments, closures, mutes, log
   activity <- episode_app_activity_log(env$con)
   expect_true("aangemeld" %in% activity$action)          # login
   expect_true("geclassificeerd" %in% activity$action)    # assessment
-  expect_true("stream gedempt" %in% activity$action)     # mute
+  expect_true("signaleringsreeks gedempt" %in% activity$action)     # mute
   expect_true(any(startsWith(activity$action, "detectierun")))  # the cron run from app_read_setup()
   expect_true(any(activity$is_system))       # the cron run from app_read_setup()
   expect_false(all(activity$is_system))      # human actions too
