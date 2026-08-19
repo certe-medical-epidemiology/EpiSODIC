@@ -1,0 +1,77 @@
+#' Derive cluster state
+#'
+#' State is computed, never chosen, never stored on `episode_cluster`
+#' (standing brief hard rule 3, ARCHITECTURE.md section 6.1). This is a
+#' pure function: given the classification history and the case-free clock,
+#' it returns the same state every time, with no side effects and no
+#' database access, so it can be exhaustively unit tested per the standing
+#' brief section 6 ("wrong output there is undetectable until it matters").
+#'
+#' State table (ARCHITECTURE.md section 6.1):
+#'
+#' | State | Condition |
+#' |---|---|
+#' | Nieuw | No assessment event exists |
+#' | In beoordeling | An event exists but no classification yet, or snoozed |
+#' | Monitoring | Classified as an open epidemic verdict, not yet case-free |
+#' | Af te sluiten | Epidemic verdict and the closure criterion has fired |
+#' | Afgesloten | Classified artefact/normal variation, or explicitly closed |
+#' | Herbeoordeling nodig | Classified, but data changed since that assessment |
+#'
+#' @param events A data frame of this cluster's assessment events, ordered
+#'   ascending by `created_at`/`event_id` (as returned by
+#'   `episode_db_assessment_events()`). May have zero rows.
+#' @param changed_since_assessment Logical, from `episode_cluster`.
+#' @param closure_criterion_met Logical, whether the case-free/MEM closure
+#'   criterion has fired for this cluster's stream (see
+#'   `R/reconcile_closure.R`). Ignored unless the latest verdict is a
+#'   non-terminal epidemic verdict.
+#' @param explicitly_closed Logical, `TRUE` if the latest event is a
+#'   closure act (ARCHITECTURE.md section 6.1: "Closure is an act, not a
+#'   classification"; represented here as an event whose `verdict` is
+#'   non-`NA` and whose rationale records the closure, or, for M1's purposes,
+#'   by the caller passing `TRUE` when it knows closure was recorded via
+#'   `episode_cluster_state`. See `QUESTIONS.md` for how M3 will represent
+#'   this on the event itself).
+#' @param today The current date, for evaluating `snooze_until`.
+#' @return One of `"new"`, `"assessing"`, `"monitoring"`, `"closable"`,
+#'   `"closed"`, `"reassess"`.
+#' @export
+episode_derive_state <- function(events, changed_since_assessment = FALSE,
+                                  closure_criterion_met = FALSE,
+                                  explicitly_closed = FALSE, today = Sys.Date()) {
+  if (nrow(events) == 0) {
+    return("new")
+  }
+
+  latest <- events[nrow(events), ]
+
+  if (explicitly_closed) {
+    return("closed")
+  }
+
+  if (is.na(latest$verdict)) {
+    return("assessing")
+  }
+
+  snoozed <- !is.na(latest$snooze_until) && as.Date(latest$snooze_until) >= as.Date(today)
+  if (snoozed) {
+    return("assessing")
+  }
+
+  terminal_verdicts <- c("artefact", "expected_variation")
+  if (latest$verdict %in% terminal_verdicts) {
+    return("closed")
+  }
+
+  if (isTRUE(changed_since_assessment)) {
+    return("reassess")
+  }
+
+  # non-terminal verdict: cluster_not_yet, possible_epidemic, confirmed_epidemic
+  if (isTRUE(closure_criterion_met)) {
+    return("closable")
+  }
+
+  "monitoring"
+}

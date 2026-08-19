@@ -1,0 +1,61 @@
+# EpiSODE shipped defaults.
+#
+# This file is software: documented defaults shipped with the package. It is
+# NOT instance configuration (ARCHITECTURE.md section 7.4-7.5). An operator's
+# actual instance configuration lives outside this repository and is located
+# through the EPISODE_CONFIG environment variable; it is loaded on top of
+# this file, and any key it sets overrides the corresponding key here. The
+# resolved (merged) result is what gets hashed into config_hash and stored in
+# config_snapshot on every run - see episode_config_resolve().
+
+# Reconciliation, ARCHITECTURE.md section 6.
+reconciliation:
+  case_free_days_default: 14   # fallback when a pathogen has no override
+  close_after_runs: 14         # section 6, step 5
+  cooldown_reopen_ratio: 1.5   # section 6.5, escape hatch ("half again")
+
+# Eligibility gate, ARCHITECTURE.md section 8, item 1.
+# Values are provisional; calibration against real signal volume is M6.
+eligibility:
+  min_baseline_weeks: 52
+  min_median_weekly_count: 1
+  min_nonzero_week_share: 0.2
+
+# Effect-size floor, ARCHITECTURE.md section 8, item 3.
+effect_size_floor:
+  min_excess_over_upperbound: 3
+  min_ratio_observed_expected: 1.5
+
+# same_place rule-based detector, ARCHITECTURE.md section 7.2.
+# Defaults of n = 3 within 14 days, tightened per organism for the ones
+# that matter. mo_code values here match inst/config/pathogen_config.csv.
+same_place:
+  # NOTE: keys are n_cases/k_days rather than the architecture's own "n"
+  # because YAML 1.1 parses a bare unquoted `n:` key as the boolean FALSE
+  # (the classic Norway-problem gotcha). n_cases means the same thing.
+  default_n_cases: 3
+  default_k_days: 14
+  overrides:
+    B_CLOSTRIDIOIDES_DIFFICILE: {n_cases: 3, k_days: 14}
+    B_MRSA: {n_cases: 3, k_days: 14}
+    B_VRE: {n_cases: 3, k_days: 14}
+    B_CPE: {n_cases: 2, k_days: 14}
+    V_NOROVIRUS: {n_cases: 3, k_days: 7}
+    B_LEGIONELLA: {n_cases: 2, k_days: 14}
+
+# Priority score weights, ARCHITECTURE.md section 8.1. Sum to 1.00.
+priority_score:
+  weights:
+    excess_component: 0.25
+    ratio_component: 0.15
+    severity_component: 0.20
+    growth_component: 0.15
+    agreement_component: 0.10
+    density_component: 0.10
+    spatial_component: 0.05
+
+# Lattice suppression, ARCHITECTURE.md section 7.
+suppression:
+  child_dominance_threshold: 0.70   # child suppresses parent
+  parent_diffuse_threshold: 0.50    # below this, parent may suppress children
+  parent_min_flagged_children: 2

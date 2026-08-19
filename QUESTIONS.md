@@ -82,9 +82,68 @@ decisions survives.
 17. **`case_free_days` default per organism where not curated.** Schema
     default is 14 (per column default). Used as the fallback in
     `pathogen_config.csv` rows that do not warrant a specific override.
+18. **`mo_code` values in `pathogen_config.csv`.** The architecture keys
+    streams on `AMR::as.mo()` output (section 5.1) but `AMR` cannot be
+    exercised in this environment to generate real codes. The shipped
+    `inst/config/pathogen_config.csv` uses placeholder codes of the shape
+    `<kingdom>_<NAME>` (e.g. `B_SALMONELLA`, `V_NOROVIRUS`) that are
+    deliberately **not** presented as real `AMR` codes. `R/mo_lookup.R`
+    resolves these through `AMR::as.mo()` at ingestion time when `AMR` is
+    installed, replacing the placeholder with the real code and rank, and
+    falls back to using the placeholder verbatim (with `mo_rank` taken from
+    the config file) when `AMR` is unavailable, so the demo still runs.
+    This needs revisiting against real `AMR::as.mo()` output once available.
+19. **`certestats::detect_disease_clusters()` / `detect_farrington()` return
+    shape.** `R/detect_certestats.R` guesses a plausible return shape (a
+    list of cluster objects with `first_day`/`last_day`/`n_cases` for the
+    former; a data frame with `alarm`/`date`/`observed`/`expected`/
+    `upperbound` columns for the latter, matching the `sts`-like
+    conventions of the `surveillance` package `certestats` builds on).
+    Neither function can be installed or inspected in this environment, so
+    this is unverified and marked clearly as such; both call sites are
+    guarded by `requireNamespace("certestats")` and return zero detections
+    when the package is absent, so the demo and the test suite never
+    exercise this code path. Must be corrected against the real source
+    before this wrapper is trusted in production, per MILESTONES.md M1
+    step 8 and `ARCHITECTURE.md` section 7.1's own verification note.
+
+19b. **Priority score `rescale()` function.** Section 8.1 names
+    `rescale(...)` for several components but does not define it. Adopted
+    `x / (x + 1)` (bounded to `[0, 1)`, monotonic, no fixed reference
+    range needed) in `R/score_priority.R`. Calibration is explicitly M6
+    scope; this is a placeholder shape, not a calibrated function.
+
+20. **`episode_stream` has no `ward` column.** ARCHITECTURE.md section 5.1's
+    `episode_stream` DDL carries `level`, `mo_code`, `mo_name`, `mo_rank`,
+    `care_line`, `region_code`, `institution_id`, `denominator`,
+    `severity_weight`. It does not carry a `ward` column, yet section 7's
+    lattice table defines L1 (`pathogen_ward`) as "Ward or specialism" and
+    section 7.2 says the `same_place` rule "runs on ward rather than
+    institution" for hospitals. Without a `ward` column, two different
+    wards in the same hospital with the same pathogen would collapse into
+    a single stream (since `stream_key` is a hash of the stream's
+    dimensions, and ward would not be one of them), which is exactly the
+    kind of silent identity collision reconciliation exists to prevent.
+    This is flagged in the "architecture concerns" section below as a
+    genuine inconsistency; the adopted fix, pending a decision, is to add
+    a nullable `ward TEXT` column to `episode_stream` in
+    `inst/sql/schema.sql` and include it in the `stream_key` hash
+    dimensions for `pathogen_ward`-level streams only (see
+    `R/lattice_stream_key.R`, `R/lattice_enumerate.R`,
+    `R/detect_same_place.R`). This is a schema change relative to the
+    literal DDL in the architecture document and should be reviewed.
 
 ## Architecture concerns raised during implementation
 
-(none yet; this section is for anything that looked wrong or internally
-inconsistent while implementing, per the standing brief's closing
-instruction. Recorded prominently in the session summary as well.)
+1. **`episode_stream` is missing a `ward` column** (see item 20 above).
+   Section 5.1's DDL does not carry one, but section 7's own lattice table
+   defines L1 as ward-level and section 7.2 explicitly says the
+   `same_place` detector "runs on ward rather than institution" inside
+   hospitals. Taken literally, the schema in section 5.1 cannot represent
+   L1 at the granularity the rest of the document requires: any two wards
+   in the same hospital with cases of the same organism would be
+   indistinguishable as streams. I added a nullable `ward` column rather
+   than silently working around it or leaving L1 broken, since the
+   alternative (no ward tracking) contradicts the document's own stated
+   design elsewhere. Flagging for review rather than treating this as
+   settled.
