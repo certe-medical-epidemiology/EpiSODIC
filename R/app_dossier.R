@@ -374,8 +374,11 @@ episode_ui_timeline_entry <- function(row, lang = "nl") {
 #' @noRd
 episode_ui_assessment_form <- function(cluster_id, obj, lang = "nl") {
   pal <- episode_palette()
-  verdicts <- c("cluster_not_yet", "possible_epidemic", "confirmed_epidemic",
-                "expected_variation", "artefact")
+  # Ordered mild/terminal to severe, matching episode-mockup.jsx's CLASSES
+  # array - artefact and expected_variation are both terminal (close
+  # immediately), the rest escalate.
+  verdicts <- c("artefact", "expected_variation", "cluster_not_yet",
+                "possible_epidemic", "confirmed_epidemic")
   mute_reasons <- c("seasonal", "screening_campaign", "method_change", "known_source", "other")
 
   verdict_options <- c(
@@ -399,11 +402,6 @@ episode_ui_assessment_form <- function(cluster_id, obj, lang = "nl") {
                      shiny::tags$label(class = "episode-form-label", episode_tr("assessment.rationale_label", lang = lang)),
                      shiny::tags$textarea(id = "assess_rationale", rows = 3,
                                            placeholder = episode_tr("assessment.rationale_placeholder", lang = lang))),
-    shiny::tags$div(class = "episode-form-group", style = "display:flex;gap:16px;font-size:12px;",
-                     shiny::tags$label(shiny::tags$input(type = "checkbox", id = "assess_wpg"), " ",
-                                        episode_tr("assessment.wpg_label", lang = lang)),
-                     shiny::tags$label(shiny::tags$input(type = "checkbox", id = "assess_ggd"), " ",
-                                        episode_tr("assessment.ggd_label", lang = lang))),
     shiny::tags$div(class = "episode-form-group",
                      shiny::tags$label(class = "episode-form-label", episode_tr("assessment.snooze_label", lang = lang)),
                      shiny::tags$input(type = "date", id = "assess_snooze")),
@@ -413,7 +411,7 @@ episode_ui_assessment_form <- function(cluster_id, obj, lang = "nl") {
       shiny::tags$button(
         class = "episode-btn episode-btn-primary",
         onclick = sprintf(
-          "Shiny.setInputValue('assess_submit', {cluster_id: %d, verdict: document.getElementById('assess_verdict').value, rationale: document.getElementById('assess_rationale').value, wpg: document.getElementById('assess_wpg').checked, ggd: document.getElementById('assess_ggd').checked, snooze: document.getElementById('assess_snooze').value}, {priority: 'event'})",
+          "Shiny.setInputValue('assess_submit', {cluster_id: %d, verdict: document.getElementById('assess_verdict').value, rationale: document.getElementById('assess_rationale').value, snooze: document.getElementById('assess_snooze').value}, {priority: 'event'})",
           cluster_id
         ),
         episode_tr("assessment.submit", lang = lang)

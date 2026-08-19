@@ -18,6 +18,21 @@ test_that("episode_ui_assessment_rail() renders the classification and mute pick
   expect_true(grepl(episode_tr("verdict.possible_epidemic", lang = "nl"), rendered, fixed = TRUE))
   expect_true(grepl(episode_tr("assessment.mute_reason.seasonal", lang = "nl"), rendered, fixed = TRUE))
   expect_true(grepl(episode_tr("assessment.mute_intro", lang = "nl"), rendered, fixed = TRUE))
+
+  # Wpg/GGD are Netherlands-specific and out of scope for a general
+  # deployment; removed from the form entirely.
+  expect_false(grepl("assess_wpg", rendered, fixed = TRUE))
+  expect_false(grepl("assess_ggd", rendered, fixed = TRUE))
+
+  # verdict buttons ordered mild/terminal to severe: artefact and
+  # expected_variation (both terminal) before the escalating verdicts.
+  pos <- function(needle) regexpr(needle, rendered, fixed = TRUE)
+  expect_true(pos(episode_tr("verdict.artefact", lang = "nl")) < pos(episode_tr("verdict.cluster_not_yet", lang = "nl")))
+  expect_true(pos(episode_tr("verdict.cluster_not_yet", lang = "nl")) < pos(episode_tr("verdict.possible_epidemic", lang = "nl")))
+  expect_true(pos(episode_tr("verdict.possible_epidemic", lang = "nl")) < pos(episode_tr("verdict.confirmed_epidemic", lang = "nl")))
+
+  # hints describe what the verdict means, not what happens next
+  expect_false(grepl("gestart", rendered, fixed = TRUE))
 })
 
 test_that("episode_ui_geo_panel() shows the full per-PC4 breakdown, not just the dominant PC4", {

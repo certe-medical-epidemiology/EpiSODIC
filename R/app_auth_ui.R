@@ -71,7 +71,8 @@ episode_ui_login_modal <- function(error = FALSE, lang = "nl") {
     if (isTRUE(error)) shiny::tags$div(class = "episode-form-error", episode_tr("auth.error", lang = lang)),
     shiny::tags$script(shiny::HTML(
       "$('#auth_username').on('input', function(){ Shiny.setInputValue('auth_username_val', this.value); });
-       $('#auth_password').on('input', function(){ Shiny.setInputValue('auth_password_val', this.value); });"
+       $('#auth_password').on('input', function(){ Shiny.setInputValue('auth_password_val', this.value); });
+       $(document).one('shown.bs.modal', function(){ $('#auth_username').trigger('focus'); });"
     ))
   )
 }

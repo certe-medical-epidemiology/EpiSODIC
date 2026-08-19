@@ -41,7 +41,9 @@ episode_app_server_assessment_actions <- function(input, output, session, con, l
       con, cluster_id = payload$cluster_id, user_id = user$user_id,
       verdict = if (nzchar(payload$verdict %||% "")) payload$verdict else NA,
       rationale = rationale,
-      wpg_notifiable = isTRUE(payload$wpg), ggd_informed = isTRUE(payload$ggd),
+      # wpg_notifiable/ggd_informed are left at episode_app_submit_assessment()'s
+      # own NA default - the form no longer collects them (Wpg and GGD are
+      # Netherlands-specific, out of scope for a general-purpose deployment).
       snooze_until = if (nzchar(payload$snooze %||% "")) payload$snooze else NA
     )
     refresh()
