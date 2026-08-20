@@ -26,7 +26,7 @@ episode_ui_rt_chart(rt, lang = "nl")
 Static, not
 interactive - keeping the app's dependency footprint to a single,
 ubiquitous CRAN plotting package rather than an htmlwidgets stack is a
-deliberate simplification; see \code{QUESTIONS.md}.
+deliberate simplification.
 }
 \examples{
 curve <- data.frame(

@@ -20,10 +20,9 @@
 #'
 #' Re-checks `current_user()` server-side before rendering, same as every
 #' other write action (the DOM/onclick is not a trust boundary). Reports
-#' are written to `<directory containing db_path>/reports/` - the
-#' instance layout ARCHITECTURE.md section 7.5 itself documents
-#' (`<instance>/reports/`), so a report lands next to the database rather
-#' than needing its own configuration knob.
+#' are written to `<directory containing db_path>/reports/`, so a report
+#' lands next to the database rather than needing its own configuration
+#' knob.
 #'
 #' @param input,output,session The Shiny server function's own arguments.
 #' @param con A [DBI::DBIConnection-class].

@@ -18,13 +18,13 @@
 
 #' Cluster reconciliation
 #'
-#' Run per stream, after detection, inside the run transaction
-#' (ARCHITECTURE.md section 6). This is the load-bearing algorithm of the
-#' whole system: no detector emits a stable cluster identity on its own, so
-#' mapping today's detections onto persistent, real-world clusters is what
-#' makes the rest of the application possible.
+#' Run per stream, after detection, inside the run transaction. This is
+#' the load-bearing algorithm of the whole system: no detector emits a
+#' stable cluster identity on its own, so mapping today's detections
+#' onto persistent, real-world clusters is what makes the rest of the
+#' application possible.
 #'
-#' Algorithm, matching section 6 verbatim:
+#' Algorithm:
 #'
 #' 1. Collect this run's detections for the stream across all detectors.
 #' 2. Merge detections whose intervals overlap into candidate episodes,
@@ -67,12 +67,12 @@
 #'   latest verdict for a cluster, used to decide auto-closure eligibility
 #'   and, together with `cooldown_days`, the cool-down escape hatch.
 #' @param cooldown_days The organism's cool-down interval, from
-#'   `episode_pathogen_config` (ARCHITECTURE.md section 6.5). `NA`
+#'   `episode_pathogen_config`. `NA`
 #'   (default) disables the cool-down/escape-hatch check entirely, for
 #'   callers (and existing tests) that predate it.
 #' @param cooldown_reopen_ratio From `config$reconciliation$
-#'   cooldown_reopen_ratio` ("half again", ARCHITECTURE.md section 6.5).
-#'   Ignored when `cooldown_days` is `NA`.
+#'   cooldown_reopen_ratio` (a "half again" growth threshold). Ignored
+#'   when `cooldown_days` is `NA`.
 #' @return Invisibly, a list with `n_new`, `n_updated`, `n_merged`.
 #' @keywords internal
 #' @noRd
@@ -116,7 +116,7 @@ episode_reconcile_stream <- function(con, stream_id, detections, case_free_days,
         # the terminal verdict was based on) flags changed_since_assessment;
         # a candidate absorbed within cool-down that does NOT clear that
         # bar is exactly the "tail of a resolved outbreak" cool-down exists
-        # to suppress (ARCHITECTURE.md section 6.5) - its cases are still
+        # to suppress - its cases are still
         # linked to the cluster (nothing is discarded), but no reassessment
         # prompt fires for it.
         changed_since_assessment = if (cooldown_match$reopen) TRUE else NULL
@@ -279,8 +279,8 @@ episode_reconcile_link_detections <- function(con, detections, candidate, cluste
 #' @param open_clusters A data frame from `episode_db_clusters_for_stream()`.
 #' @param candidate A single-row candidate episode.
 #' @param case_free_days The organism's case-free interval.
-#' @return Integer row indices into `open_clusters` (may be length 0, 1 or
-#'   more than 1, per ARCHITECTURE.md section 6 step 3).
+#' @return Integer row indices into `open_clusters` (may be length 0, 1,
+#'   or more than 1).
 #' @keywords internal
 #' @noRd
 episode_reconcile_find_matches <- function(open_clusters, candidate, case_free_days) {
@@ -297,7 +297,7 @@ episode_reconcile_find_matches <- function(open_clusters, candidate, case_free_d
   which(overlaps & still_open)
 }
 
-#' The cool-down escape hatch (ARCHITECTURE.md section 6.5)
+#' The cool-down escape hatch
 #'
 #' Only called for a candidate with zero ordinary matches (i.e. outside
 #' `case_free_days` of every open cluster in the stream, so it would
@@ -365,11 +365,11 @@ episode_reconcile_find_cooldown_match <- function(open_clusters, candidate, case
 
 #' Link the individual cases within a cluster's interval to that cluster
 #'
-#' Populates `episode_cluster_case`, which nothing else in the reconciliation
-#' loop writes to otherwise. This is part of the handoff contract (standing
-#' brief, "the cron's writes are all the app needs": the line list panel
-#' (M2) and the report's `case_ids` (M4) both read from this table rather
-#' than recomputing a stream/date filter at read time).
+#' Populates `episode_cluster_case`, which nothing else in the
+#' reconciliation loop writes to otherwise. This is part of the handoff
+#' contract between the cron and the app: the line list panel and the
+#' report's `case_ids` both read from this table rather than
+#' recomputing a stream/date filter at read time.
 #' @keywords internal
 #' @noRd
 episode_reconcile_link_cases <- function(con, stream_id, cluster_id, first_day, last_day) {

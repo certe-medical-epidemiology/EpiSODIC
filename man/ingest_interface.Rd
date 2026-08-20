@@ -11,11 +11,11 @@ episode_ingest_columns
 Defines the contract that any raw case data source must satisfy before
 \code{episode_ingest_run()} (see \code{R/ingest_pipeline.R}) can turn it into rows
 of \code{episode_case}. This is the entire boundary between EpiSODIC and
-whatever laboratory or hospital system an operator runs: EpiSODIC never
-calls \code{certedb::get_diver_data()} or any other data source itself
-(\code{QUESTIONS.md} item 22, \code{README.md}'s data format section) - the
-operator's own cron script extracts and transforms into exactly this
-shape, then calls \code{\link[=episode_run_cron]{episode_run_cron()}} with a function that returns it.
+whatever laboratory or hospital system an operator runs: EpiSODIC
+never calls any data source itself (see \code{README.md}'s data format
+section) - the operator's own cron script extracts and transforms
+into exactly this shape, then calls \code{\link[=episode_run_cron]{episode_run_cron()}} with a
+function that returns it.
 The only implementation shipped in this package is the synthetic
 generator (\code{R/ingest_synthetic.R}), used for the bundled demo.
 }
@@ -24,7 +24,7 @@ generator (\code{R/ingest_synthetic.R}), used for the bundled demo.
 isolate/result.} \code{pathogen} is a raw, lab-provided string, used
 verbatim - never resolved against \code{AMR::as.mo()} or any other taxonomy,
 since \code{AMR} only covers non-viral organisms and this system must detect
-clusters of anything a lab reports (see \code{QUESTIONS.md} item 22). The same
+clusters of anything a lab reports. The same
 underlying isolate can legitimately appear more than once under
 different \code{pathogen} values when that is epidemiologically useful (an
 ETEC isolate as both \code{"Escherichia coli"} and \code{"ETEC"}, so each is

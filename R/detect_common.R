@@ -18,10 +18,9 @@
 
 #' Common detection record
 #'
-#' Every detector, whatever its source, produces the same shape of record so
-#' that reconciliation (`R/reconcile_*.R`) never needs to know which
-#' detector fired. This matches the columns of `episode_detection`
-#' (ARCHITECTURE.md section 5.5).
+#' Every detector, whatever its source, produces the same shape of record
+#' so that reconciliation (`R/reconcile_*.R`) never needs to know which
+#' detector fired. This matches the columns of `episode_detection`.
 #'
 #' @param stream_id The stream this detection belongs to.
 #' @param detector One of `'clusters'`, `'farrington'`, `'ears'`, `'mem'`,

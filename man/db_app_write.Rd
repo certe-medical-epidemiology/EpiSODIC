@@ -12,7 +12,7 @@
 
 \item{verdict}{One of the five classification values, or \code{NA}.}
 
-\item{rationale}{Mandatory free-text rationale (ARCHITECTURE.md section 5.6).}
+\item{rationale}{Mandatory free-text rationale.}
 
 \item{wpg_notifiable, ggd_informed}{Logical or \code{NA}.}
 
@@ -53,7 +53,7 @@
 \item{event_type}{One of \code{"login"}, \code{"password_change"}.}
 }
 \description{
-The app owns the judgements (ARCHITECTURE.md section 5.0) and only ever
+The app owns the judgements and only ever
 inserts, never updates and never deletes.
 This is what makes the whole concurrency question disappear: two people
 assessing the same cluster in the same minute produce two rows, both

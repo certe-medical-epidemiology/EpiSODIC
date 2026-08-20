@@ -16,11 +16,9 @@ A list with elements \code{hash} (a 40-character SHA-1 hex digest) and
 }
 \description{
 The hash is taken over a canonicalised representation (keys sorted
-recursively, then serialised as JSON) so that key ordering in the source
-YAML never changes the hash. See \code{QUESTIONS.md} item 15: the hashing
-algorithm itself is not specified by the architecture and was chosen to
-match the \code{CHAR(40)} width used for other \verb{_key}/\verb{_hash} columns in the
-schema.
+recursively, then serialised as JSON) so that key ordering in the
+source YAML never changes the hash. SHA-1 was chosen to match the
+\code{CHAR(40)} width used for other \verb{_key}/\verb{_hash} columns in the schema.
 }
 \examples{
 hashed <- episode_config_hash(episode_config_resolve())

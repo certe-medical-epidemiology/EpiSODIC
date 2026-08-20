@@ -22,9 +22,8 @@ and gives a small board of epidemiologists a dossier to formally assess
 each one - with a full audit trail and outbreak reports for clinical
 colleagues at the end.
 
-This is a narrative summary. The authoritative, exhaustive design
-document is `ARCHITECTURE.md` in the package source - read that for
-anything this vignette simplifies away.
+This is a narrative summary of the system's design, covering the parts
+that matter most for understanding how it works day to day.
 
 ## Engine and instance are separate
 
@@ -85,7 +84,3 @@ breakdown instead of a normalised trend or a choropleth.
   repeated runs.
 - `vignette("deployment")` for actually standing up an instance: the
   data contract, environment variables, and account provisioning.
-- `ARCHITECTURE.md` for the full design, including every open decision
-  and the reasoning behind it.
-- `QUESTIONS.md` for the judgement calls made during implementation
-  where `ARCHITECTURE.md` left something unspecified.

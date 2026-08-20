@@ -31,9 +31,8 @@ it does not exist.}
 in the report.}
 
 \item{small_count_threshold}{Cells below this count are suppressed in
-the geography/institution breakdown tables ("small-count suppression
-configurable for reports leaving the department", ARCHITECTURE.md
-section 9). Defaults to \code{config$report$small_count_threshold}.}
+the geography/institution breakdown tables, configurable for reports
+leaving the department. Defaults to \code{config$report$small_count_threshold}.}
 
 \item{config}{The resolved configuration; only \code{config$report} is used.}
 
@@ -54,11 +53,11 @@ Invisibly, a list with \code{file_path}, \code{file_sha256}, \code{version_no},
 \code{report_id}.
 }
 \description{
-A parameterised Quarto template rendered to self-contained HTML
-(ARCHITECTURE.md section 11). Sent as a file, not a
-link into the app: the medical staff receiving it have neither R nor an
-account, and a static artefact is also the defensible record of what was
-communicated on that date. Every render is versioned and registered in
+A parameterised Quarto template rendered to self-contained HTML. Sent
+as a file, not a link into the app: the medical staff receiving it
+have neither R nor an account, and a static artefact is also the
+defensible record of what was communicated on that date. Every render
+is versioned and registered in
 \code{episode_report_render} (\code{episode_db_report_render_insert()}) - never
 overwritten, so what was handed to a microbiologist on a given morning
 stays exactly recoverable, including which cases it contained
@@ -73,10 +72,10 @@ data frame has no clean YAML/JSON representation, and passing one path
 string keeps the template itself simple (\code{readRDS(params$data_path)}).
 
 Line-list inclusion is decided here, at render time, via
-\code{include_linelist} - independent of whoever later opens the file, unlike
-the live app's own line-list panel which is gated on the \emph{viewer's}
-current session (ARCHITECTURE.md section 9: "Hidden entirely for
-anonymous viewers"). A rendered report has no viewer session at all.
+\code{include_linelist} - independent of whoever later opens the file,
+unlike the live app's own line-list panel, which is hidden entirely
+for anonymous viewers and gated on the \emph{viewer's} current session. A
+rendered report has no viewer session at all.
 }
 \examples{
 \dontrun{

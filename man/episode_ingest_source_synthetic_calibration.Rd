@@ -16,9 +16,9 @@ episode_ingest_source_synthetic_calibration(
 \item{start_date, end_date}{The window to generate over.}
 
 \item{pathogen}{Which organism to generate elevated volume for.
-Defaults to \emph{Clostridioides difficile}, \code{QUESTIONS.md}'s own
-worked example of an endemic organism that produces frequent
-\code{same_place} clusters at a busy institution.}
+Defaults to \emph{Clostridioides difficile}, a worked example of an
+endemic organism that produces frequent \code{same_place} clusters at a
+busy institution.}
 
 \item{n_bumps_per_month}{Average number of independent case bumps
 generated per calendar month (Poisson-distributed), each becoming

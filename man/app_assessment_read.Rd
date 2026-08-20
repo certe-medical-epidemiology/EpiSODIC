@@ -2,7 +2,7 @@
 % Please edit documentation in R/app_assessment_read.R
 \name{app_assessment_read}
 \alias{app_assessment_read}
-\title{M3 read models: assessment timeline, archive, activity}
+\title{Read models: assessment timeline, archive, activity}
 \description{
-Cheap reads only (ARCHITECTURE.md section 3.3), same as \code{R/app_read.R}.
+Cheap reads only, same as \code{R/app_read.R}.
 }

@@ -13,7 +13,6 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 
 This vignette walks through how a laboratory result becomes a dossier an
 epidemiologist can act on: detection, then reconciliation across runs.
-See `ARCHITECTURE.md` sections 6-8 for the full detail.
 
 ## The lattice: streams, not one big feed
 
@@ -35,7 +34,7 @@ Each level is a strict partition of the one above it - a ward sits
 inside exactly one hospital, a hospital inside exactly one area, and so
 on - which is what makes suppression (below) meaningful.
 
-## Five detectors, not one algorithm
+## Four detectors, not one algorithm
 
 - **`farrington`** (`surveillance::farringtonFlexible()`) - the standard
   statistical aberration detector for streams with enough baseline
@@ -56,8 +55,6 @@ on - which is what makes suppression (below) meaningful.
   flagged `mem_applicable` (influenza, RSV), answering "has the epidemic
   started" rather than "are counts elevated", with pre-/post-epidemic
   thresholds derived from historical seasons.
-- **`ears`** - reserved in the schema for a future detector; not yet
-  implemented.
 
 A stream's own history feeds back into its baseline: a period an
 assessor confirmed as a real epidemic is excluded from what

@@ -19,11 +19,10 @@
 #' Run ingestion: validate, deduplicate, resolve institutions, write cases
 #'
 #' Ties together `R/ingest_interface.R`, `R/ingest_dedup.R` and the cron
-#' repository layer. Institutions are normalised on ingestion to the level
-#' ARCHITECTURE.md section 5.4.1 specifies (hospital or long-term care
-#' institution kept as a first-class entity, GP practice collapsed to its
-#' municipality), keyed by a hash of the source identifier so a later rename
-#' does not fracture the history.
+#' repository layer. Institutions are normalised on ingestion: a hospital
+#' or long-term care institution is kept as a first-class entity, while
+#' a GP practice is collapsed to its municipality, keyed by a hash of the
+#' source identifier so a later rename does not fracture the history.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param raw A data frame satisfying the ingestion interface, e.g. from

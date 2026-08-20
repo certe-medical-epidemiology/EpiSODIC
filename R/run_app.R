@@ -18,9 +18,9 @@
 
 #' Run the EpiSODIC Shiny app
 #'
-#' Read-only for anonymous visitors (ARCHITECTURE.md section 12: signing in
-#' is only required to classify a cluster). Serves the cluster dossier and
-#' the Streams overview against a database already populated by
+#' Read-only for anonymous visitors: signing in is only required to
+#' classify a cluster. Serves the cluster dossier and the Streams
+#' overview against a database already populated by
 #' [episode_run_cron()].
 #'
 #' @param db_path Path to the SQLite database. Defaults to the

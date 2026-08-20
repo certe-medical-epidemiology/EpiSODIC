@@ -18,12 +18,11 @@
 
 #' Geographic reference data for the choropleth panel
 #'
-#' `certegis` was dropped as this feature's dependency: it is Certe's own
-#' package, useful only to a Dutch operator, and there is no reason
-#' geography should be Netherlands-only when the rest of EpiSODIC is not
-#' (`pathogen`, institution types, and every other domain concept in this
-#' codebase are already operator-defined, unconstrained values -
-#' `QUESTIONS.md` item 22). This is the same shape of solution the
+#' Geography here is operator-suppliable rather than tied to any single
+#' mapping package or country: `pathogen`, institution types, and every
+#' other domain concept in this codebase are already operator-defined,
+#' unconstrained values, and geography follows the same principle. This
+#' is the same shape of solution the
 #' package already uses elsewhere for optional, instance-specific data:
 #' a shipped default (here, geometry for the Netherlands' PC4 postcodes,
 #' `data-raw/geo_postcodes4_nl.R` documents its provenance) that any

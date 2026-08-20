@@ -20,7 +20,7 @@
 #'
 #' `EpiEstim::estimate_R()` on sample-date incidence, sliding 7-day
 #' windows, using the pathogen's serial interval from
-#' `episode_pathogen_config` (ARCHITECTURE.md section 9). This is Rt, the
+#' `episode_pathogen_config`. This is Rt, the
 #' time-varying *effective* reproduction number - not R0 - and any display
 #' of it must say so.
 #'
@@ -32,20 +32,17 @@
 #' object()`'s other `NULL`-when-not-computable fields).
 #'
 #' Estimates whose window ends inside `incomplete_days` of the run date
-#' are withheld, not shown and captioned - "estimates within the
-#' truncated window withheld rather than captioned" (ARCHITECTURE.md
-#' section 9). The reporting delay means the most recent days are
-#' under-ascertained by construction (`R/triangle_update.R`), so an Rt
-#' estimate ending there would read a reporting artefact as a real change
-#' in transmission.
+#' are withheld entirely, rather than shown with a caveat: the reporting
+#' delay means the most recent days are under-ascertained by construction
+#' (`R/triangle_update.R`), so an Rt estimate ending there would read a
+#' reporting artefact as a real change in transmission.
 #'
 #' `si_dist` (`gamma`/`lognormal`) from `episode_pathogen_config` is
 #' recorded but not yet used to pick `EpiEstim`'s distribution family:
 #' `estimate_R(method = "parametric_si")` only ever fits a Gamma-shaped
 #' serial interval internally (mean/sd parameterised, `EpiEstim`'s own
 #' standard usage), regardless of what a pathogen's own literature source
-#' assumed. This is a known simplification, not a silent one - see
-#' QUESTIONS.md.
+#' assumed. This is a known, documented simplification.
 #'
 #' @param cases A data frame of the cluster's cases, with `sample_date`.
 #' @param pc A single-row pathogen config (`episode_db_pathogen_config_get()`).

@@ -18,11 +18,11 @@
 
 #' Render an outbreak report for a cluster
 #'
-#' A parameterised Quarto template rendered to self-contained HTML
-#' (ARCHITECTURE.md section 11). Sent as a file, not a
-#' link into the app: the medical staff receiving it have neither R nor an
-#' account, and a static artefact is also the defensible record of what was
-#' communicated on that date. Every render is versioned and registered in
+#' A parameterised Quarto template rendered to self-contained HTML. Sent
+#' as a file, not a link into the app: the medical staff receiving it
+#' have neither R nor an account, and a static artefact is also the
+#' defensible record of what was communicated on that date. Every render
+#' is versioned and registered in
 #' `episode_report_render` (`episode_db_report_render_insert()`) - never
 #' overwritten, so what was handed to a microbiologist on a given morning
 #' stays exactly recoverable, including which cases it contained
@@ -36,10 +36,10 @@
 #' string keeps the template itself simple (`readRDS(params$data_path)`).
 #'
 #' Line-list inclusion is decided here, at render time, via
-#' `include_linelist` - independent of whoever later opens the file, unlike
-#' the live app's own line-list panel which is gated on the *viewer's*
-#' current session (ARCHITECTURE.md section 9: "Hidden entirely for
-#' anonymous viewers"). A rendered report has no viewer session at all.
+#' `include_linelist` - independent of whoever later opens the file,
+#' unlike the live app's own line-list panel, which is hidden entirely
+#' for anonymous viewers and gated on the *viewer's* current session. A
+#' rendered report has no viewer session at all.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
@@ -50,9 +50,8 @@
 #' @param include_linelist If `TRUE` (default), the line list is embedded
 #'   in the report.
 #' @param small_count_threshold Cells below this count are suppressed in
-#'   the geography/institution breakdown tables ("small-count suppression
-#'   configurable for reports leaving the department", ARCHITECTURE.md
-#'   section 9). Defaults to `config$report$small_count_threshold`.
+#'   the geography/institution breakdown tables, configurable for reports
+#'   leaving the department. Defaults to `config$report$small_count_threshold`.
 #' @param config The resolved configuration; only `config$report` is used.
 #' @param lang Report language, `"nl"` (default) or `"en"`.
 #' @param qmd_path Path to the Quarto template to render. Defaults to the
@@ -203,7 +202,7 @@ episode_report_qmd_path <- function(qmd_path = Sys.getenv("EPISODE_QUARTO_REPORT
 #' Suppress small counts in a breakdown table
 #'
 #' Standard disclosure control for a report that may leave the department
-#' (ARCHITECTURE.md section 9): a cell with `0 < n < threshold` is replaced
+#': a cell with `0 < n < threshold` is replaced
 #' with `"<threshold"` rather than the exact count, since a single-digit
 #' count at a named place can be personally identifying in a small
 #' population. Zero is left as `0` (absence is not disclosive) and `NA`

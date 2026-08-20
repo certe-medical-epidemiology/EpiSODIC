@@ -18,15 +18,14 @@
 
 #' `rare_trigger` detector
 #'
-#' The rare-but-serious path (ARCHITECTURE.md section 8, item 2): a single
-#' case of a curated pathogen is notable on its own, not on aberration
-#' statistics, and running it through Farrington "produces only silence"
-#' (the architecture's own words) since a baseline model has nothing to
-#' compare one rare case against. This detector needs no baseline and no
-#' eligibility gate: any occurrence at or above `min_cases` fires.
+#' A single case of a curated pathogen is notable on its own, not on
+#' aberration statistics: running it through Farrington produces only
+#' silence, since a baseline model has nothing to compare one rare case
+#' against. This detector needs no baseline and no eligibility gate: any
+#' occurrence at or above `min_cases` fires.
 #'
 #' Matching is against the raw `pathogen` string, case-insensitively, since
-#' operators supply free text (`QUESTIONS.md` item 22) and a curated list
+#' operators supply free text and a curated list
 #' should not silently miss a hit over a capitalisation difference.
 #'
 #' @param con A [DBI::DBIConnection-class].

@@ -108,10 +108,10 @@ episode_interpretation_fragments <- function() {
          key = "interpretation.fragment.magnitude.default"),
 
     # -- curve_shape ------------------------------------------------------
-    # "The first question in any outbreak investigation... redirects the
-    # enquiry from person-to-person spread towards a common exposure"
-    # (ARCHITECTURE.md section 9) - stated in the Duiding, not a separate
-    # dossier panel; see episode_classify_curve_shape().
+    # The first question in any outbreak investigation - does it redirect
+    # the enquiry from person-to-person spread towards a common exposure -
+    # is stated in the Duiding, not a separate dossier panel; see
+    # episode_classify_curve_shape().
     list(id = "curve_shape.point_source", slot = "curve_shape",
          condition = function(cl) identical(cl$curve_shape %||% NA, "point_source"),
          key = "interpretation.fragment.curve_shape.point_source"),

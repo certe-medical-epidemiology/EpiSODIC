@@ -18,9 +18,9 @@
 
 #' Synthetic ingestion source
 #'
-#' The default (and, in this environment, only) implementation of the
-#' ingestion interface (`R/ingest_interface.R`). Generates several years of
-#' seasonal baseline case data across a synthetic set of institutions,
+#' The default (and only) implementation of the ingestion interface
+#' shipped with this package (`R/ingest_interface.R`). Generates several
+#' years of seasonal baseline case data across a synthetic set of institutions,
 #' pathogens, PC4 areas and care lines, then injects two outbreaks of known
 #' shape so the detectors have something to visibly fire on: one point
 #' source (`add_outbreak_point_source`, a ward-level cluster tightly bunched
@@ -222,9 +222,9 @@ episode_synthetic_outbreak_point_source <- function(institutions, end_date, n_ca
 #'
 #' @param start_date,end_date The window to generate over.
 #' @param pathogen Which organism to generate elevated volume for.
-#'   Defaults to *Clostridioides difficile*, `QUESTIONS.md`'s own
-#'   worked example of an endemic organism that produces frequent
-#'   `same_place` clusters at a busy institution.
+#'   Defaults to *Clostridioides difficile*, a worked example of an
+#'   endemic organism that produces frequent `same_place` clusters at a
+#'   busy institution.
 #' @param n_bumps_per_month Average number of independent case bumps
 #'   generated per calendar month (Poisson-distributed), each becoming
 #'   its own candidate cluster once reconciled. Tune this up or down to

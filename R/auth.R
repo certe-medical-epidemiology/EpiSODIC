@@ -19,7 +19,7 @@
 #' Authentication
 #'
 #' A handful of accounts, hashed with `sodium::password_store()` and checked
-#' with `sodium::password_verify()` (ARCHITECTURE.md section 12). No
+#' with `sodium::password_verify()`. No
 #' lockout, no backoff, and no TLS is implemented *by this package*: the
 #' login exists to attribute assessments, not to defend against attackers,
 #' and network-level access control (VPN, internal network, a reverse
@@ -140,7 +140,7 @@ episode_auth_change_password <- function(con, user_id, new_password) {
 #' Provision an assessor account
 #'
 #' There is deliberately no in-app account management screen - "four
-#' accounts" (ARCHITECTURE.md section 12) are provisioned outside the app,
+#' accounts" are provisioned outside the app,
 #' by whoever administers the database, not created by assessors
 #' themselves. This is that provisioning step: hashes `password` with
 #' `sodium::password_store()` and inserts the account, `must_change = 1`

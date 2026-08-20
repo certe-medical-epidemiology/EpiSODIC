@@ -18,7 +18,7 @@
 
 #' Cron-side writers
 #'
-#' The cron owns the facts (ARCHITECTURE.md section 5.0) and may upsert.
+#' The cron owns the facts and may upsert.
 #' These functions are the only place in the package that write to
 #' `episode_stream`, `episode_institution`, `episode_institution_activity`,
 #' `episode_case`, `episode_reporting_triangle`, `episode_denominator`,
@@ -34,8 +34,8 @@
 #' @param source Free-text provenance, or `NA`.
 #' @param stream_key A 40-character `stream_key`.
 #' @param level One of the five lattice levels.
-#' @param pathogen The raw lab-provided pathogen string (see `QUESTIONS.md`
-#'   item 22); used verbatim as the stream's identity, no taxonomy resolved.
+#' @param pathogen The raw lab-provided pathogen string, used verbatim as
+#'   the stream's identity; no taxonomy is resolved against it.
 #' @param care_line One of `"first"`, `"second"`, `"other"`, `"unknown"`, or `NA`.
 #' @param region_code A region code, or `NA`.
 #' @param pc4 A PC4 postcode, or `NA`.
@@ -117,7 +117,7 @@ episode_db_pathogen_config_load <- function(con, pathogen_config) {
 
 #' @rdname db_cron_write
 #' @param institution_key,display_name,institution_type,municipality,is_monitored
-#'   Columns of `episode_institution`, see ARCHITECTURE.md section 5.4.1.
+#'   Columns of `episode_institution`.
 #' @return The `institution_id` of the inserted or existing row.
 #' @keywords internal
 #' @noRd

@@ -18,17 +18,16 @@
 
 #' Eligibility gate
 #'
-#' The first layer of volume control (ARCHITECTURE.md section 8, item 1): a
-#' stream needs sufficient baseline history, a minimum median weekly count,
-#' and non-zero counts in a reasonable share of baseline weeks before
-#' statistical detection is attempted on it. Streams failing this gate
-#' fall through to EARS C2 or the rare-pathogen path instead
-#' (`R/detect_*.R` handles those fall-through detectors); only the gate
-#' itself lives here.
+#' The first layer of volume control: a stream needs sufficient baseline
+#' history, a minimum median weekly count, and non-zero counts in a
+#' reasonable share of baseline weeks before statistical detection is
+#' attempted on it. Streams failing this gate fall through to EARS C2 or
+#' the rare-pathogen path instead (`R/detect_*.R` handles those
+#' fall-through detectors); only the gate itself lives here.
 #'
-#' The numeric thresholds are not specified anywhere in the architecture
-#' beyond the three named criteria; see `QUESTIONS.md` item 16 for the
-#' provisional defaults adopted and shipped in `inst/config/default.yaml`.
+#' The numeric thresholds are configurable defaults shipped in
+#' `inst/config/default.yaml`, tuned for a typical department's signal
+#' volume.
 #'
 #' @param cases_for_stream A data frame of cases belonging to one stream,
 #'   with a `sample_date` column.

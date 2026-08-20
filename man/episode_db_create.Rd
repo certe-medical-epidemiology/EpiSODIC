@@ -18,10 +18,9 @@ database. The caller is responsible for disconnecting it.
 }
 \description{
 Creates a new SQLite database file at \code{path} and applies the canonical
-schema shipped as \code{inst/sql/schema.sql}. There is one schema version in
-this milestone, so this function always builds from scratch; it refuses
-to run against a file that already contains EpiSODIC tables so that it
-cannot silently clobber existing data.
+schema shipped as \code{inst/sql/schema.sql}. Always builds from scratch;
+refuses to run against a file that already contains EpiSODIC tables
+so that it cannot silently clobber existing data.
 }
 \examples{
 db_path <- tempfile(fileext = ".sqlite")

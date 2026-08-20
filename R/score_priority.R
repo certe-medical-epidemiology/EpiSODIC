@@ -18,19 +18,19 @@
 
 #' Priority score
 #'
-#' ARCHITECTURE.md section 8.1: a weighted mean of seven rescaled
-#' components, 0-100. The density component only applies where a
-#' patient-day denominator exists; elsewhere the remaining weights
-#' renormalise rather than depressing the score for a purely structural
-#' reason (section 8.1, "hospital signals would systematically outrank
-#' community ones").
+#' A weighted mean of seven rescaled components, 0-100. The density
+#' component only applies where a patient-day denominator exists;
+#' elsewhere the remaining weights renormalise rather than depressing
+#' the score for a purely structural reason - a stream with no
+#' patient-day data available should not be penalised relative to one
+#' that has it, since otherwise hospital signals would systematically
+#' outrank community ones.
 #'
-#' This is priority ranking, not exclusion (section 8, item 5): the score
-#' never removes a candidate from the queue, it only orders it. Weight
-#' calibration against real signal volume needs an instance that has
-#' actually run for a while (see `QUESTIONS.md`); the values shipped in
-#' `inst/config/default.yaml` are the architecture's stated defaults,
-#' unmodified.
+#' This is priority ranking, not exclusion: the score never removes a
+#' candidate from the queue, it only orders it. Component weights are
+#' configurable per instance in `inst/config/default.yaml`, so a
+#' department can rebalance them against its own signal volume as
+#' evidence accumulates.
 #'
 #' @param excess Observed minus upperbound (may be `NA`).
 #' @param ratio Observed over expected, capped at 5 (may be `NA`).

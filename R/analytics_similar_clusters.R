@@ -20,18 +20,16 @@
 #'
 #' A panel on the dossier surfacing the three most similar assessed
 #' clusters from the archive, matched on organism, level, size, season
-#' and duration, each showing what was decided and why (ARCHITECTURE.md
-#' section 10.1). "At roughly ten clusters a month there will be two
-#' hundred assessed precedents within two years, which makes the archive
-#' a decision aid rather than a filing cabinet."
+#' and duration, each showing what was decided and why. At a typical
+#' rate of ten assessed clusters a month, two hundred precedents
+#' accumulate within two years, which makes the archive a decision aid
+#' rather than a filing cabinet.
 #'
-#' Matching requires the same pathogen (exact string match, as everywhere
-#' else in this codebase - `QUESTIONS.md` item 22) and only ever considers
-#' *closed* clusters (an open one is not yet a precedent). Similarity
-#' within that pool is a simple, documented scoring rule rather than a
-#' fitted model, since ARCHITECTURE.md specifies the matching dimensions
-#' but not a weighting scheme - a judgement call flagged in QUESTIONS.md
-#' alongside the codebase's other provisional numeric choices:
+#' Matching requires the same pathogen (an exact string match, as
+#' everywhere else pathogen identity is compared in this codebase) and
+#' only ever considers *closed* clusters (an open one is not yet a
+#' precedent). Similarity within that pool is a documented scoring rule
+#' across four dimensions, each in `[0, 1]`:
 #'
 #' - Level: +1 if the same lattice level, else 0.
 #' - Size: `1 / (1 + |log((n1+1)/(n2+1))|)` - a smooth similarity that
@@ -41,8 +39,8 @@
 #'   January score as seasonally close, not far apart.
 #' - Duration: `1 / (1 + |dur1 - dur2| / 7)`, in days.
 #'
-#' Each dimension contributes in `[0, 1]`; the total is their unweighted
-#' sum, ranking candidates within the same-pathogen pool.
+#' The total is their unweighted sum, ranking candidates within the
+#' same-pathogen pool.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id The cluster to find precedents for (excluded from its

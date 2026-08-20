@@ -19,7 +19,7 @@
 #' `same_place` detector
 #'
 #' Needs no baseline: *n* or more cases of the same organism at the same
-#' place within *k* days (ARCHITECTURE.md section 7.2). Inside hospitals the
+#' place within *k* days. Inside hospitals the
 #' rule runs on ward, the real transmission unit; everywhere else (long-term
 #' care, out-of-hours services, general practice) it runs on institution,
 #' since those places do not receive their own statistically-modelled

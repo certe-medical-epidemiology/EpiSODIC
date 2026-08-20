@@ -30,7 +30,7 @@ Invisibly, the new \code{user_id}.
 }
 \description{
 There is deliberately no in-app account management screen - "four
-accounts" (ARCHITECTURE.md section 12) are provisioned outside the app,
+accounts" are provisioned outside the app,
 by whoever administers the database, not created by assessors
 themselves. This is that provisioning step: hashes \code{password} with
 \code{sodium::password_store()} and inserts the account, \code{must_change = 1}

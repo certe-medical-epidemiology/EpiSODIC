@@ -19,10 +19,9 @@
 #' Create a fresh EpiSODIC SQLite database
 #'
 #' Creates a new SQLite database file at `path` and applies the canonical
-#' schema shipped as `inst/sql/schema.sql`. There is one schema version in
-#' this milestone, so this function always builds from scratch; it refuses
-#' to run against a file that already contains EpiSODIC tables so that it
-#' cannot silently clobber existing data.
+#' schema shipped as `inst/sql/schema.sql`. Always builds from scratch;
+#' refuses to run against a file that already contains EpiSODIC tables
+#' so that it cannot silently clobber existing data.
 #'
 #' @param path Path to the SQLite file to create. Must not already exist,
 #'   or must be an empty/non-EpiSODIC SQLite file.

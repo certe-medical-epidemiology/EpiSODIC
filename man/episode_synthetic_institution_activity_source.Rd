@@ -31,8 +31,7 @@ hospital, modelled as \code{n_beds * occupancy} with light seasonal
 variation (winter admissions run higher) and noise. Not called by
 \code{\link[=episode_run_cron]{episode_run_cron()}} unless an \code{institution_activity_source_fn} is
 supplied; demonstrates the shape only, so the bundled demo can show
-ARCHITECTURE.md section 7.1's incidence-density curve without a real
-hospital feed.
+an incidence-density curve without a real hospital feed.
 }
 \examples{
 institutions <- data.frame(

@@ -22,7 +22,7 @@
 #' leaves it blank, reporting delay cannot be
 #' read off the date columns. It is measured from observed accrual instead:
 #' how many cases with a given sample date were visible on each successive
-#' run date (ARCHITECTURE.md section 5.7).
+#' run date.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param stream_id The stream to update the triangle for.
@@ -51,12 +51,12 @@ episode_triangle_update <- function(con, stream_id, cases_for_stream, run_date) 
 
 #' Empirical completion curve for a stream
 #'
-#' The proportion of eventually-reported cases for a given sample date that
-#' were already visible D days later, averaged across historical sample
-#' dates. Used to shade the "incompleteness zone" on the epi curve (M2) and
-#' to size the rolling detection window (ARCHITECTURE.md section 6, "the
-#' window width taken from the triangle's empirical completion curve").
-#' M1 computes it; M2 renders it.
+#' The proportion of eventually-reported cases for a given sample date
+#' that were already visible D days later, averaged across historical
+#' sample dates. Used to shade the "incompleteness zone" on the epi
+#' curve and to size the rolling detection window - its own empirical
+#' completion curve decides how many trailing days are under-ascertained
+#' by construction.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param stream_id The stream to compute completeness for.

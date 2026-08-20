@@ -91,21 +91,16 @@ episode_ui_performance_screen <- function(performance, lang = "nl") {
 
 #' The Performance screen: positive predictive value, timeliness, classification mix
 #'
-#' ARCHITECTURE.md section 9 ("Prestatie"): "Positive predictive value
-#' per detector per organism computed from the stored verdicts, time from
-#' first case to detection, and time from detection to first assessment.
-#' This is how tuning decisions get justified, how the eligibility gate
-#' gets calibrated towards the target of roughly ten clusters a month,
-#' and it is publishable in its own right." Timeliness is read from the
-#' `episode_cluster`/`episode_assessment_event` timestamps directly
-#' (`opened_at`, `first_day`, each cluster's own first assessment/
-#' classification event) rather than reconstructed from the state
-#' trajectory - section 6.4's "supplies the timeliness figures on the
-#' Prestatie screen directly" is about state *transitions*, and the
-#' timestamps this screen needs (first case, detection, first
-#' assessment, first classification) are exactly the ones already
-#' recorded on `episode_cluster` and `episode_assessment_event` without
-#' needing the state trajectory at all.
+#' Positive predictive value per detector per organism, computed from
+#' the stored verdicts; time from first case to detection; and time from
+#' detection to first assessment. This is the evidence base for tuning
+#' decisions - how the eligibility gate gets calibrated towards a
+#' realistic monthly assessment volume - and is worth publishing in its
+#' own right. Timeliness is read from the `episode_cluster`/
+#' `episode_assessment_event` timestamps directly (`opened_at`,
+#' `first_day`, each cluster's own first assessment/classification
+#' event) rather than reconstructed from state transitions, since those
+#' timestamps are already recorded on the two tables this screen reads.
 #'
 #' A terminal verdict decides "positive predictive": `possible_epidemic`
 #' and `confirmed_epidemic` count as a true positive for every detector
@@ -114,11 +109,10 @@ episode_ui_performance_screen <- function(performance, lang = "nl") {
 #' unassessed cluster are excluded from PPV entirely - they are not yet
 #' a judgement either way, not a form of "wrong".
 #'
-#' This is a cheap read (ARCHITECTURE.md section 3.3), same as the rest
-#' of `R/app_read.R`; the aggregation happens in R over already-fetched
-#' rows, not in SQL, since SQLite's own `GROUP BY` gains nothing here at
-#' the volumes this system runs at (ARCHITECTURE.md section 3.3 on
-#' choosing SQLite in the first place).
+#' This is a cheap read, same as the rest of `R/app_read.R`; the
+#' aggregation happens in R over already-fetched rows, not in SQL, since
+#' SQLite's own `GROUP BY` gains nothing at the volumes this system runs
+#' at.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param lang Session language, for verdict labels.

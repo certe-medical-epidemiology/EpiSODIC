@@ -16,9 +16,9 @@
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 
-#' M3 read models: assessment timeline, archive, activity
+#' Read models: assessment timeline, archive, activity
 #'
-#' Cheap reads only (ARCHITECTURE.md section 3.3), same as `R/app_read.R`.
+#' Cheap reads only, same as `R/app_read.R`.
 #' @name app_assessment_read
 NULL
 
@@ -26,7 +26,7 @@ NULL
 #'
 #' Every classification, closure and mute affecting this cluster, in one
 #' chronological feed - "assessments rendered as an append-only timeline,
-#' never overwritten" (ARCHITECTURE.md section 10.2).
+#' never overwritten".
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
@@ -90,8 +90,7 @@ episode_app_actor_label <- function(con, user_id, lang = "nl") {
 
 #' The Archive screen: closed clusters, searchable
 #'
-#' "Last winter's assessment is the best prior for this winter's cluster"
-#' (ARCHITECTURE.md section 10.1).
+#' Last winter's assessment is the best prior for this winter's cluster.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param query Free-text search over pathogen and place (case-insensitive

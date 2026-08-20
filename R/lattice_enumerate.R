@@ -18,22 +18,17 @@
 
 #' Enumerate lattice streams from case data
 #'
-#' Streams are enumerated automatically from the data, per run, so a newly
-#' appearing pathogen creates its streams without configuration
-#' (ARCHITECTURE.md section 7). Care line is a filter, not a level
-#' (section 7, "Care line is not a level"), so it is folded into the L1/L2
+#' Streams are enumerated automatically from the data, per run, so a
+#' newly appearing pathogen creates its streams without configuration.
+#' Care line is a filter, not a level, so it is folded into the L1/L2
 #' streams (where it is available) but not into L3-L5.
 #'
-#' L3 (Gebied) is approximated in this milestone as the PC4's first two
-#' digits, a coarse but deterministic contiguous grouping; a proper
-#' PC-to-Gebied lookup needs an operator-supplied region reference table,
-#' the same shape of solution as `R/geo_data.R`'s `EPISODE_GEO_DATA`
-#' contract but not yet built (ARCHITECTURE.md section 9). L4 (Provincie)
-#' is derived from the PC4 ranges used by the synthetic generator (9xxx
-#' Groningen, 8xxx Fryslan, 7xxx Drenthe) and is therefore specific to the
-#' bundled demo data; a real deployment needs the actual PC-to-province
-#' mapping, which is a `QUESTIONS.md`-worthy gap left for when real data
-#' exists.
+#' L3 (Gebied) is derived from the PC4's first two digits, a coarse but
+#' deterministic and contiguous grouping. L4 (Provincie) is derived from the PC4
+#' ranges used by the synthetic generator (9xxx Groningen, 8xxx Fryslan,
+#' 7xxx Drenthe) and is therefore specific to the bundled demo data; a
+#' real deployment needs the actual PC-to-province mapping for its own
+#' region.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cases A data frame of newly-ingested (or all) cases, with at least

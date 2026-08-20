@@ -81,10 +81,10 @@ sign-in forces the holder to set their own password.
 ## Where the database lives
 
 The SQLite database must sit on local disk, not in a synchronising
-folder (SharePoint, OneDrive, Dropbox) - background sync corrupts or
-forks a live SQLite file, and the failure is silent until it very much
-is not. Configuration files are fine in a synced location, since they
-are small and read-only at runtime; the database itself is not.
+folder (SharePoint, OneDrive, Dropbox): background sync can corrupt or
+fork a live SQLite file without any immediate warning. Configuration
+files are safe in a synced location, since they are small and
+read-only at runtime; the database itself is not.
 
 ## Running the app
 

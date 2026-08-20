@@ -18,11 +18,11 @@
 
 #' Closure criterion
 #'
-#' Which criterion prompts closure differs by stream kind (ARCHITECTURE.md
-#' section 6.3): a case-free interval for most streams, two maximum
-#' incubation periods for a confirmed epidemic, and the MEM post-epidemic
-#' threshold for seasonal streams flagged `mem_applicable`
-#' (ARCHITECTURE.md section 7.3, `episode_mem_status()`).
+#' Which criterion prompts closure differs by stream kind: a case-free
+#' interval for most streams, two maximum incubation periods for a
+#' confirmed epidemic, and the MEM post-epidemic threshold
+#' (`episode_mem_status()`) for seasonal streams flagged
+#' `mem_applicable`.
 #'
 #' @param last_case_date The most recent case date in the cluster.
 #' @param verdict The cluster's latest verdict, or `NA`.

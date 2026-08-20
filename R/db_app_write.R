@@ -18,7 +18,7 @@
 
 #' App-side writers
 #'
-#' The app owns the judgements (ARCHITECTURE.md section 5.0) and only ever
+#' The app owns the judgements and only ever
 #' inserts, never updates and never deletes.
 #' This is what makes the whole concurrency question disappear: two people
 #' assessing the same cluster in the same minute produce two rows, both
@@ -29,7 +29,7 @@
 #' @param cluster_id A cluster id.
 #' @param user_id An `episode_app_user` id, or `NA` for a system-authored row.
 #' @param verdict One of the five classification values, or `NA`.
-#' @param rationale Mandatory free-text rationale (ARCHITECTURE.md section 5.6).
+#' @param rationale Mandatory free-text rationale.
 #' @param wpg_notifiable,ggd_informed Logical or `NA`.
 #' @param ggd_note Free text, or `NA`.
 #' @param snooze_until A date, or `NA`.

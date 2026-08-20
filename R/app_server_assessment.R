@@ -65,7 +65,7 @@ episode_app_server_assessment_actions <- function(input, output, session, con, l
     payload <- input$assess_submit
     rationale <- trimws(payload$rationale %||% "")
     if (!nzchar(rationale)) {
-      return(invisible(NULL))  # mandatory rationale (ARCHITECTURE.md section 5.6); client also enforces this
+      return(invisible(NULL))  # mandatory rationale; client also enforces this
     }
     episode_app_submit_assessment(
       con, cluster_id = payload$cluster_id, user_id = user$user_id,

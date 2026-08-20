@@ -34,9 +34,9 @@ NULL
 #' rather than a binomial) pass through unitalicised, exactly as intended -
 #' `pathogen` is deliberately unconstrained free text and never resolved
 #' against `AMR::as.mo()` for *detection* purposes, so viruses and other
-#' non-taxonomic values are never excluded there (`QUESTIONS.md` item 22);
+#' non-taxonomic values are never excluded there;
 #' `AMR` is nonetheless a hard dependency of the package as a whole, used
-#' here and by `episode_dedup()` (`QUESTIONS.md` item 70). Text is
+#' here and by `episode_dedup()`. Text is
 #' HTML-escaped before any tag is added, so this is always safe to pass
 #' to [shiny::HTML()].
 #'

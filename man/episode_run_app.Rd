@@ -22,9 +22,9 @@ episode_run_app(
 Invisible; called for its side effect of starting the app.
 }
 \description{
-Read-only for anonymous visitors (ARCHITECTURE.md section 12: signing in
-is only required to classify a cluster). Serves the cluster dossier and
-the Streams overview against a database already populated by
+Read-only for anonymous visitors: signing in is only required to
+classify a cluster. Serves the cluster dossier and the Streams
+overview against a database already populated by
 \code{\link[=episode_run_cron]{episode_run_cron()}}.
 }
 \examples{

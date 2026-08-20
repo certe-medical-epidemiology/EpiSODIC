@@ -19,8 +19,8 @@
 #' Ingest optional positivity metadata
 #'
 #' Writes the operator-supplied, pre-aggregated denominator table (see
-#' `QUESTIONS.md` item 22 and `README.md`'s data format section) to
-#' `episode_denominator`. Entirely optional: a site with nothing to supply
+#' `README.md`'s data format section) to `episode_denominator`. Entirely
+#' optional: a site with nothing to supply
 #' here simply never calls this, and positivity panels stay blank for its
 #' streams. Deliberately not a raw per-test linelist, so volume stays a
 #' handful of aggregate rows per pathogen/period/stratum rather than every

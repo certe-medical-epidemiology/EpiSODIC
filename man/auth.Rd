@@ -5,7 +5,7 @@
 \title{Authentication}
 \description{
 A handful of accounts, hashed with \code{sodium::password_store()} and checked
-with \code{sodium::password_verify()} (ARCHITECTURE.md section 12). No
+with \code{sodium::password_verify()}. No
 lockout, no backoff, and no TLS is implemented \emph{by this package}: the
 login exists to attribute assessments, not to defend against attackers,
 and network-level access control (VPN, internal network, a reverse

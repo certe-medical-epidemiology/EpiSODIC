@@ -20,10 +20,10 @@
 #'
 #' Static reference material - what the detection algorithms actually do,
 #' what the cluster states mean, who can see and do what - so an
-#' epidemiologist reading "gedetecteerd door `same_place`" on a dossier has
-#' somewhere to look the term up without reading `ARCHITECTURE.md` itself.
-#' Content is hardcoded (not read from the database), so unlike every other
-#' screen this one needs no `con` argument.
+#' epidemiologist reading "gedetecteerd door `same_place`" on a dossier
+#' has somewhere in the app itself to look the term up. Content is
+#' hardcoded (not read from the database), so unlike every other screen
+#' this one needs no `con` argument.
 #'
 #' @param lang Session language, `"nl"` (default) or `"en"`.
 #' @return A `shiny::tags$div`.

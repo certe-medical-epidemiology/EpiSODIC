@@ -24,14 +24,13 @@
 #' flagged `mem_applicable` (Influenza A/B, RSV in the shipped
 #' `pathogen_config.csv`). Farrington answers whether counts exceed a
 #' statistical expectation; MEM answers a different, more clinically
-#' relevant question for a seasonal pathogen - has the epidemic started
-#' (ARCHITECTURE.md section 7.3).
+#' relevant question for a seasonal pathogen: has the epidemic started.
 #'
 #' Runs only against `pathogen_region` (L5) streams: MEM needs a stable,
 #' population-level weekly series across several historical seasons to
 #' fit at all, which no ward or single institution has enough volume to
-#' support, and ARCHITECTURE.md itself frames seasonal surveillance as a
-#' population-level question, not an institutional one. `same_place` and
+#' support, and seasonal surveillance is inherently a population-level
+#' question, not an institutional one. `same_place` and
 #' Farrington continue to run at every other level exactly as before;
 #' this is additive, not a replacement.
 #'
@@ -76,9 +75,8 @@ episode_detect_mem <- function(cases_for_stream, stream_id, run_date = Sys.Date(
 #'
 #' Shared by `episode_detect_mem()` (fires on `epidemic_started`) and the
 #' seasonal closure criterion (fires when the current count has fallen
-#' back under `post_epidemic_threshold` - ARCHITECTURE.md sections 6.3 and
-#' 7.3), so both read the same fitted model rather than risking two
-#' slightly different ones.
+#' back under `post_epidemic_threshold`), so both read the same fitted
+#' model rather than risking two slightly different ones.
 #'
 #' @param cases A data frame with `sample_date`, all of a stream's known
 #'   cases (not just one cluster's).
@@ -133,14 +131,13 @@ episode_mem_status <- function(cases, run_date = Sys.Date(), min_seasons = 2L) {
 #' Build a `mem`-shaped season x week case-count matrix
 #'
 #' Surveillance seasons run ISO week 40 to week 20 of the following
-#' calendar year (ARCHITECTURE.md section 7.3's "northern hemisphere...
-#' week 40 to 20"), matching `mem`'s own documented convention and its
+#' calendar year, the standard northern-hemisphere influenza-season
+#' convention, matching `mem`'s own documented convention and its
 #' bundled `flucyl` example dataset's row/column shape (33 weeks: 40-52,
 #' then 1-20; one column per season, named `"YYYY/YYYY"`). Week 53 (some
-#' years have one) is folded into week 52 - a documented simplification,
-#' not a silent one (QUESTIONS.md): `mem`'s own guidance ("accommodate
-#' week 53") describes handling it as a distinct column, which this does
-#' not attempt.
+#' years have one) is folded into week 52 - a documented simplification:
+#' `mem`'s own guidance describes handling it as a distinct column,
+#' which this does not attempt.
 #'
 #' @param cases A data frame with `sample_date`.
 #' @return `NULL` if `cases` has no in-season data at all, else a list

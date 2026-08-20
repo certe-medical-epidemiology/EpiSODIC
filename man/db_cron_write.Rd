@@ -20,8 +20,8 @@
 
 \item{level}{One of the five lattice levels.}
 
-\item{pathogen}{The raw lab-provided pathogen string (see \code{QUESTIONS.md}
-item 22); used verbatim as the stream's identity, no taxonomy resolved.}
+\item{pathogen}{The raw lab-provided pathogen string, used verbatim as
+the stream's identity; no taxonomy is resolved against it.}
 
 \item{care_line}{One of \code{"first"}, \code{"second"}, \code{"other"}, \code{"unknown"}, or \code{NA}.}
 
@@ -92,7 +92,7 @@ item 22); used verbatim as the stream's identity, no taxonomy resolved.}
 \item{error_text}{Error text for a failed run, or \code{NA}.}
 }
 \description{
-The cron owns the facts (ARCHITECTURE.md section 5.0) and may upsert.
+The cron owns the facts and may upsert.
 These functions are the only place in the package that write to
 \code{episode_stream}, \code{episode_institution}, \code{episode_institution_activity},
 \code{episode_case}, \code{episode_reporting_triangle}, \code{episode_denominator},

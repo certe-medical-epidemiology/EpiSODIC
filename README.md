@@ -14,7 +14,7 @@ clinical colleagues.
 
 The engine and the instance it runs against are kept separate: this
 repository is open-source software with no data and no site-specific
-configuration. See `ARCHITECTURE.md` for the full design.
+configuration.
 
 <!--
 Screenshots below are sourced from data-raw/screenshots/ (git-tracked,
@@ -32,14 +32,14 @@ data-raw/README.md for how to regenerate them against episode_demo().
   <em>The Prestatie screen - positive predictive value per detector and organism, and detection timeliness, from the stored verdicts.</em>
 </p>
 
-## Status
+## Capabilities
 
-Under active development. The detection engine, interface,
-assessment/authentication, reporting and analytical depth are all
-implemented, including a Performance screen for evidence-based tuning.
-Calibrating detection thresholds and priority score weights against real
-signal volume is intentionally not attempted yet - see `QUESTIONS.md` -
-since this environment has only synthetic demo data to tune against.
+The detection engine, interface, assessment and authentication
+workflow, reporting, and analytical panels are all implemented and
+tested, including a Performance screen for evidence-based tuning.
+Detection thresholds and priority score weights are configurable per
+instance (`inst/config/default.yaml`, `EPISODE_CONFIG`), so a department
+can tune them against its own signal volume as its evidence base grows.
 
 ## Installation
 
@@ -109,8 +109,7 @@ lists the exact allow-listed columns; the ones that need explanation:
 - `gp_municipality` — a general practice. Stored as the municipality the
   practice is in, not the practice's own identity: a single-handed GP
   practice is not a transmission unit, and its name adds identifiability
-  without adding epidemiological information (see `ARCHITECTURE.md` section
-  5.4.1 for the full reasoning).
+  without adding epidemiological information.
 - `ooh_service` — an out-of-hours GP service (*huisartsenpost*), kept as a
   first-class institution like a hospital.
 - `other` — anything that doesn't fit the above; institution identity is
@@ -211,7 +210,7 @@ for a bilingual report.
 ## Accounts
 
 Read access is anonymous - the app opens read-only for anyone who reaches
-it (ARCHITECTURE.md section 12). Signing in is only needed to classify a
+it. Signing in is only needed to classify a
 cluster, and there is deliberately no in-app account management screen:
 the four assessor accounts are provisioned by whoever administers the
 database, not created by assessors themselves or by the app.

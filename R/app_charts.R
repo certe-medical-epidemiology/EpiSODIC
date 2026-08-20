@@ -21,7 +21,7 @@
 #' Static, not
 #' interactive - keeping the app's dependency footprint to a single,
 #' ubiquitous CRAN plotting package rather than an htmlwidgets stack is a
-#' deliberate simplification; see `QUESTIONS.md`.
+#' deliberate simplification.
 #' @name app_charts
 #' @importFrom rlang .data
 NULL
@@ -115,14 +115,13 @@ episode_ui_rt_chart <- function(rt, lang = "nl") {
 
 #' A PC choropleth, guarded for absence of geographic data
 #'
-#' ARCHITECTURE.md section 9: "Geography. PC4 choropleth... A second
-#' panel breaks the cluster down by institution... which is usually more
-#' informative" - the bar breakdown (`episode_ui_bars()`) is that second
-#' panel and stays regardless; this is the map itself, additive when both
-#' `sf` and a geographic dataset (`R/geo_data.R`) are actually available.
-#' Deliberately not built on `certegis` (see `R/geo_data.R`'s own docs and
-#' QUESTIONS.md): geography here is operator-suppliable, not
-#' Netherlands-only, matching how every other domain concept in this
+#' Geography is shown two ways: a bar breakdown by PC value
+#' (`episode_ui_bars()`), which is often the more informative view since
+#' it breaks the cluster down by institution, and this map, additive on
+#' top when both `sf` and a geographic dataset (`R/geo_data.R`) are
+#' actually available. Deliberately not built on any single country's
+#' own mapping package: geography here is operator-suppliable, not tied
+#' to one jurisdiction, matching how every other domain concept in this
 #' codebase already works. An optional second layer
 #' (`episode_geo_overlay_resolve()`, `EPISODE_GEO_DATA_OVERLAY`) draws
 #' region outlines - no fill, a thicker line - on top for orientation;

@@ -21,11 +21,11 @@
 #' Defines the contract that any raw case data source must satisfy before
 #' `episode_ingest_run()` (see `R/ingest_pipeline.R`) can turn it into rows
 #' of `episode_case`. This is the entire boundary between EpiSODIC and
-#' whatever laboratory or hospital system an operator runs: EpiSODIC never
-#' calls `certedb::get_diver_data()` or any other data source itself
-#' (`QUESTIONS.md` item 22, `README.md`'s data format section) - the
-#' operator's own cron script extracts and transforms into exactly this
-#' shape, then calls [episode_run_cron()] with a function that returns it.
+#' whatever laboratory or hospital system an operator runs: EpiSODIC
+#' never calls any data source itself (see `README.md`'s data format
+#' section) - the operator's own cron script extracts and transforms
+#' into exactly this shape, then calls [episode_run_cron()] with a
+#' function that returns it.
 #' The only implementation shipped in this package is the synthetic
 #' generator (`R/ingest_synthetic.R`), used for the bundled demo.
 #'
@@ -33,7 +33,7 @@
 #' isolate/result.** `pathogen` is a raw, lab-provided string, used
 #' verbatim - never resolved against `AMR::as.mo()` or any other taxonomy,
 #' since `AMR` only covers non-viral organisms and this system must detect
-#' clusters of anything a lab reports (see `QUESTIONS.md` item 22). The same
+#' clusters of anything a lab reports. The same
 #' underlying isolate can legitimately appear more than once under
 #' different `pathogen` values when that is epidemiologically useful (an
 #' ETEC isolate as both `"Escherichia coli"` and `"ETEC"`, so each is
@@ -81,8 +81,8 @@ episode_ingest_validate_source <- function(raw) {
     stop(
       "Ingestion source returned column(s) outside the allow-list: ",
       paste(extra_cols, collapse = ", "),
-      ". The ingestion interface is an explicit allow-list (ARCHITECTURE.md ",
-      "section 5.4.1); a new upstream column must not leak in silently.",
+      ". The ingestion interface is an explicit allow-list; a new ",
+      "upstream column must not leak in silently.",
       call. = FALSE
     )
   }

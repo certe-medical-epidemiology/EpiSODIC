@@ -18,9 +18,9 @@
 
 #' Baseline feedback: exclude confirmed-epidemic periods from detection
 #'
-#' ARCHITECTURE.md section 7.6: periods classified as a confirmed epidemic
-#' are excluded from the baseline of subsequent Farrington runs for that
-#' stream, derived from `episode_assessment_event` so it updates
+#' Periods classified as a confirmed epidemic are excluded from the
+#' baseline of subsequent Farrington runs for that stream, derived from
+#' `episode_assessment_event` so it updates
 #' automatically when a verdict is revised. `farringtonFlexible()`
 #' downweights past aberrations statistically, but a human verdict is
 #' better evidence than a residual - without this exclusion, last winter's

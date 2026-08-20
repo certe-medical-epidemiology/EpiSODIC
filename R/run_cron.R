@@ -18,7 +18,7 @@
 
 #' Run one detection cycle
 #'
-#' The cron entry point (ARCHITECTURE.md section 3). Ingests, enumerates
+#' The cron entry point. Ingests, enumerates
 #' streams, detects, reconciles and persists, all
 #' inside one transaction, so a partially failed run leaves no partial
 #' state and a retry is always safe.
@@ -26,10 +26,10 @@
 #' Configuration is read from `EPISODE_CONFIG`;
 #' the resolved configuration's hash and full snapshot are written to
 #' `episode_detection_run` so that any result is explainable from the
-#' database alone (ARCHITECTURE.md section 7.4).
+#' database alone.
 #'
 #' `certedb`/Diver access is deliberately never called from inside this
-#' package (`QUESTIONS.md` item 22): `get_diver_data()` is the operator's
+#' package: `get_diver_data()` is the operator's
 #' own step, run before `episode_run_cron()`, transforming Diver's columns
 #' into `episode_ingest_columns`. See `README.md` for the raw data contract.
 #'
@@ -40,12 +40,12 @@
 #'   operator who has already extracted and transformed their data has no
 #'   reason to wrap it in a function just to satisfy this parameter - see
 #'   [episode_resolve_source()]). Defaults to the bundled synthetic
-#'   generator, the only implementation shipped in this environment.
+#'   generator, the only ingestion source shipped in this package.
 #' @param denominator_source_fn An optional zero-argument function
 #'   returning the pre-aggregated positivity metadata data frame
 #'   (`pathogen`, `sample_date`, `care_line`, `area_code`, `n_tests`), that
 #'   data frame itself, or `NULL` (the default) if the operator has none to
-#'   supply. See `QUESTIONS.md` item 22.
+#'   supply.
 #' @param institution_activity_source_fn An optional one-argument function
 #'   (`institutions`, the current `episode_db_institutions()` data frame,
 #'   so a real implementation can key its own hospital system's export by
@@ -53,13 +53,12 @@
 #'   patient-days (`institution_key`, `period_start`, `period_end`,
 #'   `patient_days`); that data frame itself (the `institutions` argument
 #'   is simply not passed in that case); or `NULL` (the default) if the
-#'   operator has none to supply. Powers L2 patient-day normalisation
-#'   (ARCHITECTURE.md section 7.1); without it, L1/L2 Farrington detection
-#'   uses raw counts, unnormalised, exactly as before this was added.
+#'   operator has none to supply. Powers L2 patient-day normalisation;
+#'   without it, L1/L2 Farrington detection uses raw counts, unnormalised.
 #' @param episode_config_path Passed to [episode_config_resolve()].
-#' @param host,account Recorded on `episode_detection_run`; default to the
-#'   process's own host/account (ARCHITECTURE.md section 12: this is not an
-#'   identity source for assessors, only for the run record).
+#' @param host,account Recorded on `episode_detection_run`; default to
+#'   the process's own host/account. This is not an identity source for
+#'   assessors, only for the run record.
 #' @param run_date The date to treat as "today" for closure/eligibility
 #'   calculations; defaults to the system date, injectable for tests.
 #' @return Invisibly, the `run_id` of the completed run.
@@ -197,9 +196,9 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, denomin
       rare_trigger_detections[rare_trigger_detections$stream_id == stream$stream_id, ]
     )
 
-    # ARCHITECTURE.md section 7.3: MEM runs on pathogen_region (L5) streams
-    # only, for organisms flagged mem_applicable - see episode_detect_mem()'s
-    # own docs for why L5 rather than every level.
+    # MEM runs on pathogen_region (L5) streams only, for organisms
+    # flagged mem_applicable - see episode_detect_mem()'s own docs for
+    # why L5 rather than every level.
     pc_mem <- pathogen_config[pathogen_config$pathogen == stream$pathogen, ]
     if (nrow(pc_mem) > 0 && isTRUE(as.logical(pc_mem$mem_applicable[1])) &&
         identical(stream$level, "pathogen_region")) {
@@ -208,15 +207,15 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, denomin
 
     if (nrow(stream_cases) > 0 &&
         episode_eligibility_gate(stream_cases, run_date, config)) {
-      # ARCHITECTURE.md section 7.6: a period this stream's own history
-      # shows was a confirmed epidemic must not silently raise next
-      # winter's baseline. Excluded from the cases fed to Farrington only
+      # A period this stream's own history shows was a confirmed
+      # epidemic must not silently raise next winter's baseline.
+      # Excluded from the cases fed to Farrington only
       # (same_place/rare_trigger detect on raw counts and do not baseline
       # at all, so they are unaffected).
       excluded_windows <- episode_baseline_excluded_windows(con, stream$stream_id)
       farrington_cases <- episode_baseline_exclude_cases(stream_cases, excluded_windows)
 
-      # ARCHITECTURE.md section 7.1: patient-day normalisation at L2. Both
+      # Patient-day normalisation at L2. Both
       # calls below build identical weekly bins from the same
       # (farrington_cases, run_date), so one population vector serves both.
       weekly_weeks <- episode_weekly_bins(as.Date(farrington_cases$sample_date), run_date)$week_start
@@ -227,7 +226,7 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, denomin
         episode_detect_farrington(farrington_cases, stream$stream_id, config, run_date, population = population)
       )
 
-      # trend cache for the multi-year trend panel (M2); see
+      # trend cache for the multi-year trend panel; see
       # episode_farrington_trend()'s own docs for the backfill-once,
       # top-up-thereafter strategy.
       n_existing_trend <- nrow(episode_db_stream_trend(con, stream$stream_id))
@@ -297,9 +296,9 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, denomin
 #'
 #' L1/L2 streams filter on `pathogen` and `institution_id` (and `ward` for
 #' L1). L3-L5 streams filter on `pathogen` and sample date only, an
-#' approximation documented in `QUESTIONS.md` alongside the L3/L4 region
-#' derivation itself (`R/lattice_enumerate.R`); a real operator-supplied
-#' PC-to-region join would tighten this.
+#' approximation of the L3/L4 region derivation itself
+#' (`R/lattice_enumerate.R`); a real operator-supplied PC-to-region join
+#' would tighten this.
 #'
 #' @param cases All currently known cases.
 #' @param stream A single-row stream (from `episode_db_streams()`).

@@ -177,8 +177,8 @@ episode_ui_status_strip <- function(status, lang = "nl") {
 #' Note that `as.POSIXct(iso, tz = "UTC")` alone is not enough: the
 #' resulting object's own `tzone` attribute stays `"UTC"`, and
 #' `format()` without an explicit `tz` argument formats in *that* stored
-#' zone, not the system's - this silently produced UTC times labelled as
-#' if they were local (QUESTIONS.md).
+#' zone, not the system's - a common source of times being silently
+#' displayed as if they were local when they are not.
 #'
 #' @param iso An ISO-8601 UTC string (`episode_now()`'s format), or `NA`.
 #' @param fmt A `format()`/`strftime()` format string.

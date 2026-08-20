@@ -26,8 +26,8 @@
 #' @param cluster_id A cluster id.
 #' @param lang Session language.
 #' @param current_user The session's signed-in user row, or `NULL` for an
-#'   anonymous viewer (ARCHITECTURE.md section 12: read access is
-#'   anonymous, but the line list is the one panel gated on it).
+#'   anonymous viewer. Read access is anonymous throughout; the line
+#'   list is the one panel gated on it.
 #' @return A `shiny::tagList`.
 #' @keywords internal
 #' @noRd
@@ -252,9 +252,8 @@ episode_ui_trend_panel <- function(con, obj, lang = "nl") {
 #' @keywords internal
 #' @noRd
 episode_ui_rt_panel <- function(obj, lang = "nl") {
-  # "Suppressed entirely where rt_applicable is false" (ARCHITECTURE.md
-  # section 9) - not even an empty-state panel, unlike a section that is
-  # merely awaiting more data.
+  # Suppressed entirely when rt_applicable is false - not even an
+  # empty-state panel, unlike a section that is merely awaiting more data.
   if (!isTRUE(obj$rt_applicable)) return(NULL)
   if (is.null(obj$rt) || nrow(obj$rt) == 0) {
     msg <- episode_tr(paste0("panel.rt.unavailable.", obj$rt_unavailable_reason %||% "insufficient_history"), lang = lang)
@@ -361,9 +360,8 @@ episode_ui_places_panel <- function(con, cluster_id, obj, lang = "nl") {
 #' @keywords internal
 #' @noRd
 episode_ui_resistance_panel <- function(lang = "nl") {
-  # No M1 ingestion path carries susceptibility data yet (ARCHITECTURE.md
-  # never lists it as a captured case field); always a placeholder for now,
-  # see QUESTIONS.md.
+  # Susceptibility data is not part of the ingestion contract, so this
+  # panel is always a placeholder.
   episode_ui_panel_empty(episode_tr("panel.resistance.title", lang = lang), episode_tr("panel.resistance.unavailable", lang = lang))
 }
 
@@ -397,7 +395,7 @@ episode_ui_linelist_panel <- function(con, cluster_id, obj, lang = "nl") {
 #'
 #' "The cron pre-renders for every cluster with a verdict of
 #' possible_epidemic or above; assessors can re-render on demand,
-#' producing a new version" (ARCHITECTURE.md section 11). The button only
+#' producing a new version". The button only
 #' renders for a signed-in user, matching every other write action; the
 #' version list itself is visible to anyone, since a rendered report's
 #' existence is not sensitive the way its line-list *contents* are.
@@ -476,11 +474,10 @@ episode_ui_settings_panel <- function(con, cluster_id, lang = "nl") {
 
 #' The right-hand assessment rail
 #'
-#' The timeline ("Verloop") is always visible, to anonymous viewers too
-#' (ARCHITECTURE.md section 10.2: "assessments rendered as an append-only
-#' timeline"). The classification form, closure and mute actions render
-#' only for a signed-in user - "login only to classify" (ARCHITECTURE.md
-#' section 12).
+#' The timeline ("Verloop") is always visible, to anonymous viewers too,
+#' as an append-only record of every assessment. The classification
+#' form, closure and mute actions render only for a signed-in user -
+#' signing in is required to classify, never to read.
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
 #' @param lang Session language.

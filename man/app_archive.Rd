@@ -4,8 +4,7 @@
 \alias{app_archive}
 \title{Archive and Activity screens}
 \description{
-Read-only, reached from the top navigation (ARCHITECTURE.md section
-10). Neither needs a sign-in: "last winter's assessment is the best
-prior for this winter's cluster" is exactly as true for an anonymous
-viewer as for an assessor.
+Read-only, reached from the top navigation. Neither needs a sign-in:
+last winter's assessment is exactly as useful a precedent for an
+anonymous viewer as it is for a signed-in assessor.
 }

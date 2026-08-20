@@ -19,8 +19,7 @@
 #' App read models
 #'
 #' Every function here is a cheap read against an already-populated
-#' database (ARCHITECTURE.md section 3.3: "the app performs cheap reads
-#' only"). Nothing here recomputes a statistical model; anything
+#' database. Nothing here recomputes a statistical model; anything
 #' expensive (Farrington, reconciliation, priority scoring) has already
 #' happened in the cron and is simply looked up. This is the layer that
 #' turns raw tables into the shapes the Shiny UI and the interpretation engine
@@ -102,7 +101,7 @@ episode_app_derive_state_for_cluster <- function(con, cluster_id) {
   )
 }
 
-#' Whether a person explicitly closed a cluster (ARCHITECTURE.md section 6.1)
+#' Whether a person explicitly closed a cluster
 #'
 #' A non-terminal verdict (`cluster_not_yet`, `possible_epidemic`,
 #' `confirmed_epidemic`) can be closed by an assessor's decision alone,
@@ -277,7 +276,7 @@ episode_app_density <- function(con, stream, cases) {
   # Historical baseline: this stream's own long-run density, all known
   # cases against the sum of patient-days over the same calendar span -
   # not a fitted model (that is farringtonFlexible's own populationOffset
-  # baseline, M5), just the descriptive rate the cluster's own density is
+  # baseline), just the descriptive rate the cluster's own density is
   # being read against.
   all_cases <- DBI::dbGetQuery(
     con, "SELECT sample_date FROM episode_case WHERE pathogen = ? AND institution_id = ?",
@@ -301,9 +300,9 @@ episode_app_density <- function(con, stream, cases) {
 
 #' Simple doubling time from the case date distribution
 #'
-#' A cheap linear regression of log(cumulative cases) against day, over the
-#' last 14 days of the cluster - not a fitted epidemic model (that is Rt,
-#' M5), just a descriptive rate.
+#' A cheap linear regression of log(cumulative cases) against day, over
+#' the last 14 days of the cluster - not a fitted epidemic model (that
+#' is Rt), just a descriptive rate.
 #' @keywords internal
 #' @noRd
 episode_app_doubling_time <- function(cases) {
@@ -411,7 +410,7 @@ episode_app_demography_shift <- function(con, stream_id, cases) {
   )
 }
 
-#' Age/sex pyramid bars: cluster counts (M2 has no baseline overlay yet)
+#' Age/sex pyramid bars: cluster counts (no baseline overlay)
 #' @keywords internal
 #' @noRd
 episode_app_demography_bars <- function(cases) {
@@ -478,8 +477,8 @@ episode_app_trend <- function(con, stream_id) {
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
-#' @return A data frame, exactly the fields ARCHITECTURE.md section 9
-#'   allows in the line list.
+#' @return A data frame with exactly the fields the line list is allowed
+#'   to show.
 #' @keywords internal
 #' @noRd
 episode_app_linelist <- function(con, cluster_id) {
@@ -515,7 +514,7 @@ episode_app_detection_settings <- function(con, cluster_id) {
 #' Read-only Streams screen data
 #'
 #' Displays the configuration from the latest run's `config_snapshot`, not
-#' from the file (ARCHITECTURE.md section 7.4/10).
+#' from the file.
 #'
 #' Paginated, and deliberately at the read-model level rather than only
 #' in the UI: `baseline_excluded` is one DB round trip per stream (via
@@ -551,9 +550,9 @@ episode_app_streams_screen <- function(con, page = 1L, page_size = 50L) {
   to <- min(total, page * page_size)
   streams <- if (total == 0) streams_all else streams_all[from:to, , drop = FALSE]
 
-  # ARCHITECTURE.md section 7.6: "the excluded windows are listed on the
-  # Streams screen so that a baseline is never quietly different from
-  # what an assessor expects." Computed only for this page's streams.
+  # Excluded windows are listed on the Streams screen so a baseline is
+  # never quietly different from what an assessor expects. Computed only
+  # for this page's streams.
   if (nrow(streams) > 0) {
     streams$baseline_excluded <- lapply(streams$stream_id, function(sid) {
       episode_baseline_excluded_windows(con, sid)
@@ -565,9 +564,9 @@ episode_app_streams_screen <- function(con, page = 1L, page_size = 50L) {
 
 #' Status strip data: last run status and reporting completeness
 #'
-#' Always visible per ARCHITECTURE.md section 10 ("a silently failed cron
-#' is the main systemic risk and must never be something one has to go
-#' looking for").
+#' Always visible: a silently failed detection run is the system's main
+#' operational risk, and must never be something an operator has to go
+#' looking for.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @return A list describing the latest run.

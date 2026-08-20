@@ -23,9 +23,8 @@
 #' `institution_id` here, mirroring `episode_denominator_ingest_run()`'s
 #' own optional-source pattern). Entirely optional: a site with nothing to
 #' supply here simply never calls this, and L1/L2 Farrington detection
-#' falls back to raw counts - unnormalised, as it always has been, not
-#' broken (ARCHITECTURE.md section 7.1's patient-day normalisation is a
-#' refinement, not a requirement).
+#' falls back to raw counts - unnormalised, not broken: patient-day
+#' normalisation is a refinement, not a requirement.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param activity A data frame with `institution_key`, `period_start`,
@@ -76,8 +75,7 @@ episode_institution_activity_ingest_run <- function(con, activity) {
 #' variation (winter admissions run higher) and noise. Not called by
 #' [episode_run_cron()] unless an `institution_activity_source_fn` is
 #' supplied; demonstrates the shape only, so the bundled demo can show
-#' ARCHITECTURE.md section 7.1's incidence-density curve without a real
-#' hospital feed.
+#' an incidence-density curve without a real hospital feed.
 #'
 #' @param institutions A data frame from `episode_db_institutions()` (or
 #'   `episode_synthetic_institutions()`'s own shape before insertion),

@@ -23,7 +23,7 @@
 #' and overlays it on top: any key it sets replaces the corresponding key in
 #' the defaults. Detection settings are never read from anywhere else and
 #' never from inside this package's own tree at runtime beyond the shipped
-#' defaults (ARCHITECTURE.md section 7.4).
+#' defaults.
 #'
 #' The result is what gets hashed into `config_hash` and stored verbatim as
 #' `config_snapshot` on every detection run, so a run's exact parameters are
@@ -81,11 +81,9 @@ episode_config_merge <- function(base, override) {
 #' Compute the SHA-1 hash and canonical JSON snapshot of a resolved config
 #'
 #' The hash is taken over a canonicalised representation (keys sorted
-#' recursively, then serialised as JSON) so that key ordering in the source
-#' YAML never changes the hash. See `QUESTIONS.md` item 15: the hashing
-#' algorithm itself is not specified by the architecture and was chosen to
-#' match the `CHAR(40)` width used for other `_key`/`_hash` columns in the
-#' schema.
+#' recursively, then serialised as JSON) so that key ordering in the
+#' source YAML never changes the hash. SHA-1 was chosen to match the
+#' `CHAR(40)` width used for other `_key`/`_hash` columns in the schema.
 #'
 #' @param config A resolved configuration, as returned by
 #'   [episode_config_resolve()].

@@ -21,7 +21,7 @@
 #' `R/db_app_write.R` exposes one insert per table. The functions here
 #' combine those into the actual actions a signed-in assessor takes,
 #' adding the one piece of bookkeeping a raw insert cannot do on its own:
-#' recording every state transition (ARCHITECTURE.md section 6.4). Still
+#' recording every state transition. Still
 #' insert-only throughout - nothing here issues `UPDATE` or `DELETE`.
 #' @name app_write
 NULL
@@ -37,8 +37,7 @@ NULL
 #' @param user_id The signed-in assessor's `user_id`.
 #' @param verdict One of the five classification values, or `NA` (a
 #'   rationale-only note with no classification yet).
-#' @param rationale Mandatory free-text rationale (ARCHITECTURE.md
-#'   section 5.6).
+#' @param rationale Mandatory free-text rationale.
 #' @param wpg_notifiable,ggd_informed Logical or `NA`.
 #' @param ggd_note Free text, or `NA`.
 #' @param snooze_until A date, or `NA`.
@@ -71,7 +70,7 @@ episode_app_submit_assessment <- function(con, cluster_id, user_id, verdict = NA
 
 #' Explicitly close a cluster
 #'
-#' Closure is an act, not a classification (ARCHITECTURE.md section 6.1):
+#' Closure is an act, not a classification:
 #' it needs no new rationale, since the classification that is being
 #' closed already carries its own. Always available on a non-terminal
 #' classification, whether or not the closure criterion has fired.

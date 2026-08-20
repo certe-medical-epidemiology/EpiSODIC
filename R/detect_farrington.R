@@ -43,11 +43,10 @@
 #' @param population An optional numeric vector of weekly population
 #'   (patient-days) aligned to `episode_weekly_bins()`'s own weeks, from
 #'   `episode_farrington_population_vector()`. `NULL` (default) fits on
-#'   raw counts, unnormalised - the only behaviour possible before
-#'   ARCHITECTURE.md section 7.1's patient-day normalisation existed, and
-#'   still what every stream without institution activity data gets.
+#'   raw counts, unnormalised - what every stream without institution
+#'   activity data gets.
 #' @return A data frame of detection records (zero or one row: Farrington
-#'   evaluates only the current week, per ARCHITECTURE.md section 7).
+#'   evaluates only the current week).
 #' @references
 #' Farrington CP, Andrews NJ, Beale AD, Catchpole MA (1996). "A Statistical
 #' Algorithm for the Early Detection of Outbreaks of Infectious Disease."
@@ -98,11 +97,11 @@ episode_detect_farrington <- function(cases_for_stream, stream_id, config, run_d
 
 #' Weekly Farrington trend points, for the multi-year trend panel
 #'
-#' The app performs cheap reads only (ARCHITECTURE.md section 3.3) and
-#' cannot re-run `farringtonFlexible()` at render time, so the cron must
-#' persist a continuous expected/upperbound series rather than only the
-#' current week's alarm status (see `episode_detect_farrington()` and
-#' `QUESTIONS.md`). This function returns that series; the caller
+#' The app performs cheap reads only and cannot re-run
+#' `farringtonFlexible()` at render time, so the cron must persist a
+#' continuous expected/upperbound series rather than only the current
+#' week's alarm status (see `episode_detect_farrington()`). This
+#' function returns that series; the caller
 #' (`episode_run_cron()`) is responsible for upserting it into
 #' `episode_stream_trend`.
 #'
@@ -183,21 +182,19 @@ episode_farrington_fit <- function(weekly, range_idx, fc, population = NULL) {
 
 #' Build a weekly patient-days vector aligned to Farrington's weekly bins
 #'
-#' ARCHITECTURE.md section 7.1: institution streams (L2) should use
-#' `farringtonFlexible()`'s `populationOffset` with weekly patient-days
-#' rather than raw counts, since occupancy varies seasonally and a
-#' count-based baseline would alarm on a busy February and stay silent
-#' through a quiet August at identical transmission-per-patient-day. `NULL`
-#' when `institution_id` is `NA` (non-institution streams) or no activity
-#' data exists at all for it - callers pass `NULL` straight through to
-#' `episode_detect_farrington()`/`episode_farrington_trend()`, which then
-#' fit on raw counts exactly as before this existed.
+#' Institution streams (L2) use `farringtonFlexible()`'s
+#' `populationOffset` with weekly patient-days rather than raw counts,
+#' since occupancy varies seasonally and a count-based baseline would
+#' alarm on a busy February and stay silent through a quiet August at
+#' identical transmission-per-patient-day. `NULL` when `institution_id`
+#' is `NA` (non-institution streams) or no activity data exists at all
+#' for it - callers pass `NULL` straight through to
+#' `episode_detect_farrington()`/`episode_farrington_trend()`, which
+#' then fit on raw counts.
 #'
 #' Only `episode_institution_activity` (L2, whole-institution) exists in
-#' the schema - there is no ward-level (L1) activity table, so L1 streams
-#' always get `NULL` here regardless of `institution_id`; ARCHITECTURE.md
-#' section 7 itself only promises ward patient-days "if obtainable", and
-#' they are not (see QUESTIONS.md).
+#' the schema - there is no ward-level (L1) activity table, so L1
+#' streams always get `NULL` here regardless of `institution_id`.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param institution_id An `episode_institution` id, or `NA`.

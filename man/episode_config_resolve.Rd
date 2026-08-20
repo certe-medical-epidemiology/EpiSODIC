@@ -23,7 +23,7 @@ Loads the shipped defaults from \code{inst/config/default.yaml}, then, if the
 and overlays it on top: any key it sets replaces the corresponding key in
 the defaults. Detection settings are never read from anywhere else and
 never from inside this package's own tree at runtime beyond the shipped
-defaults (ARCHITECTURE.md section 7.4).
+defaults.
 }
 \details{
 The result is what gets hashed into \code{config_hash} and stored verbatim as

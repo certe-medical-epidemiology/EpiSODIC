@@ -24,13 +24,13 @@ satisfying the ingestion interface, or that data frame itself (an
 operator who has already extracted and transformed their data has no
 reason to wrap it in a function just to satisfy this parameter - see
 \code{\link[=episode_resolve_source]{episode_resolve_source()}}). Defaults to the bundled synthetic
-generator, the only implementation shipped in this environment.}
+generator, the only ingestion source shipped in this package.}
 
 \item{denominator_source_fn}{An optional zero-argument function
 returning the pre-aggregated positivity metadata data frame
 (\code{pathogen}, \code{sample_date}, \code{care_line}, \code{area_code}, \code{n_tests}), that
 data frame itself, or \code{NULL} (the default) if the operator has none to
-supply. See \code{QUESTIONS.md} item 22.}
+supply.}
 
 \item{institution_activity_source_fn}{An optional one-argument function
 (\code{institutions}, the current \code{episode_db_institutions()} data frame,
@@ -39,15 +39,14 @@ the same institutions this run already knows about) returning weekly
 patient-days (\code{institution_key}, \code{period_start}, \code{period_end},
 \code{patient_days}); that data frame itself (the \code{institutions} argument
 is simply not passed in that case); or \code{NULL} (the default) if the
-operator has none to supply. Powers L2 patient-day normalisation
-(ARCHITECTURE.md section 7.1); without it, L1/L2 Farrington detection
-uses raw counts, unnormalised, exactly as before this was added.}
+operator has none to supply. Powers L2 patient-day normalisation;
+without it, L1/L2 Farrington detection uses raw counts, unnormalised.}
 
 \item{episode_config_path}{Passed to \code{\link[=episode_config_resolve]{episode_config_resolve()}}.}
 
-\item{host, account}{Recorded on \code{episode_detection_run}; default to the
-process's own host/account (ARCHITECTURE.md section 12: this is not an
-identity source for assessors, only for the run record).}
+\item{host, account}{Recorded on \code{episode_detection_run}; default to
+the process's own host/account. This is not an identity source for
+assessors, only for the run record.}
 
 \item{run_date}{The date to treat as "today" for closure/eligibility
 calculations; defaults to the system date, injectable for tests.}
@@ -56,7 +55,7 @@ calculations; defaults to the system date, injectable for tests.}
 Invisibly, the \code{run_id} of the completed run.
 }
 \description{
-The cron entry point (ARCHITECTURE.md section 3). Ingests, enumerates
+The cron entry point. Ingests, enumerates
 streams, detects, reconciles and persists, all
 inside one transaction, so a partially failed run leaves no partial
 state and a retry is always safe.
@@ -65,10 +64,10 @@ state and a retry is always safe.
 Configuration is read from \code{EPISODE_CONFIG};
 the resolved configuration's hash and full snapshot are written to
 \code{episode_detection_run} so that any result is explainable from the
-database alone (ARCHITECTURE.md section 7.4).
+database alone.
 
 \code{certedb}/Diver access is deliberately never called from inside this
-package (\code{QUESTIONS.md} item 22): \code{get_diver_data()} is the operator's
+package: \code{get_diver_data()} is the operator's
 own step, run before \code{episode_run_cron()}, transforming Diver's columns
 into \code{episode_ingest_columns}. See \code{README.md} for the raw data contract.
 }
