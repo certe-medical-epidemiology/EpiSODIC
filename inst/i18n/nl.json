@@ -300,5 +300,24 @@
   "panel.report.empty": "Nog geen rapport gerenderd voor dit cluster.",
   "panel.report.version_line": "Versie {version} - {when}",
   "panel.report.render_button": "Rapport genereren",
-  "panel.report.pending": "Rapport genereren..."
+  "panel.report.pending": "Rapport genereren...",
+
+  "report.rendered_label": "Gerenderd",
+  "report.note_versioned": "Dit is een geautomatiseerd, versiegebonden rapport. Elke nieuwe render krijgt een eigen versienummer; dit exemplaar blijft ongewijzigd na verzending.",
+  "report.key_figures_title": "Kerncijfers",
+  "report.col_metric": "Metriek",
+  "report.col_value": "Waarde",
+  "report.na": "n.v.t.",
+  "report.isolates_suffix": "{n} isolaten",
+  "report.priority_score": "Prioriteitsscore",
+  "report.detected_by": "Gedetecteerd door",
+  "report.curve_shape_label": "Vorm van de curve:",
+  "report.no_data": "Geen gegevens beschikbaar.",
+  "report.rt_title": "Effectief reproductiegetal (Rt)",
+  "report.rt_note": "Tijdsafhankelijk *effectief* reproductiegetal, niet R0 - berekend over 7-daagse voortschrijdende vensters met [EpiEstim](https://CRAN.R-project.org/package=EpiEstim). Vensters binnen de nog onvolledige rapportageperiode zijn weggelaten.",
+  "report.col_count": "Aantal",
+  "report.suppressed_note": "Aantallen kleiner dan {threshold} zijn onderdrukt.",
+  "report.timeline_empty": "Nog geen beoordeling vastgelegd.",
+  "report.closed_note": "cluster afgesloten",
+  "report.footer": "Gegenereerd door EpiSODE. Dit document bevat geen live koppeling naar de applicatie; alle gegevens zijn bevroren op het moment van renderen."
 }

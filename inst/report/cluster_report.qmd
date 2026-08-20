@@ -17,51 +17,49 @@ d <- readRDS(params$data_path)
 obj <- d$obj
 lang <- if (is.null(d$lang)) "nl" else d$lang
 tr <- function(key, ...) episode_tr(key, lang = lang, ...)
+na_dash <- function(x) if (is.na(x)) "-" else x
 ```
 
 # `r obj$pathogen` — `r tr(paste0("level.", obj$level))`
 
 **`r obj$place`** &middot; cluster #`r obj$id` &middot; `r obj$first_day` &ndash; `r obj$last_day`
 
-Gerenderd: `r d$rendered_at` &middot; EpiSODE `r d$package_version`
+`r tr("report.rendered_label")`: `r d$rendered_at` &middot; EpiSODE `r d$package_version`
 
 ::: {.callout-note}
-Dit is een geautomatiseerd, versiegebonden rapport. Elke nieuwe render krijgt een eigen versienummer; dit exemplaar blijft ongewijzigd na verzending.
+`r tr("report.note_versioned")`
 :::
 
-## Kerncijfers
+## `r tr("report.key_figures_title")`
 
-| Metriek | Waarde |
+| `r tr("report.col_metric")` | `r tr("report.col_value")` |
 |---|---|
-| Vastgesteld | `r obj$n_cases` |
-| Verwacht | `r if (is.na(obj$expected)) "n.v.t." else round(obj$expected, 1)` |
-| Ratio O/V | `r if (is.na(obj$ratio)) "n.v.t." else round(obj$ratio, 1)` |
-| Unieke patiënten | `r obj$unique_patients` (`r obj$n_isolates` isolaten) |
-| Prioriteitsscore | `r round(obj$priority_score, 0)` |
-| Gedetecteerd door | `r paste(obj$detectors, collapse = ", ")` |
+| `r tr("dossier.stat.observed")` | `r obj$n_cases` |
+| `r tr("panel.trend.legend_expected")` | `r if (is.na(obj$expected)) tr("report.na") else round(obj$expected, 1)` |
+| `r tr("dossier.stat.ratio")` | `r if (is.na(obj$ratio)) tr("report.na") else round(obj$ratio, 1)` |
+| `r tr("dossier.stat.unique_patients")` | `r obj$unique_patients` (`r tr("report.isolates_suffix", n = obj$n_isolates)`) |
+| `r tr("report.priority_score")` | `r round(obj$priority_score, 0)` |
+| `r tr("report.detected_by")` | `r paste(obj$detectors, collapse = ", ")` |
 
 ```{r curve-shape, results='asis'}
 if (!is.null(obj$curve_shape) && !is.na(obj$curve_shape)) {
-  cat("**Vorm van de curve:**", tr(paste0("interpretation.fragment.curve_shape.", obj$curve_shape)), "\n\n")
+  cat("**", tr("report.curve_shape_label"), "** ", tr(paste0("interpretation.fragment.curve_shape.", obj$curve_shape)), "\n\n", sep = "")
 }
 ```
 
-## Epidemiologische curve
+## `r tr("panel.epicurve.title")`
 
 ```{r epi-curve, fig.width=7, fig.height=3}
 if (!is.null(d$epi_curve) && nrow(d$epi_curve) > 0) {
   print(episode_ui_epi_curve_chart(d$epi_curve, lang = lang))
 } else {
-  cat("Geen gegevens beschikbaar.")
+  cat(tr("report.no_data"))
 }
 ```
 
 ```{r rt-section, results='asis'}
 if (!is.null(obj$rt) && nrow(obj$rt) > 0) {
-  cat("## Effectief reproductiegetal (Rt)\n\n")
-  cat("Tijdsafhankelijk *effectief* reproductiegetal, niet R0 - berekend over 7-daagse voortschrijdende vensters ",
-      "met [EpiEstim](https://CRAN.R-project.org/package=EpiEstim). Vensters binnen de nog onvolledige ",
-      "rapportageperiode zijn weggelaten.\n\n", sep = "")
+  cat("## ", tr("report.rt_title"), "\n\n", tr("report.rt_note"), "\n\n", sep = "")
 }
 ```
 
@@ -73,7 +71,7 @@ if (!is.null(obj$rt) && nrow(obj$rt) > 0) {
 
 ```{r trend-section, results='asis'}
 if (!is.null(d$trend) && nrow(d$trend) >= 4) {
-  cat("## Meerjarige trend\n\n")
+  cat("## ", tr("panel.trend.title"), "\n\n", sep = "")
 }
 ```
 
@@ -83,22 +81,22 @@ if (!is.null(d$trend) && nrow(d$trend) >= 4) {
 }
 ```
 
-## Geografische spreiding
+## `r tr("panel.geo.title")`
 
 ```{r geo, results='asis'}
 if (!is.null(obj$concentration) && nrow(obj$concentration$rows) > 0) {
   rows <- obj$concentration$rows
-  cat("| PC4 | Aantal |\n|---|---|\n")
+  cat("|", tr("panel.geo.aside"), "|", tr("report.col_count"), "|\n|---|---|\n")
   for (i in seq_len(min(nrow(rows), 10))) {
     cat("|", rows$label[i], "|", rows$n[i], "|\n")
   }
-  cat(sprintf("\n*Aantallen kleiner dan %s zijn onderdrukt.*\n", d$small_count_threshold))
+  cat("\n*", tr("report.suppressed_note", threshold = d$small_count_threshold), "*\n", sep = "")
 } else {
-  cat("Geen postcodegegevens beschikbaar.\n")
+  cat(tr("panel.geo.empty"), "\n")
 }
 ```
 
-## Beoordelingstijdlijn
+## `r tr("verloop.title")`
 
 ```{r timeline, results='asis'}
 if (!is.null(d$timeline) && nrow(d$timeline) > 0) {
@@ -106,19 +104,19 @@ if (!is.null(d$timeline) && nrow(d$timeline) > 0) {
     row <- d$timeline[i, ]
     cat("-", row$at, "&middot;", row$actor)
     if (!is.na(row$verdict_label)) cat(" &middot; **", row$verdict_label, "**", sep = "")
-    if (row$kind == "closure") cat(" &middot; cluster afgesloten")
+    if (row$kind == "closure") cat(" &middot;", tr("report.closed_note"))
     cat("\n")
     if (!is.na(row$rationale) && nzchar(row$rationale)) cat("  >", row$rationale, "\n")
   }
 } else {
-  cat("Nog geen beoordeling vastgelegd.\n")
+  cat(tr("report.timeline_empty"), "\n")
 }
 ```
 
 ```{r similar-section, results='asis'}
 if (!is.null(d$similar) && nrow(d$similar) > 0) {
-  cat("## Vergelijkbare eerdere clusters\n\n")
-  cat("| Plaats | Aantal | Classificatie |\n|---|---|---|\n")
+  cat("## ", tr("panel.similar.title"), "\n\n", sep = "")
+  cat("|", tr("panel.similar.col.place"), "|", tr("panel.similar.col.cases"), "|", tr("panel.similar.col.verdict"), "|\n|---|---|---|\n")
   for (i in seq_len(nrow(d$similar))) {
     row <- d$similar[i, ]
     cat("|", row$place, "|", row$n_cases, "|", ifelse(is.na(row$verdict_label), "-", row$verdict_label), "|\n")
@@ -128,12 +126,13 @@ if (!is.null(d$similar) && nrow(d$similar) > 0) {
 
 ```{r linelist-section, results='asis'}
 if (!is.null(d$linelist) && nrow(d$linelist) > 0) {
-  cat("## Lijnlijst\n\n")
-  cat("| Casus | Afname | Geslacht | Leeftijd | PC4 | Afdeling | Specialisme |\n")
+  cat("## ", tr("panel.linelist.title"), "\n\n", sep = "")
+  cat("|", tr("panel.linelist.col.case"), "|", tr("panel.linelist.col.date"), "|", tr("panel.linelist.col.sex"), "|",
+      tr("panel.linelist.col.age"), "|", tr("panel.linelist.col.pc4"), "|", tr("panel.linelist.col.ward"), "|",
+      tr("panel.linelist.col.specialism"), "|\n")
   cat("|---|---|---|---|---|---|---|\n")
   for (i in seq_len(nrow(d$linelist))) {
     row <- d$linelist[i, ]
-    na_dash <- function(x) if (is.na(x)) "-" else x
     cat("|", row$source_key, "|", row$sample_date, "|", na_dash(row$sex), "|", na_dash(row$age), "|",
         na_dash(row$pc4), "|", na_dash(row$ward), "|", na_dash(row$specialism), "|\n")
   }
@@ -142,4 +141,4 @@ if (!is.null(d$linelist) && nrow(d$linelist) > 0) {
 
 ---
 
-*Gegenereerd door EpiSODE. Dit document bevat geen live koppeling naar de applicatie; alle gegevens zijn bevroren op het moment van renderen.*
+*`r tr("report.footer")`*

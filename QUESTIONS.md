@@ -779,6 +779,32 @@ decisions survives.
     now also emits a small inline `<script>` that resets the button and
     hides the pending text, since nothing else would.
 
+17. **Bug: `inst/report/cluster_report.qmd` was hardcoded Dutch
+    throughout, and used "PC4" for the postcode column.** Found by
+    actually reading a rendered report the user sent back, not by
+    inspection alone. The template took a `lang` parameter and defined
+    a `tr()` helper, but only ever used it for the level label and the
+    curve-shape fragment - every section heading, table header, and
+    static phrase ("Kerncijfers", "Geen gegevens beschikbaar.",
+    "n.v.t.", the "PC4"/"Aantal" table header, the closing note) was a
+    literal Dutch string, so an `lang = "en"` report still rendered
+    entirely in Dutch except for those two spots. Also inconsistent
+    with the app's own choropleth work (item 12 above): the in-app line
+    list and geography panels already say "PC", not "PC4", but the
+    report template still said "PC4". Fixed by routing every static
+    label through `tr()`, reusing existing app-facing i18n keys where
+    the wording already matched (`panel.geo.title`, `panel.geo.aside`
+    = "PC", `panel.linelist.col.*`, `panel.similar.*`, `verloop.title`,
+    `dossier.stat.*`) and adding a small set of new `report.*` keys in
+    both `nl.json`/`en.json` for the handful of labels with no existing
+    app equivalent (`report.key_figures_title`, `report.na`,
+    `report.rt_title`/`report.rt_note`, `report.footer`, etc.).
+    Verified with `knitr::knit()` directly against real cluster data
+    (no Pandoc/Quarto CLI in this sandbox, so full HTML rendering
+    couldn't be exercised here) - confirmed the English render now
+    reads "Key figures" / "Confirmed" / "Expected" / "n/a" throughout
+    instead of a two-word English facade over a Dutch document.
+
 ## Parked for a future milestone
 
 1. **Cluster volume for endemic organisms at a single place.**
