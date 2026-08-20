@@ -20,17 +20,22 @@
 #
 # Deliberately a separate file from default.yaml: this is a display-only
 # concern (the app's colours), not part of detection configuration, so it
-# must never affect episode_config_hash()/config_snapshot (ARCHITECTURE.md
-# section 7.4-7.5's reproducibility guarantee is about detection results,
-# not colour swatches). Resolved the same way: this file's values are the
-# defaults, an operator overrides them by pointing EPISODE_PALETTE_CONFIG
-# at their own YAML with only the keys they want to change - any
-# organisation runs EpiSODIC in its own house colours this way, without
-# EpiSODIC ever shipping (or depending on) any specific organisation's
-# house-style package.
+# must never affect episode_config_hash()/config_snapshot - that
+# reproducibility guarantee is about detection results, not colour
+# swatches. Resolved the same way: this file's values are the defaults,
+# an operator overrides them by pointing EPISODE_PALETTE_CONFIG at their
+# own YAML with only the keys they want to change - any organisation runs
+# EpiSODIC in its own house colours this way, without EpiSODIC ever
+# shipping (or depending on) any specific organisation's house-style
+# package.
 #
 # Named by role (Bootstrap-style), not by raw hue word - a config key
 # should say what a colour is *for*, not what it looks like.
+#
+# These defaults match the Bootswatch "Yeti" theme (light variant), the
+# same theme the pkgdown site (_pkgdown.yml) is built with, so the Shiny
+# app and the documentation site share one visual identity out of the
+# box.
 #
 # Neutrals: text, borders and backgrounds are their own true grey scale,
 # independent of whichever hue is "primary" - so body text is never
@@ -39,37 +44,33 @@
 # happened to be a muted blue-grey but became visibly wrong the moment
 # primary became a saturated colour: every letter of body text was
 # rendered in it).
-ink: "#1F2430"
-muted: "#5B6472"
-faint: "#9AA3B2"
-border: "#D8DCE3"
-bg_subtle: "#EEF0F4"
-bg: "#F7F8FA"
+ink: "#222222"
+muted: "#495057"
+faint: "#ADB5BD"
+border: "#DEE2E6"
+bg_subtle: "#EBEBEB"
+bg: "#F8F9FA"
 surface: "#FFFFFF"
 
-# Brand / semantic roles. Deliberately a bold, high-contrast set with
-# maximum hue distance from Certe's own muted house style, so a
-# stranger's default clone of this repository is unmistakably not a real
-# Certe instance at a glance - primary is a calm forest green rather than
-# Certe's blue-grey (a first attempt used violet, which read as far too
-# heavy for a header/primary colour; green sits easier on the eye at that
-# size while staying just as clearly distinct).
-primary: "#2E8B57"
-primary_dark: "#1F5C3A"
-primary_light: "#4FAE7C"
-primary_tint: "#DCF3E7"
+# Brand / semantic roles: Yeti's own primary, secondary and status
+# colours, each paired with a darkened step for hover/emphasis states
+# that this codebase's components expect but Yeti itself does not name.
+primary: "#008CBA"
+primary_dark: "#005F7A"
+primary_light: "#66BAD6"
+primary_tint: "#D9EDF5"
 
-secondary: "#7C3AED"
-secondary_dark: "#5B21B6"
+secondary: "#333333"
+secondary_dark: "#1A1A1A"
 
-tertiary: "#C2703D"
-tertiary_dark: "#8A4B24"
+tertiary: "#20C997"
+tertiary_dark: "#168D6A"
 
-success: "#0E8074"
-success_dark: "#0B5C54"
+success: "#43AC6A"
+success_dark: "#2F784A"
 
-warning: "#D9971F"
-warning_dark: "#A66B12"
+warning: "#F8AC59"
+warning_dark: "#AE783E"
 
-danger: "#C23B72"
-danger_dark: "#8A2851"
+danger: "#F36A5A"
+danger_dark: "#AA4A3F"
