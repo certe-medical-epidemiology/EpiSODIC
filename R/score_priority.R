@@ -40,7 +40,7 @@
 #'   how many exist in total.
 #' @param density_ratio Incidence per 1,000 patient-days versus baseline,
 #'   or `NA` when no patient-day denominator exists for this stream.
-#' @param spatial_concentration A 0-1 concentration measure across PC4
+#' @param spatial_concentration A 0-1 concentration measure across PC
 #'   (Gini or top-1 share).
 #' @param weights A list from `config$priority_score$weights`.
 #' @return A single numeric score, 0-100.

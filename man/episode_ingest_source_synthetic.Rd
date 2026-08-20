@@ -24,7 +24,7 @@ A data frame satisfying \code{episode_ingest_validate_source()}.
 The default (and only) implementation of the ingestion interface
 shipped with this package (\code{R/ingest_interface.R}). Generates several
 years of seasonal baseline case data across a synthetic set of institutions,
-pathogens, PC4 areas and care lines, then injects two outbreaks of known
+pathogens, PC areas and care lines, then injects two outbreaks of known
 shape so the detectors have something to visibly fire on: one point
 source (\code{add_outbreak_point_source}, a ward-level cluster tightly bunched
 in time) and one propagated (\code{add_outbreak_propagated}, a community

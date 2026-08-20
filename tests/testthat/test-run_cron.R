@@ -154,7 +154,7 @@ test_that("episode_lattice_enumerate() creates distinct streams per level", {
   )
   cases <- data.frame(
     pathogen = "Test organism", sample_date = "2025-01-01", care_line = "second",
-    institution_id = institution_id, ward = "ICU", pc4 = "9711", stringsAsFactors = FALSE
+    institution_id = institution_id, ward = "ICU", pc = "9711", stringsAsFactors = FALSE
   )
   institutions <- episode_db_institutions(con)
   episode_lattice_enumerate(con, cases, institutions)

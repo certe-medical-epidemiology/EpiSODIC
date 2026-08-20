@@ -27,7 +27,7 @@ the stream's identity; no taxonomy is resolved against it.}
 
 \item{region_code}{A region code, or \code{NA}.}
 
-\item{pc4}{A PC4 postcode, or \code{NA}.}
+\item{pc}{A PC postcode, or \code{NA}.}
 
 \item{ward}{A ward, for \code{pathogen_ward} streams, or \code{NA}.}
 

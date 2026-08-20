@@ -26,9 +26,10 @@
 # geography panel's data contract (R/geo_data.R) is deliberately generic -
 # an sf object with `pc`/`geometry` columns - so any operator, anywhere,
 # can point EPISODE_GEO_DATA at their own equivalent file. `pc` matches
-# `episode_case.pc4`'s own generic values (postcodes, zip codes,
+# `episode_case.pc`'s own generic values (postcodes, zip codes,
 # municipality codes, anything - see QUESTIONS.md); it is not itself
-# Dutch-postcode-specific despite the shipped default being Dutch PC4s.
+# Dutch-postcode-specific despite the shipped default being Dutch
+# four-digit postcodes.
 # This script only produces that shipped Netherlands default, trimmed to
 # the two columns the contract actually needs (certegis's own copy also
 # carries population and area, which this package has no use for and

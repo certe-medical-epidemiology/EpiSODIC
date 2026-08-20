@@ -33,7 +33,7 @@ Sys.setenv(
 if (!file.exists(db_path)) {
   # First run only: a representative synthetic dataset - the full
   # default 2021-2025 window, several years of seasonal baseline across
-  # every institution/pathogen/PC4 combination, plus two injected
+  # every institution/pathogen/PC combination, plus two injected
   # outbreaks (one point-source, one propagated) - and one assessor
   # account to sign in with.
   episode_run_cron(

@@ -79,7 +79,7 @@ test_that("episode_cluster_object() populates concentration, density and case_fr
   expect_equal(obj$n_cases, 6)
   expect_true(grepl("^Test Hospital", obj$place) && grepl("afdeling B4$", obj$place))
   expect_false(is.null(obj$concentration))
-  expect_equal(obj$concentration$dominant_label, "9711")  # 4 of 6 cases in PC4 9711
+  expect_equal(obj$concentration$dominant_label, "9711")  # 4 of 6 cases in PC 9711
   expect_false(is.null(obj$density))
   expect_equal(obj$density$value, round(6 / 1000 * 1000, 2))
   expect_equal(obj$case_free$need, 14)
@@ -108,7 +108,7 @@ test_that("episode_app_linelist() returns only the architecture-allowed fields",
   on.exit(DBI::dbDisconnect(env$con))
   ll <- episode_app_linelist(env$con, env$cluster_id)
   expect_equal(nrow(ll), 6)
-  expect_setequal(names(ll), c("source_key", "sample_date", "sex", "age", "pc4", "ward", "specialism"))
+  expect_setequal(names(ll), c("source_key", "sample_date", "sex", "age", "pc", "ward", "specialism"))
 })
 
 test_that("episode_app_detection_settings() reflects the cluster's detectors and pathogen config", {
@@ -137,7 +137,7 @@ test_that("episode_app_status() reports the latest run", {
   expect_equal(status$n_clusters_open, 1)
 })
 
-test_that("episode_cluster_object()'s concentration carries a full per-PC4 breakdown, not just the dominant one", {
+test_that("episode_cluster_object()'s concentration carries a full per-PC breakdown, not just the dominant one", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   obj <- episode_cluster_object(env$con, env$cluster_id)

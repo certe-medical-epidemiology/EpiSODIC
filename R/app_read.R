@@ -317,19 +317,19 @@ episode_app_doubling_time <- function(cases) {
   round(log(2) / stats::coef(fit)[2], 1)
 }
 
-#' Where the cluster concentrates geographically (by PC4)
+#' Where the cluster concentrates geographically (by PC)
 #'
-#' Deliberately always PC4, not ward/institution: for a ward-level (L1)
+#' Deliberately always PC, not ward/institution: for a ward-level (L1)
 #' cluster, every case already shares that ward by construction (the
 #' stream itself is scoped to it), so grouping by ward there would be
 #' tautological (100% "concentration" by definition, saying nothing).
-#' PC4 concentration is the one dimension that is informative at every
+#' PC concentration is the one dimension that is informative at every
 #' lattice level.
 #' @keywords internal
 #' @noRd
 episode_app_concentration <- function(cases, level) {
-  if (nrow(cases) == 0 || all(is.na(cases$pc4))) return(NULL)
-  tab <- table(cases$pc4)
+  if (nrow(cases) == 0 || all(is.na(cases$pc))) return(NULL)
+  tab <- table(cases$pc)
   tab <- tab[order(-tab)]
   list(
     dominant_label = names(tab)[1],
@@ -485,7 +485,7 @@ episode_app_linelist <- function(con, cluster_id) {
   cases <- episode_db_cluster_cases(con, cluster_id)
   if (nrow(cases) == 0) return(cases)
   cases[order(cases$sample_date), c(
-    "source_key", "sample_date", "sex", "age", "pc4", "ward", "specialism"
+    "source_key", "sample_date", "sex", "age", "pc", "ward", "specialism"
   )]
 }
 

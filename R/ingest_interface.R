@@ -55,7 +55,7 @@ episode_ingest_columns <- c(
   "source_key", "patient_key", "sample_date", "receipt_date", "pathogen",
   "care_line", "institution_key",
   "institution_display_name", "institution_type", "municipality",
-  "ward", "specialism", "pc4", "sex", "age"
+  "ward", "specialism", "pc", "sex", "age"
 )
 
 #' Validate that a raw ingestion source data frame satisfies the interface

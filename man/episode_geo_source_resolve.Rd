@@ -10,7 +10,7 @@ episode_geo_source_resolve(path = Sys.getenv("EPISODE_GEO_DATA", unset = NA))
 \item{path}{Path to an \code{.rds} file holding an \code{sf} object with \code{pc}
 and \code{geometry} columns. Defaults to the \code{EPISODE_GEO_DATA}
 environment variable; if unset (or the file does not exist), falls
-back to the shipped Netherlands PC4 default.}
+back to the shipped Netherlands postcode default.}
 }
 \value{
 An \code{sf} object, or \code{NULL} if \code{sf} is not installed.
@@ -19,7 +19,7 @@ An \code{sf} object, or \code{NULL} if \code{sf} is not installed.
 Resolve the geographic reference dataset to use
 }
 \examples{
-# falls back to the shipped Netherlands PC4 default when sf is
+# falls back to the shipped Netherlands postcode default when sf is
 # installed, or NULL when it is not
 geo <- episode_geo_source_resolve(path = NA)
 }

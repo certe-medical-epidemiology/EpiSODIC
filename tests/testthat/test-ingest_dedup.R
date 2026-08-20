@@ -27,7 +27,7 @@ raw_case <- function(source_key, patient_key, sample_date, pathogen = "Test orga
     care_line = "second", institution_key = "HOSP-01",
     institution_display_name = "Hospital", institution_type = "hospital",
     municipality = NA_character_, ward = "ICU", specialism = "Interne",
-    pc4 = "9711", sex = "M", age = 40L, stringsAsFactors = FALSE
+    pc = "9711", sex = "M", age = 40L, stringsAsFactors = FALSE
   )
 }
 
@@ -100,7 +100,7 @@ test_that("episode_ingest_validate_source() rejects a column outside the allow-l
 
 test_that("episode_ingest_validate_source() rejects a missing required column", {
   raw <- raw_case("K1", "P1", "2025-01-01")
-  raw$pc4 <- NULL
+  raw$pc <- NULL
   expect_error(episode_ingest_validate_source(raw), "missing required")
 })
 

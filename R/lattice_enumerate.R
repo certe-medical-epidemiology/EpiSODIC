@@ -23,8 +23,8 @@
 #' Care line is a filter, not a level, so it is folded into the L1/L2
 #' streams (where it is available) but not into L3-L5.
 #'
-#' L3 (Gebied) is derived from the PC4's first two digits, a coarse but
-#' deterministic and contiguous grouping. L4 (Provincie) is derived from the PC4
+#' L3 (Gebied) is derived from the PC's first two digits, a coarse but
+#' deterministic and contiguous grouping. L4 (Provincie) is derived from the PC
 #' ranges used by the synthetic generator (9xxx Groningen, 8xxx Fryslan,
 #' 7xxx Drenthe) and is therefore specific to the bundled demo data; a
 #' real deployment needs the actual PC-to-province mapping for its own
@@ -32,7 +32,7 @@
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cases A data frame of newly-ingested (or all) cases, with at least
-#'   `pathogen`, `sample_date`, `care_line`, `institution_id`, `pc4`.
+#'   `pathogen`, `sample_date`, `care_line`, `institution_id`, `pc`.
 #' @param institutions A data frame from `episode_db_institutions()`.
 #' @return A data frame of `stream_id` values touched by this run, one row
 #'   per (stream, level) combination created or refreshed.
@@ -66,10 +66,10 @@ episode_lattice_enumerate <- function(con, cases, institutions) {
     )
   }
 
-  # L3: pathogen x gebied (coarse PC4 grouping: first 2 digits)
-  l3 <- cases[!is.na(cases$pc4), ]
+  # L3: pathogen x gebied (coarse PC grouping: first 2 digits)
+  l3 <- cases[!is.na(cases$pc), ]
   if (nrow(l3) > 0) {
-    l3$.region_code <- paste0("GEBIED-", substr(l3$pc4, 1, 2))
+    l3$.region_code <- paste0("GEBIED-", substr(l3$pc, 1, 2))
     touched$l3 <- episode_lattice_upsert_group(
       con, l3, level = "pathogen_area",
       group_cols = c("pathogen", ".region_code"),
@@ -78,9 +78,9 @@ episode_lattice_enumerate <- function(con, cases, institutions) {
   }
 
   # L4: pathogen x provincie
-  l4 <- cases[!is.na(cases$pc4), ]
+  l4 <- cases[!is.na(cases$pc), ]
   if (nrow(l4) > 0) {
-    l4$.region_code <- episode_pc4_to_province(l4$pc4)
+    l4$.region_code <- episode_pc_to_province(l4$pc)
     l4 <- l4[!is.na(l4$.region_code), ]
     if (nrow(l4) > 0) {
       touched$l4 <- episode_lattice_upsert_group(
@@ -105,8 +105,8 @@ episode_lattice_enumerate <- function(con, cases, institutions) {
 
 #' @keywords internal
 #' @noRd
-episode_pc4_to_province <- function(pc4) {
-  digit1 <- substr(pc4, 1, 1)
+episode_pc_to_province <- function(pc) {
+  digit1 <- substr(pc, 1, 1)
   dplyr::case_when(
     digit1 == "9" ~ "PROV_GRONINGEN",
     digit1 == "8" ~ "PROV_FRYSLAN",

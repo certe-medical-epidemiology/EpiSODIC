@@ -113,7 +113,7 @@ CREATE TABLE episode_institution (
                       'ooh_service', 'other')),
   care_line        TEXT NOT NULL CHECK (care_line IN ('first', 'second', 'other', 'unknown')),
   municipality     TEXT,
-  pc4              TEXT,
+  pc               TEXT,
   n_beds           INTEGER,
   is_monitored     INTEGER NOT NULL DEFAULT 0 CHECK (is_monitored IN (0, 1)),
   is_active        INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1))
@@ -162,12 +162,12 @@ CREATE TABLE episode_case (
   patient_key    TEXT NOT NULL,
   sample_date    TEXT NOT NULL,
   receipt_date   TEXT,
-  pathogen       TEXT NOT NULL,  -- raw lab-provided string, see QUESTIONS.md item 22
+  pathogen       TEXT NOT NULL,  -- raw lab-provided string, used verbatim
   care_line      TEXT NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'other', 'unknown')),
   institution_id INTEGER REFERENCES episode_institution(institution_id),
   ward           TEXT,
   specialism     TEXT,
-  pc4            TEXT,
+  pc             TEXT,
   sex            TEXT CHECK (sex IS NULL OR sex IN ('M', 'F', 'U')),
   age            INTEGER,
   first_seen_run INTEGER NOT NULL REFERENCES episode_detection_run(run_id)

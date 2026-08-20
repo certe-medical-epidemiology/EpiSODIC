@@ -71,7 +71,7 @@ test_that("episode_ui_assessment_rail() renders the classification and mute pick
   expect_false(grepl("gestart", rendered, fixed = TRUE))
 })
 
-test_that("episode_ui_geo_panel() shows the full per-PC4 breakdown, not just the dominant PC4", {
+test_that("episode_ui_geo_panel() shows the full per-PC breakdown, not just the dominant PC", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   obj <- episode_cluster_object(env$con, env$cluster_id)

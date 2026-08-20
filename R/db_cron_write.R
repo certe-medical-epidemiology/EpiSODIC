@@ -38,7 +38,7 @@
 #'   the stream's identity; no taxonomy is resolved against it.
 #' @param care_line One of `"first"`, `"second"`, `"other"`, `"unknown"`, or `NA`.
 #' @param region_code A region code, or `NA`.
-#' @param pc4 A PC4 postcode, or `NA`.
+#' @param pc A PC postcode, or `NA`.
 #' @param ward A ward, for `pathogen_ward` streams, or `NA`.
 #' @param denominator One of `"none"`, `"tests"`, `"population"`, `"patient_days"`.
 #' @param severity_weight A severity weight, 0-1.
@@ -122,15 +122,15 @@ episode_db_pathogen_config_load <- function(con, pathogen_config) {
 #' @keywords internal
 #' @noRd
 episode_db_institution_upsert <- function(con, institution_key, display_name, institution_type,
-                                           care_line, municipality = NA, pc4 = NA, n_beds = NA,
+                                           care_line, municipality = NA, pc = NA, n_beds = NA,
                                            is_monitored = FALSE) {
   existing <- episode_db_institution_get(con, institution_key)
   if (!is.null(existing)) {
     DBI::dbExecute(
       con,
       "UPDATE episode_institution SET display_name = ?, institution_type = ?, care_line = ?,
-        municipality = ?, pc4 = ?, n_beds = ?, is_monitored = ? WHERE institution_key = ?",
-      params = list(display_name, institution_type, care_line, municipality, pc4, n_beds,
+        municipality = ?, pc = ?, n_beds = ?, is_monitored = ? WHERE institution_key = ?",
+      params = list(display_name, institution_type, care_line, municipality, pc, n_beds,
                      as.integer(is_monitored), institution_key)
     )
     return(existing$institution_id)
@@ -138,11 +138,11 @@ episode_db_institution_upsert <- function(con, institution_key, display_name, in
   DBI::dbExecute(
     con,
     "INSERT INTO episode_institution
-      (institution_key, display_name, institution_type, care_line, municipality, pc4,
+      (institution_key, display_name, institution_type, care_line, municipality, pc,
        n_beds, is_monitored, is_active)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)",
     params = list(institution_key, display_name, institution_type, care_line, municipality,
-                  pc4, n_beds, as.integer(is_monitored))
+                  pc, n_beds, as.integer(is_monitored))
   )
   DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
 }
@@ -223,12 +223,12 @@ episode_db_case_insert_new <- function(con, cases, run_id) {
       con,
       "INSERT INTO episode_case
         (source_key, patient_key, sample_date, receipt_date, pathogen,
-         care_line, institution_id, ward, specialism, pc4, sex, age, first_seen_run)
+         care_line, institution_id, ward, specialism, pc, sex, age, first_seen_run)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       params = list(
         row$source_key, row$patient_key, row$sample_date, row$receipt_date, row$pathogen,
         row$care_line, row$institution_id, row$ward,
-        row$specialism, row$pc4, row$sex, row$age, run_id
+        row$specialism, row$pc, row$sex, row$age, run_id
       )
     )
     n_inserted <- n_inserted + 1L

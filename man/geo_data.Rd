@@ -10,21 +10,18 @@ other domain concept in this codebase are already operator-defined,
 unconstrained values, and geography follows the same principle. This
 is the same shape of solution the
 package already uses elsewhere for optional, instance-specific data:
-a shipped default (here, geometry for the Netherlands' PC4 postcodes,
-\code{data-raw/geo_postcodes4_nl.R} documents its provenance) that any
-operator can override by pointing \code{EPISODE_GEO_DATA} at their own file
-\itemize{
-\item one environment variable, the same pattern \code{EPISODE_CONFIG} and
-\code{EPISODE_PALETTE_CONFIG} already establish.
-}
+a shipped default (here, geometry for the Netherlands' four-digit
+postcodes, \code{data-raw/geo_postcodes4_nl.R} documents its provenance)
+that any operator can override by pointing \code{EPISODE_GEO_DATA} at
+their own file - one environment variable, the same pattern
+\code{EPISODE_CONFIG} and \code{EPISODE_PALETTE_CONFIG} already establish.
 }
 \details{
 The contract is minimal and country-agnostic: an \code{sf} object with a
-\code{pc} column (matching whatever an operator's own \code{episode_case.pc4}
+\code{pc} column (matching whatever an operator's own \code{episode_case.pc}
 values are - postcodes, zip codes, municipality codes, anything; this
-package never validates or interprets that column beyond joining it,
-and it is deliberately named \code{pc}, not \code{pc4}, so nothing about the
-contract implies a 4-digit Dutch postcode) and a \code{geometry} column.
+package never validates or interprets that column beyond joining it)
+and a \code{geometry} column.
 \code{sf}/GDAL/GEOS/PROJ are a real system-level dependency beyond what
 CRAN alone can supply, so this whole feature is guarded end to end: no
 \code{sf} installed means the geography panel falls back to the existing PC

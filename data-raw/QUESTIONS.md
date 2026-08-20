@@ -459,8 +459,8 @@ to know which point in the project's history that decision was made.
     separated by a slash with no indication which was which
     (`"1462 / 21 d"`); split into a value ("1462 d") and a sub-label
     ("drempel 21 d"/"threshold 21 d") using the existing stat-tile
-    pattern. "PC4" was relabelled "PC" everywhere user-facing (the
-    underlying `pc4` column and ingestion contract are unchanged — this
+    pattern. "PC" was relabelled "PC" everywhere user-facing (the
+    underlying `pc` column and ingestion contract are unchanged — this
     is a label-only change, not a granularity change, so an operator
     supplying coarser or finer postcodes is not misled by a label that
     implies exactly four digits). The concentration interpretation
@@ -768,10 +768,10 @@ to know which point in the project's history that decision was made.
     codes) already being operator-defined values rather than something
     baked in. The contract in `R/geo_data.R` is generic and
     country-agnostic instead: any `sf` object with a `pc` column
-    (matching whatever an operator's own `episode_case.pc4` values are —
+    (matching whatever an operator's own `episode_case.pc` values are —
     real Dutch postcodes, zip codes, municipality codes, anything; this
     package never validates or interprets that column beyond joining it)
-    and a `geometry` column. EpiSODIC ships a Netherlands PC4 default
+    and a `geometry` column. EpiSODIC ships a Netherlands PC default
     (`inst/extdata/geo_postcodes4_nl.rds`, geometry only — population and
     area columns were dropped, not needed for the choropleth and not ours
     to redistribute beyond it — copied from `certegis` under the same
@@ -791,12 +791,12 @@ to know which point in the project's history that decision was made.
     contract has actually been built yet — only the choropleth's geometry
     contract was in scope.
 
-55. **Geographic reference data's join column is `pc`, not `pc4`.** `pc4`
+55. **Geographic reference data's join column is `pc`, not `pc`.** `pc`
     still implied a 4-digit Dutch postcode even though the column was
     already documented as accepting any code an operator's own
-    `episode_case.pc4` values use. Renamed the *contract's* column to
+    `episode_case.pc` values use. Renamed the *contract's* column to
     `pc` in `R/geo_data.R`, the shipped `inst/extdata/geo_postcodes4_nl.rds`,
-    and `data-raw/geo_postcodes4_nl.R`. `episode_case.pc4` itself (the
+    and `data-raw/geo_postcodes4_nl.R`. `episode_case.pc` itself (the
     case-level DB column everything ultimately reads from) is unchanged —
     it is an internal, longstanding field name, not part of the
     operator-facing geo-data contract. Also removed the choropleth's
@@ -810,7 +810,7 @@ to know which point in the project's history that decision was made.
     contract than `EPISODE_GEO_DATA`: just an `sf` object with a
     `geometry` column, no `pc` join at all, since an outline layer
     carries no case counts of its own to attach. No shipped default
-    (unlike the PC4 choropleth) — region boundaries are far more
+    (unlike the PC choropleth) — region boundaries are far more
     jurisdiction-specific than postcode geometry, and shipping "a"
     default would just be an arbitrary choice of country dressed up as a
     sensible one. `episode_ui_geo_map_chart()`'s overlay `geom_sf()` call
@@ -881,18 +881,18 @@ to know which point in the project's history that decision was made.
     the pending text, since nothing else would.
 
 62. **Bug: `inst/report/cluster_report.qmd` was hardcoded Dutch
-    throughout, and used "PC4" for the postcode column.** Found by
+    throughout, and used "PC" for the postcode column.** Found by
     actually reading a rendered report sent back by a user, not by
     inspection alone. The template took a `lang` parameter and defined a
     `tr()` helper, but only ever used it for the level label and the
     curve-shape fragment — every section heading, table header, and
     static phrase ("Kerncijfers", "Geen gegevens beschikbaar.", "n.v.t.",
-    the "PC4"/"Aantal" table header, the closing note) was a literal
+    the "PC"/"Aantal" table header, the closing note) was a literal
     Dutch string, so an `lang = "en"` report still rendered entirely in
     Dutch except for those two spots. Also inconsistent with the app's
     own choropleth work (item 55 above): the in-app line list and
-    geography panels already say "PC", not "PC4", but the report template
-    still said "PC4". Fixed by routing every static label through `tr()`,
+    geography panels already say "PC", not "PC", but the report template
+    still said "PC". Fixed by routing every static label through `tr()`,
     reusing existing app-facing i18n keys where the wording already
     matched (`panel.geo.title`, `panel.geo.aside` = "PC",
     `panel.linelist.col.*`, `panel.similar.*`, `verloop.title`,

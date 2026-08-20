@@ -110,7 +110,7 @@ rejected:
 | `municipality` | The institution's municipality, used for `gp_municipality`-type rows (see below) and as a coarse geographic fallback. |
 | `ward` | Only meaningful (and only used) for hospitals: this is what the `same_place` detector watches at ward level. |
 | `specialism` | The treating specialism, shown on the line list for context; not itself a detection dimension. |
-| `pc4` | The patient's postcode (or equivalent - see "Geographic reference data" below for how coarse or fine this can be). Drives the geography panel and the choropleth, and the concentration measure ("how localised is this cluster") that feeds the priority score. |
+| `pc` | The patient's postcode (or equivalent - see "Geographic reference data" below for how coarse or fine this can be). Drives the geography panel and the choropleth, and the concentration measure ("how localised is this cluster") that feeds the priority score. |
 | `sex` | The patient's sex. Feeds the demography panel's age/sex pyramid, one of the interpretation engine's own evidence dimensions (a cluster's demography shifting from a department's usual baseline is itself a signal worth surfacing). |
 | `age` | The patient's age at sample date. Same role as `sex`: demography panel and interpretation, not a detection input. |
 
@@ -186,13 +186,13 @@ never normalised, only L2.
 The dossier's geography panel shows a choropleth when both the `sf`
 package and a geographic reference dataset are available; otherwise it
 falls back to a plain bar breakdown by PC value, exactly as if this
-feature did not exist. EpiSODIC ships a Netherlands PC4 default
+feature did not exist. EpiSODIC ships a Netherlands postcode default
 (`inst/extdata/geo_postcodes4_nl.rds`, geometry only, sourced from
 `certegis` under the same GPL-2 licence - see `data-raw/
 geo_postcodes4_nl.R` for provenance), but geography is not
 Netherlands-specific: point `EPISODE_GEO_DATA` at your own `.rds` file
 holding an [`sf`](https://r-spatial.github.io/sf/) object with a `pc`
-column (matching whatever your own `episode_case.pc4` values are -
+column (matching whatever your own `episode_case.pc` values are -
 postcodes, zip codes, municipality codes, anything) and a `geometry`
 column, and it is used instead. See `R/geo_data.R` for the exact
 contract.
@@ -202,9 +202,9 @@ outlines (provinces, municipalities, whatever is useful), colour but no
 fill, a thicker line than the choropleth itself. Point
 `EPISODE_GEO_DATA_OVERLAY` at an `.rds` file holding an `sf` object with
 just a `geometry` column (no `pc` join needed, since it carries no case
-counts of its own). No default is shipped for this one - unlike PC4
-postcodes, region boundaries are too jurisdiction-specific to guess a
-sensible default for.
+counts of its own). No default is shipped for this one - unlike the
+postcode default above, region boundaries are too jurisdiction-specific
+to guess a sensible default for.
 
 ### Custom report templates (optional)
 
@@ -255,7 +255,7 @@ Docker container) without editing R code.
 | `EPISODE_DB` | `episode_run_app()`, `episode_provision_user()` (`db_path` argument) | Path to the instance's SQLite database. |
 | `EPISODE_CONFIG` | `episode_run_cron()` (`episode_config_path` argument) | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`'s shipped defaults. |
 | `EPISODE_PALETTE_CONFIG` | `episode_palette()` (`palette_config_path` argument) | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`'s shipped defaults. Deliberately separate from `EPISODE_CONFIG`: colour is a display concern, never part of `episode_config_hash()`'s detection-reproducibility guarantee. |
-| `EPISODE_GEO_DATA` | `episode_geo_source_resolve()` (`path` argument) | Path to an `.rds` file holding an operator's own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands PC4 default. See "Geographic reference data" above. |
+| `EPISODE_GEO_DATA` | `episode_geo_source_resolve()` (`path` argument) | Path to an `.rds` file holding an operator's own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands postcode default. See "Geographic reference data" above. |
 | `EPISODE_GEO_DATA_OVERLAY` | `episode_geo_overlay_resolve()` (`path` argument) | Path to an `.rds` file holding an optional region-outline overlay (an `sf` object with just a `geometry` column), drawn on top of the choropleth. No default. See "Geographic reference data" above. |
 | `EPISODE_QUARTO_REPORT` | `episode_report_render()` (`qmd_path` argument) | Path to an operator's own Quarto report template, overriding the shipped `inst/report/cluster_report.qmd`. See "Custom report templates" above. |
 

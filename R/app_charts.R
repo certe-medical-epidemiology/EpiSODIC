@@ -131,9 +131,9 @@ episode_ui_rt_chart <- function(rt, lang = "nl") {
 #'   (`label` = a PC value, `n` = case count).
 #' @return A `ggplot` object, or `NULL` if no geographic data is
 #'   available at all, or the join/plot fails for any reason (e.g. a PC
-#'   value not in the reference geometry - synthetic demo PC4s are drawn
-#'   from a fixed pool that does not promise to match real postcode
-#'   boundaries).
+#'   value not in the reference geometry - synthetic demo postcodes are
+#'   drawn from a fixed pool that does not promise to match real
+#'   postcode boundaries).
 #' @keywords internal
 #' @noRd
 episode_ui_geo_map_chart <- function(rows) {

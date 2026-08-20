@@ -27,8 +27,8 @@ overlay needs nothing but a \code{geometry} column. Unlike
 \code{\link[=episode_geo_source_resolve]{episode_geo_source_resolve()}}, there is no shipped default -
 region boundaries are far more jurisdiction-specific than postcode
 geometry, and guessing at a "sensible default" (which country's
-provinces?) would be arbitrary in a way the PC4 default is not
-(\code{EPISODE_GEO_DATA} is Netherlands-only \emph{labelled as such}, not
+provinces?) would be arbitrary in a way the shipped postcode default
+is not (\code{EPISODE_GEO_DATA} is Netherlands-only \emph{labelled as such}, not
 pretending to be universal). No \code{EPISODE_GEO_DATA_OVERLAY} set (or an
 invalid file) simply means no overlay layer, same as no \code{sf} at all.
 }

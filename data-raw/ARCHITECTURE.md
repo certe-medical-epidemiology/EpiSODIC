@@ -34,7 +34,7 @@ These are settled and drive everything downstream.
 | Detection functions | `certestats::detect_disease_clusters()` and `certestats::detect_farrington()` |
 | Data source | `certedb::get_diver_data()` against Diver cBases |
 | Date anchor | Sample date (afnamedatum), which silently falls back to receipt date when unfilled |
-| Case fields | Patient ID, sex, age, PC4, care line (1st/2nd), institution, ward, specialism |
+| Case fields | Patient ID, sex, age, PC, care line (1st/2nd), institution, ward, specialism |
 | Denominators | Tests keyed on determination; patient-days and beds per hospital |
 | Hospitals | Eight in the region, full microbiology performed by Certe |
 | Detection host | Author's AVD session host, primary plus backup, existing `cron.R` with sequential retry |
@@ -293,7 +293,7 @@ CREATE TABLE episode_case (
   institution_id BIGINT NULL,                   -- normalised, see 5.4.1
   ward           VARCHAR(64) NULL,              -- second line only
   specialism     VARCHAR(64) NULL,
-  pc4            CHAR(4) NULL,
+  pc            CHAR(4) NULL,
   sex            ENUM('M','F','U') NULL,
   age            SMALLINT NULL,
   first_seen_run BIGINT NOT NULL,
@@ -305,7 +305,7 @@ Prefixing resolves an incidental irritation: `case` is a reserved word in SQL an
 
 `first_seen_run` is what makes the reporting triangle possible without a separate ingestion log.
 
-PC4 is stored as `CHAR(4)` rather than an integer, so it joins directly against `certegis` without coercion.
+PC is stored as `CHAR(4)` rather than an integer, so it joins directly against `certegis` without coercion.
 
 ### 5.4.1 Institutions
 
@@ -332,7 +332,7 @@ CREATE TABLE episode_institution (
                         'ooh_service','other') NOT NULL,
   care_line        ENUM('first','second','other','unknown') NOT NULL,
   municipality     VARCHAR(64) NULL,
-  pc4              CHAR(4) NULL,
+  pc              CHAR(4) NULL,
   n_beds           INT NULL,                     -- hospitals
   is_monitored     TINYINT(1) NOT NULL DEFAULT 0,-- gets its own streams
   is_active        TINYINT(1) NOT NULL DEFAULT 1
@@ -643,7 +643,7 @@ Levels are numbered ascending with aggregation, matching the multilevel modellin
 |---|---|---|---|
 | L1 | Afdeling | Ward or specialism | Ward patient-days if obtainable |
 | L2 | Instelling | Hospital or care home | Patient-days |
-| L3 | Gebied | Contiguous PC4 grouping | PC4 population |
+| L3 | Gebied | Contiguous PC grouping | PC population |
 | L4 | Provincie | Groningen, Fryslân, Drenthe | Provincial population |
 | L5 | Regio | Full Certe catchment, Noord-Nederland | Catchment population or tests |
 
@@ -749,7 +749,7 @@ score = 100 * weighted_mean(
   growth_component    = slope of last 3 aggregation periods,          w = 0.15
   agreement_component = detector_agreement / n_detectors,             w = 0.10
   density_component   = incidence per 1,000 patient-days vs baseline, w = 0.10
-  spatial_component   = concentration across PC4 (Gini or top-1),     w = 0.05
+  spatial_component   = concentration across PC (Gini or top-1),     w = 0.05
 )
 ```
 
@@ -770,11 +770,11 @@ Per cluster, computed in the cron and cached, rendered by the app and the report
 - **Epi curve.** Counts by sample date at the stream's aggregation period, with the Farrington threshold overlaid and the incomplete recent window shaded, width from the triangle. The shading is mandatory, not optional: without it a colleague reads a falling tail as a receding outbreak when it is only unreported specimens.
 - **Rt.** `EpiEstim` on sample-date incidence, using the pathogen's serial interval from `episode_pathogen_config`, sliding weekly windows, credible intervals shown, estimates within the truncated window withheld rather than captioned. Suppressed entirely where `rt_applicable` is false. This is the time-varying effective reproduction number, not R0, and the report should say so.
 - **Demography.** Age-sex pyramid for the cluster against the stream's historical baseline, so that a shift in affected age group is visible rather than merely the count.
-- **Geography.** PC4 choropleth via `certegis`, cluster cases against baseline expectation, with small-count suppression configurable for reports leaving the department. A second panel breaks the cluster down by institution, which for second-line and long-term care is usually more informative than the map.
+- **Geography.** PC choropleth via `certegis`, cluster cases against baseline expectation, with small-count suppression configurable for reports leaving the department. A second panel breaks the cluster down by institution, which for second-line and long-term care is usually more informative than the map.
 - **Curve shape.** Whether all cases fall within a single maximum incubation period distinguishes a point source from propagated transmission, and that is the first question in any outbreak investigation because it redirects the enquiry from person-to-person spread towards a common exposure. Derived from the case date distribution against `incub_max_days` and stated in the Duiding, with an intermediate verdict where the evidence is ambiguous.
 - **Case-free countdown.** Days since the last case against the organism's closure threshold, shown on every open cluster.
 - **Unique patients against isolates.** Both counts, always, so that a cluster inflated by repeat sampling is visible at a glance.
-- **Line list.** Sortable table, exportable, restricted to the stored fields: patient key, sample date, sex, age, PC4, care line, institution, ward, specialism. Hidden entirely for anonymous viewers, along with its export.
+- **Line list.** Sortable table, exportable, restricted to the stored fields: patient key, sample date, sex, age, PC, care line, institution, ward, specialism. Hidden entirely for anonymous viewers, along with its export.
 - **Detector internals.** The `sts` object, thresholds, parameters, and the raw detector output. This tab exists so an assessor can distinguish a real rise from a modelling artefact, which is the single most common assessment question.
 
 ---
@@ -894,7 +894,7 @@ Reconciliation is the load-bearing component: schema, ingestion, the lattice, th
 
 Resolved since draft 2: hospitals as a lattice level, ward and specialism, deduplication per episode, baseline feedback, closure criterion, MEM, performance metrics, SQLite as the only backend, configuration outside the repository.
 
-Resolved since draft 1: package name (EpiSODIC), table prefix (`episode_`), postcode granularity (PC4), institution and care line availability, denominator model including patient-days, hospitals as a first-class lattice level, per-pathogen serial intervals.
+Resolved since draft 1: package name (EpiSODIC), table prefix (`episode_`), postcode granularity (PC), institution and care line availability, denominator model including patient-days, hospitals as a first-class lattice level, per-pathogen serial intervals.
 
 1. **Serial interval values.** Which literature estimates to ship, and for which organisms. This is the one item requiring genuine epidemiological curation rather than a decision, and it can be built incrementally: ship `rt_applicable = 0` for everything, then populate the organisms that matter as sources are agreed.
 2. **Severity weight table.** Source and curation: Wpg notification groups, ECDC priority lists, or local judgement. Affects ranking only, so a rough first pass is acceptable.

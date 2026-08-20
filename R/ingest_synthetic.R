@@ -21,7 +21,7 @@
 #' The default (and only) implementation of the ingestion interface
 #' shipped with this package (`R/ingest_interface.R`). Generates several
 #' years of seasonal baseline case data across a synthetic set of institutions,
-#' pathogens, PC4 areas and care lines, then injects two outbreaks of known
+#' pathogens, PC areas and care lines, then injects two outbreaks of known
 #' shape so the detectors have something to visibly fire on: one point
 #' source (`add_outbreak_point_source`, a ward-level cluster tightly bunched
 #' in time) and one propagated (`add_outbreak_propagated`, a community
@@ -47,15 +47,15 @@ episode_ingest_source_synthetic <- function(start_date = as.Date("2021-01-01"),
   set.seed(seed)
 
   institutions <- episode_synthetic_institutions()
-  pc4_pool <- episode_synthetic_pc4_pool()
+  pc_pool <- episode_synthetic_pc_pool()
   organisms <- episode_synthetic_organism_profiles()
 
   dates <- seq(start_date, end_date, by = "day")
 
-  baseline <- episode_synthetic_baseline_cases(dates, institutions, pc4_pool, organisms)
+  baseline <- episode_synthetic_baseline_cases(dates, institutions, pc_pool, organisms)
 
   point_source <- episode_synthetic_outbreak_point_source(institutions, end_date)
-  propagated <- episode_synthetic_outbreak_propagated(pc4_pool, end_date)
+  propagated <- episode_synthetic_outbreak_propagated(pc_pool, end_date)
 
   cases <- rbind(baseline, point_source, propagated)
   cases$source_key <- sprintf("SYN-%08d", seq_len(nrow(cases)))
@@ -111,7 +111,7 @@ episode_synthetic_municipalities <- function() {
 
 #' @keywords internal
 #' @noRd
-episode_synthetic_pc4_pool <- function() {
+episode_synthetic_pc_pool <- function() {
   c(paste0("9", sprintf("%03d", sample(0:999, 40))),   # Groningen province
     paste0("8", sprintf("%03d", sample(0:999, 40))),   # Fryslan
     paste0("7", sprintf("%03d", sample(100:999, 30)))) # Drenthe
@@ -136,7 +136,7 @@ episode_synthetic_organism_profiles <- function() {
 
 #' @keywords internal
 #' @noRd
-episode_synthetic_baseline_cases <- function(dates, institutions, pc4_pool, organisms) {
+episode_synthetic_baseline_cases <- function(dates, institutions, pc_pool, organisms) {
   rows <- list()
   for (i in seq_len(nrow(organisms))) {
     org <- organisms[i, ]
@@ -164,7 +164,7 @@ episode_synthetic_baseline_cases <- function(dates, institutions, pc4_pool, orga
       specialism = ifelse(inst$institution_type == "hospital",
                            sample(c("Interne geneeskunde", "Chirurgie", "Longziekten", "Klinische geriatrie"), n_total, replace = TRUE),
                            NA_character_),
-      pc4 = sample(pc4_pool, n_total, replace = TRUE),
+      pc = sample(pc_pool, n_total, replace = TRUE),
       sex = sample(c("M", "F"), n_total, replace = TRUE),
       age = pmin(pmax(round(stats::rnorm(n_total, mean = 45, sd = 25)), 0), 100),
       stringsAsFactors = FALSE
@@ -195,7 +195,7 @@ episode_synthetic_outbreak_point_source <- function(institutions, end_date, n_ca
     municipality = NA_character_,
     ward = "Geriatrie",
     specialism = "Klinische geriatrie",
-    pc4 = sample(episode_synthetic_pc4_pool(), n_cases, replace = TRUE),
+    pc = sample(episode_synthetic_pc_pool(), n_cases, replace = TRUE),
     sex = sample(c("M", "F"), n_cases, replace = TRUE),
     age = pmin(pmax(round(stats::rnorm(n_cases, mean = 78, sd = 8)), 60), 100),
     stringsAsFactors = FALSE
@@ -250,13 +250,13 @@ episode_ingest_source_synthetic_calibration <- function(start_date = as.Date("20
   set.seed(seed)
 
   institutions <- episode_synthetic_institutions()
-  pc4_pool <- episode_synthetic_pc4_pool()
+  pc_pool <- episode_synthetic_pc_pool()
   organisms <- episode_synthetic_organism_profiles()
   dates <- seq(start_date, end_date, by = "day")
 
-  baseline <- episode_synthetic_baseline_cases(dates, institutions, pc4_pool, organisms)
+  baseline <- episode_synthetic_baseline_cases(dates, institutions, pc_pool, organisms)
   point_source <- episode_synthetic_outbreak_point_source(institutions, end_date)
-  propagated <- episode_synthetic_outbreak_propagated(pc4_pool, end_date)
+  propagated <- episode_synthetic_outbreak_propagated(pc_pool, end_date)
   volume <- episode_synthetic_outbreak_volume(institutions, start_date, end_date,
                                                pathogen = pathogen, n_bumps_per_month = n_bumps_per_month)
 
@@ -323,7 +323,7 @@ episode_synthetic_outbreak_volume <- function(institutions, start_date, end_date
         municipality = inst$municipality,
         ward = if (is_hospital) sample(c("Interne", "Chirurgie", "Longziekten", "Geriatrie", "IC"), n_cases, replace = TRUE) else NA_character_,
         specialism = if (is_hospital) sample(c("Interne geneeskunde", "Chirurgie", "Longziekten", "Klinische geriatrie"), n_cases, replace = TRUE) else NA_character_,
-        pc4 = sample(episode_synthetic_pc4_pool(), n_cases, replace = TRUE),
+        pc = sample(episode_synthetic_pc_pool(), n_cases, replace = TRUE),
         sex = sample(c("M", "F"), n_cases, replace = TRUE),
         age = pmin(pmax(round(stats::rnorm(n_cases, mean = 75, sd = 12)), 40), 100),
         stringsAsFactors = FALSE
@@ -337,9 +337,9 @@ episode_synthetic_outbreak_volume <- function(institutions, start_date, end_date
 #' Inject a propagated outbreak: community spread with generation-interval waves
 #' @keywords internal
 #' @noRd
-episode_synthetic_outbreak_propagated <- function(pc4_pool, end_date, n_generations = 4,
+episode_synthetic_outbreak_propagated <- function(pc_pool, end_date, n_generations = 4,
                                                     cases_per_generation = c(2, 4, 6, 3)) {
-  epi_pc4 <- sample(pc4_pool, 1)
+  epi_pc <- sample(pc_pool, 1)
   start_date <- end_date - 90
   serial_interval <- 20  # Bordetella pertussis-like, days
 
@@ -360,7 +360,7 @@ episode_synthetic_outbreak_propagated <- function(pc4_pool, end_date, n_generati
       municipality = "Groningen",
       ward = NA_character_,
       specialism = NA_character_,
-      pc4 = epi_pc4,
+      pc = epi_pc,
       sex = sample(c("M", "F"), n, replace = TRUE),
       age = pmin(pmax(round(stats::rnorm(n, mean = 8, sd = 4)), 0), 18),
       stringsAsFactors = FALSE

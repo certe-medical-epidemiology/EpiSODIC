@@ -24,18 +24,17 @@
 #' unconstrained values, and geography follows the same principle. This
 #' is the same shape of solution the
 #' package already uses elsewhere for optional, instance-specific data:
-#' a shipped default (here, geometry for the Netherlands' PC4 postcodes,
-#' `data-raw/geo_postcodes4_nl.R` documents its provenance) that any
-#' operator can override by pointing `EPISODE_GEO_DATA` at their own file
-#' - one environment variable, the same pattern `EPISODE_CONFIG` and
-#' `EPISODE_PALETTE_CONFIG` already establish.
+#' a shipped default (here, geometry for the Netherlands' four-digit
+#' postcodes, `data-raw/geo_postcodes4_nl.R` documents its provenance)
+#' that any operator can override by pointing `EPISODE_GEO_DATA` at
+#' their own file - one environment variable, the same pattern
+#' `EPISODE_CONFIG` and `EPISODE_PALETTE_CONFIG` already establish.
 #'
 #' The contract is minimal and country-agnostic: an `sf` object with a
-#' `pc` column (matching whatever an operator's own `episode_case.pc4`
+#' `pc` column (matching whatever an operator's own `episode_case.pc`
 #' values are - postcodes, zip codes, municipality codes, anything; this
-#' package never validates or interprets that column beyond joining it,
-#' and it is deliberately named `pc`, not `pc4`, so nothing about the
-#' contract implies a 4-digit Dutch postcode) and a `geometry` column.
+#' package never validates or interprets that column beyond joining it)
+#' and a `geometry` column.
 #' `sf`/GDAL/GEOS/PROJ are a real system-level dependency beyond what
 #' CRAN alone can supply, so this whole feature is guarded end to end: no
 #' `sf` installed means the geography panel falls back to the existing PC
@@ -62,8 +61,8 @@ NULL
 #' [episode_geo_source_resolve()], there is no shipped default -
 #' region boundaries are far more jurisdiction-specific than postcode
 #' geometry, and guessing at a "sensible default" (which country's
-#' provinces?) would be arbitrary in a way the PC4 default is not
-#' (`EPISODE_GEO_DATA` is Netherlands-only *labelled as such*, not
+#' provinces?) would be arbitrary in a way the shipped postcode default
+#' is not (`EPISODE_GEO_DATA` is Netherlands-only *labelled as such*, not
 #' pretending to be universal). No `EPISODE_GEO_DATA_OVERLAY` set (or an
 #' invalid file) simply means no overlay layer, same as no `sf` at all.
 #'
@@ -90,10 +89,10 @@ episode_geo_overlay_resolve <- function(path = Sys.getenv("EPISODE_GEO_DATA_OVER
 #' @param path Path to an `.rds` file holding an `sf` object with `pc`
 #'   and `geometry` columns. Defaults to the `EPISODE_GEO_DATA`
 #'   environment variable; if unset (or the file does not exist), falls
-#'   back to the shipped Netherlands PC4 default.
+#'   back to the shipped Netherlands postcode default.
 #' @return An `sf` object, or `NULL` if `sf` is not installed.
 #' @examples
-#' # falls back to the shipped Netherlands PC4 default when sf is
+#' # falls back to the shipped Netherlands postcode default when sf is
 #' # installed, or NULL when it is not
 #' geo <- episode_geo_source_resolve(path = NA)
 #' @export
@@ -107,7 +106,7 @@ episode_geo_source_resolve <- function(path = Sys.getenv("EPISODE_GEO_DATA", uns
   episode_geo_source_default()
 }
 
-#' The shipped Netherlands PC4 default
+#' The shipped Netherlands postcode default
 #'
 #' @return An `sf` object with `pc`, `geometry`, or `NULL` if `sf` is not
 #'   installed.

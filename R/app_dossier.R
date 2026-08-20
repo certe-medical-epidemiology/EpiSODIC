@@ -369,9 +369,9 @@ episode_ui_resistance_panel <- function(lang = "nl") {
 #' @noRd
 episode_ui_linelist_panel <- function(con, cluster_id, obj, lang = "nl") {
   ll <- episode_app_linelist(con, cluster_id)
-  cols <- c("source_key", "sample_date", "sex", "age", "pc4", "ward", "specialism")
+  cols <- c("source_key", "sample_date", "sex", "age", "pc", "ward", "specialism")
   labels <- vapply(cols, function(c) episode_tr(paste0("panel.linelist.col.", switch(c,
-    source_key = "case", sample_date = "date", sex = "sex", age = "age", pc4 = "pc4",
+    source_key = "case", sample_date = "date", sex = "sex", age = "age", pc = "pc",
     ward = "ward", specialism = "specialism"
   )), lang = lang), character(1))
 

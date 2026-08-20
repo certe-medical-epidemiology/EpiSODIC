@@ -23,7 +23,7 @@ test_that("episode_geo_source_resolve() returns NULL when sf is not installed", 
   expect_null(episode_geo_join(data.frame(label = "1234", n = 3)))
 })
 
-test_that("episode_geo_source_default() ships a Netherlands PC4 sf object", {
+test_that("episode_geo_source_default() ships a Netherlands PC sf object", {
   skip_if_not_installed("sf")
   geo <- episode_geo_source_default()
   expect_s3_class(geo, "sf")

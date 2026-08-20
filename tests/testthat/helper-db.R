@@ -37,7 +37,7 @@ episode_test_config <- function() {
   episode_config_resolve(NA)
 }
 
-# A single ward-level Norovirus cluster with 6 cases across 3 PC4s, used by
+# A single ward-level Norovirus cluster with 6 cases across 3 PCs, used by
 # both the read-model tests and the dossier UI tests.
 app_read_setup <- function() {
   con <- episode_test_db()
@@ -73,7 +73,7 @@ app_read_setup <- function() {
     sample_date = c("2025-01-10", "2025-01-11", "2025-01-12", "2025-01-12", "2025-01-13", "2025-01-13"),
     receipt_date = c("2025-01-10", "2025-01-11", "2025-01-12", "2025-01-12", "2025-01-13", "2025-01-13"),
     pathogen = "Norovirus", care_line = "second", institution_id = institution_id, ward = "B4",
-    specialism = "Interne", pc4 = c("9711", "9711", "9711", "9712", "9713", "9711"),
+    specialism = "Interne", pc = c("9711", "9711", "9711", "9712", "9713", "9711"),
     sex = c("M", "F", "M", "F", "M", "F"), age = c(82, 79, 88, 45, 30, 76),
     first_seen_run = run_id, stringsAsFactors = FALSE
   )

@@ -49,7 +49,7 @@ episode_ingest_run <- function(con, raw, pathogen_config, run_id) {
   cases <- cases[, c(
     "source_key", "patient_key", "sample_date", "receipt_date", "pathogen",
     "care_line", "institution_id", "ward",
-    "specialism", "pc4", "sex", "age"
+    "specialism", "pc", "sex", "age"
   )]
 
   n_inserted <- episode_db_case_insert_new(con, cases, run_id)
