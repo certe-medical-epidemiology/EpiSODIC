@@ -19,15 +19,13 @@
 #' Deduplicate isolates into one case per patient per episode
 #'
 #' One isolate per patient per episode, using episode lengths from
-#' `episode_pathogen_config`. `AMR::as.mo()`
-#' only resolves non-viral taxonomy, and this package now treats `pathogen`
-#' as an arbitrary lab-provided string that can be anything (a virus, a
-#' resistance phenotype like "ETEC", a genus), so `AMR` is not a dependency
-#' at all (see `QUESTIONS.md` item 22). Episode grouping uses a direct
-#' implementation of `AMR::get_episode()`'s own documented algorithm for the
-#' default (non-combination) case: isolates for the same patient and
-#' pathogen are sorted by sample date, and a new episode starts whenever the
-#' gap since the previous isolate in the group exceeds `episode_days`.
+#' `episode_pathogen_config`, via `AMR::get_episode()` (a hard dependency -
+#' `pathogen` is still an arbitrary lab-provided string, never resolved
+#' against `AMR::as.mo()` or any taxonomy, since a taxonomy cannot
+#' represent everything a lab reports; see `R/ingest_interface.R`).
+#' Isolates for the same patient and pathogen are sorted by sample date
+#' internally by `get_episode()`, one call per patient/pathogen group so
+#' each group's own `episode_days` window applies independently.
 #'
 #' @param raw A data frame satisfying the ingestion interface
 #'   (`R/ingest_interface.R`), already validated.
@@ -42,9 +40,9 @@
 #' Berends MS, Luz CF, Friedrich AW, Sinha BNM, Albers CJ, Glasner C
 #' (2022). "AMR: An R Package for Working with Antimicrobial Resistance
 #' Data." *Journal of Statistical Software*, 104(3), 1-31.
-#' \doi{10.18637/jss.v104.i03} (the source of `get_episode()`'s
-#' documented default-case episode-grouping algorithm, reimplemented
-#' directly here since `AMR` is not a dependency of this package).
+#' \doi{10.18637/jss.v104.i03} (the source of `get_episode()`, called
+#' directly here).
+#' @importFrom AMR get_episode
 #' @keywords internal
 #' @noRd
 episode_dedup <- function(raw, pathogen_config) {
@@ -64,7 +62,7 @@ episode_dedup <- function(raw, pathogen_config) {
     dates <- raw$.sample_date[ord]
     episode_days <- raw$.episode_days[ord][1]
 
-    episode_id <- episode_assign_episode_ids(dates, episode_days)
+    episode_id <- get_episode(dates, episode_days = episode_days)
     first_in_episode <- !duplicated(episode_id)
     keep[ord[first_in_episode]] <- TRUE
   }
@@ -72,22 +70,4 @@ episode_dedup <- function(raw, pathogen_config) {
   result <- raw[keep, setdiff(names(raw), c(".episode_days", ".sample_date")), drop = FALSE]
   rownames(result) <- NULL
   result
-}
-
-#' Assign episode group ids to a sorted vector of dates
-#'
-#' A direct implementation of `AMR::get_episode()`'s documented algorithm
-#' for the default case, so results match what `AMR::get_episode()` would
-#' produce without requiring `AMR` to be installed.
-#'
-#' @param dates_sorted A `Date` vector, already sorted ascending.
-#' @param episode_days Deduplication window in days.
-#' @return An integer vector of episode group ids, same length as
-#'   `dates_sorted`.
-#' @keywords internal
-#' @noRd
-episode_assign_episode_ids <- function(dates_sorted, episode_days) {
-  if (length(dates_sorted) == 0) return(integer(0))
-  gaps <- c(0, diff(as.integer(dates_sorted)))
-  cumsum(gaps > episode_days | seq_along(dates_sorted) == 1)
 }

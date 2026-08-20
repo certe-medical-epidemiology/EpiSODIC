@@ -32,12 +32,13 @@ NULL
 #' display via [shiny::HTML()] (e.g. *Escherichia coli*); names `AMR`
 #' does not recognise as a species (e.g. "Influenza A", a virus type
 #' rather than a binomial) pass through unitalicised, exactly as intended -
-#' `pathogen` is deliberately unconstrained free text (`QUESTIONS.md`
-#' item 22c: `AMR` was dropped from detection so viruses aren't excluded).
-#' `AMR` is Suggests-only (Certe-internal-adjacent but CRAN, still an
-#' optional dependency for this display-only nicety); a no-op when it is
-#' not installed. Text is HTML-escaped before any tag is added, so this is
-#' always safe to pass to [shiny::HTML()].
+#' `pathogen` is deliberately unconstrained free text and never resolved
+#' against `AMR::as.mo()` for *detection* purposes, so viruses and other
+#' non-taxonomic values are never excluded there (`QUESTIONS.md` item 22);
+#' `AMR` is nonetheless a hard dependency of the package as a whole, used
+#' here and by `episode_dedup()` (`QUESTIONS.md` item 70). Text is
+#' HTML-escaped before any tag is added, so this is always safe to pass
+#' to [shiny::HTML()].
 #'
 #' Exported (not just internal): the Quarto report template
 #' (`inst/report/cluster_report.qmd`) runs in its own fresh session where
@@ -54,7 +55,6 @@ episode_ui_italicise_taxon <- function(pathogen) {
   escaped <- gsub("&", "&amp;", pathogen, fixed = TRUE)
   escaped <- gsub("<", "&lt;", escaped, fixed = TRUE)
   escaped <- gsub(">", "&gt;", escaped, fixed = TRUE)
-  if (!requireNamespace("AMR", quietly = TRUE)) return(escaped)
   is_taxon <- pathogen %in% AMR::microorganisms$fullname
   escaped[is_taxon] <- paste0("<i>", escaped[is_taxon], "</i>")
   escaped

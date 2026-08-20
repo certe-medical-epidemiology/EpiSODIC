@@ -17,12 +17,13 @@ Wraps names found in \code{AMR::microorganisms$fullname} in \verb{<i>...</i>}, f
 display via \code{\link[shiny:HTML]{shiny::HTML()}} (e.g. \emph{Escherichia coli}); names \code{AMR}
 does not recognise as a species (e.g. "Influenza A", a virus type
 rather than a binomial) pass through unitalicised, exactly as intended -
-\code{pathogen} is deliberately unconstrained free text (\code{QUESTIONS.md}
-item 22c: \code{AMR} was dropped from detection so viruses aren't excluded).
-\code{AMR} is Suggests-only (Certe-internal-adjacent but CRAN, still an
-optional dependency for this display-only nicety); a no-op when it is
-not installed. Text is HTML-escaped before any tag is added, so this is
-always safe to pass to \code{\link[shiny:HTML]{shiny::HTML()}}.
+\code{pathogen} is deliberately unconstrained free text and never resolved
+against \code{AMR::as.mo()} for \emph{detection} purposes, so viruses and other
+non-taxonomic values are never excluded there (\code{QUESTIONS.md} item 22);
+\code{AMR} is nonetheless a hard dependency of the package as a whole, used
+here and by \code{episode_dedup()} (\code{QUESTIONS.md} item 70). Text is
+HTML-escaped before any tag is added, so this is always safe to pass
+to \code{\link[shiny:HTML]{shiny::HTML()}}.
 }
 \details{
 Exported (not just internal): the Quarto report template

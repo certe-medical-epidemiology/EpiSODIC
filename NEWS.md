@@ -61,12 +61,15 @@ report, running entirely on open-source, CRAN-hosted packages.
 
 ## Optional, always-guarded integrations
 
-Every non-CRAN dependency is optional, with a documented fallback when
-it is absent: `AMR` (episode deduplication), `EpiEstim` (Rt), `mem`
-(seasonal thresholds), `quarto` + the Quarto CLI (report rendering),
-`sf` (geographic choropleth). None of them are required to run the
-detection engine, the interface, or the bundled demo. House colours are
-a shipped, organisation-neutral default, overridable per instance via
+Several statistical integrations are optional, with a documented
+fallback when absent: `EpiEstim` (Rt), `mem` (seasonal thresholds),
+`quarto` + the Quarto CLI (report rendering), `sf` (geographic
+choropleth). None of them are required to run the detection engine, the
+interface, or the bundled demo. `AMR` is a hard dependency (episode
+deduplication via `AMR::get_episode()`, pathogen-name italicisation via
+`AMR::microorganisms`) - see the DESCRIPTION for the published methods
+this package is built on. House colours are a shipped,
+organisation-neutral default, overridable per instance via
 `EPISODE_PALETTE_CONFIG` - no organisation-specific package involved.
 
 ## Data contract

@@ -40,6 +40,7 @@ Roxygen: list(markdown = TRUE)
 Depends:
     R (>= 4.1.0)
 Imports:
+    AMR (>= 3.0.0),
     DBI,
     RSQLite,
     dplyr,
@@ -53,7 +54,6 @@ Imports:
     ggplot2,
     sodium
 Suggests:
-    AMR (>= 2.0.0),
     RMariaDB,
     testthat (>= 3.0.0),
     EpiEstim,

@@ -109,7 +109,12 @@ rather than failing when it is absent:
 | MEM seasonal thresholds | `mem` | Detector skipped for `mem_applicable` organisms |
 | Outbreak reports | `quarto` R package + the separate Quarto CLI | Render errors clearly instead of silently producing nothing |
 | Choropleth map | `sf` + geographic reference data | Plain bar breakdown by PC value |
-| Episode deduplication via a taxonomy | `AMR` | A simpler built-in fallback |
+
+`AMR` is a hard dependency, not an optional integration: episode
+deduplication (`episode_dedup()`) calls `AMR::get_episode()` directly,
+and pathogen-name italicisation (`episode_ui_italicise_taxon()`) reads
+`AMR::microorganisms`. There is no fallback for either, by design - see
+the DESCRIPTION for the published methods this package is built on.
 
 House-style colours are not an optional-dependency concern at all: the
 app always ships an organisation-neutral default palette

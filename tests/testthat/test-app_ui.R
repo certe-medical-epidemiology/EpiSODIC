@@ -109,7 +109,6 @@ test_that("episode_ui_italicise_taxon() HTML-escapes unconditionally", {
 })
 
 test_that("episode_ui_italicise_taxon() italicises AMR-recognised binomials, leaves other names alone", {
-  skip_if_not_installed("AMR")
   out <- episode_ui_italicise_taxon(c("Escherichia coli", "Influenza A"))
   expect_equal(out[1], "<i>Escherichia coli</i>")
   expect_equal(out[2], "Influenza A")  # not a binomial AMR recognises -> unitalicised

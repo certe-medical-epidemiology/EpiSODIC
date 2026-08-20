@@ -31,7 +31,7 @@ to know which point in the project's history that decision was made.
    `eligibility.min_median_weekly_count = 1`,
    `eligibility.min_nonzero_week_share = 0.2`), overridable per instance.
    Calibration against real signal volume needs an instance that has
-   actually run for a while (see item 68 below).
+   actually run for a while (see item 70 below).
 
 6. **Detection pipeline decoupled from every Certe package; `mo_code` ->
    `pathogen`.** Decided directly with the architecture's author, not a
@@ -123,7 +123,7 @@ to know which point in the project's history that decision was made.
    Adopted `x / (x + 1)` (bounded to `[0, 1)`, monotonic, no fixed
    reference range needed) in `R/score_priority.R`. This is a placeholder
    shape, not a calibrated function — calibration is real-volume-dependent,
-   see item 68 below.
+   see item 70 below.
 
 10. **The cool-down escape hatch (ARCHITECTURE.md section 6.5) was
     initially left unimplemented, then built once its own prerequisite gap
@@ -168,7 +168,7 @@ to know which point in the project's history that decision was made.
     architecture specifies numerically (only "the first question in any
     outbreak investigation" and "an intermediate verdict" are given) — a
     documented judgement call, flagged for calibration alongside the
-    codebase's other provisional numeric thresholds (see item 68 below).
+    codebase's other provisional numeric thresholds (see item 70 below).
 
 13. **MEM (`episode_detect_mem()`, the `mem` CRAN package - added to
     `Suggests`) runs only on `pathogen_region` (L5) streams**, for
@@ -346,11 +346,15 @@ to know which point in the project's history that decision was made.
     contract; the operator's own transform step, run before
     `episode_run_cron()`, is the only thing that ever touches the source
     system.
-27. **`AMR::get_episode()` availability.** RESOLVED by item 6: `AMR` is no
-    longer a dependency at all — `pathogen` is a free-text string `AMR`
-    cannot resolve for viruses anyway. `R/ingest_dedup.R`'s own
-    implementation of `AMR::get_episode()`'s documented default-case
-    algorithm is the only implementation, not a fallback.
+27. **`AMR::get_episode()` availability.** Originally resolved by item 6:
+    `AMR` dropped as a dependency entirely, with `R/ingest_dedup.R`
+    reimplementing `get_episode()`'s documented default-case algorithm
+    by hand rather than depending on `AMR` for it — `pathogen` remained
+    a free-text string `AMR::as.mo()` cannot resolve for viruses anyway,
+    which was never in question. Superseded by item 83: `AMR` is now a
+    hard dependency and `episode_dedup()` calls the real
+    `AMR::get_episode()` directly. The free-text `pathogen` decision
+    itself (item 22) is unaffected either way.
 28. **`dbplyr` dropped from `Imports`.** A lean-Imports baseline pairs
     `dplyr` with `dbplyr` for lazy `tbl()` queries, but the repository
     layer uses plain parameterised `DBI::dbGetQuery()`/`dbExecute()`
@@ -679,7 +683,7 @@ to know which point in the project's history that decision was made.
 
 ## Accounts & assessment workflow
 
-47. **Account bookkeeping (`episode_app_user`'s `password_hash`,
+48. **Account bookkeeping (`episode_app_user`'s `password_hash`,
     `must_change`, `last_login_at`) is insert-only, event-sourced via a
     new `episode_app_user_event` table**, not `UPDATE`. The app only ever
     inserts, with no locking added — verified by inspection and enforced
@@ -693,7 +697,7 @@ to know which point in the project's history that decision was made.
     the same way — mirroring the pattern `episode_cluster_state` already
     established for cluster state.
 
-48. **Closure (ARCHITECTURE.md section 6.1, "closure is an act, not a
+49. **Closure (ARCHITECTURE.md section 6.1, "closure is an act, not a
     classification") is represented as an `episode_cluster_state` row**
     (`trigger = "closure"` for a person, `"system"` for cron auto-close),
     not as a new `episode_assessment_event`: the classification being
@@ -709,15 +713,15 @@ to know which point in the project's history that decision was made.
     the existing test that had asserted the old (incorrect) behaviour,
     and added a regression test for the cron auto-close case specifically.
 
-49. **Mute revocation (`episode_stream_mute.revoked_at`) is left
+50. **Mute revocation (`episode_stream_mute.revoked_at`) is left
     unimplemented.** Muting with a reason and expiry is implemented;
     revoking early is not — wiring `revoked_at` would need either an
-    `UPDATE` (against the insert-only rule, item 47) or its own
+    `UPDATE` (against the insert-only rule, item 48) or its own
     event-sourced redesign of the mute table, neither of which has been
     asked for yet. The column stays in the schema, always `NULL`, until
     it is actually needed.
 
-50. **`episode_provision_user()` did not exist until asked for
+51. **`episode_provision_user()` did not exist until asked for
     directly.** Earlier work claimed "accounts, login only to classify"
     as delivered, but no code path actually created an account — only ad
     hoc test/verification setup did. Added as an exported function plus a
@@ -726,7 +730,7 @@ to know which point in the project's history that decision was made.
     externally provisioned), so this is the intended permanent entry
     point, not a stopgap.
 
-51. **`episode_provision_user()` and `episode_run_app()` take `db_path`
+52. **`episode_provision_user()` and `episode_run_app()` take `db_path`
     defaulting to the `EPISODE_DB` environment variable**, rather than
     requiring the caller to construct a `con` (or pass a literal path
     every time) by hand. `episode_db_open()` is the shared utility —
@@ -735,7 +739,7 @@ to know which point in the project's history that decision was made.
     Documented alongside `EPISODE_CONFIG` and `EPISODE_PALETTE_CONFIG` in
     the README "Environment variables" section.
 
-52. **`R/auth.R`'s own docstring justified "no lockout, no backoff, no
+53. **`R/auth.R`'s own docstring justified "no lockout, no backoff, no
     TLS" by asserting "access already requires being on a Certe thin
     client" — a real institution-specific assumption baked into the
     shipped, generic package's own rationale.** Found while auditing for
@@ -756,7 +760,7 @@ to know which point in the project's history that decision was made.
 
 ## Geography
 
-52. **Geography (the choropleth panel) does not depend on `certegis`.**
+54. **Geography (the choropleth panel) does not depend on `certegis`.**
     An early version of `episode_ui_geo_map_chart()` called
     `certegis::add_map()` directly — Certe's own package, useful only to
     a Dutch operator, which is inconsistent with every other domain
@@ -787,7 +791,7 @@ to know which point in the project's history that decision was made.
     contract has actually been built yet — only the choropleth's geometry
     contract was in scope.
 
-53. **Geographic reference data's join column is `pc`, not `pc4`.** `pc4`
+55. **Geographic reference data's join column is `pc`, not `pc4`.** `pc4`
     still implied a 4-digit Dutch postcode even though the column was
     already documented as accepting any code an operator's own
     `episode_case.pc4` values use. Renamed the *contract's* column to
@@ -799,7 +803,7 @@ to know which point in the project's history that decision was made.
     lat/lon graticule and axis ticks (`coord_sf(datum = NA)`) — a map
     that isn't meant to be read at coordinate precision doesn't need them.
 
-54. **`EPISODE_GEO_DATA_OVERLAY`: a second, independent geographic layer**
+56. **`EPISODE_GEO_DATA_OVERLAY`: a second, independent geographic layer**
     — region outlines (provinces, municipalities, whatever an operator
     wants for orientation) drawn with colour but no fill, a thicker line
     than the choropleth, on top of it. Deliberately a much thinner
@@ -816,7 +820,7 @@ to know which point in the project's history that decision was made.
 
 ## Reporting
 
-55. **`episode_report_render()`, its schema, and the report itself.**
+57. **`episode_report_render()`, its schema, and the report itself.**
     Gathers the same read models the app itself uses
     (`episode_cluster_object()`, `episode_app_epi_curve()`,
     `episode_app_linelist()`, `episode_app_similar_clusters()`) into a
@@ -830,7 +834,7 @@ to know which point in the project's history that decision was made.
     returns `NULL` rather than erroring when the CLI is missing, which
     the R package alone does not make obvious.
 
-56. **Line-list inclusion is a render-time parameter
+58. **Line-list inclusion is a render-time parameter
     (`include_linelist`)**, independent of the *rendering* user's later
     session, matching how the live app already gates the panel on the
     *viewing* session (ARCHITECTURE.md section 9) — the two are
@@ -838,7 +842,7 @@ to know which point in the project's history that decision was made.
     signed-in assessor rendering a report is not the same question as an
     anonymous viewer of the live app).
 
-57. **Small-count suppression (`episode_report_suppress_small_counts()`)
+59. **Small-count suppression (`episode_report_suppress_small_counts()`)
     replaces a count with `"<threshold"` rather than blanking it or
     rounding to a bucket** — the simplest disclosure-control convention,
     easy for the reader to reconstruct as "somewhere between 1 and
@@ -848,7 +852,7 @@ to know which point in the project's history that decision was made.
     unaffected, matching "configurable for reports leaving the
     department" — a live in-app view is not leaving the department.
 
-58. **Report rendering: `quiet = TRUE` was swallowing the real Quarto
+60. **Report rendering: `quiet = TRUE` was swallowing the real Quarto
     error.** The `quarto` R package always captures the CLI's stderr into
     the condition it raises on failure, but only *includes* it in the
     error message when the CLI itself was not told to run quietly — with
@@ -862,7 +866,7 @@ to know which point in the project's history that decision was made.
     full parent-condition chain (the actual Quarto/pandoc/chunk error)
     reaches the user, not just the wrapper's own top-level message.
 
-59. **Report render button had no "in progress" feedback.** The render
+61. **Report render button had no "in progress" feedback.** The render
     itself is a long, synchronous server call that blocks the whole Shiny
     session, so nothing pushed from a server-side observer can reach the
     browser before it finishes — a `reactiveVal` flipped at the start of
@@ -876,7 +880,7 @@ to know which point in the project's history that decision was made.
     also emits a small inline `<script>` that resets the button and hides
     the pending text, since nothing else would.
 
-60. **Bug: `inst/report/cluster_report.qmd` was hardcoded Dutch
+62. **Bug: `inst/report/cluster_report.qmd` was hardcoded Dutch
     throughout, and used "PC4" for the postcode column.** Found by
     actually reading a rendered report sent back by a user, not by
     inspection alone. The template took a `lang` parameter and defined a
@@ -886,7 +890,7 @@ to know which point in the project's history that decision was made.
     the "PC4"/"Aantal" table header, the closing note) was a literal
     Dutch string, so an `lang = "en"` report still rendered entirely in
     Dutch except for those two spots. Also inconsistent with the app's
-    own choropleth work (item 53 above): the in-app line list and
+    own choropleth work (item 55 above): the in-app line list and
     geography panels already say "PC", not "PC4", but the report template
     still said "PC4". Fixed by routing every static label through `tr()`,
     reusing existing app-facing i18n keys where the wording already
@@ -901,7 +905,7 @@ to know which point in the project's history that decision was made.
     "Expected" / "n/a" throughout instead of a two-word English facade
     over a Dutch document.
 
-61. **`EPISODE_QUARTO_REPORT` and `episode_run_cron()` data-frame
+63. **`EPISODE_QUARTO_REPORT` and `episode_run_cron()` data-frame
     inputs, both requested directly.** `episode_report_render()` gained a
     `qmd_path` argument (defaulting to `EPISODE_QUARTO_REPORT`, matching
     the `EPISODE_CONFIG`/`EPISODE_GEO_DATA` pattern) so an operator can
@@ -923,7 +927,7 @@ to know which point in the project's history that decision was made.
     ignored for a data frame), anything else errors clearly rather than
     failing deep inside ingestion with a confusing type error.
 
-62. **Report template: the pathogen name in the H1 title is italicised**
+64. **Report template: the pathogen name in the H1 title is italicised**
     via the same `episode_ui_italicise_taxon()` used everywhere else
     pathogen names render — it happens to be the only place in the
     template a pathogen name appears outside a context that's already
@@ -931,7 +935,7 @@ to know which point in the project's history that decision was made.
 
 ## Analytics: priority score, similar clusters, performance
 
-63. **Historical analogue matching (`episode_app_similar_clusters()`,
+65. **Historical analogue matching (`episode_app_similar_clusters()`,
     "Vergelijkbare clusters") uses an unweighted sum of four `[0, 1]`
     similarity scores** (level match, log-ratio size similarity, circular
     day-of-year season distance, duration similarity) — ARCHITECTURE.md
@@ -939,12 +943,12 @@ to know which point in the project's history that decision was made.
     size, season, duration) but not a weighting scheme between them, so
     this is a documented judgement call rather than a tuned model,
     flagged alongside the codebase's other provisional numeric choices
-    for future calibration (item 68). Organism match is exact-string and
+    for future calibration (item 70). Organism match is exact-string and
     mandatory (not a scored dimension, a filter), consistent with how
     `pathogen` is treated as unconstrained free text everywhere else in
     this codebase.
 
-64. **The Prestatie (Performance) screen**
+66. **The Prestatie (Performance) screen**
     (`episode_app_performance()`, `episode_ui_performance_screen()`,
     `nav.performance` tab), matching ARCHITECTURE.md section 9's
     description: positive predictive value per detector per organism, the
@@ -971,7 +975,7 @@ to know which point in the project's history that decision was made.
     (`performance.col.ppv`) stays, since another locale might genuinely
     want a translated abbreviation; only the Dutch *value* changed back.
 
-65. **Not attempted: eligibility gate tuning, priority score weight
+67. **Not attempted: eligibility gate tuning, priority score weight
     recalibration, suppression threshold review.** All three are
     explicitly volume/history-dependent (tuned against real signal
     volume, towards roughly ten assessed clusters a month, system-wide) —
@@ -979,10 +983,10 @@ to know which point in the project's history that decision was made.
     against, only synthetic data whose properties were chosen to exercise
     the detectors, not to resemble a real department's true incidence.
     Once an instance has run against real data for a few months, the
-    Prestatie screen (item 64) is exactly the tool for making these
+    Prestatie screen (item 66) is exactly the tool for making these
     calibration decisions with evidence rather than guesswork.
 
-66. **Not attempted: the annual overview for the medical board and
+68. **Not attempted: the annual overview for the medical board and
     accreditation file.** Also volume/history-dependent by nature (an
     "annual overview" of a system with no real annual history to
     summarise would be either empty or fabricated); the existing Quarto
@@ -991,12 +995,12 @@ to know which point in the project's history that decision was made.
     once real data exists to report on — a second template rather than a
     second rendering pipeline.
 
-67. **`episode_ingest_source_synthetic_calibration()`: a
+69. **`episode_ingest_source_synthetic_calibration()`: a
     volume-realistic synthetic generator for one pathogen, for testing
     calibration.** Nothing stops generating *volume-realistic* synthetic
     data for testing calibration, even though it is still not *real* data
     (no amount of realism changes that — this is a testing aid, not a
-    substitute for item 65). `episode_synthetic_outbreak_volume()`
+    substitute for item 67). `episode_synthetic_outbreak_volume()`
     injects many independent `same_place`-shaped case bumps
     (Poisson-distributed per month) for one named pathogen — *
     Clostridioides difficile* by default, this file's own worked example
@@ -1012,52 +1016,22 @@ to know which point in the project's history that decision was made.
     point). Every generated case carries a `PT-VOL-*` patient key so it is
     never mistaken for anything but synthetic test data.
 
-68. **Weight and threshold calibration in general needs an instance that
+70. **Weight and threshold calibration in general needs an instance that
     has actually run for a while against real signal.** This applies
     across the codebase — priority score weights (item 9), the
     eligibility gate (item 5), curve-shape's boundary (item 12), and
-    similar-cluster matching weights (item 63) are all documented
+    similar-cluster matching weights (item 65) are all documented
     judgement calls shipped as the architecture's stated defaults,
     unmodified, pending real-world evidence. The Prestatie screen (item
-    64) and the synthetic calibration generator (item 67) are the tools
+    64) and the synthetic calibration generator (item 69) are the tools
     for making that evidence-based, once real signal volume exists.
-
-69. **Scientific attribution: DOIs added to `DESCRIPTION`'s `Description`
-    field and to the roxygen `@references` of every function that
-    directly implements a published statistical method**, rather than
-    stopping at "wraps the `surveillance`/`EpiEstim`/`mem` package" — the
-    method has a name and an author, and CRAN reviewers (and anyone
-    reading this package's own documentation) benefit from being able to
-    trace a detector straight to its literature source without going
-    hunting. Four functions, four citations, verified against the actual
-    published papers (title, journal, volume/pages, DOI) rather than
-    trusted from memory: `episode_detect_farrington()` cites Farrington
-    et al. (1996, the original algorithm) and Noufaily et al. (2013, the
-    improved version `surveillance::farringtonFlexible()` actually
-    implements), plus Salmon, Schumacher & Hoehle (2016, the
-    `surveillance` package itself); `episode_compute_rt()` cites Cori et
-    al. (2013, the `EpiEstim` method); `episode_detect_mem()` cites Vega
-    et al. (2013, the Moving Epidemic Method); `episode_dedup()` cites
-    Berends et al. (2022, the `AMR` package, since this function
-    reimplements `AMR::get_episode()`'s documented algorithm rather than
-    depending on `AMR` itself — see item 6/27 above). Deliberately *not*
-    added to `episode_priority_score()`'s `rescale()`, curve-shape's `2 ×
-    incub_max_days` boundary, or similar-cluster matching's weights — all
-    three are documented judgement calls with no literature source to
-    cite (items 9, 12, 63), and inventing a citation for an
-    unattributed heuristic would be worse than citing nothing.
-    `@references` was added even though most of these functions are
-    `@noRd` (not part of the exported public API, see item 78) — the
-    attribution belongs at the algorithm's implementation site
-    regardless of visibility, and travels with the code even though it
-    does not currently render as a formal help page.
 
 ## Deployment & packaging
 
-69. **Which machine runs the app long term.** Not decided here; an
+71. **Which machine runs the app long term.** Not decided here; an
     operator's own deployment concern.
 
-70. **`LICENSE` (an unmodified copy of the stock GPL-2 text) was removed
+72. **`LICENSE` (an unmodified copy of the stock GPL-2 text) was removed
     from the package root, then a full `LICENSE.md` was added back at the
     repository root.** `DESCRIPTION`'s `License: GPL-2` (no `+ file
     LICENSE`) already fully specifies the license without needing a
@@ -1069,7 +1043,7 @@ to know which point in the project's history that decision was made.
     at the repository root (outside what R CMD check inspects) serves
     GitHub's own license detection and any casual visitor instead.
 
-71. **`certeplot2` was a dead dependency.** Declared in `DESCRIPTION`
+73. **`certeplot2` was a dead dependency.** Declared in `DESCRIPTION`
     (`Suggests`/`Remotes`) but never actually referenced anywhere in
     `R/` — a leftover from early planning, not a real dependency.
     Removed at the time; `certestyle` was the one real optional Certe
@@ -1081,7 +1055,7 @@ to know which point in the project's history that decision was made.
     match at the time, then removed entirely once no Certe-internal
     package remained (item 47).
 
-72. **`episode_demo()`**: a stranger cloning the repository can run the
+74. **`episode_demo()`**: a stranger cloning the repository can run the
     whole system in under a minute with one call — a temp SQLite
     database, a completed detection run against the bundled synthetic
     generator, a demo assessor account (credentials printed via
@@ -1091,7 +1065,7 @@ to know which point in the project's history that decision was made.
     unchanged for real use) let tests inject a small window instead of
     the full multi-year synthetic default, keeping the test suite fast.
 
-73. **Vignettes**: `architecture` (engine/instance separation, topology,
+75. **Vignettes**: `architecture` (engine/instance separation, topology,
     the data model at a glance), `detection-reconciliation` (the five
     detectors, how reconciliation turns raised signals into persistent
     clusters, suppression, derived state), and `deployment` (the data
@@ -1103,14 +1077,14 @@ to know which point in the project's history that decision was made.
     end. `knitr`/`rmarkdown` added to `Suggests`, `VignetteBuilder: knitr`
     added to `DESCRIPTION`.
 
-74. **English i18n verified complete, not rebuilt.** `nl.json` and
+76. **English i18n verified complete, not rebuilt.** `nl.json` and
     `en.json` carry an identical key set (checked programmatically: zero
     keys missing on either side), and every value that is identical
     between the two languages on inspection is a legitimately shared word
     or loanword (`EpiSODIC`, `cluster`, `PC`, `artefact`, `Monitoring`,
     template placeholders), not an untranslated copy-paste.
 
-75. **Git history audit**: no `.sqlite`/`.db` file, `.env`/`.Renviron`,
+77. **Git history audit**: no `.sqlite`/`.db` file, `.env`/`.Renviron`,
     private key, or credential-shaped string has ever entered the
     repository's history (checked across every commit on every ref, not
     only the current tree). Every email address in the history is either
@@ -1120,7 +1094,7 @@ to know which point in the project's history that decision was made.
     `domain.com`). Nothing patient-identifiable or instance-specific has
     ever been committed.
 
-76. **README screenshots: placeholders shipped, real images left to be
+78. **README screenshots: placeholders shipped, real images left to be
     added.** The README links two named files
     (`data-raw/screenshots/dossier.png`, `.../performance.png`, with
     `data-raw/screenshots/README.md` documenting what each should show)
@@ -1135,7 +1109,7 @@ to know which point in the project's history that decision was made.
     screenshots, taken by hand against a live instance, were judged
     simpler and more representative.
 
-77. **CI: `.github/workflows/R-CMD-check.yaml`**, the standard
+79. **CI: `.github/workflows/R-CMD-check.yaml`**, the standard
     `r-lib/actions` template (`usethis::use_github_action("check-standard")`'s
     shape) — macOS release, Windows release, Ubuntu devel/release/oldrel-1,
     triggered on every push to `main` and every pull request. GitHub-hosted
@@ -1143,7 +1117,7 @@ to know which point in the project's history that decision was made.
     system libraries for `sf`, unlike some development environments, so
     CI exercises the vignette build and the `sf`-gated tests end to end.
 
-78. **Exported-function audit for a CRAN submission: public API narrowed
+80. **Exported-function audit for a CRAN submission: public API narrowed
     from 135 exports to ~30.** `R CMD check --as-cran` flags nothing about
     export count directly, but a package aiming to read as a deliberate,
     reviewable public API should not export its entire implementation.
@@ -1180,7 +1154,7 @@ to know which point in the project's history that decision was made.
     functions unqualified within the package's own namespace, so export
     status never affected them.
 
-79. **Package renamed `EpiSODE` -> `EpiSODIC`, before any public release.**
+81. **Package renamed `EpiSODE` -> `EpiSODIC`, before any public release.**
     `R CMD check --as-cran`'s incoming checks flagged `EpiSODE` as a
     case-insensitive conflict with `episode`, a real (if long-archived,
     unrelated) CRAN package — CRAN's own Repository Policy is explicit
@@ -1210,6 +1184,63 @@ to know which point in the project's history that decision was made.
     argument (which no longer needs to defend a conflict that renaming
     made moot).
 
+82. **Scientific attribution: DOIs added to `DESCRIPTION`'s `Description`
+    field and to the roxygen `@references` of every function that
+    directly implements a published statistical method**, rather than
+    stopping at "wraps the `surveillance`/`EpiEstim`/`mem` package" — the
+    method has a name and an author, and CRAN reviewers (and anyone
+    reading this package's own documentation) benefit from being able to
+    trace a detector straight to its literature source without going
+    hunting. Four functions, four citations, verified against the actual
+    published papers (title, journal, volume/pages, DOI) rather than
+    trusted from memory: `episode_detect_farrington()` cites Farrington
+    et al. (1996, the original algorithm) and Noufaily et al. (2013, the
+    improved version `surveillance::farringtonFlexible()` actually
+    implements), plus Salmon, Schumacher & Hoehle (2016, the
+    `surveillance` package itself); `episode_compute_rt()` cites Cori et
+    al. (2013, the `EpiEstim` method); `episode_detect_mem()` cites Vega
+    et al. (2013, the Moving Epidemic Method); `episode_dedup()` cites
+    Berends et al. (2022, the `AMR` package, whose `get_episode()` it
+    calls directly — see item 83 below for `AMR` becoming a hard
+    dependency, which happened after this item was first written).
+    Deliberately *not* added to `episode_priority_score()`'s
+    `rescale()`, curve-shape's `2 × incub_max_days` boundary, or
+    similar-cluster matching's weights — all three are documented
+    judgement calls with no literature source to cite (items 9, 12, 63),
+    and inventing a citation for an unattributed heuristic would be
+    worse than citing nothing. `@references` was added even though most
+    of these functions are `@noRd` (not part of the exported public
+    API, see item 80) — the attribution belongs at the algorithm's
+    implementation site regardless of visibility, and travels with the
+    code even though it does not currently render as a formal help
+    page.
+
+83. **`AMR` promoted from "not a dependency at all" (item 6) to a hard
+    `Imports` dependency, `AMR (>= 3.0.0)`, on direct instruction from
+    the package's own author (also `AMR`'s author).** `episode_dedup()`
+    no longer reimplements `AMR::get_episode()`'s algorithm by hand —
+    it calls the real function directly (`@importFrom AMR get_episode`,
+    so the code reads `get_episode()` unprefixed, standard practice for
+    an imported *function*). `episode_ui_italicise_taxon()` similarly
+    lost its `requireNamespace()` guard around `AMR::microorganisms`,
+    since the package is now always installed; per explicit instruction,
+    dataset access stays fully qualified as `AMR::microorganisms` rather
+    than `@importFrom` (importing a *dataset* into a package's own
+    namespace is discouraged practice, unlike importing a function —
+    lazy-data semantics differ from function binding, and CRAN reviewers
+    expect fully-qualified `::` access to another package's exported
+    data). This does not reopen item 22's actual detection-side
+    decision: `pathogen` is still raw, unconstrained free text for
+    *detection* purposes, never resolved against `AMR::as.mo()` — only
+    the episode-*grouping* mechanism (a distinct concern, sorting
+    isolates by date and applying a gap threshold) now uses `AMR`'s own
+    tested implementation instead of a hand-rolled mirror of it.
+    Verified: the full test suite (639 passing) produces identical
+    results with the real `AMR::get_episode()` as it did with the
+    removed reimplementation, and `R CMD check --as-cran`'s "Packages
+    suggested but not available for checking" NOTE no longer lists
+    `AMR`, confirming the dependency actually resolves.
+
 ## Open items
 
 - **`episode_stream`'s `ward` column** (item 17 above) is a schema change
@@ -1217,10 +1248,10 @@ to know which point in the project's history that decision was made.
   review rather than treated as settled.
 - **Cluster volume for endemic organisms at a single place** (item 16
   above) — two directions were discussed and deliberately parked.
-- **Calibration of weights and thresholds against real signal** (item 68
+- **Calibration of weights and thresholds against real signal** (item 70
   above) — the tools exist (Prestatie screen, synthetic calibration
   generator); the calibration itself needs a real instance with real
   history.
-- **Mute revocation** (item 49) and **region-reference naming beyond the
-  choropleth's own geometry contract** (item 52) are documented, narrow
+- **Mute revocation** (item 50) and **region-reference naming beyond the
+  choropleth's own geometry contract** (item 54) are documented, narrow
   gaps, not yet built.
