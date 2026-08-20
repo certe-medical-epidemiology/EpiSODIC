@@ -91,16 +91,28 @@ episode_run_cron(
 
 ### Cases (mandatory)
 
-One row per confirmed-positive laboratory result. `episode_ingest_columns`
-lists the exact allow-listed columns; the ones that need explanation:
+One row per confirmed-positive laboratory result. This is the complete,
+allow-listed column set (`episode_ingest_columns`); an ingestion source
+returning any column outside this list, or missing one from it, is
+rejected:
 
 | Column | Meaning |
 |---|---|
+| `source_key` | A unique identifier for the row in your own source system, so a later re-ingest of the same extract cannot create duplicate cases. |
+| `patient_key` | A stable, pseudonymised patient identifier. This is what deduplication and episode grouping key on: without it, EpiSODIC cannot tell that two isolates belong to the same patient, and every isolate would be treated as its own case. Never displayed as-is in the interface. |
+| `sample_date` | The anchor date every detector, trend, and report is built against. If your system falls back to a receipt date when sample date is unfilled, that fallback should already have happened before this row reaches EpiSODIC. |
+| `receipt_date` | When the result was received. Stored for provenance/audit, kept separate from `sample_date` - EpiSODIC deliberately does not use it to measure reporting delay, since a lab's own receipt-date field can itself silently be a stand-in for a missing sample date; reporting completeness is instead measured empirically, from how a stream's case counts change across successive detection runs. |
 | `pathogen` | The organism as your lab reports it, as free text. **Not** resolved against any taxonomy (this is deliberate: `AMR::as.mo()` only covers non-viral organisms, and EpiSODIC has to detect clusters of anything a lab reports, viruses included). The same underlying isolate can appear more than once under different `pathogen` values when that is epidemiologically useful - an ETEC isolate reported as both `"Escherichia coli"` and `"ETEC"`, so each is watched on its own. This is your transform step's decision, not EpiSODIC's. |
-| `sample_date` | The anchor date. If your system falls back to a receipt date when sample date is unfilled, that fallback should already have happened before this row reaches EpiSODIC. |
+| `care_line` | `first`, `second`, `other`, or `unknown` - which part of the health system the case came from. |
 | `institution_key` | A stable identifier for the institution, hashed internally so a later rename does not fracture history. |
+| `institution_display_name` | The human-readable name shown in the interface. |
 | `institution_type` | One of `hospital`, `ltc_institution`, `gp_municipality`, `ooh_service`, `other`. |
-| `ward` | Only meaningful (and only used) for hospitals. |
+| `municipality` | The institution's municipality, used for `gp_municipality`-type rows (see below) and as a coarse geographic fallback. |
+| `ward` | Only meaningful (and only used) for hospitals: this is what the `same_place` detector watches at ward level. |
+| `specialism` | The treating specialism, shown on the line list for context; not itself a detection dimension. |
+| `pc4` | The patient's postcode (or equivalent - see "Geographic reference data" below for how coarse or fine this can be). Drives the geography panel and the choropleth, and the concentration measure ("how localised is this cluster") that feeds the priority score. |
+| `sex` | The patient's sex. Feeds the demography panel's age/sex pyramid, one of the interpretation engine's own evidence dimensions (a cluster's demography shifting from a department's usual baseline is itself a signal worth surfacing). |
+| `age` | The patient's age at sample date. Same role as `sex`: demography panel and interpretation, not a detection input. |
 
 `institution_type` values, beyond the self-explanatory `hospital`:
 
