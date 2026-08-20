@@ -36,9 +36,9 @@ the identity the tool is meant to be cited under is preserved.
 Locally, `R CMD check --as-cran` additionally reports (all environment
 artefacts of the sandboxed development container, not real issues):
 
-- `checking package dependencies ... NOTE` - `RMariaDB` and `sf` are not
-  installed in this container (both Suggests, both optional, gated
-  behind `requireNamespace()` with a documented fallback).
+- `checking package dependencies ... NOTE` - `sf` is not installed in
+  this container (Suggests, optional, gated behind `requireNamespace()`
+  with a documented fallback).
 - `checking for future file timestamps ... NOTE` - the container's clock
   cannot be verified against a time server.
 - `checking top-level files ... NOTE` - `README.md`/`NEWS.md` cannot be

@@ -975,16 +975,58 @@ to know which point in the project's history that decision was made.
     (`performance.col.ppv`) stays, since another locale might genuinely
     want a translated abbreviation; only the Dutch *value* changed back.
 
-67. **Not attempted: eligibility gate tuning, priority score weight
-    recalibration, suppression threshold review.** All three are
-    explicitly volume/history-dependent (tuned against real signal
-    volume, towards roughly ten assessed clusters a month, system-wide) —
-    there is no real signal volume in a development environment to tune
-    against, only synthetic data whose properties were chosen to exercise
-    the detectors, not to resemble a real department's true incidence.
-    Once an instance has run against real data for a few months, the
-    Prestatie screen (item 66) is exactly the tool for making these
-    calibration decisions with evidence rather than guesswork.
+67. **Eligibility gate / detection volume: actually attempted this time,
+    against realistic synthetic volume, rather than left purely as
+    "needs real data."** True calibration against real assessed
+    ground truth still needs a real instance's real history — that has
+    not changed, and nothing here claims otherwise. What changed:
+    challenged on leaving this purely theoretical when a
+    volume-realistic synthetic generator already existed
+    (`episode_ingest_source_synthetic_calibration()`, item 69), a real
+    experiment was run rather than deferred again.
+
+    Method: `episode_run_cron()` called *periodically* (quarterly,
+    2023-01 through 2024-12, each call fed only the data available as
+    of that quarter — not a single retrospective batch, which would
+    silently starve Farrington: it only evaluates the current week per
+    call, so a one-shot run over multi-year history only ever alarms
+    on the final week, understating its true contribution). Against
+    this properly periodic simulation: **256 clusters opened over 24
+    months, ≈10.7/month system-wide** — close to the architecture's
+    stated target of "roughly ten assessed clusters a month" for raw
+    detection volume (not the same as *assessed* volume, since nothing
+    in a synthetic run classifies anything; this measures what reaches
+    the rail, not what a human then does with it). Of those 256,
+    **255 came from `same_place` and 1 from `mem`; `farrington`
+    produced zero.** That is not a finding that Farrington under-fires
+    - the run window (from 2022-01-01) never accumulated the `(b + 1) *
+    52 = 208` weeks (4 years) of history `episode_detect_farrington()`
+    requires before it will even attempt a fit at the shipped `b = 3`
+    default, so Farrington was structurally unable to contribute
+    anything in this experiment, not tuned against and found wanting.
+    This is itself a real, actionable observation: a fresh instance
+    needs four full years before Farrington-based detection activates
+    at all, which is worth knowing before deployment even though `b =
+    3` is Noufaily et al.'s own literature default (item 82), not a
+    value invented for this package, and changing it would be a
+    real deviation from the published method, not a tuning knob to
+    turn lightly.
+
+    **What this experiment does and does not license**: it is real
+    evidence that `same_place`'s current thresholds (organism-specific
+    `n_cases`/`k_days` overrides, `inst/config/default.yaml`) produce
+    roughly on-target volume against a realistic *C. difficile*-heavy
+    load, so no change is proposed there. It does **not** validate
+    priority score weights (ranking quality needs real assessed
+    ground truth - artefact vs. genuine - which no synthetic run can
+    honestly provide, since "genuine" here is a judgement about the
+    real world, not a property the generator can label), suppression
+    thresholds (a disclosure-control convention, not a statistical
+    one), or Farrington's own contribution (needs a 4+ year synthetic
+    window, not attempted here for time). Those three remain open.
+    Once a real instance has run for a few months, the Prestatie
+    screen (item 66) is exactly the tool for finishing this with real
+    evidence rather than guesswork.
 
 68. **Not attempted: the annual overview for the medical board and
     accreditation file.** Also volume/history-dependent by nature (an
@@ -1240,6 +1282,15 @@ to know which point in the project's history that decision was made.
     removed reimplementation, and `R CMD check --as-cran`'s "Packages
     suggested but not available for checking" NOTE no longer lists
     `AMR`, confirming the dependency actually resolves.
+
+84. **`RMariaDB` was another dead `Suggests` entry, like `certeplot2`
+    (item 71) before it.** Found while auditing the package for
+    imminent CRAN submission: never referenced anywhere in `R/`, tests,
+    or documentation — no alternate-backend code path, no mention of a
+    MariaDB deployment option anywhere. Removed from `DESCRIPTION`.
+    SQLite (via `RSQLite`, a hard dependency) remains the only supported
+    backend; if a MariaDB/MySQL backend is ever wanted, it needs actual
+    connection/schema code, not just a listed-but-unused package name.
 
 ## Open items
 
