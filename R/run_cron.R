@@ -18,23 +18,27 @@
 #'
 #' @param db_path Path to the SQLite database file. Created if it does not
 #'   exist.
-#' @param ingest_source_fn A zero- or one-argument function returning a
-#'   data frame satisfying the ingestion interface. Defaults to the bundled
-#'   synthetic generator, the only implementation shipped in this
-#'   environment.
-#' @param denominator_source_fn An optional zero-argument function returning
-#'   the pre-aggregated positivity metadata data frame (`pathogen`,
-#'   `sample_date`, `care_line`, `area_code`, `n_tests`), or `NULL` (the
-#'   default) if the operator has none to supply. See `QUESTIONS.md` item 22.
+#' @param ingest_source_fn A zero-argument function returning a data frame
+#'   satisfying the ingestion interface, or that data frame itself (an
+#'   operator who has already extracted and transformed their data has no
+#'   reason to wrap it in a function just to satisfy this parameter - see
+#'   [episode_resolve_source()]). Defaults to the bundled synthetic
+#'   generator, the only implementation shipped in this environment.
+#' @param denominator_source_fn An optional zero-argument function
+#'   returning the pre-aggregated positivity metadata data frame
+#'   (`pathogen`, `sample_date`, `care_line`, `area_code`, `n_tests`), that
+#'   data frame itself, or `NULL` (the default) if the operator has none to
+#'   supply. See `QUESTIONS.md` item 22.
 #' @param institution_activity_source_fn An optional one-argument function
 #'   (`institutions`, the current `episode_db_institutions()` data frame,
 #'   so a real implementation can key its own hospital system's export by
 #'   the same institutions this run already knows about) returning weekly
 #'   patient-days (`institution_key`, `period_start`, `period_end`,
-#'   `patient_days`), or `NULL` (the default) if the operator has none to
-#'   supply. Powers L2 patient-day normalisation (ARCHITECTURE.md section
-#'   7.1); without it, L1/L2 Farrington detection uses raw counts,
-#'   unnormalised, exactly as before this was added.
+#'   `patient_days`); that data frame itself (the `institutions` argument
+#'   is simply not passed in that case); or `NULL` (the default) if the
+#'   operator has none to supply. Powers L2 patient-day normalisation
+#'   (ARCHITECTURE.md section 7.1); without it, L1/L2 Farrington detection
+#'   uses raw counts, unnormalised, exactly as before this was added.
 #' @param episode_config_path Passed to [episode_config_resolve()].
 #' @param host,account Recorded on `episode_detection_run`; default to the
 #'   process's own host/account (ARCHITECTURE.md section 12: this is not an
@@ -87,6 +91,30 @@ episode_run_cron <- function(db_path,
   invisible(run_id)
 }
 
+#' Resolve a `*_source_fn` argument to the data frame it names
+#'
+#' Every `episode_run_cron()` data source (`ingest_source_fn`,
+#' `denominator_source_fn`, `institution_activity_source_fn`) accepts
+#' either a function that produces the data frame, or that data frame
+#' itself - a function is only useful when producing the data has to
+#' happen at run time (a live query, a freshly-generated synthetic set);
+#' an operator who already has the data sitting in a variable has no
+#' reason to wrap it in `function() my_df`.
+#'
+#' @param x A function, a data frame, or `NULL`.
+#' @param ... Passed to `x` if it is a function; ignored otherwise (a data
+#'   frame that is already the answer does not need `institutions` handed
+#'   to it, for instance).
+#' @return `NULL` if `x` is `NULL`; `x` itself if it is a data frame; the
+#'   result of calling `x` otherwise.
+#' @export
+episode_resolve_source <- function(x, ...) {
+  if (is.null(x)) return(NULL)
+  if (is.data.frame(x)) return(x)
+  if (is.function(x)) return(x(...))
+  stop("must be a function or a data frame, not ", paste(class(x), collapse = "/"), call. = FALSE)
+}
+
 #' @keywords internal
 #' @noRd
 episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, denominator_source_fn,
@@ -98,18 +126,20 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, denomin
   pathogen_config <- utils::read.csv(pathogen_config_path, stringsAsFactors = FALSE, na.strings = c("", "NA"))
   episode_db_pathogen_config_load(con, pathogen_config)
 
-  raw <- ingest_source_fn()
+  raw <- episode_resolve_source(ingest_source_fn)
   episode_ingest_run(con, raw, pathogen_config, run_id)
 
-  if (!is.null(denominator_source_fn)) {
-    episode_denominator_ingest_run(con, denominator_source_fn())
+  denominator <- episode_resolve_source(denominator_source_fn)
+  if (!is.null(denominator)) {
+    episode_denominator_ingest_run(con, denominator)
   }
 
   cases_all <- episode_db_cases(con)
   institutions <- episode_db_institutions(con)
 
-  if (!is.null(institution_activity_source_fn)) {
-    episode_institution_activity_ingest_run(con, institution_activity_source_fn(institutions))
+  activity <- episode_resolve_source(institution_activity_source_fn, institutions)
+  if (!is.null(activity)) {
+    episode_institution_activity_ingest_run(con, activity)
   }
 
   episode_lattice_enumerate(con, cases_all, institutions)

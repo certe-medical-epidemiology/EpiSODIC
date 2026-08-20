@@ -149,6 +149,19 @@ postcodes, zip codes, municipality codes, anything) and a `geometry`
 column, and it is used instead. See `R/geo_data.R` for the exact
 contract.
 
+### Custom report templates (optional)
+
+`episode_report_render()` renders `inst/report/cluster_report.qmd`
+(embedded as self-contained HTML via Quarto) unless `EPISODE_QUARTO_REPORT`
+points at an operator's own `.qmd` file, in which case that is used
+instead - for a department that wants its own letterhead, section order,
+or house style. A custom template only needs to `readRDS(params$data_path)`
+and read from the same list the shipped one does (`obj`, `epi_curve`,
+`trend`, `linelist`, `timeline`, `similar`, `small_count_threshold`,
+`rendered_at`, `lang`, `package_version`); see the shipped template for
+the exact shape, including how it calls `episode_tr(..., lang = d$lang)`
+for a bilingual report.
+
 ## Accounts
 
 Read access is anonymous - the app opens read-only for anyone who reaches
@@ -186,6 +199,7 @@ Docker container) without editing R code.
 | `EPISODE_CONFIG` | `episode_run_cron()` (`episode_config_path` argument) | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`'s shipped defaults. |
 | `EPISODE_PALETTE_CONFIG` | `episode_palette()` (`palette_config_path` argument) | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`'s shipped defaults. Deliberately separate from `EPISODE_CONFIG`: colour is a display concern, never part of `episode_config_hash()`'s detection-reproducibility guarantee. |
 | `EPISODE_GEO_DATA` | `episode_geo_source_resolve()` (`path` argument) | Path to an `.rds` file holding an operator's own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands PC4 default. See "Geographic reference data" above. |
+| `EPISODE_QUARTO_REPORT` | `episode_report_render()` (`qmd_path` argument) | Path to an operator's own Quarto report template, overriding the shipped `inst/report/cluster_report.qmd`. See "Custom report templates" above. |
 
 ## Licence
 

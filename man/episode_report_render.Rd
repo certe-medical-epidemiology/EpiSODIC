@@ -12,7 +12,8 @@ episode_report_render(
   include_linelist = TRUE,
   small_count_threshold = NULL,
   config = episode_config_resolve(),
-  lang = "nl"
+  lang = "nl",
+  qmd_path = Sys.getenv("EPISODE_QUARTO_REPORT", unset = NA)
 )
 }
 \arguments{
@@ -37,6 +38,16 @@ section 9). Defaults to \code{config$report$small_count_threshold}.}
 \item{config}{The resolved configuration; only \code{config$report} is used.}
 
 \item{lang}{Report language, \code{"nl"} (default) or \code{"en"}.}
+
+\item{qmd_path}{Path to the Quarto template to render. Defaults to the
+\code{EPISODE_QUARTO_REPORT} environment variable; if that is unset (or
+names a file that does not exist), falls back to the shipped
+\code{inst/report/cluster_report.qmd}. An operator's own template only
+needs to read \code{params$data_path} (an \code{.rds} path, \code{readRDS()}'d to
+the same list this function assembles: \code{obj}, \code{epi_curve}, \code{trend},
+\code{linelist}, \code{timeline}, \code{similar}, \code{small_count_threshold},
+\code{rendered_at}, \code{lang}, \code{package_version}) - see the shipped template
+for the exact shape and for \code{episode_tr(..., lang = d$lang)} usage.}
 }
 \value{
 Invisibly, a list with \code{file_path}, \code{file_sha256}, \code{version_no},

@@ -37,12 +37,22 @@
 #'   section 9). Defaults to `config$report$small_count_threshold`.
 #' @param config The resolved configuration; only `config$report` is used.
 #' @param lang Report language, `"nl"` (default) or `"en"`.
+#' @param qmd_path Path to the Quarto template to render. Defaults to the
+#'   `EPISODE_QUARTO_REPORT` environment variable; if that is unset (or
+#'   names a file that does not exist), falls back to the shipped
+#'   `inst/report/cluster_report.qmd`. An operator's own template only
+#'   needs to read `params$data_path` (an `.rds` path, `readRDS()`'d to
+#'   the same list this function assembles: `obj`, `epi_curve`, `trend`,
+#'   `linelist`, `timeline`, `similar`, `small_count_threshold`,
+#'   `rendered_at`, `lang`, `package_version`) - see the shipped template
+#'   for the exact shape and for `episode_tr(..., lang = d$lang)` usage.
 #' @return Invisibly, a list with `file_path`, `file_sha256`, `version_no`,
 #'   `report_id`.
 #' @export
 episode_report_render <- function(con, cluster_id, output_dir, user_id = NA,
                                    include_linelist = TRUE, small_count_threshold = NULL,
-                                   config = episode_config_resolve(), lang = "nl") {
+                                   config = episode_config_resolve(), lang = "nl",
+                                   qmd_path = Sys.getenv("EPISODE_QUARTO_REPORT", unset = NA)) {
   if (!episode_quarto_available()) {
     stop(
       "Rendering a report needs both the 'quarto' R package and the Quarto ",
@@ -73,8 +83,7 @@ episode_report_render <- function(con, cluster_id, output_dir, user_id = NA,
     package_version = as.character(utils::packageVersion("EpiSODE"))
   )
 
-  qmd_path <- system.file("report", "cluster_report.qmd", package = "EpiSODE")
-  if (identical(qmd_path, "")) qmd_path <- file.path("inst", "report", "cluster_report.qmd")
+  qmd_path <- episode_report_qmd_path(qmd_path)
 
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
   existing <- episode_db_reports_for_cluster(con, cluster_id)
@@ -141,6 +150,26 @@ episode_report_render <- function(con, cluster_id, output_dir, user_id = NA,
 #' @noRd
 episode_quarto_available <- function() {
   requireNamespace("quarto", quietly = TRUE) && !is.null(quarto::quarto_path())
+}
+
+#' Resolve the Quarto report template to use
+#'
+#' An operator's own template, if `EPISODE_QUARTO_REPORT` (or the
+#' explicit `qmd_path` argument) names a file that actually exists;
+#' otherwise the shipped `inst/report/cluster_report.qmd` default -
+#' matching the shape `EPISODE_CONFIG`/`EPISODE_GEO_DATA`/... already
+#' establish.
+#' @param qmd_path A path, or `NA`.
+#' @return A path to an existing `.qmd` file.
+#' @keywords internal
+#' @noRd
+episode_report_qmd_path <- function(qmd_path = Sys.getenv("EPISODE_QUARTO_REPORT", unset = NA)) {
+  if (!is.na(qmd_path) && nzchar(qmd_path) && file.exists(qmd_path)) {
+    return(qmd_path)
+  }
+  default_path <- system.file("report", "cluster_report.qmd", package = "EpiSODE")
+  if (identical(default_path, "")) default_path <- file.path("inst", "report", "cluster_report.qmd")
+  default_path
 }
 
 #' Suppress small counts in a breakdown table

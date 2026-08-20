@@ -89,6 +89,43 @@ test_that("episode_run_cron() writes institution activity rows only when institu
   expect_gt(DBI::dbGetQuery(con_with, "SELECT COUNT(*) n FROM episode_institution_activity")$n, 0)
 })
 
+test_that("episode_resolve_source() accepts a function, a data frame, or NULL, and errors otherwise", {
+  df <- data.frame(x = 1)
+  expect_null(episode_resolve_source(NULL))
+  expect_identical(episode_resolve_source(df), df)
+  expect_identical(episode_resolve_source(function() df), df)
+  expect_identical(episode_resolve_source(function(y) y, 5), 5)
+  expect_error(episode_resolve_source(1), "function or a data frame")
+})
+
+test_that("episode_run_cron() accepts a data frame directly for ingest/denominator/institution_activity_source_fn, not only a function", {
+  small_cases <- episode_ingest_source_synthetic(
+    start_date = as.Date("2024-06-01"), end_date = as.Date("2024-06-30"), seed = 11
+  )
+  small_denom <- episode_denominator_source_synthetic(
+    start_date = as.Date("2024-06-01"), end_date = as.Date("2024-06-30"), seed = 11
+  )
+
+  path <- tempfile(fileext = ".sqlite")
+  episode_run_cron(path, ingest_source_fn = small_cases, denominator_source_fn = small_denom,
+                    run_date = as.Date("2024-06-30"))
+  con <- episode_db_connect(path)
+  on.exit(DBI::dbDisconnect(con))
+  expect_gt(DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM episode_case")$n, 0)
+  expect_gt(DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM episode_denominator")$n, 0)
+
+  institutions <- episode_db_institutions(con)
+  small_activity <- episode_synthetic_institution_activity_source(
+    institutions, start_date = as.Date("2024-06-01"), end_date = as.Date("2024-06-30")
+  )
+  path2 <- tempfile(fileext = ".sqlite")
+  episode_run_cron(path2, ingest_source_fn = small_cases, institution_activity_source_fn = small_activity,
+                    run_date = as.Date("2024-06-30"))
+  con2 <- episode_db_connect(path2)
+  on.exit(DBI::dbDisconnect(con2), add = TRUE)
+  expect_gt(DBI::dbGetQuery(con2, "SELECT COUNT(*) n FROM episode_institution_activity")$n, 0)
+})
+
 test_that("episode_lattice_enumerate() creates distinct streams per level", {
   con <- episode_test_db()
   on.exit(DBI::dbDisconnect(con))

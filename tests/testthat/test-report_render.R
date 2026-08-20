@@ -25,6 +25,19 @@ test_that("episode_quarto_available() is FALSE without the CLI, and episode_repo
   )
 })
 
+test_that("episode_report_qmd_path() falls back to the shipped template when unset, missing or invalid", {
+  expect_true(file.exists(episode_report_qmd_path(NA)))
+  expect_true(basename(episode_report_qmd_path(NA)) == "cluster_report.qmd")
+  expect_true(file.exists(episode_report_qmd_path("")))
+  expect_true(file.exists(episode_report_qmd_path("/no/such/file.qmd")))
+})
+
+test_that("episode_report_qmd_path() honours an operator-supplied path that actually exists", {
+  custom <- tempfile(fileext = ".qmd")
+  writeLines("---\ntitle: custom\n---\n", custom)
+  expect_equal(episode_report_qmd_path(custom), custom)
+})
+
 test_that("episode_report_render() picks version_no = max(existing) + 1, not a fixed increment", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))

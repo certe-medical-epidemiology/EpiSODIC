@@ -805,6 +805,29 @@ decisions survives.
     reads "Key figures" / "Confirmed" / "Expected" / "n/a" throughout
     instead of a two-word English facade over a Dutch document.
 
+18. **`EPISODE_QUARTO_REPORT` and `episode_run_cron()` data-frame
+    inputs, both requested directly.** `episode_report_render()` gained
+    a `qmd_path` argument (defaulting to `EPISODE_QUARTO_REPORT`,
+    matching the `EPISODE_CONFIG`/`EPISODE_GEO_DATA` pattern) so an
+    operator can supply their own report template - a department that
+    wants its own letterhead or section order does not need to fork the
+    package. Extracted the resolution logic into
+    `episode_report_qmd_path()` so it is unit-testable independent of
+    Quarto actually being installed. Separately, `episode_run_cron()`'s
+    three `*_source_fn` parameters (`ingest_source_fn`,
+    `denominator_source_fn`, `institution_activity_source_fn`) now
+    accept the data frame itself, not only a zero/one-argument function
+    that produces one - an operator who already has the data sitting in
+    a variable had no reason to wrap it in `function() my_df` just to
+    satisfy the parameter. New shared helper `episode_resolve_source()`
+    (exported, since it is a small useful contract on its own) handles
+    all three call sites identically: `NULL` stays `NULL`, a data frame
+    passes through unchanged, a function gets called (with `...`, so
+    `institution_activity_source_fn`'s `institutions` argument still
+    reaches a real function but is silently ignored for a data frame),
+    anything else errors clearly rather than failing deep inside
+    ingestion with a confusing type error.
+
 ## Parked for a future milestone
 
 1. **Cluster volume for endemic organisms at a single place.**

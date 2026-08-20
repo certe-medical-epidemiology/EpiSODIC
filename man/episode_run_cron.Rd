@@ -19,25 +19,29 @@ episode_run_cron(
 \item{db_path}{Path to the SQLite database file. Created if it does not
 exist.}
 
-\item{ingest_source_fn}{A zero- or one-argument function returning a
-data frame satisfying the ingestion interface. Defaults to the bundled
-synthetic generator, the only implementation shipped in this
-environment.}
+\item{ingest_source_fn}{A zero-argument function returning a data frame
+satisfying the ingestion interface, or that data frame itself (an
+operator who has already extracted and transformed their data has no
+reason to wrap it in a function just to satisfy this parameter - see
+\code{\link[=episode_resolve_source]{episode_resolve_source()}}). Defaults to the bundled synthetic
+generator, the only implementation shipped in this environment.}
 
-\item{denominator_source_fn}{An optional zero-argument function returning
-the pre-aggregated positivity metadata data frame (\code{pathogen},
-\code{sample_date}, \code{care_line}, \code{area_code}, \code{n_tests}), or \code{NULL} (the
-default) if the operator has none to supply. See \code{QUESTIONS.md} item 22.}
+\item{denominator_source_fn}{An optional zero-argument function
+returning the pre-aggregated positivity metadata data frame
+(\code{pathogen}, \code{sample_date}, \code{care_line}, \code{area_code}, \code{n_tests}), that
+data frame itself, or \code{NULL} (the default) if the operator has none to
+supply. See \code{QUESTIONS.md} item 22.}
 
 \item{institution_activity_source_fn}{An optional one-argument function
 (\code{institutions}, the current \code{episode_db_institutions()} data frame,
 so a real implementation can key its own hospital system's export by
 the same institutions this run already knows about) returning weekly
 patient-days (\code{institution_key}, \code{period_start}, \code{period_end},
-\code{patient_days}), or \code{NULL} (the default) if the operator has none to
-supply. Powers L2 patient-day normalisation (ARCHITECTURE.md section
-7.1); without it, L1/L2 Farrington detection uses raw counts,
-unnormalised, exactly as before this was added.}
+\code{patient_days}); that data frame itself (the \code{institutions} argument
+is simply not passed in that case); or \code{NULL} (the default) if the
+operator has none to supply. Powers L2 patient-day normalisation
+(ARCHITECTURE.md section 7.1); without it, L1/L2 Farrington detection
+uses raw counts, unnormalised, exactly as before this was added.}
 
 \item{episode_config_path}{Passed to \code{\link[=episode_config_resolve]{episode_config_resolve()}}.}
 
