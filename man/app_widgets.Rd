@@ -58,7 +58,8 @@ episode_ui_verdict_colour(verdict)
 
 \item{unit}{Optional footnote under the bars.}
 
-\item{demo}{A data frame with \code{band}, \code{m}, \code{v} (male/female counts).}
+\item{demo}{A data frame with \code{band}, \code{m}, \code{v} (male/female counts), one
+row per age band in ascending order (youngest first).}
 
 \item{lang}{Session language, for the axis labels.}
 

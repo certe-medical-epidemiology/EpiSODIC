@@ -189,7 +189,8 @@ episode_ui_bars <- function(rows, unit = NULL, colour = NULL) {
 }
 
 #' @rdname app_widgets
-#' @param demo A data frame with `band`, `m`, `v` (male/female counts).
+#' @param demo A data frame with `band`, `m`, `v` (male/female counts), one
+#'   row per age band in ascending order (youngest first).
 #' @param lang Session language, for the axis labels.
 #' @export
 episode_ui_pyramid <- function(demo, lang = "nl") {
@@ -197,6 +198,10 @@ episode_ui_pyramid <- function(demo, lang = "nl") {
     return(shiny::tags$p(class = "episode-panel-empty", "..."))
   }
   max_n <- max(c(demo$m, demo$v), 1)
+  # Rendered oldest-band-first (top) to youngest-band-last (bottom), the
+  # conventional age-sex pyramid orientation - `demo` itself stays
+  # youngest-first, since that is the natural order for the underlying data.
+  demo <- demo[rev(seq_len(nrow(demo))), ]
   rows <- lapply(seq_len(nrow(demo)), function(i) {
     shiny::tags$div(
       class = "episode-pyramid-row",
