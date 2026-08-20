@@ -14,6 +14,12 @@ sufficiently reduces the risk of confusion, that the name should not be
 mistaken for a revival of the older package - but we defer to CRAN's
 judgement on this and are happy to rename if asked.
 
+`EpiSODE` is also not an arbitrary label: it is a backronym (Epidemiological
+Signal Observation and Detection Engine) that the package's methodology is
+being written up under for a scientific publication, so the name is tied
+to how this tool is intended to be cited and referred to in that
+literature, not merely a cosmetic choice we can make lightly.
+
 ## Test environments
 
 - Local: Ubuntu 24.04, R 4.3.3 (sandboxed development container; no
