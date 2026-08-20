@@ -1,4 +1,22 @@
--- EpiSODE database schema, SQLite dialect.
+-- ===================================================================== --
+--  An R package by Certe:                                               --
+--  https://github.com/certe-medical-epidemiology                        --
+--                                                                       --
+--  Licensed as GPL-v2.0.                                                --
+--                                                                       --
+--  Developed at non-profit organisation Certe Medical Diagnostics &     --
+--  Advice, department of Medical Epidemiology.                          --
+--                                                                       --
+--  This R package is free software; you can freely use and distribute   --
+--  it for both personal and commercial purposes under the terms of the  --
+--  GNU General Public License version 2.0 (GNU GPL-2), as published by  --
+--  the Free Software Foundation.                                        --
+--                                                                       --
+--  We created this package for both routine data analysis and academic  --
+--  research and it was publicly released in the hope that it will be    --
+--  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              --
+
+-- EpiSODIC database schema, SQLite dialect.
 --
 -- Canonical source: ARCHITECTURE.md section 5. Type mapping used throughout
 -- (see ARCHITECTURE.md section 5 table):
@@ -278,7 +296,7 @@ CREATE TABLE episode_stream_trend (
 -- panels stay blank for its streams. Keyed on `pathogen` directly rather
 -- than on a lab `determination` code, so the determination-to-organism
 -- mapping (which organisms a given test method can detect) is the
--- operator's own transform-time knowledge, not something EpiSODE encodes
+-- operator's own transform-time knowledge, not something EpiSODIC encodes
 -- (episode_mo_determination from earlier drafts is dropped).
 -- ---------------------------------------------------------------------
 CREATE TABLE episode_denominator (

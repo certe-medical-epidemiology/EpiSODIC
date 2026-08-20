@@ -1,9 +1,30 @@
+/*
+# ===================================================================== #
+#  An R package by Certe:                                               #
+#  https://github.com/certe-medical-epidemiology                        #
+#                                                                       #
+#  Licensed as GPL-v2.0.                                                #
+#                                                                       #
+#  Developed at non-profit organisation Certe Medical Diagnostics &     #
+#  Advice, department of Medical Epidemiology.                          #
+#                                                                       #
+#  This R package is free software; you can freely use and distribute   #
+#  it for both personal and commercial purposes under the terms of the  #
+#  GNU General Public License version 2.0 (GNU GPL-2), as published by  #
+#  the Free Software Foundation.                                        #
+#                                                                       #
+#  We created this package for both routine data analysis and academic  #
+#  research and it was publicly released in the hope that it will be    #
+#  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+*/
+
 /* EpiSODIC app stylesheet.
    Certe house style: card panels, a compact stat grid, a status
    trajectory bar, muted palette.
    Colour values are injected as CSS custom properties from
-   episode_palette() (see R/app_ui.R) so the shipped fallback palette and
-   a real certestyle::certe.colours install produce byte-identical CSS. */
+   episode_palette() (see R/app_ui.R) so the shipped default palette and
+   an instance's own EPISODE_PALETTE_CONFIG override produce
+   byte-identical CSS. */
 
 :root {
   --episode-font: "IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
