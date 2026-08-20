@@ -411,6 +411,18 @@ dl.episode-settings dd { margin: 0; }
 }
 
 .episode-streams-screen {
+  /* Shared by the Streams, Archief, Activiteit, Prestatie and Info
+     screens. None of these sit inside .episode-body's own fixed-height
+     flex layout (that wraps only the default clusters view), so without
+     its own height+scroll a long one - the Streams screen especially,
+     now that it can hold up to page_size rows - had no y-overflow
+     handling of its own and relied on the surrounding page/frame to
+     scroll, which is not reliable across every host (a plain browser
+     tab scrolls the document fine; an embedded viewer, e.g. RStudio's,
+     often does not without an explicit inner scroll container). */
+  height: calc(100vh - 44px);
+  overflow-y: auto;
+  box-sizing: border-box;
   padding: 18px 24px 40px;
 }
 
