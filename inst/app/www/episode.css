@@ -1,6 +1,6 @@
 /* EpiSODE app stylesheet.
-   Mirrors episode-mockup.jsx's structure and Certe house style: card
-   panels, a compact stat grid, a status trajectory bar, muted palette.
+   Certe house style: card panels, a compact stat grid, a status
+   trajectory bar, muted palette.
    Colour values are injected as CSS custom properties from
    episode_palette() (see R/app_ui.R) so the shipped fallback palette and
    a real certestyle::certe.colours install produce byte-identical CSS. */

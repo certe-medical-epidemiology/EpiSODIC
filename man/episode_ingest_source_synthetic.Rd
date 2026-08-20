@@ -28,8 +28,7 @@ pathogens, PC4 areas and care lines, then injects two outbreaks of known
 shape so the detectors have something to visibly fire on: one point
 source (\code{add_outbreak_point_source}, a ward-level cluster tightly bunched
 in time) and one propagated (\code{add_outbreak_propagated}, a community
-cluster with generation-interval-spaced case waves). This is what
-\code{MILESTONES.md} M1 step 5 asks for.
+cluster with generation-interval-spaced case waves).
 }
 \details{
 No Diver column name is invented here; every field in the returned data

@@ -1,12 +1,12 @@
 #' App-side writers
 #'
 #' The app owns the judgements (ARCHITECTURE.md section 5.0) and only ever
-#' inserts, never updates and never deletes (standing brief hard rule 7).
+#' inserts, never updates and never deletes.
 #' This is what makes the whole concurrency question disappear: two people
 #' assessing the same cluster in the same minute produce two rows, both
 #' visible in the timeline. Nothing in this file contains an `UPDATE` or a
-#' `DELETE` statement; that absence is load-bearing and should be verified
-#' by inspection, per MILESTONES.md M3's definition of done.
+#' `DELETE` statement; that absence is load-bearing and should be
+#' verified by inspection whenever this file changes.
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
 #' @param user_id An `episode_app_user` id, or `NA` for a system-authored row.

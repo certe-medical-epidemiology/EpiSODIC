@@ -56,14 +56,13 @@ calculations; defaults to the system date, injectable for tests.}
 Invisibly, the \code{run_id} of the completed run.
 }
 \description{
-The cron entry point (ARCHITECTURE.md section 3, MILESTONES.md M1 step
-10). Ingests, enumerates streams, detects, reconciles and persists, all
+The cron entry point (ARCHITECTURE.md section 3). Ingests, enumerates
+streams, detects, reconciles and persists, all
 inside one transaction, so a partially failed run leaves no partial
-state and a retry is safe (standing brief hard rule, reconciliation
-properties list in \code{MILESTONES.md}).
+state and a retry is always safe.
 }
 \details{
-Configuration is read from \code{EPISODE_CONFIG} (standing brief hard rule 2);
+Configuration is read from \code{EPISODE_CONFIG};
 the resolved configuration's hash and full snapshot are written to
 \code{episode_detection_run} so that any result is explainable from the
 database alone (ARCHITECTURE.md section 7.4).

@@ -9,8 +9,8 @@
 #' assessor, so the login is the only available identity source.
 #'
 #' Password changes and login timestamps are the one bit of per-user
-#' *mutable* state in the schema, yet the app never issues an `UPDATE`
-#' (standing brief hard rule 7). Resolved the same way `episode_cluster_
+#' *mutable* state in the schema, yet the app never issues an `UPDATE`.
+#' Resolved the same way `episode_cluster_
 #' state` already resolves it for cluster state: `episode_app_user_event`
 #' is an append-only log, and the "current" password hash / login time is
 #' derived from it at read time (see `episode_auth_password_hash()`,

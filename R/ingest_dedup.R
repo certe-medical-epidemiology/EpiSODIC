@@ -1,7 +1,7 @@
 #' Deduplicate isolates into one case per patient per episode
 #'
 #' One isolate per patient per episode, using episode lengths from
-#' `episode_pathogen_config` (standing brief hard rule 5). `AMR::as.mo()`
+#' `episode_pathogen_config`. `AMR::as.mo()`
 #' only resolves non-viral taxonomy, and this package now treats `pathogen`
 #' as an arbitrary lab-provided string that can be anything (a virus, a
 #' resistance phenotype like "ETEC", a genus), so `AMR` is not a dependency

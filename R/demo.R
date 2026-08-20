@@ -1,9 +1,8 @@
 #' Run the full synthetic demo in one call
 #'
-#' MILESTONES.md M7's own done-when bar: "a stranger clones the
-#' repository and runs the whole system in under a minute." This is
-#' everything a first-time reader would otherwise piece together by hand
-#' from the README (`Sys.setenv()`, `episode_run_cron()` against the
+#' A stranger should be able to clone the repository and run the whole
+#' system in under a minute. This is everything a first-time reader
+#' would otherwise piece together by hand from the README (`Sys.setenv()`, `episode_run_cron()` against the
 #' bundled synthetic generator, `episode_provision_user()`) wrapped into
 #' one call - a fresh SQLite database, a completed detection run, one
 #' assessor account ready to sign in with, and (unless `launch = FALSE`)

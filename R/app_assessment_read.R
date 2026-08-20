@@ -129,8 +129,8 @@ episode_app_archive <- function(con, query = NULL, lang = "nl") {
 
 #' The Activity screen: every recorded action, with system runs visually distinct
 #'
-#' "Name, timestamp, action, target, with system runs visually distinct"
-#' (MILESTONES.md M3).
+#' Name, timestamp, action, target, with system-authored runs visually
+#' distinct from human actions.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param limit Maximum number of rows to return, most recent first.

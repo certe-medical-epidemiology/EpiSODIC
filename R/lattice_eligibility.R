@@ -3,10 +3,10 @@
 #' The first layer of volume control (ARCHITECTURE.md section 8, item 1): a
 #' stream needs sufficient baseline history, a minimum median weekly count,
 #' and non-zero counts in a reasonable share of baseline weeks before
-#' statistical detection is attempted on it. Streams failing this gate are
-#' documented in `MILESTONES.md`/the architecture as falling through to
-#' EARS C2 or the rare-pathogen path; only the gate itself is implemented in
-#' M1 (`R/detect_*.R` handles the fall-through detectors).
+#' statistical detection is attempted on it. Streams failing this gate
+#' fall through to EARS C2 or the rare-pathogen path instead
+#' (`R/detect_*.R` handles those fall-through detectors); only the gate
+#' itself lives here.
 #'
 #' The numeric thresholds are not specified anywhere in the architecture
 #' beyond the three named criteria; see `QUESTIONS.md` item 16 for the

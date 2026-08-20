@@ -18,8 +18,7 @@ episode_count_phrase(n, singular, plural, with_number = TRUE)
 English both pluralise away from exactly 1.
 }
 \description{
-\verb{1 geval} against \verb{2 gevallen}: the watch-item MILESTONES.md calls out
-explicitly for M2. Deliberately takes explicit singular/plural forms
+\verb{1 geval} against \verb{2 gevallen}. Deliberately takes explicit singular/plural forms
 rather than guessing a plural suffix, since Dutch (and English) plurals
 are often irregular.
 }

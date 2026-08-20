@@ -28,9 +28,8 @@ episode_ui_denominator_chart(series, lang = "nl")
 \item{series}{A data frame from \code{episode_app_denominator_series()}.}
 }
 \description{
-\code{ggplot2}-based equivalents of \code{episode-mockup.jsx}'s Recharts
-components (\code{DailyCurve}, \code{LongTrend}, \code{Denominator}). Static, not
+Static, not
 interactive - keeping the app's dependency footprint to a single,
 ubiquitous CRAN plotting package rather than an htmlwidgets stack is a
-deliberate M2 simplification; documented in \code{QUESTIONS.md}.
+deliberate simplification; see \code{QUESTIONS.md}.
 }

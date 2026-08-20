@@ -1,7 +1,7 @@
-# Exhaustive coverage of every fragment path, per the standing brief
-# section 6: "anything with few inputs and invisible failure modes gets
-# exhaustive tests" and MILESTONES.md M2's "fluent Dutch across all
-# fragment paths".
+# Exhaustive coverage of every fragment path: few inputs and an
+# invisible failure mode (a wrong sentence in a clinical dossier) is
+# exactly the kind of function that earns exhaustive tests, and every
+# path must read as fluent Dutch.
 
 base_cluster <- function(...) {
   defaults <- list(

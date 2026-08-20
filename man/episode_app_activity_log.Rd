@@ -17,6 +17,6 @@ episode_app_activity_log(con, limit = 200, lang = "nl")
 A data frame with \code{at}, \code{actor}, \code{action}, \code{target}, \code{is_system}.
 }
 \description{
-"Name, timestamp, action, target, with system runs visually distinct"
-(MILESTONES.md M3).
+Name, timestamp, action, target, with system-authored runs visually
+distinct from human actions.
 }

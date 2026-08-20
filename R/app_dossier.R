@@ -1,8 +1,8 @@
 #' The dossier pane
 #'
 #' Assembles the full cluster dossier: header, stat grid, status
-#' trajectory band, interpretation, then the analytical panels in the order
-#' `episode-mockup.jsx` and MILESTONES.md M2 specify.
+#' trajectory band, interpretation, then the analytical panels in a fixed
+#' order (evidence before context, context before administration).
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
@@ -49,9 +49,9 @@ episode_ui_dossier <- function(con, cluster_id, lang = "nl", current_user = NULL
 
 #' The line list panel's locked state for anonymous viewers
 #'
-#' "Render it as a locked panel explaining that signing in reveals it,
-#' not as an absent tab" (MILESTONES.md M3) - so it stays in the same
-#' position in the panel order either way.
+#' Rendered as a locked panel explaining that signing in reveals it,
+#' not as an absent tab - so it stays in the same position in the panel
+#' order either way.
 #' @keywords internal
 #' @noRd
 episode_ui_linelist_locked_panel <- function(lang = "nl") {
@@ -518,9 +518,8 @@ episode_ui_timeline_entry <- function(row, lang = "nl") {
 #' @noRd
 episode_ui_assessment_form <- function(cluster_id, obj, lang = "nl") {
   pal <- episode_palette()
-  # Ordered mild/terminal to severe, matching episode-mockup.jsx's CLASSES
-  # array - artefact and expected_variation are both terminal (close
-  # immediately), the rest escalate.
+  # Ordered mild/terminal to severe - artefact and expected_variation
+  # are both terminal (close immediately), the rest escalate.
   verdicts <- c("artefact", "expected_variation", "cluster_not_yet",
                 "possible_epidemic", "confirmed_epidemic")
   mute_reasons <- c("seasonal", "screening_campaign", "method_change", "known_source", "other")

@@ -55,7 +55,7 @@ Invisibly, a list with \code{file_path}, \code{file_sha256}, \code{version_no},
 }
 \description{
 A parameterised Quarto template rendered to self-contained HTML
-(ARCHITECTURE.md section 11, MILESTONES.md M4). Sent as a file, not a
+(ARCHITECTURE.md section 11). Sent as a file, not a
 link into the app: the medical staff receiving it have neither R nor an
 account, and a static artefact is also the defensible record of what was
 communicated on that date. Every render is versioned and registered in

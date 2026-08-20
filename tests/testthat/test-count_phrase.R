@@ -1,5 +1,4 @@
-# Dutch number agreement, MILESTONES.md M2's explicit watch-item:
-# "1 geval" against "2 gevallen".
+# Dutch number agreement: "1 geval" against "2 gevallen".
 
 test_that("episode_count_phrase() uses the singular for exactly 1", {
   expect_equal(episode_count_phrase(1, "geval", "gevallen"), "1 geval")

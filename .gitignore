@@ -53,9 +53,11 @@ rsconnect/
 *.yaml
 !inst/config/default.yaml
 !inst/config/palette.yaml
+!.github/**/*.yaml
 *.yml
 !inst/config/default.yml
 !inst/config/palette.yml
+!.github/**/*.yml
 *.sqlite
 *.sqlite3
 *.db

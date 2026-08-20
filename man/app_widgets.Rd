@@ -69,9 +69,9 @@ episode_ui_verdict_colour(verdict)
 \code{"possible_epidemic"}, \code{"confirmed_epidemic"}).}
 }
 \description{
-Thin \code{shiny::tags} wrappers mirroring \code{episode-mockup.jsx}'s primitive
-components (\code{Chip}, \code{Panel}, \code{Stat}, \code{Bars}, \code{Pyramid}): same structure
-and Dutch wording, none of the React idioms (MILESTONES.md M2). Styling
+Thin \code{shiny::tags} wrappers for the interface's small recurring
+primitives (a chip, a panel, a stat tile, a bar, a pyramid), server-side
+rendered rather than a client-side component library. Styling
 lives in \code{inst/app/www/episode.css}; these functions only assign class
 names and content.
 }

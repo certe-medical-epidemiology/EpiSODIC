@@ -1,13 +1,13 @@
 #' The interpretation fragment engine
 #'
-#' No LLM at runtime (standing brief hard rule 1). An interpretation (the
+#' No LLM at runtime - deterministic and testable by construction. An interpretation (the
 #' Dutch UI has its own term for this, see `inst/i18n/nl.json`'s
 #' `panel.interpretation.title`) is assembled from a fixed library of
 #' fragments: each fragment has an id, a condition function over the
 #' cluster object, a narrative slot, and a template (an i18n key with
 #' placeholders). Deterministic, testable, translatable.
 #'
-#' Slots fire in a fixed order (MILESTONES.md M2): magnitude, concentration,
+#' Slots fire in a fixed order: magnitude, concentration,
 #' denominator, demography, completeness, recommendation. Within a slot,
 #' fragments are tried in the order they are registered and the first whose
 #' condition matches is used; a slot with no matching fragment (for example
@@ -170,8 +170,9 @@ episode_interpretation_slots <- c("magnitude", "curve_shape", "concentration", "
 #' @param instance_i18n Optional operator overrides, passed to [episode_tr()].
 #' @return A list with `text` (a character vector, one string per slot that
 #'   fired, in slot order) and `fired` (a character vector of the fragment
-#'   ids that fired, same order) - "every fragment records which condition
-#'   fired" (MILESTONES.md M2).
+#'   ids that fired, same order) - every fragment records which
+#'   condition fired, so the interpretation is always traceable back to
+#'   the evidence that produced it.
 #' @export
 episode_interpretation_generate <- function(cluster, lang = "nl", instance_i18n = NULL) {
   fragments <- episode_interpretation_fragments()
@@ -197,10 +198,10 @@ episode_interpretation_generate <- function(cluster, lang = "nl", instance_i18n 
 
 #' Render the recommendation slot separately
 #'
-#' The recommendation slot is displayed with distinct visual treatment (an
-#' advisory callout, not a plain paragraph) in the dossier, matching
-#' `episode-mockup.jsx`'s `advies` box. This re-runs generation and returns
-#' just that slot's text so the UI does not have to know fragment ids.
+#' The recommendation slot is displayed with distinct visual treatment
+#' (an advisory callout, not a plain paragraph) in the dossier. This
+#' re-runs generation and returns just that slot's text so the UI does
+#' not have to know fragment ids.
 #'
 #' @inheritParams episode_interpretation_generate
 #' @return A single character string (the recommendation text), or `""` if

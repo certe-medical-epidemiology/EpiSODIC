@@ -1,6 +1,5 @@
 # Smaller-scope exported functions, one file to keep the test suite easy to
-# navigate; each still gets direct coverage per the standing brief ("every
-# exported function has tests").
+# navigate; every exported function gets direct coverage.
 
 test_that("episode_eligibility_gate() passes a stream with a full year of steady weekly counts", {
   config <- episode_test_config()

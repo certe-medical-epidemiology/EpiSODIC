@@ -1,8 +1,8 @@
 #' The application shell
 #'
 #' Custom header, nav and brand bar rather than a stock `bslib::page_navbar`,
-#' to match `episode-mockup.jsx`'s layout precisely (MILESTONES.md M2).
-#' `bslib` supplies the Bootstrap reset and font-loading helper only; all
+#' to match the intended house-style layout precisely. `bslib` supplies
+#' the Bootstrap reset and font-loading helper only; all
 #' visual design comes from `inst/app/www/episode.css` and the palette
 #' injected as CSS custom properties.
 #'

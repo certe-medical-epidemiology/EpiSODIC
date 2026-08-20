@@ -1,8 +1,8 @@
 #' Small reusable UI building blocks
 #'
-#' Thin `shiny::tags` wrappers mirroring `episode-mockup.jsx`'s primitive
-#' components (`Chip`, `Panel`, `Stat`, `Bars`, `Pyramid`): same structure
-#' and Dutch wording, none of the React idioms (MILESTONES.md M2). Styling
+#' Thin `shiny::tags` wrappers for the interface's small recurring
+#' primitives (a chip, a panel, a stat tile, a bar, a pyramid), server-side
+#' rendered rather than a client-side component library. Styling
 #' lives in `inst/app/www/episode.css`; these functions only assign class
 #' names and content.
 #' @name app_widgets
@@ -65,10 +65,10 @@ episode_ui_code_join <- function(detectors, sep = ", ") {
 #' A vertical list of colour-coded buttons standing in for a `<select>`
 #'
 #' Used for the classification and mute-reason pickers on the assessment
-#' form (`episode_ui_assessment_form()`) - matching `episode-mockup.jsx`'s
-#' own design (a labelled, coloured button per option, filled once
-#' selected) rather than a plain dropdown, so the option and its meaning
-#' are both visible at once instead of hidden behind a click.
+#' form (`episode_ui_assessment_form()`) - a labelled, coloured button
+#' per option, filled once selected, rather than a plain dropdown, so
+#' the option and its meaning are both visible at once instead of hidden
+#' behind a click.
 #'
 #' Selection is plain inline `onclick` JS (consistent with the rest of this
 #' app's forms, e.g. `episode_ui_nav_link()`), writing into a hidden

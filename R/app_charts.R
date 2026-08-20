@@ -1,10 +1,9 @@
 #' Chart panels
 #'
-#' `ggplot2`-based equivalents of `episode-mockup.jsx`'s Recharts
-#' components (`DailyCurve`, `LongTrend`, `Denominator`). Static, not
+#' Static, not
 #' interactive - keeping the app's dependency footprint to a single,
 #' ubiquitous CRAN plotting package rather than an htmlwidgets stack is a
-#' deliberate M2 simplification; documented in `QUESTIONS.md`.
+#' deliberate simplification; see `QUESTIONS.md`.
 #' @name app_charts
 #' @importFrom rlang .data
 NULL

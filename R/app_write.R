@@ -3,11 +3,8 @@
 #' `R/db_app_write.R` exposes one insert per table. The functions here
 #' combine those into the actual actions a signed-in assessor takes,
 #' adding the one piece of bookkeeping a raw insert cannot do on its own:
-#' recording every state transition, per MILESTONES.md M3 ("derived state
-#' wired to the interface, with `episode_cluster_state` written on every
-#' transition") and ARCHITECTURE.md section 6.4. Still insert-only
-#' throughout - nothing here issues `UPDATE` or `DELETE` (standing brief
-#' hard rule 7).
+#' recording every state transition (ARCHITECTURE.md section 6.4). Still
+#' insert-only throughout - nothing here issues `UPDATE` or `DELETE`.
 #' @name app_write
 NULL
 

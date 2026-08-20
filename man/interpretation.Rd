@@ -8,7 +8,7 @@
 episode_interpretation_slots
 }
 \description{
-No LLM at runtime (standing brief hard rule 1). An interpretation (the
+No LLM at runtime - deterministic and testable by construction. An interpretation (the
 Dutch UI has its own term for this, see \code{inst/i18n/nl.json}'s
 \code{panel.interpretation.title}) is assembled from a fixed library of
 fragments: each fragment has an id, a condition function over the
@@ -16,7 +16,7 @@ cluster object, a narrative slot, and a template (an i18n key with
 placeholders). Deterministic, testable, translatable.
 }
 \details{
-Slots fire in a fixed order (MILESTONES.md M2): magnitude, concentration,
+Slots fire in a fixed order: magnitude, concentration,
 denominator, demography, completeness, recommendation. Within a slot,
 fragments are tried in the order they are registered and the first whose
 condition matches is used; a slot with no matching fragment (for example

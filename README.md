@@ -1,5 +1,7 @@
 # EpiSODE
 
+[![R-CMD-check](https://github.com/certe-medical-epidemiology/episode/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/certe-medical-epidemiology/episode/actions/workflows/R-CMD-check.yaml)
+
 **Epi**demiological **S**ignal **O**bservation and **D**etection **E**ngine
 
 EpiSODE is an outbreak cluster detection and assessment system for a
@@ -11,8 +13,23 @@ clinical colleagues.
 
 The engine and the instance it runs against are kept separate: this
 repository is open-source software with no data and no site-specific
-configuration. See `ARCHITECTURE.md` for the full design and `MILESTONES.md`
-for the build plan.
+configuration. See `ARCHITECTURE.md` for the full design.
+
+<!--
+Screenshots below are sourced from data-raw/screenshots/ (git-tracked,
+.Rbuildignore'd so they never ship in the CRAN tarball) - see
+data-raw/README.md for how to regenerate them against episode_demo().
+-->
+<p align="center">
+  <img src="data-raw/screenshots/dossier.png" alt="A cluster dossier: epi curve, trend, and an automatically generated plain-language interpretation" width="800">
+  <br>
+  <em>The cluster dossier - epi curve, multi-year trend, and an automatically generated interpretation of the evidence.</em>
+</p>
+<p align="center">
+  <img src="data-raw/screenshots/performance.png" alt="The Prestatie (Performance) screen: positive predictive value per detector and organism" width="800">
+  <br>
+  <em>The Prestatie screen - positive predictive value per detector and organism, and detection timeliness, from the stored verdicts.</em>
+</p>
 
 ## Status
 

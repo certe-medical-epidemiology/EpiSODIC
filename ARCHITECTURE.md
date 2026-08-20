@@ -871,21 +871,9 @@ Synthetic data, no Diver, no credentials, launched with a single call. This dete
 
 ---
 
-## 17. Build order
+## 17. Adoption order for a new instance
 
-| Milestone | Content |
-|---|---|
-| M1 | Schema, DBI layer, ingestion, lattice, detectors, reconciliation, cron. No interface |
-| M2 | Read-only dossier, all panels, Duiding fragment engine, i18n scaffolding |
-| M3 | Authentication, passwordless viewer, assessment write path, state transitions, archive, activity log |
-| M4 | Quarto reports, versioning, distribution |
-| M5 | Rt, MEM, curve shape, analogues, baseline feedback, patient-day normalisation, geography |
-| M6 | Prestatie screen, gate calibration towards ten clusters a month, score weights, annual overview |
-| M7 | Demo mode, English i18n, vignettes, GPL-2 publication |
-
-M1 comes first because reconciliation is the load-bearing component and everything else assumes it is correct. Running M2 for several weeks before M3 remains advisable: the priority score will need recalibration against real volume, and that is far easier before three colleagues have formed expectations of it.
-
-Per-milestone scope, ordering and definitions of done are in `MILESTONES.md`.
+Reconciliation is the load-bearing component: schema, ingestion, the lattice, the detectors, and reconciliation itself must be correct before anything built on top of them (the read-only dossier, assessment workflow, reporting, or the Prestatie screen's calibration tools) can be trusted. Running the interface for several weeks against real signal before turning on classification workflows is advisable: the priority score and gate thresholds will need recalibration against real volume (see QUESTIONS.md), and that is far easier before colleagues have formed expectations of the tool.
 
 ---
 

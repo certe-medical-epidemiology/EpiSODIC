@@ -1,8 +1,8 @@
 #' The application colour palette
 #'
 #' Uses `certestyle::certe.colours` when installed (ARCHITECTURE.md
-#' section 10.1, MILESTONES.md M2). Since `certestyle` is Certe-internal
-#' and therefore only in `Suggests` (standing brief section 2), a
+#' section 10.1). Since `certestyle` is Certe-internal, it is only ever
+#' in `Suggests`, never a hard dependency; a
 #' shipped-default palette covers everyone else - not hardcoded in R, but
 #' read from `inst/config/palette.yaml`, the same defaults-then-instance-
 #' override pattern [episode_config_resolve()] uses for detection

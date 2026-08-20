@@ -1,7 +1,7 @@
 #' Reporting triangle
 #'
 #' Because sample date silently becomes receipt date when the physician
-#' leaves it blank (standing brief hard rule 8), reporting delay cannot be
+#' leaves it blank, reporting delay cannot be
 #' read off the date columns. It is measured from observed accrual instead:
 #' how many cases with a given sample date were visible on each successive
 #' run date (ARCHITECTURE.md section 5.7).

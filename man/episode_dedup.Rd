@@ -22,7 +22,7 @@ architecture's anchor).
 }
 \description{
 One isolate per patient per episode, using episode lengths from
-\code{episode_pathogen_config} (standing brief hard rule 5). \code{AMR::as.mo()}
+\code{episode_pathogen_config}. \code{AMR::as.mo()}
 only resolves non-viral taxonomy, and this package now treats \code{pathogen}
 as an arbitrary lab-provided string that can be anything (a virus, a
 resistance phenotype like "ETEC", a genus), so \code{AMR} is not a dependency

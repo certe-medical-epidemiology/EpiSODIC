@@ -1,11 +1,11 @@
 #' Derive cluster state
 #'
 #' State is computed, never chosen, never stored on `episode_cluster`
-#' (standing brief hard rule 3, ARCHITECTURE.md section 6.1). This is a
+#' (ARCHITECTURE.md section 6.1). This is a
 #' pure function: given the classification history and the case-free clock,
 #' it returns the same state every time, with no side effects and no
-#' database access, so it can be exhaustively unit tested per the standing
-#' brief section 6 ("wrong output there is undetectable until it matters").
+#' database access, so it can be exhaustively unit tested - a wrong
+#' output here is undetectable until it actually matters.
 #'
 #' State table (ARCHITECTURE.md section 6.1):
 #'

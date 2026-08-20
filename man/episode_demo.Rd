@@ -46,10 +46,9 @@ window is far more than a test needs to confirm the plumbing works.}
 Invisibly, \code{db_path}.
 }
 \description{
-MILESTONES.md M7's own done-when bar: "a stranger clones the
-repository and runs the whole system in under a minute." This is
-everything a first-time reader would otherwise piece together by hand
-from the README (\code{Sys.setenv()}, \code{episode_run_cron()} against the
+A stranger should be able to clone the repository and run the whole
+system in under a minute. This is everything a first-time reader
+would otherwise piece together by hand from the README (\code{Sys.setenv()}, \code{episode_run_cron()} against the
 bundled synthetic generator, \code{episode_provision_user()}) wrapped into
 one call - a fresh SQLite database, a completed detection run, one
 assessor account ready to sign in with, and (unless \code{launch = FALSE})

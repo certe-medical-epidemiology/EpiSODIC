@@ -5,7 +5,7 @@
 #' and overlays it on top: any key it sets replaces the corresponding key in
 #' the defaults. Detection settings are never read from anywhere else and
 #' never from inside this package's own tree at runtime beyond the shipped
-#' defaults (ARCHITECTURE.md section 7.4, standing brief hard rule 2).
+#' defaults (ARCHITECTURE.md section 7.4).
 #'
 #' The result is what gets hashed into `config_hash` and stored verbatim as
 #' `config_snapshot` on every detection run, so a run's exact parameters are

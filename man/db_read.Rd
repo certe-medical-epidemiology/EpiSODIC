@@ -109,5 +109,5 @@ episode_db_institution_activity(con, institution_id)
 Plain \code{DBI}-based readers used by both the cron and the app. Read-only:
 none of these functions write to the database. All SQL for the package
 lives behind functions in \code{R/db_*.R}; nothing outside this layer issues
-SQL directly (standing brief, section 3).
+SQL directly.
 }

@@ -16,8 +16,9 @@ episode_interpretation_generate(cluster, lang = "nl", instance_i18n = NULL)
 \value{
 A list with \code{text} (a character vector, one string per slot that
 fired, in slot order) and \code{fired} (a character vector of the fragment
-ids that fired, same order) - "every fragment records which condition
-fired" (MILESTONES.md M2).
+ids that fired, same order) - every fragment records which
+condition fired, so the interpretation is always traceable back to
+the evidence that produced it.
 }
 \description{
 Generate the interpretation for a cluster

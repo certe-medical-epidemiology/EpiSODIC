@@ -24,10 +24,10 @@ uses \code{config$eligibility}.}
 The first layer of volume control (ARCHITECTURE.md section 8, item 1): a
 stream needs sufficient baseline history, a minimum median weekly count,
 and non-zero counts in a reasonable share of baseline weeks before
-statistical detection is attempted on it. Streams failing this gate are
-documented in \code{MILESTONES.md}/the architecture as falling through to
-EARS C2 or the rare-pathogen path; only the gate itself is implemented in
-M1 (\code{R/detect_*.R} handles the fall-through detectors).
+statistical detection is attempted on it. Streams failing this gate
+fall through to EARS C2 or the rare-pathogen path instead
+(\code{R/detect_*.R} handles those fall-through detectors); only the gate
+itself lives here.
 }
 \details{
 The numeric thresholds are not specified anywhere in the architecture

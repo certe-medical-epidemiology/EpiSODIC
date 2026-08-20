@@ -23,8 +23,8 @@ somehow nothing fired (should not happen: \code{recommendation.default}
 always matches).
 }
 \description{
-The recommendation slot is displayed with distinct visual treatment (an
-advisory callout, not a plain paragraph) in the dossier, matching
-\code{episode-mockup.jsx}'s \code{advies} box. This re-runs generation and returns
-just that slot's text so the UI does not have to know fragment ids.
+The recommendation slot is displayed with distinct visual treatment
+(an advisory callout, not a plain paragraph) in the dossier. This
+re-runs generation and returns just that slot's text so the UI does
+not have to know fragment ids.
 }

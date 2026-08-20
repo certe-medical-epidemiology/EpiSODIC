@@ -7,8 +7,7 @@
 #' shape so the detectors have something to visibly fire on: one point
 #' source (`add_outbreak_point_source`, a ward-level cluster tightly bunched
 #' in time) and one propagated (`add_outbreak_propagated`, a community
-#' cluster with generation-interval-spaced case waves). This is what
-#' `MILESTONES.md` M1 step 5 asks for.
+#' cluster with generation-interval-spaced case waves).
 #'
 #' No Diver column name is invented here; every field in the returned data
 #' frame is entirely synthetic and matches `episode_ingest_columns`.
@@ -177,6 +176,132 @@ episode_synthetic_outbreak_point_source <- function(institutions, end_date, n_ca
     age = pmin(pmax(round(stats::rnorm(n_cases, mean = 78, sd = 8)), 60), 100),
     stringsAsFactors = FALSE
   )
+}
+
+#' Synthetic data with realistic signal volume for one pathogen, for calibration testing
+#'
+#' `episode_ingest_source_synthetic()` injects exactly two outbreaks
+#' total across a multi-year window - enough to prove the detectors and
+#' reconciliation work, nowhere near enough to tune anything against.
+#' The eligibility gate's own calibration target is concrete - roughly
+#' ten assessed clusters a month, system-wide (`episode_eligibility_gate()`);
+#' there is no way to tune
+#' towards a target using two data points. This is not a substitute for
+#' real signal volume - it is still fabricated data, and no amount of
+#' realism turns it into "real data" - but it is an honest stand-in: many
+#' independent `same_place`-shaped case bumps for one named pathogen,
+#' spread across LTC institutions and hospitals over the whole window,
+#' at a volume an operator can actually run the Prestatie screen and the
+#' eligibility gate against while deciding how to tune them for a real
+#' instance. Every cluster this produces is clearly synthetic in origin
+#' (`PT-VOL-*` patient keys) so it is never mistaken for anything else.
+#'
+#' @param start_date,end_date The window to generate over.
+#' @param pathogen Which organism to generate elevated volume for.
+#'   Defaults to *Clostridioides difficile*, `QUESTIONS.md`'s own
+#'   worked example of an endemic organism that produces frequent
+#'   `same_place` clusters at a busy institution.
+#' @param n_bumps_per_month Average number of independent case bumps
+#'   generated per calendar month (Poisson-distributed), each becoming
+#'   its own candidate cluster once reconciled. Tune this up or down to
+#'   see how detection volume responds - that response is the entire
+#'   point of this function.
+#' @param seed RNG seed, for reproducible runs.
+#' @return A data frame satisfying `episode_ingest_validate_source()`,
+#'   including everything `episode_ingest_source_synthetic()` produces
+#'   (background baseline, the two standard demo outbreaks) plus the
+#'   extra volume.
+#' @export
+episode_ingest_source_synthetic_calibration <- function(start_date = as.Date("2021-01-01"),
+                                                          end_date = as.Date("2025-12-31"),
+                                                          pathogen = "Clostridioides difficile",
+                                                          n_bumps_per_month = 3,
+                                                          seed = 1) {
+  set.seed(seed)
+
+  institutions <- episode_synthetic_institutions()
+  pc4_pool <- episode_synthetic_pc4_pool()
+  organisms <- episode_synthetic_organism_profiles()
+  dates <- seq(start_date, end_date, by = "day")
+
+  baseline <- episode_synthetic_baseline_cases(dates, institutions, pc4_pool, organisms)
+  point_source <- episode_synthetic_outbreak_point_source(institutions, end_date)
+  propagated <- episode_synthetic_outbreak_propagated(pc4_pool, end_date)
+  volume <- episode_synthetic_outbreak_volume(institutions, start_date, end_date,
+                                               pathogen = pathogen, n_bumps_per_month = n_bumps_per_month)
+
+  cases <- rbind(baseline, point_source, propagated, volume)
+  cases$source_key <- sprintf("SYN-%08d", seq_len(nrow(cases)))
+
+  cases <- cases[order(cases$sample_date), ]
+  rownames(cases) <- NULL
+
+  episode_ingest_validate_source(cases)
+}
+
+#' Inject many independent same-place case bumps for one pathogen
+#'
+#' The volume generator behind [episode_ingest_source_synthetic_calibration()].
+#' Each bump is shaped like the `same_place` detector's own trigger
+#' condition (several cases at one institution within a short window) so
+#' it reliably becomes its own cluster on reconciliation, rather than
+#' relying on Farrington to notice an elevated baseline.
+#'
+#' @param institutions From `episode_synthetic_institutions()`.
+#' @param start_date,end_date The window to spread bumps across.
+#' @param pathogen The organism name to stamp every generated case with.
+#' @param n_bumps_per_month Average bumps per calendar month
+#'   (`stats::rpois()`).
+#' @param cases_per_bump A `c(min, max)` range; the actual count per bump
+#'   is drawn uniformly from it.
+#' @return A data frame in the same shape as this file's other
+#'   generators, or `NULL` if no bumps were generated at all (possible,
+#'   not likely, with a very short window or low `n_bumps_per_month`).
+#' @keywords internal
+#' @noRd
+episode_synthetic_outbreak_volume <- function(institutions, start_date, end_date,
+                                               pathogen = "Clostridioides difficile",
+                                               n_bumps_per_month = 3, cases_per_bump = c(3, 9)) {
+  eligible <- institutions[institutions$institution_type %in% c("ltc_institution", "hospital"), ]
+  months <- seq(as.Date(format(start_date, "%Y-%m-01")), end_date, by = "month")
+
+  rows <- list()
+  bump_id <- 0L
+  for (m in months) {
+    month_start <- as.Date(m, origin = "1970-01-01")
+    n_bumps <- stats::rpois(1, n_bumps_per_month)
+    for (b in seq_len(n_bumps)) {
+      inst <- eligible[sample(nrow(eligible), 1), ]
+      n_cases <- sample(cases_per_bump[1]:cases_per_bump[2], 1)
+      onset_offsets <- round(stats::rgamma(n_cases, shape = 3, rate = 1.5))
+      case_dates <- month_start + sample(0:27, 1) + onset_offsets
+      case_dates <- case_dates[case_dates >= start_date & case_dates <= end_date]
+      n_cases <- length(case_dates)
+      if (n_cases == 0) next
+
+      bump_id <- bump_id + 1L
+      is_hospital <- identical(inst$institution_type, "hospital")
+      rows[[length(rows) + 1]] <- data.frame(
+        patient_key = sprintf("PT-VOL-%04d-%03d", bump_id, seq_len(n_cases)),
+        sample_date = as.character(case_dates),
+        receipt_date = as.character(case_dates + 1),
+        pathogen = pathogen,
+        care_line = inst$care_line,
+        institution_key = inst$institution_key,
+        institution_display_name = inst$institution_display_name,
+        institution_type = inst$institution_type,
+        municipality = inst$municipality,
+        ward = if (is_hospital) sample(c("Interne", "Chirurgie", "Longziekten", "Geriatrie", "IC"), n_cases, replace = TRUE) else NA_character_,
+        specialism = if (is_hospital) sample(c("Interne geneeskunde", "Chirurgie", "Longziekten", "Klinische geriatrie"), n_cases, replace = TRUE) else NA_character_,
+        pc4 = sample(episode_synthetic_pc4_pool(), n_cases, replace = TRUE),
+        sex = sample(c("M", "F"), n_cases, replace = TRUE),
+        age = pmin(pmax(round(stats::rnorm(n_cases, mean = 75, sd = 12)), 40), 100),
+        stringsAsFactors = FALSE
+      )
+    }
+  }
+  if (length(rows) == 0) return(NULL)
+  do.call(rbind, rows)
 }
 
 #' Inject a propagated outbreak: community spread with generation-interval waves

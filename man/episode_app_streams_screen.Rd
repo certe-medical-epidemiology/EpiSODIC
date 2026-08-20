@@ -21,7 +21,7 @@ the latest successful run, or \code{NULL}).
 }
 \description{
 Displays the configuration from the latest run's \code{config_snapshot}, not
-from the file (ARCHITECTURE.md section 7.4/10, MILESTONES.md M2).
+from the file (ARCHITECTURE.md section 7.4/10).
 }
 \details{
 Paginated, and deliberately at the read-model level rather than only

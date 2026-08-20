@@ -50,7 +50,8 @@ community ones").
 \details{
 This is priority ranking, not exclusion (section 8, item 5): the score
 never removes a candidate from the queue, it only orders it. Weight
-calibration against real signal volume is M6 scope
-(\code{MILESTONES.md}); the values shipped in \code{inst/config/default.yaml}
-are the architecture's stated defaults, unmodified.
+calibration against real signal volume needs an instance that has
+actually run for a while (see \code{QUESTIONS.md}); the values shipped in
+\code{inst/config/default.yaml} are the architecture's stated defaults,
+unmodified.
 }

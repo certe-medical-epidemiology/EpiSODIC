@@ -5,7 +5,8 @@
 \title{i18n scaffolding}
 \description{
 Flat JSON, dotted keys, Dutch default, English fallback, missing keys
-rendered visibly rather than blank (MILESTONES.md M2). User-facing
+rendered visibly (\verb{[[key]]}) rather than blank, so a gap is loud, not
+silent. User-facing
 strings are never hardcoded in R code; every string used by the app
 lives in \code{inst/i18n/nl.json}/\code{en.json} and is looked up through
 \code{\link[=episode_tr]{episode_tr()}}.
@@ -13,8 +14,9 @@ lives in \code{inst/i18n/nl.json}/\code{en.json} and is looked up through
 \details{
 Fallback chain: an instance override (an operator-supplied overlay,
 e.g. for house-style wording changes, located beside \code{EPISODE_CONFIG}
-rather than in the repository, consistent with the standing brief's
-"no configuration in the repository" rule), then the requested session
-language, then \code{"en"}, then the key itself, wrapped so a missing
+rather than in the repository - configuration is never committed to
+the repository, the same rule detection settings follow), then the
+requested session language, then \code{"en"}, then the key itself, wrapped
+so a missing
 translation is obvious in testing rather than silently blank.
 }

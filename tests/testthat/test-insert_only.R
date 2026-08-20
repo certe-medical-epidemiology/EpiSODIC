@@ -11,9 +11,9 @@ episode_test_r_source_dir <- function() {
 }
 
 test_that("the app's write surface issues no UPDATE or DELETE SQL statements", {
-  # MILESTONES.md M3's own "done when" line: "Verify by inspection that the
-  # app issues no UPDATE or DELETE statements at all." Scoped to the files
-  # a live Shiny session can actually reach (everything prefixed app_,
+  # Verified by inspection that the app issues no UPDATE or DELETE
+  # statements at all. Scoped to the files a live Shiny session can
+  # actually reach (everything prefixed app_,
   # auth.R, run_app.R) - NOT R/db_cron_write.R or the cron pipeline, which
   # legitimately UPDATEs the facts it owns (ARCHITECTURE.md section 5.0:
   # "the cron owns the facts, the app owns the judgements"; only the app

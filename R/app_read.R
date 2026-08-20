@@ -490,7 +490,7 @@ episode_app_detection_settings <- function(con, cluster_id) {
 #' Read-only Streams screen data
 #'
 #' Displays the configuration from the latest run's `config_snapshot`, not
-#' from the file (ARCHITECTURE.md section 7.4/10, MILESTONES.md M2).
+#' from the file (ARCHITECTURE.md section 7.4/10).
 #'
 #' Paginated, and deliberately at the read-model level rather than only
 #' in the UI: `baseline_excluded` is one DB round trip per stream (via

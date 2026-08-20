@@ -9,9 +9,10 @@
 #'
 #' This is priority ranking, not exclusion (section 8, item 5): the score
 #' never removes a candidate from the queue, it only orders it. Weight
-#' calibration against real signal volume is M6 scope
-#' (`MILESTONES.md`); the values shipped in `inst/config/default.yaml`
-#' are the architecture's stated defaults, unmodified.
+#' calibration against real signal volume needs an instance that has
+#' actually run for a while (see `QUESTIONS.md`); the values shipped in
+#' `inst/config/default.yaml` are the architecture's stated defaults,
+#' unmodified.
 #'
 #' @param excess Observed minus upperbound (may be `NA`).
 #' @param ratio Observed over expected, capped at 5 (may be `NA`).

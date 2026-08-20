@@ -1,6 +1,6 @@
-# Property-based tests for reconciliation, per MILESTONES.md's list:
-# extension, split, merge, backfill, rerun idempotence, out-of-order runs,
-# and no partial state after a failed run.
+# Property-based tests for reconciliation: extension, split, merge,
+# backfill, rerun idempotence, out-of-order runs, and no partial state
+# after a failed run.
 #
 # These tests exercise episode_reconcile_stream() against a real SQLite
 # database (schema, streams, cases) rather than mocking the repository
