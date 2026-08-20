@@ -167,6 +167,15 @@ postcodes, zip codes, municipality codes, anything) and a `geometry`
 column, and it is used instead. See `R/geo_data.R` for the exact
 contract.
 
+A second, independent layer can be drawn on top for orientation - region
+outlines (provinces, municipalities, whatever is useful), colour but no
+fill, a thicker line than the choropleth itself. Point
+`EPISODE_GEO_DATA_OVERLAY` at an `.rds` file holding an `sf` object with
+just a `geometry` column (no `pc` join needed, since it carries no case
+counts of its own). No default is shipped for this one - unlike PC4
+postcodes, region boundaries are too jurisdiction-specific to guess a
+sensible default for.
+
 ### Custom report templates (optional)
 
 `episode_report_render()` renders `inst/report/cluster_report.qmd`
@@ -217,6 +226,7 @@ Docker container) without editing R code.
 | `EPISODE_CONFIG` | `episode_run_cron()` (`episode_config_path` argument) | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`'s shipped defaults. |
 | `EPISODE_PALETTE_CONFIG` | `episode_palette()` (`palette_config_path` argument) | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`'s shipped defaults. Deliberately separate from `EPISODE_CONFIG`: colour is a display concern, never part of `episode_config_hash()`'s detection-reproducibility guarantee. |
 | `EPISODE_GEO_DATA` | `episode_geo_source_resolve()` (`path` argument) | Path to an `.rds` file holding an operator's own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands PC4 default. See "Geographic reference data" above. |
+| `EPISODE_GEO_DATA_OVERLAY` | `episode_geo_overlay_resolve()` (`path` argument) | Path to an `.rds` file holding an optional region-outline overlay (an `sf` object with just a `geometry` column), drawn on top of the choropleth. No default. See "Geographic reference data" above. |
 | `EPISODE_QUARTO_REPORT` | `episode_report_render()` (`qmd_path` argument) | Path to an operator's own Quarto report template, overriding the shipped `inst/report/cluster_report.qmd`. See "Custom report templates" above. |
 
 ## Licence

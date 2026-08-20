@@ -30,4 +30,14 @@ contract implies a 4-digit Dutch postcode) and a \code{geometry} column.
 CRAN alone can supply, so this whole feature is guarded end to end: no
 \code{sf} installed means the geography panel falls back to the existing PC
 bar breakdown, exactly as before this existed.
+
+A second, entirely independent piece of geographic data is supported
+on top of this: \code{EPISODE_GEO_DATA_OVERLAY}
+(\code{\link[=episode_geo_overlay_resolve]{episode_geo_overlay_resolve()}}), an outline layer (region boundaries
+\itemize{
+\item provinces, municipalities, whatever an operator wants for
+orientation) drawn with colour but no fill on top of the choropleth.
+It has no \code{pc} contract at all, since it carries no case counts to
+join.
+}
 }

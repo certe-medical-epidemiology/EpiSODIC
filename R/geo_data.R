@@ -23,8 +23,47 @@
 #' CRAN alone can supply, so this whole feature is guarded end to end: no
 #' `sf` installed means the geography panel falls back to the existing PC
 #' bar breakdown, exactly as before this existed.
+#'
+#' A second, entirely independent piece of geographic data is supported
+#' on top of this: `EPISODE_GEO_DATA_OVERLAY`
+#' ([episode_geo_overlay_resolve()]), an outline layer (region boundaries
+#' - provinces, municipalities, whatever an operator wants for
+#' orientation) drawn with colour but no fill on top of the choropleth.
+#' It has no `pc` contract at all, since it carries no case counts to
+#' join.
 #' @name geo_data
 NULL
+
+#' Resolve the optional region-outline overlay
+#'
+#' A second, independent geographic layer, drawn as outlines (no fill,
+#' a thicker line) on top of the PC choropleth - for boundaries an
+#' operator wants visible for orientation (provinces, municipalities,
+#' catchment areas) but that carry no case counts of their own, so
+#' `episode_geo_join()`'s `pc`-keyed contract does not apply here: the
+#' overlay needs nothing but a `geometry` column. Unlike
+#' [episode_geo_source_resolve()], there is no shipped default -
+#' region boundaries are far more jurisdiction-specific than postcode
+#' geometry, and guessing at a "sensible default" (which country's
+#' provinces?) would be arbitrary in a way the PC4 default is not
+#' (`EPISODE_GEO_DATA` is Netherlands-only *labelled as such*, not
+#' pretending to be universal). No `EPISODE_GEO_DATA_OVERLAY` set (or an
+#' invalid file) simply means no overlay layer, same as no `sf` at all.
+#'
+#' @param path Path to an `.rds` file holding an `sf` object with a
+#'   `geometry` column. Defaults to the `EPISODE_GEO_DATA_OVERLAY`
+#'   environment variable.
+#' @return An `sf` object, or `NULL` if `sf` is not installed, the
+#'   variable is unset, or the file is missing/invalid.
+#' @export
+episode_geo_overlay_resolve <- function(path = Sys.getenv("EPISODE_GEO_DATA_OVERLAY", unset = NA)) {
+  if (!requireNamespace("sf", quietly = TRUE)) return(NULL)
+  if (is.na(path) || !nzchar(path) || !file.exists(path)) return(NULL)
+
+  overlay <- tryCatch(readRDS(path), error = function(e) NULL)
+  if (is.null(overlay) || !"geometry" %in% names(overlay)) return(NULL)
+  overlay
+}
 
 #' Resolve the geographic reference dataset to use
 #'

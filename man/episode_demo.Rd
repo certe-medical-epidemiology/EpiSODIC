@@ -11,7 +11,9 @@ episode_demo(
   email = "demo@example.org",
   password = "episode-demo",
   launch = TRUE,
-  lang = "nl"
+  lang = "nl",
+  ingest_source_fn = episode_ingest_source_synthetic,
+  denominator_source_fn = episode_denominator_source_synthetic
 )
 }
 \arguments{
@@ -32,6 +34,13 @@ for scripting, screenshots, or tests that need a populated demo
 database without an interactive session.}
 
 \item{lang}{Passed to \code{\link[=episode_run_app]{episode_run_app()}} when \code{launch = TRUE}.}
+
+\item{ingest_source_fn, denominator_source_fn}{Passed straight through
+to \code{\link[=episode_run_cron]{episode_run_cron()}}. Default to the bundled synthetic generator
+over its own full default window (several years); exposed mainly so
+a smaller/faster window can be substituted - this package's own
+tests do exactly that, since a real demo's representative multi-year
+window is far more than a test needs to confirm the plumbing works.}
 }
 \value{
 Invisibly, \code{db_path}.

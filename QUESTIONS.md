@@ -1093,6 +1093,21 @@ true.
    anything, same as the single-cluster path, since the DOM/onclick is
    not a trust boundary.
 
+9. **`EPISODE_GEO_DATA_OVERLAY`**: a second, independent geographic
+   layer, requested directly - region outlines (provinces,
+   municipalities, whatever an operator wants for orientation) drawn
+   with colour but no fill, a thicker line than the choropleth, on top
+   of it. Deliberately a much thinner contract than `EPISODE_GEO_DATA`:
+   just an `sf` object with a `geometry` column, no `pc` join at all,
+   since an outline layer carries no case counts of its own to attach.
+   No shipped default this time (unlike the PC4 choropleth) - region
+   boundaries are far more jurisdiction-specific than postcode geometry,
+   and shipping "a" default would just be an arbitrary choice of country
+   dressed up as a sensible one. `episode_ui_geo_map_chart()`'s overlay
+   `geom_sf()` call is wrapped in its own `tryCatch()` separate from the
+   choropleth's - a bad or CRS-mismatched overlay file must not take
+   down a choropleth that was already rendering fine without it.
+
 ## Parked for a future milestone
 
 1. **Cluster volume for endemic organisms at a single place.**

@@ -83,7 +83,10 @@ episode_ui_rt_chart <- function(rt, lang = "nl") {
 #' Deliberately not built on `certegis` (see `R/geo_data.R`'s own docs and
 #' QUESTIONS.md): geography here is operator-suppliable, not
 #' Netherlands-only, matching how every other domain concept in this
-#' codebase already works.
+#' codebase already works. An optional second layer
+#' (`episode_geo_overlay_resolve()`, `EPISODE_GEO_DATA_OVERLAY`) draws
+#' region outlines - no fill, a thicker line - on top for orientation;
+#' its own absence or failure never affects the choropleth itself.
 #'
 #' @param rows A data frame from `episode_app_concentration()$rows`
 #'   (`label` = a PC value, `n` = case count).
@@ -100,9 +103,25 @@ episode_ui_geo_map_chart <- function(rows) {
   tryCatch({
     geo <- episode_geo_join(rows)
     if (is.null(geo)) return(NULL)
-    ggplot2::ggplot(geo) +
+    p <- ggplot2::ggplot(geo) +
       ggplot2::geom_sf(ggplot2::aes(fill = .data$n), colour = pal$border, linewidth = 0.1) +
-      ggplot2::scale_fill_gradient(low = pal$primary_tint, high = pal$primary, na.value = pal$bg_subtle) +
+      ggplot2::scale_fill_gradient(low = pal$primary_tint, high = pal$primary, na.value = pal$bg_subtle)
+
+    # EPISODE_GEO_DATA_OVERLAY: an optional second layer for orientation
+    # (province/municipality outlines, ...) - colour, no fill, a
+    # thicker line so it reads as a boundary on top of the choropleth
+    # rather than competing with it. Its own failure (bad geometry, CRS
+    # mismatch) must not take down the choropleth that already rendered
+    # fine without it.
+    overlay <- tryCatch(episode_geo_overlay_resolve(), error = function(e) NULL)
+    if (!is.null(overlay)) {
+      p <- tryCatch(
+        p + ggplot2::geom_sf(data = overlay, fill = NA, colour = pal$ink, linewidth = 0.6),
+        error = function(e) p
+      )
+    }
+
+    p +
       ggplot2::coord_sf(datum = NA) +
       episode_chart_theme() +
       ggplot2::theme(axis.text = ggplot2::element_blank(), axis.ticks = ggplot2::element_blank(),
