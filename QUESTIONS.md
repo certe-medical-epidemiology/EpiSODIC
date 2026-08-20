@@ -718,15 +718,34 @@ decisions survives.
     `test-app_assessment_read.R` seeds a second run with a different
     status to catch this class of bug reappearing.
 
-14. **Archief showing no closed clusters is expected on a fresh instance,
-    not a gap.** Checked directly: a brand-new synthetic demo run has
-    zero closed clusters, because closure (`episode_derive_state()`)
-    requires either an assessor's explicit closure action or a terminal
-    verdict plus the closure criterion being met over time - neither has
-    happened yet on data nobody has assessed. `episode_app_archive()`
-    itself is unit-tested end-to-end (submit a terminal verdict, assert
-    it appears) and works correctly. Nothing to fix; noted here so this
-    doesn't get re-investigated as a bug later.
+14. **Bug (real, superseding this item's own earlier note): the rail
+    count and the Archief screen never noticed a write unless `view()`
+    happened to change too.** First investigated against a *fresh*
+    synthetic instance, where zero closed clusters is genuinely correct
+    (nothing had been assessed yet) - that led to wrongly closing this
+    out as "nothing to fix". The user then closed a real cluster and
+    reported the rail's "N clusters nieuw of actief" count did not
+    change and Archief stayed empty, which is a real bug: `open_clusters`
+    (the rail's data source) and `output$archive_screen` both read
+    straight from the database with no Shiny reactive dependency that a
+    write action ever touched. `episode_app_server_assessment_actions()`'s
+    `refresh()` only re-triggered `selected_cluster_id()`, which
+    invalidates the dossier/assessment panes (both keyed on that value)
+    but nothing else - so closing a cluster without ever navigating away
+    from the "clusters" view left both permanently stale, and even
+    navigating into Archief did not help, since `output$archive_screen`
+    is a standalone Shiny output whose own dependencies (`archive_query()`,
+    `lang`) `view()` is not one of - unlike the inline "streams"/"activity"
+    branches inside `output$main_view`, which *do* recompute on every
+    `view()` change because they live directly inside that renderUI.
+    Fixed with a session-wide `db_version` `reactiveVal`, bumped by
+    `refresh()`, that `open_clusters` and `output$archive_screen` both
+    now read. Caught this time with a `shiny::testServer()` regression
+    test (`test-app_server.R`) that closes a cluster via `assess_close`
+    without ever touching `nav_view`, and asserts both the rail and
+    Archief actually reflect it - confirmed against the pre-fix code
+    that it fails exactly as described before failing back to green
+    after the fix.
 
 15. **Report rendering: `quiet = TRUE` was swallowing the real Quarto
     error.** The `quarto` R package always captures the CLI's stderr into
@@ -745,6 +764,20 @@ decisions survives.
     failure in this sandbox, which has no Quarto CLI installed at all
     (only the R package) - verified by reading `quarto:::quarto_run()`
     and `quarto:::wrap_quarto_error()`'s source directly instead.
+
+16. **Report render button had no "in progress" feedback.** The render
+    itself is a long, synchronous server call that blocks the whole
+    Shiny session, so nothing pushed from a server-side observer can
+    reach the browser before it finishes - a `reactiveVal` flipped at
+    the start of the observer would not actually flush to the client
+    until the observer (including the blocking call) returns. Fixed
+    client-side instead: the button's own `onclick` disables it and
+    reveals a "Rapport genereren..." paragraph synchronously, before the
+    `Shiny.setInputValue()` call that starts the render. On success the
+    whole dossier pane re-renders (fresh DOM, both reset automatically);
+    on failure `episode_app_server_report()`'s error-display `renderUI`
+    now also emits a small inline `<script>` that resets the button and
+    hides the pending text, since nothing else would.
 
 ## Parked for a future milestone
 

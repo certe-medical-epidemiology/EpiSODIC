@@ -374,9 +374,24 @@ episode_ui_report_panel <- function(con, cluster_id, current_user, lang = "nl") 
       shiny::tagList(
         shiny::uiOutput("report_render_error"),
         shiny::tags$button(
+          id = "report-render-button",
           class = "episode-btn",
-          onclick = sprintf("Shiny.setInputValue('report_render_submit', %d, {priority: 'event'})", cluster_id),
+          # Disabling the button and showing the "generating" text happens
+          # here, client-side, at click time - the render itself is a
+          # long, synchronous server call that blocks the whole session,
+          # so nothing pushed from a Shiny observer could appear on
+          # screen before it finishes. episode_app_server_report() clears
+          # both again once it is done (a fresh dossier pane on success,
+          # a small reset script alongside the error message on failure).
+          onclick = sprintf(
+            "this.disabled=true; document.getElementById('report-render-pending').style.display='block'; Shiny.setInputValue('report_render_submit', %d, {priority: 'event'})",
+            cluster_id
+          ),
           episode_tr("panel.report.render_button", lang = lang)
+        ),
+        shiny::tags$p(
+          id = "report-render-pending", style = "display:none;font-size:12.5px;color:var(--episode-muted);margin-top:6px;",
+          episode_tr("panel.report.pending", lang = lang)
         )
       )
     }

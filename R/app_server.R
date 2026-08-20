@@ -15,7 +15,16 @@ episode_app_server_factory <- function(db_path, lang = "nl") {
     view <- shiny::reactiveVal("clusters")
     shiny::observeEvent(input$nav_view, view(input$nav_view))
 
+    # Bumped by every write action (episode_app_server_assessment_actions()'s
+    # refresh()) so read models with no other reason to invalidate - the
+    # rail's own open-cluster list, the Archief screen - notice a
+    # classification, closure or mute happened even while the user never
+    # leaves the view that triggered it.
+    db_version <- shiny::reactiveVal(0)
+    db_touch <- function() db_version(db_version() + 1)
+
     open_clusters <- shiny::reactive({
+      db_version()
       shiny::req(view() == "clusters")
       episode_app_open_clusters(con, lang = lang)
     })
@@ -89,11 +98,13 @@ episode_app_server_factory <- function(db_path, lang = "nl") {
     archive_query <- shiny::reactiveVal("")
     shiny::observeEvent(input$archive_search, archive_query(input$archive_search))
     output$archive_screen <- shiny::renderUI({
+      db_version()
       episode_ui_archive_screen(episode_app_archive(con, query = archive_query(), lang = lang), lang = lang)
     })
 
     episode_app_server_assessment_actions(input, output, session, con, lang = lang,
-                                           current_user = current_user, selected_cluster_id = selected_cluster_id)
+                                           current_user = current_user, selected_cluster_id = selected_cluster_id,
+                                           db_touch = db_touch)
     episode_app_server_report(input, output, session, con, db_path = db_path, lang = lang,
                                current_user = current_user, selected_cluster_id = selected_cluster_id)
   }

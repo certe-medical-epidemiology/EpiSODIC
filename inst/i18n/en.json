@@ -299,5 +299,6 @@
   "panel.report.title": "Outbreak report",
   "panel.report.empty": "No report rendered yet for this cluster.",
   "panel.report.version_line": "Version {version} - {when}",
-  "panel.report.render_button": "Generate report"
+  "panel.report.render_button": "Generate report",
+  "panel.report.pending": "Generating report..."
 }

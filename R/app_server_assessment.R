@@ -15,11 +15,17 @@
 #'   current selection, used to force the dossier/assessment panes to
 #'   refresh after a write (the underlying cluster's state may have
 #'   changed).
+#' @param db_touch A zero-argument function that bumps the session's
+#'   shared `db_version` counter, so read models that do not depend on
+#'   `selected_cluster_id` (the rail's own open-cluster count, the
+#'   Archief screen) also notice a write happened. Without this, closing
+#'   or classifying a cluster left both silently stale until something
+#'   unrelated (a `view()` change) happened to force a recompute.
 #' @return Invisible `NULL`; called for its side effects.
 #' @keywords internal
 #' @noRd
 episode_app_server_assessment_actions <- function(input, output, session, con, lang = "nl",
-                                                    current_user, selected_cluster_id) {
+                                                    current_user, selected_cluster_id, db_touch) {
   refresh <- function() {
     # Re-trigger the dossier/assessment renderers by "reselecting" the
     # same cluster - both read from the database, not from this value's
@@ -27,6 +33,7 @@ episode_app_server_assessment_actions <- function(input, output, session, con, l
     id <- selected_cluster_id()
     selected_cluster_id(NULL)
     selected_cluster_id(id)
+    db_touch()
   }
 
   shiny::observeEvent(input$assess_submit, {

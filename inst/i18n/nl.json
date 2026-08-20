@@ -299,5 +299,6 @@
   "panel.report.title": "Uitbraakrapport",
   "panel.report.empty": "Nog geen rapport gerenderd voor dit cluster.",
   "panel.report.version_line": "Versie {version} - {when}",
-  "panel.report.render_button": "Rapport genereren"
+  "panel.report.render_button": "Rapport genereren",
+  "panel.report.pending": "Rapport genereren..."
 }

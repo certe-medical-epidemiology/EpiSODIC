@@ -26,7 +26,19 @@ episode_app_server_report <- function(input, output, session, con, db_path, lang
   output$report_render_error <- shiny::renderUI({
     msg <- render_error()
     if (is.null(msg)) return(NULL)
-    shiny::tags$div(class = "episode-form-error", msg)
+    shiny::tagList(
+      shiny::tags$div(class = "episode-form-error", msg),
+      # The render button is disabled and the "generating" text shown
+      # client-side, at click time (episode_ui_report_panel()) - a
+      # synchronous server-side render blocks the whole session, so
+      # nothing pushed from an observer can appear before it finishes.
+      # On success the dossier pane re-renders wholesale, which already
+      # clears both; on error it does not, so reset them here instead.
+      shiny::tags$script(shiny::HTML(paste0(
+        "(function(){var b=document.getElementById('report-render-button'); if(b) b.disabled=false; ",
+        "var p=document.getElementById('report-render-pending'); if(p) p.style.display='none';})();"
+      )))
+    )
   })
 
   shiny::observeEvent(input$report_render_submit, {
