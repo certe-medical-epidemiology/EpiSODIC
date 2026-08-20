@@ -267,7 +267,7 @@ test_that("a failed run inside the cron transaction leaves no partial state", {
   expect_equal(n_cases_after, n_cases_before)
 })
 
-# ARCHITECTURE.md section 6.5's cool-down escape hatch: a candidate more
+# The cool-down escape hatch: a candidate more
 # than case_free_days but within cooldown_days of a terminal-verdict
 # (artefact/expected_variation) closed cluster is absorbed into it rather
 # than opening a new cluster - and, only if its excess materially exceeds

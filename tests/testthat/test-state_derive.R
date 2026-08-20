@@ -48,8 +48,8 @@ test_that("explicit closure wins over any classification history", {
 
 test_that("a cluster with no assessment history is closed if explicitly_closed, new otherwise", {
   # This does arise from real use: the cron auto-closes a cluster with no
-  # assessment at all after close_after_runs (ARCHITECTURE.md section 6,
-  # step 5), which never creates an assessment event - only an
+  # assessment at all after close_after_runs, which never creates an
+  # assessment event - only an
   # episode_cluster_state row (trigger = "system"). Without checking
   # explicitly_closed here too, such a cluster would read as "new" forever
   # and never leave the open rail.
@@ -80,9 +80,9 @@ test_that("terminal verdicts (artefact, expected_variation) are Afgesloten (clos
   expect_equal(
     episode_derive_state(events_one(verdict = "expected_variation"), closure_criterion_met = TRUE), "closed"
   )
-  # changed_since_assessment on a terminal verdict IS the cool-down escape
-  # hatch (ARCHITECTURE.md section 6.5) - it must surface as Herbeoordeling
-  # nodig (reassess), not stay silently closed
+  # changed_since_assessment on a terminal verdict IS the cool-down
+  # escape hatch - it must surface as Herbeoordeling nodig (reassess),
+  # not stay silently closed
   expect_equal(
     episode_derive_state(events_one(verdict = "artefact"), changed_since_assessment = TRUE), "reassess"
   )
@@ -157,7 +157,7 @@ test_that("exhaustive: every (verdict-class x changed x closure x snooze x expli
           } else if (explicit) {
             "closed"
           } else if (vc_name == "terminal") {
-            if (changed) "reassess" else "closed"  # cool-down escape hatch, ARCHITECTURE.md section 6.5
+            if (changed) "reassess" else "closed"  # cool-down escape hatch
           } else if (changed) {
             "reassess"
           } else if (closure) {

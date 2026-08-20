@@ -86,6 +86,3 @@ that produces the data at run time, or the data frame itself.
 `EpiSODIC::episode_demo()` runs the whole system in one call against
 bundled synthetic data - no laboratory system, data warehouse,
 credentials, or configuration required.
-
-See `QUESTIONS.md` for the judgement calls made along the way, and
-`ARCHITECTURE.md` for the full design this implementation follows.

@@ -17,9 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 
 # These are effectively golden-file tests against the real
-# surveillance::farringtonFlexible() (CRAN, installable anywhere), unlike
-# the old certestats wrapper which could never be exercised in CI. See
-# QUESTIONS.md for the switch.
+# surveillance::farringtonFlexible() (CRAN, installable anywhere).
 
 farrington_cases_from_weekly_counts <- function(week_starts, counts) {
   dates <- unlist(lapply(seq_along(week_starts), function(i) {

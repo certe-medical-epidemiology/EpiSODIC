@@ -69,7 +69,7 @@ test_that("different pathogens for the same patient are never merged", {
 test_that("the same isolate tagged under two pathogen values (e.g. E. coli and ETEC) is not merged", {
   # deliberately mirrors the operator's own transform: one ETEC isolate can
   # legitimately appear as two rows, "Escherichia coli" and "ETEC", so each
-  # is watched on its own (QUESTIONS.md item 22)
+  # is watched on its own
   raw <- rbind(
     raw_case("K1", "P1", "2025-01-01", pathogen = "Escherichia coli"),
     raw_case("K1-ETEC", "P1", "2025-01-01", pathogen = "ETEC")

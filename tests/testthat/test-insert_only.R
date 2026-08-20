@@ -33,8 +33,8 @@ test_that("the app's write surface issues no UPDATE or DELETE SQL statements", {
   # statements at all. Scoped to the files a live Shiny session can
   # actually reach (everything prefixed app_,
   # auth.R, run_app.R) - NOT R/db_cron_write.R or the cron pipeline, which
-  # legitimately UPDATEs the facts it owns (ARCHITECTURE.md section 5.0:
-  # "the cron owns the facts, the app owns the judgements"; only the app
+  # legitimately UPDATEs the facts it owns (the cron owns the facts, the
+  # app owns the judgements; only the app
   # side of that split is insert-only).
   r_dir <- episode_test_r_source_dir()
   skip_if(is.na(r_dir), "R/ source directory not found (e.g. checking an installed, non-source package)")
