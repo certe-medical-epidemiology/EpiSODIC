@@ -21,3 +21,12 @@ A thin wrapper around \code{\link[=episode_db_connect]{episode_db_connect()}} fo
 the "neither was given" error in one place, rather than duplicating the
 resolve-then-connect logic in every such entry point.
 }
+\examples{
+db_path <- tempfile(fileext = ".sqlite")
+con <- episode_db_create(db_path)
+DBI::dbDisconnect(con)
+Sys.setenv(EPISODE_DB = db_path)
+con <- episode_db_open()
+DBI::dbDisconnect(con)
+file.remove(db_path)
+}

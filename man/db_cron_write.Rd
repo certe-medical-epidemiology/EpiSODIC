@@ -2,170 +2,11 @@
 % Please edit documentation in R/db_cron_write.R
 \name{db_cron_write}
 \alias{db_cron_write}
-\alias{episode_db_pathogen_config_load}
-\alias{episode_db_institution_upsert}
-\alias{episode_db_institution_activity_upsert}
-\alias{episode_db_stream_upsert}
-\alias{episode_db_case_insert_new}
-\alias{episode_db_reporting_triangle_upsert}
-\alias{episode_db_denominator_upsert}
-\alias{episode_db_stream_trend_upsert}
-\alias{episode_db_detection_insert}
-\alias{episode_db_detection_set_cluster}
-\alias{episode_db_cluster_insert}
-\alias{episode_db_cluster_update}
-\alias{episode_db_cluster_increment_runs_since_detected}
-\alias{episode_db_cluster_set_merged_into}
-\alias{episode_db_cluster_case_link}
-\alias{episode_db_run_start}
-\alias{episode_db_run_finish}
 \title{Cron-side writers}
-\usage{
-episode_db_pathogen_config_load(con, pathogen_config)
-
-episode_db_institution_upsert(
-  con,
-  institution_key,
-  display_name,
-  institution_type,
-  care_line,
-  municipality = NA,
-  pc4 = NA,
-  n_beds = NA,
-  is_monitored = FALSE
-)
-
-episode_db_institution_activity_upsert(
-  con,
-  institution_id,
-  period_start,
-  period_end,
-  patient_days = NA,
-  admissions = NA,
-  n_beds = NA,
-  source = NA
-)
-
-episode_db_stream_upsert(
-  con,
-  stream_key,
-  level,
-  pathogen,
-  care_line = NA,
-  region_code = NA,
-  institution_id = NA,
-  ward = NA,
-  denominator = "none",
-  severity_weight = 1,
-  observed_date
-)
-
-episode_db_case_insert_new(con, cases, run_id)
-
-episode_db_reporting_triangle_upsert(
-  con,
-  stream_id,
-  sample_date,
-  run_date,
-  n_cases
-)
-
-episode_db_denominator_upsert(
-  con,
-  pathogen,
-  sample_date,
-  care_line,
-  area_code = NA,
-  n_tests
-)
-
-episode_db_stream_trend_upsert(
-  con,
-  stream_id,
-  week_start,
-  n_cases,
-  expected = NA,
-  upperbound = NA
-)
-
-episode_db_detection_insert(
-  con,
-  run_id,
-  stream_id,
-  detector,
-  first_day,
-  last_day,
-  n_cases,
-  expected = NA,
-  upperbound = NA,
-  params_json,
-  cluster_id = NA
-)
-
-episode_db_detection_set_cluster(con, detection_id, cluster_id)
-
-episode_db_cluster_insert(
-  con,
-  stream_id,
-  first_day,
-  last_day,
-  n_cases,
-  expected = NA,
-  excess = NA,
-  ratio = NA,
-  priority_score,
-  detector_agreement,
-  run_id
-)
-
-episode_db_cluster_update(
-  con,
-  cluster_id,
-  first_day,
-  last_day,
-  n_cases,
-  expected = NA,
-  excess = NA,
-  ratio = NA,
-  priority_score,
-  detector_agreement,
-  run_id,
-  changed_since_assessment = NULL
-)
-
-episode_db_cluster_increment_runs_since_detected(con, cluster_id)
-
-episode_db_cluster_set_merged_into(con, cluster_id, merged_into)
-
-episode_db_cluster_case_link(con, cluster_id, case_id)
-
-episode_db_run_start(con, host, account, attempt_no = 1L)
-
-episode_db_run_finish(
-  con,
-  run_id,
-  status,
-  n_streams = NA,
-  n_detections = NA,
-  n_signals_new = NA,
-  n_signals_updated = NA,
-  code_version = NA,
-  pkg_versions = NA,
-  config_hash = NA,
-  config_snapshot = NA,
-  error_text = NA
-)
-}
 \arguments{
 \item{con}{A \link[DBI:DBIConnection-class]{DBI::DBIConnection}.}
 
 \item{pathogen_config}{A data frame matching \code{inst/config/pathogen_config.csv}.}
-
-\item{institution_key, display_name, institution_type, municipality, is_monitored}{Columns of \code{episode_institution}, see ARCHITECTURE.md section 5.4.1.}
-
-\item{care_line}{One of \code{"first"}, \code{"second"}, \code{"other"}, \code{"unknown"}, or \code{NA}.}
-
-\item{pc4}{A PC4 postcode, or \code{NA}.}
 
 \item{institution_id}{An \code{episode_institution} id.}
 
@@ -182,7 +23,11 @@ episode_db_run_finish(
 \item{pathogen}{The raw lab-provided pathogen string (see \code{QUESTIONS.md}
 item 22); used verbatim as the stream's identity, no taxonomy resolved.}
 
+\item{care_line}{One of \code{"first"}, \code{"second"}, \code{"other"}, \code{"unknown"}, or \code{NA}.}
+
 \item{region_code}{A region code, or \code{NA}.}
+
+\item{pc4}{A PC4 postcode, or \code{NA}.}
 
 \item{ward}{A ward, for \code{pathogen_ward} streams, or \code{NA}.}
 
@@ -202,18 +47,15 @@ item 22); used verbatim as the stream's identity, no taxonomy resolved.}
 
 \item{n_cases}{A case count.}
 
-\item{area_code}{An area code, for the optional positivity metadata table.}
-
 \item{n_tests}{A test count, for the optional positivity metadata table.}
 
-\item{week_start}{A week-start date (chart-cache row for the multi-year
-trend panel, see \code{R/detect_farrington.R}).}
-
-\item{expected, upperbound}{Statistical detector output, or \code{NA}.}
+\item{area_code}{An area code, for the optional positivity metadata table.}
 
 \item{detector}{One of the detector enum values.}
 
 \item{first_day, last_day}{A detection or cluster interval.}
+
+\item{expected, upperbound}{Statistical detector output, or \code{NA}.}
 
 \item{params_json}{JSON-serialised detector attributes.}
 
@@ -248,9 +90,6 @@ trend panel, see \code{R/detect_farrington.R}).}
 \item{config_hash, config_snapshot}{The resolved configuration's hash and snapshot.}
 
 \item{error_text}{Error text for a failed run, or \code{NA}.}
-}
-\value{
-The \code{institution_id} of the inserted or existing row.
 }
 \description{
 The cron owns the facts (ARCHITECTURE.md section 5.0) and may upsert.

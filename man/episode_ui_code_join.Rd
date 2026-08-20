@@ -25,3 +25,6 @@ added, so the result is always safe to pass to \code{\link[shiny:HTML]{shiny::HT
 Exported for the same reason as \code{\link[=episode_ui_italicise_taxon]{episode_ui_italicise_taxon()}}: the
 Quarto report template needs it available in its own fresh session.
 }
+\examples{
+episode_ui_code_join(c("farrington", "same_place"))
+}

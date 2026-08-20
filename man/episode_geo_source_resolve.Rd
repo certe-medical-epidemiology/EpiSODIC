@@ -18,3 +18,8 @@ An \code{sf} object, or \code{NULL} if \code{sf} is not installed.
 \description{
 Resolve the geographic reference dataset to use
 }
+\examples{
+# falls back to the shipped Netherlands PC4 default when sf is
+# installed, or NULL when it is not
+geo <- episode_geo_source_resolve(path = NA)
+}

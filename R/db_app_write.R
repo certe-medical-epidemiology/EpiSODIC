@@ -35,7 +35,8 @@
 NULL
 
 #' @rdname db_app_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_assessment_event_insert <- function(con, cluster_id, user_id, verdict = NA,
                                                 rationale, wpg_notifiable = NA,
                                                 ggd_informed = NA, ggd_note = NA,
@@ -56,7 +57,8 @@ episode_db_assessment_event_insert <- function(con, cluster_id, user_id, verdict
 }
 
 #' @rdname db_app_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_stream_mute_insert <- function(con, stream_id, muted_from, muted_until, reason,
                                            note = NA, user_id) {
   DBI::dbExecute(
@@ -70,7 +72,8 @@ episode_db_stream_mute_insert <- function(con, stream_id, muted_from, muted_unti
 }
 
 #' @rdname db_app_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_cluster_state_insert <- function(con, cluster_id, state, trigger, event_id = NA,
                                              user_id = NA) {
   DBI::dbExecute(
@@ -83,7 +86,8 @@ episode_db_cluster_state_insert <- function(con, cluster_id, state, trigger, eve
 }
 
 #' @rdname db_app_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_report_render_insert <- function(con, cluster_id, user_id = NA, file_path,
                                              file_sha256, params_json, case_ids_json,
                                              version_no) {
@@ -99,7 +103,8 @@ episode_db_report_render_insert <- function(con, cluster_id, user_id = NA, file_
 }
 
 #' @rdname db_app_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_app_user_insert <- function(con, username, full_name, email, password_hash,
                                         role = "assessor") {
   DBI::dbExecute(
@@ -113,7 +118,8 @@ episode_db_app_user_insert <- function(con, username, full_name, email, password
 }
 
 #' @rdname db_app_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_app_user_event_insert <- function(con, user_id, event_type, password_hash = NA) {
   DBI::dbExecute(
     con,

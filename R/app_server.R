@@ -195,7 +195,7 @@ episode_ui_format_datetime <- function(iso, fmt = "%H:%M", tz = Sys.timezone()) 
 #' `episode_app_server_assessment_actions()`'s `bulk_assess_submit`
 #' observer is the write side.
 #'
-#' @param open A data frame from [episode_app_open_clusters()].
+#' @param open A data frame from `episode_app_open_clusters()`.
 #' @param selected_id The rail's current single-cluster selection (for
 #'   the "active" highlight), or `NULL`.
 #' @param lang Session language.

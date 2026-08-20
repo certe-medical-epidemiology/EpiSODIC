@@ -105,12 +105,17 @@ rather than failing when it is absent:
 
 | Feature | Needs | Fallback |
 |---|---|---|
-| House-style colours | `certestyle` | Shipped default palette |
 | Rt estimation | `EpiEstim` | Panel omitted |
 | MEM seasonal thresholds | `mem` | Detector skipped for `mem_applicable` organisms |
 | Outbreak reports | `quarto` R package + the separate Quarto CLI | Render errors clearly instead of silently producing nothing |
 | Choropleth map | `sf` + geographic reference data | Plain bar breakdown by PC value |
 | Episode deduplication via a taxonomy | `AMR` | A simpler built-in fallback |
+
+House-style colours are not an optional-dependency concern at all: the
+app always ships an organisation-neutral default palette
+(`inst/config/palette.yaml`), overridable per instance by pointing
+`EPISODE_PALETTE_CONFIG` at a department's own YAML file with its real
+colours - no package dependency involved either way.
 
 None of these are required to run the demo, the detection engine, or the
 interface - each is additive.

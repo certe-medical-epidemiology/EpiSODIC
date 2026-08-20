@@ -17,10 +17,11 @@ NULL
 #'   (a `full_name`, or the interpretation label for a system actor),
 #'   `kind` (`"assessment"` or `"closure"`), `verdict` (the raw key, `NA`
 #'   unless `kind == "assessment"` and a verdict was set - for colour
-#'   lookups via [episode_ui_verdict_colour()], where the translated
+#'   lookups via `episode_ui_verdict_colour()`, where the translated
 #'   `verdict_label` cannot be used back as a key), `verdict_label`
 #'   (translated), `rationale`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_app_assessment_timeline <- function(con, cluster_id, lang = "nl") {
   events <- episode_db_assessment_events(con, cluster_id)
   states <- episode_db_cluster_states(con, cluster_id)
@@ -80,7 +81,8 @@ episode_app_actor_label <- function(con, user_id, lang = "nl") {
 #' @param lang Session language.
 #' @return A data frame, one row per closed cluster, most recently closed
 #'   first.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_app_archive <- function(con, query = NULL, lang = "nl") {
   empty <- data.frame(cluster_id = integer(0), pathogen = character(0), level_label = character(0),
                        place = character(0), n_cases = integer(0), priority_score = numeric(0),
@@ -136,7 +138,8 @@ episode_app_archive <- function(con, query = NULL, lang = "nl") {
 #' @param limit Maximum number of rows to return, most recent first.
 #' @param lang Session language.
 #' @return A data frame with `at`, `actor`, `action`, `target`, `is_system`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_app_activity_log <- function(con, limit = 200, lang = "nl") {
   clusters <- episode_db_clusters(con)
   streams <- episode_db_streams(con, active_only = FALSE)

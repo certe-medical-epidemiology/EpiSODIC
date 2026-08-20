@@ -32,3 +32,7 @@ provinces?) would be arbitrary in a way the PC4 default is not
 pretending to be universal). No \code{EPISODE_GEO_DATA_OVERLAY} set (or an
 invalid file) simply means no overlay layer, same as no \code{sf} at all.
 }
+\examples{
+# NULL when unset (or when the sf package is not installed)
+episode_geo_overlay_resolve(path = NA)
+}

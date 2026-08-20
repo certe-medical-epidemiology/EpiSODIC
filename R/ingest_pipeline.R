@@ -14,7 +14,13 @@
 #' @param run_id The `run_id` of the current detection run
 #'   (`episode_case.first_seen_run`).
 #' @return Invisibly, a list with `n_raw`, `n_deduplicated` and `n_inserted`.
-#' @export
+#'
+#' Not exported: an operator's own transform step supplies a raw source to
+#' [episode_run_cron()] via `ingest_source_fn`, which calls this internally
+#' with the pieces (`pathogen_config`, `run_id`) only a run in progress has
+#' - never something a caller assembles by hand.
+#' @keywords internal
+#' @noRd
 episode_ingest_run <- function(con, raw, pathogen_config, run_id) {
   episode_ingest_validate_source(raw)
   deduped <- episode_dedup(raw, pathogen_config)

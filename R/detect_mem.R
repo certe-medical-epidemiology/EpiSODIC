@@ -28,7 +28,8 @@
 #' @param run_date The date to treat as "today".
 #' @param min_seasons Minimum number of complete prior seasons required.
 #' @return A data frame of detection records (zero or one row).
-#' @export
+#' @keywords internal
+#' @noRd
 episode_detect_mem <- function(cases_for_stream, stream_id, run_date = Sys.Date(), min_seasons = 2L) {
   empty <- episode_detection_record(integer(0), character(0), character(0), character(0), integer(0))
   if (!requireNamespace("mem", quietly = TRUE)) return(empty)
@@ -48,7 +49,7 @@ episode_detect_mem <- function(cases_for_stream, stream_id, run_date = Sys.Date(
 
 #' Compute this stream's current MEM status
 #'
-#' Shared by [episode_detect_mem()] (fires on `epidemic_started`) and the
+#' Shared by `episode_detect_mem()` (fires on `epidemic_started`) and the
 #' seasonal closure criterion (fires when the current count has fallen
 #' back under `post_epidemic_threshold` - ARCHITECTURE.md sections 6.3 and
 #' 7.3), so both read the same fitted model rather than risking two
@@ -64,7 +65,8 @@ episode_detect_mem <- function(cases_for_stream, stream_id, run_date = Sys.Date(
 #'   `epidemic_started` (logical), `current_week_count`,
 #'   `pre_epidemic_threshold`, `post_epidemic_threshold`, `week_start`,
 #'   `week_end` (the current epi week's `Date` bounds).
-#' @export
+#' @keywords internal
+#' @noRd
 episode_mem_status <- function(cases, run_date = Sys.Date(), min_seasons = 2L) {
   if (!requireNamespace("mem", quietly = TRUE)) return(NULL)
   if (is.null(cases) || nrow(cases) == 0) return(NULL)

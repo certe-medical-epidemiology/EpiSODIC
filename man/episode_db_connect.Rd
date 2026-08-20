@@ -16,3 +16,11 @@ An open \link[DBI:DBIConnection-class]{DBI::DBIConnection}.
 Opens a connection with the pragmas required by the architecture
 (WAL journal mode, a busy timeout, and foreign key enforcement).
 }
+\examples{
+db_path <- tempfile(fileext = ".sqlite")
+con <- episode_db_create(db_path)
+DBI::dbDisconnect(con)
+con <- episode_db_connect(db_path)
+DBI::dbDisconnect(con)
+file.remove(db_path)
+}

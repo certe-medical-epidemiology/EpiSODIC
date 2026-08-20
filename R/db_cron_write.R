@@ -56,7 +56,8 @@
 NULL
 
 #' @rdname db_cron_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_pathogen_config_load <- function(con, pathogen_config) {
   for (i in seq_len(nrow(pathogen_config))) {
     row <- pathogen_config[i, ]
@@ -100,7 +101,8 @@ episode_db_pathogen_config_load <- function(con, pathogen_config) {
 #' @param institution_key,display_name,institution_type,municipality,is_monitored
 #'   Columns of `episode_institution`, see ARCHITECTURE.md section 5.4.1.
 #' @return The `institution_id` of the inserted or existing row.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_institution_upsert <- function(con, institution_key, display_name, institution_type,
                                            care_line, municipality = NA, pc4 = NA, n_beds = NA,
                                            is_monitored = FALSE) {
@@ -128,7 +130,8 @@ episode_db_institution_upsert <- function(con, institution_key, display_name, in
 }
 
 #' @rdname db_cron_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_institution_activity_upsert <- function(con, institution_id, period_start, period_end,
                                                      patient_days = NA, admissions = NA,
                                                      n_beds = NA, source = NA) {
@@ -157,7 +160,8 @@ episode_db_institution_activity_upsert <- function(con, institution_id, period_s
 }
 
 #' @rdname db_cron_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_stream_upsert <- function(con, stream_key, level, pathogen,
                                       care_line = NA, region_code = NA, institution_id = NA,
                                       ward = NA, denominator = "none", severity_weight = 1.00,
@@ -187,7 +191,8 @@ episode_db_stream_upsert <- function(con, stream_key, level, pathogen,
 }
 
 #' @rdname db_cron_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_case_insert_new <- function(con, cases, run_id) {
   n_inserted <- 0L
   for (i in seq_len(nrow(cases))) {
@@ -214,7 +219,8 @@ episode_db_case_insert_new <- function(con, cases, run_id) {
 }
 
 #' @rdname db_cron_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_reporting_triangle_upsert <- function(con, stream_id, sample_date, run_date, n_cases) {
   existing <- DBI::dbGetQuery(
     con,
@@ -240,7 +246,8 @@ episode_db_reporting_triangle_upsert <- function(con, stream_id, sample_date, ru
 }
 
 #' @rdname db_cron_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_denominator_upsert <- function(con, pathogen, sample_date, care_line, area_code = NA,
                                            n_tests) {
   existing <- DBI::dbGetQuery(
@@ -270,7 +277,8 @@ episode_db_denominator_upsert <- function(con, pathogen, sample_date, care_line,
 #' @rdname db_cron_write
 #' @param week_start A week-start date (chart-cache row for the multi-year
 #'   trend panel, see `R/detect_farrington.R`).
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_stream_trend_upsert <- function(con, stream_id, week_start, n_cases, expected = NA,
                                             upperbound = NA) {
   existing <- DBI::dbGetQuery(
@@ -296,7 +304,8 @@ episode_db_stream_trend_upsert <- function(con, stream_id, week_start, n_cases, 
 }
 
 #' @rdname db_cron_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_detection_insert <- function(con, run_id, stream_id, detector, first_day, last_day,
                                          n_cases, expected = NA, upperbound = NA, params_json,
                                          cluster_id = NA) {
@@ -313,7 +322,8 @@ episode_db_detection_insert <- function(con, run_id, stream_id, detector, first_
 }
 
 #' @rdname db_cron_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_detection_set_cluster <- function(con, detection_id, cluster_id) {
   DBI::dbExecute(
     con, "UPDATE episode_detection SET cluster_id = ? WHERE detection_id = ?",
@@ -323,7 +333,8 @@ episode_db_detection_set_cluster <- function(con, detection_id, cluster_id) {
 }
 
 #' @rdname db_cron_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_cluster_insert <- function(con, stream_id, first_day, last_day, n_cases,
                                        expected = NA, excess = NA, ratio = NA,
                                        priority_score, detector_agreement, run_id) {
@@ -341,7 +352,8 @@ episode_db_cluster_insert <- function(con, stream_id, first_day, last_day, n_cas
 }
 
 #' @rdname db_cron_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_cluster_update <- function(con, cluster_id, first_day, last_day, n_cases,
                                        expected = NA, excess = NA, ratio = NA,
                                        priority_score, detector_agreement, run_id,
@@ -370,7 +382,8 @@ episode_db_cluster_update <- function(con, cluster_id, first_day, last_day, n_ca
 }
 
 #' @rdname db_cron_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_cluster_increment_runs_since_detected <- function(con, cluster_id) {
   DBI::dbExecute(
     con,
@@ -381,7 +394,8 @@ episode_db_cluster_increment_runs_since_detected <- function(con, cluster_id) {
 }
 
 #' @rdname db_cron_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_cluster_set_merged_into <- function(con, cluster_id, merged_into) {
   DBI::dbExecute(
     con, "UPDATE episode_cluster SET merged_into = ? WHERE cluster_id = ?",
@@ -391,7 +405,8 @@ episode_db_cluster_set_merged_into <- function(con, cluster_id, merged_into) {
 }
 
 #' @rdname db_cron_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_cluster_case_link <- function(con, cluster_id, case_id) {
   existing <- DBI::dbGetQuery(
     con, "SELECT 1 FROM episode_cluster_case WHERE cluster_id = ? AND case_id = ?",
@@ -407,7 +422,8 @@ episode_db_cluster_case_link <- function(con, cluster_id, case_id) {
 }
 
 #' @rdname db_cron_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_run_start <- function(con, host, account, attempt_no = 1L) {
   DBI::dbExecute(
     con,
@@ -419,7 +435,8 @@ episode_db_run_start <- function(con, host, account, attempt_no = 1L) {
 }
 
 #' @rdname db_cron_write
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_run_finish <- function(con, run_id, status, n_streams = NA, n_detections = NA,
                                    n_signals_new = NA, n_signals_updated = NA,
                                    code_version = NA, pkg_versions = NA, config_hash = NA,

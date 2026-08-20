@@ -20,7 +20,8 @@
 #'   different question from "has it been quiet for N days").
 #' @param today The date to evaluate the criterion as of.
 #' @return `TRUE` if the closure criterion has fired.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_closure_criterion_met <- function(last_case_date, verdict, case_free_days,
                                            incub_max_days = NA, mem_applicable = FALSE,
                                            mem_status = NULL, today = Sys.Date()) {

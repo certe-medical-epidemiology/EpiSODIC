@@ -13,7 +13,8 @@
 #' @return A data frame with `first_day`, `last_day` (character, ISO
 #'   dates), one row per cluster in this stream whose latest verdict is
 #'   `confirmed_epidemic`. Zero rows if none.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_baseline_excluded_windows <- function(con, stream_id) {
   clusters <- episode_db_clusters_for_stream(con, stream_id)
   empty <- data.frame(first_day = character(0), last_day = character(0), stringsAsFactors = FALSE)
@@ -41,7 +42,8 @@ episode_baseline_excluded_windows <- function(con, stream_id) {
 #' @return `cases_for_stream`, minus any row whose `sample_date` falls
 #'   within `[first_day, last_day]` of any excluded window. Unchanged if
 #'   `excluded_windows` has zero rows.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_baseline_exclude_cases <- function(cases_for_stream, excluded_windows) {
   if (nrow(excluded_windows) == 0 || nrow(cases_for_stream) == 0) return(cases_for_stream)
   dates <- as.Date(cases_for_stream$sample_date)

@@ -13,7 +13,8 @@
 #' @param run_date The date of the current run (`as.character(Sys.Date())`
 #'   in production; injectable for tests).
 #' @return Invisibly, the number of `(sample_date, run_date)` rows written.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_triangle_update <- function(con, stream_id, cases_for_stream, run_date) {
   if (nrow(cases_for_stream) == 0) return(invisible(0L))
 
@@ -44,7 +45,8 @@ episode_triangle_update <- function(con, stream_id, cases_for_stream, run_date) 
 #' @param max_lag_days Maximum reporting lag (in days) to compute.
 #' @return A data frame with columns `lag_days` and `completeness`
 #'   (0-1, the median share of the final count visible at that lag).
-#' @export
+#' @keywords internal
+#' @noRd
 episode_triangle_completeness <- function(con, stream_id, max_lag_days = 21) {
   triangle <- DBI::dbGetQuery(
     con, "SELECT sample_date, run_date, n_cases FROM episode_reporting_triangle WHERE stream_id = ?",

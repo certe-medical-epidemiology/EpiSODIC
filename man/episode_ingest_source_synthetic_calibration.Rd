@@ -51,3 +51,10 @@ eligibility gate against while deciding how to tune them for a real
 instance. Every cluster this produces is clearly synthetic in origin
 (\verb{PT-VOL-*} patient keys) so it is never mistaken for anything else.
 }
+\examples{
+raw <- episode_ingest_source_synthetic_calibration(
+  start_date = as.Date("2025-01-01"), end_date = as.Date("2025-06-30"),
+  n_bumps_per_month = 4
+)
+sum(startsWith(raw$patient_key, "PT-VOL-"))
+}

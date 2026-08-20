@@ -2,73 +2,7 @@
 % Please edit documentation in R/app_widgets.R
 \name{app_widgets}
 \alias{app_widgets}
-\alias{episode_ui_chip}
-\alias{episode_ui_panel}
-\alias{episode_ui_panel_empty}
-\alias{episode_ui_stat}
-\alias{episode_ui_bars}
-\alias{episode_ui_pyramid}
-\alias{episode_ui_state_dot}
-\alias{episode_ui_state_colour}
-\alias{episode_ui_verdict_colour}
 \title{Small reusable UI building blocks}
-\usage{
-episode_ui_chip(text, colour, filled = FALSE)
-
-episode_ui_panel(title, ..., aside = NULL, note = NULL)
-
-episode_ui_panel_empty(title, message, aside = NULL)
-
-episode_ui_stat(label, value, sub = NULL, colour = NULL)
-
-episode_ui_bars(rows, unit = NULL, colour = NULL)
-
-episode_ui_pyramid(demo, lang = "nl")
-
-episode_ui_state_dot(state)
-
-episode_ui_state_colour(state)
-
-episode_ui_verdict_colour(verdict)
-}
-\arguments{
-\item{text}{Chip text.}
-
-\item{colour}{Bar fill colour.}
-
-\item{filled}{If \code{TRUE}, filled background; otherwise an outline chip.}
-
-\item{title}{Panel title.}
-
-\item{...}{Panel body content.}
-
-\item{aside}{Optional right-aligned header text.}
-
-\item{note}{Optional footnote paragraph.}
-
-\item{message}{Empty-state text shown instead of a body.}
-
-\item{label}{Stat label (uppercase caption).}
-
-\item{value}{Stat value (large number/text).}
-
-\item{sub}{Optional sub-label.}
-
-\item{rows}{A data frame with \code{label} and \code{n} columns.}
-
-\item{unit}{Optional footnote under the bars.}
-
-\item{demo}{A data frame with \code{band}, \code{m}, \code{v} (male/female counts), one
-row per age band in ascending order (youngest first).}
-
-\item{lang}{Session language, for the axis labels.}
-
-\item{state}{One of \code{\link[=episode_derive_state]{episode_derive_state()}}'s state strings.}
-
-\item{verdict}{One of \code{episode_ui_assessment_form()}'s verdict keys
-(\code{"artefact"}, \code{"expected_variation"}, \code{"cluster_not_yet"},
-\code{"possible_epidemic"}, \code{"confirmed_epidemic"}).}
-}
 \description{
 Thin \code{shiny::tags} wrappers for the interface's small recurring
 primitives (a chip, a panel, a stat tile, a bar, a pyramid), server-side

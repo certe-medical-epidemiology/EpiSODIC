@@ -31,6 +31,24 @@
 #'   tests do exactly that, since a real demo's representative multi-year
 #'   window is far more than a test needs to confirm the plumbing works.
 #' @return Invisibly, `db_path`.
+#' @examples
+#' \dontrun{
+#' # launches a blocking, interactive Shiny session against several years
+#' # of freshly-generated synthetic data
+#' episode_demo()
+#' }
+#'
+#' \donttest{
+#' # non-interactive: populate a database and stop there, e.g. for scripting
+#' db_path <- episode_demo(
+#'   launch = FALSE,
+#'   ingest_source_fn = function() episode_ingest_source_synthetic(
+#'     start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+#'   ),
+#'   denominator_source_fn = NULL
+#' )
+#' file.remove(db_path)
+#' }
 #' @export
 episode_demo <- function(db_path = tempfile(fileext = ".sqlite"),
                           username = "demo", full_name = "Demo User",

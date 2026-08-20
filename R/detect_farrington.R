@@ -24,13 +24,14 @@
 #'   evaluated is the one containing this date.
 #' @param population An optional numeric vector of weekly population
 #'   (patient-days) aligned to `episode_weekly_bins()`'s own weeks, from
-#'   [episode_farrington_population_vector()]. `NULL` (default) fits on
+#'   `episode_farrington_population_vector()`. `NULL` (default) fits on
 #'   raw counts, unnormalised - the only behaviour possible before
 #'   ARCHITECTURE.md section 7.1's patient-day normalisation existed, and
 #'   still what every stream without institution activity data gets.
 #' @return A data frame of detection records (zero or one row: Farrington
 #'   evaluates only the current week, per ARCHITECTURE.md section 7).
-#' @export
+#' @keywords internal
+#' @noRd
 episode_detect_farrington <- function(cases_for_stream, stream_id, config, run_date = Sys.Date(),
                                        population = NULL) {
   empty <- episode_detection_record(integer(0), character(0), character(0), character(0), integer(0))
@@ -86,10 +87,11 @@ episode_detect_farrington <- function(cases_for_stream, stream_id, config, run_d
 #' @param max_backfill_weeks Cap on how many weeks a single call will ever
 #'   (re-)compute, to bound cron run time. Matches the multi-year trend
 #'   panel's own display window.
-#' @param population See [episode_detect_farrington()].
+#' @param population See `episode_detect_farrington()`.
 #' @return A data frame with `week_start`, `n_cases`, `expected`,
 #'   `upperbound` (zero rows if ineligible).
-#' @export
+#' @keywords internal
+#' @noRd
 episode_farrington_trend <- function(cases_for_stream, config, run_date = Sys.Date(),
                                       n_weeks_existing = 0L, max_backfill_weeks = 156L,
                                       population = NULL) {
@@ -154,7 +156,7 @@ episode_farrington_fit <- function(weekly, range_idx, fc, population = NULL) {
 #' through a quiet August at identical transmission-per-patient-day. `NULL`
 #' when `institution_id` is `NA` (non-institution streams) or no activity
 #' data exists at all for it - callers pass `NULL` straight through to
-#' [episode_detect_farrington()]/[episode_farrington_trend()], which then
+#' `episode_detect_farrington()`/`episode_farrington_trend()`, which then
 #' fit on raw counts exactly as before this existed.
 #'
 #' Only `episode_institution_activity` (L2, whole-institution) exists in
@@ -168,7 +170,8 @@ episode_farrington_fit <- function(weekly, range_idx, fc, population = NULL) {
 #' @param level A stream's `level`, from `episode_stream`.
 #' @param week_start The `Date` vector from `episode_weekly_bins()`.
 #' @return A numeric vector the same length as `week_start`, or `NULL`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_farrington_population_vector <- function(con, institution_id, level, week_start) {
   if (!identical(level, "pathogen_institution") || is.na(institution_id)) return(NULL)
   activity <- episode_db_institution_activity(con, institution_id)

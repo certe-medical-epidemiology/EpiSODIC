@@ -26,7 +26,8 @@ episode_i18n_cache <- new.env(parent = emptyenv())
 #'
 #' @param lang A language code, `"nl"` or `"en"`.
 #' @return A named character vector (dotted key -> template string).
-#' @export
+#' @keywords internal
+#' @noRd
 episode_i18n_load <- function(lang) {
   cached <- episode_i18n_cache[[lang]]
   if (!is.null(cached)) return(cached)
@@ -55,6 +56,9 @@ episode_i18n_load <- function(lang) {
 #'   overrides (dotted key -> template), checked before the shipped
 #'   translation files. `NULL` (the default) means no override.
 #' @return A single character string, with placeholders substituted.
+#' @examples
+#' episode_tr("nav.clusters", lang = "nl")
+#' episode_tr("nav.clusters", lang = "en")
 #' @export
 episode_tr <- function(key, ..., lang = "nl", instance_i18n = NULL) {
   template <- NULL
@@ -98,7 +102,8 @@ episode_i18n_substitute <- function(template, values) {
 #' @param with_number If `TRUE` (default), prefix with the number.
 #' @return `"1 geval"`, `"2 gevallen"`, `"0 gevallen"`, etc. Dutch and
 #'   English both pluralise away from exactly 1.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_count_phrase <- function(n, singular, plural, with_number = TRUE) {
   word <- if (n == 1) singular else plural
   if (with_number) paste(n, word) else word
@@ -117,7 +122,8 @@ episode_count_phrase <- function(n, singular, plural, with_number = TRUE) {
 #' @param lang Session language, `"nl"` (default) or `"en"`.
 #' @return A character string, or `episode_tr("misc.unknown", lang =
 #'   lang)` if either endpoint fails to parse.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_format_date_range <- function(x, y, lang = "nl") {
   x <- tryCatch(as.Date(x), error = function(e) NA)
   y <- tryCatch(as.Date(y), error = function(e) NA)

@@ -23,3 +23,9 @@ this milestone, so this function always builds from scratch; it refuses
 to run against a file that already contains EpiSODE tables so that it
 cannot silently clobber existing data.
 }
+\examples{
+db_path <- tempfile(fileext = ".sqlite")
+con <- episode_db_create(db_path)
+DBI::dbDisconnect(con)
+file.remove(db_path)
+}

@@ -16,7 +16,8 @@ NULL
 #' @param lang Session language, for level/state labels.
 #' @return A data frame, one row per open cluster, ordered by
 #'   `priority_score` descending.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_app_open_clusters <- function(con, lang = "nl") {
   clusters <- episode_db_clusters(con, open_only = TRUE)
   if (nrow(clusters) == 0) {
@@ -38,15 +39,16 @@ episode_app_open_clusters <- function(con, lang = "nl") {
 
 #' Derive the state of a single cluster
 #'
-#' Thin wrapper around [episode_derive_state()] that fetches the inputs
+#' Thin wrapper around `episode_derive_state()` that fetches the inputs
 #' from the database: the cluster's assessment events, its
 #' `changed_since_assessment` flag, the closure criterion, and whether it
 #' has been explicitly closed.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
-#' @return One of [episode_derive_state()]'s state strings.
-#' @export
+#' @return One of `episode_derive_state()`'s state strings.
+#' @keywords internal
+#' @noRd
 episode_app_derive_state_for_cluster <- function(con, cluster_id) {
   events <- episode_db_assessment_events(con, cluster_id)
   cluster <- DBI::dbGetQuery(con, "SELECT * FROM episode_cluster WHERE cluster_id = ?",
@@ -97,7 +99,7 @@ episode_app_derive_state_for_cluster <- function(con, cluster_id) {
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
 #' @param events This cluster's assessment events, as returned by
-#'   [episode_db_assessment_events()] (avoids a redundant query when the
+#'   `episode_db_assessment_events()` (avoids a redundant query when the
 #'   caller already has them).
 #' @return A single logical.
 #' @keywords internal
@@ -122,7 +124,8 @@ episode_app_explicitly_closed <- function(con, cluster_id, events) {
 #'   `demography`) are `NULL` when there is not enough data to compute
 #'   them, which is also what makes the corresponding interpretation slots and
 #'   dossier panels skip themselves.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_cluster_object <- function(con, cluster_id, lang = "nl") {
   cluster <- DBI::dbGetQuery(con, "SELECT * FROM episode_cluster WHERE cluster_id = ?",
                               params = list(cluster_id))
@@ -418,7 +421,8 @@ episode_app_completeness <- function(con, stream_id) {
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
 #' @return A data frame with `sample_date`, `n_cases`, `incomplete`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_app_epi_curve <- function(con, cluster_id) {
   cases <- episode_db_cluster_cases(con, cluster_id)
   if (nrow(cases) == 0) {
@@ -443,7 +447,8 @@ episode_app_epi_curve <- function(con, cluster_id) {
 #' @param stream_id A stream id.
 #' @return `episode_db_stream_trend()`'s output, capped to the last 156
 #'   weeks (matching `episode_farrington_trend()`'s own backfill cap).
-#' @export
+#' @keywords internal
+#' @noRd
 episode_app_trend <- function(con, stream_id) {
   trend <- episode_db_stream_trend(con, stream_id)
   if (nrow(trend) == 0) return(trend)
@@ -457,7 +462,8 @@ episode_app_trend <- function(con, stream_id) {
 #' @param cluster_id A cluster id.
 #' @return A data frame, exactly the fields ARCHITECTURE.md section 9
 #'   allows in the line list.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_app_linelist <- function(con, cluster_id) {
   cases <- episode_db_cluster_cases(con, cluster_id)
   if (nrow(cases) == 0) return(cases)
@@ -471,7 +477,8 @@ episode_app_linelist <- function(con, cluster_id) {
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
 #' @return A named list of display-ready values.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_app_detection_settings <- function(con, cluster_id) {
   cluster_obj <- episode_cluster_object(con, cluster_id)
   run <- episode_db_latest_run(con, status = "success")
@@ -494,7 +501,7 @@ episode_app_detection_settings <- function(con, cluster_id) {
 #'
 #' Paginated, and deliberately at the read-model level rather than only
 #' in the UI: `baseline_excluded` is one DB round trip per stream (via
-#' [episode_baseline_excluded_windows()], itself one round trip per
+#' `episode_baseline_excluded_windows()`, itself one round trip per
 #' cluster in that stream), so computing it for every stream regardless
 #' of what is actually shown made this screen slow to load once a real
 #' instance's stream count grew past a few dozen - the exact bug report
@@ -508,7 +515,8 @@ episode_app_detection_settings <- function(con, cluster_id) {
 #'   `total` (the total stream count across all pages), `page`,
 #'   `page_size`, `n_pages`, and `config_snapshot` (the parsed JSON from
 #'   the latest successful run, or `NULL`).
-#' @export
+#' @keywords internal
+#' @noRd
 episode_app_streams_screen <- function(con, page = 1L, page_size = 50L) {
   streams_all <- episode_db_streams(con, active_only = FALSE)
   run <- episode_db_latest_run(con, status = "success")
@@ -545,7 +553,8 @@ episode_app_streams_screen <- function(con, page = 1L, page_size = 50L) {
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @return A list describing the latest run.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_app_status <- function(con) {
   run <- episode_db_latest_run(con)
   if (is.null(run)) return(list(status = "none"))

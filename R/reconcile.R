@@ -56,7 +56,8 @@
 #'   cooldown_reopen_ratio` ("half again", ARCHITECTURE.md section 6.5).
 #'   Ignored when `cooldown_days` is `NA`.
 #' @return Invisibly, a list with `n_new`, `n_updated`, `n_merged`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_reconcile_stream <- function(con, stream_id, detections, case_free_days, run_id,
                                       close_after_runs, priority_score_fn, has_assessment_fn,
                                       verdict_fn, cooldown_days = NA, cooldown_reopen_ratio = NA) {

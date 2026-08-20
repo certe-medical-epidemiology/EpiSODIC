@@ -17,7 +17,8 @@
 #' @param config The resolved configuration; uses `config$same_place`.
 #' @return A data frame of detection records (`episode_detection_record()`
 #'   shape) plus a `stream_id` column, one row per hit.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_detect_same_place <- function(con, cases, institutions, config) {
   cases <- cases[!is.na(cases$institution_id), ]
   if (nrow(cases) == 0) {

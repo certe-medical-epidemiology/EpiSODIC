@@ -653,6 +653,30 @@ to know which point in the project's history that decision was made.
     Certe's colours" report (item 45): there was never a second palette
     to compare against, only the fallback shown twice.
 
+47. **`certestyle` integration removed entirely (supersedes items 44-46's
+    `certestyle`-specific mechanics, though their bug-hunting history
+    above stays as the record of what was tried).** A CRAN submission
+    cannot ship a `Suggests`/`Remotes` dependency on a package that only
+    exists on GitHub — `R CMD check --as-cran`'s "Suggests or Enhances
+    not in mainstream repositories" and "Unknown, possibly misspelled,
+    fields in DESCRIPTION: 'Remotes'" both point at exactly this.
+    `episode_palette_from_certestyle()` and the `requireNamespace
+    ("certestyle", ...)` branch in `episode_palette()` are deleted;
+    `episode_palette()` now always resolves through
+    `episode_palette_config_resolve()` — the shipped, organisation-
+    neutral default in `inst/config/palette.yaml`, overridable by
+    pointing `EPISODE_PALETTE_CONFIG` at an instance's own file. This is
+    not a new mechanism: it is the exact same defaults-then-override
+    pattern `EPISODE_CONFIG`/`EPISODE_GEO_DATA`/`EPISODE_QUARTO_REPORT`
+    already establish elsewhere in this codebase, now the *only* path
+    for colours too, rather than one of two. A department that wants its
+    real house colours writes its own palette YAML (not committed to
+    this public repository, kept alongside its own instance
+    configuration) and points `EPISODE_PALETTE_CONFIG` at it — the same
+    thing `certestyle` gave Certe specifically, generalised to every
+    operator rather than special-cased to one organisation's own
+    private package.
+
 ## Accounts & assessment workflow
 
 47. **Account bookkeeping (`episode_app_user`'s `password_hash`,
@@ -999,12 +1023,14 @@ to know which point in the project's history that decision was made.
 71. **`certeplot2` was a dead dependency.** Declared in `DESCRIPTION`
     (`Suggests`/`Remotes`) but never actually referenced anywhere in
     `R/` — a leftover from early planning, not a real dependency.
-    Removed; the one real optional Certe package remaining is
-    `certestyle` (`episode_palette()`). Every optional dependency
-    (`certestyle`, `AMR`, `EpiEstim`, `mem`, `quarto`, `sf`) is gated
-    behind `requireNamespace()` with a documented fallback, spot-checked
-    and listed in a table in the deployment vignette. README's "Certe
-    packages" wording corrected to match.
+    Removed at the time; `certestyle` was the one real optional Certe
+    package remaining after that pass (later removed entirely too, item
+    47 above). Every optional dependency (`AMR`, `EpiEstim`, `mem`,
+    `quarto`, `sf`) is gated behind `requireNamespace()` with a
+    documented fallback, spot-checked and listed in a table in the
+    deployment vignette. README's "Certe packages" wording corrected to
+    match at the time, then removed entirely once no Certe-internal
+    package remained (item 47).
 
 72. **`episode_demo()`**: a stranger cloning the repository can run the
     whole system in under a minute with one call — a temp SQLite
@@ -1067,6 +1093,43 @@ to know which point in the project's history that decision was made.
     runners have Pandoc (via `r-lib/actions/setup-pandoc`) and working
     system libraries for `sf`, unlike some development environments, so
     CI exercises the vignette build and the `sf`-gated tests end to end.
+
+78. **Exported-function audit for a CRAN submission: public API narrowed
+    from 135 exports to ~30.** `R CMD check --as-cran` flags nothing about
+    export count directly, but a package aiming to read as a deliberate,
+    reviewable public API should not export its entire implementation.
+    Most of what was exported (`episode_db_*` repository/CRUD functions,
+    `episode_app_*` Shiny read/write models, `episode_detect_*` and other
+    reconciliation internals, most `episode_ui_*` widgets,
+    `episode_interpretation_*`) was never meant to be called by an
+    operator directly — the architecture's own engine/instance separation
+    already draws this line (an operator configures behaviour via
+    `EPISODE_CONFIG`/`inst/config/default.yaml`, env vars, and the
+    ingestion/reporting contracts, not by calling internal R functions).
+    These became `@keywords internal`/`@noRd` rather than `@export`ed,
+    verified by checking that nothing in `inst/report/cluster_report.qmd`
+    (which runs in its own fresh `library(EpiSODE)` session, so anything
+    it calls by name must stay exported) or the documented "custom report
+    template" contract in README.md needed them. What remains exported is
+    the genuine public API: the entry points (`episode_demo()`,
+    `episode_run_cron()`, `episode_run_app()`, `episode_provision_user()`,
+    `episode_report_render()`), the operator-facing ingestion contract
+    (`episode_ingest_columns()`, `episode_ingest_validate_source()`,
+    `episode_ingest_run()`, `episode_denominator_ingest_run()`,
+    `episode_institution_activity_ingest_run()`, `episode_resolve_source()`),
+    the synthetic data generators, config/palette/geo resolution
+    (`episode_config_resolve()`, `episode_config_hash()`,
+    `episode_palette()`, `episode_geo_source_resolve()`,
+    `episode_geo_overlay_resolve()`), database connection helpers
+    (`episode_db_open()`, `episode_db_connect()`, `episode_db_create()`),
+    and the six formatting helpers a custom Quarto template needs
+    (`episode_tr()`, `episode_ui_code_join()`, `episode_ui_italicise_taxon()`,
+    `episode_ui_epi_curve_chart()`, `episode_ui_trend_chart()`,
+    `episode_ui_rt_chart()`). Verified by regenerating documentation
+    (stale `.Rd` files for newly-internal functions are removed
+    automatically) and running the full test suite unchanged — tests call
+    functions unqualified within the package's own namespace, so export
+    status never affected them.
 
 ## Open items
 

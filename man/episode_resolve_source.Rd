@@ -26,3 +26,9 @@ happen at run time (a live query, a freshly-generated synthetic set);
 an operator who already has the data sitting in a variable has no
 reason to wrap it in \code{function() my_df}.
 }
+\examples{
+df <- data.frame(x = 1:3)
+identical(episode_resolve_source(df), df)
+identical(episode_resolve_source(function() df), df)
+is.null(episode_resolve_source(NULL))
+}

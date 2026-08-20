@@ -173,7 +173,8 @@ episode_interpretation_slots <- c("magnitude", "curve_shape", "concentration", "
 #'   ids that fired, same order) - every fragment records which
 #'   condition fired, so the interpretation is always traceable back to
 #'   the evidence that produced it.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_interpretation_generate <- function(cluster, lang = "nl", instance_i18n = NULL) {
   fragments <- episode_interpretation_fragments()
   ctx <- episode_interpretation_context(cluster, lang = lang)
@@ -207,7 +208,8 @@ episode_interpretation_generate <- function(cluster, lang = "nl", instance_i18n 
 #' @return A single character string (the recommendation text), or `""` if
 #'   somehow nothing fired (should not happen: `recommendation.default`
 #'   always matches).
-#' @export
+#' @keywords internal
+#' @noRd
 episode_interpretation_recommendation <- function(cluster, lang = "nl", instance_i18n = NULL) {
   generated <- episode_interpretation_generate(cluster, lang = lang, instance_i18n = instance_i18n)
   idx <- which(startsWith(generated$fired, "recommendation."))
@@ -219,7 +221,8 @@ episode_interpretation_recommendation <- function(cluster, lang = "nl", instance
 #'
 #' @inheritParams episode_interpretation_generate
 #' @return A character vector, one string per non-recommendation slot fired.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_interpretation_paragraphs <- function(cluster, lang = "nl", instance_i18n = NULL) {
   generated <- episode_interpretation_generate(cluster, lang = lang, instance_i18n = instance_i18n)
   keep <- !startsWith(generated$fired, "recommendation.")

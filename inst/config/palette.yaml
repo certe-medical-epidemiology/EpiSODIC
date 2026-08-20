@@ -7,14 +7,9 @@
 # not colour swatches). Resolved the same way: this file's values are the
 # defaults, an operator overrides them by pointing EPISODE_PALETTE_CONFIG
 # at their own YAML with only the keys they want to change - any
-# organisation can run EpiSODE in its own house colours without installing
-# certestyle (Certe-internal; QUESTIONS.md item 22).
-#
-# If certestyle IS installed, its colours are used instead of this file's
-# values - see episode_palette_from_certestyle() in R/app_palette.R, which
-# maps Certe's six real hues (blauw/groen/roze/geel/lila/bruin) onto the
-# six semantic roles below, one each, so a real Certe instance keeps every
-# one of its own hues distinct rather than merging any two together.
+# organisation runs EpiSODE in its own house colours this way, without
+# EpiSODE ever shipping (or depending on) any specific organisation's
+# house-style package.
 #
 # Named by role (Bootstrap-style), not by raw hue word - a config key
 # should say what a colour is *for*, not what it looks like.

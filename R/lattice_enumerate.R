@@ -23,7 +23,8 @@
 #' @param institutions A data frame from `episode_db_institutions()`.
 #' @return A data frame of `stream_id` values touched by this run, one row
 #'   per (stream, level) combination created or refreshed.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_lattice_enumerate <- function(con, cases, institutions) {
   if (nrow(cases) == 0) return(data.frame(stream_id = integer(0)))
 

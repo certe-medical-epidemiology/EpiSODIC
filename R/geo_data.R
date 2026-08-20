@@ -55,6 +55,9 @@ NULL
 #'   environment variable.
 #' @return An `sf` object, or `NULL` if `sf` is not installed, the
 #'   variable is unset, or the file is missing/invalid.
+#' @examples
+#' # NULL when unset (or when the sf package is not installed)
+#' episode_geo_overlay_resolve(path = NA)
 #' @export
 episode_geo_overlay_resolve <- function(path = Sys.getenv("EPISODE_GEO_DATA_OVERLAY", unset = NA)) {
   if (!requireNamespace("sf", quietly = TRUE)) return(NULL)
@@ -72,6 +75,10 @@ episode_geo_overlay_resolve <- function(path = Sys.getenv("EPISODE_GEO_DATA_OVER
 #'   environment variable; if unset (or the file does not exist), falls
 #'   back to the shipped Netherlands PC4 default.
 #' @return An `sf` object, or `NULL` if `sf` is not installed.
+#' @examples
+#' # falls back to the shipped Netherlands PC4 default when sf is
+#' # installed, or NULL when it is not
+#' geo <- episode_geo_source_resolve(path = NA)
 #' @export
 episode_geo_source_resolve <- function(path = Sys.getenv("EPISODE_GEO_DATA", unset = NA)) {
   if (!requireNamespace("sf", quietly = TRUE)) return(NULL)

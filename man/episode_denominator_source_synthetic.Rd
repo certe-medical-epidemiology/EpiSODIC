@@ -28,3 +28,9 @@ though it would never hand over the underlying per-test rows. Not called
 by \code{\link[=episode_run_cron]{episode_run_cron()}} unless a \code{denominator_source_fn} is supplied;
 demonstrates the shape only.
 }
+\examples{
+denom <- episode_denominator_source_synthetic(
+  start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+)
+head(denom)
+}

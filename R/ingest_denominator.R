@@ -12,7 +12,11 @@
 #' @param denominators A data frame with columns `pathogen`, `sample_date`,
 #'   `care_line`, `area_code` (nullable) and `n_tests`.
 #' @return Invisibly, the number of rows written.
-#' @export
+#'
+#' Not exported: an operator supplies a source to [episode_run_cron()] via
+#' `denominator_source_fn`; this is the internal write step run against it.
+#' @keywords internal
+#' @noRd
 episode_denominator_ingest_run <- function(con, denominators) {
   required_cols <- c("pathogen", "sample_date", "care_line", "area_code", "n_tests")
   missing_cols <- setdiff(required_cols, names(denominators))
@@ -47,6 +51,11 @@ episode_denominator_ingest_run <- function(con, denominators) {
 #' @param seed RNG seed.
 #' @return A data frame with `pathogen`, `sample_date` (week start),
 #'   `care_line`, `area_code`, `n_tests`.
+#' @examples
+#' denom <- episode_denominator_source_synthetic(
+#'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+#' )
+#' head(denom)
 #' @export
 episode_denominator_source_synthetic <- function(start_date = as.Date("2021-01-01"),
                                                   end_date = as.Date("2025-12-31"),

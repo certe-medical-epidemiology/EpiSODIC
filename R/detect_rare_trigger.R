@@ -21,7 +21,8 @@
 #' @return A data frame of detection records plus a `stream_id` column, one
 #'   row per matching case (or per institution-day group when several
 #'   matching cases share an institution and date).
-#' @export
+#' @keywords internal
+#' @noRd
 episode_detect_rare_trigger <- function(con, cases, institutions, config) {
   empty <- episode_detection_record(integer(0), character(0), character(0), character(0), integer(0))
 

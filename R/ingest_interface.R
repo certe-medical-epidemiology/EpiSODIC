@@ -30,6 +30,8 @@
 NULL
 
 #' @rdname ingest_interface
+#' @examples
+#' episode_ingest_columns
 #' @export
 episode_ingest_columns <- c(
   "source_key", "patient_key", "sample_date", "receipt_date", "pathogen",
@@ -42,6 +44,11 @@ episode_ingest_columns <- c(
 #'
 #' @param raw A data frame as returned by an ingestion source function.
 #' @return `raw`, invisibly, if valid. Errors otherwise.
+#' @examples
+#' raw <- episode_ingest_source_synthetic(
+#'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-01-31")
+#' )
+#' episode_ingest_validate_source(raw)
 #' @export
 episode_ingest_validate_source <- function(raw) {
   missing_cols <- setdiff(episode_ingest_columns, names(raw))

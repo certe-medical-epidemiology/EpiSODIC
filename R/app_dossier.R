@@ -150,8 +150,8 @@ episode_ui_stat_grid <- function(obj, lang = "nl") {
 #' segment's own start date is shown instead, which carries the same
 #' information without that failure mode.
 #'
-#' @param obj A list from [episode_cluster_object()].
-#' @param timeline A data frame from [episode_app_assessment_timeline()].
+#' @param obj A list from `episode_cluster_object()`.
+#' @param timeline A data frame from `episode_app_assessment_timeline()`.
 #' @param lang Session language.
 #' @keywords internal
 #' @noRd

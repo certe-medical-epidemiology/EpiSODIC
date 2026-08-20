@@ -30,3 +30,8 @@ The result is what gets hashed into \code{config_hash} and stored verbatim as
 \code{config_snapshot} on every detection run, so a run's exact parameters are
 always recoverable from the database alone.
 }
+\examples{
+config <- episode_config_resolve()
+names(config)
+config$eligibility$min_baseline_weeks
+}

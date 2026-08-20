@@ -72,3 +72,15 @@ package (\code{QUESTIONS.md} item 22): \code{get_diver_data()} is the operator's
 own step, run before \code{episode_run_cron()}, transforming Diver's columns
 into \code{episode_ingest_columns}. See \code{README.md} for the raw data contract.
 }
+\examples{
+\donttest{
+db_path <- tempfile(fileext = ".sqlite")
+run_id <- episode_run_cron(
+  db_path,
+  ingest_source_fn = function() episode_ingest_source_synthetic(
+    start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+  )
+)
+file.remove(db_path)
+}
+}

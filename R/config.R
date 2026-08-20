@@ -16,6 +16,10 @@
 #'   file does not exist, only the shipped defaults are used, which is the
 #'   supported way to run the bundled demo.
 #' @return A nested list, the resolved configuration.
+#' @examples
+#' config <- episode_config_resolve()
+#' names(config)
+#' config$eligibility$min_baseline_weeks
 #' @export
 episode_config_resolve <- function(episode_config_path = Sys.getenv("EPISODE_CONFIG", unset = NA)) {
   defaults_path <- system.file("config", "default.yaml", package = "EpiSODE")
@@ -69,6 +73,9 @@ episode_config_merge <- function(base, override) {
 #'   [episode_config_resolve()].
 #' @return A list with elements `hash` (a 40-character SHA-1 hex digest) and
 #'   `snapshot` (the canonical JSON string).
+#' @examples
+#' hashed <- episode_config_hash(episode_config_resolve())
+#' hashed$hash
 #' @export
 episode_config_hash <- function(config) {
   canonical <- episode_config_canonicalise(config)

@@ -25,7 +25,7 @@ NULL
 #' original `password_hash` if the password has never been changed.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param user A row from [episode_db_user_by_username()]/[episode_db_user_by_id()].
+#' @param user A row from `episode_db_user_by_username()`/`episode_db_user_by_id()`.
 #' @return A single character string.
 #' @keywords internal
 #' @noRd
@@ -80,7 +80,8 @@ episode_auth_last_login <- function(con, user) {
 #' @return A list: `ok` (logical), and if `ok` is `TRUE`, `user` (the
 #'   account row) and `must_change` (logical, whether a forced password
 #'   change is due).
-#' @export
+#' @keywords internal
+#' @noRd
 episode_auth_login <- function(con, username, password) {
   rlang::check_installed("sodium")
   user <- episode_db_user_by_username(con, username)
@@ -106,7 +107,8 @@ episode_auth_login <- function(con, username, password) {
 #' @param new_password The new plaintext password (hashed here, never
 #'   stored or logged as plaintext).
 #' @return Invisible `NULL`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_auth_change_password <- function(con, user_id, new_password) {
   rlang::check_installed("sodium")
   hash <- sodium::password_store(new_password)
@@ -122,7 +124,7 @@ episode_auth_change_password <- function(con, user_id, new_password) {
 #' themselves. This is that provisioning step: hashes `password` with
 #' `sodium::password_store()` and inserts the account, `must_change = 1`
 #' by default so the first real sign-in forces a password of the
-#' account holder's own choosing (see [episode_auth_change_password()]).
+#' account holder's own choosing (see `episode_auth_change_password()`).
 #'
 #' Takes `db_path` rather than an open connection - opened and closed here
 #' via [episode_db_open()] - so provisioning an account is one call at the
@@ -136,6 +138,15 @@ episode_auth_change_password <- function(con, user_id, new_password) {
 #'   expected to change at first sign-in.
 #' @param role One of `"assessor"`, `"admin"`.
 #' @return Invisibly, the new `user_id`.
+#' @examples
+#' db_path <- tempfile(fileext = ".sqlite")
+#' con <- episode_db_create(db_path)
+#' DBI::dbDisconnect(con)
+#' episode_provision_user(
+#'   db_path, username = "jdoe", full_name = "Jane Doe",
+#'   email = "jane@example.org", password = "temporary-password"
+#' )
+#' file.remove(db_path)
 #' @export
 episode_provision_user <- function(db_path = Sys.getenv("EPISODE_DB", unset = NA),
                                     username, full_name, email, password, role = "assessor") {

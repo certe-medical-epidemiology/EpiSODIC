@@ -34,3 +34,12 @@ supplied; demonstrates the shape only, so the bundled demo can show
 ARCHITECTURE.md section 7.1's incidence-density curve without a real
 hospital feed.
 }
+\examples{
+institutions <- data.frame(
+  institution_key = "HOSP-1", institution_type = "hospital", n_beds = 320
+)
+activity <- episode_synthetic_institution_activity_source(
+  institutions, start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+)
+head(activity)
+}

@@ -16,15 +16,21 @@ whichever hue is \code{primary}) and the semantic roles \code{primary}
 (+\verb{_dark}).
 }
 \description{
-Uses \code{certestyle::certe.colours} when installed (ARCHITECTURE.md
-section 10.1). Since \code{certestyle} is Certe-internal, it is only ever
-in \code{Suggests}, never a hard dependency; a
-shipped-default palette covers everyone else - not hardcoded in R, but
-read from \code{inst/config/palette.yaml}, the same defaults-then-instance-
+Read from \code{inst/config/palette.yaml}, the same defaults-then-instance-
 override pattern \code{\link[=episode_config_resolve]{episode_config_resolve()}} uses for detection
 configuration (deliberately a \emph{separate} file and env var,
 \code{EPISODE_PALETTE_CONFIG}: colours must never affect \code{config_hash},
 which is about detection reproducibility, not display). Any
-organisation can therefore run EpiSODE in its own house colours,
-certestyle installed or not.
+organisation runs EpiSODE in its own house colours by pointing
+\code{EPISODE_PALETTE_CONFIG} at a YAML file overriding whichever roles it
+wants to rebrand - a department that wants its own colours supplies
+its own file, exactly as it supplies its own report template
+(\code{EPISODE_QUARTO_REPORT}) or geographic reference data
+(\code{EPISODE_GEO_DATA}); this package ships only the generic mechanism
+and an organisation-neutral default, never a specific organisation's
+house style.
+}
+\examples{
+pal <- episode_palette()
+pal$primary
 }

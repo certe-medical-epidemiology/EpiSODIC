@@ -56,3 +56,22 @@ the app itself. No Diver access, no real credentials, no instance
 configuration file required; every setting used here is a shipped
 default.
 }
+\examples{
+\dontrun{
+# launches a blocking, interactive Shiny session against several years
+# of freshly-generated synthetic data
+episode_demo()
+}
+
+\donttest{
+# non-interactive: populate a database and stop there, e.g. for scripting
+db_path <- episode_demo(
+  launch = FALSE,
+  ingest_source_fn = function() episode_ingest_source_synthetic(
+    start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+  ),
+  denominator_source_fn = NULL
+)
+file.remove(db_path)
+}
+}

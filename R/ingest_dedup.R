@@ -20,7 +20,8 @@
 #' @return `raw`, with one row per patient per episode (the earliest
 #'   `sample_date` in each episode is kept, since sample date is the
 #'   architecture's anchor).
-#' @export
+#' @keywords internal
+#' @noRd
 episode_dedup <- function(raw, pathogen_config) {
   if (nrow(raw) == 0) return(raw)
 

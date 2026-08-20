@@ -26,7 +26,8 @@
 #'   (Gini or top-1 share).
 #' @param weights A list from `config$priority_score$weights`.
 #' @return A single numeric score, 0-100.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_priority_score <- function(excess = NA, ratio = NA, severity_weight = 1,
                                     growth_slope = 0, detector_agreement = 1, n_detectors = 1,
                                     density_ratio = NA, spatial_concentration = 0, weights) {

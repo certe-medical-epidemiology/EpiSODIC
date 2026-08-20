@@ -14,7 +14,8 @@
 #'   detectors without a baseline model (e.g. `same_place`).
 #' @param params A list of detector-specific attributes, stored as JSON.
 #' @return A one-row data frame in the shape reconciliation expects.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_detection_record <- function(stream_id, detector, first_day, last_day, n_cases,
                                       expected = NA_real_, upperbound = NA_real_,
                                       params = list()) {

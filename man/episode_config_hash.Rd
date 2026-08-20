@@ -22,3 +22,7 @@ algorithm itself is not specified by the architecture and was chosen to
 match the \code{CHAR(40)} width used for other \verb{_key}/\verb{_hash} columns in the
 schema.
 }
+\examples{
+hashed <- episode_config_hash(episode_config_resolve())
+hashed$hash
+}

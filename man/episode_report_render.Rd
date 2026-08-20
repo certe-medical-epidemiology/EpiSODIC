@@ -66,8 +66,8 @@ stays exactly recoverable, including which cases it contained
 }
 \details{
 Data for the template is assembled here (from the same read models the
-app itself uses: \code{\link[=episode_cluster_object]{episode_cluster_object()}}, \code{\link[=episode_app_epi_curve]{episode_app_epi_curve()}},
-\code{\link[=episode_app_linelist]{episode_app_linelist()}}) and handed to Quarto as a single RDS side
+app itself uses: \code{episode_cluster_object()}, \code{episode_app_epi_curve()},
+\code{episode_app_linelist()}) and handed to Quarto as a single RDS side
 channel rather than as \code{execute_params} values directly - a line list
 data frame has no clean YAML/JSON representation, and passing one path
 string keeps the template itself simple (\code{readRDS(params$data_path)}).
@@ -77,4 +77,15 @@ Line-list inclusion is decided here, at render time, via
 the live app's own line-list panel which is gated on the \emph{viewer's}
 current session (ARCHITECTURE.md section 9: "Hidden entirely for
 anonymous viewers"). A rendered report has no viewer session at all.
+}
+\examples{
+\dontrun{
+# needs both the quarto R package and the Quarto CLI installed, plus a
+# database with at least one detected cluster - see episode_demo() for
+# a populated one, and the app's rail for a cluster_id to render
+db_path <- episode_demo(launch = FALSE)
+con <- episode_db_connect(db_path)
+episode_report_render(con, cluster_id = 1, output_dir = tempdir())
+DBI::dbDisconnect(con)
+}
 }

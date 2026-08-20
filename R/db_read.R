@@ -9,14 +9,16 @@ NULL
 
 #' @rdname db_read
 #' @param con A [DBI::DBIConnection-class].
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_pathogen_config <- function(con) {
   DBI::dbGetQuery(con, "SELECT * FROM episode_pathogen_config")
 }
 
 #' @rdname db_read
 #' @param pathogen A single raw pathogen string.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_pathogen_config_get <- function(con, pathogen) {
   res <- DBI::dbGetQuery(
     con,
@@ -28,7 +30,8 @@ episode_db_pathogen_config_get <- function(con, pathogen) {
 
 #' @rdname db_read
 #' @param active_only If `TRUE` (default), only streams with `is_active = 1`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_streams <- function(con, active_only = TRUE) {
   sql <- "SELECT * FROM episode_stream"
   if (active_only) sql <- paste(sql, "WHERE is_active = 1")
@@ -37,7 +40,8 @@ episode_db_streams <- function(con, active_only = TRUE) {
 
 #' @rdname db_read
 #' @param stream_key A single `stream_key`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_stream_get <- function(con, stream_key) {
   res <- DBI::dbGetQuery(
     con,
@@ -48,14 +52,16 @@ episode_db_stream_get <- function(con, stream_key) {
 }
 
 #' @rdname db_read
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_institutions <- function(con) {
   DBI::dbGetQuery(con, "SELECT * FROM episode_institution")
 }
 
 #' @rdname db_read
 #' @param institution_key A single `institution_key`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_institution_get <- function(con, institution_key) {
   res <- DBI::dbGetQuery(
     con,
@@ -66,13 +72,15 @@ episode_db_institution_get <- function(con, institution_key) {
 }
 
 #' @rdname db_read
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_cases <- function(con) {
   DBI::dbGetQuery(con, "SELECT * FROM episode_case")
 }
 
 #' @rdname db_read
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_cases_for_pathogen <- function(con, pathogen) {
   DBI::dbGetQuery(
     con,
@@ -83,7 +91,8 @@ episode_db_cases_for_pathogen <- function(con, pathogen) {
 
 #' @rdname db_read
 #' @param open_only If `TRUE`, exclude clusters with `merged_into` set.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_clusters <- function(con, open_only = FALSE) {
   sql <- "SELECT * FROM episode_cluster"
   if (open_only) sql <- paste(sql, "WHERE merged_into IS NULL")
@@ -92,7 +101,8 @@ episode_db_clusters <- function(con, open_only = FALSE) {
 
 #' @rdname db_read
 #' @param stream_id A single `stream_id`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_clusters_for_stream <- function(con, stream_id) {
   DBI::dbGetQuery(
     con,
@@ -103,7 +113,8 @@ episode_db_clusters_for_stream <- function(con, stream_id) {
 
 #' @rdname db_read
 #' @param cluster_id A single `cluster_id`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_cluster_cases <- function(con, cluster_id) {
   DBI::dbGetQuery(
     con,
@@ -115,7 +126,8 @@ episode_db_cluster_cases <- function(con, cluster_id) {
 }
 
 #' @rdname db_read
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_assessment_events <- function(con, cluster_id) {
   DBI::dbGetQuery(
     con,
@@ -125,7 +137,8 @@ episode_db_assessment_events <- function(con, cluster_id) {
 }
 
 #' @rdname db_read
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_cluster_states <- function(con, cluster_id) {
   DBI::dbGetQuery(
     con,
@@ -135,7 +148,8 @@ episode_db_cluster_states <- function(con, cluster_id) {
 }
 
 #' @rdname db_read
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_stream_mutes <- function(con, stream_id) {
   DBI::dbGetQuery(
     con,
@@ -146,7 +160,8 @@ episode_db_stream_mutes <- function(con, stream_id) {
 
 #' @rdname db_read
 #' @param username A single username.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_user_by_username <- function(con, username) {
   res <- DBI::dbGetQuery(
     con, "SELECT * FROM episode_app_user WHERE username = ?",
@@ -157,7 +172,8 @@ episode_db_user_by_username <- function(con, username) {
 
 #' @rdname db_read
 #' @param user_id A single `user_id`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_user_by_id <- function(con, user_id) {
   res <- DBI::dbGetQuery(
     con, "SELECT * FROM episode_app_user WHERE user_id = ?",
@@ -167,7 +183,8 @@ episode_db_user_by_id <- function(con, user_id) {
 }
 
 #' @rdname db_read
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_app_user_events <- function(con, user_id) {
   DBI::dbGetQuery(
     con,
@@ -178,7 +195,8 @@ episode_db_app_user_events <- function(con, user_id) {
 
 #' @rdname db_read
 #' @param run_id A single `run_id`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_detections_for_run <- function(con, run_id) {
   DBI::dbGetQuery(
     con,
@@ -189,7 +207,8 @@ episode_db_detections_for_run <- function(con, run_id) {
 
 #' @rdname db_read
 #' @param limit Maximum number of rows to return, most recent first.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_runs <- function(con, limit = 200) {
   DBI::dbGetQuery(
     con, "SELECT * FROM episode_detection_run ORDER BY run_id DESC LIMIT ?",
@@ -199,7 +218,8 @@ episode_db_runs <- function(con, limit = 200) {
 
 #' @rdname db_read
 #' @param status If given, only the latest run with this `status`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_latest_run <- function(con, status = NULL) {
   sql <- "SELECT * FROM episode_detection_run"
   if (!is.null(status)) {
@@ -212,7 +232,8 @@ episode_db_latest_run <- function(con, status = NULL) {
 }
 
 #' @rdname db_read
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_stream_trend <- function(con, stream_id) {
   DBI::dbGetQuery(
     con, "SELECT * FROM episode_stream_trend WHERE stream_id = ? ORDER BY week_start",
@@ -221,7 +242,8 @@ episode_db_stream_trend <- function(con, stream_id) {
 }
 
 #' @rdname db_read
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_denominator_for_pathogen <- function(con, pathogen) {
   DBI::dbGetQuery(
     con, "SELECT * FROM episode_denominator WHERE pathogen = ? ORDER BY sample_date",
@@ -230,7 +252,8 @@ episode_db_denominator_for_pathogen <- function(con, pathogen) {
 }
 
 #' @rdname db_read
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_reports_for_cluster <- function(con, cluster_id) {
   DBI::dbGetQuery(
     con, "SELECT * FROM episode_report_render WHERE cluster_id = ? ORDER BY version_no",
@@ -240,7 +263,8 @@ episode_db_reports_for_cluster <- function(con, cluster_id) {
 
 #' @rdname db_read
 #' @param institution_id An `episode_institution` id.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_db_institution_activity <- function(con, institution_id) {
   DBI::dbGetQuery(
     con, "SELECT * FROM episode_institution_activity WHERE institution_id = ? ORDER BY period_start",

@@ -20,7 +20,8 @@
 #'   uses `config$eligibility`.
 #' @return `TRUE` if the stream is eligible for statistical detection,
 #'   `FALSE` otherwise.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_eligibility_gate <- function(cases_for_stream, as_of, config) {
   gate <- config$eligibility
 

@@ -26,7 +26,8 @@ NULL
 #' @param snooze_until A date, or `NA`.
 #' @param supersedes An earlier `event_id` this event supersedes, or `NA`.
 #' @return Invisibly, the new `event_id`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_app_submit_assessment <- function(con, cluster_id, user_id, verdict = NA,
                                            rationale, wpg_notifiable = NA,
                                            ggd_informed = NA, ggd_note = NA,
@@ -59,7 +60,8 @@ episode_app_submit_assessment <- function(con, cluster_id, user_id, verdict = NA
 #'
 #' @inheritParams episode_app_submit_assessment
 #' @return Invisibly, the new `episode_cluster_state` row's `state_id`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_app_submit_closure <- function(con, cluster_id, user_id) {
   invisible(episode_db_cluster_state_insert(
     con, cluster_id = cluster_id, state = "closed", trigger = "closure", user_id = user_id

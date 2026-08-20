@@ -775,13 +775,13 @@ Per cluster, computed in the cron and cached, rendered by the app and the report
 - **Case-free countdown.** Days since the last case against the organism's closure threshold, shown on every open cluster.
 - **Unique patients against isolates.** Both counts, always, so that a cluster inflated by repeat sampling is visible at a glance.
 - **Line list.** Sortable table, exportable, restricted to the stored fields: patient key, sample date, sex, age, PC4, care line, institution, ward, specialism. Hidden entirely for anonymous viewers, along with its export.
-- **Detector internals.** The `sts` object, thresholds, parameters, and the raw `certestats` output. This tab exists so an assessor can distinguish a real rise from a modelling artefact, which is the single most common assessment question.
+- **Detector internals.** The `sts` object, thresholds, parameters, and the raw detector output. This tab exists so an assessor can distinguish a real rise from a modelling artefact, which is the single most common assessment question.
 
 ---
 
 ## 10. Interface
 
-Shiny with `bslib`, packaged as `run_app()`, styled with `certestyle::certe.colours`.
+Shiny with `bslib`, packaged as `run_app()`, styled with an organisation-configurable colour palette (a shipped, organisation-neutral default, overridable per instance).
 
 **This is a dossier, not a triage queue.** Earlier drafts optimised for a ten-minute morning routine through a long ranked list, on the assumption that detecting across all pathogens would produce high daily volume. At five to ten assessed clusters a month that assumption is wrong. Each cluster earns a full page with generous space, several plots and written interpretation. The list is a narrow rail, not the product.
 

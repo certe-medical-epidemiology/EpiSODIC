@@ -1,16 +1,18 @@
 #' The application colour palette
 #'
-#' Uses `certestyle::certe.colours` when installed (ARCHITECTURE.md
-#' section 10.1). Since `certestyle` is Certe-internal, it is only ever
-#' in `Suggests`, never a hard dependency; a
-#' shipped-default palette covers everyone else - not hardcoded in R, but
-#' read from `inst/config/palette.yaml`, the same defaults-then-instance-
+#' Read from `inst/config/palette.yaml`, the same defaults-then-instance-
 #' override pattern [episode_config_resolve()] uses for detection
 #' configuration (deliberately a *separate* file and env var,
 #' `EPISODE_PALETTE_CONFIG`: colours must never affect `config_hash`,
 #' which is about detection reproducibility, not display). Any
-#' organisation can therefore run EpiSODE in its own house colours,
-#' certestyle installed or not.
+#' organisation runs EpiSODE in its own house colours by pointing
+#' `EPISODE_PALETTE_CONFIG` at a YAML file overriding whichever roles it
+#' wants to rebrand - a department that wants its own colours supplies
+#' its own file, exactly as it supplies its own report template
+#' (`EPISODE_QUARTO_REPORT`) or geographic reference data
+#' (`EPISODE_GEO_DATA`); this package ships only the generic mechanism
+#' and an organisation-neutral default, never a specific organisation's
+#' house style.
 #'
 #' @return A named list of hex colour strings: the neutrals (`ink`
 #'   default text, `muted` secondary text, `faint` tertiary, `border`,
@@ -19,13 +21,12 @@
 #'   (+`_dark`/`_light`/`_tint`), `secondary` (+`_dark`), `tertiary`
 #'   (+`_dark`), `success` (+`_dark`), `warning` (+`_dark`), `danger`
 #'   (+`_dark`).
+#' @examples
+#' pal <- episode_palette()
+#' pal$primary
 #' @export
 episode_palette <- function() {
-  if (requireNamespace("certestyle", quietly = TRUE)) {
-    cc <- tryCatch(certestyle::certe.colours, error = function(e) NULL)
-    if (!is.null(cc)) return(episode_palette_from_certestyle(cc))
-  }
-  episode_palette_fallback()
+  episode_palette_config_resolve()
 }
 
 #' Resolve the shipped default palette, with an optional instance override
@@ -51,42 +52,9 @@ episode_palette_config_resolve <- function(palette_config_path = Sys.getenv("EPI
   base
 }
 
-#' @keywords internal
-#' @noRd
-episode_palette_fallback <- function() {
-  episode_palette_config_resolve()
-}
-
-#' @keywords internal
-#' @noRd
-episode_palette_from_certestyle <- function(cc) {
-  # certestyle::certe.colours exposes its own hue names, each prefixed
-  # "certe" (certeblauw, certeblauw0, certeblauw2, ... - verified against
-  # certe-medical-epidemiology/certestyle's R/certe_colours.R, not
-  # guessed), one real hue per role so none of Certe's own colours get
-  # merged with another. Any hue it does not provide falls back to our
-  # own shipped default for that role. cc may be a named character
-  # vector rather than a list (certestyle's actual return type), so `$`
-  # is not safe here - a small name-based getter handles both.
-  cc_get <- function(name) {
-    if (!is.null(names(cc)) && name %in% names(cc)) unname(cc[[name]]) else NULL
-  }
-  defaults <- episode_palette_config_resolve()
-  list(
-    ink = defaults$ink, muted = defaults$muted, faint = defaults$faint,
-    border = defaults$border, bg_subtle = defaults$bg_subtle, bg = defaults$bg, surface = defaults$surface,
-    primary = cc_get("certeblauw") %||% defaults$primary, primary_dark = cc_get("certeblauw0") %||% defaults$primary_dark,
-    primary_light = cc_get("certeblauw2") %||% defaults$primary_light, primary_tint = cc_get("certeblauw5") %||% defaults$primary_tint,
-    secondary = cc_get("certelila") %||% defaults$secondary, secondary_dark = cc_get("certelila0") %||% defaults$secondary_dark,
-    tertiary = cc_get("certebruin") %||% defaults$tertiary, tertiary_dark = cc_get("certebruin0") %||% defaults$tertiary_dark,
-    success = cc_get("certegroen") %||% defaults$success, success_dark = cc_get("certegroen0") %||% defaults$success_dark,
-    warning = cc_get("certegeel") %||% defaults$warning, warning_dark = cc_get("certegeel0") %||% defaults$warning_dark,
-    danger = cc_get("certeroze") %||% defaults$danger, danger_dark = cc_get("certeroze0") %||% defaults$danger_dark
-  )
-}
-
 #' The five-colour brand bar used under the app header
-#' @export
+#' @keywords internal
+#' @noRd
 episode_brand_bar <- function() {
   p <- episode_palette()
   c(p$warning, p$success, p$danger, p$primary, p$secondary)

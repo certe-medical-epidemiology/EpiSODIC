@@ -35,7 +35,8 @@
 #'   similarity descending: `cluster_id`, `pathogen`, `level_label`,
 #'   `place`, `n_cases`, `verdict_label`, `closed_at`. Zero rows if there
 #'   is no closed precedent for this pathogen.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_app_similar_clusters <- function(con, cluster_id, lang = "nl", n = 3L) {
   empty <- data.frame(cluster_id = integer(0), pathogen = character(0), level_label = character(0),
                        place = character(0), n_cases = integer(0), verdict_label = character(0),

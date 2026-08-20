@@ -45,6 +45,17 @@
 #' @param run_date The date to treat as "today" for closure/eligibility
 #'   calculations; defaults to the system date, injectable for tests.
 #' @return Invisibly, the `run_id` of the completed run.
+#' @examples
+#' \donttest{
+#' db_path <- tempfile(fileext = ".sqlite")
+#' run_id <- episode_run_cron(
+#'   db_path,
+#'   ingest_source_fn = function() episode_ingest_source_synthetic(
+#'     start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+#'   )
+#' )
+#' file.remove(db_path)
+#' }
 #' @export
 episode_run_cron <- function(db_path,
                               ingest_source_fn = episode_ingest_source_synthetic,
@@ -106,6 +117,11 @@ episode_run_cron <- function(db_path,
 #'   to it, for instance).
 #' @return `NULL` if `x` is `NULL`; `x` itself if it is a data frame; the
 #'   result of calling `x` otherwise.
+#' @examples
+#' df <- data.frame(x = 1:3)
+#' identical(episode_resolve_source(df), df)
+#' identical(episode_resolve_source(function() df), df)
+#' is.null(episode_resolve_source(NULL))
 #' @export
 episode_resolve_source <- function(x, ...) {
   if (is.null(x)) return(NULL)
@@ -270,7 +286,8 @@ episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, denomin
 #' @param cases All currently known cases.
 #' @param stream A single-row stream (from `episode_db_streams()`).
 #' @return The subset of `cases` belonging to `stream`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_cases_for_stream <- function(cases, stream) {
   matches <- cases$pathogen == stream$pathogen
   if (!is.na(stream$institution_id)) {

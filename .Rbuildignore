@@ -5,3 +5,5 @@ QUESTIONS.md
 run_test\.R
 ^data-raw$
 ^\.github$
+^LICENSE\.md$
+^cran-comments\.md$

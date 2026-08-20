@@ -17,7 +17,12 @@
 #'   `institution_key` does not match a known institution are skipped,
 #'   not an error - an operator's activity feed and case feed need not be
 #'   perfectly synchronised).
-#' @export
+#'
+#' Not exported: an operator supplies a source to [episode_run_cron()] via
+#' `institution_activity_source_fn`; this is the internal write step run
+#' against it.
+#' @keywords internal
+#' @noRd
 episode_institution_activity_ingest_run <- function(con, activity) {
   required_cols <- c("institution_key", "period_start", "period_end", "patient_days")
   missing_cols <- setdiff(required_cols, names(activity))
@@ -63,6 +68,14 @@ episode_institution_activity_ingest_run <- function(con, activity) {
 #' @param seed RNG seed.
 #' @return A data frame with `institution_key`, `period_start`,
 #'   `period_end`, `patient_days`, `n_beds`, `source`.
+#' @examples
+#' institutions <- data.frame(
+#'   institution_key = "HOSP-1", institution_type = "hospital", n_beds = 320
+#' )
+#' activity <- episode_synthetic_institution_activity_source(
+#'   institutions, start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+#' )
+#' head(activity)
 #' @export
 episode_synthetic_institution_activity_source <- function(institutions, start_date = as.Date("2021-01-01"),
                                                             end_date = as.Date("2025-12-31"), seed = 1) {

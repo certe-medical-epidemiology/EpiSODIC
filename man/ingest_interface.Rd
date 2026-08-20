@@ -35,3 +35,6 @@ that decides this, not EpiSODE.
 is handled separately as small, optional, pre-aggregated metadata (see
 \code{R/ingest_denominator.R}); the mandatory feed here is positives only.
 }
+\examples{
+episode_ingest_columns
+}

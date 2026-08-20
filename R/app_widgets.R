@@ -29,6 +29,8 @@ NULL
 #'
 #' @param pathogen A character vector of pathogen display names.
 #' @return A character vector, safe to pass to [shiny::HTML()].
+#' @examples
+#' episode_ui_italicise_taxon(c("Escherichia coli", "Influenza A"))
 #' @export
 episode_ui_italicise_taxon <- function(pathogen) {
   escaped <- gsub("&", "&amp;", pathogen, fixed = TRUE)
@@ -54,6 +56,8 @@ episode_ui_italicise_taxon <- function(pathogen) {
 #' @param detectors A character vector of detector names.
 #' @param sep Separator between entries.
 #' @return A single character string, safe to pass to [shiny::HTML()].
+#' @examples
+#' episode_ui_code_join(c("farrington", "same_place"))
 #' @export
 episode_ui_code_join <- function(detectors, sep = ", ") {
   escaped <- gsub("&", "&amp;", detectors, fixed = TRUE)
@@ -109,7 +113,8 @@ episode_ui_picker <- function(input_id, options, selected = NULL) {
 #' @param text Chip text.
 #' @param colour A hex colour.
 #' @param filled If `TRUE`, filled background; otherwise an outline chip.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_ui_chip <- function(text, colour, filled = FALSE) {
   style <- if (filled) {
     sprintf("color:#fff;background:%s;", colour)
@@ -125,7 +130,8 @@ episode_ui_chip <- function(text, colour, filled = FALSE) {
 #' @param aside Optional right-aligned header text.
 #' @param note Optional footnote paragraph.
 #' @param ... Panel body content.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_ui_panel <- function(title, ..., aside = NULL, note = NULL) {
   shiny::tags$section(
     class = "episode-panel",
@@ -144,7 +150,8 @@ episode_ui_panel <- function(title, ..., aside = NULL, note = NULL) {
 
 #' @rdname app_widgets
 #' @param message Empty-state text shown instead of a body.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_ui_panel_empty <- function(title, message, aside = NULL) {
   episode_ui_panel(title, aside = aside, shiny::tags$p(class = "episode-panel-empty", message))
 }
@@ -154,7 +161,8 @@ episode_ui_panel_empty <- function(title, message, aside = NULL) {
 #' @param value Stat value (large number/text).
 #' @param sub Optional sub-label.
 #' @param colour Optional value colour.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_ui_stat <- function(label, value, sub = NULL, colour = NULL) {
   shiny::tags$div(
     shiny::tags$div(class = "episode-stat-label", label),
@@ -167,7 +175,8 @@ episode_ui_stat <- function(label, value, sub = NULL, colour = NULL) {
 #' @param rows A data frame with `label` and `n` columns.
 #' @param unit Optional footnote under the bars.
 #' @param colour Bar fill colour.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_ui_bars <- function(rows, unit = NULL, colour = NULL) {
   if (nrow(rows) == 0) return(shiny::tags$p(class = "episode-panel-empty", "..."))
   pal <- episode_palette()
@@ -192,7 +201,8 @@ episode_ui_bars <- function(rows, unit = NULL, colour = NULL) {
 #' @param demo A data frame with `band`, `m`, `v` (male/female counts), one
 #'   row per age band in ascending order (youngest first).
 #' @param lang Session language, for the axis labels.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_ui_pyramid <- function(demo, lang = "nl") {
   if (nrow(demo) == 0 || sum(demo$m, demo$v) == 0) {
     return(shiny::tags$p(class = "episode-panel-empty", "..."))
@@ -225,15 +235,17 @@ episode_ui_pyramid <- function(demo, lang = "nl") {
 }
 
 #' @rdname app_widgets
-#' @param state One of [episode_derive_state()]'s state strings.
-#' @export
+#' @param state One of `episode_derive_state()`'s state strings.
+#' @keywords internal
+#' @noRd
 episode_ui_state_dot <- function(state) {
   colour <- episode_ui_state_colour(state)
   shiny::tags$span(class = "episode-state-dot", style = sprintf("background:%s;", colour))
 }
 
 #' @rdname app_widgets
-#' @export
+#' @keywords internal
+#' @noRd
 episode_ui_state_colour <- function(state) {
   pal <- episode_palette()
   switch(state,
@@ -247,7 +259,8 @@ episode_ui_state_colour <- function(state) {
 #' @param verdict One of `episode_ui_assessment_form()`'s verdict keys
 #'   (`"artefact"`, `"expected_variation"`, `"cluster_not_yet"`,
 #'   `"possible_epidemic"`, `"confirmed_epidemic"`).
-#' @export
+#' @keywords internal
+#' @noRd
 episode_ui_verdict_colour <- function(verdict) {
   pal <- episode_palette()
   switch(verdict,

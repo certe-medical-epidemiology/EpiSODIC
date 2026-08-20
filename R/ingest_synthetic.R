@@ -16,6 +16,12 @@
 #' @param end_date Last sample date to generate, a `Date`.
 #' @param seed RNG seed, for reproducible demo data.
 #' @return A data frame satisfying `episode_ingest_validate_source()`.
+#' @examples
+#' raw <- episode_ingest_source_synthetic(
+#'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+#' )
+#' nrow(raw)
+#' head(raw)
 #' @export
 episode_ingest_source_synthetic <- function(start_date = as.Date("2021-01-01"),
                                              end_date = as.Date("2025-12-31"),
@@ -211,6 +217,12 @@ episode_synthetic_outbreak_point_source <- function(institutions, end_date, n_ca
 #'   including everything `episode_ingest_source_synthetic()` produces
 #'   (background baseline, the two standard demo outbreaks) plus the
 #'   extra volume.
+#' @examples
+#' raw <- episode_ingest_source_synthetic_calibration(
+#'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-06-30"),
+#'   n_bumps_per_month = 4
+#' )
+#' sum(startsWith(raw$patient_key, "PT-VOL-"))
 #' @export
 episode_ingest_source_synthetic_calibration <- function(start_date = as.Date("2021-01-01"),
                                                           end_date = as.Date("2025-12-31"),

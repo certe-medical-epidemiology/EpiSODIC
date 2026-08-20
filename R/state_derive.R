@@ -37,7 +37,8 @@
 #' @param today The current date, for evaluating `snooze_until`.
 #' @return One of `"new"`, `"assessing"`, `"monitoring"`, `"closable"`,
 #'   `"closed"`, `"reassess"`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_derive_state <- function(events, changed_since_assessment = FALSE,
                                   closure_criterion_met = FALSE,
                                   explicitly_closed = FALSE, today = Sys.Date()) {

@@ -9,7 +9,7 @@ NULL
 
 #' The Archive screen
 #'
-#' @param archive A data frame from [episode_app_archive()].
+#' @param archive A data frame from `episode_app_archive()`.
 #' @param lang Session language.
 #' @return A `shiny::tags` element.
 #' @keywords internal
@@ -57,7 +57,7 @@ episode_ui_archive_screen <- function(archive, lang = "nl") {
 
 #' The Activity screen
 #'
-#' @param activity A data frame from [episode_app_activity_log()].
+#' @param activity A data frame from `episode_app_activity_log()`.
 #' @param lang Session language.
 #' @return A `shiny::tags` element.
 #' @keywords internal

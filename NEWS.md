@@ -62,12 +62,13 @@ optional Certe house-style dependency.
 
 ## Optional, always-guarded integrations
 
-Every non-CRAN or Certe-specific dependency is optional, with a
-documented fallback when it is absent: `AMR` (episode deduplication),
-`certestyle` (house-style colour palette), `EpiEstim` (Rt), `mem`
+Every non-CRAN dependency is optional, with a documented fallback when
+it is absent: `AMR` (episode deduplication), `EpiEstim` (Rt), `mem`
 (seasonal thresholds), `quarto` + the Quarto CLI (report rendering),
 `sf` (geographic choropleth). None of them are required to run the
-detection engine, the interface, or the bundled demo.
+detection engine, the interface, or the bundled demo. House colours are
+a shipped, organisation-neutral default, overridable per instance via
+`EPISODE_PALETTE_CONFIG` - no organisation-specific package involved.
 
 ## Data contract
 

@@ -3,7 +3,7 @@
 #' Wires the assessment form's submit buttons, including
 #' `bulk_assess_submit` (the rail's multi-select bar - "often they are
 #' artefacts", one classification and rationale applied to every checked
-#' cluster in a loop over [episode_app_submit_assessment()], each getting
+#' cluster in a loop over `episode_app_submit_assessment()`, each getting
 #' its own `episode_assessment_event` row exactly as a one-at-a-time
 #' classification would). Every handler re-checks
 #' `current_user()` server-side before writing anything - the UI only

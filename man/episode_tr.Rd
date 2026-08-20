@@ -24,3 +24,7 @@ A single character string, with placeholders substituted.
 \description{
 Translate a key, with placeholder substitution
 }
+\examples{
+episode_tr("nav.clusters", lang = "nl")
+episode_tr("nav.clusters", lang = "en")
+}

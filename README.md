@@ -62,14 +62,15 @@ Pass `launch = FALSE` to skip opening the app and just get a populated
 database path back, e.g. for scripting.
 
 EpiSODE's detection engine has **no dependency on any laboratory system,
-data warehouse, or Certe-internal package**. Every detector runs on
-open-source, CRAN-hosted packages (`surveillance` for Farrington). Only
-one Certe package, `certestyle`, is used anywhere, and only optionally,
-for the interface's house-style colour palette (`episode_palette()`);
-without it EpiSODE still runs completely on its bundled synthetic demo
-data, in a shipped default palette. Geography
-(the choropleth panel) is not Certe-specific at all - see "Geographic
-reference data" below.
+data warehouse, or Certe-internal package**. Every dependency is a
+CRAN-hosted package (`surveillance` for Farrington); no Certe-internal
+package is required or even referenced. House colours
+(`episode_palette()`) come from a shipped, organisation-neutral default,
+overridable per instance by pointing `EPISODE_PALETTE_CONFIG` at a YAML
+file with an organisation's own colours - the same mechanism used for
+detection configuration, a custom report template, and geographic
+reference data. Geography (the choropleth panel) is not Certe-specific
+at all - see "Geographic reference data" below.
 
 ## Data format
 

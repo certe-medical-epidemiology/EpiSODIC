@@ -49,26 +49,6 @@ test_that("an instance palette override propagates, other roles keep the shipped
   expect_false(identical(pal$secondary, "#123456"))
 })
 
-test_that("episode_palette_from_certestyle() maps certestyle's own key names onto our role names, one hue per role, falling back per-role when absent", {
-  # certestyle::certe.colours is a named character vector, not a list -
-  # matched here so a regression to `cc$name` (invalid on an atomic
-  # vector) fails this test rather than only failing for real users. Key
-  # names mirror the real package exactly (certe-medical-epidemiology/
-  # certestyle, R/certe_colours.R: "certeblauw", "certegeel", ... - each
-  # prefixed "certe", not the bare hue word) so a regression to the bare
-  # name (which silently falls through to the shipped default instead of
-  # erroring) fails this test too.
-  fake_cc <- c(certeblauw = "#000001", certegeel = "#000002")  # only two of the hues certestyle would normally provide
-  pal <- episode_palette_from_certestyle(fake_cc)
-
-  expect_equal(pal$primary, "#000001")   # certeblauw
-  expect_equal(pal$warning, "#000002")   # certegeel
-  # a role certestyle didn't supply falls back to our own shipped default, not NULL
-  expect_equal(pal$success, episode_palette_config_resolve()$success)
-  # each of Certe's real hues keeps its own role - none merged into another
-  expect_false(identical(pal$primary, pal$warning))
-})
-
 test_that("episode_ui_code_join() wraps each item in <code> and escapes, HTML-safe", {
   expect_equal(episode_ui_code_join(c("same_place", "farrington"), sep = " en "),
                "<code>same_place</code> en <code>farrington</code>")

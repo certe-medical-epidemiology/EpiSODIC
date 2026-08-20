@@ -11,6 +11,11 @@
 #' @param overwrite If `TRUE`, delete an existing file at `path` first.
 #' @return (Invisibly) an open [DBI::DBIConnection-class] to the new
 #'   database. The caller is responsible for disconnecting it.
+#' @examples
+#' db_path <- tempfile(fileext = ".sqlite")
+#' con <- episode_db_create(db_path)
+#' DBI::dbDisconnect(con)
+#' file.remove(db_path)
 #' @export
 episode_db_create <- function(path, overwrite = FALSE) {
   if (file.exists(path)) {
@@ -53,6 +58,13 @@ episode_db_create <- function(path, overwrite = FALSE) {
 #'
 #' @param path Path to an existing SQLite file.
 #' @return An open [DBI::DBIConnection-class].
+#' @examples
+#' db_path <- tempfile(fileext = ".sqlite")
+#' con <- episode_db_create(db_path)
+#' DBI::dbDisconnect(con)
+#' con <- episode_db_connect(db_path)
+#' DBI::dbDisconnect(con)
+#' file.remove(db_path)
 #' @export
 episode_db_connect <- function(path) {
   if (!file.exists(path)) {
@@ -75,6 +87,14 @@ episode_db_connect <- function(path) {
 #'   `EPISODE_DB` environment variable.
 #' @return An open [DBI::DBIConnection-class]; the caller is responsible
 #'   for disconnecting it.
+#' @examples
+#' db_path <- tempfile(fileext = ".sqlite")
+#' con <- episode_db_create(db_path)
+#' DBI::dbDisconnect(con)
+#' Sys.setenv(EPISODE_DB = db_path)
+#' con <- episode_db_open()
+#' DBI::dbDisconnect(con)
+#' file.remove(db_path)
 #' @export
 episode_db_open <- function(db_path = Sys.getenv("EPISODE_DB", unset = NA)) {
   if (is.na(db_path) || !nzchar(db_path)) {

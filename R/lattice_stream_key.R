@@ -22,7 +22,8 @@
 #'   dimension in `ARCHITECTURE.md` section 5.1's `episode_stream` DDL; see
 #'   `QUESTIONS.md` item 20 for why it was added.
 #' @return A 40-character lowercase hex SHA-1 digest.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_stream_key <- function(level, pathogen, care_line = NA, region_code = NA,
                                 institution_id = NA, ward = NA) {
   stopifnot(length(level) == 1, length(pathogen) == 1)

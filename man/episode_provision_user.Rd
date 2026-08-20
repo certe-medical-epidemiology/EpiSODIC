@@ -35,10 +35,20 @@ by whoever administers the database, not created by assessors
 themselves. This is that provisioning step: hashes \code{password} with
 \code{sodium::password_store()} and inserts the account, \code{must_change = 1}
 by default so the first real sign-in forces a password of the
-account holder's own choosing (see \code{\link[=episode_auth_change_password]{episode_auth_change_password()}}).
+account holder's own choosing (see \code{episode_auth_change_password()}).
 }
 \details{
 Takes \code{db_path} rather than an open connection - opened and closed here
 via \code{\link[=episode_db_open]{episode_db_open()}} - so provisioning an account is one call at the
 console, without first having to construct a \code{con} by hand.
+}
+\examples{
+db_path <- tempfile(fileext = ".sqlite")
+con <- episode_db_create(db_path)
+DBI::dbDisconnect(con)
+episode_provision_user(
+  db_path, username = "jdoe", full_name = "Jane Doe",
+  email = "jane@example.org", password = "temporary-password"
+)
+file.remove(db_path)
 }

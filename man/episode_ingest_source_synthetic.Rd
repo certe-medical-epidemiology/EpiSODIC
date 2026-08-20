@@ -34,3 +34,10 @@ cluster with generation-interval-spaced case waves).
 No Diver column name is invented here; every field in the returned data
 frame is entirely synthetic and matches \code{episode_ingest_columns}.
 }
+\examples{
+raw <- episode_ingest_source_synthetic(
+  start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+)
+nrow(raw)
+head(raw)
+}

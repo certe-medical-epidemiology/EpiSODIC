@@ -28,6 +28,13 @@ episode_chart_theme <- function() {
 #' @rdname app_charts
 #' @param curve A data frame from `episode_app_epi_curve()`.
 #' @param lang Session language.
+#' @examples
+#' curve <- data.frame(
+#'   sample_date = seq(as.Date("2025-01-01"), by = "day", length.out = 14),
+#'   n_cases = c(1, 0, 2, 1, 3, 2, 4, 3, 5, 2, 1, 0, 1, 2),
+#'   incomplete = c(rep(FALSE, 12), TRUE, TRUE)
+#' )
+#' p <- episode_ui_epi_curve_chart(curve)
 #' @export
 episode_ui_epi_curve_chart <- function(curve, lang = "nl") {
   pal <- episode_palette()
@@ -43,6 +50,14 @@ episode_ui_epi_curve_chart <- function(curve, lang = "nl") {
 
 #' @rdname app_charts
 #' @param trend A data frame from `episode_app_trend()`.
+#' @examples
+#' trend <- data.frame(
+#'   week_start = seq(as.Date("2025-01-06"), by = "week", length.out = 8),
+#'   n_cases = c(2, 3, 1, 4, 6, 5, 3, 2),
+#'   expected = c(2, 2, 2, 2, 2, 2, 2, 2),
+#'   upperbound = c(4, 4, 4, 4, 4, 4, 4, 4)
+#' )
+#' p <- episode_ui_trend_chart(trend)
 #' @export
 episode_ui_trend_chart <- function(trend, lang = "nl") {
   pal <- episode_palette()
@@ -61,6 +76,14 @@ episode_ui_trend_chart <- function(trend, lang = "nl") {
 
 #' @rdname app_charts
 #' @param rt A data frame from `episode_compute_rt()`.
+#' @examples
+#' rt <- data.frame(
+#'   window_end = seq(as.Date("2025-01-08"), by = "day", length.out = 5),
+#'   mean = c(1.4, 1.3, 1.1, 0.9, 0.8),
+#'   lower = c(1.0, 0.9, 0.8, 0.6, 0.5),
+#'   upper = c(1.8, 1.7, 1.4, 1.2, 1.1)
+#' )
+#' p <- episode_ui_rt_chart(rt)
 #' @export
 episode_ui_rt_chart <- function(rt, lang = "nl") {
   pal <- episode_palette()
@@ -130,7 +153,8 @@ episode_ui_geo_map_chart <- function(rows) {
 
 #' @rdname app_charts
 #' @param series A data frame from `episode_app_denominator_series()`.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_ui_denominator_chart <- function(series, lang = "nl") {
   pal <- episode_palette()
   max_tests <- max(series$n_tests, 1)

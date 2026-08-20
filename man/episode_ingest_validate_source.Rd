@@ -15,3 +15,9 @@ episode_ingest_validate_source(raw)
 \description{
 Validate that a raw ingestion source data frame satisfies the interface
 }
+\examples{
+raw <- episode_ingest_source_synthetic(
+  start_date = as.Date("2025-01-01"), end_date = as.Date("2025-01-31")
+)
+episode_ingest_validate_source(raw)
+}

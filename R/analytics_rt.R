@@ -38,7 +38,8 @@
 #' @return A data frame with `window_end` (`Date`), `mean`, `lower`,
 #'   `upper` (2.5%/97.5% credible interval), or `NULL` if Rt cannot or
 #'   should not be computed.
-#' @export
+#' @keywords internal
+#' @noRd
 episode_compute_rt <- function(cases, pc, incomplete_days = 0L, window_days = 7L) {
   if (is.null(pc) || !isTRUE(as.logical(pc$rt_applicable))) return(NULL)
   if (is.na(pc$si_mean_days) || is.na(pc$si_sd_days)) return(NULL)

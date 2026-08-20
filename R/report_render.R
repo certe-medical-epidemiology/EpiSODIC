@@ -11,8 +11,8 @@
 #' (`case_ids`).
 #'
 #' Data for the template is assembled here (from the same read models the
-#' app itself uses: [episode_cluster_object()], [episode_app_epi_curve()],
-#' [episode_app_linelist()]) and handed to Quarto as a single RDS side
+#' app itself uses: `episode_cluster_object()`, `episode_app_epi_curve()`,
+#' `episode_app_linelist()`) and handed to Quarto as a single RDS side
 #' channel rather than as `execute_params` values directly - a line list
 #' data frame has no clean YAML/JSON representation, and passing one path
 #' string keeps the template itself simple (`readRDS(params$data_path)`).
@@ -48,6 +48,16 @@
 #'   for the exact shape and for `episode_tr(..., lang = d$lang)` usage.
 #' @return Invisibly, a list with `file_path`, `file_sha256`, `version_no`,
 #'   `report_id`.
+#' @examples
+#' \dontrun{
+#' # needs both the quarto R package and the Quarto CLI installed, plus a
+#' # database with at least one detected cluster - see episode_demo() for
+#' # a populated one, and the app's rail for a cluster_id to render
+#' db_path <- episode_demo(launch = FALSE)
+#' con <- episode_db_connect(db_path)
+#' episode_report_render(con, cluster_id = 1, output_dir = tempdir())
+#' DBI::dbDisconnect(con)
+#' }
 #' @export
 episode_report_render <- function(con, cluster_id, output_dir, user_id = NA,
                                    include_linelist = TRUE, small_count_threshold = NULL,

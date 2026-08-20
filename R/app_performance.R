@@ -111,7 +111,8 @@ episode_ui_performance_screen <- function(performance, lang = "nl") {
 #'   `list(median_days, n)` entries: `to_detection`,
 #'   `to_first_assessment`, `to_classification` - `median_days` is `NA`
 #'   when `n` is `0`).
-#' @export
+#' @keywords internal
+#' @noRd
 episode_app_performance <- function(con, lang = "nl") {
   detections <- DBI::dbGetQuery(
     con, "SELECT DISTINCT cluster_id, detector FROM episode_detection WHERE cluster_id IS NOT NULL"

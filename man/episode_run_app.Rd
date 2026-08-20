@@ -22,7 +22,15 @@ episode_run_app(
 Invisible; called for its side effect of starting the app.
 }
 \description{
-Read-only in M2 (ARCHITECTURE.md section 12: no login, no writes until
-M3). Serves the cluster dossier and the Streams overview against a
-database already populated by \code{\link[=episode_run_cron]{episode_run_cron()}}.
+Read-only for anonymous visitors (ARCHITECTURE.md section 12: signing in
+is only required to classify a cluster). Serves the cluster dossier and
+the Streams overview against a database already populated by
+\code{\link[=episode_run_cron]{episode_run_cron()}}.
+}
+\examples{
+\dontrun{
+# opens a blocking, interactive Shiny session - see episode_demo() for a
+# one-call, populated version of this same example
+episode_run_app("/path/to/episode.sqlite")
+}
 }

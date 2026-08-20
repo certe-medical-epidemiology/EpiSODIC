@@ -31,3 +31,6 @@ only exported functions are attached by \code{library(EpiSODE)}, and an
 operator's own custom template (\code{EPISODE_QUARTO_REPORT}) should have
 the same formatting helpers the shipped one uses.
 }
+\examples{
+episode_ui_italicise_taxon(c("Escherichia coli", "Influenza A"))
+}
