@@ -1,0 +1,128 @@
+# Deployment
+
+This vignette is for standing up a real instance. If you only want to
+see the system working, run
+[`EpiSODIC::episode_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_demo.md)
+instead - no data, no credentials, no configuration required.
+
+## The two things you provide
+
+EpiSODIC never connects to a laboratory information system, data
+warehouse, or any other data source itself - that step is deliberately
+yours, run before EpiSODIC, so the package stays reusable by any
+laboratory rather than tied to one:
+
+``` r
+
+episode_run_cron(
+  db_path = "/path/to/episode.sqlite",
+  ingest_source_fn = function() my_extract_and_transform_function(),
+  denominator_source_fn = NULL  # optional
+)
+```
+
+`ingest_source_fn` (and `denominator_source_fn`,
+`institution_activity_source_fn`) can be a function that produces the
+data frame at run time, or the data frame itself if you already have it
+in hand - see
+[`episode_resolve_source()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_resolve_source.md).
+The README’s “Data format” section documents the exact columns each of
+the four data sources (cases, positivity metadata, institution activity,
+geographic reference data) expects; only cases are mandatory.
+
+Schedule
+[`episode_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_run_cron.md)
+however your environment normally schedules R jobs (cron, a Windows
+scheduled task, a CI pipeline) - there is nothing EpiSODIC-specific
+about the scheduling itself.
+
+## Configuration lives outside the repository
+
+Detection thresholds, baseline lengths, `same_place` rules and MEM
+seasons are *operational data*, not software, and are never committed to
+this repository. `inst/config/default.yaml` ships the documented
+defaults; point `EPISODE_CONFIG` at a YAML file with only the keys you
+want to override, and it is merged key-by-key on top of the shipped
+defaults. Every run records the resolved configuration’s hash and full
+snapshot on `episode_detection_run`, so the exact parameters behind any
+past result stay recoverable from the database alone, regardless of what
+has since changed on disk.
+
+The UI’s colour palette works the same way, deliberately through a
+*separate* environment variable (`EPISODE_PALETTE_CONFIG`): colour is a
+display concern, never part of the detection-reproducibility guarantee
+`EPISODE_CONFIG`’s hash provides.
+
+## Accounts
+
+Read access is anonymous - the app opens read-only for anyone who
+reaches it. Signing in is only needed to classify a cluster, close it,
+or mute a stream, and there is deliberately no in-app account management
+screen: accounts are provisioned by whoever administers the database.
+
+``` r
+
+Sys.setenv(EPISODE_DB = "/path/to/episode.sqlite")
+
+episode_provision_user(
+  username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
+  password = "a-temporary-password"
+)
+```
+
+The account is created with `must_change = TRUE`, so the first real
+sign-in forces the holder to set their own password.
+
+## Where the database lives
+
+The SQLite database must sit on local disk, not in a synchronising
+folder (SharePoint, OneDrive, Dropbox): background sync can corrupt or
+fork a live SQLite file without any immediate warning. Configuration
+files are safe in a synced location, since they are small and read-only
+at runtime; the database itself is not.
+
+## Running the app
+
+``` r
+
+Sys.setenv(EPISODE_DB = "/path/to/episode.sqlite")
+episode_run_app()
+```
+
+[`episode_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_run_app.md)’s
+`db_path` argument defaults to `EPISODE_DB` exactly like
+[`episode_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_provision_user.md)’s
+does, so a systemd unit or Docker container can configure everything
+through environment variables alone, with no R code to edit between
+instances.
+
+## Optional pieces, and their fallbacks
+
+Every optional integration point degrades to a documented fallback
+rather than failing when it is absent:
+
+| Feature | Needs | Fallback |
+|----|----|----|
+| Rt estimation | `EpiEstim` | Panel omitted |
+| MEM seasonal thresholds | `mem` | Detector skipped for `mem_applicable` organisms |
+| Outbreak reports | `quarto` R package + the separate Quarto CLI | Render errors clearly instead of silently producing nothing |
+| Choropleth map | `sf` + geographic reference data | Plain bar breakdown by PC value |
+
+`AMR` is a hard dependency, not an optional integration: episode
+deduplication (`episode_dedup()`) calls
+[`AMR::get_episode()`](https://amr-for-r.org/reference/get_episode.html)
+directly, and pathogen-name italicisation
+([`episode_ui_italicise_taxon()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_ui_italicise_taxon.md))
+reads
+[`AMR::microorganisms`](https://amr-for-r.org/reference/microorganisms.html).
+There is no fallback for either, by design - see the DESCRIPTION for the
+published methods this package is built on.
+
+House-style colours are not an optional-dependency concern at all: the
+app always ships an organisation-neutral default palette
+(`inst/config/palette.yaml`), overridable per instance by pointing
+`EPISODE_PALETTE_CONFIG` at a department’s own YAML file with its real
+colours - no package dependency involved either way.
+
+None of these are required to run the demo, the detection engine, or the
+interface - each is additive.
