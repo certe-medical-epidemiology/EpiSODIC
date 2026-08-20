@@ -1,0 +1,76 @@
+# ===================================================================== #
+#  An R package by Certe:                                               #
+#  https://github.com/certe-medical-epidemiology                        #
+#                                                                       #
+#  Licensed as GPL-v2.0.                                                #
+#                                                                       #
+#  Developed at non-profit organisation Certe Medical Diagnostics &     #
+#  Advice, department of Medical Epidemiology.                          #
+#                                                                       #
+#  This R package is free software; you can freely use and distribute   #
+#  it for both personal and commercial purposes under the terms of the  #
+#  GNU General Public License version 2.0 (GNU GPL-2), as published by  #
+#  the Free Software Foundation.                                        #
+#                                                                       #
+#  We created this package for both routine data analysis and academic  #
+#  research and it was publicly released in the hope that it will be    #
+#  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+
+# EpiSODIC's shipped default UI palette.
+#
+# Deliberately a separate file from default.yaml: this is a display-only
+# concern (the app's colours), not part of detection configuration, so it
+# must never affect episode_config_hash()/config_snapshot - that
+# reproducibility guarantee is about detection results, not colour
+# swatches. Resolved the same way: this file's values are the defaults,
+# an operator overrides them by pointing EPISODE_PALETTE_CONFIG at their
+# own YAML with only the keys they want to change - any organisation runs
+# EpiSODIC in its own house colours this way, without EpiSODIC ever
+# shipping (or depending on) any specific organisation's house-style
+# package.
+#
+# Named by role (Bootstrap-style), not by raw hue word - a config key
+# should say what a colour is *for*, not what it looks like.
+#
+# These defaults match the Bootswatch "Yeti" theme (light variant), the
+# same theme the pkgdown site (_pkgdown.yml) is built with, so the Shiny
+# app and the documentation site share one visual identity out of the
+# box.
+#
+# Neutrals: text, borders and backgrounds are their own true grey scale,
+# independent of whichever hue is "primary" - so body text is never
+# tinted by the brand colour (this used to derive "ink" etc. straight
+# from the primary hue's own dark step, which looked fine when primary
+# happened to be a muted blue-grey but became visibly wrong the moment
+# primary became a saturated colour: every letter of body text was
+# rendered in it).
+ink: "#222222"
+muted: "#495057"
+faint: "#ADB5BD"
+border: "#DEE2E6"
+bg_subtle: "#EBEBEB"
+bg: "#F8F9FA"
+surface: "#FFFFFF"
+
+# Brand / semantic roles: Yeti's own primary, secondary and status
+# colours, each paired with a darkened step for hover/emphasis states
+# that this codebase's components expect but Yeti itself does not name.
+primary: "#008CBA"
+primary_dark: "#005F7A"
+primary_light: "#66BAD6"
+primary_tint: "#D9EDF5"
+
+secondary: "#333333"
+secondary_dark: "#1A1A1A"
+
+tertiary: "#20C997"
+tertiary_dark: "#168D6A"
+
+success: "#43AC6A"
+success_dark: "#2F784A"
+
+warning: "#F8AC59"
+warning_dark: "#AE783E"
+
+danger: "#F36A5A"
+danger_dark: "#AA4A3F"

@@ -1,0 +1,112 @@
+---
+title: "Detection and reconciliation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Detection and reconciliation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+This vignette walks through how a laboratory result becomes a dossier an
+epidemiologist can act on: detection, then reconciliation across runs.
+
+## The lattice: streams, not one big feed
+
+Every case belongs to several *streams* at once - a ward-level stream, an
+institution-level stream, an area, a province, the whole catchment - each
+watched independently. Streams are enumerated automatically from the
+data every run, so a newly appearing pathogen creates its own streams
+without any configuration step:
+
+| Level | Unit |
+|---|---|
+| L1 | Ward or specialism |
+| L2 | Hospital or care home |
+| L3 | A contiguous geographic grouping |
+| L4 | Province |
+| L5 | Full catchment |
+
+Each level is a strict partition of the one above it - a ward sits
+inside exactly one hospital, a hospital inside exactly one area, and so
+on - which is what makes suppression (below) meaningful.
+
+## Four detectors, not one algorithm
+
+- **`farrington`** (`surveillance::farringtonFlexible()`) - the standard
+  statistical aberration detector for streams with enough baseline
+  history, run at L1/L2 with a patient-day population offset where one
+  exists, so a busy month and a quiet one at identical
+  transmission-per-patient-day read as the same signal strength.
+- **`same_place`** - a rule-based detector needing no baseline at all:
+  *n* or more cases of the same organism at the same place within *k*
+  days. This is what catches long-term care institutions, which are
+  individually too sparse for a statistical baseline, and it also runs
+  alongside Farrington at hospitals, where it can fire first on a fast
+  cluster before a weekly aggregation has produced a point to test.
+- **`rare_trigger`** - a curated list of organisms (in
+  `inst/config/default.yaml`) where a single occurrence anywhere is
+  itself the signal - certain notifiable or exceptionally rare
+  pathogens do not need a second case to warrant a look.
+- **`mem`** (the `mem` package's Moving Epidemic Method) - for organisms
+  flagged `mem_applicable` (influenza, RSV), answering "has the epidemic
+  started" rather than "are counts elevated", with pre-/post-epidemic
+  thresholds derived from historical seasons.
+
+A stream's own history feeds back into its baseline: a period an
+assessor confirmed as a real epidemic is excluded from what
+`farringtonFlexible()` sees on subsequent runs for that stream, so last
+winter's outbreak does not silently raise this winter's threshold.
+
+## Reconciliation: turning detections into clusters
+
+Detection alone produces a burst of raised signals every run - the same
+underlying cluster would otherwise appear as a new row every single
+time it is still elevated. Reconciliation, run per stream immediately
+after detection inside the same transaction, is what turns that into a
+small number of *persistent* clusters an assessor can actually track:
+
+1. Detections from different detectors whose intervals overlap merge
+   into one candidate episode.
+2. Each candidate is matched against currently open clusters in the same
+   stream by interval overlap (or proximity within `case_free_days`):
+   no match creates a new cluster; one match extends the existing one
+   and recomputes its score; multiple matches merge, with the oldest
+   surviving and the others' assessment history preserved, never
+   discarded.
+3. A cluster nobody's seen a new candidate for this run gets its
+   `runs_since_detected` counter incremented; past a threshold, with no
+   assessment ever recorded, it closes itself automatically as expected
+   variation. Anything an assessor has actually classified as worth
+   watching is never auto-closed - only a person closes those.
+
+Because the anchor is the sample date, a late-arriving case can
+legitimately change an already-detected signal retrospectively -
+reconciliation deliberately re-runs over a rolling window, not only
+"today", sized from the empirical reporting-delay curve.
+
+## Suppression: one lattice, not five parallel views
+
+Without suppression, one real outbreak would appear as five separate
+clusters - one per level - burying the actual signal in restatements of
+itself. After reconciliation:
+
+- A child cluster suppresses its parent when it accounts for most of the
+  parent's excess (the rise is local; the wider view adds nothing).
+- A parent suppresses its children when the rise is spread across
+  several of them with no single dominant one (the rise is diffuse;
+  five separate area-level clusters would just be noise).
+- The suppressed clusters are never discarded - they stay attached as
+  context, visible on the surviving cluster's detail screen.
+
+## Derived state, not a stored status
+
+A cluster's displayed state (new, assessing, monitoring, ready to close,
+closed, needs reassessment) is *computed*, every time, from its
+classification history, the case-free clock, and whether it changed
+since it was last assessed - never stored and hand-edited. See
+`episode_derive_state()` for the exact rule and `state_derive.R`'s own
+tests for every transition it covers.

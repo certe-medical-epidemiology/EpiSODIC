@@ -1,0 +1,164 @@
+---
+title: "EpiSODIC outbreak report"
+format:
+  html:
+    embed-resources: true
+    toc: false
+    theme: cosmo
+params:
+  data_path: "report_data.rds"
+---
+
+<!--
+# ===================================================================== #
+#  An R package by Certe:                                               #
+#  https://github.com/certe-medical-epidemiology                        #
+#                                                                       #
+#  Licensed as GPL-v2.0.                                                #
+#                                                                       #
+#  Developed at non-profit organisation Certe Medical Diagnostics &     #
+#  Advice, department of Medical Epidemiology.                          #
+#                                                                       #
+#  This R package is free software; you can freely use and distribute   #
+#  it for both personal and commercial purposes under the terms of the  #
+#  GNU General Public License version 2.0 (GNU GPL-2), as published by  #
+#  the Free Software Foundation.                                        #
+#                                                                       #
+#  We created this package for both routine data analysis and academic  #
+#  research and it was publicly released in the hope that it will be    #
+#  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+-->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(EpiSODIC)
+library(ggplot2)
+d <- readRDS(params$data_path)
+obj <- d$obj
+lang <- if (is.null(d$lang)) "nl" else d$lang
+tr <- function(key, ...) episode_tr(key, lang = lang, ...)
+na_dash <- function(x) if (is.na(x)) "-" else x
+```
+
+# `r episode_ui_italicise_taxon(obj$pathogen)` — `r tr(paste0("level.", obj$level))`
+
+**`r obj$place`** &middot; `r tr("report.cluster")` #`r obj$id` &middot; `r obj$first_day` &ndash; `r obj$last_day`
+
+`r tr("report.rendered_label")`: `r d$rendered_at` &middot; EpiSODIC `r d$package_version`
+
+::: {.callout-note}
+`r tr("report.note_versioned")`
+:::
+
+## `r tr("report.key_figures_title")`
+
+| `r tr("report.col_metric")` | `r tr("report.col_value")` |
+|---|---|
+| `r tr("dossier.stat.observed")` | `r obj$n_cases` |
+| `r tr("panel.trend.legend_expected")` | `r if (is.na(obj$expected)) tr("report.na") else round(obj$expected, 1)` |
+| `r tr("dossier.stat.ratio")` | `r if (is.na(obj$ratio)) tr("report.na") else round(obj$ratio, 1)` |
+| `r tr("dossier.stat.unique_patients")` | `r obj$unique_patients` (`r tr("report.isolates_suffix", n = obj$n_isolates)`) |
+| `r tr("report.priority_score")` | `r round(obj$priority_score, 0)` |
+| `r tr("report.detected_by")` | `r episode_ui_code_join(obj$detectors)` |
+
+```{r curve-shape, results='asis'}
+if (!is.null(obj$curve_shape) && !is.na(obj$curve_shape)) {
+  cat("**", tr("report.curve_shape_label"), "** ", tr(paste0("interpretation.fragment.curve_shape.", obj$curve_shape)), "\n\n", sep = "")
+}
+```
+
+## `r tr("panel.epicurve.title")`
+
+```{r epi-curve, fig.width=7, fig.height=3}
+if (!is.null(d$epi_curve) && nrow(d$epi_curve) > 0) {
+  print(episode_ui_epi_curve_chart(d$epi_curve, lang = lang))
+} else {
+  cat(tr("report.no_data"))
+}
+```
+
+```{r rt-section, results='asis'}
+if (!is.null(obj$rt) && nrow(obj$rt) > 0) {
+  cat("## ", tr("report.rt_title"), "\n\n", tr("report.rt_note"), "\n\n", sep = "")
+}
+```
+
+```{r rt-plot, fig.width=7, fig.height=2.5}
+if (!is.null(obj$rt) && nrow(obj$rt) > 0) {
+  print(episode_ui_rt_chart(obj$rt, lang = lang))
+}
+```
+
+```{r trend-section, results='asis'}
+if (!is.null(d$trend) && nrow(d$trend) >= 4) {
+  cat("## ", tr("panel.trend.title"), "\n\n", sep = "")
+}
+```
+
+```{r trend-plot, fig.width=7, fig.height=2.5}
+if (!is.null(d$trend) && nrow(d$trend) >= 4) {
+  print(episode_ui_trend_chart(d$trend, lang = lang))
+}
+```
+
+## `r tr("panel.geo.title")`
+
+```{r geo, results='asis'}
+if (!is.null(obj$concentration) && nrow(obj$concentration$rows) > 0) {
+  rows <- obj$concentration$rows
+  cat("|", tr("panel.geo.aside"), "|", tr("report.col_count"), "|\n|---|---|\n")
+  for (i in seq_len(min(nrow(rows), 10))) {
+    cat("|", rows$label[i], "|", rows$n[i], "|\n")
+  }
+  cat("\n*", tr("report.suppressed_note", threshold = d$small_count_threshold), "*\n", sep = "")
+} else {
+  cat(tr("panel.geo.empty"), "\n")
+}
+```
+
+## `r tr("verloop.title")`
+
+```{r timeline, results='asis'}
+if (!is.null(d$timeline) && nrow(d$timeline) > 0) {
+  for (i in seq_len(nrow(d$timeline))) {
+    row <- d$timeline[i, ]
+    cat("-", row$at, "&middot;", row$actor)
+    if (!is.na(row$verdict_label)) cat(" &middot; **", row$verdict_label, "**", sep = "")
+    if (row$kind == "closure") cat(" &middot;", tr("report.closed_note"))
+    cat("\n")
+    if (!is.na(row$rationale) && nzchar(row$rationale)) cat("  >", row$rationale, "\n")
+  }
+} else {
+  cat(tr("report.timeline_empty"), "\n")
+}
+```
+
+```{r similar-section, results='asis'}
+if (!is.null(d$similar) && nrow(d$similar) > 0) {
+  cat("## ", tr("panel.similar.title"), "\n\n", sep = "")
+  cat("|", tr("panel.similar.col.place"), "|", tr("panel.similar.col.cases"), "|", tr("panel.similar.col.verdict"), "|\n|---|---|---|\n")
+  for (i in seq_len(nrow(d$similar))) {
+    row <- d$similar[i, ]
+    cat("|", row$place, "|", row$n_cases, "|", ifelse(is.na(row$verdict_label), "-", row$verdict_label), "|\n")
+  }
+}
+```
+
+```{r linelist-section, results='asis'}
+if (!is.null(d$linelist) && nrow(d$linelist) > 0) {
+  cat("## ", tr("panel.linelist.title"), "\n\n", sep = "")
+  cat("|", tr("panel.linelist.col.case"), "|", tr("panel.linelist.col.date"), "|", tr("panel.linelist.col.sex"), "|",
+      tr("panel.linelist.col.age"), "|", tr("panel.linelist.col.pc"), "|", tr("panel.linelist.col.ward"), "|",
+      tr("panel.linelist.col.specialism"), "|\n")
+  cat("|---|---|---|---|---|---|---|\n")
+  for (i in seq_len(nrow(d$linelist))) {
+    row <- d$linelist[i, ]
+    cat("|", row$source_key, "|", row$sample_date, "|", na_dash(row$sex), "|", na_dash(row$age), "|",
+        na_dash(row$pc), "|", na_dash(row$ward), "|", na_dash(row$specialism), "|\n")
+  }
+}
+```
+
+---
+
+*`r tr("report.footer")`*

@@ -5,6 +5,7 @@
 # Session Data files
 .RData
 .RDataTmp
+.DS_Store
 
 # User-specific files
 .Ruserdata
@@ -47,3 +48,25 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Instance configuration and data are never versioned - only the shipped
+# defaults, CI workflow files, and pkgdown's own config are exceptions.
+*.yaml
+!inst/config/default.yaml
+!inst/config/palette.yaml
+!.github/**/*.yaml
+!_pkgdown.yaml
+*.yml
+!inst/config/default.yml
+!inst/config/palette.yml
+!.github/**/*.yml
+!_pkgdown.yml
+*.sqlite
+*.sqlite3
+*.db
+data/
+*.env
+.Renviron.*
+*credential*
+*secret*
+

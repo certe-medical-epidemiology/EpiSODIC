@@ -1,0 +1,5 @@
+url: https://certe-medical-epidemiology.github.io/EpiSODIC/
+
+template:
+  bootstrap: 5
+  bootswatch: yeti
