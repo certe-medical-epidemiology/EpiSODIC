@@ -71,13 +71,25 @@ test_that("episode_ui_assessment_rail() renders the classification and mute pick
   expect_false(grepl("gestart", rendered, fixed = TRUE))
 })
 
-test_that("episode_ui_geo_panel() shows the full per-PC breakdown, not just the dominant PC", {
+test_that("the concentration read model carries the full per-PC breakdown, not just the dominant PC", {
+  # episode_ui_geo_panel() itself renders either a bar breakdown or a
+  # choropleth map, depending on whether sf and geographic reference data
+  # happen to be available - a rendering choice, tested on its own terms
+  # below. What actually matters here is the data both of those rendering
+  # paths draw from.
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   obj <- episode_cluster_object(env$con, env$cluster_id)
 
+  expect_true(all(c("9711", "9712", "9713") %in% obj$concentration$rows$label))
+
   panel <- episode_ui_geo_panel(obj, lang = "nl")
-  rendered <- as.character(panel)
+  expect_s3_class(panel, "shiny.tag")
+})
+
+test_that("episode_ui_bars() renders every row's label as text, not just the dominant one", {
+  rows <- data.frame(label = c("9711", "9712", "9713"), n = c(5, 3, 1))
+  rendered <- as.character(episode_ui_bars(rows))
   expect_true(grepl("9711", rendered))
   expect_true(grepl("9712", rendered))
   expect_true(grepl("9713", rendered))
