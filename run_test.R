@@ -15,7 +15,7 @@ episode_run_cron(db_path,
                  ingest_source_fn      = fake_cases,
                  denominator_source_fn = fake_aggregated_data)
 
-# add an authorised user that classifies clusters (i.e., an epidemiologist)
+# add an authorised user who classifies clusters (i.e., an epidemiologist)
 episode_provision_user(
   username = "5580",
   full_name = "Matthijs Berends",

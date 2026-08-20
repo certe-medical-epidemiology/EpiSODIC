@@ -302,6 +302,7 @@
   "panel.report.render_button": "Generate report",
   "panel.report.pending": "Generating report...",
 
+  "report.cluster": "cluster",
   "report.rendered_label": "Rendered",
   "report.note_versioned": "This is an automated, version-bound report. Every new render gets its own version number; this copy stays unchanged after it is sent.",
   "report.key_figures_title": "Key figures",

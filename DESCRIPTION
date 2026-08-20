@@ -59,3 +59,4 @@ Remotes:
 URL: https://github.com/certe-medical-epidemiology/episode
 BugReports: https://github.com/certe-medical-epidemiology/episode/issues
 Config/roxygen2/version: 8.1.0
+RoxygenNote: 7.3.3

@@ -302,6 +302,7 @@
   "panel.report.render_button": "Rapport genereren",
   "panel.report.pending": "Rapport genereren...",
 
+  "report.cluster": "cluster",
   "report.rendered_label": "Gerenderd",
   "report.note_versioned": "Dit is een geautomatiseerd, versiegebonden rapport. Elke nieuwe render krijgt een eigen versienummer; dit exemplaar blijft ongewijzigd na verzending.",
   "report.key_figures_title": "Kerncijfers",
