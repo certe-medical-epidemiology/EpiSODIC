@@ -39,7 +39,7 @@ test_that("an instance override takes priority over the shipped translation", {
 
 test_that("episode_tr() with no instance override uses the shipped file", {
   result <- episode_tr("app.title", lang = "nl")
-  expect_equal(result, "EpiSODE")
+  expect_equal(result, "EpiSODIC")
 })
 
 test_that("every key used in code exists in both language files", {

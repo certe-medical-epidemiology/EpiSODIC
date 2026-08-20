@@ -1,4 +1,4 @@
 library(testthat)
-library(EpiSODE)
+library(EpiSODIC)
 
-test_check("EpiSODE")
+test_check("EpiSODIC")

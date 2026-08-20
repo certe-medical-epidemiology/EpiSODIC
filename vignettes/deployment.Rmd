@@ -12,14 +12,14 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 ```
 
 This vignette is for standing up a real instance. If you only want to
-see the system working, run `EpiSODE::episode_demo()` instead - no data,
+see the system working, run `EpiSODIC::episode_demo()` instead - no data,
 no credentials, no configuration required.
 
 ## The two things you provide
 
-EpiSODE never connects to a laboratory information system, data
+EpiSODIC never connects to a laboratory information system, data
 warehouse, or any other data source itself - that step is deliberately
-yours, run before EpiSODE, so the package stays reusable by any
+yours, run before EpiSODIC, so the package stays reusable by any
 laboratory rather than tied to one:
 
 ```r
@@ -40,7 +40,7 @@ data) expects; only cases are mandatory.
 
 Schedule `episode_run_cron()` however your environment normally
 schedules R jobs (cron, a Windows scheduled task, a CI pipeline) - there
-is nothing EpiSODE-specific about the scheduling itself.
+is nothing EpiSODIC-specific about the scheduling itself.
 
 ## Configuration lives outside the repository
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/schema_migrate.R
 \name{episode_db_connect}
 \alias{episode_db_connect}
-\title{Connect to an existing EpiSODE SQLite database}
+\title{Connect to an existing EpiSODIC SQLite database}
 \usage{
 episode_db_connect(path)
 }

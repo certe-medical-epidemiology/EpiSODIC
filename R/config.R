@@ -1,4 +1,4 @@
-#' Resolve the EpiSODE configuration
+#' Resolve the EpiSODIC configuration
 #'
 #' Loads the shipped defaults from `inst/config/default.yaml`, then, if the
 #' `EPISODE_CONFIG` environment variable points at a readable file, loads it
@@ -22,7 +22,7 @@
 #' config$eligibility$min_baseline_weeks
 #' @export
 episode_config_resolve <- function(episode_config_path = Sys.getenv("EPISODE_CONFIG", unset = NA)) {
-  defaults_path <- system.file("config", "default.yaml", package = "EpiSODE")
+  defaults_path <- system.file("config", "default.yaml", package = "EpiSODIC")
   if (identical(defaults_path, "")) {
     defaults_path <- file.path("inst", "config", "default.yaml")
   }

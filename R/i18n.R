@@ -32,7 +32,7 @@ episode_i18n_load <- function(lang) {
   cached <- episode_i18n_cache[[lang]]
   if (!is.null(cached)) return(cached)
 
-  path <- system.file("i18n", paste0(lang, ".json"), package = "EpiSODE")
+  path <- system.file("i18n", paste0(lang, ".json"), package = "EpiSODIC")
   if (identical(path, "")) {
     path <- file.path("inst", "i18n", paste0(lang, ".json"))
   }

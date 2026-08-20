@@ -2,23 +2,20 @@
 
 ## Package name
 
-`R CMD check --as-cran` flags this as a new submission with a name conflict:
-CRAN's incoming checks compare package names case-insensitively, and
-`episode` (note the different capitalisation) was a CRAN package from
-2017 to 2019, archived on 2019-12-01 for unaddressed installation warnings.
-It has had no CRAN presence for several years and is, as far as we can
-tell, unrelated in scope to this package (an outbreak cluster detection
-and assessment system for medical epidemiology). We believe `EpiSODE` is
-sufficiently distinct in capitalisation, and its long absence from CRAN
-sufficiently reduces the risk of confusion, that the name should not be
-mistaken for a revival of the older package.
-
-The name also is not an arbitrary label we could swap without cost:
-`EpiSODE` is a backronym (Epidemiological Signal Observation and
-Detection Engine) that the package's methodology is being written up
-under for a scientific publication, so it is tied to how this tool is
-intended to be cited and referred to in that literature. We would ask
-CRAN to weigh that before requiring a rename.
+The package was originally developed under the name `EpiSODE`, which
+`R CMD check --as-cran`'s incoming checks correctly flagged as a
+case-insensitive conflict with `episode`, a CRAN package archived in
+2019 (unrelated in scope). Per CRAN's Repository Policy ("Packages
+should be named in a way that does not conflict (irrespective of case)
+with any current or past CRAN package"), that conflict is not something
+we asked CRAN to make an exception for - we renamed instead, to
+`EpiSODIC` (Epidemiological Signal Observation, Detection,
+Identification and Classification), which has never existed as either a
+current or archived CRAN package name (both `https://cran.r-project.org
+/package=episodic` and the corresponding Archive URL 404). The new name
+keeps the same backronym structure and pronunciation the package's
+methodology is being written up under for a scientific publication, so
+the identity the tool is meant to be cited under is preserved.
 
 ## Test environments
 

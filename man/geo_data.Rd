@@ -6,7 +6,7 @@
 \description{
 \code{certegis} was dropped as this feature's dependency: it is Certe's own
 package, useful only to a Dutch operator, and there is no reason
-geography should be Netherlands-only when the rest of EpiSODE is not
+geography should be Netherlands-only when the rest of EpiSODIC is not
 (\code{pathogen}, institution types, and every other domain concept in this
 codebase are already operator-defined, unconstrained values -
 \code{QUESTIONS.md} item 22). This is the same shape of solution the

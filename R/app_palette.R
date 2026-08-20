@@ -5,7 +5,7 @@
 #' configuration (deliberately a *separate* file and env var,
 #' `EPISODE_PALETTE_CONFIG`: colours must never affect `config_hash`,
 #' which is about detection reproducibility, not display). Any
-#' organisation runs EpiSODE in its own house colours by pointing
+#' organisation runs EpiSODIC in its own house colours by pointing
 #' `EPISODE_PALETTE_CONFIG` at a YAML file overriding whichever roles it
 #' wants to rebrand - a department that wants its own colours supplies
 #' its own file, exactly as it supplies its own report template
@@ -38,7 +38,7 @@ episode_palette <- function() {
 #' @keywords internal
 #' @noRd
 episode_palette_config_resolve <- function(palette_config_path = Sys.getenv("EPISODE_PALETTE_CONFIG", unset = NA)) {
-  defaults_path <- system.file("config", "palette.yaml", package = "EpiSODE")
+  defaults_path <- system.file("config", "palette.yaml", package = "EpiSODIC")
   if (identical(defaults_path, "")) {
     defaults_path <- file.path("inst", "config", "palette.yaml")
   }

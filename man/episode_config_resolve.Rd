@@ -2,7 +2,7 @@
 % Please edit documentation in R/config.R
 \name{episode_config_resolve}
 \alias{episode_config_resolve}
-\title{Resolve the EpiSODE configuration}
+\title{Resolve the EpiSODIC configuration}
 \usage{
 episode_config_resolve(
   episode_config_path = Sys.getenv("EPISODE_CONFIG", unset = NA)

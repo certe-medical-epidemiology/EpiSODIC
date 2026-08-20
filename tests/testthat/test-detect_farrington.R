@@ -59,7 +59,7 @@ test_that("an empty cases data frame returns no detection", {
 
 test_that("episode_weekly_bins() covers the full range and fills zero-count weeks", {
   dates <- as.Date(c("2025-01-01", "2025-01-01", "2025-01-15"))
-  weekly <- EpiSODE:::episode_weekly_bins(dates, run_date = as.Date("2025-01-20"))
+  weekly <- EpiSODIC:::episode_weekly_bins(dates, run_date = as.Date("2025-01-20"))
   expect_equal(sum(weekly$counts), 3)
   expect_true(any(weekly$counts == 0))  # the week between the two case-weeks
   expect_equal(length(weekly$week_start), length(weekly$counts))

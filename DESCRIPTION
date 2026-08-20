@@ -1,6 +1,7 @@
-Package: EpiSODE
+Package: EpiSODIC
 Type: Package
-Title: Epidemiological Signal Observation and Detection Engine
+Title: Epidemiological Signal Observation, Detection, Identification and
+    Classification
 Version: 0.1.0
 Authors@R: c(
     person(given = c("Matthijs", "S."),
@@ -54,6 +55,6 @@ Suggests:
     rmarkdown
 Config/testthat/edition: 3
 VignetteBuilder: knitr
-URL: https://github.com/certe-medical-epidemiology/episode
-BugReports: https://github.com/certe-medical-epidemiology/episode/issues
+URL: https://github.com/certe-medical-epidemiology/EpiSODIC
+BugReports: https://github.com/certe-medical-epidemiology/EpiSODIC/issues
 Config/roxygen2/version: 8.1.0

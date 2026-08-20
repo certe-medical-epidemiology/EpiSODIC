@@ -2,7 +2,7 @@
 #'
 #' `certegis` was dropped as this feature's dependency: it is Certe's own
 #' package, useful only to a Dutch operator, and there is no reason
-#' geography should be Netherlands-only when the rest of EpiSODE is not
+#' geography should be Netherlands-only when the rest of EpiSODIC is not
 #' (`pathogen`, institution types, and every other domain concept in this
 #' codebase are already operator-defined, unconstrained values -
 #' `QUESTIONS.md` item 22). This is the same shape of solution the
@@ -98,7 +98,7 @@ episode_geo_source_resolve <- function(path = Sys.getenv("EPISODE_GEO_DATA", uns
 #' @noRd
 episode_geo_source_default <- function() {
   if (!requireNamespace("sf", quietly = TRUE)) return(NULL)
-  path <- system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODE")
+  path <- system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
   if (identical(path, "")) path <- file.path("inst", "extdata", "geo_postcodes4_nl.rds")
   if (!file.exists(path)) return(NULL)
   readRDS(path)

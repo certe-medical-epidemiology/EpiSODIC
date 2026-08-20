@@ -120,7 +120,7 @@ test_that("episode_denominator_ingest_run() rejects a source missing required co
 
 test_that("episode_split_sql_statements() splits on semicolons and drops comments", {
   sql <- "-- a comment with a ; inside\nCREATE TABLE a (x INT);\nCREATE TABLE b (y INT);\n"
-  statements <- EpiSODE:::episode_split_sql_statements(sql)
+  statements <- EpiSODIC:::episode_split_sql_statements(sql)
   expect_equal(length(statements), 2)
   expect_true(all(grepl("^CREATE TABLE", statements)))
 })

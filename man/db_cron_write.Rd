@@ -83,7 +83,7 @@ item 22); used verbatim as the stream's identity, no taxonomy resolved.}
 
 \item{n_streams, n_detections, n_signals_new, n_signals_updated}{Run summary counts.}
 
-\item{code_version}{The installed EpiSODE version.}
+\item{code_version}{The installed EpiSODIC version.}
 
 \item{pkg_versions}{JSON-serialised package versions.}
 

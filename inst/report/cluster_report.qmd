@@ -1,5 +1,5 @@
 ---
-title: "EpiSODE outbreak report"
+title: "EpiSODIC outbreak report"
 format:
   html:
     embed-resources: true
@@ -11,7 +11,7 @@ params:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
-library(EpiSODE)
+library(EpiSODIC)
 library(ggplot2)
 d <- readRDS(params$data_path)
 obj <- d$obj
@@ -24,7 +24,7 @@ na_dash <- function(x) if (is.na(x)) "-" else x
 
 **`r obj$place`** &middot; `r tr("report.cluster")` #`r obj$id` &middot; `r obj$first_day` &ndash; `r obj$last_day`
 
-`r tr("report.rendered_label")`: `r d$rendered_at` &middot; EpiSODE `r d$package_version`
+`r tr("report.rendered_label")`: `r d$rendered_at` &middot; EpiSODIC `r d$package_version`
 
 ::: {.callout-note}
 `r tr("report.note_versioned")`

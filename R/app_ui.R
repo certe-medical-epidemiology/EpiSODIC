@@ -26,7 +26,7 @@ episode_app_ui <- function(lang = "nl") {
       class = "episode-header",
       shiny::tags$div(
         style = "display:flex;align-items:center;",
-        shiny::tags$span(class = "episode-brand", title = episode_tr("app.full_name", lang = lang), "EpiSODE"),
+        shiny::tags$span(class = "episode-brand", title = episode_tr("app.full_name", lang = lang), "EpiSODIC"),
         shiny::tags$div(
           class = "episode-nav",
           episode_ui_nav_link("clusters", episode_tr("nav.clusters", lang = lang)),

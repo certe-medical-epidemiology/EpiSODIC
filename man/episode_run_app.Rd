@@ -2,7 +2,7 @@
 % Please edit documentation in R/run_app.R
 \name{episode_run_app}
 \alias{episode_run_app}
-\title{Run the EpiSODE Shiny app}
+\title{Run the EpiSODIC Shiny app}
 \usage{
 episode_run_app(
   db_path = Sys.getenv("EPISODE_DB", unset = NA),

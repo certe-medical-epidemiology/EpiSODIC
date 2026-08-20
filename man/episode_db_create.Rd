@@ -2,13 +2,13 @@
 % Please edit documentation in R/schema_migrate.R
 \name{episode_db_create}
 \alias{episode_db_create}
-\title{Create a fresh EpiSODE SQLite database}
+\title{Create a fresh EpiSODIC SQLite database}
 \usage{
 episode_db_create(path, overwrite = FALSE)
 }
 \arguments{
 \item{path}{Path to the SQLite file to create. Must not already exist,
-or must be an empty/non-EpiSODE SQLite file.}
+or must be an empty/non-EpiSODIC SQLite file.}
 
 \item{overwrite}{If \code{TRUE}, delete an existing file at \code{path} first.}
 }
@@ -20,7 +20,7 @@ database. The caller is responsible for disconnecting it.
 Creates a new SQLite database file at \code{path} and applies the canonical
 schema shipped as \code{inst/sql/schema.sql}. There is one schema version in
 this milestone, so this function always builds from scratch; it refuses
-to run against a file that already contains EpiSODE tables so that it
+to run against a file that already contains EpiSODIC tables so that it
 cannot silently clobber existing data.
 }
 \examples{

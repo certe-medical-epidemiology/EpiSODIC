@@ -4,7 +4,7 @@
 #
 # Source: certe-medical-epidemiology/certegis's `geo_postcodes4` dataset
 # (data/geo_postcodes4.rda), GPL-2 licensed, same licence as this package.
-# certegis itself is no longer a dependency of EpiSODE (QUESTIONS.md): the
+# certegis itself is no longer a dependency of EpiSODIC (QUESTIONS.md): the
 # geography panel's data contract (R/geo_data.R) is deliberately generic -
 # an sf object with `pc`/`geometry` columns - so any operator, anywhere,
 # can point EPISODE_GEO_DATA at their own equivalent file. `pc` matches

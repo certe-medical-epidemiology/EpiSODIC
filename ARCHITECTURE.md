@@ -1,6 +1,6 @@
-# EpiSODE
+# EpiSODIC
 
-**Epidemiological Signal Observation and Detection Engine**
+**Epidemiological Signal Observation, Detection, Identification and Classification**
 
 **Architecture document, draft 6**
 Author: Dr M.S. Berends, Department of Medical Epidemiology, Certe
@@ -111,7 +111,7 @@ A single R process serves all sessions, so any slow operation blocks every user.
 ## 4. Repository layout
 
 ```
-EpiSODE/
+EpiSODIC/
   DESCRIPTION                 GPL-2
   NAMESPACE
   R/
@@ -143,7 +143,7 @@ EpiSODE/
   LICENSE
 ```
 
-R package names are case-sensitive, so `library(EpiSODE)` is valid and the branding survives into the code.
+R package names are case-sensitive, so `library(EpiSODIC)` is valid and the branding survives into the code.
 
 The instance lives entirely outside this tree and is located through `EPISODE_CONFIG`. See section 7.5. Nothing under the repository ever contains a credential, an instance parameter or a patient record.
 
@@ -265,7 +265,7 @@ CREATE TABLE episode_detection_run (
   n_detections     INT NULL,
   n_signals_new    INT NULL,
   n_signals_updated INT NULL,
-  code_version     VARCHAR(64) NULL,   -- installed EpiSODE version
+  code_version     VARCHAR(64) NULL,   -- installed EpiSODIC version
   pkg_versions     JSON NULL,          -- certestats, surveillance, AMR, EpiEstim
   config_hash      CHAR(40) NULL,      -- sha1 of the resolved configuration
   config_snapshot  JSON NULL,          -- the resolved configuration in full
@@ -689,7 +689,7 @@ All detection parameters live in the instance configuration read by the cron: th
 
 **The configuration is not part of the software and never enters the repository.** The repository is a piece of software that anyone may clone; the configuration is operational data belonging to whoever runs it. Committing thresholds would mean a public commit for every operational change, repository write access for whoever operates the system, and a fork arriving with somebody else's parameters. The package ships `inst/config/default.yaml` as documented defaults, which is software. What an instance actually uses is not.
 
-Where the instance configuration lives is the operator's decision. EpiSODE locates it through a single environment variable, `EPISODE_CONFIG`, and cares about nothing else. A network drive, a SharePoint project folder, a local directory beside the cron script: all equivalent to the software.
+Where the instance configuration lives is the operator's decision. EpiSODIC locates it through a single environment variable, `EPISODE_CONFIG`, and cares about nothing else. A network drive, a SharePoint project folder, a local directory beside the cron script: all equivalent to the software.
 
 Reproducibility is achieved in the database rather than in version control. Every run writes `config_hash` and `config_snapshot`, so the exact parameters behind any result are recoverable from `episode_detection_run` alone, whatever happened to the file afterwards. This is stronger than a commit reference, because it records the resolved configuration rather than a document that has to be reconstructed.
 
@@ -697,7 +697,7 @@ The Streams screen displays the configuration from the most recent run's snapsho
 
 ### 7.5 Instance layout
 
-The instance is a folder containing the cron script, the configuration and the reference tables. It is not versioned by EpiSODE and its shape is up to the operator.
+The instance is a folder containing the cron script, the configuration and the reference tables. It is not versioned by EpiSODIC and its shape is up to the operator.
 
 ```
 <instance>/
@@ -894,7 +894,7 @@ Reconciliation is the load-bearing component: schema, ingestion, the lattice, th
 
 Resolved since draft 2: hospitals as a lattice level, ward and specialism, deduplication per episode, baseline feedback, closure criterion, MEM, performance metrics, SQLite as the only backend, configuration outside the repository.
 
-Resolved since draft 1: package name (EpiSODE), table prefix (`episode_`), postcode granularity (PC4), institution and care line availability, denominator model including patient-days, hospitals as a first-class lattice level, per-pathogen serial intervals.
+Resolved since draft 1: package name (EpiSODIC), table prefix (`episode_`), postcode granularity (PC4), institution and care line availability, denominator model including patient-days, hospitals as a first-class lattice level, per-pathogen serial intervals.
 
 1. **Serial interval values.** Which literature estimates to ship, and for which organisms. This is the one item requiring genuine epidemiological curation rather than a decision, and it can be built incrementally: ship `rt_applicable = 0` for everything, then populate the organisms that matter as sources are agreed.
 2. **Severity weight table.** Source and curation: Wpg notification groups, ECDC priority lists, or local judgement. Affects ranking only, so a rough first pass is acceptable.

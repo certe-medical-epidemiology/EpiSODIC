@@ -13,7 +13,7 @@
 #' used for the underlying `sts` object, the conventional approximation
 #' (a true year is ~52.18 weeks, so bin-to-calendar alignment drifts
 #' slightly over many years - a documented, widely-accepted simplification,
-#' not an EpiSODE-specific one). Detection is only evaluated for the most
+#' not an EpiSODIC-specific one). Detection is only evaluated for the most
 #' recent complete week relative to `run_date`.
 #'
 #' @param cases_for_stream A data frame of a single stream's cases, with

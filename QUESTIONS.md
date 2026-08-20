@@ -1,4 +1,4 @@
-# EpiSODE, open questions
+# EpiSODIC, open questions
 
 Assumptions adopted provisionally where a decision was needed and no answer
 was available. Update this file whenever a new assumption is made; do not
@@ -54,7 +54,7 @@ to know which point in the project's history that decision was made.
       angles. `certestats::detect_farrington()` was never inspected
       (assumed to be a thin linelist-to-`sts` wrapper around
       `surveillance::farringtonFlexible()`, which is a reasonable
-      inference but unverified); it is replaced by EpiSODE owning that
+      inference but unverified); it is replaced by EpiSODIC owning that
       glue directly (`R/detect_farrington.R`), which also means it can be
       installed and tested directly rather than always returning zero
       detections.
@@ -70,9 +70,9 @@ to know which point in the project's history that decision was made.
    c. **`certedb` was already outside the package** (the ingestion
       interface was designed that way from the start), but the boundary
       is now explicit and permanent rather than an artefact of "not
-      installed here": EpiSODE never calls a data source itself, on
+      installed here": EpiSODIC never calls a data source itself, on
       principle, so that labs/operators own extraction and transform and
-      EpiSODE owns detection and assessment only. See README.md's data
+      EpiSODIC owns detection and assessment only. See README.md's data
       format section.
    d. **Positivity/denominators decoupled from detection and made
       optional.** The `positive`/negative-test question was discussed at
@@ -94,7 +94,7 @@ to know which point in the project's history that decision was made.
       fixed target list; not meaningful for open-ended culture results).
       `episode_mo_determination` is dropped: the determination-to-
       organism mapping it encoded is lab-specific expert knowledge that
-      belongs in the operator's own transform step, not inside EpiSODE.
+      belongs in the operator's own transform step, not inside EpiSODIC.
 
    Net effect on `DESCRIPTION`: `certestats`, `certedb` and `AMR` are gone
    from `Suggests`/`Remotes` entirely (not merely optional); `surveillance`
@@ -114,7 +114,7 @@ to know which point in the project's history that decision was made.
    `pathogen_config.csv` is keyed on the raw `pathogen` string.
 8. **RESOLVED by item 6.** `certestats::detect_disease_clusters()` was
    inspected directly (its source was fetched and read in full) and
-   retired rather than ported. EpiSODE calls `surveillance::
+   retired rather than ported. EpiSODIC calls `surveillance::
    farringtonFlexible()` directly (`R/detect_farrington.R`), a real CRAN
    dependency that can be installed, run and tested against directly
    rather than guessed about.
@@ -411,7 +411,7 @@ to know which point in the project's history that decision was made.
     "Detected by" row (`` `r episode_ui_code_join(obj$detectors)` ``).
     `episode_ui_code_join()` and `episode_ui_italicise_taxon()` are
     `@export`ed rather than `@noRd` internal, since the Quarto report
-    template runs in its own fresh `library(EpiSODE)` session where only
+    template runs in its own fresh `library(EpiSODIC)` session where only
     exported functions are attached — a bare (unexported) reference from
     the `.qmd` would simply fail to resolve. An operator's own custom
     template (`EPISODE_QUARTO_REPORT`) has both helpers available for the
@@ -748,7 +748,7 @@ to know which point in the project's history that decision was made.
     (matching whatever an operator's own `episode_case.pc4` values are —
     real Dutch postcodes, zip codes, municipality codes, anything; this
     package never validates or interprets that column beyond joining it)
-    and a `geometry` column. EpiSODE ships a Netherlands PC4 default
+    and a `geometry` column. EpiSODIC ships a Netherlands PC4 default
     (`inst/extdata/geo_postcodes4_nl.rds`, geometry only — population and
     area columns were dropped, not needed for the choropleth and not ours
     to redistribute beyond it — copied from `certegis` under the same
@@ -1058,7 +1058,7 @@ to know which point in the project's history that decision was made.
     `en.json` carry an identical key set (checked programmatically: zero
     keys missing on either side), and every value that is identical
     between the two languages on inspection is a legitimately shared word
-    or loanword (`EpiSODE`, `cluster`, `PC`, `artefact`, `Monitoring`,
+    or loanword (`EpiSODIC`, `cluster`, `PC`, `artefact`, `Monitoring`,
     template placeholders), not an untranslated copy-paste.
 
 75. **Git history audit**: no `.sqlite`/`.db` file, `.env`/`.Renviron`,
@@ -1108,7 +1108,7 @@ to know which point in the project's history that decision was made.
     ingestion/reporting contracts, not by calling internal R functions).
     These became `@keywords internal`/`@noRd` rather than `@export`ed,
     verified by checking that nothing in `inst/report/cluster_report.qmd`
-    (which runs in its own fresh `library(EpiSODE)` session, so anything
+    (which runs in its own fresh `library(EpiSODIC)` session, so anything
     it calls by name must stay exported) or the documented "custom report
     template" contract in README.md needed them. What remains exported is
     the genuine public API: the entry points (`episode_demo()`,
@@ -1130,6 +1130,36 @@ to know which point in the project's history that decision was made.
     automatically) and running the full test suite unchanged — tests call
     functions unqualified within the package's own namespace, so export
     status never affected them.
+
+79. **Package renamed `EpiSODE` -> `EpiSODIC`, before any public release.**
+    `R CMD check --as-cran`'s incoming checks flagged `EpiSODE` as a
+    case-insensitive conflict with `episode`, a real (if long-archived,
+    unrelated) CRAN package — CRAN's own Repository Policy is explicit
+    that this is disallowed regardless of how long ago the conflicting
+    name was archived ("does not conflict... with any current or past
+    CRAN package"), not merely a soft preference a reviewer might waive.
+    Rather than gamble on an exception, the package was renamed outright
+    while the repository was brand new (created this week, never
+    installed or referenced anywhere outside this development session):
+    `EpiSODIC` (Epidemiological Signal Observation, Detection,
+    Identification and Classification) keeps the same acronym
+    structure and pronunciation, verified against both the current CRAN
+    package index and the Archive for the exact new name before
+    adopting it. The `episode_` prefix on every exported and internal
+    function, and every `episode_*` database table, is unaffected — that
+    prefix is tied to the domain term "episode" (an epidemiological
+    grouping concept already used independently for deduplication, see
+    item 6 above), not to the product name, and changing roughly 150
+    function/table identifiers for a naming collision that has nothing
+    to do with them would have been a large, purely cosmetic, high-risk
+    change for no benefit. Updated everywhere the product name itself
+    appears: `DESCRIPTION` (`Package`, `Title`, `URL`, `BugReports`),
+    every roxygen doc header and `library(EpiSODIC)` example, the app's
+    own header/title (`inst/i18n/*.json`'s `app.title`/`app.full_name`),
+    the Quarto report footer, README/ARCHITECTURE.md/NEWS.md/vignette
+    titles and backronym expansions, and `cran-comments.md`'s own
+    argument (which no longer needs to defend a conflict that renaming
+    made moot).
 
 ## Open items
 

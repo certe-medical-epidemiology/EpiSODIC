@@ -1,4 +1,4 @@
-#' Run the EpiSODE Shiny app
+#' Run the EpiSODIC Shiny app
 #'
 #' Read-only for anonymous visitors (ARCHITECTURE.md section 12: signing in
 #' is only required to classify a cluster). Serves the cluster dossier and
@@ -29,7 +29,7 @@ episode_run_app <- function(db_path = Sys.getenv("EPISODE_DB", unset = NA), lang
   if (!file.exists(db_path)) {
     stop("No database file found at '", db_path, "'.", call. = FALSE)
   }
-  shiny::addResourcePath("www", system.file("app", "www", package = "EpiSODE"))
+  shiny::addResourcePath("www", system.file("app", "www", package = "EpiSODIC"))
   app <- shiny::shinyApp(
     ui = episode_app_ui(lang = lang),
     server = episode_app_server_factory(db_path, lang = lang)

@@ -23,7 +23,7 @@ NULL
 #'
 #' Exported (not just internal): the Quarto report template
 #' (`inst/report/cluster_report.qmd`) runs in its own fresh session where
-#' only exported functions are attached by `library(EpiSODE)`, and an
+#' only exported functions are attached by `library(EpiSODIC)`, and an
 #' operator's own custom template (`EPISODE_QUARTO_REPORT`) should have
 #' the same formatting helpers the shipped one uses.
 #'

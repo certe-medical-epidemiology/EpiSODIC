@@ -48,7 +48,7 @@
 #' @param attempt_no The run's attempt number.
 #' @param status One of `episode_detection_run.status`.
 #' @param n_streams,n_detections,n_signals_new,n_signals_updated Run summary counts.
-#' @param code_version The installed EpiSODE version.
+#' @param code_version The installed EpiSODIC version.
 #' @param pkg_versions JSON-serialised package versions.
 #' @param config_hash,config_snapshot The resolved configuration's hash and snapshot.
 #' @param error_text Error text for a failed run, or `NA`.

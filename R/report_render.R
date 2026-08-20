@@ -90,7 +90,7 @@ episode_report_render <- function(con, cluster_id, output_dir, user_id = NA,
   report_data <- list(
     obj = obj, epi_curve = epi_curve, trend = trend, linelist = linelist, timeline = timeline,
     similar = similar, small_count_threshold = threshold, rendered_at = episode_now(), lang = lang,
-    package_version = as.character(utils::packageVersion("EpiSODE"))
+    package_version = as.character(utils::packageVersion("EpiSODIC"))
   )
 
   qmd_path <- episode_report_qmd_path(qmd_path)
@@ -177,7 +177,7 @@ episode_report_qmd_path <- function(qmd_path = Sys.getenv("EPISODE_QUARTO_REPORT
   if (!is.na(qmd_path) && nzchar(qmd_path) && file.exists(qmd_path)) {
     return(qmd_path)
   }
-  default_path <- system.file("report", "cluster_report.qmd", package = "EpiSODE")
+  default_path <- system.file("report", "cluster_report.qmd", package = "EpiSODIC")
   if (identical(default_path, "")) default_path <- file.path("inst", "report", "cluster_report.qmd")
   default_path
 }

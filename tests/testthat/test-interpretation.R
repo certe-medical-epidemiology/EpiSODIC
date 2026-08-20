@@ -14,7 +14,7 @@ base_cluster <- function(...) {
 }
 
 test_that("every fragment key referenced by the registry exists in both language files", {
-  fragments <- EpiSODE:::episode_interpretation_fragments()
+  fragments <- EpiSODIC:::episode_interpretation_fragments()
   keys <- vapply(fragments, function(f) f$key, character(1))
   nl <- episode_i18n_load("nl")
   en <- episode_i18n_load("en")

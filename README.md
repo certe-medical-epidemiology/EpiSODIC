@@ -1,10 +1,11 @@
-# EpiSODE
+# EpiSODIC
 
-[![R-CMD-check](https://github.com/certe-medical-epidemiology/episode/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/certe-medical-epidemiology/episode/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml)
 
-**Epi**demiological **S**ignal **O**bservation and **D**etection **E**ngine
+**Epi**demiological **S**ignal **O**bservation, **D**etection,
+**I**dentification and **C**lassification
 
-EpiSODE is an outbreak cluster detection and assessment system for a
+EpiSODIC is an outbreak cluster detection and assessment system for a
 department of medical epidemiology. It ingests laboratory-confirmed
 infections, detects statistical and rule-based aberrations, reconciles them
 into persistent clusters, and gives a small board of epidemiologists a
@@ -44,7 +45,7 @@ since this environment has only synthetic demo data to tune against.
 
 ```r
 # install.packages("remotes")
-remotes::install_github("certe-medical-epidemiology/episode")
+remotes::install_github("certe-medical-epidemiology/EpiSODIC")
 ```
 
 ### Demo
@@ -53,7 +54,7 @@ No data, no credentials, no configuration - one call runs the whole
 system against bundled synthetic data:
 
 ```r
-EpiSODE::episode_demo()
+EpiSODIC::episode_demo()
 ```
 
 This creates a temporary database, runs one detection cycle, provisions
@@ -61,7 +62,7 @@ a demo assessor account (printed to the console), and opens the app.
 Pass `launch = FALSE` to skip opening the app and just get a populated
 database path back, e.g. for scripting.
 
-EpiSODE's detection engine has **no dependency on any laboratory system,
+EpiSODIC's detection engine has **no dependency on any laboratory system,
 data warehouse, or Certe-internal package**. Every dependency is a
 CRAN-hosted package (`surveillance` for Farrington); no Certe-internal
 package is required or even referenced. House colours
@@ -74,9 +75,9 @@ at all - see "Geographic reference data" below.
 
 ## Data format
 
-EpiSODE never queries a laboratory information system, data warehouse, or
+EpiSODIC never queries a laboratory information system, data warehouse, or
 any other data source itself. That is deliberately the operator's own step,
-run before EpiSODE: extract from wherever your data lives, transform into
+run before EpiSODIC: extract from wherever your data lives, transform into
 the shape below, then call `episode_run_cron()` with a function that returns
 it. This keeps the engine reusable by any laboratory, not only Certe's.
 
@@ -95,8 +96,8 @@ lists the exact allow-listed columns; the ones that need explanation:
 
 | Column | Meaning |
 |---|---|
-| `pathogen` | The organism as your lab reports it, as free text. **Not** resolved against any taxonomy (this is deliberate: `AMR::as.mo()` only covers non-viral organisms, and EpiSODE has to detect clusters of anything a lab reports, viruses included). The same underlying isolate can appear more than once under different `pathogen` values when that is epidemiologically useful - an ETEC isolate reported as both `"Escherichia coli"` and `"ETEC"`, so each is watched on its own. This is your transform step's decision, not EpiSODE's. |
-| `sample_date` | The anchor date. If your system falls back to a receipt date when sample date is unfilled, that fallback should already have happened before this row reaches EpiSODE. |
+| `pathogen` | The organism as your lab reports it, as free text. **Not** resolved against any taxonomy (this is deliberate: `AMR::as.mo()` only covers non-viral organisms, and EpiSODIC has to detect clusters of anything a lab reports, viruses included). The same underlying isolate can appear more than once under different `pathogen` values when that is epidemiologically useful - an ETEC isolate reported as both `"Escherichia coli"` and `"ETEC"`, so each is watched on its own. This is your transform step's decision, not EpiSODIC's. |
+| `sample_date` | The anchor date. If your system falls back to a receipt date when sample date is unfilled, that fallback should already have happened before this row reaches EpiSODIC. |
 | `institution_key` | A stable identifier for the institution, hashed internally so a later rename does not fracture history. |
 | `institution_type` | One of `hospital`, `ltc_institution`, `gp_municipality`, `ooh_service`, `other`. |
 | `ward` | Only meaningful (and only used) for hospitals. |
@@ -115,8 +116,8 @@ lists the exact allow-listed columns; the ones that need explanation:
 - `other` — anything that doesn't fit the above; institution identity is
   dropped (stored as `NULL`) for this category.
 
-**Deduplication is EpiSODE's job, not yours.** Send every positive result;
-EpiSODE collapses isolates for the same patient and pathogen into one case
+**Deduplication is EpiSODIC's job, not yours.** Send every positive result;
+EpiSODIC collapses isolates for the same patient and pathogen into one case
 per episode, using the episode length configured per pathogen in
 `inst/config/pathogen_config.csv`.
 
@@ -174,7 +175,7 @@ never normalised, only L2.
 The dossier's geography panel shows a choropleth when both the `sf`
 package and a geographic reference dataset are available; otherwise it
 falls back to a plain bar breakdown by PC value, exactly as if this
-feature did not exist. EpiSODE ships a Netherlands PC4 default
+feature did not exist. EpiSODIC ships a Netherlands PC4 default
 (`inst/extdata/geo_postcodes4_nl.rds`, geometry only, sourced from
 `certegis` under the same GPL-2 licence - see `data-raw/
 geo_postcodes4_nl.R` for provenance), but geography is not

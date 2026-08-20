@@ -1,4 +1,4 @@
-# EpiSODE 0.1.0 (development)
+# EpiSODIC 0.1.0 (development)
 
 First public development version: a full outbreak cluster detection and
 assessment system, from raw laboratory results to a signed-off outbreak
@@ -81,7 +81,7 @@ that produces the data at run time, or the data frame itself.
 
 ## Getting started
 
-`EpiSODE::episode_demo()` runs the whole system in one call against
+`EpiSODIC::episode_demo()` runs the whole system in one call against
 bundled synthetic data - no laboratory system, data warehouse,
 credentials, or configuration required.
 

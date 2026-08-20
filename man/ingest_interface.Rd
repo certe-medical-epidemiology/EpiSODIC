@@ -10,8 +10,8 @@ episode_ingest_columns
 \description{
 Defines the contract that any raw case data source must satisfy before
 \code{episode_ingest_run()} (see \code{R/ingest_pipeline.R}) can turn it into rows
-of \code{episode_case}. This is the entire boundary between EpiSODE and
-whatever laboratory or hospital system an operator runs: EpiSODE never
+of \code{episode_case}. This is the entire boundary between EpiSODIC and
+whatever laboratory or hospital system an operator runs: EpiSODIC never
 calls \code{certedb::get_diver_data()} or any other data source itself
 (\code{QUESTIONS.md} item 22, \code{README.md}'s data format section) - the
 operator's own cron script extracts and transforms into exactly this
@@ -29,7 +29,7 @@ underlying isolate can legitimately appear more than once under
 different \code{pathogen} values when that is epidemiologically useful (an
 ETEC isolate as both \code{"Escherichia coli"} and \code{"ETEC"}, so each is
 watched on its own), and it is entirely the operator's transform step
-that decides this, not EpiSODE.
+that decides this, not EpiSODIC.
 
 \strong{No \code{positive}/test-outcome column, and no raw negatives.} Positivity
 is handled separately as small, optional, pre-aggregated metadata (see

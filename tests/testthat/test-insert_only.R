@@ -1,9 +1,9 @@
 episode_test_r_source_dir <- function() {
   # An installed package's own system.file("R", ...) is a real directory
-  # but holds only the compiled lazy-load database (EpiSODE.rdb/.rdx), not
+  # but holds only the compiled lazy-load database (EpiSODIC.rdb/.rdx), not
   # individual .R source files - so existence alone is not enough to
   # trust a candidate; each must actually contain recognisable sources.
-  candidates <- c(system.file("R", package = "EpiSODE"), "R", "../../R")
+  candidates <- c(system.file("R", package = "EpiSODIC"), "R", "../../R")
   for (d in candidates) {
     if (nzchar(d) && dir.exists(d) && file.exists(file.path(d, "db_app_write.R"))) return(d)
   }

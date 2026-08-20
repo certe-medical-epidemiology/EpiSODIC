@@ -1,4 +1,4 @@
-library(EpiSODE)
+library(EpiSODIC)
 
 # A persistent path, not a tempfile: the point of manual testing is to
 # sign in, classify clusters, close them, mute a stream, generate a
@@ -7,9 +7,9 @@ library(EpiSODE)
 db_path <- "episode-demo.sqlite"
 
 Sys.setenv(
-  EPISODE_CONFIG = system.file("config", "default.yaml", package = "EpiSODE"),
+  EPISODE_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),
   EPISODE_DB = db_path,
-  EPISODE_GEO_DATA = system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODE")
+  EPISODE_GEO_DATA = system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
 )
 
 if (!file.exists(db_path)) {

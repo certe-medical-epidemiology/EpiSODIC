@@ -11,10 +11,10 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 ```
 
-## What EpiSODE is
+## What EpiSODIC is
 
-EpiSODE (**Epi**demiological **S**ignal **O**bservation and **D**etection
-**E**ngine) is an outbreak cluster detection and assessment system for a
+EpiSODIC (**Epi**demiological **S**ignal **O**bservation, **D**etection,
+**I**dentification and **C**lassification) is an outbreak cluster detection and assessment system for a
 department of medical epidemiology. It ingests laboratory-confirmed
 infections, runs statistical and rule-based detectors over them,
 reconciles raised signals into persistent clusters across repeated runs,

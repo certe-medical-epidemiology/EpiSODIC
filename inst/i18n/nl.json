@@ -1,6 +1,6 @@
 {
-  "app.title": "EpiSODE",
-  "app.full_name": "Epidemiological Signal Observation and Detection Engine",
+  "app.title": "EpiSODIC",
+  "app.full_name": "Epidemiological Signal Observation, Detection, Identification and Classification",
   "app.demodata": "Demodata",
 
   "nav.clusters": "Clusters",
@@ -280,7 +280,7 @@
   "performance.col.ppv": "PPV",
 
   "info.title": "Info",
-  "info.intro": "Achtergrond bij de detectiealgoritmen, clusterstatussen en het toegangsmodel van EpiSODE.",
+  "info.intro": "Achtergrond bij de detectiealgoritmen, clusterstatussen en het toegangsmodel van EpiSODIC.",
   "info.algorithms.title": "Detectiealgoritmen",
   "info.algorithms.note": "Een cluster kan door meer dan een algoritme tegelijk zijn gedetecteerd; zie \"gedetecteerd door\" op het dossier.",
   "info.algorithms.col.name": "Naam",
@@ -346,5 +346,5 @@
   "report.suppressed_note": "Aantallen kleiner dan {threshold} zijn onderdrukt.",
   "report.timeline_empty": "Nog geen beoordeling vastgelegd.",
   "report.closed_note": "cluster afgesloten",
-  "report.footer": "Gegenereerd door EpiSODE. Dit document bevat geen live koppeling naar de applicatie; alle gegevens zijn bevroren op het moment van renderen."
+  "report.footer": "Gegenereerd door EpiSODIC. Dit document bevat geen live koppeling naar de applicatie; alle gegevens zijn bevroren op het moment van renderen."
 }

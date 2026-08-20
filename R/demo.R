@@ -57,9 +57,9 @@ episode_demo <- function(db_path = tempfile(fileext = ".sqlite"),
                           ingest_source_fn = episode_ingest_source_synthetic,
                           denominator_source_fn = episode_denominator_source_synthetic) {
   Sys.setenv(
-    EPISODE_CONFIG = system.file("config", "default.yaml", package = "EpiSODE"),
+    EPISODE_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),
     EPISODE_DB = db_path,
-    EPISODE_GEO_DATA = system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODE")
+    EPISODE_GEO_DATA = system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
   )
 
   episode_run_cron(
@@ -72,7 +72,7 @@ episode_demo <- function(db_path = tempfile(fileext = ".sqlite"),
     db_path = db_path, username = username, full_name = full_name,
     email = email, password = password
   )
-  message(sprintf("EpiSODE demo account - username: %s, password: %s", username, password))
+  message(sprintf("EpiSODIC demo account - username: %s, password: %s", username, password))
 
   if (isTRUE(launch)) {
     episode_run_app(db_path = db_path, lang = lang)

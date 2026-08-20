@@ -92,7 +92,7 @@ episode_run_cron <- function(db_path,
     status = if (is.null(result$status)) "success" else result$status,
     n_streams = result$n_streams, n_detections = result$n_detections,
     n_signals_new = result$n_signals_new, n_signals_updated = result$n_signals_updated,
-    code_version = as.character(utils::packageVersion("EpiSODE")),
+    code_version = as.character(utils::packageVersion("EpiSODIC")),
     pkg_versions = as.character(pkg_versions),
     config_hash = hashed$hash, config_snapshot = hashed$snapshot,
     error_text = result$error_text
@@ -134,7 +134,7 @@ episode_resolve_source <- function(x, ...) {
 #' @noRd
 episode_run_cron_body <- function(con, run_id, config, ingest_source_fn, denominator_source_fn,
                                    institution_activity_source_fn, run_date) {
-  pathogen_config_path <- system.file("config", "pathogen_config.csv", package = "EpiSODE")
+  pathogen_config_path <- system.file("config", "pathogen_config.csv", package = "EpiSODIC")
   if (identical(pathogen_config_path, "")) {
     pathogen_config_path <- file.path("inst", "config", "pathogen_config.csv")
   }
@@ -302,7 +302,7 @@ episode_cases_for_stream <- function(cases, stream) {
 #' @keywords internal
 #' @noRd
 episode_pkg_versions <- function() {
-  pkgs <- c("EpiSODE", "surveillance", "EpiEstim")
+  pkgs <- c("EpiSODIC", "surveillance", "EpiEstim")
   versions <- lapply(pkgs, function(p) {
     if (requireNamespace(p, quietly = TRUE)) as.character(utils::packageVersion(p)) else NA
   })
