@@ -4,11 +4,14 @@
 \alias{auth}
 \title{Authentication}
 \description{
-Four accounts, hashed with \code{sodium::password_store()} and checked with
-\code{sodium::password_verify()} (ARCHITECTURE.md section 12). No lockout, no
-backoff, no TLS requirement: access already requires being on a Certe
-thin client. The login exists to attribute assessments, not to defend
-against attackers - since a single R process serves every session,
+A handful of accounts, hashed with \code{sodium::password_store()} and checked
+with \code{sodium::password_verify()} (ARCHITECTURE.md section 12). No
+lockout, no backoff, and no TLS is implemented \emph{by this package}: the
+login exists to attribute assessments, not to defend against attackers,
+and network-level access control (VPN, internal network, a reverse
+proxy terminating TLS) is the deploying operator's own responsibility,
+not something this package provides or assumes. Since a single R
+process serves every session,
 \code{Sys.info()[["user"]]} returns the host account rather than the
 assessor, so the login is the only available identity source.
 }

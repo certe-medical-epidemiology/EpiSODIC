@@ -735,6 +735,25 @@ to know which point in the project's history that decision was made.
     Documented alongside `EPISODE_CONFIG` and `EPISODE_PALETTE_CONFIG` in
     the README "Environment variables" section.
 
+52. **`R/auth.R`'s own docstring justified "no lockout, no backoff, no
+    TLS" by asserting "access already requires being on a Certe thin
+    client" — a real institution-specific assumption baked into the
+    shipped, generic package's own rationale.** Found while auditing for
+    remaining Certe-specific content once the package name and
+    `certestyle` dependency were both genericised. This is the *shipped*
+    documentation (`?auth`, `man/auth.Rd`), not `ARCHITECTURE.md`'s
+    original Certe-specific design brief (which legitimately keeps this
+    kind of institution-specific detail, per its own stated role as the
+    original instance's blueprint) — an outside operator reading the
+    package's own help page has no reason to know "Certe thin client"
+    ever meant anything, and might mistakenly read it as this package
+    itself providing some access control it does not. Reworded to state
+    the actual, generic design intent honestly: the login exists to
+    attribute assessments, not to defend against attackers, and
+    network-level access control (VPN, internal network, a reverse proxy
+    terminating TLS) is the deploying operator's own responsibility,
+    never something this package provides or assumes on their behalf.
+
 ## Geography
 
 52. **Geography (the choropleth panel) does not depend on `certegis`.**

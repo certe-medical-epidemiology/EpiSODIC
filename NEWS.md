@@ -2,8 +2,7 @@
 
 First public development version: a full outbreak cluster detection and
 assessment system, from raw laboratory results to a signed-off outbreak
-report, running entirely on open-source, CRAN-hosted packages plus one
-optional Certe house-style dependency.
+report, running entirely on open-source, CRAN-hosted packages.
 
 ## Detection engine
 
