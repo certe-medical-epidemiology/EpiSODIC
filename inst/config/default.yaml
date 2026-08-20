@@ -19,37 +19,38 @@
 # EpiSODIC shipped defaults.
 #
 # This file is software: documented defaults shipped with the package. It is
-# NOT instance configuration (ARCHITECTURE.md section 7.4-7.5). An operator's
-# actual instance configuration lives outside this repository and is located
-# through the EPISODE_CONFIG environment variable; it is loaded on top of
-# this file, and any key it sets overrides the corresponding key here. The
-# resolved (merged) result is what gets hashed into config_hash and stored in
-# config_snapshot on every run - see episode_config_resolve().
+# NOT instance configuration. An operator's actual instance configuration
+# lives outside this repository and is located through the EPISODE_CONFIG
+# environment variable; it is loaded on top of this file, and any key it
+# sets overrides the corresponding key here. The resolved (merged) result
+# is what gets hashed into config_hash and stored in config_snapshot on
+# every run - see episode_config_resolve().
 
-# Reconciliation, ARCHITECTURE.md section 6.
+# Reconciliation.
 reconciliation:
   case_free_days_default: 14   # fallback when a pathogen has no override
-  close_after_runs: 14         # section 6, step 5
-  cooldown_reopen_ratio: 1.5   # section 6.5, escape hatch ("half again")
+  close_after_runs: 14
+  cooldown_reopen_ratio: 1.5   # escape hatch ("half again")
 
-# Eligibility gate, ARCHITECTURE.md section 8, item 1.
-# Values are provisional; calibration against real signal volume is M6.
+# Eligibility gate: a stream must clear all three thresholds before the
+# statistical detectors run against it at all. Values are provisional;
+# calibrate against real signal volume once an instance has accrued history.
 eligibility:
   min_baseline_weeks: 52
   min_median_weekly_count: 1
   min_nonzero_week_share: 0.2
 
-# Effect-size floor, ARCHITECTURE.md section 8, item 3.
+# Effect-size floor: a signal must clear both before it becomes a cluster.
 effect_size_floor:
   min_excess_over_upperbound: 3
   min_ratio_observed_expected: 1.5
 
-# same_place rule-based detector, ARCHITECTURE.md section 7.2.
+# same_place rule-based detector.
 # Defaults of n = 3 within 14 days, tightened per organism for the ones
 # that matter. Keys are raw `pathogen` strings, matching
 # inst/config/pathogen_config.csv and whatever the operator's lab feed uses.
 same_place:
-  # NOTE: keys are n_cases/k_days rather than the architecture's own "n"
+  # NOTE: keys are n_cases/k_days rather than the more conventional "n"
   # because YAML 1.1 parses a bare unquoted `n:` key as the boolean FALSE
   # (the classic Norway-problem gotcha). n_cases means the same thing.
   default_n_cases: 3
@@ -62,9 +63,7 @@ same_place:
     Norovirus: {n_cases: 3, k_days: 7}
     Legionella: {n_cases: 2, k_days: 14}
 
-# Farrington detector (surveillance::farringtonFlexible()), replacing the
-# certestats wrapper - see QUESTIONS.md for the switch from certestats to
-# depending on `surveillance` (CRAN) directly.
+# Farrington detector (surveillance::farringtonFlexible()).
 farrington:
   aggregation: week        # cases are aggregated to weekly counts before fitting
   b: 3                     # number of years of history to compare against
@@ -79,14 +78,13 @@ farrington:
   limit54: [5, 4]          # noPeriods-style low-count safeguard: [cases, period_weeks]
   alpha: 0.05
 
-# rare_trigger: a curated absolute-rarity list, ARCHITECTURE.md section 8,
-# item 2 ("Rare-but-serious path"). A single case of any pathogen listed
-# here fires a detection; no baseline is computed at all. Match is against
-# the raw `pathogen` string, case-insensitively.
+# rare_trigger: a curated absolute-rarity list. A single case of any
+# pathogen listed here fires a detection; no baseline is computed at all.
+# Match is against the raw `pathogen` string, case-insensitively.
 #
-# Deliberately excludes Bordetella pertussis despite it being one of the
-# architecture's own examples elsewhere: it is also rt_applicable in
-# pathogen_config.csv (endemic, seasonal, tracked via Rt/Farrington), and
+# Deliberately excludes Bordetella pertussis, an otherwise plausible
+# candidate: it is also rt_applicable in pathogen_config.csv (endemic,
+# seasonal, tracked via Rt/Farrington), and
 # putting it on both lists means every sporadic case fires rare_trigger
 # redundantly with what the statistical detectors already cover. A pathogen
 # belongs here when a single case is ALWAYS notable regardless of context
@@ -100,7 +98,7 @@ rare_trigger:
     - Candida auris
   min_cases: 1
 
-# Priority score weights, ARCHITECTURE.md section 8.1. Sum to 1.00.
+# Priority score weights. Sum to 1.00.
 priority_score:
   weights:
     excess_component: 0.25
@@ -111,7 +109,7 @@ priority_score:
     density_component: 0.10
     spatial_component: 0.05
 
-# Lattice suppression, ARCHITECTURE.md section 7.
+# Lattice suppression.
 suppression:
   child_dominance_threshold: 0.70   # child suppresses parent
   parent_diffuse_threshold: 0.50    # below this, parent may suppress children

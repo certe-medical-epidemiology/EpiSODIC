@@ -62,16 +62,16 @@ a demo assessor account (printed to the console), and opens the app.
 Pass `launch = FALSE` to skip opening the app and just get a populated
 database path back, e.g. for scripting.
 
-EpiSODIC's detection engine has **no dependency on any laboratory system,
-data warehouse, or Certe-internal package**. Every dependency is a
-CRAN-hosted package (`surveillance` for Farrington); no Certe-internal
+EpiSODIC's detection engine has **no dependency on any laboratory system
+or data warehouse**. Every dependency is a CRAN-hosted package
+(`surveillance` for Farrington); no private, organisation-specific
 package is required or even referenced. House colours
 (`episode_palette()`) come from a shipped, organisation-neutral default,
 overridable per instance by pointing `EPISODE_PALETTE_CONFIG` at a YAML
 file with an organisation's own colours - the same mechanism used for
 detection configuration, a custom report template, and geographic
-reference data. Geography (the choropleth panel) is not Certe-specific
-at all - see "Geographic reference data" below.
+reference data. Geography (the choropleth panel) is not tied to any one
+organisation or country either - see "Geographic reference data" below.
 
 ## Data format
 

@@ -18,8 +18,8 @@
 
 -- EpiSODIC database schema, SQLite dialect.
 --
--- Canonical source: ARCHITECTURE.md section 5. Type mapping used throughout
--- (see ARCHITECTURE.md section 5 table):
+-- Type mapping used throughout, for reference against a more general
+-- relational type system:
 --   BIGINT AUTO_INCREMENT PRIMARY KEY -> INTEGER PRIMARY KEY AUTOINCREMENT
 --   ENUM(...)                         -> TEXT with CHECK (col IN (...))
 --   JSON                              -> TEXT holding JSON
@@ -28,8 +28,8 @@
 --   DECIMAL(p,s)                      -> REAL
 --
 -- One dialect only: there is no MySQL in this system. Write ownership
--- (cron vs. app) is documented per table; the app is insert-only, see
--- ARCHITECTURE.md section 5.0.
+-- (cron vs. app) is documented per table; the app itself only ever
+-- inserts, never updates or deletes.
 
 PRAGMA foreign_keys = ON;
 
@@ -42,11 +42,11 @@ CREATE TABLE episode_stream (
   level           TEXT NOT NULL CHECK (level IN (
                     'pathogen_ward', 'pathogen_institution', 'pathogen_area',
                     'pathogen_province', 'pathogen_region')),
-  pathogen        TEXT NOT NULL,  -- raw lab-provided string, see QUESTIONS.md item 22
+  pathogen        TEXT NOT NULL,  -- raw lab-provided string, deliberately unconstrained free text
   care_line       TEXT CHECK (care_line IN ('first', 'second', 'other', 'unknown')),
   region_code     TEXT,
   institution_id  INTEGER REFERENCES episode_institution(institution_id),
-  ward            TEXT,          -- see QUESTIONS.md item 20: not in ARCHITECTURE.md section 5.1
+  ward            TEXT,          -- optional finer level than institution, may be NULL
   denominator     TEXT NOT NULL DEFAULT 'none' CHECK (denominator IN (
                     'none', 'tests', 'population', 'patient_days')),
   severity_weight REAL NOT NULL DEFAULT 1.00,
@@ -223,7 +223,6 @@ CREATE TABLE episode_cluster (
 -- Note what this table does NOT carry: verdict, state, closed_at,
 -- snooze_until. All four are authored by the app, which is insert-only,
 -- and are therefore derived at read time from episode_assessment_event.
--- See ARCHITECTURE.md sections 5.0 and 6.1.
 
 CREATE INDEX idx_episode_cluster_stream ON episode_cluster(stream_id);
 
@@ -268,14 +267,12 @@ CREATE TABLE episode_reporting_triangle (
 );
 
 -- ---------------------------------------------------------------------
--- Weekly Farrington trend points (cron). Not in ARCHITECTURE.md's original
--- schema: added during M2 because the multi-year trend panel needs a
--- continuous expected/upperbound band across many weeks, and the app may
--- only ever perform cheap reads (section 3.3) - it cannot recompute
--- farringtonFlexible() at render time. One row per stream per evaluated
--- week; episode_detection/episode_cluster remain the only tables that
--- drive reconciliation, this is purely a chart data cache. See
--- QUESTIONS.md.
+-- Weekly Farrington trend points (cron). The multi-year trend panel needs
+-- a continuous expected/upperbound band across many weeks, and the app
+-- only ever performs cheap reads - it cannot recompute farringtonFlexible()
+-- at render time. One row per stream per evaluated week;
+-- episode_detection/episode_cluster remain the only tables that drive
+-- reconciliation, this is purely a chart data cache.
 -- ---------------------------------------------------------------------
 CREATE TABLE episode_stream_trend (
   stream_id  INTEGER NOT NULL REFERENCES episode_stream(stream_id),
@@ -290,7 +287,7 @@ CREATE TABLE episode_stream_trend (
 -- 5.7.1 Denominators / positivity metadata (cron)
 --
 -- Deliberately supplied by the operator as pre-aggregated counts, not as a
--- raw per-test linelist: see QUESTIONS.md item 22. Optional entirely - a
+-- raw per-test linelist. Optional entirely - a
 -- site that cannot produce it (e.g. culture-only, no closed target list to
 -- report negatives against) simply never writes rows here, and positivity
 -- panels stay blank for its streams. Keyed on `pathogen` directly rather
@@ -348,8 +345,7 @@ CREATE TABLE episode_app_user (
 -- already uses for cluster state: the "current" password hash is the most
 -- recent password_change event's, falling back to episode_app_user's own
 -- initial password_hash if no such event exists yet; "current" last_login_at
--- is the most recent login event. See QUESTIONS.md for why (standing brief
--- hard rule 7: the app only ever inserts).
+-- is the most recent login event.
 CREATE TABLE episode_app_user_event (
   event_id      INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id       INTEGER NOT NULL REFERENCES episode_app_user(user_id),
