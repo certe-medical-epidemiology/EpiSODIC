@@ -127,3 +127,17 @@ test_that("output$main_view actually renders the info screen when nav_view is se
     expect_true(grepl("<code>same_place</code>", rendered, fixed = TRUE))
   })
 })
+
+test_that("output$main_view actually renders the performance screen when nav_view is set to 'performance'", {
+  db_path <- tempfile(fileext = ".sqlite")
+  episode_db_create(db_path)
+
+  server <- episode_app_server_factory(db_path, lang = "nl")
+  shiny::testServer(server, {
+    session$setInputs(nav_view = "performance")
+    session$flushReact()
+    rendered <- paste(output$main_view, collapse = "\n")
+    expect_true(grepl("Prestatie", rendered, fixed = TRUE))
+    expect_true(grepl("Tijdigheid", rendered, fixed = TRUE))
+  })
+})

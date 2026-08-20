@@ -33,6 +33,7 @@ episode_app_ui <- function(lang = "nl") {
           episode_ui_nav_link("streams", episode_tr("nav.streams", lang = lang)),
           episode_ui_nav_link("archive", episode_tr("nav.archive", lang = lang)),
           episode_ui_nav_link("activity", episode_tr("nav.activity", lang = lang)),
+          episode_ui_nav_link("performance", episode_tr("nav.performance", lang = lang)),
           episode_ui_nav_link("info", episode_tr("nav.info", lang = lang))
         ),
         shiny::tags$span(class = "episode-demodata", episode_tr("app.demodata", lang = lang))

@@ -828,6 +828,66 @@ decisions survives.
     anything else errors clearly rather than failing deep inside
     ingestion with a confusing type error.
 
+## New in M6
+
+M6's own goal text ("Watch for. This milestone needs real data and
+elapsed time. It cannot be completed in one session") is taken
+literally here: the *means* to calibrate are built now; the actual
+calibration is not attempted with synthetic data standing in for real
+signal volume, since a number produced against fabricated data would be
+worse than no number at all - it would look authoritative without being
+true.
+
+1. **Built: the Prestatie (Performance) screen**
+   (`episode_app_performance()`, `episode_ui_performance_screen()`, new
+   `nav.performance` tab), exactly matching ARCHITECTURE.md section 9's
+   description: positive predictive value per detector per organism,
+   the classification distribution, and three timeliness figures
+   (first case to detection, detection to first assessment, detection
+   to classification). PPV counts a cluster's *latest* verdict only
+   (an earlier `artefact` superseded by a later `confirmed_epidemic`
+   after more evidence came in should not count as a false positive
+   forever), attributed to every detector that ever flagged that
+   cluster; `cluster_not_yet` and an unassessed cluster are excluded
+   from PPV rather than counted as either outcome, since neither is a
+   judgement yet. Timeliness reads `episode_cluster.opened_at`/
+   `first_day` and `episode_assessment_event.created_at` directly,
+   not the state trajectory (`episode_cluster_state`) - ARCHITECTURE.md
+   section 6.4's "supplies the timeliness figures ... directly rather
+   than by reconstruction from event timestamps" is about avoiding
+   reconstruction from state *transitions*, and the columns this screen
+   needs are already stored directly on the two tables it reads. Median,
+   not mean, since a single very slow assessment should not be able to
+   swamp the reported figure the way it would a mean.
+
+2. **Not attempted: eligibility gate tuning, priority score weight
+   recalibration, suppression threshold review.** All three are
+   explicitly volume/history-dependent per M6's own scope text ("tuned
+   against real signal volume towards roughly ten assessed clusters a
+   month") - there is no real signal volume in this environment to tune
+   against, only synthetic data whose properties were chosen to
+   exercise the detectors, not to resemble a real department's true
+   incidence. Once an instance has run against real data for a few
+   months, the Prestatie screen above is exactly the tool for making
+   these calibration decisions with evidence rather than guesswork.
+
+3. **Not attempted: the annual overview for the medical board and
+   accreditation file.** Also volume/history-dependent by nature (an
+   "annual overview" of a system with no real annual history to
+   summarise would be either empty or fabricated); the existing
+   Quarto reporting infrastructure (`episode_report_render()`,
+   `EPISODE_QUARTO_REPORT`) is the natural mechanism to extend for this
+   once real data exists to report on - a second template rather than a
+   second rendering pipeline.
+
+4. **Audit finding, unrelated to the above but noticed while working
+   in this area: `certeplot2` was declared in `DESCRIPTION`
+   (`Suggests`/`Remotes`) but never actually referenced anywhere in
+   `R/` - a leftover from early planning, not a real dependency. Removed
+   from `DESCRIPTION`; the one real optional Certe package remains
+   `certestyle` (`episode_palette()`). README's "Certe packages" wording
+   corrected to match.
+
 ## Parked for a future milestone
 
 1. **Cluster volume for endemic organisms at a single place.**

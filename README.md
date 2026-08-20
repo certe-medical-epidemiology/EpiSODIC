@@ -29,12 +29,13 @@ remotes::install_github("certe-medical-epidemiology/episode")
 
 EpiSODE's detection engine has **no dependency on any laboratory system,
 data warehouse, or Certe-internal package**. Every detector runs on
-open-source, CRAN-hosted packages (`surveillance` for Farrington). Certe
-packages (`certeplot2`, `certestyle`) are optional and only used by the
-interface (M2+) for house-style rendering; without them EpiSODE still runs
-completely on its bundled synthetic demo data. Geography (the choropleth
-panel) is not Certe-specific at all - see "Geographic reference data"
-below.
+open-source, CRAN-hosted packages (`surveillance` for Farrington). Only
+one Certe package, `certestyle`, is used anywhere, and only optionally,
+for the interface's house-style colour palette (`episode_palette()`);
+without it EpiSODE still runs completely on its bundled synthetic demo
+data, in a shipped default palette. Geography
+(the choropleth panel) is not Certe-specific at all - see "Geographic
+reference data" below.
 
 ## Data format
 
