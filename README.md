@@ -16,9 +16,12 @@ for the build plan.
 
 ## Status
 
-Under active development. Milestones 1-5 (detection engine, interface,
-assessment/authentication, reporting, analytical depth) are implemented.
-Milestone 6 (calibration and performance) is next.
+Under active development. The detection engine, interface,
+assessment/authentication, reporting and analytical depth are all
+implemented, including a Performance screen for evidence-based tuning.
+Calibrating detection thresholds and priority score weights against real
+signal volume is intentionally not attempted yet - see `QUESTIONS.md` -
+since this environment has only synthetic demo data to tune against.
 
 ## Installation
 
@@ -26,6 +29,20 @@ Milestone 6 (calibration and performance) is next.
 # install.packages("remotes")
 remotes::install_github("certe-medical-epidemiology/episode")
 ```
+
+### Demo
+
+No data, no credentials, no configuration - one call runs the whole
+system against bundled synthetic data:
+
+```r
+EpiSODE::episode_demo()
+```
+
+This creates a temporary database, runs one detection cycle, provisions
+a demo assessor account (printed to the console), and opens the app.
+Pass `launch = FALSE` to skip opening the app and just get a populated
+database path back, e.g. for scripting.
 
 EpiSODE's detection engine has **no dependency on any laboratory system,
 data warehouse, or Certe-internal package**. Every detector runs on
