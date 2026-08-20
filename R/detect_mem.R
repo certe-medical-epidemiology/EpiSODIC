@@ -46,6 +46,13 @@
 #' @param run_date The date to treat as "today".
 #' @param min_seasons Minimum number of complete prior seasons required.
 #' @return A data frame of detection records (zero or one row).
+#' @references
+#' Vega T, Lozano JE, Meerhoff T, Snacken R, Mott J, Ortiz de Lejarazu R,
+#' Nunes B (2013). "Influenza Surveillance in Europe: Establishing Epidemic
+#' Thresholds by the Moving Epidemic Method." *Influenza and Other
+#' Respiratory Viruses*, 7(4), 546-558.
+#' \doi{10.1111/j.1750-2659.2012.00422.x} (the Moving Epidemic Method,
+#' implemented by the `mem` package and called directly here).
 #' @keywords internal
 #' @noRd
 episode_detect_mem <- function(cases_for_stream, stream_id, run_date = Sys.Date(), min_seasons = 2L) {

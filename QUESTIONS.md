@@ -1022,6 +1022,36 @@ to know which point in the project's history that decision was made.
     64) and the synthetic calibration generator (item 67) are the tools
     for making that evidence-based, once real signal volume exists.
 
+69. **Scientific attribution: DOIs added to `DESCRIPTION`'s `Description`
+    field and to the roxygen `@references` of every function that
+    directly implements a published statistical method**, rather than
+    stopping at "wraps the `surveillance`/`EpiEstim`/`mem` package" — the
+    method has a name and an author, and CRAN reviewers (and anyone
+    reading this package's own documentation) benefit from being able to
+    trace a detector straight to its literature source without going
+    hunting. Four functions, four citations, verified against the actual
+    published papers (title, journal, volume/pages, DOI) rather than
+    trusted from memory: `episode_detect_farrington()` cites Farrington
+    et al. (1996, the original algorithm) and Noufaily et al. (2013, the
+    improved version `surveillance::farringtonFlexible()` actually
+    implements), plus Salmon, Schumacher & Hoehle (2016, the
+    `surveillance` package itself); `episode_compute_rt()` cites Cori et
+    al. (2013, the `EpiEstim` method); `episode_detect_mem()` cites Vega
+    et al. (2013, the Moving Epidemic Method); `episode_dedup()` cites
+    Berends et al. (2022, the `AMR` package, since this function
+    reimplements `AMR::get_episode()`'s documented algorithm rather than
+    depending on `AMR` itself — see item 6/27 above). Deliberately *not*
+    added to `episode_priority_score()`'s `rescale()`, curve-shape's `2 ×
+    incub_max_days` boundary, or similar-cluster matching's weights — all
+    three are documented judgement calls with no literature source to
+    cite (items 9, 12, 63), and inventing a citation for an
+    unattributed heuristic would be worse than citing nothing.
+    `@references` was added even though most of these functions are
+    `@noRd` (not part of the exported public API, see item 78) — the
+    attribution belongs at the algorithm's implementation site
+    regardless of visibility, and travels with the code even though it
+    does not currently render as a formal help page.
+
 ## Deployment & packaging
 
 69. **Which machine runs the app long term.** Not decided here; an

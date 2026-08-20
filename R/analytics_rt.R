@@ -56,6 +56,12 @@
 #' @return A data frame with `window_end` (`Date`), `mean`, `lower`,
 #'   `upper` (2.5%/97.5% credible interval), or `NULL` if Rt cannot or
 #'   should not be computed.
+#' @references
+#' Cori A, Ferguson NM, Fraser C, Cauchemez S (2013). "A New Framework and
+#' Software to Estimate Time-Varying Reproduction Numbers During
+#' Epidemics." *American Journal of Epidemiology*, 178(9), 1505-1512.
+#' \doi{10.1093/aje/kwt133} (the method `EpiEstim::estimate_R()`
+#' implements and is called directly here).
 #' @keywords internal
 #' @noRd
 episode_compute_rt <- function(cases, pc, incomplete_days = 0L, window_days = 7L) {

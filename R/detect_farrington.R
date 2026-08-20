@@ -48,6 +48,22 @@
 #'   still what every stream without institution activity data gets.
 #' @return A data frame of detection records (zero or one row: Farrington
 #'   evaluates only the current week, per ARCHITECTURE.md section 7).
+#' @references
+#' Farrington CP, Andrews NJ, Beale AD, Catchpole MA (1996). "A Statistical
+#' Algorithm for the Early Detection of Outbreaks of Infectious Disease."
+#' *Journal of the Royal Statistical Society Series A*, 159(3), 547-563.
+#' \doi{10.2307/2983331}
+#'
+#' Noufaily A, Enki DG, Farrington P, Garthwaite P, Andrews N, Charlett A
+#' (2013). "An Improved Algorithm for Outbreak Detection in Multiple
+#' Surveillance Systems." *Statistics in Medicine*, 32(7), 1206-1222.
+#' \doi{10.1002/sim.5595}
+#'
+#' Salmon M, Schumacher D, Hoehle M (2016). "Monitoring Count Time Series
+#' in R: Aberration Detection in Public Health Surveillance." *Journal of
+#' Statistical Software*, 70(10), 1-35. \doi{10.18637/jss.v070.i10}
+#' (the `surveillance` package, whose `farringtonFlexible()` implements
+#' the Noufaily et al. algorithm and is called directly here).
 #' @keywords internal
 #' @noRd
 episode_detect_farrington <- function(cases_for_stream, stream_id, config, run_date = Sys.Date(),

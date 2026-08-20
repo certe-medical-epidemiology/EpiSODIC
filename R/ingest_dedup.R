@@ -38,6 +38,13 @@
 #' @return `raw`, with one row per patient per episode (the earliest
 #'   `sample_date` in each episode is kept, since sample date is the
 #'   architecture's anchor).
+#' @references
+#' Berends MS, Luz CF, Friedrich AW, Sinha BNM, Albers CJ, Glasner C
+#' (2022). "AMR: An R Package for Working with Antimicrobial Resistance
+#' Data." *Journal of Statistical Software*, 104(3), 1-31.
+#' \doi{10.18637/jss.v104.i03} (the source of `get_episode()`'s
+#' documented default-case episode-grouping algorithm, reimplemented
+#' directly here since `AMR` is not a dependency of this package).
 #' @keywords internal
 #' @noRd
 episode_dedup <- function(raw, pathogen_config) {

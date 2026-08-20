@@ -23,8 +23,17 @@ Description: An automated surveillance system that detects aberrations in
     laboratory-confirmed infections across all pathogens, presents them to a
     small board of epidemiologists as a ranked list of dossiers, records
     their formal assessment with a full audit trail, and produces outbreak
-    reports for clinical colleagues. Ships with a synthetic demo data set so
-    the whole system can be run without access to any Certe infrastructure.
+    reports for clinical colleagues. Statistical outbreak detection uses the
+    improved Farrington algorithm of Noufaily et al. (2013)
+    <doi:10.1002/sim.5595>, itself an extension of Farrington et al. (1996)
+    <doi:10.2307/2983331>, via the 'surveillance' package of Salmon,
+    Schumacher, and Hoehle (2016) <doi:10.18637/jss.v070.i10>. Time-varying
+    effective reproduction numbers use the method of Cori et al. (2013)
+    <doi:10.1093/aje/kwt133> as implemented in 'EpiEstim'. Seasonal epidemic
+    thresholds use the Moving Epidemic Method of Vega et al. (2013)
+    <doi:10.1111/j.1750-2659.2012.00422.x>. Ships with a synthetic demo data
+    set so the whole system can be run without access to any Certe
+    infrastructure.
 License: GPL-2
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
