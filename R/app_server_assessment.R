@@ -1,6 +1,11 @@
 #' Classification, closure and mute write actions
 #'
-#' Wires the assessment form's submit buttons. Every handler re-checks
+#' Wires the assessment form's submit buttons, including
+#' `bulk_assess_submit` (the rail's multi-select bar - "often they are
+#' artefacts", one classification and rationale applied to every checked
+#' cluster in a loop over [episode_app_submit_assessment()], each getting
+#' its own `episode_assessment_event` row exactly as a one-at-a-time
+#' classification would). Every handler re-checks
 #' `current_user()` server-side before writing anything - the UI only
 #' renders these controls for a signed-in session, but a forged client
 #' event must not be able to write regardless (the DOM and `onclick`
@@ -60,6 +65,23 @@ episode_app_server_assessment_actions <- function(input, output, session, con, l
     user <- current_user()
     shiny::req(user)
     episode_app_submit_closure(con, cluster_id = input$assess_close, user_id = user$user_id)
+    refresh()
+  })
+
+  shiny::observeEvent(input$bulk_assess_submit, {
+    user <- current_user()
+    shiny::req(user)
+    payload <- input$bulk_assess_submit
+    rationale <- trimws(payload$rationale %||% "")
+    cluster_ids <- payload$cluster_ids
+    if (!nzchar(rationale) || length(cluster_ids) == 0) {
+      return(invisible(NULL))  # mandatory rationale, same rule as the single-cluster form; client also enforces both
+    }
+    verdict <- if (nzchar(payload$verdict %||% "")) payload$verdict else NA
+    for (cluster_id in cluster_ids) {
+      episode_app_submit_assessment(con, cluster_id = cluster_id, user_id = user$user_id,
+                                     verdict = verdict, rationale = rationale)
+    }
     refresh()
   })
 

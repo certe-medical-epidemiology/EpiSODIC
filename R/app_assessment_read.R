@@ -15,8 +15,11 @@ NULL
 #' @param lang Session language.
 #' @return A data frame ordered by `at` ascending, columns `at`, `actor`
 #'   (a `full_name`, or the interpretation label for a system actor),
-#'   `kind` (`"assessment"` or `"closure"`), `verdict_label` (`NA` unless
-#'   `kind == "assessment"` and a verdict was set), `rationale`.
+#'   `kind` (`"assessment"` or `"closure"`), `verdict` (the raw key, `NA`
+#'   unless `kind == "assessment"` and a verdict was set - for colour
+#'   lookups via [episode_ui_verdict_colour()], where the translated
+#'   `verdict_label` cannot be used back as a key), `verdict_label`
+#'   (translated), `rationale`.
 #' @export
 episode_app_assessment_timeline <- function(con, cluster_id, lang = "nl") {
   events <- episode_db_assessment_events(con, cluster_id)
@@ -29,6 +32,7 @@ episode_app_assessment_timeline <- function(con, cluster_id, lang = "nl") {
       at = events$created_at,
       actor = vapply(events$user_id, episode_app_actor_label, character(1), con = con, lang = lang),
       kind = "assessment",
+      verdict = events$verdict,
       verdict_label = vapply(events$verdict, function(v) {
         if (is.na(v)) NA_character_ else episode_tr(paste0("verdict.", v), lang = lang)
       }, character(1)),
@@ -41,13 +45,14 @@ episode_app_assessment_timeline <- function(con, cluster_id, lang = "nl") {
       at = closures$entered_at,
       actor = vapply(closures$user_id, episode_app_actor_label, character(1), con = con, lang = lang),
       kind = "closure",
+      verdict = NA_character_,
       verdict_label = NA_character_,
       rationale = NA_character_,
       stringsAsFactors = FALSE
     )
   }
   if (length(rows) == 0) {
-    return(data.frame(at = character(0), actor = character(0), kind = character(0),
+    return(data.frame(at = character(0), actor = character(0), kind = character(0), verdict = character(0),
                        verdict_label = character(0), rationale = character(0), stringsAsFactors = FALSE))
   }
   timeline <- do.call(rbind, rows)

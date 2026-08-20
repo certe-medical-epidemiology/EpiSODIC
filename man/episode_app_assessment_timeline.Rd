@@ -16,8 +16,11 @@ episode_app_assessment_timeline(con, cluster_id, lang = "nl")
 \value{
 A data frame ordered by \code{at} ascending, columns \code{at}, \code{actor}
 (a \code{full_name}, or the interpretation label for a system actor),
-\code{kind} (\code{"assessment"} or \code{"closure"}), \code{verdict_label} (\code{NA} unless
-\code{kind == "assessment"} and a verdict was set), \code{rationale}.
+\code{kind} (\code{"assessment"} or \code{"closure"}), \code{verdict} (the raw key, \code{NA}
+unless \code{kind == "assessment"} and a verdict was set - for colour
+lookups via \code{\link[=episode_ui_verdict_colour]{episode_ui_verdict_colour()}}, where the translated
+\code{verdict_label} cannot be used back as a key), \code{verdict_label}
+(translated), \code{rationale}.
 }
 \description{
 Every classification, closure and mute affecting this cluster, in one

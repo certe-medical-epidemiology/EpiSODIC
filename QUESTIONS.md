@@ -967,6 +967,132 @@ true.
    a build log. Flagged here so it is not forgotten, to be done as its
    own pass in a future iteration rather than folded into M6/M7.
 
+## New in this round of feedback
+
+1. **"PVW" reverted to "PPV" on the Performance screen (Dutch).** No
+   Dutch epidemiologist actually says "PVW" for positive predictive
+   value in practice - "PPV" is what is used. The i18n *key*
+   (`performance.col.ppv`) stays, since another locale might genuinely
+   want a translated abbreviation; only the Dutch *value* changed back.
+
+2. **Detector names now in `<code>` format absolutely everywhere they
+   appear**, per the standing rule with no exceptions: the Performance
+   screen's PPV table (`episode_ui_code_join(row$detector)`, previously
+   plain text) and the outbreak report's "Detected by" row
+   (`` `r episode_ui_code_join(obj$detectors)` ``, previously
+   `paste(..., collapse=", ")`). `episode_ui_code_join()` and
+   `episode_ui_italicise_taxon()` are now `@export`ed rather than
+   `@noRd` internal - the report template runs in its own fresh
+   `library(EpiSODE)` session where only exported functions are
+   attached, so a bare (unexported) reference from the `.qmd` would
+   simply fail to resolve. An operator's own custom template
+   (`EPISODE_QUARTO_REPORT`) now also has both helpers available for the
+   same reason.
+
+3. **Report template: the pathogen name in the H1 title is now
+   italicised** via the same `episode_ui_italicise_taxon()` used
+   everywhere else pathogen names render - it happens to be the only
+   place in the template a pathogen name appears outside a context
+   that's already scoped to one organism (linelist, similar-clusters
+   table).
+
+4. **Signaleringsreeksen (Streams) screen was slow to load on a real
+   instance - fixed at the read-model level, with pagination as the
+   user-facing shape.** The actual bottleneck was not HTML row count:
+   `episode_app_streams_screen()` computed `baseline_excluded` for
+   *every* stream unconditionally, and that computation is one DB round
+   trip per stream (`episode_baseline_excluded_windows()`) plus one more
+   per cluster within it (`episode_db_assessment_events()`) - an N+1(+M)
+   query pattern invisible on the small fixture database this was built
+   against, real on hundreds of real streams. `episode_app_streams_
+   screen(con, page, page_size)` now slices to the requested page
+   *before* that loop runs, so the cost is bounded by `page_size`
+   (default 50) regardless of total stream count. Prev/Next controls
+   (`streams_page_select` input) only render when there is more than one
+   page - the pager itself never became a visible feature on the small
+   demo dataset this was tested against.
+
+5. **The status trajectory band now shows classifications, not the
+   derived state.** Previously a single bar labelled with the current
+   derived state (new/assessing/monitoring/...), which cannot answer
+   "was this ever thought to be a possible epidemic before being
+   confirmed, or was it artefact from the start" - exactly the question
+   this band exists to answer at a glance. Rebuilt from `episode_app_
+   assessment_timeline()`'s verdict-*setting* events only (note-only
+   assessments and closures don't start a new segment, since neither
+   changes what the cluster was judged to be): the period before the
+   first classification is always labelled "Onbeoordeeld"/"Unassessed"
+   (`statusverloop.unassessed`, replacing the now-unused
+   `statusverloop.now`), not the generic "Nieuw"/"New" state label,
+   which reads ambiguously as "recently created" rather than what it
+   actually means here - nobody has looked at it yet. Segments are
+   equal-width (not time-proportional, to avoid unreadable slivers for
+   near-simultaneous events) with each segment's own start date shown
+   instead. `episode_app_assessment_timeline()` gained a raw `verdict`
+   column alongside the existing translated `verdict_label`, needed for
+   `episode_ui_verdict_colour()` lookups (which take the raw key, not
+   the translated string) - a small, backward-compatible read-model
+   extension. This was scoped to the trajectory band specifically, since
+   that is what the feedback named; the same "Nieuw" label is unchanged
+   everywhere else a cluster's state is shown (rail chip, dossier
+   header) - worth revisiting together if the same ambiguity bothers
+   there too, but not assumed here.
+
+6. **Rt's empty-state message now says *why*, distinguishing three
+   different causes `episode_compute_rt()` previously collapsed into one
+   generic "insufficient data" string** (which its own docs already
+   flagged as against the codebase's philosophy of preferring no panel
+   over a vague one - the panel is only ever shown at all when
+   `rt_applicable` is `TRUE`, so *something* has to explain the
+   emptiness rather than nothing): a genuinely missing serial interval
+   in the pathogen config (`no_serial_interval` - a data-entry gap worth
+   fixing), the `EpiEstim` package not being installed
+   (`epiestim_missing` - an environment gap), or simply not enough case
+   history yet (`insufficient_history` - the common, expected case,
+   needing no action). New `episode_rt_unavailable_reason(pc)` decides
+   which cheaply, without re-running `episode_compute_rt()`'s own
+   computation; `episode_cluster_object()` now carries this alongside
+   `rt`. The user's own guess ("this means the config lacks a serial
+   interval, right?") was the *possible* but not the *typical* cause -
+   most real cases of an empty Rt panel on an `rt_applicable` organism
+   are simply "not enough cases in this specific cluster yet", which the
+   old message actively mislabelled as a data problem.
+
+7. **`episode_run_cron()` already accepted a data frame directly for
+   `ingest_source_fn`/`denominator_source_fn`/`institution_activity_
+   source_fn`, as requested earlier this session** (`episode_resolve_
+   source()`, item 18 above) - this was a documentation/communication
+   gap on my part, not an unshipped feature: the change had already
+   been implemented, tested, and pushed in an earlier commit
+   (`26fcb03`) before this round of feedback arrived, but I never
+   confirmed back to the user that it was done. No code change needed
+   here; flagged so the gap in my own reporting doesn't recur.
+
+8. **Bulk assessment: select several clusters on the rail, classify all
+   of them in one submit with one shared verdict and rationale** -
+   "often they are artefacts", so opening each dossier in turn for the
+   same classification was pure friction. A checkbox per rail item
+   (rendered only for a signed-in session, same gate as the
+   single-cluster form) and a bulk action bar (verdict picker +
+   mandatory rationale + Apply/Clear) that appears once at least one is
+   checked. Selection state lives entirely client-side - read from the
+   DOM's checkbox `checked` attributes at submit time via a small inline
+   `episodeBulkUpdate()` script, not synced to the server on every
+   toggle - because the rail's own render is deliberately decoupled from
+   `selected_cluster_id()` already (so a single-cluster click does not
+   replace the whole rail and lose scroll position); round-tripping
+   every checkbox toggle through a reactive would reintroduce exactly
+   that problem for a feature whose whole point is checking several
+   boxes in quick succession. `episode_app_server_assessment_actions()`
+   gained a `bulk_assess_submit` observer that loops
+   `episode_app_submit_assessment()` once per selected cluster, each
+   getting its own `episode_assessment_event` row exactly as a
+   one-at-a-time classification would (nothing new at the write-model
+   level, only at the UI/submission level) - re-checks `current_user()`
+   server-side and requires a non-empty rationale before writing
+   anything, same as the single-cluster path, since the DOM/onclick is
+   not a trust boundary.
+
 ## Parked for a future milestone
 
 1. **Cluster volume for endemic organisms at a single place.**

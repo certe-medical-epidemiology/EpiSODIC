@@ -39,6 +39,9 @@ episode_app_server_factory <- function(db_path, lang = "nl") {
     })
     shiny::observeEvent(input$rail_select, selected_cluster_id(input$rail_select))
 
+    streams_page <- shiny::reactiveVal(1L)
+    shiny::observeEvent(input$streams_page_select, streams_page(input$streams_page_select))
+
     current_user <- episode_app_server_auth(input, output, session, con, lang = lang)
 
     output$auth_control <- shiny::renderUI({
@@ -51,7 +54,7 @@ episode_app_server_factory <- function(db_path, lang = "nl") {
 
     output$main_view <- shiny::renderUI({
       if (view() == "streams") {
-        episode_ui_streams_screen(episode_app_streams_screen(con), lang = lang)
+        episode_ui_streams_screen(episode_app_streams_screen(con, page = streams_page()), lang = lang)
       } else if (view() == "archive") {
         shiny::uiOutput("archive_screen")
       } else if (view() == "activity") {
@@ -77,7 +80,12 @@ episode_app_server_factory <- function(db_path, lang = "nl") {
     # every click - episode_ui_rail()'s onclick handles the "active"
     # highlight itself, client-side, instead.
     output$rail_pane <- shiny::renderUI({
-      episode_ui_rail(open_clusters(), shiny::isolate(selected_cluster_id()), lang = lang)
+      # current_user() deliberately not isolated (unlike selected_cluster_id()
+      # above it): the bulk-select checkboxes and action bar are gated on
+      # being signed in, so they need to appear/disappear immediately on
+      # sign-in/out, matching dossier_pane's own choice below for the same
+      # reason.
+      episode_ui_rail(open_clusters(), shiny::isolate(selected_cluster_id()), lang = lang, current_user = current_user())
     })
 
     output$dossier_pane <- shiny::renderUI({
@@ -171,11 +179,86 @@ episode_ui_format_datetime <- function(iso, fmt = "%H:%M", tz = Sys.timezone()) 
   format(parsed, fmt, tz = tz)
 }
 
+#' The open-cluster rail, with an optional bulk-assessment bar
+#'
+#' "Often they are artefacts": a signed-in user can check several
+#' clusters and classify all of them in one submit, rather than opening
+#' each dossier in turn for what is frequently the same verdict
+#' (`artefact`) and a shared rationale. Selection itself is tracked
+#' entirely client-side (a checkbox's own `checked` state, read from the
+#' DOM at submit time via `episodeBulkUpdate()`/the submit button's
+#' onclick) rather than in a Shiny reactive - the rail's own render is
+#' deliberately decoupled from `selected_cluster_id()` so a click does
+#' not replace the whole list and lose scroll position (see
+#' `output$rail_pane`'s own comment); round-tripping every checkbox
+#' toggle through the server would reintroduce exactly that problem.
+#' `episode_app_server_assessment_actions()`'s `bulk_assess_submit`
+#' observer is the write side.
+#'
+#' @param open A data frame from [episode_app_open_clusters()].
+#' @param selected_id The rail's current single-cluster selection (for
+#'   the "active" highlight), or `NULL`.
+#' @param lang Session language.
+#' @param current_user The session's signed-in user row, or `NULL` -
+#'   bulk selection is a write action, so checkboxes and the action bar
+#'   only render for a signed-in session, same gate as the single-cluster
+#'   assessment form.
 #' @keywords internal
 #' @noRd
-episode_ui_rail <- function(open, selected_id, lang = "nl") {
+episode_ui_rail <- function(open, selected_id, lang = "nl", current_user = NULL) {
+  pal <- episode_palette()
+  verdicts <- c("artefact", "expected_variation", "cluster_not_yet", "possible_epidemic", "confirmed_epidemic")
+  verdict_options <- c(
+    list(list(value = "", label = episode_tr("assessment.verdict_none", lang = lang), colour = pal$muted)),
+    lapply(verdicts, function(v) list(value = v, label = episode_tr(paste0("verdict.", v), lang = lang),
+                                       colour = episode_ui_verdict_colour(v)))
+  )
+
+  bulk_bar <- if (!is.null(current_user)) {
+    shiny::tags$div(
+      id = "episode-bulk-bar", style = "display:none;", class = "episode-panel-body",
+      shiny::tags$div(style = "font-size:12.5px;font-weight:600;margin-bottom:6px;",
+                       shiny::tags$span(id = "episode-bulk-count"), " ", episode_tr("rail.bulk_selected", lang = lang)),
+      shiny::tags$div(class = "episode-form-group",
+                       shiny::tags$label(class = "episode-form-label", episode_tr("assessment.verdict_label", lang = lang)),
+                       episode_ui_picker("bulk_assess_verdict", verdict_options)),
+      shiny::tags$div(class = "episode-form-group",
+                       shiny::tags$label(class = "episode-form-label", episode_tr("assessment.rationale_label", lang = lang)),
+                       shiny::tags$textarea(id = "bulk_assess_rationale", rows = 2,
+                                             placeholder = episode_tr("assessment.rationale_placeholder", lang = lang))),
+      shiny::tags$div(
+        style = "display:flex;gap:8px;",
+        shiny::tags$button(
+          class = "episode-btn", type = "button",
+          onclick = paste0(
+            "var ids=Array.from(document.querySelectorAll('.episode-rail-select:checked')).map(function(el){return parseInt(el.value);}); ",
+            "var rationale=document.getElementById('bulk_assess_rationale').value; ",
+            "if(!rationale.trim()){return;} ",
+            "Shiny.setInputValue('bulk_assess_submit', {cluster_ids: ids, verdict: document.getElementById('bulk_assess_verdict').value, rationale: rationale}, {priority: 'event'});"
+          ),
+          episode_tr("rail.bulk_apply", lang = lang)
+        ),
+        shiny::tags$button(
+          class = "episode-btn", type = "button",
+          onclick = paste0(
+            "document.querySelectorAll('.episode-rail-select').forEach(function(el){el.checked=false;}); episodeBulkUpdate();"
+          ),
+          episode_tr("rail.bulk_clear", lang = lang)
+        )
+      )
+    )
+  }
+
   shiny::tags$div(
     class = "episode-rail",
+    if (!is.null(current_user)) {
+      shiny::tags$script(shiny::HTML(paste0(
+        "function episodeBulkUpdate(){var n=document.querySelectorAll('.episode-rail-select:checked').length; ",
+        "var bar=document.getElementById('episode-bulk-bar'); if(!bar){return;} ",
+        "bar.style.display = n>0 ? 'block' : 'none'; ",
+        "var c=document.getElementById('episode-bulk-count'); if(c){c.textContent=n;}}"
+      )))
+    },
     shiny::tags$div(
       class = "episode-rail-header",
       shiny::tags$div(class = "episode-rail-title", episode_tr("rail.title", lang = lang)),
@@ -184,6 +267,7 @@ episode_ui_rail <- function(open, selected_id, lang = "nl") {
                                              episode_tr("unit.clusters", lang = lang)),
                        " ", episode_tr("rail.count_suffix", lang = lang))
     ),
+    bulk_bar,
     if (nrow(open) == 0) {
       shiny::tags$div(style = "padding:14px;font-size:12.5px;color:var(--episode-muted);", episode_tr("rail.empty", lang = lang))
     } else {
@@ -196,6 +280,13 @@ episode_ui_rail <- function(open, selected_id, lang = "nl") {
             "document.querySelectorAll('.episode-rail-item').forEach(function(el){el.classList.remove('active');}); this.classList.add('active'); Shiny.setInputValue('rail_select', %d, {priority: 'event'})",
             row$cluster_id
           ),
+          if (!is.null(current_user)) {
+            shiny::tags$input(
+              type = "checkbox", class = "episode-rail-select", value = row$cluster_id,
+              onclick = "event.stopPropagation(); episodeBulkUpdate();",
+              onchange = "episodeBulkUpdate();"
+            )
+          },
           shiny::tags$div(class = "episode-rail-pathogen", shiny::HTML(episode_ui_italicise_taxon(row$pathogen))),
           shiny::tags$div(class = "episode-rail-meta", row$level_label),
           shiny::tags$div(class = "episode-rail-meta", episode_format_date_range(row$first_day, row$last_day, lang = lang)),

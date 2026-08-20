@@ -13,6 +13,9 @@
   "rail.title": "Open clusters",
   "rail.count_suffix": "new or active",
   "rail.empty": "No open clusters.",
+  "rail.bulk_selected": "selected",
+  "rail.bulk_apply": "Apply classification to selected",
+  "rail.bulk_clear": "Clear selection",
 
   "dossier.stat.observed": "Confirmed",
   "dossier.stat.observed_sub": "expected {expected}",
@@ -58,7 +61,7 @@
   "verloop.not_assessed": "Not yet assessed. Detected on {first} by {detectors}.",
 
   "statusverloop.title": "Status trajectory",
-  "statusverloop.now": "now",
+  "statusverloop.unassessed": "Unassessed",
 
   "panel.interpretation.title": "Interpretation",
   "panel.interpretation.aside": "automatically generated",
@@ -130,6 +133,9 @@
   "streams.col.first_seen": "First seen",
   "streams.col.last_seen": "Last seen",
   "streams.config.title": "Resolved configuration (latest run)",
+  "streams.page_prev": "Previous",
+  "streams.page_next": "Next",
+  "streams.page_of": "Page {page} of {n_pages}",
 
   "status.run_ok": "Run {time} succeeded · {streams_phrase} · {clusters_phrase} detected",
   "status.run_failed": "Last run failed · {time}",
@@ -305,7 +311,9 @@
 
   "panel.rt.title": "Effective reproduction number (Rt)",
   "panel.rt.note": "Time-varying effective reproduction number (not R0), computed over 7-day sliding windows. Windows within the still-incomplete reporting period are withheld.",
-  "panel.rt.unavailable": "Insufficient data to compute Rt for this organism.",
+  "panel.rt.unavailable.no_serial_interval": "Rt cannot be computed: this organism's configuration is missing a serial interval (si_mean_days/si_sd_days).",
+  "panel.rt.unavailable.epiestim_missing": "Rt cannot be computed: the 'EpiEstim' R package is not installed.",
+  "panel.rt.unavailable.insufficient_history": "Not enough case history in this cluster yet to compute Rt.",
 
   "panel.similar.title": "Similar clusters",
   "panel.similar.unavailable": "No similar closed clusters found for this organism.",

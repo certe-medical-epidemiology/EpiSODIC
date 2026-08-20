@@ -60,7 +60,7 @@ episode_ui_performance_screen <- function(performance, lang = "nl") {
         shiny::tags$tbody(lapply(seq_len(nrow(by_dp)), function(i) {
           row <- by_dp[i, ]
           shiny::tags$tr(
-            shiny::tags$td(row$detector),
+            shiny::tags$td(shiny::HTML(episode_ui_code_join(row$detector))),
             shiny::tags$td(shiny::HTML(episode_ui_italicise_taxon(row$pathogen))),
             shiny::tags$td(row$n_detections),
             shiny::tags$td(if (is.na(row$ppv)) episode_tr("misc.dash", lang = lang) else paste0(round(row$ppv * 100, 0), "%"))

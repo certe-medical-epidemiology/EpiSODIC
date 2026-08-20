@@ -20,7 +20,7 @@ tr <- function(key, ...) episode_tr(key, lang = lang, ...)
 na_dash <- function(x) if (is.na(x)) "-" else x
 ```
 
-# `r obj$pathogen` — `r tr(paste0("level.", obj$level))`
+# `r episode_ui_italicise_taxon(obj$pathogen)` — `r tr(paste0("level.", obj$level))`
 
 **`r obj$place`** &middot; `r tr("report.cluster")` #`r obj$id` &middot; `r obj$first_day` &ndash; `r obj$last_day`
 
@@ -39,7 +39,7 @@ na_dash <- function(x) if (is.na(x)) "-" else x
 | `r tr("dossier.stat.ratio")` | `r if (is.na(obj$ratio)) tr("report.na") else round(obj$ratio, 1)` |
 | `r tr("dossier.stat.unique_patients")` | `r obj$unique_patients` (`r tr("report.isolates_suffix", n = obj$n_isolates)`) |
 | `r tr("report.priority_score")` | `r round(obj$priority_score, 0)` |
-| `r tr("report.detected_by")` | `r paste(obj$detectors, collapse = ", ")` |
+| `r tr("report.detected_by")` | `r episode_ui_code_join(obj$detectors)` |
 
 ```{r curve-shape, results='asis'}
 if (!is.null(obj$curve_shape) && !is.na(obj$curve_shape)) {

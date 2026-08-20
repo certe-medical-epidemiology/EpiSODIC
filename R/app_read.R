@@ -158,6 +158,7 @@ episode_cluster_object <- function(con, cluster_id, lang = "nl") {
     detectors = detections,
     first_day = cluster$first_day,
     last_day = cluster$last_day,
+    opened_at = cluster$opened_at,
     n_cases = cluster$n_cases,
     expected = cluster$expected,
     ratio = cluster$ratio,
@@ -179,8 +180,34 @@ episode_cluster_object <- function(con, cluster_id, lang = "nl") {
     case_free_days = if (!is.null(pc)) pc$case_free_days else NA_integer_,
     mem_applicable = if (!is.null(pc)) as.logical(pc$mem_applicable) else FALSE,
     curve_shape = if (!is.null(pc)) episode_classify_curve_shape(cases, pc$incub_max_days) else NA_character_,
-    rt = if (!is.null(pc)) episode_compute_rt(cases, pc, incomplete_days = completeness$incomplete_days %||% 0L) else NULL
+    rt = if (!is.null(pc)) episode_compute_rt(cases, pc, incomplete_days = completeness$incomplete_days %||% 0L) else NULL,
+    rt_unavailable_reason = episode_rt_unavailable_reason(pc)
   )
+}
+
+#' Why the Rt panel has nothing to show, when `rt_applicable` is `TRUE`
+#'
+#' `episode_compute_rt()` deliberately collapses several distinct causes
+#' into one `NULL` (its own docs: "no off-the-shelf message ... is a
+#' substitute for simply not showing the panel"), which is right for
+#' `episode_cluster_object()` itself but leaves the *displayed* empty
+#' state unable to distinguish "this organism's config is missing a
+#' serial interval" (a data-entry gap worth fixing) from "there simply
+#' are not enough cases in this cluster yet" (expected, no action
+#' needed) from "the `EpiEstim` package is not installed" (an
+#' environment gap, not a data one). Cheap to determine directly from
+#' `pc` without re-running the computation.
+#'
+#' @param pc A single-row pathogen config, or `NULL`.
+#' @return One of `"no_serial_interval"`, `"epiestim_missing"`,
+#'   `"insufficient_history"`, or `NA` if Rt is not applicable at all.
+#' @keywords internal
+#' @noRd
+episode_rt_unavailable_reason <- function(pc) {
+  if (is.null(pc) || !isTRUE(as.logical(pc$rt_applicable))) return(NA_character_)
+  if (is.na(pc$si_mean_days) || is.na(pc$si_sd_days)) return("no_serial_interval")
+  if (!requireNamespace("EpiEstim", quietly = TRUE)) return("epiestim_missing")
+  "insufficient_history"
 }
 
 #' @keywords internal
@@ -465,27 +492,49 @@ episode_app_detection_settings <- function(con, cluster_id) {
 #' Displays the configuration from the latest run's `config_snapshot`, not
 #' from the file (ARCHITECTURE.md section 7.4/10, MILESTONES.md M2).
 #'
+#' Paginated, and deliberately at the read-model level rather than only
+#' in the UI: `baseline_excluded` is one DB round trip per stream (via
+#' [episode_baseline_excluded_windows()], itself one round trip per
+#' cluster in that stream), so computing it for every stream regardless
+#' of what is actually shown made this screen slow to load once a real
+#' instance's stream count grew past a few dozen - the exact bug report
+#' this was written to fix. Slicing to `page` before that loop runs means
+#' the cost is bounded by `page_size`, not by the total stream count.
+#'
 #' @param con A [DBI::DBIConnection-class].
-#' @return A list with `streams` (a data frame) and `config_snapshot` (the
-#'   parsed JSON from the latest successful run, or `NULL`).
+#' @param page 1-based page number.
+#' @param page_size Streams per page.
+#' @return A list with `streams` (a data frame, one page's worth),
+#'   `total` (the total stream count across all pages), `page`,
+#'   `page_size`, `n_pages`, and `config_snapshot` (the parsed JSON from
+#'   the latest successful run, or `NULL`).
 #' @export
-episode_app_streams_screen <- function(con) {
-  streams <- episode_db_streams(con, active_only = FALSE)
+episode_app_streams_screen <- function(con, page = 1L, page_size = 50L) {
+  streams_all <- episode_db_streams(con, active_only = FALSE)
   run <- episode_db_latest_run(con, status = "success")
   config_snapshot <- if (!is.null(run) && !is.na(run$config_snapshot)) {
     jsonlite::fromJSON(run$config_snapshot)
   } else {
     NULL
   }
+
+  total <- nrow(streams_all)
+  n_pages <- max(1L, ceiling(total / page_size))
+  page <- min(max(1L, page), n_pages)
+  from <- (page - 1L) * page_size + 1L
+  to <- min(total, page * page_size)
+  streams <- if (total == 0) streams_all else streams_all[from:to, , drop = FALSE]
+
   # ARCHITECTURE.md section 7.6: "the excluded windows are listed on the
   # Streams screen so that a baseline is never quietly different from
-  # what an assessor expects."
+  # what an assessor expects." Computed only for this page's streams.
   if (nrow(streams) > 0) {
     streams$baseline_excluded <- lapply(streams$stream_id, function(sid) {
       episode_baseline_excluded_windows(con, sid)
     })
   }
-  list(streams = streams, config_snapshot = config_snapshot, run = run)
+  list(streams = streams, total = total, page = page, page_size = page_size,
+       n_pages = n_pages, config_snapshot = config_snapshot, run = run)
 }
 
 #' Status strip data: last run status and reporting completeness

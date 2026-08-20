@@ -13,6 +13,9 @@
   "rail.title": "Openstaande clusters",
   "rail.count_suffix": "nieuw of actief",
   "rail.empty": "Geen openstaande clusters.",
+  "rail.bulk_selected": "geselecteerd",
+  "rail.bulk_apply": "Classificatie toepassen op geselecteerde",
+  "rail.bulk_clear": "Selectie wissen",
 
   "dossier.stat.observed": "Vastgesteld",
   "dossier.stat.observed_sub": "verwacht {expected}",
@@ -58,7 +61,7 @@
   "verloop.not_assessed": "Nog niet beoordeeld. Gedetecteerd op {first} door {detectors}.",
 
   "statusverloop.title": "Statusverloop",
-  "statusverloop.now": "nu",
+  "statusverloop.unassessed": "Onbeoordeeld",
 
   "panel.interpretation.title": "Duiding",
   "panel.interpretation.aside": "automatisch opgesteld",
@@ -130,6 +133,9 @@
   "streams.col.first_seen": "Eerst gezien",
   "streams.col.last_seen": "Laatst gezien",
   "streams.config.title": "Opgeloste configuratie (laatste run)",
+  "streams.page_prev": "Vorige",
+  "streams.page_next": "Volgende",
+  "streams.page_of": "Pagina {page} van {n_pages}",
 
   "status.run_ok": "Run {time} geslaagd · {streams_phrase} · {clusters_phrase} gedetecteerd",
   "status.run_failed": "Laatste run mislukt · {time}",
@@ -271,7 +277,7 @@
   "performance.col.detector": "Detector",
   "performance.col.pathogen": "Verwekker",
   "performance.col.n_detections": "Aantal detecties",
-  "performance.col.ppv": "PVW",
+  "performance.col.ppv": "PPV",
 
   "info.title": "Info",
   "info.intro": "Achtergrond bij de detectiealgoritmen, clusterstatussen en het toegangsmodel van EpiSODE.",
@@ -305,7 +311,9 @@
 
   "panel.rt.title": "Effectief reproductiegetal (Rt)",
   "panel.rt.note": "Tijdsafhankelijk effectief reproductiegetal (niet R0), berekend over 7-daagse voortschrijdende vensters. Vensters binnen de nog onvolledige rapportageperiode zijn weggelaten.",
-  "panel.rt.unavailable": "Onvoldoende gegevens om Rt te berekenen voor deze verwekker.",
+  "panel.rt.unavailable.no_serial_interval": "Rt kan niet worden berekend: voor deze verwekker ontbreekt een seriële interval in de configuratie (si_mean_days/si_sd_days).",
+  "panel.rt.unavailable.epiestim_missing": "Rt kan niet worden berekend: het R-pakket 'EpiEstim' is niet geïnstalleerd.",
+  "panel.rt.unavailable.insufficient_history": "Nog onvoldoende gevalsgeschiedenis in dit cluster om Rt te berekenen.",
 
   "panel.similar.title": "Vergelijkbare clusters",
   "panel.similar.unavailable": "Geen vergelijkbare afgesloten clusters gevonden voor deze verwekker.",

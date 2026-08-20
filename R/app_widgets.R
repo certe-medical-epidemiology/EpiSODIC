@@ -21,10 +21,15 @@ NULL
 #' not installed. Text is HTML-escaped before any tag is added, so this is
 #' always safe to pass to [shiny::HTML()].
 #'
+#' Exported (not just internal): the Quarto report template
+#' (`inst/report/cluster_report.qmd`) runs in its own fresh session where
+#' only exported functions are attached by `library(EpiSODE)`, and an
+#' operator's own custom template (`EPISODE_QUARTO_REPORT`) should have
+#' the same formatting helpers the shipped one uses.
+#'
 #' @param pathogen A character vector of pathogen display names.
 #' @return A character vector, safe to pass to [shiny::HTML()].
-#' @keywords internal
-#' @noRd
+#' @export
 episode_ui_italicise_taxon <- function(pathogen) {
   escaped <- gsub("&", "&amp;", pathogen, fixed = TRUE)
   escaped <- gsub("<", "&lt;", escaped, fixed = TRUE)
@@ -43,11 +48,13 @@ episode_ui_italicise_taxon <- function(pathogen) {
 #' line, settings panel, timeline). Text is HTML-escaped before any tag is
 #' added, so the result is always safe to pass to [shiny::HTML()].
 #'
+#' Exported for the same reason as [episode_ui_italicise_taxon()]: the
+#' Quarto report template needs it available in its own fresh session.
+#'
 #' @param detectors A character vector of detector names.
 #' @param sep Separator between entries.
 #' @return A single character string, safe to pass to [shiny::HTML()].
-#' @keywords internal
-#' @noRd
+#' @export
 episode_ui_code_join <- function(detectors, sep = ", ") {
   escaped <- gsub("&", "&amp;", detectors, fixed = TRUE)
   escaped <- gsub("<", "&lt;", escaped, fixed = TRUE)

@@ -16,13 +16,14 @@
 episode_ui_dossier <- function(con, cluster_id, lang = "nl", current_user = NULL) {
   obj <- episode_cluster_object(con, cluster_id, lang = lang)
   state <- episode_app_derive_state_for_cluster(con, cluster_id)
+  timeline <- episode_app_assessment_timeline(con, cluster_id, lang = lang)
   pal <- episode_palette()
 
   shiny::tags$div(
     class = "episode-dossier",
     episode_ui_dossier_header(obj, state, lang = lang),
     episode_ui_stat_grid(obj, lang = lang),
-    episode_ui_trajectory(obj, state, lang = lang),
+    episode_ui_trajectory(obj, timeline, lang = lang),
     episode_ui_interpretation_panel(obj, lang = lang),
     episode_ui_epicurve_panel(con, cluster_id, obj, lang = lang),
     episode_ui_rt_panel(obj, lang = lang),
@@ -128,21 +129,51 @@ episode_ui_stat_grid <- function(obj, lang = "nl") {
   shiny::tags$div(class = "episode-statgrid", stats)
 }
 
+#' The status trajectory band: one segment per classification held, not
+#' per derived state
+#'
+#' Earlier version rendered a single bar labelled with the current
+#' derived state (new/assessing/monitoring/...), which cannot answer the
+#' one question this band exists for: was this ever thought to be a
+#' possible epidemic before being confirmed, or was it artefact from the
+#' start? Segments are therefore built from verdict-*setting* events only
+#' (`episode_app_assessment_timeline()`'s `verdict` column, ignoring
+#' note-only assessments that carry no classification and closures,
+#' neither of which change what the cluster was judged to be) - the time
+#' before the first one is its own segment, always labelled
+#' `statusverloop.unassessed` rather than the generic "new" state label,
+#' since "New" is easily misread as "recently created" rather than what
+#' it actually means here: nobody has looked at it yet.
+#'
+#' Segments are equal-width, not time-proportional - a near-simultaneous
+#' pair of events would otherwise render as an unreadable sliver: each
+#' segment's own start date is shown instead, which carries the same
+#' information without that failure mode.
+#'
+#' @param obj A list from [episode_cluster_object()].
+#' @param timeline A data frame from [episode_app_assessment_timeline()].
+#' @param lang Session language.
 #' @keywords internal
 #' @noRd
-episode_ui_trajectory <- function(obj, state, lang = "nl") {
-  colour <- episode_ui_state_colour(state)
+episode_ui_trajectory <- function(obj, timeline, lang = "nl") {
+  verdict_events <- timeline[timeline$kind == "assessment" & !is.na(timeline$verdict), , drop = FALSE]
+  starts <- c(obj$opened_at, verdict_events$at)
+  labels <- c(episode_tr("statusverloop.unassessed", lang = lang), verdict_events$verdict_label)
+  colours <- c(episode_palette()$muted, vapply(verdict_events$verdict, episode_ui_verdict_colour, character(1)))
+
   shiny::tags$section(
     class = "episode-trajectory",
     shiny::tags$div(class = "episode-trajectory-title", episode_tr("statusverloop.title", lang = lang)),
     shiny::tags$div(
       class = "episode-trajectory-track",
-      shiny::tags$div(
-        style = "flex:1;",
-        shiny::tags$div(class = "episode-trajectory-seg-bar", style = sprintf("background:%s;", colour)),
-        shiny::tags$div(class = "episode-trajectory-seg-label", episode_tr(paste0("state.", state), lang = lang)),
-        shiny::tags$div(class = "episode-trajectory-seg-time", episode_tr("statusverloop.now", lang = lang))
-      )
+      lapply(seq_along(starts), function(i) {
+        shiny::tags$div(
+          style = "flex:1;",
+          shiny::tags$div(class = "episode-trajectory-seg-bar", style = sprintf("background:%s;", colours[i])),
+          shiny::tags$div(class = "episode-trajectory-seg-label", labels[i]),
+          shiny::tags$div(class = "episode-trajectory-seg-time", episode_ui_format_datetime(starts[i], fmt = "%d-%m-%Y"))
+        )
+      })
     )
   )
 }
@@ -208,7 +239,8 @@ episode_ui_rt_panel <- function(obj, lang = "nl") {
   # merely awaiting more data.
   if (!isTRUE(obj$rt_applicable)) return(NULL)
   if (is.null(obj$rt) || nrow(obj$rt) == 0) {
-    return(episode_ui_panel_empty(episode_tr("panel.rt.title", lang = lang), episode_tr("panel.rt.unavailable", lang = lang)))
+    msg <- episode_tr(paste0("panel.rt.unavailable.", obj$rt_unavailable_reason %||% "insufficient_history"), lang = lang)
+    return(episode_ui_panel_empty(episode_tr("panel.rt.title", lang = lang), msg))
   }
   episode_ui_panel(
     episode_tr("panel.rt.title", lang = lang),
@@ -567,10 +599,27 @@ episode_ui_assessment_form <- function(cluster_id, obj, lang = "nl") {
 #' @noRd
 episode_ui_streams_screen <- function(screen, lang = "nl") {
   streams <- screen$streams
+  pager <- if (!is.null(screen$n_pages) && screen$n_pages > 1) {
+    shiny::tags$div(
+      style = "display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:12.5px;",
+      shiny::tags$button(
+        class = "episode-btn", disabled = if (screen$page <= 1) NA else NULL,
+        onclick = sprintf("Shiny.setInputValue('streams_page_select', %d, {priority: 'event'})", screen$page - 1L),
+        episode_tr("streams.page_prev", lang = lang)
+      ),
+      shiny::tags$span(episode_tr("streams.page_of", page = screen$page, n_pages = screen$n_pages, lang = lang)),
+      shiny::tags$button(
+        class = "episode-btn", disabled = if (screen$page >= screen$n_pages) NA else NULL,
+        onclick = sprintf("Shiny.setInputValue('streams_page_select', %d, {priority: 'event'})", screen$page + 1L),
+        episode_tr("streams.page_next", lang = lang)
+      )
+    )
+  }
   shiny::tags$div(
     class = "episode-streams-screen",
     shiny::tags$h1(style = "font-size:22px;font-weight:600;margin-bottom:4px;", episode_tr("streams.title", lang = lang)),
     shiny::tags$p(style = "font-size:12.5px;color:var(--episode-muted);margin-bottom:16px;", episode_tr("streams.note", lang = lang)),
+    pager,
     if (nrow(streams) == 0) {
       shiny::tags$p(class = "episode-panel-empty", episode_tr("rail.empty", lang = lang))
     } else {
