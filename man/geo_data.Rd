@@ -21,11 +21,13 @@ operator can override by pointing \code{EPISODE_GEO_DATA} at their own file
 }
 \details{
 The contract is minimal and country-agnostic: an \code{sf} object with a
-\code{pc4} column (matching whatever an operator's own \code{episode_case.pc4}
+\code{pc} column (matching whatever an operator's own \code{episode_case.pc4}
 values are - postcodes, zip codes, municipality codes, anything; this
-package never validates or interprets that column beyond joining it)
-and a \code{geometry} column. \code{sf}/GDAL/GEOS/PROJ are a real system-level
-dependency beyond what CRAN alone can supply, so this whole feature is
-guarded end to end: no \code{sf} installed means the geography panel falls
-back to the existing PC bar breakdown, exactly as before this existed.
+package never validates or interprets that column beyond joining it,
+and it is deliberately named \code{pc}, not \code{pc4}, so nothing about the
+contract implies a 4-digit Dutch postcode) and a \code{geometry} column.
+\code{sf}/GDAL/GEOS/PROJ are a real system-level dependency beyond what
+CRAN alone can supply, so this whole feature is guarded end to end: no
+\code{sf} installed means the geography panel falls back to the existing PC
+bar breakdown, exactly as before this existed.
 }

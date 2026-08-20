@@ -42,7 +42,7 @@ episode_app_server_report <- function(input, output, session, con, db_path, lang
     )
 
     if (inherits(result, "error")) {
-      render_error(conditionMessage(result))
+      render_error(rlang::cnd_message(result, inherit = TRUE))
     } else {
       id <- selected_cluster_id()
       selected_cluster_id(NULL)

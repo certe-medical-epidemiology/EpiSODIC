@@ -87,11 +87,20 @@ episode_report_render <- function(con, cluster_id, output_dir, user_id = NA,
   data_path <- file.path(work_dir, "report_data.rds")
   saveRDS(report_data, data_path)
 
-  quarto::quarto_render(
-    input = file.path(work_dir, "cluster_report.qmd"),
-    execute_params = list(data_path = "report_data.rds"),
-    output_file = "report.html", quiet = TRUE, as_job = FALSE
-  )
+  tryCatch({
+    quarto::quarto_render(
+      input = file.path(work_dir, "cluster_report.qmd"),
+      execute_params = list(data_path = "report_data.rds"),
+      # quiet = FALSE (not TRUE): the quarto R package always captures the
+      # CLI's stderr into the condition it raises on failure, but only
+      # embeds it in the error *message* when the CLI itself was not told
+      # to be quiet - with quiet = TRUE the caller only ever sees "rerun
+      # with quiet = FALSE", never the actual underlying cause.
+      output_file = "report.html", quiet = FALSE, as_job = FALSE
+    )
+  }, error = function(e) {
+    stop("Quarto failed to render this report: ", rlang::cnd_message(e, inherit = TRUE), call. = FALSE)
+  })
 
   rendered_path <- file.path(work_dir, "report.html")
   if (!file.exists(rendered_path)) {

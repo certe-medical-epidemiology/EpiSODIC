@@ -14,19 +14,21 @@
 #' `EPISODE_PALETTE_CONFIG` already establish.
 #'
 #' The contract is minimal and country-agnostic: an `sf` object with a
-#' `pc4` column (matching whatever an operator's own `episode_case.pc4`
+#' `pc` column (matching whatever an operator's own `episode_case.pc4`
 #' values are - postcodes, zip codes, municipality codes, anything; this
-#' package never validates or interprets that column beyond joining it)
-#' and a `geometry` column. `sf`/GDAL/GEOS/PROJ are a real system-level
-#' dependency beyond what CRAN alone can supply, so this whole feature is
-#' guarded end to end: no `sf` installed means the geography panel falls
-#' back to the existing PC bar breakdown, exactly as before this existed.
+#' package never validates or interprets that column beyond joining it,
+#' and it is deliberately named `pc`, not `pc4`, so nothing about the
+#' contract implies a 4-digit Dutch postcode) and a `geometry` column.
+#' `sf`/GDAL/GEOS/PROJ are a real system-level dependency beyond what
+#' CRAN alone can supply, so this whole feature is guarded end to end: no
+#' `sf` installed means the geography panel falls back to the existing PC
+#' bar breakdown, exactly as before this existed.
 #' @name geo_data
 NULL
 
 #' Resolve the geographic reference dataset to use
 #'
-#' @param path Path to an `.rds` file holding an `sf` object with `pc4`
+#' @param path Path to an `.rds` file holding an `sf` object with `pc`
 #'   and `geometry` columns. Defaults to the `EPISODE_GEO_DATA`
 #'   environment variable; if unset (or the file does not exist), falls
 #'   back to the shipped Netherlands PC4 default.
@@ -37,14 +39,14 @@ episode_geo_source_resolve <- function(path = Sys.getenv("EPISODE_GEO_DATA", uns
 
   if (!is.na(path) && nzchar(path) && file.exists(path)) {
     geo <- tryCatch(readRDS(path), error = function(e) NULL)
-    if (!is.null(geo) && all(c("pc4", "geometry") %in% names(geo))) return(geo)
+    if (!is.null(geo) && all(c("pc", "geometry") %in% names(geo))) return(geo)
   }
   episode_geo_source_default()
 }
 
 #' The shipped Netherlands PC4 default
 #'
-#' @return An `sf` object with `pc4`, `geometry`, or `NULL` if `sf` is not
+#' @return An `sf` object with `pc`, `geometry`, or `NULL` if `sf` is not
 #'   installed.
 #' @keywords internal
 #' @noRd
@@ -58,12 +60,12 @@ episode_geo_source_default <- function() {
 
 #' Join case counts onto geographic reference data
 #'
-#' @param rows A data frame with `label` (PC4-equivalent codes) and `n`
+#' @param rows A data frame with `label` (PC-equivalent codes) and `n`
 #'   (case counts), from `episode_app_concentration()$rows`.
-#' @param geo_data An `sf` object with `pc4`/`geometry`, or `NULL` to
+#' @param geo_data An `sf` object with `pc`/`geometry`, or `NULL` to
 #'   resolve one via [episode_geo_source_resolve()].
 #' @return An `sf` object (a right join: every `geo_data` row is kept,
-#'   `n` is `NA` where `rows` has no matching `pc4`), or `NULL` if no
+#'   `n` is `NA` where `rows` has no matching `pc`), or `NULL` if no
 #'   geographic data is available at all.
 #' @keywords internal
 #' @noRd
@@ -71,8 +73,8 @@ episode_geo_join <- function(rows, geo_data = NULL) {
   geo_data <- geo_data %||% episode_geo_source_resolve()
   if (is.null(geo_data) || nrow(rows) == 0) return(NULL)
 
-  counts <- data.frame(pc4 = as.character(rows$label), n = rows$n, stringsAsFactors = FALSE)
-  geo_data$pc4 <- as.character(geo_data$pc4)
-  merged <- merge(geo_data, counts, by = "pc4", all.x = TRUE)
+  counts <- data.frame(pc = as.character(rows$label), n = rows$n, stringsAsFactors = FALSE)
+  geo_data$pc <- as.character(geo_data$pc)
+  merged <- merge(geo_data, counts, by = "pc", all.x = TRUE)
   sf::st_as_sf(merged)
 }

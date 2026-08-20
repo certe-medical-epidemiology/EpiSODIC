@@ -692,6 +692,60 @@ decisions survives.
     region-reference contract has actually been built yet - only the
     choropleth's geometry contract was in scope for this change.
 
+12. **Geographic reference data's join column renamed `pc4` -> `pc`.**
+    Feedback on item 11's shipped contract: `pc4` still implied a 4-digit
+    Dutch postcode even though the column was already documented as
+    accepting any code an operator's own `episode_case.pc4` values use.
+    Renamed the *contract's* column to `pc` in `R/geo_data.R`, the shipped
+    `inst/extdata/geo_postcodes4_nl.rds`, and `data-raw/
+    geo_postcodes4_nl.R`. `episode_case.pc4` itself (the case-level DB
+    column everything ultimately reads from) is unchanged - it is an
+    internal, longstanding field name, not part of the operator-facing
+    geo-data contract, and renaming it is a much larger, unrelated change
+    not in scope here. Also removed the choropleth's lat/lon graticule
+    and axis ticks (`coord_sf(datum = NA)`) - a map that isn't meant to
+    be read at coordinate precision doesn't need them.
+
+13. **Bug: "the condition has length > 1" on the Activiteit tab.**
+    `episode_app_activity_log()` built the "action" column for detection
+    runs via `episode_tr(paste0("activity.action_run_", runs$status), ...)`
+    - `episode_tr()` is a scalar helper (`if (key %in% names(table))`
+    inside it), so passing it a vector of keys only worked by accident
+    when exactly one run existed. Any real instance, with more than one
+    cron run recorded, hit this immediately. Fixed with `vapply()` over
+    `runs$status`, matching how every other per-row `action`/`actor`
+    label in the same function is already built. Regression test in
+    `test-app_assessment_read.R` seeds a second run with a different
+    status to catch this class of bug reappearing.
+
+14. **Archief showing no closed clusters is expected on a fresh instance,
+    not a gap.** Checked directly: a brand-new synthetic demo run has
+    zero closed clusters, because closure (`episode_derive_state()`)
+    requires either an assessor's explicit closure action or a terminal
+    verdict plus the closure criterion being met over time - neither has
+    happened yet on data nobody has assessed. `episode_app_archive()`
+    itself is unit-tested end-to-end (submit a terminal verdict, assert
+    it appears) and works correctly. Nothing to fix; noted here so this
+    doesn't get re-investigated as a bug later.
+
+15. **Report rendering: `quiet = TRUE` was swallowing the real Quarto
+    error.** The `quarto` R package always captures the CLI's stderr into
+    the condition it raises on failure, but only *includes* it in the
+    error message when the CLI itself was not told to run quietly - with
+    `quiet = TRUE` (this package's previous setting) a failure surfaced
+    only as "Error returned by quarto CLI... Rerun with `quiet = FALSE`
+    to see the full error message", with the actual cause never reaching
+    the caller (or the in-app error banner) at all. Changed to
+    `quiet = FALSE` in `episode_report_render()`, and both there and in
+    `episode_app_server_report()`'s error display, switched from
+    `conditionMessage()` to `rlang::cnd_message(e, inherit = TRUE)` so
+    the full parent-condition chain (the actual Quarto/pandoc/chunk
+    error) reaches the user, not just the wrapper's own top-level
+    message. Not independently verified against a real Quarto CLI
+    failure in this sandbox, which has no Quarto CLI installed at all
+    (only the R package) - verified by reading `quarto:::quarto_run()`
+    and `quarto:::wrap_quarto_error()`'s source directly instead.
+
 ## Parked for a future milestone
 
 1. **Cluster volume for endemic organisms at a single place.**

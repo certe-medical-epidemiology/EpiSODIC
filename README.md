@@ -143,7 +143,7 @@ feature did not exist. EpiSODE ships a Netherlands PC4 default
 `certegis` under the same GPL-2 licence - see `data-raw/
 geo_postcodes4_nl.R` for provenance), but geography is not
 Netherlands-specific: point `EPISODE_GEO_DATA` at your own `.rds` file
-holding an [`sf`](https://r-spatial.github.io/sf/) object with a `pc4`
+holding an [`sf`](https://r-spatial.github.io/sf/) object with a `pc`
 column (matching whatever your own `episode_case.pc4` values are -
 postcodes, zip codes, municipality codes, anything) and a `geometry`
 column, and it is used instead. See `R/geo_data.R` for the exact
@@ -185,7 +185,7 @@ Docker container) without editing R code.
 | `EPISODE_DB` | `episode_run_app()`, `episode_provision_user()` (`db_path` argument) | Path to the instance's SQLite database. |
 | `EPISODE_CONFIG` | `episode_run_cron()` (`episode_config_path` argument) | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`'s shipped defaults. |
 | `EPISODE_PALETTE_CONFIG` | `episode_palette()` (`palette_config_path` argument) | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`'s shipped defaults. Deliberately separate from `EPISODE_CONFIG`: colour is a display concern, never part of `episode_config_hash()`'s detection-reproducibility guarantee. |
-| `EPISODE_GEO_DATA` | `episode_geo_source_resolve()` (`path` argument) | Path to an `.rds` file holding an operator's own geographic reference data (an `sf` object with `pc4`/`geometry` columns), overriding the shipped Netherlands PC4 default. See "Geographic reference data" above. |
+| `EPISODE_GEO_DATA` | `episode_geo_source_resolve()` (`path` argument) | Path to an `.rds` file holding an operator's own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands PC4 default. See "Geographic reference data" above. |
 
 ## Licence
 

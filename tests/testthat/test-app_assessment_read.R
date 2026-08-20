@@ -57,11 +57,19 @@ test_that("episode_app_activity_log() surfaces assessments, closures, mutes, log
   episode_db_stream_mute_insert(env$con, stream_id = env$stream_id, muted_from = "2025-01-01",
                                  muted_until = "2025-02-01", reason = "seasonal", user_id = user_id)
 
+  # A second run with a different status: episode_tr() is a scalar helper,
+  # so building the "action" column from a vectorised runs$status (rather
+  # than vapply()-ing episode_tr() over it) throws "the condition has
+  # length > 1" as soon as more than one run exists with differing statuses.
+  second_run <- episode_db_run_start(env$con, "host", "account")
+  episode_db_run_finish(env$con, second_run, status = "failed")
+
   activity <- episode_app_activity_log(env$con)
   expect_true("aangemeld" %in% activity$action)          # login
   expect_true("geclassificeerd" %in% activity$action)    # assessment
   expect_true("signaleringsreeks gedempt" %in% activity$action)     # mute
   expect_true(any(startsWith(activity$action, "detectierun")))  # the cron run from app_read_setup()
+  expect_equal(sum(startsWith(activity$action, "detectierun")), 2)  # both runs
   expect_true(any(activity$is_system))       # the cron run from app_read_setup()
   expect_false(all(activity$is_system))      # human actions too
   expect_true(all(diff(as.numeric(as.POSIXct(activity$at, tz = "UTC"))) <= 0))  # descending

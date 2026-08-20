@@ -196,7 +196,7 @@ episode_app_activity_log <- function(con, limit = 200, lang = "nl") {
     rows[[length(rows) + 1]] <- data.frame(
       at = ifelse(is.na(runs$finished_at), runs$started_at, runs$finished_at),
       actor = episode_tr("activity.actor_system", lang = lang),
-      action = episode_tr(paste0("activity.action_run_", runs$status), lang = lang),
+      action = vapply(runs$status, function(s) episode_tr(paste0("activity.action_run_", s), lang = lang), character(1)),
       target = runs$host,
       is_system = TRUE, stringsAsFactors = FALSE
     )

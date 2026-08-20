@@ -103,8 +103,10 @@ episode_ui_geo_map_chart <- function(rows) {
     ggplot2::ggplot(geo) +
       ggplot2::geom_sf(ggplot2::aes(fill = .data$n), colour = pal$border, linewidth = 0.1) +
       ggplot2::scale_fill_gradient(low = pal$primary_tint, high = pal$primary, na.value = pal$bg_subtle) +
+      ggplot2::coord_sf(datum = NA) +
       episode_chart_theme() +
-      ggplot2::theme(axis.text = ggplot2::element_blank(), panel.grid.major.y = ggplot2::element_blank())
+      ggplot2::theme(axis.text = ggplot2::element_blank(), axis.ticks = ggplot2::element_blank(),
+                     panel.grid = ggplot2::element_blank())
   }, error = function(e) NULL)
 }
 
