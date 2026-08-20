@@ -1,6 +1,6 @@
 # EpiSODIC
 
-**Epidemiological Signal Observation, Detection, Identification and Classification**
+**Epidemiological Signal Observation, Detection, Identification, and Classification**
 
 **Architecture document, draft 6**
 Author: Dr M.S. Berends, Department of Medical Epidemiology, Certe

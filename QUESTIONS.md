@@ -1142,7 +1142,7 @@ to know which point in the project's history that decision was made.
     while the repository was brand new (created this week, never
     installed or referenced anywhere outside this development session):
     `EpiSODIC` (Epidemiological Signal Observation, Detection,
-    Identification and Classification) keeps the same acronym
+    Identification, and Classification) keeps the same acronym
     structure and pronunciation, verified against both the current CRAN
     package index and the Archive for the exact new name before
     adopting it. The `episode_` prefix on every exported and internal

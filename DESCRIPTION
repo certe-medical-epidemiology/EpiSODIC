@@ -1,6 +1,6 @@
 Package: EpiSODIC
 Type: Package
-Title: Epidemiological Signal Observation, Detection, Identification and
+Title: Epidemiological Signal Observation, Detection, Identification, and
     Classification
 Version: 0.1.0
 Authors@R: c(

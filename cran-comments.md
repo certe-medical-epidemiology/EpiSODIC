@@ -10,7 +10,7 @@ should be named in a way that does not conflict (irrespective of case)
 with any current or past CRAN package"), that conflict is not something
 we asked CRAN to make an exception for - we renamed instead, to
 `EpiSODIC` (Epidemiological Signal Observation, Detection,
-Identification and Classification), which has never existed as either a
+Identification, and Classification), which has never existed as either a
 current or archived CRAN package name (both `https://cran.r-project.org
 /package=episodic` and the corresponding Archive URL 404). The new name
 keeps the same backronym structure and pronunciation the package's
