@@ -1,33 +1,17 @@
-# ===================================================================== #
-#  An R package by Certe:                                               #
-#  https://github.com/certe-medical-epidemiology                        #
-#                                                                       #
-#  Licensed as GPL-v2.0.                                                #
-#                                                                       #
-#  Developed at non-profit organisation Certe Medical Diagnostics &     #
-#  Advice, department of Medical Epidemiology.                          #
-#                                                                       #
-#  This R package is free software; you can freely use and distribute   #
-#  it for both personal and commercial purposes under the terms of the  #
-#  GNU General Public License version 2.0 (GNU GPL-2), as published by  #
-#  the Free Software Foundation.                                        #
-#                                                                       #
-#  We created this package for both routine data analysis and academic  #
-#  research and it was publicly released in the hope that it will be    #
-#  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
-# ===================================================================== #
-
 library(EpiSODIC)
+# or:
+devtools::load_all()
 
 # A persistent path, not a tempfile: the point of manual testing is to
 # sign in, classify clusters, close them, mute a stream, generate a
 # report - and see that work still be there next time this script runs.
 # *.sqlite is already .gitignore'd, so this never gets committed.
-db_path <- "episodic-demo.sqlite"
+db_path <- tempfile(fileext = ".sqlite")
 
 Sys.setenv(
-  EPISODIC_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),
   EPISODIC_DB = db_path,
+  EPISODIC_LANGUAGE = "nl",
+  EPISODIC_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),
   EPISODIC_GEO_DATA = system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
 )
 

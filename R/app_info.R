@@ -81,7 +81,7 @@ episodic_ui_info_algorithms_table <- function(lang = "nl") {
         shiny::tags$tr(
           shiny::tags$td(shiny::HTML(episodic_ui_code_join(r$name))),
           shiny::tags$td(r$type),
-          shiny::tags$td(episodic_tr(r$key, lang = lang))
+          shiny::tags$td(shiny::HTML(episodic_tr(r$key, lang = lang)))
         )
       })
     )

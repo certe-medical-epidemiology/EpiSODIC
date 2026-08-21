@@ -1,6 +1,5 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
-run_test\.R
 ^data-raw$
 ^\.github$
 ^LICENSE\.md$

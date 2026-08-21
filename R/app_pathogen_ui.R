@@ -230,7 +230,7 @@ episodic_ui_pathogen_curve_panel <- function(screen, lang = "nl") {
   episodic_ui_panel(
     episodic_tr("pathogen.panel.curve.title", lang = lang),
     aside = episodic_tr("pathogen.panel.curve.aside", weeks = nrow(screen$weekly), lang = lang),
-    note = note,
+    note = shiny::HTML(note),
     shiny::renderPlot(
       episodic_ui_pathogen_curve_chart(screen$weekly, thresholds, lang = lang), height = 300
     )
