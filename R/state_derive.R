@@ -15,10 +15,11 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 #' Derive cluster state
 #'
-#' State is computed, never chosen, never stored on `episode_cluster`.
+#' State is computed, never chosen, never stored on `episodic_cluster`.
 #' This is a pure function: given the classification history and the
 #' case-free clock, it returns the same state every time, with no side
 #' effects and no database access, so it can be exhaustively unit tested
@@ -37,17 +38,17 @@
 #'
 #' @param events A data frame of this cluster's assessment events, ordered
 #'   ascending by `created_at`/`event_id` (as returned by
-#'   `episode_db_assessment_events()`). May have zero rows.
-#' @param changed_since_assessment Logical, from `episode_cluster`.
+#'   `episodic_db_assessment_events()`). May have zero rows.
+#' @param changed_since_assessment Logical, from `episodic_cluster`.
 #' @param closure_criterion_met Logical, whether the case-free/MEM closure
 #'   criterion has fired for this cluster's stream (see
 #'   `R/reconcile_closure.R`). Ignored unless the latest verdict is a
 #'   non-terminal epidemic verdict.
 #' @param explicitly_closed Logical, `TRUE` if a person closed this
 #'   cluster as an act distinct from any classification - represented as
-#'   an `episode_cluster_state` row with `trigger = "closure"` (a person)
+#'   an `episodic_cluster_state` row with `trigger = "closure"` (a person)
 #'   or `"system"` (cron auto-close), not as a new assessment event; see
-#'   `episode_app_explicitly_closed()`. Checked even when `events` has
+#'   `episodic_app_explicitly_closed()`. Checked even when `events` has
 #'   zero rows: a cluster the cron auto-closed without anyone ever
 #'   assessing it still has no assessment events.
 #' @param today The current date, for evaluating `snooze_until`.
@@ -55,7 +56,7 @@
 #'   `"closed"`, `"reassess"`.
 #' @keywords internal
 #' @noRd
-episode_derive_state <- function(events, changed_since_assessment = FALSE,
+episodic_derive_state <- function(events, changed_since_assessment = FALSE,
                                   closure_criterion_met = FALSE,
                                   explicitly_closed = FALSE, today = Sys.Date()) {
   if (nrow(events) == 0) {

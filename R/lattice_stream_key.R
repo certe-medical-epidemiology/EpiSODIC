@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 #' Compute a deterministic `stream_key` for a stream definition
 #'
@@ -38,7 +39,7 @@
 #' @return A 40-character lowercase hex SHA-1 digest.
 #' @keywords internal
 #' @noRd
-episode_stream_key <- function(level, pathogen, care_line = NA, region_code = NA,
+episodic_stream_key <- function(level, pathogen, care_line = NA, region_code = NA,
                                 institution_id = NA, ward = NA) {
   stopifnot(length(level) == 1, length(pathogen) == 1)
   fields <- vapply(

@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 #' Run ingestion: validate, deduplicate, resolve institutions, write cases
 #'
@@ -26,23 +27,23 @@
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param raw A data frame satisfying the ingestion interface, e.g. from
-#'   [episode_ingest_source_synthetic()].
-#' @param pathogen_config A data frame from `episode_db_pathogen_config()`.
+#'   [episodic_ingest_source_synthetic()].
+#' @param pathogen_config A data frame from `episodic_db_pathogen_config()`.
 #' @param run_id The `run_id` of the current detection run
-#'   (`episode_case.first_seen_run`).
+#'   (`episodic_case.first_seen_run`).
 #' @return Invisibly, a list with `n_raw`, `n_deduplicated` and `n_inserted`.
 #'
 #' Not exported: an operator's own transform step supplies a raw source to
-#' [episode_run_cron()] via `ingest_source_fn`, which calls this internally
+#' [episodic_run_cron()] via `ingest_source_fn`, which calls this internally
 #' with the pieces (`pathogen_config`, `run_id`) only a run in progress has
 #' - never something a caller assembles by hand.
 #' @keywords internal
 #' @noRd
-episode_ingest_run <- function(con, raw, pathogen_config, run_id) {
-  episode_ingest_validate_source(raw)
-  deduped <- episode_dedup(raw, pathogen_config)
+episodic_ingest_run <- function(con, raw, pathogen_config, run_id) {
+  episodic_ingest_validate_source(raw)
+  deduped <- episodic_dedup(raw, pathogen_config)
 
-  institution_lookup <- episode_ingest_resolve_institutions(con, deduped)
+  institution_lookup <- episodic_ingest_resolve_institutions(con, deduped)
 
   cases <- deduped
   cases$institution_id <- institution_lookup[cases$institution_key]
@@ -52,7 +53,7 @@ episode_ingest_run <- function(con, raw, pathogen_config, run_id) {
     "specialism", "pc", "sex", "age"
   )]
 
-  n_inserted <- episode_db_case_insert_new(con, cases, run_id)
+  n_inserted <- episodic_db_case_insert_new(con, cases, run_id)
 
   invisible(list(n_raw = nrow(raw), n_deduplicated = nrow(deduped), n_inserted = n_inserted))
 }
@@ -67,7 +68,7 @@ episode_ingest_run <- function(con, raw, pathogen_config, run_id) {
 #'   database `institution_id`.
 #' @keywords internal
 #' @noRd
-episode_ingest_resolve_institutions <- function(con, cases) {
+episodic_ingest_resolve_institutions <- function(con, cases) {
   distinct <- unique(cases[, c(
     "institution_key", "institution_display_name", "institution_type",
     "care_line", "municipality"
@@ -77,7 +78,7 @@ episode_ingest_resolve_institutions <- function(con, cases) {
   for (i in seq_len(nrow(distinct))) {
     row <- distinct[i, ]
     hashed_key <- digest::digest(row$institution_key, algo = "sha1", serialize = FALSE)
-    ids[i] <- episode_db_institution_upsert(
+    ids[i] <- episodic_db_institution_upsert(
       con,
       institution_key = hashed_key,
       display_name = row$institution_display_name,

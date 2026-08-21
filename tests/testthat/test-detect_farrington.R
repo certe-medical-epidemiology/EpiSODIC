@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 # These are effectively golden-file tests against the real
 # surveillance::farringtonFlexible() (CRAN, installable anywhere).
@@ -35,10 +36,10 @@ test_that("a sharp current-week spike against a stable baseline fires an alarm",
   counts[n_weeks] <- 25L  # unmistakable spike in the current week
 
   cases <- farrington_cases_from_weekly_counts(week_starts, counts)
-  config <- episode_test_config()
+  config <- episodic_test_config()
   run_date <- week_starts[n_weeks] + 3
 
-  result <- episode_detect_farrington(cases, stream_id = 1L, config = config, run_date = run_date)
+  result <- episodic_detect_farrington(cases, stream_id = 1L, config = config, run_date = run_date)
   expect_equal(nrow(result), 1)
   expect_equal(result$detector[1], "farrington")
   expect_equal(result$n_cases[1], 25)
@@ -52,30 +53,30 @@ test_that("a flat, unremarkable series produces no alarm", {
   counts <- stats::rpois(n_weeks, lambda = 3)  # no injected spike anywhere
 
   cases <- farrington_cases_from_weekly_counts(week_starts, counts)
-  config <- episode_test_config()
+  config <- episodic_test_config()
   run_date <- week_starts[n_weeks] + 3
 
-  result <- episode_detect_farrington(cases, stream_id = 1L, config = config, run_date = run_date)
+  result <- episodic_detect_farrington(cases, stream_id = 1L, config = config, run_date = run_date)
   expect_equal(nrow(result), 0)
 })
 
 test_that("insufficient baseline history returns no detection rather than erroring", {
   cases <- data.frame(sample_date = as.character(seq(as.Date("2025-01-01"), as.Date("2025-03-01"), by = "day")))
-  config <- episode_test_config()
-  result <- episode_detect_farrington(cases, stream_id = 1L, config = config, run_date = as.Date("2025-03-01"))
+  config <- episodic_test_config()
+  result <- episodic_detect_farrington(cases, stream_id = 1L, config = config, run_date = as.Date("2025-03-01"))
   expect_equal(nrow(result), 0)
 })
 
 test_that("an empty cases data frame returns no detection", {
   cases <- data.frame(sample_date = character(0))
-  config <- episode_test_config()
-  result <- episode_detect_farrington(cases, stream_id = 1L, config = config, run_date = as.Date("2025-01-01"))
+  config <- episodic_test_config()
+  result <- episodic_detect_farrington(cases, stream_id = 1L, config = config, run_date = as.Date("2025-01-01"))
   expect_equal(nrow(result), 0)
 })
 
-test_that("episode_weekly_bins() covers the full range and fills zero-count weeks", {
+test_that("episodic_weekly_bins() covers the full range and fills zero-count weeks", {
   dates <- as.Date(c("2025-01-01", "2025-01-01", "2025-01-15"))
-  weekly <- EpiSODIC:::episode_weekly_bins(dates, run_date = as.Date("2025-01-20"))
+  weekly <- EpiSODIC:::episodic_weekly_bins(dates, run_date = as.Date("2025-01-20"))
   expect_equal(sum(weekly$counts), 3)
   expect_true(any(weekly$counts == 0))  # the week between the two case-weeks
   expect_equal(length(weekly$week_start), length(weekly$counts))

@@ -29,9 +29,9 @@ that matter most for understanding how it works day to day.
 
 This package is open-source software with no data and no site-specific
 configuration in it. A running instance - a real department's database,
-its `EPISODE_CONFIG` overrides, its provisioned accounts - lives entirely
+its `EPISODIC_CONFIG` overrides, its provisioned accounts - lives entirely
 outside the package, addressed by environment variables
-(`EPISODE_DB`, `EPISODE_CONFIG`, `EPISODE_GEO_DATA`, ...; see the
+(`EPISODIC_DB`, `EPISODIC_CONFIG`, `EPISODIC_GEO_DATA`, ...; see the
 README's "Environment variables" table for the full list). Nothing about
 a specific laboratory, hospital, or patient can enter this repository,
 because the repository never holds any of it.
@@ -42,20 +42,20 @@ Two entry points, one database:
 
 ```r
 # The cron entry point - typically scheduled, e.g. nightly
-episode_run_cron(
-  db_path = "/path/to/episode.sqlite",
+episodic_run_cron(
+  db_path = "/path/to/episodic.sqlite",
   ingest_source_fn = my_extract_and_transform_function
 )
 
 # The interactive entry point - a Shiny app, read-only for anonymous
 # visitors, write access after signing in
-episode_run_app(db_path = "/path/to/episode.sqlite")
+episodic_run_app(db_path = "/path/to/episodic.sqlite")
 ```
 
-`episode_run_cron()` does the expensive work: ingestion, stream
+`episodic_run_cron()` does the expensive work: ingestion, stream
 enumeration, detection, reconciliation, all inside one transaction, so a
 partially failed run leaves no partial state and a retry is always safe.
-`episode_run_app()` only ever performs cheap reads against
+`episodic_run_app()` only ever performs cheap reads against
 already-computed results, plus a small set of insert-only write actions
 (classify, close, mute) gated behind authentication. This split keeps
 the interactive app fast regardless of how expensive detection itself

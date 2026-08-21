@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 #' Farrington detector
 #'
@@ -41,8 +42,8 @@
 #' @param run_date The date to treat as "today"; the most recent week
 #'   evaluated is the one containing this date.
 #' @param population An optional numeric vector of weekly population
-#'   (patient-days) aligned to `episode_weekly_bins()`'s own weeks, from
-#'   `episode_farrington_population_vector()`. `NULL` (default) fits on
+#'   (patient-days) aligned to `episodic_weekly_bins()`'s own weeks, from
+#'   `episodic_farrington_population_vector()`. `NULL` (default) fits on
 #'   raw counts, unnormalised - what every stream without institution
 #'   activity data gets.
 #' @return A data frame of detection records (zero or one row: Farrington
@@ -65,26 +66,26 @@
 #' the Noufaily et al. algorithm and is called directly here).
 #' @keywords internal
 #' @noRd
-episode_detect_farrington <- function(cases_for_stream, stream_id, config, run_date = Sys.Date(),
+episodic_detect_farrington <- function(cases_for_stream, stream_id, config, run_date = Sys.Date(),
                                        population = NULL) {
-  empty <- episode_detection_record(integer(0), character(0), character(0), character(0), integer(0))
+  empty <- episodic_detection_record(integer(0), character(0), character(0), character(0), integer(0))
 
   dates <- as.Date(cases_for_stream$sample_date)
   if (length(dates) == 0) return(empty)
 
   fc <- config$farrington
-  weekly <- episode_weekly_bins(dates, run_date)
+  weekly <- episodic_weekly_bins(dates, run_date)
 
   min_weeks_required <- (fc$b + 1) * 52
   if (length(weekly$counts) < min_weeks_required) {
     return(empty)  # insufficient baseline history for the configured b
   }
 
-  result <- episode_farrington_fit(weekly, range_idx = length(weekly$counts), fc = fc, population = population)
+  result <- episodic_farrington_fit(weekly, range_idx = length(weekly$counts), fc = fc, population = population)
   if (is.null(result) || !isTRUE(as.logical(result@alarm[1, 1]))) return(empty)
 
   current_week_start <- weekly$week_start[length(weekly$week_start)]
-  episode_detection_record(
+  episodic_detection_record(
     stream_id = stream_id, detector = "farrington",
     first_day = as.character(current_week_start),
     last_day = as.character(current_week_start + 6),
@@ -100,10 +101,10 @@ episode_detect_farrington <- function(cases_for_stream, stream_id, config, run_d
 #' The app performs cheap reads only and cannot re-run
 #' `farringtonFlexible()` at render time, so the cron must persist a
 #' continuous expected/upperbound series rather than only the current
-#' week's alarm status (see `episode_detect_farrington()`). This
+#' week's alarm status (see `episodic_detect_farrington()`). This
 #' function returns that series; the caller
-#' (`episode_run_cron()`) is responsible for upserting it into
-#' `episode_stream_trend`.
+#' (`episodic_run_cron()`) is responsible for upserting it into
+#' `episodic_stream_trend`.
 #'
 #' Only the trailing `n_weeks_to_compute` weeks are (re-)evaluated per call,
 #' not the whole history: on a normal nightly run that is 1 (today's week
@@ -115,17 +116,17 @@ episode_detect_farrington <- function(cases_for_stream, stream_id, config, run_d
 #' @param config The resolved configuration; uses `config$farrington`.
 #' @param run_date The date to treat as "today".
 #' @param n_weeks_existing How many trend weeks are already persisted for
-#'   this stream (from `episode_db_stream_trend()`); determines how much
+#'   this stream (from `episodic_db_stream_trend()`); determines how much
 #'   backfill is attempted.
 #' @param max_backfill_weeks Cap on how many weeks a single call will ever
 #'   (re-)compute, to bound cron run time. Matches the multi-year trend
 #'   panel's own display window.
-#' @param population See `episode_detect_farrington()`.
+#' @param population See `episodic_detect_farrington()`.
 #' @return A data frame with `week_start`, `n_cases`, `expected`,
 #'   `upperbound` (zero rows if ineligible).
 #' @keywords internal
 #' @noRd
-episode_farrington_trend <- function(cases_for_stream, config, run_date = Sys.Date(),
+episodic_farrington_trend <- function(cases_for_stream, config, run_date = Sys.Date(),
                                       n_weeks_existing = 0L, max_backfill_weeks = 156L,
                                       population = NULL) {
   empty <- data.frame(week_start = as.Date(character(0)), n_cases = integer(0),
@@ -135,7 +136,7 @@ episode_farrington_trend <- function(cases_for_stream, config, run_date = Sys.Da
   if (length(dates) == 0) return(empty)
 
   fc <- config$farrington
-  weekly <- episode_weekly_bins(dates, run_date)
+  weekly <- episodic_weekly_bins(dates, run_date)
 
   min_weeks_required <- (fc$b + 1) * 52
   if (length(weekly$counts) < min_weeks_required) return(empty)
@@ -146,7 +147,7 @@ episode_farrington_trend <- function(cases_for_stream, config, run_date = Sys.Da
     length(weekly$counts)
   )
 
-  result <- episode_farrington_fit(weekly, range_idx = range_idx, fc = fc, population = population)
+  result <- episodic_farrington_fit(weekly, range_idx = range_idx, fc = fc, population = population)
   if (is.null(result)) return(empty)
 
   data.frame(
@@ -160,7 +161,7 @@ episode_farrington_trend <- function(cases_for_stream, config, run_date = Sys.Da
 
 #' @keywords internal
 #' @noRd
-episode_farrington_fit <- function(weekly, range_idx, fc, population = NULL) {
+episodic_farrington_fit <- function(weekly, range_idx, fc, population = NULL) {
   use_population <- !is.null(population) && length(population) == length(weekly$counts)
   sts_obj <- surveillance::sts(
     observed = weekly$counts,
@@ -189,23 +190,23 @@ episode_farrington_fit <- function(weekly, range_idx, fc, population = NULL) {
 #' identical transmission-per-patient-day. `NULL` when `institution_id`
 #' is `NA` (non-institution streams) or no activity data exists at all
 #' for it - callers pass `NULL` straight through to
-#' `episode_detect_farrington()`/`episode_farrington_trend()`, which
+#' `episodic_detect_farrington()`/`episodic_farrington_trend()`, which
 #' then fit on raw counts.
 #'
-#' Only `episode_institution_activity` (L2, whole-institution) exists in
+#' Only `episodic_institution_activity` (L2, whole-institution) exists in
 #' the schema - there is no ward-level (L1) activity table, so L1
 #' streams always get `NULL` here regardless of `institution_id`.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param institution_id An `episode_institution` id, or `NA`.
-#' @param level A stream's `level`, from `episode_stream`.
-#' @param week_start The `Date` vector from `episode_weekly_bins()`.
+#' @param institution_id An `episodic_institution` id, or `NA`.
+#' @param level A stream's `level`, from `episodic_stream`.
+#' @param week_start The `Date` vector from `episodic_weekly_bins()`.
 #' @return A numeric vector the same length as `week_start`, or `NULL`.
 #' @keywords internal
 #' @noRd
-episode_farrington_population_vector <- function(con, institution_id, level, week_start) {
+episodic_farrington_population_vector <- function(con, institution_id, level, week_start) {
   if (!identical(level, "pathogen_institution") || is.na(institution_id)) return(NULL)
-  activity <- episode_db_institution_activity(con, institution_id)
+  activity <- episodic_db_institution_activity(con, institution_id)
   if (nrow(activity) == 0) return(NULL)
 
   activity_start <- as.Date(activity$period_start)
@@ -229,7 +230,7 @@ episode_farrington_population_vector <- function(con, institution_id, level, wee
 #'   `counts` (an integer vector, same length).
 #' @keywords internal
 #' @noRd
-episode_weekly_bins <- function(dates, run_date) {
+episodic_weekly_bins <- function(dates, run_date) {
   floor_to_monday <- function(d) d - (as.integer(format(d, "%u")) - 1)
   first_week <- floor_to_monday(min(dates))
   last_week <- floor_to_monday(as.Date(run_date))

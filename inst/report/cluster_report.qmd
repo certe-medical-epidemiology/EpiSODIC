@@ -27,6 +27,7 @@ params:
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 -->
 
 ```{r setup, include=FALSE}
@@ -36,11 +37,11 @@ library(ggplot2)
 d <- readRDS(params$data_path)
 obj <- d$obj
 lang <- if (is.null(d$lang)) "nl" else d$lang
-tr <- function(key, ...) episode_tr(key, lang = lang, ...)
+tr <- function(key, ...) episodic_tr(key, lang = lang, ...)
 na_dash <- function(x) if (is.na(x)) "-" else x
 ```
 
-# `r episode_ui_italicise_taxon(obj$pathogen)` — `r tr(paste0("level.", obj$level))`
+# `r episodic_ui_italicise_taxon(obj$pathogen)` — `r tr(paste0("level.", obj$level))`
 
 **`r obj$place`** &middot; `r tr("report.cluster")` #`r obj$id` &middot; `r obj$first_day` &ndash; `r obj$last_day`
 
@@ -59,7 +60,7 @@ na_dash <- function(x) if (is.na(x)) "-" else x
 | `r tr("dossier.stat.ratio")` | `r if (is.na(obj$ratio)) tr("report.na") else round(obj$ratio, 1)` |
 | `r tr("dossier.stat.unique_patients")` | `r obj$unique_patients` (`r tr("report.isolates_suffix", n = obj$n_isolates)`) |
 | `r tr("report.priority_score")` | `r round(obj$priority_score, 0)` |
-| `r tr("report.detected_by")` | `r episode_ui_code_join(obj$detectors)` |
+| `r tr("report.detected_by")` | `r episodic_ui_code_join(obj$detectors)` |
 
 ```{r curve-shape, results='asis'}
 if (!is.null(obj$curve_shape) && !is.na(obj$curve_shape)) {
@@ -71,7 +72,7 @@ if (!is.null(obj$curve_shape) && !is.na(obj$curve_shape)) {
 
 ```{r epi-curve, fig.width=7, fig.height=3}
 if (!is.null(d$epi_curve) && nrow(d$epi_curve) > 0) {
-  print(episode_ui_epi_curve_chart(d$epi_curve, lang = lang))
+  print(episodic_ui_epi_curve_chart(d$epi_curve, lang = lang))
 } else {
   cat(tr("report.no_data"))
 }
@@ -85,7 +86,7 @@ if (!is.null(obj$rt) && nrow(obj$rt) > 0) {
 
 ```{r rt-plot, fig.width=7, fig.height=2.5}
 if (!is.null(obj$rt) && nrow(obj$rt) > 0) {
-  print(episode_ui_rt_chart(obj$rt, lang = lang))
+  print(episodic_ui_rt_chart(obj$rt, lang = lang))
 }
 ```
 
@@ -97,7 +98,7 @@ if (!is.null(d$trend) && nrow(d$trend) >= 4) {
 
 ```{r trend-plot, fig.width=7, fig.height=2.5}
 if (!is.null(d$trend) && nrow(d$trend) >= 4) {
-  print(episode_ui_trend_chart(d$trend, lang = lang))
+  print(episodic_ui_trend_chart(d$trend, lang = lang))
 }
 ```
 

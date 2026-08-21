@@ -93,7 +93,7 @@
 
   "panel.geo.title": "Geographic spread",
   "panel.geo.aside": "PC",
-  "panel.geo.unit": "A map appears here once geographic reference data is configured (EPISODE_GEO_DATA).",
+  "panel.geo.unit": "A map appears here once geographic reference data is configured (EPISODIC_GEO_DATA).",
   "panel.geo.empty": "No postcode data available.",
 
   "panel.places.title_ward": "Ward",

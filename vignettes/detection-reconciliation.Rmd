@@ -108,5 +108,5 @@ A cluster's displayed state (new, assessing, monitoring, ready to close,
 closed, needs reassessment) is *computed*, every time, from its
 classification history, the case-free clock, and whether it changed
 since it was last assessed - never stored and hand-edited. See
-`episode_derive_state()` for the exact rule and `state_derive.R`'s own
+`episodic_derive_state()` for the exact rule and `state_derive.R`'s own
 tests for every transition it covers.

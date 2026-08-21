@@ -15,18 +15,19 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 test_that("output$auth_control actually renders the sign-in link (anonymous) and updates on login/logout", {
   skip_if_not_installed("sodium")
 
   db_path <- tempfile(fileext = ".sqlite")
-  con <- episode_db_create(db_path)
-  user_id <- episode_db_app_user_insert(con, "jdoe", "Jane Doe", "j@x.nl",
+  con <- episodic_db_create(db_path)
+  user_id <- episodic_db_app_user_insert(con, "jdoe", "Jane Doe", "j@x.nl",
                                          sodium::password_store("initial123"))
-  DBI::dbExecute(con, "UPDATE episode_app_user SET must_change = 0 WHERE user_id = ?", params = list(user_id))
+  DBI::dbExecute(con, "UPDATE episodic_app_user SET must_change = 0 WHERE user_id = ?", params = list(user_id))
   DBI::dbDisconnect(con)
 
-  server <- episode_app_server_factory(db_path, lang = "nl")
+  server <- episodic_app_server_factory(db_path, lang = "nl")
   shiny::testServer(server, {
     session$flushReact()
     rendered <- paste(output$auth_control, collapse = "\n")
@@ -50,29 +51,29 @@ test_that("output$auth_control actually renders the sign-in link (anonymous) and
 
 test_that("the report-render button actually surfaces a clear error via output$report_render_error when quarto is unavailable", {
   skip_if_not_installed("sodium")
-  skip_if(episode_quarto_available(), "quarto CLI is actually available in this environment")
+  skip_if(episodic_quarto_available(), "quarto CLI is actually available in this environment")
 
   db_path <- tempfile(fileext = ".sqlite")
-  con <- episode_db_create(db_path)
-  user_id <- episode_db_app_user_insert(con, "jdoe", "Jane Doe", "j@x.nl", sodium::password_store("initial123"))
-  DBI::dbExecute(con, "UPDATE episode_app_user SET must_change = 0 WHERE user_id = ?", params = list(user_id))
+  con <- episodic_db_create(db_path)
+  user_id <- episodic_db_app_user_insert(con, "jdoe", "Jane Doe", "j@x.nl", sodium::password_store("initial123"))
+  DBI::dbExecute(con, "UPDATE episodic_app_user SET must_change = 0 WHERE user_id = ?", params = list(user_id))
 
-  institution_id <- episode_db_institution_upsert(
+  institution_id <- episodic_db_institution_upsert(
     con, institution_key = digest::digest("hosp-server-report", algo = "sha1", serialize = FALSE),
     display_name = "Test Hospital", institution_type = "hospital", care_line = "second", is_monitored = TRUE
   )
-  stream_id <- episode_db_stream_upsert(
-    con, stream_key = episode_stream_key("pathogen_institution", "Norovirus", institution_id = institution_id),
+  stream_id <- episodic_db_stream_upsert(
+    con, stream_key = episodic_stream_key("pathogen_institution", "Norovirus", institution_id = institution_id),
     level = "pathogen_institution", pathogen = "Norovirus", institution_id = institution_id,
     observed_date = "2025-01-01"
   )
-  run_id <- episode_db_run_start(con, "h", "a")
-  cluster_id <- episode_db_cluster_insert(con, stream_id = stream_id, first_day = "2025-01-01",
+  run_id <- episodic_db_run_start(con, "h", "a")
+  cluster_id <- episodic_db_cluster_insert(con, stream_id = stream_id, first_day = "2025-01-01",
                                            last_day = "2025-01-02", n_cases = 3, priority_score = 50,
                                            detector_agreement = 1, run_id = run_id)
   DBI::dbDisconnect(con)
 
-  server <- episode_app_server_factory(db_path, lang = "nl")
+  server <- episodic_app_server_factory(db_path, lang = "nl")
   shiny::testServer(server, {
     session$setInputs(auth_username_val = "jdoe", auth_password_val = "initial123")
     session$setInputs(auth_login_submit = 1)
@@ -89,26 +90,26 @@ test_that("closing a cluster actually updates the rail and the Archief screen wi
   skip_if_not_installed("sodium")
 
   db_path <- tempfile(fileext = ".sqlite")
-  con <- episode_db_create(db_path)
-  user_id <- episode_db_app_user_insert(con, "jdoe", "Jane Doe", "j@x.nl", sodium::password_store("initial123"))
-  DBI::dbExecute(con, "UPDATE episode_app_user SET must_change = 0 WHERE user_id = ?", params = list(user_id))
+  con <- episodic_db_create(db_path)
+  user_id <- episodic_db_app_user_insert(con, "jdoe", "Jane Doe", "j@x.nl", sodium::password_store("initial123"))
+  DBI::dbExecute(con, "UPDATE episodic_app_user SET must_change = 0 WHERE user_id = ?", params = list(user_id))
 
-  institution_id <- episode_db_institution_upsert(
+  institution_id <- episodic_db_institution_upsert(
     con, institution_key = digest::digest("hosp-server-rail", algo = "sha1", serialize = FALSE),
     display_name = "Test Hospital", institution_type = "hospital", care_line = "second", is_monitored = TRUE
   )
-  stream_id <- episode_db_stream_upsert(
-    con, stream_key = episode_stream_key("pathogen_institution", "Norovirus", institution_id = institution_id),
+  stream_id <- episodic_db_stream_upsert(
+    con, stream_key = episodic_stream_key("pathogen_institution", "Norovirus", institution_id = institution_id),
     level = "pathogen_institution", pathogen = "Norovirus", institution_id = institution_id,
     observed_date = "2025-01-01"
   )
-  run_id <- episode_db_run_start(con, "h", "a")
-  cluster_id <- episode_db_cluster_insert(con, stream_id = stream_id, first_day = "2025-01-01",
+  run_id <- episodic_db_run_start(con, "h", "a")
+  cluster_id <- episodic_db_cluster_insert(con, stream_id = stream_id, first_day = "2025-01-01",
                                            last_day = "2025-01-02", n_cases = 3, priority_score = 50,
                                            detector_agreement = 1, run_id = run_id)
   DBI::dbDisconnect(con)
 
-  server <- episode_app_server_factory(db_path, lang = "nl")
+  server <- episodic_app_server_factory(db_path, lang = "nl")
   shiny::testServer(server, {
     session$setInputs(auth_username_val = "jdoe", auth_password_val = "initial123")
     session$setInputs(auth_login_submit = 1)
@@ -137,27 +138,27 @@ test_that("bulk_assess_submit applies one classification to several clusters in 
   skip_if_not_installed("sodium")
 
   db_path <- tempfile(fileext = ".sqlite")
-  con <- episode_db_create(db_path)
-  user_id <- episode_db_app_user_insert(con, "jdoe", "Jane Doe", "j@x.nl", sodium::password_store("initial123"))
-  DBI::dbExecute(con, "UPDATE episode_app_user SET must_change = 0 WHERE user_id = ?", params = list(user_id))
+  con <- episodic_db_create(db_path)
+  user_id <- episodic_db_app_user_insert(con, "jdoe", "Jane Doe", "j@x.nl", sodium::password_store("initial123"))
+  DBI::dbExecute(con, "UPDATE episodic_app_user SET must_change = 0 WHERE user_id = ?", params = list(user_id))
 
-  institution_id <- episode_db_institution_upsert(
+  institution_id <- episodic_db_institution_upsert(
     con, institution_key = digest::digest("hosp-bulk", algo = "sha1", serialize = FALSE),
     display_name = "Test Hospital", institution_type = "hospital", care_line = "second", is_monitored = TRUE
   )
-  run_id <- episode_db_run_start(con, "h", "a")
+  run_id <- episodic_db_run_start(con, "h", "a")
   cluster_ids <- vapply(c("Norovirus", "Influenza"), function(pathogen) {
-    stream_id <- episode_db_stream_upsert(
-      con, stream_key = episode_stream_key("pathogen_institution", pathogen, institution_id = institution_id),
+    stream_id <- episodic_db_stream_upsert(
+      con, stream_key = episodic_stream_key("pathogen_institution", pathogen, institution_id = institution_id),
       level = "pathogen_institution", pathogen = pathogen, institution_id = institution_id,
       observed_date = "2025-01-01"
     )
-    episode_db_cluster_insert(con, stream_id = stream_id, first_day = "2025-01-01", last_day = "2025-01-02",
+    episodic_db_cluster_insert(con, stream_id = stream_id, first_day = "2025-01-01", last_day = "2025-01-02",
                                n_cases = 3, priority_score = 50, detector_agreement = 1, run_id = run_id)
   }, integer(1))
   DBI::dbDisconnect(con)
 
-  server <- episode_app_server_factory(db_path, lang = "nl")
+  server <- episodic_app_server_factory(db_path, lang = "nl")
   shiny::testServer(server, {
     session$setInputs(auth_username_val = "jdoe", auth_password_val = "initial123")
     session$setInputs(auth_login_submit = 1)
@@ -176,9 +177,9 @@ test_that("bulk_assess_submit applies one classification to several clusters in 
     expect_false(grepl("Norovirus", rail_after))  # artefact is terminal: both close, both leave the rail
     expect_false(grepl("Influenza", rail_after))
 
-    con <- episode_db_connect(db_path)
+    con <- episodic_db_connect(db_path)
     on.exit(DBI::dbDisconnect(con))
-    events <- DBI::dbGetQuery(con, "SELECT cluster_id, verdict, rationale FROM episode_assessment_event")
+    events <- DBI::dbGetQuery(con, "SELECT cluster_id, verdict, rationale FROM episodic_assessment_event")
     expect_equal(nrow(events), 2)
     expect_true(all(events$verdict == "artefact"))
     expect_true(all(grepl("reagent lot", events$rationale)))
@@ -189,25 +190,25 @@ test_that("bulk_assess_submit is a no-op without a rationale, even if the client
   skip_if_not_installed("sodium")
 
   db_path <- tempfile(fileext = ".sqlite")
-  con <- episode_db_create(db_path)
-  user_id <- episode_db_app_user_insert(con, "jdoe", "Jane Doe", "j@x.nl", sodium::password_store("initial123"))
-  DBI::dbExecute(con, "UPDATE episode_app_user SET must_change = 0 WHERE user_id = ?", params = list(user_id))
-  institution_id <- episode_db_institution_upsert(
+  con <- episodic_db_create(db_path)
+  user_id <- episodic_db_app_user_insert(con, "jdoe", "Jane Doe", "j@x.nl", sodium::password_store("initial123"))
+  DBI::dbExecute(con, "UPDATE episodic_app_user SET must_change = 0 WHERE user_id = ?", params = list(user_id))
+  institution_id <- episodic_db_institution_upsert(
     con, institution_key = digest::digest("hosp-bulk2", algo = "sha1", serialize = FALSE),
     display_name = "Test Hospital", institution_type = "hospital", care_line = "second", is_monitored = TRUE
   )
-  stream_id <- episode_db_stream_upsert(
-    con, stream_key = episode_stream_key("pathogen_institution", "Norovirus", institution_id = institution_id),
+  stream_id <- episodic_db_stream_upsert(
+    con, stream_key = episodic_stream_key("pathogen_institution", "Norovirus", institution_id = institution_id),
     level = "pathogen_institution", pathogen = "Norovirus", institution_id = institution_id,
     observed_date = "2025-01-01"
   )
-  run_id <- episode_db_run_start(con, "h", "a")
-  cluster_id <- episode_db_cluster_insert(con, stream_id = stream_id, first_day = "2025-01-01",
+  run_id <- episodic_db_run_start(con, "h", "a")
+  cluster_id <- episodic_db_cluster_insert(con, stream_id = stream_id, first_day = "2025-01-01",
                                            last_day = "2025-01-02", n_cases = 3, priority_score = 50,
                                            detector_agreement = 1, run_id = run_id)
   DBI::dbDisconnect(con)
 
-  server <- episode_app_server_factory(db_path, lang = "nl")
+  server <- episodic_app_server_factory(db_path, lang = "nl")
   shiny::testServer(server, {
     session$setInputs(auth_username_val = "jdoe", auth_password_val = "initial123")
     session$setInputs(auth_login_submit = 1)
@@ -216,17 +217,17 @@ test_that("bulk_assess_submit is a no-op without a rationale, even if the client
     session$setInputs(bulk_assess_submit = list(cluster_ids = cluster_id, verdict = "artefact", rationale = ""))
     session$flushReact()
 
-    con <- episode_db_connect(db_path)
+    con <- episodic_db_connect(db_path)
     on.exit(DBI::dbDisconnect(con))
-    expect_equal(DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM episode_assessment_event")$n, 0)
+    expect_equal(DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM episodic_assessment_event")$n, 0)
   })
 })
 
 test_that("output$main_view actually renders the info screen when nav_view is set to 'info'", {
   db_path <- tempfile(fileext = ".sqlite")
-  episode_db_create(db_path)
+  episodic_db_create(db_path)
 
-  server <- episode_app_server_factory(db_path, lang = "nl")
+  server <- episodic_app_server_factory(db_path, lang = "nl")
   shiny::testServer(server, {
     session$setInputs(nav_view = "info")
     session$flushReact()
@@ -237,9 +238,9 @@ test_that("output$main_view actually renders the info screen when nav_view is se
 
 test_that("output$main_view actually renders the performance screen when nav_view is set to 'performance'", {
   db_path <- tempfile(fileext = ".sqlite")
-  episode_db_create(db_path)
+  episodic_db_create(db_path)
 
-  server <- episode_app_server_factory(db_path, lang = "nl")
+  server <- episodic_app_server_factory(db_path, lang = "nl")
   shiny::testServer(server, {
     session$setInputs(nav_view = "performance")
     session$flushReact()

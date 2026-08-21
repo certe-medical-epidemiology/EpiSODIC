@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 #' Authentication server logic
 #'
@@ -29,11 +30,11 @@
 #'   or `NULL`.
 #' @keywords internal
 #' @noRd
-episode_app_server_auth <- function(input, output, session, con, lang = "nl") {
+episodic_app_server_auth <- function(input, output, session, con, lang = "nl") {
   current_user <- shiny::reactiveVal(NULL)
 
   shiny::observeEvent(input$auth_show_login, {
-    shiny::showModal(episode_ui_login_modal(lang = lang))
+    shiny::showModal(episodic_ui_login_modal(lang = lang))
   })
 
   shiny::observeEvent(input$auth_cancel_login, shiny::removeModal())
@@ -41,14 +42,14 @@ episode_app_server_auth <- function(input, output, session, con, lang = "nl") {
   shiny::observeEvent(input$auth_login_submit, {
     username <- input$auth_username_val %||% ""
     password <- input$auth_password_val %||% ""
-    result <- episode_auth_login(con, username, password)
+    result <- episodic_auth_login(con, username, password)
     if (!isTRUE(result$ok)) {
-      shiny::showModal(episode_ui_login_modal(error = TRUE, lang = lang))
+      shiny::showModal(episodic_ui_login_modal(error = TRUE, lang = lang))
       return(invisible(NULL))
     }
     current_user(result$user)
     if (isTRUE(result$must_change)) {
-      shiny::showModal(episode_ui_must_change_modal(lang = lang))
+      shiny::showModal(episodic_ui_must_change_modal(lang = lang))
     } else {
       shiny::removeModal()
     }
@@ -63,15 +64,15 @@ episode_app_server_auth <- function(input, output, session, con, lang = "nl") {
     shiny::req(user)
 
     if (nchar(new_pw) < 8) {
-      shiny::showModal(episode_ui_must_change_modal(error = episode_tr("auth.password_too_short", lang = lang), lang = lang))
+      shiny::showModal(episodic_ui_must_change_modal(error = episodic_tr("auth.password_too_short", lang = lang), lang = lang))
       return(invisible(NULL))
     }
     if (!identical(new_pw, confirm_pw)) {
-      shiny::showModal(episode_ui_must_change_modal(error = episode_tr("auth.password_mismatch", lang = lang), lang = lang))
+      shiny::showModal(episodic_ui_must_change_modal(error = episodic_tr("auth.password_mismatch", lang = lang), lang = lang))
       return(invisible(NULL))
     }
 
-    episode_auth_change_password(con, user$user_id, new_pw)
+    episodic_auth_change_password(con, user$user_id, new_pw)
     shiny::removeModal()
   })
 

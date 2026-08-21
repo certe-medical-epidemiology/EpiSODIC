@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 # Provenance script for inst/extdata/geo_postcodes4_nl.rds - not run at
 # install or check time (data-raw/ is .Rbuildignore'd), kept only so the
@@ -25,8 +26,8 @@
 # certegis itself is no longer a dependency of EpiSODIC: the geography
 # panel's data contract (R/geo_data.R) is deliberately generic - an sf
 # object with `pc`/`geometry` columns - so any operator, anywhere, can
-# point EPISODE_GEO_DATA at their own equivalent file. `pc` matches
-# `episode_case.pc`'s own generic values (postcodes, zip codes,
+# point EPISODIC_GEO_DATA at their own equivalent file. `pc` matches
+# `episodic_case.pc`'s own generic values (postcodes, zip codes,
 # municipality codes, anything); it is not itself Dutch-postcode-specific
 # despite the shipped default being Dutch four-digit postcodes.
 # This script only produces that shipped Netherlands default, trimmed to

@@ -15,12 +15,13 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 #' Common detection record
 #'
 #' Every detector, whatever its source, produces the same shape of record
 #' so that reconciliation (`R/reconcile_*.R`) never needs to know which
-#' detector fired. This matches the columns of `episode_detection`.
+#' detector fired. This matches the columns of `episodic_detection`.
 #'
 #' @param stream_id The stream this detection belongs to.
 #' @param detector One of `'clusters'`, `'farrington'`, `'ears'`, `'mem'`,
@@ -33,7 +34,7 @@
 #' @return A one-row data frame in the shape reconciliation expects.
 #' @keywords internal
 #' @noRd
-episode_detection_record <- function(stream_id, detector, first_day, last_day, n_cases,
+episodic_detection_record <- function(stream_id, detector, first_day, last_day, n_cases,
                                       expected = NA_real_, upperbound = NA_real_,
                                       params = list()) {
   if (length(n_cases) == 0) {

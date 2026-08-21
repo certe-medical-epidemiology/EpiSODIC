@@ -15,16 +15,17 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 #' Ingestion interface
 #'
 #' Defines the contract that any raw case data source must satisfy before
-#' `episode_ingest_run()` (see `R/ingest_pipeline.R`) can turn it into rows
-#' of `episode_case`. This is the entire boundary between EpiSODIC and
+#' `episodic_ingest_run()` (see `R/ingest_pipeline.R`) can turn it into rows
+#' of `episodic_case`. This is the entire boundary between EpiSODIC and
 #' whatever laboratory or hospital system an operator runs: EpiSODIC
 #' never calls any data source itself (see `README.md`'s data format
 #' section) - the operator's own cron script extracts and transforms
-#' into exactly this shape, then calls [episode_run_cron()] with a
+#' into exactly this shape, then calls [episodic_run_cron()] with a
 #' function that returns it.
 #' The only implementation shipped in this package is the synthetic
 #' generator (`R/ingest_synthetic.R`), used for the bundled demo.
@@ -49,9 +50,9 @@ NULL
 
 #' @rdname ingest_interface
 #' @examples
-#' episode_ingest_columns
+#' episodic_ingest_columns
 #' @export
-episode_ingest_columns <- c(
+episodic_ingest_columns <- c(
   "source_key", "patient_key", "sample_date", "receipt_date", "pathogen",
   "care_line", "institution_key",
   "institution_display_name", "institution_type", "municipality",
@@ -63,20 +64,20 @@ episode_ingest_columns <- c(
 #' @param raw A data frame as returned by an ingestion source function.
 #' @return `raw`, invisibly, if valid. Errors otherwise.
 #' @examples
-#' raw <- episode_ingest_source_synthetic(
+#' raw <- episodic_ingest_source_synthetic(
 #'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-01-31")
 #' )
-#' episode_ingest_validate_source(raw)
+#' episodic_ingest_validate_source(raw)
 #' @export
-episode_ingest_validate_source <- function(raw) {
-  missing_cols <- setdiff(episode_ingest_columns, names(raw))
+episodic_ingest_validate_source <- function(raw) {
+  missing_cols <- setdiff(episodic_ingest_columns, names(raw))
   if (length(missing_cols) > 0) {
     stop(
       "Ingestion source is missing required column(s): ",
       paste(missing_cols, collapse = ", "), call. = FALSE
     )
   }
-  extra_cols <- setdiff(names(raw), episode_ingest_columns)
+  extra_cols <- setdiff(names(raw), episodic_ingest_columns)
   if (length(extra_cols) > 0) {
     stop(
       "Ingestion source returned column(s) outside the allow-list: ",

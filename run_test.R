@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 library(EpiSODIC)
 
@@ -22,12 +23,12 @@ library(EpiSODIC)
 # sign in, classify clusters, close them, mute a stream, generate a
 # report - and see that work still be there next time this script runs.
 # *.sqlite is already .gitignore'd, so this never gets committed.
-db_path <- "episode-demo.sqlite"
+db_path <- "episodic-demo.sqlite"
 
 Sys.setenv(
-  EPISODE_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),
-  EPISODE_DB = db_path,
-  EPISODE_GEO_DATA = system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
+  EPISODIC_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),
+  EPISODIC_DB = db_path,
+  EPISODIC_GEO_DATA = system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
 )
 
 if (!file.exists(db_path)) {
@@ -36,13 +37,13 @@ if (!file.exists(db_path)) {
   # every institution/pathogen/PC combination, plus two injected
   # outbreaks (one point-source, one propagated) - and one assessor
   # account to sign in with.
-  episode_run_cron(
+  episodic_run_cron(
     db_path,
-    ingest_source_fn = episode_ingest_source_synthetic,
-    denominator_source_fn = episode_denominator_source_synthetic
+    ingest_source_fn = episodic_ingest_source_synthetic,
+    denominator_source_fn = episodic_denominator_source_synthetic
   )
 
-  episode_provision_user(
+  episodic_provision_user(
     username = "5580",
     full_name = "Matthijs Berends",
     email = "m.berends@domain.com",
@@ -57,8 +58,8 @@ if (!file.exists(db_path)) {
 # reconciliation across runs, the Activiteit log with more than one run
 # recorded, and the Prestatie screen's timeliness figures once a few
 # clusters have been assessed:
-# episode_run_cron(db_path, ingest_source_fn = episode_ingest_source_synthetic,
-#                   denominator_source_fn = episode_denominator_source_synthetic)
+# episodic_run_cron(db_path, ingest_source_fn = episodic_ingest_source_synthetic,
+#                   denominator_source_fn = episodic_denominator_source_synthetic)
 
 # review the simulated data
-episode_run_app()
+episodic_run_app()

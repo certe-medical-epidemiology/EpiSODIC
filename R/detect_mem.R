@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 #' `mem` seasonal detector
 #'
@@ -54,15 +55,15 @@
 #' implemented by the `mem` package and called directly here).
 #' @keywords internal
 #' @noRd
-episode_detect_mem <- function(cases_for_stream, stream_id, run_date = Sys.Date(), min_seasons = 2L) {
-  empty <- episode_detection_record(integer(0), character(0), character(0), character(0), integer(0))
+episodic_detect_mem <- function(cases_for_stream, stream_id, run_date = Sys.Date(), min_seasons = 2L) {
+  empty <- episodic_detection_record(integer(0), character(0), character(0), character(0), integer(0))
   if (!requireNamespace("mem", quietly = TRUE)) return(empty)
   if (is.null(cases_for_stream) || nrow(cases_for_stream) == 0) return(empty)
 
-  status <- episode_mem_status(cases_for_stream, run_date, min_seasons)
+  status <- episodic_mem_status(cases_for_stream, run_date, min_seasons)
   if (is.null(status) || !isTRUE(status$epidemic_started)) return(empty)
 
-  episode_detection_record(
+  episodic_detection_record(
     stream_id = stream_id, detector = "mem",
     first_day = as.character(status$week_start), last_day = as.character(status$week_end),
     n_cases = status$current_week_count,
@@ -73,7 +74,7 @@ episode_detect_mem <- function(cases_for_stream, stream_id, run_date = Sys.Date(
 
 #' Compute this stream's current MEM status
 #'
-#' Shared by `episode_detect_mem()` (fires on `epidemic_started`) and the
+#' Shared by `episodic_detect_mem()` (fires on `epidemic_started`) and the
 #' seasonal closure criterion (fires when the current count has fallen
 #' back under `post_epidemic_threshold`), so both read the same fitted
 #' model rather than risking two slightly different ones.
@@ -90,15 +91,15 @@ episode_detect_mem <- function(cases_for_stream, stream_id, run_date = Sys.Date(
 #'   `week_end` (the current epi week's `Date` bounds).
 #' @keywords internal
 #' @noRd
-episode_mem_status <- function(cases, run_date = Sys.Date(), min_seasons = 2L) {
+episodic_mem_status <- function(cases, run_date = Sys.Date(), min_seasons = 2L) {
   if (!requireNamespace("mem", quietly = TRUE)) return(NULL)
   if (is.null(cases) || nrow(cases) == 0) return(NULL)
 
   today <- as.Date(run_date)
-  current <- episode_mem_season_week(today)
+  current <- episodic_mem_season_week(today)
   if (is.na(current$season)) return(NULL)  # off-season (May-September window)
 
-  built <- episode_mem_seasonal_matrix(cases)
+  built <- episodic_mem_seasonal_matrix(cases)
   if (is.null(built) || is.null(built$matrix)) return(NULL)
 
   prior_seasons <- setdiff(colnames(built$matrix), current$season)
@@ -144,9 +145,9 @@ episode_mem_status <- function(cases, run_date = Sys.Date(), min_seasons = 2L) {
 #'   with `matrix` (weeks x seasons, `NA`-free, zero-filled).
 #' @keywords internal
 #' @noRd
-episode_mem_seasonal_matrix <- function(cases) {
+episodic_mem_seasonal_matrix <- function(cases) {
   dates <- as.Date(cases$sample_date)
-  assigned <- lapply(dates, episode_mem_season_week)
+  assigned <- lapply(dates, episodic_mem_season_week)
   seasons <- vapply(assigned, function(a) a$season, character(1))
   weeks <- vapply(assigned, function(a) a$week_label, character(1))
 
@@ -175,7 +176,7 @@ episode_mem_seasonal_matrix <- function(cases) {
 #'   week's Monday).
 #' @keywords internal
 #' @noRd
-episode_mem_season_week <- function(date) {
+episodic_mem_season_week <- function(date) {
   date <- as.Date(date)
   iso_week <- as.integer(format(date, "%V"))
   iso_year <- as.integer(format(date, "%G"))

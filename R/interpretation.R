@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 #' The interpretation fragment engine
 #'
@@ -33,7 +34,7 @@
 #' skipped rather than padded with a placeholder sentence.
 #'
 #' The **cluster object** every condition and template renders against is a
-#' plain list; see `R/app_read.R`'s `episode_cluster_object()` for exactly
+#' plain list; see `R/app_read.R`'s `episodic_cluster_object()` for exactly
 #' which fields it carries and where each one comes from.
 #' @name interpretation
 NULL
@@ -46,21 +47,21 @@ NULL
 #'
 #' One shared set of pre-formatted placeholder strings, so every fragment
 #' template can reference any of them; unused names in a given template are
-#' harmless (`episode_tr()` only substitutes placeholders the template
+#' harmless (`episodic_tr()` only substitutes placeholders the template
 #' actually contains).
 #'
-#' @param cluster A cluster object, see `episode_cluster_object()`.
+#' @param cluster A cluster object, see `episodic_cluster_object()`.
 #' @param lang Session language, for number-agreement phrases.
 #' @return A named list of character scalars.
 #' @keywords internal
 #' @noRd
-episode_interpretation_context <- function(cluster, lang = "nl") {
+episodic_interpretation_context <- function(cluster, lang = "nl") {
   case_word <- if (lang == "nl") c("geval", "gevallen") else c("case", "cases")
   day_word <- if (lang == "nl") c("dag", "dagen") else c("day", "days")
 
   list(
     obs = cluster$n_cases,
-    obs_phrase = episode_count_phrase(cluster$n_cases, case_word[1], case_word[2]),
+    obs_phrase = episodic_count_phrase(cluster$n_cases, case_word[1], case_word[2]),
     expected = cluster$expected %||% NA,
     ratio = cluster$ratio %||% NA,
     dominant_label = cluster$concentration$dominant_label %||% "",
@@ -74,7 +75,7 @@ episode_interpretation_context <- function(cluster, lang = "nl") {
     dominant_band = cluster$demography$dominant_band %||% "",
     baseline_band = cluster$demography$baseline_band %||% "",
     incomplete_days = cluster$completeness$incomplete_days %||% 0,
-    incomplete_days_phrase = episode_count_phrase(cluster$completeness$incomplete_days %||% 0, day_word[1], day_word[2]),
+    incomplete_days_phrase = episodic_count_phrase(cluster$completeness$incomplete_days %||% 0, day_word[1], day_word[2]),
     density_value = cluster$density$value %||% NA,
     density_baseline = cluster$density$baseline %||% NA,
     place = cluster$place %||% "",
@@ -91,7 +92,7 @@ episode_interpretation_context <- function(cluster, lang = "nl") {
 #' @return A list of fragments, each `list(id, slot, condition, key)`.
 #' @keywords internal
 #' @noRd
-episode_interpretation_fragments <- function() {
+episodic_interpretation_fragments <- function() {
   list(
     # -- magnitude --------------------------------------------------------
     list(id = "magnitude.rare_trigger", slot = "magnitude",
@@ -111,7 +112,7 @@ episode_interpretation_fragments <- function() {
     # The first question in any outbreak investigation - does it redirect
     # the enquiry from person-to-person spread towards a common exposure -
     # is stated in the Duiding, not a separate dossier panel; see
-    # episode_classify_curve_shape().
+    # episodic_classify_curve_shape().
     list(id = "curve_shape.point_source", slot = "curve_shape",
          condition = function(cl) identical(cl$curve_shape %||% NA, "point_source"),
          key = "interpretation.fragment.curve_shape.point_source"),
@@ -179,13 +180,13 @@ episode_interpretation_fragments <- function() {
 
 #' @rdname interpretation
 #' @export
-episode_interpretation_slots <- c("magnitude", "curve_shape", "concentration", "denominator", "demography", "completeness", "recommendation")
+episodic_interpretation_slots <- c("magnitude", "curve_shape", "concentration", "denominator", "demography", "completeness", "recommendation")
 
 #' Generate the interpretation for a cluster
 #'
-#' @param cluster A cluster object, see `episode_cluster_object()`.
+#' @param cluster A cluster object, see `episodic_cluster_object()`.
 #' @param lang Session language, `"nl"` or `"en"`.
-#' @param instance_i18n Optional operator overrides, passed to [episode_tr()].
+#' @param instance_i18n Optional operator overrides, passed to [episodic_tr()].
 #' @return A list with `text` (a character vector, one string per slot that
 #'   fired, in slot order) and `fired` (a character vector of the fragment
 #'   ids that fired, same order) - every fragment records which
@@ -193,18 +194,18 @@ episode_interpretation_slots <- c("magnitude", "curve_shape", "concentration", "
 #'   the evidence that produced it.
 #' @keywords internal
 #' @noRd
-episode_interpretation_generate <- function(cluster, lang = "nl", instance_i18n = NULL) {
-  fragments <- episode_interpretation_fragments()
-  ctx <- episode_interpretation_context(cluster, lang = lang)
+episodic_interpretation_generate <- function(cluster, lang = "nl", instance_i18n = NULL) {
+  fragments <- episodic_interpretation_fragments()
+  ctx <- episodic_interpretation_context(cluster, lang = lang)
 
   text <- character(0)
   fired <- character(0)
 
-  for (slot in episode_interpretation_slots) {
+  for (slot in episodic_interpretation_slots) {
     slot_fragments <- Filter(function(f) f$slot == slot, fragments)
     for (fragment in slot_fragments) {
       if (isTRUE(tryCatch(fragment$condition(cluster), error = function(e) FALSE))) {
-        rendered <- do.call(episode_tr, c(list(key = fragment$key, lang = lang, instance_i18n = instance_i18n), ctx))
+        rendered <- do.call(episodic_tr, c(list(key = fragment$key, lang = lang, instance_i18n = instance_i18n), ctx))
         text <- c(text, rendered)
         fired <- c(fired, fragment$id)
         break  # one fragment per slot
@@ -222,14 +223,14 @@ episode_interpretation_generate <- function(cluster, lang = "nl", instance_i18n 
 #' re-runs generation and returns just that slot's text so the UI does
 #' not have to know fragment ids.
 #'
-#' @inheritParams episode_interpretation_generate
+#' @inheritParams episodic_interpretation_generate
 #' @return A single character string (the recommendation text), or `""` if
 #'   somehow nothing fired (should not happen: `recommendation.default`
 #'   always matches).
 #' @keywords internal
 #' @noRd
-episode_interpretation_recommendation <- function(cluster, lang = "nl", instance_i18n = NULL) {
-  generated <- episode_interpretation_generate(cluster, lang = lang, instance_i18n = instance_i18n)
+episodic_interpretation_recommendation <- function(cluster, lang = "nl", instance_i18n = NULL) {
+  generated <- episodic_interpretation_generate(cluster, lang = lang, instance_i18n = instance_i18n)
   idx <- which(startsWith(generated$fired, "recommendation."))
   if (length(idx) == 0) return("")
   generated$text[idx[1]]
@@ -237,12 +238,12 @@ episode_interpretation_recommendation <- function(cluster, lang = "nl", instance
 
 #' The narrative paragraphs only (excludes the recommendation slot)
 #'
-#' @inheritParams episode_interpretation_generate
+#' @inheritParams episodic_interpretation_generate
 #' @return A character vector, one string per non-recommendation slot fired.
 #' @keywords internal
 #' @noRd
-episode_interpretation_paragraphs <- function(cluster, lang = "nl", instance_i18n = NULL) {
-  generated <- episode_interpretation_generate(cluster, lang = lang, instance_i18n = instance_i18n)
+episodic_interpretation_paragraphs <- function(cluster, lang = "nl", instance_i18n = NULL) {
+  generated <- episodic_interpretation_generate(cluster, lang = lang, instance_i18n = instance_i18n)
   keep <- !startsWith(generated$fired, "recommendation.")
   generated$text[keep]
 }

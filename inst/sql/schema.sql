@@ -15,8 +15,14 @@
 --  We created this package for both routine data analysis and academic  --
 --  research and it was publicly released in the hope that it will be    --
 --  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              --
+-- ===================================================================== --
 
--- EpiSODIC database schema, SQLite dialect.
+-- EpiSODIC database schema, written in SQLite dialect and used verbatim
+-- for SQLite connections. For a MariaDB/MySQL EPISODIC_DB,
+-- episodic_db_schema_statements() rewrites this same file at load time
+-- (AUTOINCREMENT -> AUTO_INCREMENT, the PRAGMA line dropped, and the four
+-- TEXT columns carrying a UNIQUE constraint given a bounded VARCHAR) -
+-- there is deliberately only one schema file to keep in sync.
 --
 -- Type mapping used throughout, for reference against a more general
 -- relational type system:
@@ -27,16 +33,15 @@
 --   TINYINT(1)                        -> INTEGER 0 or 1
 --   DECIMAL(p,s)                      -> REAL
 --
--- One dialect only: there is no MySQL in this system. Write ownership
--- (cron vs. app) is documented per table; the app itself only ever
--- inserts, never updates or deletes.
+-- Write ownership (cron vs. app) is documented per table; the app itself
+-- only ever inserts, never updates or deletes.
 
 PRAGMA foreign_keys = ON;
 
 -- ---------------------------------------------------------------------
 -- 5.1 Streams (cron)
 -- ---------------------------------------------------------------------
-CREATE TABLE episode_stream (
+CREATE TABLE episodic_stream (
   stream_id       INTEGER PRIMARY KEY AUTOINCREMENT,
   stream_key      TEXT NOT NULL UNIQUE CHECK (length(stream_key) = 40),
   level           TEXT NOT NULL CHECK (level IN (
@@ -45,7 +50,7 @@ CREATE TABLE episode_stream (
   pathogen        TEXT NOT NULL,  -- raw lab-provided string, deliberately unconstrained free text
   care_line       TEXT CHECK (care_line IN ('first', 'second', 'other', 'unknown')),
   region_code     TEXT,
-  institution_id  INTEGER REFERENCES episode_institution(institution_id),
+  institution_id  INTEGER REFERENCES episodic_institution(institution_id),
   ward            TEXT,          -- optional finer level than institution, may be NULL
   denominator     TEXT NOT NULL DEFAULT 'none' CHECK (denominator IN (
                     'none', 'tests', 'population', 'patient_days')),
@@ -56,32 +61,32 @@ CREATE TABLE episode_stream (
   created_at      TEXT NOT NULL
 );
 
-CREATE INDEX idx_episode_stream_pathogen ON episode_stream(pathogen);
-CREATE INDEX idx_episode_stream_active ON episode_stream(is_active);
+CREATE INDEX idx_episodic_stream_pathogen ON episodic_stream(pathogen);
+CREATE INDEX idx_episodic_stream_active ON episodic_stream(is_active);
 
 -- ---------------------------------------------------------------------
 -- 5.2 Mutes (app)
 -- ---------------------------------------------------------------------
-CREATE TABLE episode_stream_mute (
+CREATE TABLE episodic_stream_mute (
   mute_id     INTEGER PRIMARY KEY AUTOINCREMENT,
-  stream_id   INTEGER NOT NULL REFERENCES episode_stream(stream_id),
+  stream_id   INTEGER NOT NULL REFERENCES episodic_stream(stream_id),
   muted_from  TEXT NOT NULL,
   muted_until TEXT NOT NULL,
   reason      TEXT NOT NULL CHECK (reason IN (
                 'seasonal', 'screening_campaign', 'method_change',
                 'known_source', 'other')),
   note        TEXT,
-  user_id     INTEGER NOT NULL REFERENCES episode_app_user(user_id),
+  user_id     INTEGER NOT NULL REFERENCES episodic_app_user(user_id),
   created_at  TEXT NOT NULL,
   revoked_at  TEXT
 );
 
-CREATE INDEX idx_episode_stream_mute_stream ON episode_stream_mute(stream_id);
+CREATE INDEX idx_episodic_stream_mute_stream ON episodic_stream_mute(stream_id);
 
 -- ---------------------------------------------------------------------
 -- 5.3 Runs (cron)
 -- ---------------------------------------------------------------------
-CREATE TABLE episode_detection_run (
+CREATE TABLE episodic_detection_run (
   run_id            INTEGER PRIMARY KEY AUTOINCREMENT,
   host              TEXT NOT NULL,
   account           TEXT NOT NULL,
@@ -104,7 +109,7 @@ CREATE TABLE episode_detection_run (
 -- ---------------------------------------------------------------------
 -- 5.4.1 Institutions (cron)
 -- ---------------------------------------------------------------------
-CREATE TABLE episode_institution (
+CREATE TABLE episodic_institution (
   institution_id   INTEGER PRIMARY KEY AUTOINCREMENT,
   institution_key  TEXT NOT NULL UNIQUE CHECK (length(institution_key) = 40),
   display_name     TEXT NOT NULL,
@@ -122,8 +127,8 @@ CREATE TABLE episode_institution (
 -- ---------------------------------------------------------------------
 -- 5.4.2 Hospital activity (cron)
 -- ---------------------------------------------------------------------
-CREATE TABLE episode_institution_activity (
-  institution_id INTEGER NOT NULL REFERENCES episode_institution(institution_id),
+CREATE TABLE episodic_institution_activity (
+  institution_id INTEGER NOT NULL REFERENCES episodic_institution(institution_id),
   period_start   TEXT NOT NULL,
   period_end     TEXT NOT NULL,
   patient_days   INTEGER,
@@ -137,8 +142,8 @@ CREATE TABLE episode_institution_activity (
 -- 5.4.3 Pathogen configuration (shipped defaults, overridable per instance;
 -- not written by either process at runtime, loaded from CSV)
 -- ---------------------------------------------------------------------
-CREATE TABLE episode_pathogen_config (
-  pathogen        TEXT NOT NULL PRIMARY KEY,  -- matches episode_case.pathogen exactly
+CREATE TABLE episodic_pathogen_config (
+  pathogen        TEXT NOT NULL PRIMARY KEY,  -- matches episodic_case.pathogen exactly
   episode_days    INTEGER NOT NULL DEFAULT 30,
   incub_min_days  REAL,
   incub_max_days  REAL,
@@ -156,7 +161,7 @@ CREATE TABLE episode_pathogen_config (
 -- ---------------------------------------------------------------------
 -- 5.4 Cases (cron)
 -- ---------------------------------------------------------------------
-CREATE TABLE episode_case (
+CREATE TABLE episodic_case (
   case_id        INTEGER PRIMARY KEY AUTOINCREMENT,
   source_key     TEXT NOT NULL UNIQUE,
   patient_key    TEXT NOT NULL,
@@ -164,28 +169,28 @@ CREATE TABLE episode_case (
   receipt_date   TEXT,
   pathogen       TEXT NOT NULL,  -- raw lab-provided string, used verbatim
   care_line      TEXT NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'other', 'unknown')),
-  institution_id INTEGER REFERENCES episode_institution(institution_id),
+  institution_id INTEGER REFERENCES episodic_institution(institution_id),
   ward           TEXT,
   specialism     TEXT,
   pc             TEXT,
   sex            TEXT CHECK (sex IS NULL OR sex IN ('M', 'F', 'U')),
   age            INTEGER,
-  first_seen_run INTEGER NOT NULL REFERENCES episode_detection_run(run_id)
+  first_seen_run INTEGER NOT NULL REFERENCES episodic_detection_run(run_id)
 );
 
-CREATE INDEX idx_episode_case_sample_date ON episode_case(sample_date);
-CREATE INDEX idx_episode_case_pathogen ON episode_case(pathogen);
-CREATE INDEX idx_episode_case_patient ON episode_case(patient_key);
-CREATE INDEX idx_episode_case_institution ON episode_case(institution_id);
+CREATE INDEX idx_episodic_case_sample_date ON episodic_case(sample_date);
+CREATE INDEX idx_episodic_case_pathogen ON episodic_case(pathogen);
+CREATE INDEX idx_episodic_case_patient ON episodic_case(patient_key);
+CREATE INDEX idx_episodic_case_institution ON episodic_case(institution_id);
 
 -- ---------------------------------------------------------------------
 -- 5.5 Detections and clusters (cron)
 -- ---------------------------------------------------------------------
-CREATE TABLE episode_detection (
+CREATE TABLE episodic_detection (
   detection_id INTEGER PRIMARY KEY AUTOINCREMENT,
-  run_id       INTEGER NOT NULL REFERENCES episode_detection_run(run_id),
-  stream_id    INTEGER NOT NULL REFERENCES episode_stream(stream_id),
-  cluster_id   INTEGER REFERENCES episode_cluster(cluster_id),
+  run_id       INTEGER NOT NULL REFERENCES episodic_detection_run(run_id),
+  stream_id    INTEGER NOT NULL REFERENCES episodic_stream(stream_id),
+  cluster_id   INTEGER REFERENCES episodic_cluster(cluster_id),
   detector     TEXT NOT NULL CHECK (detector IN (
                  'farrington', 'ears', 'mem', 'rare_trigger', 'same_place')),
   first_day    TEXT NOT NULL,
@@ -197,13 +202,13 @@ CREATE TABLE episode_detection (
   created_at   TEXT NOT NULL
 );
 
-CREATE INDEX idx_episode_detection_run ON episode_detection(run_id);
-CREATE INDEX idx_episode_detection_stream ON episode_detection(stream_id);
-CREATE INDEX idx_episode_detection_cluster ON episode_detection(cluster_id);
+CREATE INDEX idx_episodic_detection_run ON episodic_detection(run_id);
+CREATE INDEX idx_episodic_detection_stream ON episodic_detection(stream_id);
+CREATE INDEX idx_episodic_detection_cluster ON episodic_detection(cluster_id);
 
-CREATE TABLE episode_cluster (
+CREATE TABLE episodic_cluster (
   cluster_id               INTEGER PRIMARY KEY AUTOINCREMENT,
-  stream_id                INTEGER NOT NULL REFERENCES episode_stream(stream_id),
+  stream_id                INTEGER NOT NULL REFERENCES episodic_stream(stream_id),
   first_day                TEXT NOT NULL,
   last_day                 TEXT NOT NULL,
   n_cases                  INTEGER NOT NULL,
@@ -213,34 +218,34 @@ CREATE TABLE episode_cluster (
   priority_score           REAL NOT NULL,
   detector_agreement       INTEGER NOT NULL,
   opened_at                TEXT NOT NULL,
-  last_detected_run        INTEGER NOT NULL REFERENCES episode_detection_run(run_id),
+  last_detected_run        INTEGER NOT NULL REFERENCES episodic_detection_run(run_id),
   runs_since_detected      INTEGER NOT NULL DEFAULT 0,
   changed_since_assessment INTEGER NOT NULL DEFAULT 0 CHECK (changed_since_assessment IN (0, 1)),
-  suppressed_by            INTEGER REFERENCES episode_cluster(cluster_id),
-  merged_into              INTEGER REFERENCES episode_cluster(cluster_id)
+  suppressed_by            INTEGER REFERENCES episodic_cluster(cluster_id),
+  merged_into              INTEGER REFERENCES episodic_cluster(cluster_id)
 );
 
 -- Note what this table does NOT carry: verdict, state, closed_at,
 -- snooze_until. All four are authored by the app, which is insert-only,
--- and are therefore derived at read time from episode_assessment_event.
+-- and are therefore derived at read time from episodic_assessment_event.
 
-CREATE INDEX idx_episode_cluster_stream ON episode_cluster(stream_id);
+CREATE INDEX idx_episodic_cluster_stream ON episodic_cluster(stream_id);
 
-CREATE TABLE episode_cluster_case (
-  cluster_id INTEGER NOT NULL REFERENCES episode_cluster(cluster_id),
-  case_id    INTEGER NOT NULL REFERENCES episode_case(case_id),
+CREATE TABLE episodic_cluster_case (
+  cluster_id INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
+  case_id    INTEGER NOT NULL REFERENCES episodic_case(case_id),
   PRIMARY KEY (cluster_id, case_id)
 );
 
-CREATE INDEX idx_episode_cluster_case_case ON episode_cluster_case(case_id);
+CREATE INDEX idx_episodic_cluster_case_case ON episodic_cluster_case(case_id);
 
 -- ---------------------------------------------------------------------
 -- 5.6 Assessments (app, append-only)
 -- ---------------------------------------------------------------------
-CREATE TABLE episode_assessment_event (
+CREATE TABLE episodic_assessment_event (
   event_id       INTEGER PRIMARY KEY AUTOINCREMENT,
-  cluster_id     INTEGER NOT NULL REFERENCES episode_cluster(cluster_id),
-  user_id        INTEGER NOT NULL REFERENCES episode_app_user(user_id),
+  cluster_id     INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
+  user_id        INTEGER NOT NULL REFERENCES episodic_app_user(user_id),
   created_at     TEXT NOT NULL,
   verdict        TEXT CHECK (verdict IS NULL OR verdict IN (
                    'artefact', 'expected_variation', 'cluster_not_yet',
@@ -250,16 +255,16 @@ CREATE TABLE episode_assessment_event (
   ggd_informed   INTEGER CHECK (ggd_informed IS NULL OR ggd_informed IN (0, 1)),
   ggd_note       TEXT,
   snooze_until   TEXT,
-  supersedes     INTEGER REFERENCES episode_assessment_event(event_id)
+  supersedes     INTEGER REFERENCES episodic_assessment_event(event_id)
 );
 
-CREATE INDEX idx_episode_assessment_event_cluster ON episode_assessment_event(cluster_id);
+CREATE INDEX idx_episodic_assessment_event_cluster ON episodic_assessment_event(cluster_id);
 
 -- ---------------------------------------------------------------------
 -- 5.7 Reporting triangle (cron)
 -- ---------------------------------------------------------------------
-CREATE TABLE episode_reporting_triangle (
-  stream_id   INTEGER NOT NULL REFERENCES episode_stream(stream_id),
+CREATE TABLE episodic_reporting_triangle (
+  stream_id   INTEGER NOT NULL REFERENCES episodic_stream(stream_id),
   sample_date TEXT NOT NULL,
   run_date    TEXT NOT NULL,
   n_cases     INTEGER NOT NULL,
@@ -271,11 +276,11 @@ CREATE TABLE episode_reporting_triangle (
 -- a continuous expected/upperbound band across many weeks, and the app
 -- only ever performs cheap reads - it cannot recompute farringtonFlexible()
 -- at render time. One row per stream per evaluated week;
--- episode_detection/episode_cluster remain the only tables that drive
+-- episodic_detection/episodic_cluster remain the only tables that drive
 -- reconciliation, this is purely a chart data cache.
 -- ---------------------------------------------------------------------
-CREATE TABLE episode_stream_trend (
-  stream_id  INTEGER NOT NULL REFERENCES episode_stream(stream_id),
+CREATE TABLE episodic_stream_trend (
+  stream_id  INTEGER NOT NULL REFERENCES episodic_stream(stream_id),
   week_start TEXT NOT NULL,
   n_cases    INTEGER NOT NULL,
   expected   REAL,
@@ -294,9 +299,9 @@ CREATE TABLE episode_stream_trend (
 -- than on a lab `determination` code, so the determination-to-organism
 -- mapping (which organisms a given test method can detect) is the
 -- operator's own transform-time knowledge, not something EpiSODIC encodes
--- (episode_mo_determination from earlier drafts is dropped).
+-- (episodic_mo_determination from earlier drafts is dropped).
 -- ---------------------------------------------------------------------
-CREATE TABLE episode_denominator (
+CREATE TABLE episodic_denominator (
   pathogen      TEXT NOT NULL,
   sample_date   TEXT NOT NULL,
   care_line     TEXT NOT NULL CHECK (care_line IN ('first', 'second', 'other', 'unknown')),
@@ -308,25 +313,25 @@ CREATE TABLE episode_denominator (
 -- ---------------------------------------------------------------------
 -- 6.4 State trajectory (cron and app, append-only)
 -- ---------------------------------------------------------------------
-CREATE TABLE episode_cluster_state (
+CREATE TABLE episodic_cluster_state (
   state_id   INTEGER PRIMARY KEY AUTOINCREMENT,
-  cluster_id INTEGER NOT NULL REFERENCES episode_cluster(cluster_id),
+  cluster_id INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
   state      TEXT NOT NULL CHECK (state IN (
                'new', 'assessing', 'monitoring', 'closable', 'closed', 'reassess')),
   entered_at TEXT NOT NULL,
   left_at    TEXT,
   trigger    TEXT NOT NULL CHECK (trigger IN (
                'detection', 'assessment', 'case_free', 'new_case', 'closure', 'system')),
-  event_id   INTEGER REFERENCES episode_assessment_event(event_id),
-  user_id    INTEGER REFERENCES episode_app_user(user_id)
+  event_id   INTEGER REFERENCES episodic_assessment_event(event_id),
+  user_id    INTEGER REFERENCES episodic_app_user(user_id)
 );
 
-CREATE INDEX idx_episode_cluster_state_cluster ON episode_cluster_state(cluster_id);
+CREATE INDEX idx_episodic_cluster_state_cluster ON episodic_cluster_state(cluster_id);
 
 -- ---------------------------------------------------------------------
 -- 5.8 Reports and users
 -- ---------------------------------------------------------------------
-CREATE TABLE episode_app_user (
+CREATE TABLE episodic_app_user (
   user_id       INTEGER PRIMARY KEY AUTOINCREMENT,
   username      TEXT NOT NULL UNIQUE,
   full_name     TEXT NOT NULL,
@@ -341,26 +346,26 @@ CREATE TABLE episode_app_user (
 
 -- Account bookkeeping that would otherwise need an UPDATE (a fresh
 -- password_hash on change, a bumped last_login_at on every login) is kept
--- insert-only instead, the same event-sourced pattern episode_cluster_state
+-- insert-only instead, the same event-sourced pattern episodic_cluster_state
 -- already uses for cluster state: the "current" password hash is the most
--- recent password_change event's, falling back to episode_app_user's own
+-- recent password_change event's, falling back to episodic_app_user's own
 -- initial password_hash if no such event exists yet; "current" last_login_at
 -- is the most recent login event.
-CREATE TABLE episode_app_user_event (
+CREATE TABLE episodic_app_user_event (
   event_id      INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id       INTEGER NOT NULL REFERENCES episode_app_user(user_id),
+  user_id       INTEGER NOT NULL REFERENCES episodic_app_user(user_id),
   created_at    TEXT NOT NULL,
   event_type    TEXT NOT NULL CHECK (event_type IN ('login', 'password_change')),
   password_hash TEXT  -- set only for password_change events
 );
 
-CREATE INDEX idx_episode_app_user_event_user ON episode_app_user_event(user_id);
+CREATE INDEX idx_episodic_app_user_event_user ON episodic_app_user_event(user_id);
 
 -- app, and cron for pre-renders
-CREATE TABLE episode_report_render (
+CREATE TABLE episodic_report_render (
   report_id   INTEGER PRIMARY KEY AUTOINCREMENT,
-  cluster_id  INTEGER NOT NULL REFERENCES episode_cluster(cluster_id),
-  user_id     INTEGER REFERENCES episode_app_user(user_id),
+  cluster_id  INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
+  user_id     INTEGER REFERENCES episodic_app_user(user_id),
   rendered_at TEXT NOT NULL,
   file_path   TEXT NOT NULL,
   file_sha256 TEXT NOT NULL CHECK (length(file_sha256) = 64),
@@ -369,4 +374,4 @@ CREATE TABLE episode_report_render (
   version_no  INTEGER NOT NULL
 );
 
-CREATE INDEX idx_episode_report_render_cluster ON episode_report_render(cluster_id);
+CREATE INDEX idx_episodic_report_render_cluster ON episodic_report_render(cluster_id);

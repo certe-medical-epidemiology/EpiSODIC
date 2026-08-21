@@ -15,15 +15,16 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 # EpiSODIC's shipped default UI palette.
 #
 # Deliberately a separate file from default.yaml: this is a display-only
 # concern (the app's colours), not part of detection configuration, so it
-# must never affect episode_config_hash()/config_snapshot - that
+# must never affect episodic_config_hash()/config_snapshot - that
 # reproducibility guarantee is about detection results, not colour
 # swatches. Resolved the same way: this file's values are the defaults,
-# an operator overrides them by pointing EPISODE_PALETTE_CONFIG at their
+# an operator overrides them by pointing EPISODIC_PALETTE_CONFIG at their
 # own YAML with only the keys they want to change - any organisation runs
 # EpiSODIC in its own house colours this way, without EpiSODIC ever
 # shipping (or depending on) any specific organisation's house-style

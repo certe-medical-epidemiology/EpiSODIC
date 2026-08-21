@@ -12,13 +12,13 @@ is the same shape of solution the
 package already uses elsewhere for optional, instance-specific data:
 a shipped default (here, geometry for the Netherlands' four-digit
 postcodes, \code{data-raw/geo_postcodes4_nl.R} documents its provenance)
-that any operator can override by pointing \code{EPISODE_GEO_DATA} at
+that any operator can override by pointing \code{EPISODIC_GEO_DATA} at
 their own file - one environment variable, the same pattern
-\code{EPISODE_CONFIG} and \code{EPISODE_PALETTE_CONFIG} already establish.
+\code{EPISODIC_CONFIG} and \code{EPISODIC_PALETTE_CONFIG} already establish.
 }
 \details{
 The contract is minimal and country-agnostic: an \code{sf} object with a
-\code{pc} column (matching whatever an operator's own \code{episode_case.pc}
+\code{pc} column (matching whatever an operator's own \code{episodic_case.pc}
 values are - postcodes, zip codes, municipality codes, anything; this
 package never validates or interprets that column beyond joining it)
 and a \code{geometry} column.
@@ -28,8 +28,8 @@ CRAN alone can supply, so this whole feature is guarded end to end: no
 bar breakdown, exactly as before this existed.
 
 A second, entirely independent piece of geographic data is supported
-on top of this: \code{EPISODE_GEO_DATA_OVERLAY}
-(\code{\link[=episode_geo_overlay_resolve]{episode_geo_overlay_resolve()}}), an outline layer (region boundaries
+on top of this: \code{EPISODIC_GEO_DATA_OVERLAY}
+(\code{\link[=episodic_geo_overlay_resolve]{episodic_geo_overlay_resolve()}}), an outline layer (region boundaries
 \itemize{
 \item provinces, municipalities, whatever an operator wants for
 orientation) drawn with colour but no fill on top of the choropleth.

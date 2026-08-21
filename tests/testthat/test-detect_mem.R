@@ -15,8 +15,9 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
-episode_mem_synthetic_seasons <- function(n_seasons = 5, seed = 42) {
+episodic_mem_synthetic_seasons <- function(n_seasons = 5, seed = 42) {
   set.seed(seed)
   dates <- c()
   for (yr in seq_len(n_seasons) + 2018) {
@@ -28,29 +29,29 @@ episode_mem_synthetic_seasons <- function(n_seasons = 5, seed = 42) {
   data.frame(sample_date = as.character(as.Date(dates, origin = "1970-01-01")))
 }
 
-test_that("episode_mem_season_week() assigns weeks 40-52/1-20 to a season, and NA off-season", {
-  jan <- episode_mem_season_week(as.Date("2025-01-15"))
+test_that("episodic_mem_season_week() assigns weeks 40-52/1-20 to a season, and NA off-season", {
+  jan <- episodic_mem_season_week(as.Date("2025-01-15"))
   expect_equal(jan$season, "2024/2025")
-  oct <- episode_mem_season_week(as.Date("2025-10-15"))
+  oct <- episodic_mem_season_week(as.Date("2025-10-15"))
   expect_equal(oct$season, "2025/2026")
-  july <- episode_mem_season_week(as.Date("2025-07-15"))
+  july <- episodic_mem_season_week(as.Date("2025-07-15"))
   expect_true(is.na(july$season))
 })
 
-test_that("episode_mem_status() returns NULL off-season, with too few prior seasons, or without mem installed", {
+test_that("episodic_mem_status() returns NULL off-season, with too few prior seasons, or without mem installed", {
   skip_if_not_installed("mem")
-  cases <- episode_mem_synthetic_seasons(n_seasons = 5)
-  expect_null(episode_mem_status(cases, run_date = as.Date("2024-07-01")))  # off-season
-  expect_null(episode_mem_status(data.frame(sample_date = character(0))))   # no data
+  cases <- episodic_mem_synthetic_seasons(n_seasons = 5)
+  expect_null(episodic_mem_status(cases, run_date = as.Date("2024-07-01")))  # off-season
+  expect_null(episodic_mem_status(data.frame(sample_date = character(0))))   # no data
   # only the current season exists, zero priors
   first_season_only <- cases[as.Date(cases$sample_date) < as.Date("2020-05-16"), , drop = FALSE]
-  expect_null(episode_mem_status(first_season_only, run_date = as.Date("2020-01-15")))
+  expect_null(episodic_mem_status(first_season_only, run_date = as.Date("2020-01-15")))
 })
 
-test_that("episode_mem_status() returns a well-formed status once enough seasons exist", {
+test_that("episodic_mem_status() returns a well-formed status once enough seasons exist", {
   skip_if_not_installed("mem")
-  cases <- episode_mem_synthetic_seasons(n_seasons = 5)
-  status <- episode_mem_status(cases, run_date = as.Date("2024-01-15"))
+  cases <- episodic_mem_synthetic_seasons(n_seasons = 5)
+  status <- episodic_mem_status(cases, run_date = as.Date("2024-01-15"))
   expect_false(is.null(status))
   expect_true(all(c("epidemic_started", "current_week_count", "pre_epidemic_threshold",
                      "post_epidemic_threshold", "week_start", "week_end") %in% names(status)))
@@ -58,36 +59,36 @@ test_that("episode_mem_status() returns a well-formed status once enough seasons
   expect_equal(status$week_end, status$week_start + 6)
 })
 
-test_that("episode_detect_mem() fires a detection during peak season and none off-season", {
+test_that("episodic_detect_mem() fires a detection during peak season and none off-season", {
   skip_if_not_installed("mem")
-  cases <- episode_mem_synthetic_seasons(n_seasons = 5)
+  cases <- episodic_mem_synthetic_seasons(n_seasons = 5)
 
-  det_peak <- episode_detect_mem(cases, stream_id = 1L, run_date = as.Date("2024-01-15"))
+  det_peak <- episodic_detect_mem(cases, stream_id = 1L, run_date = as.Date("2024-01-15"))
   expect_equal(nrow(det_peak), 1)
   expect_equal(det_peak$detector[1], "mem")
   expect_equal(det_peak$stream_id[1], 1L)
 
-  det_off <- episode_detect_mem(cases, stream_id = 1L, run_date = as.Date("2024-07-01"))
+  det_off <- episodic_detect_mem(cases, stream_id = 1L, run_date = as.Date("2024-07-01"))
   expect_equal(nrow(det_off), 0)
 })
 
-test_that("episode_detect_mem() returns an empty record with no cases or mem not installed", {
-  expect_equal(nrow(episode_detect_mem(data.frame(sample_date = character(0)), 1L)), 0)
+test_that("episodic_detect_mem() returns an empty record with no cases or mem not installed", {
+  expect_equal(nrow(episodic_detect_mem(data.frame(sample_date = character(0)), 1L)), 0)
 })
 
-test_that("episode_closure_criterion_met() with mem_applicable uses mem_status's post-epidemic threshold, never case-free days", {
+test_that("episodic_closure_criterion_met() with mem_applicable uses mem_status's post-epidemic threshold, never case-free days", {
   # below threshold -> closure met
   status_low <- list(current_week_count = 2, post_epidemic_threshold = 5)
-  expect_true(episode_closure_criterion_met(
+  expect_true(episodic_closure_criterion_met(
     "2025-01-01", "possible_epidemic", case_free_days = 14, mem_applicable = TRUE, mem_status = status_low
   ))
   # above threshold -> not met, regardless of how long case-free
   status_high <- list(current_week_count = 20, post_epidemic_threshold = 5)
-  expect_false(episode_closure_criterion_met(
+  expect_false(episodic_closure_criterion_met(
     "2020-01-01", "possible_epidemic", case_free_days = 14, mem_applicable = TRUE, mem_status = status_high
   ))
   # no mem_status at all (mem unavailable/off-season) -> never closes via this criterion
-  expect_false(episode_closure_criterion_met(
+  expect_false(episodic_closure_criterion_met(
     "2020-01-01", "possible_epidemic", case_free_days = 14, mem_applicable = TRUE, mem_status = NULL
   ))
 })

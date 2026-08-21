@@ -15,17 +15,14 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
-#' App read models
-#'
-#' Every function here is a cheap read against an already-populated
-#' database. Nothing here recomputes a statistical model; anything
-#' expensive (Farrington, reconciliation, priority scoring) has already
-#' happened in the cron and is simply looked up. This is the layer that
-#' turns raw tables into the shapes the Shiny UI and the interpretation engine
-#' consume.
-#' @name app_read
-NULL
+# App read models: every function here is a cheap read against an
+# already-populated database. Nothing here recomputes a statistical
+# model; anything expensive (Farrington, reconciliation, priority
+# scoring) has already happened in the cron and is simply looked up.
+# This is the layer that turns raw tables into the shapes the Shiny UI
+# and the interpretation engine consume.
 
 #' Open clusters for the rail
 #'
@@ -35,20 +32,20 @@ NULL
 #'   `priority_score` descending.
 #' @keywords internal
 #' @noRd
-episode_app_open_clusters <- function(con, lang = "nl") {
-  clusters <- episode_db_clusters(con, open_only = TRUE)
+episodic_app_open_clusters <- function(con, lang = "nl") {
+  clusters <- episodic_db_clusters(con, open_only = TRUE)
   if (nrow(clusters) == 0) {
     return(clusters[, c("cluster_id", "priority_score"), drop = FALSE])
   }
-  streams <- episode_db_streams(con, active_only = FALSE)
+  streams <- episodic_db_streams(con, active_only = FALSE)
   clusters$pathogen <- streams$pathogen[match(clusters$stream_id, streams$stream_id)]
   clusters$level <- streams$level[match(clusters$stream_id, streams$stream_id)]
 
   clusters$state <- vapply(clusters$cluster_id, function(id) {
-    episode_app_derive_state_for_cluster(con, id)
+    episodic_app_derive_state_for_cluster(con, id)
   }, character(1))
-  clusters$state_label <- vapply(clusters$state, function(s) episode_tr(paste0("state.", s), lang = lang), character(1))
-  clusters$level_label <- vapply(clusters$level, function(lv) episode_tr(paste0("level.", lv), lang = lang), character(1))
+  clusters$state_label <- vapply(clusters$state, function(s) episodic_tr(paste0("state.", s), lang = lang), character(1))
+  clusters$level_label <- vapply(clusters$level, function(lv) episodic_tr(paste0("level.", lv), lang = lang), character(1))
 
   open <- clusters[clusters$state != "closed", ]
   open[order(-open$priority_score), ]
@@ -56,19 +53,19 @@ episode_app_open_clusters <- function(con, lang = "nl") {
 
 #' Derive the state of a single cluster
 #'
-#' Thin wrapper around `episode_derive_state()` that fetches the inputs
+#' Thin wrapper around `episodic_derive_state()` that fetches the inputs
 #' from the database: the cluster's assessment events, its
 #' `changed_since_assessment` flag, the closure criterion, and whether it
 #' has been explicitly closed.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
-#' @return One of `episode_derive_state()`'s state strings.
+#' @return One of `episodic_derive_state()`'s state strings.
 #' @keywords internal
 #' @noRd
-episode_app_derive_state_for_cluster <- function(con, cluster_id) {
-  events <- episode_db_assessment_events(con, cluster_id)
-  cluster <- DBI::dbGetQuery(con, "SELECT * FROM episode_cluster WHERE cluster_id = ?",
+episodic_app_derive_state_for_cluster <- function(con, cluster_id) {
+  events <- episodic_db_assessment_events(con, cluster_id)
+  cluster <- DBI::dbGetQuery(con, "SELECT * FROM episodic_cluster WHERE cluster_id = ?",
                               params = list(cluster_id))
   if (nrow(cluster) == 0) return("new")
   cluster <- cluster[1, ]
@@ -77,16 +74,16 @@ episode_app_derive_state_for_cluster <- function(con, cluster_id) {
   if (nrow(events) > 0 && any(!is.na(events$verdict))) {
     latest_verdict <- events$verdict[!is.na(events$verdict)]
     latest_verdict <- latest_verdict[length(latest_verdict)]
-    stream <- DBI::dbGetQuery(con, "SELECT pathogen FROM episode_stream WHERE stream_id = ?",
+    stream <- DBI::dbGetQuery(con, "SELECT pathogen FROM episodic_stream WHERE stream_id = ?",
                                params = list(cluster$stream_id))
-    pc <- episode_db_pathogen_config_get(con, stream$pathogen[1])
+    pc <- episodic_db_pathogen_config_get(con, stream$pathogen[1])
     if (!is.null(pc)) {
       mem_status <- NULL
       if (isTRUE(as.logical(pc$mem_applicable))) {
-        stream_cases <- episode_db_cases_for_pathogen(con, stream$pathogen[1])
-        mem_status <- episode_mem_status(stream_cases)
+        stream_cases <- episodic_db_cases_for_pathogen(con, stream$pathogen[1])
+        mem_status <- episodic_mem_status(stream_cases)
       }
-      closure_met <- episode_closure_criterion_met(
+      closure_met <- episodic_closure_criterion_met(
         cluster$last_day, latest_verdict, case_free_days = pc$case_free_days,
         incub_max_days = pc$incub_max_days, mem_applicable = as.logical(pc$mem_applicable),
         mem_status = mem_status
@@ -94,10 +91,10 @@ episode_app_derive_state_for_cluster <- function(con, cluster_id) {
     }
   }
 
-  episode_derive_state(
+  episodic_derive_state(
     events, changed_since_assessment = as.logical(cluster$changed_since_assessment),
     closure_criterion_met = closure_met,
-    explicitly_closed = episode_app_explicitly_closed(con, cluster_id, events)
+    explicitly_closed = episodic_app_explicitly_closed(con, cluster_id, events)
   )
 }
 
@@ -107,7 +104,7 @@ episode_app_derive_state_for_cluster <- function(con, cluster_id) {
 #' `confirmed_epidemic`) can be closed by an assessor's decision alone,
 #' without the classification itself changing - "an epidemic closes when
 #' a person says so, whether or not any criterion has fired". That act is
-#' recorded as an `episode_cluster_state` row (`trigger = "closure"`), not
+#' recorded as an `episodic_cluster_state` row (`trigger = "closure"`), not
 #' as a new assessment event (the classification's own rationale already
 #' exists; closure records that it is over, not what it was). It counts
 #' as still in effect only if nothing has happened since - in practice, no
@@ -116,13 +113,13 @@ episode_app_derive_state_for_cluster <- function(con, cluster_id) {
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
 #' @param events This cluster's assessment events, as returned by
-#'   `episode_db_assessment_events()` (avoids a redundant query when the
+#'   `episodic_db_assessment_events()` (avoids a redundant query when the
 #'   caller already has them).
 #' @return A single logical.
 #' @keywords internal
 #' @noRd
-episode_app_explicitly_closed <- function(con, cluster_id, events) {
-  states <- episode_db_cluster_states(con, cluster_id)
+episodic_app_explicitly_closed <- function(con, cluster_id, events) {
+  states <- episodic_db_cluster_states(con, cluster_id)
   closures <- states[states$trigger %in% c("closure", "system") & states$state == "closed", ]
   if (nrow(closures) == 0) return(FALSE)
   latest_closure_at <- closures$entered_at[nrow(closures)]
@@ -143,30 +140,30 @@ episode_app_explicitly_closed <- function(con, cluster_id, events) {
 #'   dossier panels skip themselves.
 #' @keywords internal
 #' @noRd
-episode_cluster_object <- function(con, cluster_id, lang = "nl") {
-  cluster <- DBI::dbGetQuery(con, "SELECT * FROM episode_cluster WHERE cluster_id = ?",
+episodic_cluster_object <- function(con, cluster_id, lang = "nl") {
+  cluster <- DBI::dbGetQuery(con, "SELECT * FROM episodic_cluster WHERE cluster_id = ?",
                               params = list(cluster_id))
   if (nrow(cluster) == 0) stop("No such cluster: ", cluster_id, call. = FALSE)
   cluster <- cluster[1, ]
 
-  stream <- DBI::dbGetQuery(con, "SELECT * FROM episode_stream WHERE stream_id = ?",
+  stream <- DBI::dbGetQuery(con, "SELECT * FROM episodic_stream WHERE stream_id = ?",
                              params = list(cluster$stream_id))[1, ]
   institution <- if (!is.na(stream$institution_id)) {
-    DBI::dbGetQuery(con, "SELECT * FROM episode_institution WHERE institution_id = ?",
+    DBI::dbGetQuery(con, "SELECT * FROM episodic_institution WHERE institution_id = ?",
                      params = list(stream$institution_id))[1, ]
   } else {
     NULL
   }
-  pc <- episode_db_pathogen_config_get(con, stream$pathogen)
+  pc <- episodic_db_pathogen_config_get(con, stream$pathogen)
 
-  cases <- episode_db_cluster_cases(con, cluster_id)
+  cases <- episodic_db_cluster_cases(con, cluster_id)
   detections <- DBI::dbGetQuery(
-    con, "SELECT DISTINCT detector FROM episode_detection WHERE cluster_id = ?",
+    con, "SELECT DISTINCT detector FROM episodic_detection WHERE cluster_id = ?",
     params = list(cluster_id)
   )$detector
 
-  place <- episode_app_place_label(stream, institution, lang = lang)
-  completeness <- episode_app_completeness(con, stream$stream_id)
+  place <- episodic_app_place_label(stream, institution, lang = lang)
+  completeness <- episodic_app_completeness(con, stream$stream_id)
 
   list(
     id = cluster$cluster_id,
@@ -184,11 +181,11 @@ episode_cluster_object <- function(con, cluster_id, lang = "nl") {
     ratio = cluster$ratio,
     priority_score = cluster$priority_score,
     changed_since_assessment = as.logical(cluster$changed_since_assessment),
-    density = episode_app_density(con, stream, cases),
-    doubling_days = episode_app_doubling_time(cases),
-    concentration = episode_app_concentration(cases, stream$level),
-    denominator = episode_app_denominator_summary(con, stream$pathogen, cases),
-    demography = episode_app_demography_shift(con, stream$stream_id, cases),
+    density = episodic_app_density(con, stream, cases),
+    doubling_days = episodic_app_doubling_time(cases),
+    concentration = episodic_app_concentration(cases, stream$level),
+    denominator = episodic_app_denominator_summary(con, stream$pathogen, cases),
+    demography = episodic_app_demography_shift(con, stream$stream_id, cases),
     completeness = completeness,
     unique_patients = length(unique(cases$patient_key)),
     n_isolates = nrow(cases),
@@ -199,18 +196,18 @@ episode_cluster_object <- function(con, cluster_id, lang = "nl") {
     rt_applicable = if (!is.null(pc)) as.logical(pc$rt_applicable) else FALSE,
     case_free_days = if (!is.null(pc)) pc$case_free_days else NA_integer_,
     mem_applicable = if (!is.null(pc)) as.logical(pc$mem_applicable) else FALSE,
-    curve_shape = if (!is.null(pc)) episode_classify_curve_shape(cases, pc$incub_max_days) else NA_character_,
-    rt = if (!is.null(pc)) episode_compute_rt(cases, pc, incomplete_days = completeness$incomplete_days %||% 0L) else NULL,
-    rt_unavailable_reason = episode_rt_unavailable_reason(pc)
+    curve_shape = if (!is.null(pc)) episodic_classify_curve_shape(cases, pc$incub_max_days) else NA_character_,
+    rt = if (!is.null(pc)) episodic_compute_rt(cases, pc, incomplete_days = completeness$incomplete_days %||% 0L) else NULL,
+    rt_unavailable_reason = episodic_rt_unavailable_reason(pc)
   )
 }
 
 #' Why the Rt panel has nothing to show, when `rt_applicable` is `TRUE`
 #'
-#' `episode_compute_rt()` deliberately collapses several distinct causes
+#' `episodic_compute_rt()` deliberately collapses several distinct causes
 #' into one `NULL` (its own docs: "no off-the-shelf message ... is a
 #' substitute for simply not showing the panel"), which is right for
-#' `episode_cluster_object()` itself but leaves the *displayed* empty
+#' `episodic_cluster_object()` itself but leaves the *displayed* empty
 #' state unable to distinguish "this organism's config is missing a
 #' serial interval" (a data-entry gap worth fixing) from "there simply
 #' are not enough cases in this cluster yet" (expected, no action
@@ -223,7 +220,7 @@ episode_cluster_object <- function(con, cluster_id, lang = "nl") {
 #'   `"insufficient_history"`, or `NA` if Rt is not applicable at all.
 #' @keywords internal
 #' @noRd
-episode_rt_unavailable_reason <- function(pc) {
+episodic_rt_unavailable_reason <- function(pc) {
   if (is.null(pc) || !isTRUE(as.logical(pc$rt_applicable))) return(NA_character_)
   if (is.na(pc$si_mean_days) || is.na(pc$si_sd_days)) return("no_serial_interval")
   if (!requireNamespace("EpiEstim", quietly = TRUE)) return("epiestim_missing")
@@ -232,9 +229,9 @@ episode_rt_unavailable_reason <- function(pc) {
 
 #' @keywords internal
 #' @noRd
-episode_app_place_label <- function(stream, institution, lang = "nl") {
+episodic_app_place_label <- function(stream, institution, lang = "nl") {
   care_line_suffix <- if (!is.na(stream$care_line)) {
-    paste0(" \u00b7 ", episode_tr(paste0("careline.", stream$care_line), lang = lang))
+    paste0(" \u00b7 ", episodic_tr(paste0("careline.", stream$care_line), lang = lang))
   } else {
     ""
   }
@@ -244,7 +241,7 @@ episode_app_place_label <- function(stream, institution, lang = "nl") {
   if (stream$level == "pathogen_institution" && !is.null(institution)) {
     return(institution$display_name)
   }
-  region_label <- episode_app_format_region(stream$region_code)
+  region_label <- episodic_app_format_region(stream$region_code)
   paste0(region_label, care_line_suffix)
 }
 
@@ -258,7 +255,7 @@ episode_app_place_label <- function(stream, institution, lang = "nl") {
 #' legible in the meantime.
 #' @keywords internal
 #' @noRd
-episode_app_format_region <- function(region_code) {
+episodic_app_format_region <- function(region_code) {
   if (is.na(region_code)) return("")
   label <- gsub("[_-]", " ", region_code)
   tools::toTitleCase(tolower(label))
@@ -266,9 +263,9 @@ episode_app_format_region <- function(region_code) {
 
 #' @keywords internal
 #' @noRd
-episode_app_density <- function(con, stream, cases) {
+episodic_app_density <- function(con, stream, cases) {
   if (is.na(stream$institution_id) || nrow(cases) == 0) return(NULL)
-  activity <- episode_db_institution_activity(con, stream$institution_id)
+  activity <- episodic_db_institution_activity(con, stream$institution_id)
   if (nrow(activity) == 0) return(NULL)
   latest <- activity[nrow(activity), ]
   if (is.na(latest$patient_days) || latest$patient_days == 0) return(NULL)
@@ -279,7 +276,7 @@ episode_app_density <- function(con, stream, cases) {
   # baseline), just the descriptive rate the cluster's own density is
   # being read against.
   all_cases <- DBI::dbGetQuery(
-    con, "SELECT sample_date FROM episode_case WHERE pathogen = ? AND institution_id = ?",
+    con, "SELECT sample_date FROM episodic_case WHERE pathogen = ? AND institution_id = ?",
     params = list(stream$pathogen, stream$institution_id)
   )
   baseline <- NA_real_
@@ -305,7 +302,7 @@ episode_app_density <- function(con, stream, cases) {
 #' is Rt), just a descriptive rate.
 #' @keywords internal
 #' @noRd
-episode_app_doubling_time <- function(cases) {
+episodic_app_doubling_time <- function(cases) {
   if (nrow(cases) < 3) return(NA_real_)
   dates <- sort(as.Date(cases$sample_date))
   recent <- dates[dates >= max(dates) - 14]
@@ -327,7 +324,7 @@ episode_app_doubling_time <- function(cases) {
 #' lattice level.
 #' @keywords internal
 #' @noRd
-episode_app_concentration <- function(cases, level) {
+episodic_app_concentration <- function(cases, level) {
   if (nrow(cases) == 0 || all(is.na(cases$pc))) return(NULL)
   tab <- table(cases$pc)
   tab <- tab[order(-tab)]
@@ -343,11 +340,11 @@ episode_app_concentration <- function(cases, level) {
 #' Positivity summary from the optional denominator table
 #' @keywords internal
 #' @noRd
-episode_app_denominator_summary <- function(con, pathogen, cases) {
-  denom <- episode_db_denominator_for_pathogen(con, pathogen)
+episodic_app_denominator_summary <- function(con, pathogen, cases) {
+  denom <- episodic_db_denominator_for_pathogen(con, pathogen)
   if (nrow(denom) == 0 || nrow(cases) == 0) return(NULL)
 
-  series <- episode_app_denominator_series(con, pathogen, cases)
+  series <- episodic_app_denominator_series(con, pathogen, cases)
   if (nrow(series) < 2) return(NULL)
 
   list(
@@ -360,8 +357,8 @@ episode_app_denominator_summary <- function(con, pathogen, cases) {
 #' Weekly (n_tests, n_cases, positivity) series aligned for charting
 #' @keywords internal
 #' @noRd
-episode_app_denominator_series <- function(con, pathogen, cases) {
-  denom <- episode_db_denominator_for_pathogen(con, pathogen)
+episodic_app_denominator_series <- function(con, pathogen, cases) {
+  denom <- episodic_db_denominator_for_pathogen(con, pathogen)
   if (nrow(denom) == 0) {
     return(data.frame(week_start = as.Date(character(0)), n_tests = integer(0),
                        n_cases = integer(0), positivity = numeric(0)))
@@ -378,7 +375,7 @@ episode_app_denominator_series <- function(con, pathogen, cases) {
 #' Whether the cluster's age distribution has shifted from the stream baseline
 #' @keywords internal
 #' @noRd
-episode_app_demography_shift <- function(con, stream_id, cases) {
+episodic_app_demography_shift <- function(con, stream_id, cases) {
   if (nrow(cases) == 0 || all(is.na(cases$age))) return(NULL)
 
   bands <- c("0-19", "20-39", "40-59", "60-79", "80+")
@@ -389,15 +386,15 @@ episode_app_demography_shift <- function(con, stream_id, cases) {
   cluster_band <- band_of(cases$age)
   cluster_dominant <- names(sort(-table(cluster_band)))[1]
 
-  stream_pathogen <- DBI::dbGetQuery(con, "SELECT pathogen FROM episode_stream WHERE stream_id = ?",
+  stream_pathogen <- DBI::dbGetQuery(con, "SELECT pathogen FROM episodic_stream WHERE stream_id = ?",
                                       params = list(stream_id))$pathogen[1]
   all_cases <- DBI::dbGetQuery(
-    con, "SELECT age FROM episode_case WHERE pathogen = ?",
+    con, "SELECT age FROM episodic_case WHERE pathogen = ?",
     params = list(stream_pathogen)
   )
   if (nrow(all_cases) < 5 || all(is.na(all_cases$age))) {
     return(list(shifted = FALSE, dominant_band = as.character(cluster_dominant), baseline_band = NA,
-                bands = episode_app_demography_bars(cases)))
+                bands = episodic_app_demography_bars(cases)))
   }
   baseline_band_tab <- band_of(all_cases$age)
   baseline_dominant <- names(sort(-table(baseline_band_tab)))[1]
@@ -406,14 +403,14 @@ episode_app_demography_shift <- function(con, stream_id, cases) {
     shifted = !identical(cluster_dominant, baseline_dominant),
     dominant_band = as.character(cluster_dominant),
     baseline_band = as.character(baseline_dominant),
-    bands = episode_app_demography_bars(cases)
+    bands = episodic_app_demography_bars(cases)
   )
 }
 
 #' Age/sex pyramid bars: cluster counts (no baseline overlay)
 #' @keywords internal
 #' @noRd
-episode_app_demography_bars <- function(cases) {
+episodic_app_demography_bars <- function(cases) {
   bands <- c("0-19", "20-39", "40-59", "60-79", "80+")
   band_of <- function(age) cut(age, breaks = c(-1, 19, 39, 59, 79, Inf), labels = bands)
   cases$band <- band_of(cases$age)
@@ -426,8 +423,8 @@ episode_app_demography_bars <- function(cases) {
 #' Reporting-triangle-derived incomplete window for the epi curve shading
 #' @keywords internal
 #' @noRd
-episode_app_completeness <- function(con, stream_id) {
-  completeness <- episode_triangle_completeness(con, stream_id)
+episodic_app_completeness <- function(con, stream_id) {
+  completeness <- episodic_triangle_completeness(con, stream_id)
   if (nrow(completeness) == 0) return(list(incomplete_days = 0L))
   incomplete <- completeness[completeness$completeness < 0.95, ]
   list(incomplete_days = if (nrow(incomplete) == 0) 0L else max(incomplete$lag_days))
@@ -440,14 +437,14 @@ episode_app_completeness <- function(con, stream_id) {
 #' @return A data frame with `sample_date`, `n_cases`, `incomplete`.
 #' @keywords internal
 #' @noRd
-episode_app_epi_curve <- function(con, cluster_id) {
-  cases <- episode_db_cluster_cases(con, cluster_id)
+episodic_app_epi_curve <- function(con, cluster_id) {
+  cases <- episodic_db_cluster_cases(con, cluster_id)
   if (nrow(cases) == 0) {
     return(data.frame(sample_date = as.Date(character(0)), n_cases = integer(0), incomplete = logical(0)))
   }
-  cluster <- DBI::dbGetQuery(con, "SELECT stream_id FROM episode_cluster WHERE cluster_id = ?",
+  cluster <- DBI::dbGetQuery(con, "SELECT stream_id FROM episodic_cluster WHERE cluster_id = ?",
                               params = list(cluster_id))
-  incomplete_days <- episode_app_completeness(con, cluster$stream_id[1])$incomplete_days
+  incomplete_days <- episodic_app_completeness(con, cluster$stream_id[1])$incomplete_days
 
   dates <- as.Date(cases$sample_date)
   all_days <- seq(min(dates), max(dates), by = "day")
@@ -462,12 +459,12 @@ episode_app_epi_curve <- function(con, cluster_id) {
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param stream_id A stream id.
-#' @return `episode_db_stream_trend()`'s output, capped to the last 156
-#'   weeks (matching `episode_farrington_trend()`'s own backfill cap).
+#' @return `episodic_db_stream_trend()`'s output, capped to the last 156
+#'   weeks (matching `episodic_farrington_trend()`'s own backfill cap).
 #' @keywords internal
 #' @noRd
-episode_app_trend <- function(con, stream_id) {
-  trend <- episode_db_stream_trend(con, stream_id)
+episodic_app_trend <- function(con, stream_id) {
+  trend <- episodic_db_stream_trend(con, stream_id)
   if (nrow(trend) == 0) return(trend)
   trend <- trend[order(trend$week_start), ]
   utils::tail(trend, 156)
@@ -481,8 +478,8 @@ episode_app_trend <- function(con, stream_id) {
 #'   to show.
 #' @keywords internal
 #' @noRd
-episode_app_linelist <- function(con, cluster_id) {
-  cases <- episode_db_cluster_cases(con, cluster_id)
+episodic_app_linelist <- function(con, cluster_id) {
+  cases <- episodic_db_cluster_cases(con, cluster_id)
   if (nrow(cases) == 0) return(cases)
   cases[order(cases$sample_date), c(
     "source_key", "sample_date", "sex", "age", "pc", "ward", "specialism"
@@ -496,9 +493,9 @@ episode_app_linelist <- function(con, cluster_id) {
 #' @return A named list of display-ready values.
 #' @keywords internal
 #' @noRd
-episode_app_detection_settings <- function(con, cluster_id) {
-  cluster_obj <- episode_cluster_object(con, cluster_id)
-  run <- episode_db_latest_run(con, status = "success")
+episodic_app_detection_settings <- function(con, cluster_id) {
+  cluster_obj <- episodic_cluster_object(con, cluster_id)
+  run <- episodic_db_latest_run(con, status = "success")
   list(
     detectors = cluster_obj$detectors,
     rt_applicable = cluster_obj$rt_applicable,
@@ -518,7 +515,7 @@ episode_app_detection_settings <- function(con, cluster_id) {
 #'
 #' Paginated, and deliberately at the read-model level rather than only
 #' in the UI: `baseline_excluded` is one DB round trip per stream (via
-#' `episode_baseline_excluded_windows()`, itself one round trip per
+#' `episodic_baseline_excluded_windows()`, itself one round trip per
 #' cluster in that stream), so computing it for every stream regardless
 #' of what is actually shown made this screen slow to load once a real
 #' instance's stream count grew past a few dozen - the exact bug report
@@ -534,9 +531,9 @@ episode_app_detection_settings <- function(con, cluster_id) {
 #'   the latest successful run, or `NULL`).
 #' @keywords internal
 #' @noRd
-episode_app_streams_screen <- function(con, page = 1L, page_size = 50L) {
-  streams_all <- episode_db_streams(con, active_only = FALSE)
-  run <- episode_db_latest_run(con, status = "success")
+episodic_app_streams_screen <- function(con, page = 1L, page_size = 50L) {
+  streams_all <- episodic_db_streams(con, active_only = FALSE)
+  run <- episodic_db_latest_run(con, status = "success")
   config_snapshot <- if (!is.null(run) && !is.na(run$config_snapshot)) {
     jsonlite::fromJSON(run$config_snapshot)
   } else {
@@ -555,7 +552,7 @@ episode_app_streams_screen <- function(con, page = 1L, page_size = 50L) {
   # for this page's streams.
   if (nrow(streams) > 0) {
     streams$baseline_excluded <- lapply(streams$stream_id, function(sid) {
-      episode_baseline_excluded_windows(con, sid)
+      episodic_baseline_excluded_windows(con, sid)
     })
   }
   list(streams = streams, total = total, page = page, page_size = page_size,
@@ -572,10 +569,10 @@ episode_app_streams_screen <- function(con, page = 1L, page_size = 50L) {
 #' @return A list describing the latest run.
 #' @keywords internal
 #' @noRd
-episode_app_status <- function(con) {
-  run <- episode_db_latest_run(con)
+episodic_app_status <- function(con) {
+  run <- episodic_db_latest_run(con)
   if (is.null(run)) return(list(status = "none"))
-  n_clusters <- nrow(episode_db_clusters(con, open_only = TRUE))
+  n_clusters <- nrow(episodic_db_clusters(con, open_only = TRUE))
   list(
     status = run$status, finished_at = run$finished_at, n_streams = run$n_streams,
     n_detections = run$n_detections, n_clusters_open = n_clusters

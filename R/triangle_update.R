@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 #' Reporting triangle
 #'
@@ -33,7 +34,7 @@
 #' @return Invisibly, the number of `(sample_date, run_date)` rows written.
 #' @keywords internal
 #' @noRd
-episode_triangle_update <- function(con, stream_id, cases_for_stream, run_date) {
+episodic_triangle_update <- function(con, stream_id, cases_for_stream, run_date) {
   if (nrow(cases_for_stream) == 0) return(invisible(0L))
 
   counts <- table(cases_for_stream$sample_date)
@@ -41,7 +42,7 @@ episode_triangle_update <- function(con, stream_id, cases_for_stream, run_date) 
   n_cases <- as.integer(counts)
 
   for (i in seq_along(sample_dates)) {
-    episode_db_reporting_triangle_upsert(
+    episodic_db_reporting_triangle_upsert(
       con, stream_id = stream_id, sample_date = sample_dates[i],
       run_date = run_date, n_cases = n_cases[i]
     )
@@ -65,9 +66,9 @@ episode_triangle_update <- function(con, stream_id, cases_for_stream, run_date) 
 #'   (0-1, the median share of the final count visible at that lag).
 #' @keywords internal
 #' @noRd
-episode_triangle_completeness <- function(con, stream_id, max_lag_days = 21) {
+episodic_triangle_completeness <- function(con, stream_id, max_lag_days = 21) {
   triangle <- DBI::dbGetQuery(
-    con, "SELECT sample_date, run_date, n_cases FROM episode_reporting_triangle WHERE stream_id = ?",
+    con, "SELECT sample_date, run_date, n_cases FROM episodic_reporting_triangle WHERE stream_id = ?",
     params = list(stream_id)
   )
   if (nrow(triangle) == 0) {

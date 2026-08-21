@@ -15,11 +15,12 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 #' Ingest optional positivity metadata
 #'
 #' Writes the operator-supplied, pre-aggregated denominator table (see
-#' `README.md`'s data format section) to `episode_denominator`. Entirely
+#' `README.md`'s data format section) to `episodic_denominator`. Entirely
 #' optional: a site with nothing to supply
 #' here simply never calls this, and positivity panels stay blank for its
 #' streams. Deliberately not a raw per-test linelist, so volume stays a
@@ -31,11 +32,11 @@
 #'   `care_line`, `area_code` (nullable) and `n_tests`.
 #' @return Invisibly, the number of rows written.
 #'
-#' Not exported: an operator supplies a source to [episode_run_cron()] via
+#' Not exported: an operator supplies a source to [episodic_run_cron()] via
 #' `denominator_source_fn`; this is the internal write step run against it.
 #' @keywords internal
 #' @noRd
-episode_denominator_ingest_run <- function(con, denominators) {
+episodic_denominator_ingest_run <- function(con, denominators) {
   required_cols <- c("pathogen", "sample_date", "care_line", "area_code", "n_tests")
   missing_cols <- setdiff(required_cols, names(denominators))
   if (length(missing_cols) > 0) {
@@ -47,7 +48,7 @@ episode_denominator_ingest_run <- function(con, denominators) {
 
   for (i in seq_len(nrow(denominators))) {
     row <- denominators[i, ]
-    episode_db_denominator_upsert(
+    episodic_db_denominator_upsert(
       con, pathogen = row$pathogen, sample_date = row$sample_date,
       care_line = row$care_line, area_code = row$area_code, n_tests = row$n_tests
     )
@@ -58,11 +59,11 @@ episode_denominator_ingest_run <- function(con, denominators) {
 #' Synthetic positivity metadata source
 #'
 #' A worked example of the optional denominator contract
-#' (`episode_denominator_ingest_run()`): weekly test-panel counts for a
+#' (`episodic_denominator_ingest_run()`): weekly test-panel counts for a
 #' multiplex GI PCR panel that reports Norovirus alongside several other
 #' targets, the kind of aggregate a lab LIS can produce trivially even
 #' though it would never hand over the underlying per-test rows. Not called
-#' by [episode_run_cron()] unless a `denominator_source_fn` is supplied;
+#' by [episodic_run_cron()] unless a `denominator_source_fn` is supplied;
 #' demonstrates the shape only.
 #'
 #' @param start_date,end_date The period to generate weekly rows for.
@@ -70,12 +71,12 @@ episode_denominator_ingest_run <- function(con, denominators) {
 #' @return A data frame with `pathogen`, `sample_date` (week start),
 #'   `care_line`, `area_code`, `n_tests`.
 #' @examples
-#' denom <- episode_denominator_source_synthetic(
+#' denom <- episodic_denominator_source_synthetic(
 #'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 #' )
 #' head(denom)
 #' @export
-episode_denominator_source_synthetic <- function(start_date = as.Date("2021-01-01"),
+episodic_denominator_source_synthetic <- function(start_date = as.Date("2021-01-01"),
                                                   end_date = as.Date("2025-12-31"),
                                                   seed = 1) {
   set.seed(seed)

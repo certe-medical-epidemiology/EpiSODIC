@@ -15,231 +15,208 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
-#' Shared read helpers
-#'
-#' Plain `DBI`-based readers used by both the cron and the app. Read-only:
-#' none of these functions write to the database. All SQL for the package
-#' lives behind functions in `R/db_*.R`; nothing outside this layer issues
-#' SQL directly.
-#' @name db_read
-NULL
+# Shared read helpers: plain DBI-based readers used by both the cron and
+# the app. Read-only: none of these functions write to the database. All
+# SQL for the package lives behind functions in R/db_*.R; nothing
+# outside this layer issues SQL directly.
 
-#' @rdname db_read
 #' @param con A [DBI::DBIConnection-class].
 #' @keywords internal
 #' @noRd
-episode_db_pathogen_config <- function(con) {
-  DBI::dbGetQuery(con, "SELECT * FROM episode_pathogen_config")
+episodic_db_pathogen_config <- function(con) {
+  DBI::dbGetQuery(con, "SELECT * FROM episodic_pathogen_config")
 }
 
-#' @rdname db_read
 #' @param pathogen A single raw pathogen string.
 #' @keywords internal
 #' @noRd
-episode_db_pathogen_config_get <- function(con, pathogen) {
+episodic_db_pathogen_config_get <- function(con, pathogen) {
   res <- DBI::dbGetQuery(
     con,
-    "SELECT * FROM episode_pathogen_config WHERE pathogen = ?",
+    "SELECT * FROM episodic_pathogen_config WHERE pathogen = ?",
     params = list(pathogen)
   )
   if (nrow(res) == 0) NULL else res[1, ]
 }
 
-#' @rdname db_read
 #' @param active_only If `TRUE` (default), only streams with `is_active = 1`.
 #' @keywords internal
 #' @noRd
-episode_db_streams <- function(con, active_only = TRUE) {
-  sql <- "SELECT * FROM episode_stream"
+episodic_db_streams <- function(con, active_only = TRUE) {
+  sql <- "SELECT * FROM episodic_stream"
   if (active_only) sql <- paste(sql, "WHERE is_active = 1")
   DBI::dbGetQuery(con, sql)
 }
 
-#' @rdname db_read
 #' @param stream_key A single `stream_key`.
 #' @keywords internal
 #' @noRd
-episode_db_stream_get <- function(con, stream_key) {
+episodic_db_stream_get <- function(con, stream_key) {
   res <- DBI::dbGetQuery(
     con,
-    "SELECT * FROM episode_stream WHERE stream_key = ?",
+    "SELECT * FROM episodic_stream WHERE stream_key = ?",
     params = list(stream_key)
   )
   if (nrow(res) == 0) NULL else res[1, ]
 }
 
-#' @rdname db_read
 #' @keywords internal
 #' @noRd
-episode_db_institutions <- function(con) {
-  DBI::dbGetQuery(con, "SELECT * FROM episode_institution")
+episodic_db_institutions <- function(con) {
+  DBI::dbGetQuery(con, "SELECT * FROM episodic_institution")
 }
 
-#' @rdname db_read
 #' @param institution_key A single `institution_key`.
 #' @keywords internal
 #' @noRd
-episode_db_institution_get <- function(con, institution_key) {
+episodic_db_institution_get <- function(con, institution_key) {
   res <- DBI::dbGetQuery(
     con,
-    "SELECT * FROM episode_institution WHERE institution_key = ?",
+    "SELECT * FROM episodic_institution WHERE institution_key = ?",
     params = list(institution_key)
   )
   if (nrow(res) == 0) NULL else res[1, ]
 }
 
-#' @rdname db_read
 #' @keywords internal
 #' @noRd
-episode_db_cases <- function(con) {
-  DBI::dbGetQuery(con, "SELECT * FROM episode_case")
+episodic_db_cases <- function(con) {
+  DBI::dbGetQuery(con, "SELECT * FROM episodic_case")
 }
 
-#' @rdname db_read
 #' @keywords internal
 #' @noRd
-episode_db_cases_for_pathogen <- function(con, pathogen) {
+episodic_db_cases_for_pathogen <- function(con, pathogen) {
   DBI::dbGetQuery(
     con,
-    "SELECT * FROM episode_case WHERE pathogen = ? ORDER BY sample_date",
+    "SELECT * FROM episodic_case WHERE pathogen = ? ORDER BY sample_date",
     params = list(pathogen)
   )
 }
 
-#' @rdname db_read
 #' @param open_only If `TRUE`, exclude clusters with `merged_into` set.
 #' @keywords internal
 #' @noRd
-episode_db_clusters <- function(con, open_only = FALSE) {
-  sql <- "SELECT * FROM episode_cluster"
+episodic_db_clusters <- function(con, open_only = FALSE) {
+  sql <- "SELECT * FROM episodic_cluster"
   if (open_only) sql <- paste(sql, "WHERE merged_into IS NULL")
   DBI::dbGetQuery(con, sql)
 }
 
-#' @rdname db_read
 #' @param stream_id A single `stream_id`.
 #' @keywords internal
 #' @noRd
-episode_db_clusters_for_stream <- function(con, stream_id) {
+episodic_db_clusters_for_stream <- function(con, stream_id) {
   DBI::dbGetQuery(
     con,
-    "SELECT * FROM episode_cluster WHERE stream_id = ? AND merged_into IS NULL",
+    "SELECT * FROM episodic_cluster WHERE stream_id = ? AND merged_into IS NULL",
     params = list(stream_id)
   )
 }
 
-#' @rdname db_read
 #' @param cluster_id A single `cluster_id`.
 #' @keywords internal
 #' @noRd
-episode_db_cluster_cases <- function(con, cluster_id) {
+episodic_db_cluster_cases <- function(con, cluster_id) {
   DBI::dbGetQuery(
     con,
-    "SELECT c.* FROM episode_case c
-     INNER JOIN episode_cluster_case cc ON cc.case_id = c.case_id
+    "SELECT c.* FROM episodic_case c
+     INNER JOIN episodic_cluster_case cc ON cc.case_id = c.case_id
      WHERE cc.cluster_id = ?",
     params = list(cluster_id)
   )
 }
 
-#' @rdname db_read
 #' @keywords internal
 #' @noRd
-episode_db_assessment_events <- function(con, cluster_id) {
+episodic_db_assessment_events <- function(con, cluster_id) {
   DBI::dbGetQuery(
     con,
-    "SELECT * FROM episode_assessment_event WHERE cluster_id = ? ORDER BY created_at, event_id",
+    "SELECT * FROM episodic_assessment_event WHERE cluster_id = ? ORDER BY created_at, event_id",
     params = list(cluster_id)
   )
 }
 
-#' @rdname db_read
 #' @keywords internal
 #' @noRd
-episode_db_cluster_states <- function(con, cluster_id) {
+episodic_db_cluster_states <- function(con, cluster_id) {
   DBI::dbGetQuery(
     con,
-    "SELECT * FROM episode_cluster_state WHERE cluster_id = ? ORDER BY entered_at, state_id",
+    "SELECT * FROM episodic_cluster_state WHERE cluster_id = ? ORDER BY entered_at, state_id",
     params = list(cluster_id)
   )
 }
 
-#' @rdname db_read
 #' @keywords internal
 #' @noRd
-episode_db_stream_mutes <- function(con, stream_id) {
+episodic_db_stream_mutes <- function(con, stream_id) {
   DBI::dbGetQuery(
     con,
-    "SELECT * FROM episode_stream_mute WHERE stream_id = ? ORDER BY created_at",
+    "SELECT * FROM episodic_stream_mute WHERE stream_id = ? ORDER BY created_at",
     params = list(stream_id)
   )
 }
 
-#' @rdname db_read
 #' @param username A single username.
 #' @keywords internal
 #' @noRd
-episode_db_user_by_username <- function(con, username) {
+episodic_db_user_by_username <- function(con, username) {
   res <- DBI::dbGetQuery(
-    con, "SELECT * FROM episode_app_user WHERE username = ?",
+    con, "SELECT * FROM episodic_app_user WHERE username = ?",
     params = list(username)
   )
   if (nrow(res) == 0) NULL else res[1, ]
 }
 
-#' @rdname db_read
 #' @param user_id A single `user_id`.
 #' @keywords internal
 #' @noRd
-episode_db_user_by_id <- function(con, user_id) {
+episodic_db_user_by_id <- function(con, user_id) {
   res <- DBI::dbGetQuery(
-    con, "SELECT * FROM episode_app_user WHERE user_id = ?",
+    con, "SELECT * FROM episodic_app_user WHERE user_id = ?",
     params = list(user_id)
   )
   if (nrow(res) == 0) NULL else res[1, ]
 }
 
-#' @rdname db_read
 #' @keywords internal
 #' @noRd
-episode_db_app_user_events <- function(con, user_id) {
+episodic_db_app_user_events <- function(con, user_id) {
   DBI::dbGetQuery(
     con,
-    "SELECT * FROM episode_app_user_event WHERE user_id = ? ORDER BY created_at, event_id",
+    "SELECT * FROM episodic_app_user_event WHERE user_id = ? ORDER BY created_at, event_id",
     params = list(user_id)
   )
 }
 
-#' @rdname db_read
 #' @param run_id A single `run_id`.
 #' @keywords internal
 #' @noRd
-episode_db_detections_for_run <- function(con, run_id) {
+episodic_db_detections_for_run <- function(con, run_id) {
   DBI::dbGetQuery(
     con,
-    "SELECT * FROM episode_detection WHERE run_id = ?",
+    "SELECT * FROM episodic_detection WHERE run_id = ?",
     params = list(run_id)
   )
 }
 
-#' @rdname db_read
 #' @param limit Maximum number of rows to return, most recent first.
 #' @keywords internal
 #' @noRd
-episode_db_runs <- function(con, limit = 200) {
+episodic_db_runs <- function(con, limit = 200) {
   DBI::dbGetQuery(
-    con, "SELECT * FROM episode_detection_run ORDER BY run_id DESC LIMIT ?",
+    con, "SELECT * FROM episodic_detection_run ORDER BY run_id DESC LIMIT ?",
     params = list(limit)
   )
 }
 
-#' @rdname db_read
 #' @param status If given, only the latest run with this `status`.
 #' @keywords internal
 #' @noRd
-episode_db_latest_run <- function(con, status = NULL) {
-  sql <- "SELECT * FROM episode_detection_run"
+episodic_db_latest_run <- function(con, status = NULL) {
+  sql <- "SELECT * FROM episodic_detection_run"
   if (!is.null(status)) {
     sql <- paste(sql, "WHERE status = ?")
     res <- DBI::dbGetQuery(con, paste(sql, "ORDER BY run_id DESC LIMIT 1"), params = list(status))
@@ -249,43 +226,39 @@ episode_db_latest_run <- function(con, status = NULL) {
   if (nrow(res) == 0) NULL else res[1, ]
 }
 
-#' @rdname db_read
 #' @keywords internal
 #' @noRd
-episode_db_stream_trend <- function(con, stream_id) {
+episodic_db_stream_trend <- function(con, stream_id) {
   DBI::dbGetQuery(
-    con, "SELECT * FROM episode_stream_trend WHERE stream_id = ? ORDER BY week_start",
+    con, "SELECT * FROM episodic_stream_trend WHERE stream_id = ? ORDER BY week_start",
     params = list(stream_id)
   )
 }
 
-#' @rdname db_read
 #' @keywords internal
 #' @noRd
-episode_db_denominator_for_pathogen <- function(con, pathogen) {
+episodic_db_denominator_for_pathogen <- function(con, pathogen) {
   DBI::dbGetQuery(
-    con, "SELECT * FROM episode_denominator WHERE pathogen = ? ORDER BY sample_date",
+    con, "SELECT * FROM episodic_denominator WHERE pathogen = ? ORDER BY sample_date",
     params = list(pathogen)
   )
 }
 
-#' @rdname db_read
 #' @keywords internal
 #' @noRd
-episode_db_reports_for_cluster <- function(con, cluster_id) {
+episodic_db_reports_for_cluster <- function(con, cluster_id) {
   DBI::dbGetQuery(
-    con, "SELECT * FROM episode_report_render WHERE cluster_id = ? ORDER BY version_no",
+    con, "SELECT * FROM episodic_report_render WHERE cluster_id = ? ORDER BY version_no",
     params = list(cluster_id)
   )
 }
 
-#' @rdname db_read
-#' @param institution_id An `episode_institution` id.
+#' @param institution_id An `episodic_institution` id.
 #' @keywords internal
 #' @noRd
-episode_db_institution_activity <- function(con, institution_id) {
+episodic_db_institution_activity <- function(con, institution_id) {
   DBI::dbGetQuery(
-    con, "SELECT * FROM episode_institution_activity WHERE institution_id = ? ORDER BY period_start",
+    con, "SELECT * FROM episodic_institution_activity WHERE institution_id = ? ORDER BY period_start",
     params = list(institution_id)
   )
 }

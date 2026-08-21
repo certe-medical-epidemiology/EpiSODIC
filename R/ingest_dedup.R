@@ -15,11 +15,12 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 #' Deduplicate isolates into one case per patient per episode
 #'
 #' One isolate per patient per episode, using episode lengths from
-#' `episode_pathogen_config`, via `AMR::get_episode()` (a hard dependency -
+#' `episodic_pathogen_config`, via `AMR::get_episode()` (a hard dependency -
 #' `pathogen` is still an arbitrary lab-provided string, never resolved
 #' against `AMR::as.mo()` or any taxonomy, since a taxonomy cannot
 #' represent everything a lab reports; see `R/ingest_interface.R`).
@@ -30,7 +31,7 @@
 #' @param raw A data frame satisfying the ingestion interface
 #'   (`R/ingest_interface.R`), already validated.
 #' @param pathogen_config A data frame from `inst/config/pathogen_config.csv`
-#'   (or `episode_db_pathogen_config()`), providing `episode_days` per
+#'   (or `episodic_db_pathogen_config()`), providing `episode_days` per
 #'   `pathogen`. A pathogen not present in this table uses the schema
 #'   default of 30 days.
 #' @return `raw`, with one row per patient per episode (the earliest
@@ -45,7 +46,7 @@
 #' @importFrom AMR get_episode
 #' @keywords internal
 #' @noRd
-episode_dedup <- function(raw, pathogen_config) {
+episodic_dedup <- function(raw, pathogen_config) {
   if (nrow(raw) == 0) return(raw)
 
   raw$.episode_days <- pathogen_config$episode_days[

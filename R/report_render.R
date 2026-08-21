@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 #' Render an outbreak report for a cluster
 #'
@@ -23,14 +24,14 @@
 #' have neither R nor an account, and a static artefact is also the
 #' defensible record of what was communicated on that date. Every render
 #' is versioned and registered in
-#' `episode_report_render` (`episode_db_report_render_insert()`) - never
+#' `episodic_report_render` (`episodic_db_report_render_insert()`) - never
 #' overwritten, so what was handed to a microbiologist on a given morning
 #' stays exactly recoverable, including which cases it contained
 #' (`case_ids`).
 #'
 #' Data for the template is assembled here (from the same read models the
-#' app itself uses: `episode_cluster_object()`, `episode_app_epi_curve()`,
-#' `episode_app_linelist()`) and handed to Quarto as a single RDS side
+#' app itself uses: `episodic_cluster_object()`, `episodic_app_epi_curve()`,
+#' `episodic_app_linelist()`) and handed to Quarto as a single RDS side
 #' channel rather than as `execute_params` values directly - a line list
 #' data frame has no clean YAML/JSON representation, and passing one path
 #' string keeps the template itself simple (`readRDS(params$data_path)`).
@@ -46,7 +47,7 @@
 #' @param output_dir Directory the rendered HTML is written to. Created if
 #'   it does not exist.
 #' @param user_id The rendering user's id, or `NA` for a cron pre-render
-#'   (matches `episode_report_render.user_id`'s own documented meaning).
+#'   (matches `episodic_report_render.user_id`'s own documented meaning).
 #' @param include_linelist If `TRUE` (default), the line list is embedded
 #'   in the report.
 #' @param small_count_threshold Cells below this count are suppressed in
@@ -55,32 +56,32 @@
 #' @param config The resolved configuration; only `config$report` is used.
 #' @param lang Report language, `"nl"` (default) or `"en"`.
 #' @param qmd_path Path to the Quarto template to render. Defaults to the
-#'   `EPISODE_QUARTO_REPORT` environment variable; if that is unset (or
+#'   `EPISODIC_QUARTO_REPORT` environment variable; if that is unset (or
 #'   names a file that does not exist), falls back to the shipped
 #'   `inst/report/cluster_report.qmd`. An operator's own template only
 #'   needs to read `params$data_path` (an `.rds` path, `readRDS()`'d to
 #'   the same list this function assembles: `obj`, `epi_curve`, `trend`,
 #'   `linelist`, `timeline`, `similar`, `small_count_threshold`,
 #'   `rendered_at`, `lang`, `package_version`) - see the shipped template
-#'   for the exact shape and for `episode_tr(..., lang = d$lang)` usage.
+#'   for the exact shape and for `episodic_tr(..., lang = d$lang)` usage.
 #' @return Invisibly, a list with `file_path`, `file_sha256`, `version_no`,
 #'   `report_id`.
 #' @examples
 #' \dontrun{
 #' # needs both the quarto R package and the Quarto CLI installed, plus a
-#' # database with at least one detected cluster - see episode_demo() for
+#' # database with at least one detected cluster - see episodic_demo() for
 #' # a populated one, and the app's rail for a cluster_id to render
-#' db_path <- episode_demo(launch = FALSE)
-#' con <- episode_db_connect(db_path)
-#' episode_report_render(con, cluster_id = 1, output_dir = tempdir())
+#' db_path <- episodic_demo(launch = FALSE)
+#' con <- episodic_db_connect(db_path)
+#' episodic_report_render(con, cluster_id = 1, output_dir = tempdir())
 #' DBI::dbDisconnect(con)
 #' }
 #' @export
-episode_report_render <- function(con, cluster_id, output_dir, user_id = NA,
+episodic_report_render <- function(con, cluster_id, output_dir, user_id = NA,
                                    include_linelist = TRUE, small_count_threshold = NULL,
-                                   config = episode_config_resolve(), lang = "nl",
-                                   qmd_path = Sys.getenv("EPISODE_QUARTO_REPORT", unset = NA)) {
-  if (!episode_quarto_available()) {
+                                   config = episodic_config_resolve(), lang = "nl",
+                                   qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)) {
+  if (!episodic_quarto_available()) {
     stop(
       "Rendering a report needs both the 'quarto' R package and the Quarto ",
       "CLI (https://quarto.org) installed - neither the report Rmd/HTML ",
@@ -92,31 +93,31 @@ episode_report_render <- function(con, cluster_id, output_dir, user_id = NA,
 
   threshold <- small_count_threshold %||% config$report$small_count_threshold %||% 5L
 
-  obj <- episode_cluster_object(con, cluster_id, lang = lang)
-  epi_curve <- episode_app_epi_curve(con, cluster_id)
-  trend <- episode_app_trend(con, obj$stream_id)
-  linelist <- if (isTRUE(include_linelist)) episode_app_linelist(con, cluster_id) else NULL
-  timeline <- episode_app_assessment_timeline(con, cluster_id, lang = lang)
-  similar <- episode_app_similar_clusters(con, cluster_id, lang = lang)
-  case_ids <- episode_db_cluster_cases(con, cluster_id)$case_id
+  obj <- episodic_cluster_object(con, cluster_id, lang = lang)
+  epi_curve <- episodic_app_epi_curve(con, cluster_id)
+  trend <- episodic_app_trend(con, obj$stream_id)
+  linelist <- if (isTRUE(include_linelist)) episodic_app_linelist(con, cluster_id) else NULL
+  timeline <- episodic_app_assessment_timeline(con, cluster_id, lang = lang)
+  similar <- episodic_app_similar_clusters(con, cluster_id, lang = lang)
+  case_ids <- episodic_db_cluster_cases(con, cluster_id)$case_id
 
   if (!is.null(obj$concentration)) {
-    obj$concentration$rows <- episode_report_suppress_small_counts(obj$concentration$rows, "n", threshold)
+    obj$concentration$rows <- episodic_report_suppress_small_counts(obj$concentration$rows, "n", threshold)
   }
 
   report_data <- list(
     obj = obj, epi_curve = epi_curve, trend = trend, linelist = linelist, timeline = timeline,
-    similar = similar, small_count_threshold = threshold, rendered_at = episode_now(), lang = lang,
+    similar = similar, small_count_threshold = threshold, rendered_at = episodic_now(), lang = lang,
     package_version = as.character(utils::packageVersion("EpiSODIC"))
   )
 
-  qmd_path <- episode_report_qmd_path(qmd_path)
+  qmd_path <- episodic_report_qmd_path(qmd_path)
 
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
-  existing <- episode_db_reports_for_cluster(con, cluster_id)
+  existing <- episodic_db_reports_for_cluster(con, cluster_id)
   version_no <- if (nrow(existing) == 0) 1L else max(existing$version_no) + 1L
 
-  work_dir <- tempfile("episode_report_")
+  work_dir <- tempfile("episodic_report_")
   dir.create(work_dir)
   on.exit(unlink(work_dir, recursive = TRUE), add = TRUE)
   file.copy(qmd_path, file.path(work_dir, "cluster_report.qmd"))
@@ -154,7 +155,7 @@ episode_report_render <- function(con, cluster_id, output_dir, user_id = NA,
   ))
   case_ids_json <- as.character(jsonlite::toJSON(case_ids))
 
-  report_id <- episode_db_report_render_insert(
+  report_id <- episodic_db_report_render_insert(
     con, cluster_id = cluster_id, user_id = user_id, file_path = out_file,
     file_sha256 = file_sha256, params_json = params_json, case_ids_json = case_ids_json,
     version_no = version_no
@@ -175,22 +176,22 @@ episode_report_render <- function(con, cluster_id, output_dir, user_id = NA,
 #' @return A single logical.
 #' @keywords internal
 #' @noRd
-episode_quarto_available <- function() {
+episodic_quarto_available <- function() {
   requireNamespace("quarto", quietly = TRUE) && !is.null(quarto::quarto_path())
 }
 
 #' Resolve the Quarto report template to use
 #'
-#' An operator's own template, if `EPISODE_QUARTO_REPORT` (or the
+#' An operator's own template, if `EPISODIC_QUARTO_REPORT` (or the
 #' explicit `qmd_path` argument) names a file that actually exists;
 #' otherwise the shipped `inst/report/cluster_report.qmd` default -
-#' matching the shape `EPISODE_CONFIG`/`EPISODE_GEO_DATA`/... already
+#' matching the shape `EPISODIC_CONFIG`/`EPISODIC_GEO_DATA`/... already
 #' establish.
 #' @param qmd_path A path, or `NA`.
 #' @return A path to an existing `.qmd` file.
 #' @keywords internal
 #' @noRd
-episode_report_qmd_path <- function(qmd_path = Sys.getenv("EPISODE_QUARTO_REPORT", unset = NA)) {
+episodic_report_qmd_path <- function(qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)) {
   if (!is.na(qmd_path) && nzchar(qmd_path) && file.exists(qmd_path)) {
     return(qmd_path)
   }
@@ -216,7 +217,7 @@ episode_report_qmd_path <- function(qmd_path = Sys.getenv("EPISODE_QUARTO_REPORT
 #'   applied.
 #' @keywords internal
 #' @noRd
-episode_report_suppress_small_counts <- function(df, count_col, threshold) {
+episodic_report_suppress_small_counts <- function(df, count_col, threshold) {
   if (is.null(df) || nrow(df) == 0 || is.null(threshold) || threshold <= 1) return(df)
   n <- df[[count_col]]
   small <- !is.na(n) & n > 0 & n < threshold
