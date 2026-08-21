@@ -15,6 +15,7 @@
 --  We created this package for both routine data analysis and academic  --
 --  research and it was publicly released in the hope that it will be    --
 --  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              --
+-- ===================================================================== --
 
 -- EpiSODIC database schema, written in SQLite dialect and used verbatim
 -- for SQLite connections. For a MariaDB/MySQL EPISODIC_DB,
