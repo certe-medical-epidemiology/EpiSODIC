@@ -58,6 +58,14 @@ body {
 .episode-header .episode-brand .episode-brand-accent {
   color: var(--episode-secondary);
 }
+.episode-header .episode-brand .episode-brand-version {
+  font-weight: 400;
+  font-size: 10px;
+  color: #8FAAB8;
+  letter-spacing: 0.2px;
+  margin-left: 5px;
+  vertical-align: 1px;
+}
 .episode-nav {
   display: flex;
   gap: 2px;
