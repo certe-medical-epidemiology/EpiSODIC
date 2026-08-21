@@ -17,13 +17,19 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Chart panels
+#' Draw the dashboard charts (epidemic curve, trend, and Rt)
 #'
-#' Static, not
-#' interactive - keeping the app's dependency footprint to a single,
-#' ubiquitous CRAN plotting package rather than an htmlwidgets stack is a
-#' deliberate simplification.
-#' @name app_charts
+#' These functions build the three time-series charts used throughout the
+#' EpiSODIC dashboard and outbreak reports: an epidemic curve, a trend chart
+#' against the expected baseline, and an effective reproduction number
+#' (\eqn{R_t}) chart. Each takes the small, already-summarised data frame the
+#' app itself works with, so they are also useful for reproducing a dossier's
+#' chart in your own report or presentation. All three return a static
+#' [ggplot2::ggplot] object that can be printed, saved with
+#' [ggplot2::ggsave()], or further customised with additional `ggplot2`
+#' layers.
+#'
+#' @name episodic_charts
 #' @importFrom rlang .data
 NULL
 
@@ -44,16 +50,21 @@ episodic_chart_theme <- function() {
     )
 }
 
-#' @rdname app_charts
-#' @param curve A data frame from `episodic_app_epi_curve()`.
-#' @param lang Session language.
+#' @rdname episodic_charts
+#' @param curve A data frame with one row per day: `sample_date` (`Date`),
+#'   `n_cases` (case count), and `incomplete` (logical, `TRUE` for the most
+#'   recent day(s) where reporting is still catching up - these are drawn at
+#'   reduced opacity as a visual reminder not to over-interpret a downturn
+#'   that is really just a reporting lag).
+#' @param lang Language for axis labels: `"nl"` (Dutch, default) or `"en"`.
+#' @return A [ggplot2::ggplot] object.
 #' @examples
 #' curve <- data.frame(
 #'   sample_date = seq(as.Date("2025-01-01"), by = "day", length.out = 14),
 #'   n_cases = c(1, 0, 2, 1, 3, 2, 4, 3, 5, 2, 1, 0, 1, 2),
 #'   incomplete = c(rep(FALSE, 12), TRUE, TRUE)
 #' )
-#' p <- episodic_ui_epi_curve_chart(curve)
+#' episodic_ui_epi_curve_chart(curve, lang = "en")
 #' @export
 episodic_ui_epi_curve_chart <- function(curve, lang = "nl") {
   pal <- episodic_palette()
@@ -67,8 +78,10 @@ episodic_ui_epi_curve_chart <- function(curve, lang = "nl") {
     episodic_chart_theme()
 }
 
-#' @rdname app_charts
-#' @param trend A data frame from `episodic_app_trend()`.
+#' @rdname episodic_charts
+#' @param trend A data frame with one row per week: `week_start` (`Date`),
+#'   `n_cases` (observed count), `expected` (the Farrington baseline), and
+#'   `upperbound` (the alarm threshold, shown as a shaded band).
 #' @examples
 #' trend <- data.frame(
 #'   week_start = seq(as.Date("2025-01-06"), by = "week", length.out = 8),
@@ -76,7 +89,7 @@ episodic_ui_epi_curve_chart <- function(curve, lang = "nl") {
 #'   expected = c(2, 2, 2, 2, 2, 2, 2, 2),
 #'   upperbound = c(4, 4, 4, 4, 4, 4, 4, 4)
 #' )
-#' p <- episodic_ui_trend_chart(trend)
+#' episodic_ui_trend_chart(trend, lang = "en")
 #' @export
 episodic_ui_trend_chart <- function(trend, lang = "nl") {
   pal <- episodic_palette()
@@ -93,8 +106,11 @@ episodic_ui_trend_chart <- function(trend, lang = "nl") {
     episodic_chart_theme()
 }
 
-#' @rdname app_charts
-#' @param rt A data frame from `episodic_compute_rt()`.
+#' @rdname episodic_charts
+#' @param rt A data frame with one row per estimation window: `window_end`
+#'   (`Date`), `mean` (point estimate of \eqn{R_t}), and `lower`/`upper`
+#'   (95% credible interval). A dashed reference line is drawn at
+#'   \eqn{R_t = 1}, the threshold between a shrinking and a growing outbreak.
 #' @examples
 #' rt <- data.frame(
 #'   window_end = seq(as.Date("2025-01-08"), by = "day", length.out = 5),
@@ -102,7 +118,7 @@ episodic_ui_trend_chart <- function(trend, lang = "nl") {
 #'   lower = c(1.0, 0.9, 0.8, 0.6, 0.5),
 #'   upper = c(1.8, 1.7, 1.4, 1.2, 1.1)
 #' )
-#' p <- episodic_ui_rt_chart(rt)
+#' episodic_ui_rt_chart(rt)
 #' @export
 episodic_ui_rt_chart <- function(rt, lang = "nl") {
   pal <- episodic_palette()
@@ -169,8 +185,8 @@ episodic_ui_geo_map_chart <- function(rows) {
   }, error = function(e) NULL)
 }
 
-#' @rdname app_charts
-#' @param series A data frame from `episodic_app_denominator_series()`.
+#' Chart of tests performed and positivity rate, by week
+#' @param series A data frame with `week_start`, `n_tests`, `positivity`.
 #' @keywords internal
 #' @noRd
 episodic_ui_denominator_chart <- function(series, lang = "nl") {

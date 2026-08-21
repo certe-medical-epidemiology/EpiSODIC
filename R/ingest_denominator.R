@@ -56,18 +56,24 @@ episodic_denominator_ingest_run <- function(con, denominators) {
   invisible(nrow(denominators))
 }
 
-#' Synthetic positivity metadata source
+#' Add a testing-volume (positivity) feed
 #'
-#' A worked example of the optional denominator contract
-#' (`episodic_denominator_ingest_run()`): weekly test-panel counts for a
-#' multiplex GI PCR panel that reports Norovirus alongside several other
-#' targets, the kind of aggregate a lab LIS can produce trivially even
-#' though it would never hand over the underlying per-test rows. Not called
-#' by [episodic_run_cron()] unless a `denominator_source_fn` is supplied;
-#' demonstrates the shape only.
+#' Case counts alone cannot distinguish a rise in infections from a rise in
+#' testing. If you can supply how many tests were performed - even as a
+#' weekly aggregate, not per-test detail - EpiSODIC can show a positivity
+#' rate alongside the case count, which is often the more meaningful signal.
+#' This feed is entirely optional: skip it and positivity panels simply stay
+#' blank.
+#'
+#' This function is a synthetic example showing the expected shape: weekly
+#' counts of a multiplex GI PCR panel that also reports Norovirus. Use it as
+#' a template for your own function, which you pass to [episodic_run_cron()]
+#' as `denominator_source_fn`. Your function should return a data frame with
+#' the same five columns: `pathogen`, `sample_date` (week start),
+#' `care_line`, `area_code` (may be `NA`), and `n_tests`.
 #'
 #' @param start_date,end_date The period to generate weekly rows for.
-#' @param seed RNG seed.
+#' @param seed RNG seed, for reproducible demo data.
 #' @return A data frame with `pathogen`, `sample_date` (week start),
 #'   `care_line`, `area_code`, `n_tests`.
 #' @examples

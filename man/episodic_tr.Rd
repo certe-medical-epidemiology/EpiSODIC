@@ -2,27 +2,33 @@
 % Please edit documentation in R/i18n.R
 \name{episodic_tr}
 \alias{episodic_tr}
-\title{Translate a key, with placeholder substitution}
+\title{Translate a dashboard text key}
 \usage{
 episodic_tr(key, ..., lang = "nl", instance_i18n = NULL)
 }
 \arguments{
-\item{key}{A dotted i18n key, e.g. \code{"rail.title"}.}
+\item{key}{A dotted key identifying the piece of text, e.g.
+\code{"nav.clusters"}. The full set of available keys and their Dutch and
+English wording lives in \code{inst/i18n/nl.json} and \code{inst/i18n/en.json}.}
 
-\item{...}{Named placeholder values substituted into \code{{name}} tokens in
-the template.}
+\item{...}{Named values substituted into \verb{\{name\}} placeholders in the
+template.}
 
-\item{lang}{Session language, \code{"nl"} (default) or \code{"en"}.}
+\item{lang}{Language: \code{"nl"} (default) or \code{"en"}.}
 
-\item{instance_i18n}{An optional named character vector of operator
-overrides (dotted key -> template), checked before the shipped
-translation files. \code{NULL} (the default) means no override.}
+\item{instance_i18n}{An optional named character vector of your own
+wording overrides (key -> template), checked before the shipped
+translations. \code{NULL} (the default) uses only the shipped text.}
 }
 \value{
-A single character string, with placeholders substituted.
+A single character string.
 }
 \description{
-Translate a key, with placeholder substitution
+Looks up a piece of dashboard text by its key and language, substituting
+any \verb{\{placeholder\}} tokens in the template. Mostly useful if you are
+writing your own Quarto outbreak report template
+(\code{EPISODIC_QUARTO_REPORT}) and want it to read the same wording, in the
+same language, as the dashboard itself.
 }
 \examples{
 episodic_tr("nav.clusters", lang = "nl")

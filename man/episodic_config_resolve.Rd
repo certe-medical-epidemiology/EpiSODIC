@@ -2,33 +2,37 @@
 % Please edit documentation in R/config.R
 \name{episodic_config_resolve}
 \alias{episodic_config_resolve}
-\title{Resolve the EpiSODIC configuration}
+\title{Read the surveillance configuration}
 \usage{
 episodic_config_resolve(
   episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)
 )
 }
 \arguments{
-\item{episodic_config_path}{Path to the instance configuration file.
-Defaults to the \code{EPISODIC_CONFIG} environment variable. If unset or the
-file does not exist, only the shipped defaults are used, which is the
-supported way to run the bundled demo.}
+\item{episodic_config_path}{Path to your own configuration file. Defaults
+to the \code{EPISODIC_CONFIG} environment variable; if that is unset or the
+file does not exist, only the built-in defaults are used.}
 }
 \value{
-A nested list, the resolved configuration.
+A nested list with the resolved configuration, e.g.
+\code{config$eligibility$min_baseline_weeks} or \code{config$priority_score$weights}.
 }
 \description{
-Loads the shipped defaults from \code{inst/config/default.yaml}, then, if the
-\code{EPISODIC_CONFIG} environment variable points at a readable file, loads it
-and overlays it on top: any key it sets replaces the corresponding key in
-the defaults. Detection settings are never read from anywhere else and
-never from inside this package's own tree at runtime beyond the shipped
-defaults.
+EpiSODIC's detection behaviour - which detectors run, their thresholds,
+how a dossier's priority score is weighted, and so on - is controlled by
+a YAML configuration file, not by function arguments. This function reads
+that configuration: it starts from the package's built-in defaults and,
+if you have set the \code{EPISODIC_CONFIG} environment variable to point at
+your own YAML file, overlays your settings on top. You only need to set
+the keys you want to change; anything you leave out keeps its default.
 }
 \details{
-The result is what gets hashed into \code{config_hash} and stored verbatim as
-\code{config_snapshot} on every detection run, so a run's exact parameters are
-always recoverable from the database alone.
+Running the bundled demo needs no configuration file at all - the
+shipped defaults are enough on their own.
+
+Every detection run stores the exact configuration it used (see
+\code{\link[=episodic_config_hash]{episodic_config_hash()}}), so you can always trace a past result back to
+the settings that produced it, even after you have since changed them.
 }
 \examples{
 config <- episodic_config_resolve()

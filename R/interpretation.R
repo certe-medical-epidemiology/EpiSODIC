@@ -17,26 +17,25 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' The interpretation fragment engine
+#' How the dossier's narrative summary is written
 #'
-#' No LLM at runtime - deterministic and testable by construction. An interpretation (the
-#' Dutch UI has its own term for this, see `inst/i18n/nl.json`'s
-#' `panel.interpretation.title`) is assembled from a fixed library of
-#' fragments: each fragment has an id, a condition function over the
-#' cluster object, a narrative slot, and a template (an i18n key with
-#' placeholders). Deterministic, testable, translatable.
+#' Every cluster dossier includes a short, plain-language narrative
+#' summarising what the numbers mean - e.g. how large the cluster is
+#' relative to baseline, how concentrated it is at one institution, and
+#' what to consider next. This text is not written by an LLM: it is
+#' assembled deterministically from a fixed library of pre-written
+#' sentence templates ("fragments"), each triggered by a specific condition
+#' on the cluster's data. The same inputs always produce the same wording,
+#' and every fragment is translated into both Dutch and English.
 #'
-#' Slots fire in a fixed order: magnitude, concentration,
-#' denominator, demography, completeness, recommendation. Within a slot,
-#' fragments are tried in the order they are registered and the first whose
-#' condition matches is used; a slot with no matching fragment (for example
-#' `denominator` when no positivity metadata was supplied) is silently
-#' skipped rather than padded with a placeholder sentence.
-#'
-#' The **cluster object** every condition and template renders against is a
-#' plain list; see `R/app_read.R`'s `episodic_cluster_object()` for exactly
-#' which fields it carries and where each one comes from.
-#' @name interpretation
+#' The narrative is built up section by section, in this fixed order:
+#' `episodic_interpretation_slots` lists them - magnitude, curve shape,
+#' concentration, testing volume, demography, data completeness, and
+#' finally a recommendation. Within a section, the first applicable
+#' fragment is used; a section with nothing applicable (for example, the
+#' testing-volume section when no positivity data was supplied) is simply
+#' omitted rather than filled with a placeholder sentence.
+#' @name episodic_interpretation
 NULL
 
 #' @keywords internal
@@ -178,7 +177,9 @@ episodic_interpretation_fragments <- function() {
   )
 }
 
-#' @rdname interpretation
+#' @rdname episodic_interpretation
+#' @examples
+#' episodic_interpretation_slots
 #' @export
 episodic_interpretation_slots <- c("magnitude", "curve_shape", "concentration", "denominator", "demography", "completeness", "recommendation")
 

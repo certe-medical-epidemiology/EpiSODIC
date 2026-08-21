@@ -2,7 +2,7 @@
 % Please edit documentation in R/ingest_synthetic.R
 \name{episodic_ingest_source_synthetic}
 \alias{episodic_ingest_source_synthetic}
-\title{Synthetic ingestion source}
+\title{Generate synthetic outbreak data}
 \usage{
 episodic_ingest_source_synthetic(
   start_date = as.Date("2021-01-01"),

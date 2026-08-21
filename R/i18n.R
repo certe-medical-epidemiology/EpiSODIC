@@ -17,22 +17,14 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' i18n scaffolding
+#' Translation lookup
 #'
-#' Flat JSON, dotted keys, Dutch default, English fallback, missing keys
-#' rendered visibly (`[[key]]`) rather than blank, so a gap is loud, not
-#' silent. User-facing
-#' strings are never hardcoded in R code; every string used by the app
-#' lives in `inst/i18n/nl.json`/`en.json` and is looked up through
-#' [episodic_tr()].
-#'
-#' Fallback chain: an instance override (an operator-supplied overlay,
-#' e.g. for house-style wording changes, located beside `EPISODIC_CONFIG`
-#' rather than in the repository - configuration is never committed to
-#' the repository, the same rule detection settings follow), then the
-#' requested session language, then `"en"`, then the key itself, wrapped
-#' so a missing
-#' translation is obvious in testing rather than silently blank.
+#' The dashboard is available in Dutch and English. All user-facing text is
+#' stored as translation keys (e.g. `"nav.clusters"`) rather than hardcoded
+#' in R code, and [episodic_tr()] looks a key up in the requested language.
+#' A key that does not exist in either language is shown as `[[key]]`
+#' rather than silently left blank, so a missing translation is easy to
+#' spot.
 #'
 #' @name i18n
 NULL
@@ -65,16 +57,24 @@ episodic_i18n_load <- function(lang) {
   flat
 }
 
-#' Translate a key, with placeholder substitution
+#' Translate a dashboard text key
 #'
-#' @param key A dotted i18n key, e.g. `"rail.title"`.
-#' @param ... Named placeholder values substituted into `{name}` tokens in
-#'   the template.
-#' @param lang Session language, `"nl"` (default) or `"en"`.
-#' @param instance_i18n An optional named character vector of operator
-#'   overrides (dotted key -> template), checked before the shipped
-#'   translation files. `NULL` (the default) means no override.
-#' @return A single character string, with placeholders substituted.
+#' Looks up a piece of dashboard text by its key and language, substituting
+#' any `{placeholder}` tokens in the template. Mostly useful if you are
+#' writing your own Quarto outbreak report template
+#' (`EPISODIC_QUARTO_REPORT`) and want it to read the same wording, in the
+#' same language, as the dashboard itself.
+#'
+#' @param key A dotted key identifying the piece of text, e.g.
+#'   `"nav.clusters"`. The full set of available keys and their Dutch and
+#'   English wording lives in `inst/i18n/nl.json` and `inst/i18n/en.json`.
+#' @param ... Named values substituted into `{name}` placeholders in the
+#'   template.
+#' @param lang Language: `"nl"` (default) or `"en"`.
+#' @param instance_i18n An optional named character vector of your own
+#'   wording overrides (key -> template), checked before the shipped
+#'   translations. `NULL` (the default) uses only the shipped text.
+#' @return A single character string.
 #' @examples
 #' episodic_tr("nav.clusters", lang = "nl")
 #' episodic_tr("nav.clusters", lang = "en")

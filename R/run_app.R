@@ -17,23 +17,30 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Run the EpiSODIC Shiny app
+#' Open the EpiSODIC dashboard
 #'
-#' Read-only for anonymous visitors: signing in is only required to
-#' classify a cluster. Serves the cluster dossier and the Streams
-#' overview against a database already populated by
-#' [episodic_run_cron()].
+#' Launches the Shiny dashboard against a database already populated by
+#' [episodic_run_cron()]: an overview of monitored surveillance streams and
+#' each cluster's dossier, with charts, its narrative interpretation, and
+#' an assessment form. Anyone can browse the dashboard; signing in is only
+#' required to record an assessment or classify a cluster.
 #'
-#' @param db_path Path to a SQLite database, or a `mysql://` DSN (see
-#'   [episodic_db_dsn_mariadb()]). Defaults to the `EPISODIC_DB`
-#'   environment variable.
-#' @param lang Default session language, `"nl"` (default) or `"en"`.
-#' @param ... Passed on to [shiny::runApp()] (e.g. `port`, `host`).
-#' @return Invisible; called for its side effect of starting the app.
+#' If you just want to explore EpiSODIC without setting anything up first,
+#' use [episodic_demo()] instead - it populates a database with synthetic
+#' data and calls this function for you.
+#'
+#' @param db_path Path to the EpiSODIC database: a SQLite file, or a
+#'   MariaDB/MySQL DSN (see [episodic_db_dsn_mariadb()]). Defaults to the
+#'   `EPISODIC_DB` environment variable.
+#' @param lang Default dashboard language, `"nl"` (default) or `"en"`.
+#'   Individual users can switch language within the app.
+#' @param ... Passed on to [shiny::runApp()], e.g. `port` or `host`.
+#' @return Invisible; called for its side effect of starting the app. This
+#'   call blocks until the app is stopped.
 #' @examples
 #' \dontrun{
-#' # opens a blocking, interactive Shiny session - see episodic_demo() for a
-#' # one-call, populated version of this same example
+#' # opens a blocking, interactive dashboard session; see episodic_demo()
+#' # for a one-call version that also creates a populated demo database
 #' episodic_run_app("/path/to/episodic.sqlite")
 #' }
 #' @export

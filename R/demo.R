@@ -17,38 +17,31 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Run the full synthetic demo in one call
+#' Try EpiSODIC with synthetic outbreak data
 #'
-#' A stranger should be able to clone the repository and run the whole
-#' system in under a minute. This is everything a first-time reader
-#' would otherwise piece together by hand from the README (`Sys.setenv()`, `episodic_run_cron()` against the
-#' bundled synthetic generator, `episodic_provision_user()`) wrapped into
-#' one call - a fresh SQLite database, a completed detection run, one
-#' assessor account ready to sign in with, and (unless `launch = FALSE`)
-#' the app itself. No Diver access, no real credentials, no instance
-#' configuration file required; every setting used here is a shipped
-#' default.
+#' The fastest way to see what EpiSODIC does: this single call creates a
+#' fresh database, generates several years of synthetic laboratory data,
+#' runs detection over it, creates a demo assessor account, and opens the
+#' dashboard - all without needing access to any real laboratory system or
+#' an instance configuration file. Everything used here is a shipped
+#' default, so it works right after installing the package.
 #'
 #' @param db_path Path to the SQLite database to create. Defaults to a
-#'   session temp file, so repeated calls never collide with each other
-#'   and nothing is left behind once the R session ends.
+#'   temporary file, so repeated calls never collide and nothing is left
+#'   behind once the R session ends.
 #' @param username,full_name,email,password Credentials for the demo
-#'   assessor account this provisions, so signing in and classifying a
-#'   cluster works immediately after `launch`. These are placeholder
-#'   values, not real credentials - change them for anything beyond a
-#'   local demo.
-#' @param launch If `TRUE` (default), calls [episodic_run_app()]
-#'   afterwards (blocking, exactly as calling it directly would). Set to
-#'   `FALSE` to only set up the database and return its path - useful
-#'   for scripting, screenshots, or tests that need a populated demo
-#'   database without an interactive session.
-#' @param lang Passed to [episodic_run_app()] when `launch = TRUE`.
-#' @param ingest_source_fn,denominator_source_fn Passed straight through
-#'   to [episodic_run_cron()]. Default to the bundled synthetic generator
-#'   over its own full default window (several years); exposed mainly so
-#'   a smaller/faster window can be substituted - this package's own
-#'   tests do exactly that, since a real demo's representative multi-year
-#'   window is far more than a test needs to confirm the plumbing works.
+#'   assessor account this creates, so you can sign in and classify a
+#'   cluster right away. These are placeholder values - change them for
+#'   anything beyond a local demo.
+#' @param launch If `TRUE` (default), opens the dashboard afterwards (see
+#'   [episodic_run_app()]); this call blocks until you close it. Set to
+#'   `FALSE` to only build the demo database and return its path, e.g. for
+#'   scripting or screenshots.
+#' @param lang Dashboard language when `launch = TRUE`: `"nl"` or `"en"`.
+#' @param ingest_source_fn,denominator_source_fn The data sources to
+#'   generate the demo from, passed on to [episodic_run_cron()]. Default to
+#'   several years of synthetic data; pass a narrower date range (see
+#'   [episodic_ingest_source_synthetic()]) for a quicker demo.
 #' @return Invisibly, `db_path`.
 #' @examples
 #' \dontrun{

@@ -23,3 +23,74 @@ template:
   bootstrap: 5
   bootswatch: yeti
 
+reference:
+- title: Try it out
+  desc: >
+    The fastest way to see what EpiSODIC does, with no data or
+    configuration of your own required.
+  contents:
+  - episodic_demo
+
+- title: Run EpiSODIC
+  desc: >
+    The two calls that run a real instance: detect on a schedule, and
+    open the dashboard for your board to review the results.
+  contents:
+  - episodic_run_cron
+  - episodic_run_app
+  - episodic_resolve_source
+
+- title: Connect your own data
+  desc: >
+    How to plug in your laboratory results and, optionally, testing
+    volume and hospital activity data.
+  contents:
+  - episodic_ingest_interface
+  - episodic_ingest_validate_source
+  - episodic_ingest_source_synthetic
+  - episodic_ingest_source_synthetic_calibration
+  - episodic_denominator_source_synthetic
+  - episodic_synthetic_institution_activity_source
+
+- title: Set up a database
+  desc: >
+    Create and connect to the database EpiSODIC stores its data in.
+  contents:
+  - episodic_db_create
+  - episodic_db_connect
+  - episodic_db_open
+  - episodic_db_dsn_mariadb
+
+- title: Accounts and sign-in
+  contents:
+  - episodic_auth
+  - episodic_provision_user
+
+- title: Configure detection
+  desc: >
+    Detection thresholds, priority scoring, and reproducibility.
+  contents:
+  - episodic_config_resolve
+  - episodic_config_hash
+
+- title: Interpret and report results
+  desc: >
+    How the dashboard's narrative summary is generated, and how to send
+    an outbreak report to clinical colleagues.
+  contents:
+  - episodic_interpretation
+  - episodic_report_render
+
+- title: Customise the look and feel
+  desc: >
+    House colours, maps, translations, and dashboard chart building
+    blocks - useful if you are adapting EpiSODIC or writing your own
+    report template.
+  contents:
+  - episodic_palette
+  - episodic_geo
+  - i18n
+  - episodic_tr
+  - episodic_charts
+  - episodic_ui_italicise_taxon
+

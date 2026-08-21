@@ -2,7 +2,7 @@
 % Please edit documentation in R/ingest_institution_activity.R
 \name{episodic_synthetic_institution_activity_source}
 \alias{episodic_synthetic_institution_activity_source}
-\title{Synthetic institution activity source}
+\title{Add a hospital activity feed (patient-days)}
 \usage{
 episodic_synthetic_institution_activity_source(
   institutions,
@@ -12,26 +12,30 @@ episodic_synthetic_institution_activity_source(
 )
 }
 \arguments{
-\item{institutions}{A data frame from \code{episodic_db_institutions()} (or
-\code{episodic_synthetic_institutions()}'s own shape before insertion),
-filtered internally to \code{institution_type == "hospital"}.}
+\item{institutions}{A data frame of institutions (as returned by your
+own institution registry), filtered internally to hospitals only.}
 
 \item{start_date, end_date}{The period to generate weekly rows for.}
 
-\item{seed}{RNG seed.}
+\item{seed}{RNG seed, for reproducible demo data.}
 }
 \value{
 A data frame with \code{institution_key}, \code{period_start},
 \code{period_end}, \code{patient_days}, \code{n_beds}, \code{source}.
 }
 \description{
-A worked example of the optional activity contract
-(\code{episodic_institution_activity_ingest_run()}): weekly patient-days per
-hospital, modelled as \code{n_beds * occupancy} with light seasonal
-variation (winter admissions run higher) and noise. Not called by
-\code{\link[=episodic_run_cron]{episodic_run_cron()}} unless an \code{institution_activity_source_fn} is
-supplied; demonstrates the shape only, so the bundled demo can show
-an incidence-density curve without a real hospital feed.
+Raw case counts at a hospital can rise simply because the hospital is
+busier, not because infection risk has increased. If you can supply
+weekly patient-days (or admissions, or bed counts) per hospital,
+EpiSODIC can normalise case counts against activity for a more reliable
+signal. This feed is entirely optional: without it, detection falls back
+to raw counts, which is a reasonable default, not a broken one.
+}
+\details{
+This function is a synthetic example showing the expected shape: weekly
+patient-days per hospital, modelled as bed count times occupancy, with a
+realistic winter peak. Use it as a template for your own function, which
+you pass to \code{\link[=episodic_run_cron]{episodic_run_cron()}} as \code{institution_activity_source_fn}.
 }
 \examples{
 institutions <- data.frame(

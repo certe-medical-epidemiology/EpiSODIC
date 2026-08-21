@@ -2,18 +2,23 @@
 % Please edit documentation in R/ingest_interface.R
 \name{episodic_ingest_validate_source}
 \alias{episodic_ingest_validate_source}
-\title{Validate that a raw ingestion source data frame satisfies the interface}
+\title{Check that your ingestion source has the right shape}
 \usage{
 episodic_ingest_validate_source(raw)
 }
 \arguments{
-\item{raw}{A data frame as returned by an ingestion source function.}
+\item{raw}{A data frame, as returned by your ingestion source function.}
 }
 \value{
-\code{raw}, invisibly, if valid. Errors otherwise.
+\code{raw}, invisibly, if it is valid. Throws an informative error
+otherwise (a missing required column, an unexpected extra column, or
+duplicate \code{source_key} values).
 }
 \description{
-Validate that a raw ingestion source data frame satisfies the interface
+Call this on the data frame your own ingestion source function returns,
+while developing it, to get a clear error if a column is missing,
+misnamed, or duplicated - before handing it to \code{\link[=episodic_run_cron]{episodic_run_cron()}}.
+See \link{episodic_ingest_columns} for the required columns.
 }
 \examples{
 raw <- episodic_ingest_source_synthetic(
