@@ -96,23 +96,23 @@ allow-listed column set (`episode_ingest_columns`); an ingestion source
 returning any column outside this list, or missing one from it, is
 rejected:
 
-| Column | Meaning |
-|---|---|
-| `source_key` | A unique identifier for the row in your own source system, so a later re-ingest of the same extract cannot create duplicate cases. |
-| `patient_key` | A stable, pseudonymised patient identifier. This is what deduplication and episode grouping key on: without it, EpiSODIC cannot tell that two isolates belong to the same patient, and every isolate would be treated as its own case. Never displayed as-is in the interface. |
-| `sample_date` | The anchor date every detector, trend, and report is built against. If your system falls back to a receipt date when sample date is unfilled, that fallback should already have happened before this row reaches EpiSODIC. |
-| `receipt_date` | When the result was received. Stored for provenance/audit, kept separate from `sample_date` - EpiSODIC deliberately does not use it to measure reporting delay, since a lab's own receipt-date field can itself silently be a stand-in for a missing sample date; reporting completeness is instead measured empirically, from how a stream's case counts change across successive detection runs. |
-| `pathogen` | The organism as your lab reports it, as free text. **Not** resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying isolate can appear more than once under different `pathogen` values when that is epidemiologically useful - an ETEC isolate reported as both `"Escherichia coli"` and `"ETEC"`, so each is watched on its own. This is your transform step's decision, not EpiSODIC's. |
-| `care_line` | `first`, `second`, `other`, or `unknown` - which part of the health system the case came from. |
-| `institution_key` | A stable identifier for the institution, hashed internally so a later rename does not fracture history. |
-| `institution_display_name` | The human-readable name shown in the interface. |
-| `institution_type` | One of `hospital`, `ltc_institution`, `gp_municipality`, `ooh_service`, `other`. |
-| `municipality` | The institution's municipality, used for `gp_municipality`-type rows (see below) and as a coarse geographic fallback. |
-| `ward` | Only meaningful (and only used) for hospitals: this is what the `same_place` detector watches at ward level. |
-| `specialism` | The treating specialism, shown on the line list for context; not itself a detection dimension. |
-| `pc` | The patient's postcode (or equivalent - see "Geographic reference data" below for how coarse or fine this can be). Drives the geography panel and the choropleth, and the concentration measure ("how localised is this cluster") that feeds the priority score. |
-| `sex` | The patient's sex. Feeds the demography panel's age/sex pyramid, one of the interpretation engine's own evidence dimensions (a cluster's demography shifting from a department's usual baseline is itself a signal worth surfacing). |
-| `age` | The patient's age at sample date. Same role as `sex`: demography panel and interpretation, not a detection input. |
+| Column                     | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `source_key`               | A unique identifier for the row in your own source system, so a later re-ingest of the same extract cannot create duplicate cases.                                                                                                                                                                                                                                                                                                                    |
+| `patient_key`              | A stable, pseudonymised patient identifier. This is what deduplication and episode grouping key on: without it, EpiSODIC cannot tell that two isolates belong to the same patient, and every isolate would be treated as its own case. Never displayed as-is in the interface.                                                                                                                                                                        |
+| `sample_date`              | The anchor date every detector, trend, and report is built against. If your system falls back to a receipt date when sample date is unfilled, that fallback should already have happened before this row reaches EpiSODIC.                                                                                                                                                                                                                            |
+| `receipt_date`             | When the result was received. Stored for provenance/audit, kept separate from `sample_date` - EpiSODIC deliberately does not use it to measure reporting delay, since a lab's own receipt-date field can itself silently be a stand-in for a missing sample date; reporting completeness is instead measured empirically, from how a stream's case counts change across successive detection runs.                                                    |
+| `pathogen`                 | The organism as your lab reports it, as free text. **Not** resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying isolate can appear more than once under different `pathogen` values when that is epidemiologically useful - an ETEC isolate reported as both `"Escherichia coli"` and `"ETEC"`, so each is watched on its own. This is your transform step's decision, not EpiSODIC's. |
+| `care_line`                | `first`, `second`, `other`, or `unknown` - which part of the health system the case came from.                                                                                                                                                                                                                                                                                                                                                        |
+| `institution_key`          | A stable identifier for the institution, hashed internally so a later rename does not fracture history.                                                                                                                                                                                                                                                                                                                                               |
+| `institution_display_name` | The human-readable name shown in the interface.                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `institution_type`         | One of `hospital`, `ltc_institution`, `gp_municipality`, `ooh_service`, `other`.                                                                                                                                                                                                                                                                                                                                                                      |
+| `municipality`             | The institution's municipality, used for `gp_municipality`-type rows (see below) and as a coarse geographic fallback.                                                                                                                                                                                                                                                                                                                                 |
+| `ward`                     | Only meaningful (and only used) for hospitals: this is what the `same_place` detector watches at ward level.                                                                                                                                                                                                                                                                                                                                          |
+| `specialism`               | The treating specialism, shown on the line list for context; not itself a detection dimension.                                                                                                                                                                                                                                                                                                                                                        |
+| `pc`                       | The patient's postcode (or equivalent - see "Geographic reference data" below for how coarse or fine this can be). Drives the geography panel and the choropleth, and the concentration measure ("how localised is this cluster") that feeds the priority score.                                                                                                                                                                                      |
+| `sex`                      | The patient's sex. Feeds the demography panel's age/sex pyramid, one of the interpretation engine's own evidence dimensions (a cluster's demography shifting from a department's usual baseline is itself a signal worth surfacing).                                                                                                                                                                                                                  |
+| `age`                      | The patient's age at sample date. Same role as `sex`: demography panel and interpretation, not a detection input.                                                                                                                                                                                                                                                                                                                                     |
 
 `institution_type` values, beyond the self-explanatory `hospital`:
 
@@ -143,13 +143,13 @@ counts, used purely as an interpretive aid on the dossier (a rising case
 count with flat test volume is a much weaker signal than the same rise with
 stable positivity) and never as a detection input.
 
-| Column | Meaning |
-|---|---|
-| `pathogen` | Matches the cases feed. |
-| `sample_date` | A period start (e.g. week start); this is aggregate data, not per-test. |
-| `care_line` | `first`, `second`, `other`, or `unknown`. |
-| `area_code` | Optional geographic stratum. |
-| `n_tests` | Total tests run for this pathogen/period/stratum, positive and negative. |
+| Column        | Meaning                                                                  |
+|---------------|--------------------------------------------------------------------------|
+| `pathogen`    | Matches the cases feed.                                                  |
+| `sample_date` | A period start (e.g. week start); this is aggregate data, not per-test.  |
+| `care_line`   | `first`, `second`, `other`, or `unknown`.                                |
+| `area_code`   | Optional geographic stratum.                                             |
+| `n_tests`     | Total tests run for this pathogen/period/stratum, positive and negative. |
 
 This is realistic to produce for a multiplex PCR panel testing a fixed list
 of targets (your LIS can report "we ran 40 GI panels this week" trivially).
@@ -168,11 +168,11 @@ identical transmission-per-patient-day should not read as different
 signal strengths. Also optional; without it, L1/L2 detection uses raw
 counts exactly as it always has.
 
-| Column | Meaning |
-|---|---|
-| `institution_key` | Matches the cases feed. |
-| `period_start`, `period_end` | The activity period this row covers (typically a week). |
-| `patient_days` | Total patient-days across the institution for that period. |
+| Column                       | Meaning                                                    |
+|------------------------------|------------------------------------------------------------|
+| `institution_key`            | Matches the cases feed.                                    |
+| `period_start`, `period_end` | The activity period this row covers (typically a week).    |
+| `patient_days`               | Total patient-days across the institution for that period. |
 
 Rows whose `institution_key` does not match a known institution are
 skipped, not an error - an activity feed and a case feed need not be
@@ -279,14 +279,14 @@ the equivalent argument passed explicitly instead. Environment variables
 exist so an operator can configure a running instance (a systemd unit, a
 Docker container) without editing R code.
 
-| Variable | Used by | Meaning |
-|---|---|---|
-| `EPISODIC_DB` | `episode_run_app()`, `episode_provision_user()` (`db_path` argument) | Path to the instance's SQLite database, or a `mysql://` DSN pointing at a MariaDB/MySQL database instead - see "Database backend" above. |
-| `EPISODIC_CONFIG` | `episode_run_cron()` (`episode_config_path` argument) | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`'s shipped defaults. |
-| `EPISODIC_PALETTE_CONFIG` | `episode_palette()` (`palette_config_path` argument) | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`'s shipped defaults. Deliberately separate from `EPISODIC_CONFIG`: colour is a display concern, never part of `episode_config_hash()`'s detection-reproducibility guarantee. |
-| `EPISODIC_GEO_DATA` | `episode_geo_source_resolve()` (`path` argument) | Path to an `.rds` file holding an operator's own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands postcode default. See "Geographic reference data" above. |
-| `EPISODIC_GEO_DATA_OVERLAY` | `episode_geo_overlay_resolve()` (`path` argument) | Path to an `.rds` file holding an optional region-outline overlay (an `sf` object with just a `geometry` column), drawn on top of the choropleth. No default. See "Geographic reference data" above. |
-| `EPISODIC_QUARTO_REPORT` | `episode_report_render()` (`qmd_path` argument) | Path to an operator's own Quarto report template, overriding the shipped `inst/report/cluster_report.qmd`. See "Custom report templates" above. |
+| Variable                    | Used by                                                              | Meaning                                                                                                                                                                                                                                                                              |
+|-----------------------------|----------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `EPISODIC_DB`               | `episode_run_app()`, `episode_provision_user()` (`db_path` argument) | Path to the instance's SQLite database, or a `mysql://` DSN pointing at a MariaDB/MySQL database instead - see "Database backend" above.                                                                                                                                             |
+| `EPISODIC_CONFIG`           | `episode_run_cron()` (`episode_config_path` argument)                | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`'s shipped defaults.                                                                                |
+| `EPISODIC_PALETTE_CONFIG`   | `episode_palette()` (`palette_config_path` argument)                 | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`'s shipped defaults. Deliberately separate from `EPISODIC_CONFIG`: colour is a display concern, never part of `episode_config_hash()`'s detection-reproducibility guarantee. |
+| `EPISODIC_GEO_DATA`         | `episode_geo_source_resolve()` (`path` argument)                     | Path to an `.rds` file holding an operator's own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands postcode default. See "Geographic reference data" above.                                                                |
+| `EPISODIC_GEO_DATA_OVERLAY` | `episode_geo_overlay_resolve()` (`path` argument)                    | Path to an `.rds` file holding an optional region-outline overlay (an `sf` object with just a `geometry` column), drawn on top of the choropleth. No default. See "Geographic reference data" above.                                                                                 |
+| `EPISODIC_QUARTO_REPORT`    | `episode_report_render()` (`qmd_path` argument)                      | Path to an operator's own Quarto report template, overriding the shipped `inst/report/cluster_report.qmd`. See "Custom report templates" above.                                                                                                                                      |
 
 ## Licence
 
