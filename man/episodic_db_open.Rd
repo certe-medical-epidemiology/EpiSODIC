@@ -2,7 +2,7 @@
 % Please edit documentation in R/schema_migrate.R
 \name{episodic_db_open}
 \alias{episodic_db_open}
-\title{Open a connection to \code{db_path}, or the \code{EPISODIC_DB} environment variable}
+\title{Connect using the \code{EPISODIC_DB} environment variable}
 \usage{
 episodic_db_open(db_path = Sys.getenv("EPISODIC_DB", unset = NA))
 }
@@ -12,15 +12,15 @@ episodic_db_open(db_path = Sys.getenv("EPISODIC_DB", unset = NA))
 environment variable.}
 }
 \value{
-An open \link[DBI:DBIConnection-class]{DBI::DBIConnection}; the caller is responsible
-for disconnecting it.
+An open \link[DBI:DBIConnection-class]{DBI::DBIConnection}; you are responsible for
+disconnecting it.
 }
 \description{
-A thin wrapper around \code{\link[=episodic_db_connect]{episodic_db_connect()}} for entry points that take
-\code{db_path} rather than an already-open connection (e.g.
-\code{\link[=episodic_provision_user]{episodic_provision_user()}}) - centralises the \code{EPISODIC_DB} default and
-the "neither was given" error in one place, rather than duplicating the
-resolve-then-connect logic in every such entry point.
+Like \code{\link[=episodic_db_connect]{episodic_db_connect()}}, but falls back to the \code{EPISODIC_DB}
+environment variable when you don't pass a path explicitly - handy for
+one-off console use, e.g. \code{\link[=episodic_provision_user]{episodic_provision_user()}} uses it
+internally so provisioning an account needs only a username and
+password, not a connection you build yourself first.
 }
 \examples{
 db_path <- tempfile(fileext = ".sqlite")

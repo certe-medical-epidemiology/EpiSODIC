@@ -12,8 +12,8 @@ episodic_demo(
   password = "episodic-demo",
   launch = TRUE,
   lang = "nl",
-  ingest_source_fn = episodic_ingest_source_synthetic,
-  denominator_source_fn = episodic_denominator_source_synthetic
+  ingest_source = episodic_ingest_source_synthetic,
+  denominator_source = episodic_denominator_source_synthetic
 )
 }
 \arguments{
@@ -33,7 +33,7 @@ scripting or screenshots.}
 
 \item{lang}{Dashboard language when \code{launch = TRUE}: \code{"nl"} or \code{"en"}.}
 
-\item{ingest_source_fn, denominator_source_fn}{The data sources to
+\item{ingest_source, denominator_source}{The data sources to
 generate the demo from, passed on to \code{\link[=episodic_run_cron]{episodic_run_cron()}}. Default to
 several years of synthetic data; pass a narrower date range (see
 \code{\link[=episodic_ingest_source_synthetic]{episodic_ingest_source_synthetic()}}) for a quicker demo.}
@@ -58,13 +58,10 @@ episodic_demo()
 
 \donttest{
 # non-interactive: populate a database and stop there, e.g. for scripting
-db_path <- episodic_demo(
-  launch = FALSE,
-  ingest_source_fn = function() episodic_ingest_source_synthetic(
-    start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
-  ),
-  denominator_source_fn = NULL
+cases <- episodic_ingest_source_synthetic(
+  start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
+db_path <- episodic_demo(launch = FALSE, ingest_source = cases, denominator_source = NULL)
 file.remove(db_path)
 }
 }

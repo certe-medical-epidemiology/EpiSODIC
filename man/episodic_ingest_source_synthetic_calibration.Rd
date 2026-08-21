@@ -2,7 +2,7 @@
 % Please edit documentation in R/ingest_synthetic.R
 \name{episodic_ingest_source_synthetic_calibration}
 \alias{episodic_ingest_source_synthetic_calibration}
-\title{Synthetic data with realistic signal volume for one pathogen, for calibration testing}
+\title{Generate synthetic data at tunable cluster volume}
 \usage{
 episodic_ingest_source_synthetic_calibration(
   start_date = as.Date("2021-01-01"),
@@ -15,41 +15,33 @@ episodic_ingest_source_synthetic_calibration(
 \arguments{
 \item{start_date, end_date}{The window to generate over.}
 
-\item{pathogen}{Which organism to generate elevated volume for.
-Defaults to \emph{Clostridioides difficile}, a worked example of an
-endemic organism that produces frequent \code{same_place} clusters at a
-busy institution.}
+\item{pathogen}{Which organism to generate the extra clusters for.
+Defaults to \emph{Clostridioides difficile}, a plausible example of an
+endemic organism that produces frequent clusters at a busy institution.}
 
-\item{n_bumps_per_month}{Average number of independent case bumps
-generated per calendar month (Poisson-distributed), each becoming
-its own candidate cluster once reconciled. Tune this up or down to
-see how detection volume responds - that response is the entire
-point of this function.}
+\item{n_bumps_per_month}{Average number of independent case clusters
+generated per calendar month. Raise or lower this to see how detection
+volume responds.}
 
 \item{seed}{RNG seed, for reproducible runs.}
 }
 \value{
-A data frame satisfying \code{episodic_ingest_validate_source()},
-including everything \code{episodic_ingest_source_synthetic()} produces
-(background baseline, the two standard demo outbreaks) plus the
-extra volume.
+A data frame satisfying \code{\link[=episodic_ingest_validate_source]{episodic_ingest_validate_source()}},
+including everything \code{\link[=episodic_ingest_source_synthetic]{episodic_ingest_source_synthetic()}} produces
+(background baseline, the two standard demo outbreaks) plus the extra
+volume.
 }
 \description{
-\code{episodic_ingest_source_synthetic()} injects exactly two outbreaks
-total across a multi-year window - enough to prove the detectors and
-reconciliation work, nowhere near enough to tune anything against.
-The eligibility gate's own calibration target is concrete - roughly
-ten assessed clusters a month, system-wide (\code{episodic_eligibility_gate()});
-there is no way to tune
-towards a target using two data points. This is not a substitute for
-real signal volume - it is still fabricated data, and no amount of
-realism turns it into "real data" - but it is an honest stand-in: many
-independent \code{same_place}-shaped case bumps for one named pathogen,
-spread across LTC institutions and hospitals over the whole window,
-at a volume an operator can actually run the Prestatie screen and the
-eligibility gate against while deciding how to tune them for a real
-instance. Every cluster this produces is clearly synthetic in origin
-(\verb{PT-VOL-*} patient keys) so it is never mistaken for anything else.
+\code{\link[=episodic_ingest_source_synthetic]{episodic_ingest_source_synthetic()}} injects exactly two outbreaks in
+total - enough to demonstrate detection working, but not enough to tune
+your own configuration against (e.g. deciding how many dossiers your
+board can realistically review per month). This function fills that gap:
+on top of the same baseline and two standard outbreaks, it adds many
+independent case clusters for one chosen pathogen, at a rate you control,
+so you can see how detection volume responds as you adjust
+\code{n_bumps_per_month} or your own configuration. Every case it adds carries
+a \verb{PT-VOL-*} patient key so it is always identifiable as synthetic tuning
+data, never mistaken for anything else.
 }
 \examples{
 raw <- episodic_ingest_source_synthetic_calibration(

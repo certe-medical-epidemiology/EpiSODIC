@@ -30,10 +30,10 @@ blank.
 \details{
 This function is a synthetic example showing the expected shape: weekly
 counts of a multiplex GI PCR panel that also reports Norovirus. Use it as
-a template for your own function, which you pass to \code{\link[=episodic_run_cron]{episodic_run_cron()}}
-as \code{denominator_source_fn}. Your function should return a data frame with
-the same five columns: \code{pathogen}, \code{sample_date} (week start),
-\code{care_line}, \code{area_code} (may be \code{NA}), and \code{n_tests}.
+a template for your own data, which you pass to \code{\link[=episodic_run_cron]{episodic_run_cron()}} as
+\code{denominator_source} - a data frame with the same five columns:
+\code{pathogen}, \code{sample_date} (week start), \code{care_line}, \code{area_code} (may be
+\code{NA}), and \code{n_tests}.
 }
 \examples{
 denom <- episodic_denominator_source_synthetic(

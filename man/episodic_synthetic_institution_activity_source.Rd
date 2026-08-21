@@ -34,8 +34,8 @@ to raw counts, which is a reasonable default, not a broken one.
 \details{
 This function is a synthetic example showing the expected shape: weekly
 patient-days per hospital, modelled as bed count times occupancy, with a
-realistic winter peak. Use it as a template for your own function, which
-you pass to \code{\link[=episodic_run_cron]{episodic_run_cron()}} as \code{institution_activity_source_fn}.
+realistic winter peak. Use it as a template for your own data, which you
+pass to \code{\link[=episodic_run_cron]{episodic_run_cron()}} as \code{institution_activity_source}.
 }
 \examples{
 institutions <- data.frame(

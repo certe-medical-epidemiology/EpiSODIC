@@ -2,13 +2,13 @@
 % Please edit documentation in R/run_cron.R
 \name{episodic_run_cron}
 \alias{episodic_run_cron}
-\title{Run one detection cycle}
+\title{Run one surveillance detection cycle}
 \usage{
 episodic_run_cron(
   db_path,
-  ingest_source_fn = episodic_ingest_source_synthetic,
-  denominator_source_fn = NULL,
-  institution_activity_source_fn = NULL,
+  ingest_source = episodic_ingest_source_synthetic,
+  denominator_source = NULL,
+  institution_activity_source = NULL,
   episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
   host = Sys.info()[["nodename"]],
   account = Sys.info()[["user"]],
@@ -16,71 +16,68 @@ episodic_run_cron(
 )
 }
 \arguments{
-\item{db_path}{Path to a SQLite database file, or a \verb{mysql://} DSN
-(see \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}). Created if it does not exist yet
-(SQLite) or is an empty database (MariaDB/MySQL).}
+\item{db_path}{Path to the EpiSODIC database: a SQLite file (created
+automatically if it does not exist yet) or a MariaDB/MySQL DSN (see
+\code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}).}
 
-\item{ingest_source_fn}{A zero-argument function returning a data frame
-satisfying the ingestion interface, or that data frame itself (an
-operator who has already extracted and transformed their data has no
-reason to wrap it in a function just to satisfy this parameter - see
-\code{\link[=episodic_resolve_source]{episodic_resolve_source()}}). Defaults to the bundled synthetic
-generator, the only ingestion source shipped in this package.}
+\item{ingest_source}{Your laboratory data: a data frame in the shape
+\link{episodic_ingest_columns} describes, or a zero-argument function that
+returns one. Defaults to the bundled synthetic generator, useful for
+demos and testing but not real surveillance.}
 
-\item{denominator_source_fn}{An optional zero-argument function
-returning the pre-aggregated positivity metadata data frame
-(\code{pathogen}, \code{sample_date}, \code{care_line}, \code{area_code}, \code{n_tests}), that
-data frame itself, or \code{NULL} (the default) if the operator has none to
-supply.}
+\item{denominator_source}{Optional: your testing-volume data, in the
+same data-frame-or-function form as \code{ingest_source} (see
+\code{\link[=episodic_denominator_source_synthetic]{episodic_denominator_source_synthetic()}} for the expected shape).
+Leave as \code{NULL} (the default) if you have none to supply - positivity
+panels simply stay blank.}
 
-\item{institution_activity_source_fn}{An optional one-argument function
-(\code{institutions}, the current \code{episodic_db_institutions()} data frame,
-so a real implementation can key its own hospital system's export by
-the same institutions this run already knows about) returning weekly
-patient-days (\code{institution_key}, \code{period_start}, \code{period_end},
-\code{patient_days}); that data frame itself (the \code{institutions} argument
-is simply not passed in that case); or \code{NULL} (the default) if the
-operator has none to supply. Powers L2 patient-day normalisation;
-without it, L1/L2 Farrington detection uses raw counts, unnormalised.}
+\item{institution_activity_source}{Optional: your hospital patient-days
+data (see \code{\link[=episodic_synthetic_institution_activity_source]{episodic_synthetic_institution_activity_source()}} for the
+expected shape), either as a data frame or as a function taking the
+current institutions table. Leave as \code{NULL} (the default) if you have
+none - detection falls back to raw case counts.}
 
 \item{episodic_config_path}{Passed to \code{\link[=episodic_config_resolve]{episodic_config_resolve()}}.}
 
-\item{host, account}{Recorded on \code{episodic_detection_run}; default to
-the process's own host/account. This is not an identity source for
-assessors, only for the run record.}
+\item{host, account}{Recorded with the run for audit purposes; default
+to the current machine and account.}
 
-\item{run_date}{The date to treat as "today" for closure/eligibility
-calculations; defaults to the system date, injectable for tests.}
+\item{run_date}{The date to treat as "today". Defaults to the system
+date; mainly useful to override in tests.}
 }
 \value{
 Invisibly, the \code{run_id} of the completed run.
 }
 \description{
-The cron entry point. Ingests, enumerates
-streams, detects, reconciles and persists, all
-inside one transaction, so a partially failed run leaves no partial
-state and a retry is always safe.
+This is the function you schedule to run regularly (e.g. daily, via
+cron): it pulls in new laboratory data, checks every monitored stream
+for statistical aberrations with the configured detectors, reconciles
+the results into cluster dossiers for the board to assess, and records
+everything in the database. A run either completes in full or leaves no
+trace at all - it runs inside a single database transaction, so a
+failed run is always safe to simply retry.
 }
 \details{
-Configuration is read from \code{EPISODIC_CONFIG};
-the resolved configuration's hash and full snapshot are written to
-\code{episodic_detection_run} so that any result is explainable from the
-database alone.
+EpiSODIC never connects to your laboratory system directly. You extract
+and transform your own data beforehand, and hand it over as a plain data
+frame: \code{ingest_source} for case data (see \link{episodic_ingest_columns} for
+the required shape), and optionally \code{denominator_source} and
+\code{institution_activity_source} for testing volume and hospital activity.
+If producing the data only makes sense at run time (a live database
+query, for instance), pass a zero-argument function that returns it
+instead - see \code{\link[=episodic_resolve_source]{episodic_resolve_source()}}.
 
-\code{certedb}/Diver access is deliberately never called from inside this
-package: \code{get_diver_data()} is the operator's
-own step, run before \code{episodic_run_cron()}, transforming Diver's columns
-into \code{episodic_ingest_columns}. See \code{README.md} for the raw data contract.
+The exact detection settings used are recorded with the run (see
+\code{\link[=episodic_config_hash]{episodic_config_hash()}}), so any past result can always be traced back
+to the configuration that produced it.
 }
 \examples{
 \donttest{
 db_path <- tempfile(fileext = ".sqlite")
-run_id <- episodic_run_cron(
-  db_path,
-  ingest_source_fn = function() episodic_ingest_source_synthetic(
-    start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
-  )
+cases <- episodic_ingest_source_synthetic(
+  start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
+run_id <- episodic_run_cron(db_path, ingest_source = cases)
 file.remove(db_path)
 }
 }

@@ -6,19 +6,17 @@
 \alias{episodic_geo_source_resolve}
 \title{Show clusters on a map}
 \usage{
-episodic_geo_overlay_resolve(path = Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA))
+episodic_geo_overlay_resolve(
+  path = Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)
+)
 
 episodic_geo_source_resolve(path = Sys.getenv("EPISODIC_GEO_DATA", unset = NA))
 }
 \arguments{
-\item{path}{Path to an \code{.rds} file holding an \code{sf} object with a
-\code{geometry} column, for the optional outline layer. Defaults to the
-\code{EPISODIC_GEO_DATA_OVERLAY} environment variable.
-
-Path to an \code{.rds} file holding an \code{sf} object with \code{pc}
-and \code{geometry} columns. Defaults to the \code{EPISODIC_GEO_DATA} environment
-variable; if unset (or the file does not exist), falls back to the
-shipped Netherlands postcode default.}
+\item{path}{Path to an \code{.rds} file holding an \code{sf} object with \code{pc}
+and \code{geometry} columns. Defaults to the \code{EPISODIC_GEO_DATA}
+environment variable; if unset (or the file does not exist), falls
+back to the shipped Netherlands postcode default.}
 }
 \value{
 An \code{sf} object, or \code{NULL} if \code{sf} is not installed, no path is
@@ -47,7 +45,6 @@ it only needs a \code{geometry} column.
 \examples{
 # NULL when unset (or when the sf package is not installed)
 episodic_geo_overlay_resolve(path = NA)
-
 # falls back to the shipped Netherlands postcode default when sf is
 # installed, or NULL when it is not
 geo <- episodic_geo_source_resolve(path = NA)

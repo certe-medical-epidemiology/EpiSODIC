@@ -11,7 +11,7 @@ episodic_tr(key, ..., lang = "nl", instance_i18n = NULL)
 \code{"nav.clusters"}. The full set of available keys and their Dutch and
 English wording lives in \code{inst/i18n/nl.json} and \code{inst/i18n/en.json}.}
 
-\item{...}{Named values substituted into \verb{\{name\}} placeholders in the
+\item{...}{Named values substituted into \code{{name}} placeholders in the
 template.}
 
 \item{lang}{Language: \code{"nl"} (default) or \code{"en"}.}
@@ -25,7 +25,7 @@ A single character string.
 }
 \description{
 Looks up a piece of dashboard text by its key and language, substituting
-any \verb{\{placeholder\}} tokens in the template. Mostly useful if you are
+any \code{{placeholder}} tokens in the template. Mostly useful if you are
 writing your own Quarto outbreak report template
 (\code{EPISODIC_QUARTO_REPORT}) and want it to read the same wording, in the
 same language, as the dashboard itself.

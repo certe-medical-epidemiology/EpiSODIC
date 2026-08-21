@@ -52,7 +52,6 @@ curve <- data.frame(
   incomplete = c(rep(FALSE, 12), TRUE, TRUE)
 )
 episodic_ui_epi_curve_chart(curve, lang = "en")
-
 trend <- data.frame(
   week_start = seq(as.Date("2025-01-06"), by = "week", length.out = 8),
   n_cases = c(2, 3, 1, 4, 6, 5, 3, 2),
@@ -60,7 +59,6 @@ trend <- data.frame(
   upperbound = c(4, 4, 4, 4, 4, 4, 4, 4)
 )
 episodic_ui_trend_chart(trend, lang = "en")
-
 rt <- data.frame(
   window_end = seq(as.Date("2025-01-08"), by = "day", length.out = 5),
   mean = c(1.4, 1.3, 1.1, 0.9, 0.8),

@@ -3,7 +3,7 @@
 \name{episodic_db_dsn_mariadb}
 \alias{episodic_db_dsn_mariadb}
 \alias{episodic_db_dsn_mysql}
-\title{Build a MariaDB/MySQL DSN for \code{EPISODIC_DB}}
+\title{Connect EpiSODIC to a MariaDB or MySQL server}
 \usage{
 episodic_db_dsn_mariadb(host, dbname, user, password, port = 3306L)
 
@@ -23,15 +23,14 @@ A single string, ready to pass as \code{db_path} or to
 \code{Sys.setenv(EPISODIC_DB = ...)}.
 }
 \description{
-\code{EPISODIC_DB} accepts either a filesystem path (a SQLite database, the
-default) or a \verb{mysql://user:password@host:port/dbname} DSN pointing at a
-MariaDB or MySQL server instead - every function that takes \code{db_path}
-(or falls back to \code{EPISODIC_DB}) dispatches on which of the two it was
-given. This helper builds that DSN string from its parts and
-URL-encodes \code{user}/\code{password}, so credentials containing \code{:}, \code{@} or
-\code{/} do not break the DSN. \code{episodic_db_dsn_mysql()} is an alias for the
-same function - the DSN and everything downstream of it is identical
-either way, so use whichever name matches the server you actually run.
+EpiSODIC stores its data in either a SQLite file (the default, and all
+you need for a single-server deployment) or a MariaDB/MySQL database.
+This function builds the connection string ("DSN") for the latter, so
+you never have to hand-assemble one or worry about special characters
+in your password breaking it. Use the resulting string as \code{db_path}
+anywhere EpiSODIC expects one, or store it in the \code{EPISODIC_DB}
+environment variable. \code{episodic_db_dsn_mysql()} is an identical alias -
+use whichever name matches the server you run.
 }
 \examples{
 episodic_db_dsn_mariadb(

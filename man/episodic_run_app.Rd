@@ -2,7 +2,7 @@
 % Please edit documentation in R/run_app.R
 \name{episodic_run_app}
 \alias{episodic_run_app}
-\title{Run the EpiSODIC Shiny app}
+\title{Open the EpiSODIC dashboard}
 \usage{
 episodic_run_app(
   db_path = Sys.getenv("EPISODIC_DB", unset = NA),
@@ -11,27 +11,35 @@ episodic_run_app(
 )
 }
 \arguments{
-\item{db_path}{Path to a SQLite database, or a \verb{mysql://} DSN (see
-\code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}). Defaults to the \code{EPISODIC_DB}
-environment variable.}
+\item{db_path}{Path to the EpiSODIC database: a SQLite file, or a
+MariaDB/MySQL DSN (see \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}). Defaults to the
+\code{EPISODIC_DB} environment variable.}
 
-\item{lang}{Default session language, \code{"nl"} (default) or \code{"en"}.}
+\item{lang}{Default dashboard language, \code{"nl"} (default) or \code{"en"}.
+Individual users can switch language within the app.}
 
-\item{...}{Passed on to \code{\link[shiny:runApp]{shiny::runApp()}} (e.g. \code{port}, \code{host}).}
+\item{...}{Passed on to \code{\link[shiny:runApp]{shiny::runApp()}}, e.g. \code{port} or \code{host}.}
 }
 \value{
-Invisible; called for its side effect of starting the app.
+Invisible; called for its side effect of starting the app. This
+call blocks until the app is stopped.
 }
 \description{
-Read-only for anonymous visitors: signing in is only required to
-classify a cluster. Serves the cluster dossier and the Streams
-overview against a database already populated by
-\code{\link[=episodic_run_cron]{episodic_run_cron()}}.
+Launches the Shiny dashboard against a database already populated by
+\code{\link[=episodic_run_cron]{episodic_run_cron()}}: an overview of monitored surveillance streams and
+each cluster's dossier, with charts, its narrative interpretation, and
+an assessment form. Anyone can browse the dashboard; signing in is only
+required to record an assessment or classify a cluster.
+}
+\details{
+If you just want to explore EpiSODIC without setting anything up first,
+use \code{\link[=episodic_demo]{episodic_demo()}} instead - it populates a database with synthetic
+data and calls this function for you.
 }
 \examples{
 \dontrun{
-# opens a blocking, interactive Shiny session - see episodic_demo() for a
-# one-call, populated version of this same example
+# opens a blocking, interactive dashboard session; see episodic_demo()
+# for a one-call version that also creates a populated demo database
 episodic_run_app("/path/to/episodic.sqlite")
 }
 }

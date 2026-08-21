@@ -18,7 +18,7 @@ episodic_ui_code_join(detectors, sep = ", ")
 }
 \value{
 A character vector (or, for \code{episodic_ui_code_join()}, a single
-string), safe to pass to \code{\link[shiny:HTML]{shiny::HTML()}}.
+string), safe to pass to \code{\link[shiny:reexports]{shiny::HTML()}}.
 }
 \description{
 Small HTML formatting helpers used when building dossier text, both in
@@ -26,7 +26,7 @@ the dashboard and in the Quarto outbreak report template
 (\code{inst/report/cluster_report.qmd}). Both are exported so that a custom
 report template of your own (set via \code{EPISODIC_QUARTO_REPORT}) can use
 the same formatting as the shipped one. Input text is always HTML-escaped
-first, so the result is safe to pass on to \code{\link[shiny:HTML]{shiny::HTML()}}.
+first, so the result is safe to pass on to \code{\link[shiny:reexports]{shiny::HTML()}}.
 }
 \details{
 \code{episodic_ui_italicise_taxon()} italicises pathogen names that \code{AMR}
