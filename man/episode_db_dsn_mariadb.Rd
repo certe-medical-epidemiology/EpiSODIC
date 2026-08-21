@@ -2,9 +2,12 @@
 % Please edit documentation in R/schema_migrate.R
 \name{episode_db_dsn_mariadb}
 \alias{episode_db_dsn_mariadb}
+\alias{episode_db_dsn_mysql}
 \title{Build a MariaDB/MySQL DSN for \code{EPISODIC_DB}}
 \usage{
 episode_db_dsn_mariadb(host, dbname, user, password, port = 3306L)
+
+episode_db_dsn_mysql(host, dbname, user, password, port = 3306L)
 }
 \arguments{
 \item{host}{Server hostname or IP address.}
@@ -26,7 +29,9 @@ MariaDB or MySQL server instead - every function that takes \code{db_path}
 (or falls back to \code{EPISODIC_DB}) dispatches on which of the two it was
 given. This helper builds that DSN string from its parts and
 URL-encodes \code{user}/\code{password}, so credentials containing \code{:}, \code{@} or
-\code{/} do not break the DSN.
+\code{/} do not break the DSN. \code{episode_db_dsn_mysql()} is an alias for the
+same function - the DSN and everything downstream of it is identical
+either way, so use whichever name matches the server you actually run.
 }
 \examples{
 episode_db_dsn_mariadb(

@@ -42,6 +42,11 @@ test_that("episode_db_dsn_mariadb() builds a DSN and URL-encodes credentials", {
   expect_equal(episode_db_dialect(dsn_special), "mariadb")
 })
 
+test_that("episode_db_dsn_mysql() is an alias for episode_db_dsn_mariadb()", {
+  args <- list(host = "db.internal", dbname = "episodic", user = "app", password = "simple")
+  expect_equal(do.call(episode_db_dsn_mysql, args), do.call(episode_db_dsn_mariadb, args))
+})
+
 test_that("episode_db_dsn_mariadb() round-trips through episode_db_parse_mariadb_dsn()", {
   dsn <- episode_db_dsn_mariadb(
     host = "db.internal", dbname = "episodic", user = "app", password = "p@ss:w/ord!",

@@ -24,7 +24,9 @@
 #' (or falls back to `EPISODIC_DB`) dispatches on which of the two it was
 #' given. This helper builds that DSN string from its parts and
 #' URL-encodes `user`/`password`, so credentials containing `:`, `@` or
-#' `/` do not break the DSN.
+#' `/` do not break the DSN. `episode_db_dsn_mysql()` is an alias for the
+#' same function - the DSN and everything downstream of it is identical
+#' either way, so use whichever name matches the server you actually run.
 #'
 #' @param host Server hostname or IP address.
 #' @param dbname Database (schema) name.
@@ -52,6 +54,10 @@ episode_db_dsn_mariadb <- function(host, dbname, user, password, port = 3306L) {
     utils::URLencode(dbname, reserved = TRUE)
   )
 }
+
+#' @rdname episode_db_dsn_mariadb
+#' @export
+episode_db_dsn_mysql <- episode_db_dsn_mariadb
 
 #' @keywords internal
 #' @noRd

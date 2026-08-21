@@ -228,8 +228,9 @@ either of two things:
   `episode_demo()` uses); or
 - a `mysql://user:password@host:port/dbname` DSN, opened against a
   MariaDB or MySQL server instead. Build one with `episode_db_dsn_mariadb()`
-  rather than assembling the string by hand, so that credentials
-  containing `:`, `@` or `/` are URL-encoded correctly:
+  (or its alias `episode_db_dsn_mysql()`) rather than assembling the
+  string by hand, so that credentials containing `:`, `@` or `/` are
+  URL-encoded correctly:
 
 ```r
 Sys.setenv(EPISODIC_DB = EpiSODIC::episode_db_dsn_mariadb(
