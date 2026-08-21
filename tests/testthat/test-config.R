@@ -16,7 +16,7 @@
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 
-test_that("episode_config_resolve() with no EPISODE_CONFIG loads only the shipped defaults", {
+test_that("episode_config_resolve() with no EPISODIC_CONFIG loads only the shipped defaults", {
   config <- episode_config_resolve(NA)
   expect_true(is.list(config))
   expect_true(!is.null(config$reconciliation$close_after_runs))
@@ -34,7 +34,7 @@ test_that("an instance config overrides only the keys it sets, recursively", {
   expect_equal(config$eligibility$min_baseline_weeks, 52)
 })
 
-test_that("a nonexistent EPISODE_CONFIG path falls back to defaults without error", {
+test_that("a nonexistent EPISODIC_CONFIG path falls back to defaults without error", {
   config <- episode_config_resolve("/no/such/file.yaml")
   expect_equal(config$reconciliation$close_after_runs, 14)
 })

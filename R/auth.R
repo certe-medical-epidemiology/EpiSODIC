@@ -152,7 +152,7 @@ episode_auth_change_password <- function(con, user_id, new_password) {
 #' console, without first having to construct a `con` by hand.
 #'
 #' @param db_path Path to an existing SQLite database. Defaults to the
-#'   `EPISODE_DB` environment variable.
+#'   `EPISODIC_DB` environment variable.
 #' @param username,full_name,email The new account's fields.
 #' @param password An initial plaintext password (hashed here, never
 #'   stored or logged as plaintext) - a temporary one the holder is
@@ -169,7 +169,7 @@ episode_auth_change_password <- function(con, user_id, new_password) {
 #' )
 #' file.remove(db_path)
 #' @export
-episode_provision_user <- function(db_path = Sys.getenv("EPISODE_DB", unset = NA),
+episode_provision_user <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA),
                                     username, full_name, email, password, role = "assessor") {
   rlang::check_installed("sodium")
   con <- episode_db_open(db_path)

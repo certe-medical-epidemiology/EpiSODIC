@@ -29,7 +29,7 @@ to \code{\link[shiny:HTML]{shiny::HTML()}}.
 Exported (not just internal): the Quarto report template
 (\code{inst/report/cluster_report.qmd}) runs in its own fresh session where
 only exported functions are attached by \code{library(EpiSODIC)}, and an
-operator's own custom template (\code{EPISODE_QUARTO_REPORT}) should have
+operator's own custom template (\code{EPISODIC_QUARTO_REPORT}) should have
 the same formatting helpers the shipped one uses.
 }
 \examples{

@@ -25,7 +25,7 @@
 # certegis itself is no longer a dependency of EpiSODIC: the geography
 # panel's data contract (R/geo_data.R) is deliberately generic - an sf
 # object with `pc`/`geometry` columns - so any operator, anywhere, can
-# point EPISODE_GEO_DATA at their own equivalent file. `pc` matches
+# point EPISODIC_GEO_DATA at their own equivalent file. `pc` matches
 # `episode_case.pc`'s own generic values (postcodes, zip codes,
 # municipality codes, anything); it is not itself Dutch-postcode-specific
 # despite the shipped default being Dutch four-digit postcodes.

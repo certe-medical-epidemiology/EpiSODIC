@@ -47,7 +47,7 @@ is nothing EpiSODIC-specific about the scheduling itself.
 Detection thresholds, baseline lengths, `same_place` rules and MEM
 seasons are *operational data*, not software, and are never committed
 to this repository. `inst/config/default.yaml` ships the documented
-defaults; point `EPISODE_CONFIG` at a YAML file with only the keys you
+defaults; point `EPISODIC_CONFIG` at a YAML file with only the keys you
 want to override, and it is merged key-by-key on top of the shipped
 defaults. Every run records the resolved configuration's hash and full
 snapshot on `episode_detection_run`, so the exact parameters behind any
@@ -55,9 +55,9 @@ past result stay recoverable from the database alone, regardless of
 what has since changed on disk.
 
 The UI's colour palette works the same way, deliberately through a
-*separate* environment variable (`EPISODE_PALETTE_CONFIG`): colour is a
+*separate* environment variable (`EPISODIC_PALETTE_CONFIG`): colour is a
 display concern, never part of the detection-reproducibility guarantee
-`EPISODE_CONFIG`'s hash provides.
+`EPISODIC_CONFIG`'s hash provides.
 
 ## Accounts
 
@@ -67,7 +67,7 @@ or mute a stream, and there is deliberately no in-app account management
 screen: accounts are provisioned by whoever administers the database.
 
 ```r
-Sys.setenv(EPISODE_DB = "/path/to/episode.sqlite")
+Sys.setenv(EPISODIC_DB = "/path/to/episode.sqlite")
 
 episode_provision_user(
   username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
@@ -89,11 +89,11 @@ read-only at runtime; the database itself is not.
 ## Running the app
 
 ```r
-Sys.setenv(EPISODE_DB = "/path/to/episode.sqlite")
+Sys.setenv(EPISODIC_DB = "/path/to/episode.sqlite")
 episode_run_app()
 ```
 
-`episode_run_app()`'s `db_path` argument defaults to `EPISODE_DB`
+`episode_run_app()`'s `db_path` argument defaults to `EPISODIC_DB`
 exactly like `episode_provision_user()`'s does, so a systemd unit or
 Docker container can configure everything through environment variables
 alone, with no R code to edit between instances.
@@ -119,7 +119,7 @@ the DESCRIPTION for the published methods this package is built on.
 House-style colours are not an optional-dependency concern at all: the
 app always ships an organisation-neutral default palette
 (`inst/config/palette.yaml`), overridable per instance by pointing
-`EPISODE_PALETTE_CONFIG` at a department's own YAML file with its real
+`EPISODIC_PALETTE_CONFIG` at a department's own YAML file with its real
 colours - no package dependency involved either way.
 
 None of these are required to run the demo, the detection engine, or the

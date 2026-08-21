@@ -93,7 +93,7 @@
 
   "panel.geo.title": "Geografische spreiding",
   "panel.geo.aside": "PC",
-  "panel.geo.unit": "Een kaartweergave verschijnt hier zodra geografische referentiedata is geconfigureerd (EPISODE_GEO_DATA).",
+  "panel.geo.unit": "Een kaartweergave verschijnt hier zodra geografische referentiedata is geconfigureerd (EPISODIC_GEO_DATA).",
   "panel.geo.empty": "Geen postcodegegevens beschikbaar.",
 
   "panel.places.title_ward": "Afdeling",

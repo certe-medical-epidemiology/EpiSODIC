@@ -25,9 +25,9 @@ library(EpiSODIC)
 db_path <- "episode-demo.sqlite"
 
 Sys.setenv(
-  EPISODE_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),
-  EPISODE_DB = db_path,
-  EPISODE_GEO_DATA = system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
+  EPISODIC_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),
+  EPISODIC_DB = db_path,
+  EPISODIC_GEO_DATA = system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
 )
 
 if (!file.exists(db_path)) {

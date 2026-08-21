@@ -418,7 +418,7 @@ to know which point in the project's history that decision was made.
     template runs in its own fresh `library(EpiSODIC)` session where only
     exported functions are attached — a bare (unexported) reference from
     the `.qmd` would simply fail to resolve. An operator's own custom
-    template (`EPISODE_QUARTO_REPORT`) has both helpers available for the
+    template (`EPISODIC_QUARTO_REPORT`) has both helpers available for the
     same reason. One caller (`episode_ui_settings_panel()`'s row list) had
     to switch from `c(label, value)` to `list(label, value)`, since `c()`
     silently strips an `shiny::HTML()` value's class when combined with a
@@ -600,7 +600,7 @@ to know which point in the project's history that decision was made.
     removed from R; the fallback palette moved from hardcoded R literals
     into `inst/config/palette.yaml`, resolved the same defaults-then-override
     way as `episode_config_resolve()` but through its own file and
-    `EPISODE_PALETTE_CONFIG` env var (deliberately never touching
+    `EPISODIC_PALETTE_CONFIG` env var (deliberately never touching
     `config_hash` — colour is a display concern, not detection
     reproducibility). Semantic role colours (`ink`, `petrol`, `carmine`...)
     are now derived from the base hues in one place
@@ -669,14 +669,14 @@ to know which point in the project's history that decision was made.
     `episode_palette()` now always resolves through
     `episode_palette_config_resolve()` — the shipped, organisation-
     neutral default in `inst/config/palette.yaml`, overridable by
-    pointing `EPISODE_PALETTE_CONFIG` at an instance's own file. This is
+    pointing `EPISODIC_PALETTE_CONFIG` at an instance's own file. This is
     not a new mechanism: it is the exact same defaults-then-override
-    pattern `EPISODE_CONFIG`/`EPISODE_GEO_DATA`/`EPISODE_QUARTO_REPORT`
+    pattern `EPISODIC_CONFIG`/`EPISODIC_GEO_DATA`/`EPISODIC_QUARTO_REPORT`
     already establish elsewhere in this codebase, now the *only* path
     for colours too, rather than one of two. A department that wants its
     real house colours writes its own palette YAML (not committed to
     this public repository, kept alongside its own instance
-    configuration) and points `EPISODE_PALETTE_CONFIG` at it — the same
+    configuration) and points `EPISODIC_PALETTE_CONFIG` at it — the same
     thing `certestyle` gave Certe specifically, generalised to every
     operator rather than special-cased to one organisation's own
     private package.
@@ -731,12 +731,12 @@ to know which point in the project's history that decision was made.
     point, not a stopgap.
 
 52. **`episode_provision_user()` and `episode_run_app()` take `db_path`
-    defaulting to the `EPISODE_DB` environment variable**, rather than
+    defaulting to the `EPISODIC_DB` environment variable**, rather than
     requiring the caller to construct a `con` (or pass a literal path
     every time) by hand. `episode_db_open()` is the shared utility —
-    resolves `EPISODE_DB`, connects, and gives a clear error if neither is
+    resolves `EPISODIC_DB`, connects, and gives a clear error if neither is
     set — so provisioning an account is one call at the console.
-    Documented alongside `EPISODE_CONFIG` and `EPISODE_PALETTE_CONFIG` in
+    Documented alongside `EPISODIC_CONFIG` and `EPISODIC_PALETTE_CONFIG` in
     the README "Environment variables" section.
 
 53. **`R/auth.R`'s own docstring justified "no lockout, no backoff, no
@@ -776,8 +776,8 @@ to know which point in the project's history that decision was made.
     area columns were dropped, not needed for the choropleth and not ours
     to redistribute beyond it — copied from `certegis` under the same
     GPL-2 licence, provenance in `data-raw/geo_postcodes4_nl.R`),
-    overridable per-instance via `EPISODE_GEO_DATA`, the same shape of
-    solution `EPISODE_CONFIG`/`EPISODE_PALETTE_CONFIG` already establish.
+    overridable per-instance via `EPISODIC_GEO_DATA`, the same shape of
+    solution `EPISODIC_CONFIG`/`EPISODIC_PALETTE_CONFIG` already establish.
     `sf`/GDAL/GEOS/PROJ are a real system-level dependency beyond what
     CRAN alone supplies, which is exactly why the whole feature is
     guarded end-to-end: no `sf` means the geography panel silently falls
@@ -803,11 +803,11 @@ to know which point in the project's history that decision was made.
     lat/lon graticule and axis ticks (`coord_sf(datum = NA)`) — a map
     that isn't meant to be read at coordinate precision doesn't need them.
 
-56. **`EPISODE_GEO_DATA_OVERLAY`: a second, independent geographic layer**
+56. **`EPISODIC_GEO_DATA_OVERLAY`: a second, independent geographic layer**
     — region outlines (provinces, municipalities, whatever an operator
     wants for orientation) drawn with colour but no fill, a thicker line
     than the choropleth, on top of it. Deliberately a much thinner
-    contract than `EPISODE_GEO_DATA`: just an `sf` object with a
+    contract than `EPISODIC_GEO_DATA`: just an `sf` object with a
     `geometry` column, no `pc` join at all, since an outline layer
     carries no case counts of its own to attach. No shipped default
     (unlike the PC choropleth) — region boundaries are far more
@@ -905,10 +905,10 @@ to know which point in the project's history that decision was made.
     "Expected" / "n/a" throughout instead of a two-word English facade
     over a Dutch document.
 
-63. **`EPISODE_QUARTO_REPORT` and `episode_run_cron()` data-frame
+63. **`EPISODIC_QUARTO_REPORT` and `episode_run_cron()` data-frame
     inputs, both requested directly.** `episode_report_render()` gained a
-    `qmd_path` argument (defaulting to `EPISODE_QUARTO_REPORT`, matching
-    the `EPISODE_CONFIG`/`EPISODE_GEO_DATA` pattern) so an operator can
+    `qmd_path` argument (defaulting to `EPISODIC_QUARTO_REPORT`, matching
+    the `EPISODIC_CONFIG`/`EPISODIC_GEO_DATA` pattern) so an operator can
     supply their own report template — a department that wants its own
     letterhead or section order does not need to fork the package.
     Extracted the resolution logic into `episode_report_qmd_path()` so it
@@ -1033,7 +1033,7 @@ to know which point in the project's history that decision was made.
     "annual overview" of a system with no real annual history to
     summarise would be either empty or fabricated); the existing Quarto
     reporting infrastructure (`episode_report_render()`,
-    `EPISODE_QUARTO_REPORT`) is the natural mechanism to extend for this
+    `EPISODIC_QUARTO_REPORT`) is the natural mechanism to extend for this
     once real data exists to report on — a second template rather than a
     second rendering pipeline.
 
@@ -1111,7 +1111,7 @@ to know which point in the project's history that decision was made.
     the data model at a glance), `detection-reconciliation` (the five
     detectors, how reconciliation turns raised signals into persistent
     clusters, suppression, derived state), and `deployment` (the data
-    contract, `EPISODE_*` environment variables, accounts, the
+    contract, `EPISODIC_*` environment variables, accounts, the
     SharePoint/OneDrive sync warning, the optional-dependency fallback
     table). Deliberately narrative summaries pointing back at
     `ARCHITECTURE.md` for the exhaustive version, not a restructured copy
@@ -1169,7 +1169,7 @@ to know which point in the project's history that decision was made.
     `episode_interpretation_*`) was never meant to be called by an
     operator directly — the architecture's own engine/instance separation
     already draws this line (an operator configures behaviour via
-    `EPISODE_CONFIG`/`inst/config/default.yaml`, env vars, and the
+    `EPISODIC_CONFIG`/`inst/config/default.yaml`, env vars, and the
     ingestion/reporting contracts, not by calling internal R functions).
     These became `@keywords internal`/`@noRd` rather than `@export`ed,
     verified by checking that nothing in `inst/report/cluster_report.qmd`

@@ -29,9 +29,9 @@ that matter most for understanding how it works day to day.
 
 This package is open-source software with no data and no site-specific
 configuration in it. A running instance - a real department's database,
-its `EPISODE_CONFIG` overrides, its provisioned accounts - lives entirely
+its `EPISODIC_CONFIG` overrides, its provisioned accounts - lives entirely
 outside the package, addressed by environment variables
-(`EPISODE_DB`, `EPISODE_CONFIG`, `EPISODE_GEO_DATA`, ...; see the
+(`EPISODIC_DB`, `EPISODIC_CONFIG`, `EPISODIC_GEO_DATA`, ...; see the
 README's "Environment variables" table for the full list). Nothing about
 a specific laboratory, hospital, or patient can enter this repository,
 because the repository never holds any of it.

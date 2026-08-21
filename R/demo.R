@@ -75,9 +75,9 @@ episode_demo <- function(db_path = tempfile(fileext = ".sqlite"),
                           ingest_source_fn = episode_ingest_source_synthetic,
                           denominator_source_fn = episode_denominator_source_synthetic) {
   Sys.setenv(
-    EPISODE_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),
-    EPISODE_DB = db_path,
-    EPISODE_GEO_DATA = system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
+    EPISODIC_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),
+    EPISODIC_DB = db_path,
+    EPISODIC_GEO_DATA = system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
   )
 
   episode_run_cron(

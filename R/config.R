@@ -19,7 +19,7 @@
 #' Resolve the EpiSODIC configuration
 #'
 #' Loads the shipped defaults from `inst/config/default.yaml`, then, if the
-#' `EPISODE_CONFIG` environment variable points at a readable file, loads it
+#' `EPISODIC_CONFIG` environment variable points at a readable file, loads it
 #' and overlays it on top: any key it sets replaces the corresponding key in
 #' the defaults. Detection settings are never read from anywhere else and
 #' never from inside this package's own tree at runtime beyond the shipped
@@ -30,7 +30,7 @@
 #' always recoverable from the database alone.
 #'
 #' @param episode_config_path Path to the instance configuration file.
-#'   Defaults to the `EPISODE_CONFIG` environment variable. If unset or the
+#'   Defaults to the `EPISODIC_CONFIG` environment variable. If unset or the
 #'   file does not exist, only the shipped defaults are used, which is the
 #'   supported way to run the bundled demo.
 #' @return A nested list, the resolved configuration.
@@ -39,7 +39,7 @@
 #' names(config)
 #' config$eligibility$min_baseline_weeks
 #' @export
-episode_config_resolve <- function(episode_config_path = Sys.getenv("EPISODE_CONFIG", unset = NA)) {
+episode_config_resolve <- function(episode_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
   defaults_path <- system.file("config", "default.yaml", package = "EpiSODIC")
   if (identical(defaults_path, "")) {
     defaults_path <- file.path("inst", "config", "default.yaml")

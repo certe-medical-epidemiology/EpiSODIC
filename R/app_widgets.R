@@ -43,7 +43,7 @@ NULL
 #' Exported (not just internal): the Quarto report template
 #' (`inst/report/cluster_report.qmd`) runs in its own fresh session where
 #' only exported functions are attached by `library(EpiSODIC)`, and an
-#' operator's own custom template (`EPISODE_QUARTO_REPORT`) should have
+#' operator's own custom template (`EPISODIC_QUARTO_REPORT`) should have
 #' the same formatting helpers the shipped one uses.
 #'
 #' @param pathogen A character vector of pathogen display names.

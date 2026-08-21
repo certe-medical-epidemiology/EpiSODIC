@@ -4,11 +4,11 @@
 \alias{episode_geo_source_resolve}
 \title{Resolve the geographic reference dataset to use}
 \usage{
-episode_geo_source_resolve(path = Sys.getenv("EPISODE_GEO_DATA", unset = NA))
+episode_geo_source_resolve(path = Sys.getenv("EPISODIC_GEO_DATA", unset = NA))
 }
 \arguments{
 \item{path}{Path to an \code{.rds} file holding an \code{sf} object with \code{pc}
-and \code{geometry} columns. Defaults to the \code{EPISODE_GEO_DATA}
+and \code{geometry} columns. Defaults to the \code{EPISODIC_GEO_DATA}
 environment variable; if unset (or the file does not exist), falls
 back to the shipped Netherlands postcode default.}
 }

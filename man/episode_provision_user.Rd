@@ -5,7 +5,7 @@
 \title{Provision an assessor account}
 \usage{
 episode_provision_user(
-  db_path = Sys.getenv("EPISODE_DB", unset = NA),
+  db_path = Sys.getenv("EPISODIC_DB", unset = NA),
   username,
   full_name,
   email,
@@ -15,7 +15,7 @@ episode_provision_user(
 }
 \arguments{
 \item{db_path}{Path to an existing SQLite database. Defaults to the
-\code{EPISODE_DB} environment variable.}
+\code{EPISODIC_DB} environment variable.}
 
 \item{username, full_name, email}{The new account's fields.}
 

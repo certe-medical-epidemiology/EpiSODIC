@@ -40,12 +40,12 @@ test_that("episode_provision_user() takes a db_path (not an open connection) and
   expect_true(result$must_change)
 })
 
-test_that("episode_provision_user() falls back to the EPISODE_DB environment variable when db_path is not given", {
+test_that("episode_provision_user() falls back to the EPISODIC_DB environment variable when db_path is not given", {
   db_path <- tempfile(fileext = ".sqlite")
   DBI::dbDisconnect(episode_db_create(db_path))
-  old_env <- Sys.getenv("EPISODE_DB", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODE_DB") else Sys.setenv(EPISODE_DB = old_env))
-  Sys.setenv(EPISODE_DB = db_path)
+  old_env <- Sys.getenv("EPISODIC_DB", unset = NA)
+  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_DB") else Sys.setenv(EPISODIC_DB = old_env))
+  Sys.setenv(EPISODIC_DB = db_path)
 
   episode_provision_user(username = "asmith", full_name = "Ann Smith", email = "a@x.nl", password = "pw123456")
 
@@ -54,12 +54,12 @@ test_that("episode_provision_user() falls back to the EPISODE_DB environment var
   expect_true(episode_auth_login(con, "asmith", "pw123456")$ok)
 })
 
-test_that("episode_db_open() errors clearly when neither db_path nor EPISODE_DB is given", {
-  old_env <- Sys.getenv("EPISODE_DB", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODE_DB") else Sys.setenv(EPISODE_DB = old_env))
-  Sys.unsetenv("EPISODE_DB")
+test_that("episode_db_open() errors clearly when neither db_path nor EPISODIC_DB is given", {
+  old_env <- Sys.getenv("EPISODIC_DB", unset = NA)
+  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_DB") else Sys.setenv(EPISODIC_DB = old_env))
+  Sys.unsetenv("EPISODIC_DB")
 
-  expect_error(episode_db_open(), "EPISODE_DB")
+  expect_error(episode_db_open(), "EPISODIC_DB")
 })
 
 test_that("episode_auth_login() rejects an unknown username or wrong password without distinguishing", {

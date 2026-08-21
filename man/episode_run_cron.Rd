@@ -9,7 +9,7 @@ episode_run_cron(
   ingest_source_fn = episode_ingest_source_synthetic,
   denominator_source_fn = NULL,
   institution_activity_source_fn = NULL,
-  episode_config_path = Sys.getenv("EPISODE_CONFIG", unset = NA),
+  episode_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
   host = Sys.info()[["nodename"]],
   account = Sys.info()[["user"]],
   run_date = Sys.Date()
@@ -61,7 +61,7 @@ inside one transaction, so a partially failed run leaves no partial
 state and a retry is always safe.
 }
 \details{
-Configuration is read from \code{EPISODE_CONFIG};
+Configuration is read from \code{EPISODIC_CONFIG};
 the resolved configuration's hash and full snapshot are written to
 \code{episode_detection_run} so that any result is explainable from the
 database alone.

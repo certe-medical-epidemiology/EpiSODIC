@@ -5,12 +5,12 @@
 \title{Resolve the optional region-outline overlay}
 \usage{
 episode_geo_overlay_resolve(
-  path = Sys.getenv("EPISODE_GEO_DATA_OVERLAY", unset = NA)
+  path = Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)
 )
 }
 \arguments{
 \item{path}{Path to an \code{.rds} file holding an \code{sf} object with a
-\code{geometry} column. Defaults to the \code{EPISODE_GEO_DATA_OVERLAY}
+\code{geometry} column. Defaults to the \code{EPISODIC_GEO_DATA_OVERLAY}
 environment variable.}
 }
 \value{
@@ -28,8 +28,8 @@ overlay needs nothing but a \code{geometry} column. Unlike
 region boundaries are far more jurisdiction-specific than postcode
 geometry, and guessing at a "sensible default" (which country's
 provinces?) would be arbitrary in a way the shipped postcode default
-is not (\code{EPISODE_GEO_DATA} is Netherlands-only \emph{labelled as such}, not
-pretending to be universal). No \code{EPISODE_GEO_DATA_OVERLAY} set (or an
+is not (\code{EPISODIC_GEO_DATA} is Netherlands-only \emph{labelled as such}, not
+pretending to be universal). No \code{EPISODIC_GEO_DATA_OVERLAY} set (or an
 invalid file) simply means no overlay layer, same as no \code{sf} at all.
 }
 \examples{

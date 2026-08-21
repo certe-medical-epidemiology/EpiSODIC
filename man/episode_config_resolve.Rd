@@ -5,12 +5,12 @@
 \title{Resolve the EpiSODIC configuration}
 \usage{
 episode_config_resolve(
-  episode_config_path = Sys.getenv("EPISODE_CONFIG", unset = NA)
+  episode_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)
 )
 }
 \arguments{
 \item{episode_config_path}{Path to the instance configuration file.
-Defaults to the \code{EPISODE_CONFIG} environment variable. If unset or the
+Defaults to the \code{EPISODIC_CONFIG} environment variable. If unset or the
 file does not exist, only the shipped defaults are used, which is the
 supported way to run the bundled demo.}
 }
@@ -19,7 +19,7 @@ A nested list, the resolved configuration.
 }
 \description{
 Loads the shipped defaults from \code{inst/config/default.yaml}, then, if the
-\code{EPISODE_CONFIG} environment variable points at a readable file, loads it
+\code{EPISODIC_CONFIG} environment variable points at a readable file, loads it
 and overlays it on top: any key it sets replaces the corresponding key in
 the defaults. Detection settings are never read from anywhere else and
 never from inside this package's own tree at runtime beyond the shipped

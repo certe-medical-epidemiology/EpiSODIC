@@ -23,7 +23,7 @@
    trajectory bar, muted palette.
    Colour values are injected as CSS custom properties from
    episode_palette() (see R/app_ui.R) so the shipped default palette and
-   an instance's own EPISODE_PALETTE_CONFIG override produce
+   an instance's own EPISODIC_PALETTE_CONFIG override produce
    byte-identical CSS. */
 
 :root {

@@ -19,14 +19,14 @@ whichever hue is \code{primary}) and the semantic roles \code{primary}
 Read from \code{inst/config/palette.yaml}, the same defaults-then-instance-
 override pattern \code{\link[=episode_config_resolve]{episode_config_resolve()}} uses for detection
 configuration (deliberately a \emph{separate} file and env var,
-\code{EPISODE_PALETTE_CONFIG}: colours must never affect \code{config_hash},
+\code{EPISODIC_PALETTE_CONFIG}: colours must never affect \code{config_hash},
 which is about detection reproducibility, not display). Any
 organisation runs EpiSODIC in its own house colours by pointing
-\code{EPISODE_PALETTE_CONFIG} at a YAML file overriding whichever roles it
+\code{EPISODIC_PALETTE_CONFIG} at a YAML file overriding whichever roles it
 wants to rebrand - a department that wants its own colours supplies
 its own file, exactly as it supplies its own report template
-(\code{EPISODE_QUARTO_REPORT}) or geographic reference data
-(\code{EPISODE_GEO_DATA}); this package ships only the generic mechanism
+(\code{EPISODIC_QUARTO_REPORT}) or geographic reference data
+(\code{EPISODIC_GEO_DATA}); this package ships only the generic mechanism
 and an organisation-neutral default, never a specific organisation's
 house style.
 }

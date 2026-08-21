@@ -2,13 +2,13 @@
 % Please edit documentation in R/schema_migrate.R
 \name{episode_db_open}
 \alias{episode_db_open}
-\title{Open a connection to \code{db_path}, or the \code{EPISODE_DB} environment variable}
+\title{Open a connection to \code{db_path}, or the \code{EPISODIC_DB} environment variable}
 \usage{
-episode_db_open(db_path = Sys.getenv("EPISODE_DB", unset = NA))
+episode_db_open(db_path = Sys.getenv("EPISODIC_DB", unset = NA))
 }
 \arguments{
 \item{db_path}{Path to an existing SQLite database. Defaults to the
-\code{EPISODE_DB} environment variable.}
+\code{EPISODIC_DB} environment variable.}
 }
 \value{
 An open \link[DBI:DBIConnection-class]{DBI::DBIConnection}; the caller is responsible
@@ -17,7 +17,7 @@ for disconnecting it.
 \description{
 A thin wrapper around \code{\link[=episode_db_connect]{episode_db_connect()}} for entry points that take
 \code{db_path} rather than an already-open connection (e.g.
-\code{\link[=episode_provision_user]{episode_provision_user()}}) - centralises the \code{EPISODE_DB} default and
+\code{\link[=episode_provision_user]{episode_provision_user()}}) - centralises the \code{EPISODIC_DB} default and
 the "neither was given" error in one place, rather than duplicating the
 resolve-then-connect logic in every such entry point.
 }
@@ -25,7 +25,7 @@ resolve-then-connect logic in every such entry point.
 db_path <- tempfile(fileext = ".sqlite")
 con <- episode_db_create(db_path)
 DBI::dbDisconnect(con)
-Sys.setenv(EPISODE_DB = db_path)
+Sys.setenv(EPISODIC_DB = db_path)
 con <- episode_db_open()
 DBI::dbDisconnect(con)
 file.remove(db_path)

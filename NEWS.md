@@ -56,7 +56,7 @@ report, running entirely on open-source, CRAN-hosted packages.
 - Parameterised, versioned outbreak reports rendered via Quarto to
   self-contained HTML, with configurable small-count disclosure
   suppression for reports leaving the department. An operator can
-  supply their own report template (`EPISODE_QUARTO_REPORT`) instead of
+  supply their own report template (`EPISODIC_QUARTO_REPORT`) instead of
   the shipped one.
 
 ## Optional, always-guarded integrations
@@ -70,7 +70,7 @@ deduplication via `AMR::get_episode()`, pathogen-name italicisation via
 `AMR::microorganisms`) - see the DESCRIPTION for the published methods
 this package is built on. House colours are a shipped,
 organisation-neutral default, overridable per instance via
-`EPISODE_PALETTE_CONFIG` - no organisation-specific package involved.
+`EPISODIC_PALETTE_CONFIG` - no organisation-specific package involved.
 
 ## Data contract
 

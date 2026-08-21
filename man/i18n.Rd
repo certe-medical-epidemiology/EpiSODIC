@@ -13,7 +13,7 @@ lives in \code{inst/i18n/nl.json}/\code{en.json} and is looked up through
 }
 \details{
 Fallback chain: an instance override (an operator-supplied overlay,
-e.g. for house-style wording changes, located beside \code{EPISODE_CONFIG}
+e.g. for house-style wording changes, located beside \code{EPISODIC_CONFIG}
 rather than in the repository - configuration is never committed to
 the repository, the same rule detection settings follow), then the
 requested session language, then \code{"en"}, then the key itself, wrapped

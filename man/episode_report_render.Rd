@@ -13,7 +13,7 @@ episode_report_render(
   small_count_threshold = NULL,
   config = episode_config_resolve(),
   lang = "nl",
-  qmd_path = Sys.getenv("EPISODE_QUARTO_REPORT", unset = NA)
+  qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)
 )
 }
 \arguments{
@@ -39,7 +39,7 @@ leaving the department. Defaults to \code{config$report$small_count_threshold}.}
 \item{lang}{Report language, \code{"nl"} (default) or \code{"en"}.}
 
 \item{qmd_path}{Path to the Quarto template to render. Defaults to the
-\code{EPISODE_QUARTO_REPORT} environment variable; if that is unset (or
+\code{EPISODIC_QUARTO_REPORT} environment variable; if that is unset (or
 names a file that does not exist), falls back to the shipped
 \code{inst/report/cluster_report.qmd}. An operator's own template only
 needs to read \code{params$data_path} (an \code{.rds} path, \code{readRDS()}'d to

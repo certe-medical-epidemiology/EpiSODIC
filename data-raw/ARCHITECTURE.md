@@ -145,7 +145,7 @@ EpiSODIC/
 
 R package names are case-sensitive, so `library(EpiSODIC)` is valid and the branding survives into the code.
 
-The instance lives entirely outside this tree and is located through `EPISODE_CONFIG`. See section 7.5. Nothing under the repository ever contains a credential, an instance parameter or a patient record.
+The instance lives entirely outside this tree and is located through `EPISODIC_CONFIG`. See section 7.5. Nothing under the repository ever contains a credential, an instance parameter or a patient record.
 
 ---
 
@@ -689,7 +689,7 @@ All detection parameters live in the instance configuration read by the cron: th
 
 **The configuration is not part of the software and never enters the repository.** The repository is a piece of software that anyone may clone; the configuration is operational data belonging to whoever runs it. Committing thresholds would mean a public commit for every operational change, repository write access for whoever operates the system, and a fork arriving with somebody else's parameters. The package ships `inst/config/default.yaml` as documented defaults, which is software. What an instance actually uses is not.
 
-Where the instance configuration lives is the operator's decision. EpiSODIC locates it through a single environment variable, `EPISODE_CONFIG`, and cares about nothing else. A network drive, a SharePoint project folder, a local directory beside the cron script: all equivalent to the software.
+Where the instance configuration lives is the operator's decision. EpiSODIC locates it through a single environment variable, `EPISODIC_CONFIG`, and cares about nothing else. A network drive, a SharePoint project folder, a local directory beside the cron script: all equivalent to the software.
 
 Reproducibility is achieved in the database rather than in version control. Every run writes `config_hash` and `config_snapshot`, so the exact parameters behind any result are recoverable from `episode_detection_run` alone, whatever happened to the file afterwards. This is stronger than a commit reference, because it records the resolved configuration rather than a document that has to be reconstructed.
 

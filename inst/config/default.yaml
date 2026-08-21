@@ -20,7 +20,7 @@
 #
 # This file is software: documented defaults shipped with the package. It is
 # NOT instance configuration. An operator's actual instance configuration
-# lives outside this repository and is located through the EPISODE_CONFIG
+# lives outside this repository and is located through the EPISODIC_CONFIG
 # environment variable; it is loaded on top of this file, and any key it
 # sets overrides the corresponding key here. The resolved (merged) result
 # is what gets hashed into config_hash and stored in config_snapshot on

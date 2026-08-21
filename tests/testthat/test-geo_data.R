@@ -31,22 +31,22 @@ test_that("episode_geo_source_default() ships a Netherlands PC sf object", {
   expect_gt(nrow(geo), 0)
 })
 
-test_that("episode_geo_source_resolve() falls back to the default when EPISODE_GEO_DATA is unset or invalid", {
+test_that("episode_geo_source_resolve() falls back to the default when EPISODIC_GEO_DATA is unset or invalid", {
   skip_if_not_installed("sf")
-  old_env <- Sys.getenv("EPISODE_GEO_DATA", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODE_GEO_DATA") else Sys.setenv(EPISODE_GEO_DATA = old_env))
+  old_env <- Sys.getenv("EPISODIC_GEO_DATA", unset = NA)
+  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_GEO_DATA") else Sys.setenv(EPISODIC_GEO_DATA = old_env))
 
-  Sys.unsetenv("EPISODE_GEO_DATA")
+  Sys.unsetenv("EPISODIC_GEO_DATA")
   expect_s3_class(episode_geo_source_resolve(), "sf")
 
-  Sys.setenv(EPISODE_GEO_DATA = "/no/such/file.rds")
+  Sys.setenv(EPISODIC_GEO_DATA = "/no/such/file.rds")
   expect_s3_class(episode_geo_source_resolve(), "sf")
 })
 
-test_that("episode_geo_source_resolve() honours an operator-supplied EPISODE_GEO_DATA file", {
+test_that("episode_geo_source_resolve() honours an operator-supplied EPISODIC_GEO_DATA file", {
   skip_if_not_installed("sf")
-  old_env <- Sys.getenv("EPISODE_GEO_DATA", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODE_GEO_DATA") else Sys.setenv(EPISODE_GEO_DATA = old_env))
+  old_env <- Sys.getenv("EPISODIC_GEO_DATA", unset = NA)
+  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_GEO_DATA") else Sys.setenv(EPISODIC_GEO_DATA = old_env))
 
   default <- episode_geo_source_default()
   custom <- default[seq_len(2), ]
@@ -54,7 +54,7 @@ test_that("episode_geo_source_resolve() honours an operator-supplied EPISODE_GEO
   tmp <- tempfile(fileext = ".rds")
   on.exit(unlink(tmp), add = TRUE)
   saveRDS(custom, tmp)
-  Sys.setenv(EPISODE_GEO_DATA = tmp)
+  Sys.setenv(EPISODIC_GEO_DATA = tmp)
 
   resolved <- episode_geo_source_resolve()
   expect_equal(sort(as.character(resolved$pc)), c("9998", "9999"))
@@ -78,27 +78,27 @@ test_that("episode_geo_join() returns NULL for empty rows or missing geo data", 
 })
 
 test_that("episode_geo_overlay_resolve() returns NULL when unset, invalid, or sf is not installed", {
-  old_env <- Sys.getenv("EPISODE_GEO_DATA_OVERLAY", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODE_GEO_DATA_OVERLAY") else Sys.setenv(EPISODE_GEO_DATA_OVERLAY = old_env))
+  old_env <- Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)
+  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY") else Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = old_env))
 
-  Sys.unsetenv("EPISODE_GEO_DATA_OVERLAY")
+  Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY")
   expect_null(episode_geo_overlay_resolve())
 
-  Sys.setenv(EPISODE_GEO_DATA_OVERLAY = "/no/such/file.rds")
+  Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = "/no/such/file.rds")
   expect_null(episode_geo_overlay_resolve())
 })
 
 test_that("episode_geo_overlay_resolve() loads an operator-supplied overlay needing only a geometry column", {
   skip_if_not_installed("sf")
-  old_env <- Sys.getenv("EPISODE_GEO_DATA_OVERLAY", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODE_GEO_DATA_OVERLAY") else Sys.setenv(EPISODE_GEO_DATA_OVERLAY = old_env))
+  old_env <- Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)
+  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY") else Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = old_env))
 
   base <- episode_geo_source_default()
   overlay <- base[seq_len(2), "geometry"]  # no pc column at all - the point of this contract
   tmp <- tempfile(fileext = ".rds")
   on.exit(unlink(tmp), add = TRUE)
   saveRDS(overlay, tmp)
-  Sys.setenv(EPISODE_GEO_DATA_OVERLAY = tmp)
+  Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = tmp)
 
   resolved <- episode_geo_overlay_resolve()
   expect_s3_class(resolved, "sf")
@@ -108,26 +108,26 @@ test_that("episode_geo_overlay_resolve() loads an operator-supplied overlay need
 
 test_that("episode_geo_overlay_resolve() rejects a file with no geometry column", {
   skip_if_not_installed("sf")
-  old_env <- Sys.getenv("EPISODE_GEO_DATA_OVERLAY", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODE_GEO_DATA_OVERLAY") else Sys.setenv(EPISODE_GEO_DATA_OVERLAY = old_env))
+  old_env <- Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)
+  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY") else Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = old_env))
 
   tmp <- tempfile(fileext = ".rds")
   on.exit(unlink(tmp), add = TRUE)
   saveRDS(data.frame(x = 1:2), tmp)
-  Sys.setenv(EPISODE_GEO_DATA_OVERLAY = tmp)
+  Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = tmp)
 
   expect_null(episode_geo_overlay_resolve())
 })
 
 test_that("episode_ui_geo_map_chart() draws the overlay layer without disturbing the choropleth when present, and ignores it gracefully when absent", {
   skip_if_not_installed("sf")
-  old_env <- Sys.getenv("EPISODE_GEO_DATA_OVERLAY", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODE_GEO_DATA_OVERLAY") else Sys.setenv(EPISODE_GEO_DATA_OVERLAY = old_env))
+  old_env <- Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)
+  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY") else Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = old_env))
 
   geo <- episode_geo_source_default()
   rows <- data.frame(label = as.character(geo$pc[1]), n = 4)
 
-  Sys.unsetenv("EPISODE_GEO_DATA_OVERLAY")
+  Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY")
   plot_without <- episode_ui_geo_map_chart(rows)
   expect_s3_class(plot_without, "ggplot")
   expect_equal(length(plot_without$layers), 1)
@@ -136,7 +136,7 @@ test_that("episode_ui_geo_map_chart() draws the overlay layer without disturbing
   tmp <- tempfile(fileext = ".rds")
   on.exit(unlink(tmp), add = TRUE)
   saveRDS(overlay, tmp)
-  Sys.setenv(EPISODE_GEO_DATA_OVERLAY = tmp)
+  Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = tmp)
 
   plot_with <- episode_ui_geo_map_chart(rows)
   expect_s3_class(plot_with, "ggplot")

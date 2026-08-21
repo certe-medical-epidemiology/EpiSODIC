@@ -123,7 +123,7 @@ episode_ui_rt_chart <- function(rt, lang = "nl") {
 #' own mapping package: geography here is operator-suppliable, not tied
 #' to one jurisdiction, matching how every other domain concept in this
 #' codebase already works. An optional second layer
-#' (`episode_geo_overlay_resolve()`, `EPISODE_GEO_DATA_OVERLAY`) draws
+#' (`episode_geo_overlay_resolve()`, `EPISODIC_GEO_DATA_OVERLAY`) draws
 #' region outlines - no fill, a thicker line - on top for orientation;
 #' its own absence or failure never affects the choropleth itself.
 #'
@@ -146,7 +146,7 @@ episode_ui_geo_map_chart <- function(rows) {
       ggplot2::geom_sf(ggplot2::aes(fill = .data$n), colour = pal$border, linewidth = 0.1) +
       ggplot2::scale_fill_gradient(low = pal$primary_tint, high = pal$primary, na.value = pal$bg_subtle)
 
-    # EPISODE_GEO_DATA_OVERLAY: an optional second layer for orientation
+    # EPISODIC_GEO_DATA_OVERLAY: an optional second layer for orientation
     # (province/municipality outlines, ...) - colour, no fill, a
     # thicker line so it reads as a boundary on top of the choropleth
     # rather than competing with it. Its own failure (bad geometry, CRS

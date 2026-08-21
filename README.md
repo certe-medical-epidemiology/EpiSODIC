@@ -38,7 +38,7 @@ The detection engine, interface, assessment and authentication
 workflow, reporting, and analytical panels are all implemented and
 tested, including a Performance screen for evidence-based tuning.
 Detection thresholds and priority score weights are configurable per
-instance (`inst/config/default.yaml`, `EPISODE_CONFIG`), so a department
+instance (`inst/config/default.yaml`, `EPISODIC_CONFIG`), so a department
 can tune them against its own signal volume as its evidence base grows.
 
 ## Installation
@@ -67,7 +67,7 @@ or data warehouse**. Every dependency is a CRAN-hosted package
 (`surveillance` for Farrington); no private, organisation-specific
 package is required or even referenced. House colours
 (`episode_palette()`) come from a shipped, organisation-neutral default,
-overridable per instance by pointing `EPISODE_PALETTE_CONFIG` at a YAML
+overridable per instance by pointing `EPISODIC_PALETTE_CONFIG` at a YAML
 file with an organisation's own colours - the same mechanism used for
 detection configuration, a custom report template, and geographic
 reference data. Geography (the choropleth panel) is not tied to any one
@@ -190,7 +190,7 @@ feature did not exist. EpiSODIC ships a Netherlands postcode default
 (`inst/extdata/geo_postcodes4_nl.rds`, geometry only, sourced from
 `certegis` under the same GPL-2 licence - see `data-raw/
 geo_postcodes4_nl.R` for provenance), but geography is not
-Netherlands-specific: point `EPISODE_GEO_DATA` at your own `.rds` file
+Netherlands-specific: point `EPISODIC_GEO_DATA` at your own `.rds` file
 holding an [`sf`](https://r-spatial.github.io/sf/) object with a `pc`
 column (matching whatever your own `episode_case.pc` values are -
 postcodes, zip codes, municipality codes, anything) and a `geometry`
@@ -200,7 +200,7 @@ contract.
 A second, independent layer can be drawn on top for orientation - region
 outlines (provinces, municipalities, whatever is useful), colour but no
 fill, a thicker line than the choropleth itself. Point
-`EPISODE_GEO_DATA_OVERLAY` at an `.rds` file holding an `sf` object with
+`EPISODIC_GEO_DATA_OVERLAY` at an `.rds` file holding an `sf` object with
 just a `geometry` column (no `pc` join needed, since it carries no case
 counts of its own). No default is shipped for this one - unlike the
 postcode default above, region boundaries are too jurisdiction-specific
@@ -209,7 +209,7 @@ to guess a sensible default for.
 ### Custom report templates (optional)
 
 `episode_report_render()` renders `inst/report/cluster_report.qmd`
-(embedded as self-contained HTML via Quarto) unless `EPISODE_QUARTO_REPORT`
+(embedded as self-contained HTML via Quarto) unless `EPISODIC_QUARTO_REPORT`
 points at an operator's own `.qmd` file, in which case that is used
 instead - for a department that wants its own letterhead, section order,
 or house style. A custom template only needs to `readRDS(params$data_path)`
@@ -228,7 +228,7 @@ the four assessor accounts are provisioned by whoever administers the
 database, not created by assessors themselves or by the app.
 
 ```r
-Sys.setenv(EPISODE_DB = "/path/to/episode.sqlite")  # or pass db_path explicitly below
+Sys.setenv(EPISODIC_DB = "/path/to/episode.sqlite")  # or pass db_path explicitly below
 
 episode_provision_user(
   username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
@@ -236,7 +236,7 @@ episode_provision_user(
 )
 ```
 
-`episode_provision_user()` takes `db_path` (defaulting to `EPISODE_DB`,
+`episode_provision_user()` takes `db_path` (defaulting to `EPISODIC_DB`,
 see "Environment variables" below), not an open connection - it opens and
 closes its own via `episode_db_open()`, so provisioning an account is one
 call at the console. The account is created with `must_change = TRUE`, so
@@ -245,19 +245,19 @@ continuing.
 
 ## Environment variables
 
-Every `EPISODE_*` variable is optional; each entry point works fine with
+Every `EPISODIC_*` variable is optional; each entry point works fine with
 the equivalent argument passed explicitly instead. Environment variables
 exist so an operator can configure a running instance (a systemd unit, a
 Docker container) without editing R code.
 
 | Variable | Used by | Meaning |
 |---|---|---|
-| `EPISODE_DB` | `episode_run_app()`, `episode_provision_user()` (`db_path` argument) | Path to the instance's SQLite database. |
-| `EPISODE_CONFIG` | `episode_run_cron()` (`episode_config_path` argument) | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`'s shipped defaults. |
-| `EPISODE_PALETTE_CONFIG` | `episode_palette()` (`palette_config_path` argument) | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`'s shipped defaults. Deliberately separate from `EPISODE_CONFIG`: colour is a display concern, never part of `episode_config_hash()`'s detection-reproducibility guarantee. |
-| `EPISODE_GEO_DATA` | `episode_geo_source_resolve()` (`path` argument) | Path to an `.rds` file holding an operator's own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands postcode default. See "Geographic reference data" above. |
-| `EPISODE_GEO_DATA_OVERLAY` | `episode_geo_overlay_resolve()` (`path` argument) | Path to an `.rds` file holding an optional region-outline overlay (an `sf` object with just a `geometry` column), drawn on top of the choropleth. No default. See "Geographic reference data" above. |
-| `EPISODE_QUARTO_REPORT` | `episode_report_render()` (`qmd_path` argument) | Path to an operator's own Quarto report template, overriding the shipped `inst/report/cluster_report.qmd`. See "Custom report templates" above. |
+| `EPISODIC_DB` | `episode_run_app()`, `episode_provision_user()` (`db_path` argument) | Path to the instance's SQLite database. |
+| `EPISODIC_CONFIG` | `episode_run_cron()` (`episode_config_path` argument) | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`'s shipped defaults. |
+| `EPISODIC_PALETTE_CONFIG` | `episode_palette()` (`palette_config_path` argument) | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`'s shipped defaults. Deliberately separate from `EPISODIC_CONFIG`: colour is a display concern, never part of `episode_config_hash()`'s detection-reproducibility guarantee. |
+| `EPISODIC_GEO_DATA` | `episode_geo_source_resolve()` (`path` argument) | Path to an `.rds` file holding an operator's own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands postcode default. See "Geographic reference data" above. |
+| `EPISODIC_GEO_DATA_OVERLAY` | `episode_geo_overlay_resolve()` (`path` argument) | Path to an `.rds` file holding an optional region-outline overlay (an `sf` object with just a `geometry` column), drawn on top of the choropleth. No default. See "Geographic reference data" above. |
+| `EPISODIC_QUARTO_REPORT` | `episode_report_render()` (`qmd_path` argument) | Path to an operator's own Quarto report template, overriding the shipped `inst/report/cluster_report.qmd`. See "Custom report templates" above. |
 
 ## Licence
 

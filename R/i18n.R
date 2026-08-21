@@ -26,7 +26,7 @@
 #' [episode_tr()].
 #'
 #' Fallback chain: an instance override (an operator-supplied overlay,
-#' e.g. for house-style wording changes, located beside `EPISODE_CONFIG`
+#' e.g. for house-style wording changes, located beside `EPISODIC_CONFIG`
 #' rather than in the repository - configuration is never committed to
 #' the repository, the same rule detection settings follow), then the
 #' requested session language, then `"en"`, then the key itself, wrapped

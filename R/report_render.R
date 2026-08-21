@@ -55,7 +55,7 @@
 #' @param config The resolved configuration; only `config$report` is used.
 #' @param lang Report language, `"nl"` (default) or `"en"`.
 #' @param qmd_path Path to the Quarto template to render. Defaults to the
-#'   `EPISODE_QUARTO_REPORT` environment variable; if that is unset (or
+#'   `EPISODIC_QUARTO_REPORT` environment variable; if that is unset (or
 #'   names a file that does not exist), falls back to the shipped
 #'   `inst/report/cluster_report.qmd`. An operator's own template only
 #'   needs to read `params$data_path` (an `.rds` path, `readRDS()`'d to
@@ -79,7 +79,7 @@
 episode_report_render <- function(con, cluster_id, output_dir, user_id = NA,
                                    include_linelist = TRUE, small_count_threshold = NULL,
                                    config = episode_config_resolve(), lang = "nl",
-                                   qmd_path = Sys.getenv("EPISODE_QUARTO_REPORT", unset = NA)) {
+                                   qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)) {
   if (!episode_quarto_available()) {
     stop(
       "Rendering a report needs both the 'quarto' R package and the Quarto ",
@@ -181,16 +181,16 @@ episode_quarto_available <- function() {
 
 #' Resolve the Quarto report template to use
 #'
-#' An operator's own template, if `EPISODE_QUARTO_REPORT` (or the
+#' An operator's own template, if `EPISODIC_QUARTO_REPORT` (or the
 #' explicit `qmd_path` argument) names a file that actually exists;
 #' otherwise the shipped `inst/report/cluster_report.qmd` default -
-#' matching the shape `EPISODE_CONFIG`/`EPISODE_GEO_DATA`/... already
+#' matching the shape `EPISODIC_CONFIG`/`EPISODIC_GEO_DATA`/... already
 #' establish.
 #' @param qmd_path A path, or `NA`.
 #' @return A path to an existing `.qmd` file.
 #' @keywords internal
 #' @noRd
-episode_report_qmd_path <- function(qmd_path = Sys.getenv("EPISODE_QUARTO_REPORT", unset = NA)) {
+episode_report_qmd_path <- function(qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)) {
   if (!is.na(qmd_path) && nzchar(qmd_path) && file.exists(qmd_path)) {
     return(qmd_path)
   }
