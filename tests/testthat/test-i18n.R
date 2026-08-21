@@ -106,3 +106,37 @@ test_that("episodic_format_date_range() falls back cleanly on unparseable input"
   expect_equal(episodic_format_date_range(NA, "2025-01-15", lang = "en"), episodic_tr("misc.unknown", lang = "en"))
   expect_equal(episodic_format_date_range("not-a-date", "2025-01-15", lang = "en"), episodic_tr("misc.unknown", lang = "en"))
 })
+
+test_that("Dutch never renders 'pathogen' as 'pathogeen', in any casing", {
+  # House terminology: the Dutch word is "verwekker", without exception.
+  # Asserted rather than left to review, because the failure mode is a
+  # single new key years from now that nobody diffs against the rest of
+  # the file.
+  nl <- episodic_i18n_load("nl")
+  # {pathogen} and friends are placeholder tokens substituted at render
+  # time, never translated - strip them before looking.
+  values <- gsub("\\{[a-zA-Z_]+\\}", "", nl)
+  offenders <- names(values)[grepl("pathogeen", values, ignore.case = TRUE)]
+  expect_equal(offenders, character(0))
+})
+
+test_that("Dutch does use 'verwekker' for the concept, so the rule above is not vacuous", {
+  nl <- episodic_i18n_load("nl")
+  expect_true(any(grepl("verwekker", nl, ignore.case = TRUE)))
+  expect_equal(unname(nl[["nav.pathogen"]]), "Verwekker")
+})
+
+test_that("every language names the Pathogen screen the same way in its nav entry and its title", {
+  # A nav entry reading one thing and the screen it opens reading another
+  # is the same class of slip as the Dutch one, just harder to spot.
+  for (lang in episodic_shipped_langs) {
+    table <- episodic_i18n_load(lang)
+    nav <- table[["nav.pathogen"]]
+    title <- table[["pathogen.title"]]
+    # Singular stem, so an inflected or compounded title still matches
+    # (Verwekker -> Verwekkeractiviteit, Patógeno -> del patógeno).
+    stem <- sub("s$", "", tolower(nav))
+    expect_true(grepl(stem, tolower(title), fixed = TRUE),
+                 info = paste0(lang, ": nav '", nav, "' vs title '", title, "'"))
+  }
+})
