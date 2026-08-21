@@ -12,7 +12,7 @@ episodic_report_render(
   include_linelist = TRUE,
   small_count_threshold = NULL,
   config = episodic_config_resolve(),
-  lang = "nl",
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
   qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)
 )
 }
@@ -39,8 +39,9 @@ Defaults to \code{config$report$small_count_threshold}.}
 \item{config}{The resolved configuration (see \code{\link[=episodic_config_resolve]{episodic_config_resolve()}});
 only \code{config$report} is used.}
 
-\item{lang}{Report language: \code{"nl"} (default), \code{"en"}, \code{"es"}, \code{"fr"},
-\code{"de"}, \code{"zh"}, \code{"hi"}, or \code{"ar"}.}
+\item{lang}{Report language: \code{"nl"}, \code{"en"}, \code{"es"}, \code{"fr"}, \code{"de"},
+\code{"zh"}, \code{"hi"}, or \code{"ar"}. Defaults to the \code{EPISODIC_LANGUAGE}
+environment variable, falling back to \code{"en"} if that is unset.}
 
 \item{qmd_path}{Path to the Quarto template to render. Defaults to the
 \code{EPISODIC_QUARTO_REPORT} environment variable, falling back to the

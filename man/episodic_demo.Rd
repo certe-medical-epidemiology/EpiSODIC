@@ -11,7 +11,7 @@ episodic_demo(
   email = "demo@example.org",
   password = "episodic-demo",
   launch = TRUE,
-  lang = "nl",
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
   ingest_source = episodic_ingest_source_synthetic,
   denominator_source = episodic_denominator_source_synthetic
 )
@@ -31,8 +31,10 @@ anything beyond a local demo.}
 \code{FALSE} to only build the demo database and return its path, e.g. for
 scripting or screenshots.}
 
-\item{lang}{Dashboard language when \code{launch = TRUE}: \code{"nl"} (default), \code{"en"},
-\code{"es"}, \code{"fr"}, \code{"de"}, \code{"zh"}, \code{"hi"}, or \code{"ar"}.}
+\item{lang}{Dashboard language when \code{launch = TRUE}: \code{"nl"}, \code{"en"},
+\code{"es"}, \code{"fr"}, \code{"de"}, \code{"zh"}, \code{"hi"}, or \code{"ar"}. Defaults to the
+\code{EPISODIC_LANGUAGE} environment variable, falling back to \code{"en"} if
+that is unset.}
 
 \item{ingest_source, denominator_source}{The data sources to
 generate the demo from, passed on to \code{\link[=episodic_run_cron]{episodic_run_cron()}}. Default to

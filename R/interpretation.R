@@ -56,26 +56,8 @@ NULL
 #' @keywords internal
 #' @noRd
 episodic_interpretation_context <- function(cluster, lang = "nl") {
-  case_word <- switch(lang,
-    nl = c("geval", "gevallen"),
-    es = c("caso", "casos"),
-    fr = c("cas", "cas"),
-    de = c("Fall", "Fälle"),
-    zh = c("例", "例"),
-    hi = c("मामला", "मामले"),
-    ar = c("حالة", "حالات"),
-    c("case", "cases")
-  )
-  day_word <- switch(lang,
-    nl = c("dag", "dagen"),
-    es = c("día", "días"),
-    fr = c("jour", "jours"),
-    de = c("Tag", "Tage"),
-    zh = c("天", "天"),
-    hi = c("दिन", "दिन"),
-    ar = c("يوم", "أيام"),
-    c("day", "days")
-  )
+  case_word <- c(episodic_tr("unit.case", lang = lang), episodic_tr("unit.cases", lang = lang))
+  day_word <- c(episodic_tr("unit.day", lang = lang), episodic_tr("unit.days", lang = lang))
 
   list(
     obs = cluster$n_cases,

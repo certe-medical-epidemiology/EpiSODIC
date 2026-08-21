@@ -73,8 +73,9 @@ episodic_i18n_load <- function(lang) {
 #'   language: `nl`, `en`, `es`, `fr`, `de`, `zh`, `hi`, `ar`).
 #' @param ... Named values substituted into `{name}` placeholders in the
 #'   template.
-#' @param lang Language: `"nl"` (default), `"en"`, `"es"`, `"fr"`, `"de"`,
-#'   `"zh"`, `"hi"`, or `"ar"`.
+#' @param lang Language: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`, `"zh"`,
+#'   `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE` environment
+#'   variable, falling back to `"en"` if that is unset.
 #' @param instance_i18n An optional named character vector of your own
 #'   wording overrides (key -> template), checked before the shipped
 #'   translations. `NULL` (the default) uses only the shipped text.
@@ -83,7 +84,8 @@ episodic_i18n_load <- function(lang) {
 #' episodic_tr("nav.clusters", lang = "nl")
 #' episodic_tr("nav.clusters", lang = "en")
 #' @export
-episodic_tr <- function(key, ..., lang = "nl", instance_i18n = NULL) {
+episodic_tr <- function(key, ..., lang = Sys.getenv("EPISODIC_LANGUAGE"), instance_i18n = NULL) {
+  if (!nzchar(lang)) lang <- "en"
   template <- NULL
 
   if (!is.null(instance_i18n) && key %in% names(instance_i18n)) {
@@ -158,16 +160,7 @@ episodic_format_date_range <- function(x, y, lang = "nl") {
     tmp <- x; x <- y; y <- tmp
   }
 
-  months <- switch(lang,
-    nl = c("jan.", "feb.", "mrt.", "apr.", "mei", "jun.", "jul.", "aug.", "sep.", "okt.", "nov.", "dec."),
-    es = c("ene.", "feb.", "mar.", "abr.", "may.", "jun.", "jul.", "ago.", "sep.", "oct.", "nov.", "dic."),
-    fr = c("janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."),
-    de = c("Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sep.", "Okt.", "Nov.", "Dez."),
-    zh = c("1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"),
-    hi = c("जन.", "फर.", "मार्च", "अप्रै.", "मई", "जून", "जुल.", "अग.", "सित.", "अक्‍तू.", "नव.", "दिस."),
-    ar = c("يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"),
-    month.abb
-  )
+  months <- vapply(sprintf("%02d", 1:12), function(mm) episodic_tr(paste0("date.month.", mm), lang = lang), character(1))
   mon <- function(d) months[as.integer(format(d, "%m"))]
   day <- function(d) as.integer(format(d, "%d"))
   yr <- function(d) format(d, "%Y")
