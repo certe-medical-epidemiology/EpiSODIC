@@ -33,20 +33,38 @@
 #' @importFrom rlang .data
 NULL
 
+#' Text sizes shared by every chart
+#'
+#' One place, so an axis label, an axis title and a legend key cannot end
+#' up at three different sizes across the app.
+#' @keywords internal
+#' @noRd
+episodic_chart_text_size <- c(axis = 11, title = 11, legend = 11)
+
+#' The shared chart theme
+#'
+#' Axis labels are set in the muted grey the rest of the interface uses
+#' for secondary text, not in `faint`. `faint` is a hairline colour meant
+#' for rules and separators; at 9pt it left the axis barely legible
+#' against white, which on a surveillance chart is not a cosmetic
+#' problem - the axis is how you name the week a rise started, and an
+#' axis you have to lean in to read is one you stop reading.
 #' @keywords internal
 #' @noRd
 episodic_chart_theme <- function() {
   pal <- episodic_palette()
+  sizes <- episodic_chart_text_size
   ggplot2::theme_minimal(base_family = "") +
     ggplot2::theme(
       panel.grid.minor = ggplot2::element_blank(),
       panel.grid.major.x = ggplot2::element_blank(),
       panel.grid.major.y = ggplot2::element_line(colour = pal$border, linewidth = 0.3),
-      axis.text = ggplot2::element_text(colour = pal$faint, size = 9),
+      axis.text = ggplot2::element_text(colour = pal$muted, size = sizes[["axis"]]),
       axis.title = ggplot2::element_blank(),
       legend.title = ggplot2::element_blank(),
       legend.position = "bottom",
-      legend.text = ggplot2::element_text(size = 9, colour = pal$muted)
+      legend.text = ggplot2::element_text(size = sizes[["legend"]], colour = pal$ink),
+      legend.key.width = ggplot2::unit(22, "pt")
     )
 }
 
@@ -401,8 +419,11 @@ episodic_ui_denominator_chart <- function(series, lang = "nl") {
     ) +
     episodic_chart_week_scale(series$week_start, lang = lang) +
     episodic_chart_theme() +
-    ggplot2::theme(axis.title.y = ggplot2::element_text(size = 9, colour = pal$muted),
-                   axis.title.y.right = ggplot2::element_text(size = 9, colour = pal$danger_dark))
+    ggplot2::theme(
+      axis.title.y = ggplot2::element_text(size = episodic_chart_text_size[["title"]], colour = pal$muted),
+      axis.title.y.right = ggplot2::element_text(size = episodic_chart_text_size[["title"]],
+                                                  colour = pal$danger_dark)
+    )
 }
 
 #' The pathogen-level weekly curve, with MEM thresholds drawn on it
@@ -522,11 +543,12 @@ episodic_ui_pathogen_overlay_chart <- function(overlay, lang = "nl") {
 
   p <- ggplot2::ggplot(rows, ggplot2::aes(x = .data$week_index, y = .data$n_cases,
                                            group = .data$group, colour = .data$group)) +
-    ggplot2::geom_line(linewidth = 0.7)
+    ggplot2::geom_line(linewidth = 0.7, na.rm = TRUE)
 
   current_rows <- rows[as.character(rows$group) == overlay$current, , drop = FALSE]
   if (nrow(current_rows) > 0) {
-    p <- p + ggplot2::geom_line(data = current_rows, linewidth = 1.4, show.legend = FALSE)
+    p <- p + ggplot2::geom_line(data = current_rows, linewidth = 1.4, show.legend = FALSE,
+                                 na.rm = TRUE)
   }
 
   p +
@@ -535,5 +557,6 @@ episodic_ui_pathogen_overlay_chart <- function(overlay, lang = "nl") {
     ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang),
                    x = episodic_tr(paste0("pathogen.panel.overlay.xlab.", overlay$kind), lang = lang)) +
     episodic_chart_theme() +
-    ggplot2::theme(axis.title.x = ggplot2::element_text(size = 9, colour = pal$muted))
+    ggplot2::theme(axis.title.x = ggplot2::element_text(size = episodic_chart_text_size[["title"]],
+                                                        colour = pal$muted))
 }

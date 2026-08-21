@@ -123,7 +123,7 @@
   "panel.settings.population_offset": "Ajuste poblacional",
   "panel.settings.population_offset_patient_days": "días-paciente",
   "panel.settings.population_offset_none": "ninguno",
-  "panel.settings.case_free_days": "case_free_days",
+  "panel.settings.case_free_days": "Días sin casos",
   "panel.settings.last_run": "Última ejecución",
   "panel.settings.last_run_value": "{when} · {host}",
   "panel.settings.pkg_versions": "Versiones de paquetes",

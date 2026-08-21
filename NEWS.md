@@ -140,6 +140,28 @@
 
 ## Interface
 
+- Chart text is legible. Axis labels were set in `faint`, a hairline
+  colour meant for rules and separators, at 9pt - which on a surveillance
+  chart is not a cosmetic problem, since the axis is how you name the
+  week a rise started, and an axis you have to lean in to read is one you
+  stop reading. Axis labels, axis titles and legend text are now 11pt in
+  the same greys the rest of the interface uses for secondary text, from
+  one shared definition so the three cannot drift apart.
+- The season-over-season overlay stops the period in progress at the
+  current week instead of running it flat along zero to the end of the
+  year. Every period is zero-filled across its whole span, which is right
+  for a finished one - a quiet week there really did have no cases - but
+  for the period still running it drew a long horizontal line through
+  weeks that have not happened, saying "no cases" where the truth is "not
+  observed". On a chart whose purpose is comparing this period's shape
+  against earlier ones, that line was the most prominent mark on it.
+- Dutch says **casus**, never *geval*, throughout - 27 strings, including
+  the two where the switch changes the grammar around it (*het geval* is
+  neuter, *de casus* is not, so "elk gerapporteerd geval" becomes "elke
+  gerapporteerde casus").
+- `case_free_days` was showing as a raw column name in the detection
+  settings table, in every language. It is now translated.
+
 - The Archive links through too, and gained a cluster id column of its
   own. Last winter's assessment is only a useful precedent if you can
   open it and read the reasoning; until now the archive named clusters it

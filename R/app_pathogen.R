@@ -203,7 +203,7 @@ episodic_app_pathogen_screen <- function(con, pathogen = NULL, period = "season_
     summary = episodic_app_pathogen_summary(all_cases, window_cases, resolved),
     weekly = episodic_app_pathogen_weekly(window_cases, resolved, incomplete_days, asof),
     mem = if (seasonal) episodic_app_pathogen_mem(all_cases, resolved, asof) else NULL,
-    overlay = episodic_app_pathogen_overlay(all_cases, resolved, seasonal = seasonal),
+    overlay = episodic_app_pathogen_overlay(all_cases, resolved, seasonal = seasonal, asof = asof),
     rt = episodic_app_pathogen_rt(all_cases, pc, resolved, incomplete_days, asof),
     rt_unavailable_reason = episodic_rt_unavailable_reason(pc),
     denominator = episodic_app_pathogen_denominator(con, pathogen, all_cases, resolved),
@@ -380,13 +380,24 @@ episodic_app_pathogen_mem <- function(all_cases, resolved, asof = Sys.Date()) {
 #' @param seasonal Whether to group by surveillance season or by calendar
 #'   year.
 #' @param max_periods How many earlier periods to draw.
+#' @param asof The date the data is current as of. The period in progress
+#'   is cut off after the week containing it, rather than being drawn
+#'   flat along zero for the rest of the year. Every group is zero-filled
+#'   across the whole period - which is right for a finished one, where a
+#'   quiet week really did have no cases - but for the period still
+#'   running it draws a long horizontal line at zero through weeks that
+#'   have not happened yet, saying "no cases" where the truth is "not
+#'   observed". On a chart whose whole purpose is comparing this period's
+#'   shape against earlier ones, that line is the most visually
+#'   prominent thing on it and it is not data.
 #' @return A list with `kind`, `current` (the label of the period the
 #'   selection falls in) and `rows` (a data frame: `group`, `week_index`,
-#'   `week_label`, `n_cases`), or `NULL` when fewer than two periods have
-#'   data.
+#'   `week_label`, `n_cases`, `NA` beyond what has been observed), or
+#'   `NULL` when fewer than two periods have data.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_overlay <- function(all_cases, resolved, seasonal = FALSE, max_periods = 6L) {
+episodic_app_pathogen_overlay <- function(all_cases, resolved, seasonal = FALSE, max_periods = 6L,
+                                          asof = NULL) {
   if (nrow(all_cases) == 0) return(NULL)
   dates <- all_cases$sample_date
 
@@ -426,8 +437,48 @@ episodic_app_pathogen_overlay <- function(all_cases, resolved, seasonal = FALSE,
     data.frame(group = g, week_index = seq_along(week_order), week_label = week_order,
                 n_cases = as.integer(counts), stringsAsFactors = FALSE)
   }))
+  rows <- episodic_app_overlay_truncate(rows, week_order, groups, seasonal = seasonal, asof = asof)
+
   list(kind = if (isTRUE(seasonal)) "season" else "year", current = current,
        groups = groups, rows = rows)
+}
+
+#' Blank the weeks of the period in progress that have not happened yet
+#'
+#' @param rows The zero-filled overlay rows.
+#' @param week_order The week labels, in the order they are plotted.
+#' @param groups The periods being drawn.
+#' @param seasonal Whether periods are surveillance seasons or calendar
+#'   years.
+#' @param asof The date the data is current as of, or `NULL` to leave the
+#'   rows alone.
+#' @return `rows`, with `n_cases` set to `NA` past the current week of
+#'   whichever period is still running. A finished period is untouched:
+#'   its quiet weeks are observations, not gaps.
+#' @keywords internal
+#' @noRd
+episodic_app_overlay_truncate <- function(rows, week_order, groups, seasonal = FALSE, asof = NULL) {
+  if (is.null(asof)) return(rows)
+  asof <- as.Date(asof)
+  if (is.na(asof)) return(rows)
+
+  if (isTRUE(seasonal)) {
+    current <- episodic_mem_season_week(asof)
+    running <- current$season
+    week <- current$week_label
+  } else {
+    running <- format(asof, "%G")
+    week <- as.character(min(as.integer(format(asof, "%V")), 52L))
+  }
+  # Off-season, `episodic_mem_season_week()` reports no week at all, and
+  # that is the right answer here too: the season it follows is over, so
+  # every one of its weeks was genuinely observed.
+  cutoff <- match(week, week_order)
+  if (is.na(running) || is.na(cutoff) || !running %in% groups) return(rows)
+
+  beyond <- rows$group == running & rows$week_index > cutoff
+  rows$n_cases[beyond] <- NA_integer_
+  rows
 }
 
 #' Pathogen-level Rt across the whole catchment

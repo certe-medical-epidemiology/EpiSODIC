@@ -123,7 +123,7 @@
   "panel.settings.population_offset": "जनसंख्या समायोजन",
   "panel.settings.population_offset_patient_days": "रोगी-दिवस",
   "panel.settings.population_offset_none": "कोई नहीं",
-  "panel.settings.case_free_days": "case_free_days",
+  "panel.settings.case_free_days": "मामला-मुक्त दिन",
   "panel.settings.last_run": "अंतिम रन",
   "panel.settings.last_run_value": "{when} · {host}",
   "panel.settings.pkg_versions": "पैकेज संस्करण",

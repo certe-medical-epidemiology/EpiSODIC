@@ -430,3 +430,61 @@ test_that("the pathogen picker says what its number counts", {
   expect_true(grepl("cases in total", html, fixed = TRUE))
   expect_false(grepl("Influenza A (108)", html, fixed = TRUE))
 })
+
+test_that("the overlay stops the period in progress at the current week", {
+  # A year still running was zero-filled to week 52, drawing a long flat
+  # line along zero through weeks that have not happened - the most
+  # prominent mark on a chart meant for comparing shapes, and not data.
+  dates <- as.Date(c("2024-07-01", "2024-07-08", "2025-01-06", "2025-01-13"))
+  overlay <- episodic_app_pathogen_overlay(
+    data.frame(sample_date = dates), list(to = as.Date("2025-01-20")),
+    seasonal = FALSE, asof = as.Date("2025-01-20")
+  )
+  running <- overlay$rows[overlay$rows$group == "2025", ]
+  # week 4 of 2025 contains 20 January; everything after it is unobserved
+  expect_false(any(is.na(running$n_cases[running$week_index <= 4])))
+  expect_true(all(is.na(running$n_cases[running$week_index > 4])))
+
+  # the finished year keeps its zeros: a quiet week there was observed
+  finished <- overlay$rows[overlay$rows$group == "2024", ]
+  expect_false(any(is.na(finished$n_cases)))
+  expect_equal(sum(finished$n_cases), 2)
+})
+
+test_that("episodic_app_overlay_truncate() leaves a completed season alone", {
+  week_order <- c(as.character(40:52), as.character(1:20))
+  rows <- data.frame(group = rep("2023/2024", 33), week_index = seq_along(week_order),
+                      week_label = week_order, n_cases = 1L, stringsAsFactors = FALSE)
+
+  # mid-July is outside the week 40-20 window: that season is over, so
+  # every one of its weeks was genuinely observed
+  untouched <- episodic_app_overlay_truncate(rows, week_order, "2023/2024", seasonal = TRUE,
+                                              asof = as.Date("2024-07-15"))
+  expect_false(any(is.na(untouched$n_cases)))
+
+  # and with no asof at all, nothing is assumed
+  expect_false(any(is.na(episodic_app_overlay_truncate(rows, week_order, "2023/2024",
+                                                        seasonal = TRUE, asof = NULL)$n_cases)))
+})
+
+test_that("episodic_app_overlay_truncate() cuts a season in progress at its current week", {
+  week_order <- c(as.character(40:52), as.character(1:20))
+  rows <- data.frame(group = rep("2024/2025", 33), week_index = seq_along(week_order),
+                      week_label = week_order, n_cases = 1L, stringsAsFactors = FALSE)
+  # 15 January 2025 is ISO week 3, which is position 16 in a season
+  # running 40..52 then 1..20
+  out <- episodic_app_overlay_truncate(rows, week_order, "2024/2025", seasonal = TRUE,
+                                        asof = as.Date("2025-01-15"))
+  expect_equal(which(is.na(out$n_cases)), 17:33)
+})
+
+test_that("episodic_chart_theme() sets axis and legend text readably", {
+  pal <- episodic_palette()
+  theme <- episodic_chart_theme()
+  # faint is a hairline colour for rules; an axis set in it is one you
+  # stop reading, and the axis is how you name the week a rise started
+  expect_false(identical(theme$axis.text$colour, pal$faint))
+  expect_equal(theme$axis.text$colour, pal$muted)
+  expect_gte(theme$axis.text$size, 10)
+  expect_gte(theme$legend.text$size, 10)
+})

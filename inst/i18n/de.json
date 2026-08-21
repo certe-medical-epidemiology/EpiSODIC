@@ -123,7 +123,7 @@
   "panel.settings.population_offset": "Populationsversatz",
   "panel.settings.population_offset_patient_days": "Patiententage",
   "panel.settings.population_offset_none": "keiner",
-  "panel.settings.case_free_days": "case_free_days",
+  "panel.settings.case_free_days": "Fallfreie Tage",
   "panel.settings.last_run": "Letzter Lauf",
   "panel.settings.last_run_value": "{when} · {host}",
   "panel.settings.pkg_versions": "Paketversionen",

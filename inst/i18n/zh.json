@@ -123,7 +123,7 @@
   "panel.settings.population_offset": "人群偏移量",
   "panel.settings.population_offset_patient_days": "患者日",
   "panel.settings.population_offset_none": "无",
-  "panel.settings.case_free_days": "case_free_days",
+  "panel.settings.case_free_days": "无病例天数",
   "panel.settings.last_run": "最近运行",
   "panel.settings.last_run_value": "{when} · {host}",
   "panel.settings.pkg_versions": "软件包版本",
