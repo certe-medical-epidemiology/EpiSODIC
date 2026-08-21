@@ -73,13 +73,14 @@
 <p>EpiSODIC (<strong>Epi</strong>demiological <strong>S</strong>ignal
 <strong>O</strong>bservation, <strong>D</strong>etection,
 <strong>I</strong>dentification, and <strong>C</strong>lassification) is
-an outbreak cluster detection and assessment system for a department of
-medical epidemiology. It ingests laboratory-confirmed infections, runs
-statistical and rule-based detectors over them, reconciles raised
-signals into persistent clusters across repeated runs, and gives a small
-board of epidemiologists a dossier to formally assess each one - with a
-full audit trail and outbreak reports for clinical colleagues at the
-end.</p>
+an R package: an outbreak cluster detection and assessment system for
+infectious disease epidemiologists. It ingests laboratory-confirmed
+infections, runs statistical and rule-based detectors over them,
+reconciles raised signals into persistent clusters across repeated runs,
+and gives a small board of epidemiologists a dossier to formally assess
+each one - with a full audit trail and outbreak reports for clinical
+colleagues (e.g., clinical microbiologists) and infection prevention
+nurses at the end.</p>
 <p>This is a narrative summary of the system’s design, covering the
 parts that matter most for understanding how it works day to day.</p>
 </div>
@@ -88,7 +89,7 @@ parts that matter most for understanding how it works day to day.</p>
 </h2>
 <p>This package is open-source software with no data and no
 site-specific configuration in it. A running instance - a real
-department’s database, its <code>EPISODIC_CONFIG</code> overrides, its
+organisation’s database, its <code>EPISODIC_CONFIG</code> overrides, its
 provisioned accounts - lives entirely outside the package, addressed by
 environment variables (<code>EPISODIC_DB</code>,
 <code>EPISODIC_CONFIG</code>, <code>EPISODIC_GEO_DATA</code>, …; see the

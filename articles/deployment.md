@@ -143,8 +143,8 @@ published methods this package is built on.
 House-style colours are not an optional-dependency concern at all: the
 app always ships an organisation-neutral default palette
 (`inst/config/palette.yaml`), overridable per instance by pointing
-`EPISODIC_PALETTE_CONFIG` at a department’s own YAML file with its real
-colours - no package dependency involved either way.
+`EPISODIC_PALETTE_CONFIG` at an organisation’s own YAML file with its
+real colours - no package dependency involved either way.
 
 None of these are required to run the demo, the detection engine, or the
 interface - each is additive.

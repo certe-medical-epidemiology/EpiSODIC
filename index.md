@@ -2,12 +2,13 @@
 
 [![R-CMD-check](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml)
 
-EpiSODIC is an outbreak cluster detection and assessment system for a
-department of medical epidemiology. It ingests laboratory-confirmed
-infections, detects statistical and rule-based aberrations, reconciles
-them into persistent clusters, and gives a small board of
-epidemiologists a dossier to assess each one, with a full audit trail
-and outbreak reports for clinical colleagues.
+EpiSODIC is an R package: an outbreak cluster detection and assessment
+system for infectious disease epidemiologists. It ingests
+laboratory-confirmed infections, detects statistical and rule-based
+aberrations, reconciles them into persistent clusters, and gives a small
+board of epidemiologists a dossier to assess each one, with a full audit
+trail and outbreak reports for clinical colleagues (e.g. clinical
+microbiologists) and infection prevention nurses.
 
 The dashboard and its outbreak reports are available in Dutch, English,
 Spanish, French, German, Mandarin Chinese, Hindi, and (Modern Standard)
@@ -37,7 +38,7 @@ The detection engine, interface, assessment and authentication workflow,
 reporting, and analytical panels are all implemented and tested,
 including a Performance screen for evidence-based tuning. Detection
 thresholds and priority score weights are configurable per instance
-(`inst/config/default.yaml`, `EPISODIC_CONFIG`), so a department can
+(`inst/config/default.yaml`, `EPISODIC_CONFIG`), so an organisation can
 tune them against its own signal volume as its evidence base grows.
 
 ## Installation
@@ -122,7 +123,7 @@ rejected:
 | `ward` | Only meaningful (and only used) for hospitals: this is what the `same_place` detector watches at ward level. |
 | `specialism` | The treating specialism, shown on the line list for context; not itself a detection dimension. |
 | `pc` | The patient’s postcode (or equivalent - see “Geographic reference data” below for how coarse or fine this can be). Drives the geography panel and the choropleth, and the concentration measure (“how localised is this cluster”) that feeds the priority score. |
-| `sex` | The patient’s sex. Feeds the demography panel’s age/sex pyramid, one of the interpretation engine’s own evidence dimensions (a cluster’s demography shifting from a department’s usual baseline is itself a signal worth surfacing). |
+| `sex` | The patient’s sex. Feeds the demography panel’s age/sex pyramid, one of the interpretation engine’s own evidence dimensions (a cluster’s demography shifting from an organisation’s usual baseline is itself a signal worth surfacing). |
 | `age` | The patient’s age at sample date. Same role as `sex`: demography panel and interpretation, not a detection input. |
 
 `institution_type` values, beyond the self-explanatory `hospital`:
@@ -223,14 +224,14 @@ to guess a sensible default for.
 [`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md)
 renders `inst/report/cluster_report.qmd` (embedded as self-contained
 HTML via Quarto) unless `EPISODIC_QUARTO_REPORT` points at an operator’s
-own `.qmd` file, in which case that is used instead - for a department
-that wants its own letterhead, section order, or house style. A custom
-template only needs to `readRDS(params$data_path)` and read from the
-same list the shipped one does (`obj`, `epi_curve`, `trend`, `linelist`,
-`timeline`, `similar`, `small_count_threshold`, `rendered_at`, `lang`,
-`package_version`); see the shipped template for the exact shape,
-including how it calls `episodic_tr(..., lang = d$lang)` for a bilingual
-report.
+own `.qmd` file, in which case that is used instead - for an
+organisation that wants its own letterhead, section order, or house
+style. A custom template only needs to `readRDS(params$data_path)` and
+read from the same list the shipped one does (`obj`, `epi_curve`,
+`trend`, `linelist`, `timeline`, `similar`, `small_count_threshold`,
+`rendered_at`, `lang`, `package_version`); see the shipped template for
+the exact shape, including how it calls
+`episodic_tr(..., lang = d$lang)` for a bilingual report.
 
 ## Database backend
 

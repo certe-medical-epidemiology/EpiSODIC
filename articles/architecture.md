@@ -3,14 +3,14 @@
 ## What EpiSODIC is
 
 EpiSODIC (**Epi**demiological **S**ignal **O**bservation, **D**etection,
-**I**dentification, and **C**lassification) is an outbreak cluster
-detection and assessment system for a department of medical
-epidemiology. It ingests laboratory-confirmed infections, runs
+**I**dentification, and **C**lassification) is an R package: an outbreak
+cluster detection and assessment system for infectious disease
+epidemiologists. It ingests laboratory-confirmed infections, runs
 statistical and rule-based detectors over them, reconciles raised
 signals into persistent clusters across repeated runs, and gives a small
 board of epidemiologists a dossier to formally assess each one - with a
-full audit trail and outbreak reports for clinical colleagues at the
-end.
+full audit trail and outbreak reports for clinical colleagues (e.g.,
+clinical microbiologists) and infection prevention nurses at the end.
 
 This is a narrative summary of the system’s design, covering the parts
 that matter most for understanding how it works day to day.
@@ -18,9 +18,9 @@ that matter most for understanding how it works day to day.
 ## Engine and instance are separate
 
 This package is open-source software with no data and no site-specific
-configuration in it. A running instance - a real department’s database,
-its `EPISODIC_CONFIG` overrides, its provisioned accounts - lives
-entirely outside the package, addressed by environment variables
+configuration in it. A running instance - a real organisation’s
+database, its `EPISODIC_CONFIG` overrides, its provisioned accounts -
+lives entirely outside the package, addressed by environment variables
 (`EPISODIC_DB`, `EPISODIC_CONFIG`, `EPISODIC_GEO_DATA`, …; see the
 README’s “Environment variables” table for the full list). Nothing about
 a specific laboratory, hospital, or patient can enter this repository,
