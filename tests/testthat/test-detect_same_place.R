@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-same_place_case <- function(source_key, sample_date, institution_id, pathogen = "Test organism",
+same_place_case <- function(source_key, sample_date, institution_id, pathogen = "Test pathogen",
                              ward = "ICU") {
   data.frame(
     source_key = source_key, pathogen = pathogen, institution_id = institution_id, ward = ward,
@@ -78,7 +78,7 @@ test_that("cases spread beyond k days do not combine into one hit", {
   expect_equal(result$n_cases[1], 3)
 })
 
-test_that("a per-organism override tightens the threshold (norovirus: n=3 within 7 days)", {
+test_that("a per-pathogen override tightens the threshold (norovirus: n=3 within 7 days)", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
   institutions <- same_place_add_institution(con)

@@ -158,3 +158,20 @@ test_that("episodic_ui_streams_screen() and episodic_ui_status_strip() render th
   status <- episodic_app_status(env$con)
   expect_s3_class(episodic_ui_status_strip(status, lang = "nl"), "shiny.tag")
 })
+
+test_that("the dossier title carries the cluster id beside the pathogen name", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  html <- as.character(episodic_ui_dossier(env$con, env$cluster_id, lang = "en"))
+
+  expect_true(grepl("episodic-dossier-id", html, fixed = TRUE))
+  # as a text node: a bare "#1" also matches the palette's #1A1A1A
+  expect_true(grepl(paste0(">", episodic_tr("dossier.cluster_ref", id = env$cluster_id, lang = "en"), "<"),
+                     html, fixed = TRUE))
+  # inside the title element, not further down the meta line
+  title_pos <- regexpr("episodic-dossier-title", html, fixed = TRUE)
+  meta_pos <- regexpr("episodic-dossier-meta", html, fixed = TRUE)
+  id_pos <- regexpr("episodic-dossier-id", html, fixed = TRUE)
+  expect_gt(id_pos, title_pos)
+  expect_lt(id_pos, meta_pos)
+})

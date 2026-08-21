@@ -50,22 +50,65 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
     })
 
     selected_cluster_id <- shiny::reactiveVal(NULL)
+    # Fills the dossier pane on first load, and moves on when whatever was
+    # selected has genuinely gone. It used to reset the selection whenever
+    # the selected cluster was not in the *open* list, which is a
+    # different and too-broad condition: the Pathogen screen links to
+    # clusters by id and most of the ones it lists are closed, so that
+    # rule would have silently redirected every such link to the top of
+    # the rail. A cluster that closes while you are reading it also has no
+    # business disappearing out from under you - the state chip says it
+    # closed, which is the answer you were looking for.
+    #
+    # Merged-away clusters are the real exception: their cases now belong
+    # to the surviving cluster, so their dossier is stale rather than
+    # merely closed, and that is what still forces a re-selection.
     shiny::observeEvent(open_clusters(), {
-      current <- selected_cluster_id()
       ids <- open_clusters()$cluster_id
-      if (length(ids) > 0 && (is.null(current) || !(current %in% ids))) {
-        selected_cluster_id(ids[1])
-      }
+      if (length(ids) == 0) return()
+      if (!episodic_app_cluster_viewable(con, selected_cluster_id())) selected_cluster_id(ids[1])
     })
     shiny::observeEvent(input$rail_select, selected_cluster_id(input$rail_select))
 
+    # Deep link from the Pathogen screen's cluster table. Setting the
+    # selection before the view means the dossier pane has its cluster
+    # ready by the time the clusters view renders, and the observer above
+    # will leave it alone whichever order the two land in.
+    shiny::observeEvent(input$open_cluster, {
+      selected_cluster_id(as.integer(input$open_cluster))
+      view("clusters")
+    })
+
     streams_page <- shiny::reactiveVal(1L)
     shiny::observeEvent(input$streams_page_select, streams_page(input$streams_page_select))
+
+    # Pathogen screen selection. Held here rather than derived from the
+    # inputs at render time so that switching away to a cluster dossier
+    # and back does not silently reset the pathogen and period an
+    # epidemiologist was part-way through reading.
+    pathogen_selected <- shiny::reactiveVal(NULL)
+    pathogen_period <- shiny::reactiveVal("season_current")
+    pathogen_range <- shiny::reactiveVal(list(from = NULL, to = NULL))
+    shiny::observeEvent(input$pathogen_select, pathogen_selected(input$pathogen_select))
+    shiny::observeEvent(input$pathogen_period, {
+      pathogen_period(input$pathogen_period)
+      if (!identical(input$pathogen_period, "custom")) pathogen_range(list(from = NULL, to = NULL))
+    })
+    shiny::observeEvent(input$pathogen_custom_range, {
+      # Picking dates *is* the request to use them, so this selects the
+      # custom period rather than requiring a separate click on it.
+      pathogen_range(list(from = input$pathogen_custom_range$from, to = input$pathogen_custom_range$to))
+      pathogen_period("custom")
+    })
 
     current_user <- episodic_app_server_auth(input, output, session, con, lang = lang)
 
     output$auth_control <- shiny::renderUI({
       episodic_ui_auth_control(current_user(), lang = lang)
+    })
+
+    output$nav_links <- shiny::renderUI({
+      episodic_ui_nav_links(view(), lang = lang)
     })
 
     output$status_strip <- shiny::renderUI({
@@ -79,6 +122,15 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
         shiny::uiOutput("archive_screen")
       } else if (view() == "activity") {
         episodic_ui_activity_screen(episodic_app_activity_log(con, lang = lang), lang = lang)
+      } else if (view() == "pathogen") {
+        range <- pathogen_range()
+        episodic_ui_pathogen_screen(
+          episodic_app_pathogen_screen(
+            con, pathogen = pathogen_selected(), period = pathogen_period(),
+            from = range$from, to = range$to, lang = lang
+          ),
+          lang = lang
+        )
       } else if (view() == "performance") {
         episodic_ui_performance_screen(episodic_app_performance(con, lang = lang), lang = lang)
       } else if (view() == "info") {

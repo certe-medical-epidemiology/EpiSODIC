@@ -48,11 +48,13 @@ episodic_ui_dossier <- function(con, cluster_id, lang = "nl", current_user = NUL
     episodic_ui_rt_panel(obj, lang = lang),
     episodic_ui_trend_panel(con, obj, lang = lang),
     episodic_ui_denominator_panel(obj, lang = lang),
-    shiny::tags$div(
-      style = "display:flex;gap:16px;align-items:flex-start;",
-      shiny::tags$div(style = "flex:1;", episodic_ui_demography_panel(obj, lang = lang)),
-      shiny::tags$div(style = "flex:1;", episodic_ui_geo_panel(obj, lang = lang))
-    ),
+    episodic_ui_demography_panel(obj, lang = lang),
+    # Geography gets the full width of the dossier pane rather than
+    # sharing a row with the demography pyramid. Half a pane is enough
+    # for a bar breakdown but not for a map: at that size the postcode
+    # labels the panel exists to convey are not readable, which is the
+    # whole question it is meant to answer.
+    episodic_ui_geo_panel(obj, lang = lang),
     episodic_ui_places_panel(con, cluster_id, obj, lang = lang),
     episodic_ui_resistance_panel(lang = lang),
     episodic_ui_similar_clusters_panel(con, cluster_id, lang = lang),
@@ -91,7 +93,17 @@ episodic_ui_dossier_header <- function(obj, state, lang = "nl") {
   shiny::tagList(
     shiny::tags$div(
       style = "display:flex;align-items:center;gap:10px;flex-wrap:wrap;",
-      shiny::tags$h1(class = "episodic-dossier-title", shiny::HTML(episodic_ui_italicise_taxon(obj$pathogen))),
+      # The cluster id sits with the name rather than down in the meta
+      # line: it is what an assessor quotes in an email, reads out on the
+      # phone and searches the archive by, so it belongs where the eye
+      # lands first. Muted and upright so it reads as a label on the
+      # name, not as part of the taxon.
+      shiny::tags$h1(
+        class = "episodic-dossier-title",
+        shiny::HTML(episodic_ui_italicise_taxon(obj$pathogen)),
+        shiny::tags$span(class = "episodic-dossier-id",
+                          episodic_tr("dossier.cluster_ref", id = obj$id, lang = lang))
+      ),
       episodic_ui_chip(episodic_tr(paste0("level.", obj$level), lang = lang), pal$primary),
       episodic_ui_chip(episodic_tr(paste0("state.", state), lang = lang), episodic_ui_state_colour(state)),
       if (isTRUE(obj$changed_since_assessment)) episodic_ui_chip(episodic_tr("dossier.changed_badge", lang = lang), pal$tertiary_dark)
@@ -100,8 +112,6 @@ episodic_ui_dossier_header <- function(obj, state, lang = "nl") {
       class = "episodic-dossier-meta",
       style = "display:flex;gap:8px;flex-wrap:wrap;",
       shiny::tags$span(obj$place),
-      shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
-      shiny::tags$span(episodic_tr("dossier.meta.cluster_id", id = obj$id, lang = lang)),
       shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
       shiny::tags$span(episodic_tr("dossier.meta.first_last", first = obj$first_day, last = obj$last_day, lang = lang)),
       shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
@@ -115,12 +125,21 @@ episodic_ui_dossier_header <- function(obj, state, lang = "nl") {
 #' @noRd
 episodic_ui_stat_grid <- function(obj, lang = "nl") {
   pal <- episodic_palette()
+  # `expected` is NA for detectors that fit no baseline at all
+  # (same_place, rare_trigger), which is a different statement from an
+  # expectation of zero - say "unknown" rather than printing "expected
+  # NA" under the case count.
+  expected_label <- if (is.null(obj$expected) || is.na(obj$expected)) {
+    episodic_tr("misc.unknown", lang = lang)
+  } else {
+    round(obj$expected, 1)
+  }
   stats <- list(
     episodic_ui_stat(episodic_tr("dossier.stat.observed", lang = lang), obj$n_cases,
-                     episodic_tr("dossier.stat.observed_sub", expected = round(obj$expected %||% NA, 1), lang = lang),
+                     episodic_tr("dossier.stat.observed_sub", expected = expected_label, lang = lang),
                      colour = pal$danger_dark)
   )
-  if (!is.na(obj$ratio)) {
+  if (!is.null(obj$ratio) && !is.na(obj$ratio)) {
     stats <- c(stats, list(episodic_ui_stat(episodic_tr("dossier.stat.ratio", lang = lang), round(obj$ratio, 1),
                                             episodic_tr("dossier.stat.ratio_sub", lang = lang))))
   }
@@ -332,12 +351,26 @@ episodic_ui_geo_panel <- function(obj, lang = "nl") {
                                    aside = episodic_tr("panel.geo.aside", lang = lang)))
   }
   map_chart <- episodic_ui_geo_map_chart(obj$concentration$rows)
+  n_unknown <- obj$concentration$n_unknown_pc %||% 0
+  note <- if (n_unknown > 0) {
+    # Stated rather than silently dropped: the concentration share, and
+    # with it the spatial term of the priority score, is computed over
+    # the cases with a known PC only.
+    episodic_tr("panel.geo.unknown_pc", n = n_unknown, total = obj$n_cases, lang = lang)
+  }
   episodic_ui_panel(
     episodic_tr("panel.geo.title", lang = lang), aside = episodic_tr("panel.geo.aside", lang = lang),
+    note = note,
     if (is.null(map_chart)) {
       episodic_ui_bars(utils::head(obj$concentration$rows, 8), unit = episodic_tr("panel.geo.unit", lang = lang))
     } else {
-      shiny::renderPlot(map_chart, height = 260)
+      shiny::tagList(
+        shiny::renderPlot(map_chart, height = 430),
+        # The map is cropped to the cases, so the areas around the edge
+        # are context, not absence of cases elsewhere - say so.
+        shiny::tags$p(class = "episodic-panel-note", episodic_tr("panel.geo.map_note", lang = lang)),
+        episodic_ui_bars(utils::head(obj$concentration$rows, 8))
+      )
     }
   )
 }

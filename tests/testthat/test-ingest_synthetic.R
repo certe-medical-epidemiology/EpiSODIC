@@ -64,7 +64,7 @@ test_that("episodic_ingest_source_synthetic_calibration() produces a valid sourc
   )
   expect_silent(episodic_ingest_validate_source(raw))
 
-  # far more volume than the baseline alone would produce for this organism
+  # far more volume than the baseline alone would produce for this pathogen
   baseline_only <- episodic_ingest_source_synthetic(
     start_date = as.Date("2024-01-01"), end_date = as.Date("2024-12-31"), seed = 5
   )

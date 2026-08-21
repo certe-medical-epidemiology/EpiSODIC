@@ -45,6 +45,7 @@ episodic_ui_archive_screen <- function(archive, lang = "nl") {
       shiny::tags$table(
         class = "episodic-table",
         shiny::tags$thead(shiny::tags$tr(
+          shiny::tags$th(episodic_tr("column.cluster", lang = lang)),
           shiny::tags$th(episodic_tr("archive.col.pathogen", lang = lang)),
           shiny::tags$th(episodic_tr("archive.col.level", lang = lang)),
           shiny::tags$th(episodic_tr("archive.col.place", lang = lang)),
@@ -55,7 +56,11 @@ episodic_ui_archive_screen <- function(archive, lang = "nl") {
         shiny::tags$tbody(
           lapply(seq_len(nrow(archive)), function(i) {
             row <- archive[i, ]
-            shiny::tags$tr(
+            # Reachable, not just listed. Last winter's assessment is only
+            # a useful precedent if you can open it and read the reasoning,
+            # and until now the archive named clusters it gave no way in to.
+            episodic_ui_cluster_link_row(
+              row$cluster_id, lang = lang,
               shiny::tags$td(shiny::HTML(episodic_ui_italicise_taxon(row$pathogen))),
               shiny::tags$td(row$level_label),
               shiny::tags$td(row$place),

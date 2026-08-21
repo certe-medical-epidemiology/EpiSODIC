@@ -47,7 +47,7 @@ effect_size_floor:
   min_ratio_observed_expected: 1.5
 
 # same_place rule-based detector.
-# Defaults of n = 3 within 14 days, tightened per organism for the ones
+# Defaults of n = 3 within 14 days, tightened per pathogen for the ones
 # that matter. Keys are raw `pathogen` strings, matching
 # inst/config/pathogen_config.csv and whatever the operator's lab feed uses.
 same_place:

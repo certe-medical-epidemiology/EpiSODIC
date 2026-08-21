@@ -40,8 +40,8 @@ reconcile_setup <- function() {
   institution_id <- DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
 
   stream_id <- episodic_db_stream_upsert(
-    con, stream_key = episodic_stream_key("pathogen_institution", "Test organism", institution_id = institution_id),
-    level = "pathogen_institution", pathogen = "Test organism",
+    con, stream_key = episodic_stream_key("pathogen_institution", "Test pathogen", institution_id = institution_id),
+    level = "pathogen_institution", pathogen = "Test pathogen",
     institution_id = institution_id, observed_date = "2025-01-01"
   )
 
@@ -59,7 +59,7 @@ reconcile_detect <- function(env, run_id, first_day, last_day, n_cases, detector
     DBI::dbExecute(
       env$con,
       "INSERT INTO episodic_case (source_key, patient_key, sample_date, pathogen, care_line,
-        institution_id, first_seen_run) VALUES (?, ?, ?, 'Test organism', 'second', ?, ?)",
+        institution_id, first_seen_run) VALUES (?, ?, ?, 'Test pathogen', 'second', ?, ?)",
       params = list(source_key, source_key, dates[i], env$institution_id, run_id)
     )
   }
@@ -373,4 +373,112 @@ test_that("cooldown_days = NA disables the escape hatch entirely, for backward c
 
   clusters <- episodic_db_clusters_for_stream(env$con, env$stream_id)
   expect_equal(nrow(clusters), 2)  # opens as new, exactly the pre-existing behaviour
+})
+
+test_that("episodic_reconcile_merge_detections() carries the baseline through, taking the most cautious of a group", {
+  detections <- rbind(
+    episodic_detection_record(1L, "farrington", "2025-01-01", "2025-01-07", 12,
+                               expected = 3, upperbound = 6),
+    episodic_detection_record(1L, "mem", "2025-01-05", "2025-01-11", 12,
+                               expected = NA_real_, upperbound = 8),
+    episodic_detection_record(1L, "same_place", "2025-01-06", "2025-01-09", 9)
+  )
+  candidates <- episodic_reconcile_merge_detections(detections)
+  expect_equal(nrow(candidates), 1)
+  expect_equal(candidates$expected, 3)
+  # A higher upperbound means a smaller excess: a candidate several
+  # detectors flagged is never made to look more aberrant than the most
+  # cautious of them judged it.
+  expect_equal(candidates$upperbound, 8)
+  expect_equal(candidates$detector_agreement, 3L)
+})
+
+test_that("episodic_reconcile_merge_detections() reports no baseline when no detector fitted one", {
+  detections <- rbind(
+    episodic_detection_record(1L, "same_place", "2025-01-01", "2025-01-07", 5),
+    episodic_detection_record(1L, "rare_trigger", "2025-01-03", "2025-01-06", 5)
+  )
+  candidates <- episodic_reconcile_merge_detections(detections)
+  expect_true(is.na(candidates$expected))
+  expect_true(is.na(candidates$upperbound))
+
+  empty <- episodic_reconcile_merge_detections(
+    episodic_detection_record(integer(0), character(0), character(0), character(0), integer(0))
+  )
+  expect_equal(nrow(empty), 0)
+  expect_true(all(c("expected", "upperbound") %in% names(empty)))
+})
+
+test_that("episodic_reconcile_candidate_metrics() derives excess and ratio, and declines to invent either", {
+  full <- episodic_reconcile_candidate_metrics(
+    data.frame(n_cases = 12, expected = 3, upperbound = 6)
+  )
+  expect_equal(full$expected, 3)
+  expect_equal(full$excess, 6)
+  expect_equal(full$ratio, 4)
+
+  none <- episodic_reconcile_candidate_metrics(
+    data.frame(n_cases = 5, expected = NA_real_, upperbound = NA_real_)
+  )
+  expect_true(is.na(none$excess))
+  expect_true(is.na(none$ratio))
+
+  # An expectation of zero is a real Farrington output; a ratio against
+  # it is undefined rather than infinite.
+  zero <- episodic_reconcile_candidate_metrics(
+    data.frame(n_cases = 4, expected = 0, upperbound = 1)
+  )
+  expect_true(is.na(zero$ratio))
+  expect_equal(zero$excess, 3)
+
+  # Callers that predate the columns entirely must still work.
+  legacy <- episodic_reconcile_candidate_metrics(data.frame(n_cases = 7))
+  expect_true(is.na(legacy$expected))
+  expect_true(is.na(legacy$ratio))
+})
+
+test_that("episodic_reconcile_stream() persists expected/excess/ratio onto the cluster it opens", {
+  # These columns exist on episodic_cluster, and both the dossier's stat
+  # grid and the interpretation engine's magnitude fragments read them -
+  # but nothing ever wrote them, so every cluster carried NA and the O/E
+  # ratio never appeared anywhere in the interface.
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  run_id <- episodic_db_run_start(env$con, "host", "account")
+
+  det <- reconcile_detect(env, run_id, "2025-01-01", "2025-01-07", 12, detector = "farrington")
+  det$expected <- 3
+  det$upperbound <- 6
+  reconcile_run(env, run_id, det)
+
+  cluster <- DBI::dbGetQuery(env$con, "SELECT expected, excess, ratio FROM episodic_cluster")
+  expect_equal(nrow(cluster), 1)
+  expect_equal(cluster$expected[1], 3)
+  expect_equal(cluster$excess[1], 6)
+  expect_equal(cluster$ratio[1], 4)
+})
+
+test_that("episodic_reconcile_stream() refreshes the baseline when a cluster is extended", {
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  run1 <- episodic_db_run_start(env$con, "host", "account")
+  det1 <- reconcile_detect(env, run1, "2025-01-01", "2025-01-07", 12, detector = "farrington")
+  det1$expected <- 3
+  det1$upperbound <- 6
+  reconcile_run(env, run1, det1)
+
+  run2 <- episodic_db_run_start(env$con, "host", "account")
+  det2 <- reconcile_detect(env, run2, "2025-01-08", "2025-01-14", 20, detector = "farrington")
+  det2$expected <- 4
+  det2$upperbound <- 7
+  reconcile_run(env, run2, det2)
+
+  cluster <- DBI::dbGetQuery(env$con, "SELECT expected, excess, ratio FROM episodic_cluster")
+  expect_equal(nrow(cluster), 1)
+  # The candidate episode this run was (re)detected on, not a stale one
+  # from a fortnight ago.
+  expect_equal(cluster$expected[1], 4)
+  expect_equal(cluster$excess[1], 13)
+  expect_equal(cluster$ratio[1], 5)
 })

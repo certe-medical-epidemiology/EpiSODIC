@@ -133,3 +133,39 @@ test_that("chart builders produce ggplot objects for typical and edge-case input
                         n_cases = c(1, 3, 2, 4), positivity = c(0.1, 0.25, 0.25, 0.27))
   expect_s3_class(episodic_ui_denominator_chart(series), "ggplot")
 })
+
+test_that("episodic_ui_nav_links() marks exactly the view being shown", {
+  for (view in c("clusters", "pathogen", "archive", "info")) {
+    html <- as.character(episodic_ui_nav_links(view, lang = "en"))
+    expect_true(grepl(sprintf("data-view=\"%s\" class=\"episodic-nav-link active\"", view), html,
+                       fixed = TRUE) ||
+                  grepl(sprintf("class=\"episodic-nav-link active\" data-view=\"%s\"", view), html,
+                        fixed = TRUE),
+                 info = view)
+    # exactly one, so the highlight can never sit on two screens at once
+    expect_equal(lengths(regmatches(html, gregexpr("episodic-nav-link active", html)))[[1]], 1)
+  }
+  expect_true(grepl(episodic_tr("nav.pathogen", lang = "en"),
+                     as.character(episodic_ui_nav_links("clusters", lang = "en")), fixed = TRUE))
+})
+
+test_that("episodic_app_ui() leaves the nav to the server rather than fixing it at page load", {
+  # The highlight has to follow server-driven view changes too - the
+  # Pathogen screen's cluster table switches views from a table row.
+  html <- as.character(episodic_app_ui(lang = "en"))
+  expect_true(grepl("nav_links", html, fixed = TRUE))
+  expect_false(grepl("episodic-nav-link active", html, fixed = TRUE))
+})
+
+test_that("episodic_ui_nav_link() clears the highlight from the other links before setting its own", {
+  # Attribute values come back HTML-escaped (htmltools turns ' into
+  # &#39;), so match on the unquoted parts.
+  link <- as.character(episodic_ui_nav_link("streams", "Streams"))
+  expect_true(grepl("classList.remove", link, fixed = TRUE))
+  expect_true(grepl("classList.add", link, fixed = TRUE))
+  expect_true(grepl("nav_view", link, fixed = TRUE))
+  expect_false(grepl("episodic-nav-link active", link, fixed = TRUE))
+  expect_true(grepl("episodic-nav-link active",
+                     as.character(episodic_ui_nav_link("clusters", "Clusters", active = TRUE)),
+                     fixed = TRUE))
+})

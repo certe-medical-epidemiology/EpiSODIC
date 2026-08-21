@@ -15,9 +15,9 @@ episodic_ingest_source_synthetic_calibration(
 \arguments{
 \item{start_date, end_date}{The window to generate over.}
 
-\item{pathogen}{Which organism to generate the extra clusters for.
+\item{pathogen}{Which pathogen to generate the extra clusters for.
 Defaults to \emph{Clostridioides difficile}, a plausible example of an
-endemic organism that produces frequent clusters at a busy institution.}
+endemic pathogen that produces frequent clusters at a busy institution.}
 
 \item{n_bumps_per_month}{Average number of independent case clusters
 generated per calendar month. Raise or lower this to see how detection

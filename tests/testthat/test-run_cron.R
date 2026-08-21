@@ -154,7 +154,7 @@ test_that("episodic_lattice_enumerate() creates distinct streams per level", {
     is_monitored = TRUE
   )
   cases <- data.frame(
-    pathogen = "Test organism", sample_date = "2025-01-01", care_line = "second",
+    pathogen = "Test pathogen", sample_date = "2025-01-01", care_line = "second",
     institution_id = institution_id, ward = "ICU", pc = "9711", stringsAsFactors = FALSE
   )
   institutions <- episodic_db_institutions(con)
