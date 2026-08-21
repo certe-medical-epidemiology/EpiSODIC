@@ -133,3 +133,24 @@ test_that("chart builders produce ggplot objects for typical and edge-case input
                         n_cases = c(1, 3, 2, 4), positivity = c(0.1, 0.25, 0.25, 0.27))
   expect_s3_class(episodic_ui_denominator_chart(series), "ggplot")
 })
+
+test_that("episodic_app_ui() carries a Pathogen nav entry and marks the opening view active", {
+  html <- as.character(episodic_app_ui(lang = "en"))
+  expect_true(grepl("data-view=\"pathogen\"", html, fixed = TRUE))
+  expect_true(grepl(episodic_tr("nav.pathogen", lang = "en"), html, fixed = TRUE))
+  # The stylesheet has always had an .active rule; nothing used to set it.
+  expect_true(grepl("episodic-nav-link active", html, fixed = TRUE))
+})
+
+test_that("episodic_ui_nav_link() clears the highlight from the other links before setting its own", {
+  # Attribute values come back HTML-escaped (htmltools turns ' into
+  # &#39;), so match on the unquoted parts.
+  link <- as.character(episodic_ui_nav_link("streams", "Streams"))
+  expect_true(grepl("classList.remove", link, fixed = TRUE))
+  expect_true(grepl("classList.add", link, fixed = TRUE))
+  expect_true(grepl("nav_view", link, fixed = TRUE))
+  expect_false(grepl("episodic-nav-link active", link, fixed = TRUE))
+  expect_true(grepl("episodic-nav-link active",
+                     as.character(episodic_ui_nav_link("clusters", "Clusters", active = TRUE)),
+                     fixed = TRUE))
+})

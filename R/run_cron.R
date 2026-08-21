@@ -260,11 +260,31 @@ episodic_run_cron_body <- function(con, run_id, config, ingest_source, denominat
       close_after_runs = config$reconciliation$close_after_runs,
       cooldown_days = cooldown_days,
       cooldown_reopen_ratio = config$reconciliation$cooldown_reopen_ratio %||% NA,
+      # Five of the seven priority components are properties of the
+      # candidate episode and its cases, so they are computed here, where
+      # both are in hand. They used to be left at their defaults - most
+      # damagingly `ratio = n_cases / max(n_cases, 1)`, which is
+      # identically 1 for every candidate - which collapsed the ranking
+      # that orders the whole assessment queue down to severity weight
+      # and detector agreement alone.
       priority_score_fn = function(candidate) {
+        metrics <- episodic_reconcile_candidate_metrics(candidate)
+        candidate_cases <- episodic_cases_in_window(stream_cases, candidate$first_day, candidate$last_day)
+        # Same descriptive rate the dossier's own density stat shows, so
+        # the ranking and the displayed evidence cannot drift apart.
+        density <- episodic_app_density(con, stream, candidate_cases)
+        density_ratio <- if (is.null(density) || is.na(density$baseline) || density$baseline <= 0) {
+          NA_real_
+        } else {
+          density$value / density$baseline
+        }
         episodic_priority_score(
-          excess = NA, ratio = candidate$n_cases / max(candidate$n_cases, 1),
+          excess = metrics$excess, ratio = metrics$ratio,
           severity_weight = if (nrow(pc) > 0) pc$severity_weight[1] else 1,
+          growth_slope = episodic_growth_slope(stream_cases, candidate$last_day),
           detector_agreement = candidate$detector_agreement, n_detectors = 4,  # farrington, same_place, rare_trigger, mem
+          density_ratio = density_ratio,
+          spatial_concentration = episodic_spatial_concentration(candidate_cases),
           weights = weights
         )
       },

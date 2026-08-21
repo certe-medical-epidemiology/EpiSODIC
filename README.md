@@ -42,6 +42,36 @@ Detection thresholds and priority score weights are configurable per
 instance (`inst/config/default.yaml`, `EPISODIC_CONFIG`), so an organisation
 can tune them against its own signal volume as its evidence base grows.
 
+### Two altitudes
+
+The **Clusters** screen is operational: a ranked queue of discrete
+signals, each one something a person has to make and record a decision
+about. That is the right unit for triage and the wrong unit for
+surveillance - "is influenza A unusual this season, and where in the
+season are we" is not a question about any one cluster, and cannot be
+answered by reading several dossiers in turn.
+
+The **Pathogen** screen is the other altitude. Pick an organism and a
+period - a surveillance season (ISO week 40 to week 20), the last twelve
+months, the last five years, or an exact date range - and it describes
+that organism across the whole catchment over that period:
+
+- weekly incidence, with the Moving Epidemic Method's pre- and
+  post-epidemic thresholds and its medium/high/very high intensity bands
+  drawn on it, fitted only on the seasons *before* the one being looked
+  at;
+- the same period laid over earlier seasons (or, for a non-seasonal
+  organism, earlier calendar years) on a shared week-within-period axis,
+  so "earlier", "later", "bigger", "smaller" can be read directly;
+- Rt for the organism as a whole rather than per cluster - which is the
+  population the renewal model assumes it is seeing - conditioned on case
+  history from before the selected period;
+- testing volume and positivity, age and sex against the organism's own
+  long-run distribution, geography, and care-line and institution
+  breakdowns;
+- and the clusters that were raised during the period, with the verdict
+  each one received, as the way back to the operational view.
+
 ## Installation
 
 ```r

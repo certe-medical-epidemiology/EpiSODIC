@@ -62,6 +62,25 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
     streams_page <- shiny::reactiveVal(1L)
     shiny::observeEvent(input$streams_page_select, streams_page(input$streams_page_select))
 
+    # Pathogen screen selection. Held here rather than derived from the
+    # inputs at render time so that switching away to a cluster dossier
+    # and back does not silently reset the organism and period an
+    # epidemiologist was part-way through reading.
+    pathogen_selected <- shiny::reactiveVal(NULL)
+    pathogen_period <- shiny::reactiveVal("season_current")
+    pathogen_range <- shiny::reactiveVal(list(from = NULL, to = NULL))
+    shiny::observeEvent(input$pathogen_select, pathogen_selected(input$pathogen_select))
+    shiny::observeEvent(input$pathogen_period, {
+      pathogen_period(input$pathogen_period)
+      if (!identical(input$pathogen_period, "custom")) pathogen_range(list(from = NULL, to = NULL))
+    })
+    shiny::observeEvent(input$pathogen_custom_range, {
+      # Picking dates *is* the request to use them, so this selects the
+      # custom period rather than requiring a separate click on it.
+      pathogen_range(list(from = input$pathogen_custom_range$from, to = input$pathogen_custom_range$to))
+      pathogen_period("custom")
+    })
+
     current_user <- episodic_app_server_auth(input, output, session, con, lang = lang)
 
     output$auth_control <- shiny::renderUI({
@@ -79,6 +98,15 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
         shiny::uiOutput("archive_screen")
       } else if (view() == "activity") {
         episodic_ui_activity_screen(episodic_app_activity_log(con, lang = lang), lang = lang)
+      } else if (view() == "pathogen") {
+        range <- pathogen_range()
+        episodic_ui_pathogen_screen(
+          episodic_app_pathogen_screen(
+            con, pathogen = pathogen_selected(), period = pathogen_period(),
+            from = range$from, to = range$to, lang = lang
+          ),
+          lang = lang
+        )
       } else if (view() == "performance") {
         episodic_ui_performance_screen(episodic_app_performance(con, lang = lang), lang = lang)
       } else if (view() == "info") {

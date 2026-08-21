@@ -1,3 +1,131 @@
+# EpiSODIC 0.3.1
+
+## New: the Pathogen screen
+
+- Added a Pathogen screen to the dashboard, alongside Clusters. Pick an
+  organism and a period - a surveillance season, the last twelve months,
+  the last five years, or an exact date range - and read that organism at
+  the epidemiological level rather than the operational one: weekly
+  incidence for the whole catchment, this period laid over earlier ones
+  on a shared week-of-season axis, region-wide Rt, testing volume and
+  positivity, age and sex, geography, and the signals that were raised
+  while the period ran.
+- The Moving Epidemic Method's thresholds are now visible. They have been
+  fitted on every run since `mem` was added, and used only to decide
+  whether a detector fired; the Pathogen screen draws them against the
+  season's own curve, together with the medium/high/very high intensity
+  bands, so "has the epidemic started" and "how hard is this season" can
+  be read directly. Thresholds for a season are fitted only on the
+  seasons before it, never on the season being judged.
+- Rt is now also estimated for a pathogen as a whole, not only per
+  cluster. Rt is a property of a transmission process, and for something
+  like influenza A that process is the region's influenza A rather than
+  the cases that happened to reconcile into one ward cluster; estimating
+  it on a cluster feeds `EpiEstim` an incidence series that is
+  systematically incomplete. The per-cluster panel remains - "is this
+  ward outbreak still growing" is a real question - but it is no longer
+  the only one on offer.
+- The `mem` detector is now documented on the Info screen, alongside the
+  three that were already there.
+
+## Corrections to the epidemiological logic
+
+- **Observed versus expected is now recorded.** `episodic_cluster` has
+  always carried `expected`, `excess` and `ratio` columns, and both the
+  dossier's stat grid and the interpretation engine's magnitude fragments
+  read them - but nothing ever wrote them. Every cluster was persisted
+  with all three left at `NA`, so the O/E ratio never appeared on a
+  dossier or in the rail, and the "well above expectation" fragments
+  could not fire. Reconciliation now carries the detections' own
+  `expected`/`upperbound` through to the cluster.
+- **The priority score now uses its evidence.** Five of its seven
+  components were being left at their defaults, most damagingly
+  `ratio = n_cases / max(n_cases, 1)`, which is identically 1 for every
+  candidate; the ranking that orders the entire assessment queue was
+  effectively severity weight times detector agreement. Excess, ratio,
+  growth, incidence density and spatial concentration are now all
+  computed and passed.
+- **A component that cannot be computed no longer drags the score down.**
+  Weight renormalisation applied only to the density component; a
+  `same_place` or `rare_trigger` cluster, which by construction has no
+  baseline and therefore no excess or ratio, was scored zero on both
+  while keeping their weight. Ward-level same-place clusters - the ones
+  an infection prevention nurse has to act on the same day - were
+  systematically outranked by Farrington signals for a purely structural
+  reason. The ratio and density components are also now anchored so that
+  "exactly as expected" contributes nothing rather than half a score.
+- **Doubling time no longer reports growth that is not there.** It was a
+  regression of log(*cumulative*) cases on day, which has a positive
+  slope for any series at all - a constant incidence still makes the
+  cumulative count climb - so every cluster with three cases reported a
+  finite doubling time. It is now a Poisson fit to the daily counts, and
+  `NA` unless growth is real and fast enough to be measurable within the
+  fitted window.
+- **Positivity is a rate again.** The dossier's positivity line was the
+  *cluster's* case count over the *region's* test count: numerator and
+  denominator from different populations, so it tracked cluster size
+  rather than test yield and could not answer the one question the panel
+  exists for. Both are now counted region-wide over the same week, and
+  the series is windowed to the cluster instead of spanning every week a
+  denominator was ever supplied - which had left the interpretation
+  engine comparing a week years before a cluster began against one long
+  after it ended.
+- **Reporting lag is measured from the run date, not from the cluster.**
+  The incompleteness window was anchored on a cluster's own last case
+  day, so a cluster that stopped generating cases weeks ago still had its
+  epi-curve tail faded and its final Rt estimates withheld, permanently.
+  The number of under-ascertained days was also one short, and a single
+  noisy dip in a completion curve could stretch the window to a
+  fortnight.
+- **Rt no longer starts estimating with no infection history.**
+  `EpiEstim` conditions each estimate on the infections before it, and at
+  the start of a series there are none recorded - not because none
+  occurred, but because the series starts there. The renewal denominator
+  is too small and Rt reads high, on the youngest and least-evidenced
+  clusters. Windows falling inside one mean serial interval of the series
+  start are now dropped.
+- **Seasonal clusters can close in summer.** `episodic_mem_status()`
+  returned `NULL` off-season, and the closure criterion could not tell
+  that apart from "MEM unavailable", so a `mem_applicable` cluster had no
+  closure route at all between May and September: every confirmed
+  influenza or RSV epidemic stayed open on the rail right through the
+  summer. Out of season the calendar answers the question, subject to the
+  ordinary case-free interval.
+- **MEM evaluates the last complete week**, not the partial one in
+  progress, and fits its thresholds only on seasons the case data spans
+  end to end - a site whose data begins in January no longer contributes
+  a season that is three-quarters structural zeros, which used to drag
+  the pre-epidemic threshold down and fire the next winter's epidemic
+  start early.
+- **Concentration is a share of the cases with a known postcode.**
+  Dividing by every case in the cluster diluted the measure by however
+  many had no postcode recorded, pushing genuinely localised clusters
+  down the queue; a missing postcode is absence of evidence about
+  localisation, not evidence of dispersal.
+- **The demographic baseline excludes the cluster being compared to it**,
+  and every other cluster in its stream. For a rare organism whose
+  recorded history is largely one cluster, that cluster dominated its own
+  baseline and could never be found to have shifted away from it -
+  exactly where a demographic shift is most worth surfacing.
+
+## Geography
+
+- The choropleth is cropped to the areas that actually have cases, plus a
+  margin of context around them, and each of those areas is labelled with
+  its postcode and case count. It used to be framed on the entire
+  reference dataset - some four thousand PC4 polygons for the shipped
+  Netherlands default - so a five-postcode cluster rendered as a handful
+  of tinted specks inside a whole country, at which scale the question
+  the panel exists to answer cannot be answered at all.
+- The geography panel now takes the full width of the dossier pane rather
+  than sharing a row with the demography pyramid, and shows the per-area
+  bar breakdown underneath the map rather than instead of it.
+
+## Interface
+
+- The top navigation now shows which screen you are on. The stylesheet
+  has always had a rule for it; nothing ever applied the class.
+
 # EpiSODIC 0.3.0
 
 - Expanded dashboard translations from Dutch and English to also cover

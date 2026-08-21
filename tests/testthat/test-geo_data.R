@@ -131,7 +131,8 @@ test_that("episodic_ui_geo_map_chart() draws the overlay layer without disturbin
   Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY")
   plot_without <- episodic_ui_geo_map_chart(rows)
   expect_s3_class(plot_without, "ggplot")
-  expect_equal(length(plot_without$layers), 1)
+  # choropleth + the PC/count labels drawn over the case-bearing areas
+  expect_equal(length(plot_without$layers), 2)
 
   overlay <- geo[seq_len(2), "geometry"]
   tmp <- tempfile(fileext = ".rds")
@@ -141,8 +142,61 @@ test_that("episodic_ui_geo_map_chart() draws the overlay layer without disturbin
 
   plot_with <- episodic_ui_geo_map_chart(rows)
   expect_s3_class(plot_with, "ggplot")
-  expect_equal(length(plot_with$layers), 2)
+  # choropleth, overlay, labels - the overlay stays layer 2, drawn over
+  # the choropleth but under the labels
+  expect_equal(length(plot_with$layers), 3)
   overlay_layer <- plot_with$layers[[2]]
   expect_true(is.na(overlay_layer$aes_params$fill))
   expect_equal(overlay_layer$aes_params$linewidth, 0.6)
+})
+
+test_that("episodic_ui_geo_map_chart() frames on the case-bearing areas, not the whole reference set", {
+  skip_if_not_installed("sf")
+  old_env <- Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)
+  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY") else Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = old_env))
+  Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY")
+
+  geo <- episodic_geo_source_default()
+  skip_if(is.null(geo) || nrow(geo) < 50, "shipped geometry unavailable")
+
+  rows <- data.frame(label = as.character(geo$pc[1]), n = 4)
+  plot <- episodic_ui_geo_map_chart(rows)
+  expect_s3_class(plot, "ggplot")
+
+  # The frame has to be a small window on the reference set, otherwise
+  # the postcode labels the panel exists to convey are unreadable.
+  limits <- plot$coordinates$limits
+  full <- sf::st_bbox(geo)
+  frame_width <- diff(limits$x)
+  expect_true(is.finite(frame_width))
+  expect_lt(frame_width, (full[["xmax"]] - full[["xmin"]]) / 3)
+})
+
+test_that("episodic_geo_frame() pads by the reference extent when the cluster sits in one area", {
+  skip_if_not_installed("sf")
+  geo <- episodic_geo_source_default()
+  skip_if(is.null(geo) || nrow(geo) < 50, "shipped geometry unavailable")
+
+  matched <- geo[1, ]
+  frame <- episodic_geo_frame(geo, matched, pad_share = 0.45, min_pad_share = 0.02)
+  own <- sf::st_bbox(matched)
+  # Strictly wider than the single area itself: a frame drawn tight
+  # around one polygon shows no context at all.
+  expect_lt(frame$xlim[1], own[["xmin"]])
+  expect_gt(frame$xlim[2], own[["xmax"]])
+  expect_equal(sf::st_crs(frame$bbox), sf::st_crs(geo))
+})
+
+test_that("episodic_geo_labels() labels the biggest areas first and caps how many it draws", {
+  skip_if_not_installed("sf")
+  geo <- episodic_geo_source_default()
+  skip_if(is.null(geo) || nrow(geo) < 50, "shipped geometry unavailable")
+
+  matched <- geo[seq_len(5), ]
+  matched$n <- c(1L, 9L, 3L, 7L, 5L)
+  labels <- episodic_geo_labels(matched, max_labels = 3L)
+  expect_equal(nrow(labels), 3)
+  # highest count first, and the label carries the count as well as the PC
+  expect_match(labels$label[1], "9$")
+  expect_true(all(c("x", "y", "label") %in% names(labels)))
 })

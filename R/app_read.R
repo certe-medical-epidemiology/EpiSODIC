@@ -164,6 +164,7 @@ episodic_cluster_object <- function(con, cluster_id, lang = "nl") {
 
   place <- episodic_app_place_label(stream, institution, lang = lang)
   completeness <- episodic_app_completeness(con, stream$stream_id)
+  asof <- episodic_app_data_asof(con)
 
   list(
     id = cluster$cluster_id,
@@ -182,9 +183,11 @@ episodic_cluster_object <- function(con, cluster_id, lang = "nl") {
     priority_score = cluster$priority_score,
     changed_since_assessment = as.logical(cluster$changed_since_assessment),
     density = episodic_app_density(con, stream, cases),
-    doubling_days = episodic_app_doubling_time(cases),
+    doubling_days = episodic_app_doubling_time(cases, incomplete_days = completeness$incomplete_days %||% 0L,
+                                               asof = asof),
     concentration = episodic_app_concentration(cases, stream$level),
     denominator = episodic_app_denominator_summary(con, stream$pathogen, cases),
+    asof = asof,
     demography = episodic_app_demography_shift(con, stream$stream_id, cases),
     completeness = completeness,
     unique_patients = length(unique(cases$patient_key)),
@@ -197,7 +200,11 @@ episodic_cluster_object <- function(con, cluster_id, lang = "nl") {
     case_free_days = if (!is.null(pc)) pc$case_free_days else NA_integer_,
     mem_applicable = if (!is.null(pc)) as.logical(pc$mem_applicable) else FALSE,
     curve_shape = if (!is.null(pc)) episodic_classify_curve_shape(cases, pc$incub_max_days) else NA_character_,
-    rt = if (!is.null(pc)) episodic_compute_rt(cases, pc, incomplete_days = completeness$incomplete_days %||% 0L) else NULL,
+    rt = if (!is.null(pc)) {
+      episodic_compute_rt(cases, pc, incomplete_days = completeness$incomplete_days %||% 0L, asof = asof)
+    } else {
+      NULL
+    },
     rt_unavailable_reason = episodic_rt_unavailable_reason(pc)
   )
 }
@@ -295,23 +302,83 @@ episodic_app_density <- function(con, stream, cases) {
   )
 }
 
-#' Simple doubling time from the case date distribution
+#' Simple doubling time from the daily case counts
 #'
-#' A cheap linear regression of log(cumulative cases) against day, over
-#' the last 14 days of the cluster - not a fitted epidemic model (that
-#' is Rt), just a descriptive rate.
+#' A Poisson regression of *daily* case counts on day, over the last 14
+#' complete days of the cluster - not a fitted epidemic model (that is
+#' Rt), just a descriptive rate. Doubling time is \eqn{\log 2} over the
+#' fitted log-linear growth rate, and is `NA` unless that rate is
+#' positive.
+#'
+#' The obvious cheaper thing - regressing log(*cumulative*) cases on day
+#' - is what this used to do, and it is wrong in a way that matters:
+#' under constant, non-growing incidence the cumulative count still
+#' climbs linearly, so \eqn{\log(\mathrm{cum})} climbs like \eqn{\log t},
+#' whose OLS slope is positive for any flat series. Every cluster with
+#' three or more cases therefore reported a finite doubling time,
+#' including ones that were not growing at all - the single stat on the
+#' dossier an assessor is most likely to read as "this is accelerating".
+#' Fitting the daily counts instead makes a flat series return a slope of
+#' about zero, and a declining one a negative slope, both of which yield
+#' `NA` and no stat tile.
+#'
+#' Zero-case days inside the window are counted as zeros rather than
+#' being absent, since a run of empty days is exactly the evidence that
+#' an outbreak is not growing.
+#'
+#' @param cases A data frame of the cluster's cases, with `sample_date`.
+#' @param incomplete_days From `episodic_app_completeness()`. The most
+#'   recent days are under-ascertained by construction (reporting lag),
+#'   and including them biases the fitted slope *downwards* - a growing
+#'   outbreak reads as flattening purely because its last few days have
+#'   not finished being reported. Trimmed for the same reason
+#'   `episodic_compute_rt()` withholds its trailing windows.
+#' @param asof The date the data is current as of (the latest successful
+#'   run). Only days within `incomplete_days` of this are trimmed: a
+#'   cluster whose last case was months ago has no incomplete tail to
+#'   trim, and trimming its final days regardless would silently discard
+#'   real observations.
+#' @param window_days How many trailing days to fit over.
+#' @return A single numeric (days), or `NA_real_` - including whenever
+#'   the fitted doubling time is longer than the fitted window itself,
+#'   which is a statement about the window rather than about the
+#'   outbreak.
 #' @keywords internal
 #' @noRd
-episodic_app_doubling_time <- function(cases) {
+episodic_app_doubling_time <- function(cases, incomplete_days = 0L, asof = Sys.Date(),
+                                       window_days = 14L) {
   if (nrow(cases) < 3) return(NA_real_)
-  dates <- sort(as.Date(cases$sample_date))
-  recent <- dates[dates >= max(dates) - 14]
-  if (length(unique(recent)) < 2) return(NA_real_)
-  days <- as.numeric(recent - min(recent))
-  cum_n <- seq_along(recent)
-  fit <- tryCatch(stats::lm(log(cum_n) ~ days), error = function(e) NULL)
-  if (is.null(fit) || is.na(stats::coef(fit)[2]) || stats::coef(fit)[2] <= 0) return(NA_real_)
-  round(log(2) / stats::coef(fit)[2], 1)
+  dates <- as.Date(cases$sample_date)
+  dates <- dates[!is.na(dates)]
+  if (length(dates) < 3) return(NA_real_)
+
+  last_complete <- min(max(dates), as.Date(asof) - as.integer(incomplete_days))
+  if (is.na(last_complete) || last_complete < min(dates)) return(NA_real_)
+  first_day <- max(min(dates), last_complete - window_days + 1)
+
+  all_days <- seq(first_day, last_complete, by = "day")
+  if (length(all_days) < 3) return(NA_real_)
+  counts <- vapply(all_days, function(d) sum(dates == d), integer(1))
+  if (sum(counts) < 3 || sum(counts > 0) < 2) return(NA_real_)
+
+  day_index <- as.numeric(all_days - first_day)
+  fit <- tryCatch(
+    suppressWarnings(stats::glm(counts ~ day_index, family = stats::poisson())),
+    error = function(e) NULL
+  )
+  if (is.null(fit)) return(NA_real_)
+  slope <- unname(stats::coef(fit)[2])
+  if (is.na(slope) || slope <= 0) return(NA_real_)
+
+  doubling <- log(2) / slope
+  # A doubling time longer than the window it was fitted over is not a
+  # measurement of doubling - the data simply does not contain a
+  # doubling. This is also what keeps a perfectly flat series honest: its
+  # fitted slope is zero only up to floating-point noise, and dividing by
+  # a slope of 1e-17 would otherwise report a doubling time of some
+  # astronomical number of days rather than "not applicable".
+  if (!is.finite(doubling) || doubling > length(all_days)) return(NA_real_)
+  round(doubling, 1)
 }
 
 #' Where the cluster concentrates geographically (by PC)
@@ -322,22 +389,56 @@ episodic_app_doubling_time <- function(cases) {
 #' tautological (100% "concentration" by definition, saying nothing).
 #' PC concentration is the one dimension that is informative at every
 #' lattice level.
+#'
+#' `dominant_share` is a share of the cases whose PC is actually known,
+#' not of every case in the cluster. Dividing by `nrow(cases)` - as this
+#' used to - silently diluted the measure by however many cases had no
+#' postcode: a cluster of ten cases, six of them in one PC and four with
+#' no PC recorded, read as 60% concentrated when what was actually
+#' observed was 100%. That share drives the concentration fragments in
+#' the interpretation engine and the spatial component of the priority
+#' score, so under-recorded postcodes were quietly pushing genuinely
+#' localised clusters down the queue. A missing postcode is absence of
+#' evidence about localisation, not evidence of dispersal.
+#'
+#' @param cases A data frame of the cluster's cases, with `pc`.
+#' @param level The stream's lattice level (unused; kept so callers stay
+#'   explicit about the level this is being computed at).
+#' @return A list, or `NULL` when no case carries a PC. `total` is the
+#'   number of cases with a known PC - the denominator `dominant_share`
+#'   is a share of - and `n_unknown_pc` how many were set aside.
 #' @keywords internal
 #' @noRd
 episodic_app_concentration <- function(cases, level) {
   if (nrow(cases) == 0 || all(is.na(cases$pc))) return(NULL)
-  tab <- table(cases$pc)
+  known <- cases$pc[!is.na(cases$pc)]
+  tab <- table(known)
   tab <- tab[order(-tab)]
   list(
     dominant_label = names(tab)[1],
     dominant_n = as.integer(tab[1]),
-    dominant_share = as.numeric(tab[1]) / nrow(cases),
-    total = nrow(cases),
+    dominant_share = as.numeric(tab[1]) / length(known),
+    total = length(known),
+    n_unknown_pc = nrow(cases) - length(known),
     rows = data.frame(label = names(tab), n = as.integer(tab), row.names = NULL)
   )
 }
 
 #' Positivity summary from the optional denominator table
+#'
+#' `positivity_first`/`positivity_last` are the two ends of the *windowed*
+#' series (see `episodic_app_denominator_series()`), which is what makes
+#' them comparable at all. Read over the whole recorded history, as they
+#' used to be, "first" was the earliest week the operator ever supplied a
+#' denominator for and "last" was the most recent one - so the
+#' interpretation engine's `denominator.rising_positivity` fragment was
+#' comparing a week two years before a cluster began against a week
+#' possibly long after it ended, and reporting the difference as evidence
+#' about that cluster.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param pathogen The stream's organism.
+#' @param cases The cluster's own cases; used only to place the window.
 #' @keywords internal
 #' @noRd
 episodic_app_denominator_summary <- function(con, pathogen, cases) {
@@ -355,21 +456,70 @@ episodic_app_denominator_summary <- function(con, pathogen, cases) {
 }
 
 #' Weekly (n_tests, n_cases, positivity) series aligned for charting
+#'
+#' Positivity is *this organism's* confirmed cases over *this organism's*
+#' tests, both counted region-wide over the same week. It used to be the
+#' cluster's own case count over the region-wide test count, which is not
+#' a positivity rate at all: numerator and denominator were drawn from
+#' different populations, so the line tracked how big the cluster was
+#' rather than how much of the testing was coming back positive, and sat
+#' near zero for any cluster smaller than the region. That mattered
+#' beyond the chart - the panel's whole stated purpose is telling a real
+#' rise apart from a denominator effect ("if the bars rise but the line
+#' stays flat, the increase is a denominator effect"), and a line
+#' computed this way cannot answer that question.
+#'
+#' The cluster's own weekly counts stay available as `n_cluster_cases`,
+#' for context alongside the rate rather than as part of it.
+#'
+#' Both counts are restricted to a window ending at the cluster's last
+#' case week, so the panel describes the period the cluster actually
+#' occupies instead of every week the operator has ever supplied a
+#' denominator for.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param pathogen The stream's organism.
+#' @param cases The cluster's own cases, with `sample_date`.
+#' @param weeks How many weeks of context to keep, ending at the week of
+#'   the cluster's last case.
+#' @return A data frame with `week_start`, `n_tests`, `n_cases` (region
+#'   wide, the positivity numerator), `n_cluster_cases`, and
+#'   `positivity`.
 #' @keywords internal
 #' @noRd
-episodic_app_denominator_series <- function(con, pathogen, cases) {
+episodic_app_denominator_series <- function(con, pathogen, cases, weeks = 26L) {
+  empty <- data.frame(week_start = as.Date(character(0)), n_tests = integer(0),
+                       n_cases = integer(0), n_cluster_cases = integer(0),
+                       positivity = numeric(0))
   denom <- episodic_db_denominator_for_pathogen(con, pathogen)
-  if (nrow(denom) == 0) {
-    return(data.frame(week_start = as.Date(character(0)), n_tests = integer(0),
-                       n_cases = integer(0), positivity = numeric(0)))
-  }
+  if (nrow(denom) == 0) return(empty)
+
   denom <- stats::aggregate(n_tests ~ sample_date, denom, sum)
   denom$week_start <- as.Date(denom$sample_date)
-  case_dates <- as.Date(cases$sample_date)
-  denom$n_cases <- vapply(denom$week_start, function(ws) sum(case_dates >= ws & case_dates < ws + 7), integer(1))
-  denom$positivity <- ifelse(denom$n_tests > 0, denom$n_cases / denom$n_tests, NA)
+  denom <- denom[!is.na(denom$week_start), , drop = FALSE]
+  if (nrow(denom) == 0) return(empty)
   denom <- denom[order(denom$week_start), ]
-  denom[, c("week_start", "n_tests", "n_cases", "positivity")]
+
+  cluster_dates <- as.Date(cases$sample_date)
+  cluster_dates <- cluster_dates[!is.na(cluster_dates)]
+  if (length(cluster_dates) > 0) {
+    window_end <- max(cluster_dates)
+    window_start <- window_end - 7 * (as.integer(weeks) - 1L)
+    denom <- denom[denom$week_start <= window_end & denom$week_start + 6 >= window_start, , drop = FALSE]
+    if (nrow(denom) == 0) return(empty)
+  }
+
+  pathogen_dates <- as.Date(episodic_db_cases_for_pathogen(con, pathogen)$sample_date)
+  pathogen_dates <- pathogen_dates[!is.na(pathogen_dates)]
+
+  denom$n_cases <- vapply(denom$week_start, function(ws) {
+    sum(pathogen_dates >= ws & pathogen_dates < ws + 7)
+  }, integer(1))
+  denom$n_cluster_cases <- vapply(denom$week_start, function(ws) {
+    sum(cluster_dates >= ws & cluster_dates < ws + 7)
+  }, integer(1))
+  denom$positivity <- ifelse(denom$n_tests > 0, denom$n_cases / denom$n_tests, NA)
+  denom[, c("week_start", "n_tests", "n_cases", "n_cluster_cases", "positivity")]
 }
 
 #' Whether the cluster's age distribution has shifted from the stream baseline
@@ -388,9 +538,22 @@ episodic_app_demography_shift <- function(con, stream_id, cases) {
 
   stream_pathogen <- DBI::dbGetQuery(con, "SELECT pathogen FROM episodic_stream WHERE stream_id = ?",
                                       params = list(stream_id))$pathogen[1]
+  # Cases belonging to any cluster in this stream are excluded from the
+  # baseline, so the comparison is against the endemic background rather
+  # than against a history that already contains this cluster. Leaving
+  # them in makes it partly circular, and increasingly so the rarer the
+  # organism: for a pathogen whose recorded history is largely this one
+  # cluster, the cluster dominates its own baseline and can therefore
+  # never be found to have shifted away from it - exactly the situation
+  # (a rare organism, a big cluster) where a demographic shift is most
+  # worth surfacing. Same principle as the baseline exclusion Farrington
+  # already applies (`episodic_baseline_excluded_windows()`): a detected
+  # aberration must not become part of what counts as normal.
   all_cases <- DBI::dbGetQuery(
-    con, "SELECT age FROM episodic_case WHERE pathogen = ?",
-    params = list(stream_pathogen)
+    con, "SELECT age FROM episodic_case WHERE pathogen = ? AND case_id NOT IN
+            (SELECT case_id FROM episodic_cluster_case WHERE cluster_id IN
+               (SELECT cluster_id FROM episodic_cluster WHERE stream_id = ?))",
+    params = list(stream_pathogen, stream_id)
   )
   if (nrow(all_cases) < 5 || all(is.na(all_cases$age))) {
     return(list(shifted = FALSE, dominant_band = as.character(cluster_dominant), baseline_band = NA,
@@ -421,16 +584,84 @@ episodic_app_demography_bars <- function(cases) {
 }
 
 #' Reporting-triangle-derived incomplete window for the epi curve shading
+#'
+#' `incomplete_days` is a *count of trailing days*, not a lag index: it
+#' is the first lag at which the stream reaches 95% completeness, so that
+#' exactly the days at lags `0 .. incomplete_days - 1` are the
+#' under-ascertained ones.
+#'
+#' Two things were wrong with taking `max(lag_days)` over every lag below
+#' 95%, as this used to. It was one day short even on a well-behaved
+#' completion curve (the largest incomplete lag is `incomplete_days - 1`,
+#' not `incomplete_days`). And `episodic_triangle_completeness()` returns
+#' a *median* share per lag, which over a modest number of historical
+#' sample dates is not monotone in practice: a single dip at, say, lag 11
+#' in an otherwise fully-reported curve dragged the shaded zone out to
+#' eleven days, greying out - and, via `episodic_compute_rt()`,
+#' withholding Rt over - a week and a half of complete data. Reading the
+#' run from the front treats a late dip as the noise it is, while a
+#' genuinely slow-reporting stream, incomplete at every early lag, is
+#' still shaded in full.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param stream_id The stream to summarise.
+#' @return A list with `incomplete_days`.
 #' @keywords internal
 #' @noRd
 episodic_app_completeness <- function(con, stream_id) {
   completeness <- episodic_triangle_completeness(con, stream_id)
   if (nrow(completeness) == 0) return(list(incomplete_days = 0L))
-  incomplete <- completeness[completeness$completeness < 0.95, ]
-  list(incomplete_days = if (nrow(incomplete) == 0) 0L else max(incomplete$lag_days))
+  completeness <- completeness[order(completeness$lag_days), ]
+
+  complete_enough <- which(completeness$completeness >= 0.95)
+  if (length(complete_enough) == 0) {
+    # Never reaches 95% within max_lag_days: every observed lag is
+    # under-ascertained, so shade all of them.
+    return(list(incomplete_days = as.integer(max(completeness$lag_days)) + 1L))
+  }
+  list(incomplete_days = as.integer(completeness$lag_days[complete_enough[1]]))
+}
+
+#' The date the database's case data is current as of
+#'
+#' Every "how recent is this" judgement in the app - which trailing days
+#' of an epi curve are still filling up, which Rt windows to withhold,
+#' which days of a cluster are too fresh to fit a growth rate over -
+#' has to be measured against the last time cases were actually
+#' ingested, not against the last day the cluster in question happened to
+#' have a case.
+#'
+#' The distinction is not cosmetic. Anchoring on a cluster's own last
+#' case day means a cluster that ended in March gets its final days
+#' treated as under-reported forever, greying out its epi curve tail and
+#' withholding its last Rt estimates, months after every one of those
+#' cases was fully reported. Reporting lag is a property of *now*, not of
+#' the cluster.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @return A `Date`: the latest successful run's finish date, falling
+#'   back to today's date when no run has been recorded yet.
+#' @keywords internal
+#' @noRd
+episodic_app_data_asof <- function(con) {
+  run <- episodic_db_latest_run(con, status = "success")
+  if (is.null(run) || is.na(run$finished_at)) return(Sys.Date())
+  parsed <- tryCatch(as.Date(substr(run$finished_at, 1, 10)), error = function(e) NA)
+  if (is.na(parsed)) Sys.Date() else parsed
 }
 
 #' Daily case counts for the epi curve panel, with an incomplete flag
+#'
+#' A day is flagged `incomplete` when it falls in the last
+#' `incomplete_days` days before the date the data is current as of
+#' (`episodic_app_data_asof()`).
+#'
+#' That anchor is the fix: the window used to be measured back from the
+#' cluster's own last case day, so a cluster that stopped generating
+#' cases weeks ago still had its final days drawn at reduced opacity -
+#' permanently implying "more cases may still arrive here" about a tail
+#' that had finished reporting long before. Reporting lag is a property
+#' of now, not of the cluster.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
@@ -445,13 +676,14 @@ episodic_app_epi_curve <- function(con, cluster_id) {
   cluster <- DBI::dbGetQuery(con, "SELECT stream_id FROM episodic_cluster WHERE cluster_id = ?",
                               params = list(cluster_id))
   incomplete_days <- episodic_app_completeness(con, cluster$stream_id[1])$incomplete_days
+  asof <- episodic_app_data_asof(con)
 
   dates <- as.Date(cases$sample_date)
   all_days <- seq(min(dates), max(dates), by = "day")
   counts <- vapply(all_days, function(d) sum(dates == d), integer(1))
   data.frame(
     sample_date = all_days, n_cases = counts,
-    incomplete = all_days > (max(all_days) - incomplete_days)
+    incomplete = all_days > (asof - incomplete_days)
   )
 }
 

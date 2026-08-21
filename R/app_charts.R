@@ -131,7 +131,7 @@ episodic_ui_rt_chart <- function(rt, lang = "nl") {
     episodic_chart_theme()
 }
 
-#' A PC choropleth, guarded for absence of geographic data
+#' A PC choropleth, cropped to where the cases actually are
 #'
 #' Geography is shown two ways: a bar breakdown by PC value
 #' (`episodic_ui_bars()`), which is often the more informative view since
@@ -145,8 +145,35 @@ episodic_ui_rt_chart <- function(rt, lang = "nl") {
 #' region outlines - no fill, a thicker line - on top for orientation;
 #' its own absence or failure never affects the choropleth itself.
 #'
+#' `episodic_geo_join()` keeps every reference polygon, not only the ones
+#' with cases, which is right - a cluster has to be read against the
+#' areas around it, not floating in white space - but drawing all of them
+#' meant the map was always framed on the entire reference dataset. With
+#' the shipped Netherlands default that is some four thousand PC4
+#' polygons: a five-postcode cluster rendered as a handful of tinted
+#' specks somewhere inside a whole country, at which scale the one
+#' question the panel exists to answer - *which* postcodes, and are they
+#' adjacent - cannot be answered at all. So the frame is cropped to the
+#' case-bearing areas plus a margin of context around them, and each of
+#' those areas is labelled with its own PC value and case count. What was
+#' a shape you could only squint at becomes something you can read.
+#'
+#' The margin is proportional (a share of the cluster's own extent, with
+#' a floor tied to the reference dataset's extent) rather than a fixed
+#' distance, since the reference data may be in degrees or in metres and
+#' EpiSODIC does not get to assume which.
+#'
 #' @param rows A data frame from `episodic_app_concentration()$rows`
 #'   (`label` = a PC value, `n` = case count).
+#' @param pad_share Margin around the case-bearing extent, as a share of
+#'   that extent's longer side.
+#' @param min_pad_share Floor for that margin, as a share of the whole
+#'   reference dataset's longer side - so a cluster confined to a single
+#'   postcode still gets a legible amount of surrounding context rather
+#'   than a frame drawn tight around one polygon.
+#' @param max_labels Cap on how many areas are labelled, highest case
+#'   count first. A diffuse cluster spread over dozens of postcodes is
+#'   past the point where labelling every one of them helps.
 #' @return A `ggplot` object, or `NULL` if no geographic data is
 #'   available at all, or the join/plot fails for any reason (e.g. a PC
 #'   value not in the reference geometry - synthetic demo postcodes are
@@ -154,13 +181,27 @@ episodic_ui_rt_chart <- function(rt, lang = "nl") {
 #'   postcode boundaries).
 #' @keywords internal
 #' @noRd
-episodic_ui_geo_map_chart <- function(rows) {
+episodic_ui_geo_map_chart <- function(rows, pad_share = 0.45, min_pad_share = 0.02,
+                                      max_labels = 30L) {
   if (nrow(rows) == 0) return(NULL)
   pal <- episodic_palette()
   tryCatch({
     geo <- episodic_geo_join(rows)
     if (is.null(geo)) return(NULL)
-    p <- ggplot2::ggplot(geo) +
+    matched <- geo[!is.na(geo$n), , drop = FALSE]
+    # No PC in the cluster resolves to a polygon: a map of the whole
+    # reference set with nothing on it says less than the bar breakdown
+    # the caller falls back to.
+    if (nrow(matched) == 0) return(NULL)
+
+    frame <- episodic_geo_frame(geo, matched, pad_share = pad_share, min_pad_share = min_pad_share)
+    # Crop the geometry as well as the frame: drawing four thousand
+    # polygons and then hiding all but a dozen of them is work the plot
+    # device does not need to do.
+    plotted <- tryCatch(suppressWarnings(sf::st_crop(geo, frame$bbox)), error = function(e) geo)
+    if (is.null(plotted) || nrow(plotted) == 0) plotted <- geo
+
+    p <- ggplot2::ggplot(plotted) +
       ggplot2::geom_sf(ggplot2::aes(fill = .data$n), colour = pal$border, linewidth = 0.1) +
       ggplot2::scale_fill_gradient(low = pal$primary_tint, high = pal$primary, na.value = pal$bg_subtle)
 
@@ -178,12 +219,80 @@ episodic_ui_geo_map_chart <- function(rows) {
       )
     }
 
+    labels <- episodic_geo_labels(matched, max_labels = max_labels)
+    if (!is.null(labels)) {
+      # Plain geom_text over pre-computed representative points rather
+      # than geom_sf_text(): stat_sf_coordinates() emits a warning per
+      # render on geographic coordinates, and a warning raised at print
+      # time inside shiny::renderPlot() cannot be caught by the caller.
+      p <- p + ggplot2::geom_text(
+        data = labels, ggplot2::aes(x = .data$x, y = .data$y, label = .data$label),
+        inherit.aes = FALSE, size = 2.9, lineheight = 0.95, colour = pal$ink
+      )
+    }
+
     p +
-      ggplot2::coord_sf(datum = NA) +
+      ggplot2::coord_sf(xlim = frame$xlim, ylim = frame$ylim, datum = NA, expand = FALSE) +
       episodic_chart_theme() +
       ggplot2::theme(axis.text = ggplot2::element_blank(), axis.ticks = ggplot2::element_blank(),
                      panel.grid = ggplot2::element_blank())
   }, error = function(e) NULL)
+}
+
+#' The cropped frame around a choropleth's case-bearing areas
+#'
+#' @param geo The full joined reference geometry.
+#' @param matched The subset carrying case counts.
+#' @param pad_share,min_pad_share See `episodic_ui_geo_map_chart()`.
+#' @return A list with `xlim`, `ylim` and a `bbox` suitable for
+#'   [sf::st_crop()].
+#' @keywords internal
+#' @noRd
+episodic_geo_frame <- function(geo, matched, pad_share = 0.45, min_pad_share = 0.02) {
+  bb <- sf::st_bbox(matched)
+  full <- sf::st_bbox(geo)
+
+  span <- max(bb[["xmax"]] - bb[["xmin"]], bb[["ymax"]] - bb[["ymin"]])
+  full_span <- max(full[["xmax"]] - full[["xmin"]], full[["ymax"]] - full[["ymin"]])
+  pad <- max(span * pad_share, full_span * min_pad_share)
+
+  xlim <- c(bb[["xmin"]] - pad, bb[["xmax"]] + pad)
+  ylim <- c(bb[["ymin"]] - pad, bb[["ymax"]] + pad)
+
+  bbox <- sf::st_bbox(
+    c(xmin = xlim[1], ymin = ylim[1], xmax = xlim[2], ymax = ylim[2]),
+    crs = sf::st_crs(geo)
+  )
+  list(xlim = xlim, ylim = ylim, bbox = bbox)
+}
+
+#' Readable "PC / count" labels for the case-bearing areas
+#'
+#' @param matched The joined geometry rows carrying case counts.
+#' @param max_labels Cap, highest case count first.
+#' @return A data frame with `x`, `y`, `label`, or `NULL` if
+#'   representative points cannot be derived.
+#' @keywords internal
+#' @noRd
+episodic_geo_labels <- function(matched, max_labels = 30L) {
+  matched <- matched[order(-matched$n), , drop = FALSE]
+  if (nrow(matched) > max_labels) matched <- matched[seq_len(max_labels), , drop = FALSE]
+
+  # st_point_on_surface() rather than st_centroid(): the centroid of a
+  # concave or multi-part area can land outside it, putting a postcode
+  # label on top of a neighbour it does not belong to.
+  points <- tryCatch(
+    suppressWarnings(sf::st_coordinates(sf::st_point_on_surface(sf::st_geometry(matched)))),
+    error = function(e) NULL
+  )
+  if (is.null(points) || nrow(points) < nrow(matched)) return(NULL)
+
+  data.frame(
+    x = points[seq_len(nrow(matched)), 1],
+    y = points[seq_len(nrow(matched)), 2],
+    label = sprintf("%s\n%d", as.character(matched$pc), as.integer(matched$n)),
+    stringsAsFactors = FALSE
+  )
 }
 
 #' Chart of tests performed and positivity rate, by week
@@ -207,4 +316,136 @@ episodic_ui_denominator_chart <- function(series, lang = "nl") {
     episodic_chart_theme() +
     ggplot2::theme(axis.title.y = ggplot2::element_text(size = 9, colour = pal$muted),
                    axis.title.y.right = ggplot2::element_text(size = 9, colour = pal$danger_dark))
+}
+
+#' The pathogen-level weekly curve, with MEM thresholds drawn on it
+#'
+#' The thresholds are the point of the chart. MEM has been fitting a
+#' pre-epidemic and a post-epidemic threshold for every seasonal organism
+#' on every detection run all along, and using them only to decide
+#' whether a detector fired; drawn against the season's own weekly curve
+#' they answer the question an epidemiologist actually opens a seasonal
+#' chart to ask - has the epidemic started, is it still running, and how
+#' hard is this season compared with the ones it was fitted on.
+#'
+#' Weeks still filling up are drawn at reduced opacity, exactly as the
+#' cluster epi curve draws its incomplete days, so the tail is never read
+#' as a downturn.
+#'
+#' @param weekly A data frame with `week_start` (`Date`), `n_cases` and
+#'   `incomplete`.
+#' @param thresholds `episodic_mem_thresholds_for_season()`'s output, or
+#'   `NULL` to draw the bars alone.
+#' @param lang Language for labels.
+#' @return A [ggplot2::ggplot] object.
+#' @keywords internal
+#' @noRd
+episodic_ui_pathogen_curve_chart <- function(weekly, thresholds = NULL, lang = "nl") {
+  pal <- episodic_palette()
+  weekly$week_start <- as.Date(weekly$week_start)
+  weekly$alpha <- ifelse(weekly$incomplete %in% TRUE, 0.45, 1)
+
+  p <- ggplot2::ggplot(weekly, ggplot2::aes(x = .data$week_start, y = .data$n_cases)) +
+    ggplot2::geom_col(ggplot2::aes(alpha = .data$alpha), fill = pal$primary, width = 5.5,
+                       show.legend = FALSE) +
+    ggplot2::scale_alpha_identity() +
+    ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang))
+
+  lines <- episodic_mem_threshold_lines(thresholds, lang = lang)
+  if (!is.null(lines)) {
+    p <- p +
+      ggplot2::geom_hline(
+        data = lines,
+        ggplot2::aes(yintercept = .data$value, colour = .data$key),
+        linewidth = 0.7, linetype = "dashed"
+      ) +
+      ggplot2::scale_colour_manual(
+        values = stats::setNames(lines$colour, lines$key),
+        labels = stats::setNames(lines$label, lines$key),
+        breaks = lines$key
+      )
+  }
+  p + episodic_chart_theme()
+}
+
+#' The MEM threshold lines to draw, in ascending order
+#'
+#' @param thresholds `episodic_mem_thresholds_for_season()`'s output, or
+#'   `NULL`.
+#' @param lang Language for the line labels.
+#' @return A data frame with `key`, `value`, `label`, `colour`, or `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_mem_threshold_lines <- function(thresholds, lang = "nl") {
+  if (is.null(thresholds)) return(NULL)
+  pal <- episodic_palette()
+
+  keys <- c("pre_epidemic", "post_epidemic")
+  values <- c(thresholds$pre_epidemic, thresholds$post_epidemic)
+  colours <- c(pal$tertiary_dark, pal$secondary)
+
+  if (!is.null(thresholds$intensity)) {
+    keys <- c(keys, "medium", "high", "very_high")
+    values <- c(values, as.numeric(thresholds$intensity))
+    colours <- c(colours, pal$warning_dark, pal$danger, pal$danger_dark)
+  }
+
+  keep <- is.finite(values)
+  if (!any(keep)) return(NULL)
+  out <- data.frame(
+    key = keys[keep], value = values[keep], colour = colours[keep],
+    label = vapply(keys[keep], function(k) episodic_tr(paste0("pathogen.threshold.", k), lang = lang),
+                    character(1)),
+    stringsAsFactors = FALSE
+  )
+  out[order(out$value), ]
+}
+
+#' Season-over-season (or year-over-year) overlay
+#'
+#' Every period's weekly curve on one axis of week-within-period, the
+#' selected one drawn heavier than the rest. This is the chart that
+#' answers "early or late, bigger or smaller" directly, instead of
+#' leaving it to be inferred by flipping between two separate charts.
+#'
+#' @param overlay `episodic_app_pathogen_overlay()`'s output.
+#' @param lang Language for labels.
+#' @return A [ggplot2::ggplot] object.
+#' @keywords internal
+#' @noRd
+episodic_ui_pathogen_overlay_chart <- function(overlay, lang = "nl") {
+  pal <- episodic_palette()
+  rows <- overlay$rows
+  groups <- sort(unique(rows$group))
+  rows$group <- factor(rows$group, levels = groups)
+
+  earlier <- setdiff(groups, overlay$current)
+  pool <- c(pal$primary_light, pal$tertiary, pal$warning, pal$faint, pal$secondary_dark)
+  colours <- stats::setNames(rep(pool, length.out = length(groups)), groups)
+  if (length(earlier) > 0) colours[earlier] <- rep(pool, length.out = length(earlier))
+  colours[overlay$current] <- pal$danger_dark
+
+  # Week labels run 40..52 then 1..20 for a season, so the x axis is an
+  # index and the labels are looked up from it - a numeric week number
+  # would put week 1 to the left of week 40.
+  n_weeks <- max(rows$week_index)
+  breaks <- seq(1L, n_weeks, by = 4L)
+  labels <- rows$week_label[match(breaks, rows$week_index)]
+
+  p <- ggplot2::ggplot(rows, ggplot2::aes(x = .data$week_index, y = .data$n_cases,
+                                           group = .data$group, colour = .data$group)) +
+    ggplot2::geom_line(linewidth = 0.7)
+
+  current_rows <- rows[as.character(rows$group) == overlay$current, , drop = FALSE]
+  if (nrow(current_rows) > 0) {
+    p <- p + ggplot2::geom_line(data = current_rows, linewidth = 1.4, show.legend = FALSE)
+  }
+
+  p +
+    ggplot2::scale_colour_manual(values = colours[as.character(groups)]) +
+    ggplot2::scale_x_continuous(breaks = breaks, labels = labels) +
+    ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang),
+                   x = episodic_tr(paste0("pathogen.panel.overlay.xlab.", overlay$kind), lang = lang)) +
+    episodic_chart_theme() +
+    ggplot2::theme(axis.title.x = ggplot2::element_text(size = 9, colour = pal$muted))
 }

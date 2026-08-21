@@ -244,3 +244,154 @@ test_that("episodic_app_similar_clusters() finds a closed same-pathogen cluster 
   expect_equal(similar$cluster_id[1], other_id)
   expect_equal(similar$verdict_label[1], episodic_tr("verdict.artefact"))
 })
+
+test_that("episodic_app_doubling_time() refuses a doubling time for a flat series", {
+  # The regression this exists for: regressing log(*cumulative*) cases on
+  # day gives a positive slope for any series at all, because a constant
+  # incidence still makes the cumulative count climb. Every cluster with
+  # three cases used to report a finite doubling time.
+  flat <- data.frame(sample_date = as.character(rep(seq(as.Date("2025-01-01"), by = "day",
+                                                          length.out = 14), each = 2)))
+  expect_true(is.na(episodic_app_doubling_time(flat, asof = as.Date("2025-01-14"))))
+
+  declining <- data.frame(sample_date = as.character(rep(
+    seq(as.Date("2025-01-01"), by = "day", length.out = 6), times = c(8, 6, 5, 3, 2, 1)
+  )))
+  expect_true(is.na(episodic_app_doubling_time(declining, asof = as.Date("2025-01-06"))))
+})
+
+test_that("episodic_app_doubling_time() reports a plausible doubling time for real growth", {
+  # Doubling every 2 days: 1, 1, 2, 2, 4, 4, 8, 8 ...
+  counts <- c(1, 1, 2, 2, 4, 4, 8, 8, 16, 16)
+  days <- rep(seq(as.Date("2025-01-01"), by = "day", length.out = 10), times = counts)
+  growing <- data.frame(sample_date = as.character(days))
+
+  doubling <- episodic_app_doubling_time(growing, asof = as.Date("2025-01-10"))
+  expect_false(is.na(doubling))
+  expect_gt(doubling, 1)
+  expect_lt(doubling, 4)
+})
+
+test_that("episodic_app_doubling_time() drops the under-ascertained tail before fitting", {
+  # A genuinely growing series whose last three days are still being
+  # reported reads as flattening if those days are fitted.
+  counts <- c(1, 2, 4, 8, 16, 32, 1, 1, 1)
+  days <- rep(seq(as.Date("2025-01-01"), by = "day", length.out = 9), times = counts)
+  cases <- data.frame(sample_date = as.character(days))
+
+  naive <- episodic_app_doubling_time(cases, incomplete_days = 0L, asof = as.Date("2025-01-09"))
+  trimmed <- episodic_app_doubling_time(cases, incomplete_days = 3L, asof = as.Date("2025-01-09"))
+  expect_false(is.na(trimmed))
+  # Trimming the artefactual tail recovers the real, faster growth.
+  expect_true(is.na(naive) || trimmed < naive)
+})
+
+test_that("episodic_app_completeness() reads the leading run of incomplete lags, not the largest one", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  sid <- env$stream_id
+
+  # Completion curve: incomplete at lags 0-2, complete from lag 3, with a
+  # single noisy dip at lag 11. A median over a modest number of sample
+  # dates is not monotone, and taking the largest sub-95% lag used to
+  # shade eleven days of complete data.
+  triangle <- list(
+    c(0, 1), c(1, 2), c(2, 3), c(3, 4), c(4, 4), c(5, 4), c(11, 3)
+  )
+  for (i in seq_along(triangle)) {
+    lag <- triangle[[i]][1]
+    seen <- triangle[[i]][2]
+    episodic_db_reporting_triangle_upsert(
+      env$con, stream_id = sid, sample_date = "2025-06-01",
+      run_date = as.character(as.Date("2025-06-01") + lag), n_cases = seen
+    )
+  }
+  expect_equal(episodic_app_completeness(env$con, sid)$incomplete_days, 3L)
+})
+
+test_that("episodic_app_completeness() shades everything when a stream never reaches 95%", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  for (lag in 0:5) {
+    episodic_db_reporting_triangle_upsert(
+      env$con, stream_id = env$stream_id, sample_date = "2025-06-01",
+      run_date = as.character(as.Date("2025-06-01") + lag), n_cases = lag + 1
+    )
+  }
+  # The eventual total only arrives well past max_lag_days, so no lag
+  # inside the observable window is anywhere near 95% complete.
+  episodic_db_reporting_triangle_upsert(
+    env$con, stream_id = env$stream_id, sample_date = "2025-06-01",
+    run_date = "2025-06-26", n_cases = 100L
+  )
+  expect_equal(episodic_app_completeness(env$con, env$stream_id)$incomplete_days, 6L)
+})
+
+test_that("episodic_app_data_asof() reads the latest successful run, not today", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  asof <- episodic_app_data_asof(env$con)
+  expect_s3_class(asof, "Date")
+  expect_equal(asof, Sys.Date())  # the fixture's run finished just now
+
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con), add = TRUE)
+  expect_equal(episodic_app_data_asof(con), Sys.Date())  # no run recorded at all
+})
+
+test_that("episodic_app_epi_curve() stops shading a cluster whose reporting finished long ago", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  # Slow-reporting stream: incomplete at lags 0-4.
+  for (lag in 0:5) {
+    episodic_db_reporting_triangle_upsert(
+      env$con, stream_id = env$stream_id, sample_date = "2025-06-01",
+      run_date = as.character(as.Date("2025-06-01") + lag),
+      n_cases = if (lag < 5) lag else 10
+    )
+  }
+  # The fixture's cases are from January 2025 and the run is today, so
+  # none of them can still be filling up. Anchoring the window on the
+  # cluster's own last case day (as this used to) would fade its tail
+  # permanently.
+  curve <- episodic_app_epi_curve(env$con, env$cluster_id)
+  expect_false(any(curve$incomplete))
+})
+
+test_that("episodic_app_concentration() measures the share among cases whose PC is known", {
+  # Six cases, four in one PC and two with no PC at all: what was
+  # observed is 100% concentration, not 67%. The diluted version fed both
+  # the interpretation fragments and the priority score's spatial term.
+  cases <- data.frame(pc = c("9711", "9711", "9711", "9711", NA, NA), stringsAsFactors = FALSE)
+  concentration <- episodic_app_concentration(cases, "pathogen_region")
+  expect_equal(concentration$dominant_share, 1)
+  expect_equal(concentration$total, 4)
+  expect_equal(concentration$n_unknown_pc, 2)
+
+  expect_null(episodic_app_concentration(data.frame(pc = c(NA, NA)), "pathogen_region"))
+})
+
+test_that("episodic_app_denominator_series() computes positivity from region-wide cases, not cluster ones", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  # Twice as many Norovirus cases region-wide as are in the cluster.
+  extra <- data.frame(
+    source_key = sprintf("EX%d", 1:6), patient_key = sprintf("EP%d", 1:6),
+    sample_date = rep("2025-01-08", 6), receipt_date = rep("2025-01-08", 6),
+    pathogen = "Norovirus", care_line = "first", institution_id = NA_integer_,
+    ward = NA_character_, specialism = NA_character_, pc = "9800",
+    sex = "M", age = 50L, first_seen_run = env$run_id, stringsAsFactors = FALSE
+  )
+  episodic_db_case_insert_new(env$con, extra, env$run_id)
+  episodic_db_denominator_upsert(env$con, pathogen = "Norovirus", sample_date = "2025-01-06",
+                                  care_line = "first", area_code = NA, n_tests = 100L)
+
+  cluster_cases <- episodic_db_cluster_cases(env$con, env$cluster_id)
+  series <- episodic_app_denominator_series(env$con, "Norovirus", cluster_cases)
+  expect_equal(nrow(series), 1)
+  # Week of 6 Jan: 6 region-wide extra cases plus the 4 cluster cases
+  # sampled 10-12 Jan, over 100 tests.
+  expect_equal(series$n_cases[1], 10L)
+  expect_equal(series$n_cluster_cases[1], 4L)
+  expect_equal(series$positivity[1], 0.10)
+})

@@ -143,3 +143,84 @@ test_that("episodic_split_sql_statements() splits on semicolons and drops commen
   expect_equal(length(statements), 2)
   expect_true(all(grepl("^CREATE TABLE", statements)))
 })
+
+test_that("episodic_priority_score() renormalises around any component it cannot compute, not just density", {
+  # same_place and rare_trigger fit no baseline, so excess and ratio do
+  # not exist for them. Scoring that absence as zero-with-weight meant
+  # every ward-level same-place cluster was systematically outranked by
+  # Farrington signals purely because Farrington is the detector that
+  # happens to report an expectation.
+  weights <- episodic_test_config()$priority_score$weights
+  no_baseline <- episodic_priority_score(
+    excess = NA, ratio = NA, severity_weight = 0.9, growth_slope = 3,
+    detector_agreement = 1, n_detectors = 4, density_ratio = NA,
+    spatial_concentration = 0.9, weights = weights
+  )
+  # Identical evidence, but with a baseline that says the count is
+  # exactly as expected: measured-and-unremarkable must rank below
+  # not-measurable.
+  at_baseline <- episodic_priority_score(
+    excess = 0, ratio = 1, severity_weight = 0.9, growth_slope = 3,
+    detector_agreement = 1, n_detectors = 4, density_ratio = NA,
+    spatial_concentration = 0.9, weights = weights
+  )
+  expect_true(is.finite(no_baseline))
+  expect_gt(no_baseline, at_baseline)
+})
+
+test_that("episodic_priority_score() anchors ratio and density at 'as expected', not at half a score", {
+  weights <- list(excess_component = 0, ratio_component = 1, severity_component = 0,
+                   growth_component = 0, agreement_component = 0, density_component = 0,
+                   spatial_component = 0)
+  expect_equal(episodic_priority_score(ratio = 1, weights = weights), 0)
+  expect_gt(episodic_priority_score(ratio = 3, weights = weights), 0)
+  expect_true(episodic_priority_score(ratio = 5, weights = weights) <= 100)
+})
+
+test_that("episodic_priority_score() still returns a number when nothing at all is computable", {
+  weights <- list(excess_component = 1, ratio_component = 1, severity_component = 0,
+                   growth_component = 0, agreement_component = 0, density_component = 1,
+                   spatial_component = 0)
+  expect_equal(
+    episodic_priority_score(excess = NA, ratio = NA, density_ratio = NA, weights = weights),
+    0
+  )
+})
+
+test_that("episodic_growth_slope() is positive while climbing, zero once flat or falling", {
+  climbing <- data.frame(sample_date = rep(
+    seq(as.Date("2025-01-06"), by = "week", length.out = 3), times = c(2, 5, 11)
+  ))
+  expect_gt(episodic_growth_slope(climbing, last_day = as.Date("2025-01-26")), 0)
+
+  flat <- data.frame(sample_date = rep(
+    seq(as.Date("2025-01-06"), by = "week", length.out = 3), times = c(4, 4, 4)
+  ))
+  expect_equal(episodic_growth_slope(flat, last_day = as.Date("2025-01-26")), 0)
+
+  falling <- data.frame(sample_date = rep(
+    seq(as.Date("2025-01-06"), by = "week", length.out = 3), times = c(11, 5, 2)
+  ))
+  expect_lt(episodic_growth_slope(falling, last_day = as.Date("2025-01-26")), 0)
+
+  expect_equal(episodic_growth_slope(data.frame(sample_date = as.Date(character(0))),
+                                      last_day = as.Date("2025-01-26")), 0)
+})
+
+test_that("episodic_spatial_concentration() ignores cases with no postcode entirely", {
+  # A missing postcode is absence of evidence about localisation, not
+  # evidence of dispersal.
+  cases <- data.frame(pc = c("9711", "9711", "9711", NA, NA), stringsAsFactors = FALSE)
+  expect_equal(episodic_spatial_concentration(cases), 1)
+
+  mixed <- data.frame(pc = c("9711", "9711", "9712", "9713"), stringsAsFactors = FALSE)
+  expect_equal(episodic_spatial_concentration(mixed), 0.5)
+
+  expect_equal(episodic_spatial_concentration(data.frame(pc = c(NA, NA))), 0)
+})
+
+test_that("episodic_cases_in_window() keeps only the candidate episode's own cases", {
+  cases <- data.frame(sample_date = as.character(seq(as.Date("2025-01-01"), by = "day", length.out = 10)))
+  window <- episodic_cases_in_window(cases, "2025-01-03", "2025-01-05")
+  expect_equal(nrow(window), 3)
+})

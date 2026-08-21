@@ -106,10 +106,12 @@ episodic_reconcile_stream <- function(con, stream_id, detections, case_free_days
       new_first <- min(as.Date(existing$first_day), as.Date(candidate$first_day))
       new_last <- max(as.Date(existing$last_day), as.Date(candidate$last_day))
       new_n <- episodic_reconcile_case_count(con, stream_id, new_first, new_last, existing, candidate)
+      metrics <- episodic_reconcile_candidate_metrics(candidate)
 
       episodic_db_cluster_update(
         con, cluster_id = cluster_id, first_day = as.character(new_first),
         last_day = as.character(new_last), n_cases = new_n,
+        expected = metrics$expected, excess = metrics$excess, ratio = metrics$ratio,
         priority_score = priority_score_fn(candidate),
         detector_agreement = max(existing$detector_agreement, candidate$detector_agreement),
         run_id = run_id,
@@ -127,9 +129,11 @@ episodic_reconcile_stream <- function(con, stream_id, detections, case_free_days
       episodic_reconcile_link_detections(con, detections, candidate, cluster_id)
       episodic_reconcile_link_cases(con, stream_id, cluster_id, as.character(new_first), as.character(new_last))
     } else if (length(matches) == 0) {
+      metrics <- episodic_reconcile_candidate_metrics(candidate)
       cluster_id <- episodic_db_cluster_insert(
         con, stream_id = stream_id, first_day = candidate$first_day,
         last_day = candidate$last_day, n_cases = candidate$n_cases,
+        expected = metrics$expected, excess = metrics$excess, ratio = metrics$ratio,
         priority_score = priority_score_fn(candidate),
         detector_agreement = candidate$detector_agreement, run_id = run_id
       )
@@ -150,10 +154,12 @@ episodic_reconcile_stream <- function(con, stream_id, detections, case_free_days
         (as.character(new_first) != existing$first_day ||
            as.character(new_last) != existing$last_day ||
            new_n != existing$n_cases)
+      metrics <- episodic_reconcile_candidate_metrics(candidate)
 
       episodic_db_cluster_update(
         con, cluster_id = cluster_id, first_day = as.character(new_first),
         last_day = as.character(new_last), n_cases = new_n,
+        expected = metrics$expected, excess = metrics$excess, ratio = metrics$ratio,
         priority_score = priority_score_fn(candidate),
         detector_agreement = max(existing$detector_agreement, candidate$detector_agreement),
         run_id = run_id,
@@ -174,9 +180,11 @@ episodic_reconcile_stream <- function(con, stream_id, detections, case_free_days
         con, stream_id, all_first, all_last, open_clusters[survivor_idx, ], candidate
       )
 
+      metrics <- episodic_reconcile_candidate_metrics(candidate)
       episodic_db_cluster_update(
         con, cluster_id = survivor_id, first_day = as.character(all_first),
         last_day = as.character(all_last), n_cases = combined_n,
+        expected = metrics$expected, excess = metrics$excess, ratio = metrics$ratio,
         priority_score = priority_score_fn(candidate),
         detector_agreement = max(open_clusters$detector_agreement[matches], candidate$detector_agreement),
         run_id = run_id
@@ -219,16 +227,20 @@ episodic_reconcile_stream <- function(con, stream_id, detections, case_free_days
 #' @return A data frame with one row per candidate episode: `first_day`,
 #'   `last_day`, `n_cases` (max across the merged detections, since
 #'   different detectors may report slightly different counts for
-#'   overlapping windows), `detector_agreement` (count of distinct
-#'   detectors), and `.detection_ids` (a list-column of the source
-#'   `detection_id`s, used only internally to link back).
+#'   overlapping windows), `expected` and `upperbound` (the baseline and
+#'   alarm threshold the merged detections were judged against, `NA`
+#'   where no detector in the group fits a baseline at all - see
+#'   `episodic_reconcile_candidate_metrics()` for how they are combined),
+#'   `detector_agreement` (count of distinct detectors), and
+#'   `.detection_ids` (a list-column of the source `detection_id`s, used
+#'   only internally to link back).
 #' @keywords internal
 #' @noRd
 episodic_reconcile_merge_detections <- function(detections) {
   if (nrow(detections) == 0) {
     return(data.frame(
       first_day = character(0), last_day = character(0), n_cases = integer(0),
-      detector_agreement = integer(0)
+      expected = numeric(0), upperbound = numeric(0), detector_agreement = integer(0)
     ))
   }
 
@@ -252,15 +264,72 @@ episodic_reconcile_merge_detections <- function(detections) {
   }
   groups[[length(groups) + 1]] <- current
 
+  # Both baseline quantities are combined with the *largest* value across
+  # the merged group, deliberately the conservative direction: a higher
+  # expected gives a smaller O/E ratio and a higher upperbound gives a
+  # smaller excess, so a candidate flagged by several detectors is never
+  # made to look more aberrant than the most cautious of them judged it.
+  max_or_na <- function(x) {
+    if (is.null(x)) return(NA_real_)
+    x <- as.numeric(x)
+    x <- x[!is.na(x)]
+    if (length(x) == 0) NA_real_ else max(x)
+  }
+
   do.call(rbind, lapply(groups, function(grp) {
     data.frame(
       first_day = as.character(min(as.Date(grp$first_day))),
       last_day = as.character(max(as.Date(grp$last_day))),
       n_cases = max(grp$n_cases),
+      expected = max_or_na(grp$expected),
+      upperbound = max_or_na(grp$upperbound),
       detector_agreement = length(unique(grp$detector)),
       stringsAsFactors = FALSE
     )
   }))
+}
+
+#' Observed-versus-expected metrics for one candidate episode
+#'
+#' `episodic_cluster` carries `expected`, `excess` and `ratio` columns,
+#' and both the dossier's stat grid and the interpretation engine's
+#' magnitude fragments read them - but until these were derived here,
+#' nothing ever wrote them: every cluster was persisted with all three
+#' left at their `NA` defaults, so the O/E ratio never appeared on a
+#' dossier, never appeared in the rail, and the `magnitude.high_ratio`/
+#' `magnitude.moderate_ratio` fragments could not fire. The detections
+#' had the numbers all along (`episodic_detection.expected`/
+#' `upperbound`); they simply were not carried through reconciliation.
+#'
+#' All three describe the **candidate episode this run**, not the
+#' cluster's whole lifetime: `expected` is a baseline for a specific
+#' window, so pairing it with a cumulative case count spanning several
+#' detection windows would compare quantities measured over different
+#' periods. A cluster's `n_cases` is therefore cumulative while its
+#' `ratio` is "how far above baseline the run that (re)detected it was",
+#' which is also the question an assessor triaging the rail is asking.
+#'
+#' @param candidate A single-row candidate from
+#'   `episodic_reconcile_merge_detections()`.
+#' @return A list with `expected`, `excess` (observed minus the alarm
+#'   threshold) and `ratio` (observed over expected), each `NA_real_`
+#'   when the underlying detector supplied no baseline.
+#' @keywords internal
+#' @noRd
+episodic_reconcile_candidate_metrics <- function(candidate) {
+  n_cases <- as.numeric(candidate$n_cases)
+  expected <- if (is.null(candidate$expected)) NA_real_ else as.numeric(candidate$expected)
+  upperbound <- if (is.null(candidate$upperbound)) NA_real_ else as.numeric(candidate$upperbound)
+
+  list(
+    expected = expected,
+    excess = if (is.na(upperbound)) NA_real_ else n_cases - upperbound,
+    # expected == 0 is a real Farrington output for a stream with no
+    # historical cases in the comparison weeks; a ratio against it is
+    # undefined rather than infinite, and rare_trigger is the detector
+    # that carries that situation's signal anyway.
+    ratio = if (is.na(expected) || expected <= 0) NA_real_ else n_cases / expected
+  )
 }
 
 #' @keywords internal
