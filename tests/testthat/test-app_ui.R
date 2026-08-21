@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 test_that("episode_ui_format_datetime() converts stored UTC to the target timezone, not literal UTC", {
   # January: CET is UTC+1, no DST ambiguity. tz is passed explicitly rather

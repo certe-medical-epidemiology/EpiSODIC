@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 test_that("episode_report_suppress_small_counts() replaces 0 < n < threshold with '<threshold', leaves 0 and large counts alone", {
   df <- data.frame(label = c("a", "b", "c", "d"), n = c(0, 3, 12, NA))

@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 # Small windows throughout: episode_demo()'s own defaults (the full
 # multi-year synthetic generator) are what a real demo should use, but

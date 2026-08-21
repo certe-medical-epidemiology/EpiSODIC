@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 test_that("episode_config_resolve() with no EPISODIC_CONFIG loads only the shipped defaults", {
   config <- episode_config_resolve(NA)

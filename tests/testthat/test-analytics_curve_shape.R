@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 test_that("episode_classify_curve_shape() classifies within-one-incubation-period clusters as point_source", {
   cases <- data.frame(sample_date = as.character(as.Date("2025-01-01") + c(0, 1, 2)))

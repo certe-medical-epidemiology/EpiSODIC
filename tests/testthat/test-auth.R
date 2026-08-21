@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 auth_test_user <- function(con, password = "initial123", must_change = TRUE) {
   user_id <- episode_db_app_user_insert(con, "jdoe", "Jane Doe", "j@x.nl",

@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 # Provenance script for inst/extdata/geo_postcodes4_nl.rds - not run at
 # install or check time (data-raw/ is .Rbuildignore'd), kept only so the

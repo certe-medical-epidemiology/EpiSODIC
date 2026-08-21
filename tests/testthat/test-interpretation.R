@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 # Exhaustive coverage of every fragment path: few inputs and an
 # invisible failure mode (a wrong sentence in a clinical dossier) is

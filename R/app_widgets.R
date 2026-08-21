@@ -15,6 +15,7 @@
 #  We created this package for both routine data analysis and academic  #
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
 
 # Small reusable UI building blocks: thin shiny::tags wrappers for the
 # interface's small recurring primitives (a chip, a panel, a stat tile, a
