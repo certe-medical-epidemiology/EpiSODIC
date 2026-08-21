@@ -15,9 +15,8 @@ repository is open-source software with no data and no site-specific
 configuration.
 
 <!--
-Screenshots below live in man/figures/ (ships with the package, so they
-also render on the CRAN page) - see data-raw/screenshots/README.md for
-how to regenerate them against episodic_demo().
+Screenshots below live in man/figures/ (ships with the package, so
+they also render on the CRAN page), regenerated against episodic_demo().
 -->
 <p align="center">
   <img src="man/figures/main_screen.png" alt="A cluster dossier: case stats, status trajectory, an automatically generated plain-language interpretation, the epidemic curve, and the classification panel" width="800">
