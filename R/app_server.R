@@ -107,6 +107,10 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
       episodic_ui_auth_control(current_user(), lang = lang)
     })
 
+    output$nav_links <- shiny::renderUI({
+      episodic_ui_nav_links(view(), lang = lang)
+    })
+
     output$status_strip <- shiny::renderUI({
       episodic_ui_status_strip(episodic_app_status(con), lang = lang)
     })

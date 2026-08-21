@@ -140,6 +140,18 @@
 
 ## Interface
 
+- The Archive links through too, and gained a cluster id column of its
+  own. Last winter's assessment is only a useful precedent if you can
+  open it and read the reasoning; until now the archive named clusters it
+  gave no way in to. Both cluster tables build their rows from one
+  helper, so the id column, the click target and the keyboard handling
+  cannot drift apart.
+- The top navigation is rendered from the view the server is actually
+  showing, rather than each link updating itself when clicked. The
+  highlight has to follow every way the view can change, and clicking a
+  row in the Pathogen screen's cluster table is one of them: it moved the
+  content to the Clusters screen and left the highlight sitting on
+  Pathogen.
 - The Pathogen screen's cluster table links through. Selecting a row -
   by click or by keyboard, since a table row carries no focus of its own
   - opens that cluster's dossier on the Clusters screen. The table is

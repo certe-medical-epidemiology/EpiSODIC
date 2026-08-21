@@ -51,19 +51,13 @@ episodic_app_ui <- function(lang = "nl") {
           "EpiSODIC",
           shiny::tags$span(class = "episodic-brand-version", paste0("v", utils::packageVersion("EpiSODIC")))
         ),
-        shiny::tags$div(
-          class = "episodic-nav",
-          episodic_ui_nav_link("clusters", episodic_tr("nav.clusters", lang = lang), active = TRUE),
-          # Between the operational views and the configuration ones: it
-          # is the same surveillance data read at a different altitude,
-          # not a settings screen.
-          episodic_ui_nav_link("pathogen", episodic_tr("nav.pathogen", lang = lang)),
-          episodic_ui_nav_link("streams", episodic_tr("nav.streams", lang = lang)),
-          episodic_ui_nav_link("archive", episodic_tr("nav.archive", lang = lang)),
-          episodic_ui_nav_link("activity", episodic_tr("nav.activity", lang = lang)),
-          episodic_ui_nav_link("performance", episodic_tr("nav.performance", lang = lang)),
-          episodic_ui_nav_link("info", episodic_tr("nav.info", lang = lang))
-        ),
+        # Rendered from the server's own view(), not written once here:
+        # the highlight has to follow every way the view can change, and
+        # not every one of them is a click on these links. The Pathogen
+        # screen's cluster table switches views from a table row, and a
+        # nav that only updated itself on its own clicks was left
+        # pointing at the screen you had just left.
+        shiny::uiOutput("nav_links", container = shiny::tags$div, class = "episodic-nav"),
         shiny::tags$span(class = "episodic-demodata", episodic_tr("app.demodata", lang = lang))
       ),
       shiny::tags$div(
@@ -95,6 +89,27 @@ episodic_app_ui <- function(lang = "nl") {
 #' @param label The link's visible text.
 #' @param active Whether this link starts out highlighted - true for the
 #'   view the app opens on.
+#' The top navigation links, with the current view marked
+#'
+#' @param active_view The view id currently on screen.
+#' @param lang Session language.
+#' @return A `shiny::tagList` of links.
+#' @keywords internal
+#' @noRd
+episodic_ui_nav_links <- function(active_view = "clusters", lang = "nl") {
+  views <- c(
+    "clusters",
+    # Between the operational views and the configuration ones: it is the
+    # same surveillance data read at a different altitude, not a settings
+    # screen.
+    "pathogen", "streams", "archive", "activity", "performance", "info"
+  )
+  shiny::tagList(lapply(views, function(v) {
+    episodic_ui_nav_link(v, episodic_tr(paste0("nav.", v), lang = lang),
+                          active = identical(v, active_view))
+  }))
+}
+
 #' @keywords internal
 #' @noRd
 episodic_ui_nav_link <- function(view, label, active = FALSE) {

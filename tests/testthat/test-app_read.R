@@ -395,3 +395,38 @@ test_that("episodic_app_denominator_series() computes positivity from region-wid
   expect_equal(series$n_cluster_cases[1], 4L)
   expect_equal(series$positivity[1], 0.10)
 })
+
+test_that("the archive lists cluster ids and links each row through to its dossier", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
+  episodic_db_assessment_event_insert(env$con, env$cluster_id, user_id = 1L,
+                                      verdict = "artefact", rationale = "test")
+
+  archive <- episodic_app_archive(env$con, lang = "en")
+  expect_equal(nrow(archive), 1)
+  html <- as.character(episodic_ui_archive_screen(archive, lang = "en"))
+
+  # last winter's assessment is only a useful precedent if you can open it
+  expect_true(grepl("open_cluster", html, fixed = TRUE))
+  expect_true(grepl("episodic-row-link", html, fixed = TRUE))
+  expect_true(grepl(paste0(">", episodic_tr("dossier.cluster_ref", id = env$cluster_id, lang = "en"), "<"),
+                     html, fixed = TRUE))
+  # the id column leads, as it does on the Pathogen screen
+  expect_lt(regexpr(episodic_tr("column.cluster", lang = "en"), html, fixed = TRUE),
+             regexpr(episodic_tr("archive.col.pathogen", lang = "en"), html, fixed = TRUE))
+})
+
+test_that("episodic_ui_cluster_link_row() is the one place both cluster tables get their row from", {
+  row <- as.character(episodic_ui_cluster_link_row(
+    42L, lang = "en", shiny::tags$td("a cell")
+  ))
+  expect_true(grepl("Shiny.setInputValue", row, fixed = TRUE))
+  expect_true(grepl("open_cluster", row, fixed = TRUE))
+  expect_true(grepl("42", row, fixed = TRUE))
+  expect_true(grepl("tabindex", row, fixed = TRUE))
+  expect_true(grepl("a cell", row, fixed = TRUE))
+  # the id cell comes first, before whatever cells the caller passed
+  expect_lt(regexpr("episodic-cell-id", row, fixed = TRUE),
+             regexpr("a cell", row, fixed = TRUE))
+})

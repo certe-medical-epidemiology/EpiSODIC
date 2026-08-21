@@ -388,7 +388,7 @@ episodic_ui_pathogen_clusters_panel <- function(screen, lang = "nl") {
         # what gets quoted in an email or searched for in the archive -
         # so it leads the row rather than being absent from a table of
         # clusters entirely.
-        shiny::tags$th(episodic_tr("pathogen.panel.clusters.col.id", lang = lang)),
+        shiny::tags$th(episodic_tr("column.cluster", lang = lang)),
         shiny::tags$th(episodic_tr("pathogen.panel.clusters.col.period", lang = lang)),
         shiny::tags$th(episodic_tr("archive.col.level", lang = lang)),
         shiny::tags$th(episodic_tr("archive.col.place", lang = lang)),
@@ -398,23 +398,8 @@ episodic_ui_pathogen_clusters_panel <- function(screen, lang = "nl") {
       )),
       shiny::tags$tbody(lapply(seq_len(nrow(clusters)), function(i) {
         row <- clusters[i, ]
-        # Whole row clickable, with the id styled as the link: the row is
-        # a generous target, the id is the visible affordance. Keyboard
-        # reachable too, since a <tr> carries no native focus of its own.
-        open_js <- sprintf("Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
-                            row$cluster_id)
-        shiny::tags$tr(
-          class = "episodic-row-link", tabindex = "0",
-          title = episodic_tr("pathogen.panel.clusters.open_hint", lang = lang),
-          onclick = open_js,
-          onkeydown = sprintf(
-            "if(event.key==='Enter'||event.key===' '){event.preventDefault();%s}", open_js
-          ),
-          shiny::tags$td(
-            class = "episodic-cell-id",
-            shiny::tags$span(class = "episodic-id-link",
-                              episodic_tr("dossier.cluster_ref", id = row$cluster_id, lang = lang))
-          ),
+        episodic_ui_cluster_link_row(
+          row$cluster_id, lang = lang,
           shiny::tags$td(episodic_format_date_range(row$first_day, row$last_day, lang = lang)),
           shiny::tags$td(row$level_label),
           shiny::tags$td(row$place),

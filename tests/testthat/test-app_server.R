@@ -353,3 +353,42 @@ test_that("episodic_app_cluster_viewable() accepts closed clusters but not merge
   expect_false(episodic_app_cluster_viewable(con, 999999L))
   expect_false(episodic_app_cluster_viewable(con, NA_integer_))
 })
+
+test_that("the navigation highlight follows a deep link, not just its own clicks", {
+  db_path <- tempfile(fileext = ".sqlite")
+  con <- episodic_db_create(db_path)
+  stream_id <- episodic_db_stream_upsert(
+    con, stream_key = episodic_stream_key("pathogen_region", "Norovirus", region_code = "R"),
+    level = "pathogen_region", pathogen = "Norovirus", region_code = "R",
+    observed_date = "2025-01-01"
+  )
+  run_id <- episodic_db_run_start(con, "h", "a")
+  cluster_id <- episodic_db_cluster_insert(con, stream_id = stream_id, first_day = "2025-01-01",
+                                           last_day = "2025-01-02", n_cases = 3, priority_score = 50,
+                                           detector_agreement = 1, run_id = run_id)
+  DBI::dbDisconnect(con)
+
+  active <- function(html) {
+    m <- regmatches(html, gregexpr('data-view="[a-z]+" class="episodic-nav-link active"', html))[[1]]
+    if (length(m) == 0) {
+      m <- regmatches(html, gregexpr('class="episodic-nav-link active" data-view="[a-z]+"', html))[[1]]
+    }
+    gsub('.*data-view="([a-z]+)".*', "\\1", m)
+  }
+
+  server <- episodic_app_server_factory(db_path, lang = "en")
+  shiny::testServer(server, {
+    session$flushReact()
+    expect_equal(active(paste(output$nav_links, collapse = "\n")), "clusters")
+
+    session$setInputs(nav_view = "pathogen")
+    session$flushReact()
+    expect_equal(active(paste(output$nav_links, collapse = "\n")), "pathogen")
+
+    # the bug: opening a cluster from the Pathogen screen's table moved
+    # the content but left the highlight behind on Pathogen
+    session$setInputs(open_cluster = cluster_id)
+    session$flushReact()
+    expect_equal(active(paste(output$nav_links, collapse = "\n")), "clusters")
+  })
+})

@@ -197,7 +197,6 @@ body {
   font-weight: 500;
   font-style: normal;
   color: var(--episodic-muted);
-  margin-left: 9px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
