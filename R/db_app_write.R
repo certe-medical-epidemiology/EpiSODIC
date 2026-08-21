@@ -16,43 +16,17 @@
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 
-#' App-side writers
-#'
-#' The app owns the judgements and only ever
-#' inserts, never updates and never deletes.
-#' This is what makes the whole concurrency question disappear: two people
-#' assessing the same cluster in the same minute produce two rows, both
-#' visible in the timeline. Nothing in this file contains an `UPDATE` or a
-#' `DELETE` statement; that absence is load-bearing and should be
-#' verified by inspection whenever this file changes.
-#' @param con A [DBI::DBIConnection-class].
-#' @param cluster_id A cluster id.
-#' @param user_id An `episode_app_user` id, or `NA` for a system-authored row.
-#' @param verdict One of the five classification values, or `NA`.
-#' @param rationale Mandatory free-text rationale.
-#' @param wpg_notifiable,ggd_informed Logical or `NA`.
-#' @param ggd_note Free text, or `NA`.
-#' @param snooze_until A date, or `NA`.
-#' @param supersedes An earlier `event_id` this event supersedes, or `NA`.
-#' @param stream_id A stream id.
-#' @param muted_from,muted_until Mute window bounds (dates).
-#' @param reason One of the mute reasons in `episode_stream_mute.reason`.
-#' @param note Free text, or `NA`.
-#' @param state One of the `episode_cluster_state.state` values.
-#' @param trigger One of the `episode_cluster_state.trigger` values.
-#' @param event_id The assessment event that caused this transition, or `NA`.
-#' @param file_path Path to the rendered report file.
-#' @param file_sha256 SHA-256 hex digest of the rendered file.
-#' @param params_json JSON-serialised render parameters.
-#' @param case_ids_json JSON-serialised array of included case ids.
-#' @param version_no The report's version number.
-#' @param username,full_name,email,password_hash New user's fields.
-#' @param role One of `"assessor"`, `"admin"`.
-#' @param event_type One of `"login"`, `"password_change"`.
-#' @name db_app_write
-NULL
+# App-side writers: the app owns the judgements and only ever inserts,
+# never updates and never deletes. This is what makes the whole
+# concurrency question disappear: two people assessing the same cluster
+# in the same minute produce two rows, both visible in the timeline.
+# Nothing in this file contains an UPDATE or a DELETE statement; that
+# absence is load-bearing and should be verified by inspection whenever
+# this file changes. Parameters throughout are one row's worth of
+# columns for the table each function name identifies - see
+# inst/sql/schema.sql for the exact column contracts (nullability,
+# enums, defaults).
 
-#' @rdname db_app_write
 #' @keywords internal
 #' @noRd
 episode_db_assessment_event_insert <- function(con, cluster_id, user_id, verdict = NA,
@@ -74,7 +48,6 @@ episode_db_assessment_event_insert <- function(con, cluster_id, user_id, verdict
   episode_db_last_insert_id(con)
 }
 
-#' @rdname db_app_write
 #' @keywords internal
 #' @noRd
 episode_db_stream_mute_insert <- function(con, stream_id, muted_from, muted_until, reason,
@@ -89,7 +62,6 @@ episode_db_stream_mute_insert <- function(con, stream_id, muted_from, muted_unti
   episode_db_last_insert_id(con)
 }
 
-#' @rdname db_app_write
 #' @keywords internal
 #' @noRd
 episode_db_cluster_state_insert <- function(con, cluster_id, state, trigger, event_id = NA,
@@ -103,7 +75,6 @@ episode_db_cluster_state_insert <- function(con, cluster_id, state, trigger, eve
   episode_db_last_insert_id(con)
 }
 
-#' @rdname db_app_write
 #' @keywords internal
 #' @noRd
 episode_db_report_render_insert <- function(con, cluster_id, user_id = NA, file_path,
@@ -120,7 +91,6 @@ episode_db_report_render_insert <- function(con, cluster_id, user_id = NA, file_
   episode_db_last_insert_id(con)
 }
 
-#' @rdname db_app_write
 #' @keywords internal
 #' @noRd
 episode_db_app_user_insert <- function(con, username, full_name, email, password_hash,
@@ -135,7 +105,6 @@ episode_db_app_user_insert <- function(con, username, full_name, email, password
   episode_db_last_insert_id(con)
 }
 
-#' @rdname db_app_write
 #' @keywords internal
 #' @noRd
 episode_db_app_user_event_insert <- function(con, user_id, event_type, password_hash = NA) {

@@ -16,16 +16,12 @@
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 
-#' App read models
-#'
-#' Every function here is a cheap read against an already-populated
-#' database. Nothing here recomputes a statistical model; anything
-#' expensive (Farrington, reconciliation, priority scoring) has already
-#' happened in the cron and is simply looked up. This is the layer that
-#' turns raw tables into the shapes the Shiny UI and the interpretation engine
-#' consume.
-#' @name app_read
-NULL
+# App read models: every function here is a cheap read against an
+# already-populated database. Nothing here recomputes a statistical
+# model; anything expensive (Farrington, reconciliation, priority
+# scoring) has already happened in the cron and is simply looked up.
+# This is the layer that turns raw tables into the shapes the Shiny UI
+# and the interpretation engine consume.
 
 #' Open clusters for the rail
 #'

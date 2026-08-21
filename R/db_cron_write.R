@@ -16,64 +16,17 @@
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 
-#' Cron-side writers
-#'
-#' The cron owns the facts and may upsert.
-#' These functions are the only place in the package that write to
-#' `episode_stream`, `episode_institution`, `episode_institution_activity`,
-#' `episode_case`, `episode_reporting_triangle`, `episode_denominator`,
-#' `episode_detection`, `episode_cluster`,
-#' `episode_cluster_case`, `episode_detection_run` and (for pre-renders)
-#' `episode_report_render`. See `R/db_app_write.R` for the insert-only
-#' counterparts.
-#' @param con A [DBI::DBIConnection-class].
-#' @param pathogen_config A data frame matching `inst/config/pathogen_config.csv`.
-#' @param institution_id An `episode_institution` id.
-#' @param period_start,period_end Activity period bounds (dates).
-#' @param patient_days,admissions,n_beds Activity counts, or `NA`.
-#' @param source Free-text provenance, or `NA`.
-#' @param stream_key A 40-character `stream_key`.
-#' @param level One of the five lattice levels.
-#' @param pathogen The raw lab-provided pathogen string, used verbatim as
-#'   the stream's identity; no taxonomy is resolved against it.
-#' @param care_line One of `"first"`, `"second"`, `"other"`, `"unknown"`, or `NA`.
-#' @param region_code A region code, or `NA`.
-#' @param pc A PC postcode, or `NA`.
-#' @param ward A ward, for `pathogen_ward` streams, or `NA`.
-#' @param denominator One of `"none"`, `"tests"`, `"population"`, `"patient_days"`.
-#' @param severity_weight A severity weight, 0-1.
-#' @param observed_date The date this stream was observed on, updates `first_seen`/`last_seen`.
-#' @param cases A data frame of cases to insert (`episode_ingest_run()`'s deduplicated batch).
-#' @param run_id A `run_id`.
-#' @param stream_id A `stream_id`.
-#' @param sample_date,run_date Reporting-triangle dates.
-#' @param n_cases A case count.
-#' @param n_tests A test count, for the optional positivity metadata table.
-#' @param area_code An area code, for the optional positivity metadata table.
-#' @param detector One of the detector enum values.
-#' @param first_day,last_day A detection or cluster interval.
-#' @param expected,upperbound Statistical detector output, or `NA`.
-#' @param params_json JSON-serialised detector attributes.
-#' @param cluster_id A `cluster_id`, or `NA`.
-#' @param detection_id A `detection_id`.
-#' @param excess,ratio Cluster statistics, or `NA`.
-#' @param priority_score A priority score, 0-100.
-#' @param detector_agreement Count of distinct detectors that fired.
-#' @param changed_since_assessment Logical, or `NULL` to leave unchanged.
-#' @param merged_into The surviving `cluster_id` this cluster merged into.
-#' @param case_id A `case_id`.
-#' @param host,account Recorded on `episode_detection_run`.
-#' @param attempt_no The run's attempt number.
-#' @param status One of `episode_detection_run.status`.
-#' @param n_streams,n_detections,n_signals_new,n_signals_updated Run summary counts.
-#' @param code_version The installed EpiSODIC version.
-#' @param pkg_versions JSON-serialised package versions.
-#' @param config_hash,config_snapshot The resolved configuration's hash and snapshot.
-#' @param error_text Error text for a failed run, or `NA`.
-#' @name db_cron_write
-NULL
+# Cron-side writers: the cron owns the facts and may upsert. These
+# functions are the only place in the package that write to
+# episode_stream, episode_institution, episode_institution_activity,
+# episode_case, episode_reporting_triangle, episode_denominator,
+# episode_detection, episode_cluster, episode_cluster_case,
+# episode_detection_run and (for pre-renders) episode_report_render. See
+# R/db_app_write.R for the insert-only counterparts. Parameters
+# throughout are one row's worth of columns for the table each function
+# name identifies - see inst/sql/schema.sql for the exact column
+# contracts (nullability, enums, defaults).
 
-#' @rdname db_cron_write
 #' @keywords internal
 #' @noRd
 episode_db_pathogen_config_load <- function(con, pathogen_config) {
@@ -115,7 +68,6 @@ episode_db_pathogen_config_load <- function(con, pathogen_config) {
   invisible(NULL)
 }
 
-#' @rdname db_cron_write
 #' @param institution_key,display_name,institution_type,municipality,is_monitored
 #'   Columns of `episode_institution`.
 #' @return The `institution_id` of the inserted or existing row.
@@ -147,7 +99,6 @@ episode_db_institution_upsert <- function(con, institution_key, display_name, in
   episode_db_last_insert_id(con)
 }
 
-#' @rdname db_cron_write
 #' @keywords internal
 #' @noRd
 episode_db_institution_activity_upsert <- function(con, institution_id, period_start, period_end,
@@ -177,7 +128,6 @@ episode_db_institution_activity_upsert <- function(con, institution_id, period_s
   invisible(NULL)
 }
 
-#' @rdname db_cron_write
 #' @keywords internal
 #' @noRd
 episode_db_stream_upsert <- function(con, stream_key, level, pathogen,
@@ -208,7 +158,6 @@ episode_db_stream_upsert <- function(con, stream_key, level, pathogen,
   episode_db_last_insert_id(con)
 }
 
-#' @rdname db_cron_write
 #' @keywords internal
 #' @noRd
 episode_db_case_insert_new <- function(con, cases, run_id) {
@@ -236,7 +185,6 @@ episode_db_case_insert_new <- function(con, cases, run_id) {
   n_inserted
 }
 
-#' @rdname db_cron_write
 #' @keywords internal
 #' @noRd
 episode_db_reporting_triangle_upsert <- function(con, stream_id, sample_date, run_date, n_cases) {
@@ -263,7 +211,6 @@ episode_db_reporting_triangle_upsert <- function(con, stream_id, sample_date, ru
   invisible(NULL)
 }
 
-#' @rdname db_cron_write
 #' @keywords internal
 #' @noRd
 episode_db_denominator_upsert <- function(con, pathogen, sample_date, care_line, area_code = NA,
@@ -294,7 +241,6 @@ episode_db_denominator_upsert <- function(con, pathogen, sample_date, care_line,
   invisible(NULL)
 }
 
-#' @rdname db_cron_write
 #' @param week_start A week-start date (chart-cache row for the multi-year
 #'   trend panel, see `R/detect_farrington.R`).
 #' @keywords internal
@@ -323,7 +269,6 @@ episode_db_stream_trend_upsert <- function(con, stream_id, week_start, n_cases, 
   invisible(NULL)
 }
 
-#' @rdname db_cron_write
 #' @keywords internal
 #' @noRd
 episode_db_detection_insert <- function(con, run_id, stream_id, detector, first_day, last_day,
@@ -341,7 +286,6 @@ episode_db_detection_insert <- function(con, run_id, stream_id, detector, first_
   episode_db_last_insert_id(con)
 }
 
-#' @rdname db_cron_write
 #' @keywords internal
 #' @noRd
 episode_db_detection_set_cluster <- function(con, detection_id, cluster_id) {
@@ -352,7 +296,6 @@ episode_db_detection_set_cluster <- function(con, detection_id, cluster_id) {
   invisible(NULL)
 }
 
-#' @rdname db_cron_write
 #' @keywords internal
 #' @noRd
 episode_db_cluster_insert <- function(con, stream_id, first_day, last_day, n_cases,
@@ -371,7 +314,6 @@ episode_db_cluster_insert <- function(con, stream_id, first_day, last_day, n_cas
   episode_db_last_insert_id(con)
 }
 
-#' @rdname db_cron_write
 #' @keywords internal
 #' @noRd
 episode_db_cluster_update <- function(con, cluster_id, first_day, last_day, n_cases,
@@ -401,7 +343,6 @@ episode_db_cluster_update <- function(con, cluster_id, first_day, last_day, n_ca
   invisible(NULL)
 }
 
-#' @rdname db_cron_write
 #' @keywords internal
 #' @noRd
 episode_db_cluster_increment_runs_since_detected <- function(con, cluster_id) {
@@ -413,7 +354,6 @@ episode_db_cluster_increment_runs_since_detected <- function(con, cluster_id) {
   invisible(NULL)
 }
 
-#' @rdname db_cron_write
 #' @keywords internal
 #' @noRd
 episode_db_cluster_set_merged_into <- function(con, cluster_id, merged_into) {
@@ -424,7 +364,6 @@ episode_db_cluster_set_merged_into <- function(con, cluster_id, merged_into) {
   invisible(NULL)
 }
 
-#' @rdname db_cron_write
 #' @keywords internal
 #' @noRd
 episode_db_cluster_case_link <- function(con, cluster_id, case_id) {
@@ -441,7 +380,6 @@ episode_db_cluster_case_link <- function(con, cluster_id, case_id) {
   invisible(NULL)
 }
 
-#' @rdname db_cron_write
 #' @keywords internal
 #' @noRd
 episode_db_run_start <- function(con, host, account, attempt_no = 1L) {
@@ -454,7 +392,6 @@ episode_db_run_start <- function(con, host, account, attempt_no = 1L) {
   episode_db_last_insert_id(con)
 }
 
-#' @rdname db_cron_write
 #' @keywords internal
 #' @noRd
 episode_db_run_finish <- function(con, run_id, status, n_streams = NA, n_detections = NA,

@@ -16,11 +16,8 @@
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 
-#' Read models: assessment timeline, archive, activity
-#'
-#' Cheap reads only, same as `R/app_read.R`.
-#' @name app_assessment_read
-NULL
+# Read models: assessment timeline, archive, activity. Cheap reads only,
+# same as R/app_read.R.
 
 #' The assessment rail's timeline ("Verloop")
 #'

@@ -16,15 +16,11 @@
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 
-#' Authentication UI
-#'
-#' "The app opens read-only for anyone who reaches it... login only to
-#' classify". A small header control and two
-#' modals (sign in; forced first-login password change) are the entire
-#' authentication surface - no separate screen, no account management UI
-#' (four accounts, provisioned outside the app).
-#' @name app_auth_ui
-NULL
+# Authentication UI: the app opens read-only for anyone who reaches it,
+# login only to classify. A small header control and two modals (sign in;
+# forced first-login password change) are the entire authentication
+# surface - no separate screen, no account management UI (four accounts,
+# provisioned outside the app).
 
 #' The header sign-in/sign-out control
 #'

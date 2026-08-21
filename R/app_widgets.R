@@ -16,15 +16,11 @@
 #  research and it was publicly released in the hope that it will be    #
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 
-#' Small reusable UI building blocks
-#'
-#' Thin `shiny::tags` wrappers for the interface's small recurring
-#' primitives (a chip, a panel, a stat tile, a bar, a pyramid), server-side
-#' rendered rather than a client-side component library. Styling
-#' lives in `inst/app/www/episode.css`; these functions only assign class
-#' names and content.
-#' @name app_widgets
-NULL
+# Small reusable UI building blocks: thin shiny::tags wrappers for the
+# interface's small recurring primitives (a chip, a panel, a stat tile, a
+# bar, a pyramid), server-side rendered rather than a client-side
+# component library. Styling lives in inst/app/www/episode.css; these
+# functions only assign class names and content.
 
 #' Italicise pathogen names `AMR` recognises as a taxonomic binomial
 #'
@@ -127,7 +123,6 @@ episode_ui_picker <- function(input_id, options, selected = NULL) {
   )
 }
 
-#' @rdname app_widgets
 #' @param text Chip text.
 #' @param colour A hex colour.
 #' @param filled If `TRUE`, filled background; otherwise an outline chip.
@@ -143,7 +138,6 @@ episode_ui_chip <- function(text, colour, filled = FALSE) {
   shiny::tags$span(class = class, style = style, text)
 }
 
-#' @rdname app_widgets
 #' @param title Panel title.
 #' @param aside Optional right-aligned header text.
 #' @param note Optional footnote paragraph.
@@ -166,7 +160,6 @@ episode_ui_panel <- function(title, ..., aside = NULL, note = NULL) {
   )
 }
 
-#' @rdname app_widgets
 #' @param message Empty-state text shown instead of a body.
 #' @keywords internal
 #' @noRd
@@ -174,7 +167,6 @@ episode_ui_panel_empty <- function(title, message, aside = NULL) {
   episode_ui_panel(title, aside = aside, shiny::tags$p(class = "episode-panel-empty", message))
 }
 
-#' @rdname app_widgets
 #' @param label Stat label (uppercase caption).
 #' @param value Stat value (large number/text).
 #' @param sub Optional sub-label.
@@ -189,7 +181,6 @@ episode_ui_stat <- function(label, value, sub = NULL, colour = NULL) {
   )
 }
 
-#' @rdname app_widgets
 #' @param rows A data frame with `label` and `n` columns.
 #' @param unit Optional footnote under the bars.
 #' @param colour Bar fill colour.
@@ -215,7 +206,6 @@ episode_ui_bars <- function(rows, unit = NULL, colour = NULL) {
   shiny::tagList(bars, if (!is.null(unit)) shiny::tags$div(style = "font-size:11px;color:var(--episode-faint);margin-top:6px;", unit))
 }
 
-#' @rdname app_widgets
 #' @param demo A data frame with `band`, `m`, `v` (male/female counts), one
 #'   row per age band in ascending order (youngest first).
 #' @param lang Session language, for the axis labels.
@@ -252,7 +242,6 @@ episode_ui_pyramid <- function(demo, lang = "nl") {
   )
 }
 
-#' @rdname app_widgets
 #' @param state One of `episode_derive_state()`'s state strings.
 #' @keywords internal
 #' @noRd
@@ -261,7 +250,6 @@ episode_ui_state_dot <- function(state) {
   shiny::tags$span(class = "episode-state-dot", style = sprintf("background:%s;", colour))
 }
 
-#' @rdname app_widgets
 #' @keywords internal
 #' @noRd
 episode_ui_state_colour <- function(state) {
@@ -273,7 +261,6 @@ episode_ui_state_colour <- function(state) {
   )
 }
 
-#' @rdname app_widgets
 #' @param verdict One of `episode_ui_assessment_form()`'s verdict keys
 #'   (`"artefact"`, `"expected_variation"`, `"cluster_not_yet"`,
 #'   `"possible_epidemic"`, `"confirmed_epidemic"`).
