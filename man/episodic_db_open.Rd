@@ -7,7 +7,7 @@
 episodic_db_open(db_path = Sys.getenv("EPISODIC_DB", unset = NA))
 }
 \arguments{
-\item{db_path}{Path to an existing SQLite database, or a \code{mysql://} DSN
+\item{db_path}{Path to an existing SQLite database, or a \verb{mysql://} DSN
 (see \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}). Defaults to the \code{EPISODIC_DB}
 environment variable.}
 }

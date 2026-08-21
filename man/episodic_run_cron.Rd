@@ -16,7 +16,7 @@ episodic_run_cron(
 )
 }
 \arguments{
-\item{db_path}{Path to a SQLite database file, or a \code{mysql://} DSN
+\item{db_path}{Path to a SQLite database file, or a \verb{mysql://} DSN
 (see \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}). Created if it does not exist yet
 (SQLite) or is an empty database (MariaDB/MySQL).}
 

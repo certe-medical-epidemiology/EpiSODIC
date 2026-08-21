@@ -24,7 +24,7 @@ A single string, ready to pass as \code{db_path} or to
 }
 \description{
 \code{EPISODIC_DB} accepts either a filesystem path (a SQLite database, the
-default) or a \code{mysql://user:password@host:port/dbname} DSN pointing at a
+default) or a \verb{mysql://user:password@host:port/dbname} DSN pointing at a
 MariaDB or MySQL server instead - every function that takes \code{db_path}
 (or falls back to \code{EPISODIC_DB}) dispatches on which of the two it was
 given. This helper builds that DSN string from its parts and

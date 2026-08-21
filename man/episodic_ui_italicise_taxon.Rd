@@ -10,11 +10,11 @@ episodic_ui_italicise_taxon(pathogen)
 \item{pathogen}{A character vector of pathogen display names.}
 }
 \value{
-A character vector, safe to pass to \code{\link[shiny:HTML]{shiny::HTML()}}.
+A character vector, safe to pass to \code{\link[shiny:reexports]{shiny::HTML()}}.
 }
 \description{
 Wraps names found in \code{AMR::microorganisms$fullname} in \verb{<i>...</i>}, for
-display via \code{\link[shiny:HTML]{shiny::HTML()}} (e.g. \emph{Escherichia coli}); names \code{AMR}
+display via \code{\link[shiny:reexports]{shiny::HTML()}} (e.g. \emph{Escherichia coli}); names \code{AMR}
 does not recognise as a species (e.g. "Influenza A", a virus type
 rather than a binomial) pass through unitalicised, exactly as intended -
 \code{pathogen} is deliberately unconstrained free text and never resolved
@@ -23,7 +23,7 @@ non-taxonomic values are never excluded there;
 \code{AMR} is nonetheless a hard dependency of the package as a whole, used
 here and by \code{episodic_dedup()}. Text is
 HTML-escaped before any tag is added, so this is always safe to pass
-to \code{\link[shiny:HTML]{shiny::HTML()}}.
+to \code{\link[shiny:reexports]{shiny::HTML()}}.
 }
 \details{
 Exported (not just internal): the Quarto report template

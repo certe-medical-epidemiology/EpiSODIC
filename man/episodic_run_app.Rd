@@ -11,9 +11,9 @@ episodic_run_app(
 )
 }
 \arguments{
-\item{db_path}{Path to a SQLite database, or a \code{mysql://} DSN (see
-\code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}). Defaults to the
-\code{EPISODIC_DB} environment variable.}
+\item{db_path}{Path to a SQLite database, or a \verb{mysql://} DSN (see
+\code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}). Defaults to the \code{EPISODIC_DB}
+environment variable.}
 
 \item{lang}{Default session language, \code{"nl"} (default) or \code{"en"}.}
 

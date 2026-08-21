@@ -7,7 +7,7 @@
 episodic_db_create(path, overwrite = FALSE)
 }
 \arguments{
-\item{path}{Path to a SQLite file, or a \code{mysql://} DSN (see
+\item{path}{Path to a SQLite file, or a \verb{mysql://} DSN (see
 \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}) pointing at an empty MariaDB/MySQL
 database. For SQLite, must not already exist, or must be an
 empty/non-EpiSODIC file.}

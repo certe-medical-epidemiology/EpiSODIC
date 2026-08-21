@@ -27,9 +27,9 @@ data-raw/README.md for how to regenerate them against episodic_demo().
   <em>The cluster dossier - epi curve, multi-year trend, and an automatically generated interpretation of the evidence.</em>
 </p>
 <p align="center">
-  <img src="data-raw/screenshots/performance.png" alt="The Prestatie (Performance) screen: positive predictive value per detector and organism" width="800">
+  <img src="data-raw/screenshots/performance.png" alt="The Performance screen: positive predictive value per detector and organism" width="800">
   <br>
-  <em>The Prestatie screen - positive predictive value per detector and organism, and detection timeliness, from the stored verdicts.</em>
+  <em>The Performance screen - positive predictive value per detector and organism, and detection timeliness, from the stored verdicts.</em>
 </p>
 
 ## Capabilities

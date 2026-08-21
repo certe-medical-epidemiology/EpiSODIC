@@ -7,7 +7,7 @@
 episodic_db_connect(path)
 }
 \arguments{
-\item{path}{Path to an existing SQLite file, or a \code{mysql://} DSN (see
+\item{path}{Path to an existing SQLite file, or a \verb{mysql://} DSN (see
 \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}) pointing at an existing MariaDB/MySQL
 database.}
 }

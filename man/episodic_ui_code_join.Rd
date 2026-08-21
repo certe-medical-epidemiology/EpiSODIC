@@ -12,14 +12,14 @@ episodic_ui_code_join(detectors, sep = ", ")
 \item{sep}{Separator between entries.}
 }
 \value{
-A single character string, safe to pass to \code{\link[shiny:HTML]{shiny::HTML()}}.
+A single character string, safe to pass to \code{\link[shiny:reexports]{shiny::HTML()}}.
 }
 \description{
 A detector name (\code{farrington}, \code{same_place}, \code{rare_trigger}, ...) is an
 identifier from the codebase, not prose - rendered in \verb{<code>} so it
 reads as one, wherever it appears in a sentence or table (dossier meta
 line, settings panel, timeline). Text is HTML-escaped before any tag is
-added, so the result is always safe to pass to \code{\link[shiny:HTML]{shiny::HTML()}}.
+added, so the result is always safe to pass to \code{\link[shiny:reexports]{shiny::HTML()}}.
 }
 \details{
 Exported for the same reason as \code{\link[=episodic_ui_italicise_taxon]{episodic_ui_italicise_taxon()}}: the
