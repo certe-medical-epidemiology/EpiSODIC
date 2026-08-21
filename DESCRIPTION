@@ -19,11 +19,13 @@ Authors@R: c(
     person(given = "Certe Medical Diagnostics & Advice Foundation",
            role = c("cph", "fnd"),
            comment = c(ROR = "04m8g8w48")))
-Description: An automated surveillance system that detects aberrations in
-    laboratory-confirmed infections across all pathogens, presents them to a
-    small board of epidemiologists as a ranked list of dossiers, records
-    their formal assessment with a full audit trail, and produces outbreak
-    reports for clinical colleagues. Statistical outbreak detection uses the
+Description: An automated surveillance system for infectious disease
+    epidemiologists that detects aberrations in laboratory-confirmed
+    infections across all pathogens, presents them to a small board of
+    epidemiologists as a ranked list of dossiers, records their formal
+    assessment with a full audit trail, and produces outbreak reports for
+    clinical colleagues (e.g., clinical microbiologists) and infection
+    prevention nurses. Statistical outbreak detection uses the
     improved Farrington algorithm of Noufaily et al. (2013)
     <doi:10.1002/sim.5595>, itself an extension of Farrington et al. (1996)
     <doi:10.2307/2983331>, via the 'surveillance' package of Salmon,
