@@ -21,10 +21,10 @@
 #'
 #' Produces a self-contained HTML outbreak report for one cluster - the
 #' document you send to a treating physician, an infection prevention
-#' team, or another clinical colleague who has neither an EpiSODIC account
-#' nor R installed. The report includes the epidemic curve, trend chart,
-#' the narrative summary shown in the dashboard, and (optionally) the case
-#' line list.
+#' nurse, or a clinical colleague (e.g., a clinical microbiologist) who has
+#' neither an EpiSODIC account nor R installed. The report includes the
+#' epidemic curve, trend chart, the narrative summary shown in the
+#' dashboard, and (optionally) the case line list.
 #'
 #' Every render is kept, versioned, and logged to the database, including
 #' exactly which cases it contained - so what was sent out on a given date
