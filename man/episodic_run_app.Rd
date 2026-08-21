@@ -15,8 +15,8 @@ episodic_run_app(
 MariaDB/MySQL DSN (see \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}). Defaults to the
 \code{EPISODIC_DB} environment variable.}
 
-\item{lang}{Default dashboard language, \code{"nl"} (default) or \code{"en"}.
-Individual users can switch language within the app.}
+\item{lang}{Dashboard language, \code{"nl"} (default) or \code{"en"}, fixed for
+the whole running app - there is no in-app language switcher.}
 
 \item{...}{Passed on to \code{\link[shiny:runApp]{shiny::runApp()}}, e.g. \code{port} or \code{host}.}
 }

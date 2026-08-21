@@ -68,4 +68,3 @@ VignetteBuilder: knitr
 URL: https://github.com/certe-medical-epidemiology/EpiSODIC
 BugReports: https://github.com/certe-medical-epidemiology/EpiSODIC/issues
 Config/roxygen2/version: 8.1.0
-RoxygenNote: 7.3.3
