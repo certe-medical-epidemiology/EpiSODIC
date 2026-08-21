@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,52 +49,10 @@
 
       <dl><dt>
 
-          <code><a href="app_archive.html">app_archive</a></code>
-
-        </dt>
-        <dd>Archive and Activity screens</dd>
-
-        <dt>
-
-          <code><a href="app_assessment_read.html">app_assessment_read</a></code>
-
-        </dt>
-        <dd>Read models: assessment timeline, archive, activity</dd>
-
-        <dt>
-
-          <code><a href="app_auth_ui.html">app_auth_ui</a></code>
-
-        </dt>
-        <dd>Authentication UI</dd>
-
-        <dt>
-
-          <code><a href="app_charts.html">episode_ui_epi_curve_chart()</a></code> <code><a href="app_charts.html">episode_ui_trend_chart()</a></code> <code><a href="app_charts.html">episode_ui_rt_chart()</a></code>
+          <code><a href="app_charts.html">episodic_ui_epi_curve_chart()</a></code> <code><a href="app_charts.html">episodic_ui_trend_chart()</a></code> <code><a href="app_charts.html">episodic_ui_rt_chart()</a></code>
 
         </dt>
         <dd>Chart panels</dd>
-
-        <dt>
-
-          <code><a href="app_read.html">app_read</a></code>
-
-        </dt>
-        <dd>App read models</dd>
-
-        <dt>
-
-          <code><a href="app_widgets.html">app_widgets</a></code>
-
-        </dt>
-        <dd>Small reusable UI building blocks</dd>
-
-        <dt>
-
-          <code><a href="app_write.html">app_write</a></code>
-
-        </dt>
-        <dd>App write orchestration</dd>
 
         <dt>
 
@@ -105,175 +63,161 @@
 
         <dt>
 
-          <code><a href="db_app_write.html">db_app_write</a></code>
-
-        </dt>
-        <dd>App-side writers</dd>
-
-        <dt>
-
-          <code><a href="db_cron_write.html">db_cron_write</a></code>
-
-        </dt>
-        <dd>Cron-side writers</dd>
-
-        <dt>
-
-          <code><a href="db_read.html">db_read</a></code>
-
-        </dt>
-        <dd>Shared read helpers</dd>
-
-        <dt>
-
-          <code><a href="episode_config_hash.html">episode_config_hash()</a></code>
+          <code><a href="episodic_config_hash.html">episodic_config_hash()</a></code>
 
         </dt>
         <dd>Compute the SHA-1 hash and canonical JSON snapshot of a resolved config</dd>
 
         <dt>
 
-          <code><a href="episode_config_resolve.html">episode_config_resolve()</a></code>
+          <code><a href="episodic_config_resolve.html">episodic_config_resolve()</a></code>
 
         </dt>
         <dd>Resolve the EpiSODIC configuration</dd>
 
         <dt>
 
-          <code><a href="episode_db_connect.html">episode_db_connect()</a></code>
+          <code><a href="episodic_db_connect.html">episodic_db_connect()</a></code>
 
         </dt>
-        <dd>Connect to an existing EpiSODIC SQLite database</dd>
+        <dd>Connect to an existing EpiSODIC database</dd>
 
         <dt>
 
-          <code><a href="episode_db_create.html">episode_db_create()</a></code>
+          <code><a href="episodic_db_create.html">episodic_db_create()</a></code>
 
         </dt>
-        <dd>Create a fresh EpiSODIC SQLite database</dd>
+        <dd>Create a fresh EpiSODIC database</dd>
 
         <dt>
 
-          <code><a href="episode_db_open.html">episode_db_open()</a></code>
+          <code><a href="episodic_db_dsn_mariadb.html">episodic_db_dsn_mariadb()</a></code> <code><a href="episodic_db_dsn_mariadb.html">episodic_db_dsn_mysql()</a></code>
 
         </dt>
-        <dd>Open a connection to <code>db_path</code>, or the <code>EPISODE_DB</code> environment variable</dd>
+        <dd>Build a MariaDB/MySQL DSN for <code>EPISODIC_DB</code></dd>
 
         <dt>
 
-          <code><a href="episode_demo.html">episode_demo()</a></code>
+          <code><a href="episodic_db_open.html">episodic_db_open()</a></code>
+
+        </dt>
+        <dd>Open a connection to <code>db_path</code>, or the <code>EPISODIC_DB</code> environment variable</dd>
+
+        <dt>
+
+          <code><a href="episodic_demo.html">episodic_demo()</a></code>
 
         </dt>
         <dd>Run the full synthetic demo in one call</dd>
 
         <dt>
 
-          <code><a href="episode_denominator_source_synthetic.html">episode_denominator_source_synthetic()</a></code>
+          <code><a href="episodic_denominator_source_synthetic.html">episodic_denominator_source_synthetic()</a></code>
 
         </dt>
         <dd>Synthetic positivity metadata source</dd>
 
         <dt>
 
-          <code><a href="episode_geo_overlay_resolve.html">episode_geo_overlay_resolve()</a></code>
+          <code><a href="episodic_geo_overlay_resolve.html">episodic_geo_overlay_resolve()</a></code>
 
         </dt>
         <dd>Resolve the optional region-outline overlay</dd>
 
         <dt>
 
-          <code><a href="episode_geo_source_resolve.html">episode_geo_source_resolve()</a></code>
+          <code><a href="episodic_geo_source_resolve.html">episodic_geo_source_resolve()</a></code>
 
         </dt>
         <dd>Resolve the geographic reference dataset to use</dd>
 
         <dt>
 
-          <code><a href="episode_ingest_source_synthetic.html">episode_ingest_source_synthetic()</a></code>
+          <code><a href="episodic_ingest_source_synthetic.html">episodic_ingest_source_synthetic()</a></code>
 
         </dt>
         <dd>Synthetic ingestion source</dd>
 
         <dt>
 
-          <code><a href="episode_ingest_source_synthetic_calibration.html">episode_ingest_source_synthetic_calibration()</a></code>
+          <code><a href="episodic_ingest_source_synthetic_calibration.html">episodic_ingest_source_synthetic_calibration()</a></code>
 
         </dt>
         <dd>Synthetic data with realistic signal volume for one pathogen, for calibration testing</dd>
 
         <dt>
 
-          <code><a href="episode_ingest_validate_source.html">episode_ingest_validate_source()</a></code>
+          <code><a href="episodic_ingest_validate_source.html">episodic_ingest_validate_source()</a></code>
 
         </dt>
         <dd>Validate that a raw ingestion source data frame satisfies the interface</dd>
 
         <dt>
 
-          <code><a href="episode_palette.html">episode_palette()</a></code>
+          <code><a href="episodic_palette.html">episodic_palette()</a></code>
 
         </dt>
         <dd>The application colour palette</dd>
 
         <dt>
 
-          <code><a href="episode_provision_user.html">episode_provision_user()</a></code>
+          <code><a href="episodic_provision_user.html">episodic_provision_user()</a></code>
 
         </dt>
         <dd>Provision an assessor account</dd>
 
         <dt>
 
-          <code><a href="episode_report_render.html">episode_report_render()</a></code>
+          <code><a href="episodic_report_render.html">episodic_report_render()</a></code>
 
         </dt>
         <dd>Render an outbreak report for a cluster</dd>
 
         <dt>
 
-          <code><a href="episode_resolve_source.html">episode_resolve_source()</a></code>
+          <code><a href="episodic_resolve_source.html">episodic_resolve_source()</a></code>
 
         </dt>
         <dd>Resolve a <code>*_source_fn</code> argument to the data frame it names</dd>
 
         <dt>
 
-          <code><a href="episode_run_app.html">episode_run_app()</a></code>
+          <code><a href="episodic_run_app.html">episodic_run_app()</a></code>
 
         </dt>
         <dd>Run the EpiSODIC Shiny app</dd>
 
         <dt>
 
-          <code><a href="episode_run_cron.html">episode_run_cron()</a></code>
+          <code><a href="episodic_run_cron.html">episodic_run_cron()</a></code>
 
         </dt>
         <dd>Run one detection cycle</dd>
 
         <dt>
 
-          <code><a href="episode_synthetic_institution_activity_source.html">episode_synthetic_institution_activity_source()</a></code>
+          <code><a href="episodic_synthetic_institution_activity_source.html">episodic_synthetic_institution_activity_source()</a></code>
 
         </dt>
         <dd>Synthetic institution activity source</dd>
 
         <dt>
 
-          <code><a href="episode_tr.html">episode_tr()</a></code>
+          <code><a href="episodic_tr.html">episodic_tr()</a></code>
 
         </dt>
         <dd>Translate a key, with placeholder substitution</dd>
 
         <dt>
 
-          <code><a href="episode_ui_code_join.html">episode_ui_code_join()</a></code>
+          <code><a href="episodic_ui_code_join.html">episodic_ui_code_join()</a></code>
 
         </dt>
         <dd>Render a list of detector names as inline code, joined by a separator</dd>
 
         <dt>
 
-          <code><a href="episode_ui_italicise_taxon.html">episode_ui_italicise_taxon()</a></code>
+          <code><a href="episodic_ui_italicise_taxon.html">episodic_ui_italicise_taxon()</a></code>
 
         </dt>
         <dd>Italicise pathogen names <code>AMR</code> recognises as a taxonomic binomial</dd>
@@ -294,14 +238,14 @@
 
         <dt>
 
-          <code><a href="ingest_interface.html">episode_ingest_columns</a></code>
+          <code><a href="ingest_interface.html">episodic_ingest_columns</a></code>
 
         </dt>
         <dd>Ingestion interface</dd>
 
         <dt>
 
-          <code><a href="interpretation.html">episode_interpretation_slots</a></code>
+          <code><a href="interpretation.html">episodic_interpretation_slots</a></code>
 
         </dt>
         <dd>The interpretation fragment engine</dd>

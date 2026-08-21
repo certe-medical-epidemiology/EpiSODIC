@@ -1,9 +1,8 @@
-# EpiSODIC
+# EpiSODIC: **Epi**demiological **S**ignal **O**bservation, **D**etection,
+
+**I**dentification, and **C**lassification
 
 [![R-CMD-check](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml)
-
-**Epi**demiological **S**ignal **O**bservation, **D**etection,
-**I**dentification, and **C**lassification
 
 EpiSODIC is an outbreak cluster detection and assessment system for a
 department of medical epidemiology. It ingests laboratory-confirmed
@@ -16,15 +15,19 @@ The engine and the instance it runs against are kept separate: this
 repository is open-source software with no data and no site-specific
 configuration.
 
-![A cluster dossier: epi curve, trend, and an automatically generated
-plain-language interpretation](data-raw/screenshots/dossier.png)  
-*The cluster dossier - epi curve, multi-year trend, and an automatically
-generated interpretation of the evidence.*
+![A cluster dossier: case stats, status trajectory, an automatically
+generated plain-language interpretation, the epidemic curve, and the
+classification panel](reference/figures/main_screen.png)  
+*A cluster dossier - case stats, status trajectory, an automatically
+generated interpretation of the evidence, the epidemic curve, and the
+classification panel, alongside the rail of open clusters.*
 
-![The Prestatie (Performance) screen: positive predictive value per
-detector and organism](data-raw/screenshots/performance.png)  
-*The Prestatie screen - positive predictive value per detector and
-organism, and detection timeliness, from the stored verdicts.*
+![The Performance screen: detection timeliness and positive predictive
+value per detector and
+organism](reference/figures/performance_screen.png)  
+*The Performance screen - detection timeliness and positive predictive
+value per detector and organism, computed from the stored verdicts (both
+fill in as clusters get assessed).*
 
 ## Capabilities
 
@@ -32,8 +35,8 @@ The detection engine, interface, assessment and authentication workflow,
 reporting, and analytical panels are all implemented and tested,
 including a Performance screen for evidence-based tuning. Detection
 thresholds and priority score weights are configurable per instance
-(`inst/config/default.yaml`, `EPISODE_CONFIG`), so a department can tune
-them against its own signal volume as its evidence base grows.
+(`inst/config/default.yaml`, `EPISODIC_CONFIG`), so a department can
+tune them against its own signal volume as its evidence base grows.
 
 ## Installation
 
@@ -50,7 +53,7 @@ system against bundled synthetic data:
 
 ``` r
 
-EpiSODIC::episode_demo()
+EpiSODIC::episodic_demo()
 ```
 
 This creates a temporary database, runs one detection cycle, provisions
@@ -62,9 +65,9 @@ EpiSODIC’s detection engine has **no dependency on any laboratory system
 or data warehouse**. Every dependency is a CRAN-hosted package
 (`surveillance` for Farrington); no private, organisation-specific
 package is required or even referenced. House colours
-([`episode_palette()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_palette.md))
+([`episodic_palette()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.md))
 come from a shipped, organisation-neutral default, overridable per
-instance by pointing `EPISODE_PALETTE_CONFIG` at a YAML file with an
+instance by pointing `EPISODIC_PALETTE_CONFIG` at a YAML file with an
 organisation’s own colours - the same mechanism used for detection
 configuration, a custom report template, and geographic reference data.
 Geography (the choropleth panel) is not tied to any one organisation or
@@ -76,14 +79,14 @@ EpiSODIC never queries a laboratory information system, data warehouse,
 or any other data source itself. That is deliberately the operator’s own
 step, run before EpiSODIC: extract from wherever your data lives,
 transform into the shape below, then call
-[`episode_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_run_cron.md)
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
 with a function that returns it. This keeps the engine reusable by any
 laboratory, not only Certe’s.
 
 ``` r
 
-episode_run_cron(
-  db_path = "/path/to/episode.sqlite",
+episodic_run_cron(
+  db_path = "/path/to/episodic.sqlite",
   ingest_source_fn = function() my_extract_and_transform_function(),
   denominator_source_fn = NULL  # optional, see "Positivity metadata" below
 )
@@ -92,7 +95,7 @@ episode_run_cron(
 ### Cases (mandatory)
 
 One row per confirmed-positive laboratory result. This is the complete,
-allow-listed column set (`episode_ingest_columns`); an ingestion source
+allow-listed column set (`episodic_ingest_columns`); an ingestion source
 returning any column outside this list, or missing one from it, is
 rejected:
 
@@ -102,7 +105,7 @@ rejected:
 | `patient_key` | A stable, pseudonymised patient identifier. This is what deduplication and episode grouping key on: without it, EpiSODIC cannot tell that two isolates belong to the same patient, and every isolate would be treated as its own case. Never displayed as-is in the interface. |
 | `sample_date` | The anchor date every detector, trend, and report is built against. If your system falls back to a receipt date when sample date is unfilled, that fallback should already have happened before this row reaches EpiSODIC. |
 | `receipt_date` | When the result was received. Stored for provenance/audit, kept separate from `sample_date` - EpiSODIC deliberately does not use it to measure reporting delay, since a lab’s own receipt-date field can itself silently be a stand-in for a missing sample date; reporting completeness is instead measured empirically, from how a stream’s case counts change across successive detection runs. |
-| `pathogen` | The organism as your lab reports it, as free text. **Not** resolved against any taxonomy (this is deliberate: [`AMR::as.mo()`](https://amr-for-r.org/reference/as.mo.html) only covers non-viral organisms, and EpiSODIC has to detect clusters of anything a lab reports, viruses included). The same underlying isolate can appear more than once under different `pathogen` values when that is epidemiologically useful - an ETEC isolate reported as both `"Escherichia coli"` and `"ETEC"`, so each is watched on its own. This is your transform step’s decision, not EpiSODIC’s. |
+| `pathogen` | The organism as your lab reports it, as free text. **Not** resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying isolate can appear more than once under different `pathogen` values when that is epidemiologically useful - an ETEC isolate reported as both `"Escherichia coli"` and `"ETEC"`, so each is watched on its own. This is your transform step’s decision, not EpiSODIC’s. |
 | `care_line` | `first`, `second`, `other`, or `unknown` - which part of the health system the case came from. |
 | `institution_key` | A stable identifier for the institution, hashed internally so a later rename does not fracture history. |
 | `institution_display_name` | The human-readable name shown in the interface. |
@@ -157,7 +160,7 @@ trivially). It is not meaningful for open-ended culture results, where
 there is no closed list of things a negative result could have been - if
 that is your situation, simply never call this, and positivity panels
 stay blank for your streams. See
-[`episode_denominator_source_synthetic()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_denominator_source_synthetic.md)
+[`episodic_denominator_source_synthetic()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_denominator_source_synthetic.md)
 for a worked example.
 
 ### Institution activity (optional)
@@ -178,7 +181,7 @@ counts exactly as it always has.
 Rows whose `institution_key` does not match a known institution are
 skipped, not an error - an activity feed and a case feed need not be
 perfectly synchronised. See
-[`episode_synthetic_institution_activity_source()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_synthetic_institution_activity_source.md)
+[`episodic_synthetic_institution_activity_source()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity_source.md)
 for a worked example. There is no ward-level (L1) equivalent in the
 schema, so L1 detection is never normalised, only L2.
 
@@ -191,9 +194,9 @@ feature did not exist. EpiSODIC ships a Netherlands postcode default
 (`inst/extdata/geo_postcodes4_nl.rds`, geometry only, sourced from
 `certegis` under the same GPL-2 licence - see
 `data-raw/ geo_postcodes4_nl.R` for provenance), but geography is not
-Netherlands-specific: point `EPISODE_GEO_DATA` at your own `.rds` file
+Netherlands-specific: point `EPISODIC_GEO_DATA` at your own `.rds` file
 holding an [`sf`](https://r-spatial.github.io/sf/) object with a `pc`
-column (matching whatever your own `episode_case.pc` values are -
+column (matching whatever your own `episodic_case.pc` values are -
 postcodes, zip codes, municipality codes, anything) and a `geometry`
 column, and it is used instead. See `R/geo_data.R` for the exact
 contract.
@@ -201,25 +204,58 @@ contract.
 A second, independent layer can be drawn on top for orientation - region
 outlines (provinces, municipalities, whatever is useful), colour but no
 fill, a thicker line than the choropleth itself. Point
-`EPISODE_GEO_DATA_OVERLAY` at an `.rds` file holding an `sf` object with
-just a `geometry` column (no `pc` join needed, since it carries no case
-counts of its own). No default is shipped for this one - unlike the
+`EPISODIC_GEO_DATA_OVERLAY` at an `.rds` file holding an `sf` object
+with just a `geometry` column (no `pc` join needed, since it carries no
+case counts of its own). No default is shipped for this one - unlike the
 postcode default above, region boundaries are too jurisdiction-specific
 to guess a sensible default for.
 
 ### Custom report templates (optional)
 
-[`episode_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_report_render.md)
+[`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md)
 renders `inst/report/cluster_report.qmd` (embedded as self-contained
-HTML via Quarto) unless `EPISODE_QUARTO_REPORT` points at an operator’s
+HTML via Quarto) unless `EPISODIC_QUARTO_REPORT` points at an operator’s
 own `.qmd` file, in which case that is used instead - for a department
 that wants its own letterhead, section order, or house style. A custom
 template only needs to `readRDS(params$data_path)` and read from the
 same list the shipped one does (`obj`, `epi_curve`, `trend`, `linelist`,
 `timeline`, `similar`, `small_count_threshold`, `rendered_at`, `lang`,
 `package_version`); see the shipped template for the exact shape,
-including how it calls `episode_tr(..., lang = d$lang)` for a bilingual
+including how it calls `episodic_tr(..., lang = d$lang)` for a bilingual
 report.
+
+## Database backend
+
+`EPISODIC_DB` (and every `db_path` argument that falls back to it)
+accepts either of two things:
+
+- a filesystem path, opened as a SQLite database (the default, and what
+  [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+  uses); or
+- a `mysql://user:password@host:port/dbname` DSN, opened against a
+  MariaDB or MySQL server instead. Build one with
+  [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)
+  (or its alias
+  [`episodic_db_dsn_mysql()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md))
+  rather than assembling the string by hand, so that credentials
+  containing `:`, `@` or `/` are URL-encoded correctly:
+
+``` r
+
+Sys.setenv(EPISODIC_DB = EpiSODIC::episodic_db_dsn_mariadb(
+  host = "db.internal", dbname = "episodic",
+  user = "episodic_app", password = "s3cr3t!"
+))
+```
+
+Connecting to MariaDB/MySQL requires the `RMariaDB` package
+(`install.packages("RMariaDB")`); it is a `Suggests` dependency, not
+installed automatically, so SQLite-only deployments never need it. The
+schema (`inst/sql/schema.sql`) is written once, in SQLite syntax, and
+adapted at load time for the handful of tokens that differ under
+MariaDB/MySQL - there is no separate schema file to keep in sync.
+`CHECK` constraints are enforced from MariaDB 10.2.1 / MySQL 8.0.16
+onwards; on older servers they are accepted but silently ignored.
 
 ## Accounts
 
@@ -231,37 +267,38 @@ created by assessors themselves or by the app.
 
 ``` r
 
-Sys.setenv(EPISODE_DB = "/path/to/episode.sqlite")  # or pass db_path explicitly below
+Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")  # or pass db_path explicitly below
 
-episode_provision_user(
+episodic_provision_user(
   username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
   password = "a-temporary-password"
 )
 ```
 
-[`episode_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_provision_user.md)
-takes `db_path` (defaulting to `EPISODE_DB`, see “Environment variables”
-below), not an open connection - it opens and closes its own via
-[`episode_db_open()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_db_open.md),
+[`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md)
+takes `db_path` (defaulting to `EPISODIC_DB`, see “Environment
+variables” below), not an open connection - it opens and closes its own
+via
+[`episodic_db_open()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_open.md),
 so provisioning an account is one call at the console. The account is
 created with `must_change = TRUE`, so its first real sign-in forces the
 holder to set their own password before continuing.
 
 ## Environment variables
 
-Every `EPISODE_*` variable is optional; each entry point works fine with
-the equivalent argument passed explicitly instead. Environment variables
-exist so an operator can configure a running instance (a systemd unit, a
-Docker container) without editing R code.
+Every `EPISODIC_*` variable is optional; each entry point works fine
+with the equivalent argument passed explicitly instead. Environment
+variables exist so an operator can configure a running instance (a
+systemd unit, a Docker container) without editing R code.
 
 | Variable | Used by | Meaning |
 |----|----|----|
-| `EPISODE_DB` | [`episode_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_run_app.md), [`episode_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_provision_user.md) (`db_path` argument) | Path to the instance’s SQLite database. |
-| `EPISODE_CONFIG` | [`episode_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_run_cron.md) (`episode_config_path` argument) | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`’s shipped defaults. |
-| `EPISODE_PALETTE_CONFIG` | [`episode_palette()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_palette.md) (`palette_config_path` argument) | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`’s shipped defaults. Deliberately separate from `EPISODE_CONFIG`: colour is a display concern, never part of [`episode_config_hash()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_config_hash.md)’s detection-reproducibility guarantee. |
-| `EPISODE_GEO_DATA` | [`episode_geo_source_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_geo_source_resolve.md) (`path` argument) | Path to an `.rds` file holding an operator’s own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands postcode default. See “Geographic reference data” above. |
-| `EPISODE_GEO_DATA_OVERLAY` | [`episode_geo_overlay_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_geo_overlay_resolve.md) (`path` argument) | Path to an `.rds` file holding an optional region-outline overlay (an `sf` object with just a `geometry` column), drawn on top of the choropleth. No default. See “Geographic reference data” above. |
-| `EPISODE_QUARTO_REPORT` | [`episode_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_report_render.md) (`qmd_path` argument) | Path to an operator’s own Quarto report template, overriding the shipped `inst/report/cluster_report.qmd`. See “Custom report templates” above. |
+| `EPISODIC_DB` | [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md), [`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md) (`db_path` argument) | Path to the instance’s SQLite database, or a `mysql://` DSN pointing at a MariaDB/MySQL database instead - see “Database backend” above. |
+| `EPISODIC_CONFIG` | [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md) (`episodic_config_path` argument) | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`’s shipped defaults. |
+| `EPISODIC_PALETTE_CONFIG` | [`episodic_palette()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.md) (`palette_config_path` argument) | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`’s shipped defaults. Deliberately separate from `EPISODIC_CONFIG`: colour is a display concern, never part of [`episodic_config_hash()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_hash.md)’s detection-reproducibility guarantee. |
+| `EPISODIC_GEO_DATA` | [`episodic_geo_source_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_geo_source_resolve.md) (`path` argument) | Path to an `.rds` file holding an operator’s own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands postcode default. See “Geographic reference data” above. |
+| `EPISODIC_GEO_DATA_OVERLAY` | [`episodic_geo_overlay_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_geo_overlay_resolve.md) (`path` argument) | Path to an `.rds` file holding an optional region-outline overlay (an `sf` object with just a `geometry` column), drawn on top of the choropleth. No default. See “Geographic reference data” above. |
+| `EPISODIC_QUARTO_REPORT` | [`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md) (`qmd_path` argument) | Path to an operator’s own Quarto report template, overriding the shipped `inst/report/cluster_report.qmd`. See “Custom report templates” above. |
 
 ## Licence
 

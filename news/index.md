@@ -1,97 +1,36 @@
 # Changelog
 
-## EpiSODIC 0.1.0 (development)
+## EpiSODIC 0.2.0
 
-First public development version: a full outbreak cluster detection and
-assessment system, from raw laboratory results to a signed-off outbreak
-report, running entirely on open-source, CRAN-hosted packages.
+- `EPISODIC_DB` also accepts a `mysql://` DSN
+  ([`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)
+  /
+  [`episodic_db_dsn_mysql()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md))
+  to run against MariaDB/MySQL instead of SQLite, from the same schema
+  file.
+- Renamed the internal `episode_`/`episode-` prefix to `episodic_`/
+  `episodic-` throughout (functions, database tables, CSS classes) to
+  match the package name.
+- Package version shown in the Shiny app header.
+- README screenshots now ship in `man/figures/` so they render on CRAN
+  too; removed placeholder pkgdown reference pages and trimmed the
+  internal dev notes (`data-raw/`).
 
-### Detection engine
+## EpiSODIC 0.1.0
 
-- SQLite schema and migration runner; a DBI repository layer split by
-  writer (the cron may upsert, the app only ever inserts).
-- Automatic lattice enumeration (ward, institution, geographic area,
-  province, catchment) from the data itself, no configuration required
-  for a newly appearing pathogen.
-- Five detectors: `farrington`
-  ([`surveillance::farringtonFlexible()`](https://rdrr.io/pkg/surveillance/man/farringtonFlexible.html),
-  with patient-day normalisation at ward/institution level where
-  activity data is supplied), `same_place` (rule-based, no baseline
-  needed - covers long-term care institutions and fast hospital clusters
-  alike), `rare_trigger` (a single occurrence of a curated organism is
-  itself the signal), and `mem` (Moving Epidemic Method seasonal
-  thresholds for influenza/RSV-like organisms).
-- Cluster reconciliation across repeated runs: extension, split, merge,
-  backfill, idempotent reruns, out-of-order convergence, all inside one
-  transaction per run so a partial failure never leaves partial state.
-- Suppression across the lattice so one real outbreak reads as one
-  cluster, not five restatements of itself at every level.
-- Baseline feedback: a stream’s own confirmed-epidemic history is
-  excluded from what `farringtonFlexible()` sees on later runs, so a
-  past outbreak never silently raises the next season’s threshold.
-- Derived cluster state as a pure function of classification history,
-  the case-free clock, and whether the cluster changed since it was last
-  assessed - never stored, always recomputed.
+First development version.
 
-### Interface
-
-- A Shiny app, read-only for anonymous visitors; classifying, closing,
-  or muting a stream requires signing in.
-- Bilingual throughout (Dutch and English) via a small
-  [`episode_tr()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_tr.md)
-  translation layer, including Dutch number/singular-plural agreement.
-- Dossier view with epi curve, multi-year trend, denominator/positivity,
-  demography, geography (choropleth when both `sf` and geographic
-  reference data are available, plain bar breakdown otherwise), line
-  list (hidden for anonymous viewers), Rt estimation, historical
-  analogue matching, and an automatically generated narrative
-  (“Duiding”) explaining the evidence in plain language.
-- Full account, classification and audit-trail model: an append-only
-  assessment timeline, an Archief of closed clusters, and an Activiteit
-  log of every recorded action with system runs visually distinct.
-- Prestatie (Performance) screen: positive predictive value per detector
-  per organism, the classification distribution, and timeliness figures
-  (first case to detection, detection to first assessment, detection to
-  classification) - the evidence base for tuning decisions once an
-  instance has run against real data for a while.
-
-### Reporting
-
-- Parameterised, versioned outbreak reports rendered via Quarto to
-  self-contained HTML, with configurable small-count disclosure
-  suppression for reports leaving the department. An operator can supply
-  their own report template (`EPISODE_QUARTO_REPORT`) instead of the
-  shipped one.
-
-### Optional, always-guarded integrations
-
-Several statistical integrations are optional, with a documented
-fallback when absent: `EpiEstim` (Rt), `mem` (seasonal thresholds),
-`quarto` + the Quarto CLI (report rendering), `sf` (geographic
-choropleth). None of them are required to run the detection engine, the
-interface, or the bundled demo. `AMR` is a hard dependency (episode
-deduplication via
-[`AMR::get_episode()`](https://amr-for-r.org/reference/get_episode.html),
-pathogen-name italicisation via
-[`AMR::microorganisms`](https://amr-for-r.org/reference/microorganisms.html)) -
-see the DESCRIPTION for the published methods this package is built on.
-House colours are a shipped, organisation-neutral default, overridable
-per instance via `EPISODE_PALETTE_CONFIG` - no organisation-specific
-package involved.
-
-### Data contract
-
-Cases are the only mandatory input, deduplicated internally per
-patient/pathogen/episode; positivity metadata, institution activity
-(patient-days), and geographic reference data are all optional, additive
-inputs with their own documented shape (see the README).
-[`episode_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_run_cron.md)’s
-data-source arguments accept either a function that produces the data at
-run time, or the data frame itself.
-
-### Getting started
-
-[`EpiSODIC::episode_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_demo.md)
-runs the whole system in one call against bundled synthetic data - no
-laboratory system, data warehouse, credentials, or configuration
-required.
+- Detection: automatic lattice enumeration, five detectors
+  (`farrington`, `ears`, `same_place`, `rare_trigger`, `mem`), cluster
+  reconciliation across runs, cross-lattice suppression, baseline
+  feedback.
+- Interface: bilingual (NL/EN) Shiny app, read-only for anonymous
+  visitors; dossier view (epi curve, trend, geography, Rt, line list);
+  audit-trailed classification workflow; Performance screen.
+- Reporting: versioned Quarto outbreak reports with small-count
+  suppression.
+- SQLite backend; optional `EpiEstim`/`mem`/`quarto`/`sf` integrations,
+  each with a documented fallback when absent.
+- [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+  runs the whole system against bundled synthetic data - no credentials
+  or configuration required.

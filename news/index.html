@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,43 +39,23 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.1.0" id="episodic-010-development">EpiSODIC 0.1.0 (development)<a class="anchor" aria-label="anchor" href="#episodic-010-development"></a></h2>
-<p>First public development version: a full outbreak cluster detection and assessment system, from raw laboratory results to a signed-off outbreak report, running entirely on open-source, CRAN-hosted packages.</p>
-<div class="section level3">
-<h3 id="detection-engine-0-1-0">Detection engine<a class="anchor" aria-label="anchor" href="#detection-engine-0-1-0"></a></h3>
-<ul><li>SQLite schema and migration runner; a DBI repository layer split by writer (the cron may upsert, the app only ever inserts).</li>
-<li>Automatic lattice enumeration (ward, institution, geographic area, province, catchment) from the data itself, no configuration required for a newly appearing pathogen.</li>
-<li>Five detectors: <code>farrington</code> (<code><a href="https://rdrr.io/pkg/surveillance/man/farringtonFlexible.html" class="external-link">surveillance::farringtonFlexible()</a></code>, with patient-day normalisation at ward/institution level where activity data is supplied), <code>same_place</code> (rule-based, no baseline needed - covers long-term care institutions and fast hospital clusters alike), <code>rare_trigger</code> (a single occurrence of a curated organism is itself the signal), and <code>mem</code> (Moving Epidemic Method seasonal thresholds for influenza/RSV-like organisms).</li>
-<li>Cluster reconciliation across repeated runs: extension, split, merge, backfill, idempotent reruns, out-of-order convergence, all inside one transaction per run so a partial failure never leaves partial state.</li>
-<li>Suppression across the lattice so one real outbreak reads as one cluster, not five restatements of itself at every level.</li>
-<li>Baseline feedback: a stream’s own confirmed-epidemic history is excluded from what <code>farringtonFlexible()</code> sees on later runs, so a past outbreak never silently raises the next season’s threshold.</li>
-<li>Derived cluster state as a pure function of classification history, the case-free clock, and whether the cluster changed since it was last assessed - never stored, always recomputed.</li>
+<h2 class="pkg-version" data-toc-text="0.2.0" id="episodic-020">EpiSODIC 0.2.0<a class="anchor" aria-label="anchor" href="#episodic-020"></a></h2>
+<ul><li>
+<code>EPISODIC_DB</code> also accepts a <code>mysql://</code> DSN (<code><a href="../reference/episodic_db_dsn_mariadb.html">episodic_db_dsn_mariadb()</a></code> / <code><a href="../reference/episodic_db_dsn_mariadb.html">episodic_db_dsn_mysql()</a></code>) to run against MariaDB/MySQL instead of SQLite, from the same schema file.</li>
+<li>Renamed the internal <code>episode_</code>/<code>episode-</code> prefix to <code>episodic_</code>/ <code>episodic-</code> throughout (functions, database tables, CSS classes) to match the package name.</li>
+<li>Package version shown in the Shiny app header.</li>
+<li>README screenshots now ship in <code>man/figures/</code> so they render on CRAN too; removed placeholder pkgdown reference pages and trimmed the internal dev notes (<code>data-raw/</code>).</li>
 </ul></div>
-<div class="section level3">
-<h3 id="interface-0-1-0">Interface<a class="anchor" aria-label="anchor" href="#interface-0-1-0"></a></h3>
-<ul><li>A Shiny app, read-only for anonymous visitors; classifying, closing, or muting a stream requires signing in.</li>
-<li>Bilingual throughout (Dutch and English) via a small <code><a href="../reference/episode_tr.html">episode_tr()</a></code> translation layer, including Dutch number/singular-plural agreement.</li>
-<li>Dossier view with epi curve, multi-year trend, denominator/positivity, demography, geography (choropleth when both <code>sf</code> and geographic reference data are available, plain bar breakdown otherwise), line list (hidden for anonymous viewers), Rt estimation, historical analogue matching, and an automatically generated narrative (“Duiding”) explaining the evidence in plain language.</li>
-<li>Full account, classification and audit-trail model: an append-only assessment timeline, an Archief of closed clusters, and an Activiteit log of every recorded action with system runs visually distinct.</li>
-<li>Prestatie (Performance) screen: positive predictive value per detector per organism, the classification distribution, and timeliness figures (first case to detection, detection to first assessment, detection to classification) - the evidence base for tuning decisions once an instance has run against real data for a while.</li>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.1.0" id="episodic-010">EpiSODIC 0.1.0<a class="anchor" aria-label="anchor" href="#episodic-010"></a></h2>
+<p>First development version.</p>
+<ul><li>Detection: automatic lattice enumeration, five detectors (<code>farrington</code>, <code>ears</code>, <code>same_place</code>, <code>rare_trigger</code>, <code>mem</code>), cluster reconciliation across runs, cross-lattice suppression, baseline feedback.</li>
+<li>Interface: bilingual (NL/EN) Shiny app, read-only for anonymous visitors; dossier view (epi curve, trend, geography, Rt, line list); audit-trailed classification workflow; Performance screen.</li>
+<li>Reporting: versioned Quarto outbreak reports with small-count suppression.</li>
+<li>SQLite backend; optional <code>EpiEstim</code>/<code>mem</code>/<code>quarto</code>/<code>sf</code> integrations, each with a documented fallback when absent.</li>
+<li>
+<code><a href="../reference/episodic_demo.html">episodic_demo()</a></code> runs the whole system against bundled synthetic data - no credentials or configuration required.</li>
 </ul></div>
-<div class="section level3">
-<h3 id="reporting-0-1-0">Reporting<a class="anchor" aria-label="anchor" href="#reporting-0-1-0"></a></h3>
-<ul><li>Parameterised, versioned outbreak reports rendered via Quarto to self-contained HTML, with configurable small-count disclosure suppression for reports leaving the department. An operator can supply their own report template (<code>EPISODE_QUARTO_REPORT</code>) instead of the shipped one.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="optional-always-guarded-integrations-0-1-0">Optional, always-guarded integrations<a class="anchor" aria-label="anchor" href="#optional-always-guarded-integrations-0-1-0"></a></h3>
-<p>Several statistical integrations are optional, with a documented fallback when absent: <code>EpiEstim</code> (Rt), <code>mem</code> (seasonal thresholds), <code>quarto</code> + the Quarto CLI (report rendering), <code>sf</code> (geographic choropleth). None of them are required to run the detection engine, the interface, or the bundled demo. <code>AMR</code> is a hard dependency (episode deduplication via <code><a href="https://amr-for-r.org/reference/get_episode.html" class="external-link">AMR::get_episode()</a></code>, pathogen-name italicisation via <code><a href="https://amr-for-r.org/reference/microorganisms.html" class="external-link">AMR::microorganisms</a></code>) - see the DESCRIPTION for the published methods this package is built on. House colours are a shipped, organisation-neutral default, overridable per instance via <code>EPISODE_PALETTE_CONFIG</code> - no organisation-specific package involved.</p>
-</div>
-<div class="section level3">
-<h3 id="data-contract-0-1-0">Data contract<a class="anchor" aria-label="anchor" href="#data-contract-0-1-0"></a></h3>
-<p>Cases are the only mandatory input, deduplicated internally per patient/pathogen/episode; positivity metadata, institution activity (patient-days), and geographic reference data are all optional, additive inputs with their own documented shape (see the README). <code><a href="../reference/episode_run_cron.html">episode_run_cron()</a></code>’s data-source arguments accept either a function that produces the data at run time, or the data frame itself.</p>
-</div>
-<div class="section level3">
-<h3 id="getting-started-0-1-0">Getting started<a class="anchor" aria-label="anchor" href="#getting-started-0-1-0"></a></h3>
-<p><code><a href="../reference/episode_demo.html">EpiSODIC::episode_demo()</a></code> runs the whole system in one call against bundled synthetic data - no laboratory system, data warehouse, credentials, or configuration required.</p>
-</div>
-</div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

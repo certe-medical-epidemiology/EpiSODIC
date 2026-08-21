@@ -8,14 +8,14 @@ the same shape of solution the package already uses elsewhere for
 optional, instance-specific data: a shipped default (here, geometry for
 the Netherlands' four-digit postcodes, `data-raw/geo_postcodes4_nl.R`
 documents its provenance) that any operator can override by pointing
-`EPISODE_GEO_DATA` at their own file - one environment variable, the
-same pattern `EPISODE_CONFIG` and `EPISODE_PALETTE_CONFIG` already
+`EPISODIC_GEO_DATA` at their own file - one environment variable, the
+same pattern `EPISODIC_CONFIG` and `EPISODIC_PALETTE_CONFIG` already
 establish.
 
 ## Details
 
 The contract is minimal and country-agnostic: an `sf` object with a `pc`
-column (matching whatever an operator's own `episode_case.pc` values
+column (matching whatever an operator's own `episodic_case.pc` values
 are - postcodes, zip codes, municipality codes, anything; this package
 never validates or interprets that column beyond joining it) and a
 `geometry` column. `sf`/GDAL/GEOS/PROJ are a real system-level
@@ -24,8 +24,8 @@ guarded end to end: no `sf` installed means the geography panel falls
 back to the existing PC bar breakdown, exactly as before this existed.
 
 A second, entirely independent piece of geographic data is supported on
-top of this: `EPISODE_GEO_DATA_OVERLAY`
-([`episode_geo_overlay_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_geo_overlay_resolve.md)),
+top of this: `EPISODIC_GEO_DATA_OVERLAY`
+([`episodic_geo_overlay_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_geo_overlay_resolve.md)),
 an outline layer (region boundaries
 
 - provinces, municipalities, whatever an operator wants for orientation)

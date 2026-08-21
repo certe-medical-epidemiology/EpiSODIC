@@ -1,0 +1,98 @@
+# Run the full synthetic demo in one call
+
+A stranger should be able to clone the repository and run the whole
+system in under a minute. This is everything a first-time reader would
+otherwise piece together by hand from the README
+([`Sys.setenv()`](https://rdrr.io/r/base/Sys.setenv.html),
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+against the bundled synthetic generator,
+[`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md))
+wrapped into one call - a fresh SQLite database, a completed detection
+run, one assessor account ready to sign in with, and (unless
+`launch = FALSE`) the app itself. No Diver access, no real credentials,
+no instance configuration file required; every setting used here is a
+shipped default.
+
+## Usage
+
+``` r
+episodic_demo(
+  db_path = tempfile(fileext = ".sqlite"),
+  username = "demo",
+  full_name = "Demo User",
+  email = "demo@example.org",
+  password = "episodic-demo",
+  launch = TRUE,
+  lang = "nl",
+  ingest_source_fn = episodic_ingest_source_synthetic,
+  denominator_source_fn = episodic_denominator_source_synthetic
+)
+```
+
+## Arguments
+
+- db_path:
+
+  Path to the SQLite database to create. Defaults to a session temp
+  file, so repeated calls never collide with each other and nothing is
+  left behind once the R session ends.
+
+- username, full_name, email, password:
+
+  Credentials for the demo assessor account this provisions, so signing
+  in and classifying a cluster works immediately after `launch`. These
+  are placeholder values, not real credentials - change them for
+  anything beyond a local demo.
+
+- launch:
+
+  If `TRUE` (default), calls
+  [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md)
+  afterwards (blocking, exactly as calling it directly would). Set to
+  `FALSE` to only set up the database and return its path - useful for
+  scripting, screenshots, or tests that need a populated demo database
+  without an interactive session.
+
+- lang:
+
+  Passed to
+  [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md)
+  when `launch = TRUE`.
+
+- ingest_source_fn, denominator_source_fn:
+
+  Passed straight through to
+  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md).
+  Default to the bundled synthetic generator over its own full default
+  window (several years); exposed mainly so a smaller/faster window can
+  be substituted - this package's own tests do exactly that, since a
+  real demo's representative multi-year window is far more than a test
+  needs to confirm the plumbing works.
+
+## Value
+
+Invisibly, `db_path`.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# launches a blocking, interactive Shiny session against several years
+# of freshly-generated synthetic data
+episodic_demo()
+} # }
+
+# \donttest{
+# non-interactive: populate a database and stop there, e.g. for scripting
+db_path <- episodic_demo(
+  launch = FALSE,
+  ingest_source_fn = function() episodic_ingest_source_synthetic(
+    start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+  ),
+  denominator_source_fn = NULL
+)
+#> EpiSODIC demo account - username: demo, password: episodic-demo
+file.remove(db_path)
+#> [1] TRUE
+# }
+```

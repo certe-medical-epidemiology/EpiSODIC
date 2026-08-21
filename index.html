@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,27 +55,26 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="episodic">EpiSODIC<a class="anchor" aria-label="anchor" href="#episodic"></a>
+<div class="page-header"><h1 id="episodic-epidemiological-signal-observation-detection">EpiSODIC: <strong>Epi</strong>demiological <strong>S</strong>ignal <strong>O</strong>bservation, <strong>D</strong>etection,<a class="anchor" aria-label="anchor" href="#episodic-epidemiological-signal-observation-detection"></a>
 </h1></div>
+<p><strong>I</strong>dentification, and <strong>C</strong>lassification</p>
 <p><a href="https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></p>
-<p><strong>Epi</strong>demiological <strong>S</strong>ignal <strong>O</strong>bservation, <strong>D</strong>etection, <strong>I</strong>dentification, and <strong>C</strong>lassification</p>
 <p>EpiSODIC is an outbreak cluster detection and assessment system for a department of medical epidemiology. It ingests laboratory-confirmed infections, detects statistical and rule-based aberrations, reconciles them into persistent clusters, and gives a small board of epidemiologists a dossier to assess each one, with a full audit trail and outbreak reports for clinical colleagues.</p>
 <p>The engine and the instance it runs against are kept separate: this repository is open-source software with no data and no site-specific configuration.</p>
 <!--
-Screenshots below are sourced from data-raw/screenshots/ (git-tracked,
-.Rbuildignore'd so they never ship in the CRAN tarball) - see
-data-raw/README.md for how to regenerate them against episode_demo().
+Screenshots below live in man/figures/ (ships with the package, so
+they also render on the CRAN page), regenerated against episodic_demo().
 -->
 <p align="center">
-<img src="data-raw/screenshots/dossier.png" alt="A cluster dossier: epi curve, trend, and an automatically generated plain-language interpretation" width="800"><br><em>The cluster dossier - epi curve, multi-year trend, and an automatically generated interpretation of the evidence.</em>
+<img src="reference/figures/main_screen.png" alt="A cluster dossier: case stats, status trajectory, an automatically generated plain-language interpretation, the epidemic curve, and the classification panel" width="800"><br><em>A cluster dossier - case stats, status trajectory, an automatically generated interpretation of the evidence, the epidemic curve, and the classification panel, alongside the rail of open clusters.</em>
 </p>
 <p align="center">
-<img src="data-raw/screenshots/performance.png" alt="The Prestatie (Performance) screen: positive predictive value per detector and organism" width="800"><br><em>The Prestatie screen - positive predictive value per detector and organism, and detection timeliness, from the stored verdicts.</em>
+<img src="reference/figures/performance_screen.png" alt="The Performance screen: detection timeliness and positive predictive value per detector and organism" width="800"><br><em>The Performance screen - detection timeliness and positive predictive value per detector and organism, computed from the stored verdicts (both fill in as clusters get assessed).</em>
 </p>
 <div class="section level2">
 <h2 id="capabilities">Capabilities<a class="anchor" aria-label="anchor" href="#capabilities"></a>
 </h2>
-<p>The detection engine, interface, assessment and authentication workflow, reporting, and analytical panels are all implemented and tested, including a Performance screen for evidence-based tuning. Detection thresholds and priority score weights are configurable per instance (<code>inst/config/default.yaml</code>, <code>EPISODE_CONFIG</code>), so a department can tune them against its own signal volume as its evidence base grows.</p>
+<p>The detection engine, interface, assessment and authentication workflow, reporting, and analytical panels are all implemented and tested, including a Performance screen for evidence-based tuning. Detection thresholds and priority score weights are configurable per instance (<code>inst/config/default.yaml</code>, <code>EPISODIC_CONFIG</code>), so a department can tune them against its own signal volume as its evidence base grows.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -88,29 +87,29 @@ data-raw/README.md for how to regenerate them against episode_demo().
 </h3>
 <p>No data, no credentials, no configuration - one call runs the whole system against bundled synthetic data:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">EpiSODIC</span><span class="fu">::</span><span class="fu"><a href="reference/episode_demo.html">episode_demo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">EpiSODIC</span><span class="fu">::</span><span class="fu"><a href="reference/episodic_demo.html">episodic_demo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>This creates a temporary database, runs one detection cycle, provisions a demo assessor account (printed to the console), and opens the app. Pass <code>launch = FALSE</code> to skip opening the app and just get a populated database path back, e.g. for scripting.</p>
-<p>EpiSODIC’s detection engine has <strong>no dependency on any laboratory system or data warehouse</strong>. Every dependency is a CRAN-hosted package (<code>surveillance</code> for Farrington); no private, organisation-specific package is required or even referenced. House colours (<code><a href="reference/episode_palette.html">episode_palette()</a></code>) come from a shipped, organisation-neutral default, overridable per instance by pointing <code>EPISODE_PALETTE_CONFIG</code> at a YAML file with an organisation’s own colours - the same mechanism used for detection configuration, a custom report template, and geographic reference data. Geography (the choropleth panel) is not tied to any one organisation or country either - see “Geographic reference data” below.</p>
+<p>EpiSODIC’s detection engine has <strong>no dependency on any laboratory system or data warehouse</strong>. Every dependency is a CRAN-hosted package (<code>surveillance</code> for Farrington); no private, organisation-specific package is required or even referenced. House colours (<code><a href="reference/episodic_palette.html">episodic_palette()</a></code>) come from a shipped, organisation-neutral default, overridable per instance by pointing <code>EPISODIC_PALETTE_CONFIG</code> at a YAML file with an organisation’s own colours - the same mechanism used for detection configuration, a custom report template, and geographic reference data. Geography (the choropleth panel) is not tied to any one organisation or country either - see “Geographic reference data” below.</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="data-format">Data format<a class="anchor" aria-label="anchor" href="#data-format"></a>
 </h2>
-<p>EpiSODIC never queries a laboratory information system, data warehouse, or any other data source itself. That is deliberately the operator’s own step, run before EpiSODIC: extract from wherever your data lives, transform into the shape below, then call <code><a href="reference/episode_run_cron.html">episode_run_cron()</a></code> with a function that returns it. This keeps the engine reusable by any laboratory, not only Certe’s.</p>
+<p>EpiSODIC never queries a laboratory information system, data warehouse, or any other data source itself. That is deliberately the operator’s own step, run before EpiSODIC: extract from wherever your data lives, transform into the shape below, then call <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> with a function that returns it. This keeps the engine reusable by any laboratory, not only Certe’s.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/episode_run_cron.html">episode_run_cron</a></span><span class="op">(</span></span>
-<span>  db_path <span class="op">=</span> <span class="st">"/path/to/episode.sqlite"</span>,</span>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/episodic_run_cron.html">episodic_run_cron</a></span><span class="op">(</span></span>
+<span>  db_path <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span>,</span>
 <span>  ingest_source_fn <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="fu">my_extract_and_transform_function</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  denominator_source_fn <span class="op">=</span> <span class="cn">NULL</span>  <span class="co"># optional, see "Positivity metadata" below</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="cases-mandatory">Cases (mandatory)<a class="anchor" aria-label="anchor" href="#cases-mandatory"></a>
 </h3>
-<p>One row per confirmed-positive laboratory result. This is the complete, allow-listed column set (<code>episode_ingest_columns</code>); an ingestion source returning any column outside this list, or missing one from it, is rejected:</p>
+<p>One row per confirmed-positive laboratory result. This is the complete, allow-listed column set (<code>episodic_ingest_columns</code>); an ingestion source returning any column outside this list, or missing one from it, is rejected:</p>
 <table class="table">
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col width="5%">
+<col width="94%">
 </colgroup>
 <thead><tr>
 <th>Column</th>
@@ -135,7 +134,7 @@ data-raw/README.md for how to regenerate them against episode_demo().
 </tr>
 <tr>
 <td><code>pathogen</code></td>
-<td>The organism as your lab reports it, as free text. <strong>Not</strong> resolved against any taxonomy (this is deliberate: <code><a href="https://amr-for-r.org/reference/as.mo.html" class="external-link">AMR::as.mo()</a></code> only covers non-viral organisms, and EpiSODIC has to detect clusters of anything a lab reports, viruses included). The same underlying isolate can appear more than once under different <code>pathogen</code> values when that is epidemiologically useful - an ETEC isolate reported as both <code>"Escherichia coli"</code> and <code>"ETEC"</code>, so each is watched on its own. This is your transform step’s decision, not EpiSODIC’s.</td>
+<td>The organism as your lab reports it, as free text. <strong>Not</strong> resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying isolate can appear more than once under different <code>pathogen</code> values when that is epidemiologically useful - an ETEC isolate reported as both <code>"Escherichia coli"</code> and <code>"ETEC"</code>, so each is watched on its own. This is your transform step’s decision, not EpiSODIC’s.</td>
 </tr>
 <tr>
 <td><code>care_line</code></td>
@@ -200,8 +199,8 @@ data-raw/README.md for how to regenerate them against episode_demo().
 <p>If, and only if, you can produce it: a small, pre-aggregated table of test counts, used purely as an interpretive aid on the dossier (a rising case count with flat test volume is a much weaker signal than the same rise with stable positivity) and never as a detection input.</p>
 <table class="table">
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col width="16%">
+<col width="83%">
 </colgroup>
 <thead><tr>
 <th>Column</th>
@@ -231,7 +230,7 @@ data-raw/README.md for how to regenerate them against episode_demo().
 </tr>
 </tbody>
 </table>
-<p>This is realistic to produce for a multiplex PCR panel testing a fixed list of targets (your LIS can report “we ran 40 GI panels this week” trivially). It is not meaningful for open-ended culture results, where there is no closed list of things a negative result could have been - if that is your situation, simply never call this, and positivity panels stay blank for your streams. See <code><a href="reference/episode_denominator_source_synthetic.html">episode_denominator_source_synthetic()</a></code> for a worked example.</p>
+<p>This is realistic to produce for a multiplex PCR panel testing a fixed list of targets (your LIS can report “we ran 40 GI panels this week” trivially). It is not meaningful for open-ended culture results, where there is no closed list of things a negative result could have been - if that is your situation, simply never call this, and positivity panels stay blank for your streams. See <code><a href="reference/episodic_denominator_source_synthetic.html">episodic_denominator_source_synthetic()</a></code> for a worked example.</p>
 </div>
 <div class="section level3">
 <h3 id="institution-activity-optional">Institution activity (optional)<a class="anchor" aria-label="anchor" href="#institution-activity-optional"></a>
@@ -239,8 +238,8 @@ data-raw/README.md for how to regenerate them against episode_demo().
 <p>If, and only if, you can produce it: weekly patient-days per hospital, used to normalise L2 (institution-level) Farrington detection by occupancy rather than raw counts - a busy February and a quiet August at identical transmission-per-patient-day should not read as different signal strengths. Also optional; without it, L1/L2 detection uses raw counts exactly as it always has.</p>
 <table class="table">
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col width="33%">
+<col width="66%">
 </colgroup>
 <thead><tr>
 <th>Column</th>
@@ -263,42 +262,57 @@ data-raw/README.md for how to regenerate them against episode_demo().
 </tr>
 </tbody>
 </table>
-<p>Rows whose <code>institution_key</code> does not match a known institution are skipped, not an error - an activity feed and a case feed need not be perfectly synchronised. See <code><a href="reference/episode_synthetic_institution_activity_source.html">episode_synthetic_institution_activity_source()</a></code> for a worked example. There is no ward-level (L1) equivalent in the schema, so L1 detection is never normalised, only L2.</p>
+<p>Rows whose <code>institution_key</code> does not match a known institution are skipped, not an error - an activity feed and a case feed need not be perfectly synchronised. See <code><a href="reference/episodic_synthetic_institution_activity_source.html">episodic_synthetic_institution_activity_source()</a></code> for a worked example. There is no ward-level (L1) equivalent in the schema, so L1 detection is never normalised, only L2.</p>
 </div>
 <div class="section level3">
 <h3 id="geographic-reference-data-optional">Geographic reference data (optional)<a class="anchor" aria-label="anchor" href="#geographic-reference-data-optional"></a>
 </h3>
-<p>The dossier’s geography panel shows a choropleth when both the <code>sf</code> package and a geographic reference dataset are available; otherwise it falls back to a plain bar breakdown by PC value, exactly as if this feature did not exist. EpiSODIC ships a Netherlands postcode default (<code>inst/extdata/geo_postcodes4_nl.rds</code>, geometry only, sourced from <code>certegis</code> under the same GPL-2 licence - see <code>data-raw/ geo_postcodes4_nl.R</code> for provenance), but geography is not Netherlands-specific: point <code>EPISODE_GEO_DATA</code> at your own <code>.rds</code> file holding an <a href="https://r-spatial.github.io/sf/" class="external-link"><code>sf</code></a> object with a <code>pc</code> column (matching whatever your own <code>episode_case.pc</code> values are - postcodes, zip codes, municipality codes, anything) and a <code>geometry</code> column, and it is used instead. See <code>R/geo_data.R</code> for the exact contract.</p>
-<p>A second, independent layer can be drawn on top for orientation - region outlines (provinces, municipalities, whatever is useful), colour but no fill, a thicker line than the choropleth itself. Point <code>EPISODE_GEO_DATA_OVERLAY</code> at an <code>.rds</code> file holding an <code>sf</code> object with just a <code>geometry</code> column (no <code>pc</code> join needed, since it carries no case counts of its own). No default is shipped for this one - unlike the postcode default above, region boundaries are too jurisdiction-specific to guess a sensible default for.</p>
+<p>The dossier’s geography panel shows a choropleth when both the <code>sf</code> package and a geographic reference dataset are available; otherwise it falls back to a plain bar breakdown by PC value, exactly as if this feature did not exist. EpiSODIC ships a Netherlands postcode default (<code>inst/extdata/geo_postcodes4_nl.rds</code>, geometry only, sourced from <code>certegis</code> under the same GPL-2 licence - see <code>data-raw/ geo_postcodes4_nl.R</code> for provenance), but geography is not Netherlands-specific: point <code>EPISODIC_GEO_DATA</code> at your own <code>.rds</code> file holding an <a href="https://r-spatial.github.io/sf/" class="external-link"><code>sf</code></a> object with a <code>pc</code> column (matching whatever your own <code>episodic_case.pc</code> values are - postcodes, zip codes, municipality codes, anything) and a <code>geometry</code> column, and it is used instead. See <code>R/geo_data.R</code> for the exact contract.</p>
+<p>A second, independent layer can be drawn on top for orientation - region outlines (provinces, municipalities, whatever is useful), colour but no fill, a thicker line than the choropleth itself. Point <code>EPISODIC_GEO_DATA_OVERLAY</code> at an <code>.rds</code> file holding an <code>sf</code> object with just a <code>geometry</code> column (no <code>pc</code> join needed, since it carries no case counts of its own). No default is shipped for this one - unlike the postcode default above, region boundaries are too jurisdiction-specific to guess a sensible default for.</p>
 </div>
 <div class="section level3">
 <h3 id="custom-report-templates-optional">Custom report templates (optional)<a class="anchor" aria-label="anchor" href="#custom-report-templates-optional"></a>
 </h3>
-<p><code><a href="reference/episode_report_render.html">episode_report_render()</a></code> renders <code>inst/report/cluster_report.qmd</code> (embedded as self-contained HTML via Quarto) unless <code>EPISODE_QUARTO_REPORT</code> points at an operator’s own <code>.qmd</code> file, in which case that is used instead - for a department that wants its own letterhead, section order, or house style. A custom template only needs to <code>readRDS(params$data_path)</code> and read from the same list the shipped one does (<code>obj</code>, <code>epi_curve</code>, <code>trend</code>, <code>linelist</code>, <code>timeline</code>, <code>similar</code>, <code>small_count_threshold</code>, <code>rendered_at</code>, <code>lang</code>, <code>package_version</code>); see the shipped template for the exact shape, including how it calls <code>episode_tr(..., lang = d$lang)</code> for a bilingual report.</p>
+<p><code><a href="reference/episodic_report_render.html">episodic_report_render()</a></code> renders <code>inst/report/cluster_report.qmd</code> (embedded as self-contained HTML via Quarto) unless <code>EPISODIC_QUARTO_REPORT</code> points at an operator’s own <code>.qmd</code> file, in which case that is used instead - for a department that wants its own letterhead, section order, or house style. A custom template only needs to <code>readRDS(params$data_path)</code> and read from the same list the shipped one does (<code>obj</code>, <code>epi_curve</code>, <code>trend</code>, <code>linelist</code>, <code>timeline</code>, <code>similar</code>, <code>small_count_threshold</code>, <code>rendered_at</code>, <code>lang</code>, <code>package_version</code>); see the shipped template for the exact shape, including how it calls <code>episodic_tr(..., lang = d$lang)</code> for a bilingual report.</p>
 </div>
+</div>
+<div class="section level2">
+<h2 id="database-backend">Database backend<a class="anchor" aria-label="anchor" href="#database-backend"></a>
+</h2>
+<p><code>EPISODIC_DB</code> (and every <code>db_path</code> argument that falls back to it) accepts either of two things:</p>
+<ul>
+<li>a filesystem path, opened as a SQLite database (the default, and what <code><a href="reference/episodic_demo.html">episodic_demo()</a></code> uses); or</li>
+<li>a <code>mysql://user:password@host:port/dbname</code> DSN, opened against a MariaDB or MySQL server instead. Build one with <code><a href="reference/episodic_db_dsn_mariadb.html">episodic_db_dsn_mariadb()</a></code> (or its alias <code><a href="reference/episodic_db_dsn_mariadb.html">episodic_db_dsn_mysql()</a></code>) rather than assembling the string by hand, so that credentials containing <code>:</code>, <code>@</code> or <code>/</code> are URL-encoded correctly:</li>
+</ul>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="fu">EpiSODIC</span><span class="fu">::</span><span class="fu"><a href="reference/episodic_db_dsn_mariadb.html">episodic_db_dsn_mariadb</a></span><span class="op">(</span></span>
+<span>  host <span class="op">=</span> <span class="st">"db.internal"</span>, dbname <span class="op">=</span> <span class="st">"episodic"</span>,</span>
+<span>  user <span class="op">=</span> <span class="st">"episodic_app"</span>, password <span class="op">=</span> <span class="st">"s3cr3t!"</span></span>
+<span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>Connecting to MariaDB/MySQL requires the <code>RMariaDB</code> package (<code>install.packages("RMariaDB")</code>); it is a <code>Suggests</code> dependency, not installed automatically, so SQLite-only deployments never need it. The schema (<code>inst/sql/schema.sql</code>) is written once, in SQLite syntax, and adapted at load time for the handful of tokens that differ under MariaDB/MySQL - there is no separate schema file to keep in sync. <code>CHECK</code> constraints are enforced from MariaDB 10.2.1 / MySQL 8.0.16 onwards; on older servers they are accepted but silently ignored.</p>
 </div>
 <div class="section level2">
 <h2 id="accounts">Accounts<a class="anchor" aria-label="anchor" href="#accounts"></a>
 </h2>
 <p>Read access is anonymous - the app opens read-only for anyone who reaches it. Signing in is only needed to classify a cluster, and there is deliberately no in-app account management screen: the four assessor accounts are provisioned by whoever administers the database, not created by assessors themselves or by the app.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODE_DB <span class="op">=</span> <span class="st">"/path/to/episode.sqlite"</span><span class="op">)</span>  <span class="co"># or pass db_path explicitly below</span></span>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span>  <span class="co"># or pass db_path explicitly below</span></span>
 <span></span>
-<span><span class="fu"><a href="reference/episode_provision_user.html">episode_provision_user</a></span><span class="op">(</span></span>
+<span><span class="fu"><a href="reference/episodic_provision_user.html">episodic_provision_user</a></span><span class="op">(</span></span>
 <span>  username <span class="op">=</span> <span class="st">"jdoe"</span>, full_name <span class="op">=</span> <span class="st">"Jane Doe"</span>, email <span class="op">=</span> <span class="st">"j.doe@example.org"</span>,</span>
 <span>  password <span class="op">=</span> <span class="st">"a-temporary-password"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="reference/episode_provision_user.html">episode_provision_user()</a></code> takes <code>db_path</code> (defaulting to <code>EPISODE_DB</code>, see “Environment variables” below), not an open connection - it opens and closes its own via <code><a href="reference/episode_db_open.html">episode_db_open()</a></code>, so provisioning an account is one call at the console. The account is created with <code>must_change = TRUE</code>, so its first real sign-in forces the holder to set their own password before continuing.</p>
+<p><code><a href="reference/episodic_provision_user.html">episodic_provision_user()</a></code> takes <code>db_path</code> (defaulting to <code>EPISODIC_DB</code>, see “Environment variables” below), not an open connection - it opens and closes its own via <code><a href="reference/episodic_db_open.html">episodic_db_open()</a></code>, so provisioning an account is one call at the console. The account is created with <code>must_change = TRUE</code>, so its first real sign-in forces the holder to set their own password before continuing.</p>
 </div>
 <div class="section level2">
 <h2 id="environment-variables">Environment variables<a class="anchor" aria-label="anchor" href="#environment-variables"></a>
 </h2>
-<p>Every <code>EPISODE_*</code> variable is optional; each entry point works fine with the equivalent argument passed explicitly instead. Environment variables exist so an operator can configure a running instance (a systemd unit, a Docker container) without editing R code.</p>
+<p>Every <code>EPISODIC_*</code> variable is optional; each entry point works fine with the equivalent argument passed explicitly instead. Environment variables exist so an operator can configure a running instance (a systemd unit, a Docker container) without editing R code.</p>
 <table class="table">
 <colgroup>
-<col width="33%">
-<col width="33%">
-<col width="33%">
+<col width="7%">
+<col width="18%">
+<col width="73%">
 </colgroup>
 <thead><tr>
 <th>Variable</th>
@@ -307,39 +321,39 @@ data-raw/README.md for how to regenerate them against episode_demo().
 </tr></thead>
 <tbody>
 <tr>
-<td><code>EPISODE_DB</code></td>
+<td><code>EPISODIC_DB</code></td>
 <td>
-<code><a href="reference/episode_run_app.html">episode_run_app()</a></code>, <code><a href="reference/episode_provision_user.html">episode_provision_user()</a></code> (<code>db_path</code> argument)</td>
-<td>Path to the instance’s SQLite database.</td>
+<code><a href="reference/episodic_run_app.html">episodic_run_app()</a></code>, <code><a href="reference/episodic_provision_user.html">episodic_provision_user()</a></code> (<code>db_path</code> argument)</td>
+<td>Path to the instance’s SQLite database, or a <code>mysql://</code> DSN pointing at a MariaDB/MySQL database instead - see “Database backend” above.</td>
 </tr>
 <tr>
-<td><code>EPISODE_CONFIG</code></td>
+<td><code>EPISODIC_CONFIG</code></td>
 <td>
-<code><a href="reference/episode_run_cron.html">episode_run_cron()</a></code> (<code>episode_config_path</code> argument)</td>
+<code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> (<code>episodic_config_path</code> argument)</td>
 <td>Path to an instance override of detection configuration (pathogen thresholds, <code>same_place</code>/<code>rare_trigger</code>/Farrington settings), overlaid key-by-key on <code>inst/config/default.yaml</code>’s shipped defaults.</td>
 </tr>
 <tr>
-<td><code>EPISODE_PALETTE_CONFIG</code></td>
+<td><code>EPISODIC_PALETTE_CONFIG</code></td>
 <td>
-<code><a href="reference/episode_palette.html">episode_palette()</a></code> (<code>palette_config_path</code> argument)</td>
-<td>Path to an instance override of the UI colour palette, overlaid key-by-key on <code>inst/config/palette.yaml</code>’s shipped defaults. Deliberately separate from <code>EPISODE_CONFIG</code>: colour is a display concern, never part of <code><a href="reference/episode_config_hash.html">episode_config_hash()</a></code>’s detection-reproducibility guarantee.</td>
+<code><a href="reference/episodic_palette.html">episodic_palette()</a></code> (<code>palette_config_path</code> argument)</td>
+<td>Path to an instance override of the UI colour palette, overlaid key-by-key on <code>inst/config/palette.yaml</code>’s shipped defaults. Deliberately separate from <code>EPISODIC_CONFIG</code>: colour is a display concern, never part of <code><a href="reference/episodic_config_hash.html">episodic_config_hash()</a></code>’s detection-reproducibility guarantee.</td>
 </tr>
 <tr>
-<td><code>EPISODE_GEO_DATA</code></td>
+<td><code>EPISODIC_GEO_DATA</code></td>
 <td>
-<code><a href="reference/episode_geo_source_resolve.html">episode_geo_source_resolve()</a></code> (<code>path</code> argument)</td>
+<code><a href="reference/episodic_geo_source_resolve.html">episodic_geo_source_resolve()</a></code> (<code>path</code> argument)</td>
 <td>Path to an <code>.rds</code> file holding an operator’s own geographic reference data (an <code>sf</code> object with <code>pc</code>/<code>geometry</code> columns), overriding the shipped Netherlands postcode default. See “Geographic reference data” above.</td>
 </tr>
 <tr>
-<td><code>EPISODE_GEO_DATA_OVERLAY</code></td>
+<td><code>EPISODIC_GEO_DATA_OVERLAY</code></td>
 <td>
-<code><a href="reference/episode_geo_overlay_resolve.html">episode_geo_overlay_resolve()</a></code> (<code>path</code> argument)</td>
+<code><a href="reference/episodic_geo_overlay_resolve.html">episodic_geo_overlay_resolve()</a></code> (<code>path</code> argument)</td>
 <td>Path to an <code>.rds</code> file holding an optional region-outline overlay (an <code>sf</code> object with just a <code>geometry</code> column), drawn on top of the choropleth. No default. See “Geographic reference data” above.</td>
 </tr>
 <tr>
-<td><code>EPISODE_QUARTO_REPORT</code></td>
+<td><code>EPISODIC_QUARTO_REPORT</code></td>
 <td>
-<code><a href="reference/episode_report_render.html">episode_report_render()</a></code> (<code>qmd_path</code> argument)</td>
+<code><a href="reference/episodic_report_render.html">episodic_report_render()</a></code> (<code>qmd_path</code> argument)</td>
 <td>Path to an operator’s own Quarto report template, overriding the shipped <code>inst/report/cluster_report.qmd</code>. See “Custom report templates” above.</td>
 </tr>
 </tbody>

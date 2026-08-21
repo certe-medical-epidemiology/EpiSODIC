@@ -7,18 +7,18 @@ stack is a deliberate simplification.
 ## Usage
 
 ``` r
-episode_ui_epi_curve_chart(curve, lang = "nl")
+episodic_ui_epi_curve_chart(curve, lang = "nl")
 
-episode_ui_trend_chart(trend, lang = "nl")
+episodic_ui_trend_chart(trend, lang = "nl")
 
-episode_ui_rt_chart(rt, lang = "nl")
+episodic_ui_rt_chart(rt, lang = "nl")
 ```
 
 ## Arguments
 
 - curve:
 
-  A data frame from `episode_app_epi_curve()`.
+  A data frame from `episodic_app_epi_curve()`.
 
 - lang:
 
@@ -26,11 +26,11 @@ episode_ui_rt_chart(rt, lang = "nl")
 
 - trend:
 
-  A data frame from `episode_app_trend()`.
+  A data frame from `episodic_app_trend()`.
 
 - rt:
 
-  A data frame from `episode_compute_rt()`.
+  A data frame from `episodic_compute_rt()`.
 
 ## Examples
 
@@ -40,19 +40,19 @@ curve <- data.frame(
   n_cases = c(1, 0, 2, 1, 3, 2, 4, 3, 5, 2, 1, 0, 1, 2),
   incomplete = c(rep(FALSE, 12), TRUE, TRUE)
 )
-p <- episode_ui_epi_curve_chart(curve)
+p <- episodic_ui_epi_curve_chart(curve)
 trend <- data.frame(
   week_start = seq(as.Date("2025-01-06"), by = "week", length.out = 8),
   n_cases = c(2, 3, 1, 4, 6, 5, 3, 2),
   expected = c(2, 2, 2, 2, 2, 2, 2, 2),
   upperbound = c(4, 4, 4, 4, 4, 4, 4, 4)
 )
-p <- episode_ui_trend_chart(trend)
+p <- episodic_ui_trend_chart(trend)
 rt <- data.frame(
   window_end = seq(as.Date("2025-01-08"), by = "day", length.out = 5),
   mean = c(1.4, 1.3, 1.1, 0.9, 0.8),
   lower = c(1.0, 0.9, 0.8, 0.6, 0.5),
   upper = c(1.8, 1.7, 1.4, 1.2, 1.1)
 )
-p <- episode_ui_rt_chart(rt)
+p <- episodic_ui_rt_chart(rt)
 ```

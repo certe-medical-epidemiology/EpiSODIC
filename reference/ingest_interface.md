@@ -1,13 +1,13 @@
 # Ingestion interface
 
 Defines the contract that any raw case data source must satisfy before
-`episode_ingest_run()` (see `R/ingest_pipeline.R`) can turn it into rows
-of `episode_case`. This is the entire boundary between EpiSODIC and
-whatever laboratory or hospital system an operator runs: EpiSODIC never
-calls any data source itself (see `README.md`'s data format section) -
-the operator's own cron script extracts and transforms into exactly this
-shape, then calls
-[`episode_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_run_cron.md)
+`episodic_ingest_run()` (see `R/ingest_pipeline.R`) can turn it into
+rows of `episodic_case`. This is the entire boundary between EpiSODIC
+and whatever laboratory or hospital system an operator runs: EpiSODIC
+never calls any data source itself (see `README.md`'s data format
+section) - the operator's own cron script extracts and transforms into
+exactly this shape, then calls
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
 with a function that returns it. The only implementation shipped in this
 package is the synthetic generator (`R/ingest_synthetic.R`), used for
 the bundled demo.
@@ -15,8 +15,12 @@ the bundled demo.
 ## Usage
 
 ``` r
-episode_ingest_columns
+episodic_ingest_columns
 ```
+
+## Format
+
+An object of class `character` of length 15.
 
 ## Details
 
@@ -39,7 +43,7 @@ is handled separately as small, optional, pre-aggregated metadata (see
 ## Examples
 
 ``` r
-episode_ingest_columns
+episodic_ingest_columns
 #>  [1] "source_key"               "patient_key"             
 #>  [3] "sample_date"              "receipt_date"            
 #>  [5] "pathogen"                 "care_line"               

@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,7 +68,7 @@
     
     
 <p>This vignette is for standing up a real instance. If you only want to
-see the system working, run <code><a href="../reference/episode_demo.html">EpiSODIC::episode_demo()</a></code>
+see the system working, run <code><a href="../reference/episodic_demo.html">EpiSODIC::episodic_demo()</a></code>
 instead - no data, no credentials, no configuration required.</p>
 <div class="section level2">
 <h2 id="the-two-things-you-provide">The two things you provide<a class="anchor" aria-label="anchor" href="#the-two-things-you-provide"></a>
@@ -78,8 +78,8 @@ warehouse, or any other data source itself - that step is deliberately
 yours, run before EpiSODIC, so the package stays reusable by any
 laboratory rather than tied to one:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/episode_run_cron.html">episode_run_cron</a></span><span class="op">(</span></span>
-<span>  db_path <span class="op">=</span> <span class="st">"/path/to/episode.sqlite"</span>,</span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/episodic_run_cron.html">episodic_run_cron</a></span><span class="op">(</span></span>
+<span>  db_path <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span>,</span>
 <span>  ingest_source_fn <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="fu">my_extract_and_transform_function</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  denominator_source_fn <span class="op">=</span> <span class="cn">NULL</span>  <span class="co"># optional</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -87,11 +87,11 @@ laboratory rather than tied to one:</p>
 <code>denominator_source_fn</code>,
 <code>institution_activity_source_fn</code>) can be a function that
 produces the data frame at run time, or the data frame itself if you
-already have it in hand - see <code><a href="../reference/episode_resolve_source.html">episode_resolve_source()</a></code>. The
-README’s “Data format” section documents the exact columns each of the
-four data sources (cases, positivity metadata, institution activity,
+already have it in hand - see <code><a href="../reference/episodic_resolve_source.html">episodic_resolve_source()</a></code>.
+The README’s “Data format” section documents the exact columns each of
+the four data sources (cases, positivity metadata, institution activity,
 geographic reference data) expects; only cases are mandatory.</p>
-<p>Schedule <code><a href="../reference/episode_run_cron.html">episode_run_cron()</a></code> however your environment
+<p>Schedule <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> however your environment
 normally schedules R jobs (cron, a Windows scheduled task, a CI
 pipeline) - there is nothing EpiSODIC-specific about the scheduling
 itself.</p>
@@ -103,17 +103,17 @@ itself.</p>
 and MEM seasons are <em>operational data</em>, not software, and are
 never committed to this repository.
 <code>inst/config/default.yaml</code> ships the documented defaults;
-point <code>EPISODE_CONFIG</code> at a YAML file with only the keys you
+point <code>EPISODIC_CONFIG</code> at a YAML file with only the keys you
 want to override, and it is merged key-by-key on top of the shipped
 defaults. Every run records the resolved configuration’s hash and full
-snapshot on <code>episode_detection_run</code>, so the exact parameters
+snapshot on <code>episodic_detection_run</code>, so the exact parameters
 behind any past result stay recoverable from the database alone,
 regardless of what has since changed on disk.</p>
 <p>The UI’s colour palette works the same way, deliberately through a
 <em>separate</em> environment variable
-(<code>EPISODE_PALETTE_CONFIG</code>): colour is a display concern,
+(<code>EPISODIC_PALETTE_CONFIG</code>): colour is a display concern,
 never part of the detection-reproducibility guarantee
-<code>EPISODE_CONFIG</code>’s hash provides.</p>
+<code>EPISODIC_CONFIG</code>’s hash provides.</p>
 </div>
 <div class="section level2">
 <h2 id="accounts">Accounts<a class="anchor" aria-label="anchor" href="#accounts"></a>
@@ -124,9 +124,9 @@ or mute a stream, and there is deliberately no in-app account management
 screen: accounts are provisioned by whoever administers the
 database.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODE_DB <span class="op">=</span> <span class="st">"/path/to/episode.sqlite"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/episode_provision_user.html">episode_provision_user</a></span><span class="op">(</span></span>
+<span><span class="fu"><a href="../reference/episodic_provision_user.html">episodic_provision_user</a></span><span class="op">(</span></span>
 <span>  username <span class="op">=</span> <span class="st">"jdoe"</span>, full_name <span class="op">=</span> <span class="st">"Jane Doe"</span>, email <span class="op">=</span> <span class="st">"j.doe@example.org"</span>,</span>
 <span>  password <span class="op">=</span> <span class="st">"a-temporary-password"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -136,21 +136,40 @@ first real sign-in forces the holder to set their own password.</p>
 <div class="section level2">
 <h2 id="where-the-database-lives">Where the database lives<a class="anchor" aria-label="anchor" href="#where-the-database-lives"></a>
 </h2>
-<p>The SQLite database must sit on local disk, not in a synchronising
-folder (SharePoint, OneDrive, Dropbox): background sync can corrupt or
-fork a live SQLite file without any immediate warning. Configuration
-files are safe in a synced location, since they are small and read-only
-at runtime; the database itself is not.</p>
+<p><code>EPISODIC_DB</code> (and every <code>db_path</code> argument
+that falls back to it) works against two backends:</p>
+<ul>
+<li>
+<strong>SQLite</strong> (the default): a path to a local file. It
+must sit on local disk, not in a synchronising folder (SharePoint,
+OneDrive, Dropbox) - background sync can corrupt or fork a live SQLite
+file without any immediate warning. Configuration files are safe in a
+synced location, since they are small and read-only at runtime; the
+database itself is not.</li>
+<li>
+<strong>MariaDB/MySQL</strong>: a
+<code>mysql://user:password@host:port/dbname</code> DSN, built with
+<code><a href="../reference/episodic_db_dsn_mariadb.html">episodic_db_dsn_mariadb()</a></code> rather than assembled by hand.
+Requires the <code>RMariaDB</code> package. This is the option for a
+deployment that already runs a database server and would rather point
+EpiSODIC at it than manage a SQLite file on disk - the schema and every
+query work identically against either backend.</li>
+</ul>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="fu"><a href="../reference/episodic_db_dsn_mariadb.html">episodic_db_dsn_mariadb</a></span><span class="op">(</span></span>
+<span>  host <span class="op">=</span> <span class="st">"db.internal"</span>, dbname <span class="op">=</span> <span class="st">"episodic"</span>,</span>
+<span>  user <span class="op">=</span> <span class="st">"episodic_app"</span>, password <span class="op">=</span> <span class="st">"s3cr3t!"</span></span>
+<span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="running-the-app">Running the app<a class="anchor" aria-label="anchor" href="#running-the-app"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODE_DB <span class="op">=</span> <span class="st">"/path/to/episode.sqlite"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/episode_run_app.html">episode_run_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="../reference/episode_run_app.html">episode_run_app()</a></code>’s <code>db_path</code> argument
-defaults to <code>EPISODE_DB</code> exactly like
-<code><a href="../reference/episode_provision_user.html">episode_provision_user()</a></code>’s does, so a systemd unit or
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/episodic_run_app.html">episodic_run_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="../reference/episodic_run_app.html">episodic_run_app()</a></code>’s <code>db_path</code> argument
+defaults to <code>EPISODIC_DB</code> exactly like
+<code><a href="../reference/episodic_provision_user.html">episodic_provision_user()</a></code>’s does, so a systemd unit or
 Docker container can configure everything through environment variables
 alone, with no R code to edit between instances.</p>
 </div>
@@ -196,16 +215,16 @@ rather than failing when it is absent:</p>
 </tbody>
 </table>
 <p><code>AMR</code> is a hard dependency, not an optional integration:
-episode deduplication (<code>episode_dedup()</code>) calls
+episode deduplication (<code>episodic_dedup()</code>) calls
 <code><a href="https://amr-for-r.org/reference/get_episode.html" class="external-link">AMR::get_episode()</a></code> directly, and pathogen-name
-italicisation (<code><a href="../reference/episode_ui_italicise_taxon.html">episode_ui_italicise_taxon()</a></code>) reads
+italicisation (<code><a href="../reference/episodic_ui_italicise_taxon.html">episodic_ui_italicise_taxon()</a></code>) reads
 <code><a href="https://amr-for-r.org/reference/microorganisms.html" class="external-link">AMR::microorganisms</a></code>. There is no fallback for either, by
 design - see the DESCRIPTION for the published methods this package is
 built on.</p>
 <p>House-style colours are not an optional-dependency concern at all:
 the app always ships an organisation-neutral default palette
 (<code>inst/config/palette.yaml</code>), overridable per instance by
-pointing <code>EPISODE_PALETTE_CONFIG</code> at a department’s own YAML
+pointing <code>EPISODIC_PALETTE_CONFIG</code> at a department’s own YAML
 file with its real colours - no package dependency involved either
 way.</p>
 <p>None of these are required to run the demo, the detection engine, or

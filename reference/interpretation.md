@@ -10,8 +10,12 @@ i18n key with placeholders). Deterministic, testable, translatable.
 ## Usage
 
 ``` r
-episode_interpretation_slots
+episodic_interpretation_slots
 ```
+
+## Format
+
+An object of class `character` of length 7.
 
 ## Details
 
@@ -23,5 +27,5 @@ matches is used; a slot with no matching fragment (for example
 skipped rather than padded with a placeholder sentence.
 
 The **cluster object** every condition and template renders against is a
-plain list; see `R/app_read.R`'s `episode_cluster_object()` for exactly
+plain list; see `R/app_read.R`'s `episodic_cluster_object()` for exactly
 which fields it carries and where each one comes from.

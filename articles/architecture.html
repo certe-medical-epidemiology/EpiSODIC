@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -88,10 +88,10 @@ parts that matter most for understanding how it works day to day.</p>
 </h2>
 <p>This package is open-source software with no data and no
 site-specific configuration in it. A running instance - a real
-department’s database, its <code>EPISODE_CONFIG</code> overrides, its
+department’s database, its <code>EPISODIC_CONFIG</code> overrides, its
 provisioned accounts - lives entirely outside the package, addressed by
-environment variables (<code>EPISODE_DB</code>,
-<code>EPISODE_CONFIG</code>, <code>EPISODE_GEO_DATA</code>, …; see the
+environment variables (<code>EPISODIC_DB</code>,
+<code>EPISODIC_CONFIG</code>, <code>EPISODIC_GEO_DATA</code>, …; see the
 README’s “Environment variables” table for the full list). Nothing about
 a specific laboratory, hospital, or patient can enter this repository,
 because the repository never holds any of it.</p>
@@ -102,18 +102,18 @@ because the repository never holds any of it.</p>
 <p>Two entry points, one database:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># The cron entry point - typically scheduled, e.g. nightly</span></span>
-<span><span class="fu"><a href="../reference/episode_run_cron.html">episode_run_cron</a></span><span class="op">(</span></span>
-<span>  db_path <span class="op">=</span> <span class="st">"/path/to/episode.sqlite"</span>,</span>
+<span><span class="fu"><a href="../reference/episodic_run_cron.html">episodic_run_cron</a></span><span class="op">(</span></span>
+<span>  db_path <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span>,</span>
 <span>  ingest_source_fn <span class="op">=</span> <span class="va">my_extract_and_transform_function</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># The interactive entry point - a Shiny app, read-only for anonymous</span></span>
 <span><span class="co"># visitors, write access after signing in</span></span>
-<span><span class="fu"><a href="../reference/episode_run_app.html">episode_run_app</a></span><span class="op">(</span>db_path <span class="op">=</span> <span class="st">"/path/to/episode.sqlite"</span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="../reference/episode_run_cron.html">episode_run_cron()</a></code> does the expensive work: ingestion,
+<span><span class="fu"><a href="../reference/episodic_run_app.html">episodic_run_app</a></span><span class="op">(</span>db_path <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> does the expensive work: ingestion,
 stream enumeration, detection, reconciliation, all inside one
 transaction, so a partially failed run leaves no partial state and a
-retry is always safe. <code><a href="../reference/episode_run_app.html">episode_run_app()</a></code> only ever performs
+retry is always safe. <code><a href="../reference/episodic_run_app.html">episodic_run_app()</a></code> only ever performs
 cheap reads against already-computed results, plus a small set of
 insert-only write actions (classify, close, mute) gated behind
 authentication. This split keeps the interactive app fast regardless of

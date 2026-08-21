@@ -25,7 +25,7 @@ assessor, so the login is the only available identity source."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,10 +75,10 @@ assessor, so the login is the only available identity source.</p>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Password changes and login timestamps are the one bit of per-user
 <em>mutable</em> state in the schema, yet the app never issues an <code>UPDATE</code>.
-Resolved the same way <code>episode_cluster_ state</code> already resolves it for cluster state: <code>episode_app_user_event</code>
+Resolved the same way <code>episodic_cluster_ state</code> already resolves it for cluster state: <code>episodic_app_user_event</code>
 is an append-only log, and the "current" password hash / login time is
-derived from it at read time (see <code>episode_auth_password_hash()</code>,
-<code>episode_auth_last_login()</code>), falling back to <code>episode_app_user</code>'s own
+derived from it at read time (see <code>episodic_auth_password_hash()</code>,
+<code>episodic_auth_last_login()</code>), falling back to <code>episodic_app_user</code>'s own
 initial values when no event has been recorded yet.</p>
     </div>
 

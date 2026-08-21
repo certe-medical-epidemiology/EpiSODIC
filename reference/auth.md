@@ -17,9 +17,9 @@ source.
 
 Password changes and login timestamps are the one bit of per-user
 *mutable* state in the schema, yet the app never issues an `UPDATE`.
-Resolved the same way `episode_cluster_ state` already resolves it for
-cluster state: `episode_app_user_event` is an append-only log, and the
+Resolved the same way `episodic_cluster_ state` already resolves it for
+cluster state: `episodic_app_user_event` is an append-only log, and the
 "current" password hash / login time is derived from it at read time
-(see `episode_auth_password_hash()`, `episode_auth_last_login()`),
-falling back to `episode_app_user`'s own initial values when no event
+(see `episodic_auth_password_hash()`, `episodic_auth_last_login()`),
+falling back to `episodic_app_user`'s own initial values when no event
 has been recorded yet.

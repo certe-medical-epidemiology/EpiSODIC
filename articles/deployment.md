@@ -2,7 +2,7 @@
 
 This vignette is for standing up a real instance. If you only want to
 see the system working, run
-[`EpiSODIC::episode_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_demo.md)
+[`EpiSODIC::episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
 instead - no data, no credentials, no configuration required.
 
 ## The two things you provide
@@ -14,8 +14,8 @@ laboratory rather than tied to one:
 
 ``` r
 
-episode_run_cron(
-  db_path = "/path/to/episode.sqlite",
+episodic_run_cron(
+  db_path = "/path/to/episodic.sqlite",
   ingest_source_fn = function() my_extract_and_transform_function(),
   denominator_source_fn = NULL  # optional
 )
@@ -25,13 +25,13 @@ episode_run_cron(
 `institution_activity_source_fn`) can be a function that produces the
 data frame at run time, or the data frame itself if you already have it
 in hand - see
-[`episode_resolve_source()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_resolve_source.md).
+[`episodic_resolve_source()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_resolve_source.md).
 The README’s “Data format” section documents the exact columns each of
 the four data sources (cases, positivity metadata, institution activity,
 geographic reference data) expects; only cases are mandatory.
 
 Schedule
-[`episode_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_run_cron.md)
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
 however your environment normally schedules R jobs (cron, a Windows
 scheduled task, a CI pipeline) - there is nothing EpiSODIC-specific
 about the scheduling itself.
@@ -41,17 +41,17 @@ about the scheduling itself.
 Detection thresholds, baseline lengths, `same_place` rules and MEM
 seasons are *operational data*, not software, and are never committed to
 this repository. `inst/config/default.yaml` ships the documented
-defaults; point `EPISODE_CONFIG` at a YAML file with only the keys you
+defaults; point `EPISODIC_CONFIG` at a YAML file with only the keys you
 want to override, and it is merged key-by-key on top of the shipped
 defaults. Every run records the resolved configuration’s hash and full
-snapshot on `episode_detection_run`, so the exact parameters behind any
+snapshot on `episodic_detection_run`, so the exact parameters behind any
 past result stay recoverable from the database alone, regardless of what
 has since changed on disk.
 
 The UI’s colour palette works the same way, deliberately through a
-*separate* environment variable (`EPISODE_PALETTE_CONFIG`): colour is a
+*separate* environment variable (`EPISODIC_PALETTE_CONFIG`): colour is a
 display concern, never part of the detection-reproducibility guarantee
-`EPISODE_CONFIG`’s hash provides.
+`EPISODIC_CONFIG`’s hash provides.
 
 ## Accounts
 
@@ -62,9 +62,9 @@ screen: accounts are provisioned by whoever administers the database.
 
 ``` r
 
-Sys.setenv(EPISODE_DB = "/path/to/episode.sqlite")
+Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")
 
-episode_provision_user(
+episodic_provision_user(
   username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
   password = "a-temporary-password"
 )
@@ -75,23 +75,42 @@ sign-in forces the holder to set their own password.
 
 ## Where the database lives
 
-The SQLite database must sit on local disk, not in a synchronising
-folder (SharePoint, OneDrive, Dropbox): background sync can corrupt or
-fork a live SQLite file without any immediate warning. Configuration
-files are safe in a synced location, since they are small and read-only
-at runtime; the database itself is not.
+`EPISODIC_DB` (and every `db_path` argument that falls back to it) works
+against two backends:
+
+- **SQLite** (the default): a path to a local file. It must sit on local
+  disk, not in a synchronising folder (SharePoint, OneDrive, Dropbox) -
+  background sync can corrupt or fork a live SQLite file without any
+  immediate warning. Configuration files are safe in a synced location,
+  since they are small and read-only at runtime; the database itself is
+  not.
+- **MariaDB/MySQL**: a `mysql://user:password@host:port/dbname` DSN,
+  built with
+  [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)
+  rather than assembled by hand. Requires the `RMariaDB` package. This
+  is the option for a deployment that already runs a database server and
+  would rather point EpiSODIC at it than manage a SQLite file on disk -
+  the schema and every query work identically against either backend.
+
+``` r
+
+Sys.setenv(EPISODIC_DB = episodic_db_dsn_mariadb(
+  host = "db.internal", dbname = "episodic",
+  user = "episodic_app", password = "s3cr3t!"
+))
+```
 
 ## Running the app
 
 ``` r
 
-Sys.setenv(EPISODE_DB = "/path/to/episode.sqlite")
-episode_run_app()
+Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")
+episodic_run_app()
 ```
 
-[`episode_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_run_app.md)’s
-`db_path` argument defaults to `EPISODE_DB` exactly like
-[`episode_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_provision_user.md)’s
+[`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md)’s
+`db_path` argument defaults to `EPISODIC_DB` exactly like
+[`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md)’s
 does, so a systemd unit or Docker container can configure everything
 through environment variables alone, with no R code to edit between
 instances.
@@ -109,10 +128,10 @@ rather than failing when it is absent:
 | Choropleth map | `sf` + geographic reference data | Plain bar breakdown by PC value |
 
 `AMR` is a hard dependency, not an optional integration: episode
-deduplication (`episode_dedup()`) calls
+deduplication (`episodic_dedup()`) calls
 [`AMR::get_episode()`](https://amr-for-r.org/reference/get_episode.html)
 directly, and pathogen-name italicisation
-([`episode_ui_italicise_taxon()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episode_ui_italicise_taxon.md))
+([`episodic_ui_italicise_taxon()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ui_italicise_taxon.md))
 reads
 [`AMR::microorganisms`](https://amr-for-r.org/reference/microorganisms.html).
 There is no fallback for either, by design - see the DESCRIPTION for the
@@ -121,7 +140,7 @@ published methods this package is built on.
 House-style colours are not an optional-dependency concern at all: the
 app always ships an organisation-neutral default palette
 (`inst/config/palette.yaml`), overridable per instance by pointing
-`EPISODE_PALETTE_CONFIG` at a department’s own YAML file with its real
+`EPISODIC_PALETTE_CONFIG` at a department’s own YAML file with its real
 colours - no package dependency involved either way.
 
 None of these are required to run the demo, the detection engine, or the
