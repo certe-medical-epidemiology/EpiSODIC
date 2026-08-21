@@ -3,3 +3,8 @@ url: https://certe-medical-epidemiology.github.io/EpiSODIC/
 template:
   bootstrap: 5
   bootswatch: yeti
+
+development:
+  mode: devel
+  version_label: default
+  version_tooltip: "EpiSODIC package version"
