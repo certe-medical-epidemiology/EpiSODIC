@@ -4,7 +4,7 @@
   "app.demodata": "Demodata",
 
   "nav.clusters": "Clusters",
-  "nav.pathogen": "Pathogeen",
+  "nav.pathogen": "Verwekker",
   "nav.streams": "Signaleringsreeksen",
   "nav.archive": "Archief",
   "nav.activity": "Activiteit",
@@ -308,7 +308,7 @@
   "info.algorithms.farrington": "Vergelijkt het waargenomen aantal gevallen per week met een verwachting op basis van historische data (surveillance::farringtonFlexible). Signaleert wanneer het waargenomen aantal boven de berekende signaalgrens uitkomt; vereist voldoende basislijngeschiedenis om te kunnen draaien.",
   "info.algorithms.same_place": "Signaleert wanneer n of meer gevallen van dezelfde verwekker binnen k dagen op dezelfde plek voorkomen. Binnen ziekenhuizen draait dit op afdelingsniveau; daarbuiten (zorginstelling, huisartsenpost, huisartsenpraktijk) op instellingsniveau. Heeft geen basislijn nodig.",
   "info.algorithms.rare_trigger": "Voor een vaste lijst zeldzame-maar-ernstige verwekkers is elk gerapporteerd geval op zich al meldenswaardig; een basislijnmodel zou hier alleen stilte opleveren. Signaleert direct bij het bereikte minimumaantal, ongeacht basislijn.",
-  "info.algorithms.mem": "Voor verwekkers met een echt seizoen (influenza, RSV) schat dit pre- en post-epidemische drempels op eerdere volledig waargenomen seizoenen met de Moving Epidemic Method (mem::memmodel), en geeft een signaal zodra de laatste volledige week de startdrempel overschrijdt. Het beantwoordt een andere vraag dan Farrington: niet \"ligt deze week hoger dan verwacht\" maar \"is de epidemie begonnen\". Draait alleen op regioniveau; de drempels worden getekend op het Pathogeen-scherm.",
+  "info.algorithms.mem": "Voor verwekkers met een echt seizoen (influenza, RSV) schat dit pre- en post-epidemische drempels op eerdere volledig waargenomen seizoenen met de Moving Epidemic Method (mem::memmodel), en geeft een signaal zodra de laatste volledige week de startdrempel overschrijdt. Het beantwoordt een andere vraag dan Farrington: niet \"ligt deze week hoger dan verwacht\" maar \"is de epidemie begonnen\". Draait alleen op regioniveau; de drempels worden getekend op het Verwekker-scherm.",
   "info.states.title": "Clusterstatussen",
   "info.states.new": "Net gedetecteerd, nog niet beoordeeld door een assessor.",
   "info.states.assessing": "In beoordeling; een assessor is bezig het cluster te classificeren.",
@@ -366,7 +366,7 @@
   "report.closed_note": "cluster afgesloten",
   "report.footer": "Gegenereerd door EpiSODIC. Dit document bevat geen live koppeling naar de applicatie; alle gegevens zijn bevroren op het moment van renderen.",
 
-  "pathogen.title": "Pathogeenactiviteit",
+  "pathogen.title": "Verwekkeractiviteit",
   "pathogen.note": "Eén verwekker over het hele verzorgingsgebied, over een periode die u zelf kiest. Dit is het epidemiologische beeld: hoe een seizoen zich verhoudt tot zijn eigen historie, hoe snel de transmissie regiobreed loopt, en welke signalen er ondertussen zijn opgekomen. Het Clusters-scherm beantwoordt wat er vandaag moet gebeuren; dit scherm beantwoordt wat er aan de hand is.",
   "pathogen.empty": "Er zijn nog geen casussen ingelezen, dus er valt nog niets te beschrijven.",
   "pathogen.select_label": "Verwekker",
