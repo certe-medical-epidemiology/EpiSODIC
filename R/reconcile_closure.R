@@ -22,14 +22,14 @@
 #' Which criterion prompts closure differs by stream kind: a case-free
 #' interval for most streams, two maximum incubation periods for a
 #' confirmed epidemic, and the MEM post-epidemic threshold
-#' (`episode_mem_status()`) for seasonal streams flagged
+#' (`episodic_mem_status()`) for seasonal streams flagged
 #' `mem_applicable`.
 #'
 #' @param last_case_date The most recent case date in the cluster.
 #' @param verdict The cluster's latest verdict, or `NA`.
-#' @param case_free_days,incub_max_days From `episode_pathogen_config`.
-#' @param mem_applicable From `episode_pathogen_config`.
-#' @param mem_status `episode_mem_status()`'s own output for this stream,
+#' @param case_free_days,incub_max_days From `episodic_pathogen_config`.
+#' @param mem_applicable From `episodic_pathogen_config`.
+#' @param mem_status `episodic_mem_status()`'s own output for this stream,
 #'   or `NULL` if `mem_applicable` is `FALSE` or MEM could not be
 #'   computed (no `mem` package, off-season, insufficient history) - in
 #'   which case a `mem_applicable` stream never closes via this criterion
@@ -41,7 +41,7 @@
 #' @return `TRUE` if the closure criterion has fired.
 #' @keywords internal
 #' @noRd
-episode_closure_criterion_met <- function(last_case_date, verdict, case_free_days,
+episodic_closure_criterion_met <- function(last_case_date, verdict, case_free_days,
                                            incub_max_days = NA, mem_applicable = FALSE,
                                            mem_status = NULL, today = Sys.Date()) {
   if (isTRUE(mem_applicable)) {

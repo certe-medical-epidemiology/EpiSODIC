@@ -17,11 +17,11 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-test_that("episode_app_performance() returns empty-but-valid shapes on a fresh instance", {
+test_that("episodic_app_performance() returns empty-but-valid shapes on a fresh instance", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
 
-  perf <- episode_app_performance(env$con)
+  perf <- episodic_app_performance(env$con)
   expect_equal(nrow(perf$classification_distribution), 0)
   expect_equal(perf$timeliness$to_first_assessment$n, 0)
   expect_true(is.na(perf$timeliness$to_first_assessment$median_days))
@@ -37,15 +37,15 @@ test_that("episode_app_performance() returns empty-but-valid shapes on a fresh i
   expect_true(is.na(perf$by_detector_pathogen$ppv))
 })
 
-test_that("episode_app_performance() counts a terminal verdict as true/false positive for every detector that flagged the cluster", {
+test_that("episodic_app_performance() counts a terminal verdict as true/false positive for every detector that flagged the cluster", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  user_id <- episode_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
+  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
 
-  episode_app_submit_assessment(env$con, env$cluster_id, user_id,
+  episodic_app_submit_assessment(env$con, env$cluster_id, user_id,
                                  verdict = "confirmed_epidemic", rationale = "real outbreak")
 
-  perf <- episode_app_performance(env$con)
+  perf <- episodic_app_performance(env$con)
   expect_equal(perf$by_detector_pathogen$n_true_positive, 1)
   expect_equal(perf$by_detector_pathogen$n_false_positive, 0)
   expect_equal(perf$by_detector_pathogen$ppv, 1)
@@ -59,49 +59,49 @@ test_that("episode_app_performance() counts a terminal verdict as true/false pos
   expect_equal(perf$timeliness$to_classification$n, 1)
 })
 
-test_that("episode_app_performance() excludes cluster_not_yet and unassessed clusters from PPV", {
+test_that("episodic_app_performance() excludes cluster_not_yet and unassessed clusters from PPV", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  user_id <- episode_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
+  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
 
-  episode_app_submit_assessment(env$con, env$cluster_id, user_id,
+  episodic_app_submit_assessment(env$con, env$cluster_id, user_id,
                                  verdict = "cluster_not_yet", rationale = "still watching")
 
-  perf <- episode_app_performance(env$con)
+  perf <- episodic_app_performance(env$con)
   expect_equal(perf$by_detector_pathogen$n_true_positive, 0)
   expect_equal(perf$by_detector_pathogen$n_false_positive, 0)
   expect_true(is.na(perf$by_detector_pathogen$ppv))
   expect_equal(perf$classification_distribution$verdict, "cluster_not_yet")
 })
 
-test_that("episode_app_performance() only counts a cluster's latest verdict, not every historical one", {
+test_that("episodic_app_performance() only counts a cluster's latest verdict, not every historical one", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  user_id <- episode_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
+  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
 
-  episode_app_submit_assessment(env$con, env$cluster_id, user_id,
+  episodic_app_submit_assessment(env$con, env$cluster_id, user_id,
                                  verdict = "artefact", rationale = "looked like noise at first")
   Sys.sleep(1.1)
-  episode_app_submit_assessment(env$con, env$cluster_id, user_id,
+  episodic_app_submit_assessment(env$con, env$cluster_id, user_id,
                                  verdict = "confirmed_epidemic", rationale = "turned out real")
 
-  perf <- episode_app_performance(env$con)
+  perf <- episodic_app_performance(env$con)
   expect_equal(nrow(perf$classification_distribution), 1)
   expect_equal(perf$classification_distribution$verdict, "confirmed_epidemic")
   expect_equal(perf$by_detector_pathogen$n_true_positive, 1)
   expect_equal(perf$by_detector_pathogen$n_false_positive, 0)
 })
 
-test_that("episode_ui_performance_screen() renders without error, empty and populated", {
+test_that("episodic_ui_performance_screen() renders without error, empty and populated", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  empty_ui <- episode_ui_performance_screen(episode_app_performance(env$con))
+  empty_ui <- episodic_ui_performance_screen(episodic_app_performance(env$con))
   expect_s3_class(empty_ui, "shiny.tag")
 
-  user_id <- episode_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
-  episode_app_submit_assessment(env$con, env$cluster_id, user_id,
+  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
+  episodic_app_submit_assessment(env$con, env$cluster_id, user_id,
                                  verdict = "confirmed_epidemic", rationale = "real outbreak")
-  filled_ui <- episode_ui_performance_screen(episode_app_performance(env$con))
+  filled_ui <- episodic_ui_performance_screen(episodic_app_performance(env$con))
   rendered <- paste(as.character(filled_ui), collapse = "\n")
   expect_true(grepl("same_place", rendered, fixed = TRUE))
   expect_true(grepl("100%", rendered, fixed = TRUE))

@@ -5,7 +5,7 @@
 **Architecture document, draft 6**
 Author: Dr M.S. Berends, Department of Medical Epidemiology, Certe
 Licence: GPL-2
-Database tables are prefixed `episode_` throughout.
+Database tables are prefixed `episodic_` throughout.
 Status: topology, persistence, authentication, interface and data scope settled. Remaining open decisions in section 18. Superseded approaches are listed there under Considered and rejected and must not be reintroduced.
 
 The name carries a useful double meaning: `AMR::get_episode()` is the function on which both detectors and the reconciliation algorithm depend.
@@ -174,20 +174,20 @@ Enable `PRAGMA journal_mode = WAL` and `PRAGMA busy_timeout = 5000`. WAL is avai
 
 | Table | Written by |
 |---|---|
-| `episode_detection_run` | cron |
-| `episode_case` | cron |
-| `episode_reporting_triangle` | cron |
-| `episode_stream` | cron |
-| `episode_institution`, `episode_institution_activity` | cron |
-| `episode_denominator` | cron |
-| `episode_detection` | cron |
-| `episode_cluster` | cron |
-| `episode_cluster_case` | cron |
-| `episode_assessment_event` | app |
-| `episode_stream_mute` | app |
-| `episode_cluster_state` | both, append only |
-| `episode_report_render` | app, and cron for pre-renders |
-| `episode_app_user` | app, rarely |
+| `episodic_detection_run` | cron |
+| `episodic_case` | cron |
+| `episodic_reporting_triangle` | cron |
+| `episodic_stream` | cron |
+| `episodic_institution`, `episodic_institution_activity` | cron |
+| `episodic_denominator` | cron |
+| `episodic_detection` | cron |
+| `episodic_cluster` | cron |
+| `episodic_cluster_case` | cron |
+| `episodic_assessment_event` | app |
+| `episodic_stream_mute` | app |
+| `episodic_cluster_state` | both, append only |
+| `episodic_report_render` | app, and cron for pre-renders |
+| `episodic_app_user` | app, rarely |
 
 **The app only ever inserts.** It never updates and never deletes. This is what makes the whole concurrency question disappear: two people assessing the same cluster in the same minute produce two events, both visible in the timeline, latest effective by timestamp. That is also the more defensible record for a board of four, so optimistic locking and row versioning are dropped from the design entirely.
 
@@ -202,7 +202,7 @@ The only irreplaceable data is the assessments. Cases, detections and clusters c
 A stream is a monitored slice of the data. `stream_key` is a deterministic hash of the defining dimensions, so the same slice always receives the same identifier across runs and across hosts. The detector is **not** part of stream identity, because both detectors watch the same stream.
 
 ```sql
-CREATE TABLE episode_stream (
+CREATE TABLE episodic_stream (
   stream_id      BIGINT AUTO_INCREMENT PRIMARY KEY,
   stream_key     CHAR(40) NOT NULL UNIQUE,      -- sha1 of dimensions below
   level          ENUM('pathogen_ward',        -- L1
@@ -235,7 +235,7 @@ The `denominator` column records which normalisation applies, since it differs b
 Mutes are historical records, not a column, so that a past suppression remains visible in the audit trail.
 
 ```sql
-CREATE TABLE episode_stream_mute (
+CREATE TABLE episodic_stream_mute (
   mute_id     BIGINT AUTO_INCREMENT PRIMARY KEY,
   stream_id   BIGINT NOT NULL,
   muted_from  DATE NOT NULL,
@@ -245,15 +245,15 @@ CREATE TABLE episode_stream_mute (
   user_id     BIGINT NOT NULL,
   created_at  DATETIME NOT NULL,
   revoked_at  DATETIME NULL,
-  FOREIGN KEY (stream_id) REFERENCES episode_stream(stream_id),
-  FOREIGN KEY (user_id)   REFERENCES episode_app_user(user_id)
+  FOREIGN KEY (stream_id) REFERENCES episodic_stream(stream_id),
+  FOREIGN KEY (user_id)   REFERENCES episodic_app_user(user_id)
 );
 ```
 
 ### 5.3 Runs
 
 ```sql
-CREATE TABLE episode_detection_run (
+CREATE TABLE episodic_detection_run (
   run_id           BIGINT AUTO_INCREMENT PRIMARY KEY,
   host             VARCHAR(64) NOT NULL,
   account          VARCHAR(64) NOT NULL,
@@ -280,7 +280,7 @@ Each run writes its signals inside one transaction, so a retry after a partial f
 ### 5.4 Cases
 
 ```sql
-CREATE TABLE episode_case (
+CREATE TABLE episodic_case (
   case_id        BIGINT AUTO_INCREMENT PRIMARY KEY,
   source_key     VARCHAR(64) NOT NULL UNIQUE,   -- stable LIS identifier
   patient_key    VARCHAR(64) NOT NULL,
@@ -301,7 +301,7 @@ CREATE TABLE episode_case (
 );
 ```
 
-Prefixing resolves an incidental irritation: `case` is a reserved word in SQL and would have required quoting everywhere. `episode_case` does not.
+Prefixing resolves an incidental irritation: `case` is a reserved word in SQL and would have required quoting everywhere. `episodic_case` does not.
 
 `first_seen_run` is what makes the reporting triangle possible without a separate ingestion log.
 
@@ -324,7 +324,7 @@ What matters is the care-providing organisation, normalised on ingestion to the 
 The asymmetry is deliberate and worth stating in the published documentation. A hospital or care home is a transmission unit, so its identity is the analytical object. A single-handed GP practice is not a transmission unit; it is a proxy for a small population, and its name adds identifiability without adding epidemiological information. The municipality is both safer and more useful.
 
 ```sql
-CREATE TABLE episode_institution (
+CREATE TABLE episodic_institution (
   institution_id   BIGINT AUTO_INCREMENT PRIMARY KEY,
   institution_key  CHAR(40) NOT NULL UNIQUE,     -- sha1 of source identifier
   display_name     VARCHAR(128) NOT NULL,
@@ -346,7 +346,7 @@ Keying on a hash of the source identifier rather than on the display name means 
 ### 5.4.2 Hospital activity
 
 ```sql
-CREATE TABLE episode_institution_activity (
+CREATE TABLE episodic_institution_activity (
   institution_id BIGINT NOT NULL,
   period_start   DATE NOT NULL,
   period_end     DATE NOT NULL,
@@ -366,10 +366,10 @@ Beds are a weaker proxy, useful as a fallback and as context on the signal detai
 
 One isolate per patient per episode. A patient with three positive cultures during one illness is one case, and eleven isolates from eight patients is a different cluster from eleven patients.
 
-Deduplication uses `AMR::get_episode()` at ingestion, with the episode length taken per organism rather than fixed: thirty days is reasonable for *Campylobacter*, a year is closer to right for MRSA carriage. The length lives in `episode_pathogen_config` alongside the serial interval, incubation period and cool-down.
+Deduplication uses `AMR::get_episode()` at ingestion, with the episode length taken per organism rather than fixed: thirty days is reasonable for *Campylobacter*, a year is closer to right for MRSA carriage. The length lives in `episodic_pathogen_config` alongside the serial interval, incubation period and cool-down.
 
 ```sql
-CREATE TABLE episode_pathogen_config (
+CREATE TABLE episodic_pathogen_config (
   mo_code         VARCHAR(24) NOT NULL PRIMARY KEY,
   episode_days    INT NOT NULL DEFAULT 30,   -- deduplication window
   incub_min_days  DECIMAL(5,2) NULL,
@@ -386,14 +386,14 @@ CREATE TABLE episode_pathogen_config (
 );
 ```
 
-This supersedes `episode_serial_interval` from draft 2: one table per organism carrying every pathogen-specific constant, since they are curated together and always read together. Both the case count and the deduplicated patient count are stored on the signal, and the interface shows both.
+This supersedes `episodic_serial_interval` from draft 2: one table per organism carrying every pathogen-specific constant, since they are curated together and always read together. Both the case count and the deduplicated patient count are stored on the signal, and the interface shows both.
 
 ### 5.5 Detections and signals
 
 This is the core distinction. A **detection** is what an algorithm produced in one run. A **cluster** is the persistent real-world entity an epidemiologist assesses. Neither `certestats` function emits a stable identity, so the mapping between the two is the system's central algorithm.
 
 ```sql
-CREATE TABLE episode_detection (
+CREATE TABLE episodic_detection (
   detection_id BIGINT AUTO_INCREMENT PRIMARY KEY,
   run_id       BIGINT NOT NULL,
   stream_id    BIGINT NOT NULL,
@@ -408,7 +408,7 @@ CREATE TABLE episode_detection (
   created_at   DATETIME NOT NULL
 );
 
-CREATE TABLE episode_cluster (
+CREATE TABLE episodic_cluster (
   cluster_id        BIGINT AUTO_INCREMENT PRIMARY KEY,
   stream_id        BIGINT NOT NULL,
   first_day        DATE NOT NULL,
@@ -429,9 +429,9 @@ CREATE TABLE episode_cluster (
 
 -- Note what this table does NOT carry: verdict, state, closed_at, snooze_until.
 -- All four are authored by the app, which is insert-only, and are therefore
--- derived at read time from episode_assessment_event. See sections 5.0 and 6.1.
+-- derived at read time from episodic_assessment_event. See sections 5.0 and 6.1.
 
-CREATE TABLE episode_cluster_case (
+CREATE TABLE episodic_cluster_case (
   cluster_id BIGINT NOT NULL,
   case_id   BIGINT NOT NULL,
   PRIMARY KEY (cluster_id, case_id)
@@ -442,10 +442,10 @@ CREATE TABLE episode_cluster_case (
 
 Append-only, and the only table the app writes on classification.
 
-Note what is **not** on `episode_cluster`: there is no `state` column. State is a pure function of the assessment events, the case-free clock and the changed flag, computed at read time. Caching it would require the app to update a row the cron owns, which would break the write-ownership rule in section 5.0 for no benefit at this data volume.
+Note what is **not** on `episodic_cluster`: there is no `state` column. State is a pure function of the assessment events, the case-free clock and the changed flag, computed at read time. Caching it would require the app to update a row the cron owns, which would break the write-ownership rule in section 5.0 for no benefit at this data volume.
 
 ```sql
-CREATE TABLE episode_assessment_event (
+CREATE TABLE episodic_assessment_event (
   event_id     BIGINT AUTO_INCREMENT PRIMARY KEY,
   cluster_id    BIGINT NOT NULL,
   user_id      BIGINT NOT NULL,
@@ -466,7 +466,7 @@ The two axes are deliberate. The verdict answers "what was it"; the derived stat
 ### 5.7 Reporting triangle
 
 ```sql
-CREATE TABLE episode_reporting_triangle (
+CREATE TABLE episodic_reporting_triangle (
   stream_id   BIGINT NOT NULL,
   sample_date DATE NOT NULL,
   run_date    DATE NOT NULL,
@@ -482,7 +482,7 @@ Because afnamedatum silently becomes ontvangstdatum when the physician leaves it
 Tests are counted independently of streams, because a determination is not pathogen-specific: one faeces culture can yield several organisms and none. The denominator is therefore keyed on determination, and a mapping table connects determinations to the pathogens they can detect.
 
 ```sql
-CREATE TABLE episode_denominator (
+CREATE TABLE episodic_denominator (
   determination VARCHAR(32) NOT NULL,
   sample_date   DATE NOT NULL,
   care_line     ENUM('first','second','other','unknown') NOT NULL,
@@ -491,7 +491,7 @@ CREATE TABLE episode_denominator (
   PRIMARY KEY (determination, sample_date, care_line, area_code)
 );
 
-CREATE TABLE episode_mo_determination (
+CREATE TABLE episodic_mo_determination (
   mo_code       VARCHAR(24) NOT NULL,
   determination VARCHAR(32) NOT NULL,
   PRIMARY KEY (mo_code, determination)
@@ -502,12 +502,12 @@ Positivity for a stream is then positives over the summed tests of all determina
 
 ### 5.7.2 Pathogen constants
 
-Superseded by `episode_pathogen_config` in section 5.4.3, which carries the serial interval, incubation range, deduplication window, closure threshold, cool-down, `rt_applicable`, `mem_applicable` and severity weight in one table. There is no separate serial interval table.
+Superseded by `episodic_pathogen_config` in section 5.4.3, which carries the serial interval, incubation range, deduplication window, closure threshold, cool-down, `rt_applicable`, `mem_applicable` and severity weight in one table. There is no separate serial interval table.
 
 ### 5.8 Reports and users
 
 ```sql
-CREATE TABLE episode_report_render (
+CREATE TABLE episodic_report_render (
   report_id   BIGINT AUTO_INCREMENT PRIMARY KEY,
   cluster_id   BIGINT NOT NULL,
   user_id     BIGINT NULL,                      -- NULL for cron pre-renders
@@ -519,7 +519,7 @@ CREATE TABLE episode_report_render (
   version_no  INT NOT NULL
 );
 
-CREATE TABLE episode_app_user (
+CREATE TABLE episodic_app_user (
   user_id       BIGINT AUTO_INCREMENT PRIMARY KEY,
   username      VARCHAR(64) NOT NULL UNIQUE,
   full_name     VARCHAR(128) NOT NULL,
@@ -605,7 +605,7 @@ A seasonal influenza epidemic at L4 or L5 runs for months and will never satisfy
 Every transition is written to its own table, so a cluster's history is queryable rather than recomputed.
 
 ```sql
-CREATE TABLE episode_cluster_state (
+CREATE TABLE episodic_cluster_state (
   state_id   BIGINT AUTO_INCREMENT PRIMARY KEY,
   cluster_id  BIGINT NOT NULL,
   state      ENUM('new','assessing','monitoring','closable','closed','reassess') NOT NULL,
@@ -691,7 +691,7 @@ All detection parameters live in the instance configuration read by the cron: th
 
 Where the instance configuration lives is the operator's decision. EpiSODIC locates it through a single environment variable, `EPISODIC_CONFIG`, and cares about nothing else. A network drive, a SharePoint project folder, a local directory beside the cron script: all equivalent to the software.
 
-Reproducibility is achieved in the database rather than in version control. Every run writes `config_hash` and `config_snapshot`, so the exact parameters behind any result are recoverable from `episode_detection_run` alone, whatever happened to the file afterwards. This is stronger than a commit reference, because it records the resolved configuration rather than a document that has to be reconstructed.
+Reproducibility is achieved in the database rather than in version control. Every run writes `config_hash` and `config_snapshot`, so the exact parameters behind any result are recoverable from `episodic_detection_run` alone, whatever happened to the file afterwards. This is stronger than a commit reference, because it records the resolved configuration rather than a document that has to be reconstructed.
 
 The Streams screen displays the configuration from the most recent run's snapshot, not from the file, so what an assessor sees is what actually ran.
 
@@ -718,7 +718,7 @@ Periods classified as a confirmed epidemic are excluded from the baseline of sub
 
 `farringtonFlexible()` downweights past aberrations statistically, but a human verdict is better evidence than a residual. Without this exclusion, last winter's outbreak silently raises this winter's threshold and the system becomes progressively less able to detect recurrence of exactly the events it was built to find. No off-the-shelf tool does this, because no off-the-shelf tool has the verdicts.
 
-The exclusion is derived from `episode_assessment_event`, so it updates automatically when a verdict is revised, and the excluded windows are listed on the Streams screen so that a baseline is never quietly different from what an assessor expects.
+The exclusion is derived from `episodic_assessment_event`, so it updates automatically when a verdict is revised, and the excluded windows are listed on the Streams screen so that a baseline is never quietly different from what an assessor expects.
 
 ---
 
@@ -745,7 +745,7 @@ Weights configurable in `default.yaml`, defaults given.
 score = 100 * weighted_mean(
   excess_component    = rescale(log1p(observed - upperbound)),        w = 0.25
   ratio_component     = rescale(min(observed / expected, 5)),         w = 0.15
-  severity_component  = episode_stream.severity_weight,               w = 0.20
+  severity_component  = episodic_stream.severity_weight,               w = 0.20
   growth_component    = slope of last 3 aggregation periods,          w = 0.15
   agreement_component = detector_agreement / n_detectors,             w = 0.10
   density_component   = incidence per 1,000 patient-days vs baseline, w = 0.10
@@ -768,7 +768,7 @@ The commonest false alarm is rising test volume, not rising incidence. Section 5
 Per cluster, computed in the cron and cached, rendered by the app and the report.
 
 - **Epi curve.** Counts by sample date at the stream's aggregation period, with the Farrington threshold overlaid and the incomplete recent window shaded, width from the triangle. The shading is mandatory, not optional: without it a colleague reads a falling tail as a receding outbreak when it is only unreported specimens.
-- **Rt.** `EpiEstim` on sample-date incidence, using the pathogen's serial interval from `episode_pathogen_config`, sliding weekly windows, credible intervals shown, estimates within the truncated window withheld rather than captioned. Suppressed entirely where `rt_applicable` is false. This is the time-varying effective reproduction number, not R0, and the report should say so.
+- **Rt.** `EpiEstim` on sample-date incidence, using the pathogen's serial interval from `episodic_pathogen_config`, sliding weekly windows, credible intervals shown, estimates within the truncated window withheld rather than captioned. Suppressed entirely where `rt_applicable` is false. This is the time-varying effective reproduction number, not R0, and the report should say so.
 - **Demography.** Age-sex pyramid for the cluster against the stream's historical baseline, so that a shift in affected age group is visible rather than merely the count.
 - **Geography.** PC choropleth via `certegis`, cluster cases against baseline expectation, with small-count suppression configurable for reports leaving the department. A second panel breaks the cluster down by institution, which for second-line and long-term care is usually more informative than the map.
 - **Curve shape.** Whether all cases fall within a single maximum incubation period distinguishes a point source from propagated transmission, and that is the first question in any outbreak investigation because it redirects the enquiry from person-to-person spread towards a common exposure. Derived from the case date distribution against `incub_max_days` and stated in the Duiding, with an intermediate verdict where the evidence is ambiguous.
@@ -823,7 +823,7 @@ Shiny with `bslib`, packaged as `run_app()`, styled with an organisation-configu
 
 A parameterised Quarto template rendered to self-contained HTML. The cron pre-renders for every cluster with a verdict of `possible_epidemic` or above; assessors can re-render on demand, producing a new version.
 
-Files are written to an authorised folder and registered in `episode_report_render`. Send the file, not a link into the app: the medical staff have neither R nor an account, and a static artefact is also the defensible record of what was communicated on that date. Distribution through SharePoint or Teams is licensed and available.
+Files are written to an authorised folder and registered in `episodic_report_render`. Send the file, not a link into the app: the medical staff have neither R nor an account, and a static artefact is also the defensible record of what was communicated on that date. Distribution through SharePoint or Teams is licensed and available.
 
 ---
 
@@ -835,7 +835,7 @@ Four accounts, hashed with `sodium::password_store()` and checked with `sodium::
 
 The login exists to attribute assessments, not to defend against attackers. Since a single R process serves all sessions, `Sys.info()[["user"]]` returns the host account rather than the assessor, so the login is the only available identity source. Every assessment event carries `user_id`.
 
-The audit trail, by contrast, is not negotiable, and its justification is scientific rather than defensive: when a confirmed outbreak is reviewed afterwards by the medical board, the GGD or a reviewer, the question of who judged it an epidemic, when, and on what grounds must be answerable. Hence the append-only `episode_assessment_event` table.
+The audit trail, by contrast, is not negotiable, and its justification is scientific rather than defensive: when a confirmed outbreak is reviewed afterwards by the medical board, the GGD or a reviewer, the question of who judged it an epidemic, when, and on what grounds must be answerable. Hence the append-only `episodic_assessment_event` table.
 
 ---
 
@@ -853,7 +853,7 @@ Flat JSON per language under `inst/i18n/`, dotted keys rather than English sourc
 
 ## 14. Retention
 
-Cases not linked to any cluster with verdict `possible_epidemic` or above are purged after a configurable horizon, retaining the aggregate counts on `episode_cluster` and the full assessment record. Retention is a first-class scheduled function with a dry-run mode and a log, not a manual cleanup script.
+Cases not linked to any cluster with verdict `possible_epidemic` or above are purged after a configurable horizon, retaining the aggregate counts on `episodic_cluster` and the full assessment record. Retention is a first-class scheduled function with a dry-run mode and a log, not a manual cleanup script.
 
 ---
 
@@ -894,7 +894,7 @@ Reconciliation is the load-bearing component: schema, ingestion, the lattice, th
 
 Resolved since draft 2: hospitals as a lattice level, ward and specialism, deduplication per episode, baseline feedback, closure criterion, MEM, performance metrics, SQLite as the only backend, configuration outside the repository.
 
-Resolved since draft 1: package name (EpiSODIC), table prefix (`episode_`), postcode granularity (PC), institution and care line availability, denominator model including patient-days, hospitals as a first-class lattice level, per-pathogen serial intervals.
+Resolved since draft 1: package name (EpiSODIC), table prefix (`episodic_`), postcode granularity (PC), institution and care line availability, denominator model including patient-days, hospitals as a first-class lattice level, per-pathogen serial intervals.
 
 1. **Serial interval values.** Which literature estimates to ship, and for which organisms. This is the one item requiring genuine epidemiological curation rather than a decision, and it can be built incrementally: ship `rt_applicable = 0` for everything, then populate the organisms that matter as sources are agreed.
 2. **Severity weight table.** Source and curation: Wpg notification groups, ECDC priority lists, or local judgement. Affects ranking only, so a rough first pass is acceptable.

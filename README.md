@@ -19,7 +19,7 @@ configuration.
 <!--
 Screenshots below are sourced from data-raw/screenshots/ (git-tracked,
 .Rbuildignore'd so they never ship in the CRAN tarball) - see
-data-raw/README.md for how to regenerate them against episode_demo().
+data-raw/README.md for how to regenerate them against episodic_demo().
 -->
 <p align="center">
   <img src="data-raw/screenshots/dossier.png" alt="A cluster dossier: epi curve, trend, and an automatically generated plain-language interpretation" width="800">
@@ -54,7 +54,7 @@ No data, no credentials, no configuration - one call runs the whole
 system against bundled synthetic data:
 
 ```r
-EpiSODIC::episode_demo()
+EpiSODIC::episodic_demo()
 ```
 
 This creates a temporary database, runs one detection cycle, provisions
@@ -66,7 +66,7 @@ EpiSODIC's detection engine has **no dependency on any laboratory system
 or data warehouse**. Every dependency is a CRAN-hosted package
 (`surveillance` for Farrington); no private, organisation-specific
 package is required or even referenced. House colours
-(`episode_palette()`) come from a shipped, organisation-neutral default,
+(`episodic_palette()`) come from a shipped, organisation-neutral default,
 overridable per instance by pointing `EPISODIC_PALETTE_CONFIG` at a YAML
 file with an organisation's own colours - the same mechanism used for
 detection configuration, a custom report template, and geographic
@@ -78,11 +78,11 @@ organisation or country either - see "Geographic reference data" below.
 EpiSODIC never queries a laboratory information system, data warehouse, or
 any other data source itself. That is deliberately the operator's own step,
 run before EpiSODIC: extract from wherever your data lives, transform into
-the shape below, then call `episode_run_cron()` with a function that returns
+the shape below, then call `episodic_run_cron()` with a function that returns
 it. This keeps the engine reusable by any laboratory, not only Certe's.
 
 ```r
-episode_run_cron(
+episodic_run_cron(
   db_path = "/path/to/episode.sqlite",
   ingest_source_fn = function() my_extract_and_transform_function(),
   denominator_source_fn = NULL  # optional, see "Positivity metadata" below
@@ -92,7 +92,7 @@ episode_run_cron(
 ### Cases (mandatory)
 
 One row per confirmed-positive laboratory result. This is the complete,
-allow-listed column set (`episode_ingest_columns`); an ingestion source
+allow-listed column set (`episodic_ingest_columns`); an ingestion source
 returning any column outside this list, or missing one from it, is
 rejected:
 
@@ -156,7 +156,7 @@ of targets (your LIS can report "we ran 40 GI panels this week" trivially).
 It is not meaningful for open-ended culture results, where there is no
 closed list of things a negative result could have been - if that is your
 situation, simply never call this, and positivity panels stay blank for
-your streams. See `episode_denominator_source_synthetic()` for a worked
+your streams. See `episodic_denominator_source_synthetic()` for a worked
 example.
 
 ### Institution activity (optional)
@@ -177,7 +177,7 @@ counts exactly as it always has.
 Rows whose `institution_key` does not match a known institution are
 skipped, not an error - an activity feed and a case feed need not be
 perfectly synchronised. See
-`episode_synthetic_institution_activity_source()` for a worked example.
+`episodic_synthetic_institution_activity_source()` for a worked example.
 There is no ward-level (L1) equivalent in the schema, so L1 detection is
 never normalised, only L2.
 
@@ -192,7 +192,7 @@ feature did not exist. EpiSODIC ships a Netherlands postcode default
 geo_postcodes4_nl.R` for provenance), but geography is not
 Netherlands-specific: point `EPISODIC_GEO_DATA` at your own `.rds` file
 holding an [`sf`](https://r-spatial.github.io/sf/) object with a `pc`
-column (matching whatever your own `episode_case.pc` values are -
+column (matching whatever your own `episodic_case.pc` values are -
 postcodes, zip codes, municipality codes, anything) and a `geometry`
 column, and it is used instead. See `R/geo_data.R` for the exact
 contract.
@@ -208,7 +208,7 @@ to guess a sensible default for.
 
 ### Custom report templates (optional)
 
-`episode_report_render()` renders `inst/report/cluster_report.qmd`
+`episodic_report_render()` renders `inst/report/cluster_report.qmd`
 (embedded as self-contained HTML via Quarto) unless `EPISODIC_QUARTO_REPORT`
 points at an operator's own `.qmd` file, in which case that is used
 instead - for a department that wants its own letterhead, section order,
@@ -216,7 +216,7 @@ or house style. A custom template only needs to `readRDS(params$data_path)`
 and read from the same list the shipped one does (`obj`, `epi_curve`,
 `trend`, `linelist`, `timeline`, `similar`, `small_count_threshold`,
 `rendered_at`, `lang`, `package_version`); see the shipped template for
-the exact shape, including how it calls `episode_tr(..., lang = d$lang)`
+the exact shape, including how it calls `episodic_tr(..., lang = d$lang)`
 for a bilingual report.
 
 ## Database backend
@@ -225,15 +225,15 @@ for a bilingual report.
 either of two things:
 
 - a filesystem path, opened as a SQLite database (the default, and what
-  `episode_demo()` uses); or
+  `episodic_demo()` uses); or
 - a `mysql://user:password@host:port/dbname` DSN, opened against a
-  MariaDB or MySQL server instead. Build one with `episode_db_dsn_mariadb()`
-  (or its alias `episode_db_dsn_mysql()`) rather than assembling the
+  MariaDB or MySQL server instead. Build one with `episodic_db_dsn_mariadb()`
+  (or its alias `episodic_db_dsn_mysql()`) rather than assembling the
   string by hand, so that credentials containing `:`, `@` or `/` are
   URL-encoded correctly:
 
 ```r
-Sys.setenv(EPISODIC_DB = EpiSODIC::episode_db_dsn_mariadb(
+Sys.setenv(EPISODIC_DB = EpiSODIC::episodic_db_dsn_mariadb(
   host = "db.internal", dbname = "episodic",
   user = "episodic_app", password = "s3cr3t!"
 ))
@@ -259,15 +259,15 @@ database, not created by assessors themselves or by the app.
 ```r
 Sys.setenv(EPISODIC_DB = "/path/to/episode.sqlite")  # or pass db_path explicitly below
 
-episode_provision_user(
+episodic_provision_user(
   username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
   password = "a-temporary-password"
 )
 ```
 
-`episode_provision_user()` takes `db_path` (defaulting to `EPISODIC_DB`,
+`episodic_provision_user()` takes `db_path` (defaulting to `EPISODIC_DB`,
 see "Environment variables" below), not an open connection - it opens and
-closes its own via `episode_db_open()`, so provisioning an account is one
+closes its own via `episodic_db_open()`, so provisioning an account is one
 call at the console. The account is created with `must_change = TRUE`, so
 its first real sign-in forces the holder to set their own password before
 continuing.
@@ -281,12 +281,12 @@ Docker container) without editing R code.
 
 | Variable                    | Used by                                                              | Meaning                                                                                                                                                                                                                                                                              |
 |-----------------------------|----------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `EPISODIC_DB`               | `episode_run_app()`, `episode_provision_user()` (`db_path` argument) | Path to the instance's SQLite database, or a `mysql://` DSN pointing at a MariaDB/MySQL database instead - see "Database backend" above.                                                                                                                                             |
-| `EPISODIC_CONFIG`           | `episode_run_cron()` (`episode_config_path` argument)                | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`'s shipped defaults.                                                                                |
-| `EPISODIC_PALETTE_CONFIG`   | `episode_palette()` (`palette_config_path` argument)                 | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`'s shipped defaults. Deliberately separate from `EPISODIC_CONFIG`: colour is a display concern, never part of `episode_config_hash()`'s detection-reproducibility guarantee. |
-| `EPISODIC_GEO_DATA`         | `episode_geo_source_resolve()` (`path` argument)                     | Path to an `.rds` file holding an operator's own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands postcode default. See "Geographic reference data" above.                                                                |
-| `EPISODIC_GEO_DATA_OVERLAY` | `episode_geo_overlay_resolve()` (`path` argument)                    | Path to an `.rds` file holding an optional region-outline overlay (an `sf` object with just a `geometry` column), drawn on top of the choropleth. No default. See "Geographic reference data" above.                                                                                 |
-| `EPISODIC_QUARTO_REPORT`    | `episode_report_render()` (`qmd_path` argument)                      | Path to an operator's own Quarto report template, overriding the shipped `inst/report/cluster_report.qmd`. See "Custom report templates" above.                                                                                                                                      |
+| `EPISODIC_DB`               | `episodic_run_app()`, `episodic_provision_user()` (`db_path` argument) | Path to the instance's SQLite database, or a `mysql://` DSN pointing at a MariaDB/MySQL database instead - see "Database backend" above.                                                                                                                                             |
+| `EPISODIC_CONFIG`           | `episodic_run_cron()` (`episodic_config_path` argument)                | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`'s shipped defaults.                                                                                |
+| `EPISODIC_PALETTE_CONFIG`   | `episodic_palette()` (`palette_config_path` argument)                 | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`'s shipped defaults. Deliberately separate from `EPISODIC_CONFIG`: colour is a display concern, never part of `episodic_config_hash()`'s detection-reproducibility guarantee. |
+| `EPISODIC_GEO_DATA`         | `episodic_geo_source_resolve()` (`path` argument)                     | Path to an `.rds` file holding an operator's own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands postcode default. See "Geographic reference data" above.                                                                |
+| `EPISODIC_GEO_DATA_OVERLAY` | `episodic_geo_overlay_resolve()` (`path` argument)                    | Path to an `.rds` file holding an optional region-outline overlay (an `sf` object with just a `geometry` column), drawn on top of the choropleth. No default. See "Geographic reference data" above.                                                                                 |
+| `EPISODIC_QUARTO_REPORT`    | `episodic_report_render()` (`qmd_path` argument)                      | Path to an operator's own Quarto report template, overriding the shipped `inst/report/cluster_report.qmd`. See "Custom report templates" above.                                                                                                                                      |
 
 ## Licence
 

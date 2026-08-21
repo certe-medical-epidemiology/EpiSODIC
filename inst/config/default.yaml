@@ -25,7 +25,7 @@
 # environment variable; it is loaded on top of this file, and any key it
 # sets overrides the corresponding key here. The resolved (merged) result
 # is what gets hashed into config_hash and stored in config_snapshot on
-# every run - see episode_config_resolve().
+# every run - see episodic_config_resolve().
 
 # Reconciliation.
 reconciliation:

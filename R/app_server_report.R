@@ -37,7 +37,7 @@
 #' @return Invisible `NULL`; called for its side effects.
 #' @keywords internal
 #' @noRd
-episode_app_server_report <- function(input, output, session, con, db_path, lang = "nl",
+episodic_app_server_report <- function(input, output, session, con, db_path, lang = "nl",
                                         current_user, selected_cluster_id) {
   render_error <- shiny::reactiveVal(NULL)
 
@@ -47,7 +47,7 @@ episode_app_server_report <- function(input, output, session, con, db_path, lang
     shiny::tagList(
       shiny::tags$div(class = "episode-form-error", msg),
       # The render button is disabled and the "generating" text shown
-      # client-side, at click time (episode_ui_report_panel()) - a
+      # client-side, at click time (episodic_ui_report_panel()) - a
       # synchronous server-side render blocks the whole session, so
       # nothing pushed from an observer can appear before it finishes.
       # On success the dossier pane re-renders wholesale, which already
@@ -65,7 +65,7 @@ episode_app_server_report <- function(input, output, session, con, db_path, lang
     render_error(NULL)
 
     result <- tryCatch(
-      episode_report_render(con, cluster_id = input$report_render_submit,
+      episodic_report_render(con, cluster_id = input$report_render_submit,
                              output_dir = file.path(dirname(db_path), "reports"),
                              user_id = user$user_id, lang = lang),
       error = function(e) e

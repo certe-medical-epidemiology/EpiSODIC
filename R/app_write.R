@@ -26,7 +26,7 @@
 #' Submit a classification
 #'
 #' Inserts the assessment event, then re-derives state; if it changed,
-#' appends an `episode_cluster_state` row (`trigger = "assessment"`)
+#' appends an `episodic_cluster_state` row (`trigger = "assessment"`)
 #' recording the transition and which event caused it.
 #'
 #' @param con A [DBI::DBIConnection-class].
@@ -42,21 +42,21 @@
 #' @return Invisibly, the new `event_id`.
 #' @keywords internal
 #' @noRd
-episode_app_submit_assessment <- function(con, cluster_id, user_id, verdict = NA,
+episodic_app_submit_assessment <- function(con, cluster_id, user_id, verdict = NA,
                                            rationale, wpg_notifiable = NA,
                                            ggd_informed = NA, ggd_note = NA,
                                            snooze_until = NA, supersedes = NA) {
-  state_before <- episode_app_derive_state_for_cluster(con, cluster_id)
+  state_before <- episodic_app_derive_state_for_cluster(con, cluster_id)
 
-  event_id <- episode_db_assessment_event_insert(
+  event_id <- episodic_db_assessment_event_insert(
     con, cluster_id = cluster_id, user_id = user_id, verdict = verdict, rationale = rationale,
     wpg_notifiable = wpg_notifiable, ggd_informed = ggd_informed, ggd_note = ggd_note,
     snooze_until = snooze_until, supersedes = supersedes
   )
 
-  state_after <- episode_app_derive_state_for_cluster(con, cluster_id)
+  state_after <- episodic_app_derive_state_for_cluster(con, cluster_id)
   if (!identical(state_before, state_after)) {
-    episode_db_cluster_state_insert(
+    episodic_db_cluster_state_insert(
       con, cluster_id = cluster_id, state = state_after, trigger = "assessment",
       event_id = event_id, user_id = user_id
     )
@@ -72,12 +72,12 @@ episode_app_submit_assessment <- function(con, cluster_id, user_id, verdict = NA
 #' closed already carries its own. Always available on a non-terminal
 #' classification, whether or not the closure criterion has fired.
 #'
-#' @inheritParams episode_app_submit_assessment
-#' @return Invisibly, the new `episode_cluster_state` row's `state_id`.
+#' @inheritParams episodic_app_submit_assessment
+#' @return Invisibly, the new `episodic_cluster_state` row's `state_id`.
 #' @keywords internal
 #' @noRd
-episode_app_submit_closure <- function(con, cluster_id, user_id) {
-  invisible(episode_db_cluster_state_insert(
+episodic_app_submit_closure <- function(con, cluster_id, user_id) {
+  invisible(episodic_db_cluster_state_insert(
     con, cluster_id = cluster_id, state = "closed", trigger = "closure", user_id = user_id
   ))
 }

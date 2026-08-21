@@ -24,7 +24,7 @@
 #' silent. User-facing
 #' strings are never hardcoded in R code; every string used by the app
 #' lives in `inst/i18n/nl.json`/`en.json` and is looked up through
-#' [episode_tr()].
+#' [episodic_tr()].
 #'
 #' Fallback chain: an instance override (an operator-supplied overlay,
 #' e.g. for house-style wording changes, located beside `EPISODIC_CONFIG`
@@ -39,7 +39,7 @@ NULL
 
 #' @keywords internal
 #' @noRd
-episode_i18n_cache <- new.env(parent = emptyenv())
+episodic_i18n_cache <- new.env(parent = emptyenv())
 
 #' Load one language's flat translation table
 #'
@@ -47,8 +47,8 @@ episode_i18n_cache <- new.env(parent = emptyenv())
 #' @return A named character vector (dotted key -> template string).
 #' @keywords internal
 #' @noRd
-episode_i18n_load <- function(lang) {
-  cached <- episode_i18n_cache[[lang]]
+episodic_i18n_load <- function(lang) {
+  cached <- episodic_i18n_cache[[lang]]
   if (!is.null(cached)) return(cached)
 
   path <- system.file("i18n", paste0(lang, ".json"), package = "EpiSODIC")
@@ -61,7 +61,7 @@ episode_i18n_load <- function(lang) {
 
   raw <- jsonlite::fromJSON(path)
   flat <- unlist(raw)
-  episode_i18n_cache[[lang]] <- flat
+  episodic_i18n_cache[[lang]] <- flat
   flat
 }
 
@@ -76,33 +76,33 @@ episode_i18n_load <- function(lang) {
 #'   translation files. `NULL` (the default) means no override.
 #' @return A single character string, with placeholders substituted.
 #' @examples
-#' episode_tr("nav.clusters", lang = "nl")
-#' episode_tr("nav.clusters", lang = "en")
+#' episodic_tr("nav.clusters", lang = "nl")
+#' episodic_tr("nav.clusters", lang = "en")
 #' @export
-episode_tr <- function(key, ..., lang = "nl", instance_i18n = NULL) {
+episodic_tr <- function(key, ..., lang = "nl", instance_i18n = NULL) {
   template <- NULL
 
   if (!is.null(instance_i18n) && key %in% names(instance_i18n)) {
     template <- instance_i18n[[key]]
   }
   if (is.null(template)) {
-    table <- episode_i18n_load(lang)
+    table <- episodic_i18n_load(lang)
     if (key %in% names(table)) template <- table[[key]]
   }
   if (is.null(template) && lang != "en") {
-    table_en <- episode_i18n_load("en")
+    table_en <- episodic_i18n_load("en")
     if (key %in% names(table_en)) template <- table_en[[key]]
   }
   if (is.null(template)) {
     return(paste0("[[", key, "]]"))
   }
 
-  episode_i18n_substitute(template, list(...))
+  episodic_i18n_substitute(template, list(...))
 }
 
 #' @keywords internal
 #' @noRd
-episode_i18n_substitute <- function(template, values) {
+episodic_i18n_substitute <- function(template, values) {
   if (length(values) == 0) return(template)
   for (name in names(values)) {
     template <- gsub(paste0("\\{", name, "\\}"), as.character(values[[name]]), template, fixed = FALSE)
@@ -123,7 +123,7 @@ episode_i18n_substitute <- function(template, values) {
 #'   English both pluralise away from exactly 1.
 #' @keywords internal
 #' @noRd
-episode_count_phrase <- function(n, singular, plural, with_number = TRUE) {
+episodic_count_phrase <- function(n, singular, plural, with_number = TRUE) {
   word <- if (n == 1) singular else plural
   if (with_number) paste(n, word) else word
 }
@@ -139,15 +139,15 @@ episode_count_phrase <- function(n, singular, plural, with_number = TRUE) {
 #' @param x,y Range endpoints - `Date`, or a string `as.Date()` accepts.
 #'   Order does not matter; the earlier date is always shown first.
 #' @param lang Session language, `"nl"` (default) or `"en"`.
-#' @return A character string, or `episode_tr("misc.unknown", lang =
+#' @return A character string, or `episodic_tr("misc.unknown", lang =
 #'   lang)` if either endpoint fails to parse.
 #' @keywords internal
 #' @noRd
-episode_format_date_range <- function(x, y, lang = "nl") {
+episodic_format_date_range <- function(x, y, lang = "nl") {
   x <- tryCatch(as.Date(x), error = function(e) NA)
   y <- tryCatch(as.Date(y), error = function(e) NA)
   if (length(x) != 1 || length(y) != 1 || is.na(x) || is.na(y)) {
-    return(episode_tr("misc.unknown", lang = lang))
+    return(episodic_tr("misc.unknown", lang = lang))
   }
   if (y < x) {
     tmp <- x; x <- y; y <- tmp

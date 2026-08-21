@@ -9,7 +9,7 @@ rendered visibly (\verb{[[key]]}) rather than blank, so a gap is loud, not
 silent. User-facing
 strings are never hardcoded in R code; every string used by the app
 lives in \code{inst/i18n/nl.json}/\code{en.json} and is looked up through
-\code{\link[=episode_tr]{episode_tr()}}.
+\code{\link[=episodic_tr]{episodic_tr()}}.
 }
 \details{
 Fallback chain: an instance override (an operator-supplied overlay,

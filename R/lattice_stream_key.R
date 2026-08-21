@@ -39,7 +39,7 @@
 #' @return A 40-character lowercase hex SHA-1 digest.
 #' @keywords internal
 #' @noRd
-episode_stream_key <- function(level, pathogen, care_line = NA, region_code = NA,
+episodic_stream_key <- function(level, pathogen, care_line = NA, region_code = NA,
                                 institution_id = NA, ward = NA) {
   stopifnot(length(level) == 1, length(pathogen) == 1)
   fields <- vapply(

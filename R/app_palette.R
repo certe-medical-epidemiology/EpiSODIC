@@ -20,7 +20,7 @@
 #' The application colour palette
 #'
 #' Read from `inst/config/palette.yaml`, the same defaults-then-instance-
-#' override pattern [episode_config_resolve()] uses for detection
+#' override pattern [episodic_config_resolve()] uses for detection
 #' configuration (deliberately a *separate* file and env var,
 #' `EPISODIC_PALETTE_CONFIG`: colours must never affect `config_hash`,
 #' which is about detection reproducibility, not display). Any
@@ -41,11 +41,11 @@
 #'   (+`_dark`), `success` (+`_dark`), `warning` (+`_dark`), `danger`
 #'   (+`_dark`).
 #' @examples
-#' pal <- episode_palette()
+#' pal <- episodic_palette()
 #' pal$primary
 #' @export
-episode_palette <- function() {
-  episode_palette_config_resolve()
+episodic_palette <- function() {
+  episodic_palette_config_resolve()
 }
 
 #' Resolve the shipped default palette, with an optional instance override
@@ -53,10 +53,10 @@ episode_palette <- function() {
 #' @param palette_config_path Path to an instance palette file, overlaid
 #'   key-by-key on the shipped defaults. Defaults to the
 #'   `EPISODIC_PALETTE_CONFIG` environment variable.
-#' @return A named list of role-named hex colours (see [episode_palette()]).
+#' @return A named list of role-named hex colours (see [episodic_palette()]).
 #' @keywords internal
 #' @noRd
-episode_palette_config_resolve <- function(palette_config_path = Sys.getenv("EPISODIC_PALETTE_CONFIG", unset = NA)) {
+episodic_palette_config_resolve <- function(palette_config_path = Sys.getenv("EPISODIC_PALETTE_CONFIG", unset = NA)) {
   defaults_path <- system.file("config", "palette.yaml", package = "EpiSODIC")
   if (identical(defaults_path, "")) {
     defaults_path <- file.path("inst", "config", "palette.yaml")
@@ -65,7 +65,7 @@ episode_palette_config_resolve <- function(palette_config_path = Sys.getenv("EPI
 
   if (!is.na(palette_config_path) && nzchar(palette_config_path) && file.exists(palette_config_path)) {
     instance_palette <- yaml::read_yaml(palette_config_path)
-    base <- episode_config_merge(base, instance_palette)
+    base <- episodic_config_merge(base, instance_palette)
   }
 
   base
@@ -74,7 +74,7 @@ episode_palette_config_resolve <- function(palette_config_path = Sys.getenv("EPI
 #' The five-colour brand bar used under the app header
 #' @keywords internal
 #' @noRd
-episode_brand_bar <- function() {
-  p <- episode_palette()
+episodic_brand_bar <- function() {
+  p <- episodic_palette()
   c(p$warning, p$success, p$danger, p$primary, p$secondary)
 }

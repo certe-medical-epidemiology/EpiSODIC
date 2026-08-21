@@ -18,9 +18,9 @@ assessor, so the login is the only available identity source.
 \details{
 Password changes and login timestamps are the one bit of per-user
 \emph{mutable} state in the schema, yet the app never issues an \code{UPDATE}.
-Resolved the same way \verb{episode_cluster_ state} already resolves it for cluster state: \code{episode_app_user_event}
+Resolved the same way \verb{episodic_cluster_ state} already resolves it for cluster state: \code{episodic_app_user_event}
 is an append-only log, and the "current" password hash / login time is
-derived from it at read time (see \code{episode_auth_password_hash()},
-\code{episode_auth_last_login()}), falling back to \code{episode_app_user}'s own
+derived from it at read time (see \code{episodic_auth_password_hash()},
+\code{episodic_auth_last_login()}), falling back to \code{episodic_app_user}'s own
 initial values when no event has been recorded yet.
 }

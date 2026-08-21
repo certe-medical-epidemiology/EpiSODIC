@@ -21,7 +21,7 @@
 #'
 #' `EpiEstim::estimate_R()` on sample-date incidence, sliding 7-day
 #' windows, using the pathogen's serial interval from
-#' `episode_pathogen_config`. This is Rt, the
+#' `episodic_pathogen_config`. This is Rt, the
 #' time-varying *effective* reproduction number - not R0 - and any display
 #' of it must say so.
 #'
@@ -29,7 +29,7 @@
 #' or the serial interval is unset, or there is not enough case history
 #' for even one window: no off-the-shelf message like "insufficient data"
 #' is a substitute for simply not showing the panel, per how the rest of
-#' this codebase treats optional analytical panels (`episode_cluster_
+#' this codebase treats optional analytical panels (`episodic_cluster_
 #' object()`'s other `NULL`-when-not-computable fields).
 #'
 #' Estimates whose window ends inside `incomplete_days` of the run date
@@ -38,7 +38,7 @@
 #' (`R/triangle_update.R`), so an Rt estimate ending there would read a
 #' reporting artefact as a real change in transmission.
 #'
-#' `si_dist` (`gamma`/`lognormal`) from `episode_pathogen_config` is
+#' `si_dist` (`gamma`/`lognormal`) from `episodic_pathogen_config` is
 #' recorded but not yet used to pick `EpiEstim`'s distribution family:
 #' `estimate_R(method = "parametric_si")` only ever fits a Gamma-shaped
 #' serial interval internally (mean/sd parameterised, `EpiEstim`'s own
@@ -46,8 +46,8 @@
 #' assumed. This is a known, documented simplification.
 #'
 #' @param cases A data frame of the cluster's cases, with `sample_date`.
-#' @param pc A single-row pathogen config (`episode_db_pathogen_config_get()`).
-#' @param incomplete_days From `episode_app_completeness()`; days at the
+#' @param pc A single-row pathogen config (`episodic_db_pathogen_config_get()`).
+#' @param incomplete_days From `episodic_app_completeness()`; days at the
 #'   trailing end of the case series considered under-ascertained.
 #' @param window_days Sliding window width, days. Fixed at 7 (weekly),
 #'   matching every other panel's own aggregation.
@@ -62,7 +62,7 @@
 #' implements and is called directly here).
 #' @keywords internal
 #' @noRd
-episode_compute_rt <- function(cases, pc, incomplete_days = 0L, window_days = 7L) {
+episodic_compute_rt <- function(cases, pc, incomplete_days = 0L, window_days = 7L) {
   if (is.null(pc) || !isTRUE(as.logical(pc$rt_applicable))) return(NULL)
   if (is.na(pc$si_mean_days) || is.na(pc$si_sd_days)) return(NULL)
   if (is.null(cases) || nrow(cases) == 0) return(NULL)

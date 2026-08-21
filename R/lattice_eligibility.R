@@ -34,13 +34,13 @@
 #'   with a `sample_date` column.
 #' @param as_of The date detection is being run as of; baseline weeks are
 #'   counted back from here.
-#' @param config The resolved configuration (`episode_config_resolve()`);
+#' @param config The resolved configuration (`episodic_config_resolve()`);
 #'   uses `config$eligibility`.
 #' @return `TRUE` if the stream is eligible for statistical detection,
 #'   `FALSE` otherwise.
 #' @keywords internal
 #' @noRd
-episode_eligibility_gate <- function(cases_for_stream, as_of, config) {
+episodic_eligibility_gate <- function(cases_for_stream, as_of, config) {
   gate <- config$eligibility
 
   dates <- as.Date(cases_for_stream$sample_date)

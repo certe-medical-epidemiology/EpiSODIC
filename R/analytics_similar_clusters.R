@@ -54,28 +54,28 @@
 #'   is no closed precedent for this pathogen.
 #' @keywords internal
 #' @noRd
-episode_app_similar_clusters <- function(con, cluster_id, lang = "nl", n = 3L) {
+episodic_app_similar_clusters <- function(con, cluster_id, lang = "nl", n = 3L) {
   empty <- data.frame(cluster_id = integer(0), pathogen = character(0), level_label = character(0),
                        place = character(0), n_cases = integer(0), verdict_label = character(0),
                        closed_at = character(0), stringsAsFactors = FALSE)
 
-  target <- DBI::dbGetQuery(con, "SELECT * FROM episode_cluster WHERE cluster_id = ?",
+  target <- DBI::dbGetQuery(con, "SELECT * FROM episodic_cluster WHERE cluster_id = ?",
                              params = list(cluster_id))
   if (nrow(target) == 0) return(empty)
   target <- target[1, ]
-  target_stream <- DBI::dbGetQuery(con, "SELECT * FROM episode_stream WHERE stream_id = ?",
+  target_stream <- DBI::dbGetQuery(con, "SELECT * FROM episodic_stream WHERE stream_id = ?",
                                     params = list(target$stream_id))[1, ]
 
-  clusters <- episode_db_clusters(con, open_only = TRUE)
+  clusters <- episodic_db_clusters(con, open_only = TRUE)
   clusters <- clusters[clusters$cluster_id != cluster_id, ]
   if (nrow(clusters) == 0) return(empty)
 
-  streams <- episode_db_streams(con, active_only = FALSE)
+  streams <- episodic_db_streams(con, active_only = FALSE)
   clusters$pathogen <- streams$pathogen[match(clusters$stream_id, streams$stream_id)]
   clusters <- clusters[!is.na(clusters$pathogen) & clusters$pathogen == target_stream$pathogen, ]
   if (nrow(clusters) == 0) return(empty)
 
-  clusters$state <- vapply(clusters$cluster_id, function(id) episode_app_derive_state_for_cluster(con, id), character(1))
+  clusters$state <- vapply(clusters$cluster_id, function(id) episodic_app_derive_state_for_cluster(con, id), character(1))
   clusters <- clusters[clusters$state == "closed", ]
   if (nrow(clusters) == 0) return(empty)
 
@@ -99,21 +99,21 @@ episode_app_similar_clusters <- function(con, cluster_id, lang = "nl", n = 3L) {
   clusters <- clusters[order(-clusters$score), ]
   clusters <- utils::head(clusters, n)
 
-  institutions <- DBI::dbGetQuery(con, "SELECT * FROM episode_institution")
-  clusters$level_label <- vapply(clusters$level, function(lv) episode_tr(paste0("level.", lv), lang = lang), character(1))
+  institutions <- DBI::dbGetQuery(con, "SELECT * FROM episodic_institution")
+  clusters$level_label <- vapply(clusters$level, function(lv) episodic_tr(paste0("level.", lv), lang = lang), character(1))
   clusters$place <- vapply(seq_len(nrow(clusters)), function(i) {
     stream <- streams[streams$stream_id == clusters$stream_id[i], ][1, ]
     institution <- if (!is.na(stream$institution_id)) institutions[institutions$institution_id == stream$institution_id, ][1, ] else NULL
-    episode_app_place_label(stream, institution, lang = lang)
+    episodic_app_place_label(stream, institution, lang = lang)
   }, character(1))
   clusters$verdict_label <- vapply(clusters$cluster_id, function(id) {
-    events <- episode_db_assessment_events(con, id)
+    events <- episodic_db_assessment_events(con, id)
     classified <- events[!is.na(events$verdict), ]
     if (nrow(classified) == 0) return(NA_character_)
-    episode_tr(paste0("verdict.", classified$verdict[nrow(classified)]), lang = lang)
+    episodic_tr(paste0("verdict.", classified$verdict[nrow(classified)]), lang = lang)
   }, character(1))
   clusters$closed_at <- vapply(clusters$cluster_id, function(id) {
-    states <- episode_db_cluster_states(con, id)
+    states <- episodic_db_cluster_states(con, id)
     closed_states <- states[states$state == "closed", ]
     if (nrow(closed_states) == 0) NA_character_ else closed_states$entered_at[nrow(closed_states)]
   }, character(1))

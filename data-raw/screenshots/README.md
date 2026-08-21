@@ -11,7 +11,7 @@ Expected files (paths the main README already links to):
   freshly-detected, still-empty one).
 - `performance.png` - the Prestatie (Performance) screen, with real
   entries in the PPV table and classification distribution - run
-  `episode_demo()` against `episode_ingest_source_synthetic_calibration()`
+  `episodic_demo()` against `episodic_ingest_source_synthetic_calibration()`
   (see `R/ingest_synthetic.R`) rather than the plain demo generator if a
   fresh instance's Performance screen looks too sparse, then classify a
   handful of the resulting clusters so the screen has verdicts to show.

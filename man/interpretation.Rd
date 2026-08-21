@@ -2,10 +2,10 @@
 % Please edit documentation in R/interpretation.R
 \name{interpretation}
 \alias{interpretation}
-\alias{episode_interpretation_slots}
+\alias{episodic_interpretation_slots}
 \title{The interpretation fragment engine}
 \usage{
-episode_interpretation_slots
+episodic_interpretation_slots
 }
 \description{
 No LLM at runtime - deterministic and testable by construction. An interpretation (the
@@ -24,6 +24,6 @@ condition matches is used; a slot with no matching fragment (for example
 skipped rather than padded with a placeholder sentence.
 
 The \strong{cluster object} every condition and template renders against is a
-plain list; see \code{R/app_read.R}'s \code{episode_cluster_object()} for exactly
+plain list; see \code{R/app_read.R}'s \code{episodic_cluster_object()} for exactly
 which fields it carries and where each one comes from.
 }

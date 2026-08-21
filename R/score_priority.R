@@ -35,7 +35,7 @@
 #'
 #' @param excess Observed minus upperbound (may be `NA`).
 #' @param ratio Observed over expected, capped at 5 (may be `NA`).
-#' @param severity_weight From `episode_stream`/`episode_pathogen_config`.
+#' @param severity_weight From `episodic_stream`/`episodic_pathogen_config`.
 #' @param growth_slope Slope of the last three aggregation periods.
 #' @param detector_agreement,n_detectors Count of detectors that fired, and
 #'   how many exist in total.
@@ -47,16 +47,16 @@
 #' @return A single numeric score, 0-100.
 #' @keywords internal
 #' @noRd
-episode_priority_score <- function(excess = NA, ratio = NA, severity_weight = 1,
+episodic_priority_score <- function(excess = NA, ratio = NA, severity_weight = 1,
                                     growth_slope = 0, detector_agreement = 1, n_detectors = 1,
                                     density_ratio = NA, spatial_concentration = 0, weights) {
   components <- c(
-    excess_component = episode_rescale(log1p(pmax(excess, 0, na.rm = FALSE))),
-    ratio_component = episode_rescale(pmin(ratio, 5)),
+    excess_component = episodic_rescale(log1p(pmax(excess, 0, na.rm = FALSE))),
+    ratio_component = episodic_rescale(pmin(ratio, 5)),
     severity_component = pmin(pmax(severity_weight, 0), 1),
-    growth_component = episode_rescale(growth_slope),
+    growth_component = episodic_rescale(growth_slope),
     agreement_component = detector_agreement / max(n_detectors, 1),
-    density_component = episode_rescale(density_ratio),
+    density_component = episodic_rescale(density_ratio),
     spatial_component = pmin(pmax(spatial_concentration, 0), 1)
   )
 
@@ -83,7 +83,7 @@ episode_priority_score <- function(excess = NA, ratio = NA, severity_weight = 1,
 #' (with no fixed reference range) cannot guarantee.
 #' @keywords internal
 #' @noRd
-episode_rescale <- function(x) {
+episodic_rescale <- function(x) {
   if (is.na(x)) return(NA_real_)
   x <- pmax(x, 0)
   x / (x + 1)

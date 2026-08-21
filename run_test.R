@@ -37,13 +37,13 @@ if (!file.exists(db_path)) {
   # every institution/pathogen/PC combination, plus two injected
   # outbreaks (one point-source, one propagated) - and one assessor
   # account to sign in with.
-  episode_run_cron(
+  episodic_run_cron(
     db_path,
-    ingest_source_fn = episode_ingest_source_synthetic,
-    denominator_source_fn = episode_denominator_source_synthetic
+    ingest_source_fn = episodic_ingest_source_synthetic,
+    denominator_source_fn = episodic_denominator_source_synthetic
   )
 
-  episode_provision_user(
+  episodic_provision_user(
     username = "5580",
     full_name = "Matthijs Berends",
     email = "m.berends@domain.com",
@@ -58,8 +58,8 @@ if (!file.exists(db_path)) {
 # reconciliation across runs, the Activiteit log with more than one run
 # recorded, and the Prestatie screen's timeliness figures once a few
 # clusters have been assessed:
-# episode_run_cron(db_path, ingest_source_fn = episode_ingest_source_synthetic,
-#                   denominator_source_fn = episode_denominator_source_synthetic)
+# episodic_run_cron(db_path, ingest_source_fn = episodic_ingest_source_synthetic,
+#                   denominator_source_fn = episodic_denominator_source_synthetic)
 
 # review the simulated data
-episode_run_app()
+episodic_run_app()

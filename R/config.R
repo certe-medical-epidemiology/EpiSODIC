@@ -30,26 +30,26 @@
 #' `config_snapshot` on every detection run, so a run's exact parameters are
 #' always recoverable from the database alone.
 #'
-#' @param episode_config_path Path to the instance configuration file.
+#' @param episodic_config_path Path to the instance configuration file.
 #'   Defaults to the `EPISODIC_CONFIG` environment variable. If unset or the
 #'   file does not exist, only the shipped defaults are used, which is the
 #'   supported way to run the bundled demo.
 #' @return A nested list, the resolved configuration.
 #' @examples
-#' config <- episode_config_resolve()
+#' config <- episodic_config_resolve()
 #' names(config)
 #' config$eligibility$min_baseline_weeks
 #' @export
-episode_config_resolve <- function(episode_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
+episodic_config_resolve <- function(episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
   defaults_path <- system.file("config", "default.yaml", package = "EpiSODIC")
   if (identical(defaults_path, "")) {
     defaults_path <- file.path("inst", "config", "default.yaml")
   }
   config <- yaml::read_yaml(defaults_path)
 
-  if (!is.na(episode_config_path) && nzchar(episode_config_path) && file.exists(episode_config_path)) {
-    instance_config <- yaml::read_yaml(episode_config_path)
-    config <- episode_config_merge(config, instance_config)
+  if (!is.na(episodic_config_path) && nzchar(episodic_config_path) && file.exists(episodic_config_path)) {
+    instance_config <- yaml::read_yaml(episodic_config_path)
+    config <- episodic_config_merge(config, instance_config)
   }
 
   config
@@ -67,11 +67,11 @@ episode_config_resolve <- function(episode_config_path = Sys.getenv("EPISODIC_CO
 #' @return The merged list.
 #' @keywords internal
 #' @noRd
-episode_config_merge <- function(base, override) {
+episodic_config_merge <- function(base, override) {
   for (key in names(override)) {
     if (is.list(override[[key]]) && is.list(base[[key]]) &&
         !is.null(names(override[[key]])) && !is.null(names(base[[key]]))) {
-      base[[key]] <- episode_config_merge(base[[key]], override[[key]])
+      base[[key]] <- episodic_config_merge(base[[key]], override[[key]])
     } else {
       base[[key]] <- override[[key]]
     }
@@ -87,15 +87,15 @@ episode_config_merge <- function(base, override) {
 #' `CHAR(40)` width used for other `_key`/`_hash` columns in the schema.
 #'
 #' @param config A resolved configuration, as returned by
-#'   [episode_config_resolve()].
+#'   [episodic_config_resolve()].
 #' @return A list with elements `hash` (a 40-character SHA-1 hex digest) and
 #'   `snapshot` (the canonical JSON string).
 #' @examples
-#' hashed <- episode_config_hash(episode_config_resolve())
+#' hashed <- episodic_config_hash(episodic_config_resolve())
 #' hashed$hash
 #' @export
-episode_config_hash <- function(config) {
-  canonical <- episode_config_canonicalise(config)
+episodic_config_hash <- function(config) {
+  canonical <- episodic_config_canonicalise(config)
   snapshot <- jsonlite::toJSON(canonical, auto_unbox = TRUE, null = "null")
   list(
     hash = digest::digest(snapshot, algo = "sha1", serialize = FALSE),
@@ -105,14 +105,14 @@ episode_config_hash <- function(config) {
 
 #' @keywords internal
 #' @noRd
-episode_config_canonicalise <- function(x) {
+episodic_config_canonicalise <- function(x) {
   if (is.list(x)) {
     nms <- names(x)
     if (!is.null(nms) && !any(nms == "")) {
       x <- x[order(nms)]
-      lapply(x, episode_config_canonicalise)
+      lapply(x, episodic_config_canonicalise)
     } else {
-      lapply(x, episode_config_canonicalise)
+      lapply(x, episodic_config_canonicalise)
     }
   } else {
     x

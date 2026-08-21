@@ -2,19 +2,19 @@
 % Please edit documentation in R/ingest_interface.R
 \name{ingest_interface}
 \alias{ingest_interface}
-\alias{episode_ingest_columns}
+\alias{episodic_ingest_columns}
 \title{Ingestion interface}
 \usage{
-episode_ingest_columns
+episodic_ingest_columns
 }
 \description{
 Defines the contract that any raw case data source must satisfy before
-\code{episode_ingest_run()} (see \code{R/ingest_pipeline.R}) can turn it into rows
-of \code{episode_case}. This is the entire boundary between EpiSODIC and
+\code{episodic_ingest_run()} (see \code{R/ingest_pipeline.R}) can turn it into rows
+of \code{episodic_case}. This is the entire boundary between EpiSODIC and
 whatever laboratory or hospital system an operator runs: EpiSODIC
 never calls any data source itself (see \code{README.md}'s data format
 section) - the operator's own cron script extracts and transforms
-into exactly this shape, then calls \code{\link[=episode_run_cron]{episode_run_cron()}} with a
+into exactly this shape, then calls \code{\link[=episodic_run_cron]{episodic_run_cron()}} with a
 function that returns it.
 The only implementation shipped in this package is the synthetic
 generator (\code{R/ingest_synthetic.R}), used for the bundled demo.
@@ -36,5 +36,5 @@ is handled separately as small, optional, pre-aggregated metadata (see
 \code{R/ingest_denominator.R}); the mandatory feed here is positives only.
 }
 \examples{
-episode_ingest_columns
+episodic_ingest_columns
 }

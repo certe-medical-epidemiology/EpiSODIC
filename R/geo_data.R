@@ -32,7 +32,7 @@
 #' `EPISODIC_CONFIG` and `EPISODIC_PALETTE_CONFIG` already establish.
 #'
 #' The contract is minimal and country-agnostic: an `sf` object with a
-#' `pc` column (matching whatever an operator's own `episode_case.pc`
+#' `pc` column (matching whatever an operator's own `episodic_case.pc`
 #' values are - postcodes, zip codes, municipality codes, anything; this
 #' package never validates or interprets that column beyond joining it)
 #' and a `geometry` column.
@@ -43,7 +43,7 @@
 #'
 #' A second, entirely independent piece of geographic data is supported
 #' on top of this: `EPISODIC_GEO_DATA_OVERLAY`
-#' ([episode_geo_overlay_resolve()]), an outline layer (region boundaries
+#' ([episodic_geo_overlay_resolve()]), an outline layer (region boundaries
 #' - provinces, municipalities, whatever an operator wants for
 #' orientation) drawn with colour but no fill on top of the choropleth.
 #' It has no `pc` contract at all, since it carries no case counts to
@@ -57,9 +57,9 @@ NULL
 #' a thicker line) on top of the PC choropleth - for boundaries an
 #' operator wants visible for orientation (provinces, municipalities,
 #' catchment areas) but that carry no case counts of their own, so
-#' `episode_geo_join()`'s `pc`-keyed contract does not apply here: the
+#' `episodic_geo_join()`'s `pc`-keyed contract does not apply here: the
 #' overlay needs nothing but a `geometry` column. Unlike
-#' [episode_geo_source_resolve()], there is no shipped default -
+#' [episodic_geo_source_resolve()], there is no shipped default -
 #' region boundaries are far more jurisdiction-specific than postcode
 #' geometry, and guessing at a "sensible default" (which country's
 #' provinces?) would be arbitrary in a way the shipped postcode default
@@ -74,9 +74,9 @@ NULL
 #'   variable is unset, or the file is missing/invalid.
 #' @examples
 #' # NULL when unset (or when the sf package is not installed)
-#' episode_geo_overlay_resolve(path = NA)
+#' episodic_geo_overlay_resolve(path = NA)
 #' @export
-episode_geo_overlay_resolve <- function(path = Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)) {
+episodic_geo_overlay_resolve <- function(path = Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)) {
   if (!requireNamespace("sf", quietly = TRUE)) return(NULL)
   if (is.na(path) || !nzchar(path) || !file.exists(path)) return(NULL)
 
@@ -95,16 +95,16 @@ episode_geo_overlay_resolve <- function(path = Sys.getenv("EPISODIC_GEO_DATA_OVE
 #' @examples
 #' # falls back to the shipped Netherlands postcode default when sf is
 #' # installed, or NULL when it is not
-#' geo <- episode_geo_source_resolve(path = NA)
+#' geo <- episodic_geo_source_resolve(path = NA)
 #' @export
-episode_geo_source_resolve <- function(path = Sys.getenv("EPISODIC_GEO_DATA", unset = NA)) {
+episodic_geo_source_resolve <- function(path = Sys.getenv("EPISODIC_GEO_DATA", unset = NA)) {
   if (!requireNamespace("sf", quietly = TRUE)) return(NULL)
 
   if (!is.na(path) && nzchar(path) && file.exists(path)) {
     geo <- tryCatch(readRDS(path), error = function(e) NULL)
     if (!is.null(geo) && all(c("pc", "geometry") %in% names(geo))) return(geo)
   }
-  episode_geo_source_default()
+  episodic_geo_source_default()
 }
 
 #' The shipped Netherlands postcode default
@@ -113,7 +113,7 @@ episode_geo_source_resolve <- function(path = Sys.getenv("EPISODIC_GEO_DATA", un
 #'   installed.
 #' @keywords internal
 #' @noRd
-episode_geo_source_default <- function() {
+episodic_geo_source_default <- function() {
   if (!requireNamespace("sf", quietly = TRUE)) return(NULL)
   path <- system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
   if (identical(path, "")) path <- file.path("inst", "extdata", "geo_postcodes4_nl.rds")
@@ -124,16 +124,16 @@ episode_geo_source_default <- function() {
 #' Join case counts onto geographic reference data
 #'
 #' @param rows A data frame with `label` (PC-equivalent codes) and `n`
-#'   (case counts), from `episode_app_concentration()$rows`.
+#'   (case counts), from `episodic_app_concentration()$rows`.
 #' @param geo_data An `sf` object with `pc`/`geometry`, or `NULL` to
-#'   resolve one via [episode_geo_source_resolve()].
+#'   resolve one via [episodic_geo_source_resolve()].
 #' @return An `sf` object (a right join: every `geo_data` row is kept,
 #'   `n` is `NA` where `rows` has no matching `pc`), or `NULL` if no
 #'   geographic data is available at all.
 #' @keywords internal
 #' @noRd
-episode_geo_join <- function(rows, geo_data = NULL) {
-  geo_data <- geo_data %||% episode_geo_source_resolve()
+episodic_geo_join <- function(rows, geo_data = NULL) {
+  geo_data <- geo_data %||% episodic_geo_source_resolve()
   if (is.null(geo_data) || nrow(rows) == 0) return(NULL)
 
   counts <- data.frame(pc = as.character(rows$label), n = rows$n, stringsAsFactors = FALSE)

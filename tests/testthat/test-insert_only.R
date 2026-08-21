@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-episode_test_r_source_dir <- function() {
+episodic_test_r_source_dir <- function() {
   # An installed package's own system.file("R", ...) is a real directory
   # but holds only the compiled lazy-load database (EpiSODIC.rdb/.rdx), not
   # individual .R source files - so existence alone is not enough to
@@ -37,7 +37,7 @@ test_that("the app's write surface issues no UPDATE or DELETE SQL statements", {
   # legitimately UPDATEs the facts it owns (the cron owns the facts, the
   # app owns the judgements; only the app
   # side of that split is insert-only).
-  r_dir <- episode_test_r_source_dir()
+  r_dir <- episodic_test_r_source_dir()
   skip_if(is.na(r_dir), "R/ source directory not found (e.g. checking an installed, non-source package)")
 
   app_files <- list.files(r_dir, pattern = "^(app_|auth\\.R$|run_app\\.R$)", full.names = TRUE)
@@ -46,7 +46,7 @@ test_that("the app's write surface issues no UPDATE or DELETE SQL statements", {
   offenders <- character(0)
   for (f in app_files) {
     lines <- readLines(f, warn = FALSE)
-    hits <- grep("\\bUPDATE\\s+episode_|\\bDELETE\\s+FROM\\s+episode_", lines, ignore.case = TRUE, perl = TRUE)
+    hits <- grep("\\bUPDATE\\s+episodic_|\\bDELETE\\s+FROM\\s+episodic_", lines, ignore.case = TRUE, perl = TRUE)
     if (length(hits) > 0) {
       offenders <- c(offenders, sprintf("%s:%d: %s", basename(f), hits, trimws(lines[hits])))
     }
@@ -55,7 +55,7 @@ test_that("the app's write surface issues no UPDATE or DELETE SQL statements", {
 })
 
 test_that("db_app_write.R specifically (the app's single-table writers) contains only INSERTs", {
-  r_dir <- episode_test_r_source_dir()
+  r_dir <- episodic_test_r_source_dir()
   skip_if(is.na(r_dir), "R/ source directory not found (e.g. checking an installed, non-source package)")
 
   lines <- readLines(file.path(r_dir, "db_app_write.R"), warn = FALSE)

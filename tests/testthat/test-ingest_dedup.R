@@ -38,7 +38,7 @@ test_that("isolates for the same patient within the episode window collapse to o
     raw_case("K2", "P1", "2025-01-10"),
     raw_case("K3", "P1", "2025-01-20")
   )
-  deduped <- episode_dedup(raw, pathogen_config_fixture)
+  deduped <- episodic_dedup(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 1)
   expect_equal(deduped$sample_date, "2025-01-01")  # earliest kept, sample date is the anchor
 })
@@ -48,13 +48,13 @@ test_that("a gap longer than episode_days starts a new episode", {
     raw_case("K1", "P1", "2025-01-01"),
     raw_case("K2", "P1", "2025-03-01")  # 59 days later, beyond the 30-day window
   )
-  deduped <- episode_dedup(raw, pathogen_config_fixture)
+  deduped <- episodic_dedup(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 2)
 })
 
 test_that("different patients are never merged", {
   raw <- rbind(raw_case("K1", "P1", "2025-01-01"), raw_case("K2", "P2", "2025-01-01"))
-  deduped <- episode_dedup(raw, pathogen_config_fixture)
+  deduped <- episodic_dedup(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 2)
 })
 
@@ -63,7 +63,7 @@ test_that("different pathogens for the same patient are never merged", {
     raw_case("K1", "P1", "2025-01-01", pathogen = "Test organism"),
     raw_case("K2", "P1", "2025-01-01", pathogen = "Other organism")
   )
-  deduped <- episode_dedup(raw, pathogen_config_fixture)
+  deduped <- episodic_dedup(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 2)
 })
 
@@ -75,7 +75,7 @@ test_that("the same isolate tagged under two pathogen values (e.g. E. coli and E
     raw_case("K1", "P1", "2025-01-01", pathogen = "Escherichia coli"),
     raw_case("K1-ETEC", "P1", "2025-01-01", pathogen = "ETEC")
   )
-  deduped <- episode_dedup(raw, pathogen_config_fixture)
+  deduped <- episodic_dedup(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 2)
 })
 
@@ -84,33 +84,33 @@ test_that("a pathogen missing from pathogen_config falls back to the schema defa
     raw_case("K1", "P1", "2025-01-01", pathogen = "Unknown organism"),
     raw_case("K2", "P1", "2025-01-20", pathogen = "Unknown organism")
   )
-  deduped <- episode_dedup(raw, pathogen_config_fixture)
+  deduped <- episodic_dedup(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 1)
 })
 
 test_that("an empty input returns an empty output without error", {
   empty <- raw_case("K1", "P1", "2025-01-01")[0, ]
-  expect_equal(nrow(episode_dedup(empty, pathogen_config_fixture)), 0)
+  expect_equal(nrow(episodic_dedup(empty, pathogen_config_fixture)), 0)
 })
 
-test_that("episode_ingest_validate_source() rejects a column outside the allow-list", {
+test_that("episodic_ingest_validate_source() rejects a column outside the allow-list", {
   raw <- raw_case("K1", "P1", "2025-01-01")
   raw$requesting_clinician <- "Dr Smith"
-  expect_error(episode_ingest_validate_source(raw), "allow-list")
+  expect_error(episodic_ingest_validate_source(raw), "allow-list")
 })
 
-test_that("episode_ingest_validate_source() rejects a missing required column", {
+test_that("episodic_ingest_validate_source() rejects a missing required column", {
   raw <- raw_case("K1", "P1", "2025-01-01")
   raw$pc <- NULL
-  expect_error(episode_ingest_validate_source(raw), "missing required")
+  expect_error(episodic_ingest_validate_source(raw), "missing required")
 })
 
-test_that("episode_ingest_validate_source() rejects duplicate source_key values", {
+test_that("episodic_ingest_validate_source() rejects duplicate source_key values", {
   raw <- rbind(raw_case("K1", "P1", "2025-01-01"), raw_case("K1", "P2", "2025-01-02"))
-  expect_error(episode_ingest_validate_source(raw), "duplicate")
+  expect_error(episodic_ingest_validate_source(raw), "duplicate")
 })
 
-test_that("episode_ingest_validate_source() accepts a well-formed source", {
+test_that("episodic_ingest_validate_source() accepts a well-formed source", {
   raw <- raw_case("K1", "P1", "2025-01-01")
-  expect_silent(episode_ingest_validate_source(raw))
+  expect_silent(episodic_ingest_validate_source(raw))
 })

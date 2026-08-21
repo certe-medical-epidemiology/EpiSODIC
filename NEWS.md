@@ -8,7 +8,7 @@ report, running entirely on open-source, CRAN-hosted packages.
 
 - SQLite schema and migration runner; a DBI repository layer split by
   writer (the cron may upsert, the app only ever inserts). `EPISODIC_DB`
-  also accepts a `mysql://` DSN (`episode_db_dsn_mariadb()`) to run
+  also accepts a `mysql://` DSN (`episodic_db_dsn_mariadb()`) to run
   against MariaDB/MySQL instead, from the same schema file.
 - Automatic lattice enumeration (ward, institution, geographic area,
   province, catchment) from the data itself, no configuration required
@@ -36,7 +36,7 @@ report, running entirely on open-source, CRAN-hosted packages.
 
 - A Shiny app, read-only for anonymous visitors; classifying, closing,
   or muting a stream requires signing in.
-- Bilingual throughout (Dutch and English) via a small `episode_tr()`
+- Bilingual throughout (Dutch and English) via a small `episodic_tr()`
   translation layer, including Dutch number/singular-plural agreement.
 - Dossier view with epi curve, multi-year trend, denominator/positivity,
   demography, geography (choropleth when both `sf` and geographic
@@ -80,11 +80,11 @@ Cases are the only mandatory input, deduplicated internally per
 patient/pathogen/episode; positivity metadata, institution activity
 (patient-days), and geographic reference data are all optional,
 additive inputs with their own documented shape (see the README).
-`episode_run_cron()`'s data-source arguments accept either a function
+`episodic_run_cron()`'s data-source arguments accept either a function
 that produces the data at run time, or the data frame itself.
 
 ## Getting started
 
-`EpiSODIC::episode_demo()` runs the whole system in one call against
+`EpiSODIC::episodic_demo()` runs the whole system in one call against
 bundled synthetic data - no laboratory system, data warehouse,
 credentials, or configuration required.

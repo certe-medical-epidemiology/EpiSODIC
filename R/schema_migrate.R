@@ -25,7 +25,7 @@
 #' (or falls back to `EPISODIC_DB`) dispatches on which of the two it was
 #' given. This helper builds that DSN string from its parts and
 #' URL-encodes `user`/`password`, so credentials containing `:`, `@` or
-#' `/` do not break the DSN. `episode_db_dsn_mysql()` is an alias for the
+#' `/` do not break the DSN. `episodic_db_dsn_mysql()` is an alias for the
 #' same function - the DSN and everything downstream of it is identical
 #' either way, so use whichever name matches the server you actually run.
 #'
@@ -36,12 +36,12 @@
 #' @return A single string, ready to pass as `db_path` or to
 #'   `Sys.setenv(EPISODIC_DB = ...)`.
 #' @examples
-#' episode_db_dsn_mariadb(
+#' episodic_db_dsn_mariadb(
 #'   host = "db.internal", dbname = "episodic",
 #'   user = "episodic_app", password = "s3cr3t!"
 #' )
 #' @export
-episode_db_dsn_mariadb <- function(host, dbname, user, password, port = 3306L) {
+episodic_db_dsn_mariadb <- function(host, dbname, user, password, port = 3306L) {
   stopifnot(
     is.character(host), nzchar(host),
     is.character(dbname), nzchar(dbname),
@@ -56,13 +56,13 @@ episode_db_dsn_mariadb <- function(host, dbname, user, password, port = 3306L) {
   )
 }
 
-#' @rdname episode_db_dsn_mariadb
+#' @rdname episodic_db_dsn_mariadb
 #' @export
-episode_db_dsn_mysql <- episode_db_dsn_mariadb
+episodic_db_dsn_mysql <- episodic_db_dsn_mariadb
 
 #' @keywords internal
 #' @noRd
-episode_db_dialect <- function(path) {
+episodic_db_dialect <- function(path) {
   if (grepl("^(mysql|mariadb)://", path)) "mariadb" else "sqlite"
 }
 
@@ -71,24 +71,24 @@ episode_db_dialect <- function(path) {
 #' For SQLite this is just `file.exists()`; a `mysql://` DSN always
 #' "exists" as a server + schema, so this connects and checks whether the
 #' EpiSODIC tables have already been created in it. Used by entry points
-#' such as [episode_run_cron()] that connect to an already-initialised
+#' such as [episodic_run_cron()] that connect to an already-initialised
 #' database or create a fresh one, whichever applies.
 #' @param path Path to a SQLite file, or a `mysql://` DSN.
 #' @return `TRUE`/`FALSE`.
 #' @keywords internal
 #' @noRd
-episode_db_exists <- function(path) {
-  if (episode_db_dialect(path) == "sqlite") {
+episodic_db_exists <- function(path) {
+  if (episodic_db_dialect(path) == "sqlite") {
     return(file.exists(path))
   }
-  con <- episode_db_mariadb_connect(path)
+  con <- episodic_db_mariadb_connect(path)
   on.exit(DBI::dbDisconnect(con))
   length(DBI::dbListTables(con)) > 0
 }
 
 #' @keywords internal
 #' @noRd
-episode_db_parse_mariadb_dsn <- function(x) {
+episodic_db_parse_mariadb_dsn <- function(x) {
   m <- regmatches(x, regexec(
     "^(?:mysql|mariadb)://(?:([^:@/]*)(?::([^@/]*))?@)?([^:@/]+)(?::([0-9]+))?/([^?]+)$",
     x
@@ -96,7 +96,7 @@ episode_db_parse_mariadb_dsn <- function(x) {
   if (length(m) == 0) {
     stop(
       "Not a valid MariaDB/MySQL DSN: '", x, "'. Expected the form ",
-      "mysql://user:password@host:port/dbname - see episode_db_dsn_mariadb().",
+      "mysql://user:password@host:port/dbname - see episodic_db_dsn_mariadb().",
       call. = FALSE
     )
   }
@@ -111,7 +111,7 @@ episode_db_parse_mariadb_dsn <- function(x) {
 
 #' @keywords internal
 #' @noRd
-episode_db_mariadb_connect <- function(dsn) {
+episodic_db_mariadb_connect <- function(dsn) {
   if (!requireNamespace("RMariaDB", quietly = TRUE)) {
     stop(
       "Connecting to a MariaDB/MySQL EPISODIC_DB requires the 'RMariaDB' ",
@@ -119,7 +119,7 @@ episode_db_mariadb_connect <- function(dsn) {
       call. = FALSE
     )
   }
-  parts <- episode_db_parse_mariadb_dsn(dsn)
+  parts <- episodic_db_parse_mariadb_dsn(dsn)
   DBI::dbConnect(
     RMariaDB::MariaDB(),
     host = parts$host, port = parts$port, dbname = parts$dbname,
@@ -135,7 +135,7 @@ episode_db_mariadb_connect <- function(dsn) {
 #' that it cannot silently clobber existing data.
 #'
 #' @param path Path to a SQLite file, or a `mysql://` DSN (see
-#'   [episode_db_dsn_mariadb()]) pointing at an empty MariaDB/MySQL
+#'   [episodic_db_dsn_mariadb()]) pointing at an empty MariaDB/MySQL
 #'   database. For SQLite, must not already exist, or must be an
 #'   empty/non-EpiSODIC file.
 #' @param overwrite If `TRUE`, delete an existing SQLite file (or drop all
@@ -144,12 +144,12 @@ episode_db_mariadb_connect <- function(dsn) {
 #'   database. The caller is responsible for disconnecting it.
 #' @examples
 #' db_path <- tempfile(fileext = ".sqlite")
-#' con <- episode_db_create(db_path)
+#' con <- episodic_db_create(db_path)
 #' DBI::dbDisconnect(con)
 #' file.remove(db_path)
 #' @export
-episode_db_create <- function(path, overwrite = FALSE) {
-  dialect <- episode_db_dialect(path)
+episodic_db_create <- function(path, overwrite = FALSE) {
+  dialect <- episodic_db_dialect(path)
 
   if (dialect == "sqlite") {
     if (file.exists(path)) {
@@ -158,7 +158,7 @@ episode_db_create <- function(path, overwrite = FALSE) {
       } else {
         stop(
           "A file already exists at '", path, "'. Pass overwrite = TRUE to ",
-          "replace it, or use episode_db_connect() to open an existing database.",
+          "replace it, or use episodic_db_connect() to open an existing database.",
           call. = FALSE
         )
       }
@@ -166,14 +166,14 @@ episode_db_create <- function(path, overwrite = FALSE) {
     dir.create(dirname(path), showWarnings = FALSE, recursive = TRUE)
     con <- DBI::dbConnect(RSQLite::SQLite(), path)
   } else {
-    con <- episode_db_mariadb_connect(path)
+    con <- episodic_db_mariadb_connect(path)
     existing_tables <- DBI::dbListTables(con)
     if (length(existing_tables) > 0) {
       if (!overwrite) {
         DBI::dbDisconnect(con)
         stop(
           "Database already contains tables. Pass overwrite = TRUE to drop ",
-          "and recreate them, or use episode_db_connect() to open an existing database.",
+          "and recreate them, or use episodic_db_connect() to open an existing database.",
           call. = FALSE
         )
       }
@@ -183,9 +183,9 @@ episode_db_create <- function(path, overwrite = FALSE) {
     }
   }
 
-  episode_db_pragmas(con)
+  episodic_db_pragmas(con)
 
-  for (statement in episode_db_schema_statements(dialect)) {
+  for (statement in episodic_db_schema_statements(dialect)) {
     DBI::dbExecute(con, statement)
   }
 
@@ -198,54 +198,54 @@ episode_db_create <- function(path, overwrite = FALSE) {
 #' SQLite: WAL journal mode, a busy timeout, and foreign key enforcement).
 #'
 #' @param path Path to an existing SQLite file, or a `mysql://` DSN (see
-#'   [episode_db_dsn_mariadb()]) pointing at an existing MariaDB/MySQL
+#'   [episodic_db_dsn_mariadb()]) pointing at an existing MariaDB/MySQL
 #'   database.
 #' @return An open [DBI::DBIConnection-class].
 #' @examples
 #' db_path <- tempfile(fileext = ".sqlite")
-#' con <- episode_db_create(db_path)
+#' con <- episodic_db_create(db_path)
 #' DBI::dbDisconnect(con)
-#' con <- episode_db_connect(db_path)
+#' con <- episodic_db_connect(db_path)
 #' DBI::dbDisconnect(con)
 #' file.remove(db_path)
 #' @export
-episode_db_connect <- function(path) {
-  dialect <- episode_db_dialect(path)
+episodic_db_connect <- function(path) {
+  dialect <- episodic_db_dialect(path)
   if (dialect == "sqlite") {
     if (!file.exists(path)) {
       stop("No database file found at '", path, "'.", call. = FALSE)
     }
     con <- DBI::dbConnect(RSQLite::SQLite(), path)
   } else {
-    con <- episode_db_mariadb_connect(path)
+    con <- episodic_db_mariadb_connect(path)
   }
-  episode_db_pragmas(con)
+  episodic_db_pragmas(con)
   con
 }
 
 #' Open a connection to `db_path`, or the `EPISODIC_DB` environment variable
 #'
-#' A thin wrapper around [episode_db_connect()] for entry points that take
+#' A thin wrapper around [episodic_db_connect()] for entry points that take
 #' `db_path` rather than an already-open connection (e.g.
-#' [episode_provision_user()]) - centralises the `EPISODIC_DB` default and
+#' [episodic_provision_user()]) - centralises the `EPISODIC_DB` default and
 #' the "neither was given" error in one place, rather than duplicating the
 #' resolve-then-connect logic in every such entry point.
 #'
 #' @param db_path Path to an existing SQLite database, or a `mysql://` DSN
-#'   (see [episode_db_dsn_mariadb()]). Defaults to the `EPISODIC_DB`
+#'   (see [episodic_db_dsn_mariadb()]). Defaults to the `EPISODIC_DB`
 #'   environment variable.
 #' @return An open [DBI::DBIConnection-class]; the caller is responsible
 #'   for disconnecting it.
 #' @examples
 #' db_path <- tempfile(fileext = ".sqlite")
-#' con <- episode_db_create(db_path)
+#' con <- episodic_db_create(db_path)
 #' DBI::dbDisconnect(con)
 #' Sys.setenv(EPISODIC_DB = db_path)
-#' con <- episode_db_open()
+#' con <- episodic_db_open()
 #' DBI::dbDisconnect(con)
 #' file.remove(db_path)
 #' @export
-episode_db_open <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA)) {
+episodic_db_open <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA)) {
   if (is.na(db_path) || !nzchar(db_path)) {
     stop(
       "No database path given and EPISODIC_DB is not set. Pass db_path ",
@@ -253,12 +253,12 @@ episode_db_open <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA)) {
       call. = FALSE
     )
   }
-  episode_db_connect(db_path)
+  episodic_db_connect(db_path)
 }
 
 #' @keywords internal
 #' @noRd
-episode_db_pragmas <- function(con) {
+episodic_db_pragmas <- function(con) {
   if (inherits(con, "SQLiteConnection")) {
     DBI::dbExecute(con, "PRAGMA journal_mode = WAL")
     DBI::dbExecute(con, "PRAGMA busy_timeout = 5000")
@@ -280,7 +280,7 @@ episode_db_pragmas <- function(con) {
 #'   connection.
 #' @keywords internal
 #' @noRd
-episode_db_last_insert_id <- function(con) {
+episodic_db_last_insert_id <- function(con) {
   if (inherits(con, "SQLiteConnection")) {
     DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
   } else {
@@ -300,7 +300,7 @@ episode_db_last_insert_id <- function(con) {
 #' @return A character vector of individual SQL statements.
 #' @keywords internal
 #' @noRd
-episode_db_schema_statements <- function(dialect) {
+episodic_db_schema_statements <- function(dialect) {
   schema_path <- system.file("sql", "schema.sql", package = "EpiSODIC")
   if (identical(schema_path, "")) {
     # not-yet-installed package (devtools::load_all()) - fall back to source tree
@@ -334,7 +334,7 @@ episode_db_schema_statements <- function(dialect) {
     )
   }
 
-  episode_split_sql_statements(schema_sql)
+  episodic_split_sql_statements(schema_sql)
 }
 
 #' Split a SQL file into individual statements
@@ -349,7 +349,7 @@ episode_db_schema_statements <- function(dialect) {
 #'   entries removed.
 #' @keywords internal
 #' @noRd
-episode_split_sql_statements <- function(sql) {
+episodic_split_sql_statements <- function(sql) {
   lines <- strsplit(sql, "\n", fixed = TRUE)[[1]]
   lines <- sub("--.*$", "", lines)
   cleaned <- paste(lines, collapse = "\n")

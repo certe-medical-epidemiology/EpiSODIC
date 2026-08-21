@@ -20,8 +20,8 @@
 #' Ingest optional institution activity (patient-days)
 #'
 #' Writes operator-supplied weekly hospital activity to
-#' `episode_institution_activity`, keyed on `institution_key` (resolved to
-#' `institution_id` here, mirroring `episode_denominator_ingest_run()`'s
+#' `episodic_institution_activity`, keyed on `institution_key` (resolved to
+#' `institution_id` here, mirroring `episodic_denominator_ingest_run()`'s
 #' own optional-source pattern). Entirely optional: a site with nothing to
 #' supply here simply never calls this, and L1/L2 Farrington detection
 #' falls back to raw counts - unnormalised, not broken: patient-day
@@ -36,12 +36,12 @@
 #'   not an error - an operator's activity feed and case feed need not be
 #'   perfectly synchronised).
 #'
-#' Not exported: an operator supplies a source to [episode_run_cron()] via
+#' Not exported: an operator supplies a source to [episodic_run_cron()] via
 #' `institution_activity_source_fn`; this is the internal write step run
 #' against it.
 #' @keywords internal
 #' @noRd
-episode_institution_activity_ingest_run <- function(con, activity) {
+episodic_institution_activity_ingest_run <- function(con, activity) {
   required_cols <- c("institution_key", "period_start", "period_end", "patient_days")
   missing_cols <- setdiff(required_cols, names(activity))
   if (length(missing_cols) > 0) {
@@ -51,13 +51,13 @@ episode_institution_activity_ingest_run <- function(con, activity) {
     )
   }
 
-  institutions <- episode_db_institutions(con)
+  institutions <- episodic_db_institutions(con)
   n_written <- 0L
   for (i in seq_len(nrow(activity))) {
     row <- activity[i, ]
     institution_id <- institutions$institution_id[institutions$institution_key == row$institution_key]
     if (length(institution_id) == 0) next
-    episode_db_institution_activity_upsert(
+    episodic_db_institution_activity_upsert(
       con, institution_id = institution_id[1], period_start = row$period_start,
       period_end = row$period_end, patient_days = row$patient_days,
       admissions = row$admissions %||% NA, n_beds = row$n_beds %||% NA,
@@ -71,15 +71,15 @@ episode_institution_activity_ingest_run <- function(con, activity) {
 #' Synthetic institution activity source
 #'
 #' A worked example of the optional activity contract
-#' (`episode_institution_activity_ingest_run()`): weekly patient-days per
+#' (`episodic_institution_activity_ingest_run()`): weekly patient-days per
 #' hospital, modelled as `n_beds * occupancy` with light seasonal
 #' variation (winter admissions run higher) and noise. Not called by
-#' [episode_run_cron()] unless an `institution_activity_source_fn` is
+#' [episodic_run_cron()] unless an `institution_activity_source_fn` is
 #' supplied; demonstrates the shape only, so the bundled demo can show
 #' an incidence-density curve without a real hospital feed.
 #'
-#' @param institutions A data frame from `episode_db_institutions()` (or
-#'   `episode_synthetic_institutions()`'s own shape before insertion),
+#' @param institutions A data frame from `episodic_db_institutions()` (or
+#'   `episodic_synthetic_institutions()`'s own shape before insertion),
 #'   filtered internally to `institution_type == "hospital"`.
 #' @param start_date,end_date The period to generate weekly rows for.
 #' @param seed RNG seed.
@@ -89,12 +89,12 @@ episode_institution_activity_ingest_run <- function(con, activity) {
 #' institutions <- data.frame(
 #'   institution_key = "HOSP-1", institution_type = "hospital", n_beds = 320
 #' )
-#' activity <- episode_synthetic_institution_activity_source(
+#' activity <- episodic_synthetic_institution_activity_source(
 #'   institutions, start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 #' )
 #' head(activity)
 #' @export
-episode_synthetic_institution_activity_source <- function(institutions, start_date = as.Date("2021-01-01"),
+episodic_synthetic_institution_activity_source <- function(institutions, start_date = as.Date("2021-01-01"),
                                                             end_date = as.Date("2025-12-31"), seed = 1) {
   set.seed(seed)
   hospitals <- institutions[institutions$institution_type == "hospital", ]

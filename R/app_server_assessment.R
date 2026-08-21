@@ -22,8 +22,8 @@
 #' Wires the assessment form's submit buttons, including
 #' `bulk_assess_submit` (the rail's multi-select bar - "often they are
 #' artefacts", one classification and rationale applied to every checked
-#' cluster in a loop over `episode_app_submit_assessment()`, each getting
-#' its own `episode_assessment_event` row exactly as a one-at-a-time
+#' cluster in a loop over `episodic_app_submit_assessment()`, each getting
+#' its own `episodic_assessment_event` row exactly as a one-at-a-time
 #' classification would). Every handler re-checks
 #' `current_user()` server-side before writing anything - the UI only
 #' renders these controls for a signed-in session, but a forged client
@@ -48,7 +48,7 @@
 #' @return Invisible `NULL`; called for its side effects.
 #' @keywords internal
 #' @noRd
-episode_app_server_assessment_actions <- function(input, output, session, con, lang = "nl",
+episodic_app_server_assessment_actions <- function(input, output, session, con, lang = "nl",
                                                     current_user, selected_cluster_id, db_touch) {
   refresh <- function() {
     # Re-trigger the dossier/assessment renderers by "reselecting" the
@@ -68,11 +68,11 @@ episode_app_server_assessment_actions <- function(input, output, session, con, l
     if (!nzchar(rationale)) {
       return(invisible(NULL))  # mandatory rationale; client also enforces this
     }
-    episode_app_submit_assessment(
+    episodic_app_submit_assessment(
       con, cluster_id = payload$cluster_id, user_id = user$user_id,
       verdict = if (nzchar(payload$verdict %||% "")) payload$verdict else NA,
       rationale = rationale,
-      # wpg_notifiable/ggd_informed are left at episode_app_submit_assessment()'s
+      # wpg_notifiable/ggd_informed are left at episodic_app_submit_assessment()'s
       # own NA default - the form no longer collects them (Wpg and GGD are
       # Netherlands-specific, out of scope for a general-purpose deployment).
       snooze_until = if (nzchar(payload$snooze %||% "")) payload$snooze else NA
@@ -83,7 +83,7 @@ episode_app_server_assessment_actions <- function(input, output, session, con, l
   shiny::observeEvent(input$assess_close, {
     user <- current_user()
     shiny::req(user)
-    episode_app_submit_closure(con, cluster_id = input$assess_close, user_id = user$user_id)
+    episodic_app_submit_closure(con, cluster_id = input$assess_close, user_id = user$user_id)
     refresh()
   })
 
@@ -98,7 +98,7 @@ episode_app_server_assessment_actions <- function(input, output, session, con, l
     }
     verdict <- if (nzchar(payload$verdict %||% "")) payload$verdict else NA
     for (cluster_id in cluster_ids) {
-      episode_app_submit_assessment(con, cluster_id = cluster_id, user_id = user$user_id,
+      episodic_app_submit_assessment(con, cluster_id = cluster_id, user_id = user$user_id,
                                      verdict = verdict, rationale = rationale)
     }
     refresh()
@@ -111,7 +111,7 @@ episode_app_server_assessment_actions <- function(input, output, session, con, l
     if (!nzchar(payload$muted_from %||% "") || !nzchar(payload$muted_until %||% "")) {
       return(invisible(NULL))
     }
-    episode_db_stream_mute_insert(
+    episodic_db_stream_mute_insert(
       con, stream_id = payload$stream_id, muted_from = payload$muted_from,
       muted_until = payload$muted_until, reason = payload$reason, user_id = user$user_id
     )

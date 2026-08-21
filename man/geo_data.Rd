@@ -18,7 +18,7 @@ their own file - one environment variable, the same pattern
 }
 \details{
 The contract is minimal and country-agnostic: an \code{sf} object with a
-\code{pc} column (matching whatever an operator's own \code{episode_case.pc}
+\code{pc} column (matching whatever an operator's own \code{episodic_case.pc}
 values are - postcodes, zip codes, municipality codes, anything; this
 package never validates or interprets that column beyond joining it)
 and a \code{geometry} column.
@@ -29,7 +29,7 @@ bar breakdown, exactly as before this existed.
 
 A second, entirely independent piece of geographic data is supported
 on top of this: \code{EPISODIC_GEO_DATA_OVERLAY}
-(\code{\link[=episode_geo_overlay_resolve]{episode_geo_overlay_resolve()}}), an outline layer (region boundaries
+(\code{\link[=episodic_geo_overlay_resolve]{episodic_geo_overlay_resolve()}}), an outline layer (region boundaries
 \itemize{
 \item provinces, municipalities, whatever an operator wants for
 orientation) drawn with colour but no fill on top of the choropleth.

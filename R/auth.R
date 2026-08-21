@@ -32,11 +32,11 @@
 #'
 #' Password changes and login timestamps are the one bit of per-user
 #' *mutable* state in the schema, yet the app never issues an `UPDATE`.
-#' Resolved the same way `episode_cluster_
-#' state` already resolves it for cluster state: `episode_app_user_event`
+#' Resolved the same way `episodic_cluster_
+#' state` already resolves it for cluster state: `episodic_app_user_event`
 #' is an append-only log, and the "current" password hash / login time is
-#' derived from it at read time (see `episode_auth_password_hash()`,
-#' `episode_auth_last_login()`), falling back to `episode_app_user`'s own
+#' derived from it at read time (see `episodic_auth_password_hash()`,
+#' `episodic_auth_last_login()`), falling back to `episodic_app_user`'s own
 #' initial values when no event has been recorded yet.
 #' @name auth
 NULL
@@ -47,12 +47,12 @@ NULL
 #' original `password_hash` if the password has never been changed.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param user A row from `episode_db_user_by_username()`/`episode_db_user_by_id()`.
+#' @param user A row from `episodic_db_user_by_username()`/`episodic_db_user_by_id()`.
 #' @return A single character string.
 #' @keywords internal
 #' @noRd
-episode_auth_password_hash <- function(con, user) {
-  events <- episode_db_app_user_events(con, user$user_id)
+episodic_auth_password_hash <- function(con, user) {
+  events <- episodic_db_app_user_events(con, user$user_id)
   changes <- events[events$event_type == "password_change", ]
   if (nrow(changes) == 0) return(user$password_hash)
   changes$password_hash[nrow(changes)]
@@ -61,27 +61,27 @@ episode_auth_password_hash <- function(con, user) {
 #' Whether a user is still required to change their password
 #'
 #' `TRUE` until the first `password_change` event is recorded for them,
-#' mirroring `episode_app_user.must_change`'s original intent without
+#' mirroring `episodic_app_user.must_change`'s original intent without
 #' needing to `UPDATE` that column once it is satisfied.
 #'
-#' @inheritParams episode_auth_password_hash
+#' @inheritParams episodic_auth_password_hash
 #' @return A single logical.
 #' @keywords internal
 #' @noRd
-episode_auth_must_change <- function(con, user) {
+episodic_auth_must_change <- function(con, user) {
   if (!as.logical(user$must_change)) return(FALSE)
-  events <- episode_db_app_user_events(con, user$user_id)
+  events <- episodic_db_app_user_events(con, user$user_id)
   !any(events$event_type == "password_change")
 }
 
 #' A user's most recent login time
 #'
-#' @inheritParams episode_auth_password_hash
+#' @inheritParams episodic_auth_password_hash
 #' @return An ISO-8601 string, or `NA` if the user has never logged in.
 #' @keywords internal
 #' @noRd
-episode_auth_last_login <- function(con, user) {
-  events <- episode_db_app_user_events(con, user$user_id)
+episodic_auth_last_login <- function(con, user) {
+  events <- episodic_db_app_user_events(con, user$user_id)
   logins <- events[events$event_type == "login", ]
   if (nrow(logins) == 0) return(NA_character_)
   logins$created_at[nrow(logins)]
@@ -104,25 +104,25 @@ episode_auth_last_login <- function(con, user) {
 #'   change is due).
 #' @keywords internal
 #' @noRd
-episode_auth_login <- function(con, username, password) {
+episodic_auth_login <- function(con, username, password) {
   rlang::check_installed("sodium")
-  user <- episode_db_user_by_username(con, username)
+  user <- episodic_db_user_by_username(con, username)
   if (is.null(user) || !as.logical(user$is_active)) {
     return(list(ok = FALSE))
   }
-  hash <- episode_auth_password_hash(con, user)
+  hash <- episodic_auth_password_hash(con, user)
   verified <- tryCatch(sodium::password_verify(hash, password), error = function(e) FALSE)
   if (!isTRUE(verified)) {
     return(list(ok = FALSE))
   }
-  episode_db_app_user_event_insert(con, user$user_id, "login")
-  list(ok = TRUE, user = user, must_change = episode_auth_must_change(con, user))
+  episodic_db_app_user_event_insert(con, user$user_id, "login")
+  list(ok = TRUE, user = user, must_change = episodic_auth_must_change(con, user))
 }
 
 #' Record a password change
 #'
 #' Appends a `password_change` event carrying the new hash; see
-#' `episode_auth_password_hash()` for how this becomes "current".
+#' `episodic_auth_password_hash()` for how this becomes "current".
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param user_id The account changing its password.
@@ -131,10 +131,10 @@ episode_auth_login <- function(con, username, password) {
 #' @return Invisible `NULL`.
 #' @keywords internal
 #' @noRd
-episode_auth_change_password <- function(con, user_id, new_password) {
+episodic_auth_change_password <- function(con, user_id, new_password) {
   rlang::check_installed("sodium")
   hash <- sodium::password_store(new_password)
-  episode_db_app_user_event_insert(con, user_id, "password_change", password_hash = hash)
+  episodic_db_app_user_event_insert(con, user_id, "password_change", password_hash = hash)
   invisible(NULL)
 }
 
@@ -146,14 +146,14 @@ episode_auth_change_password <- function(con, user_id, new_password) {
 #' themselves. This is that provisioning step: hashes `password` with
 #' `sodium::password_store()` and inserts the account, `must_change = 1`
 #' by default so the first real sign-in forces a password of the
-#' account holder's own choosing (see `episode_auth_change_password()`).
+#' account holder's own choosing (see `episodic_auth_change_password()`).
 #'
 #' Takes `db_path` rather than an open connection - opened and closed here
-#' via [episode_db_open()] - so provisioning an account is one call at the
+#' via [episodic_db_open()] - so provisioning an account is one call at the
 #' console, without first having to construct a `con` by hand.
 #'
 #' @param db_path Path to an existing SQLite database, or a `mysql://`
-#'   DSN (see [episode_db_dsn_mariadb()]). Defaults to the `EPISODIC_DB`
+#'   DSN (see [episodic_db_dsn_mariadb()]). Defaults to the `EPISODIC_DB`
 #'   environment variable.
 #' @param username,full_name,email The new account's fields.
 #' @param password An initial plaintext password (hashed here, never
@@ -163,20 +163,20 @@ episode_auth_change_password <- function(con, user_id, new_password) {
 #' @return Invisibly, the new `user_id`.
 #' @examples
 #' db_path <- tempfile(fileext = ".sqlite")
-#' con <- episode_db_create(db_path)
+#' con <- episodic_db_create(db_path)
 #' DBI::dbDisconnect(con)
-#' episode_provision_user(
+#' episodic_provision_user(
 #'   db_path, username = "jdoe", full_name = "Jane Doe",
 #'   email = "jane@example.org", password = "temporary-password"
 #' )
 #' file.remove(db_path)
 #' @export
-episode_provision_user <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA),
+episodic_provision_user <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA),
                                     username, full_name, email, password, role = "assessor") {
   rlang::check_installed("sodium")
-  con <- episode_db_open(db_path)
+  con <- episodic_db_open(db_path)
   on.exit(DBI::dbDisconnect(con))
-  invisible(episode_db_app_user_insert(
+  invisible(episodic_db_app_user_insert(
     con, username = username, full_name = full_name, email = email,
     password_hash = sodium::password_store(password), role = role
   ))

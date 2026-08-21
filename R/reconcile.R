@@ -54,9 +54,9 @@
 #' @param con A [DBI::DBIConnection-class].
 #' @param stream_id The stream to reconcile.
 #' @param detections A data frame of this run's detections for this stream
-#'   (already inserted into `episode_detection` with their `detection_id`).
+#'   (already inserted into `episodic_detection` with their `detection_id`).
 #' @param case_free_days The organism's case-free interval, from
-#'   `episode_pathogen_config`.
+#'   `episodic_pathogen_config`.
 #' @param run_id The current `run_id`.
 #' @param close_after_runs From `config$reconciliation$close_after_runs`.
 #' @param priority_score_fn A function `(candidate) -> numeric(1)` computing
@@ -68,7 +68,7 @@
 #'   latest verdict for a cluster, used to decide auto-closure eligibility
 #'   and, together with `cooldown_days`, the cool-down escape hatch.
 #' @param cooldown_days The organism's cool-down interval, from
-#'   `episode_pathogen_config`. `NA`
+#'   `episodic_pathogen_config`. `NA`
 #'   (default) disables the cool-down/escape-hatch check entirely, for
 #'   callers (and existing tests) that predate it.
 #' @param cooldown_reopen_ratio From `config$reconciliation$
@@ -77,24 +77,24 @@
 #' @return Invisibly, a list with `n_new`, `n_updated`, `n_merged`.
 #' @keywords internal
 #' @noRd
-episode_reconcile_stream <- function(con, stream_id, detections, case_free_days, run_id,
+episodic_reconcile_stream <- function(con, stream_id, detections, case_free_days, run_id,
                                       close_after_runs, priority_score_fn, has_assessment_fn,
                                       verdict_fn, cooldown_days = NA, cooldown_reopen_ratio = NA) {
   n_new <- 0L
   n_updated <- 0L
   n_merged <- 0L
 
-  candidates <- episode_reconcile_merge_detections(detections)
+  candidates <- episodic_reconcile_merge_detections(detections)
 
-  open_clusters <- episode_db_clusters_for_stream(con, stream_id)
+  open_clusters <- episodic_db_clusters_for_stream(con, stream_id)
   matched_cluster_ids <- character(0)
 
   for (i in seq_len(nrow(candidates))) {
     candidate <- candidates[i, ]
-    matches <- episode_reconcile_find_matches(open_clusters, candidate, case_free_days)
+    matches <- episodic_reconcile_find_matches(open_clusters, candidate, case_free_days)
 
     cooldown_match <- if (length(matches) == 0 && !is.na(cooldown_days)) {
-      episode_reconcile_find_cooldown_match(open_clusters, candidate, case_free_days,
+      episodic_reconcile_find_cooldown_match(open_clusters, candidate, case_free_days,
                                              cooldown_days, cooldown_reopen_ratio, verdict_fn)
     } else {
       NULL
@@ -105,9 +105,9 @@ episode_reconcile_stream <- function(con, stream_id, detections, case_free_days,
       existing <- open_clusters[open_clusters$cluster_id == cluster_id, ]
       new_first <- min(as.Date(existing$first_day), as.Date(candidate$first_day))
       new_last <- max(as.Date(existing$last_day), as.Date(candidate$last_day))
-      new_n <- episode_reconcile_case_count(con, stream_id, new_first, new_last, existing, candidate)
+      new_n <- episodic_reconcile_case_count(con, stream_id, new_first, new_last, existing, candidate)
 
-      episode_db_cluster_update(
+      episodic_db_cluster_update(
         con, cluster_id = cluster_id, first_day = as.character(new_first),
         last_day = as.character(new_last), n_cases = new_n,
         priority_score = priority_score_fn(candidate),
@@ -124,34 +124,34 @@ episode_reconcile_stream <- function(con, stream_id, detections, case_free_days,
       )
       n_updated <- n_updated + 1L
       matched_cluster_ids <- c(matched_cluster_ids, as.character(cluster_id))
-      episode_reconcile_link_detections(con, detections, candidate, cluster_id)
-      episode_reconcile_link_cases(con, stream_id, cluster_id, as.character(new_first), as.character(new_last))
+      episodic_reconcile_link_detections(con, detections, candidate, cluster_id)
+      episodic_reconcile_link_cases(con, stream_id, cluster_id, as.character(new_first), as.character(new_last))
     } else if (length(matches) == 0) {
-      cluster_id <- episode_db_cluster_insert(
+      cluster_id <- episodic_db_cluster_insert(
         con, stream_id = stream_id, first_day = candidate$first_day,
         last_day = candidate$last_day, n_cases = candidate$n_cases,
         priority_score = priority_score_fn(candidate),
         detector_agreement = candidate$detector_agreement, run_id = run_id
       )
       n_new <- n_new + 1L
-      open_clusters <- rbind(open_clusters, episode_db_clusters_for_stream(con, stream_id)[
-        episode_db_clusters_for_stream(con, stream_id)$cluster_id == cluster_id, ])
+      open_clusters <- rbind(open_clusters, episodic_db_clusters_for_stream(con, stream_id)[
+        episodic_db_clusters_for_stream(con, stream_id)$cluster_id == cluster_id, ])
       matched_cluster_ids <- c(matched_cluster_ids, as.character(cluster_id))
-      episode_reconcile_link_detections(con, detections, candidate, cluster_id)
-      episode_reconcile_link_cases(con, stream_id, cluster_id, candidate$first_day, candidate$last_day)
+      episodic_reconcile_link_detections(con, detections, candidate, cluster_id)
+      episodic_reconcile_link_cases(con, stream_id, cluster_id, candidate$first_day, candidate$last_day)
     } else if (length(matches) == 1) {
       cluster_id <- open_clusters$cluster_id[matches]
       existing <- open_clusters[matches, ]
       new_first <- min(as.Date(existing$first_day), as.Date(candidate$first_day))
       new_last <- max(as.Date(existing$last_day), as.Date(candidate$last_day))
-      new_n <- episode_reconcile_case_count(con, stream_id, new_first, new_last, existing, candidate)
+      new_n <- episodic_reconcile_case_count(con, stream_id, new_first, new_last, existing, candidate)
 
       changed <- has_assessment_fn(cluster_id) &&
         (as.character(new_first) != existing$first_day ||
            as.character(new_last) != existing$last_day ||
            new_n != existing$n_cases)
 
-      episode_db_cluster_update(
+      episodic_db_cluster_update(
         con, cluster_id = cluster_id, first_day = as.character(new_first),
         last_day = as.character(new_last), n_cases = new_n,
         priority_score = priority_score_fn(candidate),
@@ -161,8 +161,8 @@ episode_reconcile_stream <- function(con, stream_id, detections, case_free_days,
       )
       n_updated <- n_updated + 1L
       matched_cluster_ids <- c(matched_cluster_ids, as.character(cluster_id))
-      episode_reconcile_link_detections(con, detections, candidate, cluster_id)
-      episode_reconcile_link_cases(con, stream_id, cluster_id, as.character(new_first), as.character(new_last))
+      episodic_reconcile_link_detections(con, detections, candidate, cluster_id)
+      episodic_reconcile_link_cases(con, stream_id, cluster_id, as.character(new_first), as.character(new_last))
     } else {
       survivor_idx <- matches[which.min(as.Date(open_clusters$opened_at[matches]))]
       survivor_id <- open_clusters$cluster_id[survivor_idx]
@@ -170,11 +170,11 @@ episode_reconcile_stream <- function(con, stream_id, detections, case_free_days,
 
       all_first <- min(as.Date(open_clusters$first_day[matches]), as.Date(candidate$first_day))
       all_last <- max(as.Date(open_clusters$last_day[matches]), as.Date(candidate$last_day))
-      combined_n <- episode_reconcile_case_count(
+      combined_n <- episodic_reconcile_case_count(
         con, stream_id, all_first, all_last, open_clusters[survivor_idx, ], candidate
       )
 
-      episode_db_cluster_update(
+      episodic_db_cluster_update(
         con, cluster_id = survivor_id, first_day = as.character(all_first),
         last_day = as.character(all_last), n_cases = combined_n,
         priority_score = priority_score_fn(candidate),
@@ -182,13 +182,13 @@ episode_reconcile_stream <- function(con, stream_id, detections, case_free_days,
         run_id = run_id
       )
       for (m in to_merge) {
-        episode_db_cluster_set_merged_into(con, m, survivor_id)
+        episodic_db_cluster_set_merged_into(con, m, survivor_id)
       }
       n_merged <- n_merged + length(to_merge)
       n_updated <- n_updated + 1L
       matched_cluster_ids <- c(matched_cluster_ids, as.character(survivor_id))
-      episode_reconcile_link_detections(con, detections, candidate, survivor_id)
-      episode_reconcile_link_cases(con, stream_id, survivor_id, as.character(all_first), as.character(all_last))
+      episodic_reconcile_link_detections(con, detections, candidate, survivor_id)
+      episodic_reconcile_link_cases(con, stream_id, survivor_id, as.character(all_first), as.character(all_last))
     }
   }
 
@@ -197,14 +197,14 @@ episode_reconcile_stream <- function(con, stream_id, detections, case_free_days,
                                  is.na(open_clusters$merged_into), ]
   for (i in seq_len(nrow(undetected))) {
     cluster_id <- undetected$cluster_id[i]
-    episode_db_cluster_increment_runs_since_detected(con, cluster_id)
+    episodic_db_cluster_increment_runs_since_detected(con, cluster_id)
 
     runs_since <- undetected$runs_since_detected[i] + 1L
     verdict <- verdict_fn(cluster_id)
     eligible_for_autoclose <- is.na(verdict) || verdict %in% c("artefact", "expected_variation")
 
     if (runs_since > close_after_runs && eligible_for_autoclose) {
-      episode_db_cluster_state_insert(
+      episodic_db_cluster_state_insert(
         con, cluster_id = cluster_id, state = "closed", trigger = "system"
       )
     }
@@ -224,7 +224,7 @@ episode_reconcile_stream <- function(con, stream_id, detections, case_free_days,
 #'   `detection_id`s, used only internally to link back).
 #' @keywords internal
 #' @noRd
-episode_reconcile_merge_detections <- function(detections) {
+episodic_reconcile_merge_detections <- function(detections) {
   if (nrow(detections) == 0) {
     return(data.frame(
       first_day = character(0), last_day = character(0), n_cases = integer(0),
@@ -265,26 +265,26 @@ episode_reconcile_merge_detections <- function(detections) {
 
 #' @keywords internal
 #' @noRd
-episode_reconcile_link_detections <- function(con, detections, candidate, cluster_id) {
+episodic_reconcile_link_detections <- function(con, detections, candidate, cluster_id) {
   in_candidate <- as.Date(detections$first_day) <= as.Date(candidate$last_day) &
     as.Date(detections$last_day) >= as.Date(candidate$first_day)
   ids <- detections$detection_id[in_candidate]
   for (id in ids) {
-    episode_db_detection_set_cluster(con, id, cluster_id)
+    episodic_db_detection_set_cluster(con, id, cluster_id)
   }
   invisible(NULL)
 }
 
 #' Find open clusters overlapping a candidate, or within case_free_days of it
 #'
-#' @param open_clusters A data frame from `episode_db_clusters_for_stream()`.
+#' @param open_clusters A data frame from `episodic_db_clusters_for_stream()`.
 #' @param candidate A single-row candidate episode.
 #' @param case_free_days The organism's case-free interval.
 #' @return Integer row indices into `open_clusters` (may be length 0, 1,
 #'   or more than 1).
 #' @keywords internal
 #' @noRd
-episode_reconcile_find_matches <- function(open_clusters, candidate, case_free_days) {
+episodic_reconcile_find_matches <- function(open_clusters, candidate, case_free_days) {
   if (nrow(open_clusters) == 0) return(integer(0))
   still_open <- is.na(open_clusters$merged_into)
   if (!any(still_open)) return(integer(0))
@@ -316,7 +316,7 @@ episode_reconcile_find_matches <- function(open_clusters, candidate, case_free_d
 #' (unlike `ratio`, which only Farrington-detected clusters carry) and is
 #' exactly the quantity the terminal verdict was actually judged against.
 #'
-#' @param open_clusters A data frame from `episode_db_clusters_for_stream()`.
+#' @param open_clusters A data frame from `episodic_db_clusters_for_stream()`.
 #' @param candidate A single-row candidate episode.
 #' @param case_free_days The organism's case-free interval - the inner
 #'   bound of the cool-down window (a candidate this close would already
@@ -330,7 +330,7 @@ episode_reconcile_find_matches <- function(open_clusters, candidate, case_free_d
 #'   `cluster_id` and `reopen` (logical).
 #' @keywords internal
 #' @noRd
-episode_reconcile_find_cooldown_match <- function(open_clusters, candidate, case_free_days,
+episodic_reconcile_find_cooldown_match <- function(open_clusters, candidate, case_free_days,
                                                     cooldown_days, cooldown_reopen_ratio, verdict_fn) {
   if (nrow(open_clusters) == 0) return(NULL)
   still_present <- is.na(open_clusters$merged_into)
@@ -339,7 +339,7 @@ episode_reconcile_find_cooldown_match <- function(open_clusters, candidate, case
   cand_first <- as.Date(candidate$first_day)
   cand_last <- as.Date(candidate$last_day)
 
-  # Strictly beyond case_free_days (else episode_reconcile_find_matches()
+  # Strictly beyond case_free_days (else episodic_reconcile_find_matches()
   # would already have matched it) but within cooldown_days.
   in_cooldown_window <- as.Date(open_clusters$last_day) < cand_first - case_free_days &
     as.Date(open_clusters$last_day) >= cand_first - cooldown_days
@@ -366,28 +366,28 @@ episode_reconcile_find_cooldown_match <- function(open_clusters, candidate, case
 
 #' Link the individual cases within a cluster's interval to that cluster
 #'
-#' Populates `episode_cluster_case`, which nothing else in the
+#' Populates `episodic_cluster_case`, which nothing else in the
 #' reconciliation loop writes to otherwise. This is part of the handoff
 #' contract between the cron and the app: the line list panel and the
 #' report's `case_ids` both read from this table rather than
 #' recomputing a stream/date filter at read time.
 #' @keywords internal
 #' @noRd
-episode_reconcile_link_cases <- function(con, stream_id, cluster_id, first_day, last_day) {
+episodic_reconcile_link_cases <- function(con, stream_id, cluster_id, first_day, last_day) {
   tryCatch({
-    stream <- DBI::dbGetQuery(con, "SELECT pathogen, institution_id FROM episode_stream WHERE stream_id = ?",
+    stream <- DBI::dbGetQuery(con, "SELECT pathogen, institution_id FROM episodic_stream WHERE stream_id = ?",
                                params = list(stream_id))
     if (nrow(stream) == 0) stop("no such stream")
     cases <- DBI::dbGetQuery(
       con,
-      "SELECT case_id FROM episode_case
+      "SELECT case_id FROM episodic_case
        WHERE pathogen = ? AND sample_date >= ? AND sample_date <= ?
          AND (? IS NULL OR institution_id = ?)",
       params = list(stream$pathogen[1], first_day, last_day,
                     stream$institution_id[1], stream$institution_id[1])
     )
     for (case_id in cases$case_id) {
-      episode_db_cluster_case_link(con, cluster_id, case_id)
+      episodic_db_cluster_case_link(con, cluster_id, case_id)
     }
   }, error = function(e) invisible(NULL))
   invisible(NULL)
@@ -402,14 +402,14 @@ episode_reconcile_link_cases <- function(con, stream_id, cluster_id, first_day, 
 #' tests that pass synthetic clusters/candidates directly).
 #' @keywords internal
 #' @noRd
-episode_reconcile_case_count <- function(con, stream_id, first_day, last_day, existing, candidate) {
+episodic_reconcile_case_count <- function(con, stream_id, first_day, last_day, existing, candidate) {
   tryCatch({
-    stream <- DBI::dbGetQuery(con, "SELECT pathogen, institution_id FROM episode_stream WHERE stream_id = ?",
+    stream <- DBI::dbGetQuery(con, "SELECT pathogen, institution_id FROM episodic_stream WHERE stream_id = ?",
                                params = list(stream_id))
     if (nrow(stream) == 0) stop("no such stream")
     res <- DBI::dbGetQuery(
       con,
-      "SELECT COUNT(*) AS n FROM episode_case
+      "SELECT COUNT(*) AS n FROM episodic_case
        WHERE pathogen = ? AND sample_date >= ? AND sample_date <= ?
          AND (? IS NULL OR institution_id = ?)",
       params = list(stream$pathogen[1], as.character(first_day), as.character(last_day),

@@ -30,90 +30,90 @@
 
 #' @keywords internal
 #' @noRd
-episode_db_assessment_event_insert <- function(con, cluster_id, user_id, verdict = NA,
+episodic_db_assessment_event_insert <- function(con, cluster_id, user_id, verdict = NA,
                                                 rationale, wpg_notifiable = NA,
                                                 ggd_informed = NA, ggd_note = NA,
                                                 snooze_until = NA, supersedes = NA) {
   stopifnot(is.character(rationale), nzchar(rationale))
   DBI::dbExecute(
     con,
-    "INSERT INTO episode_assessment_event
+    "INSERT INTO episodic_assessment_event
       (cluster_id, user_id, created_at, verdict, rationale, wpg_notifiable, ggd_informed,
        ggd_note, snooze_until, supersedes)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    params = list(cluster_id, user_id, episode_now(), verdict, rationale,
+    params = list(cluster_id, user_id, episodic_now(), verdict, rationale,
                   if (is.na(wpg_notifiable)) NA else as.integer(wpg_notifiable),
                   if (is.na(ggd_informed)) NA else as.integer(ggd_informed),
                   ggd_note, snooze_until, supersedes)
   )
-  episode_db_last_insert_id(con)
+  episodic_db_last_insert_id(con)
 }
 
 #' @keywords internal
 #' @noRd
-episode_db_stream_mute_insert <- function(con, stream_id, muted_from, muted_until, reason,
+episodic_db_stream_mute_insert <- function(con, stream_id, muted_from, muted_until, reason,
                                            note = NA, user_id) {
   DBI::dbExecute(
     con,
-    "INSERT INTO episode_stream_mute
+    "INSERT INTO episodic_stream_mute
       (stream_id, muted_from, muted_until, reason, note, user_id, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)",
-    params = list(stream_id, muted_from, muted_until, reason, note, user_id, episode_now())
+    params = list(stream_id, muted_from, muted_until, reason, note, user_id, episodic_now())
   )
-  episode_db_last_insert_id(con)
+  episodic_db_last_insert_id(con)
 }
 
 #' @keywords internal
 #' @noRd
-episode_db_cluster_state_insert <- function(con, cluster_id, state, trigger, event_id = NA,
+episodic_db_cluster_state_insert <- function(con, cluster_id, state, trigger, event_id = NA,
                                              user_id = NA) {
   DBI::dbExecute(
     con,
-    "INSERT INTO episode_cluster_state (cluster_id, state, entered_at, trigger, event_id, user_id)
+    "INSERT INTO episodic_cluster_state (cluster_id, state, entered_at, trigger, event_id, user_id)
      VALUES (?, ?, ?, ?, ?, ?)",
-    params = list(cluster_id, state, episode_now(), trigger, event_id, user_id)
+    params = list(cluster_id, state, episodic_now(), trigger, event_id, user_id)
   )
-  episode_db_last_insert_id(con)
+  episodic_db_last_insert_id(con)
 }
 
 #' @keywords internal
 #' @noRd
-episode_db_report_render_insert <- function(con, cluster_id, user_id = NA, file_path,
+episodic_db_report_render_insert <- function(con, cluster_id, user_id = NA, file_path,
                                              file_sha256, params_json, case_ids_json,
                                              version_no) {
   DBI::dbExecute(
     con,
-    "INSERT INTO episode_report_render
+    "INSERT INTO episodic_report_render
       (cluster_id, user_id, rendered_at, file_path, file_sha256, params, case_ids, version_no)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    params = list(cluster_id, user_id, episode_now(), file_path, file_sha256, params_json,
+    params = list(cluster_id, user_id, episodic_now(), file_path, file_sha256, params_json,
                   case_ids_json, version_no)
   )
-  episode_db_last_insert_id(con)
+  episodic_db_last_insert_id(con)
 }
 
 #' @keywords internal
 #' @noRd
-episode_db_app_user_insert <- function(con, username, full_name, email, password_hash,
+episodic_db_app_user_insert <- function(con, username, full_name, email, password_hash,
                                         role = "assessor") {
   DBI::dbExecute(
     con,
-    "INSERT INTO episode_app_user
+    "INSERT INTO episodic_app_user
       (username, full_name, email, password_hash, role, is_active, must_change, created_at)
      VALUES (?, ?, ?, ?, ?, 1, 1, ?)",
-    params = list(username, full_name, email, password_hash, role, episode_now())
+    params = list(username, full_name, email, password_hash, role, episodic_now())
   )
-  episode_db_last_insert_id(con)
+  episodic_db_last_insert_id(con)
 }
 
 #' @keywords internal
 #' @noRd
-episode_db_app_user_event_insert <- function(con, user_id, event_type, password_hash = NA) {
+episodic_db_app_user_event_insert <- function(con, user_id, event_type, password_hash = NA) {
   DBI::dbExecute(
     con,
-    "INSERT INTO episode_app_user_event (user_id, created_at, event_type, password_hash)
+    "INSERT INTO episodic_app_user_event (user_id, created_at, event_type, password_hash)
      VALUES (?, ?, ?, ?)",
-    params = list(user_id, episode_now(), event_type, password_hash)
+    params = list(user_id, episodic_now(), event_type, password_hash)
   )
-  episode_db_last_insert_id(con)
+  episodic_db_last_insert_id(con)
 }

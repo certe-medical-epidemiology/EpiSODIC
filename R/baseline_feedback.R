@@ -21,7 +21,7 @@
 #'
 #' Periods classified as a confirmed epidemic are excluded from the
 #' baseline of subsequent Farrington runs for that stream, derived from
-#' `episode_assessment_event` so it updates
+#' `episodic_assessment_event` so it updates
 #' automatically when a verdict is revised. `farringtonFlexible()`
 #' downweights past aberrations statistically, but a human verdict is
 #' better evidence than a residual - without this exclusion, last winter's
@@ -34,14 +34,14 @@
 #'   `confirmed_epidemic`. Zero rows if none.
 #' @keywords internal
 #' @noRd
-episode_baseline_excluded_windows <- function(con, stream_id) {
-  clusters <- episode_db_clusters_for_stream(con, stream_id)
+episodic_baseline_excluded_windows <- function(con, stream_id) {
+  clusters <- episodic_db_clusters_for_stream(con, stream_id)
   empty <- data.frame(first_day = character(0), last_day = character(0), stringsAsFactors = FALSE)
   if (nrow(clusters) == 0) return(empty)
 
   windows <- lapply(seq_len(nrow(clusters)), function(i) {
     cluster_id <- clusters$cluster_id[i]
-    events <- episode_db_assessment_events(con, cluster_id)
+    events <- episodic_db_assessment_events(con, cluster_id)
     classified <- events[!is.na(events$verdict), ]
     if (nrow(classified) == 0) return(NULL)
     latest_verdict <- classified$verdict[nrow(classified)]
@@ -57,13 +57,13 @@ episode_baseline_excluded_windows <- function(con, stream_id) {
 #' Remove cases falling inside any excluded window
 #'
 #' @param cases_for_stream A data frame with `sample_date`.
-#' @param excluded_windows `episode_baseline_excluded_windows()`'s output.
+#' @param excluded_windows `episodic_baseline_excluded_windows()`'s output.
 #' @return `cases_for_stream`, minus any row whose `sample_date` falls
 #'   within `[first_day, last_day]` of any excluded window. Unchanged if
 #'   `excluded_windows` has zero rows.
 #' @keywords internal
 #' @noRd
-episode_baseline_exclude_cases <- function(cases_for_stream, excluded_windows) {
+episodic_baseline_exclude_cases <- function(cases_for_stream, excluded_windows) {
   if (nrow(excluded_windows) == 0 || nrow(cases_for_stream) == 0) return(cases_for_stream)
   dates <- as.Date(cases_for_stream$sample_date)
   excluded <- rep(FALSE, length(dates))

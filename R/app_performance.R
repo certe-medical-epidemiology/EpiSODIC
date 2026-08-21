@@ -19,44 +19,44 @@
 
 #' @keywords internal
 #' @noRd
-episode_ui_performance_screen <- function(performance, lang = "nl") {
+episodic_ui_performance_screen <- function(performance, lang = "nl") {
   by_dp <- performance$by_detector_pathogen
   dist <- performance$classification_distribution
   t <- performance$timeliness
 
   timeliness_row <- function(label, entry) {
     value <- if (entry$n == 0 || is.na(entry$median_days)) {
-      episode_tr("misc.dash", lang = lang)
+      episodic_tr("misc.dash", lang = lang)
     } else {
-      episode_tr("performance.timeliness_value", days = round(entry$median_days, 1), n = entry$n, lang = lang)
+      episodic_tr("performance.timeliness_value", days = round(entry$median_days, 1), n = entry$n, lang = lang)
     }
     shiny::tags$tr(shiny::tags$td(label), shiny::tags$td(value))
   }
 
   shiny::tags$div(
     class = "episode-streams-screen",
-    shiny::tags$h1(style = "font-size:22px;font-weight:600;margin-bottom:4px;", episode_tr("performance.title", lang = lang)),
-    shiny::tags$p(style = "font-size:12.5px;color:var(--episode-muted);margin-bottom:16px;", episode_tr("performance.note", lang = lang)),
+    shiny::tags$h1(style = "font-size:22px;font-weight:600;margin-bottom:4px;", episodic_tr("performance.title", lang = lang)),
+    shiny::tags$p(style = "font-size:12.5px;color:var(--episode-muted);margin-bottom:16px;", episodic_tr("performance.note", lang = lang)),
 
-    shiny::tags$h2(style = "font-size:15px;font-weight:600;margin:20px 0 6px;", episode_tr("performance.timeliness_title", lang = lang)),
+    shiny::tags$h2(style = "font-size:15px;font-weight:600;margin:20px 0 6px;", episodic_tr("performance.timeliness_title", lang = lang)),
     shiny::tags$table(
       class = "episode-table",
       shiny::tags$tbody(
-        timeliness_row(episode_tr("performance.to_detection", lang = lang), t$to_detection),
-        timeliness_row(episode_tr("performance.to_first_assessment", lang = lang), t$to_first_assessment),
-        timeliness_row(episode_tr("performance.to_classification", lang = lang), t$to_classification)
+        timeliness_row(episodic_tr("performance.to_detection", lang = lang), t$to_detection),
+        timeliness_row(episodic_tr("performance.to_first_assessment", lang = lang), t$to_first_assessment),
+        timeliness_row(episodic_tr("performance.to_classification", lang = lang), t$to_classification)
       )
     ),
 
-    shiny::tags$h2(style = "font-size:15px;font-weight:600;margin:20px 0 6px;", episode_tr("performance.distribution_title", lang = lang)),
+    shiny::tags$h2(style = "font-size:15px;font-weight:600;margin:20px 0 6px;", episodic_tr("performance.distribution_title", lang = lang)),
     if (nrow(dist) == 0) {
-      shiny::tags$p(class = "episode-panel-empty", episode_tr("performance.empty", lang = lang))
+      shiny::tags$p(class = "episode-panel-empty", episodic_tr("performance.empty", lang = lang))
     } else {
       shiny::tags$table(
         class = "episode-table",
         shiny::tags$thead(shiny::tags$tr(
-          shiny::tags$th(episode_tr("performance.col.verdict", lang = lang)),
-          shiny::tags$th(episode_tr("performance.col.n", lang = lang))
+          shiny::tags$th(episodic_tr("performance.col.verdict", lang = lang)),
+          shiny::tags$th(episodic_tr("performance.col.n", lang = lang))
         )),
         shiny::tags$tbody(lapply(seq_len(nrow(dist)), function(i) {
           shiny::tags$tr(shiny::tags$td(dist$verdict_label[i]), shiny::tags$td(dist$n[i]))
@@ -64,25 +64,25 @@ episode_ui_performance_screen <- function(performance, lang = "nl") {
       )
     },
 
-    shiny::tags$h2(style = "font-size:15px;font-weight:600;margin:20px 0 6px;", episode_tr("performance.ppv_title", lang = lang)),
+    shiny::tags$h2(style = "font-size:15px;font-weight:600;margin:20px 0 6px;", episodic_tr("performance.ppv_title", lang = lang)),
     if (nrow(by_dp) == 0) {
-      shiny::tags$p(class = "episode-panel-empty", episode_tr("performance.empty", lang = lang))
+      shiny::tags$p(class = "episode-panel-empty", episodic_tr("performance.empty", lang = lang))
     } else {
       shiny::tags$table(
         class = "episode-table",
         shiny::tags$thead(shiny::tags$tr(
-          shiny::tags$th(episode_tr("performance.col.detector", lang = lang)),
-          shiny::tags$th(episode_tr("performance.col.pathogen", lang = lang)),
-          shiny::tags$th(episode_tr("performance.col.n_detections", lang = lang)),
-          shiny::tags$th(episode_tr("performance.col.ppv", lang = lang))
+          shiny::tags$th(episodic_tr("performance.col.detector", lang = lang)),
+          shiny::tags$th(episodic_tr("performance.col.pathogen", lang = lang)),
+          shiny::tags$th(episodic_tr("performance.col.n_detections", lang = lang)),
+          shiny::tags$th(episodic_tr("performance.col.ppv", lang = lang))
         )),
         shiny::tags$tbody(lapply(seq_len(nrow(by_dp)), function(i) {
           row <- by_dp[i, ]
           shiny::tags$tr(
-            shiny::tags$td(shiny::HTML(episode_ui_code_join(row$detector))),
-            shiny::tags$td(shiny::HTML(episode_ui_italicise_taxon(row$pathogen))),
+            shiny::tags$td(shiny::HTML(episodic_ui_code_join(row$detector))),
+            shiny::tags$td(shiny::HTML(episodic_ui_italicise_taxon(row$pathogen))),
             shiny::tags$td(row$n_detections),
-            shiny::tags$td(if (is.na(row$ppv)) episode_tr("misc.dash", lang = lang) else paste0(round(row$ppv * 100, 0), "%"))
+            shiny::tags$td(if (is.na(row$ppv)) episodic_tr("misc.dash", lang = lang) else paste0(round(row$ppv * 100, 0), "%"))
           )
         }))
       )
@@ -97,8 +97,8 @@ episode_ui_performance_screen <- function(performance, lang = "nl") {
 #' detection to first assessment. This is the evidence base for tuning
 #' decisions - how the eligibility gate gets calibrated towards a
 #' realistic monthly assessment volume - and is worth publishing in its
-#' own right. Timeliness is read from the `episode_cluster`/
-#' `episode_assessment_event` timestamps directly (`opened_at`,
+#' own right. Timeliness is read from the `episodic_cluster`/
+#' `episodic_assessment_event` timestamps directly (`opened_at`,
 #' `first_day`, each cluster's own first assessment/classification
 #' event) rather than reconstructed from state transitions, since those
 #' timestamps are already recorded on the two tables this screen reads.
@@ -126,29 +126,29 @@ episode_ui_performance_screen <- function(performance, lang = "nl") {
 #'   when `n` is `0`).
 #' @keywords internal
 #' @noRd
-episode_app_performance <- function(con, lang = "nl") {
+episodic_app_performance <- function(con, lang = "nl") {
   detections <- DBI::dbGetQuery(
-    con, "SELECT DISTINCT cluster_id, detector FROM episode_detection WHERE cluster_id IS NOT NULL"
+    con, "SELECT DISTINCT cluster_id, detector FROM episodic_detection WHERE cluster_id IS NOT NULL"
   )
-  clusters <- episode_db_clusters(con)
-  streams <- episode_db_streams(con, active_only = FALSE)
+  clusters <- episodic_db_clusters(con)
+  streams <- episodic_db_streams(con, active_only = FALSE)
   events <- DBI::dbGetQuery(
-    con, "SELECT cluster_id, created_at, verdict FROM episode_assessment_event ORDER BY created_at"
+    con, "SELECT cluster_id, created_at, verdict FROM episodic_assessment_event ORDER BY created_at"
   )
   verdicts <- events[!is.na(events$verdict), , drop = FALSE]
   # last row per cluster_id, keeping input order (created_at ascending)
   latest_verdict <- verdicts[!duplicated(verdicts$cluster_id, fromLast = TRUE), c("cluster_id", "verdict")]
 
   list(
-    by_detector_pathogen = episode_performance_ppv(detections, clusters, streams, latest_verdict),
-    classification_distribution = episode_performance_classification_distribution(latest_verdict, lang = lang),
-    timeliness = episode_performance_timeliness(clusters, events, verdicts)
+    by_detector_pathogen = episodic_performance_ppv(detections, clusters, streams, latest_verdict),
+    classification_distribution = episodic_performance_classification_distribution(latest_verdict, lang = lang),
+    timeliness = episodic_performance_timeliness(clusters, events, verdicts)
   )
 }
 
 #' @keywords internal
 #' @noRd
-episode_performance_ppv <- function(detections, clusters, streams, latest_verdict) {
+episodic_performance_ppv <- function(detections, clusters, streams, latest_verdict) {
   empty <- data.frame(detector = character(0), pathogen = character(0), n_detections = integer(0),
                        n_true_positive = integer(0), n_false_positive = integer(0), ppv = numeric(0),
                        stringsAsFactors = FALSE)
@@ -174,19 +174,19 @@ episode_performance_ppv <- function(detections, clusters, streams, latest_verdic
 
 #' @keywords internal
 #' @noRd
-episode_performance_classification_distribution <- function(latest_verdict, lang = "nl") {
+episodic_performance_classification_distribution <- function(latest_verdict, lang = "nl") {
   if (nrow(latest_verdict) == 0) {
     return(data.frame(verdict = character(0), verdict_label = character(0), n = integer(0), stringsAsFactors = FALSE))
   }
   tab <- table(latest_verdict$verdict)
   dist <- data.frame(verdict = names(tab), n = as.integer(tab), stringsAsFactors = FALSE)
-  dist$verdict_label <- vapply(dist$verdict, function(v) episode_tr(paste0("verdict.", v), lang = lang), character(1))
+  dist$verdict_label <- vapply(dist$verdict, function(v) episodic_tr(paste0("verdict.", v), lang = lang), character(1))
   dist[order(-dist$n), c("verdict", "verdict_label", "n")]
 }
 
 #' @keywords internal
 #' @noRd
-episode_performance_timeliness <- function(clusters, events, verdicts) {
+episodic_performance_timeliness <- function(clusters, events, verdicts) {
   summarise_days <- function(x) {
     x <- x[!is.na(x)]
     list(median_days = if (length(x) > 0) stats::median(x) else NA_real_, n = length(x))

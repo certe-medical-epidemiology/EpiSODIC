@@ -21,7 +21,7 @@
 #
 # Deliberately a separate file from default.yaml: this is a display-only
 # concern (the app's colours), not part of detection configuration, so it
-# must never affect episode_config_hash()/config_snapshot - that
+# must never affect episodic_config_hash()/config_snapshot - that
 # reproducibility guarantee is about detection results, not colour
 # swatches. Resolved the same way: this file's values are the defaults,
 # an operator overrides them by pointing EPISODIC_PALETTE_CONFIG at their

@@ -35,12 +35,12 @@
 #'
 #' @param cases A data frame of the cluster's cases, with `sample_date`.
 #' @param incub_max_days The pathogen's maximum incubation period, from
-#'   `episode_pathogen_config`.
+#'   `episodic_pathogen_config`.
 #' @return One of `"point_source"`, `"propagated"`, `"ambiguous"`, or `NA`
 #'   if `incub_max_days` is `NA` or there are fewer than 2 cases.
 #' @keywords internal
 #' @noRd
-episode_classify_curve_shape <- function(cases, incub_max_days) {
+episodic_classify_curve_shape <- function(cases, incub_max_days) {
   if (is.na(incub_max_days) || is.null(cases) || nrow(cases) < 2) return(NA_character_)
   dates <- as.Date(cases$sample_date)
   span_days <- as.numeric(max(dates) - min(dates))

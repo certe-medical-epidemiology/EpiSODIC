@@ -33,7 +33,7 @@
 #' against `AMR::as.mo()` for *detection* purposes, so viruses and other
 #' non-taxonomic values are never excluded there;
 #' `AMR` is nonetheless a hard dependency of the package as a whole, used
-#' here and by `episode_dedup()`. Text is
+#' here and by `episodic_dedup()`. Text is
 #' HTML-escaped before any tag is added, so this is always safe to pass
 #' to [shiny::HTML()].
 #'
@@ -46,9 +46,9 @@
 #' @param pathogen A character vector of pathogen display names.
 #' @return A character vector, safe to pass to [shiny::HTML()].
 #' @examples
-#' episode_ui_italicise_taxon(c("Escherichia coli", "Influenza A"))
+#' episodic_ui_italicise_taxon(c("Escherichia coli", "Influenza A"))
 #' @export
-episode_ui_italicise_taxon <- function(pathogen) {
+episodic_ui_italicise_taxon <- function(pathogen) {
   escaped <- gsub("&", "&amp;", pathogen, fixed = TRUE)
   escaped <- gsub("<", "&lt;", escaped, fixed = TRUE)
   escaped <- gsub(">", "&gt;", escaped, fixed = TRUE)
@@ -65,16 +65,16 @@ episode_ui_italicise_taxon <- function(pathogen) {
 #' line, settings panel, timeline). Text is HTML-escaped before any tag is
 #' added, so the result is always safe to pass to [shiny::HTML()].
 #'
-#' Exported for the same reason as [episode_ui_italicise_taxon()]: the
+#' Exported for the same reason as [episodic_ui_italicise_taxon()]: the
 #' Quarto report template needs it available in its own fresh session.
 #'
 #' @param detectors A character vector of detector names.
 #' @param sep Separator between entries.
 #' @return A single character string, safe to pass to [shiny::HTML()].
 #' @examples
-#' episode_ui_code_join(c("farrington", "same_place"))
+#' episodic_ui_code_join(c("farrington", "same_place"))
 #' @export
-episode_ui_code_join <- function(detectors, sep = ", ") {
+episodic_ui_code_join <- function(detectors, sep = ", ") {
   escaped <- gsub("&", "&amp;", detectors, fixed = TRUE)
   escaped <- gsub("<", "&lt;", escaped, fixed = TRUE)
   escaped <- gsub(">", "&gt;", escaped, fixed = TRUE)
@@ -84,13 +84,13 @@ episode_ui_code_join <- function(detectors, sep = ", ") {
 #' A vertical list of colour-coded buttons standing in for a `<select>`
 #'
 #' Used for the classification and mute-reason pickers on the assessment
-#' form (`episode_ui_assessment_form()`) - a labelled, coloured button
+#' form (`episodic_ui_assessment_form()`) - a labelled, coloured button
 #' per option, filled once selected, rather than a plain dropdown, so
 #' the option and its meaning are both visible at once instead of hidden
 #' behind a click.
 #'
 #' Selection is plain inline `onclick` JS (consistent with the rest of this
-#' app's forms, e.g. `episode_ui_nav_link()`), writing into a hidden
+#' app's forms, e.g. `episodic_ui_nav_link()`), writing into a hidden
 #' `input_id` element that the submit button's own onclick reads - no new
 #' JS file, no new dependency.
 #'
@@ -101,7 +101,7 @@ episode_ui_code_join <- function(detectors, sep = ", ") {
 #' @return A `shiny::tags$div`.
 #' @keywords internal
 #' @noRd
-episode_ui_picker <- function(input_id, options, selected = NULL) {
+episodic_ui_picker <- function(input_id, options, selected = NULL) {
   selected <- selected %||% ""
   shiny::tags$div(
     class = "episode-picker",
@@ -129,7 +129,7 @@ episode_ui_picker <- function(input_id, options, selected = NULL) {
 #' @param filled If `TRUE`, filled background; otherwise an outline chip.
 #' @keywords internal
 #' @noRd
-episode_ui_chip <- function(text, colour, filled = FALSE) {
+episodic_ui_chip <- function(text, colour, filled = FALSE) {
   style <- if (filled) {
     sprintf("color:#fff;background:%s;", colour)
   } else {
@@ -145,7 +145,7 @@ episode_ui_chip <- function(text, colour, filled = FALSE) {
 #' @param ... Panel body content.
 #' @keywords internal
 #' @noRd
-episode_ui_panel <- function(title, ..., aside = NULL, note = NULL) {
+episodic_ui_panel <- function(title, ..., aside = NULL, note = NULL) {
   shiny::tags$section(
     class = "episode-panel",
     shiny::tags$div(
@@ -164,8 +164,8 @@ episode_ui_panel <- function(title, ..., aside = NULL, note = NULL) {
 #' @param message Empty-state text shown instead of a body.
 #' @keywords internal
 #' @noRd
-episode_ui_panel_empty <- function(title, message, aside = NULL) {
-  episode_ui_panel(title, aside = aside, shiny::tags$p(class = "episode-panel-empty", message))
+episodic_ui_panel_empty <- function(title, message, aside = NULL) {
+  episodic_ui_panel(title, aside = aside, shiny::tags$p(class = "episode-panel-empty", message))
 }
 
 #' @param label Stat label (uppercase caption).
@@ -174,7 +174,7 @@ episode_ui_panel_empty <- function(title, message, aside = NULL) {
 #' @param colour Optional value colour.
 #' @keywords internal
 #' @noRd
-episode_ui_stat <- function(label, value, sub = NULL, colour = NULL) {
+episodic_ui_stat <- function(label, value, sub = NULL, colour = NULL) {
   shiny::tags$div(
     shiny::tags$div(class = "episode-stat-label", label),
     shiny::tags$div(class = "episode-stat-value", style = if (!is.null(colour)) sprintf("color:%s;", colour), value),
@@ -187,9 +187,9 @@ episode_ui_stat <- function(label, value, sub = NULL, colour = NULL) {
 #' @param colour Bar fill colour.
 #' @keywords internal
 #' @noRd
-episode_ui_bars <- function(rows, unit = NULL, colour = NULL) {
+episodic_ui_bars <- function(rows, unit = NULL, colour = NULL) {
   if (nrow(rows) == 0) return(shiny::tags$p(class = "episode-panel-empty", "..."))
-  pal <- episode_palette()
+  pal <- episodic_palette()
   colour <- colour %||% pal$primary
   max_n <- max(rows$n, 1)
   bars <- lapply(seq_len(nrow(rows)), function(i) {
@@ -212,7 +212,7 @@ episode_ui_bars <- function(rows, unit = NULL, colour = NULL) {
 #' @param lang Session language, for the axis labels.
 #' @keywords internal
 #' @noRd
-episode_ui_pyramid <- function(demo, lang = "nl") {
+episodic_ui_pyramid <- function(demo, lang = "nl") {
   if (nrow(demo) == 0 || sum(demo$m, demo$v) == 0) {
     return(shiny::tags$p(class = "episode-panel-empty", "..."))
   }
@@ -237,24 +237,24 @@ episode_ui_pyramid <- function(demo, lang = "nl") {
     rows,
     shiny::tags$div(
       style = "display:flex;justify-content:space-between;font-size:11px;color:var(--episode-muted);margin-top:4px;",
-      shiny::tags$span(episode_tr("panel.demography.male", lang = lang)),
-      shiny::tags$span(episode_tr("panel.demography.female", lang = lang))
+      shiny::tags$span(episodic_tr("panel.demography.male", lang = lang)),
+      shiny::tags$span(episodic_tr("panel.demography.female", lang = lang))
     )
   )
 }
 
-#' @param state One of `episode_derive_state()`'s state strings.
+#' @param state One of `episodic_derive_state()`'s state strings.
 #' @keywords internal
 #' @noRd
-episode_ui_state_dot <- function(state) {
-  colour <- episode_ui_state_colour(state)
+episodic_ui_state_dot <- function(state) {
+  colour <- episodic_ui_state_colour(state)
   shiny::tags$span(class = "episode-state-dot", style = sprintf("background:%s;", colour))
 }
 
 #' @keywords internal
 #' @noRd
-episode_ui_state_colour <- function(state) {
-  pal <- episode_palette()
+episodic_ui_state_colour <- function(state) {
+  pal <- episodic_palette()
   switch(state,
     new = pal$primary, assessing = pal$primary, monitoring = pal$danger,
     closable = pal$warning_dark, closed = pal$success_dark, reassess = pal$tertiary_dark,
@@ -262,13 +262,13 @@ episode_ui_state_colour <- function(state) {
   )
 }
 
-#' @param verdict One of `episode_ui_assessment_form()`'s verdict keys
+#' @param verdict One of `episodic_ui_assessment_form()`'s verdict keys
 #'   (`"artefact"`, `"expected_variation"`, `"cluster_not_yet"`,
 #'   `"possible_epidemic"`, `"confirmed_epidemic"`).
 #' @keywords internal
 #' @noRd
-episode_ui_verdict_colour <- function(verdict) {
-  pal <- episode_palette()
+episodic_ui_verdict_colour <- function(verdict) {
+  pal <- episodic_palette()
   switch(verdict,
     artefact = pal$muted, expected_variation = pal$muted,
     cluster_not_yet = pal$success_dark, possible_epidemic = pal$warning_dark,
