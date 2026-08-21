@@ -131,7 +131,8 @@
   *organisme*, Hindi *जीव*, Arabic *كائن* - so all of those moved with it,
   to *patógeno*, *pathogène*, *रोगजनक* and *العامل الممرض*. Dutch is
   **verwekker** and German **Erreger**, without exception. `AMR::
-  microorganisms` keeps its name, being someone else's data object.
+  microorganisms` keeps its name: it is the AMR package's own data
+  object, and a hard dependency of this one.
 - Asserted rather than left to review: `tests/testthat/test-i18n.R` now
   fails if any shipped language calls the concept an organism again, if
   Dutch renders it "pathogeen" in any casing, or if a language's
@@ -139,6 +140,28 @@
 
 ## Interface
 
+- Cluster ids are readable now. The id sits beside the pathogen name in
+  the dossier title - *Salmonella* #300, muted and upright against the
+  italicised taxon - rather than a line further down among the metadata,
+  and it leads every row of the Pathogen screen's signals table, which
+  previously listed clusters without ever naming one. It is what an
+  assessor quotes in an email and searches the archive by, so it belongs
+  where the eye lands. Each language marks the reference its own way
+  (`n.º`, `n°`, `Nr.`, `رقم`), which is why it stays a translation key.
+- Weekly charts label weeks. `ggplot2`'s default date scale put two ticks
+  - "Oct" and "Jan" - across a whole quarter of weekly bars, which is not
+  enough to name the week a rise started in. The epidemic curve, the
+  multi-year trend and the positivity chart now carry the ISO week number
+  over the month it falls in, with the year stated once and again only
+  when it turns, thinning to month-and-year once the span passes about
+  eighteen months. Week and month are both read off the week's Thursday,
+  the day that decides which ISO year a week belongs to, so the week
+  beginning 30 December 2024 reads "w01 / Jan 2025" rather than
+  contradicting itself.
+- The number beside each pathogen in the picker now says what it counts.
+  "Norovirus (2197)" reads as an identifier; it is an all-time case
+  count, and it is the number that decides whether a pathogen has enough
+  history for the screen to say anything at all.
 - The top navigation now shows which screen you are on. The stylesheet
   has always had a rule for it; nothing ever applied the class.
 

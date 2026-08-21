@@ -48,8 +48,19 @@ test_that("every shipped language file uses the same {placeholder} tokens per ke
 })
 
 test_that("episodic_tr() substitutes placeholders", {
-  expect_equal(episodic_tr("dossier.meta.cluster_id", id = 1041, lang = "nl"), "cluster #1041")
-  expect_equal(episodic_tr("dossier.meta.cluster_id", id = 1041, lang = "en"), "cluster #1041")
+  expect_equal(episodic_tr("dossier.cluster_ref", id = 1041, lang = "nl"), "#1041")
+  expect_equal(episodic_tr("dossier.cluster_ref", id = 1041, lang = "en"), "#1041")
+})
+
+test_that("each language marks a cluster reference its own way", {
+  # "#" is not universal: Spanish writes n.º, French n°, German Nr.,
+  # Arabic رقم. Keeping this a translation key rather than a hardcoded
+  # "#" is the whole reason it is one.
+  expect_equal(episodic_tr("dossier.cluster_ref", id = 300, lang = "de"), "Nr. 300")
+  expect_equal(episodic_tr("dossier.cluster_ref", id = 300, lang = "fr"), "n\u00b0 300")
+  for (lang in episodic_shipped_langs) {
+    expect_match(episodic_tr("dossier.cluster_ref", id = 300, lang = lang), "300", fixed = TRUE)
+  }
 })
 
 test_that("episodic_tr() falls back from nl to en when a key is nl-missing", {

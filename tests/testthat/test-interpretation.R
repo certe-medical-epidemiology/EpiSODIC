@@ -24,7 +24,7 @@
 
 base_cluster <- function(...) {
   defaults <- list(
-    id = 1L, pathogen = "Test organism", n_cases = 11L, expected = 1.4, ratio = 7.9,
+    id = 1L, pathogen = "Test pathogen", n_cases = 11L, expected = 1.4, ratio = 7.9,
     detectors = c("same_place"), priority_score = 60,
     place = "Test Hospital", concentration = NULL, denominator = NULL,
     demography = NULL, completeness = list(incomplete_days = 0), density = NULL

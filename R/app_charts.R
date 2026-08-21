@@ -50,6 +50,91 @@ episodic_chart_theme <- function() {
     )
 }
 
+#' Translated month abbreviations, in month order
+#'
+#' The same `date.month.NN` keys `episodic_format_date_range()` reads, so
+#' an axis and a date range in the same dossier never spell a month two
+#' different ways.
+#'
+#' @param lang Session language.
+#' @return A character vector of length 12.
+#' @keywords internal
+#' @noRd
+episodic_chart_month_abbrevs <- function(lang = "nl") {
+  vapply(sprintf("%02d", 1:12), function(mm) episodic_tr(paste0("date.month.", mm), lang = lang),
+          character(1), USE.NAMES = FALSE)
+}
+
+#' Breaks and labels for a weekly x axis
+#'
+#' `ggplot2`'s default date scale picks round calendar breaks, which on a
+#' surveillance chart of a dozen-odd weeks means two labels - "Oct" and
+#' "Jan" - for the whole period. That is not enough to locate a peak: an
+#' epidemiologist reading a weekly curve wants to name the week the rise
+#' started, and cannot do it from a month tick a quarter of a chart away.
+#'
+#' So the axis is built from the weeks themselves. Every label carries the
+#' ISO week number, which is how surveillance weeks are referred to
+#' everywhere else in the field, over the month it falls in; the year is
+#' added on the first label and again whenever it changes, rather than
+#' repeated on every tick. Beyond about eighteen months the week number
+#' stops being the useful unit and the labels become month and year.
+#'
+#' @param week_starts The `Date` of each week on the chart.
+#' @param lang Session language, for month names.
+#' @param max_labels Roughly how many ticks to draw; the step between
+#'   weeks is chosen to stay under this.
+#' @return A list with `breaks` (`Date`) and `labels` (character), or
+#'   `NULL` when there is nothing to label.
+#' @keywords internal
+#' @noRd
+episodic_chart_week_axis <- function(week_starts, lang = "nl", max_labels = 14L) {
+  week_starts <- sort(unique(as.Date(week_starts)))
+  week_starts <- week_starts[!is.na(week_starts)]
+  n <- length(week_starts)
+  if (n == 0) return(NULL)
+
+  step <- max(1L, as.integer(ceiling(n / max_labels)))
+  breaks <- week_starts[seq(1L, n, by = step)]
+
+  months <- episodic_chart_month_abbrevs(lang)
+  # ISO week, not "week of the year": week 1 is the week containing the
+  # first Thursday, which is the convention every surveillance season in
+  # this codebase is already built on.
+  iso_week <- as.integer(format(breaks, "%V"))
+  # Month and year come from that same Thursday rather than from the
+  # week's Monday. A week can straddle a year end - the week beginning
+  # 30 December 2024 is ISO week 1 of 2025 - and taking the Monday's
+  # calendar date would label it "w01 / Dec 2024", which contradicts
+  # itself and never announces the new year at all. The Thursday is what
+  # decides which year an ISO week belongs to, so it decides the label.
+  thursday <- breaks + 3
+  mon <- months[as.integer(format(thursday, "%m"))]
+  years <- format(thursday, "%Y")
+
+  span_days <- as.numeric(max(week_starts) - min(week_starts))
+  if (span_days > 550) {
+    return(list(breaks = breaks, labels = sprintf("%s\n%s", mon, years)))
+  }
+
+  new_year <- c(TRUE, years[-1] != years[-length(years)])
+  bottom <- ifelse(new_year, paste(mon, years), mon)
+  list(breaks = breaks, labels = sprintf("w%02d\n%s", iso_week, bottom))
+}
+
+#' Apply `episodic_chart_week_axis()` to a plot, if it has anything to say
+#'
+#' @param week_starts The `Date` of each week on the chart.
+#' @param lang Session language.
+#' @return A `scale_x_date` layer, or `NULL` (which `+` ignores).
+#' @keywords internal
+#' @noRd
+episodic_chart_week_scale <- function(week_starts, lang = "nl") {
+  axis <- episodic_chart_week_axis(week_starts, lang = lang)
+  if (is.null(axis)) return(NULL)
+  ggplot2::scale_x_date(breaks = axis$breaks, labels = axis$labels)
+}
+
 #' @rdname episodic_charts
 #' @param curve A data frame with one row per day: `sample_date` (`Date`),
 #'   `n_cases` (case count), and `incomplete` (logical, `TRUE` for the most
@@ -104,6 +189,7 @@ episodic_ui_trend_chart <- function(trend, lang = "nl") {
     ggplot2::geom_line(ggplot2::aes(y = .data$expected, colour = "exp"), linewidth = 0.6, linetype = "dashed") +
     ggplot2::geom_line(ggplot2::aes(y = .data$n_cases, colour = "obs"), linewidth = 0.9) +
     ggplot2::scale_colour_manual(values = c(obs = pal$ink, exp = pal$primary_light), labels = legend_labels) +
+    episodic_chart_week_scale(trend$week_start, lang = lang) +
     episodic_chart_theme()
 }
 
@@ -313,6 +399,7 @@ episodic_ui_denominator_chart <- function(series, lang = "nl") {
       name = episodic_tr("panel.denominator.legend_tests", lang = lang),
       sec.axis = ggplot2::sec_axis(~ . / scale_factor * 100, name = episodic_tr("panel.denominator.legend_positivity", lang = lang))
     ) +
+    episodic_chart_week_scale(series$week_start, lang = lang) +
     episodic_chart_theme() +
     ggplot2::theme(axis.title.y = ggplot2::element_text(size = 9, colour = pal$muted),
                    axis.title.y.right = ggplot2::element_text(size = 9, colour = pal$danger_dark))
@@ -349,6 +436,7 @@ episodic_ui_pathogen_curve_chart <- function(weekly, thresholds = NULL, lang = "
     ggplot2::geom_col(ggplot2::aes(alpha = .data$alpha), fill = pal$primary, width = 5.5,
                        show.legend = FALSE) +
     ggplot2::scale_alpha_identity() +
+    episodic_chart_week_scale(weekly$week_start, lang = lang) +
     ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang))
 
   lines <- episodic_mem_threshold_lines(thresholds, lang = lang)

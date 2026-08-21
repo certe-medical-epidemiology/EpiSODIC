@@ -189,6 +189,18 @@ body {
   line-height: 1.15;
   display: inline;
 }
+/* The cluster id, set beside the pathogen name in the dossier title.
+   Upright and muted at a smaller size, so it reads as a reference on the
+   name rather than as part of the taxon - which is italicised. */
+.episodic-dossier-id {
+  font-size: 15px;
+  font-weight: 500;
+  font-style: normal;
+  color: var(--episodic-muted);
+  margin-left: 9px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 .episodic-dossier-meta {
   font-size: 12.5px;
   color: var(--episodic-muted);
@@ -636,4 +648,12 @@ dl.episodic-settings dd { margin: 0; }
   font-size: 11.5px;
   color: var(--episodic-muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* Cluster ids in tables: tabular figures so a column of them lines up,
+   and muted, since the id is a handle rather than a finding. */
+.episodic-table td.episodic-cell-id {
+  font-variant-numeric: tabular-nums;
+  color: var(--episodic-muted);
+  white-space: nowrap;
 }

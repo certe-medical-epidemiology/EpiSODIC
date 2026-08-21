@@ -92,8 +92,8 @@ test_that("episodic_triangle_update() and episodic_triangle_completeness() round
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
   stream_id <- episodic_db_stream_upsert(
-    con, stream_key = episodic_stream_key("pathogen_region", "Test organism"), level = "pathogen_region",
-    pathogen = "Test organism", observed_date = "2025-01-05"
+    con, stream_key = episodic_stream_key("pathogen_region", "Test pathogen"), level = "pathogen_region",
+    pathogen = "Test pathogen", observed_date = "2025-01-05"
   )
   cases <- data.frame(sample_date = c("2025-01-01", "2025-01-01", "2025-01-02"))
   episodic_triangle_update(con, stream_id, cases, run_date = "2025-01-05")

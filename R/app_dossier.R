@@ -93,7 +93,17 @@ episodic_ui_dossier_header <- function(obj, state, lang = "nl") {
   shiny::tagList(
     shiny::tags$div(
       style = "display:flex;align-items:center;gap:10px;flex-wrap:wrap;",
-      shiny::tags$h1(class = "episodic-dossier-title", shiny::HTML(episodic_ui_italicise_taxon(obj$pathogen))),
+      # The cluster id sits with the name rather than down in the meta
+      # line: it is what an assessor quotes in an email, reads out on the
+      # phone and searches the archive by, so it belongs where the eye
+      # lands first. Muted and upright so it reads as a label on the
+      # name, not as part of the taxon.
+      shiny::tags$h1(
+        class = "episodic-dossier-title",
+        shiny::HTML(episodic_ui_italicise_taxon(obj$pathogen)),
+        shiny::tags$span(class = "episodic-dossier-id",
+                          episodic_tr("dossier.cluster_ref", id = obj$id, lang = lang))
+      ),
       episodic_ui_chip(episodic_tr(paste0("level.", obj$level), lang = lang), pal$primary),
       episodic_ui_chip(episodic_tr(paste0("state.", state), lang = lang), episodic_ui_state_colour(state)),
       if (isTRUE(obj$changed_since_assessment)) episodic_ui_chip(episodic_tr("dossier.changed_badge", lang = lang), pal$tertiary_dark)
@@ -102,8 +112,6 @@ episodic_ui_dossier_header <- function(obj, state, lang = "nl") {
       class = "episodic-dossier-meta",
       style = "display:flex;gap:8px;flex-wrap:wrap;",
       shiny::tags$span(obj$place),
-      shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
-      shiny::tags$span(episodic_tr("dossier.meta.cluster_id", id = obj$id, lang = lang)),
       shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
       shiny::tags$span(episodic_tr("dossier.meta.first_last", first = obj$first_day, last = obj$last_day, lang = lang)),
       shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),

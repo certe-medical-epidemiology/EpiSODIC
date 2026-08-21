@@ -64,8 +64,8 @@ test_that("episodic_db_stream_trend_upsert() and episodic_db_stream_trend() roun
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
   stream_id <- episodic_db_stream_upsert(
-    con, stream_key = episodic_stream_key("pathogen_region", "Test organism"), level = "pathogen_region",
-    pathogen = "Test organism", observed_date = "2025-01-06"
+    con, stream_key = episodic_stream_key("pathogen_region", "Test pathogen"), level = "pathogen_region",
+    pathogen = "Test pathogen", observed_date = "2025-01-06"
   )
   episodic_db_stream_trend_upsert(con, stream_id, "2025-01-06", n_cases = 3, expected = 2.1, upperbound = 5.0)
   episodic_db_stream_trend_upsert(con, stream_id, "2025-01-06", n_cases = 4, expected = 2.1, upperbound = 5.0)

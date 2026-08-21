@@ -220,7 +220,7 @@ test_that("episodic_app_pathogen_screen() honours an explicit pathogen and repor
 test_that("episodic_app_pathogen_screen() falls back to the commonest pathogen for an unknown one", {
   env <- pathogen_screen_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  screen <- episodic_app_pathogen_screen(env$con, pathogen = "Not an organism", period = "all", lang = "en")
+  screen <- episodic_app_pathogen_screen(env$con, pathogen = "Not a pathogen", period = "all", lang = "en")
   expect_equal(screen$pathogen, "Influenza A")
 })
 
@@ -317,4 +317,87 @@ test_that("episodic_mem_threshold_lines() orders thresholds by value and labels 
   # A fit that produced no usable numbers leaves the bands off rather
   # than taking the panel down.
   expect_null(episodic_mem_threshold_lines(list(pre_epidemic = NA_real_, post_epidemic = NA_real_)))
+})
+
+test_that("episodic_chart_week_axis() labels weeks, not just the odd month", {
+  # ggplot2's default date scale gave two ticks - "Oct" and "Jan" - for a
+  # quarter's worth of weeks, which is not enough to name the week a rise
+  # started in.
+  weeks <- seq(as.Date("2024-09-30"), by = "week", length.out = 14)
+  axis <- episodic_chart_week_axis(weeks, lang = "en")
+  expect_equal(length(axis$breaks), length(axis$labels))
+  expect_gte(length(axis$breaks), 10)
+  # ISO week number over the month it falls in
+  expect_match(axis$labels[1], "^w40\n")
+  expect_match(axis$labels[1], "Oct", fixed = TRUE)
+  # the year is stated once at the start, then again only when it turns
+  expect_equal(sum(grepl("2024", axis$labels, fixed = TRUE)), 1)
+  expect_equal(sum(grepl("2025", axis$labels, fixed = TRUE)), 1)
+})
+
+test_that("episodic_chart_week_axis() puts a year-straddling week in the right year", {
+  # The week beginning 30 December 2024 is ISO week 1 of 2025. Labelling
+  # it from its Monday would read "w01 / Dec 2024" and never announce the
+  # turn of the year at all.
+  weeks <- seq(as.Date("2024-12-16"), by = "week", length.out = 4)
+  axis <- episodic_chart_week_axis(weeks, lang = "en")
+  expect_equal(axis$labels[3], "w01\nJan 2025")  # 16 Dec, 23 Dec, 30 Dec, 6 Jan
+  expect_match(axis$labels[1], "^w51\nDec")
+})
+
+test_that("episodic_chart_week_axis() thins its ticks rather than crowding them", {
+  weeks <- seq(as.Date("2023-01-02"), by = "week", length.out = 52)
+  axis <- episodic_chart_week_axis(weeks, lang = "en", max_labels = 14L)
+  expect_lte(length(axis$breaks), 14)
+  expect_true(all(axis$breaks %in% weeks))
+})
+
+test_that("episodic_chart_week_axis() drops week numbers once the span is years", {
+  weeks <- seq(as.Date("2020-01-06"), by = "week", length.out = 260)
+  axis <- episodic_chart_week_axis(weeks, lang = "en")
+  expect_lte(length(axis$breaks), 14)
+  # week numbers stop being the useful unit; month and year take over
+  expect_false(any(grepl("^w[0-9]", axis$labels)))
+  expect_true(all(grepl("20[0-9]{2}$", axis$labels)))
+})
+
+test_that("episodic_chart_week_axis() copes with an empty or single-week series", {
+  expect_null(episodic_chart_week_axis(as.Date(character(0))))
+  one <- episodic_chart_week_axis(as.Date("2025-01-06"), lang = "en")
+  expect_equal(length(one$breaks), 1)
+})
+
+test_that("episodic_chart_month_abbrevs() uses the same month names as the date ranges", {
+  months <- episodic_chart_month_abbrevs(lang = "en")
+  expect_equal(length(months), 12)
+  expect_equal(months[1], episodic_tr("date.month.01", lang = "en"))
+  expect_false(any(grepl("^\\[\\[", months)))
+})
+
+test_that("the signals table leads with the cluster id", {
+  env <- pathogen_screen_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  cluster_id <- episodic_db_cluster_insert(
+    env$con, stream_id = env$stream_id, first_day = "2025-01-08", last_day = "2025-01-22",
+    n_cases = 12, expected = 3, excess = 5, ratio = 4, priority_score = 70,
+    detector_agreement = 2, run_id = env$run_id
+  )
+  screen <- episodic_app_pathogen_screen(env$con, period = "all", lang = "en")
+  html <- as.character(episodic_ui_pathogen_clusters_panel(screen, lang = "en"))
+
+  expect_true(grepl(episodic_tr("dossier.cluster_ref", id = cluster_id, lang = "en"), html, fixed = TRUE))
+  expect_true(grepl("episodic-cell-id", html, fixed = TRUE))
+  # id column first: its header precedes the period header
+  expect_lt(regexpr(episodic_tr("pathogen.panel.clusters.col.id", lang = "en"), html, fixed = TRUE),
+             regexpr(episodic_tr("pathogen.panel.clusters.col.period", lang = "en"), html, fixed = TRUE))
+})
+
+test_that("the pathogen picker says what its number counts", {
+  env <- pathogen_screen_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  screen <- episodic_app_pathogen_screen(env$con, period = "all", lang = "en")
+  html <- as.character(episodic_ui_pathogen_controls(screen, lang = "en"))
+  # a bare "Influenza A (108)" reads as an identifier; the unit fixes that
+  expect_true(grepl("cases in total", html, fixed = TRUE))
+  expect_false(grepl("Influenza A (108)", html, fixed = TRUE))
 })

@@ -71,10 +71,19 @@ episodic_ui_pathogen_controls <- function(screen, lang = "nl") {
   pal <- episodic_palette()
   period <- screen$period
 
+  # "Norovirus (2197)" reads as an identifier; it is a case count, and an
+  # all-time one, which is the number that decides whether this pathogen
+  # has enough history for the screen to say anything at all. Spelled out
+  # with its unit so it cannot be mistaken for an id.
+  case_words <- c(episodic_tr("unit.case", lang = lang), episodic_tr("unit.cases", lang = lang))
   pathogen_options <- lapply(seq_len(nrow(screen$pathogens)), function(i) {
     row <- screen$pathogens[i, ]
-    shiny::tags$option(value = row$pathogen, selected = if (identical(row$pathogen, screen$pathogen)) "selected",
-                        sprintf("%s (%s)", row$pathogen, format(row$n_cases, big.mark = "")))
+    shiny::tags$option(
+      value = row$pathogen,
+      selected = if (identical(row$pathogen, screen$pathogen)) "selected",
+      episodic_tr("pathogen.select_option", lang = lang, pathogen = row$pathogen,
+                   cases = episodic_count_phrase(row$n_cases, case_words[1], case_words[2]))
+    )
   })
 
   period_buttons <- lapply(episodic_pathogen_period_ids, function(id) {
@@ -375,6 +384,11 @@ episodic_ui_pathogen_clusters_panel <- function(screen, lang = "nl") {
     shiny::tags$table(
       class = "episodic-table",
       shiny::tags$thead(shiny::tags$tr(
+        # First column: the id is the handle everything else refers to -
+        # what gets quoted in an email or searched for in the archive -
+        # so it leads the row rather than being absent from a table of
+        # clusters entirely.
+        shiny::tags$th(episodic_tr("pathogen.panel.clusters.col.id", lang = lang)),
         shiny::tags$th(episodic_tr("pathogen.panel.clusters.col.period", lang = lang)),
         shiny::tags$th(episodic_tr("archive.col.level", lang = lang)),
         shiny::tags$th(episodic_tr("archive.col.place", lang = lang)),
@@ -385,6 +399,8 @@ episodic_ui_pathogen_clusters_panel <- function(screen, lang = "nl") {
       shiny::tags$tbody(lapply(seq_len(nrow(clusters)), function(i) {
         row <- clusters[i, ]
         shiny::tags$tr(
+          shiny::tags$td(class = "episodic-cell-id",
+                          episodic_tr("dossier.cluster_ref", id = row$cluster_id, lang = lang)),
           shiny::tags$td(episodic_format_date_range(row$first_day, row$last_day, lang = lang)),
           shiny::tags$td(row$level_label),
           shiny::tags$td(row$place),

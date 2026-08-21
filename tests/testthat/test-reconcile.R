@@ -40,8 +40,8 @@ reconcile_setup <- function() {
   institution_id <- DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
 
   stream_id <- episodic_db_stream_upsert(
-    con, stream_key = episodic_stream_key("pathogen_institution", "Test organism", institution_id = institution_id),
-    level = "pathogen_institution", pathogen = "Test organism",
+    con, stream_key = episodic_stream_key("pathogen_institution", "Test pathogen", institution_id = institution_id),
+    level = "pathogen_institution", pathogen = "Test pathogen",
     institution_id = institution_id, observed_date = "2025-01-01"
   )
 
@@ -59,7 +59,7 @@ reconcile_detect <- function(env, run_id, first_day, last_day, n_cases, detector
     DBI::dbExecute(
       env$con,
       "INSERT INTO episodic_case (source_key, patient_key, sample_date, pathogen, care_line,
-        institution_id, first_seen_run) VALUES (?, ?, ?, 'Test organism', 'second', ?, ?)",
+        institution_id, first_seen_run) VALUES (?, ?, ?, 'Test pathogen', 'second', ?, ?)",
       params = list(source_key, source_key, dates[i], env$institution_id, run_id)
     )
   }

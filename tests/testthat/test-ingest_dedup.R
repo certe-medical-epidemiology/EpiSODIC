@@ -18,10 +18,10 @@
 # ===================================================================== #
 
 pathogen_config_fixture <- data.frame(
-  pathogen = "Test organism", episode_days = 30, stringsAsFactors = FALSE
+  pathogen = "Test pathogen", episode_days = 30, stringsAsFactors = FALSE
 )
 
-raw_case <- function(source_key, patient_key, sample_date, pathogen = "Test organism") {
+raw_case <- function(source_key, patient_key, sample_date, pathogen = "Test pathogen") {
   data.frame(
     source_key = source_key, patient_key = patient_key, sample_date = sample_date,
     receipt_date = sample_date, pathogen = pathogen,
@@ -60,8 +60,8 @@ test_that("different patients are never merged", {
 
 test_that("different pathogens for the same patient are never merged", {
   raw <- rbind(
-    raw_case("K1", "P1", "2025-01-01", pathogen = "Test organism"),
-    raw_case("K2", "P1", "2025-01-01", pathogen = "Other organism")
+    raw_case("K1", "P1", "2025-01-01", pathogen = "Test pathogen"),
+    raw_case("K2", "P1", "2025-01-01", pathogen = "Other pathogen")
   )
   deduped <- episodic_dedup(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 2)
@@ -81,8 +81,8 @@ test_that("the same isolate tagged under two pathogen values (e.g. E. coli and E
 
 test_that("a pathogen missing from pathogen_config falls back to the schema default of 30 days", {
   raw <- rbind(
-    raw_case("K1", "P1", "2025-01-01", pathogen = "Unknown organism"),
-    raw_case("K2", "P1", "2025-01-20", pathogen = "Unknown organism")
+    raw_case("K1", "P1", "2025-01-01", pathogen = "Unknown pathogen"),
+    raw_case("K2", "P1", "2025-01-20", pathogen = "Unknown pathogen")
   )
   deduped <- episodic_dedup(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 1)
