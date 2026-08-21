@@ -15,19 +15,19 @@ repository is open-source software with no data and no site-specific
 configuration.
 
 <!--
-Screenshots below are sourced from data-raw/screenshots/ (git-tracked,
-.Rbuildignore'd so they never ship in the CRAN tarball) - see
-data-raw/README.md for how to regenerate them against episodic_demo().
+Screenshots below live in man/figures/ (ships with the package, so they
+also render on the CRAN page) - see data-raw/screenshots/README.md for
+how to regenerate them against episodic_demo().
 -->
 <p align="center">
-  <img src="data-raw/screenshots/dossier.png" alt="A cluster dossier: epi curve, trend, and an automatically generated plain-language interpretation" width="800">
+  <img src="man/figures/main_screen.png" alt="A cluster dossier: case stats, status trajectory, an automatically generated plain-language interpretation, the epidemic curve, and the classification panel" width="800">
   <br>
-  <em>The cluster dossier - epi curve, multi-year trend, and an automatically generated interpretation of the evidence.</em>
+  <em>A cluster dossier - case stats, status trajectory, an automatically generated interpretation of the evidence, the epidemic curve, and the classification panel, alongside the rail of open clusters.</em>
 </p>
 <p align="center">
-  <img src="data-raw/screenshots/performance.png" alt="The Performance screen: positive predictive value per detector and organism" width="800">
+  <img src="man/figures/performance_screen.png" alt="The Performance screen: detection timeliness and positive predictive value per detector and organism" width="800">
   <br>
-  <em>The Performance screen - positive predictive value per detector and organism, and detection timeliness, from the stored verdicts.</em>
+  <em>The Performance screen - detection timeliness and positive predictive value per detector and organism, computed from the stored verdicts (both fill in as clusters get assessed).</em>
 </p>
 
 ## Capabilities
