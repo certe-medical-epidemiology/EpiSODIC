@@ -296,8 +296,8 @@ CREATE TABLE episodic_stream_trend (
 -- site that cannot produce it (e.g. culture-only, no closed target list to
 -- report negatives against) simply never writes rows here, and positivity
 -- panels stay blank for its streams. Keyed on `pathogen` directly rather
--- than on a lab `determination` code, so the determination-to-organism
--- mapping (which organisms a given test method can detect) is the
+-- than on a lab `determination` code, so the determination-to-pathogen
+-- mapping (which pathogens a given test method can detect) is the
 -- operator's own transform-time knowledge, not something EpiSODIC encodes
 -- (episodic_mo_determination from earlier drafts is dropped).
 -- ---------------------------------------------------------------------

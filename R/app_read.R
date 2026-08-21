@@ -215,7 +215,7 @@ episodic_cluster_object <- function(con, cluster_id, lang = "nl") {
 #' into one `NULL` (its own docs: "no off-the-shelf message ... is a
 #' substitute for simply not showing the panel"), which is right for
 #' `episodic_cluster_object()` itself but leaves the *displayed* empty
-#' state unable to distinguish "this organism's config is missing a
+#' state unable to distinguish "this pathogen's config is missing a
 #' serial interval" (a data-entry gap worth fixing) from "there simply
 #' are not enough cases in this cluster yet" (expected, no action
 #' needed) from "the `EpiEstim` package is not installed" (an
@@ -437,7 +437,7 @@ episodic_app_concentration <- function(cases, level) {
 #' about that cluster.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param pathogen The stream's organism.
+#' @param pathogen The stream's pathogen.
 #' @param cases The cluster's own cases; used only to place the window.
 #' @keywords internal
 #' @noRd
@@ -457,7 +457,7 @@ episodic_app_denominator_summary <- function(con, pathogen, cases) {
 
 #' Weekly (n_tests, n_cases, positivity) series aligned for charting
 #'
-#' Positivity is *this organism's* confirmed cases over *this organism's*
+#' Positivity is *this pathogen's* confirmed cases over *this pathogen's*
 #' tests, both counted region-wide over the same week. It used to be the
 #' cluster's own case count over the region-wide test count, which is not
 #' a positivity rate at all: numerator and denominator were drawn from
@@ -478,7 +478,7 @@ episodic_app_denominator_summary <- function(con, pathogen, cases) {
 #' denominator for.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param pathogen The stream's organism.
+#' @param pathogen The stream's pathogen.
 #' @param cases The cluster's own cases, with `sample_date`.
 #' @param weeks How many weeks of context to keep, ending at the week of
 #'   the cluster's last case.
@@ -542,10 +542,10 @@ episodic_app_demography_shift <- function(con, stream_id, cases) {
   # baseline, so the comparison is against the endemic background rather
   # than against a history that already contains this cluster. Leaving
   # them in makes it partly circular, and increasingly so the rarer the
-  # organism: for a pathogen whose recorded history is largely this one
+  # pathogen: for a pathogen whose recorded history is largely this one
   # cluster, the cluster dominates its own baseline and can therefore
   # never be found to have shifted away from it - exactly the situation
-  # (a rare organism, a big cluster) where a demographic shift is most
+  # (a rare pathogen, a big cluster) where a demographic shift is most
   # worth surfacing. Same principle as the baseline exclusion Farrington
   # already applies (`episodic_baseline_excluded_windows()`): a detected
   # aberration must not become part of what counts as normal.

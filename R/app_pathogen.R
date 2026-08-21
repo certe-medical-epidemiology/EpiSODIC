@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-# The Pathogen screen's read model: one organism, one date range, read
+# The Pathogen screen's read model: one pathogen, one date range, read
 # at the epidemiological level rather than the operational one.
 #
 # Every other screen in EpiSODIC is organised around a cluster - a
@@ -25,19 +25,19 @@
 # unit for triage and the wrong unit for surveillance. "Is influenza A
 # unusual this season, and where in the season are we" is not a question
 # about any one cluster, and cannot be answered by reading several
-# cluster dossiers in turn: the answer lives in the whole organism's
+# cluster dossiers in turn: the answer lives in the whole pathogen's
 # incidence across the whole catchment.
 #
 # Two things in the codebase already computed the population-level view
 # and then discarded it. MEM fits pre- and post-epidemic thresholds for
-# every seasonal organism on every run and uses them only to decide
+# every seasonal pathogen on every run and uses them only to decide
 # whether a detector fires - the thresholds themselves, and where the
 # current week sits against them, were never shown to anyone. And Rt was
 # computed per cluster only, where the renewal equation is being fed a
 # subset of the transmission process it assumes it is seeing whole. This
 # screen is where both belong.
 
-#' Which organisms the Pathogen screen can be pointed at
+#' Which pathogens the Pathogen screen can be pointed at
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @return A data frame with `pathogen`, `n_cases`, `first_day`,
@@ -151,10 +151,10 @@ episodic_app_resolve_period <- function(period = "season_current", from = NULL, 
   resolved
 }
 
-#' Everything the Pathogen screen shows for one organism over one period
+#' Everything the Pathogen screen shows for one pathogen over one period
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param pathogen The organism to describe; defaults to the commonest.
+#' @param pathogen The pathogen to describe; defaults to the commonest.
 #' @param period,from,to See `episodic_app_resolve_period()`.
 #' @param lang Session language, for labels.
 #' @return A list; see the source for which sections are populated and
@@ -215,14 +215,14 @@ episodic_app_pathogen_screen <- function(con, pathogen = NULL, period = "season_
   )
 }
 
-#' The `pathogen_region` (L5) stream for an organism, if one exists
+#' The `pathogen_region` (L5) stream for an pathogen, if one exists
 #'
-#' L5 is "this organism across the whole catchment", which is exactly the
+#' L5 is "this pathogen across the whole catchment", which is exactly the
 #' population the Pathogen screen describes - so its reporting-completion
 #' curve is the right one to read the screen's own trailing days against.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param pathogen The organism.
+#' @param pathogen The pathogen.
 #' @return A stream id, or `NULL`.
 #' @keywords internal
 #' @noRd
@@ -236,9 +236,9 @@ episodic_app_pathogen_region_stream <- function(con, pathogen) {
   if (nrow(found) == 0) NULL else found$stream_id[1]
 }
 
-#' Headline counts for the selected organism and period
+#' Headline counts for the selected pathogen and period
 #'
-#' @param all_cases Every case of the organism.
+#' @param all_cases Every case of the pathogen.
 #' @param window_cases Those inside the period.
 #' @param resolved The resolved period.
 #' @return A list of scalars.
@@ -326,7 +326,7 @@ episodic_app_pathogen_weekly <- function(window_cases, resolved, incomplete_days
 
 #' Where this season sits against its MEM thresholds
 #'
-#' @param all_cases Every case of the organism.
+#' @param all_cases Every case of the pathogen.
 #' @param resolved The resolved period.
 #' @param asof The date the data is current as of.
 #' @return A list with `season`, `thresholds`
@@ -369,13 +369,13 @@ episodic_app_pathogen_mem <- function(all_cases, resolved, asof = Sys.Date()) {
 #' so "early", "late", "bigger", "smaller" can be read directly instead
 #' of inferred from two separate charts.
 #'
-#' Seasonal organisms are overlaid by surveillance season (week 40 to
+#' Seasonal pathogens are overlaid by surveillance season (week 40 to
 #' week 20) and everything else by calendar year, because a season
 #' boundary drawn through October is meaningless for a food-borne
-#' organism whose incidence peaks in August - it would cut every summer
+#' pathogen whose incidence peaks in August - it would cut every summer
 #' peak in half and scatter it across two lines.
 #'
-#' @param all_cases Every case of the organism.
+#' @param all_cases Every case of the pathogen.
 #' @param resolved The resolved period.
 #' @param seasonal Whether to group by surveillance season or by calendar
 #'   year.
@@ -451,7 +451,7 @@ episodic_app_pathogen_overlay <- function(all_cases, resolved, seasonal = FALSE,
 #' `episodic_compute_rt()`'s own start-of-series burn-in and either drop
 #' them or, worse, show them inflated.
 #'
-#' @param all_cases Every case of the organism.
+#' @param all_cases Every case of the pathogen.
 #' @param pc The pathogen config row.
 #' @param resolved The resolved period.
 #' @param incomplete_days,asof Passed through to `episodic_compute_rt()`.
@@ -477,8 +477,8 @@ episodic_app_pathogen_rt <- function(all_cases, pc, resolved, incomplete_days = 
 #' Region-wide tests and positivity over the period
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param pathogen The organism.
-#' @param all_cases Every case of the organism.
+#' @param pathogen The pathogen.
+#' @param all_cases Every case of the pathogen.
 #' @param resolved The resolved period.
 #' @return A data frame with `week_start`, `n_tests`, `n_cases`,
 #'   `positivity`, or `NULL`.
@@ -504,16 +504,16 @@ episodic_app_pathogen_denominator <- function(con, pathogen, all_cases, resolved
   denom[, c("week_start", "n_tests", "n_cases", "positivity")]
 }
 
-#' Age and sex over the period, against the organism's own long-run
+#' Age and sex over the period, against the pathogen's own long-run
 #' distribution
 #'
 #' A shifted age distribution is one of the earliest readable signs that
-#' something has changed about an organism's epidemiology - a new
+#' something has changed about an pathogen's epidemiology - a new
 #' subtype, a waning vaccination cohort, a changed testing policy - and
 #' it shows at population level long before any single cluster is big
 #' enough to reveal it.
 #'
-#' @param all_cases Every case of the organism.
+#' @param all_cases Every case of the pathogen.
 #' @param window_cases Those inside the period.
 #' @return A list with `bands` (for `episodic_ui_pyramid()`),
 #'   `median_age`, `baseline_median_age`, and `n_unknown_age`, or `NULL`.
@@ -572,14 +572,14 @@ episodic_app_pathogen_institutions <- function(con, window_cases, top = 10L, lan
   data.frame(label = names(tab), n = as.integer(tab), row.names = NULL, stringsAsFactors = FALSE)
 }
 
-#' Clusters of this organism that overlap the period
+#' Clusters of this pathogen that overlap the period
 #'
 #' The bridge back from the epidemiological view to the operational one:
 #' having decided that a season is unusual, the next question is always
 #' which signals were raised during it and what was made of them.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param pathogen The organism.
+#' @param pathogen The pathogen.
 #' @param resolved The resolved period.
 #' @param lang Session language.
 #' @return A data frame with `cluster_id`, `level_label`, `place`,

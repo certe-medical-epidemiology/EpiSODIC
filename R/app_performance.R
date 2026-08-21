@@ -92,7 +92,7 @@ episodic_ui_performance_screen <- function(performance, lang = "nl") {
 
 #' The Performance screen: positive predictive value, timeliness, classification mix
 #'
-#' Positive predictive value per detector per organism, computed from
+#' Positive predictive value per detector per pathogen, computed from
 #' the stored verdicts; time from first case to detection; and time from
 #' detection to first assessment. This is the evidence base for tuning
 #' decisions - how the eligibility gate gets calibrated towards a

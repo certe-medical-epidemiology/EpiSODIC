@@ -55,7 +55,7 @@
 #' @param stream_id The stream to reconcile.
 #' @param detections A data frame of this run's detections for this stream
 #'   (already inserted into `episodic_detection` with their `detection_id`).
-#' @param case_free_days The organism's case-free interval, from
+#' @param case_free_days The pathogen's case-free interval, from
 #'   `episodic_pathogen_config`.
 #' @param run_id The current `run_id`.
 #' @param close_after_runs From `config$reconciliation$close_after_runs`.
@@ -67,7 +67,7 @@
 #' @param verdict_fn A function `(cluster_id) -> character(1) or NA`, the
 #'   latest verdict for a cluster, used to decide auto-closure eligibility
 #'   and, together with `cooldown_days`, the cool-down escape hatch.
-#' @param cooldown_days The organism's cool-down interval, from
+#' @param cooldown_days The pathogen's cool-down interval, from
 #'   `episodic_pathogen_config`. `NA`
 #'   (default) disables the cool-down/escape-hatch check entirely, for
 #'   callers (and existing tests) that predate it.
@@ -348,7 +348,7 @@ episodic_reconcile_link_detections <- function(con, detections, candidate, clust
 #'
 #' @param open_clusters A data frame from `episodic_db_clusters_for_stream()`.
 #' @param candidate A single-row candidate episode.
-#' @param case_free_days The organism's case-free interval.
+#' @param case_free_days The pathogen's case-free interval.
 #' @return Integer row indices into `open_clusters` (may be length 0, 1,
 #'   or more than 1).
 #' @keywords internal
@@ -387,10 +387,10 @@ episodic_reconcile_find_matches <- function(open_clusters, candidate, case_free_
 #'
 #' @param open_clusters A data frame from `episodic_db_clusters_for_stream()`.
 #' @param candidate A single-row candidate episode.
-#' @param case_free_days The organism's case-free interval - the inner
+#' @param case_free_days The pathogen's case-free interval - the inner
 #'   bound of the cool-down window (a candidate this close would already
 #'   have matched ordinarily; this function only ever sees ones that did not).
-#' @param cooldown_days The organism's cool-down interval - the outer bound.
+#' @param cooldown_days The pathogen's cool-down interval - the outer bound.
 #' @param cooldown_reopen_ratio From `config$reconciliation$
 #'   cooldown_reopen_ratio`. `NA` disables the reopen check (every
 #'   cool-down absorption is then silent, never flagged).

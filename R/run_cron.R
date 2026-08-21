@@ -191,7 +191,7 @@ episodic_run_cron_body <- function(con, run_id, config, ingest_source, denominat
       rare_trigger_detections[rare_trigger_detections$stream_id == stream$stream_id, ]
     )
 
-    # MEM runs on pathogen_region (L5) streams only, for organisms
+    # MEM runs on pathogen_region (L5) streams only, for pathogens
     # flagged mem_applicable - see episodic_detect_mem()'s own docs for
     # why L5 rather than every level.
     pc_mem <- pathogen_config[pathogen_config$pathogen == stream$pathogen, ]

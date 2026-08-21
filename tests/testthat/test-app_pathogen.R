@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-# Three winters of a seasonal organism, plus a handful of a non-seasonal
+# Three winters of a seasonal pathogen, plus a handful of a non-seasonal
 # one, so the screen has something to describe at both settings.
 pathogen_screen_setup <- function() {
   con <- episodic_test_db()
@@ -154,7 +154,7 @@ test_that("episodic_app_pathogen_overlay() lays seasons out week 40 first, not w
   expect_true(all(c("2022/2023", "2023/2024", "2024/2025") %in% overlay$groups))
 })
 
-test_that("episodic_app_pathogen_overlay() uses calendar years for a non-seasonal organism", {
+test_that("episodic_app_pathogen_overlay() uses calendar years for a non-seasonal pathogen", {
   # A season boundary drawn through October would cut a summer peak in
   # half and scatter it across two lines.
   dates <- as.Date(c("2023-07-01", "2023-07-08", "2024-07-01", "2024-07-08"))
@@ -188,7 +188,7 @@ test_that("episodic_app_pathogen_summary() compares against the previous period 
   expect_equal(summary$peak_n, 3L)
 })
 
-test_that("episodic_app_pathogen_screen() describes the commonest organism by default", {
+test_that("episodic_app_pathogen_screen() describes the commonest pathogen by default", {
   env <- pathogen_screen_setup()
   on.exit(DBI::dbDisconnect(env$con))
   screen <- episodic_app_pathogen_screen(env$con, period = "all", lang = "en")
@@ -203,7 +203,7 @@ test_that("episodic_app_pathogen_screen() describes the commonest organism by de
   expect_false(is.null(screen$demography$bands))
 })
 
-test_that("episodic_app_pathogen_screen() honours an explicit organism and reports it as non-seasonal", {
+test_that("episodic_app_pathogen_screen() honours an explicit pathogen and reports it as non-seasonal", {
   env <- pathogen_screen_setup()
   on.exit(DBI::dbDisconnect(env$con))
   screen <- episodic_app_pathogen_screen(env$con, pathogen = "Campylobacter", period = "all", lang = "en")
@@ -211,13 +211,13 @@ test_that("episodic_app_pathogen_screen() honours an explicit organism and repor
   expect_equal(screen$pathogen, "Campylobacter")
   expect_false(screen$seasonal)
   expect_null(screen$mem)
-  # rt_applicable is 0 for this organism, so Rt is suppressed entirely
+  # rt_applicable is 0 for this pathogen, so Rt is suppressed entirely
   # rather than shown with a caveat.
   expect_null(screen$rt)
   expect_true(is.na(screen$rt_unavailable_reason))
 })
 
-test_that("episodic_app_pathogen_screen() falls back to the commonest organism for an unknown one", {
+test_that("episodic_app_pathogen_screen() falls back to the commonest pathogen for an unknown one", {
   env <- pathogen_screen_setup()
   on.exit(DBI::dbDisconnect(env$con))
   screen <- episodic_app_pathogen_screen(env$con, pathogen = "Not an organism", period = "all", lang = "en")

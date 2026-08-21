@@ -28,9 +28,9 @@ they also render on the CRAN page), regenerated against episodic_demo().
   <em>A cluster dossier - case stats, status trajectory, an automatically generated interpretation of the evidence, the epidemic curve, and the classification panel, alongside the rail of open clusters.</em>
 </p>
 <p align="center">
-  <img src="man/figures/performance_screen.png" alt="The Performance screen: detection timeliness and positive predictive value per detector and organism" width="800">
+  <img src="man/figures/performance_screen.png" alt="The Performance screen: detection timeliness and positive predictive value per detector and pathogen" width="800">
   <br>
-  <em>The Performance screen - detection timeliness and positive predictive value per detector and organism, computed from the stored verdicts (both fill in as clusters get assessed).</em>
+  <em>The Performance screen - detection timeliness and positive predictive value per detector and pathogen, computed from the stored verdicts (both fill in as clusters get assessed).</em>
 </p>
 
 ## Capabilities
@@ -51,22 +51,22 @@ surveillance - "is influenza A unusual this season, and where in the
 season are we" is not a question about any one cluster, and cannot be
 answered by reading several dossiers in turn.
 
-The **Pathogen** screen is the other altitude. Pick an organism and a
+The **Pathogen** screen is the other altitude. Pick an pathogen and a
 period - a surveillance season (ISO week 40 to week 20), the last twelve
 months, the last five years, or an exact date range - and it describes
-that organism across the whole catchment over that period:
+that pathogen across the whole catchment over that period:
 
 - weekly incidence, with the Moving Epidemic Method's pre- and
   post-epidemic thresholds and its medium/high/very high intensity bands
   drawn on it, fitted only on the seasons *before* the one being looked
   at;
 - the same period laid over earlier seasons (or, for a non-seasonal
-  organism, earlier calendar years) on a shared week-within-period axis,
+  pathogen, earlier calendar years) on a shared week-within-period axis,
   so "earlier", "later", "bigger", "smaller" can be read directly;
-- Rt for the organism as a whole rather than per cluster - which is the
+- Rt for the pathogen as a whole rather than per cluster - which is the
   population the renewal model assumes it is seeing - conditioned on case
   history from before the selected period;
-- testing volume and positivity, age and sex against the organism's own
+- testing volume and positivity, age and sex against the pathogen's own
   long-run distribution, geography, and care-line and institution
   breakdowns;
 - and the clusters that were raised during the period, with the verdict
@@ -139,7 +139,7 @@ rejected:
 | `patient_key`              | A stable, pseudonymised patient identifier. This is what deduplication and episode grouping key on: without it, EpiSODIC cannot tell that two isolates belong to the same patient, and every isolate would be treated as its own case. Never displayed as-is in the interface.                                                                                                                                                                        |
 | `sample_date`              | The anchor date every detector, trend, and report is built against. If your system falls back to a receipt date when sample date is unfilled, that fallback should already have happened before this row reaches EpiSODIC.                                                                                                                                                                                                                            |
 | `receipt_date`             | When the result was received. Stored for provenance/audit, kept separate from `sample_date` - EpiSODIC deliberately does not use it to measure reporting delay, since a lab's own receipt-date field can itself silently be a stand-in for a missing sample date; reporting completeness is instead measured empirically, from how a stream's case counts change across successive detection runs.                                                    |
-| `pathogen`                 | The organism as your lab reports it, as free text. **Not** resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying isolate can appear more than once under different `pathogen` values when that is epidemiologically useful - an ETEC isolate reported as both `"Escherichia coli"` and `"ETEC"`, so each is watched on its own. This is your transform step's decision, not EpiSODIC's. |
+| `pathogen`                 | The pathogen as your lab reports it, as free text. **Not** resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying isolate can appear more than once under different `pathogen` values when that is epidemiologically useful - an ETEC isolate reported as both `"Escherichia coli"` and `"ETEC"`, so each is watched on its own. This is your transform step's decision, not EpiSODIC's. |
 | `care_line`                | `first`, `second`, `other`, or `unknown` - which part of the health system the case came from.                                                                                                                                                                                                                                                                                                                                                        |
 | `institution_key`          | A stable identifier for the institution, hashed internally so a later rename does not fracture history.                                                                                                                                                                                                                                                                                                                                               |
 | `institution_display_name` | The human-readable name shown in the interface.                                                                                                                                                                                                                                                                                                                                                                                                       |

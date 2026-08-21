@@ -20,7 +20,7 @@
 #' Find the most similar closed clusters ("Vergelijkbare clusters")
 #'
 #' A panel on the dossier surfacing the three most similar assessed
-#' clusters from the archive, matched on organism, level, size, season
+#' clusters from the archive, matched on pathogen, level, size, season
 #' and duration, each showing what was decided and why. At a typical
 #' rate of ten assessed clusters a month, two hundred precedents
 #' accumulate within two years, which makes the archive a decision aid

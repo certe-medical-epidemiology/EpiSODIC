@@ -48,11 +48,11 @@ episodic_ingest_source_synthetic <- function(start_date = as.Date("2021-01-01"),
 
   institutions <- episodic_synthetic_institutions()
   pc_pool <- episodic_synthetic_pc_pool()
-  organisms <- episodic_synthetic_organism_profiles()
+  pathogens <- episodic_synthetic_pathogen_profiles()
 
   dates <- seq(start_date, end_date, by = "day")
 
-  baseline <- episodic_synthetic_baseline_cases(dates, institutions, pc_pool, organisms)
+  baseline <- episodic_synthetic_baseline_cases(dates, institutions, pc_pool, pathogens)
 
   point_source <- episodic_synthetic_outbreak_point_source(institutions, end_date)
   propagated <- episodic_synthetic_outbreak_propagated(pc_pool, end_date)
@@ -119,7 +119,7 @@ episodic_synthetic_pc_pool <- function() {
 
 #' @keywords internal
 #' @noRd
-episodic_synthetic_organism_profiles <- function() {
+episodic_synthetic_pathogen_profiles <- function() {
   # amplitude/phase describe a sinusoidal seasonal baseline; phase_day is the
   # day-of-year of peak incidence. mean_daily is the region-wide baseline
   # mean before seasonality is applied. pathogen values match
@@ -136,10 +136,10 @@ episodic_synthetic_organism_profiles <- function() {
 
 #' @keywords internal
 #' @noRd
-episodic_synthetic_baseline_cases <- function(dates, institutions, pc_pool, organisms) {
+episodic_synthetic_baseline_cases <- function(dates, institutions, pc_pool, pathogens) {
   rows <- list()
-  for (i in seq_len(nrow(organisms))) {
-    org <- organisms[i, ]
+  for (i in seq_len(nrow(pathogens))) {
+    org <- pathogens[i, ]
     doy <- as.integer(format(dates, "%j"))
     seasonal_mean <- org$mean_daily * (1 + org$amplitude * cos(2 * pi * (doy - org$phase_day) / 365.25))
     n_per_day <- stats::rpois(length(dates), lambda = pmax(seasonal_mean, 0.01))
@@ -216,9 +216,9 @@ episodic_synthetic_outbreak_point_source <- function(institutions, end_date, n_c
 #' data, never mistaken for anything else.
 #'
 #' @param start_date,end_date The window to generate over.
-#' @param pathogen Which organism to generate the extra clusters for.
+#' @param pathogen Which pathogen to generate the extra clusters for.
 #'   Defaults to *Clostridioides difficile*, a plausible example of an
-#'   endemic organism that produces frequent clusters at a busy institution.
+#'   endemic pathogen that produces frequent clusters at a busy institution.
 #' @param n_bumps_per_month Average number of independent case clusters
 #'   generated per calendar month. Raise or lower this to see how detection
 #'   volume responds.
@@ -243,10 +243,10 @@ episodic_ingest_source_synthetic_calibration <- function(start_date = as.Date("2
 
   institutions <- episodic_synthetic_institutions()
   pc_pool <- episodic_synthetic_pc_pool()
-  organisms <- episodic_synthetic_organism_profiles()
+  pathogens <- episodic_synthetic_pathogen_profiles()
   dates <- seq(start_date, end_date, by = "day")
 
-  baseline <- episodic_synthetic_baseline_cases(dates, institutions, pc_pool, organisms)
+  baseline <- episodic_synthetic_baseline_cases(dates, institutions, pc_pool, pathogens)
   point_source <- episodic_synthetic_outbreak_point_source(institutions, end_date)
   propagated <- episodic_synthetic_outbreak_propagated(pc_pool, end_date)
   volume <- episodic_synthetic_outbreak_volume(institutions, start_date, end_date,
@@ -271,7 +271,7 @@ episodic_ingest_source_synthetic_calibration <- function(start_date = as.Date("2
 #'
 #' @param institutions From `episodic_synthetic_institutions()`.
 #' @param start_date,end_date The window to spread bumps across.
-#' @param pathogen The organism name to stamp every generated case with.
+#' @param pathogen The pathogen name to stamp every generated case with.
 #' @param n_bumps_per_month Average bumps per calendar month
 #'   (`stats::rpois()`).
 #' @param cases_per_bump A `c(min, max)` range; the actual count per bump

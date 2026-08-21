@@ -321,7 +321,7 @@ episodic_ui_denominator_chart <- function(series, lang = "nl") {
 #' The pathogen-level weekly curve, with MEM thresholds drawn on it
 #'
 #' The thresholds are the point of the chart. MEM has been fitting a
-#' pre-epidemic and a post-epidemic threshold for every seasonal organism
+#' pre-epidemic and a post-epidemic threshold for every seasonal pathogen
 #' on every detection run all along, and using them only to decide
 #' whether a detector fired; drawn against the season's own weekly curve
 #' they answer the question an epidemiologist actually opens a seasonal

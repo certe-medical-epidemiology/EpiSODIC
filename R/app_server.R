@@ -64,7 +64,7 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
 
     # Pathogen screen selection. Held here rather than derived from the
     # inputs at render time so that switching away to a cluster dossier
-    # and back does not silently reset the organism and period an
+    # and back does not silently reset the pathogen and period an
     # epidemiologist was part-way through reading.
     pathogen_selected <- shiny::reactiveVal(NULL)
     pathogen_period <- shiny::reactiveVal("season_current")

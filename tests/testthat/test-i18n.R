@@ -120,6 +120,28 @@ test_that("Dutch never renders 'pathogen' as 'pathogeen', in any casing", {
   expect_equal(offenders, character(0))
 })
 
+test_that("English says 'pathogen', never 'organism'", {
+  # Influenza is not an organism. "Organism" was in six of the shipped
+  # English strings and their translations, and is simply wrong for the
+  # viruses this system spends most of its time watching.
+  en <- episodic_i18n_load("en")
+  offenders <- names(en)[grepl("organism", en, ignore.case = TRUE)]
+  expect_equal(offenders, character(0))
+  expect_true(any(grepl("pathogen", en, ignore.case = TRUE)))
+})
+
+test_that("no shipped language still calls the concept an organism", {
+  # The same word, per language, as it was translated from English.
+  organism_words <- c(nl = "organisme", en = "organism", es = "organismo",
+                       fr = "organisme", de = "Organismus", zh = "\u751f\u7269\u4f53",
+                       hi = "\u091c\u0940\u0935", ar = "\u0643\u0627\u0626\u0646")
+  for (lang in episodic_shipped_langs) {
+    table <- episodic_i18n_load(lang)
+    offenders <- names(table)[grepl(organism_words[[lang]], table, ignore.case = TRUE)]
+    expect_equal(offenders, character(0), info = paste(lang, organism_words[[lang]]))
+  }
+})
+
 test_that("Dutch does use 'verwekker' for the concept, so the rule above is not vacuous", {
   nl <- episodic_i18n_load("nl")
   expect_true(any(grepl("verwekker", nl, ignore.case = TRUE)))

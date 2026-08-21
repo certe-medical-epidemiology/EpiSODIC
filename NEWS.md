@@ -3,8 +3,8 @@
 ## New: the Pathogen screen
 
 - Added a Pathogen screen to the dashboard, alongside Clusters. Pick an
-  organism and a period - a surveillance season, the last twelve months,
-  the last five years, or an exact date range - and read that organism at
+  pathogen and a period - a surveillance season, the last twelve months,
+  the last five years, or an exact date range - and read that pathogen at
   the epidemiological level rather than the operational one: weekly
   incidence for the whole catchment, this period laid over earlier ones
   on a shared week-of-season axis, region-wide Rt, testing volume and
@@ -103,7 +103,7 @@
   down the queue; a missing postcode is absence of evidence about
   localisation, not evidence of dispersal.
 - **The demographic baseline excludes the cluster being compared to it**,
-  and every other cluster in its stream. For a rare organism whose
+  and every other cluster in its stream. For a rare pathogen whose
   recorded history is largely one cluster, that cluster dominated its own
   baseline and could never be found to have shifted away from it -
   exactly where a demographic shift is most worth surfacing.
@@ -120,6 +120,22 @@
 - The geography panel now takes the full width of the dossier pane rather
   than sharing a row with the demography pyramid, and shows the per-area
   bar breakdown underneath the map rather than instead of it.
+
+## Terminology
+
+- One word per language for the thing being watched, everywhere. English
+  now says **pathogen** throughout, never "organism": influenza is not an
+  organism, and neither is any of the other viruses this system spends
+  most of its winter watching. Six shipped strings said "organism", and
+  their translations followed suit - Spanish *organismo*, French
+  *organisme*, Hindi *जीव*, Arabic *كائن* - so all of those moved with it,
+  to *patógeno*, *pathogène*, *रोगजनक* and *العامل الممرض*. Dutch is
+  **verwekker** and German **Erreger**, without exception. `AMR::
+  microorganisms` keeps its name, being someone else's data object.
+- Asserted rather than left to review: `tests/testthat/test-i18n.R` now
+  fails if any shipped language calls the concept an organism again, if
+  Dutch renders it "pathogeen" in any casing, or if a language's
+  navigation entry and screen title stop agreeing with each other.
 
 ## Interface
 

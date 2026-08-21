@@ -19,7 +19,7 @@
 
 #' The Pathogen screen
 #'
-#' Organism picker, period picker, then the panels in the order the
+#' Pathogen picker, period picker, then the panels in the order the
 #' question is actually asked: how much, where in the season, how fast,
 #' who, where, and finally which signals were raised during it.
 #'
@@ -57,7 +57,7 @@ episodic_ui_pathogen_screen <- function(screen, lang = "nl") {
   )
 }
 
-#' Organism and period selectors
+#' Pathogen and period selectors
 #'
 #' The period presets carry the epidemiological calendar (a surveillance
 #' season is one click, not two date entries), with explicit from/to
@@ -134,7 +134,7 @@ episodic_ui_pathogen_controls <- function(screen, lang = "nl") {
   )
 }
 
-#' Headline numbers for the selected organism and period
+#' Headline numbers for the selected pathogen and period
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_stats <- function(screen, lang = "nl") {
@@ -202,7 +202,7 @@ episodic_ui_intensity_colour <- function(level) {
 #' @noRd
 episodic_ui_pathogen_curve_panel <- function(screen, lang = "nl") {
   # An all-zero curve is not a chart worth drawing: a period with no
-  # cases of this organism is a sentence, not a row of empty bars.
+  # cases of this pathogen is a sentence, not a row of empty bars.
   if (is.null(screen$weekly) || nrow(screen$weekly) == 0 || sum(screen$weekly$n_cases) == 0) {
     return(episodic_ui_panel_empty(episodic_tr("pathogen.panel.curve.title", lang = lang),
                                     episodic_tr("pathogen.panel.curve.empty", lang = lang)))
@@ -358,7 +358,7 @@ episodic_ui_pathogen_breakdown_panels <- function(screen, lang = "nl") {
   )
 }
 
-#' The signals raised for this organism during the period
+#' The signals raised for this pathogen during the period
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_clusters_panel <- function(screen, lang = "nl") {

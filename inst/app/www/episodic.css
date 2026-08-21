@@ -593,7 +593,7 @@ dl.episodic-settings dd { margin: 0; }
 
 .episodic-activity-row.system { opacity: 0.65; font-style: italic; }
 
-/* Pathogen screen: organism + period selection.
+/* Pathogen screen: pathogen + period selection.
 
    The verdict picker in the assessment rail is a vertical stack of
    full-width buttons, which is right for a 250px column and wrong for a
