@@ -140,6 +140,21 @@
 
 ## Interface
 
+- The Pathogen screen's cluster table links through. Selecting a row -
+  by click or by keyboard, since a table row carries no focus of its own
+  - opens that cluster's dossier on the Clusters screen. The table is
+  also named for what it holds: **Clusters in this period**, not
+  "signals". A signal is a detection; these are the reconciled clusters
+  those detections became, each carrying a verdict and a state.
+
+  The rail's auto-selection had to be corrected for this to be honest.
+  It reset the selection whenever the selected cluster was not currently
+  *open*, and most of the clusters this table lists are closed - so every
+  such link would have quietly landed on the top of the rail instead. It
+  now only re-selects when nothing is selected or when the selected
+  cluster has been merged into another, which is the case where the
+  dossier really is stale. A cluster that closes while you are reading it
+  no longer disappears out from under you either.
 - Cluster ids are readable now. The id sits beside the pathogen name in
   the dossier title - *Salmonella* #300, muted and upright against the
   italicised taxon - rather than a line further down among the metadata,

@@ -657,3 +657,22 @@ dl.episodic-settings dd { margin: 0; }
   color: var(--episodic-muted);
   white-space: nowrap;
 }
+
+/* A table row that opens something. The id cell carries the visible
+   affordance; the row is the click target. Focusable, because a <tr>
+   has no keyboard access of its own. */
+.episodic-table tr.episodic-row-link { cursor: pointer; }
+.episodic-table tr.episodic-row-link:hover,
+.episodic-table tr.episodic-row-link:focus {
+  background: var(--episodic-primary-tint);
+  outline: none;
+}
+.episodic-table tr.episodic-row-link:focus-visible {
+  outline: 2px solid var(--episodic-primary);
+  outline-offset: -2px;
+}
+.episodic-id-link {
+  color: var(--episodic-primary);
+  font-weight: 500;
+}
+.episodic-table tr.episodic-row-link:hover .episodic-id-link { text-decoration: underline; }

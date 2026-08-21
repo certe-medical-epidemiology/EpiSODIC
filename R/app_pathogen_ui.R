@@ -398,9 +398,23 @@ episodic_ui_pathogen_clusters_panel <- function(screen, lang = "nl") {
       )),
       shiny::tags$tbody(lapply(seq_len(nrow(clusters)), function(i) {
         row <- clusters[i, ]
+        # Whole row clickable, with the id styled as the link: the row is
+        # a generous target, the id is the visible affordance. Keyboard
+        # reachable too, since a <tr> carries no native focus of its own.
+        open_js <- sprintf("Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
+                            row$cluster_id)
         shiny::tags$tr(
-          shiny::tags$td(class = "episodic-cell-id",
-                          episodic_tr("dossier.cluster_ref", id = row$cluster_id, lang = lang)),
+          class = "episodic-row-link", tabindex = "0",
+          title = episodic_tr("pathogen.panel.clusters.open_hint", lang = lang),
+          onclick = open_js,
+          onkeydown = sprintf(
+            "if(event.key==='Enter'||event.key===' '){event.preventDefault();%s}", open_js
+          ),
+          shiny::tags$td(
+            class = "episodic-cell-id",
+            shiny::tags$span(class = "episodic-id-link",
+                              episodic_tr("dossier.cluster_ref", id = row$cluster_id, lang = lang))
+          ),
           shiny::tags$td(episodic_format_date_range(row$first_day, row$last_day, lang = lang)),
           shiny::tags$td(row$level_label),
           shiny::tags$td(row$place),

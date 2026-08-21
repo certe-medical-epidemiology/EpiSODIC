@@ -622,6 +622,32 @@ episodic_app_completeness <- function(con, stream_id) {
   list(incomplete_days = as.integer(completeness$lag_days[complete_enough[1]]))
 }
 
+#' Whether a cluster can still be shown in the dossier pane
+#'
+#' True for any cluster that exists and has not been merged into another
+#' one - open or closed. Closed is not a reason to refuse: the archive is
+#' full of clusters worth re-reading, and the Pathogen screen links to
+#' them by id.
+#'
+#' Merged is a reason. `episodic_reconcile_stream()` folds overlapping
+#' clusters into the oldest survivor and records `merged_into` on the
+#' others; their cases are now counted under the survivor, so their
+#' dossier would show a case list that no longer belongs to them.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A cluster id, or `NULL`.
+#' @return A single logical.
+#' @keywords internal
+#' @noRd
+episodic_app_cluster_viewable <- function(con, cluster_id) {
+  if (is.null(cluster_id) || length(cluster_id) != 1 || is.na(cluster_id)) return(FALSE)
+  found <- DBI::dbGetQuery(
+    con, "SELECT merged_into FROM episodic_cluster WHERE cluster_id = ?",
+    params = list(cluster_id)
+  )
+  nrow(found) == 1 && is.na(found$merged_into[1])
+}
+
 #' The date the database's case data is current as of
 #'
 #' Every "how recent is this" judgement in the app - which trailing days

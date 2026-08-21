@@ -385,11 +385,40 @@ test_that("the signals table leads with the cluster id", {
   screen <- episodic_app_pathogen_screen(env$con, period = "all", lang = "en")
   html <- as.character(episodic_ui_pathogen_clusters_panel(screen, lang = "en"))
 
-  expect_true(grepl(episodic_tr("dossier.cluster_ref", id = cluster_id, lang = "en"), html, fixed = TRUE))
+  expect_true(grepl(paste0(">", episodic_tr("dossier.cluster_ref", id = cluster_id, lang = "en"), "<"),
+                     html, fixed = TRUE))
   expect_true(grepl("episodic-cell-id", html, fixed = TRUE))
   # id column first: its header precedes the period header
   expect_lt(regexpr(episodic_tr("pathogen.panel.clusters.col.id", lang = "en"), html, fixed = TRUE),
              regexpr(episodic_tr("pathogen.panel.clusters.col.period", lang = "en"), html, fixed = TRUE))
+})
+
+test_that("each cluster row links through to its dossier, by click and by keyboard", {
+  env <- pathogen_screen_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  cluster_id <- episodic_db_cluster_insert(
+    env$con, stream_id = env$stream_id, first_day = "2025-01-08", last_day = "2025-01-22",
+    n_cases = 12, expected = 3, excess = 5, ratio = 4, priority_score = 70,
+    detector_agreement = 2, run_id = env$run_id
+  )
+  screen <- episodic_app_pathogen_screen(env$con, period = "all", lang = "en")
+  html <- as.character(episodic_ui_pathogen_clusters_panel(screen, lang = "en"))
+
+  expect_true(grepl("open_cluster", html, fixed = TRUE))
+  expect_true(grepl(as.character(cluster_id), html, fixed = TRUE))
+  expect_true(grepl("episodic-row-link", html, fixed = TRUE))
+  # a <tr> has no keyboard access of its own
+  expect_true(grepl("tabindex", html, fixed = TRUE))
+  expect_true(grepl("onkeydown", html, fixed = TRUE))
+})
+
+test_that("the clusters panel is titled for clusters, not for signals", {
+  # They carry a verdict and a state; a signal is the detection that
+  # started one, which is a different thing this codebase already names.
+  title <- episodic_tr("pathogen.panel.clusters.title", lang = "en")
+  expect_match(title, "[Cc]luster")
+  expect_false(grepl("signal", title, ignore.case = TRUE))
+  expect_match(episodic_tr("pathogen.panel.clusters.title", lang = "nl"), "Clusters", fixed = TRUE)
 })
 
 test_that("the pathogen picker says what its number counts", {

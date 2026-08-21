@@ -50,14 +50,34 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
     })
 
     selected_cluster_id <- shiny::reactiveVal(NULL)
+    # Fills the dossier pane on first load, and moves on when whatever was
+    # selected has genuinely gone. It used to reset the selection whenever
+    # the selected cluster was not in the *open* list, which is a
+    # different and too-broad condition: the Pathogen screen links to
+    # clusters by id and most of the ones it lists are closed, so that
+    # rule would have silently redirected every such link to the top of
+    # the rail. A cluster that closes while you are reading it also has no
+    # business disappearing out from under you - the state chip says it
+    # closed, which is the answer you were looking for.
+    #
+    # Merged-away clusters are the real exception: their cases now belong
+    # to the surviving cluster, so their dossier is stale rather than
+    # merely closed, and that is what still forces a re-selection.
     shiny::observeEvent(open_clusters(), {
-      current <- selected_cluster_id()
       ids <- open_clusters()$cluster_id
-      if (length(ids) > 0 && (is.null(current) || !(current %in% ids))) {
-        selected_cluster_id(ids[1])
-      }
+      if (length(ids) == 0) return()
+      if (!episodic_app_cluster_viewable(con, selected_cluster_id())) selected_cluster_id(ids[1])
     })
     shiny::observeEvent(input$rail_select, selected_cluster_id(input$rail_select))
+
+    # Deep link from the Pathogen screen's cluster table. Setting the
+    # selection before the view means the dossier pane has its cluster
+    # ready by the time the clusters view renders, and the observer above
+    # will leave it alone whichever order the two land in.
+    shiny::observeEvent(input$open_cluster, {
+      selected_cluster_id(as.integer(input$open_cluster))
+      view("clusters")
+    })
 
     streams_page <- shiny::reactiveVal(1L)
     shiny::observeEvent(input$streams_page_select, streams_page(input$streams_page_select))

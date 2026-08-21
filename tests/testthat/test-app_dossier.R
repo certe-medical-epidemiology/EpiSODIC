@@ -165,7 +165,8 @@ test_that("the dossier title carries the cluster id beside the pathogen name", {
   html <- as.character(episodic_ui_dossier(env$con, env$cluster_id, lang = "en"))
 
   expect_true(grepl("episodic-dossier-id", html, fixed = TRUE))
-  expect_true(grepl(episodic_tr("dossier.cluster_ref", id = env$cluster_id, lang = "en"),
+  # as a text node: a bare "#1" also matches the palette's #1A1A1A
+  expect_true(grepl(paste0(">", episodic_tr("dossier.cluster_ref", id = env$cluster_id, lang = "en"), "<"),
                      html, fixed = TRUE))
   # inside the title element, not further down the meta line
   title_pos <- regexpr("episodic-dossier-title", html, fixed = TRUE)
