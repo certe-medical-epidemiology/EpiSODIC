@@ -26,7 +26,8 @@
 #' hardcoded (not read from the database), so unlike every other screen
 #' this one needs no `con` argument.
 #'
-#' @param lang Session language, `"nl"` (default) or `"en"`.
+#' @param lang Session language: `"nl"` (default), `"en"`, `"es"`, `"fr"`,
+#'   `"de"`, `"zh"`, `"hi"`, or `"ar"`.
 #' @return A `shiny::tags$div`.
 #' @keywords internal
 #' @noRd

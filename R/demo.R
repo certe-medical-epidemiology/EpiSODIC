@@ -37,7 +37,10 @@
 #'   [episodic_run_app()]); this call blocks until you close it. Set to
 #'   `FALSE` to only build the demo database and return its path, e.g. for
 #'   scripting or screenshots.
-#' @param lang Dashboard language when `launch = TRUE`: `"nl"` or `"en"`.
+#' @param lang Dashboard language when `launch = TRUE`: `"nl"`, `"en"`,
+#'   `"es"`, `"fr"`, `"de"`, `"zh"`, `"hi"`, or `"ar"`. Defaults to the
+#'   `EPISODIC_LANGUAGE` environment variable, falling back to `"en"` if
+#'   that is unset.
 #' @param ingest_source,denominator_source The data sources to
 #'   generate the demo from, passed on to [episodic_run_cron()]. Default to
 #'   several years of synthetic data; pass a narrower date range (see
@@ -62,7 +65,7 @@
 episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
                           username = "demo", full_name = "Demo User",
                           email = "demo@example.org", password = "episodic-demo",
-                          launch = TRUE, lang = "nl",
+                          launch = TRUE, lang = Sys.getenv("EPISODIC_LANGUAGE"),
                           ingest_source = episodic_ingest_source_synthetic,
                           denominator_source = episodic_denominator_source_synthetic) {
   Sys.setenv(

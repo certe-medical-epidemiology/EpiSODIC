@@ -25,7 +25,8 @@
 #' visual design comes from `inst/app/www/episodic.css` and the palette
 #' injected as CSS custom properties.
 #'
-#' @param lang Session language, `"nl"` (default) or `"en"`.
+#' @param lang Session language: `"nl"` (default), `"en"`, `"es"`, `"fr"`,
+#'   `"de"`, `"zh"`, `"hi"`, or `"ar"`.
 #' @return The page returned by [bslib::page_fluid()].
 #' @keywords internal
 #' @noRd

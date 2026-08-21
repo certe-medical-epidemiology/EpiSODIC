@@ -20,7 +20,8 @@
 #' The application server
 #'
 #' @param db_path Path to the SQLite database.
-#' @param lang Session language, `"nl"` (default) or `"en"`.
+#' @param lang Session language: `"nl"` (default), `"en"`, `"es"`, `"fr"`,
+#'   `"de"`, `"zh"`, `"hi"`, or `"ar"`.
 #' @return A Shiny server function.
 #' @keywords internal
 #' @noRd

@@ -26,7 +26,8 @@
 #' assembled deterministically from a fixed library of pre-written
 #' sentence templates ("fragments"), each triggered by a specific condition
 #' on the cluster's data. The same inputs always produce the same wording,
-#' and every fragment is translated into both Dutch and English.
+#' and every fragment is translated into every shipped language (Dutch,
+#' English, Spanish, French, German, Mandarin Chinese, Hindi, and Arabic).
 #'
 #' The narrative is built up section by section, in this fixed order:
 #' `episodic_interpretation_slots` lists them - magnitude, curve shape,
@@ -55,8 +56,8 @@ NULL
 #' @keywords internal
 #' @noRd
 episodic_interpretation_context <- function(cluster, lang = "nl") {
-  case_word <- if (lang == "nl") c("geval", "gevallen") else c("case", "cases")
-  day_word <- if (lang == "nl") c("dag", "dagen") else c("day", "days")
+  case_word <- c(episodic_tr("unit.case", lang = lang), episodic_tr("unit.cases", lang = lang))
+  day_word <- c(episodic_tr("unit.day", lang = lang), episodic_tr("unit.days", lang = lang))
 
   list(
     obs = cluster$n_cases,
@@ -186,7 +187,8 @@ episodic_interpretation_slots <- c("magnitude", "curve_shape", "concentration", 
 #' Generate the interpretation for a cluster
 #'
 #' @param cluster A cluster object, see `episodic_cluster_object()`.
-#' @param lang Session language, `"nl"` or `"en"`.
+#' @param lang Session language: `"nl"` (default), `"en"`, `"es"`, `"fr"`,
+#'   `"de"`, `"zh"`, `"hi"`, or `"ar"`.
 #' @param instance_i18n Optional operator overrides, passed to [episodic_tr()].
 #' @return A list with `text` (a character vector, one string per slot that
 #'   fired, in slot order) and `fired` (a character vector of the fragment

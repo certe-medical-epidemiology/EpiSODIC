@@ -56,7 +56,8 @@ episodic_chart_theme <- function() {
 #'   recent day(s) where reporting is still catching up - these are drawn at
 #'   reduced opacity as a visual reminder not to over-interpret a downturn
 #'   that is really just a reporting lag).
-#' @param lang Language for axis labels: `"nl"` (Dutch, default) or `"en"`.
+#' @param lang Language for axis labels: `"nl"` (Dutch, default), `"en"`,
+#'   `"es"`, `"fr"`, `"de"`, `"zh"`, `"hi"`, or `"ar"`.
 #' @return A [ggplot2::ggplot] object.
 #' @examples
 #' curve <- data.frame(

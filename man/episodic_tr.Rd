@@ -4,17 +4,20 @@
 \alias{episodic_tr}
 \title{Translate a dashboard text key}
 \usage{
-episodic_tr(key, ..., lang = "nl", instance_i18n = NULL)
+episodic_tr(key, ..., lang = Sys.getenv("EPISODIC_LANGUAGE"), instance_i18n = NULL)
 }
 \arguments{
 \item{key}{A dotted key identifying the piece of text, e.g.
-\code{"nav.clusters"}. The full set of available keys and their Dutch and
-English wording lives in \code{inst/i18n/nl.json} and \code{inst/i18n/en.json}.}
+\code{"nav.clusters"}. The full set of available keys and their wording in
+every shipped language lives in \code{inst/i18n/*.json} (one file per
+language: \code{nl}, \code{en}, \code{es}, \code{fr}, \code{de}, \code{zh}, \code{hi}, \code{ar}).}
 
 \item{...}{Named values substituted into \code{{name}} placeholders in the
 template.}
 
-\item{lang}{Language: \code{"nl"} (default) or \code{"en"}.}
+\item{lang}{Language: \code{"nl"}, \code{"en"}, \code{"es"}, \code{"fr"}, \code{"de"}, \code{"zh"},
+\code{"hi"}, or \code{"ar"}. Defaults to the \code{EPISODIC_LANGUAGE} environment
+variable, falling back to \code{"en"} if that is unset.}
 
 \item{instance_i18n}{An optional named character vector of your own
 wording overrides (key -> template), checked before the shipped

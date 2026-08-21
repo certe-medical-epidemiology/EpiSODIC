@@ -32,8 +32,10 @@
 #' @param db_path Path to the EpiSODIC database: a SQLite file, or a
 #'   MariaDB/MySQL DSN (see [episodic_db_dsn_mariadb()]). Defaults to the
 #'   `EPISODIC_DB` environment variable.
-#' @param lang Dashboard language, `"nl"` (default) or `"en"`, fixed for
-#'   the whole running app - there is no in-app language switcher.
+#' @param lang Dashboard language, fixed for the whole running app - there
+#'   is no in-app language switcher. One of `"nl"`, `"en"`, `"es"`, `"fr"`,
+#'   `"de"`, `"zh"`, `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   environment variable, falling back to `"en"` if that is unset.
 #' @param ... Passed on to [shiny::runApp()], e.g. `port` or `host`.
 #' @return Invisible; called for its side effect of starting the app. This
 #'   call blocks until the app is stopped.
@@ -44,7 +46,7 @@
 #' episodic_run_app("/path/to/episodic.sqlite")
 #' }
 #' @export
-episodic_run_app <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA), lang = "nl", ...) {
+episodic_run_app <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA), lang = Sys.getenv("EPISODIC_LANGUAGE"), ...) {
   rlang::check_installed(c("shiny", "bslib"))
   if (is.na(db_path) || !nzchar(db_path)) {
     stop(
