@@ -1,13 +1,16 @@
-# Synthetic ingestion source
+# Generate synthetic outbreak data
 
-The default (and only) implementation of the ingestion interface shipped
-with this package (`R/ingest_interface.R`). Generates several years of
-seasonal baseline case data across a synthetic set of institutions,
-pathogens, PC areas and care lines, then injects two outbreaks of known
-shape so the detectors have something to visibly fire on: one point
-source (`add_outbreak_point_source`, a ward-level cluster tightly
-bunched in time) and one propagated (`add_outbreak_propagated`, a
-community cluster with generation-interval-spaced case waves).
+Produces several years of realistic laboratory surveillance data for a
+fictional set of hospitals, long-term care institutions, and GP
+practices: seasonal baseline incidence for eight common pathogens, plus
+two deliberately injected outbreaks for the detectors to find - a
+point-source outbreak (a tight cluster of norovirus cases on one ward)
+and a propagated outbreak (community-spread pertussis with case waves
+spaced by the generation interval). This is what powers
+[`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+and the package's test suite; it is also a useful reference for what a
+real ingestion source function should return (see
+[episodic_ingest_columns](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ingest_interface.md)).
 
 ## Usage
 
@@ -37,11 +40,6 @@ episodic_ingest_source_synthetic(
 
 A data frame satisfying
 [`episodic_ingest_validate_source()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ingest_validate_source.md).
-
-## Details
-
-No Diver column name is invented here; every field in the returned data
-frame is entirely synthetic and matches `episodic_ingest_columns`.
 
 ## Examples
 

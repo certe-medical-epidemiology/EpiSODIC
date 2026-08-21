@@ -40,7 +40,8 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="episodic-020">EpiSODIC 0.2.0<a class="anchor" aria-label="anchor" href="#episodic-020"></a></h2>
-<ul><li>
+<ul><li>Rewrote all documentation for an epidemiologist audience: every man page is now written for someone running or configuring EpiSODIC, not for a contributor reading the source. Several related functions were combined onto a single help page (dashboard chart builders, HTML formatting helpers, geographic reference data), and examples now show their output instead of assigning it silently.</li>
+<li>
 <code>EPISODIC_DB</code> also accepts a <code>mysql://</code> DSN (<code><a href="../reference/episodic_db_dsn_mariadb.html">episodic_db_dsn_mariadb()</a></code> / <code><a href="../reference/episodic_db_dsn_mariadb.html">episodic_db_dsn_mysql()</a></code>) to run against MariaDB/MySQL instead of SQLite, from the same schema file.</li>
 <li>Renamed the internal <code>episode_</code>/<code>episode-</code> prefix to <code>episodic_</code>/ <code>episodic-</code> throughout (functions, database tables, CSS classes) to match the package name.</li>
 <li>Package version shown in the Shiny app header.</li>

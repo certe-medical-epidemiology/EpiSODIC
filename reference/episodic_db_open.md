@@ -1,13 +1,12 @@
-# Open a connection to `db_path`, or the `EPISODIC_DB` environment variable
+# Connect using the `EPISODIC_DB` environment variable
 
-A thin wrapper around
-[`episodic_db_connect()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_connect.md)
-for entry points that take `db_path` rather than an already-open
-connection (e.g.
-[`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md)) -
-centralises the `EPISODIC_DB` default and the "neither was given" error
-in one place, rather than duplicating the resolve-then-connect logic in
-every such entry point.
+Like
+[`episodic_db_connect()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_connect.md),
+but falls back to the `EPISODIC_DB` environment variable when you don't
+pass a path explicitly - handy for one-off console use, e.g.
+[`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md)
+uses it internally so provisioning an account needs only a username and
+password, not a connection you build yourself first.
 
 ## Usage
 
@@ -27,7 +26,7 @@ episodic_db_open(db_path = Sys.getenv("EPISODIC_DB", unset = NA))
 
 An open
 [DBI::DBIConnection](https://dbi.r-dbi.org/reference/DBIConnection-class.html);
-the caller is responsible for disconnecting it.
+you are responsible for disconnecting it.
 
 ## Examples
 

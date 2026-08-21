@@ -74,21 +74,27 @@ country either - see “Geographic reference data” below.
 ## Data format
 
 EpiSODIC never queries a laboratory information system, data warehouse,
-or any other data source itself. That is deliberately the operator’s own
-step, run before EpiSODIC: extract from wherever your data lives,
-transform into the shape below, then call
+or any other data source itself. That is deliberately your own step, run
+before EpiSODIC: extract from wherever your data lives, transform into
+the shape below, then call
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
-with a function that returns it. This keeps the engine reusable by any
-laboratory.
+with the result as a plain data frame. This keeps the engine reusable by
+any laboratory.
 
 ``` r
 
+cases <- my_extract_and_transform_function()
+
 episodic_run_cron(
   db_path = "/path/to/episodic.sqlite",
-  ingest_source_fn = function() my_extract_and_transform_function(),
-  denominator_source_fn = NULL  # optional, see "Positivity metadata" below
+  ingest_source = cases,
+  denominator_source = NULL  # optional, see "Positivity metadata" below
 )
 ```
+
+If producing the data only makes sense at run time (e.g. a live database
+query), pass a zero-argument function instead of a data frame - EpiSODIC
+accepts either.
 
 ### Cases (mandatory)
 
@@ -294,8 +300,8 @@ systemd unit, a Docker container) without editing R code.
 | `EPISODIC_DB` | [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md), [`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md) (`db_path` argument) | Path to the instance’s SQLite database, or a `mysql://` DSN pointing at a MariaDB/MySQL database instead - see “Database backend” above. |
 | `EPISODIC_CONFIG` | [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md) (`episodic_config_path` argument) | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`’s shipped defaults. |
 | `EPISODIC_PALETTE_CONFIG` | [`episodic_palette()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.md) (`palette_config_path` argument) | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`’s shipped defaults. Deliberately separate from `EPISODIC_CONFIG`: colour is a display concern, never part of [`episodic_config_hash()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_hash.md)’s detection-reproducibility guarantee. |
-| `EPISODIC_GEO_DATA` | [`episodic_geo_source_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_geo_source_resolve.md) (`path` argument) | Path to an `.rds` file holding an operator’s own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands postcode default. See “Geographic reference data” above. |
-| `EPISODIC_GEO_DATA_OVERLAY` | [`episodic_geo_overlay_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_geo_overlay_resolve.md) (`path` argument) | Path to an `.rds` file holding an optional region-outline overlay (an `sf` object with just a `geometry` column), drawn on top of the choropleth. No default. See “Geographic reference data” above. |
+| `EPISODIC_GEO_DATA` | [`episodic_geo_source_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_geo.md) (`path` argument) | Path to an `.rds` file holding an operator’s own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands postcode default. See “Geographic reference data” above. |
+| `EPISODIC_GEO_DATA_OVERLAY` | [`episodic_geo_overlay_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_geo.md) (`path` argument) | Path to an `.rds` file holding an optional region-outline overlay (an `sf` object with just a `geometry` column), drawn on top of the choropleth. No default. See “Geographic reference data” above. |
 | `EPISODIC_QUARTO_REPORT` | [`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md) (`qmd_path` argument) | Path to an operator’s own Quarto report template, overriding the shipped `inst/report/cluster_report.qmd`. See “Custom report templates” above. |
 
 ## Licence

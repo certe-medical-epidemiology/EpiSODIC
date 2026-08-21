@@ -1,13 +1,12 @@
-# Resolve a `*_source_fn` argument to the data frame it names
+# Resolve a data source argument to a data frame
 
-Every
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
-data source (`ingest_source_fn`, `denominator_source_fn`,
-`institution_activity_source_fn`) accepts either a function that
-produces the data frame, or that data frame itself - a function is only
-useful when producing the data has to happen at run time (a live query,
-a freshly-generated synthetic set); an operator who already has the data
-sitting in a variable has no reason to wrap it in `function() my_df`.
+A small helper behind
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)'s
+`ingest_source`, `denominator_source`, and `institution_activity_source`
+arguments, each of which accepts a data frame directly - the normal
+case - or, if producing the data only makes sense at run time (a live
+database query, for instance), a zero-argument function that returns
+one.
 
 ## Usage
 
@@ -19,13 +18,11 @@ episodic_resolve_source(x, ...)
 
 - x:
 
-  A function, a data frame, or `NULL`.
+  A data frame, a function returning one, or `NULL`.
 
 - ...:
 
-  Passed to `x` if it is a function; ignored otherwise (a data frame
-  that is already the answer does not need `institutions` handed to it,
-  for instance).
+  Passed to `x` if it is a function; ignored otherwise.
 
 ## Value
 

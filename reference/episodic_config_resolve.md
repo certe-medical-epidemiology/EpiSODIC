@@ -1,11 +1,13 @@
-# Resolve the EpiSODIC configuration
+# Read the surveillance configuration
 
-Loads the shipped defaults from `inst/config/default.yaml`, then, if the
-`EPISODIC_CONFIG` environment variable points at a readable file, loads
-it and overlays it on top: any key it sets replaces the corresponding
-key in the defaults. Detection settings are never read from anywhere
-else and never from inside this package's own tree at runtime beyond the
-shipped defaults.
+EpiSODIC's detection behaviour - which detectors run, their thresholds,
+how a dossier's priority score is weighted, and so on - is controlled by
+a YAML configuration file, not by function arguments. This function
+reads that configuration: it starts from the package's built-in defaults
+and, if you have set the `EPISODIC_CONFIG` environment variable to point
+at your own YAML file, overlays your settings on top. You only need to
+set the keys you want to change; anything you leave out keeps its
+default.
 
 ## Usage
 
@@ -19,20 +21,25 @@ episodic_config_resolve(
 
 - episodic_config_path:
 
-  Path to the instance configuration file. Defaults to the
-  `EPISODIC_CONFIG` environment variable. If unset or the file does not
-  exist, only the shipped defaults are used, which is the supported way
-  to run the bundled demo.
+  Path to your own configuration file. Defaults to the `EPISODIC_CONFIG`
+  environment variable; if that is unset or the file does not exist,
+  only the built-in defaults are used.
 
 ## Value
 
-A nested list, the resolved configuration.
+A nested list with the resolved configuration, e.g.
+`config$eligibility$min_baseline_weeks` or
+`config$priority_score$weights`.
 
 ## Details
 
-The result is what gets hashed into `config_hash` and stored verbatim as
-`config_snapshot` on every detection run, so a run's exact parameters
-are always recoverable from the database alone.
+Running the bundled demo needs no configuration file at all - the
+shipped defaults are enough on their own.
+
+Every detection run stores the exact configuration it used (see
+[`episodic_config_hash()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_hash.md)),
+so you can always trace a past result back to the settings that produced
+it, even after you have since changed them.
 
 ## Examples
 

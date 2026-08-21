@@ -38,9 +38,9 @@
     </div>
 
     <div class="section level2">
-      <h2 id="all-functions">All functions<a class="anchor" aria-label="anchor" href="#all-functions"></a></h2>
+      <h2 id="try-it-out">Try it out<a class="anchor" aria-label="anchor" href="#try-it-out"></a></h2>
 
-
+      <div class="section-desc"><p>The fastest way to see what EpiSODIC does, with no data or configuration of your own required.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -49,31 +49,107 @@
 
       <dl><dt>
 
-          <code><a href="app_charts.html">episodic_ui_epi_curve_chart()</a></code> <code><a href="app_charts.html">episodic_ui_trend_chart()</a></code> <code><a href="app_charts.html">episodic_ui_rt_chart()</a></code>
+          <code><a href="episodic_demo.html">episodic_demo()</a></code>
 
         </dt>
-        <dd>Chart panels</dd>
+        <dd>Try EpiSODIC with synthetic outbreak data</dd>
+      </dl></div><div class="section level2">
+      <h2 id="run-episodic">Run EpiSODIC<a class="anchor" aria-label="anchor" href="#run-episodic"></a></h2>
+
+      <div class="section-desc"><p>The two calls that run a real instance: detect on a schedule, and open the dashboard for your board to review the results.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="episodic_run_cron.html">episodic_run_cron()</a></code>
+
+        </dt>
+        <dd>Run one surveillance detection cycle</dd>
 
         <dt>
 
-          <code><a href="auth.html">auth</a></code>
+          <code><a href="episodic_run_app.html">episodic_run_app()</a></code>
 
         </dt>
-        <dd>Authentication</dd>
+        <dd>Open the EpiSODIC dashboard</dd>
 
         <dt>
 
-          <code><a href="episodic_config_hash.html">episodic_config_hash()</a></code>
+          <code><a href="episodic_resolve_source.html">episodic_resolve_source()</a></code>
 
         </dt>
-        <dd>Compute the SHA-1 hash and canonical JSON snapshot of a resolved config</dd>
+        <dd>Resolve a data source argument to a data frame</dd>
+      </dl></div><div class="section level2">
+      <h2 id="connect-your-own-data">Connect your own data<a class="anchor" aria-label="anchor" href="#connect-your-own-data"></a></h2>
+
+      <div class="section-desc"><p>How to plug in your laboratory results and, optionally, testing volume and hospital activity data.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="episodic_ingest_interface.html">episodic_ingest_columns</a></code>
+
+        </dt>
+        <dd>Connect your own laboratory data</dd>
 
         <dt>
 
-          <code><a href="episodic_config_resolve.html">episodic_config_resolve()</a></code>
+          <code><a href="episodic_ingest_validate_source.html">episodic_ingest_validate_source()</a></code>
 
         </dt>
-        <dd>Resolve the EpiSODIC configuration</dd>
+        <dd>Check that your ingestion source has the right shape</dd>
+
+        <dt>
+
+          <code><a href="episodic_ingest_source_synthetic.html">episodic_ingest_source_synthetic()</a></code>
+
+        </dt>
+        <dd>Generate synthetic outbreak data</dd>
+
+        <dt>
+
+          <code><a href="episodic_ingest_source_synthetic_calibration.html">episodic_ingest_source_synthetic_calibration()</a></code>
+
+        </dt>
+        <dd>Generate synthetic data at tunable cluster volume</dd>
+
+        <dt>
+
+          <code><a href="episodic_denominator_source_synthetic.html">episodic_denominator_source_synthetic()</a></code>
+
+        </dt>
+        <dd>Add a testing-volume (positivity) feed</dd>
+
+        <dt>
+
+          <code><a href="episodic_synthetic_institution_activity_source.html">episodic_synthetic_institution_activity_source()</a></code>
+
+        </dt>
+        <dd>Add a hospital activity feed (patient-days)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="set-up-a-database">Set up a database<a class="anchor" aria-label="anchor" href="#set-up-a-database"></a></h2>
+
+      <div class="section-desc"><p>Create and connect to the database EpiSODIC stores its data in.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="episodic_db_create.html">episodic_db_create()</a></code>
+
+        </dt>
+        <dd>Set up a new EpiSODIC database</dd>
 
         <dt>
 
@@ -84,173 +160,140 @@
 
         <dt>
 
-          <code><a href="episodic_db_create.html">episodic_db_create()</a></code>
+          <code><a href="episodic_db_open.html">episodic_db_open()</a></code>
 
         </dt>
-        <dd>Create a fresh EpiSODIC database</dd>
+        <dd>Connect using the <code>EPISODIC_DB</code> environment variable</dd>
 
         <dt>
 
           <code><a href="episodic_db_dsn_mariadb.html">episodic_db_dsn_mariadb()</a></code> <code><a href="episodic_db_dsn_mariadb.html">episodic_db_dsn_mysql()</a></code>
 
         </dt>
-        <dd>Build a MariaDB/MySQL DSN for <code>EPISODIC_DB</code></dd>
+        <dd>Connect EpiSODIC to a MariaDB or MySQL server</dd>
+      </dl></div><div class="section level2">
+      <h2 id="accounts-and-sign-in">Accounts and sign-in<a class="anchor" aria-label="anchor" href="#accounts-and-sign-in"></a></h2>
 
-        <dt>
 
-          <code><a href="episodic_db_open.html">episodic_db_open()</a></code>
 
-        </dt>
-        <dd>Open a connection to <code>db_path</code>, or the <code>EPISODIC_DB</code> environment variable</dd>
+      <dl></dl></div><div class="section level2">
 
-        <dt>
 
-          <code><a href="episodic_demo.html">episodic_demo()</a></code>
 
-        </dt>
-        <dd>Run the full synthetic demo in one call</dd>
 
-        <dt>
+      <dl><dt>
 
-          <code><a href="episodic_denominator_source_synthetic.html">episodic_denominator_source_synthetic()</a></code>
+          <code><a href="episodic_auth.html">episodic_auth</a></code>
 
         </dt>
-        <dd>Synthetic positivity metadata source</dd>
-
-        <dt>
-
-          <code><a href="episodic_geo_overlay_resolve.html">episodic_geo_overlay_resolve()</a></code>
-
-        </dt>
-        <dd>Resolve the optional region-outline overlay</dd>
-
-        <dt>
-
-          <code><a href="episodic_geo_source_resolve.html">episodic_geo_source_resolve()</a></code>
-
-        </dt>
-        <dd>Resolve the geographic reference dataset to use</dd>
-
-        <dt>
-
-          <code><a href="episodic_ingest_source_synthetic.html">episodic_ingest_source_synthetic()</a></code>
-
-        </dt>
-        <dd>Synthetic ingestion source</dd>
-
-        <dt>
-
-          <code><a href="episodic_ingest_source_synthetic_calibration.html">episodic_ingest_source_synthetic_calibration()</a></code>
-
-        </dt>
-        <dd>Synthetic data with realistic signal volume for one pathogen, for calibration testing</dd>
-
-        <dt>
-
-          <code><a href="episodic_ingest_validate_source.html">episodic_ingest_validate_source()</a></code>
-
-        </dt>
-        <dd>Validate that a raw ingestion source data frame satisfies the interface</dd>
-
-        <dt>
-
-          <code><a href="episodic_palette.html">episodic_palette()</a></code>
-
-        </dt>
-        <dd>The application colour palette</dd>
+        <dd>How sign-in works</dd>
 
         <dt>
 
           <code><a href="episodic_provision_user.html">episodic_provision_user()</a></code>
 
         </dt>
-        <dd>Provision an assessor account</dd>
+        <dd>Create an account for a new assessor or administrator</dd>
+      </dl></div><div class="section level2">
+      <h2 id="configure-detection">Configure detection<a class="anchor" aria-label="anchor" href="#configure-detection"></a></h2>
+
+      <div class="section-desc"><p>Detection thresholds, priority scoring, and reproducibility.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="episodic_config_resolve.html">episodic_config_resolve()</a></code>
+
+        </dt>
+        <dd>Read the surveillance configuration</dd>
+
+        <dt>
+
+          <code><a href="episodic_config_hash.html">episodic_config_hash()</a></code>
+
+        </dt>
+        <dd>Fingerprint a configuration for reproducibility</dd>
+      </dl></div><div class="section level2">
+      <h2 id="interpret-and-report-results">Interpret and report results<a class="anchor" aria-label="anchor" href="#interpret-and-report-results"></a></h2>
+
+      <div class="section-desc"><p>How the dashboard’s narrative summary is generated, and how to send an outbreak report to clinical colleagues.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="episodic_interpretation.html">episodic_interpretation_slots</a></code>
+
+        </dt>
+        <dd>How the dossier's narrative summary is written</dd>
 
         <dt>
 
           <code><a href="episodic_report_render.html">episodic_report_render()</a></code>
 
         </dt>
-        <dd>Render an outbreak report for a cluster</dd>
+        <dd>Render an outbreak report for clinical colleagues</dd>
+      </dl></div><div class="section level2">
+      <h2 id="customise-the-look-and-feel">Customise the look and feel<a class="anchor" aria-label="anchor" href="#customise-the-look-and-feel"></a></h2>
+
+      <div class="section-desc"><p>House colours, maps, translations, and dashboard chart building blocks - useful if you are adapting EpiSODIC or writing your own report template.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="episodic_palette.html">episodic_palette()</a></code>
+
+        </dt>
+        <dd>The dashboard's colour palette</dd>
 
         <dt>
 
-          <code><a href="episodic_resolve_source.html">episodic_resolve_source()</a></code>
+          <code><a href="episodic_geo.html">episodic_geo_overlay_resolve()</a></code> <code><a href="episodic_geo.html">episodic_geo_source_resolve()</a></code>
 
         </dt>
-        <dd>Resolve a <code>*_source_fn</code> argument to the data frame it names</dd>
-
-        <dt>
-
-          <code><a href="episodic_run_app.html">episodic_run_app()</a></code>
-
-        </dt>
-        <dd>Run the EpiSODIC Shiny app</dd>
-
-        <dt>
-
-          <code><a href="episodic_run_cron.html">episodic_run_cron()</a></code>
-
-        </dt>
-        <dd>Run one detection cycle</dd>
-
-        <dt>
-
-          <code><a href="episodic_synthetic_institution_activity_source.html">episodic_synthetic_institution_activity_source()</a></code>
-
-        </dt>
-        <dd>Synthetic institution activity source</dd>
-
-        <dt>
-
-          <code><a href="episodic_tr.html">episodic_tr()</a></code>
-
-        </dt>
-        <dd>Translate a key, with placeholder substitution</dd>
-
-        <dt>
-
-          <code><a href="episodic_ui_code_join.html">episodic_ui_code_join()</a></code>
-
-        </dt>
-        <dd>Render a list of detector names as inline code, joined by a separator</dd>
-
-        <dt>
-
-          <code><a href="episodic_ui_italicise_taxon.html">episodic_ui_italicise_taxon()</a></code>
-
-        </dt>
-        <dd>Italicise pathogen names <code>AMR</code> recognises as a taxonomic binomial</dd>
-
-        <dt>
-
-          <code><a href="geo_data.html">geo_data</a></code>
-
-        </dt>
-        <dd>Geographic reference data for the choropleth panel</dd>
+        <dd>Show clusters on a map</dd>
 
         <dt>
 
           <code><a href="i18n.html">i18n</a></code>
 
         </dt>
-        <dd>i18n scaffolding</dd>
+        <dd>Translation lookup</dd>
 
         <dt>
 
-          <code><a href="ingest_interface.html">episodic_ingest_columns</a></code>
+          <code><a href="episodic_tr.html">episodic_tr()</a></code>
 
         </dt>
-        <dd>Ingestion interface</dd>
+        <dd>Translate a dashboard text key</dd>
 
         <dt>
 
-          <code><a href="interpretation.html">episodic_interpretation_slots</a></code>
+          <code><a href="episodic_charts.html">episodic_ui_epi_curve_chart()</a></code> <code><a href="episodic_charts.html">episodic_ui_trend_chart()</a></code> <code><a href="episodic_charts.html">episodic_ui_rt_chart()</a></code>
 
         </dt>
-        <dd>The interpretation fragment engine</dd>
+        <dd>Draw the dashboard charts (epidemic curve, trend, and Rt)</dd>
+
+        <dt>
+
+          <code><a href="episodic_ui_italicise_taxon.html">episodic_ui_italicise_taxon()</a></code> <code><a href="episodic_ui_italicise_taxon.html">episodic_ui_code_join()</a></code>
+
+        </dt>
+        <dd>Format text for outbreak reports and the dashboard</dd>
       </dl></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

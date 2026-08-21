@@ -1,19 +1,8 @@
-# The application colour palette
+# The dashboard's colour palette
 
-Read from `inst/config/palette.yaml`, the same defaults-then-instance-
-override pattern
-[`episodic_config_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_resolve.md)
-uses for detection configuration (deliberately a *separate* file and env
-var, `EPISODIC_PALETTE_CONFIG`: colours must never affect `config_hash`,
-which is about detection reproducibility, not display). Any organisation
-runs EpiSODIC in its own house colours by pointing
-`EPISODIC_PALETTE_CONFIG` at a YAML file overriding whichever roles it
-wants to rebrand - a department that wants its own colours supplies its
-own file, exactly as it supplies its own report template
-(`EPISODIC_QUARTO_REPORT`) or geographic reference data
-(`EPISODIC_GEO_DATA`); this package ships only the generic mechanism and
-an organisation-neutral default, never a specific organisation's house
-style.
+Returns the colours used throughout the EpiSODIC dashboard and charts,
+as a named list of hex codes. Useful if you want to match your own plots
+or reports to the house style, or check what colour a given status uses.
 
 ## Usage
 
@@ -23,12 +12,22 @@ episodic_palette()
 
 ## Value
 
-A named list of hex colour strings: the neutrals (`ink` default text,
-`muted` secondary text, `faint` tertiary, `border`, `bg_subtle`, `bg`,
-`surface` - a true grey scale, independent of whichever hue is
-`primary`) and the semantic roles `primary` (+`_dark`/`_light`/`_tint`),
-`secondary` (+`_dark`), `tertiary` (+`_dark`), `success` (+`_dark`),
-`warning` (+`_dark`), `danger` (+`_dark`).
+A named list of hex colour strings. The greyscale neutrals are `ink`
+(default text), `muted` (secondary text), `faint` (tertiary text),
+`border`, `bg_subtle`, `bg`, and `surface`. The semantic roles are
+`primary`, `secondary`, `tertiary`, `success`, `warning`, and `danger`,
+each with `_dark`/`_light`/`_tint` variants where used.
+
+## Details
+
+The palette ships with an organisation-neutral default
+(`inst/config/palette.yaml`). To use your own institute's colours
+instead, point the `EPISODIC_PALETTE_CONFIG` environment variable at a
+YAML file that overrides only the roles you want to change - anything
+you don't set keeps its shipped default. This is independent of
+[`episodic_config_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_resolve.md)
+on purpose: colours never affect the `config_hash` recorded with a
+detection run, since they have no bearing on reproducibility.
 
 ## Examples
 
@@ -36,4 +35,6 @@ A named list of hex colour strings: the neutrals (`ink` default text,
 pal <- episodic_palette()
 pal$primary
 #> [1] "#008CBA"
+pal$danger
+#> [1] "#F36A5A"
 ```

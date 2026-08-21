@@ -104,7 +104,7 @@ because the repository never holds any of it.</p>
 <code class="sourceCode R"><span><span class="co"># The cron entry point - typically scheduled, e.g. nightly</span></span>
 <span><span class="fu"><a href="../reference/episodic_run_cron.html">episodic_run_cron</a></span><span class="op">(</span></span>
 <span>  db_path <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span>,</span>
-<span>  ingest_source_fn <span class="op">=</span> <span class="va">my_extract_and_transform_function</span></span>
+<span>  ingest_source <span class="op">=</span> <span class="fu">my_extract_and_transform_function</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># The interactive entry point - a Shiny app, read-only for anonymous</span></span>

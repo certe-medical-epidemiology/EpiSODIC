@@ -1,6 +1,12 @@
-# Validate that a raw ingestion source data frame satisfies the interface
+# Check that your ingestion source has the right shape
 
-Validate that a raw ingestion source data frame satisfies the interface
+Call this on the data frame your own ingestion source function returns,
+while developing it, to get a clear error if a column is missing,
+misnamed, or duplicated - before handing it to
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md).
+See
+[episodic_ingest_columns](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ingest_interface.md)
+for the required columns.
 
 ## Usage
 
@@ -12,11 +18,13 @@ episodic_ingest_validate_source(raw)
 
 - raw:
 
-  A data frame as returned by an ingestion source function.
+  A data frame, as returned by your ingestion source function.
 
 ## Value
 
-`raw`, invisibly, if valid. Errors otherwise.
+`raw`, invisibly, if it is valid. Throws an informative error otherwise
+(a missing required column, an unexpected extra column, or duplicate
+`source_key` values).
 
 ## Examples
 

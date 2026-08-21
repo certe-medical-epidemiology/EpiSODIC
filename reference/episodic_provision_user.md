@@ -1,13 +1,11 @@
-# Provision an assessor account
+# Create an account for a new assessor or administrator
 
-There is deliberately no in-app account management screen - "four
-accounts" are provisioned outside the app, by whoever administers the
-database, not created by assessors themselves. This is that provisioning
-step: hashes `password` with
-[`sodium::password_store()`](https://docs.ropensci.org/sodium/reference/password.html)
-and inserts the account, `must_change = 1` by default so the first real
-sign-in forces a password of the account holder's own choosing (see
-`episodic_auth_change_password()`).
+There is no self-service registration and no in-app account management
+screen: whoever administers the database creates accounts with this
+function, typically once per new board member. The password you supply
+is temporary - the new account is flagged to require a password change,
+so the account holder chooses their own password the first time they
+sign in.
 
 ## Usage
 
@@ -26,35 +24,35 @@ episodic_provision_user(
 
 - db_path:
 
-  Path to an existing SQLite database, or a `mysql://` DSN (see
+  Path to the EpiSODIC database: an existing SQLite file, or a
+  MariaDB/MySQL DSN (see
   [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
   Defaults to the `EPISODIC_DB` environment variable.
 
 - username, full_name, email:
 
-  The new account's fields.
+  The new account's sign-in name, display name, and email address.
 
 - password:
 
-  An initial plaintext password (hashed here, never stored or logged as
-  plaintext) - a temporary one the holder is expected to change at first
-  sign-in.
+  A temporary plaintext password, never stored or logged as-is: it is
+  hashed before it reaches the database, and the account holder is
+  required to replace it on first sign-in.
 
 - role:
 
-  One of `"assessor"`, `"admin"`.
+  Either `"assessor"` (records assessments) or `"admin"` (assessor
+  privileges plus dossier reconciliation and archiving).
 
 ## Value
 
-Invisibly, the new `user_id`.
+Invisibly, the new account's `user_id`.
 
 ## Details
 
-Takes `db_path` rather than an open connection - opened and closed here
-via
-[`episodic_db_open()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_open.md) -
-so provisioning an account is one call at the console, without first
-having to construct a `con` by hand.
+You only need to run this once per person. It opens the database, adds
+the account, and closes the connection again, so it is meant to be run
+interactively at the R console rather than from application code.
 
 ## Examples
 
@@ -62,10 +60,14 @@ having to construct a `con` by hand.
 db_path <- tempfile(fileext = ".sqlite")
 con <- episodic_db_create(db_path)
 DBI::dbDisconnect(con)
-episodic_provision_user(
+
+user_id <- episodic_provision_user(
   db_path, username = "jdoe", full_name = "Jane Doe",
   email = "jane@example.org", password = "temporary-password"
 )
+user_id
+#> [1] 1
+
 file.remove(db_path)
 #> [1] TRUE
 ```

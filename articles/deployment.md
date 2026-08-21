@@ -14,17 +14,20 @@ laboratory rather than tied to one:
 
 ``` r
 
+cases <- my_extract_and_transform_function()
+
 episodic_run_cron(
   db_path = "/path/to/episodic.sqlite",
-  ingest_source_fn = function() my_extract_and_transform_function(),
-  denominator_source_fn = NULL  # optional
+  ingest_source = cases,
+  denominator_source = NULL  # optional
 )
 ```
 
-`ingest_source_fn` (and `denominator_source_fn`,
-`institution_activity_source_fn`) can be a function that produces the
-data frame at run time, or the data frame itself if you already have it
-in hand - see
+`ingest_source` (and `denominator_source`,
+`institution_activity_source`) is normally a plain data frame, as above.
+If producing the data only makes sense at run time (a live database
+query, for instance), pass a zero-argument function that returns it
+instead - see
 [`episodic_resolve_source()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_resolve_source.md).
 The README’s “Data format” section documents the exact columns each of
 the four data sources (cases, positivity metadata, institution activity,

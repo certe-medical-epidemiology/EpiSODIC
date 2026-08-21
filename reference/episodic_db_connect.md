@@ -1,7 +1,12 @@
 # Connect to an existing EpiSODIC database
 
-Opens a connection with the pragmas required by the architecture (for
-SQLite: WAL journal mode, a busy timeout, and foreign key enforcement).
+Opens a connection to a database you have already set up with
+[`episodic_db_create()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_create.md),
+with the settings EpiSODIC needs enabled (for SQLite: WAL journal mode,
+a busy timeout, and foreign key enforcement). Remember to disconnect
+with
+[`DBI::dbDisconnect()`](https://dbi.r-dbi.org/reference/dbDisconnect.html)
+when you are done.
 
 ## Usage
 

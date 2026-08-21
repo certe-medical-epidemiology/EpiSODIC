@@ -1,13 +1,11 @@
-# Synthetic institution activity source
+# Add a hospital activity feed (patient-days)
 
-A worked example of the optional activity contract
-(`episodic_institution_activity_ingest_run()`): weekly patient-days per
-hospital, modelled as `n_beds * occupancy` with light seasonal variation
-(winter admissions run higher) and noise. Not called by
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
-unless an `institution_activity_source_fn` is supplied; demonstrates the
-shape only, so the bundled demo can show an incidence-density curve
-without a real hospital feed.
+Raw case counts at a hospital can rise simply because the hospital is
+busier, not because infection risk has increased. If you can supply
+weekly patient-days (or admissions, or bed counts) per hospital,
+EpiSODIC can normalise case counts against activity for a more reliable
+signal. This feed is entirely optional: without it, detection falls back
+to raw counts, which is a reasonable default, not a broken one.
 
 ## Usage
 
@@ -24,9 +22,8 @@ episodic_synthetic_institution_activity_source(
 
 - institutions:
 
-  A data frame from `episodic_db_institutions()` (or
-  `episodic_synthetic_institutions()`'s own shape before insertion),
-  filtered internally to `institution_type == "hospital"`.
+  A data frame of institutions (as returned by your own institution
+  registry), filtered internally to hospitals only.
 
 - start_date, end_date:
 
@@ -34,12 +31,21 @@ episodic_synthetic_institution_activity_source(
 
 - seed:
 
-  RNG seed.
+  RNG seed, for reproducible demo data.
 
 ## Value
 
 A data frame with `institution_key`, `period_start`, `period_end`,
 `patient_days`, `n_beds`, `source`.
+
+## Details
+
+This function is a synthetic example showing the expected shape: weekly
+patient-days per hospital, modelled as bed count times occupancy, with a
+realistic winter peak. Use it as a template for your own data, which you
+pass to
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+as `institution_activity_source`.
 
 ## Examples
 

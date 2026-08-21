@@ -2,6 +2,12 @@
 
 ## EpiSODIC 0.2.0
 
+- Rewrote all documentation for an epidemiologist audience: every man
+  page is now written for someone running or configuring EpiSODIC, not
+  for a contributor reading the source. Several related functions were
+  combined onto a single help page (dashboard chart builders, HTML
+  formatting helpers, geographic reference data), and examples now show
+  their output instead of assigning it silently.
 - `EPISODIC_DB` also accepts a `mysql://` DSN
   ([`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)
   /

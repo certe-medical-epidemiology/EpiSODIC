@@ -94,13 +94,16 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <div class="section level2">
 <h2 id="data-format">Data format<a class="anchor" aria-label="anchor" href="#data-format"></a>
 </h2>
-<p>EpiSODIC never queries a laboratory information system, data warehouse, or any other data source itself. That is deliberately the operator’s own step, run before EpiSODIC: extract from wherever your data lives, transform into the shape below, then call <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> with a function that returns it. This keeps the engine reusable by any laboratory.</p>
+<p>EpiSODIC never queries a laboratory information system, data warehouse, or any other data source itself. That is deliberately your own step, run before EpiSODIC: extract from wherever your data lives, transform into the shape below, then call <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> with the result as a plain data frame. This keeps the engine reusable by any laboratory.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/episodic_run_cron.html">episodic_run_cron</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu">my_extract_and_transform_function</span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/episodic_run_cron.html">episodic_run_cron</a></span><span class="op">(</span></span>
 <span>  db_path <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span>,</span>
-<span>  ingest_source_fn <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="fu">my_extract_and_transform_function</span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  denominator_source_fn <span class="op">=</span> <span class="cn">NULL</span>  <span class="co"># optional, see "Positivity metadata" below</span></span>
+<span>  ingest_source <span class="op">=</span> <span class="va">cases</span>,</span>
+<span>  denominator_source <span class="op">=</span> <span class="cn">NULL</span>  <span class="co"># optional, see "Positivity metadata" below</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>If producing the data only makes sense at run time (e.g. a live database query), pass a zero-argument function instead of a data frame - EpiSODIC accepts either.</p>
 <div class="section level3">
 <h3 id="cases-mandatory">Cases (mandatory)<a class="anchor" aria-label="anchor" href="#cases-mandatory"></a>
 </h3>
@@ -340,13 +343,13 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <tr>
 <td><code>EPISODIC_GEO_DATA</code></td>
 <td>
-<code><a href="reference/episodic_geo_source_resolve.html">episodic_geo_source_resolve()</a></code> (<code>path</code> argument)</td>
+<code><a href="reference/episodic_geo.html">episodic_geo_source_resolve()</a></code> (<code>path</code> argument)</td>
 <td>Path to an <code>.rds</code> file holding an operator’s own geographic reference data (an <code>sf</code> object with <code>pc</code>/<code>geometry</code> columns), overriding the shipped Netherlands postcode default. See “Geographic reference data” above.</td>
 </tr>
 <tr>
 <td><code>EPISODIC_GEO_DATA_OVERLAY</code></td>
 <td>
-<code><a href="reference/episodic_geo_overlay_resolve.html">episodic_geo_overlay_resolve()</a></code> (<code>path</code> argument)</td>
+<code><a href="reference/episodic_geo.html">episodic_geo_overlay_resolve()</a></code> (<code>path</code> argument)</td>
 <td>Path to an <code>.rds</code> file holding an optional region-outline overlay (an <code>sf</code> object with just a <code>geometry</code> column), drawn on top of the choropleth. No default. See “Geographic reference data” above.</td>
 </tr>
 <tr>

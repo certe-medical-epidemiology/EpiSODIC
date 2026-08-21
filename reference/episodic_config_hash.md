@@ -1,9 +1,12 @@
-# Compute the SHA-1 hash and canonical JSON snapshot of a resolved config
+# Fingerprint a configuration for reproducibility
 
-The hash is taken over a canonicalised representation (keys sorted
-recursively, then serialised as JSON) so that key ordering in the source
-YAML never changes the hash. SHA-1 was chosen to match the `CHAR(40)`
-width used for other `_key`/`_hash` columns in the schema.
+Every detection run is stamped with a hash of the exact configuration
+that produced it, so that two runs can be compared to see whether they
+actually used the same settings, and any run's full configuration can be
+recovered later even if the live configuration file has since changed.
+The hash does not depend on the order of keys in your YAML file: it is
+computed over a canonical (sorted, JSON) representation, so equivalent
+configurations always produce the same hash.
 
 ## Usage
 
@@ -20,8 +23,15 @@ episodic_config_hash(config)
 
 ## Value
 
-A list with elements `hash` (a 40-character SHA-1 hex digest) and
-`snapshot` (the canonical JSON string).
+A list with `hash` (a 40-character hex digest) and `snapshot` (the
+canonical configuration, as a JSON string).
+
+## Details
+
+You will not normally call this directly - EpiSODIC's detection pipeline
+calls it automatically - but it is useful for confirming that two
+configuration files are equivalent, or for recovering a full historic
+configuration from a stored hash and snapshot.
 
 ## Examples
 

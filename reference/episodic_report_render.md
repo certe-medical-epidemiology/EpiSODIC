@@ -1,13 +1,11 @@
-# Render an outbreak report for a cluster
+# Render an outbreak report for clinical colleagues
 
-A parameterised Quarto template rendered to self-contained HTML. Sent as
-a file, not a link into the app: the medical staff receiving it have
-neither R nor an account, and a static artefact is also the defensible
-record of what was communicated on that date. Every render is versioned
-and registered in `episodic_report_render`
-(`episodic_db_report_render_insert()`) - never overwritten, so what was
-handed to a microbiologist on a given morning stays exactly recoverable,
-including which cases it contained (`case_ids`).
+Produces a self-contained HTML outbreak report for one cluster - the
+document you send to a treating physician, an infection prevention team,
+or another clinical colleague who has neither an EpiSODIC account nor R
+installed. The report includes the epidemic curve, trend chart, the
+narrative summary shown in the dashboard, and (optionally) the case line
+list.
 
 ## Usage
 
@@ -34,7 +32,7 @@ episodic_report_render(
 
 - cluster_id:
 
-  A cluster id.
+  The cluster to report on.
 
 - output_dir:
 
@@ -43,22 +41,27 @@ episodic_report_render(
 
 - user_id:
 
-  The rendering user's id, or `NA` for a cron pre-render (matches
-  `episodic_report_render.user_id`'s own documented meaning).
+  The id of the user requesting the report, or `NA` for an automated
+  (cron) render.
 
 - include_linelist:
 
-  If `TRUE` (default), the line list is embedded in the report.
+  If `TRUE` (default), the case line list is included in the report. Set
+  to `FALSE` for a summary-only report, e.g. when sending outside your
+  own organisation.
 
 - small_count_threshold:
 
-  Cells below this count are suppressed in the geography/institution
-  breakdown tables, configurable for reports leaving the department.
-  Defaults to `config$report$small_count_threshold`.
+  Small counts in the geography/institution breakdown tables are
+  suppressed (shown as `"<threshold"`) below this value, to avoid
+  identifying individuals in a small population. Defaults to
+  `config$report$small_count_threshold`.
 
 - config:
 
-  The resolved configuration; only `config$report` is used.
+  The resolved configuration (see
+  [`episodic_config_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_resolve.md));
+  only `config$report` is used.
 
 - lang:
 
@@ -67,36 +70,30 @@ episodic_report_render(
 - qmd_path:
 
   Path to the Quarto template to render. Defaults to the
-  `EPISODIC_QUARTO_REPORT` environment variable; if that is unset (or
-  names a file that does not exist), falls back to the shipped
-  `inst/report/cluster_report.qmd`. An operator's own template only
-  needs to read `params$data_path` (an `.rds` path,
-  [`readRDS()`](https://rdrr.io/r/base/readRDS.html)'d to the same list
-  this function assembles: `obj`, `epi_curve`, `trend`, `linelist`,
-  `timeline`, `similar`, `small_count_threshold`, `rendered_at`, `lang`,
-  `package_version`) - see the shipped template for the exact shape and
-  for `episodic_tr(..., lang = d$lang)` usage.
+  `EPISODIC_QUARTO_REPORT` environment variable, falling back to the
+  shipped template if that is unset.
 
 ## Value
 
-Invisibly, a list with `file_path`, `file_sha256`, `version_no`,
-`report_id`.
+Invisibly, a list with `file_path` (where the HTML was written),
+`file_sha256`, `version_no`, and `report_id`.
 
 ## Details
 
-Data for the template is assembled here (from the same read models the
-app itself uses: `episodic_cluster_object()`,
-`episodic_app_epi_curve()`, `episodic_app_linelist()`) and handed to
-Quarto as a single RDS side channel rather than as `execute_params`
-values directly - a line list data frame has no clean YAML/JSON
-representation, and passing one path string keeps the template itself
-simple (`readRDS(params$data_path)`).
+Every render is kept, versioned, and logged to the database, including
+exactly which cases it contained - so what was sent out on a given date
+stays a fully recoverable record, even if the underlying data changes
+later.
 
-Line-list inclusion is decided here, at render time, via
-`include_linelist` - independent of whoever later opens the file, unlike
-the live app's own line-list panel, which is hidden entirely for
-anonymous viewers and gated on the *viewer's* current session. A
-rendered report has no viewer session at all.
+By default the report uses EpiSODIC's own report template. If your
+organisation needs its own layout or branding, set the
+`EPISODIC_QUARTO_REPORT` environment variable to your own `.qmd` file;
+`inst/report/cluster_report.qmd` in the package source is a good
+starting point to copy and adapt.
+
+Rendering requires [Quarto](https://quarto.org) to be installed
+separately (both the `quarto` R package and the Quarto command-line
+tool) - this function raises an informative error if it is not found.
 
 ## Examples
 
