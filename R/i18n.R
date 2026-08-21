@@ -19,12 +19,13 @@
 
 #' Translation lookup
 #'
-#' The dashboard is available in Dutch and English. All user-facing text is
-#' stored as translation keys (e.g. `"nav.clusters"`) rather than hardcoded
-#' in R code, and [episodic_tr()] looks a key up in the requested language.
-#' A key that does not exist in either language is shown as `[[key]]`
-#' rather than silently left blank, so a missing translation is easy to
-#' spot.
+#' The dashboard is available in Dutch, English, Spanish, French, German,
+#' Mandarin Chinese, Hindi, and (Modern Standard) Arabic. All user-facing
+#' text is stored as translation keys (e.g. `"nav.clusters"`) rather than
+#' hardcoded in R code, and [episodic_tr()] looks a key up in the requested
+#' language. A key that does not exist in any language is shown as
+#' `[[key]]` rather than silently left blank, so a missing translation is
+#' easy to spot.
 #'
 #' @name i18n
 NULL
@@ -35,7 +36,8 @@ episodic_i18n_cache <- new.env(parent = emptyenv())
 
 #' Load one language's flat translation table
 #'
-#' @param lang A language code, `"nl"` or `"en"`.
+#' @param lang A language code: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`,
+#'   `"zh"`, `"hi"`, or `"ar"`.
 #' @return A named character vector (dotted key -> template string).
 #' @keywords internal
 #' @noRd
@@ -66,11 +68,13 @@ episodic_i18n_load <- function(lang) {
 #' same language, as the dashboard itself.
 #'
 #' @param key A dotted key identifying the piece of text, e.g.
-#'   `"nav.clusters"`. The full set of available keys and their Dutch and
-#'   English wording lives in `inst/i18n/nl.json` and `inst/i18n/en.json`.
+#'   `"nav.clusters"`. The full set of available keys and their wording in
+#'   every shipped language lives in `inst/i18n/*.json` (one file per
+#'   language: `nl`, `en`, `es`, `fr`, `de`, `zh`, `hi`, `ar`).
 #' @param ... Named values substituted into `{name}` placeholders in the
 #'   template.
-#' @param lang Language: `"nl"` (default) or `"en"`.
+#' @param lang Language: `"nl"` (default), `"en"`, `"es"`, `"fr"`, `"de"`,
+#'   `"zh"`, `"hi"`, or `"ar"`.
 #' @param instance_i18n An optional named character vector of your own
 #'   wording overrides (key -> template), checked before the shipped
 #'   translations. `NULL` (the default) uses only the shipped text.
@@ -138,7 +142,8 @@ episodic_count_phrase <- function(n, singular, plural, with_number = TRUE) {
 #'
 #' @param x,y Range endpoints - `Date`, or a string `as.Date()` accepts.
 #'   Order does not matter; the earlier date is always shown first.
-#' @param lang Session language, `"nl"` (default) or `"en"`.
+#' @param lang Session language: `"nl"` (default), `"en"`, `"es"`, `"fr"`,
+#'   `"de"`, `"zh"`, `"hi"`, or `"ar"`.
 #' @return A character string, or `episodic_tr("misc.unknown", lang =
 #'   lang)` if either endpoint fails to parse.
 #' @keywords internal
@@ -153,11 +158,16 @@ episodic_format_date_range <- function(x, y, lang = "nl") {
     tmp <- x; x <- y; y <- tmp
   }
 
-  months <- if (lang == "nl") {
-    c("jan.", "feb.", "mrt.", "apr.", "mei", "jun.", "jul.", "aug.", "sep.", "okt.", "nov.", "dec.")
-  } else {
+  months <- switch(lang,
+    nl = c("jan.", "feb.", "mrt.", "apr.", "mei", "jun.", "jul.", "aug.", "sep.", "okt.", "nov.", "dec."),
+    es = c("ene.", "feb.", "mar.", "abr.", "may.", "jun.", "jul.", "ago.", "sep.", "oct.", "nov.", "dic."),
+    fr = c("janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."),
+    de = c("Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sep.", "Okt.", "Nov.", "Dez."),
+    zh = c("1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"),
+    hi = c("जन.", "फर.", "मार्च", "अप्रै.", "मई", "जून", "जुल.", "अग.", "सित.", "अक्‍तू.", "नव.", "दिस."),
+    ar = c("يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"),
     month.abb
-  }
+  )
   mon <- function(d) months[as.integer(format(d, "%m"))]
   day <- function(d) as.integer(format(d, "%d"))
   yr <- function(d) format(d, "%Y")

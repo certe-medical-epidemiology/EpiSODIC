@@ -20,7 +20,8 @@ recent day(s) where reporting is still catching up - these are drawn at
 reduced opacity as a visual reminder not to over-interpret a downturn
 that is really just a reporting lag).}
 
-\item{lang}{Language for axis labels: \code{"nl"} (Dutch, default) or \code{"en"}.}
+\item{lang}{Language for axis labels: \code{"nl"} (Dutch, default), \code{"en"},
+\code{"es"}, \code{"fr"}, \code{"de"}, \code{"zh"}, \code{"hi"}, or \code{"ar"}.}
 
 \item{trend}{A data frame with one row per week: \code{week_start} (\code{Date}),
 \code{n_cases} (observed count), \code{expected} (the Farrington baseline), and

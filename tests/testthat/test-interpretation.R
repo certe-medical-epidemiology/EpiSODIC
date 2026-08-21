@@ -150,14 +150,14 @@ test_that("episodic_interpretation_paragraphs() excludes the recommendation, epi
   expect_false(recommendation %in% paragraphs)
 })
 
-test_that("every rendered fragment is free of unrendered {placeholder} tokens, in both languages", {
+test_that("every rendered fragment is free of unrendered {placeholder} tokens, in every shipped language", {
   cluster <- base_cluster(
     concentration = list(dominant_label = "Ward A", dominant_share = 0.9, dominant_n = 9, total = 11),
     denominator = list(n_tests_first = 100, n_tests_last = 100, positivity_first = 0.01, positivity_last = 0.05),
     demography = list(shifted = TRUE, dominant_band = "60-79", baseline_band = "40-59"),
     completeness = list(incomplete_days = 9)
   )
-  for (lang in c("nl", "en")) {
+  for (lang in c("nl", "en", "es", "fr", "de", "zh", "hi", "ar")) {
     result <- episodic_interpretation_generate(cluster, lang = lang)
     for (text in result$text) {
       expect_false(grepl("\\{[a-zA-Z_]+\\}", text), info = paste(lang, ":", text))

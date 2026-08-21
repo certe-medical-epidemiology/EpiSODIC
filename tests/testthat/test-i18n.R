@@ -17,18 +17,34 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-test_that("episodic_i18n_load() reads both shipped languages", {
-  nl <- episodic_i18n_load("nl")
-  en <- episodic_i18n_load("en")
-  expect_gt(length(nl), 0)
-  expect_gt(length(en), 0)
-  expect_true(is.character(nl))
+episodic_shipped_langs <- c("nl", "en", "es", "fr", "de", "zh", "hi", "ar")
+
+test_that("episodic_i18n_load() reads every shipped language", {
+  for (lang in episodic_shipped_langs) {
+    table <- episodic_i18n_load(lang)
+    expect_gt(length(table), 0)
+    expect_true(is.character(table))
+  }
 })
 
-test_that("nl.json and en.json carry exactly the same key set", {
-  nl <- episodic_i18n_load("nl")
+test_that("every shipped language file carries exactly the same key set as en.json", {
   en <- episodic_i18n_load("en")
-  expect_setequal(names(nl), names(en))
+  for (lang in setdiff(episodic_shipped_langs, "en")) {
+    table <- episodic_i18n_load(lang)
+    expect_setequal(names(table), names(en))
+  }
+})
+
+test_that("every shipped language file uses the same {placeholder} tokens per key as en.json", {
+  en <- episodic_i18n_load("en")
+  extract_placeholders <- function(x) sort(unique(regmatches(x, gregexpr("\\{[a-zA-Z_]+\\}", x))[[1]]))
+  for (lang in setdiff(episodic_shipped_langs, "en")) {
+    table <- episodic_i18n_load(lang)
+    for (key in names(en)) {
+      expect_identical(extract_placeholders(table[[key]]), extract_placeholders(en[[key]]),
+                        info = paste("key:", key, "lang:", lang))
+    }
+  }
 })
 
 test_that("episodic_tr() substitutes placeholders", {

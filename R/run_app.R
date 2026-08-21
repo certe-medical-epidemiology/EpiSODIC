@@ -32,8 +32,9 @@
 #' @param db_path Path to the EpiSODIC database: a SQLite file, or a
 #'   MariaDB/MySQL DSN (see [episodic_db_dsn_mariadb()]). Defaults to the
 #'   `EPISODIC_DB` environment variable.
-#' @param lang Dashboard language, `"nl"` (default) or `"en"`, fixed for
-#'   the whole running app - there is no in-app language switcher.
+#' @param lang Dashboard language, fixed for the whole running app - there
+#'   is no in-app language switcher. One of `"nl"` (default), `"en"`,
+#'   `"es"`, `"fr"`, `"de"`, `"zh"`, `"hi"`, or `"ar"`.
 #' @param ... Passed on to [shiny::runApp()], e.g. `port` or `host`.
 #' @return Invisible; called for its side effect of starting the app. This
 #'   call blocks until the app is stopped.

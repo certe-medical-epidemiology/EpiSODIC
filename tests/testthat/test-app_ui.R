@@ -74,8 +74,8 @@ test_that("episodic_ui_code_join() wraps each item in <code> and escapes, HTML-s
   expect_equal(episodic_ui_code_join("a&b<c>"), "<code>a&amp;b&lt;c&gt;</code>")
 })
 
-test_that("episodic_ui_info_screen() renders in both languages and names every detector and state in code style", {
-  for (lang in c("nl", "en")) {
+test_that("episodic_ui_info_screen() renders in every shipped language and names every detector and state in code style", {
+  for (lang in c("nl", "en", "es", "fr", "de", "zh", "hi", "ar")) {
     html <- as.character(episodic_ui_info_screen(lang))
     expect_true(grepl("<code>farringtonFlexible</code>", html, fixed = TRUE))
     expect_true(grepl("<code>same_place</code>", html, fixed = TRUE))
