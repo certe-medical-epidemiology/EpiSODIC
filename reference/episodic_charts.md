@@ -34,7 +34,8 @@ episodic_ui_rt_chart(rt, lang = "nl")
 
 - lang:
 
-  Language for axis labels: `"nl"` (Dutch, default) or `"en"`.
+  Language for axis labels: `"nl"` (Dutch, default), `"en"`, `"es"`,
+  `"fr"`, `"de"`, `"zh"`, `"hi"`, or `"ar"`.
 
 - trend:
 

@@ -12,7 +12,7 @@ record an assessment or classify a cluster.
 ``` r
 episodic_run_app(
   db_path = Sys.getenv("EPISODIC_DB", unset = NA),
-  lang = "nl",
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
   ...
 )
 ```
@@ -28,8 +28,10 @@ episodic_run_app(
 
 - lang:
 
-  Dashboard language, `"nl"` (default) or `"en"`, fixed for the whole
-  running app - there is no in-app language switcher.
+  Dashboard language, fixed for the whole running app - there is no
+  in-app language switcher. One of `"nl"`, `"en"`, `"es"`, `"fr"`,
+  `"de"`, `"zh"`, `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE`
+  environment variable, falling back to `"en"` if that is unset.
 
 - ...:
 

@@ -18,7 +18,7 @@ episodic_report_render(
   include_linelist = TRUE,
   small_count_threshold = NULL,
   config = episodic_config_resolve(),
-  lang = "nl",
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
   qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)
 )
 ```
@@ -65,7 +65,9 @@ episodic_report_render(
 
 - lang:
 
-  Report language, `"nl"` (default) or `"en"`.
+  Report language: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`, `"zh"`,
+  `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE` environment
+  variable, falling back to `"en"` if that is unset.
 
 - qmd_path:
 

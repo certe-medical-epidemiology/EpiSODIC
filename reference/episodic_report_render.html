@@ -17,7 +17,7 @@ line list."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,7 +68,7 @@ line list.</p>
 <span>  include_linelist <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  small_count_threshold <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  config <span class="op">=</span> <span class="fu"><a href="episodic_config_resolve.html">episodic_config_resolve</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  lang <span class="op">=</span> <span class="st">"nl"</span>,</span>
+<span>  lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"EPISODIC_LANGUAGE"</span><span class="op">)</span>,</span>
 <span>  qmd_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"EPISODIC_QUARTO_REPORT"</span>, unset <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -114,7 +114,9 @@ only <code>config$report</code> is used.</p></dd>
 
 
 <dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>
-<dd><p>Report language, <code>"nl"</code> (default) or <code>"en"</code>.</p></dd>
+<dd><p>Report language: <code>"nl"</code>, <code>"en"</code>, <code>"es"</code>, <code>"fr"</code>, <code>"de"</code>,
+<code>"zh"</code>, <code>"hi"</code>, or <code>"ar"</code>. Defaults to the <code>EPISODIC_LANGUAGE</code>
+environment variable, falling back to <code>"en"</code> if that is unset.</p></dd>
 
 
 <dt id="arg-qmd-path">qmd_path<a class="anchor" aria-label="anchor" href="#arg-qmd-path"></a></dt>

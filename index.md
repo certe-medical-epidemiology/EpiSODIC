@@ -9,6 +9,10 @@ them into persistent clusters, and gives a small board of
 epidemiologists a dossier to assess each one, with a full audit trail
 and outbreak reports for clinical colleagues.
 
+The dashboard and its outbreak reports are available in Dutch, English,
+Spanish, French, German, Mandarin Chinese, Hindi, and (Modern Standard)
+Arabic.
+
 The engine and the instance it runs against are kept separate: this
 repository is open-source software with no data and no site-specific
 configuration.
@@ -298,6 +302,7 @@ systemd unit, a Docker container) without editing R code.
 | Variable | Used by | Meaning |
 |----|----|----|
 | `EPISODIC_DB` | [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md), [`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md) (`db_path` argument) | Path to the instance’s SQLite database, or a `mysql://` DSN pointing at a MariaDB/MySQL database instead - see “Database backend” above. |
+| `EPISODIC_LANGUAGE` | [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md), [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md), [`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md), [`episodic_tr()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_tr.md) (`lang` argument) | Dashboard/report language: `nl`, `en`, `es`, `fr`, `de`, `zh`, `hi`, or `ar`. Defaults to `en` if unset. Fixed for the whole running app - there is no in-app language switcher. |
 | `EPISODIC_CONFIG` | [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md) (`episodic_config_path` argument) | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`’s shipped defaults. |
 | `EPISODIC_PALETTE_CONFIG` | [`episodic_palette()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.md) (`palette_config_path` argument) | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`’s shipped defaults. Deliberately separate from `EPISODIC_CONFIG`: colour is a display concern, never part of [`episodic_config_hash()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_hash.md)’s detection-reproducibility guarantee. |
 | `EPISODIC_GEO_DATA` | [`episodic_geo_source_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_geo.md) (`path` argument) | Path to an `.rds` file holding an operator’s own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands postcode default. See “Geographic reference data” above. |

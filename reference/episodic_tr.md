@@ -9,7 +9,7 @@ same language, as the dashboard itself.
 ## Usage
 
 ``` r
-episodic_tr(key, ..., lang = "nl", instance_i18n = NULL)
+episodic_tr(key, ..., lang = Sys.getenv("EPISODIC_LANGUAGE"), instance_i18n = NULL)
 ```
 
 ## Arguments
@@ -17,8 +17,9 @@ episodic_tr(key, ..., lang = "nl", instance_i18n = NULL)
 - key:
 
   A dotted key identifying the piece of text, e.g. `"nav.clusters"`. The
-  full set of available keys and their Dutch and English wording lives
-  in `inst/i18n/nl.json` and `inst/i18n/en.json`.
+  full set of available keys and their wording in every shipped language
+  lives in `inst/i18n/*.json` (one file per language: `nl`, `en`, `es`,
+  `fr`, `de`, `zh`, `hi`, `ar`).
 
 - ...:
 
@@ -26,7 +27,9 @@ episodic_tr(key, ..., lang = "nl", instance_i18n = NULL)
 
 - lang:
 
-  Language: `"nl"` (default) or `"en"`.
+  Language: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`, `"zh"`, `"hi"`, or
+  `"ar"`. Defaults to the `EPISODIC_LANGUAGE` environment variable,
+  falling back to `"en"` if that is unset.
 
 - instance_i18n:
 

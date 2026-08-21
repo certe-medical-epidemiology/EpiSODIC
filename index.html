@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -59,6 +59,7 @@
 </h1></div>
 <p><a href="https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></p>
 <p>EpiSODIC is an outbreak cluster detection and assessment system for a department of medical epidemiology. It ingests laboratory-confirmed infections, detects statistical and rule-based aberrations, reconciles them into persistent clusters, and gives a small board of epidemiologists a dossier to assess each one, with a full audit trail and outbreak reports for clinical colleagues.</p>
+<p>The dashboard and its outbreak reports are available in Dutch, English, Spanish, French, German, Mandarin Chinese, Hindi, and (Modern Standard) Arabic.</p>
 <p>The engine and the instance it runs against are kept separate: this repository is open-source software with no data and no site-specific configuration.</p>
 <!--
 Screenshots below live in man/figures/ (ships with the package, so
@@ -327,6 +328,12 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <td>
 <code><a href="reference/episodic_run_app.html">episodic_run_app()</a></code>, <code><a href="reference/episodic_provision_user.html">episodic_provision_user()</a></code> (<code>db_path</code> argument)</td>
 <td>Path to the instance’s SQLite database, or a <code>mysql://</code> DSN pointing at a MariaDB/MySQL database instead - see “Database backend” above.</td>
+</tr>
+<tr>
+<td><code>EPISODIC_LANGUAGE</code></td>
+<td>
+<code><a href="reference/episodic_run_app.html">episodic_run_app()</a></code>, <code><a href="reference/episodic_demo.html">episodic_demo()</a></code>, <code><a href="reference/episodic_report_render.html">episodic_report_render()</a></code>, <code><a href="reference/episodic_tr.html">episodic_tr()</a></code> (<code>lang</code> argument)</td>
+<td>Dashboard/report language: <code>nl</code>, <code>en</code>, <code>es</code>, <code>fr</code>, <code>de</code>, <code>zh</code>, <code>hi</code>, or <code>ar</code>. Defaults to <code>en</code> if unset. Fixed for the whole running app - there is no in-app language switcher.</td>
 </tr>
 <tr>
 <td><code>EPISODIC_CONFIG</code></td>

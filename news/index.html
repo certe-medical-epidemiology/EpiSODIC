@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,11 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.0" id="episodic-030">EpiSODIC 0.3.0<a class="anchor" aria-label="anchor" href="#episodic-030"></a></h2>
+<ul><li>Expanded dashboard translations from Dutch and English to also cover Spanish, French, German, Mandarin Chinese, Hindi, and (Modern Standard) Arabic (<code>inst/i18n/{es,fr,de,zh,hi,ar}.json</code>), covering the top spoken languages in the world alongside Dutch and English. Pass any of these as <code>lang</code> to [episodic_run_app()], [episodic_demo()], or [episodic_report_render()]. <code>episodic_format_date_range()</code> now also formats month names for these languages, sourced from the same <code>inst/i18n/*.json</code> files as every other piece of dashboard text.</li>
+<li>Added the <code>EPISODIC_LANGUAGE</code> environment variable, read by [episodic_run_app()], [episodic_demo()], [episodic_report_render()], and [episodic_tr()] as the default <code>lang</code> when it is not passed explicitly. Falls back to <code>"en"</code> if unset.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="episodic-020">EpiSODIC 0.2.0<a class="anchor" aria-label="anchor" href="#episodic-020"></a></h2>
 <ul><li>Rewrote all documentation for an epidemiologist audience: every man page is now written for someone running or configuring EpiSODIC, not for a contributor reading the source. Several related functions were combined onto a single help page (dashboard chart builders, HTML formatting helpers, geographic reference data), and examples now show their output instead of assigning it silently.</li>

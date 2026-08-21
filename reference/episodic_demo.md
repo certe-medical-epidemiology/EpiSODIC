@@ -17,7 +17,7 @@ episodic_demo(
   email = "demo@example.org",
   password = "episodic-demo",
   launch = TRUE,
-  lang = "nl",
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
   ingest_source = episodic_ingest_source_synthetic,
   denominator_source = episodic_denominator_source_synthetic
 )
@@ -46,7 +46,10 @@ episodic_demo(
 
 - lang:
 
-  Dashboard language when `launch = TRUE`: `"nl"` or `"en"`.
+  Dashboard language when `launch = TRUE`: `"nl"`, `"en"`, `"es"`,
+  `"fr"`, `"de"`, `"zh"`, `"hi"`, or `"ar"`. Defaults to the
+  `EPISODIC_LANGUAGE` environment variable, falling back to `"en"` if
+  that is unset.
 
 - ingest_source, denominator_source:
 

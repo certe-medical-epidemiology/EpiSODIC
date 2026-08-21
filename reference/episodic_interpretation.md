@@ -7,7 +7,8 @@ what to consider next. This text is not written by an LLM: it is
 assembled deterministically from a fixed library of pre-written sentence
 templates ("fragments"), each triggered by a specific condition on the
 cluster's data. The same inputs always produce the same wording, and
-every fragment is translated into both Dutch and English.
+every fragment is translated into every shipped language (Dutch,
+English, Spanish, French, German, Mandarin Chinese, Hindi, and Arabic).
 
 ## Usage
 

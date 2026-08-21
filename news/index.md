@@ -1,5 +1,21 @@
 # Changelog
 
+## EpiSODIC 0.3.0
+
+- Expanded dashboard translations from Dutch and English to also cover
+  Spanish, French, German, Mandarin Chinese, Hindi, and (Modern
+  Standard) Arabic (`inst/i18n/{es,fr,de,zh,hi,ar}.json`), covering the
+  top spoken languages in the world alongside Dutch and English. Pass
+  any of these as `lang` to \[episodic_run_app()\], \[episodic_demo()\],
+  or \[episodic_report_render()\]. `episodic_format_date_range()` now
+  also formats month names for these languages, sourced from the same
+  `inst/i18n/*.json` files as every other piece of dashboard text.
+- Added the `EPISODIC_LANGUAGE` environment variable, read by
+  \[episodic_run_app()\], \[episodic_demo()\],
+  \[episodic_report_render()\], and \[episodic_tr()\] as the default
+  `lang` when it is not passed explicitly. Falls back to `"en"` if
+  unset.
+
 ## EpiSODIC 0.2.0
 
 - Rewrote all documentation for an epidemiologist audience: every man
