@@ -23,8 +23,9 @@
 #' overview against a database already populated by
 #' [episode_run_cron()].
 #'
-#' @param db_path Path to the SQLite database. Defaults to the
-#'   `EPISODIC_DB` environment variable.
+#' @param db_path Path to a SQLite database, or a `mysql://` DSN (see
+#'   [episode_db_dsn_mariadb()]). Defaults to the `EPISODIC_DB`
+#'   environment variable.
 #' @param lang Default session language, `"nl"` (default) or `"en"`.
 #' @param ... Passed on to [shiny::runApp()] (e.g. `port`, `host`).
 #' @return Invisible; called for its side effect of starting the app.
@@ -44,7 +45,7 @@ episode_run_app <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA), lan
       call. = FALSE
     )
   }
-  if (!file.exists(db_path)) {
+  if (episode_db_dialect(db_path) == "sqlite" && !file.exists(db_path)) {
     stop("No database file found at '", db_path, "'.", call. = FALSE)
   }
   shiny::addResourcePath("www", system.file("app", "www", package = "EpiSODIC"))

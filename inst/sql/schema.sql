@@ -16,7 +16,12 @@
 --  research and it was publicly released in the hope that it will be    --
 --  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              --
 
--- EpiSODIC database schema, SQLite dialect.
+-- EpiSODIC database schema, written in SQLite dialect and used verbatim
+-- for SQLite connections. For a MariaDB/MySQL EPISODIC_DB,
+-- episode_db_schema_statements() rewrites this same file at load time
+-- (AUTOINCREMENT -> AUTO_INCREMENT, the PRAGMA line dropped, and the four
+-- TEXT columns carrying a UNIQUE constraint given a bounded VARCHAR) -
+-- there is deliberately only one schema file to keep in sync.
 --
 -- Type mapping used throughout, for reference against a more general
 -- relational type system:
@@ -27,9 +32,8 @@
 --   TINYINT(1)                        -> INTEGER 0 or 1
 --   DECIMAL(p,s)                      -> REAL
 --
--- One dialect only: there is no MySQL in this system. Write ownership
--- (cron vs. app) is documented per table; the app itself only ever
--- inserts, never updates or deletes.
+-- Write ownership (cron vs. app) is documented per table; the app itself
+-- only ever inserts, never updates or deletes.
 
 PRAGMA foreign_keys = ON;
 

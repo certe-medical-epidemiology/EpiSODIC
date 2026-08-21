@@ -7,8 +7,9 @@
 episode_db_open(db_path = Sys.getenv("EPISODIC_DB", unset = NA))
 }
 \arguments{
-\item{db_path}{Path to an existing SQLite database. Defaults to the
-\code{EPISODIC_DB} environment variable.}
+\item{db_path}{Path to an existing SQLite database, or a \code{mysql://} DSN
+(see \code{\link[=episode_db_dsn_mariadb]{episode_db_dsn_mariadb()}}). Defaults to the \code{EPISODIC_DB}
+environment variable.}
 }
 \value{
 An open \link[DBI:DBIConnection-class]{DBI::DBIConnection}; the caller is responsible

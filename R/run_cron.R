@@ -33,8 +33,9 @@
 #' own step, run before `episode_run_cron()`, transforming Diver's columns
 #' into `episode_ingest_columns`. See `README.md` for the raw data contract.
 #'
-#' @param db_path Path to the SQLite database file. Created if it does not
-#'   exist.
+#' @param db_path Path to a SQLite database file, or a `mysql://` DSN
+#'   (see [episode_db_dsn_mariadb()]). Created if it does not exist yet
+#'   (SQLite) or is an empty database (MariaDB/MySQL).
 #' @param ingest_source_fn A zero-argument function returning a data frame
 #'   satisfying the ingestion interface, or that data frame itself (an
 #'   operator who has already extracted and transformed their data has no
@@ -85,7 +86,7 @@ episode_run_cron <- function(db_path,
   config <- episode_config_resolve(episode_config_path)
   hashed <- episode_config_hash(config)
 
-  con <- if (file.exists(db_path)) episode_db_connect(db_path) else episode_db_create(db_path)
+  con <- if (episode_db_exists(db_path)) episode_db_connect(db_path) else episode_db_create(db_path)
   on.exit(DBI::dbDisconnect(con), add = TRUE)
 
   run_id <- episode_db_run_start(con, host = host, account = account)

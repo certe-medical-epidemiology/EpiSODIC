@@ -151,8 +151,9 @@ episode_auth_change_password <- function(con, user_id, new_password) {
 #' via [episode_db_open()] - so provisioning an account is one call at the
 #' console, without first having to construct a `con` by hand.
 #'
-#' @param db_path Path to an existing SQLite database. Defaults to the
-#'   `EPISODIC_DB` environment variable.
+#' @param db_path Path to an existing SQLite database, or a `mysql://`
+#'   DSN (see [episode_db_dsn_mariadb()]). Defaults to the `EPISODIC_DB`
+#'   environment variable.
 #' @param username,full_name,email The new account's fields.
 #' @param password An initial plaintext password (hashed here, never
 #'   stored or logged as plaintext) - a temporary one the holder is

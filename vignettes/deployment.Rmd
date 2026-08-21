@@ -80,11 +80,28 @@ sign-in forces the holder to set their own password.
 
 ## Where the database lives
 
-The SQLite database must sit on local disk, not in a synchronising
-folder (SharePoint, OneDrive, Dropbox): background sync can corrupt or
-fork a live SQLite file without any immediate warning. Configuration
-files are safe in a synced location, since they are small and
-read-only at runtime; the database itself is not.
+`EPISODIC_DB` (and every `db_path` argument that falls back to it) works
+against two backends:
+
+- **SQLite** (the default): a path to a local file. It must sit on
+  local disk, not in a synchronising folder (SharePoint, OneDrive,
+  Dropbox) - background sync can corrupt or fork a live SQLite file
+  without any immediate warning. Configuration files are safe in a
+  synced location, since they are small and read-only at runtime; the
+  database itself is not.
+- **MariaDB/MySQL**: a `mysql://user:password@host:port/dbname` DSN,
+  built with `episode_db_dsn_mariadb()` rather than assembled by hand.
+  Requires the `RMariaDB` package. This is the option for a deployment
+  that already runs a database server and would rather point EpiSODIC
+  at it than manage a SQLite file on disk - the schema and every query
+  work identically against either backend.
+
+```r
+Sys.setenv(EPISODIC_DB = episode_db_dsn_mariadb(
+  host = "db.internal", dbname = "episodic",
+  user = "episodic_app", password = "s3cr3t!"
+))
+```
 
 ## Running the app
 

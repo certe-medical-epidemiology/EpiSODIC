@@ -2,25 +2,28 @@
 % Please edit documentation in R/schema_migrate.R
 \name{episode_db_create}
 \alias{episode_db_create}
-\title{Create a fresh EpiSODIC SQLite database}
+\title{Create a fresh EpiSODIC database}
 \usage{
 episode_db_create(path, overwrite = FALSE)
 }
 \arguments{
-\item{path}{Path to the SQLite file to create. Must not already exist,
-or must be an empty/non-EpiSODIC SQLite file.}
+\item{path}{Path to a SQLite file, or a \code{mysql://} DSN (see
+\code{\link[=episode_db_dsn_mariadb]{episode_db_dsn_mariadb()}}) pointing at an empty MariaDB/MySQL
+database. For SQLite, must not already exist, or must be an
+empty/non-EpiSODIC file.}
 
-\item{overwrite}{If \code{TRUE}, delete an existing file at \code{path} first.}
+\item{overwrite}{If \code{TRUE}, delete an existing SQLite file (or drop all
+tables in an existing MariaDB/MySQL database) first.}
 }
 \value{
 (Invisibly) an open \link[DBI:DBIConnection-class]{DBI::DBIConnection} to the new
 database. The caller is responsible for disconnecting it.
 }
 \description{
-Creates a new SQLite database file at \code{path} and applies the canonical
+Creates a new, empty database at \code{path} and applies the canonical
 schema shipped as \code{inst/sql/schema.sql}. Always builds from scratch;
-refuses to run against a file that already contains EpiSODIC tables
-so that it cannot silently clobber existing data.
+refuses to run against a database that already contains tables so
+that it cannot silently clobber existing data.
 }
 \examples{
 db_path <- tempfile(fileext = ".sqlite")

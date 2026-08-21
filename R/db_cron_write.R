@@ -144,7 +144,7 @@ episode_db_institution_upsert <- function(con, institution_key, display_name, in
     params = list(institution_key, display_name, institution_type, care_line, municipality,
                   pc, n_beds, as.integer(is_monitored))
   )
-  DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+  episode_db_last_insert_id(con)
 }
 
 #' @rdname db_cron_write
@@ -205,7 +205,7 @@ episode_db_stream_upsert <- function(con, stream_key, level, pathogen,
                   institution_id, ward, denominator, severity_weight, observed_date, observed_date,
                   episode_now())
   )
-  DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+  episode_db_last_insert_id(con)
 }
 
 #' @rdname db_cron_write
@@ -271,15 +271,17 @@ episode_db_denominator_upsert <- function(con, pathogen, sample_date, care_line,
   existing <- DBI::dbGetQuery(
     con,
     "SELECT 1 FROM episode_denominator
-     WHERE pathogen = ? AND sample_date = ? AND care_line = ? AND area_code IS ?",
-    params = list(pathogen, sample_date, care_line, area_code)
+     WHERE pathogen = ? AND sample_date = ? AND care_line = ?
+       AND (area_code = ? OR (area_code IS NULL AND ? IS NULL))",
+    params = list(pathogen, sample_date, care_line, area_code, area_code)
   )
   if (nrow(existing) > 0) {
     DBI::dbExecute(
       con,
       "UPDATE episode_denominator SET n_tests = ?
-       WHERE pathogen = ? AND sample_date = ? AND care_line = ? AND area_code IS ?",
-      params = list(n_tests, pathogen, sample_date, care_line, area_code)
+       WHERE pathogen = ? AND sample_date = ? AND care_line = ?
+         AND (area_code = ? OR (area_code IS NULL AND ? IS NULL))",
+      params = list(n_tests, pathogen, sample_date, care_line, area_code, area_code)
     )
   } else {
     DBI::dbExecute(
@@ -336,7 +338,7 @@ episode_db_detection_insert <- function(con, run_id, stream_id, detector, first_
     params = list(run_id, stream_id, cluster_id, detector, first_day, last_day, n_cases,
                   expected, upperbound, params_json, episode_now())
   )
-  DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+  episode_db_last_insert_id(con)
 }
 
 #' @rdname db_cron_write
@@ -366,7 +368,7 @@ episode_db_cluster_insert <- function(con, stream_id, first_day, last_day, n_cas
     params = list(stream_id, first_day, last_day, n_cases, expected, excess, ratio,
                   priority_score, detector_agreement, episode_now(), run_id)
   )
-  DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+  episode_db_last_insert_id(con)
 }
 
 #' @rdname db_cron_write
@@ -449,7 +451,7 @@ episode_db_run_start <- function(con, host, account, attempt_no = 1L) {
      VALUES (?, ?, ?, 'running', ?)",
     params = list(host, account, episode_now(), attempt_no)
   )
-  DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+  episode_db_last_insert_id(con)
 }
 
 #' @rdname db_cron_write

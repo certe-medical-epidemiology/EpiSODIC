@@ -2,19 +2,21 @@
 % Please edit documentation in R/schema_migrate.R
 \name{episode_db_connect}
 \alias{episode_db_connect}
-\title{Connect to an existing EpiSODIC SQLite database}
+\title{Connect to an existing EpiSODIC database}
 \usage{
 episode_db_connect(path)
 }
 \arguments{
-\item{path}{Path to an existing SQLite file.}
+\item{path}{Path to an existing SQLite file, or a \code{mysql://} DSN (see
+\code{\link[=episode_db_dsn_mariadb]{episode_db_dsn_mariadb()}}) pointing at an existing MariaDB/MySQL
+database.}
 }
 \value{
 An open \link[DBI:DBIConnection-class]{DBI::DBIConnection}.
 }
 \description{
-Opens a connection with the pragmas required by the architecture
-(WAL journal mode, a busy timeout, and foreign key enforcement).
+Opens a connection with the pragmas required by the architecture (for
+SQLite: WAL journal mode, a busy timeout, and foreign key enforcement).
 }
 \examples{
 db_path <- tempfile(fileext = ".sqlite")

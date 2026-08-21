@@ -381,7 +381,7 @@ episode_reconcile_link_cases <- function(con, stream_id, cluster_id, first_day, 
       con,
       "SELECT case_id FROM episode_case
        WHERE pathogen = ? AND sample_date >= ? AND sample_date <= ?
-         AND (institution_id IS ? OR ? IS NULL)",
+         AND (? IS NULL OR institution_id = ?)",
       params = list(stream$pathogen[1], first_day, last_day,
                     stream$institution_id[1], stream$institution_id[1])
     )
@@ -410,7 +410,7 @@ episode_reconcile_case_count <- function(con, stream_id, first_day, last_day, ex
       con,
       "SELECT COUNT(*) AS n FROM episode_case
        WHERE pathogen = ? AND sample_date >= ? AND sample_date <= ?
-         AND (institution_id IS ? OR ? IS NULL)",
+         AND (? IS NULL OR institution_id = ?)",
       params = list(stream$pathogen[1], as.character(first_day), as.character(last_day),
                     stream$institution_id[1], stream$institution_id[1])
     )

@@ -7,7 +7,9 @@ report, running entirely on open-source, CRAN-hosted packages.
 ## Detection engine
 
 - SQLite schema and migration runner; a DBI repository layer split by
-  writer (the cron may upsert, the app only ever inserts).
+  writer (the cron may upsert, the app only ever inserts). `EPISODIC_DB`
+  also accepts a `mysql://` DSN (`episode_db_dsn_mariadb()`) to run
+  against MariaDB/MySQL instead, from the same schema file.
 - Automatic lattice enumeration (ward, institution, geographic area,
   province, catchment) from the data itself, no configuration required
   for a newly appearing pathogen.

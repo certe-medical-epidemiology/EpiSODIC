@@ -219,6 +219,34 @@ and read from the same list the shipped one does (`obj`, `epi_curve`,
 the exact shape, including how it calls `episode_tr(..., lang = d$lang)`
 for a bilingual report.
 
+## Database backend
+
+`EPISODIC_DB` (and every `db_path` argument that falls back to it) accepts
+either of two things:
+
+- a filesystem path, opened as a SQLite database (the default, and what
+  `episode_demo()` uses); or
+- a `mysql://user:password@host:port/dbname` DSN, opened against a
+  MariaDB or MySQL server instead. Build one with `episode_db_dsn_mariadb()`
+  rather than assembling the string by hand, so that credentials
+  containing `:`, `@` or `/` are URL-encoded correctly:
+
+```r
+Sys.setenv(EPISODIC_DB = EpiSODIC::episode_db_dsn_mariadb(
+  host = "db.internal", dbname = "episodic",
+  user = "episodic_app", password = "s3cr3t!"
+))
+```
+
+Connecting to MariaDB/MySQL requires the `RMariaDB` package
+(`install.packages("RMariaDB")`); it is a `Suggests` dependency, not
+installed automatically, so SQLite-only deployments never need it. The
+schema (`inst/sql/schema.sql`) is written once, in SQLite syntax, and
+adapted at load time for the handful of tokens that differ under
+MariaDB/MySQL - there is no separate schema file to keep in sync.
+`CHECK` constraints are enforced from MariaDB 10.2.1 / MySQL 8.0.16
+onwards; on older servers they are accepted but silently ignored.
+
 ## Accounts
 
 Read access is anonymous - the app opens read-only for anyone who reaches
@@ -252,7 +280,7 @@ Docker container) without editing R code.
 
 | Variable | Used by | Meaning |
 |---|---|---|
-| `EPISODIC_DB` | `episode_run_app()`, `episode_provision_user()` (`db_path` argument) | Path to the instance's SQLite database. |
+| `EPISODIC_DB` | `episode_run_app()`, `episode_provision_user()` (`db_path` argument) | Path to the instance's SQLite database, or a `mysql://` DSN pointing at a MariaDB/MySQL database instead - see "Database backend" below. |
 | `EPISODIC_CONFIG` | `episode_run_cron()` (`episode_config_path` argument) | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`'s shipped defaults. |
 | `EPISODIC_PALETTE_CONFIG` | `episode_palette()` (`palette_config_path` argument) | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`'s shipped defaults. Deliberately separate from `EPISODIC_CONFIG`: colour is a display concern, never part of `episode_config_hash()`'s detection-reproducibility guarantee. |
 | `EPISODIC_GEO_DATA` | `episode_geo_source_resolve()` (`path` argument) | Path to an `.rds` file holding an operator's own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands postcode default. See "Geographic reference data" above. |

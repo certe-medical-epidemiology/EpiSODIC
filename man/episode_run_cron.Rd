@@ -16,8 +16,9 @@ episode_run_cron(
 )
 }
 \arguments{
-\item{db_path}{Path to the SQLite database file. Created if it does not
-exist.}
+\item{db_path}{Path to a SQLite database file, or a \code{mysql://} DSN
+(see \code{\link[=episode_db_dsn_mariadb]{episode_db_dsn_mariadb()}}). Created if it does not exist yet
+(SQLite) or is an empty database (MariaDB/MySQL).}
 
 \item{ingest_source_fn}{A zero-argument function returning a data frame
 satisfying the ingestion interface, or that data frame itself (an

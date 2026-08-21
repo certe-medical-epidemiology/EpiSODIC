@@ -11,7 +11,8 @@ episode_run_app(
 )
 }
 \arguments{
-\item{db_path}{Path to the SQLite database. Defaults to the
+\item{db_path}{Path to a SQLite database, or a \code{mysql://} DSN (see
+\code{\link[=episode_db_dsn_mariadb]{episode_db_dsn_mariadb()}}). Defaults to the
 \code{EPISODIC_DB} environment variable.}
 
 \item{lang}{Default session language, \code{"nl"} (default) or \code{"en"}.}

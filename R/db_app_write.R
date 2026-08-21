@@ -71,7 +71,7 @@ episode_db_assessment_event_insert <- function(con, cluster_id, user_id, verdict
                   if (is.na(ggd_informed)) NA else as.integer(ggd_informed),
                   ggd_note, snooze_until, supersedes)
   )
-  DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+  episode_db_last_insert_id(con)
 }
 
 #' @rdname db_app_write
@@ -86,7 +86,7 @@ episode_db_stream_mute_insert <- function(con, stream_id, muted_from, muted_unti
      VALUES (?, ?, ?, ?, ?, ?, ?)",
     params = list(stream_id, muted_from, muted_until, reason, note, user_id, episode_now())
   )
-  DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+  episode_db_last_insert_id(con)
 }
 
 #' @rdname db_app_write
@@ -100,7 +100,7 @@ episode_db_cluster_state_insert <- function(con, cluster_id, state, trigger, eve
      VALUES (?, ?, ?, ?, ?, ?)",
     params = list(cluster_id, state, episode_now(), trigger, event_id, user_id)
   )
-  DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+  episode_db_last_insert_id(con)
 }
 
 #' @rdname db_app_write
@@ -117,7 +117,7 @@ episode_db_report_render_insert <- function(con, cluster_id, user_id = NA, file_
     params = list(cluster_id, user_id, episode_now(), file_path, file_sha256, params_json,
                   case_ids_json, version_no)
   )
-  DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+  episode_db_last_insert_id(con)
 }
 
 #' @rdname db_app_write
@@ -132,7 +132,7 @@ episode_db_app_user_insert <- function(con, username, full_name, email, password
      VALUES (?, ?, ?, ?, ?, 1, 1, ?)",
     params = list(username, full_name, email, password_hash, role, episode_now())
   )
-  DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+  episode_db_last_insert_id(con)
 }
 
 #' @rdname db_app_write
@@ -145,5 +145,5 @@ episode_db_app_user_event_insert <- function(con, user_id, event_type, password_
      VALUES (?, ?, ?, ?)",
     params = list(user_id, episode_now(), event_type, password_hash)
   )
-  DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+  episode_db_last_insert_id(con)
 }
