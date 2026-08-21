@@ -23,7 +23,7 @@ library(EpiSODIC)
 # sign in, classify clusters, close them, mute a stream, generate a
 # report - and see that work still be there next time this script runs.
 # *.sqlite is already .gitignore'd, so this never gets committed.
-db_path <- "episode-demo.sqlite"
+db_path <- "episodic-demo.sqlite"
 
 Sys.setenv(
   EPISODIC_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),

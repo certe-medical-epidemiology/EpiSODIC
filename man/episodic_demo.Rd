@@ -9,7 +9,7 @@ episodic_demo(
   username = "demo",
   full_name = "Demo User",
   email = "demo@example.org",
-  password = "episode-demo",
+  password = "episodic-demo",
   launch = TRUE,
   lang = "nl",
   ingest_source_fn = episodic_ingest_source_synthetic,

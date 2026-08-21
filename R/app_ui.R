@@ -22,7 +22,7 @@
 #' Custom header, nav and brand bar rather than a stock `bslib::page_navbar`,
 #' to match the intended house-style layout precisely. `bslib` supplies
 #' the Bootstrap reset and font-loading helper only; all
-#' visual design comes from `inst/app/www/episode.css` and the palette
+#' visual design comes from `inst/app/www/episodic.css` and the palette
 #' injected as CSS custom properties.
 #'
 #' @param lang Session language, `"nl"` (default) or `"en"`.
@@ -38,20 +38,20 @@ episodic_app_ui <- function(lang = "nl") {
     shiny::tags$head(
       shiny::tags$link(rel = "stylesheet",
                         href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"),
-      shiny::tags$link(rel = "stylesheet", href = "www/episode.css"),
+      shiny::tags$link(rel = "stylesheet", href = "www/episodic.css"),
       shiny::tags$style(episodic_app_palette_css(pal))
     ),
     shiny::tags$div(
-      class = "episode-header",
+      class = "episodic-header",
       shiny::tags$div(
         style = "display:flex;align-items:center;",
         shiny::tags$span(
-          class = "episode-brand", title = episodic_tr("app.full_name", lang = lang),
+          class = "episodic-brand", title = episodic_tr("app.full_name", lang = lang),
           "EpiSODIC",
-          shiny::tags$span(class = "episode-brand-version", paste0("v", utils::packageVersion("EpiSODIC")))
+          shiny::tags$span(class = "episodic-brand-version", paste0("v", utils::packageVersion("EpiSODIC")))
         ),
         shiny::tags$div(
-          class = "episode-nav",
+          class = "episodic-nav",
           episodic_ui_nav_link("clusters", episodic_tr("nav.clusters", lang = lang)),
           episodic_ui_nav_link("streams", episodic_tr("nav.streams", lang = lang)),
           episodic_ui_nav_link("archive", episodic_tr("nav.archive", lang = lang)),
@@ -59,7 +59,7 @@ episodic_app_ui <- function(lang = "nl") {
           episodic_ui_nav_link("performance", episodic_tr("nav.performance", lang = lang)),
           episodic_ui_nav_link("info", episodic_tr("nav.info", lang = lang))
         ),
-        shiny::tags$span(class = "episode-demodata", episodic_tr("app.demodata", lang = lang))
+        shiny::tags$span(class = "episodic-demodata", episodic_tr("app.demodata", lang = lang))
       ),
       shiny::tags$div(
         style = "display:flex;align-items:center;gap:14px;",
@@ -68,7 +68,7 @@ episodic_app_ui <- function(lang = "nl") {
       )
     ),
     shiny::tags$div(
-      class = "episode-brandbar",
+      class = "episodic-brandbar",
       lapply(episodic_brand_bar(), function(colour) shiny::tags$div(style = sprintf("background:%s;", colour)))
     ),
     shiny::uiOutput("main_view")
@@ -79,7 +79,7 @@ episodic_app_ui <- function(lang = "nl") {
 #' @noRd
 episodic_ui_nav_link <- function(view, label) {
   shiny::tags$a(
-    href = "#", class = "episode-nav-link", `data-view` = view,
+    href = "#", class = "episodic-nav-link", `data-view` = view,
     onclick = sprintf("Shiny.setInputValue('nav_view', '%s', {priority: 'event'}); return false;", view),
     label
   )
@@ -90,9 +90,9 @@ episodic_ui_nav_link <- function(view, label) {
 episodic_app_palette_css <- function(pal) {
   # CSS custom property names conventionally use hyphens, not underscores
   # (episodic_palette()'s own list names, e.g. "primary_tint", follow R's
-  # convention instead); translated here so the stylesheet's var(--episode-
+  # convention instead); translated here so the stylesheet's var(--episodic-
   # primary-tint) references match what actually gets defined.
   css_names <- gsub("_", "-", names(pal), fixed = TRUE)
-  vars <- vapply(seq_along(pal), function(i) sprintf("--episode-%s: %s;", css_names[i], pal[[i]]), character(1))
+  vars <- vapply(seq_along(pal), function(i) sprintf("--episodic-%s: %s;", css_names[i], pal[[i]]), character(1))
   paste0(":root {\n", paste(vars, collapse = "\n"), "\n}")
 }

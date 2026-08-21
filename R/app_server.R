@@ -84,7 +84,7 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
         episodic_ui_info_screen(lang = lang)
       } else {
         shiny::tags$div(
-          class = "episode-body",
+          class = "episodic-body",
           shiny::uiOutput("rail_pane"),
           shiny::uiOutput("dossier_pane"),
           shiny::uiOutput("assessment_pane")
@@ -111,7 +111,7 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
       cluster_id <- selected_cluster_id()
       current_user()  # re-render on sign in/out (line list lock, classification form)
       if (is.null(cluster_id)) {
-        return(shiny::tags$div(class = "episode-dossier",
+        return(shiny::tags$div(class = "episodic-dossier",
                                 shiny::tags$p(episodic_tr("rail.empty", lang = lang))))
       }
       episodic_ui_dossier(con, cluster_id, lang = lang, current_user = current_user())
@@ -143,7 +143,7 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
 #' @noRd
 episodic_ui_status_strip <- function(status, lang = "nl") {
   if (identical(status$status, "none")) {
-    return(shiny::tags$div(class = "episode-status-strip", episodic_tr("status.no_run", lang = lang)))
+    return(shiny::tags$div(class = "episodic-status-strip", episodic_tr("status.no_run", lang = lang)))
   }
   pal <- episodic_palette()
   if (identical(status$status, "success")) {
@@ -158,8 +158,8 @@ episodic_ui_status_strip <- function(status, lang = "nl") {
     text <- episodic_tr("status.run_failed", lang = lang, time = episodic_ui_format_datetime(status$finished_at))
   }
   shiny::tags$div(
-    class = "episode-status-strip",
-    shiny::tags$span(shiny::tags$span(class = "episode-status-dot", style = sprintf("background:%s;", dot_colour)), text)
+    class = "episodic-status-strip",
+    shiny::tags$span(shiny::tags$span(class = "episodic-status-dot", style = sprintf("background:%s;", dot_colour)), text)
   )
 }
 
@@ -205,7 +205,7 @@ episodic_ui_format_datetime <- function(iso, fmt = "%H:%M", tz = Sys.timezone())
 #' each dossier in turn for what is frequently the same verdict
 #' (`artefact`) and a shared rationale. Selection itself is tracked
 #' entirely client-side (a checkbox's own `checked` state, read from the
-#' DOM at submit time via `episodeBulkUpdate()`/the submit button's
+#' DOM at submit time via `episodicBulkUpdate()`/the submit button's
 #' onclick) rather than in a Shiny reactive - the rail's own render is
 #' deliberately decoupled from `selected_cluster_id()` so a click does
 #' not replace the whole list and lose scroll position (see
@@ -235,22 +235,22 @@ episodic_ui_rail <- function(open, selected_id, lang = "nl", current_user = NULL
 
   bulk_bar <- if (!is.null(current_user)) {
     shiny::tags$div(
-      id = "episode-bulk-bar", style = "display:none;", class = "episode-panel-body",
+      id = "episodic-bulk-bar", style = "display:none;", class = "episodic-panel-body",
       shiny::tags$div(style = "font-size:12.5px;font-weight:600;margin-bottom:6px;",
-                       shiny::tags$span(id = "episode-bulk-count"), " ", episodic_tr("rail.bulk_selected", lang = lang)),
-      shiny::tags$div(class = "episode-form-group",
-                       shiny::tags$label(class = "episode-form-label", episodic_tr("assessment.verdict_label", lang = lang)),
+                       shiny::tags$span(id = "episodic-bulk-count"), " ", episodic_tr("rail.bulk_selected", lang = lang)),
+      shiny::tags$div(class = "episodic-form-group",
+                       shiny::tags$label(class = "episodic-form-label", episodic_tr("assessment.verdict_label", lang = lang)),
                        episodic_ui_picker("bulk_assess_verdict", verdict_options)),
-      shiny::tags$div(class = "episode-form-group",
-                       shiny::tags$label(class = "episode-form-label", episodic_tr("assessment.rationale_label", lang = lang)),
+      shiny::tags$div(class = "episodic-form-group",
+                       shiny::tags$label(class = "episodic-form-label", episodic_tr("assessment.rationale_label", lang = lang)),
                        shiny::tags$textarea(id = "bulk_assess_rationale", rows = 2,
                                              placeholder = episodic_tr("assessment.rationale_placeholder", lang = lang))),
       shiny::tags$div(
         style = "display:flex;gap:8px;",
         shiny::tags$button(
-          class = "episode-btn", type = "button",
+          class = "episodic-btn", type = "button",
           onclick = paste0(
-            "var ids=Array.from(document.querySelectorAll('.episode-rail-select:checked')).map(function(el){return parseInt(el.value);}); ",
+            "var ids=Array.from(document.querySelectorAll('.episodic-rail-select:checked')).map(function(el){return parseInt(el.value);}); ",
             "var rationale=document.getElementById('bulk_assess_rationale').value; ",
             "if(!rationale.trim()){return;} ",
             "Shiny.setInputValue('bulk_assess_submit', {cluster_ids: ids, verdict: document.getElementById('bulk_assess_verdict').value, rationale: rationale}, {priority: 'event'});"
@@ -258,9 +258,9 @@ episodic_ui_rail <- function(open, selected_id, lang = "nl", current_user = NULL
           episodic_tr("rail.bulk_apply", lang = lang)
         ),
         shiny::tags$button(
-          class = "episode-btn", type = "button",
+          class = "episodic-btn", type = "button",
           onclick = paste0(
-            "document.querySelectorAll('.episode-rail-select').forEach(function(el){el.checked=false;}); episodeBulkUpdate();"
+            "document.querySelectorAll('.episodic-rail-select').forEach(function(el){el.checked=false;}); episodicBulkUpdate();"
           ),
           episodic_tr("rail.bulk_clear", lang = lang)
         )
@@ -269,51 +269,51 @@ episodic_ui_rail <- function(open, selected_id, lang = "nl", current_user = NULL
   }
 
   shiny::tags$div(
-    class = "episode-rail",
+    class = "episodic-rail",
     if (!is.null(current_user)) {
       shiny::tags$script(shiny::HTML(paste0(
-        "function episodeBulkUpdate(){var n=document.querySelectorAll('.episode-rail-select:checked').length; ",
-        "var bar=document.getElementById('episode-bulk-bar'); if(!bar){return;} ",
+        "function episodicBulkUpdate(){var n=document.querySelectorAll('.episodic-rail-select:checked').length; ",
+        "var bar=document.getElementById('episodic-bulk-bar'); if(!bar){return;} ",
         "bar.style.display = n>0 ? 'block' : 'none'; ",
-        "var c=document.getElementById('episode-bulk-count'); if(c){c.textContent=n;}}"
+        "var c=document.getElementById('episodic-bulk-count'); if(c){c.textContent=n;}}"
       )))
     },
     shiny::tags$div(
-      class = "episode-rail-header",
-      shiny::tags$div(class = "episode-rail-title", episodic_tr("rail.title", lang = lang)),
-      shiny::tags$div(class = "episode-rail-count",
+      class = "episodic-rail-header",
+      shiny::tags$div(class = "episodic-rail-title", episodic_tr("rail.title", lang = lang)),
+      shiny::tags$div(class = "episodic-rail-count",
                        episodic_count_phrase(nrow(open), episodic_tr("unit.cluster", lang = lang),
                                              episodic_tr("unit.clusters", lang = lang)),
                        " ", episodic_tr("rail.count_suffix", lang = lang))
     ),
     bulk_bar,
     if (nrow(open) == 0) {
-      shiny::tags$div(style = "padding:14px;font-size:12.5px;color:var(--episode-muted);", episodic_tr("rail.empty", lang = lang))
+      shiny::tags$div(style = "padding:14px;font-size:12.5px;color:var(--episodic-muted);", episodic_tr("rail.empty", lang = lang))
     } else {
       lapply(seq_len(nrow(open)), function(i) {
         row <- open[i, ]
         active <- identical(row$cluster_id, selected_id)
         shiny::tags$div(
-          class = paste("episode-rail-item", if (active) "active" else ""),
+          class = paste("episodic-rail-item", if (active) "active" else ""),
           onclick = sprintf(
-            "document.querySelectorAll('.episode-rail-item').forEach(function(el){el.classList.remove('active');}); this.classList.add('active'); Shiny.setInputValue('rail_select', %d, {priority: 'event'})",
+            "document.querySelectorAll('.episodic-rail-item').forEach(function(el){el.classList.remove('active');}); this.classList.add('active'); Shiny.setInputValue('rail_select', %d, {priority: 'event'})",
             row$cluster_id
           ),
           if (!is.null(current_user)) {
             shiny::tags$input(
-              type = "checkbox", class = "episode-rail-select", value = row$cluster_id,
-              onclick = "event.stopPropagation(); episodeBulkUpdate();",
-              onchange = "episodeBulkUpdate();"
+              type = "checkbox", class = "episodic-rail-select", value = row$cluster_id,
+              onclick = "event.stopPropagation(); episodicBulkUpdate();",
+              onchange = "episodicBulkUpdate();"
             )
           },
-          shiny::tags$div(class = "episode-rail-pathogen", shiny::HTML(episodic_ui_italicise_taxon(row$pathogen))),
-          shiny::tags$div(class = "episode-rail-meta", row$level_label),
-          shiny::tags$div(class = "episode-rail-meta", episodic_format_date_range(row$first_day, row$last_day, lang = lang)),
-          shiny::tags$div(class = "episode-rail-meta", paste(c(
+          shiny::tags$div(class = "episodic-rail-pathogen", shiny::HTML(episodic_ui_italicise_taxon(row$pathogen))),
+          shiny::tags$div(class = "episodic-rail-meta", row$level_label),
+          shiny::tags$div(class = "episodic-rail-meta", episodic_format_date_range(row$first_day, row$last_day, lang = lang)),
+          shiny::tags$div(class = "episodic-rail-meta", paste(c(
             episodic_count_phrase(row$n_cases, episodic_tr("unit.case", lang = lang), episodic_tr("unit.cases", lang = lang)),
             if (!is.na(row$ratio)) sprintf("ratio %s", round(row$ratio, 1))
           ), collapse = " \u00b7 ")),
-          shiny::tags$div(class = "episode-rail-state", episodic_ui_state_dot(row$state), row$state_label)
+          shiny::tags$div(class = "episodic-rail-state", episodic_ui_state_dot(row$state), row$state_label)
         )
       })
     }

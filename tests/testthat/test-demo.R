@@ -48,7 +48,7 @@ test_that("episodic_demo(launch = FALSE) sets up a working demo database in one 
 
   user <- episodic_db_user_by_username(con, "demo")
   expect_false(is.null(user))
-  expect_true(episodic_auth_login(con, "demo", "episode-demo")$ok)
+  expect_true(episodic_auth_login(con, "demo", "episodic-demo")$ok)
 })
 
 test_that("episodic_demo() accepts custom credentials", {

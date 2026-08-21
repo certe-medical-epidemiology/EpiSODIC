@@ -34,7 +34,7 @@
 #' \dontrun{
 #' # opens a blocking, interactive Shiny session - see episodic_demo() for a
 #' # one-call, populated version of this same example
-#' episodic_run_app("/path/to/episode.sqlite")
+#' episodic_run_app("/path/to/episodic.sqlite")
 #' }
 #' @export
 episodic_run_app <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA), lang = "nl", ...) {

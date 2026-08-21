@@ -24,7 +24,7 @@ laboratory rather than tied to one:
 
 ```r
 episodic_run_cron(
-  db_path = "/path/to/episode.sqlite",
+  db_path = "/path/to/episodic.sqlite",
   ingest_source_fn = function() my_extract_and_transform_function(),
   denominator_source_fn = NULL  # optional
 )
@@ -67,7 +67,7 @@ or mute a stream, and there is deliberately no in-app account management
 screen: accounts are provisioned by whoever administers the database.
 
 ```r
-Sys.setenv(EPISODIC_DB = "/path/to/episode.sqlite")
+Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")
 
 episodic_provision_user(
   username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
@@ -106,7 +106,7 @@ Sys.setenv(EPISODIC_DB = episodic_db_dsn_mariadb(
 ## Running the app
 
 ```r
-Sys.setenv(EPISODIC_DB = "/path/to/episode.sqlite")
+Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")
 episodic_run_app()
 ```
 

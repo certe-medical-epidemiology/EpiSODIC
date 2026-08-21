@@ -33,17 +33,17 @@
 episodic_ui_auth_control <- function(current_user, lang = "nl") {
   if (is.null(current_user)) {
     return(shiny::tags$a(
-      class = "episode-auth-link", href = "#",
+      class = "episodic-auth-link", href = "#",
       onclick = "Shiny.setInputValue('auth_show_login', Math.random(), {priority: 'event'}); return false;",
       episodic_tr("auth.signin", lang = lang)
     ))
   }
   shiny::tags$span(
     style = "display:flex;align-items:center;gap:10px;",
-    shiny::tags$span(class = "episode-auth-link", style = "cursor:default;",
+    shiny::tags$span(class = "episodic-auth-link", style = "cursor:default;",
                       episodic_tr("auth.signed_in_as", name = current_user$full_name, lang = lang)),
     shiny::tags$a(
-      class = "episode-auth-link", href = "#",
+      class = "episodic-auth-link", href = "#",
       onclick = "Shiny.setInputValue('auth_signout', Math.random(), {priority: 'event'}); return false;",
       episodic_tr("auth.signout", lang = lang)
     )
@@ -62,28 +62,28 @@ episodic_ui_login_modal <- function(error = FALSE, lang = "nl") {
     title = episodic_tr("auth.signin", lang = lang),
     easyClose = TRUE,
     footer = shiny::tags$div(
-      class = "episode-form-actions",
-      shiny::tags$button(class = "episode-btn", `data-dismiss` = "modal",
+      class = "episodic-form-actions",
+      shiny::tags$button(class = "episodic-btn", `data-dismiss` = "modal",
                           onclick = "Shiny.setInputValue('auth_cancel_login', Math.random(), {priority:'event'})",
                           episodic_tr("misc.dash", lang = lang)),
       shiny::tags$button(
-        class = "episode-btn episode-btn-primary",
+        class = "episodic-btn episodic-btn-primary",
         onclick = "Shiny.setInputValue('auth_login_submit', Math.random(), {priority: 'event'})",
         episodic_tr("auth.submit", lang = lang)
       )
     ),
     shiny::tags$div(
-      class = "episode-form-group",
-      shiny::tags$label(class = "episode-form-label", episodic_tr("auth.username", lang = lang)),
+      class = "episodic-form-group",
+      shiny::tags$label(class = "episodic-form-label", episodic_tr("auth.username", lang = lang)),
       shiny::tags$input(type = "text", id = "auth_username", autocomplete = "username")
     ),
     shiny::tags$div(
-      class = "episode-form-group",
-      shiny::tags$label(class = "episode-form-label", episodic_tr("auth.password", lang = lang)),
+      class = "episodic-form-group",
+      shiny::tags$label(class = "episodic-form-label", episodic_tr("auth.password", lang = lang)),
       shiny::tags$input(type = "password", id = "auth_password", autocomplete = "current-password",
                          onkeydown = "if(event.key==='Enter'){Shiny.setInputValue('auth_login_submit', Math.random(), {priority:'event'});}")
     ),
-    if (isTRUE(error)) shiny::tags$div(class = "episode-form-error", episodic_tr("auth.error", lang = lang)),
+    if (isTRUE(error)) shiny::tags$div(class = "episodic-form-error", episodic_tr("auth.error", lang = lang)),
     shiny::tags$script(shiny::HTML(
       "$('#auth_username').on('input', function(){ Shiny.setInputValue('auth_username_val', this.value); });
        $('#auth_password').on('input', function(){ Shiny.setInputValue('auth_password_val', this.value); });
@@ -104,25 +104,25 @@ episodic_ui_must_change_modal <- function(error = NULL, lang = "nl") {
     title = episodic_tr("auth.must_change_title", lang = lang),
     easyClose = FALSE,
     footer = shiny::tags$div(
-      class = "episode-form-actions",
+      class = "episodic-form-actions",
       shiny::tags$button(
-        class = "episode-btn episode-btn-primary",
+        class = "episodic-btn episodic-btn-primary",
         onclick = "Shiny.setInputValue('auth_change_password_submit', Math.random(), {priority: 'event'})",
         episodic_tr("auth.change_password", lang = lang)
       )
     ),
     shiny::tags$p(episodic_tr("auth.must_change_note", lang = lang)),
     shiny::tags$div(
-      class = "episode-form-group",
-      shiny::tags$label(class = "episode-form-label", episodic_tr("auth.new_password", lang = lang)),
+      class = "episodic-form-group",
+      shiny::tags$label(class = "episodic-form-label", episodic_tr("auth.new_password", lang = lang)),
       shiny::tags$input(type = "password", id = "auth_new_password", autocomplete = "new-password")
     ),
     shiny::tags$div(
-      class = "episode-form-group",
-      shiny::tags$label(class = "episode-form-label", episodic_tr("auth.confirm_password", lang = lang)),
+      class = "episodic-form-group",
+      shiny::tags$label(class = "episodic-form-label", episodic_tr("auth.confirm_password", lang = lang)),
       shiny::tags$input(type = "password", id = "auth_confirm_password", autocomplete = "new-password")
     ),
-    if (!is.null(error)) shiny::tags$div(class = "episode-form-error", error),
+    if (!is.null(error)) shiny::tags$div(class = "episodic-form-error", error),
     shiny::tags$script(shiny::HTML(
       "$('#auth_new_password').on('input', function(){ Shiny.setInputValue('auth_new_password_val', this.value); });
        $('#auth_confirm_password').on('input', function(){ Shiny.setInputValue('auth_confirm_password_val', this.value); });"

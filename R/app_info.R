@@ -32,9 +32,9 @@
 #' @noRd
 episodic_ui_info_screen <- function(lang = "nl") {
   shiny::tags$div(
-    class = "episode-streams-screen",
+    class = "episodic-streams-screen",
     shiny::tags$h1(style = "font-size:22px;font-weight:600;margin-bottom:4px;", episodic_tr("info.title", lang = lang)),
-    shiny::tags$p(style = "font-size:12.5px;color:var(--episode-muted);margin-bottom:16px;", episodic_tr("info.intro", lang = lang)),
+    shiny::tags$p(style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:16px;", episodic_tr("info.intro", lang = lang)),
     episodic_ui_panel(
       episodic_tr("info.algorithms.title", lang = lang),
       note = shiny::HTML(episodic_tr("info.algorithms.note", lang = lang)),
@@ -46,7 +46,7 @@ episodic_ui_info_screen <- function(lang = "nl") {
     ),
     episodic_ui_panel(
       episodic_tr("info.access.title", lang = lang),
-      shiny::tags$p(class = "episode-panel-note", episodic_tr("info.access.body", lang = lang))
+      shiny::tags$p(class = "episodic-panel-note", episodic_tr("info.access.body", lang = lang))
     )
   )
 }
@@ -63,7 +63,7 @@ episodic_ui_info_algorithms_table <- function(lang = "nl") {
          key = "info.algorithms.rare_trigger")
   )
   shiny::tags$table(
-    class = "episode-table",
+    class = "episodic-table",
     shiny::tags$thead(shiny::tags$tr(
       shiny::tags$th(episodic_tr("info.algorithms.col.name", lang = lang)),
       shiny::tags$th(episodic_tr("info.algorithms.col.type", lang = lang)),
@@ -86,7 +86,7 @@ episodic_ui_info_algorithms_table <- function(lang = "nl") {
 episodic_ui_info_states_table <- function(lang = "nl") {
   states <- c("new", "assessing", "monitoring", "closable", "reassess", "closed")
   shiny::tags$table(
-    class = "episode-table",
+    class = "episodic-table",
     shiny::tags$thead(shiny::tags$tr(
       shiny::tags$th(episodic_tr("info.states.col.state", lang = lang)),
       shiny::tags$th(episodic_tr("info.states.col.meaning", lang = lang))

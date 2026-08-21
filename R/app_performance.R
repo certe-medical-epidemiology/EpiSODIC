@@ -34,13 +34,13 @@ episodic_ui_performance_screen <- function(performance, lang = "nl") {
   }
 
   shiny::tags$div(
-    class = "episode-streams-screen",
+    class = "episodic-streams-screen",
     shiny::tags$h1(style = "font-size:22px;font-weight:600;margin-bottom:4px;", episodic_tr("performance.title", lang = lang)),
-    shiny::tags$p(style = "font-size:12.5px;color:var(--episode-muted);margin-bottom:16px;", episodic_tr("performance.note", lang = lang)),
+    shiny::tags$p(style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:16px;", episodic_tr("performance.note", lang = lang)),
 
     shiny::tags$h2(style = "font-size:15px;font-weight:600;margin:20px 0 6px;", episodic_tr("performance.timeliness_title", lang = lang)),
     shiny::tags$table(
-      class = "episode-table",
+      class = "episodic-table",
       shiny::tags$tbody(
         timeliness_row(episodic_tr("performance.to_detection", lang = lang), t$to_detection),
         timeliness_row(episodic_tr("performance.to_first_assessment", lang = lang), t$to_first_assessment),
@@ -50,10 +50,10 @@ episodic_ui_performance_screen <- function(performance, lang = "nl") {
 
     shiny::tags$h2(style = "font-size:15px;font-weight:600;margin:20px 0 6px;", episodic_tr("performance.distribution_title", lang = lang)),
     if (nrow(dist) == 0) {
-      shiny::tags$p(class = "episode-panel-empty", episodic_tr("performance.empty", lang = lang))
+      shiny::tags$p(class = "episodic-panel-empty", episodic_tr("performance.empty", lang = lang))
     } else {
       shiny::tags$table(
-        class = "episode-table",
+        class = "episodic-table",
         shiny::tags$thead(shiny::tags$tr(
           shiny::tags$th(episodic_tr("performance.col.verdict", lang = lang)),
           shiny::tags$th(episodic_tr("performance.col.n", lang = lang))
@@ -66,10 +66,10 @@ episodic_ui_performance_screen <- function(performance, lang = "nl") {
 
     shiny::tags$h2(style = "font-size:15px;font-weight:600;margin:20px 0 6px;", episodic_tr("performance.ppv_title", lang = lang)),
     if (nrow(by_dp) == 0) {
-      shiny::tags$p(class = "episode-panel-empty", episodic_tr("performance.empty", lang = lang))
+      shiny::tags$p(class = "episodic-panel-empty", episodic_tr("performance.empty", lang = lang))
     } else {
       shiny::tags$table(
-        class = "episode-table",
+        class = "episodic-table",
         shiny::tags$thead(shiny::tags$tr(
           shiny::tags$th(episodic_tr("performance.col.detector", lang = lang)),
           shiny::tags$th(episodic_tr("performance.col.pathogen", lang = lang)),

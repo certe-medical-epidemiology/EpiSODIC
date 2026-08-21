@@ -39,7 +39,7 @@ episodic_ui_dossier <- function(con, cluster_id, lang = "nl", current_user = NUL
   pal <- episodic_palette()
 
   shiny::tags$div(
-    class = "episode-dossier",
+    class = "episodic-dossier",
     episodic_ui_dossier_header(obj, state, lang = lang),
     episodic_ui_stat_grid(obj, lang = lang),
     episodic_ui_trajectory(obj, timeline, lang = lang),
@@ -77,8 +77,8 @@ episodic_ui_linelist_locked_panel <- function(lang = "nl") {
   episodic_ui_panel(
     episodic_tr("linelist.locked_title", lang = lang),
     shiny::tags$div(
-      class = "episode-locked-panel",
-      shiny::tags$span(class = "episode-lock-icon", "\U0001F512"),
+      class = "episodic-locked-panel",
+      shiny::tags$span(class = "episodic-lock-icon", "\U0001F512"),
       shiny::tags$p(episodic_tr("linelist.locked_message", lang = lang))
     )
   )
@@ -91,20 +91,20 @@ episodic_ui_dossier_header <- function(obj, state, lang = "nl") {
   shiny::tagList(
     shiny::tags$div(
       style = "display:flex;align-items:center;gap:10px;flex-wrap:wrap;",
-      shiny::tags$h1(class = "episode-dossier-title", shiny::HTML(episodic_ui_italicise_taxon(obj$pathogen))),
+      shiny::tags$h1(class = "episodic-dossier-title", shiny::HTML(episodic_ui_italicise_taxon(obj$pathogen))),
       episodic_ui_chip(episodic_tr(paste0("level.", obj$level), lang = lang), pal$primary),
       episodic_ui_chip(episodic_tr(paste0("state.", state), lang = lang), episodic_ui_state_colour(state)),
       if (isTRUE(obj$changed_since_assessment)) episodic_ui_chip(episodic_tr("dossier.changed_badge", lang = lang), pal$tertiary_dark)
     ),
     shiny::tags$div(
-      class = "episode-dossier-meta",
+      class = "episodic-dossier-meta",
       style = "display:flex;gap:8px;flex-wrap:wrap;",
       shiny::tags$span(obj$place),
-      shiny::tags$span(style = "color:var(--episode-faint);", "\u00b7"),
+      shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
       shiny::tags$span(episodic_tr("dossier.meta.cluster_id", id = obj$id, lang = lang)),
-      shiny::tags$span(style = "color:var(--episode-faint);", "\u00b7"),
+      shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
       shiny::tags$span(episodic_tr("dossier.meta.first_last", first = obj$first_day, last = obj$last_day, lang = lang)),
-      shiny::tags$span(style = "color:var(--episode-faint);", "\u00b7"),
+      shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
       shiny::tags$span(shiny::HTML(episodic_tr("dossier.meta.detected_by",
                                                detectors = episodic_ui_code_join(obj$detectors, sep = " en "), lang = lang)))
     )
@@ -145,7 +145,7 @@ episodic_ui_stat_grid <- function(obj, lang = "nl") {
   stats <- c(stats, list(episodic_ui_stat(episodic_tr("dossier.stat.priority", lang = lang), round(obj$priority_score, 0),
                                           episodic_tr("dossier.stat.priority_sub", lang = lang))))
 
-  shiny::tags$div(class = "episode-statgrid", stats)
+  shiny::tags$div(class = "episodic-statgrid", stats)
 }
 
 #' The status trajectory band: one segment per classification held, not
@@ -181,16 +181,16 @@ episodic_ui_trajectory <- function(obj, timeline, lang = "nl") {
   colours <- c(episodic_palette()$muted, vapply(verdict_events$verdict, episodic_ui_verdict_colour, character(1)))
 
   shiny::tags$section(
-    class = "episode-trajectory",
-    shiny::tags$div(class = "episode-trajectory-title", episodic_tr("statusverloop.title", lang = lang)),
+    class = "episodic-trajectory",
+    shiny::tags$div(class = "episodic-trajectory-title", episodic_tr("statusverloop.title", lang = lang)),
     shiny::tags$div(
-      class = "episode-trajectory-track",
+      class = "episodic-trajectory-track",
       lapply(seq_along(starts), function(i) {
         shiny::tags$div(
           style = "flex:1;",
-          shiny::tags$div(class = "episode-trajectory-seg-bar", style = sprintf("background:%s;", colours[i])),
-          shiny::tags$div(class = "episode-trajectory-seg-label", labels[i]),
-          shiny::tags$div(class = "episode-trajectory-seg-time", episodic_ui_format_datetime(starts[i], fmt = "%d-%m-%Y"))
+          shiny::tags$div(class = "episodic-trajectory-seg-bar", style = sprintf("background:%s;", colours[i])),
+          shiny::tags$div(class = "episodic-trajectory-seg-label", labels[i]),
+          shiny::tags$div(class = "episodic-trajectory-seg-time", episodic_ui_format_datetime(starts[i], fmt = "%d-%m-%Y"))
         )
       })
     )
@@ -208,14 +208,14 @@ episodic_ui_interpretation_panel <- function(obj, lang = "nl") {
   episodic_ui_panel(
     episodic_tr("panel.interpretation.title", lang = lang), aside = episodic_tr("panel.interpretation.aside", lang = lang),
     shiny::tags$div(
-      class = "episode-interpretation",
+      class = "episodic-interpretation",
       if (length(paragraphs) == 0) {
-        shiny::tags$p(class = "episode-panel-empty", episodic_tr("panel.interpretation.empty", lang = lang))
+        shiny::tags$p(class = "episodic-panel-empty", episodic_tr("panel.interpretation.empty", lang = lang))
       } else {
         lapply(paragraphs, shiny::tags$p)
       },
       if (length(recommendation) > 0) {
-        shiny::tags$div(class = "episode-advies", recommendation[1])
+        shiny::tags$div(class = "episodic-advies", recommendation[1])
       }
     )
   )
@@ -277,7 +277,7 @@ episodic_ui_similar_clusters_panel <- function(con, cluster_id, lang = "nl") {
   episodic_ui_panel(
     episodic_tr("panel.similar.title", lang = lang),
     shiny::tags$table(
-      class = "episode-table",
+      class = "episodic-table",
       shiny::tags$thead(shiny::tags$tr(
         shiny::tags$th(episodic_tr("panel.similar.col.place", lang = lang)),
         shiny::tags$th(episodic_tr("panel.similar.col.cases", lang = lang)),
@@ -380,7 +380,7 @@ episodic_ui_linelist_panel <- function(con, cluster_id, obj, lang = "nl") {
     episodic_tr("panel.linelist.title", lang = lang),
     aside = episodic_tr("panel.linelist.aside", shown = nrow(ll), total = obj$n_cases, lang = lang),
     shiny::tags$table(
-      class = "episode-table",
+      class = "episodic-table",
       shiny::tags$thead(shiny::tags$tr(lapply(labels, shiny::tags$th))),
       shiny::tags$tbody(
         lapply(seq_len(nrow(ll)), function(i) {
@@ -407,7 +407,7 @@ episodic_ui_report_panel <- function(con, cluster_id, current_user, lang = "nl")
   episodic_ui_panel(
     episodic_tr("panel.report.title", lang = lang),
     if (nrow(reports) == 0) {
-      shiny::tags$p(class = "episode-panel-empty", episodic_tr("panel.report.empty", lang = lang))
+      shiny::tags$p(class = "episodic-panel-empty", episodic_tr("panel.report.empty", lang = lang))
     } else {
       shiny::tags$ul(
         style = "font-size:12.5px;padding-left:18px;",
@@ -424,7 +424,7 @@ episodic_ui_report_panel <- function(con, cluster_id, current_user, lang = "nl")
         shiny::uiOutput("report_render_error"),
         shiny::tags$button(
           id = "report-render-button",
-          class = "episode-btn",
+          class = "episodic-btn",
           # Disabling the button and showing the "generating" text happens
           # here, client-side, at click time - the render itself is a
           # long, synchronous server call that blocks the whole session,
@@ -439,7 +439,7 @@ episodic_ui_report_panel <- function(con, cluster_id, current_user, lang = "nl")
           episodic_tr("panel.report.render_button", lang = lang)
         ),
         shiny::tags$p(
-          id = "report-render-pending", style = "display:none;font-size:12.5px;color:var(--episode-muted);margin-top:6px;",
+          id = "report-render-pending", style = "display:none;font-size:12.5px;color:var(--episodic-muted);margin-top:6px;",
           episodic_tr("panel.report.pending", lang = lang)
         )
       )
@@ -468,7 +468,7 @@ episodic_ui_settings_panel <- function(con, cluster_id, lang = "nl") {
   )
   episodic_ui_panel(
     episodic_tr("panel.settings.title", lang = lang),
-    shiny::tags$dl(class = "episode-settings",
+    shiny::tags$dl(class = "episodic-settings",
                     lapply(rows, function(r) shiny::tags$div(shiny::tags$dt(r[[1]]), shiny::tags$dd(r[[2]]))))
   )
 }
@@ -490,12 +490,12 @@ episodic_ui_assessment_rail <- function(con, cluster_id, lang = "nl", current_us
   timeline <- episodic_app_assessment_timeline(con, cluster_id, lang = lang)
 
   shiny::tags$div(
-    class = "episode-assessment-rail",
+    class = "episodic-assessment-rail",
     shiny::tags$div(
-      class = "episode-verloop",
-      shiny::tags$div(class = "episode-verloop-title", episodic_tr("verloop.title", lang = lang)),
+      class = "episodic-verloop",
+      shiny::tags$div(class = "episodic-verloop-title", episodic_tr("verloop.title", lang = lang)),
       if (nrow(timeline) == 0) {
-        shiny::tags$p(class = "episode-verloop-empty",
+        shiny::tags$p(class = "episodic-verloop-empty",
                       shiny::HTML(episodic_tr("verloop.not_assessed", first = obj$first_day,
                                               detectors = episodic_ui_code_join(obj$detectors, sep = " en "), lang = lang)))
       } else {
@@ -511,18 +511,18 @@ episodic_ui_assessment_rail <- function(con, cluster_id, lang = "nl", current_us
 #' @noRd
 episodic_ui_timeline_entry <- function(row, lang = "nl") {
   shiny::tags$div(
-    class = "episode-timeline-entry",
-    shiny::tags$div(class = "episode-timeline-meta",
+    class = "episodic-timeline-entry",
+    shiny::tags$div(class = "episodic-timeline-meta",
                      sprintf("%s \u00b7 %s", episodic_ui_format_datetime(row$at), row$actor)),
     if (row$kind == "closure") {
       shiny::tags$div(episodic_tr("activity.action_closed", lang = lang))
     } else {
       shiny::tagList(
         if (!is.na(row$verdict_label)) {
-          shiny::tags$div(class = "episode-timeline-verdict", row$verdict_label)
+          shiny::tags$div(class = "episodic-timeline-verdict", row$verdict_label)
         },
         if (!is.na(row$rationale) && nzchar(row$rationale)) {
-          shiny::tags$div(class = "episode-timeline-rationale", row$rationale)
+          shiny::tags$div(class = "episodic-timeline-rationale", row$rationale)
         }
       )
     }
@@ -553,22 +553,22 @@ episodic_ui_assessment_form <- function(cluster_id, obj, lang = "nl") {
   ))
 
   shiny::tags$div(
-    class = "episode-panel-body", style = "border-top:1px solid var(--episode-rule);padding:16px;",
-    shiny::tags$div(class = "episode-form-group",
-                     shiny::tags$label(class = "episode-form-label", episodic_tr("assessment.verdict_label", lang = lang)),
+    class = "episodic-panel-body", style = "border-top:1px solid var(--episodic-rule);padding:16px;",
+    shiny::tags$div(class = "episodic-form-group",
+                     shiny::tags$label(class = "episodic-form-label", episodic_tr("assessment.verdict_label", lang = lang)),
                      episodic_ui_picker("assess_verdict", verdict_options)),
-    shiny::tags$div(class = "episode-form-group",
-                     shiny::tags$label(class = "episode-form-label", episodic_tr("assessment.rationale_label", lang = lang)),
+    shiny::tags$div(class = "episodic-form-group",
+                     shiny::tags$label(class = "episodic-form-label", episodic_tr("assessment.rationale_label", lang = lang)),
                      shiny::tags$textarea(id = "assess_rationale", rows = 3,
                                            placeholder = episodic_tr("assessment.rationale_placeholder", lang = lang))),
-    shiny::tags$div(class = "episode-form-group",
-                     shiny::tags$label(class = "episode-form-label", episodic_tr("assessment.snooze_label", lang = lang)),
+    shiny::tags$div(class = "episodic-form-group",
+                     shiny::tags$label(class = "episodic-form-label", episodic_tr("assessment.snooze_label", lang = lang)),
                      shiny::tags$input(type = "date", id = "assess_snooze")),
     shiny::tags$div(id = "assess_error"),
     shiny::tags$div(
-      class = "episode-form-actions",
+      class = "episodic-form-actions",
       shiny::tags$button(
-        class = "episode-btn episode-btn-primary",
+        class = "episodic-btn episodic-btn-primary",
         onclick = sprintf(
           "Shiny.setInputValue('assess_submit', {cluster_id: %d, verdict: document.getElementById('assess_verdict').value, rationale: document.getElementById('assess_rationale').value, snooze: document.getElementById('assess_snooze').value}, {priority: 'event'})",
           cluster_id
@@ -576,7 +576,7 @@ episodic_ui_assessment_form <- function(cluster_id, obj, lang = "nl") {
         episodic_tr("assessment.submit", lang = lang)
       ),
       shiny::tags$button(
-        class = "episode-btn", `data-confirm` = episodic_tr("assessment.close_confirm", lang = lang),
+        class = "episodic-btn", `data-confirm` = episodic_tr("assessment.close_confirm", lang = lang),
         onclick = sprintf(
           "if(confirm(this.dataset.confirm)){ Shiny.setInputValue('assess_close', %d, {priority: 'event'}) }",
           cluster_id
@@ -585,21 +585,21 @@ episodic_ui_assessment_form <- function(cluster_id, obj, lang = "nl") {
       )
     ),
     shiny::tags$hr(),
-    shiny::tags$p(class = "episode-form-hint", episodic_tr("assessment.mute_intro", lang = lang)),
+    shiny::tags$p(class = "episodic-form-hint", episodic_tr("assessment.mute_intro", lang = lang)),
     shiny::tags$div(
-      class = "episode-form-group",
-      shiny::tags$label(class = "episode-form-label", episodic_tr("assessment.mute_title", lang = lang)),
+      class = "episodic-form-group",
+      shiny::tags$label(class = "episodic-form-label", episodic_tr("assessment.mute_title", lang = lang)),
       episodic_ui_picker("mute_reason", mute_options, selected = mute_reasons[1])
     ),
     shiny::tags$div(style = "display:flex;gap:8px;",
-                     shiny::tags$div(class = "episode-form-group", style = "flex:1;",
-                                      shiny::tags$label(class = "episode-form-label", episodic_tr("assessment.mute_from_label", lang = lang)),
+                     shiny::tags$div(class = "episodic-form-group", style = "flex:1;",
+                                      shiny::tags$label(class = "episodic-form-label", episodic_tr("assessment.mute_from_label", lang = lang)),
                                       shiny::tags$input(type = "date", id = "mute_from", value = as.character(Sys.Date()))),
-                     shiny::tags$div(class = "episode-form-group", style = "flex:1;",
-                                      shiny::tags$label(class = "episode-form-label", episodic_tr("assessment.mute_until_label", lang = lang)),
+                     shiny::tags$div(class = "episodic-form-group", style = "flex:1;",
+                                      shiny::tags$label(class = "episodic-form-label", episodic_tr("assessment.mute_until_label", lang = lang)),
                                       shiny::tags$input(type = "date", id = "mute_until"))),
     shiny::tags$button(
-      class = "episode-btn",
+      class = "episodic-btn",
       onclick = sprintf(
         "Shiny.setInputValue('assess_mute_submit', {stream_id: %d, reason: document.getElementById('mute_reason').value, muted_from: document.getElementById('mute_from').value, muted_until: document.getElementById('mute_until').value}, {priority: 'event'})",
         obj$stream_id
@@ -618,28 +618,28 @@ episodic_ui_streams_screen <- function(screen, lang = "nl") {
     shiny::tags$div(
       style = "display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:12.5px;",
       shiny::tags$button(
-        class = "episode-btn", disabled = if (screen$page <= 1) NA else NULL,
+        class = "episodic-btn", disabled = if (screen$page <= 1) NA else NULL,
         onclick = sprintf("Shiny.setInputValue('streams_page_select', %d, {priority: 'event'})", screen$page - 1L),
         episodic_tr("streams.page_prev", lang = lang)
       ),
       shiny::tags$span(episodic_tr("streams.page_of", page = screen$page, n_pages = screen$n_pages, lang = lang)),
       shiny::tags$button(
-        class = "episode-btn", disabled = if (screen$page >= screen$n_pages) NA else NULL,
+        class = "episodic-btn", disabled = if (screen$page >= screen$n_pages) NA else NULL,
         onclick = sprintf("Shiny.setInputValue('streams_page_select', %d, {priority: 'event'})", screen$page + 1L),
         episodic_tr("streams.page_next", lang = lang)
       )
     )
   }
   shiny::tags$div(
-    class = "episode-streams-screen",
+    class = "episodic-streams-screen",
     shiny::tags$h1(style = "font-size:22px;font-weight:600;margin-bottom:4px;", episodic_tr("streams.title", lang = lang)),
-    shiny::tags$p(style = "font-size:12.5px;color:var(--episode-muted);margin-bottom:16px;", episodic_tr("streams.note", lang = lang)),
+    shiny::tags$p(style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:16px;", episodic_tr("streams.note", lang = lang)),
     pager,
     if (nrow(streams) == 0) {
-      shiny::tags$p(class = "episode-panel-empty", episodic_tr("rail.empty", lang = lang))
+      shiny::tags$p(class = "episodic-panel-empty", episodic_tr("rail.empty", lang = lang))
     } else {
       shiny::tags$table(
-        class = "episode-table",
+        class = "episodic-table",
         shiny::tags$thead(shiny::tags$tr(
           shiny::tags$th(episodic_tr("streams.col.stream", lang = lang)),
           shiny::tags$th(episodic_tr("streams.col.level", lang = lang)),

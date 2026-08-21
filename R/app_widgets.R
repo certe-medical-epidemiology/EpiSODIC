@@ -20,7 +20,7 @@
 # Small reusable UI building blocks: thin shiny::tags wrappers for the
 # interface's small recurring primitives (a chip, a panel, a stat tile, a
 # bar, a pyramid), server-side rendered rather than a client-side
-# component library. Styling lives in inst/app/www/episode.css; these
+# component library. Styling lives in inst/app/www/episodic.css; these
 # functions only assign class names and content.
 
 #' Italicise pathogen names `AMR` recognises as a taxonomic binomial
@@ -104,13 +104,13 @@ episodic_ui_code_join <- function(detectors, sep = ", ") {
 episodic_ui_picker <- function(input_id, options, selected = NULL) {
   selected <- selected %||% ""
   shiny::tags$div(
-    class = "episode-picker",
+    class = "episodic-picker",
     shiny::tags$input(type = "hidden", id = input_id, value = selected),
     lapply(options, function(opt) {
       active <- identical(opt$value, selected) && nzchar(selected)
       shiny::tags$button(
         type = "button",
-        class = if (active) "episode-picker-btn active" else "episode-picker-btn",
+        class = if (active) "episodic-picker-btn active" else "episodic-picker-btn",
         style = if (active) sprintf("background:%s;border-color:%s;", opt$colour, opt$colour) else "",
         `data-value` = opt$value, `data-colour` = opt$colour, `data-input` = input_id,
         onclick = sprintf(
@@ -118,7 +118,7 @@ episodic_ui_picker <- function(input_id, options, selected = NULL) {
           input_id, input_id
         ),
         opt$label,
-        if (!is.null(opt$hint)) shiny::tags$div(class = "episode-picker-hint", opt$hint)
+        if (!is.null(opt$hint)) shiny::tags$div(class = "episodic-picker-hint", opt$hint)
       )
     })
   )
@@ -135,7 +135,7 @@ episodic_ui_chip <- function(text, colour, filled = FALSE) {
   } else {
     sprintf("color:%s;border:1px solid %s66;", colour, colour)
   }
-  class <- paste("episode-chip", if (filled) "episode-chip-filled" else "episode-chip-outline")
+  class <- paste("episodic-chip", if (filled) "episodic-chip-filled" else "episodic-chip-outline")
   shiny::tags$span(class = class, style = style, text)
 }
 
@@ -147,16 +147,16 @@ episodic_ui_chip <- function(text, colour, filled = FALSE) {
 #' @noRd
 episodic_ui_panel <- function(title, ..., aside = NULL, note = NULL) {
   shiny::tags$section(
-    class = "episode-panel",
+    class = "episodic-panel",
     shiny::tags$div(
-      class = "episode-panel-header",
-      shiny::tags$h2(class = "episode-panel-title", title),
-      if (!is.null(aside)) shiny::tags$span(class = "episode-panel-aside", aside)
+      class = "episodic-panel-header",
+      shiny::tags$h2(class = "episodic-panel-title", title),
+      if (!is.null(aside)) shiny::tags$span(class = "episodic-panel-aside", aside)
     ),
     shiny::tags$div(
-      class = "episode-panel-body",
+      class = "episodic-panel-body",
       ...,
-      if (!is.null(note)) shiny::tags$p(class = "episode-panel-note", note)
+      if (!is.null(note)) shiny::tags$p(class = "episodic-panel-note", note)
     )
   )
 }
@@ -165,7 +165,7 @@ episodic_ui_panel <- function(title, ..., aside = NULL, note = NULL) {
 #' @keywords internal
 #' @noRd
 episodic_ui_panel_empty <- function(title, message, aside = NULL) {
-  episodic_ui_panel(title, aside = aside, shiny::tags$p(class = "episode-panel-empty", message))
+  episodic_ui_panel(title, aside = aside, shiny::tags$p(class = "episodic-panel-empty", message))
 }
 
 #' @param label Stat label (uppercase caption).
@@ -176,9 +176,9 @@ episodic_ui_panel_empty <- function(title, message, aside = NULL) {
 #' @noRd
 episodic_ui_stat <- function(label, value, sub = NULL, colour = NULL) {
   shiny::tags$div(
-    shiny::tags$div(class = "episode-stat-label", label),
-    shiny::tags$div(class = "episode-stat-value", style = if (!is.null(colour)) sprintf("color:%s;", colour), value),
-    if (!is.null(sub)) shiny::tags$div(class = "episode-stat-sub", sub)
+    shiny::tags$div(class = "episodic-stat-label", label),
+    shiny::tags$div(class = "episodic-stat-value", style = if (!is.null(colour)) sprintf("color:%s;", colour), value),
+    if (!is.null(sub)) shiny::tags$div(class = "episodic-stat-sub", sub)
   )
 }
 
@@ -188,23 +188,23 @@ episodic_ui_stat <- function(label, value, sub = NULL, colour = NULL) {
 #' @keywords internal
 #' @noRd
 episodic_ui_bars <- function(rows, unit = NULL, colour = NULL) {
-  if (nrow(rows) == 0) return(shiny::tags$p(class = "episode-panel-empty", "..."))
+  if (nrow(rows) == 0) return(shiny::tags$p(class = "episodic-panel-empty", "..."))
   pal <- episodic_palette()
   colour <- colour %||% pal$primary
   max_n <- max(rows$n, 1)
   bars <- lapply(seq_len(nrow(rows)), function(i) {
     shiny::tags$div(
-      class = "episode-bar-row",
-      shiny::tags$div(class = "episode-bar-label", rows$label[i]),
+      class = "episodic-bar-row",
+      shiny::tags$div(class = "episodic-bar-label", rows$label[i]),
       shiny::tags$div(
-        class = "episode-bar-track",
-        shiny::tags$div(class = "episode-bar-fill",
+        class = "episodic-bar-track",
+        shiny::tags$div(class = "episodic-bar-fill",
                          style = sprintf("width:%s%%;background:%s;", 100 * rows$n[i] / max_n, colour))
       ),
-      shiny::tags$div(class = "episode-bar-value", rows$n[i])
+      shiny::tags$div(class = "episodic-bar-value", rows$n[i])
     )
   })
-  shiny::tagList(bars, if (!is.null(unit)) shiny::tags$div(style = "font-size:11px;color:var(--episode-faint);margin-top:6px;", unit))
+  shiny::tagList(bars, if (!is.null(unit)) shiny::tags$div(style = "font-size:11px;color:var(--episodic-faint);margin-top:6px;", unit))
 }
 
 #' @param demo A data frame with `band`, `m`, `v` (male/female counts), one
@@ -214,7 +214,7 @@ episodic_ui_bars <- function(rows, unit = NULL, colour = NULL) {
 #' @noRd
 episodic_ui_pyramid <- function(demo, lang = "nl") {
   if (nrow(demo) == 0 || sum(demo$m, demo$v) == 0) {
-    return(shiny::tags$p(class = "episode-panel-empty", "..."))
+    return(shiny::tags$p(class = "episodic-panel-empty", "..."))
   }
   max_n <- max(c(demo$m, demo$v), 1)
   # Rendered oldest-band-first (top) to youngest-band-last (bottom), the
@@ -223,20 +223,20 @@ episodic_ui_pyramid <- function(demo, lang = "nl") {
   demo <- demo[rev(seq_len(nrow(demo))), ]
   rows <- lapply(seq_len(nrow(demo)), function(i) {
     shiny::tags$div(
-      class = "episode-pyramid-row",
-      shiny::tags$div(class = "episode-pyramid-side-left",
-                       shiny::tags$div(class = "episode-pyramid-bar-m",
+      class = "episodic-pyramid-row",
+      shiny::tags$div(class = "episodic-pyramid-side-left",
+                       shiny::tags$div(class = "episodic-pyramid-bar-m",
                                         style = sprintf("width:%s%%;", 100 * demo$m[i] / max_n))),
-      shiny::tags$div(class = "episode-pyramid-band", demo$band[i]),
-      shiny::tags$div(class = "episode-pyramid-side-right",
-                       shiny::tags$div(class = "episode-pyramid-bar-f",
+      shiny::tags$div(class = "episodic-pyramid-band", demo$band[i]),
+      shiny::tags$div(class = "episodic-pyramid-side-right",
+                       shiny::tags$div(class = "episodic-pyramid-bar-f",
                                         style = sprintf("width:%s%%;", 100 * demo$v[i] / max_n)))
     )
   })
   shiny::tagList(
     rows,
     shiny::tags$div(
-      style = "display:flex;justify-content:space-between;font-size:11px;color:var(--episode-muted);margin-top:4px;",
+      style = "display:flex;justify-content:space-between;font-size:11px;color:var(--episodic-muted);margin-top:4px;",
       shiny::tags$span(episodic_tr("panel.demography.male", lang = lang)),
       shiny::tags$span(episodic_tr("panel.demography.female", lang = lang))
     )
@@ -248,7 +248,7 @@ episodic_ui_pyramid <- function(demo, lang = "nl") {
 #' @noRd
 episodic_ui_state_dot <- function(state) {
   colour <- episodic_ui_state_colour(state)
-  shiny::tags$span(class = "episode-state-dot", style = sprintf("background:%s;", colour))
+  shiny::tags$span(class = "episodic-state-dot", style = sprintf("background:%s;", colour))
 }
 
 #' @keywords internal

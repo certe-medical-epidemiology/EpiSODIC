@@ -83,7 +83,7 @@ it. This keeps the engine reusable by any laboratory, not only Certe's.
 
 ```r
 episodic_run_cron(
-  db_path = "/path/to/episode.sqlite",
+  db_path = "/path/to/episodic.sqlite",
   ingest_source_fn = function() my_extract_and_transform_function(),
   denominator_source_fn = NULL  # optional, see "Positivity metadata" below
 )
@@ -257,7 +257,7 @@ the four assessor accounts are provisioned by whoever administers the
 database, not created by assessors themselves or by the app.
 
 ```r
-Sys.setenv(EPISODIC_DB = "/path/to/episode.sqlite")  # or pass db_path explicitly below
+Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")  # or pass db_path explicitly below
 
 episodic_provision_user(
   username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",

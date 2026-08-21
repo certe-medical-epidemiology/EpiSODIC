@@ -32,6 +32,6 @@ overview against a database already populated by
 \dontrun{
 # opens a blocking, interactive Shiny session - see episodic_demo() for a
 # one-call, populated version of this same example
-episodic_run_app("/path/to/episode.sqlite")
+episodic_run_app("/path/to/episodic.sqlite")
 }
 }

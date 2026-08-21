@@ -24,8 +24,8 @@
 # real server available - RSQLite's own tests already cover the SQLite path.
 
 test_that("episodic_db_dialect() tells a SQLite path from a MariaDB DSN", {
-  expect_equal(episodic_db_dialect("/path/to/episode.sqlite"), "sqlite")
-  expect_equal(episodic_db_dialect("episode.sqlite"), "sqlite")
+  expect_equal(episodic_db_dialect("/path/to/episodic.sqlite"), "sqlite")
+  expect_equal(episodic_db_dialect("episodic.sqlite"), "sqlite")
   expect_equal(episodic_db_dialect("mysql://user:pw@localhost:3306/episodic"), "mariadb")
   expect_equal(episodic_db_dialect("mariadb://user:pw@localhost/episodic"), "mariadb")
 })

@@ -43,13 +43,13 @@ Two entry points, one database:
 ```r
 # The cron entry point - typically scheduled, e.g. nightly
 episodic_run_cron(
-  db_path = "/path/to/episode.sqlite",
+  db_path = "/path/to/episodic.sqlite",
   ingest_source_fn = my_extract_and_transform_function
 )
 
 # The interactive entry point - a Shiny app, read-only for anonymous
 # visitors, write access after signing in
-episodic_run_app(db_path = "/path/to/episode.sqlite")
+episodic_run_app(db_path = "/path/to/episodic.sqlite")
 ```
 
 `episodic_run_cron()` does the expensive work: ingestion, stream

@@ -45,7 +45,7 @@ episodic_app_server_report <- function(input, output, session, con, db_path, lan
     msg <- render_error()
     if (is.null(msg)) return(NULL)
     shiny::tagList(
-      shiny::tags$div(class = "episode-form-error", msg),
+      shiny::tags$div(class = "episodic-form-error", msg),
       # The render button is disabled and the "generating" text shown
       # client-side, at click time (episodic_ui_report_panel()) - a
       # synchronous server-side render blocks the whole session, so

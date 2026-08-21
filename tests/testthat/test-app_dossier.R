@@ -51,7 +51,7 @@ test_that("episodic_ui_assessment_rail() renders the classification and mute pic
 
   rendered <- as.character(episodic_ui_assessment_rail(env$con, env$cluster_id, lang = "nl", current_user = fake_user))
   expect_false(grepl("<select", rendered, fixed = TRUE))
-  expect_true(grepl("episode-picker-btn", rendered, fixed = TRUE))
+  expect_true(grepl("episodic-picker-btn", rendered, fixed = TRUE))
   expect_true(grepl(episodic_tr("verdict.possible_epidemic", lang = "nl"), rendered, fixed = TRUE))
   expect_true(grepl(episodic_tr("assessment.mute_reason.seasonal", lang = "nl"), rendered, fixed = TRUE))
   expect_true(grepl(episodic_tr("assessment.mute_intro", lang = "nl"), rendered, fixed = TRUE))

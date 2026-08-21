@@ -71,7 +71,7 @@
 #' @export
 episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
                           username = "demo", full_name = "Demo User",
-                          email = "demo@example.org", password = "episode-demo",
+                          email = "demo@example.org", password = "episodic-demo",
                           launch = TRUE, lang = "nl",
                           ingest_source_fn = episodic_ingest_source_synthetic,
                           denominator_source_fn = episodic_denominator_source_synthetic) {
