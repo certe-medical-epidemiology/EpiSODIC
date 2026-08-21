@@ -2,7 +2,7 @@
 % Please edit documentation in R/ingest_synthetic.R
 \name{episodic_ingest_source_synthetic}
 \alias{episodic_ingest_source_synthetic}
-\title{Synthetic ingestion source}
+\title{Generate synthetic outbreak data}
 \usage{
 episodic_ingest_source_synthetic(
   start_date = as.Date("2021-01-01"),
@@ -18,21 +18,19 @@ episodic_ingest_source_synthetic(
 \item{seed}{RNG seed, for reproducible demo data.}
 }
 \value{
-A data frame satisfying \code{episodic_ingest_validate_source()}.
+A data frame satisfying \code{\link[=episodic_ingest_validate_source]{episodic_ingest_validate_source()}}.
 }
 \description{
-The default (and only) implementation of the ingestion interface
-shipped with this package (\code{R/ingest_interface.R}). Generates several
-years of seasonal baseline case data across a synthetic set of institutions,
-pathogens, PC areas and care lines, then injects two outbreaks of known
-shape so the detectors have something to visibly fire on: one point
-source (\code{add_outbreak_point_source}, a ward-level cluster tightly bunched
-in time) and one propagated (\code{add_outbreak_propagated}, a community
-cluster with generation-interval-spaced case waves).
-}
-\details{
-No Diver column name is invented here; every field in the returned data
-frame is entirely synthetic and matches \code{episodic_ingest_columns}.
+Produces several years of realistic laboratory surveillance data for a
+fictional set of hospitals, long-term care institutions, and GP
+practices: seasonal baseline incidence for eight common pathogens, plus
+two deliberately injected outbreaks for the detectors to find - a
+point-source outbreak (a tight cluster of norovirus cases on one ward)
+and a propagated outbreak (community-spread pertussis with case waves
+spaced by the generation interval). This is what powers \code{\link[=episodic_demo]{episodic_demo()}}
+and the package's test suite; it is also a useful reference for what a
+real ingestion source function should return (see
+\link{episodic_ingest_columns}).
 }
 \examples{
 raw <- episodic_ingest_source_synthetic(

@@ -2,28 +2,30 @@
 % Please edit documentation in R/schema_migrate.R
 \name{episodic_db_create}
 \alias{episodic_db_create}
-\title{Create a fresh EpiSODIC database}
+\title{Set up a new EpiSODIC database}
 \usage{
 episodic_db_create(path, overwrite = FALSE)
 }
 \arguments{
-\item{path}{Path to a SQLite file, or a \verb{mysql://} DSN (see
+\item{path}{Path to a SQLite file to create, or a \verb{mysql://} DSN (see
 \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}) pointing at an empty MariaDB/MySQL
-database. For SQLite, must not already exist, or must be an
-empty/non-EpiSODIC file.}
+database.}
 
 \item{overwrite}{If \code{TRUE}, delete an existing SQLite file (or drop all
-tables in an existing MariaDB/MySQL database) first.}
+tables in an existing MariaDB/MySQL database) first. Use with care -
+this destroys any data already there.}
 }
 \value{
 (Invisibly) an open \link[DBI:DBIConnection-class]{DBI::DBIConnection} to the new
-database. The caller is responsible for disconnecting it.
+database. You are responsible for disconnecting it (with
+\code{\link[DBI:dbDisconnect]{DBI::dbDisconnect()}}) when done.
 }
 \description{
-Creates a new, empty database at \code{path} and applies the canonical
-schema shipped as \code{inst/sql/schema.sql}. Always builds from scratch;
-refuses to run against a database that already contains tables so
-that it cannot silently clobber existing data.
+Run this once, when setting up a new EpiSODIC instance: it creates a new
+database at \code{path} and builds all the required tables. Refuses to run
+against a database that already has tables in it, so it cannot
+accidentally overwrite existing surveillance data - use
+\code{\link[=episodic_db_connect]{episodic_db_connect()}} to open a database you have already set up.
 }
 \examples{
 db_path <- tempfile(fileext = ".sqlite")

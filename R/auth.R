@@ -17,28 +17,22 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Authentication
+#' How sign-in works
 #'
-#' A handful of accounts, hashed with `sodium::password_store()` and checked
-#' with `sodium::password_verify()`. No
-#' lockout, no backoff, and no TLS is implemented *by this package*: the
-#' login exists to attribute assessments, not to defend against attackers,
-#' and network-level access control (VPN, internal network, a reverse
-#' proxy terminating TLS) is the deploying operator's own responsibility,
-#' not something this package provides or assumes. Since a single R
-#' process serves every session,
-#' `Sys.info()[["user"]]` returns the host account rather than the
-#' assessor, so the login is the only available identity source.
+#' EpiSODIC's dashboard is used by a small board of epidemiologists who sign
+#' in with a username and password to record their assessments under their
+#' own name. There is no self-service registration: an administrator creates
+#' each account with [episodic_provision_user()], and the new user sets
+#' their own password on first sign-in.
 #'
-#' Password changes and login timestamps are the one bit of per-user
-#' *mutable* state in the schema, yet the app never issues an `UPDATE`.
-#' Resolved the same way `episodic_cluster_
-#' state` already resolves it for cluster state: `episodic_app_user_event`
-#' is an append-only log, and the "current" password hash / login time is
-#' derived from it at read time (see `episodic_auth_password_hash()`,
-#' `episodic_auth_last_login()`), falling back to `episodic_app_user`'s own
-#' initial values when no event has been recorded yet.
-#' @name auth
+#' Passwords are hashed (never stored in plain text) and login history is
+#' kept for audit purposes. This login exists to attribute who assessed
+#' what, not to defend the system against attackers: EpiSODIC does not
+#' implement TLS, account lockout, or rate limiting, so it should always be
+#' deployed behind your own organisation's network controls (VPN, internal
+#' network, or a reverse proxy that terminates TLS).
+#'
+#' @name episodic_auth
 NULL
 
 #' The password hash currently in effect for a user
@@ -138,37 +132,41 @@ episodic_auth_change_password <- function(con, user_id, new_password) {
   invisible(NULL)
 }
 
-#' Provision an assessor account
+#' Create an account for a new assessor or administrator
 #'
-#' There is deliberately no in-app account management screen - "four
-#' accounts" are provisioned outside the app,
-#' by whoever administers the database, not created by assessors
-#' themselves. This is that provisioning step: hashes `password` with
-#' `sodium::password_store()` and inserts the account, `must_change = 1`
-#' by default so the first real sign-in forces a password of the
-#' account holder's own choosing (see `episodic_auth_change_password()`).
+#' There is no self-service registration and no in-app account management
+#' screen: whoever administers the database creates accounts with this
+#' function, typically once per new board member. The password you supply
+#' is temporary - the new account is flagged to require a password change,
+#' so the account holder chooses their own password the first time they
+#' sign in.
 #'
-#' Takes `db_path` rather than an open connection - opened and closed here
-#' via [episodic_db_open()] - so provisioning an account is one call at the
-#' console, without first having to construct a `con` by hand.
+#' You only need to run this once per person. It opens the database, adds
+#' the account, and closes the connection again, so it is meant to be run
+#' interactively at the R console rather than from application code.
 #'
-#' @param db_path Path to an existing SQLite database, or a `mysql://`
-#'   DSN (see [episodic_db_dsn_mariadb()]). Defaults to the `EPISODIC_DB`
-#'   environment variable.
-#' @param username,full_name,email The new account's fields.
-#' @param password An initial plaintext password (hashed here, never
-#'   stored or logged as plaintext) - a temporary one the holder is
-#'   expected to change at first sign-in.
-#' @param role One of `"assessor"`, `"admin"`.
-#' @return Invisibly, the new `user_id`.
+#' @param db_path Path to the EpiSODIC database: an existing SQLite file, or
+#'   a MariaDB/MySQL DSN (see [episodic_db_dsn_mariadb()]). Defaults to the
+#'   `EPISODIC_DB` environment variable.
+#' @param username,full_name,email The new account's sign-in name, display
+#'   name, and email address.
+#' @param password A temporary plaintext password, never stored or logged
+#'   as-is: it is hashed before it reaches the database, and the account
+#'   holder is required to replace it on first sign-in.
+#' @param role Either `"assessor"` (records assessments) or `"admin"`
+#'   (assessor privileges plus dossier reconciliation and archiving).
+#' @return Invisibly, the new account's `user_id`.
 #' @examples
 #' db_path <- tempfile(fileext = ".sqlite")
 #' con <- episodic_db_create(db_path)
 #' DBI::dbDisconnect(con)
-#' episodic_provision_user(
+#'
+#' user_id <- episodic_provision_user(
 #'   db_path, username = "jdoe", full_name = "Jane Doe",
 #'   email = "jane@example.org", password = "temporary-password"
 #' )
+#' user_id
+#'
 #' file.remove(db_path)
 #' @export
 episodic_provision_user <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA),

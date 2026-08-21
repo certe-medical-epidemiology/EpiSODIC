@@ -35,7 +35,7 @@ test_that("episodic_demo(launch = FALSE) sets up a working demo database in one 
 
   expect_message(
     result <- episodic_demo(db_path = db_path, launch = FALSE,
-                            ingest_source_fn = small_ingest, denominator_source_fn = small_denominator),
+                            ingest_source = small_ingest, denominator_source = small_denominator),
     "demo account"
   )
   expect_equal(result, db_path)
@@ -57,7 +57,7 @@ test_that("episodic_demo() accepts custom credentials", {
 
   episodic_demo(db_path = db_path, username = "jdoe", full_name = "Jane Doe",
                email = "jdoe@example.org", password = "s3cret-enough", launch = FALSE,
-               ingest_source_fn = small_ingest, denominator_source_fn = small_denominator)
+               ingest_source = small_ingest, denominator_source = small_denominator)
 
   con <- episodic_db_connect(db_path)
   on.exit(DBI::dbDisconnect(con))

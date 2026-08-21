@@ -20,8 +20,8 @@
 # Authentication UI: the app opens read-only for anyone who reaches it,
 # login only to classify. A small header control and two modals (sign in;
 # forced first-login password change) are the entire authentication
-# surface - no separate screen, no account management UI (four accounts,
-# provisioned outside the app).
+# surface - no separate screen, no account management UI (accounts are
+# provisioned outside the app, see episodic_provision_user()).
 
 #' The header sign-in/sign-out control
 #'

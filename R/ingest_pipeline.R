@@ -34,7 +34,7 @@
 #' @return Invisibly, a list with `n_raw`, `n_deduplicated` and `n_inserted`.
 #'
 #' Not exported: an operator's own transform step supplies a raw source to
-#' [episodic_run_cron()] via `ingest_source_fn`, which calls this internally
+#' [episodic_run_cron()] via `ingest_source`, which calls this internally
 #' with the pieces (`pathogen_config`, `run_id`) only a run in progress has
 #' - never something a caller assembles by hand.
 #' @keywords internal

@@ -2,7 +2,7 @@
 % Please edit documentation in R/auth.R
 \name{episodic_provision_user}
 \alias{episodic_provision_user}
-\title{Provision an assessor account}
+\title{Create an account for a new assessor or administrator}
 \usage{
 episodic_provision_user(
   db_path = Sys.getenv("EPISODIC_DB", unset = NA),
@@ -14,42 +14,46 @@ episodic_provision_user(
 )
 }
 \arguments{
-\item{db_path}{Path to an existing SQLite database, or a \verb{mysql://}
-DSN (see \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}). Defaults to the \code{EPISODIC_DB}
-environment variable.}
+\item{db_path}{Path to the EpiSODIC database: an existing SQLite file, or
+a MariaDB/MySQL DSN (see \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}). Defaults to the
+\code{EPISODIC_DB} environment variable.}
 
-\item{username, full_name, email}{The new account's fields.}
+\item{username, full_name, email}{The new account's sign-in name, display
+name, and email address.}
 
-\item{password}{An initial plaintext password (hashed here, never
-stored or logged as plaintext) - a temporary one the holder is
-expected to change at first sign-in.}
+\item{password}{A temporary plaintext password, never stored or logged
+as-is: it is hashed before it reaches the database, and the account
+holder is required to replace it on first sign-in.}
 
-\item{role}{One of \code{"assessor"}, \code{"admin"}.}
+\item{role}{Either \code{"assessor"} (records assessments) or \code{"admin"}
+(assessor privileges plus dossier reconciliation and archiving).}
 }
 \value{
-Invisibly, the new \code{user_id}.
+Invisibly, the new account's \code{user_id}.
 }
 \description{
-There is deliberately no in-app account management screen - "four
-accounts" are provisioned outside the app,
-by whoever administers the database, not created by assessors
-themselves. This is that provisioning step: hashes \code{password} with
-\code{sodium::password_store()} and inserts the account, \code{must_change = 1}
-by default so the first real sign-in forces a password of the
-account holder's own choosing (see \code{episodic_auth_change_password()}).
+There is no self-service registration and no in-app account management
+screen: whoever administers the database creates accounts with this
+function, typically once per new board member. The password you supply
+is temporary - the new account is flagged to require a password change,
+so the account holder chooses their own password the first time they
+sign in.
 }
 \details{
-Takes \code{db_path} rather than an open connection - opened and closed here
-via \code{\link[=episodic_db_open]{episodic_db_open()}} - so provisioning an account is one call at the
-console, without first having to construct a \code{con} by hand.
+You only need to run this once per person. It opens the database, adds
+the account, and closes the connection again, so it is meant to be run
+interactively at the R console rather than from application code.
 }
 \examples{
 db_path <- tempfile(fileext = ".sqlite")
 con <- episodic_db_create(db_path)
 DBI::dbDisconnect(con)
-episodic_provision_user(
+
+user_id <- episodic_provision_user(
   db_path, username = "jdoe", full_name = "Jane Doe",
   email = "jane@example.org", password = "temporary-password"
 )
+user_id
+
 file.remove(db_path)
 }

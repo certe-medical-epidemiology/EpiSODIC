@@ -17,61 +17,34 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Geographic reference data for the choropleth panel
+#' Show clusters on a map
 #'
-#' Geography here is operator-suppliable rather than tied to any single
-#' mapping package or country: `pathogen`, institution types, and every
-#' other domain concept in this codebase are already operator-defined,
-#' unconstrained values, and geography follows the same principle. This
-#' is the same shape of solution the
-#' package already uses elsewhere for optional, instance-specific data:
-#' a shipped default (here, geometry for the Netherlands' four-digit
-#' postcodes, `data-raw/geo_postcodes4_nl.R` documents its provenance)
-#' that any operator can override by pointing `EPISODIC_GEO_DATA` at
-#' their own file - one environment variable, the same pattern
-#' `EPISODIC_CONFIG` and `EPISODIC_PALETTE_CONFIG` already establish.
+#' The dashboard can plot cluster case counts on a choropleth map by postcode
+#' (or any other geographic unit you use), provided the optional `sf`
+#' package is installed and geographic reference data is available. Without
+#' either, the dashboard still works fine - it just falls back to a bar
+#' chart of case counts by area instead of a map.
 #'
-#' The contract is minimal and country-agnostic: an `sf` object with a
-#' `pc` column (matching whatever an operator's own `episodic_case.pc`
-#' values are - postcodes, zip codes, municipality codes, anything; this
-#' package never validates or interprets that column beyond joining it)
-#' and a `geometry` column.
-#' `sf`/GDAL/GEOS/PROJ are a real system-level dependency beyond what
-#' CRAN alone can supply, so this whole feature is guarded end to end: no
-#' `sf` installed means the geography panel falls back to the existing PC
-#' bar breakdown, exactly as before this existed.
+#' EpiSODIC ships with Dutch four-digit postcode geometry as a working
+#' default, but is not tied to the Netherlands or to postcodes: point the
+#' `EPISODIC_GEO_DATA` environment variable at your own `.rds` file (an
+#' `sf` object with a `pc` column matching your case data's area codes, and
+#' a `geometry` column) to map your own region instead.
 #'
-#' A second, entirely independent piece of geographic data is supported
-#' on top of this: `EPISODIC_GEO_DATA_OVERLAY`
-#' ([episodic_geo_overlay_resolve()]), an outline layer (region boundaries
-#' - provinces, municipalities, whatever an operator wants for
-#' orientation) drawn with colour but no fill on top of the choropleth.
-#' It has no `pc` contract at all, since it carries no case counts to
-#' join.
-#' @name geo_data
+#' You can optionally add a second, purely visual layer of outlines - e.g.
+#' province or municipality borders - drawn on top of the choropleth for
+#' orientation, via `EPISODIC_GEO_DATA_OVERLAY` and
+#' [episodic_geo_overlay_resolve()]. This layer carries no case counts, so
+#' it only needs a `geometry` column.
+#' @name episodic_geo
 NULL
 
-#' Resolve the optional region-outline overlay
-#'
-#' A second, independent geographic layer, drawn as outlines (no fill,
-#' a thicker line) on top of the PC choropleth - for boundaries an
-#' operator wants visible for orientation (provinces, municipalities,
-#' catchment areas) but that carry no case counts of their own, so
-#' `episodic_geo_join()`'s `pc`-keyed contract does not apply here: the
-#' overlay needs nothing but a `geometry` column. Unlike
-#' [episodic_geo_source_resolve()], there is no shipped default -
-#' region boundaries are far more jurisdiction-specific than postcode
-#' geometry, and guessing at a "sensible default" (which country's
-#' provinces?) would be arbitrary in a way the shipped postcode default
-#' is not (`EPISODIC_GEO_DATA` is Netherlands-only *labelled as such*, not
-#' pretending to be universal). No `EPISODIC_GEO_DATA_OVERLAY` set (or an
-#' invalid file) simply means no overlay layer, same as no `sf` at all.
-#'
+#' @rdname episodic_geo
 #' @param path Path to an `.rds` file holding an `sf` object with a
-#'   `geometry` column. Defaults to the `EPISODIC_GEO_DATA_OVERLAY`
-#'   environment variable.
-#' @return An `sf` object, or `NULL` if `sf` is not installed, the
-#'   variable is unset, or the file is missing/invalid.
+#'   `geometry` column, for the optional outline layer. Defaults to the
+#'   `EPISODIC_GEO_DATA_OVERLAY` environment variable.
+#' @return An `sf` object, or `NULL` if `sf` is not installed, no path is
+#'   set, or the file is missing or invalid.
 #' @examples
 #' # NULL when unset (or when the sf package is not installed)
 #' episodic_geo_overlay_resolve(path = NA)
@@ -85,13 +58,11 @@ episodic_geo_overlay_resolve <- function(path = Sys.getenv("EPISODIC_GEO_DATA_OV
   overlay
 }
 
-#' Resolve the geographic reference dataset to use
-#'
+#' @rdname episodic_geo
 #' @param path Path to an `.rds` file holding an `sf` object with `pc`
 #'   and `geometry` columns. Defaults to the `EPISODIC_GEO_DATA`
 #'   environment variable; if unset (or the file does not exist), falls
 #'   back to the shipped Netherlands postcode default.
-#' @return An `sf` object, or `NULL` if `sf` is not installed.
 #' @examples
 #' # falls back to the shipped Netherlands postcode default when sf is
 #' # installed, or NULL when it is not

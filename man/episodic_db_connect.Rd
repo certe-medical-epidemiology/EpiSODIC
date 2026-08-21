@@ -15,8 +15,10 @@ database.}
 An open \link[DBI:DBIConnection-class]{DBI::DBIConnection}.
 }
 \description{
-Opens a connection with the pragmas required by the architecture (for
+Opens a connection to a database you have already set up with
+\code{\link[=episodic_db_create]{episodic_db_create()}}, with the settings EpiSODIC needs enabled (for
 SQLite: WAL journal mode, a busy timeout, and foreign key enforcement).
+Remember to disconnect with \code{\link[DBI:dbDisconnect]{DBI::dbDisconnect()}} when you are done.
 }
 \examples{
 db_path <- tempfile(fileext = ".sqlite")

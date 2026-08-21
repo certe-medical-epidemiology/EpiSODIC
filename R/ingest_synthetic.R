@@ -17,24 +17,23 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Synthetic ingestion source
+#' Generate synthetic outbreak data
 #'
-#' The default (and only) implementation of the ingestion interface
-#' shipped with this package (`R/ingest_interface.R`). Generates several
-#' years of seasonal baseline case data across a synthetic set of institutions,
-#' pathogens, PC areas and care lines, then injects two outbreaks of known
-#' shape so the detectors have something to visibly fire on: one point
-#' source (`add_outbreak_point_source`, a ward-level cluster tightly bunched
-#' in time) and one propagated (`add_outbreak_propagated`, a community
-#' cluster with generation-interval-spaced case waves).
-#'
-#' No Diver column name is invented here; every field in the returned data
-#' frame is entirely synthetic and matches `episodic_ingest_columns`.
+#' Produces several years of realistic laboratory surveillance data for a
+#' fictional set of hospitals, long-term care institutions, and GP
+#' practices: seasonal baseline incidence for eight common pathogens, plus
+#' two deliberately injected outbreaks for the detectors to find - a
+#' point-source outbreak (a tight cluster of norovirus cases on one ward)
+#' and a propagated outbreak (community-spread pertussis with case waves
+#' spaced by the generation interval). This is what powers [episodic_demo()]
+#' and the package's test suite; it is also a useful reference for what a
+#' real ingestion source function should return (see
+#' [episodic_ingest_columns]).
 #'
 #' @param start_date First sample date to generate, a `Date`.
 #' @param end_date Last sample date to generate, a `Date`.
 #' @param seed RNG seed, for reproducible demo data.
-#' @return A data frame satisfying `episodic_ingest_validate_source()`.
+#' @return A data frame satisfying [episodic_ingest_validate_source()].
 #' @examples
 #' raw <- episodic_ingest_source_synthetic(
 #'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
@@ -203,39 +202,31 @@ episodic_synthetic_outbreak_point_source <- function(institutions, end_date, n_c
   )
 }
 
-#' Synthetic data with realistic signal volume for one pathogen, for calibration testing
+#' Generate synthetic data at tunable cluster volume
 #'
-#' `episodic_ingest_source_synthetic()` injects exactly two outbreaks
-#' total across a multi-year window - enough to prove the detectors and
-#' reconciliation work, nowhere near enough to tune anything against.
-#' The eligibility gate's own calibration target is concrete - roughly
-#' ten assessed clusters a month, system-wide (`episodic_eligibility_gate()`);
-#' there is no way to tune
-#' towards a target using two data points. This is not a substitute for
-#' real signal volume - it is still fabricated data, and no amount of
-#' realism turns it into "real data" - but it is an honest stand-in: many
-#' independent `same_place`-shaped case bumps for one named pathogen,
-#' spread across LTC institutions and hospitals over the whole window,
-#' at a volume an operator can actually run the Prestatie screen and the
-#' eligibility gate against while deciding how to tune them for a real
-#' instance. Every cluster this produces is clearly synthetic in origin
-#' (`PT-VOL-*` patient keys) so it is never mistaken for anything else.
+#' [episodic_ingest_source_synthetic()] injects exactly two outbreaks in
+#' total - enough to demonstrate detection working, but not enough to tune
+#' your own configuration against (e.g. deciding how many dossiers your
+#' board can realistically review per month). This function fills that gap:
+#' on top of the same baseline and two standard outbreaks, it adds many
+#' independent case clusters for one chosen pathogen, at a rate you control,
+#' so you can see how detection volume responds as you adjust
+#' `n_bumps_per_month` or your own configuration. Every case it adds carries
+#' a `PT-VOL-*` patient key so it is always identifiable as synthetic tuning
+#' data, never mistaken for anything else.
 #'
 #' @param start_date,end_date The window to generate over.
-#' @param pathogen Which organism to generate elevated volume for.
-#'   Defaults to *Clostridioides difficile*, a worked example of an
-#'   endemic organism that produces frequent `same_place` clusters at a
-#'   busy institution.
-#' @param n_bumps_per_month Average number of independent case bumps
-#'   generated per calendar month (Poisson-distributed), each becoming
-#'   its own candidate cluster once reconciled. Tune this up or down to
-#'   see how detection volume responds - that response is the entire
-#'   point of this function.
+#' @param pathogen Which organism to generate the extra clusters for.
+#'   Defaults to *Clostridioides difficile*, a plausible example of an
+#'   endemic organism that produces frequent clusters at a busy institution.
+#' @param n_bumps_per_month Average number of independent case clusters
+#'   generated per calendar month. Raise or lower this to see how detection
+#'   volume responds.
 #' @param seed RNG seed, for reproducible runs.
-#' @return A data frame satisfying `episodic_ingest_validate_source()`,
-#'   including everything `episodic_ingest_source_synthetic()` produces
-#'   (background baseline, the two standard demo outbreaks) plus the
-#'   extra volume.
+#' @return A data frame satisfying [episodic_ingest_validate_source()],
+#'   including everything [episodic_ingest_source_synthetic()] produces
+#'   (background baseline, the two standard demo outbreaks) plus the extra
+#'   volume.
 #' @examples
 #' raw <- episodic_ingest_source_synthetic_calibration(
 #'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-06-30"),

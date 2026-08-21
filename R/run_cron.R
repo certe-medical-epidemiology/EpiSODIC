@@ -17,69 +17,66 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Run one detection cycle
+#' Run one surveillance detection cycle
 #'
-#' The cron entry point. Ingests, enumerates
-#' streams, detects, reconciles and persists, all
-#' inside one transaction, so a partially failed run leaves no partial
-#' state and a retry is always safe.
+#' This is the function you schedule to run regularly (e.g. daily, via
+#' cron): it pulls in new laboratory data, checks every monitored stream
+#' for statistical aberrations with the configured detectors, reconciles
+#' the results into cluster dossiers for the board to assess, and records
+#' everything in the database. A run either completes in full or leaves no
+#' trace at all - it runs inside a single database transaction, so a
+#' failed run is always safe to simply retry.
 #'
-#' Configuration is read from `EPISODIC_CONFIG`;
-#' the resolved configuration's hash and full snapshot are written to
-#' `episodic_detection_run` so that any result is explainable from the
-#' database alone.
+#' EpiSODIC never connects to your laboratory system directly. You extract
+#' and transform your own data beforehand, and hand it over as a plain data
+#' frame: `ingest_source` for case data (see [episodic_ingest_columns] for
+#' the required shape), and optionally `denominator_source` and
+#' `institution_activity_source` for testing volume and hospital activity.
+#' If producing the data only makes sense at run time (a live database
+#' query, for instance), pass a zero-argument function that returns it
+#' instead - see [episodic_resolve_source()].
 #'
-#' `certedb`/Diver access is deliberately never called from inside this
-#' package: `get_diver_data()` is the operator's
-#' own step, run before `episodic_run_cron()`, transforming Diver's columns
-#' into `episodic_ingest_columns`. See `README.md` for the raw data contract.
+#' The exact detection settings used are recorded with the run (see
+#' [episodic_config_hash()]), so any past result can always be traced back
+#' to the configuration that produced it.
 #'
-#' @param db_path Path to a SQLite database file, or a `mysql://` DSN
-#'   (see [episodic_db_dsn_mariadb()]). Created if it does not exist yet
-#'   (SQLite) or is an empty database (MariaDB/MySQL).
-#' @param ingest_source_fn A zero-argument function returning a data frame
-#'   satisfying the ingestion interface, or that data frame itself (an
-#'   operator who has already extracted and transformed their data has no
-#'   reason to wrap it in a function just to satisfy this parameter - see
-#'   [episodic_resolve_source()]). Defaults to the bundled synthetic
-#'   generator, the only ingestion source shipped in this package.
-#' @param denominator_source_fn An optional zero-argument function
-#'   returning the pre-aggregated positivity metadata data frame
-#'   (`pathogen`, `sample_date`, `care_line`, `area_code`, `n_tests`), that
-#'   data frame itself, or `NULL` (the default) if the operator has none to
-#'   supply.
-#' @param institution_activity_source_fn An optional one-argument function
-#'   (`institutions`, the current `episodic_db_institutions()` data frame,
-#'   so a real implementation can key its own hospital system's export by
-#'   the same institutions this run already knows about) returning weekly
-#'   patient-days (`institution_key`, `period_start`, `period_end`,
-#'   `patient_days`); that data frame itself (the `institutions` argument
-#'   is simply not passed in that case); or `NULL` (the default) if the
-#'   operator has none to supply. Powers L2 patient-day normalisation;
-#'   without it, L1/L2 Farrington detection uses raw counts, unnormalised.
+#' @param db_path Path to the EpiSODIC database: a SQLite file (created
+#'   automatically if it does not exist yet) or a MariaDB/MySQL DSN (see
+#'   [episodic_db_dsn_mariadb()]).
+#' @param ingest_source Your laboratory data: a data frame in the shape
+#'   [episodic_ingest_columns] describes, or a zero-argument function that
+#'   returns one. Defaults to the bundled synthetic generator, useful for
+#'   demos and testing but not real surveillance.
+#' @param denominator_source Optional: your testing-volume data, in the
+#'   same data-frame-or-function form as `ingest_source` (see
+#'   [episodic_denominator_source_synthetic()] for the expected shape).
+#'   Leave as `NULL` (the default) if you have none to supply - positivity
+#'   panels simply stay blank.
+#' @param institution_activity_source Optional: your hospital patient-days
+#'   data (see [episodic_synthetic_institution_activity_source()] for the
+#'   expected shape), either as a data frame or as a function taking the
+#'   current institutions table. Leave as `NULL` (the default) if you have
+#'   none - detection falls back to raw case counts.
 #' @param episodic_config_path Passed to [episodic_config_resolve()].
-#' @param host,account Recorded on `episodic_detection_run`; default to
-#'   the process's own host/account. This is not an identity source for
-#'   assessors, only for the run record.
-#' @param run_date The date to treat as "today" for closure/eligibility
-#'   calculations; defaults to the system date, injectable for tests.
+#' @param host,account Recorded with the run for audit purposes; default
+#'   to the current machine and account.
+#' @param run_date The date to treat as "today". Defaults to the system
+#'   date; mainly useful to override in tests.
 #' @return Invisibly, the `run_id` of the completed run.
 #' @examples
 #' \donttest{
 #' db_path <- tempfile(fileext = ".sqlite")
-#' run_id <- episodic_run_cron(
-#'   db_path,
-#'   ingest_source_fn = function() episodic_ingest_source_synthetic(
-#'     start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
-#'   )
+#' cases <- episodic_ingest_source_synthetic(
+#'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 #' )
+#' run_id <- episodic_run_cron(db_path, ingest_source = cases)
 #' file.remove(db_path)
 #' }
 #' @export
 episodic_run_cron <- function(db_path,
-                              ingest_source_fn = episodic_ingest_source_synthetic,
-                              denominator_source_fn = NULL,
-                              institution_activity_source_fn = NULL,
+                              ingest_source = episodic_ingest_source_synthetic,
+                              denominator_source = NULL,
+                              institution_activity_source = NULL,
                               episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
                               host = Sys.info()[["nodename"]],
                               account = Sys.info()[["user"]],
@@ -94,8 +91,8 @@ episodic_run_cron <- function(db_path,
 
   result <- tryCatch({
     DBI::dbBegin(con)
-    stats <- episodic_run_cron_body(con, run_id, config, ingest_source_fn, denominator_source_fn,
-                                    institution_activity_source_fn, run_date)
+    stats <- episodic_run_cron_body(con, run_id, config, ingest_source, denominator_source,
+                                    institution_activity_source, run_date)
     DBI::dbCommit(con)
     stats
   }, error = function(e) {
@@ -120,20 +117,16 @@ episodic_run_cron <- function(db_path,
   invisible(run_id)
 }
 
-#' Resolve a `*_source_fn` argument to the data frame it names
+#' Resolve a data source argument to a data frame
 #'
-#' Every `episodic_run_cron()` data source (`ingest_source_fn`,
-#' `denominator_source_fn`, `institution_activity_source_fn`) accepts
-#' either a function that produces the data frame, or that data frame
-#' itself - a function is only useful when producing the data has to
-#' happen at run time (a live query, a freshly-generated synthetic set);
-#' an operator who already has the data sitting in a variable has no
-#' reason to wrap it in `function() my_df`.
+#' A small helper behind [episodic_run_cron()]'s `ingest_source`,
+#' `denominator_source`, and `institution_activity_source` arguments, each
+#' of which accepts a data frame directly - the normal case - or, if
+#' producing the data only makes sense at run time (a live database query,
+#' for instance), a zero-argument function that returns one.
 #'
-#' @param x A function, a data frame, or `NULL`.
-#' @param ... Passed to `x` if it is a function; ignored otherwise (a data
-#'   frame that is already the answer does not need `institutions` handed
-#'   to it, for instance).
+#' @param x A data frame, a function returning one, or `NULL`.
+#' @param ... Passed to `x` if it is a function; ignored otherwise.
 #' @return `NULL` if `x` is `NULL`; `x` itself if it is a data frame; the
 #'   result of calling `x` otherwise.
 #' @examples
@@ -151,8 +144,8 @@ episodic_resolve_source <- function(x, ...) {
 
 #' @keywords internal
 #' @noRd
-episodic_run_cron_body <- function(con, run_id, config, ingest_source_fn, denominator_source_fn,
-                                   institution_activity_source_fn, run_date) {
+episodic_run_cron_body <- function(con, run_id, config, ingest_source, denominator_source,
+                                   institution_activity_source, run_date) {
   pathogen_config_path <- system.file("config", "pathogen_config.csv", package = "EpiSODIC")
   if (identical(pathogen_config_path, "")) {
     pathogen_config_path <- file.path("inst", "config", "pathogen_config.csv")
@@ -160,10 +153,10 @@ episodic_run_cron_body <- function(con, run_id, config, ingest_source_fn, denomi
   pathogen_config <- utils::read.csv(pathogen_config_path, stringsAsFactors = FALSE, na.strings = c("", "NA"))
   episodic_db_pathogen_config_load(con, pathogen_config)
 
-  raw <- episodic_resolve_source(ingest_source_fn)
+  raw <- episodic_resolve_source(ingest_source)
   episodic_ingest_run(con, raw, pathogen_config, run_id)
 
-  denominator <- episodic_resolve_source(denominator_source_fn)
+  denominator <- episodic_resolve_source(denominator_source)
   if (!is.null(denominator)) {
     episodic_denominator_ingest_run(con, denominator)
   }
@@ -171,7 +164,7 @@ episodic_run_cron_body <- function(con, run_id, config, ingest_source_fn, denomi
   cases_all <- episodic_db_cases(con)
   institutions <- episodic_db_institutions(con)
 
-  activity <- episodic_resolve_source(institution_activity_source_fn, institutions)
+  activity <- episodic_resolve_source(institution_activity_source, institutions)
   if (!is.null(activity)) {
     episodic_institution_activity_ingest_run(con, activity)
   }

@@ -2,35 +2,33 @@
 % Please edit documentation in R/app_palette.R
 \name{episodic_palette}
 \alias{episodic_palette}
-\title{The application colour palette}
+\title{The dashboard's colour palette}
 \usage{
 episodic_palette()
 }
 \value{
-A named list of hex colour strings: the neutrals (\code{ink}
-default text, \code{muted} secondary text, \code{faint} tertiary, \code{border},
-\code{bg_subtle}, \code{bg}, \code{surface} - a true grey scale, independent of
-whichever hue is \code{primary}) and the semantic roles \code{primary}
-(+\verb{_dark}/\verb{_light}/\verb{_tint}), \code{secondary} (+\verb{_dark}), \code{tertiary}
-(+\verb{_dark}), \code{success} (+\verb{_dark}), \code{warning} (+\verb{_dark}), \code{danger}
-(+\verb{_dark}).
+A named list of hex colour strings. The greyscale neutrals are
+\code{ink} (default text), \code{muted} (secondary text), \code{faint} (tertiary text),
+\code{border}, \code{bg_subtle}, \code{bg}, and \code{surface}. The semantic roles are
+\code{primary}, \code{secondary}, \code{tertiary}, \code{success}, \code{warning}, and \code{danger},
+each with \verb{_dark}/\verb{_light}/\verb{_tint} variants where used.
 }
 \description{
-Read from \code{inst/config/palette.yaml}, the same defaults-then-instance-
-override pattern \code{\link[=episodic_config_resolve]{episodic_config_resolve()}} uses for detection
-configuration (deliberately a \emph{separate} file and env var,
-\code{EPISODIC_PALETTE_CONFIG}: colours must never affect \code{config_hash},
-which is about detection reproducibility, not display). Any
-organisation runs EpiSODIC in its own house colours by pointing
-\code{EPISODIC_PALETTE_CONFIG} at a YAML file overriding whichever roles it
-wants to rebrand - a department that wants its own colours supplies
-its own file, exactly as it supplies its own report template
-(\code{EPISODIC_QUARTO_REPORT}) or geographic reference data
-(\code{EPISODIC_GEO_DATA}); this package ships only the generic mechanism
-and an organisation-neutral default, never a specific organisation's
-house style.
+Returns the colours used throughout the EpiSODIC dashboard and charts, as
+a named list of hex codes. Useful if you want to match your own plots or
+reports to the house style, or check what colour a given status uses.
+}
+\details{
+The palette ships with an organisation-neutral default
+(\code{inst/config/palette.yaml}). To use your own institute's colours instead,
+point the \code{EPISODIC_PALETTE_CONFIG} environment variable at a YAML file
+that overrides only the roles you want to change - anything you don't set
+keeps its shipped default. This is independent of \code{\link[=episodic_config_resolve]{episodic_config_resolve()}}
+on purpose: colours never affect the \code{config_hash} recorded with a
+detection run, since they have no bearing on reproducibility.
 }
 \examples{
 pal <- episodic_palette()
 pal$primary
+pal$danger
 }

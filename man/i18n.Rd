@@ -2,21 +2,12 @@
 % Please edit documentation in R/i18n.R
 \name{i18n}
 \alias{i18n}
-\title{i18n scaffolding}
+\title{Translation lookup}
 \description{
-Flat JSON, dotted keys, Dutch default, English fallback, missing keys
-rendered visibly (\verb{[[key]]}) rather than blank, so a gap is loud, not
-silent. User-facing
-strings are never hardcoded in R code; every string used by the app
-lives in \code{inst/i18n/nl.json}/\code{en.json} and is looked up through
-\code{\link[=episodic_tr]{episodic_tr()}}.
-}
-\details{
-Fallback chain: an instance override (an operator-supplied overlay,
-e.g. for house-style wording changes, located beside \code{EPISODIC_CONFIG}
-rather than in the repository - configuration is never committed to
-the repository, the same rule detection settings follow), then the
-requested session language, then \code{"en"}, then the key itself, wrapped
-so a missing
-translation is obvious in testing rather than silently blank.
+The dashboard is available in Dutch and English. All user-facing text is
+stored as translation keys (e.g. \code{"nav.clusters"}) rather than hardcoded
+in R code, and \code{\link[=episodic_tr]{episodic_tr()}} looks a key up in the requested language.
+A key that does not exist in either language is shown as \verb{[[key]]}
+rather than silently left blank, so a missing translation is easy to
+spot.
 }

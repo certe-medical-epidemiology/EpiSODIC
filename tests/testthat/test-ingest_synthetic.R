@@ -94,7 +94,7 @@ test_that("episodic_ingest_source_synthetic_calibration() runs through detection
   db_path <- tempfile(fileext = ".sqlite")
   episodic_run_cron(
     db_path,
-    ingest_source_fn = function() episodic_ingest_source_synthetic_calibration(
+    ingest_source = function() episodic_ingest_source_synthetic_calibration(
       start_date = as.Date("2024-01-01"), end_date = as.Date("2024-06-30"), n_bumps_per_month = 4, seed = 5
     ),
     run_date = as.Date("2024-06-30")

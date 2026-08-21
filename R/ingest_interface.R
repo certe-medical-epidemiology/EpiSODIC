@@ -17,38 +17,52 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Ingestion interface
+#' Connect your own laboratory data
 #'
-#' Defines the contract that any raw case data source must satisfy before
-#' `episodic_ingest_run()` (see `R/ingest_pipeline.R`) can turn it into rows
-#' of `episodic_case`. This is the entire boundary between EpiSODIC and
-#' whatever laboratory or hospital system an operator runs: EpiSODIC
-#' never calls any data source itself (see `README.md`'s data format
-#' section) - the operator's own cron script extracts and transforms
-#' into exactly this shape, then calls [episodic_run_cron()] with a
-#' function that returns it.
-#' The only implementation shipped in this package is the synthetic
-#' generator (`R/ingest_synthetic.R`), used for the bundled demo.
+#' EpiSODIC does not connect to any laboratory or hospital system itself.
+#' Instead, you write a small R function - an "ingestion source" - that
+#' returns your own positive-result data as a plain data frame in the shape
+#' described here, and pass that function to [episodic_run_cron()]. This
+#' keeps EpiSODIC decoupled from any specific laboratory information system:
+#' whatever your source system is, your function is the only place that
+#' needs to know about it.
 #'
-#' **Mandatory, drives all detection: one row per confirmed-positive
-#' isolate/result.** `pathogen` is a raw, lab-provided string, used
-#' verbatim - never resolved against `AMR::as.mo()` or any other taxonomy,
-#' since `AMR` only covers non-viral organisms and this system must detect
-#' clusters of anything a lab reports. The same
-#' underlying isolate can legitimately appear more than once under
-#' different `pathogen` values when that is epidemiologically useful (an
-#' ETEC isolate as both `"Escherichia coli"` and `"ETEC"`, so each is
-#' watched on its own), and it is entirely the operator's transform step
-#' that decides this, not EpiSODIC.
+#' `episodic_ingest_columns` lists the required columns, in order:
+#' \describe{
+#'   \item{`source_key`}{A unique identifier for this result, stable across
+#'     repeated runs (used to detect duplicates).}
+#'   \item{`patient_key`}{A pseudonymised patient identifier, consistent
+#'     for the same patient across results.}
+#'   \item{`sample_date`, `receipt_date`}{Dates the sample was taken and
+#'     received by the laboratory.}
+#'   \item{`pathogen`}{The pathogen name, exactly as your laboratory
+#'     reports it (e.g. `"Escherichia coli"`, `"Influenza A"`). Used
+#'     verbatim - never matched against a taxonomy - since detection must
+#'     work for any pathogen a lab can report, viral or not. The same
+#'     isolate may appear under more than one `pathogen` value if that is
+#'     epidemiologically useful (e.g. an ETEC isolate reported as both
+#'     `"Escherichia coli"` and `"ETEC"`, so each is monitored separately).}
+#'   \item{`care_line`}{Typically `"hospital"` or `"primary_care"`.}
+#'   \item{`institution_key`, `institution_display_name`, `institution_type`}{
+#'     The reporting institution's identifier, display name, and type.}
+#'   \item{`municipality`, `ward`, `specialism`, `pc`}{Further location and
+#'     clinical context, where available.}
+#'   \item{`sex`, `age`}{Patient demographics, where available.}
+#' }
 #'
-#' **No `positive`/test-outcome column, and no raw negatives.** Positivity
-#' is handled separately as small, optional, pre-aggregated metadata (see
-#' `R/ingest_denominator.R`); the mandatory feed here is positives only.
+#' Only confirmed-positive results belong in this feed - there is no
+#' outcome column, so do not include negative results here. If you also
+#' want a denominator (tests performed, for a positivity rate), supply
+#' that separately as pre-aggregated counts; see `R/ingest_denominator.R`.
 #'
-#' @name ingest_interface
+#' The only ingestion source shipped with the package is the synthetic
+#' generator ([episodic_ingest_source_synthetic()]) used for the bundled
+#' demo - a useful template to base your own on.
+#'
+#' @name episodic_ingest_interface
 NULL
 
-#' @rdname ingest_interface
+#' @rdname episodic_ingest_interface
 #' @examples
 #' episodic_ingest_columns
 #' @export
@@ -59,10 +73,17 @@ episodic_ingest_columns <- c(
   "ward", "specialism", "pc", "sex", "age"
 )
 
-#' Validate that a raw ingestion source data frame satisfies the interface
+#' Check that your ingestion source has the right shape
 #'
-#' @param raw A data frame as returned by an ingestion source function.
-#' @return `raw`, invisibly, if valid. Errors otherwise.
+#' Call this on the data frame your own ingestion source function returns,
+#' while developing it, to get a clear error if a column is missing,
+#' misnamed, or duplicated - before handing it to [episodic_run_cron()].
+#' See [episodic_ingest_columns] for the required columns.
+#'
+#' @param raw A data frame, as returned by your ingestion source function.
+#' @return `raw`, invisibly, if it is valid. Throws an informative error
+#'   otherwise (a missing required column, an unexpected extra column, or
+#'   duplicate `source_key` values).
 #' @examples
 #' raw <- episodic_ingest_source_synthetic(
 #'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-01-31")

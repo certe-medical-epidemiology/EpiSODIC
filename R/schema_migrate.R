@@ -17,17 +17,16 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Build a MariaDB/MySQL DSN for `EPISODIC_DB`
+#' Connect EpiSODIC to a MariaDB or MySQL server
 #'
-#' `EPISODIC_DB` accepts either a filesystem path (a SQLite database, the
-#' default) or a `mysql://user:password@host:port/dbname` DSN pointing at a
-#' MariaDB or MySQL server instead - every function that takes `db_path`
-#' (or falls back to `EPISODIC_DB`) dispatches on which of the two it was
-#' given. This helper builds that DSN string from its parts and
-#' URL-encodes `user`/`password`, so credentials containing `:`, `@` or
-#' `/` do not break the DSN. `episodic_db_dsn_mysql()` is an alias for the
-#' same function - the DSN and everything downstream of it is identical
-#' either way, so use whichever name matches the server you actually run.
+#' EpiSODIC stores its data in either a SQLite file (the default, and all
+#' you need for a single-server deployment) or a MariaDB/MySQL database.
+#' This function builds the connection string ("DSN") for the latter, so
+#' you never have to hand-assemble one or worry about special characters
+#' in your password breaking it. Use the resulting string as `db_path`
+#' anywhere EpiSODIC expects one, or store it in the `EPISODIC_DB`
+#' environment variable. `episodic_db_dsn_mysql()` is an identical alias -
+#' use whichever name matches the server you run.
 #'
 #' @param host Server hostname or IP address.
 #' @param dbname Database (schema) name.
@@ -127,21 +126,23 @@ episodic_db_mariadb_connect <- function(dsn) {
   )
 }
 
-#' Create a fresh EpiSODIC database
+#' Set up a new EpiSODIC database
 #'
-#' Creates a new, empty database at `path` and applies the canonical
-#' schema shipped as `inst/sql/schema.sql`. Always builds from scratch;
-#' refuses to run against a database that already contains tables so
-#' that it cannot silently clobber existing data.
+#' Run this once, when setting up a new EpiSODIC instance: it creates a new
+#' database at `path` and builds all the required tables. Refuses to run
+#' against a database that already has tables in it, so it cannot
+#' accidentally overwrite existing surveillance data - use
+#' [episodic_db_connect()] to open a database you have already set up.
 #'
-#' @param path Path to a SQLite file, or a `mysql://` DSN (see
+#' @param path Path to a SQLite file to create, or a `mysql://` DSN (see
 #'   [episodic_db_dsn_mariadb()]) pointing at an empty MariaDB/MySQL
-#'   database. For SQLite, must not already exist, or must be an
-#'   empty/non-EpiSODIC file.
+#'   database.
 #' @param overwrite If `TRUE`, delete an existing SQLite file (or drop all
-#'   tables in an existing MariaDB/MySQL database) first.
+#'   tables in an existing MariaDB/MySQL database) first. Use with care -
+#'   this destroys any data already there.
 #' @return (Invisibly) an open [DBI::DBIConnection-class] to the new
-#'   database. The caller is responsible for disconnecting it.
+#'   database. You are responsible for disconnecting it (with
+#'   [DBI::dbDisconnect()]) when done.
 #' @examples
 #' db_path <- tempfile(fileext = ".sqlite")
 #' con <- episodic_db_create(db_path)
@@ -194,8 +195,10 @@ episodic_db_create <- function(path, overwrite = FALSE) {
 
 #' Connect to an existing EpiSODIC database
 #'
-#' Opens a connection with the pragmas required by the architecture (for
+#' Opens a connection to a database you have already set up with
+#' [episodic_db_create()], with the settings EpiSODIC needs enabled (for
 #' SQLite: WAL journal mode, a busy timeout, and foreign key enforcement).
+#' Remember to disconnect with [DBI::dbDisconnect()] when you are done.
 #'
 #' @param path Path to an existing SQLite file, or a `mysql://` DSN (see
 #'   [episodic_db_dsn_mariadb()]) pointing at an existing MariaDB/MySQL
@@ -223,19 +226,19 @@ episodic_db_connect <- function(path) {
   con
 }
 
-#' Open a connection to `db_path`, or the `EPISODIC_DB` environment variable
+#' Connect using the `EPISODIC_DB` environment variable
 #'
-#' A thin wrapper around [episodic_db_connect()] for entry points that take
-#' `db_path` rather than an already-open connection (e.g.
-#' [episodic_provision_user()]) - centralises the `EPISODIC_DB` default and
-#' the "neither was given" error in one place, rather than duplicating the
-#' resolve-then-connect logic in every such entry point.
+#' Like [episodic_db_connect()], but falls back to the `EPISODIC_DB`
+#' environment variable when you don't pass a path explicitly - handy for
+#' one-off console use, e.g. [episodic_provision_user()] uses it
+#' internally so provisioning an account needs only a username and
+#' password, not a connection you build yourself first.
 #'
 #' @param db_path Path to an existing SQLite database, or a `mysql://` DSN
 #'   (see [episodic_db_dsn_mariadb()]). Defaults to the `EPISODIC_DB`
 #'   environment variable.
-#' @return An open [DBI::DBIConnection-class]; the caller is responsible
-#'   for disconnecting it.
+#' @return An open [DBI::DBIConnection-class]; you are responsible for
+#'   disconnecting it.
 #' @examples
 #' db_path <- tempfile(fileext = ".sqlite")
 #' con <- episodic_db_create(db_path)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/report_render.R
 \name{episodic_report_render}
 \alias{episodic_report_render}
-\title{Render an outbreak report for a cluster}
+\title{Render an outbreak report for clinical colleagues}
 \usage{
 episodic_report_render(
   con,
@@ -19,63 +19,59 @@ episodic_report_render(
 \arguments{
 \item{con}{A \link[DBI:DBIConnection-class]{DBI::DBIConnection}.}
 
-\item{cluster_id}{A cluster id.}
+\item{cluster_id}{The cluster to report on.}
 
 \item{output_dir}{Directory the rendered HTML is written to. Created if
 it does not exist.}
 
-\item{user_id}{The rendering user's id, or \code{NA} for a cron pre-render
-(matches \code{episodic_report_render.user_id}'s own documented meaning).}
+\item{user_id}{The id of the user requesting the report, or \code{NA} for an
+automated (cron) render.}
 
-\item{include_linelist}{If \code{TRUE} (default), the line list is embedded
-in the report.}
+\item{include_linelist}{If \code{TRUE} (default), the case line list is
+included in the report. Set to \code{FALSE} for a summary-only report, e.g.
+when sending outside your own organisation.}
 
-\item{small_count_threshold}{Cells below this count are suppressed in
-the geography/institution breakdown tables, configurable for reports
-leaving the department. Defaults to \code{config$report$small_count_threshold}.}
+\item{small_count_threshold}{Small counts in the geography/institution
+breakdown tables are suppressed (shown as \code{"<threshold"}) below this
+value, to avoid identifying individuals in a small population.
+Defaults to \code{config$report$small_count_threshold}.}
 
-\item{config}{The resolved configuration; only \code{config$report} is used.}
+\item{config}{The resolved configuration (see \code{\link[=episodic_config_resolve]{episodic_config_resolve()}});
+only \code{config$report} is used.}
 
 \item{lang}{Report language, \code{"nl"} (default) or \code{"en"}.}
 
 \item{qmd_path}{Path to the Quarto template to render. Defaults to the
-\code{EPISODIC_QUARTO_REPORT} environment variable; if that is unset (or
-names a file that does not exist), falls back to the shipped
-\code{inst/report/cluster_report.qmd}. An operator's own template only
-needs to read \code{params$data_path} (an \code{.rds} path, \code{readRDS()}'d to
-the same list this function assembles: \code{obj}, \code{epi_curve}, \code{trend},
-\code{linelist}, \code{timeline}, \code{similar}, \code{small_count_threshold},
-\code{rendered_at}, \code{lang}, \code{package_version}) - see the shipped template
-for the exact shape and for \code{episodic_tr(..., lang = d$lang)} usage.}
+\code{EPISODIC_QUARTO_REPORT} environment variable, falling back to the
+shipped template if that is unset.}
 }
 \value{
-Invisibly, a list with \code{file_path}, \code{file_sha256}, \code{version_no},
-\code{report_id}.
+Invisibly, a list with \code{file_path} (where the HTML was written),
+\code{file_sha256}, \code{version_no}, and \code{report_id}.
 }
 \description{
-A parameterised Quarto template rendered to self-contained HTML. Sent
-as a file, not a link into the app: the medical staff receiving it
-have neither R nor an account, and a static artefact is also the
-defensible record of what was communicated on that date. Every render
-is versioned and registered in
-\code{episodic_report_render} (\code{episodic_db_report_render_insert()}) - never
-overwritten, so what was handed to a microbiologist on a given morning
-stays exactly recoverable, including which cases it contained
-(\code{case_ids}).
+Produces a self-contained HTML outbreak report for one cluster - the
+document you send to a treating physician, an infection prevention
+team, or another clinical colleague who has neither an EpiSODIC account
+nor R installed. The report includes the epidemic curve, trend chart,
+the narrative summary shown in the dashboard, and (optionally) the case
+line list.
 }
 \details{
-Data for the template is assembled here (from the same read models the
-app itself uses: \code{episodic_cluster_object()}, \code{episodic_app_epi_curve()},
-\code{episodic_app_linelist()}) and handed to Quarto as a single RDS side
-channel rather than as \code{execute_params} values directly - a line list
-data frame has no clean YAML/JSON representation, and passing one path
-string keeps the template itself simple (\code{readRDS(params$data_path)}).
+Every render is kept, versioned, and logged to the database, including
+exactly which cases it contained - so what was sent out on a given date
+stays a fully recoverable record, even if the underlying data changes
+later.
 
-Line-list inclusion is decided here, at render time, via
-\code{include_linelist} - independent of whoever later opens the file,
-unlike the live app's own line-list panel, which is hidden entirely
-for anonymous viewers and gated on the \emph{viewer's} current session. A
-rendered report has no viewer session at all.
+By default the report uses EpiSODIC's own report template. If your
+organisation needs its own layout or branding, set the
+\code{EPISODIC_QUARTO_REPORT} environment variable to your own \code{.qmd} file;
+\code{inst/report/cluster_report.qmd} in the package source is a good
+starting point to copy and adapt.
+
+Rendering requires \href{https://quarto.org}{Quarto} to be installed
+separately (both the \code{quarto} R package and the Quarto command-line
+tool) - this function raises an informative error if it is not found.
 }
 \examples{
 \dontrun{

@@ -2,7 +2,7 @@
 % Please edit documentation in R/ingest_denominator.R
 \name{episodic_denominator_source_synthetic}
 \alias{episodic_denominator_source_synthetic}
-\title{Synthetic positivity metadata source}
+\title{Add a testing-volume (positivity) feed}
 \usage{
 episodic_denominator_source_synthetic(
   start_date = as.Date("2021-01-01"),
@@ -13,20 +13,27 @@ episodic_denominator_source_synthetic(
 \arguments{
 \item{start_date, end_date}{The period to generate weekly rows for.}
 
-\item{seed}{RNG seed.}
+\item{seed}{RNG seed, for reproducible demo data.}
 }
 \value{
 A data frame with \code{pathogen}, \code{sample_date} (week start),
 \code{care_line}, \code{area_code}, \code{n_tests}.
 }
 \description{
-A worked example of the optional denominator contract
-(\code{episodic_denominator_ingest_run()}): weekly test-panel counts for a
-multiplex GI PCR panel that reports Norovirus alongside several other
-targets, the kind of aggregate a lab LIS can produce trivially even
-though it would never hand over the underlying per-test rows. Not called
-by \code{\link[=episodic_run_cron]{episodic_run_cron()}} unless a \code{denominator_source_fn} is supplied;
-demonstrates the shape only.
+Case counts alone cannot distinguish a rise in infections from a rise in
+testing. If you can supply how many tests were performed - even as a
+weekly aggregate, not per-test detail - EpiSODIC can show a positivity
+rate alongside the case count, which is often the more meaningful signal.
+This feed is entirely optional: skip it and positivity panels simply stay
+blank.
+}
+\details{
+This function is a synthetic example showing the expected shape: weekly
+counts of a multiplex GI PCR panel that also reports Norovirus. Use it as
+a template for your own data, which you pass to \code{\link[=episodic_run_cron]{episodic_run_cron()}} as
+\code{denominator_source} - a data frame with the same five columns:
+\code{pathogen}, \code{sample_date} (week start), \code{care_line}, \code{area_code} (may be
+\code{NA}), and \code{n_tests}.
 }
 \examples{
 denom <- episodic_denominator_source_synthetic(

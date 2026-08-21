@@ -2,36 +2,43 @@
 % Please edit documentation in R/app_widgets.R
 \name{episodic_ui_italicise_taxon}
 \alias{episodic_ui_italicise_taxon}
-\title{Italicise pathogen names \code{AMR} recognises as a taxonomic binomial}
+\alias{episodic_ui_code_join}
+\title{Format text for outbreak reports and the dashboard}
 \usage{
 episodic_ui_italicise_taxon(pathogen)
+
+episodic_ui_code_join(detectors, sep = ", ")
 }
 \arguments{
 \item{pathogen}{A character vector of pathogen display names.}
+
+\item{detectors}{A character vector of detector names.}
+
+\item{sep}{Separator between entries.}
 }
 \value{
-A character vector, safe to pass to \code{\link[shiny:reexports]{shiny::HTML()}}.
+A character vector (or, for \code{episodic_ui_code_join()}, a single
+string), safe to pass to \code{\link[shiny:HTML]{shiny::HTML()}}.
 }
 \description{
-Wraps names found in \code{AMR::microorganisms$fullname} in \verb{<i>...</i>}, for
-display via \code{\link[shiny:reexports]{shiny::HTML()}} (e.g. \emph{Escherichia coli}); names \code{AMR}
-does not recognise as a species (e.g. "Influenza A", a virus type
-rather than a binomial) pass through unitalicised, exactly as intended -
-\code{pathogen} is deliberately unconstrained free text and never resolved
-against \code{AMR::as.mo()} for \emph{detection} purposes, so viruses and other
-non-taxonomic values are never excluded there;
-\code{AMR} is nonetheless a hard dependency of the package as a whole, used
-here and by \code{episodic_dedup()}. Text is
-HTML-escaped before any tag is added, so this is always safe to pass
-to \code{\link[shiny:reexports]{shiny::HTML()}}.
+Small HTML formatting helpers used when building dossier text, both in
+the dashboard and in the Quarto outbreak report template
+(\code{inst/report/cluster_report.qmd}). Both are exported so that a custom
+report template of your own (set via \code{EPISODIC_QUARTO_REPORT}) can use
+the same formatting as the shipped one. Input text is always HTML-escaped
+first, so the result is safe to pass on to \code{\link[shiny:HTML]{shiny::HTML()}}.
 }
 \details{
-Exported (not just internal): the Quarto report template
-(\code{inst/report/cluster_report.qmd}) runs in its own fresh session where
-only exported functions are attached by \code{library(EpiSODIC)}, and an
-operator's own custom template (\code{EPISODIC_QUARTO_REPORT}) should have
-the same formatting helpers the shipped one uses.
+\code{episodic_ui_italicise_taxon()} italicises pathogen names that \code{AMR}
+recognises as a taxonomic binomial (e.g. \emph{Escherichia coli}), following
+standard microbiological convention. Names it does not recognise (e.g.
+"Influenza A", a virus type rather than a species) are left as-is.
+
+\code{episodic_ui_code_join()} renders a vector of detector names (e.g.
+\code{"farrington"}, \code{"same_place"}) as inline \verb{<code>}, joined into one
+string - useful when listing which detectors flagged a cluster.
 }
 \examples{
 episodic_ui_italicise_taxon(c("Escherichia coli", "Influenza A"))
+episodic_ui_code_join(c("farrington", "same_place"))
 }

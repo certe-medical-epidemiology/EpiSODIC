@@ -2,29 +2,25 @@
 % Please edit documentation in R/run_cron.R
 \name{episodic_resolve_source}
 \alias{episodic_resolve_source}
-\title{Resolve a \verb{*_source_fn} argument to the data frame it names}
+\title{Resolve a data source argument to a data frame}
 \usage{
 episodic_resolve_source(x, ...)
 }
 \arguments{
-\item{x}{A function, a data frame, or \code{NULL}.}
+\item{x}{A data frame, a function returning one, or \code{NULL}.}
 
-\item{...}{Passed to \code{x} if it is a function; ignored otherwise (a data
-frame that is already the answer does not need \code{institutions} handed
-to it, for instance).}
+\item{...}{Passed to \code{x} if it is a function; ignored otherwise.}
 }
 \value{
 \code{NULL} if \code{x} is \code{NULL}; \code{x} itself if it is a data frame; the
 result of calling \code{x} otherwise.
 }
 \description{
-Every \code{episodic_run_cron()} data source (\code{ingest_source_fn},
-\code{denominator_source_fn}, \code{institution_activity_source_fn}) accepts
-either a function that produces the data frame, or that data frame
-itself - a function is only useful when producing the data has to
-happen at run time (a live query, a freshly-generated synthetic set);
-an operator who already has the data sitting in a variable has no
-reason to wrap it in \code{function() my_df}.
+A small helper behind \code{\link[=episodic_run_cron]{episodic_run_cron()}}'s \code{ingest_source},
+\code{denominator_source}, and \code{institution_activity_source} arguments, each
+of which accepts a data frame directly - the normal case - or, if
+producing the data only makes sense at run time (a live database query,
+for instance), a zero-argument function that returns one.
 }
 \examples{
 df <- data.frame(x = 1:3)
