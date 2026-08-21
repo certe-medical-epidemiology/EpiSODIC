@@ -32,8 +32,8 @@ episodic_ingest_source_synthetic_calibration(
 
 - pathogen:
 
-  Which organism to generate the extra clusters for. Defaults to
-  *Clostridioides difficile*, a plausible example of an endemic organism
+  Which pathogen to generate the extra clusters for. Defaults to
+  *Clostridioides difficile*, a plausible example of an endemic pathogen
   that produces frequent clusters at a busy institution.
 
 - n_bumps_per_month:

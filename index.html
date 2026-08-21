@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,12 +69,25 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <img src="reference/figures/main_screen.png" alt="A cluster dossier: case stats, status trajectory, an automatically generated plain-language interpretation, the epidemic curve, and the classification panel" width="800"><br><em>A cluster dossier - case stats, status trajectory, an automatically generated interpretation of the evidence, the epidemic curve, and the classification panel, alongside the rail of open clusters.</em>
 </p>
 <p align="center">
-<img src="reference/figures/performance_screen.png" alt="The Performance screen: detection timeliness and positive predictive value per detector and organism" width="800"><br><em>The Performance screen - detection timeliness and positive predictive value per detector and organism, computed from the stored verdicts (both fill in as clusters get assessed).</em>
+<img src="reference/figures/performance_screen.png" alt="The Performance screen: detection timeliness and positive predictive value per detector and pathogen" width="800"><br><em>The Performance screen - detection timeliness and positive predictive value per detector and pathogen, computed from the stored verdicts (both fill in as clusters get assessed).</em>
 </p>
 <div class="section level2">
 <h2 id="capabilities">Capabilities<a class="anchor" aria-label="anchor" href="#capabilities"></a>
 </h2>
 <p>The detection engine, interface, assessment and authentication workflow, reporting, and analytical panels are all implemented and tested, including a Performance screen for evidence-based tuning. Detection thresholds and priority score weights are configurable per instance (<code>inst/config/default.yaml</code>, <code>EPISODIC_CONFIG</code>), so an organisation can tune them against its own signal volume as its evidence base grows.</p>
+<div class="section level3">
+<h3 id="two-altitudes">Two altitudes<a class="anchor" aria-label="anchor" href="#two-altitudes"></a>
+</h3>
+<p>The <strong>Clusters</strong> screen is operational: a ranked queue of discrete signals, each one something a person has to make and record a decision about. That is the right unit for triage and the wrong unit for surveillance - “is influenza A unusual this season, and where in the season are we” is not a question about any one cluster, and cannot be answered by reading several dossiers in turn.</p>
+<p>The <strong>Pathogen</strong> screen is the other altitude. Pick an pathogen and a period - a surveillance season (ISO week 40 to week 20), the last twelve months, the last five years, or an exact date range - and it describes that pathogen across the whole catchment over that period:</p>
+<ul>
+<li>weekly incidence, with the Moving Epidemic Method’s pre- and post-epidemic thresholds and its medium/high/very high intensity bands drawn on it, fitted only on the seasons <em>before</em> the one being looked at;</li>
+<li>the same period laid over earlier seasons (or, for a non-seasonal pathogen, earlier calendar years) on a shared week-within-period axis, so “earlier”, “later”, “bigger”, “smaller” can be read directly;</li>
+<li>Rt for the pathogen as a whole rather than per cluster - which is the population the renewal model assumes it is seeing - conditioned on case history from before the selected period;</li>
+<li>testing volume and positivity, age and sex against the pathogen’s own long-run distribution, geography, and care-line and institution breakdowns;</li>
+<li>and the clusters that were raised during the period, with the verdict each one received, as the way back to the operational view.</li>
+</ul>
+</div>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -137,7 +150,7 @@ they also render on the CRAN page), regenerated against episodic_demo().
 </tr>
 <tr>
 <td><code>pathogen</code></td>
-<td>The organism as your lab reports it, as free text. <strong>Not</strong> resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying isolate can appear more than once under different <code>pathogen</code> values when that is epidemiologically useful - an ETEC isolate reported as both <code>"Escherichia coli"</code> and <code>"ETEC"</code>, so each is watched on its own. This is your transform step’s decision, not EpiSODIC’s.</td>
+<td>The pathogen as your lab reports it, as free text. <strong>Not</strong> resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying isolate can appear more than once under different <code>pathogen</code> values when that is epidemiologically useful - an ETEC isolate reported as both <code>"Escherichia coli"</code> and <code>"ETEC"</code>, so each is watched on its own. This is your transform step’s decision, not EpiSODIC’s.</td>
 </tr>
 <tr>
 <td><code>care_line</code></td>
