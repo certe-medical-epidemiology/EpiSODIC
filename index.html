@@ -55,9 +55,8 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="episodic-epidemiological-signal-observation-detection">EpiSODIC: <strong>Epi</strong>demiological <strong>S</strong>ignal <strong>O</strong>bservation, <strong>D</strong>etection,<a class="anchor" aria-label="anchor" href="#episodic-epidemiological-signal-observation-detection"></a>
+<div class="page-header"><h1 id="episodic-epidemiological-signal-observation-detection-identification-and-classification">EpiSODIC: Epidemiological Signal Observation, Detection, Identification, and Classification<a class="anchor" aria-label="anchor" href="#episodic-epidemiological-signal-observation-detection-identification-and-classification"></a>
 </h1></div>
-<p><strong>I</strong>dentification, and <strong>C</strong>lassification</p>
 <p><a href="https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></p>
 <p>EpiSODIC is an outbreak cluster detection and assessment system for a department of medical epidemiology. It ingests laboratory-confirmed infections, detects statistical and rule-based aberrations, reconciles them into persistent clusters, and gives a small board of epidemiologists a dossier to assess each one, with a full audit trail and outbreak reports for clinical colleagues.</p>
 <p>The engine and the instance it runs against are kept separate: this repository is open-source software with no data and no site-specific configuration.</p>
@@ -95,7 +94,7 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <div class="section level2">
 <h2 id="data-format">Data format<a class="anchor" aria-label="anchor" href="#data-format"></a>
 </h2>
-<p>EpiSODIC never queries a laboratory information system, data warehouse, or any other data source itself. That is deliberately the operator’s own step, run before EpiSODIC: extract from wherever your data lives, transform into the shape below, then call <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> with a function that returns it. This keeps the engine reusable by any laboratory, not only Certe’s.</p>
+<p>EpiSODIC never queries a laboratory information system, data warehouse, or any other data source itself. That is deliberately the operator’s own step, run before EpiSODIC: extract from wherever your data lives, transform into the shape below, then call <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> with a function that returns it. This keeps the engine reusable by any laboratory.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/episodic_run_cron.html">episodic_run_cron</a></span><span class="op">(</span></span>
 <span>  db_path <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span>,</span>

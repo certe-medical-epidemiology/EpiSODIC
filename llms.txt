@@ -1,6 +1,4 @@
-# EpiSODIC: **Epi**demiological **S**ignal **O**bservation, **D**etection,
-
-**I**dentification, and **C**lassification
+# EpiSODIC: Epidemiological Signal Observation, Detection, Identification, and Classification
 
 [![R-CMD-check](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml)
 
@@ -81,7 +79,7 @@ step, run before EpiSODIC: extract from wherever your data lives,
 transform into the shape below, then call
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
 with a function that returns it. This keeps the engine reusable by any
-laboratory, not only Certe’s.
+laboratory.
 
 ``` r
 
