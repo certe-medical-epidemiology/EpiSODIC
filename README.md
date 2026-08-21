@@ -72,18 +72,24 @@ organisation or country either - see "Geographic reference data" below.
 ## Data format
 
 EpiSODIC never queries a laboratory information system, data warehouse, or
-any other data source itself. That is deliberately the operator's own step,
-run before EpiSODIC: extract from wherever your data lives, transform into
-the shape below, then call `episodic_run_cron()` with a function that returns
-it. This keeps the engine reusable by any laboratory.
+any other data source itself. That is deliberately your own step, run
+before EpiSODIC: extract from wherever your data lives, transform into the
+shape below, then call `episodic_run_cron()` with the result as a plain
+data frame. This keeps the engine reusable by any laboratory.
 
 ```r
+cases <- my_extract_and_transform_function()
+
 episodic_run_cron(
   db_path = "/path/to/episodic.sqlite",
-  ingest_source_fn = function() my_extract_and_transform_function(),
-  denominator_source_fn = NULL  # optional, see "Positivity metadata" below
+  ingest_source = cases,
+  denominator_source = NULL  # optional, see "Positivity metadata" below
 )
 ```
+
+If producing the data only makes sense at run time (e.g. a live database
+query), pass a zero-argument function instead of a data frame - EpiSODIC
+accepts either.
 
 ### Cases (mandatory)
 

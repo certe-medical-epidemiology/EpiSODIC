@@ -37,7 +37,7 @@
 #'   perfectly synchronised).
 #'
 #' Not exported: an operator supplies a source to [episodic_run_cron()] via
-#' `institution_activity_source_fn`; this is the internal write step run
+#' `institution_activity_source`; this is the internal write step run
 #' against it.
 #' @keywords internal
 #' @noRd
@@ -79,8 +79,8 @@ episodic_institution_activity_ingest_run <- function(con, activity) {
 #'
 #' This function is a synthetic example showing the expected shape: weekly
 #' patient-days per hospital, modelled as bed count times occupancy, with a
-#' realistic winter peak. Use it as a template for your own function, which
-#' you pass to [episodic_run_cron()] as `institution_activity_source_fn`.
+#' realistic winter peak. Use it as a template for your own data, which you
+#' pass to [episodic_run_cron()] as `institution_activity_source`.
 #'
 #' @param institutions A data frame of institutions (as returned by your
 #'   own institution registry), filtered internally to hospitals only.
