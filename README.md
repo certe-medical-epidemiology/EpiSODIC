@@ -1,5 +1,4 @@
-# EpiSODIC: **Epi**demiological **S**ignal **O**bservation, **D**etection,
-**I**dentification, and **C**lassification
+# EpiSODIC: Epidemiological Signal Observation, Detection, Identification, and Classification
 
 [![R-CMD-check](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml)
 
@@ -76,7 +75,7 @@ EpiSODIC never queries a laboratory information system, data warehouse, or
 any other data source itself. That is deliberately the operator's own step,
 run before EpiSODIC: extract from wherever your data lives, transform into
 the shape below, then call `episodic_run_cron()` with a function that returns
-it. This keeps the engine reusable by any laboratory, not only Certe's.
+it. This keeps the engine reusable by any laboratory.
 
 ```r
 episodic_run_cron(

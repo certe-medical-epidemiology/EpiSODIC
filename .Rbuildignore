@@ -4,3 +4,4 @@ run_test\.R
 ^data-raw$
 ^\.github$
 ^LICENSE\.md$
+^_pkgdown\.yml$
