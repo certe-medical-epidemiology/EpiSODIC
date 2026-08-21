@@ -2,7 +2,7 @@
 
 [![R-CMD-check](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml)
 
-**Epi**demiological **S**ignal **O**bservation, **D**etection,
+#### **Epi**demiological **S**ignal **O**bservation, **D**etection,
 **I**dentification, and **C**lassification
 
 EpiSODIC is an outbreak cluster detection and assessment system for a
