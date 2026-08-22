@@ -1,3 +1,133 @@
+# EpiSODIC 0.4.0
+
+A release about the seam between your data and EpiSODIC: what it is
+called, what it will accept, and what it tells you afterwards. Nothing is
+deployed yet, so the renames are hard ones - no deprecation shims.
+
+## Renamed: the data interface speaks in epidemiological objects
+
+The vocabulary for supplying data was data-engineering jargon. You passed
+an "ingestion source". Two problems with that. In an infectious-disease
+package "ingestion" is a transmission route - for norovirus, ETEC and
+*C. difficile*, exactly the organisms the synthetic generator ships,
+"ingestion source" reads as the vehicle. And `_source` became wrong
+outright once these arguments took data rather than something that
+produces data.
+
+Everything user-facing is now named after the epidemiological object,
+which is what the database has always called these things: the schema has
+`episodic_case`, `episodic_denominator` and `episodic_institution_activity`,
+and never said "ingest" anywhere. The R API was the only layer out of step.
+
+| Was | Now |
+|---|---|
+| `ingest_source =` | `cases =` |
+| `denominator_source =` | `denominators =` |
+| `institution_activity_source =` | `institution_activity =` |
+| `episodic_ingest_columns` | `episodic_case_columns` |
+| `episodic_ingest_validate_source()` | `episodic_validate_cases()` |
+| `episodic_ingest_source_synthetic()` | `episodic_synthetic_cases()` |
+| `episodic_ingest_source_synthetic_calibration()` | `episodic_synthetic_cases_calibration()` |
+| `episodic_denominator_source_synthetic()` | `episodic_synthetic_denominators()` |
+| `episodic_synthetic_institution_activity_source()` | `episodic_synthetic_institution_activity()` |
+| `episodic_resolve_source()` | `episodic_resolve_data()` |
+
+Internal helpers and source files follow the same scheme: `R/ingest_*.R`
+became `R/cases.R`, `R/cases_dedup.R`, `R/cases_load.R`,
+`R/cases_synthetic.R`, `R/denominators.R` and `R/institution_activity.R`.
+`episodic_dedup()` is `episodic_cases_deduplicate()`, `episodic_ingest_run()`
+is `episodic_cases_load()`, and so on. The database schema needed no
+change at all.
+
+Left deliberately alone: `episodic_synthetic_outbreak_point_source()`.
+A point source is a real epidemiological thing, not the `_source` suffix
+this release was removing.
+
+## The documentation now says what the code has long done
+
+What you hand to `episodic_run_cron()` is normally a data frame or
+tibble. The older framing, in which you wrote a function and passed the
+function itself, described a form that is still supported but is no
+longer the one to reach for. A function is now documented for what it is
+actually good at: producing the data at run time, e.g. a live database
+query. `episodic_validate_cases()` accepts either form, resolving a
+function before it checks anything.
+
+## Case data: every column's allowed values are specified, and enforced
+
+The help page listed the fifteen columns and left the rest to be
+discovered at insert time. Every column now documents its type, whether
+`NA` is allowed, and its permitted values.
+
+That gap had been hiding a real bug: `care_line` was documented as
+`"hospital"`/`"primary_care"`, when the values are `first`, `second`,
+`other` and `unknown`. An extract built by following the help page failed
+the database's own `CHECK` constraint partway through a run.
+
+- The three fixed value sets are exported as `episodic_care_lines`,
+  `episodic_institution_types` and `episodic_sex_codes`, so a transform
+  step can map onto them instead of copying strings out of a help page.
+- `episodic_validate_cases()` now enforces the whole contract: the
+  allow-listed columns, `source_key` uniqueness, the columns that may
+  never be `NA`, the three value sets, both date columns parsing as
+  `Date` or `YYYY-MM-DD`, and numeric `age`. It names the offending
+  column and the offending values. It reports what your data says without
+  changing it, and returns the validated data set invisibly.
+
+## A missing `care_line` means unknown
+
+An absent care line, an R `NA` and a database `NULL` all say the same
+thing - we do not know which part of the health system this case came
+from - and the schema already has a word for it. Requiring the operator's
+extract step to spell out `"unknown"` was asking for a mapping the
+package can do itself.
+
+`care_line` now accepts `NA` and is normalised to `"unknown"` as cases
+are loaded, before deduplication, so both the case row and the
+institution upsert see the value the `NOT NULL` constraint expects. The
+denominator feed reads `NA` the same way.
+
+## A run now reports what it actually loaded
+
+Runs recorded whether detection succeeded, and nothing about whether the
+data arrived. The worst case was silent: institution activity rows whose
+`institution_key` matched no known institution were skipped by design,
+and the count was computed and then discarded. An operator whose activity
+feed and case feed keyed institutions differently lost every patient-day,
+saw a green run, and had no way to find out - L2 detection quietly fell
+back to raw counts.
+
+The rule now: **structural problems fail the run, and row-level facts are
+counted and reported, but never silently dropped.**
+
+- `episodic_detection_run` gained `n_cases_supplied`,
+  `n_cases_deduplicated`, `n_cases_inserted`, `n_denominators_written`,
+  `n_activity_supplied`, `n_activity_written` and `n_activity_skipped`.
+  Every load step already computed these; they now land somewhere.
+- `partial` became a real run status. It had been in the schema's `CHECK`
+  constraint from the beginning and nothing ever wrote it. A run that
+  completed but skipped rows finishes `partial` rather than `success`.
+  Both are complete, usable runs and the dashboard reads from the most
+  recent of either; `partial` means go and look at why rows were skipped.
+- Skipped activity rows raise a warning naming the count and the
+  unmatched keys, so an interactive run says so at the console.
+- The denominator and institution activity feeds are validated the way
+  cases are: allowed values, dates that parse, numeric counts, and the
+  columns that may never be `NA`. Their failures used to surface as raw
+  SQLite constraint errors from inside a rolled-back transaction.
+- The Activity screen shows, under each run, how many cases arrived and
+  how many were new, naming skipped rows when there were any. The status
+  strip distinguishes a partial run from a clean one.
+
+Two consequences worth naming. Read-side callers that meant "the latest
+usable run" asked for status `success` specifically, so a `partial` run
+would have left the dashboard showing an older run's numbers; they now
+ask for `episodic_run_statuses_complete`, and `episodic_db_latest_run()`
+takes several statuses. And the Activity screen builds its label from the
+run status, so `running` and `partial` would have rendered as
+`[[activity.action_run_running]]`; both are now translated in all eight
+languages, along with the load summary and the partial status strip.
+
 # EpiSODIC 0.3.1
 
 ## New: the Pathogen screen
@@ -213,101 +343,6 @@
   history for the screen to say anything at all.
 - The top navigation now shows which screen you are on. The stylesheet
   has always had a rule for it; nothing ever applied the class.
-
-## Connecting your own data
-
-The user-facing vocabulary for supplying data was pipeline-stage jargon
-("ingestion source"); it is now named after the epidemiological objects
-themselves, matching what the database has always called them. In an
-infectious-disease package "ingestion" also reads as a transmission route,
-which is not what was meant anywhere it appeared. As nothing is deployed
-yet, these are hard renames with no deprecation shims.
-
-- `episodic_run_cron()` and `episodic_demo()` take `cases`,
-  `denominators` and `institution_activity`, where they took
-  `ingest_source`, `denominator_source` and `institution_activity_source`.
-  The `_source` suffix had become actively misleading: these arguments
-  take data, not something that produces data.
-- Renamed, in the same spirit: `episodic_ingest_columns` to
-  `episodic_case_columns`, `episodic_ingest_validate_source()` to
-  `episodic_validate_cases()`, `episodic_ingest_source_synthetic()` to
-  `episodic_synthetic_cases()`,
-  `episodic_ingest_source_synthetic_calibration()` to
-  `episodic_synthetic_cases_calibration()`,
-  `episodic_denominator_source_synthetic()` to
-  `episodic_synthetic_denominators()`,
-  `episodic_synthetic_institution_activity_source()` to
-  `episodic_synthetic_institution_activity()`, and
-  `episodic_resolve_source()` to `episodic_resolve_data()`. Source files
-  and internal helpers follow the same scheme (`R/cases.R`,
-  `R/cases_load.R`, `R/denominators.R`, ...).
-- The documentation now says what the code has done for a while: what you
-  hand to `episodic_run_cron()` is normally a data frame or tibble. The
-  older framing, in which you wrote a function and passed the function
-  itself, described a form that is still supported but is no longer the
-  one to reach for. A function is now documented for what it is good at:
-  producing the data at run time, e.g. a live database query.
-
-## The case data contract is now fully specified
-
-- Every one of the fifteen case columns now documents its type, whether
-  `NA` is allowed, and its permitted values - previously the page listed
-  the columns and left the rest to be discovered at insert time. Among
-  other things this corrects `care_line`, which was documented as
-  `"hospital"`/`"primary_care"`; the real values are `first`, `second`,
-  `other` and `unknown`, and an extract following the old page failed
-  against the database's own constraint.
-- The three fixed value sets are exported as `episodic_care_lines`,
-  `episodic_institution_types` and `episodic_sex_codes`, so a transform
-  step can map onto them instead of copying strings out of a help page.
-- `episodic_validate_cases()` now checks all of it: the allow-listed
-  columns, `source_key` uniqueness, the columns that may never be `NA`,
-  the three value sets, that both date columns parse as `Date` or
-  `YYYY-MM-DD`, and that `age` is numeric. It reports the offending
-  column and values. Previously these only surfaced deep inside a cron
-  run, as a rolled-back transaction. It accepts a function as readily as
-  a data set, and returns the validated data set invisibly.
-
-## A run now reports what it actually loaded
-
-Runs recorded whether detection succeeded, and nothing about whether the
-data arrived. The worst case was silent: institution activity rows whose
-`institution_key` matched no known institution were skipped by design,
-the count computed and then discarded. An operator whose activity feed
-and case feed keyed institutions differently lost all their patient-days,
-saw a green run, and had no way to find out - L2 detection quietly fell
-back to raw counts.
-
-The rule now is that structural problems fail the run, and row-level
-facts are counted and reported, but never silently dropped.
-
-- `episodic_detection_run` gained `n_cases_supplied`,
-  `n_cases_deduplicated`, `n_cases_inserted`, `n_denominators_written`,
-  `n_activity_supplied`, `n_activity_written` and `n_activity_skipped`.
-  Every load step already computed these; they now land somewhere.
-- `partial` is a real run status. It has been in the schema's `CHECK`
-  constraint since the beginning and was never written by anything. A run
-  that completed but skipped rows now finishes `partial`, not `success`.
-  Both are complete, usable runs and the dashboard reads from the most
-  recent of either - `partial` means go and look at why rows were skipped.
-- Skipped activity rows raise a warning naming the count and the
-  unmatched keys, so an interactive run says so at the console.
-- The denominator and institution activity feeds are validated the way
-  cases are: allowed values, dates that parse, numeric counts, and the
-  columns that may never be `NA`. Their failures used to surface as raw
-  SQLite constraint errors from inside a rolled-back transaction. A
-  missing `care_line` is read as `"unknown"` here too.
-- The Activity screen shows, under each run, how many cases arrived and
-  how many were new, and names skipped rows when there were any. The
-  status strip distinguishes a partial run from a clean one. Two run
-  statuses had no translation at all and would have rendered as
-  `[[activity.action_run_running]]`; `running` and `partial` are now
-  translated in all eight languages, as is the load summary.
-
-Read-side callers that meant "the latest usable run" asked for status
-`success` specifically, which would have skipped past a `partial` run and
-left the dashboard showing an older run's numbers. They now ask for
-`episodic_run_statuses_complete`.
 
 # EpiSODIC 0.3.0
 
