@@ -74,8 +74,18 @@ test_that("episodic_compute_rt() measures incompleteness from asof, not from the
   cases <- data.frame(sample_date = as.character(dates))
   pc <- data.frame(rt_applicable = 1, si_mean_days = 3, si_sd_days = 1.5)
 
-  stale <- episodic_compute_rt(cases, pc, incomplete_days = 10, asof = max(dates) + 200)
-  fresh <- episodic_compute_rt(cases, pc, incomplete_days = 0, asof = max(dates))
+  stale <- episodic_compute_rt(
+    cases,
+    pc,
+    incomplete_days = 10,
+    asof = max(dates) + 200
+  )
+  fresh <- episodic_compute_rt(
+    cases,
+    pc,
+    incomplete_days = 0,
+    asof = max(dates)
+  )
   expect_equal(nrow(stale), nrow(fresh))
 })
 
@@ -89,10 +99,14 @@ test_that("episodic_compute_rt() does not estimate inside one mean serial interv
   asof <- max(dates)
 
   short_si <- episodic_compute_rt(
-    cases, data.frame(rt_applicable = 1, si_mean_days = 2, si_sd_days = 1), asof = asof
+    cases,
+    data.frame(rt_applicable = 1, si_mean_days = 2, si_sd_days = 1),
+    asof = asof
   )
   long_si <- episodic_compute_rt(
-    cases, data.frame(rt_applicable = 1, si_mean_days = 12, si_sd_days = 4), asof = asof
+    cases,
+    data.frame(rt_applicable = 1, si_mean_days = 12, si_sd_days = 4),
+    asof = asof
   )
   # Same series, same window width: the longer serial interval simply
   # starts estimating later, so it yields strictly fewer windows and its

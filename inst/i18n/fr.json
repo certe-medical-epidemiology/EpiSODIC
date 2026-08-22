@@ -141,6 +141,7 @@
   "streams.page_of": "Page {page} sur {n_pages}",
 
   "status.run_ok": "Exécution {time} réussie · {streams_phrase} · {clusters_phrase} détectés",
+  "status.run_partial": "Exécution {time} terminée avec des lignes ignorées · {streams_phrase} · {clusters_phrase} détectés",
   "status.run_failed": "Dernière exécution échouée · {time}",
   "status.no_run": "Aucune exécution de détection pour l'instant",
   "status.completeness": "Exhaustivité {pct} % ({days_phrase})",
@@ -276,6 +277,10 @@
   "activity.action_login": "s'est connecté",
   "activity.action_run_success": "exécution de détection réussie",
   "activity.action_run_failed": "exécution de détection échouée",
+  "activity.action_run_running": "exécution de détection en cours",
+  "activity.action_run_partial": "exécution de détection terminée, lignes ignorées",
+  "activity.detail_run": "{inserted} nouveaux cas sur {supplied} fournis ({deduplicated} après déduplication)",
+  "activity.detail_run_skipped": "{skipped} lignes d'activité ignorées : établissement inconnu ici",
   "activity.target_cluster": "{pathogen} (cluster n° {id})",
 
   "performance.title": "Performance",

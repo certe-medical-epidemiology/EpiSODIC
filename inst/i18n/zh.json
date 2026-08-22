@@ -141,6 +141,7 @@
   "streams.page_of": "第 {page} / {n_pages} 页",
 
   "status.run_ok": "运行 {time} 成功 · {streams_phrase} · 检出 {clusters_phrase}",
+  "status.run_partial": "运行 {time} 完成，部分行被跳过 · {streams_phrase} · 检出 {clusters_phrase}",
   "status.run_failed": "最近一次运行失败 · {time}",
   "status.no_run": "尚未运行过检测",
   "status.completeness": "完整度 {pct}%（{days_phrase}）",
@@ -276,6 +277,10 @@
   "activity.action_login": "登录",
   "activity.action_run_success": "检测运行成功",
   "activity.action_run_failed": "检测运行失败",
+  "activity.action_run_running": "检测运行进行中",
+  "activity.action_run_partial": "检测运行完成，部分行被跳过",
+  "activity.detail_run": "已提交 {supplied} 例，新增 {inserted} 例（去重后 {deduplicated} 例）",
+  "activity.detail_run_skipped": "跳过 {skipped} 行活动数据：此处无此机构",
   "activity.target_cluster": "{pathogen}（聚集事件 #{id}）",
 
   "performance.title": "性能",

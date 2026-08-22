@@ -43,7 +43,9 @@ episodic_i18n_cache <- new.env(parent = emptyenv())
 #' @noRd
 episodic_i18n_load <- function(lang) {
   cached <- episodic_i18n_cache[[lang]]
-  if (!is.null(cached)) return(cached)
+  if (!is.null(cached)) {
+    return(cached)
+  }
 
   path <- system.file("i18n", paste0(lang, ".json"), package = "EpiSODIC")
   if (identical(path, "")) {
@@ -84,8 +86,15 @@ episodic_i18n_load <- function(lang) {
 #' episodic_tr("nav.clusters", lang = "nl")
 #' episodic_tr("nav.clusters", lang = "en")
 #' @export
-episodic_tr <- function(key, ..., lang = Sys.getenv("EPISODIC_LANGUAGE"), instance_i18n = NULL) {
-  if (!nzchar(lang)) lang <- "en"
+episodic_tr <- function(
+  key,
+  ...,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  instance_i18n = NULL
+) {
+  if (!nzchar(lang)) {
+    lang <- "en"
+  }
   template <- NULL
 
   if (!is.null(instance_i18n) && key %in% names(instance_i18n)) {
@@ -109,9 +118,16 @@ episodic_tr <- function(key, ..., lang = Sys.getenv("EPISODIC_LANGUAGE"), instan
 #' @keywords internal
 #' @noRd
 episodic_i18n_substitute <- function(template, values) {
-  if (length(values) == 0) return(template)
+  if (length(values) == 0) {
+    return(template)
+  }
   for (name in names(values)) {
-    template <- gsub(paste0("\\{", name, "\\}"), as.character(values[[name]]), template, fixed = FALSE)
+    template <- gsub(
+      paste0("\\{", name, "\\}"),
+      as.character(values[[name]]),
+      template,
+      fixed = FALSE
+    )
   }
   template
 }
@@ -157,10 +173,16 @@ episodic_format_date_range <- function(x, y, lang = "nl") {
     return(episodic_tr("misc.unknown", lang = lang))
   }
   if (y < x) {
-    tmp <- x; x <- y; y <- tmp
+    tmp <- x
+    x <- y
+    y <- tmp
   }
 
-  months <- vapply(sprintf("%02d", 1:12), function(mm) episodic_tr(paste0("date.month.", mm), lang = lang), character(1))
+  months <- vapply(
+    sprintf("%02d", 1:12),
+    function(mm) episodic_tr(paste0("date.month.", mm), lang = lang),
+    character(1)
+  )
   mon <- function(d) months[as.integer(format(d, "%m"))]
   day <- function(d) as.integer(format(d, "%d"))
   yr <- function(d) format(d, "%Y")

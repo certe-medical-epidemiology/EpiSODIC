@@ -51,9 +51,13 @@ episodic_app_pathogen_options <- function(con) {
        FROM episodic_case GROUP BY pathogen ORDER BY COUNT(*) DESC"
   )
   if (nrow(out) == 0) {
-    return(data.frame(pathogen = character(0), n_cases = integer(0),
-                       first_day = character(0), last_day = character(0),
-                       stringsAsFactors = FALSE))
+    return(data.frame(
+      pathogen = character(0),
+      n_cases = integer(0),
+      first_day = character(0),
+      last_day = character(0),
+      stringsAsFactors = FALSE
+    ))
   }
   out
 }
@@ -68,8 +72,14 @@ episodic_app_pathogen_options <- function(con) {
 #'
 #' @keywords internal
 #' @noRd
-episodic_pathogen_period_ids <- c("season_current", "season_previous", "last_12m",
-                                   "last_5y", "all", "custom")
+episodic_pathogen_period_ids <- c(
+  "season_current",
+  "season_previous",
+  "last_12m",
+  "last_5y",
+  "all",
+  "custom"
+)
 
 #' Coerce one user-supplied date, however malformed, to a single `Date`
 #'
@@ -83,8 +93,12 @@ episodic_pathogen_period_ids <- c("season_current", "season_previous", "last_12m
 #' @keywords internal
 #' @noRd
 episodic_as_single_date <- function(x) {
-  if (is.null(x) || length(x) == 0) return(as.Date(NA))
-  parsed <- suppressWarnings(tryCatch(as.Date(x[1]), error = function(e) as.Date(NA)))
+  if (is.null(x) || length(x) == 0) {
+    return(as.Date(NA))
+  }
+  parsed <- suppressWarnings(tryCatch(as.Date(x[1]), error = function(e) {
+    as.Date(NA)
+  }))
   if (length(parsed) == 0) as.Date(NA) else parsed[1]
 }
 
@@ -101,22 +115,44 @@ episodic_as_single_date <- function(x) {
 #'   `NULL`).
 #' @keywords internal
 #' @noRd
-episodic_app_resolve_period <- function(period = "season_current", from = NULL, to = NULL,
-                                        asof = Sys.Date(), data_from = NULL) {
+episodic_app_resolve_period <- function(
+  period = "season_current",
+  from = NULL,
+  to = NULL,
+  asof = Sys.Date(),
+  data_from = NULL
+) {
   asof <- as.Date(asof)
-  period <- if (is.null(period) || !period %in% episodic_pathogen_period_ids) "season_current" else period
+  period <- if (is.null(period) || !period %in% episodic_pathogen_period_ids) {
+    "season_current"
+  } else {
+    period
+  }
 
   season_window <- function(season) {
     bounds <- episodic_mem_season_bounds(season)
-    if (is.null(bounds)) return(NULL)
+    if (is.null(bounds)) {
+      return(NULL)
+    }
     previous <- episodic_season_shift(season, 1L)
-    previous_bounds <- if (is.null(previous)) NULL else episodic_mem_season_bounds(previous)
+    previous_bounds <- if (is.null(previous)) {
+      NULL
+    } else {
+      episodic_mem_season_bounds(previous)
+    }
     list(
-      id = period, from = bounds$start, to = min(bounds$end, asof), season = season,
+      id = period,
+      from = bounds$start,
+      to = min(bounds$end, asof),
+      season = season,
       previous = if (is.null(previous_bounds)) {
         NULL
       } else {
-        list(from = previous_bounds$start, to = previous_bounds$end, label = previous)
+        list(
+          from = previous_bounds$start,
+          to = previous_bounds$end,
+          label = previous
+        )
       }
     )
   }
@@ -124,12 +160,30 @@ episodic_app_resolve_period <- function(period = "season_current", from = NULL, 
   resolved <- switch(
     period,
     season_current = season_window(episodic_season_containing(asof)),
-    season_previous = season_window(episodic_season_shift(episodic_season_containing(asof), 1L)),
-    last_12m = list(id = period, from = asof - 364, to = asof, season = NA_character_),
+    season_previous = season_window(episodic_season_shift(
+      episodic_season_containing(asof),
+      1L
+    )),
+    last_12m = list(
+      id = period,
+      from = asof - 364,
+      to = asof,
+      season = NA_character_
+    ),
     # 5 x 52 weeks rather than 5 x 365 days, so the window starts on the
     # same weekday it ends on and the weekly bins line up.
-    last_5y = list(id = period, from = asof - (5 * 52 * 7 - 1), to = asof, season = NA_character_),
-    all = list(id = period, from = as.Date(data_from %||% (asof - 3650)), to = asof, season = NA_character_),
+    last_5y = list(
+      id = period,
+      from = asof - (5 * 52 * 7 - 1),
+      to = asof,
+      season = NA_character_
+    ),
+    all = list(
+      id = period,
+      from = as.Date(data_from %||% (asof - 3650)),
+      to = asof,
+      season = NA_character_
+    ),
     custom = list(
       id = period,
       from = episodic_as_single_date(from),
@@ -138,15 +192,29 @@ episodic_app_resolve_period <- function(period = "season_current", from = NULL, 
     )
   )
 
-  if (is.null(resolved) || is.na(resolved$from) || is.na(resolved$to) || resolved$to < resolved$from) {
-    resolved <- list(id = "last_12m", from = asof - 364, to = asof, season = NA_character_)
+  if (
+    is.null(resolved) ||
+      is.na(resolved$from) ||
+      is.na(resolved$to) ||
+      resolved$to < resolved$from
+  ) {
+    resolved <- list(
+      id = "last_12m",
+      from = asof - 364,
+      to = asof,
+      season = NA_character_
+    )
   }
 
   if (is.null(resolved$previous)) {
     # For everything that is not a named season, the comparison period is
     # the equally long window ending the day before this one starts.
     span <- as.integer(resolved$to - resolved$from)
-    resolved$previous <- list(from = resolved$from - span - 1, to = resolved$from - 1, label = NA_character_)
+    resolved$previous <- list(
+      from = resolved$from - span - 1,
+      to = resolved$from - 1,
+      label = NA_character_
+    )
   }
   resolved
 }
@@ -163,24 +231,47 @@ episodic_app_resolve_period <- function(period = "season_current", from = NULL, 
 #'   `episodic_cluster_object()` uses.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_screen <- function(con, pathogen = NULL, period = "season_current",
-                                         from = NULL, to = NULL, lang = "nl") {
+episodic_app_pathogen_screen <- function(
+  con,
+  pathogen = NULL,
+  period = "season_current",
+  from = NULL,
+  to = NULL,
+  lang = "nl"
+) {
   options <- episodic_app_pathogen_options(con)
   asof <- episodic_app_data_asof(con)
 
   if (nrow(options) == 0) {
-    return(list(pathogens = options, pathogen = NULL, asof = asof,
-                 period = episodic_app_resolve_period(period, from, to, asof)))
+    return(list(
+      pathogens = options,
+      pathogen = NULL,
+      asof = asof,
+      period = episodic_app_resolve_period(period, from, to, asof)
+    ))
   }
-  if (is.null(pathogen) || !pathogen %in% options$pathogen) pathogen <- options$pathogen[1]
+  if (is.null(pathogen) || !pathogen %in% options$pathogen) {
+    pathogen <- options$pathogen[1]
+  }
 
   data_from <- as.Date(options$first_day[options$pathogen == pathogen][1])
-  resolved <- episodic_app_resolve_period(period, from, to, asof, data_from = data_from)
+  resolved <- episodic_app_resolve_period(
+    period,
+    from,
+    to,
+    asof,
+    data_from = data_from
+  )
 
   all_cases <- episodic_db_cases_for_pathogen(con, pathogen)
   all_cases$sample_date <- as.Date(all_cases$sample_date)
   all_cases <- all_cases[!is.na(all_cases$sample_date), , drop = FALSE]
-  window_cases <- all_cases[all_cases$sample_date >= resolved$from & all_cases$sample_date <= resolved$to, , drop = FALSE]
+  window_cases <- all_cases[
+    all_cases$sample_date >= resolved$from &
+      all_cases$sample_date <= resolved$to,
+    ,
+    drop = FALSE
+  ]
 
   pc <- episodic_db_pathogen_config_get(con, pathogen)
   region_stream_id <- episodic_app_pathogen_region_stream(con, pathogen)
@@ -201,17 +292,55 @@ episodic_app_pathogen_screen <- function(con, pathogen = NULL, period = "season_
     seasonal = seasonal,
     incomplete_days = incomplete_days,
     summary = episodic_app_pathogen_summary(all_cases, window_cases, resolved),
-    weekly = episodic_app_pathogen_weekly(window_cases, resolved, incomplete_days, asof),
-    mem = if (seasonal) episodic_app_pathogen_mem(all_cases, resolved, asof) else NULL,
-    overlay = episodic_app_pathogen_overlay(all_cases, resolved, seasonal = seasonal, asof = asof),
-    rt = episodic_app_pathogen_rt(all_cases, pc, resolved, incomplete_days, asof),
+    weekly = episodic_app_pathogen_weekly(
+      window_cases,
+      resolved,
+      incomplete_days,
+      asof
+    ),
+    mem = if (seasonal) {
+      episodic_app_pathogen_mem(all_cases, resolved, asof)
+    } else {
+      NULL
+    },
+    overlay = episodic_app_pathogen_overlay(
+      all_cases,
+      resolved,
+      seasonal = seasonal,
+      asof = asof
+    ),
+    rt = episodic_app_pathogen_rt(
+      all_cases,
+      pc,
+      resolved,
+      incomplete_days,
+      asof
+    ),
     rt_unavailable_reason = episodic_rt_unavailable_reason(pc),
-    denominator = episodic_app_pathogen_denominator(con, pathogen, all_cases, resolved),
+    denominator = episodic_app_pathogen_denominator(
+      con,
+      pathogen,
+      all_cases,
+      resolved
+    ),
     demography = episodic_app_pathogen_demography(all_cases, window_cases),
-    care_lines = episodic_app_pathogen_breakdown(window_cases, "care_line", lang = lang),
+    care_lines = episodic_app_pathogen_breakdown(
+      window_cases,
+      "care_line",
+      lang = lang
+    ),
     concentration = episodic_app_concentration(window_cases, "pathogen_region"),
-    institutions = episodic_app_pathogen_institutions(con, window_cases, lang = lang),
-    clusters = episodic_app_pathogen_clusters(con, pathogen, resolved, lang = lang)
+    institutions = episodic_app_pathogen_institutions(
+      con,
+      window_cases,
+      lang = lang
+    ),
+    clusters = episodic_app_pathogen_clusters(
+      con,
+      pathogen,
+      resolved,
+      lang = lang
+    )
   )
 }
 
@@ -249,15 +378,26 @@ episodic_app_pathogen_summary <- function(all_cases, window_cases, resolved) {
   n_previous <- if (is.null(previous)) {
     NA_integer_
   } else {
-    sum(all_cases$sample_date >= previous$from & all_cases$sample_date <= previous$to)
+    sum(
+      all_cases$sample_date >= previous$from &
+        all_cases$sample_date <= previous$to
+    )
   }
 
   weekly <- if (nrow(window_cases) == 0) {
     data.frame(week_start = as.Date(character(0)), n_cases = integer(0))
   } else {
-    episodic_app_weekly_counts(window_cases$sample_date, resolved$from, resolved$to)
+    episodic_app_weekly_counts(
+      window_cases$sample_date,
+      resolved$from,
+      resolved$to
+    )
   }
-  peak_idx <- if (nrow(weekly) == 0 || all(weekly$n_cases == 0)) NA_integer_ else which.max(weekly$n_cases)
+  peak_idx <- if (nrow(weekly) == 0 || all(weekly$n_cases == 0)) {
+    NA_integer_
+  } else {
+    which.max(weekly$n_cases)
+  }
 
   list(
     n_cases = nrow(window_cases),
@@ -265,7 +405,11 @@ episodic_app_pathogen_summary <- function(all_cases, window_cases, resolved) {
     n_weeks = nrow(weekly),
     peak_week = if (is.na(peak_idx)) NA else weekly$week_start[peak_idx],
     peak_n = if (is.na(peak_idx)) NA_integer_ else weekly$n_cases[peak_idx],
-    median_weekly = if (nrow(weekly) == 0) NA_real_ else stats::median(weekly$n_cases),
+    median_weekly = if (nrow(weekly) == 0) {
+      NA_real_
+    } else {
+      stats::median(weekly$n_cases)
+    },
     n_previous = n_previous,
     previous_label = previous$label %||% NA_character_,
     # A percentage change is only meaningful against a non-zero base;
@@ -290,17 +434,23 @@ episodic_app_weekly_counts <- function(dates, from, to) {
   floor_to_monday <- function(d) d - (as.integer(format(d, "%u")) - 1L)
   first_week <- floor_to_monday(as.Date(from))
   last_week <- floor_to_monday(as.Date(to))
-  if (last_week < first_week) last_week <- first_week
+  if (last_week < first_week) {
+    last_week <- first_week
+  }
   week_start <- seq(first_week, last_week, by = "week")
   dates <- as.Date(dates)
   dates <- dates[!is.na(dates)]
   # Indexed with `[` rather than iterated over directly: `vapply()` over a
   # Date vector hands the function bare numbers, and comparing those
   # against Dates only works by accident of the shared storage type.
-  counts <- vapply(seq_along(week_start), function(i) {
-    ws <- week_start[i]
-    sum(dates >= ws & dates < ws + 7)
-  }, integer(1))
+  counts <- vapply(
+    seq_along(week_start),
+    function(i) {
+      ws <- week_start[i]
+      sum(dates >= ws & dates < ws + 7)
+    },
+    integer(1)
+  )
   data.frame(week_start = week_start, n_cases = counts)
 }
 
@@ -317,8 +467,17 @@ episodic_app_weekly_counts <- function(dates, from, to) {
 #' @return A data frame with `week_start`, `n_cases`, `incomplete`.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_weekly <- function(window_cases, resolved, incomplete_days = 0L, asof = Sys.Date()) {
-  weekly <- episodic_app_weekly_counts(window_cases$sample_date, resolved$from, resolved$to)
+episodic_app_pathogen_weekly <- function(
+  window_cases,
+  resolved,
+  incomplete_days = 0L,
+  asof = Sys.Date()
+) {
+  weekly <- episodic_app_weekly_counts(
+    window_cases$sample_date,
+    resolved$from,
+    resolved$to
+  )
   cutoff <- as.Date(asof) - as.integer(incomplete_days)
   weekly$incomplete <- weekly$week_start + 6 > cutoff
   weekly
@@ -338,9 +497,13 @@ episodic_app_pathogen_weekly <- function(window_cases, resolved, incomplete_days
 #' @noRd
 episodic_app_pathogen_mem <- function(all_cases, resolved, asof = Sys.Date()) {
   season <- resolved$season
-  if (is.na(season)) season <- episodic_season_containing(resolved$to)
+  if (is.na(season)) {
+    season <- episodic_season_containing(resolved$to)
+  }
   thresholds <- episodic_mem_thresholds_for_season(all_cases, season)
-  if (is.null(thresholds)) return(NULL)
+  if (is.null(thresholds)) {
+    return(NULL)
+  }
 
   # The live status is only meaningful when the period being looked at
   # actually reaches the present; on a historical season "the current
@@ -351,14 +514,22 @@ episodic_app_pathogen_mem <- function(all_cases, resolved, asof = Sys.Date()) {
     NULL
   }
 
-  weekly <- episodic_app_weekly_counts(all_cases$sample_date, resolved$from, resolved$to)
+  weekly <- episodic_app_weekly_counts(
+    all_cases$sample_date,
+    resolved$from,
+    resolved$to
+  )
   peak_n <- if (nrow(weekly) == 0) NA_integer_ else max(weekly$n_cases)
   list(
     season = season,
     thresholds = thresholds,
     status = status,
     peak_n = peak_n,
-    peak_level = episodic_mem_intensity_level(peak_n, thresholds$pre_epidemic, thresholds$intensity)
+    peak_level = episodic_mem_intensity_level(
+      peak_n,
+      thresholds$pre_epidemic,
+      thresholds$intensity
+    )
   )
 }
 
@@ -396,16 +567,25 @@ episodic_app_pathogen_mem <- function(all_cases, resolved, asof = Sys.Date()) {
 #'   `NULL` when fewer than two periods have data.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_overlay <- function(all_cases, resolved, seasonal = FALSE, max_periods = 6L,
-                                          asof = NULL) {
-  if (nrow(all_cases) == 0) return(NULL)
+episodic_app_pathogen_overlay <- function(
+  all_cases,
+  resolved,
+  seasonal = FALSE,
+  max_periods = 6L,
+  asof = NULL
+) {
+  if (nrow(all_cases) == 0) {
+    return(NULL)
+  }
   dates <- all_cases$sample_date
 
   if (isTRUE(seasonal)) {
     # `dates[i]` rather than iterating the vector directly: `[` keeps the
     # Date class, where handing elements straight to lapply is at the
     # mercy of how a classed atomic vector is subset.
-    assigned <- lapply(seq_along(dates), function(i) episodic_mem_season_week(dates[i]))
+    assigned <- lapply(seq_along(dates), function(i) {
+      episodic_mem_season_week(dates[i])
+    })
     group <- vapply(assigned, function(a) a$season, character(1))
     week_label <- vapply(assigned, function(a) a$week_label, character(1))
     week_order <- c(as.character(40:52), as.character(1:20))
@@ -423,24 +603,50 @@ episodic_app_pathogen_overlay <- function(all_cases, resolved, seasonal = FALSE,
 
   group <- group[keep]
   week_label <- week_label[keep]
-  if (length(group) == 0) return(NULL)
+  if (length(group) == 0) {
+    return(NULL)
+  }
 
   groups <- sort(unique(group), decreasing = TRUE)
   # Keep the period being looked at plus the most recent ones before it,
   # so an overlay never quietly omits the very line the user selected.
   groups <- unique(c(current[current %in% groups], groups))
   groups <- utils::head(groups, max_periods)
-  if (length(groups) < 2) return(NULL)
+  if (length(groups) < 2) {
+    return(NULL)
+  }
 
-  rows <- do.call(rbind, lapply(groups, function(g) {
-    counts <- vapply(week_order, function(w) sum(group == g & week_label == w), integer(1))
-    data.frame(group = g, week_index = seq_along(week_order), week_label = week_order,
-                n_cases = as.integer(counts), stringsAsFactors = FALSE)
-  }))
-  rows <- episodic_app_overlay_truncate(rows, week_order, groups, seasonal = seasonal, asof = asof)
+  rows <- do.call(
+    rbind,
+    lapply(groups, function(g) {
+      counts <- vapply(
+        week_order,
+        function(w) sum(group == g & week_label == w),
+        integer(1)
+      )
+      data.frame(
+        group = g,
+        week_index = seq_along(week_order),
+        week_label = week_order,
+        n_cases = as.integer(counts),
+        stringsAsFactors = FALSE
+      )
+    })
+  )
+  rows <- episodic_app_overlay_truncate(
+    rows,
+    week_order,
+    groups,
+    seasonal = seasonal,
+    asof = asof
+  )
 
-  list(kind = if (isTRUE(seasonal)) "season" else "year", current = current,
-       groups = groups, rows = rows)
+  list(
+    kind = if (isTRUE(seasonal)) "season" else "year",
+    current = current,
+    groups = groups,
+    rows = rows
+  )
 }
 
 #' Blank the weeks of the period in progress that have not happened yet
@@ -457,10 +663,20 @@ episodic_app_pathogen_overlay <- function(all_cases, resolved, seasonal = FALSE,
 #'   its quiet weeks are observations, not gaps.
 #' @keywords internal
 #' @noRd
-episodic_app_overlay_truncate <- function(rows, week_order, groups, seasonal = FALSE, asof = NULL) {
-  if (is.null(asof)) return(rows)
+episodic_app_overlay_truncate <- function(
+  rows,
+  week_order,
+  groups,
+  seasonal = FALSE,
+  asof = NULL
+) {
+  if (is.null(asof)) {
+    return(rows)
+  }
   asof <- as.Date(asof)
-  if (is.na(asof)) return(rows)
+  if (is.na(asof)) {
+    return(rows)
+  }
 
   if (isTRUE(seasonal)) {
     current <- episodic_mem_season_week(asof)
@@ -474,7 +690,9 @@ episodic_app_overlay_truncate <- function(rows, week_order, groups, seasonal = F
   # that is the right answer here too: the season it follows is over, so
   # every one of its weeks was genuinely observed.
   cutoff <- match(week, week_order)
-  if (is.na(running) || is.na(cutoff) || !running %in% groups) return(rows)
+  if (is.na(running) || is.na(cutoff) || !running %in% groups) {
+    return(rows)
+  }
 
   beyond <- rows$group == running & rows$week_index > cutoff
   rows$n_cases[beyond] <- NA_integer_
@@ -511,17 +729,40 @@ episodic_app_overlay_truncate <- function(rows, week_order, groups, seasonal = F
 #'   `NULL`.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_rt <- function(all_cases, pc, resolved, incomplete_days = 0L,
-                                     asof = Sys.Date(), lead_in_days = 90L) {
-  if (is.null(pc) || nrow(all_cases) == 0) return(NULL)
-  lead_in <- all_cases[all_cases$sample_date >= resolved$from - lead_in_days &
-                          all_cases$sample_date <= resolved$to, , drop = FALSE]
-  if (nrow(lead_in) == 0) return(NULL)
+episodic_app_pathogen_rt <- function(
+  all_cases,
+  pc,
+  resolved,
+  incomplete_days = 0L,
+  asof = Sys.Date(),
+  lead_in_days = 90L
+) {
+  if (is.null(pc) || nrow(all_cases) == 0) {
+    return(NULL)
+  }
+  lead_in <- all_cases[
+    all_cases$sample_date >= resolved$from - lead_in_days &
+      all_cases$sample_date <= resolved$to,
+    ,
+    drop = FALSE
+  ]
+  if (nrow(lead_in) == 0) {
+    return(NULL)
+  }
 
-  rt <- episodic_compute_rt(lead_in, pc, incomplete_days = incomplete_days, asof = asof)
-  if (is.null(rt)) return(NULL)
+  rt <- episodic_compute_rt(
+    lead_in,
+    pc,
+    incomplete_days = incomplete_days,
+    asof = asof
+  )
+  if (is.null(rt)) {
+    return(NULL)
+  }
   rt <- rt[rt$window_end >= resolved$from, , drop = FALSE]
-  if (nrow(rt) == 0) return(NULL)
+  if (nrow(rt) == 0) {
+    return(NULL)
+  }
   rt
 }
 
@@ -535,23 +776,44 @@ episodic_app_pathogen_rt <- function(all_cases, pc, resolved, incomplete_days = 
 #'   `positivity`, or `NULL`.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_denominator <- function(con, pathogen, all_cases, resolved) {
+episodic_app_pathogen_denominator <- function(
+  con,
+  pathogen,
+  all_cases,
+  resolved
+) {
   denom <- episodic_db_denominator_for_pathogen(con, pathogen)
-  if (nrow(denom) == 0) return(NULL)
+  if (nrow(denom) == 0) {
+    return(NULL)
+  }
 
   denom <- stats::aggregate(n_tests ~ sample_date, denom, sum)
   denom$week_start <- as.Date(denom$sample_date)
-  denom <- denom[!is.na(denom$week_start) &
-                    denom$week_start <= resolved$to &
-                    denom$week_start + 6 >= resolved$from, , drop = FALSE]
-  if (nrow(denom) < 2) return(NULL)
+  denom <- denom[
+    !is.na(denom$week_start) &
+      denom$week_start <= resolved$to &
+      denom$week_start + 6 >= resolved$from,
+    ,
+    drop = FALSE
+  ]
+  if (nrow(denom) < 2) {
+    return(NULL)
+  }
   denom <- denom[order(denom$week_start), ]
 
-  denom$n_cases <- vapply(seq_len(nrow(denom)), function(i) {
-    ws <- denom$week_start[i]
-    sum(all_cases$sample_date >= ws & all_cases$sample_date < ws + 7)
-  }, integer(1))
-  denom$positivity <- ifelse(denom$n_tests > 0, denom$n_cases / denom$n_tests, NA)
+  denom$n_cases <- vapply(
+    seq_len(nrow(denom)),
+    function(i) {
+      ws <- denom$week_start[i]
+      sum(all_cases$sample_date >= ws & all_cases$sample_date < ws + 7)
+    },
+    integer(1)
+  )
+  denom$positivity <- ifelse(
+    denom$n_tests > 0,
+    denom$n_cases / denom$n_tests,
+    NA
+  )
   denom[, c("week_start", "n_tests", "n_cases", "positivity")]
 }
 
@@ -571,16 +833,26 @@ episodic_app_pathogen_denominator <- function(con, pathogen, all_cases, resolved
 #' @keywords internal
 #' @noRd
 episodic_app_pathogen_demography <- function(all_cases, window_cases) {
-  if (nrow(window_cases) == 0 || all(is.na(window_cases$age))) return(NULL)
+  if (nrow(window_cases) == 0 || all(is.na(window_cases$age))) {
+    return(NULL)
+  }
   # The baseline excludes the period being described, so the comparison
   # is against other periods rather than partly against itself.
-  baseline <- all_cases[!(all_cases$case_id %in% window_cases$case_id), , drop = FALSE]
+  baseline <- all_cases[
+    !(all_cases$case_id %in% window_cases$case_id),
+    ,
+    drop = FALSE
+  ]
   baseline_ages <- baseline$age[!is.na(baseline$age)]
 
   list(
     bands = episodic_app_demography_bars(window_cases),
     median_age = stats::median(window_cases$age, na.rm = TRUE),
-    baseline_median_age = if (length(baseline_ages) < 5) NA_real_ else stats::median(baseline_ages),
+    baseline_median_age = if (length(baseline_ages) < 5) {
+      NA_real_
+    } else {
+      stats::median(baseline_ages)
+    },
     n_unknown_age = sum(is.na(window_cases$age))
   )
 }
@@ -594,14 +866,24 @@ episodic_app_pathogen_demography <- function(all_cases, window_cases) {
 #' @keywords internal
 #' @noRd
 episodic_app_pathogen_breakdown <- function(window_cases, column, lang = "nl") {
-  if (nrow(window_cases) == 0 || all(is.na(window_cases[[column]]))) return(NULL)
+  if (nrow(window_cases) == 0 || all(is.na(window_cases[[column]]))) {
+    return(NULL)
+  }
   tab <- sort(table(window_cases[[column]]), decreasing = TRUE)
   labels <- names(tab)
   if (identical(column, "care_line")) {
-    labels <- vapply(labels, function(v) episodic_tr(paste0("careline.", v), lang = lang), character(1))
+    labels <- vapply(
+      labels,
+      function(v) episodic_tr(paste0("careline.", v), lang = lang),
+      character(1)
+    )
   }
-  data.frame(label = as.character(labels), n = as.integer(tab), row.names = NULL,
-              stringsAsFactors = FALSE)
+  data.frame(
+    label = as.character(labels),
+    n = as.integer(tab),
+    row.names = NULL,
+    stringsAsFactors = FALSE
+  )
 }
 
 #' Which institutions the period's cases came from
@@ -613,14 +895,26 @@ episodic_app_pathogen_breakdown <- function(window_cases, column, lang = "nl") {
 #' @return A data frame with `label` and `n`, or `NULL`.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_institutions <- function(con, window_cases, top = 10L, lang = "nl") {
+episodic_app_pathogen_institutions <- function(
+  con,
+  window_cases,
+  top = 10L,
+  lang = "nl"
+) {
   ids <- window_cases$institution_id[!is.na(window_cases$institution_id)]
-  if (length(ids) == 0) return(NULL)
+  if (length(ids) == 0) {
+    return(NULL)
+  }
   institutions <- episodic_db_institutions(con)
   display <- institutions$display_name[match(ids, institutions$institution_id)]
   display[is.na(display)] <- episodic_tr("misc.unknown", lang = lang)
   tab <- utils::head(sort(table(display), decreasing = TRUE), top)
-  data.frame(label = names(tab), n = as.integer(tab), row.names = NULL, stringsAsFactors = FALSE)
+  data.frame(
+    label = names(tab),
+    n = as.integer(tab),
+    row.names = NULL,
+    stringsAsFactors = FALSE
+  )
 }
 
 #' Clusters of this pathogen that overlap the period
@@ -637,11 +931,23 @@ episodic_app_pathogen_institutions <- function(con, window_cases, top = 10L, lan
 #'   `first_day`, `last_day`, `n_cases`, `verdict_label`, `state_label`.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_clusters <- function(con, pathogen, resolved, lang = "nl") {
-  empty <- data.frame(cluster_id = integer(0), level_label = character(0), place = character(0),
-                       first_day = character(0), last_day = character(0), n_cases = integer(0),
-                       verdict_label = character(0), state_label = character(0),
-                       stringsAsFactors = FALSE)
+episodic_app_pathogen_clusters <- function(
+  con,
+  pathogen,
+  resolved,
+  lang = "nl"
+) {
+  empty <- data.frame(
+    cluster_id = integer(0),
+    level_label = character(0),
+    place = character(0),
+    first_day = character(0),
+    last_day = character(0),
+    n_cases = integer(0),
+    verdict_label = character(0),
+    state_label = character(0),
+    stringsAsFactors = FALSE
+  )
   clusters <- DBI::dbGetQuery(
     con,
     "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day, c.n_cases, c.priority_score
@@ -650,9 +956,15 @@ episodic_app_pathogen_clusters <- function(con, pathogen, resolved, lang = "nl")
       WHERE s.pathogen = ? AND c.merged_into IS NULL
         AND c.last_day >= ? AND c.first_day <= ?
       ORDER BY c.first_day DESC",
-    params = list(pathogen, as.character(resolved$from), as.character(resolved$to))
+    params = list(
+      pathogen,
+      as.character(resolved$from),
+      as.character(resolved$to)
+    )
   )
-  if (nrow(clusters) == 0) return(empty)
+  if (nrow(clusters) == 0) {
+    return(empty)
+  }
 
   streams <- episodic_db_streams(con, active_only = FALSE)
   institutions <- episodic_db_institutions(con)
@@ -661,21 +973,29 @@ episodic_app_pathogen_clusters <- function(con, pathogen, resolved, lang = "nl")
     row <- clusters[i, ]
     stream <- streams[streams$stream_id == row$stream_id, ][1, ]
     institution <- if (!is.na(stream$institution_id)) {
-      inst <- institutions[institutions$institution_id == stream$institution_id, ]
+      inst <- institutions[
+        institutions$institution_id == stream$institution_id,
+      ]
       if (nrow(inst) == 0) NULL else inst[1, ]
     } else {
       NULL
     }
     events <- episodic_db_assessment_events(con, row$cluster_id)
     verdicts <- events$verdict[!is.na(events$verdict)]
-    verdict <- if (length(verdicts) == 0) NA_character_ else verdicts[length(verdicts)]
+    verdict <- if (length(verdicts) == 0) {
+      NA_character_
+    } else {
+      verdicts[length(verdicts)]
+    }
     state <- episodic_app_derive_state_for_cluster(con, row$cluster_id)
 
     data.frame(
       cluster_id = row$cluster_id,
       level_label = episodic_tr(paste0("level.", stream$level), lang = lang),
       place = episodic_app_place_label(stream, institution, lang = lang),
-      first_day = row$first_day, last_day = row$last_day, n_cases = row$n_cases,
+      first_day = row$first_day,
+      last_day = row$last_day,
+      n_cases = row$n_cases,
       verdict_label = if (is.na(verdict)) {
         episodic_tr("misc.dash", lang = lang)
       } else {

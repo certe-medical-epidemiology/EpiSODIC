@@ -48,8 +48,16 @@
 #' @return Invisible `NULL`; called for its side effects.
 #' @keywords internal
 #' @noRd
-episodic_app_server_assessment_actions <- function(input, output, session, con, lang = "nl",
-                                                    current_user, selected_cluster_id, db_touch) {
+episodic_app_server_assessment_actions <- function(
+  input,
+  output,
+  session,
+  con,
+  lang = "nl",
+  current_user,
+  selected_cluster_id,
+  db_touch
+) {
   refresh <- function() {
     # Re-trigger the dossier/assessment renderers by "reselecting" the
     # same cluster - both read from the database, not from this value's
@@ -66,10 +74,12 @@ episodic_app_server_assessment_actions <- function(input, output, session, con, 
     payload <- input$assess_submit
     rationale <- trimws(payload$rationale %||% "")
     if (!nzchar(rationale)) {
-      return(invisible(NULL))  # mandatory rationale; client also enforces this
+      return(invisible(NULL)) # mandatory rationale; client also enforces this
     }
     episodic_app_submit_assessment(
-      con, cluster_id = payload$cluster_id, user_id = user$user_id,
+      con,
+      cluster_id = payload$cluster_id,
+      user_id = user$user_id,
       verdict = if (nzchar(payload$verdict %||% "")) payload$verdict else NA,
       rationale = rationale,
       # wpg_notifiable/ggd_informed are left at episodic_app_submit_assessment()'s
@@ -83,7 +93,11 @@ episodic_app_server_assessment_actions <- function(input, output, session, con, 
   shiny::observeEvent(input$assess_close, {
     user <- current_user()
     shiny::req(user)
-    episodic_app_submit_closure(con, cluster_id = input$assess_close, user_id = user$user_id)
+    episodic_app_submit_closure(
+      con,
+      cluster_id = input$assess_close,
+      user_id = user$user_id
+    )
     refresh()
   })
 
@@ -94,12 +108,17 @@ episodic_app_server_assessment_actions <- function(input, output, session, con, 
     rationale <- trimws(payload$rationale %||% "")
     cluster_ids <- payload$cluster_ids
     if (!nzchar(rationale) || length(cluster_ids) == 0) {
-      return(invisible(NULL))  # mandatory rationale, same rule as the single-cluster form; client also enforces both
+      return(invisible(NULL)) # mandatory rationale, same rule as the single-cluster form; client also enforces both
     }
     verdict <- if (nzchar(payload$verdict %||% "")) payload$verdict else NA
     for (cluster_id in cluster_ids) {
-      episodic_app_submit_assessment(con, cluster_id = cluster_id, user_id = user$user_id,
-                                     verdict = verdict, rationale = rationale)
+      episodic_app_submit_assessment(
+        con,
+        cluster_id = cluster_id,
+        user_id = user$user_id,
+        verdict = verdict,
+        rationale = rationale
+      )
     }
     refresh()
   })
@@ -108,12 +127,19 @@ episodic_app_server_assessment_actions <- function(input, output, session, con, 
     user <- current_user()
     shiny::req(user)
     payload <- input$assess_mute_submit
-    if (!nzchar(payload$muted_from %||% "") || !nzchar(payload$muted_until %||% "")) {
+    if (
+      !nzchar(payload$muted_from %||% "") ||
+        !nzchar(payload$muted_until %||% "")
+    ) {
       return(invisible(NULL))
     }
     episodic_db_stream_mute_insert(
-      con, stream_id = payload$stream_id, muted_from = payload$muted_from,
-      muted_until = payload$muted_until, reason = payload$reason, user_id = user$user_id
+      con,
+      stream_id = payload$stream_id,
+      muted_from = payload$muted_from,
+      muted_until = payload$muted_until,
+      reason = payload$reason,
+      user_id = user$user_id
     )
     refresh()
   })

@@ -38,19 +38,19 @@ reference:
   contents:
   - episodic_run_cron
   - episodic_run_app
-  - episodic_resolve_source
+  - episodic_resolve_data
 
 - title: Connect your own data
   desc: >
     How to plug in your laboratory results and, optionally, testing
     volume and hospital activity data.
   contents:
-  - episodic_ingest_interface
-  - episodic_ingest_validate_source
-  - episodic_ingest_source_synthetic
-  - episodic_ingest_source_synthetic_calibration
-  - episodic_denominator_source_synthetic
-  - episodic_synthetic_institution_activity_source
+  - episodic_case_data
+  - episodic_validate_cases
+  - episodic_synthetic_cases
+  - episodic_synthetic_cases_calibration
+  - episodic_synthetic_denominators
+  - episodic_synthetic_institution_activity
 
 - title: Set up a database
   desc: >

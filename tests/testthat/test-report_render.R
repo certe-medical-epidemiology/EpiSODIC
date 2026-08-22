@@ -25,17 +25,29 @@ test_that("episodic_report_suppress_small_counts() replaces 0 < n < threshold wi
 
 test_that("episodic_report_suppress_small_counts() is a no-op when threshold is NULL or <= 1", {
   df <- data.frame(label = "a", n = 3)
-  expect_equal(episodic_report_suppress_small_counts(df, "n", threshold = NULL), df)
-  expect_equal(episodic_report_suppress_small_counts(df, "n", threshold = 1), df)
+  expect_equal(
+    episodic_report_suppress_small_counts(df, "n", threshold = NULL),
+    df
+  )
+  expect_equal(
+    episodic_report_suppress_small_counts(df, "n", threshold = 1),
+    df
+  )
 })
 
 test_that("episodic_report_suppress_small_counts() handles a zero-row data frame", {
   df <- data.frame(label = character(0), n = integer(0))
-  expect_equal(nrow(episodic_report_suppress_small_counts(df, "n", threshold = 5)), 0)
+  expect_equal(
+    nrow(episodic_report_suppress_small_counts(df, "n", threshold = 5)),
+    0
+  )
 })
 
 test_that("episodic_quarto_available() is FALSE without the CLI, and episodic_report_render() gives a clear error", {
-  skip_if(episodic_quarto_available(), "quarto CLI is actually available in this environment")
+  skip_if(
+    episodic_quarto_available(),
+    "quarto CLI is actually available in this environment"
+  )
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   expect_error(
@@ -61,12 +73,26 @@ test_that("episodic_report_render() picks version_no = max(existing) + 1, not a 
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   # simulate two prior renders including a gap, as episodic_db_report_render_insert() would leave them
-  episodic_db_report_render_insert(env$con, env$cluster_id, user_id = NA, file_path = "a.html",
-                                   file_sha256 = strrep("a", 64), params_json = "{}", case_ids_json = "[]",
-                                   version_no = 1)
-  episodic_db_report_render_insert(env$con, env$cluster_id, user_id = NA, file_path = "b.html",
-                                   file_sha256 = strrep("b", 64), params_json = "{}", case_ids_json = "[]",
-                                   version_no = 3)
+  episodic_db_report_render_insert(
+    env$con,
+    env$cluster_id,
+    user_id = NA,
+    file_path = "a.html",
+    file_sha256 = strrep("a", 64),
+    params_json = "{}",
+    case_ids_json = "[]",
+    version_no = 1
+  )
+  episodic_db_report_render_insert(
+    env$con,
+    env$cluster_id,
+    user_id = NA,
+    file_path = "b.html",
+    file_sha256 = strrep("b", 64),
+    params_json = "{}",
+    case_ids_json = "[]",
+    version_no = 3
+  )
   existing <- episodic_db_reports_for_cluster(env$con, env$cluster_id)
   expect_equal(max(existing$version_no) + 1L, 4L)
 })

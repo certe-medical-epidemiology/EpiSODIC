@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Ingest optional positivity metadata
+#' Load optional positivity metadata
 #'
 #' Writes the operator-supplied, pre-aggregated denominator table (see
 #' `README.md`'s data format section) to `episodic_denominator`. Entirely
@@ -28,32 +28,69 @@
 #' individual test result.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param denominators A data frame with columns `pathogen`, `sample_date`,
-#'   `care_line`, `area_code` (nullable) and `n_tests`.
-#' @return Invisibly, the number of rows written.
+#' @param denominators A data frame (or tibble) with columns `pathogen`,
+#'   `sample_date`, `care_line`, `area_code` (nullable) and `n_tests`.
+#' @return Invisibly, a list with `n_supplied` and `n_written`. Every
+#'   supplied row is written, so these are equal - a denominator row has
+#'   nothing to match against and so cannot be skipped.
 #'
 #' Not exported: an operator supplies a source to [episodic_run_cron()] via
-#' `denominator_source`; this is the internal write step run against it.
+#' `denominators`; this is the internal write step run against it.
 #' @keywords internal
 #' @noRd
-episodic_denominator_ingest_run <- function(con, denominators) {
-  required_cols <- c("pathogen", "sample_date", "care_line", "area_code", "n_tests")
-  missing_cols <- setdiff(required_cols, names(denominators))
-  if (length(missing_cols) > 0) {
+episodic_denominators_load <- function(con, denominators) {
+  episodic_validate_columns(
+    denominators,
+    required = c(
+      "pathogen",
+      "sample_date",
+      "care_line",
+      "area_code",
+      "n_tests"
+    ),
+    filled = c("pathogen", "sample_date", "n_tests"),
+    what = "Denominator data"
+  )
+  episodic_validate_allowed(
+    denominators,
+    "care_line",
+    episodic_care_lines,
+    na_ok = TRUE,
+    what = "Denominator data"
+  )
+  episodic_validate_dates(
+    denominators,
+    "sample_date",
+    na_ok = FALSE,
+    what = "Denominator data"
+  )
+  if (nrow(denominators) > 0 && !is.numeric(denominators$n_tests)) {
     stop(
-      "Denominator source is missing required column(s): ",
-      paste(missing_cols, collapse = ", "), call. = FALSE
+      "Denominator data has a non-numeric `n_tests` (",
+      paste(class(denominators$n_tests), collapse = "/"),
+      ").",
+      call. = FALSE
     )
   }
+
+  # Same reading of a missing care line as the case feed: unknown.
+  denominators$care_line[is.na(denominators$care_line)] <- "unknown"
 
   for (i in seq_len(nrow(denominators))) {
     row <- denominators[i, ]
     episodic_db_denominator_upsert(
-      con, pathogen = row$pathogen, sample_date = row$sample_date,
-      care_line = row$care_line, area_code = row$area_code, n_tests = row$n_tests
+      con,
+      pathogen = row$pathogen,
+      sample_date = row$sample_date,
+      care_line = row$care_line,
+      area_code = row$area_code,
+      n_tests = row$n_tests
     )
   }
-  invisible(nrow(denominators))
+  invisible(list(
+    n_supplied = nrow(denominators),
+    n_written = nrow(denominators)
+  ))
 }
 
 #' Add a testing-volume (positivity) feed
@@ -68,23 +105,25 @@ episodic_denominator_ingest_run <- function(con, denominators) {
 #' This function is a synthetic example showing the expected shape: weekly
 #' counts of a multiplex GI PCR panel that also reports Norovirus. Use it as
 #' a template for your own data, which you pass to [episodic_run_cron()] as
-#' `denominator_source` - a data frame with the same five columns:
-#' `pathogen`, `sample_date` (week start), `care_line`, `area_code` (may be
-#' `NA`), and `n_tests`.
+#' `denominators` - a data frame or `tibble` with the same five
+#' columns: `pathogen`, `sample_date` (week start), `care_line`,
+#' `area_code` (may be `NA`), and `n_tests`.
 #'
 #' @param start_date,end_date The period to generate weekly rows for.
 #' @param seed RNG seed, for reproducible demo data.
 #' @return A data frame with `pathogen`, `sample_date` (week start),
 #'   `care_line`, `area_code`, `n_tests`.
 #' @examples
-#' denom <- episodic_denominator_source_synthetic(
+#' denom <- episodic_synthetic_denominators(
 #'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 #' )
 #' head(denom)
 #' @export
-episodic_denominator_source_synthetic <- function(start_date = as.Date("2021-01-01"),
-                                                  end_date = as.Date("2025-12-31"),
-                                                  seed = 1) {
+episodic_synthetic_denominators <- function(
+  start_date = as.Date("2021-01-01"),
+  end_date = as.Date("2025-12-31"),
+  seed = 1
+) {
   set.seed(seed)
   week_starts <- seq(start_date, end_date, by = "week")
   n <- length(week_starts)

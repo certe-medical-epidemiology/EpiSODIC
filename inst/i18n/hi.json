@@ -141,6 +141,7 @@
   "streams.page_of": "पृष्ठ {page} में से {n_pages}",
 
   "status.run_ok": "रन {time} सफल · {streams_phrase} · {clusters_phrase} संसूचित",
+  "status.run_partial": "रन {time} पूरा, कुछ पंक्तियाँ छोड़ी गईं · {streams_phrase} · {clusters_phrase} संसूचित",
   "status.run_failed": "अंतिम रन विफल · {time}",
   "status.no_run": "अभी तक कोई संसूचन रन नहीं हुआ है",
   "status.completeness": "पूर्णता {pct}% ({days_phrase})",
@@ -276,6 +277,10 @@
   "activity.action_login": "साइन इन किया",
   "activity.action_run_success": "संसूचन रन सफल",
   "activity.action_run_failed": "संसूचन रन विफल",
+  "activity.action_run_running": "संसूचन रन जारी है",
+  "activity.action_run_partial": "संसूचन रन पूरा, कुछ पंक्तियाँ छोड़ी गईं",
+  "activity.detail_run": "{supplied} प्रस्तुत में से {inserted} नए मामले ({deduplicated} अपुनरावृत्ति के बाद)",
+  "activity.detail_run_skipped": "{skipped} गतिविधि पंक्तियाँ छोड़ी गईं: संस्थान यहाँ ज्ञात नहीं",
   "activity.target_cluster": "{pathogen} (क्लस्टर #{id})",
 
   "performance.title": "प्रदर्शन",

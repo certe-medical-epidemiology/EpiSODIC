@@ -22,11 +22,19 @@
 # these tests only need to confirm the plumbing (db created, cron ran,
 # account provisioned, credentials work) - not exercise a representative
 # dataset, which is already covered by test-run_cron.R.
-small_ingest <- function() {
-  episodic_ingest_source_synthetic(start_date = as.Date("2024-06-01"), end_date = as.Date("2024-06-30"), seed = 21)
+small_cases <- function() {
+  episodic_synthetic_cases(
+    start_date = as.Date("2024-06-01"),
+    end_date = as.Date("2024-06-30"),
+    seed = 21
+  )
 }
 small_denominator <- function() {
-  episodic_denominator_source_synthetic(start_date = as.Date("2024-06-01"), end_date = as.Date("2024-06-30"), seed = 21)
+  episodic_synthetic_denominators(
+    start_date = as.Date("2024-06-01"),
+    end_date = as.Date("2024-06-30"),
+    seed = 21
+  )
 }
 
 test_that("episodic_demo(launch = FALSE) sets up a working demo database in one call", {
@@ -34,8 +42,12 @@ test_that("episodic_demo(launch = FALSE) sets up a working demo database in one 
   db_path <- tempfile(fileext = ".sqlite")
 
   expect_message(
-    result <- episodic_demo(db_path = db_path, launch = FALSE,
-                            ingest_source = small_ingest, denominator_source = small_denominator),
+    result <- episodic_demo(
+      db_path = db_path,
+      launch = FALSE,
+      cases = small_cases,
+      denominators = small_denominator
+    ),
     "demo account"
   )
   expect_equal(result, db_path)
@@ -44,7 +56,10 @@ test_that("episodic_demo(launch = FALSE) sets up a working demo database in one 
   con <- episodic_db_connect(db_path)
   on.exit(DBI::dbDisconnect(con))
   expect_gt(DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM episodic_case")$n, 0)
-  expect_gt(DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM episodic_cluster")$n, 0)
+  expect_gt(
+    DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM episodic_cluster")$n,
+    0
+  )
 
   user <- episodic_db_user_by_username(con, "demo")
   expect_false(is.null(user))
@@ -55,9 +70,16 @@ test_that("episodic_demo() accepts custom credentials", {
   skip_if_not_installed("sodium")
   db_path <- tempfile(fileext = ".sqlite")
 
-  episodic_demo(db_path = db_path, username = "jdoe", full_name = "Jane Doe",
-               email = "jdoe@example.org", password = "s3cret-enough", launch = FALSE,
-               ingest_source = small_ingest, denominator_source = small_denominator)
+  episodic_demo(
+    db_path = db_path,
+    username = "jdoe",
+    full_name = "Jane Doe",
+    email = "jdoe@example.org",
+    password = "s3cret-enough",
+    launch = FALSE,
+    cases = small_cases,
+    denominators = small_denominator
+  )
 
   con <- episodic_db_connect(db_path)
   on.exit(DBI::dbDisconnect(con))

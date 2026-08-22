@@ -18,11 +18,19 @@
 # ===================================================================== #
 
 auth_test_user <- function(con, password = "initial123", must_change = TRUE) {
-  user_id <- episodic_db_app_user_insert(con, "jdoe", "Jane Doe", "j@x.nl",
-                                         sodium::password_store(password))
+  user_id <- episodic_db_app_user_insert(
+    con,
+    "jdoe",
+    "Jane Doe",
+    "j@x.nl",
+    sodium::password_store(password)
+  )
   if (!must_change) {
-    DBI::dbExecute(con, "UPDATE episodic_app_user SET must_change = 0 WHERE user_id = ?",
-                    params = list(user_id))
+    DBI::dbExecute(
+      con,
+      "UPDATE episodic_app_user SET must_change = 0 WHERE user_id = ?",
+      params = list(user_id)
+    )
   }
   user_id
 }
@@ -31,7 +39,13 @@ test_that("episodic_provision_user() takes a db_path (not an open connection) an
   db_path <- tempfile(fileext = ".sqlite")
   DBI::dbDisconnect(episodic_db_create(db_path))
 
-  episodic_provision_user(db_path, "jdoe", "Jane Doe", "j@x.nl", "a-temporary-password")
+  episodic_provision_user(
+    db_path,
+    "jdoe",
+    "Jane Doe",
+    "j@x.nl",
+    "a-temporary-password"
+  )
 
   con <- episodic_db_connect(db_path)
   on.exit(DBI::dbDisconnect(con))
@@ -45,10 +59,21 @@ test_that("episodic_provision_user() falls back to the EPISODIC_DB environment v
   db_path <- tempfile(fileext = ".sqlite")
   DBI::dbDisconnect(episodic_db_create(db_path))
   old_env <- Sys.getenv("EPISODIC_DB", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_DB") else Sys.setenv(EPISODIC_DB = old_env))
+  on.exit(
+    if (is.na(old_env)) {
+      Sys.unsetenv("EPISODIC_DB")
+    } else {
+      Sys.setenv(EPISODIC_DB = old_env)
+    }
+  )
   Sys.setenv(EPISODIC_DB = db_path)
 
-  episodic_provision_user(username = "asmith", full_name = "Ann Smith", email = "a@x.nl", password = "pw123456")
+  episodic_provision_user(
+    username = "asmith",
+    full_name = "Ann Smith",
+    email = "a@x.nl",
+    password = "pw123456"
+  )
 
   con <- episodic_db_connect(db_path)
   on.exit(DBI::dbDisconnect(con), add = TRUE)
@@ -57,7 +82,13 @@ test_that("episodic_provision_user() falls back to the EPISODIC_DB environment v
 
 test_that("episodic_db_open() errors clearly when neither db_path nor EPISODIC_DB is given", {
   old_env <- Sys.getenv("EPISODIC_DB", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_DB") else Sys.setenv(EPISODIC_DB = old_env))
+  on.exit(
+    if (is.na(old_env)) {
+      Sys.unsetenv("EPISODIC_DB")
+    } else {
+      Sys.setenv(EPISODIC_DB = old_env)
+    }
+  )
   Sys.unsetenv("EPISODIC_DB")
 
   expect_error(episodic_db_open(), "EPISODIC_DB")
@@ -76,8 +107,11 @@ test_that("episodic_auth_login() rejects a deactivated account even with the rig
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
   user_id <- auth_test_user(con)
-  DBI::dbExecute(con, "UPDATE episodic_app_user SET is_active = 0 WHERE user_id = ?",
-                 params = list(user_id))
+  DBI::dbExecute(
+    con,
+    "UPDATE episodic_app_user SET is_active = 0 WHERE user_id = ?",
+    params = list(user_id)
+  )
 
   expect_false(episodic_auth_login(con, "jdoe", "initial123")$ok)
 })
@@ -99,7 +133,7 @@ test_that("episodic_auth_login() succeeds with the right password and records a 
 test_that("must_change starts TRUE and becomes FALSE only after a password_change event, never via UPDATE", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
-  user_id <- auth_test_user(con)  # must_change = 1 on the row
+  user_id <- auth_test_user(con) # must_change = 1 on the row
 
   expect_true(episodic_auth_login(con, "jdoe", "initial123")$must_change)
 
@@ -150,7 +184,10 @@ test_that("episodic_auth_last_login() reflects the most recent login, NA before 
 
   expect_true(is.na(episodic_auth_last_login(con, user)))
   episodic_auth_login(con, "jdoe", "initial123")
-  first_login <- episodic_auth_last_login(con, episodic_db_user_by_id(con, user_id))
+  first_login <- episodic_auth_last_login(
+    con,
+    episodic_db_user_by_id(con, user_id)
+  )
   expect_false(is.na(first_login))
 })
 

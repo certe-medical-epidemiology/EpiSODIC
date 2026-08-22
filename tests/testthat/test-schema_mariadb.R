@@ -26,31 +26,54 @@
 test_that("episodic_db_dialect() tells a SQLite path from a MariaDB DSN", {
   expect_equal(episodic_db_dialect("/path/to/episodic.sqlite"), "sqlite")
   expect_equal(episodic_db_dialect("episodic.sqlite"), "sqlite")
-  expect_equal(episodic_db_dialect("mysql://user:pw@localhost:3306/episodic"), "mariadb")
-  expect_equal(episodic_db_dialect("mariadb://user:pw@localhost/episodic"), "mariadb")
+  expect_equal(
+    episodic_db_dialect("mysql://user:pw@localhost:3306/episodic"),
+    "mariadb"
+  )
+  expect_equal(
+    episodic_db_dialect("mariadb://user:pw@localhost/episodic"),
+    "mariadb"
+  )
 })
 
 test_that("episodic_db_dsn_mariadb() builds a DSN and URL-encodes credentials", {
   dsn <- episodic_db_dsn_mariadb(
-    host = "db.internal", dbname = "episodic", user = "app", password = "simple"
+    host = "db.internal",
+    dbname = "episodic",
+    user = "app",
+    password = "simple"
   )
   expect_equal(dsn, "mysql://app:simple@db.internal:3306/episodic")
 
   dsn_special <- episodic_db_dsn_mariadb(
-    host = "db.internal", dbname = "episodic", user = "app", password = "p@ss:w/ord"
+    host = "db.internal",
+    dbname = "episodic",
+    user = "app",
+    password = "p@ss:w/ord"
   )
   expect_false(grepl("p@ss:w/ord", dsn_special, fixed = TRUE))
   expect_equal(episodic_db_dialect(dsn_special), "mariadb")
 })
 
 test_that("episodic_db_dsn_mysql() is an alias for episodic_db_dsn_mariadb()", {
-  args <- list(host = "db.internal", dbname = "episodic", user = "app", password = "simple")
-  expect_equal(do.call(episodic_db_dsn_mysql, args), do.call(episodic_db_dsn_mariadb, args))
+  args <- list(
+    host = "db.internal",
+    dbname = "episodic",
+    user = "app",
+    password = "simple"
+  )
+  expect_equal(
+    do.call(episodic_db_dsn_mysql, args),
+    do.call(episodic_db_dsn_mariadb, args)
+  )
 })
 
 test_that("episodic_db_dsn_mariadb() round-trips through episodic_db_parse_mariadb_dsn()", {
   dsn <- episodic_db_dsn_mariadb(
-    host = "db.internal", dbname = "episodic", user = "app", password = "p@ss:w/ord!",
+    host = "db.internal",
+    dbname = "episodic",
+    user = "app",
+    password = "p@ss:w/ord!",
     port = 3307L
   )
   parts <- episodic_db_parse_mariadb_dsn(dsn)
@@ -62,12 +85,17 @@ test_that("episodic_db_dsn_mariadb() round-trips through episodic_db_parse_maria
 })
 
 test_that("episodic_db_parse_mariadb_dsn() defaults to port 3306", {
-  parts <- episodic_db_parse_mariadb_dsn("mysql://app:secret@localhost/episodic")
+  parts <- episodic_db_parse_mariadb_dsn(
+    "mysql://app:secret@localhost/episodic"
+  )
   expect_equal(parts$port, 3306L)
 })
 
 test_that("episodic_db_parse_mariadb_dsn() errors on a malformed DSN", {
-  expect_error(episodic_db_parse_mariadb_dsn("mysql://not-a-valid-dsn"), "Not a valid")
+  expect_error(
+    episodic_db_parse_mariadb_dsn("mysql://not-a-valid-dsn"),
+    "Not a valid"
+  )
 })
 
 test_that("episodic_db_schema_statements(\"mariadb\") rewrites AUTOINCREMENT and drops the PRAGMA line", {
@@ -81,10 +109,26 @@ test_that("episodic_db_schema_statements(\"mariadb\") rewrites AUTOINCREMENT and
 test_that("episodic_db_schema_statements(\"mariadb\") bounds the four TEXT UNIQUE columns", {
   statements <- episodic_db_schema_statements("mariadb")
   combined <- paste(statements, collapse = "\n")
-  expect_true(grepl("stream_key      VARCHAR(40) NOT NULL UNIQUE", combined, fixed = TRUE))
-  expect_true(grepl("institution_key  VARCHAR(40) NOT NULL UNIQUE", combined, fixed = TRUE))
-  expect_true(grepl("source_key     VARCHAR(191) NOT NULL UNIQUE", combined, fixed = TRUE))
-  expect_true(grepl("username      VARCHAR(191) NOT NULL UNIQUE", combined, fixed = TRUE))
+  expect_true(grepl(
+    "stream_key      VARCHAR(40) NOT NULL UNIQUE",
+    combined,
+    fixed = TRUE
+  ))
+  expect_true(grepl(
+    "institution_key  VARCHAR(40) NOT NULL UNIQUE",
+    combined,
+    fixed = TRUE
+  ))
+  expect_true(grepl(
+    "source_key     VARCHAR(191) NOT NULL UNIQUE",
+    combined,
+    fixed = TRUE
+  ))
+  expect_true(grepl(
+    "username      VARCHAR(191) NOT NULL UNIQUE",
+    combined,
+    fixed = TRUE
+  ))
 })
 
 test_that("episodic_db_schema_statements(\"sqlite\") is unaffected by the mariadb rewriting", {

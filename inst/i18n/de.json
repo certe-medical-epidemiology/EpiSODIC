@@ -141,6 +141,7 @@
   "streams.page_of": "Seite {page} von {n_pages}",
 
   "status.run_ok": "Lauf {time} erfolgreich · {streams_phrase} · {clusters_phrase} erkannt",
+  "status.run_partial": "Lauf {time} mit übersprungenen Zeilen beendet · {streams_phrase} · {clusters_phrase} erkannt",
   "status.run_failed": "Letzter Lauf fehlgeschlagen · {time}",
   "status.no_run": "Noch kein Erkennungslauf durchgeführt",
   "status.completeness": "Vollständigkeit {pct}% ({days_phrase})",
@@ -276,6 +277,10 @@
   "activity.action_login": "angemeldet",
   "activity.action_run_success": "Erkennungslauf erfolgreich",
   "activity.action_run_failed": "Erkennungslauf fehlgeschlagen",
+  "activity.action_run_running": "Erkennungslauf läuft",
+  "activity.action_run_partial": "Erkennungslauf beendet, Zeilen übersprungen",
+  "activity.detail_run": "{inserted} neue Fälle von {supplied} übermittelten ({deduplicated} nach Deduplizierung)",
+  "activity.detail_run_skipped": "{skipped} Aktivitätszeilen übersprungen: Einrichtung hier unbekannt",
   "activity.target_cluster": "{pathogen} (Cluster Nr. {id})",
 
   "performance.title": "Leistung",

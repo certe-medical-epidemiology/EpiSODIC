@@ -42,23 +42,42 @@
 #' @return Invisibly, the new `event_id`.
 #' @keywords internal
 #' @noRd
-episodic_app_submit_assessment <- function(con, cluster_id, user_id, verdict = NA,
-                                           rationale, wpg_notifiable = NA,
-                                           ggd_informed = NA, ggd_note = NA,
-                                           snooze_until = NA, supersedes = NA) {
+episodic_app_submit_assessment <- function(
+  con,
+  cluster_id,
+  user_id,
+  verdict = NA,
+  rationale,
+  wpg_notifiable = NA,
+  ggd_informed = NA,
+  ggd_note = NA,
+  snooze_until = NA,
+  supersedes = NA
+) {
   state_before <- episodic_app_derive_state_for_cluster(con, cluster_id)
 
   event_id <- episodic_db_assessment_event_insert(
-    con, cluster_id = cluster_id, user_id = user_id, verdict = verdict, rationale = rationale,
-    wpg_notifiable = wpg_notifiable, ggd_informed = ggd_informed, ggd_note = ggd_note,
-    snooze_until = snooze_until, supersedes = supersedes
+    con,
+    cluster_id = cluster_id,
+    user_id = user_id,
+    verdict = verdict,
+    rationale = rationale,
+    wpg_notifiable = wpg_notifiable,
+    ggd_informed = ggd_informed,
+    ggd_note = ggd_note,
+    snooze_until = snooze_until,
+    supersedes = supersedes
   )
 
   state_after <- episodic_app_derive_state_for_cluster(con, cluster_id)
   if (!identical(state_before, state_after)) {
     episodic_db_cluster_state_insert(
-      con, cluster_id = cluster_id, state = state_after, trigger = "assessment",
-      event_id = event_id, user_id = user_id
+      con,
+      cluster_id = cluster_id,
+      state = state_after,
+      trigger = "assessment",
+      event_id = event_id,
+      user_id = user_id
     )
   }
 
@@ -78,6 +97,10 @@ episodic_app_submit_assessment <- function(con, cluster_id, user_id, verdict = N
 #' @noRd
 episodic_app_submit_closure <- function(con, cluster_id, user_id) {
   invisible(episodic_db_cluster_state_insert(
-    con, cluster_id = cluster_id, state = "closed", trigger = "closure", user_id = user_id
+    con,
+    cluster_id = cluster_id,
+    state = "closed",
+    trigger = "closure",
+    user_id = user_id
   ))
 }

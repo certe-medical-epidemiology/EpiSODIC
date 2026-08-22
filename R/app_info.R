@@ -34,8 +34,14 @@
 episodic_ui_info_screen <- function(lang = "nl") {
   shiny::tags$div(
     class = "episodic-streams-screen",
-    shiny::tags$h1(style = "font-size:22px;font-weight:600;margin-bottom:4px;", episodic_tr("info.title", lang = lang)),
-    shiny::tags$p(style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:16px;", episodic_tr("info.intro", lang = lang)),
+    shiny::tags$h1(
+      style = "font-size:22px;font-weight:600;margin-bottom:4px;",
+      episodic_tr("info.title", lang = lang)
+    ),
+    shiny::tags$p(
+      style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:16px;",
+      episodic_tr("info.intro", lang = lang)
+    ),
     episodic_ui_panel(
       episodic_tr("info.algorithms.title", lang = lang),
       note = shiny::HTML(episodic_tr("info.algorithms.note", lang = lang)),
@@ -47,7 +53,10 @@ episodic_ui_info_screen <- function(lang = "nl") {
     ),
     episodic_ui_panel(
       episodic_tr("info.access.title", lang = lang),
-      shiny::tags$p(class = "episodic-panel-note", episodic_tr("info.access.body", lang = lang))
+      shiny::tags$p(
+        class = "episodic-panel-note",
+        episodic_tr("info.access.body", lang = lang)
+      )
     )
   )
 }
@@ -56,18 +65,30 @@ episodic_ui_info_screen <- function(lang = "nl") {
 #' @noRd
 episodic_ui_info_algorithms_table <- function(lang = "nl") {
   rows <- list(
-    list(name = "farringtonFlexible", type = episodic_tr("info.algorithms.type.baseline", lang = lang),
-         key = "info.algorithms.farrington"),
-    list(name = "same_place", type = episodic_tr("info.algorithms.type.rule", lang = lang),
-         key = "info.algorithms.same_place"),
-    list(name = "rare_trigger", type = episodic_tr("info.algorithms.type.rule", lang = lang),
-         key = "info.algorithms.rare_trigger"),
+    list(
+      name = "farringtonFlexible",
+      type = episodic_tr("info.algorithms.type.baseline", lang = lang),
+      key = "info.algorithms.farrington"
+    ),
+    list(
+      name = "same_place",
+      type = episodic_tr("info.algorithms.type.rule", lang = lang),
+      key = "info.algorithms.same_place"
+    ),
+    list(
+      name = "rare_trigger",
+      type = episodic_tr("info.algorithms.type.rule", lang = lang),
+      key = "info.algorithms.rare_trigger"
+    ),
     # `mem` has been firing detections all along without appearing here,
     # so an assessor reading "detected by mem" on a dossier had nowhere
     # in the app to look the term up - the exact gap this screen exists
     # to close.
-    list(name = "mem", type = episodic_tr("info.algorithms.type.seasonal", lang = lang),
-         key = "info.algorithms.mem")
+    list(
+      name = "mem",
+      type = episodic_tr("info.algorithms.type.seasonal", lang = lang),
+      key = "info.algorithms.mem"
+    )
   )
   shiny::tags$table(
     class = "episodic-table",
@@ -91,7 +112,14 @@ episodic_ui_info_algorithms_table <- function(lang = "nl") {
 #' @keywords internal
 #' @noRd
 episodic_ui_info_states_table <- function(lang = "nl") {
-  states <- c("new", "assessing", "monitoring", "closable", "reassess", "closed")
+  states <- c(
+    "new",
+    "assessing",
+    "monitoring",
+    "closable",
+    "reassess",
+    "closed"
+  )
   shiny::tags$table(
     class = "episodic-table",
     shiny::tags$thead(shiny::tags$tr(
@@ -101,7 +129,10 @@ episodic_ui_info_states_table <- function(lang = "nl") {
     shiny::tags$tbody(
       lapply(states, function(s) {
         shiny::tags$tr(
-          shiny::tags$td(episodic_ui_chip(episodic_tr(paste0("state.", s), lang = lang), episodic_ui_state_colour(s))),
+          shiny::tags$td(episodic_ui_chip(
+            episodic_tr(paste0("state.", s), lang = lang),
+            episodic_ui_state_colour(s)
+          )),
           shiny::tags$td(episodic_tr(paste0("info.states.", s), lang = lang))
         )
       })

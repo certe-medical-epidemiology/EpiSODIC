@@ -75,10 +75,17 @@
 #' DBI::dbDisconnect(con)
 #' }
 #' @export
-episodic_report_render <- function(con, cluster_id, output_dir, user_id = NA,
-                                   include_linelist = TRUE, small_count_threshold = NULL,
-                                   config = episodic_config_resolve(), lang = Sys.getenv("EPISODIC_LANGUAGE"),
-                                   qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)) {
+episodic_report_render <- function(
+  con,
+  cluster_id,
+  output_dir,
+  user_id = NA,
+  include_linelist = TRUE,
+  small_count_threshold = NULL,
+  config = episodic_config_resolve(),
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)
+) {
   if (!episodic_quarto_available()) {
     stop(
       "Rendering a report needs both the 'quarto' R package and the Quarto ",
@@ -89,23 +96,40 @@ episodic_report_render <- function(con, cluster_id, output_dir, user_id = NA,
     )
   }
 
-  threshold <- small_count_threshold %||% config$report$small_count_threshold %||% 5L
+  threshold <- small_count_threshold %||%
+    config$report$small_count_threshold %||%
+    5L
 
   obj <- episodic_cluster_object(con, cluster_id, lang = lang)
   epi_curve <- episodic_app_epi_curve(con, cluster_id)
   trend <- episodic_app_trend(con, obj$stream_id)
-  linelist <- if (isTRUE(include_linelist)) episodic_app_linelist(con, cluster_id) else NULL
+  linelist <- if (isTRUE(include_linelist)) {
+    episodic_app_linelist(con, cluster_id)
+  } else {
+    NULL
+  }
   timeline <- episodic_app_assessment_timeline(con, cluster_id, lang = lang)
   similar <- episodic_app_similar_clusters(con, cluster_id, lang = lang)
   case_ids <- episodic_db_cluster_cases(con, cluster_id)$case_id
 
   if (!is.null(obj$concentration)) {
-    obj$concentration$rows <- episodic_report_suppress_small_counts(obj$concentration$rows, "n", threshold)
+    obj$concentration$rows <- episodic_report_suppress_small_counts(
+      obj$concentration$rows,
+      "n",
+      threshold
+    )
   }
 
   report_data <- list(
-    obj = obj, epi_curve = epi_curve, trend = trend, linelist = linelist, timeline = timeline,
-    similar = similar, small_count_threshold = threshold, rendered_at = episodic_now(), lang = lang,
+    obj = obj,
+    epi_curve = epi_curve,
+    trend = trend,
+    linelist = linelist,
+    timeline = timeline,
+    similar = similar,
+    small_count_threshold = threshold,
+    rendered_at = episodic_now(),
+    lang = lang,
     package_version = as.character(utils::packageVersion("EpiSODIC"))
   )
 
@@ -122,45 +146,74 @@ episodic_report_render <- function(con, cluster_id, output_dir, user_id = NA,
   data_path <- file.path(work_dir, "report_data.rds")
   saveRDS(report_data, data_path)
 
-  tryCatch({
-    quarto::quarto_render(
-      input = file.path(work_dir, "cluster_report.qmd"),
-      execute_params = list(data_path = "report_data.rds"),
-      # quiet = FALSE (not TRUE): the quarto R package always captures the
-      # CLI's stderr into the condition it raises on failure, but only
-      # embeds it in the error *message* when the CLI itself was not told
-      # to be quiet - with quiet = TRUE the caller only ever sees "rerun
-      # with quiet = FALSE", never the actual underlying cause.
-      output_file = "report.html", quiet = FALSE, as_job = FALSE
-    )
-  }, error = function(e) {
-    stop("Quarto failed to render this report: ", rlang::cnd_message(e, inherit = TRUE), call. = FALSE)
-  })
+  tryCatch(
+    {
+      quarto::quarto_render(
+        input = file.path(work_dir, "cluster_report.qmd"),
+        execute_params = list(data_path = "report_data.rds"),
+        # quiet = FALSE (not TRUE): the quarto R package always captures the
+        # CLI's stderr into the condition it raises on failure, but only
+        # embeds it in the error *message* when the CLI itself was not told
+        # to be quiet - with quiet = TRUE the caller only ever sees "rerun
+        # with quiet = FALSE", never the actual underlying cause.
+        output_file = "report.html",
+        quiet = FALSE,
+        as_job = FALSE
+      )
+    },
+    error = function(e) {
+      stop(
+        "Quarto failed to render this report: ",
+        rlang::cnd_message(e, inherit = TRUE),
+        call. = FALSE
+      )
+    }
+  )
 
   rendered_path <- file.path(work_dir, "report.html")
   if (!file.exists(rendered_path)) {
-    stop("Quarto did not produce the expected output file: ", rendered_path, call. = FALSE)
+    stop(
+      "Quarto did not produce the expected output file: ",
+      rendered_path,
+      call. = FALSE
+    )
   }
 
-  out_file <- file.path(output_dir, sprintf("cluster-%d-v%d.html", cluster_id, version_no))
+  out_file <- file.path(
+    output_dir,
+    sprintf("cluster-%d-v%d.html", cluster_id, version_no)
+  )
   file.copy(rendered_path, out_file, overwrite = TRUE)
 
   file_sha256 <- digest::digest(out_file, algo = "sha256", file = TRUE)
   params_json <- as.character(jsonlite::toJSON(
-    list(cluster_id = cluster_id, include_linelist = include_linelist,
-         small_count_threshold = threshold, lang = lang),
+    list(
+      cluster_id = cluster_id,
+      include_linelist = include_linelist,
+      small_count_threshold = threshold,
+      lang = lang
+    ),
     auto_unbox = TRUE
   ))
   case_ids_json <- as.character(jsonlite::toJSON(case_ids))
 
   report_id <- episodic_db_report_render_insert(
-    con, cluster_id = cluster_id, user_id = user_id, file_path = out_file,
-    file_sha256 = file_sha256, params_json = params_json, case_ids_json = case_ids_json,
+    con,
+    cluster_id = cluster_id,
+    user_id = user_id,
+    file_path = out_file,
+    file_sha256 = file_sha256,
+    params_json = params_json,
+    case_ids_json = case_ids_json,
     version_no = version_no
   )
 
-  invisible(list(file_path = out_file, file_sha256 = file_sha256, version_no = version_no,
-                  report_id = report_id))
+  invisible(list(
+    file_path = out_file,
+    file_sha256 = file_sha256,
+    version_no = version_no,
+    report_id = report_id
+  ))
 }
 
 #' Whether report rendering is actually possible in this R session
@@ -189,19 +242,27 @@ episodic_quarto_available <- function() {
 #' @return A path to an existing `.qmd` file.
 #' @keywords internal
 #' @noRd
-episodic_report_qmd_path <- function(qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)) {
+episodic_report_qmd_path <- function(
+  qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)
+) {
   if (!is.na(qmd_path) && nzchar(qmd_path) && file.exists(qmd_path)) {
     return(qmd_path)
   }
-  default_path <- system.file("report", "cluster_report.qmd", package = "EpiSODIC")
-  if (identical(default_path, "")) default_path <- file.path("inst", "report", "cluster_report.qmd")
+  default_path <- system.file(
+    "report",
+    "cluster_report.qmd",
+    package = "EpiSODIC"
+  )
+  if (identical(default_path, "")) {
+    default_path <- file.path("inst", "report", "cluster_report.qmd")
+  }
   default_path
 }
 
 #' Suppress small counts in a breakdown table
 #'
 #' Standard disclosure control for a report that may leave the department
-#': a cell with `0 < n < threshold` is replaced
+#' : a cell with `0 < n < threshold` is replaced
 #' with `"<threshold"` rather than the exact count, since a single-digit
 #' count at a named place can be personally identifying in a small
 #' population. Zero is left as `0` (absence is not disclosive) and `NA`
@@ -216,7 +277,9 @@ episodic_report_qmd_path <- function(qmd_path = Sys.getenv("EPISODIC_QUARTO_REPO
 #' @keywords internal
 #' @noRd
 episodic_report_suppress_small_counts <- function(df, count_col, threshold) {
-  if (is.null(df) || nrow(df) == 0 || is.null(threshold) || threshold <= 1) return(df)
+  if (is.null(df) || nrow(df) == 0 || is.null(threshold) || threshold <= 1) {
+    return(df)
+  }
   n <- df[[count_col]]
   small <- !is.na(n) & n > 0 & n < threshold
   out <- as.character(n)

@@ -12,8 +12,8 @@ episodic_demo(
   password = "episodic-demo",
   launch = TRUE,
   lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  ingest_source = episodic_ingest_source_synthetic,
-  denominator_source = episodic_denominator_source_synthetic
+  cases = episodic_synthetic_cases,
+  denominators = episodic_synthetic_denominators
 )
 }
 \arguments{
@@ -36,10 +36,12 @@ scripting or screenshots.}
 \code{EPISODIC_LANGUAGE} environment variable, falling back to \code{"en"} if
 that is unset.}
 
-\item{ingest_source, denominator_source}{The data sources to
-generate the demo from, passed on to \code{\link[=episodic_run_cron]{episodic_run_cron()}}. Default to
-several years of synthetic data; pass a narrower date range (see
-\code{\link[=episodic_ingest_source_synthetic]{episodic_ingest_source_synthetic()}}) for a quicker demo.}
+\item{cases, denominators}{The data to generate the demo
+from - normally data frames (or tibbles), passed on unchanged to
+\code{\link[=episodic_run_cron]{episodic_run_cron()}}. Default to several years of synthetic data;
+generate a narrower date range yourself (see
+\code{\link[=episodic_synthetic_cases]{episodic_synthetic_cases()}}) and pass it here for a quicker
+demo.}
 }
 \value{
 Invisibly, \code{db_path}.
@@ -61,10 +63,10 @@ episodic_demo()
 
 \donttest{
 # non-interactive: populate a database and stop there, e.g. for scripting
-cases <- episodic_ingest_source_synthetic(
+cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
-db_path <- episodic_demo(launch = FALSE, ingest_source = cases, denominator_source = NULL)
+db_path <- episodic_demo(launch = FALSE, cases = cases, denominators = NULL)
 file.remove(db_path)
 }
 }

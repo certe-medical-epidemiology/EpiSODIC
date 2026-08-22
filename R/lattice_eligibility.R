@@ -51,13 +51,20 @@ episodic_eligibility_gate <- function(cases_for_stream, as_of, config) {
   }
 
   weeks <- seq(baseline_start, as.Date(as_of), by = "week")
-  week_bin <- cut(dates[dates >= baseline_start & dates <= as.Date(as_of)], breaks = weeks, right = FALSE)
+  week_bin <- cut(
+    dates[dates >= baseline_start & dates <= as.Date(as_of)],
+    breaks = weeks,
+    right = FALSE
+  )
   weekly_counts <- table(week_bin)
 
-  if (length(weekly_counts) == 0) return(FALSE)
+  if (length(weekly_counts) == 0) {
+    return(FALSE)
+  }
 
   median_weekly <- stats::median(as.numeric(weekly_counts))
   nonzero_share <- mean(as.numeric(weekly_counts) > 0)
 
-  median_weekly >= gate$min_median_weekly_count && nonzero_share >= gate$min_nonzero_week_share
+  median_weekly >= gate$min_median_weekly_count &&
+    nonzero_share >= gate$min_nonzero_week_share
 }

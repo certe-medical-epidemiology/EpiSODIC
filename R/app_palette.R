@@ -53,14 +53,20 @@ episodic_palette <- function() {
 #' @return A named list of role-named hex colours (see [episodic_palette()]).
 #' @keywords internal
 #' @noRd
-episodic_palette_config_resolve <- function(palette_config_path = Sys.getenv("EPISODIC_PALETTE_CONFIG", unset = NA)) {
+episodic_palette_config_resolve <- function(
+  palette_config_path = Sys.getenv("EPISODIC_PALETTE_CONFIG", unset = NA)
+) {
   defaults_path <- system.file("config", "palette.yaml", package = "EpiSODIC")
   if (identical(defaults_path, "")) {
     defaults_path <- file.path("inst", "config", "palette.yaml")
   }
   base <- yaml::read_yaml(defaults_path)
 
-  if (!is.na(palette_config_path) && nzchar(palette_config_path) && file.exists(palette_config_path)) {
+  if (
+    !is.na(palette_config_path) &&
+      nzchar(palette_config_path) &&
+      file.exists(palette_config_path)
+  ) {
     instance_palette <- yaml::read_yaml(palette_config_path)
     base <- episodic_config_merge(base, instance_palette)
   }

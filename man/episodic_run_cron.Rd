@@ -6,9 +6,9 @@
 \usage{
 episodic_run_cron(
   db_path,
-  ingest_source = episodic_ingest_source_synthetic,
-  denominator_source = NULL,
-  institution_activity_source = NULL,
+  cases = episodic_synthetic_cases,
+  denominators = NULL,
+  institution_activity = NULL,
   episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
   host = Sys.info()[["nodename"]],
   account = Sys.info()[["user"]],
@@ -20,20 +20,20 @@ episodic_run_cron(
 automatically if it does not exist yet) or a MariaDB/MySQL DSN (see
 \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}).}
 
-\item{ingest_source}{Your laboratory data: a data frame in the shape
-\link{episodic_ingest_columns} describes, or a zero-argument function that
-returns one. Defaults to the bundled synthetic generator, useful for
-demos and testing but not real surveillance.}
+\item{cases}{Your laboratory data: a data frame or \code{tibble} in the
+shape \link{episodic_case_data} describes, or a zero-argument function
+that returns one. Defaults to the bundled synthetic generator, useful
+for demos and testing but not real surveillance.}
 
-\item{denominator_source}{Optional: your testing-volume data, in the
-same data-frame-or-function form as \code{ingest_source} (see
-\code{\link[=episodic_denominator_source_synthetic]{episodic_denominator_source_synthetic()}} for the expected shape).
-Leave as \code{NULL} (the default) if you have none to supply - positivity
-panels simply stay blank.}
+\item{denominators}{Optional: your testing-volume data, in the same
+form as \code{cases} - normally a data set, a function if it has to be
+produced at run time (see \code{\link[=episodic_synthetic_denominators]{episodic_synthetic_denominators()}} for the
+expected shape). Leave as \code{NULL} (the default) if you have none to
+supply - positivity panels simply stay blank.}
 
-\item{institution_activity_source}{Optional: your hospital patient-days
-data (see \code{\link[=episodic_synthetic_institution_activity_source]{episodic_synthetic_institution_activity_source()}} for the
-expected shape), either as a data frame or as a function taking the
+\item{institution_activity}{Optional: your hospital patient-days
+data (see \code{\link[=episodic_synthetic_institution_activity]{episodic_synthetic_institution_activity()}} for the
+expected shape), normally as a data set, or as a function taking the
 current institutions table. Leave as \code{NULL} (the default) if you have
 none - detection falls back to raw case counts.}
 
@@ -46,7 +46,9 @@ to the current machine and account.}
 date; mainly useful to override in tests.}
 }
 \value{
-Invisibly, the \code{run_id} of the completed run.
+Invisibly, the \code{run_id} of the completed run. The run's row in
+\code{episodic_detection_run} holds its status, the per-feed load counts,
+and \code{error_text} if it failed.
 }
 \description{
 This is the function you schedule to run regularly (e.g. daily, via
@@ -60,24 +62,36 @@ failed run is always safe to simply retry.
 \details{
 EpiSODIC never connects to your laboratory system directly. You extract
 and transform your own data beforehand, and hand it over as a plain data
-frame: \code{ingest_source} for case data (see \link{episodic_ingest_columns} for
-the required shape), and optionally \code{denominator_source} and
-\code{institution_activity_source} for testing volume and hospital activity.
-If producing the data only makes sense at run time (a live database
-query, for instance), pass a zero-argument function that returns it
-instead - see \code{\link[=episodic_resolve_source]{episodic_resolve_source()}}.
+frame or \code{tibble}: \code{cases} for the laboratory results themselves (see
+\link{episodic_case_data} for the required columns and their allowed
+values), and optionally \code{denominators} and \code{institution_activity} for
+testing volume and hospital activity. A data set is the normal case; if
+producing the data only makes sense at run time (a live database query,
+for instance), a zero-argument function returning one is accepted just
+as well - see \code{\link[=episodic_resolve_data]{episodic_resolve_data()}}.
 
 The exact detection settings used are recorded with the run (see
 \code{\link[=episodic_config_hash]{episodic_config_hash()}}), so any past result can always be traced back
 to the configuration that produced it.
+
+So is what each feed delivered. Structural problems - a missing column,
+a value outside the allowed set, a date that does not parse - fail the
+run before anything is written, naming the column and the values. Rows
+that are merely unmatched are counted rather than dropped in silence:
+institution activity whose \code{institution_key} matches no known
+institution is skipped with a warning, its count recorded, and the run
+finishes \code{"partial"} instead of \code{"success"}. Both are complete runs the
+dashboard reads from; \code{"partial"} says go and look at why rows were
+skipped. \code{episodic_detection_run} carries the counts (\code{n_cases_supplied},
+\code{n_cases_inserted}, \code{n_activity_skipped}, and the rest).
 }
 \examples{
 \donttest{
 db_path <- tempfile(fileext = ".sqlite")
-cases <- episodic_ingest_source_synthetic(
+cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
-run_id <- episodic_run_cron(db_path, ingest_source = cases)
+run_id <- episodic_run_cron(db_path, cases = cases)
 file.remove(db_path)
 }
 }

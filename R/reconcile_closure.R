@@ -50,24 +50,36 @@
 #' @return `TRUE` if the closure criterion has fired.
 #' @keywords internal
 #' @noRd
-episodic_closure_criterion_met <- function(last_case_date, verdict, case_free_days,
-                                           incub_max_days = NA, mem_applicable = FALSE,
-                                           mem_status = NULL, today = Sys.Date()) {
+episodic_closure_criterion_met <- function(
+  last_case_date,
+  verdict,
+  case_free_days,
+  incub_max_days = NA,
+  mem_applicable = FALSE,
+  mem_status = NULL,
+  today = Sys.Date()
+) {
   days_since <- as.integer(as.Date(today) - as.Date(last_case_date))
 
   if (isTRUE(mem_applicable)) {
-    if (is.null(mem_status)) return(FALSE)
+    if (is.null(mem_status)) {
+      return(FALSE)
+    }
     if (isFALSE(mem_status$in_season)) {
       # Still requires the ordinary case-free interval, so a cluster with
       # cases last week does not become closable the moment the season
       # lapses around it.
       return(days_since >= case_free_days)
     }
-    return(isTRUE(mem_status$current_week_count <= mem_status$post_epidemic_threshold))
+    return(isTRUE(
+      mem_status$current_week_count <= mem_status$post_epidemic_threshold
+    ))
   }
 
   threshold <- case_free_days
-  if (!is.na(verdict) && verdict == "confirmed_epidemic" && !is.na(incub_max_days)) {
+  if (
+    !is.na(verdict) && verdict == "confirmed_epidemic" && !is.na(incub_max_days)
+  ) {
     threshold <- max(threshold, 2 * incub_max_days)
   }
 

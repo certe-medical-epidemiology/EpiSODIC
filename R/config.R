@@ -44,14 +44,20 @@
 #' names(config)
 #' config$eligibility$min_baseline_weeks
 #' @export
-episodic_config_resolve <- function(episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
+episodic_config_resolve <- function(
+  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)
+) {
   defaults_path <- system.file("config", "default.yaml", package = "EpiSODIC")
   if (identical(defaults_path, "")) {
     defaults_path <- file.path("inst", "config", "default.yaml")
   }
   config <- yaml::read_yaml(defaults_path)
 
-  if (!is.na(episodic_config_path) && nzchar(episodic_config_path) && file.exists(episodic_config_path)) {
+  if (
+    !is.na(episodic_config_path) &&
+      nzchar(episodic_config_path) &&
+      file.exists(episodic_config_path)
+  ) {
     instance_config <- yaml::read_yaml(episodic_config_path)
     config <- episodic_config_merge(config, instance_config)
   }
@@ -73,8 +79,12 @@ episodic_config_resolve <- function(episodic_config_path = Sys.getenv("EPISODIC_
 #' @noRd
 episodic_config_merge <- function(base, override) {
   for (key in names(override)) {
-    if (is.list(override[[key]]) && is.list(base[[key]]) &&
-        !is.null(names(override[[key]])) && !is.null(names(base[[key]]))) {
+    if (
+      is.list(override[[key]]) &&
+        is.list(base[[key]]) &&
+        !is.null(names(override[[key]])) &&
+        !is.null(names(base[[key]]))
+    ) {
       base[[key]] <- episodic_config_merge(base[[key]], override[[key]])
     } else {
       base[[key]] <- override[[key]]

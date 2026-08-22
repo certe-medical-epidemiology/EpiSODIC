@@ -65,10 +65,17 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
     # merely closed, and that is what still forces a re-selection.
     shiny::observeEvent(open_clusters(), {
       ids <- open_clusters()$cluster_id
-      if (length(ids) == 0) return()
-      if (!episodic_app_cluster_viewable(con, selected_cluster_id())) selected_cluster_id(ids[1])
+      if (length(ids) == 0) {
+        return()
+      }
+      if (!episodic_app_cluster_viewable(con, selected_cluster_id())) {
+        selected_cluster_id(ids[1])
+      }
     })
-    shiny::observeEvent(input$rail_select, selected_cluster_id(input$rail_select))
+    shiny::observeEvent(
+      input$rail_select,
+      selected_cluster_id(input$rail_select)
+    )
 
     # Deep link from the Pathogen screen's cluster table. Setting the
     # selection before the view means the dossier pane has its cluster
@@ -80,7 +87,10 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
     })
 
     streams_page <- shiny::reactiveVal(1L)
-    shiny::observeEvent(input$streams_page_select, streams_page(input$streams_page_select))
+    shiny::observeEvent(
+      input$streams_page_select,
+      streams_page(input$streams_page_select)
+    )
 
     # Pathogen screen selection. Held here rather than derived from the
     # inputs at render time so that switching away to a cluster dossier
@@ -89,19 +99,33 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
     pathogen_selected <- shiny::reactiveVal(NULL)
     pathogen_period <- shiny::reactiveVal("season_current")
     pathogen_range <- shiny::reactiveVal(list(from = NULL, to = NULL))
-    shiny::observeEvent(input$pathogen_select, pathogen_selected(input$pathogen_select))
+    shiny::observeEvent(
+      input$pathogen_select,
+      pathogen_selected(input$pathogen_select)
+    )
     shiny::observeEvent(input$pathogen_period, {
       pathogen_period(input$pathogen_period)
-      if (!identical(input$pathogen_period, "custom")) pathogen_range(list(from = NULL, to = NULL))
+      if (!identical(input$pathogen_period, "custom")) {
+        pathogen_range(list(from = NULL, to = NULL))
+      }
     })
     shiny::observeEvent(input$pathogen_custom_range, {
       # Picking dates *is* the request to use them, so this selects the
       # custom period rather than requiring a separate click on it.
-      pathogen_range(list(from = input$pathogen_custom_range$from, to = input$pathogen_custom_range$to))
+      pathogen_range(list(
+        from = input$pathogen_custom_range$from,
+        to = input$pathogen_custom_range$to
+      ))
       pathogen_period("custom")
     })
 
-    current_user <- episodic_app_server_auth(input, output, session, con, lang = lang)
+    current_user <- episodic_app_server_auth(
+      input,
+      output,
+      session,
+      con,
+      lang = lang
+    )
 
     output$auth_control <- shiny::renderUI({
       episodic_ui_auth_control(current_user(), lang = lang)
@@ -117,22 +141,35 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
 
     output$main_view <- shiny::renderUI({
       if (view() == "streams") {
-        episodic_ui_streams_screen(episodic_app_streams_screen(con, page = streams_page()), lang = lang)
+        episodic_ui_streams_screen(
+          episodic_app_streams_screen(con, page = streams_page()),
+          lang = lang
+        )
       } else if (view() == "archive") {
         shiny::uiOutput("archive_screen")
       } else if (view() == "activity") {
-        episodic_ui_activity_screen(episodic_app_activity_log(con, lang = lang), lang = lang)
+        episodic_ui_activity_screen(
+          episodic_app_activity_log(con, lang = lang),
+          lang = lang
+        )
       } else if (view() == "pathogen") {
         range <- pathogen_range()
         episodic_ui_pathogen_screen(
           episodic_app_pathogen_screen(
-            con, pathogen = pathogen_selected(), period = pathogen_period(),
-            from = range$from, to = range$to, lang = lang
+            con,
+            pathogen = pathogen_selected(),
+            period = pathogen_period(),
+            from = range$from,
+            to = range$to,
+            lang = lang
           ),
           lang = lang
         )
       } else if (view() == "performance") {
-        episodic_ui_performance_screen(episodic_app_performance(con, lang = lang), lang = lang)
+        episodic_ui_performance_screen(
+          episodic_app_performance(con, lang = lang),
+          lang = lang
+        )
       } else if (view() == "info") {
         episodic_ui_info_screen(lang = lang)
       } else {
@@ -157,38 +194,78 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
       # being signed in, so they need to appear/disappear immediately on
       # sign-in/out, matching dossier_pane's own choice below for the same
       # reason.
-      episodic_ui_rail(open_clusters(), shiny::isolate(selected_cluster_id()), lang = lang, current_user = current_user())
+      episodic_ui_rail(
+        open_clusters(),
+        shiny::isolate(selected_cluster_id()),
+        lang = lang,
+        current_user = current_user()
+      )
     })
 
     output$dossier_pane <- shiny::renderUI({
       cluster_id <- selected_cluster_id()
-      current_user()  # re-render on sign in/out (line list lock, classification form)
+      current_user() # re-render on sign in/out (line list lock, classification form)
       if (is.null(cluster_id)) {
-        return(shiny::tags$div(class = "episodic-dossier",
-                                shiny::tags$p(episodic_tr("rail.empty", lang = lang))))
+        return(shiny::tags$div(
+          class = "episodic-dossier",
+          shiny::tags$p(episodic_tr("rail.empty", lang = lang))
+        ))
       }
-      episodic_ui_dossier(con, cluster_id, lang = lang, current_user = current_user())
+      episodic_ui_dossier(
+        con,
+        cluster_id,
+        lang = lang,
+        current_user = current_user()
+      )
     })
 
     output$assessment_pane <- shiny::renderUI({
       cluster_id <- selected_cluster_id()
       user <- current_user()
-      if (is.null(cluster_id)) return(NULL)
-      episodic_ui_assessment_rail(con, cluster_id, lang = lang, current_user = user)
+      if (is.null(cluster_id)) {
+        return(NULL)
+      }
+      episodic_ui_assessment_rail(
+        con,
+        cluster_id,
+        lang = lang,
+        current_user = user
+      )
     })
 
     archive_query <- shiny::reactiveVal("")
-    shiny::observeEvent(input$archive_search, archive_query(input$archive_search))
+    shiny::observeEvent(
+      input$archive_search,
+      archive_query(input$archive_search)
+    )
     output$archive_screen <- shiny::renderUI({
       db_version()
-      episodic_ui_archive_screen(episodic_app_archive(con, query = archive_query(), lang = lang), lang = lang)
+      episodic_ui_archive_screen(
+        episodic_app_archive(con, query = archive_query(), lang = lang),
+        lang = lang
+      )
     })
 
-    episodic_app_server_assessment_actions(input, output, session, con, lang = lang,
-                                           current_user = current_user, selected_cluster_id = selected_cluster_id,
-                                           db_touch = db_touch)
-    episodic_app_server_report(input, output, session, con, db_path = db_path, lang = lang,
-                               current_user = current_user, selected_cluster_id = selected_cluster_id)
+    episodic_app_server_assessment_actions(
+      input,
+      output,
+      session,
+      con,
+      lang = lang,
+      current_user = current_user,
+      selected_cluster_id = selected_cluster_id,
+      db_touch = db_touch
+    )
+    episodic_app_server_report(
+      input,
+      output,
+      session,
+      con,
+      db_path = db_path,
+      lang = lang,
+      current_user = current_user,
+      selected_cluster_id = selected_cluster_id
+    )
   }
 }
 
@@ -196,23 +273,57 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
 #' @noRd
 episodic_ui_status_strip <- function(status, lang = "nl") {
   if (identical(status$status, "none")) {
-    return(shiny::tags$div(class = "episodic-status-strip", episodic_tr("status.no_run", lang = lang)))
+    return(shiny::tags$div(
+      class = "episodic-status-strip",
+      episodic_tr("status.no_run", lang = lang)
+    ))
   }
   pal <- episodic_palette()
-  if (identical(status$status, "success")) {
-    dot_colour <- pal$warning
+  if (status$status %in% episodic_run_statuses_complete) {
+    # A partial run completed and is safe to read from; it is flagged
+    # rather than greened over, because rows of an optional feed were
+    # skipped and somebody should go and look at why.
+    dot_colour <- if (identical(status$status, "partial")) {
+      pal$danger
+    } else {
+      pal$warning
+    }
     text <- episodic_tr(
-      "status.run_ok", lang = lang, time = episodic_ui_format_datetime(status$finished_at),
-      streams_phrase = episodic_count_phrase(status$n_streams %||% 0, episodic_tr("unit.stream", lang = lang), episodic_tr("unit.streams", lang = lang)),
-      clusters_phrase = episodic_count_phrase(status$n_clusters_open %||% 0, episodic_tr("unit.cluster", lang = lang), episodic_tr("unit.clusters", lang = lang))
+      if (identical(status$status, "partial")) {
+        "status.run_partial"
+      } else {
+        "status.run_ok"
+      },
+      lang = lang,
+      time = episodic_ui_format_datetime(status$finished_at),
+      streams_phrase = episodic_count_phrase(
+        status$n_streams %||% 0,
+        episodic_tr("unit.stream", lang = lang),
+        episodic_tr("unit.streams", lang = lang)
+      ),
+      clusters_phrase = episodic_count_phrase(
+        status$n_clusters_open %||% 0,
+        episodic_tr("unit.cluster", lang = lang),
+        episodic_tr("unit.clusters", lang = lang)
+      )
     )
   } else {
     dot_colour <- pal$danger_dark
-    text <- episodic_tr("status.run_failed", lang = lang, time = episodic_ui_format_datetime(status$finished_at))
+    text <- episodic_tr(
+      "status.run_failed",
+      lang = lang,
+      time = episodic_ui_format_datetime(status$finished_at)
+    )
   }
   shiny::tags$div(
     class = "episodic-status-strip",
-    shiny::tags$span(shiny::tags$span(class = "episodic-status-dot", style = sprintf("background:%s;", dot_colour)), text)
+    shiny::tags$span(
+      shiny::tags$span(
+        class = "episodic-status-dot",
+        style = sprintf("background:%s;", dot_colour)
+      ),
+      text
+    )
   )
 }
 
@@ -244,10 +355,21 @@ episodic_ui_status_strip <- function(status, lang = "nl") {
 #'   for `NA`/`NULL`, or `iso` itself if it does not parse.
 #' @keywords internal
 #' @noRd
-episodic_ui_format_datetime <- function(iso, fmt = "%H:%M", tz = Sys.timezone()) {
-  if (is.null(iso) || is.na(iso)) return(episodic_tr("misc.unknown"))
-  parsed <- tryCatch(as.POSIXct(iso, format = "%Y-%m-%dT%H:%M:%OSZ", tz = "UTC"), error = function(e) NA)
-  if (is.na(parsed)) return(iso)
+episodic_ui_format_datetime <- function(
+  iso,
+  fmt = "%H:%M",
+  tz = Sys.timezone()
+) {
+  if (is.null(iso) || is.na(iso)) {
+    return(episodic_tr("misc.unknown"))
+  }
+  parsed <- tryCatch(
+    as.POSIXct(iso, format = "%Y-%m-%dT%H:%M:%OSZ", tz = "UTC"),
+    error = function(e) NA
+  )
+  if (is.na(parsed)) {
+    return(iso)
+  }
   format(parsed, fmt, tz = tz)
 }
 
@@ -277,31 +399,74 @@ episodic_ui_format_datetime <- function(iso, fmt = "%H:%M", tz = Sys.timezone())
 #'   assessment form.
 #' @keywords internal
 #' @noRd
-episodic_ui_rail <- function(open, selected_id, lang = "nl", current_user = NULL) {
+episodic_ui_rail <- function(
+  open,
+  selected_id,
+  lang = "nl",
+  current_user = NULL
+) {
   pal <- episodic_palette()
-  verdicts <- c("artefact", "expected_variation", "cluster_not_yet", "possible_epidemic", "confirmed_epidemic")
+  verdicts <- c(
+    "artefact",
+    "expected_variation",
+    "cluster_not_yet",
+    "possible_epidemic",
+    "confirmed_epidemic"
+  )
   verdict_options <- c(
-    list(list(value = "", label = episodic_tr("assessment.verdict_none", lang = lang), colour = pal$muted)),
-    lapply(verdicts, function(v) list(value = v, label = episodic_tr(paste0("verdict.", v), lang = lang),
-                                       colour = episodic_ui_verdict_colour(v)))
+    list(list(
+      value = "",
+      label = episodic_tr("assessment.verdict_none", lang = lang),
+      colour = pal$muted
+    )),
+    lapply(verdicts, function(v) {
+      list(
+        value = v,
+        label = episodic_tr(paste0("verdict.", v), lang = lang),
+        colour = episodic_ui_verdict_colour(v)
+      )
+    })
   )
 
   bulk_bar <- if (!is.null(current_user)) {
     shiny::tags$div(
-      id = "episodic-bulk-bar", style = "display:none;", class = "episodic-panel-body",
-      shiny::tags$div(style = "font-size:12.5px;font-weight:600;margin-bottom:6px;",
-                       shiny::tags$span(id = "episodic-bulk-count"), " ", episodic_tr("rail.bulk_selected", lang = lang)),
-      shiny::tags$div(class = "episodic-form-group",
-                       shiny::tags$label(class = "episodic-form-label", episodic_tr("assessment.verdict_label", lang = lang)),
-                       episodic_ui_picker("bulk_assess_verdict", verdict_options)),
-      shiny::tags$div(class = "episodic-form-group",
-                       shiny::tags$label(class = "episodic-form-label", episodic_tr("assessment.rationale_label", lang = lang)),
-                       shiny::tags$textarea(id = "bulk_assess_rationale", rows = 2,
-                                             placeholder = episodic_tr("assessment.rationale_placeholder", lang = lang))),
+      id = "episodic-bulk-bar",
+      style = "display:none;",
+      class = "episodic-panel-body",
+      shiny::tags$div(
+        style = "font-size:12.5px;font-weight:600;margin-bottom:6px;",
+        shiny::tags$span(id = "episodic-bulk-count"),
+        " ",
+        episodic_tr("rail.bulk_selected", lang = lang)
+      ),
+      shiny::tags$div(
+        class = "episodic-form-group",
+        shiny::tags$label(
+          class = "episodic-form-label",
+          episodic_tr("assessment.verdict_label", lang = lang)
+        ),
+        episodic_ui_picker("bulk_assess_verdict", verdict_options)
+      ),
+      shiny::tags$div(
+        class = "episodic-form-group",
+        shiny::tags$label(
+          class = "episodic-form-label",
+          episodic_tr("assessment.rationale_label", lang = lang)
+        ),
+        shiny::tags$textarea(
+          id = "bulk_assess_rationale",
+          rows = 2,
+          placeholder = episodic_tr(
+            "assessment.rationale_placeholder",
+            lang = lang
+          )
+        )
+      ),
       shiny::tags$div(
         style = "display:flex;gap:8px;",
         shiny::tags$button(
-          class = "episodic-btn", type = "button",
+          class = "episodic-btn",
+          type = "button",
           onclick = paste0(
             "var ids=Array.from(document.querySelectorAll('.episodic-rail-select:checked')).map(function(el){return parseInt(el.value);}); ",
             "var rationale=document.getElementById('bulk_assess_rationale').value; ",
@@ -311,7 +476,8 @@ episodic_ui_rail <- function(open, selected_id, lang = "nl", current_user = NULL
           episodic_tr("rail.bulk_apply", lang = lang)
         ),
         shiny::tags$button(
-          class = "episodic-btn", type = "button",
+          class = "episodic-btn",
+          type = "button",
           onclick = paste0(
             "document.querySelectorAll('.episodic-rail-select').forEach(function(el){el.checked=false;}); episodicBulkUpdate();"
           ),
@@ -333,15 +499,27 @@ episodic_ui_rail <- function(open, selected_id, lang = "nl", current_user = NULL
     },
     shiny::tags$div(
       class = "episodic-rail-header",
-      shiny::tags$div(class = "episodic-rail-title", episodic_tr("rail.title", lang = lang)),
-      shiny::tags$div(class = "episodic-rail-count",
-                       episodic_count_phrase(nrow(open), episodic_tr("unit.cluster", lang = lang),
-                                             episodic_tr("unit.clusters", lang = lang)),
-                       " ", episodic_tr("rail.count_suffix", lang = lang))
+      shiny::tags$div(
+        class = "episodic-rail-title",
+        episodic_tr("rail.title", lang = lang)
+      ),
+      shiny::tags$div(
+        class = "episodic-rail-count",
+        episodic_count_phrase(
+          nrow(open),
+          episodic_tr("unit.cluster", lang = lang),
+          episodic_tr("unit.clusters", lang = lang)
+        ),
+        " ",
+        episodic_tr("rail.count_suffix", lang = lang)
+      )
     ),
     bulk_bar,
     if (nrow(open) == 0) {
-      shiny::tags$div(style = "padding:14px;font-size:12.5px;color:var(--episodic-muted);", episodic_tr("rail.empty", lang = lang))
+      shiny::tags$div(
+        style = "padding:14px;font-size:12.5px;color:var(--episodic-muted);",
+        episodic_tr("rail.empty", lang = lang)
+      )
     } else {
       lapply(seq_len(nrow(open)), function(i) {
         row <- open[i, ]
@@ -354,19 +532,41 @@ episodic_ui_rail <- function(open, selected_id, lang = "nl", current_user = NULL
           ),
           if (!is.null(current_user)) {
             shiny::tags$input(
-              type = "checkbox", class = "episodic-rail-select", value = row$cluster_id,
+              type = "checkbox",
+              class = "episodic-rail-select",
+              value = row$cluster_id,
               onclick = "event.stopPropagation(); episodicBulkUpdate();",
               onchange = "episodicBulkUpdate();"
             )
           },
-          shiny::tags$div(class = "episodic-rail-pathogen", shiny::HTML(episodic_ui_italicise_taxon(row$pathogen))),
+          shiny::tags$div(
+            class = "episodic-rail-pathogen",
+            shiny::HTML(episodic_ui_italicise_taxon(row$pathogen))
+          ),
           shiny::tags$div(class = "episodic-rail-meta", row$level_label),
-          shiny::tags$div(class = "episodic-rail-meta", episodic_format_date_range(row$first_day, row$last_day, lang = lang)),
-          shiny::tags$div(class = "episodic-rail-meta", paste(c(
-            episodic_count_phrase(row$n_cases, episodic_tr("unit.case", lang = lang), episodic_tr("unit.cases", lang = lang)),
-            if (!is.na(row$ratio)) sprintf("ratio %s", round(row$ratio, 1))
-          ), collapse = " \u00b7 ")),
-          shiny::tags$div(class = "episodic-rail-state", episodic_ui_state_dot(row$state), row$state_label)
+          shiny::tags$div(
+            class = "episodic-rail-meta",
+            episodic_format_date_range(row$first_day, row$last_day, lang = lang)
+          ),
+          shiny::tags$div(
+            class = "episodic-rail-meta",
+            paste(
+              c(
+                episodic_count_phrase(
+                  row$n_cases,
+                  episodic_tr("unit.case", lang = lang),
+                  episodic_tr("unit.cases", lang = lang)
+                ),
+                if (!is.na(row$ratio)) sprintf("ratio %s", round(row$ratio, 1))
+              ),
+              collapse = " \u00b7 "
+            )
+          ),
+          shiny::tags$div(
+            class = "episodic-rail-state",
+            episodic_ui_state_dot(row$state),
+            row$state_label
+          )
         )
       })
     }

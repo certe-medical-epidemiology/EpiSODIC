@@ -141,6 +141,7 @@
   "streams.page_of": "Página {page} de {n_pages}",
 
   "status.run_ok": "Ejecución {time} correcta · {streams_phrase} · {clusters_phrase} detectados",
+  "status.run_partial": "Ejecución {time} finalizada con filas omitidas · {streams_phrase} · {clusters_phrase} detectados",
   "status.run_failed": "La última ejecución falló · {time}",
   "status.no_run": "Todavía no se ha ejecutado la detección",
   "status.completeness": "Completitud {pct}% ({days_phrase})",
@@ -276,6 +277,10 @@
   "activity.action_login": "inició sesión",
   "activity.action_run_success": "ejecución de detección correcta",
   "activity.action_run_failed": "ejecución de detección fallida",
+  "activity.action_run_running": "ejecución de detección en curso",
+  "activity.action_run_partial": "ejecución de detección finalizada, se omitieron filas",
+  "activity.detail_run": "{inserted} casos nuevos de {supplied} suministrados ({deduplicated} tras la deduplicación)",
+  "activity.detail_run_skipped": "{skipped} filas de actividad omitidas: institución desconocida aquí",
   "activity.target_cluster": "{pathogen} (clúster n.º {id})",
 
   "performance.title": "Rendimiento",

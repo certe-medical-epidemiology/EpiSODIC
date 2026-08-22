@@ -58,12 +58,21 @@ episodic_chart_theme <- function() {
     ggplot2::theme(
       panel.grid.minor = ggplot2::element_blank(),
       panel.grid.major.x = ggplot2::element_blank(),
-      panel.grid.major.y = ggplot2::element_line(colour = pal$border, linewidth = 0.3),
-      axis.text = ggplot2::element_text(colour = pal$muted, size = sizes[["axis"]]),
+      panel.grid.major.y = ggplot2::element_line(
+        colour = pal$border,
+        linewidth = 0.3
+      ),
+      axis.text = ggplot2::element_text(
+        colour = pal$muted,
+        size = sizes[["axis"]]
+      ),
       axis.title = ggplot2::element_blank(),
       legend.title = ggplot2::element_blank(),
       legend.position = "bottom",
-      legend.text = ggplot2::element_text(size = sizes[["legend"]], colour = pal$ink),
+      legend.text = ggplot2::element_text(
+        size = sizes[["legend"]],
+        colour = pal$ink
+      ),
       legend.key.width = ggplot2::unit(22, "pt")
     )
 }
@@ -79,8 +88,12 @@ episodic_chart_theme <- function() {
 #' @keywords internal
 #' @noRd
 episodic_chart_month_abbrevs <- function(lang = "nl") {
-  vapply(sprintf("%02d", 1:12), function(mm) episodic_tr(paste0("date.month.", mm), lang = lang),
-          character(1), USE.NAMES = FALSE)
+  vapply(
+    sprintf("%02d", 1:12),
+    function(mm) episodic_tr(paste0("date.month.", mm), lang = lang),
+    character(1),
+    USE.NAMES = FALSE
+  )
 }
 
 #' Breaks and labels for a weekly x axis
@@ -106,11 +119,17 @@ episodic_chart_month_abbrevs <- function(lang = "nl") {
 #'   `NULL` when there is nothing to label.
 #' @keywords internal
 #' @noRd
-episodic_chart_week_axis <- function(week_starts, lang = "nl", max_labels = 14L) {
+episodic_chart_week_axis <- function(
+  week_starts,
+  lang = "nl",
+  max_labels = 14L
+) {
   week_starts <- sort(unique(as.Date(week_starts)))
   week_starts <- week_starts[!is.na(week_starts)]
   n <- length(week_starts)
-  if (n == 0) return(NULL)
+  if (n == 0) {
+    return(NULL)
+  }
 
   step <- max(1L, as.integer(ceiling(n / max_labels)))
   breaks <- week_starts[seq(1L, n, by = step)]
@@ -149,7 +168,9 @@ episodic_chart_week_axis <- function(week_starts, lang = "nl", max_labels = 14L)
 #' @noRd
 episodic_chart_week_scale <- function(week_starts, lang = "nl") {
   axis <- episodic_chart_week_axis(week_starts, lang = lang)
-  if (is.null(axis)) return(NULL)
+  if (is.null(axis)) {
+    return(NULL)
+  }
   ggplot2::scale_x_date(breaks = axis$breaks, labels = axis$labels)
 }
 
@@ -173,11 +194,30 @@ episodic_chart_week_scale <- function(week_starts, lang = "nl") {
 episodic_ui_epi_curve_chart <- function(curve, lang = "nl") {
   pal <- episodic_palette()
   curve$alpha <- ifelse(curve$incomplete, 0.45, 1)
-  marks <- if (identical(lang, "en")) list(big = ",", decimal = ".") else list(big = ".", decimal = ",")
-  ggplot2::ggplot(curve, ggplot2::aes(x = .data$sample_date, y = .data$n_cases)) +
-    ggplot2::geom_col(ggplot2::aes(alpha = .data$alpha), fill = pal$primary, width = 0.7, show.legend = FALSE) +
+  marks <- if (identical(lang, "en")) {
+    list(big = ",", decimal = ".")
+  } else {
+    list(big = ".", decimal = ",")
+  }
+  ggplot2::ggplot(
+    curve,
+    ggplot2::aes(x = .data$sample_date, y = .data$n_cases)
+  ) +
+    ggplot2::geom_col(
+      ggplot2::aes(alpha = .data$alpha),
+      fill = pal$primary,
+      width = 0.7,
+      show.legend = FALSE
+    ) +
     ggplot2::scale_alpha_identity() +
-    ggplot2::scale_y_continuous(labels = function(x) format(x, big.mark = marks$big, decimal.mark = marks$decimal, scientific = FALSE)) +
+    ggplot2::scale_y_continuous(labels = function(x) {
+      format(
+        x,
+        big.mark = marks$big,
+        decimal.mark = marks$decimal,
+        scientific = FALSE
+      )
+    }) +
     ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang)) +
     episodic_chart_theme()
 }
@@ -203,10 +243,24 @@ episodic_ui_trend_chart <- function(trend, lang = "nl") {
     exp = episodic_tr("panel.trend.legend_expected", lang = lang)
   )
   ggplot2::ggplot(trend, ggplot2::aes(x = .data$week_start)) +
-    ggplot2::geom_ribbon(ggplot2::aes(ymin = 0, ymax = .data$upperbound), fill = pal$primary_tint, alpha = 0.35) +
-    ggplot2::geom_line(ggplot2::aes(y = .data$expected, colour = "exp"), linewidth = 0.6, linetype = "dashed") +
-    ggplot2::geom_line(ggplot2::aes(y = .data$n_cases, colour = "obs"), linewidth = 0.9) +
-    ggplot2::scale_colour_manual(values = c(obs = pal$ink, exp = pal$primary_light), labels = legend_labels) +
+    ggplot2::geom_ribbon(
+      ggplot2::aes(ymin = 0, ymax = .data$upperbound),
+      fill = pal$primary_tint,
+      alpha = 0.35
+    ) +
+    ggplot2::geom_line(
+      ggplot2::aes(y = .data$expected, colour = "exp"),
+      linewidth = 0.6,
+      linetype = "dashed"
+    ) +
+    ggplot2::geom_line(
+      ggplot2::aes(y = .data$n_cases, colour = "obs"),
+      linewidth = 0.9
+    ) +
+    ggplot2::scale_colour_manual(
+      values = c(obs = pal$ink, exp = pal$primary_light),
+      labels = legend_labels
+    ) +
     episodic_chart_week_scale(trend$week_start, lang = lang) +
     episodic_chart_theme()
 }
@@ -228,9 +282,22 @@ episodic_ui_trend_chart <- function(trend, lang = "nl") {
 episodic_ui_rt_chart <- function(rt, lang = "nl") {
   pal <- episodic_palette()
   ggplot2::ggplot(rt, ggplot2::aes(x = .data$window_end)) +
-    ggplot2::geom_hline(yintercept = 1, colour = pal$faint, linewidth = 0.4, linetype = "dashed") +
-    ggplot2::geom_ribbon(ggplot2::aes(ymin = .data$lower, ymax = .data$upper), fill = pal$primary_tint, alpha = 0.5) +
-    ggplot2::geom_line(ggplot2::aes(y = .data$mean), colour = pal$primary, linewidth = 0.9) +
+    ggplot2::geom_hline(
+      yintercept = 1,
+      colour = pal$faint,
+      linewidth = 0.4,
+      linetype = "dashed"
+    ) +
+    ggplot2::geom_ribbon(
+      ggplot2::aes(ymin = .data$lower, ymax = .data$upper),
+      fill = pal$primary_tint,
+      alpha = 0.5
+    ) +
+    ggplot2::geom_line(
+      ggplot2::aes(y = .data$mean),
+      colour = pal$primary,
+      linewidth = 0.9
+    ) +
     ggplot2::labs(y = "Rt") +
     episodic_chart_theme()
 }
@@ -285,62 +352,114 @@ episodic_ui_rt_chart <- function(rt, lang = "nl") {
 #'   postcode boundaries).
 #' @keywords internal
 #' @noRd
-episodic_ui_geo_map_chart <- function(rows, pad_share = 0.45, min_pad_share = 0.02,
-                                      max_labels = 30L) {
-  if (nrow(rows) == 0) return(NULL)
+episodic_ui_geo_map_chart <- function(
+  rows,
+  pad_share = 0.45,
+  min_pad_share = 0.02,
+  max_labels = 30L
+) {
+  if (nrow(rows) == 0) {
+    return(NULL)
+  }
   pal <- episodic_palette()
-  tryCatch({
-    geo <- episodic_geo_join(rows)
-    if (is.null(geo)) return(NULL)
-    matched <- geo[!is.na(geo$n), , drop = FALSE]
-    # No PC in the cluster resolves to a polygon: a map of the whole
-    # reference set with nothing on it says less than the bar breakdown
-    # the caller falls back to.
-    if (nrow(matched) == 0) return(NULL)
+  tryCatch(
+    {
+      geo <- episodic_geo_join(rows)
+      if (is.null(geo)) {
+        return(NULL)
+      }
+      matched <- geo[!is.na(geo$n), , drop = FALSE]
+      # No PC in the cluster resolves to a polygon: a map of the whole
+      # reference set with nothing on it says less than the bar breakdown
+      # the caller falls back to.
+      if (nrow(matched) == 0) {
+        return(NULL)
+      }
 
-    frame <- episodic_geo_frame(geo, matched, pad_share = pad_share, min_pad_share = min_pad_share)
-    # Crop the geometry as well as the frame: drawing four thousand
-    # polygons and then hiding all but a dozen of them is work the plot
-    # device does not need to do.
-    plotted <- tryCatch(suppressWarnings(sf::st_crop(geo, frame$bbox)), error = function(e) geo)
-    if (is.null(plotted) || nrow(plotted) == 0) plotted <- geo
-
-    p <- ggplot2::ggplot(plotted) +
-      ggplot2::geom_sf(ggplot2::aes(fill = .data$n), colour = pal$border, linewidth = 0.1) +
-      ggplot2::scale_fill_gradient(low = pal$primary_tint, high = pal$primary, na.value = pal$bg_subtle)
-
-    # EPISODIC_GEO_DATA_OVERLAY: an optional second layer for orientation
-    # (province/municipality outlines, ...) - colour, no fill, a
-    # thicker line so it reads as a boundary on top of the choropleth
-    # rather than competing with it. Its own failure (bad geometry, CRS
-    # mismatch) must not take down the choropleth that already rendered
-    # fine without it.
-    overlay <- tryCatch(episodic_geo_overlay_resolve(), error = function(e) NULL)
-    if (!is.null(overlay)) {
-      p <- tryCatch(
-        p + ggplot2::geom_sf(data = overlay, fill = NA, colour = pal$ink, linewidth = 0.6),
-        error = function(e) p
+      frame <- episodic_geo_frame(
+        geo,
+        matched,
+        pad_share = pad_share,
+        min_pad_share = min_pad_share
       )
-    }
-
-    labels <- episodic_geo_labels(matched, max_labels = max_labels)
-    if (!is.null(labels)) {
-      # Plain geom_text over pre-computed representative points rather
-      # than geom_sf_text(): stat_sf_coordinates() emits a warning per
-      # render on geographic coordinates, and a warning raised at print
-      # time inside shiny::renderPlot() cannot be caught by the caller.
-      p <- p + ggplot2::geom_text(
-        data = labels, ggplot2::aes(x = .data$x, y = .data$y, label = .data$label),
-        inherit.aes = FALSE, size = 2.9, lineheight = 0.95, colour = pal$ink
+      # Crop the geometry as well as the frame: drawing four thousand
+      # polygons and then hiding all but a dozen of them is work the plot
+      # device does not need to do.
+      plotted <- tryCatch(
+        suppressWarnings(sf::st_crop(geo, frame$bbox)),
+        error = function(e) geo
       )
-    }
+      if (is.null(plotted) || nrow(plotted) == 0) {
+        plotted <- geo
+      }
 
-    p +
-      ggplot2::coord_sf(xlim = frame$xlim, ylim = frame$ylim, datum = NA, expand = FALSE) +
-      episodic_chart_theme() +
-      ggplot2::theme(axis.text = ggplot2::element_blank(), axis.ticks = ggplot2::element_blank(),
-                     panel.grid = ggplot2::element_blank())
-  }, error = function(e) NULL)
+      p <- ggplot2::ggplot(plotted) +
+        ggplot2::geom_sf(
+          ggplot2::aes(fill = .data$n),
+          colour = pal$border,
+          linewidth = 0.1
+        ) +
+        ggplot2::scale_fill_gradient(
+          low = pal$primary_tint,
+          high = pal$primary,
+          na.value = pal$bg_subtle
+        )
+
+      # EPISODIC_GEO_DATA_OVERLAY: an optional second layer for orientation
+      # (province/municipality outlines, ...) - colour, no fill, a
+      # thicker line so it reads as a boundary on top of the choropleth
+      # rather than competing with it. Its own failure (bad geometry, CRS
+      # mismatch) must not take down the choropleth that already rendered
+      # fine without it.
+      overlay <- tryCatch(episodic_geo_overlay_resolve(), error = function(e) {
+        NULL
+      })
+      if (!is.null(overlay)) {
+        p <- tryCatch(
+          p +
+            ggplot2::geom_sf(
+              data = overlay,
+              fill = NA,
+              colour = pal$ink,
+              linewidth = 0.6
+            ),
+          error = function(e) p
+        )
+      }
+
+      labels <- episodic_geo_labels(matched, max_labels = max_labels)
+      if (!is.null(labels)) {
+        # Plain geom_text over pre-computed representative points rather
+        # than geom_sf_text(): stat_sf_coordinates() emits a warning per
+        # render on geographic coordinates, and a warning raised at print
+        # time inside shiny::renderPlot() cannot be caught by the caller.
+        p <- p +
+          ggplot2::geom_text(
+            data = labels,
+            ggplot2::aes(x = .data$x, y = .data$y, label = .data$label),
+            inherit.aes = FALSE,
+            size = 2.9,
+            lineheight = 0.95,
+            colour = pal$ink
+          )
+      }
+
+      p +
+        ggplot2::coord_sf(
+          xlim = frame$xlim,
+          ylim = frame$ylim,
+          datum = NA,
+          expand = FALSE
+        ) +
+        episodic_chart_theme() +
+        ggplot2::theme(
+          axis.text = ggplot2::element_blank(),
+          axis.ticks = ggplot2::element_blank(),
+          panel.grid = ggplot2::element_blank()
+        )
+    },
+    error = function(e) NULL
+  )
 }
 
 #' The cropped frame around a choropleth's case-bearing areas
@@ -352,12 +471,20 @@ episodic_ui_geo_map_chart <- function(rows, pad_share = 0.45, min_pad_share = 0.
 #'   [sf::st_crop()].
 #' @keywords internal
 #' @noRd
-episodic_geo_frame <- function(geo, matched, pad_share = 0.45, min_pad_share = 0.02) {
+episodic_geo_frame <- function(
+  geo,
+  matched,
+  pad_share = 0.45,
+  min_pad_share = 0.02
+) {
   bb <- sf::st_bbox(matched)
   full <- sf::st_bbox(geo)
 
   span <- max(bb[["xmax"]] - bb[["xmin"]], bb[["ymax"]] - bb[["ymin"]])
-  full_span <- max(full[["xmax"]] - full[["xmin"]], full[["ymax"]] - full[["ymin"]])
+  full_span <- max(
+    full[["xmax"]] - full[["xmin"]],
+    full[["ymax"]] - full[["ymin"]]
+  )
   pad <- max(span * pad_share, full_span * min_pad_share)
 
   xlim <- c(bb[["xmin"]] - pad, bb[["xmax"]] + pad)
@@ -380,16 +507,22 @@ episodic_geo_frame <- function(geo, matched, pad_share = 0.45, min_pad_share = 0
 #' @noRd
 episodic_geo_labels <- function(matched, max_labels = 30L) {
   matched <- matched[order(-matched$n), , drop = FALSE]
-  if (nrow(matched) > max_labels) matched <- matched[seq_len(max_labels), , drop = FALSE]
+  if (nrow(matched) > max_labels) {
+    matched <- matched[seq_len(max_labels), , drop = FALSE]
+  }
 
   # st_point_on_surface() rather than st_centroid(): the centroid of a
   # concave or multi-part area can land outside it, putting a postcode
   # label on top of a neighbour it does not belong to.
   points <- tryCatch(
-    suppressWarnings(sf::st_coordinates(sf::st_point_on_surface(sf::st_geometry(matched)))),
+    suppressWarnings(sf::st_coordinates(sf::st_point_on_surface(sf::st_geometry(
+      matched
+    )))),
     error = function(e) NULL
   )
-  if (is.null(points) || nrow(points) < nrow(matched)) return(NULL)
+  if (is.null(points) || nrow(points) < nrow(matched)) {
+    return(NULL)
+  }
 
   data.frame(
     x = points[seq_len(nrow(matched)), 1],
@@ -410,19 +543,39 @@ episodic_ui_denominator_chart <- function(series, lang = "nl") {
   series$positivity_scaled <- series$positivity * scale_factor
 
   ggplot2::ggplot(series, ggplot2::aes(x = .data$week_start)) +
-    ggplot2::geom_col(ggplot2::aes(y = .data$n_tests), fill = pal$secondary, width = 4) +
-    ggplot2::geom_line(ggplot2::aes(y = .data$positivity_scaled), colour = pal$danger, linewidth = 0.9) +
-    ggplot2::geom_point(ggplot2::aes(y = .data$positivity_scaled), colour = pal$danger, size = 1.6) +
+    ggplot2::geom_col(
+      ggplot2::aes(y = .data$n_tests),
+      fill = pal$secondary,
+      width = 4
+    ) +
+    ggplot2::geom_line(
+      ggplot2::aes(y = .data$positivity_scaled),
+      colour = pal$danger,
+      linewidth = 0.9
+    ) +
+    ggplot2::geom_point(
+      ggplot2::aes(y = .data$positivity_scaled),
+      colour = pal$danger,
+      size = 1.6
+    ) +
     ggplot2::scale_y_continuous(
       name = episodic_tr("panel.denominator.legend_tests", lang = lang),
-      sec.axis = ggplot2::sec_axis(~ . / scale_factor * 100, name = episodic_tr("panel.denominator.legend_positivity", lang = lang))
+      sec.axis = ggplot2::sec_axis(
+        ~ . / scale_factor * 100,
+        name = episodic_tr("panel.denominator.legend_positivity", lang = lang)
+      )
     ) +
     episodic_chart_week_scale(series$week_start, lang = lang) +
     episodic_chart_theme() +
     ggplot2::theme(
-      axis.title.y = ggplot2::element_text(size = episodic_chart_text_size[["title"]], colour = pal$muted),
-      axis.title.y.right = ggplot2::element_text(size = episodic_chart_text_size[["title"]],
-                                                  colour = pal$danger_dark)
+      axis.title.y = ggplot2::element_text(
+        size = episodic_chart_text_size[["title"]],
+        colour = pal$muted
+      ),
+      axis.title.y.right = ggplot2::element_text(
+        size = episodic_chart_text_size[["title"]],
+        colour = pal$danger_dark
+      )
     )
 }
 
@@ -448,14 +601,25 @@ episodic_ui_denominator_chart <- function(series, lang = "nl") {
 #' @return A [ggplot2::ggplot] object.
 #' @keywords internal
 #' @noRd
-episodic_ui_pathogen_curve_chart <- function(weekly, thresholds = NULL, lang = "nl") {
+episodic_ui_pathogen_curve_chart <- function(
+  weekly,
+  thresholds = NULL,
+  lang = "nl"
+) {
   pal <- episodic_palette()
   weekly$week_start <- as.Date(weekly$week_start)
   weekly$alpha <- ifelse(weekly$incomplete %in% TRUE, 0.45, 1)
 
-  p <- ggplot2::ggplot(weekly, ggplot2::aes(x = .data$week_start, y = .data$n_cases)) +
-    ggplot2::geom_col(ggplot2::aes(alpha = .data$alpha), fill = pal$primary, width = 5.5,
-                       show.legend = FALSE) +
+  p <- ggplot2::ggplot(
+    weekly,
+    ggplot2::aes(x = .data$week_start, y = .data$n_cases)
+  ) +
+    ggplot2::geom_col(
+      ggplot2::aes(alpha = .data$alpha),
+      fill = pal$primary,
+      width = 5.5,
+      show.legend = FALSE
+    ) +
     ggplot2::scale_alpha_identity() +
     episodic_chart_week_scale(weekly$week_start, lang = lang) +
     ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang))
@@ -466,7 +630,8 @@ episodic_ui_pathogen_curve_chart <- function(weekly, thresholds = NULL, lang = "
       ggplot2::geom_hline(
         data = lines,
         ggplot2::aes(yintercept = .data$value, colour = .data$key),
-        linewidth = 0.7, linetype = "dashed"
+        linewidth = 0.7,
+        linetype = "dashed"
       ) +
       ggplot2::scale_colour_manual(
         values = stats::setNames(lines$colour, lines$key),
@@ -486,7 +651,9 @@ episodic_ui_pathogen_curve_chart <- function(weekly, thresholds = NULL, lang = "
 #' @keywords internal
 #' @noRd
 episodic_mem_threshold_lines <- function(thresholds, lang = "nl") {
-  if (is.null(thresholds)) return(NULL)
+  if (is.null(thresholds)) {
+    return(NULL)
+  }
   pal <- episodic_palette()
 
   keys <- c("pre_epidemic", "post_epidemic")
@@ -500,11 +667,18 @@ episodic_mem_threshold_lines <- function(thresholds, lang = "nl") {
   }
 
   keep <- is.finite(values)
-  if (!any(keep)) return(NULL)
+  if (!any(keep)) {
+    return(NULL)
+  }
   out <- data.frame(
-    key = keys[keep], value = values[keep], colour = colours[keep],
-    label = vapply(keys[keep], function(k) episodic_tr(paste0("pathogen.threshold.", k), lang = lang),
-                    character(1)),
+    key = keys[keep],
+    value = values[keep],
+    colour = colours[keep],
+    label = vapply(
+      keys[keep],
+      function(k) episodic_tr(paste0("pathogen.threshold.", k), lang = lang),
+      character(1)
+    ),
     stringsAsFactors = FALSE
   )
   out[order(out$value), ]
@@ -529,9 +703,17 @@ episodic_ui_pathogen_overlay_chart <- function(overlay, lang = "nl") {
   rows$group <- factor(rows$group, levels = groups)
 
   earlier <- setdiff(groups, overlay$current)
-  pool <- c(pal$primary_light, pal$tertiary, pal$warning, pal$faint, pal$secondary_dark)
+  pool <- c(
+    pal$primary_light,
+    pal$tertiary,
+    pal$warning,
+    pal$faint,
+    pal$secondary_dark
+  )
   colours <- stats::setNames(rep(pool, length.out = length(groups)), groups)
-  if (length(earlier) > 0) colours[earlier] <- rep(pool, length.out = length(earlier))
+  if (length(earlier) > 0) {
+    colours[earlier] <- rep(pool, length.out = length(earlier))
+  }
   colours[overlay$current] <- pal$danger_dark
 
   # Week labels run 40..52 then 1..20 for a season, so the x axis is an
@@ -541,22 +723,47 @@ episodic_ui_pathogen_overlay_chart <- function(overlay, lang = "nl") {
   breaks <- seq(1L, n_weeks, by = 4L)
   labels <- rows$week_label[match(breaks, rows$week_index)]
 
-  p <- ggplot2::ggplot(rows, ggplot2::aes(x = .data$week_index, y = .data$n_cases,
-                                           group = .data$group, colour = .data$group)) +
+  p <- ggplot2::ggplot(
+    rows,
+    ggplot2::aes(
+      x = .data$week_index,
+      y = .data$n_cases,
+      group = .data$group,
+      colour = .data$group
+    )
+  ) +
     ggplot2::geom_line(linewidth = 0.7, na.rm = TRUE)
 
-  current_rows <- rows[as.character(rows$group) == overlay$current, , drop = FALSE]
+  current_rows <- rows[
+    as.character(rows$group) == overlay$current,
+    ,
+    drop = FALSE
+  ]
   if (nrow(current_rows) > 0) {
-    p <- p + ggplot2::geom_line(data = current_rows, linewidth = 1.4, show.legend = FALSE,
-                                 na.rm = TRUE)
+    p <- p +
+      ggplot2::geom_line(
+        data = current_rows,
+        linewidth = 1.4,
+        show.legend = FALSE,
+        na.rm = TRUE
+      )
   }
 
   p +
     ggplot2::scale_colour_manual(values = colours[as.character(groups)]) +
     ggplot2::scale_x_continuous(breaks = breaks, labels = labels) +
-    ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang),
-                   x = episodic_tr(paste0("pathogen.panel.overlay.xlab.", overlay$kind), lang = lang)) +
+    ggplot2::labs(
+      y = episodic_tr("panel.epicurve.ylab", lang = lang),
+      x = episodic_tr(
+        paste0("pathogen.panel.overlay.xlab.", overlay$kind),
+        lang = lang
+      )
+    ) +
     episodic_chart_theme() +
-    ggplot2::theme(axis.title.x = ggplot2::element_text(size = episodic_chart_text_size[["title"]],
-                                                        colour = pal$muted))
+    ggplot2::theme(
+      axis.title.x = ggplot2::element_text(
+        size = episodic_chart_text_size[["title"]],
+        colour = pal$muted
+      )
+    )
 }

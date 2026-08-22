@@ -12,7 +12,11 @@ Sys.setenv(
   EPISODIC_DB = db_path,
   EPISODIC_LANGUAGE = "nl",
   EPISODIC_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),
-  EPISODIC_GEO_DATA = system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
+  EPISODIC_GEO_DATA = system.file(
+    "extdata",
+    "geo_postcodes4_nl.rds",
+    package = "EpiSODIC"
+  )
 )
 
 if (!file.exists(db_path)) {
@@ -23,8 +27,8 @@ if (!file.exists(db_path)) {
   # account to sign in with.
   episodic_run_cron(
     db_path,
-    ingest_source = episodic_ingest_source_synthetic,
-    denominator_source = episodic_denominator_source_synthetic
+    cases = episodic_synthetic_cases,
+    denominators = episodic_synthetic_denominators
   )
 
   episodic_provision_user(
@@ -34,7 +38,11 @@ if (!file.exists(db_path)) {
     password = "123"
   )
 } else {
-  message("Reusing existing demo database at '", db_path, "' - delete it to regenerate from scratch.")
+  message(
+    "Reusing existing demo database at '",
+    db_path,
+    "' - delete it to regenerate from scratch."
+  )
 }
 
 # Run this again (with the database already present) to simulate a
@@ -42,8 +50,8 @@ if (!file.exists(db_path)) {
 # reconciliation across runs, the Activiteit log with more than one run
 # recorded, and the Prestatie screen's timeliness figures once a few
 # clusters have been assessed:
-# episodic_run_cron(db_path, ingest_source = episodic_ingest_source_synthetic,
-#                   denominator_source = episodic_denominator_source_synthetic)
+# episodic_run_cron(db_path, cases = episodic_synthetic_cases,
+#                   denominators = episodic_synthetic_denominators)
 
 # review the simulated data
 episodic_run_app()

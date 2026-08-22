@@ -90,15 +90,28 @@ episodic_ui_picker <- function(input_id, options, selected = NULL) {
       active <- identical(opt$value, selected) && nzchar(selected)
       shiny::tags$button(
         type = "button",
-        class = if (active) "episodic-picker-btn active" else "episodic-picker-btn",
-        style = if (active) sprintf("background:%s;border-color:%s;", opt$colour, opt$colour) else "",
-        `data-value` = opt$value, `data-colour` = opt$colour, `data-input` = input_id,
+        class = if (active) {
+          "episodic-picker-btn active"
+        } else {
+          "episodic-picker-btn"
+        },
+        style = if (active) {
+          sprintf("background:%s;border-color:%s;", opt$colour, opt$colour)
+        } else {
+          ""
+        },
+        `data-value` = opt$value,
+        `data-colour` = opt$colour,
+        `data-input` = input_id,
         onclick = sprintf(
           "document.getElementById('%s').value=this.dataset.value; document.querySelectorAll('[data-input=\"%s\"]').forEach(function(b){b.classList.remove('active');b.style.background='';b.style.borderColor='';}); this.classList.add('active'); this.style.background=this.dataset.colour; this.style.borderColor=this.dataset.colour;",
-          input_id, input_id
+          input_id,
+          input_id
         ),
         opt$label,
-        if (!is.null(opt$hint)) shiny::tags$div(class = "episodic-picker-hint", opt$hint)
+        if (!is.null(opt$hint)) {
+          shiny::tags$div(class = "episodic-picker-hint", opt$hint)
+        }
       )
     })
   )
@@ -115,7 +128,10 @@ episodic_ui_chip <- function(text, colour, filled = FALSE) {
   } else {
     sprintf("color:%s;border:1px solid %s66;", colour, colour)
   }
-  class <- paste("episodic-chip", if (filled) "episodic-chip-filled" else "episodic-chip-outline")
+  class <- paste(
+    "episodic-chip",
+    if (filled) "episodic-chip-filled" else "episodic-chip-outline"
+  )
   shiny::tags$span(class = class, style = style, text)
 }
 
@@ -131,7 +147,9 @@ episodic_ui_panel <- function(title, ..., aside = NULL, note = NULL) {
     shiny::tags$div(
       class = "episodic-panel-header",
       shiny::tags$h2(class = "episodic-panel-title", title),
-      if (!is.null(aside)) shiny::tags$span(class = "episodic-panel-aside", aside)
+      if (!is.null(aside)) {
+        shiny::tags$span(class = "episodic-panel-aside", aside)
+      }
     ),
     shiny::tags$div(
       class = "episodic-panel-body",
@@ -145,7 +163,11 @@ episodic_ui_panel <- function(title, ..., aside = NULL, note = NULL) {
 #' @keywords internal
 #' @noRd
 episodic_ui_panel_empty <- function(title, message, aside = NULL) {
-  episodic_ui_panel(title, aside = aside, shiny::tags$p(class = "episodic-panel-empty", message))
+  episodic_ui_panel(
+    title,
+    aside = aside,
+    shiny::tags$p(class = "episodic-panel-empty", message)
+  )
 }
 
 #' @param label Stat label (uppercase caption).
@@ -157,7 +179,11 @@ episodic_ui_panel_empty <- function(title, message, aside = NULL) {
 episodic_ui_stat <- function(label, value, sub = NULL, colour = NULL) {
   shiny::tags$div(
     shiny::tags$div(class = "episodic-stat-label", label),
-    shiny::tags$div(class = "episodic-stat-value", style = if (!is.null(colour)) sprintf("color:%s;", colour), value),
+    shiny::tags$div(
+      class = "episodic-stat-value",
+      style = if (!is.null(colour)) sprintf("color:%s;", colour),
+      value
+    ),
     if (!is.null(sub)) shiny::tags$div(class = "episodic-stat-sub", sub)
   )
 }
@@ -168,7 +194,9 @@ episodic_ui_stat <- function(label, value, sub = NULL, colour = NULL) {
 #' @keywords internal
 #' @noRd
 episodic_ui_bars <- function(rows, unit = NULL, colour = NULL) {
-  if (nrow(rows) == 0) return(shiny::tags$p(class = "episodic-panel-empty", "..."))
+  if (nrow(rows) == 0) {
+    return(shiny::tags$p(class = "episodic-panel-empty", "..."))
+  }
   pal <- episodic_palette()
   colour <- colour %||% pal$primary
   max_n <- max(rows$n, 1)
@@ -178,13 +206,27 @@ episodic_ui_bars <- function(rows, unit = NULL, colour = NULL) {
       shiny::tags$div(class = "episodic-bar-label", rows$label[i]),
       shiny::tags$div(
         class = "episodic-bar-track",
-        shiny::tags$div(class = "episodic-bar-fill",
-                         style = sprintf("width:%s%%;background:%s;", 100 * rows$n[i] / max_n, colour))
+        shiny::tags$div(
+          class = "episodic-bar-fill",
+          style = sprintf(
+            "width:%s%%;background:%s;",
+            100 * rows$n[i] / max_n,
+            colour
+          )
+        )
       ),
       shiny::tags$div(class = "episodic-bar-value", rows$n[i])
     )
   })
-  shiny::tagList(bars, if (!is.null(unit)) shiny::tags$div(style = "font-size:11px;color:var(--episodic-faint);margin-top:6px;", unit))
+  shiny::tagList(
+    bars,
+    if (!is.null(unit)) {
+      shiny::tags$div(
+        style = "font-size:11px;color:var(--episodic-faint);margin-top:6px;",
+        unit
+      )
+    }
+  )
 }
 
 #' @param demo A data frame with `band`, `m`, `v` (male/female counts), one
@@ -204,13 +246,21 @@ episodic_ui_pyramid <- function(demo, lang = "nl") {
   rows <- lapply(seq_len(nrow(demo)), function(i) {
     shiny::tags$div(
       class = "episodic-pyramid-row",
-      shiny::tags$div(class = "episodic-pyramid-side-left",
-                       shiny::tags$div(class = "episodic-pyramid-bar-m",
-                                        style = sprintf("width:%s%%;", 100 * demo$m[i] / max_n))),
+      shiny::tags$div(
+        class = "episodic-pyramid-side-left",
+        shiny::tags$div(
+          class = "episodic-pyramid-bar-m",
+          style = sprintf("width:%s%%;", 100 * demo$m[i] / max_n)
+        )
+      ),
       shiny::tags$div(class = "episodic-pyramid-band", demo$band[i]),
-      shiny::tags$div(class = "episodic-pyramid-side-right",
-                       shiny::tags$div(class = "episodic-pyramid-bar-f",
-                                        style = sprintf("width:%s%%;", 100 * demo$v[i] / max_n)))
+      shiny::tags$div(
+        class = "episodic-pyramid-side-right",
+        shiny::tags$div(
+          class = "episodic-pyramid-bar-f",
+          style = sprintf("width:%s%%;", 100 * demo$v[i] / max_n)
+        )
+      )
     )
   })
   shiny::tagList(
@@ -244,17 +294,25 @@ episodic_ui_pyramid <- function(demo, lang = "nl") {
 #' @keywords internal
 #' @noRd
 episodic_ui_cluster_link_row <- function(cluster_id, lang = "nl", ...) {
-  open_js <- sprintf("Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
-                      as.integer(cluster_id))
+  open_js <- sprintf(
+    "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
+    as.integer(cluster_id)
+  )
   shiny::tags$tr(
-    class = "episodic-row-link", tabindex = "0",
+    class = "episodic-row-link",
+    tabindex = "0",
     title = episodic_tr("cluster.open_hint", lang = lang),
     onclick = open_js,
-    onkeydown = sprintf("if(event.key==='Enter'||event.key===' '){event.preventDefault();%s}", open_js),
+    onkeydown = sprintf(
+      "if(event.key==='Enter'||event.key===' '){event.preventDefault();%s}",
+      open_js
+    ),
     shiny::tags$td(
       class = "episodic-cell-id",
-      shiny::tags$span(class = "episodic-id-link",
-                        episodic_tr("dossier.cluster_ref", id = cluster_id, lang = lang))
+      shiny::tags$span(
+        class = "episodic-id-link",
+        episodic_tr("dossier.cluster_ref", id = cluster_id, lang = lang)
+      )
     ),
     ...
   )
@@ -265,16 +323,24 @@ episodic_ui_cluster_link_row <- function(cluster_id, lang = "nl", ...) {
 #' @noRd
 episodic_ui_state_dot <- function(state) {
   colour <- episodic_ui_state_colour(state)
-  shiny::tags$span(class = "episodic-state-dot", style = sprintf("background:%s;", colour))
+  shiny::tags$span(
+    class = "episodic-state-dot",
+    style = sprintf("background:%s;", colour)
+  )
 }
 
 #' @keywords internal
 #' @noRd
 episodic_ui_state_colour <- function(state) {
   pal <- episodic_palette()
-  switch(state,
-    new = pal$primary, assessing = pal$primary, monitoring = pal$danger,
-    closable = pal$warning_dark, closed = pal$success_dark, reassess = pal$tertiary_dark,
+  switch(
+    state,
+    new = pal$primary,
+    assessing = pal$primary,
+    monitoring = pal$danger,
+    closable = pal$warning_dark,
+    closed = pal$success_dark,
+    reassess = pal$tertiary_dark,
     pal$muted
   )
 }
@@ -286,9 +352,12 @@ episodic_ui_state_colour <- function(state) {
 #' @noRd
 episodic_ui_verdict_colour <- function(verdict) {
   pal <- episodic_palette()
-  switch(verdict,
-    artefact = pal$muted, expected_variation = pal$muted,
-    cluster_not_yet = pal$success_dark, possible_epidemic = pal$warning_dark,
+  switch(
+    verdict,
+    artefact = pal$muted,
+    expected_variation = pal$muted,
+    cluster_not_yet = pal$success_dark,
+    possible_epidemic = pal$warning_dark,
     confirmed_epidemic = pal$danger,
     pal$muted
   )

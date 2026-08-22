@@ -34,8 +34,15 @@
 #' @return Invisibly, the number of `(sample_date, run_date)` rows written.
 #' @keywords internal
 #' @noRd
-episodic_triangle_update <- function(con, stream_id, cases_for_stream, run_date) {
-  if (nrow(cases_for_stream) == 0) return(invisible(0L))
+episodic_triangle_update <- function(
+  con,
+  stream_id,
+  cases_for_stream,
+  run_date
+) {
+  if (nrow(cases_for_stream) == 0) {
+    return(invisible(0L))
+  }
 
   counts <- table(cases_for_stream$sample_date)
   sample_dates <- names(counts)
@@ -43,8 +50,11 @@ episodic_triangle_update <- function(con, stream_id, cases_for_stream, run_date)
 
   for (i in seq_along(sample_dates)) {
     episodic_db_reporting_triangle_upsert(
-      con, stream_id = stream_id, sample_date = sample_dates[i],
-      run_date = run_date, n_cases = n_cases[i]
+      con,
+      stream_id = stream_id,
+      sample_date = sample_dates[i],
+      run_date = run_date,
+      n_cases = n_cases[i]
     )
   }
   invisible(length(sample_dates))
@@ -68,7 +78,8 @@ episodic_triangle_update <- function(con, stream_id, cases_for_stream, run_date)
 #' @noRd
 episodic_triangle_completeness <- function(con, stream_id, max_lag_days = 21) {
   triangle <- DBI::dbGetQuery(
-    con, "SELECT sample_date, run_date, n_cases FROM episodic_reporting_triangle WHERE stream_id = ?",
+    con,
+    "SELECT sample_date, run_date, n_cases FROM episodic_reporting_triangle WHERE stream_id = ?",
     params = list(stream_id)
   )
   if (nrow(triangle) == 0) {
@@ -82,7 +93,9 @@ episodic_triangle_completeness <- function(con, stream_id, max_lag_days = 21) {
   final_counts <- stats::aggregate(n_cases ~ sample_date, triangle, max)
   names(final_counts)[2] <- "final_n"
   merged <- merge(triangle, final_counts, by = "sample_date")
-  merged <- merged[merged$final_n > 0 & merged$lag_days >= 0 & merged$lag_days <= max_lag_days, ]
+  merged <- merged[
+    merged$final_n > 0 & merged$lag_days >= 0 & merged$lag_days <= max_lag_days,
+  ]
   if (nrow(merged) == 0) {
     return(data.frame(lag_days = integer(0), completeness = numeric(0)))
   }

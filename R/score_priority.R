@@ -64,9 +64,17 @@
 #' @return A single numeric score, 0-100.
 #' @keywords internal
 #' @noRd
-episodic_priority_score <- function(excess = NA, ratio = NA, severity_weight = 1,
-                                    growth_slope = 0, detector_agreement = 1, n_detectors = 1,
-                                    density_ratio = NA, spatial_concentration = 0, weights) {
+episodic_priority_score <- function(
+  excess = NA,
+  ratio = NA,
+  severity_weight = 1,
+  growth_slope = 0,
+  detector_agreement = 1,
+  n_detectors = 1,
+  density_ratio = NA,
+  spatial_concentration = 0,
+  weights
+) {
   components <- c(
     excess_component = episodic_rescale(log1p(pmax(excess, 0, na.rm = FALSE))),
     ratio_component = episodic_rescale(pmin(ratio, 5) - 1),
@@ -82,7 +90,9 @@ episodic_priority_score <- function(excess = NA, ratio = NA, severity_weight = 1
   # Drop every non-computable component and renormalise over what is
   # left, rather than zeroing it while keeping its weight.
   computable <- !is.na(components)
-  if (!any(computable) || sum(w[computable]) <= 0) return(0)
+  if (!any(computable) || sum(w[computable]) <= 0) {
+    return(0)
+  }
 
   100 * sum(components[computable] * w[computable]) / sum(w[computable])
 }
@@ -95,9 +105,15 @@ episodic_priority_score <- function(excess = NA, ratio = NA, severity_weight = 1
 #' @keywords internal
 #' @noRd
 episodic_cases_in_window <- function(cases, first_day, last_day) {
-  if (is.null(cases) || nrow(cases) == 0) return(cases)
+  if (is.null(cases) || nrow(cases) == 0) {
+    return(cases)
+  }
   dates <- as.Date(cases$sample_date)
-  cases[!is.na(dates) & dates >= as.Date(first_day) & dates <= as.Date(last_day), , drop = FALSE]
+  cases[
+    !is.na(dates) & dates >= as.Date(first_day) & dates <= as.Date(last_day),
+    ,
+    drop = FALSE
+  ]
 }
 
 #' Growth slope over the last few aggregation periods
@@ -126,19 +142,34 @@ episodic_cases_in_window <- function(cases, first_day, last_day) {
 #' @return A single numeric, `0` when there is nothing to fit.
 #' @keywords internal
 #' @noRd
-episodic_growth_slope <- function(cases, last_day, n_periods = 3L, period_days = 7L) {
-  if (is.null(cases) || nrow(cases) == 0 || n_periods < 2L) return(0)
+episodic_growth_slope <- function(
+  cases,
+  last_day,
+  n_periods = 3L,
+  period_days = 7L
+) {
+  if (is.null(cases) || nrow(cases) == 0 || n_periods < 2L) {
+    return(0)
+  }
   last_day <- as.Date(last_day)
-  if (is.na(last_day)) return(0)
+  if (is.na(last_day)) {
+    return(0)
+  }
   dates <- as.Date(cases$sample_date)
   dates <- dates[!is.na(dates)]
 
-  counts <- vapply(seq_len(n_periods), function(k) {
-    end <- last_day - period_days * (n_periods - k)
-    start <- end - period_days + 1
-    sum(dates >= start & dates <= end)
-  }, integer(1))
-  if (all(counts == 0)) return(0)
+  counts <- vapply(
+    seq_len(n_periods),
+    function(k) {
+      end <- last_day - period_days * (n_periods - k)
+      start <- end - period_days + 1
+      sum(dates >= start & dates <= end)
+    },
+    integer(1)
+  )
+  if (all(counts == 0)) {
+    return(0)
+  }
 
   # Closed-form OLS slope rather than stats::lm(): this runs once per
   # candidate per stream inside the run transaction, and fitting a
@@ -168,9 +199,13 @@ episodic_growth_slope <- function(cases, last_day, n_periods = 3L, period_days =
 #' @keywords internal
 #' @noRd
 episodic_spatial_concentration <- function(cases) {
-  if (is.null(cases) || nrow(cases) == 0) return(0)
+  if (is.null(cases) || nrow(cases) == 0) {
+    return(0)
+  }
   pc <- cases$pc[!is.na(cases$pc)]
-  if (length(pc) == 0) return(0)
+  if (length(pc) == 0) {
+    return(0)
+  }
   tab <- as.integer(table(pc))
   max(tab) / sum(tab)
 }
@@ -184,7 +219,9 @@ episodic_spatial_concentration <- function(cases) {
 #' @keywords internal
 #' @noRd
 episodic_rescale <- function(x) {
-  if (is.na(x)) return(NA_real_)
+  if (is.na(x)) {
+    return(NA_real_)
+  }
   x <- pmax(x, 0)
   x / (x + 1)
 }

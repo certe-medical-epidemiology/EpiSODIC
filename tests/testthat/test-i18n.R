@@ -37,29 +37,50 @@ test_that("every shipped language file carries exactly the same key set as en.js
 
 test_that("every shipped language file uses the same {placeholder} tokens per key as en.json", {
   en <- episodic_i18n_load("en")
-  extract_placeholders <- function(x) sort(unique(regmatches(x, gregexpr("\\{[a-zA-Z_]+\\}", x))[[1]]))
+  extract_placeholders <- function(x) {
+    sort(unique(regmatches(x, gregexpr("\\{[a-zA-Z_]+\\}", x))[[1]]))
+  }
   for (lang in setdiff(episodic_shipped_langs, "en")) {
     table <- episodic_i18n_load(lang)
     for (key in names(en)) {
-      expect_identical(extract_placeholders(table[[key]]), extract_placeholders(en[[key]]),
-                        info = paste("key:", key, "lang:", lang))
+      expect_identical(
+        extract_placeholders(table[[key]]),
+        extract_placeholders(en[[key]]),
+        info = paste("key:", key, "lang:", lang)
+      )
     }
   }
 })
 
 test_that("episodic_tr() substitutes placeholders", {
-  expect_equal(episodic_tr("dossier.cluster_ref", id = 1041, lang = "nl"), "#1041")
-  expect_equal(episodic_tr("dossier.cluster_ref", id = 1041, lang = "en"), "#1041")
+  expect_equal(
+    episodic_tr("dossier.cluster_ref", id = 1041, lang = "nl"),
+    "#1041"
+  )
+  expect_equal(
+    episodic_tr("dossier.cluster_ref", id = 1041, lang = "en"),
+    "#1041"
+  )
 })
 
 test_that("each language marks a cluster reference its own way", {
   # "#" is not universal: Spanish writes n.º, French n°, German Nr.,
   # Arabic رقم. Keeping this a translation key rather than a hardcoded
   # "#" is the whole reason it is one.
-  expect_equal(episodic_tr("dossier.cluster_ref", id = 300, lang = "de"), "Nr. 300")
-  expect_equal(episodic_tr("dossier.cluster_ref", id = 300, lang = "fr"), "n\u00b0 300")
+  expect_equal(
+    episodic_tr("dossier.cluster_ref", id = 300, lang = "de"),
+    "Nr. 300"
+  )
+  expect_equal(
+    episodic_tr("dossier.cluster_ref", id = 300, lang = "fr"),
+    "n\u00b0 300"
+  )
   for (lang in episodic_shipped_langs) {
-    expect_match(episodic_tr("dossier.cluster_ref", id = 300, lang = lang), "300", fixed = TRUE)
+    expect_match(
+      episodic_tr("dossier.cluster_ref", id = 300, lang = lang),
+      "300",
+      fixed = TRUE
+    )
   }
 })
 
@@ -90,9 +111,23 @@ test_that("episodic_tr() with no instance override uses the shipped file", {
 
 test_that("every key used in code exists in both language files", {
   # a lightweight guard against typo'd tr() keys: scan R/ for episodic_tr("key"...
-  r_files <- list.files(file.path(testthat::test_path(), "..", "..", "R"), pattern = "\\.R$", full.names = TRUE)
-  code <- paste(vapply(r_files, function(f) paste(readLines(f, warn = FALSE), collapse = "\n"), character(1)), collapse = "\n")
-  used_keys <- regmatches(code, gregexpr('episodic_tr\\("([a-zA-Z0-9_.]+)"', code))[[1]]
+  r_files <- list.files(
+    file.path(testthat::test_path(), "..", "..", "R"),
+    pattern = "\\.R$",
+    full.names = TRUE
+  )
+  code <- paste(
+    vapply(
+      r_files,
+      function(f) paste(readLines(f, warn = FALSE), collapse = "\n"),
+      character(1)
+    ),
+    collapse = "\n"
+  )
+  used_keys <- regmatches(
+    code,
+    gregexpr('episodic_tr\\("([a-zA-Z0-9_.]+)"', code)
+  )[[1]]
   used_keys <- gsub('episodic_tr\\("|"$', "", used_keys)
   used_keys <- unique(used_keys)
   skip_if(length(used_keys) == 0, "no episodic_tr() calls found yet")
@@ -102,20 +137,44 @@ test_that("every key used in code exists in both language files", {
 })
 
 test_that("episodic_format_date_range() collapses shared month/year, in order regardless of input order", {
-  expect_equal(episodic_format_date_range("2025-01-07", "2025-01-15", lang = "nl"), "7-15 jan. 2025")
-  expect_equal(episodic_format_date_range("2025-01-15", "2025-01-07", lang = "nl"), "7-15 jan. 2025")  # swapped input, same output
-  expect_equal(episodic_format_date_range("2025-01-07", "2025-01-07", lang = "nl"), "7 jan. 2025")  # single day, no range dash
-  expect_equal(episodic_format_date_range("2025-11-28", "2025-12-03", lang = "nl"), "28 nov. - 3 dec. 2025")
-  expect_equal(episodic_format_date_range("2024-12-28", "2025-01-03", lang = "nl"), "28 dec. 2024 - 3 jan. 2025")
+  expect_equal(
+    episodic_format_date_range("2025-01-07", "2025-01-15", lang = "nl"),
+    "7-15 jan. 2025"
+  )
+  expect_equal(
+    episodic_format_date_range("2025-01-15", "2025-01-07", lang = "nl"),
+    "7-15 jan. 2025"
+  ) # swapped input, same output
+  expect_equal(
+    episodic_format_date_range("2025-01-07", "2025-01-07", lang = "nl"),
+    "7 jan. 2025"
+  ) # single day, no range dash
+  expect_equal(
+    episodic_format_date_range("2025-11-28", "2025-12-03", lang = "nl"),
+    "28 nov. - 3 dec. 2025"
+  )
+  expect_equal(
+    episodic_format_date_range("2024-12-28", "2025-01-03", lang = "nl"),
+    "28 dec. 2024 - 3 jan. 2025"
+  )
 })
 
 test_that("episodic_format_date_range() uses English month abbreviations for lang = 'en'", {
-  expect_equal(episodic_format_date_range("2025-01-07", "2025-01-15", lang = "en"), "7-15 Jan 2025")
+  expect_equal(
+    episodic_format_date_range("2025-01-07", "2025-01-15", lang = "en"),
+    "7-15 Jan 2025"
+  )
 })
 
 test_that("episodic_format_date_range() falls back cleanly on unparseable input", {
-  expect_equal(episodic_format_date_range(NA, "2025-01-15", lang = "en"), episodic_tr("misc.unknown", lang = "en"))
-  expect_equal(episodic_format_date_range("not-a-date", "2025-01-15", lang = "en"), episodic_tr("misc.unknown", lang = "en"))
+  expect_equal(
+    episodic_format_date_range(NA, "2025-01-15", lang = "en"),
+    episodic_tr("misc.unknown", lang = "en")
+  )
+  expect_equal(
+    episodic_format_date_range("not-a-date", "2025-01-15", lang = "en"),
+    episodic_tr("misc.unknown", lang = "en")
+  )
 })
 
 test_that("Dutch never renders 'pathogen' as 'pathogeen', in any casing", {
@@ -143,13 +202,28 @@ test_that("English says 'pathogen', never 'organism'", {
 
 test_that("no shipped language still calls the concept an organism", {
   # The same word, per language, as it was translated from English.
-  organism_words <- c(nl = "organisme", en = "organism", es = "organismo",
-                       fr = "organisme", de = "Organismus", zh = "\u751f\u7269\u4f53",
-                       hi = "\u091c\u0940\u0935", ar = "\u0643\u0627\u0626\u0646")
+  organism_words <- c(
+    nl = "organisme",
+    en = "organism",
+    es = "organismo",
+    fr = "organisme",
+    de = "Organismus",
+    zh = "\u751f\u7269\u4f53",
+    hi = "\u091c\u0940\u0935",
+    ar = "\u0643\u0627\u0626\u0646"
+  )
   for (lang in episodic_shipped_langs) {
     table <- episodic_i18n_load(lang)
-    offenders <- names(table)[grepl(organism_words[[lang]], table, ignore.case = TRUE)]
-    expect_equal(offenders, character(0), info = paste(lang, organism_words[[lang]]))
+    offenders <- names(table)[grepl(
+      organism_words[[lang]],
+      table,
+      ignore.case = TRUE
+    )]
+    expect_equal(
+      offenders,
+      character(0),
+      info = paste(lang, organism_words[[lang]])
+    )
   }
 })
 
@@ -169,7 +243,9 @@ test_that("every language names the Pathogen screen the same way in its nav entr
     # Singular stem, so an inflected or compounded title still matches
     # (Verwekker -> Verwekkeractiviteit, Patógeno -> del patógeno).
     stem <- sub("s$", "", tolower(nav))
-    expect_true(grepl(stem, tolower(title), fixed = TRUE),
-                 info = paste0(lang, ": nav '", nav, "' vs title '", title, "'"))
+    expect_true(
+      grepl(stem, tolower(title), fixed = TRUE),
+      info = paste0(lang, ": nav '", nav, "' vs title '", title, "'")
+    )
   }
 })

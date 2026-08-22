@@ -55,19 +55,39 @@
 #' implemented by the `mem` package and called directly here).
 #' @keywords internal
 #' @noRd
-episodic_detect_mem <- function(cases_for_stream, stream_id, run_date = Sys.Date(), min_seasons = 2L) {
-  empty <- episodic_detection_record(integer(0), character(0), character(0), character(0), integer(0))
-  if (!requireNamespace("mem", quietly = TRUE)) return(empty)
-  if (is.null(cases_for_stream) || nrow(cases_for_stream) == 0) return(empty)
+episodic_detect_mem <- function(
+  cases_for_stream,
+  stream_id,
+  run_date = Sys.Date(),
+  min_seasons = 2L
+) {
+  empty <- episodic_detection_record(
+    integer(0),
+    character(0),
+    character(0),
+    character(0),
+    integer(0)
+  )
+  if (!requireNamespace("mem", quietly = TRUE)) {
+    return(empty)
+  }
+  if (is.null(cases_for_stream) || nrow(cases_for_stream) == 0) {
+    return(empty)
+  }
 
   status <- episodic_mem_status(cases_for_stream, run_date, min_seasons)
-  if (is.null(status) || !isTRUE(status$epidemic_started)) return(empty)
+  if (is.null(status) || !isTRUE(status$epidemic_started)) {
+    return(empty)
+  }
 
   episodic_detection_record(
-    stream_id = stream_id, detector = "mem",
-    first_day = as.character(status$week_start), last_day = as.character(status$week_end),
+    stream_id = stream_id,
+    detector = "mem",
+    first_day = as.character(status$week_start),
+    last_day = as.character(status$week_end),
     n_cases = status$current_week_count,
-    expected = NA_real_, upperbound = status$pre_epidemic_threshold,
+    expected = NA_real_,
+    upperbound = status$pre_epidemic_threshold,
     params = list(post_epidemic_threshold = status$post_epidemic_threshold)
   )
 }
@@ -125,7 +145,11 @@ episodic_detect_mem <- function(cases_for_stream, stream_id, run_date = Sys.Date
 #'   meaningful; the counts and thresholds are `NA`.
 #' @keywords internal
 #' @noRd
-episodic_mem_status <- function(cases, run_date = Sys.Date(), min_seasons = 2L) {
+episodic_mem_status <- function(
+  cases,
+  run_date = Sys.Date(),
+  min_seasons = 2L
+) {
   evaluated <- episodic_mem_evaluation_week(run_date)
 
   # Deliberately settled before the `mem` and case-data guards below:
@@ -133,28 +157,45 @@ episodic_mem_status <- function(cases, run_date = Sys.Date(), min_seasons = 2L) 
   # calendar, and stays knowable when nothing else here is.
   if (is.na(evaluated$season)) {
     return(list(
-      in_season = FALSE, epidemic_started = FALSE, current_week_count = NA_integer_,
-      pre_epidemic_threshold = NA_real_, post_epidemic_threshold = NA_real_,
-      week_start = evaluated$week_start, week_end = evaluated$week_start + 6
+      in_season = FALSE,
+      epidemic_started = FALSE,
+      current_week_count = NA_integer_,
+      pre_epidemic_threshold = NA_real_,
+      post_epidemic_threshold = NA_real_,
+      week_start = evaluated$week_start,
+      week_end = evaluated$week_start + 6
     ))
   }
 
-  if (!requireNamespace("mem", quietly = TRUE)) return(NULL)
-  if (is.null(cases) || nrow(cases) == 0) return(NULL)
+  if (!requireNamespace("mem", quietly = TRUE)) {
+    return(NULL)
+  }
+  if (is.null(cases) || nrow(cases) == 0) {
+    return(NULL)
+  }
 
   built <- episodic_mem_seasonal_matrix(cases)
-  if (is.null(built) || is.null(built$matrix)) return(NULL)
+  if (is.null(built) || is.null(built$matrix)) {
+    return(NULL)
+  }
 
   prior_seasons <- setdiff(colnames(built$matrix), evaluated$season)
   prior_seasons <- episodic_mem_observed_seasons(prior_seasons, cases)
-  if (length(prior_seasons) < min_seasons) return(NULL)
+  if (length(prior_seasons) < min_seasons) {
+    return(NULL)
+  }
 
   historical <- built$matrix[, prior_seasons, drop = FALSE]
   fit <- tryCatch(
-    suppressWarnings(suppressMessages(mem::memmodel(as.data.frame(historical), i.mem.info = FALSE))),
+    suppressWarnings(suppressMessages(mem::memmodel(
+      as.data.frame(historical),
+      i.mem.info = FALSE
+    ))),
     error = function(e) NULL
   )
-  if (is.null(fit)) return(NULL)
+  if (is.null(fit)) {
+    return(NULL)
+  }
 
   # "Threhold is the upper limit of the confidence interval" (?mem::memmodel).
   pre_threshold <- fit$pre.post.intervals["pre.i", 3]
@@ -162,7 +203,9 @@ episodic_mem_status <- function(cases, run_date = Sys.Date(), min_seasons = 2L) 
   intensity <- episodic_mem_intensity_thresholds(fit)
 
   week_label <- evaluated$week_label
-  if (!week_label %in% rownames(built$matrix)) return(NULL)
+  if (!week_label %in% rownames(built$matrix)) {
+    return(NULL)
+  }
   # A season with no cases yet has no column of its own; that is a count
   # of zero, not an unknown.
   current_count <- if (evaluated$season %in% colnames(built$matrix)) {
@@ -178,10 +221,15 @@ episodic_mem_status <- function(cases, run_date = Sys.Date(), min_seasons = 2L) 
     pre_epidemic_threshold = as.numeric(pre_threshold),
     post_epidemic_threshold = as.numeric(post_threshold),
     intensity_thresholds = intensity,
-    intensity_level = episodic_mem_intensity_level(current_count, pre_threshold, intensity),
+    intensity_level = episodic_mem_intensity_level(
+      current_count,
+      pre_threshold,
+      intensity
+    ),
     season = evaluated$season,
     seasons_used = prior_seasons,
-    week_start = evaluated$week_start, week_end = evaluated$week_start + 6
+    week_start = evaluated$week_start,
+    week_end = evaluated$week_start + 6
   )
 }
 
@@ -209,7 +257,9 @@ episodic_mem_intensity_thresholds <- function(fit) {
   raw <- tryCatch(fit$epidemic.thresholds, error = function(e) NULL)
   values <- suppressWarnings(as.numeric(raw))
   values <- values[is.finite(values)]
-  if (length(values) < 3) return(NULL)
+  if (length(values) < 3) {
+    return(NULL)
+  }
   values <- sort(values)[seq_len(3)]
   stats::setNames(values, c("medium", "high", "very_high"))
 }
@@ -226,11 +276,21 @@ episodic_mem_intensity_thresholds <- function(fit) {
 #' @keywords internal
 #' @noRd
 episodic_mem_intensity_level <- function(count, pre_threshold, intensity) {
-  if (is.null(intensity) || is.na(count)) return(NA_character_)
-  if (!is.na(pre_threshold) && count <= pre_threshold) return("baseline")
-  if (count >= intensity[["very_high"]]) return("very_high")
-  if (count >= intensity[["high"]]) return("high")
-  if (count >= intensity[["medium"]]) return("medium")
+  if (is.null(intensity) || is.na(count)) {
+    return(NA_character_)
+  }
+  if (!is.na(pre_threshold) && count <= pre_threshold) {
+    return("baseline")
+  }
+  if (count >= intensity[["very_high"]]) {
+    return("very_high")
+  }
+  if (count >= intensity[["high"]]) {
+    return("high")
+  }
+  if (count >= intensity[["medium"]]) {
+    return("medium")
+  }
   "low"
 }
 
@@ -255,18 +315,28 @@ episodic_mem_evaluation_week <- function(run_date) {
 #' @keywords internal
 #' @noRd
 episodic_mem_observed_seasons <- function(seasons, cases) {
-  if (length(seasons) == 0) return(seasons)
+  if (length(seasons) == 0) {
+    return(seasons)
+  }
   dates <- as.Date(cases$sample_date)
   dates <- dates[!is.na(dates)]
-  if (length(dates) == 0) return(character(0))
+  if (length(dates) == 0) {
+    return(character(0))
+  }
   observed_from <- min(dates)
   observed_to <- max(dates)
 
-  keep <- vapply(seasons, function(season) {
-    bounds <- episodic_mem_season_bounds(season)
-    if (is.null(bounds)) return(FALSE)
-    observed_from <= bounds$start && observed_to >= bounds$end
-  }, logical(1))
+  keep <- vapply(
+    seasons,
+    function(season) {
+      bounds <- episodic_mem_season_bounds(season)
+      if (is.null(bounds)) {
+        return(FALSE)
+      }
+      observed_from <= bounds$start && observed_to >= bounds$end
+    },
+    logical(1)
+  )
   seasons[keep]
 }
 
@@ -281,10 +351,18 @@ episodic_mem_observed_seasons <- function(seasons, cases) {
 #' @keywords internal
 #' @noRd
 episodic_mem_season_bounds <- function(season) {
-  years <- suppressWarnings(as.integer(strsplit(as.character(season), "/", fixed = TRUE)[[1]]))
-  if (length(years) != 2 || anyNA(years)) return(NULL)
-  list(start = episodic_iso_week_start(years[1], 40L),
-       end = episodic_iso_week_start(years[2], 20L) + 6L)
+  years <- suppressWarnings(as.integer(strsplit(
+    as.character(season),
+    "/",
+    fixed = TRUE
+  )[[1]]))
+  if (length(years) != 2 || anyNA(years)) {
+    return(NULL)
+  }
+  list(
+    start = episodic_iso_week_start(years[1], 40L),
+    end = episodic_iso_week_start(years[2], 20L) + 6L
+  )
 }
 
 #' The surveillance season a date belongs to, in season or out
@@ -301,7 +379,9 @@ episodic_mem_season_bounds <- function(season) {
 episodic_season_containing <- function(date) {
   date <- as.Date(date)
   in_season <- episodic_mem_season_week(date)
-  if (!is.na(in_season$season)) return(in_season$season)
+  if (!is.na(in_season$season)) {
+    return(in_season$season)
+  }
   # The off-season window (weeks 21-39) always sits inside one calendar
   # year, so the season that just ended is unambiguous.
   year <- as.integer(format(date, "%Y"))
@@ -316,8 +396,14 @@ episodic_season_containing <- function(date) {
 #' @keywords internal
 #' @noRd
 episodic_season_shift <- function(season, n = 1L) {
-  years <- suppressWarnings(as.integer(strsplit(as.character(season), "/", fixed = TRUE)[[1]]))
-  if (length(years) != 2 || anyNA(years)) return(NULL)
+  years <- suppressWarnings(as.integer(strsplit(
+    as.character(season),
+    "/",
+    fixed = TRUE
+  )[[1]]))
+  if (length(years) != 2 || anyNA(years)) {
+    return(NULL)
+  }
   sprintf("%d/%d", years[1] - as.integer(n), years[2] - as.integer(n))
 }
 
@@ -340,26 +426,45 @@ episodic_season_shift <- function(season, n = 1L) {
 #'   when `mem` is unavailable or too little earlier history exists.
 #' @keywords internal
 #' @noRd
-episodic_mem_thresholds_for_season <- function(cases, season, min_seasons = 2L) {
-  if (!requireNamespace("mem", quietly = TRUE)) return(NULL)
-  if (is.null(cases) || nrow(cases) == 0) return(NULL)
+episodic_mem_thresholds_for_season <- function(
+  cases,
+  season,
+  min_seasons = 2L
+) {
+  if (!requireNamespace("mem", quietly = TRUE)) {
+    return(NULL)
+  }
+  if (is.null(cases) || nrow(cases) == 0) {
+    return(NULL)
+  }
 
   built <- episodic_mem_seasonal_matrix(cases)
-  if (is.null(built) || is.null(built$matrix)) return(NULL)
+  if (is.null(built) || is.null(built$matrix)) {
+    return(NULL)
+  }
 
   # "YYYY/YYYY" labels sort chronologically as plain strings, so a
   # string comparison is a chronological one here.
-  earlier <- colnames(built$matrix)[colnames(built$matrix) < as.character(season)]
+  earlier <- colnames(built$matrix)[
+    colnames(built$matrix) < as.character(season)
+  ]
   earlier <- episodic_mem_observed_seasons(earlier, cases)
-  if (length(earlier) < min_seasons) return(NULL)
+  if (length(earlier) < min_seasons) {
+    return(NULL)
+  }
 
   fit <- tryCatch(
     suppressWarnings(suppressMessages(
-      mem::memmodel(as.data.frame(built$matrix[, earlier, drop = FALSE]), i.mem.info = FALSE)
+      mem::memmodel(
+        as.data.frame(built$matrix[, earlier, drop = FALSE]),
+        i.mem.info = FALSE
+      )
     )),
     error = function(e) NULL
   )
-  if (is.null(fit)) return(NULL)
+  if (is.null(fit)) {
+    return(NULL)
+  }
 
   list(
     pre_epidemic = as.numeric(fit$pre.post.intervals["pre.i", 3]),
@@ -409,16 +514,25 @@ episodic_mem_seasonal_matrix <- function(cases) {
   weeks <- vapply(assigned, function(a) a$week_label, character(1))
 
   in_season <- !is.na(seasons)
-  if (!any(in_season)) return(NULL)
+  if (!any(in_season)) {
+    return(NULL)
+  }
   seasons <- seasons[in_season]
   weeks <- weeks[in_season]
 
   week_order <- c(as.character(40:52), as.character(1:20))
   season_levels <- sort(unique(seasons))
 
-  mat <- matrix(0L, nrow = length(week_order), ncol = length(season_levels),
-                 dimnames = list(week_order, season_levels))
-  tab <- table(factor(weeks, levels = week_order), factor(seasons, levels = season_levels))
+  mat <- matrix(
+    0L,
+    nrow = length(week_order),
+    ncol = length(season_levels),
+    dimnames = list(week_order, season_levels)
+  )
+  tab <- table(
+    factor(weeks, levels = week_order),
+    factor(seasons, levels = season_levels)
+  )
   mat[rownames(tab), colnames(tab)] <- tab
 
   list(matrix = mat)
@@ -440,13 +554,23 @@ episodic_mem_season_week <- function(date) {
   week_start <- date - (as.integer(format(date, "%u")) - 1)
 
   if (iso_week >= 40) {
-    week_capped <- min(iso_week, 52L)  # fold week 53 into 52
-    list(season = sprintf("%d/%d", iso_year, iso_year + 1L), week_label = as.character(week_capped),
-         week_start = week_start)
+    week_capped <- min(iso_week, 52L) # fold week 53 into 52
+    list(
+      season = sprintf("%d/%d", iso_year, iso_year + 1L),
+      week_label = as.character(week_capped),
+      week_start = week_start
+    )
   } else if (iso_week <= 20) {
-    list(season = sprintf("%d/%d", iso_year - 1L, iso_year), week_label = as.character(iso_week),
-         week_start = week_start)
+    list(
+      season = sprintf("%d/%d", iso_year - 1L, iso_year),
+      week_label = as.character(iso_week),
+      week_start = week_start
+    )
   } else {
-    list(season = NA_character_, week_label = NA_character_, week_start = week_start)
+    list(
+      season = NA_character_,
+      week_label = NA_character_,
+      week_start = week_start
+    )
   }
 }

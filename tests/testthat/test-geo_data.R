@@ -18,7 +18,10 @@
 # ===================================================================== #
 
 test_that("episodic_geo_source_resolve() returns NULL when sf is not installed", {
-  skip_if(requireNamespace("sf", quietly = TRUE))
+  skip_if(
+    requireNamespace("sf", quietly = TRUE),
+    "sf is installed; this covers the fallback for when it is not"
+  )
   expect_null(episodic_geo_source_resolve())
   expect_null(episodic_geo_source_default())
   expect_null(episodic_geo_join(data.frame(label = "1234", n = 3)))
@@ -35,7 +38,13 @@ test_that("episodic_geo_source_default() ships a Netherlands PC sf object", {
 test_that("episodic_geo_source_resolve() falls back to the default when EPISODIC_GEO_DATA is unset or invalid", {
   skip_if_not_installed("sf")
   old_env <- Sys.getenv("EPISODIC_GEO_DATA", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_GEO_DATA") else Sys.setenv(EPISODIC_GEO_DATA = old_env))
+  on.exit(
+    if (is.na(old_env)) {
+      Sys.unsetenv("EPISODIC_GEO_DATA")
+    } else {
+      Sys.setenv(EPISODIC_GEO_DATA = old_env)
+    }
+  )
 
   Sys.unsetenv("EPISODIC_GEO_DATA")
   expect_s3_class(episodic_geo_source_resolve(), "sf")
@@ -47,7 +56,13 @@ test_that("episodic_geo_source_resolve() falls back to the default when EPISODIC
 test_that("episodic_geo_source_resolve() honours an operator-supplied EPISODIC_GEO_DATA file", {
   skip_if_not_installed("sf")
   old_env <- Sys.getenv("EPISODIC_GEO_DATA", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_GEO_DATA") else Sys.setenv(EPISODIC_GEO_DATA = old_env))
+  on.exit(
+    if (is.na(old_env)) {
+      Sys.unsetenv("EPISODIC_GEO_DATA")
+    } else {
+      Sys.setenv(EPISODIC_GEO_DATA = old_env)
+    }
+  )
 
   default <- episodic_geo_source_default()
   custom <- default[seq_len(2), ]
@@ -75,12 +90,21 @@ test_that("episodic_geo_join() right-joins case counts onto geographic reference
 
 test_that("episodic_geo_join() returns NULL for empty rows or missing geo data", {
   skip_if_not_installed("sf")
-  expect_null(episodic_geo_join(data.frame(label = character(0), n = numeric(0)), geo_data = episodic_geo_source_default()))
+  expect_null(episodic_geo_join(
+    data.frame(label = character(0), n = numeric(0)),
+    geo_data = episodic_geo_source_default()
+  ))
 })
 
 test_that("episodic_geo_overlay_resolve() returns NULL when unset, invalid, or sf is not installed", {
   old_env <- Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY") else Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = old_env))
+  on.exit(
+    if (is.na(old_env)) {
+      Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY")
+    } else {
+      Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = old_env)
+    }
+  )
 
   Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY")
   expect_null(episodic_geo_overlay_resolve())
@@ -92,10 +116,16 @@ test_that("episodic_geo_overlay_resolve() returns NULL when unset, invalid, or s
 test_that("episodic_geo_overlay_resolve() loads an operator-supplied overlay needing only a geometry column", {
   skip_if_not_installed("sf")
   old_env <- Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY") else Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = old_env))
+  on.exit(
+    if (is.na(old_env)) {
+      Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY")
+    } else {
+      Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = old_env)
+    }
+  )
 
   base <- episodic_geo_source_default()
-  overlay <- base[seq_len(2), "geometry"]  # no pc column at all - the point of this contract
+  overlay <- base[seq_len(2), "geometry"] # no pc column at all - the point of this contract
   tmp <- tempfile(fileext = ".rds")
   on.exit(unlink(tmp), add = TRUE)
   saveRDS(overlay, tmp)
@@ -110,7 +140,13 @@ test_that("episodic_geo_overlay_resolve() loads an operator-supplied overlay nee
 test_that("episodic_geo_overlay_resolve() rejects a file with no geometry column", {
   skip_if_not_installed("sf")
   old_env <- Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY") else Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = old_env))
+  on.exit(
+    if (is.na(old_env)) {
+      Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY")
+    } else {
+      Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = old_env)
+    }
+  )
 
   tmp <- tempfile(fileext = ".rds")
   on.exit(unlink(tmp), add = TRUE)
@@ -123,7 +159,13 @@ test_that("episodic_geo_overlay_resolve() rejects a file with no geometry column
 test_that("episodic_ui_geo_map_chart() draws the overlay layer without disturbing the choropleth when present, and ignores it gracefully when absent", {
   skip_if_not_installed("sf")
   old_env <- Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY") else Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = old_env))
+  on.exit(
+    if (is.na(old_env)) {
+      Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY")
+    } else {
+      Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = old_env)
+    }
+  )
 
   geo <- episodic_geo_source_default()
   rows <- data.frame(label = as.character(geo$pc[1]), n = 4)
@@ -153,7 +195,13 @@ test_that("episodic_ui_geo_map_chart() draws the overlay layer without disturbin
 test_that("episodic_ui_geo_map_chart() frames on the case-bearing areas, not the whole reference set", {
   skip_if_not_installed("sf")
   old_env <- Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)
-  on.exit(if (is.na(old_env)) Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY") else Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = old_env))
+  on.exit(
+    if (is.na(old_env)) {
+      Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY")
+    } else {
+      Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = old_env)
+    }
+  )
   Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY")
 
   geo <- episodic_geo_source_default()
@@ -178,7 +226,12 @@ test_that("episodic_geo_frame() pads by the reference extent when the cluster si
   skip_if(is.null(geo) || nrow(geo) < 50, "shipped geometry unavailable")
 
   matched <- geo[1, ]
-  frame <- episodic_geo_frame(geo, matched, pad_share = 0.45, min_pad_share = 0.02)
+  frame <- episodic_geo_frame(
+    geo,
+    matched,
+    pad_share = 0.45,
+    min_pad_share = 0.02
+  )
   own <- sf::st_bbox(matched)
   # Strictly wider than the single area itself: a frame drawn tight
   # around one polygon shows no context at all.

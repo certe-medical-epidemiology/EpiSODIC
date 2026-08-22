@@ -37,13 +37,23 @@
 #' @return Invisible `NULL`; called for its side effects.
 #' @keywords internal
 #' @noRd
-episodic_app_server_report <- function(input, output, session, con, db_path, lang = "nl",
-                                        current_user, selected_cluster_id) {
+episodic_app_server_report <- function(
+  input,
+  output,
+  session,
+  con,
+  db_path,
+  lang = "nl",
+  current_user,
+  selected_cluster_id
+) {
   render_error <- shiny::reactiveVal(NULL)
 
   output$report_render_error <- shiny::renderUI({
     msg <- render_error()
-    if (is.null(msg)) return(NULL)
+    if (is.null(msg)) {
+      return(NULL)
+    }
     shiny::tagList(
       shiny::tags$div(class = "episodic-form-error", msg),
       # The render button is disabled and the "generating" text shown
@@ -65,9 +75,13 @@ episodic_app_server_report <- function(input, output, session, con, db_path, lan
     render_error(NULL)
 
     result <- tryCatch(
-      episodic_report_render(con, cluster_id = input$report_render_submit,
-                             output_dir = file.path(dirname(db_path), "reports"),
-                             user_id = user$user_id, lang = lang),
+      episodic_report_render(
+        con,
+        cluster_id = input$report_render_submit,
+        output_dir = file.path(dirname(db_path), "reports"),
+        user_id = user$user_id,
+        lang = lang
+      ),
       error = function(e) e
     )
 

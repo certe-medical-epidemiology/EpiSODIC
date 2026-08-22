@@ -41,10 +41,12 @@
 #'   `"es"`, `"fr"`, `"de"`, `"zh"`, `"hi"`, or `"ar"`. Defaults to the
 #'   `EPISODIC_LANGUAGE` environment variable, falling back to `"en"` if
 #'   that is unset.
-#' @param ingest_source,denominator_source The data sources to
-#'   generate the demo from, passed on to [episodic_run_cron()]. Default to
-#'   several years of synthetic data; pass a narrower date range (see
-#'   [episodic_ingest_source_synthetic()]) for a quicker demo.
+#' @param cases,denominators The data to generate the demo
+#'   from - normally data frames (or tibbles), passed on unchanged to
+#'   [episodic_run_cron()]. Default to several years of synthetic data;
+#'   generate a narrower date range yourself (see
+#'   [episodic_synthetic_cases()]) and pass it here for a quicker
+#'   demo.
 #' @return Invisibly, `db_path`.
 #' @examples
 #' \dontrun{
@@ -55,36 +57,56 @@
 #'
 #' \donttest{
 #' # non-interactive: populate a database and stop there, e.g. for scripting
-#' cases <- episodic_ingest_source_synthetic(
+#' cases <- episodic_synthetic_cases(
 #'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 #' )
-#' db_path <- episodic_demo(launch = FALSE, ingest_source = cases, denominator_source = NULL)
+#' db_path <- episodic_demo(launch = FALSE, cases = cases, denominators = NULL)
 #' file.remove(db_path)
 #' }
 #' @export
-episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
-                          username = "demo", full_name = "Demo User",
-                          email = "demo@example.org", password = "episodic-demo",
-                          launch = TRUE, lang = Sys.getenv("EPISODIC_LANGUAGE"),
-                          ingest_source = episodic_ingest_source_synthetic,
-                          denominator_source = episodic_denominator_source_synthetic) {
+episodic_demo <- function(
+  db_path = tempfile(fileext = ".sqlite"),
+  username = "demo",
+  full_name = "Demo User",
+  email = "demo@example.org",
+  password = "episodic-demo",
+  launch = TRUE,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  cases = episodic_synthetic_cases,
+  denominators = episodic_synthetic_denominators
+) {
   Sys.setenv(
-    EPISODIC_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),
+    EPISODIC_CONFIG = system.file(
+      "config",
+      "default.yaml",
+      package = "EpiSODIC"
+    ),
     EPISODIC_DB = db_path,
-    EPISODIC_GEO_DATA = system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
+    EPISODIC_GEO_DATA = system.file(
+      "extdata",
+      "geo_postcodes4_nl.rds",
+      package = "EpiSODIC"
+    )
   )
 
   episodic_run_cron(
     db_path,
-    ingest_source = ingest_source,
-    denominator_source = denominator_source
+    cases = cases,
+    denominators = denominators
   )
 
   episodic_provision_user(
-    db_path = db_path, username = username, full_name = full_name,
-    email = email, password = password
+    db_path = db_path,
+    username = username,
+    full_name = full_name,
+    email = email,
+    password = password
   )
-  message(sprintf("EpiSODIC demo account - username: %s, password: %s", username, password))
+  message(sprintf(
+    "EpiSODIC demo account - username: %s, password: %s",
+    username,
+    password
+  ))
 
   if (isTRUE(launch)) {
     episodic_run_app(db_path = db_path, lang = lang)
