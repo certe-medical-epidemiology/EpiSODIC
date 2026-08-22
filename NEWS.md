@@ -53,6 +53,11 @@
 
 ## Fixed
 
+- Reconciliation matched each candidate against the clusters the run *started* with, so a cluster went on
+  advertising the last day it had when the run began. Once that was `case_free_days` behind, the next week
+  of the same outbreak no longer matched it and opened a second dossier - and a third, every 21 days for
+  as long as the outbreak ran. Harmless while a run produced one detection per stream; reachable the
+  moment one tests several weeks, which is why it surfaced now.
 - `config$effect_size_floor` was documented as "a signal must clear both before it becomes a cluster" and
   read by nothing at all. It now applies where a candidate would open a new cluster: a statistical signal
   under `min_excess_over_upperbound` cases over the model's own upperbound, or under

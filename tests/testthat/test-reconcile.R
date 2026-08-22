@@ -759,3 +759,51 @@ test_that("a weak candidate does not open a cluster, but does extend one already
   expect_equal(nrow(clusters()), 1)
   expect_equal(clusters()$last_day, "2025-01-26")
 })
+
+test_that("consecutive alarming weeks are one outbreak, not a new dossier every fortnight", {
+  # Reconciliation matched each candidate against the clusters the run
+  # started with, so a cluster went on advertising its original last day.
+  # Once that was case_free_days behind, the next week of the same
+  # outbreak stopped matching and opened a second dossier - and a third,
+  # every 21 days for as long as the outbreak lasted. Unreachable while a
+  # run produced one detection per stream; a run that tests several weeks
+  # walks straight into it.
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  run_id <- episodic_db_run_start(env$con, "h", "a")
+  weeks <- seq(as.Date("2026-07-06"), by = "week", length.out = 6)
+  detections <- do.call(
+    rbind,
+    lapply(seq_along(weeks), function(i) {
+      det <- reconcile_detect(
+        env,
+        run_id,
+        as.character(weeks[i]),
+        as.character(weeks[i] + 6),
+        5,
+        detector = "farrington"
+      )
+      det$expected <- 2
+      det$upperbound <- 4
+      det
+    })
+  )
+
+  episodic_reconcile_stream(
+    env$con,
+    env$stream_id,
+    detections,
+    case_free_days = 14,
+    run_id = run_id,
+    close_after_runs = 14,
+    priority_score_fn = noop_priority_score,
+    has_assessment_fn = noop_has_assessment,
+    verdict_fn = noop_verdict
+  )
+
+  clusters <- episodic_db_clusters_for_stream(env$con, env$stream_id)
+  expect_equal(nrow(clusters), 1)
+  expect_equal(clusters$first_day, as.character(weeks[1]))
+  expect_equal(clusters$last_day, as.character(weeks[6] + 6))
+})

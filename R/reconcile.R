@@ -103,6 +103,13 @@ episodic_reconcile_stream <- function(
 
   for (i in seq_len(nrow(candidates))) {
     candidate <- candidates[i, ]
+    # Re-read every time round: an earlier candidate in this same run may
+    # have opened a cluster or extended one, and this is what the next
+    # candidate is matched against. Kept stale, a cluster went on
+    # advertising the last day it had when the run started, stopped
+    # matching once that was case_free_days behind, and split one
+    # continuous outbreak into a new dossier every fortnight.
+    open_clusters <- episodic_db_clusters_for_stream(con, stream_id)
     matches <- episodic_reconcile_find_matches(
       open_clusters,
       candidate,
@@ -204,13 +211,6 @@ episodic_reconcile_stream <- function(
         run_id = run_id
       )
       n_new <- n_new + 1L
-      open_clusters <- rbind(
-        open_clusters,
-        episodic_db_clusters_for_stream(con, stream_id)[
-          episodic_db_clusters_for_stream(con, stream_id)$cluster_id ==
-            cluster_id,
-        ]
-      )
       matched_cluster_ids <- c(matched_cluster_ids, as.character(cluster_id))
       episodic_reconcile_link_detections(con, detections, candidate, cluster_id)
       episodic_reconcile_link_cases(
@@ -333,7 +333,11 @@ episodic_reconcile_stream <- function(
     }
   }
 
-  # step 4 + 5: age out and auto-close clusters with no candidate this run
+  # step 4 + 5: age out and auto-close clusters with no candidate this run.
+  # Judged on the clusters this run started with: one it opened itself is
+  # matched by definition, and would otherwise be aged on the run that
+  # created it.
+  open_clusters <- episodic_db_clusters_for_stream(con, stream_id)
   undetected <- open_clusters[
     !as.character(open_clusters$cluster_id) %in% matched_cluster_ids &
       is.na(open_clusters$merged_into),
