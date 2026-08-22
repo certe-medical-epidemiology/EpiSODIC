@@ -38,7 +38,11 @@
 #'   (translated), `rationale`.
 #' @keywords internal
 #' @noRd
-episodic_app_assessment_timeline <- function(con, cluster_id, lang = "nl") {
+episodic_app_assessment_timeline <- function(
+  con,
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   events <- episodic_db_assessment_events(con, cluster_id)
   states <- episodic_db_cluster_states(con, cluster_id)
   closures <- states[states$trigger == "closure", ]
@@ -106,7 +110,11 @@ episodic_app_assessment_timeline <- function(con, cluster_id, lang = "nl") {
 #' A user_id (possibly `NA`, meaning the system) as a display label
 #' @keywords internal
 #' @noRd
-episodic_app_actor_label <- function(con, user_id, lang = "nl") {
+episodic_app_actor_label <- function(
+  con,
+  user_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   if (is.na(user_id)) {
     return(episodic_tr("activity.actor_system", lang = lang))
   }
@@ -129,7 +137,11 @@ episodic_app_actor_label <- function(con, user_id, lang = "nl") {
 #'   first.
 #' @keywords internal
 #' @noRd
-episodic_app_archive <- function(con, query = NULL, lang = "nl") {
+episodic_app_archive <- function(
+  con,
+  query = NULL,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   empty <- data.frame(
     cluster_id = integer(0),
     pathogen = character(0),
@@ -230,7 +242,10 @@ episodic_app_archive <- function(con, query = NULL, lang = "nl") {
 #'   the counters existed, or one that failed before loading anything.
 #' @keywords internal
 #' @noRd
-episodic_app_run_detail <- function(run, lang = "nl") {
+episodic_app_run_detail <- function(
+  run,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   # A failed run has no load summary, but it does have a reason, and this
   # screen is where somebody goes to find out why the dashboard is empty.
   # Its first line only, since a validation failure names every offending
@@ -256,7 +271,10 @@ episodic_app_run_detail <- function(run, lang = "nl") {
 #'   counts at all.
 #' @keywords internal
 #' @noRd
-episodic_app_run_load_summary <- function(run, lang = "nl") {
+episodic_app_run_load_summary <- function(
+  run,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   # NULL when reading a database written before the counters existed;
   # NA when the run failed before it loaded anything. Neither has a
   # summary to show, and neither should read as "zero cases arrived".
@@ -300,7 +318,11 @@ episodic_app_run_load_summary <- function(run, lang = "nl") {
 #'   full run detail for those.
 #' @keywords internal
 #' @noRd
-episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
+episodic_app_activity_log <- function(
+  con,
+  limit = 200,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   clusters <- episodic_db_clusters(con)
   streams <- episodic_db_streams(con, active_only = FALSE)
   cluster_target <- function(cluster_id) {

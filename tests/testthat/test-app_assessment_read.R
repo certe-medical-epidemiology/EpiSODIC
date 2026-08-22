@@ -43,7 +43,11 @@ test_that("episodic_app_assessment_timeline() combines assessment events and clo
   Sys.sleep(1.1)
   episodic_app_submit_closure(env$con, env$cluster_id, user_id)
 
-  timeline <- episodic_app_assessment_timeline(env$con, env$cluster_id)
+  timeline <- episodic_app_assessment_timeline(
+    env$con,
+    env$cluster_id,
+    lang = "nl"
+  )
   expect_equal(nrow(timeline), 2)
   expect_equal(timeline$kind, c("assessment", "closure"))
   expect_true(all(timeline$actor == "Test User"))
@@ -61,7 +65,11 @@ test_that("episodic_app_assessment_timeline() labels a system actor (NA user_id)
     trigger = "closure"
   )
 
-  timeline <- episodic_app_assessment_timeline(env$con, env$cluster_id)
+  timeline <- episodic_app_assessment_timeline(
+    env$con,
+    env$cluster_id,
+    lang = "nl"
+  )
   expect_equal(timeline$actor[1], "Systeem")
 })
 
@@ -129,7 +137,7 @@ test_that("episodic_app_activity_log() surfaces assessments, closures, mutes, lo
   second_run <- episodic_db_run_start(env$con, "host", "account")
   episodic_db_run_finish(env$con, second_run, status = "failed")
 
-  activity <- episodic_app_activity_log(env$con)
+  activity <- episodic_app_activity_log(env$con, lang = "nl")
   expect_true("aangemeld" %in% activity$action) # login
   expect_true("geclassificeerd" %in% activity$action) # assessment
   expect_true("signaleringsreeks gedempt" %in% activity$action) # mute

@@ -39,6 +39,16 @@
 - An empty string in a column that must always be filled is now a problem, like `NA` - an empty
   `institution_key` was previously loaded as an institution with no identity.
 
+## Fixed
+
+- Every `lang` argument now defaults to the `EPISODIC_LANGUAGE` environment variable, as the entry points
+  always did. Eighty-four internal renderers defaulted to `"nl"` instead, so on an instance running in any
+  other language, anything reached through a default - a panel, a chart axis, a modal, the shipped report
+  template - came out Dutch. An unset variable means English throughout. A test now fails if a hardcoded
+  default language creeps back in.
+- The epidemic curve's thousands separator followed the language only when one was passed explicitly: an
+  unset variable read as "not English" and gave English labels Dutch number formatting.
+
 # EpiSODIC 0.4.0
 
 ## Changed

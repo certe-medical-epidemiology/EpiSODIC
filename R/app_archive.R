@@ -29,7 +29,10 @@
 #' @return A `shiny::tags` element.
 #' @keywords internal
 #' @noRd
-episodic_ui_archive_screen <- function(archive, lang = "nl") {
+episodic_ui_archive_screen <- function(
+  archive,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(
@@ -102,7 +105,10 @@ episodic_ui_archive_screen <- function(archive, lang = "nl") {
 #' @return A `shiny::tags` element.
 #' @keywords internal
 #' @noRd
-episodic_ui_activity_screen <- function(activity, lang = "nl") {
+episodic_ui_activity_screen <- function(
+  activity,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(
@@ -195,7 +201,7 @@ episodic_ui_activity_screen <- function(activity, lang = "nl") {
 #' @return A `shiny::modalDialog`.
 #' @keywords internal
 #' @noRd
-episodic_ui_run_modal <- function(run, lang = "nl") {
+episodic_ui_run_modal <- function(run, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   heading <- function(key) {
     shiny::tags$div(
       class = "episodic-run-modal-heading",

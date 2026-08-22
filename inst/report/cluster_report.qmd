@@ -36,7 +36,11 @@ library(EpiSODIC)
 library(ggplot2)
 d <- readRDS(params$data_path)
 obj <- d$obj
-lang <- if (is.null(d$lang)) "nl" else d$lang
+# Same rule as the rest of EpiSODIC: the instance sets its language once,
+# in EPISODIC_LANGUAGE, and an unset variable means English (episodic_tr()
+# resolves the empty string itself). A template must not have a language
+# of its own.
+lang <- if (is.null(d$lang)) Sys.getenv("EPISODIC_LANGUAGE") else d$lang
 tr <- function(key, ...) episodic_tr(key, lang = lang, ...)
 na_dash <- function(x) if (is.na(x)) "-" else x
 ```

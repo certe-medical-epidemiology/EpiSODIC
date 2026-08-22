@@ -109,6 +109,61 @@ test_that("episodic_tr() with no instance override uses the shipped file", {
   expect_equal(result, "EpiSODIC")
 })
 
+test_that("no function hardcodes its default language: EPISODIC_LANGUAGE decides", {
+  # The instance picks its language once, through the environment
+  # variable, and every entry point defaults to it. A function defaulting
+  # to a language of its own reintroduces the bug this replaced: a
+  # dashboard that is English at the top and Dutch three panels down,
+  # depending on which internal helper rendered what.
+  r_files <- list.files(
+    file.path(testthat::test_path(), "..", "..", "R"),
+    pattern = "\\.R$",
+    full.names = TRUE
+  )
+  offenders <- character(0)
+  for (f in r_files) {
+    lines <- readLines(f, warn = FALSE)
+    code <- lines[!grepl("^\\s*#", lines)] # roxygen may show a language
+    hits <- grep('lang = "[a-z]{2}"', code, value = TRUE)
+    if (length(hits) > 0) {
+      offenders <- c(offenders, paste0(basename(f), ": ", trimws(hits)))
+    }
+  }
+  expect_equal(offenders, character(0))
+})
+
+test_that("episodic_lang() reads an unset language as English, not as a language of its own", {
+  expect_equal(episodic_lang("nl"), "nl")
+  expect_equal(episodic_lang(""), "en")
+  expect_equal(episodic_lang(NA_character_), "en")
+  expect_equal(episodic_lang(character(0)), "en")
+})
+
+test_that("the environment variable alone decides what an internal renderer produces", {
+  # No argument passed anywhere: the default has to reach through.
+  withr_set <- Sys.getenv("EPISODIC_LANGUAGE", unset = NA)
+  on.exit(
+    if (is.na(withr_set)) {
+      Sys.unsetenv("EPISODIC_LANGUAGE")
+    } else {
+      Sys.setenv(EPISODIC_LANGUAGE = withr_set)
+    },
+    add = TRUE
+  )
+
+  Sys.unsetenv("EPISODIC_LANGUAGE")
+  expect_equal(
+    episodic_tr("nav.clusters"),
+    episodic_tr("nav.clusters", lang = "en")
+  )
+
+  Sys.setenv(EPISODIC_LANGUAGE = "nl")
+  expect_equal(
+    episodic_tr("nav.clusters"),
+    episodic_tr("nav.clusters", lang = "nl")
+  )
+})
+
 test_that("every key used in code exists in both language files", {
   # a lightweight guard against typo'd tr() keys: scan R/ for episodic_tr("key"...
   r_files <- list.files(

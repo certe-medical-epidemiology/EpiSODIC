@@ -25,12 +25,13 @@
 #' visual design comes from `inst/app/www/episodic.css` and the palette
 #' injected as CSS custom properties.
 #'
-#' @param lang Session language: `"nl"` (default), `"en"`, `"es"`, `"fr"`,
-#'   `"de"`, `"zh"`, `"hi"`, or `"ar"`.
+#' @param lang Session language: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`,
+#'   `"zh"`, `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   environment variable, falling back to `"en"` if that is unset.
 #' @return The page returned by [bslib::page_fluid()].
 #' @keywords internal
 #' @noRd
-episodic_app_ui <- function(lang = "nl") {
+episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
 
   bslib::page_fluid(
@@ -111,7 +112,10 @@ episodic_app_ui <- function(lang = "nl") {
 #' @return A `shiny::tagList` of links.
 #' @keywords internal
 #' @noRd
-episodic_ui_nav_links <- function(active_view = "clusters", lang = "nl") {
+episodic_ui_nav_links <- function(
+  active_view = "clusters",
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   views <- c(
     "clusters",
     # Between the operational views and the configuration ones: it is the

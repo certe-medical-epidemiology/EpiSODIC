@@ -20,12 +20,16 @@
 #' The application server
 #'
 #' @param db_path Path to the SQLite database.
-#' @param lang Session language: `"nl"` (default), `"en"`, `"es"`, `"fr"`,
-#'   `"de"`, `"zh"`, `"hi"`, or `"ar"`.
+#' @param lang Session language: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`,
+#'   `"zh"`, `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   environment variable, falling back to `"en"` if that is unset.
 #' @return A Shiny server function.
 #' @keywords internal
 #' @noRd
-episodic_app_server_factory <- function(db_path, lang = "nl") {
+episodic_app_server_factory <- function(
+  db_path,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   function(input, output, session) {
     con <- episodic_db_connect(db_path)
     session$onSessionEnded(function() {
@@ -284,7 +288,10 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
 
 #' @keywords internal
 #' @noRd
-episodic_ui_status_strip <- function(status, lang = "nl") {
+episodic_ui_status_strip <- function(
+  status,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   if (identical(status$status, "none")) {
     return(shiny::tags$div(
       class = "episodic-status-strip",
@@ -457,7 +464,7 @@ episodic_ui_format_datetime <- function(
 episodic_ui_rail <- function(
   open,
   selected_id,
-  lang = "nl",
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
   current_user = NULL
 ) {
   pal <- episodic_palette()

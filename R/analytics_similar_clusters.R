@@ -57,7 +57,7 @@
 episodic_app_similar_clusters <- function(
   con,
   cluster_id,
-  lang = "nl",
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
   n = 3L
 ) {
   empty <- data.frame(

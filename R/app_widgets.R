@@ -234,7 +234,7 @@ episodic_ui_bars <- function(rows, unit = NULL, colour = NULL) {
 #' @param lang Session language, for the axis labels.
 #' @keywords internal
 #' @noRd
-episodic_ui_pyramid <- function(demo, lang = "nl") {
+episodic_ui_pyramid <- function(demo, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (nrow(demo) == 0 || sum(demo$m, demo$v) == 0) {
     return(shiny::tags$p(class = "episodic-panel-empty", "..."))
   }
@@ -293,7 +293,11 @@ episodic_ui_pyramid <- function(demo, lang = "nl") {
 #' @return A `shiny::tags$tr`.
 #' @keywords internal
 #' @noRd
-episodic_ui_cluster_link_row <- function(cluster_id, lang = "nl", ...) {
+episodic_ui_cluster_link_row <- function(
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  ...
+) {
   open_js <- sprintf(
     "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
     as.integer(cluster_id)

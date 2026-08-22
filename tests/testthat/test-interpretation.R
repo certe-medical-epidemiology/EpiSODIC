@@ -320,8 +320,8 @@ test_that("Dutch number agreement in the magnitude fragment is correct at n=1 an
   one_case <- base_cluster(n_cases = 1L, ratio = 5)
   many_cases <- base_cluster(n_cases = 11L, ratio = 5)
 
-  text_one <- episodic_interpretation_generate(one_case)$text[1]
-  text_many <- episodic_interpretation_generate(many_cases)$text[1]
+  text_one <- episodic_interpretation_generate(one_case, lang = "nl")$text[1]
+  text_many <- episodic_interpretation_generate(many_cases, lang = "nl")$text[1]
 
   expect_match(text_one, "^1 casus\\b")
   expect_match(text_many, "^11 casussen\\b")

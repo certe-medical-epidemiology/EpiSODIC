@@ -30,7 +30,10 @@
 #' @return A `shiny::tags` element.
 #' @keywords internal
 #' @noRd
-episodic_ui_auth_control <- function(current_user, lang = "nl") {
+episodic_ui_auth_control <- function(
+  current_user,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   if (is.null(current_user)) {
     return(shiny::tags$a(
       class = "episodic-auth-link",
@@ -66,7 +69,10 @@ episodic_ui_auth_control <- function(current_user, lang = "nl") {
 #' @return A `shiny::modalDialog`.
 #' @keywords internal
 #' @noRd
-episodic_ui_login_modal <- function(error = FALSE, lang = "nl") {
+episodic_ui_login_modal <- function(
+  error = FALSE,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   shiny::modalDialog(
     title = episodic_tr("auth.signin", lang = lang),
     easyClose = TRUE,
@@ -130,7 +136,10 @@ episodic_ui_login_modal <- function(error = FALSE, lang = "nl") {
 #' @return A `shiny::modalDialog`.
 #' @keywords internal
 #' @noRd
-episodic_ui_must_change_modal <- function(error = NULL, lang = "nl") {
+episodic_ui_must_change_modal <- function(
+  error = NULL,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   shiny::modalDialog(
     title = episodic_tr("auth.must_change_title", lang = lang),
     easyClose = FALSE,

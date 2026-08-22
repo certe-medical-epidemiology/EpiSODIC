@@ -19,7 +19,10 @@
 
 #' @keywords internal
 #' @noRd
-episodic_ui_performance_screen <- function(performance, lang = "nl") {
+episodic_ui_performance_screen <- function(
+  performance,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   by_dp <- performance$by_detector_pathogen
   dist <- performance$classification_distribution
   t <- performance$timeliness
@@ -172,7 +175,10 @@ episodic_ui_performance_screen <- function(performance, lang = "nl") {
 #'   when `n` is `0`).
 #' @keywords internal
 #' @noRd
-episodic_app_performance <- function(con, lang = "nl") {
+episodic_app_performance <- function(
+  con,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   detections <- DBI::dbGetQuery(
     con,
     "SELECT DISTINCT cluster_id, detector FROM episodic_detection WHERE cluster_id IS NOT NULL"
@@ -282,7 +288,7 @@ episodic_performance_ppv <- function(
 #' @noRd
 episodic_performance_classification_distribution <- function(
   latest_verdict,
-  lang = "nl"
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
 ) {
   if (nrow(latest_verdict) == 0) {
     return(data.frame(
