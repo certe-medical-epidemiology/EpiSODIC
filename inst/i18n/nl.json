@@ -350,6 +350,11 @@
   "panel.rt.unavailable.insufficient_history": "Nog onvoldoende casushistorie in dit cluster om Rt te berekenen.",
 
   "panel.similar.title": "Vergelijkbare clusters",
+  "panel.suppressed.title": "Ook gezien op andere niveaus",
+  "panel.suppressed.note": "Dezelfde casussen, ook op deze niveaus gesignaleerd. Ze staan hier in plaats van als aparte clusters te worden geopend.",
+  "panel.suppressed.col.level": "Niveau",
+  "panel.suppressed.col.size": "Omvang",
+  "panel.suppressed.col.period": "Periode",
   "panel.similar.unavailable": "Geen vergelijkbare afgesloten clusters gevonden voor deze verwekker.",
   "panel.similar.col.place": "Plaats",
   "panel.similar.col.cases": "Casussen",

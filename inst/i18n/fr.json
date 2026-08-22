@@ -350,6 +350,11 @@
   "panel.rt.unavailable.insufficient_history": "Historique de cas encore insuffisant dans ce cluster pour calculer le Rt.",
 
   "panel.similar.title": "Clusters similaires",
+  "panel.suppressed.title": "Vu aussi à d'autres niveaux",
+  "panel.suppressed.note": "Les mêmes cas, signalés aussi à ces niveaux. Ils sont conservés ici plutôt qu'ouverts comme grappes distinctes.",
+  "panel.suppressed.col.level": "Niveau",
+  "panel.suppressed.col.size": "Taille",
+  "panel.suppressed.col.period": "Période",
   "panel.similar.unavailable": "Aucun cluster clôturé similaire trouvé pour ce pathogène.",
   "panel.similar.col.place": "Lieu",
   "panel.similar.col.cases": "Cas",

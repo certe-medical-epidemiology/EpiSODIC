@@ -183,7 +183,10 @@ episodic_app_performance <- function(
     con,
     "SELECT DISTINCT cluster_id, detector FROM episodic_detection WHERE cluster_id IS NOT NULL"
   )
-  clusters <- episodic_db_clusters(con)
+  # Including suppressed ones: this screen measures how the detectors
+  # behaved, not what the queue looked like, and a detection that fired is
+  # a detection whichever level of the lattice ended up carrying it.
+  clusters <- episodic_db_clusters(con, include_suppressed = TRUE)
   streams <- episodic_db_streams(con, active_only = FALSE)
   events <- DBI::dbGetQuery(
     con,

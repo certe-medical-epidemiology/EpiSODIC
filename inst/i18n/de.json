@@ -350,6 +350,11 @@
   "panel.rt.unavailable.insufficient_history": "In diesem Cluster liegt noch nicht genügend Fallhistorie vor, um Rt zu berechnen.",
 
   "panel.similar.title": "Ähnliche Cluster",
+  "panel.suppressed.title": "Auch auf anderen Ebenen gesehen",
+  "panel.suppressed.note": "Dieselben Fälle, auch auf diesen Ebenen auffällig. Sie stehen hier, statt als eigene Cluster eröffnet zu werden.",
+  "panel.suppressed.col.level": "Ebene",
+  "panel.suppressed.col.size": "Umfang",
+  "panel.suppressed.col.period": "Zeitraum",
   "panel.similar.unavailable": "Keine ähnlichen abgeschlossenen Cluster für diesen Erreger gefunden.",
   "panel.similar.col.place": "Ort",
   "panel.similar.col.cases": "Fälle",

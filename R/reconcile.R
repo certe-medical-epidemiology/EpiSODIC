@@ -684,7 +684,8 @@ episodic_reconcile_link_cases <- function(
     {
       stream <- DBI::dbGetQuery(
         con,
-        "SELECT pathogen, institution_id FROM episodic_stream WHERE stream_id = ?",
+        "SELECT pathogen, institution_id, ward, region_code, level
+         FROM episodic_stream WHERE stream_id = ?",
         params = list(stream_id)
       )
       if (nrow(stream) == 0) {
@@ -692,7 +693,7 @@ episodic_reconcile_link_cases <- function(
       }
       cases <- DBI::dbGetQuery(
         con,
-        "SELECT case_id FROM episodic_case
+        "SELECT case_id, ward, pc FROM episodic_case
        WHERE pathogen = ? AND sample_date >= ? AND sample_date <= ?
          AND (? IS NULL OR institution_id = ?)",
         params = list(
@@ -703,6 +704,18 @@ episodic_reconcile_link_cases <- function(
           stream$institution_id[1]
         )
       )
+      # The stream's own cases, by the same rule that decided the stream
+      # exists at all. Keyed on pathogen and institution alone, a ward
+      # cluster was linked to every case in the building and an area
+      # cluster to every case in the catchment - which is what the line
+      # list on the dossier then showed.
+      if (!is.na(stream$ward[1])) {
+        cases <- cases[!is.na(cases$ward) & cases$ward == stream$ward[1], ]
+      }
+      if (!is.na(stream$region_code[1]) && nrow(cases) > 0) {
+        region <- episodic_case_region_code(cases, stream$level[1])
+        cases <- cases[!is.na(region) & region == stream$region_code[1], ]
+      }
       for (case_id in cases$case_id) {
         episodic_db_cluster_case_link(con, cluster_id, case_id)
       }

@@ -659,6 +659,11 @@ episodic_run_cron_body <- function(
     n_updated_total <- n_updated_total + reconcile_result$n_updated
   }
 
+  # Suppression is a statement about the lattice as a whole - which level
+  # of the same outbreak is the one worth a dossier - so it waits until
+  # every stream in it has reconciled.
+  episodic_suppress_lattice(con, config)
+
   list(
     status = if (isTRUE(activity_counts$n_skipped > 0)) {
       "partial"

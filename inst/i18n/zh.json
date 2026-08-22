@@ -350,6 +350,11 @@
   "panel.rt.unavailable.insufficient_history": "该聚集事件的病例历史数据尚不足以计算 Rt。",
 
   "panel.similar.title": "相似聚集事件",
+  "panel.suppressed.title": "在其他层级同样出现",
+  "panel.suppressed.note": "同一批病例在这些层级同样被标记。它们保留在此处，而不另开独立聚集。",
+  "panel.suppressed.col.level": "层级",
+  "panel.suppressed.col.size": "规模",
+  "panel.suppressed.col.period": "时间段",
   "panel.similar.unavailable": "未找到该病原体的相似已结案聚集事件。",
   "panel.similar.col.place": "地点",
   "panel.similar.col.cases": "病例数",

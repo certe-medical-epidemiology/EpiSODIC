@@ -2,6 +2,16 @@
 
 ## New
 
+- Lattice suppression, which `inst/config/default.yaml` and the reconciliation vignette have both described
+  since 0.3.0 and no code implemented: one outbreak seen at five levels became five dossiers. A child
+  cluster now suppresses its parent when it holds most of the parent's cases (the rise is local, and the
+  wider view restates it); a parent suppresses its children when the rise is spread across several with no
+  dominant one (the rise is diffuse, and separate dossiers per area are the same outbreak filed five
+  times). Thresholds are `config$suppression`, which finally has a reader. Nothing is discarded: a
+  suppressed cluster keeps its cases, its history and its assessment, and appears on the surviving
+  cluster's dossier under "Also seen at other levels". A cluster somebody has already assessed is never
+  suppressed. It is recomputed every run, so a rise that was local last week and has spread this week
+  changes which cluster survives.
 - `episodic_check_cases()` checks your case data and hands back a report of everything wrong with it at
   once: the column, how many rows are affected, which rows those are, the offending values, and what to do
   about each. It needs no database, changes nothing, and never throws - the shape of a data source it
@@ -53,6 +63,10 @@
 
 ## Fixed
 
+- A cluster's cases were selected by pathogen, window and institution alone, so a ward cluster was linked
+  to every case in the building and an area cluster to every case in the catchment - which is what the
+  dossier's line list, its demography and its geography panels were showing. They are now the stream's own
+  cases, by the same rule that decided the stream exists.
 - Reconciliation matched each candidate against the clusters the run *started* with, so a cluster went on
   advertising the last day it had when the run began. Once that was `case_free_days` behind, the next week
   of the same outbreak no longer matched it and opened a second dossier - and a third, every 21 days for

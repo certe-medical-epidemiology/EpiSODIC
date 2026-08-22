@@ -101,12 +101,64 @@ episodic_db_cases_for_pathogen <- function(con, pathogen) {
 #' @param open_only If `TRUE`, exclude clusters with `merged_into` set.
 #' @keywords internal
 #' @noRd
-episodic_db_clusters <- function(con, open_only = FALSE) {
+episodic_db_clusters <- function(
+  con,
+  open_only = FALSE,
+  include_suppressed = FALSE
+) {
   sql <- "SELECT * FROM episodic_cluster"
+  where <- character(0)
   if (open_only) {
-    sql <- paste(sql, "WHERE merged_into IS NULL")
+    where <- c(where, "merged_into IS NULL")
+  }
+  # A suppressed cluster is the same outbreak as one already in the
+  # queue, seen at another level. It keeps everything it has, and the
+  # dossier of the cluster that suppressed it is where it is shown; what
+  # it must not do is appear in the queue as a second thing to assess.
+  if (!include_suppressed) {
+    where <- c(where, "suppressed_by IS NULL")
+  }
+  if (length(where) > 0) {
+    sql <- paste(sql, "WHERE", paste(where, collapse = " AND "))
   }
   DBI::dbGetQuery(con, sql)
+}
+
+#' Everything one cluster suppressed, for its own dossier
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The surviving cluster.
+#' @return A data frame of suppressed clusters with their `pathogen` and
+#'   `level`, oldest first; no rows when it suppressed nothing.
+#' @keywords internal
+#' @noRd
+episodic_db_clusters_suppressed_by <- function(con, cluster_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT c.*, s.pathogen, s.level
+     FROM episodic_cluster c
+     INNER JOIN episodic_stream s ON s.stream_id = c.stream_id
+     WHERE c.suppressed_by = ?
+     ORDER BY c.cluster_id",
+    params = list(cluster_id)
+  )
+}
+
+#' Every cluster the lattice suppression pass has to weigh up
+#'
+#' Not merged away, not closed, with the pathogen and level of its stream
+#' attached - suppression is a comparison between levels, so the level is
+#' what it needs and the cluster table does not carry it.
+#' @keywords internal
+#' @noRd
+episodic_db_clusters_for_suppression <- function(con) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT c.*, s.pathogen, s.level
+     FROM episodic_cluster c
+     INNER JOIN episodic_stream s ON s.stream_id = c.stream_id
+     WHERE c.merged_into IS NULL"
+  )
 }
 
 #' @param stream_id A single `stream_id`.

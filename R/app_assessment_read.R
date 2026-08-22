@@ -323,7 +323,10 @@ episodic_app_activity_log <- function(
   limit = 200,
   lang = Sys.getenv("EPISODIC_LANGUAGE")
 ) {
-  clusters <- episodic_db_clusters(con)
+  # Including suppressed ones: this is the record of what happened, and a
+  # cluster somebody acted on has to keep resolving to its own name here
+  # however the lattice later decided to file it.
+  clusters <- episodic_db_clusters(con, include_suppressed = TRUE)
   streams <- episodic_db_streams(con, active_only = FALSE)
   cluster_target <- function(cluster_id) {
     stream_id <- clusters$stream_id[clusters$cluster_id == cluster_id]

@@ -62,6 +62,7 @@ episodic_ui_dossier <- function(
     episodic_ui_geo_panel(obj, lang = lang),
     episodic_ui_places_panel(con, cluster_id, obj, lang = lang),
     episodic_ui_resistance_panel(lang = lang),
+    episodic_ui_suppressed_panel(con, cluster_id, lang = lang),
     episodic_ui_similar_clusters_panel(con, cluster_id, lang = lang),
     episodic_ui_report_panel(con, cluster_id, current_user, lang = lang),
     if (is.null(current_user)) {
@@ -625,6 +626,72 @@ episodic_ui_places_panel <- function(
     stringsAsFactors = FALSE
   )
   episodic_ui_panel(title, episodic_ui_bars(rows))
+}
+
+#' What this cluster suppressed: the same outbreak, seen wider or narrower
+#'
+#' The lattice watches these cases at several levels at once, and only one
+#' of those levels becomes a dossier. This panel is where the others go,
+#' so that "one cluster" never has to mean "we threw the other views
+#' away" - an assessor can see that the ward outbreak in front of them is
+#' also what the hospital-level stream was flagging.
+#' @keywords internal
+#' @noRd
+episodic_ui_suppressed_panel <- function(
+  con,
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
+  title <- episodic_tr("panel.suppressed.title", lang = lang)
+  suppressed <- episodic_db_clusters_suppressed_by(con, cluster_id)
+  if (nrow(suppressed) == 0) {
+    return(NULL)
+  }
+
+  rows <- lapply(seq_len(nrow(suppressed)), function(i) {
+    row <- suppressed[i, ]
+    shiny::tags$tr(
+      shiny::tags$td(episodic_tr(
+        paste0("level.", row$level),
+        lang = lang
+      )),
+      shiny::tags$td(episodic_count_phrase(
+        row$n_cases,
+        episodic_tr("unit.case", lang = lang),
+        episodic_tr("unit.cases", lang = lang)
+      )),
+      shiny::tags$td(episodic_format_date_range(
+        row$first_day,
+        row$last_day,
+        lang = lang
+      ))
+    )
+  })
+
+  episodic_ui_panel(
+    title,
+    shiny::tagList(
+      shiny::tags$p(
+        class = "episodic-panel-note",
+        episodic_tr("panel.suppressed.note", lang = lang)
+      ),
+      shiny::tags$table(
+        class = "episodic-table",
+        shiny::tags$thead(shiny::tags$tr(
+          shiny::tags$th(
+            episodic_tr("panel.suppressed.col.level", lang = lang)
+          ),
+          shiny::tags$th(
+            episodic_tr("panel.suppressed.col.size", lang = lang)
+          ),
+          shiny::tags$th(
+            episodic_tr("panel.suppressed.col.period", lang = lang)
+          )
+        )),
+        shiny::tags$tbody(rows)
+      )
+    )
+  )
 }
 
 #' @keywords internal
