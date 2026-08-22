@@ -144,17 +144,6 @@ episodic_app_archive <- function(con, query = NULL, lang = "nl") {
   closed[, c("cluster_id", "pathogen", "level_label", "place", "n_cases", "priority_score", "closed_at")]
 }
 
-#' The Activity screen: every recorded action, with system runs visually distinct
-#'
-#' Name, timestamp, action, target, with system-authored runs visually
-#' distinct from human actions.
-#'
-#' @param con A [DBI::DBIConnection-class].
-#' @param limit Maximum number of rows to return, most recent first.
-#' @param lang Session language.
-#' @return A data frame with `at`, `actor`, `action`, `target`, `is_system`.
-#' @keywords internal
-#' @noRd
 #' What a detection run actually took in, as one line
 #'
 #' A run that says only "succeeded" cannot answer the question an
@@ -192,6 +181,19 @@ episodic_app_run_detail <- function(run, lang = "nl") {
   detail
 }
 
+#' The Activity screen: every recorded action, with system runs visually distinct
+#'
+#' Name, timestamp, action, target, with system-authored runs visually
+#' distinct from human actions.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param limit Maximum number of rows to return, most recent first.
+#' @param lang Session language.
+#' @return A data frame with `at`, `actor`, `action`, `target`, `detail`
+#'   and `is_system`. `detail` is the run load summary on run rows, and
+#'   `NA` on human ones.
+#' @keywords internal
+#' @noRd
 episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
   clusters <- episodic_db_clusters(con)
   streams <- episodic_db_streams(con, active_only = FALSE)
