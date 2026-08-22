@@ -2,96 +2,57 @@
 
 ## New
 
-- Lattice suppression, which `inst/config/default.yaml` and the reconciliation vignette have both described
-  since 0.3.0 and no code implemented: one outbreak seen at five levels became five dossiers. A child
-  cluster now suppresses its parent when it holds most of the parent's cases (the rise is local, and the
-  wider view restates it); a parent suppresses its children when the rise is spread across several with no
-  dominant one (the rise is diffuse, and separate dossiers per area are the same outbreak filed five
-  times). Thresholds are `config$suppression`, which finally has a reader. Nothing is discarded: a
-  suppressed cluster keeps its cases, its history and its assessment, and appears on the surviving
-  cluster's dossier under "Also seen at other levels". A cluster somebody has already assessed is never
-  suppressed. It is recomputed every run, so a rise that was local last week and has spread this week
-  changes which cluster survives.
-- `episodic_check_cases()` checks your case data and hands back a report of everything wrong with it at
-  once: the column, how many rows are affected, which rows those are, the offending values, and what to do
-  about each. It needs no database, changes nothing, and never throws - the shape of a data source it
-  cannot even read is itself reported as a finding.
-- The report separates problems (a run refuses to start) from advice (a run proceeds, but you are probably
-  losing signal): one pathogen spelled two ways, hospital rows with no `ward`, a `patient_key` that never
-  repeats, an institution keyed to two names, postcodes the shipped map cannot place, sample dates in the
-  future, a receipt date before its sample date, ages outside 0-120, columns held as factors, a
-  `patient_key` that looks like it was never pseudonymised, pathogens missing from `pathogen_config.csv`.
-- A wrong date format is named for what it is, with the conversion to apply: day-first, a date-time, an
-  Excel serial number, `YYYYMMDD`. An unexpected column is matched against what it probably should have
-  been (`postcode` to `pc`, `afnamedatum` to `sample_date`, `gender` to `sex`), rather than only rejected.
-- The report prints as a report and is a plain data frame besides, one row per finding, with a header
-  saying what was read: rows, columns, sample date range, and how many pathogens, institutions and
-  patients are in it.
-- `episodic_case_data` documents every column's type, whether it may be empty, and what it accepts in one
-  table, and carries a worked example of a minimal, valid extract.
+- `episodic_check_cases()` reports everything wrong with your case data at once - the column, how many
+  rows, which rows, the offending values, and the fix for each - without a database and without changing
+  anything. It separates problems, which stop a run, from advice, which does not: one pathogen spelled two
+  ways, no `ward` on any hospital row, a `patient_key` that never repeats, postcodes the map cannot place.
+  A wrong date format is named for what it is (day-first, date-time, Excel serial, `YYYYMMDD`) with the
+  conversion to apply, and an unexpected column is matched against what it probably should have been.
+- Lattice suppression, described by `config$suppression` and the reconciliation vignette since 0.3.0 and
+  implemented by nothing: one outbreak seen at five levels became five dossiers. A child cluster now
+  suppresses its parent when it holds most of the parent's cases; a parent suppresses its children when
+  the rise is spread across several with none dominant. Nothing is discarded - a suppressed cluster keeps
+  its cases, history and assessment, and appears on the surviving cluster's dossier. An assessed cluster is
+  never suppressed, and it is recomputed every run.
+- `episodic_case_data` documents every column's type, whether it may be empty and what it accepts in one
+  table, with a worked example of a minimal valid extract.
 
 ## Changed
 
-- `episodic_validate_cases()` reports every problem in one error instead of stopping at the first, naming
-  the rows involved and how to fix each. Its checks are `episodic_check_cases()`'s.
-- `episodic_run_cron()` validates the case feed before the run writes anything and stops if it cannot be
-  used, rather than returning quietly with a `failed` run row nobody was looking at. The run row is still
-  written, with the same message in `error_text`. A run that fails for any other reason now warns, and an
-  extract with no rows at all warns before the run starts.
-- The optional denominator feed is checked at the same moment, and fails the run the same way, instead of
-  surfacing from inside a rolled-back transaction.
-- The dashboard's status strip shows why the last run failed, not only that it did, and points at
-  `episodic_check_cases()`. The Activity screen shows its first line per run row, with a Details button
-  opening the whole recorded message alongside the run's per-feed counts and provenance - so an
-  epidemiologist reading the log can see why a run failed without asking whoever schedules them.
-- Translation placeholders are substituted literally, so a value carrying a backslash (a Windows account
-  name, a recorded error message) can no longer rewrite the sentence it is substituted into.
-- An empty string in a column that must always be filled is now a problem, like `NA` - an empty
-  `institution_key` was previously loaded as an institution with no identity.
-- `episodic_synthetic_cases()` injects six outbreaks, sized from a single case of an always-notable
-  pathogen to a diffuse regional wave, and spreads its baseline thinly enough per ward and per institution
-  that coincidence alone no longer trips the rule-based detectors. The demo used to open on some three
-  hundred clusters of three or four cases, every one of them chance co-location, with the two real
-  outbreaks buried among them.
-- Patients recur in the synthetic baseline - roughly one case in six is a repeat isolate from a patient
-  already in the data - so deduplication and episode grouping have something to collapse. Every synthetic
-  case used to be its own patient, which is also what `episodic_check_cases()` says about such data.
-- The synthetic feeds default to the five years up to today rather than a fixed 2021-2025 window, so a
-  demo does not go stale; outbreaks are anchored to `end_date` and clipped to the window asked for, rather
-  than returning cases outside it. `episodic_demo()` gained `run_date`, defaulting to the end of the last
-  complete week.
+- `episodic_validate_cases()` reports every problem in one error instead of stopping at the first.
+- `episodic_run_cron()` checks the case and denominator feeds before writing anything and stops if they
+  cannot be used, rather than returning quietly with a `failed` run row nobody was looking at. A run that
+  fails for any other reason warns, and an empty extract warns before the run starts.
+- The status strip says why the last run failed; the Activity screen shows each run's first line with a
+  Details button opening the whole message, its per-feed counts and its provenance.
+- Farrington tests every week back to the last completed run, capped by `farrington$max_weeks_tested` (8),
+  instead of only the week the run fell in - an outage no longer leaves weeks nothing ever tested.
+- `config$effect_size_floor`, previously read by nothing, now gates a candidate opening a new cluster: a
+  statistical signal too close to its own upperbound is a true alarm and not a dossier. Candidates matching
+  an open cluster still extend it; `same_place` and `rare_trigger` are unaffected.
+- `episodic_synthetic_cases()` injects six outbreaks sized from one case to a regional wave, over a
+  baseline thin enough per place that coincidence no longer trips the rule-based detectors - the demo
+  opened on some three hundred chance clusters before. Patients recur, so deduplication has something to
+  do; the feeds default to the five years up to today; `episodic_demo()` gained `run_date`.
+- Every `lang` argument defaults to `EPISODIC_LANGUAGE`, as the entry points always did. Eighty-four
+  internal renderers defaulted to `"nl"`, so anything reached through a default came out Dutch whatever the
+  instance had asked for. Unset means English. A test fails if a hardcoded default creeps back.
+- An empty string in a column that must always be filled is a problem, like `NA`.
 
 ## Fixed
 
+- Only lattice enumeration knew how a case maps to a region code, so every `pathogen_area` and
+  `pathogen_province` stream was handed the whole catchment and reported the region's counts under its own
+  name. The rule now lives in one place and both halves of the lattice use it.
 - A cluster's cases were selected by pathogen, window and institution alone, so a ward cluster was linked
   to every case in the building and an area cluster to every case in the catchment - which is what the
-  dossier's line list, its demography and its geography panels were showing. They are now the stream's own
-  cases, by the same rule that decided the stream exists.
-- Reconciliation matched each candidate against the clusters the run *started* with, so a cluster went on
-  advertising the last day it had when the run began. Once that was `case_free_days` behind, the next week
-  of the same outbreak no longer matched it and opened a second dossier - and a third, every 21 days for
-  as long as the outbreak ran. Harmless while a run produced one detection per stream; reachable the
-  moment one tests several weeks, which is why it surfaced now.
-- `config$effect_size_floor` was documented as "a signal must clear both before it becomes a cluster" and
-  read by nothing at all. It now applies where a candidate would open a new cluster: a statistical signal
-  under `min_excess_over_upperbound` cases over the model's own upperbound, or under
-  `min_ratio_observed_expected` times its expected count, no longer becomes a dossier. A candidate that
-  matches a cluster already open still extends it - an outbreak producing weeks near its own baseline is
-  still that outbreak. `same_place`, `rare_trigger` and a Farrington week with an expected of zero carry no
-  effect size to measure and are unaffected.
-- Farrington tested only the week the run happened to fall in, so a run that did not happen left its week
-  untested by anything, ever - an outage became a hole in the surveillance record. A run now tests every
-  week since the last completed run, capped by `farrington$max_weeks_tested` (8), which also gives a first
-  run against a backfilled history the current picture rather than one week of it, without opening a
-  dossier for every alarming week in the archive.
-
-- Every `lang` argument now defaults to the `EPISODIC_LANGUAGE` environment variable, as the entry points
-  always did. Eighty-four internal renderers defaulted to `"nl"` instead, so on an instance running in any
-  other language, anything reached through a default - a panel, a chart axis, a modal, the shipped report
-  template - came out Dutch. An unset variable means English throughout. A test now fails if a hardcoded
-  default language creeps back in.
-- The epidemic curve's thousands separator followed the language only when one was passed explicitly: an
-  unset variable read as "not English" and gave English labels Dutch number formatting.
+  dossier's line list showed.
+- Reconciliation matched each candidate against the clusters the run *started* with, so a cluster kept
+  advertising its original last day and, once that was `case_free_days` behind, the next week of the same
+  outbreak opened a second dossier - and a third, every 21 days.
+- Translation placeholders are substituted literally, so a value carrying a backslash can no longer rewrite
+  the sentence around it.
+- The epidemic curve's thousands separator followed the language only when one was passed explicitly.
 
 # EpiSODIC 0.4.0
 
