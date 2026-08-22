@@ -7,11 +7,11 @@
 \alias{episodic_ui_rt_chart}
 \title{Draw the dashboard charts (epidemic curve, trend, and Rt)}
 \usage{
-episodic_ui_epi_curve_chart(curve, lang = "nl")
+episodic_ui_epi_curve_chart(curve, lang = Sys.getenv("EPISODIC_LANGUAGE"))
 
-episodic_ui_trend_chart(trend, lang = "nl")
+episodic_ui_trend_chart(trend, lang = Sys.getenv("EPISODIC_LANGUAGE"))
 
-episodic_ui_rt_chart(rt, lang = "nl")
+episodic_ui_rt_chart(rt, lang = Sys.getenv("EPISODIC_LANGUAGE"))
 }
 \arguments{
 \item{curve}{A data frame with one row per day: \code{sample_date} (\code{Date}),
@@ -20,8 +20,10 @@ recent day(s) where reporting is still catching up - these are drawn at
 reduced opacity as a visual reminder not to over-interpret a downturn
 that is really just a reporting lag).}
 
-\item{lang}{Language for axis labels: \code{"nl"} (Dutch, default), \code{"en"},
-\code{"es"}, \code{"fr"}, \code{"de"}, \code{"zh"}, \code{"hi"}, or \code{"ar"}.}
+\item{lang}{Language for axis labels: \code{"nl"}, \code{"en"}, \code{"es"}, \code{"fr"},
+\code{"de"}, \code{"zh"}, \code{"hi"}, or \code{"ar"}. Defaults to the
+\code{EPISODIC_LANGUAGE} environment variable, falling back to \code{"en"} if
+that is unset.}
 
 \item{trend}{A data frame with one row per week: \code{week_start} (\code{Date}),
 \code{n_cases} (observed count), \code{expected} (the Farrington baseline), and

@@ -39,6 +39,44 @@
 #' @keywords internal
 #' @noRd
 episodic_denominators_load <- function(con, denominators) {
+  # Checked by episodic_run_cron() before the run starts as well, so a
+  # problem with this feed reaches the operator the same way a problem
+  # with the case feed does.
+  episodic_validate_denominators(denominators)
+
+  # Same reading of a missing care line as the case feed: unknown.
+  denominators$care_line[is.na(denominators$care_line)] <- "unknown"
+
+  for (i in seq_len(nrow(denominators))) {
+    row <- denominators[i, ]
+    episodic_db_denominator_upsert(
+      con,
+      pathogen = row$pathogen,
+      sample_date = row$sample_date,
+      care_line = row$care_line,
+      area_code = row$area_code,
+      n_tests = row$n_tests
+    )
+  }
+  invisible(list(
+    n_supplied = nrow(denominators),
+    n_written = nrow(denominators)
+  ))
+}
+
+#' Check the optional denominator feed against its own contract
+#'
+#' Split out of the load step so [episodic_run_cron()] can run it before
+#' the run writes anything: an operator who supplies a testing-volume feed
+#' should learn what is wrong with it where they can fix it, not from a
+#' rolled-back transaction.
+#'
+#' @param denominators A data frame (or tibble) with columns `pathogen`,
+#'   `sample_date`, `care_line`, `area_code` (nullable) and `n_tests`.
+#' @return Invisibly, `NULL`. Throws otherwise.
+#' @keywords internal
+#' @noRd
+episodic_validate_denominators <- function(denominators) {
   episodic_validate_columns(
     denominators,
     required = c(
@@ -68,29 +106,12 @@ episodic_denominators_load <- function(con, denominators) {
     stop(
       "Denominator data has a non-numeric `n_tests` (",
       paste(class(denominators$n_tests), collapse = "/"),
-      ").",
+      "). Give the number of tests performed for this pathogen, period ",
+      "and stratum as a number.",
       call. = FALSE
     )
   }
-
-  # Same reading of a missing care line as the case feed: unknown.
-  denominators$care_line[is.na(denominators$care_line)] <- "unknown"
-
-  for (i in seq_len(nrow(denominators))) {
-    row <- denominators[i, ]
-    episodic_db_denominator_upsert(
-      con,
-      pathogen = row$pathogen,
-      sample_date = row$sample_date,
-      care_line = row$care_line,
-      area_code = row$area_code,
-      n_tests = row$n_tests
-    )
-  }
-  invisible(list(
-    n_supplied = nrow(denominators),
-    n_written = nrow(denominators)
-  ))
+  invisible(NULL)
 }
 
 #' Add a testing-volume (positivity) feed
@@ -110,6 +131,8 @@ episodic_denominators_load <- function(con, denominators) {
 #' `area_code` (may be `NA`), and `n_tests`.
 #'
 #' @param start_date,end_date The period to generate weekly rows for.
+#'   Defaults to the five years up to today, matching
+#'   [episodic_synthetic_cases()].
 #' @param seed RNG seed, for reproducible demo data.
 #' @return A data frame with `pathogen`, `sample_date` (week start),
 #'   `care_line`, `area_code`, `n_tests`.
@@ -120,8 +143,8 @@ episodic_denominators_load <- function(con, denominators) {
 #' head(denom)
 #' @export
 episodic_synthetic_denominators <- function(
-  start_date = as.Date("2021-01-01"),
-  end_date = as.Date("2025-12-31"),
+  start_date = end_date - 5 * 365,
+  end_date = Sys.Date(),
   seed = 1
 ) {
   set.seed(seed)

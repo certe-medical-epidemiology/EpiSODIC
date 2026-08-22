@@ -57,7 +57,10 @@ NULL
 #' @return A named list of character scalars.
 #' @keywords internal
 #' @noRd
-episodic_interpretation_context <- function(cluster, lang = "nl") {
+episodic_interpretation_context <- function(
+  cluster,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   case_word <- c(
     episodic_tr("unit.case", lang = lang),
     episodic_tr("unit.cases", lang = lang)
@@ -295,8 +298,9 @@ episodic_interpretation_slots <- c(
 #' Generate the interpretation for a cluster
 #'
 #' @param cluster A cluster object, see `episodic_cluster_object()`.
-#' @param lang Session language: `"nl"` (default), `"en"`, `"es"`, `"fr"`,
-#'   `"de"`, `"zh"`, `"hi"`, or `"ar"`.
+#' @param lang Session language: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`,
+#'   `"zh"`, `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   environment variable, falling back to `"en"` if that is unset.
 #' @param instance_i18n Optional operator overrides, passed to [episodic_tr()].
 #' @return A list with `text` (a character vector, one string per slot that
 #'   fired, in slot order) and `fired` (a character vector of the fragment
@@ -307,7 +311,7 @@ episodic_interpretation_slots <- c(
 #' @noRd
 episodic_interpretation_generate <- function(
   cluster,
-  lang = "nl",
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
   instance_i18n = NULL
 ) {
   fragments <- episodic_interpretation_fragments()
@@ -358,7 +362,7 @@ episodic_interpretation_generate <- function(
 #' @noRd
 episodic_interpretation_recommendation <- function(
   cluster,
-  lang = "nl",
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
   instance_i18n = NULL
 ) {
   generated <- episodic_interpretation_generate(
@@ -381,7 +385,7 @@ episodic_interpretation_recommendation <- function(
 #' @noRd
 episodic_interpretation_paragraphs <- function(
   cluster,
-  lang = "nl",
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
   instance_i18n = NULL
 ) {
   generated <- episodic_interpretation_generate(

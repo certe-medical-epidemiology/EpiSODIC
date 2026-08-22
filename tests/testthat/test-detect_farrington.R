@@ -112,3 +112,89 @@ test_that("episodic_weekly_bins() covers the full range and fills zero-count wee
   expect_true(any(weekly$counts == 0)) # the week between the two case-weeks
   expect_equal(length(weekly$week_start), length(weekly$counts))
 })
+
+test_that("a run tests every week it owes, so a missed run leaves no untested week", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  config <- episodic_config_resolve()
+
+  # no completed run behind it: an instance starting against a backfilled
+  # history opens on the current picture, bounded by the cap
+  expect_equal(
+    episodic_farrington_weeks_owed(con, as.Date("2025-06-30"), config),
+    8L
+  )
+
+  finish_run_on <- function(date) {
+    run_id <- episodic_db_run_start(con, "h", "a")
+    DBI::dbExecute(
+      con,
+      "UPDATE episodic_detection_run SET status = 'success', finished_at = ?
+       WHERE run_id = ?",
+      params = list(paste0(date, "T02:00:00Z"), run_id)
+    )
+  }
+
+  finish_run_on("2025-06-29")
+  expect_equal(
+    episodic_farrington_weeks_owed(con, as.Date("2025-06-30"), config),
+    1L
+  )
+
+  # a fortnight's outage owes both of the weeks nothing has looked at
+  finish_run_on("2025-06-16")
+  expect_equal(
+    episodic_farrington_weeks_owed(con, as.Date("2025-06-30"), config),
+    2L
+  )
+
+  # and a very long outage is still bounded by the cap
+  finish_run_on("2024-01-01")
+  expect_equal(
+    episodic_farrington_weeks_owed(con, as.Date("2025-06-30"), config),
+    8L
+  )
+})
+
+test_that("episodic_detect_farrington() reports a record per alarming week it tested", {
+  # A signal that ended a fortnight ago is invisible to a detector that
+  # only ever looks at the current week.
+  run_date <- as.Date("2025-06-30")
+  weeks <- seq(run_date - 7 * 259, run_date, by = "week")
+  set.seed(4)
+  counts <- stats::rpois(length(weeks), lambda = 4)
+  spike_weeks <- weeks[length(weeks) - c(4, 3)]
+  counts[length(weeks) - c(4, 3)] <- 60L
+
+  cases <- data.frame(
+    sample_date = as.character(rep(weeks, times = counts)),
+    stringsAsFactors = FALSE
+  )
+  config <- episodic_config_resolve()
+  detect <- function(n_weeks) {
+    episodic_detect_farrington(
+      cases,
+      stream_id = 1L,
+      config = config,
+      run_date = run_date,
+      n_weeks = n_weeks
+    )
+  }
+
+  current_only <- detect(1L)
+  expect_false(any(as.character(spike_weeks) %in% current_only$first_day))
+
+  caught_up <- detect(8L)
+  expect_true(all(as.character(spike_weeks) %in% caught_up$first_day))
+  expect_true(all(
+    caught_up$n_cases[
+      caught_up$first_day %in% as.character(spike_weeks)
+    ] ==
+      60
+  ))
+  expect_true(all(caught_up$detector == "farrington"))
+  # every record carries what the effect-size floor is measured against,
+  # which is what keeps the merely-significant weeks out of the queue
+  expect_false(any(is.na(caught_up$expected)))
+  expect_false(any(is.na(caught_up$upperbound)))
+})

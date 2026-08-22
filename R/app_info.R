@@ -26,12 +26,13 @@
 #' hardcoded (not read from the database), so unlike every other screen
 #' this one needs no `con` argument.
 #'
-#' @param lang Session language: `"nl"` (default), `"en"`, `"es"`, `"fr"`,
-#'   `"de"`, `"zh"`, `"hi"`, or `"ar"`.
+#' @param lang Session language: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`,
+#'   `"zh"`, `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   environment variable, falling back to `"en"` if that is unset.
 #' @return A `shiny::tags$div`.
 #' @keywords internal
 #' @noRd
-episodic_ui_info_screen <- function(lang = "nl") {
+episodic_ui_info_screen <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(
@@ -63,7 +64,9 @@ episodic_ui_info_screen <- function(lang = "nl") {
 
 #' @keywords internal
 #' @noRd
-episodic_ui_info_algorithms_table <- function(lang = "nl") {
+episodic_ui_info_algorithms_table <- function(
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   rows <- list(
     list(
       name = "farringtonFlexible",
@@ -111,7 +114,9 @@ episodic_ui_info_algorithms_table <- function(lang = "nl") {
 
 #' @keywords internal
 #' @noRd
-episodic_ui_info_states_table <- function(lang = "nl") {
+episodic_ui_info_states_table <- function(
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   states <- c(
     "new",
     "assessing",

@@ -270,7 +270,7 @@ test_that("a partial run still counts as the latest usable run", {
   )
 })
 
-test_that("a failed run records NA counts rather than zeroes", {
+test_that("case data that violates the contract fails the run out loud, and records why", {
   path <- tempfile(fileext = ".sqlite")
   on.exit(unlink(path), add = TRUE)
 
@@ -281,7 +281,12 @@ test_that("a failed run records NA counts rather than zeroes", {
   )
   cases$pathogen <- NULL # violates the case data contract
 
-  episodic_run_cron(path, cases = cases, run_date = as.Date("2024-06-30"))
+  # Reaching the operator matters as much as recording it: a run that
+  # returned quietly here left somebody staring at an empty dashboard.
+  expect_error(
+    episodic_run_cron(path, cases = cases, run_date = as.Date("2024-06-30")),
+    "pathogen"
+  )
 
   con <- episodic_db_connect(path)
   on.exit(DBI::dbDisconnect(con), add = TRUE)
@@ -291,6 +296,28 @@ test_that("a failed run records NA counts rather than zeroes", {
   expect_true(is.na(run$n_cases_supplied))
   expect_true(is.na(run$n_cases_inserted))
   expect_match(run$error_text, "pathogen")
+  # the message an operator can act on, not only the fact of a failure
+  expect_match(run$error_text, "missing required", fixed = TRUE)
+})
+
+test_that("a run over an empty extract warns rather than quietly writing nothing", {
+  path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(path), add = TRUE)
+
+  cases <- episodic_synthetic_cases(
+    start_date = as.Date("2024-06-01"),
+    end_date = as.Date("2024-06-30"),
+    seed = 6
+  )
+
+  expect_warning(
+    episodic_run_cron(
+      path,
+      cases = cases[0, ],
+      run_date = as.Date("2024-06-30")
+    ),
+    "no rows"
+  )
 })
 
 test_that("an NA care_line is stored as 'unknown', not rejected", {
@@ -405,5 +432,71 @@ test_that("episodic_lattice_enumerate() creates distinct streams per level", {
       "pathogen_province",
       "pathogen_region"
     )
+  )
+})
+
+test_that("a geographic stream gets its own area's cases, not the whole region's", {
+  # The bug this guards: only lattice enumeration knew how a case maps to
+  # a region code, so every area and province stream was handed the whole
+  # catchment and reported the region's counts under its own name - one
+  # signal, and a cluster per area to go with it.
+  cases <- data.frame(
+    pathogen = "Norovirus",
+    institution_id = NA_integer_,
+    ward = NA_character_,
+    pc = c("9711", "9712", "8911", "7811", NA),
+    stringsAsFactors = FALSE
+  )
+  stream <- function(level, region_code) {
+    data.frame(
+      level = level,
+      pathogen = "Norovirus",
+      institution_id = NA_integer_,
+      ward = NA_character_,
+      region_code = region_code,
+      stringsAsFactors = FALSE
+    )
+  }
+
+  area <- episodic_cases_for_stream(cases, stream("pathogen_area", "GEBIED-97"))
+  expect_equal(area$pc, c("9711", "9712"))
+
+  province <- episodic_cases_for_stream(
+    cases,
+    stream("pathogen_province", "PROV_GRONINGEN")
+  )
+  expect_equal(province$pc, c("9711", "9712"))
+
+  # the whole catchment is every case, including the one with no postcode
+  # to place it by
+  region <- episodic_cases_for_stream(
+    cases,
+    stream("pathogen_region", episodic_region_code_all)
+  )
+  expect_equal(nrow(region), 5)
+})
+
+test_that("episodic_case_region_code() places a case the same way at every level", {
+  cases <- data.frame(
+    pc = c("9711", "8911", "7811", NA),
+    stringsAsFactors = FALSE
+  )
+  expect_equal(
+    episodic_case_region_code(cases, "pathogen_area"),
+    c("GEBIED-97", "GEBIED-89", "GEBIED-78", NA)
+  )
+  expect_equal(
+    episodic_case_region_code(cases, "pathogen_province"),
+    c("PROV_GRONINGEN", "PROV_FRYSLAN", "PROV_DRENTHE", NA)
+  )
+  expect_equal(
+    episodic_case_region_code(cases, "pathogen_region"),
+    rep(episodic_region_code_all, 4)
+  )
+  # a level with no geography places nothing
+  expect_true(all(is.na(episodic_case_region_code(cases, "pathogen_ward"))))
+  expect_equal(
+    episodic_case_region_code(cases[0, , drop = FALSE], "pathogen_area"),
+    character(0)
   )
 })

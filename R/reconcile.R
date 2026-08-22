@@ -88,7 +88,9 @@ episodic_reconcile_stream <- function(
   has_assessment_fn,
   verdict_fn,
   cooldown_days = NA,
-  cooldown_reopen_ratio = NA
+  cooldown_reopen_ratio = NA,
+  min_excess_over_upperbound = NA,
+  min_ratio_observed_expected = NA
 ) {
   n_new <- 0L
   n_updated <- 0L
@@ -101,6 +103,13 @@ episodic_reconcile_stream <- function(
 
   for (i in seq_len(nrow(candidates))) {
     candidate <- candidates[i, ]
+    # Re-read every time round: an earlier candidate in this same run may
+    # have opened a cluster or extended one, and this is what the next
+    # candidate is matched against. Kept stale, a cluster went on
+    # advertising the last day it had when the run started, stopped
+    # matching once that was case_free_days behind, and split one
+    # continuous outbreak into a new dossier every fortnight.
+    open_clusters <- episodic_db_clusters_for_stream(con, stream_id)
     matches <- episodic_reconcile_find_matches(
       open_clusters,
       candidate,
@@ -174,6 +183,20 @@ episodic_reconcile_stream <- function(
       )
     } else if (length(matches) == 0) {
       metrics <- episodic_reconcile_candidate_metrics(candidate)
+      # The effect-size floor applies here and only here: to a candidate
+      # about to become a cluster somebody has to assess. A candidate that
+      # matches a cluster already open goes on extending it either way -
+      # an outbreak that keeps producing weeks near its own baseline is
+      # still the same outbreak, and freezing its dossier mid-course would
+      # tell the board something untrue.
+      clears_floor <- episodic_reconcile_clears_floor(
+        metrics,
+        min_excess_over_upperbound,
+        min_ratio_observed_expected
+      )
+      if (!clears_floor) {
+        next
+      }
       cluster_id <- episodic_db_cluster_insert(
         con,
         stream_id = stream_id,
@@ -188,13 +211,6 @@ episodic_reconcile_stream <- function(
         run_id = run_id
       )
       n_new <- n_new + 1L
-      open_clusters <- rbind(
-        open_clusters,
-        episodic_db_clusters_for_stream(con, stream_id)[
-          episodic_db_clusters_for_stream(con, stream_id)$cluster_id ==
-            cluster_id,
-        ]
-      )
       matched_cluster_ids <- c(matched_cluster_ids, as.character(cluster_id))
       episodic_reconcile_link_detections(con, detections, candidate, cluster_id)
       episodic_reconcile_link_cases(
@@ -317,7 +333,11 @@ episodic_reconcile_stream <- function(
     }
   }
 
-  # step 4 + 5: age out and auto-close clusters with no candidate this run
+  # step 4 + 5: age out and auto-close clusters with no candidate this run.
+  # Judged on the clusters this run started with: one it opened itself is
+  # matched by definition, and would otherwise be aged on the run that
+  # created it.
+  open_clusters <- episodic_db_clusters_for_stream(con, stream_id)
   undetected <- open_clusters[
     !as.character(open_clusters$cluster_id) %in% matched_cluster_ids &
       is.na(open_clusters$merged_into),
@@ -446,6 +466,42 @@ episodic_reconcile_merge_detections <- function(detections) {
 #' @return A list with `expected`, `excess` (observed minus the alarm
 #'   threshold) and `ratio` (observed over expected), each `NA_real_`
 #'   when the underlying detector supplied no baseline.
+#' Is a candidate a big enough departure to be worth a dossier?
+#'
+#' The floor `config$effect_size_floor` sets: how far over the model's own
+#' upperbound, and how many times its expected count, a signal has to be
+#' before it opens a cluster. Statistical significance alone opens
+#' dossiers for a stream whose expected count is two and whose observed is
+#' four, which is a true alarm and not an outbreak worth a board's evening.
+#'
+#' A candidate with nothing to measure against passes: `same_place` and
+#' `rare_trigger` carry no expected or upperbound at all, and a Farrington
+#' week whose expected is zero has no ratio (that stream's signal is
+#' `rare_trigger`'s business anyway). A floor left `NA` is no floor.
+#'
+#' @param metrics From `episodic_reconcile_candidate_metrics()`.
+#' @param min_excess_over_upperbound,min_ratio_observed_expected The two
+#'   thresholds, or `NA` to apply neither.
+#' @return `TRUE` if the candidate may open a cluster.
+#' @keywords internal
+#' @noRd
+episodic_reconcile_clears_floor <- function(
+  metrics,
+  min_excess_over_upperbound = NA,
+  min_ratio_observed_expected = NA
+) {
+  below <- function(value, threshold) {
+    !is.na(threshold) && !is.na(value) && value < threshold
+  }
+  if (below(metrics$excess, min_excess_over_upperbound)) {
+    return(FALSE)
+  }
+  if (below(metrics$ratio, min_ratio_observed_expected)) {
+    return(FALSE)
+  }
+  TRUE
+}
+
 #' @keywords internal
 #' @noRd
 episodic_reconcile_candidate_metrics <- function(candidate) {
@@ -628,7 +684,8 @@ episodic_reconcile_link_cases <- function(
     {
       stream <- DBI::dbGetQuery(
         con,
-        "SELECT pathogen, institution_id FROM episodic_stream WHERE stream_id = ?",
+        "SELECT pathogen, institution_id, ward, region_code, level
+         FROM episodic_stream WHERE stream_id = ?",
         params = list(stream_id)
       )
       if (nrow(stream) == 0) {
@@ -636,7 +693,7 @@ episodic_reconcile_link_cases <- function(
       }
       cases <- DBI::dbGetQuery(
         con,
-        "SELECT case_id FROM episodic_case
+        "SELECT case_id, ward, pc FROM episodic_case
        WHERE pathogen = ? AND sample_date >= ? AND sample_date <= ?
          AND (? IS NULL OR institution_id = ?)",
         params = list(
@@ -647,6 +704,18 @@ episodic_reconcile_link_cases <- function(
           stream$institution_id[1]
         )
       )
+      # The stream's own cases, by the same rule that decided the stream
+      # exists at all. Keyed on pathogen and institution alone, a ward
+      # cluster was linked to every case in the building and an area
+      # cluster to every case in the catchment - which is what the line
+      # list on the dossier then showed.
+      if (!is.na(stream$ward[1])) {
+        cases <- cases[!is.na(cases$ward) & cases$ward == stream$ward[1], ]
+      }
+      if (!is.na(stream$region_code[1]) && nrow(cases) > 0) {
+        region <- episodic_case_region_code(cases, stream$level[1])
+        cases <- cases[!is.na(region) & region == stream$region_code[1], ]
+      }
       for (case_id in cases$case_id) {
         episodic_db_cluster_case_link(con, cluster_id, case_id)
       }

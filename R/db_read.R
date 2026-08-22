@@ -101,12 +101,101 @@ episodic_db_cases_for_pathogen <- function(con, pathogen) {
 #' @param open_only If `TRUE`, exclude clusters with `merged_into` set.
 #' @keywords internal
 #' @noRd
-episodic_db_clusters <- function(con, open_only = FALSE) {
+episodic_db_clusters <- function(
+  con,
+  open_only = FALSE,
+  include_suppressed = FALSE
+) {
   sql <- "SELECT * FROM episodic_cluster"
+  where <- character(0)
   if (open_only) {
-    sql <- paste(sql, "WHERE merged_into IS NULL")
+    where <- c(where, "merged_into IS NULL")
+  }
+  # A suppressed cluster is the same outbreak as one already in the
+  # queue, seen at another level. It keeps everything it has, and the
+  # dossier of the cluster that suppressed it is where it is shown; what
+  # it must not do is appear in the queue as a second thing to assess.
+  if (!include_suppressed) {
+    where <- c(where, "suppressed_by IS NULL")
+  }
+  if (length(where) > 0) {
+    sql <- paste(sql, "WHERE", paste(where, collapse = " AND "))
   }
   DBI::dbGetQuery(con, sql)
+}
+
+#' Everything one cluster suppressed, for its own dossier
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The surviving cluster.
+#' @return A data frame of suppressed clusters with their `pathogen` and
+#'   `level`, oldest first; no rows when it suppressed nothing.
+#' @keywords internal
+#' @noRd
+episodic_db_clusters_suppressed_by <- function(con, cluster_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT c.*, s.pathogen, s.level
+     FROM episodic_cluster c
+     INNER JOIN episodic_stream s ON s.stream_id = c.stream_id
+     WHERE c.suppressed_by = ?
+     ORDER BY c.cluster_id",
+    params = list(cluster_id)
+  )
+}
+
+#' Other clusters holding some of the same cases
+#'
+#' Suppression only collapses clusters in one containment chain: a ward is
+#' part of a hospital, an area is part of a province. It deliberately does
+#' not link the two chains, because letting a diffuse regional signal
+#' suppress a real ward outbreak would hide the more actionable of the
+#' two. But the assessor still has to know: a regional norovirus rise
+#' driven by a ward outbreak and a nursing home is one set of cases in
+#' three dossiers, and reading any of them without the others is reading
+#' it wrong. These are the clusters that share cases with this one and
+#' stand separately from it.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The cluster being viewed.
+#' @return A data frame of clusters with their `pathogen`, `level` and
+#'   `shared_cases`, most shared first. Suppressed and merged-away
+#'   clusters are left out: those are not separate dossiers.
+#' @keywords internal
+#' @noRd
+episodic_db_clusters_linked_to <- function(con, cluster_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT c.*, s.pathogen, s.level, COUNT(*) AS shared_cases
+     FROM episodic_cluster_case mine
+     INNER JOIN episodic_cluster_case theirs ON theirs.case_id = mine.case_id
+     INNER JOIN episodic_cluster c ON c.cluster_id = theirs.cluster_id
+     INNER JOIN episodic_stream s ON s.stream_id = c.stream_id
+     WHERE mine.cluster_id = ?
+       AND theirs.cluster_id != ?
+       AND c.merged_into IS NULL
+       AND c.suppressed_by IS NULL
+     GROUP BY c.cluster_id
+     ORDER BY shared_cases DESC, c.cluster_id",
+    params = list(cluster_id, cluster_id)
+  )
+}
+
+#' Every cluster the lattice suppression pass has to weigh up
+#'
+#' Not merged away, not closed, with the pathogen and level of its stream
+#' attached - suppression is a comparison between levels, so the level is
+#' what it needs and the cluster table does not carry it.
+#' @keywords internal
+#' @noRd
+episodic_db_clusters_for_suppression <- function(con) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT c.*, s.pathogen, s.level
+     FROM episodic_cluster c
+     INNER JOIN episodic_stream s ON s.stream_id = c.stream_id
+     WHERE c.merged_into IS NULL"
+  )
 }
 
 #' @param stream_id A single `stream_id`.
@@ -217,6 +306,21 @@ episodic_db_runs <- function(con, limit = 200) {
     "SELECT * FROM episodic_detection_run ORDER BY run_id DESC LIMIT ?",
     params = list(limit)
   )
+}
+
+#' One run by its id
+#'
+#' The Activity screen's run detail reads the whole row: the counts, the
+#' provenance, and - the point of it - `error_text` when the run failed.
+#' @keywords internal
+#' @noRd
+episodic_db_run <- function(con, run_id) {
+  res <- DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_detection_run WHERE run_id = ?",
+    params = list(run_id)
+  )
+  if (nrow(res) == 0) NULL else res[1, ]
 }
 
 #' @param status If given, only the latest run with one of these

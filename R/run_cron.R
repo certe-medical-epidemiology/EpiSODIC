@@ -41,9 +41,17 @@
 #' [episodic_config_hash()]), so any past result can always be traced back
 #' to the configuration that produced it.
 #'
-#' So is what each feed delivered. Structural problems - a missing column,
-#' a value outside the allowed set, a date that does not parse - fail the
-#' run before anything is written, naming the column and the values. Rows
+#' So is what each feed delivered. Before the run writes anything, your
+#' case data goes through [episodic_check_cases()]. Structural problems -
+#' a missing column, a value outside the allowed set, a date that does not
+#' read as a date - stop the run with an error naming every offending
+#' column, its values and the rows they are in, and are recorded on the
+#' run as well, so the reason is visible both where the run was started
+#' and in the dashboard's activity screen. Advisory findings are mentioned
+#' once and the run proceeds. Run [episodic_check_cases()] on your extract
+#' yourself to see all of it without starting a run at all. A run that
+#' fails later, for any other reason, records the reason and warns rather
+#' than returning quietly. Rows
 #' that are merely unmatched are counted rather than dropped in silence:
 #' institution activity whose `institution_key` matches no known
 #' institution is skipped with a warning, its count recorded, and the run
@@ -76,7 +84,13 @@
 #'   date; mainly useful to override in tests.
 #' @return Invisibly, the `run_id` of the completed run. The run's row in
 #'   `episodic_detection_run` holds its status, the per-feed load counts,
-#'   and `error_text` if it failed.
+#'   and `error_text` if it failed. Case data that does not satisfy the
+#'   contract throws instead of returning - the run row is still written,
+#'   with `status = "failed"` and the same message in `error_text`.
+#' @inheritSection episodic_case_data Check your data before you run anything
+#' @seealso [episodic_check_cases()] to see what EpiSODIC makes of your
+#'   extract before you schedule anything, and [episodic_case_data] for
+#'   the contract it checks against.
 #' @examples
 #' \donttest{
 #' db_path <- tempfile(fileext = ".sqlite")
@@ -109,6 +123,64 @@ episodic_run_cron <- function(
 
   run_id <- episodic_db_run_start(con, host = host, account = account)
 
+  # Data problems are the operator's to fix, so they must reach the
+  # operator: resolve every feed and check it here, before the run has
+  # written anything, and refuse out loud. A run that swallowed the
+  # reason left an empty dashboard and a run row nobody was looking at -
+  # which is exactly the situation somebody connecting their own extract
+  # for the first time finds themselves in.
+  prepared <- tryCatch(
+    {
+      cases <- episodic_resolve_data(cases)
+      report <- episodic_check_cases(cases)
+      problems <- report[report$severity == "problem", , drop = FALSE]
+      if (nrow(problems) > 0) {
+        stop(episodic_check_failure_message(problems), call. = FALSE)
+      }
+      denominators <- episodic_resolve_data(denominators)
+      if (!is.null(denominators)) {
+        episodic_validate_denominators(denominators)
+      }
+      report
+    },
+    error = function(e) e
+  )
+  if (inherits(prepared, "condition")) {
+    episodic_run_cron_finish(
+      con,
+      run_id,
+      hashed,
+      episodic_run_cron_failure(conditionMessage(prepared))
+    )
+    stop(conditionMessage(prepared), call. = FALSE)
+  }
+
+  # The data is usable, but usable is not the same as intended. Say once
+  # that there is something to look at, rather than either burying it or
+  # repeating the whole report into every scheduled run's log.
+  advice <- prepared[prepared$severity == "advice", , drop = FALSE]
+  if (nrow(advice) > 0) {
+    message(
+      "episodic_check_cases() has ",
+      nrow(advice),
+      if (nrow(advice) == 1) " advisory finding" else " advisory findings",
+      " about this case data, starting with: ",
+      advice$message[1],
+      " Run episodic_check_cases() on it to see them all."
+    )
+  }
+
+  # Not a failure - an empty extract is a legitimate thing to hand over -
+  # but never something to discover from an empty dashboard either.
+  if (nrow(cases) == 0) {
+    warning(
+      "The case data supplied to episodic_run_cron() has no rows, so this ",
+      "run has nothing to detect on and writes no cases. Check the date ",
+      "and positives-only filters in your own extract step.",
+      call. = FALSE
+    )
+  }
+
   result <- tryCatch(
     {
       DBI::dbBegin(con)
@@ -126,24 +198,92 @@ episodic_run_cron <- function(
     },
     error = function(e) {
       DBI::dbRollback(con)
-      list(
-        status = "failed",
-        error_text = conditionMessage(e),
-        n_streams = NA_integer_,
-        n_detections = NA_integer_,
-        n_signals_new = NA_integer_,
-        n_signals_updated = NA_integer_,
-        n_cases_supplied = NA_integer_,
-        n_cases_deduplicated = NA_integer_,
-        n_cases_inserted = NA_integer_,
-        n_denominators_written = NA_integer_,
-        n_activity_supplied = NA_integer_,
-        n_activity_written = NA_integer_,
-        n_activity_skipped = NA_integer_
-      )
+      episodic_run_cron_failure(conditionMessage(e))
     }
   )
 
+  episodic_run_cron_finish(con, run_id, hashed, result)
+
+  # The run row records this, but a scheduled run nobody reads the row of
+  # must still say so where it ran.
+  if (identical(result$status, "failed")) {
+    warning(
+      "EpiSODIC run ",
+      run_id,
+      " failed and wrote nothing: ",
+      result$error_text,
+      call. = FALSE
+    )
+  }
+
+  invisible(run_id)
+}
+
+#' How many weeks of Farrington this run owes
+#'
+#' A nightly run owes one: the week that just became testable. A run
+#' following a gap owes every week since the last completed one, because
+#' nothing else will ever test those - a detector that only ever looks at
+#' the current week turns a server outage into a hole in the surveillance
+#' record. A first run, with no completed run behind it, owes the cap: an
+#' instance starting against a backfilled history should open on the
+#' current picture rather than on one week of it, and the cap is what
+#' stops years of backfill arriving as years of dossiers.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param run_date The date this run treats as today.
+#' @param config The resolved configuration; uses
+#'   `config$farrington$max_weeks_tested`, defaulting to 8.
+#' @return A positive integer.
+#' @keywords internal
+#' @noRd
+episodic_farrington_weeks_owed <- function(con, run_date, config) {
+  cap <- as.integer(config$farrington$max_weeks_tested %||% 8L)
+  cap <- max(1L, cap)
+
+  previous <- episodic_db_latest_run(
+    con,
+    status = episodic_run_statuses_complete
+  )
+  if (is.null(previous) || is.na(previous$finished_at)) {
+    return(cap)
+  }
+  since <- suppressWarnings(as.Date(substr(previous$finished_at, 1, 10)))
+  if (is.na(since)) {
+    return(cap)
+  }
+  weeks <- as.numeric(difftime(as.Date(run_date), since, units = "days")) / 7
+  min(cap, max(1L, ceiling(weeks)))
+}
+
+#' The counts a run that wrote nothing has to report
+#'
+#' NA rather than zero throughout, deliberately: a failed run did not
+#' load zero cases, it never got as far as loading any.
+#' @keywords internal
+#' @noRd
+episodic_run_cron_failure <- function(error_text) {
+  list(
+    status = "failed",
+    error_text = error_text,
+    n_streams = NA_integer_,
+    n_detections = NA_integer_,
+    n_signals_new = NA_integer_,
+    n_signals_updated = NA_integer_,
+    n_cases_supplied = NA_integer_,
+    n_cases_deduplicated = NA_integer_,
+    n_cases_inserted = NA_integer_,
+    n_denominators_written = NA_integer_,
+    n_activity_supplied = NA_integer_,
+    n_activity_written = NA_integer_,
+    n_activity_skipped = NA_integer_
+  )
+}
+
+#' Close the run row off, however the run ended
+#' @keywords internal
+#' @noRd
+episodic_run_cron_finish <- function(con, run_id, hashed, result) {
   pkg_versions <- jsonlite::toJSON(episodic_pkg_versions(), auto_unbox = TRUE)
 
   episodic_db_run_finish(
@@ -167,8 +307,7 @@ episodic_run_cron <- function(
     config_snapshot = hashed$snapshot,
     error_text = result$error_text
   )
-
-  invisible(run_id)
+  invisible(NULL)
 }
 
 #' Run statuses that mean the run completed and wrote its results
@@ -190,15 +329,34 @@ episodic_run_statuses_complete <- c("success", "partial")
 #' or, if producing the data only makes sense at run time (a live database
 #' query, for instance), a zero-argument function that returns one.
 #'
+#' Resolving is all this does: it does not look at what the data
+#' contains. To find out whether your case data can actually be used -
+#' which columns are missing, which values are outside their allowed set,
+#' which dates do not read as dates, and which rows those are - run
+#' [episodic_check_cases()] on it, or [episodic_validate_cases()] if you
+#' want a script to stop. Both accept the same two forms this does, so you
+#' can check a data set and the function that produces it alike.
+#'
 #' @param x A data frame or `tibble`, a function returning one, or `NULL`.
 #' @param ... Passed to `x` if it is a function; ignored otherwise.
 #' @return `NULL` if `x` is `NULL`; `x` itself if it is a data frame (a
 #'   `tibble` included); the result of calling `x` otherwise.
+#' @inheritSection episodic_case_data Check your data before you run anything
+#' @seealso [episodic_check_cases()] to check the resolved data against
+#'   the [episodic_case_data] contract.
 #' @examples
 #' df <- data.frame(x = 1:3)
 #' identical(episodic_resolve_data(df), df)
 #' identical(episodic_resolve_data(function() df), df)
 #' is.null(episodic_resolve_data(NULL))
+#'
+#' # what a live query would look like, and how to check what it returns
+#' my_extract <- function() {
+#'   episodic_synthetic_cases(
+#'     start_date = as.Date("2025-01-01"), end_date = as.Date("2025-01-31")
+#'   )
+#' }
+#' episodic_check_cases(episodic_resolve_data(my_extract))
 #' @export
 episodic_resolve_data <- function(x, ...) {
   if (is.null(x)) {
@@ -289,6 +447,10 @@ episodic_run_cron_body <- function(
     config
   )
 
+  # Asked once, not per stream: it is a property of the run, not of any
+  # one stream.
+  farrington_weeks <- episodic_farrington_weeks_owed(con, run_date, config)
+
   streams <- episodic_db_streams(con) # refresh: same_place/rare_trigger may have created streams
 
   for (i in seq_len(nrow(streams))) {
@@ -365,7 +527,8 @@ episodic_run_cron_body <- function(
           stream$stream_id,
           config,
           run_date,
-          population = population
+          population = population,
+          n_weeks = farrington_weeks
         )
       )
 
@@ -424,6 +587,8 @@ episodic_run_cron_body <- function(
     cooldown_days <- if (nrow(pc) > 0) pc$cooldown_days[1] else NA
 
     weights <- config$priority_score$weights
+    min_excess <- config$effect_size_floor$min_excess_over_upperbound %||% NA
+    min_ratio <- config$effect_size_floor$min_ratio_observed_expected %||% NA
     reconcile_result <- episodic_reconcile_stream(
       con,
       stream_id = stream$stream_id,
@@ -434,6 +599,8 @@ episodic_run_cron_body <- function(
       cooldown_days = cooldown_days,
       cooldown_reopen_ratio = config$reconciliation$cooldown_reopen_ratio %||%
         NA,
+      min_excess_over_upperbound = min_excess,
+      min_ratio_observed_expected = min_ratio,
       # Five of the seven priority components are properties of the
       # candidate episode and its cases, so they are computed here, where
       # both are in hand. They used to be left at their defaults - most
@@ -492,6 +659,11 @@ episodic_run_cron_body <- function(
     n_updated_total <- n_updated_total + reconcile_result$n_updated
   }
 
+  # Suppression is a statement about the lattice as a whole - which level
+  # of the same outbreak is the one worth a dossier - so it waits until
+  # every stream in it has reconciled.
+  episodic_suppress_lattice(con, config)
+
   list(
     status = if (isTRUE(activity_counts$n_skipped > 0)) {
       "partial"
@@ -535,6 +707,14 @@ episodic_cases_for_stream <- function(cases, stream) {
   }
   if (!is.na(stream$ward)) {
     matches <- matches & !is.na(cases$ward) & cases$ward == stream$ward
+  }
+  # A geographic stream is its own area, not the whole catchment. Without
+  # this, an area stream was handed every case in the region and reported
+  # the region's counts under the area's name - one signal, and a cluster
+  # per area to go with it.
+  if (!is.na(stream$region_code)) {
+    region <- episodic_case_region_code(cases, stream$level)
+    matches <- matches & !is.na(region) & region == stream$region_code
   }
   cases[matches, ]
 }

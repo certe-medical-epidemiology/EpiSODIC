@@ -17,6 +17,32 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
+# How many windows `same_place` would fire on, without a database: the
+# detector's own grouping (ward inside a hospital, institution elsewhere)
+# and its own window scan.
+episodic_synthetic_same_place_count <- function(cases) {
+  config <- episodic_config_resolve()
+  place <- ifelse(
+    cases$institution_type == "hospital" & !is.na(cases$ward),
+    paste(cases$institution_key, cases$ward, sep = "|"),
+    cases$institution_key
+  )
+  key <- paste(cases$pathogen, place, sep = "\r")
+  groups <- split(seq_len(nrow(cases)), key)
+  total <- 0L
+  for (g in groups) {
+    grp <- cases[g, ]
+    rule <- episodic_same_place_rule(config, grp$pathogen[1])
+    total <- total +
+      length(episodic_same_place_hit_windows(
+        sort(as.Date(grp$sample_date)),
+        n = rule$n,
+        k_days = rule$k_days
+      ))
+  }
+  total
+}
+
 test_that("episodic_synthetic_cases() produces valid case data", {
   raw <- episodic_synthetic_cases(
     start_date = as.Date("2024-01-01"),
@@ -43,6 +69,79 @@ test_that("the same seed reproduces identical data", {
     sum(as.integer(as.factor(raw1$pathogen))),
     sum(as.integer(as.factor(raw2$pathogen)))
   )
+})
+
+test_that("all six outbreaks are injected, sized from one case to a regional wave", {
+  raw <- episodic_synthetic_cases(
+    start_date = as.Date("2024-01-01"),
+    end_date = as.Date("2024-12-31"),
+    seed = 1
+  )
+  tag <- function(prefix) sum(startsWith(raw$patient_key, prefix))
+  expect_equal(tag("PT-OUTBREAK-RARE-"), 1)
+  expect_equal(tag("PT-OUTBREAK-WARD-"), 3)
+  expect_equal(tag("PT-OUTBREAK-LTC-"), 8)
+  expect_equal(tag("PT-OUTBREAK-PS-"), 14)
+  expect_equal(tag("PT-OUTBREAK-PROP-"), 15)
+  expect_gt(tag("PT-OUTBREAK-WAVE-"), 100)
+  # the one case of an always-notable pathogen the rare_trigger list carries
+  expect_equal(
+    raw$pathogen[startsWith(raw$patient_key, "PT-OUTBREAK-RARE-")],
+    "Neisseria meningitidis"
+  )
+})
+
+test_that("an outbreak anchored to end_date is clipped to the window asked for", {
+  # A generator asked for one month must not answer with the three months
+  # its outbreaks happen to be anchored across.
+  raw <- episodic_synthetic_cases(
+    start_date = as.Date("2024-06-01"),
+    end_date = as.Date("2024-06-30"),
+    seed = 2
+  )
+  dates <- as.Date(raw$sample_date)
+  expect_true(all(dates >= as.Date("2024-06-01")))
+  expect_true(all(dates <= as.Date("2024-06-30")))
+})
+
+test_that("patients recur, so deduplication has something to collapse", {
+  raw <- episodic_synthetic_cases(
+    start_date = as.Date("2024-01-01"),
+    end_date = as.Date("2024-12-31"),
+    seed = 1
+  )
+  baseline <- raw[!startsWith(raw$patient_key, "PT-OUTBREAK-"), ]
+  expect_lt(length(unique(baseline$patient_key)), nrow(baseline))
+  # and a repeat isolate is the same patient in the same place, not a
+  # different person who happens to share a key
+  repeated <- baseline$patient_key[duplicated(baseline$patient_key)][1]
+  same <- baseline[baseline$patient_key == repeated, ]
+  expect_equal(length(unique(same$institution_key)), 1)
+  expect_equal(length(unique(same$sex)), 1)
+})
+
+test_that("the baseline hardly ever trips same_place by coincidence", {
+  # The whole point of the generator's shape: a baseline that keeps
+  # tripping the rule-based detectors by chance buries the outbreaks the
+  # demo exists to show. This is the regression guard for that - it once
+  # produced hundreds of three-case clusters.
+  raw <- episodic_synthetic_cases(
+    start_date = as.Date("2022-01-01"),
+    end_date = as.Date("2024-12-31"),
+    seed = 1
+  )
+  baseline <- raw[!startsWith(raw$patient_key, "PT-OUTBREAK-"), ]
+  expect_lt(episodic_synthetic_same_place_count(baseline), 6)
+})
+
+test_that("the regional wave is too thin, anywhere, for a rule-based detector to see", {
+  raw <- episodic_synthetic_cases(
+    start_date = as.Date("2024-01-01"),
+    end_date = as.Date("2024-12-31"),
+    seed = 1
+  )
+  wave <- raw[startsWith(raw$patient_key, "PT-OUTBREAK-WAVE-"), ]
+  expect_equal(episodic_synthetic_same_place_count(wave), 0)
 })
 
 test_that("the injected point-source outbreak is present as a tight ward-level cluster", {

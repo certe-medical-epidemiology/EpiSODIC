@@ -29,7 +29,10 @@
 #' @return A `shiny::tags` element.
 #' @keywords internal
 #' @noRd
-episodic_ui_archive_screen <- function(archive, lang = "nl") {
+episodic_ui_archive_screen <- function(
+  archive,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(
@@ -102,7 +105,10 @@ episodic_ui_archive_screen <- function(archive, lang = "nl") {
 #' @return A `shiny::tags` element.
 #' @keywords internal
 #' @noRd
-episodic_ui_activity_screen <- function(activity, lang = "nl") {
+episodic_ui_activity_screen <- function(
+  activity,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(
@@ -151,6 +157,20 @@ episodic_ui_activity_screen <- function(activity, lang = "nl") {
                     style = "font-size:11.5px;color:var(--episodic-muted);margin-top:2px;",
                     row$detail
                   )
+                },
+                # And everything else the run recorded - the per-feed
+                # counts, the provenance, and the whole failure message -
+                # one click away, so the reason a dashboard is empty never
+                # lives only in a console somebody else was looking at.
+                if (!is.null(row$run_id) && !is.na(row$run_id)) {
+                  shiny::tags$button(
+                    class = "episodic-btn episodic-run-detail-btn",
+                    onclick = sprintf(
+                      "Shiny.setInputValue('activity_run_detail', %d, {priority: 'event'})",
+                      as.integer(row$run_id)
+                    ),
+                    episodic_tr("activity.detail_button", lang = lang)
+                  )
                 }
               ),
               shiny::tags$td(
@@ -165,5 +185,106 @@ episodic_ui_activity_screen <- function(activity, lang = "nl") {
         )
       )
     }
+  )
+}
+
+#' Everything one detection run recorded, as a modal
+#'
+#' The Activity screen shows a run as one line; this is the rest of it.
+#' For a failed run the whole recorded message is here verbatim - the same
+#' text [episodic_check_cases()] would have printed - because somebody
+#' looking at an empty dashboard needs to read it, and may well not be the
+#' person who scheduled the run.
+#'
+#' @param run One row of `episodic_detection_run`.
+#' @param lang Session language.
+#' @return A `shiny::modalDialog`.
+#' @keywords internal
+#' @noRd
+episodic_ui_run_modal <- function(run, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  heading <- function(key) {
+    shiny::tags$div(
+      class = "episodic-run-modal-heading",
+      episodic_tr(key, lang = lang)
+    )
+  }
+  moment <- function(at) {
+    episodic_ui_format_datetime(at, fmt = "%d-%m-%Y %H:%M")
+  }
+  unknown <- episodic_tr("misc.unknown", lang = lang)
+  load_summary <- episodic_app_run_load_summary(run, lang = lang)
+  failed <- identical(run$status, "failed") &&
+    !is.null(run$error_text) &&
+    !is.na(run$error_text) &&
+    nzchar(run$error_text)
+
+  shiny::modalDialog(
+    title = episodic_tr(
+      "activity.run_modal_title",
+      id = run$run_id,
+      lang = lang
+    ),
+    easyClose = TRUE,
+    size = "l",
+    footer = shiny::tags$button(
+      class = "episodic-btn",
+      `data-dismiss` = "modal",
+      episodic_tr("misc.close", lang = lang)
+    ),
+    shiny::tags$div(
+      class = "episodic-run-modal-when",
+      episodic_tr(paste0("activity.action_run_", run$status), lang = lang),
+      " \u00b7 ",
+      episodic_tr(
+        "activity.run_modal_when",
+        started = moment(run$started_at),
+        finished = moment(run$finished_at),
+        lang = lang
+      )
+    ),
+    heading("activity.run_modal_load"),
+    shiny::tags$p(
+      if (is.na(load_summary)) {
+        episodic_tr("activity.run_modal_no_load", lang = lang)
+      } else {
+        load_summary
+      }
+    ),
+    if (!is.null(run$n_streams) && !is.na(run$n_streams)) {
+      shiny::tagList(
+        heading("activity.run_modal_detection"),
+        shiny::tags$p(episodic_tr(
+          "activity.run_modal_detection_line",
+          streams = run$n_streams,
+          detections = run$n_detections %||% 0,
+          new = run$n_signals_new %||% 0,
+          updated = run$n_signals_updated %||% 0,
+          lang = lang
+        ))
+      )
+    },
+    if (isTRUE(failed)) {
+      shiny::tagList(
+        heading("activity.run_modal_error"),
+        # Pre-formatted, deliberately: the recorded message is written to
+        # be read as it was written, one numbered problem per line.
+        shiny::tags$pre(class = "episodic-run-modal-error", run$error_text),
+        shiny::tags$p(
+          class = "episodic-run-modal-hint",
+          episodic_tr("status.run_failed_hint", lang = lang)
+        )
+      )
+    },
+    shiny::tags$div(
+      class = "episodic-run-modal-provenance",
+      episodic_tr(
+        "activity.run_modal_provenance",
+        host = run$host,
+        account = run$account,
+        version = run$code_version %||% unknown,
+        hash = substr(run$config_hash %||% unknown, 1, 12),
+        lang = lang
+      )
+    )
   )
 }

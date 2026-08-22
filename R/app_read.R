@@ -32,7 +32,10 @@
 #'   `priority_score` descending.
 #' @keywords internal
 #' @noRd
-episodic_app_open_clusters <- function(con, lang = "nl") {
+episodic_app_open_clusters <- function(
+  con,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   clusters <- episodic_db_clusters(con, open_only = TRUE)
   if (nrow(clusters) == 0) {
     return(clusters[, c("cluster_id", "priority_score"), drop = FALSE])
@@ -173,7 +176,11 @@ episodic_app_explicitly_closed <- function(con, cluster_id, events) {
 #'   dossier panels skip themselves.
 #' @keywords internal
 #' @noRd
-episodic_cluster_object <- function(con, cluster_id, lang = "nl") {
+episodic_cluster_object <- function(
+  con,
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   cluster <- DBI::dbGetQuery(
     con,
     "SELECT * FROM episodic_cluster WHERE cluster_id = ?",
@@ -303,7 +310,11 @@ episodic_rt_unavailable_reason <- function(pc) {
 
 #' @keywords internal
 #' @noRd
-episodic_app_place_label <- function(stream, institution, lang = "nl") {
+episodic_app_place_label <- function(
+  stream,
+  institution,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   care_line_suffix <- if (!is.na(stream$care_line)) {
     paste0(
       " \u00b7 ",
@@ -1052,6 +1063,10 @@ episodic_app_status <- function(con) {
     finished_at = run$finished_at,
     n_streams = run$n_streams,
     n_detections = run$n_detections,
-    n_clusters_open = n_clusters
+    n_clusters_open = n_clusters,
+    # Why it failed, not only that it did: for an operator connecting
+    # their own extract, the reason is the whole message - and the
+    # dashboard is where they are looking when they notice.
+    error_text = run$error_text %||% NA_character_
   )
 }

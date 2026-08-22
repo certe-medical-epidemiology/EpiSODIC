@@ -93,6 +93,23 @@ a demo assessor account (printed to the console), and opens the app.
 Pass `launch = FALSE` to skip opening the app and just get a populated
 database path back, e.g. for scripting.
 
+### Bringing your own data? Check it first
+
+Before the demo, before a scheduled run, before anything: hand your own
+extract to `episodic_check_cases()`. No database, no configuration, and
+nothing is changed - it just tells you what EpiSODIC makes of your data.
+
+```r
+EpiSODIC::episodic_check_cases(my_cases)
+```
+
+It reports every problem at once - the column, how many rows are
+affected, which rows those are, what the offending values look like, and
+what to do about each - along with what is merely worth a look (one
+pathogen spelled two ways, no `ward` on any hospital row, a `patient_key`
+that never repeats). See "Check your data first" under "Data format"
+below for what its output looks like.
+
 EpiSODIC's detection engine has **no dependency on any laboratory system
 or data warehouse**. Every dependency is a CRAN-hosted package
 (`surveillance` for Farrington); no private, organisation-specific
@@ -116,6 +133,8 @@ by any laboratory.
 ```r
 cases <- my_extract_and_transform_function()
 
+episodic_check_cases(cases)  # what is wrong with it, before anything runs
+
 episodic_run_cron(
   db_path = "/path/to/episodic.sqlite",
   cases = cases,
@@ -133,7 +152,7 @@ EpiSODIC resolves either.
 One row per confirmed-positive laboratory result. This is the complete,
 allow-listed column set (`episodic_case_columns`); a data set with any
 column outside this list, or missing one from it, is rejected. Run
-`episodic_validate_cases()` on your extract to check all of this - columns,
+`episodic_check_cases()` on your extract to check all of this - columns,
 allowed values, dates, and `source_key` uniqueness - before you schedule
 anything. The three fixed value sets are available as
 `episodic_care_lines`, `episodic_institution_types` and
@@ -178,6 +197,61 @@ per episode, using the episode length configured per pathogen in
 **Do not send negative results here.** This feed drives every detector; it
 is deliberately positives-only so an operator never has to ship a
 multi-year, per-test linelist just to run detection.
+
+### Check your data first
+
+Before you schedule anything, run `episodic_check_cases()` on your
+extract. It needs no database, changes nothing, and reports everything it
+finds in one go - which column is wrong, how many rows are affected, which
+rows those are, what the offending values look like, and what to do about
+each:
+
+```r
+cases <- my_extract_and_transform_function()
+
+episodic_check_cases(cases)
+#> -- EpiSODIC case data check ------------------------------------------
+#>    4,312 rows, 15 columns
+#>    sample_date from 2024-01-02 to 2024-06-30
+#>    12 pathogens, 7 institutions, 3,981 patients
+#>
+#> x 2 problems - a detection run refuses to start until these are fixed:
+#>
+#>   1. `sample_date` has 4312 of 4312 rows that are not a Date and do
+#>      not read as YYYY-MM-DD.
+#>      values: 02-01-2024, 03-01-2024, 04-01-2024 (and 178 more)
+#>      rows:   1, 2, 3, 4, 5 (and 4307 more)
+#>      fix:    These look day-first (e.g. 31-12-2025): convert with
+#>              as.Date(x, format = "%d-%m-%Y"). EpiSODIC accepts a Date
+#>              column, or text in ISO 8601 YYYY-MM-DD form, and nothing
+#>              else [...]
+#>
+#>   2. `sex` has 2106 of 4312 rows with a value outside the allowed set
+#>      (M, F, U, or NA).
+#>      values: male, female
+#>      [...]
+#>
+#> ! 2 things worth a look - a run proceeds regardless:
+#>
+#>   1. 1 pathogen name(s) appear in more than one spelling, differing
+#>      only in capitalisation or spacing: "Influenza A" / "influenza a".
+#>      [...]
+```
+
+It separates two kinds of finding on purpose. **Problems** are things
+EpiSODIC cannot work around, and a run refuses to start while any of them
+stand. **Advice** covers what is allowed but rarely intended and quietly
+costs you signal: one pathogen spelled two ways (two streams instead of
+one), no `ward` on any hospital row (nothing for ward-level detection to
+group on), a `patient_key` that never repeats (nothing for deduplication
+to do), postcodes the map cannot place, sample dates in the future.
+
+`episodic_validate_cases()` runs the same checks and throws instead, for
+use in a script. `episodic_run_cron()` runs it for you before every run:
+data it cannot use stops the run with the same message, before anything is
+written, and that message is recorded against the run so it is also
+visible in the dashboard's status strip and activity screen. A failed run
+never passes in silence.
 
 ### Positivity metadata (optional)
 
@@ -357,7 +431,7 @@ Docker container) without editing R code.
 | Variable                    | Used by                                                              | Meaning                                                                                                                                                                                                                                                                              |
 |-----------------------------|----------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `EPISODIC_DB`               | `episodic_run_app()`, `episodic_provision_user()` (`db_path` argument) | Path to the instance's SQLite database, or a `mysql://` DSN pointing at a MariaDB/MySQL database instead - see "Database backend" above.                                                                                                                                             |
-| `EPISODIC_LANGUAGE`         | `episodic_run_app()`, `episodic_demo()`, `episodic_report_render()`, `episodic_tr()` (`lang` argument) | Dashboard/report language: `nl`, `en`, `es`, `fr`, `de`, `zh`, `hi`, or `ar`. Defaults to `en` if unset. Fixed for the whole running app - there is no in-app language switcher.                                                                                                       |
+| `EPISODIC_LANGUAGE`         | every `lang` argument - `episodic_run_app()`, `episodic_demo()`, `episodic_report_render()`, `episodic_tr()` and every renderer beneath them | Dashboard/report language: `nl`, `en`, `es`, `fr`, `de`, `zh`, `hi`, or `ar`. Defaults to `en` if unset. Fixed for the whole running app - there is no in-app language switcher.                                                                                                       |
 | `EPISODIC_CONFIG`           | `episodic_run_cron()` (`episodic_config_path` argument)                | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`'s shipped defaults.                                                                                |
 | `EPISODIC_PALETTE_CONFIG`   | `episodic_palette()` (`palette_config_path` argument)                 | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`'s shipped defaults. Deliberately separate from `EPISODIC_CONFIG`: colour is a display concern, never part of `episodic_config_hash()`'s detection-reproducibility guarantee. |
 | `EPISODIC_GEO_DATA`         | `episodic_geo_source_resolve()` (`path` argument)                     | Path to an `.rds` file holding an operator's own geographic reference data (an `sf` object with `pc`/`geometry` columns), overriding the shipped Netherlands postcode default. See "Geographic reference data" above.                                                                |

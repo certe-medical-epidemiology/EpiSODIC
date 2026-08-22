@@ -237,7 +237,7 @@ episodic_app_pathogen_screen <- function(
   period = "season_current",
   from = NULL,
   to = NULL,
-  lang = "nl"
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
 ) {
   options <- episodic_app_pathogen_options(con)
   asof <- episodic_app_data_asof(con)
@@ -865,7 +865,11 @@ episodic_app_pathogen_demography <- function(all_cases, window_cases) {
 #' @return A data frame with `label` and `n`, or `NULL`.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_breakdown <- function(window_cases, column, lang = "nl") {
+episodic_app_pathogen_breakdown <- function(
+  window_cases,
+  column,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   if (nrow(window_cases) == 0 || all(is.na(window_cases[[column]]))) {
     return(NULL)
   }
@@ -899,7 +903,7 @@ episodic_app_pathogen_institutions <- function(
   con,
   window_cases,
   top = 10L,
-  lang = "nl"
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
 ) {
   ids <- window_cases$institution_id[!is.na(window_cases$institution_id)]
   if (length(ids) == 0) {
@@ -935,7 +939,7 @@ episodic_app_pathogen_clusters <- function(
   con,
   pathogen,
   resolved,
-  lang = "nl"
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
 ) {
   empty <- data.frame(
     cluster_id = integer(0),

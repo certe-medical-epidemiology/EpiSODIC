@@ -43,7 +43,7 @@ episodic_app_server_report <- function(
   session,
   con,
   db_path,
-  lang = "nl",
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
   current_user,
   selected_cluster_id
 ) {

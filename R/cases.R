@@ -37,6 +37,10 @@
 #' denominator (tests performed, for a positivity rate), supply that
 #' separately as pre-aggregated counts; see [episodic_synthetic_denominators()].
 #'
+#' The only case data shipped with the package is what the synthetic
+#' generator ([episodic_synthetic_cases()]) returns for the bundled
+#' demo - a useful template for the shape your own data should have.
+#'
 #' @section Required columns:
 #'
 #' `episodic_case_columns` lists all fifteen, in order. The set is an
@@ -133,9 +137,76 @@
 #'     Not age group - the dashboard bands it itself.}
 #' }
 #'
-#' The only case data shipped with the package is what the synthetic
-#' generator ([episodic_synthetic_cases()]) returns for the bundled
-#' demo - a useful template for the shape your own data should have.
+#' @section Types at a glance:
+#'
+#' \tabular{llll}{
+#'   \strong{Column} \tab \strong{Type} \tab \strong{Empty allowed} \tab \strong{Accepts} \cr
+#'   \code{source_key} \tab character \tab no \tab any string, unique within the data set \cr
+#'   \code{patient_key} \tab character \tab no \tab any string, stable per patient \cr
+#'   \code{sample_date} \tab \code{Date} or character \tab no \tab \code{YYYY-MM-DD} only \cr
+#'   \code{receipt_date} \tab \code{Date} or character \tab yes \tab \code{YYYY-MM-DD} only \cr
+#'   \code{pathogen} \tab character \tab no \tab free text, spelled the same every run \cr
+#'   \code{care_line} \tab character \tab yes (read as \code{"unknown"}) \tab \code{episodic_care_lines} \cr
+#'   \code{institution_key} \tab character \tab no \tab any string, stable per institution \cr
+#'   \code{institution_display_name} \tab character \tab no \tab any string \cr
+#'   \code{institution_type} \tab character \tab no \tab \code{episodic_institution_types} \cr
+#'   \code{municipality} \tab character \tab yes \tab any string \cr
+#'   \code{ward} \tab character \tab yes \tab any string, spelled the same every run \cr
+#'   \code{specialism} \tab character \tab yes \tab any string \cr
+#'   \code{pc} \tab character \tab yes \tab four digits as text, for the shipped map \cr
+#'   \code{sex} \tab character \tab yes \tab \code{episodic_sex_codes} \cr
+#'   \code{age} \tab numeric \tab yes \tab whole years, not an age group \cr
+#' }
+#'
+#' Every column is required to be *present*; "empty allowed" says whether
+#' its values may be `NA`. Dates may be a real `Date` column or ISO 8601
+#' text, and nothing else: `"01-01-2025"` is rejected rather than read as
+#' the first of January in the year 1. Numbers stored as text, dates
+#' stored as date-times, and text stored as a factor are all common
+#' extract mistakes, and all named for what they are by the check below.
+#'
+#' @section Check your data before you run anything:
+#'
+#' Do not find out from an empty dashboard. Run [episodic_check_cases()]
+#' on your extract - it needs no database, changes nothing, and reports
+#' every problem it finds at once, with the rows and values involved and
+#' what to do about each:
+#'
+#' ```r
+#' cases <- my_extract_and_transform_function()
+#' episodic_check_cases(cases)
+#' ```
+#'
+#' It also reports what is merely worth a look: one pathogen spelled two
+#' ways (two streams instead of one), no `ward` on any hospital row (no
+#' ward-level detection), a `patient_key` that never repeats (no
+#' deduplication), postcodes the map cannot place, sample dates in the
+#' future. [episodic_validate_cases()] runs the same checks but throws,
+#' for use in a script; [episodic_run_cron()] runs it for you before every
+#' run, and refuses to start on data it cannot use, naming what to fix.
+#'
+#' @examples
+#' # A minimal but complete extract: two results, one patient, all fifteen
+#' # columns present, and the ones your laboratory does not record left NA.
+#' cases <- data.frame(
+#'   source_key = c("LAB-1", "LAB-2"),
+#'   patient_key = c("PAT-1", "PAT-1"),
+#'   sample_date = c("2025-01-06", "2025-01-09"),
+#'   receipt_date = c("2025-01-07", "2025-01-10"),
+#'   pathogen = "Norovirus",
+#'   care_line = "second",
+#'   institution_key = "HOSP-01",
+#'   institution_display_name = "Example Hospital",
+#'   institution_type = "hospital",
+#'   municipality = "Groningen",
+#'   ward = "Ward A2",
+#'   specialism = "Internal medicine",
+#'   pc = "9713",
+#'   sex = c("F", "F"),
+#'   age = c(71L, 71L),
+#'   stringsAsFactors = FALSE
+#' )
+#' episodic_check_cases(cases)
 #'
 #' @name episodic_case_data
 NULL
@@ -195,27 +266,40 @@ episodic_case_columns_required <- c(
   "institution_type"
 )
 
-#' Check that your case data has the right shape
+#' Check that your case data has the right shape, or stop
 #'
 #' Call this on the data set you intend to hand to [episodic_run_cron()],
 #' while preparing it, to get a clear error while you can still fix the
 #' extract - rather than halfway through a scheduled run, where the same
 #' problem surfaces as a rolled-back transaction and a failed run.
+#' [episodic_run_cron()] calls it itself, before it writes anything, so a
+#' run never starts on data it cannot use.
 #'
-#' It checks everything [episodic_case_data] documents: that the columns
-#' are exactly [episodic_case_columns], that `source_key` is unique, that
-#' the columns which may never be `NA` are filled, that `care_line`,
-#' `institution_type` and `sex` hold only allowed values, that the two
-#' date columns parse, and that `age` is numeric. It reports what your
-#' data says, and does not change it: the `NA` that [episodic_run_cron()]
-#' will read as `"unknown"` is left as `NA` in what comes back.
+#' It runs exactly the checks [episodic_check_cases()] runs and reports
+#' every problem it finds at once, rather than stopping at the first: that
+#' the columns are exactly [episodic_case_columns], that `source_key` is
+#' unique, that the columns which may never be empty are filled, that
+#' `care_line`, `institution_type` and `sex` hold only allowed values,
+#' that the two date columns read as dates, and that `age` is a number.
+#' It reports what your data says, and does not change it: the `NA` that
+#' [episodic_run_cron()] will read as `"unknown"` is left as `NA` in what
+#' comes back.
+#'
+#' Use [episodic_check_cases()] instead when you would rather look than
+#' stop: it returns the same findings as a printed report, adds the
+#' advisory ones this function stays silent about, and never throws.
 #'
 #' @param cases Your case data: a data frame or `tibble` in the shape
 #'   [episodic_case_data] describes, or a zero-argument function
 #'   returning one (resolved with [episodic_resolve_data()] first, so you
 #'   can check either form of `cases`).
 #' @return The validated data set, invisibly. Throws an informative error
-#'   naming the offending column, and the offending values, otherwise.
+#'   naming every offending column, its offending values and the rows they
+#'   are in, otherwise.
+#' @inheritSection episodic_case_data Check your data before you run anything
+#' @seealso [episodic_check_cases()] for the same checks as a report you
+#'   can read and filter, and [episodic_case_data] for what each column
+#'   means.
 #' @examples
 #' cases <- episodic_synthetic_cases(
 #'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-01-31")
@@ -224,53 +308,11 @@ episodic_case_columns_required <- c(
 #' @export
 episodic_validate_cases <- function(cases) {
   cases <- episodic_resolve_data(cases)
-  episodic_validate_columns(
-    cases,
-    required = episodic_case_columns,
-    filled = episodic_case_columns_required,
-    what = "Case data"
-  )
-
-  extra_cols <- setdiff(names(cases), episodic_case_columns)
-  if (length(extra_cols) > 0) {
-    stop(
-      "Case data contains column(s) outside the allow-list: ",
-      paste(extra_cols, collapse = ", "),
-      ". The case data interface is an explicit allow-list; a new ",
-      "upstream column must not leak in silently.",
-      call. = FALSE
-    )
+  report <- episodic_check_cases(cases)
+  problems <- report[report$severity == "problem", , drop = FALSE]
+  if (nrow(problems) > 0) {
+    stop(episodic_check_failure_message(problems), call. = FALSE)
   }
-  if (any(duplicated(cases$source_key))) {
-    stop("Case data contains duplicate source_key values.", call. = FALSE)
-  }
-
-  episodic_validate_allowed(
-    cases,
-    "care_line",
-    episodic_care_lines,
-    na_ok = TRUE
-  )
-  episodic_validate_allowed(
-    cases,
-    "institution_type",
-    episodic_institution_types,
-    na_ok = FALSE
-  )
-  episodic_validate_allowed(cases, "sex", episodic_sex_codes, na_ok = TRUE)
-
-  episodic_validate_dates(cases, "sample_date", na_ok = FALSE)
-  episodic_validate_dates(cases, "receipt_date", na_ok = TRUE)
-
-  if (!all(is.na(cases$age)) && !is.numeric(cases$age)) {
-    stop(
-      "Case data has a non-numeric `age` (",
-      paste(class(cases$age), collapse = "/"),
-      "). Give age in whole years, not as an age group.",
-      call. = FALSE
-    )
-  }
-
   invisible(cases)
 }
 

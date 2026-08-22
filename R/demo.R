@@ -37,6 +37,10 @@
 #'   [episodic_run_app()]); this call blocks until you close it. Set to
 #'   `FALSE` to only build the demo database and return its path, e.g. for
 #'   scripting or screenshots.
+#' @param run_date The date to run detection as of. Defaults to the end of
+#'   the last complete week, so the week the statistical detectors test is
+#'   a full one however far into the week you happen to run the demo -
+#'   which is how surveillance reads its own weeks anyway.
 #' @param lang Dashboard language when `launch = TRUE`: `"nl"`, `"en"`,
 #'   `"es"`, `"fr"`, `"de"`, `"zh"`, `"hi"`, or `"ar"`. Defaults to the
 #'   `EPISODIC_LANGUAGE` environment variable, falling back to `"en"` if
@@ -46,8 +50,16 @@
 #'   [episodic_run_cron()]. Default to several years of synthetic data;
 #'   generate a narrower date range yourself (see
 #'   [episodic_synthetic_cases()]) and pass it here for a quicker
-#'   demo.
+#'   demo. Trying the demo with your own extract is a good way to see
+#'   EpiSODIC work end to end: `cases` is checked against the
+#'   [episodic_case_data] contract first, so data it cannot use stops here
+#'   with an explanation of what to fix, rather than opening a dashboard
+#'   with nothing in it. Run [episodic_check_cases()] on your extract
+#'   yourself to see the same findings, plus the advisory ones.
 #' @return Invisibly, `db_path`.
+#' @inheritSection episodic_case_data Check your data before you run anything
+#' @seealso [episodic_check_cases()] to see what EpiSODIC makes of your
+#'   own extract first, and [episodic_case_data] for the shape it expects.
 #' @examples
 #' \dontrun{
 #' # launches a blocking, interactive Shiny session against several years
@@ -71,9 +83,10 @@ episodic_demo <- function(
   email = "demo@example.org",
   password = "episodic-demo",
   launch = TRUE,
+  run_date = episodic_synthetic_week_end(),
   lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  cases = episodic_synthetic_cases,
-  denominators = episodic_synthetic_denominators
+  cases = function() episodic_synthetic_cases(end_date = run_date),
+  denominators = function() episodic_synthetic_denominators(end_date = run_date)
 ) {
   Sys.setenv(
     EPISODIC_CONFIG = system.file(
@@ -92,7 +105,8 @@ episodic_demo <- function(
   episodic_run_cron(
     db_path,
     cases = cases,
-    denominators = denominators
+    denominators = denominators,
+    run_date = run_date
   )
 
   episodic_provision_user(

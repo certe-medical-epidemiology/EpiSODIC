@@ -53,7 +53,7 @@ episodic_app_server_assessment_actions <- function(
   output,
   session,
   con,
-  lang = "nl",
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
   current_user,
   selected_cluster_id,
   db_touch

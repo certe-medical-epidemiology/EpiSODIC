@@ -5,15 +5,16 @@
 \title{Generate synthetic data at tunable cluster volume}
 \usage{
 episodic_synthetic_cases_calibration(
-  start_date = as.Date("2021-01-01"),
-  end_date = as.Date("2025-12-31"),
+  start_date = end_date - 5 * 365,
+  end_date = Sys.Date(),
   pathogen = "Clostridioides difficile",
   n_bumps_per_month = 3,
   seed = 1
 )
 }
 \arguments{
-\item{start_date, end_date}{The window to generate over.}
+\item{start_date, end_date}{The window to generate over; defaults as in
+\code{\link[=episodic_synthetic_cases]{episodic_synthetic_cases()}}.}
 
 \item{pathogen}{Which pathogen to generate the extra clusters for.
 Defaults to \emph{Clostridioides difficile}, a plausible example of an
@@ -28,20 +29,20 @@ volume responds.}
 \value{
 A data frame satisfying \code{\link[=episodic_validate_cases]{episodic_validate_cases()}},
 including everything \code{\link[=episodic_synthetic_cases]{episodic_synthetic_cases()}} produces
-(background baseline, the two standard demo outbreaks) plus the extra
-volume.
+(background baseline, the six demo outbreaks) plus the extra volume.
 }
 \description{
-\code{\link[=episodic_synthetic_cases]{episodic_synthetic_cases()}} injects exactly two outbreaks in
-total - enough to demonstrate detection working, but not enough to tune
-your own configuration against (e.g. deciding how many dossiers your
-board can realistically review per month). This function fills that gap:
-on top of the same baseline and two standard outbreaks, it adds many
-independent case clusters for one chosen pathogen, at a rate you control,
-so you can see how detection volume responds as you adjust
-\code{n_bumps_per_month} or your own configuration. Every case it adds carries
-a \verb{PT-VOL-*} patient key so it is always identifiable as synthetic tuning
-data, never mistaken for anything else.
+\code{\link[=episodic_synthetic_cases]{episodic_synthetic_cases()}} injects six outbreaks in total - enough to
+show every detector working, and few enough that a demo dashboard reads
+like a real morning's work. That is the wrong shape for tuning a
+configuration against (e.g. deciding how many dossiers your board can
+realistically review per month). This function fills that gap: on top
+of the same baseline and the same six outbreaks, it adds many
+independent case clusters for one chosen pathogen, at a rate you
+control, so you can see how detection volume responds as you adjust
+\code{n_bumps_per_month} or your own configuration. Every case it adds
+carries a \verb{PT-VOL-*} patient key so it is always identifiable as
+synthetic tuning data, never mistaken for anything else.
 }
 \examples{
 cases <- episodic_synthetic_cases_calibration(

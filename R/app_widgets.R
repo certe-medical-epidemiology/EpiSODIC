@@ -135,6 +135,46 @@ episodic_ui_chip <- function(text, colour, filled = FALSE) {
   shiny::tags$span(class = class, style = style, text)
 }
 
+#' A chip that opens another cluster
+#'
+#' Same shape as `episodic_ui_chip()`, but it goes somewhere: used in the
+#' dossier header to say that these cases are also in another cluster, and
+#' to take the assessor straight to it. Focusable and operable from the
+#' keyboard, like the cluster rows elsewhere - a chip that only responds
+#' to a mouse is a link a keyboard user cannot follow.
+#'
+#' @param text Chip label.
+#' @param colour Chip colour, from [episodic_palette()].
+#' @param cluster_id The cluster to open.
+#' @param lang Session language.
+#' @return A `shiny::tags$span`.
+#' @keywords internal
+#' @noRd
+episodic_ui_chip_link <- function(
+  text,
+  colour,
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
+  open_js <- sprintf(
+    "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
+    as.integer(cluster_id)
+  )
+  shiny::tags$span(
+    class = "episodic-chip episodic-chip-outline episodic-chip-link",
+    style = sprintf("color:%s;border:1px solid %s66;", colour, colour),
+    tabindex = "0",
+    role = "link",
+    title = episodic_tr("cluster.open_hint", lang = lang),
+    onclick = open_js,
+    onkeydown = sprintf(
+      "if(event.key==='Enter'||event.key===' '){event.preventDefault();%s}",
+      open_js
+    ),
+    text
+  )
+}
+
 #' @param title Panel title.
 #' @param aside Optional right-aligned header text.
 #' @param note Optional footnote paragraph.
@@ -234,7 +274,7 @@ episodic_ui_bars <- function(rows, unit = NULL, colour = NULL) {
 #' @param lang Session language, for the axis labels.
 #' @keywords internal
 #' @noRd
-episodic_ui_pyramid <- function(demo, lang = "nl") {
+episodic_ui_pyramid <- function(demo, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (nrow(demo) == 0 || sum(demo$m, demo$v) == 0) {
     return(shiny::tags$p(class = "episodic-panel-empty", "..."))
   }
@@ -293,7 +333,11 @@ episodic_ui_pyramid <- function(demo, lang = "nl") {
 #' @return A `shiny::tags$tr`.
 #' @keywords internal
 #' @noRd
-episodic_ui_cluster_link_row <- function(cluster_id, lang = "nl", ...) {
+episodic_ui_cluster_link_row <- function(
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  ...
+) {
   open_js <- sprintf(
     "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
     as.integer(cluster_id)

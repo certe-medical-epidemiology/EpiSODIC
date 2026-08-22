@@ -11,9 +11,10 @@ episodic_demo(
   email = "demo@example.org",
   password = "episodic-demo",
   launch = TRUE,
+  run_date = episodic_synthetic_week_end(),
   lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  cases = episodic_synthetic_cases,
-  denominators = episodic_synthetic_denominators
+  cases = function() episodic_synthetic_cases(end_date = run_date),
+  denominators = function() episodic_synthetic_denominators(end_date = run_date)
 )
 }
 \arguments{
@@ -31,6 +32,11 @@ anything beyond a local demo.}
 \code{FALSE} to only build the demo database and return its path, e.g. for
 scripting or screenshots.}
 
+\item{run_date}{The date to run detection as of. Defaults to the end of
+the last complete week, so the week the statistical detectors test is
+a full one however far into the week you happen to run the demo -
+which is how surveillance reads its own weeks anyway.}
+
 \item{lang}{Dashboard language when \code{launch = TRUE}: \code{"nl"}, \code{"en"},
 \code{"es"}, \code{"fr"}, \code{"de"}, \code{"zh"}, \code{"hi"}, or \code{"ar"}. Defaults to the
 \code{EPISODIC_LANGUAGE} environment variable, falling back to \code{"en"} if
@@ -41,7 +47,12 @@ from - normally data frames (or tibbles), passed on unchanged to
 \code{\link[=episodic_run_cron]{episodic_run_cron()}}. Default to several years of synthetic data;
 generate a narrower date range yourself (see
 \code{\link[=episodic_synthetic_cases]{episodic_synthetic_cases()}}) and pass it here for a quicker
-demo.}
+demo. Trying the demo with your own extract is a good way to see
+EpiSODIC work end to end: \code{cases} is checked against the
+\link{episodic_case_data} contract first, so data it cannot use stops here
+with an explanation of what to fix, rather than opening a dashboard
+with nothing in it. Run \code{\link[=episodic_check_cases]{episodic_check_cases()}} on your extract
+yourself to see the same findings, plus the advisory ones.}
 }
 \value{
 Invisibly, \code{db_path}.
@@ -54,6 +65,27 @@ dashboard - all without needing access to any real laboratory system or
 an instance configuration file. Everything used here is a shipped
 default, so it works right after installing the package.
 }
+\section{Check your data before you run anything}{
+
+
+Do not find out from an empty dashboard. Run \code{\link[=episodic_check_cases]{episodic_check_cases()}}
+on your extract - it needs no database, changes nothing, and reports
+every problem it finds at once, with the rows and values involved and
+what to do about each:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{cases <- my_extract_and_transform_function()
+episodic_check_cases(cases)
+}\if{html}{\out{</div>}}
+
+It also reports what is merely worth a look: one pathogen spelled two
+ways (two streams instead of one), no \code{ward} on any hospital row (no
+ward-level detection), a \code{patient_key} that never repeats (no
+deduplication), postcodes the map cannot place, sample dates in the
+future. \code{\link[=episodic_validate_cases]{episodic_validate_cases()}} runs the same checks but throws,
+for use in a script; \code{\link[=episodic_run_cron]{episodic_run_cron()}} runs it for you before every
+run, and refuses to start on data it cannot use, naming what to fix.
+}
+
 \examples{
 \dontrun{
 # launches a blocking, interactive Shiny session against several years
@@ -69,4 +101,8 @@ cases <- episodic_synthetic_cases(
 db_path <- episodic_demo(launch = FALSE, cases = cases, denominators = NULL)
 file.remove(db_path)
 }
+}
+\seealso{
+\code{\link[=episodic_check_cases]{episodic_check_cases()}} to see what EpiSODIC makes of your
+own extract first, and \link{episodic_case_data} for the shape it expects.
 }

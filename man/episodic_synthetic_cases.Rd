@@ -5,15 +5,19 @@
 \title{Generate synthetic outbreak data}
 \usage{
 episodic_synthetic_cases(
-  start_date = as.Date("2021-01-01"),
-  end_date = as.Date("2025-12-31"),
+  start_date = end_date - 5 * 365,
+  end_date = Sys.Date(),
   seed = 1
 )
 }
 \arguments{
-\item{start_date}{First sample date to generate, a \code{Date}.}
+\item{start_date}{First sample date to generate. Defaults to five years
+before \code{end_date} - Farrington needs four of them before it will
+compare anything against anything.}
 
-\item{end_date}{Last sample date to generate, a \code{Date}.}
+\item{end_date}{Last sample date to generate. Defaults to today, so a
+demo built from this always shows current surveillance rather than
+whatever year the package was released in.}
 
 \item{seed}{RNG seed, for reproducible demo data.}
 }
@@ -21,20 +25,59 @@ episodic_synthetic_cases(
 A data frame satisfying \code{\link[=episodic_validate_cases]{episodic_validate_cases()}}.
 }
 \description{
-Produces several years of realistic laboratory surveillance data for a
-fictional set of hospitals, long-term care institutions, and GP
-practices: seasonal baseline incidence for eight common pathogens, plus
-two deliberately injected outbreaks for the detectors to find - a
-point-source outbreak (a tight cluster of norovirus cases on one ward)
-and a propagated outbreak (community-spread pertussis with case waves
-spaced by the generation interval). This is what powers \code{\link[=episodic_demo]{episodic_demo()}}
-and the package's test suite; it is also a useful reference for what
-your own case data should look like (see \link{episodic_case_columns}).
+Produces several years of laboratory surveillance data for a fictional
+northern-Netherlands region - eight hospitals, twenty long-term care
+institutions and the region's municipalities - and injects six
+outbreaks for the detectors to find. This is what powers
+\code{\link[=episodic_demo]{episodic_demo()}} and the package's test suite, and it doubles as a
+worked example of the shape your own data should have (see
+\link{episodic_case_data}).
 }
+\section{What it puts in}{
+
+
+A seasonal Poisson baseline for eight endemic pathogens, deliberately
+thin per place: a demo whose baseline keeps tripping the rule-based
+detectors by coincidence buries the outbreaks it is meant to
+demonstrate. Patients recur - roughly one case in six is a repeat
+isolate from a patient already in the data - so deduplication and
+episode grouping have something to do.
+
+On top of that, six outbreaks, sized from a single case to a regional
+wave, each shaped for a different detector:
+
+\tabular{lll}{
+\strong{Outbreak} \tab \strong{Shape} \tab \strong{Found by} \cr
+Invasive meningococcal disease \tab one case \tab \code{rare_trigger} \cr
+Ward cluster \tab 3 cases, one ward, 12 days \tab \code{same_place} \cr
+Nursing home outbreak \tab 8 cases, one institution, 9 days \tab \code{same_place} \cr
+Point source \tab 14 cases, one ward, days apart \tab \code{same_place} \cr
+Propagated \tab 15 cases, four generations, 90 days \tab \code{same_place}, Rt \cr
+Regional wave \tab 144 cases, diffuse, 6 rising weeks \tab Farrington, MEM \cr
+}
+
+The regional wave is deliberately spread one case to a place: no
+institution sees enough of it for a rule-based detector to notice, and
+only the statistical baseline comparison finds it. That contrast - a
+diffuse signal no amount of local vigilance would catch - is half the
+reason the statistical detectors exist.
+
+Every injected case carries a \verb{PT-OUTBREAK-*} patient key, so it is
+always identifiable as an injected signal rather than baseline noise.
+Outbreaks are anchored to \code{end_date} and clipped to the window you ask
+for, so a short window returns a partial one rather than cases outside
+the range you asked for.
+}
+
 \examples{
 cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
 nrow(cases)
 head(cases)
+}
+\seealso{
+\code{\link[=episodic_check_cases]{episodic_check_cases()}} to see what the contract makes of it,
+and \code{\link[=episodic_synthetic_cases_calibration]{episodic_synthetic_cases_calibration()}} for many more clusters
+than a demo wants, to tune a configuration against.
 }

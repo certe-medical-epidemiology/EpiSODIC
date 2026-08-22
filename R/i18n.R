@@ -61,6 +61,30 @@ episodic_i18n_load <- function(lang) {
   flat
 }
 
+#' The language to render in, resolved
+#'
+#' Every function that renders text takes `lang` and defaults it to the
+#' `EPISODIC_LANGUAGE` environment variable, which is how an instance
+#' picks its language once rather than at every call site. An unset (or
+#' empty) variable means English - the same fallback [episodic_tr()]
+#' applies to a key it cannot find in the requested language.
+#'
+#' Anything that *branches* on the language rather than looking a key up -
+#' the charts' thousands separator, for instance - has to resolve it
+#' first, or an unset variable would read as "not English" and take the
+#' wrong branch while every word around it came out in English.
+#'
+#' @param lang A language code, or `""`/`NA` for "not set".
+#' @return A single language code.
+#' @keywords internal
+#' @noRd
+episodic_lang <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (length(lang) != 1 || is.na(lang) || !nzchar(lang)) {
+    return("en")
+  }
+  lang
+}
+
 #' Translate a dashboard text key
 #'
 #' Looks up a piece of dashboard text by its key and language, substituting
@@ -92,9 +116,7 @@ episodic_tr <- function(
   lang = Sys.getenv("EPISODIC_LANGUAGE"),
   instance_i18n = NULL
 ) {
-  if (!nzchar(lang)) {
-    lang <- "en"
-  }
+  lang <- episodic_lang(lang)
   template <- NULL
 
   if (!is.null(instance_i18n) && key %in% names(instance_i18n)) {
@@ -122,11 +144,15 @@ episodic_i18n_substitute <- function(template, values) {
     return(template)
   }
   for (name in names(values)) {
+    # Both sides literal. A placeholder name is never a pattern, and a
+    # substituted value is never one either: run detail can carry a
+    # Windows account name or a recorded error message, and a stray
+    # backslash in one of those must not rewrite the sentence around it.
     template <- gsub(
-      paste0("\\{", name, "\\}"),
+      paste0("{", name, "}"),
       as.character(values[[name]]),
       template,
-      fixed = FALSE
+      fixed = TRUE
     )
   }
   template
@@ -160,13 +186,18 @@ episodic_count_phrase <- function(n, singular, plural, with_number = TRUE) {
 #'
 #' @param x,y Range endpoints - `Date`, or a string `as.Date()` accepts.
 #'   Order does not matter; the earlier date is always shown first.
-#' @param lang Session language: `"nl"` (default), `"en"`, `"es"`, `"fr"`,
-#'   `"de"`, `"zh"`, `"hi"`, or `"ar"`.
+#' @param lang Session language: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`,
+#'   `"zh"`, `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   environment variable, falling back to `"en"` if that is unset.
 #' @return A character string, or `episodic_tr("misc.unknown", lang =
 #'   lang)` if either endpoint fails to parse.
 #' @keywords internal
 #' @noRd
-episodic_format_date_range <- function(x, y, lang = "nl") {
+episodic_format_date_range <- function(
+  x,
+  y,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   x <- tryCatch(as.Date(x), error = function(e) NA)
   y <- tryCatch(as.Date(y), error = function(e) NA)
   if (length(x) != 1 || length(y) != 1 || is.na(x) || is.na(y)) {

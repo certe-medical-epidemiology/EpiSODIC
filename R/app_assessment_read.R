@@ -38,7 +38,11 @@
 #'   (translated), `rationale`.
 #' @keywords internal
 #' @noRd
-episodic_app_assessment_timeline <- function(con, cluster_id, lang = "nl") {
+episodic_app_assessment_timeline <- function(
+  con,
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   events <- episodic_db_assessment_events(con, cluster_id)
   states <- episodic_db_cluster_states(con, cluster_id)
   closures <- states[states$trigger == "closure", ]
@@ -106,7 +110,11 @@ episodic_app_assessment_timeline <- function(con, cluster_id, lang = "nl") {
 #' A user_id (possibly `NA`, meaning the system) as a display label
 #' @keywords internal
 #' @noRd
-episodic_app_actor_label <- function(con, user_id, lang = "nl") {
+episodic_app_actor_label <- function(
+  con,
+  user_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   if (is.na(user_id)) {
     return(episodic_tr("activity.actor_system", lang = lang))
   }
@@ -129,7 +137,11 @@ episodic_app_actor_label <- function(con, user_id, lang = "nl") {
 #'   first.
 #' @keywords internal
 #' @noRd
-episodic_app_archive <- function(con, query = NULL, lang = "nl") {
+episodic_app_archive <- function(
+  con,
+  query = NULL,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   empty <- data.frame(
     cluster_id = integer(0),
     pathogen = character(0),
@@ -230,7 +242,39 @@ episodic_app_archive <- function(con, query = NULL, lang = "nl") {
 #'   the counters existed, or one that failed before loading anything.
 #' @keywords internal
 #' @noRd
-episodic_app_run_detail <- function(run, lang = "nl") {
+episodic_app_run_detail <- function(
+  run,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
+  # A failed run has no load summary, but it does have a reason, and this
+  # screen is where somebody goes to find out why the dashboard is empty.
+  # Its first line only, since a validation failure names every offending
+  # column and would otherwise fill the table; the whole message is one
+  # click away, in the run detail. Untranslated either way - it is the
+  # operator's own error text.
+  if (identical(run$status, "failed")) {
+    return(episodic_ui_first_line(run$error_text) %||% NA_character_)
+  }
+
+  episodic_app_run_load_summary(run, lang = lang)
+}
+
+#' What a run's feeds delivered, as one line
+#'
+#' Split from `episodic_app_run_detail()` so the run detail modal can show
+#' the load summary and the failure reason as two different things, rather
+#' than one standing in for the other.
+#'
+#' @param run One row of `episodic_detection_run`.
+#' @param lang Session language.
+#' @return A single string, or `NA_character_` when the run recorded no
+#'   counts at all.
+#' @keywords internal
+#' @noRd
+episodic_app_run_load_summary <- function(
+  run,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   # NULL when reading a database written before the counters existed;
   # NA when the run failed before it loaded anything. Neither has a
   # summary to show, and neither should read as "zero cases arrived".
@@ -267,13 +311,22 @@ episodic_app_run_detail <- function(run, lang = "nl") {
 #' @param con A [DBI::DBIConnection-class].
 #' @param limit Maximum number of rows to return, most recent first.
 #' @param lang Session language.
-#' @return A data frame with `at`, `actor`, `action`, `target`, `detail`
-#'   and `is_system`. `detail` is the run load summary on run rows, and
-#'   `NA` on human ones.
+#' @return A data frame with `at`, `actor`, `action`, `target`, `detail`,
+#'   `is_system` and `run_id`. `detail` is the run load summary on run
+#'   rows (or, for a failed run, why it failed), and `NA` on human ones;
+#'   `run_id` is filled on run rows only, so the screen can offer the
+#'   full run detail for those.
 #' @keywords internal
 #' @noRd
-episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
-  clusters <- episodic_db_clusters(con)
+episodic_app_activity_log <- function(
+  con,
+  limit = 200,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
+  # Including suppressed ones: this is the record of what happened, and a
+  # cluster somebody acted on has to keep resolving to its own name here
+  # however the lattice later decided to file it.
+  clusters <- episodic_db_clusters(con, include_suppressed = TRUE)
   streams <- episodic_db_streams(con, active_only = FALSE)
   cluster_target <- function(cluster_id) {
     stream_id <- clusters$stream_id[clusters$cluster_id == cluster_id]
@@ -307,6 +360,7 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
       target = vapply(events$cluster_id, cluster_target, character(1)),
       detail = NA_character_,
       is_system = FALSE,
+      run_id = NA_integer_,
       stringsAsFactors = FALSE
     )
   }
@@ -329,6 +383,7 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
       target = vapply(states$cluster_id, cluster_target, character(1)),
       detail = NA_character_,
       is_system = FALSE,
+      run_id = NA_integer_,
       stringsAsFactors = FALSE
     )
   }
@@ -355,6 +410,7 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
       ),
       detail = NA_character_,
       is_system = FALSE,
+      run_id = NA_integer_,
       stringsAsFactors = FALSE
     )
   }
@@ -377,6 +433,7 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
       target = NA_character_,
       detail = NA_character_,
       is_system = FALSE,
+      run_id = NA_integer_,
       stringsAsFactors = FALSE
     )
   }
@@ -398,6 +455,7 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
         character(1)
       ),
       is_system = TRUE,
+      run_id = runs$run_id,
       stringsAsFactors = FALSE
     )
   }
@@ -410,6 +468,7 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
       target = character(0),
       detail = character(0),
       is_system = logical(0),
+      run_id = integer(0),
       stringsAsFactors = FALSE
     ))
   }

@@ -35,17 +35,18 @@
 episodic_ui_dossier <- function(
   con,
   cluster_id,
-  lang = "nl",
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
   current_user = NULL
 ) {
   obj <- episodic_cluster_object(con, cluster_id, lang = lang)
   state <- episodic_app_derive_state_for_cluster(con, cluster_id)
   timeline <- episodic_app_assessment_timeline(con, cluster_id, lang = lang)
+  linked <- episodic_db_clusters_linked_to(con, cluster_id)
   pal <- episodic_palette()
 
   shiny::tags$div(
     class = "episodic-dossier",
-    episodic_ui_dossier_header(obj, state, lang = lang),
+    episodic_ui_dossier_header(obj, state, lang = lang, linked = linked),
     episodic_ui_stat_grid(obj, lang = lang),
     episodic_ui_trajectory(obj, timeline, lang = lang),
     episodic_ui_interpretation_panel(obj, lang = lang),
@@ -62,6 +63,7 @@ episodic_ui_dossier <- function(
     episodic_ui_geo_panel(obj, lang = lang),
     episodic_ui_places_panel(con, cluster_id, obj, lang = lang),
     episodic_ui_resistance_panel(lang = lang),
+    episodic_ui_related_panel(con, cluster_id, lang = lang),
     episodic_ui_similar_clusters_panel(con, cluster_id, lang = lang),
     episodic_ui_report_panel(con, cluster_id, current_user, lang = lang),
     if (is.null(current_user)) {
@@ -80,7 +82,9 @@ episodic_ui_dossier <- function(
 #' order either way.
 #' @keywords internal
 #' @noRd
-episodic_ui_linelist_locked_panel <- function(lang = "nl") {
+episodic_ui_linelist_locked_panel <- function(
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   episodic_ui_panel(
     episodic_tr("linelist.locked_title", lang = lang),
     shiny::tags$div(
@@ -93,7 +97,12 @@ episodic_ui_linelist_locked_panel <- function(lang = "nl") {
 
 #' @keywords internal
 #' @noRd
-episodic_ui_dossier_header <- function(obj, state, lang = "nl") {
+episodic_ui_dossier_header <- function(
+  obj,
+  state,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  linked = NULL
+) {
   pal <- episodic_palette()
   shiny::tagList(
     shiny::tags$div(
@@ -124,7 +133,14 @@ episodic_ui_dossier_header <- function(obj, state, lang = "nl") {
           episodic_tr("dossier.changed_badge", lang = lang),
           pal$tertiary_dark
         )
-      }
+      },
+      # Cases this dossier shares with another that stands separately -
+      # the same rise seen at a level suppression deliberately does not
+      # collapse. In its own colour, and it goes there: an assessor who
+      # cannot see the other dossier is reading this one without knowing
+      # what it is part of. Three at most, since a region-level cluster
+      # can share cases with a good many; the rest are in the panel.
+      episodic_ui_linked_chips(linked, lang = lang)
     ),
     shiny::tags$div(
       class = "episodic-dossier-meta",
@@ -149,7 +165,7 @@ episodic_ui_dossier_header <- function(obj, state, lang = "nl") {
 
 #' @keywords internal
 #' @noRd
-episodic_ui_stat_grid <- function(obj, lang = "nl") {
+episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
   # `expected` is NA for detectors that fit no baseline at all
   # (same_place, rare_trigger), which is a different statement from an
@@ -280,7 +296,11 @@ episodic_ui_stat_grid <- function(obj, lang = "nl") {
 #' @param lang Session language.
 #' @keywords internal
 #' @noRd
-episodic_ui_trajectory <- function(obj, timeline, lang = "nl") {
+episodic_ui_trajectory <- function(
+  obj,
+  timeline,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   verdict_events <- timeline[
     timeline$kind == "assessment" & !is.na(timeline$verdict),
     ,
@@ -324,7 +344,10 @@ episodic_ui_trajectory <- function(obj, timeline, lang = "nl") {
 
 #' @keywords internal
 #' @noRd
-episodic_ui_interpretation_panel <- function(obj, lang = "nl") {
+episodic_ui_interpretation_panel <- function(
+  obj,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   generated <- episodic_interpretation_generate(obj, lang = lang)
   paragraphs <- generated$text[!startsWith(generated$fired, "recommendation.")]
   recommendation <- generated$text[startsWith(
@@ -355,7 +378,12 @@ episodic_ui_interpretation_panel <- function(obj, lang = "nl") {
 
 #' @keywords internal
 #' @noRd
-episodic_ui_epicurve_panel <- function(con, cluster_id, obj, lang = "nl") {
+episodic_ui_epicurve_panel <- function(
+  con,
+  cluster_id,
+  obj,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   curve <- episodic_app_epi_curve(con, cluster_id)
   incomplete_days <- obj$completeness$incomplete_days %||% 0
   days_phrase <- episodic_count_phrase(
@@ -381,7 +409,11 @@ episodic_ui_epicurve_panel <- function(con, cluster_id, obj, lang = "nl") {
 
 #' @keywords internal
 #' @noRd
-episodic_ui_trend_panel <- function(con, obj, lang = "nl") {
+episodic_ui_trend_panel <- function(
+  con,
+  obj,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   trend <- episodic_app_trend(con, obj$stream_id)
   if (nrow(trend) < 4) {
     return(episodic_ui_panel_empty(
@@ -399,7 +431,7 @@ episodic_ui_trend_panel <- function(con, obj, lang = "nl") {
 
 #' @keywords internal
 #' @noRd
-episodic_ui_rt_panel <- function(obj, lang = "nl") {
+episodic_ui_rt_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   # Suppressed entirely when rt_applicable is false - not even an
   # empty-state panel, unlike a section that is merely awaiting more data.
   if (!isTRUE(obj$rt_applicable)) {
@@ -427,7 +459,11 @@ episodic_ui_rt_panel <- function(obj, lang = "nl") {
 
 #' @keywords internal
 #' @noRd
-episodic_ui_similar_clusters_panel <- function(con, cluster_id, lang = "nl") {
+episodic_ui_similar_clusters_panel <- function(
+  con,
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   similar <- episodic_app_similar_clusters(con, cluster_id, lang = lang)
   if (nrow(similar) == 0) {
     return(episodic_ui_panel_empty(
@@ -474,7 +510,10 @@ episodic_ui_similar_clusters_panel <- function(con, cluster_id, lang = "nl") {
 
 #' @keywords internal
 #' @noRd
-episodic_ui_denominator_panel <- function(obj, lang = "nl") {
+episodic_ui_denominator_panel <- function(
+  obj,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   if (
     is.null(obj$denominator) ||
       is.null(obj$denominator$series) ||
@@ -498,7 +537,10 @@ episodic_ui_denominator_panel <- function(obj, lang = "nl") {
 
 #' @keywords internal
 #' @noRd
-episodic_ui_demography_panel <- function(obj, lang = "nl") {
+episodic_ui_demography_panel <- function(
+  obj,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   if (is.null(obj$demography) || is.null(obj$demography$bands)) {
     return(episodic_ui_panel_empty(
       episodic_tr("panel.demography.title", lang = lang),
@@ -514,7 +556,7 @@ episodic_ui_demography_panel <- function(obj, lang = "nl") {
 
 #' @keywords internal
 #' @noRd
-episodic_ui_geo_panel <- function(obj, lang = "nl") {
+episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (is.null(obj$concentration)) {
     return(episodic_ui_panel_empty(
       episodic_tr("panel.geo.title", lang = lang),
@@ -561,7 +603,12 @@ episodic_ui_geo_panel <- function(obj, lang = "nl") {
 
 #' @keywords internal
 #' @noRd
-episodic_ui_places_panel <- function(con, cluster_id, obj, lang = "nl") {
+episodic_ui_places_panel <- function(
+  con,
+  cluster_id,
+  obj,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   cases <- episodic_db_cluster_cases(con, cluster_id)
   is_hospital <- obj$level == "pathogen_ward" ||
     (nrow(cases) > 0 && !all(is.na(cases$ward)))
@@ -590,9 +637,164 @@ episodic_ui_places_panel <- function(con, cluster_id, obj, lang = "nl") {
   episodic_ui_panel(title, episodic_ui_bars(rows))
 }
 
+#' "Linked to #123", once per cluster sharing these cases
+#'
+#' Capped at three: the header is scanned, not read, and a cluster at
+#' region level can legitimately share cases with a dozen others. The
+#' overflow is a plain count, and the panel below carries the full list.
+#'
+#' @param linked From `episodic_db_clusters_linked_to()`, or `NULL`.
+#' @param lang Session language.
+#' @param max_chips How many to name before counting the rest.
+#' @return A `shiny::tagList`, empty when nothing is linked.
 #' @keywords internal
 #' @noRd
-episodic_ui_resistance_panel <- function(lang = "nl") {
+episodic_ui_linked_chips <- function(
+  linked,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  max_chips = 3L
+) {
+  if (is.null(linked) || nrow(linked) == 0) {
+    return(NULL)
+  }
+  pal <- episodic_palette()
+  shown <- utils::head(linked, max_chips)
+
+  # The theme's own red, not a red: the palette is overridable per
+  # instance, and a hardcoded hex would survive an organisation's own
+  # colours. The dark variant rather than `danger` itself, because the
+  # `monitoring` state chip is `danger` and two identical reds in one
+  # header say nothing - and because 10.5px uppercase needs the contrast.
+  chips <- lapply(seq_len(nrow(shown)), function(i) {
+    episodic_ui_chip_link(
+      episodic_tr(
+        "dossier.linked_badge",
+        ref = episodic_tr(
+          "dossier.cluster_ref",
+          id = shown$cluster_id[i],
+          lang = lang
+        ),
+        lang = lang
+      ),
+      pal$danger_dark,
+      cluster_id = shown$cluster_id[i],
+      lang = lang
+    )
+  })
+
+  if (nrow(linked) > nrow(shown)) {
+    chips[[length(chips) + 1]] <- episodic_ui_chip(
+      episodic_tr(
+        "dossier.linked_more",
+        n = nrow(linked) - nrow(shown),
+        lang = lang
+      ),
+      pal$danger_dark
+    )
+  }
+  shiny::tagList(chips)
+}
+
+#' What this cluster suppressed: the same outbreak, seen wider or narrower
+#'
+#' The lattice watches these cases at several levels at once, and only one
+#' of those levels becomes a dossier. This panel is where the others go,
+#' so that "one cluster" never has to mean "we threw the other views
+#' away" - an assessor can see that the ward outbreak in front of them is
+#' also what the hospital-level stream was flagging.
+#' @keywords internal
+#' @noRd
+episodic_ui_related_panel <- function(
+  con,
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
+  suppressed <- episodic_db_clusters_suppressed_by(con, cluster_id)
+  linked <- episodic_db_clusters_linked_to(con, cluster_id)
+  if (nrow(suppressed) == 0 && nrow(linked) == 0) {
+    return(NULL)
+  }
+
+  # Both relations in one place, because to an assessor they are one
+  # question - what else are these cases in? - and they differ only in
+  # what was done about it: absorbed into this dossier, or left standing
+  # as its own.
+  row_for <- function(row, relation, clickable) {
+    label <- episodic_tr(paste0("relation.", relation), lang = lang)
+    ref <- episodic_tr("dossier.cluster_ref", id = row$cluster_id, lang = lang)
+    shiny::tags$tr(
+      class = if (clickable) "episodic-row-link" else NULL,
+      tabindex = if (clickable) "0" else NULL,
+      title = if (clickable) {
+        episodic_tr("cluster.open_hint", lang = lang)
+      },
+      onclick = if (clickable) {
+        sprintf(
+          "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
+          as.integer(row$cluster_id)
+        )
+      },
+      shiny::tags$td(
+        class = "episodic-cell-id",
+        shiny::tags$span(
+          class = if (clickable) "episodic-id-link" else NULL,
+          ref
+        )
+      ),
+      shiny::tags$td(episodic_tr(paste0("level.", row$level), lang = lang)),
+      shiny::tags$td(label),
+      shiny::tags$td(episodic_count_phrase(
+        row$n_cases,
+        episodic_tr("unit.case", lang = lang),
+        episodic_tr("unit.cases", lang = lang)
+      )),
+      shiny::tags$td(episodic_format_date_range(
+        row$first_day,
+        row$last_day,
+        lang = lang
+      ))
+    )
+  }
+
+  rows <- c(
+    # Linked first: those are dossiers somebody still has to assess.
+    lapply(seq_len(nrow(linked)), function(i) {
+      row_for(linked[i, ], "linked", clickable = TRUE)
+    }),
+    lapply(seq_len(nrow(suppressed)), function(i) {
+      row_for(suppressed[i, ], "suppressed", clickable = FALSE)
+    })
+  )
+
+  episodic_ui_panel(
+    episodic_tr("panel.related.title", lang = lang),
+    shiny::tagList(
+      shiny::tags$p(
+        class = "episodic-panel-note",
+        episodic_tr("panel.related.note", lang = lang)
+      ),
+      shiny::tags$table(
+        class = "episodic-table",
+        shiny::tags$thead(shiny::tags$tr(
+          shiny::tags$th(episodic_tr("panel.related.col.id", lang = lang)),
+          shiny::tags$th(episodic_tr("panel.related.col.level", lang = lang)),
+          shiny::tags$th(
+            episodic_tr("panel.related.col.relation", lang = lang)
+          ),
+          shiny::tags$th(episodic_tr("panel.related.col.size", lang = lang)),
+          shiny::tags$th(episodic_tr("panel.related.col.period", lang = lang))
+        )),
+        shiny::tags$tbody(rows)
+      )
+    )
+  )
+}
+
+#' @keywords internal
+#' @noRd
+episodic_ui_resistance_panel <- function(
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   # Susceptibility data is not part of the case data contract, so this
   # panel is always a placeholder.
   episodic_ui_panel_empty(
@@ -603,7 +805,12 @@ episodic_ui_resistance_panel <- function(lang = "nl") {
 
 #' @keywords internal
 #' @noRd
-episodic_ui_linelist_panel <- function(con, cluster_id, obj, lang = "nl") {
+episodic_ui_linelist_panel <- function(
+  con,
+  cluster_id,
+  obj,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   ll <- episodic_app_linelist(con, cluster_id)
   cols <- c(
     "source_key",
@@ -676,7 +883,7 @@ episodic_ui_report_panel <- function(
   con,
   cluster_id,
   current_user,
-  lang = "nl"
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
 ) {
   reports <- episodic_db_reports_for_cluster(con, cluster_id)
   episodic_ui_panel(
@@ -734,7 +941,11 @@ episodic_ui_report_panel <- function(
 
 #' @keywords internal
 #' @noRd
-episodic_ui_settings_panel <- function(con, cluster_id, lang = "nl") {
+episodic_ui_settings_panel <- function(
+  con,
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   settings <- episodic_app_detection_settings(con, cluster_id)
   # list(), not c(): a shiny::HTML() value (the detectors row) loses its
   # "html" class and gets escaped as literal text if combined with a
@@ -813,7 +1024,7 @@ episodic_ui_settings_panel <- function(con, cluster_id, lang = "nl") {
 episodic_ui_assessment_rail <- function(
   con,
   cluster_id,
-  lang = "nl",
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
   current_user = NULL
 ) {
   obj <- episodic_cluster_object(con, cluster_id, lang = lang)
@@ -852,7 +1063,10 @@ episodic_ui_assessment_rail <- function(
 #' One row of the assessment timeline
 #' @keywords internal
 #' @noRd
-episodic_ui_timeline_entry <- function(row, lang = "nl") {
+episodic_ui_timeline_entry <- function(
+  row,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   shiny::tags$div(
     class = "episodic-timeline-entry",
     shiny::tags$div(
@@ -880,7 +1094,11 @@ episodic_ui_timeline_entry <- function(row, lang = "nl") {
 #' The classification form, closure and mute actions for a signed-in user
 #' @keywords internal
 #' @noRd
-episodic_ui_assessment_form <- function(cluster_id, obj, lang = "nl") {
+episodic_ui_assessment_form <- function(
+  cluster_id,
+  obj,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   pal <- episodic_palette()
   # Ordered mild/terminal to severe - artefact and expected_variation
   # are both terminal (close immediately), the rest escalate.
@@ -1033,7 +1251,10 @@ episodic_ui_assessment_form <- function(cluster_id, obj, lang = "nl") {
 #' The read-only Streams screen
 #' @keywords internal
 #' @noRd
-episodic_ui_streams_screen <- function(screen, lang = "nl") {
+episodic_ui_streams_screen <- function(
+  screen,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   streams <- screen$streams
   pager <- if (!is.null(screen$n_pages) && screen$n_pages > 1) {
     shiny::tags$div(

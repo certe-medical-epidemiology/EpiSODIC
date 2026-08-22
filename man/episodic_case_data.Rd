@@ -35,6 +35,10 @@ Only confirmed-positive results belong here - there is no outcome
 column, so do not include negative results. If you also want a
 denominator (tests performed, for a positivity rate), supply that
 separately as pre-aggregated counts; see \code{\link[=episodic_synthetic_denominators]{episodic_synthetic_denominators()}}.
+
+The only case data shipped with the package is what the synthetic
+generator (\code{\link[=episodic_synthetic_cases]{episodic_synthetic_cases()}}) returns for the bundled
+demo - a useful template for the shape your own data should have.
 }
 \section{Required columns}{
 
@@ -132,13 +136,82 @@ Anything else is rejected, so map your own coding (\code{1}/\code{2},
 \item{\code{age}}{Integer; \code{NA} allowed. Age in whole years at sampling.
 Not age group - the dashboard bands it itself.}
 }
+}
 
-The only case data shipped with the package is what the synthetic
-generator (\code{\link[=episodic_synthetic_cases]{episodic_synthetic_cases()}}) returns for the bundled
-demo - a useful template for the shape your own data should have.
+\section{Types at a glance}{
+
+
+\tabular{llll}{
+\strong{Column} \tab \strong{Type} \tab \strong{Empty allowed} \tab \strong{Accepts} \cr
+\code{source_key} \tab character \tab no \tab any string, unique within the data set \cr
+\code{patient_key} \tab character \tab no \tab any string, stable per patient \cr
+\code{sample_date} \tab \code{Date} or character \tab no \tab \code{YYYY-MM-DD} only \cr
+\code{receipt_date} \tab \code{Date} or character \tab yes \tab \code{YYYY-MM-DD} only \cr
+\code{pathogen} \tab character \tab no \tab free text, spelled the same every run \cr
+\code{care_line} \tab character \tab yes (read as \code{"unknown"}) \tab \code{episodic_care_lines} \cr
+\code{institution_key} \tab character \tab no \tab any string, stable per institution \cr
+\code{institution_display_name} \tab character \tab no \tab any string \cr
+\code{institution_type} \tab character \tab no \tab \code{episodic_institution_types} \cr
+\code{municipality} \tab character \tab yes \tab any string \cr
+\code{ward} \tab character \tab yes \tab any string, spelled the same every run \cr
+\code{specialism} \tab character \tab yes \tab any string \cr
+\code{pc} \tab character \tab yes \tab four digits as text, for the shipped map \cr
+\code{sex} \tab character \tab yes \tab \code{episodic_sex_codes} \cr
+\code{age} \tab numeric \tab yes \tab whole years, not an age group \cr
+}
+
+Every column is required to be \emph{present}; "empty allowed" says whether
+its values may be \code{NA}. Dates may be a real \code{Date} column or ISO 8601
+text, and nothing else: \code{"01-01-2025"} is rejected rather than read as
+the first of January in the year 1. Numbers stored as text, dates
+stored as date-times, and text stored as a factor are all common
+extract mistakes, and all named for what they are by the check below.
+}
+
+\section{Check your data before you run anything}{
+
+
+Do not find out from an empty dashboard. Run \code{\link[=episodic_check_cases]{episodic_check_cases()}}
+on your extract - it needs no database, changes nothing, and reports
+every problem it finds at once, with the rows and values involved and
+what to do about each:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{cases <- my_extract_and_transform_function()
+episodic_check_cases(cases)
+}\if{html}{\out{</div>}}
+
+It also reports what is merely worth a look: one pathogen spelled two
+ways (two streams instead of one), no \code{ward} on any hospital row (no
+ward-level detection), a \code{patient_key} that never repeats (no
+deduplication), postcodes the map cannot place, sample dates in the
+future. \code{\link[=episodic_validate_cases]{episodic_validate_cases()}} runs the same checks but throws,
+for use in a script; \code{\link[=episodic_run_cron]{episodic_run_cron()}} runs it for you before every
+run, and refuses to start on data it cannot use, naming what to fix.
 }
 
 \examples{
+# A minimal but complete extract: two results, one patient, all fifteen
+# columns present, and the ones your laboratory does not record left NA.
+cases <- data.frame(
+  source_key = c("LAB-1", "LAB-2"),
+  patient_key = c("PAT-1", "PAT-1"),
+  sample_date = c("2025-01-06", "2025-01-09"),
+  receipt_date = c("2025-01-07", "2025-01-10"),
+  pathogen = "Norovirus",
+  care_line = "second",
+  institution_key = "HOSP-01",
+  institution_display_name = "Example Hospital",
+  institution_type = "hospital",
+  municipality = "Groningen",
+  ward = "Ward A2",
+  specialism = "Internal medicine",
+  pc = "9713",
+  sex = c("F", "F"),
+  age = c(71L, 71L),
+  stringsAsFactors = FALSE
+)
+episodic_check_cases(cases)
+
 episodic_case_columns
 episodic_care_lines
 episodic_institution_types

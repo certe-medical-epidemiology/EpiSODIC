@@ -554,6 +554,33 @@ episodic_db_cluster_increment_runs_since_detected <- function(con, cluster_id) {
   invisible(NULL)
 }
 
+#' Attach a cluster to the one that suppresses it, or detach it
+#'
+#' `NA` clears the suppression, which every run does before deciding it
+#' again: a suppression is a statement about how the current picture
+#' looks, not a permanent property of the cluster.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The cluster being suppressed.
+#' @param suppressed_by The cluster that suppresses it, or `NA` to clear.
+#' @keywords internal
+#' @noRd
+episodic_db_cluster_set_suppressed_by <- function(
+  con,
+  cluster_id,
+  suppressed_by
+) {
+  DBI::dbExecute(
+    con,
+    "UPDATE episodic_cluster SET suppressed_by = ? WHERE cluster_id = ?",
+    params = list(
+      if (is.na(suppressed_by)) NA_integer_ else as.integer(suppressed_by),
+      cluster_id
+    )
+  )
+  invisible(NULL)
+}
+
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_set_merged_into <- function(con, cluster_id, merged_into) {

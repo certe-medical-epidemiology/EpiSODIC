@@ -5,13 +5,15 @@
 \title{Add a testing-volume (positivity) feed}
 \usage{
 episodic_synthetic_denominators(
-  start_date = as.Date("2021-01-01"),
-  end_date = as.Date("2025-12-31"),
+  start_date = end_date - 5 * 365,
+  end_date = Sys.Date(),
   seed = 1
 )
 }
 \arguments{
-\item{start_date, end_date}{The period to generate weekly rows for.}
+\item{start_date, end_date}{The period to generate weekly rows for.
+Defaults to the five years up to today, matching
+\code{\link[=episodic_synthetic_cases]{episodic_synthetic_cases()}}.}
 
 \item{seed}{RNG seed, for reproducible demo data.}
 }

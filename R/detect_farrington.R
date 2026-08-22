@@ -41,13 +41,20 @@
 #' @param config The resolved configuration; uses `config$farrington`.
 #' @param run_date The date to treat as "today"; the most recent week
 #'   evaluated is the one containing this date.
+#' @param n_weeks How many trailing weeks to test, ending with the most
+#'   recent complete week. One on a nightly run, more when the previous
+#'   run is further back: a run that did not happen must not leave its
+#'   week untested by anything, and a first run against a backfilled
+#'   history should open on the current picture rather than on one week of
+#'   it. Bounded by the caller, so years of backfill do not arrive as
+#'   years of dossiers.
 #' @param population An optional numeric vector of weekly population
 #'   (patient-days) aligned to `episodic_weekly_bins()`'s own weeks, from
 #'   `episodic_farrington_population_vector()`. `NULL` (default) fits on
 #'   raw counts, unnormalised - what every stream without institution
 #'   activity data gets.
 #' @return A data frame of detection records (zero or one row: Farrington
-#'   evaluates only the current week).
+#'   evaluates the trailing `n_weeks` weeks).
 #' @references
 #' Farrington CP, Andrews NJ, Beale AD, Catchpole MA (1996). "A Statistical
 #' Algorithm for the Early Detection of Outbreaks of Infectious Disease."
@@ -71,7 +78,8 @@ episodic_detect_farrington <- function(
   stream_id,
   config,
   run_date = Sys.Date(),
-  population = NULL
+  population = NULL,
+  n_weeks = 1L
 ) {
   empty <- episodic_detection_record(
     integer(0),
@@ -94,25 +102,34 @@ episodic_detect_farrington <- function(
     return(empty) # insufficient baseline history for the configured b
   }
 
+  last_idx <- length(weekly$counts)
+  first_idx <- max(min_weeks_required, last_idx - max(1L, n_weeks) + 1L)
+  range_idx <- seq(first_idx, last_idx)
+
   result <- episodic_farrington_fit(
     weekly,
-    range_idx = length(weekly$counts),
+    range_idx = range_idx,
     fc = fc,
     population = population
   )
-  if (is.null(result) || !isTRUE(as.logical(result@alarm[1, 1]))) {
+  if (is.null(result)) {
     return(empty)
   }
 
-  current_week_start <- weekly$week_start[length(weekly$week_start)]
+  alarmed <- which(as.logical(result@alarm[, 1]))
+  if (length(alarmed) == 0) {
+    return(empty)
+  }
+
+  week_start <- weekly$week_start[range_idx][alarmed]
   episodic_detection_record(
     stream_id = stream_id,
     detector = "farrington",
-    first_day = as.character(current_week_start),
-    last_day = as.character(current_week_start + 6),
-    n_cases = as.integer(result@observed[1, 1]),
-    expected = as.numeric(result@control$expected[1, 1]),
-    upperbound = as.numeric(result@upperbound[1, 1]),
+    first_day = as.character(week_start),
+    last_day = as.character(week_start + 6),
+    n_cases = as.integer(result@observed[alarmed, 1]),
+    expected = as.numeric(result@control$expected[alarmed, 1]),
+    upperbound = as.numeric(result@upperbound[alarmed, 1]),
     params = list(b = fc$b, w = fc$w, alpha = fc$alpha)
   )
 }

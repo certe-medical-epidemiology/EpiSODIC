@@ -182,7 +182,11 @@ test_that("the status trajectory shows classifications, and labels the pre-asses
   )
 
   obj <- episodic_cluster_object(env$con, env$cluster_id)
-  timeline_before <- episodic_app_assessment_timeline(env$con, env$cluster_id)
+  timeline_before <- episodic_app_assessment_timeline(
+    env$con,
+    env$cluster_id,
+    lang = "nl"
+  )
   before <- as.character(episodic_ui_trajectory(
     obj,
     timeline_before,
@@ -215,8 +219,12 @@ test_that("the status trajectory shows classifications, and labels the pre-asses
     rationale = "confirmed on culture"
   )
 
-  obj2 <- episodic_cluster_object(env$con, env$cluster_id)
-  timeline_after <- episodic_app_assessment_timeline(env$con, env$cluster_id)
+  obj2 <- episodic_cluster_object(env$con, env$cluster_id, lang = "nl")
+  timeline_after <- episodic_app_assessment_timeline(
+    env$con,
+    env$cluster_id,
+    lang = "nl"
+  )
   after <- as.character(episodic_ui_trajectory(
     obj2,
     timeline_after,
