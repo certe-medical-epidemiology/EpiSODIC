@@ -130,7 +130,9 @@ episodic_validate_denominators <- function(denominators) {
 #' columns: `pathogen`, `sample_date` (week start), `care_line`,
 #' `area_code` (may be `NA`), and `n_tests`.
 #'
-#' @param start_date,end_date The period to generate weekly rows for.
+#' @param end_date,start_date The period to generate weekly rows for.
+#'   Defaults to the five years up to today, matching
+#'   [episodic_synthetic_cases()].
 #' @param seed RNG seed, for reproducible demo data.
 #' @return A data frame with `pathogen`, `sample_date` (week start),
 #'   `care_line`, `area_code`, `n_tests`.
@@ -141,8 +143,8 @@ episodic_validate_denominators <- function(denominators) {
 #' head(denom)
 #' @export
 episodic_synthetic_denominators <- function(
-  start_date = as.Date("2021-01-01"),
-  end_date = as.Date("2025-12-31"),
+  end_date = Sys.Date(),
+  start_date = end_date - 5 * 365,
   seed = 1
 ) {
   set.seed(seed)
