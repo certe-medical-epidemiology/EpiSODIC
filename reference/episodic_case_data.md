@@ -36,6 +36,12 @@ denominator (tests performed, for a positivity rate), supply that
 separately as pre-aggregated counts; see
 [`episodic_synthetic_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_denominators.md).
 
+The only case data shipped with the package is what the synthetic
+generator
+([`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md))
+returns for the bundled demo - a useful template for the shape your own
+data should have.
+
 ## Required columns
 
 `episodic_case_columns` lists all fifteen, in order. The set is an
@@ -171,15 +177,88 @@ rather than copying the strings out of this page.
   Integer; `NA` allowed. Age in whole years at sampling. Not age group -
   the dashboard bands it itself.
 
-The only case data shipped with the package is what the synthetic
-generator
-([`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md))
-returns for the bundled demo - a useful template for the shape your own
-data should have.
+## Types at a glance
+
+|  |  |  |  |
+|----|----|----|----|
+| **Column** | **Type** | **Empty allowed** | **Accepts** |
+| `source_key` | character | no | any string, unique within the data set |
+| `patient_key` | character | no | any string, stable per patient |
+| `sample_date` | `Date` or character | no | `YYYY-MM-DD` only |
+| `receipt_date` | `Date` or character | yes | `YYYY-MM-DD` only |
+| `pathogen` | character | no | free text, spelled the same every run |
+| `care_line` | character | yes (read as `"unknown"`) | `episodic_care_lines` |
+| `institution_key` | character | no | any string, stable per institution |
+| `institution_display_name` | character | no | any string |
+| `institution_type` | character | no | `episodic_institution_types` |
+| `municipality` | character | yes | any string |
+| `ward` | character | yes | any string, spelled the same every run |
+| `specialism` | character | yes | any string |
+| `pc` | character | yes | four digits as text, for the shipped map |
+| `sex` | character | yes | `episodic_sex_codes` |
+| `age` | numeric | yes | whole years, not an age group |
+
+Every column is required to be *present*; "empty allowed" says whether
+its values may be `NA`. Dates may be a real `Date` column or ISO 8601
+text, and nothing else: `"01-01-2025"` is rejected rather than read as
+the first of January in the year 1. Numbers stored as text, dates stored
+as date-times, and text stored as a factor are all common extract
+mistakes, and all named for what they are by the check below.
+
+## Check your data before you run anything
+
+Do not find out from an empty dashboard. Run
+[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+on your extract - it needs no database, changes nothing, and reports
+every problem it finds at once, with the rows and values involved and
+what to do about each:
+
+    cases <- my_extract_and_transform_function()
+    episodic_check_cases(cases)
+
+It also reports what is merely worth a look: one pathogen spelled two
+ways (two streams instead of one), no `ward` on any hospital row (no
+ward-level detection), a `patient_key` that never repeats (no
+deduplication), postcodes the map cannot place, sample dates in the
+future.
+[`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
+runs the same checks but throws, for use in a script;
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+runs it for you before every run, and refuses to start on data it cannot
+use, naming what to fix.
 
 ## Examples
 
 ``` r
+# A minimal but complete extract: two results, one patient, all fifteen
+# columns present, and the ones your laboratory does not record left NA.
+cases <- data.frame(
+  source_key = c("LAB-1", "LAB-2"),
+  patient_key = c("PAT-1", "PAT-1"),
+  sample_date = c("2025-01-06", "2025-01-09"),
+  receipt_date = c("2025-01-07", "2025-01-10"),
+  pathogen = "Norovirus",
+  care_line = "second",
+  institution_key = "HOSP-01",
+  institution_display_name = "Example Hospital",
+  institution_type = "hospital",
+  municipality = "Groningen",
+  ward = "Ward A2",
+  specialism = "Internal medicine",
+  pc = "9713",
+  sex = c("F", "F"),
+  age = c(71L, 71L),
+  stringsAsFactors = FALSE
+)
+episodic_check_cases(cases)
+#> -- EpiSODIC case data check ------------------------------------------------
+#>    2 rows, 15 columns
+#>    sample_date from 2025-01-06 to 2025-01-09
+#>    1 pathogen, 1 institution, 1 patient
+#> 
+#> v This data set satisfies the case data contract, and is ready for
+#>   episodic_run_cron(). See ?episodic_case_data for what each column means.
+
 episodic_case_columns
 #>  [1] "source_key"               "patient_key"             
 #>  [3] "sample_date"              "receipt_date"            

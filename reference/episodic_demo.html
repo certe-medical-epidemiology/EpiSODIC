@@ -17,7 +17,7 @@ default, so it works right after installing the package."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,9 +67,10 @@ default, so it works right after installing the package.</p>
 <span>  email <span class="op">=</span> <span class="st">"demo@example.org"</span>,</span>
 <span>  password <span class="op">=</span> <span class="st">"episodic-demo"</span>,</span>
 <span>  launch <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  run_date <span class="op">=</span> <span class="fu">episodic_synthetic_week_end</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"EPISODIC_LANGUAGE"</span><span class="op">)</span>,</span>
-<span>  cases <span class="op">=</span> <span class="va">episodic_synthetic_cases</span>,</span>
-<span>  denominators <span class="op">=</span> <span class="va">episodic_synthetic_denominators</span></span>
+<span>  cases <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="fu"><a href="episodic_synthetic_cases.html">episodic_synthetic_cases</a></span><span class="op">(</span>end_date <span class="op">=</span> <span class="va">run_date</span><span class="op">)</span>,</span>
+<span>  denominators <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="fu"><a href="episodic_synthetic_denominators.html">episodic_synthetic_denominators</a></span><span class="op">(</span>end_date <span class="op">=</span> <span class="va">run_date</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -97,6 +98,13 @@ anything beyond a local demo.</p></dd>
 scripting or screenshots.</p></dd>
 
 
+<dt id="arg-run-date">run_date<a class="anchor" aria-label="anchor" href="#arg-run-date"></a></dt>
+<dd><p>The date to run detection as of. Defaults to the end of
+the last complete week, so the week the statistical detectors test is
+a full one however far into the week you happen to run the demo -
+which is how surveillance reads its own weeks anyway.</p></dd>
+
+
 <dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>
 <dd><p>Dashboard language when <code>launch = TRUE</code>: <code>"nl"</code>, <code>"en"</code>,
 <code>"es"</code>, <code>"fr"</code>, <code>"de"</code>, <code>"zh"</code>, <code>"hi"</code>, or <code>"ar"</code>. Defaults to the
@@ -110,12 +118,41 @@ from - normally data frames (or tibbles), passed on unchanged to
 <code><a href="episodic_run_cron.html">episodic_run_cron()</a></code>. Default to several years of synthetic data;
 generate a narrower date range yourself (see
 <code><a href="episodic_synthetic_cases.html">episodic_synthetic_cases()</a></code>) and pass it here for a quicker
-demo.</p></dd>
+demo. Trying the demo with your own extract is a good way to see
+EpiSODIC work end to end: <code>cases</code> is checked against the
+<a href="episodic_case_data.html">episodic_case_data</a> contract first, so data it cannot use stops here
+with an explanation of what to fix, rather than opening a dashboard
+with nothing in it. Run <code><a href="episodic_check_cases.html">episodic_check_cases()</a></code> on your extract
+yourself to see the same findings, plus the advisory ones.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Invisibly, <code>db_path</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="check-your-data-before-you-run-anything">Check your data before you run anything<a class="anchor" aria-label="anchor" href="#check-your-data-before-you-run-anything"></a></h2>
+
+
+
+<p>Do not find out from an empty dashboard. Run <code><a href="episodic_check_cases.html">episodic_check_cases()</a></code>
+on your extract - it needs no database, changes nothing, and reports
+every problem it finds at once, with the rows and values involved and
+what to do about each:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu">my_extract_and_transform_function</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/episodic_check_cases.html">episodic_check_cases</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span></span></code></pre><p></p></div>
+<p>It also reports what is merely worth a look: one pathogen spelled two
+ways (two streams instead of one), no <code>ward</code> on any hospital row (no
+ward-level detection), a <code>patient_key</code> that never repeats (no
+deduplication), postcodes the map cannot place, sample dates in the
+future. <code><a href="episodic_validate_cases.html">episodic_validate_cases()</a></code> runs the same checks but throws,
+for use in a script; <code><a href="episodic_run_cron.html">episodic_run_cron()</a></code> runs it for you before every
+run, and refuses to start on data it cannot use, naming what to fix.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="episodic_check_cases.html">episodic_check_cases()</a></code> to see what EpiSODIC makes of your
+own extract first, and <a href="episodic_case_data.html">episodic_case_data</a> for the shape it expects.</p></div>
     </div>
 
     <div class="section level2">

@@ -33,11 +33,33 @@ The README’s “Data format” section documents the exact columns each of
 the four data sources (cases, positivity metadata, institution activity,
 geographic reference data) expects; only cases are mandatory.
 
+Check your extract against that contract before you schedule anything:
+
+``` r
+
+episodic_check_cases(cases)
+```
+
+It needs no database and changes nothing, and reports everything wrong
+with the data at once - the column, the number of rows affected, which
+rows those are, the offending values, and what to do about each - along
+with what is merely worth a look (one pathogen spelled two ways, no
+`ward` on any hospital row, a `patient_key` that never repeats).
+[`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
+runs the same checks and throws instead, for a script that should stop.
+
 Schedule
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
 however your environment normally schedules R jobs (cron, a Windows
 scheduled task, a CI pipeline) - there is nothing EpiSODIC-specific
-about the scheduling itself.
+about the scheduling itself. It validates the case data itself before
+writing anything: a run on data that does not satisfy the contract stops
+with that same message, records it on the run row, and leaves the
+database untouched, so a scheduled job fails visibly (a non-zero exit,
+an error in the job’s log) rather than completing over data it could not
+read. The recorded message is what the dashboard’s status strip and
+activity screen show, so whoever notices the empty dashboard first
+learns why without going near a log file.
 
 ## Configuration lives outside the repository
 

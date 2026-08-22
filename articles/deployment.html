@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -94,10 +94,28 @@ as well - see <code><a href="../reference/episodic_resolve_data.html">episodic_r
 format” section documents the exact columns each of the four data
 sources (cases, positivity metadata, institution activity, geographic
 reference data) expects; only cases are mandatory.</p>
+<p>Check your extract against that contract before you schedule
+anything:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/episodic_check_cases.html">episodic_check_cases</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span></span></code></pre></div>
+<p>It needs no database and changes nothing, and reports everything
+wrong with the data at once - the column, the number of rows affected,
+which rows those are, the offending values, and what to do about each -
+along with what is merely worth a look (one pathogen spelled two ways,
+no <code>ward</code> on any hospital row, a <code>patient_key</code>
+that never repeats). <code><a href="../reference/episodic_validate_cases.html">episodic_validate_cases()</a></code> runs the
+same checks and throws instead, for a script that should stop.</p>
 <p>Schedule <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> however your environment
 normally schedules R jobs (cron, a Windows scheduled task, a CI
 pipeline) - there is nothing EpiSODIC-specific about the scheduling
-itself.</p>
+itself. It validates the case data itself before writing anything: a run
+on data that does not satisfy the contract stops with that same message,
+records it on the run row, and leaves the database untouched, so a
+scheduled job fails visibly (a non-zero exit, an error in the job’s log)
+rather than completing over data it could not read. The recorded message
+is what the dashboard’s status strip and activity screen show, so
+whoever notices the empty dashboard first learns why without going near
+a log file.</p>
 </div>
 <div class="section level2">
 <h2 id="configuration-lives-outside-the-repository">Configuration lives outside the repository<a class="anchor" aria-label="anchor" href="#configuration-lives-outside-the-repository"></a>
@@ -126,7 +144,7 @@ reaches it. Signing in is only needed to classify a cluster, close it,
 or mute a stream, and there is deliberately no in-app account management
 screen: accounts are provisioned by whoever administers the
 database.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/episodic_provision_user.html">episodic_provision_user</a></span><span class="op">(</span></span>
@@ -158,7 +176,7 @@ deployment that already runs a database server and would rather point
 EpiSODIC at it than manage a SQLite file on disk - the schema and every
 query work identically against either backend.</li>
 </ul>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="fu"><a href="../reference/episodic_db_dsn_mariadb.html">episodic_db_dsn_mariadb</a></span><span class="op">(</span></span>
 <span>  host <span class="op">=</span> <span class="st">"db.internal"</span>, dbname <span class="op">=</span> <span class="st">"episodic"</span>,</span>
 <span>  user <span class="op">=</span> <span class="st">"episodic_app"</span>, password <span class="op">=</span> <span class="st">"s3cr3t!"</span></span>
@@ -167,7 +185,7 @@ query work identically against either backend.</li>
 <div class="section level2">
 <h2 id="running-the-app">Running the app<a class="anchor" aria-label="anchor" href="#running-the-app"></a>
 </h2>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/episodic_run_app.html">episodic_run_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/episodic_run_app.html">episodic_run_app()</a></code>’s <code>db_path</code> argument

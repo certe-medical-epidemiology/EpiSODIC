@@ -1,5 +1,94 @@
 # Changelog
 
+## EpiSODIC 0.5.0
+
+### New
+
+- [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+  reports everything wrong with your case data at once - the column, how
+  many rows, which rows, the offending values, and the fix for each -
+  without a database and without changing anything. It separates
+  problems, which stop a run, from advice, which does not: one pathogen
+  spelled two ways, no `ward` on any hospital row, a `patient_key` that
+  never repeats, postcodes the map cannot place. A wrong date format is
+  named for what it is (day-first, date-time, Excel serial, `YYYYMMDD`)
+  with the conversion to apply, and an unexpected column is matched
+  against what it probably should have been.
+- Lattice suppression, described by `config$suppression` and the
+  reconciliation vignette since 0.3.0 and implemented by nothing: one
+  outbreak seen at five levels became five dossiers. A child cluster now
+  suppresses its parent when it holds most of the parent’s cases; a
+  parent suppresses its children when the rise is spread across several
+  with none dominant. Nothing is discarded - a suppressed cluster keeps
+  its cases, history and assessment, and appears on the surviving
+  cluster’s dossier. An assessed cluster is never suppressed, and it is
+  recomputed every run.
+- Clusters that share cases but stand separately - suppression works
+  within a containment chain, not across the two, so a regional rise
+  never hides the ward outbreak feeding it - now say so. The dossier
+  header carries a “Linked to
+  [\#123](https://github.com/certe-medical-epidemiology/EpiSODIC/issues/123)”
+  chip that opens the other cluster, and a Related clusters panel lists
+  both what this cluster suppressed and what it merely overlaps.
+- `episodic_case_data` documents every column’s type, whether it may be
+  empty and what it accepts in one table, with a worked example of a
+  minimal valid extract.
+
+### Changed
+
+- [`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
+  reports every problem in one error instead of stopping at the first.
+- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  checks the case and denominator feeds before writing anything and
+  stops if they cannot be used, rather than returning quietly with a
+  `failed` run row nobody was looking at. A run that fails for any other
+  reason warns, and an empty extract warns before the run starts.
+- The status strip says why the last run failed; the Activity screen
+  shows each run’s first line with a Details button opening the whole
+  message, its per-feed counts and its provenance.
+- Farrington tests every week back to the last completed run, capped by
+  `farrington$max_weeks_tested` (8), instead of only the week the run
+  fell in - an outage no longer leaves weeks nothing ever tested.
+- `config$effect_size_floor`, previously read by nothing, now gates a
+  candidate opening a new cluster: a statistical signal too close to its
+  own upperbound is a true alarm and not a dossier. Candidates matching
+  an open cluster still extend it; `same_place` and `rare_trigger` are
+  unaffected.
+- [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
+  injects six outbreaks sized from one case to a regional wave, over a
+  baseline thin enough per place that coincidence no longer trips the
+  rule-based detectors - the demo opened on some three hundred chance
+  clusters before. Patients recur, so deduplication has something to do;
+  the feeds default to the five years up to today;
+  [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+  gained `run_date`.
+- Every `lang` argument defaults to `EPISODIC_LANGUAGE`, as the entry
+  points always did. Eighty-four internal renderers defaulted to `"nl"`,
+  so anything reached through a default came out Dutch whatever the
+  instance had asked for. Unset means English. A test fails if a
+  hardcoded default creeps back.
+- An empty string in a column that must always be filled is a problem,
+  like `NA`.
+
+### Fixed
+
+- Only lattice enumeration knew how a case maps to a region code, so
+  every `pathogen_area` and `pathogen_province` stream was handed the
+  whole catchment and reported the region’s counts under its own name.
+  The rule now lives in one place and both halves of the lattice use it.
+- A cluster’s cases were selected by pathogen, window and institution
+  alone, so a ward cluster was linked to every case in the building and
+  an area cluster to every case in the catchment - which is what the
+  dossier’s line list showed.
+- Reconciliation matched each candidate against the clusters the run
+  *started* with, so a cluster kept advertising its original last day
+  and, once that was `case_free_days` behind, the next week of the same
+  outbreak opened a second dossier - and a third, every 21 days.
+- Translation placeholders are substituted literally, so a value
+  carrying a backslash can no longer rewrite the sentence around it.
+- The epidemic curve’s thousands separator followed the language only
+  when one was passed explicitly.
+
 ## EpiSODIC 0.4.0
 
 ### Changed

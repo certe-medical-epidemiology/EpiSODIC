@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -102,6 +102,14 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">EpiSODIC</span><span class="fu">::</span><span class="fu"><a href="reference/episodic_demo.html">episodic_demo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>This creates a temporary database, runs one detection cycle, provisions a demo assessor account (printed to the console), and opens the app. Pass <code>launch = FALSE</code> to skip opening the app and just get a populated database path back, e.g. for scripting.</p>
+</div>
+<div class="section level3">
+<h3 id="bringing-your-own-data-check-it-first">Bringing your own data? Check it first<a class="anchor" aria-label="anchor" href="#bringing-your-own-data-check-it-first"></a>
+</h3>
+<p>Before the demo, before a scheduled run, before anything: hand your own extract to <code><a href="reference/episodic_check_cases.html">episodic_check_cases()</a></code>. No database, no configuration, and nothing is changed - it just tells you what EpiSODIC makes of your data.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">EpiSODIC</span><span class="fu">::</span><span class="fu"><a href="reference/episodic_check_cases.html">episodic_check_cases</a></span><span class="op">(</span><span class="va">my_cases</span><span class="op">)</span></span></code></pre></div>
+<p>It reports every problem at once - the column, how many rows are affected, which rows those are, what the offending values look like, and what to do about each - along with what is merely worth a look (one pathogen spelled two ways, no <code>ward</code> on any hospital row, a <code>patient_key</code> that never repeats). See “Check your data first” under “Data format” below for what its output looks like.</p>
 <p>EpiSODIC’s detection engine has <strong>no dependency on any laboratory system or data warehouse</strong>. Every dependency is a CRAN-hosted package (<code>surveillance</code> for Farrington); no private, organisation-specific package is required or even referenced. House colours (<code><a href="reference/episodic_palette.html">episodic_palette()</a></code>) come from a shipped, organisation-neutral default, overridable per instance by pointing <code>EPISODIC_PALETTE_CONFIG</code> at a YAML file with an organisation’s own colours - the same mechanism used for detection configuration, a custom report template, and geographic reference data. Geography (the choropleth panel) is not tied to any one organisation or country either - see “Geographic reference data” below.</p>
 </div>
 </div>
@@ -109,8 +117,10 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <h2 id="data-format">Data format<a class="anchor" aria-label="anchor" href="#data-format"></a>
 </h2>
 <p>EpiSODIC never queries a laboratory information system, data warehouse, or any other data source itself. That is deliberately your own step, run before EpiSODIC: extract from wherever your data lives, transform into the shape below, then call <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> with the result as a plain data frame (a tibble works just as well). This keeps the engine reusable by any laboratory.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu">my_extract_and_transform_function</span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/episodic_check_cases.html">episodic_check_cases</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span>  <span class="co"># what is wrong with it, before anything runs</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/episodic_run_cron.html">episodic_run_cron</a></span><span class="op">(</span></span>
 <span>  db_path <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span>,</span>
@@ -121,7 +131,7 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <div class="section level3">
 <h3 id="cases-mandatory">Cases (mandatory)<a class="anchor" aria-label="anchor" href="#cases-mandatory"></a>
 </h3>
-<p>One row per confirmed-positive laboratory result. This is the complete, allow-listed column set (<code>episodic_case_columns</code>); a data set with any column outside this list, or missing one from it, is rejected. Run <code><a href="reference/episodic_validate_cases.html">episodic_validate_cases()</a></code> on your extract to check all of this - columns, allowed values, dates, and <code>source_key</code> uniqueness - before you schedule anything. The three fixed value sets are available as <code>episodic_care_lines</code>, <code>episodic_institution_types</code> and <code>episodic_sex_codes</code>, so your transform step can map onto them directly:</p>
+<p>One row per confirmed-positive laboratory result. This is the complete, allow-listed column set (<code>episodic_case_columns</code>); a data set with any column outside this list, or missing one from it, is rejected. Run <code><a href="reference/episodic_check_cases.html">episodic_check_cases()</a></code> on your extract to check all of this - columns, allowed values, dates, and <code>source_key</code> uniqueness - before you schedule anything. The three fixed value sets are available as <code>episodic_care_lines</code>, <code>episodic_institution_types</code> and <code>episodic_sex_codes</code>, so your transform step can map onto them directly:</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -229,6 +239,43 @@ they also render on the CRAN page), regenerated against episodic_demo().
 </ul>
 <p><strong>Deduplication is EpiSODIC’s job, not yours.</strong> Send every positive result; EpiSODIC collapses isolates for the same patient and pathogen into one case per episode, using the episode length configured per pathogen in <code>inst/config/pathogen_config.csv</code>.</p>
 <p><strong>Do not send negative results here.</strong> This feed drives every detector; it is deliberately positives-only so an operator never has to ship a multi-year, per-test linelist just to run detection.</p>
+</div>
+<div class="section level3">
+<h3 id="check-your-data-first">Check your data first<a class="anchor" aria-label="anchor" href="#check-your-data-first"></a>
+</h3>
+<p>Before you schedule anything, run <code><a href="reference/episodic_check_cases.html">episodic_check_cases()</a></code> on your extract. It needs no database, changes nothing, and reports everything it finds in one go - which column is wrong, how many rows are affected, which rows those are, what the offending values look like, and what to do about each:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu">my_extract_and_transform_function</span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/episodic_check_cases.html">episodic_check_cases</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span></span>
+<span><span class="co">#&gt; -- EpiSODIC case data check ------------------------------------------</span></span>
+<span><span class="co">#&gt;    4,312 rows, 15 columns</span></span>
+<span><span class="co">#&gt;    sample_date from 2024-01-02 to 2024-06-30</span></span>
+<span><span class="co">#&gt;    12 pathogens, 7 institutions, 3,981 patients</span></span>
+<span><span class="co">#&gt;</span></span>
+<span><span class="co">#&gt; x 2 problems - a detection run refuses to start until these are fixed:</span></span>
+<span><span class="co">#&gt;</span></span>
+<span><span class="co">#&gt;   1. `sample_date` has 4312 of 4312 rows that are not a Date and do</span></span>
+<span><span class="co">#&gt;      not read as YYYY-MM-DD.</span></span>
+<span><span class="co">#&gt;      values: 02-01-2024, 03-01-2024, 04-01-2024 (and 178 more)</span></span>
+<span><span class="co">#&gt;      rows:   1, 2, 3, 4, 5 (and 4307 more)</span></span>
+<span><span class="co">#&gt;      fix:    These look day-first (e.g. 31-12-2025): convert with</span></span>
+<span><span class="co">#&gt;              as.Date(x, format = "%d-%m-%Y"). EpiSODIC accepts a Date</span></span>
+<span><span class="co">#&gt;              column, or text in ISO 8601 YYYY-MM-DD form, and nothing</span></span>
+<span><span class="co">#&gt;              else [...]</span></span>
+<span><span class="co">#&gt;</span></span>
+<span><span class="co">#&gt;   2. `sex` has 2106 of 4312 rows with a value outside the allowed set</span></span>
+<span><span class="co">#&gt;      (M, F, U, or NA).</span></span>
+<span><span class="co">#&gt;      values: male, female</span></span>
+<span><span class="co">#&gt;      [...]</span></span>
+<span><span class="co">#&gt;</span></span>
+<span><span class="co">#&gt; ! 2 things worth a look - a run proceeds regardless:</span></span>
+<span><span class="co">#&gt;</span></span>
+<span><span class="co">#&gt;   1. 1 pathogen name(s) appear in more than one spelling, differing</span></span>
+<span><span class="co">#&gt;      only in capitalisation or spacing: "Influenza A" / "influenza a".</span></span>
+<span><span class="co">#&gt;      [...]</span></span></code></pre></div>
+<p>It separates two kinds of finding on purpose. <strong>Problems</strong> are things EpiSODIC cannot work around, and a run refuses to start while any of them stand. <strong>Advice</strong> covers what is allowed but rarely intended and quietly costs you signal: one pathogen spelled two ways (two streams instead of one), no <code>ward</code> on any hospital row (nothing for ward-level detection to group on), a <code>patient_key</code> that never repeats (nothing for deduplication to do), postcodes the map cannot place, sample dates in the future.</p>
+<p><code><a href="reference/episodic_validate_cases.html">episodic_validate_cases()</a></code> runs the same checks and throws instead, for use in a script. <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> runs it for you before every run: data it cannot use stops the run with the same message, before anything is written, and that message is recorded against the run so it is also visible in the dashboard’s status strip and activity screen. A failed run never passes in silence.</p>
 </div>
 <div class="section level3">
 <h3 id="positivity-metadata-optional">Positivity metadata (optional)<a class="anchor" aria-label="anchor" href="#positivity-metadata-optional"></a>
@@ -353,7 +400,7 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <li>a filesystem path, opened as a SQLite database (the default, and what <code><a href="reference/episodic_demo.html">episodic_demo()</a></code> uses); or</li>
 <li>a <code>mysql://user:password@host:port/dbname</code> DSN, opened against a MariaDB or MySQL server instead. Build one with <code><a href="reference/episodic_db_dsn_mariadb.html">episodic_db_dsn_mariadb()</a></code> (or its alias <code><a href="reference/episodic_db_dsn_mariadb.html">episodic_db_dsn_mysql()</a></code>) rather than assembling the string by hand, so that credentials containing <code>:</code>, <code>@</code> or <code>/</code> are URL-encoded correctly:</li>
 </ul>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="fu">EpiSODIC</span><span class="fu">::</span><span class="fu"><a href="reference/episodic_db_dsn_mariadb.html">episodic_db_dsn_mariadb</a></span><span class="op">(</span></span>
 <span>  host <span class="op">=</span> <span class="st">"db.internal"</span>, dbname <span class="op">=</span> <span class="st">"episodic"</span>,</span>
 <span>  user <span class="op">=</span> <span class="st">"episodic_app"</span>, password <span class="op">=</span> <span class="st">"s3cr3t!"</span></span>
@@ -364,7 +411,7 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <h2 id="accounts">Accounts<a class="anchor" aria-label="anchor" href="#accounts"></a>
 </h2>
 <p>Read access is anonymous - the app opens read-only for anyone who reaches it. Signing in is only needed to classify a cluster, and there is deliberately no in-app account management screen: the four assessor accounts are provisioned by whoever administers the database, not created by assessors themselves or by the app.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span>  <span class="co"># or pass db_path explicitly below</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/episodic_provision_user.html">episodic_provision_user</a></span><span class="op">(</span></span>
@@ -397,8 +444,7 @@ they also render on the CRAN page), regenerated against episodic_demo().
 </tr>
 <tr>
 <td><code>EPISODIC_LANGUAGE</code></td>
-<td>
-<code><a href="reference/episodic_run_app.html">episodic_run_app()</a></code>, <code><a href="reference/episodic_demo.html">episodic_demo()</a></code>, <code><a href="reference/episodic_report_render.html">episodic_report_render()</a></code>, <code><a href="reference/episodic_tr.html">episodic_tr()</a></code> (<code>lang</code> argument)</td>
+<td>every <code>lang</code> argument - <code><a href="reference/episodic_run_app.html">episodic_run_app()</a></code>, <code><a href="reference/episodic_demo.html">episodic_demo()</a></code>, <code><a href="reference/episodic_report_render.html">episodic_report_render()</a></code>, <code><a href="reference/episodic_tr.html">episodic_tr()</a></code> and every renderer beneath them</td>
 <td>Dashboard/report language: <code>nl</code>, <code>en</code>, <code>es</code>, <code>fr</code>, <code>de</code>, <code>zh</code>, <code>hi</code>, or <code>ar</code>. Defaults to <code>en</code> if unset. Fixed for the whole running app - there is no in-app language switcher.</td>
 </tr>
 <tr>

@@ -15,11 +15,11 @@ or further customised with additional `ggplot2` layers.
 ## Usage
 
 ``` r
-episodic_ui_epi_curve_chart(curve, lang = "nl")
+episodic_ui_epi_curve_chart(curve, lang = Sys.getenv("EPISODIC_LANGUAGE"))
 
-episodic_ui_trend_chart(trend, lang = "nl")
+episodic_ui_trend_chart(trend, lang = Sys.getenv("EPISODIC_LANGUAGE"))
 
-episodic_ui_rt_chart(rt, lang = "nl")
+episodic_ui_rt_chart(rt, lang = Sys.getenv("EPISODIC_LANGUAGE"))
 ```
 
 ## Arguments
@@ -34,8 +34,9 @@ episodic_ui_rt_chart(rt, lang = "nl")
 
 - lang:
 
-  Language for axis labels: `"nl"` (Dutch, default), `"en"`, `"es"`,
-  `"fr"`, `"de"`, `"zh"`, `"hi"`, or `"ar"`.
+  Language for axis labels: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`,
+  `"zh"`, `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE`
+  environment variable, falling back to `"en"` if that is unset.
 
 - trend:
 

@@ -12,8 +12,8 @@ to raw counts, which is a reasonable default, not a broken one.
 ``` r
 episodic_synthetic_institution_activity(
   institutions,
-  start_date = as.Date("2021-01-01"),
-  end_date = as.Date("2025-12-31"),
+  start_date = end_date - 5 * 365,
+  end_date = Sys.Date(),
   seed = 1
 )
 ```
@@ -27,7 +27,9 @@ episodic_synthetic_institution_activity(
 
 - start_date, end_date:
 
-  The period to generate weekly rows for.
+  The period to generate weekly rows for. Defaults to the five years up
+  to today, matching
+  [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md).
 
 - seed:
 

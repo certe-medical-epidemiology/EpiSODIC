@@ -15,7 +15,7 @@ query, for instance), a zero-argument function that returns one."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,6 +77,40 @@ query, for instance), a zero-argument function that returns one.</p>
     <p><code>NULL</code> if <code>x</code> is <code>NULL</code>; <code>x</code> itself if it is a data frame (a
 <code>tibble</code> included); the result of calling <code>x</code> otherwise.</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Resolving is all this does: it does not look at what the data
+contains. To find out whether your case data can actually be used -
+which columns are missing, which values are outside their allowed set,
+which dates do not read as dates, and which rows those are - run
+<code><a href="episodic_check_cases.html">episodic_check_cases()</a></code> on it, or <code><a href="episodic_validate_cases.html">episodic_validate_cases()</a></code> if you
+want a script to stop. Both accept the same two forms this does, so you
+can check a data set and the function that produces it alike.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="check-your-data-before-you-run-anything">Check your data before you run anything<a class="anchor" aria-label="anchor" href="#check-your-data-before-you-run-anything"></a></h2>
+
+
+
+<p>Do not find out from an empty dashboard. Run <code><a href="episodic_check_cases.html">episodic_check_cases()</a></code>
+on your extract - it needs no database, changes nothing, and reports
+every problem it finds at once, with the rows and values involved and
+what to do about each:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu">my_extract_and_transform_function</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/episodic_check_cases.html">episodic_check_cases</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span></span></code></pre><p></p></div>
+<p>It also reports what is merely worth a look: one pathogen spelled two
+ways (two streams instead of one), no <code>ward</code> on any hospital row (no
+ward-level detection), a <code>patient_key</code> that never repeats (no
+deduplication), postcodes the map cannot place, sample dates in the
+future. <code><a href="episodic_validate_cases.html">episodic_validate_cases()</a></code> runs the same checks but throws,
+for use in a script; <code><a href="episodic_run_cron.html">episodic_run_cron()</a></code> runs it for you before every
+run, and refuses to start on data it cannot use, naming what to fix.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="episodic_check_cases.html">episodic_check_cases()</a></code> to check the resolved data against
+the <a href="episodic_case_data.html">episodic_case_data</a> contract.</p></div>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -87,6 +121,21 @@ query, for instance), a zero-argument function that returns one.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="fu">episodic_resolve_data</span><span class="op">(</span><span class="cn">NULL</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># what a live query would look like, and how to check what it returns</span></span></span>
+<span class="r-in"><span><span class="va">my_extract</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="episodic_synthetic_cases.html">episodic_synthetic_cases</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    start_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2025-01-01"</span><span class="op">)</span>, end_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2025-01-31"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="episodic_check_cases.html">episodic_check_cases</a></span><span class="op">(</span><span class="fu">episodic_resolve_data</span><span class="op">(</span><span class="va">my_extract</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -- EpiSODIC case data check ------------------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    206 rows, 15 columns</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    sample_date from 2025-01-01 to 2025-01-31</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    10 pathogens, 62 institutions, 200 patients</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> v This data set satisfies the case data contract, and is ready for</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   episodic_run_cron(). See ?episodic_case_data for what each column means.</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

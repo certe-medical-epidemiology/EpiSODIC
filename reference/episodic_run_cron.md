@@ -75,7 +75,9 @@ episodic_run_cron(
 
 Invisibly, the `run_id` of the completed run. The run's row in
 `episodic_detection_run` holds its status, the per-feed load counts, and
-`error_text` if it failed.
+`error_text` if it failed. Case data that does not satisfy the contract
+throws instead of returning - the run row is still written, with
+`status = "failed"` and the same message in `error_text`.
 
 ## Details
 
@@ -95,17 +97,55 @@ The exact detection settings used are recorded with the run (see
 so any past result can always be traced back to the configuration that
 produced it.
 
-So is what each feed delivered. Structural problems - a missing column,
-a value outside the allowed set, a date that does not parse - fail the
-run before anything is written, naming the column and the values. Rows
-that are merely unmatched are counted rather than dropped in silence:
-institution activity whose `institution_key` matches no known
-institution is skipped with a warning, its count recorded, and the run
-finishes `"partial"` instead of `"success"`. Both are complete runs the
-dashboard reads from; `"partial"` says go and look at why rows were
-skipped. `episodic_detection_run` carries the counts
-(`n_cases_supplied`, `n_cases_inserted`, `n_activity_skipped`, and the
-rest).
+So is what each feed delivered. Before the run writes anything, your
+case data goes through
+[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md).
+Structural problems - a missing column, a value outside the allowed set,
+a date that does not read as a date - stop the run with an error naming
+every offending column, its values and the rows they are in, and are
+recorded on the run as well, so the reason is visible both where the run
+was started and in the dashboard's activity screen. Advisory findings
+are mentioned once and the run proceeds. Run
+[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+on your extract yourself to see all of it without starting a run at all.
+A run that fails later, for any other reason, records the reason and
+warns rather than returning quietly. Rows that are merely unmatched are
+counted rather than dropped in silence: institution activity whose
+`institution_key` matches no known institution is skipped with a
+warning, its count recorded, and the run finishes `"partial"` instead of
+`"success"`. Both are complete runs the dashboard reads from;
+`"partial"` says go and look at why rows were skipped.
+`episodic_detection_run` carries the counts (`n_cases_supplied`,
+`n_cases_inserted`, `n_activity_skipped`, and the rest).
+
+## Check your data before you run anything
+
+Do not find out from an empty dashboard. Run
+[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+on your extract - it needs no database, changes nothing, and reports
+every problem it finds at once, with the rows and values involved and
+what to do about each:
+
+    cases <- my_extract_and_transform_function()
+    episodic_check_cases(cases)
+
+It also reports what is merely worth a look: one pathogen spelled two
+ways (two streams instead of one), no `ward` on any hospital row (no
+ward-level detection), a `patient_key` that never repeats (no
+deduplication), postcodes the map cannot place, sample dates in the
+future.
+[`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
+runs the same checks but throws, for use in a script;
+`episodic_run_cron()` runs it for you before every run, and refuses to
+start on data it cannot use, naming what to fix.
+
+## See also
+
+[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+to see what EpiSODIC makes of your extract before you schedule anything,
+and
+[episodic_case_data](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
+for the contract it checks against.
 
 ## Examples
 

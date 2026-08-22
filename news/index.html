@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,41 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.5.0" id="episodic-050">EpiSODIC 0.5.0<a class="anchor" aria-label="anchor" href="#episodic-050"></a></h2>
+<div class="section level3">
+<h3 id="new-0-5-0">New<a class="anchor" aria-label="anchor" href="#new-0-5-0"></a></h3>
+<ul><li>
+<code><a href="../reference/episodic_check_cases.html">episodic_check_cases()</a></code> reports everything wrong with your case data at once - the column, how many rows, which rows, the offending values, and the fix for each - without a database and without changing anything. It separates problems, which stop a run, from advice, which does not: one pathogen spelled two ways, no <code>ward</code> on any hospital row, a <code>patient_key</code> that never repeats, postcodes the map cannot place. A wrong date format is named for what it is (day-first, date-time, Excel serial, <code>YYYYMMDD</code>) with the conversion to apply, and an unexpected column is matched against what it probably should have been.</li>
+<li>Lattice suppression, described by <code>config$suppression</code> and the reconciliation vignette since 0.3.0 and implemented by nothing: one outbreak seen at five levels became five dossiers. A child cluster now suppresses its parent when it holds most of the parent’s cases; a parent suppresses its children when the rise is spread across several with none dominant. Nothing is discarded - a suppressed cluster keeps its cases, history and assessment, and appears on the surviving cluster’s dossier. An assessed cluster is never suppressed, and it is recomputed every run.</li>
+<li>Clusters that share cases but stand separately - suppression works within a containment chain, not across the two, so a regional rise never hides the ward outbreak feeding it - now say so. The dossier header carries a “Linked to <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/issues/123" class="external-link">#123</a>” chip that opens the other cluster, and a Related clusters panel lists both what this cluster suppressed and what it merely overlaps.</li>
+<li>
+<code>episodic_case_data</code> documents every column’s type, whether it may be empty and what it accepts in one table, with a worked example of a minimal valid extract.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-5-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-5-0"></a></h3>
+<ul><li>
+<code><a href="../reference/episodic_validate_cases.html">episodic_validate_cases()</a></code> reports every problem in one error instead of stopping at the first.</li>
+<li>
+<code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> checks the case and denominator feeds before writing anything and stops if they cannot be used, rather than returning quietly with a <code>failed</code> run row nobody was looking at. A run that fails for any other reason warns, and an empty extract warns before the run starts.</li>
+<li>The status strip says why the last run failed; the Activity screen shows each run’s first line with a Details button opening the whole message, its per-feed counts and its provenance.</li>
+<li>Farrington tests every week back to the last completed run, capped by <code>farrington$max_weeks_tested</code> (8), instead of only the week the run fell in - an outage no longer leaves weeks nothing ever tested.</li>
+<li>
+<code>config$effect_size_floor</code>, previously read by nothing, now gates a candidate opening a new cluster: a statistical signal too close to its own upperbound is a true alarm and not a dossier. Candidates matching an open cluster still extend it; <code>same_place</code> and <code>rare_trigger</code> are unaffected.</li>
+<li>
+<code><a href="../reference/episodic_synthetic_cases.html">episodic_synthetic_cases()</a></code> injects six outbreaks sized from one case to a regional wave, over a baseline thin enough per place that coincidence no longer trips the rule-based detectors - the demo opened on some three hundred chance clusters before. Patients recur, so deduplication has something to do; the feeds default to the five years up to today; <code><a href="../reference/episodic_demo.html">episodic_demo()</a></code> gained <code>run_date</code>.</li>
+<li>Every <code>lang</code> argument defaults to <code>EPISODIC_LANGUAGE</code>, as the entry points always did. Eighty-four internal renderers defaulted to <code>"nl"</code>, so anything reached through a default came out Dutch whatever the instance had asked for. Unset means English. A test fails if a hardcoded default creeps back.</li>
+<li>An empty string in a column that must always be filled is a problem, like <code>NA</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-5-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-5-0"></a></h3>
+<ul><li>Only lattice enumeration knew how a case maps to a region code, so every <code>pathogen_area</code> and <code>pathogen_province</code> stream was handed the whole catchment and reported the region’s counts under its own name. The rule now lives in one place and both halves of the lattice use it.</li>
+<li>A cluster’s cases were selected by pathogen, window and institution alone, so a ward cluster was linked to every case in the building and an area cluster to every case in the catchment - which is what the dossier’s line list showed.</li>
+<li>Reconciliation matched each candidate against the clusters the run <em>started</em> with, so a cluster kept advertising its original last day and, once that was <code>case_free_days</code> behind, the next week of the same outbreak opened a second dossier - and a third, every 21 days.</li>
+<li>Translation placeholders are substituted literally, so a value carrying a backslash can no longer rewrite the sentence around it.</li>
+<li>The epidemic curve’s thousands separator followed the language only when one was passed explicitly.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.0" id="episodic-040">EpiSODIC 0.4.0<a class="anchor" aria-label="anchor" href="#episodic-040"></a></h2>
 <div class="section level3">

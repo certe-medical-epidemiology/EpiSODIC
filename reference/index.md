@@ -23,15 +23,19 @@ the dashboard for your board to review the results.
 ## Connect your own data
 
 How to plug in your laboratory results and, optionally, testing volume
-and hospital activity data.
+and hospital activity data - and how to check your extract against the
+contract before you run anything.
 
 - [`episodic_case_columns`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
   [`episodic_care_lines`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
   [`episodic_institution_types`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
   [`episodic_sex_codes`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
   : Connect your own laboratory data
+- [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+  [`print(`*`<episodic_case_check>`*`)`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+  : Check your case data before you hand it to EpiSODIC
 - [`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
-  : Check that your case data has the right shape
+  : Check that your case data has the right shape, or stop
 - [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
   : Generate synthetic outbreak data
 - [`episodic_synthetic_cases_calibration()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases_calibration.md)

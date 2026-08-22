@@ -1,23 +1,20 @@
 # Generate synthetic outbreak data
 
-Produces several years of realistic laboratory surveillance data for a
-fictional set of hospitals, long-term care institutions, and GP
-practices: seasonal baseline incidence for eight common pathogens, plus
-two deliberately injected outbreaks for the detectors to find - a
-point-source outbreak (a tight cluster of norovirus cases on one ward)
-and a propagated outbreak (community-spread pertussis with case waves
-spaced by the generation interval). This is what powers
+Produces several years of laboratory surveillance data for a fictional
+northern-Netherlands region - eight hospitals, twenty long-term care
+institutions and the region's municipalities - and injects six outbreaks
+for the detectors to find. This is what powers
 [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
-and the package's test suite; it is also a useful reference for what
-your own case data should look like (see
-[episodic_case_columns](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)).
+and the package's test suite, and it doubles as a worked example of the
+shape your own data should have (see
+[episodic_case_data](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)).
 
 ## Usage
 
 ``` r
 episodic_synthetic_cases(
-  start_date = as.Date("2021-01-01"),
-  end_date = as.Date("2025-12-31"),
+  start_date = end_date - 5 * 365,
+  end_date = Sys.Date(),
   seed = 1
 )
 ```
@@ -26,11 +23,15 @@ episodic_synthetic_cases(
 
 - start_date:
 
-  First sample date to generate, a `Date`.
+  First sample date to generate. Defaults to five years before
+  `end_date` - Farrington needs four of them before it will compare
+  anything against anything.
 
 - end_date:
 
-  Last sample date to generate, a `Date`.
+  Last sample date to generate. Defaults to today, so a demo built from
+  this always shows current surveillance rather than whatever year the
+  package was released in.
 
 - seed:
 
@@ -41,6 +42,48 @@ episodic_synthetic_cases(
 A data frame satisfying
 [`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md).
 
+## What it puts in
+
+A seasonal Poisson baseline for eight endemic pathogens, deliberately
+thin per place: a demo whose baseline keeps tripping the rule-based
+detectors by coincidence buries the outbreaks it is meant to
+demonstrate. Patients recur - roughly one case in six is a repeat
+isolate from a patient already in the data - so deduplication and
+episode grouping have something to do.
+
+On top of that, six outbreaks, sized from a single case to a regional
+wave, each shaped for a different detector:
+
+|  |  |  |
+|----|----|----|
+| **Outbreak** | **Shape** | **Found by** |
+| Invasive meningococcal disease | one case | `rare_trigger` |
+| Ward cluster | 3 cases, one ward, 12 days | `same_place` |
+| Nursing home outbreak | 8 cases, one institution, 9 days | `same_place` |
+| Point source | 14 cases, one ward, days apart | `same_place` |
+| Propagated | 15 cases, four generations, 90 days | `same_place`, Rt |
+| Regional wave | 144 cases, diffuse, 6 rising weeks | Farrington, MEM |
+
+The regional wave is deliberately spread one case to a place: no
+institution sees enough of it for a rule-based detector to notice, and
+only the statistical baseline comparison finds it. That contrast - a
+diffuse signal no amount of local vigilance would catch - is half the
+reason the statistical detectors exist.
+
+Every injected case carries a `PT-OUTBREAK-*` patient key, so it is
+always identifiable as an injected signal rather than baseline noise.
+Outbreaks are anchored to `end_date` and clipped to the window you ask
+for, so a short window returns a partial one rather than cases outside
+the range you asked for.
+
+## See also
+
+[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+to see what the contract makes of it, and
+[`episodic_synthetic_cases_calibration()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases_calibration.md)
+for many more clusters than a demo wants, to tune a configuration
+against.
+
 ## Examples
 
 ``` r
@@ -48,34 +91,34 @@ cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
 nrow(cases)
-#> [1] 622
+#> [1] 419
 head(cases)
-#>                           patient_key sample_date receipt_date
-#> 1                PT-Norovirus-4817862  2025-01-01   2025-01-02
-#> 2                PT-Norovirus-3172321  2025-01-01   2025-01-01
-#> 3            PT-Campylobacter-4699847  2025-01-01   2025-01-02
-#> 4            PT-Campylobacter-8657051  2025-01-01   2025-01-02
-#> 5               PT-Salmonella-1128334  2025-01-01   2025-01-01
-#> 6 PT-Clostridioides.difficile-5206854  2025-01-01   2025-01-01
+#>                          patient_key sample_date receipt_date
+#> 1                PT-Norovirus-000044  2025-01-01   2025-01-01
+#> 2              PT-Influenza.A-000105  2025-01-01   2025-01-01
+#> 3                      PT-RSV-000072  2025-01-01   2025-01-01
+#> 4 PT-Clostridioides.difficile-000055  2025-01-01   2025-01-02
+#> 5              PT-Influenza.A-000162  2025-01-02   2025-01-02
+#> 6              PT-Influenza.A-000047  2025-01-02   2025-01-02
 #>                   pathogen care_line institution_key institution_display_name
-#> 1                Norovirus    second          LTC-12           Zorgcentrum 12
-#> 2                Norovirus    second         HOSP-05             Ziekenhuis E
-#> 3            Campylobacter     first           GP-03                    Assen
-#> 4            Campylobacter    second          LTC-10           Zorgcentrum 10
-#> 5               Salmonella    second         HOSP-08             Ziekenhuis H
-#> 6 Clostridioides difficile     first           GP-08                 Drachten
-#>   institution_type municipality      ward          specialism   pc sex age
-#> 1  ltc_institution         <NA>      <NA>                <NA> 9403   F  10
-#> 2         hospital         <NA> Geriatrie Klinische geriatrie 7656   F  66
-#> 3  gp_municipality        Assen      <NA>                <NA> 9873   F  73
-#> 4  ltc_institution         <NA>      <NA>                <NA> 9676   F  36
-#> 5         hospital         <NA>        IC           Chirurgie 9877   F  57
-#> 6  gp_municipality     Drachten      <NA>                <NA> 9939   F  44
+#> 1                Norovirus    second         HOSP-07             Ziekenhuis G
+#> 2              Influenza A    second          LTC-10           Zorgcentrum 10
+#> 3                      RSV    second         HOSP-03             Ziekenhuis C
+#> 4 Clostridioides difficile    second         HOSP-07             Ziekenhuis G
+#> 5              Influenza A    second         HOSP-01             Ziekenhuis A
+#> 6              Influenza A    second         HOSP-02             Ziekenhuis B
+#>   institution_type municipality        ward          specialism   pc sex age
+#> 1         hospital         <NA>     Interne Interne geneeskunde 7384   F  33
+#> 2  ltc_institution         <NA>        <NA>                <NA> 8524   M  37
+#> 3         hospital         <NA> Cardiologie         Cardiologie 9800   M  76
+#> 4         hospital         <NA> Longziekten         Longziekten 7600   M   8
+#> 5         hospital         <NA>   Geriatrie Klinische geriatrie 9930   F  79
+#> 6         hospital         <NA>   Chirurgie           Chirurgie 9021   F  14
 #>     source_key
 #> 1 SYN-00000001
-#> 2 SYN-00000002
-#> 3 SYN-00000336
-#> 4 SYN-00000337
-#> 5 SYN-00000390
-#> 6 SYN-00000504
+#> 2 SYN-00000060
+#> 3 SYN-00000159
+#> 4 SYN-00000203
+#> 5 SYN-00000061
+#> 6 SYN-00000062
 ```

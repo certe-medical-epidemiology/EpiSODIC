@@ -19,7 +19,7 @@ is, your own extract step is the only place that needs to know about it."></head
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -82,6 +82,9 @@ set instead; EpiSODIC accepts either (see <code><a href="episodic_resolve_data.h
 column, so do not include negative results. If you also want a
 denominator (tests performed, for a positivity rate), supply that
 separately as pre-aggregated counts; see <code><a href="episodic_synthetic_denominators.html">episodic_synthetic_denominators()</a></code>.</p>
+<p>The only case data shipped with the package is what the synthetic
+generator (<code><a href="episodic_synthetic_cases.html">episodic_synthetic_cases()</a></code>) returns for the bundled
+demo - a useful template for the shape your own data should have.</p>
     </div>
     <div class="section level2">
     <h2 id="required-columns">Required columns<a class="anchor" aria-label="anchor" href="#required-columns"></a></h2>
@@ -208,14 +211,71 @@ Anything else is rejected, so map your own coding (<code>1</code>/<code>2</code>
 Not age group - the dashboard bands it itself.</p></dd>
 
 
-</dl><p>The only case data shipped with the package is what the synthetic
-generator (<code><a href="episodic_synthetic_cases.html">episodic_synthetic_cases()</a></code>) returns for the bundled
-demo - a useful template for the shape your own data should have.</p>
+</dl></div>
+    <div class="section level2">
+    <h2 id="types-at-a-glance">Types at a glance<a class="anchor" aria-label="anchor" href="#types-at-a-glance"></a></h2>
+
+
+
+<table class="table table"><tr><td><strong>Column</strong></td><td><strong>Type</strong></td><td><strong>Empty allowed</strong></td><td><strong>Accepts</strong></td></tr><tr><td><code>source_key</code></td><td>character</td><td>no</td><td>any string, unique within the data set</td></tr><tr><td><code>patient_key</code></td><td>character</td><td>no</td><td>any string, stable per patient</td></tr><tr><td><code>sample_date</code></td><td><code>Date</code> or character</td><td>no</td><td><code>YYYY-MM-DD</code> only</td></tr><tr><td><code>receipt_date</code></td><td><code>Date</code> or character</td><td>yes</td><td><code>YYYY-MM-DD</code> only</td></tr><tr><td><code>pathogen</code></td><td>character</td><td>no</td><td>free text, spelled the same every run</td></tr><tr><td><code>care_line</code></td><td>character</td><td>yes (read as <code>"unknown"</code>)</td><td><code>episodic_care_lines</code></td></tr><tr><td><code>institution_key</code></td><td>character</td><td>no</td><td>any string, stable per institution</td></tr><tr><td><code>institution_display_name</code></td><td>character</td><td>no</td><td>any string</td></tr><tr><td><code>institution_type</code></td><td>character</td><td>no</td><td><code>episodic_institution_types</code></td></tr><tr><td><code>municipality</code></td><td>character</td><td>yes</td><td>any string</td></tr><tr><td><code>ward</code></td><td>character</td><td>yes</td><td>any string, spelled the same every run</td></tr><tr><td><code>specialism</code></td><td>character</td><td>yes</td><td>any string</td></tr><tr><td><code>pc</code></td><td>character</td><td>yes</td><td>four digits as text, for the shipped map</td></tr><tr><td><code>sex</code></td><td>character</td><td>yes</td><td><code>episodic_sex_codes</code></td></tr><tr><td><code>age</code></td><td>numeric</td><td>yes</td><td>whole years, not an age group</td></tr></table><p>Every column is required to be <em>present</em>; "empty allowed" says whether
+its values may be <code>NA</code>. Dates may be a real <code>Date</code> column or ISO 8601
+text, and nothing else: <code>"01-01-2025"</code> is rejected rather than read as
+the first of January in the year 1. Numbers stored as text, dates
+stored as date-times, and text stored as a factor are all common
+extract mistakes, and all named for what they are by the check below.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="check-your-data-before-you-run-anything">Check your data before you run anything<a class="anchor" aria-label="anchor" href="#check-your-data-before-you-run-anything"></a></h2>
+
+
+
+<p>Do not find out from an empty dashboard. Run <code><a href="episodic_check_cases.html">episodic_check_cases()</a></code>
+on your extract - it needs no database, changes nothing, and reports
+every problem it finds at once, with the rows and values involved and
+what to do about each:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu">my_extract_and_transform_function</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/episodic_check_cases.html">episodic_check_cases</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span></span></code></pre><p></p></div>
+<p>It also reports what is merely worth a look: one pathogen spelled two
+ways (two streams instead of one), no <code>ward</code> on any hospital row (no
+ward-level detection), a <code>patient_key</code> that never repeats (no
+deduplication), postcodes the map cannot place, sample dates in the
+future. <code><a href="episodic_validate_cases.html">episodic_validate_cases()</a></code> runs the same checks but throws,
+for use in a script; <code><a href="episodic_run_cron.html">episodic_run_cron()</a></code> runs it for you before every
+run, and refuses to start on data it cannot use, naming what to fix.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">episodic_case_columns</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># A minimal but complete extract: two results, one patient, all fifteen</span></span></span>
+<span class="r-in"><span><span class="co"># columns present, and the ones your laboratory does not record left NA.</span></span></span>
+<span class="r-in"><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  source_key <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"LAB-1"</span>, <span class="st">"LAB-2"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  patient_key <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PAT-1"</span>, <span class="st">"PAT-1"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  sample_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2025-01-06"</span>, <span class="st">"2025-01-09"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  receipt_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2025-01-07"</span>, <span class="st">"2025-01-10"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  pathogen <span class="op">=</span> <span class="st">"Norovirus"</span>,</span></span>
+<span class="r-in"><span>  care_line <span class="op">=</span> <span class="st">"second"</span>,</span></span>
+<span class="r-in"><span>  institution_key <span class="op">=</span> <span class="st">"HOSP-01"</span>,</span></span>
+<span class="r-in"><span>  institution_display_name <span class="op">=</span> <span class="st">"Example Hospital"</span>,</span></span>
+<span class="r-in"><span>  institution_type <span class="op">=</span> <span class="st">"hospital"</span>,</span></span>
+<span class="r-in"><span>  municipality <span class="op">=</span> <span class="st">"Groningen"</span>,</span></span>
+<span class="r-in"><span>  ward <span class="op">=</span> <span class="st">"Ward A2"</span>,</span></span>
+<span class="r-in"><span>  specialism <span class="op">=</span> <span class="st">"Internal medicine"</span>,</span></span>
+<span class="r-in"><span>  pc <span class="op">=</span> <span class="st">"9713"</span>,</span></span>
+<span class="r-in"><span>  sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"F"</span>, <span class="st">"F"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">71L</span>, <span class="fl">71L</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="episodic_check_cases.html">episodic_check_cases</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -- EpiSODIC case data check ------------------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    2 rows, 15 columns</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    sample_date from 2025-01-06 to 2025-01-09</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1 pathogen, 1 institution, 1 patient</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> v This data set satisfies the case data contract, and is ready for</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   episodic_run_cron(). See ?episodic_case_data for what each column means.</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">episodic_case_columns</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "source_key"               "patient_key"             </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [3] "sample_date"              "receipt_date"            </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [5] "pathogen"                 "care_line"               </span>
