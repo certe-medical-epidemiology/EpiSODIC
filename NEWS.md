@@ -14,6 +14,10 @@
   the rise is spread across several with none dominant. Nothing is discarded - a suppressed cluster keeps
   its cases, history and assessment, and appears on the surviving cluster's dossier. An assessed cluster is
   never suppressed, and it is recomputed every run.
+- Clusters that share cases but stand separately - suppression works within a containment chain, not across
+  the two, so a regional rise never hides the ward outbreak feeding it - now say so. The dossier header
+  carries a "Linked to #123" chip that opens the other cluster, and a Related clusters panel lists both what
+  this cluster suppressed and what it merely overlaps.
 - `episodic_case_data` documents every column's type, whether it may be empty and what it accepts in one
   table, with a worked example of a minimal valid extract.
 

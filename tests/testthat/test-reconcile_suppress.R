@@ -195,13 +195,68 @@ test_that("the dossier shows what a cluster suppressed", {
   expect_equal(attached$cluster_id, env$parent)
   expect_equal(attached$level, "pathogen_institution")
 
-  rendered <- as.character(episodic_ui_suppressed_panel(
+  rendered <- as.character(episodic_ui_related_panel(
     env$con,
     env$children[1],
     lang = "en"
   ))
   expect_true(grepl("institution", rendered, ignore.case = TRUE))
+  expect_true(grepl("suppressed", rendered, ignore.case = TRUE))
   expect_false(grepl("[[", rendered, fixed = TRUE))
-  # a cluster that suppressed nothing gets no panel at all
-  expect_null(episodic_ui_suppressed_panel(env$con, env$parent, lang = "en"))
+})
+
+test_that("a cluster sharing cases with one that stands separately says so, and links to it", {
+  # Suppression only collapses within a containment chain. A ward
+  # outbreak and a regional rise built partly out of it are two dossiers
+  # by design, and an assessor reading either without the other is
+  # reading it wrong.
+  env <- suppress_setup(child_share = 0.6)
+  on.exit(DBI::dbDisconnect(env$con))
+  episodic_suppress_lattice(env$con, episodic_config_resolve())
+
+  linked <- episodic_db_clusters_linked_to(env$con, env$parent)
+  expect_equal(linked$cluster_id, env$children[1])
+  expect_equal(linked$shared_cases, 6)
+
+  # the header names it and can be operated from the keyboard
+  chips <- as.character(episodic_ui_linked_chips(linked, lang = "en"))
+  expect_true(grepl("Linked to", chips, fixed = TRUE))
+  opens <- paste0("open_cluster', ", env$children[1])
+  expect_true(grepl(opens, chips, fixed = TRUE))
+  expect_true(grepl("onkeydown", chips, fixed = TRUE))
+
+  # and the panel carries it, marked as standing separately
+  panel <- as.character(episodic_ui_related_panel(
+    env$con,
+    env$parent,
+    lang = "en"
+  ))
+  expect_true(grepl("linked", panel, ignore.case = TRUE))
+  expect_false(grepl("[[", panel, fixed = TRUE))
+})
+
+test_that("a suppressed cluster is not also advertised as a link", {
+  # It is not a separate dossier: it is this one, seen at another level.
+  env <- suppress_setup(child_share = 0.9)
+  on.exit(DBI::dbDisconnect(env$con))
+  episodic_suppress_lattice(env$con, episodic_config_resolve())
+
+  linked <- episodic_db_clusters_linked_to(env$con, env$children[1])
+  expect_equal(nrow(linked), 0)
+  expect_null(episodic_ui_linked_chips(linked, lang = "en"))
+})
+
+test_that("the header names at most three links and counts the rest", {
+  linked <- data.frame(
+    cluster_id = 101:105,
+    n_cases = 5,
+    shared_cases = 5,
+    stringsAsFactors = FALSE
+  )
+  chips <- as.character(episodic_ui_linked_chips(linked, lang = "en"))
+  expect_true(grepl("#101", chips, fixed = TRUE))
+  expect_true(grepl("#103", chips, fixed = TRUE))
+  expect_false(grepl("#104", chips, fixed = TRUE))
+  expect_true(grepl("+2 more", chips, fixed = TRUE))
+  expect_null(episodic_ui_linked_chips(linked[0, ], lang = "en"))
 })

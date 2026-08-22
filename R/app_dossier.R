@@ -41,11 +41,12 @@ episodic_ui_dossier <- function(
   obj <- episodic_cluster_object(con, cluster_id, lang = lang)
   state <- episodic_app_derive_state_for_cluster(con, cluster_id)
   timeline <- episodic_app_assessment_timeline(con, cluster_id, lang = lang)
+  linked <- episodic_db_clusters_linked_to(con, cluster_id)
   pal <- episodic_palette()
 
   shiny::tags$div(
     class = "episodic-dossier",
-    episodic_ui_dossier_header(obj, state, lang = lang),
+    episodic_ui_dossier_header(obj, state, lang = lang, linked = linked),
     episodic_ui_stat_grid(obj, lang = lang),
     episodic_ui_trajectory(obj, timeline, lang = lang),
     episodic_ui_interpretation_panel(obj, lang = lang),
@@ -62,7 +63,7 @@ episodic_ui_dossier <- function(
     episodic_ui_geo_panel(obj, lang = lang),
     episodic_ui_places_panel(con, cluster_id, obj, lang = lang),
     episodic_ui_resistance_panel(lang = lang),
-    episodic_ui_suppressed_panel(con, cluster_id, lang = lang),
+    episodic_ui_related_panel(con, cluster_id, lang = lang),
     episodic_ui_similar_clusters_panel(con, cluster_id, lang = lang),
     episodic_ui_report_panel(con, cluster_id, current_user, lang = lang),
     if (is.null(current_user)) {
@@ -99,7 +100,8 @@ episodic_ui_linelist_locked_panel <- function(
 episodic_ui_dossier_header <- function(
   obj,
   state,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  linked = NULL
 ) {
   pal <- episodic_palette()
   shiny::tagList(
@@ -131,7 +133,14 @@ episodic_ui_dossier_header <- function(
           episodic_tr("dossier.changed_badge", lang = lang),
           pal$tertiary_dark
         )
-      }
+      },
+      # Cases this dossier shares with another that stands separately -
+      # the same rise seen at a level suppression deliberately does not
+      # collapse. In its own colour, and it goes there: an assessor who
+      # cannot see the other dossier is reading this one without knowing
+      # what it is part of. Three at most, since a region-level cluster
+      # can share cases with a good many; the rest are in the panel.
+      episodic_ui_linked_chips(linked, lang = lang)
     ),
     shiny::tags$div(
       class = "episodic-dossier-meta",
@@ -628,6 +637,59 @@ episodic_ui_places_panel <- function(
   episodic_ui_panel(title, episodic_ui_bars(rows))
 }
 
+#' "Linked to #123", once per cluster sharing these cases
+#'
+#' Capped at three: the header is scanned, not read, and a cluster at
+#' region level can legitimately share cases with a dozen others. The
+#' overflow is a plain count, and the panel below carries the full list.
+#'
+#' @param linked From `episodic_db_clusters_linked_to()`, or `NULL`.
+#' @param lang Session language.
+#' @param max_chips How many to name before counting the rest.
+#' @return A `shiny::tagList`, empty when nothing is linked.
+#' @keywords internal
+#' @noRd
+episodic_ui_linked_chips <- function(
+  linked,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  max_chips = 3L
+) {
+  if (is.null(linked) || nrow(linked) == 0) {
+    return(NULL)
+  }
+  pal <- episodic_palette()
+  shown <- utils::head(linked, max_chips)
+
+  chips <- lapply(seq_len(nrow(shown)), function(i) {
+    episodic_ui_chip_link(
+      episodic_tr(
+        "dossier.linked_badge",
+        ref = episodic_tr(
+          "dossier.cluster_ref",
+          id = shown$cluster_id[i],
+          lang = lang
+        ),
+        lang = lang
+      ),
+      pal$secondary,
+      cluster_id = shown$cluster_id[i],
+      lang = lang
+    )
+  })
+
+  if (nrow(linked) > nrow(shown)) {
+    chips[[length(chips) + 1]] <- episodic_ui_chip(
+      episodic_tr(
+        "dossier.linked_more",
+        n = nrow(linked) - nrow(shown),
+        lang = lang
+      ),
+      pal$secondary
+    )
+  }
+  shiny::tagList(chips)
+}
+
 #' What this cluster suppressed: the same outbreak, seen wider or narrower
 #'
 #' The lattice watches these cases at several levels at once, and only one
@@ -637,24 +699,45 @@ episodic_ui_places_panel <- function(
 #' also what the hospital-level stream was flagging.
 #' @keywords internal
 #' @noRd
-episodic_ui_suppressed_panel <- function(
+episodic_ui_related_panel <- function(
   con,
   cluster_id,
   lang = Sys.getenv("EPISODIC_LANGUAGE")
 ) {
-  title <- episodic_tr("panel.suppressed.title", lang = lang)
   suppressed <- episodic_db_clusters_suppressed_by(con, cluster_id)
-  if (nrow(suppressed) == 0) {
+  linked <- episodic_db_clusters_linked_to(con, cluster_id)
+  if (nrow(suppressed) == 0 && nrow(linked) == 0) {
     return(NULL)
   }
 
-  rows <- lapply(seq_len(nrow(suppressed)), function(i) {
-    row <- suppressed[i, ]
+  # Both relations in one place, because to an assessor they are one
+  # question - what else are these cases in? - and they differ only in
+  # what was done about it: absorbed into this dossier, or left standing
+  # as its own.
+  row_for <- function(row, relation, clickable) {
+    label <- episodic_tr(paste0("relation.", relation), lang = lang)
+    ref <- episodic_tr("dossier.cluster_ref", id = row$cluster_id, lang = lang)
     shiny::tags$tr(
-      shiny::tags$td(episodic_tr(
-        paste0("level.", row$level),
-        lang = lang
-      )),
+      class = if (clickable) "episodic-row-link" else NULL,
+      tabindex = if (clickable) "0" else NULL,
+      title = if (clickable) {
+        episodic_tr("cluster.open_hint", lang = lang)
+      },
+      onclick = if (clickable) {
+        sprintf(
+          "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
+          as.integer(row$cluster_id)
+        )
+      },
+      shiny::tags$td(
+        class = "episodic-cell-id",
+        shiny::tags$span(
+          class = if (clickable) "episodic-id-link" else NULL,
+          ref
+        )
+      ),
+      shiny::tags$td(episodic_tr(paste0("level.", row$level), lang = lang)),
+      shiny::tags$td(label),
       shiny::tags$td(episodic_count_phrase(
         row$n_cases,
         episodic_tr("unit.case", lang = lang),
@@ -666,27 +749,35 @@ episodic_ui_suppressed_panel <- function(
         lang = lang
       ))
     )
-  })
+  }
+
+  rows <- c(
+    # Linked first: those are dossiers somebody still has to assess.
+    lapply(seq_len(nrow(linked)), function(i) {
+      row_for(linked[i, ], "linked", clickable = TRUE)
+    }),
+    lapply(seq_len(nrow(suppressed)), function(i) {
+      row_for(suppressed[i, ], "suppressed", clickable = FALSE)
+    })
+  )
 
   episodic_ui_panel(
-    title,
+    episodic_tr("panel.related.title", lang = lang),
     shiny::tagList(
       shiny::tags$p(
         class = "episodic-panel-note",
-        episodic_tr("panel.suppressed.note", lang = lang)
+        episodic_tr("panel.related.note", lang = lang)
       ),
       shiny::tags$table(
         class = "episodic-table",
         shiny::tags$thead(shiny::tags$tr(
+          shiny::tags$th(episodic_tr("panel.related.col.id", lang = lang)),
+          shiny::tags$th(episodic_tr("panel.related.col.level", lang = lang)),
           shiny::tags$th(
-            episodic_tr("panel.suppressed.col.level", lang = lang)
+            episodic_tr("panel.related.col.relation", lang = lang)
           ),
-          shiny::tags$th(
-            episodic_tr("panel.suppressed.col.size", lang = lang)
-          ),
-          shiny::tags$th(
-            episodic_tr("panel.suppressed.col.period", lang = lang)
-          )
+          shiny::tags$th(episodic_tr("panel.related.col.size", lang = lang)),
+          shiny::tags$th(episodic_tr("panel.related.col.period", lang = lang))
         )),
         shiny::tags$tbody(rows)
       )

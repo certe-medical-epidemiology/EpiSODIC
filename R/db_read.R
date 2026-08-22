@@ -144,6 +144,43 @@ episodic_db_clusters_suppressed_by <- function(con, cluster_id) {
   )
 }
 
+#' Other clusters holding some of the same cases
+#'
+#' Suppression only collapses clusters in one containment chain: a ward is
+#' part of a hospital, an area is part of a province. It deliberately does
+#' not link the two chains, because letting a diffuse regional signal
+#' suppress a real ward outbreak would hide the more actionable of the
+#' two. But the assessor still has to know: a regional norovirus rise
+#' driven by a ward outbreak and a nursing home is one set of cases in
+#' three dossiers, and reading any of them without the others is reading
+#' it wrong. These are the clusters that share cases with this one and
+#' stand separately from it.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The cluster being viewed.
+#' @return A data frame of clusters with their `pathogen`, `level` and
+#'   `shared_cases`, most shared first. Suppressed and merged-away
+#'   clusters are left out: those are not separate dossiers.
+#' @keywords internal
+#' @noRd
+episodic_db_clusters_linked_to <- function(con, cluster_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT c.*, s.pathogen, s.level, COUNT(*) AS shared_cases
+     FROM episodic_cluster_case mine
+     INNER JOIN episodic_cluster_case theirs ON theirs.case_id = mine.case_id
+     INNER JOIN episodic_cluster c ON c.cluster_id = theirs.cluster_id
+     INNER JOIN episodic_stream s ON s.stream_id = c.stream_id
+     WHERE mine.cluster_id = ?
+       AND theirs.cluster_id != ?
+       AND c.merged_into IS NULL
+       AND c.suppressed_by IS NULL
+     GROUP BY c.cluster_id
+     ORDER BY shared_cases DESC, c.cluster_id",
+    params = list(cluster_id, cluster_id)
+  )
+}
+
 #' Every cluster the lattice suppression pass has to weigh up
 #'
 #' Not merged away, not closed, with the pathogen and level of its stream
