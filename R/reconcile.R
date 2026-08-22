@@ -88,7 +88,9 @@ episodic_reconcile_stream <- function(
   has_assessment_fn,
   verdict_fn,
   cooldown_days = NA,
-  cooldown_reopen_ratio = NA
+  cooldown_reopen_ratio = NA,
+  min_excess_over_upperbound = NA,
+  min_ratio_observed_expected = NA
 ) {
   n_new <- 0L
   n_updated <- 0L
@@ -174,6 +176,20 @@ episodic_reconcile_stream <- function(
       )
     } else if (length(matches) == 0) {
       metrics <- episodic_reconcile_candidate_metrics(candidate)
+      # The effect-size floor applies here and only here: to a candidate
+      # about to become a cluster somebody has to assess. A candidate that
+      # matches a cluster already open goes on extending it either way -
+      # an outbreak that keeps producing weeks near its own baseline is
+      # still the same outbreak, and freezing its dossier mid-course would
+      # tell the board something untrue.
+      clears_floor <- episodic_reconcile_clears_floor(
+        metrics,
+        min_excess_over_upperbound,
+        min_ratio_observed_expected
+      )
+      if (!clears_floor) {
+        next
+      }
       cluster_id <- episodic_db_cluster_insert(
         con,
         stream_id = stream_id,
@@ -446,6 +462,42 @@ episodic_reconcile_merge_detections <- function(detections) {
 #' @return A list with `expected`, `excess` (observed minus the alarm
 #'   threshold) and `ratio` (observed over expected), each `NA_real_`
 #'   when the underlying detector supplied no baseline.
+#' Is a candidate a big enough departure to be worth a dossier?
+#'
+#' The floor `config$effect_size_floor` sets: how far over the model's own
+#' upperbound, and how many times its expected count, a signal has to be
+#' before it opens a cluster. Statistical significance alone opens
+#' dossiers for a stream whose expected count is two and whose observed is
+#' four, which is a true alarm and not an outbreak worth a board's evening.
+#'
+#' A candidate with nothing to measure against passes: `same_place` and
+#' `rare_trigger` carry no expected or upperbound at all, and a Farrington
+#' week whose expected is zero has no ratio (that stream's signal is
+#' `rare_trigger`'s business anyway). A floor left `NA` is no floor.
+#'
+#' @param metrics From `episodic_reconcile_candidate_metrics()`.
+#' @param min_excess_over_upperbound,min_ratio_observed_expected The two
+#'   thresholds, or `NA` to apply neither.
+#' @return `TRUE` if the candidate may open a cluster.
+#' @keywords internal
+#' @noRd
+episodic_reconcile_clears_floor <- function(
+  metrics,
+  min_excess_over_upperbound = NA,
+  min_ratio_observed_expected = NA
+) {
+  below <- function(value, threshold) {
+    !is.na(threshold) && !is.na(value) && value < threshold
+  }
+  if (below(metrics$excess, min_excess_over_upperbound)) {
+    return(FALSE)
+  }
+  if (below(metrics$ratio, min_ratio_observed_expected)) {
+    return(FALSE)
+  }
+  TRUE
+}
+
 #' @keywords internal
 #' @noRd
 episodic_reconcile_candidate_metrics <- function(candidate) {

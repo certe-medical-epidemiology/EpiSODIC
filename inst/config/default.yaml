@@ -78,6 +78,13 @@ farrington:
   pastWeeksNotIncluded: 26 # exclude the trailing window from the noise-level estimate (surveillance default guidance)
   limit54: [5, 4]          # noPeriods-style low-count safeguard: [cases, period_weeks]
   alpha: 0.05
+  # How many trailing weeks one run may test. A nightly run tests the one
+  # week that just became testable; a run after a gap tests every week
+  # since the last completed run, so an outage does not leave weeks that
+  # nothing ever looked at. This caps that catch-up - and caps a first run
+  # against a backfilled history, which would otherwise open a dossier for
+  # every alarming week in the archive.
+  max_weeks_tested: 8
 
 # rare_trigger: a curated absolute-rarity list. A single case of any
 # pathogen listed here fires a detection; no baseline is computed at all.

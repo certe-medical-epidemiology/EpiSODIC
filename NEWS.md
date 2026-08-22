@@ -53,6 +53,19 @@
 
 ## Fixed
 
+- `config$effect_size_floor` was documented as "a signal must clear both before it becomes a cluster" and
+  read by nothing at all. It now applies where a candidate would open a new cluster: a statistical signal
+  under `min_excess_over_upperbound` cases over the model's own upperbound, or under
+  `min_ratio_observed_expected` times its expected count, no longer becomes a dossier. A candidate that
+  matches a cluster already open still extends it - an outbreak producing weeks near its own baseline is
+  still that outbreak. `same_place`, `rare_trigger` and a Farrington week with an expected of zero carry no
+  effect size to measure and are unaffected.
+- Farrington tested only the week the run happened to fall in, so a run that did not happen left its week
+  untested by anything, ever - an outage became a hole in the surveillance record. A run now tests every
+  week since the last completed run, capped by `farrington$max_weeks_tested` (8), which also gives a first
+  run against a backfilled history the current picture rather than one week of it, without opening a
+  dossier for every alarming week in the archive.
+
 - Every `lang` argument now defaults to the `EPISODIC_LANGUAGE` environment variable, as the entry points
   always did. Eighty-four internal renderers defaulted to `"nl"` instead, so on an instance running in any
   other language, anything reached through a default - a panel, a chart axis, a modal, the shipped report

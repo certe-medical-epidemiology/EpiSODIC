@@ -219,6 +219,43 @@ episodic_run_cron <- function(
   invisible(run_id)
 }
 
+#' How many weeks of Farrington this run owes
+#'
+#' A nightly run owes one: the week that just became testable. A run
+#' following a gap owes every week since the last completed one, because
+#' nothing else will ever test those - a detector that only ever looks at
+#' the current week turns a server outage into a hole in the surveillance
+#' record. A first run, with no completed run behind it, owes the cap: an
+#' instance starting against a backfilled history should open on the
+#' current picture rather than on one week of it, and the cap is what
+#' stops years of backfill arriving as years of dossiers.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param run_date The date this run treats as today.
+#' @param config The resolved configuration; uses
+#'   `config$farrington$max_weeks_tested`, defaulting to 8.
+#' @return A positive integer.
+#' @keywords internal
+#' @noRd
+episodic_farrington_weeks_owed <- function(con, run_date, config) {
+  cap <- as.integer(config$farrington$max_weeks_tested %||% 8L)
+  cap <- max(1L, cap)
+
+  previous <- episodic_db_latest_run(
+    con,
+    status = episodic_run_statuses_complete
+  )
+  if (is.null(previous) || is.na(previous$finished_at)) {
+    return(cap)
+  }
+  since <- suppressWarnings(as.Date(substr(previous$finished_at, 1, 10)))
+  if (is.na(since)) {
+    return(cap)
+  }
+  weeks <- as.numeric(difftime(as.Date(run_date), since, units = "days")) / 7
+  min(cap, max(1L, ceiling(weeks)))
+}
+
 #' The counts a run that wrote nothing has to report
 #'
 #' NA rather than zero throughout, deliberately: a failed run did not
@@ -410,6 +447,10 @@ episodic_run_cron_body <- function(
     config
   )
 
+  # Asked once, not per stream: it is a property of the run, not of any
+  # one stream.
+  farrington_weeks <- episodic_farrington_weeks_owed(con, run_date, config)
+
   streams <- episodic_db_streams(con) # refresh: same_place/rare_trigger may have created streams
 
   for (i in seq_len(nrow(streams))) {
@@ -486,7 +527,8 @@ episodic_run_cron_body <- function(
           stream$stream_id,
           config,
           run_date,
-          population = population
+          population = population,
+          n_weeks = farrington_weeks
         )
       )
 
@@ -545,6 +587,8 @@ episodic_run_cron_body <- function(
     cooldown_days <- if (nrow(pc) > 0) pc$cooldown_days[1] else NA
 
     weights <- config$priority_score$weights
+    min_excess <- config$effect_size_floor$min_excess_over_upperbound %||% NA
+    min_ratio <- config$effect_size_floor$min_ratio_observed_expected %||% NA
     reconcile_result <- episodic_reconcile_stream(
       con,
       stream_id = stream$stream_id,
@@ -555,6 +599,8 @@ episodic_run_cron_body <- function(
       cooldown_days = cooldown_days,
       cooldown_reopen_ratio = config$reconciliation$cooldown_reopen_ratio %||%
         NA,
+      min_excess_over_upperbound = min_excess,
+      min_ratio_observed_expected = min_ratio,
       # Five of the seven priority components are properties of the
       # candidate episode and its cases, so they are computed here, where
       # both are in hand. They used to be left at their defaults - most

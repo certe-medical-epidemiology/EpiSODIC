@@ -668,3 +668,94 @@ test_that("episodic_reconcile_stream() refreshes the baseline when a cluster is 
   expect_equal(cluster$excess[1], 13)
   expect_equal(cluster$ratio[1], 5)
 })
+
+test_that("the effect-size floor keeps a statistically-true-but-small signal out of the queue", {
+  # config$effect_size_floor was documented as "a signal must clear both
+  # before it becomes a cluster" and read by nothing at all.
+  metrics <- list(expected = 2, excess = 2, ratio = 2)
+  expect_false(episodic_reconcile_clears_floor(metrics, 3, 1.5))
+  expect_true(episodic_reconcile_clears_floor(metrics, 2, 1.5))
+
+  # both thresholds have to be cleared, not either
+  expect_false(episodic_reconcile_clears_floor(
+    list(expected = 10, excess = 5, ratio = 1.2),
+    3,
+    1.5
+  ))
+})
+
+test_that("a candidate with no effect size to measure is not floored out", {
+  # same_place and rare_trigger carry no expected or upperbound, and a
+  # Farrington week with expected 0 has no ratio. A floor that rejected
+  # those would silence the detectors that need no baseline at all.
+  bare <- list(expected = NA_real_, excess = NA_real_, ratio = NA_real_)
+  expect_true(episodic_reconcile_clears_floor(bare, 3, 1.5))
+  expect_true(episodic_reconcile_clears_floor(
+    list(expected = 0, excess = 4, ratio = NA_real_),
+    3,
+    1.5
+  ))
+  # and no floor configured is no floor
+  expect_true(episodic_reconcile_clears_floor(
+    list(expected = 2, excess = 0, ratio = 1),
+    NA,
+    NA
+  ))
+})
+
+test_that("a weak candidate does not open a cluster, but does extend one already open", {
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  # A Farrington week is only ever as strong as its distance from the
+  # model's own upperbound, so a detection carries both.
+  detect <- function(run_id, first_day, last_day, n_cases) {
+    det <- reconcile_detect(
+      env,
+      run_id,
+      first_day,
+      last_day,
+      n_cases,
+      detector = "farrington"
+    )
+    det$expected <- 10
+    det$upperbound <- 12
+    det
+  }
+  reconcile <- function(run_id, det) {
+    episodic_reconcile_stream(
+      env$con,
+      env$stream_id,
+      det,
+      case_free_days = 14,
+      run_id = run_id,
+      close_after_runs = 14,
+      priority_score_fn = noop_priority_score,
+      has_assessment_fn = noop_has_assessment,
+      verdict_fn = noop_verdict,
+      min_excess_over_upperbound = 3,
+      min_ratio_observed_expected = 1.5
+    )
+  }
+  clusters <- function() {
+    episodic_db_clusters_for_stream(env$con, env$stream_id)
+  }
+
+  # 13 observed against an upperbound of 12 is a true alarm and a
+  # one-case excess: not a dossier.
+  run1 <- episodic_db_run_start(env$con, "h", "a")
+  reconcile(run1, detect(run1, "2025-01-06", "2025-01-12", 13))
+  expect_equal(nrow(clusters()), 0)
+
+  # 30 against the same upperbound clears both thresholds and opens one
+  run2 <- episodic_db_run_start(env$con, "h", "a")
+  reconcile(run2, detect(run2, "2025-01-13", "2025-01-19", 30))
+  expect_equal(nrow(clusters()), 1)
+
+  # and the next week, weak again, still belongs to the outbreak already
+  # open: the floor gates opening a dossier, not continuing one
+  run3 <- episodic_db_run_start(env$con, "h", "a")
+  reconcile(run3, detect(run3, "2025-01-20", "2025-01-26", 13))
+  expect_equal(nrow(clusters()), 1)
+  expect_equal(clusters()$last_day, "2025-01-26")
+})
