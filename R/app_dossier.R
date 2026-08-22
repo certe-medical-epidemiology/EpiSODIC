@@ -660,6 +660,11 @@ episodic_ui_linked_chips <- function(
   pal <- episodic_palette()
   shown <- utils::head(linked, max_chips)
 
+  # The theme's own red, not a red: the palette is overridable per
+  # instance, and a hardcoded hex would survive an organisation's own
+  # colours. The dark variant rather than `danger` itself, because the
+  # `monitoring` state chip is `danger` and two identical reds in one
+  # header say nothing - and because 10.5px uppercase needs the contrast.
   chips <- lapply(seq_len(nrow(shown)), function(i) {
     episodic_ui_chip_link(
       episodic_tr(
@@ -671,7 +676,7 @@ episodic_ui_linked_chips <- function(
         ),
         lang = lang
       ),
-      pal$secondary,
+      pal$danger_dark,
       cluster_id = shown$cluster_id[i],
       lang = lang
     )
@@ -684,7 +689,7 @@ episodic_ui_linked_chips <- function(
         n = nrow(linked) - nrow(shown),
         lang = lang
       ),
-      pal$secondary
+      pal$danger_dark
     )
   }
   shiny::tagList(chips)
