@@ -296,8 +296,14 @@ episodic_validate_allowed <- function(data, column, allowed, na_ok, what = "Case
 episodic_validate_dates <- function(data, column, na_ok, what = "Case data") {
   values <- data[[column]]
   if (inherits(values, "Date")) return(invisible(NULL))
-  parsed <- suppressWarnings(as.Date(as.character(values), format = "%Y-%m-%d"))
-  bad <- values[is.na(parsed) & !(is.na(values) & isTRUE(na_ok))]
+  text <- as.character(values)
+  # Parsing alone is not enough: as.Date(format = "%Y-%m-%d") matches a
+  # prefix and ignores whatever trails it, so "01-01-2025" comes back as
+  # the first of January in the year 1 rather than as NA. Require the ISO
+  # shape first, then that those digits are a real date.
+  iso_shaped <- grepl("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", text)
+  parsed <- suppressWarnings(as.Date(text, format = "%Y-%m-%d"))
+  bad <- values[(!iso_shaped | is.na(parsed)) & !(is.na(values) & isTRUE(na_ok))]
   if (length(bad) > 0) {
     shown <- unique(bad)
     if (length(shown) > 5) shown <- shown[1:5]

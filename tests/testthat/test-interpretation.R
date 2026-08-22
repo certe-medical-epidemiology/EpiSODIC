@@ -172,8 +172,8 @@ test_that("Dutch number agreement in the magnitude fragment is correct at n=1 an
   text_one <- episodic_interpretation_generate(one_case)$text[1]
   text_many <- episodic_interpretation_generate(many_cases)$text[1]
 
-  expect_match(text_one, "^1 geval\\b")
-  expect_match(text_many, "^11 gevallen\\b")
+  expect_match(text_one, "^1 casus\\b")
+  expect_match(text_many, "^11 casussen\\b")
 })
 
 test_that("the engine never errors on a minimal cluster object with everything optional set to NULL", {

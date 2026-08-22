@@ -284,8 +284,12 @@ test_that("input$open_cluster jumps to the Clusters screen on that very cluster"
     dossier <- paste(output$dossier_pane, collapse = "\n")
     expect_true(grepl(ref(second), dossier, fixed = TRUE))
     expect_false(grepl(ref(first), dossier, fixed = TRUE))
-    # and it actually switched screens
-    expect_true(grepl("episodic-dossier", paste(output$main_view, collapse = "\n"), fixed = TRUE))
+    # and it actually switched screens. The dossier itself is rendered
+    # into output$dossier_pane; main_view only carries the clusters
+    # container and its placeholders, so that is what proves the switch.
+    main <- paste(output$main_view, collapse = "\n")
+    expect_true(grepl("episodic-body", main, fixed = TRUE))
+    expect_false(grepl("episodic-pathogen-controls", main, fixed = TRUE))
   })
 })
 

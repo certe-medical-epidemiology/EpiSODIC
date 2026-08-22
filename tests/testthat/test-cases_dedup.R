@@ -184,12 +184,24 @@ test_that("episodic_validate_cases() accepts every documented allowed value", {
 })
 
 test_that("episodic_validate_cases() rejects a date that does not read as YYYY-MM-DD", {
-  cases <- raw_case("K1", "P1", "01-01-2025")
-  expect_error(episodic_validate_cases(cases), "sample_date", fixed = TRUE)
-
   cases <- raw_case("K1", "P1", "2025-01-01")
   cases$receipt_date <- "not a date"
   expect_error(episodic_validate_cases(cases), "receipt_date", fixed = TRUE)
+})
+
+test_that("episodic_validate_cases() rejects a date that only parses because of a trailing remainder", {
+  # as.Date(format = "%Y-%m-%d") matches a prefix and ignores the rest, so
+  # a day-first date reads as the year 1 instead of failing. Everything
+  # here parses; none of it is the date the operator meant.
+  for (value in c("01-01-2025", "1-1-2025", "2025-01-01T00:00:00", "2025-01-01 extra")) {
+    cases <- raw_case("K1", "P1", value)
+    expect_error(episodic_validate_cases(cases), "sample_date", fixed = TRUE)
+  }
+})
+
+test_that("episodic_validate_cases() rejects an ISO-shaped string that is not a real date", {
+  cases <- raw_case("K1", "P1", "2025-13-45")
+  expect_error(episodic_validate_cases(cases), "sample_date", fixed = TRUE)
 })
 
 test_that("episodic_validate_cases() accepts Date columns as well as ISO strings", {
