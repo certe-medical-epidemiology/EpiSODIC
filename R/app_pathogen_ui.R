@@ -174,7 +174,7 @@ episodic_ui_pathogen_controls <- function(
           id = "pathogen_from",
           value = as.character(period$from)
         ),
-        shiny::tags$span(style = "color:var(--episodic-faint);", "–"),
+        shiny::tags$span(style = "color:var(--episodic-faint);", "\u2013"),
         shiny::tags$input(
           type = "date",
           class = "episodic-date-input",

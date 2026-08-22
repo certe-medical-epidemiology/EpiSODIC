@@ -297,7 +297,7 @@ episodic_app_run_load_summary <- function(
         skipped = run$n_activity_skipped,
         lang = lang
       ),
-      sep = " · "
+      sep = " \u00b7 "
     )
   }
   detail
