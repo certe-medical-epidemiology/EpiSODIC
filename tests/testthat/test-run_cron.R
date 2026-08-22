@@ -434,3 +434,69 @@ test_that("episodic_lattice_enumerate() creates distinct streams per level", {
     )
   )
 })
+
+test_that("a geographic stream gets its own area's cases, not the whole region's", {
+  # The bug this guards: only lattice enumeration knew how a case maps to
+  # a region code, so every area and province stream was handed the whole
+  # catchment and reported the region's counts under its own name - one
+  # signal, and a cluster per area to go with it.
+  cases <- data.frame(
+    pathogen = "Norovirus",
+    institution_id = NA_integer_,
+    ward = NA_character_,
+    pc = c("9711", "9712", "8911", "7811", NA),
+    stringsAsFactors = FALSE
+  )
+  stream <- function(level, region_code) {
+    data.frame(
+      level = level,
+      pathogen = "Norovirus",
+      institution_id = NA_integer_,
+      ward = NA_character_,
+      region_code = region_code,
+      stringsAsFactors = FALSE
+    )
+  }
+
+  area <- episodic_cases_for_stream(cases, stream("pathogen_area", "GEBIED-97"))
+  expect_equal(area$pc, c("9711", "9712"))
+
+  province <- episodic_cases_for_stream(
+    cases,
+    stream("pathogen_province", "PROV_GRONINGEN")
+  )
+  expect_equal(province$pc, c("9711", "9712"))
+
+  # the whole catchment is every case, including the one with no postcode
+  # to place it by
+  region <- episodic_cases_for_stream(
+    cases,
+    stream("pathogen_region", episodic_region_code_all)
+  )
+  expect_equal(nrow(region), 5)
+})
+
+test_that("episodic_case_region_code() places a case the same way at every level", {
+  cases <- data.frame(
+    pc = c("9711", "8911", "7811", NA),
+    stringsAsFactors = FALSE
+  )
+  expect_equal(
+    episodic_case_region_code(cases, "pathogen_area"),
+    c("GEBIED-97", "GEBIED-89", "GEBIED-78", NA)
+  )
+  expect_equal(
+    episodic_case_region_code(cases, "pathogen_province"),
+    c("PROV_GRONINGEN", "PROV_FRYSLAN", "PROV_DRENTHE", NA)
+  )
+  expect_equal(
+    episodic_case_region_code(cases, "pathogen_region"),
+    rep(episodic_region_code_all, 4)
+  )
+  # a level with no geography places nothing
+  expect_true(all(is.na(episodic_case_region_code(cases, "pathogen_ward"))))
+  expect_equal(
+    episodic_case_region_code(cases[0, , drop = FALSE], "pathogen_area"),
+    character(0)
+  )
+})

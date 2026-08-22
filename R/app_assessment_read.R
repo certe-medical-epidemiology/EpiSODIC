@@ -261,7 +261,7 @@ episodic_app_run_detail <- function(
 
 #' What a run's feeds delivered, as one line
 #'
-#' Split from [episodic_app_run_detail()] so the run detail modal can show
+#' Split from `episodic_app_run_detail()` so the run detail modal can show
 #' the load summary and the failure reason as two different things, rather
 #' than one standing in for the other.
 #'

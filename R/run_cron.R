@@ -657,6 +657,14 @@ episodic_cases_for_stream <- function(cases, stream) {
   if (!is.na(stream$ward)) {
     matches <- matches & !is.na(cases$ward) & cases$ward == stream$ward
   }
+  # A geographic stream is its own area, not the whole catchment. Without
+  # this, an area stream was handed every case in the region and reported
+  # the region's counts under the area's name - one signal, and a cluster
+  # per area to go with it.
+  if (!is.na(stream$region_code)) {
+    region <- episodic_case_region_code(cases, stream$level)
+    matches <- matches & !is.na(region) & region == stream$region_code
+  }
   cases[matches, ]
 }
 

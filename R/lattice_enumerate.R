@@ -81,7 +81,7 @@ episodic_lattice_enumerate <- function(con, cases, institutions) {
   # L3: pathogen x gebied (coarse PC grouping: first 2 digits)
   l3 <- cases[!is.na(cases$pc), ]
   if (nrow(l3) > 0) {
-    l3$.region_code <- paste0("GEBIED-", substr(l3$pc, 1, 2))
+    l3$.region_code <- episodic_case_region_code(l3, "pathogen_area")
     touched$l3 <- episodic_lattice_upsert_group(
       con,
       l3,
@@ -95,7 +95,7 @@ episodic_lattice_enumerate <- function(con, cases, institutions) {
   # L4: pathogen x provincie
   l4 <- cases[!is.na(cases$pc), ]
   if (nrow(l4) > 0) {
-    l4$.region_code <- episodic_pc_to_province(l4$pc)
+    l4$.region_code <- episodic_case_region_code(l4, "pathogen_province")
     l4 <- l4[!is.na(l4$.region_code), ]
     if (nrow(l4) > 0) {
       touched$l4 <- episodic_lattice_upsert_group(
@@ -111,7 +111,7 @@ episodic_lattice_enumerate <- function(con, cases, institutions) {
 
   # L5: pathogen x regio (whole catchment)
   l5 <- cases
-  l5$.region_code <- "NOORD_NEDERLAND"
+  l5$.region_code <- episodic_region_code_all
   touched$l5 <- episodic_lattice_upsert_group(
     con,
     l5,
@@ -123,6 +123,48 @@ episodic_lattice_enumerate <- function(con, cases, institutions) {
 
   do.call(rbind, touched)
 }
+
+#' The region code a case falls in, at one lattice level
+#'
+#' Both halves of the lattice need this: enumeration, to decide which
+#' streams exist, and `episodic_cases_for_stream()`, to fetch a stream's
+#' own cases back. Deriving it in one place is the point - when only
+#' enumeration knew the rule, every area and province stream was handed
+#' the whole region's cases and reported the same count as the region
+#' itself.
+#'
+#' @param cases A data frame of cases, with `pc`.
+#' @param level A stream level; anything without a geography returns `NA`.
+#' @return A character vector, one region code per case, `NA` where the
+#'   case has no `pc` to place it by.
+#' @keywords internal
+#' @noRd
+episodic_case_region_code <- function(cases, level) {
+  if (nrow(cases) == 0) {
+    return(character(0))
+  }
+  has_pc <- !is.na(cases$pc)
+  switch(
+    level,
+    pathogen_area = ifelse(
+      has_pc,
+      paste0("GEBIED-", substr(cases$pc, 1, 2)),
+      NA_character_
+    ),
+    pathogen_province = ifelse(
+      has_pc,
+      episodic_pc_to_province(cases$pc),
+      NA_character_
+    ),
+    pathogen_region = rep(episodic_region_code_all, nrow(cases)),
+    rep(NA_character_, nrow(cases))
+  )
+}
+
+#' The whole catchment, as one region code
+#' @keywords internal
+#' @noRd
+episodic_region_code_all <- "NOORD_NEDERLAND"
 
 #' @keywords internal
 #' @noRd
