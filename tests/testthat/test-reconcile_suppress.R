@@ -221,8 +221,11 @@ test_that("a cluster sharing cases with one that stands separately says so, and 
   # the header names it and can be operated from the keyboard
   chips <- as.character(episodic_ui_linked_chips(linked, lang = "en"))
   expect_true(grepl("Linked to", chips, fixed = TRUE))
+  # htmltools escapes the quotes in an attribute value, so compare
+  # against what the browser will actually run rather than the source.
+  handler <- gsub("&#39;", "'", chips, fixed = TRUE)
   opens <- paste0("open_cluster', ", env$children[1])
-  expect_true(grepl(opens, chips, fixed = TRUE))
+  expect_true(grepl(opens, handler, fixed = TRUE))
   expect_true(grepl("onkeydown", chips, fixed = TRUE))
 
   # and the panel carries it, marked as standing separately

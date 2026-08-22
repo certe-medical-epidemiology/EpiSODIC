@@ -137,7 +137,7 @@ episodic_ui_chip <- function(text, colour, filled = FALSE) {
 
 #' A chip that opens another cluster
 #'
-#' Same shape as [episodic_ui_chip()], but it goes somewhere: used in the
+#' Same shape as `episodic_ui_chip()`, but it goes somewhere: used in the
 #' dossier header to say that these cases are also in another cluster, and
 #' to take the assessor straight to it. Focusable and operable from the
 #' keyboard, like the cluster rows elsewhere - a chip that only responds
