@@ -162,6 +162,7 @@
 
   "misc.unknown": "अज्ञात",
   "misc.none": "कोई नहीं",
+  "misc.close": "बंद करें",
   "misc.dash": "—",
 
   "date.month.01": "जन.",
@@ -283,6 +284,15 @@
   "activity.detail_run": "{supplied} प्रस्तुत में से {inserted} नए मामले ({deduplicated} अपुनरावृत्ति के बाद)",
   "activity.detail_run_skipped": "{skipped} गतिविधि पंक्तियाँ छोड़ी गईं: संस्थान यहाँ ज्ञात नहीं",
   "activity.target_cluster": "{pathogen} (क्लस्टर #{id})",
+  "activity.detail_button": "विवरण",
+  "activity.run_modal_title": "डिटेक्शन रन {id}",
+  "activity.run_modal_when": "आरंभ {started}, समाप्त {finished}",
+  "activity.run_modal_load": "इस रन ने क्या लोड किया",
+  "activity.run_modal_no_load": "इस रन ने कोई लोड गणना दर्ज नहीं की: यह डेटा पढ़ने से पहले ही रुक गया।",
+  "activity.run_modal_detection": "डिटेक्शन से क्या मिला",
+  "activity.run_modal_detection_line": "{streams} स्ट्रीम पर निगरानी, {detections} डिटेक्शन, {new} नए सिग्नल, {updated} अद्यतन",
+  "activity.run_modal_error": "यह रन क्यों विफल हुआ",
+  "activity.run_modal_provenance": "{host} पर {account} के रूप में चला · EpiSODIC {version} · कॉन्फ़िगरेशन {hash}",
 
   "performance.title": "प्रदर्शन",
   "performance.note": "संसूचक कितनी अच्छी तरह भविष्यवाणी करते हैं, और किसी क्लस्टर को पहचानने और मूल्यांकित करने में कितना समय लगता है - दर्ज वर्गीकरणों पर आधारित, न कि किसी अनुमान पर।",

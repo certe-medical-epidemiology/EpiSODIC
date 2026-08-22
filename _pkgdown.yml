@@ -43,7 +43,8 @@ reference:
 - title: Connect your own data
   desc: >
     How to plug in your laboratory results and, optionally, testing
-    volume and hospital activity data.
+    volume and hospital activity data - and how to check your extract
+    against the contract before you run anything.
   contents:
   - episodic_case_data
   - episodic_check_cases

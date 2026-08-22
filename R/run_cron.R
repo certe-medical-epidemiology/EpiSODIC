@@ -87,6 +87,10 @@
 #'   and `error_text` if it failed. Case data that does not satisfy the
 #'   contract throws instead of returning - the run row is still written,
 #'   with `status = "failed"` and the same message in `error_text`.
+#' @inheritSection episodic_case_data Check your data before you run anything
+#' @seealso [episodic_check_cases()] to see what EpiSODIC makes of your
+#'   extract before you schedule anything, and [episodic_case_data] for
+#'   the contract it checks against.
 #' @examples
 #' \donttest{
 #' db_path <- tempfile(fileext = ".sqlite")
@@ -300,6 +304,7 @@ episodic_run_statuses_complete <- c("success", "partial")
 #' @param ... Passed to `x` if it is a function; ignored otherwise.
 #' @return `NULL` if `x` is `NULL`; `x` itself if it is a data frame (a
 #'   `tibble` included); the result of calling `x` otherwise.
+#' @inheritSection episodic_case_data Check your data before you run anything
 #' @seealso [episodic_check_cases()] to check the resolved data against
 #'   the [episodic_case_data] contract.
 #' @examples

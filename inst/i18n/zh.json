@@ -162,6 +162,7 @@
 
   "misc.unknown": "未知",
   "misc.none": "无",
+  "misc.close": "关闭",
   "misc.dash": "—",
 
   "date.month.01": "1月",
@@ -283,6 +284,15 @@
   "activity.detail_run": "已提交 {supplied} 例，新增 {inserted} 例（去重后 {deduplicated} 例）",
   "activity.detail_run_skipped": "跳过 {skipped} 行活动数据：此处无此机构",
   "activity.target_cluster": "{pathogen}（聚集事件 #{id}）",
+  "activity.detail_button": "详情",
+  "activity.run_modal_title": "检测运行 {id}",
+  "activity.run_modal_when": "开始于 {started}，结束于 {finished}",
+  "activity.run_modal_load": "本次运行载入的数据",
+  "activity.run_modal_no_load": "本次运行没有记录任何载入计数：它在读取数据前就已停止。",
+  "activity.run_modal_detection": "检测产生的结果",
+  "activity.run_modal_detection_line": "监测 {streams} 个数据流，{detections} 次检测，{new} 个新信号，{updated} 个已更新",
+  "activity.run_modal_error": "本次运行失败的原因",
+  "activity.run_modal_provenance": "在 {host} 上以 {account} 运行 · EpiSODIC {version} · 配置 {hash}",
 
   "performance.title": "性能",
   "performance.note": "检测器的预测能力，以及聚集事件被发现和评估的速度——均基于已记录的分类结果，而非假设。",

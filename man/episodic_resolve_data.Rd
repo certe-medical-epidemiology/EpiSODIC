@@ -31,6 +31,27 @@ which dates do not read as dates, and which rows those are - run
 want a script to stop. Both accept the same two forms this does, so you
 can check a data set and the function that produces it alike.
 }
+\section{Check your data before you run anything}{
+
+
+Do not find out from an empty dashboard. Run \code{\link[=episodic_check_cases]{episodic_check_cases()}}
+on your extract - it needs no database, changes nothing, and reports
+every problem it finds at once, with the rows and values involved and
+what to do about each:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{cases <- my_extract_and_transform_function()
+episodic_check_cases(cases)
+}\if{html}{\out{</div>}}
+
+It also reports what is merely worth a look: one pathogen spelled two
+ways (two streams instead of one), no \code{ward} on any hospital row (no
+ward-level detection), a \code{patient_key} that never repeats (no
+deduplication), postcodes the map cannot place, sample dates in the
+future. \code{\link[=episodic_validate_cases]{episodic_validate_cases()}} runs the same checks but throws,
+for use in a script; \code{\link[=episodic_run_cron]{episodic_run_cron()}} runs it for you before every
+run, and refuses to start on data it cannot use, naming what to fix.
+}
+
 \examples{
 df <- data.frame(x = 1:3)
 identical(episodic_resolve_data(df), df)

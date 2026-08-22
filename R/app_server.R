@@ -246,6 +246,19 @@ episodic_app_server_factory <- function(db_path, lang = "nl") {
       )
     })
 
+    # The Activity screen's per-run detail. Everything shown here is
+    # already in the database; the point is that an epidemiologist reading
+    # the log can see why a run failed without asking whoever schedules
+    # them - and read the whole message, not the line the table had room
+    # for.
+    shiny::observeEvent(input$activity_run_detail, {
+      run <- episodic_db_run(con, as.integer(input$activity_run_detail))
+      if (is.null(run)) {
+        return(NULL)
+      }
+      shiny::showModal(episodic_ui_run_modal(run, lang = lang))
+    })
+
     episodic_app_server_assessment_actions(
       input,
       output,

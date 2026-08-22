@@ -35,6 +35,10 @@ Only confirmed-positive results belong here - there is no outcome
 column, so do not include negative results. If you also want a
 denominator (tests performed, for a positivity rate), supply that
 separately as pre-aggregated counts; see \code{\link[=episodic_synthetic_denominators]{episodic_synthetic_denominators()}}.
+
+The only case data shipped with the package is what the synthetic
+generator (\code{\link[=episodic_synthetic_cases]{episodic_synthetic_cases()}}) returns for the bundled
+demo - a useful template for the shape your own data should have.
 }
 \section{Required columns}{
 
@@ -182,11 +186,7 @@ ward-level detection), a \code{patient_key} that never repeats (no
 deduplication), postcodes the map cannot place, sample dates in the
 future. \code{\link[=episodic_validate_cases]{episodic_validate_cases()}} runs the same checks but throws,
 for use in a script; \code{\link[=episodic_run_cron]{episodic_run_cron()}} runs it for you before every
-run, and refuses to start on data it cannot use.
-
-The only case data shipped with the package is what the synthetic
-generator (\code{\link[=episodic_synthetic_cases]{episodic_synthetic_cases()}}) returns for the bundled
-demo - a useful template for the shape your own data should have.
+run, and refuses to start on data it cannot use, naming what to fix.
 }
 
 \examples{

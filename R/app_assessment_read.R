@@ -233,17 +233,30 @@ episodic_app_archive <- function(con, query = NULL, lang = "nl") {
 episodic_app_run_detail <- function(run, lang = "nl") {
   # A failed run has no load summary, but it does have a reason, and this
   # screen is where somebody goes to find out why the dashboard is empty.
-  # The whole recorded message, not its first line: it names every
-  # offending column and what to do about each, and there is room for it
-  # here. Untranslated, because it is the operator's own error text.
+  # Its first line only, since a validation failure names every offending
+  # column and would otherwise fill the table; the whole message is one
+  # click away, in the run detail. Untranslated either way - it is the
+  # operator's own error text.
   if (identical(run$status, "failed")) {
-    reason <- run$error_text %||% NA_character_
-    if (is.na(reason) || !nzchar(reason)) {
-      return(NA_character_)
-    }
-    return(reason)
+    return(episodic_ui_first_line(run$error_text) %||% NA_character_)
   }
 
+  episodic_app_run_load_summary(run, lang = lang)
+}
+
+#' What a run's feeds delivered, as one line
+#'
+#' Split from [episodic_app_run_detail()] so the run detail modal can show
+#' the load summary and the failure reason as two different things, rather
+#' than one standing in for the other.
+#'
+#' @param run One row of `episodic_detection_run`.
+#' @param lang Session language.
+#' @return A single string, or `NA_character_` when the run recorded no
+#'   counts at all.
+#' @keywords internal
+#' @noRd
+episodic_app_run_load_summary <- function(run, lang = "nl") {
   # NULL when reading a database written before the counters existed;
   # NA when the run failed before it loaded anything. Neither has a
   # summary to show, and neither should read as "zero cases arrived".
@@ -280,9 +293,11 @@ episodic_app_run_detail <- function(run, lang = "nl") {
 #' @param con A [DBI::DBIConnection-class].
 #' @param limit Maximum number of rows to return, most recent first.
 #' @param lang Session language.
-#' @return A data frame with `at`, `actor`, `action`, `target`, `detail`
-#'   and `is_system`. `detail` is the run load summary on run rows, and
-#'   `NA` on human ones.
+#' @return A data frame with `at`, `actor`, `action`, `target`, `detail`,
+#'   `is_system` and `run_id`. `detail` is the run load summary on run
+#'   rows (or, for a failed run, why it failed), and `NA` on human ones;
+#'   `run_id` is filled on run rows only, so the screen can offer the
+#'   full run detail for those.
 #' @keywords internal
 #' @noRd
 episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
@@ -320,6 +335,7 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
       target = vapply(events$cluster_id, cluster_target, character(1)),
       detail = NA_character_,
       is_system = FALSE,
+      run_id = NA_integer_,
       stringsAsFactors = FALSE
     )
   }
@@ -342,6 +358,7 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
       target = vapply(states$cluster_id, cluster_target, character(1)),
       detail = NA_character_,
       is_system = FALSE,
+      run_id = NA_integer_,
       stringsAsFactors = FALSE
     )
   }
@@ -368,6 +385,7 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
       ),
       detail = NA_character_,
       is_system = FALSE,
+      run_id = NA_integer_,
       stringsAsFactors = FALSE
     )
   }
@@ -390,6 +408,7 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
       target = NA_character_,
       detail = NA_character_,
       is_system = FALSE,
+      run_id = NA_integer_,
       stringsAsFactors = FALSE
     )
   }
@@ -411,6 +430,7 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
         character(1)
       ),
       is_system = TRUE,
+      run_id = runs$run_id,
       stringsAsFactors = FALSE
     )
   }
@@ -423,6 +443,7 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
       target = character(0),
       detail = character(0),
       is_system = logical(0),
+      run_id = integer(0),
       stringsAsFactors = FALSE
     ))
   }

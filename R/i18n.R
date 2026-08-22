@@ -122,11 +122,15 @@ episodic_i18n_substitute <- function(template, values) {
     return(template)
   }
   for (name in names(values)) {
+    # Both sides literal. A placeholder name is never a pattern, and a
+    # substituted value is never one either: run detail can carry a
+    # Windows account name or a recorded error message, and a stray
+    # backslash in one of those must not rewrite the sentence around it.
     template <- gsub(
-      paste0("\\{", name, "\\}"),
+      paste0("{", name, "}"),
       as.character(values[[name]]),
       template,
-      fixed = FALSE
+      fixed = TRUE
     )
   }
   template

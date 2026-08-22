@@ -93,6 +93,23 @@ a demo assessor account (printed to the console), and opens the app.
 Pass `launch = FALSE` to skip opening the app and just get a populated
 database path back, e.g. for scripting.
 
+### Bringing your own data? Check it first
+
+Before the demo, before a scheduled run, before anything: hand your own
+extract to `episodic_check_cases()`. No database, no configuration, and
+nothing is changed - it just tells you what EpiSODIC makes of your data.
+
+```r
+EpiSODIC::episodic_check_cases(my_cases)
+```
+
+It reports every problem at once - the column, how many rows are
+affected, which rows those are, what the offending values look like, and
+what to do about each - along with what is merely worth a look (one
+pathogen spelled two ways, no `ward` on any hospital row, a `patient_key`
+that never repeats). See "Check your data first" under "Data format"
+below for what its output looks like.
+
 EpiSODIC's detection engine has **no dependency on any laboratory system
 or data warehouse**. Every dependency is a CRAN-hosted package
 (`surveillance` for Farrington); no private, organisation-specific
@@ -115,6 +132,8 @@ by any laboratory.
 
 ```r
 cases <- my_extract_and_transform_function()
+
+episodic_check_cases(cases)  # what is wrong with it, before anything runs
 
 episodic_run_cron(
   db_path = "/path/to/episodic.sqlite",

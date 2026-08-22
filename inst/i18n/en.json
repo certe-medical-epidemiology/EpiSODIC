@@ -162,6 +162,7 @@
 
   "misc.unknown": "unknown",
   "misc.none": "none",
+  "misc.close": "Close",
   "misc.dash": "—",
 
   "date.month.01": "Jan",
@@ -283,6 +284,15 @@
   "activity.detail_run": "{inserted} new cases from {supplied} supplied ({deduplicated} after deduplication)",
   "activity.detail_run_skipped": "{skipped} activity rows skipped: institution not known here",
   "activity.target_cluster": "{pathogen} (cluster #{id})",
+  "activity.detail_button": "Details",
+  "activity.run_modal_title": "Detection run {id}",
+  "activity.run_modal_when": "started {started}, finished {finished}",
+  "activity.run_modal_load": "What this run loaded",
+  "activity.run_modal_no_load": "This run recorded no load counts: it stopped before it read any data.",
+  "activity.run_modal_detection": "What detection produced",
+  "activity.run_modal_detection_line": "{streams} streams monitored, {detections} detections, {new} new signals, {updated} updated",
+  "activity.run_modal_error": "Why this run failed",
+  "activity.run_modal_provenance": "Ran on {host} as {account} · EpiSODIC {version} · configuration {hash}",
 
   "performance.title": "Performance",
   "performance.note": "How well the detectors predict, and how fast a cluster gets noticed and assessed - based on recorded classifications, not an assumption.",

@@ -205,3 +205,104 @@ test_that("a run recorded before the load counters existed shows no summary rath
   runs <- activity[activity$is_system, ]
   expect_true(any(is.na(runs$detail)))
 })
+
+test_that("run rows carry their run_id so the screen can offer the run detail, human rows do not", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    sodium::password_store("pw12345")
+  )
+  episodic_auth_login(env$con, "tester", "pw12345")
+
+  run_id <- episodic_db_run_start(env$con, "host", "account")
+  episodic_db_run_finish(env$con, run_id, status = "success")
+
+  activity <- episodic_app_activity_log(env$con, lang = "en")
+  expect_true(run_id %in% activity$run_id[activity$is_system])
+  expect_true(all(is.na(activity$run_id[!activity$is_system])))
+})
+
+test_that("a failed run shows its first line in the log, not the whole recorded message", {
+  # The message names every offending column; the table has room for its
+  # summary line, and the run detail has room for the rest.
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  run_id <- episodic_db_run_start(env$con, "host", "account")
+  episodic_db_run_finish(
+    env$con,
+    run_id,
+    status = "failed",
+    error_text = paste0(
+      "Case data cannot be used by EpiSODIC: 2 problems.\n",
+      "  1. `sex` has 300 of 300 rows with a value outside the allowed set."
+    )
+  )
+
+  activity <- episodic_app_activity_log(env$con, lang = "en")
+  detail <- activity$detail[activity$is_system & !is.na(activity$detail)]
+  expect_equal(detail, "Case data cannot be used by EpiSODIC: 2 problems.")
+})
+
+test_that("episodic_ui_run_modal() shows a failed run's whole message, and how to act on it", {
+  run <- data.frame(
+    run_id = 12L,
+    host = "srv-01",
+    account = "cron",
+    started_at = "2025-06-01T08:00:00Z",
+    finished_at = "2025-06-01T08:01:00Z",
+    status = "failed",
+    n_streams = NA_integer_,
+    n_cases_supplied = NA_integer_,
+    code_version = "0.5.0",
+    config_hash = strrep("a", 40),
+    error_text = paste0(
+      "Case data cannot be used by EpiSODIC: 2 problems.\n",
+      "  1. `sex` has 300 of 300 rows with a value outside the allowed set."
+    ),
+    stringsAsFactors = FALSE
+  )
+  rendered <- as.character(episodic_ui_run_modal(run, lang = "en"))
+
+  expect_true(grepl("300 of 300 rows", rendered, fixed = TRUE))
+  expect_true(grepl("episodic_check_cases()", rendered, fixed = TRUE))
+  expect_true(grepl("srv-01", rendered, fixed = TRUE))
+  expect_true(grepl("0.5.0", rendered, fixed = TRUE))
+  # a run that never loaded anything says so, rather than showing zeroes
+  expect_true(grepl("stopped before it read any data", rendered, fixed = TRUE))
+  expect_false(grepl("[[", rendered, fixed = TRUE))
+})
+
+test_that("episodic_ui_run_modal() shows what a successful run loaded, and no failure section", {
+  run <- data.frame(
+    run_id = 13L,
+    host = "srv-01",
+    account = "cron",
+    started_at = "2025-06-01T08:00:00Z",
+    finished_at = "2025-06-01T08:01:00Z",
+    status = "success",
+    n_streams = 42L,
+    n_detections = 3L,
+    n_signals_new = 1L,
+    n_signals_updated = 2L,
+    n_cases_supplied = 400L,
+    n_cases_deduplicated = 350L,
+    n_cases_inserted = 120L,
+    n_activity_skipped = NA_integer_,
+    code_version = "0.5.0",
+    config_hash = strrep("a", 40),
+    error_text = NA_character_,
+    stringsAsFactors = FALSE
+  )
+  rendered <- as.character(episodic_ui_run_modal(run, lang = "en"))
+
+  expect_true(grepl("120", rendered, fixed = TRUE))
+  expect_true(grepl("42", rendered, fixed = TRUE))
+  expect_false(grepl("Why this run failed", rendered, fixed = TRUE))
+  expect_false(grepl("episodic_check_cases()", rendered, fixed = TRUE))
+  expect_false(grepl("[[", rendered, fixed = TRUE))
+})

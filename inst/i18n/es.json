@@ -162,6 +162,7 @@
 
   "misc.unknown": "desconocido",
   "misc.none": "ninguno",
+  "misc.close": "Cerrar",
   "misc.dash": "—",
 
   "date.month.01": "ene.",
@@ -283,6 +284,15 @@
   "activity.detail_run": "{inserted} casos nuevos de {supplied} suministrados ({deduplicated} tras la deduplicación)",
   "activity.detail_run_skipped": "{skipped} filas de actividad omitidas: institución desconocida aquí",
   "activity.target_cluster": "{pathogen} (clúster n.º {id})",
+  "activity.detail_button": "Detalles",
+  "activity.run_modal_title": "Ejecución de detección {id}",
+  "activity.run_modal_when": "iniciada {started}, finalizada {finished}",
+  "activity.run_modal_load": "Qué cargó esta ejecución",
+  "activity.run_modal_no_load": "Esta ejecución no registró recuentos: se detuvo antes de leer datos.",
+  "activity.run_modal_detection": "Qué produjo la detección",
+  "activity.run_modal_detection_line": "{streams} flujos monitorizados, {detections} detecciones, {new} señales nuevas, {updated} actualizadas",
+  "activity.run_modal_error": "Por qué falló esta ejecución",
+  "activity.run_modal_provenance": "Ejecutada en {host} como {account} · EpiSODIC {version} · configuración {hash}",
 
   "performance.title": "Rendimiento",
   "performance.note": "Qué tan bien predicen los detectores y qué tan rápido se detecta y evalúa un clúster: basado en las clasificaciones registradas, no en una suposición.",

@@ -764,10 +764,13 @@ test_that("episodic_ui_first_line() takes the first line, and nothing when there
   expect_equal(nchar(episodic_ui_first_line(strrep("x", 300))), 160)
 })
 
-test_that("the Activity screen shows a failed run's recorded reason in full", {
+test_that("the Activity screen's run line carries a failed run's reason, its first line", {
   run <- data.frame(
     status = "failed",
-    error_text = "Case data cannot be used by EpiSODIC: 2 problems.",
+    error_text = paste0(
+      "Case data cannot be used by EpiSODIC: 2 problems.\n",
+      "  1. `sex` has 300 of 300 rows with a value outside the allowed set."
+    ),
     n_cases_supplied = NA_integer_,
     stringsAsFactors = FALSE
   )

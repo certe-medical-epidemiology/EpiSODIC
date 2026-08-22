@@ -604,6 +604,51 @@ dl.episodic-settings dd { margin: 0; }
 
 .episodic-activity-row.system { opacity: 0.65; font-style: italic; }
 
+/* The per-run detail button on a system row. The row itself is dimmed
+   and italic, which is right for the log entry and wrong for a control
+   inside it. */
+.episodic-run-detail-btn {
+  font-size: 11px;
+  font-style: normal;
+  padding: 2px 8px;
+  margin-top: 4px;
+}
+.episodic-run-modal-when {
+  font-size: 12px;
+  color: var(--episodic-muted);
+  margin-bottom: 12px;
+}
+.episodic-run-modal-heading {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--episodic-muted);
+  margin-top: 14px;
+  margin-bottom: 2px;
+}
+.episodic-run-modal-error {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  max-height: 340px;
+  padding: 10px 12px;
+  border: 1px solid var(--episodic-border);
+  border-radius: 3px;
+  background: var(--episodic-bg-subtle);
+}
+.episodic-run-modal-hint {
+  font-size: 12px;
+  color: var(--episodic-muted);
+}
+.episodic-run-modal-provenance {
+  font-size: 11px;
+  color: var(--episodic-faint);
+  margin-top: 16px;
+}
+
 /* Pathogen screen: pathogen + period selection.
 
    The verdict picker in the assessment rail is a vertical stack of

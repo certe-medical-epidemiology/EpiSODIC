@@ -31,7 +31,11 @@
 - The optional denominator feed is checked at the same moment, and fails the run the same way, instead of
   surfacing from inside a rolled-back transaction.
 - The dashboard's status strip shows why the last run failed, not only that it did, and points at
-  `episodic_check_cases()`. The Activity screen shows the recorded message in full.
+  `episodic_check_cases()`. The Activity screen shows its first line per run row, with a Details button
+  opening the whole recorded message alongside the run's per-feed counts and provenance - so an
+  epidemiologist reading the log can see why a run failed without asking whoever schedules them.
+- Translation placeholders are substituted literally, so a value carrying a backslash (a Windows account
+  name, a recorded error message) can no longer rewrite the sentence it is substituted into.
 - An empty string in a column that must always be filled is now a problem, like `NA` - an empty
   `institution_key` was previously loaded as an institution with no identity.
 

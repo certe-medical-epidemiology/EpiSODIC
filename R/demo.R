@@ -53,6 +53,9 @@
 #'   with nothing in it. Run [episodic_check_cases()] on your extract
 #'   yourself to see the same findings, plus the advisory ones.
 #' @return Invisibly, `db_path`.
+#' @inheritSection episodic_case_data Check your data before you run anything
+#' @seealso [episodic_check_cases()] to see what EpiSODIC makes of your
+#'   own extract first, and [episodic_case_data] for the shape it expects.
 #' @examples
 #' \dontrun{
 #' # launches a blocking, interactive Shiny session against several years

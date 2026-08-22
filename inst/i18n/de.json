@@ -162,6 +162,7 @@
 
   "misc.unknown": "unbekannt",
   "misc.none": "keine",
+  "misc.close": "Schließen",
   "misc.dash": "—",
 
   "date.month.01": "Jan.",
@@ -283,6 +284,15 @@
   "activity.detail_run": "{inserted} neue Fälle von {supplied} übermittelten ({deduplicated} nach Deduplizierung)",
   "activity.detail_run_skipped": "{skipped} Aktivitätszeilen übersprungen: Einrichtung hier unbekannt",
   "activity.target_cluster": "{pathogen} (Cluster Nr. {id})",
+  "activity.detail_button": "Details",
+  "activity.run_modal_title": "Detektionslauf {id}",
+  "activity.run_modal_when": "gestartet {started}, beendet {finished}",
+  "activity.run_modal_load": "Was dieser Lauf eingelesen hat",
+  "activity.run_modal_no_load": "Dieser Lauf hat keine Zahlen erfasst: Er brach ab, bevor Daten gelesen wurden.",
+  "activity.run_modal_detection": "Was die Detektion ergeben hat",
+  "activity.run_modal_detection_line": "{streams} Streams überwacht, {detections} Detektionen, {new} neue Signale, {updated} aktualisiert",
+  "activity.run_modal_error": "Warum dieser Lauf fehlgeschlagen ist",
+  "activity.run_modal_provenance": "Ausgeführt auf {host} als {account} · EpiSODIC {version} · Konfiguration {hash}",
 
   "performance.title": "Leistung",
   "performance.note": "Wie gut die Detektoren vorhersagen und wie schnell ein Cluster bemerkt und bewertet wird - basierend auf erfassten Klassifikationen, nicht auf einer Annahme.",

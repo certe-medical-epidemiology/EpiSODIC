@@ -37,6 +37,10 @@
 #' denominator (tests performed, for a positivity rate), supply that
 #' separately as pre-aggregated counts; see [episodic_synthetic_denominators()].
 #'
+#' The only case data shipped with the package is what the synthetic
+#' generator ([episodic_synthetic_cases()]) returns for the bundled
+#' demo - a useful template for the shape your own data should have.
+#'
 #' @section Required columns:
 #'
 #' `episodic_case_columns` lists all fifteen, in order. The set is an
@@ -179,11 +183,7 @@
 #' deduplication), postcodes the map cannot place, sample dates in the
 #' future. [episodic_validate_cases()] runs the same checks but throws,
 #' for use in a script; [episodic_run_cron()] runs it for you before every
-#' run, and refuses to start on data it cannot use.
-#'
-#' The only case data shipped with the package is what the synthetic
-#' generator ([episodic_synthetic_cases()]) returns for the bundled
-#' demo - a useful template for the shape your own data should have.
+#' run, and refuses to start on data it cannot use, naming what to fix.
 #'
 #' @examples
 #' # A minimal but complete extract: two results, one patient, all fifteen
@@ -296,6 +296,7 @@ episodic_case_columns_required <- c(
 #' @return The validated data set, invisibly. Throws an informative error
 #'   naming every offending column, its offending values and the rows they
 #'   are in, otherwise.
+#' @inheritSection episodic_case_data Check your data before you run anything
 #' @seealso [episodic_check_cases()] for the same checks as a report you
 #'   can read and filter, and [episodic_case_data] for what each column
 #'   means.

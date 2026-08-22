@@ -219,6 +219,21 @@ episodic_db_runs <- function(con, limit = 200) {
   )
 }
 
+#' One run by its id
+#'
+#' The Activity screen's run detail reads the whole row: the counts, the
+#' provenance, and - the point of it - `error_text` when the run failed.
+#' @keywords internal
+#' @noRd
+episodic_db_run <- function(con, run_id) {
+  res <- DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_detection_run WHERE run_id = ?",
+    params = list(run_id)
+  )
+  if (nrow(res) == 0) NULL else res[1, ]
+}
+
 #' @param status If given, only the latest run with one of these
 #'   statuses. Pass `episodic_run_statuses_complete` for "the latest run
 #'   that produced usable results", which is what almost every caller

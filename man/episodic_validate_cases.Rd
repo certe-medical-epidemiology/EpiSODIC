@@ -40,6 +40,27 @@ Use \code{\link[=episodic_check_cases]{episodic_check_cases()}} instead when you
 stop: it returns the same findings as a printed report, adds the
 advisory ones this function stays silent about, and never throws.
 }
+\section{Check your data before you run anything}{
+
+
+Do not find out from an empty dashboard. Run \code{\link[=episodic_check_cases]{episodic_check_cases()}}
+on your extract - it needs no database, changes nothing, and reports
+every problem it finds at once, with the rows and values involved and
+what to do about each:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{cases <- my_extract_and_transform_function()
+episodic_check_cases(cases)
+}\if{html}{\out{</div>}}
+
+It also reports what is merely worth a look: one pathogen spelled two
+ways (two streams instead of one), no \code{ward} on any hospital row (no
+ward-level detection), a \code{patient_key} that never repeats (no
+deduplication), postcodes the map cannot place, sample dates in the
+future. \code{\link[=episodic_validate_cases]{episodic_validate_cases()}} runs the same checks but throws,
+for use in a script; \code{\link[=episodic_run_cron]{episodic_run_cron()}} runs it for you before every
+run, and refuses to start on data it cannot use, naming what to fix.
+}
+
 \examples{
 cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-01-31")
