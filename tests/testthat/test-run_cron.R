@@ -108,6 +108,23 @@ test_that("episodic_run_cron() writes institution activity rows only when instit
   expect_gt(DBI::dbGetQuery(con_with, "SELECT COUNT(*) n FROM episodic_institution_activity")$n, 0)
 })
 
+test_that("an NA care_line is stored as 'unknown', not rejected", {
+  path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(path), add = TRUE)
+
+  cases <- episodic_synthetic_cases(
+    start_date = as.Date("2024-06-01"), end_date = as.Date("2024-06-30"), seed = 7
+  )
+  cases$care_line <- NA_character_
+
+  episodic_run_cron(path, cases = cases, run_date = as.Date("2024-06-30"))
+
+  con <- episodic_db_connect(path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE)
+  stored <- DBI::dbGetQuery(con, "SELECT DISTINCT care_line FROM episodic_case")
+  expect_identical(stored$care_line, "unknown")
+})
+
 test_that("episodic_resolve_data() accepts a data frame, a function, or NULL, and errors otherwise", {
   df <- data.frame(x = 1)
   expect_null(episodic_resolve_data(NULL))

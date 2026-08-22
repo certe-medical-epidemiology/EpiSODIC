@@ -137,10 +137,18 @@ test_that("episodic_validate_cases() rejects NA in a column that must always be 
 
 test_that("episodic_validate_cases() allows NA in the optional columns", {
   cases <- raw_case("K1", "P1", "2025-01-01")
-  for (column in c("receipt_date", "municipality", "ward", "specialism", "pc", "sex", "age")) {
+  for (column in c("receipt_date", "care_line", "municipality", "ward",
+                   "specialism", "pc", "sex", "age")) {
     cases[[column]] <- NA
   }
   expect_silent(episodic_validate_cases(cases))
+})
+
+test_that("episodic_validate_cases() accepts an NA care_line and leaves it alone", {
+  cases <- raw_case("K1", "P1", "2025-01-01")
+  cases$care_line <- NA_character_
+  expect_silent(episodic_validate_cases(cases))
+  expect_true(is.na(episodic_validate_cases(cases)$care_line))
 })
 
 test_that("episodic_validate_cases() rejects a value outside the allowed set", {

@@ -86,10 +86,13 @@
 #'     appear under more than one `pathogen` value where that is
 #'     epidemiologically useful - an ETEC isolate reported as both
 #'     `"Escherichia coli"` and `"ETEC"`, so each is monitored separately.}
-#'   \item{`care_line`}{Character, required. Exactly one of `"first"`
+#'   \item{`care_line`}{Character; `NA` allowed. One of `"first"`
 #'     (primary care), `"second"` (secondary care), `"other"`, or
 #'     `"unknown"` - the values in `episodic_care_lines`. Anything else is
-#'     rejected. Use `"unknown"` rather than `NA` when you cannot tell.}
+#'     rejected. `NA` is read as `"unknown"` and stored that way, so you
+#'     need not map missing values yourself: an empty `care_line`, an
+#'     R `NA` and a database `NULL` all mean the same thing here, and the
+#'     dashboard shows all three as "unknown".}
 #'   \item{`institution_key`}{Character, required, no `NA`. A stable
 #'     identifier for the reporting institution. Hashed (SHA-1) on the way
 #'     in, so a later rename does not fracture the institution's history,
@@ -168,7 +171,7 @@ episodic_sex_codes <- c("M", "F", "U")
 #' @keywords internal
 #' @noRd
 episodic_case_columns_required <- c(
-  "source_key", "patient_key", "sample_date", "pathogen", "care_line",
+  "source_key", "patient_key", "sample_date", "pathogen",
   "institution_key", "institution_display_name", "institution_type"
 )
 
@@ -183,7 +186,9 @@ episodic_case_columns_required <- c(
 #' are exactly [episodic_case_columns], that `source_key` is unique, that
 #' the columns which may never be `NA` are filled, that `care_line`,
 #' `institution_type` and `sex` hold only allowed values, that the two
-#' date columns parse, and that `age` is numeric.
+#' date columns parse, and that `age` is numeric. It reports what your
+#' data says, and does not change it: the `NA` that [episodic_run_cron()]
+#' will read as `"unknown"` is left as `NA` in what comes back.
 #'
 #' @param cases Your case data: a data frame or `tibble` in the shape
 #'   [episodic_case_data] describes, or a zero-argument function
@@ -237,7 +242,7 @@ episodic_validate_cases <- function(cases) {
     }
   }
 
-  episodic_validate_allowed(cases, "care_line", episodic_care_lines, na_ok = FALSE)
+  episodic_validate_allowed(cases, "care_line", episodic_care_lines, na_ok = TRUE)
   episodic_validate_allowed(cases, "institution_type", episodic_institution_types, na_ok = FALSE)
   episodic_validate_allowed(cases, "sex", episodic_sex_codes, na_ok = TRUE)
 

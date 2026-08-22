@@ -17,10 +17,12 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Load case data: validate, deduplicate, resolve institutions, write
+#' Load case data: validate, normalise, deduplicate, resolve institutions, write
 #'
 #' Ties together `R/cases.R`, `R/cases_dedup.R` and the cron
-#' repository layer. Institutions are normalised as cases are loaded: a
+#' repository layer. A missing `care_line` is normalised to `"unknown"`
+#' here, so an operator's extract step need not distinguish `NA` from the
+#' string the schema stores. Institutions are normalised as cases are loaded: a
 #' hospital or long-term care institution is kept as a first-class entity,
 #' while a GP practice is collapsed to its municipality, keyed by a hash of
 #' the source identifier so a later rename does not fracture the history.
@@ -41,6 +43,14 @@
 #' @noRd
 episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
   episodic_validate_cases(cases)
+
+  # An absent care line, an R NA and a database NULL all mean the same
+  # thing - we do not know which part of the health system this came from
+  # - and the schema has one way of saying it. Normalise here rather than
+  # asking every operator's extract step to do it, and rather than letting
+  # a NOT NULL violation surface mid-run.
+  cases$care_line[is.na(cases$care_line)] <- "unknown"
+
   deduped <- episodic_cases_deduplicate(cases, pathogen_config)
 
   institution_lookup <- episodic_institutions_resolve(con, deduped)

@@ -28,7 +28,9 @@ It checks everything \link{episodic_case_data} documents: that the columns
 are exactly \link{episodic_case_columns}, that \code{source_key} is unique, that
 the columns which may never be \code{NA} are filled, that \code{care_line},
 \code{institution_type} and \code{sex} hold only allowed values, that the two
-date columns parse, and that \code{age} is numeric.
+date columns parse, and that \code{age} is numeric. It reports what your
+data says, and does not change it: the \code{NA} that \code{\link[=episodic_run_cron]{episodic_run_cron()}}
+will read as \code{"unknown"} is left as \code{NA} in what comes back.
 
 }
 \examples{

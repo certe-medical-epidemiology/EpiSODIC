@@ -75,10 +75,13 @@ rather than copying the strings out of this page.
     appear under more than one \code{pathogen} value where that is
     epidemiologically useful - an ETEC isolate reported as both
     \code{"Escherichia coli"} and \code{"ETEC"}, so each is monitored separately.}
-  \item{\code{care_line}}{Character, required. Exactly one of \code{"first"}
+  \item{\code{care_line}}{Character; \code{NA} allowed. One of \code{"first"}
     (primary care), \code{"second"} (secondary care), \code{"other"}, or
     \code{"unknown"} - the values in \code{episodic_care_lines}. Anything else is
-    rejected. Use \code{"unknown"} rather than \code{NA} when you cannot tell.}
+    rejected. \code{NA} is read as \code{"unknown"} and stored that way, so you
+    need not map missing values yourself: an empty \code{care_line}, an
+    R \code{NA} and a database \code{NULL} all mean the same thing here, and the
+    dashboard shows all three as "unknown".}
   \item{\code{institution_key}}{Character, required, no \code{NA}. A stable
     identifier for the reporting institution. Hashed (SHA-1) on the way
     in, so a later rename does not fracture the institution's history,
