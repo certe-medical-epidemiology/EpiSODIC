@@ -334,6 +334,20 @@ test_that("episodic_app_pathogen_rt() clips to the period but conditions on hist
   pc <- episodic_db_pathogen_config_get(env$con, "Influenza A")
 
   resolved <- list(from = as.Date("2024-12-01"), to = as.Date("2025-02-15"))
+
+  # The shared fixture's flu seasons are tight clusters around mid-January,
+  # so the 90-day lead-in before this period holds nothing and the series
+  # would start on 2024-12-18, inside the period - leaving the burn-in to
+  # eat its first nine days. That is correct behaviour with no history to
+  # condition on, and it means the fixture cannot exercise what this test
+  # is about. Give influenza the off-season baseline a real one has, here
+  # rather than in the fixture, which 100-odd other assertions depend on.
+  autumn <- cases[rep(1L, 12L), , drop = FALSE]
+  autumn$sample_date <- seq(as.Date("2024-09-15"), by = "week", length.out = 12L)
+  autumn$source_key <- sprintf("PS-AUTUMN%02d", seq_len(12L))
+  autumn$patient_key <- sprintf("PP-AUTUMN%02d", seq_len(12L))
+  cases <- rbind(autumn, cases)
+
   rt <- episodic_app_pathogen_rt(
     cases,
     pc,
@@ -344,8 +358,9 @@ test_that("episodic_app_pathogen_rt() clips to the period but conditions on hist
   skip_if(is.null(rt), "not enough synthetic history for an Rt window")
   expect_true(all(rt$window_end >= resolved$from))
   expect_true(all(rt$window_end <= resolved$to))
-  # The first estimate falls inside the period rather than being pushed
-  # past the burn-in of a series that started at the period boundary.
+  # With history behind it, the burn-in is spent before the period opens,
+  # so the first estimate lands on the period's own first day rather than
+  # being pushed past a burn-in that started at the boundary.
   expect_lt(as.integer(min(rt$window_end) - resolved$from), 21)
 })
 

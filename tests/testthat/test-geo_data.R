@@ -18,7 +18,10 @@
 # ===================================================================== #
 
 test_that("episodic_geo_source_resolve() returns NULL when sf is not installed", {
-  skip_if(requireNamespace("sf", quietly = TRUE))
+  skip_if(
+    requireNamespace("sf", quietly = TRUE),
+    "sf is installed; this covers the fallback for when it is not"
+  )
   expect_null(episodic_geo_source_resolve())
   expect_null(episodic_geo_source_default())
   expect_null(episodic_geo_join(data.frame(label = "1234", n = 3)))
