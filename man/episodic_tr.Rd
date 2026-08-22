@@ -4,12 +4,17 @@
 \alias{episodic_tr}
 \title{Translate a dashboard text key}
 \usage{
-episodic_tr(key, ..., lang = Sys.getenv("EPISODIC_LANGUAGE"), instance_i18n = NULL)
+episodic_tr(
+  key,
+  ...,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  instance_i18n = NULL
+)
 }
 \arguments{
 \item{key}{A dotted key identifying the piece of text, e.g.
 \code{"nav.clusters"}. The full set of available keys and their wording in
-every shipped language lives in \code{inst/i18n/*.json} (one file per
+every shipped language lives in \verb{inst/i18n/*.json} (one file per
 language: \code{nl}, \code{en}, \code{es}, \code{fr}, \code{de}, \code{zh}, \code{hi}, \code{ar}).}
 
 \item{...}{Named values substituted into \code{{name}} placeholders in the

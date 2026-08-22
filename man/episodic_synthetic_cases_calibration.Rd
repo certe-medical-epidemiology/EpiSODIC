@@ -44,9 +44,9 @@ a \verb{PT-VOL-*} patient key so it is always identifiable as synthetic tuning
 data, never mistaken for anything else.
 }
 \examples{
-raw <- episodic_synthetic_cases_calibration(
+cases <- episodic_synthetic_cases_calibration(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-06-30"),
   n_bumps_per_month = 4
 )
-sum(startsWith(raw$patient_key, "PT-VOL-"))
+sum(startsWith(cases$patient_key, "PT-VOL-"))
 }

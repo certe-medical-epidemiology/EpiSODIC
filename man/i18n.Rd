@@ -8,7 +8,7 @@ The dashboard is available in Dutch, English, Spanish, French, German,
 Mandarin Chinese, Hindi, and (Modern Standard) Arabic. All user-facing
 text is stored as translation keys (e.g. \code{"nav.clusters"}) rather than
 hardcoded in R code, and \code{\link[=episodic_tr]{episodic_tr()}} looks a key up in the requested
-language. A key that does not exist in any language is shown as \verb{[[key]]}
-rather than silently left blank, so a missing translation is easy to
-spot.
+language. A key that does not exist in any language is shown as
+\verb{[[key]]} rather than silently left blank, so a missing translation is
+easy to spot.
 }

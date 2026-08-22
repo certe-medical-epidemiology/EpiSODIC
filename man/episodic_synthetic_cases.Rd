@@ -32,9 +32,9 @@ and the package's test suite; it is also a useful reference for what
 your own case data should look like (see \link{episodic_case_columns}).
 }
 \examples{
-raw <- episodic_synthetic_cases(
+cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
-nrow(raw)
-head(raw)
+nrow(cases)
+head(cases)
 }

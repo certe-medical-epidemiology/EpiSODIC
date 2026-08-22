@@ -8,16 +8,15 @@ episodic_validate_cases(cases)
 }
 \arguments{
 \item{cases}{Your case data: a data frame or \code{tibble} in the shape
-  \link{episodic_case_data} describes, or a zero-argument function
-  returning one (resolved with \code{\link[=episodic_resolve_data]{episodic_resolve_data()}} first, so you
-  can check either form of \code{cases}).}
+\link{episodic_case_data} describes, or a zero-argument function
+returning one (resolved with \code{\link[=episodic_resolve_data]{episodic_resolve_data()}} first, so you
+can check either form of \code{cases}).}
 }
 \value{
 The validated data set, invisibly. Throws an informative error
-  naming the offending column, and the offending values, otherwise.
+naming the offending column, and the offending values, otherwise.
 }
 \description{
-
 Call this on the data set you intend to hand to \code{\link[=episodic_run_cron]{episodic_run_cron()}},
 while preparing it, to get a clear error while you can still fix the
 extract - rather than halfway through a scheduled run, where the same
@@ -31,7 +30,6 @@ the columns which may never be \code{NA} are filled, that \code{care_line},
 date columns parse, and that \code{age} is numeric. It reports what your
 data says, and does not change it: the \code{NA} that \code{\link[=episodic_run_cron]{episodic_run_cron()}}
 will read as \code{"unknown"} is left as \code{NA} in what comes back.
-
 }
 \examples{
 cases <- episodic_synthetic_cases(

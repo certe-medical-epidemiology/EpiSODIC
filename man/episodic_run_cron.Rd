@@ -20,17 +20,16 @@ episodic_run_cron(
 automatically if it does not exist yet) or a MariaDB/MySQL DSN (see
 \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}).}
 
-\item{cases}{Your laboratory data: a data frame or \code{tibble} in
-the shape \link{episodic_case_columns} describes, or a zero-argument
-function that returns one. Defaults to the bundled synthetic
-generator, useful for demos and testing but not real surveillance.}
+\item{cases}{Your laboratory data: a data frame or \code{tibble} in the
+shape \link{episodic_case_data} describes, or a zero-argument function
+that returns one. Defaults to the bundled synthetic generator, useful
+for demos and testing but not real surveillance.}
 
-\item{denominators}{Optional: your testing-volume data, in the
-same form as \code{cases} - normally a data set, a function if it
-has to be produced at run time (see
-\code{\link[=episodic_synthetic_denominators]{episodic_synthetic_denominators()}} for the expected shape).
-Leave as \code{NULL} (the default) if you have none to supply - positivity
-panels simply stay blank.}
+\item{denominators}{Optional: your testing-volume data, in the same
+form as \code{cases} - normally a data set, a function if it has to be
+produced at run time (see \code{\link[=episodic_synthetic_denominators]{episodic_synthetic_denominators()}} for the
+expected shape). Leave as \code{NULL} (the default) if you have none to
+supply - positivity panels simply stay blank.}
 
 \item{institution_activity}{Optional: your hospital patient-days
 data (see \code{\link[=episodic_synthetic_institution_activity]{episodic_synthetic_institution_activity()}} for the
@@ -63,13 +62,17 @@ failed run is always safe to simply retry.
 \details{
 EpiSODIC never connects to your laboratory system directly. You extract
 and transform your own data beforehand, and hand it over as a plain data
-frame or \code{tibble}: \code{cases} for case data (see
-\link{episodic_case_columns} for the required shape), and optionally
-\code{denominators} and \code{institution_activity} for testing
-volume and hospital activity. A data set is the normal case; if
+frame or \code{tibble}: \code{cases} for the laboratory results themselves (see
+\link{episodic_case_data} for the required columns and their allowed
+values), and optionally \code{denominators} and \code{institution_activity} for
+testing volume and hospital activity. A data set is the normal case; if
 producing the data only makes sense at run time (a live database query,
 for instance), a zero-argument function returning one is accepted just
 as well - see \code{\link[=episodic_resolve_data]{episodic_resolve_data()}}.
+
+The exact detection settings used are recorded with the run (see
+\code{\link[=episodic_config_hash]{episodic_config_hash()}}), so any past result can always be traced back
+to the configuration that produced it.
 
 So is what each feed delivered. Structural problems - a missing column,
 a value outside the allowed set, a date that does not parse - fail the
@@ -81,10 +84,6 @@ finishes \code{"partial"} instead of \code{"success"}. Both are complete runs th
 dashboard reads from; \code{"partial"} says go and look at why rows were
 skipped. \code{episodic_detection_run} carries the counts (\code{n_cases_supplied},
 \code{n_cases_inserted}, \code{n_activity_skipped}, and the rest).
-
-The exact detection settings used are recorded with the run (see
-\code{\link[=episodic_config_hash]{episodic_config_hash()}}), so any past result can always be traced back
-to the configuration that produced it.
 }
 \examples{
 \donttest{
