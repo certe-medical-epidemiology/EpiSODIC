@@ -37,7 +37,7 @@
 #' delay means the most recent days are under-ascertained by construction
 #' (`R/triangle_update.R`), so an Rt estimate ending there would read a
 #' reporting artefact as a real change in transmission. That cut-off is
-#' measured from `asof` - when the data was last ingested - not from the
+#' measured from `asof` - when the data was last loaded - not from the
 #' series' own last case: a cluster whose final case was months ago has
 #' no under-ascertained tail, and anchoring on its own maximum silently
 #' discarded its last valid estimates forever.

@@ -368,7 +368,7 @@
 
   "pathogen.title": "Pathogen activity",
   "pathogen.note": "One pathogen across the whole catchment, over a period you choose. This is the epidemiological view: where a season stands against its own history, how fast transmission is running region-wide, and which signals were raised while it ran. The Clusters screen answers what to do today; this one answers what is going on.",
-  "pathogen.empty": "No case data has been ingested yet, so there is nothing to describe.",
+  "pathogen.empty": "No case data has been loaded yet, so there is nothing to describe.",
   "pathogen.select_label": "Pathogen",
   "pathogen.select_option": "{pathogen} — {cases} in total",
   "pathogen.period_label": "Period",

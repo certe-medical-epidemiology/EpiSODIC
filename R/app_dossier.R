@@ -394,7 +394,7 @@ episodic_ui_places_panel <- function(con, cluster_id, obj, lang = "nl") {
 #' @keywords internal
 #' @noRd
 episodic_ui_resistance_panel <- function(lang = "nl") {
-  # Susceptibility data is not part of the ingestion contract, so this
+  # Susceptibility data is not part of the case data contract, so this
   # panel is always a placeholder.
   episodic_ui_panel_empty(episodic_tr("panel.resistance.title", lang = lang), episodic_tr("panel.resistance.unavailable", lang = lang))
 }

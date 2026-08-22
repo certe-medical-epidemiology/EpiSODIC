@@ -29,13 +29,13 @@
 #'
 #' EpiSODIC never connects to your laboratory system directly. You extract
 #' and transform your own data beforehand, and hand it over as a plain data
-#' frame or `tibble`: `ingest_source` for case data (see
-#' [episodic_ingest_columns] for the required shape), and optionally
-#' `denominator_source` and `institution_activity_source` for testing
-#' volume and hospital activity. A data set is the normal case; if
+#' frame or `tibble`: `cases` for the laboratory results themselves (see
+#' [episodic_case_data] for the required columns and their allowed
+#' values), and optionally `denominators` and `institution_activity` for
+#' testing volume and hospital activity. A data set is the normal case; if
 #' producing the data only makes sense at run time (a live database query,
 #' for instance), a zero-argument function returning one is accepted just
-#' as well - see [episodic_resolve_source()].
+#' as well - see [episodic_resolve_data()].
 #'
 #' The exact detection settings used are recorded with the run (see
 #' [episodic_config_hash()]), so any past result can always be traced back
@@ -44,18 +44,17 @@
 #' @param db_path Path to the EpiSODIC database: a SQLite file (created
 #'   automatically if it does not exist yet) or a MariaDB/MySQL DSN (see
 #'   [episodic_db_dsn_mariadb()]).
-#' @param ingest_source Your laboratory data: a data frame or `tibble` in
-#'   the shape [episodic_ingest_columns] describes, or a zero-argument
-#'   function that returns one. Defaults to the bundled synthetic
-#'   generator, useful for demos and testing but not real surveillance.
-#' @param denominator_source Optional: your testing-volume data, in the
-#'   same form as `ingest_source` - normally a data set, a function if it
-#'   has to be produced at run time (see
-#'   [episodic_denominator_source_synthetic()] for the expected shape).
-#'   Leave as `NULL` (the default) if you have none to supply - positivity
-#'   panels simply stay blank.
-#' @param institution_activity_source Optional: your hospital patient-days
-#'   data (see [episodic_synthetic_institution_activity_source()] for the
+#' @param cases Your laboratory data: a data frame or `tibble` in the
+#'   shape [episodic_case_data] describes, or a zero-argument function
+#'   that returns one. Defaults to the bundled synthetic generator, useful
+#'   for demos and testing but not real surveillance.
+#' @param denominators Optional: your testing-volume data, in the same
+#'   form as `cases` - normally a data set, a function if it has to be
+#'   produced at run time (see [episodic_synthetic_denominators()] for the
+#'   expected shape). Leave as `NULL` (the default) if you have none to
+#'   supply - positivity panels simply stay blank.
+#' @param institution_activity Optional: your hospital patient-days
+#'   data (see [episodic_synthetic_institution_activity()] for the
 #'   expected shape), normally as a data set, or as a function taking the
 #'   current institutions table. Leave as `NULL` (the default) if you have
 #'   none - detection falls back to raw case counts.
@@ -68,17 +67,17 @@
 #' @examples
 #' \donttest{
 #' db_path <- tempfile(fileext = ".sqlite")
-#' cases <- episodic_ingest_source_synthetic(
+#' cases <- episodic_synthetic_cases(
 #'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 #' )
-#' run_id <- episodic_run_cron(db_path, ingest_source = cases)
+#' run_id <- episodic_run_cron(db_path, cases = cases)
 #' file.remove(db_path)
 #' }
 #' @export
 episodic_run_cron <- function(db_path,
-                              ingest_source = episodic_ingest_source_synthetic,
-                              denominator_source = NULL,
-                              institution_activity_source = NULL,
+                              cases = episodic_synthetic_cases,
+                              denominators = NULL,
+                              institution_activity = NULL,
                               episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
                               host = Sys.info()[["nodename"]],
                               account = Sys.info()[["user"]],
@@ -93,8 +92,8 @@ episodic_run_cron <- function(db_path,
 
   result <- tryCatch({
     DBI::dbBegin(con)
-    stats <- episodic_run_cron_body(con, run_id, config, ingest_source, denominator_source,
-                                    institution_activity_source, run_date)
+    stats <- episodic_run_cron_body(con, run_id, config, cases, denominators,
+                                    institution_activity, run_date)
     DBI::dbCommit(con)
     stats
   }, error = function(e) {
@@ -121,8 +120,8 @@ episodic_run_cron <- function(db_path,
 
 #' Resolve a data source argument to a data frame
 #'
-#' A small helper behind [episodic_run_cron()]'s `ingest_source`,
-#' `denominator_source`, and `institution_activity_source` arguments, each
+#' A small helper behind [episodic_run_cron()]'s `cases`,
+#' `denominators`, and `institution_activity` arguments, each
 #' of which accepts a data frame or `tibble` directly - the normal case -
 #' or, if producing the data only makes sense at run time (a live database
 #' query, for instance), a zero-argument function that returns one.
@@ -133,11 +132,11 @@ episodic_run_cron <- function(db_path,
 #'   `tibble` included); the result of calling `x` otherwise.
 #' @examples
 #' df <- data.frame(x = 1:3)
-#' identical(episodic_resolve_source(df), df)
-#' identical(episodic_resolve_source(function() df), df)
-#' is.null(episodic_resolve_source(NULL))
+#' identical(episodic_resolve_data(df), df)
+#' identical(episodic_resolve_data(function() df), df)
+#' is.null(episodic_resolve_data(NULL))
 #' @export
-episodic_resolve_source <- function(x, ...) {
+episodic_resolve_data <- function(x, ...) {
   if (is.null(x)) return(NULL)
   if (is.data.frame(x)) return(x)
   if (is.function(x)) return(x(...))
@@ -147,8 +146,8 @@ episodic_resolve_source <- function(x, ...) {
 
 #' @keywords internal
 #' @noRd
-episodic_run_cron_body <- function(con, run_id, config, ingest_source, denominator_source,
-                                   institution_activity_source, run_date) {
+episodic_run_cron_body <- function(con, run_id, config, cases, denominators,
+                                   institution_activity, run_date) {
   pathogen_config_path <- system.file("config", "pathogen_config.csv", package = "EpiSODIC")
   if (identical(pathogen_config_path, "")) {
     pathogen_config_path <- file.path("inst", "config", "pathogen_config.csv")
@@ -156,20 +155,20 @@ episodic_run_cron_body <- function(con, run_id, config, ingest_source, denominat
   pathogen_config <- utils::read.csv(pathogen_config_path, stringsAsFactors = FALSE, na.strings = c("", "NA"))
   episodic_db_pathogen_config_load(con, pathogen_config)
 
-  raw <- episodic_resolve_source(ingest_source)
-  episodic_ingest_run(con, raw, pathogen_config, run_id)
+  cases <- episodic_resolve_data(cases)
+  episodic_cases_load(con, cases, pathogen_config, run_id)
 
-  denominator <- episodic_resolve_source(denominator_source)
-  if (!is.null(denominator)) {
-    episodic_denominator_ingest_run(con, denominator)
+  denominators <- episodic_resolve_data(denominators)
+  if (!is.null(denominators)) {
+    episodic_denominators_load(con, denominators)
   }
 
   cases_all <- episodic_db_cases(con)
   institutions <- episodic_db_institutions(con)
 
-  activity <- episodic_resolve_source(institution_activity_source, institutions)
-  if (!is.null(activity)) {
-    episodic_institution_activity_ingest_run(con, activity)
+  institution_activity <- episodic_resolve_data(institution_activity, institutions)
+  if (!is.null(institution_activity)) {
+    episodic_institution_activity_load(con, institution_activity)
   }
 
   episodic_lattice_enumerate(con, cases_all, institutions)

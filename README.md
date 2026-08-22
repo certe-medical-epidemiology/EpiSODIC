@@ -3,7 +3,7 @@
 [![R-CMD-check](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml)
 
 EpiSODIC is an R package: an outbreak cluster detection and assessment
-system for infectious disease epidemiologists. It ingests laboratory-confirmed
+system for infectious disease epidemiologists. It reads laboratory-confirmed
 infections, detects statistical and rule-based aberrations, reconciles them
 into persistent clusters, and gives a small board of epidemiologists a
 dossier to assess each one, with a full audit trail and outbreak reports
@@ -118,8 +118,8 @@ cases <- my_extract_and_transform_function()
 
 episodic_run_cron(
   db_path = "/path/to/episodic.sqlite",
-  ingest_source = cases,
-  denominator_source = NULL  # optional, see "Positivity metadata" below
+  cases = cases,
+  denominators = NULL  # optional, see "Positivity metadata" below
 )
 ```
 
@@ -131,26 +131,31 @@ EpiSODIC resolves either.
 ### Cases (mandatory)
 
 One row per confirmed-positive laboratory result. This is the complete,
-allow-listed column set (`episodic_ingest_columns`); a data set with any
-column outside this list, or missing one from it, is rejected:
+allow-listed column set (`episodic_case_columns`); a data set with any
+column outside this list, or missing one from it, is rejected. Run
+`episodic_validate_cases()` on your extract to check all of this - columns,
+allowed values, dates, and `source_key` uniqueness - before you schedule
+anything. The three fixed value sets are available as
+`episodic_care_lines`, `episodic_institution_types` and
+`episodic_sex_codes`, so your transform step can map onto them directly:
 
-| Column                     | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `source_key`               | A unique identifier for the row in your own source system, so a later re-ingest of the same extract cannot create duplicate cases.                                                                                                                                                                                                                                                                                                                    |
-| `patient_key`              | A stable, pseudonymised patient identifier. This is what deduplication and episode grouping key on: without it, EpiSODIC cannot tell that two isolates belong to the same patient, and every isolate would be treated as its own case. Never displayed as-is in the interface.                                                                                                                                                                        |
-| `sample_date`              | The anchor date every detector, trend, and report is built against. If your system falls back to a receipt date when sample date is unfilled, that fallback should already have happened before this row reaches EpiSODIC.                                                                                                                                                                                                                            |
-| `receipt_date`             | When the result was received. Stored for provenance/audit, kept separate from `sample_date` - EpiSODIC deliberately does not use it to measure reporting delay, since a lab's own receipt-date field can itself silently be a stand-in for a missing sample date; reporting completeness is instead measured empirically, from how a stream's case counts change across successive detection runs.                                                    |
-| `pathogen`                 | The pathogen as your lab reports it, as free text. **Not** resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying isolate can appear more than once under different `pathogen` values when that is epidemiologically useful - an ETEC isolate reported as both `"Escherichia coli"` and `"ETEC"`, so each is watched on its own. This is your transform step's decision, not EpiSODIC's. |
-| `care_line`                | `first`, `second`, `other`, or `unknown` - which part of the health system the case came from.                                                                                                                                                                                                                                                                                                                                                        |
-| `institution_key`          | A stable identifier for the institution, hashed internally so a later rename does not fracture history.                                                                                                                                                                                                                                                                                                                                               |
-| `institution_display_name` | The human-readable name shown in the interface.                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `institution_type`         | One of `hospital`, `ltc_institution`, `gp_municipality`, `ooh_service`, `other`.                                                                                                                                                                                                                                                                                                                                                                      |
-| `municipality`             | The institution's municipality, used for `gp_municipality`-type rows (see below) and as a coarse geographic fallback.                                                                                                                                                                                                                                                                                                                                 |
-| `ward`                     | Only meaningful (and only used) for hospitals: this is what the `same_place` detector watches at ward level.                                                                                                                                                                                                                                                                                                                                          |
-| `specialism`               | The treating specialism, shown on the line list for context; not itself a detection dimension.                                                                                                                                                                                                                                                                                                                                                        |
-| `pc`                       | The patient's postcode (or equivalent - see "Geographic reference data" below for how coarse or fine this can be). Drives the geography panel and the choropleth, and the concentration measure ("how localised is this cluster") that feeds the priority score.                                                                                                                                                                                      |
-| `sex`                      | The patient's sex. Feeds the demography panel's age/sex pyramid, one of the interpretation engine's own evidence dimensions (a cluster's demography shifting from an organisation's usual baseline is itself a signal worth surfacing).                                                                                                                                                                                                                  |
-| `age`                      | The patient's age at sample date. Same role as `sex`: demography panel and interpretation, not a detection input.                                                                                                                                                                                                                                                                                                                                     |
+| Column | Type and allowed values | Meaning |
+|---|---|---|
+| `source_key` | character, required, unique | A unique identifier for the row in your own source system, so re-running the same extract later cannot create duplicate cases. |
+| `patient_key` | character, required | A stable, pseudonymised patient identifier. This is what deduplication and episode grouping key on: without it, EpiSODIC cannot tell that two isolates belong to the same patient, and every isolate would be treated as its own case. Never displayed as-is in the interface. |
+| `sample_date` | `Date` or `"YYYY-MM-DD"`, required | The anchor date every detector, trend, and report is built against. If your system falls back to a receipt date when sample date is unfilled, that fallback should already have happened before this row reaches EpiSODIC. |
+| `receipt_date` | `Date` or `"YYYY-MM-DD"`, `NA` allowed | When the result was received. Stored for provenance/audit, kept separate from `sample_date` - EpiSODIC deliberately does not use it to measure reporting delay, since a lab's own receipt-date field can itself silently be a stand-in for a missing sample date; reporting completeness is instead measured empirically, from how a stream's case counts change across successive detection runs. |
+| `pathogen` | character, required, free text | The pathogen as your lab reports it, as free text. **Not** resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying isolate can appear more than once under different `pathogen` values when that is epidemiologically useful - an ETEC isolate reported as both `"Escherichia coli"` and `"ETEC"`, so each is watched on its own. This is your transform step's decision, not EpiSODIC's. |
+| `care_line` | `first`, `second`, `other`, `unknown` - required | Which part of the health system the case came from: `first` is primary care, `second` secondary care. Use `unknown` rather than leaving it empty. |
+| `institution_key` | character, required | A stable identifier for the institution, hashed internally so a later rename does not fracture history. |
+| `institution_display_name` | character, required | The human-readable name shown in the interface. |
+| `institution_type` | `hospital`, `ltc_institution`, `gp_municipality`, `ooh_service`, `other` - required | How the institution is handled downstream; see the list below the table. |
+| `municipality` | character, `NA` allowed | The institution's municipality, used for `gp_municipality`-type rows (see below) and as a coarse geographic fallback. |
+| `ward` | character, `NA` allowed | Only meaningful (and only used) for hospitals: this is what the `same_place` detector watches at ward level. |
+| `specialism` | character, `NA` allowed | The treating specialism, shown on the line list for context; not itself a detection dimension. |
+| `pc` | character, `NA` allowed | The patient's postcode (or equivalent - see "Geographic reference data" below for how coarse or fine this can be). Drives the geography panel and the choropleth, and the concentration measure ("how localised is this cluster") that feeds the priority score. |
+| `sex` | `M`, `F`, `U` - `NA` allowed | The patient's sex. Feeds the demography panel's age/sex pyramid, one of the interpretation engine's own evidence dimensions (a cluster's demography shifting from an organisation's usual baseline is itself a signal worth surfacing). |
+| `age` | integer (whole years), `NA` allowed | The patient's age at sample date. Same role as `sex`: demography panel and interpretation, not a detection input. |
 
 `institution_type` values, beyond the self-explanatory `hospital`:
 
@@ -193,8 +198,8 @@ This is realistic to produce for a multiplex PCR panel testing a fixed list
 of targets (your LIS can report "we ran 40 GI panels this week" trivially).
 It is not meaningful for open-ended culture results, where there is no
 closed list of things a negative result could have been - if that is your
-situation, simply leave `denominator_source` at `NULL`, and positivity
-panels stay blank for your streams. See `episodic_denominator_source_synthetic()` for a worked
+situation, simply leave `denominators` at `NULL`, and positivity
+panels stay blank for your streams. See `episodic_synthetic_denominators()` for a worked
 example.
 
 ### Institution activity (optional)
@@ -215,7 +220,7 @@ counts exactly as it always has.
 Rows whose `institution_key` does not match a known institution are
 skipped, not an error - an activity feed and a case feed need not be
 perfectly synchronised. See
-`episodic_synthetic_institution_activity_source()` for a worked example.
+`episodic_synthetic_institution_activity()` for a worked example.
 There is no ward-level (L1) equivalent in the schema, so L1 detection is
 never normalised, only L2.
 

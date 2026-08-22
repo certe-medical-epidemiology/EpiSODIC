@@ -17,58 +17,58 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Run ingestion: validate, deduplicate, resolve institutions, write cases
+#' Load case data: validate, deduplicate, resolve institutions, write
 #'
-#' Ties together `R/ingest_interface.R`, `R/ingest_dedup.R` and the cron
-#' repository layer. Institutions are normalised on ingestion: a hospital
-#' or long-term care institution is kept as a first-class entity, while
-#' a GP practice is collapsed to its municipality, keyed by a hash of the
-#' source identifier so a later rename does not fracture the history.
+#' Ties together `R/cases.R`, `R/cases_dedup.R` and the cron
+#' repository layer. Institutions are normalised as cases are loaded: a
+#' hospital or long-term care institution is kept as a first-class entity,
+#' while a GP practice is collapsed to its municipality, keyed by a hash of
+#' the source identifier so a later rename does not fracture the history.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param raw A data frame (or tibble) satisfying the ingestion
-#'   interface, e.g. from [episodic_ingest_source_synthetic()].
+#' @param cases A data frame (or tibble) satisfying the case data
+#'   contract, e.g. from [episodic_synthetic_cases()].
 #' @param pathogen_config A data frame from `episodic_db_pathogen_config()`.
 #' @param run_id The `run_id` of the current detection run
 #'   (`episodic_case.first_seen_run`).
-#' @return Invisibly, a list with `n_raw`, `n_deduplicated` and `n_inserted`.
+#' @return Invisibly, a list with `n_supplied`, `n_deduplicated` and `n_inserted`.
 #'
 #' Not exported: an operator's own transform step supplies the case data
-#' to [episodic_run_cron()] via `ingest_source`, which calls this internally
+#' to [episodic_run_cron()] via `cases`, which calls this internally
 #' with the pieces (`pathogen_config`, `run_id`) only a run in progress has
 #' - never something a caller assembles by hand.
 #' @keywords internal
 #' @noRd
-episodic_ingest_run <- function(con, raw, pathogen_config, run_id) {
-  episodic_ingest_validate_source(raw)
-  deduped <- episodic_dedup(raw, pathogen_config)
+episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
+  episodic_validate_cases(cases)
+  deduped <- episodic_cases_deduplicate(cases, pathogen_config)
 
-  institution_lookup <- episodic_ingest_resolve_institutions(con, deduped)
+  institution_lookup <- episodic_institutions_resolve(con, deduped)
 
-  cases <- deduped
-  cases$institution_id <- institution_lookup[cases$institution_key]
-  cases <- cases[, c(
+  to_insert <- deduped
+  to_insert$institution_id <- institution_lookup[to_insert$institution_key]
+  to_insert <- to_insert[, c(
     "source_key", "patient_key", "sample_date", "receipt_date", "pathogen",
     "care_line", "institution_id", "ward",
     "specialism", "pc", "sex", "age"
   )]
 
-  n_inserted <- episodic_db_case_insert_new(con, cases, run_id)
+  n_inserted <- episodic_db_case_insert_new(con, to_insert, run_id)
 
-  invisible(list(n_raw = nrow(raw), n_deduplicated = nrow(deduped), n_inserted = n_inserted))
+  invisible(list(n_supplied = nrow(cases), n_deduplicated = nrow(deduped), n_inserted = n_inserted))
 }
 
-#' Upsert every distinct institution referenced in a raw/deduped batch
+#' Upsert every distinct institution referenced in a batch of cases
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param cases A data frame with the ingestion interface's
+#' @param cases A data frame with the case data contract's
 #'   `institution_key`/`institution_display_name`/`institution_type`/
 #'   `care_line`/`municipality` columns.
-#' @return A named integer vector mapping the raw `institution_key` to the
+#' @return A named integer vector mapping the supplied `institution_key` to the
 #'   database `institution_id`.
 #' @keywords internal
 #' @noRd
-episodic_ingest_resolve_institutions <- function(con, cases) {
+episodic_institutions_resolve <- function(con, cases) {
   distinct <- unique(cases[, c(
     "institution_key", "institution_display_name", "institution_type",
     "care_line", "municipality"

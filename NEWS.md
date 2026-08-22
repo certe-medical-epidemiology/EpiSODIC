@@ -216,18 +216,57 @@
 
 ## Connecting your own data
 
-- The documentation now says what the code has done for a while: the data
-  sources you hand to `episodic_run_cron()` - `ingest_source`,
-  `denominator_source`, `institution_activity_source` - are normally a
-  data frame or tibble. The older framing, in which you wrote an
-  "ingestion source" function and passed the function itself, described a
-  form that is still supported but is no longer the one to reach for. A
-  function is now documented for what it is good at: producing the data
-  at run time, e.g. a live database query.
-- `episodic_ingest_validate_source()` accepts either form too, resolving a
-  function before it checks the columns, and says plainly when what it was
-  given is no data set at all rather than reporting every required column
-  as missing. It returns the validated data set invisibly.
+The user-facing vocabulary for supplying data was pipeline-stage jargon
+("ingestion source"); it is now named after the epidemiological objects
+themselves, matching what the database has always called them. In an
+infectious-disease package "ingestion" also reads as a transmission route,
+which is not what was meant anywhere it appeared. As nothing is deployed
+yet, these are hard renames with no deprecation shims.
+
+- `episodic_run_cron()` and `episodic_demo()` take `cases`,
+  `denominators` and `institution_activity`, where they took
+  `ingest_source`, `denominator_source` and `institution_activity_source`.
+  The `_source` suffix had become actively misleading: these arguments
+  take data, not something that produces data.
+- Renamed, in the same spirit: `episodic_ingest_columns` to
+  `episodic_case_columns`, `episodic_ingest_validate_source()` to
+  `episodic_validate_cases()`, `episodic_ingest_source_synthetic()` to
+  `episodic_synthetic_cases()`,
+  `episodic_ingest_source_synthetic_calibration()` to
+  `episodic_synthetic_cases_calibration()`,
+  `episodic_denominator_source_synthetic()` to
+  `episodic_synthetic_denominators()`,
+  `episodic_synthetic_institution_activity_source()` to
+  `episodic_synthetic_institution_activity()`, and
+  `episodic_resolve_source()` to `episodic_resolve_data()`. Source files
+  and internal helpers follow the same scheme (`R/cases.R`,
+  `R/cases_load.R`, `R/denominators.R`, ...).
+- The documentation now says what the code has done for a while: what you
+  hand to `episodic_run_cron()` is normally a data frame or tibble. The
+  older framing, in which you wrote a function and passed the function
+  itself, described a form that is still supported but is no longer the
+  one to reach for. A function is now documented for what it is good at:
+  producing the data at run time, e.g. a live database query.
+
+## The case data contract is now fully specified
+
+- Every one of the fifteen case columns now documents its type, whether
+  `NA` is allowed, and its permitted values - previously the page listed
+  the columns and left the rest to be discovered at insert time. Among
+  other things this corrects `care_line`, which was documented as
+  `"hospital"`/`"primary_care"`; the real values are `first`, `second`,
+  `other` and `unknown`, and an extract following the old page failed
+  against the database's own constraint.
+- The three fixed value sets are exported as `episodic_care_lines`,
+  `episodic_institution_types` and `episodic_sex_codes`, so a transform
+  step can map onto them instead of copying strings out of a help page.
+- `episodic_validate_cases()` now checks all of it: the allow-listed
+  columns, `source_key` uniqueness, the columns that may never be `NA`,
+  the three value sets, that both date columns parse as `Date` or
+  `YYYY-MM-DD`, and that `age` is numeric. It reports the offending
+  column and values. Previously these only surfaced deep inside a cron
+  run, as a rolled-back transaction. It accepts a function as readily as
+  a data set, and returns the validated data set invisibly.
 
 # EpiSODIC 0.3.0
 

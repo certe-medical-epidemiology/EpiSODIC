@@ -250,14 +250,14 @@ test_that("a failed run inside the cron transaction leaves no partial state", {
   n_cases_before <- DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM episodic_case")$n
 
   bad_source <- function() {
-    raw <- episodic_ingest_source_synthetic(
+    raw <- episodic_synthetic_cases(
       start_date = as.Date("2024-01-01"), end_date = as.Date("2024-01-05")
     )
-    raw$pathogen <- NULL  # violates the ingestion interface, forces an error mid-run
+    raw$pathogen <- NULL  # violates the case data contract, forces an error mid-run
     raw
   }
 
-  run_id <- episodic_run_cron(path, ingest_source = bad_source, run_date = as.Date("2024-01-05"))
+  run_id <- episodic_run_cron(path, cases = bad_source, run_date = as.Date("2024-01-05"))
   status <- DBI::dbGetQuery(con, "SELECT status FROM episodic_detection_run WHERE run_id = ?",
                              params = list(run_id))$status[1]
   expect_equal(status, "failed")

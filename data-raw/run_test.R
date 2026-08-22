@@ -23,8 +23,8 @@ if (!file.exists(db_path)) {
   # account to sign in with.
   episodic_run_cron(
     db_path,
-    ingest_source = episodic_ingest_source_synthetic,
-    denominator_source = episodic_denominator_source_synthetic
+    cases = episodic_synthetic_cases,
+    denominators = episodic_synthetic_denominators
   )
 
   episodic_provision_user(
@@ -42,8 +42,8 @@ if (!file.exists(db_path)) {
 # reconciliation across runs, the Activiteit log with more than one run
 # recorded, and the Prestatie screen's timeliness figures once a few
 # clusters have been assessed:
-# episodic_run_cron(db_path, ingest_source = episodic_ingest_source_synthetic,
-#                   denominator_source = episodic_denominator_source_synthetic)
+# episodic_run_cron(db_path, cases = episodic_synthetic_cases,
+#                   denominators = episodic_synthetic_denominators)
 
 # review the simulated data
 episodic_run_app()

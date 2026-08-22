@@ -27,20 +27,20 @@
 #' and a propagated outbreak (community-spread pertussis with case waves
 #' spaced by the generation interval). This is what powers [episodic_demo()]
 #' and the package's test suite; it is also a useful reference for what
-#' your own case data should look like (see [episodic_ingest_columns]).
+#' your own case data should look like (see [episodic_case_columns]).
 #'
 #' @param start_date First sample date to generate, a `Date`.
 #' @param end_date Last sample date to generate, a `Date`.
 #' @param seed RNG seed, for reproducible demo data.
-#' @return A data frame satisfying [episodic_ingest_validate_source()].
+#' @return A data frame satisfying [episodic_validate_cases()].
 #' @examples
-#' raw <- episodic_ingest_source_synthetic(
+#' cases <- episodic_synthetic_cases(
 #'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 #' )
-#' nrow(raw)
-#' head(raw)
+#' nrow(cases)
+#' head(cases)
 #' @export
-episodic_ingest_source_synthetic <- function(start_date = as.Date("2021-01-01"),
+episodic_synthetic_cases <- function(start_date = as.Date("2021-01-01"),
                                              end_date = as.Date("2025-12-31"),
                                              seed = 1) {
   set.seed(seed)
@@ -62,7 +62,7 @@ episodic_ingest_source_synthetic <- function(start_date = as.Date("2021-01-01"),
   cases <- cases[order(cases$sample_date), ]
   rownames(cases) <- NULL
 
-  episodic_ingest_validate_source(cases)
+  episodic_validate_cases(cases)
 }
 
 #' @keywords internal
@@ -203,7 +203,7 @@ episodic_synthetic_outbreak_point_source <- function(institutions, end_date, n_c
 
 #' Generate synthetic data at tunable cluster volume
 #'
-#' [episodic_ingest_source_synthetic()] injects exactly two outbreaks in
+#' [episodic_synthetic_cases()] injects exactly two outbreaks in
 #' total - enough to demonstrate detection working, but not enough to tune
 #' your own configuration against (e.g. deciding how many dossiers your
 #' board can realistically review per month). This function fills that gap:
@@ -222,18 +222,18 @@ episodic_synthetic_outbreak_point_source <- function(institutions, end_date, n_c
 #'   generated per calendar month. Raise or lower this to see how detection
 #'   volume responds.
 #' @param seed RNG seed, for reproducible runs.
-#' @return A data frame satisfying [episodic_ingest_validate_source()],
-#'   including everything [episodic_ingest_source_synthetic()] produces
+#' @return A data frame satisfying [episodic_validate_cases()],
+#'   including everything [episodic_synthetic_cases()] produces
 #'   (background baseline, the two standard demo outbreaks) plus the extra
 #'   volume.
 #' @examples
-#' raw <- episodic_ingest_source_synthetic_calibration(
+#' cases <- episodic_synthetic_cases_calibration(
 #'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-06-30"),
 #'   n_bumps_per_month = 4
 #' )
-#' sum(startsWith(raw$patient_key, "PT-VOL-"))
+#' sum(startsWith(cases$patient_key, "PT-VOL-"))
 #' @export
-episodic_ingest_source_synthetic_calibration <- function(start_date = as.Date("2021-01-01"),
+episodic_synthetic_cases_calibration <- function(start_date = as.Date("2021-01-01"),
                                                           end_date = as.Date("2025-12-31"),
                                                           pathogen = "Clostridioides difficile",
                                                           n_bumps_per_month = 3,
@@ -257,12 +257,12 @@ episodic_ingest_source_synthetic_calibration <- function(start_date = as.Date("2
   cases <- cases[order(cases$sample_date), ]
   rownames(cases) <- NULL
 
-  episodic_ingest_validate_source(cases)
+  episodic_validate_cases(cases)
 }
 
 #' Inject many independent same-place case bumps for one pathogen
 #'
-#' The volume generator behind [episodic_ingest_source_synthetic_calibration()].
+#' The volume generator behind [episodic_synthetic_cases_calibration()].
 #' Each bump is shaped like the `same_place` detector's own trigger
 #' condition (several cases at one institution within a short window) so
 #' it reliably becomes its own cluster on reconciliation, rather than

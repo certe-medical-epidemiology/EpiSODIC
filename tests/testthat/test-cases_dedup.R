@@ -38,7 +38,7 @@ test_that("isolates for the same patient within the episode window collapse to o
     raw_case("K2", "P1", "2025-01-10"),
     raw_case("K3", "P1", "2025-01-20")
   )
-  deduped <- episodic_dedup(raw, pathogen_config_fixture)
+  deduped <- episodic_cases_deduplicate(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 1)
   expect_equal(deduped$sample_date, "2025-01-01")  # earliest kept, sample date is the anchor
 })
@@ -48,13 +48,13 @@ test_that("a gap longer than episode_days starts a new episode", {
     raw_case("K1", "P1", "2025-01-01"),
     raw_case("K2", "P1", "2025-03-01")  # 59 days later, beyond the 30-day window
   )
-  deduped <- episodic_dedup(raw, pathogen_config_fixture)
+  deduped <- episodic_cases_deduplicate(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 2)
 })
 
 test_that("different patients are never merged", {
   raw <- rbind(raw_case("K1", "P1", "2025-01-01"), raw_case("K2", "P2", "2025-01-01"))
-  deduped <- episodic_dedup(raw, pathogen_config_fixture)
+  deduped <- episodic_cases_deduplicate(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 2)
 })
 
@@ -63,7 +63,7 @@ test_that("different pathogens for the same patient are never merged", {
     raw_case("K1", "P1", "2025-01-01", pathogen = "Test pathogen"),
     raw_case("K2", "P1", "2025-01-01", pathogen = "Other pathogen")
   )
-  deduped <- episodic_dedup(raw, pathogen_config_fixture)
+  deduped <- episodic_cases_deduplicate(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 2)
 })
 
@@ -75,7 +75,7 @@ test_that("the same isolate tagged under two pathogen values (e.g. E. coli and E
     raw_case("K1", "P1", "2025-01-01", pathogen = "Escherichia coli"),
     raw_case("K1-ETEC", "P1", "2025-01-01", pathogen = "ETEC")
   )
-  deduped <- episodic_dedup(raw, pathogen_config_fixture)
+  deduped <- episodic_cases_deduplicate(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 2)
 })
 
@@ -84,45 +84,115 @@ test_that("a pathogen missing from pathogen_config falls back to the schema defa
     raw_case("K1", "P1", "2025-01-01", pathogen = "Unknown pathogen"),
     raw_case("K2", "P1", "2025-01-20", pathogen = "Unknown pathogen")
   )
-  deduped <- episodic_dedup(raw, pathogen_config_fixture)
+  deduped <- episodic_cases_deduplicate(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 1)
 })
 
 test_that("an empty input returns an empty output without error", {
   empty <- raw_case("K1", "P1", "2025-01-01")[0, ]
-  expect_equal(nrow(episodic_dedup(empty, pathogen_config_fixture)), 0)
+  expect_equal(nrow(episodic_cases_deduplicate(empty, pathogen_config_fixture)), 0)
 })
 
-test_that("episodic_ingest_validate_source() rejects a column outside the allow-list", {
+test_that("episodic_validate_cases() rejects a column outside the allow-list", {
   raw <- raw_case("K1", "P1", "2025-01-01")
   raw$requesting_clinician <- "Dr Smith"
-  expect_error(episodic_ingest_validate_source(raw), "allow-list")
+  expect_error(episodic_validate_cases(raw), "allow-list")
 })
 
-test_that("episodic_ingest_validate_source() rejects a missing required column", {
+test_that("episodic_validate_cases() rejects a missing required column", {
   raw <- raw_case("K1", "P1", "2025-01-01")
   raw$pc <- NULL
-  expect_error(episodic_ingest_validate_source(raw), "missing required")
+  expect_error(episodic_validate_cases(raw), "missing required")
 })
 
-test_that("episodic_ingest_validate_source() rejects duplicate source_key values", {
+test_that("episodic_validate_cases() rejects duplicate source_key values", {
   raw <- rbind(raw_case("K1", "P1", "2025-01-01"), raw_case("K1", "P2", "2025-01-02"))
-  expect_error(episodic_ingest_validate_source(raw), "duplicate")
+  expect_error(episodic_validate_cases(raw), "duplicate")
 })
 
-test_that("episodic_ingest_validate_source() accepts a well-formed data set", {
+test_that("episodic_validate_cases() accepts a well-formed data set", {
   raw <- raw_case("K1", "P1", "2025-01-01")
-  expect_silent(episodic_ingest_validate_source(raw))
-  expect_identical(episodic_ingest_validate_source(raw), raw)
+  expect_silent(episodic_validate_cases(raw))
+  expect_identical(episodic_validate_cases(raw), raw)
 })
 
-test_that("episodic_ingest_validate_source() also accepts a function returning the data set", {
+test_that("episodic_validate_cases() also accepts a function returning the data set", {
   raw <- raw_case("K1", "P1", "2025-01-01")
-  expect_silent(episodic_ingest_validate_source(function() raw))
-  expect_identical(episodic_ingest_validate_source(function() raw), raw)
+  expect_silent(episodic_validate_cases(function() raw))
+  expect_identical(episodic_validate_cases(function() raw), raw)
 })
 
-test_that("episodic_ingest_validate_source() rejects something that is no data set at all", {
-  expect_error(episodic_ingest_validate_source(1), "data frame")
-  expect_error(episodic_ingest_validate_source(function() 1), "data frame")
+test_that("episodic_validate_cases() rejects something that is no data set at all", {
+  expect_error(episodic_validate_cases(1), "data frame")
+  expect_error(episodic_validate_cases(function() 1), "data frame")
+})
+
+test_that("episodic_validate_cases() rejects NA in a column that must always be filled", {
+  for (column in episodic_case_columns_required) {
+    cases <- raw_case("K1", "P1", "2025-01-01")
+    cases[[column]] <- NA
+    expect_error(episodic_validate_cases(cases), column, fixed = TRUE)
+  }
+})
+
+test_that("episodic_validate_cases() allows NA in the optional columns", {
+  cases <- raw_case("K1", "P1", "2025-01-01")
+  for (column in c("receipt_date", "municipality", "ward", "specialism", "pc", "sex", "age")) {
+    cases[[column]] <- NA
+  }
+  expect_silent(episodic_validate_cases(cases))
+})
+
+test_that("episodic_validate_cases() rejects a value outside the allowed set", {
+  cases <- raw_case("K1", "P1", "2025-01-01")
+  cases$care_line <- "primary_care"
+  expect_error(episodic_validate_cases(cases), "care_line", fixed = TRUE)
+
+  cases <- raw_case("K1", "P1", "2025-01-01")
+  cases$institution_type <- "clinic"
+  expect_error(episodic_validate_cases(cases), "institution_type", fixed = TRUE)
+
+  cases <- raw_case("K1", "P1", "2025-01-01")
+  cases$sex <- "male"
+  expect_error(episodic_validate_cases(cases), "sex", fixed = TRUE)
+})
+
+test_that("episodic_validate_cases() accepts every documented allowed value", {
+  for (value in episodic_care_lines) {
+    cases <- raw_case("K1", "P1", "2025-01-01")
+    cases$care_line <- value
+    expect_silent(episodic_validate_cases(cases))
+  }
+  for (value in episodic_institution_types) {
+    cases <- raw_case("K1", "P1", "2025-01-01")
+    cases$institution_type <- value
+    expect_silent(episodic_validate_cases(cases))
+  }
+  for (value in episodic_sex_codes) {
+    cases <- raw_case("K1", "P1", "2025-01-01")
+    cases$sex <- value
+    expect_silent(episodic_validate_cases(cases))
+  }
+})
+
+test_that("episodic_validate_cases() rejects a date that does not read as YYYY-MM-DD", {
+  cases <- raw_case("K1", "P1", "01-01-2025")
+  expect_error(episodic_validate_cases(cases), "sample_date", fixed = TRUE)
+
+  cases <- raw_case("K1", "P1", "2025-01-01")
+  cases$receipt_date <- "not a date"
+  expect_error(episodic_validate_cases(cases), "receipt_date", fixed = TRUE)
+})
+
+test_that("episodic_validate_cases() accepts Date columns as well as ISO strings", {
+  cases <- raw_case("K1", "P1", "2025-01-01")
+  cases$sample_date <- as.Date(cases$sample_date)
+  cases$receipt_date <- as.Date(cases$receipt_date)
+  expect_silent(episodic_validate_cases(cases))
+})
+
+test_that("episodic_validate_cases() rejects an age that is not numeric", {
+  cases <- raw_case("K1", "P1", "2025-01-01")
+  cases$age <- "40-49"
+  expect_error(episodic_validate_cases(cases), "age", fixed = TRUE)
 })

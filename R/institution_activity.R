@@ -17,11 +17,11 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Ingest optional institution activity (patient-days)
+#' Load optional institution activity (patient-days)
 #'
 #' Writes operator-supplied weekly hospital activity to
 #' `episodic_institution_activity`, keyed on `institution_key` (resolved to
-#' `institution_id` here, mirroring `episodic_denominator_ingest_run()`'s
+#' `institution_id` here, mirroring `episodic_denominators_load()`'s
 #' own optional-source pattern). Entirely optional: a site with nothing to
 #' supply here simply never calls this, and L1/L2 Farrington detection
 #' falls back to raw counts - unnormalised, not broken: patient-day
@@ -37,11 +37,11 @@
 #'   perfectly synchronised).
 #'
 #' Not exported: an operator supplies a source to [episodic_run_cron()] via
-#' `institution_activity_source`; this is the internal write step run
+#' `institution_activity`; this is the internal write step run
 #' against it.
 #' @keywords internal
 #' @noRd
-episodic_institution_activity_ingest_run <- function(con, activity) {
+episodic_institution_activity_load <- function(con, activity) {
   required_cols <- c("institution_key", "period_start", "period_end", "patient_days")
   missing_cols <- setdiff(required_cols, names(activity))
   if (length(missing_cols) > 0) {
@@ -80,7 +80,7 @@ episodic_institution_activity_ingest_run <- function(con, activity) {
 #' This function is a synthetic example showing the expected shape: weekly
 #' patient-days per hospital, modelled as bed count times occupancy, with a
 #' realistic winter peak. Use it as a template for your own data, which you
-#' pass to [episodic_run_cron()] as `institution_activity_source` -
+#' pass to [episodic_run_cron()] as `institution_activity` -
 #' normally a data frame or `tibble`.
 #'
 #' @param institutions A data frame (or tibble) of institutions (as
@@ -94,12 +94,12 @@ episodic_institution_activity_ingest_run <- function(con, activity) {
 #' institutions <- data.frame(
 #'   institution_key = "HOSP-1", institution_type = "hospital", n_beds = 320
 #' )
-#' activity <- episodic_synthetic_institution_activity_source(
+#' activity <- episodic_synthetic_institution_activity(
 #'   institutions, start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 #' )
 #' head(activity)
 #' @export
-episodic_synthetic_institution_activity_source <- function(institutions, start_date = as.Date("2021-01-01"),
+episodic_synthetic_institution_activity <- function(institutions, start_date = as.Date("2021-01-01"),
                                                             end_date = as.Date("2025-12-31"), seed = 1) {
   set.seed(seed)
   hospitals <- institutions[institutions$institution_type == "hospital", ]

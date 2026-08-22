@@ -654,7 +654,7 @@ episodic_app_cluster_viewable <- function(con, cluster_id) {
 #' of an epi curve are still filling up, which Rt windows to withhold,
 #' which days of a cluster are too fresh to fit a growth rate over -
 #' has to be measured against the last time cases were actually
-#' ingested, not against the last day the cluster in question happened to
+#' loaded, not against the last day the cluster in question happened to
 #' have a case.
 #'
 #' The distinction is not cosmetic. Anchoring on a cluster's own last

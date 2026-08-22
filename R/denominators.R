@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Ingest optional positivity metadata
+#' Load optional positivity metadata
 #'
 #' Writes the operator-supplied, pre-aggregated denominator table (see
 #' `README.md`'s data format section) to `episodic_denominator`. Entirely
@@ -33,10 +33,10 @@
 #' @return Invisibly, the number of rows written.
 #'
 #' Not exported: an operator supplies a source to [episodic_run_cron()] via
-#' `denominator_source`; this is the internal write step run against it.
+#' `denominators`; this is the internal write step run against it.
 #' @keywords internal
 #' @noRd
-episodic_denominator_ingest_run <- function(con, denominators) {
+episodic_denominators_load <- function(con, denominators) {
   required_cols <- c("pathogen", "sample_date", "care_line", "area_code", "n_tests")
   missing_cols <- setdiff(required_cols, names(denominators))
   if (length(missing_cols) > 0) {
@@ -68,7 +68,7 @@ episodic_denominator_ingest_run <- function(con, denominators) {
 #' This function is a synthetic example showing the expected shape: weekly
 #' counts of a multiplex GI PCR panel that also reports Norovirus. Use it as
 #' a template for your own data, which you pass to [episodic_run_cron()] as
-#' `denominator_source` - a data frame or `tibble` with the same five
+#' `denominators` - a data frame or `tibble` with the same five
 #' columns: `pathogen`, `sample_date` (week start), `care_line`,
 #' `area_code` (may be `NA`), and `n_tests`.
 #'
@@ -77,12 +77,12 @@ episodic_denominator_ingest_run <- function(con, denominators) {
 #' @return A data frame with `pathogen`, `sample_date` (week start),
 #'   `care_line`, `area_code`, `n_tests`.
 #' @examples
-#' denom <- episodic_denominator_source_synthetic(
+#' denom <- episodic_synthetic_denominators(
 #'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 #' )
 #' head(denom)
 #' @export
-episodic_denominator_source_synthetic <- function(start_date = as.Date("2021-01-01"),
+episodic_synthetic_denominators <- function(start_date = as.Date("2021-01-01"),
                                                   end_date = as.Date("2025-12-31"),
                                                   seed = 1) {
   set.seed(seed)

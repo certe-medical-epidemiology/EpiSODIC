@@ -32,7 +32,7 @@
 #' region.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param cases A data frame of newly-ingested (or all) cases, with at least
+#' @param cases A data frame of newly-loaded (or all) cases, with at least
 #'   `pathogen`, `sample_date`, `care_line`, `institution_id`, `pc`.
 #' @param institutions A data frame from `episodic_db_institutions()`.
 #' @return A data frame of `stream_id` values touched by this run, one row

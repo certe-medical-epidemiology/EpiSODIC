@@ -107,7 +107,7 @@ test_that("episodic_triangle_update() and episodic_triangle_completeness() round
   expect_true(all(completeness$completeness >= 0 & completeness$completeness <= 1))
 })
 
-test_that("episodic_db_denominator_upsert() and episodic_denominator_ingest_run() round-trip", {
+test_that("episodic_db_denominator_upsert() and episodic_denominators_load() round-trip", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
 
@@ -121,20 +121,20 @@ test_that("episodic_db_denominator_upsert() and episodic_denominator_ingest_run(
   expect_equal(nrow(rows), 1)
   expect_equal(rows$n_tests[1], 55)
 
-  denom <- episodic_denominator_source_synthetic(
+  denom <- episodic_synthetic_denominators(
     start_date = as.Date("2024-01-01"), end_date = as.Date("2024-02-28"), seed = 1
   )
-  n_written <- episodic_denominator_ingest_run(con, denom)
+  n_written <- episodic_denominators_load(con, denom)
   expect_equal(n_written, nrow(denom))
   rows_after <- DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM episodic_denominator")
   expect_gt(rows_after$n, 1)
 })
 
-test_that("episodic_denominator_ingest_run() rejects a source missing required columns", {
+test_that("episodic_denominators_load() rejects a source missing required columns", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
   bad <- data.frame(pathogen = "Norovirus", sample_date = "2025-01-01")
-  expect_error(episodic_denominator_ingest_run(con, bad), "missing required")
+  expect_error(episodic_denominators_load(con, bad), "missing required")
 })
 
 test_that("episodic_split_sql_statements() splits on semicolons and drops comments", {
