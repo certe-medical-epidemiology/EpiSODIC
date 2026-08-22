@@ -32,15 +32,26 @@
 episodic_ui_archive_screen <- function(archive, lang = "nl") {
   shiny::tags$div(
     class = "episodic-streams-screen",
-    shiny::tags$h1(style = "font-size:22px;font-weight:600;margin-bottom:4px;", episodic_tr("archive.title", lang = lang)),
-    shiny::tags$p(style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:16px;", episodic_tr("archive.note", lang = lang)),
+    shiny::tags$h1(
+      style = "font-size:22px;font-weight:600;margin-bottom:4px;",
+      episodic_tr("archive.title", lang = lang)
+    ),
+    shiny::tags$p(
+      style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:16px;",
+      episodic_tr("archive.note", lang = lang)
+    ),
     shiny::tags$input(
-      type = "text", class = "episodic-search-input", id = "archive_search_input",
+      type = "text",
+      class = "episodic-search-input",
+      id = "archive_search_input",
       placeholder = episodic_tr("archive.search_placeholder", lang = lang),
       oninput = "Shiny.setInputValue('archive_search', this.value, {priority: 'event'})"
     ),
     if (nrow(archive) == 0) {
-      shiny::tags$p(class = "episodic-panel-empty", episodic_tr("archive.empty", lang = lang))
+      shiny::tags$p(
+        class = "episodic-panel-empty",
+        episodic_tr("archive.empty", lang = lang)
+      )
     } else {
       shiny::tags$table(
         class = "episodic-table",
@@ -60,13 +71,22 @@ episodic_ui_archive_screen <- function(archive, lang = "nl") {
             # a useful precedent if you can open it and read the reasoning,
             # and until now the archive named clusters it gave no way in to.
             episodic_ui_cluster_link_row(
-              row$cluster_id, lang = lang,
-              shiny::tags$td(shiny::HTML(episodic_ui_italicise_taxon(row$pathogen))),
+              row$cluster_id,
+              lang = lang,
+              shiny::tags$td(shiny::HTML(episodic_ui_italicise_taxon(
+                row$pathogen
+              ))),
               shiny::tags$td(row$level_label),
               shiny::tags$td(row$place),
               shiny::tags$td(row$n_cases),
               shiny::tags$td(round(row$priority_score, 0)),
-              shiny::tags$td(if (is.na(row$closed_at)) episodic_tr("misc.unknown", lang = lang) else episodic_ui_format_datetime(row$closed_at, fmt = "%d-%m-%Y"))
+              shiny::tags$td(
+                if (is.na(row$closed_at)) {
+                  episodic_tr("misc.unknown", lang = lang)
+                } else {
+                  episodic_ui_format_datetime(row$closed_at, fmt = "%d-%m-%Y")
+                }
+              )
             )
           })
         )
@@ -85,10 +105,19 @@ episodic_ui_archive_screen <- function(archive, lang = "nl") {
 episodic_ui_activity_screen <- function(activity, lang = "nl") {
   shiny::tags$div(
     class = "episodic-streams-screen",
-    shiny::tags$h1(style = "font-size:22px;font-weight:600;margin-bottom:4px;", episodic_tr("activity.title", lang = lang)),
-    shiny::tags$p(style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:16px;", episodic_tr("activity.note", lang = lang)),
+    shiny::tags$h1(
+      style = "font-size:22px;font-weight:600;margin-bottom:4px;",
+      episodic_tr("activity.title", lang = lang)
+    ),
+    shiny::tags$p(
+      style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:16px;",
+      episodic_tr("activity.note", lang = lang)
+    ),
     if (nrow(activity) == 0) {
-      shiny::tags$p(class = "episodic-panel-empty", episodic_tr("activity.empty", lang = lang))
+      shiny::tags$p(
+        class = "episodic-panel-empty",
+        episodic_tr("activity.empty", lang = lang)
+      )
     } else {
       shiny::tags$table(
         class = "episodic-table",
@@ -102,8 +131,15 @@ episodic_ui_activity_screen <- function(activity, lang = "nl") {
           lapply(seq_len(nrow(activity)), function(i) {
             row <- activity[i, ]
             shiny::tags$tr(
-              class = if (isTRUE(row$is_system)) "episodic-activity-row system" else "episodic-activity-row",
-              shiny::tags$td(episodic_ui_format_datetime(row$at, fmt = "%d-%m-%Y %H:%M")),
+              class = if (isTRUE(row$is_system)) {
+                "episodic-activity-row system"
+              } else {
+                "episodic-activity-row"
+              },
+              shiny::tags$td(episodic_ui_format_datetime(
+                row$at,
+                fmt = "%d-%m-%Y %H:%M"
+              )),
               shiny::tags$td(row$actor),
               shiny::tags$td(
                 row$action,
@@ -117,7 +153,13 @@ episodic_ui_activity_screen <- function(activity, lang = "nl") {
                   )
                 }
               ),
-              shiny::tags$td(if (is.na(row$target)) episodic_tr("misc.dash", lang = lang) else row$target)
+              shiny::tags$td(
+                if (is.na(row$target)) {
+                  episodic_tr("misc.dash", lang = lang)
+                } else {
+                  row$target
+                }
+              )
             )
           })
         )

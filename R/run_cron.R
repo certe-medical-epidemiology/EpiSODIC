@@ -87,45 +87,73 @@
 #' file.remove(db_path)
 #' }
 #' @export
-episodic_run_cron <- function(db_path,
-                              cases = episodic_synthetic_cases,
-                              denominators = NULL,
-                              institution_activity = NULL,
-                              episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
-                              host = Sys.info()[["nodename"]],
-                              account = Sys.info()[["user"]],
-                              run_date = Sys.Date()) {
+episodic_run_cron <- function(
+  db_path,
+  cases = episodic_synthetic_cases,
+  denominators = NULL,
+  institution_activity = NULL,
+  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
+  host = Sys.info()[["nodename"]],
+  account = Sys.info()[["user"]],
+  run_date = Sys.Date()
+) {
   config <- episodic_config_resolve(episodic_config_path)
   hashed <- episodic_config_hash(config)
 
-  con <- if (episodic_db_exists(db_path)) episodic_db_connect(db_path) else episodic_db_create(db_path)
+  con <- if (episodic_db_exists(db_path)) {
+    episodic_db_connect(db_path)
+  } else {
+    episodic_db_create(db_path)
+  }
   on.exit(DBI::dbDisconnect(con), add = TRUE)
 
   run_id <- episodic_db_run_start(con, host = host, account = account)
 
-  result <- tryCatch({
-    DBI::dbBegin(con)
-    stats <- episodic_run_cron_body(con, run_id, config, cases, denominators,
-                                    institution_activity, run_date)
-    DBI::dbCommit(con)
-    stats
-  }, error = function(e) {
-    DBI::dbRollback(con)
-    list(status = "failed", error_text = conditionMessage(e), n_streams = NA_integer_,
-         n_detections = NA_integer_, n_signals_new = NA_integer_, n_signals_updated = NA_integer_,
-         n_cases_supplied = NA_integer_, n_cases_deduplicated = NA_integer_,
-         n_cases_inserted = NA_integer_, n_denominators_written = NA_integer_,
-         n_activity_supplied = NA_integer_, n_activity_written = NA_integer_,
-         n_activity_skipped = NA_integer_)
-  })
+  result <- tryCatch(
+    {
+      DBI::dbBegin(con)
+      stats <- episodic_run_cron_body(
+        con,
+        run_id,
+        config,
+        cases,
+        denominators,
+        institution_activity,
+        run_date
+      )
+      DBI::dbCommit(con)
+      stats
+    },
+    error = function(e) {
+      DBI::dbRollback(con)
+      list(
+        status = "failed",
+        error_text = conditionMessage(e),
+        n_streams = NA_integer_,
+        n_detections = NA_integer_,
+        n_signals_new = NA_integer_,
+        n_signals_updated = NA_integer_,
+        n_cases_supplied = NA_integer_,
+        n_cases_deduplicated = NA_integer_,
+        n_cases_inserted = NA_integer_,
+        n_denominators_written = NA_integer_,
+        n_activity_supplied = NA_integer_,
+        n_activity_written = NA_integer_,
+        n_activity_skipped = NA_integer_
+      )
+    }
+  )
 
   pkg_versions <- jsonlite::toJSON(episodic_pkg_versions(), auto_unbox = TRUE)
 
   episodic_db_run_finish(
-    con, run_id,
+    con,
+    run_id,
     status = if (is.null(result$status)) "success" else result$status,
-    n_streams = result$n_streams, n_detections = result$n_detections,
-    n_signals_new = result$n_signals_new, n_signals_updated = result$n_signals_updated,
+    n_streams = result$n_streams,
+    n_detections = result$n_detections,
+    n_signals_new = result$n_signals_new,
+    n_signals_updated = result$n_signals_updated,
     n_cases_supplied = result$n_cases_supplied,
     n_cases_deduplicated = result$n_cases_deduplicated,
     n_cases_inserted = result$n_cases_inserted,
@@ -135,7 +163,8 @@ episodic_run_cron <- function(db_path,
     n_activity_skipped = result$n_activity_skipped,
     code_version = as.character(utils::packageVersion("EpiSODIC")),
     pkg_versions = as.character(pkg_versions),
-    config_hash = hashed$hash, config_snapshot = hashed$snapshot,
+    config_hash = hashed$hash,
+    config_snapshot = hashed$snapshot,
     error_text = result$error_text
   )
 
@@ -172,22 +201,46 @@ episodic_run_statuses_complete <- c("success", "partial")
 #' is.null(episodic_resolve_data(NULL))
 #' @export
 episodic_resolve_data <- function(x, ...) {
-  if (is.null(x)) return(NULL)
-  if (is.data.frame(x)) return(x)
-  if (is.function(x)) return(x(...))
-  stop("data source must be a data frame (or tibble), or a function returning one, not ",
-       paste(class(x), collapse = "/"), call. = FALSE)
+  if (is.null(x)) {
+    return(NULL)
+  }
+  if (is.data.frame(x)) {
+    return(x)
+  }
+  if (is.function(x)) {
+    return(x(...))
+  }
+  stop(
+    "data source must be a data frame (or tibble), or a function returning one, not ",
+    paste(class(x), collapse = "/"),
+    call. = FALSE
+  )
 }
 
 #' @keywords internal
 #' @noRd
-episodic_run_cron_body <- function(con, run_id, config, cases, denominators,
-                                   institution_activity, run_date) {
-  pathogen_config_path <- system.file("config", "pathogen_config.csv", package = "EpiSODIC")
+episodic_run_cron_body <- function(
+  con,
+  run_id,
+  config,
+  cases,
+  denominators,
+  institution_activity,
+  run_date
+) {
+  pathogen_config_path <- system.file(
+    "config",
+    "pathogen_config.csv",
+    package = "EpiSODIC"
+  )
   if (identical(pathogen_config_path, "")) {
     pathogen_config_path <- file.path("inst", "config", "pathogen_config.csv")
   }
-  pathogen_config <- utils::read.csv(pathogen_config_path, stringsAsFactors = FALSE, na.strings = c("", "NA"))
+  pathogen_config <- utils::read.csv(
+    pathogen_config_path,
+    stringsAsFactors = FALSE,
+    na.strings = c("", "NA")
+  )
   episodic_db_pathogen_config_load(con, pathogen_config)
 
   cases <- episodic_resolve_data(cases)
@@ -203,11 +256,18 @@ episodic_run_cron_body <- function(con, run_id, config, cases, denominators,
   cases_all <- episodic_db_cases(con)
   institutions <- episodic_db_institutions(con)
 
-  institution_activity <- episodic_resolve_data(institution_activity, institutions)
+  institution_activity <- episodic_resolve_data(
+    institution_activity,
+    institutions
+  )
   activity_counts <- if (!is.null(institution_activity)) {
     episodic_institution_activity_load(con, institution_activity)
   } else {
-    list(n_supplied = NA_integer_, n_written = NA_integer_, n_skipped = NA_integer_)
+    list(
+      n_supplied = NA_integer_,
+      n_written = NA_integer_,
+      n_skipped = NA_integer_
+    )
   }
 
   episodic_lattice_enumerate(con, cases_all, institutions)
@@ -216,91 +276,164 @@ episodic_run_cron_body <- function(con, run_id, config, cases, denominators,
   n_new_total <- 0L
   n_updated_total <- 0L
 
-  same_place_detections <- episodic_detect_same_place(con, cases_all, institutions, config)
-  rare_trigger_detections <- episodic_detect_rare_trigger(con, cases_all, institutions, config)
+  same_place_detections <- episodic_detect_same_place(
+    con,
+    cases_all,
+    institutions,
+    config
+  )
+  rare_trigger_detections <- episodic_detect_rare_trigger(
+    con,
+    cases_all,
+    institutions,
+    config
+  )
 
-  streams <- episodic_db_streams(con)  # refresh: same_place/rare_trigger may have created streams
+  streams <- episodic_db_streams(con) # refresh: same_place/rare_trigger may have created streams
 
   for (i in seq_len(nrow(streams))) {
     stream <- streams[i, ]
     stream_cases <- episodic_cases_for_stream(cases_all, stream)
 
-    episodic_triangle_update(con, stream$stream_id, stream_cases, as.character(run_date))
+    episodic_triangle_update(
+      con,
+      stream$stream_id,
+      stream_cases,
+      as.character(run_date)
+    )
 
     stream_detections <- rbind(
-      same_place_detections[same_place_detections$stream_id == stream$stream_id, ],
-      rare_trigger_detections[rare_trigger_detections$stream_id == stream$stream_id, ]
+      same_place_detections[
+        same_place_detections$stream_id == stream$stream_id,
+      ],
+      rare_trigger_detections[
+        rare_trigger_detections$stream_id == stream$stream_id,
+      ]
     )
 
     # MEM runs on pathogen_region (L5) streams only, for pathogens
     # flagged mem_applicable - see episodic_detect_mem()'s own docs for
     # why L5 rather than every level.
     pc_mem <- pathogen_config[pathogen_config$pathogen == stream$pathogen, ]
-    if (nrow(pc_mem) > 0 && isTRUE(as.logical(pc_mem$mem_applicable[1])) &&
-        identical(stream$level, "pathogen_region")) {
-      stream_detections <- rbind(stream_detections, episodic_detect_mem(stream_cases, stream$stream_id, run_date))
+    if (
+      nrow(pc_mem) > 0 &&
+        isTRUE(as.logical(pc_mem$mem_applicable[1])) &&
+        identical(stream$level, "pathogen_region")
+    ) {
+      stream_detections <- rbind(
+        stream_detections,
+        episodic_detect_mem(stream_cases, stream$stream_id, run_date)
+      )
     }
 
-    if (nrow(stream_cases) > 0 &&
-        episodic_eligibility_gate(stream_cases, run_date, config)) {
+    if (
+      nrow(stream_cases) > 0 &&
+        episodic_eligibility_gate(stream_cases, run_date, config)
+    ) {
       # A period this stream's own history shows was a confirmed
       # epidemic must not silently raise next winter's baseline.
       # Excluded from the cases fed to Farrington only
       # (same_place/rare_trigger detect on raw counts and do not baseline
       # at all, so they are unaffected).
-      excluded_windows <- episodic_baseline_excluded_windows(con, stream$stream_id)
-      farrington_cases <- episodic_baseline_exclude_cases(stream_cases, excluded_windows)
+      excluded_windows <- episodic_baseline_excluded_windows(
+        con,
+        stream$stream_id
+      )
+      farrington_cases <- episodic_baseline_exclude_cases(
+        stream_cases,
+        excluded_windows
+      )
 
       # Patient-day normalisation at L2. Both
       # calls below build identical weekly bins from the same
       # (farrington_cases, run_date), so one population vector serves both.
-      weekly_weeks <- episodic_weekly_bins(as.Date(farrington_cases$sample_date), run_date)$week_start
-      population <- episodic_farrington_population_vector(con, stream$institution_id, stream$level, weekly_weeks)
+      weekly_weeks <- episodic_weekly_bins(
+        as.Date(farrington_cases$sample_date),
+        run_date
+      )$week_start
+      population <- episodic_farrington_population_vector(
+        con,
+        stream$institution_id,
+        stream$level,
+        weekly_weeks
+      )
 
       stream_detections <- rbind(
         stream_detections,
-        episodic_detect_farrington(farrington_cases, stream$stream_id, config, run_date, population = population)
+        episodic_detect_farrington(
+          farrington_cases,
+          stream$stream_id,
+          config,
+          run_date,
+          population = population
+        )
       )
 
       # trend cache for the multi-year trend panel; see
       # episodic_farrington_trend()'s own docs for the backfill-once,
       # top-up-thereafter strategy.
       n_existing_trend <- nrow(episodic_db_stream_trend(con, stream$stream_id))
-      trend <- episodic_farrington_trend(farrington_cases, config, run_date, n_weeks_existing = n_existing_trend,
-                                         population = population)
+      trend <- episodic_farrington_trend(
+        farrington_cases,
+        config,
+        run_date,
+        n_weeks_existing = n_existing_trend,
+        population = population
+      )
       for (k in seq_len(nrow(trend))) {
         episodic_db_stream_trend_upsert(
-          con, stream_id = stream$stream_id, week_start = as.character(trend$week_start[k]),
-          n_cases = trend$n_cases[k], expected = trend$expected[k], upperbound = trend$upperbound[k]
+          con,
+          stream_id = stream$stream_id,
+          week_start = as.character(trend$week_start[k]),
+          n_cases = trend$n_cases[k],
+          expected = trend$expected[k],
+          upperbound = trend$upperbound[k]
         )
       }
     }
 
-    if (nrow(stream_detections) == 0) next
+    if (nrow(stream_detections) == 0) {
+      next
+    }
 
     detection_ids <- integer(nrow(stream_detections))
     for (j in seq_len(nrow(stream_detections))) {
       d <- stream_detections[j, ]
       detection_ids[j] <- episodic_db_detection_insert(
-        con, run_id = run_id, stream_id = stream$stream_id, detector = d$detector,
-        first_day = d$first_day, last_day = d$last_day, n_cases = d$n_cases,
-        expected = d$expected, upperbound = d$upperbound, params_json = as.character(d$params)
+        con,
+        run_id = run_id,
+        stream_id = stream$stream_id,
+        detector = d$detector,
+        first_day = d$first_day,
+        last_day = d$last_day,
+        n_cases = d$n_cases,
+        expected = d$expected,
+        upperbound = d$upperbound,
+        params_json = as.character(d$params)
       )
     }
     stream_detections$detection_id <- detection_ids
     n_detections_total <- n_detections_total + nrow(stream_detections)
 
     pc <- pathogen_config[pathogen_config$pathogen == stream$pathogen, ]
-    case_free_days <- if (nrow(pc) > 0) pc$case_free_days[1] else config$reconciliation$case_free_days_default
+    case_free_days <- if (nrow(pc) > 0) {
+      pc$case_free_days[1]
+    } else {
+      config$reconciliation$case_free_days_default
+    }
     cooldown_days <- if (nrow(pc) > 0) pc$cooldown_days[1] else NA
 
     weights <- config$priority_score$weights
     reconcile_result <- episodic_reconcile_stream(
-      con, stream_id = stream$stream_id, detections = stream_detections,
-      case_free_days = case_free_days, run_id = run_id,
+      con,
+      stream_id = stream$stream_id,
+      detections = stream_detections,
+      case_free_days = case_free_days,
+      run_id = run_id,
       close_after_runs = config$reconciliation$close_after_runs,
       cooldown_days = cooldown_days,
-      cooldown_reopen_ratio = config$reconciliation$cooldown_reopen_ratio %||% NA,
+      cooldown_reopen_ratio = config$reconciliation$cooldown_reopen_ratio %||%
+        NA,
       # Five of the seven priority components are properties of the
       # candidate episode and its cases, so they are computed here, where
       # both are in hand. They used to be left at their defaults - most
@@ -310,22 +443,35 @@ episodic_run_cron_body <- function(con, run_id, config, cases, denominators,
       # and detector agreement alone.
       priority_score_fn = function(candidate) {
         metrics <- episodic_reconcile_candidate_metrics(candidate)
-        candidate_cases <- episodic_cases_in_window(stream_cases, candidate$first_day, candidate$last_day)
+        candidate_cases <- episodic_cases_in_window(
+          stream_cases,
+          candidate$first_day,
+          candidate$last_day
+        )
         # Same descriptive rate the dossier's own density stat shows, so
         # the ranking and the displayed evidence cannot drift apart.
         density <- episodic_app_density(con, stream, candidate_cases)
-        density_ratio <- if (is.null(density) || is.na(density$baseline) || density$baseline <= 0) {
+        density_ratio <- if (
+          is.null(density) || is.na(density$baseline) || density$baseline <= 0
+        ) {
           NA_real_
         } else {
           density$value / density$baseline
         }
         episodic_priority_score(
-          excess = metrics$excess, ratio = metrics$ratio,
+          excess = metrics$excess,
+          ratio = metrics$ratio,
           severity_weight = if (nrow(pc) > 0) pc$severity_weight[1] else 1,
-          growth_slope = episodic_growth_slope(stream_cases, candidate$last_day),
-          detector_agreement = candidate$detector_agreement, n_detectors = 4,  # farrington, same_place, rare_trigger, mem
+          growth_slope = episodic_growth_slope(
+            stream_cases,
+            candidate$last_day
+          ),
+          detector_agreement = candidate$detector_agreement,
+          n_detectors = 4, # farrington, same_place, rare_trigger, mem
           density_ratio = density_ratio,
-          spatial_concentration = episodic_spatial_concentration(candidate_cases),
+          spatial_concentration = episodic_spatial_concentration(
+            candidate_cases
+          ),
           weights = weights
         )
       },
@@ -335,7 +481,11 @@ episodic_run_cron_body <- function(con, run_id, config, cases, denominators,
       verdict_fn = function(cluster_id) {
         events <- episodic_db_assessment_events(con, cluster_id)
         classified <- events[!is.na(events$verdict), ]
-        if (nrow(classified) == 0) NA_character_ else classified$verdict[nrow(classified)]
+        if (nrow(classified) == 0) {
+          NA_character_
+        } else {
+          classified$verdict[nrow(classified)]
+        }
       }
     )
     n_new_total <- n_new_total + reconcile_result$n_new
@@ -343,9 +493,15 @@ episodic_run_cron_body <- function(con, run_id, config, cases, denominators,
   }
 
   list(
-    status = if (isTRUE(activity_counts$n_skipped > 0)) "partial" else "success",
-    n_streams = nrow(streams), n_detections = n_detections_total,
-    n_signals_new = n_new_total, n_signals_updated = n_updated_total,
+    status = if (isTRUE(activity_counts$n_skipped > 0)) {
+      "partial"
+    } else {
+      "success"
+    },
+    n_streams = nrow(streams),
+    n_detections = n_detections_total,
+    n_signals_new = n_new_total,
+    n_signals_updated = n_updated_total,
     n_cases_supplied = case_counts$n_supplied,
     n_cases_deduplicated = case_counts$n_deduplicated,
     n_cases_inserted = case_counts$n_inserted,
@@ -373,7 +529,9 @@ episodic_run_cron_body <- function(con, run_id, config, cases, denominators,
 episodic_cases_for_stream <- function(cases, stream) {
   matches <- cases$pathogen == stream$pathogen
   if (!is.na(stream$institution_id)) {
-    matches <- matches & !is.na(cases$institution_id) & cases$institution_id == stream$institution_id
+    matches <- matches &
+      !is.na(cases$institution_id) &
+      cases$institution_id == stream$institution_id
   }
   if (!is.na(stream$ward)) {
     matches <- matches & !is.na(cases$ward) & cases$ward == stream$ward
@@ -386,7 +544,11 @@ episodic_cases_for_stream <- function(cases, stream) {
 episodic_pkg_versions <- function() {
   pkgs <- c("EpiSODIC", "surveillance", "EpiEstim")
   versions <- lapply(pkgs, function(p) {
-    if (requireNamespace(p, quietly = TRUE)) as.character(utils::packageVersion(p)) else NA
+    if (requireNamespace(p, quietly = TRUE)) {
+      as.character(utils::packageVersion(p))
+    } else {
+      NA
+    }
   })
   stats::setNames(versions, pkgs)
 }

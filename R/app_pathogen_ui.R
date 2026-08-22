@@ -32,18 +32,27 @@ episodic_ui_pathogen_screen <- function(screen, lang = "nl") {
   if (nrow(screen$pathogens) == 0 || is.null(screen$pathogen)) {
     return(shiny::tags$div(
       class = "episodic-streams-screen",
-      shiny::tags$h1(style = "font-size:22px;font-weight:600;margin-bottom:4px;",
-                      episodic_tr("pathogen.title", lang = lang)),
-      shiny::tags$p(class = "episodic-panel-empty", episodic_tr("pathogen.empty", lang = lang))
+      shiny::tags$h1(
+        style = "font-size:22px;font-weight:600;margin-bottom:4px;",
+        episodic_tr("pathogen.title", lang = lang)
+      ),
+      shiny::tags$p(
+        class = "episodic-panel-empty",
+        episodic_tr("pathogen.empty", lang = lang)
+      )
     ))
   }
 
   shiny::tags$div(
     class = "episodic-streams-screen",
-    shiny::tags$h1(style = "font-size:22px;font-weight:600;margin-bottom:4px;",
-                    episodic_tr("pathogen.title", lang = lang)),
-    shiny::tags$p(style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:16px;",
-                   episodic_tr("pathogen.note", lang = lang)),
+    shiny::tags$h1(
+      style = "font-size:22px;font-weight:600;margin-bottom:4px;",
+      episodic_tr("pathogen.title", lang = lang)
+    ),
+    shiny::tags$p(
+      style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:16px;",
+      episodic_tr("pathogen.note", lang = lang)
+    ),
     episodic_ui_pathogen_controls(screen, lang = lang),
     episodic_ui_pathogen_stats(screen, lang = lang),
     episodic_ui_pathogen_curve_panel(screen, lang = lang),
@@ -75,14 +84,21 @@ episodic_ui_pathogen_controls <- function(screen, lang = "nl") {
   # all-time one, which is the number that decides whether this pathogen
   # has enough history for the screen to say anything at all. Spelled out
   # with its unit so it cannot be mistaken for an id.
-  case_words <- c(episodic_tr("unit.case", lang = lang), episodic_tr("unit.cases", lang = lang))
+  case_words <- c(
+    episodic_tr("unit.case", lang = lang),
+    episodic_tr("unit.cases", lang = lang)
+  )
   pathogen_options <- lapply(seq_len(nrow(screen$pathogens)), function(i) {
     row <- screen$pathogens[i, ]
     shiny::tags$option(
       value = row$pathogen,
       selected = if (identical(row$pathogen, screen$pathogen)) "selected",
-      episodic_tr("pathogen.select_option", lang = lang, pathogen = row$pathogen,
-                   cases = episodic_count_phrase(row$n_cases, case_words[1], case_words[2]))
+      episodic_tr(
+        "pathogen.select_option",
+        lang = lang,
+        pathogen = row$pathogen,
+        cases = episodic_count_phrase(row$n_cases, case_words[1], case_words[2])
+      )
     )
   })
 
@@ -90,9 +106,24 @@ episodic_ui_pathogen_controls <- function(screen, lang = "nl") {
     active <- identical(id, period$id)
     shiny::tags$button(
       type = "button",
-      class = if (active) "episodic-picker-btn active" else "episodic-picker-btn",
-      style = if (active) sprintf("background:%s;border-color:%s;color:#fff;", pal$primary, pal$primary) else "",
-      onclick = sprintf("Shiny.setInputValue('pathogen_period', '%s', {priority: 'event'}); return false;", id),
+      class = if (active) {
+        "episodic-picker-btn active"
+      } else {
+        "episodic-picker-btn"
+      },
+      style = if (active) {
+        sprintf(
+          "background:%s;border-color:%s;color:#fff;",
+          pal$primary,
+          pal$primary
+        )
+      } else {
+        ""
+      },
+      onclick = sprintf(
+        "Shiny.setInputValue('pathogen_period', '%s', {priority: 'event'}); return false;",
+        id
+      ),
       episodic_tr(paste0("pathogen.period.", id), lang = lang)
     )
   })
@@ -101,30 +132,52 @@ episodic_ui_pathogen_controls <- function(screen, lang = "nl") {
     class = "episodic-pathogen-controls",
     shiny::tags$div(
       class = "episodic-form-group",
-      shiny::tags$label(class = "episodic-form-label", episodic_tr("pathogen.select_label", lang = lang)),
+      shiny::tags$label(
+        class = "episodic-form-label",
+        episodic_tr("pathogen.select_label", lang = lang)
+      ),
       shiny::tags$select(
-        id = "pathogen_select", class = "episodic-select",
+        id = "pathogen_select",
+        class = "episodic-select",
         onchange = "Shiny.setInputValue('pathogen_select', this.value, {priority: 'event'})",
         pathogen_options
       )
     ),
     shiny::tags$div(
       class = "episodic-form-group",
-      shiny::tags$label(class = "episodic-form-label", episodic_tr("pathogen.period_label", lang = lang)),
-      shiny::tags$div(class = "episodic-picker episodic-picker-inline", period_buttons)
+      shiny::tags$label(
+        class = "episodic-form-label",
+        episodic_tr("pathogen.period_label", lang = lang)
+      ),
+      shiny::tags$div(
+        class = "episodic-picker episodic-picker-inline",
+        period_buttons
+      )
     ),
     shiny::tags$div(
       class = "episodic-form-group",
-      shiny::tags$label(class = "episodic-form-label", episodic_tr("pathogen.custom_label", lang = lang)),
+      shiny::tags$label(
+        class = "episodic-form-label",
+        episodic_tr("pathogen.custom_label", lang = lang)
+      ),
       shiny::tags$div(
         style = "display:flex;gap:8px;align-items:center;",
-        shiny::tags$input(type = "date", class = "episodic-date-input", id = "pathogen_from",
-                           value = as.character(period$from)),
+        shiny::tags$input(
+          type = "date",
+          class = "episodic-date-input",
+          id = "pathogen_from",
+          value = as.character(period$from)
+        ),
         shiny::tags$span(style = "color:var(--episodic-faint);", "–"),
-        shiny::tags$input(type = "date", class = "episodic-date-input", id = "pathogen_to",
-                           value = as.character(period$to)),
+        shiny::tags$input(
+          type = "date",
+          class = "episodic-date-input",
+          id = "pathogen_to",
+          value = as.character(period$to)
+        ),
         shiny::tags$button(
-          type = "button", class = "episodic-btn",
+          type = "button",
+          class = "episodic-btn",
           onclick = paste0(
             "Shiny.setInputValue('pathogen_custom_range', ",
             "{from: document.getElementById('pathogen_from').value, ",
@@ -136,9 +189,13 @@ episodic_ui_pathogen_controls <- function(screen, lang = "nl") {
     ),
     shiny::tags$div(
       class = "episodic-pathogen-period-label",
-      episodic_tr("pathogen.showing", lang = lang,
-                   from = format(period$from, "%d-%m-%Y"), to = format(period$to, "%d-%m-%Y"),
-                   asof = format(screen$asof, "%d-%m-%Y"))
+      episodic_tr(
+        "pathogen.showing",
+        lang = lang,
+        from = format(period$from, "%d-%m-%Y"),
+        to = format(period$to, "%d-%m-%Y"),
+        asof = format(screen$asof, "%d-%m-%Y")
+      )
     )
   )
 }
@@ -151,17 +208,31 @@ episodic_ui_pathogen_stats <- function(screen, lang = "nl") {
   s <- screen$summary
 
   stats <- list(
-    episodic_ui_stat(episodic_tr("pathogen.stat.cases", lang = lang), s$n_cases,
-                      episodic_tr("pathogen.stat.cases_sub", weeks = s$n_weeks, lang = lang),
-                      colour = pal$danger_dark),
-    episodic_ui_stat(episodic_tr("pathogen.stat.patients", lang = lang), s$n_patients,
-                      episodic_tr("pathogen.stat.patients_sub", lang = lang))
+    episodic_ui_stat(
+      episodic_tr("pathogen.stat.cases", lang = lang),
+      s$n_cases,
+      episodic_tr("pathogen.stat.cases_sub", weeks = s$n_weeks, lang = lang),
+      colour = pal$danger_dark
+    ),
+    episodic_ui_stat(
+      episodic_tr("pathogen.stat.patients", lang = lang),
+      s$n_patients,
+      episodic_tr("pathogen.stat.patients_sub", lang = lang)
+    )
   )
   if (!is.na(s$peak_n)) {
-    stats <- c(stats, list(episodic_ui_stat(
-      episodic_tr("pathogen.stat.peak", lang = lang), s$peak_n,
-      episodic_tr("pathogen.stat.peak_sub", week = format(as.Date(s$peak_week), "%d-%m-%Y"), lang = lang)
-    )))
+    stats <- c(
+      stats,
+      list(episodic_ui_stat(
+        episodic_tr("pathogen.stat.peak", lang = lang),
+        s$peak_n,
+        episodic_tr(
+          "pathogen.stat.peak_sub",
+          week = format(as.Date(s$peak_week), "%d-%m-%Y"),
+          lang = lang
+        )
+      ))
+    )
   }
   if (!is.na(s$n_previous)) {
     change <- if (is.na(s$change_pct)) {
@@ -169,19 +240,33 @@ episodic_ui_pathogen_stats <- function(screen, lang = "nl") {
     } else {
       sprintf("%+d%%", as.integer(s$change_pct))
     }
-    stats <- c(stats, list(episodic_ui_stat(
-      episodic_tr("pathogen.stat.change", lang = lang), change,
-      episodic_tr("pathogen.stat.change_sub", n = s$n_previous, lang = lang),
-      colour = if (!is.na(s$change_pct) && s$change_pct > 0) pal$danger_dark else pal$muted
-    )))
+    stats <- c(
+      stats,
+      list(episodic_ui_stat(
+        episodic_tr("pathogen.stat.change", lang = lang),
+        change,
+        episodic_tr("pathogen.stat.change_sub", n = s$n_previous, lang = lang),
+        colour = if (!is.na(s$change_pct) && s$change_pct > 0) {
+          pal$danger_dark
+        } else {
+          pal$muted
+        }
+      ))
+    )
   }
   if (!is.null(screen$mem) && !is.na(screen$mem$peak_level)) {
-    stats <- c(stats, list(episodic_ui_stat(
-      episodic_tr("pathogen.stat.intensity", lang = lang),
-      episodic_tr(paste0("pathogen.intensity.", screen$mem$peak_level), lang = lang),
-      episodic_tr("pathogen.stat.intensity_sub", lang = lang),
-      colour = episodic_ui_intensity_colour(screen$mem$peak_level)
-    )))
+    stats <- c(
+      stats,
+      list(episodic_ui_stat(
+        episodic_tr("pathogen.stat.intensity", lang = lang),
+        episodic_tr(
+          paste0("pathogen.intensity.", screen$mem$peak_level),
+          lang = lang
+        ),
+        episodic_tr("pathogen.stat.intensity_sub", lang = lang),
+        colour = episodic_ui_intensity_colour(screen$mem$peak_level)
+      ))
+    )
   }
   shiny::tags$div(class = "episodic-statgrid", stats)
 }
@@ -197,13 +282,15 @@ episodic_ui_pathogen_stats <- function(screen, lang = "nl") {
 #' @noRd
 episodic_ui_intensity_colour <- function(level) {
   pal <- episodic_palette()
-  switch(as.character(level),
-         baseline = pal$muted,
-         low = pal$success,
-         medium = pal$warning_dark,
-         high = pal$danger,
-         very_high = pal$danger_dark,
-         pal$muted)
+  switch(
+    as.character(level),
+    baseline = pal$muted,
+    low = pal$success,
+    medium = pal$warning_dark,
+    high = pal$danger,
+    very_high = pal$danger_dark,
+    pal$muted
+  )
 }
 
 #' The weekly curve, with MEM thresholds where they exist
@@ -212,15 +299,25 @@ episodic_ui_intensity_colour <- function(level) {
 episodic_ui_pathogen_curve_panel <- function(screen, lang = "nl") {
   # An all-zero curve is not a chart worth drawing: a period with no
   # cases of this pathogen is a sentence, not a row of empty bars.
-  if (is.null(screen$weekly) || nrow(screen$weekly) == 0 || sum(screen$weekly$n_cases) == 0) {
-    return(episodic_ui_panel_empty(episodic_tr("pathogen.panel.curve.title", lang = lang),
-                                    episodic_tr("pathogen.panel.curve.empty", lang = lang)))
+  if (
+    is.null(screen$weekly) ||
+      nrow(screen$weekly) == 0 ||
+      sum(screen$weekly$n_cases) == 0
+  ) {
+    return(episodic_ui_panel_empty(
+      episodic_tr("pathogen.panel.curve.title", lang = lang),
+      episodic_tr("pathogen.panel.curve.empty", lang = lang)
+    ))
   }
   thresholds <- screen$mem$thresholds
   note <- if (!is.null(thresholds)) {
-    episodic_tr("pathogen.panel.curve.mem_note", lang = lang,
-                 seasons = length(thresholds$seasons_used),
-                 pre = round(thresholds$pre_epidemic, 1), post = round(thresholds$post_epidemic, 1))
+    episodic_tr(
+      "pathogen.panel.curve.mem_note",
+      lang = lang,
+      seasons = length(thresholds$seasons_used),
+      pre = round(thresholds$pre_epidemic, 1),
+      post = round(thresholds$post_epidemic, 1)
+    )
   } else if (isTRUE(screen$seasonal)) {
     episodic_tr("pathogen.panel.curve.mem_unavailable", lang = lang)
   } else {
@@ -229,10 +326,15 @@ episodic_ui_pathogen_curve_panel <- function(screen, lang = "nl") {
 
   episodic_ui_panel(
     episodic_tr("pathogen.panel.curve.title", lang = lang),
-    aside = episodic_tr("pathogen.panel.curve.aside", weeks = nrow(screen$weekly), lang = lang),
+    aside = episodic_tr(
+      "pathogen.panel.curve.aside",
+      weeks = nrow(screen$weekly),
+      lang = lang
+    ),
     note = shiny::HTML(note),
     shiny::renderPlot(
-      episodic_ui_pathogen_curve_chart(screen$weekly, thresholds, lang = lang), height = 300
+      episodic_ui_pathogen_curve_chart(screen$weekly, thresholds, lang = lang),
+      height = 300
     )
   )
 }
@@ -243,14 +345,22 @@ episodic_ui_pathogen_curve_panel <- function(screen, lang = "nl") {
 episodic_ui_pathogen_overlay_panel <- function(screen, lang = "nl") {
   overlay <- screen$overlay
   if (is.null(overlay)) {
-    return(episodic_ui_panel_empty(episodic_tr("pathogen.panel.overlay.title", lang = lang),
-                                    episodic_tr("pathogen.panel.overlay.empty", lang = lang)))
+    return(episodic_ui_panel_empty(
+      episodic_tr("pathogen.panel.overlay.title", lang = lang),
+      episodic_tr("pathogen.panel.overlay.empty", lang = lang)
+    ))
   }
   episodic_ui_panel(
     episodic_tr("pathogen.panel.overlay.title", lang = lang),
-    aside = episodic_tr(paste0("pathogen.panel.overlay.kind.", overlay$kind), lang = lang),
+    aside = episodic_tr(
+      paste0("pathogen.panel.overlay.kind.", overlay$kind),
+      lang = lang
+    ),
     note = episodic_tr("pathogen.panel.overlay.note", lang = lang),
-    shiny::renderPlot(episodic_ui_pathogen_overlay_chart(overlay, lang = lang), height = 300)
+    shiny::renderPlot(
+      episodic_ui_pathogen_overlay_chart(overlay, lang = lang),
+      height = 300
+    )
   )
 }
 
@@ -265,12 +375,18 @@ episodic_ui_pathogen_rt_panel <- function(screen, lang = "nl") {
     } else {
       episodic_tr(paste0("panel.rt.unavailable.", reason), lang = lang)
     }
-    return(episodic_ui_panel_empty(episodic_tr("pathogen.panel.rt.title", lang = lang), msg))
+    return(episodic_ui_panel_empty(
+      episodic_tr("pathogen.panel.rt.title", lang = lang),
+      msg
+    ))
   }
   episodic_ui_panel(
     episodic_tr("pathogen.panel.rt.title", lang = lang),
     note = episodic_tr("pathogen.panel.rt.note", lang = lang),
-    shiny::renderPlot(episodic_ui_rt_chart(screen$rt, lang = lang), height = 260)
+    shiny::renderPlot(
+      episodic_ui_rt_chart(screen$rt, lang = lang),
+      height = 260
+    )
   )
 }
 
@@ -279,14 +395,19 @@ episodic_ui_pathogen_rt_panel <- function(screen, lang = "nl") {
 #' @noRd
 episodic_ui_pathogen_denominator_panel <- function(screen, lang = "nl") {
   if (is.null(screen$denominator)) {
-    return(episodic_ui_panel_empty(episodic_tr("panel.denominator.title", lang = lang),
-                                    episodic_tr("panel.denominator.unavailable", lang = lang)))
+    return(episodic_ui_panel_empty(
+      episodic_tr("panel.denominator.title", lang = lang),
+      episodic_tr("panel.denominator.unavailable", lang = lang)
+    ))
   }
   episodic_ui_panel(
     episodic_tr("panel.denominator.title", lang = lang),
     aside = episodic_tr("panel.denominator.aside", lang = lang),
     note = episodic_tr("pathogen.panel.denominator.note", lang = lang),
-    shiny::renderPlot(episodic_ui_denominator_chart(screen$denominator, lang = lang), height = 260)
+    shiny::renderPlot(
+      episodic_ui_denominator_chart(screen$denominator, lang = lang),
+      height = 260
+    )
   )
 }
 
@@ -296,17 +417,24 @@ episodic_ui_pathogen_denominator_panel <- function(screen, lang = "nl") {
 episodic_ui_pathogen_demography_panel <- function(screen, lang = "nl") {
   demo <- screen$demography
   if (is.null(demo)) {
-    return(episodic_ui_panel_empty(episodic_tr("panel.demography.title", lang = lang),
-                                    episodic_tr("misc.none", lang = lang)))
+    return(episodic_ui_panel_empty(
+      episodic_tr("panel.demography.title", lang = lang),
+      episodic_tr("misc.none", lang = lang)
+    ))
   }
   note <- if (is.na(demo$baseline_median_age)) {
     episodic_tr("panel.demography.note", lang = lang)
   } else {
-    episodic_tr("pathogen.panel.demography.note", lang = lang,
-                 median = round(demo$median_age, 0), baseline = round(demo$baseline_median_age, 0))
+    episodic_tr(
+      "pathogen.panel.demography.note",
+      lang = lang,
+      median = round(demo$median_age, 0),
+      baseline = round(demo$baseline_median_age, 0)
+    )
   }
   episodic_ui_panel(
-    episodic_tr("panel.demography.title", lang = lang), note = note,
+    episodic_tr("panel.demography.title", lang = lang),
+    note = note,
     episodic_ui_pyramid(demo$bands, lang = lang)
   )
 }
@@ -317,18 +445,27 @@ episodic_ui_pathogen_demography_panel <- function(screen, lang = "nl") {
 episodic_ui_pathogen_geo_panel <- function(screen, lang = "nl") {
   concentration <- screen$concentration
   if (is.null(concentration)) {
-    return(episodic_ui_panel_empty(episodic_tr("panel.geo.title", lang = lang),
-                                    episodic_tr("panel.geo.empty", lang = lang)))
+    return(episodic_ui_panel_empty(
+      episodic_tr("panel.geo.title", lang = lang),
+      episodic_tr("panel.geo.empty", lang = lang)
+    ))
   }
   map_chart <- episodic_ui_geo_map_chart(concentration$rows)
   episodic_ui_panel(
-    episodic_tr("panel.geo.title", lang = lang), aside = episodic_tr("panel.geo.aside", lang = lang),
+    episodic_tr("panel.geo.title", lang = lang),
+    aside = episodic_tr("panel.geo.aside", lang = lang),
     if (is.null(map_chart)) {
-      episodic_ui_bars(utils::head(concentration$rows, 12), unit = episodic_tr("panel.geo.unit", lang = lang))
+      episodic_ui_bars(
+        utils::head(concentration$rows, 12),
+        unit = episodic_tr("panel.geo.unit", lang = lang)
+      )
     } else {
       shiny::tagList(
         shiny::renderPlot(map_chart, height = 470),
-        shiny::tags$p(class = "episodic-panel-note", episodic_tr("panel.geo.map_note", lang = lang)),
+        shiny::tags$p(
+          class = "episodic-panel-note",
+          episodic_tr("panel.geo.map_note", lang = lang)
+        ),
         episodic_ui_bars(utils::head(concentration$rows, 12))
       )
     }
@@ -346,22 +483,30 @@ episodic_ui_pathogen_breakdown_panels <- function(screen, lang = "nl") {
     shiny::tags$div(
       style = "flex:1;",
       if (is.null(care_lines)) {
-        episodic_ui_panel_empty(episodic_tr("pathogen.panel.care_line.title", lang = lang),
-                                 episodic_tr("misc.none", lang = lang))
+        episodic_ui_panel_empty(
+          episodic_tr("pathogen.panel.care_line.title", lang = lang),
+          episodic_tr("misc.none", lang = lang)
+        )
       } else {
-        episodic_ui_panel(episodic_tr("pathogen.panel.care_line.title", lang = lang),
-                           note = episodic_tr("pathogen.panel.care_line.note", lang = lang),
-                           episodic_ui_bars(care_lines))
+        episodic_ui_panel(
+          episodic_tr("pathogen.panel.care_line.title", lang = lang),
+          note = episodic_tr("pathogen.panel.care_line.note", lang = lang),
+          episodic_ui_bars(care_lines)
+        )
       }
     ),
     shiny::tags$div(
       style = "flex:1;",
       if (is.null(institutions)) {
-        episodic_ui_panel_empty(episodic_tr("pathogen.panel.institutions.title", lang = lang),
-                                 episodic_tr("misc.none", lang = lang))
+        episodic_ui_panel_empty(
+          episodic_tr("pathogen.panel.institutions.title", lang = lang),
+          episodic_tr("misc.none", lang = lang)
+        )
       } else {
-        episodic_ui_panel(episodic_tr("pathogen.panel.institutions.title", lang = lang),
-                           episodic_ui_bars(institutions))
+        episodic_ui_panel(
+          episodic_tr("pathogen.panel.institutions.title", lang = lang),
+          episodic_ui_bars(institutions)
+        )
       }
     )
   )
@@ -373,13 +518,18 @@ episodic_ui_pathogen_breakdown_panels <- function(screen, lang = "nl") {
 episodic_ui_pathogen_clusters_panel <- function(screen, lang = "nl") {
   clusters <- screen$clusters
   if (is.null(clusters) || nrow(clusters) == 0) {
-    return(episodic_ui_panel_empty(episodic_tr("pathogen.panel.clusters.title", lang = lang),
-                                    episodic_tr("pathogen.panel.clusters.empty", lang = lang)))
+    return(episodic_ui_panel_empty(
+      episodic_tr("pathogen.panel.clusters.title", lang = lang),
+      episodic_tr("pathogen.panel.clusters.empty", lang = lang)
+    ))
   }
   episodic_ui_panel(
     episodic_tr("pathogen.panel.clusters.title", lang = lang),
-    aside = episodic_count_phrase(nrow(clusters), episodic_tr("unit.cluster", lang = lang),
-                                   episodic_tr("unit.clusters", lang = lang)),
+    aside = episodic_count_phrase(
+      nrow(clusters),
+      episodic_tr("unit.cluster", lang = lang),
+      episodic_tr("unit.clusters", lang = lang)
+    ),
     note = episodic_tr("pathogen.panel.clusters.note", lang = lang),
     shiny::tags$table(
       class = "episodic-table",
@@ -389,18 +539,29 @@ episodic_ui_pathogen_clusters_panel <- function(screen, lang = "nl") {
         # so it leads the row rather than being absent from a table of
         # clusters entirely.
         shiny::tags$th(episodic_tr("column.cluster", lang = lang)),
-        shiny::tags$th(episodic_tr("pathogen.panel.clusters.col.period", lang = lang)),
+        shiny::tags$th(episodic_tr(
+          "pathogen.panel.clusters.col.period",
+          lang = lang
+        )),
         shiny::tags$th(episodic_tr("archive.col.level", lang = lang)),
         shiny::tags$th(episodic_tr("archive.col.place", lang = lang)),
         shiny::tags$th(episodic_tr("archive.col.cases", lang = lang)),
         shiny::tags$th(episodic_tr("panel.similar.col.verdict", lang = lang)),
-        shiny::tags$th(episodic_tr("pathogen.panel.clusters.col.state", lang = lang))
+        shiny::tags$th(episodic_tr(
+          "pathogen.panel.clusters.col.state",
+          lang = lang
+        ))
       )),
       shiny::tags$tbody(lapply(seq_len(nrow(clusters)), function(i) {
         row <- clusters[i, ]
         episodic_ui_cluster_link_row(
-          row$cluster_id, lang = lang,
-          shiny::tags$td(episodic_format_date_range(row$first_day, row$last_day, lang = lang)),
+          row$cluster_id,
+          lang = lang,
+          shiny::tags$td(episodic_format_date_range(
+            row$first_day,
+            row$last_day,
+            lang = lang
+          )),
           shiny::tags$td(row$level_label),
           shiny::tags$td(row$place),
           shiny::tags$td(row$n_cases),

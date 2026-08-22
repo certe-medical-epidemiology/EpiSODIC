@@ -64,16 +64,29 @@
 #' file.remove(db_path)
 #' }
 #' @export
-episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
-                          username = "demo", full_name = "Demo User",
-                          email = "demo@example.org", password = "episodic-demo",
-                          launch = TRUE, lang = Sys.getenv("EPISODIC_LANGUAGE"),
-                          cases = episodic_synthetic_cases,
-                          denominators = episodic_synthetic_denominators) {
+episodic_demo <- function(
+  db_path = tempfile(fileext = ".sqlite"),
+  username = "demo",
+  full_name = "Demo User",
+  email = "demo@example.org",
+  password = "episodic-demo",
+  launch = TRUE,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  cases = episodic_synthetic_cases,
+  denominators = episodic_synthetic_denominators
+) {
   Sys.setenv(
-    EPISODIC_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),
+    EPISODIC_CONFIG = system.file(
+      "config",
+      "default.yaml",
+      package = "EpiSODIC"
+    ),
     EPISODIC_DB = db_path,
-    EPISODIC_GEO_DATA = system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
+    EPISODIC_GEO_DATA = system.file(
+      "extdata",
+      "geo_postcodes4_nl.rds",
+      package = "EpiSODIC"
+    )
   )
 
   episodic_run_cron(
@@ -83,10 +96,17 @@ episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
   )
 
   episodic_provision_user(
-    db_path = db_path, username = username, full_name = full_name,
-    email = email, password = password
+    db_path = db_path,
+    username = username,
+    full_name = full_name,
+    email = email,
+    password = password
   )
-  message(sprintf("EpiSODIC demo account - username: %s, password: %s", username, password))
+  message(sprintf(
+    "EpiSODIC demo account - username: %s, password: %s",
+    username,
+    password
+  ))
 
   if (isTRUE(launch)) {
     episodic_run_app(db_path = db_path, lang = lang)

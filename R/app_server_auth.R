@@ -64,11 +64,17 @@ episodic_app_server_auth <- function(input, output, session, con, lang = "nl") {
     shiny::req(user)
 
     if (nchar(new_pw) < 8) {
-      shiny::showModal(episodic_ui_must_change_modal(error = episodic_tr("auth.password_too_short", lang = lang), lang = lang))
+      shiny::showModal(episodic_ui_must_change_modal(
+        error = episodic_tr("auth.password_too_short", lang = lang),
+        lang = lang
+      ))
       return(invisible(NULL))
     }
     if (!identical(new_pw, confirm_pw)) {
-      shiny::showModal(episodic_ui_must_change_modal(error = episodic_tr("auth.password_mismatch", lang = lang), lang = lang))
+      shiny::showModal(episodic_ui_must_change_modal(
+        error = episodic_tr("auth.password_mismatch", lang = lang),
+        lang = lang
+      ))
       return(invisible(NULL))
     }
 

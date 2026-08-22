@@ -36,21 +36,36 @@
 #' @noRd
 episodic_baseline_excluded_windows <- function(con, stream_id) {
   clusters <- episodic_db_clusters_for_stream(con, stream_id)
-  empty <- data.frame(first_day = character(0), last_day = character(0), stringsAsFactors = FALSE)
-  if (nrow(clusters) == 0) return(empty)
+  empty <- data.frame(
+    first_day = character(0),
+    last_day = character(0),
+    stringsAsFactors = FALSE
+  )
+  if (nrow(clusters) == 0) {
+    return(empty)
+  }
 
   windows <- lapply(seq_len(nrow(clusters)), function(i) {
     cluster_id <- clusters$cluster_id[i]
     events <- episodic_db_assessment_events(con, cluster_id)
     classified <- events[!is.na(events$verdict), ]
-    if (nrow(classified) == 0) return(NULL)
+    if (nrow(classified) == 0) {
+      return(NULL)
+    }
     latest_verdict <- classified$verdict[nrow(classified)]
-    if (!identical(latest_verdict, "confirmed_epidemic")) return(NULL)
-    data.frame(first_day = clusters$first_day[i], last_day = clusters$last_day[i],
-               stringsAsFactors = FALSE)
+    if (!identical(latest_verdict, "confirmed_epidemic")) {
+      return(NULL)
+    }
+    data.frame(
+      first_day = clusters$first_day[i],
+      last_day = clusters$last_day[i],
+      stringsAsFactors = FALSE
+    )
   })
   windows <- windows[!vapply(windows, is.null, logical(1))]
-  if (length(windows) == 0) return(empty)
+  if (length(windows) == 0) {
+    return(empty)
+  }
   do.call(rbind, windows)
 }
 
@@ -63,13 +78,19 @@ episodic_baseline_excluded_windows <- function(con, stream_id) {
 #'   `excluded_windows` has zero rows.
 #' @keywords internal
 #' @noRd
-episodic_baseline_exclude_cases <- function(cases_for_stream, excluded_windows) {
-  if (nrow(excluded_windows) == 0 || nrow(cases_for_stream) == 0) return(cases_for_stream)
+episodic_baseline_exclude_cases <- function(
+  cases_for_stream,
+  excluded_windows
+) {
+  if (nrow(excluded_windows) == 0 || nrow(cases_for_stream) == 0) {
+    return(cases_for_stream)
+  }
   dates <- as.Date(cases_for_stream$sample_date)
   excluded <- rep(FALSE, length(dates))
   for (i in seq_len(nrow(excluded_windows))) {
-    excluded <- excluded | (dates >= as.Date(excluded_windows$first_day[i]) &
-                               dates <= as.Date(excluded_windows$last_day[i]))
+    excluded <- excluded |
+      (dates >= as.Date(excluded_windows$first_day[i]) &
+        dates <= as.Date(excluded_windows$last_day[i]))
   }
   cases_for_stream[!excluded, , drop = FALSE]
 }

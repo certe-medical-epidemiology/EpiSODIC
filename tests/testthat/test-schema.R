@@ -21,14 +21,27 @@ test_that("episodic_db_create() builds every expected table", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
   tables <- DBI::dbListTables(con)
-  expect_true(all(c(
-    "episodic_stream", "episodic_stream_mute", "episodic_detection_run",
-    "episodic_institution", "episodic_institution_activity", "episodic_pathogen_config",
-    "episodic_case", "episodic_detection", "episodic_cluster", "episodic_cluster_case",
-    "episodic_assessment_event", "episodic_reporting_triangle", "episodic_denominator",
-    "episodic_cluster_state", "episodic_app_user",
-    "episodic_report_render"
-  ) %in% tables))
+  expect_true(all(
+    c(
+      "episodic_stream",
+      "episodic_stream_mute",
+      "episodic_detection_run",
+      "episodic_institution",
+      "episodic_institution_activity",
+      "episodic_pathogen_config",
+      "episodic_case",
+      "episodic_detection",
+      "episodic_cluster",
+      "episodic_cluster_case",
+      "episodic_assessment_event",
+      "episodic_reporting_triangle",
+      "episodic_denominator",
+      "episodic_cluster_state",
+      "episodic_app_user",
+      "episodic_report_render"
+    ) %in%
+      tables
+  ))
 })
 
 test_that("episodic_db_create() refuses to overwrite an existing file without overwrite = TRUE", {

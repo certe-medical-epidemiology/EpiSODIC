@@ -12,7 +12,11 @@ Sys.setenv(
   EPISODIC_DB = db_path,
   EPISODIC_LANGUAGE = "nl",
   EPISODIC_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),
-  EPISODIC_GEO_DATA = system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
+  EPISODIC_GEO_DATA = system.file(
+    "extdata",
+    "geo_postcodes4_nl.rds",
+    package = "EpiSODIC"
+  )
 )
 
 if (!file.exists(db_path)) {
@@ -34,7 +38,11 @@ if (!file.exists(db_path)) {
     password = "123"
   )
 } else {
-  message("Reusing existing demo database at '", db_path, "' - delete it to regenerate from scratch.")
+  message(
+    "Reusing existing demo database at '",
+    db_path,
+    "' - delete it to regenerate from scratch."
+  )
 }
 
 # Run this again (with the database already present) to simulate a

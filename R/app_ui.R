@@ -37,8 +37,10 @@ episodic_app_ui <- function(lang = "nl") {
     theme = bslib::bs_theme(version = 5),
     title = episodic_tr("app.title", lang = lang),
     shiny::tags$head(
-      shiny::tags$link(rel = "stylesheet",
-                        href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"),
+      shiny::tags$link(
+        rel = "stylesheet",
+        href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      ),
       shiny::tags$link(rel = "stylesheet", href = "www/episodic.css"),
       shiny::tags$style(episodic_app_palette_css(pal))
     ),
@@ -47,9 +49,13 @@ episodic_app_ui <- function(lang = "nl") {
       shiny::tags$div(
         style = "display:flex;align-items:center;",
         shiny::tags$span(
-          class = "episodic-brand", title = episodic_tr("app.full_name", lang = lang),
+          class = "episodic-brand",
+          title = episodic_tr("app.full_name", lang = lang),
           "EpiSODIC",
-          shiny::tags$span(class = "episodic-brand-version", paste0("v", utils::packageVersion("EpiSODIC")))
+          shiny::tags$span(
+            class = "episodic-brand-version",
+            paste0("v", utils::packageVersion("EpiSODIC"))
+          )
         ),
         # Rendered from the server's own view(), not written once here:
         # the highlight has to follow every way the view can change, and
@@ -57,8 +63,15 @@ episodic_app_ui <- function(lang = "nl") {
         # screen's cluster table switches views from a table row, and a
         # nav that only updated itself on its own clicks was left
         # pointing at the screen you had just left.
-        shiny::uiOutput("nav_links", container = shiny::tags$div, class = "episodic-nav"),
-        shiny::tags$span(class = "episodic-demodata", episodic_tr("app.demodata", lang = lang))
+        shiny::uiOutput(
+          "nav_links",
+          container = shiny::tags$div,
+          class = "episodic-nav"
+        ),
+        shiny::tags$span(
+          class = "episodic-demodata",
+          episodic_tr("app.demodata", lang = lang)
+        )
       ),
       shiny::tags$div(
         style = "display:flex;align-items:center;gap:14px;",
@@ -68,7 +81,9 @@ episodic_app_ui <- function(lang = "nl") {
     ),
     shiny::tags$div(
       class = "episodic-brandbar",
-      lapply(episodic_brand_bar(), function(colour) shiny::tags$div(style = sprintf("background:%s;", colour)))
+      lapply(episodic_brand_bar(), function(colour) {
+        shiny::tags$div(style = sprintf("background:%s;", colour))
+      })
     ),
     shiny::uiOutput("main_view")
   )
@@ -102,11 +117,19 @@ episodic_ui_nav_links <- function(active_view = "clusters", lang = "nl") {
     # Between the operational views and the configuration ones: it is the
     # same surveillance data read at a different altitude, not a settings
     # screen.
-    "pathogen", "streams", "archive", "activity", "performance", "info"
+    "pathogen",
+    "streams",
+    "archive",
+    "activity",
+    "performance",
+    "info"
   )
   shiny::tagList(lapply(views, function(v) {
-    episodic_ui_nav_link(v, episodic_tr(paste0("nav.", v), lang = lang),
-                          active = identical(v, active_view))
+    episodic_ui_nav_link(
+      v,
+      episodic_tr(paste0("nav.", v), lang = lang),
+      active = identical(v, active_view)
+    )
   }))
 }
 
@@ -115,7 +138,11 @@ episodic_ui_nav_links <- function(active_view = "clusters", lang = "nl") {
 episodic_ui_nav_link <- function(view, label, active = FALSE) {
   shiny::tags$a(
     href = "#",
-    class = if (isTRUE(active)) "episodic-nav-link active" else "episodic-nav-link",
+    class = if (isTRUE(active)) {
+      "episodic-nav-link active"
+    } else {
+      "episodic-nav-link"
+    },
     `data-view` = view,
     onclick = sprintf(
       paste0(
@@ -137,6 +164,10 @@ episodic_app_palette_css <- function(pal) {
   # convention instead); translated here so the stylesheet's var(--episodic-
   # primary-tint) references match what actually gets defined.
   css_names <- gsub("_", "-", names(pal), fixed = TRUE)
-  vars <- vapply(seq_along(pal), function(i) sprintf("--episodic-%s: %s;", css_names[i], pal[[i]]), character(1))
+  vars <- vapply(
+    seq_along(pal),
+    function(i) sprintf("--episodic-%s: %s;", css_names[i], pal[[i]]),
+    character(1)
+  )
   paste0(":root {\n", paste(vars, collapse = "\n"), "\n}")
 }

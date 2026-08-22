@@ -49,12 +49,20 @@ NULL
 #' # NULL when unset (or when the sf package is not installed)
 #' episodic_geo_overlay_resolve(path = NA)
 #' @export
-episodic_geo_overlay_resolve <- function(path = Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)) {
-  if (!requireNamespace("sf", quietly = TRUE)) return(NULL)
-  if (is.na(path) || !nzchar(path) || !file.exists(path)) return(NULL)
+episodic_geo_overlay_resolve <- function(
+  path = Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)
+) {
+  if (!requireNamespace("sf", quietly = TRUE)) {
+    return(NULL)
+  }
+  if (is.na(path) || !nzchar(path) || !file.exists(path)) {
+    return(NULL)
+  }
 
   overlay <- tryCatch(readRDS(path), error = function(e) NULL)
-  if (is.null(overlay) || !"geometry" %in% names(overlay)) return(NULL)
+  if (is.null(overlay) || !"geometry" %in% names(overlay)) {
+    return(NULL)
+  }
   overlay
 }
 
@@ -68,12 +76,18 @@ episodic_geo_overlay_resolve <- function(path = Sys.getenv("EPISODIC_GEO_DATA_OV
 #' # installed, or NULL when it is not
 #' geo <- episodic_geo_source_resolve(path = NA)
 #' @export
-episodic_geo_source_resolve <- function(path = Sys.getenv("EPISODIC_GEO_DATA", unset = NA)) {
-  if (!requireNamespace("sf", quietly = TRUE)) return(NULL)
+episodic_geo_source_resolve <- function(
+  path = Sys.getenv("EPISODIC_GEO_DATA", unset = NA)
+) {
+  if (!requireNamespace("sf", quietly = TRUE)) {
+    return(NULL)
+  }
 
   if (!is.na(path) && nzchar(path) && file.exists(path)) {
     geo <- tryCatch(readRDS(path), error = function(e) NULL)
-    if (!is.null(geo) && all(c("pc", "geometry") %in% names(geo))) return(geo)
+    if (!is.null(geo) && all(c("pc", "geometry") %in% names(geo))) {
+      return(geo)
+    }
   }
   episodic_geo_source_default()
 }
@@ -85,10 +99,16 @@ episodic_geo_source_resolve <- function(path = Sys.getenv("EPISODIC_GEO_DATA", u
 #' @keywords internal
 #' @noRd
 episodic_geo_source_default <- function() {
-  if (!requireNamespace("sf", quietly = TRUE)) return(NULL)
+  if (!requireNamespace("sf", quietly = TRUE)) {
+    return(NULL)
+  }
   path <- system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
-  if (identical(path, "")) path <- file.path("inst", "extdata", "geo_postcodes4_nl.rds")
-  if (!file.exists(path)) return(NULL)
+  if (identical(path, "")) {
+    path <- file.path("inst", "extdata", "geo_postcodes4_nl.rds")
+  }
+  if (!file.exists(path)) {
+    return(NULL)
+  }
   readRDS(path)
 }
 
@@ -105,9 +125,15 @@ episodic_geo_source_default <- function() {
 #' @noRd
 episodic_geo_join <- function(rows, geo_data = NULL) {
   geo_data <- geo_data %||% episodic_geo_source_resolve()
-  if (is.null(geo_data) || nrow(rows) == 0) return(NULL)
+  if (is.null(geo_data) || nrow(rows) == 0) {
+    return(NULL)
+  }
 
-  counts <- data.frame(pc = as.character(rows$label), n = rows$n, stringsAsFactors = FALSE)
+  counts <- data.frame(
+    pc = as.character(rows$label),
+    n = rows$n,
+    stringsAsFactors = FALSE
+  )
   geo_data$pc <- as.character(geo_data$pc)
   merged <- merge(geo_data, counts, by = "pc", all.x = TRUE)
   sf::st_as_sf(merged)

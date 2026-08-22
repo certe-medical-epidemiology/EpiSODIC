@@ -20,11 +20,25 @@
 test_that("episodic_app_submit_assessment() records a cluster_state transition when state actually changes", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
 
   # new -> assessing (a rationale-only note, no verdict yet)
-  episodic_app_submit_assessment(env$con, env$cluster_id, user_id, rationale = "looking into it")
-  expect_equal(episodic_app_derive_state_for_cluster(env$con, env$cluster_id), "assessing")
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    rationale = "looking into it"
+  )
+  expect_equal(
+    episodic_app_derive_state_for_cluster(env$con, env$cluster_id),
+    "assessing"
+  )
 
   states <- episodic_db_cluster_states(env$con, env$cluster_id)
   expect_equal(nrow(states), 1)
@@ -36,25 +50,58 @@ test_that("episodic_app_submit_assessment() records a cluster_state transition w
 test_that("episodic_app_submit_assessment() does not write a cluster_state row when the state does not change", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
 
-  episodic_app_submit_assessment(env$con, env$cluster_id, user_id, rationale = "first note")
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    rationale = "first note"
+  )
   expect_equal(nrow(episodic_db_cluster_states(env$con, env$cluster_id)), 1)
 
   # a second rationale-only note: state stays "assessing" both times
-  episodic_app_submit_assessment(env$con, env$cluster_id, user_id, rationale = "second note")
-  expect_equal(episodic_app_derive_state_for_cluster(env$con, env$cluster_id), "assessing")
-  expect_equal(nrow(episodic_db_cluster_states(env$con, env$cluster_id)), 1)  # unchanged
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    rationale = "second note"
+  )
+  expect_equal(
+    episodic_app_derive_state_for_cluster(env$con, env$cluster_id),
+    "assessing"
+  )
+  expect_equal(nrow(episodic_db_cluster_states(env$con, env$cluster_id)), 1) # unchanged
 })
 
 test_that("episodic_app_submit_assessment() with a terminal verdict transitions straight to closed", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
 
-  event_id <- episodic_app_submit_assessment(env$con, env$cluster_id, user_id,
-                                             verdict = "artefact", rationale = "detector artefact")
-  expect_equal(episodic_app_derive_state_for_cluster(env$con, env$cluster_id), "closed")
+  event_id <- episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    verdict = "artefact",
+    rationale = "detector artefact"
+  )
+  expect_equal(
+    episodic_app_derive_state_for_cluster(env$con, env$cluster_id),
+    "closed"
+  )
 
   states <- episodic_db_cluster_states(env$con, env$cluster_id)
   expect_equal(states$state[1], "closed")
@@ -64,15 +111,35 @@ test_that("episodic_app_submit_assessment() with a terminal verdict transitions 
 test_that("episodic_app_submit_closure() closes a non-terminal classification without a new assessment event", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
-  episodic_app_submit_assessment(env$con, env$cluster_id, user_id,
-                                 verdict = "possible_epidemic", rationale = "watching")
-  n_events_before <- nrow(episodic_db_assessment_events(env$con, env$cluster_id))
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    verdict = "possible_epidemic",
+    rationale = "watching"
+  )
+  n_events_before <- nrow(episodic_db_assessment_events(
+    env$con,
+    env$cluster_id
+  ))
 
   episodic_app_submit_closure(env$con, env$cluster_id, user_id)
 
-  expect_equal(episodic_app_derive_state_for_cluster(env$con, env$cluster_id), "closed")
-  expect_equal(nrow(episodic_db_assessment_events(env$con, env$cluster_id)), n_events_before)  # no new event
+  expect_equal(
+    episodic_app_derive_state_for_cluster(env$con, env$cluster_id),
+    "closed"
+  )
+  expect_equal(
+    nrow(episodic_db_assessment_events(env$con, env$cluster_id)),
+    n_events_before
+  ) # no new event
   states <- episodic_db_cluster_states(env$con, env$cluster_id)
   expect_equal(states$trigger[nrow(states)], "closure")
   expect_true(is.na(states$event_id[nrow(states)]))
@@ -81,6 +148,17 @@ test_that("episodic_app_submit_closure() closes a non-terminal classification wi
 test_that("episodic_app_submit_assessment() rejects a blank rationale", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
-  expect_error(episodic_app_submit_assessment(env$con, env$cluster_id, user_id, rationale = ""))
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
+  expect_error(episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    rationale = ""
+  ))
 })

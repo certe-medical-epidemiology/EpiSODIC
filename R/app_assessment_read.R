@@ -47,12 +47,26 @@ episodic_app_assessment_timeline <- function(con, cluster_id, lang = "nl") {
   if (nrow(events) > 0) {
     rows[[length(rows) + 1]] <- data.frame(
       at = events$created_at,
-      actor = vapply(events$user_id, episodic_app_actor_label, character(1), con = con, lang = lang),
+      actor = vapply(
+        events$user_id,
+        episodic_app_actor_label,
+        character(1),
+        con = con,
+        lang = lang
+      ),
       kind = "assessment",
       verdict = events$verdict,
-      verdict_label = vapply(events$verdict, function(v) {
-        if (is.na(v)) NA_character_ else episodic_tr(paste0("verdict.", v), lang = lang)
-      }, character(1)),
+      verdict_label = vapply(
+        events$verdict,
+        function(v) {
+          if (is.na(v)) {
+            NA_character_
+          } else {
+            episodic_tr(paste0("verdict.", v), lang = lang)
+          }
+        },
+        character(1)
+      ),
       rationale = events$rationale,
       stringsAsFactors = FALSE
     )
@@ -60,7 +74,13 @@ episodic_app_assessment_timeline <- function(con, cluster_id, lang = "nl") {
   if (nrow(closures) > 0) {
     rows[[length(rows) + 1]] <- data.frame(
       at = closures$entered_at,
-      actor = vapply(closures$user_id, episodic_app_actor_label, character(1), con = con, lang = lang),
+      actor = vapply(
+        closures$user_id,
+        episodic_app_actor_label,
+        character(1),
+        con = con,
+        lang = lang
+      ),
       kind = "closure",
       verdict = NA_character_,
       verdict_label = NA_character_,
@@ -69,8 +89,15 @@ episodic_app_assessment_timeline <- function(con, cluster_id, lang = "nl") {
     )
   }
   if (length(rows) == 0) {
-    return(data.frame(at = character(0), actor = character(0), kind = character(0), verdict = character(0),
-                       verdict_label = character(0), rationale = character(0), stringsAsFactors = FALSE))
+    return(data.frame(
+      at = character(0),
+      actor = character(0),
+      kind = character(0),
+      verdict = character(0),
+      verdict_label = character(0),
+      rationale = character(0),
+      stringsAsFactors = FALSE
+    ))
   }
   timeline <- do.call(rbind, rows)
   timeline[order(timeline$at), ]
@@ -80,9 +107,13 @@ episodic_app_assessment_timeline <- function(con, cluster_id, lang = "nl") {
 #' @keywords internal
 #' @noRd
 episodic_app_actor_label <- function(con, user_id, lang = "nl") {
-  if (is.na(user_id)) return(episodic_tr("activity.actor_system", lang = lang))
+  if (is.na(user_id)) {
+    return(episodic_tr("activity.actor_system", lang = lang))
+  }
   user <- episodic_db_user_by_id(con, user_id)
-  if (is.null(user)) return(episodic_tr("misc.unknown", lang = lang))
+  if (is.null(user)) {
+    return(episodic_tr("misc.unknown", lang = lang))
+  }
   user$full_name
 }
 
@@ -99,9 +130,16 @@ episodic_app_actor_label <- function(con, user_id, lang = "nl") {
 #' @keywords internal
 #' @noRd
 episodic_app_archive <- function(con, query = NULL, lang = "nl") {
-  empty <- data.frame(cluster_id = integer(0), pathogen = character(0), level_label = character(0),
-                       place = character(0), n_cases = integer(0), priority_score = numeric(0),
-                       closed_at = character(0), stringsAsFactors = FALSE)
+  empty <- data.frame(
+    cluster_id = integer(0),
+    pathogen = character(0),
+    level_label = character(0),
+    place = character(0),
+    n_cases = integer(0),
+    priority_score = numeric(0),
+    closed_at = character(0),
+    stringsAsFactors = FALSE
+  )
   clusters <- episodic_db_clusters(con, open_only = TRUE)
   if (nrow(clusters) == 0) {
     return(empty)
@@ -109,39 +147,73 @@ episodic_app_archive <- function(con, query = NULL, lang = "nl") {
   streams <- episodic_db_streams(con, active_only = FALSE)
   institutions <- DBI::dbGetQuery(con, "SELECT * FROM episodic_institution")
 
-  clusters$state <- vapply(clusters$cluster_id, function(id) {
-    episodic_app_derive_state_for_cluster(con, id)
-  }, character(1))
+  clusters$state <- vapply(
+    clusters$cluster_id,
+    function(id) {
+      episodic_app_derive_state_for_cluster(con, id)
+    },
+    character(1)
+  )
   closed <- clusters[clusters$state == "closed", ]
   if (nrow(closed) == 0) {
     return(empty)
   }
 
-  closed$pathogen <- streams$pathogen[match(closed$stream_id, streams$stream_id)]
+  closed$pathogen <- streams$pathogen[match(
+    closed$stream_id,
+    streams$stream_id
+  )]
   closed$level <- streams$level[match(closed$stream_id, streams$stream_id)]
-  closed$level_label <- vapply(closed$level, function(lv) episodic_tr(paste0("level.", lv), lang = lang), character(1))
-  closed$place <- vapply(seq_len(nrow(closed)), function(i) {
-    stream <- streams[streams$stream_id == closed$stream_id[i], ][1, ]
-    institution <- if (!is.na(stream$institution_id)) {
-      institutions[institutions$institution_id == stream$institution_id, ][1, ]
-    } else {
-      NULL
-    }
-    episodic_app_place_label(stream, institution, lang = lang)
-  }, character(1))
-  closed$closed_at <- vapply(closed$cluster_id, function(id) {
-    states <- episodic_db_cluster_states(con, id)
-    closed_states <- states[states$state == "closed", ]
-    if (nrow(closed_states) == 0) NA_character_ else closed_states$entered_at[nrow(closed_states)]
-  }, character(1))
+  closed$level_label <- vapply(
+    closed$level,
+    function(lv) episodic_tr(paste0("level.", lv), lang = lang),
+    character(1)
+  )
+  closed$place <- vapply(
+    seq_len(nrow(closed)),
+    function(i) {
+      stream <- streams[streams$stream_id == closed$stream_id[i], ][1, ]
+      institution <- if (!is.na(stream$institution_id)) {
+        institutions[institutions$institution_id == stream$institution_id, ][
+          1,
+        ]
+      } else {
+        NULL
+      }
+      episodic_app_place_label(stream, institution, lang = lang)
+    },
+    character(1)
+  )
+  closed$closed_at <- vapply(
+    closed$cluster_id,
+    function(id) {
+      states <- episodic_db_cluster_states(con, id)
+      closed_states <- states[states$state == "closed", ]
+      if (nrow(closed_states) == 0) {
+        NA_character_
+      } else {
+        closed_states$entered_at[nrow(closed_states)]
+      }
+    },
+    character(1)
+  )
 
   if (!is.null(query) && nzchar(query)) {
-    hit <- grepl(query, closed$pathogen, ignore.case = TRUE) | grepl(query, closed$place, ignore.case = TRUE)
+    hit <- grepl(query, closed$pathogen, ignore.case = TRUE) |
+      grepl(query, closed$place, ignore.case = TRUE)
     closed <- closed[hit, ]
   }
 
   closed <- closed[order(closed$closed_at, decreasing = TRUE, na.last = TRUE), ]
-  closed[, c("cluster_id", "pathogen", "level_label", "place", "n_cases", "priority_score", "closed_at")]
+  closed[, c(
+    "cluster_id",
+    "pathogen",
+    "level_label",
+    "place",
+    "n_cases",
+    "priority_score",
+    "closed_at"
+  )]
 }
 
 #' What a detection run actually took in, as one line
@@ -162,7 +234,9 @@ episodic_app_run_detail <- function(run, lang = "nl") {
   # NULL when reading a database written before the counters existed;
   # NA when the run failed before it loaded anything. Neither has a
   # summary to show, and neither should read as "zero cases arrived".
-  if (is.null(run$n_cases_supplied) || is.na(run$n_cases_supplied)) return(NA_character_)
+  if (is.null(run$n_cases_supplied) || is.na(run$n_cases_supplied)) {
+    return(NA_character_)
+  }
 
   detail <- episodic_tr(
     "activity.detail_run",
@@ -174,7 +248,11 @@ episodic_app_run_detail <- function(run, lang = "nl") {
   if (isTRUE(run$n_activity_skipped > 0)) {
     detail <- paste(
       detail,
-      episodic_tr("activity.detail_run_skipped", skipped = run$n_activity_skipped, lang = lang),
+      episodic_tr(
+        "activity.detail_run_skipped",
+        skipped = run$n_activity_skipped,
+        lang = lang
+      ),
       sep = " · "
     )
   }
@@ -200,7 +278,12 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
   cluster_target <- function(cluster_id) {
     stream_id <- clusters$stream_id[clusters$cluster_id == cluster_id]
     pathogen <- streams$pathogen[streams$stream_id == stream_id][1]
-    episodic_tr("activity.target_cluster", pathogen = pathogen %||% "?", id = cluster_id, lang = lang)
+    episodic_tr(
+      "activity.target_cluster",
+      pathogen = pathogen %||% "?",
+      id = cluster_id,
+      lang = lang
+    )
   }
 
   rows <- list()
@@ -209,22 +292,44 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
   if (nrow(events) > 0) {
     rows[[length(rows) + 1]] <- data.frame(
       at = events$created_at,
-      actor = vapply(events$user_id, episodic_app_actor_label, character(1), con = con, lang = lang),
-      action = ifelse(is.na(events$verdict), episodic_tr("activity.action_note", lang = lang),
-                       episodic_tr("activity.action_classified", lang = lang)),
+      actor = vapply(
+        events$user_id,
+        episodic_app_actor_label,
+        character(1),
+        con = con,
+        lang = lang
+      ),
+      action = ifelse(
+        is.na(events$verdict),
+        episodic_tr("activity.action_note", lang = lang),
+        episodic_tr("activity.action_classified", lang = lang)
+      ),
       target = vapply(events$cluster_id, cluster_target, character(1)),
-      detail = NA_character_, is_system = FALSE, stringsAsFactors = FALSE
+      detail = NA_character_,
+      is_system = FALSE,
+      stringsAsFactors = FALSE
     )
   }
 
-  states <- DBI::dbGetQuery(con, "SELECT * FROM episodic_cluster_state WHERE trigger = 'closure'")
+  states <- DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_cluster_state WHERE trigger = 'closure'"
+  )
   if (nrow(states) > 0) {
     rows[[length(rows) + 1]] <- data.frame(
       at = states$entered_at,
-      actor = vapply(states$user_id, episodic_app_actor_label, character(1), con = con, lang = lang),
+      actor = vapply(
+        states$user_id,
+        episodic_app_actor_label,
+        character(1),
+        con = con,
+        lang = lang
+      ),
       action = episodic_tr("activity.action_closed", lang = lang),
       target = vapply(states$cluster_id, cluster_target, character(1)),
-      detail = NA_character_, is_system = FALSE, stringsAsFactors = FALSE
+      detail = NA_character_,
+      is_system = FALSE,
+      stringsAsFactors = FALSE
     )
   }
 
@@ -232,24 +337,47 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
   if (nrow(mutes) > 0) {
     rows[[length(rows) + 1]] <- data.frame(
       at = mutes$created_at,
-      actor = vapply(mutes$user_id, episodic_app_actor_label, character(1), con = con, lang = lang),
+      actor = vapply(
+        mutes$user_id,
+        episodic_app_actor_label,
+        character(1),
+        con = con,
+        lang = lang
+      ),
       action = episodic_tr("activity.action_muted", lang = lang),
-      target = vapply(mutes$stream_id, function(sid) {
-        pathogen <- streams$pathogen[streams$stream_id == sid][1]
-        pathogen %||% "?"
-      }, character(1)),
-      detail = NA_character_, is_system = FALSE, stringsAsFactors = FALSE
+      target = vapply(
+        mutes$stream_id,
+        function(sid) {
+          pathogen <- streams$pathogen[streams$stream_id == sid][1]
+          pathogen %||% "?"
+        },
+        character(1)
+      ),
+      detail = NA_character_,
+      is_system = FALSE,
+      stringsAsFactors = FALSE
     )
   }
 
-  logins <- DBI::dbGetQuery(con, "SELECT * FROM episodic_app_user_event WHERE event_type = 'login'")
+  logins <- DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_app_user_event WHERE event_type = 'login'"
+  )
   if (nrow(logins) > 0) {
     rows[[length(rows) + 1]] <- data.frame(
       at = logins$created_at,
-      actor = vapply(logins$user_id, episodic_app_actor_label, character(1), con = con, lang = lang),
+      actor = vapply(
+        logins$user_id,
+        episodic_app_actor_label,
+        character(1),
+        con = con,
+        lang = lang
+      ),
       action = episodic_tr("activity.action_login", lang = lang),
       target = NA_character_,
-      detail = NA_character_, is_system = FALSE, stringsAsFactors = FALSE
+      detail = NA_character_,
+      is_system = FALSE,
+      stringsAsFactors = FALSE
     )
   }
 
@@ -258,17 +386,32 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
     rows[[length(rows) + 1]] <- data.frame(
       at = ifelse(is.na(runs$finished_at), runs$started_at, runs$finished_at),
       actor = episodic_tr("activity.actor_system", lang = lang),
-      action = vapply(runs$status, function(s) episodic_tr(paste0("activity.action_run_", s), lang = lang), character(1)),
+      action = vapply(
+        runs$status,
+        function(s) episodic_tr(paste0("activity.action_run_", s), lang = lang),
+        character(1)
+      ),
       target = runs$host,
-      detail = vapply(seq_len(nrow(runs)), function(i) episodic_app_run_detail(runs[i, ], lang), character(1)),
-      is_system = TRUE, stringsAsFactors = FALSE
+      detail = vapply(
+        seq_len(nrow(runs)),
+        function(i) episodic_app_run_detail(runs[i, ], lang),
+        character(1)
+      ),
+      is_system = TRUE,
+      stringsAsFactors = FALSE
     )
   }
 
   if (length(rows) == 0) {
-    return(data.frame(at = character(0), actor = character(0), action = character(0),
-                       target = character(0), detail = character(0),
-                       is_system = logical(0), stringsAsFactors = FALSE))
+    return(data.frame(
+      at = character(0),
+      actor = character(0),
+      action = character(0),
+      target = character(0),
+      detail = character(0),
+      is_system = logical(0),
+      stringsAsFactors = FALSE
+    ))
   }
   activity <- do.call(rbind, rows)
   activity <- activity[order(activity$at, decreasing = TRUE), ]

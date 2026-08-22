@@ -40,10 +40,21 @@ test_that("episodic_app_performance() returns empty-but-valid shapes on a fresh 
 test_that("episodic_app_performance() counts a terminal verdict as true/false positive for every detector that flagged the cluster", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
 
-  episodic_app_submit_assessment(env$con, env$cluster_id, user_id,
-                                 verdict = "confirmed_epidemic", rationale = "real outbreak")
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    verdict = "confirmed_epidemic",
+    rationale = "real outbreak"
+  )
 
   perf <- episodic_app_performance(env$con)
   expect_equal(perf$by_detector_pathogen$n_true_positive, 1)
@@ -62,10 +73,21 @@ test_that("episodic_app_performance() counts a terminal verdict as true/false po
 test_that("episodic_app_performance() excludes cluster_not_yet and unassessed clusters from PPV", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
 
-  episodic_app_submit_assessment(env$con, env$cluster_id, user_id,
-                                 verdict = "cluster_not_yet", rationale = "still watching")
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    verdict = "cluster_not_yet",
+    rationale = "still watching"
+  )
 
   perf <- episodic_app_performance(env$con)
   expect_equal(perf$by_detector_pathogen$n_true_positive, 0)
@@ -77,13 +99,29 @@ test_that("episodic_app_performance() excludes cluster_not_yet and unassessed cl
 test_that("episodic_app_performance() only counts a cluster's latest verdict, not every historical one", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
 
-  episodic_app_submit_assessment(env$con, env$cluster_id, user_id,
-                                 verdict = "artefact", rationale = "looked like noise at first")
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    verdict = "artefact",
+    rationale = "looked like noise at first"
+  )
   Sys.sleep(1.1)
-  episodic_app_submit_assessment(env$con, env$cluster_id, user_id,
-                                 verdict = "confirmed_epidemic", rationale = "turned out real")
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    verdict = "confirmed_epidemic",
+    rationale = "turned out real"
+  )
 
   perf <- episodic_app_performance(env$con)
   expect_equal(nrow(perf$classification_distribution), 1)
@@ -98,9 +136,20 @@ test_that("episodic_ui_performance_screen() renders without error, empty and pop
   empty_ui <- episodic_ui_performance_screen(episodic_app_performance(env$con))
   expect_s3_class(empty_ui, "shiny.tag")
 
-  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
-  episodic_app_submit_assessment(env$con, env$cluster_id, user_id,
-                                 verdict = "confirmed_epidemic", rationale = "real outbreak")
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    verdict = "confirmed_epidemic",
+    rationale = "real outbreak"
+  )
   filled_ui <- episodic_ui_performance_screen(episodic_app_performance(env$con))
   rendered <- paste(as.character(filled_ui), collapse = "\n")
   expect_true(grepl("same_place", rendered, fixed = TRUE))

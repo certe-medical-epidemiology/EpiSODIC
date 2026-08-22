@@ -24,26 +24,75 @@ test_that("episodic_stream_key() is a 40-character hex digest", {
 })
 
 test_that("episodic_stream_key() is deterministic for identical inputs", {
-  k1 <- episodic_stream_key("pathogen_ward", "Test pathogen", institution_id = 3, ward = "ICU")
-  k2 <- episodic_stream_key("pathogen_ward", "Test pathogen", institution_id = 3, ward = "ICU")
+  k1 <- episodic_stream_key(
+    "pathogen_ward",
+    "Test pathogen",
+    institution_id = 3,
+    ward = "ICU"
+  )
+  k2 <- episodic_stream_key(
+    "pathogen_ward",
+    "Test pathogen",
+    institution_id = 3,
+    ward = "ICU"
+  )
   expect_equal(k1, k2)
 })
 
 test_that("episodic_stream_key() differs when ward differs (item 20 fix)", {
-  k1 <- episodic_stream_key("pathogen_ward", "Test pathogen", institution_id = 3, ward = "ICU")
-  k2 <- episodic_stream_key("pathogen_ward", "Test pathogen", institution_id = 3, ward = "Geriatrie")
+  k1 <- episodic_stream_key(
+    "pathogen_ward",
+    "Test pathogen",
+    institution_id = 3,
+    ward = "ICU"
+  )
+  k2 <- episodic_stream_key(
+    "pathogen_ward",
+    "Test pathogen",
+    institution_id = 3,
+    ward = "Geriatrie"
+  )
   expect_false(identical(k1, k2))
 })
 
 test_that("episodic_stream_key() differs when any other dimension differs", {
-  base <- episodic_stream_key("pathogen_institution", "Test pathogen", institution_id = 1)
-  expect_false(identical(base, episodic_stream_key("pathogen_institution", "Other pathogen", institution_id = 1)))
-  expect_false(identical(base, episodic_stream_key("pathogen_institution", "Test pathogen", institution_id = 2)))
-  expect_false(identical(base, episodic_stream_key("pathogen_area", "Test pathogen", institution_id = 1)))
+  base <- episodic_stream_key(
+    "pathogen_institution",
+    "Test pathogen",
+    institution_id = 1
+  )
+  expect_false(identical(
+    base,
+    episodic_stream_key(
+      "pathogen_institution",
+      "Other pathogen",
+      institution_id = 1
+    )
+  ))
+  expect_false(identical(
+    base,
+    episodic_stream_key(
+      "pathogen_institution",
+      "Test pathogen",
+      institution_id = 2
+    )
+  ))
+  expect_false(identical(
+    base,
+    episodic_stream_key("pathogen_area", "Test pathogen", institution_id = 1)
+  ))
 })
 
 test_that("NA dimensions are treated consistently (no accidental collision with the string 'NA')", {
-  k_na <- episodic_stream_key("pathogen_region", "Test pathogen", region_code = NA)
-  k_literal <- episodic_stream_key("pathogen_region", "Test pathogen", region_code = "NA")
-  expect_equal(k_na, k_literal)  # documented behaviour: NA maps to the literal "NA"
+  k_na <- episodic_stream_key(
+    "pathogen_region",
+    "Test pathogen",
+    region_code = NA
+  )
+  k_literal <- episodic_stream_key(
+    "pathogen_region",
+    "Test pathogen",
+    region_code = "NA"
+  )
+  expect_equal(k_na, k_literal) # documented behaviour: NA maps to the literal "NA"
 })

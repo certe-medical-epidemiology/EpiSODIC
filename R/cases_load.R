@@ -58,14 +58,27 @@ episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
   to_insert <- deduped
   to_insert$institution_id <- institution_lookup[to_insert$institution_key]
   to_insert <- to_insert[, c(
-    "source_key", "patient_key", "sample_date", "receipt_date", "pathogen",
-    "care_line", "institution_id", "ward",
-    "specialism", "pc", "sex", "age"
+    "source_key",
+    "patient_key",
+    "sample_date",
+    "receipt_date",
+    "pathogen",
+    "care_line",
+    "institution_id",
+    "ward",
+    "specialism",
+    "pc",
+    "sex",
+    "age"
   )]
 
   n_inserted <- episodic_db_case_insert_new(con, to_insert, run_id)
 
-  invisible(list(n_supplied = nrow(cases), n_deduplicated = nrow(deduped), n_inserted = n_inserted))
+  invisible(list(
+    n_supplied = nrow(cases),
+    n_deduplicated = nrow(deduped),
+    n_inserted = n_inserted
+  ))
 }
 
 #' Upsert every distinct institution referenced in a batch of cases
@@ -80,14 +93,21 @@ episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
 #' @noRd
 episodic_institutions_resolve <- function(con, cases) {
   distinct <- unique(cases[, c(
-    "institution_key", "institution_display_name", "institution_type",
-    "care_line", "municipality"
+    "institution_key",
+    "institution_display_name",
+    "institution_type",
+    "care_line",
+    "municipality"
   )])
 
   ids <- integer(nrow(distinct))
   for (i in seq_len(nrow(distinct))) {
     row <- distinct[i, ]
-    hashed_key <- digest::digest(row$institution_key, algo = "sha1", serialize = FALSE)
+    hashed_key <- digest::digest(
+      row$institution_key,
+      algo = "sha1",
+      serialize = FALSE
+    )
     ids[i] <- episodic_db_institution_upsert(
       con,
       institution_key = hashed_key,

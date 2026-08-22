@@ -47,7 +47,9 @@
 #' @keywords internal
 #' @noRd
 episodic_cases_deduplicate <- function(cases, pathogen_config) {
-  if (nrow(cases) == 0) return(cases)
+  if (nrow(cases) == 0) {
+    return(cases)
+  }
 
   cases$.episode_days <- pathogen_config$episode_days[
     match(cases$pathogen, pathogen_config$pathogen)
@@ -55,7 +57,10 @@ episodic_cases_deduplicate <- function(cases, pathogen_config) {
   cases$.episode_days[is.na(cases$.episode_days)] <- 30
 
   cases$.sample_date <- as.Date(cases$sample_date)
-  groups <- split(seq_len(nrow(cases)), paste(cases$patient_key, cases$pathogen, sep = ""))
+  groups <- split(
+    seq_len(nrow(cases)),
+    paste(cases$patient_key, cases$pathogen, sep = "")
+  )
 
   keep <- logical(nrow(cases))
   for (idx in groups) {
@@ -68,7 +73,11 @@ episodic_cases_deduplicate <- function(cases, pathogen_config) {
     keep[ord[first_in_episode]] <- TRUE
   }
 
-  result <- cases[keep, setdiff(names(cases), c(".episode_days", ".sample_date")), drop = FALSE]
+  result <- cases[
+    keep,
+    setdiff(names(cases), c(".episode_days", ".sample_date")),
+    drop = FALSE
+  ]
   rownames(result) <- NULL
   result
 }

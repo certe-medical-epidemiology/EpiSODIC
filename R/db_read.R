@@ -46,7 +46,9 @@ episodic_db_pathogen_config_get <- function(con, pathogen) {
 #' @noRd
 episodic_db_streams <- function(con, active_only = TRUE) {
   sql <- "SELECT * FROM episodic_stream"
-  if (active_only) sql <- paste(sql, "WHERE is_active = 1")
+  if (active_only) {
+    sql <- paste(sql, "WHERE is_active = 1")
+  }
   DBI::dbGetQuery(con, sql)
 }
 
@@ -101,7 +103,9 @@ episodic_db_cases_for_pathogen <- function(con, pathogen) {
 #' @noRd
 episodic_db_clusters <- function(con, open_only = FALSE) {
   sql <- "SELECT * FROM episodic_cluster"
-  if (open_only) sql <- paste(sql, "WHERE merged_into IS NULL")
+  if (open_only) {
+    sql <- paste(sql, "WHERE merged_into IS NULL")
+  }
   DBI::dbGetQuery(con, sql)
 }
 
@@ -164,7 +168,8 @@ episodic_db_stream_mutes <- function(con, stream_id) {
 #' @noRd
 episodic_db_user_by_username <- function(con, username) {
   res <- DBI::dbGetQuery(
-    con, "SELECT * FROM episodic_app_user WHERE username = ?",
+    con,
+    "SELECT * FROM episodic_app_user WHERE username = ?",
     params = list(username)
   )
   if (nrow(res) == 0) NULL else res[1, ]
@@ -175,7 +180,8 @@ episodic_db_user_by_username <- function(con, username) {
 #' @noRd
 episodic_db_user_by_id <- function(con, user_id) {
   res <- DBI::dbGetQuery(
-    con, "SELECT * FROM episodic_app_user WHERE user_id = ?",
+    con,
+    "SELECT * FROM episodic_app_user WHERE user_id = ?",
     params = list(user_id)
   )
   if (nrow(res) == 0) NULL else res[1, ]
@@ -207,7 +213,8 @@ episodic_db_detections_for_run <- function(con, run_id) {
 #' @noRd
 episodic_db_runs <- function(con, limit = 200) {
   DBI::dbGetQuery(
-    con, "SELECT * FROM episodic_detection_run ORDER BY run_id DESC LIMIT ?",
+    con,
+    "SELECT * FROM episodic_detection_run ORDER BY run_id DESC LIMIT ?",
     params = list(limit)
   )
 }
@@ -224,7 +231,11 @@ episodic_db_latest_run <- function(con, status = NULL) {
   if (!is.null(status)) {
     placeholders <- paste(rep("?", length(status)), collapse = ", ")
     sql <- paste0(sql, " WHERE status IN (", placeholders, ")")
-    res <- DBI::dbGetQuery(con, paste(sql, "ORDER BY run_id DESC LIMIT 1"), params = as.list(status))
+    res <- DBI::dbGetQuery(
+      con,
+      paste(sql, "ORDER BY run_id DESC LIMIT 1"),
+      params = as.list(status)
+    )
   } else {
     res <- DBI::dbGetQuery(con, paste(sql, "ORDER BY run_id DESC LIMIT 1"))
   }
@@ -235,7 +246,8 @@ episodic_db_latest_run <- function(con, status = NULL) {
 #' @noRd
 episodic_db_stream_trend <- function(con, stream_id) {
   DBI::dbGetQuery(
-    con, "SELECT * FROM episodic_stream_trend WHERE stream_id = ? ORDER BY week_start",
+    con,
+    "SELECT * FROM episodic_stream_trend WHERE stream_id = ? ORDER BY week_start",
     params = list(stream_id)
   )
 }
@@ -244,7 +256,8 @@ episodic_db_stream_trend <- function(con, stream_id) {
 #' @noRd
 episodic_db_denominator_for_pathogen <- function(con, pathogen) {
   DBI::dbGetQuery(
-    con, "SELECT * FROM episodic_denominator WHERE pathogen = ? ORDER BY sample_date",
+    con,
+    "SELECT * FROM episodic_denominator WHERE pathogen = ? ORDER BY sample_date",
     params = list(pathogen)
   )
 }
@@ -253,7 +266,8 @@ episodic_db_denominator_for_pathogen <- function(con, pathogen) {
 #' @noRd
 episodic_db_reports_for_cluster <- function(con, cluster_id) {
   DBI::dbGetQuery(
-    con, "SELECT * FROM episodic_report_render WHERE cluster_id = ? ORDER BY version_no",
+    con,
+    "SELECT * FROM episodic_report_render WHERE cluster_id = ? ORDER BY version_no",
     params = list(cluster_id)
   )
 }
@@ -263,7 +277,8 @@ episodic_db_reports_for_cluster <- function(con, cluster_id) {
 #' @noRd
 episodic_db_institution_activity <- function(con, institution_id) {
   DBI::dbGetQuery(
-    con, "SELECT * FROM episodic_institution_activity WHERE institution_id = ? ORDER BY period_start",
+    con,
+    "SELECT * FROM episodic_institution_activity WHERE institution_id = ? ORDER BY period_start",
     params = list(institution_id)
   )
 }

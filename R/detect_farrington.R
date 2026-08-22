@@ -66,27 +66,48 @@
 #' the Noufaily et al. algorithm and is called directly here).
 #' @keywords internal
 #' @noRd
-episodic_detect_farrington <- function(cases_for_stream, stream_id, config, run_date = Sys.Date(),
-                                       population = NULL) {
-  empty <- episodic_detection_record(integer(0), character(0), character(0), character(0), integer(0))
+episodic_detect_farrington <- function(
+  cases_for_stream,
+  stream_id,
+  config,
+  run_date = Sys.Date(),
+  population = NULL
+) {
+  empty <- episodic_detection_record(
+    integer(0),
+    character(0),
+    character(0),
+    character(0),
+    integer(0)
+  )
 
   dates <- as.Date(cases_for_stream$sample_date)
-  if (length(dates) == 0) return(empty)
+  if (length(dates) == 0) {
+    return(empty)
+  }
 
   fc <- config$farrington
   weekly <- episodic_weekly_bins(dates, run_date)
 
   min_weeks_required <- (fc$b + 1) * 52
   if (length(weekly$counts) < min_weeks_required) {
-    return(empty)  # insufficient baseline history for the configured b
+    return(empty) # insufficient baseline history for the configured b
   }
 
-  result <- episodic_farrington_fit(weekly, range_idx = length(weekly$counts), fc = fc, population = population)
-  if (is.null(result) || !isTRUE(as.logical(result@alarm[1, 1]))) return(empty)
+  result <- episodic_farrington_fit(
+    weekly,
+    range_idx = length(weekly$counts),
+    fc = fc,
+    population = population
+  )
+  if (is.null(result) || !isTRUE(as.logical(result@alarm[1, 1]))) {
+    return(empty)
+  }
 
   current_week_start <- weekly$week_start[length(weekly$week_start)]
   episodic_detection_record(
-    stream_id = stream_id, detector = "farrington",
+    stream_id = stream_id,
+    detector = "farrington",
     first_day = as.character(current_week_start),
     last_day = as.character(current_week_start + 6),
     n_cases = as.integer(result@observed[1, 1]),
@@ -126,20 +147,34 @@ episodic_detect_farrington <- function(cases_for_stream, stream_id, config, run_
 #'   `upperbound` (zero rows if ineligible).
 #' @keywords internal
 #' @noRd
-episodic_farrington_trend <- function(cases_for_stream, config, run_date = Sys.Date(),
-                                      n_weeks_existing = 0L, max_backfill_weeks = 156L,
-                                      population = NULL) {
-  empty <- data.frame(week_start = as.Date(character(0)), n_cases = integer(0),
-                       expected = numeric(0), upperbound = numeric(0), stringsAsFactors = FALSE)
+episodic_farrington_trend <- function(
+  cases_for_stream,
+  config,
+  run_date = Sys.Date(),
+  n_weeks_existing = 0L,
+  max_backfill_weeks = 156L,
+  population = NULL
+) {
+  empty <- data.frame(
+    week_start = as.Date(character(0)),
+    n_cases = integer(0),
+    expected = numeric(0),
+    upperbound = numeric(0),
+    stringsAsFactors = FALSE
+  )
 
   dates <- as.Date(cases_for_stream$sample_date)
-  if (length(dates) == 0) return(empty)
+  if (length(dates) == 0) {
+    return(empty)
+  }
 
   fc <- config$farrington
   weekly <- episodic_weekly_bins(dates, run_date)
 
   min_weeks_required <- (fc$b + 1) * 52
-  if (length(weekly$counts) < min_weeks_required) return(empty)
+  if (length(weekly$counts) < min_weeks_required) {
+    return(empty)
+  }
 
   n_weeks_to_compute <- if (n_weeks_existing == 0) max_backfill_weeks else 1L
   range_idx <- seq(
@@ -147,8 +182,15 @@ episodic_farrington_trend <- function(cases_for_stream, config, run_date = Sys.D
     length(weekly$counts)
   )
 
-  result <- episodic_farrington_fit(weekly, range_idx = range_idx, fc = fc, population = population)
-  if (is.null(result)) return(empty)
+  result <- episodic_farrington_fit(
+    weekly,
+    range_idx = range_idx,
+    fc = fc,
+    population = population
+  )
+  if (is.null(result)) {
+    return(empty)
+  }
 
   data.frame(
     week_start = weekly$week_start[range_idx],
@@ -162,7 +204,8 @@ episodic_farrington_trend <- function(cases_for_stream, config, run_date = Sys.D
 #' @keywords internal
 #' @noRd
 episodic_farrington_fit <- function(weekly, range_idx, fc, population = NULL) {
-  use_population <- !is.null(population) && length(population) == length(weekly$counts)
+  use_population <- !is.null(population) &&
+    length(population) == length(weekly$counts)
   sts_obj <- surveillance::sts(
     observed = weekly$counts,
     start = c(as.integer(format(weekly$week_start[1], "%Y")), 1),
@@ -170,13 +213,22 @@ episodic_farrington_fit <- function(weekly, range_idx, fc, population = NULL) {
     population = if (use_population) population else NULL
   )
   control <- list(
-    range = range_idx, b = fc$b, w = fc$w, reweight = isTRUE(fc$reweight),
-    weightsThreshold = fc$weightsThreshold, trend = isTRUE(fc$trend),
-    pastWeeksNotIncluded = fc$pastWeeksNotIncluded, limit54 = unlist(fc$limit54),
-    alpha = fc$alpha, populationOffset = use_population
+    range = range_idx,
+    b = fc$b,
+    w = fc$w,
+    reweight = isTRUE(fc$reweight),
+    weightsThreshold = fc$weightsThreshold,
+    trend = isTRUE(fc$trend),
+    pastWeeksNotIncluded = fc$pastWeeksNotIncluded,
+    limit54 = unlist(fc$limit54),
+    alpha = fc$alpha,
+    populationOffset = use_population
   )
   tryCatch(
-    suppressWarnings(surveillance::farringtonFlexible(sts_obj, control = control)),
+    suppressWarnings(surveillance::farringtonFlexible(
+      sts_obj,
+      control = control
+    )),
     error = function(e) NULL
   )
 }
@@ -204,20 +256,35 @@ episodic_farrington_fit <- function(weekly, range_idx, fc, population = NULL) {
 #' @return A numeric vector the same length as `week_start`, or `NULL`.
 #' @keywords internal
 #' @noRd
-episodic_farrington_population_vector <- function(con, institution_id, level, week_start) {
-  if (!identical(level, "pathogen_institution") || is.na(institution_id)) return(NULL)
+episodic_farrington_population_vector <- function(
+  con,
+  institution_id,
+  level,
+  week_start
+) {
+  if (!identical(level, "pathogen_institution") || is.na(institution_id)) {
+    return(NULL)
+  }
   activity <- episodic_db_institution_activity(con, institution_id)
-  if (nrow(activity) == 0) return(NULL)
+  if (nrow(activity) == 0) {
+    return(NULL)
+  }
 
   activity_start <- as.Date(activity$period_start)
   activity_end <- as.Date(activity$period_end)
   fallback <- stats::median(activity$patient_days, na.rm = TRUE)
 
-  vapply(week_start, function(ws) {
-    hit <- which(activity_start <= ws & activity_end >= ws)
-    if (length(hit) == 0 || is.na(activity$patient_days[hit[1]])) return(fallback)
-    activity$patient_days[hit[1]]
-  }, numeric(1))
+  vapply(
+    week_start,
+    function(ws) {
+      hit <- which(activity_start <= ws & activity_end >= ws)
+      if (length(hit) == 0 || is.na(activity$patient_days[hit[1]])) {
+        return(fallback)
+      }
+      activity$patient_days[hit[1]]
+    },
+    numeric(1)
+  )
 }
 
 #' Aggregate case dates into Monday-starting weekly counts
@@ -235,6 +302,10 @@ episodic_weekly_bins <- function(dates, run_date) {
   first_week <- floor_to_monday(min(dates))
   last_week <- floor_to_monday(as.Date(run_date))
   week_start <- seq(first_week, last_week, by = "week")
-  counts <- vapply(week_start, function(ws) sum(dates >= ws & dates < ws + 7), integer(1))
+  counts <- vapply(
+    week_start,
+    function(ws) sum(dates >= ws & dates < ws + 7),
+    integer(1)
+  )
   list(week_start = week_start, counts = counts)
 }

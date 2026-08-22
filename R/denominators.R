@@ -41,21 +41,35 @@
 episodic_denominators_load <- function(con, denominators) {
   episodic_validate_columns(
     denominators,
-    required = c("pathogen", "sample_date", "care_line", "area_code", "n_tests"),
+    required = c(
+      "pathogen",
+      "sample_date",
+      "care_line",
+      "area_code",
+      "n_tests"
+    ),
     filled = c("pathogen", "sample_date", "n_tests"),
     what = "Denominator data"
   )
   episodic_validate_allowed(
-    denominators, "care_line", episodic_care_lines,
-    na_ok = TRUE, what = "Denominator data"
+    denominators,
+    "care_line",
+    episodic_care_lines,
+    na_ok = TRUE,
+    what = "Denominator data"
   )
   episodic_validate_dates(
-    denominators, "sample_date", na_ok = FALSE, what = "Denominator data"
+    denominators,
+    "sample_date",
+    na_ok = FALSE,
+    what = "Denominator data"
   )
   if (nrow(denominators) > 0 && !is.numeric(denominators$n_tests)) {
     stop(
       "Denominator data has a non-numeric `n_tests` (",
-      paste(class(denominators$n_tests), collapse = "/"), ").", call. = FALSE
+      paste(class(denominators$n_tests), collapse = "/"),
+      ").",
+      call. = FALSE
     )
   }
 
@@ -65,11 +79,18 @@ episodic_denominators_load <- function(con, denominators) {
   for (i in seq_len(nrow(denominators))) {
     row <- denominators[i, ]
     episodic_db_denominator_upsert(
-      con, pathogen = row$pathogen, sample_date = row$sample_date,
-      care_line = row$care_line, area_code = row$area_code, n_tests = row$n_tests
+      con,
+      pathogen = row$pathogen,
+      sample_date = row$sample_date,
+      care_line = row$care_line,
+      area_code = row$area_code,
+      n_tests = row$n_tests
     )
   }
-  invisible(list(n_supplied = nrow(denominators), n_written = nrow(denominators)))
+  invisible(list(
+    n_supplied = nrow(denominators),
+    n_written = nrow(denominators)
+  ))
 }
 
 #' Add a testing-volume (positivity) feed
@@ -98,9 +119,11 @@ episodic_denominators_load <- function(con, denominators) {
 #' )
 #' head(denom)
 #' @export
-episodic_synthetic_denominators <- function(start_date = as.Date("2021-01-01"),
-                                                  end_date = as.Date("2025-12-31"),
-                                                  seed = 1) {
+episodic_synthetic_denominators <- function(
+  start_date = as.Date("2021-01-01"),
+  end_date = as.Date("2025-12-31"),
+  seed = 1
+) {
   set.seed(seed)
   week_starts <- seq(start_date, end_date, by = "week")
   n <- length(week_starts)

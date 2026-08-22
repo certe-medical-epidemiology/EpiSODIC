@@ -40,17 +40,27 @@
 #'   user = "episodic_app", password = "s3cr3t!"
 #' )
 #' @export
-episodic_db_dsn_mariadb <- function(host, dbname, user, password, port = 3306L) {
+episodic_db_dsn_mariadb <- function(
+  host,
+  dbname,
+  user,
+  password,
+  port = 3306L
+) {
   stopifnot(
-    is.character(host), nzchar(host),
-    is.character(dbname), nzchar(dbname),
-    is.character(user), is.character(password)
+    is.character(host),
+    nzchar(host),
+    is.character(dbname),
+    nzchar(dbname),
+    is.character(user),
+    is.character(password)
   )
   sprintf(
     "mysql://%s:%s@%s:%d/%s",
     utils::URLencode(user, reserved = TRUE),
     utils::URLencode(password, reserved = TRUE),
-    host, as.integer(port),
+    host,
+    as.integer(port),
     utils::URLencode(dbname, reserved = TRUE)
   )
 }
@@ -88,13 +98,18 @@ episodic_db_exists <- function(path) {
 #' @keywords internal
 #' @noRd
 episodic_db_parse_mariadb_dsn <- function(x) {
-  m <- regmatches(x, regexec(
-    "^(?:mysql|mariadb)://(?:([^:@/]*)(?::([^@/]*))?@)?([^:@/]+)(?::([0-9]+))?/([^?]+)$",
-    x
-  ))[[1]]
+  m <- regmatches(
+    x,
+    regexec(
+      "^(?:mysql|mariadb)://(?:([^:@/]*)(?::([^@/]*))?@)?([^:@/]+)(?::([0-9]+))?/([^?]+)$",
+      x
+    )
+  )[[1]]
   if (length(m) == 0) {
     stop(
-      "Not a valid MariaDB/MySQL DSN: '", x, "'. Expected the form ",
+      "Not a valid MariaDB/MySQL DSN: '",
+      x,
+      "'. Expected the form ",
       "mysql://user:password@host:port/dbname - see episodic_db_dsn_mariadb().",
       call. = FALSE
     )
@@ -121,8 +136,11 @@ episodic_db_mariadb_connect <- function(dsn) {
   parts <- episodic_db_parse_mariadb_dsn(dsn)
   DBI::dbConnect(
     RMariaDB::MariaDB(),
-    host = parts$host, port = parts$port, dbname = parts$dbname,
-    user = parts$user, password = parts$password
+    host = parts$host,
+    port = parts$port,
+    dbname = parts$dbname,
+    user = parts$user,
+    password = parts$password
   )
 }
 
@@ -158,7 +176,9 @@ episodic_db_create <- function(path, overwrite = FALSE) {
         file.remove(path)
       } else {
         stop(
-          "A file already exists at '", path, "'. Pass overwrite = TRUE to ",
+          "A file already exists at '",
+          path,
+          "'. Pass overwrite = TRUE to ",
           "replace it, or use episodic_db_connect() to open an existing database.",
           call. = FALSE
         )
@@ -179,7 +199,9 @@ episodic_db_create <- function(path, overwrite = FALSE) {
         )
       }
       DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 0")
-      for (tbl in existing_tables) DBI::dbRemoveTable(con, tbl)
+      for (tbl in existing_tables) {
+        DBI::dbRemoveTable(con, tbl)
+      }
       DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 1")
     }
   }
@@ -313,27 +335,41 @@ episodic_db_schema_statements <- function(dialect) {
   schema_sql <- paste(schema_sql, collapse = "\n")
 
   if (dialect == "mariadb") {
-    schema_sql <- sub("PRAGMA foreign_keys = ON;\n", "", schema_sql, fixed = TRUE)
-    schema_sql <- gsub("AUTOINCREMENT", "AUTO_INCREMENT", schema_sql, fixed = TRUE)
+    schema_sql <- sub(
+      "PRAGMA foreign_keys = ON;\n",
+      "",
+      schema_sql,
+      fixed = TRUE
+    )
+    schema_sql <- gsub(
+      "AUTOINCREMENT",
+      "AUTO_INCREMENT",
+      schema_sql,
+      fixed = TRUE
+    )
     schema_sql <- sub(
       "stream_key      TEXT NOT NULL UNIQUE",
       "stream_key      VARCHAR(40) NOT NULL UNIQUE",
-      schema_sql, fixed = TRUE
+      schema_sql,
+      fixed = TRUE
     )
     schema_sql <- sub(
       "institution_key  TEXT NOT NULL UNIQUE",
       "institution_key  VARCHAR(40) NOT NULL UNIQUE",
-      schema_sql, fixed = TRUE
+      schema_sql,
+      fixed = TRUE
     )
     schema_sql <- sub(
       "source_key     TEXT NOT NULL UNIQUE,",
       "source_key     VARCHAR(191) NOT NULL UNIQUE,",
-      schema_sql, fixed = TRUE
+      schema_sql,
+      fixed = TRUE
     )
     schema_sql <- sub(
       "username      TEXT NOT NULL UNIQUE,",
       "username      VARCHAR(191) NOT NULL UNIQUE,",
-      schema_sql, fixed = TRUE
+      schema_sql,
+      fixed = TRUE
     )
   }
 

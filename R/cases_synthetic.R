@@ -40,9 +40,11 @@
 #' nrow(cases)
 #' head(cases)
 #' @export
-episodic_synthetic_cases <- function(start_date = as.Date("2021-01-01"),
-                                             end_date = as.Date("2025-12-31"),
-                                             seed = 1) {
+episodic_synthetic_cases <- function(
+  start_date = as.Date("2021-01-01"),
+  end_date = as.Date("2025-12-31"),
+  seed = 1
+) {
   set.seed(seed)
 
   institutions <- episodic_synthetic_institutions()
@@ -51,9 +53,17 @@ episodic_synthetic_cases <- function(start_date = as.Date("2021-01-01"),
 
   dates <- seq(start_date, end_date, by = "day")
 
-  baseline <- episodic_synthetic_baseline_cases(dates, institutions, pc_pool, pathogens)
+  baseline <- episodic_synthetic_baseline_cases(
+    dates,
+    institutions,
+    pc_pool,
+    pathogens
+  )
 
-  point_source <- episodic_synthetic_outbreak_point_source(institutions, end_date)
+  point_source <- episodic_synthetic_outbreak_point_source(
+    institutions,
+    end_date
+  )
   propagated <- episodic_synthetic_outbreak_propagated(pc_pool, end_date)
 
   cases <- rbind(baseline, point_source, propagated)
@@ -89,7 +99,10 @@ episodic_synthetic_institutions <- function() {
     stringsAsFactors = FALSE
   )
   gp <- data.frame(
-    institution_key = sprintf("GP-%02d", seq_along(episodic_synthetic_municipalities())),
+    institution_key = sprintf(
+      "GP-%02d",
+      seq_along(episodic_synthetic_municipalities())
+    ),
     institution_display_name = episodic_synthetic_municipalities(),
     institution_type = "gp_municipality",
     care_line = "first",
@@ -104,16 +117,28 @@ episodic_synthetic_institutions <- function() {
 #' @keywords internal
 #' @noRd
 episodic_synthetic_municipalities <- function() {
-  c("Groningen", "Leeuwarden", "Assen", "Emmen", "Hoogezand-Sappemeer",
-    "Winschoten", "Delfzijl", "Drachten", "Heerenveen", "Meppel")
+  c(
+    "Groningen",
+    "Leeuwarden",
+    "Assen",
+    "Emmen",
+    "Hoogezand-Sappemeer",
+    "Winschoten",
+    "Delfzijl",
+    "Drachten",
+    "Heerenveen",
+    "Meppel"
+  )
 }
 
 #' @keywords internal
 #' @noRd
 episodic_synthetic_pc_pool <- function() {
-  c(paste0("9", sprintf("%03d", sample(0:999, 40))),   # Groningen province
-    paste0("8", sprintf("%03d", sample(0:999, 40))),   # Fryslan
-    paste0("7", sprintf("%03d", sample(100:999, 30)))) # Drenthe
+  c(
+    paste0("9", sprintf("%03d", sample(0:999, 40))), # Groningen province
+    paste0("8", sprintf("%03d", sample(0:999, 40))), # Fryslan
+    paste0("7", sprintf("%03d", sample(100:999, 30)))
+  ) # Drenthe
 }
 
 #' @keywords internal
@@ -124,48 +149,91 @@ episodic_synthetic_pathogen_profiles <- function() {
   # mean before seasonality is applied. pathogen values match
   # inst/config/pathogen_config.csv exactly, as raw lab-provided strings.
   data.frame(
-    pathogen = c("Norovirus", "Influenza A", "Campylobacter", "Salmonella",
-                 "RSV", "Clostridioides difficile", "MRSA", "Giardia lamblia"),
+    pathogen = c(
+      "Norovirus",
+      "Influenza A",
+      "Campylobacter",
+      "Salmonella",
+      "RSV",
+      "Clostridioides difficile",
+      "MRSA",
+      "Giardia lamblia"
+    ),
     mean_daily = c(1.2, 1.0, 0.9, 0.4, 0.7, 0.5, 0.15, 0.2),
     amplitude = c(0.7, 0.9, 0.4, 0.3, 0.9, 0.1, 0.05, 0.1),
-    phase_day = c(15, 15, 200, 210, 350, 180, 180, 200),  # ~mid-Jan, mid-Jul etc.
+    phase_day = c(15, 15, 200, 210, 350, 180, 180, 200), # ~mid-Jan, mid-Jul etc.
     stringsAsFactors = FALSE
   )
 }
 
 #' @keywords internal
 #' @noRd
-episodic_synthetic_baseline_cases <- function(dates, institutions, pc_pool, pathogens) {
+episodic_synthetic_baseline_cases <- function(
+  dates,
+  institutions,
+  pc_pool,
+  pathogens
+) {
   rows <- list()
   for (i in seq_len(nrow(pathogens))) {
     org <- pathogens[i, ]
     doy <- as.integer(format(dates, "%j"))
-    seasonal_mean <- org$mean_daily * (1 + org$amplitude * cos(2 * pi * (doy - org$phase_day) / 365.25))
+    seasonal_mean <- org$mean_daily *
+      (1 + org$amplitude * cos(2 * pi * (doy - org$phase_day) / 365.25))
     n_per_day <- stats::rpois(length(dates), lambda = pmax(seasonal_mean, 0.01))
     n_total <- sum(n_per_day)
-    if (n_total == 0) next
+    if (n_total == 0) {
+      next
+    }
     case_dates <- rep(dates, times = n_per_day)
     inst_idx <- sample(seq_len(nrow(institutions)), n_total, replace = TRUE)
     inst <- institutions[inst_idx, ]
     rows[[i]] <- data.frame(
-      patient_key = sprintf("PT-%s-%06d", make.names(org$pathogen), sample.int(1e7, n_total)),
+      patient_key = sprintf(
+        "PT-%s-%06d",
+        make.names(org$pathogen),
+        sample.int(1e7, n_total)
+      ),
       sample_date = as.character(case_dates),
-      receipt_date = as.character(case_dates + sample(0:3, n_total, replace = TRUE, prob = c(0.6, 0.25, 0.1, 0.05))),
+      receipt_date = as.character(
+        case_dates +
+          sample(0:3, n_total, replace = TRUE, prob = c(0.6, 0.25, 0.1, 0.05))
+      ),
       pathogen = org$pathogen,
       care_line = inst$care_line,
       institution_key = inst$institution_key,
       institution_display_name = inst$institution_display_name,
       institution_type = inst$institution_type,
       municipality = inst$municipality,
-      ward = ifelse(inst$institution_type == "hospital",
-                     sample(c("Interne", "Chirurgie", "Longziekten", "Geriatrie", "IC"), n_total, replace = TRUE),
-                     NA_character_),
-      specialism = ifelse(inst$institution_type == "hospital",
-                           sample(c("Interne geneeskunde", "Chirurgie", "Longziekten", "Klinische geriatrie"), n_total, replace = TRUE),
-                           NA_character_),
+      ward = ifelse(
+        inst$institution_type == "hospital",
+        sample(
+          c("Interne", "Chirurgie", "Longziekten", "Geriatrie", "IC"),
+          n_total,
+          replace = TRUE
+        ),
+        NA_character_
+      ),
+      specialism = ifelse(
+        inst$institution_type == "hospital",
+        sample(
+          c(
+            "Interne geneeskunde",
+            "Chirurgie",
+            "Longziekten",
+            "Klinische geriatrie"
+          ),
+          n_total,
+          replace = TRUE
+        ),
+        NA_character_
+      ),
       pc = sample(pc_pool, n_total, replace = TRUE),
       sex = sample(c("M", "F"), n_total, replace = TRUE),
-      age = pmin(pmax(round(stats::rnorm(n_total, mean = 45, sd = 25)), 0), 100),
+      age = pmin(
+        pmax(round(stats::rnorm(n_total, mean = 45, sd = 25)), 0),
+        100
+      ),
       stringsAsFactors = FALSE
     )
   }
@@ -175,7 +243,11 @@ episodic_synthetic_baseline_cases <- function(dates, institutions, pc_pool, path
 #' Inject a point-source outbreak: one ward, tightly bunched in time
 #' @keywords internal
 #' @noRd
-episodic_synthetic_outbreak_point_source <- function(institutions, end_date, n_cases = 14) {
+episodic_synthetic_outbreak_point_source <- function(
+  institutions,
+  end_date,
+  n_cases = 14
+) {
   hospital <- institutions[institutions$institution_type == "hospital", ][1, ]
   exposure_date <- end_date - 40
   # norovirus incubation is 0.5-3 days; all cases cluster within a few days
@@ -233,11 +305,13 @@ episodic_synthetic_outbreak_point_source <- function(institutions, end_date, n_c
 #' )
 #' sum(startsWith(cases$patient_key, "PT-VOL-"))
 #' @export
-episodic_synthetic_cases_calibration <- function(start_date = as.Date("2021-01-01"),
-                                                          end_date = as.Date("2025-12-31"),
-                                                          pathogen = "Clostridioides difficile",
-                                                          n_bumps_per_month = 3,
-                                                          seed = 1) {
+episodic_synthetic_cases_calibration <- function(
+  start_date = as.Date("2021-01-01"),
+  end_date = as.Date("2025-12-31"),
+  pathogen = "Clostridioides difficile",
+  n_bumps_per_month = 3,
+  seed = 1
+) {
   set.seed(seed)
 
   institutions <- episodic_synthetic_institutions()
@@ -245,11 +319,24 @@ episodic_synthetic_cases_calibration <- function(start_date = as.Date("2021-01-0
   pathogens <- episodic_synthetic_pathogen_profiles()
   dates <- seq(start_date, end_date, by = "day")
 
-  baseline <- episodic_synthetic_baseline_cases(dates, institutions, pc_pool, pathogens)
-  point_source <- episodic_synthetic_outbreak_point_source(institutions, end_date)
+  baseline <- episodic_synthetic_baseline_cases(
+    dates,
+    institutions,
+    pc_pool,
+    pathogens
+  )
+  point_source <- episodic_synthetic_outbreak_point_source(
+    institutions,
+    end_date
+  )
   propagated <- episodic_synthetic_outbreak_propagated(pc_pool, end_date)
-  volume <- episodic_synthetic_outbreak_volume(institutions, start_date, end_date,
-                                               pathogen = pathogen, n_bumps_per_month = n_bumps_per_month)
+  volume <- episodic_synthetic_outbreak_volume(
+    institutions,
+    start_date,
+    end_date,
+    pathogen = pathogen,
+    n_bumps_per_month = n_bumps_per_month
+  )
 
   cases <- rbind(baseline, point_source, propagated, volume)
   cases$source_key <- sprintf("SYN-%08d", seq_len(nrow(cases)))
@@ -280,10 +367,17 @@ episodic_synthetic_cases_calibration <- function(start_date = as.Date("2021-01-0
 #'   not likely, with a very short window or low `n_bumps_per_month`).
 #' @keywords internal
 #' @noRd
-episodic_synthetic_outbreak_volume <- function(institutions, start_date, end_date,
-                                               pathogen = "Clostridioides difficile",
-                                               n_bumps_per_month = 3, cases_per_bump = c(3, 9)) {
-  eligible <- institutions[institutions$institution_type %in% c("ltc_institution", "hospital"), ]
+episodic_synthetic_outbreak_volume <- function(
+  institutions,
+  start_date,
+  end_date,
+  pathogen = "Clostridioides difficile",
+  n_bumps_per_month = 3,
+  cases_per_bump = c(3, 9)
+) {
+  eligible <- institutions[
+    institutions$institution_type %in% c("ltc_institution", "hospital"),
+  ]
   months <- seq(as.Date(format(start_date, "%Y-%m-01")), end_date, by = "month")
 
   rows <- list()
@@ -296,9 +390,13 @@ episodic_synthetic_outbreak_volume <- function(institutions, start_date, end_dat
       n_cases <- sample(cases_per_bump[1]:cases_per_bump[2], 1)
       onset_offsets <- round(stats::rgamma(n_cases, shape = 3, rate = 1.5))
       case_dates <- month_start + sample(0:27, 1) + onset_offsets
-      case_dates <- case_dates[case_dates >= start_date & case_dates <= end_date]
+      case_dates <- case_dates[
+        case_dates >= start_date & case_dates <= end_date
+      ]
       n_cases <- length(case_dates)
-      if (n_cases == 0) next
+      if (n_cases == 0) {
+        next
+      }
 
       bump_id <- bump_id + 1L
       is_hospital <- identical(inst$institution_type, "hospital")
@@ -312,33 +410,64 @@ episodic_synthetic_outbreak_volume <- function(institutions, start_date, end_dat
         institution_display_name = inst$institution_display_name,
         institution_type = inst$institution_type,
         municipality = inst$municipality,
-        ward = if (is_hospital) sample(c("Interne", "Chirurgie", "Longziekten", "Geriatrie", "IC"), n_cases, replace = TRUE) else NA_character_,
-        specialism = if (is_hospital) sample(c("Interne geneeskunde", "Chirurgie", "Longziekten", "Klinische geriatrie"), n_cases, replace = TRUE) else NA_character_,
+        ward = if (is_hospital) {
+          sample(
+            c("Interne", "Chirurgie", "Longziekten", "Geriatrie", "IC"),
+            n_cases,
+            replace = TRUE
+          )
+        } else {
+          NA_character_
+        },
+        specialism = if (is_hospital) {
+          sample(
+            c(
+              "Interne geneeskunde",
+              "Chirurgie",
+              "Longziekten",
+              "Klinische geriatrie"
+            ),
+            n_cases,
+            replace = TRUE
+          )
+        } else {
+          NA_character_
+        },
         pc = sample(episodic_synthetic_pc_pool(), n_cases, replace = TRUE),
         sex = sample(c("M", "F"), n_cases, replace = TRUE),
-        age = pmin(pmax(round(stats::rnorm(n_cases, mean = 75, sd = 12)), 40), 100),
+        age = pmin(
+          pmax(round(stats::rnorm(n_cases, mean = 75, sd = 12)), 40),
+          100
+        ),
         stringsAsFactors = FALSE
       )
     }
   }
-  if (length(rows) == 0) return(NULL)
+  if (length(rows) == 0) {
+    return(NULL)
+  }
   do.call(rbind, rows)
 }
 
 #' Inject a propagated outbreak: community spread with generation-interval waves
 #' @keywords internal
 #' @noRd
-episodic_synthetic_outbreak_propagated <- function(pc_pool, end_date, n_generations = 4,
-                                                    cases_per_generation = c(2, 4, 6, 3)) {
+episodic_synthetic_outbreak_propagated <- function(
+  pc_pool,
+  end_date,
+  n_generations = 4,
+  cases_per_generation = c(2, 4, 6, 3)
+) {
   epi_pc <- sample(pc_pool, 1)
   start_date <- end_date - 90
-  serial_interval <- 20  # Bordetella pertussis-like, days
+  serial_interval <- 20 # Bordetella pertussis-like, days
 
   rows <- list()
   gen_start <- start_date
   for (g in seq_len(n_generations)) {
     n <- cases_per_generation[g]
-    case_dates <- gen_start + round(stats::rgamma(n, shape = 2, rate = 2 / serial_interval))
+    case_dates <- gen_start +
+      round(stats::rgamma(n, shape = 2, rate = 2 / serial_interval))
     rows[[g]] <- data.frame(
       patient_key = sprintf("PT-OUTBREAK-PROP-G%d-%03d", g, seq_len(n)),
       sample_date = as.character(case_dates),

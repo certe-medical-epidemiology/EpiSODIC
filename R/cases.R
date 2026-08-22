@@ -147,10 +147,21 @@ NULL
 #' episodic_institution_types
 #' @export
 episodic_case_columns <- c(
-  "source_key", "patient_key", "sample_date", "receipt_date", "pathogen",
-  "care_line", "institution_key",
-  "institution_display_name", "institution_type", "municipality",
-  "ward", "specialism", "pc", "sex", "age"
+  "source_key",
+  "patient_key",
+  "sample_date",
+  "receipt_date",
+  "pathogen",
+  "care_line",
+  "institution_key",
+  "institution_display_name",
+  "institution_type",
+  "municipality",
+  "ward",
+  "specialism",
+  "pc",
+  "sex",
+  "age"
 )
 
 #' @rdname episodic_case_data
@@ -160,7 +171,11 @@ episodic_care_lines <- c("first", "second", "other", "unknown")
 #' @rdname episodic_case_data
 #' @export
 episodic_institution_types <- c(
-  "hospital", "ltc_institution", "gp_municipality", "ooh_service", "other"
+  "hospital",
+  "ltc_institution",
+  "gp_municipality",
+  "ooh_service",
+  "other"
 )
 
 #' @rdname episodic_case_data
@@ -171,8 +186,13 @@ episodic_sex_codes <- c("M", "F", "U")
 #' @keywords internal
 #' @noRd
 episodic_case_columns_required <- c(
-  "source_key", "patient_key", "sample_date", "pathogen",
-  "institution_key", "institution_display_name", "institution_type"
+  "source_key",
+  "patient_key",
+  "sample_date",
+  "pathogen",
+  "institution_key",
+  "institution_display_name",
+  "institution_type"
 )
 
 #' Check that your case data has the right shape
@@ -225,8 +245,18 @@ episodic_validate_cases <- function(cases) {
     stop("Case data contains duplicate source_key values.", call. = FALSE)
   }
 
-  episodic_validate_allowed(cases, "care_line", episodic_care_lines, na_ok = TRUE)
-  episodic_validate_allowed(cases, "institution_type", episodic_institution_types, na_ok = FALSE)
+  episodic_validate_allowed(
+    cases,
+    "care_line",
+    episodic_care_lines,
+    na_ok = TRUE
+  )
+  episodic_validate_allowed(
+    cases,
+    "institution_type",
+    episodic_institution_types,
+    na_ok = FALSE
+  )
   episodic_validate_allowed(cases, "sex", episodic_sex_codes, na_ok = TRUE)
 
   episodic_validate_dates(cases, "sample_date", na_ok = FALSE)
@@ -234,8 +264,10 @@ episodic_validate_cases <- function(cases) {
 
   if (!all(is.na(cases$age)) && !is.numeric(cases$age)) {
     stop(
-      "Case data has a non-numeric `age` (", paste(class(cases$age), collapse = "/"),
-      "). Give age in whole years, not as an age group.", call. = FALSE
+      "Case data has a non-numeric `age` (",
+      paste(class(cases$age), collapse = "/"),
+      "). Give age in whole years, not as an age group.",
+      call. = FALSE
     )
   }
 
@@ -250,19 +282,35 @@ episodic_validate_cases <- function(cases) {
 #' @noRd
 episodic_validate_columns <- function(data, required, filled, what) {
   if (!is.data.frame(data)) {
-    stop(what, " must be a data frame (or tibble), not ",
-         paste(class(data), collapse = "/"), ".", call. = FALSE)
+    stop(
+      what,
+      " must be a data frame (or tibble), not ",
+      paste(class(data), collapse = "/"),
+      ".",
+      call. = FALSE
+    )
   }
   missing_cols <- setdiff(required, names(data))
   if (length(missing_cols) > 0) {
-    stop(what, " is missing required column(s): ",
-         paste(missing_cols, collapse = ", "), call. = FALSE)
+    stop(
+      what,
+      " is missing required column(s): ",
+      paste(missing_cols, collapse = ", "),
+      call. = FALSE
+    )
   }
   for (column in filled) {
     if (any(is.na(data[[column]]))) {
       stop(
-        what, " has NA in `", column, "`, which must always be filled ",
-        "(", sum(is.na(data[[column]])), " of ", nrow(data), " rows).",
+        what,
+        " has NA in `",
+        column,
+        "`, which must always be filled ",
+        "(",
+        sum(is.na(data[[column]])),
+        " of ",
+        nrow(data),
+        " rows).",
         call. = FALSE
       )
     }
@@ -276,15 +324,33 @@ episodic_validate_columns <- function(data, required, filled, what) {
 #' it arrived on a case, a denominator or an activity row.
 #' @keywords internal
 #' @noRd
-episodic_validate_allowed <- function(data, column, allowed, na_ok, what = "Case data") {
+episodic_validate_allowed <- function(
+  data,
+  column,
+  allowed,
+  na_ok,
+  what = "Case data"
+) {
   values <- data[[column]]
-  bad <- if (isTRUE(na_ok)) values[!is.na(values) & !values %in% allowed] else values[!values %in% allowed]
+  bad <- if (isTRUE(na_ok)) {
+    values[!is.na(values) & !values %in% allowed]
+  } else {
+    values[!values %in% allowed]
+  }
   if (length(bad) > 0) {
     stop(
-      what, " has ", length(bad), " row(s) with a `", column,
-      "` outside the allowed values (", paste(allowed, collapse = ", "),
-      if (isTRUE(na_ok)) ", or NA" else "", "): ",
-      paste(unique(bad), collapse = ", "), ".", call. = FALSE
+      what,
+      " has ",
+      length(bad),
+      " row(s) with a `",
+      column,
+      "` outside the allowed values (",
+      paste(allowed, collapse = ", "),
+      if (isTRUE(na_ok)) ", or NA" else "",
+      "): ",
+      paste(unique(bad), collapse = ", "),
+      ".",
+      call. = FALSE
     )
   }
   invisible(NULL)
@@ -295,7 +361,9 @@ episodic_validate_allowed <- function(data, column, allowed, na_ok, what = "Case
 #' @noRd
 episodic_validate_dates <- function(data, column, na_ok, what = "Case data") {
   values <- data[[column]]
-  if (inherits(values, "Date")) return(invisible(NULL))
+  if (inherits(values, "Date")) {
+    return(invisible(NULL))
+  }
   text <- as.character(values)
   # Parsing alone is not enough: as.Date(format = "%Y-%m-%d") matches a
   # prefix and ignores whatever trails it, so "01-01-2025" comes back as
@@ -303,14 +371,24 @@ episodic_validate_dates <- function(data, column, na_ok, what = "Case data") {
   # shape first, then that those digits are a real date.
   iso_shaped <- grepl("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", text)
   parsed <- suppressWarnings(as.Date(text, format = "%Y-%m-%d"))
-  bad <- values[(!iso_shaped | is.na(parsed)) & !(is.na(values) & isTRUE(na_ok))]
+  bad <- values[
+    (!iso_shaped | is.na(parsed)) & !(is.na(values) & isTRUE(na_ok))
+  ]
   if (length(bad) > 0) {
     shown <- unique(bad)
-    if (length(shown) > 5) shown <- shown[1:5]
+    if (length(shown) > 5) {
+      shown <- shown[1:5]
+    }
     stop(
-      what, " has ", length(bad), " row(s) whose `", column,
+      what,
+      " has ",
+      length(bad),
+      " row(s) whose `",
+      column,
       "` is not a Date and does not read as YYYY-MM-DD: ",
-      paste(shown, collapse = ", "), ".", call. = FALSE
+      paste(shown, collapse = ", "),
+      ".",
+      call. = FALSE
     )
   }
   invisible(NULL)

@@ -19,20 +19,28 @@
 
 test_that("episodic_synthetic_institution_activity() returns weekly rows for hospitals only", {
   institutions <- data.frame(
-    institution_key = c("h1", "h2", "l1"), n_beds = c(400, 200, 80),
-    institution_type = c("hospital", "hospital", "ltc_institution"), stringsAsFactors = FALSE
+    institution_key = c("h1", "h2", "l1"),
+    n_beds = c(400, 200, 80),
+    institution_type = c("hospital", "hospital", "ltc_institution"),
+    stringsAsFactors = FALSE
   )
   activity <- episodic_synthetic_institution_activity(
-    institutions, start_date = as.Date("2025-01-06"), end_date = as.Date("2025-02-03")
+    institutions,
+    start_date = as.Date("2025-01-06"),
+    end_date = as.Date("2025-02-03")
   )
   expect_setequal(unique(activity$institution_key), c("h1", "h2"))
   expect_true(all(activity$patient_days > 0))
-  expect_true(all(activity$patient_days <= activity$n_beds * 7 * 1.1))  # sanity: never wildly above capacity
+  expect_true(all(activity$patient_days <= activity$n_beds * 7 * 1.1)) # sanity: never wildly above capacity
 })
 
 test_that("episodic_synthetic_institution_activity() returns zero rows when there are no hospitals", {
-  institutions <- data.frame(institution_key = "l1", n_beds = 80, institution_type = "ltc_institution",
-                              stringsAsFactors = FALSE)
+  institutions <- data.frame(
+    institution_key = "l1",
+    n_beds = 80,
+    institution_type = "ltc_institution",
+    stringsAsFactors = FALSE
+  )
   activity <- episodic_synthetic_institution_activity(institutions)
   expect_equal(nrow(activity), 0)
 })
@@ -43,15 +51,21 @@ test_that("episodic_institution_activity_load() resolves institution_key to inst
   institution <- episodic_db_institutions(env$con)
 
   activity <- data.frame(
-    institution_key = institution$institution_key[1], period_start = "2025-03-01", period_end = "2025-03-07",
-    patient_days = 500, stringsAsFactors = FALSE
+    institution_key = institution$institution_key[1],
+    period_start = "2025-03-01",
+    period_end = "2025-03-07",
+    patient_days = 500,
+    stringsAsFactors = FALSE
   )
   counts <- episodic_institution_activity_load(env$con, activity)
   expect_equal(counts$n_supplied, 1)
   expect_equal(counts$n_written, 1)
   expect_equal(counts$n_skipped, 0)
 
-  rows <- episodic_db_institution_activity(env$con, institution$institution_id[1])
+  rows <- episodic_db_institution_activity(
+    env$con,
+    institution$institution_id[1]
+  )
   expect_true("2025-03-01" %in% rows$period_start)
 })
 
@@ -59,10 +73,16 @@ test_that("episodic_institution_activity_load() skips rows for an unknown instit
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   activity <- data.frame(
-    institution_key = "does-not-exist", period_start = "2025-03-01", period_end = "2025-03-07",
-    patient_days = 500, stringsAsFactors = FALSE
+    institution_key = "does-not-exist",
+    period_start = "2025-03-01",
+    period_end = "2025-03-07",
+    patient_days = 500,
+    stringsAsFactors = FALSE
   )
-  counts <- suppressWarnings(episodic_institution_activity_load(env$con, activity))
+  counts <- suppressWarnings(episodic_institution_activity_load(
+    env$con,
+    activity
+  ))
   expect_equal(counts$n_written, 0)
   expect_equal(counts$n_skipped, 1)
 })
@@ -72,11 +92,19 @@ test_that("episodic_institution_activity_load() warns, naming the unmatched keys
   on.exit(DBI::dbDisconnect(env$con))
   activity <- data.frame(
     institution_key = c("ghost-a", "ghost-b"),
-    period_start = "2025-03-01", period_end = "2025-03-07",
-    patient_days = 500, stringsAsFactors = FALSE
+    period_start = "2025-03-01",
+    period_end = "2025-03-07",
+    patient_days = 500,
+    stringsAsFactors = FALSE
   )
-  expect_warning(episodic_institution_activity_load(env$con, activity), "ghost-a")
-  expect_warning(episodic_institution_activity_load(env$con, activity), "2 of 2")
+  expect_warning(
+    episodic_institution_activity_load(env$con, activity),
+    "ghost-a"
+  )
+  expect_warning(
+    episodic_institution_activity_load(env$con, activity),
+    "2 of 2"
+  )
 })
 
 test_that("episodic_institution_activity_load() is silent when nothing is skipped", {
@@ -85,8 +113,10 @@ test_that("episodic_institution_activity_load() is silent when nothing is skippe
   institution <- episodic_db_institutions(env$con)
   activity <- data.frame(
     institution_key = institution$institution_key[1],
-    period_start = "2025-03-01", period_end = "2025-03-07",
-    patient_days = 500, stringsAsFactors = FALSE
+    period_start = "2025-03-01",
+    period_end = "2025-03-07",
+    patient_days = 500,
+    stringsAsFactors = FALSE
   )
   expect_silent(episodic_institution_activity_load(env$con, activity))
 })
@@ -97,17 +127,25 @@ test_that("episodic_institution_activity_load() rejects an unparseable period da
   institution <- episodic_db_institutions(env$con)
   activity <- data.frame(
     institution_key = institution$institution_key[1],
-    period_start = "01-03-2025", period_end = "2025-03-07",
-    patient_days = 500, stringsAsFactors = FALSE
+    period_start = "01-03-2025",
+    period_end = "2025-03-07",
+    patient_days = 500,
+    stringsAsFactors = FALSE
   )
-  expect_error(episodic_institution_activity_load(env$con, activity), "period_start")
+  expect_error(
+    episodic_institution_activity_load(env$con, activity),
+    "period_start"
+  )
 })
 
 test_that("episodic_institution_activity_load() errors clearly when required columns are missing", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   expect_error(
-    episodic_institution_activity_load(env$con, data.frame(institution_key = "x")),
+    episodic_institution_activity_load(
+      env$con,
+      data.frame(institution_key = "x")
+    ),
     "required column"
   )
 })

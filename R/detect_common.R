@@ -34,14 +34,27 @@
 #' @return A one-row data frame in the shape reconciliation expects.
 #' @keywords internal
 #' @noRd
-episodic_detection_record <- function(stream_id, detector, first_day, last_day, n_cases,
-                                      expected = NA_real_, upperbound = NA_real_,
-                                      params = list()) {
+episodic_detection_record <- function(
+  stream_id,
+  detector,
+  first_day,
+  last_day,
+  n_cases,
+  expected = NA_real_,
+  upperbound = NA_real_,
+  params = list()
+) {
   if (length(n_cases) == 0) {
     return(data.frame(
-      stream_id = integer(0), detector = character(0), first_day = character(0),
-      last_day = character(0), n_cases = integer(0), expected = numeric(0),
-      upperbound = numeric(0), params = character(0), stringsAsFactors = FALSE
+      stream_id = integer(0),
+      detector = character(0),
+      first_day = character(0),
+      last_day = character(0),
+      n_cases = integer(0),
+      expected = numeric(0),
+      upperbound = numeric(0),
+      params = character(0),
+      stringsAsFactors = FALSE
     ))
   }
   data.frame(

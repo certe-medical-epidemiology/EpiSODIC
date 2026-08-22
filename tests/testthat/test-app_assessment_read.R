@@ -20,12 +20,26 @@
 test_that("episodic_app_assessment_timeline() combines assessment events and closures, chronologically", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
 
-  expect_equal(nrow(episodic_app_assessment_timeline(env$con, env$cluster_id)), 0)
+  expect_equal(
+    nrow(episodic_app_assessment_timeline(env$con, env$cluster_id)),
+    0
+  )
 
-  episodic_app_submit_assessment(env$con, env$cluster_id, user_id,
-                                 verdict = "possible_epidemic", rationale = "watching this")
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    verdict = "possible_epidemic",
+    rationale = "watching this"
+  )
   Sys.sleep(1.1)
   episodic_app_submit_closure(env$con, env$cluster_id, user_id)
 
@@ -40,7 +54,12 @@ test_that("episodic_app_assessment_timeline() combines assessment events and clo
 test_that("episodic_app_assessment_timeline() labels a system actor (NA user_id) distinctly", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  episodic_db_cluster_state_insert(env$con, cluster_id = env$cluster_id, state = "closed", trigger = "closure")
+  episodic_db_cluster_state_insert(
+    env$con,
+    cluster_id = env$cluster_id,
+    state = "closed",
+    trigger = "closure"
+  )
 
   timeline <- episodic_app_assessment_timeline(env$con, env$cluster_id)
   expect_equal(timeline$actor[1], "Systeem")
@@ -49,11 +68,22 @@ test_that("episodic_app_assessment_timeline() labels a system actor (NA user_id)
 test_that("episodic_app_archive() lists only closed clusters, most recent first, and supports search", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  expect_equal(nrow(episodic_app_archive(env$con)), 0)  # nothing closed yet
+  expect_equal(nrow(episodic_app_archive(env$con)), 0) # nothing closed yet
 
-  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com", "hash")
-  episodic_app_submit_assessment(env$con, env$cluster_id, user_id,
-                                 verdict = "artefact", rationale = "false alarm")
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    verdict = "artefact",
+    rationale = "false alarm"
+  )
 
   archive <- episodic_app_archive(env$con)
   expect_equal(nrow(archive), 1)
@@ -67,14 +97,30 @@ test_that("episodic_app_archive() lists only closed clusters, most recent first,
 test_that("episodic_app_activity_log() surfaces assessments, closures, mutes, logins and runs, most recent first", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com",
-                                         sodium::password_store("pw12345"))
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    sodium::password_store("pw12345")
+  )
 
   episodic_auth_login(env$con, "tester", "pw12345")
-  episodic_app_submit_assessment(env$con, env$cluster_id, user_id,
-                                 verdict = "cluster_not_yet", rationale = "watching")
-  episodic_db_stream_mute_insert(env$con, stream_id = env$stream_id, muted_from = "2025-01-01",
-                                 muted_until = "2025-02-01", reason = "seasonal", user_id = user_id)
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    verdict = "cluster_not_yet",
+    rationale = "watching"
+  )
+  episodic_db_stream_mute_insert(
+    env$con,
+    stream_id = env$stream_id,
+    muted_from = "2025-01-01",
+    muted_until = "2025-02-01",
+    reason = "seasonal",
+    user_id = user_id
+  )
 
   # A second run with a different status: episodic_tr() is a scalar helper,
   # so building the "action" column from a vectorised runs$status (rather
@@ -84,27 +130,36 @@ test_that("episodic_app_activity_log() surfaces assessments, closures, mutes, lo
   episodic_db_run_finish(env$con, second_run, status = "failed")
 
   activity <- episodic_app_activity_log(env$con)
-  expect_true("aangemeld" %in% activity$action)          # login
-  expect_true("geclassificeerd" %in% activity$action)    # assessment
-  expect_true("signaleringsreeks gedempt" %in% activity$action)     # mute
-  expect_true(any(startsWith(activity$action, "detectierun")))  # the cron run from app_read_setup()
-  expect_equal(sum(startsWith(activity$action, "detectierun")), 2)  # both runs
-  expect_true(any(activity$is_system))       # the cron run from app_read_setup()
-  expect_false(all(activity$is_system))      # human actions too
-  expect_true(all(diff(as.numeric(as.POSIXct(activity$at, tz = "UTC"))) <= 0))  # descending
+  expect_true("aangemeld" %in% activity$action) # login
+  expect_true("geclassificeerd" %in% activity$action) # assessment
+  expect_true("signaleringsreeks gedempt" %in% activity$action) # mute
+  expect_true(any(startsWith(activity$action, "detectierun"))) # the cron run from app_read_setup()
+  expect_equal(sum(startsWith(activity$action, "detectierun")), 2) # both runs
+  expect_true(any(activity$is_system)) # the cron run from app_read_setup()
+  expect_false(all(activity$is_system)) # human actions too
+  expect_true(all(diff(as.numeric(as.POSIXct(activity$at, tz = "UTC"))) <= 0)) # descending
 })
 
 test_that("episodic_app_activity_log() carries a load summary on run rows and nothing on human rows", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com",
-                                         sodium::password_store("pw12345"))
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    sodium::password_store("pw12345")
+  )
   episodic_auth_login(env$con, "tester", "pw12345")
 
   run_id <- episodic_db_run_start(env$con, "host", "account")
   episodic_db_run_finish(
-    env$con, run_id, status = "success",
-    n_cases_supplied = 400, n_cases_deduplicated = 350, n_cases_inserted = 120
+    env$con,
+    run_id,
+    status = "success",
+    n_cases_supplied = 400,
+    n_cases_deduplicated = 350,
+    n_cases_inserted = 120
   )
 
   activity <- episodic_app_activity_log(env$con, lang = "en")
@@ -120,9 +175,15 @@ test_that("a partial run reads as skipped rows in the activity log, and names th
 
   run_id <- episodic_db_run_start(env$con, "host", "account")
   episodic_db_run_finish(
-    env$con, run_id, status = "partial",
-    n_cases_supplied = 400, n_cases_deduplicated = 350, n_cases_inserted = 120,
-    n_activity_supplied = 30, n_activity_written = 18, n_activity_skipped = 12
+    env$con,
+    run_id,
+    status = "partial",
+    n_cases_supplied = 400,
+    n_cases_deduplicated = 350,
+    n_cases_inserted = 120,
+    n_activity_supplied = 30,
+    n_activity_written = 18,
+    n_activity_skipped = 12
   )
 
   activity <- episodic_app_activity_log(env$con, lang = "en")
@@ -138,7 +199,7 @@ test_that("a run recorded before the load counters existed shows no summary rath
   on.exit(DBI::dbDisconnect(env$con))
 
   run_id <- episodic_db_run_start(env$con, "host", "account")
-  episodic_db_run_finish(env$con, run_id, status = "success")  # counters left NA
+  episodic_db_run_finish(env$con, run_id, status = "success") # counters left NA
 
   activity <- episodic_app_activity_log(env$con, lang = "en")
   runs <- activity[activity$is_system, ]

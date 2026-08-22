@@ -41,7 +41,9 @@
 #' @keywords internal
 #' @noRd
 episodic_classify_curve_shape <- function(cases, incub_max_days) {
-  if (is.na(incub_max_days) || is.null(cases) || nrow(cases) < 2) return(NA_character_)
+  if (is.na(incub_max_days) || is.null(cases) || nrow(cases) < 2) {
+    return(NA_character_)
+  }
   dates <- as.Date(cases$sample_date)
   span_days <- as.numeric(max(dates) - min(dates))
 

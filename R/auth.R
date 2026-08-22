@@ -48,7 +48,9 @@ NULL
 episodic_auth_password_hash <- function(con, user) {
   events <- episodic_db_app_user_events(con, user$user_id)
   changes <- events[events$event_type == "password_change", ]
-  if (nrow(changes) == 0) return(user$password_hash)
+  if (nrow(changes) == 0) {
+    return(user$password_hash)
+  }
   changes$password_hash[nrow(changes)]
 }
 
@@ -63,7 +65,9 @@ episodic_auth_password_hash <- function(con, user) {
 #' @keywords internal
 #' @noRd
 episodic_auth_must_change <- function(con, user) {
-  if (!as.logical(user$must_change)) return(FALSE)
+  if (!as.logical(user$must_change)) {
+    return(FALSE)
+  }
   events <- episodic_db_app_user_events(con, user$user_id)
   !any(events$event_type == "password_change")
 }
@@ -77,7 +81,9 @@ episodic_auth_must_change <- function(con, user) {
 episodic_auth_last_login <- function(con, user) {
   events <- episodic_db_app_user_events(con, user$user_id)
   logins <- events[events$event_type == "login", ]
-  if (nrow(logins) == 0) return(NA_character_)
+  if (nrow(logins) == 0) {
+    return(NA_character_)
+  }
   logins$created_at[nrow(logins)]
 }
 
@@ -105,12 +111,19 @@ episodic_auth_login <- function(con, username, password) {
     return(list(ok = FALSE))
   }
   hash <- episodic_auth_password_hash(con, user)
-  verified <- tryCatch(sodium::password_verify(hash, password), error = function(e) FALSE)
+  verified <- tryCatch(
+    sodium::password_verify(hash, password),
+    error = function(e) FALSE
+  )
   if (!isTRUE(verified)) {
     return(list(ok = FALSE))
   }
   episodic_db_app_user_event_insert(con, user$user_id, "login")
-  list(ok = TRUE, user = user, must_change = episodic_auth_must_change(con, user))
+  list(
+    ok = TRUE,
+    user = user,
+    must_change = episodic_auth_must_change(con, user)
+  )
 }
 
 #' Record a password change
@@ -128,7 +141,12 @@ episodic_auth_login <- function(con, username, password) {
 episodic_auth_change_password <- function(con, user_id, new_password) {
   rlang::check_installed("sodium")
   hash <- sodium::password_store(new_password)
-  episodic_db_app_user_event_insert(con, user_id, "password_change", password_hash = hash)
+  episodic_db_app_user_event_insert(
+    con,
+    user_id,
+    "password_change",
+    password_hash = hash
+  )
   invisible(NULL)
 }
 
@@ -162,20 +180,31 @@ episodic_auth_change_password <- function(con, user_id, new_password) {
 #' DBI::dbDisconnect(con)
 #'
 #' user_id <- episodic_provision_user(
-#'   db_path, username = "jdoe", full_name = "Jane Doe",
+#'   db_path,
+#'   username = "jdoe", full_name = "Jane Doe",
 #'   email = "jane@example.org", password = "temporary-password"
 #' )
 #' user_id
 #'
 #' file.remove(db_path)
 #' @export
-episodic_provision_user <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA),
-                                    username, full_name, email, password, role = "assessor") {
+episodic_provision_user <- function(
+  db_path = Sys.getenv("EPISODIC_DB", unset = NA),
+  username,
+  full_name,
+  email,
+  password,
+  role = "assessor"
+) {
   rlang::check_installed("sodium")
   con <- episodic_db_open(db_path)
   on.exit(DBI::dbDisconnect(con))
   invisible(episodic_db_app_user_insert(
-    con, username = username, full_name = full_name, email = email,
-    password_hash = sodium::password_store(password), role = role
+    con,
+    username = username,
+    full_name = full_name,
+    email = email,
+    password_hash = sodium::password_store(password),
+    role = role
   ))
 }

@@ -46,21 +46,37 @@
 episodic_institution_activity_load <- function(con, activity) {
   episodic_validate_columns(
     activity,
-    required = c("institution_key", "period_start", "period_end", "patient_days"),
+    required = c(
+      "institution_key",
+      "period_start",
+      "period_end",
+      "patient_days"
+    ),
     filled = c("institution_key", "period_start", "period_end"),
     what = "Institution activity data"
   )
   episodic_validate_dates(
-    activity, "period_start", na_ok = FALSE, what = "Institution activity data"
+    activity,
+    "period_start",
+    na_ok = FALSE,
+    what = "Institution activity data"
   )
   episodic_validate_dates(
-    activity, "period_end", na_ok = FALSE, what = "Institution activity data"
+    activity,
+    "period_end",
+    na_ok = FALSE,
+    what = "Institution activity data"
   )
-  if (nrow(activity) > 0 && !all(is.na(activity$patient_days)) &&
-      !is.numeric(activity$patient_days)) {
+  if (
+    nrow(activity) > 0 &&
+      !all(is.na(activity$patient_days)) &&
+      !is.numeric(activity$patient_days)
+  ) {
     stop(
       "Institution activity data has a non-numeric `patient_days` (",
-      paste(class(activity$patient_days), collapse = "/"), ").", call. = FALSE
+      paste(class(activity$patient_days), collapse = "/"),
+      ").",
+      call. = FALSE
     )
   }
 
@@ -69,15 +85,21 @@ episodic_institution_activity_load <- function(con, activity) {
   skipped_keys <- character(0)
   for (i in seq_len(nrow(activity))) {
     row <- activity[i, ]
-    institution_id <- institutions$institution_id[institutions$institution_key == row$institution_key]
+    institution_id <- institutions$institution_id[
+      institutions$institution_key == row$institution_key
+    ]
     if (length(institution_id) == 0) {
       skipped_keys <- c(skipped_keys, row$institution_key)
       next
     }
     episodic_db_institution_activity_upsert(
-      con, institution_id = institution_id[1], period_start = row$period_start,
-      period_end = row$period_end, patient_days = row$patient_days,
-      admissions = row$admissions %||% NA, n_beds = row$n_beds %||% NA,
+      con,
+      institution_id = institution_id[1],
+      period_start = row$period_start,
+      period_end = row$period_end,
+      patient_days = row$patient_days,
+      admissions = row$admissions %||% NA,
+      n_beds = row$n_beds %||% NA,
       source = row$source %||% NA
     )
     n_written <- n_written + 1L
@@ -91,10 +113,15 @@ episodic_institution_activity_load <- function(con, activity) {
     unmatched <- unique(skipped_keys)
     shown <- if (length(unmatched) > 5) unmatched[1:5] else unmatched
     warning(
-      length(skipped_keys), " of ", nrow(activity), " institution activity row(s) ",
+      length(skipped_keys),
+      " of ",
+      nrow(activity),
+      " institution activity row(s) ",
       "were skipped: their `institution_key` matches no institution in the case ",
-      "data (", paste(shown, collapse = ", "),
-      if (length(unmatched) > length(shown)) ", ..." else "", "). ",
+      "data (",
+      paste(shown, collapse = ", "),
+      if (length(unmatched) > length(shown)) ", ..." else "",
+      "). ",
       "Detection falls back to raw counts for those institutions.",
       call. = FALSE
     )
@@ -134,27 +161,42 @@ episodic_institution_activity_load <- function(con, activity) {
 #'   institution_key = "HOSP-1", institution_type = "hospital", n_beds = 320
 #' )
 #' activity <- episodic_synthetic_institution_activity(
-#'   institutions, start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+#'   institutions,
+#'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 #' )
 #' head(activity)
 #' @export
-episodic_synthetic_institution_activity <- function(institutions, start_date = as.Date("2021-01-01"),
-                                                            end_date = as.Date("2025-12-31"), seed = 1) {
+episodic_synthetic_institution_activity <- function(
+  institutions,
+  start_date = as.Date("2021-01-01"),
+  end_date = as.Date("2025-12-31"),
+  seed = 1
+) {
   set.seed(seed)
   hospitals <- institutions[institutions$institution_type == "hospital", ]
   if (nrow(hospitals) == 0) {
-    return(data.frame(institution_key = character(0), period_start = character(0),
-                       period_end = character(0), patient_days = integer(0),
-                       n_beds = integer(0), source = character(0), stringsAsFactors = FALSE))
+    return(data.frame(
+      institution_key = character(0),
+      period_start = character(0),
+      period_end = character(0),
+      patient_days = integer(0),
+      n_beds = integer(0),
+      source = character(0),
+      stringsAsFactors = FALSE
+    ))
   }
 
   week_starts <- seq(start_date, end_date, by = "week")
   rows <- lapply(seq_len(nrow(hospitals)), function(i) {
     h <- hospitals[i, ]
     doy <- as.integer(format(week_starts, "%j"))
-    seasonal_occupancy <- 0.82 + 0.08 * cos(2 * pi * (doy - 15) / 365.25)  # winter peak
-    patient_days <- round(h$n_beds * pmin(pmax(seasonal_occupancy, 0.5), 1) * 7 *
-                             stats::runif(length(week_starts), 0.95, 1.05))
+    seasonal_occupancy <- 0.82 + 0.08 * cos(2 * pi * (doy - 15) / 365.25) # winter peak
+    patient_days <- round(
+      h$n_beds *
+        pmin(pmax(seasonal_occupancy, 0.5), 1) *
+        7 *
+        stats::runif(length(week_starts), 0.95, 1.05)
+    )
     data.frame(
       institution_key = h$institution_key,
       period_start = as.character(week_starts),

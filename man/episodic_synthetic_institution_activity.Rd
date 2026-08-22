@@ -44,7 +44,8 @@ institutions <- data.frame(
   institution_key = "HOSP-1", institution_type = "hospital", n_beds = 320
 )
 activity <- episodic_synthetic_institution_activity(
-  institutions, start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+  institutions,
+  start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
 head(activity)
 }

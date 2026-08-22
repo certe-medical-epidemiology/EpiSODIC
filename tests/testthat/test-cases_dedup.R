@@ -18,17 +18,34 @@
 # ===================================================================== #
 
 pathogen_config_fixture <- data.frame(
-  pathogen = "Test pathogen", episode_days = 30, stringsAsFactors = FALSE
+  pathogen = "Test pathogen",
+  episode_days = 30,
+  stringsAsFactors = FALSE
 )
 
-raw_case <- function(source_key, patient_key, sample_date, pathogen = "Test pathogen") {
+raw_case <- function(
+  source_key,
+  patient_key,
+  sample_date,
+  pathogen = "Test pathogen"
+) {
   data.frame(
-    source_key = source_key, patient_key = patient_key, sample_date = sample_date,
-    receipt_date = sample_date, pathogen = pathogen,
-    care_line = "second", institution_key = "HOSP-01",
-    institution_display_name = "Hospital", institution_type = "hospital",
-    municipality = NA_character_, ward = "ICU", specialism = "Interne",
-    pc = "9711", sex = "M", age = 40L, stringsAsFactors = FALSE
+    source_key = source_key,
+    patient_key = patient_key,
+    sample_date = sample_date,
+    receipt_date = sample_date,
+    pathogen = pathogen,
+    care_line = "second",
+    institution_key = "HOSP-01",
+    institution_display_name = "Hospital",
+    institution_type = "hospital",
+    municipality = NA_character_,
+    ward = "ICU",
+    specialism = "Interne",
+    pc = "9711",
+    sex = "M",
+    age = 40L,
+    stringsAsFactors = FALSE
   )
 }
 
@@ -40,20 +57,23 @@ test_that("isolates for the same patient within the episode window collapse to o
   )
   deduped <- episodic_cases_deduplicate(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 1)
-  expect_equal(deduped$sample_date, "2025-01-01")  # earliest kept, sample date is the anchor
+  expect_equal(deduped$sample_date, "2025-01-01") # earliest kept, sample date is the anchor
 })
 
 test_that("a gap longer than episode_days starts a new episode", {
   raw <- rbind(
     raw_case("K1", "P1", "2025-01-01"),
-    raw_case("K2", "P1", "2025-03-01")  # 59 days later, beyond the 30-day window
+    raw_case("K2", "P1", "2025-03-01") # 59 days later, beyond the 30-day window
   )
   deduped <- episodic_cases_deduplicate(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 2)
 })
 
 test_that("different patients are never merged", {
-  raw <- rbind(raw_case("K1", "P1", "2025-01-01"), raw_case("K2", "P2", "2025-01-01"))
+  raw <- rbind(
+    raw_case("K1", "P1", "2025-01-01"),
+    raw_case("K2", "P2", "2025-01-01")
+  )
   deduped <- episodic_cases_deduplicate(raw, pathogen_config_fixture)
   expect_equal(nrow(deduped), 2)
 })
@@ -90,7 +110,10 @@ test_that("a pathogen missing from pathogen_config falls back to the schema defa
 
 test_that("an empty input returns an empty output without error", {
   empty <- raw_case("K1", "P1", "2025-01-01")[0, ]
-  expect_equal(nrow(episodic_cases_deduplicate(empty, pathogen_config_fixture)), 0)
+  expect_equal(
+    nrow(episodic_cases_deduplicate(empty, pathogen_config_fixture)),
+    0
+  )
 })
 
 test_that("episodic_validate_cases() rejects a column outside the allow-list", {
@@ -106,7 +129,10 @@ test_that("episodic_validate_cases() rejects a missing required column", {
 })
 
 test_that("episodic_validate_cases() rejects duplicate source_key values", {
-  raw <- rbind(raw_case("K1", "P1", "2025-01-01"), raw_case("K1", "P2", "2025-01-02"))
+  raw <- rbind(
+    raw_case("K1", "P1", "2025-01-01"),
+    raw_case("K1", "P2", "2025-01-02")
+  )
   expect_error(episodic_validate_cases(raw), "duplicate")
 })
 
@@ -137,8 +163,16 @@ test_that("episodic_validate_cases() rejects NA in a column that must always be 
 
 test_that("episodic_validate_cases() allows NA in the optional columns", {
   cases <- raw_case("K1", "P1", "2025-01-01")
-  for (column in c("receipt_date", "care_line", "municipality", "ward",
-                   "specialism", "pc", "sex", "age")) {
+  for (column in c(
+    "receipt_date",
+    "care_line",
+    "municipality",
+    "ward",
+    "specialism",
+    "pc",
+    "sex",
+    "age"
+  )) {
     cases[[column]] <- NA
   }
   expect_silent(episodic_validate_cases(cases))
@@ -193,7 +227,12 @@ test_that("episodic_validate_cases() rejects a date that only parses because of 
   # as.Date(format = "%Y-%m-%d") matches a prefix and ignores the rest, so
   # a day-first date reads as the year 1 instead of failing. Everything
   # here parses; none of it is the date the operator meant.
-  for (value in c("01-01-2025", "1-1-2025", "2025-01-01T00:00:00", "2025-01-01 extra")) {
+  for (value in c(
+    "01-01-2025",
+    "1-1-2025",
+    "2025-01-01T00:00:00",
+    "2025-01-01 extra"
+  )) {
     cases <- raw_case("K1", "P1", value)
     expect_error(episodic_validate_cases(cases), "sample_date", fixed = TRUE)
   }

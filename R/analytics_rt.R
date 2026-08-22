@@ -81,16 +81,31 @@
 #' implements and is called directly here).
 #' @keywords internal
 #' @noRd
-episodic_compute_rt <- function(cases, pc, incomplete_days = 0L, asof = Sys.Date(),
-                                window_days = 7L) {
-  if (is.null(pc) || !isTRUE(as.logical(pc$rt_applicable))) return(NULL)
-  if (is.na(pc$si_mean_days) || is.na(pc$si_sd_days)) return(NULL)
-  if (is.null(cases) || nrow(cases) == 0) return(NULL)
-  if (!requireNamespace("EpiEstim", quietly = TRUE)) return(NULL)
+episodic_compute_rt <- function(
+  cases,
+  pc,
+  incomplete_days = 0L,
+  asof = Sys.Date(),
+  window_days = 7L
+) {
+  if (is.null(pc) || !isTRUE(as.logical(pc$rt_applicable))) {
+    return(NULL)
+  }
+  if (is.na(pc$si_mean_days) || is.na(pc$si_sd_days)) {
+    return(NULL)
+  }
+  if (is.null(cases) || nrow(cases) == 0) {
+    return(NULL)
+  }
+  if (!requireNamespace("EpiEstim", quietly = TRUE)) {
+    return(NULL)
+  }
 
   dates <- as.Date(cases$sample_date)
   dates <- dates[!is.na(dates)]
-  if (length(dates) == 0) return(NULL)
+  if (length(dates) == 0) {
+    return(NULL)
+  }
   all_days <- seq(min(dates), max(dates), by = "day")
 
   daily_incidence <- vapply(all_days, function(d) sum(dates == d), integer(1))
@@ -101,28 +116,46 @@ episodic_compute_rt <- function(cases, pc, incomplete_days = 0L, asof = Sys.Date
   # start-of-series inflation.
   burn_in <- max(2L, ceiling(as.numeric(pc$si_mean_days)) + 1L)
   last_start <- length(all_days) - window_days + 1
-  if (is.na(burn_in) || burn_in > last_start) return(NULL)
+  if (is.na(burn_in) || burn_in > last_start) {
+    return(NULL)
+  }
 
   t_start <- seq(burn_in, last_start)
   t_end <- t_start + window_days - 1
-  if (length(t_start) == 0) return(NULL)
+  if (length(t_start) == 0) {
+    return(NULL)
+  }
 
-  cfg <- EpiEstim::make_config(mean_si = pc$si_mean_days, std_si = pc$si_sd_days,
-                                t_start = t_start, t_end = t_end)
+  cfg <- EpiEstim::make_config(
+    mean_si = pc$si_mean_days,
+    std_si = pc$si_sd_days,
+    t_start = t_start,
+    t_end = t_end
+  )
   result <- tryCatch(
-    suppressWarnings(EpiEstim::estimate_R(daily_incidence, method = "parametric_si", config = cfg)),
+    suppressWarnings(EpiEstim::estimate_R(
+      daily_incidence,
+      method = "parametric_si",
+      config = cfg
+    )),
     error = function(e) NULL
   )
-  if (is.null(result) || nrow(result$R) == 0) return(NULL)
+  if (is.null(result) || nrow(result$R) == 0) {
+    return(NULL)
+  }
 
   r <- result$R
   out <- data.frame(
     window_end = all_days[r$t_end],
-    mean = r$`Mean(R)`, lower = r$`Quantile.0.025(R)`, upper = r$`Quantile.0.975(R)`,
+    mean = r$`Mean(R)`,
+    lower = r$`Quantile.0.025(R)`,
+    upper = r$`Quantile.0.975(R)`,
     stringsAsFactors = FALSE
   )
   cutoff <- as.Date(asof) - as.integer(incomplete_days)
   out <- out[out$window_end <= cutoff, ]
-  if (nrow(out) == 0) return(NULL)
+  if (nrow(out) == 0) {
+    return(NULL)
+  }
   out
 }
