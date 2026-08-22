@@ -231,6 +231,19 @@ episodic_app_archive <- function(con, query = NULL, lang = "nl") {
 #' @keywords internal
 #' @noRd
 episodic_app_run_detail <- function(run, lang = "nl") {
+  # A failed run has no load summary, but it does have a reason, and this
+  # screen is where somebody goes to find out why the dashboard is empty.
+  # The whole recorded message, not its first line: it names every
+  # offending column and what to do about each, and there is room for it
+  # here. Untranslated, because it is the operator's own error text.
+  if (identical(run$status, "failed")) {
+    reason <- run$error_text %||% NA_character_
+    if (is.na(reason) || !nzchar(reason)) {
+      return(NA_character_)
+    }
+    return(reason)
+  }
+
   # NULL when reading a database written before the counters existed;
   # NA when the run failed before it loaded anything. Neither has a
   # summary to show, and neither should read as "zero cases arrived".

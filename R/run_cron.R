@@ -41,9 +41,17 @@
 #' [episodic_config_hash()]), so any past result can always be traced back
 #' to the configuration that produced it.
 #'
-#' So is what each feed delivered. Structural problems - a missing column,
-#' a value outside the allowed set, a date that does not parse - fail the
-#' run before anything is written, naming the column and the values. Rows
+#' So is what each feed delivered. Before the run writes anything, your
+#' case data goes through [episodic_check_cases()]. Structural problems -
+#' a missing column, a value outside the allowed set, a date that does not
+#' read as a date - stop the run with an error naming every offending
+#' column, its values and the rows they are in, and are recorded on the
+#' run as well, so the reason is visible both where the run was started
+#' and in the dashboard's activity screen. Advisory findings are mentioned
+#' once and the run proceeds. Run [episodic_check_cases()] on your extract
+#' yourself to see all of it without starting a run at all. A run that
+#' fails later, for any other reason, records the reason and warns rather
+#' than returning quietly. Rows
 #' that are merely unmatched are counted rather than dropped in silence:
 #' institution activity whose `institution_key` matches no known
 #' institution is skipped with a warning, its count recorded, and the run
@@ -76,7 +84,9 @@
 #'   date; mainly useful to override in tests.
 #' @return Invisibly, the `run_id` of the completed run. The run's row in
 #'   `episodic_detection_run` holds its status, the per-feed load counts,
-#'   and `error_text` if it failed.
+#'   and `error_text` if it failed. Case data that does not satisfy the
+#'   contract throws instead of returning - the run row is still written,
+#'   with `status = "failed"` and the same message in `error_text`.
 #' @examples
 #' \donttest{
 #' db_path <- tempfile(fileext = ".sqlite")
@@ -109,6 +119,64 @@ episodic_run_cron <- function(
 
   run_id <- episodic_db_run_start(con, host = host, account = account)
 
+  # Data problems are the operator's to fix, so they must reach the
+  # operator: resolve every feed and check it here, before the run has
+  # written anything, and refuse out loud. A run that swallowed the
+  # reason left an empty dashboard and a run row nobody was looking at -
+  # which is exactly the situation somebody connecting their own extract
+  # for the first time finds themselves in.
+  prepared <- tryCatch(
+    {
+      cases <- episodic_resolve_data(cases)
+      report <- episodic_check_cases(cases)
+      problems <- report[report$severity == "problem", , drop = FALSE]
+      if (nrow(problems) > 0) {
+        stop(episodic_check_failure_message(problems), call. = FALSE)
+      }
+      denominators <- episodic_resolve_data(denominators)
+      if (!is.null(denominators)) {
+        episodic_validate_denominators(denominators)
+      }
+      report
+    },
+    error = function(e) e
+  )
+  if (inherits(prepared, "condition")) {
+    episodic_run_cron_finish(
+      con,
+      run_id,
+      hashed,
+      episodic_run_cron_failure(conditionMessage(prepared))
+    )
+    stop(conditionMessage(prepared), call. = FALSE)
+  }
+
+  # The data is usable, but usable is not the same as intended. Say once
+  # that there is something to look at, rather than either burying it or
+  # repeating the whole report into every scheduled run's log.
+  advice <- prepared[prepared$severity == "advice", , drop = FALSE]
+  if (nrow(advice) > 0) {
+    message(
+      "episodic_check_cases() has ",
+      nrow(advice),
+      if (nrow(advice) == 1) " advisory finding" else " advisory findings",
+      " about this case data, starting with: ",
+      advice$message[1],
+      " Run episodic_check_cases() on it to see them all."
+    )
+  }
+
+  # Not a failure - an empty extract is a legitimate thing to hand over -
+  # but never something to discover from an empty dashboard either.
+  if (nrow(cases) == 0) {
+    warning(
+      "The case data supplied to episodic_run_cron() has no rows, so this ",
+      "run has nothing to detect on and writes no cases. Check the date ",
+      "and positives-only filters in your own extract step.",
+      call. = FALSE
+    )
+  }
+
   result <- tryCatch(
     {
       DBI::dbBegin(con)
@@ -126,24 +194,55 @@ episodic_run_cron <- function(
     },
     error = function(e) {
       DBI::dbRollback(con)
-      list(
-        status = "failed",
-        error_text = conditionMessage(e),
-        n_streams = NA_integer_,
-        n_detections = NA_integer_,
-        n_signals_new = NA_integer_,
-        n_signals_updated = NA_integer_,
-        n_cases_supplied = NA_integer_,
-        n_cases_deduplicated = NA_integer_,
-        n_cases_inserted = NA_integer_,
-        n_denominators_written = NA_integer_,
-        n_activity_supplied = NA_integer_,
-        n_activity_written = NA_integer_,
-        n_activity_skipped = NA_integer_
-      )
+      episodic_run_cron_failure(conditionMessage(e))
     }
   )
 
+  episodic_run_cron_finish(con, run_id, hashed, result)
+
+  # The run row records this, but a scheduled run nobody reads the row of
+  # must still say so where it ran.
+  if (identical(result$status, "failed")) {
+    warning(
+      "EpiSODIC run ",
+      run_id,
+      " failed and wrote nothing: ",
+      result$error_text,
+      call. = FALSE
+    )
+  }
+
+  invisible(run_id)
+}
+
+#' The counts a run that wrote nothing has to report
+#'
+#' NA rather than zero throughout, deliberately: a failed run did not
+#' load zero cases, it never got as far as loading any.
+#' @keywords internal
+#' @noRd
+episodic_run_cron_failure <- function(error_text) {
+  list(
+    status = "failed",
+    error_text = error_text,
+    n_streams = NA_integer_,
+    n_detections = NA_integer_,
+    n_signals_new = NA_integer_,
+    n_signals_updated = NA_integer_,
+    n_cases_supplied = NA_integer_,
+    n_cases_deduplicated = NA_integer_,
+    n_cases_inserted = NA_integer_,
+    n_denominators_written = NA_integer_,
+    n_activity_supplied = NA_integer_,
+    n_activity_written = NA_integer_,
+    n_activity_skipped = NA_integer_
+  )
+}
+
+#' Close the run row off, however the run ended
+#' @keywords internal
+#' @noRd
+episodic_run_cron_finish <- function(con, run_id, hashed, result) {
   pkg_versions <- jsonlite::toJSON(episodic_pkg_versions(), auto_unbox = TRUE)
 
   episodic_db_run_finish(
@@ -167,8 +266,7 @@ episodic_run_cron <- function(
     config_snapshot = hashed$snapshot,
     error_text = result$error_text
   )
-
-  invisible(run_id)
+  invisible(NULL)
 }
 
 #' Run statuses that mean the run completed and wrote its results
@@ -190,15 +288,33 @@ episodic_run_statuses_complete <- c("success", "partial")
 #' or, if producing the data only makes sense at run time (a live database
 #' query, for instance), a zero-argument function that returns one.
 #'
+#' Resolving is all this does: it does not look at what the data
+#' contains. To find out whether your case data can actually be used -
+#' which columns are missing, which values are outside their allowed set,
+#' which dates do not read as dates, and which rows those are - run
+#' [episodic_check_cases()] on it, or [episodic_validate_cases()] if you
+#' want a script to stop. Both accept the same two forms this does, so you
+#' can check a data set and the function that produces it alike.
+#'
 #' @param x A data frame or `tibble`, a function returning one, or `NULL`.
 #' @param ... Passed to `x` if it is a function; ignored otherwise.
 #' @return `NULL` if `x` is `NULL`; `x` itself if it is a data frame (a
 #'   `tibble` included); the result of calling `x` otherwise.
+#' @seealso [episodic_check_cases()] to check the resolved data against
+#'   the [episodic_case_data] contract.
 #' @examples
 #' df <- data.frame(x = 1:3)
 #' identical(episodic_resolve_data(df), df)
 #' identical(episodic_resolve_data(function() df), df)
 #' is.null(episodic_resolve_data(NULL))
+#'
+#' # what a live query would look like, and how to check what it returns
+#' my_extract <- function() {
+#'   episodic_synthetic_cases(
+#'     start_date = as.Date("2025-01-01"), end_date = as.Date("2025-01-31")
+#'   )
+#' }
+#' episodic_check_cases(episodic_resolve_data(my_extract))
 #' @export
 episodic_resolve_data <- function(x, ...) {
   if (is.null(x)) {

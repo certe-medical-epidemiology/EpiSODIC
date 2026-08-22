@@ -133,7 +133,7 @@ EpiSODIC resolves either.
 One row per confirmed-positive laboratory result. This is the complete,
 allow-listed column set (`episodic_case_columns`); a data set with any
 column outside this list, or missing one from it, is rejected. Run
-`episodic_validate_cases()` on your extract to check all of this - columns,
+`episodic_check_cases()` on your extract to check all of this - columns,
 allowed values, dates, and `source_key` uniqueness - before you schedule
 anything. The three fixed value sets are available as
 `episodic_care_lines`, `episodic_institution_types` and
@@ -178,6 +178,61 @@ per episode, using the episode length configured per pathogen in
 **Do not send negative results here.** This feed drives every detector; it
 is deliberately positives-only so an operator never has to ship a
 multi-year, per-test linelist just to run detection.
+
+### Check your data first
+
+Before you schedule anything, run `episodic_check_cases()` on your
+extract. It needs no database, changes nothing, and reports everything it
+finds in one go - which column is wrong, how many rows are affected, which
+rows those are, what the offending values look like, and what to do about
+each:
+
+```r
+cases <- my_extract_and_transform_function()
+
+episodic_check_cases(cases)
+#> -- EpiSODIC case data check ------------------------------------------
+#>    4,312 rows, 15 columns
+#>    sample_date from 2024-01-02 to 2024-06-30
+#>    12 pathogens, 7 institutions, 3,981 patients
+#>
+#> x 2 problems - a detection run refuses to start until these are fixed:
+#>
+#>   1. `sample_date` has 4312 of 4312 rows that are not a Date and do
+#>      not read as YYYY-MM-DD.
+#>      values: 02-01-2024, 03-01-2024, 04-01-2024 (and 178 more)
+#>      rows:   1, 2, 3, 4, 5 (and 4307 more)
+#>      fix:    These look day-first (e.g. 31-12-2025): convert with
+#>              as.Date(x, format = "%d-%m-%Y"). EpiSODIC accepts a Date
+#>              column, or text in ISO 8601 YYYY-MM-DD form, and nothing
+#>              else [...]
+#>
+#>   2. `sex` has 2106 of 4312 rows with a value outside the allowed set
+#>      (M, F, U, or NA).
+#>      values: male, female
+#>      [...]
+#>
+#> ! 2 things worth a look - a run proceeds regardless:
+#>
+#>   1. 1 pathogen name(s) appear in more than one spelling, differing
+#>      only in capitalisation or spacing: "Influenza A" / "influenza a".
+#>      [...]
+```
+
+It separates two kinds of finding on purpose. **Problems** are things
+EpiSODIC cannot work around, and a run refuses to start while any of them
+stand. **Advice** covers what is allowed but rarely intended and quietly
+costs you signal: one pathogen spelled two ways (two streams instead of
+one), no `ward` on any hospital row (nothing for ward-level detection to
+group on), a `patient_key` that never repeats (nothing for deduplication
+to do), postcodes the map cannot place, sample dates in the future.
+
+`episodic_validate_cases()` runs the same checks and throws instead, for
+use in a script. `episodic_run_cron()` runs it for you before every run:
+data it cannot use stops the run with the same message, before anything is
+written, and that message is recorded against the run so it is also
+visible in the dashboard's status strip and activity screen. A failed run
+never passes in silence.
 
 ### Positivity metadata (optional)
 

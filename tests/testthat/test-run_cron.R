@@ -270,7 +270,7 @@ test_that("a partial run still counts as the latest usable run", {
   )
 })
 
-test_that("a failed run records NA counts rather than zeroes", {
+test_that("case data that violates the contract fails the run out loud, and records why", {
   path <- tempfile(fileext = ".sqlite")
   on.exit(unlink(path), add = TRUE)
 
@@ -281,7 +281,12 @@ test_that("a failed run records NA counts rather than zeroes", {
   )
   cases$pathogen <- NULL # violates the case data contract
 
-  episodic_run_cron(path, cases = cases, run_date = as.Date("2024-06-30"))
+  # Reaching the operator matters as much as recording it: a run that
+  # returned quietly here left somebody staring at an empty dashboard.
+  expect_error(
+    episodic_run_cron(path, cases = cases, run_date = as.Date("2024-06-30")),
+    "pathogen"
+  )
 
   con <- episodic_db_connect(path)
   on.exit(DBI::dbDisconnect(con), add = TRUE)
@@ -291,6 +296,24 @@ test_that("a failed run records NA counts rather than zeroes", {
   expect_true(is.na(run$n_cases_supplied))
   expect_true(is.na(run$n_cases_inserted))
   expect_match(run$error_text, "pathogen")
+  # the message an operator can act on, not only the fact of a failure
+  expect_match(run$error_text, "missing required", fixed = TRUE)
+})
+
+test_that("a run over an empty extract warns rather than quietly writing nothing", {
+  path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(path), add = TRUE)
+
+  cases <- episodic_synthetic_cases(
+    start_date = as.Date("2024-06-01"),
+    end_date = as.Date("2024-06-30"),
+    seed = 6
+  )
+
+  expect_warning(
+    episodic_run_cron(path, cases = cases[0, ], run_date = as.Date("2024-06-30")),
+    "no rows"
+  )
 })
 
 test_that("an NA care_line is stored as 'unknown', not rejected", {

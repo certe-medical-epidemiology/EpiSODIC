@@ -46,6 +46,7 @@ reference:
     volume and hospital activity data.
   contents:
   - episodic_case_data
+  - episodic_check_cases
   - episodic_validate_cases
   - episodic_synthetic_cases
   - episodic_synthetic_cases_calibration

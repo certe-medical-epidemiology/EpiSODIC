@@ -309,11 +309,22 @@ episodic_ui_status_strip <- function(status, lang = "nl") {
     )
   } else {
     dot_colour <- pal$danger_dark
+    # A failed run is almost always an operator's own data, and the
+    # reason for it is already recorded. Showing only "failed" sends
+    # somebody looking through logs for a message the dashboard is
+    # holding.
+    reason <- episodic_ui_first_line(status$error_text)
     text <- episodic_tr(
       "status.run_failed",
       lang = lang,
       time = episodic_ui_format_datetime(status$finished_at)
     )
+    # Appended rather than substituted into the template: the message is
+    # the operator's own error text, and it belongs in the strip as it
+    # was recorded.
+    if (!is.null(reason)) {
+      text <- paste0(text, " \u00b7 ", reason)
+    }
   }
   shiny::tags$div(
     class = "episodic-status-strip",
@@ -322,9 +333,40 @@ episodic_ui_status_strip <- function(status, lang = "nl") {
         class = "episodic-status-dot",
         style = sprintf("background:%s;", dot_colour)
       ),
-      text
+      text,
+      if (!status$status %in% c("none", episodic_run_statuses_complete)) {
+        shiny::tags$span(
+          class = "episodic-status-hint",
+          style = "margin-left:8px;opacity:0.85;",
+          episodic_tr("status.run_failed_hint", lang = lang)
+        )
+      }
     )
   )
+}
+
+#' The first line of a recorded error, short enough for one strip
+#'
+#' A validation failure is deliberately a long, multi-line message: it
+#' names every offending column and how to fix each. Its first line is the
+#' summary, and the whole message is on the activity screen.
+#' @keywords internal
+#' @noRd
+episodic_ui_first_line <- function(text, max_chars = 160L) {
+  if (
+    is.null(text) || length(text) == 0 || is.na(text[1]) || !nzchar(text[1])
+  ) {
+    return(NULL)
+  }
+  first <- strsplit(as.character(text[1]), "\n", fixed = FALSE)[[1]][1]
+  first <- trimws(first)
+  if (is.na(first) || !nzchar(first)) {
+    return(NULL)
+  }
+  if (nchar(first) > max_chars) {
+    first <- paste0(substr(first, 1, max_chars - 1L), "\u2026")
+  }
+  first
 }
 
 #' Format a UTC-stored ISO timestamp for display, converted to local time

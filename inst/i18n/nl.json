@@ -143,6 +143,7 @@
   "status.run_ok": "Run {time} geslaagd · {streams_phrase} · {clusters_phrase} gedetecteerd",
   "status.run_partial": "Run {time} voltooid met overgeslagen rijen · {streams_phrase} · {clusters_phrase} gedetecteerd",
   "status.run_failed": "Laatste run mislukt · {time}",
+  "status.run_failed_hint": "Controleer uw casusdata in R met episodic_check_cases()",
   "status.no_run": "Nog geen detectierun uitgevoerd",
   "status.completeness": "Volledigheid {pct}% ({days_phrase})",
 

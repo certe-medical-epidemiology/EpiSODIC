@@ -143,6 +143,7 @@
   "status.run_ok": "Lauf {time} erfolgreich · {streams_phrase} · {clusters_phrase} erkannt",
   "status.run_partial": "Lauf {time} mit übersprungenen Zeilen beendet · {streams_phrase} · {clusters_phrase} erkannt",
   "status.run_failed": "Letzter Lauf fehlgeschlagen · {time}",
+  "status.run_failed_hint": "Prüfen Sie Ihre Falldaten in R mit episodic_check_cases()",
   "status.no_run": "Noch kein Erkennungslauf durchgeführt",
   "status.completeness": "Vollständigkeit {pct}% ({days_phrase})",
 

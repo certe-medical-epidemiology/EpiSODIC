@@ -1,3 +1,40 @@
+# EpiSODIC 0.5.0
+
+## New
+
+- `episodic_check_cases()` checks your case data and hands back a report of everything wrong with it at
+  once: the column, how many rows are affected, which rows those are, the offending values, and what to do
+  about each. It needs no database, changes nothing, and never throws - the shape of a data source it
+  cannot even read is itself reported as a finding.
+- The report separates problems (a run refuses to start) from advice (a run proceeds, but you are probably
+  losing signal): one pathogen spelled two ways, hospital rows with no `ward`, a `patient_key` that never
+  repeats, an institution keyed to two names, postcodes the shipped map cannot place, sample dates in the
+  future, a receipt date before its sample date, ages outside 0-120, columns held as factors, a
+  `patient_key` that looks like it was never pseudonymised, pathogens missing from `pathogen_config.csv`.
+- A wrong date format is named for what it is, with the conversion to apply: day-first, a date-time, an
+  Excel serial number, `YYYYMMDD`. An unexpected column is matched against what it probably should have
+  been (`postcode` to `pc`, `afnamedatum` to `sample_date`, `gender` to `sex`), rather than only rejected.
+- The report prints as a report and is a plain data frame besides, one row per finding, with a header
+  saying what was read: rows, columns, sample date range, and how many pathogens, institutions and
+  patients are in it.
+- `episodic_case_data` documents every column's type, whether it may be empty, and what it accepts in one
+  table, and carries a worked example of a minimal, valid extract.
+
+## Changed
+
+- `episodic_validate_cases()` reports every problem in one error instead of stopping at the first, naming
+  the rows involved and how to fix each. Its checks are `episodic_check_cases()`'s.
+- `episodic_run_cron()` validates the case feed before the run writes anything and stops if it cannot be
+  used, rather than returning quietly with a `failed` run row nobody was looking at. The run row is still
+  written, with the same message in `error_text`. A run that fails for any other reason now warns, and an
+  extract with no rows at all warns before the run starts.
+- The optional denominator feed is checked at the same moment, and fails the run the same way, instead of
+  surfacing from inside a rolled-back transaction.
+- The dashboard's status strip shows why the last run failed, not only that it did, and points at
+  `episodic_check_cases()`. The Activity screen shows the recorded message in full.
+- An empty string in a column that must always be filled is now a problem, like `NA` - an empty
+  `institution_key` was previously loaded as an institution with no identity.
+
 # EpiSODIC 0.4.0
 
 ## Changed

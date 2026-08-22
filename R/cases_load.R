@@ -42,6 +42,9 @@
 #' @keywords internal
 #' @noRd
 episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
+  # Validated by episodic_run_cron() before the run starts, so that a
+  # data problem reaches the operator who can fix it rather than only the
+  # run row - kept here as the last guard for any other caller.
   episodic_validate_cases(cases)
 
   # An absent care line, an R NA and a database NULL all mean the same

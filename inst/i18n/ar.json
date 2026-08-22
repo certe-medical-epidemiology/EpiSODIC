@@ -143,6 +143,7 @@
   "status.run_ok": "نجح التشغيل {time} · {streams_phrase} · تم اكتشاف {clusters_phrase}",
   "status.run_partial": "انتهى التشغيل {time} مع تخطي صفوف · {streams_phrase} · {clusters_phrase} تم كشفها",
   "status.run_failed": "فشل آخر تشغيل · {time}",
+  "status.run_failed_hint": "تحقق من بيانات الحالات في R باستخدام episodic_check_cases()",
   "status.no_run": "لم يُنفَّذ أي تشغيل كشف بعد",
   "status.completeness": "الاكتمال {pct}% ({days_phrase})",
 

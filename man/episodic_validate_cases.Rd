@@ -2,7 +2,7 @@
 % Please edit documentation in R/cases.R
 \name{episodic_validate_cases}
 \alias{episodic_validate_cases}
-\title{Check that your case data has the right shape}
+\title{Check that your case data has the right shape, or stop}
 \usage{
 episodic_validate_cases(cases)
 }
@@ -14,26 +14,40 @@ can check either form of \code{cases}).}
 }
 \value{
 The validated data set, invisibly. Throws an informative error
-naming the offending column, and the offending values, otherwise.
+naming every offending column, its offending values and the rows they
+are in, otherwise.
 }
 \description{
 Call this on the data set you intend to hand to \code{\link[=episodic_run_cron]{episodic_run_cron()}},
 while preparing it, to get a clear error while you can still fix the
 extract - rather than halfway through a scheduled run, where the same
 problem surfaces as a rolled-back transaction and a failed run.
+\code{\link[=episodic_run_cron]{episodic_run_cron()}} calls it itself, before it writes anything, so a
+run never starts on data it cannot use.
 }
 \details{
-It checks everything \link{episodic_case_data} documents: that the columns
-are exactly \link{episodic_case_columns}, that \code{source_key} is unique, that
-the columns which may never be \code{NA} are filled, that \code{care_line},
-\code{institution_type} and \code{sex} hold only allowed values, that the two
-date columns parse, and that \code{age} is numeric. It reports what your
-data says, and does not change it: the \code{NA} that \code{\link[=episodic_run_cron]{episodic_run_cron()}}
-will read as \code{"unknown"} is left as \code{NA} in what comes back.
+It runs exactly the checks \code{\link[=episodic_check_cases]{episodic_check_cases()}} runs and reports
+every problem it finds at once, rather than stopping at the first: that
+the columns are exactly \link{episodic_case_columns}, that \code{source_key} is
+unique, that the columns which may never be empty are filled, that
+\code{care_line}, \code{institution_type} and \code{sex} hold only allowed values,
+that the two date columns read as dates, and that \code{age} is a number.
+It reports what your data says, and does not change it: the \code{NA} that
+\code{\link[=episodic_run_cron]{episodic_run_cron()}} will read as \code{"unknown"} is left as \code{NA} in what
+comes back.
+
+Use \code{\link[=episodic_check_cases]{episodic_check_cases()}} instead when you would rather look than
+stop: it returns the same findings as a printed report, adds the
+advisory ones this function stays silent about, and never throws.
 }
 \examples{
 cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-01-31")
 )
 episodic_validate_cases(cases)
+}
+\seealso{
+\code{\link[=episodic_check_cases]{episodic_check_cases()}} for the same checks as a report you
+can read and filter, and \link{episodic_case_data} for what each column
+means.
 }

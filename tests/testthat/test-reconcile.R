@@ -342,15 +342,19 @@ test_that("a failed run inside the cron transaction leaves no partial state", {
     raw
   }
 
-  run_id <- episodic_run_cron(
-    path,
-    cases = bad_source,
-    run_date = as.Date("2024-01-05")
+  # The run refuses out loud - the operator whose extract this is has to
+  # hear about it - and still records the attempt.
+  expect_error(
+    episodic_run_cron(
+      path,
+      cases = bad_source,
+      run_date = as.Date("2024-01-05")
+    ),
+    "pathogen"
   )
   status <- DBI::dbGetQuery(
     con,
-    "SELECT status FROM episodic_detection_run WHERE run_id = ?",
-    params = list(run_id)
+    "SELECT status FROM episodic_detection_run ORDER BY run_id DESC LIMIT 1"
   )$status[1]
   expect_equal(status, "failed")
 

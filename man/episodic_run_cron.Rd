@@ -48,7 +48,9 @@ date; mainly useful to override in tests.}
 \value{
 Invisibly, the \code{run_id} of the completed run. The run's row in
 \code{episodic_detection_run} holds its status, the per-feed load counts,
-and \code{error_text} if it failed.
+and \code{error_text} if it failed. Case data that does not satisfy the
+contract throws instead of returning - the run row is still written,
+with \code{status = "failed"} and the same message in \code{error_text}.
 }
 \description{
 This is the function you schedule to run regularly (e.g. daily, via
@@ -74,10 +76,17 @@ The exact detection settings used are recorded with the run (see
 \code{\link[=episodic_config_hash]{episodic_config_hash()}}), so any past result can always be traced back
 to the configuration that produced it.
 
-So is what each feed delivered. Structural problems - a missing column,
-a value outside the allowed set, a date that does not parse - fail the
-run before anything is written, naming the column and the values. Rows
-that are merely unmatched are counted rather than dropped in silence:
+So is what each feed delivered. Before the run writes anything, your
+case data goes through \code{\link[=episodic_check_cases]{episodic_check_cases()}}. Structural problems -
+a missing column, a value outside the allowed set, a date that does not
+read as a date - stop the run with an error naming every offending
+column, its values and the rows they are in, and are recorded on the
+run as well, so the reason is visible both where the run was started
+and in the dashboard's activity screen. Advisory findings are mentioned
+once and the run proceeds. Run \code{\link[=episodic_check_cases]{episodic_check_cases()}} on your extract
+yourself to see all of it without starting a run at all. A run that
+fails later, for any other reason, records the reason and warns rather
+than returning quietly. Rows that are merely unmatched are counted rather than dropped in silence:
 institution activity whose \code{institution_key} matches no known
 institution is skipped with a warning, its count recorded, and the run
 finishes \code{"partial"} instead of \code{"success"}. Both are complete runs the

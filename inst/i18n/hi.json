@@ -143,6 +143,7 @@
   "status.run_ok": "रन {time} सफल · {streams_phrase} · {clusters_phrase} संसूचित",
   "status.run_partial": "रन {time} पूरा, कुछ पंक्तियाँ छोड़ी गईं · {streams_phrase} · {clusters_phrase} संसूचित",
   "status.run_failed": "अंतिम रन विफल · {time}",
+  "status.run_failed_hint": "R में episodic_check_cases() से अपना केस डेटा जाँचें",
   "status.no_run": "अभी तक कोई संसूचन रन नहीं हुआ है",
   "status.completeness": "पूर्णता {pct}% ({days_phrase})",
 

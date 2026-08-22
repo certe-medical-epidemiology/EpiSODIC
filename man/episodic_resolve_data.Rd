@@ -22,9 +22,30 @@ of which accepts a data frame or \code{tibble} directly - the normal case -
 or, if producing the data only makes sense at run time (a live database
 query, for instance), a zero-argument function that returns one.
 }
+\details{
+Resolving is all this does: it does not look at what the data
+contains. To find out whether your case data can actually be used -
+which columns are missing, which values are outside their allowed set,
+which dates do not read as dates, and which rows those are - run
+\code{\link[=episodic_check_cases]{episodic_check_cases()}} on it, or \code{\link[=episodic_validate_cases]{episodic_validate_cases()}} if you
+want a script to stop. Both accept the same two forms this does, so you
+can check a data set and the function that produces it alike.
+}
 \examples{
 df <- data.frame(x = 1:3)
 identical(episodic_resolve_data(df), df)
 identical(episodic_resolve_data(function() df), df)
 is.null(episodic_resolve_data(NULL))
+
+# what a live query would look like, and how to check what it returns
+my_extract <- function() {
+  episodic_synthetic_cases(
+    start_date = as.Date("2025-01-01"), end_date = as.Date("2025-01-31")
+  )
+}
+episodic_check_cases(episodic_resolve_data(my_extract))
+}
+\seealso{
+\code{\link[=episodic_check_cases]{episodic_check_cases()}} to check the resolved data against
+the \link{episodic_case_data} contract.
 }

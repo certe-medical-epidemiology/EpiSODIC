@@ -143,6 +143,7 @@
   "status.run_ok": "运行 {time} 成功 · {streams_phrase} · 检出 {clusters_phrase}",
   "status.run_partial": "运行 {time} 完成，部分行被跳过 · {streams_phrase} · 检出 {clusters_phrase}",
   "status.run_failed": "最近一次运行失败 · {time}",
+  "status.run_failed_hint": "在 R 中使用 episodic_check_cases() 检查病例数据",
   "status.no_run": "尚未运行过检测",
   "status.completeness": "完整度 {pct}%（{days_phrase}）",
 

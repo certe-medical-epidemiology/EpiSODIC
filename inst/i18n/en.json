@@ -143,6 +143,7 @@
   "status.run_ok": "Run {time} succeeded · {streams_phrase} · {clusters_phrase} detected",
   "status.run_partial": "Run {time} finished with skipped rows · {streams_phrase} · {clusters_phrase} detected",
   "status.run_failed": "Last run failed · {time}",
+  "status.run_failed_hint": "Check your case data in R with episodic_check_cases()",
   "status.no_run": "No detection run yet",
   "status.completeness": "Completeness {pct}% ({days_phrase})",
 

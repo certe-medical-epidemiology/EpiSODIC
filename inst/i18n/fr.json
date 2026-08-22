@@ -143,6 +143,7 @@
   "status.run_ok": "Exécution {time} réussie · {streams_phrase} · {clusters_phrase} détectés",
   "status.run_partial": "Exécution {time} terminée avec des lignes ignorées · {streams_phrase} · {clusters_phrase} détectés",
   "status.run_failed": "Dernière exécution échouée · {time}",
+  "status.run_failed_hint": "Vérifiez vos données de cas dans R avec episodic_check_cases()",
   "status.no_run": "Aucune exécution de détection pour l'instant",
   "status.completeness": "Exhaustivité {pct} % ({days_phrase})",
 

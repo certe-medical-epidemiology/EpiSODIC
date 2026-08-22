@@ -1052,6 +1052,10 @@ episodic_app_status <- function(con) {
     finished_at = run$finished_at,
     n_streams = run$n_streams,
     n_detections = run$n_detections,
-    n_clusters_open = n_clusters
+    n_clusters_open = n_clusters,
+    # Why it failed, not only that it did: for an operator connecting
+    # their own extract, the reason is the whole message - and the
+    # dashboard is where they are looking when they notice.
+    error_text = run$error_text %||% NA_character_
   )
 }
