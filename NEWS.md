@@ -38,6 +38,18 @@
   name, a recorded error message) can no longer rewrite the sentence it is substituted into.
 - An empty string in a column that must always be filled is now a problem, like `NA` - an empty
   `institution_key` was previously loaded as an institution with no identity.
+- `episodic_synthetic_cases()` injects six outbreaks, sized from a single case of an always-notable
+  pathogen to a diffuse regional wave, and spreads its baseline thinly enough per ward and per institution
+  that coincidence alone no longer trips the rule-based detectors. The demo used to open on some three
+  hundred clusters of three or four cases, every one of them chance co-location, with the two real
+  outbreaks buried among them.
+- Patients recur in the synthetic baseline - roughly one case in six is a repeat isolate from a patient
+  already in the data - so deduplication and episode grouping have something to collapse. Every synthetic
+  case used to be its own patient, which is also what `episodic_check_cases()` says about such data.
+- The synthetic feeds default to the five years up to today rather than a fixed 2021-2025 window, so a
+  demo does not go stale; outbreaks are anchored to `end_date` and clipped to the window asked for, rather
+  than returning cases outside it. `episodic_demo()` gained `run_date`, defaulting to the end of the last
+  complete week.
 
 ## Fixed
 

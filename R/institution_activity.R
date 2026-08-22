@@ -152,7 +152,7 @@ episodic_institution_activity_load <- function(con, activity) {
 #' @param institutions A data frame (or tibble) of institutions (as
 #'   returned by your own institution registry), filtered internally to
 #'   hospitals only.
-#' @param end_date,start_date The period to generate weekly rows for.
+#' @param start_date,end_date The period to generate weekly rows for.
 #'   Defaults to the five years up to today, matching
 #'   [episodic_synthetic_cases()].
 #' @param seed RNG seed, for reproducible demo data.
@@ -170,8 +170,8 @@ episodic_institution_activity_load <- function(con, activity) {
 #' @export
 episodic_synthetic_institution_activity <- function(
   institutions,
-  end_date = Sys.Date(),
   start_date = end_date - 5 * 365,
+  end_date = Sys.Date(),
   seed = 1
 ) {
   set.seed(seed)

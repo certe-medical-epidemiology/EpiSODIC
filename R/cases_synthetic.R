@@ -80,8 +80,8 @@
 #' head(cases)
 #' @export
 episodic_synthetic_cases <- function(
-  end_date = Sys.Date(),
   start_date = end_date - 5 * 365,
+  end_date = Sys.Date(),
   seed = 1
 ) {
   set.seed(seed)
@@ -641,15 +641,23 @@ episodic_synthetic_outbreak_propagated <- function(
     institutions$institution_type == "gp_municipality",
   ][1, ]
   epi_pc <- sample(pc_pool, 1)
-  first_date <- end_date - 90
   serial_interval <- 20 # Bordetella pertussis-like, days
+  # Far enough back that the last generation still lands inside the
+  # window: an outbreak whose tail is clipped off is a different shape
+  # from the one this is meant to demonstrate.
+  first_date <- end_date - (n_generations + 1.5) * serial_interval
 
   rows <- list()
   gen_start <- first_date
   for (g in seq_len(n_generations)) {
     n <- cases_per_generation[g]
+    # Capped at two serial intervals: a case further out than that
+    # belongs to the next generation, not a long tail of this one.
     case_dates <- gen_start +
-      round(stats::rgamma(n, shape = 2, rate = 2 / serial_interval))
+      pmin(
+        round(stats::rgamma(n, shape = 2, rate = 2 / serial_interval)),
+        2 * serial_interval
+      )
     rows[[g]] <- episodic_synthetic_case_rows(
       patient_key = sprintf("PT-OUTBREAK-PROP-G%d-%03d", g, seq_len(n)),
       sample_date = case_dates,
@@ -746,7 +754,7 @@ episodic_synthetic_places <- function(institutions) {
 #' carries a `PT-VOL-*` patient key so it is always identifiable as
 #' synthetic tuning data, never mistaken for anything else.
 #'
-#' @param end_date,start_date The window to generate over; defaults as in
+#' @param start_date,end_date The window to generate over; defaults as in
 #'   [episodic_synthetic_cases()].
 #' @param pathogen Which pathogen to generate the extra clusters for.
 #'   Defaults to *Clostridioides difficile*, a plausible example of an
@@ -766,8 +774,8 @@ episodic_synthetic_places <- function(institutions) {
 #' sum(startsWith(cases$patient_key, "PT-VOL-"))
 #' @export
 episodic_synthetic_cases_calibration <- function(
-  end_date = Sys.Date(),
   start_date = end_date - 5 * 365,
+  end_date = Sys.Date(),
   pathogen = "Clostridioides difficile",
   n_bumps_per_month = 3,
   seed = 1
