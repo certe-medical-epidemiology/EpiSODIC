@@ -99,6 +99,16 @@ CREATE TABLE episodic_detection_run (
   n_detections      INTEGER,
   n_signals_new     INTEGER,
   n_signals_updated INTEGER,
+  -- What each feed actually delivered. A run that skipped rows finishes
+  -- 'partial', never 'success': silently dropping an operator's data is
+  -- the one failure mode a green run must not be able to hide.
+  n_cases_supplied       INTEGER,
+  n_cases_deduplicated   INTEGER,
+  n_cases_inserted       INTEGER,
+  n_denominators_written INTEGER,
+  n_activity_supplied    INTEGER,
+  n_activity_written     INTEGER,
+  n_activity_skipped     INTEGER,
   code_version      TEXT,
   pkg_versions      TEXT,
   config_hash       TEXT CHECK (config_hash IS NULL OR length(config_hash) = 40),

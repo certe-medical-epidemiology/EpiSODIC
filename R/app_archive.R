@@ -105,7 +105,18 @@ episodic_ui_activity_screen <- function(activity, lang = "nl") {
               class = if (isTRUE(row$is_system)) "episodic-activity-row system" else "episodic-activity-row",
               shiny::tags$td(episodic_ui_format_datetime(row$at, fmt = "%d-%m-%Y %H:%M")),
               shiny::tags$td(row$actor),
-              shiny::tags$td(row$action),
+              shiny::tags$td(
+                row$action,
+                # What a run took in, under the run's own line: an operator
+                # reading the log should not have to query the database to
+                # find out whether last night's extract arrived in full.
+                if (!is.na(row$detail)) {
+                  shiny::tags$div(
+                    style = "font-size:11.5px;color:var(--episodic-muted);margin-top:2px;",
+                    row$detail
+                  )
+                }
+              ),
               shiny::tags$td(if (is.na(row$target)) episodic_tr("misc.dash", lang = lang) else row$target)
             )
           })

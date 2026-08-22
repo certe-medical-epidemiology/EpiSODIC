@@ -204,20 +204,13 @@ episodic_case_columns_required <- c(
 #' @export
 episodic_validate_cases <- function(cases) {
   cases <- episodic_resolve_data(cases)
-  if (!is.data.frame(cases)) {
-    stop(
-      "Case data must be a data frame (or tibble), not ",
-      paste(class(cases), collapse = "/"), ".", call. = FALSE
-    )
-  }
+  episodic_validate_columns(
+    cases,
+    required = episodic_case_columns,
+    filled = episodic_case_columns_required,
+    what = "Case data"
+  )
 
-  missing_cols <- setdiff(episodic_case_columns, names(cases))
-  if (length(missing_cols) > 0) {
-    stop(
-      "Case data is missing required column(s): ",
-      paste(missing_cols, collapse = ", "), call. = FALSE
-    )
-  }
   extra_cols <- setdiff(names(cases), episodic_case_columns)
   if (length(extra_cols) > 0) {
     stop(
@@ -230,16 +223,6 @@ episodic_validate_cases <- function(cases) {
   }
   if (any(duplicated(cases$source_key))) {
     stop("Case data contains duplicate source_key values.", call. = FALSE)
-  }
-
-  for (column in episodic_case_columns_required) {
-    if (any(is.na(cases[[column]]))) {
-      stop(
-        "Case data has NA in `", column, "`, which must always be filled ",
-        "(", sum(is.na(cases[[column]])), " of ", nrow(cases), " rows).",
-        call. = FALSE
-      )
-    }
   }
 
   episodic_validate_allowed(cases, "care_line", episodic_care_lines, na_ok = TRUE)
@@ -259,15 +242,46 @@ episodic_validate_cases <- function(cases) {
   invisible(cases)
 }
 
-#' Reject values outside a fixed set, naming the ones that offended
+#' Reject a missing column, or an NA where the schema allows none
+#'
+#' Shared by all three feeds. `required` names the columns that must be
+#' present; `filled` those that must additionally never be `NA`.
 #' @keywords internal
 #' @noRd
-episodic_validate_allowed <- function(cases, column, allowed, na_ok) {
-  values <- cases[[column]]
+episodic_validate_columns <- function(data, required, filled, what) {
+  if (!is.data.frame(data)) {
+    stop(what, " must be a data frame (or tibble), not ",
+         paste(class(data), collapse = "/"), ".", call. = FALSE)
+  }
+  missing_cols <- setdiff(required, names(data))
+  if (length(missing_cols) > 0) {
+    stop(what, " is missing required column(s): ",
+         paste(missing_cols, collapse = ", "), call. = FALSE)
+  }
+  for (column in filled) {
+    if (any(is.na(data[[column]]))) {
+      stop(
+        what, " has NA in `", column, "`, which must always be filled ",
+        "(", sum(is.na(data[[column]])), " of ", nrow(data), " rows).",
+        call. = FALSE
+      )
+    }
+  }
+  invisible(NULL)
+}
+
+#' Reject values outside a fixed set, naming the ones that offended
+#'
+#' Shared by all three feeds, so a bad `care_line` reads the same whether
+#' it arrived on a case, a denominator or an activity row.
+#' @keywords internal
+#' @noRd
+episodic_validate_allowed <- function(data, column, allowed, na_ok, what = "Case data") {
+  values <- data[[column]]
   bad <- if (isTRUE(na_ok)) values[!is.na(values) & !values %in% allowed] else values[!values %in% allowed]
   if (length(bad) > 0) {
     stop(
-      "Case data has ", length(bad), " row(s) with a `", column,
+      what, " has ", length(bad), " row(s) with a `", column,
       "` outside the allowed values (", paste(allowed, collapse = ", "),
       if (isTRUE(na_ok)) ", or NA" else "", "): ",
       paste(unique(bad), collapse = ", "), ".", call. = FALSE
@@ -279,8 +293,8 @@ episodic_validate_allowed <- function(cases, column, allowed, na_ok) {
 #' Reject dates that will not parse, naming the ones that offended
 #' @keywords internal
 #' @noRd
-episodic_validate_dates <- function(cases, column, na_ok) {
-  values <- cases[[column]]
+episodic_validate_dates <- function(data, column, na_ok, what = "Case data") {
+  values <- data[[column]]
   if (inherits(values, "Date")) return(invisible(NULL))
   parsed <- suppressWarnings(as.Date(as.character(values), format = "%Y-%m-%d"))
   bad <- values[is.na(parsed) & !(is.na(values) & isTRUE(na_ok))]
@@ -288,7 +302,7 @@ episodic_validate_dates <- function(cases, column, na_ok) {
     shown <- unique(bad)
     if (length(shown) > 5) shown <- shown[1:5]
     stop(
-      "Case data has ", length(bad), " row(s) whose `", column,
+      what, " has ", length(bad), " row(s) whose `", column,
       "` is not a Date and does not read as YYYY-MM-DD: ",
       paste(shown, collapse = ", "), ".", call. = FALSE
     )

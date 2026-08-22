@@ -155,6 +155,43 @@ episodic_app_archive <- function(con, query = NULL, lang = "nl") {
 #' @return A data frame with `at`, `actor`, `action`, `target`, `is_system`.
 #' @keywords internal
 #' @noRd
+#' What a detection run actually took in, as one line
+#'
+#' A run that says only "succeeded" cannot answer the question an
+#' operator actually has the morning after: did last night's extract
+#' arrive in full? This renders the load counters recorded against the
+#' run, and names skipped rows explicitly - that is the number a green
+#' run must never be able to hide.
+#'
+#' @param run One row of `episodic_db_runs()`.
+#' @param lang Session language.
+#' @return A single string, or `NA_character_` for a run recorded before
+#'   the counters existed, or one that failed before loading anything.
+#' @keywords internal
+#' @noRd
+episodic_app_run_detail <- function(run, lang = "nl") {
+  # NULL when reading a database written before the counters existed;
+  # NA when the run failed before it loaded anything. Neither has a
+  # summary to show, and neither should read as "zero cases arrived".
+  if (is.null(run$n_cases_supplied) || is.na(run$n_cases_supplied)) return(NA_character_)
+
+  detail <- episodic_tr(
+    "activity.detail_run",
+    inserted = run$n_cases_inserted,
+    supplied = run$n_cases_supplied,
+    deduplicated = run$n_cases_deduplicated,
+    lang = lang
+  )
+  if (isTRUE(run$n_activity_skipped > 0)) {
+    detail <- paste(
+      detail,
+      episodic_tr("activity.detail_run_skipped", skipped = run$n_activity_skipped, lang = lang),
+      sep = " · "
+    )
+  }
+  detail
+}
+
 episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
   clusters <- episodic_db_clusters(con)
   streams <- episodic_db_streams(con, active_only = FALSE)
@@ -174,7 +211,7 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
       action = ifelse(is.na(events$verdict), episodic_tr("activity.action_note", lang = lang),
                        episodic_tr("activity.action_classified", lang = lang)),
       target = vapply(events$cluster_id, cluster_target, character(1)),
-      is_system = FALSE, stringsAsFactors = FALSE
+      detail = NA_character_, is_system = FALSE, stringsAsFactors = FALSE
     )
   }
 
@@ -185,7 +222,7 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
       actor = vapply(states$user_id, episodic_app_actor_label, character(1), con = con, lang = lang),
       action = episodic_tr("activity.action_closed", lang = lang),
       target = vapply(states$cluster_id, cluster_target, character(1)),
-      is_system = FALSE, stringsAsFactors = FALSE
+      detail = NA_character_, is_system = FALSE, stringsAsFactors = FALSE
     )
   }
 
@@ -199,7 +236,7 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
         pathogen <- streams$pathogen[streams$stream_id == sid][1]
         pathogen %||% "?"
       }, character(1)),
-      is_system = FALSE, stringsAsFactors = FALSE
+      detail = NA_character_, is_system = FALSE, stringsAsFactors = FALSE
     )
   }
 
@@ -210,7 +247,7 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
       actor = vapply(logins$user_id, episodic_app_actor_label, character(1), con = con, lang = lang),
       action = episodic_tr("activity.action_login", lang = lang),
       target = NA_character_,
-      is_system = FALSE, stringsAsFactors = FALSE
+      detail = NA_character_, is_system = FALSE, stringsAsFactors = FALSE
     )
   }
 
@@ -221,13 +258,15 @@ episodic_app_activity_log <- function(con, limit = 200, lang = "nl") {
       actor = episodic_tr("activity.actor_system", lang = lang),
       action = vapply(runs$status, function(s) episodic_tr(paste0("activity.action_run_", s), lang = lang), character(1)),
       target = runs$host,
+      detail = vapply(seq_len(nrow(runs)), function(i) episodic_app_run_detail(runs[i, ], lang), character(1)),
       is_system = TRUE, stringsAsFactors = FALSE
     )
   }
 
   if (length(rows) == 0) {
     return(data.frame(at = character(0), actor = character(0), action = character(0),
-                       target = character(0), is_system = logical(0), stringsAsFactors = FALSE))
+                       target = character(0), detail = character(0),
+                       is_system = logical(0), stringsAsFactors = FALSE))
   }
   activity <- do.call(rbind, rows)
   activity <- activity[order(activity$at, decreasing = TRUE), ]

@@ -219,7 +219,10 @@ counts exactly as it always has.
 
 Rows whose `institution_key` does not match a known institution are
 skipped, not an error - an activity feed and a case feed need not be
-perfectly synchronised. See
+perfectly synchronised. Skipped rows are never silent, though: the load
+warns and names the unmatched keys, the count is recorded against the
+run, and the run finishes `partial` rather than `success` (see "What a
+run reports" below). See
 `episodic_synthetic_institution_activity()` for a worked example.
 There is no ward-level (L1) equivalent in the schema, so L1 detection is
 never normalised, only L2.
@@ -261,6 +264,35 @@ and read from the same list the shipped one does (`obj`, `epi_curve`,
 `rendered_at`, `lang`, `package_version`); see the shipped template for
 the exact shape, including how it calls `episodic_tr(..., lang = d$lang)`
 for a bilingual report.
+
+## What a run reports
+
+Every `episodic_run_cron()` call records what each feed actually
+delivered, so "did last night's extract arrive in full?" is answerable
+without re-running anything. `episodic_detection_run` carries
+`n_cases_supplied`, `n_cases_deduplicated`, `n_cases_inserted`,
+`n_denominators_written`, `n_activity_supplied`, `n_activity_written` and
+`n_activity_skipped` alongside the detection counts, and the dashboard's
+Activity screen shows them under each run.
+
+The run's `status` distinguishes three outcomes:
+
+| Status | Meaning |
+|---|---|
+| `success` | Everything supplied was loaded. |
+| `partial` | The run completed and its detections are valid, but rows of an optional feed were skipped - today that means institution activity whose `institution_key` matched no known institution. |
+| `failed` | Nothing was written. The whole run is one transaction, so a failure leaves no partial state and is always safe to retry; `error_text` holds the reason. |
+
+The distinction that matters: **structural problems fail the run, and
+row-level facts are counted and reported, but never silently dropped.** A
+malformed feed - a missing column, a value outside the allowed set, a
+date that does not parse, a duplicate `source_key` - stops the run before
+anything is written, and says which column and which values were wrong.
+A run that quietly loaded 10% of your patient-days is the one outcome the
+design refuses to report as green.
+
+Both `success` and `partial` are usable runs, and the dashboard reads
+from the most recent of either.
 
 ## Database backend
 

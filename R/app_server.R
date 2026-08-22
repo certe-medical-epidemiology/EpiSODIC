@@ -199,10 +199,14 @@ episodic_ui_status_strip <- function(status, lang = "nl") {
     return(shiny::tags$div(class = "episodic-status-strip", episodic_tr("status.no_run", lang = lang)))
   }
   pal <- episodic_palette()
-  if (identical(status$status, "success")) {
-    dot_colour <- pal$warning
+  if (status$status %in% episodic_run_statuses_complete) {
+    # A partial run completed and is safe to read from; it is flagged
+    # rather than greened over, because rows of an optional feed were
+    # skipped and somebody should go and look at why.
+    dot_colour <- if (identical(status$status, "partial")) pal$danger else pal$warning
     text <- episodic_tr(
-      "status.run_ok", lang = lang, time = episodic_ui_format_datetime(status$finished_at),
+      if (identical(status$status, "partial")) "status.run_partial" else "status.run_ok",
+      lang = lang, time = episodic_ui_format_datetime(status$finished_at),
       streams_phrase = episodic_count_phrase(status$n_streams %||% 0, episodic_tr("unit.stream", lang = lang), episodic_tr("unit.streams", lang = lang)),
       clusters_phrase = episodic_count_phrase(status$n_clusters_open %||% 0, episodic_tr("unit.cluster", lang = lang), episodic_tr("unit.clusters", lang = lang))
     )

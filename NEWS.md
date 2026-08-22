@@ -268,6 +268,47 @@ yet, these are hard renames with no deprecation shims.
   run, as a rolled-back transaction. It accepts a function as readily as
   a data set, and returns the validated data set invisibly.
 
+## A run now reports what it actually loaded
+
+Runs recorded whether detection succeeded, and nothing about whether the
+data arrived. The worst case was silent: institution activity rows whose
+`institution_key` matched no known institution were skipped by design,
+the count computed and then discarded. An operator whose activity feed
+and case feed keyed institutions differently lost all their patient-days,
+saw a green run, and had no way to find out - L2 detection quietly fell
+back to raw counts.
+
+The rule now is that structural problems fail the run, and row-level
+facts are counted and reported, but never silently dropped.
+
+- `episodic_detection_run` gained `n_cases_supplied`,
+  `n_cases_deduplicated`, `n_cases_inserted`, `n_denominators_written`,
+  `n_activity_supplied`, `n_activity_written` and `n_activity_skipped`.
+  Every load step already computed these; they now land somewhere.
+- `partial` is a real run status. It has been in the schema's `CHECK`
+  constraint since the beginning and was never written by anything. A run
+  that completed but skipped rows now finishes `partial`, not `success`.
+  Both are complete, usable runs and the dashboard reads from the most
+  recent of either - `partial` means go and look at why rows were skipped.
+- Skipped activity rows raise a warning naming the count and the
+  unmatched keys, so an interactive run says so at the console.
+- The denominator and institution activity feeds are validated the way
+  cases are: allowed values, dates that parse, numeric counts, and the
+  columns that may never be `NA`. Their failures used to surface as raw
+  SQLite constraint errors from inside a rolled-back transaction. A
+  missing `care_line` is read as `"unknown"` here too.
+- The Activity screen shows, under each run, how many cases arrived and
+  how many were new, and names skipped rows when there were any. The
+  status strip distinguishes a partial run from a clean one. Two run
+  statuses had no translation at all and would have rendered as
+  `[[activity.action_run_running]]`; `running` and `partial` are now
+  translated in all eight languages, as is the load summary.
+
+Read-side callers that meant "the latest usable run" asked for status
+`success` specifically, which would have skipped past a `partial` run and
+left the dashboard showing an older run's numbers. They now ask for
+`episodic_run_statuses_complete`.
+
 # EpiSODIC 0.3.0
 
 - Expanded dashboard translations from Dutch and English to also cover

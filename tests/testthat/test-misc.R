@@ -124,8 +124,9 @@ test_that("episodic_db_denominator_upsert() and episodic_denominators_load() rou
   denom <- episodic_synthetic_denominators(
     start_date = as.Date("2024-01-01"), end_date = as.Date("2024-02-28"), seed = 1
   )
-  n_written <- episodic_denominators_load(con, denom)
-  expect_equal(n_written, nrow(denom))
+  counts <- episodic_denominators_load(con, denom)
+  expect_equal(counts$n_written, nrow(denom))
+  expect_equal(counts$n_supplied, nrow(denom))
   rows_after <- DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM episodic_denominator")
   expect_gt(rows_after$n, 1)
 })
@@ -135,6 +136,37 @@ test_that("episodic_denominators_load() rejects a source missing required column
   on.exit(DBI::dbDisconnect(con))
   bad <- data.frame(pathogen = "Norovirus", sample_date = "2025-01-01")
   expect_error(episodic_denominators_load(con, bad), "missing required")
+})
+
+test_that("episodic_denominators_load() rejects bad values before the database has to", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  ok <- data.frame(pathogen = "Norovirus", sample_date = "2025-01-06",
+                   care_line = "second", area_code = NA_character_, n_tests = 40,
+                   stringsAsFactors = FALSE)
+
+  bad <- ok; bad$care_line <- "hospital"
+  expect_error(episodic_denominators_load(con, bad), "care_line")
+
+  bad <- ok; bad$sample_date <- "06-01-2025"
+  expect_error(episodic_denominators_load(con, bad), "sample_date")
+
+  bad <- ok; bad$n_tests <- "forty"
+  expect_error(episodic_denominators_load(con, bad), "n_tests")
+
+  bad <- ok; bad$pathogen <- NA_character_
+  expect_error(episodic_denominators_load(con, bad), "pathogen")
+})
+
+test_that("episodic_denominators_load() reads an NA care_line as 'unknown', like the case feed", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  denom <- data.frame(pathogen = "Norovirus", sample_date = "2025-01-06",
+                      care_line = NA_character_, area_code = NA_character_, n_tests = 40,
+                      stringsAsFactors = FALSE)
+  episodic_denominators_load(con, denom)
+  rows <- DBI::dbGetQuery(con, "SELECT care_line FROM episodic_denominator")
+  expect_identical(rows$care_line, "unknown")
 })
 
 test_that("episodic_split_sql_statements() splits on semicolons and drops comments", {

@@ -141,6 +141,7 @@
   "streams.page_of": "الصفحة {page} من {n_pages}",
 
   "status.run_ok": "نجح التشغيل {time} · {streams_phrase} · تم اكتشاف {clusters_phrase}",
+  "status.run_partial": "انتهى التشغيل {time} مع تخطي صفوف · {streams_phrase} · {clusters_phrase} تم كشفها",
   "status.run_failed": "فشل آخر تشغيل · {time}",
   "status.no_run": "لم يُنفَّذ أي تشغيل كشف بعد",
   "status.completeness": "الاكتمال {pct}% ({days_phrase})",
@@ -276,6 +277,10 @@
   "activity.action_login": "سجَّل الدخول",
   "activity.action_run_success": "نجح تشغيل الكشف",
   "activity.action_run_failed": "فشل تشغيل الكشف",
+  "activity.action_run_running": "تشغيل الكشف قيد التنفيذ",
+  "activity.action_run_partial": "انتهى تشغيل الكشف مع تخطي بعض الصفوف",
+  "activity.detail_run": "{inserted} حالة جديدة من أصل {supplied} مقدَّمة ({deduplicated} بعد إزالة التكرار)",
+  "activity.detail_run_skipped": "تم تخطي {skipped} من صفوف النشاط: المؤسسة غير معروفة هنا",
   "activity.target_cluster": "{pathogen} (التجمع رقم {id})",
 
   "performance.title": "الأداء",

@@ -212,14 +212,19 @@ episodic_db_runs <- function(con, limit = 200) {
   )
 }
 
-#' @param status If given, only the latest run with this `status`.
+#' @param status If given, only the latest run with one of these
+#'   statuses. Pass `episodic_run_statuses_complete` for "the latest run
+#'   that produced usable results", which is what almost every caller
+#'   means - a `partial` run completed and wrote its detections; it only
+#'   skipped rows of an optional feed.
 #' @keywords internal
 #' @noRd
 episodic_db_latest_run <- function(con, status = NULL) {
   sql <- "SELECT * FROM episodic_detection_run"
   if (!is.null(status)) {
-    sql <- paste(sql, "WHERE status = ?")
-    res <- DBI::dbGetQuery(con, paste(sql, "ORDER BY run_id DESC LIMIT 1"), params = list(status))
+    placeholders <- paste(rep("?", length(status)), collapse = ", ")
+    sql <- paste0(sql, " WHERE status IN (", placeholders, ")")
+    res <- DBI::dbGetQuery(con, paste(sql, "ORDER BY run_id DESC LIMIT 1"), params = as.list(status))
   } else {
     res <- DBI::dbGetQuery(con, paste(sql, "ORDER BY run_id DESC LIMIT 1"))
   }

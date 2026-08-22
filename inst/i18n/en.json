@@ -141,6 +141,7 @@
   "streams.page_of": "Page {page} of {n_pages}",
 
   "status.run_ok": "Run {time} succeeded · {streams_phrase} · {clusters_phrase} detected",
+  "status.run_partial": "Run {time} finished with skipped rows · {streams_phrase} · {clusters_phrase} detected",
   "status.run_failed": "Last run failed · {time}",
   "status.no_run": "No detection run yet",
   "status.completeness": "Completeness {pct}% ({days_phrase})",
@@ -276,6 +277,10 @@
   "activity.action_login": "signed in",
   "activity.action_run_success": "detection run succeeded",
   "activity.action_run_failed": "detection run failed",
+  "activity.action_run_running": "detection run in progress",
+  "activity.action_run_partial": "detection run finished, some rows skipped",
+  "activity.detail_run": "{inserted} new cases from {supplied} supplied ({deduplicated} after deduplication)",
+  "activity.detail_run_skipped": "{skipped} activity rows skipped: institution not known here",
   "activity.target_cluster": "{pathogen} (cluster #{id})",
 
   "performance.title": "Performance",

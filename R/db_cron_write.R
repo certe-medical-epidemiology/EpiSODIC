@@ -397,17 +397,26 @@ episodic_db_run_start <- function(con, host, account, attempt_no = 1L) {
 #' @noRd
 episodic_db_run_finish <- function(con, run_id, status, n_streams = NA, n_detections = NA,
                                    n_signals_new = NA, n_signals_updated = NA,
+                                   n_cases_supplied = NA, n_cases_deduplicated = NA,
+                                   n_cases_inserted = NA, n_denominators_written = NA,
+                                   n_activity_supplied = NA, n_activity_written = NA,
+                                   n_activity_skipped = NA,
                                    code_version = NA, pkg_versions = NA, config_hash = NA,
                                    config_snapshot = NA, error_text = NA) {
   DBI::dbExecute(
     con,
     "UPDATE episodic_detection_run SET finished_at = ?, status = ?, n_streams = ?,
-      n_detections = ?, n_signals_new = ?, n_signals_updated = ?, code_version = ?,
+      n_detections = ?, n_signals_new = ?, n_signals_updated = ?,
+      n_cases_supplied = ?, n_cases_deduplicated = ?, n_cases_inserted = ?,
+      n_denominators_written = ?, n_activity_supplied = ?, n_activity_written = ?,
+      n_activity_skipped = ?, code_version = ?,
       pkg_versions = ?, config_hash = ?, config_snapshot = ?, error_text = ?
      WHERE run_id = ?",
     params = list(episodic_now(), status, n_streams, n_detections, n_signals_new,
-                  n_signals_updated, code_version, pkg_versions, config_hash, config_snapshot,
-                  error_text, run_id)
+                  n_signals_updated, n_cases_supplied, n_cases_deduplicated,
+                  n_cases_inserted, n_denominators_written, n_activity_supplied,
+                  n_activity_written, n_activity_skipped, code_version, pkg_versions,
+                  config_hash, config_snapshot, error_text, run_id)
   )
   invisible(NULL)
 }

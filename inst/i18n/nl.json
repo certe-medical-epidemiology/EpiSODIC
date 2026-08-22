@@ -141,6 +141,7 @@
   "streams.page_of": "Pagina {page} van {n_pages}",
 
   "status.run_ok": "Run {time} geslaagd · {streams_phrase} · {clusters_phrase} gedetecteerd",
+  "status.run_partial": "Run {time} voltooid met overgeslagen rijen · {streams_phrase} · {clusters_phrase} gedetecteerd",
   "status.run_failed": "Laatste run mislukt · {time}",
   "status.no_run": "Nog geen detectierun uitgevoerd",
   "status.completeness": "Volledigheid {pct}% ({days_phrase})",
@@ -276,6 +277,10 @@
   "activity.action_login": "aangemeld",
   "activity.action_run_success": "detectierun geslaagd",
   "activity.action_run_failed": "detectierun mislukt",
+  "activity.action_run_running": "detectierun bezig",
+  "activity.action_run_partial": "detectierun voltooid, rijen overgeslagen",
+  "activity.detail_run": "{inserted} nieuwe casussen van {supplied} aangeleverd ({deduplicated} na ontdubbeling)",
+  "activity.detail_run_skipped": "{skipped} activiteitsrijen overgeslagen: instelling hier niet bekend",
   "activity.target_cluster": "{pathogen} (cluster #{id})",
 
   "performance.title": "Prestatie",

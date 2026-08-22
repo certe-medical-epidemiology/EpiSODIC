@@ -30,21 +30,37 @@
 #' @param con A [DBI::DBIConnection-class].
 #' @param denominators A data frame (or tibble) with columns `pathogen`,
 #'   `sample_date`, `care_line`, `area_code` (nullable) and `n_tests`.
-#' @return Invisibly, the number of rows written.
+#' @return Invisibly, a list with `n_supplied` and `n_written`. Every
+#'   supplied row is written, so these are equal - a denominator row has
+#'   nothing to match against and so cannot be skipped.
 #'
 #' Not exported: an operator supplies a source to [episodic_run_cron()] via
 #' `denominators`; this is the internal write step run against it.
 #' @keywords internal
 #' @noRd
 episodic_denominators_load <- function(con, denominators) {
-  required_cols <- c("pathogen", "sample_date", "care_line", "area_code", "n_tests")
-  missing_cols <- setdiff(required_cols, names(denominators))
-  if (length(missing_cols) > 0) {
+  episodic_validate_columns(
+    denominators,
+    required = c("pathogen", "sample_date", "care_line", "area_code", "n_tests"),
+    filled = c("pathogen", "sample_date", "n_tests"),
+    what = "Denominator data"
+  )
+  episodic_validate_allowed(
+    denominators, "care_line", episodic_care_lines,
+    na_ok = TRUE, what = "Denominator data"
+  )
+  episodic_validate_dates(
+    denominators, "sample_date", na_ok = FALSE, what = "Denominator data"
+  )
+  if (nrow(denominators) > 0 && !is.numeric(denominators$n_tests)) {
     stop(
-      "Denominator data is missing required column(s): ",
-      paste(missing_cols, collapse = ", "), call. = FALSE
+      "Denominator data has a non-numeric `n_tests` (",
+      paste(class(denominators$n_tests), collapse = "/"), ").", call. = FALSE
     )
   }
+
+  # Same reading of a missing care line as the case feed: unknown.
+  denominators$care_line[is.na(denominators$care_line)] <- "unknown"
 
   for (i in seq_len(nrow(denominators))) {
     row <- denominators[i, ]
@@ -53,7 +69,7 @@ episodic_denominators_load <- function(con, denominators) {
       care_line = row$care_line, area_code = row$area_code, n_tests = row$n_tests
     )
   }
-  invisible(nrow(denominators))
+  invisible(list(n_supplied = nrow(denominators), n_written = nrow(denominators)))
 }
 
 #' Add a testing-volume (positivity) feed

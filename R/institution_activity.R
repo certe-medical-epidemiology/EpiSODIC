@@ -31,10 +31,12 @@
 #' @param activity A data frame (or tibble) with `institution_key`, `period_start`,
 #'   `period_end`, `patient_days` (nullable `admissions`, `n_beds`,
 #'   `source`).
-#' @return Invisibly, the number of rows written (rows whose
-#'   `institution_key` does not match a known institution are skipped,
-#'   not an error - an operator's activity feed and case feed need not be
-#'   perfectly synchronised).
+#' @return Invisibly, a list with `n_supplied`, `n_written` and
+#'   `n_skipped`. Rows whose `institution_key` matches no known
+#'   institution are skipped rather than raising an error - an operator's
+#'   activity feed and case feed need not be perfectly synchronised - but
+#'   they are counted, warned about, and recorded against the run, which
+#'   finishes `partial` rather than `success`.
 #'
 #' Not exported: an operator supplies a source to [episodic_run_cron()] via
 #' `institution_activity`; this is the internal write step run
@@ -42,21 +44,36 @@
 #' @keywords internal
 #' @noRd
 episodic_institution_activity_load <- function(con, activity) {
-  required_cols <- c("institution_key", "period_start", "period_end", "patient_days")
-  missing_cols <- setdiff(required_cols, names(activity))
-  if (length(missing_cols) > 0) {
+  episodic_validate_columns(
+    activity,
+    required = c("institution_key", "period_start", "period_end", "patient_days"),
+    filled = c("institution_key", "period_start", "period_end"),
+    what = "Institution activity data"
+  )
+  episodic_validate_dates(
+    activity, "period_start", na_ok = FALSE, what = "Institution activity data"
+  )
+  episodic_validate_dates(
+    activity, "period_end", na_ok = FALSE, what = "Institution activity data"
+  )
+  if (nrow(activity) > 0 && !all(is.na(activity$patient_days)) &&
+      !is.numeric(activity$patient_days)) {
     stop(
-      "Institution activity data is missing required column(s): ",
-      paste(missing_cols, collapse = ", "), call. = FALSE
+      "Institution activity data has a non-numeric `patient_days` (",
+      paste(class(activity$patient_days), collapse = "/"), ").", call. = FALSE
     )
   }
 
   institutions <- episodic_db_institutions(con)
   n_written <- 0L
+  skipped_keys <- character(0)
   for (i in seq_len(nrow(activity))) {
     row <- activity[i, ]
     institution_id <- institutions$institution_id[institutions$institution_key == row$institution_key]
-    if (length(institution_id) == 0) next
+    if (length(institution_id) == 0) {
+      skipped_keys <- c(skipped_keys, row$institution_key)
+      next
+    }
     episodic_db_institution_activity_upsert(
       con, institution_id = institution_id[1], period_start = row$period_start,
       period_end = row$period_end, patient_days = row$patient_days,
@@ -65,7 +82,29 @@ episodic_institution_activity_load <- function(con, activity) {
     )
     n_written <- n_written + 1L
   }
-  invisible(n_written)
+
+  # Skipping is deliberate - an activity feed and a case feed need not be
+  # perfectly synchronised - but skipping in silence is not. An operator
+  # whose two feeds key institutions differently would otherwise see a
+  # green run and never learn that none of their patient-days landed.
+  if (length(skipped_keys) > 0) {
+    unmatched <- unique(skipped_keys)
+    shown <- if (length(unmatched) > 5) unmatched[1:5] else unmatched
+    warning(
+      length(skipped_keys), " of ", nrow(activity), " institution activity row(s) ",
+      "were skipped: their `institution_key` matches no institution in the case ",
+      "data (", paste(shown, collapse = ", "),
+      if (length(unmatched) > length(shown)) ", ..." else "", "). ",
+      "Detection falls back to raw counts for those institutions.",
+      call. = FALSE
+    )
+  }
+
+  invisible(list(
+    n_supplied = nrow(activity),
+    n_written = n_written,
+    n_skipped = length(skipped_keys)
+  ))
 }
 
 #' Add a hospital activity feed (patient-days)

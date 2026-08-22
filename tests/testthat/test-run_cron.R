@@ -108,6 +108,105 @@ test_that("episodic_run_cron() writes institution activity rows only when instit
   expect_gt(DBI::dbGetQuery(con_with, "SELECT COUNT(*) n FROM episodic_institution_activity")$n, 0)
 })
 
+test_that("a run records what each feed delivered, not just that it succeeded", {
+  path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(path), add = TRUE)
+
+  cases <- episodic_synthetic_cases(
+    start_date = as.Date("2024-06-01"), end_date = as.Date("2024-06-30"), seed = 3
+  )
+  denom <- episodic_synthetic_denominators(
+    start_date = as.Date("2024-06-01"), end_date = as.Date("2024-06-30")
+  )
+  episodic_run_cron(path, cases = cases, denominators = denom,
+                    run_date = as.Date("2024-06-30"))
+
+  con <- episodic_db_connect(path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE)
+  run <- episodic_db_latest_run(con)
+
+  expect_identical(run$status, "success")
+  expect_equal(run$n_cases_supplied, nrow(cases))
+  expect_true(run$n_cases_deduplicated <= run$n_cases_supplied)
+  expect_gt(run$n_cases_inserted, 0)
+  expect_equal(run$n_denominators_written, nrow(denom))
+  expect_true(is.na(run$n_activity_supplied))  # no activity feed was given
+})
+
+test_that("a run that skipped activity rows finishes 'partial', not 'success'", {
+  path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(path), add = TRUE)
+
+  cases <- episodic_synthetic_cases(
+    start_date = as.Date("2024-06-01"), end_date = as.Date("2024-06-30"), seed = 4
+  )
+  # an activity feed keyed on institutions the case feed never mentions -
+  # the exact situation that used to report a clean success
+  activity <- data.frame(
+    institution_key = c("UNKNOWN-1", "UNKNOWN-2"),
+    period_start = "2024-06-03", period_end = "2024-06-09",
+    patient_days = 900, stringsAsFactors = FALSE
+  )
+  suppressWarnings(
+    episodic_run_cron(path, cases = cases, institution_activity = activity,
+                      run_date = as.Date("2024-06-30"))
+  )
+
+  con <- episodic_db_connect(path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE)
+  run <- episodic_db_latest_run(con)
+
+  expect_identical(run$status, "partial")
+  expect_equal(run$n_activity_supplied, 2)
+  expect_equal(run$n_activity_written, 0)
+  expect_equal(run$n_activity_skipped, 2)
+})
+
+test_that("a partial run still counts as the latest usable run", {
+  path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(path), add = TRUE)
+
+  cases <- episodic_synthetic_cases(
+    start_date = as.Date("2024-06-01"), end_date = as.Date("2024-06-30"), seed = 5
+  )
+  activity <- data.frame(
+    institution_key = "UNKNOWN-1", period_start = "2024-06-03",
+    period_end = "2024-06-09", patient_days = 900, stringsAsFactors = FALSE
+  )
+  suppressWarnings(
+    episodic_run_cron(path, cases = cases, institution_activity = activity,
+                      run_date = as.Date("2024-06-30"))
+  )
+
+  con <- episodic_db_connect(path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE)
+  expect_identical(
+    episodic_db_latest_run(con, status = episodic_run_statuses_complete)$status,
+    "partial"
+  )
+})
+
+test_that("a failed run records NA counts rather than zeroes", {
+  path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(path), add = TRUE)
+
+  cases <- episodic_synthetic_cases(
+    start_date = as.Date("2024-06-01"), end_date = as.Date("2024-06-30"), seed = 6
+  )
+  cases$pathogen <- NULL  # violates the case data contract
+
+  episodic_run_cron(path, cases = cases, run_date = as.Date("2024-06-30"))
+
+  con <- episodic_db_connect(path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE)
+  run <- episodic_db_latest_run(con)
+
+  expect_identical(run$status, "failed")
+  expect_true(is.na(run$n_cases_supplied))
+  expect_true(is.na(run$n_cases_inserted))
+  expect_match(run$error_text, "pathogen")
+})
+
 test_that("an NA care_line is stored as 'unknown', not rejected", {
   path <- tempfile(fileext = ".sqlite")
   on.exit(unlink(path), add = TRUE)

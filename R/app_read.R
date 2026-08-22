@@ -670,7 +670,7 @@ episodic_app_cluster_viewable <- function(con, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_app_data_asof <- function(con) {
-  run <- episodic_db_latest_run(con, status = "success")
+  run <- episodic_db_latest_run(con, status = episodic_run_statuses_complete)
   if (is.null(run) || is.na(run$finished_at)) return(Sys.Date())
   parsed <- tryCatch(as.Date(substr(run$finished_at, 1, 10)), error = function(e) NA)
   if (is.na(parsed)) Sys.Date() else parsed
@@ -753,7 +753,7 @@ episodic_app_linelist <- function(con, cluster_id) {
 #' @noRd
 episodic_app_detection_settings <- function(con, cluster_id) {
   cluster_obj <- episodic_cluster_object(con, cluster_id)
-  run <- episodic_db_latest_run(con, status = "success")
+  run <- episodic_db_latest_run(con, status = episodic_run_statuses_complete)
   list(
     detectors = cluster_obj$detectors,
     rt_applicable = cluster_obj$rt_applicable,
@@ -791,7 +791,7 @@ episodic_app_detection_settings <- function(con, cluster_id) {
 #' @noRd
 episodic_app_streams_screen <- function(con, page = 1L, page_size = 50L) {
   streams_all <- episodic_db_streams(con, active_only = FALSE)
-  run <- episodic_db_latest_run(con, status = "success")
+  run <- episodic_db_latest_run(con, status = episodic_run_statuses_complete)
   config_snapshot <- if (!is.null(run) && !is.na(run$config_snapshot)) {
     jsonlite::fromJSON(run$config_snapshot)
   } else {

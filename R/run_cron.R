@@ -41,6 +41,17 @@
 #' [episodic_config_hash()]), so any past result can always be traced back
 #' to the configuration that produced it.
 #'
+#' So is what each feed delivered. Structural problems - a missing column,
+#' a value outside the allowed set, a date that does not parse - fail the
+#' run before anything is written, naming the column and the values. Rows
+#' that are merely unmatched are counted rather than dropped in silence:
+#' institution activity whose `institution_key` matches no known
+#' institution is skipped with a warning, its count recorded, and the run
+#' finishes `"partial"` instead of `"success"`. Both are complete runs the
+#' dashboard reads from; `"partial"` says go and look at why rows were
+#' skipped. `episodic_detection_run` carries the counts (`n_cases_supplied`,
+#' `n_cases_inserted`, `n_activity_skipped`, and the rest).
+#'
 #' @param db_path Path to the EpiSODIC database: a SQLite file (created
 #'   automatically if it does not exist yet) or a MariaDB/MySQL DSN (see
 #'   [episodic_db_dsn_mariadb()]).
@@ -63,7 +74,9 @@
 #'   to the current machine and account.
 #' @param run_date The date to treat as "today". Defaults to the system
 #'   date; mainly useful to override in tests.
-#' @return Invisibly, the `run_id` of the completed run.
+#' @return Invisibly, the `run_id` of the completed run. The run's row in
+#'   `episodic_detection_run` holds its status, the per-feed load counts,
+#'   and `error_text` if it failed.
 #' @examples
 #' \donttest{
 #' db_path <- tempfile(fileext = ".sqlite")
@@ -99,7 +112,11 @@ episodic_run_cron <- function(db_path,
   }, error = function(e) {
     DBI::dbRollback(con)
     list(status = "failed", error_text = conditionMessage(e), n_streams = NA_integer_,
-         n_detections = NA_integer_, n_signals_new = NA_integer_, n_signals_updated = NA_integer_)
+         n_detections = NA_integer_, n_signals_new = NA_integer_, n_signals_updated = NA_integer_,
+         n_cases_supplied = NA_integer_, n_cases_deduplicated = NA_integer_,
+         n_cases_inserted = NA_integer_, n_denominators_written = NA_integer_,
+         n_activity_supplied = NA_integer_, n_activity_written = NA_integer_,
+         n_activity_skipped = NA_integer_)
   })
 
   pkg_versions <- jsonlite::toJSON(episodic_pkg_versions(), auto_unbox = TRUE)
@@ -109,6 +126,13 @@ episodic_run_cron <- function(db_path,
     status = if (is.null(result$status)) "success" else result$status,
     n_streams = result$n_streams, n_detections = result$n_detections,
     n_signals_new = result$n_signals_new, n_signals_updated = result$n_signals_updated,
+    n_cases_supplied = result$n_cases_supplied,
+    n_cases_deduplicated = result$n_cases_deduplicated,
+    n_cases_inserted = result$n_cases_inserted,
+    n_denominators_written = result$n_denominators_written,
+    n_activity_supplied = result$n_activity_supplied,
+    n_activity_written = result$n_activity_written,
+    n_activity_skipped = result$n_activity_skipped,
     code_version = as.character(utils::packageVersion("EpiSODIC")),
     pkg_versions = as.character(pkg_versions),
     config_hash = hashed$hash, config_snapshot = hashed$snapshot,
@@ -117,6 +141,17 @@ episodic_run_cron <- function(db_path,
 
   invisible(run_id)
 }
+
+#' Run statuses that mean the run completed and wrote its results
+#'
+#' `success` and `partial` differ only in whether rows of an optional
+#' feed were skipped; both produced detections and both are safe to read
+#' from. Anything asking for "the latest usable run" wants this, not
+#' `"success"` alone - otherwise a `partial` run leaves the dashboard
+#' quietly showing an older run's numbers.
+#' @keywords internal
+#' @noRd
+episodic_run_statuses_complete <- c("success", "partial")
 
 #' Resolve a data source argument to a data frame
 #'
@@ -156,19 +191,23 @@ episodic_run_cron_body <- function(con, run_id, config, cases, denominators,
   episodic_db_pathogen_config_load(con, pathogen_config)
 
   cases <- episodic_resolve_data(cases)
-  episodic_cases_load(con, cases, pathogen_config, run_id)
+  case_counts <- episodic_cases_load(con, cases, pathogen_config, run_id)
 
   denominators <- episodic_resolve_data(denominators)
-  if (!is.null(denominators)) {
+  denominator_counts <- if (!is.null(denominators)) {
     episodic_denominators_load(con, denominators)
+  } else {
+    list(n_supplied = NA_integer_, n_written = NA_integer_)
   }
 
   cases_all <- episodic_db_cases(con)
   institutions <- episodic_db_institutions(con)
 
   institution_activity <- episodic_resolve_data(institution_activity, institutions)
-  if (!is.null(institution_activity)) {
+  activity_counts <- if (!is.null(institution_activity)) {
     episodic_institution_activity_load(con, institution_activity)
+  } else {
+    list(n_supplied = NA_integer_, n_written = NA_integer_, n_skipped = NA_integer_)
   }
 
   episodic_lattice_enumerate(con, cases_all, institutions)
@@ -304,8 +343,17 @@ episodic_run_cron_body <- function(con, run_id, config, cases, denominators,
   }
 
   list(
-    status = "success", n_streams = nrow(streams), n_detections = n_detections_total,
-    n_signals_new = n_new_total, n_signals_updated = n_updated_total, error_text = NA
+    status = if (isTRUE(activity_counts$n_skipped > 0)) "partial" else "success",
+    n_streams = nrow(streams), n_detections = n_detections_total,
+    n_signals_new = n_new_total, n_signals_updated = n_updated_total,
+    n_cases_supplied = case_counts$n_supplied,
+    n_cases_deduplicated = case_counts$n_deduplicated,
+    n_cases_inserted = case_counts$n_inserted,
+    n_denominators_written = denominator_counts$n_written,
+    n_activity_supplied = activity_counts$n_supplied,
+    n_activity_written = activity_counts$n_written,
+    n_activity_skipped = activity_counts$n_skipped,
+    error_text = NA
   )
 }
 

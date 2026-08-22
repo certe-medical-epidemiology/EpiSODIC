@@ -93,3 +93,54 @@ test_that("episodic_app_activity_log() surfaces assessments, closures, mutes, lo
   expect_false(all(activity$is_system))      # human actions too
   expect_true(all(diff(as.numeric(as.POSIXct(activity$at, tz = "UTC"))) <= 0))  # descending
 })
+
+test_that("episodic_app_activity_log() carries a load summary on run rows and nothing on human rows", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  user_id <- episodic_db_app_user_insert(env$con, "tester", "Test User", "t@example.com",
+                                         sodium::password_store("pw12345"))
+  episodic_auth_login(env$con, "tester", "pw12345")
+
+  run_id <- episodic_db_run_start(env$con, "host", "account")
+  episodic_db_run_finish(
+    env$con, run_id, status = "success",
+    n_cases_supplied = 400, n_cases_deduplicated = 350, n_cases_inserted = 120
+  )
+
+  activity <- episodic_app_activity_log(env$con, lang = "en")
+  detail <- activity$detail[!is.na(activity$detail)]
+  expect_true(any(grepl("120", detail, fixed = TRUE)))
+  expect_true(any(grepl("400", detail, fixed = TRUE)))
+  expect_true(is.na(activity$detail[activity$action == "signed in"]))
+})
+
+test_that("a partial run reads as skipped rows in the activity log, and names the count", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  run_id <- episodic_db_run_start(env$con, "host", "account")
+  episodic_db_run_finish(
+    env$con, run_id, status = "partial",
+    n_cases_supplied = 400, n_cases_deduplicated = 350, n_cases_inserted = 120,
+    n_activity_supplied = 30, n_activity_written = 18, n_activity_skipped = 12
+  )
+
+  activity <- episodic_app_activity_log(env$con, lang = "en")
+  partial <- activity[grepl("skipped", activity$action, fixed = TRUE), ]
+  expect_equal(nrow(partial), 1)
+  expect_match(partial$detail[1], "12")
+  # every status the schema allows must have a translation, not [[key]]
+  expect_false(any(grepl("[[", activity$action, fixed = TRUE)))
+})
+
+test_that("a run recorded before the load counters existed shows no summary rather than blanks", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  run_id <- episodic_db_run_start(env$con, "host", "account")
+  episodic_db_run_finish(env$con, run_id, status = "success")  # counters left NA
+
+  activity <- episodic_app_activity_log(env$con, lang = "en")
+  runs <- activity[activity$is_system, ]
+  expect_true(any(is.na(runs$detail)))
+})
