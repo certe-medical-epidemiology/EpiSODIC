@@ -4,20 +4,6 @@
 
 - Renamed the data interface after epidemiological objects. "Ingestion" is a transmission route, and
   `_source` was wrong once these arguments took data rather than a producer of it. No deprecation shims.
-
-  | Was | Now |
-  |---|---|
-  | `ingest_source =` | `cases =` |
-  | `denominator_source =` | `denominators =` |
-  | `institution_activity_source =` | `institution_activity =` |
-  | `episodic_ingest_columns` | `episodic_case_columns` |
-  | `episodic_ingest_validate_source()` | `episodic_validate_cases()` |
-  | `episodic_ingest_source_synthetic()` | `episodic_synthetic_cases()` |
-  | `episodic_ingest_source_synthetic_calibration()` | `episodic_synthetic_cases_calibration()` |
-  | `episodic_denominator_source_synthetic()` | `episodic_synthetic_denominators()` |
-  | `episodic_synthetic_institution_activity_source()` | `episodic_synthetic_institution_activity()` |
-  | `episodic_resolve_source()` | `episodic_resolve_data()` |
-
 - Internals follow: `R/ingest_*.R` are now `R/cases*.R`, `R/denominators.R`, `R/institution_activity.R`;
   `episodic_dedup()` is `episodic_cases_deduplicate()`; `episodic_ingest_run()` is `episodic_cases_load()`.
   `episodic_synthetic_outbreak_point_source()` keeps its name - a point source is an epidemiological term.
