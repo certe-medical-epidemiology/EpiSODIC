@@ -9,14 +9,19 @@ episodic_ingest_columns
 }
 \description{
 EpiSODIC does not connect to any laboratory or hospital system itself.
-Instead, you write a small R function - an "ingestion source" - that
-returns your own positive-result data as a plain data frame in the shape
-described here, and pass that function to \code{\link[=episodic_run_cron]{episodic_run_cron()}}. This
-keeps EpiSODIC decoupled from any specific laboratory information system:
-whatever your source system is, your function is the only place that
-needs to know about it.
+Instead, you extract and transform your own positive-result data
+beforehand - with whatever tooling you already use - and hand the result
+to \code{\link[=episodic_run_cron]{episodic_run_cron()}} as a plain data frame (a \code{tibble} is equally
+fine) in the shape described here. This keeps EpiSODIC decoupled from
+any specific laboratory information system: whatever your source system
+is, your own extract step is the only place that needs to know about it.
 }
 \details{
+A data set is the normal case, and the one to reach for. If producing
+the data only makes sense at run time - a live database query, for
+instance - you can pass a zero-argument function returning such a data
+set instead; EpiSODIC accepts either (see \code{\link[=episodic_resolve_source]{episodic_resolve_source()}}).
+
 \code{episodic_ingest_columns} lists the required columns, in order:
 \describe{
 \item{\code{source_key}}{A unique identifier for this result, stable across
@@ -40,14 +45,14 @@ clinical context, where available.}
 \item{\code{sex}, \code{age}}{Patient demographics, where available.}
 }
 
-Only confirmed-positive results belong in this feed - there is no
+Only confirmed-positive results belong in this data set - there is no
 outcome column, so do not include negative results here. If you also
 want a denominator (tests performed, for a positivity rate), supply
 that separately as pre-aggregated counts; see \code{R/ingest_denominator.R}.
 
-The only ingestion source shipped with the package is the synthetic
-generator (\code{\link[=episodic_ingest_source_synthetic]{episodic_ingest_source_synthetic()}}) used for the bundled
-demo - a useful template to base your own on.
+The only case data shipped with the package is what the synthetic
+generator (\code{\link[=episodic_ingest_source_synthetic]{episodic_ingest_source_synthetic()}}) returns for the bundled
+demo - a useful template for the shape your own data should have.
 }
 \examples{
 episodic_ingest_columns

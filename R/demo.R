@@ -41,10 +41,12 @@
 #'   `"es"`, `"fr"`, `"de"`, `"zh"`, `"hi"`, or `"ar"`. Defaults to the
 #'   `EPISODIC_LANGUAGE` environment variable, falling back to `"en"` if
 #'   that is unset.
-#' @param ingest_source,denominator_source The data sources to
-#'   generate the demo from, passed on to [episodic_run_cron()]. Default to
-#'   several years of synthetic data; pass a narrower date range (see
-#'   [episodic_ingest_source_synthetic()]) for a quicker demo.
+#' @param ingest_source,denominator_source The data to generate the demo
+#'   from - normally data frames (or tibbles), passed on unchanged to
+#'   [episodic_run_cron()]. Default to several years of synthetic data;
+#'   generate a narrower date range yourself (see
+#'   [episodic_ingest_source_synthetic()]) and pass it here for a quicker
+#'   demo.
 #' @return Invisibly, `db_path`.
 #' @examples
 #' \dontrun{

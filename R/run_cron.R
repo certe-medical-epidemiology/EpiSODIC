@@ -29,12 +29,13 @@
 #'
 #' EpiSODIC never connects to your laboratory system directly. You extract
 #' and transform your own data beforehand, and hand it over as a plain data
-#' frame: `ingest_source` for case data (see [episodic_ingest_columns] for
-#' the required shape), and optionally `denominator_source` and
-#' `institution_activity_source` for testing volume and hospital activity.
-#' If producing the data only makes sense at run time (a live database
-#' query, for instance), pass a zero-argument function that returns it
-#' instead - see [episodic_resolve_source()].
+#' frame or `tibble`: `ingest_source` for case data (see
+#' [episodic_ingest_columns] for the required shape), and optionally
+#' `denominator_source` and `institution_activity_source` for testing
+#' volume and hospital activity. A data set is the normal case; if
+#' producing the data only makes sense at run time (a live database query,
+#' for instance), a zero-argument function returning one is accepted just
+#' as well - see [episodic_resolve_source()].
 #'
 #' The exact detection settings used are recorded with the run (see
 #' [episodic_config_hash()]), so any past result can always be traced back
@@ -43,18 +44,19 @@
 #' @param db_path Path to the EpiSODIC database: a SQLite file (created
 #'   automatically if it does not exist yet) or a MariaDB/MySQL DSN (see
 #'   [episodic_db_dsn_mariadb()]).
-#' @param ingest_source Your laboratory data: a data frame in the shape
-#'   [episodic_ingest_columns] describes, or a zero-argument function that
-#'   returns one. Defaults to the bundled synthetic generator, useful for
-#'   demos and testing but not real surveillance.
+#' @param ingest_source Your laboratory data: a data frame or `tibble` in
+#'   the shape [episodic_ingest_columns] describes, or a zero-argument
+#'   function that returns one. Defaults to the bundled synthetic
+#'   generator, useful for demos and testing but not real surveillance.
 #' @param denominator_source Optional: your testing-volume data, in the
-#'   same data-frame-or-function form as `ingest_source` (see
+#'   same form as `ingest_source` - normally a data set, a function if it
+#'   has to be produced at run time (see
 #'   [episodic_denominator_source_synthetic()] for the expected shape).
 #'   Leave as `NULL` (the default) if you have none to supply - positivity
 #'   panels simply stay blank.
 #' @param institution_activity_source Optional: your hospital patient-days
 #'   data (see [episodic_synthetic_institution_activity_source()] for the
-#'   expected shape), either as a data frame or as a function taking the
+#'   expected shape), normally as a data set, or as a function taking the
 #'   current institutions table. Leave as `NULL` (the default) if you have
 #'   none - detection falls back to raw case counts.
 #' @param episodic_config_path Passed to [episodic_config_resolve()].
@@ -121,14 +123,14 @@ episodic_run_cron <- function(db_path,
 #'
 #' A small helper behind [episodic_run_cron()]'s `ingest_source`,
 #' `denominator_source`, and `institution_activity_source` arguments, each
-#' of which accepts a data frame directly - the normal case - or, if
-#' producing the data only makes sense at run time (a live database query,
-#' for instance), a zero-argument function that returns one.
+#' of which accepts a data frame or `tibble` directly - the normal case -
+#' or, if producing the data only makes sense at run time (a live database
+#' query, for instance), a zero-argument function that returns one.
 #'
-#' @param x A data frame, a function returning one, or `NULL`.
+#' @param x A data frame or `tibble`, a function returning one, or `NULL`.
 #' @param ... Passed to `x` if it is a function; ignored otherwise.
-#' @return `NULL` if `x` is `NULL`; `x` itself if it is a data frame; the
-#'   result of calling `x` otherwise.
+#' @return `NULL` if `x` is `NULL`; `x` itself if it is a data frame (a
+#'   `tibble` included); the result of calling `x` otherwise.
 #' @examples
 #' df <- data.frame(x = 1:3)
 #' identical(episodic_resolve_source(df), df)
@@ -139,7 +141,8 @@ episodic_resolve_source <- function(x, ...) {
   if (is.null(x)) return(NULL)
   if (is.data.frame(x)) return(x)
   if (is.function(x)) return(x(...))
-  stop("must be a function or a data frame, not ", paste(class(x), collapse = "/"), call. = FALSE)
+  stop("data source must be a data frame (or tibble), or a function returning one, not ",
+       paste(class(x), collapse = "/"), call. = FALSE)
 }
 
 #' @keywords internal

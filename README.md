@@ -110,7 +110,8 @@ EpiSODIC never queries a laboratory information system, data warehouse, or
 any other data source itself. That is deliberately your own step, run
 before EpiSODIC: extract from wherever your data lives, transform into the
 shape below, then call `episodic_run_cron()` with the result as a plain
-data frame. This keeps the engine reusable by any laboratory.
+data frame (a tibble works just as well). This keeps the engine reusable
+by any laboratory.
 
 ```r
 cases <- my_extract_and_transform_function()
@@ -122,16 +123,16 @@ episodic_run_cron(
 )
 ```
 
+A data set is the normal case, and what these arguments are written for.
 If producing the data only makes sense at run time (e.g. a live database
-query), pass a zero-argument function instead of a data frame - EpiSODIC
-accepts either.
+query), a zero-argument function returning one is accepted just as well -
+EpiSODIC resolves either.
 
 ### Cases (mandatory)
 
 One row per confirmed-positive laboratory result. This is the complete,
-allow-listed column set (`episodic_ingest_columns`); an ingestion source
-returning any column outside this list, or missing one from it, is
-rejected:
+allow-listed column set (`episodic_ingest_columns`); a data set with any
+column outside this list, or missing one from it, is rejected:
 
 | Column                     | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 |----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -192,8 +193,8 @@ This is realistic to produce for a multiplex PCR panel testing a fixed list
 of targets (your LIS can report "we ran 40 GI panels this week" trivially).
 It is not meaningful for open-ended culture results, where there is no
 closed list of things a negative result could have been - if that is your
-situation, simply never call this, and positivity panels stay blank for
-your streams. See `episodic_denominator_source_synthetic()` for a worked
+situation, simply leave `denominator_source` at `NULL`, and positivity
+panels stay blank for your streams. See `episodic_denominator_source_synthetic()` for a worked
 example.
 
 ### Institution activity (optional)

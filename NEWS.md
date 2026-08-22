@@ -214,6 +214,21 @@
 - The top navigation now shows which screen you are on. The stylesheet
   has always had a rule for it; nothing ever applied the class.
 
+## Connecting your own data
+
+- The documentation now says what the code has done for a while: the data
+  sources you hand to `episodic_run_cron()` - `ingest_source`,
+  `denominator_source`, `institution_activity_source` - are normally a
+  data frame or tibble. The older framing, in which you wrote an
+  "ingestion source" function and passed the function itself, described a
+  form that is still supported but is no longer the one to reach for. A
+  function is now documented for what it is good at: producing the data
+  at run time, e.g. a live database query.
+- `episodic_ingest_validate_source()` accepts either form too, resolving a
+  function before it checks the columns, and says plainly when what it was
+  given is no data set at all rather than reporting every required column
+  as missing. It returns the validated data set invisibly.
+
 # EpiSODIC 0.3.0
 
 - Expanded dashboard translations from Dutch and English to also cover

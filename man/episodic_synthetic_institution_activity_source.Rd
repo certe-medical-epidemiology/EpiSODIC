@@ -12,8 +12,9 @@ episodic_synthetic_institution_activity_source(
 )
 }
 \arguments{
-\item{institutions}{A data frame of institutions (as returned by your
-own institution registry), filtered internally to hospitals only.}
+\item{institutions}{A data frame (or tibble) of institutions (as
+returned by your own institution registry), filtered internally to
+hospitals only.}
 
 \item{start_date, end_date}{The period to generate weekly rows for.}
 
@@ -35,7 +36,8 @@ to raw counts, which is a reasonable default, not a broken one.
 This function is a synthetic example showing the expected shape: weekly
 patient-days per hospital, modelled as bed count times occupancy, with a
 realistic winter peak. Use it as a template for your own data, which you
-pass to \code{\link[=episodic_run_cron]{episodic_run_cron()}} as \code{institution_activity_source}.
+pass to \code{\link[=episodic_run_cron]{episodic_run_cron()}} as \code{institution_activity_source} -
+normally a data frame or \code{tibble}.
 }
 \examples{
 institutions <- data.frame(

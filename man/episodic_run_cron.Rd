@@ -20,20 +20,21 @@ episodic_run_cron(
 automatically if it does not exist yet) or a MariaDB/MySQL DSN (see
 \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}).}
 
-\item{ingest_source}{Your laboratory data: a data frame in the shape
-\link{episodic_ingest_columns} describes, or a zero-argument function that
-returns one. Defaults to the bundled synthetic generator, useful for
-demos and testing but not real surveillance.}
+\item{ingest_source}{Your laboratory data: a data frame or \code{tibble} in
+the shape \link{episodic_ingest_columns} describes, or a zero-argument
+function that returns one. Defaults to the bundled synthetic
+generator, useful for demos and testing but not real surveillance.}
 
 \item{denominator_source}{Optional: your testing-volume data, in the
-same data-frame-or-function form as \code{ingest_source} (see
+same form as \code{ingest_source} - normally a data set, a function if it
+has to be produced at run time (see
 \code{\link[=episodic_denominator_source_synthetic]{episodic_denominator_source_synthetic()}} for the expected shape).
 Leave as \code{NULL} (the default) if you have none to supply - positivity
 panels simply stay blank.}
 
 \item{institution_activity_source}{Optional: your hospital patient-days
 data (see \code{\link[=episodic_synthetic_institution_activity_source]{episodic_synthetic_institution_activity_source()}} for the
-expected shape), either as a data frame or as a function taking the
+expected shape), normally as a data set, or as a function taking the
 current institutions table. Leave as \code{NULL} (the default) if you have
 none - detection falls back to raw case counts.}
 
@@ -60,12 +61,13 @@ failed run is always safe to simply retry.
 \details{
 EpiSODIC never connects to your laboratory system directly. You extract
 and transform your own data beforehand, and hand it over as a plain data
-frame: \code{ingest_source} for case data (see \link{episodic_ingest_columns} for
-the required shape), and optionally \code{denominator_source} and
-\code{institution_activity_source} for testing volume and hospital activity.
-If producing the data only makes sense at run time (a live database
-query, for instance), pass a zero-argument function that returns it
-instead - see \code{\link[=episodic_resolve_source]{episodic_resolve_source()}}.
+frame or \code{tibble}: \code{ingest_source} for case data (see
+\link{episodic_ingest_columns} for the required shape), and optionally
+\code{denominator_source} and \code{institution_activity_source} for testing
+volume and hospital activity. A data set is the normal case; if
+producing the data only makes sense at run time (a live database query,
+for instance), a zero-argument function returning one is accepted just
+as well - see \code{\link[=episodic_resolve_source]{episodic_resolve_source()}}.
 
 The exact detection settings used are recorded with the run (see
 \code{\link[=episodic_config_hash]{episodic_config_hash()}}), so any past result can always be traced back

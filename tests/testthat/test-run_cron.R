@@ -108,13 +108,13 @@ test_that("episodic_run_cron() writes institution activity rows only when instit
   expect_gt(DBI::dbGetQuery(con_with, "SELECT COUNT(*) n FROM episodic_institution_activity")$n, 0)
 })
 
-test_that("episodic_resolve_source() accepts a function, a data frame, or NULL, and errors otherwise", {
+test_that("episodic_resolve_source() accepts a data frame, a function, or NULL, and errors otherwise", {
   df <- data.frame(x = 1)
   expect_null(episodic_resolve_source(NULL))
   expect_identical(episodic_resolve_source(df), df)
   expect_identical(episodic_resolve_source(function() df), df)
   expect_identical(episodic_resolve_source(function(y) y, 5), 5)
-  expect_error(episodic_resolve_source(1), "function or a data frame")
+  expect_error(episodic_resolve_source(1), "data frame")
 })
 
 test_that("episodic_run_cron() accepts a data frame directly for ingest/denominator/institution_activity_source, not only a function", {

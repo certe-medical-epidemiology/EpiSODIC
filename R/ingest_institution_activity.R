@@ -28,7 +28,7 @@
 #' normalisation is a refinement, not a requirement.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param activity A data frame with `institution_key`, `period_start`,
+#' @param activity A data frame (or tibble) with `institution_key`, `period_start`,
 #'   `period_end`, `patient_days` (nullable `admissions`, `n_beds`,
 #'   `source`).
 #' @return Invisibly, the number of rows written (rows whose
@@ -46,7 +46,7 @@ episodic_institution_activity_ingest_run <- function(con, activity) {
   missing_cols <- setdiff(required_cols, names(activity))
   if (length(missing_cols) > 0) {
     stop(
-      "Institution activity source is missing required column(s): ",
+      "Institution activity data is missing required column(s): ",
       paste(missing_cols, collapse = ", "), call. = FALSE
     )
   }
@@ -80,10 +80,12 @@ episodic_institution_activity_ingest_run <- function(con, activity) {
 #' This function is a synthetic example showing the expected shape: weekly
 #' patient-days per hospital, modelled as bed count times occupancy, with a
 #' realistic winter peak. Use it as a template for your own data, which you
-#' pass to [episodic_run_cron()] as `institution_activity_source`.
+#' pass to [episodic_run_cron()] as `institution_activity_source` -
+#' normally a data frame or `tibble`.
 #'
-#' @param institutions A data frame of institutions (as returned by your
-#'   own institution registry), filtered internally to hospitals only.
+#' @param institutions A data frame (or tibble) of institutions (as
+#'   returned by your own institution registry), filtered internally to
+#'   hospitals only.
 #' @param start_date,end_date The period to generate weekly rows for.
 #' @param seed RNG seed, for reproducible demo data.
 #' @return A data frame with `institution_key`, `period_start`,

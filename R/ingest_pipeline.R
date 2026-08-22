@@ -26,15 +26,15 @@
 #' source identifier so a later rename does not fracture the history.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param raw A data frame satisfying the ingestion interface, e.g. from
-#'   [episodic_ingest_source_synthetic()].
+#' @param raw A data frame (or tibble) satisfying the ingestion
+#'   interface, e.g. from [episodic_ingest_source_synthetic()].
 #' @param pathogen_config A data frame from `episodic_db_pathogen_config()`.
 #' @param run_id The `run_id` of the current detection run
 #'   (`episodic_case.first_seen_run`).
 #' @return Invisibly, a list with `n_raw`, `n_deduplicated` and `n_inserted`.
 #'
-#' Not exported: an operator's own transform step supplies a raw source to
-#' [episodic_run_cron()] via `ingest_source`, which calls this internally
+#' Not exported: an operator's own transform step supplies the case data
+#' to [episodic_run_cron()] via `ingest_source`, which calls this internally
 #' with the pieces (`pathogen_config`, `run_id`) only a run in progress has
 #' - never something a caller assembles by hand.
 #' @keywords internal

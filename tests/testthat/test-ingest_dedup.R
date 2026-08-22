@@ -110,7 +110,19 @@ test_that("episodic_ingest_validate_source() rejects duplicate source_key values
   expect_error(episodic_ingest_validate_source(raw), "duplicate")
 })
 
-test_that("episodic_ingest_validate_source() accepts a well-formed source", {
+test_that("episodic_ingest_validate_source() accepts a well-formed data set", {
   raw <- raw_case("K1", "P1", "2025-01-01")
   expect_silent(episodic_ingest_validate_source(raw))
+  expect_identical(episodic_ingest_validate_source(raw), raw)
+})
+
+test_that("episodic_ingest_validate_source() also accepts a function returning the data set", {
+  raw <- raw_case("K1", "P1", "2025-01-01")
+  expect_silent(episodic_ingest_validate_source(function() raw))
+  expect_identical(episodic_ingest_validate_source(function() raw), raw)
+})
+
+test_that("episodic_ingest_validate_source() rejects something that is no data set at all", {
+  expect_error(episodic_ingest_validate_source(1), "data frame")
+  expect_error(episodic_ingest_validate_source(function() 1), "data frame")
 })

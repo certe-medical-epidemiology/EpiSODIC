@@ -28,8 +28,8 @@
 #' individual test result.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param denominators A data frame with columns `pathogen`, `sample_date`,
-#'   `care_line`, `area_code` (nullable) and `n_tests`.
+#' @param denominators A data frame (or tibble) with columns `pathogen`,
+#'   `sample_date`, `care_line`, `area_code` (nullable) and `n_tests`.
 #' @return Invisibly, the number of rows written.
 #'
 #' Not exported: an operator supplies a source to [episodic_run_cron()] via
@@ -41,7 +41,7 @@ episodic_denominator_ingest_run <- function(con, denominators) {
   missing_cols <- setdiff(required_cols, names(denominators))
   if (length(missing_cols) > 0) {
     stop(
-      "Denominator source is missing required column(s): ",
+      "Denominator data is missing required column(s): ",
       paste(missing_cols, collapse = ", "), call. = FALSE
     )
   }
@@ -68,9 +68,9 @@ episodic_denominator_ingest_run <- function(con, denominators) {
 #' This function is a synthetic example showing the expected shape: weekly
 #' counts of a multiplex GI PCR panel that also reports Norovirus. Use it as
 #' a template for your own data, which you pass to [episodic_run_cron()] as
-#' `denominator_source` - a data frame with the same five columns:
-#' `pathogen`, `sample_date` (week start), `care_line`, `area_code` (may be
-#' `NA`), and `n_tests`.
+#' `denominator_source` - a data frame or `tibble` with the same five
+#' columns: `pathogen`, `sample_date` (week start), `care_line`,
+#' `area_code` (may be `NA`), and `n_tests`.
 #'
 #' @param start_date,end_date The period to generate weekly rows for.
 #' @param seed RNG seed, for reproducible demo data.

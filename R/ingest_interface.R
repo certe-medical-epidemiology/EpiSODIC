@@ -20,12 +20,17 @@
 #' Connect your own laboratory data
 #'
 #' EpiSODIC does not connect to any laboratory or hospital system itself.
-#' Instead, you write a small R function - an "ingestion source" - that
-#' returns your own positive-result data as a plain data frame in the shape
-#' described here, and pass that function to [episodic_run_cron()]. This
-#' keeps EpiSODIC decoupled from any specific laboratory information system:
-#' whatever your source system is, your function is the only place that
-#' needs to know about it.
+#' Instead, you extract and transform your own positive-result data
+#' beforehand - with whatever tooling you already use - and hand the result
+#' to [episodic_run_cron()] as a plain data frame (a `tibble` is equally
+#' fine) in the shape described here. This keeps EpiSODIC decoupled from
+#' any specific laboratory information system: whatever your source system
+#' is, your own extract step is the only place that needs to know about it.
+#'
+#' A data set is the normal case, and the one to reach for. If producing
+#' the data only makes sense at run time - a live database query, for
+#' instance - you can pass a zero-argument function returning such a data
+#' set instead; EpiSODIC accepts either (see [episodic_resolve_source()]).
 #'
 #' `episodic_ingest_columns` lists the required columns, in order:
 #' \describe{
@@ -50,14 +55,14 @@
 #'   \item{`sex`, `age`}{Patient demographics, where available.}
 #' }
 #'
-#' Only confirmed-positive results belong in this feed - there is no
+#' Only confirmed-positive results belong in this data set - there is no
 #' outcome column, so do not include negative results here. If you also
 #' want a denominator (tests performed, for a positivity rate), supply
 #' that separately as pre-aggregated counts; see `R/ingest_denominator.R`.
 #'
-#' The only ingestion source shipped with the package is the synthetic
-#' generator ([episodic_ingest_source_synthetic()]) used for the bundled
-#' demo - a useful template to base your own on.
+#' The only case data shipped with the package is what the synthetic
+#' generator ([episodic_ingest_source_synthetic()]) returns for the bundled
+#' demo - a useful template for the shape your own data should have.
 #'
 #' @name episodic_ingest_interface
 NULL
@@ -73,15 +78,18 @@ episodic_ingest_columns <- c(
   "ward", "specialism", "pc", "sex", "age"
 )
 
-#' Check that your ingestion source has the right shape
+#' Check that your case data has the right shape
 #'
-#' Call this on the data frame your own ingestion source function returns,
-#' while developing it, to get a clear error if a column is missing,
-#' misnamed, or duplicated - before handing it to [episodic_run_cron()].
+#' Call this on the data set you intend to hand to [episodic_run_cron()],
+#' while preparing it, to get a clear error if a column is missing,
+#' misnamed, or duplicated - before a scheduled run finds out for you.
 #' See [episodic_ingest_columns] for the required columns.
 #'
-#' @param raw A data frame, as returned by your ingestion source function.
-#' @return `raw`, invisibly, if it is valid. Throws an informative error
+#' @param raw Your case data: a data frame or `tibble` in the shape
+#'   [episodic_ingest_columns] describes, or a zero-argument function
+#'   returning one (resolved with [episodic_resolve_source()] first, so you
+#'   can check either form of `ingest_source`).
+#' @return The validated data set, invisibly. Throws an informative error
 #'   otherwise (a missing required column, an unexpected extra column, or
 #'   duplicate `source_key` values).
 #' @examples
@@ -91,17 +99,24 @@ episodic_ingest_columns <- c(
 #' episodic_ingest_validate_source(raw)
 #' @export
 episodic_ingest_validate_source <- function(raw) {
+  raw <- episodic_resolve_source(raw)
+  if (!is.data.frame(raw)) {
+    stop(
+      "Case data must be a data frame (or tibble), not ",
+      paste(class(raw), collapse = "/"), ".", call. = FALSE
+    )
+  }
   missing_cols <- setdiff(episodic_ingest_columns, names(raw))
   if (length(missing_cols) > 0) {
     stop(
-      "Ingestion source is missing required column(s): ",
+      "Case data is missing required column(s): ",
       paste(missing_cols, collapse = ", "), call. = FALSE
     )
   }
   extra_cols <- setdiff(names(raw), episodic_ingest_columns)
   if (length(extra_cols) > 0) {
     stop(
-      "Ingestion source returned column(s) outside the allow-list: ",
+      "Case data contains column(s) outside the allow-list: ",
       paste(extra_cols, collapse = ", "),
       ". The ingestion interface is an explicit allow-list; a new ",
       "upstream column must not leak in silently.",
@@ -109,7 +124,7 @@ episodic_ingest_validate_source <- function(raw) {
     )
   }
   if (any(duplicated(raw$source_key))) {
-    stop("Ingestion source returned duplicate source_key values.", call. = FALSE)
+    stop("Case data contains duplicate source_key values.", call. = FALSE)
   }
   invisible(raw)
 }

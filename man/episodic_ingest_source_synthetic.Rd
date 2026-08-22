@@ -28,9 +28,8 @@ two deliberately injected outbreaks for the detectors to find - a
 point-source outbreak (a tight cluster of norovirus cases on one ward)
 and a propagated outbreak (community-spread pertussis with case waves
 spaced by the generation interval). This is what powers \code{\link[=episodic_demo]{episodic_demo()}}
-and the package's test suite; it is also a useful reference for what a
-real ingestion source function should return (see
-\link{episodic_ingest_columns}).
+and the package's test suite; it is also a useful reference for what
+your own case data should look like (see \link{episodic_ingest_columns}).
 }
 \examples{
 raw <- episodic_ingest_source_synthetic(

@@ -2,22 +2,25 @@
 % Please edit documentation in R/ingest_interface.R
 \name{episodic_ingest_validate_source}
 \alias{episodic_ingest_validate_source}
-\title{Check that your ingestion source has the right shape}
+\title{Check that your case data has the right shape}
 \usage{
 episodic_ingest_validate_source(raw)
 }
 \arguments{
-\item{raw}{A data frame, as returned by your ingestion source function.}
+\item{raw}{Your case data: a data frame or \code{tibble} in the shape
+\link{episodic_ingest_columns} describes, or a zero-argument function
+returning one (resolved with \code{\link[=episodic_resolve_source]{episodic_resolve_source()}} first, so you
+can check either form of \code{ingest_source}).}
 }
 \value{
-\code{raw}, invisibly, if it is valid. Throws an informative error
+The validated data set, invisibly. Throws an informative error
 otherwise (a missing required column, an unexpected extra column, or
 duplicate \code{source_key} values).
 }
 \description{
-Call this on the data frame your own ingestion source function returns,
-while developing it, to get a clear error if a column is missing,
-misnamed, or duplicated - before handing it to \code{\link[=episodic_run_cron]{episodic_run_cron()}}.
+Call this on the data set you intend to hand to \code{\link[=episodic_run_cron]{episodic_run_cron()}},
+while preparing it, to get a clear error if a column is missing,
+misnamed, or duplicated - before a scheduled run finds out for you.
 See \link{episodic_ingest_columns} for the required columns.
 }
 \examples{

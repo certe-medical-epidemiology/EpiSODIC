@@ -7,20 +7,20 @@
 episodic_resolve_source(x, ...)
 }
 \arguments{
-\item{x}{A data frame, a function returning one, or \code{NULL}.}
+\item{x}{A data frame or \code{tibble}, a function returning one, or \code{NULL}.}
 
 \item{...}{Passed to \code{x} if it is a function; ignored otherwise.}
 }
 \value{
-\code{NULL} if \code{x} is \code{NULL}; \code{x} itself if it is a data frame; the
-result of calling \code{x} otherwise.
+\code{NULL} if \code{x} is \code{NULL}; \code{x} itself if it is a data frame (a
+\code{tibble} included); the result of calling \code{x} otherwise.
 }
 \description{
 A small helper behind \code{\link[=episodic_run_cron]{episodic_run_cron()}}'s \code{ingest_source},
 \code{denominator_source}, and \code{institution_activity_source} arguments, each
-of which accepts a data frame directly - the normal case - or, if
-producing the data only makes sense at run time (a live database query,
-for instance), a zero-argument function that returns one.
+of which accepts a data frame or \code{tibble} directly - the normal case -
+or, if producing the data only makes sense at run time (a live database
+query, for instance), a zero-argument function that returns one.
 }
 \examples{
 df <- data.frame(x = 1:3)

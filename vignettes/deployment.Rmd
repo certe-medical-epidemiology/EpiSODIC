@@ -23,7 +23,7 @@ yours, run before EpiSODIC, so the package stays reusable by any
 laboratory rather than tied to one:
 
 ```r
-cases <- my_extract_and_transform_function()
+cases <- my_extract_and_transform_function()   # a data frame or tibble
 
 episodic_run_cron(
   db_path = "/path/to/episodic.sqlite",
@@ -33,10 +33,10 @@ episodic_run_cron(
 ```
 
 `ingest_source` (and `denominator_source`, `institution_activity_source`)
-is normally a plain data frame, as above. If producing the data only makes
-sense at run time (a live database query, for instance), pass a
-zero-argument function that returns it instead - see
-`episodic_resolve_source()`. The README's "Data format" section documents
+is normally a plain data frame or tibble, as above - that is what these
+arguments are written for. If producing the data only makes sense at run
+time (a live database query, for instance), a zero-argument function
+returning one is accepted just as well - see `episodic_resolve_source()`. The README's "Data format" section documents
 the exact columns each of the four data sources (cases, positivity
 metadata, institution activity, geographic reference data) expects; only
 cases are mandatory.

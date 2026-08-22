@@ -36,10 +36,12 @@ scripting or screenshots.}
 \code{EPISODIC_LANGUAGE} environment variable, falling back to \code{"en"} if
 that is unset.}
 
-\item{ingest_source, denominator_source}{The data sources to
-generate the demo from, passed on to \code{\link[=episodic_run_cron]{episodic_run_cron()}}. Default to
-several years of synthetic data; pass a narrower date range (see
-\code{\link[=episodic_ingest_source_synthetic]{episodic_ingest_source_synthetic()}}) for a quicker demo.}
+\item{ingest_source, denominator_source}{The data to generate the demo
+from - normally data frames (or tibbles), passed on unchanged to
+\code{\link[=episodic_run_cron]{episodic_run_cron()}}. Default to several years of synthetic data;
+generate a narrower date range yourself (see
+\code{\link[=episodic_ingest_source_synthetic]{episodic_ingest_source_synthetic()}}) and pass it here for a quicker
+demo.}
 }
 \value{
 Invisibly, \code{db_path}.
