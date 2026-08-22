@@ -186,9 +186,12 @@ test_that("episodic_detect_farrington() reports a record per alarming week it te
 
   caught_up <- detect(8L)
   expect_true(all(as.character(spike_weeks) %in% caught_up$first_day))
-  expect_true(all(caught_up$n_cases[
-    caught_up$first_day %in% as.character(spike_weeks)
-  ] == 60))
+  expect_true(all(
+    caught_up$n_cases[
+      caught_up$first_day %in% as.character(spike_weeks)
+    ] ==
+      60
+  ))
   expect_true(all(caught_up$detector == "farrington"))
   # every record carries what the effect-size floor is measured against,
   # which is what keeps the merely-significant weeks out of the queue
