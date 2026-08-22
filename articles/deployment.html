@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -78,21 +78,22 @@ warehouse, or any other data source itself - that step is deliberately
 yours, run before EpiSODIC, so the package stays reusable by any
 laboratory rather than tied to one:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu">my_extract_and_transform_function</span><span class="op">(</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu">my_extract_and_transform_function</span><span class="op">(</span><span class="op">)</span>   <span class="co"># a data frame or tibble</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/episodic_run_cron.html">episodic_run_cron</a></span><span class="op">(</span></span>
 <span>  db_path <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span>,</span>
-<span>  ingest_source <span class="op">=</span> <span class="va">cases</span>,</span>
-<span>  denominator_source <span class="op">=</span> <span class="cn">NULL</span>  <span class="co"># optional</span></span>
+<span>  cases <span class="op">=</span> <span class="va">cases</span>,</span>
+<span>  denominators <span class="op">=</span> <span class="cn">NULL</span>  <span class="co"># optional</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><code>ingest_source</code> (and <code>denominator_source</code>,
-<code>institution_activity_source</code>) is normally a plain data
-frame, as above. If producing the data only makes sense at run time (a
-live database query, for instance), pass a zero-argument function that
-returns it instead - see <code><a href="../reference/episodic_resolve_source.html">episodic_resolve_source()</a></code>. The
-README’s “Data format” section documents the exact columns each of the
-four data sources (cases, positivity metadata, institution activity,
-geographic reference data) expects; only cases are mandatory.</p>
+<p><code>cases</code> (and <code>denominators</code>,
+<code>institution_activity</code>) is normally a plain data frame or
+tibble, as above - that is what these arguments are written for. If
+producing the data only makes sense at run time (a live database query,
+for instance), a zero-argument function returning one is accepted just
+as well - see <code><a href="../reference/episodic_resolve_data.html">episodic_resolve_data()</a></code>. The README’s “Data
+format” section documents the exact columns each of the four data
+sources (cases, positivity metadata, institution activity, geographic
+reference data) expects; only cases are mandatory.</p>
 <p>Schedule <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> however your environment
 normally schedules R jobs (cron, a Windows scheduled task, a CI
 pipeline) - there is nothing EpiSODIC-specific about the scheduling
@@ -217,7 +218,7 @@ rather than failing when it is absent:</p>
 </tbody>
 </table>
 <p><code>AMR</code> is a hard dependency, not an optional integration:
-episode deduplication (<code>episodic_dedup()</code>) calls
+episode deduplication (<code>episodic_cases_deduplicate()</code>) calls
 <code><a href="https://amr-for-r.org/reference/get_episode.html" class="external-link">AMR::get_episode()</a></code> directly, and pathogen-name
 italicisation (<code><a href="../reference/episodic_ui_italicise_taxon.html">episodic_ui_italicise_taxon()</a></code>) reads
 <code><a href="https://amr-for-r.org/reference/microorganisms.html" class="external-link">AMR::microorganisms</a></code>. There is no fallback for either, by

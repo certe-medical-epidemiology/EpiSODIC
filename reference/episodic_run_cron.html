@@ -19,7 +19,7 @@ failed run is always safe to simply retry."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,9 +65,9 @@ failed run is always safe to simply retry.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">episodic_run_cron</span><span class="op">(</span></span>
 <span>  <span class="va">db_path</span>,</span>
-<span>  ingest_source <span class="op">=</span> <span class="va">episodic_ingest_source_synthetic</span>,</span>
-<span>  denominator_source <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  institution_activity_source <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  cases <span class="op">=</span> <span class="va">episodic_synthetic_cases</span>,</span>
+<span>  denominators <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  institution_activity <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  episodic_config_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"EPISODIC_CONFIG"</span>, unset <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span>,</span>
 <span>  host <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.info.html" class="external-link">Sys.info</a></span><span class="op">(</span><span class="op">)</span><span class="op">[[</span><span class="st">"nodename"</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>  account <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.info.html" class="external-link">Sys.info</a></span><span class="op">(</span><span class="op">)</span><span class="op">[[</span><span class="st">"user"</span><span class="op">]</span><span class="op">]</span>,</span>
@@ -85,25 +85,25 @@ automatically if it does not exist yet) or a MariaDB/MySQL DSN (see
 <code><a href="episodic_db_dsn_mariadb.html">episodic_db_dsn_mariadb()</a></code>).</p></dd>
 
 
-<dt id="arg-ingest-source">ingest_source<a class="anchor" aria-label="anchor" href="#arg-ingest-source"></a></dt>
-<dd><p>Your laboratory data: a data frame in the shape
-<a href="episodic_ingest_interface.html">episodic_ingest_columns</a> describes, or a zero-argument function that
-returns one. Defaults to the bundled synthetic generator, useful for
-demos and testing but not real surveillance.</p></dd>
+<dt id="arg-cases">cases<a class="anchor" aria-label="anchor" href="#arg-cases"></a></dt>
+<dd><p>Your laboratory data: a data frame or <code>tibble</code> in the
+shape <a href="episodic_case_data.html">episodic_case_data</a> describes, or a zero-argument function
+that returns one. Defaults to the bundled synthetic generator, useful
+for demos and testing but not real surveillance.</p></dd>
 
 
-<dt id="arg-denominator-source">denominator_source<a class="anchor" aria-label="anchor" href="#arg-denominator-source"></a></dt>
-<dd><p>Optional: your testing-volume data, in the
-same data-frame-or-function form as <code>ingest_source</code> (see
-<code><a href="episodic_denominator_source_synthetic.html">episodic_denominator_source_synthetic()</a></code> for the expected shape).
-Leave as <code>NULL</code> (the default) if you have none to supply - positivity
-panels simply stay blank.</p></dd>
+<dt id="arg-denominators">denominators<a class="anchor" aria-label="anchor" href="#arg-denominators"></a></dt>
+<dd><p>Optional: your testing-volume data, in the same
+form as <code>cases</code> - normally a data set, a function if it has to be
+produced at run time (see <code><a href="episodic_synthetic_denominators.html">episodic_synthetic_denominators()</a></code> for the
+expected shape). Leave as <code>NULL</code> (the default) if you have none to
+supply - positivity panels simply stay blank.</p></dd>
 
 
-<dt id="arg-institution-activity-source">institution_activity_source<a class="anchor" aria-label="anchor" href="#arg-institution-activity-source"></a></dt>
+<dt id="arg-institution-activity">institution_activity<a class="anchor" aria-label="anchor" href="#arg-institution-activity"></a></dt>
 <dd><p>Optional: your hospital patient-days
-data (see <code><a href="episodic_synthetic_institution_activity_source.html">episodic_synthetic_institution_activity_source()</a></code> for the
-expected shape), either as a data frame or as a function taking the
+data (see <code><a href="episodic_synthetic_institution_activity.html">episodic_synthetic_institution_activity()</a></code> for the
+expected shape), normally as a data set, or as a function taking the
 current institutions table. Leave as <code>NULL</code> (the default) if you have
 none - detection falls back to raw case counts.</p></dd>
 
@@ -124,31 +124,44 @@ date; mainly useful to override in tests.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Invisibly, the <code>run_id</code> of the completed run.</p>
+    <p>Invisibly, the <code>run_id</code> of the completed run. The run's row in
+<code>episodic_detection_run</code> holds its status, the per-feed load counts,
+and <code>error_text</code> if it failed.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>EpiSODIC never connects to your laboratory system directly. You extract
 and transform your own data beforehand, and hand it over as a plain data
-frame: <code>ingest_source</code> for case data (see <a href="episodic_ingest_interface.html">episodic_ingest_columns</a> for
-the required shape), and optionally <code>denominator_source</code> and
-<code>institution_activity_source</code> for testing volume and hospital activity.
-If producing the data only makes sense at run time (a live database
-query, for instance), pass a zero-argument function that returns it
-instead - see <code><a href="episodic_resolve_source.html">episodic_resolve_source()</a></code>.</p>
+frame or <code>tibble</code>: <code>cases</code> for the laboratory results themselves (see
+<a href="episodic_case_data.html">episodic_case_data</a> for the required columns and their allowed
+values), and optionally <code>denominators</code> and <code>institution_activity</code> for
+testing volume and hospital activity. A data set is the normal case; if
+producing the data only makes sense at run time (a live database query,
+for instance), a zero-argument function returning one is accepted just
+as well - see <code><a href="episodic_resolve_data.html">episodic_resolve_data()</a></code>.</p>
 <p>The exact detection settings used are recorded with the run (see
 <code><a href="episodic_config_hash.html">episodic_config_hash()</a></code>), so any past result can always be traced back
 to the configuration that produced it.</p>
+<p>So is what each feed delivered. Structural problems - a missing column,
+a value outside the allowed set, a date that does not parse - fail the
+run before anything is written, naming the column and the values. Rows
+that are merely unmatched are counted rather than dropped in silence:
+institution activity whose <code>institution_key</code> matches no known
+institution is skipped with a warning, its count recorded, and the run
+finishes <code>"partial"</code> instead of <code>"success"</code>. Both are complete runs the
+dashboard reads from; <code>"partial"</code> says go and look at why rows were
+skipped. <code>episodic_detection_run</code> carries the counts (<code>n_cases_supplied</code>,
+<code>n_cases_inserted</code>, <code>n_activity_skipped</code>, and the rest).</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">db_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".sqlite"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu"><a href="episodic_ingest_source_synthetic.html">episodic_ingest_source_synthetic</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu"><a href="episodic_synthetic_cases.html">episodic_synthetic_cases</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  start_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2025-01-01"</span><span class="op">)</span>, end_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2025-03-31"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">run_id</span> <span class="op">&lt;-</span> <span class="fu">episodic_run_cron</span><span class="op">(</span><span class="va">db_path</span>, ingest_source <span class="op">=</span> <span class="va">cases</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">run_id</span> <span class="op">&lt;-</span> <span class="fu">episodic_run_cron</span><span class="op">(</span><span class="va">db_path</span>, cases <span class="op">=</span> <span class="va">cases</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.remove</a></span><span class="op">(</span><span class="va">db_path</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>

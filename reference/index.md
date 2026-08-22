@@ -17,7 +17,7 @@ the dashboard for your board to review the results.
   : Run one surveillance detection cycle
 - [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md)
   : Open the EpiSODIC dashboard
-- [`episodic_resolve_source()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_resolve_source.md)
+- [`episodic_resolve_data()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_resolve_data.md)
   : Resolve a data source argument to a data frame
 
 ## Connect your own data
@@ -25,17 +25,20 @@ the dashboard for your board to review the results.
 How to plug in your laboratory results and, optionally, testing volume
 and hospital activity data.
 
-- [`episodic_ingest_columns`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ingest_interface.md)
+- [`episodic_case_columns`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
+  [`episodic_care_lines`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
+  [`episodic_institution_types`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
+  [`episodic_sex_codes`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
   : Connect your own laboratory data
-- [`episodic_ingest_validate_source()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ingest_validate_source.md)
-  : Check that your ingestion source has the right shape
-- [`episodic_ingest_source_synthetic()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ingest_source_synthetic.md)
+- [`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
+  : Check that your case data has the right shape
+- [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
   : Generate synthetic outbreak data
-- [`episodic_ingest_source_synthetic_calibration()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ingest_source_synthetic_calibration.md)
+- [`episodic_synthetic_cases_calibration()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases_calibration.md)
   : Generate synthetic data at tunable cluster volume
-- [`episodic_denominator_source_synthetic()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_denominator_source_synthetic.md)
+- [`episodic_synthetic_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_denominators.md)
   : Add a testing-volume (positivity) feed
-- [`episodic_synthetic_institution_activity_source()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity_source.md)
+- [`episodic_synthetic_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity.md)
   : Add a hospital activity feed (patient-days)
 
 ## Set up a database

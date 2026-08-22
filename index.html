@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,7 +58,7 @@
 <div class="page-header"><h1 id="episodic-epidemiological-signal-observation-detection-identification-and-classification">EpiSODIC: Epidemiological Signal Observation, Detection, Identification, and Classification<a class="anchor" aria-label="anchor" href="#episodic-epidemiological-signal-observation-detection-identification-and-classification"></a>
 </h1></div>
 <p><a href="https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></p>
-<p>EpiSODIC is an R package: an outbreak cluster detection and assessment system for infectious disease epidemiologists. It ingests laboratory-confirmed infections, detects statistical and rule-based aberrations, reconciles them into persistent clusters, and gives a small board of epidemiologists a dossier to assess each one, with a full audit trail and outbreak reports for clinical colleagues (e.g. clinical microbiologists) and infection prevention nurses.</p>
+<p>EpiSODIC is an R package: an outbreak cluster detection and assessment system for infectious disease epidemiologists. It reads laboratory-confirmed infections, detects statistical and rule-based aberrations, reconciles them into persistent clusters, and gives a small board of epidemiologists a dossier to assess each one, with a full audit trail and outbreak reports for clinical colleagues (e.g. clinical microbiologists) and infection prevention nurses.</p>
 <p>The dashboard and its outbreak reports are available in Dutch, English, Spanish, French, German, Mandarin Chinese, Hindi, and (Modern Standard) Arabic.</p>
 <p>The engine and the instance it runs against are kept separate: this repository is open-source software with no data and no site-specific configuration.</p>
 <!--
@@ -108,89 +108,110 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <div class="section level2">
 <h2 id="data-format">Data format<a class="anchor" aria-label="anchor" href="#data-format"></a>
 </h2>
-<p>EpiSODIC never queries a laboratory information system, data warehouse, or any other data source itself. That is deliberately your own step, run before EpiSODIC: extract from wherever your data lives, transform into the shape below, then call <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> with the result as a plain data frame. This keeps the engine reusable by any laboratory.</p>
+<p>EpiSODIC never queries a laboratory information system, data warehouse, or any other data source itself. That is deliberately your own step, run before EpiSODIC: extract from wherever your data lives, transform into the shape below, then call <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> with the result as a plain data frame (a tibble works just as well). This keeps the engine reusable by any laboratory.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu">my_extract_and_transform_function</span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/episodic_run_cron.html">episodic_run_cron</a></span><span class="op">(</span></span>
 <span>  db_path <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span>,</span>
-<span>  ingest_source <span class="op">=</span> <span class="va">cases</span>,</span>
-<span>  denominator_source <span class="op">=</span> <span class="cn">NULL</span>  <span class="co"># optional, see "Positivity metadata" below</span></span>
+<span>  cases <span class="op">=</span> <span class="va">cases</span>,</span>
+<span>  denominators <span class="op">=</span> <span class="cn">NULL</span>  <span class="co"># optional, see "Positivity metadata" below</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>If producing the data only makes sense at run time (e.g. a live database query), pass a zero-argument function instead of a data frame - EpiSODIC accepts either.</p>
+<p>A data set is the normal case, and what these arguments are written for. If producing the data only makes sense at run time (e.g. a live database query), a zero-argument function returning one is accepted just as well - EpiSODIC resolves either.</p>
 <div class="section level3">
 <h3 id="cases-mandatory">Cases (mandatory)<a class="anchor" aria-label="anchor" href="#cases-mandatory"></a>
 </h3>
-<p>One row per confirmed-positive laboratory result. This is the complete, allow-listed column set (<code>episodic_ingest_columns</code>); an ingestion source returning any column outside this list, or missing one from it, is rejected:</p>
+<p>One row per confirmed-positive laboratory result. This is the complete, allow-listed column set (<code>episodic_case_columns</code>); a data set with any column outside this list, or missing one from it, is rejected. Run <code><a href="reference/episodic_validate_cases.html">episodic_validate_cases()</a></code> on your extract to check all of this - columns, allowed values, dates, and <code>source_key</code> uniqueness - before you schedule anything. The three fixed value sets are available as <code>episodic_care_lines</code>, <code>episodic_institution_types</code> and <code>episodic_sex_codes</code>, so your transform step can map onto them directly:</p>
 <table class="table">
 <colgroup>
-<col width="5%">
-<col width="94%">
+<col width="33%">
+<col width="33%">
+<col width="33%">
 </colgroup>
 <thead><tr>
 <th>Column</th>
+<th>Type and allowed values</th>
 <th>Meaning</th>
 </tr></thead>
 <tbody>
 <tr>
 <td><code>source_key</code></td>
-<td>A unique identifier for the row in your own source system, so a later re-ingest of the same extract cannot create duplicate cases.</td>
+<td>character, required, unique</td>
+<td>A unique identifier for the row in your own source system, so re-running the same extract later cannot create duplicate cases.</td>
 </tr>
 <tr>
 <td><code>patient_key</code></td>
+<td>character, required</td>
 <td>A stable, pseudonymised patient identifier. This is what deduplication and episode grouping key on: without it, EpiSODIC cannot tell that two isolates belong to the same patient, and every isolate would be treated as its own case. Never displayed as-is in the interface.</td>
 </tr>
 <tr>
 <td><code>sample_date</code></td>
+<td>
+<code>Date</code> or <code>"YYYY-MM-DD"</code>, required</td>
 <td>The anchor date every detector, trend, and report is built against. If your system falls back to a receipt date when sample date is unfilled, that fallback should already have happened before this row reaches EpiSODIC.</td>
 </tr>
 <tr>
 <td><code>receipt_date</code></td>
+<td>
+<code>Date</code> or <code>"YYYY-MM-DD"</code>, <code>NA</code> allowed</td>
 <td>When the result was received. Stored for provenance/audit, kept separate from <code>sample_date</code> - EpiSODIC deliberately does not use it to measure reporting delay, since a lab’s own receipt-date field can itself silently be a stand-in for a missing sample date; reporting completeness is instead measured empirically, from how a stream’s case counts change across successive detection runs.</td>
 </tr>
 <tr>
 <td><code>pathogen</code></td>
+<td>character, required, free text</td>
 <td>The pathogen as your lab reports it, as free text. <strong>Not</strong> resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying isolate can appear more than once under different <code>pathogen</code> values when that is epidemiologically useful - an ETEC isolate reported as both <code>"Escherichia coli"</code> and <code>"ETEC"</code>, so each is watched on its own. This is your transform step’s decision, not EpiSODIC’s.</td>
 </tr>
 <tr>
 <td><code>care_line</code></td>
 <td>
-<code>first</code>, <code>second</code>, <code>other</code>, or <code>unknown</code> - which part of the health system the case came from.</td>
+<code>first</code>, <code>second</code>, <code>other</code>, <code>unknown</code> - <code>NA</code> allowed</td>
+<td>Which part of the health system the case came from: <code>first</code> is primary care, <code>second</code> secondary care. <code>NA</code> is read as <code>unknown</code> and stored that way - an empty value, an R <code>NA</code> and a database <code>NULL</code> all mean the same thing here.</td>
 </tr>
 <tr>
 <td><code>institution_key</code></td>
+<td>character, required</td>
 <td>A stable identifier for the institution, hashed internally so a later rename does not fracture history.</td>
 </tr>
 <tr>
 <td><code>institution_display_name</code></td>
+<td>character, required</td>
 <td>The human-readable name shown in the interface.</td>
 </tr>
 <tr>
 <td><code>institution_type</code></td>
-<td>One of <code>hospital</code>, <code>ltc_institution</code>, <code>gp_municipality</code>, <code>ooh_service</code>, <code>other</code>.</td>
+<td>
+<code>hospital</code>, <code>ltc_institution</code>, <code>gp_municipality</code>, <code>ooh_service</code>, <code>other</code> - required</td>
+<td>How the institution is handled downstream; see the list below the table.</td>
 </tr>
 <tr>
 <td><code>municipality</code></td>
+<td>character, <code>NA</code> allowed</td>
 <td>The institution’s municipality, used for <code>gp_municipality</code>-type rows (see below) and as a coarse geographic fallback.</td>
 </tr>
 <tr>
 <td><code>ward</code></td>
+<td>character, <code>NA</code> allowed</td>
 <td>Only meaningful (and only used) for hospitals: this is what the <code>same_place</code> detector watches at ward level.</td>
 </tr>
 <tr>
 <td><code>specialism</code></td>
+<td>character, <code>NA</code> allowed</td>
 <td>The treating specialism, shown on the line list for context; not itself a detection dimension.</td>
 </tr>
 <tr>
 <td><code>pc</code></td>
+<td>character, <code>NA</code> allowed</td>
 <td>The patient’s postcode (or equivalent - see “Geographic reference data” below for how coarse or fine this can be). Drives the geography panel and the choropleth, and the concentration measure (“how localised is this cluster”) that feeds the priority score.</td>
 </tr>
 <tr>
 <td><code>sex</code></td>
+<td>
+<code>M</code>, <code>F</code>, <code>U</code> - <code>NA</code> allowed</td>
 <td>The patient’s sex. Feeds the demography panel’s age/sex pyramid, one of the interpretation engine’s own evidence dimensions (a cluster’s demography shifting from an organisation’s usual baseline is itself a signal worth surfacing).</td>
 </tr>
 <tr>
 <td><code>age</code></td>
+<td>integer (whole years), <code>NA</code> allowed</td>
 <td>The patient’s age at sample date. Same role as <code>sex</code>: demography panel and interpretation, not a detection input.</td>
 </tr>
 </tbody>
@@ -246,7 +267,7 @@ they also render on the CRAN page), regenerated against episodic_demo().
 </tr>
 </tbody>
 </table>
-<p>This is realistic to produce for a multiplex PCR panel testing a fixed list of targets (your LIS can report “we ran 40 GI panels this week” trivially). It is not meaningful for open-ended culture results, where there is no closed list of things a negative result could have been - if that is your situation, simply never call this, and positivity panels stay blank for your streams. See <code><a href="reference/episodic_denominator_source_synthetic.html">episodic_denominator_source_synthetic()</a></code> for a worked example.</p>
+<p>This is realistic to produce for a multiplex PCR panel testing a fixed list of targets (your LIS can report “we ran 40 GI panels this week” trivially). It is not meaningful for open-ended culture results, where there is no closed list of things a negative result could have been - if that is your situation, simply leave <code>denominators</code> at <code>NULL</code>, and positivity panels stay blank for your streams. See <code><a href="reference/episodic_synthetic_denominators.html">episodic_synthetic_denominators()</a></code> for a worked example.</p>
 </div>
 <div class="section level3">
 <h3 id="institution-activity-optional">Institution activity (optional)<a class="anchor" aria-label="anchor" href="#institution-activity-optional"></a>
@@ -278,7 +299,7 @@ they also render on the CRAN page), regenerated against episodic_demo().
 </tr>
 </tbody>
 </table>
-<p>Rows whose <code>institution_key</code> does not match a known institution are skipped, not an error - an activity feed and a case feed need not be perfectly synchronised. See <code><a href="reference/episodic_synthetic_institution_activity_source.html">episodic_synthetic_institution_activity_source()</a></code> for a worked example. There is no ward-level (L1) equivalent in the schema, so L1 detection is never normalised, only L2.</p>
+<p>Rows whose <code>institution_key</code> does not match a known institution are skipped, not an error - an activity feed and a case feed need not be perfectly synchronised. Skipped rows are never silent, though: the load warns and names the unmatched keys, the count is recorded against the run, and the run finishes <code>partial</code> rather than <code>success</code> (see “What a run reports” below). See <code><a href="reference/episodic_synthetic_institution_activity.html">episodic_synthetic_institution_activity()</a></code> for a worked example. There is no ward-level (L1) equivalent in the schema, so L1 detection is never normalised, only L2.</p>
 </div>
 <div class="section level3">
 <h3 id="geographic-reference-data-optional">Geographic reference data (optional)<a class="anchor" aria-label="anchor" href="#geographic-reference-data-optional"></a>
@@ -291,6 +312,38 @@ they also render on the CRAN page), regenerated against episodic_demo().
 </h3>
 <p><code><a href="reference/episodic_report_render.html">episodic_report_render()</a></code> renders <code>inst/report/cluster_report.qmd</code> (embedded as self-contained HTML via Quarto) unless <code>EPISODIC_QUARTO_REPORT</code> points at an operator’s own <code>.qmd</code> file, in which case that is used instead - for an organisation that wants its own letterhead, section order, or house style. A custom template only needs to <code>readRDS(params$data_path)</code> and read from the same list the shipped one does (<code>obj</code>, <code>epi_curve</code>, <code>trend</code>, <code>linelist</code>, <code>timeline</code>, <code>similar</code>, <code>small_count_threshold</code>, <code>rendered_at</code>, <code>lang</code>, <code>package_version</code>); see the shipped template for the exact shape, including how it calls <code>episodic_tr(..., lang = d$lang)</code> for a bilingual report.</p>
 </div>
+</div>
+<div class="section level2">
+<h2 id="what-a-run-reports">What a run reports<a class="anchor" aria-label="anchor" href="#what-a-run-reports"></a>
+</h2>
+<p>Every <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> call records what each feed actually delivered, so “did last night’s extract arrive in full?” is answerable without re-running anything. <code>episodic_detection_run</code> carries <code>n_cases_supplied</code>, <code>n_cases_deduplicated</code>, <code>n_cases_inserted</code>, <code>n_denominators_written</code>, <code>n_activity_supplied</code>, <code>n_activity_written</code> and <code>n_activity_skipped</code> alongside the detection counts, and the dashboard’s Activity screen shows them under each run.</p>
+<p>The run’s <code>status</code> distinguishes three outcomes:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Status</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>success</code></td>
+<td>Everything supplied was loaded.</td>
+</tr>
+<tr>
+<td><code>partial</code></td>
+<td>The run completed and its detections are valid, but rows of an optional feed were skipped - today that means institution activity whose <code>institution_key</code> matched no known institution.</td>
+</tr>
+<tr>
+<td><code>failed</code></td>
+<td>Nothing was written. The whole run is one transaction, so a failure leaves no partial state and is always safe to retry; <code>error_text</code> holds the reason.</td>
+</tr>
+</tbody>
+</table>
+<p>The distinction that matters: <strong>structural problems fail the run, and row-level facts are counted and reported, but never silently dropped.</strong> A malformed feed - a missing column, a value outside the allowed set, a date that does not parse, a duplicate <code>source_key</code> - stops the run before anything is written, and says which column and which values were wrong. A run that quietly loaded 10% of your patient-days is the one outcome the design refuses to report as green.</p>
+<p>Both <code>success</code> and <code>partial</code> are usable runs, and the dashboard reads from the most recent of either.</p>
 </div>
 <div class="section level2">
 <h2 id="database-backend">Database backend<a class="anchor" aria-label="anchor" href="#database-backend"></a>

@@ -5,7 +5,7 @@
 EpiSODIC (**Epi**demiological **S**ignal **O**bservation, **D**etection,
 **I**dentification, and **C**lassification) is an R package: an outbreak
 cluster detection and assessment system for infectious disease
-epidemiologists. It ingests laboratory-confirmed infections, runs
+epidemiologists. It reads laboratory-confirmed infections, runs
 statistical and rule-based detectors over them, reconciles raised
 signals into persistent clusters across repeated runs, and gives a small
 board of epidemiologists a dossier to formally assess each one - with a
@@ -33,9 +33,11 @@ Two entry points, one database:
 ``` r
 
 # The cron entry point - typically scheduled, e.g. nightly
+cases <- my_extract_and_transform_function()   # a data frame or tibble
+
 episodic_run_cron(
   db_path = "/path/to/episodic.sqlite",
-  ingest_source = my_extract_and_transform_function()
+  cases = cases
 )
 
 # The interactive entry point - a Shiny app, read-only for anonymous
@@ -44,9 +46,9 @@ episodic_run_app(db_path = "/path/to/episodic.sqlite")
 ```
 
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
-does the expensive work: ingestion, stream enumeration, detection,
-reconciliation, all inside one transaction, so a partially failed run
-leaves no partial state and a retry is always safe.
+does the expensive work: loading case data, stream enumeration,
+detection, reconciliation, all inside one transaction, so a partially
+failed run leaves no partial state and a retry is always safe.
 [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md)
 only ever performs cheap reads against already-computed results, plus a
 small set of insert-only write actions (classify, close, mute) gated

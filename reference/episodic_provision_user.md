@@ -62,7 +62,8 @@ con <- episodic_db_create(db_path)
 DBI::dbDisconnect(con)
 
 user_id <- episodic_provision_user(
-  db_path, username = "jdoe", full_name = "Jane Doe",
+  db_path,
+  username = "jdoe", full_name = "Jane Doe",
   email = "jane@example.org", password = "temporary-password"
 )
 user_id

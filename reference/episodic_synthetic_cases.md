@@ -1,0 +1,81 @@
+# Generate synthetic outbreak data
+
+Produces several years of realistic laboratory surveillance data for a
+fictional set of hospitals, long-term care institutions, and GP
+practices: seasonal baseline incidence for eight common pathogens, plus
+two deliberately injected outbreaks for the detectors to find - a
+point-source outbreak (a tight cluster of norovirus cases on one ward)
+and a propagated outbreak (community-spread pertussis with case waves
+spaced by the generation interval). This is what powers
+[`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+and the package's test suite; it is also a useful reference for what
+your own case data should look like (see
+[episodic_case_columns](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)).
+
+## Usage
+
+``` r
+episodic_synthetic_cases(
+  start_date = as.Date("2021-01-01"),
+  end_date = as.Date("2025-12-31"),
+  seed = 1
+)
+```
+
+## Arguments
+
+- start_date:
+
+  First sample date to generate, a `Date`.
+
+- end_date:
+
+  Last sample date to generate, a `Date`.
+
+- seed:
+
+  RNG seed, for reproducible demo data.
+
+## Value
+
+A data frame satisfying
+[`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md).
+
+## Examples
+
+``` r
+cases <- episodic_synthetic_cases(
+  start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+)
+nrow(cases)
+#> [1] 622
+head(cases)
+#>                           patient_key sample_date receipt_date
+#> 1                PT-Norovirus-4817862  2025-01-01   2025-01-02
+#> 2                PT-Norovirus-3172321  2025-01-01   2025-01-01
+#> 3            PT-Campylobacter-4699847  2025-01-01   2025-01-02
+#> 4            PT-Campylobacter-8657051  2025-01-01   2025-01-02
+#> 5               PT-Salmonella-1128334  2025-01-01   2025-01-01
+#> 6 PT-Clostridioides.difficile-5206854  2025-01-01   2025-01-01
+#>                   pathogen care_line institution_key institution_display_name
+#> 1                Norovirus    second          LTC-12           Zorgcentrum 12
+#> 2                Norovirus    second         HOSP-05             Ziekenhuis E
+#> 3            Campylobacter     first           GP-03                    Assen
+#> 4            Campylobacter    second          LTC-10           Zorgcentrum 10
+#> 5               Salmonella    second         HOSP-08             Ziekenhuis H
+#> 6 Clostridioides difficile     first           GP-08                 Drachten
+#>   institution_type municipality      ward          specialism   pc sex age
+#> 1  ltc_institution         <NA>      <NA>                <NA> 9403   F  10
+#> 2         hospital         <NA> Geriatrie Klinische geriatrie 7656   F  66
+#> 3  gp_municipality        Assen      <NA>                <NA> 9873   F  73
+#> 4  ltc_institution         <NA>      <NA>                <NA> 9676   F  36
+#> 5         hospital         <NA>        IC           Chirurgie 9877   F  57
+#> 6  gp_municipality     Drachten      <NA>                <NA> 9939   F  44
+#>     source_key
+#> 1 SYN-00000001
+#> 2 SYN-00000002
+#> 3 SYN-00000336
+#> 4 SYN-00000337
+#> 5 SYN-00000390
+#> 6 SYN-00000504
+```

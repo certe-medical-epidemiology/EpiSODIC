@@ -14,21 +14,21 @@ laboratory rather than tied to one:
 
 ``` r
 
-cases <- my_extract_and_transform_function()
+cases <- my_extract_and_transform_function()   # a data frame or tibble
 
 episodic_run_cron(
   db_path = "/path/to/episodic.sqlite",
-  ingest_source = cases,
-  denominator_source = NULL  # optional
+  cases = cases,
+  denominators = NULL  # optional
 )
 ```
 
-`ingest_source` (and `denominator_source`,
-`institution_activity_source`) is normally a plain data frame, as above.
-If producing the data only makes sense at run time (a live database
-query, for instance), pass a zero-argument function that returns it
-instead - see
-[`episodic_resolve_source()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_resolve_source.md).
+`cases` (and `denominators`, `institution_activity`) is normally a plain
+data frame or tibble, as above - that is what these arguments are
+written for. If producing the data only makes sense at run time (a live
+database query, for instance), a zero-argument function returning one is
+accepted just as well - see
+[`episodic_resolve_data()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_resolve_data.md).
 The README’s “Data format” section documents the exact columns each of
 the four data sources (cases, positivity metadata, institution activity,
 geographic reference data) expects; only cases are mandatory.
@@ -131,7 +131,7 @@ rather than failing when it is absent:
 | Choropleth map | `sf` + geographic reference data | Plain bar breakdown by PC value |
 
 `AMR` is a hard dependency, not an optional integration: episode
-deduplication (`episodic_dedup()`) calls
+deduplication (`episodic_cases_deduplicate()`) calls
 [`AMR::get_episode()`](https://amr-for-r.org/reference/get_episode.html)
 directly, and pathogen-name italicisation
 ([`episodic_ui_italicise_taxon()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ui_italicise_taxon.md))

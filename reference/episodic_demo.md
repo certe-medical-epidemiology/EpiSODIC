@@ -18,8 +18,8 @@ episodic_demo(
   password = "episodic-demo",
   launch = TRUE,
   lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  ingest_source = episodic_ingest_source_synthetic,
-  denominator_source = episodic_denominator_source_synthetic
+  cases = episodic_synthetic_cases,
+  denominators = episodic_synthetic_denominators
 )
 ```
 
@@ -51,14 +51,15 @@ episodic_demo(
   `EPISODIC_LANGUAGE` environment variable, falling back to `"en"` if
   that is unset.
 
-- ingest_source, denominator_source:
+- cases, denominators:
 
-  The data sources to generate the demo from, passed on to
+  The data to generate the demo from - normally data frames (or
+  tibbles), passed on unchanged to
   [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md).
-  Default to several years of synthetic data; pass a narrower date range
-  (see
-  [`episodic_ingest_source_synthetic()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ingest_source_synthetic.md))
-  for a quicker demo.
+  Default to several years of synthetic data; generate a narrower date
+  range yourself (see
+  [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md))
+  and pass it here for a quicker demo.
 
 ## Value
 
@@ -75,10 +76,10 @@ episodic_demo()
 
 # \donttest{
 # non-interactive: populate a database and stop there, e.g. for scripting
-cases <- episodic_ingest_source_synthetic(
+cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
-db_path <- episodic_demo(launch = FALSE, ingest_source = cases, denominator_source = NULL)
+db_path <- episodic_demo(launch = FALSE, cases = cases, denominators = NULL)
 #> EpiSODIC demo account - username: demo, password: episodic-demo
 file.remove(db_path)
 #> [1] TRUE

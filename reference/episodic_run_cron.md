@@ -13,9 +13,9 @@ run is always safe to simply retry.
 ``` r
 episodic_run_cron(
   db_path,
-  ingest_source = episodic_ingest_source_synthetic,
-  denominator_source = NULL,
-  institution_activity_source = NULL,
+  cases = episodic_synthetic_cases,
+  denominators = NULL,
+  institution_activity = NULL,
   episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
   host = Sys.info()[["nodename"]],
   account = Sys.info()[["user"]],
@@ -31,27 +31,28 @@ episodic_run_cron(
   it does not exist yet) or a MariaDB/MySQL DSN (see
   [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
 
-- ingest_source:
+- cases:
 
-  Your laboratory data: a data frame in the shape
-  [episodic_ingest_columns](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ingest_interface.md)
+  Your laboratory data: a data frame or `tibble` in the shape
+  [episodic_case_data](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
   describes, or a zero-argument function that returns one. Defaults to
   the bundled synthetic generator, useful for demos and testing but not
   real surveillance.
 
-- denominator_source:
+- denominators:
 
-  Optional: your testing-volume data, in the same data-frame-or-function
-  form as `ingest_source` (see
-  [`episodic_denominator_source_synthetic()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_denominator_source_synthetic.md)
+  Optional: your testing-volume data, in the same form as `cases` -
+  normally a data set, a function if it has to be produced at run time
+  (see
+  [`episodic_synthetic_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_denominators.md)
   for the expected shape). Leave as `NULL` (the default) if you have
   none to supply - positivity panels simply stay blank.
 
-- institution_activity_source:
+- institution_activity:
 
   Optional: your hospital patient-days data (see
-  [`episodic_synthetic_institution_activity_source()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity_source.md)
-  for the expected shape), either as a data frame or as a function
+  [`episodic_synthetic_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity.md)
+  for the expected shape), normally as a data set, or as a function
   taking the current institutions table. Leave as `NULL` (the default)
   if you have none - detection falls back to raw case counts.
 
@@ -72,35 +73,49 @@ episodic_run_cron(
 
 ## Value
 
-Invisibly, the `run_id` of the completed run.
+Invisibly, the `run_id` of the completed run. The run's row in
+`episodic_detection_run` holds its status, the per-feed load counts, and
+`error_text` if it failed.
 
 ## Details
 
 EpiSODIC never connects to your laboratory system directly. You extract
 and transform your own data beforehand, and hand it over as a plain data
-frame: `ingest_source` for case data (see
-[episodic_ingest_columns](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ingest_interface.md)
-for the required shape), and optionally `denominator_source` and
-`institution_activity_source` for testing volume and hospital activity.
-If producing the data only makes sense at run time (a live database
-query, for instance), pass a zero-argument function that returns it
-instead - see
-[`episodic_resolve_source()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_resolve_source.md).
+frame or `tibble`: `cases` for the laboratory results themselves (see
+[episodic_case_data](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
+for the required columns and their allowed values), and optionally
+`denominators` and `institution_activity` for testing volume and
+hospital activity. A data set is the normal case; if producing the data
+only makes sense at run time (a live database query, for instance), a
+zero-argument function returning one is accepted just as well - see
+[`episodic_resolve_data()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_resolve_data.md).
 
 The exact detection settings used are recorded with the run (see
 [`episodic_config_hash()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_hash.md)),
 so any past result can always be traced back to the configuration that
 produced it.
 
+So is what each feed delivered. Structural problems - a missing column,
+a value outside the allowed set, a date that does not parse - fail the
+run before anything is written, naming the column and the values. Rows
+that are merely unmatched are counted rather than dropped in silence:
+institution activity whose `institution_key` matches no known
+institution is skipped with a warning, its count recorded, and the run
+finishes `"partial"` instead of `"success"`. Both are complete runs the
+dashboard reads from; `"partial"` says go and look at why rows were
+skipped. `episodic_detection_run` carries the counts
+(`n_cases_supplied`, `n_cases_inserted`, `n_activity_skipped`, and the
+rest).
+
 ## Examples
 
 ``` r
 # \donttest{
 db_path <- tempfile(fileext = ".sqlite")
-cases <- episodic_ingest_source_synthetic(
+cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
-run_id <- episodic_run_cron(db_path, ingest_source = cases)
+run_id <- episodic_run_cron(db_path, cases = cases)
 file.remove(db_path)
 #> [1] TRUE
 # }

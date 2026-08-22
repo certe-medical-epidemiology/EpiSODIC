@@ -9,7 +9,12 @@ same language, as the dashboard itself.
 ## Usage
 
 ``` r
-episodic_tr(key, ..., lang = Sys.getenv("EPISODIC_LANGUAGE"), instance_i18n = NULL)
+episodic_tr(
+  key,
+  ...,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  instance_i18n = NULL
+)
 ```
 
 ## Arguments
