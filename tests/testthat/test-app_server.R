@@ -58,7 +58,7 @@ test_that("output$auth_control actually renders the sign-in link (anonymous) and
     rendered <- paste(output$auth_control, collapse = "\n")
     expect_true(grepl("Aanmelden", rendered))
     expect_false(grepl("Aangemeld als", rendered))
-  
+
     # The factory opened this connection; the mock session does not
     # run onSessionEnded, so close it here. Safe either way - the
     # production callback guards on dbIsValid().
@@ -138,7 +138,7 @@ test_that("the report-render button actually surfaces a clear error via output$r
     session$flushReact()
     rendered <- paste(output$report_render_error, collapse = "\n")
     expect_true(grepl("Quarto CLI", rendered, fixed = TRUE))
-  
+
     # The factory opened this connection; the mock session does not
     # run onSessionEnded, so close it here. Safe either way - the
     # production callback guards on dbIsValid().
@@ -226,7 +226,7 @@ test_that("closing a cluster actually updates the rail and the Archief screen wi
     expect_false(grepl("Norovirus", rail_after))
     archive_after <- paste(output$archive_screen, collapse = "\n")
     expect_true(grepl("Norovirus", archive_after))
-  
+
     # The factory opened this connection; the mock session does not
     # run onSessionEnded, so close it here. Safe either way - the
     # production callback guards on dbIsValid().
@@ -436,7 +436,7 @@ test_that("output$main_view actually renders the info screen when nav_view is se
     session$flushReact()
     rendered <- paste(output$main_view, collapse = "\n")
     expect_true(grepl("<code>same_place</code>", rendered, fixed = TRUE))
-  
+
     # The factory opened this connection; the mock session does not
     # run onSessionEnded, so close it here. Safe either way - the
     # production callback guards on dbIsValid().
@@ -454,7 +454,7 @@ test_that("output$main_view actually renders the performance screen when nav_vie
     rendered <- paste(output$main_view, collapse = "\n")
     expect_true(grepl("Prestatie", rendered, fixed = TRUE))
     expect_true(grepl("Tijdigheid", rendered, fixed = TRUE))
-  
+
     # The factory opened this connection; the mock session does not
     # run onSessionEnded, so close it here. Safe either way - the
     # production callback guards on dbIsValid().
@@ -529,7 +529,7 @@ test_that("input$open_cluster jumps to the Clusters screen on that very cluster"
     main <- paste(output$main_view, collapse = "\n")
     expect_true(grepl("episodic-body", main, fixed = TRUE))
     expect_false(grepl("episodic-pathogen-controls", main, fixed = TRUE))
-  
+
     # The factory opened this connection; the mock session does not
     # run onSessionEnded, so close it here. Safe either way - the
     # production callback guards on dbIsValid().
@@ -596,7 +596,7 @@ test_that("a deep link to a closed cluster is not redirected to the top of the r
     dossier <- paste(output$dossier_pane, collapse = "\n")
     expect_true(grepl(ref(closed), dossier, fixed = TRUE))
     expect_false(grepl(ref(open_one), dossier, fixed = TRUE))
-  
+
     # The factory opened this connection; the mock session does not
     # run onSessionEnded, so close it here. Safe either way - the
     # production callback guards on dbIsValid().
@@ -717,7 +717,7 @@ test_that("the navigation highlight follows a deep link, not just its own clicks
     session$setInputs(open_cluster = cluster_id)
     session$flushReact()
     expect_equal(active(paste(output$nav_links, collapse = "\n")), "clusters")
-  
+
     # The factory opened this connection; the mock session does not
     # run onSessionEnded, so close it here. Safe either way - the
     # production callback guards on dbIsValid().

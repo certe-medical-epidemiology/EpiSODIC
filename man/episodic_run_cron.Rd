@@ -86,7 +86,8 @@ and in the dashboard's activity screen. Advisory findings are mentioned
 once and the run proceeds. Run \code{\link[=episodic_check_cases]{episodic_check_cases()}} on your extract
 yourself to see all of it without starting a run at all. A run that
 fails later, for any other reason, records the reason and warns rather
-than returning quietly. Rows that are merely unmatched are counted rather than dropped in silence:
+than returning quietly. Rows
+that are merely unmatched are counted rather than dropped in silence:
 institution activity whose \code{institution_key} matches no known
 institution is skipped with a warning, its count recorded, and the run
 finishes \code{"partial"} instead of \code{"success"}. Both are complete runs the

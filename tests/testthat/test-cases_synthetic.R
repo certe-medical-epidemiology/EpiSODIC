@@ -33,11 +33,12 @@ episodic_synthetic_same_place_count <- function(cases) {
   for (g in groups) {
     grp <- cases[g, ]
     rule <- episodic_same_place_rule(config, grp$pathogen[1])
-    total <- total + length(episodic_same_place_hit_windows(
-      sort(as.Date(grp$sample_date)),
-      n = rule$n,
-      k_days = rule$k_days
-    ))
+    total <- total +
+      length(episodic_same_place_hit_windows(
+        sort(as.Date(grp$sample_date)),
+        n = rule$n,
+        k_days = rule$k_days
+      ))
   }
   total
 }

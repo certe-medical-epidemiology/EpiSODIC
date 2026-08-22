@@ -51,19 +51,19 @@ is what \code{\link[=episodic_run_cron]{episodic_run_cron()}} itself calls befor
 Two kinds of finding, deliberately kept apart:
 
 \describe{
-  \item{Problems}{Things EpiSODIC cannot work around: a missing or
-    unexpected column, an empty value in a column that must be filled,
-    a value outside a fixed set, a date that does not read as a date, a
-    duplicated \code{source_key}. A run refuses to start while any of these
-    stand.}
-  \item{Advice}{Things that are \emph{allowed} but rarely intended, and that
-    quietly cost you signal: no \code{ward} on any hospital row (so
-    ward-level detection has nothing to group on), one pathogen spelled
-    two ways (so its cases are split over two streams), a
-    \code{patient_key} that is unique per row (so deduplication and episode
-    grouping cannot do anything), postcodes that the geography panel
-    cannot place, sample dates in the future. A run proceeds
-    regardless; these are for you to judge.}
+\item{Problems}{Things EpiSODIC cannot work around: a missing or
+unexpected column, an empty value in a column that must be filled,
+a value outside a fixed set, a date that does not read as a date, a
+duplicated \code{source_key}. A run refuses to start while any of these
+stand.}
+\item{Advice}{Things that are \emph{allowed} but rarely intended, and that
+quietly cost you signal: no \code{ward} on any hospital row (so
+ward-level detection has nothing to group on), one pathogen spelled
+two ways (so its cases are split over two streams), a
+\code{patient_key} that is unique per row (so deduplication and episode
+grouping cannot do anything), postcodes that the geography panel
+cannot place, sample dates in the future. A run proceeds
+regardless; these are for you to judge.}
 }
 
 The value prints as a report; it is also a plain data frame, one row

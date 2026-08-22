@@ -142,22 +142,22 @@ Not age group - the dashboard bands it itself.}
 
 
 \tabular{llll}{
-  \strong{Column} \tab \strong{Type} \tab \strong{Empty allowed} \tab \strong{Accepts} \cr
-  \code{source_key} \tab character \tab no \tab any string, unique within the data set \cr
-  \code{patient_key} \tab character \tab no \tab any string, stable per patient \cr
-  \code{sample_date} \tab \code{Date} or character \tab no \tab \code{YYYY-MM-DD} only \cr
-  \code{receipt_date} \tab \code{Date} or character \tab yes \tab \code{YYYY-MM-DD} only \cr
-  \code{pathogen} \tab character \tab no \tab free text, spelled the same every run \cr
-  \code{care_line} \tab character \tab yes (read as \code{"unknown"}) \tab \code{episodic_care_lines} \cr
-  \code{institution_key} \tab character \tab no \tab any string, stable per institution \cr
-  \code{institution_display_name} \tab character \tab no \tab any string \cr
-  \code{institution_type} \tab character \tab no \tab \code{episodic_institution_types} \cr
-  \code{municipality} \tab character \tab yes \tab any string \cr
-  \code{ward} \tab character \tab yes \tab any string, spelled the same every run \cr
-  \code{specialism} \tab character \tab yes \tab any string \cr
-  \code{pc} \tab character \tab yes \tab four digits as text, for the shipped map \cr
-  \code{sex} \tab character \tab yes \tab \code{episodic_sex_codes} \cr
-  \code{age} \tab numeric \tab yes \tab whole years, not an age group \cr
+\strong{Column} \tab \strong{Type} \tab \strong{Empty allowed} \tab \strong{Accepts} \cr
+\code{source_key} \tab character \tab no \tab any string, unique within the data set \cr
+\code{patient_key} \tab character \tab no \tab any string, stable per patient \cr
+\code{sample_date} \tab \code{Date} or character \tab no \tab \code{YYYY-MM-DD} only \cr
+\code{receipt_date} \tab \code{Date} or character \tab yes \tab \code{YYYY-MM-DD} only \cr
+\code{pathogen} \tab character \tab no \tab free text, spelled the same every run \cr
+\code{care_line} \tab character \tab yes (read as \code{"unknown"}) \tab \code{episodic_care_lines} \cr
+\code{institution_key} \tab character \tab no \tab any string, stable per institution \cr
+\code{institution_display_name} \tab character \tab no \tab any string \cr
+\code{institution_type} \tab character \tab no \tab \code{episodic_institution_types} \cr
+\code{municipality} \tab character \tab yes \tab any string \cr
+\code{ward} \tab character \tab yes \tab any string, spelled the same every run \cr
+\code{specialism} \tab character \tab yes \tab any string \cr
+\code{pc} \tab character \tab yes \tab four digits as text, for the shipped map \cr
+\code{sex} \tab character \tab yes \tab \code{episodic_sex_codes} \cr
+\code{age} \tab numeric \tab yes \tab whole years, not an age group \cr
 }
 
 Every column is required to be \emph{present}; "empty allowed" says whether

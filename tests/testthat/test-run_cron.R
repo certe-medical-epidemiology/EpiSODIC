@@ -311,7 +311,11 @@ test_that("a run over an empty extract warns rather than quietly writing nothing
   )
 
   expect_warning(
-    episodic_run_cron(path, cases = cases[0, ], run_date = as.Date("2024-06-30")),
+    episodic_run_cron(
+      path,
+      cases = cases[0, ],
+      run_date = as.Date("2024-06-30")
+    ),
     "no rows"
   )
 })

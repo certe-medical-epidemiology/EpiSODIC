@@ -343,7 +343,11 @@ test_that("episodic_app_pathogen_rt() clips to the period but conditions on hist
   # is about. Give influenza the off-season baseline a real one has, here
   # rather than in the fixture, which 100-odd other assertions depend on.
   autumn <- cases[rep(1L, 12L), , drop = FALSE]
-  autumn$sample_date <- seq(as.Date("2024-09-15"), by = "week", length.out = 12L)
+  autumn$sample_date <- seq(
+    as.Date("2024-09-15"),
+    by = "week",
+    length.out = 12L
+  )
   autumn$source_key <- sprintf("PS-AUTUMN%02d", seq_len(12L))
   autumn$patient_key <- sprintf("PP-AUTUMN%02d", seq_len(12L))
   cases <- rbind(autumn, cases)
