@@ -30,7 +30,9 @@ suppress_setup <- function(child_share = 1, n_children = 1, n_cases = 10) {
      VALUES (?, 'H', 'hospital', 'second', 1, 1)",
     params = list(key)
   )
-  institution_id <- DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+  institution_id <- DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[
+    1
+  ]
   run_id <- episodic_db_run_start(con, "h", "a")
 
   stream <- function(level, ward = NA) {
@@ -65,21 +67,32 @@ suppress_setup <- function(child_share = 1, n_children = 1, n_cases = 10) {
   parent_id <- cluster(stream("pathogen_institution"), n_cases)
   child_ids <- vapply(
     seq_len(n_children),
-    function(k) cluster(stream("pathogen_ward", ward = paste0("W", k)), n_cases),
+    function(k) {
+      cluster(stream("pathogen_ward", ward = paste0("W", k)), n_cases)
+    },
     integer(1)
   )
 
   # every case belongs to the parent; the children take their share
-  case_ids <- vapply(seq_len(n_cases), function(i) {
-    DBI::dbExecute(
-      con,
-      "INSERT INTO episodic_case
+  case_ids <- vapply(
+    seq_len(n_cases),
+    function(i) {
+      DBI::dbExecute(
+        con,
+        "INSERT INTO episodic_case
         (source_key, patient_key, sample_date, pathogen, care_line, institution_id, first_seen_run)
        VALUES (?, ?, '2026-07-10', 'Test pathogen', 'second', ?, ?)",
-      params = list(sprintf("C%d", i), sprintf("P%d", i), institution_id, run_id)
-    )
-    DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
-  }, numeric(1))
+        params = list(
+          sprintf("C%d", i),
+          sprintf("P%d", i),
+          institution_id,
+          run_id
+        )
+      )
+      DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+    },
+    numeric(1)
+  )
   for (case_id in case_ids) {
     episodic_db_cluster_case_link(con, parent_id, case_id)
   }
@@ -99,7 +112,8 @@ suppressed_by <- function(con, cluster_id) {
     con,
     include_suppressed = TRUE
   )$suppressed_by[
-    episodic_db_clusters(con, include_suppressed = TRUE)$cluster_id == cluster_id
+    episodic_db_clusters(con, include_suppressed = TRUE)$cluster_id ==
+      cluster_id
   ]
 }
 
