@@ -320,8 +320,7 @@ test_that("runs applied out of order converge to the same state as in-order runs
 })
 
 test_that("a failed run inside the cron transaction leaves no partial state", {
-  path <- tempfile(fileext = ".sqlite")
-  episodic_db_create(path)
+  path <- episodic_test_db_path()
   con <- episodic_db_connect(path)
   on.exit(DBI::dbDisconnect(con))
 

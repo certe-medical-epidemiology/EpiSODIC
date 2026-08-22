@@ -28,6 +28,17 @@ episodic_test_db <- function() {
   episodic_db_create(path)
 }
 
+# For a test that wants the database file but opens its own connection, or
+# hands the path to something that does. episodic_db_create() returns a
+# live connection, so calling it for its side effect alone orphans one,
+# which RSQLite then complains about whenever it is garbage-collected -
+# long after the test that caused it has finished.
+episodic_test_db_path <- function() {
+  path <- tempfile(fileext = ".sqlite")
+  DBI::dbDisconnect(episodic_db_create(path))
+  path
+}
+
 episodic_test_pathogen_config <- function() {
   path <- system.file("config", "pathogen_config.csv", package = "EpiSODIC")
   if (identical(path, "")) {
