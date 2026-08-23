@@ -2,7 +2,7 @@
 
 Like
 [`episodic_db_connect()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_connect.md),
-but falls back to the `EPISODIC_DB` environment variable when you don't
+but falls back to the `EPISODIC_DB` environment variable when you do not
 pass a path explicitly - handy for one-off console use, e.g.
 [`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md)
 uses it internally so provisioning an account needs only a username and

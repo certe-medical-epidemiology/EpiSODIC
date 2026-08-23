@@ -25,6 +25,7 @@ reports to the house style, or check what colour a given status uses."><meta pro
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/architecture.html">Architecture overview</a></li>
     <li><a class="dropdown-item" href="../articles/deployment.html">Deployment</a></li>
     <li><a class="dropdown-item" href="../articles/detection-reconciliation.html">Detection and reconciliation</a></li>
+    <li><a class="dropdown-item" href="../articles/faq.html">Frequently asked questions</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -66,7 +67,7 @@ each with <code>_dark</code>/<code>_light</code>/<code>_tint</code> variants whe
     <p>The palette ships with an organisation-neutral default
 (<code>inst/config/palette.yaml</code>). To use your own institute's colours instead,
 point the <code>EPISODIC_PALETTE_CONFIG</code> environment variable at a YAML file
-that overrides only the roles you want to change - anything you don't set
+that overrides only the roles you want to change - anything you do not set
 keeps its shipped default. This is independent of <code><a href="episodic_config_resolve.html">episodic_config_resolve()</a></code>
 on purpose: colours never affect the <code>config_hash</code> recorded with a
 detection run, since they have no bearing on reproducibility.</p>

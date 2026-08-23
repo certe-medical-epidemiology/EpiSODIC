@@ -1,0 +1,348 @@
+# Frequently asked questions
+
+This page collects the questions that come up most often when getting
+started with EpiSODIC. Skim the questions first, then click the one you
+need to open its answer - nothing on this page needs to be read start to
+finish. If your question is not here, the README’s “Data format” and
+“Environment variables” sections and the “Architecture overview”,
+“Deployment”, and “Detection and reconciliation” vignettes go deeper on
+most of these topics; and if it still is not answered anywhere, that is
+worth telling us, since it means this page is missing something it
+should cover.
+
+## Getting your data in
+
+**How do I prepare my data?**
+
+Do not worry about getting this perfect by hand - that is exactly what
+[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+is for. Hand it your extract, however rough:
+
+``` r
+
+EpiSODIC::episodic_check_cases(my_cases)
+```
+
+No database, no configuration, nothing changed - it just reads your data
+and tells you, in one pass, everything it finds: which column is wrong,
+how many rows are affected, which rows those are, what the offending
+values look like, and what to do about each. It also separates two kinds
+of finding, so you are never left guessing which ones actually block
+you: **problems** (a run refuses to start until these are fixed - a date
+that does not parse, a value outside the allowed set) and **advice** (a
+run proceeds regardless, but it is worth a look - one pathogen spelled
+two ways, no `ward` on any hospital row). Run it, fix what it flags as a
+problem, run it again - most people get to a clean report in two or
+three passes. The README’s “Data format” section has the full column
+contract this is checking against, including the exact allowed values
+for `care_line`, `institution_type`, and `sex`.
+
+**Do I need to send all of my positives every time, or only new/recent
+ones?**
+
+Only a recent window, with a couple of weeks of overlap - that is the
+recommended norm, and it is fully supported. You do *not* need to
+re-extract a patient’s whole history on every run.
+
+Here is why that is safe: every run checks each incoming positive
+against the most recent episode EpiSODIC already has on file for that
+patient/pathogen, not just against the other rows in the same batch. So
+if a patient’s first positive was loaded last week and a second positive
+for the same episode arrives today in an otherwise-unrelated extract,
+EpiSODIC still recognises it as the same episode and does not create a
+second case for it. A window with, say, two weeks of overlap with your
+previous extract is a sensible default - it gives you a safety margin if
+a run is ever skipped or delayed, without requiring you to resend
+everything.
+
+Two related things worth knowing:
+
+- **Re-sending a row is always safe**, however wide your window is.
+  Every row needs a `source_key` unique to your own source system;
+  resending a `source_key` EpiSODIC has already loaded is simply a
+  no-op. There is no bookkeeping you need to do to avoid duplicates - if
+  in doubt, a wider window (or even a full resend) never causes harm, it
+  is just more rows for
+  [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)/the
+  load step to look at.
+- **Do not send negative results.** This feed is deliberately
+  positives-only, regardless of how wide a window you choose.
+
+**What do I do when a lab result was rectified or corrected, but
+EpiSODIC already has the now-false positive?**
+
+First: do not worry, this happens, and it is a normal part of running
+any detection system on live laboratory data - it is not something you
+did wrong. EpiSODIC does not offer a way to delete or edit an individual
+case once it has been loaded, and that is deliberate: the case data is
+the audit trail every dossier and every report is built from, so quietly
+removing a row would make past results harder to explain rather than
+easier. What this means in practice depends on where the correction
+lands:
+
+- **If the correction arrives before a cluster was raised from it** (or
+  before the affected run), you do not need to do anything - it simply
+  will not be part of any signal, since it is just data sitting in the
+  database like any other case.
+- **If a cluster has already been raised (or affected) because of it**,
+  handle it the same way you would handle any signal that turns out not
+  to reflect reality: assess and close it in the dashboard with the
+  classification that fits (e.g. not an outbreak), noting the correction
+  in the assessment. That decision - including the reasoning - becomes
+  part of the cluster’s own audit trail, which is exactly the record you
+  want to be able to point to later if anyone asks why a signal did not
+  lead anywhere.
+- **If a stream is regularly noisy for a reason like this** (a lab or
+  feed that corrects unusually often), muting it for a defined period is
+  the right tool, with the reason recorded - see the mute action on a
+  cluster’s dossier.
+
+If this is happening often enough that it is a recurring nuisance rather
+than an occasional correction, that is worth raising with whoever owns
+your extract/transform step - the earlier a correction happens before
+data reaches EpiSODIC, the less cleanup it costs anyone downstream.
+
+**What happens to detection if I am missing optional columns - postcode,
+ward, institution activity - for some or all of my cases?**
+
+You lose only the parts of the picture that specific column feeds, and
+nothing else - EpiSODIC is built so every optional piece degrades
+gracefully rather than blocking anything:
+
+- No `pc` (postcode) on a row: that case just does not contribute to the
+  geography panel/choropleth or the concentration measure for its own
+  cluster; every other detector and panel works exactly as normal.
+- No `ward` on hospital rows: the ward-level (`L1`) `same_place`
+  detector has nothing to group those cases on, so ward-level detection
+  is effectively skipped for them - institution-level (`L2`) and above
+  are unaffected.
+- No institution-activity feed at all: `L1`/`L2` Farrington detection
+  simply uses raw case counts instead of counts normalised by
+  patient-days. Perfectly usable, just not adjusted for a busy month
+  looking busier than a quiet one.
+- No denominators (positivity) feed: the positivity panel on the dossier
+  stays blank for your streams; nothing about detection itself depends
+  on it, since it is an interpretive aid, never a detection input.
+
+In short: send what you reliably have.
+[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+will flag missing optional columns as *advice*, not a *problem*, so you
+will always know what you are missing without anything blocking your
+run.
+
+## Running it day to day
+
+**How do I know whether a scheduled run actually succeeded, partially
+loaded, or failed?**
+
+You do not have to go near a log file for this - it is recorded on every
+run and surfaced in the dashboard itself. Every
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+call writes a `status` of `success`, `partial`, or `failed`, along with
+exactly what each feed delivered (`n_cases_supplied`,
+`n_cases_inserted`, and the equivalent for denominators/institution
+activity). The dashboard’s Activity screen shows this under each run, so
+“did last night’s extract arrive in full?” is answerable at a glance. A
+`failed` run means nothing was written at all (the whole run is one
+transaction, so it is always safe to just retry); a `partial` run means
+everything supplied was validated and detections are valid, but some
+optional-feed rows were skipped (e.g. institution activity for an
+institution EpiSODIC does not know) - both `success` and `partial` are
+usable runs.
+
+**Can I try EpiSODIC out before pointing it at anything real?**
+
+Yes, and this is the easiest way to get a feel for it. One call:
+
+``` r
+
+EpiSODIC::episodic_demo()
+```
+
+No data, no credentials, no configuration of your own required - it
+creates a temporary database, runs one detection cycle over bundled
+synthetic data, provisions a demo assessor account (printed to the
+console), and opens the dashboard. Pass `launch = FALSE` if you just
+want a populated database path back for scripting, without opening the
+app. Nothing about this touches a real database or real data, so feel
+free to explore freely.
+
+**How do I change the dashboard and report language?**
+
+Set the `EPISODIC_LANGUAGE` environment variable to one of `nl`, `en`,
+`es`, `fr`, `de`, `zh`, `hi`, or `ar` before starting the app (it
+defaults to `en` if unset):
+
+``` r
+
+Sys.setenv(EPISODIC_LANGUAGE = "nl")
+episodic_run_app()
+```
+
+This covers the dashboard interface and the outbreak reports it
+generates alike. It is fixed for the whole running instance - there is
+no in-app language switcher - so if different people need different
+languages, that is a case for running more than one instance pointed at
+the same database.
+
+**How do I tune detection thresholds or priority score weights for my
+own organisation?**
+
+Through `EPISODIC_CONFIG`, not by editing package code - detection
+thresholds, baseline lengths, `same_place` rules, MEM seasons, and
+priority score weights are all *operational data*, kept out of this
+repository on purpose. Point the environment variable at a YAML file
+with only the keys you want to change:
+
+``` r
+
+Sys.setenv(EPISODIC_CONFIG = "/path/to/my_overrides.yaml")
+```
+
+It is merged key-by-key on top of `inst/config/default.yaml`’s shipped
+defaults, so you only ever need to write down what differs for your
+organisation. Every run records the resolved configuration’s full
+snapshot and hash on `episodic_detection_run`, so whatever parameters
+were behind any past result stay reproducible from the database alone -
+you can tune with confidence, since nothing about a past run’s meaning
+changes retroactively when you update the file.
+
+**I have more than one laboratory system or data source - can I combine
+them into one feed?**
+
+Yes - EpiSODIC only ever sees the single data frame (or tibble) your own
+transform step hands to
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md),
+so combining several source systems is exactly that: your transform
+step’s job, done before EpiSODIC is ever called. Bring each source into
+the shared column contract,
+[`rbind()`](https://rdrr.io/r/base/cbind.html) (or
+[`dplyr::bind_rows()`](https://dplyr.tidyverse.org/reference/bind_rows.html))
+them together, and check the combined result with
+[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+as normal. The one thing to get right across sources is `source_key`: it
+only needs to be unique *within your own source system* per the column
+contract, so if two systems could otherwise produce the same key
+(e.g. both use a simple incrementing lab accession number), prefix each
+system’s keys with something that tells them apart (e.g. `"LIS1-482910"`
+vs. `"LIS2-482910"`) before combining, so a later re-run cannot collide
+two genuinely different results into one.
+
+## Accounts and hosting
+
+**How do I create a new account?**
+
+There is no self-service sign-up screen, and that is by design - only
+whoever administers your instance’s database provisions accounts, which
+keeps sign-in tied to real board membership rather than being
+open-ended. If that is you, it is one function call:
+
+``` r
+
+Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")  # or your MariaDB/MySQL DSN
+
+EpiSODIC::episodic_provision_user(
+  username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
+  password = "a-temporary-password"
+)
+```
+
+Pick any temporary password you like - the account is created with a
+forced password change, so the new holder is required to set their own
+private password the very first time they sign in, and the temporary one
+you typed never lingers as their real credential. Pass `role = "admin"`
+instead of the default `"assessor"` for someone who also needs dossier
+reconciliation and archiving privileges, beyond recording assessments.
+If someone forgets their password or needs their access removed, that is
+also a job for whoever administers the database (there is no
+self-service reset either) - reach out to them rather than trying to
+work around it yourself.
+
+**What is the difference between an “assessor” and an “admin” account,
+and how do I decide who needs which?**
+
+Both can sign in and record classifications on a cluster - that is the
+core, shared job of being on the board. `admin` additionally gets
+dossier reconciliation and archiving privileges on top of that. In
+practice: `assessor` is the right default for most board members, whose
+job is reviewing and classifying signals; reach for `admin` for the
+smaller number of people who also need to manage how clusters are
+reconciled or archived over time, typically whoever administers the
+instance day to day. If you are not sure, `assessor` is the safer
+starting point - it is easy to provision a second, `admin` account for
+yourself specifically once you know you need one.
+
+**Must I run this on my own machine, or must I host it somewhere?**
+
+Either is genuinely fine - EpiSODIC does not assume one or the other,
+and plenty of setups do each:
+
+- **On your own machine**:
+  [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md)
+  opens the dashboard locally, and you (or a scheduled task on that same
+  machine) run
+  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  on whatever cadence suits you. This is the simplest way to get
+  started, and exactly what
+  [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+  does under the hood.
+- **Hosted somewhere shared**: a server running
+  [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md)
+  behind your organisation’s usual access setup, with
+  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  scheduled separately (cron, a Windows scheduled task, a CI pipeline -
+  there is nothing EpiSODIC-specific about the scheduling mechanism
+  itself). This is the natural choice once more than one person needs to
+  reach the dashboard, since read access is anonymous to anyone who can
+  reach the app - only classifying a cluster requires signing in.
+
+Both point at the same kind of database (a local SQLite file, or a
+shared MariaDB/MySQL server via `EPISODIC_DB`), so you are not locked
+into your first choice - moving from “trying it out on my laptop” to “a
+shared instance the whole board uses” is a deployment change, not a data
+or code change. See the “Deployment” vignette for the full walk-through.
+
+**Can more than one board member review the same cluster, and what
+happens if they disagree?**
+
+Yes - any signed-in assessor or admin can open and classify any cluster;
+there is no assignment or locking that reserves one to a single person.
+Every classification is recorded as its own event on the cluster’s audit
+trail, attributed to the account that made it, rather than overwriting a
+single “current” verdict - so if two people classify the same cluster
+differently, both decisions stay visible with who made them and when,
+rather than one silently replacing the other. In practice, most boards
+settle disagreements the same way they would for any shared clinical
+decision: talk it through and let whoever has the final say record the
+version that stands - EpiSODIC’s job is to keep that history honest, not
+to referee it.
+
+**Is patient-identifying information ever shown in the dashboard or in
+outbreak reports?**
+
+No - `patient_key` (the field deduplication and episode grouping key on)
+is never displayed as-is anywhere in the interface or in a generated
+report; it is an internal identifier only. What clinicians and board
+members see is epidemiological context: age, sex, care line,
+institution/ward, specialism, postcode-level geography, and dates -
+enough to assess a cluster, not enough to identify who is in it from the
+dashboard alone. Getting a pseudonymised `patient_key` in the first
+place (rather than a real name or record number) is part of your own
+transform step, before data ever reaches EpiSODIC - see the README’s
+“Data format” section for the exact column contract.
+
+**My organisation is not in the Netherlands - does the geography panel
+(the choropleth map) still work for us?**
+
+Yes - the shipped Netherlands postcode reference data is a default, not
+a requirement. Point `EPISODIC_GEO_DATA` at your own `.rds` file holding
+an [`sf`](https://r-spatial.github.io/sf/) object with a `pc` column
+(matching whatever your own `pc` values are - postcodes, zip codes,
+municipality codes, anything) and a `geometry` column, and it is used
+instead of the Netherlands default. An optional second layer,
+`EPISODIC_GEO_DATA_OVERLAY`, can draw region outlines (provinces,
+counties, whatever is useful for orientation) on top. If you do not have
+geographic reference data to hand at all, nothing breaks - the geography
+panel simply falls back to a plain bar breakdown by `pc` value, exactly
+as if this feature did not exist. See the README’s “Geographic reference
+data” section for the exact contract these files need to satisfy.

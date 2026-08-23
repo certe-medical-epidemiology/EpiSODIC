@@ -46,6 +46,7 @@
 <li><a class="dropdown-item" href="articles/architecture.html">Architecture overview</a></li>
     <li><a class="dropdown-item" href="articles/deployment.html">Deployment</a></li>
     <li><a class="dropdown-item" href="articles/detection-reconciliation.html">Detection and reconciliation</a></li>
+    <li><a class="dropdown-item" href="articles/faq.html">Frequently asked questions</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -70,6 +71,7 @@
 <p><a href="https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></p>
 <p>EpiSODIC is an automated outbreak cluster detection and assessment system for infectious disease epidemiologists. It runs in R, and reads laboratory-confirmed infections, detects statistical and rule-based aberrations, reconciles them into persistent clusters, and gives epidemiologists a dossier to assess each one, with a full audit trail and outbreak reports for clinical colleagues (e.g. clinical microbiologists) and infection prevention nurses.</p>
 <p>The dashboard and its outbreak reports are available in Dutch, English, Spanish, French, German, Mandarin Chinese, Hindi, and (Modern Standard) Arabic.</p>
+<p>Ready to automate your epi-analyses? Be sure to read our <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html">frequently asked questions</a>.</p>
 <p>This software is free; this repository is open-source software with no data and no site-specific configuration.</p>
 <!--
 Screenshots below live in man/figures/ (ships with the package, so
@@ -127,6 +129,7 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <h2 id="data-format">Data format<a class="anchor" aria-label="anchor" href="#data-format"></a>
 </h2>
 <p>EpiSODIC never queries a laboratory information system, data warehouse, or any other data source itself. That is deliberately your own step, run before EpiSODIC: extract from wherever your data lives, transform into the shape below, then call <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> with the result as a plain data frame (a tibble works just as well). This keeps the engine reusable by any laboratory.</p>
+<p><strong>Extract a recent window, not your full history.</strong> A scheduled extract should cover only the last few weeks, with some overlap (two weeks is a reasonable default) as a safety margin against a missed or delayed run - not a re-pull of every positive result you have ever had. This keeps every scheduled run fast and light, however large your archive grows. It is safe for the same reason re-running a whole extract by hand is safe: deduplication checks each incoming result against what is already stored for that patient and pathogen, so results that reappear inside your overlap window - or that continue an episode whose first result is not in this batch at all - are still recognised correctly, never double-counted.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu">my_extract_and_transform_function</span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -162,7 +165,7 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <tr>
 <td><code>patient_key</code></td>
 <td>character, required</td>
-<td>A stable, pseudonymised patient identifier. This is what deduplication and episode grouping key on: without it, EpiSODIC cannot tell that two isolates belong to the same patient, and every isolate would be treated as its own case. Never displayed as-is in the interface.</td>
+<td>A stable, pseudonymised patient identifier. This is what deduplication and episode grouping key on: without it, EpiSODIC cannot tell that two positives belong to the same patient, and every positive would be treated as its own case. Never displayed as-is in the interface.</td>
 </tr>
 <tr>
 <td><code>sample_date</code></td>
@@ -179,7 +182,7 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <tr>
 <td><code>pathogen</code></td>
 <td>character, required, free text</td>
-<td>The pathogen as your lab reports it, as free text. <strong>Not</strong> resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying isolate can appear more than once under different <code>pathogen</code> values when that is epidemiologically useful - an ETEC isolate reported as both <code>"Escherichia coli"</code> and <code>"ETEC"</code>, so each is watched on its own. This is your transform step’s decision, not EpiSODIC’s.</td>
+<td>The pathogen as your lab reports it, as free text. <strong>Not</strong> resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying positive can appear more than once under different <code>pathogen</code> values when that is epidemiologically useful - an ETEC positive reported as both <code>"Escherichia coli"</code> and <code>"ETEC"</code>, so each is watched on its own. This is your transform step’s decision, not EpiSODIC’s.</td>
 </tr>
 <tr>
 <td><code>care_line</code></td>
@@ -245,9 +248,9 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <li>
 <code>ooh_service</code> — an out-of-hours GP service (<em>huisartsenpost</em>), kept as a first-class institution like a hospital.</li>
 <li>
-<code>other</code> — anything that doesn’t fit the above; institution identity is dropped (stored as <code>NULL</code>) for this category.</li>
+<code>other</code> — anything that does not fit the above; institution identity is dropped (stored as <code>NULL</code>) for this category.</li>
 </ul>
-<p><strong>Deduplication is EpiSODIC’s job, not yours.</strong> Send every positive result; EpiSODIC collapses isolates for the same patient and pathogen into one case per episode, using the episode length configured per pathogen in <code>inst/config/pathogen_config.csv</code>.</p>
+<p><strong>Deduplication is EpiSODIC’s job, not yours.</strong> EpiSODIC collapses positives for the same patient and pathogen into one case per episode, using the episode length configured per pathogen in <code>inst/config/pathogen_config.csv</code> - and it does this correctly across runs, not just within one extract: each run checks incoming positives against the most recent episode already on file for that patient/pathogen, so a recurring extract only has to cover a recent window (with a couple of weeks of overlap, so nothing slips through if a run is ever missed) rather than a patient’s full history every time. Re-sending a row EpiSODIC has already seen (same <code>source_key</code>) is always safe regardless - it is simply a no-op.</p>
 <p><strong>Do not send negative results here.</strong> This feed drives every detector; it is deliberately positives-only so an operator never has to ship a multi-year, per-test linelist just to run detection.</p>
 </div>
 <div class="section level3">

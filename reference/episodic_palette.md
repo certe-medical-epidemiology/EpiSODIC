@@ -24,7 +24,7 @@ The palette ships with an organisation-neutral default
 (`inst/config/palette.yaml`). To use your own institute's colours
 instead, point the `EPISODIC_PALETTE_CONFIG` environment variable at a
 YAML file that overrides only the roles you want to change - anything
-you don't set keeps its shipped default. This is independent of
+you do not set keeps its shipped default. This is independent of
 [`episodic_config_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_resolve.md)
 on purpose: colours never affect the `config_hash` recorded with a
 detection run, since they have no bearing on reproducibility.

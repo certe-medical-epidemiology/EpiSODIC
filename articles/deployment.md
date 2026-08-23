@@ -33,6 +33,16 @@ The README’s “Data format” section documents the exact columns each of
 the four data sources (cases, positivity metadata, institution activity,
 geographic reference data) expects; only cases are mandatory.
 
+Scope `my_extract_and_transform_function()` to a recent window - the
+last few weeks, with a couple of weeks of overlap as a margin against a
+missed run - rather than a patient’s full history on every schedule. A
+scheduled job should stay fast and light regardless of how large the
+archive behind it grows. This is safe: deduplication checks every
+incoming result against what is already stored for that patient and
+pathogen, so a result that reappears inside your overlap window, or one
+that continues an episode whose earlier result is not in this batch at
+all, is still recognised correctly rather than counted twice.
+
 Check your extract against that contract before you schedule anything:
 
 ``` r

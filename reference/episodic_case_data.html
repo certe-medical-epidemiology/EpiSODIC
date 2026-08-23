@@ -33,6 +33,7 @@ is, your own extract step is the only place that needs to know about it."><meta 
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/architecture.html">Architecture overview</a></li>
     <li><a class="dropdown-item" href="../articles/deployment.html">Deployment</a></li>
     <li><a class="dropdown-item" href="../articles/detection-reconciliation.html">Detection and reconciliation</a></li>
+    <li><a class="dropdown-item" href="../articles/faq.html">Frequently asked questions</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -110,7 +111,7 @@ always carries the same one.</p></dd>
 <dd><p>Character, required, no <code>NA</code>. A pseudonymised
 patient identifier, the same for the same patient across results.
 Deduplication and episode grouping key on it: without it every
-isolate becomes its own case. Never shown as-is in the dashboard,
+positive becomes its own case. Never shown as-is in the dashboard,
 but do pseudonymise it before it reaches EpiSODIC - a BSN or
 hospital number must not be passed through.</p></dd>
 
@@ -139,9 +140,9 @@ not. Spelling must be stable across runs - <code>"Influenza A"</code> and
 concerned. Names matching <code>inst/config/pathogen_config.csv</code> pick up
 that pathogen's episode length, incubation window and serial
 interval; anything else falls back to the schema defaults (30-day
-episode, 14 case-free days, no Rt, no MEM). The same isolate may
+episode, 14 case-free days, no Rt, no MEM). The same positive may
 appear under more than one <code>pathogen</code> value where that is
-epidemiologically useful - an ETEC isolate reported as both
+epidemiologically useful - an ETEC positive reported as both
 <code>"Escherichia coli"</code> and <code>"ETEC"</code>, so each is monitored separately.</p></dd>
 
 <dt><code>care_line</code></dt>

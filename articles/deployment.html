@@ -43,6 +43,7 @@
 <li><a class="dropdown-item" href="../articles/architecture.html">Architecture overview</a></li>
     <li><a class="dropdown-item" href="../articles/deployment.html">Deployment</a></li>
     <li><a class="dropdown-item" href="../articles/detection-reconciliation.html">Detection and reconciliation</a></li>
+    <li><a class="dropdown-item" href="../articles/faq.html">Frequently asked questions</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -100,6 +101,16 @@ as well - see <code><a href="../reference/episodic_resolve_data.html">episodic_r
 format” section documents the exact columns each of the four data
 sources (cases, positivity metadata, institution activity, geographic
 reference data) expects; only cases are mandatory.</p>
+<p>Scope <code>my_extract_and_transform_function()</code> to a recent
+window - the last few weeks, with a couple of weeks of overlap as a
+margin against a missed run - rather than a patient’s full history on
+every schedule. A scheduled job should stay fast and light regardless of
+how large the archive behind it grows. This is safe: deduplication
+checks every incoming result against what is already stored for that
+patient and pathogen, so a result that reappears inside your overlap
+window, or one that continues an episode whose earlier result is not in
+this batch at all, is still recognised correctly rather than counted
+twice.</p>
 <p>Check your extract against that contract before you schedule
 anything:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
