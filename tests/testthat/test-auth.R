@@ -241,7 +241,7 @@ test_that("episodic_provision_user() also accepts the viewer role, and rejects a
       "Other Person",
       "o@x.nl",
       "a-temporary-password",
-      role = "assessor"
+      role = "moderator"
     )
   )
 })

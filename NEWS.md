@@ -35,14 +35,13 @@
 
 ## Changed
 
-- Accounts now have exactly two roles: `"epidemiologist"` (by definition, assesses clusters and classifies
-  them; replaces the former `"assessor"`/`"admin"` split, since nothing had ever actually distinguished the
-  two) and the new `"viewer"`, read-only and otherwise identical - a viewer sees everything a signed-in
+- Accounts have exactly two roles: `"epidemiologist"` (by definition, assesses clusters and classifies
+  them) and `"viewer"`, read-only and otherwise identical - a viewer sees everything a signed-in
   epidemiologist sees, including patient-level line lists, but cannot classify, close, mute a stream, or
   re-render a report. Aggregate data stays visible to anyone who reaches the app; signing in, as either
   role, is what unlocks patient-level detail, and only an epidemiologist account can write.
-  `episodic_provision_user()`'s `role` argument now defaults to `"epidemiologist"` and rejects anything
-  besides `"epidemiologist"`/`"viewer"`.
+  `episodic_provision_user()`'s `role` argument defaults to `"epidemiologist"` and rejects anything besides
+  `"epidemiologist"`/`"viewer"`.
 - `episodic_validate_cases()` reports every problem in one error instead of stopping at the first.
 - `episodic_run_cron()` checks the case and denominator feeds before writing anything and stops if they
   cannot be used, rather than returning quietly with a `failed` run row nobody was looking at. A run that
