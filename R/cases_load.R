@@ -28,7 +28,7 @@
 #' the source identifier so a later rename does not fracture the history.
 #'
 #' Deduplication looks beyond the current batch: before grouping positives
-#' into episodes, [episodic_db_last_case_dates()] fetches each incoming
+#' into episodes, EpiSODIC fetches each incoming
 #' patient/pathogen's most recently stored episode anchor, so a
 #' patient/pathogen combination that already has a case on file is
 #' recognised correctly even if the positive that opened that episode
@@ -68,7 +68,11 @@ episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
     unique(cases$patient_key),
     unique(cases$pathogen)
   )
-  deduped <- episodic_cases_deduplicate(cases, pathogen_config, existing = existing)
+  deduped <- episodic_cases_deduplicate(
+    cases,
+    pathogen_config,
+    existing = existing
+  )
 
   institution_lookup <- episodic_institutions_resolve(con, deduped)
 

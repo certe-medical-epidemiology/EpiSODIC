@@ -312,7 +312,11 @@ test_that("episodic_db_last_case_dates() returns the latest sample_date per pati
   on.exit(DBI::dbDisconnect(con))
   institution_id <- episodic_db_institution_upsert(
     con,
-    institution_key = digest::digest("hosp-dedup", algo = "sha1", serialize = FALSE),
+    institution_key = digest::digest(
+      "hosp-dedup",
+      algo = "sha1",
+      serialize = FALSE
+    ),
     display_name = "Test Hospital",
     institution_type = "hospital",
     care_line = "second",

@@ -2,7 +2,7 @@ Package: EpiSODIC
 Type: Package
 Title: Epidemiological Signal Observation, Detection, Identification, and
     Classification
-Version: 0.5.0
+Version: 0.5.1
 Authors@R: c(
     person(given = c("Matthijs", "S."),
            family = "Berends",
@@ -60,6 +60,6 @@ Suggests:
     RMariaDB
 Config/testthat/edition: 3
 VignetteBuilder: knitr
-URL: https://github.com/certe-medical-epidemiology/EpiSODIC
+URL: https://certe-medical-epidemiology.github.io/EpiSODIC, https://github.com/certe-medical-epidemiology/EpiSODIC
 BugReports: https://github.com/certe-medical-epidemiology/EpiSODIC/issues
 Config/roxygen2/version: 8.1.0
