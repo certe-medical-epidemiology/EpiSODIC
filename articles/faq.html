@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -248,7 +248,9 @@ languages, that is a case for running more than one instance pointed at
 the same database.</p>
 </details><details><summary><strong>How do I tune detection thresholds or priority score weights for
 my own organisation?</strong>
-</summary><p>Through <code>EPISODIC_CONFIG</code>, not by editing package code -
+</summary><p>EpiSODIC contains many options you can tune to alter the behaviour of
+its algorithms.</p>
+<p>Through <code>EPISODIC_CONFIG</code>, not by editing package code -
 detection thresholds, baseline lengths, <code>same_place</code> rules,
 MEM seasons, and priority score weights are all <em>operational
 data</em>, kept out of this repository on purpose. Point the environment
@@ -294,7 +296,10 @@ open-ended. If that is you, it is one function call:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span>  <span class="co"># or your MariaDB/MySQL DSN</span></span>
 <span></span>
 <span><span class="fu">EpiSODIC</span><span class="fu">::</span><span class="fu"><a href="../reference/episodic_provision_user.html">episodic_provision_user</a></span><span class="op">(</span></span>
-<span>  username <span class="op">=</span> <span class="st">"jdoe"</span>, full_name <span class="op">=</span> <span class="st">"Jane Doe"</span>, email <span class="op">=</span> <span class="st">"j.doe@example.org"</span>,</span>
+<span>  username <span class="op">=</span> <span class="st">"jdoe"</span>,</span>
+<span>  full_name <span class="op">=</span> <span class="st">"Dr Jane Doe"</span>,</span>
+<span>  role <span class="op">=</span> <span class="st">"epidemiologist"</span>, <span class="co"># or "viewer"</span></span>
+<span>  email <span class="op">=</span> <span class="st">"j.doe@example.org"</span>,</span>
 <span>  password <span class="op">=</span> <span class="st">"a-temporary-password"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Pick any temporary password you like - the account is created with a
@@ -312,18 +317,18 @@ trying to work around it yourself.</p>
 “viewer” account, and how do I decide who needs which?</strong>
 </summary><p><code>epidemiologist</code> is, by definition, the person who
 assesses clusters and classifies them - the core, shared job of being on
-the board. An epidemiologist can classify, close and mute clusters, and
-re-render reports on demand. <code>viewer</code> is read-only: it sees
-exactly what a signed-in epidemiologist sees, including patient-level
-line lists, but cannot record an assessment. In practice:
-<code>epidemiologist</code> is the right default for board members whose
-job is reviewing and classifying signals; reach for <code>viewer</code>
-for anyone who needs full visibility into cluster detail without a say
-in the classification itself (a manager kept in the loop, an auditor, a
-colleague covering for the board without taking assessment
-responsibility). Neither role needs signing in just to see aggregate
-data - that is anonymous throughout; signing in as either role is what
-unlocks patient-level detail.</p>
+the board. An epidemiologist can (and should) classify, close and mute
+clusters, and re-render reports on demand. <code>viewer</code> is
+read-only: it sees exactly what a signed-in epidemiologist sees,
+including patient-level line lists, but cannot record an assessment. In
+practice: <code>epidemiologist</code> is the right default for board
+members whose job is reviewing and classifying signals; reach for
+<code>viewer</code> for anyone who needs full visibility into cluster
+detail without a say in the classification itself (a data-analyst, a
+manager kept in the loop, an auditor, a colleague covering for the board
+without taking assessment responsibility). Neither role needs signing in
+just to see aggregate data - that is anonymous throughout; signing in as
+either role is what unlocks patient-level detail.</p>
 </details><details><summary><strong>Must I run this on my own machine, or must I host it
 somewhere?</strong>
 </summary><p>Either is genuinely fine - EpiSODIC does not assume one or the other,

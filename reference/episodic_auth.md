@@ -1,7 +1,7 @@
 # How sign-in works
 
 EpiSODIC's dashboard is used by a small board of epidemiologists (the
-`"epidemiologist"` role - by definition they assess clusters and
+`"epidemiologist"` role - by definition, they assess clusters and
 classify them) and by `"viewer"` accounts for anyone who needs to see
 cluster detail, including patient-level data, without classifying
 anything themselves. Both roles sign in with a username and password;
