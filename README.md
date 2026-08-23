@@ -14,6 +14,9 @@ The dashboard and its outbreak reports are available in Dutch, English,
 Spanish, French, German, Mandarin Chinese, Hindi, and (Modern Standard)
 Arabic.
 
+Ready to automate your epi-analyses? Be sure to read our [frequently asked
+questions](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html).
+
 This software is free; this repository is open-source software with no data and no site-specific configuration.
 
 <!--

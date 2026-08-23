@@ -1,0 +1,172 @@
+---
+title: "Frequently asked questions"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Frequently asked questions}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+This page collects the questions that come up most often when getting
+started with EpiSODIC - about data, running it day to day, and
+accounts. If your question isn't here, the README's "Data format" and
+"Environment variables" sections and the "Architecture overview",
+"Deployment", and "Detection and reconciliation" vignettes go deeper on
+most of these topics; and if it still isn't answered anywhere, that's
+worth telling us, since it means this page is missing something it
+should cover.
+
+## How do I prepare my data?
+
+Don't worry about getting this perfect by hand - that's exactly what
+`episodic_check_cases()` is for. Hand it your extract, however rough:
+
+```r
+EpiSODIC::episodic_check_cases(my_cases)
+```
+
+No database, no configuration, nothing changed - it just reads your data
+and tells you, in one pass, everything it finds: which column is wrong,
+how many rows are affected, which rows those are, what the offending
+values look like, and what to do about each. It also separates two kinds
+of finding, so you're never left guessing which ones actually block you:
+**problems** (a run refuses to start until these are fixed - a date that
+doesn't parse, a value outside the allowed set) and **advice** (a run
+proceeds regardless, but it's worth a look - one pathogen spelled two
+ways, no `ward` on any hospital row). Run it, fix what it flags as a
+problem, run it again - most people get to a clean report in two or
+three passes. The README's "Data format" section has the full column
+contract this is checking against, including the exact allowed values
+for `care_line`, `institution_type`, and `sex`.
+
+## Do I need to send all of my positives each day, or only the latest results?
+
+Send everything, every time - don't try to filter to "what's new" on
+your end. That's not extra work you're doing for nothing: **deduplication
+is EpiSODIC's job, not yours**. Every row needs a `source_key` that's
+unique within your own source system; re-sending a row EpiSODIC has
+already seen (same `source_key`) is simply a no-op, so a full daily
+export is always safe to resend, and there's no bookkeeping on your side
+to track what's already been sent. Isolates from the same patient and
+pathogen are then collapsed into one case per episode automatically,
+using the episode length configured per pathogen. If you instead try to
+send only "new" results, you risk EpiSODIC quietly missing a positive
+that your own filtering logic mis-classified as already sent - so the
+simpler approach is also the safer one. The one thing this feed should
+never include is negative results; it's deliberately positives-only.
+
+## What do I do when a lab result was rectified or corrected, but EpiSODIC already has the now-false positive?
+
+First: don't worry, this happens, and it's a normal part of running any
+detection system on live laboratory data - it isn't something you did
+wrong. EpiSODIC doesn't offer a way to delete or edit an individual case
+once it's been loaded, and that's deliberate: the case data is the
+audit trail every dossier and every report is built from, so quietly
+removing a row would make past results harder to explain rather than
+easier. What this means in practice depends on where the correction
+lands:
+
+- **If the correction arrives before a cluster was raised from it** (or
+  before the affected run), you don't need to do anything - it simply
+  won't be part of any signal, since it's just data sitting in the
+  database like any other case.
+- **If a cluster has already been raised (or affected) because of it**,
+  handle it the same way you'd handle any signal that turns out not to
+  reflect reality: assess and close it in the dashboard with the
+  classification that fits (e.g. not an outbreak), noting the correction
+  in the assessment. That decision - including the reasoning - becomes
+  part of the cluster's own audit trail, which is exactly the record you
+  want to be able to point to later if anyone asks why a signal didn't
+  lead anywhere.
+- **If a stream is regularly noisy for a reason like this** (a lab or
+  feed that corrects unusually often), muting it for a defined period is
+  the right tool, with the reason recorded - see the mute action on a
+  cluster's dossier.
+
+If this is happening often enough that it's a recurring nuisance rather
+than an occasional correction, that's worth raising with whoever owns
+your extract/transform step - the earlier a correction happens before
+data reaches EpiSODIC, the less cleanup it costs anyone downstream.
+
+## How do I create a new account?
+
+There's no self-service sign-up screen, and that's by design - only
+whoever administers your instance's database provisions accounts, which
+keeps sign-in tied to real board membership rather than being
+open-ended. If that's you, it's one function call:
+
+```r
+Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")  # or your MariaDB/MySQL DSN
+
+EpiSODIC::episodic_provision_user(
+  username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
+  password = "a-temporary-password"
+)
+```
+
+Pick any temporary password you like - the account is created with a
+forced password change, so the new holder is required to set their own
+private password the very first time they sign in, and the temporary
+one you typed never lingers as their real credential. Pass
+`role = "admin"` instead of the default `"assessor"` for someone who
+also needs dossier reconciliation and archiving privileges, beyond
+recording assessments. If someone forgets their password or needs their
+access removed, that's also a job for whoever administers the database
+(there's no self-service reset either) - reach out to them rather than
+trying to work around it yourself.
+
+## Must I run this on my own machine, or must I host it somewhere?
+
+Either is genuinely fine - EpiSODIC doesn't assume one or the other, and
+plenty of setups do each:
+
+- **On your own machine**: `episodic_run_app()` opens the dashboard
+  locally, and you (or a scheduled task on that same machine) run
+  `episodic_run_cron()` on whatever cadence suits you. This is the
+  simplest way to get started, and exactly what `episodic_demo()` does
+  under the hood.
+- **Hosted somewhere shared**: a server running `episodic_run_app()`
+  behind your organisation's usual access setup, with `episodic_run_cron()`
+  scheduled separately (cron, a Windows scheduled task, a CI pipeline -
+  there's nothing EpiSODIC-specific about the scheduling mechanism
+  itself). This is the natural choice once more than one person needs to
+  reach the dashboard, since read access is anonymous to anyone who can
+  reach the app - only classifying a cluster requires signing in.
+
+Both point at the same kind of database (a local SQLite file, or a
+shared MariaDB/MySQL server via `EPISODIC_DB`), so you're not locked
+into your first choice - moving from "trying it out on my laptop" to "a
+shared instance the whole board uses" is a deployment change, not a
+data or code change. See the "Deployment" vignette for the full walk-through.
+
+## More questions worth answering here
+
+The five above are the ones every new user runs into first. Here are
+ten more that come up quickly after that - happy to keep expanding this
+page as more surface:
+
+1. How do I know whether a scheduled `episodic_run_cron()` run actually
+   succeeded, partially loaded, or failed outright - without digging
+   through logs?
+2. Can I try EpiSODIC out against a throwaway database first, before
+   pointing it at anything real?
+3. What happens to detection if I don't have postcode, ward, or
+   institution-activity data for some (or all) of my cases - do I lose
+   the whole picture, or just parts of it?
+4. How do I change the dashboard and report language for my instance?
+5. What's the difference between an `assessor` and an `admin` account,
+   and how do I decide who needs which?
+6. How do I tune detection thresholds (or priority score weights) for my
+   own organisation without forking the package?
+7. Can more than one board member review and classify the same cluster,
+   and what happens if they'd disagree?
+8. I have more than one laboratory system or data source - can I combine
+   them into a single EpiSODIC feed?
+9. Is patient-identifying information ever shown in the dashboard or in
+   outbreak reports sent to clinical colleagues?
+10. My organisation isn't in the Netherlands - does the geography panel
+    (the choropleth map) still work for us?
