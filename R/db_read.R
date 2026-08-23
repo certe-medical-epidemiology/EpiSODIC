@@ -204,7 +204,7 @@ episodic_db_clusters_suppressed_by <- function(con, cluster_id) {
 #' part of a hospital, an area is part of a province. It deliberately does
 #' not link the two chains, because letting a diffuse regional signal
 #' suppress a real ward outbreak would hide the more actionable of the
-#' two. But the assessor still has to know: a regional norovirus rise
+#' two. But the epidemiologist still has to know: a regional norovirus rise
 #' driven by a ward outbreak and a nursing home is one set of cases in
 #' three dossiers, and reading any of them without the others is reading
 #' it wrong. These are the clusters that share cases with this one and

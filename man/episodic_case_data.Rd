@@ -121,7 +121,7 @@ institution. Only meaningful for \code{"hospital"} and
 (ward-level) detection watches, so an inconsistent spelling splits
 one ward into two streams.}
 \item{\code{specialism}}{Character; \code{NA} allowed. The requesting clinical
-specialism. Context for the assessor, not a detection input.}
+specialism. Context for the epidemiologist, not a detection input.}
 \item{\code{pc}}{Character; \code{NA} allowed. The \emph{patient's} postcode area,
 not the institution's - it is what the geography panel and
 area-level (L3) detection use. Four digits as a string for the

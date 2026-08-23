@@ -350,7 +350,7 @@ CREATE TABLE episodic_app_user (
   full_name     TEXT NOT NULL,
   email         TEXT NOT NULL,
   password_hash TEXT NOT NULL,
-  role          TEXT NOT NULL CHECK (role IN ('assessor', 'admin')),
+  role          TEXT NOT NULL CHECK (role IN ('epidemiologist', 'viewer')),
   is_active     INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
   must_change   INTEGER NOT NULL DEFAULT 1 CHECK (must_change IN (0, 1)),
   last_login_at TEXT,

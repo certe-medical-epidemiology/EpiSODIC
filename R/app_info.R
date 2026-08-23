@@ -84,7 +84,7 @@ episodic_ui_info_algorithms_table <- function(
       key = "info.algorithms.rare_trigger"
     ),
     # `mem` has been firing detections all along without appearing here,
-    # so an assessor reading "detected by mem" on a dossier had nowhere
+    # so an epidemiologist reading "detected by mem" on a dossier had nowhere
     # in the app to look the term up - the exact gap this screen exists
     # to close.
     list(

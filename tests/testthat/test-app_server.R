@@ -427,6 +427,114 @@ test_that("bulk_assess_submit is a no-op without a rationale, even if the client
   })
 })
 
+test_that("assess_submit is a no-op for a signed-in viewer, even bypassing the client-side controls that hide the form", {
+  skip_if_not_installed("sodium")
+
+  db_path <- tempfile(fileext = ".sqlite")
+  con <- episodic_db_create(db_path)
+  user_id <- episodic_db_app_user_insert(
+    con,
+    "vsmith",
+    "Val Smith",
+    "v@x.nl",
+    sodium::password_store("initial123"),
+    role = "viewer"
+  )
+  DBI::dbExecute(
+    con,
+    "UPDATE episodic_app_user SET must_change = 0 WHERE user_id = ?",
+    params = list(user_id)
+  )
+  institution_id <- episodic_db_institution_upsert(
+    con,
+    institution_key = digest::digest(
+      "hosp-viewer",
+      algo = "sha1",
+      serialize = FALSE
+    ),
+    display_name = "Test Hospital",
+    institution_type = "hospital",
+    care_line = "second",
+    is_monitored = TRUE
+  )
+  stream_id <- episodic_db_stream_upsert(
+    con,
+    stream_key = episodic_stream_key(
+      "pathogen_institution",
+      "Norovirus",
+      institution_id = institution_id
+    ),
+    level = "pathogen_institution",
+    pathogen = "Norovirus",
+    institution_id = institution_id,
+    observed_date = "2025-01-01"
+  )
+  run_id <- episodic_db_run_start(con, "h", "a")
+  cluster_id <- episodic_db_cluster_insert(
+    con,
+    stream_id = stream_id,
+    first_day = "2025-01-01",
+    last_day = "2025-01-02",
+    n_cases = 3,
+    priority_score = 50,
+    detector_agreement = 1,
+    run_id = run_id
+  )
+  DBI::dbDisconnect(con)
+
+  server <- episodic_app_server_factory(db_path, lang = "nl")
+  shiny::testServer(server, {
+    session$setInputs(
+      auth_username_val = "vsmith",
+      auth_password_val = "initial123"
+    )
+    session$setInputs(auth_login_submit = 1)
+    session$flushReact()
+
+    # The dossier pane must not offer a viewer the classification form
+    # or the report-render button in the first place.
+    session$setInputs(rail_select = cluster_id)
+    session$flushReact()
+    dossier <- paste(output$dossier_pane, collapse = "\n")
+    expect_false(grepl("assess_submit", dossier, fixed = TRUE))
+    expect_false(grepl("report_render_submit", dossier, fixed = TRUE))
+    # a viewer sees patient-level detail (the line list) same as an epidemiologist -
+    # the locked panel is only for a signed-out visitor
+    expect_true(grepl(
+      episodic_tr("panel.linelist.title", lang = "nl"),
+      dossier,
+      fixed = TRUE
+    ))
+    expect_false(grepl(
+      episodic_tr("linelist.locked_title", lang = "nl"),
+      dossier,
+      fixed = TRUE
+    ))
+
+    # A forged client event must not be able to write regardless.
+    session$setInputs(
+      assess_submit = list(
+        cluster_id = cluster_id,
+        verdict = "artefact",
+        rationale = "a viewer should never be able to write this"
+      )
+    )
+    session$flushReact()
+
+    check_con <- episodic_db_connect(db_path)
+    expect_equal(
+      DBI::dbGetQuery(
+        check_con,
+        "SELECT COUNT(*) n FROM episodic_assessment_event"
+      )$n,
+      0
+    )
+
+    DBI::dbDisconnect(check_con)
+    DBI::dbDisconnect(con)
+  })
+})
+
 test_that("output$main_view actually renders the info screen when nav_view is set to 'info'", {
   db_path <- episodic_test_db_path()
 

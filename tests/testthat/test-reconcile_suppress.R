@@ -222,7 +222,7 @@ test_that("the dossier shows what a cluster suppressed", {
 test_that("a cluster sharing cases with one that stands separately says so, and links to it", {
   # Suppression only collapses within a containment chain. A ward
   # outbreak and a regional rise built partly out of it are two dossiers
-  # by design, and an assessor reading either without the other is
+  # by design, and an epidemiologist reading either without the other is
   # reading it wrong.
   env <- suppress_setup(child_share = 0.6)
   on.exit(DBI::dbDisconnect(env$con))

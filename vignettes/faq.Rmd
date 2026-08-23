@@ -178,7 +178,7 @@ EpiSODIC::episodic_demo()
 
 No data, no credentials, no configuration of your own required - it
 creates a temporary database, runs one detection cycle over bundled
-synthetic data, provisions a demo assessor account (printed to the
+synthetic data, provisions a demo epidemiologist account (printed to the
 console), and opens the dashboard. Pass `launch = FALSE` if you just
 want a populated database path back for scripting, without opening the
 app. Nothing about this touches a real database or real data, so feel
@@ -271,28 +271,31 @@ Pick any temporary password you like - the account is created with a
 forced password change, so the new holder is required to set their own
 private password the very first time they sign in, and the temporary
 one you typed never lingers as their real credential. Pass
-`role = "admin"` instead of the default `"assessor"` for someone who
-also needs dossier reconciliation and archiving privileges, beyond
-recording assessments. If someone forgets their password or needs their
-access removed, that is also a job for whoever administers the database
-(there is no self-service reset either) - reach out to them rather than
-trying to work around it yourself.
+`role = "viewer"` instead of the default `"epidemiologist"` for someone who
+should be able to see everything, including patient-level detail, but
+should never record an assessment themselves. If someone forgets their
+password or needs their access removed, that is also a job for whoever
+administers the database (there is no self-service reset either) -
+reach out to them rather than trying to work around it yourself.
 
 </details>
 
 <details>
-<summary><strong>What is the difference between an "assessor" and an "admin" account, and how do I decide who needs which?</strong></summary>
+<summary><strong>What is the difference between an "epidemiologist" and a "viewer" account, and how do I decide who needs which?</strong></summary>
 
-Both can sign in and record classifications on a cluster - that is the
-core, shared job of being on the board. `admin` additionally gets
-dossier reconciliation and archiving privileges on top of that. In
-practice: `assessor` is the right default for most board members, whose
-job is reviewing and classifying signals; reach for `admin` for the
-smaller number of people who also need to manage how clusters are
-reconciled or archived over time, typically whoever administers the
-instance day to day. If you are not sure, `assessor` is the safer
-starting point - it is easy to provision a second, `admin` account for
-yourself specifically once you know you need one.
+`epidemiologist` is, by definition, the person who assesses clusters and
+classifies them - the core, shared job of being on the board. An
+epidemiologist can classify, close and mute clusters, and
+re-render reports on demand. `viewer` is read-only: it sees exactly
+what a signed-in epidemiologist sees, including patient-level line lists, but
+cannot record an assessment. In practice: `epidemiologist` is the right default
+for board members whose job is reviewing and classifying signals;
+reach for `viewer` for anyone who needs full visibility into cluster
+detail without a say in the classification itself (a manager kept in
+the loop, an auditor, a colleague covering for the board without
+taking assessment responsibility). Neither role needs signing in just
+to see aggregate data - that is anonymous throughout; signing in as
+either role is what unlocks patient-level detail.
 
 </details>
 
@@ -312,8 +315,9 @@ plenty of setups do each:
   scheduled separately (cron, a Windows scheduled task, a CI pipeline -
   there is nothing EpiSODIC-specific about the scheduling mechanism
   itself). This is the natural choice once more than one person needs to
-  reach the dashboard, since read access is anonymous to anyone who can
-  reach the app - only classifying a cluster requires signing in.
+  reach the dashboard, since aggregate data is anonymous to anyone who
+  can reach the app - signing in (as either role) only unlocks
+  patient-level detail, and only an `epidemiologist` account can classify.
 
 Both point at the same kind of database (a local SQLite file, or a
 shared MariaDB/MySQL server via `EPISODIC_DB`), so you are not locked
@@ -326,8 +330,8 @@ data or code change. See the "Deployment" vignette for the full walk-through.
 <details>
 <summary><strong>Can more than one board member review the same cluster, and what happens if they disagree?</strong></summary>
 
-Yes - any signed-in assessor or admin can open and classify any cluster;
-there is no assignment or locking that reserves one to a single person.
+Yes - any signed-in epidemiologist can open and classify any cluster; there is no
+assignment or locking that reserves one to a single person.
 Every classification is recorded as its own event on the cluster's
 audit trail, attributed to the account that made it, rather than
 overwriting a single "current" verdict - so if two people classify the

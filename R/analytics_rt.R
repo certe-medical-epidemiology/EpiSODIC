@@ -49,7 +49,7 @@
 #' because the series begins there. The renewal denominator (total
 #' infectiousness) is therefore too small and Rt comes out too high,
 #' which for a cluster is precisely the wrong direction: the first
-#' estimate an assessor sees, on the youngest and least-evidenced
+#' estimate an epidemiologist sees, on the youngest and least-evidenced
 #' cluster, is the most inflated one. Cori et al. make the same point
 #' about early estimates; dropping the windows that fall inside one mean
 #' serial interval of the series start is the standard remedy, and costs

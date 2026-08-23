@@ -25,10 +25,12 @@
 #' cluster in a loop over `episodic_app_submit_assessment()`, each getting
 #' its own `episodic_assessment_event` row exactly as a one-at-a-time
 #' classification would). Every handler re-checks
-#' `current_user()` server-side before writing anything - the UI only
-#' renders these controls for a signed-in session, but a forged client
-#' event must not be able to write regardless (the DOM and `onclick`
-#' handlers are not a trust boundary).
+#' `episodic_user_is_epidemiologist(current_user())` server-side before writing
+#' anything - the UI only renders these controls for a signed-in
+#' `"epidemiologist"` account, but a forged client event must not be able to
+#' write regardless (the DOM and `onclick` handlers are not a trust
+#' boundary, and a signed-in `"viewer"` must not be able to write by
+#' forging one either).
 #'
 #' @param input,output,session The Shiny server function's own arguments.
 #' @param con A [DBI::DBIConnection-class].
@@ -70,7 +72,7 @@ episodic_app_server_assessment_actions <- function(
 
   shiny::observeEvent(input$assess_submit, {
     user <- current_user()
-    shiny::req(user)
+    shiny::req(episodic_user_is_epidemiologist(user))
     payload <- input$assess_submit
     rationale <- trimws(payload$rationale %||% "")
     if (!nzchar(rationale)) {
@@ -92,7 +94,7 @@ episodic_app_server_assessment_actions <- function(
 
   shiny::observeEvent(input$assess_close, {
     user <- current_user()
-    shiny::req(user)
+    shiny::req(episodic_user_is_epidemiologist(user))
     episodic_app_submit_closure(
       con,
       cluster_id = input$assess_close,
@@ -103,7 +105,7 @@ episodic_app_server_assessment_actions <- function(
 
   shiny::observeEvent(input$bulk_assess_submit, {
     user <- current_user()
-    shiny::req(user)
+    shiny::req(episodic_user_is_epidemiologist(user))
     payload <- input$bulk_assess_submit
     rationale <- trimws(payload$rationale %||% "")
     cluster_ids <- payload$cluster_ids
@@ -125,7 +127,7 @@ episodic_app_server_assessment_actions <- function(
 
   shiny::observeEvent(input$assess_mute_submit, {
     user <- current_user()
-    shiny::req(user)
+    shiny::req(episodic_user_is_epidemiologist(user))
     payload <- input$assess_mute_submit
     if (
       !nzchar(payload$muted_from %||% "") ||

@@ -26,9 +26,11 @@
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
 #' @param lang Session language.
-#' @param current_user The session's signed-in user row, or `NULL` for an
-#'   anonymous viewer. Read access is anonymous throughout; the line
-#'   list is the one panel gated on it.
+#' @param current_user The session's signed-in user row, or `NULL` for a
+#'   signed-out visitor. Read access (including epidemiologist vs. viewer) is
+#'   otherwise unrestricted throughout; the line list is the one panel
+#'   gated on sign-in, and the classification form and report-render
+#'   button are further gated on the `"epidemiologist"` role.
 #' @return A `shiny::tagList`.
 #' @keywords internal
 #' @noRd
@@ -75,7 +77,7 @@ episodic_ui_dossier <- function(
   )
 }
 
-#' The line list panel's locked state for anonymous viewers
+#' The line list panel's locked state for signed-out visitors
 #'
 #' Rendered as a locked panel explaining that signing in reveals it,
 #' not as an absent tab - so it stays in the same position in the panel
@@ -108,7 +110,7 @@ episodic_ui_dossier_header <- function(
     shiny::tags$div(
       style = "display:flex;align-items:center;gap:10px;flex-wrap:wrap;",
       # The cluster id sits with the name rather than down in the meta
-      # line: it is what an assessor quotes in an email, reads out on the
+      # line: it is what an epidemiologist quotes in an email, reads out on the
       # phone and searches the archive by, so it belongs where the eye
       # lands first. Muted and upright so it reads as a label on the
       # name, not as part of the taxon.
@@ -136,7 +138,7 @@ episodic_ui_dossier_header <- function(
       },
       # Cases this dossier shares with another that stands separately -
       # the same rise seen at a level suppression deliberately does not
-      # collapse. In its own colour, and it goes there: an assessor who
+      # collapse. In its own colour, and it goes there: an epidemiologist who
       # cannot see the other dossier is reading this one without knowing
       # what it is part of. Three at most, since a region-level cluster
       # can share cases with a good many; the rest are in the panel.
@@ -700,7 +702,7 @@ episodic_ui_linked_chips <- function(
 #' The lattice watches these cases at several levels at once, and only one
 #' of those levels becomes a dossier. This panel is where the others go,
 #' so that "one cluster" never has to mean "we threw the other views
-#' away" - an assessor can see that the ward outbreak in front of them is
+#' away" - an epidemiologist can see that the ward outbreak in front of them is
 #' also what the hospital-level stream was flagging.
 #' @keywords internal
 #' @noRd
@@ -715,7 +717,7 @@ episodic_ui_related_panel <- function(
     return(NULL)
   }
 
-  # Both relations in one place, because to an assessor they are one
+  # Both relations in one place, because to an epidemiologist they are one
   # question - what else are these cases in? - and they differ only in
   # what was done about it: absorbed into this dossier, or left standing
   # as its own.
@@ -872,11 +874,11 @@ episodic_ui_linelist_panel <- function(
 #' The report panel: existing versions plus a render-on-demand button
 #'
 #' "The cron pre-renders for every cluster with a verdict of
-#' possible_epidemic or above; assessors can re-render on demand,
-#' producing a new version". The button only
-#' renders for a signed-in user, matching every other write action; the
-#' version list itself is visible to anyone, since a rendered report's
-#' existence is not sensitive the way its line-list *contents* are.
+#' possible_epidemic or above; admins can re-render on demand, producing
+#' a new version". The button only renders for a signed-in epidemiologist,
+#' matching every other write action; the version list itself is visible
+#' to anyone, since a rendered report's existence is not sensitive the
+#' way its line-list *contents* are.
 #' @keywords internal
 #' @noRd
 episodic_ui_report_panel <- function(
@@ -910,7 +912,7 @@ episodic_ui_report_panel <- function(
         })
       )
     },
-    if (!is.null(current_user)) {
+    if (episodic_user_is_epidemiologist(current_user)) {
       shiny::tagList(
         shiny::uiOutput("report_render_error"),
         shiny::tags$button(
@@ -1011,10 +1013,11 @@ episodic_ui_settings_panel <- function(
 
 #' The right-hand assessment rail
 #'
-#' The timeline ("Verloop") is always visible, to anonymous viewers too,
-#' as an append-only record of every assessment. The classification
-#' form, closure and mute actions render only for a signed-in user -
-#' signing in is required to classify, never to read.
+#' The timeline ("Verloop") is always visible, to signed-out visitors
+#' too, as an append-only record of every assessment. The classification
+#' form, closure and mute actions render only for a signed-in epidemiologist -
+#' viewer accounts see the same timeline but cannot classify, and
+#' signing in is never required just to read.
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
 #' @param lang Session language.
@@ -1054,7 +1057,7 @@ episodic_ui_assessment_rail <- function(
         })
       }
     ),
-    if (!is.null(current_user)) {
+    if (episodic_user_is_epidemiologist(current_user)) {
       episodic_ui_assessment_form(cluster_id, obj, lang = lang)
     }
   )

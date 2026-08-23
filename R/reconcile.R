@@ -459,7 +459,7 @@ episodic_reconcile_merge_detections <- function(detections) {
 #' detection windows would compare quantities measured over different
 #' periods. A cluster's `n_cases` is therefore cumulative while its
 #' `ratio` is "how far above baseline the run that (re)detected it was",
-#' which is also the question an assessor triaging the rail is asking.
+#' which is also the question an epidemiologist triaging the rail is asking.
 #'
 #' @param candidate A single-row candidate from
 #'   `episodic_reconcile_merge_detections()`.

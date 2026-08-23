@@ -23,7 +23,7 @@ if (!file.exists(db_path)) {
   # First run only: a representative synthetic dataset - the full
   # default 2021-2025 window, several years of seasonal baseline across
   # every institution/pathogen/PC combination, plus two injected
-  # outbreaks (one point-source, one propagated) - and one assessor
+  # outbreaks (one point-source, one propagated) - and one epidemiologist
   # account to sign in with.
   episodic_run_cron(
     db_path,
