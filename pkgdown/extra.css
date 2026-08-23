@@ -1,8 +1,14 @@
-/* Multi-colour strip beneath the pkgdown navbar, matching the app's own
-   header (see .episodic-header in inst/app/www/episodic.css). Colours are
-   the role colours from inst/config/palette.yaml: warning, success,
-   danger, primary, secondary, in five equal hard-edged stripes. */
+/* Match the pkgdown navbar to the app's own header (.episodic-header in
+   inst/app/www/episodic.css): a darker background than Yeti's own
+   $primary used elsewhere on the site, plus the same multi-colour strip
+   beneath it (warning, success, danger, primary, secondary from
+   inst/config/palette.yaml, in five equal hard-edged stripes).
+   Set directly rather than via template.bslib.navbar-bg: without a
+   navbar.bg utility class in _pkgdown.yml, pkgdown's navbar template
+   never gets a bg-* class, so that Sass variable has nothing to attach
+   to and Yeti's default wins. */
 .navbar.fixed-top {
+  background-color: #005F7A !important;
   border-bottom: 4px solid transparent;
   border-image: linear-gradient(
     to right,
