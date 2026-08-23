@@ -27,6 +27,9 @@ template:
     # inst/config/palette.yaml / inst/app/www/episodic.css), which is
     # darker than Yeti's own $primary used elsewhere on the site.
     navbar-bg: "#005F7A"
+    # Match the app's own typeface (--episodic-font in
+    # inst/app/www/episodic.css, loaded the same way in R/app_ui.R).
+    base_font: {google: "IBM Plex Sans"}
 
 navbar:
   type: dark
