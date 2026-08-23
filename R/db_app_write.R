@@ -152,7 +152,7 @@ episodic_db_app_user_insert <- function(
   full_name,
   email,
   password_hash,
-  role = "assessor"
+  role = "admin"
 ) {
   DBI::dbExecute(
     con,

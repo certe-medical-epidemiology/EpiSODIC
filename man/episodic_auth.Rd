@@ -4,11 +4,14 @@
 \alias{episodic_auth}
 \title{How sign-in works}
 \description{
-EpiSODIC's dashboard is used by a small board of epidemiologists who sign
-in with a username and password to record their assessments under their
-own name. There is no self-service registration: an administrator creates
-each account with \code{\link[=episodic_provision_user]{episodic_provision_user()}}, and the new user sets
-their own password on first sign-in.
+EpiSODIC's dashboard is used by a small board of epidemiologists (the
+\code{"admin"} role - by definition they assess clusters and classify them)
+and by \code{"viewer"} accounts for anyone who needs to see cluster detail,
+including patient-level data, without classifying anything themselves.
+Both roles sign in with a username and password; there is no
+self-service registration - an administrator creates each account with
+\code{\link[=episodic_provision_user]{episodic_provision_user()}}, and the new user sets their own password
+on first sign-in.
 }
 \details{
 Passwords are hashed (never stored in plain text) and login history is

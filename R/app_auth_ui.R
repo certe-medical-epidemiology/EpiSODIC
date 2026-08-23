@@ -17,10 +17,12 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-# Authentication UI: the app opens read-only for anyone who reaches it,
-# login only to classify. A small header control and two modals (sign in;
-# forced first-login password change) are the entire authentication
-# surface - no separate screen, no account management UI (accounts are
+# Authentication UI: the app opens read-only (aggregate data only) for
+# anyone who reaches it; signing in - as either role - unlocks patient-
+# level detail, and only the "admin" role can additionally classify. A
+# small header control and two modals (sign in; forced first-login
+# password change) are the entire authentication surface - no separate
+# screen, no account management UI, and no role shown here (accounts are
 # provisioned outside the app, see episodic_provision_user()).
 
 #' The header sign-in/sign-out control
