@@ -22,6 +22,17 @@ url: https://certe-medical-epidemiology.github.io/EpiSODIC/
 template:
   bootstrap: 5
   bootswatch: yeti
+  bslib:
+    # Match the app's own header colour (episodic-primary-dark in
+    # inst/config/palette.yaml / inst/app/www/episodic.css), which is
+    # darker than Yeti's own $primary used elsewhere on the site.
+    navbar-bg: "#005F7A"
+    # Match the app's own typeface (--episodic-font in
+    # inst/app/www/episodic.css, loaded the same way in R/app_ui.R).
+    base_font: {google: "IBM Plex Sans"}
+
+navbar:
+  type: dark
 
 reference:
 - title: Try it out
