@@ -134,12 +134,12 @@ by any laboratory.
 **Extract a recent window, not your full history.** A scheduled extract
 should cover only the last few weeks, with some overlap (two weeks is a
 reasonable default) as a safety margin against a missed or delayed run -
-not a re-pull of every positive result you've ever had. This keeps every
-scheduled run fast and light, however large your archive grows. It's
+not a re-pull of every positive result you have ever had. This keeps every
+scheduled run fast and light, however large your archive grows. It is
 safe for the same reason re-running a whole extract by hand is safe:
-deduplication checks each incoming result against what's already stored
+deduplication checks each incoming result against what is already stored
 for that patient and pathogen, so results that reappear inside your
-overlap window - or that continue an episode whose first result isn't in
+overlap window - or that continue an episode whose first result is not in
 this batch at all - are still recognised correctly, never double-counted.
 
 ```r
@@ -198,7 +198,7 @@ anything. The three fixed value sets are available as
   without adding epidemiological information.
 - `ooh_service` — an out-of-hours GP service (*huisartsenpost*), kept as a
   first-class institution like a hospital.
-- `other` — anything that doesn't fit the above; institution identity is
+- `other` — anything that does not fit the above; institution identity is
   dropped (stored as `NULL`) for this category.
 
 **Deduplication is EpiSODIC's job, not yours.** EpiSODIC collapses positives
@@ -210,7 +210,7 @@ file for that patient/pathogen, so a recurring extract only has to cover a
 recent window (with a couple of weeks of overlap, so nothing slips through
 if a run is ever missed) rather than a patient's full history every time.
 Re-sending a row EpiSODIC has already seen (same `source_key`) is always
-safe regardless - it's simply a no-op.
+safe regardless - it is simply a no-op.
 
 **Do not send negative results here.** This feed drives every detector; it
 is deliberately positives-only so an operator never has to ship a

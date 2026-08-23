@@ -32,7 +32,7 @@
 #' patient/pathogen's most recently stored episode anchor, so a
 #' patient/pathogen combination that already has a case on file is
 #' recognised correctly even if the positive that opened that episode
-#' isn't in this batch. This is what lets an operator send only a recent
+#' is not in this batch. This is what lets an operator send only a recent
 #' window of positives on each run instead of the full case history every
 #' time - see `episodic_cases_deduplicate()`.
 #'

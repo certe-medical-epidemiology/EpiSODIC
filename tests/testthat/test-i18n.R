@@ -165,7 +165,7 @@ test_that("the environment variable alone decides what an internal renderer prod
 })
 
 test_that("every key used in code exists in both language files", {
-  # a lightweight guard against typo'd tr() keys: scan R/ for episodic_tr("key"...
+  # a lightweight guard against mistyped tr() keys: scan R/ for episodic_tr("key"...
   r_files <- list.files(
     file.path(testthat::test_path(), "..", "..", "R"),
     pattern = "\\.R$",

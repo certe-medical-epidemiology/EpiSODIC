@@ -113,7 +113,7 @@ episodic_db_cases_for_pathogen <- function(con, pathogen) {
 #' @param patient_keys,pathogens The distinct values from the incoming
 #'   batch to look up. Filters to rows whose `patient_key` and `pathogen`
 #'   both appear somewhere in the batch (not the whole table); the
-#'   result may include a few patient/pathogen pairs that weren't
+#'   result may include a few patient/pathogen pairs that were not
 #'   actually paired in the batch itself, which is harmless - the caller
 #'   only ever looks up the exact pairs it has.
 #' @return A named character vector of `YYYY-MM-DD` dates, one per

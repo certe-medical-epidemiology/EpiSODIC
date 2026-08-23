@@ -22,7 +22,7 @@ reports to the house style, or check what colour a given status uses.
 The palette ships with an organisation-neutral default
 (\code{inst/config/palette.yaml}). To use your own institute's colours instead,
 point the \code{EPISODIC_PALETTE_CONFIG} environment variable at a YAML file
-that overrides only the roles you want to change - anything you don't set
+that overrides only the roles you want to change - anything you do not set
 keeps its shipped default. This is independent of \code{\link[=episodic_config_resolve]{episodic_config_resolve()}}
 on purpose: colours never affect the \code{config_hash} recorded with a
 detection run, since they have no bearing on reproducibility.
