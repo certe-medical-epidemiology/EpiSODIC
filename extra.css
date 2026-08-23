@@ -1,0 +1,15 @@
+/* Multi-colour strip beneath the pkgdown navbar, matching the app's own
+   header (see .episodic-header in inst/app/www/episodic.css). Colours are
+   the role colours from inst/config/palette.yaml: warning, success,
+   danger, primary, secondary, in five equal hard-edged stripes. */
+.navbar.fixed-top {
+  border-bottom: 4px solid transparent;
+  border-image: linear-gradient(
+    to right,
+    #F8AC59 0 20%,
+    #43AC6A 20% 40%,
+    #F36A5A 40% 60%,
+    #008CBA 60% 80%,
+    #333333 80% 100%
+  ) 1;
+}
