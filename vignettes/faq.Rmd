@@ -209,6 +209,8 @@ the same database.
 <details>
 <summary><strong>How do I tune detection thresholds or priority score weights for my own organisation?</strong></summary>
 
+EpiSODIC contains many options you can tune to alter the behaviour of its algorithms.
+
 Through `EPISODIC_CONFIG`, not by editing package code - detection
 thresholds, baseline lengths, `same_place` rules, MEM seasons, and
 priority score weights are all *operational data*, kept out of this
@@ -262,7 +264,10 @@ open-ended. If that is you, it is one function call:
 Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")  # or your MariaDB/MySQL DSN
 
 EpiSODIC::episodic_provision_user(
-  username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
+  username = "jdoe",
+  full_name = "Dr Jane Doe",
+  role = "epidemiologist", # or "viewer"
+  email = "j.doe@example.org",
   password = "a-temporary-password"
 )
 ```
@@ -285,13 +290,13 @@ reach out to them rather than trying to work around it yourself.
 
 `epidemiologist` is, by definition, the person who assesses clusters and
 classifies them - the core, shared job of being on the board. An
-epidemiologist can classify, close and mute clusters, and
+epidemiologist can (and should) classify, close and mute clusters, and
 re-render reports on demand. `viewer` is read-only: it sees exactly
 what a signed-in epidemiologist sees, including patient-level line lists, but
 cannot record an assessment. In practice: `epidemiologist` is the right default
 for board members whose job is reviewing and classifying signals;
 reach for `viewer` for anyone who needs full visibility into cluster
-detail without a say in the classification itself (a manager kept in
+detail without a say in the classification itself (a data-analyst, a manager kept in
 the loop, an auditor, a colleague covering for the board without
 taking assessment responsibility). Neither role needs signing in just
 to see aggregate data - that is anonymous throughout; signing in as

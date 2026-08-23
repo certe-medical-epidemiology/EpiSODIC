@@ -506,7 +506,7 @@ test_that("assess_submit is a no-op for a signed-in viewer, even bypassing the c
       fixed = TRUE
     ))
     expect_false(grepl(
-      episodic_tr("linelist.locked_title", lang = "nl"),
+      episodic_tr("linelist.locked_message", lang = "nl"),
       dossier,
       fixed = TRUE
     ))
