@@ -121,7 +121,7 @@
 #'     (ward-level) detection watches, so an inconsistent spelling splits
 #'     one ward into two streams.}
 #'   \item{`specialism`}{Character; `NA` allowed. The requesting clinical
-#'     specialism. Context for the admin, not a detection input.}
+#'     specialism. Context for the epidemiologist, not a detection input.}
 #'   \item{`pc`}{Character; `NA` allowed. The *patient's* postcode area,
 #'     not the institution's - it is what the geography panel and
 #'     area-level (L3) detection use. Four digits as a string for the

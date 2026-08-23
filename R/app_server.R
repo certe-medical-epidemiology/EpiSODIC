@@ -457,7 +457,7 @@ episodic_ui_format_datetime <- function(
 #' @param lang Session language.
 #' @param current_user The session's signed-in user row, or `NULL` -
 #'   bulk selection is a write action, so checkboxes and the action bar
-#'   only render for a signed-in admin, same gate as the single-cluster
+#'   only render for a signed-in epidemiologist, same gate as the single-cluster
 #'   assessment form. A signed-in viewer sees the rail exactly as a
 #'   signed-out visitor does.
 #' @keywords internal
@@ -491,7 +491,7 @@ episodic_ui_rail <- function(
     })
   )
 
-  bulk_bar <- if (episodic_user_is_admin(current_user)) {
+  bulk_bar <- if (episodic_user_is_epidemiologist(current_user)) {
     shiny::tags$div(
       id = "episodic-bulk-bar",
       style = "display:none;",
@@ -552,7 +552,7 @@ episodic_ui_rail <- function(
 
   shiny::tags$div(
     class = "episodic-rail",
-    if (episodic_user_is_admin(current_user)) {
+    if (episodic_user_is_epidemiologist(current_user)) {
       shiny::tags$script(shiny::HTML(paste0(
         "function episodicBulkUpdate(){var n=document.querySelectorAll('.episodic-rail-select:checked').length; ",
         "var bar=document.getElementById('episodic-bulk-bar'); if(!bar){return;} ",
@@ -593,7 +593,7 @@ episodic_ui_rail <- function(
             "document.querySelectorAll('.episodic-rail-item').forEach(function(el){el.classList.remove('active');}); this.classList.add('active'); Shiny.setInputValue('rail_select', %d, {priority: 'event'})",
             row$cluster_id
           ),
-          if (episodic_user_is_admin(current_user)) {
+          if (episodic_user_is_epidemiologist(current_user)) {
             shiny::tags$input(
               type = "checkbox",
               class = "episodic-rail-select",

@@ -20,13 +20,13 @@
 #' How sign-in works
 #'
 #' EpiSODIC's dashboard is used by a small board of epidemiologists (the
-#' `"admin"` role - by definition they assess clusters and classify them)
-#' and by `"viewer"` accounts for anyone who needs to see cluster detail,
-#' including patient-level data, without classifying anything themselves.
-#' Both roles sign in with a username and password; there is no
-#' self-service registration - an administrator creates each account with
-#' [episodic_provision_user()], and the new user sets their own password
-#' on first sign-in.
+#' `"epidemiologist"` role - by definition, they assess clusters and
+#' classify them) and by `"viewer"` accounts for anyone who needs to see
+#' cluster detail, including patient-level data, without classifying
+#' anything themselves. Both roles sign in with a username and password;
+#' there is no self-service registration - an administrator creates each
+#' account with [episodic_provision_user()], and the new user sets their
+#' own password on first sign-in.
 #'
 #' Passwords are hashed (never stored in plain text) and login history is
 #' kept for audit purposes. This login exists to attribute who assessed
@@ -153,7 +153,7 @@ episodic_auth_change_password <- function(con, user_id, new_password) {
   invisible(NULL)
 }
 
-#' Create an account for a new admin or viewer
+#' Create an account for a new epidemiologist or viewer
 #'
 #' There is no self-service registration and no in-app account management
 #' screen: whoever administers the database creates accounts with this
@@ -174,9 +174,9 @@ episodic_auth_change_password <- function(con, user_id, new_password) {
 #' @param password A temporary plaintext password, never stored or logged
 #'   as-is: it is hashed before it reaches the database, and the account
 #'   holder is required to replace it on first sign-in.
-#' @param role Either `"admin"` (an epidemiologist: can classify and close
-#'   clusters, in addition to everything a viewer can do) or `"viewer"`
-#'   (read-only - can see everything a signed-in admin sees, including
+#' @param role Either `"epidemiologist"` (can classify and close clusters,
+#'   in addition to everything a viewer can do) or `"viewer"` (read-only -
+#'   can see everything a signed-in epidemiologist sees, including
 #'   patient-level line lists, but cannot record an assessment). Both
 #'   roles require sign-in; there is no anonymous access to patient
 #'   detail.
@@ -201,10 +201,10 @@ episodic_provision_user <- function(
   full_name,
   email,
   password,
-  role = "admin"
+  role = "epidemiologist"
 ) {
   rlang::check_installed("sodium")
-  role <- match.arg(role, c("admin", "viewer"))
+  role <- match.arg(role, c("epidemiologist", "viewer"))
   con <- episodic_db_open(db_path)
   on.exit(DBI::dbDisconnect(con))
   invisible(episodic_db_app_user_insert(
@@ -219,8 +219,8 @@ episodic_provision_user <- function(
 
 #' Whether a signed-in user may classify, close, or otherwise write
 #'
-#' The only role distinction the app enforces: `"admin"` accounts (the
-#' epidemiologists who assess clusters and classify them) may write,
+#' The only role distinction the app enforces: `"epidemiologist"` accounts
+#' (who, by definition, assess clusters and classify them) may write,
 #' `"viewer"` accounts may not. Both roles see identical read access,
 #' including patient-level detail - `NULL` (nobody signed in) is the only
 #' case with no patient detail at all, handled separately by each panel's
@@ -230,6 +230,6 @@ episodic_provision_user <- function(
 #' @return A single logical.
 #' @keywords internal
 #' @noRd
-episodic_user_is_admin <- function(user) {
-  !is.null(user) && identical(user$role, "admin")
+episodic_user_is_epidemiologist <- function(user) {
+  !is.null(user) && identical(user$role, "epidemiologist")
 }

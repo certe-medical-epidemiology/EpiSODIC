@@ -139,7 +139,7 @@ episodic_ui_chip <- function(text, colour, filled = FALSE) {
 #'
 #' Same shape as `episodic_ui_chip()`, but it goes somewhere: used in the
 #' dossier header to say that these cases are also in another cluster, and
-#' to take the admin straight to it. Focusable and operable from the
+#' to take the epidemiologist straight to it. Focusable and operable from the
 #' keyboard, like the cluster rows elsewhere - a chip that only responds
 #' to a mouse is a link a keyboard user cannot follow.
 #'

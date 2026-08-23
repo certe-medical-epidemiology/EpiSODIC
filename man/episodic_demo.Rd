@@ -23,7 +23,7 @@ temporary file, so repeated calls never collide and nothing is left
 behind once the R session ends.}
 
 \item{username, full_name, email, password}{Credentials for the demo
-admin account this creates, so you can sign in and classify a
+epidemiologist account this creates, so you can sign in and classify a
 cluster right away. These are placeholder values - change them for
 anything beyond a local demo.}
 
@@ -60,7 +60,7 @@ Invisibly, \code{db_path}.
 \description{
 The fastest way to see what EpiSODIC does: this single call creates a
 fresh database, generates several years of synthetic laboratory data,
-runs detection over it, creates a demo admin account, and opens the
+runs detection over it, creates a demo epidemiologist account, and opens the
 dashboard - all without needing access to any real laboratory system or
 an instance configuration file. Everything used here is a shipped
 default, so it works right after installing the package.

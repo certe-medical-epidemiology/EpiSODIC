@@ -2,7 +2,7 @@
 % Please edit documentation in R/auth.R
 \name{episodic_provision_user}
 \alias{episodic_provision_user}
-\title{Create an account for a new admin or viewer}
+\title{Create an account for a new epidemiologist or viewer}
 \usage{
 episodic_provision_user(
   db_path = Sys.getenv("EPISODIC_DB", unset = NA),
@@ -10,7 +10,7 @@ episodic_provision_user(
   full_name,
   email,
   password,
-  role = "admin"
+  role = "epidemiologist"
 )
 }
 \arguments{
@@ -25,9 +25,9 @@ name, and email address.}
 as-is: it is hashed before it reaches the database, and the account
 holder is required to replace it on first sign-in.}
 
-\item{role}{Either \code{"admin"} (an epidemiologist: can classify and close
-clusters, in addition to everything a viewer can do) or \code{"viewer"}
-(read-only - can see everything a signed-in admin sees, including
+\item{role}{Either \code{"epidemiologist"} (can classify and close clusters,
+in addition to everything a viewer can do) or \code{"viewer"} (read-only -
+can see everything a signed-in epidemiologist sees, including
 patient-level line lists, but cannot record an assessment). Both
 roles require sign-in; there is no anonymous access to patient
 detail.}

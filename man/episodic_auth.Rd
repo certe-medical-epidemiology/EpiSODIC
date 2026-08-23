@@ -5,7 +5,7 @@
 \title{How sign-in works}
 \description{
 EpiSODIC's dashboard is used by a small board of epidemiologists (the
-\code{"admin"} role - by definition they assess clusters and classify them)
+\code{"epidemiologist"} role - by definition they assess clusters and classify them)
 and by \code{"viewer"} accounts for anyone who needs to see cluster detail,
 including patient-level data, without classifying anything themselves.
 Both roles sign in with a username and password; there is no

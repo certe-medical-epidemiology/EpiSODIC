@@ -19,7 +19,7 @@
 
 #' Wire the dossier's report-render-on-demand button
 #'
-#' Re-checks `episodic_user_is_admin(current_user())` server-side before
+#' Re-checks `episodic_user_is_epidemiologist(current_user())` server-side before
 #' rendering, same as every other write action (the DOM/onclick is not a
 #' trust boundary). Reports are written to
 #' `<directory containing db_path>/reports/`, so a report lands next to
@@ -71,7 +71,7 @@ episodic_app_server_report <- function(
 
   shiny::observeEvent(input$report_render_submit, {
     user <- current_user()
-    shiny::req(episodic_user_is_admin(user))
+    shiny::req(episodic_user_is_epidemiologist(user))
     render_error(NULL)
 
     result <- tryCatch(

@@ -198,7 +198,7 @@ test_that("episodic_db_user_by_username() and episodic_db_user_by_id() return NU
   expect_null(episodic_db_user_by_id(con, 99999L))
 })
 
-test_that("episodic_provision_user() defaults to the admin role", {
+test_that("episodic_provision_user() defaults to the epidemiologist role", {
   db_path <- tempfile(fileext = ".sqlite")
   DBI::dbDisconnect(episodic_db_create(db_path))
 
@@ -213,7 +213,7 @@ test_that("episodic_provision_user() defaults to the admin role", {
   con <- episodic_db_connect(db_path)
   on.exit(DBI::dbDisconnect(con))
   user <- episodic_db_user_by_username(con, "jdoe")
-  expect_equal(user$role, "admin")
+  expect_equal(user$role, "epidemiologist")
 })
 
 test_that("episodic_provision_user() also accepts the viewer role, and rejects anything else", {
@@ -246,8 +246,8 @@ test_that("episodic_provision_user() also accepts the viewer role, and rejects a
   )
 })
 
-test_that("episodic_user_is_admin() is TRUE only for a signed-in admin, never for a viewer or NULL", {
-  expect_true(episodic_user_is_admin(list(role = "admin")))
-  expect_false(episodic_user_is_admin(list(role = "viewer")))
-  expect_false(episodic_user_is_admin(NULL))
+test_that("episodic_user_is_epidemiologist() is TRUE only for a signed-in epidemiologist, never for a viewer or NULL", {
+  expect_true(episodic_user_is_epidemiologist(list(role = "epidemiologist")))
+  expect_false(episodic_user_is_epidemiologist(list(role = "viewer")))
+  expect_false(episodic_user_is_epidemiologist(NULL))
 })

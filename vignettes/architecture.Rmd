@@ -52,7 +52,7 @@ episodic_run_cron(
 
 # The interactive entry point - a Shiny app, aggregate data only for
 # anonymous visitors; signing in unlocks patient-level detail for both
-# roles, and only the "admin" role can also classify
+# roles, and only the "epidemiologist" role can also classify
 episodic_run_app(db_path = "/path/to/episodic.sqlite")
 ```
 

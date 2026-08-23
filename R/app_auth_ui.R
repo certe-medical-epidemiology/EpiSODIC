@@ -19,7 +19,7 @@
 
 # Authentication UI: the app opens read-only (aggregate data only) for
 # anyone who reaches it; signing in - as either role - unlocks patient-
-# level detail, and only the "admin" role can additionally classify. A
+# level detail, and only the "epidemiologist" role can additionally classify. A
 # small header control and two modals (sign in; forced first-login
 # password change) are the entire authentication surface - no separate
 # screen, no account management UI, and no role shown here (accounts are

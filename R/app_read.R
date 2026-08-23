@@ -131,7 +131,7 @@ episodic_app_derive_state_for_cluster <- function(con, cluster_id) {
 #' Whether a person explicitly closed a cluster
 #'
 #' A non-terminal verdict (`cluster_not_yet`, `possible_epidemic`,
-#' `confirmed_epidemic`) can be closed by an admin's decision alone,
+#' `confirmed_epidemic`) can be closed by an epidemiologist's decision alone,
 #' without the classification itself changing - "an epidemic closes when
 #' a person says so, whether or not any criterion has fired". That act is
 #' recorded as an `episodic_cluster_state` row (`trigger = "closure"`), not
@@ -407,7 +407,7 @@ episodic_app_density <- function(con, stream, cases) {
 #' whose OLS slope is positive for any flat series. Every cluster with
 #' three or more cases therefore reported a finite doubling time,
 #' including ones that were not growing at all - the single stat on the
-#' dossier an admin is most likely to read as "this is accelerating".
+#' dossier an epidemiologist is most likely to read as "this is accelerating".
 #' Fitting the daily counts instead makes a flat series return a slope of
 #' about zero, and a declining one a negative slope, both of which yield
 #' `NA` and no stat tile.
@@ -1024,7 +1024,7 @@ episodic_app_streams_screen <- function(con, page = 1L, page_size = 50L) {
   }
 
   # Excluded windows are listed on the Streams screen so a baseline is
-  # never quietly different from what an admin expects. Computed only
+  # never quietly different from what an epidemiologist expects. Computed only
   # for this page's streams.
   if (nrow(streams) > 0) {
     streams$baseline_excluded <- lapply(streams$stream_id, function(sid) {

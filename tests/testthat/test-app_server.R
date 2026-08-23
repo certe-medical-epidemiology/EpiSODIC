@@ -498,7 +498,7 @@ test_that("assess_submit is a no-op for a signed-in viewer, even bypassing the c
     dossier <- paste(output$dossier_pane, collapse = "\n")
     expect_false(grepl("assess_submit", dossier, fixed = TRUE))
     expect_false(grepl("report_render_submit", dossier, fixed = TRUE))
-    # a viewer sees patient-level detail (the line list) same as an admin -
+    # a viewer sees patient-level detail (the line list) same as an epidemiologist -
     # the locked panel is only for a signed-out visitor
     expect_true(grepl(
       episodic_tr("panel.linelist.title", lang = "nl"),

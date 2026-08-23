@@ -20,7 +20,7 @@
 # Archive and Activity screens: read-only, reached from the top
 # navigation. Neither needs a sign-in - last winter's assessment is
 # exactly as useful a precedent for a signed-out visitor as it is for a
-# signed-in admin.
+# signed-in epidemiologist.
 
 #' The Archive screen
 #'

@@ -42,7 +42,7 @@ test_that("episodic_ui_dossier() renders the new M5 panels (Rt, similar clusters
     user_id = 1L,
     username = "jdoe",
     full_name = "Jane Doe",
-    role = "admin",
+    role = "epidemiologist",
     stringsAsFactors = FALSE
   )
 
@@ -95,7 +95,7 @@ test_that("episodic_ui_assessment_rail() renders the classification and mute pic
     user_id = 1L,
     username = "jdoe",
     full_name = "Jane Doe",
-    role = "admin",
+    role = "epidemiologist",
     stringsAsFactors = FALSE
   )
 
