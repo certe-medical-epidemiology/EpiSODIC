@@ -192,6 +192,9 @@ CREATE INDEX idx_episodic_case_sample_date ON episodic_case(sample_date);
 CREATE INDEX idx_episodic_case_pathogen ON episodic_case(pathogen);
 CREATE INDEX idx_episodic_case_patient ON episodic_case(patient_key);
 CREATE INDEX idx_episodic_case_institution ON episodic_case(institution_id);
+-- Serves episodic_db_last_case_dates(), the per-run lookup that lets an
+-- operator send only a recent window of positives instead of full history.
+CREATE INDEX idx_episodic_case_patient_pathogen ON episodic_case(patient_key, pathogen, sample_date);
 
 -- ---------------------------------------------------------------------
 -- 5.5 Detections and clusters (cron)

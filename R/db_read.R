@@ -98,6 +98,60 @@ episodic_db_cases_for_pathogen <- function(con, pathogen) {
   )
 }
 
+#' The most recent stored episode anchor per patient/pathogen
+#'
+#' For every `patient_key`/`pathogen` combination already in
+#' `episodic_case`, the latest `sample_date` on record - which is the
+#' anchor date of that patient/pathogen's most recent episode, since
+#' `episodic_cases_deduplicate()` only ever stores the earliest date of
+#' each episode. Used by `episodic_cases_load()` so a run does not need
+#' the full case history resent every time to deduplicate correctly: an
+#' incoming isolate close enough to this stored anchor is recognised as
+#' the same, already-recorded episode.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param patient_keys,pathogens The distinct values from the incoming
+#'   batch to look up. Filters to rows whose `patient_key` and `pathogen`
+#'   both appear somewhere in the batch (not the whole table); the
+#'   result may include a few patient/pathogen pairs that weren't
+#'   actually paired in the batch itself, which is harmless - the caller
+#'   only ever looks up the exact pairs it has.
+#' @return A named character vector of `YYYY-MM-DD` dates, one per
+#'   patient/pathogen combination found, named `paste0(patient_key,
+#'   pathogen)` (matching `episodic_cases_deduplicate()`'s own internal
+#'   grouping key). Empty (but named-vector-shaped) if nothing matches or
+#'   either input is empty.
+#' @keywords internal
+#' @noRd
+episodic_db_last_case_dates <- function(con, patient_keys, pathogens) {
+  empty <- stats::setNames(character(0), character(0))
+  if (length(patient_keys) == 0 || length(pathogens) == 0) {
+    return(empty)
+  }
+
+  patient_placeholders <- paste(rep("?", length(patient_keys)), collapse = ", ")
+  pathogen_placeholders <- paste(rep("?", length(pathogens)), collapse = ", ")
+  res <- DBI::dbGetQuery(
+    con,
+    sprintf(
+      "SELECT patient_key, pathogen, MAX(sample_date) AS last_date
+       FROM episodic_case
+       WHERE patient_key IN (%s) AND pathogen IN (%s)
+       GROUP BY patient_key, pathogen",
+      patient_placeholders,
+      pathogen_placeholders
+    ),
+    params = c(as.list(patient_keys), as.list(pathogens))
+  )
+  if (nrow(res) == 0) {
+    return(empty)
+  }
+  stats::setNames(
+    as.character(res$last_date),
+    paste0(res$patient_key, res$pathogen)
+  )
+}
+
 #' @param open_only If `TRUE`, exclude clusters with `merged_into` set.
 #' @keywords internal
 #' @noRd

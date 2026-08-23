@@ -190,10 +190,16 @@ anything. The three fixed value sets are available as
 - `other` — anything that doesn't fit the above; institution identity is
   dropped (stored as `NULL`) for this category.
 
-**Deduplication is EpiSODIC's job, not yours.** Send every positive result;
-EpiSODIC collapses isolates for the same patient and pathogen into one case
-per episode, using the episode length configured per pathogen in
-`inst/config/pathogen_config.csv`.
+**Deduplication is EpiSODIC's job, not yours.** EpiSODIC collapses isolates
+for the same patient and pathogen into one case per episode, using the
+episode length configured per pathogen in `inst/config/pathogen_config.csv`
+- and it does this correctly across runs, not just within one extract: each
+run checks incoming isolates against the most recent episode already on
+file for that patient/pathogen, so a recurring extract only has to cover a
+recent window (with a couple of weeks of overlap, so nothing slips through
+if a run is ever missed) rather than a patient's full history every time.
+Re-sending a row EpiSODIC has already seen (same `source_key`) is always
+safe regardless - it's simply a no-op.
 
 **Do not send negative results here.** This feed drives every detector; it
 is deliberately positives-only so an operator never has to ship a

@@ -20,6 +20,13 @@
   this cluster suppressed and what it merely overlaps.
 - `episodic_case_data` documents every column's type, whether it may be empty and what it accepts in one
   table, with a worked example of a minimal valid extract.
+- Deduplication now checks incoming isolates against the most recently stored episode for their
+  patient/pathogen, not just against the rest of the current batch. An operator can now send a recent
+  window of positives on every run (with a couple of weeks of overlap as a safety margin) instead of a
+  patient's full history every time - a later isolate for an episode already on file is still recognised as
+  a continuation of it rather than becoming a spurious second case.
+- A "Frequently asked questions" vignette (`vignette("faq", package = "EpiSODIC")`), linked from the top of
+  the README.
 
 ## Changed
 
