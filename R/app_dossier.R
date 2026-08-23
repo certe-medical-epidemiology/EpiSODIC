@@ -223,10 +223,10 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       ))
     )
   }
-  isolate_phrase <- episodic_count_phrase(
-    obj$n_isolates,
-    episodic_tr("unit.isolate", lang = lang),
-    episodic_tr("unit.isolates", lang = lang)
+  positive_phrase <- episodic_count_phrase(
+    obj$n_positives,
+    episodic_tr("unit.positive", lang = lang),
+    episodic_tr("unit.positives", lang = lang)
   )
   stats <- c(
     stats,
@@ -235,7 +235,7 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       obj$unique_patients,
       episodic_tr(
         "dossier.stat.unique_patients_sub",
-        isolates_phrase = isolate_phrase,
+        positives_phrase = positive_phrase,
         lang = lang
       )
     ))

@@ -17,14 +17,14 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Deduplicate isolates into one case per patient per episode
+#' Deduplicate positives into one case per patient per episode
 #'
-#' One isolate per patient per episode, using episode lengths from
+#' One positive per patient per episode, using episode lengths from
 #' `episodic_pathogen_config`, via `AMR::get_episode()` (a hard dependency -
 #' `pathogen` is still an arbitrary lab-provided string, never resolved
 #' against `AMR::as.mo()` or any taxonomy, since a taxonomy cannot
 #' represent everything a lab reports; see `R/cases.R`).
-#' Isolates for the same patient and pathogen are sorted by sample date
+#' Positives for the same patient and pathogen are sorted by sample date
 #' internally by `get_episode()`, one call per patient/pathogen group so
 #' each group's own `episode_days` window applies independently.
 #'
@@ -40,12 +40,12 @@
 #'   `episodic_db_last_case_dates()`. Names are `paste0(patient_key,
 #'   pathogen)`, matching this function's own internal grouping key. Lets
 #'   an operator send only a recent window of positives on each run - an
-#'   incoming isolate that falls within `episode_days` of that
+#'   incoming positive that falls within `episode_days` of that
 #'   patient/pathogen's last stored episode is recognised as a
 #'   continuation of it (and dropped, since the stored case already
 #'   represents that episode) rather than being inserted as a spurious
 #'   second case. Defaults to `NULL` (nothing known yet), under which
-#'   this behaves exactly as before - every incoming isolate is compared
+#'   this behaves exactly as before - every incoming positive is compared
 #'   only against the rest of the current batch.
 #' @return `cases`, with one row per patient per new episode (the
 #'   earliest `sample_date` in each episode is kept, since sample date is
@@ -87,7 +87,7 @@ episodic_cases_deduplicate <- function(cases, pathogen_config, existing = NULL) 
     }
     if (!is.na(anchor)) {
       # Prepend the already-stored episode's anchor date, so an incoming
-      # isolate close enough to it is recognised as the same episode
+      # positive close enough to it is recognised as the same episode
       # (already represented in the database) instead of a new one.
       episode_id_all <- get_episode(
         c(as.Date(anchor), dates),

@@ -27,11 +27,11 @@
 #' while a GP practice is collapsed to its municipality, keyed by a hash of
 #' the source identifier so a later rename does not fracture the history.
 #'
-#' Deduplication looks beyond the current batch: before grouping isolates
+#' Deduplication looks beyond the current batch: before grouping positives
 #' into episodes, [episodic_db_last_case_dates()] fetches each incoming
 #' patient/pathogen's most recently stored episode anchor, so a
 #' patient/pathogen combination that already has a case on file is
-#' recognised correctly even if the isolate that opened that episode
+#' recognised correctly even if the positive that opened that episode
 #' isn't in this batch. This is what lets an operator send only a recent
 #' window of positives on each run instead of the full case history every
 #' time - see `episodic_cases_deduplicate()`.

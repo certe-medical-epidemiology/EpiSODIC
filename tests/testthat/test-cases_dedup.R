@@ -49,7 +49,7 @@ raw_case <- function(
   )
 }
 
-test_that("isolates for the same patient within the episode window collapse to one case", {
+test_that("positives for the same patient within the episode window collapse to one case", {
   raw <- rbind(
     raw_case("K1", "P1", "2025-01-01"),
     raw_case("K2", "P1", "2025-01-10"),
@@ -69,7 +69,7 @@ test_that("a gap longer than episode_days starts a new episode", {
   expect_equal(nrow(deduped), 2)
 })
 
-test_that("an isolate within episode_days of an already-stored episode is dropped, not inserted as new", {
+test_that("a positive within episode_days of an already-stored episode is dropped, not inserted as new", {
   raw <- raw_case("K2", "P1", "2025-01-20") # 19 days after the stored anchor below
   deduped <- episodic_cases_deduplicate(
     raw,
@@ -79,7 +79,7 @@ test_that("an isolate within episode_days of an already-stored episode is droppe
   expect_equal(nrow(deduped), 0)
 })
 
-test_that("an isolate beyond episode_days of an already-stored episode starts a new one", {
+test_that("a positive beyond episode_days of an already-stored episode starts a new one", {
   raw <- raw_case("K2", "P1", "2025-03-01") # 59 days after the stored anchor below
   deduped <- episodic_cases_deduplicate(
     raw,
@@ -138,8 +138,8 @@ test_that("different pathogens for the same patient are never merged", {
   expect_equal(nrow(deduped), 2)
 })
 
-test_that("the same isolate tagged under two pathogen values (e.g. E. coli and ETEC) is not merged", {
-  # deliberately mirrors the operator's own transform: one ETEC isolate can
+test_that("the same positive tagged under two pathogen values (e.g. E. coli and ETEC) is not merged", {
+  # deliberately mirrors the operator's own transform: one ETEC positive can
   # legitimately appear as two rows, "Escherichia coli" and "ETEC", so each
   # is watched on its own
   raw <- rbind(

@@ -131,6 +131,17 @@ shape below, then call `episodic_run_cron()` with the result as a plain
 data frame (a tibble works just as well). This keeps the engine reusable
 by any laboratory.
 
+**Extract a recent window, not your full history.** A scheduled extract
+should cover only the last few weeks, with some overlap (two weeks is a
+reasonable default) as a safety margin against a missed or delayed run -
+not a re-pull of every positive result you've ever had. This keeps every
+scheduled run fast and light, however large your archive grows. It's
+safe for the same reason re-running a whole extract by hand is safe:
+deduplication checks each incoming result against what's already stored
+for that patient and pathogen, so results that reappear inside your
+overlap window - or that continue an episode whose first result isn't in
+this batch at all - are still recognised correctly, never double-counted.
+
 ```r
 cases <- my_extract_and_transform_function()
 
@@ -162,10 +173,10 @@ anything. The three fixed value sets are available as
 | Column | Type and allowed values | Meaning |
 |---|---|---|
 | `source_key` | character, required, unique | A unique identifier for the row in your own source system, so re-running the same extract later cannot create duplicate cases. |
-| `patient_key` | character, required | A stable, pseudonymised patient identifier. This is what deduplication and episode grouping key on: without it, EpiSODIC cannot tell that two isolates belong to the same patient, and every isolate would be treated as its own case. Never displayed as-is in the interface. |
+| `patient_key` | character, required | A stable, pseudonymised patient identifier. This is what deduplication and episode grouping key on: without it, EpiSODIC cannot tell that two positives belong to the same patient, and every positive would be treated as its own case. Never displayed as-is in the interface. |
 | `sample_date` | `Date` or `"YYYY-MM-DD"`, required | The anchor date every detector, trend, and report is built against. If your system falls back to a receipt date when sample date is unfilled, that fallback should already have happened before this row reaches EpiSODIC. |
 | `receipt_date` | `Date` or `"YYYY-MM-DD"`, `NA` allowed | When the result was received. Stored for provenance/audit, kept separate from `sample_date` - EpiSODIC deliberately does not use it to measure reporting delay, since a lab's own receipt-date field can itself silently be a stand-in for a missing sample date; reporting completeness is instead measured empirically, from how a stream's case counts change across successive detection runs. |
-| `pathogen` | character, required, free text | The pathogen as your lab reports it, as free text. **Not** resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying isolate can appear more than once under different `pathogen` values when that is epidemiologically useful - an ETEC isolate reported as both `"Escherichia coli"` and `"ETEC"`, so each is watched on its own. This is your transform step's decision, not EpiSODIC's. |
+| `pathogen` | character, required, free text | The pathogen as your lab reports it, as free text. **Not** resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying positive can appear more than once under different `pathogen` values when that is epidemiologically useful - an ETEC positive reported as both `"Escherichia coli"` and `"ETEC"`, so each is watched on its own. This is your transform step's decision, not EpiSODIC's. |
 | `care_line` | `first`, `second`, `other`, `unknown` - `NA` allowed | Which part of the health system the case came from: `first` is primary care, `second` secondary care. `NA` is read as `unknown` and stored that way - an empty value, an R `NA` and a database `NULL` all mean the same thing here. |
 | `institution_key` | character, required | A stable identifier for the institution, hashed internally so a later rename does not fracture history. |
 | `institution_display_name` | character, required | The human-readable name shown in the interface. |
@@ -190,11 +201,11 @@ anything. The three fixed value sets are available as
 - `other` — anything that doesn't fit the above; institution identity is
   dropped (stored as `NULL`) for this category.
 
-**Deduplication is EpiSODIC's job, not yours.** EpiSODIC collapses isolates
+**Deduplication is EpiSODIC's job, not yours.** EpiSODIC collapses positives
 for the same patient and pathogen into one case per episode, using the
 episode length configured per pathogen in `inst/config/pathogen_config.csv`
 - and it does this correctly across runs, not just within one extract: each
-run checks incoming isolates against the most recent episode already on
+run checks incoming positives against the most recent episode already on
 file for that patient/pathogen, so a recurring extract only has to cover a
 recent window (with a couple of weeks of overlap, so nothing slips through
 if a run is ever missed) rather than a patient's full history every time.

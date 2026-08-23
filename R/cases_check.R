@@ -202,7 +202,7 @@ episodic_check_structure <- function(cases) {
           "source_key must identify one laboratory result in your own ",
           "source system. If your extract joins a table that multiplies ",
           "rows, de-duplicate before handing the data over; if one ",
-          "isolate legitimately appears under two pathogen names, give ",
+          "positive legitimately appears under two pathogen names, give ",
           "each row its own key (e.g. paste(source_key, pathogen))."
         )
       )
@@ -475,8 +475,8 @@ episodic_check_advice <- function(cases) {
         },
         fix = paste0(
           "Deduplication and episode grouping key on patient_key: with a ",
-          "value that never repeats, every isolate becomes its own case ",
-          "and repeat isolates inflate the counts. Use a pseudonymised ",
+          "value that never repeats, every positive becomes its own case ",
+          "and repeat positives inflate the counts. Use a pseudonymised ",
           "patient identifier that is stable across results, not the ",
           "sample identifier."
         )

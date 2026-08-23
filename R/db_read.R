@@ -106,7 +106,7 @@ episodic_db_cases_for_pathogen <- function(con, pathogen) {
 #' `episodic_cases_deduplicate()` only ever stores the earliest date of
 #' each episode. Used by `episodic_cases_load()` so a run does not need
 #' the full case history resent every time to deduplicate correctly: an
-#' incoming isolate close enough to this stored anchor is recognised as
+#' incoming positive close enough to this stored anchor is recognised as
 #' the same, already-recorded episode.
 #'
 #' @param con A [DBI::DBIConnection-class].

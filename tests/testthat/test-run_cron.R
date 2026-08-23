@@ -73,9 +73,9 @@ test_that("running the cron twice over the same window is idempotent on case cou
   expect_equal(n_cases_1, n_cases_2) # same source_keys: no duplicate case rows
 })
 
-test_that("a second isolate sent in a later, non-overlapping run still joins its earlier episode", {
+test_that("a second positive sent in a later, non-overlapping run still joins its earlier episode", {
   # The scenario "send a recent window, not the full history" depends on
-  # this: two isolates for the same patient/pathogen, within episode_days
+  # this: two positives for the same patient/pathogen, within episode_days
   # of each other, arriving in two separate episodic_run_cron() calls
   # with different source_keys and no shared rows between them. Without
   # cross-run deduplication this would insert two cases instead of one.

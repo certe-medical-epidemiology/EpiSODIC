@@ -56,10 +56,10 @@ Only a recent window, with a couple of weeks of overlap - that's the
 recommended norm, and it's fully supported. You do *not* need to
 re-extract a patient's whole history on every run.
 
-Here's why that's safe: every run checks each incoming isolate against
+Here's why that's safe: every run checks each incoming positive against
 the most recent episode EpiSODIC already has on file for that
 patient/pathogen, not just against the other rows in the same batch. So
-if a patient's first isolate was loaded last week and a second isolate
+if a patient's first positive was loaded last week and a second positive
 for the same episode arrives today in an otherwise-unrelated extract,
 EpiSODIC still recognises it as the same episode and doesn't create a
 second case for it. A window with, say, two weeks of overlap with your

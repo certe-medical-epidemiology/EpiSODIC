@@ -21,7 +21,7 @@
 
 test_that("episodic_count_phrase() uses the singular for exactly 1", {
   expect_equal(episodic_count_phrase(1, "geval", "gevallen"), "1 geval")
-  expect_equal(episodic_count_phrase(1, "isolaat", "isolaten"), "1 isolaat")
+  expect_equal(episodic_count_phrase(1, "positief", "positieven"), "1 positief")
   expect_equal(episodic_count_phrase(1, "case", "cases"), "1 case")
 })
 
