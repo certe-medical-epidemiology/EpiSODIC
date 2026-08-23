@@ -54,7 +54,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="changed-0-5-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-5-0"></a></h3>
-<ul><li>
+<ul><li>Accounts have exactly two roles: <code>"epidemiologist"</code> (by definition, assesses clusters and classifies them) and <code>"viewer"</code>, read-only and otherwise identical - a viewer sees everything a signed-in epidemiologist sees, including patient-level line lists, but cannot classify, close, mute a stream, or re-render a report. Aggregate data stays visible to anyone who reaches the app; signing in, as either role, is what unlocks patient-level detail, and only an epidemiologist account can write. <code><a href="../reference/episodic_provision_user.html">episodic_provision_user()</a></code>’s <code>role</code> argument defaults to <code>"epidemiologist"</code> and rejects anything besides <code>"epidemiologist"</code>/<code>"viewer"</code>.</li>
+<li>
 <code><a href="../reference/episodic_validate_cases.html">episodic_validate_cases()</a></code> reports every problem in one error instead of stopping at the first.</li>
 <li>
 <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> checks the case and denominator feeds before writing anything and stops if they cannot be used, rather than returning quietly with a <code>failed</code> run row nobody was looking at. A run that fails for any other reason warns, and an empty extract warns before the run starts.</li>

@@ -69,7 +69,7 @@ Create and connect to the database EpiSODIC stores its data in.
 - [`episodic_auth`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_auth.md)
   : How sign-in works
 - [`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md)
-  : Create an account for a new assessor or administrator
+  : Create an account for a new epidemiologist or viewer
 
 ## Configure detection
 

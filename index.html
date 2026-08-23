@@ -113,7 +113,7 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <p>No data, no credentials, no configuration - one call runs the whole system against bundled synthetic data:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">EpiSODIC</span><span class="fu">::</span><span class="fu"><a href="reference/episodic_demo.html">episodic_demo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>This creates a temporary database, runs one detection cycle, provisions a demo assessor account (printed to the console), and opens the app. Pass <code>launch = FALSE</code> to skip opening the app and just get a populated database path back, e.g. for scripting.</p>
+<p>This creates a temporary database, runs one detection cycle, provisions a demo epidemiologist account (printed to the console), and opens the app. Pass <code>launch = FALSE</code> to skip opening the app and just get a populated database path back, e.g. for scripting.</p>
 </div>
 <div class="section level3">
 <h3 id="bringing-your-own-data-check-it-first">Bringing your own data? Check it first<a class="anchor" aria-label="anchor" href="#bringing-your-own-data-check-it-first"></a>
@@ -423,13 +423,20 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <div class="section level2">
 <h2 id="accounts">Accounts<a class="anchor" aria-label="anchor" href="#accounts"></a>
 </h2>
-<p>Read access is anonymous - the app opens read-only for anyone who reaches it. Signing in is only needed to classify a cluster, and there is deliberately no in-app account management screen: the four assessor accounts are provisioned by whoever administers the database, not created by assessors themselves or by the app.</p>
+<p>Aggregate data is anonymous - the app opens read-only for anyone who reaches it. Signing in unlocks patient-level detail (the line list) for both roles below; there is deliberately no in-app account management screen, and accounts are provisioned by whoever administers the database, not created by users themselves or by the app.</p>
+<p>There are exactly two roles:</p>
+<ul>
+<li>
+<code>"epidemiologist"</code> - by definition, assesses clusters and classifies them. Can do everything a viewer can, plus classify, close, and mute clusters, and re-render reports on demand.</li>
+<li>
+<code>"viewer"</code> - read-only. Sees exactly what a signed-in epidemiologist sees, including patient-level detail, but cannot record an assessment.</li>
+</ul>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span>  <span class="co"># or pass db_path explicitly below</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/episodic_provision_user.html">episodic_provision_user</a></span><span class="op">(</span></span>
 <span>  username <span class="op">=</span> <span class="st">"jdoe"</span>, full_name <span class="op">=</span> <span class="st">"Jane Doe"</span>, email <span class="op">=</span> <span class="st">"j.doe@example.org"</span>,</span>
-<span>  password <span class="op">=</span> <span class="st">"a-temporary-password"</span></span>
+<span>  password <span class="op">=</span> <span class="st">"a-temporary-password"</span>, role <span class="op">=</span> <span class="st">"epidemiologist"</span>  <span class="co"># or "viewer"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="reference/episodic_provision_user.html">episodic_provision_user()</a></code> takes <code>db_path</code> (defaulting to <code>EPISODIC_DB</code>, see “Environment variables” below), not an open connection - it opens and closes its own via <code><a href="reference/episodic_db_open.html">episodic_db_open()</a></code>, so provisioning an account is one call at the console. The account is created with <code>must_change = TRUE</code>, so its first real sign-in forces the holder to set their own password before continuing.</p>
 </div>

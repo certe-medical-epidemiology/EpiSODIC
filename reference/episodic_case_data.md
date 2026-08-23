@@ -154,7 +154,7 @@ rather than copying the strings out of this page.
 - `specialism`:
 
   Character; `NA` allowed. The requesting clinical specialism. Context
-  for the assessor, not a detection input.
+  for the epidemiologist, not a detection input.
 
 - `pc`:
 

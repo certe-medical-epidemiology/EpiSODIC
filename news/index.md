@@ -54,6 +54,17 @@
 
 ### Changed
 
+- Accounts have exactly two roles: `"epidemiologist"` (by definition,
+  assesses clusters and classifies them) and `"viewer"`, read-only and
+  otherwise identical - a viewer sees everything a signed-in
+  epidemiologist sees, including patient-level line lists, but cannot
+  classify, close, mute a stream, or re-render a report. Aggregate data
+  stays visible to anyone who reaches the app; signing in, as either
+  role, is what unlocks patient-level detail, and only an epidemiologist
+  account can write.
+  [`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md)’s
+  `role` argument defaults to `"epidemiologist"` and rejects anything
+  besides `"epidemiologist"`/`"viewer"`.
 - [`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
   reports every problem in one error instead of stopping at the first.
 - [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)

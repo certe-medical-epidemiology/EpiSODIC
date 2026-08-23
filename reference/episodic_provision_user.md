@@ -1,4 +1,4 @@
-# Create an account for a new assessor or administrator
+# Create an account for a new epidemiologist or viewer
 
 There is no self-service registration and no in-app account management
 screen: whoever administers the database creates accounts with this
@@ -16,7 +16,7 @@ episodic_provision_user(
   full_name,
   email,
   password,
-  role = "assessor"
+  role = "epidemiologist"
 )
 ```
 
@@ -41,8 +41,11 @@ episodic_provision_user(
 
 - role:
 
-  Either `"assessor"` (records assessments) or `"admin"` (assessor
-  privileges plus dossier reconciliation and archiving).
+  Either `"epidemiologist"` (can classify and close clusters, in
+  addition to everything a viewer can do) or `"viewer"` (read-only - can
+  see everything a signed-in epidemiologist sees, including
+  patient-level line lists, but cannot record an assessment). Both roles
+  require sign-in; there is no anonymous access to patient detail.
 
 ## Value
 

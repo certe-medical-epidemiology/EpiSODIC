@@ -150,7 +150,7 @@ epidemic started” rather than “are counts elevated”, with
 pre-/post-epidemic thresholds derived from historical seasons.</li>
 </ul>
 <p>A stream’s own history feeds back into its baseline: a period an
-assessor confirmed as a real epidemic is excluded from what
+epidemiologist confirmed as a real epidemic is excluded from what
 <code>farringtonFlexible()</code> sees on subsequent runs for that
 stream, so last winter’s outbreak does not silently raise this winter’s
 threshold.</p>
@@ -162,8 +162,8 @@ threshold.</p>
 same underlying cluster would otherwise appear as a new row every single
 time it is still elevated. Reconciliation, run per stream immediately
 after detection inside the same transaction, is what turns that into a
-small number of <em>persistent</em> clusters an assessor can actually
-track:</p>
+small number of <em>persistent</em> clusters an epidemiologist can
+actually track:</p>
 <ol style="list-style-type: decimal">
 <li>Detections from different detectors whose intervals overlap merge
 into one candidate episode.</li>
@@ -176,8 +176,9 @@ preserved, never discarded.</li>
 <li>A cluster nobody’s seen a new candidate for this run gets its
 <code>runs_since_detected</code> counter incremented; past a threshold,
 with no assessment ever recorded, it closes itself automatically as
-expected variation. Anything an assessor has actually classified as
-worth watching is never auto-closed - only a person closes those.</li>
+expected variation. Anything an epidemiologist has actually classified
+as worth watching is never auto-closed - only a person closes
+those.</li>
 </ol>
 <p>Because the anchor is the sample date, a late-arriving case can
 legitimately change an already-detected signal retrospectively -
@@ -212,7 +213,7 @@ norovirus rise driven by a ward outbreak and a nursing home is one set
 of cases in three dossiers. Rather than collapse them, the dossier says
 so - each names the others in its header (“Linked to #123”, which opens
 them) and lists them under Related clusters. Two views of one rise, and
-the assessor is told which is which.</p>
+the epidemiologist is told which is which.</p>
 </div>
 <div class="section level2">
 <h2 id="derived-state-not-a-stored-status">Derived state, not a stored status<a class="anchor" aria-label="anchor" href="#derived-state-not-a-stored-status"></a>

@@ -93,9 +93,9 @@ EpiSODIC::episodic_demo()
 ```
 
 This creates a temporary database, runs one detection cycle, provisions
-a demo assessor account (printed to the console), and opens the app.
-Pass `launch = FALSE` to skip opening the app and just get a populated
-database path back, e.g. for scripting.
+a demo epidemiologist account (printed to the console), and opens the
+app. Pass `launch = FALSE` to skip opening the app and just get a
+populated database path back, e.g. for scripting.
 
 ### Bringing your own data? Check it first
 
@@ -441,11 +441,19 @@ onwards; on older servers they are accepted but silently ignored.
 
 ## Accounts
 
-Read access is anonymous - the app opens read-only for anyone who
-reaches it. Signing in is only needed to classify a cluster, and there
-is deliberately no in-app account management screen: the four assessor
-accounts are provisioned by whoever administers the database, not
-created by assessors themselves or by the app.
+Aggregate data is anonymous - the app opens read-only for anyone who
+reaches it. Signing in unlocks patient-level detail (the line list) for
+both roles below; there is deliberately no in-app account management
+screen, and accounts are provisioned by whoever administers the
+database, not created by users themselves or by the app.
+
+There are exactly two roles:
+
+- `"epidemiologist"` - by definition, assesses clusters and classifies
+  them. Can do everything a viewer can, plus classify, close, and mute
+  clusters, and re-render reports on demand.
+- `"viewer"` - read-only. Sees exactly what a signed-in epidemiologist
+  sees, including patient-level detail, but cannot record an assessment.
 
 ``` r
 
@@ -453,7 +461,7 @@ Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")  # or pass db_path explicit
 
 episodic_provision_user(
   username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
-  password = "a-temporary-password"
+  password = "a-temporary-password", role = "epidemiologist"  # or "viewer"
 )
 ```
 

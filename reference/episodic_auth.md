@@ -1,9 +1,12 @@
 # How sign-in works
 
-EpiSODIC's dashboard is used by a small board of epidemiologists who
-sign in with a username and password to record their assessments under
-their own name. There is no self-service registration: an administrator
-creates each account with
+EpiSODIC's dashboard is used by a small board of epidemiologists (the
+`"epidemiologist"` role - by definition they assess clusters and
+classify them) and by `"viewer"` accounts for anyone who needs to see
+cluster detail, including patient-level data, without classifying
+anything themselves. Both roles sign in with a username and password;
+there is no self-service registration - an administrator creates each
+account with
 [`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md),
 and the new user sets their own password on first sign-in.
 
