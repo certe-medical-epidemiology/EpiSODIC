@@ -20,6 +20,18 @@
   this cluster suppressed and what it merely overlaps.
 - `episodic_case_data` documents every column's type, whether it may be empty and what it accepts in one
   table, with a worked example of a minimal valid extract.
+- Deduplication now checks incoming positives against the most recently stored episode for their
+  patient/pathogen, not just against the rest of the current batch. An operator can now send a recent
+  window of positives on every run (with a couple of weeks of overlap as a safety margin) instead of a
+  patient's full history every time - a later positive for an episode already on file is still recognised as
+  a continuation of it rather than becoming a spurious second case.
+- "Isolate" is gone from the dashboard, reports, and `episodic_check_cases()` advice - replaced by
+  "positive"/"positives" throughout (`unit.isolate(s)` and `report.isolates_suffix` are now
+  `unit.positive(s)` and `report.positives_suffix` in every language file). "Isolate" implied a bacterial
+  culture and read wrong for a PCR- or antigen-detected virus; "positive" describes any lab result EpiSODIC
+  ingests, regardless of how it was produced.
+- A "Frequently asked questions" vignette (`vignette("faq", package = "EpiSODIC")`), linked from the top of
+  the README.
 
 ## Changed
 

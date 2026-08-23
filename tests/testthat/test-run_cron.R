@@ -73,6 +73,57 @@ test_that("running the cron twice over the same window is idempotent on case cou
   expect_equal(n_cases_1, n_cases_2) # same source_keys: no duplicate case rows
 })
 
+test_that("a second positive sent in a later, non-overlapping run still joins its earlier episode", {
+  # The scenario "send a recent window, not the full history" depends on
+  # this: two positives for the same patient/pathogen, within episode_days
+  # of each other, arriving in two separate episodic_run_cron() calls
+  # with different source_keys and no shared rows between them. Without
+  # cross-run deduplication this would insert two cases instead of one.
+  path <- tempfile(fileext = ".sqlite")
+  raw_case <- function(source_key, sample_date) {
+    data.frame(
+      source_key = source_key,
+      patient_key = "P1",
+      sample_date = sample_date,
+      receipt_date = sample_date,
+      pathogen = "Test pathogen",
+      care_line = "second",
+      institution_key = "HOSP-01",
+      institution_display_name = "Hospital",
+      institution_type = "hospital",
+      municipality = NA_character_,
+      ward = "ICU",
+      specialism = "Interne",
+      pc = "9711",
+      sex = "M",
+      age = 40L,
+      stringsAsFactors = FALSE
+    )
+  }
+
+  episodic_run_cron(
+    path,
+    cases = raw_case("K1", "2025-01-01"),
+    run_date = as.Date("2025-01-01")
+  )
+  # Test pathogen is not in inst/config/pathogen_config.csv, so it falls
+  # back to the schema default of 30 days - day 20 is well within that.
+  episodic_run_cron(
+    path,
+    cases = raw_case("K2", "2025-01-20"),
+    run_date = as.Date("2025-01-20")
+  )
+
+  con <- episodic_db_connect(path)
+  on.exit(DBI::dbDisconnect(con))
+  cases <- DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_case WHERE patient_key = 'P1'"
+  )
+  expect_equal(nrow(cases), 1)
+  expect_equal(cases$sample_date, "2025-01-01") # the episode's anchor, unchanged
+})
+
 test_that("episodic_run_cron() writes denominator rows only when a denominators is supplied", {
   path_without <- tempfile(fileext = ".sqlite")
   small_source <- function() {

@@ -342,7 +342,7 @@ test_that("episodic_app_similar_clusters() finds no precedent when there is no c
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   similar <- episodic_app_similar_clusters(env$con, env$cluster_id)
-  expect_equal(nrow(similar), 0) # the only other cluster of this pathogen is itself, and it isn't closed
+  expect_equal(nrow(similar), 0) # the only other cluster of this pathogen is itself, and it is not closed
 })
 
 test_that("episodic_app_similar_clusters() finds a closed same-pathogen cluster and excludes the target itself", {

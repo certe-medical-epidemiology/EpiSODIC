@@ -27,6 +27,15 @@
 #' while a GP practice is collapsed to its municipality, keyed by a hash of
 #' the source identifier so a later rename does not fracture the history.
 #'
+#' Deduplication looks beyond the current batch: before grouping positives
+#' into episodes, [episodic_db_last_case_dates()] fetches each incoming
+#' patient/pathogen's most recently stored episode anchor, so a
+#' patient/pathogen combination that already has a case on file is
+#' recognised correctly even if the positive that opened that episode
+#' is not in this batch. This is what lets an operator send only a recent
+#' window of positives on each run instead of the full case history every
+#' time - see `episodic_cases_deduplicate()`.
+#'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cases A data frame (or tibble) satisfying the case data
 #'   contract, e.g. from [episodic_synthetic_cases()].
@@ -54,7 +63,12 @@ episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
   # a NOT NULL violation surface mid-run.
   cases$care_line[is.na(cases$care_line)] <- "unknown"
 
-  deduped <- episodic_cases_deduplicate(cases, pathogen_config)
+  existing <- episodic_db_last_case_dates(
+    con,
+    unique(cases$patient_key),
+    unique(cases$pathogen)
+  )
+  deduped <- episodic_cases_deduplicate(cases, pathogen_config, existing = existing)
 
   institution_lookup <- episodic_institutions_resolve(con, deduped)
 

@@ -63,7 +63,7 @@
 #'   \item{`patient_key`}{Character, required, no `NA`. A pseudonymised
 #'     patient identifier, the same for the same patient across results.
 #'     Deduplication and episode grouping key on it: without it every
-#'     isolate becomes its own case. Never shown as-is in the dashboard,
+#'     positive becomes its own case. Never shown as-is in the dashboard,
 #'     but do pseudonymise it before it reaches EpiSODIC - a BSN or
 #'     hospital number must not be passed through.}
 #'   \item{`sample_date`}{Date, or character in `YYYY-MM-DD` (ISO 8601)
@@ -86,9 +86,9 @@
 #'     concerned. Names matching `inst/config/pathogen_config.csv` pick up
 #'     that pathogen's episode length, incubation window and serial
 #'     interval; anything else falls back to the schema defaults (30-day
-#'     episode, 14 case-free days, no Rt, no MEM). The same isolate may
+#'     episode, 14 case-free days, no Rt, no MEM). The same positive may
 #'     appear under more than one `pathogen` value where that is
-#'     epidemiologically useful - an ETEC isolate reported as both
+#'     epidemiologically useful - an ETEC positive reported as both
 #'     `"Escherichia coli"` and `"ETEC"`, so each is monitored separately.}
 #'   \item{`care_line`}{Character; `NA` allowed. One of `"first"`
 #'     (primary care), `"second"` (secondary care), `"other"`, or

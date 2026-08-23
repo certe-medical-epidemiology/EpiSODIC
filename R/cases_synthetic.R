@@ -33,7 +33,7 @@
 #' thin per place: a demo whose baseline keeps tripping the rule-based
 #' detectors by coincidence buries the outbreaks it is meant to
 #' demonstrate. Patients recur - roughly one case in six is a repeat
-#' isolate from a patient already in the data - so deduplication and
+#' positive from a patient already in the data - so deduplication and
 #' episode grouping have something to do.
 #'
 #' On top of that, six outbreaks, sized from a single case to a regional
@@ -417,8 +417,8 @@ episodic_synthetic_ward_draw <- function(institution) {
 #' Patient keys that repeat, because patients do
 #'
 #' Drawn from a pool three times the number of cases, which leaves about
-#' one case in six a repeat isolate from a patient already in the data.
-#' Without that, every isolate is its own patient, deduplication has
+#' one case in six a repeat positive from a patient already in the data.
+#' Without that, every positive is its own patient, deduplication has
 #' nothing to collapse, and a demo shows none of it.
 #' @keywords internal
 #' @noRd

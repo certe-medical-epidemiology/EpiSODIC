@@ -112,7 +112,7 @@ test_that("patients recur, so deduplication has something to collapse", {
   )
   baseline <- raw[!startsWith(raw$patient_key, "PT-OUTBREAK-"), ]
   expect_lt(length(unique(baseline$patient_key)), nrow(baseline))
-  # and a repeat isolate is the same patient in the same place, not a
+  # and a repeat positive is the same patient in the same place, not a
   # different person who happens to share a key
   repeated <- baseline$patient_key[duplicated(baseline$patient_key)][1]
   same <- baseline[baseline$patient_key == repeated, ]

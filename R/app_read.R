@@ -246,7 +246,7 @@ episodic_cluster_object <- function(
     demography = episodic_app_demography_shift(con, stream$stream_id, cases),
     completeness = completeness,
     unique_patients = length(unique(cases$patient_key)),
-    n_isolates = nrow(cases),
+    n_positives = nrow(cases),
     case_free = list(
       since = if (nrow(cases) > 0) {
         as.integer(Sys.Date() - max(as.Date(cases$sample_date)))

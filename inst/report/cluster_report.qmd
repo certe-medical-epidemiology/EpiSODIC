@@ -62,7 +62,7 @@ na_dash <- function(x) if (is.na(x)) "-" else x
 | `r tr("dossier.stat.observed")` | `r obj$n_cases` |
 | `r tr("panel.trend.legend_expected")` | `r if (is.na(obj$expected)) tr("report.na") else round(obj$expected, 1)` |
 | `r tr("dossier.stat.ratio")` | `r if (is.na(obj$ratio)) tr("report.na") else round(obj$ratio, 1)` |
-| `r tr("dossier.stat.unique_patients")` | `r obj$unique_patients` (`r tr("report.isolates_suffix", n = obj$n_isolates)`) |
+| `r tr("dossier.stat.unique_patients")` | `r obj$unique_patients` (`r tr("report.positives_suffix", n = obj$n_positives)`) |
 | `r tr("report.priority_score")` | `r round(obj$priority_score, 0)` |
 | `r tr("report.detected_by")` | `r episodic_ui_code_join(obj$detectors)` |
 

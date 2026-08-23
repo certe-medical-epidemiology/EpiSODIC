@@ -17,7 +17,7 @@ disconnecting it.
 }
 \description{
 Like \code{\link[=episodic_db_connect]{episodic_db_connect()}}, but falls back to the \code{EPISODIC_DB}
-environment variable when you don't pass a path explicitly - handy for
+environment variable when you do not pass a path explicitly - handy for
 one-off console use, e.g. \code{\link[=episodic_provision_user]{episodic_provision_user()}} uses it
 internally so provisioning an account needs only a username and
 password, not a connection you build yourself first.
