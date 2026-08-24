@@ -344,7 +344,7 @@ test_that("a failed run inside the cron transaction leaves no partial state", {
   # hear about it - and still records the attempt.
   expect_error(
     episodic_run_cron(
-      path,
+      db_path = path,
       cases = bad_source,
       run_date = as.Date("2024-01-05")
     ),

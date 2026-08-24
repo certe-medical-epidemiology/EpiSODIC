@@ -187,12 +187,12 @@ episodic_db_create <- function(path, overwrite = FALSE) {
     con <- DBI::dbConnect(RSQLite::SQLite(), path)
   } else {
     con <- episodic_db_mariadb_connect(path)
-    
+
     existing_tables <- DBI::dbListTables(con)
     intended_tables <- readLines(system.file("sql/schema.sql", package = "EpiSODIC"))
     intended_tables <- intended_tables[grepl("^\\s*CREATE TABLE", intended_tables, ignore.case = TRUE)]
     intended_tables <- gsub("^\\s*CREATE TABLE\\s+([a-zA-Z0-9_]+).*", "\\1", intended_tables, ignore.case = TRUE)
-    
+
     if (length(intended_tables) == 0) {
       stop(
         "No 'CREATE TABLE' statements found in the schema file `inst/sql/schema.sql`. ",
@@ -200,9 +200,9 @@ episodic_db_create <- function(path, overwrite = FALSE) {
         call. = FALSE
       )
     }
-    
+
     tables_to_drop <- intersect(existing_tables, intended_tables)
-    
+
     if (length(tables_to_drop) > 0) {
       if (!overwrite) {
         stop(
@@ -213,17 +213,20 @@ episodic_db_create <- function(path, overwrite = FALSE) {
           call. = FALSE
         )
       }
-      
+
       DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 0")
       on.exit(DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 1"), add = TRUE, after = FALSE)
-      
+
       dropped <- character(0)
       failed <- NULL
       for (tbl in tables_to_drop) {
-        result <- tryCatch({
-          DBI::dbRemoveTable(con, tbl)
-          TRUE
-        }, error = function(e) e)
+        result <- tryCatch(
+          {
+            DBI::dbRemoveTable(con, tbl)
+            TRUE
+          },
+          error = function(e) e
+        )
         if (isTRUE(result)) {
           dropped <- c(dropped, tbl)
         } else {
@@ -231,7 +234,7 @@ episodic_db_create <- function(path, overwrite = FALSE) {
           break
         }
       }
-      
+
       if (!is.null(failed)) {
         stop(
           "Failed to drop table \"", failed$table, "\" while recreating the schema. ",

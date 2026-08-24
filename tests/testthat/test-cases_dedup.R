@@ -350,6 +350,60 @@ test_that("episodic_db_last_case_dates() returns the latest sample_date per pati
   )
 })
 
+test_that("episodic_db_case_insert_new() stores a Date-typed sample_date as ISO text, not its numeric epoch value", {
+  # The case data contract explicitly allows sample_date/receipt_date to
+  # arrive as a real Date column (episodic_validate_dates() accepts it
+  # directly), but RSQLite binds a Date parameter by its underlying
+  # double rather than its printed form - a TEXT-affinity column then
+  # stores that number as a string of digits instead of "2025-01-01".
+  # Every reader downstream (episodic_db_last_case_dates(),
+  # episodic_db_cases(), the detectors) calls as.Date() on what comes
+  # back and breaks the moment it is not ISO text.
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  institution_id <- episodic_db_institution_upsert(
+    con,
+    institution_key = digest::digest(
+      "hosp-dedup-date",
+      algo = "sha1",
+      serialize = FALSE
+    ),
+    display_name = "Test Hospital",
+    institution_type = "hospital",
+    care_line = "second",
+    is_monitored = TRUE
+  )
+  run_id <- episodic_db_run_start(con, "host", "account")
+  cases <- data.frame(
+    source_key = "K1",
+    patient_key = "P1",
+    sample_date = as.Date("2025-01-01"),
+    receipt_date = as.Date("2025-01-02"),
+    pathogen = "Test pathogen",
+    care_line = "second",
+    institution_id = institution_id,
+    ward = "ICU",
+    specialism = "Interne",
+    pc = "9711",
+    sex = "M",
+    age = 40L,
+    stringsAsFactors = FALSE
+  )
+  episodic_db_case_insert_new(con, cases, run_id)
+
+  stored <- DBI::dbGetQuery(
+    con,
+    "SELECT sample_date, receipt_date FROM episodic_case WHERE source_key = 'K1'"
+  )
+  expect_equal(stored$sample_date, "2025-01-01")
+  expect_equal(stored$receipt_date, "2025-01-02")
+
+  # And the round-trip readers that depend on that text shape still work.
+  result <- episodic_db_last_case_dates(con, "P1", "Test pathogen")
+  expect_equal(unname(result), "2025-01-01")
+  expect_silent(as.Date(stored$sample_date))
+})
+
 test_that("episodic_db_last_case_dates() returns an empty named vector when either input is empty", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))

@@ -283,7 +283,7 @@ episodic_check_values <- function(cases) {
           " of ",
           nrow(cases),
           " rows with a value outside the allowed set (",
-          paste(spec$values, collapse = ", "),
+          paste0("\"", spec$values, "\"", collapse = ", "),
           if (isTRUE(spec$na_ok)) ", or NA" else "",
           ")."
         ),
@@ -1215,9 +1215,23 @@ episodic_check_failure_message <- function(problems, what = "Case data") {
     "\n",
     paste(bullets, collapse = "\n"),
     "\n  Run episodic_check_cases(your_data) for the full report, ",
-    "including the rows involved and what is merely worth a look. ",
-    "See ?episodic_case_data for what each column means."
+    "including the rows involved and what is merely worth a look. See ",
+    episodic_check_case_data_link(), " for what each column means."
   )
+}
+
+#' A clickable `?episodic_case_data` reference for console output
+#'
+#' `cat()`/`stop()`/`message()` text is not markdown, so the only way to
+#' get a link a terminal or the RStudio console can actually follow is
+#' `cli`'s own hyperlink markup - a plain `"?episodic_case_data"` string
+#' is just text to click nowhere. Degrades to that same plain text where
+#' the output stream has no hyperlink support (a log file, `Rscript`),
+#' since `cli::format_inline()` does that automatically.
+#' @keywords internal
+#' @noRd
+episodic_check_case_data_link <- function() {
+  cli::format_inline("{.help [?episodic_case_data](episodic_case_data)}")
 }
 
 #' @param x An `episodic_case_check` report, as returned by
@@ -1343,15 +1357,17 @@ print.episodic_case_check <- function(x, ...) {
   if (nrow(problems) == 0) {
     cat(
       "v This data set satisfies the case data contract, and is ready ",
-      "for\n  episodic_run_cron(). See ?episodic_case_data for what each ",
-      "column means.\n",
+      "for\n  episodic_run_cron(). See ",
+      episodic_check_case_data_link(),
+      " for what each\n  column means.\n",
       sep = ""
     )
   } else {
     cat(
       "Nothing was changed here. Fix the problems above in your own ",
-      "extract step,\nthen check again. See ?episodic_case_data for what ",
-      "each column means and\nwhich values it accepts.\n",
+      "extract step,\nthen check again. See ",
+      episodic_check_case_data_link(),
+      " for what each column means\n  and which values it accepts.\n",
       sep = ""
     )
   }

@@ -76,8 +76,8 @@ episodic_interpretation_context <- function(
       case_word[1],
       case_word[2]
     ),
-    expected = cluster$expected %||% NA,
-    ratio = cluster$ratio %||% NA,
+    expected = round(cluster$expected %||% NA, 1),
+    ratio = round(cluster$ratio %||% NA, 1),
     dominant_label = cluster$concentration$dominant_label %||% "",
     dominant_share_pct = round(
       (cluster$concentration$dominant_share %||% 0) * 100
