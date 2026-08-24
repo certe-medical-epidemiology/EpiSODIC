@@ -162,6 +162,8 @@ body {
 .episodic-rail-pathogen .episodic-chip {
   margin-left: 6px;
   vertical-align: 1px;
+  font-size: 9px;
+  padding: 1px 5px;
 }
 /* The cluster id, set beside the pathogen name in the rail list - same
    idea as .episodic-dossier-id, so an epidemiologist can quote or search

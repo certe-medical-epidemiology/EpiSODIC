@@ -606,11 +606,14 @@ episodic_ui_rail <- function(
               episodic_tr("dossier.cluster_ref", id = row$cluster_id, lang = lang)
             ),
             if (!is.na(row$care_line)) {
-              episodic_ui_chip(
-                episodic_tr(paste0("careline.short.", row$care_line), lang = lang),
-                pal$tertiary,
-                filled = TRUE
-              )
+              care_line_colour <- episodic_ui_care_line_colour(row$care_line)
+              if (!is.null(care_line_colour)) {
+                episodic_ui_chip(
+                  episodic_tr(paste0("careline.short.", row$care_line), lang = lang),
+                  care_line_colour,
+                  filled = TRUE
+                )
+              }
             }
           ),
           shiny::tags$div(class = "episodic-rail-meta", row$level_label),

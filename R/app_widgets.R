@@ -390,6 +390,28 @@ episodic_ui_state_colour <- function(state) {
   )
 }
 
+#' The rail care-line chip's colour
+#'
+#' Deliberately not primary/secondary/tertiary in line order: first line
+#' takes primary since it is the one an epidemiologist sees most often,
+#' second takes tertiary and third takes secondary. `"other"`/`"unknown"`
+#' (and anything else) get `NULL` - no chip, rather than a chip that
+#' says nothing.
+#'
+#' @param care_line A stream `care_line` value, or `NA`.
+#' @return A hex colour, or `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_ui_care_line_colour <- function(care_line) {
+  pal <- episodic_palette()
+  switch(care_line,
+    first = pal$primary,
+    second = pal$tertiary,
+    third = pal$secondary,
+    NULL
+  )
+}
+
 #' @param verdict One of `episodic_ui_assessment_form()`'s verdict keys
 #'   (`"artefact"`, `"expected_variation"`, `"cluster_not_yet"`,
 #'   `"possible_epidemic"`, `"confirmed_epidemic"`).
