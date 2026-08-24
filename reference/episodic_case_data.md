@@ -26,7 +26,7 @@ episodic_sex_codes
 
 An object of class `character` of length 15.
 
-An object of class `character` of length 4.
+An object of class `character` of length 5.
 
 An object of class `character` of length 5.
 
@@ -280,7 +280,7 @@ episodic_case_columns
 #> [13] "pc"                       "sex"                     
 #> [15] "age"                     
 episodic_care_lines
-#> [1] "first"   "second"  "other"   "unknown"
+#> [1] "first"   "second"  "third"   "other"   "unknown"
 episodic_institution_types
 #> [1] "hospital"        "ltc_institution" "gp_municipality" "ooh_service"    
 #> [5] "other"          

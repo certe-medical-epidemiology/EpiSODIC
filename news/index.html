@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,6 +51,10 @@
 <li>Deduplication now checks against the most recently stored episode, not just the current batch</li>
 <li>“Isolate” renamed to “positive” throughout the app, reports and validation advice</li>
 <li>New “Frequently asked questions” vignette</li>
+<li>Rail cards show the cluster’s care line as a colour-coded chip (1st/2nd/3rd line) beside the pathogen name, and the cluster id in small type next to it</li>
+<li>The geography panel shows a second, uncropped choropleth alongside the existing cropped one, for region-wide context</li>
+<li>
+<code>episodic_care_lines</code> gains <code>"third"</code> (tertiary care)</li>
 </ul></div>
 <div class="section level3">
 <h3 id="changed-0-5">Changed<a class="anchor" aria-label="anchor" href="#changed-0-5"></a></h3>
@@ -69,6 +73,10 @@
 <code>lang</code> now defaults correctly to <code>EPISODIC_LANGUAGE</code> everywhere; unset means English</li>
 <li>Empty strings in required columns are now treated as invalid, like <code>NA</code>
 </li>
+<li>Cluster status chips render filled (colour background, white text) throughout, not just outlined</li>
+<li>Rail card dates spell the month out when the range falls within a single month (<code>"2-12 January 2025"</code>), abbreviated otherwise (<code>"12 Jan. - 4 Feb. 2025"</code>)</li>
+<li>Rail card’s last line shows case count and priority score; ratio dropped</li>
+<li>Bar chart labels widen from ~30 to ~50 characters before truncating, with a mouse-over tooltip for the full value</li>
 </ul></div>
 <div class="section level3">
 <h3 id="fixed-0-5">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-5"></a></h3>
@@ -87,6 +95,11 @@
 <code><a href="../reference/episodic_db_create.html">episodic_db_create()</a></code> against MySQL no longer fails with “BLOB/TEXT column … used in key specification without a key length” [1170] - every remaining <code>TEXT</code> column used in a <code>PRIMARY KEY</code>, composite <code>PRIMARY KEY</code>, or <code>CREATE INDEX</code> (<code>pathogen</code>, <code>patient_key</code>, <code>sample_date</code>, <code>run_date</code>, <code>week_start</code>, <code>period_start</code>, <code>care_line</code>, <code>area_code</code>) is now widened to a bounded <code>VARCHAR</code> under the <code>mariadb</code> dialect, since MySQL requires an explicit key length on <code>TEXT</code>/<code>BLOB</code> columns used as a key</li>
 <li>
 <code>episodic_denominators_load()</code> against MySQL no longer fails to write a denominator row with no area stratum (<code>area_code = NA</code>, which <code>episodic_validate_denominators()</code> has always allowed) - <code>episodic_denominator</code>’s composite <code>PRIMARY KEY</code> included the nullable <code>area_code</code>, and MySQL implicitly forces every <code>PRIMARY KEY</code> column <code>NOT NULL</code>; it now has a surrogate <code>denominator_id</code> primary key with the natural key as a <code>UNIQUE</code> constraint instead, which permits multiple <code>NULL</code>s in both MySQL and SQLite</li>
+<li>
+<code><a href="../reference/episodic_db_create.html">episodic_db_create()</a></code> against MySQL no longer fails with “you have an error in your SQL syntax … near ‘trigger’” [1064] - <code>trigger</code> is a reserved word in MySQL; <code>episodic_cluster_state.trigger</code> and the raw SQL that reads/writes it are now backtick-quoted</li>
+<li>
+<code>episodic_detect_same_place()</code> no longer hardcodes <code>care_line = NA</code> on every stream it creates or upserts - it is the detector responsible for the institution-level streams (LTC, out-of-hours, general practice) that lattice enumeration never creates on its own, and for hospital ward-level streams, so this had silently hidden the care line on almost every stream capable of showing one</li>
+<li>Logo no longer shows an opaque white background outside the hexagon</li>
 </ul></div>
 </div>
     <div class="section level2">

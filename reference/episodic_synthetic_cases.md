@@ -102,7 +102,7 @@ head(cases)
 #> 6              PT-Influenza.A-000047  2025-01-02   2025-01-02
 #>                   pathogen care_line institution_key institution_display_name
 #> 1                Norovirus    second         HOSP-07             Ziekenhuis G
-#> 2              Influenza A    second          LTC-10           Zorgcentrum 10
+#> 2              Influenza A     first          LTC-10           Zorgcentrum 10
 #> 3                      RSV    second         HOSP-03             Ziekenhuis C
 #> 4 Clostridioides difficile    second         HOSP-07             Ziekenhuis G
 #> 5              Influenza A    second         HOSP-01             Ziekenhuis A
