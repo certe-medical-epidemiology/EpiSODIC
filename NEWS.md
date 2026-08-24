@@ -9,6 +9,9 @@
 - Deduplication now checks against the most recently stored episode, not just the current batch
 - "Isolate" renamed to "positive" throughout the app, reports and validation advice
 - New "Frequently asked questions" vignette
+- Rail cards show the cluster's care line as a colour-coded chip (1st/2nd/3rd line) beside the pathogen name, and the cluster id in small type next to it
+- The geography panel shows a second, uncropped choropleth alongside the existing cropped one, for region-wide context
+- `episodic_care_lines` gains `"third"` (tertiary care)
 
 ## Changed
 
@@ -21,6 +24,10 @@
 - `episodic_synthetic_cases()` demo data rebalanced to avoid spurious chance clusters
 - `lang` now defaults correctly to `EPISODIC_LANGUAGE` everywhere; unset means English
 - Empty strings in required columns are now treated as invalid, like `NA`
+- Cluster status chips render filled (colour background, white text) throughout, not just outlined
+- Rail card dates spell the month out when the range falls within a single month (`"2-12 January 2025"`), abbreviated otherwise (`"12 Jan. - 4 Feb. 2025"`)
+- Rail card's last line shows case count and priority score; ratio dropped
+- Bar chart labels widen from ~30 to ~50 characters before truncating, with a mouse-over tooltip for the full value
 
 ## Fixed
 
@@ -34,6 +41,9 @@
 - `episodic_db_create()` against MySQL no longer fails with "BLOB/TEXT column can't have a default value" [1101] - `episodic_stream.denominator` and `episodic_case.care_line` are now widened to `VARCHAR` under the `mariadb` dialect, since MySQL (unlike MariaDB and SQLite) rejects a `DEFAULT` on `TEXT` columns outright
 - `episodic_db_create()` against MySQL no longer fails with "BLOB/TEXT column ... used in key specification without a key length" [1170] - every remaining `TEXT` column used in a `PRIMARY KEY`, composite `PRIMARY KEY`, or `CREATE INDEX` (`pathogen`, `patient_key`, `sample_date`, `run_date`, `week_start`, `period_start`, `care_line`, `area_code`) is now widened to a bounded `VARCHAR` under the `mariadb` dialect, since MySQL requires an explicit key length on `TEXT`/`BLOB` columns used as a key
 - `episodic_denominators_load()` against MySQL no longer fails to write a denominator row with no area stratum (`area_code = NA`, which `episodic_validate_denominators()` has always allowed) - `episodic_denominator`'s composite `PRIMARY KEY` included the nullable `area_code`, and MySQL implicitly forces every `PRIMARY KEY` column `NOT NULL`; it now has a surrogate `denominator_id` primary key with the natural key as a `UNIQUE` constraint instead, which permits multiple `NULL`s in both MySQL and SQLite
+- `episodic_db_create()` against MySQL no longer fails with "you have an error in your SQL syntax ... near 'trigger'" [1064] - `trigger` is a reserved word in MySQL; `episodic_cluster_state.trigger` and the raw SQL that reads/writes it are now backtick-quoted
+- `episodic_detect_same_place()` no longer hardcodes `care_line = NA` on every stream it creates or upserts - it is the detector responsible for the institution-level streams (LTC, out-of-hours, general practice) that lattice enumeration never creates on its own, and for hospital ward-level streams, so this had silently hidden the care line on almost every stream capable of showing one
+- Logo no longer shows an opaque white background outside the hexagon
 
 # EpiSODIC 0.4.0
 
