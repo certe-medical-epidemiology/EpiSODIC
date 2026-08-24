@@ -359,9 +359,10 @@ episodic_db_last_insert_id <- function(con) {
 #' The schema is written once, in SQLite syntax; for a MariaDB/MySQL
 #' connection this rewrites the handful of tokens that differ
 #' (`AUTOINCREMENT`, the SQLite-only `PRAGMA` line, and the few `TEXT`
-#' columns that carry a `UNIQUE` constraint, which need a bounded
-#' `VARCHAR` under MySQL/MariaDB) rather than maintaining a second schema
-#' file.
+#' columns that carry a `UNIQUE` constraint or a `DEFAULT` value, which
+#' need a bounded `VARCHAR` under MySQL/MariaDB - MySQL rejects a
+#' `DEFAULT` on `BLOB`/`TEXT` columns outright) rather than maintaining a
+#' second schema file.
 #' @param dialect `"sqlite"` or `"mariadb"`.
 #' @return A character vector of individual SQL statements.
 #' @keywords internal
@@ -409,6 +410,15 @@ episodic_db_schema_statements <- function(dialect) {
     schema_sql <- sub(
       "username      TEXT NOT NULL UNIQUE,",
       "username      VARCHAR(191) NOT NULL UNIQUE,",
+      schema_sql,
+      fixed = TRUE
+    )
+    # MySQL (unlike MariaDB and SQLite) rejects a DEFAULT on BLOB/TEXT
+    # columns outright [1101], so this DEFAULT-carrying TEXT column also
+    # needs a bounded VARCHAR under the mariadb dialect.
+    schema_sql <- sub(
+      "denominator     TEXT NOT NULL DEFAULT 'none' CHECK (denominator IN (",
+      "denominator     VARCHAR(20) NOT NULL DEFAULT 'none' CHECK (denominator IN (",
       schema_sql,
       fixed = TRUE
     )

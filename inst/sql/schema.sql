@@ -20,8 +20,9 @@
 -- EpiSODIC database schema, written in SQLite dialect and used verbatim
 -- for SQLite connections. For a MariaDB/MySQL EPISODIC_DB,
 -- episodic_db_schema_statements() rewrites this same file at load time
--- (AUTOINCREMENT -> AUTO_INCREMENT, the PRAGMA line dropped, and the four
--- TEXT columns carrying a UNIQUE constraint given a bounded VARCHAR) -
+-- (AUTOINCREMENT -> AUTO_INCREMENT, the PRAGMA line dropped, and the TEXT
+-- columns carrying a UNIQUE constraint or a DEFAULT value given a bounded
+-- VARCHAR, since MySQL rejects a DEFAULT on BLOB/TEXT columns outright) -
 -- there is deliberately only one schema file to keep in sync.
 --
 -- Type mapping used throughout, for reference against a more general
