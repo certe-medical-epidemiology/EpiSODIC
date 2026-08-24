@@ -174,7 +174,7 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   expected_label <- if (is.null(obj$expected) || is.na(obj$expected)) {
     episodic_tr("misc.unknown", lang = lang)
   } else {
-    round(obj$expected, 1)
+    trimws(format(round(obj$expected, 1)))
   }
   stats <- list(
     episodic_ui_stat(
@@ -193,7 +193,7 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       stats,
       list(episodic_ui_stat(
         episodic_tr("dossier.stat.ratio", lang = lang),
-        round(obj$ratio, 1),
+        trimws(format(round(obj$ratio, 1))),
         episodic_tr("dossier.stat.ratio_sub", lang = lang)
       ))
     )
@@ -218,7 +218,7 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       stats,
       list(episodic_ui_stat(
         episodic_tr("dossier.stat.doubling", lang = lang),
-        paste(obj$doubling_days, "d"),
+        paste(trimws(format(obj$doubling_days)), "d"),
         episodic_tr("dossier.stat.doubling_sub", lang = lang)
       ))
     )
@@ -262,7 +262,7 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     stats,
     list(episodic_ui_stat(
       episodic_tr("dossier.stat.priority", lang = lang),
-      round(obj$priority_score, 0),
+      trimws(format(round(obj$priority_score, 0))),
       episodic_tr("dossier.stat.priority_sub", lang = lang)
     ))
   )

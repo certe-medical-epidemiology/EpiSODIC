@@ -75,8 +75,7 @@ episodic_geo_overlay_resolve <- function(
 #' # installed, or NULL when it is not
 #' geo <- episodic_geo_source_resolve(path = NA)
 #' @export
-episodic_geo_source_resolve <- function(
-    path = Sys.getenv("EPISODIC_GEO_DATA", unset = NA)) {
+episodic_geo_source_resolve <- function(path = Sys.getenv("EPISODIC_GEO_DATA", unset = NA)) {
   if (!requireNamespace("sf", quietly = TRUE)) {
     return(NULL)
   }
@@ -85,6 +84,8 @@ episodic_geo_source_resolve <- function(
     geo <- tryCatch(readRDS(path), error = function(e) NULL)
     if (!is.null(geo) && all(c("pc", "geometry") %in% names(geo))) {
       return(geo)
+    } else {
+      warning("'sf' object found for postcodes in '", path, "', but it does not contain columns 'pc' and 'geometry' - ignoring file", call. = FALSE)
     }
   }
   episodic_geo_source_default()

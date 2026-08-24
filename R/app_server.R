@@ -644,7 +644,7 @@ episodic_ui_rail <- function(
                 if (!is.na(row$priority_score)) {
                   episodic_tr(
                     "rail.priority",
-                    score = round(row$priority_score, 0),
+                    score = trimws(format(round(row$priority_score, 0))),
                     lang = lang
                   )
                 }
