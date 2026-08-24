@@ -68,10 +68,6 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
           "nav_links",
           container = shiny::tags$div,
           class = "episodic-nav"
-        ),
-        shiny::tags$span(
-          class = "episodic-demodata",
-          episodic_tr("app.demodata", lang = lang)
         )
       ),
       shiny::tags$div(
