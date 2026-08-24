@@ -189,8 +189,12 @@ episodic_count_phrase <- function(n, singular, plural, with_number = TRUE) {
 #'   `"zh"`, `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
 #' @param full_month If `TRUE`, spell the month out (`date.month_full.NN`,
-#'   Excel's `"mmmm"`) instead of the abbreviated form
-#'   (`date.month.NN`, `"mmm"`) every other caller uses.
+#'   Excel's `"mmmm"`) rather than the abbreviated form (`date.month.NN`,
+#'   `"mmm"`) every other caller uses - but only when `x` and `y` fall in
+#'   the same month, the one case where spelling it out does not also
+#'   double the number of months in the string: "12 January - 4 February
+#'   2025" is the length this argument exists to avoid, so a range
+#'   spanning two months is always abbreviated regardless of it.
 #' @return A character string, or `episodic_tr("misc.unknown", lang =
 #'   lang)` if either endpoint fails to parse.
 #' @keywords internal
@@ -211,13 +215,22 @@ episodic_format_date_range <- function(
     y <- tmp
   }
 
-  month_key <- if (full_month) "date.month_full." else "date.month."
-  months <- vapply(
+  months_abbr <- vapply(
     sprintf("%02d", 1:12),
-    function(mm) episodic_tr(paste0(month_key, mm), lang = lang),
+    function(mm) episodic_tr(paste0("date.month.", mm), lang = lang),
     character(1)
   )
-  mon <- function(d) months[as.integer(format(d, "%m"))]
+  months_full <- if (full_month) {
+    vapply(
+      sprintf("%02d", 1:12),
+      function(mm) episodic_tr(paste0("date.month_full.", mm), lang = lang),
+      character(1)
+    )
+  } else {
+    months_abbr
+  }
+  mon <- function(d) months_full[as.integer(format(d, "%m"))]
+  mon_abbr <- function(d) months_abbr[as.integer(format(d, "%m"))]
   day <- function(d) as.integer(format(d, "%d"))
   yr <- function(d) format(d, "%Y")
 
@@ -226,8 +239,11 @@ episodic_format_date_range <- function(
   } else if (format(x, "%Y-%m") == format(y, "%Y-%m")) {
     sprintf("%d-%d %s %s", day(x), day(y), mon(x), yr(x))
   } else if (yr(x) == yr(y)) {
-    sprintf("%d %s - %d %s %s", day(x), mon(x), day(y), mon(y), yr(x))
+    sprintf("%d %s - %d %s %s", day(x), mon_abbr(x), day(y), mon_abbr(y), yr(x))
   } else {
-    sprintf("%d %s %s - %d %s %s", day(x), mon(x), yr(x), day(y), mon(y), yr(y))
+    sprintf(
+      "%d %s %s - %d %s %s",
+      day(x), mon_abbr(x), yr(x), day(y), mon_abbr(y), yr(y)
+    )
   }
 }
