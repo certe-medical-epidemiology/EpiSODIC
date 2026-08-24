@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -81,6 +81,8 @@
 <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> no longer corrupts <code>sample_date</code>/<code>receipt_date</code>/<code>period_start</code>/<code>period_end</code> when the operator supplies them as <code>Date</code> columns (as <code>episodic_case_data</code> explicitly allows) - RSQLite was binding them by their raw numeric epoch value instead of <code>YYYY-MM-DD</code> text, so a later read failed with “character string is not in a standard unambiguous format”</li>
 <li>
 <code><a href="../reference/episodic_check_cases.html">episodic_check_cases()</a></code>’s allowed-value messages (<code>care_line</code>, <code>institution_type</code>, <code>sex</code>) now quote each value, and its <code><a href="../reference/episodic_case_data.html">?episodic_case_data</a></code> references are clickable in terminals/RStudio that support it</li>
+<li>
+<code><a href="../reference/episodic_db_create.html">episodic_db_create()</a></code> against MySQL no longer fails with “BLOB/TEXT column can’t have a default value” [1101] - <code>episodic_stream.denominator</code> and <code>episodic_case.care_line</code> are now widened to <code>VARCHAR</code> under the <code>mariadb</code> dialect, since MySQL (unlike MariaDB and SQLite) rejects a <code>DEFAULT</code> on <code>TEXT</code> columns outright</li>
 </ul></div>
 </div>
     <div class="section level2">

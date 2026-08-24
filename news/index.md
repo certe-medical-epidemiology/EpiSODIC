@@ -62,6 +62,12 @@
   quote each value, and its
   [`?episodic_case_data`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
   references are clickable in terminals/RStudio that support it
+- [`episodic_db_create()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_create.md)
+  against MySQL no longer fails with “BLOB/TEXT column can’t have a
+  default value” \[1101\] - `episodic_stream.denominator` and
+  `episodic_case.care_line` are now widened to `VARCHAR` under the
+  `mariadb` dialect, since MySQL (unlike MariaDB and SQLite) rejects a
+  `DEFAULT` on `TEXT` columns outright
 
 ## EpiSODIC 0.4.0
 
