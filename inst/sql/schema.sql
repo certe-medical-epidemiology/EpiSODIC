@@ -20,10 +20,11 @@
 -- EpiSODIC database schema, written in SQLite dialect and used verbatim
 -- for SQLite connections. For a MariaDB/MySQL EPISODIC_DB,
 -- episodic_db_schema_statements() rewrites this same file at load time
--- (AUTOINCREMENT -> AUTO_INCREMENT, the PRAGMA line dropped, and the TEXT
--- columns carrying a UNIQUE constraint or a DEFAULT value given a bounded
--- VARCHAR, since MySQL rejects a DEFAULT on BLOB/TEXT columns outright) -
--- there is deliberately only one schema file to keep in sync.
+-- (AUTOINCREMENT -> AUTO_INCREMENT, the PRAGMA line dropped, and every
+-- TEXT column that MySQL rejects as-is - one carrying a UNIQUE or
+-- PRIMARY KEY constraint, a DEFAULT value, or used in a CREATE INDEX or
+-- composite PRIMARY KEY - given a bounded VARCHAR instead) - there is
+-- deliberately only one schema file to keep in sync.
 --
 -- Type mapping used throughout, for reference against a more general
 -- relational type system:
@@ -314,14 +315,27 @@ CREATE TABLE episodic_stream_trend (
 -- mapping (which pathogens a given test method can detect) is the
 -- operator's own transform-time knowledge, not something EpiSODIC encodes
 -- (episodic_mo_determination from earlier drafts is dropped).
+--
+-- area_code is nullable by design - a site with a single catchment
+-- supplies no stratum at all (episodic_validate_denominators() does not
+-- require it) - so it cannot sit in the PRIMARY KEY: MySQL implicitly
+-- forces every PRIMARY KEY column NOT NULL (silently, at CREATE TABLE
+-- time), which would later reject any such row with "column 'area_code'
+-- cannot be null". A surrogate PRIMARY KEY plus a UNIQUE constraint on
+-- the natural key gets the same one-row-per-stratum guarantee in both
+-- SQLite and MySQL, since UNIQUE (unlike PRIMARY KEY) treats multiple
+-- NULLs as distinct in both dialects - matching what
+-- episodic_db_denominator_upsert() already assumes with its explicit
+-- "area_code IS NULL AND ? IS NULL" comparison.
 -- ---------------------------------------------------------------------
 CREATE TABLE episodic_denominator (
-  pathogen      TEXT NOT NULL,
-  sample_date   TEXT NOT NULL,
-  care_line     TEXT NOT NULL CHECK (care_line IN ('first', 'second', 'other', 'unknown')),
-  area_code     TEXT,
-  n_tests       INTEGER NOT NULL,
-  PRIMARY KEY (pathogen, sample_date, care_line, area_code)
+  denominator_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  pathogen       TEXT NOT NULL,
+  sample_date    TEXT NOT NULL,
+  care_line      TEXT NOT NULL CHECK (care_line IN ('first', 'second', 'other', 'unknown')),
+  area_code      TEXT,
+  n_tests        INTEGER NOT NULL,
+  UNIQUE (pathogen, sample_date, care_line, area_code)
 );
 
 -- ---------------------------------------------------------------------
