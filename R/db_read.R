@@ -156,10 +156,9 @@ episodic_db_last_case_dates <- function(con, patient_keys, pathogens) {
 #' @keywords internal
 #' @noRd
 episodic_db_clusters <- function(
-  con,
-  open_only = FALSE,
-  include_suppressed = FALSE
-) {
+    con,
+    open_only = FALSE,
+    include_suppressed = FALSE) {
   sql <- "SELECT * FROM episodic_cluster"
   where <- character(0)
   if (open_only) {

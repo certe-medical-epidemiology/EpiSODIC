@@ -80,10 +80,9 @@
 #' head(cases)
 #' @export
 episodic_synthetic_cases <- function(
-  start_date = end_date - 5 * 365,
-  end_date = Sys.Date(),
-  seed = 1
-) {
+    start_date = end_date - 5 * 365,
+    end_date = Sys.Date(),
+    seed = 1) {
   set.seed(seed)
 
   institutions <- episodic_synthetic_institutions()
@@ -345,15 +344,14 @@ episodic_synthetic_pathogen_profiles <- function() {
 #' @keywords internal
 #' @noRd
 episodic_synthetic_case_rows <- function(
-  patient_key,
-  sample_date,
-  pathogen,
-  institution,
-  ward,
-  pc,
-  sex,
-  age
-) {
+    patient_key,
+    sample_date,
+    pathogen,
+    institution,
+    ward,
+    pc,
+    sex,
+    age) {
   sample_date <- as.Date(sample_date)
   n <- length(sample_date)
   data.frame(
@@ -434,11 +432,10 @@ episodic_synthetic_patient_keys <- function(pathogen, n) {
 #' @keywords internal
 #' @noRd
 episodic_synthetic_baseline_cases <- function(
-  dates,
-  institutions,
-  pc_pool,
-  pathogens
-) {
+    dates,
+    institutions,
+    pc_pool,
+    pathogens) {
   rows <- list()
   for (i in seq_len(nrow(pathogens))) {
     org <- pathogens[i, ]
@@ -504,11 +501,10 @@ episodic_synthetic_baseline_cases <- function(
 #' @keywords internal
 #' @noRd
 episodic_synthetic_outbreaks <- function(
-  institutions,
-  pc_pool,
-  start_date,
-  end_date
-) {
+    institutions,
+    pc_pool,
+    start_date,
+    end_date) {
   parts <- list(
     episodic_synthetic_outbreak_rare_case(institutions, pc_pool, end_date),
     episodic_synthetic_outbreak_ward_cluster(institutions, pc_pool, end_date),
@@ -533,10 +529,9 @@ episodic_synthetic_outbreaks <- function(
 #' @keywords internal
 #' @noRd
 episodic_synthetic_outbreak_rare_case <- function(
-  institutions,
-  pc_pool,
-  end_date
-) {
+    institutions,
+    pc_pool,
+    end_date) {
   hospital <- institutions[institutions$institution_type == "hospital", ][2, ]
   episodic_synthetic_case_rows(
     patient_key = "PT-OUTBREAK-RARE-001",
@@ -554,11 +549,10 @@ episodic_synthetic_outbreak_rare_case <- function(
 #' @keywords internal
 #' @noRd
 episodic_synthetic_outbreak_ward_cluster <- function(
-  institutions,
-  pc_pool,
-  end_date,
-  n_cases = 3
-) {
+    institutions,
+    pc_pool,
+    end_date,
+    n_cases = 3) {
   hospital <- institutions[institutions$institution_type == "hospital", ][3, ]
   case_dates <- end_date - 75 + c(0, 5, 11)[seq_len(n_cases)]
   episodic_synthetic_case_rows(
@@ -580,11 +574,10 @@ episodic_synthetic_outbreak_ward_cluster <- function(
 #' @keywords internal
 #' @noRd
 episodic_synthetic_outbreak_ltc <- function(
-  institutions,
-  pc_pool,
-  end_date,
-  n_cases = 8
-) {
+    institutions,
+    pc_pool,
+    end_date,
+    n_cases = 8) {
   home <- institutions[institutions$institution_type == "ltc_institution", ][
     3,
   ]
@@ -605,11 +598,10 @@ episodic_synthetic_outbreak_ltc <- function(
 #' @keywords internal
 #' @noRd
 episodic_synthetic_outbreak_point_source <- function(
-  institutions,
-  pc_pool,
-  end_date,
-  n_cases = 14
-) {
+    institutions,
+    pc_pool,
+    end_date,
+    n_cases = 14) {
   hospital <- institutions[institutions$institution_type == "hospital", ][1, ]
   exposure_date <- end_date - 40
   # norovirus incubation is 0.5-3 days; all cases cluster within a few days
@@ -631,12 +623,11 @@ episodic_synthetic_outbreak_point_source <- function(
 #' @keywords internal
 #' @noRd
 episodic_synthetic_outbreak_propagated <- function(
-  institutions,
-  pc_pool,
-  end_date,
-  n_generations = 4,
-  cases_per_generation = c(2, 4, 6, 3)
-) {
+    institutions,
+    pc_pool,
+    end_date,
+    n_generations = 4,
+    cases_per_generation = c(2, 4, 6, 3)) {
   municipality <- institutions[
     institutions$institution_type == "gp_municipality",
   ][1, ]
@@ -683,11 +674,10 @@ episodic_synthetic_outbreak_propagated <- function(
 #' @keywords internal
 #' @noRd
 episodic_synthetic_outbreak_regional_wave <- function(
-  institutions,
-  pc_pool,
-  end_date,
-  cases_per_week = c(10, 15, 21, 27, 33, 38)
-) {
+    institutions,
+    pc_pool,
+    end_date,
+    cases_per_week = c(10, 15, 21, 27, 33, 38)) {
   places <- episodic_synthetic_places(institutions)
   # A random tour of every place in the region, dealt out week by week:
   # walking it means a place is revisited only after the whole tour, weeks
@@ -774,12 +764,11 @@ episodic_synthetic_places <- function(institutions) {
 #' sum(startsWith(cases$patient_key, "PT-VOL-"))
 #' @export
 episodic_synthetic_cases_calibration <- function(
-  start_date = end_date - 5 * 365,
-  end_date = Sys.Date(),
-  pathogen = "Clostridioides difficile",
-  n_bumps_per_month = 3,
-  seed = 1
-) {
+    start_date = end_date - 5 * 365,
+    end_date = Sys.Date(),
+    pathogen = "Clostridioides difficile",
+    n_bumps_per_month = 3,
+    seed = 1) {
   set.seed(seed)
 
   institutions <- episodic_synthetic_institutions()
@@ -839,14 +828,13 @@ episodic_synthetic_cases_calibration <- function(
 #' @keywords internal
 #' @noRd
 episodic_synthetic_outbreak_volume <- function(
-  institutions,
-  pc_pool,
-  start_date,
-  end_date,
-  pathogen = "Clostridioides difficile",
-  n_bumps_per_month = 3,
-  cases_per_bump = c(3, 9)
-) {
+    institutions,
+    pc_pool,
+    start_date,
+    end_date,
+    pathogen = "Clostridioides difficile",
+    n_bumps_per_month = 3,
+    cases_per_bump = c(3, 9)) {
   eligible <- institutions[
     institutions$institution_type %in% c("ltc_institution", "hospital"),
   ]

@@ -102,15 +102,14 @@
 #' }
 #' @export
 episodic_run_cron <- function(
-  db_path,
-  cases = episodic_synthetic_cases,
-  denominators = NULL,
-  institution_activity = NULL,
-  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
-  host = Sys.info()[["nodename"]],
-  account = Sys.info()[["user"]],
-  run_date = Sys.Date()
-) {
+    db_path,
+    cases = episodic_synthetic_cases,
+    denominators = NULL,
+    institution_activity = NULL,
+    episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
+    host = Sys.info()[["nodename"]],
+    account = Sys.info()[["user"]],
+    run_date = Sys.Date()) {
   config <- episodic_config_resolve(episodic_config_path)
   hashed <- episodic_config_hash(config)
 
@@ -378,14 +377,13 @@ episodic_resolve_data <- function(x, ...) {
 #' @keywords internal
 #' @noRd
 episodic_run_cron_body <- function(
-  con,
-  run_id,
-  config,
-  cases,
-  denominators,
-  institution_activity,
-  run_date
-) {
+    con,
+    run_id,
+    config,
+    cases,
+    denominators,
+    institution_activity,
+    run_date) {
   pathogen_config_path <- system.file(
     "config",
     "pathogen_config.csv",

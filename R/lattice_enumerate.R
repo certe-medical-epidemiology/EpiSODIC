@@ -144,8 +144,7 @@ episodic_case_region_code <- function(cases, level) {
     return(character(0))
   }
   has_pc <- !is.na(cases$pc)
-  switch(
-    level,
+  switch(level,
     pathogen_area = ifelse(
       has_pc,
       paste0("GEBIED-", substr(cases$pc, 1, 2)),
@@ -164,7 +163,7 @@ episodic_case_region_code <- function(cases, level) {
 #' The whole catchment, as one region code
 #' @keywords internal
 #' @noRd
-episodic_region_code_all <- "NOORD_NEDERLAND"
+episodic_region_code_all <- "NORTHERN_NETHERLANDS"
 
 #' @keywords internal
 #' @noRd
@@ -181,16 +180,15 @@ episodic_pc_to_province <- function(pc) {
 #' @keywords internal
 #' @noRd
 episodic_lattice_upsert_group <- function(
-  con,
-  cases,
-  level,
-  group_cols,
-  care_line_col = NULL,
-  institution_col = NULL,
-  region_col = NULL,
-  ward_col = NULL,
-  denominator = "none"
-) {
+    con,
+    cases,
+    level,
+    group_cols,
+    care_line_col = NULL,
+    institution_col = NULL,
+    region_col = NULL,
+    ward_col = NULL,
+    denominator = "none") {
   key_df <- cases[, group_cols, drop = FALSE]
   key_str <- do.call(paste, c(key_df, sep = ""))
   groups <- split(seq_len(nrow(cases)), key_str)

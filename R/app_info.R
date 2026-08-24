@@ -35,6 +35,9 @@
 episodic_ui_info_screen <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   shiny::tags$div(
     class = "episodic-streams-screen",
+    shiny::img(src = "www/logo.svg"),
+    shiny::br(),
+    shiny::br(),
     shiny::tags$h1(
       style = "font-size:22px;font-weight:600;margin-bottom:4px;",
       episodic_tr("info.title", lang = lang)
@@ -65,8 +68,7 @@ episodic_ui_info_screen <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @keywords internal
 #' @noRd
 episodic_ui_info_algorithms_table <- function(
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   rows <- list(
     list(
       name = "farringtonFlexible",
@@ -115,8 +117,7 @@ episodic_ui_info_algorithms_table <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_info_states_table <- function(
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   states <- c(
     "new",
     "assessing",

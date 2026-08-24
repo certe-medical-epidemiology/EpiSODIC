@@ -113,9 +113,8 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @keywords internal
 #' @noRd
 episodic_ui_nav_links <- function(
-  active_view = "clusters",
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    active_view = "clusters",
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   views <- c(
     "clusters",
     # Between the operational views and the configuration ones: it is the

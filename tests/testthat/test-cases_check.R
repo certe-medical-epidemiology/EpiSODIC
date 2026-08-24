@@ -18,12 +18,11 @@
 # ===================================================================== #
 
 check_case <- function(
-  source_key = "K1",
-  patient_key = "P1",
-  sample_date = "2025-01-01",
-  pathogen = "Test pathogen",
-  receipt_date = "2025-01-02"
-) {
+    source_key = "K1",
+    patient_key = "P1",
+    sample_date = "2025-01-01",
+    pathogen = "Test pathogen",
+    receipt_date = "2025-01-02") {
   data.frame(
     source_key = source_key,
     patient_key = patient_key,

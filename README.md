@@ -29,6 +29,11 @@ they also render on the CRAN page), regenerated against episodic_demo().
   <em>A cluster dossier - case stats, status trajectory, an automatically generated interpretation of the evidence, the epidemic curve, and the classification panel, alongside the rail of open clusters.</em>
 </p>
 <p align="center">
+  <img src="man/figures/pathogen_screen.png" alt="The Pathogen screen: weekly numbers of cases, reproduction number, with geographic and demographic distribution" width="800">
+  <br>
+  <em>The Pathogen screen - weekly numbers of cases, reproduction number, with geographic and demographic distribution.</em>
+</p>
+<p align="center">
   <img src="man/figures/performance_screen.png" alt="The Performance screen: detection timeliness and positive predictive value per detector and pathogen" width="800">
   <br>
   <em>The Performance screen - detection timeliness and positive predictive value per detector and pathogen, computed from the stored verdicts (both fill in as clusters get assessed).</em>

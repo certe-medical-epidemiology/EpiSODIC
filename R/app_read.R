@@ -33,9 +33,8 @@
 #' @keywords internal
 #' @noRd
 episodic_app_open_clusters <- function(
-  con,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    con,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   clusters <- episodic_db_clusters(con, open_only = TRUE)
   if (nrow(clusters) == 0) {
     return(clusters[, c("cluster_id", "priority_score"), drop = FALSE])
@@ -177,10 +176,9 @@ episodic_app_explicitly_closed <- function(con, cluster_id, events) {
 #' @keywords internal
 #' @noRd
 episodic_cluster_object <- function(
-  con,
-  cluster_id,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    con,
+    cluster_id,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   cluster <- DBI::dbGetQuery(
     con,
     "SELECT * FROM episodic_cluster WHERE cluster_id = ?",
@@ -311,10 +309,9 @@ episodic_rt_unavailable_reason <- function(pc) {
 #' @keywords internal
 #' @noRd
 episodic_app_place_label <- function(
-  stream,
-  institution,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    stream,
+    institution,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   care_line_suffix <- if (!is.na(stream$care_line)) {
     paste0(
       " \u00b7 ",
@@ -336,7 +333,7 @@ episodic_app_place_label <- function(
 #' Cosmetically format an internal `region_code`
 #'
 #' `region_code` values (`"GEBIED-97"`, `"PROV_GRONINGEN"`,
-#' `"NOORD_NEDERLAND"`) are internal synthetic-demo constructs, not real
+#' `"NORTHERN_NETHERLANDS"`) are internal synthetic-demo constructs, not real
 #' place names; a real deployment resolves proper Gebied/Provincie naming
 #' from its own operator-supplied region reference data (see
 #' `R/lattice_enumerate.R`). This only tidies punctuation so the demo is
@@ -436,11 +433,10 @@ episodic_app_density <- function(con, stream, cases) {
 #' @keywords internal
 #' @noRd
 episodic_app_doubling_time <- function(
-  cases,
-  incomplete_days = 0L,
-  asof = Sys.Date(),
-  window_days = 14L
-) {
+    cases,
+    incomplete_days = 0L,
+    asof = Sys.Date(),
+    window_days = 14L) {
   if (nrow(cases) < 3) {
     return(NA_real_)
   }
@@ -632,8 +628,7 @@ episodic_app_denominator_series <- function(con, pathogen, cases, weeks = 26L) {
     window_end <- max(cluster_dates)
     window_start <- window_end - 7 * (as.integer(weeks) - 1L)
     denom <- denom[
-      denom$week_start <= window_end & denom$week_start + 6 >= window_start,
-      ,
+      denom$week_start <= window_end & denom$week_start + 6 >= window_start, ,
       drop = FALSE
     ]
     if (nrow(denom) == 0) {

@@ -29,9 +29,8 @@
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_screen <- function(
-  screen,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    screen,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (nrow(screen$pathogens) == 0 || is.null(screen$pathogen)) {
     return(shiny::tags$div(
       class = "episodic-streams-screen",
@@ -80,9 +79,8 @@ episodic_ui_pathogen_screen <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_controls <- function(
-  screen,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    screen,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
   period <- screen$period
 
@@ -210,9 +208,8 @@ episodic_ui_pathogen_controls <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_stats <- function(
-  screen,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    screen,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
   s <- screen$summary
 
@@ -291,8 +288,7 @@ episodic_ui_pathogen_stats <- function(
 #' @noRd
 episodic_ui_intensity_colour <- function(level) {
   pal <- episodic_palette()
-  switch(
-    as.character(level),
+  switch(as.character(level),
     baseline = pal$muted,
     low = pal$success,
     medium = pal$warning_dark,
@@ -306,9 +302,8 @@ episodic_ui_intensity_colour <- function(level) {
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_curve_panel <- function(
-  screen,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    screen,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   # An all-zero curve is not a chart worth drawing: a period with no
   # cases of this pathogen is a sentence, not a row of empty bars.
   if (
@@ -355,9 +350,8 @@ episodic_ui_pathogen_curve_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_overlay_panel <- function(
-  screen,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    screen,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   overlay <- screen$overlay
   if (is.null(overlay)) {
     return(episodic_ui_panel_empty(
@@ -383,9 +377,8 @@ episodic_ui_pathogen_overlay_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_rt_panel <- function(
-  screen,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    screen,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (is.null(screen$rt)) {
     reason <- screen$rt_unavailable_reason
     msg <- if (is.na(reason)) {
@@ -412,9 +405,8 @@ episodic_ui_pathogen_rt_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_denominator_panel <- function(
-  screen,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    screen,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (is.null(screen$denominator)) {
     return(episodic_ui_panel_empty(
       episodic_tr("panel.denominator.title", lang = lang),
@@ -436,9 +428,8 @@ episodic_ui_pathogen_denominator_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_demography_panel <- function(
-  screen,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    screen,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   demo <- screen$demography
   if (is.null(demo)) {
     return(episodic_ui_panel_empty(
@@ -467,9 +458,8 @@ episodic_ui_pathogen_demography_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_geo_panel <- function(
-  screen,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    screen,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   concentration <- screen$concentration
   if (is.null(concentration)) {
     return(episodic_ui_panel_empty(
@@ -503,9 +493,8 @@ episodic_ui_pathogen_geo_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_breakdown_panels <- function(
-  screen,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    screen,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   care_lines <- screen$care_lines
   institutions <- screen$institutions
   shiny::tags$div(
@@ -546,9 +535,8 @@ episodic_ui_pathogen_breakdown_panels <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_clusters_panel <- function(
-  screen,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    screen,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   clusters <- screen$clusters
   if (is.null(clusters) || nrow(clusters) == 0) {
     return(episodic_ui_panel_empty(

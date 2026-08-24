@@ -30,9 +30,8 @@
 #' @keywords internal
 #' @noRd
 episodic_ui_archive_screen <- function(
-  archive,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    archive,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(
@@ -106,9 +105,8 @@ episodic_ui_archive_screen <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_activity_screen <- function(
-  activity,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    activity,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(

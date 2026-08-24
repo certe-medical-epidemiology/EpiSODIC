@@ -77,17 +77,17 @@
 #' }
 #' @export
 episodic_demo <- function(
-  db_path = tempfile(fileext = ".sqlite"),
-  username = "demo",
-  full_name = "Demo User",
-  email = "demo@example.org",
-  password = "episodic-demo",
-  launch = TRUE,
-  run_date = episodic_synthetic_week_end(),
-  lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  cases = function() episodic_synthetic_cases(end_date = run_date),
-  denominators = function() episodic_synthetic_denominators(end_date = run_date)
-) {
+    db_path = tempfile(fileext = ".sqlite"),
+    username = "demo",
+    full_name = "Demo User",
+    email = "demo@example.org",
+    password = "episodic-demo",
+    launch = TRUE,
+    run_date = episodic_synthetic_week_end(),
+    lang = Sys.getenv("EPISODIC_LANGUAGE"),
+    cases = function() episodic_synthetic_cases(end_date = run_date),
+    denominators = function() episodic_synthetic_denominators(end_date = run_date)) {
+  
   Sys.setenv(
     EPISODIC_CONFIG = system.file(
       "config",
@@ -101,13 +101,15 @@ episodic_demo <- function(
       package = "EpiSODIC"
     )
   )
-
+  
+  message("Creating synthetic cases...", appendLF = FALSE)
   episodic_run_cron(
     db_path,
     cases = cases,
     denominators = denominators,
     run_date = run_date
   )
+  message("OK")
 
   episodic_provision_user(
     db_path = db_path,

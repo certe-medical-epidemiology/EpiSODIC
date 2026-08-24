@@ -151,11 +151,10 @@ episodic_ui_chip <- function(text, colour, filled = FALSE) {
 #' @keywords internal
 #' @noRd
 episodic_ui_chip_link <- function(
-  text,
-  colour,
-  cluster_id,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    text,
+    colour,
+    cluster_id,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   open_js <- sprintf(
     "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
     as.integer(cluster_id)
@@ -334,10 +333,9 @@ episodic_ui_pyramid <- function(demo, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @keywords internal
 #' @noRd
 episodic_ui_cluster_link_row <- function(
-  cluster_id,
-  lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  ...
-) {
+    cluster_id,
+    lang = Sys.getenv("EPISODIC_LANGUAGE"),
+    ...) {
   open_js <- sprintf(
     "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
     as.integer(cluster_id)
@@ -377,8 +375,7 @@ episodic_ui_state_dot <- function(state) {
 #' @noRd
 episodic_ui_state_colour <- function(state) {
   pal <- episodic_palette()
-  switch(
-    state,
+  switch(state,
     new = pal$primary,
     assessing = pal$primary,
     monitoring = pal$danger,
@@ -396,8 +393,7 @@ episodic_ui_state_colour <- function(state) {
 #' @noRd
 episodic_ui_verdict_colour <- function(verdict) {
   pal <- episodic_palette()
-  switch(
-    verdict,
+  switch(verdict,
     artefact = pal$muted,
     expected_variation = pal$muted,
     cluster_not_yet = pal$success_dark,

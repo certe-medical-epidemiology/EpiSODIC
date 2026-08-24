@@ -54,8 +54,7 @@ episodic_palette <- function() {
 #' @keywords internal
 #' @noRd
 episodic_palette_config_resolve <- function(
-  palette_config_path = Sys.getenv("EPISODIC_PALETTE_CONFIG", unset = NA)
-) {
+    palette_config_path = Sys.getenv("EPISODIC_PALETTE_CONFIG", unset = NA)) {
   defaults_path <- system.file("config", "palette.yaml", package = "EpiSODIC")
   if (identical(defaults_path, "")) {
     defaults_path <- file.path("inst", "config", "palette.yaml")

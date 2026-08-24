@@ -51,15 +51,14 @@
 #' @keywords internal
 #' @noRd
 episodic_app_server_assessment_actions <- function(
-  input,
-  output,
-  session,
-  con,
-  lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  current_user,
-  selected_cluster_id,
-  db_touch
-) {
+    input,
+    output,
+    session,
+    con,
+    lang = Sys.getenv("EPISODIC_LANGUAGE"),
+    current_user,
+    selected_cluster_id,
+    db_touch) {
   refresh <- function() {
     # Re-trigger the dossier/assessment renderers by "reselecting" the
     # same cluster - both read from the database, not from this value's
