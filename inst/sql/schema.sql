@@ -20,10 +20,11 @@
 -- EpiSODIC database schema, written in SQLite dialect and used verbatim
 -- for SQLite connections. For a MariaDB/MySQL EPISODIC_DB,
 -- episodic_db_schema_statements() rewrites this same file at load time
--- (AUTOINCREMENT -> AUTO_INCREMENT, the PRAGMA line dropped, and the TEXT
--- columns carrying a UNIQUE constraint or a DEFAULT value given a bounded
--- VARCHAR, since MySQL rejects a DEFAULT on BLOB/TEXT columns outright) -
--- there is deliberately only one schema file to keep in sync.
+-- (AUTOINCREMENT -> AUTO_INCREMENT, the PRAGMA line dropped, and every
+-- TEXT column that MySQL rejects as-is - one carrying a UNIQUE or
+-- PRIMARY KEY constraint, a DEFAULT value, or used in a CREATE INDEX or
+-- composite PRIMARY KEY - given a bounded VARCHAR instead) - there is
+-- deliberately only one schema file to keep in sync.
 --
 -- Type mapping used throughout, for reference against a more general
 -- relational type system:
