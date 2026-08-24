@@ -348,7 +348,7 @@ CREATE TABLE episodic_cluster_state (
                'new', 'assessing', 'monitoring', 'closable', 'closed', 'reassess')),
   entered_at TEXT NOT NULL,
   left_at    TEXT,
-  trigger    TEXT NOT NULL CHECK (trigger IN (
+  `trigger`  TEXT NOT NULL CHECK (`trigger` IN (
                'detection', 'assessment', 'case_free', 'new_case', 'closure', 'system')),
   event_id   INTEGER REFERENCES episodic_assessment_event(event_id),
   user_id    INTEGER REFERENCES episodic_app_user(user_id)

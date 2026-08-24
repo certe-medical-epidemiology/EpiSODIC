@@ -14,6 +14,7 @@
   "rail.title": "التجمعات المفتوحة",
   "rail.count_suffix": "جديدة أو نشطة",
   "rail.empty": "لا توجد تجمعات مفتوحة.",
+  "rail.priority": "الدرجة {score}",
   "rail.bulk_selected": "محدَّدة",
   "rail.bulk_apply": "تطبيق التصنيف على المحدَّد",
   "rail.bulk_clear": "مسح التحديد",
@@ -57,6 +58,10 @@
   "careline.second": "الرعاية الثانوية",
   "careline.other": "أخرى",
   "careline.unknown": "غير معروف",
+  "careline.short.first": "الخط الأول",
+  "careline.short.second": "الخط الثاني",
+  "careline.short.other": "أخرى",
+  "careline.short.unknown": "غير معروف",
 
   "verloop.title": "الجدول الزمني",
   "verloop.not_assessed": "لم يُقيَّم بعد. اكتُشف في {first} بواسطة {detectors}.",

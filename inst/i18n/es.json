@@ -14,6 +14,7 @@
   "rail.title": "Clústeres abiertos",
   "rail.count_suffix": "nuevos o activos",
   "rail.empty": "No hay clústeres abiertos.",
+  "rail.priority": "puntuación {score}",
   "rail.bulk_selected": "seleccionados",
   "rail.bulk_apply": "Aplicar clasificación a los seleccionados",
   "rail.bulk_clear": "Borrar selección",
@@ -57,6 +58,10 @@
   "careline.second": "atención secundaria",
   "careline.other": "otro",
   "careline.unknown": "desconocido",
+  "careline.short.first": "1.ª línea",
+  "careline.short.second": "2.ª línea",
+  "careline.short.other": "otro",
+  "careline.short.unknown": "desconocido",
 
   "verloop.title": "Cronología",
   "verloop.not_assessed": "Aún sin evaluar. Detectado el {first} por {detectors}.",

@@ -14,6 +14,7 @@
   "rail.title": "Openstaande clusters",
   "rail.count_suffix": "nieuw of actief",
   "rail.empty": "Geen openstaande clusters.",
+  "rail.priority": "score {score}",
   "rail.bulk_selected": "geselecteerd",
   "rail.bulk_apply": "Classificatie toepassen op geselecteerde",
   "rail.bulk_clear": "Selectie wissen",
@@ -57,6 +58,10 @@
   "careline.second": "tweede lijn",
   "careline.other": "overig",
   "careline.unknown": "onbekend",
+  "careline.short.first": "1e lijn",
+  "careline.short.second": "2e lijn",
+  "careline.short.other": "overig",
+  "careline.short.unknown": "onbekend",
 
   "verloop.title": "Verloop",
   "verloop.not_assessed": "Nog niet beoordeeld. Gedetecteerd op {first} door {detectors}.",

@@ -14,6 +14,7 @@
   "rail.title": "Offene Cluster",
   "rail.count_suffix": "neu oder aktiv",
   "rail.empty": "Keine offenen Cluster.",
+  "rail.priority": "Score {score}",
   "rail.bulk_selected": "ausgewählt",
   "rail.bulk_apply": "Klassifikation auf Auswahl anwenden",
   "rail.bulk_clear": "Auswahl leeren",
@@ -57,6 +58,10 @@
   "careline.second": "Sekundärversorgung",
   "careline.other": "sonstige",
   "careline.unknown": "unbekannt",
+  "careline.short.first": "1. Linie",
+  "careline.short.second": "2. Linie",
+  "careline.short.other": "sonstige",
+  "careline.short.unknown": "unbekannt",
 
   "verloop.title": "Zeitverlauf",
   "verloop.not_assessed": "Noch nicht bewertet. Erkannt am {first} durch {detectors}.",

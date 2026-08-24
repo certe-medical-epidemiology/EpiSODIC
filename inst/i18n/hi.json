@@ -14,6 +14,7 @@
   "rail.title": "खुले क्लस्टर",
   "rail.count_suffix": "नए या सक्रिय",
   "rail.empty": "कोई खुला क्लस्टर नहीं है।",
+  "rail.priority": "स्कोर {score}",
   "rail.bulk_selected": "चयनित",
   "rail.bulk_apply": "चयनित पर वर्गीकरण लागू करें",
   "rail.bulk_clear": "चयन साफ़ करें",
@@ -57,6 +58,10 @@
   "careline.second": "द्वितीयक देखभाल",
   "careline.other": "अन्य",
   "careline.unknown": "अज्ञात",
+  "careline.short.first": "प्रथम पंक्ति",
+  "careline.short.second": "द्वितीय पंक्ति",
+  "careline.short.other": "अन्य",
+  "careline.short.unknown": "अज्ञात",
 
   "verloop.title": "समयरेखा",
   "verloop.not_assessed": "अभी तक मूल्यांकन नहीं हुआ है। {first} को {detectors} द्वारा संसूचित।",

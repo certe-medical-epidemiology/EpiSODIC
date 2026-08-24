@@ -242,7 +242,11 @@ episodic_ui_bars <- function(rows, unit = NULL, colour = NULL) {
   bars <- lapply(seq_len(nrow(rows)), function(i) {
     shiny::tags$div(
       class = "episodic-bar-row",
-      shiny::tags$div(class = "episodic-bar-label", rows$label[i]),
+      shiny::tags$div(
+        class = "episodic-bar-label",
+        title = rows$label[i],
+        rows$label[i]
+      ),
       shiny::tags$div(
         class = "episodic-bar-track",
         shiny::tags$div(

@@ -353,6 +353,12 @@ episodic_ui_rt_chart <- function(rt, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @param max_labels Cap on how many areas are labelled, highest case
 #'   count first. A diffuse cluster spread over dozens of postcodes is
 #'   past the point where labelling every one of them helps.
+#' @param crop When `TRUE` (the default), the map is cropped tight
+#'   around the case-bearing areas plus a margin - the detail view. When
+#'   `FALSE`, the full reference extent is drawn and unmatched areas are
+#'   left unfilled, for a companion "where in the region is this"
+#'   context map; area labels are skipped since a full-region view has
+#'   too many polygons to label legibly.
 #' @return A `ggplot` object, or `NULL` if no geographic data is
 #'   available at all, or the join/plot fails for any reason (e.g. a PC
 #'   value not in the reference geometry - synthetic demo postcodes are
@@ -364,7 +370,8 @@ episodic_ui_geo_map_chart <- function(
     rows,
     pad_share = 0.45,
     min_pad_share = 0.02,
-    max_labels = 30L) {
+    max_labels = 30L,
+    crop = TRUE) {
   if (nrow(rows) == 0) {
     return(NULL)
   }
@@ -383,20 +390,29 @@ episodic_ui_geo_map_chart <- function(
         return(NULL)
       }
 
-      frame <- episodic_geo_frame(
-        geo,
-        matched,
-        pad_share = pad_share,
-        min_pad_share = min_pad_share
-      )
-      # Crop the geometry as well as the frame: drawing four thousand
-      # polygons and then hiding all but a dozen of them is work the plot
-      # device does not need to do.
-      plotted <- tryCatch(
-        suppressWarnings(sf::st_crop(geo, frame$bbox)),
-        error = function(e) geo
-      )
-      if (is.null(plotted) || nrow(plotted) == 0) {
+      if (crop) {
+        frame <- episodic_geo_frame(
+          geo,
+          matched,
+          pad_share = pad_share,
+          min_pad_share = min_pad_share
+        )
+        # Crop the geometry as well as the frame: drawing four thousand
+        # polygons and then hiding all but a dozen of them is work the plot
+        # device does not need to do.
+        plotted <- tryCatch(
+          suppressWarnings(sf::st_crop(geo, frame$bbox)),
+          error = function(e) geo
+        )
+        if (is.null(plotted) || nrow(plotted) == 0) {
+          plotted <- geo
+        }
+      } else {
+        full <- sf::st_bbox(geo)
+        frame <- list(
+          xlim = c(full[["xmin"]], full[["xmax"]]),
+          ylim = c(full[["ymin"]], full[["ymax"]])
+        )
         plotted <- geo
       }
 
@@ -434,7 +450,7 @@ episodic_ui_geo_map_chart <- function(
         )
       }
 
-      labels <- episodic_geo_labels(matched, max_labels = max_labels)
+      labels <- if (crop) episodic_geo_labels(matched, max_labels = max_labels)
       if (!is.null(labels)) {
         # Plain geom_text over pre-computed representative points rather
         # than geom_sf_text(): stat_sf_coordinates() emits a warning per

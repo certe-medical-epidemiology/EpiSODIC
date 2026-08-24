@@ -12,12 +12,13 @@
        over one another, reshaped here into an asymmetric epidemic-curve
        silhouette (steep rise, rounded peak, longer decay tail). -->
 
-  <rect x="0" y="0" width="240" height="240" fill="#FFFFFF" />
-
-  <!-- Hexagon, flat-top, centred on 120,120, circumradius 92 -->
+  <!-- Hexagon, flat-top, centred on 120,120, circumradius 92. Filled
+       white so the wordmark and curves beneath have a solid backing,
+       but only inside the hex outline - the canvas outside it stays
+       transparent rather than a white square. -->
   <polygon
     points="120,28 199.7,74 199.7,166 120,212 40.3,166 40.3,74"
-    fill="none"
+    fill="#FFFFFF"
     stroke="#005F7A"
     stroke-width="7"
     stroke-linejoin="round"

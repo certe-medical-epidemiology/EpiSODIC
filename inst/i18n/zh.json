@@ -14,6 +14,7 @@
   "rail.title": "未结聚集事件",
   "rail.count_suffix": "新增或活跃",
   "rail.empty": "暂无未结聚集事件。",
+  "rail.priority": "评分 {score}",
   "rail.bulk_selected": "已选择",
   "rail.bulk_apply": "对所选项应用分类",
   "rail.bulk_clear": "清除选择",
@@ -57,6 +58,10 @@
   "careline.second": "二级医疗",
   "careline.other": "其他",
   "careline.unknown": "未知",
+  "careline.short.first": "一线",
+  "careline.short.second": "二线",
+  "careline.short.other": "其他",
+  "careline.short.unknown": "未知",
 
   "verloop.title": "时间线",
   "verloop.not_assessed": "尚未评估。于 {first} 由 {detectors} 检出。",
