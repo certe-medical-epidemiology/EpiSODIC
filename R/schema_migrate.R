@@ -414,11 +414,17 @@ episodic_db_schema_statements <- function(dialect) {
       fixed = TRUE
     )
     # MySQL (unlike MariaDB and SQLite) rejects a DEFAULT on BLOB/TEXT
-    # columns outright [1101], so this DEFAULT-carrying TEXT column also
+    # columns outright [1101], so every DEFAULT-carrying TEXT column also
     # needs a bounded VARCHAR under the mariadb dialect.
     schema_sql <- sub(
       "denominator     TEXT NOT NULL DEFAULT 'none' CHECK (denominator IN (",
       "denominator     VARCHAR(20) NOT NULL DEFAULT 'none' CHECK (denominator IN (",
+      schema_sql,
+      fixed = TRUE
+    )
+    schema_sql <- sub(
+      "care_line      TEXT NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'other', 'unknown')),",
+      "care_line      VARCHAR(20) NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'other', 'unknown')),",
       schema_sql,
       fixed = TRUE
     )
