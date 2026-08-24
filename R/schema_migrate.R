@@ -365,7 +365,12 @@ episodic_db_last_insert_id <- function(con) {
 #' `TEXT`/`BLOB` column ("BLOB/TEXT column can't have a default value"
 #' [1101]; "BLOB/TEXT column used in key specification without a key
 #' length" [1170]) - given a bounded `VARCHAR` instead) rather than
-#' maintaining a second schema file.
+#' maintaining a second schema file. `episodic_denominator`'s nullable
+#' `area_code` is also, in the schema itself rather than here, kept out
+#' of any `PRIMARY KEY` (a surrogate `denominator_id` plus a `UNIQUE`
+#' constraint stand in for it) - MySQL implicitly forces every
+#' `PRIMARY KEY` column `NOT NULL`, which would otherwise reject a row
+#' with no area stratum.
 #' @param dialect `"sqlite"` or `"mariadb"`.
 #' @return A character vector of individual SQL statements.
 #' @keywords internal
@@ -400,55 +405,93 @@ episodic_db_schema_statements <- function(dialect) {
     # conventional safe width for an indexed utf8mb4 column under
     # MySQL's default 767-byte key-part limit), 20 for a short CHECK'd
     # enum, 10 for an ISO 8601 YYYY-MM-DD date stored as text.
-    text_to_varchar <- c(
-      "stream_key      TEXT NOT NULL UNIQUE" =
-        "stream_key      VARCHAR(40) NOT NULL UNIQUE",
-      "institution_key  TEXT NOT NULL UNIQUE" =
-        "institution_key  VARCHAR(40) NOT NULL UNIQUE",
-      "source_key     TEXT NOT NULL UNIQUE," =
-        "source_key     VARCHAR(191) NOT NULL UNIQUE,",
-      "username      TEXT NOT NULL UNIQUE," =
-        "username      VARCHAR(191) NOT NULL UNIQUE,",
-      "denominator     TEXT NOT NULL DEFAULT 'none' CHECK (denominator IN (" =
-        "denominator     VARCHAR(20) NOT NULL DEFAULT 'none' CHECK (denominator IN (",
-      "care_line      TEXT NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'other', 'unknown'))," =
-        "care_line      VARCHAR(20) NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'other', 'unknown')),",
-      # episodic_stream.pathogen - plain INDEX
-      "  pathogen        TEXT NOT NULL,  -- raw lab-provided string, deliberately unconstrained free text" =
-        "  pathogen        VARCHAR(191) NOT NULL,  -- raw lab-provided string, deliberately unconstrained free text",
-      # episodic_pathogen_config.pathogen - inline PRIMARY KEY
-      "  pathogen        TEXT NOT NULL PRIMARY KEY,  -- matches episodic_case.pathogen exactly" =
-        "  pathogen        VARCHAR(191) NOT NULL PRIMARY KEY,  -- matches episodic_case.pathogen exactly",
-      # episodic_case.patient_key/sample_date/pathogen - plain INDEX
-      "  patient_key    TEXT NOT NULL," =
-        "  patient_key    VARCHAR(191) NOT NULL,",
-      "  sample_date    TEXT NOT NULL," =
-        "  sample_date    VARCHAR(10) NOT NULL,",
-      "  pathogen       TEXT NOT NULL,  -- raw lab-provided string, used verbatim" =
-        "  pathogen       VARCHAR(191) NOT NULL,  -- raw lab-provided string, used verbatim",
-      # episodic_institution_activity.period_start - composite PRIMARY KEY
-      "  period_start   TEXT NOT NULL," =
-        "  period_start   VARCHAR(10) NOT NULL,",
-      # episodic_reporting_triangle.sample_date/run_date - composite PRIMARY KEY
-      "  sample_date TEXT NOT NULL," =
-        "  sample_date VARCHAR(10) NOT NULL,",
-      "  run_date    TEXT NOT NULL," =
-        "  run_date    VARCHAR(10) NOT NULL,",
-      # episodic_stream_trend.week_start - composite PRIMARY KEY
-      "  week_start TEXT NOT NULL," =
-        "  week_start VARCHAR(10) NOT NULL,",
-      # episodic_denominator.pathogen/sample_date/care_line/area_code - composite PRIMARY KEY
-      "  pathogen      TEXT NOT NULL," =
-        "  pathogen      VARCHAR(191) NOT NULL,",
-      "  sample_date   TEXT NOT NULL," =
-        "  sample_date   VARCHAR(10) NOT NULL,",
-      "  care_line     TEXT NOT NULL CHECK (care_line IN ('first', 'second', 'other', 'unknown'))," =
-        "  care_line     VARCHAR(20) NOT NULL CHECK (care_line IN ('first', 'second', 'other', 'unknown')),",
-      "  area_code     TEXT," =
-        "  area_code     VARCHAR(191),"
+    #
+    # Scoped per table (not a flat find/replace over the whole file):
+    # several tables pad their column names to different widths, so the
+    # same "colname   TEXT NOT NULL," text can occur verbatim in more
+    # than one CREATE TABLE block, and a flat sub() would silently only
+    # touch whichever one happens to come first.
+    text_to_varchar <- list(
+      episodic_stream = c(
+        "stream_key      TEXT NOT NULL UNIQUE" =
+          "stream_key      VARCHAR(40) NOT NULL UNIQUE",
+        "  pathogen        TEXT NOT NULL,  -- raw lab-provided string, deliberately unconstrained free text" =
+          "  pathogen        VARCHAR(191) NOT NULL,  -- raw lab-provided string, deliberately unconstrained free text",
+        "denominator     TEXT NOT NULL DEFAULT 'none' CHECK (denominator IN (" =
+          "denominator     VARCHAR(20) NOT NULL DEFAULT 'none' CHECK (denominator IN ("
+      ),
+      episodic_institution = c(
+        "institution_key  TEXT NOT NULL UNIQUE" =
+          "institution_key  VARCHAR(40) NOT NULL UNIQUE"
+      ),
+      episodic_institution_activity = c(
+        "  period_start   TEXT NOT NULL," =
+          "  period_start   VARCHAR(10) NOT NULL,"
+      ),
+      episodic_pathogen_config = c(
+        "  pathogen        TEXT NOT NULL PRIMARY KEY,  -- matches episodic_case.pathogen exactly" =
+          "  pathogen        VARCHAR(191) NOT NULL PRIMARY KEY,  -- matches episodic_case.pathogen exactly"
+      ),
+      episodic_case = c(
+        "source_key     TEXT NOT NULL UNIQUE," =
+          "source_key     VARCHAR(191) NOT NULL UNIQUE,",
+        "  patient_key    TEXT NOT NULL," =
+          "  patient_key    VARCHAR(191) NOT NULL,",
+        "  sample_date    TEXT NOT NULL," =
+          "  sample_date    VARCHAR(10) NOT NULL,",
+        "  pathogen       TEXT NOT NULL,  -- raw lab-provided string, used verbatim" =
+          "  pathogen       VARCHAR(191) NOT NULL,  -- raw lab-provided string, used verbatim",
+        "care_line      TEXT NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'other', 'unknown'))," =
+          "care_line      VARCHAR(20) NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'other', 'unknown')),"
+      ),
+      episodic_reporting_triangle = c(
+        "  sample_date TEXT NOT NULL," =
+          "  sample_date VARCHAR(10) NOT NULL,",
+        "  run_date    TEXT NOT NULL," =
+          "  run_date    VARCHAR(10) NOT NULL,"
+      ),
+      episodic_stream_trend = c(
+        "  week_start TEXT NOT NULL," =
+          "  week_start VARCHAR(10) NOT NULL,"
+      ),
+      episodic_denominator = c(
+        "  pathogen       TEXT NOT NULL," =
+          "  pathogen       VARCHAR(191) NOT NULL,",
+        "  sample_date    TEXT NOT NULL," =
+          "  sample_date    VARCHAR(10) NOT NULL,",
+        "  care_line      TEXT NOT NULL CHECK (care_line IN ('first', 'second', 'other', 'unknown'))," =
+          "  care_line      VARCHAR(20) NOT NULL CHECK (care_line IN ('first', 'second', 'other', 'unknown')),",
+        "  area_code      TEXT," =
+          "  area_code      VARCHAR(191),"
+      ),
+      episodic_app_user = c(
+        "username      TEXT NOT NULL UNIQUE," =
+          "username      VARCHAR(191) NOT NULL UNIQUE,"
+      )
     )
-    for (pattern in names(text_to_varchar)) {
-      schema_sql <- sub(pattern, text_to_varchar[[pattern]], schema_sql, fixed = TRUE)
+    for (table in names(text_to_varchar)) {
+      # (?s) makes "." span newlines - these blocks are multi-line.
+      block_pattern <- paste0("(?s)CREATE TABLE ", table, " \\(.*?\\n\\);")
+      block_span <- regexpr(block_pattern, schema_sql, perl = TRUE)
+      block <- regmatches(schema_sql, block_span)
+      rules <- text_to_varchar[[table]]
+      for (pattern in names(rules)) {
+        new_block <- sub(pattern, rules[[pattern]], block, fixed = TRUE)
+        if (identical(new_block, block)) {
+          stop(
+            "episodic_db_schema_statements(): pattern not found in ",
+            table, ": '", pattern, "'. inst/sql/schema.sql may have changed - ",
+            "update the mariadb rewrite rules to match.",
+            call. = FALSE
+          )
+        }
+        block <- new_block
+      }
+      # regmatches<-() substitutes the matched span with `block` literally
+      # (unlike sub()'s replacement string, it never interprets \1/\\-style
+      # backreferences in it), which matters here since `block` is
+      # arbitrary already-rewritten SQL text, not a hand-written pattern.
+      regmatches(schema_sql, block_span) <- block
     }
   }
 
