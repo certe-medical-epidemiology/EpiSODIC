@@ -4,11 +4,10 @@ This page collects the questions that come up most often when getting
 started with EpiSODIC. Skim the questions first, then click the one you
 need to open its answer - nothing on this page needs to be read start to
 finish. If your question is not here, the README’s “Data format” and
-“Environment variables” sections and the “Architecture overview”,
-“Deployment”, and “Detection and reconciliation” vignettes go deeper on
-most of these topics; and if it still is not answered anywhere, that is
-worth telling us, since it means this page is missing something it
-should cover.
+“Environment variables” sections and the “Deployment”, and “Detection
+and reconciliation” vignettes go deeper on most of these topics; and if
+it still is not answered anywhere, that is worth telling us, since it
+means this page is missing something it should cover.
 
 ## Getting your data in
 

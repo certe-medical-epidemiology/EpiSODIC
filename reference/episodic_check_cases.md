@@ -91,7 +91,8 @@ episodic_check_cases(cases)
 #>    10 pathogens, 62 institutions, 200 patients
 #> 
 #> v This data set satisfies the case data contract, and is ready for
-#>   episodic_run_cron(). See ?episodic_case_data for what each column means.
+#>   episodic_run_cron(). See ?episodic_case_data (`?episodic_case_data()`) for what each
+#>   column means.
 
 # a typical extract mistake: dates written day-first, sex as words
 broken <- cases
@@ -105,8 +106,8 @@ report
 #> 
 #> x 2 problems - a detection run refuses to start until these are fixed:
 #> 
-#>   1. `sex` has 206 of 206 rows with a value outside the allowed set (M, F,
-#>      U, or NA).
+#>   1. `sex` has 206 of 206 rows with a value outside the allowed set ("M",
+#>      "F", "U", or NA).
 #>      values: female, male
 #>      rows:   1, 2, 3, 4, 5 (and 201 more)
 #>      fix:    Map your own coding onto the allowed values in your extract
@@ -125,8 +126,8 @@ report
 #>              that refuses to read.
 #> 
 #> Nothing was changed here. Fix the problems above in your own extract step,
-#> then check again. See ?episodic_case_data for what each column means and
-#> which values it accepts.
+#> then check again. See ?episodic_case_data (`?episodic_case_data()`) for what each column means
+#>   and which values it accepts.
 
 # it is a data frame too
 report$column[report$severity == "problem"]

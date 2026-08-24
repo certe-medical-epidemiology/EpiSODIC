@@ -466,8 +466,11 @@ There are exactly two roles:
 Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")  # or pass db_path explicitly below
 
 episodic_provision_user(
-  username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
-  password = "a-temporary-password", role = "epidemiologist"  # or "viewer"
+  username = "jdoe",
+  role = "epidemiologist",  # or "viewer"
+  full_name = "Dr Jane Doe",
+  email = "j.doe@example.org",
+  password = "a-temporary-password"
 )
 ```
 
@@ -618,10 +621,10 @@ useful if you are adapting EpiSODIC or writing your own report template.
 
 ### All vignettes
 
-- [Architecture
-  overview](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/architecture.md):
 - [Deployment](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md):
 - [Detection and
   reconciliation](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.md):
+- [Environment
+  variables](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md):
 - [Frequently asked
   questions](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.md):

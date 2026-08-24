@@ -93,5 +93,6 @@ episodic_check_cases(episodic_resolve_data(my_extract))
 #>    10 pathogens, 62 institutions, 200 patients
 #> 
 #> v This data set satisfies the case data contract, and is ready for
-#>   episodic_run_cron(). See ?episodic_case_data for what each column means.
+#>   episodic_run_cron(). See ?episodic_case_data (`?episodic_case_data()`) for what each
+#>   column means.
 ```

@@ -267,7 +267,8 @@ episodic_check_cases(cases)
 #>    1 pathogen, 1 institution, 1 patient
 #> 
 #> v This data set satisfies the case data contract, and is ready for
-#>   episodic_run_cron(). See ?episodic_case_data for what each column means.
+#>   episodic_run_cron(). See ?episodic_case_data (`?episodic_case_data()`) for what each
+#>   column means.
 
 episodic_case_columns
 #>  [1] "source_key"               "patient_key"             

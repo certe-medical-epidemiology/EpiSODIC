@@ -466,8 +466,11 @@ There are exactly two roles:
 Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")  # or pass db_path explicitly below
 
 episodic_provision_user(
-  username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
-  password = "a-temporary-password", role = "epidemiologist"  # or "viewer"
+  username = "jdoe",
+  role = "epidemiologist",  # or "viewer"
+  full_name = "Dr Jane Doe",
+  email = "j.doe@example.org",
+  password = "a-temporary-password"
 )
 ```
 

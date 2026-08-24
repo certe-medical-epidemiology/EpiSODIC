@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,9 +43,9 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/architecture.html">Architecture overview</a></li>
-    <li><a class="dropdown-item" href="articles/deployment.html">Deployment</a></li>
+<li><a class="dropdown-item" href="articles/deployment.html">Deployment</a></li>
     <li><a class="dropdown-item" href="articles/detection-reconciliation.html">Detection and reconciliation</a></li>
+    <li><a class="dropdown-item" href="articles/environment-variables.html">Environment variables</a></li>
     <li><a class="dropdown-item" href="articles/faq.html">Frequently asked questions</a></li>
   </ul>
 </li>
@@ -438,8 +438,11 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span>  <span class="co"># or pass db_path explicitly below</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/episodic_provision_user.html">episodic_provision_user</a></span><span class="op">(</span></span>
-<span>  username <span class="op">=</span> <span class="st">"jdoe"</span>, full_name <span class="op">=</span> <span class="st">"Jane Doe"</span>, email <span class="op">=</span> <span class="st">"j.doe@example.org"</span>,</span>
-<span>  password <span class="op">=</span> <span class="st">"a-temporary-password"</span>, role <span class="op">=</span> <span class="st">"epidemiologist"</span>  <span class="co"># or "viewer"</span></span>
+<span>  username <span class="op">=</span> <span class="st">"jdoe"</span>,</span>
+<span>  role <span class="op">=</span> <span class="st">"epidemiologist"</span>,  <span class="co"># or "viewer"</span></span>
+<span>  full_name <span class="op">=</span> <span class="st">"Dr Jane Doe"</span>,</span>
+<span>  email <span class="op">=</span> <span class="st">"j.doe@example.org"</span>,</span>
+<span>  password <span class="op">=</span> <span class="st">"a-temporary-password"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="reference/episodic_provision_user.html">episodic_provision_user()</a></code> takes <code>db_path</code> (defaulting to <code>EPISODIC_DB</code>, see “Environment variables” below), not an open connection - it opens and closes its own via <code><a href="reference/episodic_db_open.html">episodic_db_open()</a></code>, so provisioning an account is one call at the console. The account is created with <code>must_change = TRUE</code>, so its first real sign-in forces the holder to set their own password before continuing.</p>
 </div>
