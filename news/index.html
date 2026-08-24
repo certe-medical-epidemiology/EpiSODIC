@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -83,6 +83,10 @@
 <code><a href="../reference/episodic_check_cases.html">episodic_check_cases()</a></code>’s allowed-value messages (<code>care_line</code>, <code>institution_type</code>, <code>sex</code>) now quote each value, and its <code><a href="../reference/episodic_case_data.html">?episodic_case_data</a></code> references are clickable in terminals/RStudio that support it</li>
 <li>
 <code><a href="../reference/episodic_db_create.html">episodic_db_create()</a></code> against MySQL no longer fails with “BLOB/TEXT column can’t have a default value” [1101] - <code>episodic_stream.denominator</code> and <code>episodic_case.care_line</code> are now widened to <code>VARCHAR</code> under the <code>mariadb</code> dialect, since MySQL (unlike MariaDB and SQLite) rejects a <code>DEFAULT</code> on <code>TEXT</code> columns outright</li>
+<li>
+<code><a href="../reference/episodic_db_create.html">episodic_db_create()</a></code> against MySQL no longer fails with “BLOB/TEXT column … used in key specification without a key length” [1170] - every remaining <code>TEXT</code> column used in a <code>PRIMARY KEY</code>, composite <code>PRIMARY KEY</code>, or <code>CREATE INDEX</code> (<code>pathogen</code>, <code>patient_key</code>, <code>sample_date</code>, <code>run_date</code>, <code>week_start</code>, <code>period_start</code>, <code>care_line</code>, <code>area_code</code>) is now widened to a bounded <code>VARCHAR</code> under the <code>mariadb</code> dialect, since MySQL requires an explicit key length on <code>TEXT</code>/<code>BLOB</code> columns used as a key</li>
+<li>
+<code>episodic_denominators_load()</code> against MySQL no longer fails to write a denominator row with no area stratum (<code>area_code = NA</code>, which <code>episodic_validate_denominators()</code> has always allowed) - <code>episodic_denominator</code>’s composite <code>PRIMARY KEY</code> included the nullable <code>area_code</code>, and MySQL implicitly forces every <code>PRIMARY KEY</code> column <code>NOT NULL</code>; it now has a surrogate <code>denominator_id</code> primary key with the natural key as a <code>UNIQUE</code> constraint instead, which permits multiple <code>NULL</code>s in both MySQL and SQLite</li>
 </ul></div>
 </div>
     <div class="section level2">

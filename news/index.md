@@ -68,6 +68,22 @@
   `episodic_case.care_line` are now widened to `VARCHAR` under the
   `mariadb` dialect, since MySQL (unlike MariaDB and SQLite) rejects a
   `DEFAULT` on `TEXT` columns outright
+- [`episodic_db_create()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_create.md)
+  against MySQL no longer fails with “BLOB/TEXT column … used in key
+  specification without a key length” \[1170\] - every remaining `TEXT`
+  column used in a `PRIMARY KEY`, composite `PRIMARY KEY`, or
+  `CREATE INDEX` (`pathogen`, `patient_key`, `sample_date`, `run_date`,
+  `week_start`, `period_start`, `care_line`, `area_code`) is now widened
+  to a bounded `VARCHAR` under the `mariadb` dialect, since MySQL
+  requires an explicit key length on `TEXT`/`BLOB` columns used as a key
+- `episodic_denominators_load()` against MySQL no longer fails to write
+  a denominator row with no area stratum (`area_code = NA`, which
+  `episodic_validate_denominators()` has always allowed) -
+  `episodic_denominator`’s composite `PRIMARY KEY` included the nullable
+  `area_code`, and MySQL implicitly forces every `PRIMARY KEY` column
+  `NOT NULL`; it now has a surrogate `denominator_id` primary key with
+  the natural key as a `UNIQUE` constraint instead, which permits
+  multiple `NULL`s in both MySQL and SQLite
 
 ## EpiSODIC 0.4.0
 
