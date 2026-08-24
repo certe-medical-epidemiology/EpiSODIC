@@ -13,9 +13,6 @@ the first call to make when a run did not produce what you expected.
 
 ``` r
 episodic_check_cases(cases)
-
-# S3 method for class 'episodic_case_check'
-print(x, ...)
 ```
 
 ## Arguments
@@ -29,15 +26,6 @@ print(x, ...)
   first, so you can check either form). Anything else is itself reported
   as a problem rather than throwing - the point of this function is that
   it always answers.
-
-- x:
-
-  An `episodic_case_check` report, as returned by
-  `episodic_check_cases()`.
-
-- ...:
-
-  Ignored, for compatibility with the print generic.
 
 ## Value
 

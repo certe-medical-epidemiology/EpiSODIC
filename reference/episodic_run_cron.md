@@ -12,11 +12,11 @@ run is always safe to simply retry.
 
 ``` r
 episodic_run_cron(
-  db_path,
-  cases = episodic_synthetic_cases,
+  cases,
   denominators = NULL,
   institution_activity = NULL,
   episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
+  db_path = Sys.getenv("EPISODIC_DB"),
   host = Sys.info()[["nodename"]],
   account = Sys.info()[["user"]],
   run_date = Sys.Date()
@@ -24,12 +24,6 @@ episodic_run_cron(
 ```
 
 ## Arguments
-
-- db_path:
-
-  Path to the EpiSODIC database: a SQLite file (created automatically if
-  it does not exist yet) or a MariaDB/MySQL DSN (see
-  [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
 
 - cases:
 
@@ -60,6 +54,12 @@ episodic_run_cron(
 
   Passed to
   [`episodic_config_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_resolve.md).
+
+- db_path:
+
+  Path to the EpiSODIC database: a SQLite file (created automatically if
+  it does not exist yet) or a MariaDB/MySQL DSN (see
+  [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
 
 - host, account:
 
@@ -155,7 +155,7 @@ db_path <- tempfile(fileext = ".sqlite")
 cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
-run_id <- episodic_run_cron(db_path, cases = cases)
+run_id <- episodic_run_cron(db_path = db_path, cases = cases)
 file.remove(db_path)
 #> [1] TRUE
 # }

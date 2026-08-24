@@ -22,6 +22,16 @@ episodic_institution_types
 episodic_sex_codes
 ```
 
+## Format
+
+An object of class `character` of length 15.
+
+An object of class `character` of length 4.
+
+An object of class `character` of length 5.
+
+An object of class `character` of length 3.
+
 ## Details
 
 A data set is the normal case, and the one to reach for. If producing

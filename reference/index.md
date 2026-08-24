@@ -32,7 +32,6 @@ contract before you run anything.
   [`episodic_sex_codes`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
   : Connect your own laboratory data
 - [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
-  [`print(`*`<episodic_case_check>`*`)`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
   : Check your case data before you hand it to EpiSODIC
 - [`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
   : Check that your case data has the right shape, or stop

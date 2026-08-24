@@ -18,8 +18,8 @@
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><link href="extra.css" rel="stylesheet">
 <meta property="og:title" content="Epidemiological Signal Observation, Detection, Identification, and Classification">
-<meta name="description" content="An automated surveillance system for infectious disease epidemiologists that detects aberrations in laboratory-confirmed infections, presents them to a small board of epidemiologists as a ranked list of dossiers, records their formal assessment with a full audit trail, and produces outbreak reports for clinical colleagues (e.g., clinical microbiologists) and infection prevention nurses. Statistical methods used include Farrington (2013) &lt;doi:10.1002/sim.5595&gt; and EpiEstim (Cori et al. 2013) &lt;doi:10.1093/aje/kwt133&gt;. Ships with a synthetic demo data set requiring no external data or infrastructure.">
-<meta property="og:description" content="An automated surveillance system for infectious disease epidemiologists that detects aberrations in laboratory-confirmed infections, presents them to a small board of epidemiologists as a ranked list of dossiers, records their formal assessment with a full audit trail, and produces outbreak reports for clinical colleagues (e.g., clinical microbiologists) and infection prevention nurses. Statistical methods used include Farrington (2013) &lt;doi:10.1002/sim.5595&gt; and EpiEstim (Cori et al. 2013) &lt;doi:10.1093/aje/kwt133&gt;. Ships with a synthetic demo data set requiring no external data or infrastructure.">
+<meta name="description" content="An automated surveillance system for infectious disease epidemiologists that detects aberrations in laboratory-confirmed infections, records epidemiologists formal assessment with a full audit trail, and produces outbreak reports for clinical colleagues and infection prevention nurses. Applies evidence-based statistical methods such as Improved Farrington (2013) &lt;doi:10.1002/sim.5595&gt; and EpiEstim' (Cori et al. 2013) &lt;doi:10.1093/aje/kwt133&gt;. Ships with a synthetic demo data set requiring no external data or infrastructure.">
+<meta property="og:description" content="An automated surveillance system for infectious disease epidemiologists that detects aberrations in laboratory-confirmed infections, records epidemiologists formal assessment with a full audit trail, and produces outbreak reports for clinical colleagues and infection prevention nurses. Applies evidence-based statistical methods such as Improved Farrington (2013) &lt;doi:10.1002/sim.5595&gt; and EpiEstim' (Cori et al. 2013) &lt;doi:10.1093/aje/kwt133&gt;. Ships with a synthetic demo data set requiring no external data or infrastructure.">
 <meta property="og:image" content="https://certe-medical-epidemiology.github.io/EpiSODIC/logo.svg">
 </head>
 <body>
@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -139,8 +139,8 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <span><span class="fu"><a href="reference/episodic_check_cases.html">episodic_check_cases</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span>  <span class="co"># what is wrong with it, before anything runs</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/episodic_run_cron.html">episodic_run_cron</a></span><span class="op">(</span></span>
-<span>  db_path <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span>,</span>
 <span>  cases <span class="op">=</span> <span class="va">cases</span>,</span>
+<span>  db_path <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span>,</span>
 <span>  denominators <span class="op">=</span> <span class="cn">NULL</span>  <span class="co"># optional, see "Positivity metadata" below</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>A data set is the normal case, and what these arguments are written for. If producing the data only makes sense at run time (e.g. a live database query), a zero-argument function returning one is accepted just as well - EpiSODIC resolves either.</p>
