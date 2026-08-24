@@ -124,7 +124,7 @@ test_that("a value outside a fixed set is reported with the values that offended
   report <- problems_of(episodic_check_cases(cases))
   expect_identical(report$column, "sex")
   expect_match(report$values, "male", fixed = TRUE)
-  expect_match(report$message, "M, F, U", fixed = TRUE)
+  expect_match(report$message, '"M", "F", "U"', fixed = TRUE)
 })
 
 test_that("a value that is right apart from its capitalisation says so", {

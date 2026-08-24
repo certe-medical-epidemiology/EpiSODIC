@@ -218,7 +218,7 @@ test_that("episodic_synthetic_cases_calibration() responds to n_bumps_per_month"
 test_that("episodic_synthetic_cases_calibration() runs through detection and produces many clusters for the named pathogen", {
   db_path <- tempfile(fileext = ".sqlite")
   episodic_run_cron(
-    db_path,
+    db_path = db_path,
     cases = function() {
       episodic_synthetic_cases_calibration(
         start_date = as.Date("2024-01-01"),
