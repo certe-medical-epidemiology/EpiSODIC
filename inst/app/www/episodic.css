@@ -167,7 +167,7 @@ body {
   color: var(--episodic-muted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  margin-left: 5px;
+  margin-left: 2px;
 }
 .episodic-rail-item .episodic-rail-meta {
   font-size: 11px;

@@ -143,7 +143,7 @@ episodic_synthetic_institutions <- function() {
     institution_key = sprintf("LTC-%02d", 1:20),
     institution_display_name = paste("Zorgcentrum", 1:20),
     institution_type = "ltc_institution",
-    care_line = "second",
+    care_line = "first",
     municipality = NA_character_,
     n_beds = sample(40:180, 20),
     n_wards = NA_integer_,
