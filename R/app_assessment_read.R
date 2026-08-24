@@ -173,9 +173,19 @@ episodic_app_archive <- function(
     streams$stream_id
   )]
   closed$level <- streams$level[match(closed$stream_id, streams$stream_id)]
+  closed$care_line <- streams$care_line[match(
+    closed$stream_id,
+    streams$stream_id
+  )]
   closed$level_label <- vapply(
-    closed$level,
-    function(lv) episodic_tr(paste0("level.", lv), lang = lang),
+    seq_len(nrow(closed)),
+    function(i) {
+      episodic_app_level_label(
+        closed$level[i],
+        closed$care_line[i],
+        lang = lang
+      )
+    },
     character(1)
   )
   closed$place <- vapply(
@@ -361,7 +371,7 @@ episodic_app_activity_log <- function(
 
   states <- DBI::dbGetQuery(
     con,
-    "SELECT * FROM episodic_cluster_state WHERE trigger = 'closure'"
+    "SELECT * FROM episodic_cluster_state WHERE `trigger` = 'closure'"
   )
   if (nrow(states) > 0) {
     rows[[length(rows) + 1]] <- data.frame(

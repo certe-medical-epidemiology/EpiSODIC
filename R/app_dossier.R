@@ -120,12 +120,13 @@ episodic_ui_dossier_header <- function(
         )
       ),
       episodic_ui_chip(
-        episodic_tr(paste0("level.", obj$level), lang = lang),
+        episodic_app_level_label(obj$level, obj$care_line, lang = lang),
         pal$primary
       ),
       episodic_ui_chip(
         episodic_tr(paste0("state.", state), lang = lang),
-        episodic_ui_state_colour(state)
+        episodic_ui_state_colour(state),
+        filled = TRUE
       ),
       if (isTRUE(obj$changed_since_assessment)) {
         episodic_ui_chip(
@@ -556,6 +557,15 @@ episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     ))
   }
   map_chart <- episodic_ui_geo_map_chart(obj$concentration$rows)
+  # A second, uncropped map alongside the detail one: the cropped view
+  # is deliberately tight around the cases (see panel.geo.map_note), which
+  # is exactly what throws away where in the wider region that tight
+  # frame actually sits. Only rendered when the detail map itself
+  # rendered - no point showing region-wide context for a fallback bar
+  # breakdown.
+  context_chart <- if (!is.null(map_chart)) {
+    episodic_ui_geo_map_chart(obj$concentration$rows, crop = FALSE)
+  }
   n_unknown <- obj$concentration$n_unknown_pc %||% 0
   note <- if (n_unknown > 0) {
     # Stated rather than silently dropped: the concentration share, and
@@ -579,7 +589,13 @@ episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       )
     } else {
       shiny::tagList(
-        shiny::renderPlot(map_chart, height = 430),
+        shiny::tags$div(
+          class = "episodic-geo-maps",
+          shiny::renderPlot(map_chart, height = 430),
+          if (!is.null(context_chart)) {
+            shiny::renderPlot(context_chart, height = 430)
+          }
+        ),
         # The map is cropped to the cases, so the areas around the edge
         # are context, not absence of cases elsewhere - say so.
         shiny::tags$p(

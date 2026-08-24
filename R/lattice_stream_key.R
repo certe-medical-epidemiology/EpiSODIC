@@ -31,7 +31,7 @@
 #' @param level One of the five lattice levels, e.g. `"pathogen_ward"`.
 #' @param pathogen The raw lab-provided pathogen string, used as-is (no
 #'   taxonomy resolution).
-#' @param care_line One of `"first"`, `"second"`, `"other"`, `"unknown"`, or
+#' @param care_line One of `"first"`, `"second"`, `"third"`, `"other"`, `"unknown"`, or
 #'   `NA` if care line does not apply at this level.
 #' @param region_code The region/area code, or `NA`.
 #' @param institution_id The institution id for hospital streams, or `NA`.

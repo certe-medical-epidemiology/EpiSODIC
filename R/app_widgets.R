@@ -242,7 +242,11 @@ episodic_ui_bars <- function(rows, unit = NULL, colour = NULL) {
   bars <- lapply(seq_len(nrow(rows)), function(i) {
     shiny::tags$div(
       class = "episodic-bar-row",
-      shiny::tags$div(class = "episodic-bar-label", rows$label[i]),
+      shiny::tags$div(
+        class = "episodic-bar-label",
+        title = rows$label[i],
+        rows$label[i]
+      ),
       shiny::tags$div(
         class = "episodic-bar-track",
         shiny::tags$div(
@@ -383,6 +387,28 @@ episodic_ui_state_colour <- function(state) {
     closed = pal$success_dark,
     reassess = pal$tertiary_dark,
     pal$muted
+  )
+}
+
+#' The rail care-line chip's colour
+#'
+#' Deliberately not primary/secondary/tertiary in line order: first line
+#' takes primary since it is the one an epidemiologist sees most often,
+#' second takes tertiary and third takes secondary. `"other"`/`"unknown"`
+#' (and anything else) get `NULL` - no chip, rather than a chip that
+#' says nothing.
+#'
+#' @param care_line A stream `care_line` value, or `NA`.
+#' @return A hex colour, or `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_ui_care_line_colour <- function(care_line) {
+  pal <- episodic_palette()
+  switch(care_line,
+    first = pal$primary,
+    second = pal$tertiary,
+    third = pal$secondary,
+    NULL
   )
 }
 

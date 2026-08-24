@@ -51,7 +51,7 @@ test_that("episodic_ui_format_datetime() returns 'unknown' for NA/NULL and the r
   )
 })
 
-test_that("episodic_ui_rail() omits the ratio segment (not 'ratio NA') for a detector with no ratio, and shows a date range", {
+test_that("episodic_ui_rail() shows a full-month date range and the priority score, never a ratio", {
   open <- data.frame(
     cluster_id = 1L,
     pathogen = "Norovirus",
@@ -59,18 +59,45 @@ test_that("episodic_ui_rail() omits the ratio segment (not 'ratio NA') for a det
     state = "new",
     state_label = "Nieuw",
     n_cases = 3L,
-    ratio = NA_real_,
+    priority_score = NA_real_,
     first_day = "2025-01-07",
     last_day = "2025-01-15",
     stringsAsFactors = FALSE
   )
   html <- as.character(episodic_ui_rail(open, selected_id = NULL, lang = "nl"))
-  expect_false(grepl("ratio NA", html, fixed = TRUE))
-  expect_true(grepl("7-15 jan. 2025", html, fixed = TRUE))
+  expect_false(grepl("ratio", html, fixed = TRUE))
+  expect_false(grepl("score NA", html, fixed = TRUE))
+  expect_true(grepl("7-15 januari 2025", html, fixed = TRUE))
 
-  open$ratio <- 2.3456
+  open$priority_score <- 2.3456
   html <- as.character(episodic_ui_rail(open, selected_id = NULL, lang = "nl"))
-  expect_true(grepl("ratio 2.3", html, fixed = TRUE))
+  expect_true(grepl("score 2", html, fixed = TRUE))
+})
+
+test_that("episodic_ui_rail() renders a colour-coded chip only for the first/second/third care lines", {
+  open <- data.frame(
+    cluster_id = 1L,
+    pathogen = "Norovirus",
+    level_label = "L1",
+    state = "new",
+    state_label = "Nieuw",
+    n_cases = 3L,
+    priority_score = 50,
+    first_day = "2025-01-07",
+    last_day = "2025-01-15",
+    care_line = "second",
+    stringsAsFactors = FALSE
+  )
+  html <- as.character(episodic_ui_rail(open, selected_id = NULL, lang = "nl"))
+  expect_true(grepl("2e lijn", html, fixed = TRUE))
+
+  open$care_line <- "other"
+  html <- as.character(episodic_ui_rail(open, selected_id = NULL, lang = "nl"))
+  expect_false(grepl("episodic-chip", html, fixed = TRUE))
+
+  open$care_line <- NA_character_
+  html <- as.character(episodic_ui_rail(open, selected_id = NULL, lang = "nl"))
+  expect_false(grepl("episodic-chip", html, fixed = TRUE))
 })
 
 test_that("episodic_palette() and episodic_brand_bar() return usable hex colours, role-named", {

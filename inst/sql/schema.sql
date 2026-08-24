@@ -50,7 +50,7 @@ CREATE TABLE episodic_stream (
                     'pathogen_ward', 'pathogen_institution', 'pathogen_area',
                     'pathogen_province', 'pathogen_region')),
   pathogen        TEXT NOT NULL,  -- raw lab-provided string, deliberately unconstrained free text
-  care_line       TEXT CHECK (care_line IN ('first', 'second', 'other', 'unknown')),
+  care_line       TEXT CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown')),
   region_code     TEXT,
   institution_id  INTEGER REFERENCES episodic_institution(institution_id),
   ward            TEXT,          -- optional finer level than institution, may be NULL
@@ -128,7 +128,7 @@ CREATE TABLE episodic_institution (
   institution_type TEXT NOT NULL CHECK (institution_type IN (
                       'hospital', 'ltc_institution', 'gp_municipality',
                       'ooh_service', 'other')),
-  care_line        TEXT NOT NULL CHECK (care_line IN ('first', 'second', 'other', 'unknown')),
+  care_line        TEXT NOT NULL CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown')),
   municipality     TEXT,
   pc               TEXT,
   n_beds           INTEGER,
@@ -180,7 +180,7 @@ CREATE TABLE episodic_case (
   sample_date    TEXT NOT NULL,
   receipt_date   TEXT,
   pathogen       TEXT NOT NULL,  -- raw lab-provided string, used verbatim
-  care_line      TEXT NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'other', 'unknown')),
+  care_line      TEXT NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown')),
   institution_id INTEGER REFERENCES episodic_institution(institution_id),
   ward           TEXT,
   specialism     TEXT,
@@ -332,7 +332,7 @@ CREATE TABLE episodic_denominator (
   denominator_id INTEGER PRIMARY KEY AUTOINCREMENT,
   pathogen       TEXT NOT NULL,
   sample_date    TEXT NOT NULL,
-  care_line      TEXT NOT NULL CHECK (care_line IN ('first', 'second', 'other', 'unknown')),
+  care_line      TEXT NOT NULL CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown')),
   area_code      TEXT,
   n_tests        INTEGER NOT NULL,
   UNIQUE (pathogen, sample_date, care_line, area_code)
@@ -348,7 +348,7 @@ CREATE TABLE episodic_cluster_state (
                'new', 'assessing', 'monitoring', 'closable', 'closed', 'reassess')),
   entered_at TEXT NOT NULL,
   left_at    TEXT,
-  trigger    TEXT NOT NULL CHECK (trigger IN (
+  `trigger`  TEXT NOT NULL CHECK (`trigger` IN (
                'detection', 'assessment', 'case_free', 'new_case', 'closure', 'system')),
   event_id   INTEGER REFERENCES episodic_assessment_event(event_id),
   user_id    INTEGER REFERENCES episodic_app_user(user_id)

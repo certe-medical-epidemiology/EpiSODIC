@@ -45,6 +45,10 @@ episodic_app_open_clusters <- function(
     streams$stream_id
   )]
   clusters$level <- streams$level[match(clusters$stream_id, streams$stream_id)]
+  clusters$care_line <- streams$care_line[match(
+    clusters$stream_id,
+    streams$stream_id
+  )]
 
   clusters$state <- vapply(
     clusters$cluster_id,
@@ -58,6 +62,8 @@ episodic_app_open_clusters <- function(
     function(s) episodic_tr(paste0("state.", s), lang = lang),
     character(1)
   )
+  # Plain here - the rail shows the care line as its own chip beside the
+  # pathogen name rather than folded into this text (see episodic_ui_rail()).
   clusters$level_label <- vapply(
     clusters$level,
     function(lv) episodic_tr(paste0("level.", lv), lang = lang),
@@ -304,6 +310,37 @@ episodic_rt_unavailable_reason <- function(pc) {
     return("epiestim_missing")
   }
   "insufficient_history"
+}
+
+#' The level chip label, prefixed with the care line where known
+#'
+#' `"L2 \u00b7 instelling"` on its own tells an epidemiologist nothing
+#' about whether the institution is a GP practice or a hospital ward;
+#' prepending the care line (`"1e lijn"`/`"2e lijn"`) answers that in the
+#' same glance the level already earns. `NA` (no care line recorded for
+#' the stream) leaves the label unprefixed rather than printing
+#' "unknown".
+#'
+#' @param level A stream level, e.g. `"pathogen_institution"`.
+#' @param care_line A stream `care_line` (`"first"`, `"second"`,
+#'   `"other"`, `"unknown"`, or `NA`).
+#' @param lang Session language.
+#' @return A single string.
+#' @keywords internal
+#' @noRd
+episodic_app_level_label <- function(
+    level,
+    care_line = NA,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  label <- episodic_tr(paste0("level.", level), lang = lang)
+  if (is.na(care_line)) {
+    return(label)
+  }
+  paste0(
+    episodic_tr(paste0("careline.short.", care_line), lang = lang),
+    " \u00b7 ",
+    label
+  )
 }
 
 #' @keywords internal

@@ -582,6 +582,12 @@ episodic_ui_rail <- function(
     } else {
       lapply(seq_len(nrow(open)), function(i) {
         row <- open[i, ]
+        # `care_line`/`priority_score` are absent from some older test
+        # fixtures that predate them; a bare `row$care_line` on such a
+        # frame returns NULL rather than NA, and `is.na(NULL)` errors
+        # ("argument is of length zero") rather than returning FALSE.
+        row$care_line <- row$care_line %||% NA_character_
+        row$priority_score <- row$priority_score %||% NA_real_
         active <- identical(row$cluster_id, selected_id)
         shiny::tags$div(
           class = paste("episodic-rail-item", if (active) "active" else ""),
@@ -600,12 +606,31 @@ episodic_ui_rail <- function(
           },
           shiny::tags$div(
             class = "episodic-rail-pathogen",
-            shiny::HTML(episodic_ui_italicise_taxon(row$pathogen))
+            shiny::HTML(episodic_ui_italicise_taxon(row$pathogen)),
+            shiny::tags$span(
+              class = "episodic-rail-id",
+              episodic_tr("dossier.cluster_ref", id = row$cluster_id, lang = lang)
+            ),
+            if (!is.na(row$care_line)) {
+              care_line_colour <- episodic_ui_care_line_colour(row$care_line)
+              if (!is.null(care_line_colour)) {
+                episodic_ui_chip(
+                  episodic_tr(paste0("careline.short.", row$care_line), lang = lang),
+                  care_line_colour,
+                  filled = TRUE
+                )
+              }
+            }
           ),
           shiny::tags$div(class = "episodic-rail-meta", row$level_label),
           shiny::tags$div(
             class = "episodic-rail-meta",
-            episodic_format_date_range(row$first_day, row$last_day, lang = lang)
+            episodic_format_date_range(
+              row$first_day,
+              row$last_day,
+              lang = lang,
+              full_month = TRUE
+            )
           ),
           shiny::tags$div(
             class = "episodic-rail-meta",
@@ -616,7 +641,13 @@ episodic_ui_rail <- function(
                   episodic_tr("unit.case", lang = lang),
                   episodic_tr("unit.cases", lang = lang)
                 ),
-                if (!is.na(row$ratio)) sprintf("ratio %s", round(row$ratio, 1))
+                if (!is.na(row$priority_score)) {
+                  episodic_tr(
+                    "rail.priority",
+                    score = round(row$priority_score, 0),
+                    lang = lang
+                  )
+                }
               ),
               collapse = " \u00b7 "
             )

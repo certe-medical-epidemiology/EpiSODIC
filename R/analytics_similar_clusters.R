@@ -114,6 +114,10 @@ episodic_app_similar_clusters <- function(
   }
 
   clusters$level <- streams$level[match(clusters$stream_id, streams$stream_id)]
+  clusters$care_line <- streams$care_line[match(
+    clusters$stream_id,
+    streams$stream_id
+  )]
 
   doy_dist <- function(d1, d2) {
     doy1 <- as.integer(format(as.Date(d1), "%j"))
@@ -135,8 +139,14 @@ episodic_app_similar_clusters <- function(
 
   institutions <- DBI::dbGetQuery(con, "SELECT * FROM episodic_institution")
   clusters$level_label <- vapply(
-    clusters$level,
-    function(lv) episodic_tr(paste0("level.", lv), lang = lang),
+    seq_len(nrow(clusters)),
+    function(i) {
+      episodic_app_level_label(
+        clusters$level[i],
+        clusters$care_line[i],
+        lang = lang
+      )
+    },
     character(1)
   )
   clusters$place <- vapply(

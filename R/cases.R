@@ -237,7 +237,7 @@ episodic_case_columns <- c(
 
 #' @rdname episodic_case_data
 #' @export
-episodic_care_lines <- c("first", "second", "other", "unknown")
+episodic_care_lines <- c("first", "second", "third", "other", "unknown")
 
 #' @rdname episodic_case_data
 #' @export

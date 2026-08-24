@@ -980,7 +980,11 @@ episodic_app_pathogen_clusters <- function(
 
     data.frame(
       cluster_id = row$cluster_id,
-      level_label = episodic_tr(paste0("level.", stream$level), lang = lang),
+      level_label = episodic_app_level_label(
+        stream$level,
+        stream$care_line,
+        lang = lang
+      ),
       place = episodic_app_place_label(stream, institution, lang = lang),
       first_day = row$first_day,
       last_day = row$last_day,

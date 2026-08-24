@@ -103,7 +103,7 @@ episodic_db_cluster_state_insert <- function(
     user_id = NA) {
   DBI::dbExecute(
     con,
-    "INSERT INTO episodic_cluster_state (cluster_id, state, entered_at, trigger, event_id, user_id)
+    "INSERT INTO episodic_cluster_state (cluster_id, state, entered_at, `trigger`, event_id, user_id)
      VALUES (?, ?, ?, ?, ?, ?)",
     params = list(cluster_id, state, episodic_now(), trigger, event_id, user_id)
   )

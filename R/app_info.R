@@ -137,7 +137,8 @@ episodic_ui_info_states_table <- function(
         shiny::tags$tr(
           shiny::tags$td(episodic_ui_chip(
             episodic_tr(paste0("state.", s), lang = lang),
-            episodic_ui_state_colour(s)
+            episodic_ui_state_colour(s),
+            filled = TRUE
           )),
           shiny::tags$td(episodic_tr(paste0("info.states.", s), lang = lang))
         )
