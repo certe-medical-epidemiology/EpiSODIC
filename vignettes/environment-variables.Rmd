@@ -13,7 +13,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 
 Every `EPISODIC_*` variable is optional; each entry point works fine with
 the equivalent argument passed explicitly instead. Environment variables
-exist so an operator can configure a running instance (a systemd unit, a
+exist so an operator can configure a running instance (a `systemd` unit, a
 Docker container) without editing R code - set them once where the
 instance runs, and every entry point that falls back to them picks the
 setting up automatically.
