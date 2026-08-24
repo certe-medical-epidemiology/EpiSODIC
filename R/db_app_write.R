@@ -41,6 +41,7 @@ episodic_db_assessment_event_insert <- function(
     ggd_note = NA,
     snooze_until = NA,
     supersedes = NA) {
+  
   stopifnot(is.character(rationale), nzchar(rationale))
   DBI::dbExecute(
     con,
@@ -74,6 +75,7 @@ episodic_db_stream_mute_insert <- function(
     reason,
     note = NA,
     user_id) {
+  
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_stream_mute
@@ -101,6 +103,7 @@ episodic_db_cluster_state_insert <- function(
     trigger,
     event_id = NA,
     user_id = NA) {
+  
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_cluster_state (cluster_id, state, entered_at, trigger, event_id, user_id)
@@ -121,6 +124,7 @@ episodic_db_report_render_insert <- function(
     params_json,
     case_ids_json,
     version_no) {
+  
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_report_render
@@ -149,6 +153,7 @@ episodic_db_app_user_insert <- function(
     email,
     password_hash,
     role = "epidemiologist") {
+  
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_app_user
@@ -173,6 +178,7 @@ episodic_db_app_user_event_insert <- function(
     user_id,
     event_type,
     password_hash = NA) {
+  
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_app_user_event (user_id, created_at, event_type, password_hash)

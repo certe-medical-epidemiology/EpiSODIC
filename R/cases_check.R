@@ -1220,11 +1220,11 @@ episodic_check_failure_message <- function(problems, what = "Case data") {
   )
 }
 
-#' @rdname episodic_check_cases
 #' @param x An `episodic_case_check` report, as returned by
 #'   `episodic_check_cases()`.
 #' @param ... Ignored, for compatibility with the print generic.
 #' @export
+#' @noRd
 print.episodic_case_check <- function(x, ...) {
   info <- attr(x, "summary")
   width <- 76L

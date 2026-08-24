@@ -2,12 +2,9 @@
 % Please edit documentation in R/cases_check.R
 \name{episodic_check_cases}
 \alias{episodic_check_cases}
-\alias{print.episodic_case_check}
 \title{Check your case data before you hand it to EpiSODIC}
 \usage{
 episodic_check_cases(cases)
-
-\method{print}{episodic_case_check}(x, ...)
 }
 \arguments{
 \item{cases}{Your case data: a data frame or \code{tibble} in the shape
@@ -15,11 +12,6 @@ episodic_check_cases(cases)
 one (resolved with \code{\link[=episodic_resolve_data]{episodic_resolve_data()}} first, so you can check
 either form). Anything else is itself reported as a problem rather
 than throwing - the point of this function is that it always answers.}
-
-\item{x}{An \code{episodic_case_check} report, as returned by
-\code{episodic_check_cases()}.}
-
-\item{...}{Ignored, for compatibility with the print generic.}
 }
 \value{
 A data frame of findings with class \code{episodic_case_check} and

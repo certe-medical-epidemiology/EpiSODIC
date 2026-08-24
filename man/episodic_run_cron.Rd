@@ -5,21 +5,17 @@
 \title{Run one surveillance detection cycle}
 \usage{
 episodic_run_cron(
-  db_path,
-  cases = episodic_synthetic_cases,
+  cases,
   denominators = NULL,
   institution_activity = NULL,
   episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
+  db_path = Sys.getenv("EPISODIC_DB"),
   host = Sys.info()[["nodename"]],
   account = Sys.info()[["user"]],
   run_date = Sys.Date()
 )
 }
 \arguments{
-\item{db_path}{Path to the EpiSODIC database: a SQLite file (created
-automatically if it does not exist yet) or a MariaDB/MySQL DSN (see
-\code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}).}
-
 \item{cases}{Your laboratory data: a data frame or \code{tibble} in the
 shape \link{episodic_case_data} describes, or a zero-argument function
 that returns one. Defaults to the bundled synthetic generator, useful
@@ -38,6 +34,10 @@ current institutions table. Leave as \code{NULL} (the default) if you have
 none - detection falls back to raw case counts.}
 
 \item{episodic_config_path}{Passed to \code{\link[=episodic_config_resolve]{episodic_config_resolve()}}.}
+
+\item{db_path}{Path to the EpiSODIC database: a SQLite file (created
+automatically if it does not exist yet) or a MariaDB/MySQL DSN (see
+\code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}).}
 
 \item{host, account}{Recorded with the run for audit purposes; default
 to the current machine and account.}
@@ -122,7 +122,7 @@ db_path <- tempfile(fileext = ".sqlite")
 cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
-run_id <- episodic_run_cron(db_path, cases = cases)
+run_id <- episodic_run_cron(db_path = db_path, cases = cases)
 file.remove(db_path)
 }
 }

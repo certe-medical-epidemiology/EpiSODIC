@@ -153,8 +153,8 @@ cases <- my_extract_and_transform_function()
 episodic_check_cases(cases)  # what is wrong with it, before anything runs
 
 episodic_run_cron(
-  db_path = "/path/to/episodic.sqlite",
   cases = cases,
+  db_path = "/path/to/episodic.sqlite",
   denominators = NULL  # optional, see "Positivity metadata" below
 )
 ```

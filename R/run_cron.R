@@ -60,13 +60,13 @@
 #' skipped. `episodic_detection_run` carries the counts (`n_cases_supplied`,
 #' `n_cases_inserted`, `n_activity_skipped`, and the rest).
 #'
-#' @param db_path Path to the EpiSODIC database: a SQLite file (created
-#'   automatically if it does not exist yet) or a MariaDB/MySQL DSN (see
-#'   [episodic_db_dsn_mariadb()]).
 #' @param cases Your laboratory data: a data frame or `tibble` in the
 #'   shape [episodic_case_data] describes, or a zero-argument function
 #'   that returns one. Defaults to the bundled synthetic generator, useful
 #'   for demos and testing but not real surveillance.
+#' @param db_path Path to the EpiSODIC database: a SQLite file (created
+#'   automatically if it does not exist yet) or a MariaDB/MySQL DSN (see
+#'   [episodic_db_dsn_mariadb()]).
 #' @param denominators Optional: your testing-volume data, in the same
 #'   form as `cases` - normally a data set, a function if it has to be
 #'   produced at run time (see [episodic_synthetic_denominators()] for the
@@ -97,16 +97,16 @@
 #' cases <- episodic_synthetic_cases(
 #'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 #' )
-#' run_id <- episodic_run_cron(db_path, cases = cases)
+#' run_id <- episodic_run_cron(db_path = db_path, cases = cases)
 #' file.remove(db_path)
 #' }
 #' @export
 episodic_run_cron <- function(
-    db_path,
-    cases = episodic_synthetic_cases,
+    cases,
     denominators = NULL,
     institution_activity = NULL,
     episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
+    db_path = Sys.getenv("EPISODIC_DB"),
     host = Sys.info()[["nodename"]],
     account = Sys.info()[["user"]],
     run_date = Sys.Date()) {

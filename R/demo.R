@@ -87,7 +87,6 @@ episodic_demo <- function(
     lang = Sys.getenv("EPISODIC_LANGUAGE"),
     cases = function() episodic_synthetic_cases(end_date = run_date),
     denominators = function() episodic_synthetic_denominators(end_date = run_date)) {
-  
   Sys.setenv(
     EPISODIC_CONFIG = system.file(
       "config",
@@ -101,11 +100,11 @@ episodic_demo <- function(
       package = "EpiSODIC"
     )
   )
-  
+
   message("Creating synthetic cases...", appendLF = FALSE)
   episodic_run_cron(
-    db_path,
     cases = cases,
+    db_path = db_path,
     denominators = denominators,
     run_date = run_date
   )

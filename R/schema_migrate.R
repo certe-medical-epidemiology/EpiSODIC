@@ -187,21 +187,60 @@ episodic_db_create <- function(path, overwrite = FALSE) {
     con <- DBI::dbConnect(RSQLite::SQLite(), path)
   } else {
     con <- episodic_db_mariadb_connect(path)
+    
     existing_tables <- DBI::dbListTables(con)
-    if (length(existing_tables) > 0) {
+    intended_tables <- readLines(system.file("sql/schema.sql", package = "EpiSODIC"))
+    intended_tables <- intended_tables[grepl("^\\s*CREATE TABLE", intended_tables, ignore.case = TRUE)]
+    intended_tables <- gsub("^\\s*CREATE TABLE\\s+([a-zA-Z0-9_]+).*", "\\1", intended_tables, ignore.case = TRUE)
+    
+    if (length(intended_tables) == 0) {
+      stop(
+        "No 'CREATE TABLE' statements found in the schema file `inst/sql/schema.sql`. ",
+        "The package installation may be corrupted.",
+        call. = FALSE
+      )
+    }
+    
+    tables_to_drop <- intersect(existing_tables, intended_tables)
+    
+    if (length(tables_to_drop) > 0) {
       if (!overwrite) {
-        DBI::dbDisconnect(con)
         stop(
-          "Database already contains tables. Pass overwrite = TRUE to drop ",
-          "and recreate them, or use episodic_db_connect() to open an existing database.",
+          "Database already contains these EpiSODIC tables: ",
+          paste(sprintf('"%s"', tables_to_drop), collapse = ", "),
+          ". Pass overwrite = TRUE to drop and recreate them, ",
+          "or use episodic_db_connect() to open an existing database.",
           call. = FALSE
         )
       }
+      
       DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 0")
-      for (tbl in existing_tables) {
-        DBI::dbRemoveTable(con, tbl)
+      on.exit(DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 1"), add = TRUE, after = FALSE)
+      
+      dropped <- character(0)
+      failed <- NULL
+      for (tbl in tables_to_drop) {
+        result <- tryCatch({
+          DBI::dbRemoveTable(con, tbl)
+          TRUE
+        }, error = function(e) e)
+        if (isTRUE(result)) {
+          dropped <- c(dropped, tbl)
+        } else {
+          failed <- list(table = tbl, error = result)
+          break
+        }
       }
-      DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 1")
+      
+      if (!is.null(failed)) {
+        stop(
+          "Failed to drop table \"", failed$table, "\" while recreating the schema. ",
+          "Successfully dropped: ", if (length(dropped)) paste(dropped, collapse = ", ") else "(none)",
+          ". Database is now in a partially-dropped state and must be inspected manually. ",
+          "Original error: ", conditionMessage(failed$error),
+          call. = FALSE
+        )
+      }
     }
   }
 
