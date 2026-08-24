@@ -152,6 +152,8 @@ episodic_db_institution_activity_upsert <- function(
     admissions = NA,
     n_beds = NA,
     source = NA) {
+  period_start <- episodic_sql_date(period_start)
+  period_end <- episodic_sql_date(period_end)
   existing <- DBI::dbGetQuery(
     con,
     "SELECT 1 FROM episodic_institution_activity WHERE institution_id = ? AND period_start = ?",
@@ -206,6 +208,7 @@ episodic_db_stream_upsert <- function(
     denominator = "none",
     severity_weight = 1.00,
     observed_date) {
+  observed_date <- episodic_sql_date(observed_date)
   existing <- episodic_db_stream_get(con, stream_key)
   if (!is.null(existing)) {
     first_seen <- min(existing$first_seen, observed_date)
@@ -264,8 +267,8 @@ episodic_db_case_insert_new <- function(con, cases, run_id) {
       params = list(
         row$source_key,
         row$patient_key,
-        row$sample_date,
-        row$receipt_date,
+        episodic_sql_date(row$sample_date),
+        episodic_sql_date(row$receipt_date),
         row$pathogen,
         row$care_line,
         row$institution_id,
@@ -322,6 +325,7 @@ episodic_db_denominator_upsert <- function(
     care_line,
     area_code = NA,
     n_tests) {
+  sample_date <- episodic_sql_date(sample_date)
   existing <- DBI::dbGetQuery(
     con,
     "SELECT 1 FROM episodic_denominator
@@ -672,4 +676,28 @@ episodic_db_run_finish <- function(
 #' @noRd
 episodic_now <- function() {
   format(Sys.time(), "%Y-%m-%dT%H:%M:%OS0Z", tz = "UTC")
+}
+
+#' Coerce a `Date` column to `YYYY-MM-DD` text before it is bound as a SQL parameter
+#'
+#' RSQLite binds a `Date` parameter by its underlying double (days since
+#' 1970-01-01), not by its printed form - a `TEXT`-affinity column such as
+#' `sample_date` then stores that number as a *string of digits*
+#' (`"20089"`) rather than an ISO date. Every reader downstream calls
+#' `as.Date()` on what it gets back and only ever expects `"2025-01-01"`,
+#' so that stored digit-string fails to parse with "character string is
+#' not in a standard unambiguous format" the moment it is read back - the
+#' case data contract explicitly allows `sample_date` etc. to arrive as
+#' `Date` (see `episodic_validate_dates()`), so this is not an edge case.
+#' Applied at every write site that accepts an operator-supplied date
+#' column, so the fix holds regardless of whether the caller remembered
+#' to convert.
+#' @keywords internal
+#' @noRd
+episodic_sql_date <- function(x) {
+  if (inherits(x, "Date")) {
+    format(x, "%Y-%m-%d")
+  } else {
+    x
+  }
 }

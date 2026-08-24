@@ -29,6 +29,8 @@
 - Reconciliation no longer opens duplicate dossiers for an ageing cluster
 - Translation placeholders no longer break on backslashes
 - Epidemic curve thousands separator now follows the language by default
+- `episodic_run_cron()` no longer corrupts `sample_date`/`receipt_date`/`period_start`/`period_end` when the operator supplies them as `Date` columns (as `episodic_case_data` explicitly allows) - RSQLite was binding them by their raw numeric epoch value instead of `YYYY-MM-DD` text, so a later read failed with "character string is not in a standard unambiguous format"
+- `episodic_check_cases()`'s allowed-value messages (`care_line`, `institution_type`, `sex`) now quote each value, and its `?episodic_case_data` references are clickable in terminals/RStudio that support it
 
 # EpiSODIC 0.4.0
 

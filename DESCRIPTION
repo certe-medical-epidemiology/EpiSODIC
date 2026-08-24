@@ -37,6 +37,7 @@ Imports:
     AMR (>= 3.0.0),
     DBI,
     RSQLite,
+    cli,
     dplyr,
     yaml,
     rlang,
