@@ -27,7 +27,7 @@ test_that("episodic_run_cron() completes successfully end to end on a small synt
     )
   }
   run_id <- episodic_run_cron(
-    path,
+    db_path = path,
     cases = small_source,
     run_date = as.Date("2024-08-31")
   )
@@ -53,7 +53,7 @@ test_that("running the cron twice over the same window is idempotent on case cou
     )
   }
   episodic_run_cron(
-    path,
+    db_path = path,
     cases = small_source,
     run_date = as.Date("2024-06-30")
   )
@@ -63,7 +63,7 @@ test_that("running the cron twice over the same window is idempotent on case cou
   DBI::dbDisconnect(con)
 
   episodic_run_cron(
-    path,
+    db_path = path,
     cases = small_source,
     run_date = as.Date("2024-06-30")
   )
@@ -102,14 +102,14 @@ test_that("a second positive sent in a later, non-overlapping run still joins it
   }
 
   episodic_run_cron(
-    path,
+    db_path = path,
     cases = raw_case("K1", "2025-01-01"),
     run_date = as.Date("2025-01-01")
   )
   # Test pathogen is not in inst/config/pathogen_config.csv, so it falls
   # back to the schema default of 30 days - day 20 is well within that.
   episodic_run_cron(
-    path,
+    db_path = path,
     cases = raw_case("K2", "2025-01-20"),
     run_date = as.Date("2025-01-20")
   )
@@ -134,7 +134,7 @@ test_that("episodic_run_cron() writes denominator rows only when a denominators 
     )
   }
   episodic_run_cron(
-    path_without,
+    db_path = path_without,
     cases = small_source,
     run_date = as.Date("2024-06-30")
   )
@@ -157,7 +157,7 @@ test_that("episodic_run_cron() writes denominator rows only when a denominators 
     )
   }
   episodic_run_cron(
-    path_with,
+    db_path = path_with,
     cases = small_source,
     denominators = small_denom,
     run_date = as.Date("2024-06-30")
@@ -181,7 +181,7 @@ test_that("episodic_run_cron() writes institution activity rows only when instit
 
   path_without <- tempfile(fileext = ".sqlite")
   episodic_run_cron(
-    path_without,
+    db_path = path_without,
     cases = small_source,
     run_date = as.Date("2024-06-30")
   )
@@ -197,7 +197,7 @@ test_that("episodic_run_cron() writes institution activity rows only when instit
 
   path_with <- tempfile(fileext = ".sqlite")
   episodic_run_cron(
-    path_with,
+    db_path = path_with,
     cases = small_source,
     institution_activity = function(institutions) {
       episodic_synthetic_institution_activity(
@@ -233,7 +233,7 @@ test_that("a run records what each feed delivered, not just that it succeeded", 
     end_date = as.Date("2024-06-30")
   )
   episodic_run_cron(
-    path,
+    db_path = path,
     cases = cases,
     denominators = denom,
     run_date = as.Date("2024-06-30")
@@ -271,7 +271,7 @@ test_that("a run that skipped activity rows finishes 'partial', not 'success'", 
   )
   suppressWarnings(
     episodic_run_cron(
-      path,
+      db_path = path,
       cases = cases,
       institution_activity = activity,
       run_date = as.Date("2024-06-30")
@@ -306,7 +306,7 @@ test_that("a partial run still counts as the latest usable run", {
   )
   suppressWarnings(
     episodic_run_cron(
-      path,
+      db_path = path,
       cases = cases,
       institution_activity = activity,
       run_date = as.Date("2024-06-30")
@@ -335,7 +335,7 @@ test_that("case data that violates the contract fails the run out loud, and reco
   # Reaching the operator matters as much as recording it: a run that
   # returned quietly here left somebody staring at an empty dashboard.
   expect_error(
-    episodic_run_cron(path, cases = cases, run_date = as.Date("2024-06-30")),
+    episodic_run_cron(db_path = path, cases = cases, run_date = as.Date("2024-06-30")),
     "pathogen"
   )
 
@@ -363,7 +363,7 @@ test_that("a run over an empty extract warns rather than quietly writing nothing
 
   expect_warning(
     episodic_run_cron(
-      path,
+      db_path = path,
       cases = cases[0, ],
       run_date = as.Date("2024-06-30")
     ),
@@ -382,7 +382,7 @@ test_that("an NA care_line is stored as 'unknown', not rejected", {
   )
   cases$care_line <- NA_character_
 
-  episodic_run_cron(path, cases = cases, run_date = as.Date("2024-06-30"))
+  episodic_run_cron(db_path = path, cases = cases, run_date = as.Date("2024-06-30"))
 
   con <- episodic_db_connect(path)
   on.exit(DBI::dbDisconnect(con), add = TRUE)
@@ -413,7 +413,7 @@ test_that("episodic_run_cron() accepts a data frame directly for cases/denominat
 
   path <- tempfile(fileext = ".sqlite")
   episodic_run_cron(
-    path,
+    db_path = path,
     cases = small_cases,
     denominators = small_denom,
     run_date = as.Date("2024-06-30")
@@ -434,7 +434,7 @@ test_that("episodic_run_cron() accepts a data frame directly for cases/denominat
   )
   path2 <- tempfile(fileext = ".sqlite")
   episodic_run_cron(
-    path2,
+    db_path = path2,
     cases = small_cases,
     institution_activity = small_activity,
     run_date = as.Date("2024-06-30")
