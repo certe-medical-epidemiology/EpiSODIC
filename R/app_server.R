@@ -582,6 +582,12 @@ episodic_ui_rail <- function(
     } else {
       lapply(seq_len(nrow(open)), function(i) {
         row <- open[i, ]
+        # `care_line`/`priority_score` are absent from some older test
+        # fixtures that predate them; a bare `row$care_line` on such a
+        # frame returns NULL rather than NA, and `is.na(NULL)` errors
+        # ("argument is of length zero") rather than returning FALSE.
+        row$care_line <- row$care_line %||% NA_character_
+        row$priority_score <- row$priority_score %||% NA_real_
         active <- identical(row$cluster_id, selected_id)
         shiny::tags$div(
           class = paste("episodic-rail-item", if (active) "active" else ""),

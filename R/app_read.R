@@ -314,7 +314,7 @@ episodic_rt_unavailable_reason <- function(pc) {
 
 #' The level chip label, prefixed with the care line where known
 #'
-#' `"L2 · instelling"` on its own tells an epidemiologist nothing
+#' `"L2 \u00b7 instelling"` on its own tells an epidemiologist nothing
 #' about whether the institution is a GP practice or a hospital ward;
 #' prepending the care line (`"1e lijn"`/`"2e lijn"`) answers that in the
 #' same glance the level already earns. `NA` (no care line recorded for
@@ -338,7 +338,7 @@ episodic_app_level_label <- function(
   }
   paste0(
     episodic_tr(paste0("careline.short.", care_line), lang = lang),
-    " · ",
+    " \u00b7 ",
     label
   )
 }
