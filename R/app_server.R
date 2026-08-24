@@ -604,23 +604,23 @@ episodic_ui_rail <- function(
             shiny::tags$span(
               class = "episodic-rail-id",
               episodic_tr("dossier.cluster_ref", id = row$cluster_id, lang = lang)
-            )
+            ),
+            if (!is.na(row$care_line)) {
+              episodic_ui_chip(
+                episodic_tr(paste0("careline.short.", row$care_line), lang = lang),
+                pal$tertiary,
+                filled = TRUE
+              )
+            }
           ),
           shiny::tags$div(class = "episodic-rail-meta", row$level_label),
           shiny::tags$div(
             class = "episodic-rail-meta",
-            paste(
-              c(
-                episodic_format_date_range(row$first_day, row$last_day, lang = lang),
-                if (!is.na(row$priority_score)) {
-                  episodic_tr(
-                    "rail.priority",
-                    score = round(row$priority_score, 0),
-                    lang = lang
-                  )
-                }
-              ),
-              collapse = " · "
+            episodic_format_date_range(
+              row$first_day,
+              row$last_day,
+              lang = lang,
+              full_month = TRUE
             )
           ),
           shiny::tags$div(
@@ -632,7 +632,13 @@ episodic_ui_rail <- function(
                   episodic_tr("unit.case", lang = lang),
                   episodic_tr("unit.cases", lang = lang)
                 ),
-                if (!is.na(row$ratio)) sprintf("ratio %s", round(row$ratio, 1))
+                if (!is.na(row$priority_score)) {
+                  episodic_tr(
+                    "rail.priority",
+                    score = round(row$priority_score, 0),
+                    lang = lang
+                  )
+                }
               ),
               collapse = " \u00b7 "
             )

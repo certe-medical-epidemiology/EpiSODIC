@@ -157,6 +157,12 @@ body {
   font-size: 13px;
   font-weight: 500;
 }
+/* The care-line chip beside the pathogen name - inline with the text,
+   not pushed to its own line, since the rail card is already tight. */
+.episodic-rail-pathogen .episodic-chip {
+  margin-left: 6px;
+  vertical-align: 1px;
+}
 /* The cluster id, set beside the pathogen name in the rail list - same
    idea as .episodic-dossier-id, so an epidemiologist can quote or search
    by it without opening the dossier. */

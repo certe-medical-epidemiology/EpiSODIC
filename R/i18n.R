@@ -188,6 +188,9 @@ episodic_count_phrase <- function(n, singular, plural, with_number = TRUE) {
 #' @param lang Session language: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`,
 #'   `"zh"`, `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
+#' @param full_month If `TRUE`, spell the month out (`date.month_full.NN`,
+#'   Excel's `"mmmm"`) instead of the abbreviated form
+#'   (`date.month.NN`, `"mmm"`) every other caller uses.
 #' @return A character string, or `episodic_tr("misc.unknown", lang =
 #'   lang)` if either endpoint fails to parse.
 #' @keywords internal
@@ -195,7 +198,8 @@ episodic_count_phrase <- function(n, singular, plural, with_number = TRUE) {
 episodic_format_date_range <- function(
     x,
     y,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+    lang = Sys.getenv("EPISODIC_LANGUAGE"),
+    full_month = FALSE) {
   x <- tryCatch(as.Date(x), error = function(e) NA)
   y <- tryCatch(as.Date(y), error = function(e) NA)
   if (length(x) != 1 || length(y) != 1 || is.na(x) || is.na(y)) {
@@ -207,9 +211,10 @@ episodic_format_date_range <- function(
     y <- tmp
   }
 
+  month_key <- if (full_month) "date.month_full." else "date.month."
   months <- vapply(
     sprintf("%02d", 1:12),
-    function(mm) episodic_tr(paste0("date.month.", mm), lang = lang),
+    function(mm) episodic_tr(paste0(month_key, mm), lang = lang),
     character(1)
   )
   mon <- function(d) months[as.integer(format(d, "%m"))]

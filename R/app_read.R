@@ -62,15 +62,11 @@ episodic_app_open_clusters <- function(
     function(s) episodic_tr(paste0("state.", s), lang = lang),
     character(1)
   )
+  # Plain here - the rail shows the care line as its own chip beside the
+  # pathogen name rather than folded into this text (see episodic_ui_rail()).
   clusters$level_label <- vapply(
-    seq_len(nrow(clusters)),
-    function(i) {
-      episodic_app_level_label(
-        clusters$level[i],
-        clusters$care_line[i],
-        lang = lang
-      )
-    },
+    clusters$level,
+    function(lv) episodic_tr(paste0("level.", lv), lang = lang),
     character(1)
   )
 
