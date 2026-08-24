@@ -28,6 +28,12 @@ classification panel](reference/figures/main_screen.png)
 generated interpretation of the evidence, the epidemic curve, and the
 classification panel, alongside the rail of open clusters.*
 
+![The Pathogen screen: weekly numbers of cases, reproduction number,
+with geographic and demographic
+distribution](reference/figures/pathogen_screen.png)  
+*The Pathogen screen - weekly numbers of cases, reproduction number,
+with geographic and demographic distribution.*
+
 ![The Performance screen: detection timeliness and positive predictive
 value per detector and
 pathogen](reference/figures/performance_screen.png)  

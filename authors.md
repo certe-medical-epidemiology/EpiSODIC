@@ -19,13 +19,13 @@ Source:
 
 Berends MS, Hassing EEA, Dijkstra E (2026). *EpiSODIC: Epidemiological
 Signal Observation, Detection, Identification, and Classification*. R
-package version 0.5.1,
+package version 0.5.2,
 <https://certe-medical-epidemiology.github.io/EpiSODIC>.
 
     @Manual{,
       title = {EpiSODIC: Epidemiological Signal Observation, Detection, Identification, and Classification},
       author = {Matthijs S. Berends and Erwin E. A. Hassing and Erwin Dijkstra},
       year = {2026},
-      note = {R package version 0.5.1},
+      note = {R package version 0.5.2},
       url = {https://certe-medical-epidemiology.github.io/EpiSODIC},
     }

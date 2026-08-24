@@ -1,329 +1,172 @@
 # Changelog
 
-## EpiSODIC 0.5.0
+## EpiSODIC 0.5.\*
 
 ### New
 
 - [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
-  reports everything wrong with your case data at once - the column, how
-  many rows, which rows, the offending values, and the fix for each -
-  without a database and without changing anything. It separates
-  problems, which stop a run, from advice, which does not: one pathogen
-  spelled two ways, no `ward` on any hospital row, a `patient_key` that
-  never repeats, postcodes the map cannot place. A wrong date format is
-  named for what it is (day-first, date-time, Excel serial, `YYYYMMDD`)
-  with the conversion to apply, and an unexpected column is matched
-  against what it probably should have been.
-- Lattice suppression, described by `config$suppression` and the
-  reconciliation vignette since 0.3.0 and implemented by nothing: one
-  outbreak seen at five levels became five dossiers. A child cluster now
-  suppresses its parent when it holds most of the parent’s cases; a
-  parent suppresses its children when the rise is spread across several
-  with none dominant. Nothing is discarded - a suppressed cluster keeps
-  its cases, history and assessment, and appears on the surviving
-  cluster’s dossier. An assessed cluster is never suppressed, and it is
-  recomputed every run.
-- Clusters that share cases but stand separately - suppression works
-  within a containment chain, not across the two, so a regional rise
-  never hides the ward outbreak feeding it - now say so. The dossier
-  header carries a “Linked to
+  reports all case data problems at once, with row-level detail and
+  fixes
+- Lattice suppression collapses one outbreak seen at multiple levels
+  into a single dossier
+- Linked clusters show e.g. “Linked to
   [\#123](https://github.com/certe-medical-epidemiology/EpiSODIC/issues/123)”
-  chip that opens the other cluster, and a Related clusters panel lists
-  both what this cluster suppressed and what it merely overlaps.
-- `episodic_case_data` documents every column’s type, whether it may be
-  empty and what it accepts in one table, with a worked example of a
-  minimal valid extract.
-- Deduplication now checks incoming positives against the most recently
-  stored episode for their patient/pathogen, not just against the rest
-  of the current batch. An operator can now send a recent window of
-  positives on every run (with a couple of weeks of overlap as a safety
-  margin) instead of a patient’s full history every time - a later
-  positive for an episode already on file is still recognised as a
-  continuation of it rather than becoming a spurious second case.
-- “Isolate” is gone from the dashboard, reports, and
-  [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
-  advice - replaced by “positive”/“positives” throughout
-  (`unit.isolate(s)` and `report.isolates_suffix` are now
-  `unit.positive(s)` and `report.positives_suffix` in every language
-  file). “Isolate” implied a bacterial culture and read wrong for a PCR-
-  or antigen-detected virus; “positive” describes any lab result
-  EpiSODIC ingests, regardless of how it was produced.
-- A “Frequently asked questions” vignette
-  ([`vignette("faq", package = "EpiSODIC")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.md)),
-  linked from the top of the README.
+  and a Related clusters panel
+- `episodic_case_data` documents every column’s type, nullability and
+  accepted values
+- Deduplication now checks against the most recently stored episode, not
+  just the current batch
+- “Isolate” renamed to “positive” throughout the app, reports and
+  validation advice
+- New “Frequently asked questions” vignette
 
 ### Changed
 
-- Accounts have exactly two roles: `"epidemiologist"` (by definition,
-  assesses clusters and classifies them) and `"viewer"`, read-only and
-  otherwise identical - a viewer sees everything a signed-in
-  epidemiologist sees, including patient-level line lists, but cannot
-  classify, close, mute a stream, or re-render a report. Aggregate data
-  stays visible to anyone who reaches the app; signing in, as either
-  role, is what unlocks patient-level detail, and only an epidemiologist
-  account can write.
-  [`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md)’s
-  `role` argument defaults to `"epidemiologist"` and rejects anything
-  besides `"epidemiologist"`/`"viewer"`.
+- Accounts now have exactly two roles: `"epidemiologist"` (read/write)
+  and `"viewer"` (read-only)
 - [`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
-  reports every problem in one error instead of stopping at the first.
+  reports all problems in one error, not just the first
 - [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
-  checks the case and denominator feeds before writing anything and
-  stops if they cannot be used, rather than returning quietly with a
-  `failed` run row nobody was looking at. A run that fails for any other
-  reason warns, and an empty extract warns before the run starts.
-- The status strip says why the last run failed; the Activity screen
-  shows each run’s first line with a Details button opening the whole
-  message, its per-feed counts and its provenance.
-- Farrington tests every week back to the last completed run, capped by
-  `farrington$max_weeks_tested` (8), instead of only the week the run
-  fell in - an outage no longer leaves weeks nothing ever tested.
-- `config$effect_size_floor`, previously read by nothing, now gates a
-  candidate opening a new cluster: a statistical signal too close to its
-  own upperbound is a true alarm and not a dossier. Candidates matching
-  an open cluster still extend it; `same_place` and `rare_trigger` are
-  unaffected.
+  checks feeds before writing and stops cleanly on failure
+- Status strip and Activity screen show why a run failed
+- Farrington now retests every week since the last completed run, capped
+  at 8 weeks
+- `config$effect_size_floor` now gates new-cluster candidates against
+  borderline signals
 - [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
-  injects six outbreaks sized from one case to a regional wave, over a
-  baseline thin enough per place that coincidence no longer trips the
-  rule-based detectors - the demo opened on some three hundred chance
-  clusters before. Patients recur, so deduplication has something to do;
-  the feeds default to the five years up to today;
-  [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
-  gained `run_date`.
-- Every `lang` argument defaults to `EPISODIC_LANGUAGE`, as the entry
-  points always did. Eighty-four internal renderers defaulted to `"nl"`,
-  so anything reached through a default came out Dutch whatever the
-  instance had asked for. Unset means English. A test fails if a
-  hardcoded default creeps back.
-- An empty string in a column that must always be filled is a problem,
-  like `NA`.
+  demo data rebalanced to avoid spurious chance clusters
+- `lang` now defaults correctly to `EPISODIC_LANGUAGE` everywhere; unset
+  means English
+- Empty strings in required columns are now treated as invalid, like
+  `NA`
 
 ### Fixed
 
-- Only lattice enumeration knew how a case maps to a region code, so
-  every `pathogen_area` and `pathogen_province` stream was handed the
-  whole catchment and reported the region’s counts under its own name.
-  The rule now lives in one place and both halves of the lattice use it.
-- A cluster’s cases were selected by pathogen, window and institution
-  alone, so a ward cluster was linked to every case in the building and
-  an area cluster to every case in the catchment - which is what the
-  dossier’s line list showed.
-- Reconciliation matched each candidate against the clusters the run
-  *started* with, so a cluster kept advertising its original last day
-  and, once that was `case_free_days` behind, the next week of the same
-  outbreak opened a second dossier - and a third, every 21 days.
-- Translation placeholders are substituted literally, so a value
-  carrying a backslash can no longer rewrite the sentence around it.
-- The epidemic curve’s thousands separator followed the language only
-  when one was passed explicitly.
+- Region-level streams no longer report the whole catchment’s counts
+  under one region’s name
+- Cluster line lists no longer include unrelated cases from the same
+  ward or catchment
+- Reconciliation no longer opens duplicate dossiers for an ageing
+  cluster
+- Translation placeholders no longer break on backslashes
+- Epidemic curve thousands separator now follows the language by default
 
 ## EpiSODIC 0.4.0
 
 ### Changed
 
-- Renamed the data interface after epidemiological objects. “Ingestion”
-  is a transmission route, and `_source` was wrong once these arguments
-  took data rather than a producer of it. No deprecation shims.
-- Internals follow: `R/ingest_*.R` are now `R/cases*.R`,
-  `R/denominators.R`, `R/institution_activity.R`; `episodic_dedup()` is
-  `episodic_cases_deduplicate()`; `episodic_ingest_run()` is
-  `episodic_cases_load()`. `episodic_synthetic_outbreak_point_source()`
-  keeps its name - a point source is an epidemiological term.
-- Documented data frames and tibbles as the normal input. A
-  zero-argument function is still accepted, for data that only exists at
-  run time.
-- `care_line` accepts `NA`, normalised to `"unknown"` on load. Same in
-  the denominator feed.
-- Corrected `care_line`’s documented values, which were
-  `"hospital"`/`"primary_care"`. They are `first`, `second`, `other`,
-  `unknown` - an extract built from the old help page failed the
-  database `CHECK`.
-- A run that skipped rows now finishes `partial`, not `success`. Both
-  are usable; the dashboard reads the most recent of either.
-  `episodic_db_latest_run()` takes several statuses.
-- Skipped institution activity rows warn, naming the count and unmatched
-  keys, instead of passing silently.
-- Denominators and institution activity are validated like cases; their
-  failures used to surface as raw SQLite constraint errors from inside a
-  rolled-back transaction.
+- Renamed data interface from “ingestion” to case-based naming
+  (`R/cases*.R`, `episodic_cases_load()`, etc.), no deprecation shims
+- Documented data frames/tibbles as normal input; zero-argument
+  functions still accepted
+- `care_line` now accepts `NA`, normalised to `"unknown"`
+- Corrected `care_line`’s documented values to `first`, `second`,
+  `other`, `unknown`
+- A run that skips rows now finishes `partial`, not `success`
+- Skipped institution activity rows now warn with counts and unmatched
+  keys
+- Denominators and institution activity validated like cases, with clear
+  errors
 
 ### New
 
-- Every case column documents its type, whether `NA` is allowed, and its
-  permitted values.
-- Exported `episodic_care_lines`, `episodic_institution_types` and
-  `episodic_sex_codes`, to map onto in an extract step.
+- Every case column documents type, nullability and permitted values
+- Exported `episodic_care_lines`, `episodic_institution_types`,
+  `episodic_sex_codes`
 - [`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
-  enforces the whole contract: allow-listed columns, `source_key`
-  uniqueness, never-`NA` columns, the three value sets, dates parsing as
-  `Date` or `YYYY-MM-DD`, numeric `age`. It names the offending column
-  and values, and does not alter the data.
-- `episodic_detection_run` records what each feed delivered:
-  `n_cases_supplied`, `n_cases_deduplicated`, `n_cases_inserted`,
-  `n_denominators_written`, `n_activity_supplied`, `n_activity_written`,
-  `n_activity_skipped`.
-- The Activity screen shows, per run, how many cases arrived and how
-  many were new, naming skipped rows. The status strip distinguishes a
-  partial run.
+  enforces the full data contract
+- `episodic_detection_run` records per-feed supply/dedup/insert/skip
+  counts
+- Activity screen shows per-run arrival and skip counts
 
 ### Fixed
 
-- Institution activity rows with an unmatched `institution_key` were
-  skipped and the count discarded. An operator whose feeds keyed
-  institutions differently lost every patient-day and saw a green run.
-- Run statuses `running` and `partial` had no translation and rendered
-  as `[[activity.action_run_running]]`. Both are now translated in all
-  eight languages, with the load summary and partial status strip.
+- Institution activity rows with unmatched keys no longer silently
+  dropped
+- Missing translations for `running`/`partial` run statuses added in all
+  languages
 
 ## EpiSODIC 0.3.1
 
 ### New
 
-- Pathogen screen, alongside Clusters: pick a pathogen and a period, and
-  read weekly incidence, seasons on a shared week-of-season axis,
-  region-wide Rt, positivity, age and sex, geography, and signals
-  raised.
-- MEM thresholds are drawn against the season’s curve with intensity
-  bands, so “has the epidemic started” and “how hard is this season” can
-  be read directly. A season is fitted only on the seasons before it.
-- Rt is estimated per pathogen, not only per cluster. A cluster’s
-  incidence series is systematically incomplete for a process that is
-  region-wide. The per-cluster panel remains.
-- The `mem` detector is documented on the Info screen.
+- New Pathogen screen: weekly incidence, seasonal comparison, Rt,
+  positivity, age/sex, geography, signals
+- MEM thresholds drawn against the season curve with intensity bands
+- Rt now estimated per pathogen, not only per cluster
+- `mem` detector documented on the Info screen
 
 ### Fixed
 
-- `expected`, `excess` and `ratio` were never written. Every cluster
-  persisted them as `NA`, so the O/E ratio never appeared and the
-  magnitude fragments could not fire. Reconciliation now carries them
-  through.
-- Five of the priority score’s seven components sat at their defaults,
-  `ratio` identically 1. The queue ranking was severity weight times
-  detector agreement. All components are now computed.
-- A component that cannot be computed no longer drags the score down.
-  `same_place` and `rare_trigger` clusters have no baseline, scored zero
-  on excess and ratio, and kept the weight - so ward-level clusters were
-  outranked structurally. Ratio and density are also anchored so “as
-  expected” contributes nothing.
-- Doubling time regressed log(*cumulative*) cases, which climbs for any
-  series at all, so every three-case cluster reported a finite doubling
-  time. Now a Poisson fit to daily counts, `NA` unless growth is real.
-- Positivity was the cluster’s cases over the region’s tests. Both are
-  now region-wide over the same week, windowed to the cluster rather
-  than every week a denominator was ever supplied.
-- Reporting lag is measured from the run date, not the cluster’s last
-  case day, which permanently faded the epi-curve tail of any cluster
-  that had stopped. The under-ascertained day count was also one short.
-- Rt no longer estimates windows falling inside one serial interval of
-  the series start, where the renewal denominator is too small and Rt
-  reads high on the youngest clusters.
-- `episodic_mem_status()` returned `NULL` off-season, indistinguishable
-  from “MEM unavailable”, so `mem_applicable` clusters had no closure
-  route between May and September. The calendar now answers.
-- MEM evaluates the last complete week, and fits only on seasons the
-  data spans end to end.
-- Concentration is a share of cases with a known postcode. Dividing by
-  all cases diluted localised clusters.
-- The demographic baseline excludes the cluster compared to it, and
-  others in its stream. A rare pathogen’s one cluster dominated its own
-  baseline and could never be found to have shifted.
-- The top navigation shows which screen you are on; the stylesheet rule
-  was never applied.
+- `expected`, `excess` and `ratio` now correctly persisted and carried
+  through reconciliation
+- Priority score now computes all seven components instead of defaulting
+  most to zero
+- Missing components no longer drag the score down
+- Doubling time now uses a Poisson fit to daily counts instead of
+  cumulative log-regression
+- Positivity now compares region-wide cases and tests over the same week
+- Reporting lag now measured from cluster’s last case day, not run date
+- Rt no longer overestimated for clusters younger than one serial
+  interval
+- `episodic_mem_status()` no longer returns ambiguous `NULL` off-season
+- MEM now evaluates the last complete week and fits only on full seasons
+- Concentration now a share of cases with known postcode, not all cases
+- Demographic baseline now excludes the cluster being compared
+- Top navigation now correctly highlights the active screen
 
 ### Changed
 
-- The choropleth is cropped to areas with cases plus context, each
-  labelled with postcode and count. It was framed on the whole reference
-  dataset - four thousand PC4 polygons for the Netherlands default.
-- Geography takes the full dossier width, with the per-area bars under
-  the map rather than instead of it.
-- English says **pathogen**, never “organism”; translations followed
-  (*patógeno*, *pathogène*, *रोगजनक*, *العامل الممرض*). Dutch is
-  **verwekker**, German **Erreger**.
-  [`AMR::microorganisms`](https://amr-for-r.org/reference/microorganisms.html)
-  keeps its name.
-- `tests/testthat/test-i18n.R` fails if a language calls it an organism
-  again, if Dutch renders “pathogeen”, or if a navigation entry and
-  screen title stop agreeing.
-- Axis labels, axis titles and legend text are 11pt in secondary greys,
-  from one definition. They were 9pt in `faint`, a hairline colour meant
-  for rules.
-- The season overlay stops the period in progress at the current week,
-  instead of running flat along zero through weeks that have not
-  happened.
-- Dutch says **casus**, never *geval* - 27 strings, including the two
-  where the gender changes the grammar.
-- `case_free_days` was showing as a raw column name in every language.
-- Weekly charts carry the ISO week number over its month, the year
-  stated once and again when it turns, thinning past ~18 months. Both
-  read off the week’s Thursday, so 30 December 2024 reads “w01 / Jan
-  2025”.
-- Cluster ids sit beside the pathogen name in the dossier title and lead
-  every Pathogen screen row. Each language marks the reference its own
-  way (`n.º`, `n°`, `Nr.`, `رقم`).
-- The Pathogen screen’s cluster table links through, by click or
-  keyboard, and is named **Clusters in this period** rather than
-  “signals”. The rail no longer resets the selection for a cluster that
-  is not open, which would have landed every such link on the top of the
-  rail.
-- The Archive links through and gained a cluster id column. Both cluster
-  tables build rows from one helper.
-- The top navigation renders from the view the server is showing, so it
-  follows a link out of the Pathogen screen rather than staying behind.
-- The pathogen picker’s count is labelled: it is an all-time case count,
-  which decides whether a pathogen has enough history for the screen.
+- Choropleth cropped to relevant areas instead of the full reference
+  dataset
+- Geography panel now spans the full dossier width
+- Standardised terminology to “pathogen” across all languages
+- Axis labels and legend text standardised to 11pt secondary grey
+- Season overlay stops at the current week instead of running flat to
+  zero
+- Dutch terminology standardised to “casus”
+- `case_free_days` now translated instead of shown as a raw column name
+- Weekly charts now show ISO week number with month/year, thinning past
+  ~18 months
+- Cluster ids now shown beside pathogen name in dossier and Pathogen
+  screen
+- Pathogen screen’s cluster table renamed “Clusters in this period” and
+  links through properly
+- Archive now links through and includes a cluster id column
+- Top navigation now follows links out of the Pathogen screen
+- Pathogen picker’s count now labelled as an all-time case count
 
 ## EpiSODIC 0.3.0
 
 ### New
 
-- Dashboard translations for Spanish, French, German, Mandarin Chinese,
-  Hindi and Modern Standard Arabic alongside Dutch and English. Pass as
-  `lang` to
-  [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md),
-  [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
-  or
-  [`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md).
-  `episodic_format_date_range()` formats month names from the same
-  files.
-- `EPISODIC_LANGUAGE` sets the default `lang` for those functions and
-  [`episodic_tr()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_tr.md).
-  Falls back to `"en"`.
+- Dashboard translated into Spanish, French, German, Mandarin, Hindi and
+  Arabic, alongside Dutch and English
+- `EPISODIC_LANGUAGE` sets the default language, falling back to English
 
 ## EpiSODIC 0.2.0
 
 ### Changed
 
-- Rewrote all documentation for an epidemiologist audience rather than a
-  contributor reading the source. Related functions share a help page,
-  and examples show their output.
-- Renamed the internal `episode_`/`episode-` prefix to
-  `episodic_`/`episodic-` throughout - functions, tables, CSS classes -
-  to match the package name.
+- Documentation rewritten for an epidemiologist audience
+- Internal `episode_` prefix renamed to `episodic_` throughout
 
 ### New
 
-- `EPISODIC_DB` accepts a `mysql://` DSN
-  ([`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md),
-  [`episodic_db_dsn_mysql()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md))
-  to run against MariaDB/MySQL from the same schema file.
-- Package version shown in the app header.
-- README screenshots ship in `man/figures/` so they render on CRAN.
+- `EPISODIC_DB` accepts a `mysql://` DSN for MariaDB/MySQL
+- Package version shown in the app header
+- README screenshots now ship in `man/figures/`
 
 ## EpiSODIC 0.1.0
 
 First development version.
 
-- Detection: lattice enumeration, five detectors (`farrington`, `ears`,
-  `same_place`, `rare_trigger`, `mem`), cluster reconciliation across
-  runs, cross-lattice suppression, baseline feedback.
-- Interface: bilingual (NL/EN) Shiny app, read-only for anonymous
-  visitors; dossier view (epi curve, trend, geography, Rt, line list);
-  audit-trailed classification workflow; Performance screen.
+- Detection: lattice enumeration, five detectors, cluster
+  reconciliation, cross-lattice suppression, baseline feedback
+- Interface: bilingual (NL/EN) Shiny app, dossier view, audit-trailed
+  classification, Performance screen
 - Reporting: versioned Quarto outbreak reports with small-count
-  suppression.
-- SQLite backend; optional `EpiEstim`/`mem`/`quarto`/`sf`, each with a
-  documented fallback.
+  suppression
+- SQLite backend, with optional `EpiEstim`/`mem`/`quarto`/`sf`
 - [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
-  runs the whole system against bundled synthetic data.
+  runs the whole system against bundled synthetic data

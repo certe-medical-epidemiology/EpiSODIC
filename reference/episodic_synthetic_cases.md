@@ -107,18 +107,18 @@ head(cases)
 #> 4 Clostridioides difficile    second         HOSP-07             Ziekenhuis G
 #> 5              Influenza A    second         HOSP-01             Ziekenhuis A
 #> 6              Influenza A    second         HOSP-02             Ziekenhuis B
-#>   institution_type municipality        ward          specialism   pc sex age
-#> 1         hospital         <NA>     Interne Interne geneeskunde 7384   F  33
-#> 2  ltc_institution         <NA>        <NA>                <NA> 8524   M  37
-#> 3         hospital         <NA> Cardiologie         Cardiologie 9800   M  76
-#> 4         hospital         <NA> Longziekten         Longziekten 7600   M   8
-#> 5         hospital         <NA>   Geriatrie Klinische geriatrie 9930   F  79
-#> 6         hospital         <NA>   Chirurgie           Chirurgie 9021   F  14
-#>     source_key
-#> 1 SYN-00000001
-#> 2 SYN-00000060
-#> 3 SYN-00000159
-#> 4 SYN-00000203
-#> 5 SYN-00000061
-#> 6 SYN-00000062
+#>   institution_type municipality              ward          specialism   pc sex
+#> 1         hospital         <NA> Internal Medicine   Internal Medicine 7384   F
+#> 2  ltc_institution         <NA>              <NA>                <NA> 8524   M
+#> 3         hospital         <NA>        Cardiology          Cardiology 9800   M
+#> 4         hospital         <NA>       Pulmonology         Pulmonology 7600   M
+#> 5         hospital         <NA>        Geriatrics Clinical Geriatrics 9930   F
+#> 6         hospital         <NA>           Surgery             Surgery 9021   F
+#>   age   source_key
+#> 1  33 SYN-00000001
+#> 2  37 SYN-00000060
+#> 3  76 SYN-00000159
+#> 4   8 SYN-00000203
+#> 5  79 SYN-00000061
+#> 6  14 SYN-00000062
 ```

@@ -126,6 +126,8 @@ cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
 db_path <- episodic_demo(launch = FALSE, cases = cases, denominators = NULL)
+#> Creating synthetic cases...
+#> OK
 #> EpiSODIC demo account - username: demo, password: episodic-demo
 file.remove(db_path)
 #> [1] TRUE
