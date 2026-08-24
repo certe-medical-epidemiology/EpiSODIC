@@ -56,10 +56,12 @@
 
   "careline.first": "初级医疗",
   "careline.second": "二级医疗",
+  "careline.third": "三级医疗",
   "careline.other": "其他",
   "careline.unknown": "未知",
   "careline.short.first": "一线",
   "careline.short.second": "二线",
+  "careline.short.third": "三线",
   "careline.short.other": "其他",
   "careline.short.unknown": "未知",
 

@@ -56,10 +56,12 @@
 
   "careline.first": "eerste lijn",
   "careline.second": "tweede lijn",
+  "careline.third": "derde lijn",
   "careline.other": "overig",
   "careline.unknown": "onbekend",
   "careline.short.first": "1e lijn",
   "careline.short.second": "2e lijn",
+  "careline.short.third": "3e lijn",
   "careline.short.other": "overig",
   "careline.short.unknown": "onbekend",
 

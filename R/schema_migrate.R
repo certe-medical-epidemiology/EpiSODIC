@@ -441,8 +441,8 @@ episodic_db_schema_statements <- function(dialect) {
           "  sample_date    VARCHAR(10) NOT NULL,",
         "  pathogen       TEXT NOT NULL,  -- raw lab-provided string, used verbatim" =
           "  pathogen       VARCHAR(191) NOT NULL,  -- raw lab-provided string, used verbatim",
-        "care_line      TEXT NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'other', 'unknown'))," =
-          "care_line      VARCHAR(20) NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'other', 'unknown')),"
+        "care_line      TEXT NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown'))," =
+          "care_line      VARCHAR(20) NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown')),"
       ),
       episodic_reporting_triangle = c(
         "  sample_date TEXT NOT NULL," =
@@ -459,8 +459,8 @@ episodic_db_schema_statements <- function(dialect) {
           "  pathogen       VARCHAR(191) NOT NULL,",
         "  sample_date    TEXT NOT NULL," =
           "  sample_date    VARCHAR(10) NOT NULL,",
-        "  care_line      TEXT NOT NULL CHECK (care_line IN ('first', 'second', 'other', 'unknown'))," =
-          "  care_line      VARCHAR(20) NOT NULL CHECK (care_line IN ('first', 'second', 'other', 'unknown')),",
+        "  care_line      TEXT NOT NULL CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown'))," =
+          "  care_line      VARCHAR(20) NOT NULL CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown')),",
         "  area_code      TEXT," =
           "  area_code      VARCHAR(191),"
       ),

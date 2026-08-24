@@ -56,10 +56,12 @@
 
   "careline.first": "الرعاية الأولية",
   "careline.second": "الرعاية الثانوية",
+  "careline.third": "الرعاية الثالثية",
   "careline.other": "أخرى",
   "careline.unknown": "غير معروف",
   "careline.short.first": "الخط الأول",
   "careline.short.second": "الخط الثاني",
+  "careline.short.third": "الخط الثالث",
   "careline.short.other": "أخرى",
   "careline.short.unknown": "غير معروف",
 

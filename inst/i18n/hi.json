@@ -56,10 +56,12 @@
 
   "careline.first": "प्राथमिक देखभाल",
   "careline.second": "द्वितीयक देखभाल",
+  "careline.third": "तृतीयक देखभाल",
   "careline.other": "अन्य",
   "careline.unknown": "अज्ञात",
   "careline.short.first": "प्रथम पंक्ति",
   "careline.short.second": "द्वितीय पंक्ति",
+  "careline.short.third": "तृतीय पंक्ति",
   "careline.short.other": "अन्य",
   "careline.short.unknown": "अज्ञात",
 

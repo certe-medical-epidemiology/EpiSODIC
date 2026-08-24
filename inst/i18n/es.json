@@ -56,10 +56,12 @@
 
   "careline.first": "atención primaria",
   "careline.second": "atención secundaria",
+  "careline.third": "atención terciaria",
   "careline.other": "otro",
   "careline.unknown": "desconocido",
   "careline.short.first": "1.ª línea",
   "careline.short.second": "2.ª línea",
+  "careline.short.third": "3.ª línea",
   "careline.short.other": "otro",
   "careline.short.unknown": "desconocido",
 

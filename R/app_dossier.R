@@ -125,7 +125,8 @@ episodic_ui_dossier_header <- function(
       ),
       episodic_ui_chip(
         episodic_tr(paste0("state.", state), lang = lang),
-        episodic_ui_state_colour(state)
+        episodic_ui_state_colour(state),
+        filled = TRUE
       ),
       if (isTRUE(obj$changed_since_assessment)) {
         episodic_ui_chip(

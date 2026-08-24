@@ -56,10 +56,12 @@
 
   "careline.first": "primary care",
   "careline.second": "secondary care",
+  "careline.third": "tertiary care",
   "careline.other": "other",
   "careline.unknown": "unknown",
   "careline.short.first": "1st line",
   "careline.short.second": "2nd line",
+  "careline.short.third": "3rd line",
   "careline.short.other": "other",
   "careline.short.unknown": "unknown",
 

@@ -56,10 +56,12 @@
 
   "careline.first": "soins primaires",
   "careline.second": "soins secondaires",
+  "careline.third": "soins tertiaires",
   "careline.other": "autre",
   "careline.unknown": "inconnu",
   "careline.short.first": "1re ligne",
   "careline.short.second": "2e ligne",
+  "careline.short.third": "3e ligne",
   "careline.short.other": "autre",
   "careline.short.unknown": "inconnu",
 

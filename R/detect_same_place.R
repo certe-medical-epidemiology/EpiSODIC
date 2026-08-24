@@ -123,11 +123,18 @@ episodic_same_place_scan <- function(
 
     institution_id <- grp$institution_id[1]
     ward <- if ("ward" %in% group_cols) grp$ward[1] else NA
+    # `same_place` is the detector responsible for exactly the streams
+    # (LTC, out-of-hours, general practice) that never get one from
+    # lattice enumeration - hardcoding NA here defeated the point of
+    # `care_line` existing at the stream level at all, for both those and
+    # its hospital ward streams. Taken from the group's own cases, same
+    # as `episodic_lattice_upsert_group()` does.
+    care_line <- if ("care_line" %in% names(grp)) grp$care_line[1] else NA
 
     stream_key <- episodic_stream_key(
       level = stream_level,
       pathogen = pathogen,
-      care_line = NA,
+      care_line = care_line,
       region_code = NA,
       institution_id = institution_id,
       ward = if (stream_level == "pathogen_ward") ward else NA
@@ -137,7 +144,7 @@ episodic_same_place_scan <- function(
       stream_key = stream_key,
       level = stream_level,
       pathogen = pathogen,
-      care_line = NA,
+      care_line = care_line,
       region_code = NA,
       institution_id = institution_id,
       ward = if (stream_level == "pathogen_ward") ward else NA,
