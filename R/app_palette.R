@@ -64,7 +64,14 @@ episodic_palette_cache <- new.env(parent = emptyenv())
 #' @noRd
 episodic_palette_config_resolve <- function(
     palette_config_path = Sys.getenv("EPISODIC_PALETTE_CONFIG", unset = NA)) {
-  cache_key <- if (is.na(palette_config_path)) "" else palette_config_path
+  # `[[` on an environment requires a non-empty name - "" (from an unset
+  # env var) errors with "zero-length variable name" - hence the sentinel
+  # rather than caching under palette_config_path itself.
+  cache_key <- if (is.na(palette_config_path) || !nzchar(palette_config_path)) {
+    "._default"
+  } else {
+    palette_config_path
+  }
   cached <- episodic_palette_cache[[cache_key]]
   if (!is.null(cached)) {
     return(cached)
