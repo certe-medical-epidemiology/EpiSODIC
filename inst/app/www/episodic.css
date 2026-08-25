@@ -157,6 +157,12 @@ body {
   font-size: 13px;
   font-weight: 500;
 }
+/* The bulk-select checkbox, inline with the pathogen name rather than on
+   its own line - the rail card is already tight on vertical space. */
+.episodic-rail-select {
+  margin-right: 6px;
+  vertical-align: -1px;
+}
 /* The care-line chip beside the pathogen name - inline with the text,
    not pushed to its own line, since the rail card is already tight. */
 .episodic-rail-pathogen .episodic-chip {

@@ -153,15 +153,15 @@ if (!is.null(d$similar) && nrow(d$similar) > 0) {
 if (!is.null(d$linelist) && nrow(d$linelist) > 0) {
   cat("## ", tr("panel.linelist.title"), "\n\n", sep = "")
   cat(
-    "|", tr("panel.linelist.col.case"), "|", tr("panel.linelist.col.date"), "|", tr("panel.linelist.col.sex"), "|",
+    "|", tr("panel.linelist.col.patient"), "|", tr("panel.linelist.col.case"), "|", tr("panel.linelist.col.date"), "|", tr("panel.linelist.col.sex"), "|",
     tr("panel.linelist.col.age"), "|", tr("panel.linelist.col.pc"), "|", tr("panel.linelist.col.ward"), "|",
     tr("panel.linelist.col.specialism"), "|\n"
   )
-  cat("|---|---|---|---|---|---|---|\n")
+  cat("|---|---|---|---|---|---|---|---|\n")
   for (i in seq_len(nrow(d$linelist))) {
     row <- d$linelist[i, ]
     cat(
-      "|", row$source_key, "|", row$sample_date, "|", na_dash(row$sex), "|", na_dash(row$age), "|",
+      "|", row$patient_key, "|", row$source_key, "|", row$sample_date, "|", na_dash(row$sex), "|", na_dash(row$age), "|",
       na_dash(row$pc), "|", na_dash(row$ward), "|", na_dash(row$specialism), "|\n"
     )
   }

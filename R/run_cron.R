@@ -599,6 +599,7 @@ episodic_run_cron_body <- function(
         NA,
       min_excess_over_upperbound = min_excess,
       min_ratio_observed_expected = min_ratio,
+      stale_open_days = config$reconciliation$stale_open_days %||% NA,
       # Five of the seven priority components are properties of the
       # candidate episode and its cases, so they are computed here, where
       # both are in hand. They used to be left at their defaults - most

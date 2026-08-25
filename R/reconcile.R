@@ -42,7 +42,9 @@
 #' 4. Open clusters in the stream with no candidate this run get
 #'    `runs_since_detected + 1`.
 #' 5. Auto-closure: unassessed clusters, or those assessed `artefact`/
-#'    `expected_variation`, close after `close_after_runs` runs undetected.
+#'    `expected_variation`, close after `close_after_runs` runs undetected;
+#'    an unassessed cluster whose `last_day` is more than `stale_open_days`
+#'    in the past closes the same way regardless of that runs counter.
 #'
 #' This function is idempotent by construction: it is keyed on `stream_key`
 #' and interval overlap rather than on insertion order (section 5.3), so
@@ -74,6 +76,17 @@
 #' @param cooldown_reopen_ratio From `config$reconciliation$
 #'   cooldown_reopen_ratio` (a "half again" growth threshold). Ignored
 #'   when `cooldown_days` is `NA`.
+#' @param stale_open_days From `config$reconciliation$stale_open_days`.
+#'   An unassessed cluster (no verdict has ever been recorded for it)
+#'   whose `last_day` is more than this many days before `today` is
+#'   auto-closed with `trigger = "system"` regardless of
+#'   `close_after_runs`/`runs_since_detected` - a stream that keeps
+#'   getting redetected around a case-free interval it never actually
+#'   left would otherwise never trip the ordinary undetected-runs
+#'   counter. It stays "unassessed": this never records a verdict, only
+#'   the same system closure an aged-out cluster gets. `NA` (default)
+#'   disables the check entirely, for callers that predate it.
+#' @param today The date to evaluate `stale_open_days` as of.
 #' @return Invisibly, a list with `n_new`, `n_updated`, `n_merged`.
 #' @keywords internal
 #' @noRd
@@ -90,7 +103,9 @@ episodic_reconcile_stream <- function(
     cooldown_days = NA,
     cooldown_reopen_ratio = NA,
     min_excess_over_upperbound = NA,
-    min_ratio_observed_expected = NA) {
+    min_ratio_observed_expected = NA,
+    stale_open_days = NA,
+    today = Sys.Date()) {
   n_new <- 0L
   n_updated <- 0L
   n_merged <- 0L
@@ -350,7 +365,17 @@ episodic_reconcile_stream <- function(
     eligible_for_autoclose <- is.na(verdict) ||
       verdict %in% c("artefact", "expected_variation")
 
-    if (runs_since > close_after_runs && eligible_for_autoclose) {
+    days_since_last_case <- as.integer(
+      as.Date(today) - as.Date(undetected$last_day[i])
+    )
+    stale_unassessed <- !is.na(stale_open_days) &&
+      is.na(verdict) &&
+      days_since_last_case > stale_open_days
+
+    if (
+      (runs_since > close_after_runs && eligible_for_autoclose) ||
+        stale_unassessed
+    ) {
       episodic_db_cluster_state_insert(
         con,
         cluster_id = cluster_id,

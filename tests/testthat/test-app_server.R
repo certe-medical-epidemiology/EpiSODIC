@@ -338,7 +338,7 @@ test_that("bulk_assess_submit applies one classification to several clusters in 
   })
 })
 
-test_that("bulk_assess_submit is a no-op without a rationale, even if the client bypasses its own JS guard", {
+test_that("bulk_assess_submit records an event even without a rationale", {
   skip_if_not_installed("sodium")
 
   db_path <- tempfile(fileext = ".sqlite")
@@ -414,13 +414,13 @@ test_that("bulk_assess_submit is a no-op without a rationale, even if the client
     # factory's own `con`, which is in scope here and which this used to
     # shadow - leaving the server's connection both unreachable and open.
     check_con <- episodic_db_connect(db_path)
-    expect_equal(
-      DBI::dbGetQuery(
-        check_con,
-        "SELECT COUNT(*) n FROM episodic_assessment_event"
-      )$n,
-      0
+    events <- DBI::dbGetQuery(
+      check_con,
+      "SELECT verdict, rationale FROM episodic_assessment_event"
     )
+    expect_equal(nrow(events), 1)
+    expect_equal(events$verdict[1], "artefact")
+    expect_equal(events$rationale[1], "")
 
     DBI::dbDisconnect(check_con)
     DBI::dbDisconnect(con)

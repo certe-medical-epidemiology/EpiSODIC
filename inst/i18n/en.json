@@ -115,6 +115,7 @@
 
   "panel.linelist.title": "Line list",
   "panel.linelist.aside": "{shown} of {total} cases",
+  "panel.linelist.col.patient": "Patient",
   "panel.linelist.col.case": "Case",
   "panel.linelist.col.date": "Sample date",
   "panel.linelist.col.sex": "Sex",
@@ -248,7 +249,7 @@
   "assessment.verdict_label": "Classification",
   "assessment.verdict_none": "No classification yet (note only)",
   "assessment.rationale_label": "Rationale",
-  "assessment.rationale_placeholder": "Required: justify this assessment.",
+  "assessment.rationale_placeholder": "Optional: explain this assessment.",
   "assessment.rationale_required": "A rationale is required.",
   "assessment.snooze_label": "Snooze until",
   "assessment.submit": "Record assessment",

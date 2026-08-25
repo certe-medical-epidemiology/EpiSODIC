@@ -115,6 +115,7 @@
 
   "panel.linelist.title": "Listado de casos",
   "panel.linelist.aside": "{shown} de {total} casos",
+  "panel.linelist.col.patient": "Paciente",
   "panel.linelist.col.case": "Caso",
   "panel.linelist.col.date": "Fecha de muestra",
   "panel.linelist.col.sex": "Sexo",
@@ -248,7 +249,7 @@
   "assessment.verdict_label": "Clasificación",
   "assessment.verdict_none": "Sin clasificación todavía (solo nota)",
   "assessment.rationale_label": "Justificación",
-  "assessment.rationale_placeholder": "Obligatorio: justifique esta evaluación.",
+  "assessment.rationale_placeholder": "Opcional: justifique esta evaluación.",
   "assessment.rationale_required": "Se requiere una justificación.",
   "assessment.snooze_label": "Posponer hasta",
   "assessment.submit": "Registrar evaluación",

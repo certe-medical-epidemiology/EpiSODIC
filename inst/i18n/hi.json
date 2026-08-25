@@ -115,6 +115,7 @@
 
   "panel.linelist.title": "लाइन सूची",
   "panel.linelist.aside": "{total} में से {shown} मामले",
+  "panel.linelist.col.patient": "मरीज़",
   "panel.linelist.col.case": "मामला",
   "panel.linelist.col.date": "नमूना तिथि",
   "panel.linelist.col.sex": "लिंग",
@@ -248,7 +249,7 @@
   "assessment.verdict_label": "वर्गीकरण",
   "assessment.verdict_none": "अभी तक कोई वर्गीकरण नहीं (केवल टिप्पणी)",
   "assessment.rationale_label": "औचित्य",
-  "assessment.rationale_placeholder": "आवश्यक: इस मूल्यांकन को उचित ठहराएँ।",
+  "assessment.rationale_placeholder": "वैकल्पिक: इस मूल्यांकन को उचित ठहराएँ।",
   "assessment.rationale_required": "औचित्य आवश्यक है।",
   "assessment.snooze_label": "इस तिथि तक स्थगित करें",
   "assessment.submit": "मूल्यांकन दर्ज करें",

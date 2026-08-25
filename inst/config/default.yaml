@@ -32,6 +32,7 @@ reconciliation:
   case_free_days_default: 14   # fallback when a pathogen has no override
   close_after_runs: 14
   cooldown_reopen_ratio: 1.5   # escape hatch ("half again")
+  stale_open_days: 60          # auto-close unassessed clusters this stale
 
 # Eligibility gate: a stream must clear all three thresholds before the
 # statistical detectors run against it at all. Values are provisional;

@@ -528,8 +528,8 @@ episodic_ui_rail <- function(
           type = "button",
           onclick = paste0(
             "var ids=Array.from(document.querySelectorAll('.episodic-rail-select:checked')).map(function(el){return parseInt(el.value);}); ",
+            "if(ids.length===0){return;} ",
             "var rationale=document.getElementById('bulk_assess_rationale').value; ",
-            "if(!rationale.trim()){return;} ",
             "Shiny.setInputValue('bulk_assess_submit', {cluster_ids: ids, verdict: document.getElementById('bulk_assess_verdict').value, rationale: rationale}, {priority: 'event'});"
           ),
           episodic_tr("rail.bulk_apply", lang = lang)
@@ -595,17 +595,17 @@ episodic_ui_rail <- function(
             "document.querySelectorAll('.episodic-rail-item').forEach(function(el){el.classList.remove('active');}); this.classList.add('active'); Shiny.setInputValue('rail_select', %d, {priority: 'event'})",
             row$cluster_id
           ),
-          if (episodic_user_is_epidemiologist(current_user)) {
-            shiny::tags$input(
-              type = "checkbox",
-              class = "episodic-rail-select",
-              value = row$cluster_id,
-              onclick = "event.stopPropagation(); episodicBulkUpdate();",
-              onchange = "episodicBulkUpdate();"
-            )
-          },
           shiny::tags$div(
             class = "episodic-rail-pathogen",
+            if (episodic_user_is_epidemiologist(current_user)) {
+              shiny::tags$input(
+                type = "checkbox",
+                class = "episodic-rail-select",
+                value = row$cluster_id,
+                onclick = "event.stopPropagation(); episodicBulkUpdate();",
+                onchange = "episodicBulkUpdate();"
+              )
+            },
             shiny::HTML(episodic_ui_italicise_taxon(row$pathogen)),
             shiny::tags$span(
               class = "episodic-rail-id",

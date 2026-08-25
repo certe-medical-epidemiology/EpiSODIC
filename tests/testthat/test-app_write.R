@@ -145,7 +145,7 @@ test_that("episodic_app_submit_closure() closes a non-terminal classification wi
   expect_true(is.na(states$event_id[nrow(states)]))
 })
 
-test_that("episodic_app_submit_assessment() rejects a blank rationale", {
+test_that("episodic_app_submit_assessment() accepts a blank rationale", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   user_id <- episodic_db_app_user_insert(
@@ -155,10 +155,13 @@ test_that("episodic_app_submit_assessment() rejects a blank rationale", {
     "t@example.com",
     "hash"
   )
-  expect_error(episodic_app_submit_assessment(
+  event_id <- episodic_app_submit_assessment(
     env$con,
     env$cluster_id,
     user_id,
+    verdict = "artefact",
     rationale = ""
-  ))
+  )
+  events <- episodic_db_assessment_events(env$con, env$cluster_id)
+  expect_equal(events$rationale[events$event_id == event_id], "")
 })

@@ -815,6 +815,7 @@ episodic_ui_linelist_panel <- function(
     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   ll <- episodic_app_linelist(con, cluster_id)
   cols <- c(
+    "patient_key",
     "source_key",
     "sample_date",
     "sex",
@@ -830,6 +831,7 @@ episodic_ui_linelist_panel <- function(
         paste0(
           "panel.linelist.col.",
           switch(c,
+            patient_key = "patient",
             source_key = "case",
             sample_date = "date",
             sex = "sex",

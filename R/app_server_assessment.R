@@ -74,9 +74,6 @@ episodic_app_server_assessment_actions <- function(
     shiny::req(episodic_user_is_epidemiologist(user))
     payload <- input$assess_submit
     rationale <- trimws(payload$rationale %||% "")
-    if (!nzchar(rationale)) {
-      return(invisible(NULL)) # mandatory rationale; client also enforces this
-    }
     episodic_app_submit_assessment(
       con,
       cluster_id = payload$cluster_id,
@@ -108,8 +105,8 @@ episodic_app_server_assessment_actions <- function(
     payload <- input$bulk_assess_submit
     rationale <- trimws(payload$rationale %||% "")
     cluster_ids <- payload$cluster_ids
-    if (!nzchar(rationale) || length(cluster_ids) == 0) {
-      return(invisible(NULL)) # mandatory rationale, same rule as the single-cluster form; client also enforces both
+    if (length(cluster_ids) == 0) {
+      return(invisible(NULL)) # nothing selected; client also enforces this
     }
     verdict <- if (nzchar(payload$verdict %||% "")) payload$verdict else NA
     for (cluster_id in cluster_ids) {

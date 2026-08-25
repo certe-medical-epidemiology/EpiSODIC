@@ -26,6 +26,27 @@ test_that("episodic_app_open_clusters() lists the cluster with derived state new
   expect_equal(open$pathogen[1], "Norovirus")
 })
 
+test_that("episodic_app_open_clusters() sorts by last_day descending, not priority_score", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  # A second, unrelated cluster with a much higher priority_score but an
+  # earlier last_day - it must still sort behind the first cluster, since
+  # the rail orders on recency of last case, not priority.
+  older_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$stream_id,
+    first_day = "2025-01-01",
+    last_day = "2025-01-02",
+    n_cases = 2,
+    priority_score = 99,
+    detector_agreement = 1,
+    run_id = env$run_id
+  )
+  open <- episodic_app_open_clusters(env$con)
+  expect_equal(open$cluster_id[1], env$cluster_id) # last_day 2025-01-13
+  expect_equal(open$cluster_id[2], older_id) # last_day 2025-01-02
+})
+
 test_that("a cluster with an assessment event is excluded once closed, included otherwise", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
@@ -80,6 +101,31 @@ test_that("a non-terminal verdict explicitly closed via episodic_cluster_state (
     episodic_app_derive_state_for_cluster(env$con, env$cluster_id),
     "closed"
   )
+})
+
+test_that("episodic_app_open_clusters()'s batch state derivation agrees with episodic_app_derive_state_for_cluster() for a closable, non-terminal verdict", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
+  episodic_db_assessment_event_insert(
+    env$con,
+    env$cluster_id,
+    user_id = 1L,
+    verdict = "possible_epidemic",
+    rationale = "test"
+  )
+  expect_equal(
+    episodic_app_derive_state_for_cluster(env$con, env$cluster_id),
+    "closable"
+  )
+  open <- episodic_app_open_clusters(env$con)
+  expect_equal(open$state[open$cluster_id == env$cluster_id], "closable")
 })
 
 test_that("a later assessment event re-opens a cluster that was previously explicitly closed", {
@@ -186,8 +232,18 @@ test_that("episodic_app_linelist() returns only the architecture-allowed fields"
   expect_equal(nrow(ll), 6)
   expect_setequal(
     names(ll),
-    c("source_key", "sample_date", "sex", "age", "pc", "ward", "specialism")
+    c(
+      "patient_key",
+      "source_key",
+      "sample_date",
+      "sex",
+      "age",
+      "pc",
+      "ward",
+      "specialism"
+    )
   )
+  expect_equal(names(ll)[1], "patient_key")
 })
 
 test_that("episodic_app_detection_settings() reflects the cluster's detectors and pathogen config", {

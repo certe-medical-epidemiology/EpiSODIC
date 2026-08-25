@@ -28,8 +28,8 @@
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param lang Session language, for level/state labels.
-#' @return A data frame, one row per open cluster, ordered by
-#'   `priority_score` descending.
+#' @return A data frame, one row per open cluster, ordered by `last_day`
+#'   descending (newest last case day first).
 #' @keywords internal
 #' @noRd
 episodic_app_open_clusters <- function(
@@ -50,13 +50,7 @@ episodic_app_open_clusters <- function(
     streams$stream_id
   )]
 
-  clusters$state <- vapply(
-    clusters$cluster_id,
-    function(id) {
-      episodic_app_derive_state_for_cluster(con, id)
-    },
-    character(1)
-  )
+  clusters$state <- episodic_app_derive_states_batch(con, clusters)
   clusters$state_label <- vapply(
     clusters$state,
     function(s) episodic_tr(paste0("state.", s), lang = lang),
@@ -71,7 +65,98 @@ episodic_app_open_clusters <- function(
   )
 
   open <- clusters[clusters$state != "closed", ]
-  open[order(-open$priority_score), ]
+  # Newest last case day first - the rail is a triage queue, and a cluster
+  # that just gained a case is more likely to need attention right now
+  # than one that scored higher on priority but has gone quiet.
+  open[order(as.Date(open$last_day), decreasing = TRUE), ]
+}
+
+#' Derive state for many clusters at once
+#'
+#' What the rail actually needs from `episodic_app_derive_state_for_cluster()`,
+#' but without its one-query-per-cluster cost: `episodic_db_assessment_events()`,
+#' `episodic_db_cluster_states()` and (for a `mem_applicable` pathogen)
+#' `episodic_db_cases_for_pathogen()` are each fetched once per distinct
+#' cluster/pathogen here instead of once per cluster, which is what made
+#' the rail's own render cost scale with the number of open clusters
+#' rather than being flat.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param clusters A data frame with (at least) `cluster_id`, `pathogen`,
+#'   `last_day` and `changed_since_assessment` columns - `episodic_db_clusters()`'s
+#'   own shape, with `pathogen` joined in from `episodic_db_streams()`, is
+#'   exactly this.
+#' @return A character vector of states, one per row of `clusters`, in the
+#'   same order.
+#' @keywords internal
+#' @noRd
+episodic_app_derive_states_batch <- function(con, clusters) {
+  if (nrow(clusters) == 0) {
+    return(character(0))
+  }
+
+  ids <- clusters$cluster_id
+  events_all <- episodic_db_assessment_events_batch(con, ids)
+  states_all <- episodic_db_cluster_states_batch(con, ids)
+  pathogen_config <- episodic_db_pathogen_config(con)
+
+  # mem_status is only worth computing for pathogens that are both
+  # mem_applicable and actually have a non-terminal latest verdict among
+  # these clusters - episodic_db_cases_for_pathogen() reads every case for
+  # the pathogen, so it is memoised per pathogen rather than per cluster.
+  mem_cache <- new.env(parent = emptyenv())
+  mem_status_for <- function(pathogen) {
+    if (!exists(pathogen, envir = mem_cache, inherits = FALSE)) {
+      status <- episodic_mem_status(episodic_db_cases_for_pathogen(
+        con,
+        pathogen
+      ))
+      assign(pathogen, status, envir = mem_cache)
+    }
+    get(pathogen, envir = mem_cache, inherits = FALSE)
+  }
+
+  vapply(
+    seq_len(nrow(clusters)),
+    function(i) {
+      row <- clusters[i, ]
+      events <- events_all[events_all$cluster_id == row$cluster_id, ]
+      states <- states_all[states_all$cluster_id == row$cluster_id, ]
+
+      closure_met <- FALSE
+      if (nrow(events) > 0 && any(!is.na(events$verdict))) {
+        latest_verdict <- events$verdict[!is.na(events$verdict)]
+        latest_verdict <- latest_verdict[length(latest_verdict)]
+        pc <- pathogen_config[pathogen_config$pathogen == row$pathogen, ]
+        if (nrow(pc) > 0) {
+          pc <- pc[1, ]
+          mem_status <- NULL
+          if (isTRUE(as.logical(pc$mem_applicable))) {
+            mem_status <- mem_status_for(row$pathogen)
+          }
+          closure_met <- episodic_closure_criterion_met(
+            row$last_day,
+            latest_verdict,
+            case_free_days = pc$case_free_days,
+            incub_max_days = pc$incub_max_days,
+            mem_applicable = as.logical(pc$mem_applicable),
+            mem_status = mem_status
+          )
+        }
+      }
+
+      episodic_derive_state(
+        events,
+        changed_since_assessment = as.logical(row$changed_since_assessment),
+        closure_criterion_met = closure_met,
+        explicitly_closed = episodic_app_explicitly_closed_from(
+          states,
+          events
+        )
+      )
+    },
+    character(1)
+  )
 }
 
 #' Derive the state of a single cluster
@@ -154,7 +239,24 @@ episodic_app_derive_state_for_cluster <- function(con, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_app_explicitly_closed <- function(con, cluster_id, events) {
-  states <- episodic_db_cluster_states(con, cluster_id)
+  episodic_app_explicitly_closed_from(
+    episodic_db_cluster_states(con, cluster_id),
+    events
+  )
+}
+
+#' The actual logic behind `episodic_app_explicitly_closed()`, given states
+#'
+#' Split out so a caller deriving many clusters' state at once (the rail's
+#' `episodic_app_derive_states_batch()`) can pass in states it already
+#' fetched in bulk, rather than one `episodic_db_cluster_states()` query
+#' per cluster.
+#' @param states This cluster's rows from `episodic_db_cluster_states()`.
+#' @param events This cluster's assessment events.
+#' @return A single logical.
+#' @keywords internal
+#' @noRd
+episodic_app_explicitly_closed_from <- function(states, events) {
   closures <- states[
     states$trigger %in% c("closure", "system") & states$state == "closed",
   ]
@@ -971,6 +1073,7 @@ episodic_app_linelist <- function(con, cluster_id) {
   cases[
     order(cases$sample_date),
     c(
+      "patient_key",
       "source_key",
       "sample_date",
       "sex",

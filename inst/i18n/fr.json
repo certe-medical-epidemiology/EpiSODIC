@@ -115,6 +115,7 @@
 
   "panel.linelist.title": "Liste linéaire",
   "panel.linelist.aside": "{shown} sur {total} cas",
+  "panel.linelist.col.patient": "Patient",
   "panel.linelist.col.case": "Cas",
   "panel.linelist.col.date": "Date de prélèvement",
   "panel.linelist.col.sex": "Sexe",
@@ -248,7 +249,7 @@
   "assessment.verdict_label": "Classification",
   "assessment.verdict_none": "Aucune classification pour l'instant (note seulement)",
   "assessment.rationale_label": "Justification",
-  "assessment.rationale_placeholder": "Obligatoire : justifiez cette évaluation.",
+  "assessment.rationale_placeholder": "Facultatif : justifiez cette évaluation.",
   "assessment.rationale_required": "Une justification est requise.",
   "assessment.snooze_label": "Reporter jusqu'au",
   "assessment.submit": "Enregistrer l'évaluation",

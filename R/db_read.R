@@ -295,6 +295,58 @@ episodic_db_cluster_states <- function(con, cluster_id) {
   )
 }
 
+#' All assessment events for a set of clusters, in one query
+#'
+#' Used where a caller needs several clusters' events at once (the rail,
+#' the Pathogen screen's cluster table) - one round trip instead of one
+#' per cluster.
+#' @param cluster_ids A vector of `cluster_id`s.
+#' @return A data frame with the same columns as
+#'   [episodic_db_assessment_events()], for all of them, ordered by
+#'   `cluster_id`, `created_at`, `event_id`. Empty (but correctly shaped)
+#'   if `cluster_ids` is empty.
+#' @keywords internal
+#' @noRd
+episodic_db_assessment_events_batch <- function(con, cluster_ids) {
+  if (length(cluster_ids) == 0) {
+    return(episodic_db_assessment_events(con, -1L)[0, ])
+  }
+  placeholders <- paste(rep("?", length(cluster_ids)), collapse = ", ")
+  DBI::dbGetQuery(
+    con,
+    sprintf(
+      "SELECT * FROM episodic_assessment_event WHERE cluster_id IN (%s)
+       ORDER BY cluster_id, created_at, event_id",
+      placeholders
+    ),
+    params = as.list(cluster_ids)
+  )
+}
+
+#' All cluster-state rows for a set of clusters, in one query
+#' @param cluster_ids A vector of `cluster_id`s.
+#' @return A data frame with the same columns as
+#'   [episodic_db_cluster_states()], for all of them, ordered by
+#'   `cluster_id`, `entered_at`, `state_id`. Empty (but correctly shaped)
+#'   if `cluster_ids` is empty.
+#' @keywords internal
+#' @noRd
+episodic_db_cluster_states_batch <- function(con, cluster_ids) {
+  if (length(cluster_ids) == 0) {
+    return(episodic_db_cluster_states(con, -1L)[0, ])
+  }
+  placeholders <- paste(rep("?", length(cluster_ids)), collapse = ", ")
+  DBI::dbGetQuery(
+    con,
+    sprintf(
+      "SELECT * FROM episodic_cluster_state WHERE cluster_id IN (%s)
+       ORDER BY cluster_id, entered_at, state_id",
+      placeholders
+    ),
+    params = as.list(cluster_ids)
+  )
+}
+
 #' @keywords internal
 #' @noRd
 episodic_db_stream_mutes <- function(con, stream_id) {

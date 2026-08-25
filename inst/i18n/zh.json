@@ -115,6 +115,7 @@
 
   "panel.linelist.title": "病例清单",
   "panel.linelist.aside": "共 {total} 例中的 {shown} 例",
+  "panel.linelist.col.patient": "患者",
   "panel.linelist.col.case": "病例",
   "panel.linelist.col.date": "采样日期",
   "panel.linelist.col.sex": "性别",
@@ -248,7 +249,7 @@
   "assessment.verdict_label": "分类",
   "assessment.verdict_none": "尚无分类（仅备注）",
   "assessment.rationale_label": "评估依据",
-  "assessment.rationale_placeholder": "必填：请说明本次评估的依据。",
+  "assessment.rationale_placeholder": "可选：请说明本次评估的依据。",
   "assessment.rationale_required": "必须填写评估依据。",
   "assessment.snooze_label": "延后至",
   "assessment.submit": "提交评估",

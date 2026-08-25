@@ -35,13 +35,20 @@ episodic_db_assessment_event_insert <- function(
     cluster_id,
     user_id,
     verdict = NA,
-    rationale,
+    rationale = "",
     wpg_notifiable = NA,
     ggd_informed = NA,
     ggd_note = NA,
     snooze_until = NA,
     supersedes = NA) {
-  stopifnot(is.character(rationale), nzchar(rationale))
+  # Optional: `rationale` is free text, not a required justification - the
+  # column stays NOT NULL (inst/sql/schema.sql), so a blank rationale is
+  # stored as "" rather than NULL.
+  rationale <- if (is.null(rationale) || is.na(rationale)) {
+    ""
+  } else {
+    as.character(rationale)
+  }
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_assessment_event

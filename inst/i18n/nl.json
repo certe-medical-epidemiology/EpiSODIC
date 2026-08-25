@@ -115,6 +115,7 @@
 
   "panel.linelist.title": "Lijnlijst",
   "panel.linelist.aside": "{shown} van {total} casussen",
+  "panel.linelist.col.patient": "Patiënt",
   "panel.linelist.col.case": "Casus",
   "panel.linelist.col.date": "Afname",
   "panel.linelist.col.sex": "Geslacht",
@@ -248,7 +249,7 @@
   "assessment.verdict_label": "Classificatie",
   "assessment.verdict_none": "Nog geen classificatie (alleen notitie)",
   "assessment.rationale_label": "Onderbouwing",
-  "assessment.rationale_placeholder": "Verplicht: motiveer deze beoordeling.",
+  "assessment.rationale_placeholder": "Optioneel: licht deze beoordeling toe.",
   "assessment.rationale_required": "Onderbouwing is verplicht.",
   "assessment.snooze_label": "Snooze tot",
   "assessment.submit": "Beoordeling vastleggen",

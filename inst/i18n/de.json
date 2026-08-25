@@ -115,6 +115,7 @@
 
   "panel.linelist.title": "Fallliste",
   "panel.linelist.aside": "{shown} von {total} Fällen",
+  "panel.linelist.col.patient": "Patient",
   "panel.linelist.col.case": "Fall",
   "panel.linelist.col.date": "Probendatum",
   "panel.linelist.col.sex": "Geschlecht",
@@ -248,7 +249,7 @@
   "assessment.verdict_label": "Klassifikation",
   "assessment.verdict_none": "Noch keine Klassifikation (nur Notiz)",
   "assessment.rationale_label": "Begründung",
-  "assessment.rationale_placeholder": "Erforderlich: Begründen Sie diese Bewertung.",
+  "assessment.rationale_placeholder": "Optional: Begründen Sie diese Bewertung.",
   "assessment.rationale_required": "Eine Begründung ist erforderlich.",
   "assessment.snooze_label": "Zurückstellen bis",
   "assessment.submit": "Bewertung erfassen",

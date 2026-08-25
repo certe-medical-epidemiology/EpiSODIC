@@ -34,7 +34,8 @@
 #' @param user_id The signed-in epidemiologist's `user_id`.
 #' @param verdict One of the five classification values, or `NA` (a
 #'   rationale-only note with no classification yet).
-#' @param rationale Mandatory free-text rationale.
+#' @param rationale Optional free-text rationale; `NA` or `""` records no
+#'   rationale rather than blocking the assessment.
 #' @param wpg_notifiable,ggd_informed Logical or `NA`.
 #' @param ggd_note Free text, or `NA`.
 #' @param snooze_until A date, or `NA`.
@@ -47,7 +48,7 @@ episodic_app_submit_assessment <- function(
     cluster_id,
     user_id,
     verdict = NA,
-    rationale,
+    rationale = "",
     wpg_notifiable = NA,
     ggd_informed = NA,
     ggd_note = NA,

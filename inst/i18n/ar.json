@@ -115,6 +115,7 @@
 
   "panel.linelist.title": "قائمة الحالات",
   "panel.linelist.aside": "{shown} من أصل {total} حالة",
+  "panel.linelist.col.patient": "المريض",
   "panel.linelist.col.case": "الحالة",
   "panel.linelist.col.date": "تاريخ العيّنة",
   "panel.linelist.col.sex": "الجنس",
@@ -248,7 +249,7 @@
   "assessment.verdict_label": "التصنيف",
   "assessment.verdict_none": "لا يوجد تصنيف بعد (ملاحظة فقط)",
   "assessment.rationale_label": "المبرر",
-  "assessment.rationale_placeholder": "مطلوب: برِّر هذا التقييم.",
+  "assessment.rationale_placeholder": "اختياري: برِّر هذا التقييم.",
   "assessment.rationale_required": "المبرر مطلوب.",
   "assessment.snooze_label": "تأجيل حتى",
   "assessment.submit": "تسجيل التقييم",

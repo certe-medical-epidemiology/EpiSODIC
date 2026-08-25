@@ -45,6 +45,15 @@ episodic_palette <- function() {
   episodic_palette_config_resolve()
 }
 
+# A dossier render alone calls episodic_palette() seven times, charts nine -
+# every one of them re-reading and re-parsing the same YAML file(s) from
+# disk, on every render, for a value that cannot change within a running
+# session (it is a function of the env var and shipped/instance files, none
+# of which are touched while the app is up). Cached per resolved path, not
+# globally, so a caller that does pass a different `palette_config_path`
+# still gets the right file, just not re-read every time.
+episodic_palette_cache <- new.env(parent = emptyenv())
+
 #' Resolve the shipped default palette, with an optional instance override
 #'
 #' @param palette_config_path Path to an instance palette file, overlaid
@@ -55,6 +64,12 @@ episodic_palette <- function() {
 #' @noRd
 episodic_palette_config_resolve <- function(
     palette_config_path = Sys.getenv("EPISODIC_PALETTE_CONFIG", unset = NA)) {
+  cache_key <- if (is.na(palette_config_path)) "" else palette_config_path
+  cached <- episodic_palette_cache[[cache_key]]
+  if (!is.null(cached)) {
+    return(cached)
+  }
+
   defaults_path <- system.file("config", "palette.yaml", package = "EpiSODIC")
   if (identical(defaults_path, "")) {
     defaults_path <- file.path("inst", "config", "palette.yaml")
@@ -70,6 +85,7 @@ episodic_palette_config_resolve <- function(
     base <- episodic_config_merge(base, instance_palette)
   }
 
+  episodic_palette_cache[[cache_key]] <- base
   base
 }
 
