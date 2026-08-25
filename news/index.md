@@ -1,5 +1,28 @@
 # Changelog
 
+## EpiSODIC 0.6.0
+
+### New
+
+- Unassessed clusters auto-close once their last case day is older than
+  `config$reconciliation$stale_open_days` (default 60 days)
+- Run-detail modal shows how many clusters a run auto-closed
+- Info screen shows the app’s version, description, license and website,
+  read live from `DESCRIPTION`
+- Line list gains `patient_key` as its first column
+
+### Changed
+
+- Rail sorts by last case day (newest first) instead of priority score
+- Assessment rationale is now optional, not required
+- Rail’s bulk-select checkbox sits inline with the pathogen name
+- Version number moved from the navbar to the Info screen
+
+### Fixed
+
+- Modal close buttons (dead under Bootstrap 5)
+- Several Shiny performance issues in the rail and colour palette
+
 ## EpiSODIC 0.5.\*
 
 ### New

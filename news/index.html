@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,29 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.0" id="episodic-060">EpiSODIC 0.6.0<a class="anchor" aria-label="anchor" href="#episodic-060"></a></h2>
+<div class="section level3">
+<h3 id="new-0-6-0">New<a class="anchor" aria-label="anchor" href="#new-0-6-0"></a></h3>
+<ul><li>Unassessed clusters auto-close once their last case day is older than <code>config$reconciliation$stale_open_days</code> (default 60 days)</li>
+<li>Run-detail modal shows how many clusters a run auto-closed</li>
+<li>Info screen shows the app’s version, description, license and website, read live from <code>DESCRIPTION</code>
+</li>
+<li>Line list gains <code>patient_key</code> as its first column</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-6-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-6-0"></a></h3>
+<ul><li>Rail sorts by last case day (newest first) instead of priority score</li>
+<li>Assessment rationale is now optional, not required</li>
+<li>Rail’s bulk-select checkbox sits inline with the pathogen name</li>
+<li>Version number moved from the navbar to the Info screen</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-6-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-6-0"></a></h3>
+<ul><li>Modal close buttons (dead under Bootstrap 5)</li>
+<li>Several Shiny performance issues in the rail and colour palette</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.5" id="episodic-05">EpiSODIC 0.5.*<a class="anchor" aria-label="anchor" href="#episodic-05"></a></h2>
 <div class="section level3">
