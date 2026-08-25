@@ -19,13 +19,7 @@
 
 #' Farrington detector
 #'
-#' Wraps `surveillance::farringtonFlexible()` directly (CRAN, `Imports`, no
-#' Certe dependency), replacing the earlier `certestats::detect_farrington()`
-#' wrapper. `certestats` was only ever a thin linelist-to-`sts` adapter
-#' around this exact function; owning that glue removes the last
-#' Certe-specific package from the detection path and, unlike the
-#' `certestats` wrapper it replaces, can actually be installed and tested in
-#' any environment, CI included.
+#' Wraps `surveillance::farringtonFlexible()` directly.
 #'
 #' Case dates are aggregated into weekly bins (Monday-starting), which is
 #' standard practice for Farrington-style surveillance; `frequency = 52` is

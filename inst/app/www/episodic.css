@@ -20,8 +20,6 @@
 */
 
 /* EpiSODIC app stylesheet.
-   Certe house style: card panels, a compact stat grid, a status
-   trajectory bar, muted palette.
    Colour values are injected as CSS custom properties from
    episodic_palette() (see R/app_ui.R) so the shipped default palette and
    an instance's own EPISODIC_PALETTE_CONFIG override produce
