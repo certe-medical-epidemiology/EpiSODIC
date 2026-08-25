@@ -616,21 +616,21 @@ test_that("input$open_cluster jumps to the Clusters screen on that very cluster"
     ref <- function(id) {
       paste0(">", episodic_tr("dossier.cluster_ref", id = id, lang = "en"), "<")
     }
-    # the rail auto-selects the highest-priority cluster on load
+    # the rail auto-selects the cluster with the newest last case day on load
     expect_true(grepl(
-      ref(first),
+      ref(second),
       paste(output$dossier_pane, collapse = "\n"),
       fixed = TRUE
     ))
 
     session$setInputs(nav_view = "pathogen")
     session$flushReact()
-    session$setInputs(open_cluster = second)
+    session$setInputs(open_cluster = first)
     session$flushReact()
 
     dossier <- paste(output$dossier_pane, collapse = "\n")
-    expect_true(grepl(ref(second), dossier, fixed = TRUE))
-    expect_false(grepl(ref(first), dossier, fixed = TRUE))
+    expect_true(grepl(ref(first), dossier, fixed = TRUE))
+    expect_false(grepl(ref(second), dossier, fixed = TRUE))
     # and it actually switched screens. The dossier itself is rendered
     # into output$dossier_pane; main_view only carries the clusters
     # container and its placeholders, so that is what proves the switch.
