@@ -259,7 +259,7 @@ episodic_app_server_factory <- function(
       if (is.null(run)) {
         return(NULL)
       }
-      shiny::showModal(episodic_ui_run_modal(run, lang = lang))
+      shiny::showModal(episodic_ui_run_modal(con, run, lang = lang))
     })
 
     episodic_app_server_assessment_actions(

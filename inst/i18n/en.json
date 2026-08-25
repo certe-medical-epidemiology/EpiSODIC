@@ -311,6 +311,7 @@
   "activity.run_modal_no_load": "This run recorded no load counts: it stopped before it read any data.",
   "activity.run_modal_detection": "What detection produced",
   "activity.run_modal_detection_line": "{streams} streams monitored, {detections} detections, {new} new signals, {updated} updated",
+  "activity.run_modal_autoclosed_line": "{closed} clusters auto-closed",
   "activity.run_modal_error": "Why this run failed",
   "activity.run_modal_provenance": "Ran on {host} as {account} · EpiSODIC {version} · configuration {hash}",
 

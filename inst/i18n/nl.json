@@ -311,6 +311,7 @@
   "activity.run_modal_no_load": "Deze run heeft geen aantallen vastgelegd: hij stopte voordat er data was gelezen.",
   "activity.run_modal_detection": "Wat de detectie heeft opgeleverd",
   "activity.run_modal_detection_line": "{streams} streams gemonitord, {detections} detecties, {new} nieuwe signalen, {updated} bijgewerkt",
+  "activity.run_modal_autoclosed_line": "{closed} clusters automatisch gesloten",
   "activity.run_modal_error": "Waarom deze run is mislukt",
   "activity.run_modal_provenance": "Uitgevoerd op {host} als {account} · EpiSODIC {version} · configuratie {hash}",
 

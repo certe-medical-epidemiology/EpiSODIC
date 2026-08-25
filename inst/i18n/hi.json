@@ -311,6 +311,7 @@
   "activity.run_modal_no_load": "इस रन ने कोई लोड गणना दर्ज नहीं की: यह डेटा पढ़ने से पहले ही रुक गया।",
   "activity.run_modal_detection": "डिटेक्शन से क्या मिला",
   "activity.run_modal_detection_line": "{streams} स्ट्रीम पर निगरानी, {detections} डिटेक्शन, {new} नए सिग्नल, {updated} अद्यतन",
+  "activity.run_modal_autoclosed_line": "{closed} क्लस्टर स्वतः बंद किए गए",
   "activity.run_modal_error": "यह रन क्यों विफल हुआ",
   "activity.run_modal_provenance": "{host} पर {account} के रूप में चला · EpiSODIC {version} · कॉन्फ़िगरेशन {hash}",
 

@@ -80,9 +80,13 @@ episodic_ui_login_modal <- function(
       class = "episodic-form-actions",
       shiny::tags$button(
         class = "episodic-btn",
-        `data-dismiss` = "modal",
+        type = "button",
+        # Bootstrap 5 (episodic_app_ui()'s bslib::bs_theme(version = 5))
+        # reads `data-bs-dismiss`, not Bootstrap 4's unprefixed
+        # `data-dismiss`.
+        `data-bs-dismiss` = "modal",
         onclick = "Shiny.setInputValue('auth_cancel_login', Math.random(), {priority:'event'})",
-        episodic_tr("misc.dash", lang = lang)
+        episodic_tr("misc.close", lang = lang)
       ),
       shiny::tags$button(
         class = "episodic-btn episodic-btn-primary",

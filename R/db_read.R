@@ -428,6 +428,37 @@ episodic_db_run <- function(con, run_id) {
   if (nrow(res) == 0) NULL else res[1, ]
 }
 
+#' How many clusters a run auto-closed
+#'
+#' `episodic_detection_run` has no `n_signals_closed` column of its own
+#' (adding one would need a schema migration this package does not have -
+#' `episodic_db_create()` only ever builds a fresh database), so this is
+#' answered by counting `episodic_cluster_state` rows a system trigger
+#' wrote during the run's own time window instead of a stored count.
+#' `entered_at` is `episodic_now()`, called strictly between the run's own
+#' `started_at` and `finished_at`, so the window is exact for any run that
+#' finished (an in-progress run has `finished_at = NA`, in which case
+#' every system closure since `started_at` counts).
+#' @param con A [DBI::DBIConnection-class].
+#' @param run One row from `episodic_db_run()`/`episodic_db_runs()`.
+#' @return A single integer.
+#' @keywords internal
+#' @noRd
+episodic_db_run_autoclosed_count <- function(con, run) {
+  until <- if (is.null(run$finished_at) || is.na(run$finished_at)) {
+    episodic_now()
+  } else {
+    run$finished_at
+  }
+  DBI::dbGetQuery(
+    con,
+    "SELECT COUNT(*) n FROM episodic_cluster_state
+     WHERE `trigger` = 'system' AND state = 'closed'
+       AND entered_at >= ? AND entered_at <= ?",
+    params = list(run$started_at, until)
+  )$n[1]
+}
+
 #' @param status If given, only the latest run with one of these
 #'   statuses. Pass `episodic_run_statuses_complete` for "the latest run
 #'   that produced usable results", which is what almost every caller

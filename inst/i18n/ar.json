@@ -311,6 +311,7 @@
   "activity.run_modal_no_load": "لم تسجّل هذه الدورة أي أعداد تحميل: توقفت قبل قراءة أي بيانات.",
   "activity.run_modal_detection": "ما أنتجه الكشف",
   "activity.run_modal_detection_line": "تمت مراقبة {streams} من التدفقات، و{detections} من الاكتشافات، و{new} إشارات جديدة، و{updated} محدَّثة",
+  "activity.run_modal_autoclosed_line": "تم إغلاق {closed} من التجمعات تلقائيًا",
   "activity.run_modal_error": "سبب فشل هذه الدورة",
   "activity.run_modal_provenance": "نُفِّذت على {host} باسم {account} · EpiSODIC {version} · التهيئة {hash}",
 

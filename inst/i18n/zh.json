@@ -311,6 +311,7 @@
   "activity.run_modal_no_load": "本次运行没有记录任何载入计数：它在读取数据前就已停止。",
   "activity.run_modal_detection": "检测产生的结果",
   "activity.run_modal_detection_line": "监测 {streams} 个数据流，{detections} 次检测，{new} 个新信号，{updated} 个已更新",
+  "activity.run_modal_autoclosed_line": "自动关闭 {closed} 个集群",
   "activity.run_modal_error": "本次运行失败的原因",
   "activity.run_modal_provenance": "在 {host} 上以 {account} 运行 · EpiSODIC {version} · 配置 {hash}",
 

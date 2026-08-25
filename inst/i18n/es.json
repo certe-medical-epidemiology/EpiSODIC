@@ -311,6 +311,7 @@
   "activity.run_modal_no_load": "Esta ejecución no registró recuentos: se detuvo antes de leer datos.",
   "activity.run_modal_detection": "Qué produjo la detección",
   "activity.run_modal_detection_line": "{streams} flujos monitorizados, {detections} detecciones, {new} señales nuevas, {updated} actualizadas",
+  "activity.run_modal_autoclosed_line": "{closed} clústeres cerrados automáticamente",
   "activity.run_modal_error": "Por qué falló esta ejecución",
   "activity.run_modal_provenance": "Ejecutada en {host} como {account} · EpiSODIC {version} · configuración {hash}",
 

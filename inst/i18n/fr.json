@@ -311,6 +311,7 @@
   "activity.run_modal_no_load": "Cette exécution n'a enregistré aucun décompte : elle s'est arrêtée avant de lire des données.",
   "activity.run_modal_detection": "Ce que la détection a produit",
   "activity.run_modal_detection_line": "{streams} flux surveillés, {detections} détections, {new} nouveaux signaux, {updated} mis à jour",
+  "activity.run_modal_autoclosed_line": "{closed} clusters fermés automatiquement",
   "activity.run_modal_error": "Pourquoi cette exécution a échoué",
   "activity.run_modal_provenance": "Exécutée sur {host} en tant que {account} · EpiSODIC {version} · configuration {hash}",
 

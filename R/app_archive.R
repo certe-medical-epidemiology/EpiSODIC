@@ -194,12 +194,16 @@ episodic_ui_activity_screen <- function(
 #' looking at an empty dashboard needs to read it, and may well not be the
 #' person who scheduled the run.
 #'
+#' @param con A [DBI::DBIConnection-class].
 #' @param run One row of `episodic_detection_run`.
 #' @param lang Session language.
 #' @return A `shiny::modalDialog`.
 #' @keywords internal
 #' @noRd
-episodic_ui_run_modal <- function(run, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_ui_run_modal <- function(
+    con,
+    run,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   heading <- function(key) {
     shiny::tags$div(
       class = "episodic-run-modal-heading",
@@ -226,7 +230,12 @@ episodic_ui_run_modal <- function(run, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     size = "l",
     footer = shiny::tags$button(
       class = "episodic-btn",
-      `data-dismiss` = "modal",
+      type = "button",
+      # Bootstrap 5 (episodic_app_ui()'s bslib::bs_theme(version = 5)) reads
+      # `data-bs-dismiss`, not Bootstrap 4's unprefixed `data-dismiss` - the
+      # old attribute name silently did nothing, leaving only the modal's
+      # own backdrop click to close it.
+      `data-bs-dismiss` = "modal",
       episodic_tr("misc.close", lang = lang)
     ),
     shiny::tags$div(
@@ -257,6 +266,11 @@ episodic_ui_run_modal <- function(run, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
           detections = run$n_detections %||% 0,
           new = run$n_signals_new %||% 0,
           updated = run$n_signals_updated %||% 0,
+          lang = lang
+        )),
+        shiny::tags$p(episodic_tr(
+          "activity.run_modal_autoclosed_line",
+          closed = episodic_db_run_autoclosed_count(con, run),
           lang = lang
         ))
       )

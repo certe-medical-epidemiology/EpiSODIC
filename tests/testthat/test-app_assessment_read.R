@@ -274,7 +274,9 @@ test_that("episodic_ui_run_modal() shows a failed run's whole message, and how t
     ),
     stringsAsFactors = FALSE
   )
-  rendered <- as.character(episodic_ui_run_modal(run, lang = "en"))
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  rendered <- as.character(episodic_ui_run_modal(con, run, lang = "en"))
 
   expect_true(grepl("300 of 300 rows", rendered, fixed = TRUE))
   expect_true(grepl("episodic_check_cases()", rendered, fixed = TRUE))
@@ -283,6 +285,46 @@ test_that("episodic_ui_run_modal() shows a failed run's whole message, and how t
   # a run that never loaded anything says so, rather than showing zeroes
   expect_true(grepl("stopped before it read any data", rendered, fixed = TRUE))
   expect_false(grepl("[[", rendered, fixed = TRUE))
+})
+
+test_that("episodic_db_run_autoclosed_count() counts only system closures inside the run's own window", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  run <- episodic_db_run(env$con, env$run_id)
+
+  # a system closure recorded before the run started - out of window
+  episodic_db_cluster_state_insert(
+    env$con,
+    cluster_id = env$cluster_id,
+    state = "closed",
+    trigger = "system"
+  )
+  DBI::dbExecute(
+    env$con,
+    "UPDATE episodic_cluster_state SET entered_at = '2000-01-01T00:00:00Z' WHERE cluster_id = ?",
+    params = list(env$cluster_id)
+  )
+  expect_equal(episodic_db_run_autoclosed_count(env$con, run), 0)
+
+  # a person closing a cluster - not a system trigger, must not be counted
+  episodic_db_cluster_state_insert(
+    env$con,
+    cluster_id = env$cluster_id,
+    state = "closed",
+    trigger = "closure",
+    user_id = NA
+  )
+  expect_equal(episodic_db_run_autoclosed_count(env$con, run), 0)
+
+  # a genuine system closure recorded during the run's own window
+  DBI::dbExecute(
+    env$con,
+    "INSERT INTO episodic_cluster_state (cluster_id, state, entered_at, `trigger`)
+     VALUES (?, 'closed', ?, 'system')",
+    params = list(env$cluster_id, run$started_at)
+  )
+  expect_equal(episodic_db_run_autoclosed_count(env$con, run), 1)
 })
 
 test_that("episodic_ui_run_modal() shows what a successful run loaded, and no failure section", {
@@ -306,10 +348,13 @@ test_that("episodic_ui_run_modal() shows what a successful run loaded, and no fa
     error_text = NA_character_,
     stringsAsFactors = FALSE
   )
-  rendered <- as.character(episodic_ui_run_modal(run, lang = "en"))
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  rendered <- as.character(episodic_ui_run_modal(con, run, lang = "en"))
 
   expect_true(grepl("120", rendered, fixed = TRUE))
   expect_true(grepl("42", rendered, fixed = TRUE))
+  expect_true(grepl("0 clusters auto-closed", rendered, fixed = TRUE))
   expect_false(grepl("Why this run failed", rendered, fixed = TRUE))
   expect_false(grepl("episodic_check_cases()", rendered, fixed = TRUE))
   expect_false(grepl("[[", rendered, fixed = TRUE))

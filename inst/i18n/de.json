@@ -311,6 +311,7 @@
   "activity.run_modal_no_load": "Dieser Lauf hat keine Zahlen erfasst: Er brach ab, bevor Daten gelesen wurden.",
   "activity.run_modal_detection": "Was die Detektion ergeben hat",
   "activity.run_modal_detection_line": "{streams} Streams überwacht, {detections} Detektionen, {new} neue Signale, {updated} aktualisiert",
+  "activity.run_modal_autoclosed_line": "{closed} Cluster automatisch geschlossen",
   "activity.run_modal_error": "Warum dieser Lauf fehlgeschlagen ist",
   "activity.run_modal_provenance": "Ausgeführt auf {host} als {account} · EpiSODIC {version} · Konfiguration {hash}",
 
