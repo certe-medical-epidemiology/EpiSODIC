@@ -553,28 +553,34 @@ episodic_run_cron_body <- function(
       }
     }
 
-    if (nrow(stream_detections) == 0) {
-      next
+    # A stream with nothing detected this run still has to go through
+    # episodic_reconcile_stream(): that is where a stream's open clusters
+    # age (runs_since_detected) and where an unassessed cluster gone stale
+    # (stale_open_days) or long undetected (close_after_runs) actually
+    # gets auto-closed. Skipping the call entirely for a quiet stream - as
+    # this used to - left every cluster on such a stream ineligible for
+    # either kind of auto-close for as long as the stream stayed quiet,
+    # which is exactly the case a truly dormant stream is in forever.
+    if (nrow(stream_detections) > 0) {
+      detection_ids <- integer(nrow(stream_detections))
+      for (j in seq_len(nrow(stream_detections))) {
+        d <- stream_detections[j, ]
+        detection_ids[j] <- episodic_db_detection_insert(
+          con,
+          run_id = run_id,
+          stream_id = stream$stream_id,
+          detector = d$detector,
+          first_day = d$first_day,
+          last_day = d$last_day,
+          n_cases = d$n_cases,
+          expected = d$expected,
+          upperbound = d$upperbound,
+          params_json = as.character(d$params)
+        )
+      }
+      stream_detections$detection_id <- detection_ids
+      n_detections_total <- n_detections_total + nrow(stream_detections)
     }
-
-    detection_ids <- integer(nrow(stream_detections))
-    for (j in seq_len(nrow(stream_detections))) {
-      d <- stream_detections[j, ]
-      detection_ids[j] <- episodic_db_detection_insert(
-        con,
-        run_id = run_id,
-        stream_id = stream$stream_id,
-        detector = d$detector,
-        first_day = d$first_day,
-        last_day = d$last_day,
-        n_cases = d$n_cases,
-        expected = d$expected,
-        upperbound = d$upperbound,
-        params_json = as.character(d$params)
-      )
-    }
-    stream_detections$detection_id <- detection_ids
-    n_detections_total <- n_detections_total + nrow(stream_detections)
 
     pc <- pathogen_config[pathogen_config$pathogen == stream$pathogen, ]
     case_free_days <- if (nrow(pc) > 0) {
