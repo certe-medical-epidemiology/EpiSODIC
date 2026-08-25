@@ -52,7 +52,6 @@ body {
   letter-spacing: 0.4px;
   font-size: 15px;
   cursor: help;
-  border-bottom: 1px dotted var(--episodic-faint);
   padding-bottom: 1px;
 }
 .episodic-header .episodic-brand .episodic-brand-accent {
@@ -517,7 +516,7 @@ dl.episodic-settings dd { margin: 0; }
   margin-bottom: 28px;
 }
 .episodic-info-about img {
-  width: 130px;
+  height: 100%;
   flex: none;
 }
 .episodic-info-about-name {

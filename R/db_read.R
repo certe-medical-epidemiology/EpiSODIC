@@ -302,7 +302,7 @@ episodic_db_cluster_states <- function(con, cluster_id) {
 #' per cluster.
 #' @param cluster_ids A vector of `cluster_id`s.
 #' @return A data frame with the same columns as
-#'   [episodic_db_assessment_events()], for all of them, ordered by
+#'   `episodic_db_assessment_events()`, for all of them, ordered by
 #'   `cluster_id`, `created_at`, `event_id`. Empty (but correctly shaped)
 #'   if `cluster_ids` is empty.
 #' @keywords internal
@@ -326,7 +326,7 @@ episodic_db_assessment_events_batch <- function(con, cluster_ids) {
 #' All cluster-state rows for a set of clusters, in one query
 #' @param cluster_ids A vector of `cluster_id`s.
 #' @return A data frame with the same columns as
-#'   [episodic_db_cluster_states()], for all of them, ordered by
+#'   `episodic_db_cluster_states()`, for all of them, ordered by
 #'   `cluster_id`, `entered_at`, `state_id`. Empty (but correctly shaped)
 #'   if `cluster_ids` is empty.
 #' @keywords internal
