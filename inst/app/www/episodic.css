@@ -515,6 +515,48 @@ dl.episodic-settings dd { margin: 0; }
   padding: 18px 24px 40px;
 }
 
+/* Info screen's about block: the logo beside the package's own name,
+   version, description and links, rather than stacked above the page's
+   own "Info" heading. */
+.episodic-info-about {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+  margin-bottom: 28px;
+}
+.episodic-info-about img {
+  width: 130px;
+  flex: none;
+}
+.episodic-info-about-name {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--episodic-ink);
+}
+.episodic-info-about-version {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--episodic-muted);
+}
+.episodic-info-about-desc {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--episodic-ink);
+  max-width: 640px;
+}
+.episodic-info-about-links {
+  margin-top: 10px;
+  display: flex;
+  gap: 18px;
+  font-size: 12.5px;
+  color: var(--episodic-muted);
+}
+.episodic-info-about-links a {
+  color: var(--episodic-primary);
+}
+
 /* M3: auth, classification form, archive, activity */
 .episodic-auth-link {
   font-size: 11.5px;

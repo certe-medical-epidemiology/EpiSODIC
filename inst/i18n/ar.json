@@ -334,6 +334,8 @@
 
   "info.title": "معلومات",
   "info.intro": "خلفية عن خوارزميات الكشف في EpiSODIC، وحالات التجمعات، ونموذج الوصول.",
+  "info.about.website": "الموقع الإلكتروني",
+  "info.about.license": "الترخيص: {license}",
   "info.algorithms.title": "خوارزميات الكشف",
   "info.algorithms.note": "يمكن أن يُكتشف التجمع بأكثر من خوارزمية في وقت واحد؛ انظر \"اكتُشف بواسطة\" في الملف.",
   "info.algorithms.col.name": "الاسم",

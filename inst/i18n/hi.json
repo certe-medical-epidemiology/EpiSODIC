@@ -334,6 +334,8 @@
 
   "info.title": "जानकारी",
   "info.intro": "EpiSODIC के संसूचन एल्गोरिदम, क्लस्टर स्थितियों और पहुँच मॉडल की पृष्ठभूमि।",
+  "info.about.website": "वेबसाइट",
+  "info.about.license": "लाइसेंस: {license}",
   "info.algorithms.title": "संसूचन एल्गोरिदम",
   "info.algorithms.note": "किसी क्लस्टर को एक से अधिक एल्गोरिदम द्वारा एक साथ संसूचित किया जा सकता है; डोज़ियर पर \"द्वारा संसूचित\" देखें।",
   "info.algorithms.col.name": "नाम",

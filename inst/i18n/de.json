@@ -334,6 +334,8 @@
 
   "info.title": "Info",
   "info.intro": "Hintergrund zu den Erkennungsalgorithmen, Clusterstatus und dem Zugriffsmodell von EpiSODIC.",
+  "info.about.website": "Website",
+  "info.about.license": "Lizenz: {license}",
   "info.algorithms.title": "Erkennungsalgorithmen",
   "info.algorithms.note": "Ein Cluster kann von mehr als einem Algorithmus gleichzeitig erkannt werden; siehe „erkannt durch“ im Dossier.",
   "info.algorithms.col.name": "Name",

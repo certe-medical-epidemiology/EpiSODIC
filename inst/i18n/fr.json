@@ -334,6 +334,8 @@
 
   "info.title": "Infos",
   "info.intro": "Contexte des algorithmes de détection d'EpiSODIC, des états des clusters et du modèle d'accès.",
+  "info.about.website": "Site web",
+  "info.about.license": "Licence : {license}",
   "info.algorithms.title": "Algorithmes de détection",
   "info.algorithms.note": "Un cluster peut être détecté par plusieurs algorithmes à la fois ; voir « détecté par » dans le dossier.",
   "info.algorithms.col.name": "Nom",

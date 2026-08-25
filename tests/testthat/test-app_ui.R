@@ -152,6 +152,27 @@ test_that("episodic_ui_info_screen() renders in every shipped language and names
   }
 })
 
+test_that("episodic_app_package_meta() reads only the first DESCRIPTION URL, not the whole comma-separated field", {
+  meta <- episodic_app_package_meta()
+  expect_false(is.null(meta))
+  expect_equal(meta$url, "https://certe-medical-epidemiology.github.io/EpiSODIC")
+  expect_false(grepl(",", meta$url, fixed = TRUE))
+  expect_equal(meta$license, "GPL-2")
+})
+
+test_that("episodic_ui_info_screen() shows the package's own version, description and license, beside the logo", {
+  html <- as.character(episodic_ui_info_screen("en"))
+  meta <- episodic_app_package_meta()
+  expect_false(is.null(meta))
+  expect_true(grepl(paste0("v", meta$version), html, fixed = TRUE))
+  # the description contains "<doi:...>" markup, HTML-escaped on render -
+  # a stable, escaping-safe substring instead of the raw field.
+  expect_true(grepl("automated surveillance system", html, fixed = TRUE))
+  expect_true(grepl(paste0("License: ", meta$license), html, fixed = TRUE))
+  expect_true(grepl(meta$url, html, fixed = TRUE))
+  expect_true(grepl("www/logo.svg", html, fixed = TRUE))
+})
+
 test_that("app widgets render to shiny tags without error, including empty-data edge cases", {
   expect_s3_class(
     episodic_ui_chip("Norovirus", "#4A647D", filled = TRUE),

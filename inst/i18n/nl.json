@@ -334,6 +334,8 @@
 
   "info.title": "Info",
   "info.intro": "Achtergrond bij de detectiealgoritmen, clusterstatussen en het toegangsmodel van EpiSODIC.",
+  "info.about.website": "Website",
+  "info.about.license": "Licentie: {license}",
   "info.algorithms.title": "Detectiealgoritmen",
   "info.algorithms.note": "Een cluster kan door meer dan een algoritme tegelijk zijn gedetecteerd; zie \"gedetecteerd door\" op het dossier.",
   "info.algorithms.col.name": "Naam",

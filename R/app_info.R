@@ -17,6 +17,42 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
+#' The package's own DESCRIPTION metadata, for the Info screen's about block
+#'
+#' Read live rather than hardcoded, so the about block never drifts from
+#' the shipped `DESCRIPTION` the way a copy-pasted string would the next
+#' time the version, description or URL changes there. `Title` is not
+#' included: `episodic_tr("app.full_name")` already carries the same text,
+#' pre-cleaned of `DESCRIPTION`'s line-wrap whitespace and already
+#' translated, so the UI uses that instead of this function's own `Title`.
+#'
+#' @return A list with `version`, `description`, `license` and `url`
+#'   (the first entry of `DESCRIPTION`'s comma-separated `URL` field, or
+#'   `NA` if it has none), or `NULL` if package metadata cannot be read at
+#'   all (not installed and not loaded via a tool that shims it).
+#' @keywords internal
+#' @noRd
+episodic_app_package_meta <- function() {
+  desc <- tryCatch(
+    utils::packageDescription("EpiSODIC"),
+    error = function(e) NULL,
+    warning = function(w) NULL
+  )
+  if (!is.list(desc)) {
+    return(NULL)
+  }
+  urls <- trimws(strsplit(desc$URL %||% "", ",", fixed = TRUE)[[1]])
+  urls <- urls[nzchar(urls)]
+  list(
+    version = as.character(utils::packageVersion("EpiSODIC")),
+    # DESCRIPTION wraps long fields across lines with continuation
+    # indentation; collapsed to single spaces so it reads as one paragraph.
+    description = gsub("\\s+", " ", trimws(desc$Description %||% "")),
+    license = desc$License %||% NA_character_,
+    url = if (length(urls) > 0) urls[1] else NA_character_
+  )
+}
+
 #' The "Info" screen
 #'
 #' Static reference material - what the detection algorithms actually do,
@@ -33,11 +69,53 @@
 #' @keywords internal
 #' @noRd
 episodic_ui_info_screen <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  meta <- episodic_app_package_meta()
   shiny::tags$div(
     class = "episodic-streams-screen",
-    shiny::img(src = "www/logo.svg"),
-    shiny::br(),
-    shiny::br(),
+    shiny::tags$div(
+      class = "episodic-info-about",
+      shiny::img(src = "www/logo.svg"),
+      shiny::tags$div(
+        shiny::tags$div(
+          class = "episodic-info-about-name",
+          episodic_tr("app.title", lang = lang),
+          if (!is.null(meta)) {
+            shiny::tags$span(
+              class = "episodic-info-about-version",
+              paste0("v", meta$version)
+            )
+          }
+        ),
+        if (!is.null(meta) && nzchar(meta$description)) {
+          shiny::tags$p(
+            class = "episodic-info-about-desc",
+            meta$description
+          )
+        },
+        if (!is.null(meta)) {
+          shiny::tags$div(
+            class = "episodic-info-about-links",
+            if (!is.na(meta$url)) {
+              shiny::tags$a(
+                href = meta$url,
+                target = "_blank",
+                rel = "noopener noreferrer",
+                episodic_tr("info.about.website", lang = lang)
+              )
+            },
+            if (!is.na(meta$license)) {
+              shiny::tags$span(
+                episodic_tr(
+                  "info.about.license",
+                  license = meta$license,
+                  lang = lang
+                )
+              )
+            }
+          )
+        }
+      )
+    ),
     shiny::tags$h1(
       style = "font-size:22px;font-weight:600;margin-bottom:4px;",
       episodic_tr("info.title", lang = lang)

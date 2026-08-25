@@ -334,6 +334,8 @@
 
   "info.title": "信息",
   "info.intro": "关于 EpiSODIC 检测算法、聚集事件状态及访问模型的背景说明。",
+  "info.about.website": "网站",
+  "info.about.license": "许可证：{license}",
   "info.algorithms.title": "检测算法",
   "info.algorithms.note": "一个聚集事件可能同时由多个算法检出；详见档案中的“由……检出”。",
   "info.algorithms.col.name": "名称",
