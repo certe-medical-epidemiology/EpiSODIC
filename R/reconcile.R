@@ -40,11 +40,15 @@
 #'      others via `merged_into`; nothing is deleted and no assessment
 #'      history is lost.
 #' 4. Open clusters in the stream with no candidate this run get
-#'    `runs_since_detected + 1`.
-#' 5. Auto-closure: unassessed clusters, or those assessed `artefact`/
-#'    `expected_variation`, close after `close_after_runs` runs undetected;
-#'    an unassessed cluster whose `last_day` is more than `stale_open_days`
-#'    in the past closes the same way regardless of that runs counter.
+#'    `runs_since_detected + 1`; unassessed clusters, or those assessed
+#'    `artefact`/`expected_variation`, close after `close_after_runs` runs
+#'    undetected this way.
+#' 5. Separately, any unassessed open cluster (matched this run or not)
+#'    whose `last_day` is more than `stale_open_days` in the past closes
+#'    the same way - a cluster reconciled from a whole backfilled history
+#'    in one run is "matched" in the very run that creates it, so this has
+#'    to be judged against every live cluster, not only the undetected set
+#'    step 4 looks at.
 #'
 #' This function is idempotent by construction: it is keyed on `stream_key`
 #' and interval overlap rather than on insertion order (section 5.3), so
@@ -80,11 +84,14 @@
 #'   An unassessed cluster (no verdict has ever been recorded for it)
 #'   whose `last_day` is more than this many days before `today` is
 #'   auto-closed with `trigger = "system"` regardless of
-#'   `close_after_runs`/`runs_since_detected` - a stream that keeps
-#'   getting redetected around a case-free interval it never actually
-#'   left would otherwise never trip the ordinary undetected-runs
-#'   counter. It stays "unassessed": this never records a verdict, only
-#'   the same system closure an aged-out cluster gets. `NA` (default)
+#'   `close_after_runs`/`runs_since_detected` and regardless of whether a
+#'   candidate matched it this run - a stream that keeps getting
+#'   redetected around a case-free interval it never actually left would
+#'   otherwise never trip the ordinary undetected-runs counter, and a
+#'   cluster reconciled from a backfilled history in one run is "matched"
+#'   in the very run that creates it. It stays "unassessed": this never
+#'   records a verdict, only the same system closure an aged-out cluster
+#'   gets. `NA` (default)
 #'   disables the check entirely, for callers that predate it.
 #' @param today The date to evaluate `stale_open_days` as of.
 #' @return Invisibly, a list with `n_new`, `n_updated`, `n_merged`.
@@ -347,15 +354,16 @@ episodic_reconcile_stream <- function(
     }
   }
 
-  # step 4 + 5: age out and auto-close clusters with no candidate this run.
+  # step 4: age out and auto-close clusters with no candidate this run.
   # Judged on the clusters this run started with: one it opened itself is
   # matched by definition, and would otherwise be aged on the run that
   # created it.
   open_clusters <- episodic_db_clusters_for_stream(con, stream_id)
-  undetected <- open_clusters[
-    !as.character(open_clusters$cluster_id) %in% matched_cluster_ids &
-      is.na(open_clusters$merged_into),
+  live_clusters <- open_clusters[is.na(open_clusters$merged_into), ]
+  undetected <- live_clusters[
+    !as.character(live_clusters$cluster_id) %in% matched_cluster_ids,
   ]
+  closed_this_run <- character(0)
   for (i in seq_len(nrow(undetected))) {
     cluster_id <- undetected$cluster_id[i]
     episodic_db_cluster_increment_runs_since_detected(con, cluster_id)
@@ -365,23 +373,55 @@ episodic_reconcile_stream <- function(
     eligible_for_autoclose <- is.na(verdict) ||
       verdict %in% c("artefact", "expected_variation")
 
-    days_since_last_case <- as.integer(
-      as.Date(today) - as.Date(undetected$last_day[i])
-    )
-    stale_unassessed <- !is.na(stale_open_days) &&
-      is.na(verdict) &&
-      days_since_last_case > stale_open_days
-
-    if (
-      (runs_since > close_after_runs && eligible_for_autoclose) ||
-        stale_unassessed
-    ) {
+    if (runs_since > close_after_runs && eligible_for_autoclose) {
       episodic_db_cluster_state_insert(
         con,
         cluster_id = cluster_id,
         state = "closed",
         trigger = "system"
       )
+      closed_this_run <- c(closed_this_run, as.character(cluster_id))
+    }
+  }
+
+  # step 5: close an unassessed cluster whose last_day has simply gone
+  # stale, independent of whether a candidate matched it this run. A
+  # cluster reconciled from a whole backfilled history in one run (a
+  # historical import, episodic_demo()'s own synthetic data) is "matched"
+  # in the very run that creates it, so judging staleness only against the
+  # undetected set above would never catch it - last_day age is a
+  # property of the cluster, not of what this run's detections happened
+  # to find.
+  if (!is.na(stale_open_days)) {
+    for (i in seq_len(nrow(live_clusters))) {
+      cluster_id <- live_clusters$cluster_id[i]
+      if (as.character(cluster_id) %in% closed_this_run) {
+        next
+      }
+      verdict <- verdict_fn(cluster_id)
+      if (!is.na(verdict)) {
+        next
+      }
+      # Already closed as of its own latest recorded transition - skip,
+      # rather than inserting an identical "closed" row on every future
+      # run forever (verdict stays NA and last_day stays stale, so
+      # nothing above would otherwise ever stop matching this cluster
+      # again).
+      states <- episodic_db_cluster_states(con, cluster_id)
+      if (nrow(states) > 0 && identical(states$state[nrow(states)], "closed")) {
+        next
+      }
+      days_since_last_case <- as.integer(
+        as.Date(today) - as.Date(live_clusters$last_day[i])
+      )
+      if (days_since_last_case > stale_open_days) {
+        episodic_db_cluster_state_insert(
+          con,
+          cluster_id = cluster_id,
+          state = "closed",
+          trigger = "system"
+        )
+      }
     }
   }
 

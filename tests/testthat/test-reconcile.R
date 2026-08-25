@@ -556,6 +556,87 @@ test_that("an unassessed cluster auto-closes once its last_day is beyond stale_o
   )
 })
 
+test_that("stale_open_days closes a cluster in the very run that creates it, not only ones later found undetected", {
+  # The scenario episodic_demo() and any historical backfill hit: a whole
+  # multi-year history reconciled in one single run, so every cluster it
+  # opens is "matched" by definition in that same run and would never
+  # land in the undetected set at all.
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  run1 <- episodic_db_run_start(env$con, "h", "a")
+  det1 <- reconcile_detect(env, run1, "2022-01-01", "2022-01-03", 3)
+  episodic_reconcile_stream(
+    env$con,
+    env$stream_id,
+    det1,
+    case_free_days = 14,
+    run_id = run1,
+    close_after_runs = 14,
+    priority_score_fn = noop_priority_score,
+    has_assessment_fn = noop_has_assessment,
+    verdict_fn = noop_verdict,
+    stale_open_days = 60,
+    today = as.Date("2026-08-25")
+  )
+
+  cluster_id <- episodic_db_clusters_for_stream(
+    env$con,
+    env$stream_id
+  )$cluster_id[1]
+  states <- episodic_db_cluster_states(env$con, cluster_id)
+  expect_equal(states$state[nrow(states)], "closed")
+  expect_equal(states$trigger[nrow(states)], "system")
+})
+
+test_that("stale_open_days does not insert a duplicate closed row on a later run", {
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  run1 <- episodic_db_run_start(env$con, "h", "a")
+  det1 <- reconcile_detect(env, run1, "2022-01-01", "2022-01-03", 3)
+  episodic_reconcile_stream(
+    env$con,
+    env$stream_id,
+    det1,
+    case_free_days = 14,
+    run_id = run1,
+    close_after_runs = 14,
+    priority_score_fn = noop_priority_score,
+    has_assessment_fn = noop_has_assessment,
+    verdict_fn = noop_verdict,
+    stale_open_days = 60,
+    today = as.Date("2026-08-25")
+  )
+  cluster_id <- episodic_db_clusters_for_stream(
+    env$con,
+    env$stream_id
+  )$cluster_id[1]
+  n_states_after_run1 <- nrow(episodic_db_cluster_states(env$con, cluster_id))
+  expect_equal(n_states_after_run1, 1)
+
+  # a second, unrelated run over the same (now long-closed) stream
+  run2 <- episodic_db_run_start(env$con, "h", "a")
+  det2 <- reconcile_detect(env, run2, "2025-01-01", "2025-01-03", 3)
+  episodic_reconcile_stream(
+    env$con,
+    env$stream_id,
+    det2,
+    case_free_days = 14,
+    run_id = run2,
+    close_after_runs = 14,
+    priority_score_fn = noop_priority_score,
+    has_assessment_fn = noop_has_assessment,
+    verdict_fn = noop_verdict,
+    stale_open_days = 60,
+    today = as.Date("2026-08-25")
+  )
+  expect_equal(
+    nrow(episodic_db_cluster_states(env$con, cluster_id)),
+    n_states_after_run1 # unchanged - not re-closed a second time
+  )
+})
+
 test_that("an unassessed cluster within stale_open_days stays open", {
   env <- reconcile_setup()
   on.exit(DBI::dbDisconnect(env$con))
