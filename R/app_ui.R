@@ -52,11 +52,7 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         shiny::tags$span(
           class = "episodic-brand",
           title = episodic_tr("app.full_name", lang = lang),
-          "EpiSODIC",
-          shiny::tags$span(
-            class = "episodic-brand-version",
-            paste0("v", utils::packageVersion("EpiSODIC"))
-          )
+          "EpiSODIC"
         ),
         # Rendered from the server's own view(), not written once here:
         # the highlight has to follow every way the view can change, and

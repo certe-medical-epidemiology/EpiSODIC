@@ -58,14 +58,6 @@ body {
 .episodic-header .episodic-brand .episodic-brand-accent {
   color: var(--episodic-secondary);
 }
-.episodic-header .episodic-brand .episodic-brand-version {
-  font-weight: 400;
-  font-size: 10px;
-  color: #8FAAB8;
-  letter-spacing: 0.2px;
-  margin-left: 5px;
-  vertical-align: 1px;
-}
 .episodic-nav {
   display: flex;
   gap: 2px;
