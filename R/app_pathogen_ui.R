@@ -204,9 +204,9 @@ episodic_ui_pathogen_controls <- function(
       episodic_tr(
         "pathogen.showing",
         lang = lang,
-        from = format(period$from, "%d-%m-%Y"),
-        to = format(period$to, "%d-%m-%Y"),
-        asof = format(screen$asof, "%d-%m-%Y")
+        from = episodic_format_date(period$from, lang = lang),
+        to = episodic_format_date(period$to, lang = lang),
+        asof = episodic_format_date(screen$asof, lang = lang)
       )
     )
   )
@@ -242,7 +242,7 @@ episodic_ui_pathogen_stats <- function(
         s$peak_n,
         episodic_tr(
           "pathogen.stat.peak_sub",
-          week = format(as.Date(s$peak_week), "%d-%m-%Y"),
+          week = episodic_format_date(s$peak_week, lang = lang),
           lang = lang
         )
       ))
@@ -261,7 +261,7 @@ episodic_ui_pathogen_stats <- function(
         change,
         episodic_tr("pathogen.stat.change_sub", n = s$n_previous, lang = lang),
         colour = if (!is.na(s$change_pct) && s$change_pct > 0) {
-          pal$danger_dark
+          "var(--episodic-danger)"
         } else {
           pal$muted
         }
@@ -748,10 +748,13 @@ episodic_ui_pathogen_config_panel <- function(
 
   episodic_ui_panel(
     episodic_tr("pathogen.panel.config.title", lang = lang),
-    note = episodic_tr(
-      "pathogen.panel.config.note",
-      pathogen = screen$pathogen,
-      lang = lang
+    shiny::tags$p(
+      style = "font-size:12.5px;margin:0 0 12px;",
+      episodic_tr(
+        "pathogen.panel.config.note",
+        pathogen = screen$pathogen,
+        lang = lang
+      )
     ),
     shiny::tags$table(
       class = "episodic-table",

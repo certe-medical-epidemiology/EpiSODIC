@@ -47,7 +47,7 @@ na_dash <- function(x) if (is.na(x)) "-" else x
 
 # `r episodic_ui_italicise_taxon(obj$pathogen)` — `r tr(paste0("level.", obj$level))`
 
-**`r obj$place`** &middot; `r tr("report.cluster")` #`r obj$id` &middot; `r obj$first_day` &ndash; `r obj$last_day`
+**`r obj$place`** &middot; `r tr("report.cluster")` #`r obj$id` &middot; `r EpiSODIC:::episodic_format_date_range(obj$first_day, obj$last_day, lang = lang)`
 
 `r tr("report.rendered_label")`: `r d$rendered_at` &middot; EpiSODIC `r d$package_version`
 

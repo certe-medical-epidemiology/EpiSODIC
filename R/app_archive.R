@@ -131,7 +131,7 @@ episodic_ui_archive_screen <- function(
                 if (is.na(row$closed_at)) {
                   episodic_tr("misc.unknown", lang = lang)
                 } else {
-                  episodic_ui_format_datetime(row$closed_at, fmt = "%d-%m-%Y")
+                  episodic_format_date(row$closed_at, lang = lang)
                 }
               )
             )

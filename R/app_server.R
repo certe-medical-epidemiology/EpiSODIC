@@ -645,8 +645,7 @@ episodic_ui_rail <- function(
             episodic_format_date_range(
               row$first_day,
               row$last_day,
-              lang = lang,
-              full_month = TRUE
+              lang = lang
             )
           ),
           shiny::tags$div(

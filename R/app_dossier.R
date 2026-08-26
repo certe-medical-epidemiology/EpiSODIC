@@ -154,8 +154,8 @@ episodic_ui_dossier_header <- function(
       shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
       shiny::tags$span(episodic_tr(
         "dossier.meta.first_last",
-        first = obj$first_day,
-        last = obj$last_day,
+        first = episodic_format_date(obj$first_day, lang = lang),
+        last = episodic_format_date(obj$last_day, lang = lang),
         lang = lang
       )),
       shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
@@ -337,7 +337,7 @@ episodic_ui_trajectory <- function(
           shiny::tags$div(class = "episodic-trajectory-seg-label", labels[i]),
           shiny::tags$div(
             class = "episodic-trajectory-seg-time",
-            episodic_ui_format_datetime(starts[i], fmt = "%d-%m-%Y")
+            episodic_format_date(starts[i], lang = lang)
           )
         )
       })
@@ -497,7 +497,7 @@ episodic_ui_similar_clusters_panel <- function(
               if (is.na(row$closed_at)) {
                 episodic_tr("misc.unknown", lang = lang)
               } else {
-                episodic_ui_format_datetime(row$closed_at, fmt = "%d-%m-%Y")
+                episodic_format_date(row$closed_at, lang = lang)
               }
             )
           )
@@ -1063,7 +1063,7 @@ episodic_ui_assessment_rail <- function(
           class = "episodic-verloop-empty",
           shiny::HTML(episodic_tr(
             "verloop.not_assessed",
-            first = obj$first_day,
+            first = episodic_format_date(obj$first_day, lang = lang),
             detectors = episodic_ui_code_join(obj$detectors, sep = " en "),
             lang = lang
           ))
@@ -1344,7 +1344,17 @@ episodic_ui_streams_screen <- function(
               episodic_tr("misc.dash", lang = lang)
             } else {
               paste(
-                sprintf("%s \u2013 %s", excluded$first_day, excluded$last_day),
+                vapply(
+                  seq_len(nrow(excluded)),
+                  function(j) {
+                    episodic_format_date_range(
+                      excluded$first_day[j],
+                      excluded$last_day[j],
+                      lang = lang
+                    )
+                  },
+                  character(1)
+                ),
                 collapse = "; "
               )
             }
@@ -1357,8 +1367,8 @@ episodic_ui_streams_screen <- function(
                 lang = lang
               )),
               shiny::tags$td(row$denominator),
-              shiny::tags$td(row$first_seen),
-              shiny::tags$td(row$last_seen),
+              shiny::tags$td(episodic_format_date(row$first_seen, lang = lang)),
+              shiny::tags$td(episodic_format_date(row$last_seen, lang = lang)),
               shiny::tags$td(excluded_text)
             )
           })
