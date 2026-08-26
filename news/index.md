@@ -1,6 +1,6 @@
 # Changelog
 
-## EpiSODIC 0.6.0
+## EpiSODIC 0.6.\*
 
 ### New
 
