@@ -100,7 +100,7 @@ episodic_app_server_factory <- function(
     # and back does not silently reset the pathogen and period an
     # epidemiologist was part-way through reading.
     pathogen_selected <- shiny::reactiveVal(NULL)
-    pathogen_period <- shiny::reactiveVal("season_current")
+    pathogen_period <- shiny::reactiveVal("year_current")
     pathogen_range <- shiny::reactiveVal(list(from = NULL, to = NULL))
     shiny::observeEvent(
       input$pathogen_select,

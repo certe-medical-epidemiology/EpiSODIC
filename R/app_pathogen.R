@@ -73,6 +73,7 @@ episodic_app_pathogen_options <- function(con) {
 #' @keywords internal
 #' @noRd
 episodic_pathogen_period_ids <- c(
+  "year_current",
   "season_current",
   "season_previous",
   "last_12m",
@@ -157,6 +158,15 @@ episodic_app_resolve_period <- function(
   }
 
   resolved <- switch(period,
+    year_current = list(
+      id = period,
+      from = as.Date(sprintf("%d-01-01", as.integer(format(asof, "%Y")))),
+      to = min(
+        as.Date(sprintf("%d-12-31", as.integer(format(asof, "%Y")))),
+        asof
+      ),
+      season = NA_character_
+    ),
     season_current = season_window(episodic_season_containing(asof)),
     season_previous = season_window(episodic_season_shift(
       episodic_season_containing(asof),
@@ -232,7 +242,7 @@ episodic_app_resolve_period <- function(
 episodic_app_pathogen_screen <- function(
     con,
     pathogen = NULL,
-    period = "season_current",
+    period = "year_current",
     from = NULL,
     to = NULL,
     lang = Sys.getenv("EPISODIC_LANGUAGE")) {

@@ -591,9 +591,18 @@ episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       shiny::tagList(
         shiny::tags$div(
           class = "episodic-geo-maps",
-          shiny::renderPlot(map_chart, height = 430),
+          shiny::renderPlot(
+            map_chart,
+            height = episodic_ui_map_render_height(map_chart, width = 400)
+          ),
           if (!is.null(context_chart)) {
-            shiny::renderPlot(context_chart, height = 430)
+            shiny::renderPlot(
+              context_chart,
+              height = episodic_ui_map_render_height(
+                context_chart,
+                width = 400
+              )
+            )
           }
         ),
         # The map is cropped to the cases, so the areas around the edge
