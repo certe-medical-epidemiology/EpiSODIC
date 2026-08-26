@@ -252,7 +252,7 @@ episodic_ui_bars <- function(rows, unit = NULL, colour = NULL) {
         shiny::tags$div(
           class = "episodic-bar-fill",
           style = sprintf(
-            "width:%s%%;background:%s;",
+            "width:%.4f%%;background:%s;",
             100 * rows$n[i] / max_n,
             colour
           )
@@ -293,7 +293,7 @@ episodic_ui_pyramid <- function(demo, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         class = "episodic-pyramid-side-left",
         shiny::tags$div(
           class = "episodic-pyramid-bar-m",
-          style = sprintf("width:%s%%;", 100 * demo$m[i] / max_n)
+          style = sprintf("width:%.4f%%;", 100 * demo$m[i] / max_n)
         )
       ),
       shiny::tags$div(class = "episodic-pyramid-band", demo$band[i]),
@@ -301,7 +301,7 @@ episodic_ui_pyramid <- function(demo, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         class = "episodic-pyramid-side-right",
         shiny::tags$div(
           class = "episodic-pyramid-bar-f",
-          style = sprintf("width:%s%%;", 100 * demo$v[i] / max_n)
+          style = sprintf("width:%.4f%%;", 100 * demo$v[i] / max_n)
         )
       )
     )
