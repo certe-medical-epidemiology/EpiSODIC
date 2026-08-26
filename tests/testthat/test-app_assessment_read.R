@@ -97,9 +97,39 @@ test_that("episodic_app_archive() lists only closed clusters, most recent first,
   expect_equal(nrow(archive), 1)
   expect_equal(archive$pathogen[1], "Norovirus")
   expect_false(is.na(archive$closed_at[1]))
+  expect_false(is.na(archive$first_day[1]))
+  expect_false(is.na(archive$last_day[1]))
+  expect_equal(
+    archive$duration_days[1],
+    as.integer(as.Date(archive$last_day[1]) - as.Date(archive$first_day[1])) + 1L
+  )
 
   expect_equal(nrow(episodic_app_archive(env$con, query = "noro")), 1)
   expect_equal(nrow(episodic_app_archive(env$con, query = "influenza")), 0)
+
+  # app_read_setup()'s cluster is ward-level.
+  expect_equal(
+    nrow(episodic_app_archive(env$con, level = "pathogen_ward")),
+    1
+  )
+  expect_equal(
+    nrow(episodic_app_archive(env$con, level = "pathogen_region")),
+    0
+  )
+  expect_equal(
+    nrow(episodic_app_archive(
+      env$con,
+      level = c("pathogen_province", "pathogen_region")
+    )),
+    0
+  )
+  expect_equal(
+    nrow(episodic_app_archive(
+      env$con,
+      level = c("pathogen_ward", "pathogen_region")
+    )),
+    1
+  )
 })
 
 test_that("episodic_app_activity_log() surfaces assessments, closures, mutes, logins and runs, most recent first", {

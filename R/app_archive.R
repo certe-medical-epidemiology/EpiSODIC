@@ -22,16 +22,35 @@
 # exactly as useful a precedent for a signed-out visitor as it is for a
 # signed-in epidemiologist.
 
+#' The five stream levels, ward to region, in lattice order
+#' @keywords internal
+#' @noRd
+episodic_archive_levels <- c(
+  "pathogen_ward",
+  "pathogen_institution",
+  "pathogen_area",
+  "pathogen_province",
+  "pathogen_region"
+)
+
 #' The Archive screen
 #'
 #' @param archive A data frame from `episodic_app_archive()`.
+#' @param selected_levels The levels currently filtered to (a subset of
+#'   `episodic_archive_levels`), or `character(0)` for every level -
+#'   just for drawing the filter chips in their current state; the
+#'   filtering itself already happened in `episodic_app_archive()`.
 #' @param lang Session language.
 #' @return A `shiny::tags` element.
 #' @keywords internal
 #' @noRd
 episodic_ui_archive_screen <- function(
     archive,
+    selected_levels = character(0),
     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  level_options <- lapply(episodic_archive_levels, function(lvl) {
+    list(value = lvl, label = episodic_app_level_label(lvl, lang = lang))
+  })
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(
@@ -49,6 +68,20 @@ episodic_ui_archive_screen <- function(
       placeholder = episodic_tr("archive.search_placeholder", lang = lang),
       oninput = "Shiny.setInputValue('archive_search', this.value, {priority: 'event'})"
     ),
+    shiny::tags$div(
+      class = "episodic-form-group",
+      style = "margin-top:10px;",
+      shiny::tags$label(
+        class = "episodic-form-label",
+        episodic_tr("archive.filter_label", lang = lang)
+      ),
+      episodic_ui_multi_picker(
+        "archive_level_filter",
+        level_options,
+        selected = selected_levels,
+        all_label = episodic_tr("archive.filter_all", lang = lang)
+      )
+    ),
     if (nrow(archive) == 0) {
       shiny::tags$p(
         class = "episodic-panel-empty",
@@ -62,6 +95,8 @@ episodic_ui_archive_screen <- function(
           shiny::tags$th(episodic_tr("archive.col.pathogen", lang = lang)),
           shiny::tags$th(episodic_tr("archive.col.level", lang = lang)),
           shiny::tags$th(episodic_tr("archive.col.place", lang = lang)),
+          shiny::tags$th(episodic_tr("archive.col.period", lang = lang)),
+          shiny::tags$th(episodic_tr("archive.col.duration", lang = lang)),
           shiny::tags$th(episodic_tr("archive.col.cases", lang = lang)),
           shiny::tags$th(episodic_tr("archive.col.priority", lang = lang)),
           shiny::tags$th(episodic_tr("archive.col.closed_at", lang = lang))
@@ -80,13 +115,23 @@ episodic_ui_archive_screen <- function(
               ))),
               shiny::tags$td(row$level_label),
               shiny::tags$td(row$place),
+              shiny::tags$td(episodic_format_date_range(
+                row$first_day,
+                row$last_day,
+                lang = lang
+              )),
+              shiny::tags$td(episodic_count_phrase(
+                row$duration_days,
+                episodic_tr("unit.day", lang = lang),
+                episodic_tr("unit.days", lang = lang)
+              )),
               shiny::tags$td(row$n_cases),
               shiny::tags$td(round(row$priority_score, 0)),
               shiny::tags$td(
                 if (is.na(row$closed_at)) {
                   episodic_tr("misc.unknown", lang = lang)
                 } else {
-                  episodic_ui_format_datetime(row$closed_at, fmt = "%d-%m-%Y")
+                  episodic_format_date(row$closed_at, lang = lang)
                 }
               )
             )

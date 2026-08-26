@@ -107,7 +107,12 @@ episodic_report_render <- function(
   } else {
     NULL
   }
-  timeline <- episodic_app_assessment_timeline(con, cluster_id, lang = lang)
+  timeline <- episodic_app_assessment_timeline(
+    con,
+    cluster_id,
+    lang = lang,
+    level = obj$level
+  )
   similar <- episodic_app_similar_clusters(con, cluster_id, lang = lang)
   case_ids <- episodic_db_cluster_cases(con, cluster_id)$case_id
 

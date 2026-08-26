@@ -41,7 +41,12 @@ episodic_ui_dossier <- function(
     current_user = NULL) {
   obj <- episodic_cluster_object(con, cluster_id, lang = lang)
   state <- episodic_app_derive_state_for_cluster(con, cluster_id)
-  timeline <- episodic_app_assessment_timeline(con, cluster_id, lang = lang)
+  timeline <- episodic_app_assessment_timeline(
+    con,
+    cluster_id,
+    lang = lang,
+    level = obj$level
+  )
   linked <- episodic_db_clusters_linked_to(con, cluster_id)
   pal <- episodic_palette()
 
@@ -149,8 +154,8 @@ episodic_ui_dossier_header <- function(
       shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
       shiny::tags$span(episodic_tr(
         "dossier.meta.first_last",
-        first = obj$first_day,
-        last = obj$last_day,
+        first = episodic_format_date(obj$first_day, lang = lang),
+        last = episodic_format_date(obj$last_day, lang = lang),
         lang = lang
       )),
       shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
@@ -185,7 +190,7 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         expected = expected_label,
         lang = lang
       ),
-      colour = pal$danger_dark
+      # colour = pal$danger_dark
     )
   )
   if (!is.null(obj$ratio) && !is.na(obj$ratio)) {
@@ -254,7 +259,8 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
           "dossier.stat.case_free_sub",
           need = obj$case_free$need,
           lang = lang
-        )
+        ),
+        colour = if (obj$case_free$need < obj$case_free$since) pal$success else pal$danger
       ))
     )
   }
@@ -332,7 +338,7 @@ episodic_ui_trajectory <- function(
           shiny::tags$div(class = "episodic-trajectory-seg-label", labels[i]),
           shiny::tags$div(
             class = "episodic-trajectory-seg-time",
-            episodic_ui_format_datetime(starts[i], fmt = "%d-%m-%Y")
+            episodic_format_date(starts[i], lang = lang)
           )
         )
       })
@@ -492,7 +498,7 @@ episodic_ui_similar_clusters_panel <- function(
               if (is.na(row$closed_at)) {
                 episodic_tr("misc.unknown", lang = lang)
               } else {
-                episodic_ui_format_datetime(row$closed_at, fmt = "%d-%m-%Y")
+                episodic_format_date(row$closed_at, lang = lang)
               }
             )
           )
@@ -591,9 +597,18 @@ episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       shiny::tagList(
         shiny::tags$div(
           class = "episodic-geo-maps",
-          shiny::renderPlot(map_chart, height = 430),
+          shiny::renderPlot(
+            map_chart,
+            height = episodic_ui_map_render_height(map_chart, width = 400)
+          ),
           if (!is.null(context_chart)) {
-            shiny::renderPlot(context_chart, height = 430)
+            shiny::renderPlot(
+              context_chart,
+              height = episodic_ui_map_render_height(
+                context_chart,
+                width = 400
+              )
+            )
           }
         ),
         # The map is cropped to the cases, so the areas around the edge
@@ -1029,7 +1044,12 @@ episodic_ui_assessment_rail <- function(
     lang = Sys.getenv("EPISODIC_LANGUAGE"),
     current_user = NULL) {
   obj <- episodic_cluster_object(con, cluster_id, lang = lang)
-  timeline <- episodic_app_assessment_timeline(con, cluster_id, lang = lang)
+  timeline <- episodic_app_assessment_timeline(
+    con,
+    cluster_id,
+    lang = lang,
+    level = obj$level
+  )
 
   shiny::tags$div(
     class = "episodic-assessment-rail",
@@ -1044,7 +1064,7 @@ episodic_ui_assessment_rail <- function(
           class = "episodic-verloop-empty",
           shiny::HTML(episodic_tr(
             "verloop.not_assessed",
-            first = obj$first_day,
+            first = episodic_format_date(obj$first_day, lang = lang),
             detectors = episodic_ui_code_join(obj$detectors, sep = " en "),
             lang = lang
           ))
@@ -1125,7 +1145,7 @@ episodic_ui_assessment_form <- function(
     lapply(verdicts, function(v) {
       list(
         value = v,
-        label = episodic_tr(paste0("verdict.", v), lang = lang),
+        label = episodic_verdict_label(v, level = obj$level, lang = lang),
         hint = episodic_tr(paste0("verdict.", v, ".hint"), lang = lang),
         colour = episodic_ui_verdict_colour(v)
       )
@@ -1325,7 +1345,17 @@ episodic_ui_streams_screen <- function(
               episodic_tr("misc.dash", lang = lang)
             } else {
               paste(
-                sprintf("%s \u2013 %s", excluded$first_day, excluded$last_day),
+                vapply(
+                  seq_len(nrow(excluded)),
+                  function(j) {
+                    episodic_format_date_range(
+                      excluded$first_day[j],
+                      excluded$last_day[j],
+                      lang = lang
+                    )
+                  },
+                  character(1)
+                ),
                 collapse = "; "
               )
             }
@@ -1338,8 +1368,8 @@ episodic_ui_streams_screen <- function(
                 lang = lang
               )),
               shiny::tags$td(row$denominator),
-              shiny::tags$td(row$first_seen),
-              shiny::tags$td(row$last_seen),
+              shiny::tags$td(episodic_format_date(row$first_seen, lang = lang)),
+              shiny::tags$td(episodic_format_date(row$last_seen, lang = lang)),
               shiny::tags$td(excluded_text)
             )
           })

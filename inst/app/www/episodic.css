@@ -347,6 +347,18 @@ body {
 .episodic-geo-maps > div {
   flex: 1 1 300px;
   min-width: 0;
+  max-width: 500px;
+}
+/* A single map (the Pathogen screen's geo panel) is capped and centred
+   rather than stretched full-width: shiny::renderPlot() draws a fixed
+   pixel box and coord_sf() keeps the map itself true to scale, so a box
+   much wider than the map's own aspect ratio just means blank canvas
+   padding the map on both sides - capping the box close to the map's
+   rendered width (see episodic_ui_map_render_height()) is what actually
+   removes that whitespace, rather than pushing it out to the panel edge. */
+.episodic-geo-single {
+  max-width: 640px;
+  margin: 0 auto;
 }
 .episodic-panel-empty {
   font-size: 12.5px;
@@ -520,19 +532,19 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-info-about-name {
   font-size: 26px;
   font-weight: 700;
-  color: var(--episodic-ink);
+  color: var(--episodic-primary-dark);
 }
 .episodic-info-about-version {
   margin-left: 8px;
   font-size: 13px;
   font-weight: 400;
-  color: var(--episodic-muted);
+  color: var(--episodic-primary-dark);
 }
 .episodic-info-about-desc {
   margin-top: 8px;
   font-size: 14px;
   line-height: 1.5;
-  color: var(--episodic-ink);
+  color: var(--episodic-primary-dark);
   max-width: 640px;
 }
 .episodic-info-about-links {

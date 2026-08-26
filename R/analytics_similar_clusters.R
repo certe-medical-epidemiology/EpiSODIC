@@ -165,15 +165,16 @@ episodic_app_similar_clusters <- function(
     character(1)
   )
   clusters$verdict_label <- vapply(
-    clusters$cluster_id,
-    function(id) {
-      events <- episodic_db_assessment_events(con, id)
+    seq_len(nrow(clusters)),
+    function(i) {
+      events <- episodic_db_assessment_events(con, clusters$cluster_id[i])
       classified <- events[!is.na(events$verdict), ]
       if (nrow(classified) == 0) {
         return(NA_character_)
       }
-      episodic_tr(
-        paste0("verdict.", classified$verdict[nrow(classified)]),
+      episodic_verdict_label(
+        classified$verdict[nrow(classified)],
+        level = clusters$level[i],
         lang = lang
       )
     },

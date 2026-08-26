@@ -612,7 +612,7 @@ episodic_synthetic_outbreak_point_source <- function(
     sample_date = case_dates,
     pathogen = "Norovirus",
     institution = hospital,
-    ward = "Geriatrie",
+    ward = "Pulmonology",
     pc = sample(pc_pool, n_cases, replace = TRUE),
     sex = sample(c("M", "F"), n_cases, replace = TRUE),
     age = pmin(pmax(round(stats::rnorm(n_cases, mean = 78, sd = 8)), 60), 100)

@@ -303,10 +303,14 @@ episodic_performance_classification_distribution <- function(
     n = as.integer(tab),
     stringsAsFactors = FALSE
   )
+  # No `level`: this counts verdicts across every cluster system-wide,
+  # a mix of every level, so there is no single level to word the label
+  # for - kept as the general "epidemic" wording rather than guessing.
   dist$verdict_label <- vapply(
     dist$verdict,
-    function(v) episodic_tr(paste0("verdict.", v), lang = lang),
-    character(1)
+    episodic_verdict_label,
+    character(1),
+    lang = lang
   )
   dist[order(-dist$n), c("verdict", "verdict_label", "n")]
 }

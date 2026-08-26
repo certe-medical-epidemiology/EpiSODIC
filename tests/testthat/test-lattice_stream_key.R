@@ -50,7 +50,7 @@ test_that("episodic_stream_key() differs when ward differs (item 20 fix)", {
     "pathogen_ward",
     "Test pathogen",
     institution_id = 3,
-    ward = "Geriatrie"
+    ward = "Pulmonology"
   )
   expect_false(identical(k1, k2))
 })

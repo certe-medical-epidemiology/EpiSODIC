@@ -705,6 +705,47 @@ test_that("the archive lists cluster ids and links each row through to its dossi
       fixed = TRUE
     )
   )
+  # dates, duration and case count, per the row's own cluster
+  expect_true(grepl(
+    episodic_tr("archive.col.period", lang = "en"),
+    html,
+    fixed = TRUE
+  ))
+  expect_true(grepl(
+    episodic_tr("archive.col.duration", lang = "en"),
+    html,
+    fixed = TRUE
+  ))
+  # the level filter chips, one per lattice level plus "all"
+  expect_true(grepl("archive_level_filter", html, fixed = TRUE))
+  expect_true(grepl(
+    episodic_tr("archive.filter_all", lang = "en"),
+    html,
+    fixed = TRUE
+  ))
+  expect_true(grepl(
+    episodic_app_level_label("pathogen_region", lang = "en"),
+    html,
+    fixed = TRUE
+  ))
+
+  # selecting a level narrows what episodic_app_archive() itself returns
+  expect_equal(
+    nrow(episodic_app_archive(
+      env$con,
+      level = "pathogen_region",
+      lang = "en"
+    )),
+    0
+  )
+  expect_equal(
+    nrow(episodic_app_archive(
+      env$con,
+      level = "pathogen_ward",
+      lang = "en"
+    )),
+    1
+  )
 })
 
 test_that("episodic_ui_cluster_link_row() is the one place both cluster tables get their row from", {

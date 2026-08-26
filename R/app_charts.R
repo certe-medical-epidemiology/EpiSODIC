@@ -467,7 +467,7 @@ episodic_ui_geo_map_chart <- function(
           )
       }
 
-      p +
+      p <- p +
         ggplot2::coord_sf(
           xlim = frame$xlim,
           ylim = frame$ylim,
@@ -480,9 +480,79 @@ episodic_ui_geo_map_chart <- function(
           axis.ticks = ggplot2::element_blank(),
           panel.grid = ggplot2::element_blank()
         )
+      # So the caller can size its render device to the map's own shape
+      # instead of a fixed box: coord_sf() draws geographic space true to
+      # scale (a degree of longitude is narrower than a degree of
+      # latitude away from the equator), so the frame's raw xlim/ylim
+      # span ratio is not the on-screen aspect ratio unless corrected for
+      # that. Fed into a device box of a different ratio, the true-scale
+      # constraint is still honoured - by shrinking the map to fit and
+      # padding the rest with blank canvas, which is the whitespace this
+      # exists to avoid.
+      attr(p, "episodic_aspect_ratio") <- episodic_geo_aspect_ratio(
+        geo,
+        frame
+      )
+      p
     },
     error = function(e) NULL
   )
+}
+
+#' The on-screen width:height ratio a map's frame renders at
+#'
+#' @param geo The `sf` object the frame's CRS is read from.
+#' @param frame A list with `xlim`, `ylim`, as from `episodic_geo_frame()`.
+#' @return A finite positive number, or `1` if it cannot be determined.
+#' @keywords internal
+#' @noRd
+episodic_geo_aspect_ratio <- function(geo, frame) {
+  dx <- diff(frame$xlim)
+  dy <- diff(frame$ylim)
+  if (!is.finite(dx) || !is.finite(dy) || dx <= 0 || dy <= 0) {
+    return(1)
+  }
+  longlat <- tryCatch(isTRUE(sf::st_is_longlat(geo)), error = function(e) FALSE)
+  correction <- if (isTRUE(longlat)) {
+    cos(mean(frame$ylim) * pi / 180)
+  } else {
+    1
+  }
+  ratio <- (dx * correction) / dy
+  if (!is.finite(ratio) || ratio <= 0) 1 else ratio
+}
+
+#' The render height (in px) that keeps a map's own shape at a given width
+#'
+#' Paired with a CSS `max-width: <width>px` on the element the plot
+#' renders into, so the box `shiny::renderPlot()` fills actually has this
+#' aspect ratio rather than the panel's own (typically much wider) one -
+#' see `episodic_geo_aspect_ratio()`.
+#'
+#' @param map_chart A `ggplot` from `episodic_ui_geo_map_chart()`, or
+#'   `NULL`.
+#' @param width The width (px) the map is capped to.
+#' @param default Height (px) to fall back to when the aspect ratio is
+#'   unavailable (e.g. `map_chart` is `NULL`).
+#' @param min_height,max_height Bounds so an unusually shaped frame (a
+#'   single sliver-thin cluster, say) does not collapse the panel to a
+#'   few pixels or blow it out past the screen.
+#' @return An integer height in px.
+#' @keywords internal
+#' @noRd
+episodic_ui_map_render_height <- function(
+    map_chart,
+    width = 640,
+    default = 430,
+    min_height = 260,
+    max_height = 600) {
+  ratio <- attr(map_chart, "episodic_aspect_ratio")
+  height <- if (is.null(ratio) || !is.finite(ratio) || ratio <= 0) {
+    default
+  } else {
+    width / ratio
+  }
+  as.integer(round(min(max(height, min_height), max_height)))
 }
 
 #' The cropped frame around a choropleth's case-bearing areas

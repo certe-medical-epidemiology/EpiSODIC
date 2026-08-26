@@ -192,18 +192,22 @@ test_that("every key used in code exists in both language files", {
 })
 
 test_that("episodic_format_date_range() collapses shared month/year, in order regardless of input order", {
+  # Only one month name needs to appear (same month, or a single date):
+  # spelled out in full, not abbreviated.
   expect_equal(
     episodic_format_date_range("2025-01-07", "2025-01-15", lang = "nl"),
-    "7-15 jan. 2025"
+    "7-15 januari 2025"
   )
   expect_equal(
     episodic_format_date_range("2025-01-15", "2025-01-07", lang = "nl"),
-    "7-15 jan. 2025"
+    "7-15 januari 2025"
   ) # swapped input, same output
   expect_equal(
     episodic_format_date_range("2025-01-07", "2025-01-07", lang = "nl"),
-    "7 jan. 2025"
+    "7 januari 2025"
   ) # single day, no range dash
+  # Two different month names have to appear side by side: abbreviated,
+  # so the string does not double in length for no gain in clarity.
   expect_equal(
     episodic_format_date_range("2025-11-28", "2025-12-03", lang = "nl"),
     "28 nov. - 3 dec. 2025"
@@ -214,10 +218,22 @@ test_that("episodic_format_date_range() collapses shared month/year, in order re
   )
 })
 
-test_that("episodic_format_date_range() uses English month abbreviations for lang = 'en'", {
+test_that("episodic_format_date_range() uses English month names for lang = 'en'", {
   expect_equal(
     episodic_format_date_range("2025-01-07", "2025-01-15", lang = "en"),
-    "7-15 Jan 2025"
+    "7-15 January 2025"
+  )
+  expect_equal(
+    episodic_format_date_range("2025-01-07", "2025-01-07", lang = "en"),
+    "7 January 2025"
+  )
+  expect_equal(
+    episodic_format_date_range("2025-06-09", "2025-06-20", lang = "en"),
+    "9-20 June 2025"
+  )
+  expect_equal(
+    episodic_format_date_range("2025-11-28", "2025-12-03", lang = "en"),
+    "28 Nov - 3 Dec 2025"
   )
 })
 
