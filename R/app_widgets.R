@@ -227,6 +227,20 @@ episodic_ui_stat <- function(label, value, sub = NULL, colour = NULL) {
   )
 }
 
+#' A CSS `width`/`height` percentage, immune to `options(OutDec = ",")`
+#'
+#' `sprintf("%s", <double>)` coerces through `format()`, which honours
+#' `OutDec` - so under a Dutch session (`OutDec = ","`) it renders
+#' `"95,4545...\%"`, invalid CSS that browsers silently drop, leaving the
+#' element at its default (usually full) width. `%f` conversions go
+#' through C-level float formatting instead and never consult `OutDec`,
+#' so this is a real fix rather than a locale workaround. Only for this
+#' kind of machine-read value: numbers shown to the user should keep
+#' their comma, which is why this isn't applied more broadly.
+#' @keywords internal
+#' @noRd
+episodic_css_pct <- function(x) sprintf("%.4f%%", x)
+
 #' @param rows A data frame with `label` and `n` columns.
 #' @param unit Optional footnote under the bars.
 #' @param colour Bar fill colour.
@@ -252,8 +266,8 @@ episodic_ui_bars <- function(rows, unit = NULL, colour = NULL) {
         shiny::tags$div(
           class = "episodic-bar-fill",
           style = sprintf(
-            "width:%.4f%%;background:%s;",
-            100 * rows$n[i] / max_n,
+            "width:%s;background:%s;",
+            episodic_css_pct(100 * rows$n[i] / max_n),
             colour
           )
         )
@@ -293,7 +307,7 @@ episodic_ui_pyramid <- function(demo, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         class = "episodic-pyramid-side-left",
         shiny::tags$div(
           class = "episodic-pyramid-bar-m",
-          style = sprintf("width:%.4f%%;", 100 * demo$m[i] / max_n)
+          style = sprintf("width:%s;", episodic_css_pct(100 * demo$m[i] / max_n))
         )
       ),
       shiny::tags$div(class = "episodic-pyramid-band", demo$band[i]),
@@ -301,7 +315,7 @@ episodic_ui_pyramid <- function(demo, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         class = "episodic-pyramid-side-right",
         shiny::tags$div(
           class = "episodic-pyramid-bar-f",
-          style = sprintf("width:%.4f%%;", 100 * demo$v[i] / max_n)
+          style = sprintf("width:%s;", episodic_css_pct(100 * demo$v[i] / max_n))
         )
       )
     )
