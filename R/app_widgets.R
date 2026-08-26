@@ -117,6 +117,75 @@ episodic_ui_picker <- function(input_id, options, selected = NULL) {
   )
 }
 
+#' A row of toggle chips for a multi-value filter (e.g. "L4 and L5 only")
+#'
+#' Unlike `episodic_ui_picker()`, more than one chip can be active at
+#' once, and there is no client-side state to keep in sync: each chip's
+#' `onclick` already carries the *next* full selection, computed here at
+#' render time from `selected`, so a click just reports that set to
+#' Shiny and lets the next render (server-driven, same as
+#' `archive_search`) redraw every chip's active state correctly - no
+#' JavaScript has to track which chips are on.
+#'
+#' @param input_id The Shiny input the comma-joined selection is written
+#'   to (`""` when nothing is selected, i.e. no filter).
+#' @param options A list of `list(value, label)`.
+#' @param selected Character vector of currently-selected `value`s.
+#' @param all_label Label for the leading "clear the filter" chip.
+#' @param lang Session language, for the active-chip colour only.
+#' @return A `shiny::tags$div`.
+#' @keywords internal
+#' @noRd
+episodic_ui_multi_picker <- function(
+    input_id,
+    options,
+    selected = character(0),
+    all_label = "All") {
+  pal <- episodic_palette()
+  active_style <- sprintf(
+    "background:%s;border-color:%s;color:#fff;",
+    pal$primary,
+    pal$primary
+  )
+  all_active <- length(selected) == 0
+  chips <- c(
+    list(shiny::tags$button(
+      type = "button",
+      class = if (all_active) {
+        "episodic-picker-btn active"
+      } else {
+        "episodic-picker-btn"
+      },
+      style = if (all_active) active_style else "",
+      onclick = sprintf(
+        "Shiny.setInputValue('%s', '', {priority: 'event'});",
+        input_id
+      ),
+      all_label
+    )),
+    lapply(options, function(opt) {
+      active <- opt$value %in% selected
+      next_selected <- if (active) {
+        setdiff(selected, opt$value)
+      } else {
+        c(selected, opt$value)
+      }
+      shiny::tags$button(
+        type = "button",
+        class = if (active) "episodic-picker-btn active" else "episodic-picker-btn",
+        style = if (active) active_style else "",
+        onclick = sprintf(
+          "Shiny.setInputValue('%s', '%s', {priority: 'event'});",
+          input_id,
+          paste(next_selected, collapse = ",")
+        ),
+        opt$label
+      )
+    })
+  )
+  shiny::tags$div(class = "episodic-picker episodic-picker-inline", chips)
+}
+
 #' @param text Chip text.
 #' @param colour A hex colour.
 #' @param filled If `TRUE`, filled background; otherwise an outline chip.
@@ -441,4 +510,68 @@ episodic_ui_verdict_colour <- function(verdict) {
     confirmed_epidemic = pal$danger,
     pal$muted
   )
+}
+
+#' Stream levels bounded and local enough to call a cluster an "outbreak"
+#' rather than an "epidemic"
+#'
+#' A ward or an institution is a contained setting - the standard field
+#' term for a confirmed cluster there is "outbreak" (a norovirus outbreak
+#' on a ward, a Legionella outbreak tied to one care home), same as this
+#' codebase's own commentary already says informally throughout
+#' (`R/reconcile.R`, `R/run_cron.R`, ...). From area level up, a cluster
+#' is a population-level statistical excess over baseline - what
+#' "epidemic" means, and already the Moving Epidemic Method's own
+#' vocabulary elsewhere on the same screens ("epidemic start/end
+#' threshold"). `pathogen_area` is not the fuzzy middle case it looks
+#' like: `episodic_case_region_code()` defines it as a multi-town
+#' postcode district, not a single contained setting, so it sits with
+#' province/region rather than with ward/institution.
+#' @keywords internal
+#' @noRd
+episodic_verdict_outbreak_levels <- c("pathogen_ward", "pathogen_institution")
+
+#' A verdict's display label, worded for the cluster's own scale
+#'
+#' The stored verdict value (`"possible_epidemic"`, ...) never changes -
+#' `episodic_ui_verdict_colour()`, the state machine and the performance
+#' stats all still key off it. Only the wording shown to a reader shifts:
+#' `"cluster_not_yet"`/`"possible_epidemic"`/`"confirmed_epidemic"` read
+#' as "... outbreak" rather than "... epidemic" when the cluster sits at
+#' ward or institution level (see `episodic_verdict_outbreak_levels`).
+#' `"artefact"`/`"expected_variation"` never mention either word, so
+#' `level` makes no difference to them.
+#'
+#' @param verdict One of the five verdict keys, or `NA`.
+#' @param level The cluster's stream level (e.g. `"pathogen_ward"`), or
+#'   `NULL` when no single level applies - a bulk action across a mixed
+#'   selection, or a system-wide distribution summed over every level.
+#'   Both deliberately keep the general "epidemic" wording rather than
+#'   guessing a level that is not actually singular.
+#' @param lang Session language.
+#' @return A single string, or `NA_character_` if `verdict` is `NA`.
+#' @keywords internal
+#' @noRd
+episodic_verdict_label <- function(
+    verdict,
+    level = NULL,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (is.na(verdict)) {
+    return(NA_character_)
+  }
+  key <- paste0("verdict.", verdict)
+  has_outbreak_variant <- verdict %in% c(
+    "cluster_not_yet",
+    "possible_epidemic",
+    "confirmed_epidemic"
+  )
+  if (
+    has_outbreak_variant &&
+      !is.null(level) &&
+      !is.na(level) &&
+      level %in% episodic_verdict_outbreak_levels
+  ) {
+    key <- paste0(key, ".outbreak")
+  }
+  episodic_tr(key, lang = lang)
 }

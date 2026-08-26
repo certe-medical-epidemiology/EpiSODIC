@@ -107,8 +107,14 @@ test_that("episodic_ui_assessment_rail() renders the classification and mute pic
   ))
   expect_false(grepl("<select", rendered, fixed = TRUE))
   expect_true(grepl("episodic-picker-btn", rendered, fixed = TRUE))
+  # app_read_setup()'s cluster is ward-level, so the verdict buttons read
+  # "outbreak", not "epidemic" - see episodic_verdict_outbreak_levels().
   expect_true(grepl(
-    episodic_tr("verdict.possible_epidemic", lang = "nl"),
+    episodic_verdict_label(
+      "possible_epidemic",
+      level = "pathogen_ward",
+      lang = "nl"
+    ),
     rendered,
     fixed = TRUE
   ))
@@ -131,17 +137,20 @@ test_that("episodic_ui_assessment_rail() renders the classification and mute pic
   # verdict buttons ordered mild/terminal to severe: artefact and
   # expected_variation (both terminal) before the escalating verdicts.
   pos <- function(needle) regexpr(needle, rendered, fixed = TRUE)
+  verdict_label_nl <- function(v) {
+    episodic_verdict_label(v, level = "pathogen_ward", lang = "nl")
+  }
   expect_true(
-    pos(episodic_tr("verdict.artefact", lang = "nl")) <
-      pos(episodic_tr("verdict.cluster_not_yet", lang = "nl"))
+    pos(verdict_label_nl("artefact")) <
+      pos(verdict_label_nl("cluster_not_yet"))
   )
   expect_true(
-    pos(episodic_tr("verdict.cluster_not_yet", lang = "nl")) <
-      pos(episodic_tr("verdict.possible_epidemic", lang = "nl"))
+    pos(verdict_label_nl("cluster_not_yet")) <
+      pos(verdict_label_nl("possible_epidemic"))
   )
   expect_true(
-    pos(episodic_tr("verdict.possible_epidemic", lang = "nl")) <
-      pos(episodic_tr("verdict.confirmed_epidemic", lang = "nl"))
+    pos(verdict_label_nl("possible_epidemic")) <
+      pos(verdict_label_nl("confirmed_epidemic"))
   )
 
   # hints describe what the verdict means, not what happens next

@@ -241,10 +241,23 @@ episodic_app_server_factory <- function(
       input$archive_search,
       archive_query(input$archive_search)
     )
+    archive_levels <- shiny::reactiveVal(character(0))
+    shiny::observeEvent(input$archive_level_filter, {
+      v <- input$archive_level_filter
+      archive_levels(
+        if (!nzchar(v)) character(0) else strsplit(v, ",", fixed = TRUE)[[1]]
+      )
+    })
     output$archive_screen <- shiny::renderUI({
       db_version()
       episodic_ui_archive_screen(
-        episodic_app_archive(con, query = archive_query(), lang = lang),
+        episodic_app_archive(
+          con,
+          query = archive_query(),
+          level = archive_levels(),
+          lang = lang
+        ),
+        selected_levels = archive_levels(),
         lang = lang
       )
     })
@@ -481,7 +494,11 @@ episodic_ui_rail <- function(
     lapply(verdicts, function(v) {
       list(
         value = v,
-        label = episodic_tr(paste0("verdict.", v), lang = lang),
+        # No `level`: this one dropdown applies to whatever mix of
+        # clusters is checked in the rail, which can span several
+        # levels at once - so it deliberately keeps the general
+        # "epidemic" wording rather than guessing one.
+        label = episodic_verdict_label(v, lang = lang),
         colour = episodic_ui_verdict_colour(v)
       )
     })

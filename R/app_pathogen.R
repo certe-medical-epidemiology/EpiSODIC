@@ -1002,7 +1002,7 @@ episodic_app_pathogen_clusters <- function(
       verdict_label = if (is.na(verdict)) {
         episodic_tr("misc.dash", lang = lang)
       } else {
-        episodic_tr(paste0("verdict.", verdict), lang = lang)
+        episodic_verdict_label(verdict, level = stream$level, lang = lang)
       },
       state_label = episodic_tr(paste0("state.", state), lang = lang),
       stringsAsFactors = FALSE

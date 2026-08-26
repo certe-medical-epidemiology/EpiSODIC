@@ -41,7 +41,12 @@ episodic_ui_dossier <- function(
     current_user = NULL) {
   obj <- episodic_cluster_object(con, cluster_id, lang = lang)
   state <- episodic_app_derive_state_for_cluster(con, cluster_id)
-  timeline <- episodic_app_assessment_timeline(con, cluster_id, lang = lang)
+  timeline <- episodic_app_assessment_timeline(
+    con,
+    cluster_id,
+    lang = lang,
+    level = obj$level
+  )
   linked <- episodic_db_clusters_linked_to(con, cluster_id)
   pal <- episodic_palette()
 
@@ -1038,7 +1043,12 @@ episodic_ui_assessment_rail <- function(
     lang = Sys.getenv("EPISODIC_LANGUAGE"),
     current_user = NULL) {
   obj <- episodic_cluster_object(con, cluster_id, lang = lang)
-  timeline <- episodic_app_assessment_timeline(con, cluster_id, lang = lang)
+  timeline <- episodic_app_assessment_timeline(
+    con,
+    cluster_id,
+    lang = lang,
+    level = obj$level
+  )
 
   shiny::tags$div(
     class = "episodic-assessment-rail",
@@ -1134,7 +1144,7 @@ episodic_ui_assessment_form <- function(
     lapply(verdicts, function(v) {
       list(
         value = v,
-        label = episodic_tr(paste0("verdict.", v), lang = lang),
+        label = episodic_verdict_label(v, level = obj$level, lang = lang),
         hint = episodic_tr(paste0("verdict.", v, ".hint"), lang = lang),
         colour = episodic_ui_verdict_colour(v)
       )

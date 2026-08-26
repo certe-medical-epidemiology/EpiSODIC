@@ -41,7 +41,8 @@
 episodic_app_assessment_timeline <- function(
     con,
     cluster_id,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+    lang = Sys.getenv("EPISODIC_LANGUAGE"),
+    level = NA) {
   events <- episodic_db_assessment_events(con, cluster_id)
   states <- episodic_db_cluster_states(con, cluster_id)
   closures <- states[states$trigger == "closure", ]
@@ -61,14 +62,10 @@ episodic_app_assessment_timeline <- function(
       verdict = events$verdict,
       verdict_label = vapply(
         events$verdict,
-        function(v) {
-          if (is.na(v)) {
-            NA_character_
-          } else {
-            episodic_tr(paste0("verdict.", v), lang = lang)
-          }
-        },
-        character(1)
+        episodic_verdict_label,
+        character(1),
+        level = level,
+        lang = lang
       ),
       rationale = events$rationale,
       stringsAsFactors = FALSE
@@ -130,6 +127,9 @@ episodic_app_actor_label <- function(
 #' @param con A [DBI::DBIConnection-class].
 #' @param query Free-text search over pathogen and place (case-insensitive
 #'   substring), or `NULL`/`""` for no filter.
+#' @param level A character vector of stream levels to include (e.g.
+#'   `c("pathogen_province", "pathogen_region")`), or `NULL`/empty for
+#'   every level.
 #' @param lang Session language.
 #' @return A data frame, one row per closed cluster, most recently closed
 #'   first.
@@ -138,12 +138,17 @@ episodic_app_actor_label <- function(
 episodic_app_archive <- function(
     con,
     query = NULL,
+    level = NULL,
     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   empty <- data.frame(
     cluster_id = integer(0),
     pathogen = character(0),
+    level = character(0),
     level_label = character(0),
     place = character(0),
+    first_day = character(0),
+    last_day = character(0),
+    duration_days = integer(0),
     n_cases = integer(0),
     priority_score = numeric(0),
     closed_at = character(0),
@@ -222,13 +227,29 @@ episodic_app_archive <- function(
       grepl(query, closed$place, ignore.case = TRUE)
     closed <- closed[hit, ]
   }
+  if (!is.null(level) && length(level) > 0) {
+    closed <- closed[closed$level %in% level, ]
+  }
+  if (nrow(closed) == 0) {
+    return(empty)
+  }
+
+  # Inclusive day count: a cluster first and last seen the same day ran
+  # for 1 day, not 0.
+  closed$duration_days <- as.integer(
+    as.Date(closed$last_day) - as.Date(closed$first_day)
+  ) + 1L
 
   closed <- closed[order(closed$closed_at, decreasing = TRUE, na.last = TRUE), ]
   closed[, c(
     "cluster_id",
     "pathogen",
+    "level",
     "level_label",
     "place",
+    "first_day",
+    "last_day",
+    "duration_days",
     "n_cases",
     "priority_score",
     "closed_at"
