@@ -532,19 +532,19 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-info-about-name {
   font-size: 26px;
   font-weight: 700;
-  color: var(--episodic-ink);
+  color: var(--episodic-primary-dark);
 }
 .episodic-info-about-version {
   margin-left: 8px;
   font-size: 13px;
   font-weight: 400;
-  color: var(--episodic-muted);
+  color: var(--episodic-primary-dark);
 }
 .episodic-info-about-desc {
   margin-top: 8px;
   font-size: 14px;
   line-height: 1.5;
-  color: var(--episodic-ink);
+  color: var(--episodic-primary-dark);
   max-width: 640px;
 }
 .episodic-info-about-links {

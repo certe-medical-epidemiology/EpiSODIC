@@ -89,9 +89,13 @@ episodic_ui_info_screen <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         if (!is.null(meta) && nzchar(meta$description)) {
           shiny::tags$p(
             class = "episodic-info-about-desc",
-            meta$description
+            shiny::HTML(gsub("<doi:(.*?)>", '<a href="https://doi.org/\\1" target="_blank">[link]</a>', meta$description))
           )
         },
+        shiny::tags$div(
+          class = "episodic-info-about-links",
+          shiny::tags$p("Developed by Matthijs Berends et al, 2026.")
+        ),
         if (!is.null(meta)) {
           shiny::tags$div(
             class = "episodic-info-about-links",

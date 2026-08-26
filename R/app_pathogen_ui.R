@@ -225,8 +225,7 @@ episodic_ui_pathogen_stats <- function(
     episodic_ui_stat(
       episodic_tr("pathogen.stat.cases", lang = lang),
       s$n_cases,
-      episodic_tr("pathogen.stat.cases_sub", weeks = s$n_weeks, lang = lang),
-      colour = pal$danger_dark
+      episodic_tr("pathogen.stat.cases_sub", weeks = s$n_weeks, lang = lang)
     ),
     episodic_ui_stat(
       episodic_tr("pathogen.stat.patients", lang = lang),
@@ -261,7 +260,9 @@ episodic_ui_pathogen_stats <- function(
         change,
         episodic_tr("pathogen.stat.change_sub", n = s$n_previous, lang = lang),
         colour = if (!is.na(s$change_pct) && s$change_pct > 0) {
-          "var(--episodic-danger)"
+          pal$danger
+        } else if (!is.na(s$change_pct) && s$change_pct < 0) {
+          pal$success
         } else {
           pal$muted
         }

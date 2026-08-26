@@ -190,7 +190,7 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         expected = expected_label,
         lang = lang
       ),
-      colour = pal$danger_dark
+      # colour = pal$danger_dark
     )
   )
   if (!is.null(obj$ratio) && !is.na(obj$ratio)) {
@@ -259,7 +259,8 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
           "dossier.stat.case_free_sub",
           need = obj$case_free$need,
           lang = lang
-        )
+        ),
+        colour = if (obj$case_free$need < obj$case_free$since) pal$success else pal$danger
       ))
     )
   }
