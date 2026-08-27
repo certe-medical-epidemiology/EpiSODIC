@@ -17,6 +17,110 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
+#' Emit a timestamped progress line
+#'
+#' `episodic_run_cron()` writes one of these at every phase of a run, so
+#' a scheduled cron job's own log - and a console watching an interactive
+#' one - shows where the run currently is. Unconditional, not gated
+#' behind `debug`: this is the trail that lets "the run got stuck" or "R
+#' crashed" localise to a phase without needing to reproduce anything,
+#' which is exactly the information a silent run (or a fatal crash that
+#' leaves no R-level error at all) otherwise never gives up.
+#' @keywords internal
+#' @noRd
+episodic_trace <- function(...) {
+  message(format(Sys.time(), "%Y-%m-%d %H:%M:%OS3"), " | ", ...)
+}
+
+#' The extra detail `debug = TRUE` adds on top of every `episodic_trace()` line
+#'
+#' Session and package versions, memory, and the resolved configuration -
+#' the things worth having in hand when something goes wrong but too
+#' verbose to print on every run by default.
+#' @keywords internal
+#' @noRd
+episodic_trace_debug <- function(debug, ...) {
+  if (isTRUE(debug)) {
+    episodic_trace(...)
+  }
+  invisible(NULL)
+}
+
+#' A one-line memory snapshot, for `debug = TRUE` traces
+#'
+#' `gc()`'s own matrix shape (which columns it reports, and in what
+#' unit) varies across R versions, so its printed form - not its
+#' indexed values - is what gets reused here.
+#' @keywords internal
+#' @noRd
+episodic_trace_memory <- function() {
+  lines <- utils::capture.output(print(gc(verbose = FALSE)))
+  paste(trimws(lines[nzchar(trimws(lines))]), collapse = " | ")
+}
+
+#' Everything `debug = TRUE` prints once, at the start of a run
+#'
+#' A crash that leaves no R-level error at all is the case this exists
+#' for: `sessionInfo()`, the versions of the packages a fatal error is
+#' most likely to originate in (the DB driver, `surveillance`,
+#' `EpiEstim`), and the database dialect in play, printed once so
+#' whoever reads the log afterwards does not have to ask the operator
+#' what they were running.
+#' @param db_path The `db_path` argument as given to `episodic_run_cron()`.
+#' @keywords internal
+#' @noRd
+episodic_trace_session_info <- function(db_path) {
+  episodic_trace("---- debug: session info ----")
+  message(paste(utils::capture.output(utils::sessionInfo()), collapse = "\n"))
+  episodic_trace(
+    "debug: database dialect = ",
+    tryCatch(episodic_db_dialect(db_path), error = function(e) NA_character_)
+  )
+  episodic_trace("debug: package versions:")
+  versions <- episodic_pkg_versions_extended()
+  for (nm in names(versions)) {
+    message("    ", nm, ": ", versions[[nm]])
+  }
+  episodic_trace("debug: memory at start: ", episodic_trace_memory())
+  episodic_trace("---- debug: end session info ----")
+}
+
+#' Package versions worth knowing when a run crashes without an R-level error
+#'
+#' Wider than `episodic_pkg_versions()` (which is what gets recorded on
+#' the run row): this is printed, not stored, so it can include the
+#' database driver and every compiled-code dependency a fatal error
+#' (rather than a catchable one) is most likely to actually originate
+#' in.
+#' @keywords internal
+#' @noRd
+episodic_pkg_versions_extended <- function() {
+  pkgs <- c(
+    "EpiSODIC",
+    "DBI",
+    "RSQLite",
+    "RMariaDB",
+    "surveillance",
+    "EpiEstim",
+    "sf",
+    "MASS"
+  )
+  stats::setNames(
+    vapply(
+      pkgs,
+      function(p) {
+        if (requireNamespace(p, quietly = TRUE)) {
+          as.character(utils::packageVersion(p))
+        } else {
+          "not installed"
+        }
+      },
+      character(1)
+    ),
+    pkgs
+  )
+}
+
 #' Run one surveillance detection cycle
 #'
 #' This is the function you schedule to run regularly (e.g. daily, via
@@ -82,6 +186,15 @@
 #'   to the current machine and account.
 #' @param run_date The date to treat as "today". Defaults to the system
 #'   date; mainly useful to override in tests.
+#' @param debug If `TRUE`, print a lot more than the phase-by-phase
+#'   progress this function always writes: `sessionInfo()`, the versions
+#'   of every package a fatal (non-catchable) crash is most likely to
+#'   originate in, memory snapshots, and per-stream detail inside the
+#'   detection loop. Meant for chasing exactly the kind of failure that
+#'   leaves no R-level error behind at all - a crashed session, a run
+#'   that silently never returns - where the normal progress trace does
+#'   not narrow things down enough on its own. Noisy; leave off for
+#'   routine scheduled runs.
 #' @return Invisibly, the `run_id` of the completed run. The run's row in
 #'   `episodic_detection_run` holds its status, the per-feed load counts,
 #'   and `error_text` if it failed. Case data that does not satisfy the
@@ -109,19 +222,36 @@ episodic_run_cron <- function(
   db_path = Sys.getenv("EPISODIC_DB"),
   host = Sys.info()[["nodename"]],
   account = Sys.info()[["user"]],
-  run_date = Sys.Date()
+  run_date = Sys.Date(),
+  debug = FALSE
 ) {
+  start_time <- Sys.time()
+  episodic_trace("episodic_run_cron() starting (host=", host, ", account=", account, ")")
+  if (isTRUE(debug)) {
+    episodic_trace_session_info(db_path)
+  }
+
+  episodic_trace("Resolving configuration")
   config <- episodic_config_resolve(episodic_config_path)
   hashed <- episodic_config_hash(config)
+  episodic_trace("Configuration resolved (hash ", substr(hashed$hash, 1, 12), ")")
 
+  episodic_trace("Connecting to database")
   con <- if (episodic_db_exists(db_path)) {
     episodic_db_connect(db_path)
   } else {
+    episodic_trace("No existing database found - creating one")
     episodic_db_create(db_path)
   }
   on.exit(DBI::dbDisconnect(con), add = TRUE)
+  episodic_trace(
+    "Database connected (dialect: ",
+    episodic_db_dialect(db_path),
+    ")"
+  )
 
   run_id <- episodic_db_run_start(con, host = host, account = account)
+  episodic_trace("Run ", run_id, " started")
 
   # Data problems are the operator's to fix, so they must reach the
   # operator: resolve every feed and check it here, before the run has
@@ -129,16 +259,26 @@ episodic_run_cron <- function(
   # reason left an empty dashboard and a run row nobody was looking at -
   # which is exactly the situation somebody connecting their own extract
   # for the first time finds themselves in.
+  episodic_trace("Resolving and checking case data")
   prepared <- tryCatch(
     {
       cases <- episodic_resolve_data(cases)
+      episodic_trace_debug(debug, "debug: case data resolved (", nrow(cases), " rows)")
       report <- episodic_check_cases(cases)
       problems <- report[report$severity == "problem", , drop = FALSE]
       if (nrow(problems) > 0) {
         stop(episodic_check_failure_message(problems), call. = FALSE)
       }
+      episodic_trace(
+        "Case data checked: ",
+        nrow(cases),
+        " rows, 0 problems, ",
+        sum(report$severity == "advice"),
+        " advisory finding(s)"
+      )
       denominators <- episodic_resolve_data(denominators)
       if (!is.null(denominators)) {
+        episodic_trace("Validating denominator data (", nrow(denominators), " rows)")
         episodic_validate_denominators(denominators)
       }
       # institution_activity is resolved against the institutions table,
@@ -149,6 +289,11 @@ episodic_run_cron <- function(
       # rather than mid-transaction if it was handed over as a plain
       # data frame rather than a function.
       if (!is.null(institution_activity) && is.data.frame(institution_activity)) {
+        episodic_trace(
+          "Validating institution activity data (",
+          nrow(institution_activity),
+          " rows)"
+        )
         episodic_validate_institution_activity(institution_activity)
       }
       report
@@ -156,6 +301,7 @@ episodic_run_cron <- function(
     error = function(e) e
   )
   if (inherits(prepared, "condition")) {
+    episodic_trace("Pre-run checks failed: ", conditionMessage(prepared))
     episodic_run_cron_finish(
       con,
       run_id,
@@ -191,6 +337,7 @@ episodic_run_cron <- function(
     )
   }
 
+  episodic_trace("Beginning transaction")
   result <- tryCatch(
     {
       DBI::dbBegin(con)
@@ -201,17 +348,21 @@ episodic_run_cron <- function(
         cases,
         denominators,
         institution_activity,
-        run_date
+        run_date,
+        debug = debug
       )
+      episodic_trace("Committing transaction")
       DBI::dbCommit(con)
       stats
     },
     error = function(e) {
+      episodic_trace("Error during run body, rolling back: ", conditionMessage(e))
       DBI::dbRollback(con)
       episodic_run_cron_failure(conditionMessage(e))
     }
   )
 
+  episodic_trace("Finishing run ", run_id, " (status: ", result$status %||% "success", ")")
   episodic_run_cron_finish(con, run_id, hashed, result)
 
   # The run row records this, but a scheduled run nobody reads the row of
@@ -224,6 +375,18 @@ episodic_run_cron <- function(
       result$error_text,
       call. = FALSE
     )
+  }
+
+  elapsed <- round(as.numeric(difftime(Sys.time(), start_time, units = "secs")), 1)
+  episodic_trace(
+    "episodic_run_cron() finished in ",
+    elapsed,
+    "s (status: ",
+    result$status %||% "success",
+    ")"
+  )
+  if (isTRUE(debug)) {
+    episodic_trace_debug(debug, "debug: memory at finish: ", episodic_trace_memory())
   }
 
   invisible(run_id)
@@ -394,8 +557,10 @@ episodic_run_cron_body <- function(
   cases,
   denominators,
   institution_activity,
-  run_date
+  run_date,
+  debug = FALSE
 ) {
+  episodic_trace("Loading pathogen configuration")
   pathogen_config_path <- system.file(
     "config",
     "pathogen_config.csv",
@@ -410,62 +575,135 @@ episodic_run_cron_body <- function(
     na.strings = c("", "NA")
   )
   episodic_db_pathogen_config_load(con, pathogen_config)
+  episodic_trace(
+    "Pathogen configuration loaded (",
+    nrow(pathogen_config),
+    " pathogen(s))"
+  )
 
+  episodic_trace("Loading case data into the database")
   cases <- episodic_resolve_data(cases)
   case_counts <- episodic_cases_load(con, cases, pathogen_config, run_id)
+  episodic_trace(
+    "Case data loaded: supplied=",
+    case_counts$n_supplied,
+    ", deduplicated=",
+    case_counts$n_deduplicated,
+    ", inserted=",
+    case_counts$n_inserted
+  )
 
   denominators <- episodic_resolve_data(denominators)
-  denominator_counts <- if (!is.null(denominators)) {
-    episodic_denominators_load(con, denominators)
+  if (!is.null(denominators)) {
+    episodic_trace("Loading denominator (positivity) data")
+    denominator_counts <- episodic_denominators_load(con, denominators)
+    episodic_trace(
+      "Denominator data loaded: supplied=",
+      denominator_counts$n_supplied,
+      ", written=",
+      denominator_counts$n_written
+    )
   } else {
-    list(n_supplied = NA_integer_, n_written = NA_integer_)
+    denominator_counts <- list(n_supplied = NA_integer_, n_written = NA_integer_)
   }
 
+  episodic_trace("Fetching all known cases and institutions")
   cases_all <- episodic_db_cases(con)
   institutions <- episodic_db_institutions(con)
+  episodic_trace_debug(
+    debug,
+    "debug: ",
+    nrow(cases_all),
+    " cases and ",
+    nrow(institutions),
+    " institutions on file, memory: ",
+    episodic_trace_memory()
+  )
 
   institution_activity <- episodic_resolve_data(
     institution_activity,
     institutions
   )
-  activity_counts <- if (!is.null(institution_activity)) {
-    episodic_institution_activity_load(con, institution_activity)
+  if (!is.null(institution_activity)) {
+    episodic_trace("Loading institution activity (patient-days) data")
+    activity_counts <- episodic_institution_activity_load(con, institution_activity)
+    episodic_trace(
+      "Institution activity loaded: supplied=",
+      activity_counts$n_supplied,
+      ", written=",
+      activity_counts$n_written,
+      ", skipped=",
+      activity_counts$n_skipped
+    )
   } else {
-    list(
+    activity_counts <- list(
       n_supplied = NA_integer_,
       n_written = NA_integer_,
       n_skipped = NA_integer_
     )
   }
 
+  episodic_trace("Enumerating lattice streams")
   episodic_lattice_enumerate(con, cases_all, institutions)
 
   n_detections_total <- 0L
   n_new_total <- 0L
   n_updated_total <- 0L
 
+  episodic_trace("Running same-place detector")
   same_place_detections <- episodic_detect_same_place(
     con,
     cases_all,
     institutions,
     config
   )
+  episodic_trace(
+    "Same-place detector found ",
+    nrow(same_place_detections),
+    " detection(s)"
+  )
+  episodic_trace("Running rare-trigger detector")
   rare_trigger_detections <- episodic_detect_rare_trigger(
     con,
     cases_all,
     institutions,
     config
   )
+  episodic_trace(
+    "Rare-trigger detector found ",
+    nrow(rare_trigger_detections),
+    " detection(s)"
+  )
 
   # Asked once, not per stream: it is a property of the run, not of any
   # one stream.
   farrington_weeks <- episodic_farrington_weeks_owed(con, run_date, config)
+  episodic_trace("Farrington owes ", farrington_weeks, " week(s) this run")
 
   streams <- episodic_db_streams(con) # refresh: same_place/rare_trigger may have created streams
+  episodic_trace(
+    "Reconciling ",
+    nrow(streams),
+    " stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)"
+  )
 
   for (i in seq_len(nrow(streams))) {
     stream <- streams[i, ]
     stream_cases <- episodic_cases_for_stream(cases_all, stream)
+    episodic_trace_debug(
+      debug,
+      "debug: [",
+      i,
+      "/",
+      nrow(streams),
+      "] stream ",
+      stream$stream_id,
+      " (",
+      stream$stream_key,
+      "): ",
+      nrow(stream_cases),
+      " case(s)"
+    )
 
     episodic_triangle_update(
       con,
@@ -675,11 +913,22 @@ episodic_run_cron_body <- function(
     n_new_total <- n_new_total + reconcile_result$n_new
     n_updated_total <- n_updated_total + reconcile_result$n_updated
   }
+  episodic_trace(
+    "Stream reconciliation done: ",
+    n_detections_total,
+    " detection(s), ",
+    n_new_total,
+    " new signal(s), ",
+    n_updated_total,
+    " updated signal(s)"
+  )
 
   # Suppression is a statement about the lattice as a whole - which level
   # of the same outbreak is the one worth a dossier - so it waits until
   # every stream in it has reconciled.
+  episodic_trace("Suppressing lattice")
   episodic_suppress_lattice(con, config)
+  episodic_trace_debug(debug, "debug: memory before finishing: ", episodic_trace_memory())
 
   list(
     status = if (isTRUE(activity_counts$n_skipped > 0)) {

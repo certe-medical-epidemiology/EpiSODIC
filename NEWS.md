@@ -10,6 +10,7 @@ recreated or migrated before running against this version.
 - Similar-clusters panel on the dossier gains a cluster ID column and opens the same way every other cluster table does
 - `episodic_check_denominators()` and `episodic_check_institution_activity()`: the same non-throwing pre-flight report `episodic_check_cases()` gives the case feed, now available for the optional positivity and hospital-activity feeds too
 - `episodic_run_cron()` now refuses on a malformed `institution_activity` feed before writing anything (when handed as a plain data frame), instead of only mid-transaction
+- `episodic_run_cron()` writes a timestamped `message()` at every phase of a run (config resolution, DB connect, each feed load, lattice enumeration, each detector, and each stream's reconciliation), always on - useful in any interactive load-through and in a real cron job's own log. A new `debug = TRUE` argument adds `sessionInfo()`, package/driver versions, memory snapshots, and per-stream detail on top, for chasing a failure (including a crashed session) that leaves no R-level error behind
 
 ## Changed
 
