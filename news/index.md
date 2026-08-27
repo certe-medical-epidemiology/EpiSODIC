@@ -1,5 +1,56 @@
 # Changelog
 
+## EpiSODIC 0.8.0
+
+### New
+
+- [`episodic_check_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.md)
+  and
+  [`episodic_check_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.md):
+  the same non-throwing pre-flight report
+  [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+  gives the case feed, now available for the optional positivity and
+  hospital-activity feeds too
+- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  now refuses on a malformed `institution_activity` feed before writing
+  anything (when handed as a plain data frame), instead of only
+  mid-transaction
+- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  writes a timestamped
+  [`message()`](https://rdrr.io/r/base/message.html) at every phase of a
+  run (config resolution, DB connect, each feed load, lattice
+  enumeration, each detector, and each stream’s reconciliation), always
+  on - useful in any interactive load-through and in a real cron job’s
+  own log. A new `debug = TRUE` argument adds
+  [`sessionInfo()`](https://rdrr.io/r/utils/sessionInfo.html),
+  package/driver versions, memory snapshots, and per-stream detail on
+  top, for chasing a failure (including a crashed session) that leaves
+  no R-level error behind
+
+### Changed
+
+- L4 (province) stream derivation supports an operator-supplied
+  PC-to-province lookup via `EPISODIC_PC_PROVINCE_MAP`, falling back to
+  the bundled Northern Netherlands demo ranges as before - a deployment
+  outside that demo region previously got no L4 streams at all, silently
+- Archive screen sorts by Period (descending) instead of by closing date
+- Dossier top card reorders to confirmed, unique patients, duration
+  (new), doubling time, case-free days, priority, with ratio/incidence
+  density (where shown) moved after priority
+- Pathogen screen’s detection parameter table shows a long `source_ref`
+  reference in the “What it does” column instead of “Value”
+- Pathogen screen’s positivity chart no longer renders a percentage axis
+  past 100%
+- Pathogen screen’s weekly incidence and season/year comparison charts
+  share the same x-axis span for any period that falls within a single
+  season/year
+- Geography map charts drop their fill legend (redundant with the on-map
+  count labels) so the render height computed for the map’s own aspect
+  ratio is not shortened by legend space, removing the whitespace
+  above/below the map
+- `.shiny-plot-output` centres its contents vertically and horizontally;
+  the geo-panel map group centres horizontally as well
+
 ## EpiSODIC 0.7.0
 
 This release includes a database schema migration (`episodic_case` gains

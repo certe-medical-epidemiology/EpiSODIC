@@ -19,7 +19,8 @@ episodic_run_cron(
   db_path = Sys.getenv("EPISODIC_DB"),
   host = Sys.info()[["nodename"]],
   account = Sys.info()[["user"]],
-  run_date = Sys.Date()
+  run_date = Sys.Date(),
+  debug = FALSE
 )
 ```
 
@@ -70,6 +71,19 @@ episodic_run_cron(
 
   The date to treat as "today". Defaults to the system date; mainly
   useful to override in tests.
+
+- debug:
+
+  If `TRUE`, print a lot more than the phase-by-phase progress this
+  function always writes:
+  [`sessionInfo()`](https://rdrr.io/r/utils/sessionInfo.html), the
+  versions of every package a fatal (non-catchable) crash is most likely
+  to originate in, memory snapshots, and per-stream detail inside the
+  detection loop. Meant for chasing exactly the kind of failure that
+  leaves no R-level error behind at all - a crashed session, a run that
+  silently never returns - where the normal progress trace does not
+  narrow things down enough on its own. Noisy; leave off for routine
+  scheduled runs.
 
 ## Value
 
@@ -156,6 +170,33 @@ cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
 run_id <- episodic_run_cron(db_path = db_path, cases = cases)
+#> 2026-08-27 17:21:56.760 | episodic_run_cron() starting (host=runnervmgx7h7, account=runner)
+#> 2026-08-27 17:21:56.760 | Resolving configuration
+#> 2026-08-27 17:21:56.765 | Configuration resolved (hash 0e1853bcb766)
+#> 2026-08-27 17:21:56.765 | Connecting to database
+#> 2026-08-27 17:21:56.765 | No existing database found - creating one
+#> 2026-08-27 17:21:56.783 | Database connected (dialect: sqlite)
+#> 2026-08-27 17:21:56.784 | Run 1 started
+#> 2026-08-27 17:21:56.785 | Resolving and checking case data
+#> 2026-08-27 17:21:56.798 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
+#> 2026-08-27 17:21:56.798 | Beginning transaction
+#> 2026-08-27 17:21:56.799 | Loading pathogen configuration
+#> 2026-08-27 17:21:56.818 | Pathogen configuration loaded (23 pathogen(s))
+#> 2026-08-27 17:21:56.818 | Loading case data into the database
+#> 2026-08-27 17:21:56.973 | Case data loaded: supplied=419, deduplicated=410, inserted=410
+#> 2026-08-27 17:21:56.974 | Fetching all known cases and institutions
+#> 2026-08-27 17:21:56.976 | Enumerating lattice streams
+#> 2026-08-27 17:21:57.467 | Running same-place detector
+#> 2026-08-27 17:21:57.547 | Same-place detector found 4 detection(s)
+#> 2026-08-27 17:21:57.548 | Running rare-trigger detector
+#> 2026-08-27 17:21:57.551 | Rare-trigger detector found 1 detection(s)
+#> 2026-08-27 17:21:57.552 | Farrington owes 8 week(s) this run
+#> 2026-08-27 17:21:57.553 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
+#> 2026-08-27 17:21:59.732 | Stream reconciliation done: 5 detection(s), 5 new signal(s), 0 updated signal(s)
+#> 2026-08-27 17:21:59.732 | Suppressing lattice
+#> 2026-08-27 17:21:59.737 | Committing transaction
+#> 2026-08-27 17:21:59.738 | Finishing run 1 (status: success)
+#> 2026-08-27 17:21:59.740 | episodic_run_cron() finished in 3s (status: success)
 file.remove(db_path)
 #> [1] TRUE
 # }

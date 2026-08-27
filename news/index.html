@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,30 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.0" id="episodic-080">EpiSODIC 0.8.0<a class="anchor" aria-label="anchor" href="#episodic-080"></a></h2>
+<div class="section level3">
+<h3 id="new-0-8-0">New<a class="anchor" aria-label="anchor" href="#new-0-8-0"></a></h3>
+<ul><li>
+<code><a href="../reference/episodic_check_denominators.html">episodic_check_denominators()</a></code> and <code><a href="../reference/episodic_check_institution_activity.html">episodic_check_institution_activity()</a></code>: the same non-throwing pre-flight report <code><a href="../reference/episodic_check_cases.html">episodic_check_cases()</a></code> gives the case feed, now available for the optional positivity and hospital-activity feeds too</li>
+<li>
+<code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> now refuses on a malformed <code>institution_activity</code> feed before writing anything (when handed as a plain data frame), instead of only mid-transaction</li>
+<li>
+<code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> writes a timestamped <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code> at every phase of a run (config resolution, DB connect, each feed load, lattice enumeration, each detector, and each stream’s reconciliation), always on - useful in any interactive load-through and in a real cron job’s own log. A new <code>debug = TRUE</code> argument adds <code><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo()</a></code>, package/driver versions, memory snapshots, and per-stream detail on top, for chasing a failure (including a crashed session) that leaves no R-level error behind</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-8-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-8-0"></a></h3>
+<ul><li>L4 (province) stream derivation supports an operator-supplied PC-to-province lookup via <code>EPISODIC_PC_PROVINCE_MAP</code>, falling back to the bundled Northern Netherlands demo ranges as before - a deployment outside that demo region previously got no L4 streams at all, silently</li>
+<li>Archive screen sorts by Period (descending) instead of by closing date</li>
+<li>Dossier top card reorders to confirmed, unique patients, duration (new), doubling time, case-free days, priority, with ratio/incidence density (where shown) moved after priority</li>
+<li>Pathogen screen’s detection parameter table shows a long <code>source_ref</code> reference in the “What it does” column instead of “Value”</li>
+<li>Pathogen screen’s positivity chart no longer renders a percentage axis past 100%</li>
+<li>Pathogen screen’s weekly incidence and season/year comparison charts share the same x-axis span for any period that falls within a single season/year</li>
+<li>Geography map charts drop their fill legend (redundant with the on-map count labels) so the render height computed for the map’s own aspect ratio is not shortened by legend space, removing the whitespace above/below the map</li>
+<li>
+<code>.shiny-plot-output</code> centres its contents vertically and horizontally; the geo-panel map group centres horizontally as well</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.0" id="episodic-070">EpiSODIC 0.7.0<a class="anchor" aria-label="anchor" href="#episodic-070"></a></h2>
 <p>This release includes a database schema migration (<code>episodic_case</code> gains a required <code>lab_number</code> column) - existing databases need to be recreated or migrated before running against this version.</p>

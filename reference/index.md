@@ -33,6 +33,10 @@ contract before you run anything.
   : Connect your own laboratory data
 - [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
   : Check your case data before you hand it to EpiSODIC
+- [`episodic_check_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.md)
+  : Check your positivity data before you hand it to EpiSODIC
+- [`episodic_check_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.md)
+  : Check your hospital activity data before you hand it to EpiSODIC
 - [`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
   : Check that your case data has the right shape, or stop
 - [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
