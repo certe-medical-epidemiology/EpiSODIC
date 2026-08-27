@@ -30,6 +30,8 @@
   "dossier.stat.doubling_na": "不适用",
   "dossier.stat.unique_patients": "独立患者数",
   "dossier.stat.unique_patients_sub": "{positives_phrase}，每个病程1例",
+  "dossier.stat.duration": "持续时间",
+  "dossier.stat.duration_sub": "首例至末例",
   "dossier.stat.case_free": "无新增病例",
   "dossier.stat.case_free_value": "{since} 天",
   "dossier.stat.case_free_sub": "阈值 {need} 天",

@@ -653,8 +653,79 @@ episodic_app_pathogen_overlay <- function(
     kind = if (isTRUE(seasonal)) "season" else "year",
     current = current,
     groups = groups,
-    rows = rows
+    rows = rows,
+    # So the chart can crop its own axis to the same weeks the weekly
+    # incidence panel is showing, see episodic_app_overlay_period_range().
+    period_range = episodic_app_overlay_period_range(
+      resolved,
+      seasonal,
+      current,
+      week_order
+    )
   )
+}
+
+#' The x-axis span (week index bounds) the selected period covers
+#'
+#' The overlay chart plots every group (season or year) across the whole
+#' week_order axis, because comparing shapes needs the full run of
+#' weeks - but the weekly incidence panel right above it only ever draws
+#' the selected period. Left alone, picking a short custom range moves
+#' one chart's x axis without moving the other, and the two stop lining
+#' up. Cropping the overlay to the same span fixes that for any period
+#' that falls inside a single season/year, which covers every preset
+#' except the multi-year ones ("last 5 years", "all") - there the two
+#' panels are answering different questions on purpose (this season's
+#' shape vs. several years of it) and forcing one range onto the other
+#' would misrepresent the overlay rather than align it.
+#'
+#' @param resolved The resolved period (`episodic_app_resolve_period()`).
+#' @param seasonal Whether the overlay groups by surveillance season or
+#'   calendar year.
+#' @param current The group label the overlay is centred on.
+#' @param week_order The axis labels, in plotted order.
+#' @return An integer `c(from, to)` pair of `week_index` bounds, or
+#'   `NULL` when the period does not resolve to a single span on this
+#'   axis.
+#' @keywords internal
+#' @noRd
+episodic_app_overlay_period_range <- function(
+  resolved,
+  seasonal,
+  current,
+  week_order
+) {
+  if (is.null(resolved$from) || is.null(resolved$to)) {
+    return(NULL)
+  }
+  if (is.na(resolved$from) || is.na(resolved$to)) {
+    return(NULL)
+  }
+  week_of <- function(d) {
+    if (isTRUE(seasonal)) {
+      wk <- episodic_mem_season_week(d)
+      list(group = wk$season, label = wk$week_label)
+    } else {
+      list(
+        group = format(as.Date(d), "%G"),
+        label = as.character(pmin(as.integer(format(as.Date(d), "%V")), 52L))
+      )
+    }
+  }
+  from <- week_of(resolved$from)
+  to <- week_of(resolved$to)
+  if (
+    is.na(from$group) || is.na(to$group) ||
+      !identical(from$group, current) || !identical(to$group, current)
+  ) {
+    return(NULL)
+  }
+  idx_from <- match(from$label, week_order)
+  idx_to <- match(to$label, week_order)
+  if (is.na(idx_from) || is.na(idx_to) || idx_from > idx_to) {
+    return(NULL)
+  }
+  c(idx_from, idx_to)
 }
 
 #' Blank the weeks of the period in progress that have not happened yet

@@ -141,6 +141,16 @@ episodic_run_cron <- function(
       if (!is.null(denominators)) {
         episodic_validate_denominators(denominators)
       }
+      # institution_activity is resolved against the institutions table,
+      # which only exists once cases have loaded, so it cannot be
+      # resolved and checked here the way cases and denominators are -
+      # but its own contract (columns, filled, dates, patient_days) does
+      # not depend on that, so it is still worth refusing on up front
+      # rather than mid-transaction if it was handed over as a plain
+      # data frame rather than a function.
+      if (!is.null(institution_activity) && is.data.frame(institution_activity)) {
+        episodic_validate_institution_activity(institution_activity)
+      }
       report
     },
     error = function(e) e

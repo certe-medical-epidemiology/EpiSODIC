@@ -114,6 +114,280 @@ episodic_validate_denominators <- function(denominators) {
   invisible(NULL)
 }
 
+#' Check your positivity data before you hand it to EpiSODIC
+#'
+#' The same purpose as [episodic_check_cases()], for the optional
+#' `denominators` feed: every check [episodic_validate_denominators()]
+#' would throw on, reported instead of thrown - what is wrong, how many
+#' rows, which ones, and what to do about it - plus a couple of things
+#' that are allowed but worth a look. Nothing is written, no database is
+#' needed. Run this while building your extract step, or when a run's
+#' positivity panels come out empty or look wrong.
+#'
+#' @param denominators Your positivity data: a data frame or `tibble`
+#'   with `pathogen`, `sample_date`, `care_line`, `area_code` and
+#'   `n_tests` (see [episodic_synthetic_denominators()] for the shape),
+#'   or a zero-argument function returning one.
+#' @return A data frame of findings with class `episodic_case_check`, the
+#'   same shape [episodic_check_cases()] returns. Zero rows means the
+#'   data set passed every check.
+#' @seealso [episodic_check_cases()] for the case data feed,
+#'   [episodic_check_institution_activity()] for the hospital activity
+#'   feed.
+#' @examples
+#' denom <- episodic_synthetic_denominators(
+#'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+#' )
+#' episodic_check_denominators(denom)
+#' @export
+episodic_check_denominators <- function(denominators) {
+  title <- "EpiSODIC denominator data check"
+  what <- "Denominator data"
+
+  resolved <- tryCatch(
+    episodic_resolve_data(denominators),
+    error = function(e) e
+  )
+  if (inherits(resolved, "condition")) {
+    return(episodic_check_report(
+      list(episodic_check_finding(
+        severity = "problem",
+        issue = "not_a_data_set",
+        message = paste0(
+          what,
+          " must be a data frame (or tibble), or a function returning ",
+          "one, not ",
+          paste(class(denominators), collapse = "/"),
+          "."
+        ),
+        fix = paste0(
+          "Hand over the extract itself, e.g. ",
+          "episodic_check_denominators(my_denominators)."
+        )
+      )),
+      title = title,
+      what = what
+    ))
+  }
+  if (!is.data.frame(resolved)) {
+    return(episodic_check_report(
+      list(episodic_check_finding(
+        severity = "problem",
+        issue = "not_a_data_set",
+        message = paste0(
+          what,
+          " must be a data frame (or tibble), not ",
+          paste(class(resolved), collapse = "/"),
+          "."
+        ),
+        fix = paste0(
+          "A function passed as `denominators` must return the data set ",
+          "itself, not something built from it."
+        )
+      )),
+      title = title,
+      what = what
+    ))
+  }
+
+  found <- c(
+    episodic_check_denominators_structure(resolved),
+    episodic_check_denominators_values(resolved),
+    episodic_check_denominators_advice(resolved)
+  )
+  episodic_check_report(
+    found,
+    info = list(n_rows = nrow(resolved), n_cols = ncol(resolved)),
+    title = title,
+    what = what
+  )
+}
+
+#' @keywords internal
+#' @noRd
+episodic_check_denominators_columns <- c(
+  "pathogen",
+  "sample_date",
+  "care_line",
+  "area_code",
+  "n_tests"
+)
+
+#' @keywords internal
+#' @noRd
+episodic_check_denominators_structure <- function(denominators) {
+  found <- list()
+  missing_cols <- setdiff(episodic_check_denominators_columns, names(denominators))
+  if (length(missing_cols) > 0) {
+    found[[length(found) + 1]] <- episodic_check_finding(
+      severity = "problem",
+      issue = "missing_column",
+      column = paste(missing_cols, collapse = ", "),
+      values = missing_cols,
+      message = paste0(
+        "Denominator data is missing required column(s): ",
+        paste(missing_cols, collapse = ", "),
+        "."
+      ),
+      fix = paste0(
+        "Add the column(s): `pathogen`, `sample_date`, `care_line`, ",
+        "`area_code` and `n_tests` (see ?episodic_synthetic_denominators ",
+        "for the shape). `care_line` and `area_code` may be all-NA."
+      )
+    )
+  }
+  found
+}
+
+#' @keywords internal
+#' @noRd
+episodic_check_denominators_values <- function(denominators) {
+  found <- list()
+
+  for (column in c("pathogen", "sample_date", "n_tests")) {
+    if (!column %in% names(denominators)) {
+      next
+    }
+    idx <- which(is.na(denominators[[column]]))
+    if (length(idx) > 0) {
+      found[[length(found) + 1]] <- episodic_check_finding(
+        severity = "problem",
+        issue = "empty_required_value",
+        column = column,
+        n_rows = length(idx),
+        rows = idx,
+        message = paste0(
+          "`",
+          column,
+          "` is empty in ",
+          length(idx),
+          " of ",
+          nrow(denominators),
+          " rows, and must always be filled."
+        ),
+        fix = "Every denominator row must name the pathogen, week and test count it counts."
+      )
+    }
+  }
+
+  if ("care_line" %in% names(denominators)) {
+    values <- episodic_check_chr(denominators$care_line)
+    idx <- which(!is.na(values) & !values %in% episodic_care_lines)
+    if (length(idx) > 0) {
+      found[[length(found) + 1]] <- episodic_check_finding(
+        severity = "problem",
+        issue = "value_outside_allowed_set",
+        column = "care_line",
+        n_rows = length(idx),
+        rows = idx,
+        values = values[idx],
+        message = paste0(
+          "`care_line` has ",
+          length(idx),
+          " of ",
+          nrow(denominators),
+          " rows with a value outside the allowed set (",
+          paste0("\"", episodic_care_lines, "\"", collapse = ", "),
+          ", or NA)."
+        ),
+        fix = "Map your own coding onto `episodic_care_lines`."
+      )
+    }
+  }
+
+  if ("sample_date" %in% names(denominators)) {
+    bad <- episodic_check_unreadable_dates(denominators$sample_date)
+    idx <- which(bad)
+    if (length(idx) > 0) {
+      found[[length(found) + 1]] <- episodic_check_finding(
+        severity = "problem",
+        issue = "unreadable_date",
+        column = "sample_date",
+        n_rows = length(idx),
+        rows = idx,
+        values = episodic_check_chr(denominators$sample_date)[idx],
+        message = paste0(
+          "`sample_date` has ",
+          length(idx),
+          " of ",
+          nrow(denominators),
+          " rows that are not a Date and do not read as YYYY-MM-DD."
+        ),
+        fix = episodic_check_date_fix(denominators$sample_date, idx)
+      )
+    }
+  }
+
+  if (
+    "n_tests" %in% names(denominators) &&
+      nrow(denominators) > 0 &&
+      !is.numeric(denominators$n_tests)
+  ) {
+    found[[length(found) + 1]] <- episodic_check_finding(
+      severity = "problem",
+      issue = "n_tests_not_numeric",
+      column = "n_tests",
+      message = paste0(
+        "`n_tests` is ",
+        paste(class(denominators$n_tests), collapse = "/"),
+        ", not a number."
+      ),
+      fix = "Give the number of tests performed for this pathogen, period and stratum as a number."
+    )
+  }
+
+  found
+}
+
+#' @keywords internal
+#' @noRd
+episodic_check_denominators_advice <- function(denominators) {
+  found <- list()
+  if (nrow(denominators) == 0) {
+    found[[length(found) + 1]] <- episodic_check_finding(
+      severity = "advice",
+      issue = "no_rows",
+      n_rows = 0L,
+      message = "Denominator data has no rows at all.",
+      fix = "Positivity panels stay blank for every stream until this feed has rows."
+    )
+    return(found)
+  }
+  if (
+    "n_tests" %in% names(denominators) &&
+      is.numeric(denominators$n_tests)
+  ) {
+    idx <- which(!is.na(denominators$n_tests) & denominators$n_tests <= 0)
+    if (length(idx) > 0) {
+      found[[length(found) + 1]] <- episodic_check_finding(
+        severity = "advice",
+        issue = "n_tests_not_positive",
+        column = "n_tests",
+        n_rows = length(idx),
+        rows = idx,
+        values = as.character(denominators$n_tests[idx]),
+        message = paste0(
+          "`n_tests` is zero or negative in ",
+          length(idx),
+          " of ",
+          nrow(denominators),
+          " rows."
+        ),
+        fix = paste0(
+          "A period with zero tests performed is unusual but not ",
+          "impossible; a negative count is always a mistake upstream. ",
+          "Either way, positivity cannot be computed for that row and it ",
+          "is skipped."
+        )
+      )
+    }
+  }
+  if ("pathogen" %in% names(denominators)) {
+    found <- c(found, episodic_check_pathogen_advice(denominators))
+  }
+  found
+}
+
 #' Add a testing-volume (positivity) feed
 #'
 #' Case counts alone cannot distinguish a rise in infections from a rise in

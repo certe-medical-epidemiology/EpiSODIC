@@ -44,41 +44,10 @@
 #' @keywords internal
 #' @noRd
 episodic_institution_activity_load <- function(con, activity) {
-  episodic_validate_columns(
-    activity,
-    required = c(
-      "institution_key",
-      "period_start",
-      "period_end",
-      "patient_days"
-    ),
-    filled = c("institution_key", "period_start", "period_end"),
-    what = "Institution activity data"
-  )
-  episodic_validate_dates(
-    activity,
-    "period_start",
-    na_ok = FALSE,
-    what = "Institution activity data"
-  )
-  episodic_validate_dates(
-    activity,
-    "period_end",
-    na_ok = FALSE,
-    what = "Institution activity data"
-  )
-  if (
-    nrow(activity) > 0 &&
-      !all(is.na(activity$patient_days)) &&
-      !is.numeric(activity$patient_days)
-  ) {
-    stop(
-      "Institution activity data has a non-numeric `patient_days` (",
-      paste(class(activity$patient_days), collapse = "/"),
-      ").",
-      call. = FALSE
-    )
-  }
+  # Checked by episodic_run_cron() before the run starts as well, so a
+  # problem with this feed reaches the operator the same way a problem
+  # with the case and denominator feeds does.
+  episodic_validate_institution_activity(activity)
 
   institutions <- episodic_db_institutions(con)
   n_written <- 0L
@@ -132,6 +101,340 @@ episodic_institution_activity_load <- function(con, activity) {
     n_written = n_written,
     n_skipped = length(skipped_keys)
   ))
+}
+
+#' Check the optional institution activity feed against its own contract
+#'
+#' Split out of the load step so [episodic_run_cron()] can run it before
+#' the run writes anything, mirroring [episodic_validate_denominators()].
+#'
+#' @param activity A data frame (or tibble) with `institution_key`,
+#'   `period_start`, `period_end`, `patient_days` (nullable `admissions`,
+#'   `n_beds`, `source`).
+#' @return Invisibly, `NULL`. Throws otherwise.
+#' @keywords internal
+#' @noRd
+episodic_validate_institution_activity <- function(activity) {
+  episodic_validate_columns(
+    activity,
+    required = c(
+      "institution_key",
+      "period_start",
+      "period_end",
+      "patient_days"
+    ),
+    filled = c("institution_key", "period_start", "period_end"),
+    what = "Institution activity data"
+  )
+  episodic_validate_dates(
+    activity,
+    "period_start",
+    na_ok = FALSE,
+    what = "Institution activity data"
+  )
+  episodic_validate_dates(
+    activity,
+    "period_end",
+    na_ok = FALSE,
+    what = "Institution activity data"
+  )
+  if (
+    nrow(activity) > 0 &&
+      !all(is.na(activity$patient_days)) &&
+      !is.numeric(activity$patient_days)
+  ) {
+    stop(
+      "Institution activity data has a non-numeric `patient_days` (",
+      paste(class(activity$patient_days), collapse = "/"),
+      ").",
+      call. = FALSE
+    )
+  }
+  invisible(NULL)
+}
+
+#' Check your hospital activity data before you hand it to EpiSODIC
+#'
+#' The same purpose as [episodic_check_cases()], for the optional
+#' `institution_activity` feed: every check
+#' [episodic_run_cron()] would refuse a run over, reported instead of
+#' thrown, plus a couple of things worth a look. Nothing is written, no
+#' database is needed.
+#'
+#' Unlike the case and denominator feeds, an `institution_key` that
+#' matches no institution in your case data is not a problem here - it
+#' is deliberately allowed, and only ever counted and warned about at
+#' run time (see [episodic_institution_activity_load()]), since the two
+#' feeds need not be perfectly synchronised and this function has no
+#' case data to compare against in the first place.
+#'
+#' @param institution_activity Your hospital activity data: a data frame
+#'   or `tibble` with `institution_key`, `period_start`, `period_end`,
+#'   `patient_days` (nullable `admissions`, `n_beds`, `source`) - see
+#'   [episodic_synthetic_institution_activity()] for the shape - or a
+#'   zero-argument function returning one.
+#' @return A data frame of findings with class `episodic_case_check`, the
+#'   same shape [episodic_check_cases()] returns. Zero rows means the
+#'   data set passed every check.
+#' @seealso [episodic_check_cases()] for the case data feed,
+#'   [episodic_check_denominators()] for the positivity feed.
+#' @examples
+#' institutions <- data.frame(
+#'   institution_key = "HOSP-1", institution_type = "hospital", n_beds = 320
+#' )
+#' activity <- episodic_synthetic_institution_activity(
+#'   institutions,
+#'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+#' )
+#' episodic_check_institution_activity(activity)
+#' @export
+episodic_check_institution_activity <- function(institution_activity) {
+  title <- "EpiSODIC institution activity data check"
+  what <- "Institution activity data"
+
+  resolved <- tryCatch(
+    episodic_resolve_data(institution_activity),
+    error = function(e) e
+  )
+  if (inherits(resolved, "condition")) {
+    return(episodic_check_report(
+      list(episodic_check_finding(
+        severity = "problem",
+        issue = "not_a_data_set",
+        message = paste0(
+          what,
+          " must be a data frame (or tibble), or a function returning ",
+          "one, not ",
+          paste(class(institution_activity), collapse = "/"),
+          "."
+        ),
+        fix = paste0(
+          "Hand over the extract itself, e.g. ",
+          "episodic_check_institution_activity(my_activity)."
+        )
+      )),
+      title = title,
+      what = what
+    ))
+  }
+  if (!is.data.frame(resolved)) {
+    return(episodic_check_report(
+      list(episodic_check_finding(
+        severity = "problem",
+        issue = "not_a_data_set",
+        message = paste0(
+          what,
+          " must be a data frame (or tibble), not ",
+          paste(class(resolved), collapse = "/"),
+          "."
+        ),
+        fix = paste0(
+          "A function passed as `institution_activity` must return the ",
+          "data set itself, not something built from it."
+        )
+      )),
+      title = title,
+      what = what
+    ))
+  }
+
+  found <- c(
+    episodic_check_institution_activity_structure(resolved),
+    episodic_check_institution_activity_values(resolved),
+    episodic_check_institution_activity_advice(resolved)
+  )
+  episodic_check_report(
+    found,
+    info = list(n_rows = nrow(resolved), n_cols = ncol(resolved)),
+    title = title,
+    what = what
+  )
+}
+
+#' @keywords internal
+#' @noRd
+episodic_check_institution_activity_columns <- c(
+  "institution_key",
+  "period_start",
+  "period_end",
+  "patient_days"
+)
+
+#' @keywords internal
+#' @noRd
+episodic_check_institution_activity_structure <- function(activity) {
+  found <- list()
+  missing_cols <- setdiff(
+    episodic_check_institution_activity_columns,
+    names(activity)
+  )
+  if (length(missing_cols) > 0) {
+    found[[length(found) + 1]] <- episodic_check_finding(
+      severity = "problem",
+      issue = "missing_column",
+      column = paste(missing_cols, collapse = ", "),
+      values = missing_cols,
+      message = paste0(
+        "Institution activity data is missing required column(s): ",
+        paste(missing_cols, collapse = ", "),
+        "."
+      ),
+      fix = paste0(
+        "Add the column(s): `institution_key`, `period_start`, ",
+        "`period_end` and `patient_days` (nullable `admissions`, ",
+        "`n_beds`, `source`)."
+      )
+    )
+  }
+  found
+}
+
+#' @keywords internal
+#' @noRd
+episodic_check_institution_activity_values <- function(activity) {
+  found <- list()
+
+  for (column in c("institution_key", "period_start", "period_end")) {
+    if (!column %in% names(activity)) {
+      next
+    }
+    idx <- which(is.na(activity[[column]]))
+    if (length(idx) > 0) {
+      found[[length(found) + 1]] <- episodic_check_finding(
+        severity = "problem",
+        issue = "empty_required_value",
+        column = column,
+        n_rows = length(idx),
+        rows = idx,
+        message = paste0(
+          "`",
+          column,
+          "` is empty in ",
+          length(idx),
+          " of ",
+          nrow(activity),
+          " rows, and must always be filled."
+        ),
+        fix = "Every activity row must identify the institution and the period it covers."
+      )
+    }
+  }
+
+  for (column in c("period_start", "period_end")) {
+    if (!column %in% names(activity)) {
+      next
+    }
+    bad <- episodic_check_unreadable_dates(activity[[column]])
+    idx <- which(bad)
+    if (length(idx) > 0) {
+      found[[length(found) + 1]] <- episodic_check_finding(
+        severity = "problem",
+        issue = "unreadable_date",
+        column = column,
+        n_rows = length(idx),
+        rows = idx,
+        values = episodic_check_chr(activity[[column]])[idx],
+        message = paste0(
+          "`",
+          column,
+          "` has ",
+          length(idx),
+          " of ",
+          nrow(activity),
+          " rows that are not a Date and do not read as YYYY-MM-DD."
+        ),
+        fix = episodic_check_date_fix(activity[[column]], idx)
+      )
+    }
+  }
+
+  if (
+    "patient_days" %in% names(activity) &&
+      nrow(activity) > 0 &&
+      !all(is.na(activity$patient_days)) &&
+      !is.numeric(activity$patient_days)
+  ) {
+    found[[length(found) + 1]] <- episodic_check_finding(
+      severity = "problem",
+      issue = "patient_days_not_numeric",
+      column = "patient_days",
+      message = paste0(
+        "`patient_days` is ",
+        paste(class(activity$patient_days), collapse = "/"),
+        ", not a number."
+      ),
+      fix = "Give the number of patient-days for this institution and period as a number."
+    )
+  }
+
+  found
+}
+
+#' @keywords internal
+#' @noRd
+episodic_check_institution_activity_advice <- function(activity) {
+  found <- list()
+  n <- nrow(activity)
+  if (n == 0) {
+    found[[length(found) + 1]] <- episodic_check_finding(
+      severity = "advice",
+      issue = "no_rows",
+      n_rows = 0L,
+      message = "Institution activity data has no rows at all.",
+      fix = "Detection falls back to raw, unnormalised counts for every institution until this feed has rows."
+    )
+    return(found)
+  }
+
+  if (all(c("period_start", "period_end") %in% names(activity))) {
+    starts <- episodic_check_as_date(activity$period_start)
+    ends <- episodic_check_as_date(activity$period_end)
+    idx <- which(!is.na(starts) & !is.na(ends) & ends < starts)
+    if (length(idx) > 0) {
+      found[[length(found) + 1]] <- episodic_check_finding(
+        severity = "advice",
+        issue = "period_end_before_start",
+        column = "period_end",
+        n_rows = length(idx),
+        rows = idx,
+        message = paste0(
+          "`period_end` is earlier than `period_start` in ",
+          length(idx),
+          " of ",
+          n,
+          " rows."
+        ),
+        fix = "A period cannot end before it starts - usually the two columns are swapped."
+      )
+    }
+  }
+
+  if (
+    "patient_days" %in% names(activity) &&
+      is.numeric(activity$patient_days)
+  ) {
+    idx <- which(!is.na(activity$patient_days) & activity$patient_days < 0)
+    if (length(idx) > 0) {
+      found[[length(found) + 1]] <- episodic_check_finding(
+        severity = "advice",
+        issue = "patient_days_negative",
+        column = "patient_days",
+        n_rows = length(idx),
+        rows = idx,
+        values = as.character(activity$patient_days[idx]),
+        message = paste0(
+          "`patient_days` is negative in ",
+          length(idx),
+          " of ",
+          n,
+          " rows."
+        ),
+        fix = "A negative patient-day count is always a mistake upstream."
+      )
+    }
+  }
+
+  found
 }
 
 #' Add a hospital activity feed (patient-days)

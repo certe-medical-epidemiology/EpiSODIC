@@ -244,7 +244,11 @@ episodic_app_archive <- function(
   ) +
     1L
 
-  closed <- closed[order(closed$closed_at, decreasing = TRUE, na.last = TRUE), ]
+  # Sorted on the Period column shown in the table (first_day), not on
+  # closed_at: an operator scanning the archive reads it as a timeline of
+  # outbreaks, and wants the most recent period on top regardless of the
+  # order clusters happened to be closed in.
+  closed <- closed[order(closed$first_day, decreasing = TRUE, na.last = TRUE), ]
   closed[, c(
     "cluster_id",
     "pathogen",

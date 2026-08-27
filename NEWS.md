@@ -8,10 +8,20 @@ recreated or migrated before running against this version.
 
 - Case data contract gains a required `lab_number` column: your laboratory's own specimen/culture number, distinct from `source_key` and, unlike it, not required to be unique - two rows may share one when a single culture yields more than one reported result. Shown on the line list alongside `patient_key`, replacing the previously-shown (and not useful) `source_key`
 - Similar-clusters panel on the dossier gains a cluster ID column and opens the same way every other cluster table does
+- `episodic_check_denominators()` and `episodic_check_institution_activity()`: the same non-throwing pre-flight report `episodic_check_cases()` gives the case feed, now available for the optional positivity and hospital-activity feeds too
+- `episodic_run_cron()` now refuses on a malformed `institution_activity` feed before writing anything (when handed as a plain data frame), instead of only mid-transaction
 
 ## Changed
 
 - `episodic_db_case_insert_new()` batches its existence check and insert into chunked round trips instead of one query pair per row, a large speedup for larger imports
+- L4 (province) stream derivation supports an operator-supplied PC-to-province lookup via `EPISODIC_PC_PROVINCE_MAP`, falling back to the bundled Northern Netherlands demo ranges as before - a deployment outside that demo region previously got no L4 streams at all, silently
+- Archive screen sorts by Period (descending) instead of by closing date
+- Dossier top card reorders to confirmed, unique patients, duration (new), doubling time, case-free days, priority, with ratio/incidence density (where shown) moved after priority
+- Pathogen screen's detection parameter table shows a long `source_ref` reference in the "What it does" column instead of "Value"
+- Pathogen screen's positivity chart no longer renders a percentage axis past 100%
+- Pathogen screen's weekly incidence and season/year comparison charts share the same x-axis span for any period that falls within a single season/year
+- Geography map charts drop their fill legend (redundant with the on-map count labels) so the render height computed for the map's own aspect ratio is not shortened by legend space, removing the whitespace above/below the map
+- `.shiny-plot-output` centres its contents vertically and horizontally; the geo-panel map group centres horizontally as well
 
 # EpiSODIC 0.6.*
 

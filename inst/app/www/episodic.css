@@ -343,6 +343,11 @@ body {
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
+  /* The pair of maps (Clusters screen: detail + region context) rarely
+     fills the panel's full width - centred as a group rather than
+     hugging the left edge, matching the single map's own centring
+     below. */
+  justify-content: center;
 }
 .episodic-geo-maps > div {
   flex: 1 1 300px;
@@ -364,6 +369,16 @@ body {
   font-size: 12.5px;
   color: var(--episodic-muted);
   font-style: italic;
+}
+/* shiny::renderPlot() draws into a box whose height is fixed by the
+   `height` argument but whose rendered image can be shorter (a chart
+   with a narrow aspect ratio, or one still loading) - flexed and
+   centred so that image sits in the middle of its box on both axes
+   instead of pinned to the top-left corner. */
+.shiny-plot-output {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .episodic-interpretation p {

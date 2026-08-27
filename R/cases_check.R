@@ -830,9 +830,20 @@ episodic_check_finding <- function(
   )
 }
 
+#' @param title Heading shown by `print.episodic_case_check()`, and the
+#'   "what" named in the thrown message if the report is ever turned into
+#'   one. Defaults to the case data wording, since that is this
+#'   function's original and most common caller;
+#'   `episodic_check_denominators()` and
+#'   `episodic_check_institution_activity()` pass their own.
 #' @keywords internal
 #' @noRd
-episodic_check_report <- function(found, info = list()) {
+episodic_check_report <- function(
+  found,
+  info = list(),
+  title = "EpiSODIC case data check",
+  what = "Case data"
+) {
   problems <- if (length(found) == 0) {
     data.frame(
       severity = character(0),
@@ -850,6 +861,8 @@ episodic_check_report <- function(found, info = list()) {
   }
   rownames(problems) <- NULL
   attr(problems, "summary") <- info
+  attr(problems, "title") <- title
+  attr(problems, "what") <- what
   class(problems) <- c("episodic_case_check", "data.frame")
   problems
 }
@@ -1278,7 +1291,15 @@ print.episodic_case_check <- function(x, ...) {
     paste0(count(n), " ", if (n == 1) singular else plural)
   }
 
-  cat("-- EpiSODIC case data check ", strrep("-", width - 28L), "\n", sep = "")
+  title <- attr(x, "title") %||% "EpiSODIC case data check"
+  cat(
+    "-- ",
+    title,
+    " ",
+    strrep("-", max(0L, width - nchar(title) - 4L)),
+    "\n",
+    sep = ""
+  )
   if (!is.null(info$n_rows)) {
     cat(
       "   ",
@@ -1375,22 +1396,41 @@ print.episodic_case_check <- function(x, ...) {
       )
     )
   }
+  what <- attr(x, "what") %||% "Case data"
+  is_cases <- identical(what, "Case data")
   if (nrow(problems) == 0) {
-    cat(
-      "v This data set satisfies the case data contract, and is ready ",
-      "for\n  episodic_run_cron(). See ",
-      episodic_check_case_data_link(),
-      " for what each\n  column means.\n",
-      sep = ""
-    )
+    if (is_cases) {
+      cat(
+        "v This data set satisfies the case data contract, and is ready ",
+        "for\n  episodic_run_cron(). See ",
+        episodic_check_case_data_link(),
+        " for what each\n  column means.\n",
+        sep = ""
+      )
+    } else {
+      cat(
+        "v ",
+        what,
+        " satisfies its contract, and is ready for episodic_run_cron().\n",
+        sep = ""
+      )
+    }
   } else {
-    cat(
-      "Nothing was changed here. Fix the problems above in your own ",
-      "extract step,\nthen check again. See ",
-      episodic_check_case_data_link(),
-      " for what each column means\n  and which values it accepts.\n",
-      sep = ""
-    )
+    if (is_cases) {
+      cat(
+        "Nothing was changed here. Fix the problems above in your own ",
+        "extract step,\nthen check again. See ",
+        episodic_check_case_data_link(),
+        " for what each column means\n  and which values it accepts.\n",
+        sep = ""
+      )
+    } else {
+      cat(
+        "Nothing was changed here. Fix the problems above in your own ",
+        "extract step,\nthen check again.\n",
+        sep = ""
+      )
+    }
   }
   invisible(x)
 }

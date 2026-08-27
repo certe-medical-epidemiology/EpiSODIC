@@ -30,6 +30,8 @@
   "dossier.stat.doubling_na": "غير متاح",
   "dossier.stat.unique_patients": "المرضى الفريدون",
   "dossier.stat.unique_patients_sub": "{positives_phrase}، حالة واحدة لكل نوبة",
+  "dossier.stat.duration": "المدة",
+  "dossier.stat.duration_sub": "من أول حالة إلى آخر حالة",
   "dossier.stat.case_free": "خالٍ من الحالات",
   "dossier.stat.case_free_value": "{since} يومًا",
   "dossier.stat.case_free_sub": "الحد {need} يومًا",

@@ -196,41 +196,6 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       # colour = pal$danger_dark
     )
   )
-  if (!is.null(obj$ratio) && !is.na(obj$ratio)) {
-    stats <- c(
-      stats,
-      list(episodic_ui_stat(
-        episodic_tr("dossier.stat.ratio", lang = lang),
-        trimws(format(round(obj$ratio, 1))),
-        episodic_tr("dossier.stat.ratio_sub", lang = lang)
-      ))
-    )
-  }
-  if (!is.null(obj$density)) {
-    stats <- c(
-      stats,
-      list(episodic_ui_stat(
-        episodic_tr("dossier.stat.density", lang = lang),
-        obj$density$value,
-        episodic_tr(
-          "dossier.stat.density_sub",
-          baseline = obj$density$baseline %||%
-            episodic_tr("misc.unknown", lang = lang),
-          lang = lang
-        )
-      ))
-    )
-  }
-  if (!is.na(obj$doubling_days)) {
-    stats <- c(
-      stats,
-      list(episodic_ui_stat(
-        episodic_tr("dossier.stat.doubling", lang = lang),
-        paste(trimws(format(obj$doubling_days)), "d"),
-        episodic_tr("dossier.stat.doubling_sub", lang = lang)
-      ))
-    )
-  }
   positive_phrase <- episodic_count_phrase(
     obj$n_positives,
     episodic_tr("unit.positive", lang = lang),
@@ -248,6 +213,28 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       )
     ))
   )
+  duration_days <- as.integer(as.Date(obj$last_day) - as.Date(obj$first_day)) +
+    1L
+  if (!is.na(duration_days)) {
+    stats <- c(
+      stats,
+      list(episodic_ui_stat(
+        episodic_tr("dossier.stat.duration", lang = lang),
+        paste(duration_days, "d"),
+        episodic_tr("dossier.stat.duration_sub", lang = lang)
+      ))
+    )
+  }
+  if (!is.na(obj$doubling_days)) {
+    stats <- c(
+      stats,
+      list(episodic_ui_stat(
+        episodic_tr("dossier.stat.doubling", lang = lang),
+        paste(trimws(format(obj$doubling_days)), "d"),
+        episodic_tr("dossier.stat.doubling_sub", lang = lang)
+      ))
+    )
+  }
   if (!is.na(obj$case_free$need)) {
     stats <- c(
       stats,
@@ -279,6 +266,31 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       episodic_tr("dossier.stat.priority_sub", lang = lang)
     ))
   )
+  if (!is.null(obj$ratio) && !is.na(obj$ratio)) {
+    stats <- c(
+      stats,
+      list(episodic_ui_stat(
+        episodic_tr("dossier.stat.ratio", lang = lang),
+        trimws(format(round(obj$ratio, 1))),
+        episodic_tr("dossier.stat.ratio_sub", lang = lang)
+      ))
+    )
+  }
+  if (!is.null(obj$density)) {
+    stats <- c(
+      stats,
+      list(episodic_ui_stat(
+        episodic_tr("dossier.stat.density", lang = lang),
+        obj$density$value,
+        episodic_tr(
+          "dossier.stat.density_sub",
+          baseline = obj$density$baseline %||%
+            episodic_tr("misc.unknown", lang = lang),
+          lang = lang
+        )
+      ))
+    )
+  }
 
   shiny::tags$div(class = "episodic-statgrid", stats)
 }
