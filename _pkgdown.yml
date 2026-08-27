@@ -73,6 +73,8 @@ reference:
   contents:
   - episodic_case_data
   - episodic_check_cases
+  - episodic_check_denominators
+  - episodic_check_institution_activity
   - episodic_validate_cases
   - episodic_synthetic_cases
   - episodic_synthetic_cases_calibration
