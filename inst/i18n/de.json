@@ -116,7 +116,7 @@
   "panel.linelist.title": "Fallliste",
   "panel.linelist.aside": "{shown} von {total} Fällen",
   "panel.linelist.col.patient": "Patient",
-  "panel.linelist.col.case": "Fall",
+  "panel.linelist.col.lab_number": "Labornummer",
   "panel.linelist.col.date": "Probendatum",
   "panel.linelist.col.sex": "Geschlecht",
   "panel.linelist.col.age": "Alter",

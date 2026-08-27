@@ -6,6 +6,8 @@
 \alias{EpiSODIC-package}
 \title{EpiSODIC: Epidemiological Signal Observation, Detection, Identification, and Classification}
 \description{
+\if{html}{\figure{logo.svg}{options: style='float: right' alt='logo' width='120'}}
+
 An automated surveillance system for infectious disease epidemiologists that detects aberrations in laboratory-confirmed infections, records epidemiologist's formal assessment with a full audit trail, and produces outbreak reports for clinical colleagues and infection prevention nurses. Applies evidence-based statistical methods such as Improved Farrington (2013) \doi{10.1002/sim.5595} and 'EpiEstim' (Cori et al. 2013) \doi{10.1093/aje/kwt133}. Ships with a synthetic demo data set requiring no external data or infrastructure.
 }
 \seealso{
@@ -22,6 +24,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Matthijs S. Berends \email{m.berends@certe.nl}
   \item Erwin E. A. Hassing \email{e.hassing@certe.nl}
   \item Erwin Dijkstra \email{e.dijkstra@certe.nl}
 }

@@ -137,10 +137,11 @@ episodic_ui_picker <- function(input_id, options, selected = NULL) {
 #' @keywords internal
 #' @noRd
 episodic_ui_multi_picker <- function(
-    input_id,
-    options,
-    selected = character(0),
-    all_label = "All") {
+  input_id,
+  options,
+  selected = character(0),
+  all_label = "All"
+) {
   pal <- episodic_palette()
   active_style <- sprintf(
     "background:%s;border-color:%s;color:#fff;",
@@ -172,7 +173,11 @@ episodic_ui_multi_picker <- function(
       }
       shiny::tags$button(
         type = "button",
-        class = if (active) "episodic-picker-btn active" else "episodic-picker-btn",
+        class = if (active) {
+          "episodic-picker-btn active"
+        } else {
+          "episodic-picker-btn"
+        },
         style = if (active) active_style else "",
         onclick = sprintf(
           "Shiny.setInputValue('%s', '%s', {priority: 'event'});",
@@ -220,10 +225,11 @@ episodic_ui_chip <- function(text, colour, filled = FALSE) {
 #' @keywords internal
 #' @noRd
 episodic_ui_chip_link <- function(
-    text,
-    colour,
-    cluster_id,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  text,
+  colour,
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   open_js <- sprintf(
     "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
     as.integer(cluster_id)
@@ -376,7 +382,10 @@ episodic_ui_pyramid <- function(demo, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         class = "episodic-pyramid-side-left",
         shiny::tags$div(
           class = "episodic-pyramid-bar-m",
-          style = sprintf("width:%s;", episodic_css_pct(100 * demo$m[i] / max_n))
+          style = sprintf(
+            "width:%s;",
+            episodic_css_pct(100 * demo$m[i] / max_n)
+          )
         )
       ),
       shiny::tags$div(class = "episodic-pyramid-band", demo$band[i]),
@@ -384,7 +393,10 @@ episodic_ui_pyramid <- function(demo, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         class = "episodic-pyramid-side-right",
         shiny::tags$div(
           class = "episodic-pyramid-bar-f",
-          style = sprintf("width:%s;", episodic_css_pct(100 * demo$v[i] / max_n))
+          style = sprintf(
+            "width:%s;",
+            episodic_css_pct(100 * demo$v[i] / max_n)
+          )
         )
       )
     )
@@ -420,9 +432,10 @@ episodic_ui_pyramid <- function(demo, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @keywords internal
 #' @noRd
 episodic_ui_cluster_link_row <- function(
-    cluster_id,
-    lang = Sys.getenv("EPISODIC_LANGUAGE"),
-    ...) {
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  ...
+) {
   open_js <- sprintf(
     "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
     as.integer(cluster_id)
@@ -553,18 +566,20 @@ episodic_verdict_outbreak_levels <- c("pathogen_ward", "pathogen_institution")
 #' @keywords internal
 #' @noRd
 episodic_verdict_label <- function(
-    verdict,
-    level = NULL,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  verdict,
+  level = NULL,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   if (is.na(verdict)) {
     return(NA_character_)
   }
   key <- paste0("verdict.", verdict)
-  has_outbreak_variant <- verdict %in% c(
-    "cluster_not_yet",
-    "possible_epidemic",
-    "confirmed_epidemic"
-  )
+  has_outbreak_variant <- verdict %in%
+    c(
+      "cluster_not_yet",
+      "possible_epidemic",
+      "confirmed_epidemic"
+    )
   if (
     has_outbreak_variant &&
       !is.null(level) &&

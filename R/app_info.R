@@ -89,7 +89,11 @@ episodic_ui_info_screen <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         if (!is.null(meta) && nzchar(meta$description)) {
           shiny::tags$p(
             class = "episodic-info-about-desc",
-            shiny::HTML(gsub("<doi:(.*?)>", '<a href="https://doi.org/\\1" target="_blank">[link]</a>', meta$description))
+            shiny::HTML(gsub(
+              "<doi:(.*?)>",
+              '<a href="https://doi.org/\\1" target="_blank">[link]</a>',
+              meta$description
+            ))
           )
         },
         shiny::tags$div(
@@ -150,7 +154,8 @@ episodic_ui_info_screen <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @keywords internal
 #' @noRd
 episodic_ui_info_algorithms_table <- function(
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   rows <- list(
     list(
       name = "farringtonFlexible",
@@ -199,7 +204,8 @@ episodic_ui_info_algorithms_table <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_info_states_table <- function(
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   states <- c(
     "new",
     "assessing",

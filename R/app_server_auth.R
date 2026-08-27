@@ -31,11 +31,12 @@
 #' @keywords internal
 #' @noRd
 episodic_app_server_auth <- function(
-    input,
-    output,
-    session,
-    con,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  input,
+  output,
+  session,
+  con,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   current_user <- shiny::reactiveVal(NULL)
 
   shiny::observeEvent(input$auth_show_login, {

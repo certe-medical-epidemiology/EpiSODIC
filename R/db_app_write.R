@@ -31,16 +31,17 @@
 #' @keywords internal
 #' @noRd
 episodic_db_assessment_event_insert <- function(
-    con,
-    cluster_id,
-    user_id,
-    verdict = NA,
-    rationale = "",
-    wpg_notifiable = NA,
-    ggd_informed = NA,
-    ggd_note = NA,
-    snooze_until = NA,
-    supersedes = NA) {
+  con,
+  cluster_id,
+  user_id,
+  verdict = NA,
+  rationale = "",
+  wpg_notifiable = NA,
+  ggd_informed = NA,
+  ggd_note = NA,
+  snooze_until = NA,
+  supersedes = NA
+) {
   # Optional: `rationale` is free text, not a required justification - the
   # column stays NOT NULL (inst/sql/schema.sql), so a blank rationale is
   # stored as "" rather than NULL.
@@ -74,13 +75,14 @@ episodic_db_assessment_event_insert <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_stream_mute_insert <- function(
-    con,
-    stream_id,
-    muted_from,
-    muted_until,
-    reason,
-    note = NA,
-    user_id) {
+  con,
+  stream_id,
+  muted_from,
+  muted_until,
+  reason,
+  note = NA,
+  user_id
+) {
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_stream_mute
@@ -102,12 +104,13 @@ episodic_db_stream_mute_insert <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_state_insert <- function(
-    con,
-    cluster_id,
-    state,
-    trigger,
-    event_id = NA,
-    user_id = NA) {
+  con,
+  cluster_id,
+  state,
+  trigger,
+  event_id = NA,
+  user_id = NA
+) {
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_cluster_state (cluster_id, state, entered_at, `trigger`, event_id, user_id)
@@ -120,14 +123,15 @@ episodic_db_cluster_state_insert <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_report_render_insert <- function(
-    con,
-    cluster_id,
-    user_id = NA,
-    file_path,
-    file_sha256,
-    params_json,
-    case_ids_json,
-    version_no) {
+  con,
+  cluster_id,
+  user_id = NA,
+  file_path,
+  file_sha256,
+  params_json,
+  case_ids_json,
+  version_no
+) {
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_report_render
@@ -150,12 +154,13 @@ episodic_db_report_render_insert <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_app_user_insert <- function(
-    con,
-    username,
-    full_name,
-    email,
-    password_hash,
-    role = "epidemiologist") {
+  con,
+  username,
+  full_name,
+  email,
+  password_hash,
+  role = "epidemiologist"
+) {
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_app_user
@@ -176,10 +181,11 @@ episodic_db_app_user_insert <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_app_user_event_insert <- function(
-    con,
-    user_id,
-    event_type,
-    password_hash = NA) {
+  con,
+  user_id,
+  event_type,
+  password_hash = NA
+) {
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_app_user_event (user_id, created_at, event_type, password_hash)

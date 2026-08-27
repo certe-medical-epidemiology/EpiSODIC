@@ -234,7 +234,7 @@ test_that("episodic_app_linelist() returns only the architecture-allowed fields"
     names(ll),
     c(
       "patient_key",
-      "source_key",
+      "lab_number",
       "sample_date",
       "sex",
       "age",
@@ -628,6 +628,7 @@ test_that("episodic_app_denominator_series() computes positivity from region-wid
   # Twice as many Norovirus cases region-wide as are in the cluster.
   extra <- data.frame(
     source_key = sprintf("EX%d", 1:6),
+    lab_number = sprintf("LAB-EX%d", 1:6),
     patient_key = sprintf("EP%d", 1:6),
     sample_date = rep("2025-01-08", 6),
     receipt_date = rep("2025-01-08", 6),

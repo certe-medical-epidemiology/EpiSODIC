@@ -180,15 +180,16 @@ episodic_pc_to_province <- function(pc) {
 #' @keywords internal
 #' @noRd
 episodic_lattice_upsert_group <- function(
-    con,
-    cases,
-    level,
-    group_cols,
-    care_line_col = NULL,
-    institution_col = NULL,
-    region_col = NULL,
-    ward_col = NULL,
-    denominator = "none") {
+  con,
+  cases,
+  level,
+  group_cols,
+  care_line_col = NULL,
+  institution_col = NULL,
+  region_col = NULL,
+  ward_col = NULL,
+  denominator = "none"
+) {
   key_df <- cases[, group_cols, drop = FALSE]
   key_str <- do.call(paste, c(key_df, sep = ""))
   groups <- split(seq_len(nrow(cases)), key_str)

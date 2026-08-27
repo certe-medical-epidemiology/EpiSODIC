@@ -20,8 +20,8 @@
 #' Load optional positivity metadata
 #'
 #' Writes the operator-supplied, pre-aggregated denominator table (see
-#' `README.md`'s data format section) to `episodic_denominator`. Entirely
-#' optional: a site with nothing to supply
+#' `vignette("data-format")`'s "Positivity metadata" section) to
+#' `episodic_denominator`. Entirely optional: a site with nothing to supply
 #' here simply never calls this, and positivity panels stay blank for its
 #' streams. Deliberately not a raw per-test linelist, so volume stays a
 #' handful of aggregate rows per pathogen/period/stratum rather than every
@@ -143,9 +143,10 @@ episodic_validate_denominators <- function(denominators) {
 #' head(denom)
 #' @export
 episodic_synthetic_denominators <- function(
-    start_date = end_date - 5 * 365,
-    end_date = Sys.Date(),
-    seed = 1) {
+  start_date = end_date - 5 * 365,
+  end_date = Sys.Date(),
+  seed = 1
+) {
   set.seed(seed)
   week_starts <- seq(start_date, end_date, by = "week")
   n <- length(week_starts)

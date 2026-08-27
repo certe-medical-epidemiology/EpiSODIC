@@ -83,6 +83,7 @@ test_that("a second positive sent in a later, non-overlapping run still joins it
   raw_case <- function(source_key, sample_date) {
     data.frame(
       source_key = source_key,
+      lab_number = paste0("LAB-", source_key),
       patient_key = "P1",
       sample_date = sample_date,
       receipt_date = sample_date,
@@ -335,7 +336,11 @@ test_that("case data that violates the contract fails the run out loud, and reco
   # Reaching the operator matters as much as recording it: a run that
   # returned quietly here left somebody staring at an empty dashboard.
   expect_error(
-    episodic_run_cron(db_path = path, cases = cases, run_date = as.Date("2024-06-30")),
+    episodic_run_cron(
+      db_path = path,
+      cases = cases,
+      run_date = as.Date("2024-06-30")
+    ),
     "pathogen"
   )
 
@@ -382,7 +387,11 @@ test_that("an NA care_line is stored as 'unknown', not rejected", {
   )
   cases$care_line <- NA_character_
 
-  episodic_run_cron(db_path = path, cases = cases, run_date = as.Date("2024-06-30"))
+  episodic_run_cron(
+    db_path = path,
+    cases = cases,
+    run_date = as.Date("2024-06-30")
+  )
 
   con <- episodic_db_connect(path)
   on.exit(DBI::dbDisconnect(con), add = TRUE)

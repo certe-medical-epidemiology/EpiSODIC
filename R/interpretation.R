@@ -58,8 +58,9 @@ NULL
 #' @keywords internal
 #' @noRd
 episodic_interpretation_context <- function(
-    cluster,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  cluster,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   case_word <- c(
     episodic_tr("unit.case", lang = lang),
     episodic_tr("unit.cases", lang = lang)
@@ -309,9 +310,10 @@ episodic_interpretation_slots <- c(
 #' @keywords internal
 #' @noRd
 episodic_interpretation_generate <- function(
-    cluster,
-    lang = Sys.getenv("EPISODIC_LANGUAGE"),
-    instance_i18n = NULL) {
+  cluster,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  instance_i18n = NULL
+) {
   fragments <- episodic_interpretation_fragments()
   ctx <- episodic_interpretation_context(cluster, lang = lang)
 
@@ -359,9 +361,10 @@ episodic_interpretation_generate <- function(
 #' @keywords internal
 #' @noRd
 episodic_interpretation_recommendation <- function(
-    cluster,
-    lang = Sys.getenv("EPISODIC_LANGUAGE"),
-    instance_i18n = NULL) {
+  cluster,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  instance_i18n = NULL
+) {
   generated <- episodic_interpretation_generate(
     cluster,
     lang = lang,
@@ -381,9 +384,10 @@ episodic_interpretation_recommendation <- function(
 #' @keywords internal
 #' @noRd
 episodic_interpretation_paragraphs <- function(
-    cluster,
-    lang = Sys.getenv("EPISODIC_LANGUAGE"),
-    instance_i18n = NULL) {
+  cluster,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  instance_i18n = NULL
+) {
   generated <- episodic_interpretation_generate(
     cluster,
     lang = lang,

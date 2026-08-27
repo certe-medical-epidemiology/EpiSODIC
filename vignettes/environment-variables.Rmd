@@ -29,8 +29,9 @@ setting up automatically.
 | `EPISODIC_QUARTO_REPORT`    | `episodic_report_render()` (`qmd_path` argument)                      | Path to an operator's own Quarto report template, overriding the shipped `inst/report/cluster_report.qmd`. See "Custom report templates" above.                                                                                                                                      |
 
 None of these need to be set to run the demo - `episodic_demo()` uses a
-temporary SQLite file and every shipped default. See `vignettes/deployment.Rmd`
-for `EPISODIC_DB` and `EPISODIC_CONFIG`/`EPISODIC_PALETTE_CONFIG` in
-context, and the README's "Database backend", "Geographic reference
-data" and "Custom report templates" sections for the detail behind each
-of the rows above.
+temporary SQLite file and every shipped default. See
+`vignette("deployment")` for `EPISODIC_DB` and
+`EPISODIC_CONFIG`/`EPISODIC_PALETTE_CONFIG` in context (database backend,
+custom report templates), and `vignette("data-format")`'s "Geographic
+reference data" section for the detail behind `EPISODIC_GEO_DATA` and
+`EPISODIC_GEO_DATA_OVERLAY`.

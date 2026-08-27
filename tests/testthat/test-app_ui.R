@@ -155,7 +155,10 @@ test_that("episodic_ui_info_screen() renders in every shipped language and names
 test_that("episodic_app_package_meta() reads only the first DESCRIPTION URL, not the whole comma-separated field", {
   meta <- episodic_app_package_meta()
   expect_false(is.null(meta))
-  expect_equal(meta$url, "https://certe-medical-epidemiology.github.io/EpiSODIC")
+  expect_equal(
+    meta$url,
+    "https://certe-medical-epidemiology.github.io/EpiSODIC"
+  )
   expect_false(grepl(",", meta$url, fixed = TRUE))
   expect_equal(meta$license, "GPL-2")
 })

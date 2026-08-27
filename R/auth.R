@@ -196,12 +196,13 @@ episodic_auth_change_password <- function(con, user_id, new_password) {
 #' file.remove(db_path)
 #' @export
 episodic_provision_user <- function(
-    db_path = Sys.getenv("EPISODIC_DB", unset = NA),
-    username,
-    full_name,
-    email,
-    password,
-    role = "epidemiologist") {
+  db_path = Sys.getenv("EPISODIC_DB", unset = NA),
+  username,
+  full_name,
+  email,
+  password,
+  role = "epidemiologist"
+) {
   rlang::check_installed("sodium")
   role <- match.arg(role, c("epidemiologist", "viewer"))
   con <- episodic_db_open(db_path)

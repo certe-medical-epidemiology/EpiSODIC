@@ -27,8 +27,9 @@
 #' @keywords internal
 #' @noRd
 episodic_app_server_factory <- function(
-    db_path,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  db_path,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   function(input, output, session) {
     con <- episodic_db_connect(db_path)
     session$onSessionEnded(function() {
@@ -301,8 +302,9 @@ episodic_app_server_factory <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_status_strip <- function(
-    status,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  status,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   if (identical(status$status, "none")) {
     return(shiny::tags$div(
       class = "episodic-status-strip",
@@ -429,9 +431,10 @@ episodic_ui_first_line <- function(text, max_chars = 160L) {
 #' @keywords internal
 #' @noRd
 episodic_ui_format_datetime <- function(
-    iso,
-    fmt = "%H:%M",
-    tz = Sys.timezone()) {
+  iso,
+  fmt = "%H:%M",
+  tz = Sys.timezone()
+) {
   if (is.null(iso) || is.na(iso)) {
     return(episodic_tr("misc.unknown"))
   }
@@ -473,10 +476,11 @@ episodic_ui_format_datetime <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_rail <- function(
-    open,
-    selected_id,
-    lang = Sys.getenv("EPISODIC_LANGUAGE"),
-    current_user = NULL) {
+  open,
+  selected_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  current_user = NULL
+) {
   pal <- episodic_palette()
   verdicts <- c(
     "artefact",
@@ -626,13 +630,20 @@ episodic_ui_rail <- function(
             shiny::HTML(episodic_ui_italicise_taxon(row$pathogen)),
             shiny::tags$span(
               class = "episodic-rail-id",
-              episodic_tr("dossier.cluster_ref", id = row$cluster_id, lang = lang)
+              episodic_tr(
+                "dossier.cluster_ref",
+                id = row$cluster_id,
+                lang = lang
+              )
             ),
             if (!is.na(row$care_line)) {
               care_line_colour <- episodic_ui_care_line_colour(row$care_line)
               if (!is.null(care_line_colour)) {
                 episodic_ui_chip(
-                  episodic_tr(paste0("careline.short.", row$care_line), lang = lang),
+                  episodic_tr(
+                    paste0("careline.short.", row$care_line),
+                    lang = lang
+                  ),
                   care_line_colour,
                   filled = TRUE
                 )

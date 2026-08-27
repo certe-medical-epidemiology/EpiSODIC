@@ -33,8 +33,9 @@
 #' @keywords internal
 #' @noRd
 episodic_app_open_clusters <- function(
-    con,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  con,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   clusters <- episodic_db_clusters(con, open_only = TRUE)
   if (nrow(clusters) == 0) {
     return(clusters[, c("cluster_id", "priority_score"), drop = FALSE])
@@ -284,9 +285,10 @@ episodic_app_explicitly_closed_from <- function(states, events) {
 #' @keywords internal
 #' @noRd
 episodic_cluster_object <- function(
-    con,
-    cluster_id,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  con,
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   cluster <- DBI::dbGetQuery(
     con,
     "SELECT * FROM episodic_cluster WHERE cluster_id = ?",
@@ -431,9 +433,10 @@ episodic_rt_unavailable_reason <- function(pc) {
 #' @keywords internal
 #' @noRd
 episodic_app_level_label <- function(
-    level,
-    care_line = NA,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  level,
+  care_line = NA,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   label <- episodic_tr(paste0("level.", level), lang = lang)
   if (is.na(care_line)) {
     return(label)
@@ -448,9 +451,10 @@ episodic_app_level_label <- function(
 #' @keywords internal
 #' @noRd
 episodic_app_place_label <- function(
-    stream,
-    institution,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  stream,
+  institution,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   care_line_suffix <- if (!is.na(stream$care_line)) {
     paste0(
       " \u00b7 ",
@@ -572,10 +576,11 @@ episodic_app_density <- function(con, stream, cases) {
 #' @keywords internal
 #' @noRd
 episodic_app_doubling_time <- function(
-    cases,
-    incomplete_days = 0L,
-    asof = Sys.Date(),
-    window_days = 14L) {
+  cases,
+  incomplete_days = 0L,
+  asof = Sys.Date(),
+  window_days = 14L
+) {
   if (nrow(cases) < 3) {
     return(NA_real_)
   }
@@ -1074,7 +1079,7 @@ episodic_app_linelist <- function(con, cluster_id) {
     order(cases$sample_date),
     c(
       "patient_key",
-      "source_key",
+      "lab_number",
       "sample_date",
       "sex",
       "age",

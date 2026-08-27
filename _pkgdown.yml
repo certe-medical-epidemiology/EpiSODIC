@@ -30,6 +30,24 @@ template:
 navbar:
   type: dark
 
+articles:
+- title: Get started
+  desc: >
+    What EpiSODIC does, and the fastest path from nothing to a working
+    instance.
+  contents:
+  - overview
+  - data-format
+  - deployment
+
+- title: Reference
+  desc: >
+    Look these up as needed rather than reading start to finish.
+  contents:
+  - environment-variables
+  - detection-reconciliation
+  - faq
+
 reference:
 - title: Try it out
   desc: >

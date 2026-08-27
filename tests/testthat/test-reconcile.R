@@ -61,21 +61,23 @@ reconcile_setup <- function() {
 # episodic_reconcile_case_count() has something real to recount) and returns
 # the matching detection record for episodic_reconcile_stream().
 reconcile_detect <- function(
-    env,
-    run_id,
-    first_day,
-    last_day,
-    n_cases,
-    detector = "same_place") {
+  env,
+  run_id,
+  first_day,
+  last_day,
+  n_cases,
+  detector = "same_place"
+) {
   dates <- seq(as.Date(first_day), as.Date(last_day), length.out = n_cases)
   dates <- as.character(as.Date(dates))
   for (i in seq_len(n_cases)) {
     source_key <- sprintf("CASE-%s-%d-%d", first_day, run_id, i)
     DBI::dbExecute(
       env$con,
-      "INSERT INTO episodic_case (source_key, patient_key, sample_date, pathogen, care_line,
-        institution_id, first_seen_run) VALUES (?, ?, ?, 'Test pathogen', 'second', ?, ?)",
+      "INSERT INTO episodic_case (source_key, lab_number, patient_key, sample_date, pathogen,
+        care_line, institution_id, first_seen_run) VALUES (?, ?, ?, ?, 'Test pathogen', 'second', ?, ?)",
       params = list(
+        source_key,
         source_key,
         source_key,
         dates[i],
@@ -99,13 +101,14 @@ noop_has_assessment <- function(cluster_id) FALSE
 noop_verdict <- function(cluster_id) NA_character_
 
 reconcile_run <- function(
-    env,
-    run_id,
-    det,
-    case_free_days = 14,
-    close_after_runs = 14,
-    has_assessment_fn = noop_has_assessment,
-    verdict_fn = noop_verdict) {
+  env,
+  run_id,
+  det,
+  case_free_days = 14,
+  close_after_runs = 14,
+  has_assessment_fn = noop_has_assessment,
+  verdict_fn = noop_verdict
+) {
   episodic_reconcile_stream(
     env$con,
     env$stream_id,

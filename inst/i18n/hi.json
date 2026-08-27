@@ -116,7 +116,7 @@
   "panel.linelist.title": "लाइन सूची",
   "panel.linelist.aside": "{total} में से {shown} मामले",
   "panel.linelist.col.patient": "मरीज़",
-  "panel.linelist.col.case": "मामला",
+  "panel.linelist.col.lab_number": "लैब नंबर",
   "panel.linelist.col.date": "नमूना तिथि",
   "panel.linelist.col.sex": "लिंग",
   "panel.linelist.col.age": "आयु",
