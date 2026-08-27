@@ -476,6 +476,11 @@ episodic_ui_similar_clusters_panel <- function(
     shiny::tags$table(
       class = "episodic-table",
       shiny::tags$thead(shiny::tags$tr(
+        # First column: the id is the handle everything else refers to,
+        # and the row it leads is reachable rather than only listed -
+        # matching every other table of clusters (the Pathogen screen's
+        # clusters panel, the Archive).
+        shiny::tags$th(episodic_tr("column.cluster", lang = lang)),
         shiny::tags$th(episodic_tr("panel.similar.col.place", lang = lang)),
         shiny::tags$th(episodic_tr("panel.similar.col.cases", lang = lang)),
         shiny::tags$th(episodic_tr("panel.similar.col.verdict", lang = lang)),
@@ -484,7 +489,9 @@ episodic_ui_similar_clusters_panel <- function(
       shiny::tags$tbody(
         lapply(seq_len(nrow(similar)), function(i) {
           row <- similar[i, ]
-          shiny::tags$tr(
+          episodic_ui_cluster_link_row(
+            row$cluster_id,
+            lang = lang,
             shiny::tags$td(paste0(row$level_label, " \u00b7 ", row$place)),
             shiny::tags$td(row$n_cases),
             shiny::tags$td(

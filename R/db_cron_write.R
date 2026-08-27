@@ -244,43 +244,93 @@ episodic_db_stream_upsert <- function(
   episodic_db_last_insert_id(con)
 }
 
+#' How many `source_key`/`patient_key` (etc.) values one `IN (...)` query
+#' binds at a time.
+#'
+#' A single query with tens of thousands of placeholders risks the
+#' driver's own limit (SQLite's default `SQLITE_MAX_VARIABLE_NUMBER`,
+#' MariaDB's `max_allowed_packet`) - chunking keeps every lookup well
+#' under either, whatever the batch size an operator's extract step
+#' hands to a run.
+#' @keywords internal
+#' @noRd
+episodic_db_chunk_size <- 500L
+
+#' The subset of `keys` already present in `episodic_case.source_key`
+#'
+#' One `IN (...)` query per chunk instead of one `SELECT` per row - the
+#' loop this replaced sent as many round trips to the database as there
+#' were cases in the batch, which is what made a run's own case-insert
+#' step the slow part of an import that was otherwise dominated by
+#' network latency rather than by the data itself.
+#' @keywords internal
+#' @noRd
+episodic_db_existing_source_keys <- function(con, keys) {
+  keys <- unique(keys)
+  if (length(keys) == 0) {
+    return(character(0))
+  }
+  chunks <- split(keys, ceiling(seq_along(keys) / episodic_db_chunk_size))
+  found <- lapply(chunks, function(chunk) {
+    placeholders <- paste(rep("?", length(chunk)), collapse = ", ")
+    DBI::dbGetQuery(
+      con,
+      sprintf(
+        "SELECT source_key FROM episodic_case WHERE source_key IN (%s)",
+        placeholders
+      ),
+      params = as.list(chunk)
+    )$source_key
+  })
+  unlist(found, use.names = FALSE)
+}
+
 #' @keywords internal
 #' @noRd
 episodic_db_case_insert_new <- function(con, cases, run_id) {
-  n_inserted <- 0L
-  for (i in seq_len(nrow(cases))) {
-    row <- cases[i, ]
-    existing <- DBI::dbGetQuery(
-      con,
-      "SELECT 1 FROM episodic_case WHERE source_key = ?",
-      params = list(row$source_key)
-    )
-    if (nrow(existing) > 0) {
-      next
-    }
-    DBI::dbExecute(
-      con,
-      "INSERT INTO episodic_case
-        (source_key, patient_key, sample_date, receipt_date, pathogen,
-         care_line, institution_id, ward, specialism, pc, sex, age, first_seen_run)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      params = list(
-        row$source_key,
-        row$patient_key,
-        episodic_sql_date(row$sample_date),
-        episodic_sql_date(row$receipt_date),
-        row$pathogen,
-        row$care_line,
-        row$institution_id,
-        row$ward,
-        row$specialism,
-        row$pc,
-        row$sex,
-        row$age,
-        run_id
-      )
-    )
-    n_inserted <- n_inserted + 1L
+  if (nrow(cases) == 0) {
+    return(0L)
+  }
+
+  existing <- episodic_db_existing_source_keys(con, cases$source_key)
+  to_insert <- cases[!(cases$source_key %in% existing), , drop = FALSE]
+  n_inserted <- nrow(to_insert)
+  if (n_inserted == 0) {
+    return(0L)
+  }
+
+  # One prepared statement, bound once with every row's parameters
+  # instead of parsed and executed anew for each row - the same
+  # `INSERT`, sent as one round trip per chunk rather than one per case.
+  chunks <- split(
+    seq_len(n_inserted),
+    ceiling(seq_len(n_inserted) / episodic_db_chunk_size)
+  )
+  stmt <- DBI::dbSendStatement(
+    con,
+    "INSERT INTO episodic_case
+      (source_key, patient_key, sample_date, receipt_date, pathogen,
+       care_line, institution_id, ward, specialism, pc, sex, age, first_seen_run)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  )
+  on.exit(DBI::dbClearResult(stmt))
+  for (idx in chunks) {
+    batch <- to_insert[idx, , drop = FALSE]
+    DBI::dbBind(stmt, list(
+      batch$source_key,
+      batch$patient_key,
+      episodic_sql_date(batch$sample_date),
+      episodic_sql_date(batch$receipt_date),
+      batch$pathogen,
+      batch$care_line,
+      batch$institution_id,
+      batch$ward,
+      batch$specialism,
+      batch$pc,
+      batch$sex,
+      batch$age,
+      rep(run_id, nrow(batch))
+    ))
   }
   n_inserted
 }
