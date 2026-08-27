@@ -207,9 +207,10 @@ episodic_check_structure <- function(cases) {
           "one culture yielding results under two pathogen names, or two ",
           "isolates of the same pathogen from one culture with different ",
           "antibiograms - build source_key from whatever combination of ",
-          "lab_number, patient_key and pathogen is unique per row in your ",
-          "own data, e.g. paste(lab_number, pathogen) or ",
-          "paste(lab_number, pathogen, isolate_number)."
+          "your own columns is unique per row: many laboratory systems ",
+          "need all of lab_number, patient_key, a test/panel code and a ",
+          "strain/isolate number, e.g. paste(lab_number, patient_key, ",
+          "test_code, isolate_number)."
         )
       )
     }

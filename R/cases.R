@@ -64,14 +64,18 @@
 #'     result (a multiplex panel positive for two organisms, two isolates
 #'     from one culture with different antibiograms), and a bare specimen
 #'     number then repeats across rows. Where that is true of your source
-#'     data, build `source_key` yourself from whatever combination of
-#'     `lab_number`, `patient_key` and `pathogen` is unique per *row* in
-#'     your extract, e.g. `paste(lab_number, pathogen)` or, if one culture
-#'     can yield more than one isolate of the same pathogen,
-#'     `paste(lab_number, pathogen, isolate_number)`. `source_key` itself
-#'     is never shown in the dashboard - it exists only so a re-run stays
-#'     idempotent - which is exactly why it is safe to make it an
-#'     artificial combination rather than a real-world identifier.}
+#'     data, build `source_key` yourself by combining whichever of your
+#'     own columns are unique per *row* - many laboratory systems need all
+#'     four of `lab_number`, `patient_key`, a test/panel code, and a
+#'     strain or isolate number to pin down one row, e.g.
+#'     `paste(lab_number, patient_key, test_code, isolate_number)` in your
+#'     own extract step (only `lab_number` and `patient_key` reach
+#'     EpiSODIC itself; a test code or isolate number that exists only in
+#'     your source system is fine to fold into `source_key` and drop
+#'     otherwise). `source_key` itself is never shown in the dashboard -
+#'     it exists only so a re-run stays idempotent - which is exactly why
+#'     it is safe to make it an artificial combination rather than a
+#'     real-world identifier.}
 #'   \item{`lab_number`}{Character, required, no `NA`. Your laboratory's
 #'     own identifier for the specimen or culture this result came from
 #'     (an accession, specimen or culture number) - not pseudonymised,
