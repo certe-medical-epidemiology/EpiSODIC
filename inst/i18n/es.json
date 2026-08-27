@@ -30,6 +30,8 @@
   "dossier.stat.doubling_na": "n/d",
   "dossier.stat.unique_patients": "Pacientes únicos",
   "dossier.stat.unique_patients_sub": "{positives_phrase}, 1 por episodio",
+  "dossier.stat.duration": "Duración",
+  "dossier.stat.duration_sub": "primer a último caso",
   "dossier.stat.case_free": "Sin casos",
   "dossier.stat.case_free_value": "{since} d",
   "dossier.stat.case_free_sub": "umbral {need} d",

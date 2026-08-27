@@ -480,11 +480,21 @@ episodic_ui_geo_map_chart <- function(
           datum = NA,
           expand = FALSE
         ) +
+        # No fill legend: every labelled area already carries its own
+        # count (episodic_geo_labels()), and episodic_chart_theme()'s
+        # legend.position = "bottom" would otherwise eat into the box
+        # episodic_ui_map_render_height() sized for the map's geographic
+        # aspect ratio alone - the map then renders shorter than that box
+        # and floats in the middle of it, padded with blank space top and
+        # bottom exactly where the legend's own row was budgeted for.
+        ggplot2::guides(fill = "none") +
         episodic_chart_theme() +
         ggplot2::theme(
           axis.text = ggplot2::element_blank(),
           axis.ticks = ggplot2::element_blank(),
-          panel.grid = ggplot2::element_blank()
+          panel.grid = ggplot2::element_blank(),
+          legend.position = "none",
+          plot.margin = ggplot2::margin(0, 0, 0, 0)
         )
       # So the caller can size its render device to the map's own shape
       # instead of a fixed box: coord_sf() draws geographic space true to
@@ -643,7 +653,13 @@ episodic_ui_denominator_chart <- function(
   pal <- episodic_palette()
   max_tests <- max(series$n_tests, 1)
   scale_factor <- max_tests
-  series$positivity_scaled <- series$positivity * scale_factor
+  # A positivity rate above 100% is not a real reading - it means the
+  # supplied testing-volume feed does not cover every case counted (a
+  # partial-coverage panel, say), not that more than every test came back
+  # positive. Clamped here rather than upstream so the underlying numbers
+  # stay available to anyone reading `series` directly; the chart is the
+  # one place a rate has to fit on a percentage axis.
+  series$positivity_scaled <- pmin(series$positivity, 1) * scale_factor
 
   ggplot2::ggplot(series, ggplot2::aes(x = .data$week_start)) +
     ggplot2::geom_col(
@@ -663,9 +679,11 @@ episodic_ui_denominator_chart <- function(
     ) +
     ggplot2::scale_y_continuous(
       name = episodic_tr("panel.denominator.legend_tests", lang = lang),
+      limits = c(0, scale_factor),
       sec.axis = ggplot2::sec_axis(
         ~ . / scale_factor * 100,
-        name = episodic_tr("panel.denominator.legend_positivity", lang = lang)
+        name = episodic_tr("panel.denominator.legend_positivity", lang = lang),
+        breaks = seq(0, 100, by = 25)
       )
     ) +
     episodic_chart_week_scale(series$week_start, lang = lang) +
@@ -832,6 +850,12 @@ episodic_ui_pathogen_overlay_chart <- function(
   breaks <- seq(1L, n_weeks, by = 4L)
   labels <- rows$week_label[match(breaks, rows$week_index)]
 
+  # Crop to the same weeks the weekly incidence panel above this one is
+  # showing (see episodic_app_overlay_period_range()), rather than always
+  # the full season/year, so the two top Pathogen-screen charts share an
+  # x axis whatever period is selected.
+  period_range <- overlay$period_range
+
   p <- ggplot2::ggplot(
     rows,
     ggplot2::aes(
@@ -857,9 +881,14 @@ episodic_ui_pathogen_overlay_chart <- function(
       )
   }
 
-  p +
+  p <- p +
     ggplot2::scale_colour_manual(values = colours[as.character(groups)]) +
-    ggplot2::scale_x_continuous(breaks = breaks, labels = labels) +
+    ggplot2::scale_x_continuous(breaks = breaks, labels = labels)
+  if (!is.null(period_range)) {
+    p <- p +
+      ggplot2::coord_cartesian(xlim = period_range)
+  }
+  p +
     ggplot2::labs(
       y = episodic_tr("panel.epicurve.ylab", lang = lang),
       x = episodic_tr(

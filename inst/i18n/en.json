@@ -30,6 +30,8 @@
   "dossier.stat.doubling_na": "n/a",
   "dossier.stat.unique_patients": "Unique patients",
   "dossier.stat.unique_patients_sub": "{positives_phrase}, 1 per episode",
+  "dossier.stat.duration": "Duration",
+  "dossier.stat.duration_sub": "first case to last case",
   "dossier.stat.case_free": "Case-free",
   "dossier.stat.case_free_value": "{since} d",
   "dossier.stat.case_free_sub": "threshold {need} d",

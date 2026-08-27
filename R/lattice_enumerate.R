@@ -25,11 +25,13 @@
 #' streams (where it is available) but not into L3-L5.
 #'
 #' L3 (Gebied) is derived from the PC's first two digits, a coarse but
-#' deterministic and contiguous grouping. L4 (Provincie) is derived from the PC
+#' deterministic and contiguous grouping. L4 (Provincie) defaults to the PC
 #' ranges used by the synthetic generator (9xxx Groningen, 8xxx Fryslan,
-#' 7xxx Drenthe) and is therefore specific to the bundled demo data; a
-#' real deployment needs the actual PC-to-province mapping for its own
-#' region.
+#' 7xxx Drenthe), which is specific to the bundled demo data; a real
+#' deployment outside that region supplies its own PC-to-province lookup
+#' via `EPISODIC_PC_PROVINCE_MAP` (see `episodic_pc_to_province()`) -
+#' without it, every postcode outside the demo's three provinces resolves
+#' to no province at all, and L4 never has anything to detect on.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cases A data frame of newly-loaded (or all) cases, with at least
@@ -165,9 +167,35 @@ episodic_case_region_code <- function(cases, level) {
 #' @noRd
 episodic_region_code_all <- "NORTHERN_NETHERLANDS"
 
+#' Map a postcode to its L4 province/region code
+#'
+#' Falls back to the PC ranges used by the bundled Northern Netherlands
+#' demo data (9xxx Groningen, 8xxx Fryslan, 7xxx Drenthe) only when no
+#' operator-supplied mapping is configured. Left unconfigured in a real
+#' deployment outside that specific demo region, every `pc` resolves to
+#' `NA` here, so no province ever gets an L4 stream and L4 detection -
+#' and everything downstream that reads it, including the Pathogen
+#' screen's map - stays permanently empty however many cases accumulate.
+#'
+#' @param pc A character vector of postcode values, matching the `pc`
+#'   column of your case data.
+#' @param path Path to a CSV with columns `pc` (matching your case
+#'   data's `pc` values exactly - not a prefix) and `province_code`.
+#'   Defaults to the `EPISODIC_PC_PROVINCE_MAP` environment variable; if
+#'   unset (or the file does not exist), falls back to the shipped
+#'   Northern Netherlands demo default.
+#' @return A character vector the same length as `pc`: the province code,
+#'   or `NA` where `pc` has no entry in the mapping.
 #' @keywords internal
 #' @noRd
-episodic_pc_to_province <- function(pc) {
+episodic_pc_to_province <- function(
+  pc,
+  path = Sys.getenv("EPISODIC_PC_PROVINCE_MAP", unset = NA)
+) {
+  mapping <- episodic_pc_province_map_resolve(path)
+  if (!is.null(mapping)) {
+    return(unname(mapping[as.character(pc)]))
+  }
   digit1 <- substr(pc, 1, 1)
   dplyr::case_when(
     digit1 == "9" ~ "PROV_GRONINGEN",
@@ -175,6 +203,33 @@ episodic_pc_to_province <- function(pc) {
     digit1 == "7" ~ "PROV_DRENTHE",
     TRUE ~ NA_character_
   )
+}
+
+#' Read an operator-supplied PC-to-province CSV, defensively
+#'
+#' A missing or malformed mapping file must cost the L4 level, not the
+#' run - read errors and a wrong column layout both fall back to `NULL`
+#' (which `episodic_pc_to_province()` reads as "use the demo default")
+#' rather than throwing partway through lattice enumeration.
+#' @keywords internal
+#' @noRd
+episodic_pc_province_map_resolve <- function(path) {
+  if (is.na(path) || !nzchar(path) || !file.exists(path)) {
+    return(NULL)
+  }
+  df <- tryCatch(
+    utils::read.csv(
+      path,
+      stringsAsFactors = FALSE,
+      colClasses = "character",
+      na.strings = c("", "NA")
+    ),
+    error = function(e) NULL
+  )
+  if (is.null(df) || !all(c("pc", "province_code") %in% names(df))) {
+    return(NULL)
+  }
+  stats::setNames(df$province_code, df$pc)
 }
 
 #' @keywords internal

@@ -780,8 +780,12 @@ episodic_ui_pathogen_config_panel <- function(
       rows,
       list(list(
         label = episodic_tr("pathogen.panel.config.source.label", lang = lang),
-        value = pc$source_ref,
-        meaning = ""
+        # The reference itself is often a long citation string, so it goes
+        # in the wide "What it does" column rather than "Value" - the
+        # narrower column that every other row's short number or yes/no
+        # has to keep sized for.
+        value = dash,
+        meaning = pc$source_ref
       ))
     )
   }

@@ -30,6 +30,8 @@
   "dossier.stat.doubling_na": "लागू नहीं",
   "dossier.stat.unique_patients": "अद्वितीय रोगी",
   "dossier.stat.unique_patients_sub": "{positives_phrase}, प्रति प्रकरण 1",
+  "dossier.stat.duration": "अवधि",
+  "dossier.stat.duration_sub": "पहले मामले से अंतिम मामले तक",
   "dossier.stat.case_free": "प्रकरण-मुक्त",
   "dossier.stat.case_free_value": "{since} दि.",
   "dossier.stat.case_free_sub": "सीमा {need} दि.",

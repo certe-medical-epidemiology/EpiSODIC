@@ -30,6 +30,8 @@
   "dossier.stat.doubling_na": "k. A.",
   "dossier.stat.unique_patients": "Eindeutige Patienten",
   "dossier.stat.unique_patients_sub": "{positives_phrase}, 1 pro Episode",
+  "dossier.stat.duration": "Dauer",
+  "dossier.stat.duration_sub": "erster bis letzter Fall",
   "dossier.stat.case_free": "Fallfrei",
   "dossier.stat.case_free_value": "{since} T",
   "dossier.stat.case_free_sub": "Schwelle {need} T",
