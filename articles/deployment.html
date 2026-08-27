@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,15 +37,7 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="active nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/deployment.html">Deployment</a></li>
-    <li><a class="dropdown-item" href="../articles/detection-reconciliation.html">Detection and reconciliation</a></li>
-    <li><a class="dropdown-item" href="../articles/environment-variables.html">Environment variables</a></li>
-    <li><a class="dropdown-item" href="../articles/faq.html">Frequently asked questions</a></li>
-  </ul>
-</li>
+<li class="active nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -97,10 +89,10 @@ laboratory rather than tied to one:</p>
 tibble, as above - that is what these arguments are written for. If
 producing the data only makes sense at run time (a live database query,
 for instance), a zero-argument function returning one is accepted just
-as well - see <code><a href="../reference/episodic_resolve_data.html">episodic_resolve_data()</a></code>. The README’s “Data
-format” section documents the exact columns each of the four data
-sources (cases, positivity metadata, institution activity, geographic
-reference data) expects; only cases are mandatory.</p>
+as well - see <code><a href="../reference/episodic_resolve_data.html">episodic_resolve_data()</a></code>.
+<code><a href="../articles/data-format.html">vignette("data-format")</a></code> documents the exact columns each of
+the four data sources (cases, positivity metadata, institution activity,
+geographic reference data) expects; only cases are mandatory.</p>
 <p>Scope <code>my_extract_and_transform_function()</code> to a recent
 window - the last few weeks, with a couple of weeks of overlap as a
 margin against a missed run - rather than a patient’s full history on
@@ -156,20 +148,39 @@ never part of the detection-reproducibility guarantee
 <div class="section level2">
 <h2 id="accounts">Accounts<a class="anchor" aria-label="anchor" href="#accounts"></a>
 </h2>
-<p>Read access is anonymous - the app opens read-only for anyone who
-reaches it. Signing in is only needed to classify a cluster, close it,
-or mute a stream, and there is deliberately no in-app account management
-screen: accounts are provisioned by whoever administers the
-database.</p>
+<p>Aggregate data is anonymous - the app opens read-only for anyone who
+reaches it. Signing in unlocks patient-level detail (the line list) for
+both roles below; there is deliberately no in-app account management
+screen, and accounts are provisioned by whoever administers the
+database, not created by users themselves or by the app.</p>
+<p>There are exactly two roles:</p>
+<ul>
+<li>
+<code>"epidemiologist"</code> - by definition, assesses clusters and
+classifies them. Can do everything a viewer can, plus classify, close,
+and mute clusters, and re-render reports on demand.</li>
+<li>
+<code>"viewer"</code> - read-only. Sees exactly what a signed-in
+epidemiologist sees, including patient-level detail, but cannot record
+an assessment.</li>
+</ul>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span>  <span class="co"># or pass db_path explicitly below</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/episodic_provision_user.html">episodic_provision_user</a></span><span class="op">(</span></span>
-<span>  username <span class="op">=</span> <span class="st">"jdoe"</span>, full_name <span class="op">=</span> <span class="st">"Jane Doe"</span>, email <span class="op">=</span> <span class="st">"j.doe@example.org"</span>,</span>
+<span>  username <span class="op">=</span> <span class="st">"jdoe"</span>,</span>
+<span>  role <span class="op">=</span> <span class="st">"epidemiologist"</span>,  <span class="co"># or "viewer"</span></span>
+<span>  full_name <span class="op">=</span> <span class="st">"Dr Jane Doe"</span>,</span>
+<span>  email <span class="op">=</span> <span class="st">"j.doe@example.org"</span>,</span>
 <span>  password <span class="op">=</span> <span class="st">"a-temporary-password"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>The account is created with <code>must_change = TRUE</code>, so the
-first real sign-in forces the holder to set their own password.</p>
+<p><code><a href="../reference/episodic_provision_user.html">episodic_provision_user()</a></code> takes <code>db_path</code>
+(defaulting to <code>EPISODIC_DB</code>, see
+<code><a href="../articles/environment-variables.html">vignette("environment-variables")</a></code>), not an open connection
+- it opens and closes its own via <code><a href="../reference/episodic_db_open.html">episodic_db_open()</a></code>, so
+provisioning an account is one call at the console. The account is
+created with <code>must_change = TRUE</code>, so its first real sign-in
+forces the holder to set their own password before continuing.</p>
 </div>
 <div class="section level2">
 <h2 id="where-the-database-lives">Where the database lives<a class="anchor" aria-label="anchor" href="#where-the-database-lives"></a>
@@ -198,6 +209,16 @@ query work identically against either backend.</li>
 <span>  host <span class="op">=</span> <span class="st">"db.internal"</span>, dbname <span class="op">=</span> <span class="st">"episodic"</span>,</span>
 <span>  user <span class="op">=</span> <span class="st">"episodic_app"</span>, password <span class="op">=</span> <span class="st">"s3cr3t!"</span></span>
 <span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>Connecting to MariaDB/MySQL requires the <code>RMariaDB</code>
+package (<code>install.packages("RMariaDB")</code>); it is a
+<code>Suggests</code> dependency, not installed automatically, so
+SQLite-only deployments never need it. The schema
+(<code>inst/sql/schema.sql</code>) is written once, in SQLite syntax,
+and adapted at load time for the handful of tokens that differ under
+MariaDB/MySQL - there is no separate schema file to keep in sync.
+<code>CHECK</code> constraints are enforced from MariaDB 10.2.1 / MySQL
+8.0.16 onwards; on older servers they are accepted but silently
+ignored.</p>
 </div>
 <div class="section level2">
 <h2 id="running-the-app">Running the app<a class="anchor" aria-label="anchor" href="#running-the-app"></a>
@@ -210,6 +231,24 @@ defaults to <code>EPISODIC_DB</code> exactly like
 <code><a href="../reference/episodic_provision_user.html">episodic_provision_user()</a></code>’s does, so a systemd unit or
 Docker container can configure everything through environment variables
 alone, with no R code to edit between instances.</p>
+</div>
+<div class="section level2">
+<h2 id="custom-report-templates">Custom report templates<a class="anchor" aria-label="anchor" href="#custom-report-templates"></a>
+</h2>
+<p><code><a href="../reference/episodic_report_render.html">episodic_report_render()</a></code> renders
+<code>inst/report/cluster_report.qmd</code> (embedded as self-contained
+HTML via Quarto) unless <code>EPISODIC_QUARTO_REPORT</code> points at an
+operator’s own <code>.qmd</code> file, in which case that is used
+instead - for an organisation that wants its own letterhead, section
+order, or house style. A custom template only needs to
+<code>readRDS(params$data_path)</code> and read from the same list the
+shipped one does (<code>obj</code>, <code>epi_curve</code>,
+<code>trend</code>, <code>linelist</code>, <code>timeline</code>,
+<code>similar</code>, <code>small_count_threshold</code>,
+<code>rendered_at</code>, <code>lang</code>,
+<code>package_version</code>); see the shipped template for the exact
+shape, including how it calls
+<code>episodic_tr(..., lang = d$lang)</code> for a bilingual report.</p>
 </div>
 <div class="section level2">
 <h2 id="optional-pieces-and-their-fallbacks">Optional pieces, and their fallbacks<a class="anchor" aria-label="anchor" href="#optional-pieces-and-their-fallbacks"></a>
@@ -267,6 +306,22 @@ YAML file with its real colours - no package dependency involved either
 way.</p>
 <p>None of these are required to run the demo, the detection engine, or
 the interface - each is additive.</p>
+</div>
+<div class="section level2">
+<h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a>
+</h2>
+<ul>
+<li>
+<code><a href="../articles/data-format.html">vignette("data-format")</a></code> for the case data contract this
+vignette’s <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> calls expect.</li>
+<li>
+<code><a href="../articles/environment-variables.html">vignette("environment-variables")</a></code> for the full
+<code>EPISODIC_*</code> reference table, including every variable named
+above.</li>
+<li>
+<code><a href="../articles/faq.html">vignette("faq")</a></code> for hosting choices, account roles, and
+other operational questions.</li>
+</ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

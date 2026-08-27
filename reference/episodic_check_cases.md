@@ -86,7 +86,7 @@ cases <- episodic_synthetic_cases(
 )
 episodic_check_cases(cases)
 #> -- EpiSODIC case data check ------------------------------------------------
-#>    206 rows, 15 columns
+#>    206 rows, 16 columns
 #>    sample_date from 2025-01-01 to 2025-01-31
 #>    10 pathogens, 62 institutions, 200 patients
 #> 
@@ -101,7 +101,7 @@ broken$sex <- ifelse(broken$sex == "M", "male", "female")
 report <- episodic_check_cases(broken)
 report
 #> -- EpiSODIC case data check ------------------------------------------------
-#>    206 rows, 15 columns
+#>    206 rows, 16 columns
 #>    10 pathogens, 62 institutions, 200 patients
 #> 
 #> x 2 problems - a detection run refuses to start until these are fixed:

@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,15 +37,7 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="active nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/deployment.html">Deployment</a></li>
-    <li><a class="dropdown-item" href="../articles/detection-reconciliation.html">Detection and reconciliation</a></li>
-    <li><a class="dropdown-item" href="../articles/environment-variables.html">Environment variables</a></li>
-    <li><a class="dropdown-item" href="../articles/faq.html">Frequently asked questions</a></li>
-  </ul>
-</li>
+<li class="active nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -77,11 +69,14 @@
 <p>This page collects the questions that come up most often when getting
 started with EpiSODIC. Skim the questions first, then click the one you
 need to open its answer - nothing on this page needs to be read start to
-finish. If your question is not here, the README’s “Data format” and
-“Environment variables” sections and the “Deployment”, and “Detection
-and reconciliation” vignettes go deeper on most of these topics; and if
-it still is not answered anywhere, that is worth telling us, since it
-means this page is missing something it should cover.</p>
+finish. If your question is not here,
+<code><a href="../articles/data-format.html">vignette("data-format")</a></code>,
+<code><a href="../articles/deployment.html">vignette("deployment")</a></code>,
+<code><a href="../articles/environment-variables.html">vignette("environment-variables")</a></code> and
+<code><a href="../articles/detection-reconciliation.html">vignette("detection-reconciliation")</a></code> go deeper on most of
+these topics; and if it still is not answered anywhere, that is worth
+telling us, since it means this page is missing something it should
+cover.</p>
 <div class="section level2">
 <h2 id="getting-your-data-in">Getting your data in<a class="anchor" aria-label="anchor" href="#getting-your-data-in"></a>
 </h2>
@@ -101,10 +96,11 @@ are fixed - a date that does not parse, a value outside the allowed set)
 and <strong>advice</strong> (a run proceeds regardless, but it is worth
 a look - one pathogen spelled two ways, no <code>ward</code> on any
 hospital row). Run it, fix what it flags as a problem, run it again -
-most people get to a clean report in two or three passes. The README’s
-“Data format” section has the full column contract this is checking
-against, including the exact allowed values for <code>care_line</code>,
-<code>institution_type</code>, and <code>sex</code>.</p>
+most people get to a clean report in two or three passes.
+<code><a href="../articles/data-format.html">vignette("data-format")</a></code> has the full column contract this
+is checking against, including the exact allowed values for
+<code>care_line</code>, <code>institution_type</code>, and
+<code>sex</code>.</p>
 </details><details><summary><strong>Do I need to send all of my positives every time, or only
 new/recent ones?</strong>
 </summary><p>Only a recent window, with a couple of weeks of overlap - that is the
@@ -273,14 +269,21 @@ job, done before EpiSODIC is ever called. Bring each source into the
 shared column contract, <code><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind()</a></code> (or
 <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">dplyr::bind_rows()</a></code>) them together, and check the combined
 result with <code><a href="../reference/episodic_check_cases.html">episodic_check_cases()</a></code> as normal. The one thing
-to get right across sources is <code>source_key</code>: it only needs to
-be unique <em>within your own source system</em> per the column
-contract, so if two systems could otherwise produce the same key
-(e.g. both use a simple incrementing lab accession number), prefix each
-system’s keys with something that tells them apart
-(e.g. <code>"LIS1-482910"</code> vs. <code>"LIS2-482910"</code>) before
-combining, so a later re-run cannot collide two genuinely different
-results into one.</p>
+to get right across sources is <code>source_key</code>: it needs to be
+unique <em>per row of the combined data set</em>, so if two systems
+could otherwise produce the same key (e.g. both use a simple
+incrementing lab accession number), prefix each system’s keys with
+something that tells them apart (e.g. <code>"LIS1-482910"</code>
+vs. <code>"LIS2-482910"</code>) before combining, so a later re-run
+cannot collide two genuinely different results into one.
+<code>lab_number</code> itself needs no such treatment - unlike
+<code>source_key</code> it is never required to be unique, so your lab’s
+own accession number can go into it verbatim regardless of how many
+systems you combine. See <code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s
+“<code>source_key</code>: one identifier per <em>result</em>, not per
+specimen” section for the same idea applied within one source system,
+where a bare accession number repeats for other reasons (e.g. one
+culture yielding more than one reported result).</p>
 </details>
 </div>
 <div class="section level2">
@@ -355,8 +358,8 @@ an <code>epidemiologist</code> account can classify.</li>
 shared MariaDB/MySQL server via <code>EPISODIC_DB</code>), so you are
 not locked into your first choice - moving from “trying it out on my
 laptop” to “a shared instance the whole board uses” is a deployment
-change, not a data or code change. See the “Deployment” vignette for the
-full walk-through.</p>
+change, not a data or code change. See
+<code><a href="../articles/deployment.html">vignette("deployment")</a></code> for the full walk-through.</p>
 </details><details><summary><strong>Can more than one board member review the same cluster, and what
 happens if they disagree?</strong>
 </summary><p>Yes - any signed-in epidemiologist can open and classify any cluster;
@@ -372,17 +375,20 @@ version that stands - EpiSODIC’s job is to keep that history honest, not
 to referee it.</p>
 </details><details><summary><strong>Is patient-identifying information ever shown in the dashboard
 or in outbreak reports?</strong>
-</summary><p>No - <code>patient_key</code> (the field deduplication and episode
-grouping key on) is never displayed as-is anywhere in the interface or
-in a generated report; it is an internal identifier only. What
-clinicians and board members see is epidemiological context: age, sex,
-care line, institution/ward, specialism, postcode-level geography, and
-dates - enough to assess a cluster, not enough to identify who is in it
-from the dashboard alone. Getting a pseudonymised
-<code>patient_key</code> in the first place (rather than a real name or
-record number) is part of your own transform step, before data ever
-reaches EpiSODIC - see the README’s “Data format” section for the exact
-column contract.</p>
+</summary><p>No, not as long as you have pseudonymised <code>patient_key</code>
+before it reaches EpiSODIC - which is your own transform step’s job, not
+EpiSODIC’s; a real name, BSN, or hospital record number must never be
+passed through as this column. The pseudonym itself <em>is</em> shown,
+to a signed-in user, on a cluster’s line list (alongside
+<code>lab_number</code>, your lab’s specimen/culture number - also not
+itself a patient identifier), together with epidemiological context:
+sex, age, care line, institution/ward, specialism, postcode-level
+geography, and dates. That is enough to assess a cluster and to look a
+case up in your own source system if needed, but - given a properly
+pseudonymised <code>patient_key</code> - not enough to identify who is
+in it from the dashboard alone. See <code><a href="../articles/data-format.html">vignette("data-format")</a></code>
+for the exact column contract, including what “pseudonymised” needs to
+mean for this guarantee to hold.</p>
 </details><details><summary><strong>My organisation is not in the Netherlands - does the geography
 panel (the choropleth map) still work for us?</strong>
 </summary><p>Yes - the shipped Netherlands postcode reference data is a default,
@@ -396,9 +402,9 @@ default. An optional second layer,
 (provinces, counties, whatever is useful for orientation) on top. If you
 do not have geographic reference data to hand at all, nothing breaks -
 the geography panel simply falls back to a plain bar breakdown by
-<code>pc</code> value, exactly as if this feature did not exist. See the
-README’s “Geographic reference data” section for the exact contract
-these files need to satisfy.</p>
+<code>pc</code> value, exactly as if this feature did not exist. See
+<code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic reference data”
+section for the exact contract these files need to satisfy.</p>
 </details>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

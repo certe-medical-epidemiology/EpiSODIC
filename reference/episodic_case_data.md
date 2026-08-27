@@ -22,16 +22,6 @@ episodic_institution_types
 episodic_sex_codes
 ```
 
-## Format
-
-An object of class `character` of length 15.
-
-An object of class `character` of length 5.
-
-An object of class `character` of length 5.
-
-An object of class `character` of length 3.
-
 ## Details
 
 A data set is the normal case, and the one to reach for. If producing
@@ -54,7 +44,7 @@ data should have.
 
 ## Required columns
 
-`episodic_case_columns` lists all fifteen, in order. The set is an
+`episodic_case_columns` lists all sixteen, in order. The set is an
 explicit allow-list: a column outside it, or one missing from it, is
 rejected by
 [`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
@@ -69,19 +59,46 @@ rather than copying the strings out of this page.
 
 - `source_key`:
 
-  Character, required, no `NA`, unique within the data set. A stable
-  identifier for this result in your own source system, so re-running
-  the same extract later cannot create duplicate cases. Any string will
-  do, as long as the same result always carries the same one.
+  Character, required, no `NA`, unique within the data set as a whole -
+  across every pathogen and every patient, not just within one of them.
+  A stable identifier for this *result*, so re-running the same extract
+  later cannot create duplicate cases. Your laboratory's own specimen or
+  culture number rarely satisfies this by itself: the same culture can
+  yield more than one reported result (a multiplex panel positive for
+  two organisms, two isolates from one culture with different
+  antibiograms), and a bare specimen number then repeats across rows.
+  Where that is true of your source data, build `source_key` yourself by
+  combining whichever of your own columns are unique per *row* - many
+  laboratory systems need all four of `lab_number`, `patient_key`, a
+  test/panel code, and a strain or isolate number to pin down one row,
+  e.g. `paste(lab_number, patient_key, test_code, isolate_number)` in
+  your own extract step (only `lab_number` and `patient_key` reach
+  EpiSODIC itself; a test code or isolate number that exists only in
+  your source system is fine to fold into `source_key` and drop
+  otherwise). `source_key` itself is never shown in the dashboard - it
+  exists only so a re-run stays idempotent - which is exactly why it is
+  safe to make it an artificial combination rather than a real-world
+  identifier.
+
+- `lab_number`:
+
+  Character, required, no `NA`. Your laboratory's own identifier for the
+  specimen or culture this result came from (an accession, specimen or
+  culture number) - not pseudonymised, and not required to be unique:
+  two rows legitimately share one `lab_number` when a single culture
+  produced more than one reported result (see `source_key`). Shown
+  alongside `patient_key` in the dashboard's case tables, since - unlike
+  `patient_key` - it is not a patient identifier and carries no reason
+  to hide it.
 
 - `patient_key`:
 
   Character, required, no `NA`. A pseudonymised patient identifier, the
   same for the same patient across results. Deduplication and episode
-  grouping key on it: without it every positive becomes its own case.
-  Never shown as-is in the dashboard, but do pseudonymise it before it
-  reaches EpiSODIC - a BSN or hospital number must not be passed
-  through.
+  grouping key on it: without it every positive becomes its own case. Do
+  pseudonymise it before it reaches EpiSODIC - a BSN or hospital number
+  must not be passed through - but the pseudonym itself is shown in the
+  dashboard's case tables, same as `lab_number`.
 
 - `sample_date`:
 
@@ -193,6 +210,7 @@ rather than copying the strings out of this page.
 |----|----|----|----|
 | **Column** | **Type** | **Empty allowed** | **Accepts** |
 | `source_key` | character | no | any string, unique within the data set |
+| `lab_number` | character | no | any string, your lab's own specimen/culture number |
 | `patient_key` | character | no | any string, stable per patient |
 | `sample_date` | `Date` or character | no | `YYYY-MM-DD` only |
 | `receipt_date` | `Date` or character | yes | `YYYY-MM-DD` only |
@@ -240,10 +258,11 @@ use, naming what to fix.
 ## Examples
 
 ``` r
-# A minimal but complete extract: two results, one patient, all fifteen
+# A minimal but complete extract: two results, one patient, all sixteen
 # columns present, and the ones your laboratory does not record left NA.
 cases <- data.frame(
   source_key = c("LAB-1", "LAB-2"),
+  lab_number = c("LAB-1", "LAB-2"),
   patient_key = c("PAT-1", "PAT-1"),
   sample_date = c("2025-01-06", "2025-01-09"),
   receipt_date = c("2025-01-07", "2025-01-10"),
@@ -262,7 +281,7 @@ cases <- data.frame(
 )
 episodic_check_cases(cases)
 #> -- EpiSODIC case data check ------------------------------------------------
-#>    2 rows, 15 columns
+#>    2 rows, 16 columns
 #>    sample_date from 2025-01-06 to 2025-01-09
 #>    1 pathogen, 1 institution, 1 patient
 #> 
@@ -271,14 +290,14 @@ episodic_check_cases(cases)
 #>   column means.
 
 episodic_case_columns
-#>  [1] "source_key"               "patient_key"             
-#>  [3] "sample_date"              "receipt_date"            
-#>  [5] "pathogen"                 "care_line"               
-#>  [7] "institution_key"          "institution_display_name"
-#>  [9] "institution_type"         "municipality"            
-#> [11] "ward"                     "specialism"              
-#> [13] "pc"                       "sex"                     
-#> [15] "age"                     
+#>  [1] "source_key"               "lab_number"              
+#>  [3] "patient_key"              "sample_date"             
+#>  [5] "receipt_date"             "pathogen"                
+#>  [7] "care_line"                "institution_key"         
+#>  [9] "institution_display_name" "institution_type"        
+#> [11] "municipality"             "ward"                    
+#> [13] "specialism"               "pc"                      
+#> [15] "sex"                      "age"                     
 episodic_care_lines
 #> [1] "first"   "second"  "third"   "other"   "unknown"
 episodic_institution_types

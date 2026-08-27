@@ -1,5 +1,28 @@
 # Changelog
 
+## EpiSODIC 0.7.0
+
+This release includes a database schema migration (`episodic_case` gains
+a required `lab_number` column) - existing databases need to be
+recreated or migrated before running against this version.
+
+### New
+
+- Case data contract gains a required `lab_number` column: your
+  laboratory’s own specimen/culture number, distinct from `source_key`
+  and, unlike it, not required to be unique - two rows may share one
+  when a single culture yields more than one reported result. Shown on
+  the line list alongside `patient_key`, replacing the previously-shown
+  (and not useful) `source_key`
+- Similar-clusters panel on the dossier gains a cluster ID column and
+  opens the same way every other cluster table does
+
+### Changed
+
+- `episodic_db_case_insert_new()` batches its existence check and insert
+  into chunked round trips instead of one query pair per row, a large
+  speedup for larger imports
+
 ## EpiSODIC 0.6.\*
 
 ### New

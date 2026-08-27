@@ -88,7 +88,7 @@ my_extract <- function() {
 }
 episodic_check_cases(episodic_resolve_data(my_extract))
 #> -- EpiSODIC case data check ------------------------------------------------
-#>    206 rows, 15 columns
+#>    206 rows, 16 columns
 #>    sample_date from 2025-01-01 to 2025-01-31
 #>    10 pathogens, 62 institutions, 200 patients
 #> 

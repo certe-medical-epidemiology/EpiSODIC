@@ -29,6 +29,8 @@ Useful links:
 
 Authors:
 
+- Matthijs S. Berends <m.berends@certe.nl>
+
 - Erwin E. A. Hassing <e.hassing@certe.nl>
 
 - Erwin Dijkstra <e.dijkstra@certe.nl>

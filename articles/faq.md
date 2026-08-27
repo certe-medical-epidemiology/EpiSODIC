@@ -3,11 +3,15 @@
 This page collects the questions that come up most often when getting
 started with EpiSODIC. Skim the questions first, then click the one you
 need to open its answer - nothing on this page needs to be read start to
-finish. If your question is not here, the README’s “Data format” and
-“Environment variables” sections and the “Deployment”, and “Detection
-and reconciliation” vignettes go deeper on most of these topics; and if
-it still is not answered anywhere, that is worth telling us, since it
-means this page is missing something it should cover.
+finish. If your question is not here,
+[`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md),
+[`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md),
+[`vignette("environment-variables")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md)
+and
+[`vignette("detection-reconciliation")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.md)
+go deeper on most of these topics; and if it still is not answered
+anywhere, that is worth telling us, since it means this page is missing
+something it should cover.
 
 ## Getting your data in
 
@@ -32,9 +36,10 @@ that does not parse, a value outside the allowed set) and **advice** (a
 run proceeds regardless, but it is worth a look - one pathogen spelled
 two ways, no `ward` on any hospital row). Run it, fix what it flags as a
 problem, run it again - most people get to a clean report in two or
-three passes. The README’s “Data format” section has the full column
-contract this is checking against, including the exact allowed values
-for `care_line`, `institution_type`, and `sex`.
+three passes.
+[`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
+has the full column contract this is checking against, including the
+exact allowed values for `care_line`, `institution_type`, and `sex`.
 
 **Do I need to send all of my positives every time, or only new/recent
 ones?**
@@ -223,12 +228,20 @@ the shared column contract,
 them together, and check the combined result with
 [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
 as normal. The one thing to get right across sources is `source_key`: it
-only needs to be unique *within your own source system* per the column
-contract, so if two systems could otherwise produce the same key
-(e.g. both use a simple incrementing lab accession number), prefix each
-system’s keys with something that tells them apart (e.g. `"LIS1-482910"`
-vs. `"LIS2-482910"`) before combining, so a later re-run cannot collide
-two genuinely different results into one.
+needs to be unique *per row of the combined data set*, so if two systems
+could otherwise produce the same key (e.g. both use a simple
+incrementing lab accession number), prefix each system’s keys with
+something that tells them apart (e.g. `"LIS1-482910"`
+vs. `"LIS2-482910"`) before combining, so a later re-run cannot collide
+two genuinely different results into one. `lab_number` itself needs no
+such treatment - unlike `source_key` it is never required to be unique,
+so your lab’s own accession number can go into it verbatim regardless of
+how many systems you combine. See
+[`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)’s
+“`source_key`: one identifier per *result*, not per specimen” section
+for the same idea applied within one source system, where a bare
+accession number repeats for other reasons (e.g. one culture yielding
+more than one reported result).
 
 ## Accounts and hosting
 
@@ -311,7 +324,9 @@ Both point at the same kind of database (a local SQLite file, or a
 shared MariaDB/MySQL server via `EPISODIC_DB`), so you are not locked
 into your first choice - moving from “trying it out on my laptop” to “a
 shared instance the whole board uses” is a deployment change, not a data
-or code change. See the “Deployment” vignette for the full walk-through.
+or code change. See
+[`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)
+for the full walk-through.
 
 **Can more than one board member review the same cluster, and what
 happens if they disagree?**
@@ -331,16 +346,20 @@ to referee it.
 **Is patient-identifying information ever shown in the dashboard or in
 outbreak reports?**
 
-No - `patient_key` (the field deduplication and episode grouping key on)
-is never displayed as-is anywhere in the interface or in a generated
-report; it is an internal identifier only. What clinicians and board
-members see is epidemiological context: age, sex, care line,
-institution/ward, specialism, postcode-level geography, and dates -
-enough to assess a cluster, not enough to identify who is in it from the
-dashboard alone. Getting a pseudonymised `patient_key` in the first
-place (rather than a real name or record number) is part of your own
-transform step, before data ever reaches EpiSODIC - see the README’s
-“Data format” section for the exact column contract.
+No, not as long as you have pseudonymised `patient_key` before it
+reaches EpiSODIC - which is your own transform step’s job, not
+EpiSODIC’s; a real name, BSN, or hospital record number must never be
+passed through as this column. The pseudonym itself *is* shown, to a
+signed-in user, on a cluster’s line list (alongside `lab_number`, your
+lab’s specimen/culture number - also not itself a patient identifier),
+together with epidemiological context: sex, age, care line,
+institution/ward, specialism, postcode-level geography, and dates. That
+is enough to assess a cluster and to look a case up in your own source
+system if needed, but - given a properly pseudonymised `patient_key` -
+not enough to identify who is in it from the dashboard alone. See
+[`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
+for the exact column contract, including what “pseudonymised” needs to
+mean for this guarantee to hold.
 
 **My organisation is not in the Netherlands - does the geography panel
 (the choropleth map) still work for us?**
@@ -355,5 +374,7 @@ instead of the Netherlands default. An optional second layer,
 counties, whatever is useful for orientation) on top. If you do not have
 geographic reference data to hand at all, nothing breaks - the geography
 panel simply falls back to a plain bar breakdown by `pc` value, exactly
-as if this feature did not exist. See the README’s “Geographic reference
-data” section for the exact contract these files need to satisfy.
+as if this feature did not exist. See
+[`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)’s
+“Geographic reference data” section for the exact contract these files
+need to satisfy.

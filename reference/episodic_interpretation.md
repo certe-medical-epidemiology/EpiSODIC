@@ -16,10 +16,6 @@ English, Spanish, French, German, Mandarin Chinese, Hindi, and Arabic).
 episodic_interpretation_slots
 ```
 
-## Format
-
-An object of class `character` of length 7.
-
 ## Details
 
 The narrative is built up section by section, in this fixed order:

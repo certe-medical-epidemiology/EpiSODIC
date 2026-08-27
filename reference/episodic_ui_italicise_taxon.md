@@ -6,7 +6,7 @@ the dashboard and in the Quarto outbreak report template
 report template of your own (set via `EPISODIC_QUARTO_REPORT`) can use
 the same formatting as the shipped one. Input text is always
 HTML-escaped first, so the result is safe to pass on to
-[`shiny::HTML()`](https://rdrr.io/pkg/shiny/man/reexports.html).
+[`shiny::HTML()`](https://rstudio.github.io/htmltools/reference/HTML.html).
 
 ## Usage
 
@@ -34,7 +34,7 @@ episodic_ui_code_join(detectors, sep = ", ")
 
 A character vector (or, for `episodic_ui_code_join()`, a single string),
 safe to pass to
-[`shiny::HTML()`](https://rdrr.io/pkg/shiny/man/reexports.html).
+[`shiny::HTML()`](https://rstudio.github.io/htmltools/reference/HTML.html).
 
 ## Details
 

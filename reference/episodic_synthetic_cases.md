@@ -114,11 +114,11 @@ head(cases)
 #> 4         hospital         <NA>       Pulmonology         Pulmonology 7600   M
 #> 5         hospital         <NA>        Geriatrics Clinical Geriatrics 9930   F
 #> 6         hospital         <NA>           Surgery             Surgery 9021   F
-#>   age   source_key
-#> 1  33 SYN-00000001
-#> 2  37 SYN-00000060
-#> 3  76 SYN-00000159
-#> 4   8 SYN-00000203
-#> 5  79 SYN-00000061
-#> 6  14 SYN-00000062
+#>   age   source_key      lab_number
+#> 1  33 SYN-00000001 LABSYN-00000001
+#> 2  37 SYN-00000060 LABSYN-00000060
+#> 3  76 SYN-00000159 LABSYN-00000159
+#> 4   8 SYN-00000203 LABSYN-00000203
+#> 5  79 SYN-00000061 LABSYN-00000061
+#> 6  14 SYN-00000062 LABSYN-00000062
 ```

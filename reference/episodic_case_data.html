@@ -19,7 +19,7 @@ is, your own extract step is the only place that needs to know about it."><meta 
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,13 +28,7 @@ is, your own extract step is the only place that needs to know about it."><meta 
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/deployment.html">Deployment</a></li>
-    <li><a class="dropdown-item" href="../articles/detection-reconciliation.html">Detection and reconciliation</a></li>
-    <li><a class="dropdown-item" href="../articles/environment-variables.html">Environment variables</a></li>
-    <li><a class="dropdown-item" href="../articles/faq.html">Frequently asked questions</a></li>
-  </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -73,13 +67,6 @@ is, your own extract step is the only place that needs to know about it.</p>
     </div>
 
     <div class="section level2">
-    <h2 id="format">Format<a class="anchor" aria-label="anchor" href="#format"></a></h2>
-    <p>An object of class <code>character</code> of length 15.</p>
-<p>An object of class <code>character</code> of length 5.</p>
-<p>An object of class <code>character</code> of length 5.</p>
-<p>An object of class <code>character</code> of length 3.</p>
-    </div>
-    <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>A data set is the normal case, and the one to reach for. If producing
 the data only makes sense at run time - a live database query, for
@@ -98,7 +85,7 @@ demo - a useful template for the shape your own data should have.</p>
 
 
 
-<p><code>episodic_case_columns</code> lists all fifteen, in order. The set is an
+<p><code>episodic_case_columns</code> lists all sixteen, in order. The set is an
 explicit allow-list: a column outside it, or one missing from it, is
 rejected by <code><a href="episodic_validate_cases.html">episodic_validate_cases()</a></code> rather than silently ignored.
 "Required" means the column must be present; several may be <code>NA</code>
@@ -109,18 +96,45 @@ throughout if your laboratory does not record them.</p>
 rather than copying the strings out of this page.</p>
 <dl><dt><code>source_key</code></dt>
 <dd><p>Character, required, no <code>NA</code>, unique within the
-data set. A stable identifier for this result in your own source
-system, so re-running the same extract later cannot create
-duplicate cases. Any string will do, as long as the same result
-always carries the same one.</p></dd>
+data set as a whole - across every pathogen and every patient, not
+just within one of them. A stable identifier for this <em>result</em>, so
+re-running the same extract later cannot create duplicate cases.
+Your laboratory's own specimen or culture number rarely satisfies
+this by itself: the same culture can yield more than one reported
+result (a multiplex panel positive for two organisms, two isolates
+from one culture with different antibiograms), and a bare specimen
+number then repeats across rows. Where that is true of your source
+data, build <code>source_key</code> yourself by combining whichever of your
+own columns are unique per <em>row</em> - many laboratory systems need all
+four of <code>lab_number</code>, <code>patient_key</code>, a test/panel code, and a
+strain or isolate number to pin down one row, e.g.
+<code>paste(lab_number, patient_key, test_code, isolate_number)</code> in your
+own extract step (only <code>lab_number</code> and <code>patient_key</code> reach
+EpiSODIC itself; a test code or isolate number that exists only in
+your source system is fine to fold into <code>source_key</code> and drop
+otherwise). <code>source_key</code> itself is never shown in the dashboard -
+it exists only so a re-run stays idempotent - which is exactly why
+it is safe to make it an artificial combination rather than a
+real-world identifier.</p></dd>
+
+<dt><code>lab_number</code></dt>
+<dd><p>Character, required, no <code>NA</code>. Your laboratory's
+own identifier for the specimen or culture this result came from
+(an accession, specimen or culture number) - not pseudonymised,
+and not required to be unique: two rows legitimately share one
+<code>lab_number</code> when a single culture produced more than one reported
+result (see <code>source_key</code>). Shown alongside <code>patient_key</code> in the
+dashboard's case tables, since - unlike <code>patient_key</code> - it is not a
+patient identifier and carries no reason to hide it.</p></dd>
 
 <dt><code>patient_key</code></dt>
 <dd><p>Character, required, no <code>NA</code>. A pseudonymised
 patient identifier, the same for the same patient across results.
 Deduplication and episode grouping key on it: without it every
-positive becomes its own case. Never shown as-is in the dashboard,
-but do pseudonymise it before it reaches EpiSODIC - a BSN or
-hospital number must not be passed through.</p></dd>
+positive becomes its own case. Do pseudonymise it before it
+reaches EpiSODIC - a BSN or hospital number must not be passed
+through - but the pseudonym itself is shown in the dashboard's
+case tables, same as <code>lab_number</code>.</p></dd>
 
 <dt><code>sample_date</code></dt>
 <dd><p>Date, or character in <code>YYYY-MM-DD</code> (ISO 8601)
@@ -224,7 +238,7 @@ Not age group - the dashboard bands it itself.</p></dd>
 
 
 
-<table class="table table"><tr><td><strong>Column</strong></td><td><strong>Type</strong></td><td><strong>Empty allowed</strong></td><td><strong>Accepts</strong></td></tr><tr><td><code>source_key</code></td><td>character</td><td>no</td><td>any string, unique within the data set</td></tr><tr><td><code>patient_key</code></td><td>character</td><td>no</td><td>any string, stable per patient</td></tr><tr><td><code>sample_date</code></td><td><code>Date</code> or character</td><td>no</td><td><code>YYYY-MM-DD</code> only</td></tr><tr><td><code>receipt_date</code></td><td><code>Date</code> or character</td><td>yes</td><td><code>YYYY-MM-DD</code> only</td></tr><tr><td><code>pathogen</code></td><td>character</td><td>no</td><td>free text, spelled the same every run</td></tr><tr><td><code>care_line</code></td><td>character</td><td>yes (read as <code>"unknown"</code>)</td><td><code>episodic_care_lines</code></td></tr><tr><td><code>institution_key</code></td><td>character</td><td>no</td><td>any string, stable per institution</td></tr><tr><td><code>institution_display_name</code></td><td>character</td><td>no</td><td>any string</td></tr><tr><td><code>institution_type</code></td><td>character</td><td>no</td><td><code>episodic_institution_types</code></td></tr><tr><td><code>municipality</code></td><td>character</td><td>yes</td><td>any string</td></tr><tr><td><code>ward</code></td><td>character</td><td>yes</td><td>any string, spelled the same every run</td></tr><tr><td><code>specialism</code></td><td>character</td><td>yes</td><td>any string</td></tr><tr><td><code>pc</code></td><td>character</td><td>yes</td><td>four digits as text, for the shipped map</td></tr><tr><td><code>sex</code></td><td>character</td><td>yes</td><td><code>episodic_sex_codes</code></td></tr><tr><td><code>age</code></td><td>numeric</td><td>yes</td><td>whole years, not an age group</td></tr></table><p>Every column is required to be <em>present</em>; "empty allowed" says whether
+<table class="table table"><tr><td><strong>Column</strong></td><td><strong>Type</strong></td><td><strong>Empty allowed</strong></td><td><strong>Accepts</strong></td></tr><tr><td><code>source_key</code></td><td>character</td><td>no</td><td>any string, unique within the data set</td></tr><tr><td><code>lab_number</code></td><td>character</td><td>no</td><td>any string, your lab's own specimen/culture number</td></tr><tr><td><code>patient_key</code></td><td>character</td><td>no</td><td>any string, stable per patient</td></tr><tr><td><code>sample_date</code></td><td><code>Date</code> or character</td><td>no</td><td><code>YYYY-MM-DD</code> only</td></tr><tr><td><code>receipt_date</code></td><td><code>Date</code> or character</td><td>yes</td><td><code>YYYY-MM-DD</code> only</td></tr><tr><td><code>pathogen</code></td><td>character</td><td>no</td><td>free text, spelled the same every run</td></tr><tr><td><code>care_line</code></td><td>character</td><td>yes (read as <code>"unknown"</code>)</td><td><code>episodic_care_lines</code></td></tr><tr><td><code>institution_key</code></td><td>character</td><td>no</td><td>any string, stable per institution</td></tr><tr><td><code>institution_display_name</code></td><td>character</td><td>no</td><td>any string</td></tr><tr><td><code>institution_type</code></td><td>character</td><td>no</td><td><code>episodic_institution_types</code></td></tr><tr><td><code>municipality</code></td><td>character</td><td>yes</td><td>any string</td></tr><tr><td><code>ward</code></td><td>character</td><td>yes</td><td>any string, spelled the same every run</td></tr><tr><td><code>specialism</code></td><td>character</td><td>yes</td><td>any string</td></tr><tr><td><code>pc</code></td><td>character</td><td>yes</td><td>four digits as text, for the shipped map</td></tr><tr><td><code>sex</code></td><td>character</td><td>yes</td><td><code>episodic_sex_codes</code></td></tr><tr><td><code>age</code></td><td>numeric</td><td>yes</td><td>whole years, not an age group</td></tr></table><p>Every column is required to be <em>present</em>; "empty allowed" says whether
 its values may be <code>NA</code>. Dates may be a real <code>Date</code> column or ISO 8601
 text, and nothing else: <code>"01-01-2025"</code> is rejected rather than read as
 the first of January in the year 1. Numbers stored as text, dates
@@ -253,10 +267,11 @@ run, and refuses to start on data it cannot use, naming what to fix.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># A minimal but complete extract: two results, one patient, all fifteen</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># A minimal but complete extract: two results, one patient, all sixteen</span></span></span>
 <span class="r-in"><span><span class="co"># columns present, and the ones your laboratory does not record left NA.</span></span></span>
 <span class="r-in"><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  source_key <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"LAB-1"</span>, <span class="st">"LAB-2"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  lab_number <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"LAB-1"</span>, <span class="st">"LAB-2"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  patient_key <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PAT-1"</span>, <span class="st">"PAT-1"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  sample_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2025-01-06"</span>, <span class="st">"2025-01-09"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  receipt_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2025-01-07"</span>, <span class="st">"2025-01-10"</span><span class="op">)</span>,</span></span>
@@ -275,7 +290,7 @@ run, and refuses to start on data it cannot use, naming what to fix.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="episodic_check_cases.html">episodic_check_cases</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> -- EpiSODIC case data check ------------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    2 rows, 15 columns</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    2 rows, 16 columns</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    sample_date from 2025-01-06 to 2025-01-09</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    1 pathogen, 1 institution, 1 patient</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -284,14 +299,14 @@ run, and refuses to start on data it cannot use, naming what to fix.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   column means.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">episodic_case_columns</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "source_key"               "patient_key"             </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [3] "sample_date"              "receipt_date"            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [5] "pathogen"                 "care_line"               </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "institution_key"          "institution_display_name"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [9] "institution_type"         "municipality"            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11] "ward"                     "specialism"              </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13] "pc"                       "sex"                     </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [15] "age"                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "source_key"               "lab_number"              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [3] "patient_key"              "sample_date"             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [5] "receipt_date"             "pathogen"                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "care_line"                "institution_key"         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [9] "institution_display_name" "institution_type"        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11] "municipality"             "ward"                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13] "specialism"               "pc"                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [15] "sex"                      "age"                     </span>
 <span class="r-in"><span><span class="va">episodic_care_lines</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "first"   "second"  "third"   "other"   "unknown"</span>
 <span class="r-in"><span><span class="va">episodic_institution_types</span></span></span>

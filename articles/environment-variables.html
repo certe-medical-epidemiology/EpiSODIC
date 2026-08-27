@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,15 +37,7 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="active nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/deployment.html">Deployment</a></li>
-    <li><a class="dropdown-item" href="../articles/detection-reconciliation.html">Detection and reconciliation</a></li>
-    <li><a class="dropdown-item" href="../articles/environment-variables.html">Environment variables</a></li>
-    <li><a class="dropdown-item" href="../articles/faq.html">Frequently asked questions</a></li>
-  </ul>
-</li>
+<li class="active nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -168,12 +160,13 @@ templates” above.</td>
 </table>
 <p>None of these need to be set to run the demo -
 <code><a href="../reference/episodic_demo.html">episodic_demo()</a></code> uses a temporary SQLite file and every
-shipped default. See <code>vignettes/deployment.Rmd</code> for
+shipped default. See <code><a href="../articles/deployment.html">vignette("deployment")</a></code> for
 <code>EPISODIC_DB</code> and
 <code>EPISODIC_CONFIG</code>/<code>EPISODIC_PALETTE_CONFIG</code> in
-context, and the README’s “Database backend”, “Geographic reference
-data” and “Custom report templates” sections for the detail behind each
-of the rows above.</p>
+context (database backend, custom report templates), and
+<code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic reference data”
+section for the detail behind <code>EPISODIC_GEO_DATA</code> and
+<code>EPISODIC_GEO_DATA_OVERLAY</code>.</p>
   </main>
 </div>
 

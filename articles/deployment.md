@@ -29,9 +29,10 @@ written for. If producing the data only makes sense at run time (a live
 database query, for instance), a zero-argument function returning one is
 accepted just as well - see
 [`episodic_resolve_data()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_resolve_data.md).
-The README’s “Data format” section documents the exact columns each of
-the four data sources (cases, positivity metadata, institution activity,
-geographic reference data) expects; only cases are mandatory.
+[`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
+documents the exact columns each of the four data sources (cases,
+positivity metadata, institution activity, geographic reference data)
+expects; only cases are mandatory.
 
 Scope `my_extract_and_transform_function()` to a recent window - the
 last few weeks, with a couple of weeks of overlap as a margin against a
@@ -90,23 +91,41 @@ display concern, never part of the detection-reproducibility guarantee
 
 ## Accounts
 
-Read access is anonymous - the app opens read-only for anyone who
-reaches it. Signing in is only needed to classify a cluster, close it,
-or mute a stream, and there is deliberately no in-app account management
-screen: accounts are provisioned by whoever administers the database.
+Aggregate data is anonymous - the app opens read-only for anyone who
+reaches it. Signing in unlocks patient-level detail (the line list) for
+both roles below; there is deliberately no in-app account management
+screen, and accounts are provisioned by whoever administers the
+database, not created by users themselves or by the app.
+
+There are exactly two roles:
+
+- `"epidemiologist"` - by definition, assesses clusters and classifies
+  them. Can do everything a viewer can, plus classify, close, and mute
+  clusters, and re-render reports on demand.
+- `"viewer"` - read-only. Sees exactly what a signed-in epidemiologist
+  sees, including patient-level detail, but cannot record an assessment.
 
 ``` r
 
-Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")
+Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")  # or pass db_path explicitly below
 
 episodic_provision_user(
-  username = "jdoe", full_name = "Jane Doe", email = "j.doe@example.org",
+  username = "jdoe",
+  role = "epidemiologist",  # or "viewer"
+  full_name = "Dr Jane Doe",
+  email = "j.doe@example.org",
   password = "a-temporary-password"
 )
 ```
 
-The account is created with `must_change = TRUE`, so the first real
-sign-in forces the holder to set their own password.
+[`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md)
+takes `db_path` (defaulting to `EPISODIC_DB`, see
+[`vignette("environment-variables")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md)),
+not an open connection - it opens and closes its own via
+[`episodic_db_open()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_open.md),
+so provisioning an account is one call at the console. The account is
+created with `must_change = TRUE`, so its first real sign-in forces the
+holder to set their own password before continuing.
 
 ## Where the database lives
 
@@ -135,6 +154,15 @@ Sys.setenv(EPISODIC_DB = episodic_db_dsn_mariadb(
 ))
 ```
 
+Connecting to MariaDB/MySQL requires the `RMariaDB` package
+(`install.packages("RMariaDB")`); it is a `Suggests` dependency, not
+installed automatically, so SQLite-only deployments never need it. The
+schema (`inst/sql/schema.sql`) is written once, in SQLite syntax, and
+adapted at load time for the handful of tokens that differ under
+MariaDB/MySQL - there is no separate schema file to keep in sync.
+`CHECK` constraints are enforced from MariaDB 10.2.1 / MySQL 8.0.16
+onwards; on older servers they are accepted but silently ignored.
+
 ## Running the app
 
 ``` r
@@ -149,6 +177,20 @@ episodic_run_app()
 does, so a systemd unit or Docker container can configure everything
 through environment variables alone, with no R code to edit between
 instances.
+
+## Custom report templates
+
+[`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md)
+renders `inst/report/cluster_report.qmd` (embedded as self-contained
+HTML via Quarto) unless `EPISODIC_QUARTO_REPORT` points at an operator’s
+own `.qmd` file, in which case that is used instead - for an
+organisation that wants its own letterhead, section order, or house
+style. A custom template only needs to `readRDS(params$data_path)` and
+read from the same list the shipped one does (`obj`, `epi_curve`,
+`trend`, `linelist`, `timeline`, `similar`, `small_count_threshold`,
+`rendered_at`, `lang`, `package_version`); see the shipped template for
+the exact shape, including how it calls
+`episodic_tr(..., lang = d$lang)` for a bilingual report.
 
 ## Optional pieces, and their fallbacks
 
@@ -180,3 +222,15 @@ real colours - no package dependency involved either way.
 
 None of these are required to run the demo, the detection engine, or the
 interface - each is additive.
+
+## See also
+
+- [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
+  for the case data contract this vignette’s
+  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  calls expect.
+- [`vignette("environment-variables")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md)
+  for the full `EPISODIC_*` reference table, including every variable
+  named above.
+- [`vignette("faq")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.md)
+  for hosting choices, account roles, and other operational questions.
