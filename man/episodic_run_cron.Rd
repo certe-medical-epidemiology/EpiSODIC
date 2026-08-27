@@ -12,7 +12,8 @@ episodic_run_cron(
   db_path = Sys.getenv("EPISODIC_DB"),
   host = Sys.info()[["nodename"]],
   account = Sys.info()[["user"]],
-  run_date = Sys.Date()
+  run_date = Sys.Date(),
+  debug = FALSE
 )
 }
 \arguments{
@@ -44,6 +45,16 @@ to the current machine and account.}
 
 \item{run_date}{The date to treat as "today". Defaults to the system
 date; mainly useful to override in tests.}
+
+\item{debug}{If \code{TRUE}, print a lot more than the phase-by-phase
+progress this function always writes: \code{sessionInfo()}, the versions
+of every package a fatal (non-catchable) crash is most likely to
+originate in, memory snapshots, and per-stream detail inside the
+detection loop. Meant for chasing exactly the kind of failure that
+leaves no R-level error behind at all - a crashed session, a run
+that silently never returns - where the normal progress trace does
+not narrow things down enough on its own. Noisy; leave off for
+routine scheduled runs.}
 }
 \value{
 Invisibly, the \code{run_id} of the completed run. The run's row in
