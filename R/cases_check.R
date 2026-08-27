@@ -808,14 +808,15 @@ episodic_check_institution_advice <- function(cases) {
 #' @keywords internal
 #' @noRd
 episodic_check_finding <- function(
-    severity,
-    issue,
-    column = NA_character_,
-    n_rows = NA_integer_,
-    rows = integer(0),
-    values = character(0),
-    message,
-    fix = NA_character_) {
+  severity,
+  issue,
+  column = NA_character_,
+  n_rows = NA_integer_,
+  rows = integer(0),
+  values = character(0),
+  message,
+  fix = NA_character_
+) {
   data.frame(
     severity = severity,
     issue = issue,
@@ -1235,7 +1236,8 @@ episodic_check_failure_message <- function(problems, what = "Case data") {
     paste(bullets, collapse = "\n"),
     "\n  Run episodic_check_cases(your_data) for the full report, ",
     "including the rows involved and what is merely worth a look. See ",
-    episodic_check_case_data_link(), " for what each column means."
+    episodic_check_case_data_link(),
+    " for what each column means."
   )
 }
 

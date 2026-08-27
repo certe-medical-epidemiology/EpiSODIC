@@ -169,10 +169,11 @@ episodic_institution_activity_load <- function(con, activity) {
 #' head(activity)
 #' @export
 episodic_synthetic_institution_activity <- function(
-    institutions,
-    start_date = end_date - 5 * 365,
-    end_date = Sys.Date(),
-    seed = 1) {
+  institutions,
+  start_date = end_date - 5 * 365,
+  end_date = Sys.Date(),
+  seed = 1
+) {
   set.seed(seed)
   hospitals <- institutions[institutions$institution_type == "hospital", ]
   if (nrow(hospitals) == 0) {

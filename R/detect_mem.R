@@ -56,10 +56,11 @@
 #' @keywords internal
 #' @noRd
 episodic_detect_mem <- function(
-    cases_for_stream,
-    stream_id,
-    run_date = Sys.Date(),
-    min_seasons = 2L) {
+  cases_for_stream,
+  stream_id,
+  run_date = Sys.Date(),
+  min_seasons = 2L
+) {
   empty <- episodic_detection_record(
     integer(0),
     character(0),
@@ -145,9 +146,10 @@ episodic_detect_mem <- function(
 #' @keywords internal
 #' @noRd
 episodic_mem_status <- function(
-    cases,
-    run_date = Sys.Date(),
-    min_seasons = 2L) {
+  cases,
+  run_date = Sys.Date(),
+  min_seasons = 2L
+) {
   evaluated <- episodic_mem_evaluation_week(run_date)
 
   # Deliberately settled before the `mem` and case-data guards below:
@@ -425,9 +427,10 @@ episodic_season_shift <- function(season, n = 1L) {
 #' @keywords internal
 #' @noRd
 episodic_mem_thresholds_for_season <- function(
-    cases,
-    season,
-    min_seasons = 2L) {
+  cases,
+  season,
+  min_seasons = 2L
+) {
   if (!requireNamespace("mem", quietly = TRUE)) {
     return(NULL)
   }

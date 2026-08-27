@@ -101,7 +101,8 @@ test_that("episodic_app_archive() lists only closed clusters, most recent first,
   expect_false(is.na(archive$last_day[1]))
   expect_equal(
     archive$duration_days[1],
-    as.integer(as.Date(archive$last_day[1]) - as.Date(archive$first_day[1])) + 1L
+    as.integer(as.Date(archive$last_day[1]) - as.Date(archive$first_day[1])) +
+      1L
   )
 
   expect_equal(nrow(episodic_app_archive(env$con, query = "noro")), 1)

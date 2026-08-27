@@ -45,7 +45,8 @@
 #' config$eligibility$min_baseline_weeks
 #' @export
 episodic_config_resolve <- function(
-    episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
+  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)
+) {
   defaults_path <- system.file("config", "default.yaml", package = "EpiSODIC")
   if (identical(defaults_path, "")) {
     defaults_path <- file.path("inst", "config", "default.yaml")

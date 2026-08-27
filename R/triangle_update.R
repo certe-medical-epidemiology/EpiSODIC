@@ -35,10 +35,11 @@
 #' @keywords internal
 #' @noRd
 episodic_triangle_update <- function(
-    con,
-    stream_id,
-    cases_for_stream,
-    run_date) {
+  con,
+  stream_id,
+  cases_for_stream,
+  run_date
+) {
   if (nrow(cases_for_stream) == 0) {
     return(invisible(0L))
   }

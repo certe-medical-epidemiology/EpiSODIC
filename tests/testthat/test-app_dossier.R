@@ -141,8 +141,7 @@ test_that("episodic_ui_assessment_rail() renders the classification and mute pic
     episodic_verdict_label(v, level = "pathogen_ward", lang = "nl")
   }
   expect_true(
-    pos(verdict_label_nl("artefact")) <
-      pos(verdict_label_nl("cluster_not_yet"))
+    pos(verdict_label_nl("artefact")) < pos(verdict_label_nl("cluster_not_yet"))
   )
   expect_true(
     pos(verdict_label_nl("cluster_not_yet")) <

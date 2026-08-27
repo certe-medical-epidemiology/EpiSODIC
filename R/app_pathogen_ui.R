@@ -29,8 +29,9 @@
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_screen <- function(
-    screen,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  screen,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   if (nrow(screen$pathogens) == 0 || is.null(screen$pathogen)) {
     return(shiny::tags$div(
       class = "episodic-streams-screen",
@@ -80,8 +81,9 @@ episodic_ui_pathogen_screen <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_controls <- function(
-    screen,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  screen,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   pal <- episodic_palette()
   period <- screen$period
 
@@ -216,8 +218,9 @@ episodic_ui_pathogen_controls <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_stats <- function(
-    screen,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  screen,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   pal <- episodic_palette()
   s <- screen$summary
 
@@ -311,8 +314,9 @@ episodic_ui_intensity_colour <- function(level) {
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_curve_panel <- function(
-    screen,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  screen,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   # An all-zero curve is not a chart worth drawing: a period with no
   # cases of this pathogen is a sentence, not a row of empty bars.
   if (
@@ -359,8 +363,9 @@ episodic_ui_pathogen_curve_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_overlay_panel <- function(
-    screen,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  screen,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   overlay <- screen$overlay
   if (is.null(overlay)) {
     return(episodic_ui_panel_empty(
@@ -386,8 +391,9 @@ episodic_ui_pathogen_overlay_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_rt_panel <- function(
-    screen,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  screen,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   if (is.null(screen$rt)) {
     reason <- screen$rt_unavailable_reason
     msg <- if (is.na(reason)) {
@@ -414,8 +420,9 @@ episodic_ui_pathogen_rt_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_denominator_panel <- function(
-    screen,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  screen,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   if (is.null(screen$denominator)) {
     return(episodic_ui_panel_empty(
       episodic_tr("panel.denominator.title", lang = lang),
@@ -437,8 +444,9 @@ episodic_ui_pathogen_denominator_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_demography_panel <- function(
-    screen,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  screen,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   demo <- screen$demography
   if (is.null(demo)) {
     return(episodic_ui_panel_empty(
@@ -467,8 +475,9 @@ episodic_ui_pathogen_demography_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_geo_panel <- function(
-    screen,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  screen,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   concentration <- screen$concentration
   if (is.null(concentration)) {
     return(episodic_ui_panel_empty(
@@ -508,8 +517,9 @@ episodic_ui_pathogen_geo_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_breakdown_panels <- function(
-    screen,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  screen,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   care_lines <- screen$care_lines
   institutions <- screen$institutions
   shiny::tags$div(
@@ -550,8 +560,9 @@ episodic_ui_pathogen_breakdown_panels <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_clusters_panel <- function(
-    screen,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  screen,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   clusters <- screen$clusters
   if (is.null(clusters) || nrow(clusters) == 0) {
     return(episodic_ui_panel_empty(
@@ -622,8 +633,9 @@ episodic_ui_pathogen_clusters_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_config_panel <- function(
-    screen,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  screen,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   pc <- screen$config
   if (is.null(pc)) {
     return(episodic_ui_panel(
@@ -664,87 +676,114 @@ episodic_ui_pathogen_config_panel <- function(
   ))
 
   if (!is.na(pc$incub_min_days) || !is.na(pc$incub_max_days)) {
-    rows <- c(rows, list(list(
-      label = episodic_tr(
-        "pathogen.panel.config.incubation.label",
-        lang = lang
-      ),
-      value = episodic_tr(
-        "pathogen.panel.config.incubation.value",
-        min = pc$incub_min_days %||% dash,
-        max = pc$incub_max_days %||% dash,
-        lang = lang
-      ),
-      meaning = episodic_tr(
-        "pathogen.panel.config.incubation.meaning",
-        lang = lang
-      )
-    )))
+    rows <- c(
+      rows,
+      list(list(
+        label = episodic_tr(
+          "pathogen.panel.config.incubation.label",
+          lang = lang
+        ),
+        value = episodic_tr(
+          "pathogen.panel.config.incubation.value",
+          min = pc$incub_min_days %||% dash,
+          max = pc$incub_max_days %||% dash,
+          lang = lang
+        ),
+        meaning = episodic_tr(
+          "pathogen.panel.config.incubation.meaning",
+          lang = lang
+        )
+      ))
+    )
   }
 
-  rows <- c(rows, list(
+  rows <- c(
+    rows,
     list(
-      label = episodic_tr("pathogen.panel.config.case_free.label", lang = lang),
-      value = day_phrase(pc$case_free_days),
-      meaning = episodic_tr(
-        "pathogen.panel.config.case_free.meaning",
-        lang = lang
+      list(
+        label = episodic_tr(
+          "pathogen.panel.config.case_free.label",
+          lang = lang
+        ),
+        value = day_phrase(pc$case_free_days),
+        meaning = episodic_tr(
+          "pathogen.panel.config.case_free.meaning",
+          lang = lang
+        )
+      ),
+      list(
+        label = episodic_tr(
+          "pathogen.panel.config.cooldown.label",
+          lang = lang
+        ),
+        value = day_phrase(pc$cooldown_days),
+        meaning = episodic_tr(
+          "pathogen.panel.config.cooldown.meaning",
+          lang = lang
+        )
+      ),
+      list(
+        label = episodic_tr("pathogen.panel.config.rt.label", lang = lang),
+        value = yes_no(pc$rt_applicable),
+        meaning = episodic_tr("pathogen.panel.config.rt.meaning", lang = lang)
       )
-    ),
-    list(
-      label = episodic_tr("pathogen.panel.config.cooldown.label", lang = lang),
-      value = day_phrase(pc$cooldown_days),
-      meaning = episodic_tr(
-        "pathogen.panel.config.cooldown.meaning",
-        lang = lang
-      )
-    ),
-    list(
-      label = episodic_tr("pathogen.panel.config.rt.label", lang = lang),
-      value = yes_no(pc$rt_applicable),
-      meaning = episodic_tr("pathogen.panel.config.rt.meaning", lang = lang)
     )
-  ))
+  )
 
   if (isTRUE(as.logical(pc$rt_applicable)) && !is.na(pc$si_mean_days)) {
-    rows <- c(rows, list(list(
-      label = episodic_tr("pathogen.panel.config.si.label", lang = lang),
-      value = episodic_tr(
-        "pathogen.panel.config.si.value",
-        mean = pc$si_mean_days,
-        sd = pc$si_sd_days %||% dash,
-        dist = pc$si_dist %||% dash,
-        lang = lang
-      ),
-      meaning = episodic_tr("pathogen.panel.config.si.meaning", lang = lang)
-    )))
+    rows <- c(
+      rows,
+      list(list(
+        label = episodic_tr("pathogen.panel.config.si.label", lang = lang),
+        value = episodic_tr(
+          "pathogen.panel.config.si.value",
+          mean = pc$si_mean_days,
+          sd = pc$si_sd_days %||% dash,
+          dist = pc$si_dist %||% dash,
+          lang = lang
+        ),
+        meaning = episodic_tr("pathogen.panel.config.si.meaning", lang = lang)
+      ))
+    )
   }
 
-  rows <- c(rows, list(
+  rows <- c(
+    rows,
     list(
-      label = episodic_tr("pathogen.panel.config.seasonal.label", lang = lang),
-      value = yes_no(pc$mem_applicable),
-      meaning = episodic_tr(
-        "pathogen.panel.config.seasonal.meaning",
-        lang = lang
-      )
-    ),
-    list(
-      label = episodic_tr("pathogen.panel.config.severity.label", lang = lang),
-      value = as.character(pc$severity_weight %||% dash),
-      meaning = episodic_tr(
-        "pathogen.panel.config.severity.meaning",
-        lang = lang
+      list(
+        label = episodic_tr(
+          "pathogen.panel.config.seasonal.label",
+          lang = lang
+        ),
+        value = yes_no(pc$mem_applicable),
+        meaning = episodic_tr(
+          "pathogen.panel.config.seasonal.meaning",
+          lang = lang
+        )
+      ),
+      list(
+        label = episodic_tr(
+          "pathogen.panel.config.severity.label",
+          lang = lang
+        ),
+        value = as.character(pc$severity_weight %||% dash),
+        meaning = episodic_tr(
+          "pathogen.panel.config.severity.meaning",
+          lang = lang
+        )
       )
     )
-  ))
+  )
 
   if (!is.na(pc$source_ref) && nzchar(trimws(pc$source_ref %||% ""))) {
-    rows <- c(rows, list(list(
-      label = episodic_tr("pathogen.panel.config.source.label", lang = lang),
-      value = pc$source_ref,
-      meaning = ""
-    )))
+    rows <- c(
+      rows,
+      list(list(
+        label = episodic_tr("pathogen.panel.config.source.label", lang = lang),
+        value = pc$source_ref,
+        meaning = ""
+      ))
+    )
   }
 
   episodic_ui_panel(

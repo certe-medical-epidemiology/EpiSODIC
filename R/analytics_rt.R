@@ -82,11 +82,12 @@
 #' @keywords internal
 #' @noRd
 episodic_compute_rt <- function(
-    cases,
-    pc,
-    incomplete_days = 0L,
-    asof = Sys.Date(),
-    window_days = 7L) {
+  cases,
+  pc,
+  incomplete_days = 0L,
+  asof = Sys.Date(),
+  window_days = 7L
+) {
   if (is.null(pc) || !isTRUE(as.logical(pc$rt_applicable))) {
     return(NULL)
   }

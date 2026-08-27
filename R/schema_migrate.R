@@ -41,11 +41,12 @@
 #' )
 #' @export
 episodic_db_dsn_mariadb <- function(
-    host,
-    dbname,
-    user,
-    password,
-    port = 3306L) {
+  host,
+  dbname,
+  user,
+  password,
+  port = 3306L
+) {
   stopifnot(
     is.character(host),
     nzchar(host),
@@ -189,9 +190,21 @@ episodic_db_create <- function(path, overwrite = FALSE) {
     con <- episodic_db_mariadb_connect(path)
 
     existing_tables <- DBI::dbListTables(con)
-    intended_tables <- readLines(system.file("sql/schema.sql", package = "EpiSODIC"))
-    intended_tables <- intended_tables[grepl("^\\s*CREATE TABLE", intended_tables, ignore.case = TRUE)]
-    intended_tables <- gsub("^\\s*CREATE TABLE\\s+([a-zA-Z0-9_]+).*", "\\1", intended_tables, ignore.case = TRUE)
+    intended_tables <- readLines(system.file(
+      "sql/schema.sql",
+      package = "EpiSODIC"
+    ))
+    intended_tables <- intended_tables[grepl(
+      "^\\s*CREATE TABLE",
+      intended_tables,
+      ignore.case = TRUE
+    )]
+    intended_tables <- gsub(
+      "^\\s*CREATE TABLE\\s+([a-zA-Z0-9_]+).*",
+      "\\1",
+      intended_tables,
+      ignore.case = TRUE
+    )
 
     if (length(intended_tables) == 0) {
       stop(
@@ -215,7 +228,11 @@ episodic_db_create <- function(path, overwrite = FALSE) {
       }
 
       DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 0")
-      on.exit(DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 1"), add = TRUE, after = FALSE)
+      on.exit(
+        DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 1"),
+        add = TRUE,
+        after = FALSE
+      )
 
       dropped <- character(0)
       failed <- NULL
@@ -237,10 +254,14 @@ episodic_db_create <- function(path, overwrite = FALSE) {
 
       if (!is.null(failed)) {
         stop(
-          "Failed to drop table \"", failed$table, "\" while recreating the schema. ",
-          "Successfully dropped: ", if (length(dropped)) paste(dropped, collapse = ", ") else "(none)",
+          "Failed to drop table \"",
+          failed$table,
+          "\" while recreating the schema. ",
+          "Successfully dropped: ",
+          if (length(dropped)) paste(dropped, collapse = ", ") else "(none)",
           ". Database is now in a partially-dropped state and must be inspected manually. ",
-          "Original error: ", conditionMessage(failed$error),
+          "Original error: ",
+          conditionMessage(failed$error),
           call. = FALSE
         )
       }
@@ -413,62 +434,42 @@ episodic_db_schema_statements <- function(dialect) {
     # touch whichever one happens to come first.
     text_to_varchar <- list(
       episodic_stream = c(
-        "stream_key      TEXT NOT NULL UNIQUE" =
-          "stream_key      VARCHAR(40) NOT NULL UNIQUE",
-        "  pathogen        TEXT NOT NULL,  -- raw lab-provided string, deliberately unconstrained free text" =
-          "  pathogen        VARCHAR(191) NOT NULL,  -- raw lab-provided string, deliberately unconstrained free text",
-        "denominator     TEXT NOT NULL DEFAULT 'none' CHECK (denominator IN (" =
-          "denominator     VARCHAR(20) NOT NULL DEFAULT 'none' CHECK (denominator IN ("
+        "stream_key      TEXT NOT NULL UNIQUE" = "stream_key      VARCHAR(40) NOT NULL UNIQUE",
+        "  pathogen        TEXT NOT NULL,  -- raw lab-provided string, deliberately unconstrained free text" = "  pathogen        VARCHAR(191) NOT NULL,  -- raw lab-provided string, deliberately unconstrained free text",
+        "denominator     TEXT NOT NULL DEFAULT 'none' CHECK (denominator IN (" = "denominator     VARCHAR(20) NOT NULL DEFAULT 'none' CHECK (denominator IN ("
       ),
       episodic_institution = c(
-        "institution_key  TEXT NOT NULL UNIQUE" =
-          "institution_key  VARCHAR(40) NOT NULL UNIQUE"
+        "institution_key  TEXT NOT NULL UNIQUE" = "institution_key  VARCHAR(40) NOT NULL UNIQUE"
       ),
       episodic_institution_activity = c(
-        "  period_start   TEXT NOT NULL," =
-          "  period_start   VARCHAR(10) NOT NULL,"
+        "  period_start   TEXT NOT NULL," = "  period_start   VARCHAR(10) NOT NULL,"
       ),
       episodic_pathogen_config = c(
-        "  pathogen        TEXT NOT NULL PRIMARY KEY,  -- matches episodic_case.pathogen exactly" =
-          "  pathogen        VARCHAR(191) NOT NULL PRIMARY KEY,  -- matches episodic_case.pathogen exactly"
+        "  pathogen        TEXT NOT NULL PRIMARY KEY,  -- matches episodic_case.pathogen exactly" = "  pathogen        VARCHAR(191) NOT NULL PRIMARY KEY,  -- matches episodic_case.pathogen exactly"
       ),
       episodic_case = c(
-        "source_key     TEXT NOT NULL UNIQUE," =
-          "source_key     VARCHAR(191) NOT NULL UNIQUE,",
-        "  lab_number     TEXT NOT NULL,  -- the lab's own specimen/culture number; not unique, unlike source_key" =
-          "  lab_number     VARCHAR(191) NOT NULL,  -- the lab's own specimen/culture number; not unique, unlike source_key",
-        "  patient_key    TEXT NOT NULL," =
-          "  patient_key    VARCHAR(191) NOT NULL,",
-        "  sample_date    TEXT NOT NULL," =
-          "  sample_date    VARCHAR(10) NOT NULL,",
-        "  pathogen       TEXT NOT NULL,  -- raw lab-provided string, used verbatim" =
-          "  pathogen       VARCHAR(191) NOT NULL,  -- raw lab-provided string, used verbatim",
-        "care_line      TEXT NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown'))," =
-          "care_line      VARCHAR(20) NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown')),"
+        "source_key     TEXT NOT NULL UNIQUE," = "source_key     VARCHAR(191) NOT NULL UNIQUE,",
+        "  lab_number     TEXT NOT NULL,  -- the lab's own specimen/culture number; not unique, unlike source_key" = "  lab_number     VARCHAR(191) NOT NULL,  -- the lab's own specimen/culture number; not unique, unlike source_key",
+        "  patient_key    TEXT NOT NULL," = "  patient_key    VARCHAR(191) NOT NULL,",
+        "  sample_date    TEXT NOT NULL," = "  sample_date    VARCHAR(10) NOT NULL,",
+        "  pathogen       TEXT NOT NULL,  -- raw lab-provided string, used verbatim" = "  pathogen       VARCHAR(191) NOT NULL,  -- raw lab-provided string, used verbatim",
+        "care_line      TEXT NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown'))," = "care_line      VARCHAR(20) NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown')),"
       ),
       episodic_reporting_triangle = c(
-        "  sample_date TEXT NOT NULL," =
-          "  sample_date VARCHAR(10) NOT NULL,",
-        "  run_date    TEXT NOT NULL," =
-          "  run_date    VARCHAR(10) NOT NULL,"
+        "  sample_date TEXT NOT NULL," = "  sample_date VARCHAR(10) NOT NULL,",
+        "  run_date    TEXT NOT NULL," = "  run_date    VARCHAR(10) NOT NULL,"
       ),
       episodic_stream_trend = c(
-        "  week_start TEXT NOT NULL," =
-          "  week_start VARCHAR(10) NOT NULL,"
+        "  week_start TEXT NOT NULL," = "  week_start VARCHAR(10) NOT NULL,"
       ),
       episodic_denominator = c(
-        "  pathogen       TEXT NOT NULL," =
-          "  pathogen       VARCHAR(191) NOT NULL,",
-        "  sample_date    TEXT NOT NULL," =
-          "  sample_date    VARCHAR(10) NOT NULL,",
-        "  care_line      TEXT NOT NULL CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown'))," =
-          "  care_line      VARCHAR(20) NOT NULL CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown')),",
-        "  area_code      TEXT," =
-          "  area_code      VARCHAR(191),"
+        "  pathogen       TEXT NOT NULL," = "  pathogen       VARCHAR(191) NOT NULL,",
+        "  sample_date    TEXT NOT NULL," = "  sample_date    VARCHAR(10) NOT NULL,",
+        "  care_line      TEXT NOT NULL CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown'))," = "  care_line      VARCHAR(20) NOT NULL CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown')),",
+        "  area_code      TEXT," = "  area_code      VARCHAR(191),"
       ),
       episodic_app_user = c(
-        "username      TEXT NOT NULL UNIQUE," =
-          "username      VARCHAR(191) NOT NULL UNIQUE,"
+        "username      TEXT NOT NULL UNIQUE," = "username      VARCHAR(191) NOT NULL UNIQUE,"
       )
     )
     for (table in names(text_to_varchar)) {
@@ -482,7 +483,10 @@ episodic_db_schema_statements <- function(dialect) {
         if (identical(new_block, block)) {
           stop(
             "episodic_db_schema_statements(): pattern not found in ",
-            table, ": '", pattern, "'. inst/sql/schema.sql may have changed - ",
+            table,
+            ": '",
+            pattern,
+            "'. inst/sql/schema.sql may have changed - ",
             "update the mariadb rewrite rules to match.",
             call. = FALSE
           )

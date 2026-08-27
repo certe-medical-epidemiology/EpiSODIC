@@ -57,11 +57,12 @@
 #' @keywords internal
 #' @noRd
 episodic_derive_state <- function(
-    events,
-    changed_since_assessment = FALSE,
-    closure_criterion_met = FALSE,
-    explicitly_closed = FALSE,
-    today = Sys.Date()) {
+  events,
+  changed_since_assessment = FALSE,
+  closure_criterion_met = FALSE,
+  explicitly_closed = FALSE,
+  today = Sys.Date()
+) {
   if (nrow(events) == 0) {
     # A cluster the cron auto-closed without anyone ever assessing it
     # still has zero assessment events - so explicitly_closed must be
