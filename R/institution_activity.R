@@ -106,7 +106,7 @@ episodic_institution_activity_load <- function(con, activity) {
 #' Check the optional institution activity feed against its own contract
 #'
 #' Split out of the load step so [episodic_run_cron()] can run it before
-#' the run writes anything, mirroring [episodic_validate_denominators()].
+#' the run writes anything, mirroring `episodic_validate_denominators()`.
 #'
 #' @param activity A data frame (or tibble) with `institution_key`,
 #'   `period_start`, `period_end`, `patient_days` (nullable `admissions`,
@@ -164,7 +164,7 @@ episodic_validate_institution_activity <- function(activity) {
 #' Unlike the case and denominator feeds, an `institution_key` that
 #' matches no institution in your case data is not a problem here - it
 #' is deliberately allowed, and only ever counted and warned about at
-#' run time (see [episodic_institution_activity_load()]), since the two
+#' run time (see `episodic_institution_activity_load()`), since the two
 #' feeds need not be perfectly synchronised and this function has no
 #' case data to compare against in the first place.
 #'
@@ -177,7 +177,7 @@ episodic_validate_institution_activity <- function(activity) {
 #'   same shape [episodic_check_cases()] returns. Zero rows means the
 #'   data set passed every check.
 #' @seealso [episodic_check_cases()] for the case data feed,
-#'   [episodic_check_denominators()] for the positivity feed.
+#'   `episodic_check_denominators()` for the positivity feed.
 #' @examples
 #' institutions <- data.frame(
 #'   institution_key = "HOSP-1", institution_type = "hospital", n_beds = 320
