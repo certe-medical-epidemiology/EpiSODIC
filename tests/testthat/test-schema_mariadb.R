@@ -125,6 +125,11 @@ test_that("episodic_db_schema_statements(\"mariadb\") bounds the four TEXT UNIQU
     fixed = TRUE
   ))
   expect_true(grepl(
+    "lab_number     VARCHAR(191) NOT NULL",
+    combined,
+    fixed = TRUE
+  ))
+  expect_true(grepl(
     "username      VARCHAR(191) NOT NULL UNIQUE",
     combined,
     fixed = TRUE

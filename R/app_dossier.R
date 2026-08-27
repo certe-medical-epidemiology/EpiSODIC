@@ -838,7 +838,7 @@ episodic_ui_linelist_panel <- function(
   ll <- episodic_app_linelist(con, cluster_id)
   cols <- c(
     "patient_key",
-    "source_key",
+    "lab_number",
     "sample_date",
     "sex",
     "age",
@@ -854,7 +854,7 @@ episodic_ui_linelist_panel <- function(
           "panel.linelist.col.",
           switch(c,
             patient_key = "patient",
-            source_key = "case",
+            lab_number = "lab_number",
             sample_date = "date",
             sex = "sex",
             age = "age",

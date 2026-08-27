@@ -106,6 +106,7 @@ episodic_synthetic_cases <- function(
 
   cases <- rbind(baseline, outbreaks)
   cases$source_key <- sprintf("SYN-%08d", seq_len(nrow(cases)))
+  cases$lab_number <- sprintf("LABSYN-%08d", seq_len(nrow(cases)))
 
   cases <- cases[order(cases$sample_date), ]
   rownames(cases) <- NULL
@@ -332,7 +333,7 @@ episodic_synthetic_pathogen_profiles <- function() {
 #' One case row, however it was generated
 #'
 #' Every generator here - baseline, each outbreak, the calibration volume -
-#' produces the same fifteen columns in the same order, so they rbind
+#' produces the same fourteen columns in the same order, so they rbind
 #' without anyone having to keep six copies of the column list in step.
 #'
 #' @param patient_key,sample_date,pathogen,pc,sex,age Per-case values.
@@ -340,7 +341,8 @@ episodic_synthetic_pathogen_profiles <- function() {
 #'   single row, recycled).
 #' @param ward Ward per case, `NA` outside hospitals.
 #' @return A data frame in [episodic_case_columns] order, minus
-#'   `source_key`, which the assembling function stamps on at the end.
+#'   `source_key` and `lab_number`, which the assembling function stamps
+#'   on at the end.
 #' @keywords internal
 #' @noRd
 episodic_synthetic_case_rows <- function(
@@ -799,6 +801,7 @@ episodic_synthetic_cases_calibration <- function(
 
   cases <- rbind(baseline, outbreaks, volume)
   cases$source_key <- sprintf("SYN-%08d", seq_len(nrow(cases)))
+  cases$lab_number <- sprintf("LABSYN-%08d", seq_len(nrow(cases)))
 
   cases <- cases[order(cases$sample_date), ]
   rownames(cases) <- NULL

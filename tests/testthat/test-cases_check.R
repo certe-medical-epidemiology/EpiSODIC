@@ -22,9 +22,11 @@ check_case <- function(
     patient_key = "P1",
     sample_date = "2025-01-01",
     pathogen = "Test pathogen",
-    receipt_date = "2025-01-02") {
+    receipt_date = "2025-01-02",
+    lab_number = paste0("LAB-", source_key)) {
   data.frame(
     source_key = source_key,
+    lab_number = lab_number,
     patient_key = patient_key,
     sample_date = sample_date,
     receipt_date = receipt_date,

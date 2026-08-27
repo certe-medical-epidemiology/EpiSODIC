@@ -309,15 +309,17 @@ episodic_db_case_insert_new <- function(con, cases, run_id) {
   stmt <- DBI::dbSendStatement(
     con,
     "INSERT INTO episodic_case
-      (source_key, patient_key, sample_date, receipt_date, pathogen,
-       care_line, institution_id, ward, specialism, pc, sex, age, first_seen_run)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      (source_key, lab_number, patient_key, sample_date, receipt_date,
+       pathogen, care_line, institution_id, ward, specialism, pc, sex, age,
+       first_seen_run)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
   )
   on.exit(DBI::dbClearResult(stmt))
   for (idx in chunks) {
     batch <- to_insert[idx, , drop = FALSE]
     DBI::dbBind(stmt, list(
       batch$source_key,
+      batch$lab_number,
       batch$patient_key,
       episodic_sql_date(batch$sample_date),
       episodic_sql_date(batch$receipt_date),

@@ -70,6 +70,7 @@ pathogen_screen_setup <- function() {
 
   cases <- data.frame(
     source_key = sprintf("PS%04d", seq_len(n)),
+    lab_number = sprintf("LAB-PS%04d", seq_len(n)),
     patient_key = sprintf("PP%04d", seq_len(n)),
     sample_date = dates,
     receipt_date = dates,

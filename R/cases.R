@@ -43,7 +43,7 @@
 #'
 #' @section Required columns:
 #'
-#' `episodic_case_columns` lists all fifteen, in order. The set is an
+#' `episodic_case_columns` lists all sixteen, in order. The set is an
 #' explicit allow-list: a column outside it, or one missing from it, is
 #' rejected by [episodic_validate_cases()] rather than silently ignored.
 #' "Required" means the column must be present; several may be `NA`
@@ -56,16 +56,37 @@
 #'
 #' \describe{
 #'   \item{`source_key`}{Character, required, no `NA`, unique within the
-#'     data set. A stable identifier for this result in your own source
-#'     system, so re-running the same extract later cannot create
-#'     duplicate cases. Any string will do, as long as the same result
-#'     always carries the same one.}
+#'     data set as a whole - across every pathogen and every patient, not
+#'     just within one of them. A stable identifier for this *result*, so
+#'     re-running the same extract later cannot create duplicate cases.
+#'     Your laboratory's own specimen or culture number rarely satisfies
+#'     this by itself: the same culture can yield more than one reported
+#'     result (a multiplex panel positive for two organisms, two isolates
+#'     from one culture with different antibiograms), and a bare specimen
+#'     number then repeats across rows. Where that is true of your source
+#'     data, build `source_key` yourself from whatever combination of
+#'     `lab_number`, `patient_key` and `pathogen` is unique per *row* in
+#'     your extract, e.g. `paste(lab_number, pathogen)` or, if one culture
+#'     can yield more than one isolate of the same pathogen,
+#'     `paste(lab_number, pathogen, isolate_number)`. `source_key` itself
+#'     is never shown in the dashboard - it exists only so a re-run stays
+#'     idempotent - which is exactly why it is safe to make it an
+#'     artificial combination rather than a real-world identifier.}
+#'   \item{`lab_number`}{Character, required, no `NA`. Your laboratory's
+#'     own identifier for the specimen or culture this result came from
+#'     (an accession, specimen or culture number) - not pseudonymised,
+#'     and not required to be unique: two rows legitimately share one
+#'     `lab_number` when a single culture produced more than one reported
+#'     result (see `source_key`). Shown alongside `patient_key` in the
+#'     dashboard's case tables, since - unlike `patient_key` - it is not a
+#'     patient identifier and carries no reason to hide it.}
 #'   \item{`patient_key`}{Character, required, no `NA`. A pseudonymised
 #'     patient identifier, the same for the same patient across results.
 #'     Deduplication and episode grouping key on it: without it every
-#'     positive becomes its own case. Never shown as-is in the dashboard,
-#'     but do pseudonymise it before it reaches EpiSODIC - a BSN or
-#'     hospital number must not be passed through.}
+#'     positive becomes its own case. Do pseudonymise it before it
+#'     reaches EpiSODIC - a BSN or hospital number must not be passed
+#'     through - but the pseudonym itself is shown in the dashboard's
+#'     case tables, same as `lab_number`.}
 #'   \item{`sample_date`}{Date, or character in `YYYY-MM-DD` (ISO 8601)
 #'     form. Required, no `NA`. The date the sample was taken, and the
 #'     anchor every detector, trend and report is built against. If your
@@ -142,6 +163,7 @@
 #' \tabular{llll}{
 #'   \strong{Column} \tab \strong{Type} \tab \strong{Empty allowed} \tab \strong{Accepts} \cr
 #'   \code{source_key} \tab character \tab no \tab any string, unique within the data set \cr
+#'   \code{lab_number} \tab character \tab no \tab any string, your lab's own specimen/culture number \cr
 #'   \code{patient_key} \tab character \tab no \tab any string, stable per patient \cr
 #'   \code{sample_date} \tab \code{Date} or character \tab no \tab \code{YYYY-MM-DD} only \cr
 #'   \code{receipt_date} \tab \code{Date} or character \tab yes \tab \code{YYYY-MM-DD} only \cr
@@ -186,10 +208,11 @@
 #' run, and refuses to start on data it cannot use, naming what to fix.
 #'
 #' @examples
-#' # A minimal but complete extract: two results, one patient, all fifteen
+#' # A minimal but complete extract: two results, one patient, all sixteen
 #' # columns present, and the ones your laboratory does not record left NA.
 #' cases <- data.frame(
 #'   source_key = c("LAB-1", "LAB-2"),
+#'   lab_number = c("LAB-1", "LAB-2"),
 #'   patient_key = c("PAT-1", "PAT-1"),
 #'   sample_date = c("2025-01-06", "2025-01-09"),
 #'   receipt_date = c("2025-01-07", "2025-01-10"),
@@ -219,6 +242,7 @@ NULL
 #' @export
 episodic_case_columns <- c(
   "source_key",
+  "lab_number",
   "patient_key",
   "sample_date",
   "receipt_date",
@@ -258,6 +282,7 @@ episodic_sex_codes <- c("M", "F", "U")
 #' @noRd
 episodic_case_columns_required <- c(
   "source_key",
+  "lab_number",
   "patient_key",
   "sample_date",
   "pathogen",

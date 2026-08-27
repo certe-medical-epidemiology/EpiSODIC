@@ -2,6 +2,8 @@
 
 ## New
 
+- Case data contract gains a required `lab_number` column: your laboratory's own specimen/culture number, distinct from `source_key` and, unlike it, not required to be unique - two rows may share one when a single culture yields more than one reported result. Shown on the line list alongside `patient_key`, replacing the previously-shown (and not useful) `source_key`
+- Similar-clusters panel on the dossier gains a cluster ID column and opens the same way every other cluster table does
 - Unassessed clusters auto-close once their last case day is older than `config$reconciliation$stale_open_days` (default 60 days)
 - Run-detail modal shows how many clusters a run auto-closed
 - Info screen shows the app's version, description, license and website, read live from `DESCRIPTION`
@@ -13,6 +15,7 @@
 - Assessment rationale is now optional, not required
 - Rail's bulk-select checkbox sits inline with the pathogen name
 - Version number moved from the navbar to the Info screen
+- `episodic_db_case_insert_new()` batches its existence check and insert into chunked round trips instead of one query pair per row, a large speedup for larger imports
 
 ## Fixed
 

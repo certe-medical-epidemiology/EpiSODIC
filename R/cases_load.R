@@ -80,6 +80,7 @@ episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
   to_insert$institution_id <- institution_lookup[to_insert$institution_key]
   to_insert <- to_insert[, c(
     "source_key",
+    "lab_number",
     "patient_key",
     "sample_date",
     "receipt_date",

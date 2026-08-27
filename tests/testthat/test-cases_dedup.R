@@ -27,9 +27,11 @@ raw_case <- function(
     source_key,
     patient_key,
     sample_date,
-    pathogen = "Test pathogen") {
+    pathogen = "Test pathogen",
+    lab_number = paste0("LAB-", source_key)) {
   data.frame(
     source_key = source_key,
+    lab_number = lab_number,
     patient_key = patient_key,
     sample_date = sample_date,
     receipt_date = sample_date,
@@ -324,6 +326,7 @@ test_that("episodic_db_last_case_dates() returns the latest sample_date per pati
   run_id <- episodic_db_run_start(con, "host", "account")
   cases <- data.frame(
     source_key = c("K1", "K2"),
+    lab_number = c("LAB-K1", "LAB-K2"),
     patient_key = c("P1", "P1"),
     sample_date = c("2025-01-01", "2025-01-20"),
     receipt_date = c("2025-01-01", "2025-01-20"),
@@ -376,6 +379,7 @@ test_that("episodic_db_case_insert_new() stores a Date-typed sample_date as ISO 
   run_id <- episodic_db_run_start(con, "host", "account")
   cases <- data.frame(
     source_key = "K1",
+    lab_number = "LAB-K1",
     patient_key = "P1",
     sample_date = as.Date("2025-01-01"),
     receipt_date = as.Date("2025-01-02"),

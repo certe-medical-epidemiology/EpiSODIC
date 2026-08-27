@@ -176,6 +176,7 @@ CREATE TABLE episodic_pathogen_config (
 CREATE TABLE episodic_case (
   case_id        INTEGER PRIMARY KEY AUTOINCREMENT,
   source_key     TEXT NOT NULL UNIQUE,
+  lab_number     TEXT NOT NULL,  -- the lab's own specimen/culture number; not unique, unlike source_key
   patient_key    TEXT NOT NULL,
   sample_date    TEXT NOT NULL,
   receipt_date   TEXT,
@@ -197,6 +198,9 @@ CREATE INDEX idx_episodic_case_institution ON episodic_case(institution_id);
 -- Serves episodic_db_last_case_dates(), the per-run lookup that lets an
 -- operator send only a recent window of positives instead of full history.
 CREATE INDEX idx_episodic_case_patient_pathogen ON episodic_case(patient_key, pathogen, sample_date);
+-- Finds every other result from the same culture (e.g. two isolates of
+-- the same pathogen reported separately with different antibiograms).
+CREATE INDEX idx_episodic_case_lab_number ON episodic_case(lab_number);
 
 -- ---------------------------------------------------------------------
 -- 5.5 Detections and clusters (cron)

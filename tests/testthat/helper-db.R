@@ -113,6 +113,7 @@ app_read_setup <- function() {
 
   cases <- data.frame(
     source_key = sprintf("K%d", 1:6),
+    lab_number = sprintf("LAB-K%d", 1:6),
     patient_key = sprintf("P%d", 1:6),
     sample_date = c(
       "2025-01-10",

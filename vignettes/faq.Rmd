@@ -240,13 +240,15 @@ source systems is exactly that: your transform step's job, done before
 EpiSODIC is ever called. Bring each source into the shared column
 contract, `rbind()` (or `dplyr::bind_rows()`) them together, and check
 the combined result with `episodic_check_cases()` as normal. The one
-thing to get right across sources is `source_key`: it only needs to be
-unique *within your own source system* per the column contract, so if
-two systems could otherwise produce the same key (e.g. both use a
-simple incrementing lab accession number), prefix each system's keys
-with something that tells them apart (e.g. `"LIS1-482910"` vs.
-`"LIS2-482910"`) before combining, so a later re-run cannot collide two
-genuinely different results into one.
+thing to get right across sources is `source_key`: it needs to be
+unique *per row of the combined data set*, so if two systems could
+otherwise produce the same key (e.g. both use a simple incrementing lab
+accession number), prefix each system's keys with something that tells
+them apart (e.g. `"LIS1-482910"` vs. `"LIS2-482910"`) before combining,
+so a later re-run cannot collide two genuinely different results into
+one. `lab_number` itself needs no such treatment - unlike `source_key`
+it is never required to be unique, so your lab's own accession number
+can go into it verbatim regardless of how many systems you combine.
 
 </details>
 

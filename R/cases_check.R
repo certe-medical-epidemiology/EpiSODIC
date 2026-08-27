@@ -151,8 +151,9 @@ episodic_check_structure <- function(cases) {
         "Add the column(s). `episodic_case_columns` lists all ",
         length(episodic_case_columns),
         " in order. A column your laboratory does not record may be ",
-        "all-NA, except source_key, patient_key, sample_date, pathogen, ",
-        "institution_key, institution_display_name and institution_type."
+        "all-NA, except source_key, lab_number, patient_key, sample_date, ",
+        "pathogen, institution_key, institution_display_name and ",
+        "institution_type."
       )
     )
   }
@@ -199,11 +200,16 @@ episodic_check_structure <- function(cases) {
           " rows."
         ),
         fix = paste0(
-          "source_key must identify one laboratory result in your own ",
-          "source system. If your extract joins a table that multiplies ",
-          "rows, de-duplicate before handing the data over; if one ",
-          "positive legitimately appears under two pathogen names, give ",
-          "each row its own key (e.g. paste(source_key, pathogen))."
+          "source_key must identify one laboratory result, not one ",
+          "specimen - it needs its own value on every row. If your ",
+          "extract joins a table that multiplies rows, de-duplicate ",
+          "before handing the data over. If the repeats are legitimate - ",
+          "one culture yielding results under two pathogen names, or two ",
+          "isolates of the same pathogen from one culture with different ",
+          "antibiograms - build source_key from whatever combination of ",
+          "lab_number, patient_key and pathogen is unique per row in your ",
+          "own data, e.g. paste(lab_number, pathogen) or ",
+          "paste(lab_number, pathogen, isolate_number)."
         )
       )
     }
@@ -977,7 +983,13 @@ episodic_check_required_fix <- function(column) {
     source_key = paste0(
       "source_key identifies the result in your own source system, so a ",
       "re-run of the same extract cannot create the case twice. Any ",
-      "stable string will do."
+      "stable string will do, as long as it is unique per row - see ",
+      "?episodic_case_data if a bare specimen number is not."
+    ),
+    lab_number = paste0(
+      "lab_number is your laboratory's own specimen or culture number. ",
+      "Unlike source_key it need not be unique - two rows may share one ",
+      "when a single culture produced more than one reported result."
     ),
     patient_key = paste0(
       "patient_key is what deduplication and episode grouping key on. ",
@@ -1027,8 +1039,14 @@ episodic_check_column_synonyms <- c(
   sampleid = "source_key",
   specimenid = "source_key",
   isolateid = "source_key",
-  labid = "source_key",
-  monsternummer = "source_key",
+  labid = "lab_number",
+  labnr = "lab_number",
+  labnummer = "lab_number",
+  labnumber = "lab_number",
+  monsternummer = "lab_number",
+  kweeknummer = "lab_number",
+  culturenumber = "lab_number",
+  accessionnumber = "lab_number",
   patientid = "patient_key",
   patient = "patient_key",
   patientnumber = "patient_key",

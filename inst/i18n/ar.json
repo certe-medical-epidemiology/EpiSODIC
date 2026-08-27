@@ -116,7 +116,7 @@
   "panel.linelist.title": "قائمة الحالات",
   "panel.linelist.aside": "{shown} من أصل {total} حالة",
   "panel.linelist.col.patient": "المريض",
-  "panel.linelist.col.case": "الحالة",
+  "panel.linelist.col.lab_number": "رقم المختبر",
   "panel.linelist.col.date": "تاريخ العيّنة",
   "panel.linelist.col.sex": "الجنس",
   "panel.linelist.col.age": "العمر",

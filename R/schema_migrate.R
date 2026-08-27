@@ -435,6 +435,8 @@ episodic_db_schema_statements <- function(dialect) {
       episodic_case = c(
         "source_key     TEXT NOT NULL UNIQUE," =
           "source_key     VARCHAR(191) NOT NULL UNIQUE,",
+        "  lab_number     TEXT NOT NULL,  -- the lab's own specimen/culture number; not unique, unlike source_key" =
+          "  lab_number     VARCHAR(191) NOT NULL,  -- the lab's own specimen/culture number; not unique, unlike source_key",
         "  patient_key    TEXT NOT NULL," =
           "  patient_key    VARCHAR(191) NOT NULL,",
         "  sample_date    TEXT NOT NULL," =

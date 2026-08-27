@@ -83,6 +83,7 @@ test_that("a second positive sent in a later, non-overlapping run still joins it
   raw_case <- function(source_key, sample_date) {
     data.frame(
       source_key = source_key,
+      lab_number = paste0("LAB-", source_key),
       patient_key = "P1",
       sample_date = sample_date,
       receipt_date = sample_date,

@@ -1074,7 +1074,7 @@ episodic_app_linelist <- function(con, cluster_id) {
     order(cases$sample_date),
     c(
       "patient_key",
-      "source_key",
+      "lab_number",
       "sample_date",
       "sex",
       "age",

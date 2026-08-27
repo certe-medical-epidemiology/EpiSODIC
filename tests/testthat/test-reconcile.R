@@ -73,9 +73,10 @@ reconcile_detect <- function(
     source_key <- sprintf("CASE-%s-%d-%d", first_day, run_id, i)
     DBI::dbExecute(
       env$con,
-      "INSERT INTO episodic_case (source_key, patient_key, sample_date, pathogen, care_line,
-        institution_id, first_seen_run) VALUES (?, ?, ?, 'Test pathogen', 'second', ?, ?)",
+      "INSERT INTO episodic_case (source_key, lab_number, patient_key, sample_date, pathogen,
+        care_line, institution_id, first_seen_run) VALUES (?, ?, ?, ?, 'Test pathogen', 'second', ?, ?)",
       params = list(
+        source_key,
         source_key,
         source_key,
         dates[i],

@@ -80,9 +80,10 @@ suppress_setup <- function(child_share = 1, n_children = 1, n_cases = 10) {
       DBI::dbExecute(
         con,
         "INSERT INTO episodic_case
-        (source_key, patient_key, sample_date, pathogen, care_line, institution_id, first_seen_run)
-       VALUES (?, ?, '2026-07-10', 'Test pathogen', 'second', ?, ?)",
+        (source_key, lab_number, patient_key, sample_date, pathogen, care_line, institution_id, first_seen_run)
+       VALUES (?, ?, ?, '2026-07-10', 'Test pathogen', 'second', ?, ?)",
         params = list(
+          sprintf("C%d", i),
           sprintf("C%d", i),
           sprintf("P%d", i),
           institution_id,

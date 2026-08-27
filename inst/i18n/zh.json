@@ -116,7 +116,7 @@
   "panel.linelist.title": "病例清单",
   "panel.linelist.aside": "共 {total} 例中的 {shown} 例",
   "panel.linelist.col.patient": "患者",
-  "panel.linelist.col.case": "病例",
+  "panel.linelist.col.lab_number": "化验号",
   "panel.linelist.col.date": "采样日期",
   "panel.linelist.col.sex": "性别",
   "panel.linelist.col.age": "年龄",

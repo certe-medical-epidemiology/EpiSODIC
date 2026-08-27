@@ -177,8 +177,9 @@ anything. The three fixed value sets are available as
 
 | Column | Type and allowed values | Meaning |
 |---|---|---|
-| `source_key` | character, required, unique | A unique identifier for the row in your own source system, so re-running the same extract later cannot create duplicate cases. |
-| `patient_key` | character, required | A stable, pseudonymised patient identifier. This is what deduplication and episode grouping key on: without it, EpiSODIC cannot tell that two positives belong to the same patient, and every positive would be treated as its own case. Never displayed as-is in the interface. |
+| `source_key` | character, required, unique | A unique identifier for the *row*, not the specimen - so re-running the same extract later cannot create duplicate cases. A bare lab accession number often is not unique per row by itself (the same culture can produce more than one reported result); where that is true of your data, build `source_key` yourself from whatever combination of `lab_number`, `patient_key` and `pathogen` is unique per row, e.g. `paste(lab_number, pathogen)`. |
+| `lab_number` | character, required | Your laboratory's own specimen or culture number. Unlike `source_key` it is not required to be unique - two rows legitimately share one `lab_number` when a single culture produced more than one reported result. Shown alongside `patient_key` on the line list, since it is not itself a patient identifier. |
+| `patient_key` | character, required | A stable, pseudonymised patient identifier. This is what deduplication and episode grouping key on: without it, EpiSODIC cannot tell that two positives belong to the same patient, and every positive would be treated as its own case. The pseudonym is shown on the line list, same as `lab_number`; do not pass through a real identifier (BSN, hospital number) as this column. |
 | `sample_date` | `Date` or `"YYYY-MM-DD"`, required | The anchor date every detector, trend, and report is built against. If your system falls back to a receipt date when sample date is unfilled, that fallback should already have happened before this row reaches EpiSODIC. |
 | `receipt_date` | `Date` or `"YYYY-MM-DD"`, `NA` allowed | When the result was received. Stored for provenance/audit, kept separate from `sample_date` - EpiSODIC deliberately does not use it to measure reporting delay, since a lab's own receipt-date field can itself silently be a stand-in for a missing sample date; reporting completeness is instead measured empirically, from how a stream's case counts change across successive detection runs. |
 | `pathogen` | character, required, free text | The pathogen as your lab reports it, as free text. **Not** resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying positive can appear more than once under different `pathogen` values when that is epidemiologically useful - an ETEC positive reported as both `"Escherichia coli"` and `"ETEC"`, so each is watched on its own. This is your transform step's decision, not EpiSODIC's. |
@@ -216,6 +217,19 @@ recent window (with a couple of weeks of overlap, so nothing slips through
 if a run is ever missed) rather than a patient's full history every time.
 Re-sending a row EpiSODIC has already seen (same `source_key`) is always
 safe regardless - it is simply a no-op.
+
+This also means two isolates from *one* culture, reported separately (e.g.
+two *E. coli* isolates with different antibiograms), collapse to one case
+if they share `patient_key`, `pathogen` and a `sample_date` within one
+episode of each other - by design. For counting cases and detecting
+clusters, one patient's one positive culture on one day is one
+epidemiological event, however many isolates or antibiogram rows your lab
+reported for it; counting it twice would inflate every downstream signal.
+`lab_number` still ties both rows back to the same culture even though
+only one survives deduplication as "the case" - but antibiogram-level
+detail (which isolate had which resistance pattern) is not itself part of
+the case data contract, and is a separate concern from whether EpiSODIC
+counts one case or two.
 
 **Do not send negative results here.** This feed drives every detector; it
 is deliberately positives-only so an operator never has to ship a
