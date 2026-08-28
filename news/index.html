@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,14 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.2" id="episodic-082">EpiSODIC 0.8.2<a class="anchor" aria-label="anchor" href="#episodic-082"></a></h2>
+<div class="section level3">
+<h3 id="fixed-0-8-2">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-8-2"></a></h3>
+<ul><li>Every cron-side database write function’s optional parameters defaulted to a bare, untyped <code>NA</code> (R’s logical <code>NA</code>) rather than the column’s own type (<code>NA_integer_</code>, <code>NA_real_</code>, <code>NA_character_</code>). RSQLite coerces this silently; RMariaDB does not treat a logical <code>NA</code> bound to a non-logical column the same way as a properly typed one, which is a documented source of crashes rather than a catchable error. Most notably, <code>episodic_db_detection_insert()</code>’s <code>cluster_id</code> - untyped, and hit on every single detection insert in every run, since a detection is always written before a cluster is attached to it - now defaults to <code>NA_integer_</code>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.8.1" id="episodic-081">EpiSODIC 0.8.1<a class="anchor" aria-label="anchor" href="#episodic-081"></a></h2>
 <div class="section level3">
