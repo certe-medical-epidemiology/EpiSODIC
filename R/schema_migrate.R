@@ -355,15 +355,31 @@ episodic_db_truncate <- function(path) {
     return(invisible(character(0)))
   }
 
-  if (dialect == "mariadb") {
-    DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 0")
-    on.exit(DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 1"), add = TRUE)
+  restore_fk <- if (dialect == "mariadb") {
+    "SET FOREIGN_KEY_CHECKS = 1"
   } else {
     # SQLite has no per-statement equivalent of MariaDB's FK-check
     # toggle; the pragma is connection-wide.
-    DBI::dbExecute(con, "PRAGMA foreign_keys = OFF")
-    on.exit(DBI::dbExecute(con, "PRAGMA foreign_keys = ON"), add = TRUE)
+    "PRAGMA foreign_keys = ON"
   }
+  DBI::dbExecute(
+    con,
+    if (dialect == "mariadb") "SET FOREIGN_KEY_CHECKS = 0" else "PRAGMA foreign_keys = OFF"
+  )
+  # A safety net for the error path only - the happy path restores this
+  # explicitly, right after the loop below, and disconnects after that.
+  # `on.exit(..., add = TRUE)` appends to the *end* of the connection's
+  # exit-handler list; con's own on.exit(dbDisconnect(con)) above was
+  # registered first and so would otherwise run first, closing the
+  # connection before this handler got to use it - RMariaDB's own
+  # response to a query issued against an already-freed connection is
+  # not a catchable R error but a C++ bad_weak_ptr abort. `after = FALSE`
+  # prepends instead, so this runs before the disconnect even then.
+  on.exit(
+    tryCatch(DBI::dbExecute(con, restore_fk), error = function(e) NULL),
+    add = TRUE,
+    after = FALSE
+  )
 
   truncated <- character(0)
   for (tbl in tables) {
@@ -389,6 +405,8 @@ episodic_db_truncate <- function(path) {
     }
     truncated <- c(truncated, tbl)
   }
+
+  DBI::dbExecute(con, restore_fk)
 
   message(
     length(truncated),
