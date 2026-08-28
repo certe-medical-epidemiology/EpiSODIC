@@ -1,3 +1,9 @@
+# EpiSODIC 0.8.5
+
+## Changed
+
+- `episodic_run_cron(debug = TRUE)` now forces a full garbage collection (`gc(full = TRUE)`) immediately after every database round trip inside the per-stream reconciliation loop. A fatal crash from corrupted memory typically surfaces later than its actual cause - whenever R's own, otherwise lazily scheduled, garbage collector happens to stumble on the damage - so forcing one right after each call is what lets the trace log land on the actual culprit instead of a downstream symptom several calls away. Confirmed necessary: a lab reproduction of the ongoing MariaDB crash showed the trace stopping at a different line on each run (once after `episodic_growth_slope()`, once mid-`episodic_app_density()`) despite hitting the exact same stream and data, the signature of exactly this kind of delayed-onset corruption. Noisy and slow; `debug = TRUE` was already meant only for chasing a failure like this, not for routine runs
+
 # EpiSODIC 0.8.4
 
 ## Fixed
