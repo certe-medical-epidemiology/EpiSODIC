@@ -41,8 +41,8 @@
 #'   the last complete week, so the week the statistical detectors test is
 #'   a full one however far into the week you happen to run the demo -
 #'   which is how surveillance reads its own weeks anyway.
-#' @param lang Dashboard language when `launch = TRUE`: `"nl"`, `"en"`,
-#'   `"es"`, `"fr"`, `"de"`, `"zh"`, `"hi"`, or `"ar"`. Defaults to the
+#' @param lang Dashboard language when `launch = TRUE`: `"en"`, `"ar"`,
+#'   `"nl"`, `"fr"`, `"de"`, `"hi"`, `"zh"`, or `"es"`. Defaults to the
 #'   `EPISODIC_LANGUAGE` environment variable, falling back to `"en"` if
 #'   that is unset.
 #' @param cases,denominators The data to generate the demo

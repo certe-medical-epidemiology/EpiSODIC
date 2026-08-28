@@ -1,3 +1,17 @@
+# EpiSODIC 0.8.7
+
+## Changed
+
+- Author list trimmed to its actual contributors and copyright holders: Matthijs Berends, Certe Medical Diagnostics & Advice Foundation, and University Medical Center Groningen (ROR-identified, same format as Certe)
+- Every language listing (README, vignettes, roxygen docs) now orders English first, then the rest alphabetically, instead of leading with Dutch
+- Geography is documented as operator-supplied throughout, not Netherlands-specific: the "Geographic reference data" section in `vignette("data-format")` is substantially expanded, now also covering `EPISODIC_PC_PROVINCE_MAP` (L4 stream detection) alongside the map data, and the FAQ's geography entry does the same
+- `vignette("overview")`'s screen-by-screen section no longer stops at three screens ("a third screen closes the loop") - it now covers all seven (Clusters, Pathogen, Performance, Archive, Streams, Activity, Info)
+- `episodic_check_denominators()` and `episodic_check_institution_activity()` are now mentioned alongside `episodic_check_cases()` everywhere the docs discuss checking input data before a run (`vignette("data-format")`, `vignette("deployment")`, `vignette("faq")`, README)
+
+## Fixed
+
+- `care_line`'s `"third"` (tertiary care) value was missing from every column-contract table and roxygen doc listing its allowed values - `episodic_care_lines` already included it, the docs just did not
+
 # EpiSODIC 0.8.6
 
 ## Changed
@@ -5,6 +19,10 @@
 - Reverted 0.8.5's `gc(full = TRUE)` forcing in `episodic_run_cron(debug = TRUE)`: a second lab reproduction, with that forcing in place, showed a `gc()` completing cleanly immediately after `episodic_growth_slope()` and then the crash landing on the very next call, `episodic_spatial_concentration()` - ruling out delayed-onset corruption from an earlier call and pointing at that one call on that specific data instead, which the extra `gc()` calls were never able to help with and were only slowing every run down (~600-1000ms added per stream, a ~5 minute run turning into "10-20 seconds on SQLite" by the lab's own comparison)
 - `episodic_spatial_concentration()` (the isolated crash site) no longer uses `table()`/`factor()`, which sort their levels and so invoke locale-aware string collation - not guaranteed safe against a string whose declared encoding does not match its actual bytes, which is exactly what a client/server character-set mismatch can hand back from a MariaDB connection. Counts via `tabulate(match(pc, unique(pc)))` instead, which only ever hashes and byte-compares the strings themselves and sorts nothing but the resulting integer codes
 - `episodic_run_cron(debug = TRUE)` now dumps each reconciliation candidate's `pc` values (encoding, validity, raw bytes) immediately before `episodic_spatial_concentration()` runs, in place of the removed `gc()` forcing - cheap (a handful of values at most) and aimed squarely at confirming or ruling out the character-encoding hypothesis above
+
+# EpiSODIC 0.8.5
+
+## Changed
 
 - `episodic_run_cron(debug = TRUE)` now forces a full garbage collection (`gc(full = TRUE)`) immediately after every database round trip inside the per-stream reconciliation loop. A fatal crash from corrupted memory typically surfaces later than its actual cause - whenever R's own, otherwise lazily scheduled, garbage collector happens to stumble on the damage - so forcing one right after each call is what lets the trace log land on the actual culprit instead of a downstream symptom several calls away. Confirmed necessary: a lab reproduction of the ongoing MariaDB crash showed the trace stopping at a different line on each run (once after `episodic_growth_slope()`, once mid-`episodic_app_density()`) despite hitting the exact same stream and data, the signature of exactly this kind of delayed-onset corruption. Noisy and slow; `debug = TRUE` was already meant only for chasing a failure like this, not for routine runs
 
