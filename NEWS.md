@@ -1,3 +1,9 @@
+# EpiSODIC 0.8.2
+
+## Fixed
+
+- Every cron-side database write function's optional parameters defaulted to a bare, untyped `NA` (R's logical `NA`) rather than the column's own type (`NA_integer_`, `NA_real_`, `NA_character_`). RSQLite coerces this silently; RMariaDB does not treat a logical `NA` bound to a non-logical column the same way as a properly typed one, which is a documented source of crashes rather than a catchable error. Most notably, `episodic_db_detection_insert()`'s `cluster_id` - untyped, and hit on every single detection insert in every run, since a detection is always written before a cluster is attached to it - now defaults to `NA_integer_`
+
 # EpiSODIC 0.8.1
 
 ## Changed
