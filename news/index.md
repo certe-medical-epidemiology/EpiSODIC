@@ -1,5 +1,21 @@
 # Changelog
 
+## EpiSODIC 0.8.8
+
+### Changed
+
+- `episodic_run_cron(debug = TRUE)` now prints the exact SQL and every
+  bound parameter’s value, class and encoding immediately before each
+  database call the ongoing MariaDB crash investigation has implicated
+  so far - `episodic_app_density()`’s two queries, the population-vector
+  lookup, the trend/detection writes, and the assessment-event lookups -
+  rather than only reporting once the call has returned. The crash has
+  now landed on three different calls across three otherwise-identical
+  reproductions on the exact same stream and candidate, so seeing
+  precisely what was sent (not just where the trace stopped) is the next
+  step in pinning it down as an EpiSODIC-side issue rather than a driver
+  one
+
 ## EpiSODIC 0.8.7
 
 ### Changed

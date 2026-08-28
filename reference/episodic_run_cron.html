@@ -19,7 +19,7 @@ failed run is always safe to simply retry."><meta property="og:image" content="h
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.8</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -204,33 +204,33 @@ the contract it checks against.</p></div>
 <span class="r-in"><span>  start_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2025-01-01"</span><span class="op">)</span>, end_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2025-03-31"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">run_id</span> <span class="op">&lt;-</span> <span class="fu">episodic_run_cron</span><span class="op">(</span>db_path <span class="op">=</span> <span class="va">db_path</span>, cases <span class="op">=</span> <span class="va">cases</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.015 | episodic_run_cron() starting (host=runnervmgx7h7, account=runner)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.016 | Resolving configuration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.020 | Configuration resolved (hash 0e1853bcb766)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.020 | Connecting to database</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.021 | No existing database found - creating one</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.038 | Database connected (dialect: sqlite)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.039 | Run 1 started</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.039 | Resolving and checking case data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.052 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.052 | Beginning transaction</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.053 | Loading pathogen configuration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.072 | Pathogen configuration loaded (23 pathogen(s))</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.073 | Loading case data into the database</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.232 | Case data loaded: supplied=419, deduplicated=410, inserted=410</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.233 | Fetching all known cases and institutions</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.235 | Enumerating lattice streams</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.720 | Running same-place detector</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.793 | Same-place detector found 4 detection(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.794 | Running rare-trigger detector</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.797 | Rare-trigger detector found 1 detection(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.798 | Farrington owes 8 week(s) this run</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:26.799 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:28.986 | Stream reconciliation done: 5 detection(s), 5 new signal(s), 0 updated signal(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:28.986 | Suppressing lattice</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:28.997 | Committing transaction</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:28.999 | Finishing run 1 (status: success)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 17:43:29.002 | episodic_run_cron() finished in 3s (status: success)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:36.930 | episodic_run_cron() starting (host=runnervmgx7h7, account=runner)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:36.931 | Resolving configuration</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:36.935 | Configuration resolved (hash 0e1853bcb766)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:36.935 | Connecting to database</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:36.935 | No existing database found - creating one</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:36.952 | Database connected (dialect: sqlite)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:36.953 | Run 1 started</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:36.953 | Resolving and checking case data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:36.967 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:36.968 | Beginning transaction</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:36.968 | Loading pathogen configuration</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:36.986 | Pathogen configuration loaded (23 pathogen(s))</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:36.986 | Loading case data into the database</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:37.124 | Case data loaded: supplied=419, deduplicated=410, inserted=410</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:37.124 | Fetching all known cases and institutions</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:37.126 | Enumerating lattice streams</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:37.548 | Running same-place detector</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:37.616 | Same-place detector found 4 detection(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:37.616 | Running rare-trigger detector</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:37.619 | Rare-trigger detector found 1 detection(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:37.620 | Farrington owes 8 week(s) this run</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:37.621 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:39.642 | Stream reconciliation done: 5 detection(s), 5 new signal(s), 0 updated signal(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:39.642 | Suppressing lattice</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:39.647 | Committing transaction</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:39.648 | Finishing run 1 (status: success)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-08-28 19:11:39.651 | episodic_run_cron() finished in 2.7s (status: success)</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.remove</a></span><span class="op">(</span><span class="va">db_path</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>

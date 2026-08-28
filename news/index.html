@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.8</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,14 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.8" id="episodic-088">EpiSODIC 0.8.8<a class="anchor" aria-label="anchor" href="#episodic-088"></a></h2>
+<div class="section level3">
+<h3 id="changed-0-8-8">Changed<a class="anchor" aria-label="anchor" href="#changed-0-8-8"></a></h3>
+<ul><li>
+<code>episodic_run_cron(debug = TRUE)</code> now prints the exact SQL and every bound parameter’s value, class and encoding immediately before each database call the ongoing MariaDB crash investigation has implicated so far - <code>episodic_app_density()</code>’s two queries, the population-vector lookup, the trend/detection writes, and the assessment-event lookups - rather than only reporting once the call has returned. The crash has now landed on three different calls across three otherwise-identical reproductions on the exact same stream and candidate, so seeing precisely what was sent (not just where the trace stopped) is the next step in pinning it down as an EpiSODIC-side issue rather than a driver one</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.8.7" id="episodic-087">EpiSODIC 0.8.7<a class="anchor" aria-label="anchor" href="#episodic-087"></a></h2>
 <div class="section level3">
