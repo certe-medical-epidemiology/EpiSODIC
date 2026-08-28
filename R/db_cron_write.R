@@ -98,9 +98,9 @@ episodic_db_institution_upsert <- function(
   display_name,
   institution_type,
   care_line,
-  municipality = NA,
-  pc = NA,
-  n_beds = NA,
+  municipality = NA_character_,
+  pc = NA_character_,
+  n_beds = NA_integer_,
   is_monitored = FALSE
 ) {
   existing <- episodic_db_institution_get(con, institution_key)
@@ -149,10 +149,10 @@ episodic_db_institution_activity_upsert <- function(
   institution_id,
   period_start,
   period_end,
-  patient_days = NA,
-  admissions = NA,
-  n_beds = NA,
-  source = NA
+  patient_days = NA_integer_,
+  admissions = NA_integer_,
+  n_beds = NA_integer_,
+  source = NA_character_
 ) {
   period_start <- episodic_sql_date(period_start)
   period_end <- episodic_sql_date(period_end)
@@ -203,10 +203,10 @@ episodic_db_stream_upsert <- function(
   stream_key,
   level,
   pathogen,
-  care_line = NA,
-  region_code = NA,
-  institution_id = NA,
-  ward = NA,
+  care_line = NA_character_,
+  region_code = NA_character_,
+  institution_id = NA_integer_,
+  ward = NA_character_,
   denominator = "none",
   severity_weight = 1.00,
   observed_date
@@ -382,7 +382,7 @@ episodic_db_denominator_upsert <- function(
   pathogen,
   sample_date,
   care_line,
-  area_code = NA,
+  area_code = NA_character_,
   n_tests
 ) {
   sample_date <- episodic_sql_date(sample_date)
@@ -428,8 +428,8 @@ episodic_db_stream_trend_upsert <- function(
   stream_id,
   week_start,
   n_cases,
-  expected = NA,
-  upperbound = NA
+  expected = NA_real_,
+  upperbound = NA_real_
 ) {
   existing <- DBI::dbGetQuery(
     con,
@@ -464,10 +464,16 @@ episodic_db_detection_insert <- function(
   first_day,
   last_day,
   n_cases,
-  expected = NA,
-  upperbound = NA,
+  expected = NA_real_,
+  upperbound = NA_real_,
   params_json,
-  cluster_id = NA
+  # An untyped `NA` is logical, and a logical NA bound where MariaDB
+  # expects an integer for `cluster_id` is a documented crash trigger
+  # for RMariaDB, unlike RSQLite which coerces it silently - every
+  # detection is inserted with no cluster yet (one is attached later via
+  # episodic_db_detection_set_cluster()), so this default is hit on
+  # every single call from episodic_run_cron_body().
+  cluster_id = NA_integer_
 ) {
   DBI::dbExecute(
     con,
@@ -511,9 +517,9 @@ episodic_db_cluster_insert <- function(
   first_day,
   last_day,
   n_cases,
-  expected = NA,
-  excess = NA,
-  ratio = NA,
+  expected = NA_real_,
+  excess = NA_real_,
+  ratio = NA_real_,
   priority_score,
   detector_agreement,
   run_id
@@ -550,9 +556,9 @@ episodic_db_cluster_update <- function(
   first_day,
   last_day,
   n_cases,
-  expected = NA,
-  excess = NA,
-  ratio = NA,
+  expected = NA_real_,
+  excess = NA_real_,
+  ratio = NA_real_,
   priority_score,
   detector_agreement,
   run_id,
@@ -687,22 +693,22 @@ episodic_db_run_finish <- function(
   con,
   run_id,
   status,
-  n_streams = NA,
-  n_detections = NA,
-  n_signals_new = NA,
-  n_signals_updated = NA,
-  n_cases_supplied = NA,
-  n_cases_deduplicated = NA,
-  n_cases_inserted = NA,
-  n_denominators_written = NA,
-  n_activity_supplied = NA,
-  n_activity_written = NA,
-  n_activity_skipped = NA,
-  code_version = NA,
-  pkg_versions = NA,
-  config_hash = NA,
-  config_snapshot = NA,
-  error_text = NA
+  n_streams = NA_integer_,
+  n_detections = NA_integer_,
+  n_signals_new = NA_integer_,
+  n_signals_updated = NA_integer_,
+  n_cases_supplied = NA_integer_,
+  n_cases_deduplicated = NA_integer_,
+  n_cases_inserted = NA_integer_,
+  n_denominators_written = NA_integer_,
+  n_activity_supplied = NA_integer_,
+  n_activity_written = NA_integer_,
+  n_activity_skipped = NA_integer_,
+  code_version = NA_character_,
+  pkg_versions = NA_character_,
+  config_hash = NA_character_,
+  config_snapshot = NA_character_,
+  error_text = NA_character_
 ) {
   DBI::dbExecute(
     con,
