@@ -1,5 +1,17 @@
 # Changelog
 
+## EpiSODIC 0.8.1
+
+### Changed
+
+- `episodic_run_cron(debug = TRUE)` traces every sub-step inside a
+  stream’s own reconciliation (triangle update, MEM/Farrington
+  detection, baseline exclusion, population vector, trend caching,
+  detection insert, and each reconciliation candidate’s priority-score
+  components) instead of only the stream as a whole - narrows a crash or
+  a stall down to the exact call inside a single stream’s processing,
+  not just which stream
+
 ## EpiSODIC 0.8.0
 
 ### New
