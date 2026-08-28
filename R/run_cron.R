@@ -711,6 +711,7 @@ episodic_run_cron_body <- function(
       stream_cases,
       as.character(run_date)
     )
+    episodic_trace_debug(debug, "debug:   triangle_update done")
 
     stream_detections <- rbind(
       same_place_detections[
@@ -734,12 +735,13 @@ episodic_run_cron_body <- function(
         stream_detections,
         episodic_detect_mem(stream_cases, stream$stream_id, run_date)
       )
+      episodic_trace_debug(debug, "debug:   MEM detect done")
     }
 
-    if (
-      nrow(stream_cases) > 0 &&
-        episodic_eligibility_gate(stream_cases, run_date, config)
-    ) {
+    eligible <- nrow(stream_cases) > 0 &&
+      episodic_eligibility_gate(stream_cases, run_date, config)
+    episodic_trace_debug(debug, "debug:   eligibility gate: ", eligible)
+    if (eligible) {
       # A period this stream's own history shows was a confirmed
       # epidemic must not silently raise next winter's baseline.
       # Excluded from the cases fed to Farrington only
@@ -752,6 +754,14 @@ episodic_run_cron_body <- function(
       farrington_cases <- episodic_baseline_exclude_cases(
         stream_cases,
         excluded_windows
+      )
+      episodic_trace_debug(
+        debug,
+        "debug:   baseline exclusion done (",
+        nrow(farrington_cases),
+        " of ",
+        nrow(stream_cases),
+        " case(s) kept)"
       )
 
       # Patient-day normalisation at L2. Both
@@ -767,6 +777,13 @@ episodic_run_cron_body <- function(
         stream$level,
         weekly_weeks
       )
+      episodic_trace_debug(
+        debug,
+        "debug:   population vector done (",
+        length(population),
+        " week(s)); calling episodic_detect_farrington() with n_weeks=",
+        farrington_weeks
+      )
 
       stream_detections <- rbind(
         stream_detections,
@@ -779,6 +796,7 @@ episodic_run_cron_body <- function(
           n_weeks = farrington_weeks
         )
       )
+      episodic_trace_debug(debug, "debug:   episodic_detect_farrington() done")
 
       # trend cache for the multi-year trend panel; see
       # episodic_farrington_trend()'s own docs for the backfill-once,
@@ -791,6 +809,12 @@ episodic_run_cron_body <- function(
         n_weeks_existing = n_existing_trend,
         population = population
       )
+      episodic_trace_debug(
+        debug,
+        "debug:   episodic_farrington_trend() done (",
+        nrow(trend),
+        " week(s) to upsert)"
+      )
       for (k in seq_len(nrow(trend))) {
         episodic_db_stream_trend_upsert(
           con,
@@ -801,6 +825,7 @@ episodic_run_cron_body <- function(
           upperbound = trend$upperbound[k]
         )
       }
+      episodic_trace_debug(debug, "debug:   trend upsert loop done")
     }
 
     # A stream with nothing detected this run still has to go through
@@ -830,6 +855,12 @@ episodic_run_cron_body <- function(
       }
       stream_detections$detection_id <- detection_ids
       n_detections_total <- n_detections_total + nrow(stream_detections)
+      episodic_trace_debug(
+        debug,
+        "debug:   ",
+        nrow(stream_detections),
+        " detection(s) inserted"
+      )
     }
 
     pc <- pathogen_config[pathogen_config$pathogen == stream$pathogen, ]
@@ -843,6 +874,7 @@ episodic_run_cron_body <- function(
     weights <- config$priority_score$weights
     min_excess <- config$effect_size_floor$min_excess_over_upperbound %||% NA
     min_ratio <- config$effect_size_floor$min_ratio_observed_expected %||% NA
+    episodic_trace_debug(debug, "debug:   calling episodic_reconcile_stream()")
     reconcile_result <- episodic_reconcile_stream(
       con,
       stream_id = stream$stream_id,
@@ -864,11 +896,24 @@ episodic_run_cron_body <- function(
       # that orders the whole assessment queue down to severity weight
       # and detector agreement alone.
       priority_score_fn = function(candidate) {
+        episodic_trace_debug(
+          debug,
+          "debug:     priority_score_fn() candidate ",
+          candidate$first_day,
+          "..",
+          candidate$last_day
+        )
         metrics <- episodic_reconcile_candidate_metrics(candidate)
         candidate_cases <- episodic_cases_in_window(
           stream_cases,
           candidate$first_day,
           candidate$last_day
+        )
+        episodic_trace_debug(
+          debug,
+          "debug:       ",
+          nrow(candidate_cases),
+          " candidate case(s); calling episodic_app_density()"
         )
         # Same descriptive rate the dossier's own density stat shows, so
         # the ranking and the displayed evidence cannot drift apart.
@@ -880,20 +925,34 @@ episodic_run_cron_body <- function(
         } else {
           density$value / density$baseline
         }
+        episodic_trace_debug(
+          debug,
+          "debug:       density done; calling episodic_growth_slope()"
+        )
+        growth_slope <- episodic_growth_slope(
+          stream_cases,
+          candidate$last_day
+        )
+        episodic_trace_debug(
+          debug,
+          "debug:       growth_slope done; calling episodic_spatial_concentration()"
+        )
+        spatial_concentration <- episodic_spatial_concentration(
+          candidate_cases
+        )
+        episodic_trace_debug(
+          debug,
+          "debug:       spatial_concentration done; scoring"
+        )
         episodic_priority_score(
           excess = metrics$excess,
           ratio = metrics$ratio,
           severity_weight = if (nrow(pc) > 0) pc$severity_weight[1] else 1,
-          growth_slope = episodic_growth_slope(
-            stream_cases,
-            candidate$last_day
-          ),
+          growth_slope = growth_slope,
           detector_agreement = candidate$detector_agreement,
           n_detectors = 4, # farrington, same_place, rare_trigger, mem
           density_ratio = density_ratio,
-          spatial_concentration = episodic_spatial_concentration(
-            candidate_cases
-          ),
+          spatial_concentration = spatial_concentration,
           weights = weights
         )
       },
@@ -910,6 +969,7 @@ episodic_run_cron_body <- function(
         }
       }
     )
+    episodic_trace_debug(debug, "debug:   episodic_reconcile_stream() done")
     n_new_total <- n_new_total + reconcile_result$n_new
     n_updated_total <- n_updated_total + reconcile_result$n_updated
   }
