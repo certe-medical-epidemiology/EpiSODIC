@@ -1,3 +1,9 @@
+# EpiSODIC 0.8.3
+
+## New
+
+- `episodic_db_truncate()`: empties every EpiSODIC table (including dashboard accounts) while keeping the schema itself, for a hard reset back to "freshly created, no data" without a schema migration. Refuses to run outside an interactive session, and requires typing the database's own name back at a prompt before it deletes anything
+
 # EpiSODIC 0.8.2
 
 ## Fixed

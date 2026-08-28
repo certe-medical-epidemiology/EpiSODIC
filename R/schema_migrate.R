@@ -190,30 +190,7 @@ episodic_db_create <- function(path, overwrite = FALSE) {
     con <- episodic_db_mariadb_connect(path)
 
     existing_tables <- DBI::dbListTables(con)
-    intended_tables <- readLines(system.file(
-      "sql/schema.sql",
-      package = "EpiSODIC"
-    ))
-    intended_tables <- intended_tables[grepl(
-      "^\\s*CREATE TABLE",
-      intended_tables,
-      ignore.case = TRUE
-    )]
-    intended_tables <- gsub(
-      "^\\s*CREATE TABLE\\s+([a-zA-Z0-9_]+).*",
-      "\\1",
-      intended_tables,
-      ignore.case = TRUE
-    )
-
-    if (length(intended_tables) == 0) {
-      stop(
-        "No 'CREATE TABLE' statements found in the schema file `inst/sql/schema.sql`. ",
-        "The package installation may be corrupted.",
-        call. = FALSE
-      )
-    }
-
+    intended_tables <- episodic_db_schema_tables()
     tables_to_drop <- intersect(existing_tables, intended_tables)
 
     if (length(tables_to_drop) > 0) {
@@ -275,6 +252,151 @@ episodic_db_create <- function(path, overwrite = FALSE) {
   }
 
   invisible(con)
+}
+
+#' Empty every EpiSODIC table, keeping the schema itself
+#'
+#' A hard reset back to "freshly created, no data" - every row in every
+#' EpiSODIC table is deleted, but the tables, indexes and constraints
+#' stay exactly as [episodic_db_create()] built them, so the database is
+#' immediately ready for a new [episodic_run_cron()] without a schema
+#' migration. This includes `episodic_app_user`: dashboard accounts are
+#' data too, and are deleted along with everything else - there is
+#' nothing this function leaves behind to sign in with afterwards.
+#'
+#' Deliberately hard to trigger by accident:
+#'
+#' \describe{
+#'   \item{Interactive only}{Refuses outright under [interactive()]
+#'     `FALSE` - a script, a cron job, or any other unattended context
+#'     can never reach the confirmation prompt, so it can never reach
+#'     the deletion either.}
+#'   \item{Typed confirmation}{Prints exactly what is about to be
+#'     deleted (every table, and its row count) and then requires you to
+#'     type the database's own name back at a prompt. A bare yes/no is
+#'     answerable on autopilot; typing the name back is not.}
+#' }
+#'
+#' @param path Path to an existing SQLite file, or a `mysql://` DSN (see
+#'   [episodic_db_dsn_mariadb()]) pointing at an existing MariaDB/MySQL
+#'   database.
+#' @return Invisibly, the character vector of tables that were
+#'   truncated - `character(0)` if you cancelled, or if the database had
+#'   no EpiSODIC tables to begin with.
+#' @examples
+#' \dontrun{
+#' episodic_db_truncate(db_path)
+#' }
+#' @export
+episodic_db_truncate <- function(path) {
+  if (!interactive()) {
+    stop(
+      "episodic_db_truncate() only runs in an interactive session - never ",
+      "from a script, a cron job, or any other unattended context. This is ",
+      "deliberate: it permanently deletes every row in every EpiSODIC table, ",
+      "including dashboard accounts.",
+      call. = FALSE
+    )
+  }
+
+  con <- episodic_db_connect(path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE)
+  dialect <- episodic_db_dialect(path)
+
+  tables <- intersect(episodic_db_schema_tables(), DBI::dbListTables(con))
+  if (length(tables) == 0) {
+    message("No EpiSODIC tables found on this connection - nothing to truncate.")
+    return(invisible(character(0)))
+  }
+
+  counts <- vapply(
+    tables,
+    function(tbl) {
+      tryCatch(
+        as.numeric(DBI::dbGetQuery(
+          con,
+          paste0("SELECT COUNT(*) AS n FROM ", tbl)
+        )$n[1]),
+        error = function(e) NA_real_
+      )
+    },
+    numeric(1)
+  )
+  total_rows <- sum(counts, na.rm = TRUE)
+
+  # Both RSQLite and RMariaDB report this the same way, so it is the one
+  # thing that reliably names "this database" regardless of dialect -
+  # the file path for SQLite, the schema name for MariaDB/MySQL.
+  dbname <- tryCatch(DBI::dbGetInfo(con)$dbname, error = function(e) NULL)
+  if (is.null(dbname) || is.na(dbname) || !nzchar(dbname)) {
+    dbname <- path
+  }
+
+  cat(
+    "This will permanently delete all data in ",
+    length(tables),
+    " EpiSODIC table(s) (",
+    format(total_rows, big.mark = ",", scientific = FALSE),
+    " row(s) total) on:\n\n  ",
+    dbname,
+    "\n\nTables: ",
+    paste(tables, collapse = ", "),
+    "\n\nThe schema itself is kept - this is not the same as ",
+    "episodic_db_create(overwrite = TRUE), which drops and rebuilds the ",
+    "tables from scratch.\n\n",
+    sep = ""
+  )
+  answer <- readline(paste0(
+    "Type the database name shown above (", dbname,
+    ") to confirm, or anything else to cancel: "
+  ))
+  if (!identical(trimws(answer), dbname)) {
+    message("Cancelled - no data was deleted.")
+    return(invisible(character(0)))
+  }
+
+  if (dialect == "mariadb") {
+    DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 0")
+    on.exit(DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 1"), add = TRUE)
+  } else {
+    # SQLite has no per-statement equivalent of MariaDB's FK-check
+    # toggle; the pragma is connection-wide.
+    DBI::dbExecute(con, "PRAGMA foreign_keys = OFF")
+    on.exit(DBI::dbExecute(con, "PRAGMA foreign_keys = ON"), add = TRUE)
+  }
+
+  truncated <- character(0)
+  for (tbl in tables) {
+    if (dialect == "mariadb") {
+      DBI::dbExecute(con, paste0("TRUNCATE TABLE ", tbl))
+    } else {
+      DBI::dbExecute(con, paste0("DELETE FROM ", tbl))
+      # DELETE alone leaves AUTOINCREMENT counters where they were;
+      # dropping the table's own row from sqlite_sequence is what makes
+      # the next insert start back at 1, matching what TRUNCATE does on
+      # MariaDB and what a genuinely empty table implies. sqlite_sequence
+      # itself only exists once at least one AUTOINCREMENT table has
+      # been created, so its absence (a schema with none, or none used
+      # yet) is not a real failure.
+      tryCatch(
+        DBI::dbExecute(
+          con,
+          "DELETE FROM sqlite_sequence WHERE name = ?",
+          params = list(tbl)
+        ),
+        error = function(e) NULL
+      )
+    }
+    truncated <- c(truncated, tbl)
+  }
+
+  message(
+    length(truncated),
+    " table(s) truncated (",
+    format(total_rows, big.mark = ",", scientific = FALSE),
+    " row(s) deleted)."
+  )
+  invisible(truncated)
 }
 
 #' Connect to an existing EpiSODIC database
@@ -373,6 +495,40 @@ episodic_db_last_insert_id <- function(con) {
   } else {
     DBI::dbGetQuery(con, "SELECT LAST_INSERT_ID() AS id")$id[1]
   }
+}
+
+#' Every table name `inst/sql/schema.sql` declares
+#'
+#' Parsed from the schema file's own `CREATE TABLE` statements rather
+#' than kept as a separate hand-maintained list, so a new table is
+#' picked up here the moment it is added to the schema.
+#'
+#' @return A character vector of table names, in the order the schema
+#'   creates them (parents before the children that reference them).
+#' @keywords internal
+#' @noRd
+episodic_db_schema_tables <- function() {
+  schema_path <- system.file("sql", "schema.sql", package = "EpiSODIC")
+  if (identical(schema_path, "")) {
+    # not-yet-installed package (devtools::load_all()) - fall back to source tree
+    schema_path <- file.path("inst", "sql", "schema.sql")
+  }
+  lines <- readLines(schema_path, warn = FALSE)
+  create_lines <- lines[grepl("^\\s*CREATE TABLE", lines, ignore.case = TRUE)]
+  tables <- gsub(
+    "^\\s*CREATE TABLE\\s+([a-zA-Z0-9_]+).*",
+    "\\1",
+    create_lines,
+    ignore.case = TRUE
+  )
+  if (length(tables) == 0) {
+    stop(
+      "No 'CREATE TABLE' statements found in the schema file `inst/sql/schema.sql`. ",
+      "The package installation may be corrupted.",
+      call. = FALSE
+    )
+  }
+  tables
 }
 
 #' Load and dialect-adapt `inst/sql/schema.sql`
