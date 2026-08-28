@@ -116,8 +116,9 @@
 #'     epidemiologically useful - an ETEC positive reported as both
 #'     `"Escherichia coli"` and `"ETEC"`, so each is monitored separately.}
 #'   \item{`care_line`}{Character; `NA` allowed. One of `"first"`
-#'     (primary care), `"second"` (secondary care), `"other"`, or
-#'     `"unknown"` - the values in `episodic_care_lines`. Anything else is
+#'     (primary care), `"second"` (secondary care), `"third"` (tertiary
+#'     care), `"other"`, or `"unknown"` - the values in
+#'     `episodic_care_lines`. Anything else is
 #'     rejected. `NA` is read as `"unknown"` and stored that way, so you
 #'     need not map missing values yourself: an empty `care_line`, an
 #'     R `NA` and a database `NULL` all mean the same thing here, and the

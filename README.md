@@ -10,10 +10,10 @@ epidemiologists a dossier to assess each one, with a full audit trail and
 outbreak reports for clinical colleagues (e.g. clinical microbiologists)
 and infection prevention nurses.
 
-The dashboard and its outbreak reports are available in Dutch, English,
-Spanish, French, German, Mandarin Chinese, Hindi, and (Modern Standard)
-Arabic. This software is free; this repository is open-source software
-with no data and no site-specific configuration.
+The dashboard and its outbreak reports are available in English,
+(Modern Standard) Arabic, Dutch, French, German, Hindi, Mandarin
+Chinese, and Spanish. This software is free; this repository is
+open-source software with no data and no site-specific configuration.
 
 <!--
 Screenshots below live in man/figures/ (ships with the package, so
@@ -63,8 +63,8 @@ vignettes, so it stays organised by topic instead of one long page:
 
 | Read this... | ...for |
 |---|---|
-| [Overview](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/overview.html) | What EpiSODIC does: the Clusters, Pathogen and Performance screens, and why they answer different questions. |
-| [Getting your data in](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html) | The case data contract - every column, what's optional, and `episodic_check_cases()` to check your extract before anything runs. |
+| [Overview](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/overview.html) | What EpiSODIC does: the Clusters and Pathogen screens' two altitudes, and the Performance, Archive, Streams, Activity and Info screens around them. |
+| [Getting your data in](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html) | The case data contract - every column, what's optional, and `episodic_check_cases()`/`episodic_check_denominators()`/`episodic_check_institution_activity()` to check your extract before anything runs. |
 | [Deployment](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) | Standing up a real instance: scheduling, accounts, the database backend, custom report templates. |
 | [Environment variables](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) | The full `EPISODIC_*` reference table. |
 | [Detection and reconciliation](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html) | How a laboratory result becomes a dossier: the four detectors, reconciliation, and suppression. |

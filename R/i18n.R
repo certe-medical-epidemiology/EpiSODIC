@@ -19,8 +19,8 @@
 
 #' Translation lookup
 #'
-#' The dashboard is available in Dutch, English, Spanish, French, German,
-#' Mandarin Chinese, Hindi, and (Modern Standard) Arabic. All user-facing
+#' The dashboard is available in English, (Modern Standard) Arabic,
+#' Dutch, French, German, Hindi, Mandarin Chinese, and Spanish. All user-facing
 #' text is stored as translation keys (e.g. `"nav.clusters"`) rather than
 #' hardcoded in R code, and [episodic_tr()] looks a key up in the requested
 #' language. A key that does not exist in any language is shown as
@@ -36,8 +36,8 @@ episodic_i18n_cache <- new.env(parent = emptyenv())
 
 #' Load one language's flat translation table
 #'
-#' @param lang A language code: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`,
-#'   `"zh"`, `"hi"`, or `"ar"`.
+#' @param lang A language code: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
+#'   `"hi"`, `"zh"`, or `"es"`.
 #' @return A named character vector (dotted key -> template string).
 #' @keywords internal
 #' @noRd
@@ -96,11 +96,11 @@ episodic_lang <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @param key A dotted key identifying the piece of text, e.g.
 #'   `"nav.clusters"`. The full set of available keys and their wording in
 #'   every shipped language lives in `inst/i18n/*.json` (one file per
-#'   language: `nl`, `en`, `es`, `fr`, `de`, `zh`, `hi`, `ar`).
+#'   language: `en`, `ar`, `nl`, `fr`, `de`, `hi`, `zh`, `es`).
 #' @param ... Named values substituted into `{name}` placeholders in the
 #'   template.
-#' @param lang Language: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`, `"zh"`,
-#'   `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE` environment
+#' @param lang Language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`, `"hi"`,
+#'   `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE` environment
 #'   variable, falling back to `"en"` if that is unset.
 #' @param instance_i18n An optional named character vector of your own
 #'   wording overrides (key -> template), checked before the shipped
@@ -194,8 +194,8 @@ episodic_count_phrase <- function(n, singular, plural, with_number = TRUE) {
 #'
 #' @param x,y Range endpoints - `Date`, or a string `as.Date()` accepts.
 #'   Order does not matter; the earlier date is always shown first.
-#' @param lang Session language: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`,
-#'   `"zh"`, `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE`
+#' @param lang Session language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
+#'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
 #' @return A character string, or `episodic_tr("misc.unknown", lang =
 #'   lang)` if either endpoint fails to parse.

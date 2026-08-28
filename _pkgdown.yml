@@ -88,6 +88,7 @@ reference:
   - episodic_db_create
   - episodic_db_connect
   - episodic_db_open
+  - episodic_db_truncate
   - episodic_db_dsn_mariadb
 
 - title: Accounts and sign-in

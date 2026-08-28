@@ -62,8 +62,8 @@ episodic_app_package_meta <- function() {
 #' hardcoded (not read from the database), so unlike every other screen
 #' this one needs no `con` argument.
 #'
-#' @param lang Session language: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`,
-#'   `"zh"`, `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE`
+#' @param lang Session language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
+#'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
 #' @return A `shiny::tags$div`.
 #' @keywords internal
