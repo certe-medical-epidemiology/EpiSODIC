@@ -58,6 +58,46 @@ episodic_trace_memory <- function() {
   paste(trimws(lines[nzchar(trimws(lines))]), collapse = " | ")
 }
 
+#' Print the exact SQL and bound parameter values about to be sent, for `debug = TRUE`
+#'
+#' The crash trace has now landed on three different calls across three
+#' otherwise-identical runs (once at the `episodic_growth_slope()` /
+#' `episodic_spatial_concentration()` boundary, once inside
+#' `episodic_spatial_concentration()`, once inside
+#' `episodic_app_density()`) - all downstream of a database round trip,
+#' never in between two purely in-memory steps. Printing the literal SQL
+#' text and every bound parameter's value, class and encoding
+#' immediately before each such call, rather than only "done" once it
+#' returns, is what finally shows whether one specific query - or one
+#' specific parameter value - is what a run never gets past, instead of
+#' inferring it from where the trace happens to stop.
+#' @keywords internal
+#' @noRd
+episodic_trace_query <- function(debug, sql, params = list()) {
+  if (!isTRUE(debug)) {
+    return(invisible(NULL))
+  }
+  param_detail <- if (length(params) == 0) {
+    "(none)"
+  } else {
+    paste(
+      vapply(
+        params,
+        function(p) {
+          sprintf(
+            "%s<%s>",
+            paste(utils::capture.output(print(p)), collapse = " "),
+            paste(class(p), collapse = "/")
+          )
+        },
+        character(1)
+      ),
+      collapse = ", "
+    )
+  }
+  episodic_trace("debug:       SQL: ", sql, " | params: ", param_detail)
+}
+
 #' Dump a `pc` vector's own encoding, for `debug = TRUE` traces
 #'
 #' Printed right before `episodic_spatial_concentration()` runs, since a
@@ -239,10 +279,12 @@ episodic_pkg_versions_extended <- function() {
 #'   progress this function always writes: `sessionInfo()`, the versions
 #'   of every package a fatal (non-catchable) crash is most likely to
 #'   originate in, memory snapshots, per-stream detail inside the
-#'   detection loop, and - for each reconciliation candidate -
-#'   `episodic_spatial_concentration()`'s own input data (row count,
-#'   string encoding) right before it runs, since that call is the
-#'   current prime suspect for a known MariaDB-only crash. Meant for
+#'   detection loop, and - for the calls implicated so far in a known
+#'   MariaDB-only crash (`episodic_app_density()`, the population-vector
+#'   lookup, the trend/detection writes, the assessment-event lookups,
+#'   and `episodic_spatial_concentration()`'s own input) - the exact SQL
+#'   and every bound parameter's value, class and encoding immediately
+#'   before each such call runs, not only once it returns. Meant for
 #'   chasing exactly the kind of failure that leaves no R-level error
 #'   behind at all - a crashed session, a run that silently never
 #'   returns - where the normal progress trace does not narrow things
@@ -824,6 +866,11 @@ episodic_run_cron_body <- function(
         as.Date(farrington_cases$sample_date),
         run_date
       )$week_start
+      episodic_trace_query(
+        debug,
+        "SELECT * FROM episodic_institution_activity WHERE institution_id = ? ORDER BY period_start",
+        list(stream$institution_id)
+      )
       population <- episodic_farrington_population_vector(
         con,
         stream$institution_id,
@@ -869,6 +916,17 @@ episodic_run_cron_body <- function(
         " week(s) to upsert)"
       )
       for (k in seq_len(nrow(trend))) {
+        episodic_trace_query(
+          debug,
+          "INSERT/UPDATE episodic_stream_trend",
+          list(
+            stream_id = stream$stream_id,
+            week_start = as.character(trend$week_start[k]),
+            n_cases = trend$n_cases[k],
+            expected = trend$expected[k],
+            upperbound = trend$upperbound[k]
+          )
+        )
         episodic_db_stream_trend_upsert(
           con,
           stream_id = stream$stream_id,
@@ -893,6 +951,21 @@ episodic_run_cron_body <- function(
       detection_ids <- integer(nrow(stream_detections))
       for (j in seq_len(nrow(stream_detections))) {
         d <- stream_detections[j, ]
+        episodic_trace_query(
+          debug,
+          "INSERT INTO episodic_detection",
+          list(
+            run_id = run_id,
+            stream_id = stream$stream_id,
+            detector = d$detector,
+            first_day = d$first_day,
+            last_day = d$last_day,
+            n_cases = d$n_cases,
+            expected = d$expected,
+            upperbound = d$upperbound,
+            params_json = as.character(d$params)
+          )
+        )
         detection_ids[j] <- episodic_db_detection_insert(
           con,
           run_id = run_id,
@@ -970,7 +1043,7 @@ episodic_run_cron_body <- function(
         )
         # Same descriptive rate the dossier's own density stat shows, so
         # the ranking and the displayed evidence cannot drift apart.
-        density <- episodic_app_density(con, stream, candidate_cases)
+        density <- episodic_app_density(con, stream, candidate_cases, debug = debug)
         density_ratio <- if (
           is.null(density) || is.na(density$baseline) || density$baseline <= 0
         ) {
@@ -1011,10 +1084,20 @@ episodic_run_cron_body <- function(
         )
       },
       has_assessment_fn = function(cluster_id) {
+        episodic_trace_query(
+          debug,
+          "SELECT * FROM episodic_assessment_event WHERE cluster_id = ? ORDER BY created_at, event_id",
+          list(cluster_id)
+        )
         result <- nrow(episodic_db_assessment_events(con, cluster_id)) > 0
         result
       },
       verdict_fn = function(cluster_id) {
+        episodic_trace_query(
+          debug,
+          "SELECT * FROM episodic_assessment_event WHERE cluster_id = ? ORDER BY created_at, event_id",
+          list(cluster_id)
+        )
         events <- episodic_db_assessment_events(con, cluster_id)
         classified <- events[!is.na(events$verdict), ]
         if (nrow(classified) == 0) {
