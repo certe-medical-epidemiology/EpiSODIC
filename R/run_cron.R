@@ -58,26 +58,53 @@ episodic_trace_memory <- function() {
   paste(trimws(lines[nzchar(trimws(lines))]), collapse = " | ")
 }
 
-#' Force a garbage collection right after a DB call, for `debug = TRUE`
+#' Dump a `pc` vector's own encoding, for `debug = TRUE` traces
 #'
-#' A fatal crash from corrupted memory (a buggy DB driver's C code being
-#' the classic source) frequently does not show up at the operation that
-#' actually caused it - it shows up later, whenever R's own garbage
-#' collector next runs and stumbles on the damage, which under normal,
-#' lazy GC scheduling can be many calls and several seconds away from the
-#' real culprit. Calling `gc()` immediately after every database round
-#' trip in the hot path (only under `debug = TRUE` - this is expensive)
-#' closes that gap: if a call corrupts the heap, the crash now happens
-#' right after that call instead of drifting to an arbitrary later one,
-#' which is what actually lets a trace line pin down the cause rather
-#' than merely a nearby symptom.
+#' Printed right before `episodic_spatial_concentration()` runs, since a
+#' MariaDB-only crash has been isolated to exactly that call on exactly
+#' this input - reproducibly, on data forced through a `gc()` right
+#' beforehand that itself completed cleanly, which rules out a merely
+#' *delayed* symptom of damage from an earlier call and points at
+#' something about this specific `pc` data instead. A text value fetched
+#' from a database can carry a `CHARSXP` that claims one encoding
+#' (`UTF-8`, `latin1`, native) while actually holding bytes for another
+#' - a client/server character-set mismatch is a well-known way for this
+#' to happen with MariaDB specifically - and R's own string hashing
+#' (which `table()`, called inside `episodic_spatial_concentration()`,
+#' relies on) is not guaranteed to be safe against that. Cheap: a
+#' candidate's `pc` vector is a handful of values at most, never the
+#' full stream.
 #' @keywords internal
 #' @noRd
-episodic_trace_gc <- function(debug) {
-  if (isTRUE(debug)) {
-    gc(full = TRUE, verbose = FALSE)
+episodic_trace_pc_dump <- function(debug, pc) {
+  if (!isTRUE(debug)) {
+    return(invisible(NULL))
   }
-  invisible(NULL)
+  if (length(pc) == 0) {
+    episodic_trace("debug:       pc: (no values)")
+    return(invisible(NULL))
+  }
+  detail <- vapply(
+    pc,
+    function(x) {
+      if (is.na(x)) {
+        return("NA")
+      }
+      sprintf(
+        "%s [enc=%s valid=%s nchar=%d bytes=%s]",
+        x,
+        Encoding(x),
+        tryCatch(validEnc(x), error = function(e) NA),
+        tryCatch(nchar(x, type = "bytes"), error = function(e) NA_integer_),
+        paste(
+          tryCatch(as.integer(charToRaw(x)), error = function(e) NA_integer_),
+          collapse = ","
+        )
+      )
+    },
+    character(1)
+  )
+  episodic_trace("debug:       pc: ", paste(detail, collapse = " | "))
 }
 
 #' Everything `debug = TRUE` prints once, at the start of a run
@@ -211,19 +238,15 @@ episodic_pkg_versions_extended <- function() {
 #' @param debug If `TRUE`, print a lot more than the phase-by-phase
 #'   progress this function always writes: `sessionInfo()`, the versions
 #'   of every package a fatal (non-catchable) crash is most likely to
-#'   originate in, memory snapshots, and per-stream detail inside the
-#'   detection loop. It also forces a full garbage collection
-#'   (`gc(full = TRUE)`) immediately after every database round trip in
-#'   that loop - a fatal crash from corrupted memory typically surfaces
-#'   later than its actual cause, whenever R's own (otherwise lazily
-#'   scheduled) garbage collector happens to stumble on the damage, so
-#'   forcing one right after each call is what lets the trace log land
-#'   on the actual culprit instead of a downstream symptom several calls
-#'   away. Meant for chasing exactly the kind of failure that leaves no
-#'   R-level error behind at all - a crashed session, a run that
-#'   silently never returns - where the normal progress trace does not
-#'   narrow things down enough on its own. Noisy and slow (a `gc()` per
-#'   database call, on every stream); leave off for routine scheduled
+#'   originate in, memory snapshots, per-stream detail inside the
+#'   detection loop, and - for each reconciliation candidate -
+#'   `episodic_spatial_concentration()`'s own input data (row count,
+#'   string encoding) right before it runs, since that call is the
+#'   current prime suspect for a known MariaDB-only crash. Meant for
+#'   chasing exactly the kind of failure that leaves no R-level error
+#'   behind at all - a crashed session, a run that silently never
+#'   returns - where the normal progress trace does not narrow things
+#'   down enough on its own. Noisy; leave off for routine scheduled
 #'   runs.
 #' @return Invisibly, the `run_id` of the completed run. The run's row in
 #'   `episodic_detection_run` holds its status, the per-feed load counts,
@@ -741,7 +764,6 @@ episodic_run_cron_body <- function(
       stream_cases,
       as.character(run_date)
     )
-    episodic_trace_gc(debug)
     episodic_trace_debug(debug, "debug:   triangle_update done")
 
     stream_detections <- rbind(
@@ -782,7 +804,6 @@ episodic_run_cron_body <- function(
         con,
         stream$stream_id
       )
-      episodic_trace_gc(debug)
       farrington_cases <- episodic_baseline_exclude_cases(
         stream_cases,
         excluded_windows
@@ -809,7 +830,6 @@ episodic_run_cron_body <- function(
         stream$level,
         weekly_weeks
       )
-      episodic_trace_gc(debug)
       episodic_trace_debug(
         debug,
         "debug:   population vector done (",
@@ -835,7 +855,6 @@ episodic_run_cron_body <- function(
       # episodic_farrington_trend()'s own docs for the backfill-once,
       # top-up-thereafter strategy.
       n_existing_trend <- nrow(episodic_db_stream_trend(con, stream$stream_id))
-      episodic_trace_gc(debug)
       trend <- episodic_farrington_trend(
         farrington_cases,
         config,
@@ -858,7 +877,6 @@ episodic_run_cron_body <- function(
           expected = trend$expected[k],
           upperbound = trend$upperbound[k]
         )
-        episodic_trace_gc(debug)
       }
       episodic_trace_debug(debug, "debug:   trend upsert loop done")
     }
@@ -887,7 +905,6 @@ episodic_run_cron_body <- function(
           upperbound = d$upperbound,
           params_json = as.character(d$params)
         )
-        episodic_trace_gc(debug)
       }
       stream_detections$detection_id <- detection_ids
       n_detections_total <- n_detections_total + nrow(stream_detections)
@@ -954,7 +971,6 @@ episodic_run_cron_body <- function(
         # Same descriptive rate the dossier's own density stat shows, so
         # the ranking and the displayed evidence cannot drift apart.
         density <- episodic_app_density(con, stream, candidate_cases)
-        episodic_trace_gc(debug)
         density_ratio <- if (
           is.null(density) || is.na(density$baseline) || density$baseline <= 0
         ) {
@@ -970,15 +986,14 @@ episodic_run_cron_body <- function(
           stream_cases,
           candidate$last_day
         )
-        episodic_trace_gc(debug)
         episodic_trace_debug(
           debug,
           "debug:       growth_slope done; calling episodic_spatial_concentration()"
         )
+        episodic_trace_pc_dump(debug, candidate_cases$pc)
         spatial_concentration <- episodic_spatial_concentration(
           candidate_cases
         )
-        episodic_trace_gc(debug)
         episodic_trace_debug(
           debug,
           "debug:       spatial_concentration done; scoring"
@@ -997,12 +1012,10 @@ episodic_run_cron_body <- function(
       },
       has_assessment_fn = function(cluster_id) {
         result <- nrow(episodic_db_assessment_events(con, cluster_id)) > 0
-        episodic_trace_gc(debug)
         result
       },
       verdict_fn = function(cluster_id) {
         events <- episodic_db_assessment_events(con, cluster_id)
-        episodic_trace_gc(debug)
         classified <- events[!is.na(events$verdict), ]
         if (nrow(classified) == 0) {
           NA_character_

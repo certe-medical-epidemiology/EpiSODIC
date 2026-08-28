@@ -205,8 +205,17 @@ episodic_spatial_concentration <- function(cases) {
   if (length(pc) == 0) {
     return(0)
   }
-  tab <- as.integer(table(pc))
-  max(tab) / sum(tab)
+  # Deliberately not table()/factor(): both sort their levels, and
+  # sorting character data invokes locale-aware string collation
+  # (Scollate()/ICU) - unlike plain hashing, collation is not guaranteed
+  # safe against a string whose declared encoding does not match its
+  # actual bytes, which is exactly what a client/server character-set
+  # mismatch can hand back from a MariaDB connection. match()/unique()
+  # only ever hash and byte-compare, never sort or collate the strings
+  # themselves; tabulate() then counts the resulting integer codes,
+  # where sorting is a plain numeric operation with no such risk.
+  counts <- tabulate(match(pc, unique(pc)))
+  max(counts) / sum(counts)
 }
 
 #' Rescale a value onto the zero-to-one range with a simple bounded transform
