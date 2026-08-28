@@ -1,3 +1,9 @@
+# EpiSODIC 0.8.4
+
+## Fixed
+
+- `episodic_db_truncate()` against MariaDB/MySQL crashed with `Error: bad_weak_ptr` right after successfully truncating every table. `on.exit(..., add = TRUE)` appends to the end of the exit-handler list, so the handler that restores `FOREIGN_KEY_CHECKS` (registered after the connection's own `on.exit(dbDisconnect(con))`) ran *after* the connection had already been closed - RMariaDB's response to a query against a freed connection is a C++ abort, not a catchable R error. Now restores foreign-key checks explicitly right after truncating, with the `on.exit` handler only as a safety net for the error path, registered with `after = FALSE` so it runs before the disconnect even then
+
 # EpiSODIC 0.8.3
 
 ## New
