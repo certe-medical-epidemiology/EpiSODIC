@@ -49,15 +49,19 @@ Check your extract against that contract before you schedule anything:
 ``` r
 
 episodic_check_cases(cases)
+episodic_check_denominators(denominators)              # if you supply positivity data
+episodic_check_institution_activity(institution_activity)  # if you supply activity data
 ```
 
-It needs no database and changes nothing, and reports everything wrong
-with the data at once - the column, the number of rows affected, which
-rows those are, the offending values, and what to do about each - along
-with what is merely worth a look (one pathogen spelled two ways, no
-`ward` on any hospital row, a `patient_key` that never repeats).
+All three need no database and change nothing, and report everything
+wrong with the data at once - the column, the number of rows affected,
+which rows those are, the offending values, and what to do about each -
+along with what is merely worth a look (one pathogen spelled two ways,
+no `ward` on any hospital row, a `patient_key` that never repeats).
 [`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
-runs the same checks and throws instead, for a script that should stop.
+runs the same checks as
+[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+and throws instead, for a script that should stop.
 
 Schedule
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)

@@ -59,7 +59,7 @@ your data first” below). The three fixed value sets are available as
 | `sample_date` | `Date` or `"YYYY-MM-DD"`, required | The anchor date every detector, trend, and report is built against. If your system falls back to a receipt date when sample date is unfilled, that fallback should already have happened before this row reaches EpiSODIC. |
 | `receipt_date` | `Date` or `"YYYY-MM-DD"`, `NA` allowed | When the result was received. Stored for provenance/audit, kept separate from `sample_date` - EpiSODIC deliberately does not use it to measure reporting delay, since a lab’s own receipt-date field can itself silently be a stand-in for a missing sample date; reporting completeness is instead measured empirically, from how a stream’s case counts change across successive detection runs. |
 | `pathogen` | character, required, free text | The pathogen as your lab reports it, as free text. **Not** resolved against any taxonomy, since EpiSODIC has to detect clusters of anything a lab reports. The same underlying positive can appear more than once under different `pathogen` values when that is epidemiologically useful - an ETEC positive reported as both `"Escherichia coli"` and `"ETEC"`, so each is watched on its own. This is your transform step’s decision, not EpiSODIC’s. |
-| `care_line` | `first`, `second`, `other`, `unknown` - `NA` allowed | Which part of the health system the case came from: `first` is primary care, `second` secondary care. `NA` is read as `unknown` and stored that way - an empty value, an R `NA` and a database `NULL` all mean the same thing here. |
+| `care_line` | `first`, `second`, `third`, `other`, `unknown` - `NA` allowed | Which part of the health system the case came from: `first` is primary care, `second` secondary care, `third` tertiary care. `NA` is read as `unknown` and stored that way - an empty value, an R `NA` and a database `NULL` all mean the same thing here. |
 | `institution_key` | character, required | A stable identifier for the institution, hashed internally so a later rename does not fracture history. |
 | `institution_display_name` | character, required | The human-readable name shown in the interface. |
 | `institution_type` | `hospital`, `ltc_institution`, `gp_municipality`, `ooh_service`, `other` - required | How the institution is handled downstream; see the list below the table. |
@@ -212,6 +212,21 @@ the same message, before anything is written, and that message is
 recorded against the run so it is also visible in the dashboard’s status
 strip and activity screen. A failed run never passes in silence.
 
+The optional feeds below have the same non-throwing check, over their
+own contract:
+[`episodic_check_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.md)
+for positivity metadata,
+[`episodic_check_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.md)
+for institution activity. Both read the same way as
+[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+does - no database, nothing changed, problems versus advice - and
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+validates both the same way it validates `cases`, before writing
+anything, whenever they are supplied as a plain data frame (a
+zero-argument function is instead resolved and validated once the run is
+already under way, since it may depend on data - e.g. the institutions
+table - that only exists once the case feed has loaded).
+
 ## Positivity metadata (optional)
 
 If, and only if, you can produce it: a small, pre-aggregated table of
@@ -223,7 +238,7 @@ rise with stable positivity) and never as a detection input.
 |----|----|
 | `pathogen` | Matches the cases feed. |
 | `sample_date` | A period start (e.g. week start); this is aggregate data, not per-test. |
-| `care_line` | `first`, `second`, `other`, or `unknown`. |
+| `care_line` | `first`, `second`, `third`, `other`, or `unknown`. |
 | `area_code` | Optional geographic stratum. |
 | `n_tests` | Total tests run for this pathogen/period/stratum, positive and negative. |
 
@@ -263,28 +278,56 @@ schema, so L1 detection is never normalised, only L2.
 
 ## Geographic reference data (optional)
 
+EpiSODIC is not built around any one country, coding system, or
+administrative structure. Everywhere geography enters the picture - the
+`pc` column on your case data (see the table above), the L3/L4 area and
+province lattice levels, and the dossier’s map - it is a column your own
+extract step fills in and a lookup you supply, never something hardcoded
+to a specific jurisdiction. The Dutch postcode reference data described
+below is a single bundled *example*, shipped so the demo and a first
+trial run show a real map without any setup, not a sign that this
+package assumes a Dutch deployment. Two independent things are
+configurable, and either, both, or neither can be set - the rest of the
+dashboard works the same regardless.
+
+### The choropleth map
+
 The dossier’s geography panel shows a choropleth when both the `sf`
 package and a geographic reference dataset are available; otherwise it
 falls back to a plain bar breakdown by PC value, exactly as if this
-feature did not exist. EpiSODIC ships a Netherlands postcode default
+feature did not exist. EpiSODIC ships a Dutch postcode default
 (`inst/extdata/geo_postcodes4_nl.rds`, geometry only, sourced from
 `certegis` under the same GPL-2 licence - see
-`data-raw/ geo_postcodes4_nl.R` for provenance), but geography is not
-Netherlands-specific: point `EPISODIC_GEO_DATA` at your own `.rds` file
-holding an [`sf`](https://r-spatial.github.io/sf/) object with a `pc`
-column (matching whatever your own `episodic_case.pc` values are -
-postcodes, zip codes, municipality codes, anything) and a `geometry`
-column, and it is used instead. See `R/geo_data.R` for the exact
-contract.
+`data-raw/ geo_postcodes4_nl.R` for provenance) purely as a working
+example: point `EPISODIC_GEO_DATA` at your own `.rds` file holding an
+[`sf`](https://r-spatial.github.io/sf/) object with a `pc` column
+(matching whatever your own `episodic_case.pc` values are - postcodes,
+zip codes, municipality codes, census tracts, anything with a shape) and
+a `geometry` column, and it is used instead of the shipped default. See
+`R/geo_data.R` for the exact contract.
 
 A second, independent layer can be drawn on top for orientation - region
-outlines (provinces, municipalities, whatever is useful), colour but no
-fill, a thicker line than the choropleth itself. Point
+outlines (provinces, counties, states, whatever is useful), colour but
+no fill, a thicker line than the choropleth itself. Point
 `EPISODIC_GEO_DATA_OVERLAY` at an `.rds` file holding an `sf` object
 with just a `geometry` column (no `pc` join needed, since it carries no
 case counts of its own). No default is shipped for this one - unlike the
 postcode default above, region boundaries are too jurisdiction-specific
 to guess a sensible default for.
+
+### L4 (province-level) detection
+
+Separate from the map, the lattice’s L4 level watches for clusters at
+province/state/region scale, and it needs its own lookup from `pc` to
+that coarser unit - a choropleth `sf` file already has geometry for
+every postcode, but not which province each one belongs to. Point
+`EPISODIC_PC_PROVINCE_MAP` at a CSV with `pc` (matching your case data’s
+`pc` values exactly, not a prefix) and `province_code` columns. Left
+unset, this defaults to the ranges the Dutch demo data happens to use,
+which - being specific to that data - will not match postcodes from
+anywhere else: outside that one region, L4 simply never has anything to
+detect on until you supply your own mapping. L1-L3 and L5 do not depend
+on this at all. See `episodic_pc_to_province()` for the exact contract.
 
 ## What a run reports
 

@@ -41,6 +41,19 @@ three passes.
 has the full column contract this is checking against, including the
 exact allowed values for `care_line`, `institution_type`, and `sex`.
 
+If you are also supplying the optional positivity or hospital-activity
+feeds,
+[`episodic_check_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.md)
+and
+[`episodic_check_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.md)
+are the same idea, over those:
+
+``` r
+
+EpiSODIC::episodic_check_denominators(my_denominators)
+EpiSODIC::episodic_check_institution_activity(my_institution_activity)
+```
+
 **Do I need to send all of my positives every time, or only new/recent
 ones?**
 
@@ -173,13 +186,13 @@ free to explore freely.
 
 **How do I change the dashboard and report language?**
 
-Set the `EPISODIC_LANGUAGE` environment variable to one of `nl`, `en`,
-`es`, `fr`, `de`, `zh`, `hi`, or `ar` before starting the app (it
+Set the `EPISODIC_LANGUAGE` environment variable to one of `en`, `ar`,
+`nl`, `fr`, `de`, `hi`, `zh`, or `es` before starting the app (it
 defaults to `en` if unset):
 
 ``` r
 
-Sys.setenv(EPISODIC_LANGUAGE = "nl")
+Sys.setenv(EPISODIC_LANGUAGE = "es")
 episodic_run_app()
 ```
 
@@ -361,20 +374,38 @@ not enough to identify who is in it from the dashboard alone. See
 for the exact column contract, including what “pseudonymised” needs to
 mean for this guarantee to hold.
 
-**My organisation is not in the Netherlands - does the geography panel
+**My organisation is outside the Netherlands - does the geography panel
 (the choropleth map) still work for us?**
 
-Yes - the shipped Netherlands postcode reference data is a default, not
-a requirement. Point `EPISODIC_GEO_DATA` at your own `.rds` file holding
-an [`sf`](https://r-spatial.github.io/sf/) object with a `pc` column
-(matching whatever your own `pc` values are - postcodes, zip codes,
-municipality codes, anything) and a `geometry` column, and it is used
-instead of the Netherlands default. An optional second layer,
-`EPISODIC_GEO_DATA_OVERLAY`, can draw region outlines (provinces,
-counties, whatever is useful for orientation) on top. If you do not have
-geographic reference data to hand at all, nothing breaks - the geography
-panel simply falls back to a plain bar breakdown by `pc` value, exactly
-as if this feature did not exist. See
+Yes. EpiSODIC is not built for the Netherlands specifically - the
+bundled Dutch postcode data is one worked example, shipped so the demo
+and a first trial run show a real map out of the box, not a statement
+about who this package is for. Nothing about detection, reconciliation,
+or the rest of the dashboard assumes any particular country, coding
+system, or administrative structure; geography is entirely something you
+plug in.
+
+Two independent things are configurable, and both are optional:
+
+- **The choropleth itself** (`EPISODIC_GEO_DATA`): point it at your own
+  `.rds` file holding an [`sf`](https://r-spatial.github.io/sf/) object
+  with a `pc` column (matching whatever your own `pc` values are -
+  postcodes, zip codes, municipality codes, anything) and a `geometry`
+  column, and it is used instead of the shipped default. An optional
+  second layer, `EPISODIC_GEO_DATA_OVERLAY`, can draw region outlines
+  (provinces, counties, states, whatever is useful for orientation) on
+  top. If you have no geographic reference data to hand at all, nothing
+  breaks - the geography panel simply falls back to a plain bar
+  breakdown by `pc` value, exactly as if this feature did not exist.
+- **L4 (province-level) stream detection**: separately from the map, the
+  lattice’s province level needs to know which of your postcodes belong
+  to which province/region, via `EPISODIC_PC_PROVINCE_MAP` - a CSV with
+  `pc` and `province_code` columns. Left unset, this also falls back to
+  the same Dutch demo default, which only ever matches Dutch postcodes;
+  outside that region L4 simply never has anything to detect on until
+  you supply your own mapping (L1-L3 and L5 are unaffected either way).
+
+See
 [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)’s
 “Geographic reference data” section for the exact contract these files
 need to satisfy.

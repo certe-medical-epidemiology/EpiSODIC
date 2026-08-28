@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -101,6 +101,13 @@ most people get to a clean report in two or three passes.
 is checking against, including the exact allowed values for
 <code>care_line</code>, <code>institution_type</code>, and
 <code>sex</code>.</p>
+<p>If you are also supplying the optional positivity or
+hospital-activity feeds, <code><a href="../reference/episodic_check_denominators.html">episodic_check_denominators()</a></code> and
+<code><a href="../reference/episodic_check_institution_activity.html">episodic_check_institution_activity()</a></code> are the same idea,
+over those:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">EpiSODIC</span><span class="fu">::</span><span class="fu"><a href="../reference/episodic_check_denominators.html">episodic_check_denominators</a></span><span class="op">(</span><span class="va">my_denominators</span><span class="op">)</span></span>
+<span><span class="fu">EpiSODIC</span><span class="fu">::</span><span class="fu"><a href="../reference/episodic_check_institution_activity.html">episodic_check_institution_activity</a></span><span class="op">(</span><span class="va">my_institution_activity</span><span class="op">)</span></span></code></pre></div>
 </details><details><summary><strong>Do I need to send all of my positives every time, or only
 new/recent ones?</strong>
 </summary><p>Only a recent window, with a couple of weeks of overlap - that is the
@@ -219,7 +226,7 @@ institution EpiSODIC does not know) - both <code>success</code> and
 </details><details><summary><strong>Can I try EpiSODIC out before pointing it at anything
 real?</strong>
 </summary><p>Yes, and this is the easiest way to get a feel for it. One call:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">EpiSODIC</span><span class="fu">::</span><span class="fu"><a href="../reference/episodic_demo.html">episodic_demo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>No data, no credentials, no configuration of your own required - it
 creates a temporary database, runs one detection cycle over bundled
@@ -230,11 +237,11 @@ opening the app. Nothing about this touches a real database or real
 data, so feel free to explore freely.</p>
 </details><details><summary><strong>How do I change the dashboard and report language?</strong>
 </summary><p>Set the <code>EPISODIC_LANGUAGE</code> environment variable to one of
-<code>nl</code>, <code>en</code>, <code>es</code>, <code>fr</code>,
-<code>de</code>, <code>zh</code>, <code>hi</code>, or <code>ar</code>
+<code>en</code>, <code>ar</code>, <code>nl</code>, <code>fr</code>,
+<code>de</code>, <code>hi</code>, <code>zh</code>, or <code>es</code>
 before starting the app (it defaults to <code>en</code> if unset):</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_LANGUAGE <span class="op">=</span> <span class="st">"nl"</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_LANGUAGE <span class="op">=</span> <span class="st">"es"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/episodic_run_app.html">episodic_run_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>This covers the dashboard interface and the outbreak reports it
 generates alike. It is fixed for the whole running instance - there is
@@ -250,7 +257,7 @@ detection thresholds, baseline lengths, <code>same_place</code> rules,
 MEM seasons, and priority score weights are all <em>operational
 data</em>, kept out of this repository on purpose. Point the environment
 variable at a YAML file with only the keys you want to change:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_CONFIG <span class="op">=</span> <span class="st">"/path/to/my_overrides.yaml"</span><span class="op">)</span></span></code></pre></div>
 <p>It is merged key-by-key on top of
 <code>inst/config/default.yaml</code>’s shipped defaults, so you only
@@ -294,7 +301,7 @@ culture yielding more than one reported result).</p>
 whoever administers your instance’s database provisions accounts, which
 keeps sign-in tied to real board membership rather than being
 open-ended. If that is you, it is one function call:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span>  <span class="co"># or your MariaDB/MySQL DSN</span></span>
 <span></span>
 <span><span class="fu">EpiSODIC</span><span class="fu">::</span><span class="fu"><a href="../reference/episodic_provision_user.html">episodic_provision_user</a></span><span class="op">(</span></span>
@@ -389,22 +396,42 @@ pseudonymised <code>patient_key</code> - not enough to identify who is
 in it from the dashboard alone. See <code><a href="../articles/data-format.html">vignette("data-format")</a></code>
 for the exact column contract, including what “pseudonymised” needs to
 mean for this guarantee to hold.</p>
-</details><details><summary><strong>My organisation is not in the Netherlands - does the geography
+</details><details><summary><strong>My organisation is outside the Netherlands - does the geography
 panel (the choropleth map) still work for us?</strong>
-</summary><p>Yes - the shipped Netherlands postcode reference data is a default,
-not a requirement. Point <code>EPISODIC_GEO_DATA</code> at your own
-<code>.rds</code> file holding an <a href="https://r-spatial.github.io/sf/" class="external-link"><code>sf</code></a> object with a
+</summary><p>Yes. EpiSODIC is not built for the Netherlands specifically - the
+bundled Dutch postcode data is one worked example, shipped so the demo
+and a first trial run show a real map out of the box, not a statement
+about who this package is for. Nothing about detection, reconciliation,
+or the rest of the dashboard assumes any particular country, coding
+system, or administrative structure; geography is entirely something you
+plug in.</p>
+<p>Two independent things are configurable, and both are optional:</p>
+<ul>
+<li>
+<strong>The choropleth itself</strong>
+(<code>EPISODIC_GEO_DATA</code>): point it at your own <code>.rds</code>
+file holding an <a href="https://r-spatial.github.io/sf/" class="external-link"><code>sf</code></a> object with a
 <code>pc</code> column (matching whatever your own <code>pc</code>
 values are - postcodes, zip codes, municipality codes, anything) and a
-<code>geometry</code> column, and it is used instead of the Netherlands
+<code>geometry</code> column, and it is used instead of the shipped
 default. An optional second layer,
 <code>EPISODIC_GEO_DATA_OVERLAY</code>, can draw region outlines
-(provinces, counties, whatever is useful for orientation) on top. If you
-do not have geographic reference data to hand at all, nothing breaks -
-the geography panel simply falls back to a plain bar breakdown by
-<code>pc</code> value, exactly as if this feature did not exist. See
-<code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic reference data”
-section for the exact contract these files need to satisfy.</p>
+(provinces, counties, states, whatever is useful for orientation) on
+top. If you have no geographic reference data to hand at all, nothing
+breaks - the geography panel simply falls back to a plain bar breakdown
+by <code>pc</code> value, exactly as if this feature did not exist.</li>
+<li>
+<strong>L4 (province-level) stream detection</strong>: separately
+from the map, the lattice’s province level needs to know which of your
+postcodes belong to which province/region, via
+<code>EPISODIC_PC_PROVINCE_MAP</code> - a CSV with <code>pc</code> and
+<code>province_code</code> columns. Left unset, this also falls back to
+the same Dutch demo default, which only ever matches Dutch postcodes;
+outside that region L4 simply never has anything to detect on until you
+supply your own mapping (L1-L3 and L5 are unaffected either way).</li>
+</ul>
+<p>See <code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic reference
+data” section for the exact contract these files need to satisfy.</p>
 </details>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -414,7 +441,7 @@ section for the exact contract these files need to satisfy.</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Matthijs S. Berends, Erwin E. A. Hassing, Erwin Dijkstra, Certe Medical Diagnostics &amp; Advice Foundation.</p>
+  <p>Developed by Matthijs S. Berends, Certe Medical Diagnostics &amp; Advice Foundation, University Medical Center Groningen.</p>
 </div>
 
 <div class="pkgdown-footer-right">

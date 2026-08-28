@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -73,9 +73,9 @@ aberrations, reconciles them into persistent clusters, and gives
 epidemiologists a dossier to assess each one, with a full audit trail
 and outbreak reports for clinical colleagues (e.g. clinical
 microbiologists) and infection prevention nurses.</p>
-<p>The dashboard and its outbreak reports are available in Dutch,
-English, Spanish, French, German, Mandarin Chinese, Hindi, and (Modern
-Standard) Arabic.</p>
+<p>The dashboard and its outbreak reports are available in English,
+(Modern Standard) Arabic, Dutch, French, German, Hindi, Mandarin
+Chinese, and Spanish.</p>
 <div class="section level2">
 <h2 id="no-dependency-on-any-one-laboratory-system">No dependency on any one laboratory system<a class="anchor" aria-label="anchor" href="#no-dependency-on-any-one-laboratory-system"></a>
 </h2>
@@ -150,15 +150,49 @@ breakdowns;</li>
 verdict each one received, as the way back to the operational view.</li>
 </ul>
 </div>
+</div>
+<div class="section level2">
+<h2 id="beyond-the-two-altitudes">Beyond the two altitudes<a class="anchor" aria-label="anchor" href="#beyond-the-two-altitudes"></a>
+</h2>
+<p>The rest of the dashboard - Performance, Archive, Streams, Activity,
+and Info - rounds out these two, each answering a narrower question than
+“should we act on this cluster” or “is this pathogen unusual this
+season”:</p>
 <div class="section level3">
 <h3 id="the-performance-screen-is-detection-itself-working">The Performance screen: is detection itself working<a class="anchor" aria-label="anchor" href="#the-performance-screen-is-detection-itself-working"></a>
 </h3>
-<p>A third screen closes the loop: detection timeliness and positive
-predictive value per detector and pathogen, computed from stored
-verdicts. Both fill in as clusters get assessed, so tuning
-<code>EPISODIC_CONFIG</code> against your own signal volume is an
-evidence-based exercise rather than a guess, once your board has
-classified enough clusters to have a baseline.</p>
+<p>Detection timeliness and positive predictive value per detector and
+pathogen, computed from stored verdicts. Both fill in as clusters get
+assessed, so tuning <code>EPISODIC_CONFIG</code> against your own signal
+volume is an evidence-based exercise rather than a guess, once your
+board has classified enough clusters to have a baseline.</p>
+</div>
+<div class="section level3">
+<h3 id="the-archive-screen-last-winters-precedent">The Archive screen: last winter’s precedent<a class="anchor" aria-label="anchor" href="#the-archive-screen-last-winters-precedent"></a>
+</h3>
+<p>Every closed cluster, searchable by pathogen and place, sorted by
+period. A closed dossier is not filed away - it stays reachable and
+reasoned exactly the way an open one is, since last winter’s assessment
+is often the best prior evidence for judging this winter’s cluster.</p>
+</div>
+<div class="section level3">
+<h3 id="streams-and-activity-how-the-machinery-is-behaving">Streams and Activity: how the machinery is behaving<a class="anchor" aria-label="anchor" href="#streams-and-activity-how-the-machinery-is-behaving"></a>
+</h3>
+<p><strong>Streams</strong> lists every stream the lattice is currently
+watching (pathogen x level x institution/area/ward/region) alongside the
+detection configuration resolved for it at the latest run - the place to
+look when “why didn’t this fire” needs a concrete answer rather than a
+guess. <strong>Activity</strong> is the audit log: every assessment,
+closure, mute, sign-in, and scheduled run, with a system action visually
+distinct from a person’s. Between the two, nothing the system did (or
+did not do) is ever only inferable from its effects.</p>
+</div>
+<div class="section level3">
+<h3 id="the-info-screen">The Info screen<a class="anchor" aria-label="anchor" href="#the-info-screen"></a>
+</h3>
+<p>The running instance’s own version, licence, and configuration, read
+live from the package itself - useful when reporting an issue, or simply
+confirming which build is deployed.</p>
 </div>
 </div>
 <div class="section level2">
@@ -196,7 +230,7 @@ configuration required:</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Matthijs S. Berends, Erwin E. A. Hassing, Erwin Dijkstra, Certe Medical Diagnostics &amp; Advice Foundation.</p>
+  <p>Developed by Matthijs S. Berends, Certe Medical Diagnostics &amp; Advice Foundation, University Medical Center Groningen.</p>
 </div>
 
 <div class="pkgdown-footer-right">

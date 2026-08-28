@@ -63,6 +63,9 @@ Create and connect to the database EpiSODIC stores its data in.
 
   Connect using the `EPISODIC_DB` environment variable
 
+- [`episodic_db_truncate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_truncate.md)
+  : Empty every EpiSODIC table, keeping the schema itself
+
 - [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)
   [`episodic_db_dsn_mysql()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)
   : Connect EpiSODIC to a MariaDB or MySQL server

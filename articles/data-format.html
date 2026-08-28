@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -191,13 +191,14 @@ EpiSODIC’s.</td>
 <tr class="odd">
 <td><code>care_line</code></td>
 <td>
-<code>first</code>, <code>second</code>, <code>other</code>,
-<code>unknown</code> - <code>NA</code> allowed</td>
+<code>first</code>, <code>second</code>, <code>third</code>,
+<code>other</code>, <code>unknown</code> - <code>NA</code> allowed</td>
 <td>Which part of the health system the case came from:
-<code>first</code> is primary care, <code>second</code> secondary care.
-<code>NA</code> is read as <code>unknown</code> and stored that way - an
-empty value, an R <code>NA</code> and a database <code>NULL</code> all
-mean the same thing here.</td>
+<code>first</code> is primary care, <code>second</code> secondary care,
+<code>third</code> tertiary care. <code>NA</code> is read as
+<code>unknown</code> and stored that way - an empty value, an R
+<code>NA</code> and a database <code>NULL</code> all mean the same thing
+here.</td>
 </tr>
 <tr class="even">
 <td><code>institution_key</code></td>
@@ -410,6 +411,17 @@ runs it for you before every run: data it cannot use stops the run with
 the same message, before anything is written, and that message is
 recorded against the run so it is also visible in the dashboard’s status
 strip and activity screen. A failed run never passes in silence.</p>
+<p>The optional feeds below have the same non-throwing check, over their
+own contract: <code><a href="../reference/episodic_check_denominators.html">episodic_check_denominators()</a></code> for positivity
+metadata, <code><a href="../reference/episodic_check_institution_activity.html">episodic_check_institution_activity()</a></code> for
+institution activity. Both read the same way as
+<code><a href="../reference/episodic_check_cases.html">episodic_check_cases()</a></code> does - no database, nothing changed,
+problems versus advice - and <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> validates
+both the same way it validates <code>cases</code>, before writing
+anything, whenever they are supplied as a plain data frame (a
+zero-argument function is instead resolved and validated once the run is
+already under way, since it may depend on data - e.g. the institutions
+table - that only exists once the case feed has loaded).</p>
 </div>
 <div class="section level2">
 <h2 id="positivity-metadata-optional">Positivity metadata (optional)<a class="anchor" aria-label="anchor" href="#positivity-metadata-optional"></a>
@@ -440,8 +452,8 @@ per-test.</td>
 <tr class="odd">
 <td><code>care_line</code></td>
 <td>
-<code>first</code>, <code>second</code>, <code>other</code>, or
-<code>unknown</code>.</td>
+<code>first</code>, <code>second</code>, <code>third</code>,
+<code>other</code>, or <code>unknown</code>.</td>
 </tr>
 <tr class="even">
 <td><code>area_code</code></td>
@@ -511,30 +523,61 @@ detection is never normalised, only L2.</p>
 <div class="section level2">
 <h2 id="geographic-reference-data-optional">Geographic reference data (optional)<a class="anchor" aria-label="anchor" href="#geographic-reference-data-optional"></a>
 </h2>
+<p>EpiSODIC is not built around any one country, coding system, or
+administrative structure. Everywhere geography enters the picture - the
+<code>pc</code> column on your case data (see the table above), the
+L3/L4 area and province lattice levels, and the dossier’s map - it is a
+column your own extract step fills in and a lookup you supply, never
+something hardcoded to a specific jurisdiction. The Dutch postcode
+reference data described below is a single bundled <em>example</em>,
+shipped so the demo and a first trial run show a real map without any
+setup, not a sign that this package assumes a Dutch deployment. Two
+independent things are configurable, and either, both, or neither can be
+set - the rest of the dashboard works the same regardless.</p>
+<div class="section level3">
+<h3 id="the-choropleth-map">The choropleth map<a class="anchor" aria-label="anchor" href="#the-choropleth-map"></a>
+</h3>
 <p>The dossier’s geography panel shows a choropleth when both the
 <code>sf</code> package and a geographic reference dataset are
 available; otherwise it falls back to a plain bar breakdown by PC value,
-exactly as if this feature did not exist. EpiSODIC ships a Netherlands
+exactly as if this feature did not exist. EpiSODIC ships a Dutch
 postcode default (<code>inst/extdata/geo_postcodes4_nl.rds</code>,
 geometry only, sourced from <code>certegis</code> under the same GPL-2
-licence - see <code>data-raw/ geo_postcodes4_nl.R</code> for
-provenance), but geography is not Netherlands-specific: point
-<code>EPISODIC_GEO_DATA</code> at your own <code>.rds</code> file
-holding an <a href="https://r-spatial.github.io/sf/" class="external-link"><code>sf</code></a>
-object with a <code>pc</code> column (matching whatever your own
+licence - see <code>data-raw/ geo_postcodes4_nl.R</code> for provenance)
+purely as a working example: point <code>EPISODIC_GEO_DATA</code> at
+your own <code>.rds</code> file holding an <a href="https://r-spatial.github.io/sf/" class="external-link"><code>sf</code></a> object with a
+<code>pc</code> column (matching whatever your own
 <code>episodic_case.pc</code> values are - postcodes, zip codes,
-municipality codes, anything) and a <code>geometry</code> column, and it
-is used instead. See <code>R/geo_data.R</code> for the exact
-contract.</p>
+municipality codes, census tracts, anything with a shape) and a
+<code>geometry</code> column, and it is used instead of the shipped
+default. See <code>R/geo_data.R</code> for the exact contract.</p>
 <p>A second, independent layer can be drawn on top for orientation -
-region outlines (provinces, municipalities, whatever is useful), colour
-but no fill, a thicker line than the choropleth itself. Point
+region outlines (provinces, counties, states, whatever is useful),
+colour but no fill, a thicker line than the choropleth itself. Point
 <code>EPISODIC_GEO_DATA_OVERLAY</code> at an <code>.rds</code> file
 holding an <code>sf</code> object with just a <code>geometry</code>
 column (no <code>pc</code> join needed, since it carries no case counts
 of its own). No default is shipped for this one - unlike the postcode
 default above, region boundaries are too jurisdiction-specific to guess
 a sensible default for.</p>
+</div>
+<div class="section level3">
+<h3 id="l4-province-level-detection">L4 (province-level) detection<a class="anchor" aria-label="anchor" href="#l4-province-level-detection"></a>
+</h3>
+<p>Separate from the map, the lattice’s L4 level watches for clusters at
+province/state/region scale, and it needs its own lookup from
+<code>pc</code> to that coarser unit - a choropleth <code>sf</code> file
+already has geometry for every postcode, but not which province each one
+belongs to. Point <code>EPISODIC_PC_PROVINCE_MAP</code> at a CSV with
+<code>pc</code> (matching your case data’s <code>pc</code> values
+exactly, not a prefix) and <code>province_code</code> columns. Left
+unset, this defaults to the ranges the Dutch demo data happens to use,
+which - being specific to that data - will not match postcodes from
+anywhere else: outside that one region, L4 simply never has anything to
+detect on until you supply your own mapping. L1-L3 and L5 do not depend
+on this at all. See <code>episodic_pc_to_province()</code> for the exact
+contract.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="what-a-run-reports">What a run reports<a class="anchor" aria-label="anchor" href="#what-a-run-reports"></a>
@@ -613,7 +656,7 @@ result.</li>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Matthijs S. Berends, Erwin E. A. Hassing, Erwin Dijkstra, Certe Medical Diagnostics &amp; Advice Foundation.</p>
+  <p>Developed by Matthijs S. Berends, Certe Medical Diagnostics &amp; Advice Foundation, University Medical Center Groningen.</p>
 </div>
 
 <div class="pkgdown-footer-right">

@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -106,14 +106,17 @@ twice.</p>
 <p>Check your extract against that contract before you schedule
 anything:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/episodic_check_cases.html">episodic_check_cases</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span></span></code></pre></div>
-<p>It needs no database and changes nothing, and reports everything
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/episodic_check_cases.html">episodic_check_cases</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/episodic_check_denominators.html">episodic_check_denominators</a></span><span class="op">(</span><span class="va">denominators</span><span class="op">)</span>              <span class="co"># if you supply positivity data</span></span>
+<span><span class="fu"><a href="../reference/episodic_check_institution_activity.html">episodic_check_institution_activity</a></span><span class="op">(</span><span class="va">institution_activity</span><span class="op">)</span>  <span class="co"># if you supply activity data</span></span></code></pre></div>
+<p>All three need no database and change nothing, and report everything
 wrong with the data at once - the column, the number of rows affected,
 which rows those are, the offending values, and what to do about each -
 along with what is merely worth a look (one pathogen spelled two ways,
 no <code>ward</code> on any hospital row, a <code>patient_key</code>
 that never repeats). <code><a href="../reference/episodic_validate_cases.html">episodic_validate_cases()</a></code> runs the
-same checks and throws instead, for a script that should stop.</p>
+same checks as <code><a href="../reference/episodic_check_cases.html">episodic_check_cases()</a></code> and throws instead,
+for a script that should stop.</p>
 <p>Schedule <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> however your environment
 normally schedules R jobs (cron, a Windows scheduled task, a CI
 pipeline) - there is nothing EpiSODIC-specific about the scheduling
@@ -330,7 +333,7 @@ other operational questions.</li>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Matthijs S. Berends, Erwin E. A. Hassing, Erwin Dijkstra, Certe Medical Diagnostics &amp; Advice Foundation.</p>
+  <p>Developed by Matthijs S. Berends, Certe Medical Diagnostics &amp; Advice Foundation, University Medical Center Groningen.</p>
 </div>
 
 <div class="pkgdown-footer-right">

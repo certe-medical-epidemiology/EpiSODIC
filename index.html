@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,7 +62,7 @@
 </div>
 <p><a href="https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></p>
 <p>EpiSODIC is an automated outbreak cluster detection and assessment system for infectious disease epidemiologists. It runs in R, reads laboratory-confirmed infections, detects statistical and rule-based aberrations, reconciles them into persistent clusters, and gives epidemiologists a dossier to assess each one, with a full audit trail and outbreak reports for clinical colleagues (e.g. clinical microbiologists) and infection prevention nurses.</p>
-<p>The dashboard and its outbreak reports are available in Dutch, English, Spanish, French, German, Mandarin Chinese, Hindi, and (Modern Standard) Arabic. This software is free; this repository is open-source software with no data and no site-specific configuration.</p>
+<p>The dashboard and its outbreak reports are available in English, (Modern Standard) Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and Spanish. This software is free; this repository is open-source software with no data and no site-specific configuration.</p>
 <!--
 Screenshots below live in man/figures/ (ships with the package, so
 they also render on the CRAN page), regenerated against episodic_demo().
@@ -107,11 +107,11 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <tbody>
 <tr>
 <td><a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/overview.html">Overview</a></td>
-<td>What EpiSODIC does: the Clusters, Pathogen and Performance screens, and why they answer different questions.</td>
+<td>What EpiSODIC does: the Clusters and Pathogen screens’ two altitudes, and the Performance, Archive, Streams, Activity and Info screens around them.</td>
 </tr>
 <tr>
 <td><a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html">Getting your data in</a></td>
-<td>The case data contract - every column, what’s optional, and <code><a href="reference/episodic_check_cases.html">episodic_check_cases()</a></code> to check your extract before anything runs.</td>
+<td>The case data contract - every column, what’s optional, and <code><a href="reference/episodic_check_cases.html">episodic_check_cases()</a></code>/<code><a href="reference/episodic_check_denominators.html">episodic_check_denominators()</a></code>/<code><a href="reference/episodic_check_institution_activity.html">episodic_check_institution_activity()</a></code> to check your extract before anything runs.</td>
 </tr>
 <tr>
 <td><a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html">Deployment</a></td>
@@ -167,9 +167,8 @@ they also render on the CRAN page), regenerated against episodic_demo().
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
 <li>Matthijs S. Berends <br><small class="roles"> Author, maintainer </small>   </li>
-<li>Erwin E. A. Hassing <br><small class="roles"> Author </small>   </li>
-<li>Erwin Dijkstra <br><small class="roles"> Author </small>   </li>
 <li>Certe Medical Diagnostics &amp; Advice Foundation <br><small class="roles"> Copyright holder, funder </small>  <a href="https://ror.org/04m8g8w48" class="external-link"><img src="https://raw.githubusercontent.com/ror-community/ror-logos/main/ror-icon-rgb.svg" class="ror" alt="ROR"></a> </li>
+<li>University Medical Center Groningen <br><small class="roles"> Copyright holder, funder </small>  <a href="https://ror.org/03cv38k47" class="external-link"><img src="https://raw.githubusercontent.com/ror-community/ror-logos/main/ror-icon-rgb.svg" class="ror" alt="ROR"></a> </li>
 </ul>
 </div>
 
@@ -180,7 +179,7 @@ they also render on the CRAN page), regenerated against episodic_demo().
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Matthijs S. Berends, Erwin E. A. Hassing, Erwin Dijkstra, Certe Medical Diagnostics &amp; Advice Foundation.</p>
+  <p>Developed by Matthijs S. Berends, Certe Medical Diagnostics &amp; Advice Foundation, University Medical Center Groningen.</p>
 </div>
 
 <div class="pkgdown-footer-right">

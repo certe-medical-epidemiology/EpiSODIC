@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -99,9 +99,9 @@ backend” above.</td>
 <td>every <code>lang</code> argument - <code><a href="../reference/episodic_run_app.html">episodic_run_app()</a></code>,
 <code><a href="../reference/episodic_demo.html">episodic_demo()</a></code>, <code><a href="../reference/episodic_report_render.html">episodic_report_render()</a></code>,
 <code><a href="../reference/episodic_tr.html">episodic_tr()</a></code> and every renderer beneath them</td>
-<td>Dashboard/report language: <code>nl</code>, <code>en</code>,
-<code>es</code>, <code>fr</code>, <code>de</code>, <code>zh</code>,
-<code>hi</code>, or <code>ar</code>. Defaults to <code>en</code> if
+<td>Dashboard/report language: <code>en</code>, <code>ar</code>,
+<code>nl</code>, <code>fr</code>, <code>de</code>, <code>hi</code>,
+<code>zh</code>, or <code>es</code>. Defaults to <code>en</code> if
 unset. Fixed for the whole running app - there is no in-app language
 switcher.</td>
 </tr>
@@ -131,11 +131,13 @@ detection-reproducibility guarantee.</td>
 <td>
 <code><a href="../reference/episodic_geo.html">episodic_geo_source_resolve()</a></code> (<code>path</code>
 argument)</td>
-<td>Path to an <code>.rds</code> file holding an operator’s own
-geographic reference data (an <code>sf</code> object with
-<code>pc</code>/<code>geometry</code> columns), overriding the shipped
-Netherlands postcode default. See “Geographic reference data”
-above.</td>
+<td>Path to an <code>.rds</code> file holding your own geographic
+reference data (an <code>sf</code> object with
+<code>pc</code>/<code>geometry</code> columns) for the choropleth map -
+any country, any area unit. EpiSODIC ships one worked example (Dutch
+postcodes), used only when this is unset. See
+<code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic reference data”
+section.</td>
 </tr>
 <tr class="even">
 <td><code>EPISODIC_GEO_DATA_OVERLAY</code></td>
@@ -144,10 +146,22 @@ above.</td>
 argument)</td>
 <td>Path to an <code>.rds</code> file holding an optional region-outline
 overlay (an <code>sf</code> object with just a <code>geometry</code>
-column), drawn on top of the choropleth. No default. See “Geographic
-reference data” above.</td>
+column), drawn on top of the choropleth. No default. See
+<code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic reference data”
+section.</td>
 </tr>
 <tr class="odd">
+<td><code>EPISODIC_PC_PROVINCE_MAP</code></td>
+<td>
+<code>episodic_pc_to_province()</code> (<code>path</code>
+argument)</td>
+<td>Path to a CSV (<code>pc</code>, <code>province_code</code> columns)
+mapping your postcodes to provinces/states/regions, for L4 stream
+detection. Defaults to Dutch demo ranges that only match Dutch
+postcodes. See <code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic
+reference data” section.</td>
+</tr>
+<tr class="even">
 <td><code>EPISODIC_QUARTO_REPORT</code></td>
 <td>
 <code><a href="../reference/episodic_report_render.html">episodic_report_render()</a></code> (<code>qmd_path</code>
@@ -173,7 +187,7 @@ section for the detail behind <code>EPISODIC_GEO_DATA</code> and
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Matthijs S. Berends, Erwin E. A. Hassing, Erwin Dijkstra, Certe Medical Diagnostics &amp; Advice Foundation.</p>
+  <p>Developed by Matthijs S. Berends, Certe Medical Diagnostics &amp; Advice Foundation, University Medical Center Groningen.</p>
 </div>
 
 <div class="pkgdown-footer-right">

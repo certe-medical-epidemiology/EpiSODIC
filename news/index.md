@@ -1,5 +1,122 @@
 # Changelog
 
+## EpiSODIC 0.8.7
+
+### Changed
+
+- Author list trimmed to its actual contributors and copyright holders:
+  Matthijs Berends, Certe Medical Diagnostics & Advice Foundation, and
+  University Medical Center Groningen (ROR-identified, same format as
+  Certe)
+- Every language listing (README, vignettes, roxygen docs) now orders
+  English first, then the rest alphabetically, instead of leading with
+  Dutch
+- Geography is documented as operator-supplied throughout, not
+  Netherlands-specific: the “Geographic reference data” section in
+  [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
+  is substantially expanded, now also covering
+  `EPISODIC_PC_PROVINCE_MAP` (L4 stream detection) alongside the map
+  data, and the FAQ’s geography entry does the same
+- [`vignette("overview")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/overview.md)’s
+  screen-by-screen section no longer stops at three screens (“a third
+  screen closes the loop”) - it now covers all seven (Clusters,
+  Pathogen, Performance, Archive, Streams, Activity, Info)
+- [`episodic_check_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.md)
+  and
+  [`episodic_check_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.md)
+  are now mentioned alongside
+  [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+  everywhere the docs discuss checking input data before a run
+  ([`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md),
+  [`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md),
+  [`vignette("faq")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.md),
+  README)
+
+### Fixed
+
+- `care_line`’s `"third"` (tertiary care) value was missing from every
+  column-contract table and roxygen doc listing its allowed values -
+  `episodic_care_lines` already included it, the docs just did not
+
+## EpiSODIC 0.8.6
+
+### Changed
+
+- Reverted 0.8.5’s `gc(full = TRUE)` forcing in
+  `episodic_run_cron(debug = TRUE)`: a second lab reproduction, with
+  that forcing in place, showed a
+  [`gc()`](https://rdrr.io/r/base/gc.html) completing cleanly
+  immediately after `episodic_growth_slope()` and then the crash landing
+  on the very next call, `episodic_spatial_concentration()` - ruling out
+  delayed-onset corruption from an earlier call and pointing at that one
+  call on that specific data instead, which the extra
+  [`gc()`](https://rdrr.io/r/base/gc.html) calls were never able to help
+  with and were only slowing every run down (~600-1000ms added per
+  stream, a ~5 minute run turning into “10-20 seconds on SQLite” by the
+  lab’s own comparison)
+- `episodic_spatial_concentration()` (the isolated crash site) no longer
+  uses
+  [`table()`](https://rdrr.io/r/base/table.html)/[`factor()`](https://rdrr.io/r/base/factor.html),
+  which sort their levels and so invoke locale-aware string collation -
+  not guaranteed safe against a string whose declared encoding does not
+  match its actual bytes, which is exactly what a client/server
+  character-set mismatch can hand back from a MariaDB connection. Counts
+  via `tabulate(match(pc, unique(pc)))` instead, which only ever hashes
+  and byte-compares the strings themselves and sorts nothing but the
+  resulting integer codes
+- `episodic_run_cron(debug = TRUE)` now dumps each reconciliation
+  candidate’s `pc` values (encoding, validity, raw bytes) immediately
+  before `episodic_spatial_concentration()` runs, in place of the
+  removed [`gc()`](https://rdrr.io/r/base/gc.html) forcing - cheap (a
+  handful of values at most) and aimed squarely at confirming or ruling
+  out the character-encoding hypothesis above
+
+## EpiSODIC 0.8.5
+
+### Changed
+
+- `episodic_run_cron(debug = TRUE)` now forces a full garbage collection
+  (`gc(full = TRUE)`) immediately after every database round trip inside
+  the per-stream reconciliation loop. A fatal crash from corrupted
+  memory typically surfaces later than its actual cause - whenever R’s
+  own, otherwise lazily scheduled, garbage collector happens to stumble
+  on the damage - so forcing one right after each call is what lets the
+  trace log land on the actual culprit instead of a downstream symptom
+  several calls away. Confirmed necessary: a lab reproduction of the
+  ongoing MariaDB crash showed the trace stopping at a different line on
+  each run (once after `episodic_growth_slope()`, once
+  mid-`episodic_app_density()`) despite hitting the exact same stream
+  and data, the signature of exactly this kind of delayed-onset
+  corruption. Noisy and slow; `debug = TRUE` was already meant only for
+  chasing a failure like this, not for routine runs
+
+## EpiSODIC 0.8.4
+
+### Fixed
+
+- [`episodic_db_truncate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_truncate.md)
+  against MariaDB/MySQL crashed with `Error: bad_weak_ptr` right after
+  successfully truncating every table. `on.exit(..., add = TRUE)`
+  appends to the end of the exit-handler list, so the handler that
+  restores `FOREIGN_KEY_CHECKS` (registered after the connection’s own
+  `on.exit(dbDisconnect(con))`) ran *after* the connection had already
+  been closed - RMariaDB’s response to a query against a freed
+  connection is a C++ abort, not a catchable R error. Now restores
+  foreign-key checks explicitly right after truncating, with the
+  `on.exit` handler only as a safety net for the error path, registered
+  with `after = FALSE` so it runs before the disconnect even then
+
+## EpiSODIC 0.8.3
+
+### New
+
+- [`episodic_db_truncate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_truncate.md):
+  empties every EpiSODIC table (including dashboard accounts) while
+  keeping the schema itself, for a hard reset back to “freshly created,
+  no data” without a schema migration. Refuses to run outside an
+  interactive session, and requires typing the database’s own name back
+  at a prompt before it deletes anything
+
 ## EpiSODIC 0.8.2
 
 ### Fixed

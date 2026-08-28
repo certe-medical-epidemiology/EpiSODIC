@@ -8,9 +8,9 @@ epidemiologists a dossier to assess each one, with a full audit trail
 and outbreak reports for clinical colleagues (e.g. clinical
 microbiologists) and infection prevention nurses.
 
-The dashboard and its outbreak reports are available in Dutch, English,
-Spanish, French, German, Mandarin Chinese, Hindi, and (Modern Standard)
-Arabic.
+The dashboard and its outbreak reports are available in English, (Modern
+Standard) Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and
+Spanish.
 
 ## No dependency on any one laboratory system
 
@@ -90,14 +90,44 @@ that period:
 - and the clusters that were raised during the period, with the verdict
   each one received, as the way back to the operational view.
 
+## Beyond the two altitudes
+
+The rest of the dashboard - Performance, Archive, Streams, Activity, and
+Info - rounds out these two, each answering a narrower question than
+“should we act on this cluster” or “is this pathogen unusual this
+season”:
+
 ### The Performance screen: is detection itself working
 
-A third screen closes the loop: detection timeliness and positive
-predictive value per detector and pathogen, computed from stored
-verdicts. Both fill in as clusters get assessed, so tuning
-`EPISODIC_CONFIG` against your own signal volume is an evidence-based
-exercise rather than a guess, once your board has classified enough
-clusters to have a baseline.
+Detection timeliness and positive predictive value per detector and
+pathogen, computed from stored verdicts. Both fill in as clusters get
+assessed, so tuning `EPISODIC_CONFIG` against your own signal volume is
+an evidence-based exercise rather than a guess, once your board has
+classified enough clusters to have a baseline.
+
+### The Archive screen: last winter’s precedent
+
+Every closed cluster, searchable by pathogen and place, sorted by
+period. A closed dossier is not filed away - it stays reachable and
+reasoned exactly the way an open one is, since last winter’s assessment
+is often the best prior evidence for judging this winter’s cluster.
+
+### Streams and Activity: how the machinery is behaving
+
+**Streams** lists every stream the lattice is currently watching
+(pathogen x level x institution/area/ward/region) alongside the
+detection configuration resolved for it at the latest run - the place to
+look when “why didn’t this fire” needs a concrete answer rather than a
+guess. **Activity** is the audit log: every assessment, closure, mute,
+sign-in, and scheduled run, with a system action visually distinct from
+a person’s. Between the two, nothing the system did (or did not do) is
+ever only inferable from its effects.
+
+### The Info screen
+
+The running instance’s own version, licence, and configuration, read
+live from the package itself - useful when reporting an issue, or simply
+confirming which build is deployed.
 
 ## Where to go next
 

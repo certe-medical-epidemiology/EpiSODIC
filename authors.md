@@ -4,28 +4,26 @@
 
 - **Matthijs S. Berends**. Author, maintainer.
 
-- **Erwin E. A. Hassing**. Author.
-
-- **Erwin Dijkstra**. Author.
-
 - **Certe Medical Diagnostics & Advice Foundation**. Copyright holder,
   funder.
   [![ROR](https://raw.githubusercontent.com/ror-community/ror-logos/main/ror-icon-rgb.svg)](https://ror.org/04m8g8w48)
+
+- **University Medical Center Groningen**. Copyright holder, funder.
+  [![ROR](https://raw.githubusercontent.com/ror-community/ror-logos/main/ror-icon-rgb.svg)](https://ror.org/03cv38k47)
 
 ## Citation
 
 Source:
 [`DESCRIPTION`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/DESCRIPTION)
 
-Berends MS, Hassing EEA, Dijkstra E (2026). *EpiSODIC: Epidemiological
-Signal Observation, Detection, Identification, and Classification*. R
-package version 0.8.2,
+Berends MS (2026). *EpiSODIC: Epidemiological Signal Observation,
+Detection, Identification, and Classification*. R package version 0.8.7,
 <https://certe-medical-epidemiology.github.io/EpiSODIC>.
 
     @Manual{,
       title = {EpiSODIC: Epidemiological Signal Observation, Detection, Identification, and Classification},
-      author = {Matthijs S. Berends and Erwin E. A. Hassing and Erwin Dijkstra},
+      author = {Matthijs S. Berends},
       year = {2026},
-      note = {R package version 0.8.2},
+      note = {R package version 0.8.7},
       url = {https://certe-medical-epidemiology.github.io/EpiSODIC},
     }

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,59 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.7" id="episodic-087">EpiSODIC 0.8.7<a class="anchor" aria-label="anchor" href="#episodic-087"></a></h2>
+<div class="section level3">
+<h3 id="changed-0-8-7">Changed<a class="anchor" aria-label="anchor" href="#changed-0-8-7"></a></h3>
+<ul><li>Author list trimmed to its actual contributors and copyright holders: Matthijs Berends, Certe Medical Diagnostics &amp; Advice Foundation, and University Medical Center Groningen (ROR-identified, same format as Certe)</li>
+<li>Every language listing (README, vignettes, roxygen docs) now orders English first, then the rest alphabetically, instead of leading with Dutch</li>
+<li>Geography is documented as operator-supplied throughout, not Netherlands-specific: the “Geographic reference data” section in <code><a href="../articles/data-format.html">vignette("data-format")</a></code> is substantially expanded, now also covering <code>EPISODIC_PC_PROVINCE_MAP</code> (L4 stream detection) alongside the map data, and the FAQ’s geography entry does the same</li>
+<li>
+<code><a href="../articles/overview.html">vignette("overview")</a></code>’s screen-by-screen section no longer stops at three screens (“a third screen closes the loop”) - it now covers all seven (Clusters, Pathogen, Performance, Archive, Streams, Activity, Info)</li>
+<li>
+<code><a href="../reference/episodic_check_denominators.html">episodic_check_denominators()</a></code> and <code><a href="../reference/episodic_check_institution_activity.html">episodic_check_institution_activity()</a></code> are now mentioned alongside <code><a href="../reference/episodic_check_cases.html">episodic_check_cases()</a></code> everywhere the docs discuss checking input data before a run (<code><a href="../articles/data-format.html">vignette("data-format")</a></code>, <code><a href="../articles/deployment.html">vignette("deployment")</a></code>, <code><a href="../articles/faq.html">vignette("faq")</a></code>, README)</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-8-7">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-8-7"></a></h3>
+<ul><li>
+<code>care_line</code>’s <code>"third"</code> (tertiary care) value was missing from every column-contract table and roxygen doc listing its allowed values - <code>episodic_care_lines</code> already included it, the docs just did not</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.6" id="episodic-086">EpiSODIC 0.8.6<a class="anchor" aria-label="anchor" href="#episodic-086"></a></h2>
+<div class="section level3">
+<h3 id="changed-0-8-6">Changed<a class="anchor" aria-label="anchor" href="#changed-0-8-6"></a></h3>
+<ul><li>Reverted 0.8.5’s <code>gc(full = TRUE)</code> forcing in <code>episodic_run_cron(debug = TRUE)</code>: a second lab reproduction, with that forcing in place, showed a <code><a href="https://rdrr.io/r/base/gc.html" class="external-link">gc()</a></code> completing cleanly immediately after <code>episodic_growth_slope()</code> and then the crash landing on the very next call, <code>episodic_spatial_concentration()</code> - ruling out delayed-onset corruption from an earlier call and pointing at that one call on that specific data instead, which the extra <code><a href="https://rdrr.io/r/base/gc.html" class="external-link">gc()</a></code> calls were never able to help with and were only slowing every run down (~600-1000ms added per stream, a ~5 minute run turning into “10-20 seconds on SQLite” by the lab’s own comparison)</li>
+<li>
+<code>episodic_spatial_concentration()</code> (the isolated crash site) no longer uses <code><a href="https://rdrr.io/r/base/table.html" class="external-link">table()</a></code>/<code><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor()</a></code>, which sort their levels and so invoke locale-aware string collation - not guaranteed safe against a string whose declared encoding does not match its actual bytes, which is exactly what a client/server character-set mismatch can hand back from a MariaDB connection. Counts via <code>tabulate(match(pc, unique(pc)))</code> instead, which only ever hashes and byte-compares the strings themselves and sorts nothing but the resulting integer codes</li>
+<li>
+<code>episodic_run_cron(debug = TRUE)</code> now dumps each reconciliation candidate’s <code>pc</code> values (encoding, validity, raw bytes) immediately before <code>episodic_spatial_concentration()</code> runs, in place of the removed <code><a href="https://rdrr.io/r/base/gc.html" class="external-link">gc()</a></code> forcing - cheap (a handful of values at most) and aimed squarely at confirming or ruling out the character-encoding hypothesis above</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.5" id="episodic-085">EpiSODIC 0.8.5<a class="anchor" aria-label="anchor" href="#episodic-085"></a></h2>
+<div class="section level3">
+<h3 id="changed-0-8-5">Changed<a class="anchor" aria-label="anchor" href="#changed-0-8-5"></a></h3>
+<ul><li>
+<code>episodic_run_cron(debug = TRUE)</code> now forces a full garbage collection (<code>gc(full = TRUE)</code>) immediately after every database round trip inside the per-stream reconciliation loop. A fatal crash from corrupted memory typically surfaces later than its actual cause - whenever R’s own, otherwise lazily scheduled, garbage collector happens to stumble on the damage - so forcing one right after each call is what lets the trace log land on the actual culprit instead of a downstream symptom several calls away. Confirmed necessary: a lab reproduction of the ongoing MariaDB crash showed the trace stopping at a different line on each run (once after <code>episodic_growth_slope()</code>, once mid-<code>episodic_app_density()</code>) despite hitting the exact same stream and data, the signature of exactly this kind of delayed-onset corruption. Noisy and slow; <code>debug = TRUE</code> was already meant only for chasing a failure like this, not for routine runs</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.4" id="episodic-084">EpiSODIC 0.8.4<a class="anchor" aria-label="anchor" href="#episodic-084"></a></h2>
+<div class="section level3">
+<h3 id="fixed-0-8-4">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-8-4"></a></h3>
+<ul><li>
+<code><a href="../reference/episodic_db_truncate.html">episodic_db_truncate()</a></code> against MariaDB/MySQL crashed with <code>Error: bad_weak_ptr</code> right after successfully truncating every table. <code>on.exit(..., add = TRUE)</code> appends to the end of the exit-handler list, so the handler that restores <code>FOREIGN_KEY_CHECKS</code> (registered after the connection’s own <code>on.exit(dbDisconnect(con))</code>) ran <em>after</em> the connection had already been closed - RMariaDB’s response to a query against a freed connection is a C++ abort, not a catchable R error. Now restores foreign-key checks explicitly right after truncating, with the <code>on.exit</code> handler only as a safety net for the error path, registered with <code>after = FALSE</code> so it runs before the disconnect even then</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.3" id="episodic-083">EpiSODIC 0.8.3<a class="anchor" aria-label="anchor" href="#episodic-083"></a></h2>
+<div class="section level3">
+<h3 id="new-0-8-3">New<a class="anchor" aria-label="anchor" href="#new-0-8-3"></a></h3>
+<ul><li>
+<code><a href="../reference/episodic_db_truncate.html">episodic_db_truncate()</a></code>: empties every EpiSODIC table (including dashboard accounts) while keeping the schema itself, for a hard reset back to “freshly created, no data” without a schema migration. Refuses to run outside an interactive session, and requires typing the database’s own name back at a prompt before it deletes anything</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.8.2" id="episodic-082">EpiSODIC 0.8.2<a class="anchor" aria-label="anchor" href="#episodic-082"></a></h2>
 <div class="section level3">
@@ -293,7 +346,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Matthijs S. Berends, Erwin E. A. Hassing, Erwin Dijkstra, Certe Medical Diagnostics &amp; Advice Foundation.</p>
+  <p>Developed by Matthijs S. Berends, Certe Medical Diagnostics &amp; Advice Foundation, University Medical Center Groningen.</p>
 </div>
 
 <div class="pkgdown-footer-right">
