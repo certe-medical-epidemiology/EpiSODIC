@@ -60,17 +60,24 @@ episodic_trace_memory <- function() {
 
 #' Print the exact SQL and bound parameter values about to be sent, for `debug = TRUE`
 #'
-#' The crash trace has now landed on three different calls across three
-#' otherwise-identical runs (once at the `episodic_growth_slope()` /
-#' `episodic_spatial_concentration()` boundary, once inside
-#' `episodic_spatial_concentration()`, once inside
-#' `episodic_app_density()`) - all downstream of a database round trip,
-#' never in between two purely in-memory steps. Printing the literal SQL
-#' text and every bound parameter's value, class and encoding
-#' immediately before each such call, rather than only "done" once it
-#' returns, is what finally shows whether one specific query - or one
-#' specific parameter value - is what a run never gets past, instead of
-#' inferring it from where the trace happens to stop.
+#' The crash trace once pointed at a live-corruption theory: it landed on
+#' several different calls across otherwise-identical runs, always near
+#' but not always inside a database round trip. A minimal, isolated
+#' reproduction of the query it landed on most (fetching
+#' `episodic_institution_activity` on repeat, nothing else running)
+#' eventually raised a plain, catchable `Lost connection to server during
+#' query` after several minutes of continuous use - not a crash - which
+#' points instead at a connection-lifetime limit somewhere between the
+#' client and the server (see `episodic_run_cron()`'s `batch_size`
+#' argument, added for exactly this). A dropped connection landing
+#' mid-transaction rather than between autocommit statements is a far
+#' less forgiving place for the native client library to handle abruptly,
+#' which is consistent with why the fatal crash never reproduced in the
+#' isolated loop. Printing the literal SQL text and every bound
+#' parameter's value, class and encoding immediately before each call
+#' this covers is kept regardless: it is what would show a genuinely bad
+#' query or parameter value directly, if the batching/cleanup change does
+#' not fully resolve this.
 #' @keywords internal
 #' @noRd
 episodic_trace_query <- function(debug, sql, params = list()) {
@@ -290,6 +297,18 @@ episodic_pkg_versions_extended <- function() {
 #'   returns - where the normal progress trace does not narrow things
 #'   down enough on its own. Noisy; leave off for routine scheduled
 #'   runs.
+#' @param batch_size How many streams to reconcile per committed
+#'   transaction. A run holding one connection open in one uncommitted
+#'   transaction for its entire length - which can run several minutes
+#'   against a few hundred streams - is exposed to any connection-lifetime
+#'   limit sitting between here and the server, proxy, load balancer, or
+#'   firewall included, none of which show up in the server's own
+#'   `SHOW VARIABLES LIKE '%timeout%'`. Committing every `batch_size`
+#'   streams instead bounds how much of the run any one such drop can
+#'   catch mid-flight; if a batch fails, the run erases everything it
+#'   wrote (across every already-committed batch, not just the failed
+#'   one) rather than leaving a partially-written run behind - the same
+#'   all-or-nothing outcome a single transaction gave for free.
 #' @return Invisibly, the `run_id` of the completed run. The run's row in
 #'   `episodic_detection_run` holds its status, the per-feed load counts,
 #'   and `error_text` if it failed. Case data that does not satisfy the
@@ -318,7 +337,8 @@ episodic_run_cron <- function(
   host = Sys.info()[["nodename"]],
   account = Sys.info()[["user"]],
   run_date = Sys.Date(),
-  debug = FALSE
+  debug = FALSE,
+  batch_size = 25L
 ) {
   start_time <- Sys.time()
   episodic_trace("episodic_run_cron() starting (host=", host, ", account=", account, ")")
@@ -432,33 +452,82 @@ episodic_run_cron <- function(
     )
   }
 
-  episodic_trace("Beginning transaction")
+  episodic_trace("Starting run body (batch_size = ", batch_size, ")")
   result <- tryCatch(
-    {
-      DBI::dbBegin(con)
-      stats <- episodic_run_cron_body(
-        con,
-        run_id,
-        config,
-        cases,
-        denominators,
-        institution_activity,
-        run_date,
-        debug = debug
-      )
-      episodic_trace("Committing transaction")
-      DBI::dbCommit(con)
-      stats
-    },
+    episodic_run_cron_body(
+      con,
+      run_id,
+      config,
+      cases,
+      denominators,
+      institution_activity,
+      run_date,
+      debug = debug,
+      batch_size = batch_size
+    ),
     error = function(e) {
-      episodic_trace("Error during run body, rolling back: ", conditionMessage(e))
-      DBI::dbRollback(con)
+      # The run body commits as it goes (one transaction per setup phase,
+      # per stream batch, and for the final suppression pass - see its own
+      # docs for why one connection held in a single open transaction for
+      # the whole run is not safe to assume). A batch that has already
+      # committed cannot be rolled back by the driver once a later batch
+      # fails, so undoing the run means erasing what it wrote by run_id
+      # instead, not asking the driver to undo a transaction that closed
+      # minutes ago.
+      episodic_trace("Error during run body: ", conditionMessage(e))
+      if (DBI::dbIsValid(con)) {
+        episodic_trace("Cleaning up partial writes from run ", run_id)
+        tryCatch(
+          episodic_run_cron_cleanup(con, run_id),
+          error = function(e2) {
+            episodic_trace(
+              "Cleanup of run ",
+              run_id,
+              " itself failed: ",
+              conditionMessage(e2),
+              " - partial writes tagged with run_id ",
+              run_id,
+              " may remain and need manual review"
+            )
+          }
+        )
+      } else {
+        episodic_trace(
+          "Connection is no longer valid - could not clean up partial ",
+          "writes from run ",
+          run_id,
+          " automatically. Any rows tagged with run_id ",
+          run_id,
+          " in episodic_case, episodic_detection, or newly-opened rows in ",
+          "episodic_cluster (those with last_detected_run = ",
+          run_id,
+          " and no surviving detection) may need manual review."
+        )
+      }
       episodic_run_cron_failure(conditionMessage(e))
     }
   )
 
   episodic_trace("Finishing run ", run_id, " (status: ", result$status %||% "success", ")")
-  episodic_run_cron_finish(con, run_id, hashed, result)
+  if (DBI::dbIsValid(con)) {
+    tryCatch(
+      episodic_run_cron_finish(con, run_id, hashed, result),
+      error = function(e) {
+        episodic_trace(
+          "Could not write the run ",
+          run_id,
+          " summary row: ",
+          conditionMessage(e)
+        )
+      }
+    )
+  } else {
+    episodic_trace(
+      "Connection is no longer valid - could not write the run ",
+      run_id,
+      " summary row"
+    )
+  }
 
   # The run row records this, but a scheduled run nobody reads the row of
   # must still say so where it ran.
@@ -522,6 +591,99 @@ episodic_farrington_weeks_owed <- function(con, run_date, config) {
   }
   weeks <- as.numeric(difftime(as.Date(run_date), since, units = "days")) / 7
   min(cap, max(1L, ceiling(weeks)))
+}
+
+#' Erase what a failed run wrote, by run_id
+#'
+#' [episodic_run_cron()] commits its work in several transactions rather
+#' than one (see [episodic_run_cron_body()]'s own docs for why), so a
+#' failure partway through can leave earlier batches already committed.
+#' This restores the same all-or-nothing outcome a single transaction
+#' used to give for free, using the identifiers already on the schema
+#' rather than adding new ones: `episodic_case.first_seen_run` and
+#' `episodic_detection.run_id` tag every row this run could have
+#' inserted, and a cluster this run opened (rather than merely
+#' re-detected) is exactly one with `last_detected_run = run_id` left
+#' with no surviving detection once this run's own detections are gone.
+#'
+#' Deliberately narrow: it does not touch `episodic_stream`,
+#' `episodic_stream_trend`, `episodic_reporting_triangle`, or a
+#' pre-existing cluster's `last_detected_run`/`runs_since_detected`
+#' bookkeeping. All four are upsert caches or structural records with no
+#' run-specific identity of their own - safe to leave exactly as a failed
+#' run left them, because the next successful run recomputes and
+#' overwrites them rather than accumulating from them.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param run_id The run whose writes to erase.
+#' @return Invisibly, `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_run_cron_cleanup <- function(con, run_id) {
+  chunked_in <- function(table, column, ids, extra_where = NULL) {
+    ids <- unique(ids[!is.na(ids)])
+    if (length(ids) == 0) {
+      return(invisible(NULL))
+    }
+    chunk_size <- 500L
+    for (start in seq(1L, length(ids), by = chunk_size)) {
+      chunk <- ids[start:min(start + chunk_size - 1L, length(ids))]
+      placeholders <- paste(rep("?", length(chunk)), collapse = ", ")
+      where <- paste0(column, " IN (", placeholders, ")")
+      if (!is.null(extra_where)) {
+        where <- paste0(where, " AND ", extra_where)
+      }
+      DBI::dbExecute(
+        con,
+        paste0("DELETE FROM ", table, " WHERE ", where),
+        params = as.list(chunk)
+      )
+    }
+    invisible(NULL)
+  }
+
+  case_ids <- DBI::dbGetQuery(
+    con,
+    "SELECT case_id FROM episodic_case WHERE first_seen_run = ?",
+    params = list(run_id)
+  )$case_id
+
+  chunked_in("episodic_cluster_case", "case_id", case_ids)
+
+  DBI::dbExecute(
+    con,
+    "DELETE FROM episodic_detection WHERE run_id = ?",
+    params = list(run_id)
+  )
+
+  # Only clusters this run itself opened: last_detected_run points at
+  # this run, and with this run's own detections just deleted above,
+  # nothing else still ties the cluster to any run at all. A cluster
+  # merely re-detected this run keeps older detections from earlier runs
+  # and so is left alone.
+  new_cluster_ids <- DBI::dbGetQuery(
+    con,
+    paste(
+      "SELECT cluster_id FROM episodic_cluster",
+      "WHERE last_detected_run = ?",
+      "AND cluster_id NOT IN (",
+      "  SELECT DISTINCT cluster_id FROM episodic_detection",
+      "  WHERE cluster_id IS NOT NULL",
+      ")"
+    ),
+    params = list(run_id)
+  )$cluster_id
+
+  chunked_in("episodic_cluster_case", "cluster_id", new_cluster_ids)
+  # A cluster opened and abandoned within a single failed cron run cannot
+  # legitimately carry an app-authored assessment yet, but a stray row is
+  # cleared defensively rather than left to violate the FK below.
+  chunked_in("episodic_assessment_event", "cluster_id", new_cluster_ids)
+  chunked_in("episodic_cluster", "cluster_id", new_cluster_ids)
+
+  chunked_in("episodic_case", "case_id", case_ids)
+
+  invisible(NULL)
 }
 
 #' The counts a run that wrote nothing has to report
@@ -653,8 +815,16 @@ episodic_run_cron_body <- function(
   denominators,
   institution_activity,
   run_date,
-  debug = FALSE
+  debug = FALSE,
+  batch_size = 25L
 ) {
+  # Setup - pathogen configuration, loading the supplied feeds, and the
+  # detectors that only need the full case history - is its own
+  # transaction, separate from the per-stream batches below: it is
+  # normally fast and has nothing to gain from being split further.
+  DBI::dbBegin(con)
+  tryCatch(
+    {
   episodic_trace("Loading pathogen configuration")
   pathogen_config_path <- system.file(
     "config",
@@ -779,11 +949,54 @@ episodic_run_cron_body <- function(
   episodic_trace(
     "Reconciling ",
     nrow(streams),
-    " stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)"
+    " stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation), ",
+    "in batches of ",
+    batch_size
+  )
+      DBI::dbCommit(con)
+    },
+    error = function(e) {
+      DBI::dbRollback(con)
+      stop(e)
+    }
   )
 
-  for (i in seq_len(nrow(streams))) {
-    stream <- streams[i, ]
+  # One transaction per batch, not one for the whole run: a run of a few
+  # hundred streams can take minutes end to end, and a single connection
+  # held open (and one transaction kept uncommitted) for that whole span
+  # is exposed to any connection-lifetime limit sitting between here and
+  # the server - a proxy, load balancer, or firewall, none of which show
+  # up in the server's own `SHOW VARIABLES LIKE '%timeout%'`. Committing
+  # every `batch_size` streams bounds how much of the run any one such
+  # drop can catch mid-flight, and lets episodic_run_cron_cleanup() erase
+  # exactly what a failed run wrote, batch or no batch, restoring the
+  # same all-or-nothing outcome a single giant transaction used to give
+  # for free.
+  stream_batches <- if (nrow(streams) == 0) {
+    list()
+  } else {
+    split(seq_len(nrow(streams)), ceiling(seq_len(nrow(streams)) / batch_size))
+  }
+
+  for (batch_no in seq_along(stream_batches)) {
+    batch_indices <- stream_batches[[batch_no]]
+    episodic_trace_debug(
+      debug,
+      "debug: starting stream batch ",
+      batch_no,
+      "/",
+      length(stream_batches),
+      " (streams ",
+      min(batch_indices),
+      "-",
+      max(batch_indices),
+      ")"
+    )
+    DBI::dbBegin(con)
+    tryCatch(
+      {
+        for (i in batch_indices) {
+          stream <- streams[i, ]
     stream_cases <- episodic_cases_for_stream(cases_all, stream)
     episodic_trace_debug(
       debug,
@@ -1110,6 +1323,24 @@ episodic_run_cron_body <- function(
     episodic_trace_debug(debug, "debug:   episodic_reconcile_stream() done")
     n_new_total <- n_new_total + reconcile_result$n_new
     n_updated_total <- n_updated_total + reconcile_result$n_updated
+        }
+        DBI::dbCommit(con)
+      },
+      error = function(e) {
+        episodic_trace(
+          "Error in stream batch ",
+          batch_no,
+          ", rolling back this batch: ",
+          conditionMessage(e)
+        )
+        DBI::dbRollback(con)
+        # Earlier batches in this run already committed and cannot be
+        # rolled back by the driver at this point - episodic_run_cron()'s
+        # caller erases them by run_id once this re-thrown error reaches
+        # it, via episodic_run_cron_cleanup().
+        stop(e)
+      }
+    )
   }
   episodic_trace(
     "Stream reconciliation done: ",
@@ -1123,9 +1354,21 @@ episodic_run_cron_body <- function(
 
   # Suppression is a statement about the lattice as a whole - which level
   # of the same outbreak is the one worth a dossier - so it waits until
-  # every stream in it has reconciled.
+  # every stream in it has reconciled. Its own transaction, for the same
+  # reason the streams above are batched: nothing forces it to share a
+  # connection lifetime with everything before it.
   episodic_trace("Suppressing lattice")
-  episodic_suppress_lattice(con, config)
+  DBI::dbBegin(con)
+  tryCatch(
+    {
+      episodic_suppress_lattice(con, config)
+      DBI::dbCommit(con)
+    },
+    error = function(e) {
+      DBI::dbRollback(con)
+      stop(e)
+    }
+  )
   episodic_trace_debug(debug, "debug: memory before finishing: ", episodic_trace_memory())
 
   list(

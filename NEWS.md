@@ -1,3 +1,10 @@
+# EpiSODIC 0.8.9
+
+## Changed
+
+- `episodic_run_cron()` no longer holds one connection open in a single uncommitted transaction for the entire run. A minimal, isolated reproduction of the query the MariaDB crash investigation had most recently landed on - fetching `episodic_institution_activity` on repeat, nothing else running - eventually raised a plain, catchable `Lost connection to server during query` after several minutes of continuous use, not a crash, pointing at a connection-lifetime limit somewhere between the client and the server rather than at corruption in EpiSODIC's own code. A real run's connection reaches that same age right around the point every fatal reproduction has crashed at (stream 368 of 371 is nearly the end of the run, not early in it), and a connection dropping mid-transaction rather than between autocommit statements is a far less forgiving place for the native client library to handle abruptly - consistent with why the isolated loop raised a normal error instead of crashing. `episodic_run_cron()` now commits every `batch_size` streams (new argument, default 25) instead of one transaction for the whole run, bounding how much of a run any one such drop can catch mid-flight
+- On any failure, the run's writes are erased by `run_id`/`first_seen_run` across every table they touched (`episodic_case`, `episodic_detection`, newly-opened rows in `episodic_cluster` and `episodic_cluster_case`), even when several batches already committed before the failure - restoring the same all-or-nothing outcome a single transaction gave for free, without needing to hold that transaction open for the run's full length
+
 # EpiSODIC 0.8.8
 
 ## Changed
