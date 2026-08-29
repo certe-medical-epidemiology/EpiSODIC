@@ -282,6 +282,93 @@ episodic_db_stream_upsert <- function(
 #' hands to a run.
 #' @keywords internal
 #' @noRd
+
+#' Insert or upsert many rows in one statement per chunk
+#'
+#' The package's write helpers used to send one row per `DBI` call, which
+#' on a local SQLite file costs nothing and against a networked MariaDB
+#' costs a full round trip each - the difference between a run that takes
+#' seconds and one that takes minutes.
+#'
+#' Chunked `dbBind()` is not the fix, despite looking like it: RMariaDB
+#' binds a multi-row parameter list with `while (bind_next_row())
+#' { execute(); }`, one `mysql_stmt_execute()` per row, so it saves the
+#' parse but still pays every round trip. What does collapse them is one
+#' statement carrying every row's placeholders - `VALUES (?, ?), (?, ?),
+#' ...` with a single flat parameter list, which both drivers execute
+#' once.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param table Table name.
+#' @param cols Column names, in the order `values` supplies them.
+#' @param values A list of equal-length column vectors (a data frame is
+#'   fine), giving the rows to write.
+#' @param key_cols The columns whose uniqueness decides insert vs. update.
+#'   `NULL` (the default) means a plain insert with no conflict handling -
+#'   use it only when the caller has already established the rows are new.
+#' @param update_cols The columns to overwrite when a row already exists.
+#' @return Invisibly, the number of rows written.
+#' @keywords internal
+#' @noRd
+episodic_db_write_many <- function(
+  con,
+  table,
+  cols,
+  values,
+  key_cols = NULL,
+  update_cols = NULL
+) {
+  n <- length(values[[1]])
+  if (n == 0) {
+    return(invisible(0L))
+  }
+  tuple <- paste0("(", paste(rep("?", length(cols)), collapse = ", "), ")")
+
+  # Both dialects spell "insert, or update what is already there" their own
+  # way, and neither understands the other's. Same split as
+  # episodic_db_last_insert_id() and episodic_db_pragmas() already make.
+  tail <- ""
+  if (!is.null(key_cols) && length(update_cols) > 0) {
+    tail <- if (inherits(con, "SQLiteConnection")) {
+      paste0(
+        " ON CONFLICT (",
+        paste(key_cols, collapse = ", "),
+        ") DO UPDATE SET ",
+        paste(sprintf("%s = excluded.%s", update_cols, update_cols), collapse = ", ")
+      )
+    } else {
+      paste0(
+        " ON DUPLICATE KEY UPDATE ",
+        paste(sprintf("%s = VALUES(%s)", update_cols, update_cols), collapse = ", ")
+      )
+    }
+  }
+
+  # Chunked on the placeholder count, not the row count: a wide table hits
+  # the driver's parameter ceiling far sooner than a narrow one.
+  per_chunk <- max(1L, as.integer(floor(5000 / length(cols))))
+  chunks <- split(seq_len(n), ceiling(seq_len(n) / per_chunk))
+  for (idx in chunks) {
+    sql <- paste0(
+      "INSERT INTO ", table, " (", paste(cols, collapse = ", "), ") VALUES ",
+      paste(rep(tuple, length(idx)), collapse = ", "),
+      tail
+    )
+    # One flat list, row-major: every element length 1, so the driver binds
+    # and executes exactly once.
+    params <- vector("list", length(idx) * length(cols))
+    k <- 1L
+    for (i in idx) {
+      for (col in cols) {
+        params[[k]] <- values[[col]][i]
+        k <- k + 1L
+      }
+    }
+    DBI::dbExecute(con, sql, params = params)
+  }
+  invisible(n)
+}
+
 episodic_db_chunk_size <- 500L
 
 #' The subset of `keys` already present in `episodic_case.source_key`
@@ -327,44 +414,47 @@ episodic_db_case_insert_new <- function(con, cases, run_id) {
     return(0L)
   }
 
-  # One prepared statement, bound once with every row's parameters
-  # instead of parsed and executed anew for each row - the same
-  # `INSERT`, sent as one round trip per chunk rather than one per case.
-  chunks <- split(
-    seq_len(n_inserted),
-    ceiling(seq_len(n_inserted) / episodic_db_chunk_size)
-  )
-  stmt <- DBI::dbSendStatement(
+  # Every row's placeholders in one statement. This used to bind a single
+  # prepared statement in chunks, which reads like a batch but is not one:
+  # RMariaDB executes a multi-row parameter list one row at a time, so the
+  # only thing that saved was the parse, and 2,400 cases still cost 2,400
+  # round trips.
+  episodic_db_write_many(
     con,
-    "INSERT INTO episodic_case
-      (source_key, lab_number, patient_key, sample_date, receipt_date,
-       pathogen, care_line, institution_id, ward, specialism, pc, sex, age,
-       first_seen_run)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-  )
-  on.exit(DBI::dbClearResult(stmt))
-  for (idx in chunks) {
-    batch <- to_insert[idx, , drop = FALSE]
-    DBI::dbBind(
-      stmt,
-      list(
-        batch$source_key,
-        batch$lab_number,
-        batch$patient_key,
-        episodic_sql_date(batch$sample_date),
-        episodic_sql_date(batch$receipt_date),
-        batch$pathogen,
-        batch$care_line,
-        batch$institution_id,
-        batch$ward,
-        batch$specialism,
-        batch$pc,
-        batch$sex,
-        batch$age,
-        rep(run_id, nrow(batch))
-      )
+    table = "episodic_case",
+    cols = c(
+      "source_key",
+      "lab_number",
+      "patient_key",
+      "sample_date",
+      "receipt_date",
+      "pathogen",
+      "care_line",
+      "institution_id",
+      "ward",
+      "specialism",
+      "pc",
+      "sex",
+      "age",
+      "first_seen_run"
+    ),
+    values = list(
+      source_key = to_insert$source_key,
+      lab_number = to_insert$lab_number,
+      patient_key = to_insert$patient_key,
+      sample_date = episodic_sql_date(to_insert$sample_date),
+      receipt_date = episodic_sql_date(to_insert$receipt_date),
+      pathogen = to_insert$pathogen,
+      care_line = to_insert$care_line,
+      institution_id = to_insert$institution_id,
+      ward = to_insert$ward,
+      specialism = to_insert$specialism,
+      pc = to_insert$pc,
+      sex = to_insert$sex,
+      age = to_insert$age,
+      first_seen_run = rep(run_id, n_inserted)
     )
-  }
+  )
   n_inserted
 }
 

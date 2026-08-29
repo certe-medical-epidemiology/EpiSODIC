@@ -48,15 +48,24 @@ episodic_triangle_update <- function(
   sample_dates <- names(counts)
   n_cases <- as.integer(counts)
 
-  for (i in seq_along(sample_dates)) {
-    episodic_db_reporting_triangle_upsert(
-      con,
-      stream_id = stream_id,
-      sample_date = sample_dates[i],
-      run_date = run_date,
-      n_cases = n_cases[i]
-    )
-  }
+  # One statement for the whole stream, not one per sample date. This is
+  # the single hottest write in a run - a stream with two years of daily
+  # cases has ~600 distinct dates, and at two round trips each (a SELECT
+  # to see whether the row exists, then an INSERT or an UPDATE) one stream
+  # alone cost twelve seconds against a networked database.
+  episodic_db_write_many(
+    con,
+    table = "episodic_reporting_triangle",
+    cols = c("stream_id", "sample_date", "run_date", "n_cases"),
+    values = list(
+      stream_id = rep(stream_id, length(sample_dates)),
+      sample_date = sample_dates,
+      run_date = rep(run_date, length(sample_dates)),
+      n_cases = n_cases
+    ),
+    key_cols = c("stream_id", "sample_date", "run_date"),
+    update_cols = "n_cases"
+  )
   invisible(length(sample_dates))
 }
 

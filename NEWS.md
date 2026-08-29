@@ -1,3 +1,10 @@
+# EpiSODIC 0.8.12
+
+## Changed
+
+- `episodic_run_cron()` now writes in batches rather than a row at a time, which is what made a run against a networked MariaDB take minutes where the same run against a local SQLite file takes seconds. The reporting-triangle update (one `SELECT` plus an `INSERT` or `UPDATE` per distinct sample date per stream - by far the hottest write in a run, twelve seconds for a single large stream), the case insert, institution resolution and lattice-stream enumeration all now send one statement per batch instead of one per row. `episodic_reconcile_stream()` also no longer reads a stream's open clusters at a point where the value is always overwritten before anything reads it, and `episodic_suppress_lattice()` clears last run's suppression in one statement rather than one per cluster. On a 950-case, 605-stream synthetic run this takes the number of database round trips from 14,673 to 2,231; every one of the nineteen tables is byte-identical afterwards, ids included
+- Note for anyone extending the write layer: chunked `DBI::dbBind()` looks like a batch and is not one. RMariaDB binds a multi-row parameter list with `while (bind_next_row()) { execute(); }`, one `mysql_stmt_execute()` per row, so it saves the statement parse and pays every round trip regardless. What actually collapses them is a single statement carrying every row's placeholders, which is what the new internal `episodic_db_write_many()` builds (with `ON CONFLICT`/`ON DUPLICATE KEY UPDATE` per dialect where an upsert is wanted)
+
 # EpiSODIC 0.8.11
 
 ## Changed

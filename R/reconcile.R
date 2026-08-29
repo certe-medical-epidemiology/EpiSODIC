@@ -120,7 +120,12 @@ episodic_reconcile_stream <- function(
 
   candidates <- episodic_reconcile_merge_detections(detections)
 
-  open_clusters <- episodic_db_clusters_for_stream(con, stream_id)
+  # No read of the open clusters here on purpose. The candidate loop below
+  # re-reads them at the top of every iteration (it has to - see there),
+  # and the ageing step re-reads them again afterwards, so a read at this
+  # point is overwritten before anything looks at it whether or not there
+  # are candidates. It is one round trip per stream for nothing, which on
+  # a run enumerating several hundred streams is not nothing.
   matched_cluster_ids <- character(0)
 
   for (i in seq_len(nrow(candidates))) {
