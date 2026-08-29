@@ -41,6 +41,23 @@ test_that("episodic_run_cron() completes successfully end to end on a small synt
   expect_true(nchar(run$config_snapshot) > 0)
   expect_gt(DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM episodic_case")$n, 0)
   expect_gt(DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM episodic_stream")$n, 0)
+
+  # A cluster's n_cases and its linked line list are two expressions of the
+  # same thing - the stream's own cases inside the cluster's interval - and
+  # must not be able to disagree. They did: the recount filtered on
+  # pathogen and institution only, so a ward cluster counted the whole
+  # building while its line list correctly held the ward, and n_cases feeds
+  # ratio = n_cases / expected and therefore the queue's ordering.
+  mismatch <- DBI::dbGetQuery(
+    con,
+    "SELECT c.cluster_id, c.n_cases, COUNT(cc.case_id) AS linked
+       FROM episodic_cluster c
+       LEFT JOIN episodic_cluster_case cc ON cc.cluster_id = c.cluster_id
+      WHERE c.merged_into IS NULL
+      GROUP BY c.cluster_id, c.n_cases
+     HAVING c.n_cases <> COUNT(cc.case_id)"
+  )
+  expect_equal(nrow(mismatch), 0)
 })
 
 test_that("running the cron twice over the same window is idempotent on case counts", {
@@ -559,4 +576,89 @@ test_that("episodic_case_region_code() places a case the same way at every level
     episodic_case_region_code(cases[0, , drop = FALSE], "pathogen_area"),
     character(0)
   )
+})
+
+test_that("muting a stream suppresses its new detections, and unmuting restores them", {
+  path <- tempfile(fileext = ".sqlite")
+  cases <- function() {
+    episodic_synthetic_cases(
+      start_date = as.Date("2024-06-01"),
+      end_date = as.Date("2024-08-31"),
+      seed = 3
+    )
+  }
+  episodic_run_cron(
+    db_path = path,
+    cases = cases,
+    run_date = as.Date("2024-08-31")
+  )
+  con <- episodic_db_connect(path)
+  on.exit(DBI::dbDisconnect(con))
+
+  detected <- DBI::dbGetQuery(
+    con,
+    "SELECT stream_id, COUNT(*) n FROM episodic_detection
+      GROUP BY stream_id ORDER BY n DESC LIMIT 1"
+  )
+  skip_if(nrow(detected) == 0, "no detections in this window to mute")
+  target <- detected$stream_id[1]
+
+  user_id <- episodic_db_app_user_insert(
+    con,
+    "muter",
+    "Muter",
+    "m@example.org",
+    "x",
+    "epidemiologist"
+  )
+  episodic_db_stream_mute_insert(
+    con,
+    stream_id = target,
+    muted_from = "2024-09-01",
+    muted_until = "2024-12-31",
+    reason = "seasonal",
+    note = NA,
+    user_id = user_id
+  )
+
+  # The app promises a mute "temporarily suppresses new detections for this
+  # stream". It used to promise only that: the mute was recorded, shown in
+  # the activity log, and read by nothing that decides anything.
+  before <- DBI::dbGetQuery(
+    con,
+    "SELECT COUNT(*) n FROM episodic_detection WHERE stream_id = ?",
+    params = list(target)
+  )$n
+  episodic_run_cron(
+    db_path = path,
+    cases = cases,
+    run_date = as.Date("2024-09-15")
+  )
+  during <- DBI::dbGetQuery(
+    con,
+    "SELECT COUNT(*) n FROM episodic_detection WHERE stream_id = ?",
+    params = list(target)
+  )$n
+  expect_equal(during, before)
+
+  # Other streams are unaffected by one stream's mute.
+  others <- DBI::dbGetQuery(
+    con,
+    "SELECT COUNT(*) n FROM episodic_detection WHERE stream_id <> ?",
+    params = list(target)
+  )$n
+  expect_gt(others, 0)
+
+  # And a run outside the mute window detects on it again.
+  episodic_run_cron(
+    db_path = path,
+    cases = cases,
+    run_date = as.Date("2025-01-15")
+  )
+  after <- DBI::dbGetQuery(
+    con,
+    "SELECT COUNT(*) n FROM episodic_detection WHERE stream_id = ?",
+    params = list(target)
+  )$n
+  expect_gt(after, during)
 })

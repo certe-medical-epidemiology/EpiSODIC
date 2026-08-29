@@ -753,6 +753,8 @@ episodic_run_cron_body <- function(
   # its configured `b` needs. Collected so the run can say so once, rather
   # than each stream quietly producing nothing.
   farrington_short <- NULL
+  n_muted_streams <- 0L
+  muted_stream_ids <- episodic_db_muted_stream_ids(con, run_date)
 
   episodic_trace("Running same-place detector")
   same_place_detections <- episodic_detect_same_place(
@@ -827,12 +829,31 @@ episodic_run_cron_body <- function(
       ]
     )
 
+    # A muted stream produces no new detections, which is exactly what the
+    # app promises when it offers the action ("temporarily suppresses new
+    # detections for this stream ... so the same cause is not flagged again
+    # and again"). Until now the mute was written, shown in the activity
+    # log, and consulted by nothing: an epidemiologist could mute a stream
+    # for a known seasonal peak and the next run would open a dossier on it
+    # regardless.
+    #
+    # Detections only. Reconciliation still runs below, so clusters that
+    # were already open go on ageing and closing normally - a mute quiets
+    # what is coming, it does not freeze what is already on the board.
+    muted <- stream$stream_id %in% muted_stream_ids
+    if (muted) {
+      stream_detections <- stream_detections[0, , drop = FALSE]
+      n_muted_streams <- n_muted_streams + 1L
+      episodic_trace_debug(debug, "debug:   stream is muted; detections suppressed")
+    }
+
     # MEM runs on pathogen_region (L5) streams only, for pathogens
     # flagged mem_applicable - see episodic_detect_mem()'s own docs for
     # why L5 rather than every level.
     pc_mem <- pathogen_config[pathogen_config$pathogen == stream$pathogen, ]
     if (
       nrow(pc_mem) > 0 &&
+        !muted &&
         isTRUE(as.logical(pc_mem$mem_applicable[1])) &&
         identical(stream$level, "pathogen_region")
     ) {
@@ -843,7 +864,8 @@ episodic_run_cron_body <- function(
       episodic_trace_debug(debug, "debug:   MEM detect done")
     }
 
-    eligible <- nrow(stream_cases) > 0 &&
+    eligible <- !muted &&
+      nrow(stream_cases) > 0 &&
       episodic_eligibility_gate(stream_cases, run_date, config)
     episodic_trace_debug(debug, "debug:   eligibility gate: ", eligible)
     if (eligible) {
@@ -1141,6 +1163,13 @@ episodic_run_cron_body <- function(
     episodic_trace_debug(debug, "debug:   episodic_reconcile_stream() done")
     n_new_total <- n_new_total + reconcile_result$n_new
     n_updated_total <- n_updated_total + reconcile_result$n_updated
+  }
+  if (n_muted_streams > 0) {
+    episodic_trace(
+      "Detection suppressed on ",
+      n_muted_streams,
+      " muted stream(s); their existing clusters still age and close normally"
+    )
   }
   if (!is.null(farrington_short) && nrow(farrington_short) > 0) {
     episodic_trace(

@@ -1,3 +1,11 @@
+# EpiSODIC 0.8.14
+
+## Fixed
+
+- A cluster's `n_cases` counted the wrong cases for any stream narrower than an institution. `episodic_reconcile_case_count()` recounted on pathogen and institution alone, so a ward cluster was recorded as holding every case in the hospital and an area cluster every case of that pathogen anywhere - while `episodic_reconcile_link_cases()`, which builds the same cluster's line list, correctly applied the ward and region filters. The two disagreed, and `n_cases` is not cosmetic: it feeds `ratio = n_cases / expected`, and so the priority score and the order of the assessment queue. Both now go through one function, `episodic_db_cases_for_stream_id()`, which is the single place stream membership is defined; a run asserts that every cluster's `n_cases` equals its own linked line list
+- Muting a stream did nothing. The app offers the action and tells the user it "temporarily suppresses new detections for this stream ... so the same cause is not flagged again and again"; the mute was written to `episodic_stream_mute`, shown in the activity log, and read by nothing that decides anything, so the next run opened a dossier on the muted stream exactly as before. A stream under an unrevoked mute covering the run date now produces no new detections from any detector. Deliberately detections only: clusters already open go on ageing and closing normally, because a mute quiets what is coming rather than freezing what is already on the board. A run reports how many streams it suppressed
+- `episodic_reconcile_case_count()` and `episodic_reconcile_link_cases()` no longer swallow database errors. Both wrapped their whole body in a `tryCatch()` that turned any failure into a plausible-looking fallback - a count taken from the detector's own reckoning, or a cluster with no line list at all - so a connection that failed mid-run committed wrong numbers under a run that reported success. Only the documented case, a stream that does not exist, still falls back; anything else propagates and rolls the run back
+
 # EpiSODIC 0.8.13
 
 ## Fixed

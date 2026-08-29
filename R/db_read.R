@@ -301,8 +301,11 @@ episodic_db_clusters_for_streams <- function(con, stream_ids) {
 #' @param columns Case columns to select. `ward` and `pc` are always
 #'   fetched regardless, since the ward and region filters need them.
 #' @param first_day,last_day Optional inclusive `sample_date` bounds.
-#' @return A data frame of the stream's cases, or zero rows if the stream
-#'   does not exist.
+#' @return A data frame of the stream's cases. Carries an
+#'   `episodic_stream_exists` attribute, so a caller can tell "this stream
+#'   has no cases" from "there is no such stream" - which
+#'   `episodic_reconcile_case_count()` needs, since only the second is a
+#'   reason to fall back to a detector's own count.
 #' @keywords internal
 #' @noRd
 episodic_db_cases_for_stream_id <- function(
@@ -325,6 +328,10 @@ episodic_db_cases_for_stream_id <- function(
       con,
       sprintf("SELECT %s FROM episodic_case WHERE 0 = 1", select)
     ))
+  }
+  exists_marker <- function(df) {
+    attr(df, "episodic_stream_exists") <- TRUE
+    df
   }
 
   where <- "pathogen = ? AND (? IS NULL OR institution_id = ?)"
@@ -357,7 +364,7 @@ episodic_db_cases_for_stream_id <- function(
     region <- episodic_case_region_code(cases, stream$level[1])
     cases <- cases[!is.na(region) & region == stream$region_code[1], ]
   }
-  cases
+  exists_marker(cases)
 }
 
 #' @param cluster_id A single `cluster_id`.
@@ -453,6 +460,27 @@ episodic_db_stream_mutes <- function(con, stream_id) {
     "SELECT * FROM episodic_stream_mute WHERE stream_id = ? ORDER BY created_at",
     params = list(stream_id)
   )
+}
+
+#' The streams under an active mute on a given date
+#'
+#' A mute is in effect when the date falls inside its window and nobody
+#' has revoked it. Read once per run rather than once per stream.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param as_of The date to judge the window against.
+#' @return An integer vector of `stream_id`s, possibly empty.
+#' @keywords internal
+#' @noRd
+episodic_db_muted_stream_ids <- function(con, as_of) {
+  params <- list(episodic_sql_date(as_of), episodic_sql_date(as_of))
+  res <- DBI::dbGetQuery(
+    con,
+    "SELECT DISTINCT stream_id FROM episodic_stream_mute
+      WHERE revoked_at IS NULL AND muted_from <= ? AND muted_until >= ?",
+    params = params
+  )
+  as.integer(res$stream_id)
 }
 
 #' @param username A single username.

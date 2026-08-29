@@ -1044,3 +1044,101 @@ test_that("a scoring closure that queries the database is scored and stored corr
   expect_equal(calls, 2L)
   expect_equal(clusters2$priority_score[1], 40)
 })
+
+test_that("a cluster's recounted n_cases respects the stream's ward, not just its institution", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  institution_id <- episodic_db_institution_upsert(
+    con,
+    institution_key = digest::digest("h-ward", algo = "sha1", serialize = FALSE),
+    display_name = "Test Hospital",
+    institution_type = "hospital",
+    care_line = "second",
+    is_monitored = TRUE
+  )
+  stream_id <- episodic_db_stream_upsert(
+    con,
+    stream_key = episodic_stream_key(
+      "pathogen_ward",
+      "Norovirus",
+      care_line = "second",
+      institution_id = institution_id,
+      ward = "B4"
+    ),
+    level = "pathogen_ward",
+    pathogen = "Norovirus",
+    care_line = "second",
+    institution_id = institution_id,
+    ward = "B4",
+    observed_date = "2025-01-05"
+  )
+  run_id <- episodic_db_run_start(con, "h", "a", run_date = "2025-01-10")
+  # Three on the stream's own ward, seven elsewhere in the same hospital,
+  # same pathogen, same days.
+  for (i in 1:10) {
+    key <- sprintf("W%d", i)
+    params <- list(
+      key,
+      key,
+      key,
+      institution_id,
+      if (i <= 3) "B4" else "C9",
+      run_id
+    )
+    DBI::dbExecute(
+      con,
+      "INSERT INTO episodic_case (source_key, lab_number, patient_key, sample_date,
+         pathogen, care_line, institution_id, ward, first_seen_run)
+       VALUES (?, ?, ?, '2025-01-05', 'Norovirus', 'second', ?, ?, ?)",
+      params = params
+    )
+  }
+
+  # n_cases drives ratio = n_cases / expected, and so the priority score
+  # and the order of the assessment queue. Counting the whole building for
+  # a ward cluster does not just misreport it, it reorders the queue.
+  expect_equal(
+    episodic_reconcile_case_count(
+      con,
+      stream_id,
+      "2025-01-01",
+      "2025-01-09",
+      data.frame(n_cases = 3L),
+      data.frame(n_cases = 3L)
+    ),
+    3L
+  )
+})
+
+test_that("recounting falls back to the inputs only when the stream is absent, not on a database error", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  # No such stream: the documented fallback, used by callers that pass
+  # synthetic clusters with no stream row behind them.
+  expect_equal(
+    episodic_reconcile_case_count(
+      con,
+      -1L,
+      "2025-01-01",
+      "2025-01-09",
+      data.frame(n_cases = 4L),
+      data.frame(n_cases = 7L)
+    ),
+    7L
+  )
+  # A broken connection must not be silently turned into a plausible
+  # number: a wrong count committed by a run that reported success is
+  # worse than a run that fails and says why.
+  broken <- episodic_test_db()
+  DBI::dbDisconnect(broken)
+  expect_error(
+    episodic_reconcile_case_count(
+      broken,
+      1L,
+      "2025-01-01",
+      "2025-01-09",
+      data.frame(n_cases = 4L),
+      data.frame(n_cases = 7L)
+    )
+  )
+})
