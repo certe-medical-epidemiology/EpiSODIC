@@ -246,17 +246,6 @@ episodic_db_stream_upsert <- function(
   episodic_db_last_insert_id(con)
 }
 
-#' How many `source_key`/`patient_key` (etc.) values one `IN (...)` query
-#' binds at a time.
-#'
-#' A single query with tens of thousands of placeholders risks the
-#' driver's own limit (SQLite's default `SQLITE_MAX_VARIABLE_NUMBER`,
-#' MariaDB's `max_allowed_packet`) - chunking keeps every lookup well
-#' under either, whatever the batch size an operator's extract step
-#' hands to a run.
-#' @keywords internal
-#' @noRd
-
 #' Insert or upsert many rows in one statement per chunk
 #'
 #' The package's write helpers used to send one row per `DBI` call, which
@@ -310,12 +299,18 @@ episodic_db_write_many <- function(
           " ON CONFLICT (",
           paste(key_cols, collapse = ", "),
           ") DO UPDATE SET ",
-          paste(sprintf("%s = excluded.%s", update_cols, update_cols), collapse = ", ")
+          paste(
+            sprintf("%s = excluded.%s", update_cols, update_cols),
+            collapse = ", "
+          )
         )
       } else {
         paste0(
           " ON DUPLICATE KEY UPDATE ",
-          paste(sprintf("%s = VALUES(%s)", update_cols, update_cols), collapse = ", ")
+          paste(
+            sprintf("%s = VALUES(%s)", update_cols, update_cols),
+            collapse = ", "
+          )
         )
       }
     } else if (sqlite) {
@@ -335,7 +330,11 @@ episodic_db_write_many <- function(
   chunks <- split(seq_len(n), ceiling(seq_len(n) / per_chunk))
   for (idx in chunks) {
     sql <- paste0(
-      "INSERT INTO ", table, " (", paste(cols, collapse = ", "), ") VALUES ",
+      "INSERT INTO ",
+      table,
+      " (",
+      paste(cols, collapse = ", "),
+      ") VALUES ",
       paste(rep(tuple, length(idx)), collapse = ", "),
       tail
     )

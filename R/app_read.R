@@ -1234,7 +1234,7 @@ episodic_app_streams_screen <- function(con, page = 1L, page_size = 50L) {
     )
     streams$farrington_ready <-
       !is.na(streams$farrington_weeks_need) &
-      streams$farrington_weeks_have >= streams$farrington_weeks_need
+        streams$farrington_weeks_have >= streams$farrington_weeks_need
   }
   list(
     streams = streams,

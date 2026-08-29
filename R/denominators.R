@@ -217,7 +217,10 @@ episodic_check_denominators_columns <- c(
 #' @noRd
 episodic_check_denominators_structure <- function(denominators) {
   found <- list()
-  missing_cols <- setdiff(episodic_check_denominators_columns, names(denominators))
+  missing_cols <- setdiff(
+    episodic_check_denominators_columns,
+    names(denominators)
+  )
   if (length(missing_cols) > 0) {
     found[[length(found) + 1]] <- episodic_check_finding(
       severity = "problem",
@@ -319,7 +322,8 @@ episodic_check_denominators_values <- function(denominators) {
   }
 
   if (
-    "n_tests" %in% names(denominators) &&
+    "n_tests" %in%
+      names(denominators) &&
       nrow(denominators) > 0 &&
       !is.numeric(denominators$n_tests)
   ) {
@@ -353,10 +357,7 @@ episodic_check_denominators_advice <- function(denominators) {
     )
     return(found)
   }
-  if (
-    "n_tests" %in% names(denominators) &&
-      is.numeric(denominators$n_tests)
-  ) {
+  if ("n_tests" %in% names(denominators) && is.numeric(denominators$n_tests)) {
     idx <- which(!is.na(denominators$n_tests) & denominators$n_tests <= 0)
     if (length(idx) > 0) {
       found[[length(found) + 1]] <- episodic_check_finding(

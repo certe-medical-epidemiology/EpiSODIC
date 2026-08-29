@@ -349,7 +349,8 @@ episodic_check_institution_activity_values <- function(activity) {
   }
 
   if (
-    "patient_days" %in% names(activity) &&
+    "patient_days" %in%
+      names(activity) &&
       nrow(activity) > 0 &&
       !all(is.na(activity$patient_days)) &&
       !is.numeric(activity$patient_days)
@@ -410,8 +411,7 @@ episodic_check_institution_activity_advice <- function(activity) {
   }
 
   if (
-    "patient_days" %in% names(activity) &&
-      is.numeric(activity$patient_days)
+    "patient_days" %in% names(activity) && is.numeric(activity$patient_days)
   ) {
     idx <- which(!is.na(activity$patient_days) & activity$patient_days < 0)
     if (length(idx) > 0) {

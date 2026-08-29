@@ -1050,7 +1050,11 @@ test_that("a cluster's recounted n_cases respects the stream's ward, not just it
   on.exit(DBI::dbDisconnect(con))
   institution_id <- episodic_db_institution_upsert(
     con,
-    institution_key = digest::digest("h-ward", algo = "sha1", serialize = FALSE),
+    institution_key = digest::digest(
+      "h-ward",
+      algo = "sha1",
+      serialize = FALSE
+    ),
     display_name = "Test Hospital",
     institution_type = "hospital",
     care_line = "second",
