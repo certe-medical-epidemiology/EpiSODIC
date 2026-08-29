@@ -362,6 +362,7 @@
   "info.access.title": "Accès",
   "info.access.body": "La lecture est anonyme : toute personne accédant à l'application peut consulter les clusters, les flux et les archives sans se connecter. La connexion n'est nécessaire que pour classer un cluster, le clôturer ou mettre un flux en sourdine - chaque écriture est attribuée à l'utilisateur connecté.",
 
+  "streams.col.farrington": "Farrington",
   "streams.col.baseline_excluded": "Référence exclue",
 
   "interpretation.fragment.curve_shape.point_source": "Tous les cas se situent dans une seule période d'incubation maximale, ce qui indique une source ponctuelle : une exposition partagée autour d'un même moment, plutôt qu'une transmission de personne à personne.",

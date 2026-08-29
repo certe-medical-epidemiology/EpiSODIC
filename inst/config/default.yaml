@@ -68,10 +68,15 @@ same_place:
 # Farrington detector (surveillance::farringtonFlexible()).
 farrington:
   aggregation: week        # cases are aggregated to weekly counts before fitting
-  b: 3                     # number of years of history to compare against
-                            # (3, not the more conventional 5, so the bundled
-                            # 5-year demo has margin to actually fire; raise
-                            # this in a real instance with more history)
+  b: 2                     # number of years of history to compare against.
+                            # The detector needs (b + 1) * 52 weeks before it
+                            # will fit at all, so this is not a free dial: at
+                            # b: 3 a stream needs four years of history, which
+                            # silently switched Farrington off entirely for an
+                            # instance carrying two. A run now says so out
+                            # loud when it happens. Raise this as history
+                            # accrues - 5 is the conventional choice - and the
+                            # detector starts fitting again by itself.
   w: 3                     # half-window (weeks) around the same calendar week in each reference year
   reweight: true
   weightsThreshold: 2.58

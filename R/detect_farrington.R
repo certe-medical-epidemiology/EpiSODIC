@@ -91,9 +91,19 @@ episodic_detect_farrington <- function(
   fc <- config$farrington
   weekly <- episodic_weekly_bins(dates, run_date)
 
+  # Not enough baseline to fit against. Reported, not swallowed: an empty
+  # result is indistinguishable from "looked and found nothing", so a
+  # stream whose history cannot support the configured `b` looked exactly
+  # like a stream Farrington was watching and clearing. For a surveillance
+  # system that is the wrong silence - the operator needs to know which of
+  # their detectors is actually running.
   min_weeks_required <- (fc$b + 1) * 52
   if (length(weekly$counts) < min_weeks_required) {
-    return(empty) # insufficient baseline history for the configured b
+    return(episodic_farrington_insufficient(
+      empty,
+      have = length(weekly$counts),
+      need = min_weeks_required
+    ))
   }
 
   last_idx <- length(weekly$counts)
@@ -184,7 +194,11 @@ episodic_farrington_trend <- function(
 
   min_weeks_required <- (fc$b + 1) * 52
   if (length(weekly$counts) < min_weeks_required) {
-    return(empty)
+    return(episodic_farrington_insufficient(
+      empty,
+      have = length(weekly$counts),
+      need = min_weeks_required
+    ))
   }
 
   n_weeks_to_compute <- if (n_weeks_existing == 0) max_backfill_weeks else 1L
@@ -242,6 +256,30 @@ episodic_farrington_fit <- function(weekly, range_idx, fc, population = NULL) {
     )),
     error = function(e) NULL
   )
+}
+
+
+#' Mark an empty Farrington result as "not enough history", not "nothing found"
+#'
+#' Carried as an attribute so the shape callers already `rbind()` is
+#' unchanged, and so a caller that does not care can keep ignoring it.
+#' `episodic_farrington_shortfall()` reads it back.
+#'
+#' @param empty The zero-row detection record to annotate.
+#' @param have,need Weeks of history the stream has, and the number the
+#'   configured `b` requires.
+#' @keywords internal
+#' @noRd
+episodic_farrington_insufficient <- function(empty, have, need) {
+  attr(empty, "episodic_insufficient_history") <- c(have = have, need = need)
+  empty
+}
+
+#' The shortfall recorded by `episodic_farrington_insufficient()`, or `NULL`
+#' @keywords internal
+#' @noRd
+episodic_farrington_shortfall <- function(x) {
+  attr(x, "episodic_insufficient_history", exact = TRUE)
 }
 
 #' Build a weekly patient-days vector aligned to Farrington's weekly bins

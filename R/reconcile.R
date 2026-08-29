@@ -810,9 +810,7 @@ episodic_reconcile_link_cases <- function(
         region <- episodic_case_region_code(cases, stream$level[1])
         cases <- cases[!is.na(region) & region == stream$region_code[1], ]
       }
-      for (case_id in cases$case_id) {
-        episodic_db_cluster_case_link(con, cluster_id, case_id)
-      }
+      episodic_db_cluster_case_link_many(con, cluster_id, cases$case_id)
     },
     error = function(e) invisible(NULL)
   )

@@ -1208,9 +1208,33 @@ episodic_app_streams_screen <- function(con, page = 1L, page_size = 50L) {
   # never quietly different from what an epidemiologist expects. Computed only
   # for this page's streams.
   if (nrow(streams) > 0) {
-    streams$baseline_excluded <- lapply(streams$stream_id, function(sid) {
-      episodic_baseline_excluded_windows(con, sid)
-    })
+    streams$baseline_excluded <- episodic_baseline_excluded_windows_many(
+      con,
+      streams$stream_id
+    )
+    # Whether Farrington can actually run on this stream. It needs
+    # (b + 1) * 52 weeks of history and returns nothing at all below that,
+    # which is indistinguishable on screen from having looked and found
+    # nothing - so a stream nobody's statistical detector is watching
+    # looked exactly like a quiet one. Read off first_seen and the run's
+    # own date, so it costs no query: both are already in hand.
+    b <- config_snapshot$farrington$b
+    asof <- if (!is.null(run) && !is.na(run$run_date)) {
+      as.Date(run$run_date)
+    } else {
+      Sys.Date()
+    }
+    streams$farrington_weeks_need <- if (is.null(b)) {
+      NA_integer_
+    } else {
+      as.integer((b + 1) * 52)
+    }
+    streams$farrington_weeks_have <- as.integer(
+      as.integer(asof - as.Date(streams$first_seen)) %/% 7L + 1L
+    )
+    streams$farrington_ready <-
+      !is.na(streams$farrington_weeks_need) &
+      streams$farrington_weeks_have >= streams$farrington_weeks_need
   }
   list(
     streams = streams,

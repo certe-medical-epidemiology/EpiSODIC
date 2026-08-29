@@ -93,6 +93,11 @@ CREATE TABLE episodic_detection_run (
   host              TEXT NOT NULL,
   account           TEXT NOT NULL,
   started_at        TEXT NOT NULL,
+  -- The run's own business date, as passed to episodic_run_cron(). Nearly
+  -- always the date part of started_at, but not by construction: a
+  -- backfill or a replay names the date it is standing in for, and the
+  -- reporting-delay calculation reads this, not the wall clock.
+  run_date          TEXT NOT NULL,
   finished_at       TEXT,
   status            TEXT NOT NULL CHECK (status IN (
                       'running', 'success', 'failed', 'partial')),
@@ -278,17 +283,6 @@ CREATE TABLE episodic_assessment_event (
 );
 
 CREATE INDEX idx_episodic_assessment_event_cluster ON episodic_assessment_event(cluster_id);
-
--- ---------------------------------------------------------------------
--- 5.7 Reporting triangle (cron)
--- ---------------------------------------------------------------------
-CREATE TABLE episodic_reporting_triangle (
-  stream_id   INTEGER NOT NULL REFERENCES episodic_stream(stream_id),
-  sample_date TEXT NOT NULL,
-  run_date    TEXT NOT NULL,
-  n_cases     INTEGER NOT NULL,
-  PRIMARY KEY (stream_id, sample_date, run_date)
-);
 
 -- ---------------------------------------------------------------------
 -- Weekly Farrington trend points (cron). The multi-year trend panel needs

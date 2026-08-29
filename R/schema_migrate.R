@@ -671,10 +671,6 @@ episodic_db_schema_statements <- function(dialect) {
         "  pathogen       TEXT NOT NULL,  -- raw lab-provided string, used verbatim" = "  pathogen       VARCHAR(191) NOT NULL,  -- raw lab-provided string, used verbatim",
         "care_line      TEXT NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown'))," = "care_line      VARCHAR(20) NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown')),"
       ),
-      episodic_reporting_triangle = c(
-        "  sample_date TEXT NOT NULL," = "  sample_date VARCHAR(10) NOT NULL,",
-        "  run_date    TEXT NOT NULL," = "  run_date    VARCHAR(10) NOT NULL,"
-      ),
       episodic_stream_trend = c(
         "  week_start TEXT NOT NULL," = "  week_start VARCHAR(10) NOT NULL,"
       ),

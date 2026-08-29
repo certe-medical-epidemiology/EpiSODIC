@@ -345,7 +345,12 @@ episodic_run_cron <- function(
     ")"
   )
 
-  run_id <- episodic_db_run_start(con, host = host, account = account)
+  run_id <- episodic_db_run_start(
+    con,
+    host = host,
+    account = account,
+    run_date = run_date
+  )
   episodic_trace("Run ", run_id, " started")
 
   # Data problems are the operator's to fix, so they must reach the
@@ -744,6 +749,10 @@ episodic_run_cron_body <- function(
   n_detections_total <- 0L
   n_new_total <- 0L
   n_updated_total <- 0L
+  # Streams that were eligible for Farrington but do not have the baseline
+  # its configured `b` needs. Collected so the run can say so once, rather
+  # than each stream quietly producing nothing.
+  farrington_short <- NULL
 
   episodic_trace("Running same-place detector")
   same_place_detections <- episodic_detect_same_place(
@@ -776,6 +785,15 @@ episodic_run_cron_body <- function(
   episodic_trace("Farrington owes ", farrington_weeks, " week(s) this run")
 
   streams <- episodic_db_streams(con) # refresh: same_place/rare_trigger may have created streams
+  # Read once for the whole run rather than once per stream inside
+  # episodic_reconcile_stream(). Only a stream's own candidates can open a
+  # cluster on it, so a snapshot taken here cannot go stale for any stream
+  # the loop then skips.
+  streams_with_clusters <- unique(episodic_db_clusters(
+    con,
+    open_only = TRUE,
+    include_suppressed = TRUE
+  )$stream_id)
   episodic_trace(
     "Reconciling ",
     nrow(streams),
@@ -799,14 +817,6 @@ episodic_run_cron_body <- function(
       nrow(stream_cases),
       " case(s)"
     )
-
-    episodic_triangle_update(
-      con,
-      stream$stream_id,
-      stream_cases,
-      as.character(run_date)
-    )
-    episodic_trace_debug(debug, "debug:   triangle_update done")
 
     stream_detections <- rbind(
       same_place_detections[
@@ -885,17 +895,27 @@ episodic_run_cron_body <- function(
         farrington_weeks
       )
 
-      stream_detections <- rbind(
-        stream_detections,
-        episodic_detect_farrington(
-          farrington_cases,
-          stream$stream_id,
-          config,
-          run_date,
-          population = population,
-          n_weeks = farrington_weeks
-        )
+      farrington <- episodic_detect_farrington(
+        farrington_cases,
+        stream$stream_id,
+        config,
+        run_date,
+        population = population,
+        n_weeks = farrington_weeks
       )
+      shortfall <- episodic_farrington_shortfall(farrington)
+      if (!is.null(shortfall)) {
+        farrington_short <- rbind(
+          farrington_short,
+          data.frame(
+            stream_id = stream$stream_id,
+            have = unname(shortfall[["have"]]),
+            need = unname(shortfall[["need"]]),
+            stringsAsFactors = FALSE
+          )
+        )
+      }
+      stream_detections <- rbind(stream_detections, farrington)
       episodic_trace_debug(debug, "debug:   episodic_detect_farrington() done")
 
       # trend cache for the multi-year trend panel; see
@@ -1000,6 +1020,17 @@ episodic_run_cron_body <- function(
     weights <- config$priority_score$weights
     min_excess <- config$effect_size_floor$min_excess_over_upperbound %||% NA
     min_ratio <- config$effect_size_floor$min_ratio_observed_expected %||% NA
+    # A stream with no candidates this run and no open cluster from a
+    # previous one has nothing for reconciliation to do: matching, ageing
+    # and staleness all operate on clusters that do not exist. Skipping is
+    # worth a special case because it is the common case - most streams
+    # never alarm - and the call is two `SELECT`s deep even when it does
+    # nothing, which across several hundred streams was the single
+    # largest remaining source of round trips in a run.
+    if (nrow(stream_detections) == 0 && !(stream$stream_id %in% streams_with_clusters)) {
+      episodic_trace_debug(debug, "debug:   no candidates and no open clusters, skipping reconciliation")
+      next
+    }
     episodic_trace_debug(debug, "debug:   calling episodic_reconcile_stream()")
     reconcile_result <- episodic_reconcile_stream(
       con,
@@ -1110,6 +1141,17 @@ episodic_run_cron_body <- function(
     episodic_trace_debug(debug, "debug:   episodic_reconcile_stream() done")
     n_new_total <- n_new_total + reconcile_result$n_new
     n_updated_total <- n_updated_total + reconcile_result$n_updated
+  }
+  if (!is.null(farrington_short) && nrow(farrington_short) > 0) {
+    episodic_trace(
+      "Farrington had too little history on ",
+      nrow(farrington_short),
+      " of the eligible stream(s) and did not run there: it needs ",
+      max(farrington_short$need),
+      " weeks for the configured b, and the longest of those streams has ",
+      max(farrington_short$have),
+      ". Lower `farrington.b` or wait for the history to accrue."
+    )
   }
   episodic_trace(
     "Stream reconciliation done: ",

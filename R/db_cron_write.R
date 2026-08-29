@@ -20,7 +20,7 @@
 # Cron-side writers: the cron owns the facts and may upsert. These
 # functions are the only place in the package that write to
 # episodic_stream, episodic_institution, episodic_institution_activity,
-# episodic_case, episodic_reporting_triangle, episodic_denominator,
+# episodic_case, episodic_denominator,
 # episodic_detection, episodic_cluster, episodic_cluster_case,
 # episodic_detection_run and (for pre-renders) episodic_report_render. See
 # R/db_app_write.R for the insert-only counterparts. Parameters
@@ -47,61 +47,35 @@
 #' @keywords internal
 #' @noRd
 episodic_db_pathogen_config_load <- function(con, pathogen_config) {
-  for (i in seq_len(nrow(pathogen_config))) {
-    row <- pathogen_config[i, ]
-    existing <- episodic_db_pathogen_config_get(con, row$pathogen)
-    if (is.null(existing)) {
-      params <- list(
-        row$pathogen,
-        row$episode_days,
-        row$incub_min_days,
-        row$incub_max_days,
-        row$case_free_days,
-        row$cooldown_days,
-        as.integer(row$rt_applicable),
-        row$si_mean_days,
-        row$si_sd_days,
-        row$si_dist,
-        as.integer(row$mem_applicable),
-        row$severity_weight,
-        row$source_ref
-      )
-      DBI::dbExecute(
-        con,
-        "INSERT INTO episodic_pathogen_config
-          (pathogen, episode_days, incub_min_days, incub_max_days, case_free_days,
-           cooldown_days, rt_applicable, si_mean_days, si_sd_days, si_dist,
-           mem_applicable, severity_weight, source_ref)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        params = params
-      )
-    } else {
-      params <- list(
-        row$episode_days,
-        row$incub_min_days,
-        row$incub_max_days,
-        row$case_free_days,
-        row$cooldown_days,
-        as.integer(row$rt_applicable),
-        row$si_mean_days,
-        row$si_sd_days,
-        row$si_dist,
-        as.integer(row$mem_applicable),
-        row$severity_weight,
-        row$source_ref,
-        row$pathogen
-      )
-      DBI::dbExecute(
-        con,
-        "UPDATE episodic_pathogen_config SET
-          episode_days = ?, incub_min_days = ?, incub_max_days = ?, case_free_days = ?,
-          cooldown_days = ?, rt_applicable = ?, si_mean_days = ?, si_sd_days = ?,
-          si_dist = ?, mem_applicable = ?, severity_weight = ?, source_ref = ?
-         WHERE pathogen = ?",
-        params = params
-      )
-    }
+  if (nrow(pathogen_config) == 0) {
+    return(invisible(NULL))
   }
+  cols <- c(
+    "pathogen",
+    "episode_days",
+    "incub_min_days",
+    "incub_max_days",
+    "case_free_days",
+    "cooldown_days",
+    "rt_applicable",
+    "si_mean_days",
+    "si_sd_days",
+    "si_dist",
+    "mem_applicable",
+    "severity_weight",
+    "source_ref"
+  )
+  values <- as.list(pathogen_config[, cols, drop = FALSE])
+  values$rt_applicable <- as.integer(values$rt_applicable)
+  values$mem_applicable <- as.integer(values$mem_applicable)
+  episodic_db_write_many(
+    con,
+    table = "episodic_pathogen_config",
+    cols = cols,
+    values = values,
+    key_cols = "pathogen",
+    update_cols = setdiff(cols, "pathogen")
+  )
   invisible(NULL)
 }
 
@@ -328,19 +302,30 @@ episodic_db_write_many <- function(
   # way, and neither understands the other's. Same split as
   # episodic_db_last_insert_id() and episodic_db_pragmas() already make.
   tail <- ""
-  if (!is.null(key_cols) && length(update_cols) > 0) {
-    tail <- if (inherits(con, "SQLiteConnection")) {
-      paste0(
-        " ON CONFLICT (",
-        paste(key_cols, collapse = ", "),
-        ") DO UPDATE SET ",
-        paste(sprintf("%s = excluded.%s", update_cols, update_cols), collapse = ", ")
-      )
+  if (!is.null(key_cols)) {
+    sqlite <- inherits(con, "SQLiteConnection")
+    tail <- if (length(update_cols) > 0) {
+      if (sqlite) {
+        paste0(
+          " ON CONFLICT (",
+          paste(key_cols, collapse = ", "),
+          ") DO UPDATE SET ",
+          paste(sprintf("%s = excluded.%s", update_cols, update_cols), collapse = ", ")
+        )
+      } else {
+        paste0(
+          " ON DUPLICATE KEY UPDATE ",
+          paste(sprintf("%s = VALUES(%s)", update_cols, update_cols), collapse = ", ")
+        )
+      }
+    } else if (sqlite) {
+      # Nothing to update: the row already says what it would have said.
+      paste0(" ON CONFLICT (", paste(key_cols, collapse = ", "), ") DO NOTHING")
     } else {
-      paste0(
-        " ON DUPLICATE KEY UPDATE ",
-        paste(sprintf("%s = VALUES(%s)", update_cols, update_cols), collapse = ", ")
-      )
+      # MariaDB has no DO NOTHING; assigning a key column to itself is the
+      # idiomatic no-op, and unlike INSERT IGNORE it does not also swallow
+      # unrelated errors.
+      sprintf(" ON DUPLICATE KEY UPDATE %s = %s", key_cols[1], key_cols[1])
     }
   }
 
@@ -456,41 +441,6 @@ episodic_db_case_insert_new <- function(con, cases, run_id) {
     )
   )
   n_inserted
-}
-
-#' @keywords internal
-#' @noRd
-episodic_db_reporting_triangle_upsert <- function(
-  con,
-  stream_id,
-  sample_date,
-  run_date,
-  n_cases
-) {
-  params <- list(stream_id, sample_date, run_date)
-  existing <- DBI::dbGetQuery(
-    con,
-    "SELECT 1 FROM episodic_reporting_triangle WHERE stream_id = ? AND sample_date = ? AND run_date = ?",
-    params = params
-  )
-  if (nrow(existing) > 0) {
-    params <- list(n_cases, stream_id, sample_date, run_date)
-    DBI::dbExecute(
-      con,
-      "UPDATE episodic_reporting_triangle SET n_cases = ?
-       WHERE stream_id = ? AND sample_date = ? AND run_date = ?",
-      params = params
-    )
-  } else {
-    params <- list(stream_id, sample_date, run_date, n_cases)
-    DBI::dbExecute(
-      con,
-      "INSERT INTO episodic_reporting_triangle (stream_id, sample_date, run_date, n_cases)
-       VALUES (?, ?, ?, ?)",
-      params = params
-    )
-  }
-  invisible(NULL)
 }
 
 #' @keywords internal
@@ -786,31 +736,59 @@ episodic_db_cluster_set_merged_into <- function(con, cluster_id, merged_into) {
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_case_link <- function(con, cluster_id, case_id) {
-  params <- list(cluster_id, case_id)
-  existing <- DBI::dbGetQuery(
-    con,
-    "SELECT 1 FROM episodic_cluster_case WHERE cluster_id = ? AND case_id = ?",
-    params = params
-  )
-  if (nrow(existing) == 0) {
-    params <- list(cluster_id, case_id)
-    DBI::dbExecute(
-      con,
-      "INSERT INTO episodic_cluster_case (cluster_id, case_id) VALUES (?, ?)",
-      params = params
-    )
+  episodic_db_cluster_case_link_many(con, cluster_id, case_id)
+}
+
+#' Link many cases to one cluster in a single statement
+#'
+#' `(cluster_id, case_id)` is the table's primary key, so re-linking a case
+#' the cluster already holds is a no-op the database can decide for itself.
+#' Asking it first, once per case, was two round trips per link.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id One cluster id.
+#' @param case_ids The case ids to link. May be empty.
+#' @return Invisibly, `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_db_cluster_case_link_many <- function(con, cluster_id, case_ids) {
+  case_ids <- unique(case_ids)
+  if (length(case_ids) == 0) {
+    return(invisible(NULL))
   }
+  episodic_db_write_many(
+    con,
+    table = "episodic_cluster_case",
+    cols = c("cluster_id", "case_id"),
+    values = list(
+      cluster_id = rep(cluster_id, length(case_ids)),
+      case_id = case_ids
+    ),
+    key_cols = c("cluster_id", "case_id")
+  )
   invisible(NULL)
 }
 
 #' @keywords internal
 #' @noRd
-episodic_db_run_start <- function(con, host, account, attempt_no = 1L) {
-  params <- list(host, account, episodic_now(), attempt_no)
+episodic_db_run_start <- function(
+  con,
+  host,
+  account,
+  run_date = Sys.Date(),
+  attempt_no = 1L
+) {
+  params <- list(
+    host,
+    account,
+    episodic_now(),
+    episodic_sql_date(run_date),
+    attempt_no
+  )
   DBI::dbExecute(
     con,
-    "INSERT INTO episodic_detection_run (host, account, started_at, status, attempt_no)
-     VALUES (?, ?, ?, 'running', ?)",
+    "INSERT INTO episodic_detection_run (host, account, started_at, run_date, status, attempt_no)
+     VALUES (?, ?, ?, ?, 'running', ?)",
     params = params
   )
   episodic_db_last_insert_id(con)

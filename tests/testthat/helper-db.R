@@ -58,6 +58,63 @@ episodic_test_r_source_dir <- function() {
   NA_character_
 }
 
+
+# Seed a stream's completion curve by creating the runs and case arrivals
+# that produce it. Replaces the old approach of writing rows straight into
+# episodic_reporting_triangle, which no longer exists - the curve is now
+# derived from episodic_case.first_seen_run and episodic_detection_run.
+#
+# `seen_by_lag` is a named list mapping lag (days after `sample_date`, as a
+# character) to the cumulative number of cases visible at that lag. Cases
+# are created so those cumulative totals come out exactly.
+episodic_test_seed_completion <- function(
+  con,
+  stream_id,
+  sample_date,
+  seen_by_lag
+) {
+  # The cases have to satisfy the stream's own membership rule, or
+  # episodic_db_cases_for_stream_id() will not see them and the curve
+  # comes back empty.
+  stream <- DBI::dbGetQuery(
+    con,
+    "SELECT pathogen, institution_id, ward FROM episodic_stream WHERE stream_id = ?",
+    params = list(stream_id)
+  )
+  pathogen <- stream$pathogen[1]
+  institution_id <- stream$institution_id[1]
+  ward <- stream$ward[1]
+
+  lags <- as.integer(names(seen_by_lag))
+  totals <- as.integer(unlist(seen_by_lag))
+  ord <- order(lags)
+  lags <- lags[ord]
+  totals <- totals[ord]
+  arrivals <- diff(c(0L, totals)) # how many first appear at each lag
+
+  n <- 0L
+  for (i in seq_along(lags)) {
+    run_date <- as.character(as.Date(sample_date) + lags[i])
+    run_id <- episodic_db_run_start(con, "h", "a", run_date = run_date)
+    episodic_db_run_finish(con, run_id, status = "success")
+    for (k in seq_len(max(0L, arrivals[i]))) {
+      n <- n + 1L
+      key <- sprintf("SEED-%d-%d", stream_id, n)
+      params <- list(
+        key, key, key, sample_date, pathogen, institution_id, ward, run_id
+      )
+      DBI::dbExecute(
+        con,
+        "INSERT INTO episodic_case (source_key, lab_number, patient_key,
+           sample_date, pathogen, care_line, institution_id, ward, first_seen_run)
+         VALUES (?, ?, ?, ?, ?, 'second', ?, ?, ?)",
+        params = params
+      )
+    }
+  }
+  invisible(n)
+}
+
 episodic_test_pathogen_config <- function() {
   path <- system.file("config", "pathogen_config.csv", package = "EpiSODIC")
   if (identical(path, "")) {

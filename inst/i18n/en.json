@@ -362,6 +362,7 @@
   "info.access.title": "Access",
   "info.access.body": "Reading is anonymous: anyone who reaches the app can view clusters, streams and the archive without signing in. Signing in is only needed to classify a cluster, close it, or mute a stream - every write is attributed to the signed-in user.",
 
+  "streams.col.farrington": "Farrington",
   "streams.col.baseline_excluded": "Baseline excluded",
 
   "interpretation.fragment.curve_shape.point_source": "All cases fall within a single maximum incubation period, pointing to a point source: a shared exposure around one moment, rather than person-to-person spread.",

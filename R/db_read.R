@@ -256,11 +256,108 @@ episodic_db_clusters_for_suppression <- function(con) {
 #' @keywords internal
 #' @noRd
 episodic_db_clusters_for_stream <- function(con, stream_id) {
+  params <- list(stream_id)
   DBI::dbGetQuery(
     con,
     "SELECT * FROM episodic_cluster WHERE stream_id = ? AND merged_into IS NULL",
-    params = list(stream_id)
+    params = params
   )
+}
+
+#' @param stream_ids Several `stream_id`s.
+#' @keywords internal
+#' @noRd
+episodic_db_clusters_for_streams <- function(con, stream_ids) {
+  stream_ids <- unique(stream_ids)
+  if (length(stream_ids) == 0) {
+    return(episodic_db_clusters_for_stream(con, -1L))
+  }
+  placeholders <- paste(rep("?", length(stream_ids)), collapse = ", ")
+  DBI::dbGetQuery(
+    con,
+    sprintf(
+      "SELECT * FROM episodic_cluster
+        WHERE stream_id IN (%s) AND merged_into IS NULL
+        ORDER BY stream_id, cluster_id",
+      placeholders
+    ),
+    params = as.list(stream_ids)
+  )
+}
+
+
+#' A stream's own cases, by the rule that decided the stream exists
+#'
+#' Stream membership is pathogen, plus institution where the stream names
+#' one, plus ward where it names one, plus the geographic area its
+#' `region_code` denotes. That rule lives here rather than being spelled
+#' out at each call site, because two call sites disagreeing about what a
+#' stream contains is a silent correctness bug: the line list would show
+#' one set of cases and the reporting-delay curve would be computed from
+#' another.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param stream_id The stream to read.
+#' @param columns Case columns to select. `ward` and `pc` are always
+#'   fetched regardless, since the ward and region filters need them.
+#' @param first_day,last_day Optional inclusive `sample_date` bounds.
+#' @return A data frame of the stream's cases, or zero rows if the stream
+#'   does not exist.
+#' @keywords internal
+#' @noRd
+episodic_db_cases_for_stream_id <- function(
+  con,
+  stream_id,
+  columns = c("case_id", "sample_date"),
+  first_day = NULL,
+  last_day = NULL
+) {
+  params <- list(stream_id)
+  stream <- DBI::dbGetQuery(
+    con,
+    "SELECT pathogen, institution_id, ward, region_code, level
+     FROM episodic_stream WHERE stream_id = ?",
+    params = params
+  )
+  select <- paste(unique(c(columns, "ward", "pc")), collapse = ", ")
+  if (nrow(stream) == 0) {
+    return(DBI::dbGetQuery(
+      con,
+      sprintf("SELECT %s FROM episodic_case WHERE 0 = 1", select)
+    ))
+  }
+
+  where <- "pathogen = ? AND (? IS NULL OR institution_id = ?)"
+  params <- list(
+    stream$pathogen[1],
+    stream$institution_id[1],
+    stream$institution_id[1]
+  )
+  if (!is.null(first_day)) {
+    where <- paste(where, "AND sample_date >= ?")
+    params <- c(params, list(episodic_sql_date(first_day)))
+  }
+  if (!is.null(last_day)) {
+    where <- paste(where, "AND sample_date <= ?")
+    params <- c(params, list(episodic_sql_date(last_day)))
+  }
+  cases <- DBI::dbGetQuery(
+    con,
+    sprintf("SELECT %s FROM episodic_case WHERE %s", select, where),
+    params = params
+  )
+
+  # Keyed on pathogen and institution alone, a ward cluster would take in
+  # every case in the building and an area cluster every case in the
+  # catchment.
+  if (!is.na(stream$ward[1])) {
+    cases <- cases[!is.na(cases$ward) & cases$ward == stream$ward[1], ]
+  }
+  if (!is.na(stream$region_code[1]) && nrow(cases) > 0) {
+    region <- episodic_case_region_code(cases, stream$level[1])
+    cases <- cases[!is.na(region) & region == stream$region_code[1], ]
+  }
+  cases
 }
 
 #' @param cluster_id A single `cluster_id`.
