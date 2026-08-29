@@ -196,6 +196,7 @@ episodic_pkg_versions_extended <- function() {
     "DBI",
     "RSQLite",
     "RMariaDB",
+    "bit64",
     "surveillance",
     "EpiEstim",
     "sf",
@@ -314,6 +315,18 @@ episodic_pkg_versions_extended <- function() {
 #'   just the failed one) rather than leaving a partially-written run
 #'   behind - the same all-or-nothing outcome a single transaction gave
 #'   for free.
+#' @param debug_dump_stream_id Diagnostic escape hatch, for chasing a
+#'   fatal crash tied to one specific stream: if set, the run processes
+#'   every stream before it as normal, then - the moment it reaches this
+#'   `stream_id` - captures that stream's row, its full case data (with
+#'   every column's class, to catch a type such as `integer64` that only
+#'   ever comes from a MariaDB fetch, never SQLite), the matching
+#'   pathogen configuration, and the package versions in play, into
+#'   `episodic_debug_dump` in the global environment and two files under
+#'   [tempdir()] (a CSV of the case data, a text dump of everything else)
+#'   - then stops before running a single one of that stream's own
+#'   detectors, so whatever segfaults never gets the chance to. `NULL`
+#'   (the default) disables this entirely.
 #' @return Invisibly, the `run_id` of the completed run. The run's row in
 #'   `episodic_detection_run` holds its status, the per-feed load counts,
 #'   and `error_text` if it failed. Case data that does not satisfy the
@@ -343,7 +356,8 @@ episodic_run_cron <- function(
   account = Sys.info()[["user"]],
   run_date = Sys.Date(),
   debug = FALSE,
-  batch_size = 25L
+  batch_size = 25L,
+  debug_dump_stream_id = NULL
 ) {
   start_time <- Sys.time()
   episodic_trace("episodic_run_cron() starting (host=", host, ", account=", account, ")")
@@ -469,7 +483,8 @@ episodic_run_cron <- function(
       run_date,
       debug = debug,
       batch_size = batch_size,
-      db_path = db_path
+      db_path = db_path,
+      debug_dump_stream_id = debug_dump_stream_id
     ),
     error = function(e) {
       # The run body commits as it goes (one transaction per setup phase,
@@ -833,7 +848,8 @@ episodic_run_cron_body <- function(
   run_date,
   debug = FALSE,
   batch_size = 25L,
-  db_path = NULL
+  db_path = NULL,
+  debug_dump_stream_id = NULL
 ) {
   # Committing every batch bounds how much work one lost connection can
   # catch mid-flight, but it does not reset the connection itself - a
@@ -1055,6 +1071,80 @@ episodic_run_cron_body <- function(
       nrow(stream_cases),
       " case(s)"
     )
+
+    if (
+      !is.null(debug_dump_stream_id) &&
+        isTRUE(as.numeric(stream$stream_id) == as.numeric(debug_dump_stream_id))
+    ) {
+      episodic_trace(
+        "debug_dump_stream_id = ",
+        debug_dump_stream_id,
+        " reached at stream ",
+        i,
+        "/",
+        nrow(streams),
+        " - dumping and stopping before this stream's own detectors run"
+      )
+      dump <- list(
+        dumped_at = Sys.time(),
+        stream = as.list(stream),
+        stream_cases = stream_cases,
+        stream_cases_classes = vapply(
+          stream_cases,
+          function(col) paste(class(col), collapse = "/"),
+          character(1)
+        ),
+        pathogen_config_row = pathogen_config[
+          pathogen_config$pathogen == stream$pathogen,
+        ],
+        farrington_weeks = farrington_weeks,
+        run_date = run_date,
+        package_versions = episodic_pkg_versions_extended()
+      )
+      assign("episodic_debug_dump", dump, envir = .GlobalEnv)
+      dump_dir <- tempdir()
+      csv_path <- file.path(dump_dir, "episodic_debug_stream_cases.csv")
+      txt_path <- file.path(dump_dir, "episodic_debug_stream_dump.txt")
+      utils::write.csv(stream_cases, csv_path, row.names = FALSE)
+      writeLines(
+        c(
+          paste("Dumped at:", format(dump$dumped_at)),
+          paste("Stream ", debug_dump_stream_id, ":"),
+          utils::capture.output(print(dump$stream)),
+          "",
+          "Column classes of stream_cases:",
+          paste(
+            names(dump$stream_cases_classes),
+            dump$stream_cases_classes,
+            sep = " = "
+          ),
+          "",
+          "str(stream_cases):",
+          utils::capture.output(utils::str(stream_cases)),
+          "",
+          "Matching pathogen configuration row:",
+          utils::capture.output(print(dump$pathogen_config_row)),
+          "",
+          paste("farrington_weeks:", farrington_weeks),
+          paste("run_date:", format(run_date)),
+          "",
+          "Package versions:",
+          paste(names(dump$package_versions), dump$package_versions)
+        ),
+        txt_path
+      )
+      episodic_trace("Dump written to: ", txt_path, " and ", csv_path)
+      episodic_trace(
+        "Also available in this session as `episodic_debug_dump` in the global environment"
+      )
+      stop(
+        "episodic_run_cron() stopped intentionally at stream ",
+        debug_dump_stream_id,
+        " (debug_dump_stream_id was set) before running any of its own ",
+        "detectors - see episodic_debug_dump and the files traced above.",
+        call. = FALSE
+      )
+    }
 
     episodic_triangle_update(
       con,
