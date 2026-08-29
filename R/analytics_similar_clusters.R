@@ -104,11 +104,12 @@ episodic_app_similar_clusters <- function(
     return(empty)
   }
 
-  clusters$state <- vapply(
-    clusters$cluster_id,
-    function(id) episodic_app_derive_state_for_cluster(con, id),
-    character(1)
-  )
+  # Every cluster of this pathogen, not just the handful that survive the
+  # ranking below - so deriving state one cluster at a time meant five
+  # queries each across the whole history before anything was filtered.
+  # That is what made opening a dossier slow once a pathogen had accrued a
+  # few hundred clusters; the batch form is three queries for the lot.
+  clusters$state <- episodic_app_derive_states_batch(con, clusters)
   clusters <- clusters[clusters$state == "closed", ]
   if (nrow(clusters) == 0) {
     return(empty)
@@ -165,10 +166,11 @@ episodic_app_similar_clusters <- function(
     },
     character(1)
   )
+  events_all <- episodic_db_assessment_events_batch(con, clusters$cluster_id)
   clusters$verdict_label <- vapply(
     seq_len(nrow(clusters)),
     function(i) {
-      events <- episodic_db_assessment_events(con, clusters$cluster_id[i])
+      events <- events_all[events_all$cluster_id == clusters$cluster_id[i], ]
       classified <- events[!is.na(events$verdict), ]
       if (nrow(classified) == 0) {
         return(NA_character_)
@@ -181,18 +183,9 @@ episodic_app_similar_clusters <- function(
     },
     character(1)
   )
-  clusters$closed_at <- vapply(
-    clusters$cluster_id,
-    function(id) {
-      states <- episodic_db_cluster_states(con, id)
-      closed_states <- states[states$state == "closed", ]
-      if (nrow(closed_states) == 0) {
-        NA_character_
-      } else {
-        closed_states$entered_at[nrow(closed_states)]
-      }
-    },
-    character(1)
+  clusters$closed_at <- episodic_app_closed_at_from(
+    episodic_db_cluster_states_batch(con, clusters$cluster_id),
+    clusters$cluster_id
   )
 
   clusters[, c(

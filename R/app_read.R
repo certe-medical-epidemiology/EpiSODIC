@@ -272,6 +272,30 @@ episodic_app_explicitly_closed_from <- function(states, events) {
   latest_closure_at >= latest_event_at
 }
 
+#' When each of many clusters was last closed, from states fetched in bulk
+#'
+#' The archive and the similar-clusters panel both show a "closed on"
+#' column, and both used to fill it with one
+#' `episodic_db_cluster_states()` query per row. Given
+#' `episodic_db_cluster_states_batch()`'s output - already ordered by
+#' `cluster_id, entered_at, state_id`, so a cluster's last closure is its
+#' last row - the same answer is a `match()`.
+#'
+#' @param states_all Rows from `episodic_db_cluster_states_batch()`.
+#' @param cluster_ids The cluster ids to answer for, in the order wanted.
+#' @return A character vector of `entered_at` values, one per id, `NA` for
+#'   a cluster with no recorded closure.
+#' @keywords internal
+#' @noRd
+episodic_app_closed_at_from <- function(states_all, cluster_ids) {
+  closures <- states_all[states_all$state == "closed", ]
+  if (nrow(closures) == 0) {
+    return(rep(NA_character_, length(cluster_ids)))
+  }
+  last <- closures[!duplicated(closures$cluster_id, fromLast = TRUE), ]
+  as.character(last$entered_at[match(cluster_ids, last$cluster_id)])
+}
+
 #' Build the cluster object consumed by the interpretation engine and the dossier
 #'
 #' @param con A [DBI::DBIConnection-class].

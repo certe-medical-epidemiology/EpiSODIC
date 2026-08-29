@@ -1,3 +1,9 @@
+# EpiSODIC 0.8.11
+
+## Changed
+
+- The Pathogen and Archive screens and the dossier's similar-clusters panel now derive cluster state in bulk instead of one cluster at a time, which is what made them slow to open against a MariaDB database (and invisible against a local SQLite file). `episodic_app_derive_state_for_cluster()` costs five or six queries per cluster - it re-reads the cluster, its stream, the pathogen configuration, its assessment events and its state history one row at a time, and for a `mem_applicable` pathogen re-reads every case for that pathogen as well - and all three screens called it in a loop. The Pathogen screen additionally fetched each cluster's assessment events itself and then called the function that fetches them again. `episodic_app_derive_states_batch()` and the `_batch()` readers it uses already existed and were already in production on the Clusters rail; these three call sites just never adopted them. Query counts are now flat in the number of clusters rather than linear: on a 63-cluster pathogen, the Pathogen screen goes from 259 queries to 7, the Archive from 330 to 7, and a dossier's similar-clusters panel from 195 to 10. Output is unchanged - state labels, verdict labels, ordering and closed-on dates all verified identical against the previous implementation
+
 # EpiSODIC 0.8.10
 
 ## Fixed

@@ -1030,7 +1030,8 @@ episodic_app_pathogen_clusters <- function(
   )
   clusters <- DBI::dbGetQuery(
     con,
-    "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day, c.n_cases, c.priority_score
+    "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day, c.n_cases,
+            c.priority_score, c.changed_since_assessment
        FROM episodic_cluster c
        JOIN episodic_stream s ON s.stream_id = c.stream_id
       WHERE s.pathogen = ? AND c.merged_into IS NULL
@@ -1049,6 +1050,18 @@ episodic_app_pathogen_clusters <- function(
   streams <- episodic_db_streams(con, active_only = FALSE)
   institutions <- episodic_db_institutions(con)
 
+  # Both read once for the whole screen rather than once per cluster. Per
+  # cluster this used to be an assessment-event query plus
+  # `episodic_app_derive_state_for_cluster()`'s own five - one of which
+  # re-fetched the very events already in hand - so a pathogen with a
+  # hundred clusters spent hundreds of round trips here. Against a local
+  # SQLite file that is invisible; against a database over the network it
+  # is the whole render, and it is what made this screen take tens of
+  # seconds to open.
+  clusters$pathogen <- pathogen
+  events_all <- episodic_db_assessment_events_batch(con, clusters$cluster_id)
+  states <- episodic_app_derive_states_batch(con, clusters)
+
   rows <- lapply(seq_len(nrow(clusters)), function(i) {
     row <- clusters[i, ]
     stream <- streams[streams$stream_id == row$stream_id, ][1, ]
@@ -1060,14 +1073,14 @@ episodic_app_pathogen_clusters <- function(
     } else {
       NULL
     }
-    events <- episodic_db_assessment_events(con, row$cluster_id)
+    events <- events_all[events_all$cluster_id == row$cluster_id, ]
     verdicts <- events$verdict[!is.na(events$verdict)]
     verdict <- if (length(verdicts) == 0) {
       NA_character_
     } else {
       verdicts[length(verdicts)]
     }
-    state <- episodic_app_derive_state_for_cluster(con, row$cluster_id)
+    state <- states[i]
 
     data.frame(
       cluster_id = row$cluster_id,

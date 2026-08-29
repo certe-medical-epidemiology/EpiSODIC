@@ -164,22 +164,23 @@ episodic_app_archive <- function(
   streams <- episodic_db_streams(con, active_only = FALSE)
   institutions <- DBI::dbGetQuery(con, "SELECT * FROM episodic_institution")
 
-  clusters$state <- vapply(
-    clusters$cluster_id,
-    function(id) {
-      episodic_app_derive_state_for_cluster(con, id)
-    },
-    character(1)
-  )
+  # Derived for the whole archive in three queries rather than five per
+  # cluster. `episodic_app_derive_state_for_cluster()` is the readable form
+  # but it re-reads the cluster, its stream, the pathogen config, its events
+  # and its states one row at a time; on a networked database that is what
+  # made opening the archive take tens of seconds. The batch form needs
+  # `pathogen` alongside `last_day` and `changed_since_assessment`, so the
+  # stream join moves up here from below.
+  clusters$pathogen <- streams$pathogen[match(
+    clusters$stream_id,
+    streams$stream_id
+  )]
+  clusters$state <- episodic_app_derive_states_batch(con, clusters)
   closed <- clusters[clusters$state == "closed", ]
   if (nrow(closed) == 0) {
     return(empty)
   }
 
-  closed$pathogen <- streams$pathogen[match(
-    closed$stream_id,
-    streams$stream_id
-  )]
   closed$level <- streams$level[match(closed$stream_id, streams$stream_id)]
   closed$care_line <- streams$care_line[match(
     closed$stream_id,
@@ -211,18 +212,9 @@ episodic_app_archive <- function(
     },
     character(1)
   )
-  closed$closed_at <- vapply(
-    closed$cluster_id,
-    function(id) {
-      states <- episodic_db_cluster_states(con, id)
-      closed_states <- states[states$state == "closed", ]
-      if (nrow(closed_states) == 0) {
-        NA_character_
-      } else {
-        closed_states$entered_at[nrow(closed_states)]
-      }
-    },
-    character(1)
+  closed$closed_at <- episodic_app_closed_at_from(
+    episodic_db_cluster_states_batch(con, closed$cluster_id),
+    closed$cluster_id
   )
 
   if (!is.null(query) && nzchar(query)) {
