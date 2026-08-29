@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.9</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,13 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.9" id="episodic-089">EpiSODIC 0.8.9<a class="anchor" aria-label="anchor" href="#episodic-089"></a></h2>
+<div class="section level3">
+<h3 id="changed-0-8-9">Changed<a class="anchor" aria-label="anchor" href="#changed-0-8-9"></a></h3>
+<ul><li>Reverted 0.8.2’s explicit <code>NA_integer_</code>/<code>NA_real_</code>/<code>NA_character_</code> typing of every cron-write function’s optional defaults. The column types themselves already constrain this on both SQLite and MariaDB; the typing was defensive scaffolding added while chasing an unrelated MariaDB-only crash and turned out not to be needed by either backend</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.8.8" id="episodic-088">EpiSODIC 0.8.8<a class="anchor" aria-label="anchor" href="#episodic-088"></a></h2>
 <div class="section level3">
