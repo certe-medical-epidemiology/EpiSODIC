@@ -2,7 +2,7 @@ Package: EpiSODIC
 Type: Package
 Title: Epidemiological Signal Observation, Detection, Identification, and
     Classification
-Version: 0.8.9
+Version: 0.8.10
 Authors@R: c(
     person(given = c("Matthijs", "S."),
            family = "Berends",

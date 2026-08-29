@@ -169,6 +169,21 @@ episodic_reconcile_stream <- function(
       )
       metrics <- episodic_reconcile_candidate_metrics(candidate)
 
+      # Forced here, deliberately, rather than left inline as
+      # `priority_score = priority_score_fn(candidate)` in the call below.
+      # The scoring closure runs its own queries on `con`
+      # (`episodic_app_density()`), and an R argument is a promise: inlined,
+      # it is not forced at this call site but inside `dbExecute()`, after
+      # the driver has already prepared the INSERT/UPDATE on that same
+      # connection. RMariaDB allows one active result per connection, so the
+      # nested SELECT closes the half-built statement, and `dbBind()` - which
+      # unlike `dbFetch()` does not check that its result is still active -
+      # then binds into freed memory. That is a native crash, not an R
+      # condition: it took the whole session down mid-run, reproducibly, and
+      # only ever against MariaDB (RSQLite allows concurrent results per
+      # connection, so the same code is harmless there). Every argument to a
+      # database write must be a plain value before the write begins.
+      priority_score <- priority_score_fn(candidate)
       episodic_db_cluster_update(
         con,
         cluster_id = cluster_id,
@@ -178,7 +193,7 @@ episodic_reconcile_stream <- function(
         expected = metrics$expected,
         excess = metrics$excess,
         ratio = metrics$ratio,
-        priority_score = priority_score_fn(candidate),
+        priority_score = priority_score,
         detector_agreement = max(
           existing$detector_agreement,
           candidate$detector_agreement
@@ -219,6 +234,9 @@ episodic_reconcile_stream <- function(
       if (!clears_floor) {
         next
       }
+      # Forced before the write opens a statement, never inline - see the
+      # cool-down branch above for why.
+      priority_score <- priority_score_fn(candidate)
       cluster_id <- episodic_db_cluster_insert(
         con,
         stream_id = stream_id,
@@ -228,7 +246,7 @@ episodic_reconcile_stream <- function(
         expected = metrics$expected,
         excess = metrics$excess,
         ratio = metrics$ratio,
-        priority_score = priority_score_fn(candidate),
+        priority_score = priority_score,
         detector_agreement = candidate$detector_agreement,
         run_id = run_id
       )
@@ -265,6 +283,9 @@ episodic_reconcile_stream <- function(
           new_n != existing$n_cases)
       metrics <- episodic_reconcile_candidate_metrics(candidate)
 
+      # Forced before the write opens a statement, never inline - see the
+      # cool-down branch above for why.
+      priority_score <- priority_score_fn(candidate)
       episodic_db_cluster_update(
         con,
         cluster_id = cluster_id,
@@ -274,7 +295,7 @@ episodic_reconcile_stream <- function(
         expected = metrics$expected,
         excess = metrics$excess,
         ratio = metrics$ratio,
-        priority_score = priority_score_fn(candidate),
+        priority_score = priority_score,
         detector_agreement = max(
           existing$detector_agreement,
           candidate$detector_agreement
@@ -317,6 +338,9 @@ episodic_reconcile_stream <- function(
       )
 
       metrics <- episodic_reconcile_candidate_metrics(candidate)
+      # Forced before the write opens a statement, never inline - see the
+      # cool-down branch above for why.
+      priority_score <- priority_score_fn(candidate)
       episodic_db_cluster_update(
         con,
         cluster_id = survivor_id,
@@ -326,7 +350,7 @@ episodic_reconcile_stream <- function(
         expected = metrics$expected,
         excess = metrics$excess,
         ratio = metrics$ratio,
-        priority_score = priority_score_fn(candidate),
+        priority_score = priority_score,
         detector_agreement = max(
           open_clusters$detector_agreement[matches],
           candidate$detector_agreement

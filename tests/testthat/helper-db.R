@@ -39,6 +39,25 @@ episodic_test_db_path <- function() {
   path
 }
 
+# Locate the package's own R/ sources, for the handful of invariants that
+# are load-bearing but not observable at runtime (see
+# test-insert_only.R and test-db_write_reentrancy.R). An installed
+# package's own system.file("R", ...) is a real directory but holds only
+# the compiled lazy-load database (EpiSODIC.rdb/.rdx), not individual .R
+# source files - so existence alone is not enough to trust a candidate;
+# each must actually contain recognisable sources.
+episodic_test_r_source_dir <- function() {
+  candidates <- c(system.file("R", package = "EpiSODIC"), "R", "../../R")
+  for (d in candidates) {
+    if (
+      nzchar(d) && dir.exists(d) && file.exists(file.path(d, "db_app_write.R"))
+    ) {
+      return(d)
+    }
+  }
+  NA_character_
+}
+
 episodic_test_pathogen_config <- function() {
   path <- system.file("config", "pathogen_config.csv", package = "EpiSODIC")
   if (identical(path, "")) {

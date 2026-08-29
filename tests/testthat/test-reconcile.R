@@ -985,3 +985,62 @@ test_that("consecutive alarming weeks are one outbreak, not a new dossier every 
   expect_equal(clusters$first_day, as.character(weeks[1]))
   expect_equal(clusters$last_day, as.character(weeks[6] + 6))
 })
+
+test_that("a scoring closure that queries the database is scored and stored correctly", {
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  # The behavioural companion to test-db_write_reentrancy.R. The real
+  # priority_score_fn (episodic_run_cron()) queries `con` itself, via
+  # episodic_app_density(). Passed inline as an argument to the cluster
+  # write, that query would be a promise forced inside dbExecute() after
+  # the driver had already prepared the statement - which on MariaDB frees
+  # the statement under dbBind() and kills the session outright. SQLite
+  # permits concurrent results and so cannot reproduce the crash, but it
+  # can prove the closure is called once per candidate and that what it
+  # computes is what lands in episodic_cluster.
+  calls <- 0L
+  querying_score_fn <- function(candidate) {
+    calls <<- calls + 1L
+    n <- DBI::dbGetQuery(
+      env$con,
+      "SELECT COUNT(*) AS n FROM episodic_case WHERE sample_date <= ?",
+      params = list(candidate$last_day)
+    )$n[1]
+    as.numeric(n) * 10
+  }
+  score_run <- function(run_id, det) {
+    episodic_reconcile_stream(
+      env$con,
+      env$stream_id,
+      det,
+      case_free_days = 14,
+      run_id = run_id,
+      close_after_runs = 14,
+      priority_score_fn = querying_score_fn,
+      has_assessment_fn = noop_has_assessment,
+      verdict_fn = noop_verdict
+    )
+  }
+
+  # a new cluster: the insert branch
+  run1 <- episodic_db_run_start(env$con, "h", "a")
+  det1 <- reconcile_detect(env, run1, "2025-01-01", "2025-01-05", 3)
+  score_run(run1, det1)
+
+  clusters1 <- episodic_db_clusters_for_stream(env$con, env$stream_id)
+  expect_equal(nrow(clusters1), 1)
+  expect_equal(calls, 1L)
+  expect_equal(clusters1$priority_score[1], 30)
+
+  # the same cluster extended: the update branch
+  run2 <- episodic_db_run_start(env$con, "h", "a")
+  det2 <- reconcile_detect(env, run2, "2025-01-08", "2025-01-08", 1)
+  score_run(run2, det2)
+
+  clusters2 <- episodic_db_clusters_for_stream(env$con, env$stream_id)
+  expect_equal(nrow(clusters2), 1)
+  expect_equal(clusters2$cluster_id[1], clusters1$cluster_id[1])
+  expect_equal(calls, 2L)
+  expect_equal(clusters2$priority_score[1], 40)
+})

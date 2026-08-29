@@ -28,6 +28,22 @@
 # inst/sql/schema.sql for the exact column contracts (nullability,
 # enums, defaults).
 
+# Every function here binds its parameters through a `params` local built
+# immediately before the `DBI` call, never as an inline
+# `params = list(...)` argument. That is deliberate and load-bearing, not
+# a style preference. An R argument is a promise: written inline, the
+# list is not evaluated at the call site but inside `dbExecute()`/
+# `dbGetQuery()`, by which point the driver has already prepared a
+# statement on `con`. If evaluating any element then queries that same
+# connection - which a caller-supplied argument can do without this file
+# knowing, and which `episodic_reconcile_stream()`'s `priority_score_fn`
+# did - RMariaDB cancels and frees the prepared statement, and `dbBind()`
+# binds into freed memory. That is a native crash: no R condition, no
+# `tryCatch`, the session simply dies, and only ever against MariaDB
+# (RSQLite permits concurrent results on one connection, so the same code
+# is harmless there). Building the list first means every element is a
+# plain value before any statement exists.
+
 #' @keywords internal
 #' @noRd
 episodic_db_assessment_event_insert <- function(
@@ -50,24 +66,25 @@ episodic_db_assessment_event_insert <- function(
   } else {
     as.character(rationale)
   }
+  params <- list(
+    cluster_id,
+    user_id,
+    episodic_now(),
+    verdict,
+    rationale,
+    if (is.na(wpg_notifiable)) NA else as.integer(wpg_notifiable),
+    if (is.na(ggd_informed)) NA else as.integer(ggd_informed),
+    ggd_note,
+    snooze_until,
+    supersedes
+  )
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_assessment_event
       (cluster_id, user_id, created_at, verdict, rationale, wpg_notifiable, ggd_informed,
        ggd_note, snooze_until, supersedes)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    params = list(
-      cluster_id,
-      user_id,
-      episodic_now(),
-      verdict,
-      rationale,
-      if (is.na(wpg_notifiable)) NA else as.integer(wpg_notifiable),
-      if (is.na(ggd_informed)) NA else as.integer(ggd_informed),
-      ggd_note,
-      snooze_until,
-      supersedes
-    )
+    params = params
   )
   episodic_db_last_insert_id(con)
 }
@@ -83,20 +100,21 @@ episodic_db_stream_mute_insert <- function(
   note = NA,
   user_id
 ) {
+  params <- list(
+    stream_id,
+    muted_from,
+    muted_until,
+    reason,
+    note,
+    user_id,
+    episodic_now()
+  )
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_stream_mute
       (stream_id, muted_from, muted_until, reason, note, user_id, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)",
-    params = list(
-      stream_id,
-      muted_from,
-      muted_until,
-      reason,
-      note,
-      user_id,
-      episodic_now()
-    )
+    params = params
   )
   episodic_db_last_insert_id(con)
 }
@@ -111,11 +129,12 @@ episodic_db_cluster_state_insert <- function(
   event_id = NA,
   user_id = NA
 ) {
+  params <- list(cluster_id, state, episodic_now(), trigger, event_id, user_id)
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_cluster_state (cluster_id, state, entered_at, `trigger`, event_id, user_id)
      VALUES (?, ?, ?, ?, ?, ?)",
-    params = list(cluster_id, state, episodic_now(), trigger, event_id, user_id)
+    params = params
   )
   episodic_db_last_insert_id(con)
 }
@@ -132,21 +151,22 @@ episodic_db_report_render_insert <- function(
   case_ids_json,
   version_no
 ) {
+  params <- list(
+    cluster_id,
+    user_id,
+    episodic_now(),
+    file_path,
+    file_sha256,
+    params_json,
+    case_ids_json,
+    version_no
+  )
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_report_render
       (cluster_id, user_id, rendered_at, file_path, file_sha256, params, case_ids, version_no)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    params = list(
-      cluster_id,
-      user_id,
-      episodic_now(),
-      file_path,
-      file_sha256,
-      params_json,
-      case_ids_json,
-      version_no
-    )
+    params = params
   )
   episodic_db_last_insert_id(con)
 }
@@ -161,19 +181,20 @@ episodic_db_app_user_insert <- function(
   password_hash,
   role = "epidemiologist"
 ) {
+  params <- list(
+    username,
+    full_name,
+    email,
+    password_hash,
+    role,
+    episodic_now()
+  )
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_app_user
       (username, full_name, email, password_hash, role, is_active, must_change, created_at)
      VALUES (?, ?, ?, ?, ?, 1, 1, ?)",
-    params = list(
-      username,
-      full_name,
-      email,
-      password_hash,
-      role,
-      episodic_now()
-    )
+    params = params
   )
   episodic_db_last_insert_id(con)
 }
@@ -186,11 +207,12 @@ episodic_db_app_user_event_insert <- function(
   event_type,
   password_hash = NA
 ) {
+  params <- list(user_id, episodic_now(), event_type, password_hash)
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_app_user_event (user_id, created_at, event_type, password_hash)
      VALUES (?, ?, ?, ?)",
-    params = list(user_id, episodic_now(), event_type, password_hash)
+    params = params
   )
   episodic_db_last_insert_id(con)
 }

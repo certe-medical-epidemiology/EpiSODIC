@@ -1,3 +1,14 @@
+# EpiSODIC 0.8.10
+
+## Fixed
+
+- `episodic_run_cron()` no longer crashes the R session partway through a run against MariaDB. The cause was re-entrancy, not data: `episodic_reconcile_stream()` passed `priority_score_fn(candidate)` straight into `episodic_db_cluster_insert()`/`episodic_db_cluster_update()` as an argument, and an R argument is a promise - so the scoring closure did not run at the call site but inside `dbExecute()`, after the driver had already prepared the INSERT/UPDATE on the connection. The closure then queried that same connection (via `episodic_app_density()`), RMariaDB cancelled and freed the pending statement, and `dbBind()` - which, unlike `dbFetch()`, never checks that its result is still active - bound its parameters into freed memory. That is a native crash, so no condition was ever raised and `tryCatch()` never saw anything; the session simply died. SQLite was never affected because RSQLite permits concurrent results on one connection. The score is now computed into a local before any statement is opened, and every write helper in `R/db_cron_write.R` and `R/db_app_write.R` builds its `params` list into a local first rather than inlining it as an argument, so no caller-supplied value can be evaluated mid-statement again. A six-line reproduction, independent of EpiSODIC, is recorded in the reconciliation tests' comments
+- Institution ids read back after an `INSERT` are now plain integers on both backends. MariaDB's `LAST_INSERT_ID()` is a `BIGINT`, which RMariaDB returns as a `bit64::integer64` - physically a double carrying the integer's *bit pattern*, not its value - and `episodic_institutions_resolve()` assigned that into an ordinary `integer()` vector, which drops the class and keeps the payload. Every institution id so obtained silently became a subnormal double (institution 368 became 1.8e-321) and was then written into `episodic_case.institution_id`, an `INTEGER` column, as **0**. Every case loaded into a MariaDB database therefore pointed at a non-existent institution 0, collapsing institution-level streams together; SQLite, whose `last_insert_rowid()` is a plain numeric, was correct throughout. `episodic_db_last_insert_id()` now coerces and range-checks, and MariaDB connections are opened with `bigint = "integer"` so no `integer64` enters the package at all. **Existing MariaDB databases carry the bad ids already written and need their `episodic_case.institution_id` values re-linked; a fresh load after this release is correct**
+
+## Changed
+
+- MariaDB connections now declare their character set explicitly (`SET NAMES utf8mb4`) instead of inheriting whatever the server's `my.cnf` happens to configure, so what comes back is the same on every machine that connects
+
 # EpiSODIC 0.8.9
 
 ## Changed
