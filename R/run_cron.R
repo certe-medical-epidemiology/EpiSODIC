@@ -298,17 +298,22 @@ episodic_pkg_versions_extended <- function() {
 #'   down enough on its own. Noisy; leave off for routine scheduled
 #'   runs.
 #' @param batch_size How many streams to reconcile per committed
-#'   transaction. A run holding one connection open in one uncommitted
+#'   transaction, and how often the database connection itself is
+#'   recycled. A run holding one connection open in one uncommitted
 #'   transaction for its entire length - which can run several minutes
 #'   against a few hundred streams - is exposed to any connection-lifetime
 #'   limit sitting between here and the server, proxy, load balancer, or
 #'   firewall included, none of which show up in the server's own
 #'   `SHOW VARIABLES LIKE '%timeout%'`. Committing every `batch_size`
-#'   streams instead bounds how much of the run any one such drop can
-#'   catch mid-flight; if a batch fails, the run erases everything it
-#'   wrote (across every already-committed batch, not just the failed
-#'   one) rather than leaving a partially-written run behind - the same
-#'   all-or-nothing outcome a single transaction gave for free.
+#'   streams bounds how much of the run any one such drop can catch
+#'   mid-flight; reconnecting at the same boundary (and after the initial
+#'   setup phase) additionally caps how long the connection itself has
+#'   been open when it matters, since a shorter transaction alone does not
+#'   shorten the underlying connection's age. If a batch fails, the run
+#'   erases everything it wrote (across every already-committed batch, not
+#'   just the failed one) rather than leaving a partially-written run
+#'   behind - the same all-or-nothing outcome a single transaction gave
+#'   for free.
 #' @return Invisibly, the `run_id` of the completed run. The run's row in
 #'   `episodic_detection_run` holds its status, the per-feed load counts,
 #'   and `error_text` if it failed. Case data that does not satisfy the
@@ -463,7 +468,8 @@ episodic_run_cron <- function(
       institution_activity,
       run_date,
       debug = debug,
-      batch_size = batch_size
+      batch_size = batch_size,
+      db_path = db_path
     ),
     error = function(e) {
       # The run body commits as it goes (one transaction per setup phase,
@@ -475,10 +481,15 @@ episodic_run_cron <- function(
       # instead, not asking the driver to undo a transaction that closed
       # minutes ago.
       episodic_trace("Error during run body: ", conditionMessage(e))
-      if (DBI::dbIsValid(con)) {
+      # episodic_run_cron_body() may have reconnected one or more times
+      # before this error - e$con, attached by its own rollback handlers,
+      # is the connection it was actually using when it failed, which is
+      # not necessarily the one this frame started with.
+      failure_con <- if (!is.null(e$con)) e$con else con
+      if (DBI::dbIsValid(failure_con)) {
         episodic_trace("Cleaning up partial writes from run ", run_id)
         tryCatch(
-          episodic_run_cron_cleanup(con, run_id),
+          episodic_run_cron_cleanup(failure_con, run_id),
           error = function(e2) {
             episodic_trace(
               "Cleanup of run ",
@@ -504,9 +515,14 @@ episodic_run_cron <- function(
           " and no surviving detection) may need manual review."
         )
       }
-      episodic_run_cron_failure(conditionMessage(e))
+      failure <- episodic_run_cron_failure(conditionMessage(e))
+      failure$con <- failure_con
+      failure
     }
   )
+  if (!is.null(result$con)) {
+    con <- result$con
+  }
 
   episodic_trace("Finishing run ", run_id, " (status: ", result$status %||% "success", ")")
   if (DBI::dbIsValid(con)) {
@@ -816,8 +832,33 @@ episodic_run_cron_body <- function(
   institution_activity,
   run_date,
   debug = FALSE,
-  batch_size = 25L
+  batch_size = 25L,
+  db_path = NULL
 ) {
+  # Committing every batch bounds how much work one lost connection can
+  # catch mid-flight, but it does not reset the connection itself - a
+  # commit is a statement sent over the same long-lived socket, not a new
+  # one. A lab reproduction with batching already in place still lost the
+  # session at the same wall-clock point as before batching existed, on
+  # a connection that had simply been open that long. So the connection
+  # itself is recycled here, between batches, whenever `db_path` is
+  # supplied (it always is from episodic_run_cron() itself; NULL is only
+  # for callers, such as tests, that want the batching without the
+  # reconnect). The reconnected `con` is threaded back out to the caller
+  # through this function's own return value (on success) or through the
+  # re-thrown condition's `$con` field (on failure, from the rollback
+  # handlers below) - not through any frame-hopping trick - so
+  # episodic_run_cron()'s own cleanup-on-failure logic always operates on
+  # the same live connection this function has actually been using.
+  reconnect <- function(con) {
+    if (is.null(db_path)) {
+      return(con)
+    }
+    if (DBI::dbIsValid(con)) {
+      DBI::dbDisconnect(con)
+    }
+    episodic_db_connect(db_path)
+  }
   # Setup - pathogen configuration, loading the supplied feeds, and the
   # detectors that only need the full case history - is its own
   # transaction, separate from the per-stream batches below: it is
@@ -957,9 +998,11 @@ episodic_run_cron_body <- function(
     },
     error = function(e) {
       DBI::dbRollback(con)
+      e$con <- con
       stop(e)
     }
   )
+  con <- reconnect(con)
 
   # One transaction per batch, not one for the whole run: a run of a few
   # hundred streams can take minutes end to end, and a single connection
@@ -1338,9 +1381,11 @@ episodic_run_cron_body <- function(
         # rolled back by the driver at this point - episodic_run_cron()'s
         # caller erases them by run_id once this re-thrown error reaches
         # it, via episodic_run_cron_cleanup().
+        e$con <- con
         stop(e)
       }
     )
+    con <- reconnect(con)
   }
   episodic_trace(
     "Stream reconciliation done: ",
@@ -1366,6 +1411,7 @@ episodic_run_cron_body <- function(
     },
     error = function(e) {
       DBI::dbRollback(con)
+      e$con <- con
       stop(e)
     }
   )
@@ -1388,7 +1434,8 @@ episodic_run_cron_body <- function(
     n_activity_supplied = activity_counts$n_supplied,
     n_activity_written = activity_counts$n_written,
     n_activity_skipped = activity_counts$n_skipped,
-    error_text = NA
+    error_text = NA,
+    con = con
   )
 }
 
