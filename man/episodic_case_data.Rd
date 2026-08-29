@@ -116,8 +116,9 @@ appear under more than one \code{pathogen} value where that is
 epidemiologically useful - an ETEC positive reported as both
 \code{"Escherichia coli"} and \code{"ETEC"}, so each is monitored separately.}
 \item{\code{care_line}}{Character; \code{NA} allowed. One of \code{"first"}
-(primary care), \code{"second"} (secondary care), \code{"other"}, or
-\code{"unknown"} - the values in \code{episodic_care_lines}. Anything else is
+(primary care), \code{"second"} (secondary care), \code{"third"} (tertiary
+care), \code{"other"}, or \code{"unknown"} - the values in
+\code{episodic_care_lines}. Anything else is
 rejected. \code{NA} is read as \code{"unknown"} and stored that way, so you
 need not map missing values yourself: an empty \code{care_line}, an
 R \code{NA} and a database \code{NULL} all mean the same thing here, and the

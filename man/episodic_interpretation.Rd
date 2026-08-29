@@ -15,8 +15,8 @@ what to consider next. This text is not written by an LLM: it is
 assembled deterministically from a fixed library of pre-written
 sentence templates ("fragments"), each triggered by a specific condition
 on the cluster's data. The same inputs always produce the same wording,
-and every fragment is translated into every shipped language (Dutch,
-English, Spanish, French, German, Mandarin Chinese, Hindi, and Arabic).
+and every fragment is translated into every shipped language (English,
+Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and Spanish).
 }
 \details{
 The narrative is built up section by section, in this fixed order:

@@ -20,8 +20,8 @@ recent day(s) where reporting is still catching up - these are drawn at
 reduced opacity as a visual reminder not to over-interpret a downturn
 that is really just a reporting lag).}
 
-\item{lang}{Language for axis labels: \code{"nl"}, \code{"en"}, \code{"es"}, \code{"fr"},
-\code{"de"}, \code{"zh"}, \code{"hi"}, or \code{"ar"}. Defaults to the
+\item{lang}{Language for axis labels: \code{"en"}, \code{"ar"}, \code{"nl"}, \code{"fr"},
+\code{"de"}, \code{"hi"}, \code{"zh"}, or \code{"es"}. Defaults to the
 \code{EPISODIC_LANGUAGE} environment variable, falling back to \code{"en"} if
 that is unset.}
 
