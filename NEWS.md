@@ -1,3 +1,9 @@
+# EpiSODIC 0.8.9
+
+## Changed
+
+- Reverted 0.8.2's explicit `NA_integer_`/`NA_real_`/`NA_character_` typing of every cron-write function's optional defaults. The column types themselves already constrain this on both SQLite and MariaDB; the typing was defensive scaffolding added while chasing an unrelated MariaDB-only crash and turned out not to be needed by either backend
+
 # EpiSODIC 0.8.8
 
 ## Changed
