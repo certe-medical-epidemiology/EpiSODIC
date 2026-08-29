@@ -25,13 +25,12 @@ Useful links:
 Authors:
 \itemize{
   \item Matthijs S. Berends \email{m.berends@certe.nl}
-  \item Erwin E. A. Hassing \email{e.hassing@certe.nl}
-  \item Erwin Dijkstra \email{e.dijkstra@certe.nl}
 }
 
 Other contributors:
 \itemize{
   \item Certe Medical Diagnostics & Advice Foundation (\href{https://ror.org/04m8g8w48}{ROR}) [copyright holder, funder]
+  \item University Medical Center Groningen (\href{https://ror.org/03cv38k47}{ROR}) [copyright holder, funder]
 }
 
 }

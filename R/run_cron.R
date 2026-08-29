@@ -596,7 +596,7 @@ episodic_farrington_weeks_owed <- function(con, run_date, config) {
 #' Erase what a failed run wrote, by run_id
 #'
 #' [episodic_run_cron()] commits its work in several transactions rather
-#' than one (see [episodic_run_cron_body()]'s own docs for why), so a
+#' than one (see `episodic_run_cron_body()`'s own docs for why), so a
 #' failure partway through can leave earlier batches already committed.
 #' This restores the same all-or-nothing outcome a single transaction
 #' used to give for free, using the identifiers already on the schema

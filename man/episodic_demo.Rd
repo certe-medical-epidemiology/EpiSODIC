@@ -37,8 +37,8 @@ the last complete week, so the week the statistical detectors test is
 a full one however far into the week you happen to run the demo -
 which is how surveillance reads its own weeks anyway.}
 
-\item{lang}{Dashboard language when \code{launch = TRUE}: \code{"nl"}, \code{"en"},
-\code{"es"}, \code{"fr"}, \code{"de"}, \code{"zh"}, \code{"hi"}, or \code{"ar"}. Defaults to the
+\item{lang}{Dashboard language when \code{launch = TRUE}: \code{"en"}, \code{"ar"},
+\code{"nl"}, \code{"fr"}, \code{"de"}, \code{"hi"}, \code{"zh"}, or \code{"es"}. Defaults to the
 \code{EPISODIC_LANGUAGE} environment variable, falling back to \code{"en"} if
 that is unset.}
 

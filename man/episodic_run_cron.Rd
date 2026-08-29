@@ -13,7 +13,8 @@ episodic_run_cron(
   host = Sys.info()[["nodename"]],
   account = Sys.info()[["user"]],
   run_date = Sys.Date(),
-  debug = FALSE
+  debug = FALSE,
+  batch_size = 25L
 )
 }
 \arguments{
@@ -49,12 +50,31 @@ date; mainly useful to override in tests.}
 \item{debug}{If \code{TRUE}, print a lot more than the phase-by-phase
 progress this function always writes: \code{sessionInfo()}, the versions
 of every package a fatal (non-catchable) crash is most likely to
-originate in, memory snapshots, and per-stream detail inside the
-detection loop. Meant for chasing exactly the kind of failure that
-leaves no R-level error behind at all - a crashed session, a run
-that silently never returns - where the normal progress trace does
-not narrow things down enough on its own. Noisy; leave off for
-routine scheduled runs.}
+originate in, memory snapshots, per-stream detail inside the
+detection loop, and - for the calls implicated so far in a known
+MariaDB-only crash (\code{episodic_app_density()}, the population-vector
+lookup, the trend/detection writes, the assessment-event lookups,
+and \code{episodic_spatial_concentration()}'s own input) - the exact SQL
+and every bound parameter's value, class and encoding immediately
+before each such call runs, not only once it returns. Meant for
+chasing exactly the kind of failure that leaves no R-level error
+behind at all - a crashed session, a run that silently never
+returns - where the normal progress trace does not narrow things
+down enough on its own. Noisy; leave off for routine scheduled
+runs.}
+
+\item{batch_size}{How many streams to reconcile per committed
+transaction. A run holding one connection open in one uncommitted
+transaction for its entire length - which can run several minutes
+against a few hundred streams - is exposed to any connection-lifetime
+limit sitting between here and the server, proxy, load balancer, or
+firewall included, none of which show up in the server's own
+\verb{SHOW VARIABLES LIKE '\%timeout\%'}. Committing every \code{batch_size}
+streams instead bounds how much of the run any one such drop can
+catch mid-flight; if a batch fails, the run erases everything it
+wrote (across every already-committed batch, not just the failed
+one) rather than leaving a partially-written run behind - the same
+all-or-nothing outcome a single transaction gave for free.}
 }
 \value{
 Invisibly, the \code{run_id} of the completed run. The run's row in
