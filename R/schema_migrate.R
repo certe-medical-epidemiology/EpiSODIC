@@ -314,7 +314,9 @@ episodic_db_truncate <- function(path) {
 
   tables <- intersect(episodic_db_schema_tables(), DBI::dbListTables(con))
   if (length(tables) == 0) {
-    message("No EpiSODIC tables found on this connection - nothing to truncate.")
+    message(
+      "No EpiSODIC tables found on this connection - nothing to truncate."
+    )
     return(invisible(character(0)))
   }
 
@@ -356,7 +358,8 @@ episodic_db_truncate <- function(path) {
     sep = ""
   )
   answer <- readline(paste0(
-    "Type the database name shown above (", dbname,
+    "Type the database name shown above (",
+    dbname,
     ") to confirm, or anything else to cancel: "
   ))
   if (!identical(trimws(answer), dbname)) {
@@ -373,7 +376,11 @@ episodic_db_truncate <- function(path) {
   }
   DBI::dbExecute(
     con,
-    if (dialect == "mariadb") "SET FOREIGN_KEY_CHECKS = 0" else "PRAGMA foreign_keys = OFF"
+    if (dialect == "mariadb") {
+      "SET FOREIGN_KEY_CHECKS = 0"
+    } else {
+      "PRAGMA foreign_keys = OFF"
+    }
   )
   # A safety net for the error path only - the happy path restores this
   # explicitly, right after the loop below, and disconnects after that.

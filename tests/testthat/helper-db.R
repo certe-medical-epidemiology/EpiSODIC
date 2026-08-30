@@ -101,7 +101,14 @@ episodic_test_seed_completion <- function(
       n <- n + 1L
       key <- sprintf("SEED-%d-%d", stream_id, n)
       params <- list(
-        key, key, key, sample_date, pathogen, institution_id, ward, run_id
+        key,
+        key,
+        key,
+        sample_date,
+        pathogen,
+        institution_id,
+        ward,
+        run_id
       )
       DBI::dbExecute(
         con,

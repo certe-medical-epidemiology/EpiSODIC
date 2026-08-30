@@ -715,8 +715,10 @@ episodic_app_overlay_period_range <- function(
   from <- week_of(resolved$from)
   to <- week_of(resolved$to)
   if (
-    is.na(from$group) || is.na(to$group) ||
-      !identical(from$group, current) || !identical(to$group, current)
+    is.na(from$group) ||
+      is.na(to$group) ||
+      !identical(from$group, current) ||
+      !identical(to$group, current)
   ) {
     return(NULL)
   }

@@ -538,7 +538,13 @@ test_that("episodic_app_completeness() shades everything when a stream never rea
     env$stream_id,
     sample_date = "2025-06-01",
     seen_by_lag = list(
-      "0" = 1, "1" = 2, "2" = 3, "3" = 4, "4" = 5, "5" = 6, "25" = 100
+      "0" = 1,
+      "1" = 2,
+      "2" = 3,
+      "3" = 4,
+      "4" = 5,
+      "5" = 6,
+      "25" = 100
     )
   )
   expect_equal(
