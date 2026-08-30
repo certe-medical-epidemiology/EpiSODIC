@@ -114,13 +114,29 @@ episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
 #' @keywords internal
 #' @noRd
 episodic_institutions_resolve <- function(con, cases) {
-  distinct <- unique(cases[, c(
-    "institution_key",
-    "institution_display_name",
-    "institution_type",
-    "care_line",
-    "municipality"
-  )])
+  # An institution is keyed on institution_key alone, so keep exactly one
+  # row per key: the last, which is where the per-institution upsert loop
+  # this replaced ended up, and what episodic_check_cases() already tells an
+  # operator to expect when one key carries two names.
+  #
+  # Taking distinct *combinations* of the five columns instead let one key
+  # appear twice in the same batch - a hospital reporting two care lines is
+  # enough, and nothing about the contract forbids it - and a batched insert
+  # cannot upsert a row against another row of its own statement: MariaDB
+  # rejects the second copy on institution_key's UNIQUE index and the whole
+  # run rolls back before a single case is written. The loop tolerated it
+  # because each iteration was its own statement.
+  distinct <- cases[
+    !duplicated(cases$institution_key, fromLast = TRUE),
+    c(
+      "institution_key",
+      "institution_display_name",
+      "institution_type",
+      "care_line",
+      "municipality"
+    ),
+    drop = FALSE
+  ]
 
   distinct$hashed_key <- vapply(
     distinct$institution_key,

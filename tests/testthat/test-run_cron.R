@@ -512,6 +512,39 @@ test_that("episodic_lattice_enumerate() creates distinct streams per level", {
   )
 })
 
+test_that("two groups whose fields concatenate to the same string stay two streams", {
+  # The grouping key used to be the group columns pasted together with no
+  # separator, so "Flu A" in area 12 and "Flu A1" in area 2 both keyed on
+  # "Flu A12": two streams collapsed into one, and whichever of them was not
+  # the first row simply stopped existing. A surveillance system may report
+  # nothing, but it may not lose a stream silently.
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+
+  cases <- data.frame(
+    pathogen = c("Flu A", "Flu A1"),
+    .region_code = c("12", "2"),
+    sample_date = "2025-01-01",
+    stringsAsFactors = FALSE
+  )
+
+  touched <- episodic_lattice_upsert_group(
+    con,
+    cases,
+    level = "pathogen_area",
+    group_cols = c("pathogen", ".region_code"),
+    region_col = ".region_code",
+    denominator = "population"
+  )
+
+  expect_equal(nrow(touched), 2)
+  expect_equal(length(unique(touched$stream_id)), 2)
+  expect_equal(
+    DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM episodic_stream")$n,
+    2
+  )
+})
+
 test_that("a geographic stream gets its own area's cases, not the whole region's", {
   # The bug this guards: only lattice enumeration knew how a case maps to
   # a region code, so every area and province stream was handed the whole

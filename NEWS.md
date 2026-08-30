@@ -1,3 +1,10 @@
+# EpiSODIC 0.8.16
+
+## Fixed
+
+- A run against MariaDB rolled back on `Duplicate entry '...' for key 'institution_key'` while loading case data. Institutions were gathered as distinct *combinations* of key, name, type, care line and municipality, but an institution is keyed on `institution_key` alone - so a hospital reporting both a second- and a third-line care line, which nothing in the data contract forbids, appeared twice in the same batch. While institutions were written one at a time this was invisible, each row being its own statement and the second updating what the first inserted; batched into one `INSERT` it is a duplicate on a `UNIQUE` index, and the run died before a single case was written. The batch now carries one row per key - the last, which is what the loop it replaced ended on and what `episodic_check_cases()` already tells an operator to expect
+- Two lattice streams whose grouping fields happened to concatenate to the same string were silently merged into one. The grouping key pasted the columns together with no separator, so pathogen `Flu A` in area `12` and `Flu A1` in area `2` were one group - and whichever of them was not the group's first row simply stopped existing, with no error and nothing on screen to say a stream had gone. A surveillance system may report nothing; it may not lose a stream quietly
+
 # EpiSODIC 0.8.15
 
 ## Changed

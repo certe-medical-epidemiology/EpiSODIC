@@ -246,7 +246,13 @@ episodic_lattice_upsert_group <- function(
   denominator = "none"
 ) {
   key_df <- cases[, group_cols, drop = FALSE]
-  key_str <- do.call(paste, c(key_df, sep = ""))
+  # Separated, not concatenated. Glued together, institution 1 on ward "2A"
+  # and institution 12 on ward "A" are the same group, and the two wards
+  # become one stream with one of them silently gone - the kind of thing a
+  # surveillance system must never do quietly. A control character cannot
+  # occur in a pathogen name, a ward or a region code, so it separates
+  # without being mistakable for content.
+  key_str <- do.call(paste, c(key_df, sep = "\r"))
   groups <- split(seq_len(nrow(cases)), key_str)
 
   # One row per group, assembled in R first. The database is then touched
