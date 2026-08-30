@@ -94,15 +94,11 @@ suppress_setup <- function(child_share = 1, n_children = 1, n_cases = 10) {
     },
     numeric(1)
   )
-  for (case_id in case_ids) {
-    episodic_db_cluster_case_link(con, parent_id, case_id)
-  }
+  episodic_db_cluster_case_link_many(con, parent_id, case_ids)
   per_child <- floor(n_cases * child_share / n_children)
   for (k in seq_len(n_children)) {
     taken <- case_ids[seq_len(per_child) + (k - 1) * per_child]
-    for (case_id in taken[!is.na(taken)]) {
-      episodic_db_cluster_case_link(con, child_ids[k], case_id)
-    }
+    episodic_db_cluster_case_link_many(con, child_ids[k], taken[!is.na(taken)])
   }
 
   list(con = con, parent = parent_id, children = child_ids)

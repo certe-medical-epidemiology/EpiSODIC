@@ -321,9 +321,13 @@ CREATE TABLE episodic_stream_trend (
 -- cannot be null". A surrogate PRIMARY KEY plus a UNIQUE constraint on
 -- the natural key gets the same one-row-per-stratum guarantee in both
 -- SQLite and MySQL, since UNIQUE (unlike PRIMARY KEY) treats multiple
--- NULLs as distinct in both dialects - matching what
--- episodic_db_denominator_upsert() already assumes with its explicit
--- "area_code IS NULL AND ? IS NULL" comparison.
+-- NULLs as distinct in both dialects.
+--
+-- That last point cuts both ways, and is why episodic_denominators_load()
+-- matches an incoming row against what is on file in R rather than letting
+-- the database decide with an upsert on this constraint: NULL is not equal
+-- to NULL, so no conflict would ever be raised for a row without an area
+-- stratum, and every one of them would insert afresh on every run.
 -- ---------------------------------------------------------------------
 CREATE TABLE episodic_denominator (
   denominator_id INTEGER PRIMARY KEY AUTOINCREMENT,

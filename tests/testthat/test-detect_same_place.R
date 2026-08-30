@@ -35,18 +35,16 @@ same_place_case <- function(
 }
 
 same_place_add_institution <- function(con, type = "hospital", monitored = 1L) {
-  key <- digest::digest(
-    paste(type, monitored, stats::runif(1)),
-    algo = "sha1",
-    serialize = FALSE
-  )
-  id <- episodic_db_institution_upsert(
+  # is_monitored is passed rather than left to follow the type, because the
+  # same value goes into the institutions data frame handed to the detector
+  # below: the row in the database and the row it reads have to agree, for
+  # whatever combination a test here asks for.
+  id <- episodic_test_institution(
     con,
-    institution_key = key,
+    key = paste(type, monitored, stats::runif(1)),
     display_name = "Test Institution",
     institution_type = type,
-    care_line = "second",
-    is_monitored = as.logical(monitored)
+    is_monitored = monitored
   )
   data.frame(
     institution_id = id,

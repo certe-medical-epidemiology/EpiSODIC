@@ -479,14 +479,7 @@ test_that("episodic_run_cron() accepts a data frame directly for cases/denominat
 test_that("episodic_lattice_enumerate() creates distinct streams per level", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
-  institution_id <- episodic_db_institution_upsert(
-    con,
-    institution_key = digest::digest("hosp", algo = "sha1", serialize = FALSE),
-    display_name = "Test Hospital",
-    institution_type = "hospital",
-    care_line = "second",
-    is_monitored = TRUE
-  )
+  institution_id <- episodic_test_institution(con, "hosp")
   cases <- data.frame(
     pathogen = "Test pathogen",
     sample_date = "2025-01-01",

@@ -209,27 +209,27 @@ test_that("episodic_triangle_completeness() ignores runs that never committed", 
   expect_equal(completeness$completeness, 1)
 })
 
-test_that("episodic_db_denominator_upsert() and episodic_denominators_load() round-trip", {
+test_that("episodic_denominators_load() revises a day's count instead of duplicating it", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
 
-  episodic_db_denominator_upsert(
-    con,
-    pathogen = "Norovirus",
-    sample_date = "2025-01-06",
-    care_line = "second",
-    area_code = NA,
-    n_tests = 40
-  )
-  # upsert: same key, different n_tests, must update not duplicate
-  episodic_db_denominator_upsert(
-    con,
-    pathogen = "Norovirus",
-    sample_date = "2025-01-06",
-    care_line = "second",
-    area_code = NA,
-    n_tests = 55
-  )
+  day <- function(n_tests) {
+    data.frame(
+      pathogen = "Norovirus",
+      sample_date = "2025-01-06",
+      care_line = "second",
+      area_code = NA_character_,
+      n_tests = n_tests,
+      stringsAsFactors = FALSE
+    )
+  }
+  expect_equal(episodic_denominators_load(con, day(40))$n_written, 1)
+  # Same key, a revised count: an update, not a second row. area_code is
+  # empty here on purpose - NULL is not equal to NULL in SQL, so this is
+  # the case a unique-index upsert would silently insert afresh every run.
+  expect_equal(episodic_denominators_load(con, day(55))$n_written, 1)
+  # And the same count again writes nothing at all.
+  expect_equal(episodic_denominators_load(con, day(55))$n_written, 0)
 
   rows <- DBI::dbGetQuery(con, "SELECT * FROM episodic_denominator")
   expect_equal(nrow(rows), 1)

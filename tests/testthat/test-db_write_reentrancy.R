@@ -116,34 +116,28 @@ test_that("episodic_db_last_insert_id() returns a plain integer", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
 
-  id <- episodic_db_institution_upsert(
-    con,
-    institution_key = digest::digest(
-      "hosp-last-insert-id",
-      algo = "sha1",
-      serialize = FALSE
-    ),
-    display_name = "Test Hospital",
-    institution_type = "hospital",
-    care_line = "second",
-    is_monitored = TRUE
-  )
+  id <- episodic_db_run_start(con, "h", "a")
 
   # MariaDB's LAST_INSERT_ID() is BIGINT, which RMariaDB would otherwise
   # hand back as a bit64::integer64 - a double carrying the integer's bit
-  # pattern. Subassigning one into an ordinary vector (as
-  # episodic_institutions_resolve() does) drops the class and keeps the
-  # payload, so a real id silently became a subnormal double and was
-  # written into an INTEGER column as 0. Asserting the plain type here is
-  # what stops that reaching the database again.
+  # pattern. Subassigning one into an ordinary vector drops the class and
+  # keeps the payload, so a real id silently became a subnormal double and
+  # was written into an INTEGER column as 0. Asserting the plain type here
+  # is what stops that reaching the database again.
+  #
+  # The run row stands in for every id read back this way. Institutions no
+  # longer are: episodic_institutions_resolve(), where that bug surfaced,
+  # now writes the batch and reads the ids back by key, which keeps
+  # LAST_INSERT_ID() out of that path altogether. Clusters, detections and
+  # runs still take theirs from here.
   expect_type(id, "integer")
   expect_false(inherits(id, "integer64"))
   expect_equal(id, 1L)
 
   stored <- DBI::dbGetQuery(
     con,
-    "SELECT institution_id FROM episodic_institution"
-  )$institution_id
+    "SELECT run_id FROM episodic_detection_run"
+  )$run_id
   expect_equal(stored, 1L)
   expect_false(any(stored == 0))
 })

@@ -28,18 +28,10 @@ rare_case <- function(source_key, sample_date, pathogen, institution_id = 1L) {
 }
 
 rare_add_institution <- function(con) {
-  key <- digest::digest(
-    paste("rare-trigger-test", stats::runif(1)),
-    algo = "sha1",
-    serialize = FALSE
-  )
-  episodic_db_institution_upsert(
+  episodic_test_institution(
     con,
-    institution_key = key,
-    display_name = "Test Institution",
-    institution_type = "hospital",
-    care_line = "second",
-    is_monitored = TRUE
+    key = paste("rare-trigger-test", stats::runif(1)),
+    display_name = "Test Institution"
   )
 }
 

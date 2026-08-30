@@ -70,18 +70,6 @@ episodic_db_institutions <- function(con) {
   DBI::dbGetQuery(con, "SELECT * FROM episodic_institution")
 }
 
-#' @param institution_key A single `institution_key`.
-#' @keywords internal
-#' @noRd
-episodic_db_institution_get <- function(con, institution_key) {
-  res <- DBI::dbGetQuery(
-    con,
-    "SELECT * FROM episodic_institution WHERE institution_key = ?",
-    params = list(institution_key)
-  )
-  if (nrow(res) == 0) NULL else res[1, ]
-}
-
 #' @keywords internal
 #' @noRd
 episodic_db_cases <- function(con) {

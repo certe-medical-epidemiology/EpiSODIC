@@ -621,13 +621,16 @@ test_that("episodic_app_denominator_series() computes positivity from region-wid
     stringsAsFactors = FALSE
   )
   episodic_db_case_insert_new(env$con, extra, env$run_id)
-  episodic_db_denominator_upsert(
+  episodic_denominators_load(
     env$con,
-    pathogen = "Norovirus",
-    sample_date = "2025-01-06",
-    care_line = "first",
-    area_code = NA,
-    n_tests = 100L
+    data.frame(
+      pathogen = "Norovirus",
+      sample_date = "2025-01-06",
+      care_line = "first",
+      area_code = NA_character_,
+      n_tests = 100L,
+      stringsAsFactors = FALSE
+    )
   )
 
   cluster_cases <- episodic_db_cluster_cases(env$con, env$cluster_id)

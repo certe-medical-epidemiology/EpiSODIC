@@ -134,22 +134,53 @@ episodic_test_config <- function() {
   episodic_config_resolve(NA)
 }
 
+# One institution, for a test that needs a case to belong somewhere.
+# Institutions are written by the batch in episodic_institutions_resolve(),
+# which is also where the source key is hashed - so a test names the key it
+# would have supplied in the case data, not a hash of it, and cannot drift
+# from how a run does it.
+#
+# is_monitored is derived there from the institution type, as in production.
+# A test that needs to state it outright - because it hands the same value
+# to a detector as well, or wants a combination a run would not produce -
+# passes it, and gets one UPDATE for it.
+episodic_test_institution <- function(
+  con,
+  key,
+  display_name = "Test Hospital",
+  institution_type = "hospital",
+  care_line = "second",
+  municipality = NA_character_,
+  is_monitored = NULL
+) {
+  ids <- episodic_institutions_resolve(
+    con,
+    data.frame(
+      institution_key = key,
+      institution_display_name = display_name,
+      institution_type = institution_type,
+      care_line = care_line,
+      municipality = municipality,
+      stringsAsFactors = FALSE
+    )
+  )
+  institution_id <- unname(ids[[1]])
+  if (!is.null(is_monitored)) {
+    params <- list(as.integer(as.logical(is_monitored)), institution_id)
+    DBI::dbExecute(
+      con,
+      "UPDATE episodic_institution SET is_monitored = ? WHERE institution_id = ?",
+      params = params
+    )
+  }
+  institution_id
+}
+
 # A single ward-level Norovirus cluster with 6 cases across 3 PCs, used by
 # both the read-model tests and the dossier UI tests.
 app_read_setup <- function() {
   con <- episodic_test_db()
-  institution_id <- episodic_db_institution_upsert(
-    con,
-    institution_key = digest::digest(
-      "hosp-app-read",
-      algo = "sha1",
-      serialize = FALSE
-    ),
-    display_name = "Test Hospital",
-    institution_type = "hospital",
-    care_line = "second",
-    is_monitored = TRUE
-  )
+  institution_id <- episodic_test_institution(con, "hosp-app-read")
   episodic_db_institution_activity_upsert(
     con,
     institution_id = institution_id,
@@ -241,9 +272,7 @@ app_read_setup <- function() {
     run_id = run_id
   )
   all_cases <- DBI::dbGetQuery(con, "SELECT case_id FROM episodic_case")
-  for (case_id in all_cases$case_id) {
-    episodic_db_cluster_case_link(con, cluster_id, case_id)
-  }
+  episodic_db_cluster_case_link_many(con, cluster_id, all_cases$case_id)
   detection_id <- episodic_db_detection_insert(
     con,
     run_id = run_id,

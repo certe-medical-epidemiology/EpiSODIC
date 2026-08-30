@@ -79,63 +79,6 @@ episodic_db_pathogen_config_load <- function(con, pathogen_config) {
   invisible(NULL)
 }
 
-#' @param institution_key,display_name,institution_type,municipality,is_monitored
-#'   Columns of `episodic_institution`.
-#' @return The `institution_id` of the inserted or existing row.
-#' @keywords internal
-#' @noRd
-episodic_db_institution_upsert <- function(
-  con,
-  institution_key,
-  display_name,
-  institution_type,
-  care_line,
-  municipality = NA,
-  pc = NA,
-  n_beds = NA,
-  is_monitored = FALSE
-) {
-  existing <- episodic_db_institution_get(con, institution_key)
-  if (!is.null(existing)) {
-    params <- list(
-      display_name,
-      institution_type,
-      care_line,
-      municipality,
-      pc,
-      n_beds,
-      as.integer(is_monitored),
-      institution_key
-    )
-    DBI::dbExecute(
-      con,
-      "UPDATE episodic_institution SET display_name = ?, institution_type = ?, care_line = ?,
-        municipality = ?, pc = ?, n_beds = ?, is_monitored = ? WHERE institution_key = ?",
-      params = params
-    )
-    return(existing$institution_id)
-  }
-  params <- list(
-    institution_key,
-    display_name,
-    institution_type,
-    care_line,
-    municipality,
-    pc,
-    n_beds,
-    as.integer(is_monitored)
-  )
-  DBI::dbExecute(
-    con,
-    "INSERT INTO episodic_institution
-      (institution_key, display_name, institution_type, care_line, municipality, pc,
-       n_beds, is_monitored, is_active)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)",
-    params = params
-  )
-  episodic_db_last_insert_id(con)
-}
-
 #' @keywords internal
 #' @noRd
 episodic_db_institution_activity_upsert <- function(
@@ -442,53 +385,6 @@ episodic_db_case_insert_new <- function(con, cases, run_id) {
   n_inserted
 }
 
-#' @keywords internal
-#' @noRd
-episodic_db_denominator_upsert <- function(
-  con,
-  pathogen,
-  sample_date,
-  care_line,
-  area_code = NA,
-  n_tests
-) {
-  sample_date <- episodic_sql_date(sample_date)
-  params <- list(pathogen, sample_date, care_line, area_code, area_code)
-  existing <- DBI::dbGetQuery(
-    con,
-    "SELECT 1 FROM episodic_denominator
-     WHERE pathogen = ? AND sample_date = ? AND care_line = ?
-       AND (area_code = ? OR (area_code IS NULL AND ? IS NULL))",
-    params = params
-  )
-  if (nrow(existing) > 0) {
-    params <- list(
-      n_tests,
-      pathogen,
-      sample_date,
-      care_line,
-      area_code,
-      area_code
-    )
-    DBI::dbExecute(
-      con,
-      "UPDATE episodic_denominator SET n_tests = ?
-       WHERE pathogen = ? AND sample_date = ? AND care_line = ?
-         AND (area_code = ? OR (area_code IS NULL AND ? IS NULL))",
-      params = params
-    )
-  } else {
-    params <- list(pathogen, sample_date, care_line, area_code, n_tests)
-    DBI::dbExecute(
-      con,
-      "INSERT INTO episodic_denominator (pathogen, sample_date, care_line, area_code, n_tests)
-       VALUES (?, ?, ?, ?, ?)",
-      params = params
-    )
-  }
-  invisible(NULL)
-}
-
 #' @param week_start A week-start date (chart-cache row for the multi-year
 #'   trend panel, see `R/detect_farrington.R`).
 #' @keywords internal
@@ -730,12 +626,6 @@ episodic_db_cluster_set_merged_into <- function(con, cluster_id, merged_into) {
     params = params
   )
   invisible(NULL)
-}
-
-#' @keywords internal
-#' @noRd
-episodic_db_cluster_case_link <- function(con, cluster_id, case_id) {
-  episodic_db_cluster_case_link_many(con, cluster_id, case_id)
 }
 
 #' Link many cases to one cluster in a single statement

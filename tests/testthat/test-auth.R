@@ -176,21 +176,6 @@ test_that("a second password change supersedes the first, not just the original"
   expect_true(episodic_auth_login(con, "jdoe", "second_change")$ok)
 })
 
-test_that("episodic_auth_last_login() reflects the most recent login, NA before any login", {
-  con <- episodic_test_db()
-  on.exit(DBI::dbDisconnect(con))
-  user_id <- auth_test_user(con)
-  user <- episodic_db_user_by_id(con, user_id)
-
-  expect_true(is.na(episodic_auth_last_login(con, user)))
-  episodic_auth_login(con, "jdoe", "initial123")
-  first_login <- episodic_auth_last_login(
-    con,
-    episodic_db_user_by_id(con, user_id)
-  )
-  expect_false(is.na(first_login))
-})
-
 test_that("episodic_db_user_by_username() and episodic_db_user_by_id() return NULL for a nonexistent account", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))

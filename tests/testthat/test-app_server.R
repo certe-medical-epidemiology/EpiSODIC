@@ -88,18 +88,7 @@ test_that("the report-render button actually surfaces a clear error via output$r
     params = list(user_id)
   )
 
-  institution_id <- episodic_db_institution_upsert(
-    con,
-    institution_key = digest::digest(
-      "hosp-server-report",
-      algo = "sha1",
-      serialize = FALSE
-    ),
-    display_name = "Test Hospital",
-    institution_type = "hospital",
-    care_line = "second",
-    is_monitored = TRUE
-  )
+  institution_id <- episodic_test_institution(con, "hosp-server-report")
   stream_id <- episodic_db_stream_upsert(
     con,
     stream_key = episodic_stream_key(
@@ -164,18 +153,7 @@ test_that("closing a cluster actually updates the rail and the Archief screen wi
     params = list(user_id)
   )
 
-  institution_id <- episodic_db_institution_upsert(
-    con,
-    institution_key = digest::digest(
-      "hosp-server-rail",
-      algo = "sha1",
-      serialize = FALSE
-    ),
-    display_name = "Test Hospital",
-    institution_type = "hospital",
-    care_line = "second",
-    is_monitored = TRUE
-  )
+  institution_id <- episodic_test_institution(con, "hosp-server-rail")
   stream_id <- episodic_db_stream_upsert(
     con,
     stream_key = episodic_stream_key(
@@ -252,18 +230,7 @@ test_that("bulk_assess_submit applies one classification to several clusters in 
     params = list(user_id)
   )
 
-  institution_id <- episodic_db_institution_upsert(
-    con,
-    institution_key = digest::digest(
-      "hosp-bulk",
-      algo = "sha1",
-      serialize = FALSE
-    ),
-    display_name = "Test Hospital",
-    institution_type = "hospital",
-    care_line = "second",
-    is_monitored = TRUE
-  )
+  institution_id <- episodic_test_institution(con, "hosp-bulk")
   run_id <- episodic_db_run_start(con, "h", "a")
   cluster_ids <- vapply(
     c("Norovirus", "Influenza"),
@@ -355,18 +322,7 @@ test_that("bulk_assess_submit records an event even without a rationale", {
     "UPDATE episodic_app_user SET must_change = 0 WHERE user_id = ?",
     params = list(user_id)
   )
-  institution_id <- episodic_db_institution_upsert(
-    con,
-    institution_key = digest::digest(
-      "hosp-bulk2",
-      algo = "sha1",
-      serialize = FALSE
-    ),
-    display_name = "Test Hospital",
-    institution_type = "hospital",
-    care_line = "second",
-    is_monitored = TRUE
-  )
+  institution_id <- episodic_test_institution(con, "hosp-bulk2")
   stream_id <- episodic_db_stream_upsert(
     con,
     stream_key = episodic_stream_key(
@@ -445,18 +401,7 @@ test_that("assess_submit is a no-op for a signed-in viewer, even bypassing the c
     "UPDATE episodic_app_user SET must_change = 0 WHERE user_id = ?",
     params = list(user_id)
   )
-  institution_id <- episodic_db_institution_upsert(
-    con,
-    institution_key = digest::digest(
-      "hosp-viewer",
-      algo = "sha1",
-      serialize = FALSE
-    ),
-    display_name = "Test Hospital",
-    institution_type = "hospital",
-    care_line = "second",
-    is_monitored = TRUE
-  )
+  institution_id <- episodic_test_institution(con, "hosp-viewer")
   stream_id <- episodic_db_stream_upsert(
     con,
     stream_key = episodic_stream_key(
