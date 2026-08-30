@@ -422,7 +422,11 @@ episodic_season_shift <- function(season, n = 1L) {
 #'
 #' @param cases A data frame with `sample_date`.
 #' @param season The season label the thresholds are for.
-#' @param min_seasons Minimum number of fully-observed earlier seasons.
+#' @param config The resolved configuration; `config$mem$min_seasons` is
+#'   the minimum number of fully-observed earlier seasons required - the
+#'   same dial `episodic_mem_status()` reads, so raising it cannot leave
+#'   the detector silent while this screen keeps drawing thresholds fitted
+#'   on fewer seasons than the detector is willing to trust.
 #' @return A list with `pre_epidemic`, `post_epidemic`, `intensity` (see
 #'   `episodic_mem_intensity_thresholds()`) and `seasons_used`, or `NULL`
 #'   when `mem` is unavailable or too little earlier history exists.
@@ -431,8 +435,9 @@ episodic_season_shift <- function(season, n = 1L) {
 episodic_mem_thresholds_for_season <- function(
   cases,
   season,
-  min_seasons = 2L
+  config = episodic_config_resolve()
 ) {
+  min_seasons <- as.integer(config$mem$min_seasons %||% 2L)
   if (!requireNamespace("mem", quietly = TRUE)) {
     return(NULL)
   }

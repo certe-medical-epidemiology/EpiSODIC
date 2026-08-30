@@ -2,7 +2,7 @@
 
 ## Changed
 
-- MEM's season requirement moves into the configuration file. `episodic_detect_mem()` and `episodic_mem_status()` hard-coded `min_seasons = 2L` as a function default that no caller ever passed, so the one dial deciding whether the seasonal detector can speak at all lived in the source rather than beside `farrington.b` - the same class of dial, with the same consequence when set beyond what an instance carries. It is now `mem.min_seasons`, and the app and the cron read the same value instead of the app quietly keeping the old default if an operator changed it
+- MEM's season requirement moves into the configuration file. `episodic_detect_mem()`, `episodic_mem_status()` and `episodic_mem_thresholds_for_season()` each hard-coded `min_seasons = 2L` as a function default that no caller ever passed, so the one dial deciding whether the seasonal detector can speak at all lived in the source rather than beside `farrington.b` - the same class of dial, with the same consequence when set beyond what an instance carries. It is now `mem.min_seasons`, read in all three places, so the cron and the app cannot end up disagreeing about how much history MEM needs: raising it can no longer silence the detector while the activity screen goes on drawing thresholds fitted on fewer seasons than the detector will trust
 - Chart axes are formatted in the reading language's own number conventions, not only the epidemic curve's. `episodic_ui_rt_chart()` took a `lang` argument and used it for nothing, so an Rt of 1.4 rendered as "1.4" for a Dutch reader, who reads that as fourteen hundred - on the one chart whose entire point is which side of 1 a value falls. Both charts now share `episodic_chart_number_labels()`
 
 ## Fixed
