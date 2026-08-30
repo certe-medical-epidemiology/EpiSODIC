@@ -337,7 +337,7 @@ episodic_app_pathogen_screen <- function(
       "care_line",
       lang = lang
     ),
-    concentration = episodic_app_concentration(window_cases, "pathogen_region"),
+    concentration = episodic_app_concentration(window_cases),
     institutions = episodic_app_pathogen_institutions(
       con,
       window_cases,

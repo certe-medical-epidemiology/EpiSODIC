@@ -79,8 +79,7 @@ CREATE TABLE episodic_stream_mute (
                 'known_source', 'other')),
   note        TEXT,
   user_id     INTEGER NOT NULL REFERENCES episodic_app_user(user_id),
-  created_at  TEXT NOT NULL,
-  revoked_at  TEXT
+  created_at  TEXT NOT NULL
 );
 
 CREATE INDEX idx_episodic_stream_mute_stream ON episodic_stream_mute(stream_id);
@@ -344,8 +343,9 @@ CREATE TABLE episodic_cluster_state (
   cluster_id INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
   state      TEXT NOT NULL CHECK (state IN (
                'new', 'assessing', 'monitoring', 'closable', 'closed', 'reassess')),
+  -- Append-only, so a state's end is the next row's entered_at; there is
+  -- deliberately no left_at to keep in step with it.
   entered_at TEXT NOT NULL,
-  left_at    TEXT,
   `trigger`  TEXT NOT NULL CHECK (`trigger` IN (
                'detection', 'assessment', 'case_free', 'new_case', 'closure', 'system')),
   event_id   INTEGER REFERENCES episodic_assessment_event(event_id),
@@ -366,17 +366,17 @@ CREATE TABLE episodic_app_user (
   role          TEXT NOT NULL CHECK (role IN ('epidemiologist', 'viewer')),
   is_active     INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
   must_change   INTEGER NOT NULL DEFAULT 1 CHECK (must_change IN (0, 1)),
-  last_login_at TEXT,
   created_at    TEXT NOT NULL
 );
 
 -- Account bookkeeping that would otherwise need an UPDATE (a fresh
--- password_hash on change, a bumped last_login_at on every login) is kept
+-- password_hash on change, a new last-login time on every login) is kept
 -- insert-only instead, the same event-sourced pattern episodic_cluster_state
 -- already uses for cluster state: the "current" password hash is the most
 -- recent password_change event's, falling back to episodic_app_user's own
--- initial password_hash if no such event exists yet; "current" last_login_at
--- is the most recent login event.
+-- initial password_hash if no such event exists yet, and the last login is
+-- the most recent login event. There is deliberately no last_login_at
+-- column on episodic_app_user for the same value to drift out of step with.
 CREATE TABLE episodic_app_user_event (
   event_id      INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id       INTEGER NOT NULL REFERENCES episodic_app_user(user_id),

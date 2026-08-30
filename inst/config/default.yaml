@@ -92,6 +92,17 @@ farrington:
   # every alarming week in the archive.
   max_weeks_tested: 8
 
+# MEM seasonal detector (mem::memmodel()), for pathogens flagged
+# mem_applicable in pathogen_config.csv.
+mem:
+  min_seasons: 2   # fully-observed prior seasons required before MEM fits
+                   # at all. The same "need real baseline history first"
+                   # dial as farrington.b, and with the same consequence if
+                   # set beyond what an instance carries: MEM says nothing.
+                   # Two is the practical floor; more prior seasons give a
+                   # steadier pre-epidemic threshold, so raise this as
+                   # history accrues.
+
 # rare_trigger: a curated absolute-rarity list. A single case of any
 # pathogen listed here fires a detection; no baseline is computed at all.
 # Match is against the raw `pathogen` string, case-insensitively.

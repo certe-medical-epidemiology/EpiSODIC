@@ -372,7 +372,7 @@ episodic_cluster_object <- function(
       incomplete_days = completeness$incomplete_days %||% 0L,
       asof = asof
     ),
-    concentration = episodic_app_concentration(cases, stream$level),
+    concentration = episodic_app_concentration(cases),
     denominator = episodic_app_denominator_summary(con, stream$pathogen, cases),
     asof = asof,
     demography = episodic_app_demography_shift(con, stream$stream_id, cases),
@@ -693,14 +693,12 @@ episodic_app_doubling_time <- function(
 #' evidence about localisation, not evidence of dispersal.
 #'
 #' @param cases A data frame of the cluster's cases, with `pc`.
-#' @param level The stream's lattice level (unused; kept so callers stay
-#'   explicit about the level this is being computed at).
 #' @return A list, or `NULL` when no case carries a PC. `total` is the
 #'   number of cases with a known PC - the denominator `dominant_share`
 #'   is a share of - and `n_unknown_pc` how many were set aside.
 #' @keywords internal
 #' @noRd
-episodic_app_concentration <- function(cases, level) {
+episodic_app_concentration <- function(cases) {
   if (nrow(cases) == 0 || all(is.na(cases$pc))) {
     return(NULL)
   }

@@ -772,7 +772,6 @@ episodic_run_cron_body <- function(
   rare_trigger_detections <- episodic_detect_rare_trigger(
     con,
     cases_all,
-    institutions,
     config
   )
   episodic_trace(
@@ -859,7 +858,7 @@ episodic_run_cron_body <- function(
     ) {
       stream_detections <- rbind(
         stream_detections,
-        episodic_detect_mem(stream_cases, stream$stream_id, run_date)
+        episodic_detect_mem(stream_cases, stream$stream_id, run_date, config)
       )
       episodic_trace_debug(debug, "debug:   MEM detect done")
     }

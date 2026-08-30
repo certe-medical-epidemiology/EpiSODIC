@@ -585,15 +585,12 @@ test_that("episodic_app_concentration() measures the share among cases whose PC 
     pc = c("9711", "9711", "9711", "9711", NA, NA),
     stringsAsFactors = FALSE
   )
-  concentration <- episodic_app_concentration(cases, "pathogen_region")
+  concentration <- episodic_app_concentration(cases)
   expect_equal(concentration$dominant_share, 1)
   expect_equal(concentration$total, 4)
   expect_equal(concentration$n_unknown_pc, 2)
 
-  expect_null(episodic_app_concentration(
-    data.frame(pc = c(NA, NA)),
-    "pathogen_region"
-  ))
+  expect_null(episodic_app_concentration(data.frame(pc = c(NA, NA))))
 })
 
 test_that("episodic_app_denominator_series() computes positivity from region-wide cases, not cluster ones", {

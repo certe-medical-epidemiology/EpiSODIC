@@ -452,20 +452,11 @@ episodic_db_cluster_states_batch <- function(con, cluster_ids) {
   )
 }
 
-#' @keywords internal
-#' @noRd
-episodic_db_stream_mutes <- function(con, stream_id) {
-  DBI::dbGetQuery(
-    con,
-    "SELECT * FROM episodic_stream_mute WHERE stream_id = ? ORDER BY created_at",
-    params = list(stream_id)
-  )
-}
-
 #' The streams under an active mute on a given date
 #'
-#' A mute is in effect when the date falls inside its window and nobody
-#' has revoked it. Read once per run rather than once per stream.
+#' A mute is in effect when the date falls inside its window. A mute is
+#' bounded when it is written and expires by itself; there is no way to end
+#' one early. Read once per run rather than once per stream.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param as_of The date to judge the window against.
@@ -477,7 +468,7 @@ episodic_db_muted_stream_ids <- function(con, as_of) {
   res <- DBI::dbGetQuery(
     con,
     "SELECT DISTINCT stream_id FROM episodic_stream_mute
-      WHERE revoked_at IS NULL AND muted_from <= ? AND muted_until >= ?",
+      WHERE muted_from <= ? AND muted_until >= ?",
     params = params
   )
   as.integer(res$stream_id)
@@ -514,17 +505,6 @@ episodic_db_app_user_events <- function(con, user_id) {
     con,
     "SELECT * FROM episodic_app_user_event WHERE user_id = ? ORDER BY created_at, event_id",
     params = list(user_id)
-  )
-}
-
-#' @param run_id A single `run_id`.
-#' @keywords internal
-#' @noRd
-episodic_db_detections_for_run <- function(con, run_id) {
-  DBI::dbGetQuery(
-    con,
-    "SELECT * FROM episodic_detection WHERE run_id = ?",
-    params = list(run_id)
   )
 }
 

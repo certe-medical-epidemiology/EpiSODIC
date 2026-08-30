@@ -34,7 +34,6 @@
 #'
 #' @param input,output,session The Shiny server function's own arguments.
 #' @param con A [DBI::DBIConnection-class].
-#' @param lang Session language.
 #' @param current_user A `shiny::reactiveVal` holding the signed-in user's
 #'   account row, or `NULL`.
 #' @param selected_cluster_id A `shiny::reactiveVal` holding the rail's
@@ -55,7 +54,6 @@ episodic_app_server_assessment_actions <- function(
   output,
   session,
   con,
-  lang = Sys.getenv("EPISODIC_LANGUAGE"),
   current_user,
   selected_cluster_id,
   db_touch

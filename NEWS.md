@@ -1,3 +1,15 @@
+# EpiSODIC 0.8.15
+
+## Changed
+
+- MEM's season requirement moves into the configuration file. `episodic_detect_mem()` and `episodic_mem_status()` hard-coded `min_seasons = 2L` as a function default that no caller ever passed, so the one dial deciding whether the seasonal detector can speak at all lived in the source rather than beside `farrington.b` - the same class of dial, with the same consequence when set beyond what an instance carries. It is now `mem.min_seasons`, and the app and the cron read the same value instead of the app quietly keeping the old default if an operator changed it
+- Chart axes are formatted in the reading language's own number conventions, not only the epidemic curve's. `episodic_ui_rt_chart()` took a `lang` argument and used it for nothing, so an Rt of 1.4 rendered as "1.4" for a Dutch reader, who reads that as fourteen hundred - on the one chart whose entire point is which side of 1 a value falls. Both charts now share `episodic_chart_number_labels()`
+
+## Fixed
+
+- Removed three columns nothing has ever written: `episodic_stream_mute.revoked_at`, `episodic_cluster_state.left_at` and `episodic_app_user.last_login_at`. Each described a capability that does not exist. `revoked_at` implied a mute could be ended early - there is no revoke path anywhere, and a mute is bounded when it is written, so the `revoked_at IS NULL` predicate the new mute query carried was always true. `left_at` duplicated what an append-only trajectory already says: a state ends where the next row begins. `last_login_at` was superseded by `episodic_app_user_event`, as that table's own comment already explained. The schema now says so where each column stood
+- Removed two internal readers nothing called (`episodic_db_detections_for_run()`, `episodic_db_stream_mutes()`) and two arguments nothing read: `episodic_detect_rare_trigger()`'s `institutions`, documented as kept "for signature parity", and `episodic_app_concentration()`'s `level`, documented as kept so callers "stay explicit" - both made call sites pass values that did nothing. `episodic_app_server_assessment_actions()` also no longer takes a `lang` it never used, that module having no user-facing text at all. The `(input, output, session)` triple stays on all three server fragments, used or not, because that is the Shiny signature and a future observer in any of them needs it
+
 # EpiSODIC 0.8.14
 
 ## Fixed
