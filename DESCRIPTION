@@ -56,7 +56,8 @@ Suggests:
     curl,
     httr2,
     Microsoft365R,
-    AzureGraph
+    AzureGraph,
+    zip
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 URL: https://certe-medical-epidemiology.github.io/EpiSODIC, https://github.com/certe-medical-epidemiology/EpiSODIC

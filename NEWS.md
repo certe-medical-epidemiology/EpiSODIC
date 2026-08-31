@@ -4,6 +4,8 @@
 
 - Implemented various ways to send notifications of new clusters: ntfy, SMTP, sendmail, Microsoft 365, Teams (Power Automate Workflow), Slack
 - Added `vignette("notifications")` with setup steps per channel
+- Added an `is_admin` account property and an in-app Settings screen for managing notification channels, dashboard accounts, and viewing (read-only) detection configuration, without needing server access
+- Added `episodic_config_export()` to export the resolved configuration as a zip file, with notification secrets masked by default
 
 ## Fixed
 

@@ -34,9 +34,22 @@
 #' [episodic_config_hash()]), so you can always trace a past result back to
 #' the settings that produced it, even after you have since changed them.
 #'
+#' An `is_admin` account can additionally override the `notifications`
+#' section from the Settings screen, without touching the YAML file at
+#' all - pass `con` to also apply the most recent such override (if any)
+#' on top of the YAML-resolved configuration. The YAML overlay itself
+#' remains fully supported either way: an admin override is an additional,
+#' higher-precedence layer, not a replacement for it.
+#'
 #' @param episodic_config_path Path to your own configuration file. Defaults
 #'   to the `EPISODIC_CONFIG` environment variable; if that is unset or the
 #'   file does not exist, only the built-in defaults are used.
+#' @param con An open [DBI::DBIConnection-class], to also overlay the most
+#'   recent Settings-screen `notifications` override (if any) on top of
+#'   the YAML-resolved configuration. `NULL` (the default) skips this -
+#'   [episodic_run_cron()] and the Settings screen itself both pass their
+#'   own connection; most other callers (tests, `episodic_config_hash()`
+#'   snapshots) do not need one.
 #' @return A nested list with the resolved configuration, e.g.
 #'   `config$eligibility$min_baseline_weeks` or `config$priority_score$weights`.
 #' @examples
@@ -45,7 +58,8 @@
 #' config$eligibility$min_baseline_weeks
 #' @export
 episodic_config_resolve <- function(
-  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)
+  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
+  con = NULL
 ) {
   defaults_path <- system.file("config", "default.yaml", package = "EpiSODIC")
   if (identical(defaults_path, "")) {
@@ -60,6 +74,20 @@ episodic_config_resolve <- function(
   ) {
     instance_config <- yaml::read_yaml(episodic_config_path)
     config <- episodic_config_merge(config, instance_config)
+  }
+
+  if (!is.null(con)) {
+    latest <- episodic_db_app_config_latest(con, "notifications")
+    if (!is.null(latest)) {
+      overlay <- jsonlite::fromJSON(
+        latest$config_json,
+        simplifyVector = FALSE
+      )
+      config$notifications <- episodic_config_merge(
+        config$notifications %||% list(),
+        overlay
+      )
+    }
   }
 
   config

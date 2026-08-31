@@ -689,6 +689,10 @@ episodic_db_schema_statements <- function(dialect) {
       ),
       episodic_app_user = c(
         "username      TEXT NOT NULL UNIQUE," = "username      VARCHAR(191) NOT NULL UNIQUE,"
+      ),
+      episodic_app_config_event = c(
+        "  created_at  TEXT NOT NULL," = "  created_at  VARCHAR(30) NOT NULL,",
+        "  section     TEXT NOT NULL CHECK (section IN ('notifications'))," = "  section     VARCHAR(20) NOT NULL CHECK (section IN ('notifications')),"
       )
     )
     for (table in names(text_to_varchar)) {

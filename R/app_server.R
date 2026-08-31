@@ -136,7 +136,11 @@ episodic_app_server_factory <- function(
     })
 
     output$nav_links <- shiny::renderUI({
-      episodic_ui_nav_links(view(), lang = lang)
+      episodic_ui_nav_links(
+        view(),
+        lang = lang,
+        is_admin = episodic_user_is_admin(current_user())
+      )
     })
 
     output$status_strip <- shiny::renderUI({
@@ -176,6 +180,8 @@ episodic_app_server_factory <- function(
         )
       } else if (view() == "info") {
         episodic_ui_info_screen(lang = lang)
+      } else if (view() == "settings") {
+        shiny::uiOutput("settings_screen")
       } else {
         shiny::tags$div(
           class = "episodic-body",
@@ -294,6 +300,15 @@ episodic_app_server_factory <- function(
       lang = lang,
       current_user = current_user,
       selected_cluster_id = selected_cluster_id
+    )
+    episodic_app_server_settings(
+      input,
+      output,
+      session,
+      con,
+      db_path = db_path,
+      lang = lang,
+      current_user = current_user
     )
   }
 }

@@ -101,12 +101,18 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #'
 #' @param active_view The view id currently on screen.
 #' @param lang Session language.
+#' @param is_admin Whether the signed-in account may see the Settings
+#'   screen - `FALSE`/`NULL` (the default: nobody signed in, or a
+#'   non-admin) omits the link entirely, so a non-admin never sees a link
+#'   to a screen that server-side re-checks the same flag and refuses to
+#'   render regardless (see `episodic_app_server_settings()`).
 #' @return A `shiny::tagList` of links.
 #' @keywords internal
 #' @noRd
 episodic_ui_nav_links <- function(
   active_view = "clusters",
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  is_admin = FALSE
 ) {
   views <- c(
     "clusters",
@@ -120,6 +126,9 @@ episodic_ui_nav_links <- function(
     "performance",
     "info"
   )
+  if (isTRUE(is_admin)) {
+    views <- c(views, "settings")
+  }
   shiny::tagList(lapply(views, function(v) {
     episodic_ui_nav_link(
       v,

@@ -37,6 +37,8 @@ test_that("episodic_db_create() builds every expected table", {
       "episodic_denominator",
       "episodic_cluster_state",
       "episodic_app_user",
+      "episodic_app_user_event",
+      "episodic_app_config_event",
       "episodic_report_render"
     ) %in%
       tables
