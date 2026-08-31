@@ -28,12 +28,9 @@ distribution](reference/figures/pathogen_screen.png)
 *The Pathogen screen - weekly numbers of cases, reproduction number,
 with geographic and demographic distribution.*
 
-![The Performance screen: detection timeliness and positive predictive
-value per detector and
-pathogen](reference/figures/performance_screen.png)  
-*The Performance screen - detection timeliness and positive predictive
-value per detector and pathogen, computed from the stored verdicts (both
-fill in as clusters get assessed).*
+![The Archive screen: previously detected
+clusters](reference/figures/archive_screen.png)  
+*The Archive screen - previously detected clusters.*
 
 ## Installation
 
