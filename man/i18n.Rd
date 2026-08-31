@@ -4,8 +4,8 @@
 \alias{i18n}
 \title{Translation lookup}
 \description{
-The dashboard is available in Dutch, English, Spanish, French, German,
-Mandarin Chinese, Hindi, and (Modern Standard) Arabic. All user-facing
+The dashboard is available in English, (Modern Standard) Arabic,
+Dutch, French, German, Hindi, Mandarin Chinese, and Spanish. All user-facing
 text is stored as translation keys (e.g. \code{"nav.clusters"}) rather than
 hardcoded in R code, and \code{\link[=episodic_tr]{episodic_tr()}} looks a key up in the requested
 language. A key that does not exist in any language is shown as

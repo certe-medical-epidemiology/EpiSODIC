@@ -30,9 +30,9 @@
 #' @param con A [DBI::DBIConnection-class].
 #' @param denominators A data frame (or tibble) with columns `pathogen`,
 #'   `sample_date`, `care_line`, `area_code` (nullable) and `n_tests`.
-#' @return Invisibly, a list with `n_supplied` and `n_written`. Every
-#'   supplied row is written, so these are equal - a denominator row has
-#'   nothing to match against and so cannot be skipped.
+#' @return Invisibly, a list with `n_supplied` and `n_written`. On a feed
+#'   the database has not seen these are equal; re-sending a feed unchanged
+#'   writes nothing, and `n_written` says so.
 #'
 #' Not exported: an operator supplies a source to [episodic_run_cron()] via
 #' `denominators`; this is the internal write step run against it.
@@ -47,21 +47,98 @@ episodic_denominators_load <- function(con, denominators) {
   # Same reading of a missing care line as the case feed: unknown.
   denominators$care_line[is.na(denominators$care_line)] <- "unknown"
 
-  for (i in seq_len(nrow(denominators))) {
-    row <- denominators[i, ]
-    episodic_db_denominator_upsert(
+  n_supplied <- nrow(denominators)
+  if (n_supplied == 0) {
+    return(invisible(list(n_supplied = 0L, n_written = 0L)))
+  }
+  denominators$sample_date <- episodic_sql_date(denominators$sample_date)
+
+  # (pathogen, sample_date, care_line, area_code) is the table's unique key,
+  # so one row per key goes in - the last, as with an institution keyed
+  # twice. A feed naming the same day twice used to be absorbed by the loop
+  # this replaced, whose second iteration updated what its first had
+  # inserted; a batched insert collides on the unique index instead, and
+  # takes the whole run down with it.
+  keys <- episodic_denominator_key(denominators)
+  keep <- !duplicated(keys, fromLast = TRUE)
+  denominators <- denominators[keep, , drop = FALSE]
+  keys <- keys[keep]
+
+  # One read, one insert, and an update only where a count actually moved -
+  # rather than a SELECT plus a write per row, which is a round trip apiece
+  # and, for a year of daily testing volumes per pathogen, most of what a
+  # run spent on this feed.
+  #
+  # The matching is done in R rather than by an upsert on the unique index,
+  # and has to be: area_code is nullable, and NULL is not equal to NULL in
+  # SQL, so no conflict would ever be detected for the rows that leave it
+  # empty. Every such row would insert afresh on every run, for ever. The
+  # loop this replaced hand-wrote `area_code IS NULL` matching for exactly
+  # that reason; in R, NA is a value like any other.
+  #
+  # Bounded by the feed's own date span: a row outside it cannot match any
+  # key in the batch, so there is no reason to carry years of history back
+  # over the wire to look at. ISO 8601 dates compare lexicographically,
+  # which is why the schema stores them as text.
+  params <- list(min(denominators$sample_date), max(denominators$sample_date))
+  on_file <- DBI::dbGetQuery(
+    con,
+    "SELECT denominator_id, pathogen, sample_date, care_line, area_code, n_tests
+       FROM episodic_denominator
+      WHERE sample_date >= ? AND sample_date <= ?",
+    params = params
+  )
+  known <- match(keys, episodic_denominator_key(on_file))
+
+  new <- is.na(known)
+  if (any(new)) {
+    episodic_db_write_many(
       con,
-      pathogen = row$pathogen,
-      sample_date = row$sample_date,
-      care_line = row$care_line,
-      area_code = row$area_code,
-      n_tests = row$n_tests
+      table = "episodic_denominator",
+      cols = c("pathogen", "sample_date", "care_line", "area_code", "n_tests"),
+      values = list(
+        pathogen = denominators$pathogen[new],
+        sample_date = denominators$sample_date[new],
+        care_line = denominators$care_line[new],
+        area_code = denominators$area_code[new],
+        n_tests = denominators$n_tests[new]
+      )
     )
   }
+
+  # An UPDATE cannot be batched into one statement the way an INSERT can,
+  # but it does not need to be: a re-sent feed says what the table already
+  # says, so this loop is empty on a routine run and carries only the days
+  # whose count was revised.
+  moved <- which(!new & on_file$n_tests[known] != denominators$n_tests)
+  for (i in moved) {
+    params <- list(denominators$n_tests[i], on_file$denominator_id[known[i]])
+    DBI::dbExecute(
+      con,
+      "UPDATE episodic_denominator SET n_tests = ? WHERE denominator_id = ?",
+      params = params
+    )
+  }
+
   invisible(list(
-    n_supplied = nrow(denominators),
-    n_written = nrow(denominators)
+    n_supplied = n_supplied,
+    n_written = sum(new) + length(moved)
   ))
+}
+
+#' The denominator table's unique key, as one string per row
+#'
+#' Both sides of the match - the incoming feed and what is on file - are
+#' keyed through here, so they can only ever disagree together. Separated
+#' by a control character, which cannot occur in a pathogen name or an area
+#' code, and with a marker for `NA` that is likewise unwriteable: an absent
+#' area code is a key value of its own, not an empty one.
+#' @keywords internal
+#' @noRd
+episodic_denominator_key <- function(rows) {
+  area_code <- as.character(rows$area_code)
+  area_code[is.na(area_code)] <- "\v"
+  paste(rows$pathogen, rows$sample_date, rows$care_line, area_code, sep = "\r")
 }
 
 #' Check the optional denominator feed against its own contract
@@ -217,7 +294,10 @@ episodic_check_denominators_columns <- c(
 #' @noRd
 episodic_check_denominators_structure <- function(denominators) {
   found <- list()
-  missing_cols <- setdiff(episodic_check_denominators_columns, names(denominators))
+  missing_cols <- setdiff(
+    episodic_check_denominators_columns,
+    names(denominators)
+  )
   if (length(missing_cols) > 0) {
     found[[length(found) + 1]] <- episodic_check_finding(
       severity = "problem",
@@ -319,7 +399,8 @@ episodic_check_denominators_values <- function(denominators) {
   }
 
   if (
-    "n_tests" %in% names(denominators) &&
+    "n_tests" %in%
+      names(denominators) &&
       nrow(denominators) > 0 &&
       !is.numeric(denominators$n_tests)
   ) {
@@ -353,10 +434,7 @@ episodic_check_denominators_advice <- function(denominators) {
     )
     return(found)
   }
-  if (
-    "n_tests" %in% names(denominators) &&
-      is.numeric(denominators$n_tests)
-  ) {
+  if ("n_tests" %in% names(denominators) && is.numeric(denominators$n_tests)) {
     idx <- which(!is.na(denominators$n_tests) & denominators$n_tests <= 0)
     if (length(idx) > 0) {
       found[[length(found) + 1]] <- episodic_check_finding(

@@ -246,45 +246,128 @@ episodic_lattice_upsert_group <- function(
   denominator = "none"
 ) {
   key_df <- cases[, group_cols, drop = FALSE]
-  key_str <- do.call(paste, c(key_df, sep = ""))
+  # Separated, not concatenated. Glued together, institution 1 on ward "2A"
+  # and institution 12 on ward "A" are the same group, and the two wards
+  # become one stream with one of them silently gone - the kind of thing a
+  # surveillance system must never do quietly. A control character cannot
+  # occur in a pathogen name, a ward or a region code, so it separates
+  # without being mistakable for content.
+  key_str <- do.call(paste, c(key_df, sep = "\r"))
   groups <- split(seq_len(nrow(cases)), key_str)
 
-  ids <- integer(length(groups))
-  i <- 1L
-  for (g in groups) {
-    row <- cases[g[1], ]
-    care_line <- if (!is.null(care_line_col)) row[[care_line_col]] else NA
-    institution_id <- if (!is.null(institution_col)) {
-      row[[institution_col]]
-    } else {
-      NA
-    }
-    region_code <- if (!is.null(region_col)) row[[region_col]] else NA
-    ward <- if (!is.null(ward_col)) row[[ward_col]] else NA
+  # One row per group, assembled in R first. The database is then touched
+  # three times for the whole level instead of three times per stream (a
+  # SELECT on stream_key, an INSERT or UPDATE, and a LAST_INSERT_ID()),
+  # which is what made enumerating a few hundred streams take seventeen
+  # seconds against a networked database. Group order is preserved, so
+  # newly created streams still get their ids in the order they always did.
+  heads <- vapply(groups, function(g) g[1], integer(1))
+  reps <- cases[heads, , drop = FALSE]
+  pick <- function(col) if (is.null(col)) rep(NA, nrow(reps)) else reps[[col]]
 
-    stream_key <- episodic_stream_key(
-      level = level,
-      pathogen = row$pathogen,
-      care_line = care_line,
-      region_code = region_code,
-      institution_id = institution_id,
-      ward = ward
-    )
+  care_line <- pick(care_line_col)
+  institution_id <- pick(institution_col)
+  region_code <- pick(region_col)
+  ward <- pick(ward_col)
+  observed_date <- as.character(vapply(
+    groups,
+    function(g) max(cases$sample_date[g]),
+    character(1)
+  ))
+  stream_key <- vapply(
+    seq_len(nrow(reps)),
+    function(i) {
+      episodic_stream_key(
+        level = level,
+        pathogen = reps$pathogen[i],
+        care_line = care_line[i],
+        region_code = region_code[i],
+        institution_id = institution_id[i],
+        ward = ward[i]
+      )
+    },
+    character(1)
+  )
 
-    max_date <- max(cases$sample_date[g])
-    ids[i] <- episodic_db_stream_upsert(
+  on_file <- DBI::dbGetQuery(
+    con,
+    "SELECT stream_id, stream_key, first_seen, last_seen FROM episodic_stream"
+  )
+  known <- match(stream_key, on_file$stream_key)
+
+  # Same widening as the single-row upsert did: an existing stream keeps
+  # the earliest first_seen and the latest last_seen it has ever had.
+  first_seen <- ifelse(
+    is.na(known),
+    observed_date,
+    pmin(on_file$first_seen[known], observed_date)
+  )
+  last_seen <- ifelse(
+    is.na(known),
+    observed_date,
+    pmax(on_file$last_seen[known], observed_date)
+  )
+
+  new <- is.na(known)
+  if (any(new)) {
+    episodic_db_write_many(
       con,
-      stream_key = stream_key,
-      level = level,
-      pathogen = row$pathogen,
-      care_line = care_line,
-      region_code = region_code,
-      institution_id = institution_id,
-      ward = ward,
-      denominator = denominator,
-      observed_date = as.character(max_date)
+      table = "episodic_stream",
+      cols = c(
+        "stream_key",
+        "level",
+        "pathogen",
+        "care_line",
+        "region_code",
+        "institution_id",
+        "ward",
+        "denominator",
+        "severity_weight",
+        "is_active",
+        "first_seen",
+        "last_seen",
+        "created_at"
+      ),
+      values = list(
+        stream_key = stream_key[new],
+        level = rep(level, sum(new)),
+        pathogen = reps$pathogen[new],
+        care_line = care_line[new],
+        region_code = region_code[new],
+        institution_id = institution_id[new],
+        ward = ward[new],
+        denominator = rep(denominator, sum(new)),
+        severity_weight = rep(1.00, sum(new)),
+        is_active = rep(1L, sum(new)),
+        first_seen = first_seen[new],
+        last_seen = last_seen[new],
+        created_at = rep(episodic_now(), sum(new))
+      )
     )
-    i <- i + 1L
   }
+  # Existing streams get a plain UPDATE, and only the ones whose window
+  # actually moved. An upsert cannot serve here - episodic_stream has NOT
+  # NULL columns (level, pathogen, created_at ...) that an update-only
+  # caller has no business restating - and it is not needed: first_seen
+  # and last_seen change only when a stream gains a case outside the span
+  # it already knew about, so on a routine re-run this loop writes almost
+  # nothing.
+  moved <- !new &
+    (first_seen != on_file$first_seen[known] |
+      last_seen != on_file$last_seen[known])
+  for (i in which(moved)) {
+    params <- list(first_seen[i], last_seen[i], stream_key[i])
+    DBI::dbExecute(
+      con,
+      "UPDATE episodic_stream SET first_seen = ?, last_seen = ? WHERE stream_key = ?",
+      params = params
+    )
+  }
+
+  on_file <- DBI::dbGetQuery(
+    con,
+    "SELECT stream_id, stream_key FROM episodic_stream"
+  )
+  ids <- as.integer(on_file$stream_id[match(stream_key, on_file$stream_key)])
   data.frame(stream_id = ids)
 }

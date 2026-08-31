@@ -17,49 +17,6 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Reporting triangle
-#'
-#' Because sample date silently becomes receipt date when the physician
-#' leaves it blank, reporting delay cannot be
-#' read off the date columns. It is measured from observed accrual instead:
-#' how many cases with a given sample date were visible on each successive
-#' run date.
-#'
-#' @param con A [DBI::DBIConnection-class].
-#' @param stream_id The stream to update the triangle for.
-#' @param cases_for_stream A data frame of that stream's current cases
-#'   (all of them, not just this run's), with `sample_date`.
-#' @param run_date The date of the current run (`as.character(Sys.Date())`
-#'   in production; injectable for tests).
-#' @return Invisibly, the number of `(sample_date, run_date)` rows written.
-#' @keywords internal
-#' @noRd
-episodic_triangle_update <- function(
-  con,
-  stream_id,
-  cases_for_stream,
-  run_date
-) {
-  if (nrow(cases_for_stream) == 0) {
-    return(invisible(0L))
-  }
-
-  counts <- table(cases_for_stream$sample_date)
-  sample_dates <- names(counts)
-  n_cases <- as.integer(counts)
-
-  for (i in seq_along(sample_dates)) {
-    episodic_db_reporting_triangle_upsert(
-      con,
-      stream_id = stream_id,
-      sample_date = sample_dates[i],
-      run_date = run_date,
-      n_cases = n_cases[i]
-    )
-  }
-  invisible(length(sample_dates))
-}
-
 #' Empirical completion curve for a stream
 #'
 #' The proportion of eventually-reported cases for a given sample date
@@ -69,6 +26,18 @@ episodic_triangle_update <- function(
 #' completion curve decides how many trailing days are under-ascertained
 #' by construction.
 #'
+#' Derived, not stored. This used to read `episodic_reporting_triangle`,
+#' a table the cron rewrote in full on every run: one row per stream per
+#' distinct sample date per run, so a nightly run added tens of thousands
+#' of rows whether or not a single case had arrived, and the table grew
+#' without bound. It was also redundant. `episodic_case.first_seen_run`
+#' records the run that first saw each case and
+#' `episodic_detection_run.run_date` dates every run, so "how many cases
+#' with sample date D were visible at run R" is a `cumsum()` over data
+#' the database already holds exactly. Deriving it is cheaper to write
+#' (nothing), cheaper to store (nothing), and strictly more faithful than
+#' a cache that could only ever record the runs that happened to fire.
+#'
 #' @param con A [DBI::DBIConnection-class].
 #' @param stream_id The stream to compute completeness for.
 #' @param max_lag_days Maximum reporting lag (in days) to compute.
@@ -77,31 +46,82 @@ episodic_triangle_update <- function(
 #' @keywords internal
 #' @noRd
 episodic_triangle_completeness <- function(con, stream_id, max_lag_days = 21) {
-  triangle <- DBI::dbGetQuery(
+  empty <- data.frame(lag_days = integer(0), completeness = numeric(0))
+
+  cases <- episodic_db_cases_for_stream_id(
     con,
-    "SELECT sample_date, run_date, n_cases FROM episodic_reporting_triangle WHERE stream_id = ?",
-    params = list(stream_id)
+    stream_id,
+    columns = c("sample_date", "first_seen_run")
   )
-  if (nrow(triangle) == 0) {
-    return(data.frame(lag_days = integer(0), completeness = numeric(0)))
+  if (nrow(cases) == 0) {
+    return(empty)
+  }
+  # Only runs that committed. A failed run rolls its body back, so it
+  # never made a case visible to anyone, and counting it would invent a
+  # lag at which nothing had yet been reported.
+  runs <- DBI::dbGetQuery(
+    con,
+    sprintf(
+      "SELECT run_id, run_date FROM episodic_detection_run
+        WHERE status IN (%s) ORDER BY run_id",
+      paste(rep("?", length(episodic_run_statuses_complete)), collapse = ", ")
+    ),
+    params = as.list(episodic_run_statuses_complete)
+  )
+  if (nrow(runs) == 0) {
+    return(empty)
   }
 
-  triangle$sample_date <- as.Date(triangle$sample_date)
-  triangle$run_date <- as.Date(triangle$run_date)
-  triangle$lag_days <- as.integer(triangle$run_date - triangle$sample_date)
-
-  final_counts <- stats::aggregate(n_cases ~ sample_date, triangle, max)
-  names(final_counts)[2] <- "final_n"
-  merged <- merge(triangle, final_counts, by = "sample_date")
-  merged <- merged[
-    merged$final_n > 0 & merged$lag_days >= 0 & merged$lag_days <= max_lag_days,
-  ]
-  if (nrow(merged) == 0) {
-    return(data.frame(lag_days = integer(0), completeness = numeric(0)))
+  # n_cases visible at each run, per sample date: the running total of
+  # cases first seen at or before that run. Built as a matrix rather than
+  # a join so the whole curve costs two queries regardless of how many
+  # runs and sample dates a stream has accumulated.
+  sample_dates <- sort(unique(cases$sample_date))
+  seen_at <- match(cases$first_seen_run, runs$run_id)
+  keep <- !is.na(seen_at)
+  if (!any(keep)) {
+    return(empty)
   }
-  merged$share <- merged$n_cases / merged$final_n
+  # Cross-tabulated, not index-assigned: several cases routinely share a
+  # sample date and the run that first saw them, and `m[idx] <- m[idx] + 1`
+  # over repeated index pairs keeps only the last write.
+  counts <- matrix(
+    as.integer(table(
+      factor(cases$sample_date[keep], levels = sample_dates),
+      factor(seen_at[keep], levels = seq_len(nrow(runs)))
+    )),
+    nrow = length(sample_dates),
+    ncol = nrow(runs)
+  )
+  # A case stays visible once it has appeared, so each row accumulates.
+  # Done column by column rather than with t(apply(., 1, cumsum)), which
+  # silently transposes when there is only one run and drops a dimension
+  # when there is only one sample date.
+  visible <- counts
+  for (j in seq_len(ncol(counts))[-1]) {
+    visible[, j] <- visible[, j - 1L] + counts[, j]
+  }
 
-  by_lag <- stats::aggregate(share ~ lag_days, merged, stats::median)
+  lag <- outer(
+    as.numeric(as.Date(sample_dates)),
+    as.numeric(as.Date(runs$run_date)),
+    function(sd, rd) rd - sd
+  )
+  # The final count is what the stream ends up reporting for that sample
+  # date, which is the last run's total - the same quantity the stored
+  # triangle expressed as the maximum over its rows.
+  final_n <- visible[, ncol(visible)]
+
+  ok <- visible > 0 & lag >= 0 & lag <= max_lag_days & final_n > 0
+  if (!any(ok)) {
+    return(empty)
+  }
+  share <- (visible / final_n)[ok]
+  by_lag <- stats::aggregate(
+    share ~ lag_days,
+    data.frame(lag_days = as.integer(lag[ok]), share = share),
+    stats::median
+  )
   names(by_lag) <- c("lag_days", "completeness")
   by_lag[order(by_lag$lag_days), ]
 }

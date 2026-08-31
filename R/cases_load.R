@@ -114,31 +114,118 @@ episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
 #' @keywords internal
 #' @noRd
 episodic_institutions_resolve <- function(con, cases) {
-  distinct <- unique(cases[, c(
-    "institution_key",
-    "institution_display_name",
-    "institution_type",
-    "care_line",
-    "municipality"
-  )])
+  # An institution is keyed on institution_key alone, so keep exactly one
+  # row per key: the last, which is where the per-institution upsert loop
+  # this replaced ended up, and what episodic_check_cases() already tells an
+  # operator to expect when one key carries two names.
+  #
+  # Taking distinct *combinations* of the five columns instead let one key
+  # appear twice in the same batch - a hospital reporting two care lines is
+  # enough, and nothing about the contract forbids it - and a batched insert
+  # cannot upsert a row against another row of its own statement: MariaDB
+  # rejects the second copy on institution_key's UNIQUE index and the whole
+  # run rolls back before a single case is written. The loop tolerated it
+  # because each iteration was its own statement.
+  distinct <- cases[
+    !duplicated(cases$institution_key, fromLast = TRUE),
+    c(
+      "institution_key",
+      "institution_display_name",
+      "institution_type",
+      "care_line",
+      "municipality"
+    ),
+    drop = FALSE
+  ]
 
-  ids <- integer(nrow(distinct))
-  for (i in seq_len(nrow(distinct))) {
-    row <- distinct[i, ]
-    hashed_key <- digest::digest(
-      row$institution_key,
-      algo = "sha1",
-      serialize = FALSE
-    )
-    ids[i] <- episodic_db_institution_upsert(
+  distinct$hashed_key <- vapply(
+    distinct$institution_key,
+    function(k) digest::digest(k, algo = "sha1", serialize = FALSE),
+    character(1),
+    USE.NAMES = FALSE
+  )
+
+  # Read what is on file once, write the batch once, then read the ids
+  # back once - rather than a SELECT, an INSERT or UPDATE and a
+  # LAST_INSERT_ID() per institution, which for a few hundred of them was
+  # over a thousand round trips and most of a run's case-loading time.
+  #
+  # Reading the ids back by key also keeps LAST_INSERT_ID() out of this
+  # path entirely, which matters beyond speed: it returns a BIGINT, and it
+  # was that value's bit64::integer64 type - silently flattened to a
+  # subnormal double on assignment into an ordinary vector - that once
+  # wrote every case's institution_id to the database as 0.
+  on_file <- DBI::dbGetQuery(
+    con,
+    "SELECT institution_id, institution_key FROM episodic_institution"
+  )
+  known <- match(distinct$hashed_key, on_file$institution_key)
+
+  is_monitored <- as.integer(distinct$institution_type == "hospital")
+  new <- is.na(known)
+  if (any(new)) {
+    episodic_db_write_many(
       con,
-      institution_key = hashed_key,
-      display_name = row$institution_display_name,
-      institution_type = row$institution_type,
-      care_line = row$care_line,
-      municipality = row$municipality,
-      is_monitored = row$institution_type == "hospital"
+      table = "episodic_institution",
+      cols = c(
+        "institution_key",
+        "display_name",
+        "institution_type",
+        "care_line",
+        "municipality",
+        "is_monitored",
+        "is_active"
+      ),
+      values = list(
+        institution_key = distinct$hashed_key[new],
+        display_name = distinct$institution_display_name[new],
+        institution_type = distinct$institution_type[new],
+        care_line = distinct$care_line[new],
+        municipality = distinct$municipality[new],
+        is_monitored = is_monitored[new],
+        is_active = rep(1L, sum(new))
+      )
     )
   }
+  if (any(!new)) {
+    episodic_db_write_many(
+      con,
+      table = "episodic_institution",
+      cols = c(
+        "institution_key",
+        "display_name",
+        "institution_type",
+        "care_line",
+        "municipality",
+        "is_monitored",
+        "is_active"
+      ),
+      values = list(
+        institution_key = distinct$hashed_key[!new],
+        display_name = distinct$institution_display_name[!new],
+        institution_type = distinct$institution_type[!new],
+        care_line = distinct$care_line[!new],
+        municipality = distinct$municipality[!new],
+        is_monitored = is_monitored[!new],
+        is_active = rep(1L, sum(!new))
+      ),
+      key_cols = "institution_key",
+      update_cols = c(
+        "display_name",
+        "institution_type",
+        "care_line",
+        "municipality",
+        "is_monitored"
+      )
+    )
+  }
+
+  on_file <- DBI::dbGetQuery(
+    con,
+    "SELECT institution_id, institution_key FROM episodic_institution"
+  )
+  ids <- as.integer(
+    on_file$institution_id[match(distinct$hashed_key, on_file$institution_key)]
+  )
   stats::setNames(ids, distinct$institution_key)
 }

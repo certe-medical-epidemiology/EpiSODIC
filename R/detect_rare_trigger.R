@@ -32,16 +32,13 @@
 #' @param con A [DBI::DBIConnection-class].
 #' @param cases A data frame of cases to scan, with `pathogen`,
 #'   `institution_id`, `sample_date`.
-#' @param institutions A data frame from `episodic_db_institutions()` (kept
-#'   for signature parity with `episodic_detect_same_place()`; not currently
-#'   used, since `rare_trigger` fires regardless of institution type).
 #' @param config The resolved configuration; uses `config$rare_trigger`.
 #' @return A data frame of detection records plus a `stream_id` column, one
 #'   row per matching case (or per institution-day group when several
 #'   matching cases share an institution and date).
 #' @keywords internal
 #' @noRd
-episodic_detect_rare_trigger <- function(con, cases, institutions, config) {
+episodic_detect_rare_trigger <- function(con, cases, config) {
   empty <- episodic_detection_record(
     integer(0),
     character(0),

@@ -362,6 +362,7 @@
   "info.access.title": "Toegang",
   "info.access.body": "Lezen is anoniem: iedereen die de app bereikt kan clusters, signaleringsreeksen en het archief bekijken zonder aan te melden. Aanmelden is alleen nodig om een cluster te classificeren, te sluiten of een signaleringsreeks te dempen - elke schrijfactie wordt aan de aangemelde gebruiker toegeschreven.",
 
+  "streams.col.farrington": "Farrington",
   "streams.col.baseline_excluded": "Basislijn uitgesloten",
 
   "interpretation.fragment.curve_shape.point_source": "Alle casussen vallen binnen een enkele maximale incubatieperiode, wat wijst op een puntbron: een gedeelde blootstelling op of rond een moment, eerder dan verspreiding van mens op mens.",

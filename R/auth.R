@@ -75,21 +75,6 @@ episodic_auth_must_change <- function(con, user) {
   !any(events$event_type == "password_change")
 }
 
-#' A user's most recent login time
-#'
-#' @inheritParams episodic_auth_password_hash
-#' @return An ISO-8601 string, or `NA` if the user has never logged in.
-#' @keywords internal
-#' @noRd
-episodic_auth_last_login <- function(con, user) {
-  events <- episodic_db_app_user_events(con, user$user_id)
-  logins <- events[events$event_type == "login", ]
-  if (nrow(logins) == 0) {
-    return(NA_character_)
-  }
-  logins$created_at[nrow(logins)]
-}
-
 #' Attempt to log in
 #'
 #' Verifies `username`/`password` against the account's current password

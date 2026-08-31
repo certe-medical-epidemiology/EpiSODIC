@@ -362,6 +362,7 @@
   "info.access.title": "访问权限",
   "info.access.body": "阅读是匿名的：任何访问该应用的人都可以在不登录的情况下查看聚集事件、监测序列和归档记录。仅在需要对聚集事件进行分类、结案或静音某监测序列时才需要登录——每次写入操作都会归属于当前登录的用户。",
 
+  "streams.col.farrington": "Farrington",
   "streams.col.baseline_excluded": "已排除基线",
 
   "interpretation.fragment.curve_shape.point_source": "所有病例均落在单一最长潜伏期范围内，提示为点源暴露：即在某一时间点前后存在共同暴露，而非人际传播。",

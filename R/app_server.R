@@ -281,7 +281,6 @@ episodic_app_server_factory <- function(
       output,
       session,
       con,
-      lang = lang,
       current_user = current_user,
       selected_cluster_id = selected_cluster_id,
       db_touch = db_touch

@@ -120,7 +120,12 @@ episodic_reconcile_stream <- function(
 
   candidates <- episodic_reconcile_merge_detections(detections)
 
-  open_clusters <- episodic_db_clusters_for_stream(con, stream_id)
+  # No read of the open clusters here on purpose. The candidate loop below
+  # re-reads them at the top of every iteration (it has to - see there),
+  # and the ageing step re-reads them again afterwards, so a read at this
+  # point is overwritten before anything looks at it whether or not there
+  # are candidates. It is one round trip per stream for nothing, which on
+  # a run enumerating several hundred streams is not nothing.
   matched_cluster_ids <- character(0)
 
   for (i in seq_len(nrow(candidates))) {
@@ -169,6 +174,21 @@ episodic_reconcile_stream <- function(
       )
       metrics <- episodic_reconcile_candidate_metrics(candidate)
 
+      # Forced here, deliberately, rather than left inline as
+      # `priority_score = priority_score_fn(candidate)` in the call below.
+      # The scoring closure runs its own queries on `con`
+      # (`episodic_app_density()`), and an R argument is a promise: inlined,
+      # it is not forced at this call site but inside `dbExecute()`, after
+      # the driver has already prepared the INSERT/UPDATE on that same
+      # connection. RMariaDB allows one active result per connection, so the
+      # nested SELECT closes the half-built statement, and `dbBind()` - which
+      # unlike `dbFetch()` does not check that its result is still active -
+      # then binds into freed memory. That is a native crash, not an R
+      # condition: it took the whole session down mid-run, reproducibly, and
+      # only ever against MariaDB (RSQLite allows concurrent results per
+      # connection, so the same code is harmless there). Every argument to a
+      # database write must be a plain value before the write begins.
+      priority_score <- priority_score_fn(candidate)
       episodic_db_cluster_update(
         con,
         cluster_id = cluster_id,
@@ -178,7 +198,7 @@ episodic_reconcile_stream <- function(
         expected = metrics$expected,
         excess = metrics$excess,
         ratio = metrics$ratio,
-        priority_score = priority_score_fn(candidate),
+        priority_score = priority_score,
         detector_agreement = max(
           existing$detector_agreement,
           candidate$detector_agreement
@@ -219,6 +239,9 @@ episodic_reconcile_stream <- function(
       if (!clears_floor) {
         next
       }
+      # Forced before the write opens a statement, never inline - see the
+      # cool-down branch above for why.
+      priority_score <- priority_score_fn(candidate)
       cluster_id <- episodic_db_cluster_insert(
         con,
         stream_id = stream_id,
@@ -228,7 +251,7 @@ episodic_reconcile_stream <- function(
         expected = metrics$expected,
         excess = metrics$excess,
         ratio = metrics$ratio,
-        priority_score = priority_score_fn(candidate),
+        priority_score = priority_score,
         detector_agreement = candidate$detector_agreement,
         run_id = run_id
       )
@@ -265,6 +288,9 @@ episodic_reconcile_stream <- function(
           new_n != existing$n_cases)
       metrics <- episodic_reconcile_candidate_metrics(candidate)
 
+      # Forced before the write opens a statement, never inline - see the
+      # cool-down branch above for why.
+      priority_score <- priority_score_fn(candidate)
       episodic_db_cluster_update(
         con,
         cluster_id = cluster_id,
@@ -274,7 +300,7 @@ episodic_reconcile_stream <- function(
         expected = metrics$expected,
         excess = metrics$excess,
         ratio = metrics$ratio,
-        priority_score = priority_score_fn(candidate),
+        priority_score = priority_score,
         detector_agreement = max(
           existing$detector_agreement,
           candidate$detector_agreement
@@ -317,6 +343,9 @@ episodic_reconcile_stream <- function(
       )
 
       metrics <- episodic_reconcile_candidate_metrics(candidate)
+      # Forced before the write opens a statement, never inline - see the
+      # cool-down branch above for why.
+      priority_score <- priority_score_fn(candidate)
       episodic_db_cluster_update(
         con,
         cluster_id = survivor_id,
@@ -326,7 +355,7 @@ episodic_reconcile_stream <- function(
         expected = metrics$expected,
         excess = metrics$excess,
         ratio = metrics$ratio,
-        priority_score = priority_score_fn(candidate),
+        priority_score = priority_score,
         detector_agreement = max(
           open_clusters$detector_agreement[matches],
           candidate$detector_agreement
@@ -745,48 +774,19 @@ episodic_reconcile_link_cases <- function(
   first_day,
   last_day
 ) {
-  tryCatch(
-    {
-      stream <- DBI::dbGetQuery(
-        con,
-        "SELECT pathogen, institution_id, ward, region_code, level
-         FROM episodic_stream WHERE stream_id = ?",
-        params = list(stream_id)
-      )
-      if (nrow(stream) == 0) {
-        stop("no such stream")
-      }
-      cases <- DBI::dbGetQuery(
-        con,
-        "SELECT case_id, ward, pc FROM episodic_case
-       WHERE pathogen = ? AND sample_date >= ? AND sample_date <= ?
-         AND (? IS NULL OR institution_id = ?)",
-        params = list(
-          stream$pathogen[1],
-          first_day,
-          last_day,
-          stream$institution_id[1],
-          stream$institution_id[1]
-        )
-      )
-      # The stream's own cases, by the same rule that decided the stream
-      # exists at all. Keyed on pathogen and institution alone, a ward
-      # cluster was linked to every case in the building and an area
-      # cluster to every case in the catchment - which is what the line
-      # list on the dossier then showed.
-      if (!is.na(stream$ward[1])) {
-        cases <- cases[!is.na(cases$ward) & cases$ward == stream$ward[1], ]
-      }
-      if (!is.na(stream$region_code[1]) && nrow(cases) > 0) {
-        region <- episodic_case_region_code(cases, stream$level[1])
-        cases <- cases[!is.na(region) & region == stream$region_code[1], ]
-      }
-      for (case_id in cases$case_id) {
-        episodic_db_cluster_case_link(con, cluster_id, case_id)
-      }
-    },
-    error = function(e) invisible(NULL)
+  # Membership comes from episodic_db_cases_for_stream_id(), which is the
+  # one place the rule lives. It used to be spelled out again here, and
+  # spelling it out twice is how episodic_reconcile_case_count() came to
+  # count the whole building for a ward cluster while this function
+  # correctly counted the ward.
+  cases <- episodic_db_cases_for_stream_id(
+    con,
+    stream_id,
+    columns = c("case_id", "sample_date"),
+    first_day = first_day,
+    last_day = last_day
   )
+  episodic_db_cluster_case_link_many(con, cluster_id, cases$case_id)
   invisible(NULL)
 }
 
@@ -794,9 +794,21 @@ episodic_reconcile_link_cases <- function(
 #'
 #' Reconciliation recomputes the case count from the underlying data rather
 #' than summing detector-reported counts, since detectors may double-count
-#' at their boundaries. Falls back to the maximum of the inputs' own counts
-#' when case-level data cannot be queried (keeps the function usable in
-#' tests that pass synthetic clusters/candidates directly).
+#' at their boundaries.
+#'
+#' Counted through `episodic_db_cases_for_stream_id()`, so a ward stream is
+#' counted over its ward and an area stream over its area. This used to
+#' filter on pathogen and institution alone, which meant a three-case ward
+#' cluster was recorded as holding every case in the hospital and an
+#' area-level cluster every case of that pathogen anywhere - and since
+#' `n_cases` drives `ratio = n_cases / expected`, that inflated the priority
+#' score and reordered the assessment queue. `episodic_reconcile_link_cases()`
+#' already applied the ward and region filters; this did not.
+#'
+#' A stream that does not exist yields the inputs' own counts, which is what
+#' lets tests pass synthetic clusters and candidates with no stream row. A
+#' database error is *not* caught: a wrong case count committed by a run
+#' that appeared to succeed is worse than a run that fails and says so.
 #' @keywords internal
 #' @noRd
 episodic_reconcile_case_count <- function(
@@ -807,33 +819,15 @@ episodic_reconcile_case_count <- function(
   existing,
   candidate
 ) {
-  tryCatch(
-    {
-      stream <- DBI::dbGetQuery(
-        con,
-        "SELECT pathogen, institution_id FROM episodic_stream WHERE stream_id = ?",
-        params = list(stream_id)
-      )
-      if (nrow(stream) == 0) {
-        stop("no such stream")
-      }
-      res <- DBI::dbGetQuery(
-        con,
-        "SELECT COUNT(*) AS n FROM episodic_case
-       WHERE pathogen = ? AND sample_date >= ? AND sample_date <= ?
-         AND (? IS NULL OR institution_id = ?)",
-        params = list(
-          stream$pathogen[1],
-          as.character(first_day),
-          as.character(last_day),
-          stream$institution_id[1],
-          stream$institution_id[1]
-        )
-      )
-      as.integer(res$n[1])
-    },
-    error = function(e) {
-      max(existing$n_cases, candidate$n_cases)
-    }
+  cases <- episodic_db_cases_for_stream_id(
+    con,
+    stream_id,
+    columns = c("case_id", "sample_date"),
+    first_day = as.character(first_day),
+    last_day = as.character(last_day)
   )
+  if (is.null(attr(cases, "episodic_stream_exists", exact = TRUE))) {
+    return(max(existing$n_cases, candidate$n_cases))
+  }
+  nrow(cases)
 }

@@ -28,18 +28,10 @@ rare_case <- function(source_key, sample_date, pathogen, institution_id = 1L) {
 }
 
 rare_add_institution <- function(con) {
-  key <- digest::digest(
-    paste("rare-trigger-test", stats::runif(1)),
-    algo = "sha1",
-    serialize = FALSE
-  )
-  episodic_db_institution_upsert(
+  episodic_test_institution(
     con,
-    institution_key = key,
-    display_name = "Test Institution",
-    institution_type = "hospital",
-    care_line = "second",
-    is_monitored = TRUE
+    key = paste("rare-trigger-test", stats::runif(1)),
+    display_name = "Test Institution"
   )
 }
 
@@ -53,7 +45,6 @@ test_that("a single case of a curated rare pathogen fires a detection", {
   result <- episodic_detect_rare_trigger(
     con,
     cases,
-    episodic_db_institutions(con),
     config
   )
   expect_equal(nrow(result), 1)
@@ -71,7 +62,6 @@ test_that("a pathogen not on the curated list never fires", {
   result <- episodic_detect_rare_trigger(
     con,
     cases,
-    episodic_db_institutions(con),
     config
   )
   expect_equal(nrow(result), 0)
@@ -87,7 +77,6 @@ test_that("matching is case-insensitive against the curated list", {
   result <- episodic_detect_rare_trigger(
     con,
     cases,
-    episodic_db_institutions(con),
     config
   )
   expect_equal(nrow(result), 1)
@@ -101,7 +90,6 @@ test_that("an empty cases data frame produces no detections", {
   result <- episodic_detect_rare_trigger(
     con,
     empty,
-    episodic_db_institutions(con),
     config
   )
   expect_equal(nrow(result), 0)

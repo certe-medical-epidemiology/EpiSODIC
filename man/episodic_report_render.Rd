@@ -39,8 +39,8 @@ Defaults to \code{config$report$small_count_threshold}.}
 \item{config}{The resolved configuration (see \code{\link[=episodic_config_resolve]{episodic_config_resolve()}});
 only \code{config$report} is used.}
 
-\item{lang}{Report language: \code{"nl"}, \code{"en"}, \code{"es"}, \code{"fr"}, \code{"de"},
-\code{"zh"}, \code{"hi"}, or \code{"ar"}. Defaults to the \code{EPISODIC_LANGUAGE}
+\item{lang}{Report language: \code{"en"}, \code{"ar"}, \code{"nl"}, \code{"fr"}, \code{"de"},
+\code{"hi"}, \code{"zh"}, or \code{"es"}. Defaults to the \code{EPISODIC_LANGUAGE}
 environment variable, falling back to \code{"en"} if that is unset.}
 
 \item{qmd_path}{Path to the Quarto template to render. Defaults to the

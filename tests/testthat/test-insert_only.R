@@ -17,21 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-episodic_test_r_source_dir <- function() {
-  # An installed package's own system.file("R", ...) is a real directory
-  # but holds only the compiled lazy-load database (EpiSODIC.rdb/.rdx), not
-  # individual .R source files - so existence alone is not enough to
-  # trust a candidate; each must actually contain recognisable sources.
-  candidates <- c(system.file("R", package = "EpiSODIC"), "R", "../../R")
-  for (d in candidates) {
-    if (
-      nzchar(d) && dir.exists(d) && file.exists(file.path(d, "db_app_write.R"))
-    ) {
-      return(d)
-    }
-  }
-  NA_character_
-}
+# episodic_test_r_source_dir() lives in helper-db.R.
 
 test_that("the app's write surface issues no UPDATE or DELETE SQL statements", {
   # Verified by inspection that the app issues no UPDATE or DELETE

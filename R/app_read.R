@@ -272,6 +272,30 @@ episodic_app_explicitly_closed_from <- function(states, events) {
   latest_closure_at >= latest_event_at
 }
 
+#' When each of many clusters was last closed, from states fetched in bulk
+#'
+#' The archive and the similar-clusters panel both show a "closed on"
+#' column, and both used to fill it with one
+#' `episodic_db_cluster_states()` query per row. Given
+#' `episodic_db_cluster_states_batch()`'s output - already ordered by
+#' `cluster_id, entered_at, state_id`, so a cluster's last closure is its
+#' last row - the same answer is a `match()`.
+#'
+#' @param states_all Rows from `episodic_db_cluster_states_batch()`.
+#' @param cluster_ids The cluster ids to answer for, in the order wanted.
+#' @return A character vector of `entered_at` values, one per id, `NA` for
+#'   a cluster with no recorded closure.
+#' @keywords internal
+#' @noRd
+episodic_app_closed_at_from <- function(states_all, cluster_ids) {
+  closures <- states_all[states_all$state == "closed", ]
+  if (nrow(closures) == 0) {
+    return(rep(NA_character_, length(cluster_ids)))
+  }
+  last <- closures[!duplicated(closures$cluster_id, fromLast = TRUE), ]
+  as.character(last$entered_at[match(cluster_ids, last$cluster_id)])
+}
+
 #' Build the cluster object consumed by the interpretation engine and the dossier
 #'
 #' @param con A [DBI::DBIConnection-class].
@@ -348,7 +372,7 @@ episodic_cluster_object <- function(
       incomplete_days = completeness$incomplete_days %||% 0L,
       asof = asof
     ),
-    concentration = episodic_app_concentration(cases, stream$level),
+    concentration = episodic_app_concentration(cases),
     denominator = episodic_app_denominator_summary(con, stream$pathogen, cases),
     asof = asof,
     demography = episodic_app_demography_shift(con, stream$stream_id, cases),
@@ -669,14 +693,12 @@ episodic_app_doubling_time <- function(
 #' evidence about localisation, not evidence of dispersal.
 #'
 #' @param cases A data frame of the cluster's cases, with `pc`.
-#' @param level The stream's lattice level (unused; kept so callers stay
-#'   explicit about the level this is being computed at).
 #' @return A list, or `NULL` when no case carries a PC. `total` is the
 #'   number of cases with a known PC - the denominator `dominant_share`
 #'   is a share of - and `n_unknown_pc` how many were set aside.
 #' @keywords internal
 #' @noRd
-episodic_app_concentration <- function(cases, level) {
+episodic_app_concentration <- function(cases) {
   if (nrow(cases) == 0 || all(is.na(cases$pc))) {
     return(NULL)
   }
@@ -1184,9 +1206,33 @@ episodic_app_streams_screen <- function(con, page = 1L, page_size = 50L) {
   # never quietly different from what an epidemiologist expects. Computed only
   # for this page's streams.
   if (nrow(streams) > 0) {
-    streams$baseline_excluded <- lapply(streams$stream_id, function(sid) {
-      episodic_baseline_excluded_windows(con, sid)
-    })
+    streams$baseline_excluded <- episodic_baseline_excluded_windows_many(
+      con,
+      streams$stream_id
+    )
+    # Whether Farrington can actually run on this stream. It needs
+    # (b + 1) * 52 weeks of history and returns nothing at all below that,
+    # which is indistinguishable on screen from having looked and found
+    # nothing - so a stream nobody's statistical detector is watching
+    # looked exactly like a quiet one. Read off first_seen and the run's
+    # own date, so it costs no query: both are already in hand.
+    b <- config_snapshot$farrington$b
+    asof <- if (!is.null(run) && !is.na(run$run_date)) {
+      as.Date(run$run_date)
+    } else {
+      Sys.Date()
+    }
+    streams$farrington_weeks_need <- if (is.null(b)) {
+      NA_integer_
+    } else {
+      as.integer((b + 1) * 52)
+    }
+    streams$farrington_weeks_have <- as.integer(
+      as.integer(asof - as.Date(streams$first_seen)) %/% 7L + 1L
+    )
+    streams$farrington_ready <-
+      !is.na(streams$farrington_weeks_need) &
+        streams$farrington_weeks_have >= streams$farrington_weeks_need
   }
   list(
     streams = streams,

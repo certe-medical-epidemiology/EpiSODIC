@@ -140,7 +140,16 @@ episodic_db_mariadb_connect <- function(dsn) {
     port = parts$port,
     dbname = parts$dbname,
     user = parts$user,
-    password = parts$password
+    password = parts$password,
+    # Never bit64::integer64, RMariaDB's default. An integer64 is a double
+    # holding an integer's bit pattern, and every base operation that drops
+    # its class (subassignment into an ordinary vector, `c()`, `ifelse()`)
+    # silently turns it into a subnormal double instead of erroring - which
+    # is how ids fetched here ended up written back as 0. Nothing in this
+    # package needs 64-bit ids, so the safest thing is for them never to
+    # exist: `episodic_db_last_insert_id()` guards the same boundary for
+    # callers that reach the database another way.
+    bigint = "integer"
   )
 }
 
@@ -305,7 +314,9 @@ episodic_db_truncate <- function(path) {
 
   tables <- intersect(episodic_db_schema_tables(), DBI::dbListTables(con))
   if (length(tables) == 0) {
-    message("No EpiSODIC tables found on this connection - nothing to truncate.")
+    message(
+      "No EpiSODIC tables found on this connection - nothing to truncate."
+    )
     return(invisible(character(0)))
   }
 
@@ -347,7 +358,8 @@ episodic_db_truncate <- function(path) {
     sep = ""
   )
   answer <- readline(paste0(
-    "Type the database name shown above (", dbname,
+    "Type the database name shown above (",
+    dbname,
     ") to confirm, or anything else to cancel: "
   ))
   if (!identical(trimws(answer), dbname)) {
@@ -364,7 +376,11 @@ episodic_db_truncate <- function(path) {
   }
   DBI::dbExecute(
     con,
-    if (dialect == "mariadb") "SET FOREIGN_KEY_CHECKS = 0" else "PRAGMA foreign_keys = OFF"
+    if (dialect == "mariadb") {
+      "SET FOREIGN_KEY_CHECKS = 0"
+    } else {
+      "PRAGMA foreign_keys = OFF"
+    }
   )
   # A safety net for the error path only - the happy path restores this
   # explicitly, right after the loop below, and disconnects after that.
@@ -492,6 +508,15 @@ episodic_db_pragmas <- function(con) {
     DBI::dbExecute(con, "PRAGMA foreign_keys = ON")
   } else {
     DBI::dbExecute(con, "SET SESSION foreign_key_checks = 1")
+    # Say what the client speaks rather than inheriting whatever my.cnf
+    # happens to set. Left implicit, the connection charset is decided
+    # off-host and can differ from the server's own
+    # (`character_set_connection = utf8mb4` against
+    # `character_set_server = utf8` is what this deployment had), which is
+    # a standing invitation for a string to arrive declaring one encoding
+    # while holding bytes for another. Declaring it here makes what comes
+    # back deterministic and identical on every machine that connects.
+    DBI::dbExecute(con, "SET NAMES utf8mb4")
   }
   invisible(con)
 }
@@ -504,15 +529,39 @@ episodic_db_pragmas <- function(con) {
 #' of hardcoding one dialect's function name.
 #' @param con A [DBI::DBIConnection-class].
 #' @return The last auto-generated id, as inserted on `con` by the current
-#'   connection.
+#'   connection, as a plain `integer`.
 #' @keywords internal
 #' @noRd
 episodic_db_last_insert_id <- function(con) {
-  if (inherits(con, "SQLiteConnection")) {
+  id <- if (inherits(con, "SQLiteConnection")) {
     DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
   } else {
     DBI::dbGetQuery(con, "SELECT LAST_INSERT_ID() AS id")$id[1]
   }
+
+  # Returned as a plain integer on purpose. MariaDB's LAST_INSERT_ID() is
+  # BIGINT, and RMariaDB's default (`bigint = "integer64"`) hands that back
+  # as a bit64::integer64 - which is physically a double carrying the
+  # integer's *bit pattern*, not its value. Assigning one into an ordinary
+  # vector (`ids <- integer(n); ids[i] <- ...`, as
+  # `episodic_institutions_resolve()` does) drops the class and keeps the
+  # payload, so institution 368 silently became 1.8e-321 and was then
+  # written into an INTEGER column as 0. That is how every case in a
+  # MariaDB run ended up pointing at a non-existent institution 0, while
+  # SQLite - whose last_insert_rowid() is a plain numeric - was correct all
+  # along. `as.numeric()` is bit64's own method and yields the real value,
+  # never the bit pattern.
+  id <- as.numeric(id)
+  if (is.na(id) || id > .Machine$integer.max) {
+    stop(
+      "Could not read the last inserted id from the database (got ",
+      format(id),
+      "). This should not happen; the run cannot safely continue, since ",
+      "every row written after this point would reference the wrong id.",
+      call. = FALSE
+    )
+  }
+  as.integer(id)
 }
 
 #' Every table name `inst/sql/schema.sql` declares
@@ -628,10 +677,6 @@ episodic_db_schema_statements <- function(dialect) {
         "  sample_date    TEXT NOT NULL," = "  sample_date    VARCHAR(10) NOT NULL,",
         "  pathogen       TEXT NOT NULL,  -- raw lab-provided string, used verbatim" = "  pathogen       VARCHAR(191) NOT NULL,  -- raw lab-provided string, used verbatim",
         "care_line      TEXT NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown'))," = "care_line      VARCHAR(20) NOT NULL DEFAULT 'unknown' CHECK (care_line IN ('first', 'second', 'third', 'other', 'unknown')),"
-      ),
-      episodic_reporting_triangle = c(
-        "  sample_date TEXT NOT NULL," = "  sample_date VARCHAR(10) NOT NULL,",
-        "  run_date    TEXT NOT NULL," = "  run_date    VARCHAR(10) NOT NULL,"
       ),
       episodic_stream_trend = c(
         "  week_start TEXT NOT NULL," = "  week_start VARCHAR(10) NOT NULL,"

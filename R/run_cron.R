@@ -321,7 +321,13 @@ episodic_run_cron <- function(
   debug = FALSE
 ) {
   start_time <- Sys.time()
-  episodic_trace("episodic_run_cron() starting (host=", host, ", account=", account, ")")
+  episodic_trace(
+    "episodic_run_cron() starting (host=",
+    host,
+    ", account=",
+    account,
+    ")"
+  )
   if (isTRUE(debug)) {
     episodic_trace_session_info(db_path)
   }
@@ -329,7 +335,11 @@ episodic_run_cron <- function(
   episodic_trace("Resolving configuration")
   config <- episodic_config_resolve(episodic_config_path)
   hashed <- episodic_config_hash(config)
-  episodic_trace("Configuration resolved (hash ", substr(hashed$hash, 1, 12), ")")
+  episodic_trace(
+    "Configuration resolved (hash ",
+    substr(hashed$hash, 1, 12),
+    ")"
+  )
 
   episodic_trace("Connecting to database")
   con <- if (episodic_db_exists(db_path)) {
@@ -345,7 +355,12 @@ episodic_run_cron <- function(
     ")"
   )
 
-  run_id <- episodic_db_run_start(con, host = host, account = account)
+  run_id <- episodic_db_run_start(
+    con,
+    host = host,
+    account = account,
+    run_date = run_date
+  )
   episodic_trace("Run ", run_id, " started")
 
   # Data problems are the operator's to fix, so they must reach the
@@ -358,7 +373,12 @@ episodic_run_cron <- function(
   prepared <- tryCatch(
     {
       cases <- episodic_resolve_data(cases)
-      episodic_trace_debug(debug, "debug: case data resolved (", nrow(cases), " rows)")
+      episodic_trace_debug(
+        debug,
+        "debug: case data resolved (",
+        nrow(cases),
+        " rows)"
+      )
       report <- episodic_check_cases(cases)
       problems <- report[report$severity == "problem", , drop = FALSE]
       if (nrow(problems) > 0) {
@@ -373,7 +393,11 @@ episodic_run_cron <- function(
       )
       denominators <- episodic_resolve_data(denominators)
       if (!is.null(denominators)) {
-        episodic_trace("Validating denominator data (", nrow(denominators), " rows)")
+        episodic_trace(
+          "Validating denominator data (",
+          nrow(denominators),
+          " rows)"
+        )
         episodic_validate_denominators(denominators)
       }
       # institution_activity is resolved against the institutions table,
@@ -383,7 +407,9 @@ episodic_run_cron <- function(
       # not depend on that, so it is still worth refusing on up front
       # rather than mid-transaction if it was handed over as a plain
       # data frame rather than a function.
-      if (!is.null(institution_activity) && is.data.frame(institution_activity)) {
+      if (
+        !is.null(institution_activity) && is.data.frame(institution_activity)
+      ) {
         episodic_trace(
           "Validating institution activity data (",
           nrow(institution_activity),
@@ -451,13 +477,22 @@ episodic_run_cron <- function(
       stats
     },
     error = function(e) {
-      episodic_trace("Error during run body, rolling back: ", conditionMessage(e))
+      episodic_trace(
+        "Error during run body, rolling back: ",
+        conditionMessage(e)
+      )
       DBI::dbRollback(con)
       episodic_run_cron_failure(conditionMessage(e))
     }
   )
 
-  episodic_trace("Finishing run ", run_id, " (status: ", result$status %||% "success", ")")
+  episodic_trace(
+    "Finishing run ",
+    run_id,
+    " (status: ",
+    result$status %||% "success",
+    ")"
+  )
   episodic_run_cron_finish(con, run_id, hashed, result)
 
   # The run row records this, but a scheduled run nobody reads the row of
@@ -472,7 +507,10 @@ episodic_run_cron <- function(
     )
   }
 
-  elapsed <- round(as.numeric(difftime(Sys.time(), start_time, units = "secs")), 1)
+  elapsed <- round(
+    as.numeric(difftime(Sys.time(), start_time, units = "secs")),
+    1
+  )
   episodic_trace(
     "episodic_run_cron() finished in ",
     elapsed,
@@ -481,7 +519,11 @@ episodic_run_cron <- function(
     ")"
   )
   if (isTRUE(debug)) {
-    episodic_trace_debug(debug, "debug: memory at finish: ", episodic_trace_memory())
+    episodic_trace_debug(
+      debug,
+      "debug: memory at finish: ",
+      episodic_trace_memory()
+    )
   }
 
   invisible(run_id)
@@ -699,7 +741,10 @@ episodic_run_cron_body <- function(
       denominator_counts$n_written
     )
   } else {
-    denominator_counts <- list(n_supplied = NA_integer_, n_written = NA_integer_)
+    denominator_counts <- list(
+      n_supplied = NA_integer_,
+      n_written = NA_integer_
+    )
   }
 
   episodic_trace("Fetching all known cases and institutions")
@@ -721,7 +766,10 @@ episodic_run_cron_body <- function(
   )
   if (!is.null(institution_activity)) {
     episodic_trace("Loading institution activity (patient-days) data")
-    activity_counts <- episodic_institution_activity_load(con, institution_activity)
+    activity_counts <- episodic_institution_activity_load(
+      con,
+      institution_activity
+    )
     episodic_trace(
       "Institution activity loaded: supplied=",
       activity_counts$n_supplied,
@@ -744,6 +792,12 @@ episodic_run_cron_body <- function(
   n_detections_total <- 0L
   n_new_total <- 0L
   n_updated_total <- 0L
+  # Streams that were eligible for Farrington but do not have the baseline
+  # its configured `b` needs. Collected so the run can say so once, rather
+  # than each stream quietly producing nothing.
+  farrington_short <- NULL
+  n_muted_streams <- 0L
+  muted_stream_ids <- episodic_db_muted_stream_ids(con, run_date)
 
   episodic_trace("Running same-place detector")
   same_place_detections <- episodic_detect_same_place(
@@ -761,7 +815,6 @@ episodic_run_cron_body <- function(
   rare_trigger_detections <- episodic_detect_rare_trigger(
     con,
     cases_all,
-    institutions,
     config
   )
   episodic_trace(
@@ -776,6 +829,17 @@ episodic_run_cron_body <- function(
   episodic_trace("Farrington owes ", farrington_weeks, " week(s) this run")
 
   streams <- episodic_db_streams(con) # refresh: same_place/rare_trigger may have created streams
+  # Read once for the whole run rather than once per stream inside
+  # episodic_reconcile_stream(). Only a stream's own candidates can open a
+  # cluster on it, so a snapshot taken here cannot go stale for any stream
+  # the loop then skips.
+  streams_with_clusters <- unique(
+    episodic_db_clusters(
+      con,
+      open_only = TRUE,
+      include_suppressed = TRUE
+    )$stream_id
+  )
   episodic_trace(
     "Reconciling ",
     nrow(streams),
@@ -800,14 +864,6 @@ episodic_run_cron_body <- function(
       " case(s)"
     )
 
-    episodic_triangle_update(
-      con,
-      stream$stream_id,
-      stream_cases,
-      as.character(run_date)
-    )
-    episodic_trace_debug(debug, "debug:   triangle_update done")
-
     stream_detections <- rbind(
       same_place_detections[
         same_place_detections$stream_id == stream$stream_id,
@@ -817,23 +873,46 @@ episodic_run_cron_body <- function(
       ]
     )
 
+    # A muted stream produces no new detections, which is exactly what the
+    # app promises when it offers the action ("temporarily suppresses new
+    # detections for this stream ... so the same cause is not flagged again
+    # and again"). Until now the mute was written, shown in the activity
+    # log, and consulted by nothing: an epidemiologist could mute a stream
+    # for a known seasonal peak and the next run would open a dossier on it
+    # regardless.
+    #
+    # Detections only. Reconciliation still runs below, so clusters that
+    # were already open go on ageing and closing normally - a mute quiets
+    # what is coming, it does not freeze what is already on the board.
+    muted <- stream$stream_id %in% muted_stream_ids
+    if (muted) {
+      stream_detections <- stream_detections[0, , drop = FALSE]
+      n_muted_streams <- n_muted_streams + 1L
+      episodic_trace_debug(
+        debug,
+        "debug:   stream is muted; detections suppressed"
+      )
+    }
+
     # MEM runs on pathogen_region (L5) streams only, for pathogens
     # flagged mem_applicable - see episodic_detect_mem()'s own docs for
     # why L5 rather than every level.
     pc_mem <- pathogen_config[pathogen_config$pathogen == stream$pathogen, ]
     if (
       nrow(pc_mem) > 0 &&
+        !muted &&
         isTRUE(as.logical(pc_mem$mem_applicable[1])) &&
         identical(stream$level, "pathogen_region")
     ) {
       stream_detections <- rbind(
         stream_detections,
-        episodic_detect_mem(stream_cases, stream$stream_id, run_date)
+        episodic_detect_mem(stream_cases, stream$stream_id, run_date, config)
       )
       episodic_trace_debug(debug, "debug:   MEM detect done")
     }
 
-    eligible <- nrow(stream_cases) > 0 &&
+    eligible <- !muted &&
+      nrow(stream_cases) > 0 &&
       episodic_eligibility_gate(stream_cases, run_date, config)
     episodic_trace_debug(debug, "debug:   eligibility gate: ", eligible)
     if (eligible) {
@@ -885,17 +964,27 @@ episodic_run_cron_body <- function(
         farrington_weeks
       )
 
-      stream_detections <- rbind(
-        stream_detections,
-        episodic_detect_farrington(
-          farrington_cases,
-          stream$stream_id,
-          config,
-          run_date,
-          population = population,
-          n_weeks = farrington_weeks
-        )
+      farrington <- episodic_detect_farrington(
+        farrington_cases,
+        stream$stream_id,
+        config,
+        run_date,
+        population = population,
+        n_weeks = farrington_weeks
       )
+      shortfall <- episodic_farrington_shortfall(farrington)
+      if (!is.null(shortfall)) {
+        farrington_short <- rbind(
+          farrington_short,
+          data.frame(
+            stream_id = stream$stream_id,
+            have = unname(shortfall[["have"]]),
+            need = unname(shortfall[["need"]]),
+            stringsAsFactors = FALSE
+          )
+        )
+      }
+      stream_detections <- rbind(stream_detections, farrington)
       episodic_trace_debug(debug, "debug:   episodic_detect_farrington() done")
 
       # trend cache for the multi-year trend panel; see
@@ -1000,6 +1089,23 @@ episodic_run_cron_body <- function(
     weights <- config$priority_score$weights
     min_excess <- config$effect_size_floor$min_excess_over_upperbound %||% NA
     min_ratio <- config$effect_size_floor$min_ratio_observed_expected %||% NA
+    # A stream with no candidates this run and no open cluster from a
+    # previous one has nothing for reconciliation to do: matching, ageing
+    # and staleness all operate on clusters that do not exist. Skipping is
+    # worth a special case because it is the common case - most streams
+    # never alarm - and the call is two `SELECT`s deep even when it does
+    # nothing, which across several hundred streams was the single
+    # largest remaining source of round trips in a run.
+    if (
+      nrow(stream_detections) == 0 &&
+        !(stream$stream_id %in% streams_with_clusters)
+    ) {
+      episodic_trace_debug(
+        debug,
+        "debug:   no candidates and no open clusters, skipping reconciliation"
+      )
+      next
+    }
     episodic_trace_debug(debug, "debug:   calling episodic_reconcile_stream()")
     reconcile_result <- episodic_reconcile_stream(
       con,
@@ -1043,7 +1149,12 @@ episodic_run_cron_body <- function(
         )
         # Same descriptive rate the dossier's own density stat shows, so
         # the ranking and the displayed evidence cannot drift apart.
-        density <- episodic_app_density(con, stream, candidate_cases, debug = debug)
+        density <- episodic_app_density(
+          con,
+          stream,
+          candidate_cases,
+          debug = debug
+        )
         density_ratio <- if (
           is.null(density) || is.na(density$baseline) || density$baseline <= 0
         ) {
@@ -1111,6 +1222,24 @@ episodic_run_cron_body <- function(
     n_new_total <- n_new_total + reconcile_result$n_new
     n_updated_total <- n_updated_total + reconcile_result$n_updated
   }
+  if (n_muted_streams > 0) {
+    episodic_trace(
+      "Detection suppressed on ",
+      n_muted_streams,
+      " muted stream(s); their existing clusters still age and close normally"
+    )
+  }
+  if (!is.null(farrington_short) && nrow(farrington_short) > 0) {
+    episodic_trace(
+      "Farrington had too little history on ",
+      nrow(farrington_short),
+      " of the eligible stream(s) and did not run there: it needs ",
+      max(farrington_short$need),
+      " weeks for the configured b, and the longest of those streams has ",
+      max(farrington_short$have),
+      ". Lower `farrington.b` or wait for the history to accrue."
+    )
+  }
   episodic_trace(
     "Stream reconciliation done: ",
     n_detections_total,
@@ -1126,7 +1255,11 @@ episodic_run_cron_body <- function(
   # every stream in it has reconciled.
   episodic_trace("Suppressing lattice")
   episodic_suppress_lattice(con, config)
-  episodic_trace_debug(debug, "debug: memory before finishing: ", episodic_trace_memory())
+  episodic_trace_debug(
+    debug,
+    "debug: memory before finishing: ",
+    episodic_trace_memory()
+  )
 
   list(
     status = if (isTRUE(activity_counts$n_skipped > 0)) {

@@ -290,12 +290,11 @@ test_that("episodic_triangle_completeness() returns an empty frame rather than e
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   # sample_date far outside max_lag_days from run_date -> filtered to zero rows
-  episodic_db_reporting_triangle_upsert(
+  episodic_test_seed_completion(
     env$con,
-    stream_id = env$stream_id,
+    env$stream_id,
     sample_date = "2024-01-01",
-    run_date = "2025-06-01",
-    n_cases = 3
+    seen_by_lag = list("517" = 3)
   )
   result <- episodic_triangle_completeness(
     env$con,
@@ -520,49 +519,33 @@ test_that("episodic_app_completeness() reads the leading run of incomplete lags,
   # single noisy dip at lag 11. A median over a modest number of sample
   # dates is not monotone, and taking the largest sub-95% lag used to
   # shade eleven days of complete data.
-  triangle <- list(
-    c(0, 1),
-    c(1, 2),
-    c(2, 3),
-    c(3, 4),
-    c(4, 4),
-    c(5, 4),
-    c(11, 3)
+  episodic_test_seed_completion(
+    env$con,
+    sid,
+    sample_date = "2025-06-01",
+    seen_by_lag = list("0" = 1, "1" = 2, "2" = 3, "3" = 4, "4" = 4, "5" = 4)
   )
-  for (i in seq_along(triangle)) {
-    lag <- triangle[[i]][1]
-    seen <- triangle[[i]][2]
-    episodic_db_reporting_triangle_upsert(
-      env$con,
-      stream_id = sid,
-      sample_date = "2025-06-01",
-      run_date = as.character(as.Date("2025-06-01") + lag),
-      n_cases = seen
-    )
-  }
   expect_equal(episodic_app_completeness(env$con, sid)$incomplete_days, 3L)
 })
 
 test_that("episodic_app_completeness() shades everything when a stream never reaches 95%", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  for (lag in 0:5) {
-    episodic_db_reporting_triangle_upsert(
-      env$con,
-      stream_id = env$stream_id,
-      sample_date = "2025-06-01",
-      run_date = as.character(as.Date("2025-06-01") + lag),
-      n_cases = lag + 1
-    )
-  }
   # The eventual total only arrives well past max_lag_days, so no lag
   # inside the observable window is anywhere near 95% complete.
-  episodic_db_reporting_triangle_upsert(
+  episodic_test_seed_completion(
     env$con,
-    stream_id = env$stream_id,
+    env$stream_id,
     sample_date = "2025-06-01",
-    run_date = "2025-06-26",
-    n_cases = 100L
+    seen_by_lag = list(
+      "0" = 1,
+      "1" = 2,
+      "2" = 3,
+      "3" = 4,
+      "4" = 5,
+      "5" = 6,
+      "25" = 100
+    )
   )
   expect_equal(
     episodic_app_completeness(env$con, env$stream_id)$incomplete_days,
@@ -586,15 +569,12 @@ test_that("episodic_app_epi_curve() stops shading a cluster whose reporting fini
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   # Slow-reporting stream: incomplete at lags 0-4.
-  for (lag in 0:5) {
-    episodic_db_reporting_triangle_upsert(
-      env$con,
-      stream_id = env$stream_id,
-      sample_date = "2025-06-01",
-      run_date = as.character(as.Date("2025-06-01") + lag),
-      n_cases = if (lag < 5) lag else 10
-    )
-  }
+  episodic_test_seed_completion(
+    env$con,
+    env$stream_id,
+    sample_date = "2025-06-01",
+    seen_by_lag = list("1" = 1, "2" = 2, "3" = 3, "4" = 4, "5" = 10)
+  )
   # The fixture's cases are from January 2025 and the run is today, so
   # none of them can still be filling up. Anchoring the window on the
   # cluster's own last case day (as this used to) would fade its tail
@@ -611,15 +591,12 @@ test_that("episodic_app_concentration() measures the share among cases whose PC 
     pc = c("9711", "9711", "9711", "9711", NA, NA),
     stringsAsFactors = FALSE
   )
-  concentration <- episodic_app_concentration(cases, "pathogen_region")
+  concentration <- episodic_app_concentration(cases)
   expect_equal(concentration$dominant_share, 1)
   expect_equal(concentration$total, 4)
   expect_equal(concentration$n_unknown_pc, 2)
 
-  expect_null(episodic_app_concentration(
-    data.frame(pc = c(NA, NA)),
-    "pathogen_region"
-  ))
+  expect_null(episodic_app_concentration(data.frame(pc = c(NA, NA))))
 })
 
 test_that("episodic_app_denominator_series() computes positivity from region-wide cases, not cluster ones", {
@@ -644,13 +621,16 @@ test_that("episodic_app_denominator_series() computes positivity from region-wid
     stringsAsFactors = FALSE
   )
   episodic_db_case_insert_new(env$con, extra, env$run_id)
-  episodic_db_denominator_upsert(
+  episodic_denominators_load(
     env$con,
-    pathogen = "Norovirus",
-    sample_date = "2025-01-06",
-    care_line = "first",
-    area_code = NA,
-    n_tests = 100L
+    data.frame(
+      pathogen = "Norovirus",
+      sample_date = "2025-01-06",
+      care_line = "first",
+      area_code = NA_character_,
+      n_tests = 100L,
+      stringsAsFactors = FALSE
+    )
   )
 
   cluster_cases <- episodic_db_cluster_cases(env$con, env$cluster_id)

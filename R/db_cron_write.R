@@ -20,7 +20,7 @@
 # Cron-side writers: the cron owns the facts and may upsert. These
 # functions are the only place in the package that write to
 # episodic_stream, episodic_institution, episodic_institution_activity,
-# episodic_case, episodic_reporting_triangle, episodic_denominator,
+# episodic_case, episodic_denominator,
 # episodic_detection, episodic_cluster, episodic_cluster_case,
 # episodic_detection_run and (for pre-renders) episodic_report_render. See
 # R/db_app_write.R for the insert-only counterparts. Parameters
@@ -28,118 +28,55 @@
 # name identifies - see inst/sql/schema.sql for the exact column
 # contracts (nullability, enums, defaults).
 
+# Every function here binds its parameters through a `params` local built
+# immediately before the `DBI` call, never as an inline
+# `params = list(...)` argument. That is deliberate and load-bearing, not
+# a style preference. An R argument is a promise: written inline, the
+# list is not evaluated at the call site but inside `dbExecute()`/
+# `dbGetQuery()`, by which point the driver has already prepared a
+# statement on `con`. If evaluating any element then queries that same
+# connection - which a caller-supplied argument can do without this file
+# knowing, and which `episodic_reconcile_stream()`'s `priority_score_fn`
+# did - RMariaDB cancels and frees the prepared statement, and `dbBind()`
+# binds into freed memory. That is a native crash: no R condition, no
+# `tryCatch`, the session simply dies, and only ever against MariaDB
+# (RSQLite permits concurrent results on one connection, so the same code
+# is harmless there). Building the list first means every element is a
+# plain value before any statement exists.
+
 #' @keywords internal
 #' @noRd
 episodic_db_pathogen_config_load <- function(con, pathogen_config) {
-  for (i in seq_len(nrow(pathogen_config))) {
-    row <- pathogen_config[i, ]
-    existing <- episodic_db_pathogen_config_get(con, row$pathogen)
-    if (is.null(existing)) {
-      DBI::dbExecute(
-        con,
-        "INSERT INTO episodic_pathogen_config
-          (pathogen, episode_days, incub_min_days, incub_max_days, case_free_days,
-           cooldown_days, rt_applicable, si_mean_days, si_sd_days, si_dist,
-           mem_applicable, severity_weight, source_ref)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        params = list(
-          row$pathogen,
-          row$episode_days,
-          row$incub_min_days,
-          row$incub_max_days,
-          row$case_free_days,
-          row$cooldown_days,
-          as.integer(row$rt_applicable),
-          row$si_mean_days,
-          row$si_sd_days,
-          row$si_dist,
-          as.integer(row$mem_applicable),
-          row$severity_weight,
-          row$source_ref
-        )
-      )
-    } else {
-      DBI::dbExecute(
-        con,
-        "UPDATE episodic_pathogen_config SET
-          episode_days = ?, incub_min_days = ?, incub_max_days = ?, case_free_days = ?,
-          cooldown_days = ?, rt_applicable = ?, si_mean_days = ?, si_sd_days = ?,
-          si_dist = ?, mem_applicable = ?, severity_weight = ?, source_ref = ?
-         WHERE pathogen = ?",
-        params = list(
-          row$episode_days,
-          row$incub_min_days,
-          row$incub_max_days,
-          row$case_free_days,
-          row$cooldown_days,
-          as.integer(row$rt_applicable),
-          row$si_mean_days,
-          row$si_sd_days,
-          row$si_dist,
-          as.integer(row$mem_applicable),
-          row$severity_weight,
-          row$source_ref,
-          row$pathogen
-        )
-      )
-    }
+  if (nrow(pathogen_config) == 0) {
+    return(invisible(NULL))
   }
-  invisible(NULL)
-}
-
-#' @param institution_key,display_name,institution_type,municipality,is_monitored
-#'   Columns of `episodic_institution`.
-#' @return The `institution_id` of the inserted or existing row.
-#' @keywords internal
-#' @noRd
-episodic_db_institution_upsert <- function(
-  con,
-  institution_key,
-  display_name,
-  institution_type,
-  care_line,
-  municipality = NA,
-  pc = NA,
-  n_beds = NA,
-  is_monitored = FALSE
-) {
-  existing <- episodic_db_institution_get(con, institution_key)
-  if (!is.null(existing)) {
-    DBI::dbExecute(
-      con,
-      "UPDATE episodic_institution SET display_name = ?, institution_type = ?, care_line = ?,
-        municipality = ?, pc = ?, n_beds = ?, is_monitored = ? WHERE institution_key = ?",
-      params = list(
-        display_name,
-        institution_type,
-        care_line,
-        municipality,
-        pc,
-        n_beds,
-        as.integer(is_monitored),
-        institution_key
-      )
-    )
-    return(existing$institution_id)
-  }
-  DBI::dbExecute(
-    con,
-    "INSERT INTO episodic_institution
-      (institution_key, display_name, institution_type, care_line, municipality, pc,
-       n_beds, is_monitored, is_active)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)",
-    params = list(
-      institution_key,
-      display_name,
-      institution_type,
-      care_line,
-      municipality,
-      pc,
-      n_beds,
-      as.integer(is_monitored)
-    )
+  cols <- c(
+    "pathogen",
+    "episode_days",
+    "incub_min_days",
+    "incub_max_days",
+    "case_free_days",
+    "cooldown_days",
+    "rt_applicable",
+    "si_mean_days",
+    "si_sd_days",
+    "si_dist",
+    "mem_applicable",
+    "severity_weight",
+    "source_ref"
   )
-  episodic_db_last_insert_id(con)
+  values <- as.list(pathogen_config[, cols, drop = FALSE])
+  values$rt_applicable <- as.integer(values$rt_applicable)
+  values$mem_applicable <- as.integer(values$mem_applicable)
+  episodic_db_write_many(
+    con,
+    table = "episodic_pathogen_config",
+    cols = cols,
+    values = values,
+    key_cols = "pathogen",
+    update_cols = setdiff(cols, "pathogen")
+  )
+  invisible(NULL)
 }
 
 #' @keywords internal
@@ -156,41 +93,44 @@ episodic_db_institution_activity_upsert <- function(
 ) {
   period_start <- episodic_sql_date(period_start)
   period_end <- episodic_sql_date(period_end)
+  params <- list(institution_id, period_start)
   existing <- DBI::dbGetQuery(
     con,
     "SELECT 1 FROM episodic_institution_activity WHERE institution_id = ? AND period_start = ?",
-    params = list(institution_id, period_start)
+    params = params
   )
   if (nrow(existing) > 0) {
+    params <- list(
+      period_end,
+      patient_days,
+      admissions,
+      n_beds,
+      source,
+      institution_id,
+      period_start
+    )
     DBI::dbExecute(
       con,
       "UPDATE episodic_institution_activity SET period_end = ?, patient_days = ?, admissions = ?,
         n_beds = ?, source = ? WHERE institution_id = ? AND period_start = ?",
-      params = list(
-        period_end,
-        patient_days,
-        admissions,
-        n_beds,
-        source,
-        institution_id,
-        period_start
-      )
+      params = params
     )
   } else {
+    params <- list(
+      institution_id,
+      period_start,
+      period_end,
+      patient_days,
+      admissions,
+      n_beds,
+      source
+    )
     DBI::dbExecute(
       con,
       "INSERT INTO episodic_institution_activity
         (institution_id, period_start, period_end, patient_days, admissions, n_beds, source)
        VALUES (?, ?, ?, ?, ?, ?, ?)",
-      params = list(
-        institution_id,
-        period_start,
-        period_end,
-        patient_days,
-        admissions,
-        n_beds,
-        source
-      )
+      params = params
     )
   }
   invisible(NULL)
@@ -216,47 +156,146 @@ episodic_db_stream_upsert <- function(
   if (!is.null(existing)) {
     first_seen <- min(existing$first_seen, observed_date)
     last_seen <- max(existing$last_seen, observed_date)
+    params <- list(first_seen, last_seen, stream_key)
     DBI::dbExecute(
       con,
       "UPDATE episodic_stream SET first_seen = ?, last_seen = ? WHERE stream_key = ?",
-      params = list(first_seen, last_seen, stream_key)
+      params = params
     )
     return(existing$stream_id)
   }
+  params <- list(
+    stream_key,
+    level,
+    pathogen,
+    care_line,
+    region_code,
+    institution_id,
+    ward,
+    denominator,
+    severity_weight,
+    observed_date,
+    observed_date,
+    episodic_now()
+  )
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_stream
       (stream_key, level, pathogen, care_line, region_code, institution_id,
        ward, denominator, severity_weight, is_active, first_seen, last_seen, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)",
-    params = list(
-      stream_key,
-      level,
-      pathogen,
-      care_line,
-      region_code,
-      institution_id,
-      ward,
-      denominator,
-      severity_weight,
-      observed_date,
-      observed_date,
-      episodic_now()
-    )
+    params = params
   )
   episodic_db_last_insert_id(con)
 }
 
-#' How many `source_key`/`patient_key` (etc.) values one `IN (...)` query
-#' binds at a time.
+#' Insert or upsert many rows in one statement per chunk
 #'
-#' A single query with tens of thousands of placeholders risks the
-#' driver's own limit (SQLite's default `SQLITE_MAX_VARIABLE_NUMBER`,
-#' MariaDB's `max_allowed_packet`) - chunking keeps every lookup well
-#' under either, whatever the batch size an operator's extract step
-#' hands to a run.
+#' The package's write helpers used to send one row per `DBI` call, which
+#' on a local SQLite file costs nothing and against a networked MariaDB
+#' costs a full round trip each - the difference between a run that takes
+#' seconds and one that takes minutes.
+#'
+#' Chunked `dbBind()` is not the fix, despite looking like it: RMariaDB
+#' binds a multi-row parameter list with `while (bind_next_row())
+#' { execute(); }`, one `mysql_stmt_execute()` per row, so it saves the
+#' parse but still pays every round trip. What does collapse them is one
+#' statement carrying every row's placeholders - `VALUES (?, ?), (?, ?),
+#' ...` with a single flat parameter list, which both drivers execute
+#' once.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param table Table name.
+#' @param cols Column names, in the order `values` supplies them.
+#' @param values A list of equal-length column vectors (a data frame is
+#'   fine), giving the rows to write.
+#' @param key_cols The columns whose uniqueness decides insert vs. update.
+#'   `NULL` (the default) means a plain insert with no conflict handling -
+#'   use it only when the caller has already established the rows are new.
+#' @param update_cols The columns to overwrite when a row already exists.
+#' @return Invisibly, the number of rows written.
 #' @keywords internal
 #' @noRd
+episodic_db_write_many <- function(
+  con,
+  table,
+  cols,
+  values,
+  key_cols = NULL,
+  update_cols = NULL
+) {
+  n <- length(values[[1]])
+  if (n == 0) {
+    return(invisible(0L))
+  }
+  tuple <- paste0("(", paste(rep("?", length(cols)), collapse = ", "), ")")
+
+  # Both dialects spell "insert, or update what is already there" their own
+  # way, and neither understands the other's. Same split as
+  # episodic_db_last_insert_id() and episodic_db_pragmas() already make.
+  tail <- ""
+  if (!is.null(key_cols)) {
+    sqlite <- inherits(con, "SQLiteConnection")
+    tail <- if (length(update_cols) > 0) {
+      if (sqlite) {
+        paste0(
+          " ON CONFLICT (",
+          paste(key_cols, collapse = ", "),
+          ") DO UPDATE SET ",
+          paste(
+            sprintf("%s = excluded.%s", update_cols, update_cols),
+            collapse = ", "
+          )
+        )
+      } else {
+        paste0(
+          " ON DUPLICATE KEY UPDATE ",
+          paste(
+            sprintf("%s = VALUES(%s)", update_cols, update_cols),
+            collapse = ", "
+          )
+        )
+      }
+    } else if (sqlite) {
+      # Nothing to update: the row already says what it would have said.
+      paste0(" ON CONFLICT (", paste(key_cols, collapse = ", "), ") DO NOTHING")
+    } else {
+      # MariaDB has no DO NOTHING; assigning a key column to itself is the
+      # idiomatic no-op, and unlike INSERT IGNORE it does not also swallow
+      # unrelated errors.
+      sprintf(" ON DUPLICATE KEY UPDATE %s = %s", key_cols[1], key_cols[1])
+    }
+  }
+
+  # Chunked on the placeholder count, not the row count: a wide table hits
+  # the driver's parameter ceiling far sooner than a narrow one.
+  per_chunk <- max(1L, as.integer(floor(5000 / length(cols))))
+  chunks <- split(seq_len(n), ceiling(seq_len(n) / per_chunk))
+  for (idx in chunks) {
+    sql <- paste0(
+      "INSERT INTO ",
+      table,
+      " (",
+      paste(cols, collapse = ", "),
+      ") VALUES ",
+      paste(rep(tuple, length(idx)), collapse = ", "),
+      tail
+    )
+    # One flat list, row-major: every element length 1, so the driver binds
+    # and executes exactly once.
+    params <- vector("list", length(idx) * length(cols))
+    k <- 1L
+    for (i in idx) {
+      for (col in cols) {
+        params[[k]] <- values[[col]][i]
+        k <- k + 1L
+      }
+    }
+    DBI::dbExecute(con, sql, params = params)
+  }
+  invisible(n)
+}
+
 episodic_db_chunk_size <- 500L
 
 #' The subset of `keys` already present in `episodic_case.source_key`
@@ -302,121 +341,48 @@ episodic_db_case_insert_new <- function(con, cases, run_id) {
     return(0L)
   }
 
-  # One prepared statement, bound once with every row's parameters
-  # instead of parsed and executed anew for each row - the same
-  # `INSERT`, sent as one round trip per chunk rather than one per case.
-  chunks <- split(
-    seq_len(n_inserted),
-    ceiling(seq_len(n_inserted) / episodic_db_chunk_size)
-  )
-  stmt <- DBI::dbSendStatement(
+  # Every row's placeholders in one statement. This used to bind a single
+  # prepared statement in chunks, which reads like a batch but is not one:
+  # RMariaDB executes a multi-row parameter list one row at a time, so the
+  # only thing that saved was the parse, and 2,400 cases still cost 2,400
+  # round trips.
+  episodic_db_write_many(
     con,
-    "INSERT INTO episodic_case
-      (source_key, lab_number, patient_key, sample_date, receipt_date,
-       pathogen, care_line, institution_id, ward, specialism, pc, sex, age,
-       first_seen_run)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-  )
-  on.exit(DBI::dbClearResult(stmt))
-  for (idx in chunks) {
-    batch <- to_insert[idx, , drop = FALSE]
-    DBI::dbBind(
-      stmt,
-      list(
-        batch$source_key,
-        batch$lab_number,
-        batch$patient_key,
-        episodic_sql_date(batch$sample_date),
-        episodic_sql_date(batch$receipt_date),
-        batch$pathogen,
-        batch$care_line,
-        batch$institution_id,
-        batch$ward,
-        batch$specialism,
-        batch$pc,
-        batch$sex,
-        batch$age,
-        rep(run_id, nrow(batch))
-      )
+    table = "episodic_case",
+    cols = c(
+      "source_key",
+      "lab_number",
+      "patient_key",
+      "sample_date",
+      "receipt_date",
+      "pathogen",
+      "care_line",
+      "institution_id",
+      "ward",
+      "specialism",
+      "pc",
+      "sex",
+      "age",
+      "first_seen_run"
+    ),
+    values = list(
+      source_key = to_insert$source_key,
+      lab_number = to_insert$lab_number,
+      patient_key = to_insert$patient_key,
+      sample_date = episodic_sql_date(to_insert$sample_date),
+      receipt_date = episodic_sql_date(to_insert$receipt_date),
+      pathogen = to_insert$pathogen,
+      care_line = to_insert$care_line,
+      institution_id = to_insert$institution_id,
+      ward = to_insert$ward,
+      specialism = to_insert$specialism,
+      pc = to_insert$pc,
+      sex = to_insert$sex,
+      age = to_insert$age,
+      first_seen_run = rep(run_id, n_inserted)
     )
-  }
+  )
   n_inserted
-}
-
-#' @keywords internal
-#' @noRd
-episodic_db_reporting_triangle_upsert <- function(
-  con,
-  stream_id,
-  sample_date,
-  run_date,
-  n_cases
-) {
-  existing <- DBI::dbGetQuery(
-    con,
-    "SELECT 1 FROM episodic_reporting_triangle WHERE stream_id = ? AND sample_date = ? AND run_date = ?",
-    params = list(stream_id, sample_date, run_date)
-  )
-  if (nrow(existing) > 0) {
-    DBI::dbExecute(
-      con,
-      "UPDATE episodic_reporting_triangle SET n_cases = ?
-       WHERE stream_id = ? AND sample_date = ? AND run_date = ?",
-      params = list(n_cases, stream_id, sample_date, run_date)
-    )
-  } else {
-    DBI::dbExecute(
-      con,
-      "INSERT INTO episodic_reporting_triangle (stream_id, sample_date, run_date, n_cases)
-       VALUES (?, ?, ?, ?)",
-      params = list(stream_id, sample_date, run_date, n_cases)
-    )
-  }
-  invisible(NULL)
-}
-
-#' @keywords internal
-#' @noRd
-episodic_db_denominator_upsert <- function(
-  con,
-  pathogen,
-  sample_date,
-  care_line,
-  area_code = NA,
-  n_tests
-) {
-  sample_date <- episodic_sql_date(sample_date)
-  existing <- DBI::dbGetQuery(
-    con,
-    "SELECT 1 FROM episodic_denominator
-     WHERE pathogen = ? AND sample_date = ? AND care_line = ?
-       AND (area_code = ? OR (area_code IS NULL AND ? IS NULL))",
-    params = list(pathogen, sample_date, care_line, area_code, area_code)
-  )
-  if (nrow(existing) > 0) {
-    DBI::dbExecute(
-      con,
-      "UPDATE episodic_denominator SET n_tests = ?
-       WHERE pathogen = ? AND sample_date = ? AND care_line = ?
-         AND (area_code = ? OR (area_code IS NULL AND ? IS NULL))",
-      params = list(
-        n_tests,
-        pathogen,
-        sample_date,
-        care_line,
-        area_code,
-        area_code
-      )
-    )
-  } else {
-    DBI::dbExecute(
-      con,
-      "INSERT INTO episodic_denominator (pathogen, sample_date, care_line, area_code, n_tests)
-       VALUES (?, ?, ?, ?, ?)",
-      params = list(pathogen, sample_date, care_line, area_code, n_tests)
-    )
-  }
-  invisible(NULL)
 }
 
 #' @param week_start A week-start date (chart-cache row for the multi-year
@@ -431,24 +397,27 @@ episodic_db_stream_trend_upsert <- function(
   expected = NA,
   upperbound = NA
 ) {
+  params <- list(stream_id, week_start)
   existing <- DBI::dbGetQuery(
     con,
     "SELECT 1 FROM episodic_stream_trend WHERE stream_id = ? AND week_start = ?",
-    params = list(stream_id, week_start)
+    params = params
   )
   if (nrow(existing) > 0) {
+    params <- list(n_cases, expected, upperbound, stream_id, week_start)
     DBI::dbExecute(
       con,
       "UPDATE episodic_stream_trend SET n_cases = ?, expected = ?, upperbound = ?
        WHERE stream_id = ? AND week_start = ?",
-      params = list(n_cases, expected, upperbound, stream_id, week_start)
+      params = params
     )
   } else {
+    params <- list(stream_id, week_start, n_cases, expected, upperbound)
     DBI::dbExecute(
       con,
       "INSERT INTO episodic_stream_trend (stream_id, week_start, n_cases, expected, upperbound)
        VALUES (?, ?, ?, ?, ?)",
-      params = list(stream_id, week_start, n_cases, expected, upperbound)
+      params = params
     )
   }
   invisible(NULL)
@@ -469,25 +438,26 @@ episodic_db_detection_insert <- function(
   params_json,
   cluster_id = NA
 ) {
+  params <- list(
+    run_id,
+    stream_id,
+    cluster_id,
+    detector,
+    first_day,
+    last_day,
+    n_cases,
+    expected,
+    upperbound,
+    params_json,
+    episodic_now()
+  )
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_detection
       (run_id, stream_id, cluster_id, detector, first_day, last_day, n_cases, expected,
        upperbound, params, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    params = list(
-      run_id,
-      stream_id,
-      cluster_id,
-      detector,
-      first_day,
-      last_day,
-      n_cases,
-      expected,
-      upperbound,
-      params_json,
-      episodic_now()
-    )
+    params = params
   )
   episodic_db_last_insert_id(con)
 }
@@ -495,10 +465,11 @@ episodic_db_detection_insert <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_detection_set_cluster <- function(con, detection_id, cluster_id) {
+  params <- list(cluster_id, detection_id)
   DBI::dbExecute(
     con,
     "UPDATE episodic_detection SET cluster_id = ? WHERE detection_id = ?",
-    params = list(cluster_id, detection_id)
+    params = params
   )
   invisible(NULL)
 }
@@ -518,6 +489,19 @@ episodic_db_cluster_insert <- function(
   detector_agreement,
   run_id
 ) {
+  params <- list(
+    stream_id,
+    first_day,
+    last_day,
+    n_cases,
+    expected,
+    excess,
+    ratio,
+    priority_score,
+    detector_agreement,
+    episodic_now(),
+    run_id
+  )
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_cluster
@@ -525,19 +509,7 @@ episodic_db_cluster_insert <- function(
        detector_agreement, opened_at, last_detected_run, runs_since_detected,
        changed_since_assessment, suppressed_by, merged_into)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, NULL, NULL)",
-    params = list(
-      stream_id,
-      first_day,
-      last_day,
-      n_cases,
-      expected,
-      excess,
-      ratio,
-      priority_score,
-      detector_agreement,
-      episodic_now(),
-      run_id
-    )
+    params = params
   )
   episodic_db_last_insert_id(con)
 }
@@ -559,44 +531,46 @@ episodic_db_cluster_update <- function(
   changed_since_assessment = NULL
 ) {
   if (is.null(changed_since_assessment)) {
+    params <- list(
+      first_day,
+      last_day,
+      n_cases,
+      expected,
+      excess,
+      ratio,
+      priority_score,
+      detector_agreement,
+      run_id,
+      cluster_id
+    )
     DBI::dbExecute(
       con,
       "UPDATE episodic_cluster SET first_day = ?, last_day = ?, n_cases = ?, expected = ?,
         excess = ?, ratio = ?, priority_score = ?, detector_agreement = ?,
         last_detected_run = ?, runs_since_detected = 0 WHERE cluster_id = ?",
-      params = list(
-        first_day,
-        last_day,
-        n_cases,
-        expected,
-        excess,
-        ratio,
-        priority_score,
-        detector_agreement,
-        run_id,
-        cluster_id
-      )
+      params = params
     )
   } else {
+    params <- list(
+      first_day,
+      last_day,
+      n_cases,
+      expected,
+      excess,
+      ratio,
+      priority_score,
+      detector_agreement,
+      run_id,
+      as.integer(changed_since_assessment),
+      cluster_id
+    )
     DBI::dbExecute(
       con,
       "UPDATE episodic_cluster SET first_day = ?, last_day = ?, n_cases = ?, expected = ?,
         excess = ?, ratio = ?, priority_score = ?, detector_agreement = ?,
         last_detected_run = ?, runs_since_detected = 0, changed_since_assessment = ?
        WHERE cluster_id = ?",
-      params = list(
-        first_day,
-        last_day,
-        n_cases,
-        expected,
-        excess,
-        ratio,
-        priority_score,
-        detector_agreement,
-        run_id,
-        as.integer(changed_since_assessment),
-        cluster_id
-      )
+      params = params
     )
   }
   invisible(NULL)
@@ -605,10 +579,11 @@ episodic_db_cluster_update <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_increment_runs_since_detected <- function(con, cluster_id) {
+  params <- list(cluster_id)
   DBI::dbExecute(
     con,
     "UPDATE episodic_cluster SET runs_since_detected = runs_since_detected + 1 WHERE cluster_id = ?",
-    params = list(cluster_id)
+    params = params
   )
   invisible(NULL)
 }
@@ -629,13 +604,14 @@ episodic_db_cluster_set_suppressed_by <- function(
   cluster_id,
   suppressed_by
 ) {
+  params <- list(
+    if (is.na(suppressed_by)) NA_integer_ else as.integer(suppressed_by),
+    cluster_id
+  )
   DBI::dbExecute(
     con,
     "UPDATE episodic_cluster SET suppressed_by = ? WHERE cluster_id = ?",
-    params = list(
-      if (is.na(suppressed_by)) NA_integer_ else as.integer(suppressed_by),
-      cluster_id
-    )
+    params = params
   )
   invisible(NULL)
 }
@@ -643,40 +619,66 @@ episodic_db_cluster_set_suppressed_by <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_set_merged_into <- function(con, cluster_id, merged_into) {
+  params <- list(merged_into, cluster_id)
   DBI::dbExecute(
     con,
     "UPDATE episodic_cluster SET merged_into = ? WHERE cluster_id = ?",
-    params = list(merged_into, cluster_id)
+    params = params
   )
   invisible(NULL)
 }
 
+#' Link many cases to one cluster in a single statement
+#'
+#' `(cluster_id, case_id)` is the table's primary key, so re-linking a case
+#' the cluster already holds is a no-op the database can decide for itself.
+#' Asking it first, once per case, was two round trips per link.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id One cluster id.
+#' @param case_ids The case ids to link. May be empty.
+#' @return Invisibly, `NULL`.
 #' @keywords internal
 #' @noRd
-episodic_db_cluster_case_link <- function(con, cluster_id, case_id) {
-  existing <- DBI::dbGetQuery(
-    con,
-    "SELECT 1 FROM episodic_cluster_case WHERE cluster_id = ? AND case_id = ?",
-    params = list(cluster_id, case_id)
-  )
-  if (nrow(existing) == 0) {
-    DBI::dbExecute(
-      con,
-      "INSERT INTO episodic_cluster_case (cluster_id, case_id) VALUES (?, ?)",
-      params = list(cluster_id, case_id)
-    )
+episodic_db_cluster_case_link_many <- function(con, cluster_id, case_ids) {
+  case_ids <- unique(case_ids)
+  if (length(case_ids) == 0) {
+    return(invisible(NULL))
   }
+  episodic_db_write_many(
+    con,
+    table = "episodic_cluster_case",
+    cols = c("cluster_id", "case_id"),
+    values = list(
+      cluster_id = rep(cluster_id, length(case_ids)),
+      case_id = case_ids
+    ),
+    key_cols = c("cluster_id", "case_id")
+  )
   invisible(NULL)
 }
 
 #' @keywords internal
 #' @noRd
-episodic_db_run_start <- function(con, host, account, attempt_no = 1L) {
+episodic_db_run_start <- function(
+  con,
+  host,
+  account,
+  run_date = Sys.Date(),
+  attempt_no = 1L
+) {
+  params <- list(
+    host,
+    account,
+    episodic_now(),
+    episodic_sql_date(run_date),
+    attempt_no
+  )
   DBI::dbExecute(
     con,
-    "INSERT INTO episodic_detection_run (host, account, started_at, status, attempt_no)
-     VALUES (?, ?, ?, 'running', ?)",
-    params = list(host, account, episodic_now(), attempt_no)
+    "INSERT INTO episodic_detection_run (host, account, started_at, run_date, status, attempt_no)
+     VALUES (?, ?, ?, ?, 'running', ?)",
+    params = params
   )
   episodic_db_last_insert_id(con)
 }
@@ -704,6 +706,27 @@ episodic_db_run_finish <- function(
   config_snapshot = NA,
   error_text = NA
 ) {
+  params <- list(
+    episodic_now(),
+    status,
+    n_streams,
+    n_detections,
+    n_signals_new,
+    n_signals_updated,
+    n_cases_supplied,
+    n_cases_deduplicated,
+    n_cases_inserted,
+    n_denominators_written,
+    n_activity_supplied,
+    n_activity_written,
+    n_activity_skipped,
+    code_version,
+    pkg_versions,
+    config_hash,
+    config_snapshot,
+    error_text,
+    run_id
+  )
   DBI::dbExecute(
     con,
     "UPDATE episodic_detection_run SET finished_at = ?, status = ?, n_streams = ?,
@@ -713,27 +736,7 @@ episodic_db_run_finish <- function(
       n_activity_skipped = ?, code_version = ?,
       pkg_versions = ?, config_hash = ?, config_snapshot = ?, error_text = ?
      WHERE run_id = ?",
-    params = list(
-      episodic_now(),
-      status,
-      n_streams,
-      n_detections,
-      n_signals_new,
-      n_signals_updated,
-      n_cases_supplied,
-      n_cases_deduplicated,
-      n_cases_inserted,
-      n_denominators_written,
-      n_activity_supplied,
-      n_activity_written,
-      n_activity_skipped,
-      code_version,
-      pkg_versions,
-      config_hash,
-      config_snapshot,
-      error_text,
-      run_id
-    )
+    params = params
   )
   invisible(NULL)
 }

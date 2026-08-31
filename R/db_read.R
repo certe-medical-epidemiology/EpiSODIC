@@ -70,18 +70,6 @@ episodic_db_institutions <- function(con) {
   DBI::dbGetQuery(con, "SELECT * FROM episodic_institution")
 }
 
-#' @param institution_key A single `institution_key`.
-#' @keywords internal
-#' @noRd
-episodic_db_institution_get <- function(con, institution_key) {
-  res <- DBI::dbGetQuery(
-    con,
-    "SELECT * FROM episodic_institution WHERE institution_key = ?",
-    params = list(institution_key)
-  )
-  if (nrow(res) == 0) NULL else res[1, ]
-}
-
 #' @keywords internal
 #' @noRd
 episodic_db_cases <- function(con) {
@@ -256,11 +244,115 @@ episodic_db_clusters_for_suppression <- function(con) {
 #' @keywords internal
 #' @noRd
 episodic_db_clusters_for_stream <- function(con, stream_id) {
+  params <- list(stream_id)
   DBI::dbGetQuery(
     con,
     "SELECT * FROM episodic_cluster WHERE stream_id = ? AND merged_into IS NULL",
-    params = list(stream_id)
+    params = params
   )
+}
+
+#' @param stream_ids Several `stream_id`s.
+#' @keywords internal
+#' @noRd
+episodic_db_clusters_for_streams <- function(con, stream_ids) {
+  stream_ids <- unique(stream_ids)
+  if (length(stream_ids) == 0) {
+    return(episodic_db_clusters_for_stream(con, -1L))
+  }
+  placeholders <- paste(rep("?", length(stream_ids)), collapse = ", ")
+  DBI::dbGetQuery(
+    con,
+    sprintf(
+      "SELECT * FROM episodic_cluster
+        WHERE stream_id IN (%s) AND merged_into IS NULL
+        ORDER BY stream_id, cluster_id",
+      placeholders
+    ),
+    params = as.list(stream_ids)
+  )
+}
+
+
+#' A stream's own cases, by the rule that decided the stream exists
+#'
+#' Stream membership is pathogen, plus institution where the stream names
+#' one, plus ward where it names one, plus the geographic area its
+#' `region_code` denotes. That rule lives here rather than being spelled
+#' out at each call site, because two call sites disagreeing about what a
+#' stream contains is a silent correctness bug: the line list would show
+#' one set of cases and the reporting-delay curve would be computed from
+#' another.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param stream_id The stream to read.
+#' @param columns Case columns to select. `ward` and `pc` are always
+#'   fetched regardless, since the ward and region filters need them.
+#' @param first_day,last_day Optional inclusive `sample_date` bounds.
+#' @return A data frame of the stream's cases. Carries an
+#'   `episodic_stream_exists` attribute, so a caller can tell "this stream
+#'   has no cases" from "there is no such stream" - which
+#'   `episodic_reconcile_case_count()` needs, since only the second is a
+#'   reason to fall back to a detector's own count.
+#' @keywords internal
+#' @noRd
+episodic_db_cases_for_stream_id <- function(
+  con,
+  stream_id,
+  columns = c("case_id", "sample_date"),
+  first_day = NULL,
+  last_day = NULL
+) {
+  params <- list(stream_id)
+  stream <- DBI::dbGetQuery(
+    con,
+    "SELECT pathogen, institution_id, ward, region_code, level
+     FROM episodic_stream WHERE stream_id = ?",
+    params = params
+  )
+  select <- paste(unique(c(columns, "ward", "pc")), collapse = ", ")
+  if (nrow(stream) == 0) {
+    return(DBI::dbGetQuery(
+      con,
+      sprintf("SELECT %s FROM episodic_case WHERE 0 = 1", select)
+    ))
+  }
+  exists_marker <- function(df) {
+    attr(df, "episodic_stream_exists") <- TRUE
+    df
+  }
+
+  where <- "pathogen = ? AND (? IS NULL OR institution_id = ?)"
+  params <- list(
+    stream$pathogen[1],
+    stream$institution_id[1],
+    stream$institution_id[1]
+  )
+  if (!is.null(first_day)) {
+    where <- paste(where, "AND sample_date >= ?")
+    params <- c(params, list(episodic_sql_date(first_day)))
+  }
+  if (!is.null(last_day)) {
+    where <- paste(where, "AND sample_date <= ?")
+    params <- c(params, list(episodic_sql_date(last_day)))
+  }
+  cases <- DBI::dbGetQuery(
+    con,
+    sprintf("SELECT %s FROM episodic_case WHERE %s", select, where),
+    params = params
+  )
+
+  # Keyed on pathogen and institution alone, a ward cluster would take in
+  # every case in the building and an area cluster every case in the
+  # catchment.
+  if (!is.na(stream$ward[1])) {
+    cases <- cases[!is.na(cases$ward) & cases$ward == stream$ward[1], ]
+  }
+  if (!is.na(stream$region_code[1]) && nrow(cases) > 0) {
+    region <- episodic_case_region_code(cases, stream$level[1])
+    cases <- cases[!is.na(region) & region == stream$region_code[1], ]
+  }
+  exists_marker(cases)
 }
 
 #' @param cluster_id A single `cluster_id`.
@@ -348,14 +440,26 @@ episodic_db_cluster_states_batch <- function(con, cluster_ids) {
   )
 }
 
+#' The streams under an active mute on a given date
+#'
+#' A mute is in effect when the date falls inside its window. A mute is
+#' bounded when it is written and expires by itself; there is no way to end
+#' one early. Read once per run rather than once per stream.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param as_of The date to judge the window against.
+#' @return An integer vector of `stream_id`s, possibly empty.
 #' @keywords internal
 #' @noRd
-episodic_db_stream_mutes <- function(con, stream_id) {
-  DBI::dbGetQuery(
+episodic_db_muted_stream_ids <- function(con, as_of) {
+  params <- list(episodic_sql_date(as_of), episodic_sql_date(as_of))
+  res <- DBI::dbGetQuery(
     con,
-    "SELECT * FROM episodic_stream_mute WHERE stream_id = ? ORDER BY created_at",
-    params = list(stream_id)
+    "SELECT DISTINCT stream_id FROM episodic_stream_mute
+      WHERE muted_from <= ? AND muted_until >= ?",
+    params = params
   )
+  as.integer(res$stream_id)
 }
 
 #' @param username A single username.
@@ -389,17 +493,6 @@ episodic_db_app_user_events <- function(con, user_id) {
     con,
     "SELECT * FROM episodic_app_user_event WHERE user_id = ? ORDER BY created_at, event_id",
     params = list(user_id)
-  )
-}
-
-#' @param run_id A single `run_id`.
-#' @keywords internal
-#' @noRd
-episodic_db_detections_for_run <- function(con, run_id) {
-  DBI::dbGetQuery(
-    con,
-    "SELECT * FROM episodic_detection WHERE run_id = ?",
-    params = list(run_id)
   )
 }
 

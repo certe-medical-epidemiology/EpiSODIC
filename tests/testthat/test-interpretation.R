@@ -273,15 +273,20 @@ test_that("recommendation always fires exactly one fragment, tiered by priority/
   )
 })
 
-test_that("episodic_interpretation_paragraphs() excludes the recommendation, episodic_interpretation_recommendation() returns only it", {
+test_that("interpretation output carries exactly one recommendation, last, and paragraphs before it", {
+  # The split episodic_ui_interpretation_panel() makes: every fragment not
+  # prefixed "recommendation." is a paragraph, and the one that is renders
+  # apart from them as an advisory callout. It reads generate() once and
+  # splits its output, so this asserts on that output rather than on a pair
+  # of helpers that would each have to generate all over again.
   cluster <- base_cluster(priority_score = 85)
   full <- episodic_interpretation_generate(cluster)
-  paragraphs <- episodic_interpretation_paragraphs(cluster)
-  recommendation <- episodic_interpretation_recommendation(cluster)
+  is_recommendation <- startsWith(full$fired, "recommendation.")
 
-  expect_equal(length(paragraphs), length(full$text) - 1)
-  expect_equal(recommendation, full$text[length(full$text)])
-  expect_false(recommendation %in% paragraphs)
+  expect_equal(sum(is_recommendation), 1)
+  expect_true(is_recommendation[length(is_recommendation)])
+  expect_equal(sum(!is_recommendation), length(full$text) - 1)
+  expect_false(full$text[is_recommendation] %in% full$text[!is_recommendation])
 })
 
 test_that("every rendered fragment is free of unrendered {placeholder} tokens, in every shipped language", {

@@ -79,8 +79,7 @@ CREATE TABLE episodic_stream_mute (
                 'known_source', 'other')),
   note        TEXT,
   user_id     INTEGER NOT NULL REFERENCES episodic_app_user(user_id),
-  created_at  TEXT NOT NULL,
-  revoked_at  TEXT
+  created_at  TEXT NOT NULL
 );
 
 CREATE INDEX idx_episodic_stream_mute_stream ON episodic_stream_mute(stream_id);
@@ -93,6 +92,11 @@ CREATE TABLE episodic_detection_run (
   host              TEXT NOT NULL,
   account           TEXT NOT NULL,
   started_at        TEXT NOT NULL,
+  -- The run's own business date, as passed to episodic_run_cron(). Nearly
+  -- always the date part of started_at, but not by construction: a
+  -- backfill or a replay names the date it is standing in for, and the
+  -- reporting-delay calculation reads this, not the wall clock.
+  run_date          TEXT NOT NULL,
   finished_at       TEXT,
   status            TEXT NOT NULL CHECK (status IN (
                       'running', 'success', 'failed', 'partial')),
@@ -280,17 +284,6 @@ CREATE TABLE episodic_assessment_event (
 CREATE INDEX idx_episodic_assessment_event_cluster ON episodic_assessment_event(cluster_id);
 
 -- ---------------------------------------------------------------------
--- 5.7 Reporting triangle (cron)
--- ---------------------------------------------------------------------
-CREATE TABLE episodic_reporting_triangle (
-  stream_id   INTEGER NOT NULL REFERENCES episodic_stream(stream_id),
-  sample_date TEXT NOT NULL,
-  run_date    TEXT NOT NULL,
-  n_cases     INTEGER NOT NULL,
-  PRIMARY KEY (stream_id, sample_date, run_date)
-);
-
--- ---------------------------------------------------------------------
 -- Weekly Farrington trend points (cron). The multi-year trend panel needs
 -- a continuous expected/upperbound band across many weeks, and the app
 -- only ever performs cheap reads - it cannot recompute farringtonFlexible()
@@ -328,9 +321,13 @@ CREATE TABLE episodic_stream_trend (
 -- cannot be null". A surrogate PRIMARY KEY plus a UNIQUE constraint on
 -- the natural key gets the same one-row-per-stratum guarantee in both
 -- SQLite and MySQL, since UNIQUE (unlike PRIMARY KEY) treats multiple
--- NULLs as distinct in both dialects - matching what
--- episodic_db_denominator_upsert() already assumes with its explicit
--- "area_code IS NULL AND ? IS NULL" comparison.
+-- NULLs as distinct in both dialects.
+--
+-- That last point cuts both ways, and is why episodic_denominators_load()
+-- matches an incoming row against what is on file in R rather than letting
+-- the database decide with an upsert on this constraint: NULL is not equal
+-- to NULL, so no conflict would ever be raised for a row without an area
+-- stratum, and every one of them would insert afresh on every run.
 -- ---------------------------------------------------------------------
 CREATE TABLE episodic_denominator (
   denominator_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -350,8 +347,9 @@ CREATE TABLE episodic_cluster_state (
   cluster_id INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
   state      TEXT NOT NULL CHECK (state IN (
                'new', 'assessing', 'monitoring', 'closable', 'closed', 'reassess')),
+  -- Append-only, so a state's end is the next row's entered_at; there is
+  -- deliberately no left_at to keep in step with it.
   entered_at TEXT NOT NULL,
-  left_at    TEXT,
   `trigger`  TEXT NOT NULL CHECK (`trigger` IN (
                'detection', 'assessment', 'case_free', 'new_case', 'closure', 'system')),
   event_id   INTEGER REFERENCES episodic_assessment_event(event_id),
@@ -372,17 +370,17 @@ CREATE TABLE episodic_app_user (
   role          TEXT NOT NULL CHECK (role IN ('epidemiologist', 'viewer')),
   is_active     INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
   must_change   INTEGER NOT NULL DEFAULT 1 CHECK (must_change IN (0, 1)),
-  last_login_at TEXT,
   created_at    TEXT NOT NULL
 );
 
 -- Account bookkeeping that would otherwise need an UPDATE (a fresh
--- password_hash on change, a bumped last_login_at on every login) is kept
+-- password_hash on change, a new last-login time on every login) is kept
 -- insert-only instead, the same event-sourced pattern episodic_cluster_state
 -- already uses for cluster state: the "current" password hash is the most
 -- recent password_change event's, falling back to episodic_app_user's own
--- initial password_hash if no such event exists yet; "current" last_login_at
--- is the most recent login event.
+-- initial password_hash if no such event exists yet, and the last login is
+-- the most recent login event. There is deliberately no last_login_at
+-- column on episodic_app_user for the same value to drift out of step with.
 CREATE TABLE episodic_app_user_event (
   event_id      INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id       INTEGER NOT NULL REFERENCES episodic_app_user(user_id),

@@ -362,6 +362,7 @@
   "info.access.title": "Acceso",
   "info.access.body": "La lectura es anónima: cualquiera que acceda a la aplicación puede ver clústeres, series y el archivo sin iniciar sesión. Iniciar sesión solo es necesario para clasificar un clúster, cerrarlo o silenciar una serie; cada escritura se atribuye al usuario con sesión iniciada.",
 
+  "streams.col.farrington": "Farrington",
   "streams.col.baseline_excluded": "Línea base excluida",
 
   "interpretation.fragment.curve_shape.point_source": "Todos los casos caen dentro de un único periodo de incubación máximo, lo que apunta a una fuente puntual: una exposición compartida en torno a un momento, en lugar de transmisión de persona a persona.",

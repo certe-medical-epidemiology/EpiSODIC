@@ -35,38 +35,57 @@
 #' @keywords internal
 #' @noRd
 episodic_baseline_excluded_windows <- function(con, stream_id) {
-  clusters <- episodic_db_clusters_for_stream(con, stream_id)
+  episodic_baseline_excluded_windows_many(con, stream_id)[[1]]
+}
+
+#' The same, for many streams at once
+#'
+#' The Streams screen asks this of every stream on the page, and the cron
+#' of every eligible stream. One cluster query per stream plus one
+#' assessment-event query per cluster made that a per-row round trip
+#' count; both readers are the same two queries however many streams are
+#' asked about.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param stream_ids The streams to answer for.
+#' @return A list of data frames, one per id, in the order given.
+#' @keywords internal
+#' @noRd
+episodic_baseline_excluded_windows_many <- function(con, stream_ids) {
   empty <- data.frame(
     first_day = character(0),
     last_day = character(0),
     stringsAsFactors = FALSE
   )
-  if (nrow(clusters) == 0) {
-    return(empty)
+  if (length(stream_ids) == 0) {
+    return(list())
   }
+  clusters_all <- episodic_db_clusters_for_streams(con, stream_ids)
+  if (nrow(clusters_all) == 0) {
+    return(rep(list(empty), length(stream_ids)))
+  }
+  events_all <- episodic_db_assessment_events_batch(
+    con,
+    clusters_all$cluster_id
+  )
+  classified <- events_all[!is.na(events_all$verdict), ]
+  # The latest verdict per cluster: the batch reader orders by
+  # cluster_id, created_at, event_id, so that is each cluster's last row.
+  latest <- classified[!duplicated(classified$cluster_id, fromLast = TRUE), ]
+  confirmed <- latest$cluster_id[latest$verdict == "confirmed_epidemic"]
 
-  windows <- lapply(seq_len(nrow(clusters)), function(i) {
-    cluster_id <- clusters$cluster_id[i]
-    events <- episodic_db_assessment_events(con, cluster_id)
-    classified <- events[!is.na(events$verdict), ]
-    if (nrow(classified) == 0) {
-      return(NULL)
-    }
-    latest_verdict <- classified$verdict[nrow(classified)]
-    if (!identical(latest_verdict, "confirmed_epidemic")) {
-      return(NULL)
+  keep <- clusters_all[clusters_all$cluster_id %in% confirmed, , drop = FALSE]
+  lapply(stream_ids, function(sid) {
+    rows <- keep[keep$stream_id == sid, , drop = FALSE]
+    if (nrow(rows) == 0) {
+      return(empty)
     }
     data.frame(
-      first_day = clusters$first_day[i],
-      last_day = clusters$last_day[i],
+      first_day = rows$first_day,
+      last_day = rows$last_day,
       stringsAsFactors = FALSE
     )
   })
-  windows <- windows[!vapply(windows, is.null, logical(1))]
-  if (length(windows) == 0) {
-    return(empty)
-  }
-  do.call(rbind, windows)
 }
 
 #' Remove cases falling inside any excluded window

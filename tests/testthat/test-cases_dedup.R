@@ -312,18 +312,7 @@ test_that("episodic_validate_cases() rejects an age that is not numeric", {
 test_that("episodic_db_last_case_dates() returns the latest sample_date per patient/pathogen already stored", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
-  institution_id <- episodic_db_institution_upsert(
-    con,
-    institution_key = digest::digest(
-      "hosp-dedup",
-      algo = "sha1",
-      serialize = FALSE
-    ),
-    display_name = "Test Hospital",
-    institution_type = "hospital",
-    care_line = "second",
-    is_monitored = TRUE
-  )
+  institution_id <- episodic_test_institution(con, "hosp-dedup")
   run_id <- episodic_db_run_start(con, "host", "account")
   cases <- data.frame(
     source_key = c("K1", "K2"),
@@ -365,18 +354,7 @@ test_that("episodic_db_case_insert_new() stores a Date-typed sample_date as ISO 
   # back and breaks the moment it is not ISO text.
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
-  institution_id <- episodic_db_institution_upsert(
-    con,
-    institution_key = digest::digest(
-      "hosp-dedup-date",
-      algo = "sha1",
-      serialize = FALSE
-    ),
-    display_name = "Test Hospital",
-    institution_type = "hospital",
-    care_line = "second",
-    is_monitored = TRUE
-  )
+  institution_id <- episodic_test_institution(con, "hosp-dedup-date")
   run_id <- episodic_db_run_start(con, "host", "account")
   cases <- data.frame(
     source_key = "K1",

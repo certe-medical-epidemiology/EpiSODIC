@@ -64,6 +64,22 @@ test_that("episodic_mem_status() returns NULL with no data, or too few fully-obs
   ))
 })
 
+test_that("episodic_mem_status() takes its season requirement from the configuration, not a literal", {
+  skip_if_not_installed("mem")
+  # Same data, same date, two configurations: the shipped `min_seasons`
+  # fits (this is the fixture the well-formed-status test below uses), and
+  # a requirement no instance could ever meet must not. If the guard were
+  # still reading a literal, both calls would return the same thing.
+  cases <- episodic_mem_synthetic_seasons(n_seasons = 5)
+  run_date <- as.Date("2024-01-15")
+  config <- episodic_config_resolve(NA)
+  expect_equal(as.integer(config$mem$min_seasons), 2L)
+  expect_false(is.null(episodic_mem_status(cases, run_date, config)))
+
+  config$mem$min_seasons <- 99
+  expect_null(episodic_mem_status(cases, run_date, config))
+})
+
 test_that("episodic_mem_status() reports off-season as a fact, not as an inability to compute", {
   # The distinction is what gives a seasonal cluster a closure route in
   # July; see episodic_closure_criterion_met().

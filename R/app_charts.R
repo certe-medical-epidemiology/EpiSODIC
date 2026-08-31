@@ -98,6 +98,36 @@ episodic_chart_month_abbrevs <- function(
   )
 }
 
+#' A numeric axis labeller in the session language's own conventions
+#'
+#' English writes 1,234.5 and every other language this package speaks
+#' writes 1.234,5. A chart axis that ignores that is not merely untidy: a
+#' Dutch reader seeing an \eqn{R_t} of "1.4" reads fourteen hundred before
+#' reading 1.4, on the one chart where the difference between just above
+#' and just below 1 is the whole point.
+#'
+#' @param lang Session language.
+#' @return A function suitable as `ggplot2::scale_*_continuous(labels =)`.
+#' @keywords internal
+#' @noRd
+episodic_chart_number_labels <- function(
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
+  marks <- if (identical(episodic_lang(lang), "en")) {
+    list(big = ",", decimal = ".")
+  } else {
+    list(big = ".", decimal = ",")
+  }
+  function(x) {
+    format(
+      x,
+      big.mark = marks$big,
+      decimal.mark = marks$decimal,
+      scientific = FALSE
+    )
+  }
+}
+
 #' Breaks and labels for a weekly x axis
 #'
 #' `ggplot2`'s default date scale picks round calendar breaks, which on a
@@ -204,11 +234,6 @@ episodic_ui_epi_curve_chart <- function(
 ) {
   pal <- episodic_palette()
   curve$alpha <- ifelse(curve$incomplete, 0.45, 1)
-  marks <- if (identical(episodic_lang(lang), "en")) {
-    list(big = ",", decimal = ".")
-  } else {
-    list(big = ".", decimal = ",")
-  }
   ggplot2::ggplot(
     curve,
     ggplot2::aes(x = .data$sample_date, y = .data$n_cases)
@@ -220,14 +245,7 @@ episodic_ui_epi_curve_chart <- function(
       show.legend = FALSE
     ) +
     ggplot2::scale_alpha_identity() +
-    ggplot2::scale_y_continuous(labels = function(x) {
-      format(
-        x,
-        big.mark = marks$big,
-        decimal.mark = marks$decimal,
-        scientific = FALSE
-      )
-    }) +
+    ggplot2::scale_y_continuous(labels = episodic_chart_number_labels(lang)) +
     ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang)) +
     episodic_chart_theme()
 }
@@ -311,6 +329,7 @@ episodic_ui_rt_chart <- function(rt, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       colour = pal$primary,
       linewidth = 0.9
     ) +
+    ggplot2::scale_y_continuous(labels = episodic_chart_number_labels(lang)) +
     ggplot2::labs(y = "Rt") +
     episodic_chart_theme()
 }

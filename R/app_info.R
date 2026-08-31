@@ -74,7 +74,10 @@ episodic_ui_info_screen <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     class = "episodic-streams-screen",
     shiny::tags$div(
       class = "episodic-info-about",
-      shiny::img(src = "www/logo.svg"),
+      shiny::tags$div(
+        class = "episodic-info-about-img",
+        shiny::img(src = "www/logo.svg"),
+      ),
       shiny::tags$div(
         shiny::tags$div(
           class = "episodic-info-about-name",
@@ -85,6 +88,10 @@ episodic_ui_info_screen <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
               paste0("v", meta$version)
             )
           }
+        ),
+        shiny::tags$div(
+          class = "episodic-info-about-full-name",
+          episodic_tr("app.full_name", lang = lang)
         ),
         if (!is.null(meta) && nzchar(meta$description)) {
           shiny::tags$p(

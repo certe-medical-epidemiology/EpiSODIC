@@ -362,6 +362,7 @@
   "info.access.title": "Zugriff",
   "info.access.body": "Lesen ist anonym: Jeder, der die App erreicht, kann Cluster, Meldereihen und das Archiv einsehen, ohne sich anzumelden. Eine Anmeldung ist nur erforderlich, um ein Cluster zu klassifizieren, abzuschließen oder eine Meldereihe stummzuschalten - jede Schreibaktion wird dem angemeldeten Benutzer zugeordnet.",
 
+  "streams.col.farrington": "Farrington",
   "streams.col.baseline_excluded": "Basislinie ausgeschlossen",
 
   "interpretation.fragment.curve_shape.point_source": "Alle Fälle liegen innerhalb einer einzigen maximalen Inkubationszeit, was auf eine Punktquelle hindeutet: eine gemeinsame Exposition um einen Zeitpunkt herum statt einer Übertragung von Mensch zu Mensch.",

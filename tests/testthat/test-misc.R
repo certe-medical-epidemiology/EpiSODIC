@@ -134,7 +134,7 @@ test_that("episodic_priority_score() renormalises weights when density_ratio is 
   expect_true(is.finite(without_density))
 })
 
-test_that("episodic_triangle_update() and episodic_triangle_completeness() round-trip", {
+test_that("episodic_triangle_completeness() derives the completion curve from case arrivals", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
   stream_id <- episodic_db_stream_upsert(
@@ -144,44 +144,92 @@ test_that("episodic_triangle_update() and episodic_triangle_completeness() round
     pathogen = "Test pathogen",
     observed_date = "2025-01-05"
   )
-  cases <- data.frame(sample_date = c("2025-01-01", "2025-01-01", "2025-01-02"))
-  episodic_triangle_update(con, stream_id, cases, run_date = "2025-01-05")
 
-  triangle <- DBI::dbGetQuery(
-    con,
-    "SELECT * FROM episodic_reporting_triangle WHERE stream_id = ?",
-    params = list(stream_id)
-  )
-  expect_equal(nrow(triangle), 2)
-  expect_equal(sum(triangle$n_cases), 3)
+  # Two runs a day apart. The first sees two of the three cases for
+  # 2025-01-01; the third arrives late and is only visible to the second.
+  # That is a reporting delay, and it is the whole thing being measured.
+  run1 <- episodic_db_run_start(con, "h", "a", run_date = "2025-01-02")
+  episodic_db_run_finish(con, run1, status = "success")
+  run2 <- episodic_db_run_start(con, "h", "a", run_date = "2025-01-03")
+  episodic_db_run_finish(con, run2, status = "success")
+
+  insert_case <- function(key, sample_date, run_id) {
+    params <- list(key, key, key, sample_date, run_id)
+    DBI::dbExecute(
+      con,
+      "INSERT INTO episodic_case (source_key, lab_number, patient_key, sample_date,
+         pathogen, care_line, first_seen_run)
+       VALUES (?, ?, ?, ?, 'Test pathogen', 'second', ?)",
+      params = params
+    )
+  }
+  insert_case("A", "2025-01-01", run1)
+  insert_case("B", "2025-01-01", run1)
+  insert_case("C", "2025-01-01", run2)
 
   completeness <- episodic_triangle_completeness(con, stream_id)
+  expect_named(completeness, c("lag_days", "completeness"))
   expect_true(all(
     completeness$completeness >= 0 & completeness$completeness <= 1
   ))
+  # At lag 1 two of the eventual three were in; at lag 2 all three.
+  expect_equal(
+    completeness$completeness[completeness$lag_days == 1],
+    2 / 3
+  )
+  expect_equal(completeness$completeness[completeness$lag_days == 2], 1)
 })
 
-test_that("episodic_db_denominator_upsert() and episodic_denominators_load() round-trip", {
+test_that("episodic_triangle_completeness() ignores runs that never committed", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  stream_id <- episodic_db_stream_upsert(
+    con,
+    stream_key = episodic_stream_key("pathogen_region", "Test pathogen"),
+    level = "pathogen_region",
+    pathogen = "Test pathogen",
+    observed_date = "2025-01-05"
+  )
+  # A failed run rolled its body back, so it never made anything visible;
+  # counting it would invent a lag at which nothing had been reported.
+  failed <- episodic_db_run_start(con, "h", "a", run_date = "2025-01-02")
+  episodic_db_run_finish(con, failed, status = "failed")
+  ok <- episodic_db_run_start(con, "h", "a", run_date = "2025-01-03")
+  episodic_db_run_finish(con, ok, status = "success")
+  params <- list(ok)
+  DBI::dbExecute(
+    con,
+    "INSERT INTO episodic_case (source_key, lab_number, patient_key, sample_date,
+       pathogen, care_line, first_seen_run)
+     VALUES ('A', 'A', 'A', '2025-01-01', 'Test pathogen', 'second', ?)",
+    params = params
+  )
+  completeness <- episodic_triangle_completeness(con, stream_id)
+  expect_equal(completeness$lag_days, 2L)
+  expect_equal(completeness$completeness, 1)
+})
+
+test_that("episodic_denominators_load() revises a day's count instead of duplicating it", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
 
-  episodic_db_denominator_upsert(
-    con,
-    pathogen = "Norovirus",
-    sample_date = "2025-01-06",
-    care_line = "second",
-    area_code = NA,
-    n_tests = 40
-  )
-  # upsert: same key, different n_tests, must update not duplicate
-  episodic_db_denominator_upsert(
-    con,
-    pathogen = "Norovirus",
-    sample_date = "2025-01-06",
-    care_line = "second",
-    area_code = NA,
-    n_tests = 55
-  )
+  day <- function(n_tests) {
+    data.frame(
+      pathogen = "Norovirus",
+      sample_date = "2025-01-06",
+      care_line = "second",
+      area_code = NA_character_,
+      n_tests = n_tests,
+      stringsAsFactors = FALSE
+    )
+  }
+  expect_equal(episodic_denominators_load(con, day(40))$n_written, 1)
+  # Same key, a revised count: an update, not a second row. area_code is
+  # empty here on purpose - NULL is not equal to NULL in SQL, so this is
+  # the case a unique-index upsert would silently insert afresh every run.
+  expect_equal(episodic_denominators_load(con, day(55))$n_written, 1)
+  # And the same count again writes nothing at all.
+  expect_equal(episodic_denominators_load(con, day(55))$n_written, 0)
 
   rows <- DBI::dbGetQuery(con, "SELECT * FROM episodic_denominator")
   expect_equal(nrow(rows), 1)

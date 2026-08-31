@@ -1375,7 +1375,8 @@ episodic_ui_streams_screen <- function(
           shiny::tags$th(episodic_tr(
             "streams.col.baseline_excluded",
             lang = lang
-          ))
+          )),
+          shiny::tags$th(episodic_tr("streams.col.farrington", lang = lang))
         )),
         shiny::tags$tbody(
           lapply(seq_len(nrow(streams)), function(i) {
@@ -1414,7 +1415,27 @@ episodic_ui_streams_screen <- function(
               shiny::tags$td(row$denominator),
               shiny::tags$td(episodic_format_date(row$first_seen, lang = lang)),
               shiny::tags$td(episodic_format_date(row$last_seen, lang = lang)),
-              shiny::tags$td(excluded_text)
+              shiny::tags$td(excluded_text),
+              # Numbers only, deliberately: "weeks of history / weeks the
+              # configured b needs". A dash means Farrington is running on
+              # this stream. Saying it this way needs no translated phrase
+              # beyond the detector's own name, which is a proper noun.
+              shiny::tags$td(
+                title = sprintf(
+                  "Farrington needs %s weeks of history for the configured b; this stream has %s.",
+                  row$farrington_weeks_need,
+                  row$farrington_weeks_have
+                ),
+                if (isTRUE(row$farrington_ready)) {
+                  episodic_tr("misc.dash", lang = lang)
+                } else {
+                  sprintf(
+                    "%s / %s",
+                    row$farrington_weeks_have,
+                    row$farrington_weeks_need
+                  )
+                }
+              )
             )
           })
         )

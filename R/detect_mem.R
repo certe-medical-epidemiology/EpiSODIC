@@ -35,16 +35,17 @@
 #' Farrington continue to run at every other level exactly as before;
 #' this is additive, not a replacement.
 #'
-#' Requires at least two complete prior seasons in the historical matrix
-#' before firing at all (`min_seasons`), the same "need real baseline
+#' Requires at least `config$mem$min_seasons` complete prior seasons in the
+#' historical matrix before firing at all, the same "need real baseline
 #' history first" posture Farrington already takes for its own `b`
-#' parameter.
+#' parameter - and, like `b`, a configured value rather than a literal, so
+#' an instance can raise it without touching the code.
 #'
 #' @param cases_for_stream A data frame of a single (L5) stream's cases,
 #'   with `sample_date`.
 #' @param stream_id The stream these cases belong to.
 #' @param run_date The date to treat as "today".
-#' @param min_seasons Minimum number of complete prior seasons required.
+#' @param config The resolved configuration; uses `config$mem`.
 #' @return A data frame of detection records (zero or one row).
 #' @references
 #' Vega T, Lozano JE, Meerhoff T, Snacken R, Mott J, Ortiz de Lejarazu R,
@@ -59,7 +60,7 @@ episodic_detect_mem <- function(
   cases_for_stream,
   stream_id,
   run_date = Sys.Date(),
-  min_seasons = 2L
+  config = episodic_config_resolve()
 ) {
   empty <- episodic_detection_record(
     integer(0),
@@ -75,7 +76,7 @@ episodic_detect_mem <- function(
     return(empty)
   }
 
-  status <- episodic_mem_status(cases_for_stream, run_date, min_seasons)
+  status <- episodic_mem_status(cases_for_stream, run_date, config)
   if (is.null(status) || !isTRUE(status$epidemic_started)) {
     return(empty)
   }
@@ -133,10 +134,10 @@ episodic_detect_mem <- function(
 #' @param cases A data frame with `sample_date`, all of a stream's known
 #'   cases (not just one cluster's).
 #' @param run_date The date to treat as "today".
-#' @param min_seasons Minimum number of fully-observed prior seasons
-#'   required.
+#' @param config The resolved configuration; `config$mem$min_seasons` is
+#'   the minimum number of fully-observed prior seasons required.
 #' @return `NULL` if `mem` is not installed, there is no case data, or
-#'   fewer than `min_seasons` fully-observed prior seasons exist.
+#'   fewer than that many fully-observed prior seasons exist.
 #'   Otherwise a list: `in_season` (logical), `epidemic_started`
 #'   (logical), `current_week_count`, `pre_epidemic_threshold`,
 #'   `post_epidemic_threshold`, `week_start`, `week_end` (the evaluated
@@ -148,8 +149,9 @@ episodic_detect_mem <- function(
 episodic_mem_status <- function(
   cases,
   run_date = Sys.Date(),
-  min_seasons = 2L
+  config = episodic_config_resolve()
 ) {
+  min_seasons <- as.integer(config$mem$min_seasons %||% 2L)
   evaluated <- episodic_mem_evaluation_week(run_date)
 
   # Deliberately settled before the `mem` and case-data guards below:
@@ -420,7 +422,11 @@ episodic_season_shift <- function(season, n = 1L) {
 #'
 #' @param cases A data frame with `sample_date`.
 #' @param season The season label the thresholds are for.
-#' @param min_seasons Minimum number of fully-observed earlier seasons.
+#' @param config The resolved configuration; `config$mem$min_seasons` is
+#'   the minimum number of fully-observed earlier seasons required - the
+#'   same dial `episodic_mem_status()` reads, so raising it cannot leave
+#'   the detector silent while this screen keeps drawing thresholds fitted
+#'   on fewer seasons than the detector is willing to trust.
 #' @return A list with `pre_epidemic`, `post_epidemic`, `intensity` (see
 #'   `episodic_mem_intensity_thresholds()`) and `seasons_used`, or `NULL`
 #'   when `mem` is unavailable or too little earlier history exists.
@@ -429,8 +435,9 @@ episodic_season_shift <- function(season, n = 1L) {
 episodic_mem_thresholds_for_season <- function(
   cases,
   season,
-  min_seasons = 2L
+  config = episodic_config_resolve()
 ) {
+  min_seasons <- as.integer(config$mem$min_seasons %||% 2L)
   if (!requireNamespace("mem", quietly = TRUE)) {
     return(NULL)
   }

@@ -15,13 +15,13 @@ episodic_tr(
 \item{key}{A dotted key identifying the piece of text, e.g.
 \code{"nav.clusters"}. The full set of available keys and their wording in
 every shipped language lives in \verb{inst/i18n/*.json} (one file per
-language: \code{nl}, \code{en}, \code{es}, \code{fr}, \code{de}, \code{zh}, \code{hi}, \code{ar}).}
+language: \code{en}, \code{ar}, \code{nl}, \code{fr}, \code{de}, \code{hi}, \code{zh}, \code{es}).}
 
 \item{...}{Named values substituted into \code{{name}} placeholders in the
 template.}
 
-\item{lang}{Language: \code{"nl"}, \code{"en"}, \code{"es"}, \code{"fr"}, \code{"de"}, \code{"zh"},
-\code{"hi"}, or \code{"ar"}. Defaults to the \code{EPISODIC_LANGUAGE} environment
+\item{lang}{Language: \code{"en"}, \code{"ar"}, \code{"nl"}, \code{"fr"}, \code{"de"}, \code{"hi"},
+\code{"zh"}, or \code{"es"}. Defaults to the \code{EPISODIC_LANGUAGE} environment
 variable, falling back to \code{"en"} if that is unset.}
 
 \item{instance_i18n}{An optional named character vector of your own
