@@ -3,17 +3,22 @@
 [![R-CMD-check](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml)
 
 EpiSODIC is an automated outbreak cluster detection and assessment
-system for infectious disease epidemiologists. It runs in R, reads
-laboratory-confirmed infections, detects statistical and rule-based
-aberrations, reconciles them into persistent clusters, and gives
-epidemiologists a dossier to assess each one, with a full audit trail
-and outbreak reports for clinical colleagues (e.g. clinical
-microbiologists) and infection prevention nurses.
+system for infectious disease epidemiologists. Running just in R, it
+reads laboratory-confirmed infections automatically, detects statistical
+and rule-based aberrations, reconciles them into persistent clusters,
+and gives epidemiologists a dossier to assess each one, with a full
+audit trail and outbreak reports for clinical colleagues (e.g. clinical
+microbiologists) and infection prevention nurses. It can send
+notifications of new clusters automatically via email, MS Teams, Slack,
+or even an ntfy server.
 
 The dashboard and its outbreak reports are available in English, (Modern
 Standard) Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and
-Spanish. This software is free; this repository is open-source software
-with no data and no site-specific configuration.
+Spanish.
+
+This software is 100% free and open-source, and only allows for local
+storage of data and configurations. This software is perfectly safe, and
+all code is open to anyone willing or required to assess.
 
 ![A cluster dossier: case stats, status trajectory, an automatically
 generated plain-language interpretation, the epidemic curve, and the
@@ -177,6 +182,19 @@ outbreak report to clinical colleagues.
 - [`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md)
   : Render an outbreak report for clinical colleagues
 
+## Notifications
+
+Send alerts to your team when new clusters are detected or a detection
+run fails. Supports ntfy, SMTP, sendmail, Microsoft 365, Teams, and
+Slack.
+
+- [`episodic_notifications`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notifications.md)
+  : How notifications work
+- [`episodic_notify_test()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notify_test.md)
+  : Send a test notification through all configured channels
+- [`episodic_setup_microsoft365()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_setup_microsoft365.md)
+  : Set up Microsoft 365 authentication for notifications
+
 ## Customise the look and feel
 
 House colours, maps, translations, and dashboard chart building blocks -
@@ -210,6 +228,12 @@ instance.
 - [Getting your data
   in](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md):
 - [Deployment](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md):
+
+### Configure
+
+Set up notifications and other operational knobs.
+
+- [Notifications](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md):
 
 ### Reference
 

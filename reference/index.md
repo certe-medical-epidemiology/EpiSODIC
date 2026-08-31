@@ -96,6 +96,19 @@ outbreak report to clinical colleagues.
 - [`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md)
   : Render an outbreak report for clinical colleagues
 
+## Notifications
+
+Send alerts to your team when new clusters are detected or a detection
+run fails. Supports ntfy, SMTP, sendmail, Microsoft 365, Teams, and
+Slack.
+
+- [`episodic_notifications`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notifications.md)
+  : How notifications work
+- [`episodic_notify_test()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notify_test.md)
+  : Send a test notification through all configured channels
+- [`episodic_setup_microsoft365()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_setup_microsoft365.md)
+  : Set up Microsoft 365 authentication for notifications
+
 ## Customise the look and feel
 
 House colours, maps, translations, and dashboard chart building blocks -

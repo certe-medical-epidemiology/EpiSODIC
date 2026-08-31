@@ -3,17 +3,22 @@
 [![R-CMD-check](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml)
 
 EpiSODIC is an automated outbreak cluster detection and assessment
-system for infectious disease epidemiologists. It runs in R, reads
-laboratory-confirmed infections, detects statistical and rule-based
-aberrations, reconciles them into persistent clusters, and gives
-epidemiologists a dossier to assess each one, with a full audit trail
-and outbreak reports for clinical colleagues (e.g. clinical
-microbiologists) and infection prevention nurses.
+system for infectious disease epidemiologists. Running just in R, it
+reads laboratory-confirmed infections automatically, detects statistical
+and rule-based aberrations, reconciles them into persistent clusters,
+and gives epidemiologists a dossier to assess each one, with a full
+audit trail and outbreak reports for clinical colleagues (e.g. clinical
+microbiologists) and infection prevention nurses. It can send
+notifications of new clusters automatically via email, MS Teams, Slack,
+or even an ntfy server.
 
 The dashboard and its outbreak reports are available in English, (Modern
 Standard) Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and
-Spanish. This software is free; this repository is open-source software
-with no data and no site-specific configuration.
+Spanish.
+
+This software is 100% free and open-source, and only allows for local
+storage of data and configurations. This software is perfectly safe, and
+all code is open to anyone willing or required to assess.
 
 ![A cluster dossier: case stats, status trajectory, an automatically
 generated plain-language interpretation, the epidemic curve, and the

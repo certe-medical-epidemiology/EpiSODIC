@@ -10,6 +10,12 @@ instance.
   in](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md):
 - [Deployment](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md):
 
+### Configure
+
+Set up notifications and other operational knobs.
+
+- [Notifications](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md):
+
 ### Reference
 
 Look these up as needed rather than reading start to finish.

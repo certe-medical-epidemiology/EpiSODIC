@@ -1,5 +1,25 @@
 # Changelog
 
+## EpiSODIC 0.9.0
+
+### New
+
+- Implemented various ways to send notifications of new clusters: ntfy,
+  SMTP, sendmail, Microsoft 365, Teams (Power Automate Workflow), Slack
+- Added
+  [`vignette("notifications")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md)
+  with setup steps per channel
+
+### Fixed
+
+- Fixed pkgdown build failure from three undocumented notification
+  topics
+
+### Changed
+
+- Documented every `default.yaml` config key with a short inline
+  explanation
+
 ## EpiSODIC 0.8.17
 
 ### Changed

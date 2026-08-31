@@ -1,5 +1,6 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/404.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/CLAUDE.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/LICENSE.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html</loc></url>
@@ -7,6 +8,7 @@
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/index.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/overview.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/authors.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/index.html</loc></url>
@@ -28,12 +30,15 @@
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_geo.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_interpretation.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notifications.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notify_test.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_resolve_data.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_setup_microsoft365.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases_calibration.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_denominators.html</loc></url>
