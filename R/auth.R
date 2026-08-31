@@ -57,6 +57,140 @@ episodic_auth_password_hash <- function(con, user) {
   changes$password_hash[nrow(changes)]
 }
 
+#' The most recent value of an insert-only account attribute
+#'
+#' Generalises the pattern `episodic_auth_password_hash()` established for
+#' `password_hash`: an account attribute mutated only by appending an event
+#' (never by `UPDATE`) is "whatever the most recent matching event set it
+#' to, or the account row's own original value if no such event exists
+#' yet". Used for `role`, `is_admin`, and `is_active`, each mutated by its
+#' own event type and its own `new_*` column.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param user A row from `episodic_db_user_by_username()`/`episodic_db_user_by_id()`.
+#' @param event_type The event type carrying this attribute's changes.
+#' @param new_column The `episodic_app_user_event` column holding the new value.
+#' @param original_column The `episodic_app_user` column holding the original value.
+#' @return A single value (whatever type `original_column` is).
+#' @keywords internal
+#' @noRd
+episodic_auth_latest_value <- function(
+  con,
+  user,
+  event_type,
+  new_column,
+  original_column
+) {
+  events <- episodic_db_app_user_events(con, user$user_id)
+  matching <- events[events$event_type == event_type, ]
+  if (nrow(matching) == 0) {
+    return(user[[original_column]])
+  }
+  matching[[new_column]][nrow(matching)]
+}
+
+#' The role currently in effect for a user
+#'
+#' @inheritParams episodic_auth_password_hash
+#' @return `"epidemiologist"` or `"viewer"`.
+#' @keywords internal
+#' @noRd
+episodic_auth_role <- function(con, user) {
+  episodic_auth_latest_value(con, user, "role_change", "new_role", "role")
+}
+
+#' Whether a user currently has admin (Settings screen) access
+#'
+#' @inheritParams episodic_auth_password_hash
+#' @return A single logical.
+#' @keywords internal
+#' @noRd
+episodic_auth_is_admin <- function(con, user) {
+  as.logical(episodic_auth_latest_value(
+    con,
+    user,
+    "admin_change",
+    "new_is_admin",
+    "is_admin"
+  ))
+}
+
+#' Whether a user's account is currently active
+#'
+#' @inheritParams episodic_auth_password_hash
+#' @return A single logical.
+#' @keywords internal
+#' @noRd
+episodic_auth_is_active <- function(con, user) {
+  as.logical(episodic_auth_latest_value(
+    con,
+    user,
+    "active_change",
+    "new_is_active",
+    "is_active"
+  ))
+}
+
+#' Resolve every insert-only attribute of an account row at once
+#'
+#' `episodic_auth_login()` and the Settings screen's user list both need
+#' `role`/`is_admin`/`is_active` as they currently stand, not as the
+#' account was first provisioned - this bundles the three
+#' `episodic_auth_latest_value()` calls into the row itself so callers
+#' downstream (e.g. `episodic_user_is_epidemiologist()`,
+#' `episodic_user_is_admin()`) can keep reading `user$role`/`user$is_admin`
+#' directly.
+#'
+#' @inheritParams episodic_auth_password_hash
+#' @return `user`, with `role`, `is_admin`, and `is_active` replaced by
+#'   their currently-resolved values.
+#' @keywords internal
+#' @noRd
+episodic_auth_resolve_user <- function(con, user) {
+  if (is.null(user)) {
+    return(NULL)
+  }
+  user$role <- episodic_auth_role(con, user)
+  user$is_admin <- as.integer(episodic_auth_is_admin(con, user))
+  user$is_active <- as.integer(episodic_auth_is_active(con, user))
+  user
+}
+
+#' Re-resolve a cached session user against the database, for a write check
+#'
+#' `current_user()` is a `shiny::reactiveVal` set once, at sign-in - it is
+#' not itself invalidated by an `is_admin` account later revoking that
+#' same account's access (`episodic_auth_set_active(..., FALSE)`) or
+#' demoting it (`episodic_auth_set_role()`/`episodic_auth_set_admin()`)
+#' from the Settings screen. Every privileged write path
+#' (`episodic_app_server_assessment_actions()`, `episodic_app_server_report()`,
+#' `episodic_app_server_settings()`) calls this immediately before its own
+#' `episodic_user_is_epidemiologist()`/`episodic_user_is_admin()` check, so
+#' authorization is decided from the database as of *this* write, not from
+#' whatever was true when the browser tab first signed in - an
+#' already-open session cannot keep writing once deactivated or demoted,
+#' even though its own UI may still show as signed in until the next
+#' unrelated re-render notices.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cached_user The session's cached signed-in user row (from
+#'   `current_user()`), or `NULL`.
+#' @return The freshly resolved account row (role/is_admin/is_active as of
+#'   now), or `NULL` if nobody was signed in, the account no longer
+#'   exists, or the account is no longer active.
+#' @keywords internal
+#' @noRd
+episodic_auth_refresh_user <- function(con, cached_user) {
+  if (is.null(cached_user)) {
+    return(NULL)
+  }
+  fresh <- episodic_db_user_by_id(con, cached_user$user_id)
+  if (is.null(fresh) || !episodic_auth_is_active(con, fresh)) {
+    return(NULL)
+  }
+  episodic_auth_resolve_user(con, fresh)
+}
+
 #' Whether a user is still required to change their password
 #'
 #' `TRUE` until the first `password_change` event is recorded for them,
@@ -95,7 +229,7 @@ episodic_auth_must_change <- function(con, user) {
 episodic_auth_login <- function(con, username, password) {
   rlang::check_installed("sodium")
   user <- episodic_db_user_by_username(con, username)
-  if (is.null(user) || !as.logical(user$is_active)) {
+  if (is.null(user) || !episodic_auth_is_active(con, user)) {
     return(list(ok = FALSE))
   }
   hash <- episodic_auth_password_hash(con, user)
@@ -109,7 +243,7 @@ episodic_auth_login <- function(con, username, password) {
   episodic_db_app_user_event_insert(con, user$user_id, "login")
   list(
     ok = TRUE,
-    user = user,
+    user = episodic_auth_resolve_user(con, user),
     must_change = episodic_auth_must_change(con, user)
   )
 }
@@ -140,16 +274,15 @@ episodic_auth_change_password <- function(con, user_id, new_password) {
 
 #' Create an account for a new epidemiologist or viewer
 #'
-#' There is no self-service registration and no in-app account management
-#' screen: whoever administers the database creates accounts with this
-#' function, typically once per new board member. The password you supply
-#' is temporary - the new account is flagged to require a password change,
-#' so the account holder chooses their own password the first time they
-#' sign in.
+#' There is no self-service registration: an account is provisioned either
+#' from the Settings screen (by an `is_admin` account) or with this
+#' function at the R console. The password you supply is temporary - the
+#' new account is flagged to require a password change, so the account
+#' holder chooses their own password the first time they sign in.
 #'
-#' You only need to run this once per person. It opens the database, adds
-#' the account, and closes the connection again, so it is meant to be run
-#' interactively at the R console rather than from application code.
+#' At the console, you only need to run this once per person. It opens the
+#' database, adds the account, and closes the connection again, so it is
+#' meant to be run interactively rather than from application code.
 #'
 #' @param db_path Path to the EpiSODIC database: an existing SQLite file, or
 #'   a MariaDB/MySQL DSN (see [episodic_db_dsn_mariadb()]). Defaults to the
@@ -165,6 +298,10 @@ episodic_auth_change_password <- function(con, user_id, new_password) {
 #'   patient-level line lists, but cannot record an assessment). Both
 #'   roles require sign-in; there is no anonymous access to patient
 #'   detail.
+#' @param is_admin Whether the new account may also see the Settings
+#'   screen (manage notification channels, other accounts, and export the
+#'   configuration). Independent of `role` - an admin is still either an
+#'   epidemiologist or a viewer for everything outside Settings.
 #' @return Invisibly, the new account's `user_id`.
 #' @examples
 #' db_path <- tempfile(fileext = ".sqlite")
@@ -186,7 +323,8 @@ episodic_provision_user <- function(
   full_name,
   email,
   password,
-  role = "epidemiologist"
+  role = "epidemiologist",
+  is_admin = FALSE
 ) {
   rlang::check_installed("sodium")
   role <- match.arg(role, c("epidemiologist", "viewer"))
@@ -198,8 +336,71 @@ episodic_provision_user <- function(
     full_name = full_name,
     email = email,
     password_hash = sodium::password_store(password),
-    role = role
+    role = role,
+    is_admin = is_admin
   ))
+}
+
+#' Change a signed-in account's role, admin flag, or active state
+#'
+#' The Settings screen's user-management panel writes here rather than
+#' via `UPDATE`, the same insert-only pattern
+#' `episodic_auth_change_password()` uses for `password_hash`: each call
+#' appends one event, and `episodic_auth_role()`/`episodic_auth_is_admin()`/
+#' `episodic_auth_is_active()` resolve "current" as the most recent
+#' matching event.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param user_id The account being changed.
+#' @param actor_user_id The signed-in `is_admin` account making the
+#'   change, recorded for the audit trail.
+#' @param role New role (`"epidemiologist"`/`"viewer"`), for
+#'   `episodic_auth_set_role()`.
+#' @param is_admin New admin flag, for `episodic_auth_set_admin()`.
+#' @param is_active New active flag, for `episodic_auth_set_active()`
+#'   (`FALSE` revokes sign-in without deleting the account or its
+#'   history).
+#' @return Invisible `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_auth_set_role <- function(con, user_id, actor_user_id, role) {
+  role <- match.arg(role, c("epidemiologist", "viewer"))
+  episodic_db_app_user_event_insert(
+    con,
+    user_id,
+    "role_change",
+    actor_user_id = actor_user_id,
+    new_role = role
+  )
+  invisible(NULL)
+}
+
+#' @rdname episodic_auth_set_role
+#' @keywords internal
+#' @noRd
+episodic_auth_set_admin <- function(con, user_id, actor_user_id, is_admin) {
+  episodic_db_app_user_event_insert(
+    con,
+    user_id,
+    "admin_change",
+    actor_user_id = actor_user_id,
+    new_is_admin = as.integer(isTRUE(is_admin))
+  )
+  invisible(NULL)
+}
+
+#' @rdname episodic_auth_set_role
+#' @keywords internal
+#' @noRd
+episodic_auth_set_active <- function(con, user_id, actor_user_id, is_active) {
+  episodic_db_app_user_event_insert(
+    con,
+    user_id,
+    "active_change",
+    actor_user_id = actor_user_id,
+    new_is_active = as.integer(isTRUE(is_active))
+  )
+  invisible(NULL)
 }
 
 #' Whether a signed-in user may classify, close, or otherwise write
@@ -217,4 +418,18 @@ episodic_provision_user <- function(
 #' @noRd
 episodic_user_is_epidemiologist <- function(user) {
   !is.null(user) && identical(user$role, "epidemiologist")
+}
+
+#' Whether a signed-in user may see the Settings screen
+#'
+#' Independent of `episodic_user_is_epidemiologist()` - an admin is still
+#' separately either an epidemiologist or a viewer for everything outside
+#' Settings.
+#'
+#' @inheritParams episodic_user_is_epidemiologist
+#' @return A single logical.
+#' @keywords internal
+#' @noRd
+episodic_user_is_admin <- function(user) {
+  !is.null(user) && isTRUE(as.logical(user$is_admin))
 }

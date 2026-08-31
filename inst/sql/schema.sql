@@ -368,28 +368,67 @@ CREATE TABLE episodic_app_user (
   email         TEXT NOT NULL,
   password_hash TEXT NOT NULL,
   role          TEXT NOT NULL CHECK (role IN ('epidemiologist', 'viewer')),
+  -- Additive to `role`: an admin is still either an epidemiologist or a
+  -- viewer for read/write purposes, and separately may see the Settings
+  -- screen (episodic_user_is_admin()). Mutated the same insert-only way as
+  -- role/is_active below, never via UPDATE.
+  is_admin      INTEGER NOT NULL DEFAULT 0 CHECK (is_admin IN (0, 1)),
   is_active     INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
   must_change   INTEGER NOT NULL DEFAULT 1 CHECK (must_change IN (0, 1)),
   created_at    TEXT NOT NULL
 );
 
 -- Account bookkeeping that would otherwise need an UPDATE (a fresh
--- password_hash on change, a new last-login time on every login) is kept
+-- password_hash on change, a new last-login time on every login, a role or
+-- admin flag or active-state change made from the Settings screen) is kept
 -- insert-only instead, the same event-sourced pattern episodic_cluster_state
--- already uses for cluster state: the "current" password hash is the most
--- recent password_change event's, falling back to episodic_app_user's own
--- initial password_hash if no such event exists yet, and the last login is
--- the most recent login event. There is deliberately no last_login_at
--- column on episodic_app_user for the same value to drift out of step with.
+-- already uses for cluster state: the "current" password hash/role/is_admin/
+-- is_active is the most recent matching event's, falling back to
+-- episodic_app_user's own initial column value if no such event exists yet,
+-- and the last login is the most recent login event. There is deliberately
+-- no last_login_at column on episodic_app_user for the same value to drift
+-- out of step with.
 CREATE TABLE episodic_app_user_event (
   event_id      INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id       INTEGER NOT NULL REFERENCES episodic_app_user(user_id),
   created_at    TEXT NOT NULL,
-  event_type    TEXT NOT NULL CHECK (event_type IN ('login', 'password_change')),
-  password_hash TEXT  -- set only for password_change events
+  event_type    TEXT NOT NULL CHECK (event_type IN (
+                  'login', 'password_change', 'role_change',
+                  'admin_change', 'active_change')),
+  actor_user_id INTEGER REFERENCES episodic_app_user(user_id),  -- who made the change; NULL for login/password_change (self-service)
+  password_hash TEXT,                                            -- set only for password_change events
+  new_role      TEXT CHECK (new_role IS NULL OR new_role IN ('epidemiologist', 'viewer')), -- set only for role_change events
+  new_is_admin  INTEGER CHECK (new_is_admin IS NULL OR new_is_admin IN (0, 1)),  -- set only for admin_change events
+  new_is_active INTEGER CHECK (new_is_active IS NULL OR new_is_active IN (0, 1)) -- set only for active_change events
 );
 
 CREATE INDEX idx_episodic_app_user_event_user ON episodic_app_user_event(user_id);
+
+-- ---------------------------------------------------------------------
+-- 5.9 In-app settings: notification/config overrides (app, append-only)
+--
+-- The YAML overlay (EPISODIC_CONFIG) remains the authoritative source of
+-- detection configuration and stays fully supported; this table is an
+-- additional, higher-precedence overlay that lets an is_admin account
+-- change certain sections (currently: notifications) from the Settings
+-- screen without SSH/file access. episodic_config_resolve() applies the
+-- most recent event per section on top of the YAML-resolved config. Every
+-- change is kept (never updated/deleted) for the audit trail the Settings
+-- screen shows; config_json for 'notifications' may contain secrets
+-- (SMTP passwords, webhook URLs) and is masked in the UI on display, never
+-- on storage - the database is already the trust boundary every other
+-- secret-bearing table in this schema relies on.
+-- ---------------------------------------------------------------------
+CREATE TABLE episodic_app_config_event (
+  event_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id     INTEGER NOT NULL REFERENCES episodic_app_user(user_id),
+  created_at  TEXT NOT NULL,
+  section     TEXT NOT NULL CHECK (section IN ('notifications')),
+  config_json TEXT NOT NULL,
+  note        TEXT
+);
+
+CREATE INDEX idx_episodic_app_config_event_section ON episodic_app_config_event(section, created_at);
 
 -- app, and cron for pre-renders
 CREATE TABLE episodic_report_render (

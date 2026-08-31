@@ -144,6 +144,21 @@ test_that("episodic_db_schema_statements(\"sqlite\") is unaffected by the mariad
   expect_true(any(grepl("^PRAGMA", statements)))
 })
 
+test_that("episodic_db_schema_statements(\"mariadb\") bounds episodic_app_config_event's indexed TEXT columns", {
+  statements <- episodic_db_schema_statements("mariadb")
+  combined <- paste(statements, collapse = "\n")
+  expect_true(grepl(
+    "section     VARCHAR(20) NOT NULL CHECK (section IN ('notifications'))",
+    combined,
+    fixed = TRUE
+  ))
+  expect_true(grepl(
+    "CREATE TABLE episodic_app_config_event (\n  event_id    INTEGER PRIMARY KEY AUTO_INCREMENT,\n  user_id     INTEGER NOT NULL REFERENCES episodic_app_user(user_id),\n  created_at  VARCHAR(30) NOT NULL,",
+    combined,
+    fixed = TRUE
+  ))
+})
+
 test_that("episodic_db_create() with a mysql:// DSN errors clearly when RMariaDB is not installed", {
   skip_if(requireNamespace("RMariaDB", quietly = TRUE), "RMariaDB is installed")
   expect_error(

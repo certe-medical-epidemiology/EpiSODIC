@@ -21,9 +21,10 @@
 # anyone who reaches it; signing in - as either role - unlocks patient-
 # level detail, and only the "epidemiologist" role can additionally classify. A
 # small header control and two modals (sign in; forced first-login
-# password change) are the entire authentication surface - no separate
-# screen, no account management UI, and no role shown here (accounts are
-# provisioned outside the app, see episodic_provision_user()).
+# password change) are the entire authentication surface here - no role
+# shown in this control either (an is_admin account manages accounts and
+# roles from the separate Settings screen instead, see
+# R/app_settings.R/episodic_ui_settings_users_panel()).
 
 #' The header sign-in/sign-out control
 #'

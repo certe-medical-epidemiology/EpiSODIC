@@ -496,6 +496,70 @@ episodic_db_app_user_events <- function(con, user_id) {
   )
 }
 
+#' Every dashboard account, for the Settings screen's user list
+#' @keywords internal
+#' @noRd
+episodic_db_app_users <- function(con) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_app_user ORDER BY username"
+  )
+}
+
+#' The most recent config override for one section, or `NULL`
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param section A section name, e.g. `"notifications"`.
+#' @return The most recent `episodic_app_config_event` row for `section`,
+#'   or `NULL` if an admin has never saved one.
+#' @keywords internal
+#' @noRd
+episodic_db_app_config_latest <- function(con, section) {
+  res <- DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_app_config_event
+      WHERE section = ?
+      ORDER BY created_at DESC, event_id DESC
+      LIMIT 1",
+    params = list(section)
+  )
+  if (nrow(res) == 0) NULL else res[1, ]
+}
+
+#' The full audit trail of config overrides, most recent first
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param section Optional section filter; `NULL` (default) returns every
+#'   section.
+#' @param limit Maximum number of rows to return.
+#' @return A data frame, joined with the acting user's username.
+#' @keywords internal
+#' @noRd
+episodic_db_app_config_events <- function(con, section = NULL, limit = 200) {
+  if (is.null(section)) {
+    DBI::dbGetQuery(
+      con,
+      "SELECT e.*, u.username AS actor_username
+        FROM episodic_app_config_event e
+        LEFT JOIN episodic_app_user u ON u.user_id = e.user_id
+        ORDER BY e.created_at DESC, e.event_id DESC
+        LIMIT ?",
+      params = list(as.integer(limit))
+    )
+  } else {
+    DBI::dbGetQuery(
+      con,
+      "SELECT e.*, u.username AS actor_username
+        FROM episodic_app_config_event e
+        LEFT JOIN episodic_app_user u ON u.user_id = e.user_id
+        WHERE e.section = ?
+        ORDER BY e.created_at DESC, e.event_id DESC
+        LIMIT ?",
+      params = list(section, as.integer(limit))
+    )
+  }
+}
+
 #' @param limit Maximum number of rows to return, most recent first.
 #' @keywords internal
 #' @noRd

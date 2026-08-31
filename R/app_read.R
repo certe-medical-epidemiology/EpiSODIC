@@ -817,7 +817,8 @@ episodic_app_denominator_series <- function(con, pathogen, cases, weeks = 26L) {
     window_end <- max(cluster_dates)
     window_start <- window_end - 7 * (as.integer(weeks) - 1L)
     denom <- denom[
-      denom$week_start <= window_end & denom$week_start + 6 >= window_start, ,
+      denom$week_start <= window_end & denom$week_start + 6 >= window_start,
+      ,
       drop = FALSE
     ]
     if (nrow(denom) == 0) {
@@ -1238,7 +1239,7 @@ episodic_app_streams_screen <- function(con, page = 1L, page_size = 50L) {
     )
     streams$farrington_ready <-
       !is.na(streams$farrington_weeks_need) &
-        streams$farrington_weeks_have >= streams$farrington_weeks_need
+      streams$farrington_weeks_have >= streams$farrington_weeks_need
   }
   list(
     streams = streams,

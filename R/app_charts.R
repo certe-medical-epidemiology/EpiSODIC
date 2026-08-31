@@ -887,7 +887,8 @@ episodic_ui_pathogen_overlay_chart <- function(
     ggplot2::geom_line(linewidth = 0.7, na.rm = TRUE)
 
   current_rows <- rows[
-    as.character(rows$group) == overlay$current, ,
+    as.character(rows$group) == overlay$current,
+    ,
     drop = FALSE
   ]
   if (nrow(current_rows) > 0) {

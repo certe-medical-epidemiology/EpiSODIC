@@ -179,7 +179,8 @@ episodic_db_app_user_insert <- function(
   full_name,
   email,
   password_hash,
-  role = "epidemiologist"
+  role = "epidemiologist",
+  is_admin = FALSE
 ) {
   params <- list(
     username,
@@ -187,13 +188,14 @@ episodic_db_app_user_insert <- function(
     email,
     password_hash,
     role,
+    as.integer(isTRUE(is_admin)),
     episodic_now()
   )
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_app_user
-      (username, full_name, email, password_hash, role, is_active, must_change, created_at)
-     VALUES (?, ?, ?, ?, ?, 1, 1, ?)",
+      (username, full_name, email, password_hash, role, is_admin, is_active, must_change, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, 1, 1, ?)",
     params = params
   )
   episodic_db_last_insert_id(con)
@@ -205,13 +207,47 @@ episodic_db_app_user_event_insert <- function(
   con,
   user_id,
   event_type,
-  password_hash = NA
+  actor_user_id = NA,
+  password_hash = NA,
+  new_role = NA,
+  new_is_admin = NA,
+  new_is_active = NA
 ) {
-  params <- list(user_id, episodic_now(), event_type, password_hash)
+  params <- list(
+    user_id,
+    episodic_now(),
+    event_type,
+    actor_user_id,
+    password_hash,
+    new_role,
+    new_is_admin,
+    new_is_active
+  )
   DBI::dbExecute(
     con,
-    "INSERT INTO episodic_app_user_event (user_id, created_at, event_type, password_hash)
-     VALUES (?, ?, ?, ?)",
+    "INSERT INTO episodic_app_user_event
+      (user_id, created_at, event_type, actor_user_id, password_hash, new_role, new_is_admin, new_is_active)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    params = params
+  )
+  episodic_db_last_insert_id(con)
+}
+
+#' @keywords internal
+#' @noRd
+episodic_db_app_config_event_insert <- function(
+  con,
+  user_id,
+  section,
+  config_json,
+  note = NA
+) {
+  section <- match.arg(section, c("notifications"))
+  params <- list(user_id, episodic_now(), section, config_json, note)
+  DBI::dbExecute(
+    con,
+    "INSERT INTO episodic_app_config_event (user_id, created_at, section, config_json, note)
+     VALUES (?, ?, ?, ?, ?)",
     params = params
   )
   episodic_db_last_insert_id(con)

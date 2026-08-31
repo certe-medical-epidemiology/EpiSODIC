@@ -5,13 +5,21 @@
 \title{Read the surveillance configuration}
 \usage{
 episodic_config_resolve(
-  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)
+  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
+  con = NULL
 )
 }
 \arguments{
 \item{episodic_config_path}{Path to your own configuration file. Defaults
 to the \code{EPISODIC_CONFIG} environment variable; if that is unset or the
 file does not exist, only the built-in defaults are used.}
+
+\item{con}{An open \link[DBI:DBIConnection-class]{DBI::DBIConnection}, to also overlay the most
+recent Settings-screen \code{notifications} override (if any) on top of
+the YAML-resolved configuration. \code{NULL} (the default) skips this -
+\code{\link[=episodic_run_cron]{episodic_run_cron()}} and the Settings screen itself both pass their
+own connection; most other callers (tests, \code{episodic_config_hash()}
+snapshots) do not need one.}
 }
 \value{
 A nested list with the resolved configuration, e.g.
@@ -33,6 +41,13 @@ shipped defaults are enough on their own.
 Every detection run stores the exact configuration it used (see
 \code{\link[=episodic_config_hash]{episodic_config_hash()}}), so you can always trace a past result back to
 the settings that produced it, even after you have since changed them.
+
+An \code{is_admin} account can additionally override the \code{notifications}
+section from the Settings screen, without touching the YAML file at
+all - pass \code{con} to also apply the most recent such override (if any)
+on top of the YAML-resolved configuration. The YAML overlay itself
+remains fully supported either way: an admin override is an additional,
+higher-precedence layer, not a replacement for it.
 }
 \examples{
 config <- episodic_config_resolve()

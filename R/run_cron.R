@@ -486,8 +486,19 @@ episodic_run_cron <- function(
     }
   )
 
+  # Overlaid here, not when `config` was first resolved: an is_admin
+  # account's Settings-screen edits must reach the very next run without a
+  # redeploy, and notifications is excluded from config_hash/
+  # config_snapshot regardless of when this runs, so applying it after the
+  # detection transaction has already committed changes nothing about
+  # reproducibility.
+  notify_config <- config
+  notify_config$notifications <- episodic_config_resolve(
+    episodic_config_path,
+    con = con
+  )$notifications
   tryCatch(
-    episodic_notify(con, config, result, run_id, run_date, host),
+    episodic_notify(con, notify_config, result, run_id, run_date, host),
     error = function(e) {
       episodic_trace("Notification dispatch failed: ", conditionMessage(e))
     }

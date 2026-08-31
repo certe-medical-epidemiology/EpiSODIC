@@ -606,6 +606,8 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-form-group input[type="text"],
 .episodic-form-group input[type="password"],
 .episodic-form-group input[type="date"],
+.episodic-form-group input[type="number"],
+.episodic-form-group input[type="email"],
 .episodic-form-group textarea,
 .episodic-form-group select {
   width: 100%;
@@ -616,6 +618,17 @@ dl.episodic-settings dd { margin: 0; }
   border-radius: 3px;
   background: var(--episodic-surface);
   color: var(--episodic-ink);
+}
+.episodic-form-group input[type="checkbox"] {
+  margin-right: 6px;
+}
+.episodic-form-checkbox-label {
+  display: flex;
+  align-items: center;
+  font-size: 12.5px;
+  color: var(--episodic-ink);
+  text-transform: none;
+  letter-spacing: normal;
 }
 .episodic-form-hint {
   font-size: 10.5px;
@@ -837,3 +850,51 @@ dl.episodic-settings dd { margin: 0; }
   font-weight: 500;
 }
 .episodic-table tr.episodic-row-link:hover .episodic-id-link { text-decoration: underline; }
+
+/* Settings screen: notification channel cards, read-only detection config
+   grid, and the user-management table. */
+.episodic-settings-channel {
+  border: 1px solid var(--episodic-border);
+  border-radius: 4px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.episodic-settings-channel-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.episodic-settings-channel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px 16px;
+}
+.episodic-settings-readonly-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px 16px;
+  opacity: 0.65;
+}
+.episodic-settings-readonly-grid .episodic-settings-kv-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--episodic-muted);
+  display: block;
+}
+.episodic-settings-readonly-grid .episodic-settings-kv-value {
+  font-size: 12.5px;
+  color: var(--episodic-ink);
+}
+.episodic-settings-readonly-grid input,
+.episodic-settings-readonly-grid select {
+  pointer-events: none;
+  background: var(--episodic-bg);
+}
+.episodic-settings-user-row select,
+.episodic-settings-user-row input[type="checkbox"] {
+  width: auto;
+}

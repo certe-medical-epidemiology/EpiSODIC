@@ -300,7 +300,8 @@ episodic_ui_pathogen_stats <- function(
 #' @noRd
 episodic_ui_intensity_colour <- function(level) {
   pal <- episodic_palette()
-  switch(as.character(level),
+  switch(
+    as.character(level),
     baseline = pal$muted,
     low = pal$success,
     medium = pal$warning_dark,

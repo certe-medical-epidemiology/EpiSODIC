@@ -110,7 +110,8 @@ episodic_cases_in_window <- function(cases, first_day, last_day) {
   }
   dates <- as.Date(cases$sample_date)
   cases[
-    !is.na(dates) & dates >= as.Date(first_day) & dates <= as.Date(last_day), ,
+    !is.na(dates) & dates >= as.Date(first_day) & dates <= as.Date(last_day),
+    ,
     drop = FALSE
   ]
 }
