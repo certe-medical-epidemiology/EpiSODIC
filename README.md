@@ -30,9 +30,9 @@ they also render on the CRAN page), regenerated against episodic_demo().
   <em>The Pathogen screen - weekly numbers of cases, reproduction number, with geographic and demographic distribution.</em>
 </p>
 <p align="center">
-  <img src="man/figures/performance_screen.png" alt="The Performance screen: detection timeliness and positive predictive value per detector and pathogen" width="800">
+  <img src="man/figures/archive_screen.png" alt="The Archive screen: previously detected clusters" width="800">
   <br>
-  <em>The Performance screen - detection timeliness and positive predictive value per detector and pathogen, computed from the stored verdicts (both fill in as clusters get assessed).</em>
+  <em>The Archive screen - previously detected clusters.</em>
 </p>
 
 ## Installation
