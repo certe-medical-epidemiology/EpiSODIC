@@ -194,7 +194,7 @@ test_that("episodic_cluster_object() populates concentration, density and case_f
   expect_equal(obj$pathogen, "Norovirus")
   expect_equal(obj$n_cases, 6)
   expect_true(
-    grepl("^Test Hospital", obj$place) && grepl("afdeling B4$", obj$place)
+    grepl("^Test Hospital", obj$place) && grepl("Ward: B4$", obj$place)
   )
   expect_false(is.null(obj$concentration))
   expect_equal(obj$concentration$dominant_label, "9711") # 4 of 6 cases in PC 9711

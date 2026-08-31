@@ -128,7 +128,7 @@ episodic_synthetic_cases <- function(
 episodic_synthetic_institutions <- function() {
   hospitals <- data.frame(
     institution_key = sprintf("HOSP-%02d", 1:8),
-    institution_display_name = paste("Ziekenhuis", LETTERS[1:8]),
+    institution_display_name = paste("Hospital", LETTERS[1:8]),
     institution_type = "hospital",
     care_line = "second",
     municipality = NA_character_,

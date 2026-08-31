@@ -639,7 +639,7 @@ episodic_ui_pathogen_config_panel <- function(
   pc <- screen$config
   if (is.null(pc)) {
     return(episodic_ui_panel(
-      episodic_tr("pathogen.panel.config.title", lang = lang),
+      paste(episodic_tr("pathogen.panel.config.title", lang = lang), screen$pathogen),
       shiny::tags$p(
         class = "episodic-panel-empty",
         episodic_tr(
@@ -791,7 +791,7 @@ episodic_ui_pathogen_config_panel <- function(
   }
 
   episodic_ui_panel(
-    episodic_tr("pathogen.panel.config.title", lang = lang),
+    paste(episodic_tr("pathogen.panel.config.title", lang = lang), screen$pathogen),
     shiny::tags$p(
       style = "font-size:12.5px;margin:0 0 12px;",
       episodic_tr(

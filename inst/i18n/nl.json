@@ -102,7 +102,7 @@
   "panel.demography.female": "vrouw →",
 
   "panel.geo.title": "Geografische spreiding",
-  "panel.geo.aside": "PC",
+  "panel.geo.aside": "Postcodegebied",
   "panel.geo.unit": "Een kaartweergave verschijnt hier zodra geografische referentiedata is geconfigureerd (EPISODIC_GEO_DATA).",
   "panel.geo.empty": "Geen postcodegegevens beschikbaar.",
   "panel.geo.unknown_pc": "Van {total} casussen hebben er {n} geen postcode; die blijven buiten de kaart en buiten de concentratiemaat.",
@@ -115,10 +115,10 @@
   "panel.resistance.note": "Geen vervanging voor typering, maar een gedeeld profiel maakt een gemeenschappelijke bron plausibeler en kan aanleiding zijn om isolaten in te sturen voor WGS.",
   "panel.resistance.unavailable": "Nog geen resistentiegegevens gekoppeld aan casussen in dit systeem.",
 
-  "panel.linelist.title": "Lijnlijst",
+  "panel.linelist.title": "Patiëntlijst",
   "panel.linelist.aside": "{shown} van {total} casussen",
   "panel.linelist.col.patient": "Patiënt",
-  "panel.linelist.col.lab_number": "Labnummer",
+  "panel.linelist.col.lab_number": "Order-/monsternummer",
   "panel.linelist.col.date": "Afname",
   "panel.linelist.col.sex": "Geslacht",
   "panel.linelist.col.age": "Leeftijd",
@@ -272,8 +272,8 @@
   "assessment.mute_submit": "Dempen vastleggen",
   "assessment.autosave_note": "Concept lokaal bewaard.",
 
-  "linelist.locked_title": "Lijnlijst",
-  "linelist.locked_message": "Meld u aan om de lijnlijst met patiëntgegevens te bekijken.",
+  "linelist.locked_title": "Patiëntlijst",
+  "linelist.locked_message": "Meld u aan om de patiëntlijst met patiëntgegevens te bekijken.",
 
   "archive.title": "Archief",
   "archive.note": "Afgesloten clusters, doorzoekbaar op verwekker en plaats.",
@@ -494,7 +494,7 @@
   "pathogen.period.year_current": "Dit jaar",
   "pathogen.period.season_note": "“Seizoen” en “episode” lopen van week 40 tot en met week 20 van het volgende jaar, de respiratoire-seizoensconventie (medio oktober tot medio mei), niet een kalenderjaar. Veel verwekkers kennen geen seizoenspatroon; “Dit jaar” of een aangepaste periode past dan vaak beter.",
   "pathogen.panel.config.title": "Detectieparameters",
-  "pathogen.panel.config.note": "De parameters die dit exemplaar op dit moment laadt voor {pathogen}, centraal ingesteld en niet per scherm. Ze bepalen deduplicatie tot één casus per episode, wanneer een open cluster sluitbaar wordt, Rt, en of er een seizoensbaseline wordt gefit.",
+  "pathogen.panel.config.note": "De parameters die op dit moment geladen zijn voor {pathogen}, centraal ingesteld en niet per scherm. Ze bepalen deduplicatie tot één casus per episode, wanneer een open cluster sluitbaar wordt, Rt, en of er een seizoensbaseline wordt gefit.",
   "pathogen.panel.config.none": "Er is geen specifieke configuratie geladen voor {pathogen}; in plaats daarvan gelden de standaardwaarden van het pakket: een episodevenster van 30 dagen, 14 casusvrije dagen voordat een cluster kan sluiten, geen Rt en geen seizoensbaseline.",
   "pathogen.panel.config.col.parameter": "Parameter",
   "pathogen.panel.config.col.value": "Waarde",

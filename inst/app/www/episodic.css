@@ -540,6 +540,12 @@ dl.episodic-settings dd { margin: 0; }
   gap: 28px;
   margin-bottom: 28px;
 }
+.episodic-info-about-img {
+  height: 100%;
+  width: 200px;
+  margin-top: auto;
+  margin-bottom: auto;
+}
 .episodic-info-about img {
   height: 100%;
   flex: none;
@@ -553,12 +559,6 @@ dl.episodic-settings dd { margin: 0; }
   font-size: 18px;
   font-weight: 700;
   color: var(--episodic-primary-dark);
-}
-.episodic-info-about img {
-  height: 100%;
-  width: 200px;
-  margin-top: auto;
-  margin-bottom: auto;
 }
 .episodic-info-about-version {
   margin-left: 8px;

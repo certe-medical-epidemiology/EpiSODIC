@@ -476,7 +476,7 @@ episodic_ui_state_dot <- function(state) {
 episodic_ui_state_colour <- function(state) {
   pal <- episodic_palette()
   switch(state,
-    new = pal$primary,
+    new = pal$primary_light,
     assessing = pal$primary,
     monitoring = pal$danger,
     closable = pal$warning_dark,

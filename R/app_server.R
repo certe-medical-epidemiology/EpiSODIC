@@ -316,9 +316,9 @@ episodic_ui_status_strip <- function(
     # rather than greened over, because rows of an optional feed were
     # skipped and somebody should go and look at why.
     dot_colour <- if (identical(status$status, "partial")) {
-      pal$danger
-    } else {
       pal$warning
+    } else {
+      pal$success
     }
     text <- episodic_tr(
       if (identical(status$status, "partial")) {
@@ -340,7 +340,7 @@ episodic_ui_status_strip <- function(
       )
     )
   } else {
-    dot_colour <- pal$danger_dark
+    dot_colour <- pal$danger
     # A failed run is almost always an operator's own data, and the
     # reason for it is already recorded. Showing only "failed" sends
     # somebody looking through logs for a message the dashboard is

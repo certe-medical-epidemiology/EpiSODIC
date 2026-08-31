@@ -488,7 +488,7 @@ episodic_app_place_label <- function(
     ""
   }
   if (stream$level == "pathogen_ward" && !is.null(institution)) {
-    return(paste0(institution$display_name, " \u00b7 afdeling ", stream$ward))
+    return(paste0(institution$display_name, " \u00b7 ", episodic_tr("panel.places.title_ward", lang = lang), ": ", stream$ward))
   }
   if (stream$level == "pathogen_institution" && !is.null(institution)) {
     return(institution$display_name)
