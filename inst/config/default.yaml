@@ -30,22 +30,27 @@
 # Reconciliation.
 reconciliation:
   case_free_days_default: 14   # fallback when a pathogen has no override
-  close_after_runs: 14
-  cooldown_reopen_ratio: 1.5   # escape hatch ("half again")
-  stale_open_days: 60          # auto-close unassessed clusters this stale
+  close_after_runs: 14         # consecutive runs with no new case before an unconfirmed cluster auto-closes (never for a confirmed outbreak)
+  cooldown_reopen_ratio: 1.5   # escape hatch ("half again"): a cool-down absorption at least this many times the cluster's size flags it for reassessment instead of being silently absorbed; NA disables this
+  stale_open_days: 60          # force-closes any still-unassessed cluster this many days since its last case, regardless of close_after_runs - catches backfilled clusters that would otherwise never age out
 
 # Eligibility gate: a stream must clear all three thresholds before the
-# statistical detectors run against it at all. Values are provisional;
-# calibrate against real signal volume once an instance has accrued history.
+# statistical detectors (Farrington/MEM) run against it at all; a stream
+# that fails still runs through same_place and rare_trigger. Values are
+# provisional; calibrate against real signal volume once an instance has
+# accrued history.
 eligibility:
-  min_baseline_weeks: 52
-  min_median_weekly_count: 1
-  min_nonzero_week_share: 0.2
+  min_baseline_weeks: 52        # weeks of case history required before detection is attempted at all
+  min_median_weekly_count: 1    # median weekly case count over that baseline window must reach this
+  min_nonzero_week_share: 0.2   # share of baseline weeks with at least one case must reach this
 
-# Effect-size floor: a signal must clear both before it becomes a cluster.
+# Effect-size floor: an extra gate on top of the detector's own
+# significance test, applied only when opening a NEW cluster (a match
+# against an already-open cluster is always merged regardless). A signal
+# must clear both floors that are set; either left NA never blocks.
 effect_size_floor:
-  min_excess_over_upperbound: 3
-  min_ratio_observed_expected: 1.5
+  min_excess_over_upperbound: 3    # cases observed above Farrington's own statistical upper bound
+  min_ratio_observed_expected: 1.5 # observed/expected ratio required
 
 # same_place rule-based detector.
 # Defaults of n = 3 within 14 days, tightened per pathogen for the ones
@@ -78,12 +83,12 @@ farrington:
                             # accrues - 5 is the conventional choice - and the
                             # detector starts fitting again by itself.
   w: 3                     # half-window (weeks) around the same calendar week in each reference year
-  reweight: true
-  weightsThreshold: 2.58
-  trend: true
+  reweight: true           # down-weight past outbreak weeks (by Anscombe residual) when re-estimating the baseline, so an old outbreak doesn't inflate future thresholds
+  weightsThreshold: 2.58   # Anscombe-residual cutoff above which a past week is down-weighted by `reweight`
+  trend: true              # allow a linear trend term in the baseline model, when significant
   pastWeeksNotIncluded: 26 # exclude the trailing window from the noise-level estimate (surveillance default guidance)
   limit54: [5, 4]          # noPeriods-style low-count safeguard: [cases, period_weeks]
-  alpha: 0.05
+  alpha: 0.05              # significance level for the upper bound; lower = wider bound = fewer alarms, higher = narrower = more alarms
   # How many trailing weeks one run may test. A nightly run tests the one
   # week that just became testable; a run after a gap tests every week
   # since the last completed run, so an outage does not leave weeks that
@@ -121,27 +126,65 @@ rare_trigger:
     - Corynebacterium diphtheriae
     - Carbapenemase-producing Enterobacterales
     - Candida auris
-  min_cases: 1
+  min_cases: 1   # cases required in the window to fire; almost always 1, since a pathogen only belongs on this list if a single case is already notable
 
-# Priority score weights. Sum to 1.00.
+# Priority score weights. Sum to 1.00. Each component is independently
+# rescaled/clamped before being combined as a weighted mean; a component
+# that cannot be computed for a given cluster (e.g. no patient-day
+# denominator) drops out and the remaining weights renormalise, rather
+# than being scored as 0.
 priority_score:
   weights:
-    excess_component: 0.25
-    ratio_component: 0.15
-    severity_component: 0.20
-    growth_component: 0.15
-    agreement_component: 0.10
-    density_component: 0.10
-    spatial_component: 0.05
+    excess_component: 0.25     # magnitude of cases above the model's own upper bound
+    ratio_component: 0.15      # how far observed/expected exceeds 1 (capped at ratio 5)
+    severity_component: 0.20   # the pathogen's configured clinical severity weight (pathogen_config.csv), independent of case counts
+    growth_component: 0.15     # whether the cluster is accelerating (slope of case counts over the last 3 periods)
+    agreement_component: 0.10  # share of the 4 detectors that fired on this cluster
+    density_component: 0.10    # incidence per 1,000 patient-days versus that stream's own baseline density
+    spatial_component: 0.05    # how concentrated cases are in one location versus spread across several
 
 # Notifications: not configured by default. Set in the instance
 # configuration file (EPISODIC_CONFIG) to enable. This key is excluded
 # from config_hash so notification settings never alter detection
 # reproducibility and secrets never reach config_snapshot.
+#
+# Supported channels: ntfy, SMTP, sendmail, Microsoft 365, Teams, Slack.
+# See vignette("notifications") for the full setup guide per channel.
+#
+# Minimal example (ntfy):
+#
+# notifications:
+#   enabled: true
+#   dashboard_url: "https://episodic.example.org"  # optional
+#   triggers:
+#     new_clusters: true
+#     run_failure: true
+#   channels:
+#     ntfy:
+#       enabled: true
+#       server: "https://ntfy.sh"
+#       topic: "my-episodic-alerts"
 notifications: ~
 
-# Lattice suppression.
+# Lattice suppression: collapses one real outbreak seen at several
+# lattice levels at once (e.g. a ward outbreak is also statistically
+# visible at its institution) into a single dossier, instead of opening
+# a redundant one per level. Evaluated per pathogen against three
+# parent/child pairs: ward<->institution, area<->province,
+# province<->region. See R/reconcile_suppress.R for the full mechanism.
+# Suppressed clusters are never deleted, only hidden behind the cluster
+# that suppressed them; a cluster a human has already assessed is never
+# suppressed regardless of these thresholds.
 suppression:
-  child_dominance_threshold: 0.70   # child suppresses parent
-  parent_diffuse_threshold: 0.50    # below this, parent may suppress children
+  # If one child-level cluster accounts for at least this share of its
+  # parent's cases (actual case overlap, not cluster size), the rise is
+  # local: the child wins and the parent cluster is suppressed.
+  child_dominance_threshold: 0.70
+  # If none of the parent's overlapping children individually reach this
+  # share of the parent's cases, the rise counts as spread across them
+  # rather than concentrated in one - a candidate for the diffuse rule
+  # below (only fires once parent_min_flagged_children is also met).
+  parent_diffuse_threshold: 0.50
+  # Minimum number of overlapping child clusters required before the
+  # diffuse rule can suppress them in favour of the parent.
   parent_min_flagged_children: 2

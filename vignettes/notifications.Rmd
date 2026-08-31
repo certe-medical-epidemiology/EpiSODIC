@@ -1,0 +1,436 @@
+---
+title: "Notifications"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Notifications}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+EpiSODIC can notify your team whenever `episodic_run_cron()` detects new
+clusters or when a detection run fails. Notifications are entirely
+optional: if you do not configure them, the system continues to work
+exactly as before, and you review clusters through the dashboard alone.
+
+Supported channels:
+
+| Channel | Transport | Needs R package |
+|---|---|---|
+| **ntfy** | HTTP POST to a self-hosted or public ntfy server | `httr2` |
+| **SMTP** | Any SMTP server (Gmail, Outlook, institutional relay, etc.) | `curl` |
+| **sendmail** | The `sendmail` binary on a Linux/Unix server | (none) |
+| **Microsoft 365** | Microsoft Graph API (application or delegated auth) | `Microsoft365R`, `AzureGraph` |
+| **Teams** | Power Automate Workflow webhook (Adaptive Card) | `httr2` |
+| **Slack** | Incoming Webhook | `httr2` |
+
+You can enable as many channels in parallel as you like. Each channel is
+independent: if one fails, the others still send, and a notification
+failure never rolls back a successful detection run.
+
+## Where to configure
+
+Notification settings go in your instance YAML configuration file, the
+same file that `EPISODIC_CONFIG` points at (see
+`vignette("environment-variables")`). Add a `notifications` key at the
+top level. The shipped `inst/config/default.yaml` contains commented-out
+examples for every channel; copy the ones you need into your instance
+file and fill in the values.
+
+Notification configuration is deliberately **excluded** from the
+detection `config_hash`. This means:
+
+- Changing notification settings never alters detection reproducibility.
+- Secrets (passwords, webhook URLs, client secrets) never reach the
+  `config_snapshot` stored on each run.
+
+## Minimal example: ntfy
+
+[ntfy](https://ntfy.sh/) is the simplest channel to set up. If you run
+your own ntfy server, or use the public instance at `ntfy.sh`, this is
+all you need in your instance YAML:
+
+```yaml
+notifications:
+  enabled: true
+  triggers:
+    new_clusters: true
+    run_failure: true
+  channels:
+    ntfy:
+      enabled: true
+      server: "https://ntfy.sh"
+      topic: "my-episodic-alerts"
+```
+
+That is it. Install `httr2` (`install.packages("httr2")`) and test:
+
+```r
+episodic_notify_test()
+```
+
+Subscribe to the topic `my-episodic-alerts` in the ntfy app on your
+phone or desktop, and you will see the test message arrive.
+
+### ntfy with authentication
+
+If your ntfy server requires a login:
+
+```yaml
+    ntfy:
+      enabled: true
+      server: "https://ntfy.example.org"
+      topic: "episodic-alerts"
+      priority: 4            # ntfy priority 1 (min) to 5 (max); default 4 (high)
+      auth:
+        username: "episodic"
+        password: "s3cr3t"
+```
+
+## SMTP (Gmail, institutional relay, any SMTP server)
+
+Works with any SMTP server that supports STARTTLS. For Gmail, create an
+[App Password](https://support.google.com/accounts/answer/185833)
+(requires 2FA on the Google account) and use that instead of the account
+password.
+
+```yaml
+    smtp:
+      enabled: true
+      host: "smtp.gmail.com"
+      port: 587
+      tls: true
+      username: "episodic.alerts@gmail.com"
+      password: "xxxx xxxx xxxx xxxx"   # Gmail App Password
+      from: "episodic.alerts@gmail.com"
+      to:
+        - "team-lead@example.org"
+        - "oncall@example.org"
+```
+
+For an institutional relay that does not require authentication (common
+on internal networks):
+
+```yaml
+    smtp:
+      enabled: true
+      host: "mail-relay.internal.example.org"
+      port: 25
+      tls: false
+      from: "episodic@example.org"
+      to:
+        - "epi-team@example.org"
+```
+
+Requires the `curl` package (`install.packages("curl")`).
+
+## sendmail (Linux/Unix)
+
+If the server running EpiSODIC has `sendmail` (or a compatible MTA such
+as Postfix or msmtp) installed and configured, you can pipe messages
+directly without needing an external SMTP server:
+
+```yaml
+    sendmail:
+      enabled: true
+      binary: "/usr/sbin/sendmail"    # default; change if your MTA is elsewhere
+      from: "episodic@example.org"
+      to:
+        - "epi-team@example.org"
+```
+
+No additional R packages required. The binary must be executable by the
+user running the cron job.
+
+## Microsoft 365
+
+Sends email through the Microsoft Graph API. Two authentication flows
+are supported, depending on your Azure AD (Entra ID) setup.
+
+### Option A: App-only (client credentials) -- recommended for unattended cron
+
+This is the recommended approach for a cron job. It requires an Azure AD
+app registration with the **Mail.Send** application permission
+(admin-consented).
+
+1. In the [Azure portal](https://portal.azure.com/), go to **Azure
+   Active Directory > App registrations > New registration**.
+2. Name it (e.g. "EpiSODIC Notifications"), set **Supported account
+   types** to "Accounts in this organizational directory only".
+3. Under **API permissions**, add **Microsoft Graph > Application
+   permissions > Mail.Send**. Click **Grant admin consent**.
+4. Under **Certificates & secrets**, create a new client secret and copy
+   it immediately.
+
+```yaml
+    microsoft365:
+      enabled: true
+      tenant_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      client_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      client_secret: "your-client-secret-value"
+      from: "episodic@example.org"    # must be a mailbox the app is authorised to send from
+      to:
+        - "team-lead@example.org"
+```
+
+### Option B: Delegated (cached interactive token)
+
+If you cannot get admin consent for application-level permissions, or if
+your organisation restricts app-only mail sending, you can use a
+delegated token instead. This requires a one-time interactive login on
+the server:
+
+```r
+episodic_setup_microsoft365(
+  tenant_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  client_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # optional; uses the Microsoft365R default if NULL
+)
+```
+
+This opens a browser window (or prints a device-code URL for headless
+servers). Sign in with the account that will send notifications. The
+token is cached in `~/.local/share/AzureR/` and reused by subsequent
+cron runs.
+
+In your instance YAML, omit `client_secret`:
+
+```yaml
+    microsoft365:
+      enabled: true
+      tenant_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      client_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      from: "episodic@example.org"
+      to:
+        - "team-lead@example.org"
+```
+
+**Token lifetime:** Delegated refresh tokens typically expire after
+90 days of inactivity. If the cron runs at least once within that
+window, the token refreshes itself automatically. If the token does
+expire, re-run `episodic_setup_microsoft365()`.
+
+Requires `Microsoft365R` and `AzureGraph`
+(`install.packages(c("Microsoft365R", "AzureGraph"))`).
+
+## Microsoft Teams
+
+Teams notifications use a **Power Automate Workflow** webhook. The
+legacy Office 365 Connector webhooks are deprecated by Microsoft and
+should not be used for new setups.
+
+### Setting up the webhook
+
+1. In Teams, go to the channel where you want notifications.
+2. Click **...** (more options) > **Workflows**.
+3. Search for **"Post to a channel when a webhook request is received"**
+   and select it.
+4. Follow the prompts. When done, copy the webhook URL (it looks like
+   `https://*.logic.azure.com/workflows/...`).
+
+```yaml
+    teams:
+      enabled: true
+      webhook_url: "https://prod-XX.westeurope.logic.azure.com/workflows/..."
+```
+
+The notification is sent as an Adaptive Card, which renders as a
+structured card in the Teams channel with pathogen, location, case
+counts, and a link to the dashboard.
+
+Requires `httr2` (`install.packages("httr2")`).
+
+## Slack
+
+Slack notifications use an [Incoming
+Webhook](https://api.slack.com/messaging/webhooks).
+
+### Setting up the webhook
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) and create a
+   new app (or use an existing one).
+2. Under **Incoming Webhooks**, activate them and click **Add New
+   Webhook to Workspace**.
+3. Choose the channel and copy the webhook URL.
+
+```yaml
+    slack:
+      enabled: true
+      webhook_url: "https://hooks.slack.com/services/<workspace-id>/<bot-id>/<token>"
+```
+
+The notification is formatted as Slack `mrkdwn`, with pathogen names in
+bold, case counts, and (if configured) a link to the dashboard.
+
+Requires `httr2` (`install.packages("httr2")`).
+
+## Triggers
+
+Two triggers are available. Both are independently toggleable:
+
+| Trigger | Fires when | Default |
+|---|---|---|
+| `new_clusters` | The cron run created at least one new cluster | Must be explicitly set to `true` |
+| `run_failure` | The cron run's status is `"failed"` | Must be explicitly set to `true` |
+
+```yaml
+notifications:
+  enabled: true
+  triggers:
+    new_clusters: true
+    run_failure: true
+```
+
+If both triggers fire on the same run (new clusters were detected, but
+something else in the run also failed), two separate notifications are
+sent.
+
+## Dashboard link
+
+If your EpiSODIC dashboard is reachable at a URL, set `dashboard_url`
+and every notification will include a direct link:
+
+```yaml
+notifications:
+  enabled: true
+  dashboard_url: "https://episodic.example.org"
+  # ...channels...
+```
+
+This produces a clickable link in email bodies, a button in the Teams
+Adaptive Card, and a hyperlink in Slack messages.
+
+## Full reference example
+
+Below is a complete `notifications` block with every channel shown.
+Copy only what you need.
+
+```yaml
+notifications:
+  enabled: true
+  dashboard_url: "https://episodic.example.org"
+  triggers:
+    new_clusters: true
+    run_failure: true
+  channels:
+    ntfy:
+      enabled: true
+      server: "https://ntfy.example.org"
+      topic: "episodic-alerts"
+      priority: 4
+      auth:
+        username: "episodic"
+        password: "s3cr3t"
+    smtp:
+      enabled: false
+      host: "smtp.gmail.com"
+      port: 587
+      tls: true
+      username: "episodic.alerts@gmail.com"
+      password: "xxxx xxxx xxxx xxxx"
+      from: "episodic.alerts@gmail.com"
+      to:
+        - "team-lead@example.org"
+        - "oncall@example.org"
+    sendmail:
+      enabled: false
+      binary: "/usr/sbin/sendmail"
+      from: "episodic@example.org"
+      to:
+        - "epi-team@example.org"
+    microsoft365:
+      enabled: false
+      tenant_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      client_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      client_secret: "your-client-secret-value"
+      from: "episodic@example.org"
+      to:
+        - "team-lead@example.org"
+    teams:
+      enabled: false
+      webhook_url: "https://prod-XX.westeurope.logic.azure.com/workflows/..."
+    slack:
+      enabled: false
+      webhook_url: "https://hooks.slack.com/services/<workspace-id>/<bot-id>/<token>"
+```
+
+## Testing your setup
+
+After configuring notifications, always run the test function
+interactively before relying on cron:
+
+```r
+episodic_notify_test()
+```
+
+This validates the configuration (checking for missing required fields
+and uninstalled packages), then sends a test message through every
+enabled channel. It reports success or failure per channel with the
+exact error message, so you can fix problems before the next real run.
+
+## What a notification looks like
+
+### New clusters
+
+The notification includes, for each new cluster (up to 10, with a
+"+N more" summary for the rest):
+
+- **Pathogen** name
+- **Location**: institution, ward, and/or region, depending on the
+  stream level
+- **Cases**: observed count, expected count, and their ratio
+- **Priority score**: the composite score that ranks the cluster
+- **Period**: first and last day of the detection window
+
+The subject line reads:
+`EpiSODIC: 3 new cluster(s) detected on 2025-09-01`
+
+### Run failure
+
+The notification includes the date, the hostname of the server that ran
+the detection, and the error message. This lets you triage whether the
+failure is a data problem, a configuration problem, or a server issue
+before you check any logs.
+
+## Troubleshooting
+
+**"Notifications are not enabled in the configuration"** when calling
+`episodic_notify_test()`: Check that your instance YAML has
+`notifications: enabled: true` and that `EPISODIC_CONFIG` points at
+that file.
+
+**Channel sends succeed in the test but do not fire on cron runs:**
+Check the triggers section. Both `new_clusters` and `run_failure` must
+be explicitly set to `true`; they do not default to on.
+
+**SMTP connection times out:** Ensure the server can reach the SMTP
+host and port. Firewalls, VPNs, and cloud-provider restrictions on
+outbound port 25/587 are common causes.
+
+**Microsoft 365 "Insufficient privileges":** For app-only auth, the
+Mail.Send application permission must have admin consent. For delegated
+auth, the signed-in user must have a mailbox and the Mail.Send delegated
+permission on the app registration.
+
+**Teams webhook returns 202 but no card appears:** Power Automate
+Workflow webhooks can silently drop malformed payloads. Check that the
+webhook URL is correct and that the workflow is turned on in Power
+Automate.
+
+**Slack webhook returns `invalid_payload`:** Ensure `httr2` is
+installed and up to date. The payload is JSON with a single `text`
+field; the webhook URL must be an Incoming Webhook, not a Slack API
+endpoint.
+
+## See also
+
+- `vignette("deployment")` for how to stand up an instance and
+  configure `EPISODIC_CONFIG`.
+- `vignette("environment-variables")` for the full reference table
+  of `EPISODIC_*` variables.
+- `?episodic_notifications` for the API-level documentation.
+- `?episodic_notify_test` for the test function.
+- `?episodic_setup_microsoft365` for the Microsoft 365 delegated
+  auth setup helper.

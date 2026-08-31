@@ -200,6 +200,7 @@ rather than failing when it is absent:
 | MEM seasonal thresholds | `mem` | Detector skipped for `mem_applicable` organisms |
 | Outbreak reports | `quarto` R package + the separate Quarto CLI | Render errors clearly instead of silently producing nothing |
 | Choropleth map | `sf` + geographic reference data | Plain bar breakdown by PC value |
+| Notifications | `httr2`, `curl`, `Microsoft365R` + `AzureGraph` (depending on channel) | No alerts; review clusters through the dashboard only |
 
 `AMR` is a hard dependency, not an optional integration: episode
 deduplication (`episodic_cases_deduplicate()`) calls `AMR::get_episode()` directly,
@@ -216,11 +217,22 @@ colours - no package dependency involved either way.
 None of these are required to run the demo, the detection engine, or the
 interface - each is additive.
 
+## Notifications
+
+EpiSODIC can notify your team, through ntfy, email, Teams, or Slack,
+whenever new clusters are detected or a cron run fails. Notifications
+are configured in the same YAML file as detection thresholds
+(`EPISODIC_CONFIG`), under a `notifications` key. See
+`vignette("notifications")` for the full setup guide, with step-by-step
+instructions for every supported channel.
+
 ## See also
 
 - `vignette("data-format")` for the case data contract this vignette's
   `episodic_run_cron()` calls expect.
 - `vignette("environment-variables")` for the full `EPISODIC_*`
   reference table, including every variable named above.
+- `vignette("notifications")` for setting up alerts on new clusters
+  and run failures.
 - `vignette("faq")` for hosting choices, account roles, and other
   operational questions.

@@ -21,6 +21,7 @@ url: https://certe-medical-epidemiology.github.io/EpiSODIC/
 
 template:
   bootstrap: 5
+  # Yeti has the default EpiSODIC colours with some minor changes, see pkgdown/extra.css
   bootswatch: yeti
   bslib:
     # Match the app's own typeface (--episodic-font in
@@ -39,6 +40,12 @@ articles:
   - overview
   - data-format
   - deployment
+
+- title: Configure
+  desc: >
+    Set up notifications and other operational knobs.
+  contents:
+  - notifications
 
 - title: Reference
   desc: >
@@ -111,6 +118,16 @@ reference:
   - episodic_interpretation
   - episodic_report_render
 
+- title: Notifications
+  desc: >
+    Send alerts to your team when new clusters are detected or a
+    detection run fails. Supports ntfy, SMTP, sendmail, Microsoft 365,
+    Teams, and Slack.
+  contents:
+  - episodic_notifications
+  - episodic_notify_test
+  - episodic_setup_microsoft365
+
 - title: Customise the look and feel
   desc: >
     House colours, maps, translations, and dashboard chart building
@@ -123,4 +140,3 @@ reference:
   - episodic_tr
   - episodic_charts
   - episodic_ui_italicise_taxon
-
