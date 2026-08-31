@@ -156,6 +156,41 @@ episodic_auth_resolve_user <- function(con, user) {
   user
 }
 
+#' Re-resolve a cached session user against the database, for a write check
+#'
+#' `current_user()` is a `shiny::reactiveVal` set once, at sign-in - it is
+#' not itself invalidated by an `is_admin` account later revoking that
+#' same account's access (`episodic_auth_set_active(..., FALSE)`) or
+#' demoting it (`episodic_auth_set_role()`/`episodic_auth_set_admin()`)
+#' from the Settings screen. Every privileged write path
+#' (`episodic_app_server_assessment_actions()`, `episodic_app_server_report()`,
+#' `episodic_app_server_settings()`) calls this immediately before its own
+#' `episodic_user_is_epidemiologist()`/`episodic_user_is_admin()` check, so
+#' authorization is decided from the database as of *this* write, not from
+#' whatever was true when the browser tab first signed in - an
+#' already-open session cannot keep writing once deactivated or demoted,
+#' even though its own UI may still show as signed in until the next
+#' unrelated re-render notices.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cached_user The session's cached signed-in user row (from
+#'   `current_user()`), or `NULL`.
+#' @return The freshly resolved account row (role/is_admin/is_active as of
+#'   now), or `NULL` if nobody was signed in, the account no longer
+#'   exists, or the account is no longer active.
+#' @keywords internal
+#' @noRd
+episodic_auth_refresh_user <- function(con, cached_user) {
+  if (is.null(cached_user)) {
+    return(NULL)
+  }
+  fresh <- episodic_db_user_by_id(con, cached_user$user_id)
+  if (is.null(fresh) || !episodic_auth_is_active(con, fresh)) {
+    return(NULL)
+  }
+  episodic_auth_resolve_user(con, fresh)
+}
+
 #' Whether a user is still required to change their password
 #'
 #' `TRUE` until the first `password_change` event is recorded for them,

@@ -14,6 +14,8 @@
 ## Changed
 
 - Documented every `default.yaml` config key with a short inline explanation
+- Every write action now re-resolves the signed-in account against the database immediately before writing (`episodic_auth_refresh_user()`), so deactivating or demoting an account from the Settings screen takes effect on its already-open sessions too, not only on its next sign-in
+- An `is_admin` account can no longer revoke its own admin access or deactivate its own account from the Settings screen (self-lockout guard)
 
 # EpiSODIC 0.8.17
 

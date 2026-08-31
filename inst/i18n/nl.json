@@ -292,6 +292,8 @@
   "settings.users.err_full_name": "Volledige naam is verplicht.",
   "settings.users.err_email": "E-mail is verplicht.",
   "settings.users.err_duplicate": "Die gebruikersnaam is al in gebruik.",
+  "settings.users.err_role": "Selecteer een geldige rol.",
+  "settings.users.err_self_lockout": "U kunt uw eigen beheerderstoegang niet verwijderen of uw eigen account niet deactiveren - vraag een andere beheerder, of gebruik episodic_auth_set_admin()/episodic_auth_set_active() in de console.",
   "settings.export.title": "Configuratie exporteren",
   "settings.export.note": "Bundelt de opgeloste configuratie, pathogeenconfiguratie en een eventueel aangepast kleurenpalet in een zip-bestand naast de database. Meldingsgeheimen worden in de export gemaskeerd.",
   "settings.export.button": "Configuratie exporteren als zip",

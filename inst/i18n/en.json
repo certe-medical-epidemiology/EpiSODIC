@@ -292,6 +292,8 @@
   "settings.users.err_full_name": "Full name is required.",
   "settings.users.err_email": "Email is required.",
   "settings.users.err_duplicate": "That username is already taken.",
+  "settings.users.err_role": "Please select a valid role.",
+  "settings.users.err_self_lockout": "You cannot remove your own admin access or deactivate your own account - ask another admin, or use episodic_auth_set_admin()/episodic_auth_set_active() at the console.",
   "settings.export.title": "Export configuration",
   "settings.export.note": "Bundles the resolved configuration, pathogen configuration, and any custom palette into a zip file next to the database. Notification secrets are masked in the export.",
   "settings.export.button": "Export configuration as zip",

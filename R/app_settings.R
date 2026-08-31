@@ -213,10 +213,14 @@ episodic_app_settings_build_notifications <- function(input, existing) {
 
 #' Wire the Settings screen's server-side logic
 #'
-#' Re-checks `episodic_user_is_admin(current_user())` before every write,
-#' the same server-side trust boundary every other write action in this
-#' app applies (the nav link and the forms themselves are just what an
-#' admin normally sees, not what is actually enforced).
+#' Every handler re-resolves the signed-in account with
+#' `episodic_auth_refresh_user()` and re-checks `episodic_user_is_admin()`
+#' before writing anything - the same server-side trust boundary every
+#' other write action in this app applies (the nav link and the forms
+#' themselves are just what an admin normally sees, not what is actually
+#' enforced), with the extra requirement here that an account another
+#' admin has just revoked or demoted cannot keep using its own
+#' already-open session to write either.
 #'
 #' @param input,output,session The Shiny server function's own arguments.
 #' @param con A [DBI::DBIConnection-class].
@@ -251,7 +255,7 @@ episodic_app_server_settings <- function(
   })
 
   shiny::observeEvent(input$settings_notif_save, {
-    user <- current_user()
+    user <- episodic_auth_refresh_user(con, current_user())
     shiny::req(episodic_user_is_admin(user))
 
     existing <- episodic_config_resolve(con = con)$notifications
@@ -274,7 +278,7 @@ episodic_app_server_settings <- function(
   })
 
   shiny::observeEvent(input$settings_config_export, {
-    user <- current_user()
+    user <- episodic_auth_refresh_user(con, current_user())
     shiny::req(episodic_user_is_admin(user))
     result <- tryCatch(
       episodic_config_export(db_path = db_path),
@@ -299,7 +303,7 @@ episodic_app_server_settings <- function(
   })
 
   shiny::observeEvent(input$settings_user_create, {
-    user <- current_user()
+    user <- episodic_auth_refresh_user(con, current_user())
     shiny::req(episodic_user_is_admin(user))
     rlang::check_installed("sodium")
 
@@ -322,6 +326,13 @@ episodic_app_server_settings <- function(
     }
     if (nchar(password) < 8) {
       problems <- c(problems, episodic_tr("auth.password_too_short", lang = lang))
+    }
+    # The role <select> only ever submits one of these two values, but the
+    # Shiny input is client-controlled like any other - validated with a
+    # clear message here rather than left to surface as an opaque CHECK
+    # constraint violation from episodic_db_app_user_insert().
+    if (!role %in% c("epidemiologist", "viewer")) {
+      problems <- c(problems, episodic_tr("settings.users.err_role", lang = lang))
     }
     if (
       length(problems) == 0 &&
@@ -352,7 +363,7 @@ episodic_app_server_settings <- function(
   })
 
   shiny::observeEvent(input$settings_user_role_change, {
-    user <- current_user()
+    user <- episodic_auth_refresh_user(con, current_user())
     shiny::req(episodic_user_is_admin(user))
     parts <- strsplit(input$settings_user_role_change, ":", fixed = TRUE)[[1]]
     episodic_auth_set_role(con, as.integer(parts[1]), user$user_id, parts[2])
@@ -360,28 +371,43 @@ episodic_app_server_settings <- function(
   })
 
   shiny::observeEvent(input$settings_user_admin_change, {
-    user <- current_user()
+    user <- episodic_auth_refresh_user(con, current_user())
     shiny::req(episodic_user_is_admin(user))
     parts <- strsplit(input$settings_user_admin_change, ":", fixed = TRUE)[[1]]
-    episodic_auth_set_admin(
-      con,
-      as.integer(parts[1]),
-      user$user_id,
-      identical(parts[2], "true")
-    )
+    target_id <- as.integer(parts[1])
+    new_is_admin <- identical(parts[2], "true")
+    # An admin revoking their *own* is_admin flag would lock every admin
+    # account out of Settings at once (nothing left in the UI to grant it
+    # back - only episodic_auth_set_admin() at the console could recover),
+    # so the one case this refuses is exactly that: self-revocation.
+    # Revoking someone else's, even the last other admin's, is still
+    # allowed - that is a deliberate access decision this account is
+    # entitled to make.
+    if (identical(target_id, user$user_id) && !new_is_admin) {
+      settings_message(list(
+        type = "error",
+        text = episodic_tr("settings.users.err_self_lockout", lang = lang)
+      ))
+      return(invisible(NULL))
+    }
+    episodic_auth_set_admin(con, target_id, user$user_id, new_is_admin)
     settings_touch()
   })
 
   shiny::observeEvent(input$settings_user_active_change, {
-    user <- current_user()
+    user <- episodic_auth_refresh_user(con, current_user())
     shiny::req(episodic_user_is_admin(user))
     parts <- strsplit(input$settings_user_active_change, ":", fixed = TRUE)[[1]]
-    episodic_auth_set_active(
-      con,
-      as.integer(parts[1]),
-      user$user_id,
-      identical(parts[2], "true")
-    )
+    target_id <- as.integer(parts[1])
+    new_is_active <- identical(parts[2], "true")
+    if (identical(target_id, user$user_id) && !new_is_active) {
+      settings_message(list(
+        type = "error",
+        text = episodic_tr("settings.users.err_self_lockout", lang = lang)
+      ))
+      return(invisible(NULL))
+    }
+    episodic_auth_set_active(con, target_id, user$user_id, new_is_active)
     settings_touch()
   })
 

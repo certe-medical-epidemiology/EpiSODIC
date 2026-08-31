@@ -19,9 +19,11 @@
 
 #' Wire the dossier's report-render-on-demand button
 #'
-#' Re-checks `episodic_user_is_epidemiologist(current_user())` server-side before
+#' Re-resolves `current_user()` with `episodic_auth_refresh_user()` and
+#' re-checks `episodic_user_is_epidemiologist()` server-side before
 #' rendering, same as every other write action (the DOM/onclick is not a
-#' trust boundary). Reports are written to
+#' trust boundary, and an account deactivated or demoted mid-session must
+#' not keep writing on its already-open session). Reports are written to
 #' `<directory containing db_path>/reports/`, so a report lands next to
 #' the database rather than needing its own configuration knob.
 #'
@@ -70,7 +72,7 @@ episodic_app_server_report <- function(
   })
 
   shiny::observeEvent(input$report_render_submit, {
-    user <- current_user()
+    user <- episodic_auth_refresh_user(con, current_user())
     shiny::req(episodic_user_is_epidemiologist(user))
     render_error(NULL)
 

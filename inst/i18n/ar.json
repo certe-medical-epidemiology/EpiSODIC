@@ -292,6 +292,8 @@
   "settings.users.err_full_name": "الاسم الكامل مطلوب.",
   "settings.users.err_email": "البريد الإلكتروني مطلوب.",
   "settings.users.err_duplicate": "اسم المستخدم هذا مستخدم بالفعل.",
+  "settings.users.err_role": "الرجاء اختيار دور صالح.",
+  "settings.users.err_self_lockout": "لا يمكنك إزالة صلاحية الإدارة الخاصة بك أو تعطيل حسابك الخاص - اطلب من مسؤول آخر، أو استخدم episodic_auth_set_admin()/episodic_auth_set_active() في وحدة التحكم.",
   "settings.export.title": "تصدير الإعدادات",
   "settings.export.note": "يجمع الإعدادات المحلولة وإعدادات مسببات الأمراض وأي لوحة ألوان مخصصة في ملف zip بجانب قاعدة البيانات. يتم إخفاء أسرار الإشعارات في التصدير.",
   "settings.export.button": "تصدير الإعدادات كملف zip",

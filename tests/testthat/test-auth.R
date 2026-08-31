@@ -332,6 +332,57 @@ test_that("episodic_auth_login() rejects a deactivated account even via an activ
   expect_false(episodic_auth_login(con, "tsmith", "initial123")$ok)
 })
 
+test_that("episodic_auth_refresh_user() returns NULL for a cached user deactivated after sign-in, without touching the row", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  actor_id <- auth_test_user(con, password = "actorpw", must_change = FALSE)
+  target_id <- episodic_db_app_user_insert(
+    con,
+    "tsmith",
+    "Tom Smith",
+    "t@x.nl",
+    sodium::password_store("initial123")
+  )
+  cached <- episodic_auth_login(con, "tsmith", "initial123")$user
+  expect_false(is.null(episodic_auth_refresh_user(con, cached)))
+
+  episodic_auth_set_active(con, target_id, actor_id, FALSE)
+  # the cached reactiveVal snapshot is unaffected by the deactivation -
+  # only a fresh look at the database sees it
+  expect_null(episodic_auth_refresh_user(con, cached))
+})
+
+test_that("episodic_auth_refresh_user() reflects a role/admin change made after sign-in, not the cached snapshot", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  actor_id <- auth_test_user(con, password = "actorpw", must_change = FALSE)
+  target_id <- episodic_db_app_user_insert(
+    con,
+    "tsmith",
+    "Tom Smith",
+    "t@x.nl",
+    sodium::password_store("initial123"),
+    role = "viewer"
+  )
+  cached <- episodic_auth_login(con, "tsmith", "initial123")$user
+  expect_false(episodic_user_is_epidemiologist(cached))
+
+  episodic_auth_set_role(con, target_id, actor_id, "epidemiologist")
+  refreshed <- episodic_auth_refresh_user(con, cached)
+  expect_true(episodic_user_is_epidemiologist(refreshed))
+
+  episodic_auth_set_admin(con, target_id, actor_id, TRUE)
+  refreshed <- episodic_auth_refresh_user(con, cached)
+  expect_true(episodic_user_is_admin(refreshed))
+})
+
+test_that("episodic_auth_refresh_user() returns NULL for NULL, and for an account that no longer exists", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  expect_null(episodic_auth_refresh_user(con, NULL))
+  expect_null(episodic_auth_refresh_user(con, list(user_id = 999999L)))
+})
+
 test_that("episodic_auth_login() returns a user row with role/is_admin/is_active resolved from events, not the raw row", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))

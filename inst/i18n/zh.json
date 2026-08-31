@@ -292,6 +292,8 @@
   "settings.users.err_full_name": "全名为必填项。",
   "settings.users.err_email": "电子邮件为必填项。",
   "settings.users.err_duplicate": "该用户名已被使用。",
+  "settings.users.err_role": "请选择有效的角色。",
+  "settings.users.err_self_lockout": "您不能移除自己的管理员权限或停用自己的账户——请其他管理员操作，或在控制台使用 episodic_auth_set_admin()/episodic_auth_set_active()。",
   "settings.export.title": "导出配置",
   "settings.export.note": "将已解析的配置、病原体配置及任何自定义调色板打包成一个 zip 文件，存放在数据库旁边。导出内容中的通知密钥会被隐藏。",
   "settings.export.button": "将配置导出为 zip",

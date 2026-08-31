@@ -24,13 +24,15 @@
 #' artefacts", one classification and rationale applied to every checked
 #' cluster in a loop over `episodic_app_submit_assessment()`, each getting
 #' its own `episodic_assessment_event` row exactly as a one-at-a-time
-#' classification would). Every handler re-checks
-#' `episodic_user_is_epidemiologist(current_user())` server-side before writing
-#' anything - the UI only renders these controls for a signed-in
-#' `"epidemiologist"` account, but a forged client event must not be able to
-#' write regardless (the DOM and `onclick` handlers are not a trust
-#' boundary, and a signed-in `"viewer"` must not be able to write by
-#' forging one either).
+#' classification would). Every handler re-resolves the signed-in account
+#' with `episodic_auth_refresh_user()` and re-checks
+#' `episodic_user_is_epidemiologist()` server-side before writing anything -
+#' the UI only renders these controls for a signed-in `"epidemiologist"`
+#' account, but a forged client event must not be able to write regardless
+#' (the DOM and `onclick` handlers are not a trust boundary, a signed-in
+#' `"viewer"` must not be able to write by forging one either, and an
+#' account deactivated or demoted mid-session by an `is_admin` account must
+#' not keep writing on its already-open session either).
 #'
 #' @param input,output,session The Shiny server function's own arguments.
 #' @param con A [DBI::DBIConnection-class].
@@ -69,7 +71,7 @@ episodic_app_server_assessment_actions <- function(
   }
 
   shiny::observeEvent(input$assess_submit, {
-    user <- current_user()
+    user <- episodic_auth_refresh_user(con, current_user())
     shiny::req(episodic_user_is_epidemiologist(user))
     payload <- input$assess_submit
     rationale <- trimws(payload$rationale %||% "")
@@ -88,7 +90,7 @@ episodic_app_server_assessment_actions <- function(
   })
 
   shiny::observeEvent(input$assess_close, {
-    user <- current_user()
+    user <- episodic_auth_refresh_user(con, current_user())
     shiny::req(episodic_user_is_epidemiologist(user))
     episodic_app_submit_closure(
       con,
@@ -99,7 +101,7 @@ episodic_app_server_assessment_actions <- function(
   })
 
   shiny::observeEvent(input$bulk_assess_submit, {
-    user <- current_user()
+    user <- episodic_auth_refresh_user(con, current_user())
     shiny::req(episodic_user_is_epidemiologist(user))
     payload <- input$bulk_assess_submit
     rationale <- trimws(payload$rationale %||% "")
@@ -121,7 +123,7 @@ episodic_app_server_assessment_actions <- function(
   })
 
   shiny::observeEvent(input$assess_mute_submit, {
-    user <- current_user()
+    user <- episodic_auth_refresh_user(con, current_user())
     shiny::req(episodic_user_is_epidemiologist(user))
     payload <- input$assess_mute_submit
     if (

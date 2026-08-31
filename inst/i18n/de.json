@@ -292,6 +292,8 @@
   "settings.users.err_full_name": "Vollständiger Name ist erforderlich.",
   "settings.users.err_email": "E-Mail ist erforderlich.",
   "settings.users.err_duplicate": "Dieser Benutzername ist bereits vergeben.",
+  "settings.users.err_role": "Bitte wählen Sie eine gültige Rolle.",
+  "settings.users.err_self_lockout": "Sie können Ihren eigenen Admin-Zugriff nicht entfernen oder Ihr eigenes Konto nicht deaktivieren - bitten Sie einen anderen Administrator, oder verwenden Sie episodic_auth_set_admin()/episodic_auth_set_active() in der Konsole.",
   "settings.export.title": "Konfiguration exportieren",
   "settings.export.note": "Bündelt die aufgelöste Konfiguration, die Erregerkonfiguration und eine eventuell angepasste Farbpalette in einer ZIP-Datei neben der Datenbank. Benachrichtigungsgeheimnisse werden im Export maskiert.",
   "settings.export.button": "Konfiguration als ZIP exportieren",

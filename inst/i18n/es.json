@@ -292,6 +292,8 @@
   "settings.users.err_full_name": "El nombre completo es obligatorio.",
   "settings.users.err_email": "El correo electrónico es obligatorio.",
   "settings.users.err_duplicate": "Ese nombre de usuario ya está en uso.",
+  "settings.users.err_role": "Seleccione un rol válido.",
+  "settings.users.err_self_lockout": "No puede quitar su propio acceso de administrador ni desactivar su propia cuenta - pida a otro administrador, o use episodic_auth_set_admin()/episodic_auth_set_active() en la consola.",
   "settings.export.title": "Exportar configuración",
   "settings.export.note": "Agrupa la configuración resuelta, la configuración de patógenos y cualquier paleta personalizada en un archivo zip junto a la base de datos. Los secretos de notificación se enmascaran en la exportación.",
   "settings.export.button": "Exportar configuración como zip",

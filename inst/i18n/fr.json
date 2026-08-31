@@ -292,6 +292,8 @@
   "settings.users.err_full_name": "Le nom complet est requis.",
   "settings.users.err_email": "L'e-mail est requis.",
   "settings.users.err_duplicate": "Ce nom d'utilisateur est déjà pris.",
+  "settings.users.err_role": "Veuillez sélectionner un rôle valide.",
+  "settings.users.err_self_lockout": "Vous ne pouvez pas retirer votre propre accès administrateur ni désactiver votre propre compte - demandez à un autre administrateur, ou utilisez episodic_auth_set_admin()/episodic_auth_set_active() dans la console.",
   "settings.export.title": "Exporter la configuration",
   "settings.export.note": "Regroupe la configuration résolue, la configuration des agents pathogènes et toute palette personnalisée dans un fichier zip à côté de la base de données. Les secrets de notification sont masqués dans l'export.",
   "settings.export.button": "Exporter la configuration en zip",
