@@ -303,14 +303,16 @@ Microsoft and should not be used for new setups.</p>
 <li>In Teams, go to the channel where you want notifications.</li>
 <li>Click <strong>…</strong> (more options) &gt;
 <strong>Workflows</strong>.</li>
-<li>Search for <strong>“Post to a channel when a webhook request is
-received”</strong> and select it.</li>
-<li>Follow the prompts. When done, copy the webhook URL (it looks like
-<code>https://*.logic.azure.com/workflows/...</code>).</li>
+<li>Search for <strong>“webhook”</strong> and select the <strong>“Send
+webhook alerts to a channel”</strong> template.</li>
+<li>Choose the team and channel, then click <strong>Save</strong>.</li>
+<li>Click <strong>Copy webhook link</strong>. When done, copy the
+webhook URL (it looks like
+<code>https://default&lt;environment-id&gt;.&lt;region&gt;.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/&lt;n&gt;/workflows/&lt;workflow-id&gt;/triggers/manual/paths/invoke?api-version=1&amp;sp=%2Ftriggers%2Fmanual%2Frun&amp;sv=1.0&amp;sig=...</code>).</li>
 </ol>
 <div class="sourceCode" id="cb10"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="at">    </span><span class="fu">teams</span><span class="kw">:</span></span>
 <span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="at">      </span><span class="fu">webhook_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://prod-XX.westeurope.logic.azure.com/workflows/..."</span></span></code></pre></div>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="at">      </span><span class="fu">webhook_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://default32d178cfed3488384266e0286e48b.2c.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/29/workflows/dc666faf7e22497f9854bce58e0e09d8/triggers/manual/paths/invoke?api-version=1&amp;sp=%2Ftriggers%2Fmanual%2Frun&amp;sv=1.0&amp;sig=..."</span></span></code></pre></div>
 <p>The notification is sent as an Adaptive Card, which renders as a
 structured card in the Teams channel with pathogen, location, case
 counts, and a link to the dashboard.</p>
@@ -443,7 +445,7 @@ channel shown. Copy only what you need.</p>
 <span id="cb14-40"><a href="#cb14-40" tabindex="-1"></a><span class="at">        </span><span class="kw">-</span><span class="at"> </span><span class="st">"team-lead@example.org"</span></span>
 <span id="cb14-41"><a href="#cb14-41" tabindex="-1"></a><span class="at">    </span><span class="fu">teams</span><span class="kw">:</span></span>
 <span id="cb14-42"><a href="#cb14-42" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
-<span id="cb14-43"><a href="#cb14-43" tabindex="-1"></a><span class="at">      </span><span class="fu">webhook_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://prod-XX.westeurope.logic.azure.com/workflows/..."</span></span>
+<span id="cb14-43"><a href="#cb14-43" tabindex="-1"></a><span class="at">      </span><span class="fu">webhook_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://default32d178cfed3488384266e0286e48b.2c.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/29/workflows/dc666faf7e22497f9854bce58e0e09d8/triggers/manual/paths/invoke?api-version=1&amp;sp=%2Ftriggers%2Fmanual%2Frun&amp;sv=1.0&amp;sig=..."</span></span>
 <span id="cb14-44"><a href="#cb14-44" tabindex="-1"></a><span class="at">    </span><span class="fu">slack</span><span class="kw">:</span></span>
 <span id="cb14-45"><a href="#cb14-45" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
 <span id="cb14-46"><a href="#cb14-46" tabindex="-1"></a><span class="at">      </span><span class="fu">webhook_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://hooks.slack.com/services/&lt;workspace-id&gt;/&lt;bot-id&gt;/&lt;token&gt;"</span></span></code></pre></div>

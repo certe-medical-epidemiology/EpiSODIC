@@ -220,15 +220,17 @@ should not be used for new setups.
 
 1.  In Teams, go to the channel where you want notifications.
 2.  Click **…** (more options) \> **Workflows**.
-3.  Search for **“Post to a channel when a webhook request is
-    received”** and select it.
-4.  Follow the prompts. When done, copy the webhook URL (it looks like
-    `https://*.logic.azure.com/workflows/...`).
+3.  Search for **“webhook”** and select the **“Send webhook alerts to a
+    channel”** template.
+4.  Choose the team and channel, then click **Save**.
+5.  Click **Copy webhook link**. When done, copy the webhook URL (it
+    looks like
+    `https://default<environment-id>.<region>.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/<n>/workflows/<workflow-id>/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=...`).
 
 ``` yaml
     teams:
       enabled: true
-      webhook_url: "https://prod-XX.westeurope.logic.azure.com/workflows/..."
+      webhook_url: "https://default32d178cfed3488384266e0286e48b.2c.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/29/workflows/dc666faf7e22497f9854bce58e0e09d8/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=..."
 ```
 
 The notification is sent as an Adaptive Card, which renders as a
@@ -345,7 +347,7 @@ notifications:
         - "team-lead@example.org"
     teams:
       enabled: false
-      webhook_url: "https://prod-XX.westeurope.logic.azure.com/workflows/..."
+      webhook_url: "https://default32d178cfed3488384266e0286e48b.2c.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/29/workflows/dc666faf7e22497f9854bce58e0e09d8/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=..."
     slack:
       enabled: false
       webhook_url: "https://hooks.slack.com/services/<workspace-id>/<bot-id>/<token>"
