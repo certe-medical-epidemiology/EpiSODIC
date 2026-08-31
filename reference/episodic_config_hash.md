@@ -38,5 +38,5 @@ configuration from a stored hash and snapshot.
 ``` r
 hashed <- episodic_config_hash(episodic_config_resolve())
 hashed$hash
-#> [1] "0e1853bcb7660f15676e7070b64d80f557e08bce"
+#> [1] "f198adfd3d377717cf031ccd8f73c5eb0c0f9cb3"
 ```

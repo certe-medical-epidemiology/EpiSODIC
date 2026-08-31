@@ -136,12 +136,12 @@ rather than copying the strings out of this page.
 - `care_line`:
 
   Character; `NA` allowed. One of `"first"` (primary care), `"second"`
-  (secondary care), `"other"`, or `"unknown"` - the values in
-  `episodic_care_lines`. Anything else is rejected. `NA` is read as
-  `"unknown"` and stored that way, so you need not map missing values
-  yourself: an empty `care_line`, an R `NA` and a database `NULL` all
-  mean the same thing here, and the dashboard shows all three as
-  "unknown".
+  (secondary care), `"third"` (tertiary care), `"other"`, or
+  `"unknown"` - the values in `episodic_care_lines`. Anything else is
+  rejected. `NA` is read as `"unknown"` and stored that way, so you need
+  not map missing values yourself: an empty `care_line`, an R `NA` and a
+  database `NULL` all mean the same thing here, and the dashboard shows
+  all three as "unknown".
 
 - `institution_key`:
 

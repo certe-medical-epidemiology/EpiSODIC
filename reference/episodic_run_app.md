@@ -29,8 +29,8 @@ episodic_run_app(
 - lang:
 
   Dashboard language, fixed for the whole running app - there is no
-  in-app language switcher. One of `"nl"`, `"en"`, `"es"`, `"fr"`,
-  `"de"`, `"zh"`, `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE`
+  in-app language switcher. One of `"en"`, `"ar"`, `"nl"`, `"fr"`,
+  `"de"`, `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
   environment variable, falling back to `"en"` if that is unset.
 
 - ...:

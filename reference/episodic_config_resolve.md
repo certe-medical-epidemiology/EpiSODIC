@@ -47,8 +47,8 @@ it, even after you have since changed them.
 config <- episodic_config_resolve()
 names(config)
 #> [1] "reconciliation"    "eligibility"       "effect_size_floor"
-#> [4] "same_place"        "farrington"        "rare_trigger"     
-#> [7] "priority_score"    "suppression"      
+#> [4] "same_place"        "farrington"        "mem"              
+#> [7] "rare_trigger"      "priority_score"    "suppression"      
 config$eligibility$min_baseline_weeks
 #> [1] 52
 ```

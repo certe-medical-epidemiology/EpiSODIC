@@ -65,8 +65,8 @@ episodic_report_render(
 
 - lang:
 
-  Report language: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`, `"zh"`,
-  `"hi"`, or `"ar"`. Defaults to the `EPISODIC_LANGUAGE` environment
+  Report language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`, `"hi"`,
+  `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE` environment
   variable, falling back to `"en"` if that is unset.
 
 - qmd_path:

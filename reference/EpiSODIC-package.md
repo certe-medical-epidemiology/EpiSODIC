@@ -31,11 +31,10 @@ Authors:
 
 - Matthijs S. Berends <m.berends@certe.nl>
 
-- Erwin E. A. Hassing <e.hassing@certe.nl>
-
-- Erwin Dijkstra <e.dijkstra@certe.nl>
-
 Other contributors:
 
 - Certe Medical Diagnostics & Advice Foundation
   ([ROR](https://ror.org/04m8g8w48)) \[copyright holder, funder\]
+
+- University Medical Center Groningen ([ROR](https://ror.org/03cv38k47))
+  \[copyright holder, funder\]

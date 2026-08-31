@@ -23,8 +23,8 @@ episodic_tr(
 
   A dotted key identifying the piece of text, e.g. `"nav.clusters"`. The
   full set of available keys and their wording in every shipped language
-  lives in `inst/i18n/*.json` (one file per language: `nl`, `en`, `es`,
-  `fr`, `de`, `zh`, `hi`, `ar`).
+  lives in `inst/i18n/*.json` (one file per language: `en`, `ar`, `nl`,
+  `fr`, `de`, `hi`, `zh`, `es`).
 
 - ...:
 
@@ -32,8 +32,8 @@ episodic_tr(
 
 - lang:
 
-  Language: `"nl"`, `"en"`, `"es"`, `"fr"`, `"de"`, `"zh"`, `"hi"`, or
-  `"ar"`. Defaults to the `EPISODIC_LANGUAGE` environment variable,
+  Language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`, `"hi"`, `"zh"`, or
+  `"es"`. Defaults to the `EPISODIC_LANGUAGE` environment variable,
   falling back to `"en"` if that is unset.
 
 - instance_i18n:
