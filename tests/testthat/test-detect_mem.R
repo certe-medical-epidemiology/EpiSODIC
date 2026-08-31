@@ -55,7 +55,8 @@ test_that("episodic_mem_status() returns NULL with no data, or too few fully-obs
   ))
   # only the current season exists, zero priors
   first_season_only <- cases[
-    as.Date(cases$sample_date) < as.Date("2020-05-16"), ,
+    as.Date(cases$sample_date) < as.Date("2020-05-16"),
+    ,
     drop = FALSE
   ]
   expect_null(episodic_mem_status(

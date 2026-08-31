@@ -102,9 +102,14 @@ test_that("episodic_app_settings_build_notifications() parses a comma-separated 
 })
 
 test_that("episodic_app_settings_build_notifications() keeps a secret unchanged when its field is left blank", {
-  existing <- list(channels = list(
-    teams = list(enabled = TRUE, webhook_url = "https://hooks.example/secret-token")
-  ))
+  existing <- list(
+    channels = list(
+      teams = list(
+        enabled = TRUE,
+        webhook_url = "https://hooks.example/secret-token"
+      )
+    )
+  )
   input <- list(
     stg_notif_teams_enabled = TRUE,
     stg_notif_teams_webhook_url = "" # left blank on screen
@@ -117,9 +122,14 @@ test_that("episodic_app_settings_build_notifications() keeps a secret unchanged 
 })
 
 test_that("episodic_app_settings_build_notifications() overwrites a secret when a new value is submitted", {
-  existing <- list(channels = list(
-    teams = list(enabled = TRUE, webhook_url = "https://hooks.example/old-token")
-  ))
+  existing <- list(
+    channels = list(
+      teams = list(
+        enabled = TRUE,
+        webhook_url = "https://hooks.example/old-token"
+      )
+    )
+  )
   input <- list(
     stg_notif_teams_enabled = TRUE,
     stg_notif_teams_webhook_url = "https://hooks.example/new-token"
@@ -155,11 +165,21 @@ test_that("episodic_db_app_config_event_insert()/episodic_db_app_config_latest()
 
   expect_null(episodic_db_app_config_latest(con, "notifications"))
 
-  episodic_db_app_config_event_insert(con, user_id, "notifications", '{"enabled":true}')
+  episodic_db_app_config_event_insert(
+    con,
+    user_id,
+    "notifications",
+    '{"enabled":true}'
+  )
   latest <- episodic_db_app_config_latest(con, "notifications")
   expect_equal(latest$config_json, '{"enabled":true}')
 
-  episodic_db_app_config_event_insert(con, user_id, "notifications", '{"enabled":false}')
+  episodic_db_app_config_event_insert(
+    con,
+    user_id,
+    "notifications",
+    '{"enabled":false}'
+  )
   latest <- episodic_db_app_config_latest(con, "notifications")
   expect_equal(latest$config_json, '{"enabled":false}')
 
@@ -179,7 +199,12 @@ test_that("episodic_db_app_config_event_insert() rejects an unknown section", {
     sodium::password_store("pw12345678")
   )
   expect_error(
-    episodic_db_app_config_event_insert(con, user_id, "not_a_real_section", "{}")
+    episodic_db_app_config_event_insert(
+      con,
+      user_id,
+      "not_a_real_section",
+      "{}"
+    )
   )
 })
 
@@ -188,8 +213,20 @@ test_that("episodic_db_app_users() lists every account", {
   on.exit(DBI::dbDisconnect(con))
   expect_equal(nrow(episodic_db_app_users(con)), 0)
 
-  episodic_db_app_user_insert(con, "b", "B", "b@x.nl", sodium::password_store("pw12345678"))
-  episodic_db_app_user_insert(con, "a", "A", "a@x.nl", sodium::password_store("pw12345678"))
+  episodic_db_app_user_insert(
+    con,
+    "b",
+    "B",
+    "b@x.nl",
+    sodium::password_store("pw12345678")
+  )
+  episodic_db_app_user_insert(
+    con,
+    "a",
+    "A",
+    "a@x.nl",
+    sodium::password_store("pw12345678")
+  )
 
   users <- episodic_db_app_users(con)
   expect_equal(nrow(users), 2)

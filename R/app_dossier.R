@@ -327,7 +327,8 @@ episodic_ui_trajectory <- function(
   lang = Sys.getenv("EPISODIC_LANGUAGE")
 ) {
   verdict_events <- timeline[
-    timeline$kind == "assessment" & !is.na(timeline$verdict), ,
+    timeline$kind == "assessment" & !is.na(timeline$verdict),
+    ,
     drop = FALSE
   ]
   starts <- c(obj$opened_at, verdict_events$at)
@@ -883,7 +884,8 @@ episodic_ui_linelist_panel <- function(
       episodic_tr(
         paste0(
           "panel.linelist.col.",
-          switch(c,
+          switch(
+            c,
             patient_key = "patient",
             lab_number = "lab_number",
             sample_date = "date",

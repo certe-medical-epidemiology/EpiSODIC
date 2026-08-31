@@ -106,7 +106,9 @@ episodic_config_export <- function(
   }
 
   palette_path <- Sys.getenv("EPISODIC_PALETTE_CONFIG", unset = NA)
-  if (!is.na(palette_path) && nzchar(palette_path) && file.exists(palette_path)) {
+  if (
+    !is.na(palette_path) && nzchar(palette_path) && file.exists(palette_path)
+  ) {
     file.copy(palette_path, file.path(work_dir, "palette.yaml"))
   }
 

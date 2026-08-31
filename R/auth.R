@@ -133,7 +133,7 @@ episodic_auth_is_active <- function(con, user) {
 
 #' Resolve every insert-only attribute of an account row at once
 #'
-#' [episodic_auth_login()] and the Settings screen's user list both need
+#' `episodic_auth_login()` and the Settings screen's user list both need
 #' `role`/`is_admin`/`is_active` as they currently stand, not as the
 #' account was first provisioned - this bundles the three
 #' `episodic_auth_latest_value()` calls into the row itself so callers

@@ -146,7 +146,8 @@ episodic_case_region_code <- function(cases, level) {
     return(character(0))
   }
   has_pc <- !is.na(cases$pc)
-  switch(level,
+  switch(
+    level,
     pathogen_area = ifelse(
       has_pc,
       paste0("GEBIED-", substr(cases$pc, 1, 2)),

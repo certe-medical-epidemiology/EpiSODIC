@@ -53,40 +53,52 @@
 #' @noRd
 episodic_settings_channel_specs <- function() {
   list(
-    ntfy = list(fields = list(
-      list(key = "server", type = "text"),
-      list(key = "topic", type = "text"),
-      list(key = "priority", type = "number"),
-      list(key = "auth.username", type = "text"),
-      list(key = "auth.password", type = "secret")
-    )),
-    smtp = list(fields = list(
-      list(key = "host", type = "text"),
-      list(key = "port", type = "number"),
-      list(key = "tls", type = "checkbox"),
-      list(key = "from", type = "text"),
-      list(key = "to", type = "textlist"),
-      list(key = "username", type = "text"),
-      list(key = "password", type = "secret")
-    )),
-    sendmail = list(fields = list(
-      list(key = "binary", type = "text"),
-      list(key = "from", type = "text"),
-      list(key = "to", type = "textlist")
-    )),
-    microsoft365 = list(fields = list(
-      list(key = "tenant_id", type = "text"),
-      list(key = "client_id", type = "text"),
-      list(key = "client_secret", type = "secret"),
-      list(key = "from", type = "text"),
-      list(key = "to", type = "textlist")
-    )),
-    teams = list(fields = list(
-      list(key = "webhook_url", type = "secret")
-    )),
-    slack = list(fields = list(
-      list(key = "webhook_url", type = "secret")
-    ))
+    ntfy = list(
+      fields = list(
+        list(key = "server", type = "text"),
+        list(key = "topic", type = "text"),
+        list(key = "priority", type = "number"),
+        list(key = "auth.username", type = "text"),
+        list(key = "auth.password", type = "secret")
+      )
+    ),
+    smtp = list(
+      fields = list(
+        list(key = "host", type = "text"),
+        list(key = "port", type = "number"),
+        list(key = "tls", type = "checkbox"),
+        list(key = "from", type = "text"),
+        list(key = "to", type = "textlist"),
+        list(key = "username", type = "text"),
+        list(key = "password", type = "secret")
+      )
+    ),
+    sendmail = list(
+      fields = list(
+        list(key = "binary", type = "text"),
+        list(key = "from", type = "text"),
+        list(key = "to", type = "textlist")
+      )
+    ),
+    microsoft365 = list(
+      fields = list(
+        list(key = "tenant_id", type = "text"),
+        list(key = "client_id", type = "text"),
+        list(key = "client_secret", type = "secret"),
+        list(key = "from", type = "text"),
+        list(key = "to", type = "textlist")
+      )
+    ),
+    teams = list(
+      fields = list(
+        list(key = "webhook_url", type = "secret")
+      )
+    ),
+    slack = list(
+      fields = list(
+        list(key = "webhook_url", type = "secret")
+      )
+    )
   )
 }
 
@@ -284,21 +296,27 @@ episodic_app_server_settings <- function(
       episodic_config_export(db_path = db_path),
       error = function(e) e
     )
-    settings_message(if (inherits(result, "error")) {
-      list(
-        type = "error",
-        text = episodic_tr(
-          "settings.export.failed",
-          error = conditionMessage(result),
-          lang = lang
+    settings_message(
+      if (inherits(result, "error")) {
+        list(
+          type = "error",
+          text = episodic_tr(
+            "settings.export.failed",
+            error = conditionMessage(result),
+            lang = lang
+          )
         )
-      )
-    } else {
-      list(
-        type = "success",
-        text = episodic_tr("settings.export.saved", path = result, lang = lang)
-      )
-    })
+      } else {
+        list(
+          type = "success",
+          text = episodic_tr(
+            "settings.export.saved",
+            path = result,
+            lang = lang
+          )
+        )
+      }
+    )
     settings_touch()
   })
 
@@ -316,33 +334,54 @@ episodic_app_server_settings <- function(
 
     problems <- character(0)
     if (!nzchar(username)) {
-      problems <- c(problems, episodic_tr("settings.users.err_username", lang = lang))
+      problems <- c(
+        problems,
+        episodic_tr("settings.users.err_username", lang = lang)
+      )
     }
     if (!nzchar(full_name)) {
-      problems <- c(problems, episodic_tr("settings.users.err_full_name", lang = lang))
+      problems <- c(
+        problems,
+        episodic_tr("settings.users.err_full_name", lang = lang)
+      )
     }
     if (!nzchar(email)) {
-      problems <- c(problems, episodic_tr("settings.users.err_email", lang = lang))
+      problems <- c(
+        problems,
+        episodic_tr("settings.users.err_email", lang = lang)
+      )
     }
     if (nchar(password) < 8) {
-      problems <- c(problems, episodic_tr("auth.password_too_short", lang = lang))
+      problems <- c(
+        problems,
+        episodic_tr("auth.password_too_short", lang = lang)
+      )
     }
     # The role <select> only ever submits one of these two values, but the
     # Shiny input is client-controlled like any other - validated with a
     # clear message here rather than left to surface as an opaque CHECK
     # constraint violation from episodic_db_app_user_insert().
     if (!role %in% c("epidemiologist", "viewer")) {
-      problems <- c(problems, episodic_tr("settings.users.err_role", lang = lang))
+      problems <- c(
+        problems,
+        episodic_tr("settings.users.err_role", lang = lang)
+      )
     }
     if (
       length(problems) == 0 &&
         !is.null(episodic_db_user_by_username(con, username))
     ) {
-      problems <- c(problems, episodic_tr("settings.users.err_duplicate", lang = lang))
+      problems <- c(
+        problems,
+        episodic_tr("settings.users.err_duplicate", lang = lang)
+      )
     }
 
     if (length(problems) > 0) {
-      settings_message(list(type = "error", text = paste(problems, collapse = " ")))
+      settings_message(list(
+        type = "error",
+        text = paste(problems, collapse = " ")
+      ))
       return(invisible(NULL))
     }
 
@@ -357,7 +396,11 @@ episodic_app_server_settings <- function(
     )
     settings_message(list(
       type = "success",
-      text = episodic_tr("settings.users.created", username = username, lang = lang)
+      text = episodic_tr(
+        "settings.users.created",
+        username = username,
+        lang = lang
+      )
     ))
     settings_touch()
   })

@@ -75,7 +75,11 @@ test_that("episodic_config_export() masks notification secrets by default, and c
     user_id,
     "notifications",
     jsonlite::toJSON(
-      list(channels = list(teams = list(webhook_url = "https://hooks.example/real-secret"))),
+      list(
+        channels = list(
+          teams = list(webhook_url = "https://hooks.example/real-secret")
+        )
+      ),
       auto_unbox = TRUE
     )
   )
@@ -85,7 +89,10 @@ test_that("episodic_config_export() masks notification secrets by default, and c
   masked_path <- episodic_config_export(db_path = db_path, output_dir = out_dir)
   extract_masked <- tempfile("episodic_export_extract_")
   zip::unzip(masked_path, exdir = extract_masked)
-  resolved_masked <- yaml::read_yaml(file.path(extract_masked, "config_resolved.yaml"))
+  resolved_masked <- yaml::read_yaml(file.path(
+    extract_masked,
+    "config_resolved.yaml"
+  ))
   expect_equal(resolved_masked$notifications$channels$teams$webhook_url, "***")
 
   unmasked_path <- episodic_config_export(
@@ -95,7 +102,10 @@ test_that("episodic_config_export() masks notification secrets by default, and c
   )
   extract_unmasked <- tempfile("episodic_export_extract_")
   zip::unzip(unmasked_path, exdir = extract_unmasked)
-  resolved_unmasked <- yaml::read_yaml(file.path(extract_unmasked, "config_resolved.yaml"))
+  resolved_unmasked <- yaml::read_yaml(file.path(
+    extract_unmasked,
+    "config_resolved.yaml"
+  ))
   expect_equal(
     resolved_unmasked$notifications$channels$teams$webhook_url,
     "https://hooks.example/real-secret"

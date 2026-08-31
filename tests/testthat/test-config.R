@@ -84,7 +84,12 @@ test_that("episodic_config_resolve(con = ...) overlays the latest episodic_app_c
     user_id,
     "notifications",
     jsonlite::toJSON(
-      list(enabled = TRUE, channels = list(ntfy = list(enabled = TRUE, server = "https://ntfy.sh", topic = "t"))),
+      list(
+        enabled = TRUE,
+        channels = list(
+          ntfy = list(enabled = TRUE, server = "https://ntfy.sh", topic = "t")
+        )
+      ),
       auto_unbox = TRUE
     )
   )
@@ -111,14 +116,20 @@ test_that("episodic_config_resolve(con = ...) applies the most recent override, 
     con,
     user_id,
     "notifications",
-    jsonlite::toJSON(list(dashboard_url = "https://first.example"), auto_unbox = TRUE)
+    jsonlite::toJSON(
+      list(dashboard_url = "https://first.example"),
+      auto_unbox = TRUE
+    )
   )
   Sys.sleep(0.01)
   episodic_db_app_config_event_insert(
     con,
     user_id,
     "notifications",
-    jsonlite::toJSON(list(dashboard_url = "https://second.example"), auto_unbox = TRUE)
+    jsonlite::toJSON(
+      list(dashboard_url = "https://second.example"),
+      auto_unbox = TRUE
+    )
   )
 
   config <- episodic_config_resolve(NA, con = con)
@@ -142,7 +153,15 @@ test_that("a DB notifications override does not change episodic_config_hash(), s
     con,
     user_id,
     "notifications",
-    jsonlite::toJSON(list(enabled = TRUE, channels = list(slack = list(enabled = TRUE, webhook_url = "https://hooks.example/x"))), auto_unbox = TRUE)
+    jsonlite::toJSON(
+      list(
+        enabled = TRUE,
+        channels = list(
+          slack = list(enabled = TRUE, webhook_url = "https://hooks.example/x")
+        )
+      ),
+      auto_unbox = TRUE
+    )
   )
   h_after <- episodic_config_hash(episodic_config_resolve(NA, con = con))
 

@@ -44,11 +44,18 @@ episodic_ui_settings_screen <- function(
   # table renders, the same way episodic_auth_login() resolves the
   # signed-in user's own row.
   if (nrow(users) > 0) {
-    users <- do.call(rbind, lapply(seq_len(nrow(users)), function(i) {
-      episodic_auth_resolve_user(con, users[i, ])
-    }))
+    users <- do.call(
+      rbind,
+      lapply(seq_len(nrow(users)), function(i) {
+        episodic_auth_resolve_user(con, users[i, ])
+      })
+    )
   }
-  audit <- episodic_db_app_config_events(con, section = "notifications", limit = 20)
+  audit <- episodic_db_app_config_events(
+    con,
+    section = "notifications",
+    limit = 20
+  )
 
   shiny::tags$div(
     class = "episodic-streams-screen",
@@ -315,8 +322,14 @@ episodic_ui_settings_users_panel <- function(
       shiny::tags$table(
         class = "episodic-table",
         shiny::tags$thead(shiny::tags$tr(
-          shiny::tags$th(episodic_tr("settings.users.col.username", lang = lang)),
-          shiny::tags$th(episodic_tr("settings.users.col.full_name", lang = lang)),
+          shiny::tags$th(episodic_tr(
+            "settings.users.col.username",
+            lang = lang
+          )),
+          shiny::tags$th(episodic_tr(
+            "settings.users.col.full_name",
+            lang = lang
+          )),
           shiny::tags$th(episodic_tr("settings.users.col.email", lang = lang)),
           shiny::tags$th(episodic_tr("settings.users.col.role", lang = lang)),
           shiny::tags$th(episodic_tr("settings.users.col.admin", lang = lang)),
@@ -520,7 +533,9 @@ episodic_ui_settings_audit_panel <- function(
               row$created_at,
               fmt = "%d-%m-%Y %H:%M"
             )),
-            shiny::tags$td(row$actor_username %||% episodic_tr("misc.unknown", lang = lang)),
+            shiny::tags$td(
+              row$actor_username %||% episodic_tr("misc.unknown", lang = lang)
+            ),
             shiny::tags$td(row$section)
           )
         }))

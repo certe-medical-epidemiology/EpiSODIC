@@ -475,7 +475,8 @@ episodic_ui_state_dot <- function(state) {
 #' @noRd
 episodic_ui_state_colour <- function(state) {
   pal <- episodic_palette()
-  switch(state,
+  switch(
+    state,
     new = pal$primary_light,
     assessing = pal$primary,
     monitoring = pal$danger,
@@ -500,7 +501,8 @@ episodic_ui_state_colour <- function(state) {
 #' @noRd
 episodic_ui_care_line_colour <- function(care_line) {
   pal <- episodic_palette()
-  switch(care_line,
+  switch(
+    care_line,
     first = pal$primary,
     second = pal$tertiary,
     third = pal$secondary,
@@ -515,7 +517,8 @@ episodic_ui_care_line_colour <- function(care_line) {
 #' @noRd
 episodic_ui_verdict_colour <- function(verdict) {
   pal <- episodic_palette()
-  switch(verdict,
+  switch(
+    verdict,
     artefact = pal$muted,
     expected_variation = pal$muted,
     cluster_not_yet = pal$success_dark,

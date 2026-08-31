@@ -158,7 +158,8 @@ episodic_app_resolve_period <- function(
     )
   }
 
-  resolved <- switch(period,
+  resolved <- switch(
+    period,
     year_current = list(
       id = period,
       from = as.Date(sprintf("%d-01-01", as.integer(format(asof, "%Y")))),
@@ -277,7 +278,8 @@ episodic_app_pathogen_screen <- function(
   all_cases <- all_cases[!is.na(all_cases$sample_date), , drop = FALSE]
   window_cases <- all_cases[
     all_cases$sample_date >= resolved$from &
-      all_cases$sample_date <= resolved$to, ,
+      all_cases$sample_date <= resolved$to,
+    ,
     drop = FALSE
   ]
 
@@ -823,7 +825,8 @@ episodic_app_pathogen_rt <- function(
   }
   lead_in <- all_cases[
     all_cases$sample_date >= resolved$from - lead_in_days &
-      all_cases$sample_date <= resolved$to, ,
+      all_cases$sample_date <= resolved$to,
+    ,
     drop = FALSE
   ]
   if (nrow(lead_in) == 0) {
@@ -872,7 +875,8 @@ episodic_app_pathogen_denominator <- function(
   denom <- denom[
     !is.na(denom$week_start) &
       denom$week_start <= resolved$to &
-      denom$week_start + 6 >= resolved$from, ,
+      denom$week_start + 6 >= resolved$from,
+    ,
     drop = FALSE
   ]
   if (nrow(denom) < 2) {
@@ -918,7 +922,8 @@ episodic_app_pathogen_demography <- function(all_cases, window_cases) {
   # The baseline excludes the period being described, so the comparison
   # is against other periods rather than partly against itself.
   baseline <- all_cases[
-    !(all_cases$case_id %in% window_cases$case_id), ,
+    !(all_cases$case_id %in% window_cases$case_id),
+    ,
     drop = FALSE
   ]
   baseline_ages <- baseline$age[!is.na(baseline$age)]

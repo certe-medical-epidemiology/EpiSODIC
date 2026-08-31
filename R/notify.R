@@ -163,7 +163,8 @@ episodic_notify_location <- function(row) {
   if (!is.na(row$region_code) && nzchar(row$region_code)) {
     parts <- c(parts, row$region_code)
   }
-  level_label <- switch(row$level,
+  level_label <- switch(
+    row$level,
     pathogen_ward = "ward",
     pathogen_institution = "institution",
     pathogen_area = "area",
