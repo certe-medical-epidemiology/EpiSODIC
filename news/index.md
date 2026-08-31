@@ -1,336 +1,125 @@
 # Changelog
 
+## EpiSODIC 0.8.17
+
+### Changed
+
+- Minor UI changes
+
 ## EpiSODIC 0.8.16
 
 ### Fixed
 
-- A run against MariaDB rolled back on
-  `Duplicate entry '...' for key 'institution_key'` while loading case
-  data. Institutions were gathered as distinct *combinations* of key,
-  name, type, care line and municipality, but an institution is keyed on
-  `institution_key` alone - so a hospital reporting both a second- and a
-  third-line care line, which nothing in the data contract forbids,
-  appeared twice in the same batch. While institutions were written one
-  at a time this was invisible, each row being its own statement and the
-  second updating what the first inserted; batched into one `INSERT` it
-  is a duplicate on a `UNIQUE` index, and the run died before a single
-  case was written. The batch now carries one row per key - the last,
-  which is what the loop it replaced ended on and what
-  [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
-  already tells an operator to expect
-- Two lattice streams whose grouping fields happened to concatenate to
-  the same string were silently merged into one. The grouping key pasted
-  the columns together with no separator, so pathogen `Flu A` in area
-  `12` and `Flu A1` in area `2` were one group - and whichever of them
-  was not the group’s first row simply stopped existing, with no error
-  and nothing on screen to say a stream had gone. A surveillance system
-  may report nothing; it may not lose a stream quietly
+- Fixed duplicate-key crash when an institution had two care lines:
+  batch insert now keeps one row per key, matching prior per-row
+  behaviour
+- Fixed two lattice streams with colliding concatenated grouping keys
+  silently merging, causing one stream to disappear without error
 
 ### Changed
 
-- The denominator feed is loaded in a batch like everything else: one
-  read bounded by the feed’s own date span, one insert, and an update
-  only where a count actually moved - instead of a `SELECT` plus a write
-  per row, which for a 623-row feed was 1,246 round trips. Re-sending a
-  feed unchanged now writes nothing at all, and `n_written` says so
-  rather than always echoing the row count back. The match is made in R
-  rather than by an upsert on the table’s unique index, and has to be:
-  `area_code` is nullable, `NULL` is not equal to `NULL` in SQL, and
-  every row without an area stratum would therefore insert afresh on
-  every run, for ever
-- Removed six more functions that nothing but their own tests called,
-  all of them left behind by work that replaced them:
-  `episodic_db_denominator_upsert()` and
-  `episodic_db_institution_upsert()` (superseded by the batched
-  writers), `episodic_db_cluster_case_link()` (a one-line alias for
-  `episodic_db_cluster_case_link_many()`),
-  `episodic_db_institution_get()`, `episodic_auth_last_login()` (the
-  R-side twin of the `last_login_at` column dropped in 0.8.15, displayed
-  nowhere), and
-  `episodic_interpretation_paragraphs()`/`episodic_interpretation_recommendation()`,
-  which duplicated a split the dossier panel already makes inline - and
-  each re-ran generation to do it, so using both would have generated
-  the same interpretation twice. Every test that exercised them now goes
-  through the path a run actually takes; institutions in test fixtures
-  are built by `episodic_test_institution()`, which hashes the key the
-  same way a run does instead of each test hashing its own
+- Denominator feed now loads in one batched read/insert/update instead
+  of a query and write per row (1,246 to 2 round trips for 623 rows)
+- Removed six dead functions superseded by batched writers or duplicated
+  logic; tests now use `episodic_test_institution()` fixture helper
 
 ## EpiSODIC 0.8.15
 
 ### Changed
 
-- MEM’s season requirement moves into the configuration file.
-  `episodic_detect_mem()`, `episodic_mem_status()` and
-  `episodic_mem_thresholds_for_season()` each hard-coded
-  `min_seasons = 2L` as a function default that no caller ever passed,
-  so the one dial deciding whether the seasonal detector can speak at
-  all lived in the source rather than beside `farrington.b` - the same
-  class of dial, with the same consequence when set beyond what an
-  instance carries. It is now `mem.min_seasons`, read in all three
-  places, so the cron and the app cannot end up disagreeing about how
-  much history MEM needs: raising it can no longer silence the detector
-  while the activity screen goes on drawing thresholds fitted on fewer
-  seasons than the detector will trust
-- Chart axes are formatted in the reading language’s own number
-  conventions, not only the epidemic curve’s.
-  [`episodic_ui_rt_chart()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_charts.md)
-  took a `lang` argument and used it for nothing, so an Rt of 1.4
-  rendered as “1.4” for a Dutch reader, who reads that as fourteen
-  hundred - on the one chart whose entire point is which side of 1 a
-  value falls. Both charts now share `episodic_chart_number_labels()`
+- MEM’s `min_seasons` moved from a hard-coded function default into
+  config (`mem.min_seasons`), keeping cron and app in agreement
+- Chart axes now use the reading language’s number format via
+  `episodic_chart_number_labels()`, fixing Rt misread as e.g. “1.4” vs
+  1,400
 
 ### Fixed
 
-- Removed three columns nothing has ever written:
-  `episodic_stream_mute.revoked_at`, `episodic_cluster_state.left_at`
-  and `episodic_app_user.last_login_at`. Each described a capability
-  that does not exist. `revoked_at` implied a mute could be ended
-  early - there is no revoke path anywhere, and a mute is bounded when
-  it is written, so the `revoked_at IS NULL` predicate the new mute
-  query carried was always true. `left_at` duplicated what an
-  append-only trajectory already says: a state ends where the next row
-  begins. `last_login_at` was superseded by `episodic_app_user_event`,
-  as that table’s own comment already explained. The schema now says so
-  where each column stood
-- Removed two internal readers nothing called
-  (`episodic_db_detections_for_run()`, `episodic_db_stream_mutes()`) and
-  two arguments nothing read: `episodic_detect_rare_trigger()`’s
-  `institutions`, documented as kept “for signature parity”, and
-  `episodic_app_concentration()`’s `level`, documented as kept so
-  callers “stay explicit” - both made call sites pass values that did
-  nothing. `episodic_app_server_assessment_actions()` also no longer
-  takes a `lang` it never used, that module having no user-facing text
-  at all. The `(input, output, session)` triple stays on all three
-  server fragments, used or not, because that is the Shiny signature and
-  a future observer in any of them needs it
+- Removed three unused schema columns (`revoked_at`, `left_at`,
+  `last_login_at`) describing capabilities that never existed
+- Removed two unused internal readers and two unused function arguments
+  (`institutions`, `level`) that made call sites pass dead values
 
 ## EpiSODIC 0.8.14
 
 ### Fixed
 
-- A cluster’s `n_cases` counted the wrong cases for any stream narrower
-  than an institution. `episodic_reconcile_case_count()` recounted on
-  pathogen and institution alone, so a ward cluster was recorded as
-  holding every case in the hospital and an area cluster every case of
-  that pathogen anywhere - while `episodic_reconcile_link_cases()`,
-  which builds the same cluster’s line list, correctly applied the ward
-  and region filters. The two disagreed, and `n_cases` is not cosmetic:
-  it feeds `ratio = n_cases / expected`, and so the priority score and
-  the order of the assessment queue. Both now go through one function,
-  `episodic_db_cases_for_stream_id()`, which is the single place stream
-  membership is defined; a run asserts that every cluster’s `n_cases`
-  equals its own linked line list
-- Muting a stream did nothing. The app offers the action and tells the
-  user it “temporarily suppresses new detections for this stream … so
-  the same cause is not flagged again and again”; the mute was written
-  to `episodic_stream_mute`, shown in the activity log, and read by
-  nothing that decides anything, so the next run opened a dossier on the
-  muted stream exactly as before. A stream under an unrevoked mute
-  covering the run date now produces no new detections from any
-  detector. Deliberately detections only: clusters already open go on
-  ageing and closing normally, because a mute quiets what is coming
-  rather than freezing what is already on the board. A run reports how
-  many streams it suppressed
-- `episodic_reconcile_case_count()` and
-  `episodic_reconcile_link_cases()` no longer swallow database errors.
-  Both wrapped their whole body in a
-  [`tryCatch()`](https://rdrr.io/r/base/conditions.html) that turned any
-  failure into a plausible-looking fallback - a count taken from the
-  detector’s own reckoning, or a cluster with no line list at all - so a
-  connection that failed mid-run committed wrong numbers under a run
-  that reported success. Only the documented case, a stream that does
-  not exist, still falls back; anything else propagates and rolls the
-  run back
+- Fixed `n_cases` counting wrong cases for ward/area-level clusters; now
+  uses one shared function, `episodic_db_cases_for_stream_id()`
+- Fixed stream muting doing nothing; a run now actually suppresses new
+  detections on muted streams and reports how many were suppressed
+- Reconciliation functions no longer swallow database errors via
+  [`tryCatch()`](https://rdrr.io/r/base/conditions.html); only a
+  genuinely missing stream still falls back safely
 
 ## EpiSODIC 0.8.13
 
 ### Fixed
 
-- Farrington was silently switched off. It needs `(b + 1) * 52` weeks of
-  history before
-  [`surveillance::farringtonFlexible()`](https://rdrr.io/pkg/surveillance/man/farringtonFlexible.html)
-  will fit at all, and at the shipped `b: 3` that is four years - so an
-  instance carrying two years of data got nothing from it on every
-  stream, indistinguishable on screen from a detector that had looked
-  and found nothing. For a surveillance system that is the wrong
-  silence: three of the four detectors appeared to be watching streams
-  that only one was. The guard now reports the shortfall instead of
-  returning empty. A run says once how many eligible streams could not
-  be fitted and how much history they would need, and the Streams screen
-  carries a per-stream `Farrington` column reading
-  `weeks of history / weeks required` (a dash when the detector is
-  running). `farrington.b` drops to `2`; raise it as history accrues and
-  the detector starts fitting again by itself. Note that Farrington
-  never required `denominators` - it falls back to raw counts when no
-  population vector is available, and always did
+- Fixed Farrington detector being silently inactive on \<4 years of
+  history; now reports shortfall and `farrington.b` default lowered to 2
 
 ### Changed
 
-- `episodic_reporting_triangle` is gone, and the reporting-delay curve
-  is derived instead. The table was redundant:
-  `episodic_case.first_seen_run` records the run that first saw each
-  case and `episodic_detection_run` now records each run’s own
-  `run_date`, which together are exactly “how many cases with sample
-  date D were visible at run R”. It was also the most expensive thing in
-  a run and grew without bound - the cron rewrote every stream’s whole
-  history on every run, so five consecutive runs over unchanged data
-  took the table from 3,472 rows to 17,360 while only ~11% of those rows
-  fell within the 21-day lag its one reader ever looked at. Nightly for
-  a year that is over a million rows nothing reads.
-  `episodic_triangle_completeness()` keeps its signature and its output;
-  verified identical across 622 streams on a five-run fixture with real
-  reporting lag
-- `episodic_detection_run` gains a `run_date` column: the run’s own
-  business date, which is nearly always the date part of `started_at`
-  but not by construction - a backfill or a replay names the date it
-  stands in for
-- The remaining per-row database traffic in a run is batched:
-  cluster-case links, the pathogen configuration load, and a
-  reconciliation call that is now skipped entirely for streams with
-  neither candidates nor open clusters. Together with the triangle, a
-  synthetic run goes from 1,868 round trips to **203**, and five
-  consecutive runs over unchanged data now grow only the run and
-  detection audit trail
-- The Streams screen no longer issues one query per stream on the page
-  for its excluded-baseline windows: **52 queries per page to 3**.
-  `episodic_baseline_excluded_windows_many()` answers for a whole page
-  in two
+- Removed unbounded `episodic_reporting_triangle` table; delay curve now
+  derived on the fly from existing case/run data
+- `episodic_detection_run` gains a `run_date` column representing the
+  run’s business date (distinct from `started_at`)
+- Batched remaining per-row database writes in a run; round trips
+  dropped from 1,868 to 203 on a synthetic run
+- Streams screen baseline-window queries reduced from 52 per page to 3
+  via `episodic_baseline_excluded_windows_many()`
 
 ## EpiSODIC 0.8.12
 
 ### Changed
 
 - [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
-  now writes in batches rather than a row at a time, which is what made
-  a run against a networked MariaDB take minutes where the same run
-  against a local SQLite file takes seconds. The reporting-triangle
-  update (one `SELECT` plus an `INSERT` or `UPDATE` per distinct sample
-  date per stream - by far the hottest write in a run, twelve seconds
-  for a single large stream), the case insert, institution resolution
-  and lattice-stream enumeration all now send one statement per batch
-  instead of one per row. `episodic_reconcile_stream()` also no longer
-  reads a stream’s open clusters at a point where the value is always
-  overwritten before anything reads it, and
-  `episodic_suppress_lattice()` clears last run’s suppression in one
-  statement rather than one per cluster. On a 950-case, 605-stream
-  synthetic run this takes the number of database round trips from
-  12,549 to 1,868; every one of the nineteen tables is byte-identical
-  afterwards, ids included
-- Note for anyone extending the write layer: chunked
-  [`DBI::dbBind()`](https://dbi.r-dbi.org/reference/dbBind.html) looks
-  like a batch and is not one. RMariaDB binds a multi-row parameter list
-  with `while (bind_next_row()) { execute(); }`, one
-  `mysql_stmt_execute()` per row, so it saves the statement parse and
-  pays every round trip regardless. What actually collapses them is a
-  single statement carrying every row’s placeholders, which is what the
-  new internal `episodic_db_write_many()` builds (with
-  `ON CONFLICT`/`ON DUPLICATE KEY UPDATE` per dialect where an upsert is
-  wanted)
+  now batches writes instead of row-by-row, cutting MariaDB round trips
+  from 12,549 to 1,868 on a synthetic run
+- Note: chunked `dbBind()` is not a true batch; single multi-row
+  statements via new `episodic_db_write_many()` are what collapse round
+  trips
 
 ## EpiSODIC 0.8.11
 
 ### Changed
 
-- The Pathogen and Archive screens and the dossier’s similar-clusters
-  panel now derive cluster state in bulk instead of one cluster at a
-  time, which is what made them slow to open against a MariaDB database
-  (and invisible against a local SQLite file).
-  `episodic_app_derive_state_for_cluster()` costs five or six queries
-  per cluster - it re-reads the cluster, its stream, the pathogen
-  configuration, its assessment events and its state history one row at
-  a time, and for a `mem_applicable` pathogen re-reads every case for
-  that pathogen as well - and all three screens called it in a loop. The
-  Pathogen screen additionally fetched each cluster’s assessment events
-  itself and then called the function that fetches them again.
-  `episodic_app_derive_states_batch()` and the `_batch()` readers it
-  uses already existed and were already in production on the Clusters
-  rail; these three call sites just never adopted them. Query counts are
-  now flat in the number of clusters rather than linear: on a 63-cluster
-  pathogen, the Pathogen screen goes from 259 queries to 7, the Archive
-  from 330 to 7, and a dossier’s similar-clusters panel from 195 to 10.
-  Output is unchanged - state labels, verdict labels, ordering and
-  closed-on dates all verified identical against the previous
-  implementation
+- Pathogen, Archive and dossier similar-clusters screens now derive
+  cluster state in bulk instead of per-cluster, fixing slow MariaDB
+  loads
+- Query counts now flat rather than linear in cluster count
+  (e.g. Pathogen screen: 259 to 7 queries on 63 clusters); output
+  unchanged
 
 ## EpiSODIC 0.8.10
 
 ### Fixed
 
-- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
-  no longer crashes the R session partway through a run against MariaDB.
-  The cause was re-entrancy, not data: `episodic_reconcile_stream()`
-  passed `priority_score_fn(candidate)` straight into
-  `episodic_db_cluster_insert()`/`episodic_db_cluster_update()` as an
-  argument, and an R argument is a promise - so the scoring closure did
-  not run at the call site but inside `dbExecute()`, after the driver
-  had already prepared the INSERT/UPDATE on the connection. The closure
-  then queried that same connection (via `episodic_app_density()`),
-  RMariaDB cancelled and freed the pending statement, and `dbBind()` -
-  which, unlike `dbFetch()`, never checks that its result is still
-  active - bound its parameters into freed memory. That is a native
-  crash, so no condition was ever raised and
-  [`tryCatch()`](https://rdrr.io/r/base/conditions.html) never saw
-  anything; the session simply died. SQLite was never affected because
-  RSQLite permits concurrent results on one connection. The score is now
-  computed into a local before any statement is opened, and every write
-  helper in `R/db_cron_write.R` and `R/db_app_write.R` builds its
-  `params` list into a local first rather than inlining it as an
-  argument, so no caller-supplied value can be evaluated mid-statement
-  again. A six-line reproduction, independent of EpiSODIC, is recorded
-  in the reconciliation tests’ comments
-- Institution ids read back after an `INSERT` are now plain integers on
-  both backends. MariaDB’s `LAST_INSERT_ID()` is a `BIGINT`, which
-  RMariaDB returns as a
-  [`bit64::integer64`](https://bit64.r-lib.org/reference/bit64-package.html) -
-  physically a double carrying the integer’s *bit pattern*, not its
-  value - and `episodic_institutions_resolve()` assigned that into an
-  ordinary [`integer()`](https://rdrr.io/r/base/integer.html) vector,
-  which drops the class and keeps the payload. Every institution id so
-  obtained silently became a subnormal double (institution 368 became
-  1.8e-321) and was then written into `episodic_case.institution_id`, an
-  `INTEGER` column, as **0**. Every case loaded into a MariaDB database
-  therefore pointed at a non-existent institution 0, collapsing
-  institution-level streams together; SQLite, whose
-  `last_insert_rowid()` is a plain numeric, was correct throughout.
-  `episodic_db_last_insert_id()` now coerces and range-checks, and
-  MariaDB connections are opened with `bigint = "integer"` so no
-  `integer64` enters the package at all. **Existing MariaDB databases
-  carry the bad ids already written and need their
-  `episodic_case.institution_id` values re-linked; a fresh load after
-  this release is correct**
+- Fixed R session crash on MariaDB caused by re-entrant connection use
+  when a scoring closure ran inside `dbExecute()`; now computed eagerly
+- Fixed institution ids read back as `integer64` on MariaDB being
+  corrupted to 0 on insert, collapsing institution-level streams
+  together
 
 ### Changed
 
-- MariaDB connections now declare their character set explicitly
-  (`SET NAMES utf8mb4`) instead of inheriting whatever the server’s
-  `my.cnf` happens to configure, so what comes back is the same on every
-  machine that connects
+- MariaDB connections now explicitly set `utf8mb4` character encoding
+  instead of relying on server defaults
 
 ## EpiSODIC 0.8.9
 
 ### Changed
 
-- Reverted 0.8.2’s explicit `NA_integer_`/`NA_real_`/`NA_character_`
-  typing of every cron-write function’s optional defaults. The column
-  types themselves already constrain this on both SQLite and MariaDB;
-  the typing was defensive scaffolding added while chasing an unrelated
-  MariaDB-only crash and turned out not to be needed by either backend
+- Reverted 0.8.2’s explicit NA-typing of cron-write defaults; column
+  types already enforce this and the scaffolding proved unnecessary
 
 ## EpiSODIC 0.8.8
 
 ### Changed
 
-- `episodic_run_cron(debug = TRUE)` now prints the exact SQL and every
-  bound parameter’s value, class and encoding immediately before each
-  database call the ongoing MariaDB crash investigation has implicated
-  so far - `episodic_app_density()`’s two queries, the population-vector
-  lookup, the trend/detection writes, and the assessment-event lookups -
-  rather than only reporting once the call has returned. The crash has
-  now landed on three different calls across three otherwise-identical
-  reproductions on the exact same stream and candidate, so seeing
-  precisely what was sent (not just where the trace stopped) is the next
-  step in pinning it down as an EpiSODIC-side issue rather than a driver
-  one
+- `episodic_run_cron(debug = TRUE)` now logs SQL and bound parameters
+  before each call, aiding the ongoing MariaDB crash investigation
 
 ## EpiSODIC 0.8.7
 

@@ -101,12 +101,12 @@ head(cases)
 #> 5              PT-Influenza.A-000162  2025-01-02   2025-01-02
 #> 6              PT-Influenza.A-000047  2025-01-02   2025-01-02
 #>                   pathogen care_line institution_key institution_display_name
-#> 1                Norovirus    second         HOSP-07             Ziekenhuis G
+#> 1                Norovirus    second         HOSP-07               Hospital G
 #> 2              Influenza A     first          LTC-10           Zorgcentrum 10
-#> 3                      RSV    second         HOSP-03             Ziekenhuis C
-#> 4 Clostridioides difficile    second         HOSP-07             Ziekenhuis G
-#> 5              Influenza A    second         HOSP-01             Ziekenhuis A
-#> 6              Influenza A    second         HOSP-02             Ziekenhuis B
+#> 3                      RSV    second         HOSP-03               Hospital C
+#> 4 Clostridioides difficile    second         HOSP-07               Hospital G
+#> 5              Influenza A    second         HOSP-01               Hospital A
+#> 6              Influenza A    second         HOSP-02               Hospital B
 #>   institution_type municipality              ward          specialism   pc sex
 #> 1         hospital         <NA> Internal Medicine   Internal Medicine 7384   F
 #> 2  ltc_institution         <NA>              <NA>                <NA> 8524   M
