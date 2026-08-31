@@ -1,4 +1,4 @@
-# EpiSODIC 0.9.0
+# EpiSODIC 0.10.0
 
 ## New
 
