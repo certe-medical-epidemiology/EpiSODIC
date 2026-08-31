@@ -97,9 +97,11 @@ display concern, never part of the detection-reproducibility guarantee
 
 Aggregate data is anonymous - the app opens read-only for anyone who
 reaches it. Signing in unlocks patient-level detail (the line list) for
-both roles below; there is deliberately no in-app account management
-screen, and accounts are provisioned by whoever administers the
-database, not created by users themselves or by the app.
+both roles below. Accounts are never created by users themselves; either
+an `is_admin` account provisions them from the in-app Settings screen,
+or whoever administers the database runs
+[`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md)
+at the console.
 
 There are exactly two roles:
 
@@ -108,6 +110,14 @@ There are exactly two roles:
   clusters, and re-render reports on demand.
 - `"viewer"` - read-only. Sees exactly what a signed-in epidemiologist
   sees, including patient-level detail, but cannot record an assessment.
+
+Independent of role, an account can additionally be flagged `is_admin`,
+which unlocks the Settings screen: managing notification channels and
+recipients, creating accounts and changing their role/admin/active
+state, and exporting the resolved configuration. Detection parameters
+themselves stay read-only there deliberately - changing them is still a
+`EPISODIC_CONFIG` YAML change, so every past result stays traceable to
+the exact configuration that produced it (see “Configuration” above).
 
 ``` r
 
@@ -129,7 +139,11 @@ not an open connection - it opens and closes its own via
 [`episodic_db_open()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_open.md),
 so provisioning an account is one call at the console. The account is
 created with `must_change = TRUE`, so its first real sign-in forces the
-holder to set their own password before continuing.
+holder to set their own password before continuing. Pass
+`is_admin = TRUE` to give the new account Settings-screen access as
+well - you need at least one such account to manage anything from the
+dashboard itself; every account after that can be provisioned either
+way.
 
 ## Where the database lives
 

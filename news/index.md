@@ -1,6 +1,6 @@
 # Changelog
 
-## EpiSODIC 0.9.0
+## EpiSODIC 0.10.0
 
 ### New
 
@@ -9,6 +9,13 @@
 - Added
   [`vignette("notifications")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md)
   with setup steps per channel
+- Added an `is_admin` account property and an in-app Settings screen for
+  managing notification channels, dashboard accounts, and viewing
+  (read-only) detection configuration, without needing server access
+- Added
+  [`episodic_config_export()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_export.md)
+  to export the resolved configuration as a zip file, with notification
+  secrets masked by default
 
 ### Fixed
 
@@ -19,6 +26,13 @@
 
 - Documented every `default.yaml` config key with a short inline
   explanation
+- Every write action now re-resolves the signed-in account against the
+  database immediately before writing (`episodic_auth_refresh_user()`),
+  so deactivating or demoting an account from the Settings screen takes
+  effect on its already-open sessions too, not only on its next sign-in
+- An `is_admin` account can no longer revoke its own admin access or
+  deactivate its own account from the Settings screen (self-lockout
+  guard)
 
 ## EpiSODIC 0.8.17
 

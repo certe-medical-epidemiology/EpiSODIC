@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -153,9 +153,10 @@ never part of the detection-reproducibility guarantee
 </h2>
 <p>Aggregate data is anonymous - the app opens read-only for anyone who
 reaches it. Signing in unlocks patient-level detail (the line list) for
-both roles below; there is deliberately no in-app account management
-screen, and accounts are provisioned by whoever administers the
-database, not created by users themselves or by the app.</p>
+both roles below. Accounts are never created by users themselves; either
+an <code>is_admin</code> account provisions them from the in-app
+Settings screen, or whoever administers the database runs
+<code><a href="../reference/episodic_provision_user.html">episodic_provision_user()</a></code> at the console.</p>
 <p>There are exactly two roles:</p>
 <ul>
 <li>
@@ -167,6 +168,14 @@ and mute clusters, and re-render reports on demand.</li>
 epidemiologist sees, including patient-level detail, but cannot record
 an assessment.</li>
 </ul>
+<p>Independent of role, an account can additionally be flagged
+<code>is_admin</code>, which unlocks the Settings screen: managing
+notification channels and recipients, creating accounts and changing
+their role/admin/active state, and exporting the resolved configuration.
+Detection parameters themselves stay read-only there deliberately -
+changing them is still a <code>EPISODIC_CONFIG</code> YAML change, so
+every past result stays traceable to the exact configuration that
+produced it (see “Configuration” above).</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span>  <span class="co"># or pass db_path explicitly below</span></span>
 <span></span>
@@ -183,7 +192,11 @@ an assessment.</li>
 - it opens and closes its own via <code><a href="../reference/episodic_db_open.html">episodic_db_open()</a></code>, so
 provisioning an account is one call at the console. The account is
 created with <code>must_change = TRUE</code>, so its first real sign-in
-forces the holder to set their own password before continuing.</p>
+forces the holder to set their own password before continuing. Pass
+<code>is_admin = TRUE</code> to give the new account Settings-screen
+access as well - you need at least one such account to manage anything
+from the dashboard itself; every account after that can be provisioned
+either way.</p>
 </div>
 <div class="section level2">
 <h2 id="where-the-database-lives">Where the database lives<a class="anchor" aria-label="anchor" href="#where-the-database-lives"></a>

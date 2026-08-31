@@ -1,11 +1,10 @@
 # Create an account for a new epidemiologist or viewer
 
-There is no self-service registration and no in-app account management
-screen: whoever administers the database creates accounts with this
-function, typically once per new board member. The password you supply
-is temporary - the new account is flagged to require a password change,
-so the account holder chooses their own password the first time they
-sign in.
+There is no self-service registration: an account is provisioned either
+from the Settings screen (by an `is_admin` account) or with this
+function at the R console. The password you supply is temporary - the
+new account is flagged to require a password change, so the account
+holder chooses their own password the first time they sign in.
 
 ## Usage
 
@@ -16,7 +15,8 @@ episodic_provision_user(
   full_name,
   email,
   password,
-  role = "epidemiologist"
+  role = "epidemiologist",
+  is_admin = FALSE
 )
 ```
 
@@ -47,15 +47,22 @@ episodic_provision_user(
   patient-level line lists, but cannot record an assessment). Both roles
   require sign-in; there is no anonymous access to patient detail.
 
+- is_admin:
+
+  Whether the new account may also see the Settings screen (manage
+  notification channels, other accounts, and export the configuration).
+  Independent of `role` - an admin is still either an epidemiologist or
+  a viewer for everything outside Settings.
+
 ## Value
 
 Invisibly, the new account's `user_id`.
 
 ## Details
 
-You only need to run this once per person. It opens the database, adds
-the account, and closes the connection again, so it is meant to be run
-interactively at the R console rather than from application code.
+At the console, you only need to run this once per person. It opens the
+database, adds the account, and closes the connection again, so it is
+meant to be run interactively rather than from application code.
 
 ## Examples
 

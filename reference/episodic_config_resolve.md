@@ -13,7 +13,8 @@ default.
 
 ``` r
 episodic_config_resolve(
-  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)
+  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
+  con = NULL
 )
 ```
 
@@ -24,6 +25,19 @@ episodic_config_resolve(
   Path to your own configuration file. Defaults to the `EPISODIC_CONFIG`
   environment variable; if that is unset or the file does not exist,
   only the built-in defaults are used.
+
+- con:
+
+  An open
+  [DBI::DBIConnection](https://dbi.r-dbi.org/reference/DBIConnection-class.html),
+  to also overlay the most recent Settings-screen `notifications`
+  override (if any) on top of the YAML-resolved configuration. `NULL`
+  (the default) skips this -
+  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  and the Settings screen itself both pass their own connection; most
+  other callers (tests,
+  [`episodic_config_hash()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_hash.md)
+  snapshots) do not need one.
 
 ## Value
 
@@ -40,6 +54,13 @@ Every detection run stores the exact configuration it used (see
 [`episodic_config_hash()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_hash.md)),
 so you can always trace a past result back to the settings that produced
 it, even after you have since changed them.
+
+An `is_admin` account can additionally override the `notifications`
+section from the Settings screen, without touching the YAML file at
+all - pass `con` to also apply the most recent such override (if any) on
+top of the YAML-resolved configuration. The YAML overlay itself remains
+fully supported either way: an admin override is an additional,
+higher-precedence layer, not a replacement for it.
 
 ## Examples
 

@@ -85,6 +85,8 @@ Detection thresholds, priority scoring, and reproducibility.
   : Read the surveillance configuration
 - [`episodic_config_hash()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_hash.md)
   : Fingerprint a configuration for reproducibility
+- [`episodic_config_export()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_export.md)
+  : Export the resolved configuration as a zip file
 
 ## Interpret and report results
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,19 +33,23 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.9.0" id="episodic-090">EpiSODIC 0.9.0<a class="anchor" aria-label="anchor" href="#episodic-090"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.10.0" id="episodic-0100">EpiSODIC 0.10.0<a class="anchor" aria-label="anchor" href="#episodic-0100"></a></h2>
 <div class="section level3">
-<h3 id="new-0-9-0">New<a class="anchor" aria-label="anchor" href="#new-0-9-0"></a></h3>
+<h3 id="new-0-10-0">New<a class="anchor" aria-label="anchor" href="#new-0-10-0"></a></h3>
 <ul><li>Implemented various ways to send notifications of new clusters: ntfy, SMTP, sendmail, Microsoft 365, Teams (Power Automate Workflow), Slack</li>
 <li>Added <code><a href="../articles/notifications.html">vignette("notifications")</a></code> with setup steps per channel</li>
+<li>Added an <code>is_admin</code> account property and an in-app Settings screen for managing notification channels, dashboard accounts, and viewing (read-only) detection configuration, without needing server access</li>
+<li>Added <code><a href="../reference/episodic_config_export.html">episodic_config_export()</a></code> to export the resolved configuration as a zip file, with notification secrets masked by default</li>
 </ul></div>
 <div class="section level3">
-<h3 id="fixed-0-9-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-9-0"></a></h3>
+<h3 id="fixed-0-10-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-10-0"></a></h3>
 <ul><li>Fixed pkgdown build failure from three undocumented notification topics</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-0-9-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-9-0"></a></h3>
+<h3 id="changed-0-10-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-10-0"></a></h3>
 <ul><li>Documented every <code>default.yaml</code> config key with a short inline explanation</li>
+<li>Every write action now re-resolves the signed-in account against the database immediately before writing (<code>episodic_auth_refresh_user()</code>), so deactivating or demoting an account from the Settings screen takes effect on its already-open sessions too, not only on its next sign-in</li>
+<li>An <code>is_admin</code> account can no longer revoke its own admin access or deactivate its own account from the Settings screen (self-lockout guard)</li>
 </ul></div>
 </div>
     <div class="section level2">
