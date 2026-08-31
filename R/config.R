@@ -117,7 +117,9 @@ episodic_config_merge <- function(base, override) {
 #' hashed$hash
 #' @export
 episodic_config_hash <- function(config) {
-  canonical <- episodic_config_canonicalise(config)
+  config_for_hash <- config
+  config_for_hash$notifications <- NULL
+  canonical <- episodic_config_canonicalise(config_for_hash)
   snapshot <- jsonlite::toJSON(canonical, auto_unbox = TRUE, null = "null")
   list(
     hash = digest::digest(snapshot, algo = "sha1", serialize = FALSE),

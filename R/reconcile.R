@@ -94,7 +94,8 @@
 #'   gets. `NA` (default)
 #'   disables the check entirely, for callers that predate it.
 #' @param today The date to evaluate `stale_open_days` as of.
-#' @return Invisibly, a list with `n_new`, `n_updated`, `n_merged`.
+#' @return Invisibly, a list with `n_new`, `n_updated`, `n_merged`,
+#'   and `new_cluster_ids` (integer vector of cluster IDs created this call).
 #' @keywords internal
 #' @noRd
 episodic_reconcile_stream <- function(
@@ -117,6 +118,7 @@ episodic_reconcile_stream <- function(
   n_new <- 0L
   n_updated <- 0L
   n_merged <- 0L
+  new_cluster_ids <- integer(0)
 
   candidates <- episodic_reconcile_merge_detections(detections)
 
@@ -256,6 +258,7 @@ episodic_reconcile_stream <- function(
         run_id = run_id
       )
       n_new <- n_new + 1L
+      new_cluster_ids <- c(new_cluster_ids, cluster_id)
       matched_cluster_ids <- c(matched_cluster_ids, as.character(cluster_id))
       episodic_reconcile_link_detections(con, detections, candidate, cluster_id)
       episodic_reconcile_link_cases(
@@ -455,7 +458,12 @@ episodic_reconcile_stream <- function(
     }
   }
 
-  invisible(list(n_new = n_new, n_updated = n_updated, n_merged = n_merged))
+  invisible(list(
+    n_new = n_new,
+    n_updated = n_updated,
+    n_merged = n_merged,
+    new_cluster_ids = new_cluster_ids
+  ))
 }
 
 #' Merge same-run detections whose intervals overlap into candidate episodes

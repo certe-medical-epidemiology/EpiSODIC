@@ -1,3 +1,9 @@
+# EpiSODIC 0.9.0
+
+## New
+
+- Implemented various ways to send notifications of new clusters: ntfy, SMTP, sendmail, Microsoft 365, Teams (Power Automate Workflow), Slack
+
 # EpiSODIC 0.8.17
 
 ## Changed

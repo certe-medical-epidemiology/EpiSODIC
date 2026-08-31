@@ -2,18 +2,11 @@
 
 [![R-CMD-check](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml)
 
-EpiSODIC is an automated outbreak cluster detection and assessment
-system for infectious disease epidemiologists. It runs in R, reads
-laboratory-confirmed infections, detects statistical and rule-based
-aberrations, reconciles them into persistent clusters, and gives
-epidemiologists a dossier to assess each one, with a full audit trail and
-outbreak reports for clinical colleagues (e.g. clinical microbiologists)
-and infection prevention nurses.
+EpiSODIC is an automated outbreak cluster detection and assessment system for infectious disease epidemiologists. Running just in R, it reads laboratory-confirmed infections automatically, detects statistical and rule-based aberrations, reconciles them into persistent clusters, and gives epidemiologists a dossier to assess each one, with a full audit trail and outbreak reports for clinical colleagues (e.g. clinical microbiologists) and infection prevention nurses. It can send notifications of new clusters automatically via email, MS Teams, Slack, or even an ntfy server.
 
-The dashboard and its outbreak reports are available in English,
-(Modern Standard) Arabic, Dutch, French, German, Hindi, Mandarin
-Chinese, and Spanish. This software is free; this repository is
-open-source software with no data and no site-specific configuration.
+The dashboard and its outbreak reports are available in English, (Modern Standard) Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and Spanish.
+
+This software is 100% free and open-source, and only allows for local storage of data and configurations. This software is perfectly safe, and all code is open to anyone willing or required to assess.
 
 <!--
 Screenshots below live in man/figures/ (ships with the package, so
@@ -44,22 +37,17 @@ remotes::install_github("certe-medical-epidemiology/EpiSODIC")
 
 ## See it work, right now
 
-No data, no credentials, no configuration - one call runs the whole
-system against bundled synthetic data:
+No data, no credentials, no configuration - one call runs the whole system against bundled synthetic data:
 
 ```r
 EpiSODIC::episodic_demo()
 ```
 
-This creates a temporary database, runs one detection cycle, provisions
-a demo epidemiologist account (printed to the console), and opens the app.
-Pass `launch = FALSE` to skip opening the app and just get a populated
-database path back, e.g. for scripting.
+This creates a temporary database, runs one detection cycle, provisions a demo epidemiologist account (printed to the console), and opens the app. Pass `launch = FALSE` to skip opening the app and just get a populated database path back, e.g. for scripting.
 
 ## Documentation
 
-Everything past "what is this and how do I try it" lives in the package's
-vignettes, so it stays organised by topic instead of one long page:
+Everything past "what is this and how do I try it" lives in the package's vignettes, so it stays organised by topic instead of one long page:
 
 | Read this... | ...for |
 |---|---|
@@ -70,9 +58,7 @@ vignettes, so it stays organised by topic instead of one long page:
 | [Detection and reconciliation](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html) | How a laboratory result becomes a dossier: the four detectors, reconciliation, and suppression. |
 | [FAQ](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html) | Answers to the questions that come up most often when getting started. |
 
-Building the package locally (or browsing offline) works the same way:
-`vignette(package = "EpiSODIC")` lists all of them, and
-`vignette("data-format", package = "EpiSODIC")` (etc.) opens one.
+Building the package locally (or browsing offline) works the same way: `vignette(package = "EpiSODIC")` lists all of them, and `vignette("data-format", package = "EpiSODIC")` (etc.) opens one.
 
 ## Licence
 

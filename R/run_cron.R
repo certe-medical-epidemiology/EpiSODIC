@@ -486,6 +486,13 @@ episodic_run_cron <- function(
     }
   )
 
+  tryCatch(
+    episodic_notify(con, config, result, run_id, run_date, host),
+    error = function(e) {
+      episodic_trace("Notification dispatch failed: ", conditionMessage(e))
+    }
+  )
+
   episodic_trace(
     "Finishing run ",
     run_id,
@@ -792,6 +799,7 @@ episodic_run_cron_body <- function(
   n_detections_total <- 0L
   n_new_total <- 0L
   n_updated_total <- 0L
+  new_cluster_ids_all <- integer(0)
   # Streams that were eligible for Farrington but do not have the baseline
   # its configured `b` needs. Collected so the run can say so once, rather
   # than each stream quietly producing nothing.
@@ -1221,6 +1229,10 @@ episodic_run_cron_body <- function(
     episodic_trace_debug(debug, "debug:   episodic_reconcile_stream() done")
     n_new_total <- n_new_total + reconcile_result$n_new
     n_updated_total <- n_updated_total + reconcile_result$n_updated
+    new_cluster_ids_all <- c(
+      new_cluster_ids_all,
+      reconcile_result$new_cluster_ids
+    )
   }
   if (n_muted_streams > 0) {
     episodic_trace(
@@ -1278,6 +1290,7 @@ episodic_run_cron_body <- function(
     n_activity_supplied = activity_counts$n_supplied,
     n_activity_written = activity_counts$n_written,
     n_activity_skipped = activity_counts$n_skipped,
+    new_cluster_ids = new_cluster_ids_all,
     error_text = NA
   )
 }

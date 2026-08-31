@@ -134,6 +134,12 @@ priority_score:
     density_component: 0.10
     spatial_component: 0.05
 
+# Notifications: not configured by default. Set in the instance
+# configuration file (EPISODIC_CONFIG) to enable. This key is excluded
+# from config_hash so notification settings never alter detection
+# reproducibility and secrets never reach config_snapshot.
+notifications: ~
+
 # Lattice suppression.
 suppression:
   child_dominance_threshold: 0.70   # child suppresses parent
