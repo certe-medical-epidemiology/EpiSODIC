@@ -1,7 +1,12 @@
 # EpiSODIC 0.10.1
 
+## Fixed
+
+- `episodic_demo()`'s startup message once again mentions "demo account", after an unrelated styling commit reworded it away from that phrase
+
 ## Changed
 
+- Redesigned the Settings screen: notification channels now sit in a compact wrapping card grid with a toggle switch per channel instead of full-width stacked blocks, and the read-only detection configuration is grouped by section with readable field labels instead of one dense grid of dotted, all-caps keys
 - Documentation updates
 
 

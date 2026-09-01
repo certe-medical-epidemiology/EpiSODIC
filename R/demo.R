@@ -122,7 +122,7 @@ episodic_demo <- function(
   message(sprintf(
     paste0(
       strrep("=", 75),
-      "\n\n  EpiSODIC demo admin account - username: %s, password: %s\n\n",
+      "\n\n  EpiSODIC demo account (admin) - username: %s, password: %s\n\n",
       strrep("=", 75)
     ),
     username,
