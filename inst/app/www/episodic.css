@@ -863,6 +863,7 @@ dl.episodic-settings dd { margin: 0; }
    bare checkbox, so the on/off state reads at a glance in a header row
    where a native checkbox would sit awkwardly against a bold title. */
 .episodic-toggle {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -870,7 +871,16 @@ dl.episodic-settings dd { margin: 0; }
   user-select: none;
 }
 .episodic-toggle input[type="checkbox"] {
+  /* Hidden, but still positioned relative to .episodic-toggle itself
+     (which is `position: relative` for exactly this reason) rather than
+     escaping to the nearest positioned ancestor - with no such ancestor
+     up the chain to .episodic-streams-screen's own scroll container,
+     an unscoped absolute checkbox was being focused into view on click
+     against some far-off fallback position, which read as the page
+     jumping to a "new void" and clipping the scrollable content below it. */
   position: absolute;
+  top: 0;
+  left: 0;
   opacity: 0;
   width: 1px;
   height: 1px;
