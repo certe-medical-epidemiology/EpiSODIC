@@ -15,7 +15,7 @@ episodic_demo(
   username = "demo",
   full_name = "Demo User",
   email = "demo@example.org",
-  password = "episodic-demo",
+  password = "demo",
   launch = TRUE,
   run_date = episodic_synthetic_week_end(),
   lang = Sys.getenv("EPISODIC_LANGUAGE"),
@@ -127,35 +127,39 @@ cases <- episodic_synthetic_cases(
 )
 db_path <- episodic_demo(launch = FALSE, cases = cases, denominators = NULL)
 #> Creating synthetic cases...
-#> 2026-08-31 22:17:44.457 | episodic_run_cron() starting (host=runnervmgx7h7, account=runner)
-#> 2026-08-31 22:17:44.458 | Resolving configuration
-#> 2026-08-31 22:17:44.462 | Configuration resolved (hash f198adfd3d37)
-#> 2026-08-31 22:17:44.462 | Connecting to database
-#> 2026-08-31 22:17:44.462 | No existing database found - creating one
-#> 2026-08-31 22:17:44.475 | Database connected (dialect: sqlite)
-#> 2026-08-31 22:17:44.477 | Run 1 started
-#> 2026-08-31 22:17:44.477 | Resolving and checking case data
-#> 2026-08-31 22:17:44.488 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
-#> 2026-08-31 22:17:44.488 | Beginning transaction
-#> 2026-08-31 22:17:44.490 | Loading pathogen configuration
-#> 2026-08-31 22:17:44.498 | Pathogen configuration loaded (23 pathogen(s))
-#> 2026-08-31 22:17:44.498 | Loading case data into the database
-#> 2026-08-31 22:17:44.573 | Case data loaded: supplied=419, deduplicated=410, inserted=410
-#> 2026-08-31 22:17:44.574 | Fetching all known cases and institutions
-#> 2026-08-31 22:17:44.576 | Enumerating lattice streams
-#> 2026-08-31 22:17:44.612 | Running same-place detector
-#> 2026-08-31 22:17:44.665 | Same-place detector found 4 detection(s)
-#> 2026-08-31 22:17:44.666 | Running rare-trigger detector
-#> 2026-08-31 22:17:44.669 | Rare-trigger detector found 1 detection(s)
-#> 2026-08-31 22:17:44.670 | Farrington owes 8 week(s) this run
-#> 2026-08-31 22:17:44.672 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
-#> 2026-08-31 22:17:45.257 | Stream reconciliation done: 5 detection(s), 5 new signal(s), 0 updated signal(s)
-#> 2026-08-31 22:17:45.257 | Suppressing lattice
-#> 2026-08-31 22:17:45.262 | Committing transaction
-#> 2026-08-31 22:17:45.265 | Finishing run 1 (status: success)
-#> 2026-08-31 22:17:46.500 | episodic_run_cron() finished in 2s (status: success)
+#> 2026-09-01 18:27:36.107 | episodic_run_cron() starting (host=runnervmgx7h7, account=runner)
+#> 2026-09-01 18:27:36.107 | Resolving configuration
+#> 2026-09-01 18:27:36.112 | Configuration resolved (hash f198adfd3d37)
+#> 2026-09-01 18:27:36.112 | Connecting to database
+#> 2026-09-01 18:27:36.113 | No existing database found - creating one
+#> 2026-09-01 18:27:36.129 | Database connected (dialect: sqlite)
+#> 2026-09-01 18:27:36.131 | Run 1 started
+#> 2026-09-01 18:27:36.131 | Resolving and checking case data
+#> 2026-09-01 18:27:36.151 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
+#> 2026-09-01 18:27:36.151 | Beginning transaction
+#> 2026-09-01 18:27:36.153 | Loading pathogen configuration
+#> 2026-09-01 18:27:36.156 | Pathogen configuration loaded (23 pathogen(s))
+#> 2026-09-01 18:27:36.162 | Loading case data into the database
+#> 2026-09-01 18:27:36.255 | Case data loaded: supplied=419, deduplicated=410, inserted=410
+#> 2026-09-01 18:27:36.256 | Fetching all known cases and institutions
+#> 2026-09-01 18:27:36.258 | Enumerating lattice streams
+#> 2026-09-01 18:27:36.304 | Running same-place detector
+#> 2026-09-01 18:27:36.370 | Same-place detector found 4 detection(s)
+#> 2026-09-01 18:27:36.371 | Running rare-trigger detector
+#> 2026-09-01 18:27:36.374 | Rare-trigger detector found 1 detection(s)
+#> 2026-09-01 18:27:36.375 | Farrington owes 8 week(s) this run
+#> 2026-09-01 18:27:36.377 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
+#> 2026-09-01 18:27:37.049 | Stream reconciliation done: 5 detection(s), 5 new signal(s), 0 updated signal(s)
+#> 2026-09-01 18:27:37.050 | Suppressing lattice
+#> 2026-09-01 18:27:37.055 | Committing transaction
+#> 2026-09-01 18:27:37.058 | Finishing run 1 (status: success)
+#> 2026-09-01 18:27:38.291 | episodic_run_cron() finished in 2.2s (status: success)
 #> OK
-#> EpiSODIC demo account - username: demo, password: episodic-demo
+#> ===========================================================================
+#> 
+#>   EpiSODIC demo admin account - username: demo, password: demo
+#> 
+#> ===========================================================================
 file.remove(db_path)
 #> [1] TRUE
 # }

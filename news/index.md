@@ -1,5 +1,11 @@
 # Changelog
 
+## EpiSODIC 0.10.1
+
+### Changed
+
+- Documentation updates
+
 ## EpiSODIC 0.10.0
 
 ### New
