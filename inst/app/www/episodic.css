@@ -857,46 +857,160 @@ dl.episodic-settings dd { margin: 0; }
 
 /* Settings screen: notification channel cards, read-only detection config
    grid, and the user-management table. */
+
+/* Toggle switch, used for the notifications master switch and each
+   channel's own "enabled" control - a small track+thumb instead of a
+   bare checkbox, so the on/off state reads at a glance in a header row
+   where a native checkbox would sit awkwardly against a bold title. */
+.episodic-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.episodic-toggle input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.episodic-toggle-track {
+  position: relative;
+  width: 30px;
+  height: 17px;
+  border-radius: 999px;
+  background: var(--episodic-border);
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+.episodic-toggle-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+}
+.episodic-toggle input:checked + .episodic-toggle-track {
+  background: var(--episodic-primary);
+}
+.episodic-toggle input:checked + .episodic-toggle-track::after {
+  transform: translateX(13px);
+}
+.episodic-toggle input:focus-visible + .episodic-toggle-track {
+  outline: 2px solid var(--episodic-primary);
+  outline-offset: 2px;
+}
+.episodic-toggle-label {
+  font-size: 12px;
+  color: var(--episodic-ink);
+}
+
+/* The master switch sits in the notifications panel header rather than
+   as a checkbox in the body, and the two trigger checkboxes underneath
+   it read as a single compact settings row instead of two stacked
+   .episodic-form-group blocks. */
+.episodic-settings-notif-master {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--episodic-border);
+}
+.episodic-settings-notif-triggers {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.episodic-settings-notif-triggers .episodic-form-checkbox-label {
+  margin: 0;
+}
+
+/* Channel cards flow as a wrapping grid instead of full-width stacked
+   blocks - Teams and Slack (one field each) sit side by side with room
+   to spare instead of each claiming a full row of mostly empty space. */
+.episodic-settings-channels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
 .episodic-settings-channel {
   border: 1px solid var(--episodic-border);
-  border-radius: 4px;
-  padding: 12px 14px;
-  margin-bottom: 14px;
+  border-radius: 6px;
+  padding: 14px 16px;
+  background: var(--episodic-bg-subtle);
+  display: flex;
+  flex-direction: column;
 }
 .episodic-settings-channel-title {
   font-size: 12.5px;
   font-weight: 600;
-  margin-bottom: 8px;
+  color: var(--episodic-ink);
+  margin: 0 0 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--episodic-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 .episodic-settings-channel-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px 14px;
+}
+.episodic-settings-channel .episodic-form-group {
+  margin-bottom: 0;
+}
+.episodic-settings-channel .episodic-form-hint {
+  grid-column: 1 / -1;
+}
+
+/* Read-only detection configuration: grouped by config section under a
+   small heading instead of one undifferentiated grid of ~40 dotted,
+   all-caps keys, with generous spacing so a label never runs into its
+   neighbour. */
+.episodic-settings-section {
+  margin-bottom: 22px;
+}
+.episodic-settings-section:last-child {
+  margin-bottom: 0;
+}
+.episodic-settings-section-title {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--episodic-primary);
+  margin: 0 0 10px;
 }
 .episodic-settings-readonly-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 8px 16px;
-  opacity: 0.65;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px 20px;
+}
+.episodic-settings-kv {
+  min-width: 0;
 }
 .episodic-settings-readonly-grid .episodic-settings-kv-label {
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
+  font-size: 11px;
   color: var(--episodic-muted);
   display: block;
+  margin-bottom: 2px;
+  overflow-wrap: break-word;
 }
 .episodic-settings-readonly-grid .episodic-settings-kv-value {
   font-size: 12.5px;
   color: var(--episodic-ink);
-}
-.episodic-settings-readonly-grid input,
-.episodic-settings-readonly-grid select {
-  pointer-events: none;
-  background: var(--episodic-bg);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: break-word;
 }
 .episodic-settings-user-row select,
 .episodic-settings-user-row input[type="checkbox"] {

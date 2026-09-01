@@ -88,16 +88,12 @@ episodic_ui_settings_notif_panel <- function(
     episodic_tr("settings.notif.title", lang = lang),
     note = episodic_tr("settings.notif.note", lang = lang),
     shiny::tags$div(
-      class = "episodic-form-group",
-      shiny::tags$label(
-        class = "episodic-form-checkbox-label",
-        shiny::tags$input(
-          type = "checkbox",
-          id = "stg_notif_enabled",
-          class = "episodic-settings-input",
-          checked = if (isTRUE(notif$enabled)) NA else NULL
-        ),
-        episodic_tr("settings.notif.master_enabled", lang = lang)
+      class = "episodic-settings-notif-master",
+      episodic_ui_settings_toggle(
+        id = "stg_notif_enabled",
+        label = episodic_tr("settings.notif.master_enabled", lang = lang),
+        checked = isTRUE(notif$enabled),
+        emphasise = TRUE
       )
     ),
     shiny::tags$div(
@@ -114,8 +110,7 @@ episodic_ui_settings_notif_panel <- function(
       )
     ),
     shiny::tags$div(
-      class = "episodic-form-group episodic-settings-channel-grid",
-      style = "margin-bottom:14px;",
+      class = "episodic-settings-notif-triggers",
       shiny::tags$label(
         class = "episodic-form-checkbox-label",
         shiny::tags$input(
@@ -137,9 +132,12 @@ episodic_ui_settings_notif_panel <- function(
         episodic_tr("settings.notif.trigger_run_failure", lang = lang)
       )
     ),
-    lapply(names(episodic_settings_channel_specs()), function(ch) {
-      episodic_ui_settings_notif_channel(ch, notif, lang = lang)
-    }),
+    shiny::tags$div(
+      class = "episodic-settings-channels-grid",
+      lapply(names(episodic_settings_channel_specs()), function(ch) {
+        episodic_ui_settings_notif_channel(ch, notif, lang = lang)
+      })
+    ),
     shiny::tags$div(
       class = "episodic-form-actions",
       shiny::tags$button(
@@ -147,6 +145,38 @@ episodic_ui_settings_notif_panel <- function(
         onclick = "Shiny.setInputValue('settings_notif_save', Math.random(), {priority: 'event'})",
         episodic_tr("settings.notif.save", lang = lang)
       )
+    )
+  )
+}
+
+#' A track+thumb toggle switch bound the same way as a checkbox
+#'
+#' Renders a native checkbox (still carrying `episodic-settings-input`,
+#' so `episodic_ui_settings_bind_script()` binds it exactly like any
+#' other field) visually replaced by a track and thumb, for the handful
+#' of on/off controls - the notifications master switch and each
+#' channel's own enabled state - that sit in a header row where a bare
+#' checkbox reads as an afterthought next to a bold title.
+#' @param id Input id.
+#' @param label Visible label, placed after the switch.
+#' @param checked Initial state.
+#' @param emphasise Slightly larger label, for the panel's own master switch.
+#' @keywords internal
+#' @noRd
+episodic_ui_settings_toggle <- function(id, label, checked = FALSE, emphasise = FALSE) {
+  shiny::tags$label(
+    class = "episodic-toggle",
+    shiny::tags$input(
+      type = "checkbox",
+      id = id,
+      class = "episodic-settings-input",
+      checked = if (isTRUE(checked)) NA else NULL
+    ),
+    shiny::tags$span(class = "episodic-toggle-track"),
+    shiny::tags$span(
+      class = "episodic-toggle-label",
+      style = if (emphasise) "font-size:13.5px;font-weight:600;",
+      label
     )
   )
 }
@@ -166,17 +196,12 @@ episodic_ui_settings_notif_channel <- function(
       shiny::tags$span(episodic_tr(
         paste0("settings.notif.channel.", channel),
         lang = lang
-      ))
-    ),
-    shiny::tags$label(
-      class = "episodic-form-checkbox-label",
-      shiny::tags$input(
-        type = "checkbox",
+      )),
+      episodic_ui_settings_toggle(
         id = paste0("stg_notif_", channel, "_enabled"),
-        class = "episodic-settings-input",
-        checked = if (isTRUE(current$enabled)) NA else NULL
-      ),
-      episodic_tr("settings.notif.enabled", lang = lang)
+        label = episodic_tr("settings.notif.enabled", lang = lang),
+        checked = isTRUE(current$enabled)
+      )
     ),
     shiny::tags$div(
       class = "episodic-settings-channel-grid",
@@ -267,20 +292,49 @@ episodic_ui_settings_detection_panel <- function(
     config,
     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   sections <- config[setdiff(names(config), "notifications")]
-  rows <- episodic_settings_flatten(sections)
   episodic_ui_panel(
     episodic_tr("settings.detection.title", lang = lang),
     note = episodic_tr("settings.detection.note", lang = lang),
-    shiny::tags$div(
-      class = "episodic-settings-readonly-grid",
-      lapply(names(rows), function(key) {
+    lapply(names(sections), function(section) {
+      rows <- episodic_settings_flatten(sections[[section]])
+      shiny::tags$div(
+        class = "episodic-settings-section",
+        shiny::tags$h3(
+          class = "episodic-settings-section-title",
+          episodic_settings_prettify_label(section)
+        ),
         shiny::tags$div(
-          shiny::tags$span(class = "episodic-settings-kv-label", key),
-          shiny::tags$span(class = "episodic-settings-kv-value", rows[[key]])
+          class = "episodic-settings-readonly-grid",
+          lapply(names(rows), function(key) {
+            shiny::tags$div(
+              class = "episodic-settings-kv",
+              shiny::tags$span(
+                class = "episodic-settings-kv-label",
+                episodic_settings_prettify_label(key)
+              ),
+              shiny::tags$span(class = "episodic-settings-kv-value", rows[[key]])
+            )
+          })
         )
-      })
-    )
+      )
+    })
   )
+}
+
+#' Turn a flattened config key into a readable label
+#'
+#' `"case_free_days_default"` becomes `"Case free days default"`,
+#' `"overrides.norovirus.k_days"` becomes `"Overrides norovirus k days"`.
+#' Single-letter Farrington parameters (`w`, `b`) round-trip unchanged
+#' bar the capital, which is the correct reading of those names - they
+#' are the method's own notation, not a UI shortcoming.
+#' @keywords internal
+#' @noRd
+episodic_settings_prettify_label <- function(key) {
+  words <- strsplit(gsub("[._]+", " ", key), " ", fixed = TRUE)[[1]]
+  words <- words[nzchar(words)]
+  words <- paste0(toupper(substring(words, 1, 1)), substring(words, 2))
+  paste(words, collapse = " ")
 }
 
 #' Flatten a nested config list into `"a.b.c" -> "display value"` pairs

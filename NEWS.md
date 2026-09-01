@@ -2,6 +2,7 @@
 
 ## Changed
 
+- Redesigned the Settings screen: notification channels now sit in a compact wrapping card grid with a toggle switch per channel instead of full-width stacked blocks, and the read-only detection configuration is grouped by section with readable field labels instead of one dense grid of dotted, all-caps keys
 - Documentation updates
 
 
