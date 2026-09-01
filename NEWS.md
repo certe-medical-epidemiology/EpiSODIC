@@ -2,7 +2,7 @@
 
 ## Fixed
 
-- `episodic_demo()`'s default password reverted to `"episodic-demo"` and its startup message to mention "demo account" again, after both were accidentally changed by an unrelated styling commit
+- `episodic_demo()`'s startup message once again mentions "demo account", after an unrelated styling commit reworded it away from that phrase
 
 ## Changed
 
