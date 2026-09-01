@@ -2,8 +2,19 @@
 
 ## EpiSODIC 0.10.1
 
+### Fixed
+
+- [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)’s
+  startup message once again mentions “demo account”, after an unrelated
+  styling commit reworded it away from that phrase
+
 ### Changed
 
+- Redesigned the Settings screen: notification channels now sit in a
+  compact wrapping card grid with a toggle switch per channel instead of
+  full-width stacked blocks, and the read-only detection configuration
+  is grouped by section with readable field labels instead of one dense
+  grid of dotted, all-caps keys
 - Documentation updates
 
 ## EpiSODIC 0.10.0
