@@ -81,7 +81,7 @@ episodic_demo <- function(
     username = "demo",
     full_name = "Demo User",
     email = "demo@example.org",
-    password = "demo",
+    password = "episodic-demo",
     launch = TRUE,
     run_date = episodic_synthetic_week_end(),
     lang = Sys.getenv("EPISODIC_LANGUAGE"),
@@ -122,7 +122,7 @@ episodic_demo <- function(
   message(sprintf(
     paste0(
       strrep("=", 75),
-      "\n\n  EpiSODIC demo admin account - username: %s, password: %s\n\n",
+      "\n\n  EpiSODIC demo account (admin) - username: %s, password: %s\n\n",
       strrep("=", 75)
     ),
     username,

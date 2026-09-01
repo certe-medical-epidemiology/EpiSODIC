@@ -1,5 +1,9 @@
 # EpiSODIC 0.10.1
 
+## Fixed
+
+- `episodic_demo()`'s default password reverted to `"episodic-demo"` and its startup message to mention "demo account" again, after both were accidentally changed by an unrelated styling commit
+
 ## Changed
 
 - Redesigned the Settings screen: notification channels now sit in a compact wrapping card grid with a toggle switch per channel instead of full-width stacked blocks, and the read-only detection configuration is grouped by section with readable field labels instead of one dense grid of dotted, all-caps keys
