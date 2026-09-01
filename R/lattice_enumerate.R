@@ -146,8 +146,7 @@ episodic_case_region_code <- function(cases, level) {
     return(character(0))
   }
   has_pc <- !is.na(cases$pc)
-  switch(
-    level,
+  switch(level,
     pathogen_area = ifelse(
       has_pc,
       paste0("GEBIED-", substr(cases$pc, 1, 2)),
@@ -190,9 +189,8 @@ episodic_region_code_all <- "NORTHERN_NETHERLANDS"
 #' @keywords internal
 #' @noRd
 episodic_pc_to_province <- function(
-  pc,
-  path = Sys.getenv("EPISODIC_PC_PROVINCE_MAP", unset = NA)
-) {
+    pc,
+    path = Sys.getenv("EPISODIC_PC_PROVINCE_MAP", unset = NA)) {
   mapping <- episodic_pc_province_map_resolve(path)
   if (!is.null(mapping)) {
     return(unname(mapping[as.character(pc)]))
@@ -236,16 +234,15 @@ episodic_pc_province_map_resolve <- function(path) {
 #' @keywords internal
 #' @noRd
 episodic_lattice_upsert_group <- function(
-  con,
-  cases,
-  level,
-  group_cols,
-  care_line_col = NULL,
-  institution_col = NULL,
-  region_col = NULL,
-  ward_col = NULL,
-  denominator = "none"
-) {
+    con,
+    cases,
+    level,
+    group_cols,
+    care_line_col = NULL,
+    institution_col = NULL,
+    region_col = NULL,
+    ward_col = NULL,
+    denominator = "none") {
   key_df <- cases[, group_cols, drop = FALSE]
   # Separated, not concatenated. Glued together, institution 1 on ward "2A"
   # and institution 12 on ward "A" are the same group, and the two wards

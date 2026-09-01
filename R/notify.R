@@ -163,8 +163,7 @@ episodic_notify_location <- function(row) {
   if (!is.na(row$region_code) && nzchar(row$region_code)) {
     parts <- c(parts, row$region_code)
   }
-  level_label <- switch(
-    row$level,
+  level_label <- switch(row$level,
     pathogen_ward = "ward",
     pathogen_institution = "institution",
     pathogen_area = "area",
@@ -188,11 +187,10 @@ episodic_notify_location <- function(row) {
 #' @keywords internal
 #' @noRd
 episodic_notify_build_new_clusters <- function(
-  details,
-  n_new,
-  run_date,
-  dashboard_url = NULL
-) {
+    details,
+    n_new,
+    run_date,
+    dashboard_url = NULL) {
   title <- paste0(
     "EpiSODIC: ",
     n_new,
@@ -692,8 +690,7 @@ episodic_notify_validate_config <- function(config) {
 #' }
 #' @export
 episodic_notify_test <- function(
-  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)
-) {
+    episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
   config <- episodic_config_resolve(episodic_config_path)
   notif <- config$notifications
 
@@ -809,10 +806,9 @@ episodic_notify_test <- function(
 #' }
 #' @export
 episodic_setup_microsoft365 <- function(
-  tenant_id,
-  client_id = NULL,
-  scopes = c("Mail.Send", "User.Read", "openid", "offline_access")
-) {
+    tenant_id,
+    client_id = NULL,
+    scopes = c("Mail.Send", "User.Read", "openid", "offline_access")) {
   rlang::check_installed("Microsoft365R")
   rlang::check_installed("AzureGraph")
 

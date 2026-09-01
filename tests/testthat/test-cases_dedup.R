@@ -24,12 +24,11 @@ pathogen_config_fixture <- data.frame(
 )
 
 raw_case <- function(
-  source_key,
-  patient_key,
-  sample_date,
-  pathogen = "Test pathogen",
-  lab_number = paste0("LAB-", source_key)
-) {
+    source_key,
+    patient_key,
+    sample_date,
+    pathogen = "Test pathogen",
+    lab_number = paste0("LAB-", source_key)) {
   data.frame(
     source_key = source_key,
     lab_number = lab_number,

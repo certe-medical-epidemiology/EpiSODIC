@@ -40,15 +40,14 @@
 #' @keywords internal
 #' @noRd
 episodic_app_server_report <- function(
-  input,
-  output,
-  session,
-  con,
-  db_path,
-  lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  current_user,
-  selected_cluster_id
-) {
+    input,
+    output,
+    session,
+    con,
+    db_path,
+    lang = Sys.getenv("EPISODIC_LANGUAGE"),
+    current_user,
+    selected_cluster_id) {
   render_error <- shiny::reactiveVal(NULL)
 
   output$report_render_error <- shiny::renderUI({

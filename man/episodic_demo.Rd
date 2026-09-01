@@ -9,7 +9,7 @@ episodic_demo(
   username = "demo",
   full_name = "Demo User",
   email = "demo@example.org",
-  password = "episodic-demo",
+  password = "demo",
   launch = TRUE,
   run_date = episodic_synthetic_week_end(),
   lang = Sys.getenv("EPISODIC_LANGUAGE"),

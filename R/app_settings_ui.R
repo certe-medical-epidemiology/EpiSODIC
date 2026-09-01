@@ -32,10 +32,9 @@
 #' @keywords internal
 #' @noRd
 episodic_ui_settings_screen <- function(
-  con,
-  lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  message = NULL
-) {
+    con,
+    lang = Sys.getenv("EPISODIC_LANGUAGE"),
+    message = NULL) {
   config <- episodic_config_resolve(con = con)
   users <- episodic_db_app_users(con)
   # role/is_admin/is_active are insert-only attributes (see R/auth.R); the
@@ -70,9 +69,9 @@ episodic_ui_settings_screen <- function(
         message$text
       )
     },
-    episodic_ui_settings_notif_panel(config$notifications, lang = lang),
-    episodic_ui_settings_detection_panel(config, lang = lang),
     episodic_ui_settings_users_panel(users, lang = lang),
+    episodic_ui_settings_detection_panel(config, lang = lang),
+    episodic_ui_settings_notif_panel(config$notifications, lang = lang),
     episodic_ui_settings_export_panel(lang = lang),
     episodic_ui_settings_audit_panel(audit, lang = lang),
     shiny::tags$script(shiny::HTML(episodic_ui_settings_bind_script()))
@@ -82,9 +81,8 @@ episodic_ui_settings_screen <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_settings_notif_panel <- function(
-  notif,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    notif,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   notif <- notif %||% list()
   episodic_ui_panel(
     episodic_tr("settings.notif.title", lang = lang),
@@ -116,7 +114,7 @@ episodic_ui_settings_notif_panel <- function(
       )
     ),
     shiny::tags$div(
-      class = "episodic-settings-channel-grid",
+      class = "episodic-form-group episodic-settings-channel-grid",
       style = "margin-bottom:14px;",
       shiny::tags$label(
         class = "episodic-form-checkbox-label",
@@ -156,12 +154,11 @@ episodic_ui_settings_notif_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_settings_notif_channel <- function(
-  channel,
-  notif,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    channel,
+    notif,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   current <- notif$channels[[channel]]
-  enabled_id <- paste0("stg_notif_", channel, "_enabled")
+
   shiny::tags$div(
     class = "episodic-settings-channel",
     shiny::tags$div(
@@ -169,17 +166,17 @@ episodic_ui_settings_notif_channel <- function(
       shiny::tags$span(episodic_tr(
         paste0("settings.notif.channel.", channel),
         lang = lang
-      )),
-      shiny::tags$label(
-        class = "episodic-form-checkbox-label",
-        shiny::tags$input(
-          type = "checkbox",
-          id = enabled_id,
-          class = "episodic-settings-input",
-          checked = if (isTRUE(current$enabled)) NA else NULL
-        ),
-        episodic_tr("settings.notif.enabled", lang = lang)
-      )
+      ))
+    ),
+    shiny::tags$label(
+      class = "episodic-form-checkbox-label",
+      shiny::tags$input(
+        type = "checkbox",
+        id = paste0("stg_notif_", channel, "_enabled"),
+        class = "episodic-settings-input",
+        checked = if (isTRUE(current$enabled)) NA else NULL
+      ),
+      episodic_tr("settings.notif.enabled", lang = lang)
     ),
     shiny::tags$div(
       class = "episodic-settings-channel-grid",
@@ -194,11 +191,10 @@ episodic_ui_settings_notif_channel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_settings_field <- function(
-  channel,
-  field,
-  current,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    channel,
+    field,
+    current,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   id <- episodic_settings_field_id(channel, field$key)
   label <- episodic_tr(
     paste0("settings.notif.field.", gsub(".", "_", field$key, fixed = TRUE)),
@@ -268,9 +264,8 @@ episodic_ui_settings_field <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_settings_detection_panel <- function(
-  config,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    config,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   sections <- config[setdiff(names(config), "notifications")]
   rows <- episodic_settings_flatten(sections)
   episodic_ui_panel(
@@ -308,9 +303,8 @@ episodic_settings_flatten <- function(x, prefix = "") {
 #' @keywords internal
 #' @noRd
 episodic_ui_settings_users_panel <- function(
-  users,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    users,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   episodic_ui_panel(
     episodic_tr("settings.users.title", lang = lang),
     if (nrow(users) == 0) {
@@ -347,9 +341,8 @@ episodic_ui_settings_users_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_settings_user_row <- function(
-  user,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    user,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   shiny::tags$tr(
     class = "episodic-settings-user-row",
     shiny::tags$td(user$username),
@@ -387,8 +380,7 @@ episodic_ui_settings_user_row <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_settings_user_create_form <- function(
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   shiny::tags$div(
     style = "margin-top:18px;border-top:1px solid var(--episodic-border);padding-top:14px;",
     shiny::tags$div(
@@ -489,8 +481,7 @@ episodic_ui_settings_user_create_form <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_settings_export_panel <- function(
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   episodic_ui_panel(
     episodic_tr("settings.export.title", lang = lang),
     note = episodic_tr("settings.export.note", lang = lang),
@@ -508,9 +499,8 @@ episodic_ui_settings_export_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_settings_audit_panel <- function(
-  audit,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    audit,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   episodic_ui_panel(
     episodic_tr("settings.audit.title", lang = lang),
     if (nrow(audit) == 0) {

@@ -98,9 +98,8 @@ episodic_baseline_excluded_windows_many <- function(con, stream_ids) {
 #' @keywords internal
 #' @noRd
 episodic_baseline_exclude_cases <- function(
-  cases_for_stream,
-  excluded_windows
-) {
+    cases_for_stream,
+    excluded_windows) {
   if (nrow(excluded_windows) == 0 || nrow(cases_for_stream) == 0) {
     return(cases_for_stream)
   }

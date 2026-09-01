@@ -397,12 +397,11 @@ episodic_validate_columns <- function(data, required, filled, what) {
 #' @keywords internal
 #' @noRd
 episodic_validate_allowed <- function(
-  data,
-  column,
-  allowed,
-  na_ok,
-  what = "Case data"
-) {
+    data,
+    column,
+    allowed,
+    na_ok,
+    what = "Case data") {
   values <- data[[column]]
   bad <- if (isTRUE(na_ok)) {
     values[!is.na(values) & !values %in% allowed]

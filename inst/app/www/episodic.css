@@ -233,6 +233,10 @@ body {
 .episodic-chip-filled { color: #fff; }
 .episodic-chip-outline { background: transparent; border: 1px solid; }
 
+input:focus-visible {
+  outline-color: var(--episodic-primary) !important;
+}
+
 /* A chip that goes somewhere. Underlined on hover and given a focus ring
    for the same reason the cluster rows have one: it is a link, and a link
    a keyboard user cannot see they have landed on is not one. */

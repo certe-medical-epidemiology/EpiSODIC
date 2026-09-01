@@ -68,13 +68,12 @@
 #' @keywords internal
 #' @noRd
 episodic_detect_farrington <- function(
-  cases_for_stream,
-  stream_id,
-  config,
-  run_date = Sys.Date(),
-  population = NULL,
-  n_weeks = 1L
-) {
+    cases_for_stream,
+    stream_id,
+    config,
+    run_date = Sys.Date(),
+    population = NULL,
+    n_weeks = 1L) {
   empty <- episodic_detection_record(
     integer(0),
     character(0),
@@ -169,13 +168,12 @@ episodic_detect_farrington <- function(
 #' @keywords internal
 #' @noRd
 episodic_farrington_trend <- function(
-  cases_for_stream,
-  config,
-  run_date = Sys.Date(),
-  n_weeks_existing = 0L,
-  max_backfill_weeks = 156L,
-  population = NULL
-) {
+    cases_for_stream,
+    config,
+    run_date = Sys.Date(),
+    n_weeks_existing = 0L,
+    max_backfill_weeks = 156L,
+    population = NULL) {
   empty <- data.frame(
     week_start = as.Date(character(0)),
     n_cases = integer(0),
@@ -306,11 +304,10 @@ episodic_farrington_shortfall <- function(x) {
 #' @keywords internal
 #' @noRd
 episodic_farrington_population_vector <- function(
-  con,
-  institution_id,
-  level,
-  week_start
-) {
+    con,
+    institution_id,
+    level,
+    week_start) {
   if (!identical(level, "pathogen_institution") || is.na(institution_id)) {
     return(NULL)
   }

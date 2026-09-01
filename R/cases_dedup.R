@@ -61,10 +61,9 @@
 #' @keywords internal
 #' @noRd
 episodic_cases_deduplicate <- function(
-  cases,
-  pathogen_config,
-  existing = NULL
-) {
+    cases,
+    pathogen_config,
+    existing = NULL) {
   if (nrow(cases) == 0) {
     return(cases)
   }

@@ -77,17 +77,16 @@
 #' }
 #' @export
 episodic_demo <- function(
-  db_path = tempfile(fileext = ".sqlite"),
-  username = "demo",
-  full_name = "Demo User",
-  email = "demo@example.org",
-  password = "episodic-demo",
-  launch = TRUE,
-  run_date = episodic_synthetic_week_end(),
-  lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  cases = function() episodic_synthetic_cases(end_date = run_date),
-  denominators = function() episodic_synthetic_denominators(end_date = run_date)
-) {
+    db_path = tempfile(fileext = ".sqlite"),
+    username = "demo",
+    full_name = "Demo User",
+    email = "demo@example.org",
+    password = "demo",
+    launch = TRUE,
+    run_date = episodic_synthetic_week_end(),
+    lang = Sys.getenv("EPISODIC_LANGUAGE"),
+    cases = function() episodic_synthetic_cases(end_date = run_date),
+    denominators = function() episodic_synthetic_denominators(end_date = run_date)) {
   Sys.setenv(
     EPISODIC_CONFIG = system.file(
       "config",
@@ -116,10 +115,16 @@ episodic_demo <- function(
     username = username,
     full_name = full_name,
     email = email,
-    password = password
+    password = password,
+    is_admin = TRUE,
+    role = "epidemiologist"
   )
   message(sprintf(
-    "EpiSODIC demo account - username: %s, password: %s",
+    paste0(
+      strrep("=", 75),
+      "\n\n  EpiSODIC demo admin account - username: %s, password: %s\n\n",
+      strrep("=", 75)
+    ),
     username,
     password
   ))

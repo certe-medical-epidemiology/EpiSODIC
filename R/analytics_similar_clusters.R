@@ -55,11 +55,10 @@
 #' @keywords internal
 #' @noRd
 episodic_app_similar_clusters <- function(
-  con,
-  cluster_id,
-  lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  n = 3L
-) {
+    con,
+    cluster_id,
+    lang = Sys.getenv("EPISODIC_LANGUAGE"),
+    n = 3L) {
   empty <- data.frame(
     cluster_id = integer(0),
     pathogen = character(0),

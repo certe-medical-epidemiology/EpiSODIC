@@ -82,15 +82,14 @@ episodic_db_pathogen_config_load <- function(con, pathogen_config) {
 #' @keywords internal
 #' @noRd
 episodic_db_institution_activity_upsert <- function(
-  con,
-  institution_id,
-  period_start,
-  period_end,
-  patient_days = NA,
-  admissions = NA,
-  n_beds = NA,
-  source = NA
-) {
+    con,
+    institution_id,
+    period_start,
+    period_end,
+    patient_days = NA,
+    admissions = NA,
+    n_beds = NA,
+    source = NA) {
   period_start <- episodic_sql_date(period_start)
   period_end <- episodic_sql_date(period_end)
   params <- list(institution_id, period_start)
@@ -139,18 +138,17 @@ episodic_db_institution_activity_upsert <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_stream_upsert <- function(
-  con,
-  stream_key,
-  level,
-  pathogen,
-  care_line = NA,
-  region_code = NA,
-  institution_id = NA,
-  ward = NA,
-  denominator = "none",
-  severity_weight = 1.00,
-  observed_date
-) {
+    con,
+    stream_key,
+    level,
+    pathogen,
+    care_line = NA,
+    region_code = NA,
+    institution_id = NA,
+    ward = NA,
+    denominator = "none",
+    severity_weight = 1.00,
+    observed_date) {
   observed_date <- episodic_sql_date(observed_date)
   existing <- episodic_db_stream_get(con, stream_key)
   if (!is.null(existing)) {
@@ -217,13 +215,12 @@ episodic_db_stream_upsert <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_write_many <- function(
-  con,
-  table,
-  cols,
-  values,
-  key_cols = NULL,
-  update_cols = NULL
-) {
+    con,
+    table,
+    cols,
+    values,
+    key_cols = NULL,
+    update_cols = NULL) {
   n <- length(values[[1]])
   if (n == 0) {
     return(invisible(0L))
@@ -390,13 +387,12 @@ episodic_db_case_insert_new <- function(con, cases, run_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_stream_trend_upsert <- function(
-  con,
-  stream_id,
-  week_start,
-  n_cases,
-  expected = NA,
-  upperbound = NA
-) {
+    con,
+    stream_id,
+    week_start,
+    n_cases,
+    expected = NA,
+    upperbound = NA) {
   params <- list(stream_id, week_start)
   existing <- DBI::dbGetQuery(
     con,
@@ -426,18 +422,17 @@ episodic_db_stream_trend_upsert <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_detection_insert <- function(
-  con,
-  run_id,
-  stream_id,
-  detector,
-  first_day,
-  last_day,
-  n_cases,
-  expected = NA,
-  upperbound = NA,
-  params_json,
-  cluster_id = NA
-) {
+    con,
+    run_id,
+    stream_id,
+    detector,
+    first_day,
+    last_day,
+    n_cases,
+    expected = NA,
+    upperbound = NA,
+    params_json,
+    cluster_id = NA) {
   params <- list(
     run_id,
     stream_id,
@@ -477,18 +472,17 @@ episodic_db_detection_set_cluster <- function(con, detection_id, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_insert <- function(
-  con,
-  stream_id,
-  first_day,
-  last_day,
-  n_cases,
-  expected = NA,
-  excess = NA,
-  ratio = NA,
-  priority_score,
-  detector_agreement,
-  run_id
-) {
+    con,
+    stream_id,
+    first_day,
+    last_day,
+    n_cases,
+    expected = NA,
+    excess = NA,
+    ratio = NA,
+    priority_score,
+    detector_agreement,
+    run_id) {
   params <- list(
     stream_id,
     first_day,
@@ -517,19 +511,18 @@ episodic_db_cluster_insert <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_update <- function(
-  con,
-  cluster_id,
-  first_day,
-  last_day,
-  n_cases,
-  expected = NA,
-  excess = NA,
-  ratio = NA,
-  priority_score,
-  detector_agreement,
-  run_id,
-  changed_since_assessment = NULL
-) {
+    con,
+    cluster_id,
+    first_day,
+    last_day,
+    n_cases,
+    expected = NA,
+    excess = NA,
+    ratio = NA,
+    priority_score,
+    detector_agreement,
+    run_id,
+    changed_since_assessment = NULL) {
   if (is.null(changed_since_assessment)) {
     params <- list(
       first_day,
@@ -600,10 +593,9 @@ episodic_db_cluster_increment_runs_since_detected <- function(con, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_set_suppressed_by <- function(
-  con,
-  cluster_id,
-  suppressed_by
-) {
+    con,
+    cluster_id,
+    suppressed_by) {
   params <- list(
     if (is.na(suppressed_by)) NA_integer_ else as.integer(suppressed_by),
     cluster_id
@@ -661,12 +653,11 @@ episodic_db_cluster_case_link_many <- function(con, cluster_id, case_ids) {
 #' @keywords internal
 #' @noRd
 episodic_db_run_start <- function(
-  con,
-  host,
-  account,
-  run_date = Sys.Date(),
-  attempt_no = 1L
-) {
+    con,
+    host,
+    account,
+    run_date = Sys.Date(),
+    attempt_no = 1L) {
   params <- list(
     host,
     account,
@@ -686,26 +677,25 @@ episodic_db_run_start <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_run_finish <- function(
-  con,
-  run_id,
-  status,
-  n_streams = NA,
-  n_detections = NA,
-  n_signals_new = NA,
-  n_signals_updated = NA,
-  n_cases_supplied = NA,
-  n_cases_deduplicated = NA,
-  n_cases_inserted = NA,
-  n_denominators_written = NA,
-  n_activity_supplied = NA,
-  n_activity_written = NA,
-  n_activity_skipped = NA,
-  code_version = NA,
-  pkg_versions = NA,
-  config_hash = NA,
-  config_snapshot = NA,
-  error_text = NA
-) {
+    con,
+    run_id,
+    status,
+    n_streams = NA,
+    n_detections = NA,
+    n_signals_new = NA,
+    n_signals_updated = NA,
+    n_cases_supplied = NA,
+    n_cases_deduplicated = NA,
+    n_cases_inserted = NA,
+    n_denominators_written = NA,
+    n_activity_supplied = NA,
+    n_activity_written = NA,
+    n_activity_skipped = NA,
+    code_version = NA,
+    pkg_versions = NA,
+    config_hash = NA,
+    config_snapshot = NA,
+    error_text = NA) {
   params <- list(
     episodic_now(),
     status,

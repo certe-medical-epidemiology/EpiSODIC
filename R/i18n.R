@@ -111,11 +111,10 @@ episodic_lang <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' episodic_tr("nav.clusters", lang = "en")
 #' @export
 episodic_tr <- function(
-  key,
-  ...,
-  lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  instance_i18n = NULL
-) {
+    key,
+    ...,
+    lang = Sys.getenv("EPISODIC_LANGUAGE"),
+    instance_i18n = NULL) {
   lang <- episodic_lang(lang)
   template <- NULL
 
@@ -202,10 +201,9 @@ episodic_count_phrase <- function(n, singular, plural, with_number = TRUE) {
 #' @keywords internal
 #' @noRd
 episodic_format_date_range <- function(
-  x,
-  y,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    x,
+    y,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   x <- tryCatch(as.Date(x), error = function(e) NA)
   y <- tryCatch(as.Date(y), error = function(e) NA)
   if (length(x) != 1 || length(y) != 1 || is.na(x) || is.na(y)) {

@@ -1,3 +1,10 @@
+# EpiSODIC 0.10.1
+
+## Changed
+
+- Documentation updates
+
+
 # EpiSODIC 0.10.0
 
 ## New
@@ -17,11 +24,13 @@
 - Every write action now re-resolves the signed-in account against the database immediately before writing (`episodic_auth_refresh_user()`), so deactivating or demoting an account from the Settings screen takes effect on its already-open sessions too, not only on its next sign-in
 - An `is_admin` account can no longer revoke its own admin access or deactivate its own account from the Settings screen (self-lockout guard)
 
+
 # EpiSODIC 0.8.17
 
 ## Changed
 
 - Minor UI changes
+
 
 # EpiSODIC 0.8.16
 
@@ -35,6 +44,7 @@
 - Denominator feed now loads in one batched read/insert/update instead of a query and write per row (1,246 to 2 round trips for 623 rows)
 - Removed six dead functions superseded by batched writers or duplicated logic; tests now use `episodic_test_institution()` fixture helper
 
+
 # EpiSODIC 0.8.15
 
 ## Changed
@@ -47,6 +57,7 @@
 - Removed three unused schema columns (`revoked_at`, `left_at`, `last_login_at`) describing capabilities that never existed
 - Removed two unused internal readers and two unused function arguments (`institutions`, `level`) that made call sites pass dead values
 
+
 # EpiSODIC 0.8.14
 
 ## Fixed
@@ -54,6 +65,7 @@
 - Fixed `n_cases` counting wrong cases for ward/area-level clusters; now uses one shared function, `episodic_db_cases_for_stream_id()`
 - Fixed stream muting doing nothing; a run now actually suppresses new detections on muted streams and reports how many were suppressed
 - Reconciliation functions no longer swallow database errors via `tryCatch()`; only a genuinely missing stream still falls back safely
+
 
 # EpiSODIC 0.8.13
 
@@ -68,6 +80,7 @@
 - Batched remaining per-row database writes in a run; round trips dropped from 1,868 to 203 on a synthetic run
 - Streams screen baseline-window queries reduced from 52 per page to 3 via `episodic_baseline_excluded_windows_many()`
 
+
 # EpiSODIC 0.8.12
 
 ## Changed
@@ -75,12 +88,14 @@
 - `episodic_run_cron()` now batches writes instead of row-by-row, cutting MariaDB round trips from 12,549 to 1,868 on a synthetic run
 - Note: chunked `dbBind()` is not a true batch; single multi-row statements via new `episodic_db_write_many()` are what collapse round trips
 
+
 # EpiSODIC 0.8.11
 
 ## Changed
 
 - Pathogen, Archive and dossier similar-clusters screens now derive cluster state in bulk instead of per-cluster, fixing slow MariaDB loads
 - Query counts now flat rather than linear in cluster count (e.g. Pathogen screen: 259 to 7 queries on 63 clusters); output unchanged
+
 
 # EpiSODIC 0.8.10
 
@@ -93,17 +108,20 @@
 
 - MariaDB connections now explicitly set `utf8mb4` character encoding instead of relying on server defaults
 
+
 # EpiSODIC 0.8.9
 
 ## Changed
 
 - Reverted 0.8.2's explicit NA-typing of cron-write defaults; column types already enforce this and the scaffolding proved unnecessary
 
+
 # EpiSODIC 0.8.8
 
 ## Changed
 
 - `episodic_run_cron(debug = TRUE)` now logs SQL and bound parameters before each call, aiding the ongoing MariaDB crash investigation
+
 
 # EpiSODIC 0.8.7
 
@@ -119,6 +137,7 @@
 
 - `care_line`'s `"third"` (tertiary care) value was missing from every column-contract table and roxygen doc listing its allowed values - `episodic_care_lines` already included it, the docs just did not
 
+
 # EpiSODIC 0.8.6
 
 ## Changed
@@ -127,11 +146,13 @@
 - `episodic_spatial_concentration()` (the isolated crash site) no longer uses `table()`/`factor()`, which sort their levels and so invoke locale-aware string collation - not guaranteed safe against a string whose declared encoding does not match its actual bytes, which is exactly what a client/server character-set mismatch can hand back from a MariaDB connection. Counts via `tabulate(match(pc, unique(pc)))` instead, which only ever hashes and byte-compares the strings themselves and sorts nothing but the resulting integer codes
 - `episodic_run_cron(debug = TRUE)` now dumps each reconciliation candidate's `pc` values (encoding, validity, raw bytes) immediately before `episodic_spatial_concentration()` runs, in place of the removed `gc()` forcing - cheap (a handful of values at most) and aimed squarely at confirming or ruling out the character-encoding hypothesis above
 
+
 # EpiSODIC 0.8.5
 
 ## Changed
 
 - `episodic_run_cron(debug = TRUE)` now forces a full garbage collection (`gc(full = TRUE)`) immediately after every database round trip inside the per-stream reconciliation loop. A fatal crash from corrupted memory typically surfaces later than its actual cause - whenever R's own, otherwise lazily scheduled, garbage collector happens to stumble on the damage - so forcing one right after each call is what lets the trace log land on the actual culprit instead of a downstream symptom several calls away. Confirmed necessary: a lab reproduction of the ongoing MariaDB crash showed the trace stopping at a different line on each run (once after `episodic_growth_slope()`, once mid-`episodic_app_density()`) despite hitting the exact same stream and data, the signature of exactly this kind of delayed-onset corruption. Noisy and slow; `debug = TRUE` was already meant only for chasing a failure like this, not for routine runs
+
 
 # EpiSODIC 0.8.4
 
@@ -139,11 +160,13 @@
 
 - `episodic_db_truncate()` against MariaDB/MySQL crashed with `Error: bad_weak_ptr` right after successfully truncating every table. `on.exit(..., add = TRUE)` appends to the end of the exit-handler list, so the handler that restores `FOREIGN_KEY_CHECKS` (registered after the connection's own `on.exit(dbDisconnect(con))`) ran *after* the connection had already been closed - RMariaDB's response to a query against a freed connection is a C++ abort, not a catchable R error. Now restores foreign-key checks explicitly right after truncating, with the `on.exit` handler only as a safety net for the error path, registered with `after = FALSE` so it runs before the disconnect even then
 
+
 # EpiSODIC 0.8.3
 
 ## New
 
 - `episodic_db_truncate()`: empties every EpiSODIC table (including dashboard accounts) while keeping the schema itself, for a hard reset back to "freshly created, no data" without a schema migration. Refuses to run outside an interactive session, and requires typing the database's own name back at a prompt before it deletes anything
+
 
 # EpiSODIC 0.8.2
 
@@ -151,11 +174,13 @@
 
 - Every cron-side database write function's optional parameters defaulted to a bare, untyped `NA` (R's logical `NA`) rather than the column's own type (`NA_integer_`, `NA_real_`, `NA_character_`). RSQLite coerces this silently; RMariaDB does not treat a logical `NA` bound to a non-logical column the same way as a properly typed one, which is a documented source of crashes rather than a catchable error. Most notably, `episodic_db_detection_insert()`'s `cluster_id` - untyped, and hit on every single detection insert in every run, since a detection is always written before a cluster is attached to it - now defaults to `NA_integer_`
 
+
 # EpiSODIC 0.8.1
 
 ## Changed
 
 - `episodic_run_cron(debug = TRUE)` traces every sub-step inside a stream's own reconciliation (triangle update, MEM/Farrington detection, baseline exclusion, population vector, trend caching, detection insert, and each reconciliation candidate's priority-score components) instead of only the stream as a whole - narrows a crash or a stall down to the exact call inside a single stream's processing, not just which stream
+
 
 # EpiSODIC 0.8.0
 
@@ -176,6 +201,7 @@
 - Geography map charts drop their fill legend (redundant with the on-map count labels) so the render height computed for the map's own aspect ratio is not shortened by legend space, removing the whitespace above/below the map
 - `.shiny-plot-output` centres its contents vertically and horizontally; the geo-panel map group centres horizontally as well
 
+
 # EpiSODIC 0.7.0
 
 This release includes a database schema migration (`episodic_case` gains
@@ -190,6 +216,7 @@ recreated or migrated before running against this version.
 ## Changed
 
 - `episodic_db_case_insert_new()` batches its existence check and insert into chunked round trips instead of one query pair per row, a large speedup for larger imports
+
 
 # EpiSODIC 0.6.*
 
@@ -211,6 +238,7 @@ recreated or migrated before running against this version.
 
 - Modal close buttons (dead under Bootstrap 5)
 - Several Shiny performance issues in the rail and colour palette
+
 
 # EpiSODIC 0.5.*
 
@@ -259,6 +287,7 @@ recreated or migrated before running against this version.
 - `episodic_detect_same_place()` no longer hardcodes `care_line = NA` on every stream it creates or upserts - it is the detector responsible for the institution-level streams (LTC, out-of-hours, general practice) that lattice enumeration never creates on its own, and for hospital ward-level streams, so this had silently hidden the care line on almost every stream capable of showing one
 - Logo no longer shows an opaque white background outside the hexagon
 
+
 # EpiSODIC 0.4.0
 
 ## Changed
@@ -283,6 +312,7 @@ recreated or migrated before running against this version.
 
 - Institution activity rows with unmatched keys no longer silently dropped
 - Missing translations for `running`/`partial` run statuses added in all languages
+
 
 # EpiSODIC 0.3.1
 
@@ -324,12 +354,14 @@ recreated or migrated before running against this version.
 - Top navigation now follows links out of the Pathogen screen
 - Pathogen picker's count now labelled as an all-time case count
 
+
 # EpiSODIC 0.3.0
 
 ## New
 
 - Dashboard translated into Spanish, French, German, Mandarin, Hindi and Arabic, alongside Dutch and English
 - `EPISODIC_LANGUAGE` sets the default language, falling back to English
+
 
 # EpiSODIC 0.2.0
 
@@ -343,6 +375,7 @@ recreated or migrated before running against this version.
 - `EPISODIC_DB` accepts a `mysql://` DSN for MariaDB/MySQL
 - Package version shown in the app header
 - README screenshots now ship in `man/figures/`
+
 
 # EpiSODIC 0.1.0
 

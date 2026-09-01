@@ -181,8 +181,7 @@ episodic_app_settings_build_notifications <- function(input, existing) {
     for (f in specs[[ch]]$fields) {
       id <- episodic_settings_field_id(ch, f$key)
       raw <- input[[id]]
-      value <- switch(
-        f$type,
+      value <- switch(f$type,
         checkbox = isTRUE(raw),
         number = {
           v <- suppressWarnings(as.numeric(raw))
@@ -245,14 +244,13 @@ episodic_app_settings_build_notifications <- function(input, existing) {
 #' @keywords internal
 #' @noRd
 episodic_app_server_settings <- function(
-  input,
-  output,
-  session,
-  con,
-  db_path,
-  lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  current_user
-) {
+    input,
+    output,
+    session,
+    con,
+    db_path,
+    lang = Sys.getenv("EPISODIC_LANGUAGE"),
+    current_user) {
   settings_message <- shiny::reactiveVal(NULL)
   settings_version <- shiny::reactiveVal(0)
   settings_touch <- function() settings_version(settings_version() + 1)

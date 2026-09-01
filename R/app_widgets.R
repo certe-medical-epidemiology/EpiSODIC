@@ -137,11 +137,10 @@ episodic_ui_picker <- function(input_id, options, selected = NULL) {
 #' @keywords internal
 #' @noRd
 episodic_ui_multi_picker <- function(
-  input_id,
-  options,
-  selected = character(0),
-  all_label = "All"
-) {
+    input_id,
+    options,
+    selected = character(0),
+    all_label = "All") {
   pal <- episodic_palette()
   active_style <- sprintf(
     "background:%s;border-color:%s;color:#fff;",
@@ -225,11 +224,10 @@ episodic_ui_chip <- function(text, colour, filled = FALSE) {
 #' @keywords internal
 #' @noRd
 episodic_ui_chip_link <- function(
-  text,
-  colour,
-  cluster_id,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    text,
+    colour,
+    cluster_id,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   open_js <- sprintf(
     "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
     as.integer(cluster_id)
@@ -432,10 +430,9 @@ episodic_ui_pyramid <- function(demo, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @keywords internal
 #' @noRd
 episodic_ui_cluster_link_row <- function(
-  cluster_id,
-  lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  ...
-) {
+    cluster_id,
+    lang = Sys.getenv("EPISODIC_LANGUAGE"),
+    ...) {
   open_js <- sprintf(
     "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
     as.integer(cluster_id)
@@ -475,8 +472,7 @@ episodic_ui_state_dot <- function(state) {
 #' @noRd
 episodic_ui_state_colour <- function(state) {
   pal <- episodic_palette()
-  switch(
-    state,
+  switch(state,
     new = pal$primary_light,
     assessing = pal$primary,
     monitoring = pal$danger,
@@ -501,8 +497,7 @@ episodic_ui_state_colour <- function(state) {
 #' @noRd
 episodic_ui_care_line_colour <- function(care_line) {
   pal <- episodic_palette()
-  switch(
-    care_line,
+  switch(care_line,
     first = pal$primary,
     second = pal$tertiary,
     third = pal$secondary,
@@ -517,8 +512,7 @@ episodic_ui_care_line_colour <- function(care_line) {
 #' @noRd
 episodic_ui_verdict_colour <- function(verdict) {
   pal <- episodic_palette()
-  switch(
-    verdict,
+  switch(verdict,
     artefact = pal$muted,
     expected_variation = pal$muted,
     cluster_not_yet = pal$success_dark,
@@ -569,10 +563,9 @@ episodic_verdict_outbreak_levels <- c("pathogen_ward", "pathogen_institution")
 #' @keywords internal
 #' @noRd
 episodic_verdict_label <- function(
-  verdict,
-  level = NULL,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+    verdict,
+    level = NULL,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (is.na(verdict)) {
     return(NA_character_)
   }

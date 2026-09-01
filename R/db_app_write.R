@@ -47,17 +47,16 @@
 #' @keywords internal
 #' @noRd
 episodic_db_assessment_event_insert <- function(
-  con,
-  cluster_id,
-  user_id,
-  verdict = NA,
-  rationale = "",
-  wpg_notifiable = NA,
-  ggd_informed = NA,
-  ggd_note = NA,
-  snooze_until = NA,
-  supersedes = NA
-) {
+    con,
+    cluster_id,
+    user_id,
+    verdict = NA,
+    rationale = "",
+    wpg_notifiable = NA,
+    ggd_informed = NA,
+    ggd_note = NA,
+    snooze_until = NA,
+    supersedes = NA) {
   # Optional: `rationale` is free text, not a required justification - the
   # column stays NOT NULL (inst/sql/schema.sql), so a blank rationale is
   # stored as "" rather than NULL.
@@ -92,14 +91,13 @@ episodic_db_assessment_event_insert <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_stream_mute_insert <- function(
-  con,
-  stream_id,
-  muted_from,
-  muted_until,
-  reason,
-  note = NA,
-  user_id
-) {
+    con,
+    stream_id,
+    muted_from,
+    muted_until,
+    reason,
+    note = NA,
+    user_id) {
   params <- list(
     stream_id,
     muted_from,
@@ -122,13 +120,12 @@ episodic_db_stream_mute_insert <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_state_insert <- function(
-  con,
-  cluster_id,
-  state,
-  trigger,
-  event_id = NA,
-  user_id = NA
-) {
+    con,
+    cluster_id,
+    state,
+    trigger,
+    event_id = NA,
+    user_id = NA) {
   params <- list(cluster_id, state, episodic_now(), trigger, event_id, user_id)
   DBI::dbExecute(
     con,
@@ -142,15 +139,14 @@ episodic_db_cluster_state_insert <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_report_render_insert <- function(
-  con,
-  cluster_id,
-  user_id = NA,
-  file_path,
-  file_sha256,
-  params_json,
-  case_ids_json,
-  version_no
-) {
+    con,
+    cluster_id,
+    user_id = NA,
+    file_path,
+    file_sha256,
+    params_json,
+    case_ids_json,
+    version_no) {
   params <- list(
     cluster_id,
     user_id,
@@ -174,14 +170,13 @@ episodic_db_report_render_insert <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_app_user_insert <- function(
-  con,
-  username,
-  full_name,
-  email,
-  password_hash,
-  role = "epidemiologist",
-  is_admin = FALSE
-) {
+    con,
+    username,
+    full_name,
+    email,
+    password_hash,
+    role = "epidemiologist",
+    is_admin = FALSE) {
   params <- list(
     username,
     full_name,
@@ -204,15 +199,14 @@ episodic_db_app_user_insert <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_app_user_event_insert <- function(
-  con,
-  user_id,
-  event_type,
-  actor_user_id = NA,
-  password_hash = NA,
-  new_role = NA,
-  new_is_admin = NA,
-  new_is_active = NA
-) {
+    con,
+    user_id,
+    event_type,
+    actor_user_id = NA,
+    password_hash = NA,
+    new_role = NA,
+    new_is_admin = NA,
+    new_is_active = NA) {
   params <- list(
     user_id,
     episodic_now(),
@@ -236,12 +230,11 @@ episodic_db_app_user_event_insert <- function(
 #' @keywords internal
 #' @noRd
 episodic_db_app_config_event_insert <- function(
-  con,
-  user_id,
-  section,
-  config_json,
-  note = NA
-) {
+    con,
+    user_id,
+    section,
+    config_json,
+    note = NA) {
   section <- match.arg(section, c("notifications"))
   params <- list(user_id, episodic_now(), section, config_json, note)
   DBI::dbExecute(
