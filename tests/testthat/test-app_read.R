@@ -17,6 +17,54 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
+test_that("episodic_app_format_region() tidies punctuation without the raw code by default", {
+  expect_equal(episodic_app_format_region("PROV_GRONINGEN"), "Prov Groningen")
+  expect_equal(episodic_app_format_region(NA_character_), "")
+})
+
+test_that("episodic_app_format_region(with_code = TRUE) appends the raw code when it differs", {
+  expect_equal(
+    episodic_app_format_region("PROV_GRONINGEN", with_code = TRUE),
+    "Prov Groningen (PROV_GRONINGEN)"
+  )
+  expect_equal(
+    episodic_app_format_region("NORTHERN_NETHERLANDS", with_code = TRUE),
+    "Northern Netherlands (NORTHERN_NETHERLANDS)"
+  )
+})
+
+test_that("episodic_app_format_region(with_code = TRUE) does not repeat a code that already reads as the label", {
+  expect_equal(
+    episodic_app_format_region("Groningen", with_code = TRUE),
+    "Groningen"
+  )
+})
+
+test_that("episodic_app_place_label() shows the raw region_code for area/province/region streams", {
+  stream <- list(
+    level = "pathogen_province",
+    care_line = NA,
+    region_code = "PROV_GRONINGEN"
+  )
+  expect_equal(
+    episodic_app_place_label(stream, NULL, lang = "en"),
+    "Prov Groningen (PROV_GRONINGEN)"
+  )
+})
+
+test_that("episodic_app_place_label() does not touch ward/institution labels with a code", {
+  stream <- list(
+    level = "pathogen_institution",
+    care_line = NA,
+    region_code = NA_character_
+  )
+  institution <- list(display_name = "Hospital A")
+  expect_equal(
+    episodic_app_place_label(stream, institution, lang = "en"),
+    "Hospital A"
+  )
+})
+
 test_that("episodic_app_open_clusters() lists the cluster with derived state new", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))

@@ -495,7 +495,7 @@ episodic_app_place_label <- function(
   if (stream$level == "pathogen_institution" && !is.null(institution)) {
     return(institution$display_name)
   }
-  region_label <- episodic_app_format_region(stream$region_code)
+  region_label <- episodic_app_format_region(stream$region_code, with_code = TRUE)
   paste0(region_label, care_line_suffix)
 }
 
@@ -503,18 +503,37 @@ episodic_app_place_label <- function(
 #'
 #' `region_code` values (`"GEBIED-97"`, `"PROV_GRONINGEN"`,
 #' `"NORTHERN_NETHERLANDS"`) are internal synthetic-demo constructs, not real
-#' place names; a real deployment resolves proper Gebied/Provincie naming
-#' from its own operator-supplied region reference data (see
-#' `R/lattice_enumerate.R`). This only tidies punctuation so the demo is
-#' legible in the meantime.
+#' place names; a real deployment resolves proper area/province/region
+#' naming from its own operator-supplied region reference data (see
+#' `R/lattice_enumerate.R`). This tidies punctuation so the demo is legible
+#' in the meantime.
+#'
+#' At `pathogen_area`/`pathogen_province` level, `region_code` is also the
+#' value an operator's own `EPISODIC_PC_PROVINCE_MAP` resolved a postcode
+#' to (see `episodic_pc_to_province()`). There is otherwise nowhere on the
+#' dashboard to see whether that mapping produced the code the operator
+#' expects, so `with_code = TRUE` appends the raw code in parentheses
+#' whenever it differs from the tidied label - a quick way to confirm the
+#' map is doing what it should.
+#'
+#' @param region_code A stream's `region_code`, or `NA`.
+#' @param with_code If `TRUE`, append the untouched `region_code` in
+#'   parentheses when it is not already what the tidied label shows.
 #' @keywords internal
 #' @noRd
-episodic_app_format_region <- function(region_code) {
-  if (is.na(region_code)) {
+episodic_app_format_region <- function(region_code, with_code = FALSE) {
+  if (is.na(region_code) || !nzchar(region_code)) {
     return("")
   }
   label <- gsub("[_-]", " ", region_code)
-  tools::toTitleCase(tolower(label))
+  label <- tools::toTitleCase(tolower(label))
+  if (!with_code) {
+    return(label)
+  }
+  if (identical(tolower(label), tolower(region_code))) {
+    return(label)
+  }
+  paste0(label, " (", region_code, ")")
 }
 
 #' @param debug If `TRUE`, print the exact SQL and bound parameters for

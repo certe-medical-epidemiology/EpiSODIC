@@ -1,5 +1,9 @@
 # EpiSODIC 0.10.3
 
+## Changed
+
+- The dashboard's area/province/region place label now appends the raw `region_code` in parentheses whenever it differs from the tidied label, so an operator can see at a glance whether `EPISODIC_PC_PROVINCE_MAP` resolved the code they expected
+
 ## Fixed
 
 - Email/notification messages for new clusters and run failures are now rendered in `EPISODIC_LANGUAGE`, in all 8 shipped languages, instead of always in English
