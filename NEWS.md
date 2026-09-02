@@ -1,8 +1,11 @@
-# EpiSODIC 0.10.1
+# EpiSODIC 0.10.2
 
 ## New
 
 - `microsoft365` notifications can now reuse an already-cached Azure AD login (e.g. one obtained via `Microsoft365R::get_business_outlook()` or `episodic_setup_microsoft365()`) by tenant, with no `client_id`, `client_secret`, or `from` required
+
+
+# EpiSODIC 0.10.1
 
 ## Fixed
 
