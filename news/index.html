@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,21 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.10.3" id="episodic-0103">EpiSODIC 0.10.3<a class="anchor" aria-label="anchor" href="#episodic-0103"></a></h2>
+<div class="section level3">
+<h3 id="changed-0-10-3">Changed<a class="anchor" aria-label="anchor" href="#changed-0-10-3"></a></h3>
+<ul><li>The dashboard’s area/province/region place label now shows <code>region_code</code> verbatim instead of cosmetically reformatting it, so an operator can see at a glance, character for character, whether <code>EPISODIC_PC_PROVINCE_MAP</code> resolved the code they expected, without risking a mangled real place name (e.g. the hyphen in “Noord-Holland”)</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-10-3">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-10-3"></a></h3>
+<ul><li>Email/notification messages for new clusters and run failures are now rendered in <code>EPISODIC_LANGUAGE</code>, in all 8 shipped languages, instead of always in English</li>
+<li>The new-clusters email’s Cases, Expected, Ratio, Priority, and Period columns are now horizontally centred, and the Period column is formatted the same way the dashboard formats date ranges</li>
+<li>
+<code>microsoft365</code> notifications under the cached-login flow (Option C) now honour <code>from</code>: when set, mail is sent from that mailbox via <code>Microsoft365R::get_business_outlook(shared_mbox_email = from)</code> instead of always sending as the signed-in account</li>
+<li>Fixed a <code>grepl(..., ignore.case = TRUE, fixed = TRUE)</code> warning when matching a Microsoft 365 tenant against cached Azure AD logins; the match is now done case-insensitively without triggering the warning</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.10.2" id="episodic-0102">EpiSODIC 0.10.2<a class="anchor" aria-label="anchor" href="#episodic-0102"></a></h2>
 <div class="section level3">

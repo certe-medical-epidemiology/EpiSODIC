@@ -214,8 +214,8 @@ shared login on this server, for example by running
 [`Microsoft365R::get_business_outlook()`](https://rdrr.io/pkg/Microsoft365R/man/client.html)
 interactively for other purposes, or by running
 [`episodic_setup_microsoft365()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_setup_microsoft365.md)
-once as in Option B, you do not need to configure `client_id`,
-`client_secret`, or `from` at all. Omit `client_id` and
+once as in Option B, you do not need to configure `client_id` or
+`client_secret` at all. Omit `client_id` and
 `episodic_notify_microsoft365()` will look up whichever cached Azure AD
 token it finds for the configured `tenant_id` in
 [`AzureAuth::AzureR_dir()`](https://rdrr.io/pkg/AzureAuth/man/AzureR_dir.html)
@@ -226,12 +226,25 @@ name (e.g. `"contoso"`), the full tenant domain
 (`"contoso.onmicrosoft.com"`), or the tenant GUID; it is matched against
 each cached login’s tenant.
 
+`from` is optional here. Leave it out and mail is sent from the mailbox
+of whoever is signed in on the cached token. Set it to send from a
+different mailbox instead (a shared or departmental mailbox, for
+example): `episodic_notify_microsoft365()` then opens that mailbox with
+`Microsoft365R::get_business_outlook(shared_mbox_email = from)`, which
+requires the signed-in account to hold **Send As** or **Send on Behalf**
+permission on it. Whether the cached token’s account actually has that
+permission is between your organisation and Azure AD; if it does not,
+sending fails with a permissions error from the Graph API, not from
+EpiSODIC.
+
 ``` yaml
     microsoft365:
       enabled: true
       tenant_id: "contoso"
-      # client_id, client_secret and from are not needed: an already
-      # cached Azure AD token for this tenant will be reused
+      from: "team-alerts@example.org"  # optional: a shared mailbox the
+                                        # signed-in account may send as
+      # client_id and client_secret are not needed: an already cached
+      # Azure AD token for this tenant will be reused
       to:
         - "team-lead@example.org"
 ```

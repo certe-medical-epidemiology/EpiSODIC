@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -296,9 +296,8 @@ needed)<a class="anchor" aria-label="anchor" href="#option-c-reuse-an-already-ca
 through a shared login on this server, for example by running
 <code><a href="https://rdrr.io/pkg/Microsoft365R/man/client.html" class="external-link">Microsoft365R::get_business_outlook()</a></code> interactively for
 other purposes, or by running <code><a href="../reference/episodic_setup_microsoft365.html">episodic_setup_microsoft365()</a></code>
-once as in Option B, you do not need to configure
-<code>client_id</code>, <code>client_secret</code>, or <code>from</code>
-at all. Omit <code>client_id</code> and
+once as in Option B, you do not need to configure <code>client_id</code>
+or <code>client_secret</code> at all. Omit <code>client_id</code> and
 <code>episodic_notify_microsoft365()</code> will look up whichever
 cached Azure AD token it finds for the configured <code>tenant_id</code>
 in <code><a href="https://rdrr.io/pkg/AzureAuth/man/AzureR_dir.html" class="external-link">AzureAuth::AzureR_dir()</a></code> (by default
@@ -308,13 +307,26 @@ without ever starting a new interactive login. <code>tenant_id</code>
 can be the short tenant name (e.g. <code>"contoso"</code>), the full
 tenant domain (<code>"contoso.onmicrosoft.com"</code>), or the tenant
 GUID; it is matched against each cached login’s tenant.</p>
+<p><code>from</code> is optional here. Leave it out and mail is sent
+from the mailbox of whoever is signed in on the cached token. Set it to
+send from a different mailbox instead (a shared or departmental mailbox,
+for example): <code>episodic_notify_microsoft365()</code> then opens
+that mailbox with
+<code>Microsoft365R::get_business_outlook(shared_mbox_email = from)</code>,
+which requires the signed-in account to hold <strong>Send As</strong> or
+<strong>Send on Behalf</strong> permission on it. Whether the cached
+token’s account actually has that permission is between your
+organisation and Azure AD; if it does not, sending fails with a
+permissions error from the Graph API, not from EpiSODIC.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="at">    </span><span class="fu">microsoft365</span><span class="kw">:</span></span>
 <span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
 <span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="at">      </span><span class="fu">tenant_id</span><span class="kw">:</span><span class="at"> </span><span class="st">"contoso"</span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">      # client_id, client_secret and from are not needed: an already</span></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">      # cached Azure AD token for this tenant will be reused</span></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="at">      </span><span class="fu">to</span><span class="kw">:</span></span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="at">        </span><span class="kw">-</span><span class="at"> </span><span class="st">"team-lead@example.org"</span></span></code></pre></div>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="at">      </span><span class="fu">from</span><span class="kw">:</span><span class="at"> </span><span class="st">"team-alerts@example.org"</span><span class="co">  # optional: a shared mailbox the</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">                                        # signed-in account may send as</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">      # client_id and client_secret are not needed: an already cached</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">      # Azure AD token for this tenant will be reused</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="at">      </span><span class="fu">to</span><span class="kw">:</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="at">        </span><span class="kw">-</span><span class="at"> </span><span class="st">"team-lead@example.org"</span></span></code></pre></div>
 <p>If no cached token is found for the tenant, sending fails loudly with
 an error naming the tenant and the directory searched, rather than
 starting a new interactive login (which would hang an unattended cron
