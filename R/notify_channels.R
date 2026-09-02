@@ -157,6 +157,50 @@ episodic_notify_sendmail <- function(channel, message) {
   invisible(NULL)
 }
 
+#' Find a cached Azure AD token for a tenant
+#'
+#' Looks up a Microsoft Graph login already cached on disk (by
+#' [AzureGraph::create_graph_login()], `Microsoft365R::get_business_outlook()`,
+#' or [episodic_setup_microsoft365()]) instead of starting a new interactive
+#' or client-credentials login. This is how a laboratory that authenticates
+#' its staff via a shared department login (rather than a per-app client
+#' secret) can reuse that already-cached token for unattended sending: as
+#' long as a valid token for the configured `tenant_id` exists in
+#' `AzureGraph::AzureR_dir()` (overridable via the `R_AZURE_DATA_DIR`
+#' environment variable), no `client_id` or `client_secret` is needed at
+#' all. Matching is done against each cached login's tenant, allowing a
+#' short tenant name (e.g. `"contoso"`) to match a full tenant domain
+#' (`"contoso.onmicrosoft.com"`) or GUID.
+#' @keywords internal
+#' @noRd
+episodic_notify_microsoft365_cached_token <- function(tenant_id) {
+  logins <- unlist(AzureGraph::list_graph_logins(), recursive = FALSE)
+  matches <- Filter(
+    function(login) {
+      login_tenant <- tryCatch(login$tenant, error = function(e) NULL)
+      !is.null(login_tenant) &&
+        nzchar(login_tenant) &&
+        (grepl(tenant_id, login_tenant, ignore.case = TRUE, fixed = TRUE) ||
+          grepl(login_tenant, tenant_id, ignore.case = TRUE, fixed = TRUE))
+    },
+    logins
+  )
+  if (length(matches) == 0) {
+    stop(
+      "microsoft365: no cached Azure AD token found for tenant '",
+      tenant_id,
+      "' in ",
+      AzureGraph::AzureR_dir(),
+      ". Sign in once with episodic_setup_microsoft365(tenant_id = \"",
+      tenant_id,
+      "\") (or Microsoft365R::get_business_outlook()) on this server, ",
+      "or configure 'client_secret' for unattended app-only access.",
+      call. = FALSE
+    )
+  }
+  matches[[1]]$token
+}
+
 #' Send via Microsoft 365 (Graph API)
 #' @keywords internal
 #' @noRd
@@ -171,6 +215,8 @@ episodic_notify_microsoft365 <- function(channel, message) {
   to <- channel$to
 
   if (!is.null(client_secret) && nzchar(client_secret %||% "")) {
+    # app-only (client credentials): the app registration itself sends,
+    # so the mailbox to send from must be named explicitly.
     args <- list(
       tenant = tenant_id,
       auth_type = "client_credentials",
@@ -182,12 +228,17 @@ episodic_notify_microsoft365 <- function(channel, message) {
     gr <- do.call(AzureGraph::create_graph_login, args)
     user <- gr$get_user(from)
     outl <- user$get_outlook()
+  } else if (!is.null(client_id) && nzchar(client_id %||% "")) {
+    # delegated, own app registration: reuses a cached login for this
+    # tenant/app/scopes combination, or starts an interactive login.
+    outl <- Microsoft365R::get_business_outlook(tenant = tenant_id, app = client_id)
   } else {
-    args <- list(tenant = tenant_id)
-    if (!is.null(client_id) && nzchar(client_id %||% "")) {
-      args$app <- client_id
-    }
-    outl <- do.call(Microsoft365R::get_business_outlook, args)
+    # delegated, no app registration configured: reuse whatever Azure AD
+    # login is already cached on disk for this tenant (e.g. a token
+    # obtained by staff signing in through Microsoft365R for other
+    # purposes). Never starts a new interactive login.
+    token <- episodic_notify_microsoft365_cached_token(tenant_id)
+    outl <- Microsoft365R::get_business_outlook(tenant = tenant_id, token = token)
   }
 
   email <- outl$create_email(

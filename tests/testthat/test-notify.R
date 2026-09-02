@@ -262,8 +262,70 @@ test_that("episodic_notify_validate_config() reports missing Microsoft 365 field
   )
   problems <- episodic_notify_validate_config(config)
   expect_true(any(grepl("microsoft365: tenant_id", problems)))
-  expect_true(any(grepl("microsoft365: from", problems)))
   expect_true(any(grepl("microsoft365:.*recipient", problems)))
+  # 'from' is only required for the client_secret (app-only) flow, not for
+  # the delegated/cached-token flow
+  expect_false(any(grepl("microsoft365: from", problems)))
+})
+
+test_that("episodic_notify_validate_config() requires 'from' only with client_secret", {
+  config <- list(
+    notifications = list(
+      enabled = TRUE,
+      channels = list(
+        microsoft365 = list(
+          enabled = TRUE,
+          tenant_id = "contoso",
+          client_secret = "s3cr3t",
+          to = "team-lead@example.org"
+        )
+      )
+    )
+  )
+  problems <- episodic_notify_validate_config(config)
+  expect_true(any(grepl("microsoft365: from", problems)))
+})
+
+test_that("episodic_notify_validate_config() does not require 'from' without client_secret", {
+  config <- list(
+    notifications = list(
+      enabled = TRUE,
+      channels = list(
+        microsoft365 = list(
+          enabled = TRUE,
+          tenant_id = "contoso",
+          to = "team-lead@example.org"
+        )
+      )
+    )
+  )
+  problems <- episodic_notify_validate_config(config)
+  expect_false(any(grepl("microsoft365: from", problems)))
+})
+
+test_that("episodic_notify_microsoft365_cached_token() errors loudly when nothing is cached", {
+  testthat::skip_if_not_installed("AzureGraph")
+  local_mocked_bindings(
+    list_graph_logins = function() list(),
+    .package = "AzureGraph"
+  )
+  expect_error(
+    episodic_notify_microsoft365_cached_token("contoso"),
+    "no cached Azure AD token found for tenant 'contoso'"
+  )
+})
+
+test_that("episodic_notify_microsoft365_cached_token() matches on a substring of the tenant", {
+  testthat::skip_if_not_installed("AzureGraph")
+  fake_login <- list(tenant = "contoso.onmicrosoft.com", token = "the-token")
+  local_mocked_bindings(
+    list_graph_logins = function() list(contoso = list(hash1 = fake_login)),
+    .package = "AzureGraph"
+  )
+  expect_identical(
+    episodic_notify_microsoft365_cached_token("contoso"),
+    "the-token"
+  )
 })
 
 test_that("episodic_notify_teams_card() produces valid JSON", {

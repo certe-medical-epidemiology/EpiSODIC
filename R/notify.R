@@ -613,11 +613,18 @@ episodic_notify_validate_config <- function(config) {
     ) {
       problems <- c(problems, "microsoft365: tenant_id is required")
     }
+    has_client_secret <-
+      !is.null(channels$microsoft365$client_secret) &&
+        nzchar(channels$microsoft365$client_secret %||% "")
     if (
-      is.null(channels$microsoft365$from) ||
-        !nzchar(channels$microsoft365$from %||% "")
+      has_client_secret &&
+        (is.null(channels$microsoft365$from) ||
+          !nzchar(channels$microsoft365$from %||% ""))
     ) {
-      problems <- c(problems, "microsoft365: from is required")
+      problems <- c(
+        problems,
+        "microsoft365: from is required when client_secret is set (application permissions)"
+      )
     }
     to <- channels$microsoft365$to
     if (is.null(to) || length(to) == 0) {
@@ -794,6 +801,15 @@ episodic_notify_test <- function(
 #' application-level (daemon) access, put the `client_secret` in the
 #' instance YAML instead and skip this function entirely: the cron will
 #' use the client-credentials flow directly.
+#'
+#' If your staff already authenticate to Microsoft 365 through a shared
+#' login on this server (for example by having called
+#' `Microsoft365R::get_business_outlook()` interactively at some point, or
+#' by running this function once), you can skip `client_id` entirely in
+#' the instance YAML: `episodic_notify_microsoft365()` will reuse whatever
+#' cached Azure AD token it finds for the configured `tenant_id` in
+#' `AzureGraph::AzureR_dir()`, without any client ID, client secret, or new
+#' interactive login.
 #'
 #' @param tenant_id Your Azure AD tenant ID.
 #' @param client_id Your Azure AD app registration's client ID. If

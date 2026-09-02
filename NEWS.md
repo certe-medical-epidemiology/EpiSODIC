@@ -1,5 +1,9 @@
 # EpiSODIC 0.10.1
 
+## New
+
+- `microsoft365` notifications can now reuse an already-cached Azure AD login (e.g. one obtained via `Microsoft365R::get_business_outlook()` or `episodic_setup_microsoft365()`) by tenant, with no `client_id`, `client_secret`, or `from` required
+
 ## Fixed
 
 - `episodic_demo()`'s startup message once again mentions "demo account", after an unrelated styling commit reworded it away from that phrase
