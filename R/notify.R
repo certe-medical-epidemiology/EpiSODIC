@@ -613,11 +613,18 @@ episodic_notify_validate_config <- function(config) {
     ) {
       problems <- c(problems, "microsoft365: tenant_id is required")
     }
+    has_client_secret <-
+      !is.null(channels$microsoft365$client_secret) &&
+        nzchar(channels$microsoft365$client_secret %||% "")
     if (
-      is.null(channels$microsoft365$from) ||
-        !nzchar(channels$microsoft365$from %||% "")
+      has_client_secret &&
+        (is.null(channels$microsoft365$from) ||
+          !nzchar(channels$microsoft365$from %||% ""))
     ) {
-      problems <- c(problems, "microsoft365: from is required")
+      problems <- c(
+        problems,
+        "microsoft365: from is required when client_secret is set (application permissions)"
+      )
     }
     to <- channels$microsoft365$to
     if (is.null(to) || length(to) == 0) {
@@ -795,6 +802,15 @@ episodic_notify_test <- function(
 #' instance YAML instead and skip this function entirely: the cron will
 #' use the client-credentials flow directly.
 #'
+#' If your staff already authenticate to Microsoft 365 through a shared
+#' login on this server (for example by having called
+#' `Microsoft365R::get_business_outlook()` interactively at some point, or
+#' by running this function once), you can skip `client_id` entirely in
+#' the instance YAML: `episodic_notify_microsoft365()` will reuse whatever
+#' cached Azure AD token it finds for the configured `tenant_id` in
+#' `AzureAuth::AzureR_dir()`, without any client ID, client secret, or new
+#' interactive login.
+#'
 #' @param tenant_id Your Azure AD tenant ID.
 #' @param client_id Your Azure AD app registration's client ID. If
 #'   `NULL`, uses the Microsoft365R package default.
@@ -811,6 +827,7 @@ episodic_setup_microsoft365 <- function(
     scopes = c("Mail.Send", "User.Read", "openid", "offline_access")) {
   rlang::check_installed("Microsoft365R")
   rlang::check_installed("AzureGraph")
+  rlang::check_installed("AzureAuth")
 
   cli::cli_alert_info(
     "Starting interactive Azure AD login for tenant {tenant_id}..."
@@ -827,7 +844,7 @@ episodic_setup_microsoft365 <- function(
 
   cli::cli_alert_success("Login successful. Token cached for unattended use.")
   cli::cli_alert_info(
-    "The cached token is stored in {AzureGraph::AzureR_dir()}"
+    "The cached token is stored in {AzureAuth::AzureR_dir()}"
   )
 
   invisible(TRUE)

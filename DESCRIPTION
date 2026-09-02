@@ -2,7 +2,7 @@ Package: EpiSODIC
 Type: Package
 Title: Epidemiological Signal Observation, Detection, Identification, and
     Classification
-Version: 0.10.1
+Version: 0.10.2
 Authors@R: c(
     person(given = c("Matthijs", "S."),
            family = "Berends",
@@ -57,6 +57,7 @@ Suggests:
     httr2,
     Microsoft365R,
     AzureGraph,
+    AzureAuth,
     zip
 Config/testthat/edition: 3
 VignetteBuilder: knitr

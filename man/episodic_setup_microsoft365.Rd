@@ -32,6 +32,15 @@ If your Azure AD app registration has a client secret configured for
 application-level (daemon) access, put the \code{client_secret} in the
 instance YAML instead and skip this function entirely: the cron will
 use the client-credentials flow directly.
+
+If your staff already authenticate to Microsoft 365 through a shared
+login on this server (for example by having called
+\code{Microsoft365R::get_business_outlook()} interactively at some point, or
+by running this function once), you can skip \code{client_id} entirely in
+the instance YAML: \code{episodic_notify_microsoft365()} will reuse whatever
+cached Azure AD token it finds for the configured \code{tenant_id} in
+\code{AzureAuth::AzureR_dir()}, without any client ID, client secret, or new
+interactive login.
 }
 \examples{
 \dontrun{
