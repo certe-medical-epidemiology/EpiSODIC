@@ -181,8 +181,8 @@ episodic_notify_microsoft365_cached_token <- function(tenant_id) {
       login_tenant <- tryCatch(login$tenant, error = function(e) NULL)
       !is.null(login_tenant) &&
         nzchar(login_tenant) &&
-        (grepl(tenant_id, login_tenant, ignore.case = TRUE, fixed = TRUE) ||
-          grepl(login_tenant, tenant_id, ignore.case = TRUE, fixed = TRUE))
+        (grepl(tolower(tenant_id), tolower(login_tenant), fixed = TRUE) ||
+          grepl(tolower(login_tenant), tolower(tenant_id), fixed = TRUE))
     },
     logins
   )
@@ -237,9 +237,21 @@ episodic_notify_microsoft365 <- function(channel, message) {
     # delegated, no app registration configured: reuse whatever Azure AD
     # login is already cached on disk for this tenant (e.g. a token
     # obtained by staff signing in through Microsoft365R for other
-    # purposes). Never starts a new interactive login.
+    # purposes). Never starts a new interactive login. If 'from' names a
+    # mailbox other than the signed-in user's own, it is opened as a
+    # shared mailbox; whether the cached token actually carries
+    # permission to send from it is between the operator and Azure AD,
+    # not something this package can check up front.
     token <- episodic_notify_microsoft365_cached_token(tenant_id)
-    outl <- Microsoft365R::get_business_outlook(tenant = tenant_id, token = token)
+    if (!is.null(from) && nzchar(from %||% "")) {
+      outl <- Microsoft365R::get_business_outlook(
+        tenant = tenant_id,
+        token = token,
+        shared_mbox_email = from
+      )
+    } else {
+      outl <- Microsoft365R::get_business_outlook(tenant = tenant_id, token = token)
+    }
   }
 
   email <- outl$create_email(

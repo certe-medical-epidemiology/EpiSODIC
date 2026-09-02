@@ -499,22 +499,27 @@ episodic_app_place_label <- function(
   paste0(region_label, care_line_suffix)
 }
 
-#' Cosmetically format an internal `region_code`
+#' A stream's `region_code`, verbatim
 #'
-#' `region_code` values (`"GEBIED-97"`, `"PROV_GRONINGEN"`,
-#' `"NORTHERN_NETHERLANDS"`) are internal synthetic-demo constructs, not real
-#' place names; a real deployment resolves proper Gebied/Provincie naming
-#' from its own operator-supplied region reference data (see
-#' `R/lattice_enumerate.R`). This only tidies punctuation so the demo is
-#' legible in the meantime.
+#' At `pathogen_area`/`pathogen_province` level, `region_code` is either
+#' the shipped demo's own internal fallback (`"PROV_GRONINGEN"`,
+#' `"NORTHERN_NETHERLANDS"`, see `R/lattice_enumerate.R`) or, in a real
+#' deployment, whatever `province_code` an operator's own
+#' `EPISODIC_PC_PROVINCE_MAP` resolved a postcode to (see
+#' `episodic_pc_to_province()`). It is shown exactly as configured -
+#' cosmetic reformatting would risk mangling a real name (a hyphen in
+#' "Noord-Holland" is part of the name, not a code separator to strip)
+#' and would leave the operator unable to see, character for character,
+#' whether their mapping is producing what they expect.
+#'
+#' @param region_code A stream's `region_code`, or `NA`.
 #' @keywords internal
 #' @noRd
 episodic_app_format_region <- function(region_code) {
-  if (is.na(region_code)) {
+  if (is.na(region_code) || !nzchar(region_code)) {
     return("")
   }
-  label <- gsub("[_-]", " ", region_code)
-  tools::toTitleCase(tolower(label))
+  region_code
 }
 
 #' @param debug If `TRUE`, print the exact SQL and bound parameters for

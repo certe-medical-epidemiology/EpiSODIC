@@ -1,3 +1,17 @@
+# EpiSODIC 0.10.3
+
+## Changed
+
+- The dashboard's area/province/region place label now shows `region_code` verbatim instead of cosmetically reformatting it, so an operator can see at a glance, character for character, whether `EPISODIC_PC_PROVINCE_MAP` resolved the code they expected, without risking a mangled real place name (e.g. the hyphen in "Noord-Holland")
+
+## Fixed
+
+- Email/notification messages for new clusters and run failures are now rendered in `EPISODIC_LANGUAGE`, in all 8 shipped languages, instead of always in English
+- The new-clusters email's Cases, Expected, Ratio, Priority, and Period columns are now horizontally centred, and the Period column is formatted the same way the dashboard formats date ranges
+- `microsoft365` notifications under the cached-login flow (Option C) now honour `from`: when set, mail is sent from that mailbox via `Microsoft365R::get_business_outlook(shared_mbox_email = from)` instead of always sending as the signed-in account
+- Fixed a `grepl(..., ignore.case = TRUE, fixed = TRUE)` warning when matching a Microsoft 365 tenant against cached Azure AD logins; the match is now done case-insensitively without triggering the warning
+
+
 # EpiSODIC 0.10.2
 
 ## New

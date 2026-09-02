@@ -163,6 +163,115 @@ test_that("episodic_notify_build_failure() produces all message formats", {
   expect_match(msg$slack_text, "`bad data`")
 })
 
+test_that("episodic_notify_build_new_clusters() renders the Period column like the app", {
+  details <- data.frame(
+    cluster_id = 1L,
+    pathogen = "MRSA",
+    level = "pathogen_institution",
+    institution_name = "Hospital A",
+    ward = NA_character_,
+    region_code = NA_character_,
+    n_cases = 5L,
+    expected = 1.2,
+    excess = 3.8,
+    ratio = 4.2,
+    priority_score = 72.3,
+    detector_agreement = 2L,
+    first_day = "2026-08-01",
+    last_day = "2026-08-15",
+    stringsAsFactors = FALSE
+  )
+  msg <- episodic_notify_build_new_clusters(details, 1L, "2026-08-15", NULL)
+  expected_period <- episodic_format_date_range(
+    "2026-08-01",
+    "2026-08-15",
+    lang = "en"
+  )
+  expect_match(msg$html, expected_period, fixed = TRUE)
+  expect_match(msg$plain, expected_period, fixed = TRUE)
+})
+
+test_that("episodic_notify_build_new_clusters() centre-aligns Cases through Period", {
+  details <- data.frame(
+    cluster_id = 1L,
+    pathogen = "MRSA",
+    level = "pathogen_institution",
+    institution_name = "Hospital A",
+    ward = NA_character_,
+    region_code = NA_character_,
+    n_cases = 5L,
+    expected = 1.2,
+    excess = 3.8,
+    ratio = 4.2,
+    priority_score = 72.3,
+    detector_agreement = 2L,
+    first_day = "2026-08-01",
+    last_day = "2026-08-15",
+    stringsAsFactors = FALSE
+  )
+  msg <- episodic_notify_build_new_clusters(details, 1L, "2026-08-15", NULL)
+  header <- sub(
+    ".*(<tr style='background:#f0f0f0'>.*?</tr>).*",
+    "\\1",
+    msg$html,
+    perl = TRUE
+  )
+  expect_equal(lengths(regmatches(header, gregexpr("text-align:left", header))), 2)
+  expect_equal(lengths(regmatches(header, gregexpr("text-align:center", header))), 5)
+  row <- sub(".*(<tr>.*?</tr>).*", "\\1", msg$html, perl = TRUE)
+  expect_equal(lengths(regmatches(row, gregexpr("text-align:center", row))), 5)
+})
+
+test_that("episodic_notify_build_new_clusters() and episodic_notify_build_failure() honour lang", {
+  details <- data.frame(
+    cluster_id = 1L,
+    pathogen = "MRSA",
+    level = "pathogen_institution",
+    institution_name = "Hospital A",
+    ward = NA_character_,
+    region_code = NA_character_,
+    n_cases = 5L,
+    expected = 1.2,
+    excess = 3.8,
+    ratio = 4.2,
+    priority_score = 72.3,
+    detector_agreement = 2L,
+    first_day = "2026-08-01",
+    last_day = "2026-08-15",
+    stringsAsFactors = FALSE
+  )
+  msg_nl <- episodic_notify_build_new_clusters(
+    details,
+    1L,
+    "2026-08-15",
+    NULL,
+    lang = "nl"
+  )
+  expect_match(msg_nl$title, "nieuw cluster")
+  expect_match(msg_nl$title, "gedetecteerd")
+  expect_match(msg_nl$html, "Verwekker")
+  expect_match(msg_nl$html, "Prioriteit")
+
+  msg_failed_nl <- episodic_notify_build_failure(
+    "bad data",
+    "2026-08-15",
+    "myhost",
+    lang = "nl"
+  )
+  expect_match(msg_failed_nl$title, "mislukt")
+  expect_match(msg_failed_nl$plain, "Foutmelding")
+})
+
+test_that("episodic_notify_location() translates the level label", {
+  row <- list(
+    institution_name = "",
+    ward = NA,
+    region_code = NA,
+    level = "pathogen_region"
+  )
+  expect_equal(episodic_notify_location(row, lang = "nl"), "regio")
+})
+
 test_that("episodic_notify_build_new_clusters() includes dashboard link when given", {
   details <- data.frame(
     cluster_id = 1L,
@@ -328,6 +437,91 @@ test_that("episodic_notify_microsoft365_cached_token() matches on a substring of
     episodic_notify_microsoft365_cached_token("contoso"),
     "the-token"
   )
+})
+
+test_that("episodic_notify_microsoft365_cached_token() matches the tenant case-insensitively", {
+  testthat::skip_if_not_installed("AzureGraph")
+  testthat::skip_if_not_installed("AzureAuth")
+  fake_login <- list(tenant = "Contoso.OnMicrosoft.com", token = "the-token")
+  local_mocked_bindings(
+    list_graph_logins = function() list(contoso = list(hash1 = fake_login)),
+    .package = "AzureGraph"
+  )
+  expect_identical(
+    episodic_notify_microsoft365_cached_token("CONTOSO"),
+    "the-token"
+  )
+})
+
+test_that("episodic_notify_microsoft365() opens 'from' as a shared mailbox under Option C", {
+  testthat::skip_if_not_installed("Microsoft365R")
+  testthat::skip_if_not_installed("AzureGraph")
+  testthat::skip_if_not_installed("AzureAuth")
+
+  fake_login <- list(tenant = "contoso.onmicrosoft.com", token = "the-token")
+  local_mocked_bindings(
+    list_graph_logins = function() list(contoso = list(hash1 = fake_login)),
+    .package = "AzureGraph"
+  )
+
+  captured <- new.env()
+  fake_outlook <- list(
+    create_email = function(body, content_type, subject, to) {
+      list(send = function() invisible(NULL))
+    }
+  )
+  local_mocked_bindings(
+    get_business_outlook = function(...) {
+      captured$args <- list(...)
+      fake_outlook
+    },
+    .package = "Microsoft365R"
+  )
+
+  episodic_notify_microsoft365(
+    list(
+      tenant_id = "contoso",
+      to = "team-lead@example.org",
+      from = "shared@example.org"
+    ),
+    list(title = "t", html = "<p>x</p>")
+  )
+
+  expect_equal(captured$args$shared_mbox_email, "shared@example.org")
+  expect_equal(captured$args$tenant, "contoso")
+})
+
+test_that("episodic_notify_microsoft365() does not request a shared mailbox when 'from' is unset", {
+  testthat::skip_if_not_installed("Microsoft365R")
+  testthat::skip_if_not_installed("AzureGraph")
+  testthat::skip_if_not_installed("AzureAuth")
+
+  fake_login <- list(tenant = "contoso.onmicrosoft.com", token = "the-token")
+  local_mocked_bindings(
+    list_graph_logins = function() list(contoso = list(hash1 = fake_login)),
+    .package = "AzureGraph"
+  )
+
+  captured <- new.env()
+  fake_outlook <- list(
+    create_email = function(body, content_type, subject, to) {
+      list(send = function() invisible(NULL))
+    }
+  )
+  local_mocked_bindings(
+    get_business_outlook = function(...) {
+      captured$args <- list(...)
+      fake_outlook
+    },
+    .package = "Microsoft365R"
+  )
+
+  episodic_notify_microsoft365(
+    list(tenant_id = "contoso", to = "team-lead@example.org"),
+    list(title = "t", html = "<p>x</p>")
+  )
+
+  expect_false("shared_mbox_email" %in% names(captured$args))
 })
 
 test_that("episodic_notify_teams_card() produces valid JSON", {

@@ -78,6 +78,7 @@ episodic_notify <- function(con, config, result, run_id, run_date, host) {
   }
 
   dashboard_url <- notif$dashboard_url
+  lang <- episodic_lang()
 
   if (trigger_new) {
     cluster_details <- episodic_notify_cluster_details(con, new_cluster_ids)
@@ -85,7 +86,8 @@ episodic_notify <- function(con, config, result, run_id, run_date, host) {
       cluster_details,
       n_new,
       run_date,
-      dashboard_url
+      dashboard_url,
+      lang = lang
     )
     episodic_notify_dispatch(channels, message)
   }
@@ -94,7 +96,8 @@ episodic_notify <- function(con, config, result, run_id, run_date, host) {
     message <- episodic_notify_build_failure(
       result$error_text,
       run_date,
-      host
+      host,
+      lang = lang
     )
     episodic_notify_dispatch(channels, message)
   }
@@ -152,7 +155,7 @@ episodic_notify_cluster_details <- function(con, cluster_ids) {
 #' Describe where a cluster is, from stream fields
 #' @keywords internal
 #' @noRd
-episodic_notify_location <- function(row) {
+episodic_notify_location <- function(row, lang = episodic_lang()) {
   parts <- character(0)
   if (nzchar(row$institution_name %||% "")) {
     parts <- c(parts, row$institution_name)
@@ -163,14 +166,11 @@ episodic_notify_location <- function(row) {
   if (!is.na(row$region_code) && nzchar(row$region_code)) {
     parts <- c(parts, row$region_code)
   }
-  level_label <- switch(row$level,
-    pathogen_ward = "ward",
-    pathogen_institution = "institution",
-    pathogen_area = "area",
-    pathogen_province = "province",
-    pathogen_region = "region",
-    row$level
-  )
+  level_key <- paste0("notif.level.", row$level)
+  level_label <- episodic_tr(level_key, lang = lang)
+  if (identical(level_label, paste0("[[", level_key, "]]"))) {
+    level_label <- row$level
+  }
   if (length(parts) == 0) {
     return(level_label)
   }
@@ -183,6 +183,9 @@ episodic_notify_location <- function(row) {
 #' @param n_new Total number of new signals.
 #' @param run_date The run date.
 #' @param dashboard_url Optional dashboard URL for deep links.
+#' @param lang Language to render the message in. Defaults to
+#'   `EPISODIC_LANGUAGE`, falling back to `"en"`, the same as the
+#'   dashboard.
 #' @return A list with `title`, `plain`, `html`, `teams_card`, `slack_blocks`.
 #' @keywords internal
 #' @noRd
@@ -190,13 +193,18 @@ episodic_notify_build_new_clusters <- function(
     details,
     n_new,
     run_date,
-    dashboard_url = NULL) {
-  title <- paste0(
-    "EpiSODIC: ",
+    dashboard_url = NULL,
+    lang = episodic_lang()) {
+  count_phrase <- episodic_count_phrase(
     n_new,
-    if (n_new == 1) " new cluster" else " new clusters",
-    " detected on ",
-    run_date
+    episodic_tr("notif.new_cluster.singular", lang = lang),
+    episodic_tr("notif.new_cluster.plural", lang = lang)
+  )
+  title <- episodic_tr(
+    "notif.title_new_clusters",
+    count_phrase = count_phrase,
+    date = run_date,
+    lang = lang
   )
 
   max_detail <- 10L
@@ -210,27 +218,32 @@ episodic_notify_build_new_clusters <- function(
 
   for (i in seq_len(nrow(show))) {
     row <- show[i, ]
-    location <- episodic_notify_location(row)
+    location <- episodic_notify_location(row, lang = lang)
     expected_str <- if (is.na(row$expected)) "n/a" else round(row$expected, 1)
     ratio_str <- if (is.na(row$ratio)) "n/a" else round(row$ratio, 1)
-    line <- paste0(
-      row$pathogen,
-      " at ",
-      location,
-      ": ",
-      row$n_cases,
-      " cases",
-      " (expected ",
-      expected_str,
-      ", ratio ",
-      ratio_str,
-      ")",
-      ", priority ",
-      round(row$priority_score, 0),
-      ", ",
+    priority_str <- round(row$priority_score, 0)
+    period_str <- episodic_format_date_range(
       row$first_day,
-      " to ",
-      row$last_day
+      row$last_day,
+      lang = lang
+    )
+    line <- episodic_tr(
+      "notif.cluster_line",
+      pathogen = row$pathogen,
+      location = location,
+      cases = row$n_cases,
+      expected = expected_str,
+      ratio = ratio_str,
+      priority = priority_str,
+      period = period_str,
+      lang = lang
+    )
+    summary_str <- episodic_tr(
+      "notif.cluster_summary",
+      cases = row$n_cases,
+      expected = expected_str,
+      priority = priority_str,
+      lang = lang
     )
     plain_lines <- c(plain_lines, paste0("  - ", line))
     html_rows <- c(
@@ -243,22 +256,20 @@ episodic_notify_build_new_clusters <- function(
         "<td>",
         episodic_html_escape(location),
         "</td>",
-        "<td style='text-align:right'>",
+        "<td style='text-align:center'>",
         row$n_cases,
         "</td>",
-        "<td style='text-align:right'>",
+        "<td style='text-align:center'>",
         expected_str,
         "</td>",
-        "<td style='text-align:right'>",
+        "<td style='text-align:center'>",
         ratio_str,
         "</td>",
-        "<td style='text-align:right'>",
-        round(row$priority_score, 0),
+        "<td style='text-align:center'>",
+        priority_str,
         "</td>",
-        "<td>",
-        row$first_day,
-        " to ",
-        row$last_day,
+        "<td style='text-align:center'>",
+        episodic_html_escape(period_str),
         "</td>",
         "</tr>"
       )
@@ -266,42 +277,24 @@ episodic_notify_build_new_clusters <- function(
     teams_facts <- c(
       teams_facts,
       list(list(
-        title = paste0(row$pathogen, " at ", location),
-        value = paste0(
-          row$n_cases,
-          " cases (expected ",
-          expected_str,
-          "), priority ",
-          round(row$priority_score, 0)
-        )
+        title = paste0(row$pathogen, " \u00b7 ", location),
+        value = summary_str
       ))
     )
     slack_lines <- c(
       slack_lines,
-      paste0(
-        "*",
-        row$pathogen,
-        "* at ",
-        location,
-        ": ",
-        row$n_cases,
-        " cases",
-        " (expected ",
-        expected_str,
-        "), priority ",
-        round(row$priority_score, 0)
-      )
+      paste0("*", row$pathogen, "* \u00b7 ", location, ": ", summary_str)
     )
   }
 
   if (remainder > 0) {
-    more <- paste0("... and ", remainder, " more")
+    more <- episodic_tr("notif.and_more", n = remainder, lang = lang)
     plain_lines <- c(plain_lines, paste0("  ", more))
     html_rows <- c(
       html_rows,
       paste0(
         "<tr><td colspan='7' style='font-style:italic'>",
-        more,
+        episodic_html_escape(more),
         "</td></tr>"
       )
     )
@@ -318,27 +311,54 @@ episodic_notify_build_new_clusters <- function(
     paste0(
       "<table style='border-collapse:collapse;width:100%'>",
       "<tr style='background:#f0f0f0'>",
-      "<th style='text-align:left;padding:4px'>Pathogen</th>",
-      "<th style='text-align:left;padding:4px'>Location</th>",
-      "<th style='text-align:right;padding:4px'>Cases</th>",
-      "<th style='text-align:right;padding:4px'>Expected</th>",
-      "<th style='text-align:right;padding:4px'>Ratio</th>",
-      "<th style='text-align:right;padding:4px'>Priority</th>",
-      "<th style='text-align:left;padding:4px'>Period</th>",
+      "<th style='text-align:left;padding:4px'>",
+      episodic_html_escape(episodic_tr("notif.table.pathogen", lang = lang)),
+      "</th>",
+      "<th style='text-align:left;padding:4px'>",
+      episodic_html_escape(episodic_tr("notif.table.location", lang = lang)),
+      "</th>",
+      "<th style='text-align:center;padding:4px'>",
+      episodic_html_escape(episodic_tr("notif.table.cases", lang = lang)),
+      "</th>",
+      "<th style='text-align:center;padding:4px'>",
+      episodic_html_escape(episodic_tr("notif.table.expected", lang = lang)),
+      "</th>",
+      "<th style='text-align:center;padding:4px'>",
+      episodic_html_escape(episodic_tr("notif.table.ratio", lang = lang)),
+      "</th>",
+      "<th style='text-align:center;padding:4px'>",
+      episodic_html_escape(episodic_tr("notif.table.priority", lang = lang)),
+      "</th>",
+      "<th style='text-align:center;padding:4px'>",
+      episodic_html_escape(episodic_tr("notif.table.period", lang = lang)),
+      "</th>",
       "</tr>",
       paste(html_rows, collapse = "\n"),
       "</table>"
     ),
-    dashboard_url
+    dashboard_url,
+    lang = lang
   )
 
-  teams_card <- episodic_notify_teams_card(title, teams_facts, dashboard_url)
+  teams_card <- episodic_notify_teams_card(
+    title,
+    teams_facts,
+    dashboard_url,
+    lang = lang
+  )
   slack_text <- paste(
     c(paste0("*", title, "*"), "", slack_lines),
     collapse = "\n"
   )
   if (!is.null(dashboard_url) && nzchar(dashboard_url)) {
-    slack_text <- paste0(slack_text, "\n\n<", dashboard_url, "|Open dashboard>")
+    slack_text <- paste0(
+      slack_text,
+      "\n\n<",
+      dashboard_url,
+      "|",
+      episodic_tr("notif.open_dashboard", lang = lang),
+      ">"
+    )
   }
 
   list(
@@ -351,58 +371,82 @@ episodic_notify_build_new_clusters <- function(
 }
 
 #' Build a notification message for a run failure
+#'
+#' @param error_text The recorded error text, or `NULL`.
+#' @param run_date The run date.
+#' @param host The host name.
+#' @param lang Language to render the message in. Defaults to
+#'   `EPISODIC_LANGUAGE`, falling back to `"en"`, the same as the
+#'   dashboard.
 #' @keywords internal
 #' @noRd
-episodic_notify_build_failure <- function(error_text, run_date, host) {
-  title <- "EpiSODIC: detection run failed"
+episodic_notify_build_failure <- function(
+    error_text,
+    run_date,
+    host,
+    lang = episodic_lang()) {
+  title <- episodic_tr("notif.title_failed", lang = lang)
+  label_date <- episodic_tr("notif.label.date", lang = lang)
+  label_host <- episodic_tr("notif.label.host", lang = lang)
+  label_error <- episodic_tr("notif.label.error", lang = lang)
+  error_str <- error_text %||% episodic_tr("notif.no_error_text", lang = lang)
+
   plain <- paste0(
     title,
     "\n\n",
-    "Date: ",
+    label_date,
+    ": ",
     run_date,
     "\n",
-    "Host: ",
+    label_host,
+    ": ",
     host,
     "\n",
-    "Error: ",
-    error_text %||% "(no error text)"
+    label_error,
+    ": ",
+    error_str
   )
   html <- episodic_notify_html_wrap(
     title,
     paste0(
-      "<p><strong>Date:</strong> ",
+      "<p><strong>", episodic_html_escape(label_date), ":</strong> ",
       run_date,
       "</p>",
-      "<p><strong>Host:</strong> ",
+      "<p><strong>", episodic_html_escape(label_host), ":</strong> ",
       episodic_html_escape(host),
       "</p>",
-      "<p><strong>Error:</strong> ",
-      episodic_html_escape(error_text %||% "(no error text)"),
+      "<p><strong>", episodic_html_escape(label_error), ":</strong> ",
+      episodic_html_escape(error_str),
       "</p>"
     ),
-    NULL
+    NULL,
+    lang = lang
   )
   teams_card <- episodic_notify_teams_card(
     title,
     list(
-      list(title = "Date", value = as.character(run_date)),
-      list(title = "Host", value = host),
-      list(title = "Error", value = error_text %||% "(no error text)")
+      list(title = label_date, value = as.character(run_date)),
+      list(title = label_host, value = host),
+      list(title = label_error, value = error_str)
     ),
-    NULL
+    NULL,
+    lang = lang
   )
   slack_text <- paste0(
     "*",
     title,
     "*\n\n",
-    "Date: ",
+    label_date,
+    ": ",
     run_date,
     "\n",
-    "Host: ",
+    label_host,
+    ": ",
     host,
     "\n",
-    "Error: `",
-    error_text %||% "(no error text)",
+    label_error,
+    ": `",
+    error_str,
     "`"
   )
 
@@ -429,13 +473,19 @@ episodic_html_escape <- function(x) {
 #' Wrap HTML notification body in a minimal document
 #' @keywords internal
 #' @noRd
-episodic_notify_html_wrap <- function(title, body_html, dashboard_url) {
+episodic_notify_html_wrap <- function(
+    title,
+    body_html,
+    dashboard_url,
+    lang = episodic_lang()) {
   footer <- ""
   if (!is.null(dashboard_url) && nzchar(dashboard_url)) {
     footer <- paste0(
       "<p style='margin-top:16px'><a href='",
       episodic_html_escape(dashboard_url),
-      "'>Open dashboard</a></p>"
+      "'>",
+      episodic_html_escape(episodic_tr("notif.open_dashboard", lang = lang)),
+      "</a></p>"
     )
   }
   paste0(
@@ -452,7 +502,11 @@ episodic_notify_html_wrap <- function(title, body_html, dashboard_url) {
 #' Build a Teams Adaptive Card JSON structure
 #' @keywords internal
 #' @noRd
-episodic_notify_teams_card <- function(title, facts, dashboard_url) {
+episodic_notify_teams_card <- function(
+    title,
+    facts,
+    dashboard_url,
+    lang = episodic_lang()) {
   body <- list(
     list(
       type = "TextBlock",
@@ -470,7 +524,7 @@ episodic_notify_teams_card <- function(title, facts, dashboard_url) {
   if (!is.null(dashboard_url) && nzchar(dashboard_url)) {
     actions <- list(list(
       type = "Action.OpenUrl",
-      title = "Open dashboard",
+      title = episodic_tr("notif.open_dashboard", lang = lang),
       url = dashboard_url
     ))
   }
@@ -717,43 +771,54 @@ episodic_notify_test <- function(
     return(invisible(logical(0)))
   }
 
+  lang <- episodic_lang()
+  title <- episodic_tr("notif.title_test", lang = lang)
+  body_text <- episodic_tr("notif.test.body", lang = lang)
+  sent_at_label <- episodic_tr("notif.test.sent_at", lang = lang)
+  working_text <- episodic_tr("notif.test.working", lang = lang)
+  status_label <- episodic_tr("notif.label.status", lang = lang)
+  status_value <- episodic_tr("notif.test.status_value", lang = lang)
+  sent_at <- format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")
+
   message <- list(
-    title = "EpiSODIC: test notification",
+    title = title,
     plain = paste0(
-      "This is a test notification from EpiSODIC.\n\n",
-      "Sent at: ",
-      format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"),
+      body_text,
+      "\n\n",
+      sent_at_label,
+      ": ",
+      sent_at,
       "\n",
-      "If you received this, your notification channel is working."
+      working_text
     ),
     html = episodic_notify_html_wrap(
-      "EpiSODIC: test notification",
+      title,
       paste0(
-        "<p>This is a test notification from EpiSODIC.</p>",
-        "<p><strong>Sent at:</strong> ",
-        format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"),
+        "<p>", episodic_html_escape(body_text), "</p>",
+        "<p><strong>", episodic_html_escape(sent_at_label), ":</strong> ",
+        sent_at,
         "</p>",
-        "<p>If you received this, your notification channel is working.</p>"
+        "<p>", episodic_html_escape(working_text), "</p>"
       ),
-      notif$dashboard_url
+      notif$dashboard_url,
+      lang = lang
     ),
     teams_card = episodic_notify_teams_card(
-      "EpiSODIC: test notification",
+      title,
       list(
-        list(title = "Status", value = "This is a test notification."),
-        list(
-          title = "Sent at",
-          value = format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")
-        )
+        list(title = status_label, value = status_value),
+        list(title = sent_at_label, value = sent_at)
       ),
-      notif$dashboard_url
+      notif$dashboard_url,
+      lang = lang
     ),
     slack_text = paste0(
-      "*EpiSODIC: test notification*\n\n",
-      "Sent at: ",
-      format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"),
+      "*", title, "*\n\n",
+      sent_at_label,
+      ": ",
+      sent_at,
       "\n",
-      "If you received this, your notification channel is working."
+      working_text
     )
   )
 

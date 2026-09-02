@@ -17,6 +17,37 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
+test_that("episodic_app_format_region() prints region_code verbatim, no reformatting", {
+  expect_equal(episodic_app_format_region("PROV_GRONINGEN"), "PROV_GRONINGEN")
+  expect_equal(episodic_app_format_region("Noord-Holland"), "Noord-Holland")
+  expect_equal(episodic_app_format_region(NA_character_), "")
+})
+
+test_that("episodic_app_place_label() shows region_code verbatim for area/province/region streams", {
+  stream <- list(
+    level = "pathogen_province",
+    care_line = NA,
+    region_code = "Noord-Holland"
+  )
+  expect_equal(
+    episodic_app_place_label(stream, NULL, lang = "en"),
+    "Noord-Holland"
+  )
+})
+
+test_that("episodic_app_place_label() does not touch ward/institution labels with a code", {
+  stream <- list(
+    level = "pathogen_institution",
+    care_line = NA,
+    region_code = NA_character_
+  )
+  institution <- list(display_name = "Hospital A")
+  expect_equal(
+    episodic_app_place_label(stream, institution, lang = "en"),
+    "Hospital A"
+  )
+})
+
 test_that("episodic_app_open_clusters() lists the cluster with derived state new", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
