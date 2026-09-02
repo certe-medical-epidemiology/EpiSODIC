@@ -166,7 +166,7 @@ episodic_notify_sendmail <- function(channel, message) {
 #' its staff via a shared department login (rather than a per-app client
 #' secret) can reuse that already-cached token for unattended sending: as
 #' long as a valid token for the configured `tenant_id` exists in
-#' `AzureGraph::AzureR_dir()` (overridable via the `R_AZURE_DATA_DIR`
+#' `AzureAuth::AzureR_dir()` (overridable via the `R_AZURE_DATA_DIR`
 #' environment variable), no `client_id` or `client_secret` is needed at
 #' all. Matching is done against each cached login's tenant, allowing a
 #' short tenant name (e.g. `"contoso"`) to match a full tenant domain
@@ -174,6 +174,7 @@ episodic_notify_sendmail <- function(channel, message) {
 #' @keywords internal
 #' @noRd
 episodic_notify_microsoft365_cached_token <- function(tenant_id) {
+  rlang::check_installed("AzureAuth")
   logins <- unlist(AzureGraph::list_graph_logins(), recursive = FALSE)
   matches <- Filter(
     function(login) {
@@ -190,7 +191,7 @@ episodic_notify_microsoft365_cached_token <- function(tenant_id) {
       "microsoft365: no cached Azure AD token found for tenant '",
       tenant_id,
       "' in ",
-      AzureGraph::AzureR_dir(),
+      AzureAuth::AzureR_dir(),
       ". Sign in once with episodic_setup_microsoft365(tenant_id = \"",
       tenant_id,
       "\") (or Microsoft365R::get_business_outlook()) on this server, ",

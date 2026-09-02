@@ -305,6 +305,7 @@ test_that("episodic_notify_validate_config() does not require 'from' without cli
 
 test_that("episodic_notify_microsoft365_cached_token() errors loudly when nothing is cached", {
   testthat::skip_if_not_installed("AzureGraph")
+  testthat::skip_if_not_installed("AzureAuth")
   local_mocked_bindings(
     list_graph_logins = function() list(),
     .package = "AzureGraph"
@@ -317,6 +318,7 @@ test_that("episodic_notify_microsoft365_cached_token() errors loudly when nothin
 
 test_that("episodic_notify_microsoft365_cached_token() matches on a substring of the tenant", {
   testthat::skip_if_not_installed("AzureGraph")
+  testthat::skip_if_not_installed("AzureAuth")
   fake_login <- list(tenant = "contoso.onmicrosoft.com", token = "the-token")
   local_mocked_bindings(
     list_graph_logins = function() list(contoso = list(hash1 = fake_login)),

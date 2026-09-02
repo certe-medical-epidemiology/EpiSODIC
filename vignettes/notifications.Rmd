@@ -23,7 +23,7 @@ Supported channels:
 | **ntfy** | HTTP POST to a self-hosted or public ntfy server | `httr2` |
 | **SMTP** | Any SMTP server (Gmail, Outlook, institutional relay, etc.) | `curl` |
 | **sendmail** | The `sendmail` binary on a Linux/Unix server | (none) |
-| **Microsoft 365** | Microsoft Graph API (application or delegated auth) | `Microsoft365R`, `AzureGraph` |
+| **Microsoft 365** | Microsoft Graph API (application or delegated auth) | `Microsoft365R`, `AzureGraph`, `AzureAuth` |
 | **Teams** | Power Automate Workflow webhook (Adaptive Card) | `httr2` |
 | **Slack** | Incoming Webhook | `httr2` |
 
@@ -221,7 +221,7 @@ or by running `episodic_setup_microsoft365()` once as in Option B, you
 do not need to configure `client_id`, `client_secret`, or `from` at all.
 Omit `client_id` and `episodic_notify_microsoft365()` will look up
 whichever cached Azure AD token it finds for the configured `tenant_id`
-in `AzureGraph::AzureR_dir()` (by default `~/.local/share/AzureR/`,
+in `AzureAuth::AzureR_dir()` (by default `~/.local/share/AzureR/`,
 overridable with the `R_AZURE_DATA_DIR` environment variable) and reuse
 it, without ever starting a new interactive login. `tenant_id` can be
 the short tenant name (e.g. `"contoso"`), the full tenant domain
@@ -242,8 +242,8 @@ If no cached token is found for the tenant, sending fails loudly with an
 error naming the tenant and the directory searched, rather than starting
 a new interactive login (which would hang an unattended cron run).
 
-Requires `Microsoft365R` and `AzureGraph`
-(`install.packages(c("Microsoft365R", "AzureGraph"))`).
+Requires `Microsoft365R`, `AzureGraph`, and `AzureAuth`
+(`install.packages(c("Microsoft365R", "AzureGraph", "AzureAuth"))`).
 
 ## Microsoft Teams
 

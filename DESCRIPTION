@@ -57,6 +57,7 @@ Suggests:
     httr2,
     Microsoft365R,
     AzureGraph,
+    AzureAuth,
     zip
 Config/testthat/edition: 3
 VignetteBuilder: knitr

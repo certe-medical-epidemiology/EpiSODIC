@@ -808,7 +808,7 @@ episodic_notify_test <- function(
 #' by running this function once), you can skip `client_id` entirely in
 #' the instance YAML: `episodic_notify_microsoft365()` will reuse whatever
 #' cached Azure AD token it finds for the configured `tenant_id` in
-#' `AzureGraph::AzureR_dir()`, without any client ID, client secret, or new
+#' `AzureAuth::AzureR_dir()`, without any client ID, client secret, or new
 #' interactive login.
 #'
 #' @param tenant_id Your Azure AD tenant ID.
@@ -827,6 +827,7 @@ episodic_setup_microsoft365 <- function(
     scopes = c("Mail.Send", "User.Read", "openid", "offline_access")) {
   rlang::check_installed("Microsoft365R")
   rlang::check_installed("AzureGraph")
+  rlang::check_installed("AzureAuth")
 
   cli::cli_alert_info(
     "Starting interactive Azure AD login for tenant {tenant_id}..."
@@ -843,7 +844,7 @@ episodic_setup_microsoft365 <- function(
 
   cli::cli_alert_success("Login successful. Token cached for unattended use.")
   cli::cli_alert_info(
-    "The cached token is stored in {AzureGraph::AzureR_dir()}"
+    "The cached token is stored in {AzureAuth::AzureR_dir()}"
   )
 
   invisible(TRUE)

@@ -39,7 +39,7 @@ login on this server (for example by having called
 by running this function once), you can skip \code{client_id} entirely in
 the instance YAML: \code{episodic_notify_microsoft365()} will reuse whatever
 cached Azure AD token it finds for the configured \code{tenant_id} in
-\code{AzureGraph::AzureR_dir()}, without any client ID, client secret, or new
+\code{AzureAuth::AzureR_dir()}, without any client ID, client secret, or new
 interactive login.
 }
 \examples{
