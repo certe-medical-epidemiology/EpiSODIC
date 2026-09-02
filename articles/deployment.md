@@ -221,7 +221,7 @@ rather than failing when it is absent:
 | MEM seasonal thresholds | `mem` | Detector skipped for `mem_applicable` organisms |
 | Outbreak reports | `quarto` R package + the separate Quarto CLI | Render errors clearly instead of silently producing nothing |
 | Choropleth map | `sf` + geographic reference data | Plain bar breakdown by PC value |
-| Notifications | `httr2`, `curl`, `Microsoft365R` + `AzureGraph` (depending on channel) | No alerts; review clusters through the dashboard only |
+| Notifications | `httr2`, `curl`, `Microsoft365R` + `AzureGraph` + `AzureAuth` (depending on channel) | No alerts; review clusters through the dashboard only |
 
 `AMR` is a hard dependency, not an optional integration: episode
 deduplication (`episodic_cases_deduplicate()`) calls

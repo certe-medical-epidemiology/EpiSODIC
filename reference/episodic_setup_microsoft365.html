@@ -13,7 +13,7 @@ Microsoft365R and AzureGraph packages."><meta property="og:image" content="https
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -82,6 +82,14 @@ run this once per server, unless the token expires. Requires the
 application-level (daemon) access, put the <code>client_secret</code> in the
 instance YAML instead and skip this function entirely: the cron will
 use the client-credentials flow directly.</p>
+<p>If your staff already authenticate to Microsoft 365 through a shared
+login on this server (for example by having called
+<code><a href="https://rdrr.io/pkg/Microsoft365R/man/client.html" class="external-link">Microsoft365R::get_business_outlook()</a></code> interactively at some point, or
+by running this function once), you can skip <code>client_id</code> entirely in
+the instance YAML: <code>episodic_notify_microsoft365()</code> will reuse whatever
+cached Azure AD token it finds for the configured <code>tenant_id</code> in
+<code><a href="https://rdrr.io/pkg/AzureAuth/man/AzureR_dir.html" class="external-link">AzureAuth::AzureR_dir()</a></code>, without any client ID, client secret, or new
+interactive login.</p>
     </div>
 
     <div class="section level2">

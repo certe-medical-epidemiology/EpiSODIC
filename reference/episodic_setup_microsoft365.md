@@ -42,6 +42,16 @@ application-level (daemon) access, put the `client_secret` in the
 instance YAML instead and skip this function entirely: the cron will use
 the client-credentials flow directly.
 
+If your staff already authenticate to Microsoft 365 through a shared
+login on this server (for example by having called
+[`Microsoft365R::get_business_outlook()`](https://rdrr.io/pkg/Microsoft365R/man/client.html)
+interactively at some point, or by running this function once), you can
+skip `client_id` entirely in the instance YAML:
+`episodic_notify_microsoft365()` will reuse whatever cached Azure AD
+token it finds for the configured `tenant_id` in
+[`AzureAuth::AzureR_dir()`](https://rdrr.io/pkg/AzureAuth/man/AzureR_dir.html),
+without any client ID, client secret, or new interactive login.
+
 ## Examples
 
 ``` r
