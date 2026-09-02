@@ -2,7 +2,7 @@
 
 ## Changed
 
-- The dashboard's area/province/region place label now appends the raw `region_code` in parentheses whenever it differs from the tidied label, so an operator can see at a glance whether `EPISODIC_PC_PROVINCE_MAP` resolved the code they expected
+- The dashboard's area/province/region place label now shows `region_code` verbatim instead of cosmetically reformatting it, so an operator can see at a glance, character for character, whether `EPISODIC_PC_PROVINCE_MAP` resolved the code they expected, without risking a mangled real place name (e.g. the hyphen in "Noord-Holland")
 
 ## Fixed
 
