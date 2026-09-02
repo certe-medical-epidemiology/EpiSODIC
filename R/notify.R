@@ -277,13 +277,13 @@ episodic_notify_build_new_clusters <- function(
     teams_facts <- c(
       teams_facts,
       list(list(
-        title = paste0(row$pathogen, " · ", location),
+        title = paste0(row$pathogen, " \u00b7 ", location),
         value = summary_str
       ))
     )
     slack_lines <- c(
       slack_lines,
-      paste0("*", row$pathogen, "* · ", location, ": ", summary_str)
+      paste0("*", row$pathogen, "* \u00b7 ", location, ": ", summary_str)
     )
   }
 
