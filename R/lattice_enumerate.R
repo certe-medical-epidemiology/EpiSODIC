@@ -98,6 +98,42 @@ episodic_lattice_enumerate <- function(con, cases, institutions) {
   l4 <- cases[!is.na(cases$pc), ]
   if (nrow(l4) > 0) {
     l4$.region_code <- episodic_case_region_code(l4, "pathogen_province")
+    # A mapping that places no case at all is not a mapping: it is a
+    # postcode column formatted one way being looked up against
+    # postcodes formatted another ("9713" against "9713 AB", say). The
+    # result is an L4 level that stays permanently empty however many
+    # cases arrive, and a Pathogen-screen map that never fills in, so it
+    # is said out loud on the run rather than left for somebody to
+    # notice months later.
+    if (all(is.na(l4$.region_code))) {
+      episodic_trace(
+        "no province could be resolved for any of the ",
+        length(unique(l4$pc)),
+        " postcode values in this run - province-level (L4) detection ",
+        "has nothing to run on. ",
+        if (nzchar(Sys.getenv("EPISODIC_PC_PROVINCE_MAP"))) {
+          paste0(
+            "EPISODIC_PC_PROVINCE_MAP is set to '",
+            Sys.getenv("EPISODIC_PC_PROVINCE_MAP"),
+            "'; its `pc` column has to hold the same values as your case ",
+            "data's `pc` column, exactly (e.g. ",
+            paste0(
+              "\"",
+              utils::head(unique(l4$pc), 3),
+              "\"",
+              collapse = ", "
+            ),
+            "), not a prefix of them."
+          )
+        } else {
+          paste0(
+            "EPISODIC_PC_PROVINCE_MAP is unset, so the shipped Northern ",
+            "Netherlands demo ranges are in use and match only Dutch 7xxx-",
+            "9xxx postcodes. Point it at your own pc/province_code CSV."
+          )
+        }
+      )
+    }
     l4 <- l4[!is.na(l4$.region_code), ]
     if (nrow(l4) > 0) {
       touched$l4 <- episodic_lattice_upsert_group(
@@ -182,8 +218,9 @@ episodic_region_code_all <- "NORTHERN_NETHERLANDS"
 #' @param path Path to a CSV with columns `pc` (matching your case
 #'   data's `pc` values exactly - not a prefix) and `province_code`.
 #'   Defaults to the `EPISODIC_PC_PROVINCE_MAP` environment variable; if
-#'   unset (or the file does not exist), falls back to the shipped
-#'   Northern Netherlands demo default.
+#'   unset, falls back to the shipped Northern Netherlands demo default.
+#'   A path that *is* set but cannot be used is an error, not a fallback -
+#'   see `episodic_pc_province_map_resolve()`.
 #' @return A character vector the same length as `pc`: the province code,
 #'   or `NA` where `pc` has no entry in the mapping.
 #' @keywords internal
@@ -204,17 +241,48 @@ episodic_pc_to_province <- function(
   )
 }
 
-#' Read an operator-supplied PC-to-province CSV, defensively
+#' What is wrong with the configured PC-to-province mapping, if anything
 #'
-#' A missing or malformed mapping file must cost the L4 level, not the
-#' run - read errors and a wrong column layout both fall back to `NULL`
-#' (which `episodic_pc_to_province()` reads as "use the demo default")
-#' rather than throwing partway through lattice enumeration.
+#' Unset and unusable are two different things, and only the first is a
+#' fallback. `EPISODIC_PC_PROVINCE_MAP` left unset means "this instance
+#' has not configured one", and the shipped Northern Netherlands demo
+#' ranges stand in. A variable that *is* set and does not resolve to a
+#' readable CSV with the documented columns is a configuration error:
+#' quietly substituting the demo ranges there would hand an operator who
+#' supplied their own mapping a lattice built on somebody else's
+#' provinces, or none at all, with nothing anywhere to say why.
+#'
+#' Stated as a returned message rather than thrown, so that the one
+#' description of the problem serves both sides. `episodic_run_cron()`
+#' refuses on it before the run has written anything, the same as any
+#' other structural problem with a feed; the dashboard shows it in the
+#' geography panel, where the reader is the first to notice the
+#' provinces have stopped appearing. What neither side does is carry on
+#' as if no mapping had been configured.
+#'
+#' @param path Path to the CSV, or `NA`/`""` for "not configured".
+#' @return `NA_character_` when the mapping is usable (or none is
+#'   configured), otherwise a single sentence naming the file and the
+#'   problem.
 #' @keywords internal
 #' @noRd
-episodic_pc_province_map_resolve <- function(path) {
-  if (is.na(path) || !nzchar(path) || !file.exists(path)) {
-    return(NULL)
+episodic_pc_province_map_problem <- function(
+    path = Sys.getenv("EPISODIC_PC_PROVINCE_MAP", unset = NA)) {
+  if (length(path) != 1 || is.na(path) || !nzchar(path)) {
+    return(NA_character_)
+  }
+  refuse <- function(...) {
+    paste0(
+      "EPISODIC_PC_PROVINCE_MAP is set to '",
+      path,
+      "', but ",
+      ...,
+      ". Point it at a CSV with `pc` and `province_code` columns, or ",
+      "unset it to fall back to the shipped demo mapping."
+    )
+  }
+  if (!file.exists(path)) {
+    return(refuse("no file exists there"))
   }
   df <- tryCatch(
     utils::read.csv(
@@ -223,11 +291,72 @@ episodic_pc_province_map_resolve <- function(path) {
       colClasses = "character",
       na.strings = c("", "NA")
     ),
-    error = function(e) NULL
+    error = function(e) conditionMessage(e)
   )
-  if (is.null(df) || !all(c("pc", "province_code") %in% names(df))) {
+  if (!is.data.frame(df)) {
+    return(refuse("it could not be read as a CSV: ", df))
+  }
+  missing <- setdiff(c("pc", "province_code"), names(df))
+  if (length(missing) > 0) {
+    return(refuse(
+      "it has no ",
+      paste0("`", missing, "`", collapse = " and no "),
+      " column (it has ",
+      paste0("`", names(df), "`", collapse = ", "),
+      ")"
+    ))
+  }
+  if (nrow(df) == 0) {
+    return(refuse("it holds no rows"))
+  }
+  duplicated_pc <- unique(df$pc[duplicated(df$pc)])
+  if (length(duplicated_pc) > 0) {
+    # Silently keeping the first would put a postcode in one province on
+    # one run and another after somebody re-sorts the file.
+    return(refuse(
+      "its `pc` column repeats ",
+      paste0("\"", utils::head(duplicated_pc, 5), "\"", collapse = ", "),
+      if (length(duplicated_pc) > 5) ", among others" else "",
+      ", so a postcode would map to more than one province"
+    ))
+  }
+  NA_character_
+}
+
+#' Read an operator-supplied PC-to-province CSV
+#'
+#' Deliberately total: it never throws, because it sits under
+#' `episodic_case_region_code()`, which both the cron and the dashboard
+#' derive stream membership with, and a derivation that can fail
+#' mid-render is a dashboard that goes blank instead of explaining
+#' itself. Refusing on an unusable mapping is
+#' `episodic_pc_province_map_problem()`'s job, and both sides call it -
+#' `episodic_run_cron()` before writing anything, the dashboard where it
+#' shows the geography panel.
+#'
+#' @param path Path to the CSV, or `NA`/`""` for "not configured".
+#' @return A named character vector (postcode -> province code), or
+#'   `NULL` when no mapping is configured or the configured one cannot be
+#'   used.
+#' @keywords internal
+#' @noRd
+episodic_pc_province_map_resolve <- function(path) {
+  # Two ways to have no mapping, and both mean the demo ranges stand in
+  # here: none configured at all, and one configured that cannot be used.
+  # Only the second is something to say out loud, and saying it is
+  # `episodic_pc_province_map_problem()`'s job, not this one's.
+  if (length(path) != 1 || is.na(path) || !nzchar(path)) {
     return(NULL)
   }
+  if (!is.na(episodic_pc_province_map_problem(path))) {
+    return(NULL)
+  }
+  df <- utils::read.csv(
+    path,
+    stringsAsFactors = FALSE,
+    colClasses = "character",
+    na.strings = c("", "NA")
+  )
   stats::setNames(df$province_code, df$pc)
 }
 

@@ -110,7 +110,9 @@ if (!is.null(d$trend) && nrow(d$trend) >= 4) {
 
 ```{r geo, results='asis'}
 if (!is.null(obj$concentration) && nrow(obj$concentration$rows) > 0) {
-  rows <- obj$concentration$rows
+  # Each postcode named with the province it falls in, the same as the
+  # dossier's own geography panel.
+  rows <- EpiSODIC:::episodic_ui_geo_bar_rows(obj$concentration$rows, lang = lang)
   cat("|", tr("panel.geo.aside"), "|", tr("report.col_count"), "|\n|---|---|\n")
   for (i in seq_len(min(nrow(rows), 10))) {
     cat("|", rows$label[i], "|", rows$n[i], "|\n")
@@ -139,12 +141,32 @@ if (!is.null(d$timeline) && nrow(d$timeline) > 0) {
 ```
 
 ```{r similar-section, results='asis'}
+# The same spine of columns, in the same order, as every cluster table on
+# the dashboard (see R/app_cluster_table.R): id, place, cases, first
+# case, last case, duration, priority, classification - and the same
+# ordering, most recent last case day first.
 if (!is.null(d$similar) && nrow(d$similar) > 0) {
+  similar <- d$similar[EpiSODIC:::episodic_cluster_table_order(d$similar), ]
+  duration <- EpiSODIC:::episodic_cluster_duration_days(
+    similar$first_day,
+    similar$last_day
+  )
   cat("## ", tr("panel.similar.title"), "\n\n", sep = "")
-  cat("|", tr("panel.similar.col.place"), "|", tr("panel.similar.col.cases"), "|", tr("panel.similar.col.verdict"), "|\n|---|---|---|\n")
-  for (i in seq_len(nrow(d$similar))) {
-    row <- d$similar[i, ]
-    cat("|", row$place, "|", row$n_cases, "|", ifelse(is.na(row$verdict_label), "-", row$verdict_label), "|\n")
+  cat(
+    "|", tr("column.cluster"), "|", tr("column.place"), "|", tr("column.cases"), "|",
+    tr("column.first_day"), "|", tr("column.last_day"), "|", tr("column.duration"), "|",
+    tr("column.priority"), "|", tr("column.verdict"), "|\n"
+  )
+  cat("|---|---|---|---|---|---|---|---|\n")
+  for (i in seq_len(nrow(similar))) {
+    row <- similar[i, ]
+    cat(
+      "|", tr("dossier.cluster_ref", id = row$cluster_id), "|", row$place, "|", row$n_cases, "|",
+      EpiSODIC:::episodic_format_date(row$first_day, lang = lang), "|",
+      EpiSODIC:::episodic_format_date(row$last_day, lang = lang), "|",
+      na_dash(duration[i]), "|", na_dash(round(row$priority_score, 0)), "|",
+      na_dash(row$verdict_label), "|\n"
+    )
   }
 }
 ```

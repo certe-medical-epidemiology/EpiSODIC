@@ -146,10 +146,35 @@ episodic_notify_cluster_details <- function(con, cluster_ids) {
     " WHERE c.cluster_id IN (",
     placeholders,
     ")",
-    " ORDER BY c.priority_score DESC"
+    # A deterministic order to hand back; the message's own ordering is
+    # applied where the message is built
+    # (`episodic_notify_build_new_clusters()`), the same way every
+    # cluster table applies it where it renders.
+    " ORDER BY c.cluster_id"
   )
   params <- as.list(as.integer(cluster_ids))
   DBI::dbGetQuery(con, sql, params = params)
+}
+
+#' A cluster's deep link into the dashboard's Clusters screen
+#'
+#' The dashboard reads `?cluster=` on load (`R/app_server.R`), so a link
+#' built here opens that cluster's dossier rather than dropping the
+#' reader at the top of the queue to find it themselves. `NULL` when no
+#' `dashboard_url` is configured, which is what makes the id render as
+#' plain text instead of a dead link.
+#'
+#' @param dashboard_url The configured dashboard URL, or `NULL`/`""`.
+#' @param cluster_id A single cluster id.
+#' @return A URL string, or `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_notify_cluster_url <- function(dashboard_url, cluster_id) {
+  if (is.null(dashboard_url) || !nzchar(dashboard_url)) {
+    return(NULL)
+  }
+  sep <- if (grepl("?", dashboard_url, fixed = TRUE)) "&" else "?"
+  paste0(dashboard_url, sep, "cluster=", as.integer(cluster_id))
 }
 
 #' Describe where a cluster is, from stream fields
@@ -182,7 +207,10 @@ episodic_notify_location <- function(row, lang = episodic_lang()) {
 #' @param details Data frame from `episodic_notify_cluster_details()`.
 #' @param n_new Total number of new signals.
 #' @param run_date The run date.
-#' @param dashboard_url Optional dashboard URL for deep links.
+#' @param dashboard_url Optional dashboard URL. When set, every cluster's
+#'   id becomes a deep link into its dossier
+#'   (`episodic_notify_cluster_url()`); when not, the id is still shown,
+#'   as plain text.
 #' @param lang Language to render the message in. Defaults to
 #'   `EPISODIC_LANGUAGE`, falling back to `"en"`, the same as the
 #'   dashboard.
@@ -207,9 +235,17 @@ episodic_notify_build_new_clusters <- function(
     lang = lang
   )
 
+  # Ordered here, where the message is rendered, for the same reason
+  # `episodic_ui_cluster_table()` orders at render time: a cluster table
+  # reads the same way wherever it appears, and no caller has to
+  # remember to sort before handing rows over. Truncation follows the
+  # order, so the ten that make it into the message are the ten most
+  # recently active, priority breaking a tie on the same last day.
+  details <- details[episodic_cluster_table_order(details), , drop = FALSE]
   max_detail <- 10L
   show <- details[seq_len(min(nrow(details), max_detail)), , drop = FALSE]
   remainder <- max(0L, nrow(details) - max_detail)
+  durations <- episodic_cluster_duration_days(show$first_day, show$last_day)
 
   plain_lines <- character(0)
   html_rows <- character(0)
@@ -218,6 +254,8 @@ episodic_notify_build_new_clusters <- function(
 
   for (i in seq_len(nrow(show))) {
     row <- show[i, ]
+    ref <- episodic_tr("dossier.cluster_ref", id = row$cluster_id, lang = lang)
+    url <- episodic_notify_cluster_url(dashboard_url, row$cluster_id)
     location <- episodic_notify_location(row, lang = lang)
     expected_str <- if (is.na(row$expected)) "n/a" else round(row$expected, 1)
     ratio_str <- if (is.na(row$ratio)) "n/a" else round(row$ratio, 1)
@@ -227,8 +265,18 @@ episodic_notify_build_new_clusters <- function(
       row$last_day,
       lang = lang
     )
+    duration_str <- if (is.na(durations[i])) {
+      episodic_tr("misc.dash", lang = lang)
+    } else {
+      episodic_count_phrase(
+        durations[i],
+        episodic_tr("unit.day", lang = lang),
+        episodic_tr("unit.days", lang = lang)
+      )
+    }
     line <- episodic_tr(
       "notif.cluster_line",
+      ref = ref,
       pathogen = row$pathogen,
       location = location,
       cases = row$n_cases,
@@ -246,10 +294,30 @@ episodic_notify_build_new_clusters <- function(
       lang = lang
     )
     plain_lines <- c(plain_lines, paste0("  - ", line))
+    if (!is.null(url)) {
+      plain_lines <- c(plain_lines, paste0("    ", url))
+    }
+    # The id leads the row here exactly as it does on screen, and it is
+    # the link: an alert that names a cluster the reader then has to hunt
+    # for in the queue is an alert that costs time at the worst moment.
+    id_cell <- if (is.null(url)) {
+      episodic_html_escape(ref)
+    } else {
+      paste0(
+        "<a href='",
+        episodic_html_escape(url),
+        "'>",
+        episodic_html_escape(ref),
+        "</a>"
+      )
+    }
     html_rows <- c(
       html_rows,
       paste0(
         "<tr>",
+        "<td>",
+        id_cell,
+        "</td>",
         "<td>",
         episodic_html_escape(row$pathogen),
         "</td>",
@@ -260,16 +328,22 @@ episodic_notify_build_new_clusters <- function(
         row$n_cases,
         "</td>",
         "<td style='text-align:center'>",
-        expected_str,
+        episodic_html_escape(episodic_format_date(row$first_day, lang = lang)),
         "</td>",
         "<td style='text-align:center'>",
-        ratio_str,
+        episodic_html_escape(episodic_format_date(row$last_day, lang = lang)),
+        "</td>",
+        "<td style='text-align:center'>",
+        episodic_html_escape(duration_str),
         "</td>",
         "<td style='text-align:center'>",
         priority_str,
         "</td>",
         "<td style='text-align:center'>",
-        episodic_html_escape(period_str),
+        expected_str,
+        "</td>",
+        "<td style='text-align:center'>",
+        ratio_str,
         "</td>",
         "</tr>"
       )
@@ -277,13 +351,21 @@ episodic_notify_build_new_clusters <- function(
     teams_facts <- c(
       teams_facts,
       list(list(
-        title = paste0(row$pathogen, " \u00b7 ", location),
+        title = paste0(ref, " \u00b7 ", row$pathogen, " \u00b7 ", location),
         value = summary_str
       ))
     )
     slack_lines <- c(
       slack_lines,
-      paste0("*", row$pathogen, "* \u00b7 ", location, ": ", summary_str)
+      paste0(
+        if (is.null(url)) ref else paste0("<", url, "|", ref, ">"),
+        " *",
+        row$pathogen,
+        "* \u00b7 ",
+        location,
+        ": ",
+        summary_str
+      )
     )
   }
 
@@ -293,7 +375,7 @@ episodic_notify_build_new_clusters <- function(
     html_rows <- c(
       html_rows,
       paste0(
-        "<tr><td colspan='7' style='font-style:italic'>",
+        "<tr><td colspan='10' style='font-style:italic'>",
         episodic_html_escape(more),
         "</td></tr>"
       )
@@ -306,32 +388,35 @@ episodic_notify_build_new_clusters <- function(
     plain <- paste0(plain, "\n\nDashboard: ", dashboard_url)
   }
 
+  # The same spine of columns, in the same order, as every cluster table
+  # on screen (see `R/app_cluster_table.R`): id, then what and where,
+  # then cases, first case, last case, duration and priority. Expected
+  # and ratio close the row - the detection evidence an alert carries and
+  # a screen does not.
+  header <- function(key, align) {
+    paste0(
+      "<th style='text-align:",
+      align,
+      ";padding:4px'>",
+      episodic_html_escape(episodic_tr(key, lang = lang)),
+      "</th>"
+    )
+  }
   html <- episodic_notify_html_wrap(
     title,
     paste0(
       "<table style='border-collapse:collapse;width:100%'>",
       "<tr style='background:#f0f0f0'>",
-      "<th style='text-align:left;padding:4px'>",
-      episodic_html_escape(episodic_tr("notif.table.pathogen", lang = lang)),
-      "</th>",
-      "<th style='text-align:left;padding:4px'>",
-      episodic_html_escape(episodic_tr("notif.table.location", lang = lang)),
-      "</th>",
-      "<th style='text-align:center;padding:4px'>",
-      episodic_html_escape(episodic_tr("notif.table.cases", lang = lang)),
-      "</th>",
-      "<th style='text-align:center;padding:4px'>",
-      episodic_html_escape(episodic_tr("notif.table.expected", lang = lang)),
-      "</th>",
-      "<th style='text-align:center;padding:4px'>",
-      episodic_html_escape(episodic_tr("notif.table.ratio", lang = lang)),
-      "</th>",
-      "<th style='text-align:center;padding:4px'>",
-      episodic_html_escape(episodic_tr("notif.table.priority", lang = lang)),
-      "</th>",
-      "<th style='text-align:center;padding:4px'>",
-      episodic_html_escape(episodic_tr("notif.table.period", lang = lang)),
-      "</th>",
+      header("column.cluster", "left"),
+      header("column.pathogen", "left"),
+      header("column.place", "left"),
+      header("column.cases", "center"),
+      header("column.first_day", "center"),
+      header("column.last_day", "center"),
+      header("column.duration", "center"),
+      header("column.priority", "center"),
+      header("notif.table.expected", "center"),
+      header("notif.table.ratio", "center"),
       "</tr>",
       paste(html_rows, collapse = "\n"),
       "</table>"

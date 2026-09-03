@@ -188,3 +188,29 @@ suppression:
   # Minimum number of overlapping child clusters required before the
   # diffuse rule can suppress them in favour of the parent.
   parent_min_flagged_children: 2
+
+# Dashboard access.
+#
+# Deliberately not part of config_hash: like `notifications`, this
+# governs how the app is operated, never what the detection run computes,
+# so changing it must not make two otherwise-identical runs look
+# different (see episodic_config_hash()).
+#
+# This section lives in the YAML file only, and not in the Settings
+# screen's in-app overrides, on purpose: a login wall an admin account
+# can switch off from inside the app is a login wall that falls with that
+# one account. Turning it off takes file access to the machine.
+access:
+  # FALSE (the shipped default) keeps the behaviour EpiSODIC has always
+  # had: anyone who reaches the app reads clusters, streams and the
+  # archive without signing in, and signing in is needed only for the
+  # line list and for writing (see vignette("deployment")).
+  #
+  # TRUE closes the app to anonymous visitors entirely. A visitor gets a
+  # sign-in prompt and nothing else - not the navigation, not the status
+  # strip, not one row of data - because the server renders none of it
+  # rather than hiding it client-side. There is correspondingly nothing
+  # for a browser's developer tools to reveal: the data never reaches the
+  # page. Set this if the instance is reachable from anywhere its data
+  # should not be.
+  require_login: false

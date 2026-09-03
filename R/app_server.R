@@ -35,6 +35,34 @@ episodic_app_server_factory <- function(
       if (DBI::dbIsValid(con)) DBI::dbDisconnect(con)
     })
 
+    # Read once per session rather than per render: the access policy is
+    # a property of the deployment, and re-reading the YAML on every
+    # reactive invalidation would let it change under a session halfway
+    # through.
+    require_login <- episodic_app_require_login()
+
+    # Set up before anything that reads it, because `access_granted()` is
+    # the gate every output below gets its data past, and a gate defined
+    # after the things it guards is a gate somebody eventually forgets to
+    # close.
+    current_user <- episodic_app_server_auth(
+      input,
+      output,
+      session,
+      con,
+      lang = lang,
+      require_login = require_login
+    )
+
+    # The one place the anonymous-access policy is decided. Everything
+    # that would put surveillance data on the page is behind it, and what
+    # it gates is whether that data is *computed and sent at all* - never
+    # whether it is hidden once sent. See
+    # `episodic_app_access_granted()`.
+    access_granted <- shiny::reactive({
+      episodic_app_access_granted(require_login, current_user())
+    })
+
     view <- shiny::reactiveVal("clusters")
     shiny::observeEvent(input$nav_view, view(input$nav_view))
 
@@ -48,6 +76,7 @@ episodic_app_server_factory <- function(
 
     open_clusters <- shiny::reactive({
       db_version()
+      shiny::req(access_granted())
       shiny::req(view() == "clusters")
       episodic_app_open_clusters(con, lang = lang)
     })
@@ -80,14 +109,39 @@ episodic_app_server_factory <- function(
       selected_cluster_id(input$rail_select)
     )
 
-    # Deep link from the Pathogen screen's cluster table. Setting the
-    # selection before the view means the dossier pane has its cluster
-    # ready by the time the clusters view renders, and the observer above
-    # will leave it alone whichever order the two land in.
+    # Deep link from any cluster table (see `R/app_cluster_table.R`).
+    # Setting the selection before the view means the dossier pane has
+    # its cluster ready by the time the clusters view renders, and the
+    # observer above will leave it alone whichever order the two land in.
     shiny::observeEvent(input$open_cluster, {
       selected_cluster_id(as.integer(input$open_cluster))
       view("clusters")
     })
+
+    # The same deep link from outside the app: `?cluster=123` opens that
+    # cluster's dossier on load. It is what makes the id in a
+    # notification a link somebody can follow (see
+    # `episodic_notify_cluster_url()`) rather than a reference they have
+    # to go and find in the queue. An id that names nothing viewable is
+    # ignored rather than blanking the screen - a link from an old email
+    # to a cluster since merged away should land on the queue, not on an
+    # error.
+    session$onFlushed(
+      function() {
+        requested <- episodic_app_url_cluster_id(
+          session$clientData$url_search
+        )
+        if (is.null(requested)) {
+          return()
+        }
+        if (!episodic_app_cluster_viewable(con, requested)) {
+          return()
+        }
+        selected_cluster_id(requested)
+        view("clusters")
+      },
+      once = TRUE
+    )
 
     streams_page <- shiny::reactiveVal(1L)
     shiny::observeEvent(
@@ -122,19 +176,17 @@ episodic_app_server_factory <- function(
       pathogen_period("custom")
     })
 
-    current_user <- episodic_app_server_auth(
-      input,
-      output,
-      session,
-      con,
-      lang = lang
-    )
-
     output$auth_control <- shiny::renderUI({
       episodic_ui_auth_control(current_user(), lang = lang)
     })
 
+    # The navigation is a map of what there is to read, and the status
+    # strip carries the last run's outcome and completeness. Neither is a
+    # cluster, and both are withheld from a visitor who may see nothing.
     output$nav_links <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
       episodic_ui_nav_links(
         view(),
         lang = lang,
@@ -143,10 +195,20 @@ episodic_app_server_factory <- function(
     })
 
     output$status_strip <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
       episodic_ui_status_strip(episodic_app_status(con), lang = lang)
     })
 
     output$main_view <- shiny::renderUI({
+      # Every screen below reads the database. On an instance that
+      # requires a sign-in, an anonymous session never gets past here, so
+      # none of those reads happens and nothing they would return is
+      # serialised into the page.
+      if (!access_granted()) {
+        return(episodic_ui_locked_screen(lang = lang))
+      }
       if (view() == "streams") {
         episodic_ui_streams_screen(
           episodic_app_streams_screen(con, page = streams_page()),
@@ -178,7 +240,11 @@ episodic_app_server_factory <- function(
           lang = lang
         )
       } else if (view() == "info") {
-        episodic_ui_info_screen(lang = lang)
+        episodic_ui_info_screen(
+          con,
+          current_user = current_user(),
+          lang = lang
+        )
       } else if (view() == "settings") {
         shiny::uiOutput("settings_screen")
       } else {
@@ -198,6 +264,13 @@ episodic_app_server_factory <- function(
     # every click - episodic_ui_rail()'s onclick handles the "active"
     # highlight itself, client-side, instead.
     output$rail_pane <- shiny::renderUI({
+      # Gated in its own right, not only through `main_view` not placing
+      # it: an output nothing binds is an output nothing computes, but
+      # that is a property of how it happens to be reached today, and
+      # this is a leak if it ever stops being true.
+      if (!access_granted()) {
+        return(NULL)
+      }
       # current_user() deliberately not isolated (unlike selected_cluster_id()
       # above it): the bulk-select checkboxes and action bar are gated on
       # being signed in, so they need to appear/disappear immediately on
@@ -212,6 +285,9 @@ episodic_app_server_factory <- function(
     })
 
     output$dossier_pane <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
       cluster_id <- selected_cluster_id()
       current_user() # re-render on sign in/out (line list lock, classification form)
       if (is.null(cluster_id)) {
@@ -229,6 +305,9 @@ episodic_app_server_factory <- function(
     })
 
     output$assessment_pane <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
       cluster_id <- selected_cluster_id()
       user <- current_user()
       if (is.null(cluster_id)) {
@@ -255,6 +334,9 @@ episodic_app_server_factory <- function(
       )
     })
     output$archive_screen <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
       db_version()
       episodic_ui_archive_screen(
         episodic_app_archive(
@@ -274,6 +356,11 @@ episodic_app_server_factory <- function(
     # them - and read the whole message, not the line the table had room
     # for.
     shiny::observeEvent(input$activity_run_detail, {
+      # An observer, unlike an output, runs whenever the input arrives -
+      # and any client can set any input. Without this the run detail,
+      # error text and per-feed counts included, is one console line away
+      # on an instance that shows an anonymous visitor nothing.
+      shiny::req(access_granted())
       run <- episodic_db_run(con, as.integer(input$activity_run_detail))
       if (is.null(run)) {
         return(NULL)
@@ -457,6 +544,36 @@ episodic_ui_format_datetime <- function(
     return(iso)
   }
   format(parsed, fmt, tz = tz)
+}
+
+#' The cluster id a `?cluster=` deep link asks for
+#'
+#' Parsed rather than trusted: the query string is whatever a reader's
+#' browser was pointed at, so anything that is not a single positive
+#' integer is no request at all. Refusing to guess is the point - a
+#' malformed link must leave the app where it would have been, never
+#' select some other cluster.
+#'
+#' @param search A URL query string including its leading `"?"`
+#'   (`session$clientData$url_search`), or `NULL`.
+#' @return A single integer, or `NULL` when no usable `cluster` parameter
+#'   is present.
+#' @keywords internal
+#' @noRd
+episodic_app_url_cluster_id <- function(search) {
+  if (is.null(search) || length(search) != 1 || is.na(search)) {
+    return(NULL)
+  }
+  parsed <- shiny::parseQueryString(search)
+  value <- parsed$cluster
+  if (is.null(value) || length(value) != 1 || !grepl("^[0-9]+$", value)) {
+    return(NULL)
+  }
+  id <- suppressWarnings(as.integer(value))
+  if (is.na(id) || id <= 0L) {
+    return(NULL)
+  }
+  id
 }
 
 #' The open-cluster rail, with an optional bulk-assessment bar

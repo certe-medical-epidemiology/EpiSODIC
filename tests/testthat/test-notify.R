@@ -182,16 +182,28 @@ test_that("episodic_notify_build_new_clusters() renders the Period column like t
     stringsAsFactors = FALSE
   )
   msg <- episodic_notify_build_new_clusters(details, 1L, "2026-08-15", NULL)
-  expected_period <- episodic_format_date_range(
-    "2026-08-01",
-    "2026-08-15",
-    lang = "en"
+  # The table carries the two case days as their own columns, formatted
+  # the way the app formats a date; the one-line plain-text fallback is a
+  # sentence, so it keeps the compact range.
+  expect_match(
+    msg$html,
+    episodic_format_date("2026-08-01", lang = "en"),
+    fixed = TRUE
   )
-  expect_match(msg$html, expected_period, fixed = TRUE)
-  expect_match(msg$plain, expected_period, fixed = TRUE)
+  expect_match(
+    msg$html,
+    episodic_format_date("2026-08-15", lang = "en"),
+    fixed = TRUE
+  )
+  expect_match(msg$html, "15 days", fixed = TRUE)
+  expect_match(
+    msg$plain,
+    episodic_format_date_range("2026-08-01", "2026-08-15", lang = "en"),
+    fixed = TRUE
+  )
 })
 
-test_that("episodic_notify_build_new_clusters() centre-aligns Cases through Period", {
+test_that("episodic_notify_build_new_clusters() centre-aligns everything after the place", {
   details <- data.frame(
     cluster_id = 1L,
     pathogen = "MRSA",
@@ -216,10 +228,18 @@ test_that("episodic_notify_build_new_clusters() centre-aligns Cases through Peri
     msg$html,
     perl = TRUE
   )
-  expect_equal(lengths(regmatches(header, gregexpr("text-align:left", header))), 2)
-  expect_equal(lengths(regmatches(header, gregexpr("text-align:center", header))), 5)
+  # cluster, pathogen and place read as text; cases, first case, last
+  # case, duration, priority, expected and ratio are all numbers
+  expect_equal(
+    lengths(regmatches(header, gregexpr("text-align:left", header))),
+    3
+  )
+  expect_equal(
+    lengths(regmatches(header, gregexpr("text-align:center", header))),
+    7
+  )
   row <- sub(".*(<tr>.*?</tr>).*", "\\1", msg$html, perl = TRUE)
-  expect_equal(lengths(regmatches(row, gregexpr("text-align:center", row))), 5)
+  expect_equal(lengths(regmatches(row, gregexpr("text-align:center", row))), 7)
 })
 
 test_that("episodic_notify_build_new_clusters() and episodic_notify_build_failure() honour lang", {
@@ -299,6 +319,88 @@ test_that("episodic_notify_build_new_clusters() includes dashboard link when giv
   expect_match(msg$plain, "https://episodic.example.org")
   expect_match(msg$html, "https://episodic.example.org")
   expect_match(msg$slack_text, "episodic.example.org")
+
+  # and each cluster's id is the deep link into its own dossier, not
+  # just a reference the reader then has to find in the queue
+  expect_match(
+    msg$html,
+    "https://episodic.example.org?cluster=1",
+    fixed = TRUE
+  )
+  expect_match(
+    msg$plain,
+    "https://episodic.example.org?cluster=1",
+    fixed = TRUE
+  )
+  expect_match(
+    msg$slack_text,
+    "<https://episodic.example.org?cluster=1|#1>",
+    fixed = TRUE
+  )
+})
+
+test_that("episodic_notify_cluster_url() appends to whatever query the dashboard URL already has", {
+  expect_null(episodic_notify_cluster_url(NULL, 1L))
+  expect_null(episodic_notify_cluster_url("", 1L))
+  expect_equal(
+    episodic_notify_cluster_url("https://x.example.org", 7L),
+    "https://x.example.org?cluster=7"
+  )
+  expect_equal(
+    episodic_notify_cluster_url("https://x.example.org/?lang=nl", 7L),
+    "https://x.example.org/?lang=nl&cluster=7"
+  )
+})
+
+test_that("the notification names every cluster by id and shows them last case day first", {
+  details <- data.frame(
+    cluster_id = c(11L, 12L, 13L),
+    pathogen = c("MRSA", "Norovirus", "VRE"),
+    level = rep("pathogen_region", 3),
+    institution_name = rep("", 3),
+    ward = rep(NA_character_, 3),
+    region_code = rep("NL", 3),
+    n_cases = c(4L, 9L, 2L),
+    expected = rep(1.0, 3),
+    excess = rep(2.0, 3),
+    ratio = rep(3.0, 3),
+    priority_score = c(50, 61.4, 88.6),
+    detector_agreement = rep(1L, 3),
+    first_day = c("2026-01-02", "2026-02-01", "2026-03-01"),
+    last_day = c("2026-01-06", "2026-03-20", "2026-03-20"),
+    stringsAsFactors = FALSE
+  )
+  msg <- episodic_notify_build_new_clusters(details, 3L, "2026-03-21", NULL)
+
+  # the id leads every row, exactly as it does on screen
+  for (id in details$cluster_id) {
+    expect_match(
+      msg$html,
+      episodic_tr("dossier.cluster_ref", id = id, lang = "en"),
+      fixed = TRUE
+    )
+    expect_match(
+      msg$plain,
+      episodic_tr("dossier.cluster_ref", id = id, lang = "en"),
+      fixed = TRUE
+    )
+  }
+
+  # and the same order: 13 and 12 share a last day, so priority breaks
+  # the tie, and 11 (last seen in January) comes last
+  positions <- vapply(
+    c(13L, 12L, 11L),
+    function(id) {
+      as.integer(regexpr(
+        episodic_tr("dossier.cluster_ref", id = id, lang = "en"),
+        msg$html,
+        fixed = TRUE
+      ))
+    },
+    integer(1)
+  )
+  expect_false(any(positions < 0))
+  expect_equal(positions, sort(positions))
 })
 
 test_that("episodic_notify_validate_config() passes for disabled notifications", {

@@ -712,22 +712,21 @@ test_that("the archive lists cluster ids and links each row through to its dossi
   expect_lt(
     regexpr(episodic_tr("column.cluster", lang = "en"), html, fixed = TRUE),
     regexpr(
-      episodic_tr("archive.col.pathogen", lang = "en"),
+      episodic_tr("column.pathogen", lang = "en"),
       html,
       fixed = TRUE
     )
   )
-  # dates, duration and case count, per the row's own cluster
-  expect_true(grepl(
-    episodic_tr("archive.col.period", lang = "en"),
-    html,
-    fixed = TRUE
-  ))
-  expect_true(grepl(
-    episodic_tr("archive.col.duration", lang = "en"),
-    html,
-    fixed = TRUE
-  ))
+  # both dates, duration, case count and priority, per the row's own cluster
+  for (key in c(
+    "column.cases",
+    "column.first_day",
+    "column.last_day",
+    "column.duration",
+    "column.priority"
+  )) {
+    expect_true(grepl(episodic_tr(key, lang = "en"), html, fixed = TRUE))
+  }
   # the level filter chips, one per lattice level plus "all"
   expect_true(grepl("archive_level_filter", html, fixed = TRUE))
   expect_true(grepl(
@@ -757,23 +756,5 @@ test_that("the archive lists cluster ids and links each row through to its dossi
       lang = "en"
     )),
     1
-  )
-})
-
-test_that("episodic_ui_cluster_link_row() is the one place both cluster tables get their row from", {
-  row <- as.character(episodic_ui_cluster_link_row(
-    42L,
-    lang = "en",
-    shiny::tags$td("a cell")
-  ))
-  expect_true(grepl("Shiny.setInputValue", row, fixed = TRUE))
-  expect_true(grepl("open_cluster", row, fixed = TRUE))
-  expect_true(grepl("42", row, fixed = TRUE))
-  expect_true(grepl("tabindex", row, fixed = TRUE))
-  expect_true(grepl("a cell", row, fixed = TRUE))
-  # the id cell comes first, before whatever cells the caller passed
-  expect_lt(
-    regexpr("episodic-cell-id", row, fixed = TRUE),
-    regexpr("a cell", row, fixed = TRUE)
   )
 })

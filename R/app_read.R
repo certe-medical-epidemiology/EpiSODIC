@@ -701,7 +701,14 @@ episodic_app_doubling_time <- function(
 #' @param cases A data frame of the cluster's cases, with `pc`.
 #' @return A list, or `NULL` when no case carries a PC. `total` is the
 #'   number of cases with a known PC - the denominator `dominant_share`
-#'   is a share of - and `n_unknown_pc` how many were set aside.
+#'   is a share of - and `n_unknown_pc` how many were set aside. `rows`
+#'   carries `label` (the PC verbatim, which is what
+#'   `episodic_geo_join()` joins the map geometry on, so it must stay
+#'   the bare value), `n`, and `province` - the coarser unit that PC
+#'   resolves to, or `NA` where it resolves to none.
+#'   `province_error` holds why no province could be resolved for any of
+#'   them, when the reason is a configuration problem worth showing the
+#'   reader rather than absence of a mapping.
 #' @keywords internal
 #' @noRd
 episodic_app_concentration <- function(cases) {
@@ -711,14 +718,52 @@ episodic_app_concentration <- function(cases) {
   known <- cases$pc[!is.na(cases$pc)]
   tab <- table(known)
   tab <- tab[order(-tab)]
+  provinces <- episodic_app_pc_provinces(names(tab))
   list(
     dominant_label = names(tab)[1],
     dominant_n = as.integer(tab[1]),
     dominant_share = as.numeric(tab[1]) / length(known),
     total = length(known),
     n_unknown_pc = nrow(cases) - length(known),
-    rows = data.frame(label = names(tab), n = as.integer(tab), row.names = NULL)
+    province_error = provinces$error,
+    rows = data.frame(
+      label = names(tab),
+      n = as.integer(tab),
+      province = provinces$province,
+      row.names = NULL,
+      stringsAsFactors = FALSE
+    )
   )
+}
+
+#' The province each PC falls in, for display next to it
+#'
+#' The same lookup the lattice's L4 level is built on
+#' (`episodic_pc_to_province()`), so a postcode is shown under the
+#' province it is actually detected under rather than under a second,
+#' cosmetic notion of where it is.
+#'
+#' A misconfigured `EPISODIC_PC_PROVINCE_MAP` stops a detection run
+#' (`episodic_run_cron()`). The dashboard cannot take that literally - a
+#' dossier that refuses to render says less about the problem than a
+#' dossier that renders and names it - so the same message is read here
+#' and handed back to be shown in the panel. Read, not swallowed: it
+#' reaches the reader either way.
+#'
+#' @param pc A character vector of postcode values.
+#' @return A list with `province` (a character vector the length of `pc`)
+#'   and `error` (a single string, or `NA`).
+#' @keywords internal
+#' @noRd
+episodic_app_pc_provinces <- function(pc) {
+  problem <- episodic_pc_province_map_problem()
+  if (!is.na(problem)) {
+    return(list(
+      province = rep(NA_character_, length(pc)),
+      error = problem
+    ))
+  }
+  list(province = episodic_pc_to_province(pc), error = NA_character_)
 }
 
 #' Positivity summary from the optional denominator table

@@ -323,6 +323,31 @@ anywhere else: outside that one region, L4 simply never has anything to
 detect on until you supply your own mapping. L1-L3 and L5 do not depend
 on this at all. See `episodic_pc_to_province()` for the exact contract.
 
+Unset and unusable are two different things. Once the variable *is* set,
+a file that does not exist, cannot be read as a CSV, holds no rows, has
+no `pc` or no `province_code` column, or repeats a `pc` is a
+configuration error: the run stops and `error_text` names the file and
+which of those it is. It does not fall back to the demo ranges - doing
+so would hand an operator who supplied their own mapping a lattice built
+on somebody else's provinces, with nothing anywhere to say why.
+
+The run also says so in its trace when the mapping loads but places no
+case at all, which is almost always a formatting mismatch: `"9713"` in
+the CSV against `"9713 AB"` in the case data, or the reverse. The same
+mapping is what puts a province name beside each postcode in the
+dashboard's geography panel, so a mapping that is not being used is
+visible there too.
+
+The dashboard's **Info** screen answers the same question directly, for
+this and every other `EPISODIC_*` file: its "Reference data" panel says
+whether each one was read, was rejected (and why), or was read fine, and
+what it put into the app - for the postcode mapping, how many postcodes
+it holds, how many provinces they resolve to, and how many of the
+distinct postcodes in your own case data it actually covers. That last
+number is the one that separates a mapping that was never read from one
+whose postcode format does not match yours. The resolved file paths on
+that panel are shown only to a signed-in user.
+
 ## What a run reports
 
 Every `episodic_run_cron()` call records what each feed actually

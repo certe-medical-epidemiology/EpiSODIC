@@ -371,6 +371,15 @@ episodic_run_cron <- function(
   episodic_trace("Resolving and checking case data")
   prepared <- tryCatch(
     {
+      # A PC-to-province mapping an operator configured and this run
+      # cannot use is a structural problem like any other, and belongs
+      # here with them: falling back to the shipped demo ranges would
+      # build the province level of the lattice on somebody else's
+      # provinces without saying so.
+      pc_province_problem <- episodic_pc_province_map_problem()
+      if (!is.na(pc_province_problem)) {
+        stop(pc_province_problem, call. = FALSE)
+      }
       cases <- episodic_resolve_data(cases)
       episodic_trace_debug(
         debug,

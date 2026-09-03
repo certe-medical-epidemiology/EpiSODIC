@@ -1,13 +1,33 @@
-# EpiSODIC 0.10.3
+# EpiSODIC 0.10.4
+
+## New
+
+- New `access.require_login` configuration key (default `false`, keeping the current behaviour): when `true`, an anonymous visitor gets a sign-in prompt and nothing else, because the server renders no navigation, no status strip and no screen for them rather than hiding it client-side
+- The Settings screen has a read-only "Dashboard access" panel reporting which way `access.require_login` is set; it is deliberately not editable in-app, so a login wall cannot be switched off from inside the app by a single account
+- A cluster's dossier can now be opened by URL: `?cluster=<id>` on the dashboard address selects that cluster on the Clusters screen
+- New-cluster notifications now link each cluster id straight to its dossier when `dashboard_url` is configured
+- The geography panel and the outbreak report now name the province each postcode falls in, alongside the postcode itself
+- The Info screen has a "Reference data" panel reporting, per `EPISODIC_*` variable, whether the instance's own file was read, was rejected, or was read and matched nothing, and what it delivered
+- The reference-data panel reports how many of the case data's own postcodes resolve to a province, which is what distinguishes a `EPISODIC_PC_PROVINCE_MAP` that was never read from one whose postcode format does not match the case data
 
 ## Changed
 
+- Every table of clusters (Archive, Pathogen screen, the dossier's related and similar-clusters panels, the outbreak report and the new-cluster notification) now shares one implementation with the same columns in the same order: cluster id, then context, then cases, first case, last case, duration and priority
+- Every table of clusters is now sorted on the last case day, most recent first, with priority and cluster id breaking ties
+- A cluster row that does not open a dossier, because lattice suppression folded it into another, now shows its id in the warning colour with a tooltip explaining why, instead of a link that does nothing
+- The per-screen cluster table column translation keys are replaced by one `column.*` family shared by every cluster table
+- `episodic_config_hash()` now also excludes the `access` section, for the same reason it excludes `notifications`: it governs how the instance is operated, never what a run computes
+- `EPISODIC_PC_PROVINCE_MAP` pointing at a missing, unreadable, empty, wrongly-columned or duplicate-postcode CSV is now a run-stopping error naming the file and the problem, instead of a silent fall back to the shipped Dutch demo ranges
+- A detection run in which no postcode resolves to a province now says so in its trace, instead of leaving province-level detection silently empty
 - The dashboard's area/province/region place label now shows `region_code` verbatim instead of cosmetically reformatting it, so an operator can see at a glance, character for character, whether `EPISODIC_PC_PROVINCE_MAP` resolved the code they expected, without risking a mangled real place name (e.g. the hyphen in "Noord-Holland")
+
+
+# EpiSODIC 0.10.3
 
 ## Fixed
 
 - Email/notification messages for new clusters and run failures are now rendered in `EPISODIC_LANGUAGE`, in all 8 shipped languages, instead of always in English
-- The new-clusters email's Cases, Expected, Ratio, Priority, and Period columns are now horizontally centred, and the Period column is formatted the same way the dashboard formats date ranges
+- The new-clusters email's numeric columns are now horizontally centred, and its dates are formatted the same way the dashboard formats them
 - `microsoft365` notifications under the cached-login flow (Option C) now honour `from`: when set, mail is sent from that mailbox via `Microsoft365R::get_business_outlook(shared_mbox_email = from)` instead of always sending as the signed-in account
 - Fixed a `grepl(..., ignore.case = TRUE, fixed = TRUE)` warning when matching a Microsoft 365 tenant against cached Azure AD logins; the match is now done case-insensitively without triggering the warning
 

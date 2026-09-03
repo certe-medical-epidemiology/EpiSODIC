@@ -48,10 +48,13 @@
 #'   own results).
 #' @param lang Session language.
 #' @param n Maximum number of results.
-#' @return A data frame, one row per similar cluster, ordered by
-#'   similarity descending: `cluster_id`, `pathogen`, `level_label`,
-#'   `place`, `n_cases`, `verdict_label`, `closed_at`. Zero rows if there
-#'   is no closed precedent for this pathogen.
+#' @return A data frame, one row per similar cluster, the `n` most similar
+#'   first: `cluster_id`, `pathogen`, `level_label`, `place`, `first_day`,
+#'   `last_day`, `n_cases`, `priority_score`, `verdict_label`,
+#'   `closed_at`. Zero rows if there is no closed precedent for this
+#'   pathogen. Similarity decides *which* rows come back; the panel that
+#'   renders them re-sorts into `episodic_cluster_table_order()`, like
+#'   every other cluster table.
 #' @keywords internal
 #' @noRd
 episodic_app_similar_clusters <- function(
@@ -64,7 +67,10 @@ episodic_app_similar_clusters <- function(
     pathogen = character(0),
     level_label = character(0),
     place = character(0),
+    first_day = character(0),
+    last_day = character(0),
     n_cases = integer(0),
+    priority_score = numeric(0),
     verdict_label = character(0),
     closed_at = character(0),
     stringsAsFactors = FALSE
@@ -192,7 +198,10 @@ episodic_app_similar_clusters <- function(
     "pathogen",
     "level_label",
     "place",
+    "first_day",
+    "last_day",
     "n_cases",
+    "priority_score",
     "verdict_label",
     "closed_at"
   )]
