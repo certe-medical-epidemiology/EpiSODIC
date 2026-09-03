@@ -70,6 +70,7 @@ episodic_ui_settings_screen <- function(
       )
     },
     episodic_ui_settings_users_panel(users, lang = lang),
+    episodic_ui_settings_access_panel(config, lang = lang),
     episodic_ui_settings_detection_panel(config, lang = lang),
     episodic_ui_settings_notif_panel(config$notifications, lang = lang),
     episodic_ui_settings_export_panel(lang = lang),
@@ -285,13 +286,69 @@ episodic_ui_settings_field <- function(
   )
 }
 
+#' The read-only dashboard-access panel
+#'
+#' `access.require_login` is a YAML-only setting with no in-app override,
+#' deliberately (see `episodic_app_require_login()`), so this panel reads
+#' rather than edits: an admin can confirm which way the instance is set
+#' without SSH access, and changing it still takes file access to the
+#' machine.
+#'
+#' @param config A resolved configuration.
+#' @param lang Session language.
+#' @return A `shiny::tags` element.
+#' @keywords internal
+#' @noRd
+episodic_ui_settings_access_panel <- function(
+    config,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  required <- episodic_app_require_login(config)
+  pal <- episodic_palette()
+  episodic_ui_panel(
+    episodic_tr("settings.access.title", lang = lang),
+    note = episodic_tr("settings.access.note", lang = lang),
+    shiny::tags$div(
+      class = "episodic-settings-kv",
+      shiny::tags$span(
+        class = "episodic-settings-kv-label",
+        episodic_tr("settings.access.require_login", lang = lang)
+      ),
+      shiny::tags$span(
+        class = "episodic-settings-kv-value",
+        episodic_ui_chip(
+          episodic_tr(
+            if (required) "settings.access.closed" else "settings.access.open",
+            lang = lang
+          ),
+          if (required) pal$success_dark else pal$muted,
+          filled = TRUE
+        )
+      )
+    ),
+    shiny::tags$p(
+      class = "episodic-panel-note",
+      episodic_tr(
+        if (required) {
+          "settings.access.closed_detail"
+        } else {
+          "settings.access.open_detail"
+        },
+        lang = lang
+      )
+    )
+  )
+}
+
 #' The read-only detection configuration grid
 #' @keywords internal
 #' @noRd
 episodic_ui_settings_detection_panel <- function(
     config,
     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  sections <- config[setdiff(names(config), "notifications")]
+  # `notifications` has its own editable panel above; `access` has its
+  # own read-only one. Neither is detection configuration, and listing
+  # them here under that heading would say they were.
+  sections <- config[setdiff(names(config), episodic_config_unhashed_sections)]
   episodic_ui_panel(
     episodic_tr("settings.detection.title", lang = lang),
     note = episodic_tr("settings.detection.note", lang = lang),

@@ -35,6 +35,34 @@ episodic_app_server_factory <- function(
       if (DBI::dbIsValid(con)) DBI::dbDisconnect(con)
     })
 
+    # Read once per session rather than per render: the access policy is
+    # a property of the deployment, and re-reading the YAML on every
+    # reactive invalidation would let it change under a session halfway
+    # through.
+    require_login <- episodic_app_require_login()
+
+    # Set up before anything that reads it, because `access_granted()` is
+    # the gate every output below gets its data past, and a gate defined
+    # after the things it guards is a gate somebody eventually forgets to
+    # close.
+    current_user <- episodic_app_server_auth(
+      input,
+      output,
+      session,
+      con,
+      lang = lang,
+      require_login = require_login
+    )
+
+    # The one place the anonymous-access policy is decided. Everything
+    # that would put surveillance data on the page is behind it, and what
+    # it gates is whether that data is *computed and sent at all* - never
+    # whether it is hidden once sent. See
+    # `episodic_app_access_granted()`.
+    access_granted <- shiny::reactive({
+      episodic_app_access_granted(require_login, current_user())
+    })
+
     view <- shiny::reactiveVal("clusters")
     shiny::observeEvent(input$nav_view, view(input$nav_view))
 
@@ -48,6 +76,7 @@ episodic_app_server_factory <- function(
 
     open_clusters <- shiny::reactive({
       db_version()
+      shiny::req(access_granted())
       shiny::req(view() == "clusters")
       episodic_app_open_clusters(con, lang = lang)
     })
@@ -147,19 +176,17 @@ episodic_app_server_factory <- function(
       pathogen_period("custom")
     })
 
-    current_user <- episodic_app_server_auth(
-      input,
-      output,
-      session,
-      con,
-      lang = lang
-    )
-
     output$auth_control <- shiny::renderUI({
       episodic_ui_auth_control(current_user(), lang = lang)
     })
 
+    # The navigation is a map of what there is to read, and the status
+    # strip carries the last run's outcome and completeness. Neither is a
+    # cluster, and both are withheld from a visitor who may see nothing.
     output$nav_links <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
       episodic_ui_nav_links(
         view(),
         lang = lang,
@@ -168,10 +195,20 @@ episodic_app_server_factory <- function(
     })
 
     output$status_strip <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
       episodic_ui_status_strip(episodic_app_status(con), lang = lang)
     })
 
     output$main_view <- shiny::renderUI({
+      # Every screen below reads the database. On an instance that
+      # requires a sign-in, an anonymous session never gets past here, so
+      # none of those reads happens and nothing they would return is
+      # serialised into the page.
+      if (!access_granted()) {
+        return(episodic_ui_locked_screen(lang = lang))
+      }
       if (view() == "streams") {
         episodic_ui_streams_screen(
           episodic_app_streams_screen(con, page = streams_page()),
@@ -227,6 +264,13 @@ episodic_app_server_factory <- function(
     # every click - episodic_ui_rail()'s onclick handles the "active"
     # highlight itself, client-side, instead.
     output$rail_pane <- shiny::renderUI({
+      # Gated in its own right, not only through `main_view` not placing
+      # it: an output nothing binds is an output nothing computes, but
+      # that is a property of how it happens to be reached today, and
+      # this is a leak if it ever stops being true.
+      if (!access_granted()) {
+        return(NULL)
+      }
       # current_user() deliberately not isolated (unlike selected_cluster_id()
       # above it): the bulk-select checkboxes and action bar are gated on
       # being signed in, so they need to appear/disappear immediately on
@@ -241,6 +285,9 @@ episodic_app_server_factory <- function(
     })
 
     output$dossier_pane <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
       cluster_id <- selected_cluster_id()
       current_user() # re-render on sign in/out (line list lock, classification form)
       if (is.null(cluster_id)) {
@@ -258,6 +305,9 @@ episodic_app_server_factory <- function(
     })
 
     output$assessment_pane <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
       cluster_id <- selected_cluster_id()
       user <- current_user()
       if (is.null(cluster_id)) {
@@ -284,6 +334,9 @@ episodic_app_server_factory <- function(
       )
     })
     output$archive_screen <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
       db_version()
       episodic_ui_archive_screen(
         episodic_app_archive(
@@ -303,6 +356,11 @@ episodic_app_server_factory <- function(
     # them - and read the whole message, not the line the table had room
     # for.
     shiny::observeEvent(input$activity_run_detail, {
+      # An observer, unlike an output, runs whenever the input arrives -
+      # and any client can set any input. Without this the run detail,
+      # error text and per-feed counts included, is one console line away
+      # on an instance that shows an anonymous visitor nothing.
+      shiny::req(access_granted())
       run <- episodic_db_run(con, as.integer(input$activity_run_detail))
       if (is.null(run)) {
         return(NULL)

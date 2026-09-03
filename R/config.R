@@ -120,6 +120,21 @@ episodic_config_merge <- function(base, override) {
   base
 }
 
+#' Configuration sections deliberately left out of `config_hash`
+#'
+#' Detection reproducibility is the guarantee the hash exists for: same
+#' detection settings in, same hash out. A section that cannot change
+#' what a run computes therefore must not change the hash either, or
+#' every notification tweak and every access-policy change would make
+#' historic runs look incomparable with current ones for no reason.
+#'
+#' `notifications` has the further reason that it holds secrets (SMTP
+#' passwords, webhook URLs), and `config_snapshot` is stored in plain
+#' text on every run row.
+#' @keywords internal
+#' @noRd
+episodic_config_unhashed_sections <- c("notifications", "access")
+
 #' Fingerprint a configuration for reproducibility
 #'
 #' Every detection run is stamped with a hash of the exact configuration
@@ -129,6 +144,10 @@ episodic_config_merge <- function(base, override) {
 #' The hash does not depend on the order of keys in your YAML file: it is
 #' computed over a canonical (sorted, JSON) representation, so equivalent
 #' configurations always produce the same hash.
+#'
+#' The `notifications` and `access` sections are excluded: both govern how
+#' the instance is operated rather than what a run computes, so neither
+#' can make two otherwise-identical runs compare as different.
 #'
 #' You will not normally call this directly - EpiSODIC's detection pipeline
 #' calls it automatically - but it is useful for confirming that two
@@ -145,7 +164,14 @@ episodic_config_merge <- function(base, override) {
 #' @export
 episodic_config_hash <- function(config) {
   config_for_hash <- config
-  config_for_hash$notifications <- NULL
+  # Sections that govern how the instance is operated rather than what a
+  # detection run computes. Turning on the login wall, or changing an
+  # SMTP password, must not make two otherwise-identical runs compare as
+  # having used different settings - and `notifications` additionally
+  # holds secrets that have no business in `config_snapshot`.
+  for (section in episodic_config_unhashed_sections) {
+    config_for_hash[[section]] <- NULL
+  }
   canonical <- episodic_config_canonicalise(config_for_hash)
   snapshot <- jsonlite::toJSON(canonical, auto_unbox = TRUE, null = "null")
   list(

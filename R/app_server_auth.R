@@ -26,6 +26,10 @@
 #' @param input,output,session The Shiny server function's own arguments.
 #' @param con A [DBI::DBIConnection-class].
 #' @param lang Session language.
+#' @param require_login Whether this instance closes the app to anonymous
+#'   visitors (`episodic_app_require_login()`). When it does, the sign-in
+#'   prompt is raised on connect and again on sign-out, and cannot be
+#'   dismissed - there is nothing behind it to go back to.
 #' @return A `shiny::reactiveVal` holding the signed-in user's account row,
 #'   or `NULL`.
 #' @keywords internal
@@ -35,12 +39,25 @@ episodic_app_server_auth <- function(
     output,
     session,
     con,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+    lang = Sys.getenv("EPISODIC_LANGUAGE"),
+    require_login = FALSE) {
   current_user <- shiny::reactiveVal(NULL)
+  prompt <- function(error = FALSE) {
+    shiny::showModal(episodic_ui_login_modal(
+      error = error,
+      dismissible = !isTRUE(require_login),
+      lang = lang
+    ))
+  }
 
-  shiny::observeEvent(input$auth_show_login, {
-    shiny::showModal(episodic_ui_login_modal(lang = lang))
-  })
+  # Raised without being asked for, on an instance that requires a
+  # sign-in: the alternative is a reader looking at a locked screen and
+  # having to find the way in themselves.
+  if (isTRUE(require_login)) {
+    session$onFlushed(function() prompt(), once = TRUE)
+  }
+
+  shiny::observeEvent(input$auth_show_login, prompt())
 
   shiny::observeEvent(input$auth_cancel_login, shiny::removeModal())
 
@@ -49,7 +66,7 @@ episodic_app_server_auth <- function(
     password <- input$auth_password_val %||% ""
     result <- episodic_auth_login(con, username, password)
     if (!isTRUE(result$ok)) {
-      shiny::showModal(episodic_ui_login_modal(error = TRUE, lang = lang))
+      prompt(error = TRUE)
       return(invisible(NULL))
     }
     current_user(result$user)
@@ -60,7 +77,15 @@ episodic_app_server_auth <- function(
     }
   })
 
-  shiny::observeEvent(input$auth_signout, current_user(NULL))
+  shiny::observeEvent(input$auth_signout, {
+    current_user(NULL)
+    # Signing out of a login-required instance lands back where an
+    # anonymous session starts, prompt and all, rather than on a locked
+    # screen with no way forward.
+    if (isTRUE(require_login)) {
+      prompt()
+    }
+  })
 
   shiny::observeEvent(input$auth_change_password_submit, {
     new_pw <- input$auth_new_password_val %||% ""

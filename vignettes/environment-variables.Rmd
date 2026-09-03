@@ -22,7 +22,7 @@ setting up automatically.
 |-----------------------------|----------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `EPISODIC_DB`               | `episodic_run_app()`, `episodic_provision_user()` (`db_path` argument) | Path to the instance's SQLite database, or a `mysql://` DSN pointing at a MariaDB/MySQL database instead - see "Database backend" above.                                                                                                                                             |
 | `EPISODIC_LANGUAGE`         | every `lang` argument - `episodic_run_app()`, `episodic_demo()`, `episodic_report_render()`, `episodic_tr()` and every renderer beneath them | Dashboard/report language: `en`, `ar`, `nl`, `fr`, `de`, `hi`, `zh`, or `es`. Defaults to `en` if unset. Fixed for the whole running app - there is no in-app language switcher.                                                                                                       |
-| `EPISODIC_CONFIG`           | `episodic_run_cron()` (`episodic_config_path` argument)                | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`'s shipped defaults.                                                                                |
+| `EPISODIC_CONFIG`           | `episodic_run_cron()` (`episodic_config_path` argument), `episodic_run_app()` | Path to an instance override of configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings, notification channels, and `access.require_login`), overlaid key-by-key on `inst/config/default.yaml`'s shipped defaults. See `vignette("deployment")`'s "Closing the app to anonymous visitors" for `access.require_login`.       |
 | `EPISODIC_PALETTE_CONFIG`   | `episodic_palette()` (`palette_config_path` argument)                 | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`'s shipped defaults. Deliberately separate from `EPISODIC_CONFIG`: colour is a display concern, never part of `episodic_config_hash()`'s detection-reproducibility guarantee. |
 | `EPISODIC_GEO_DATA`         | `episodic_geo_source_resolve()` (`path` argument)                     | Path to an `.rds` file holding your own geographic reference data (an `sf` object with `pc`/`geometry` columns) for the choropleth map - any country, any area unit. EpiSODIC ships one worked example (Dutch postcodes), used only when this is unset. See `vignette("data-format")`'s "Geographic reference data" section.                |
 | `EPISODIC_GEO_DATA_OVERLAY` | `episodic_geo_overlay_resolve()` (`path` argument)                    | Path to an `.rds` file holding an optional region-outline overlay (an `sf` object with just a `geometry` column), drawn on top of the choropleth. No default. See `vignette("data-format")`'s "Geographic reference data" section.                                                   |
@@ -53,5 +53,12 @@ distinct postcodes in your own case data resolve to a province.
 That last figure is the one worth reading first when a province is not
 appearing where you expect: a mapping read successfully but matching
 none of your postcodes looks, on every other screen, exactly like a
-mapping that was never read. The resolved file paths are shown only to a
-signed-in user, since the Info screen itself needs no sign-in.
+mapping that was never read.
+
+The resolved file paths are shown only to a signed-in user. By default
+the Info screen itself needs no sign-in, so the statuses and counts - the
+part that answers "is my file being used" - are readable without one,
+while the paths, which say more about the machine than a visitor needs,
+are not. On an instance with `access.require_login` set the whole screen
+is behind the sign-in like every other, so a signed-in reader sees the
+paths there too.

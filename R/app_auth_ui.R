@@ -67,34 +67,48 @@ episodic_ui_auth_control <- function(
 #' The sign-in modal
 #'
 #' @param error If `TRUE`, shows the generic credentials-rejected message.
+#' @param dismissible Whether the reader may close the modal without
+#'   signing in. `FALSE` on an instance with `access.require_login` set,
+#'   where there is nothing behind the modal to go back to. It is a
+#'   courtesy, not a control: the screen behind it is empty because the
+#'   server rendered nothing, not because the modal is covering it.
 #' @param lang Session language.
 #' @return A `shiny::modalDialog`.
 #' @keywords internal
 #' @noRd
 episodic_ui_login_modal <- function(
     error = FALSE,
+    dismissible = TRUE,
     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   shiny::modalDialog(
     title = episodic_tr("auth.signin", lang = lang),
-    easyClose = TRUE,
+    easyClose = isTRUE(dismissible),
     footer = shiny::tags$div(
       class = "episodic-form-actions",
-      shiny::tags$button(
-        class = "episodic-btn",
-        type = "button",
-        # Bootstrap 5 (episodic_app_ui()'s bslib::bs_theme(version = 5))
-        # reads `data-bs-dismiss`, not Bootstrap 4's unprefixed
-        # `data-dismiss`.
-        `data-bs-dismiss` = "modal",
-        onclick = "Shiny.setInputValue('auth_cancel_login', Math.random(), {priority:'event'})",
-        episodic_tr("misc.close", lang = lang)
-      ),
+      if (isTRUE(dismissible)) {
+        shiny::tags$button(
+          class = "episodic-btn",
+          type = "button",
+          # Bootstrap 5 (episodic_app_ui()'s bslib::bs_theme(version = 5))
+          # reads `data-bs-dismiss`, not Bootstrap 4's unprefixed
+          # `data-dismiss`.
+          `data-bs-dismiss` = "modal",
+          onclick = "Shiny.setInputValue('auth_cancel_login', Math.random(), {priority:'event'})",
+          episodic_tr("misc.close", lang = lang)
+        )
+      },
       shiny::tags$button(
         class = "episodic-btn episodic-btn-primary",
         onclick = "Shiny.setInputValue('auth_login_submit', Math.random(), {priority: 'event'})",
         episodic_tr("auth.submit", lang = lang)
       )
     ),
+    if (!isTRUE(dismissible)) {
+      shiny::tags$p(
+        class = "episodic-panel-note",
+        episodic_tr("auth.required_note", lang = lang)
+      )
+    },
     shiny::tags$div(
       class = "episodic-form-group",
       shiny::tags$label(
@@ -185,5 +199,45 @@ episodic_ui_must_change_modal <- function(
       "$('#auth_new_password').on('input', function(){ Shiny.setInputValue('auth_new_password_val', this.value); });
        $('#auth_confirm_password').on('input', function(){ Shiny.setInputValue('auth_confirm_password_val', this.value); });"
     ))
+  )
+}
+
+#' What an anonymous visitor sees when the instance requires a sign-in
+#'
+#' The whole of the main view, for a session that has not signed in on an
+#' instance with `access.require_login` set. It carries no surveillance
+#' data of any kind, because on such a session the server never computes
+#' any: this is not the data screen with something drawn over it.
+#'
+#' The sign-in modal is shown over this on connect. The panel exists
+#' underneath it anyway, for the reader who dismisses the modal with the
+#' browser's own controls or whose JavaScript never ran - they get an
+#' explanation and a way back to the prompt, rather than a blank page
+#' that reads as an outage.
+#'
+#' @param lang Session language.
+#' @return A `shiny::tags` element.
+#' @keywords internal
+#' @noRd
+episodic_ui_locked_screen <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  shiny::tags$div(
+    class = "episodic-locked-screen",
+    shiny::tags$div(
+      class = "episodic-locked-card",
+      shiny::tags$span(class = "episodic-lock-icon", "\U0001F512"),
+      shiny::tags$h1(
+        class = "episodic-locked-title",
+        episodic_tr("auth.required_title", lang = lang)
+      ),
+      shiny::tags$p(
+        class = "episodic-locked-body",
+        episodic_tr("auth.required_body", lang = lang)
+      ),
+      shiny::tags$button(
+        class = "episodic-btn episodic-btn-primary",
+        onclick = "Shiny.setInputValue('auth_show_login', Math.random(), {priority: 'event'});",
+        episodic_tr("auth.signin", lang = lang)
+      )
+    )
   )
 }

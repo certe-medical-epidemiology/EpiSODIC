@@ -435,3 +435,48 @@ episodic_user_is_epidemiologist <- function(user) {
 episodic_user_is_admin <- function(user) {
   !is.null(user) && isTRUE(as.logical(user$is_admin))
 }
+
+#' Whether this instance closes the app to anonymous visitors
+#'
+#' `access.require_login` in the resolved configuration, read defensively:
+#' anything that is not unambiguously true leaves the app in the
+#' behaviour it has always had, so a malformed or absent value can never
+#' silently lock an instance out of its own dashboard.
+#'
+#' Deliberately a YAML-only setting, with no Settings-screen override: a
+#' login wall an admin account can switch off from inside the app is a
+#' login wall that falls with that one account.
+#'
+#' @param config A resolved configuration from
+#'   [episodic_config_resolve()], or `NULL` to resolve one here.
+#' @return A single logical, never `NA`.
+#' @keywords internal
+#' @noRd
+episodic_app_require_login <- function(config = NULL) {
+  config <- config %||% episodic_config_resolve()
+  isTRUE(as.logical(config$access$require_login %||% FALSE))
+}
+
+#' Whether this session may be shown anything at all
+#'
+#' The whole of the anonymous-access policy, in one predicate, so that
+#' every screen and every observer asks the same question in the same way
+#' rather than each re-deriving it.
+#'
+#' It is asked on the *server*, and what it gates is whether a screen is
+#' rendered at all - not whether it is hidden once rendered. A dashboard
+#' that renders its data and then covers it with a modal has already sent
+#' that data to the browser, where a developer console reaches it in
+#' seconds; the modal is then decoration over a leak. Everything behind
+#' this predicate is therefore never computed, never serialised, and
+#' never sent.
+#'
+#' @param require_login Whether this instance requires a sign-in, from
+#'   `episodic_app_require_login()`.
+#' @param user The session's signed-in user row, or `NULL`.
+#' @return A single logical.
+#' @keywords internal
+#' @noRd
+episodic_app_access_granted <- function(require_login, user) {
+  !isTRUE(require_login) || !is.null(user)
+}

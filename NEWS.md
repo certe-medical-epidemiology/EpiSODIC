@@ -2,6 +2,8 @@
 
 ## New
 
+- New `access.require_login` configuration key (default `false`, keeping the current behaviour): when `true`, an anonymous visitor gets a sign-in prompt and nothing else, because the server renders no navigation, no status strip and no screen for them rather than hiding it client-side
+- The Settings screen has a read-only "Dashboard access" panel reporting which way `access.require_login` is set; it is deliberately not editable in-app, so a login wall cannot be switched off from inside the app by a single account
 - A cluster's dossier can now be opened by URL: `?cluster=<id>` on the dashboard address selects that cluster on the Clusters screen
 - New-cluster notifications now link each cluster id straight to its dossier when `dashboard_url` is configured
 - The geography panel and the outbreak report now name the province each postcode falls in, alongside the postcode itself
@@ -14,6 +16,7 @@
 - Every table of clusters is now sorted on the last case day, most recent first, with priority and cluster id breaking ties
 - A cluster row that does not open a dossier, because lattice suppression folded it into another, now shows its id in the warning colour with a tooltip explaining why, instead of a link that does nothing
 - The per-screen cluster table column translation keys are replaced by one `column.*` family shared by every cluster table
+- `episodic_config_hash()` now also excludes the `access` section, for the same reason it excludes `notifications`: it governs how the instance is operated, never what a run computes
 - `EPISODIC_PC_PROVINCE_MAP` pointing at a missing, unreadable, empty, wrongly-columned or duplicate-postcode CSV is now a run-stopping error naming the file and the problem, instead of a silent fall back to the shipped Dutch demo ranges
 - A detection run in which no postcode resolves to a province now says so in its trace, instead of leaving province-level detection silently empty
 - The dashboard's area/province/region place label now shows `region_code` verbatim instead of cosmetically reformatting it, so an operator can see at a glance, character for character, whether `EPISODIC_PC_PROVINCE_MAP` resolved the code they expected, without risking a mangled real place name (e.g. the hyphen in "Noord-Holland")
