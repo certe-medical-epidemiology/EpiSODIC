@@ -19,7 +19,7 @@ Statistical methods for spotting an unusual rise in infections are not new. The 
 **EpiSODIC is that system.** It takes a stream of laboratory-confirmed infections and carries it all the way from statistical detection through reconciliation into persistent clusters, structured epidemiologist assessment with a full audit trail, to an outbreak report ready for clinical colleagues, fully automated and running on a schedule of your choosing.
 
 ### It Detects
-Combines the Farrington method with rule-based detectors for pathogens too rare for a statistical baseline, and the Moving Epidemic Method for seasonal ones such as influenza and RSV, applied automatically across every ward, institution, and region in your data.
+Combines the Improved Farrington method with rule-based detectors for pathogens too rare for a statistical baseline, and the Moving Epidemic Method for seasonal ones such as influenza and RSV, applied automatically across every ward, institution, and region in your data.
 
 ### It Reconciles
 Recognises the same signal across repeated runs and across geographic levels, so one outbreak stays one dossier, not a pile of restatements.
@@ -31,7 +31,7 @@ Gives epidemiologists a dossier per cluster with an automatically generated inte
 Turns a confirmed cluster into an outbreak report for clinical microbiologists and infection prevention practitioners, rendered in the language your colleagues read.
 
 ### It Notifies
-Pushes new clusters to your team the moment they arise, by email, Microsoft Teams, Slack, or an ntfy server.
+Pushes new clusters to your team the moment they arise, by email, Microsoft Teams, Slack, or even an ntfy server.
 
 ### It Adapts
 Works against any laboratory information system, any coding system, any administrative geography. Nothing about how it interprets your data is hardcoded.
