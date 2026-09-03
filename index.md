@@ -17,18 +17,10 @@ new. The Farrington algorithm and its successors have run at national
 public health institutes since the early 1990s, and R has long had a
 solid reference implementation in the `surveillance` package. What has
 been missing is not a better method, but a system that actually runs
-one, day after day, in an ordinary laboratory.
-
-An algorithm on its own only produces a single alarm at a single point
-in time. It does not remember that the alarm it raised yesterday and the
-one it raises today are the same ongoing event. It does not notice that
-a signal at ward level and a signal at hospital level are the same
-outbreak seen at two altitudes, so without reconciliation, one outbreak
-becomes several unrelated alerts competing for attention. It does not
-record why an epidemiologist decided a statistically significant blip
-was clinically irrelevant, or why a real cluster was eventually closed.
-And it certainly does not write a report an infection prevention nurse
-can act on.
+one, day after day, in an ordinary laboratory. That signals at either
+ward or full-region level. That records an epidemiologist’s or
+surveillance scientists’s assessments. That runs reliably with clear
+insights for anyone involved.
 
 **EpiSODIC is that system.** It takes a stream of laboratory-confirmed
 infections and carries it all the way from statistical detection through
@@ -37,24 +29,40 @@ assessment with a full audit trail, to an outbreak report ready for
 clinical colleagues, fully automated and running on a schedule of your
 choosing.
 
-- **Detects.** Combines the Farrington method with rule-based detectors
-  for pathogens too rare for a statistical baseline, and the Moving
-  Epidemic Method for seasonal ones such as influenza and RSV, applied
-  automatically across every ward, institution, and region in your data.
-- **Reconciles.** Recognises the same signal across repeated runs and
-  across geographic levels, so one outbreak stays one dossier, not a
-  pile of restatements.
-- **Assesses.** Gives epidemiologists a dossier per cluster with an
-  automatically generated interpretation of the evidence, and records
-  every judgement made on it, kept as a full, immutable audit trail.
-- **Reports.** Turns a confirmed cluster into an outbreak report for
-  clinical microbiologists and infection prevention practitioners,
-  rendered in the language your colleagues read.
-- **Notifies.** Pushes new clusters to your team the moment they arise,
-  by email, Microsoft Teams, Slack, or an ntfy server.
-- **Adapts.** Works against any laboratory information system, any
-  coding system, any administrative geography. Nothing about how it
-  interprets your data is hardcoded.
+### It Detects
+
+Combines the Farrington method with rule-based detectors for pathogens
+too rare for a statistical baseline, and the Moving Epidemic Method for
+seasonal ones such as influenza and RSV, applied automatically across
+every ward, institution, and region in your data.
+
+### It Reconciles
+
+Recognises the same signal across repeated runs and across geographic
+levels, so one outbreak stays one dossier, not a pile of restatements.
+
+### It Assesses
+
+Gives epidemiologists a dossier per cluster with an automatically
+generated interpretation of the evidence, and records every judgement
+made on it, kept as a full, immutable audit trail.
+
+### It Reports
+
+Turns a confirmed cluster into an outbreak report for clinical
+microbiologists and infection prevention practitioners, rendered in the
+language your colleagues read.
+
+### It Notifies
+
+Pushes new clusters to your team the moment they arise, by email,
+Microsoft Teams, Slack, or an ntfy server.
+
+### It Adapts
+
+Works against any laboratory information system, any coding system, any
+administrative geography. Nothing about how it interprets your data is
+hardcoded.
 
 Set-up takes minutes, and no data ever leaves your own infrastructure.
 The dashboard and its outbreak reports are available in English, (Modern
