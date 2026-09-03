@@ -143,7 +143,7 @@ test_that("episodic_ui_code_join() wraps each item in <code> and escapes, HTML-s
 
 test_that("episodic_ui_info_screen() renders in every shipped language and names every detector and state in code style", {
   for (lang in c("nl", "en", "es", "fr", "de", "zh", "hi", "ar")) {
-    html <- as.character(episodic_ui_info_screen(lang))
+    html <- as.character(episodic_ui_info_screen(lang = lang))
     expect_true(grepl("<code>farringtonFlexible</code>", html, fixed = TRUE))
     expect_true(grepl("<code>same_place</code>", html, fixed = TRUE))
     expect_true(grepl("<code>rare_trigger</code>", html, fixed = TRUE))
@@ -164,7 +164,7 @@ test_that("episodic_app_package_meta() reads only the first DESCRIPTION URL, not
 })
 
 test_that("episodic_ui_info_screen() shows the package's own version, description and license, beside the logo", {
-  html <- as.character(episodic_ui_info_screen("en"))
+  html <- as.character(episodic_ui_info_screen(lang = "en"))
   meta <- episodic_app_package_meta()
   expect_false(is.null(meta))
   expect_true(grepl(paste0("v", meta$version), html, fixed = TRUE))

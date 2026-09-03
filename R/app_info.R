@@ -55,20 +55,33 @@ episodic_app_package_meta <- function() {
 
 #' The "Info" screen
 #'
-#' Static reference material - what the detection algorithms actually do,
-#' what the cluster states mean, who can see and do what - so an
+#' Reference material - what the detection algorithms actually do, what
+#' the cluster states mean, who can see and do what - so an
 #' epidemiologist reading "gedetecteerd door `same_place`" on a dossier
-#' has somewhere in the app itself to look the term up. Content is
-#' hardcoded (not read from the database), so unlike every other screen
-#' this one needs no `con` argument.
+#' has somewhere in the app itself to look the term up.
 #'
+#' It also answers the question no other screen does: what the
+#' instance's own `EPISODIC_*` reference files actually delivered. An
+#' operator who points `EPISODIC_PC_PROVINCE_MAP` at a CSV and then sees
+#' postcodes with no province beside them has, until now, no way to tell
+#' a file that was never read from one that was read and rejected from
+#' one that was read fine and matches none of their postcodes. See
+#' `R/app_reference_data.R`.
+#'
+#' @param con A [DBI::DBIConnection-class], or `NULL` to render the
+#'   reference-data panel without the checks that need case data.
+#' @param current_user The session's signed-in user row, or `NULL`. Only
+#'   the reference-data panel's resolved file paths are gated on it.
 #' @param lang Session language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
 #'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
 #' @return A `shiny::tags$div`.
 #' @keywords internal
 #' @noRd
-episodic_ui_info_screen <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_ui_info_screen <- function(
+    con = NULL,
+    current_user = NULL,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   meta <- episodic_app_package_meta()
   shiny::tags$div(
     class = "episodic-streams-screen",
@@ -147,6 +160,11 @@ episodic_ui_info_screen <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     episodic_ui_panel(
       episodic_tr("info.states.title", lang = lang),
       episodic_ui_info_states_table(lang = lang)
+    ),
+    episodic_ui_info_reference_panel(
+      con,
+      current_user = current_user,
+      lang = lang
     ),
     episodic_ui_panel(
       episodic_tr("info.access.title", lang = lang),

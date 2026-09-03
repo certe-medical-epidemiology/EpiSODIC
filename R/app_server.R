@@ -203,7 +203,11 @@ episodic_app_server_factory <- function(
           lang = lang
         )
       } else if (view() == "info") {
-        episodic_ui_info_screen(lang = lang)
+        episodic_ui_info_screen(
+          con,
+          current_user = current_user(),
+          lang = lang
+        )
       } else if (view() == "settings") {
         shiny::uiOutput("settings_screen")
       } else {

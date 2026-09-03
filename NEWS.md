@@ -5,6 +5,8 @@
 - A cluster's dossier can now be opened by URL: `?cluster=<id>` on the dashboard address selects that cluster on the Clusters screen
 - New-cluster notifications now link each cluster id straight to its dossier when `dashboard_url` is configured
 - The geography panel and the outbreak report now name the province each postcode falls in, alongside the postcode itself
+- The Info screen has a "Reference data" panel reporting, per `EPISODIC_*` variable, whether the instance's own file was read, was rejected, or was read and matched nothing, and what it delivered
+- The reference-data panel reports how many of the case data's own postcodes resolve to a province, which is what distinguishes a `EPISODIC_PC_PROVINCE_MAP` that was never read from one whose postcode format does not match the case data
 
 ## Changed
 

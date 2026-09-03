@@ -36,3 +36,22 @@ temporary SQLite file and every shipped default. See
 custom report templates), and `vignette("data-format")`'s "Geographic
 reference data" section for the detail behind `EPISODIC_GEO_DATA` and
 `EPISODIC_GEO_DATA_OVERLAY`.
+
+## Checking what they actually delivered
+
+Setting a variable and seeing nothing change on screen has, until now,
+been indistinguishable from setting it wrongly. The dashboard's **Info**
+screen carries a "Reference data" panel that resolves each of these live
+and reports, per variable, whether the instance's own file is in use, the
+shipped default is standing in, nothing is configured, the file was
+configured and could not be used (with the reason), or an optional
+package the feature needs is missing - alongside what it put into the
+app: how many areas the map geometry holds, how many postcodes the
+province mapping maps and to how many provinces, and how many of the
+distinct postcodes in your own case data resolve to a province.
+
+That last figure is the one worth reading first when a province is not
+appearing where you expect: a mapping read successfully but matching
+none of your postcodes looks, on every other screen, exactly like a
+mapping that was never read. The resolved file paths are shown only to a
+signed-in user, since the Info screen itself needs no sign-in.

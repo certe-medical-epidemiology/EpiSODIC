@@ -338,6 +338,16 @@ mapping is what puts a province name beside each postcode in the
 dashboard's geography panel, so a mapping that is not being used is
 visible there too.
 
+The dashboard's **Info** screen answers the same question directly, for
+this and every other `EPISODIC_*` file: its "Reference data" panel says
+whether each one was read, was rejected (and why), or was read fine, and
+what it put into the app - for the postcode mapping, how many postcodes
+it holds, how many provinces they resolve to, and how many of the
+distinct postcodes in your own case data it actually covers. That last
+number is the one that separates a mapping that was never read from one
+whose postcode format does not match yours. The resolved file paths on
+that panel are shown only to a signed-in user.
+
 ## What a run reports
 
 Every `episodic_run_cron()` call records what each feed actually
