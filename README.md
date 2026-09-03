@@ -4,6 +4,16 @@
 
 **An early warning system for infectious disease outbreaks, built to run in any laboratory, in any country.**
 
+<!--
+Screenshots below live in man/figures/ (ships with the package, so
+they also render on the CRAN page), regenerated against episodic_demo().
+-->
+<p align="center">
+  <img src="man/figures/main_screen.png" alt="A cluster dossier: case stats, status trajectory, an automatically generated plain-language interpretation, the epidemic curve, and the classification panel" width="800">
+  <br>
+  <em>A cluster dossier - case stats, status trajectory, an automatically generated interpretation of the evidence, the epidemic curve, and the classification panel, alongside the rail of open clusters.</em>
+</p>
+
 Statistical methods for spotting an unusual rise in infections are not new. The Farrington algorithm and its successors have run at national public health institutes since the early 1990s, and R has long had a solid reference implementation in the `surveillance` package. What has been missing is not a better method, but a system that actually runs one, day after day, in an ordinary laboratory.
 
 An algorithm on its own only produces a single alarm at a single point in time. It does not remember that the alarm it raised yesterday and the one it raises today are the same ongoing event. It does not notice that a signal at ward level and a signal at hospital level are the same outbreak seen at two altitudes, so without reconciliation, one outbreak becomes several unrelated alerts competing for attention. It does not record why an epidemiologist decided a statistically significant blip was clinically irrelevant, or why a real cluster was eventually closed. And it certainly does not write a report an infection prevention nurse can act on.
@@ -21,15 +31,6 @@ Set-up takes minutes, and no data ever leaves your own infrastructure. The dashb
 
 This software is 100% free and open-source, and only allows for local storage of data and configurations. This software is perfectly safe, and all code is open to anyone willing or required to assess.
 
-<!--
-Screenshots below live in man/figures/ (ships with the package, so
-they also render on the CRAN page), regenerated against episodic_demo().
--->
-<p align="center">
-  <img src="man/figures/main_screen.png" alt="A cluster dossier: case stats, status trajectory, an automatically generated plain-language interpretation, the epidemic curve, and the classification panel" width="800">
-  <br>
-  <em>A cluster dossier - case stats, status trajectory, an automatically generated interpretation of the evidence, the epidemic curve, and the classification panel, alongside the rail of open clusters.</em>
-</p>
 <p align="center">
   <img src="man/figures/pathogen_screen.png" alt="The Pathogen screen: weekly numbers of cases, reproduction number, with geographic and demographic distribution" width="800">
   <br>
