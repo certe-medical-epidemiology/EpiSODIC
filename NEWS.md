@@ -1,4 +1,4 @@
-# EpiSODIC 0.10.3
+# EpiSODIC 0.10.4
 
 ## New
 
@@ -20,6 +20,9 @@
 - `EPISODIC_PC_PROVINCE_MAP` pointing at a missing, unreadable, empty, wrongly-columned or duplicate-postcode CSV is now a run-stopping error naming the file and the problem, instead of a silent fall back to the shipped Dutch demo ranges
 - A detection run in which no postcode resolves to a province now says so in its trace, instead of leaving province-level detection silently empty
 - The dashboard's area/province/region place label now shows `region_code` verbatim instead of cosmetically reformatting it, so an operator can see at a glance, character for character, whether `EPISODIC_PC_PROVINCE_MAP` resolved the code they expected, without risking a mangled real place name (e.g. the hyphen in "Noord-Holland")
+
+
+# EpiSODIC 0.10.3
 
 ## Fixed
 
