@@ -12,6 +12,13 @@ The dashboard and its outbreak reports are available in English, (Modern
 Standard) Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and
 Spanish.
 
+![A cluster dossier: case stats, status trajectory, an automatically
+generated plain-language interpretation, the epidemic curve, and the
+classification panel](../reference/figures/main_screen.png)  
+*A cluster dossier - case stats, status trajectory, an automatically
+generated interpretation of the evidence, the epidemic curve, and the
+classification panel, alongside the rail of open clusters.*
+
 ## No dependency on any one laboratory system
 
 EpiSODIC never queries a laboratory information system, data warehouse,
@@ -90,6 +97,12 @@ that period:
 - and the clusters that were raised during the period, with the verdict
   each one received, as the way back to the operational view.
 
+![The Pathogen screen: weekly numbers of cases, reproduction number,
+with geographic and demographic
+distribution](../reference/figures/pathogen_screen.png)  
+*The Pathogen screen - weekly numbers of cases, reproduction number,
+with geographic and demographic distribution.*
+
 ## Beyond the two altitudes
 
 The rest of the dashboard - Performance, Archive, Streams, Activity, and
@@ -111,6 +124,10 @@ Every closed cluster, searchable by pathogen and place, sorted by
 period. A closed dossier is not filed away - it stays reachable and
 reasoned exactly the way an open one is, since last winter’s assessment
 is often the best prior evidence for judging this winter’s cluster.
+
+![The Archive screen: previously detected
+clusters](../reference/figures/archive_screen.png)  
+*The Archive screen - previously detected clusters.*
 
 ### Streams and Activity: how the machinery is behaving
 
