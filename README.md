@@ -2,11 +2,7 @@
 
 [![R-CMD-check](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml)
 
-EpiSODIC is an automated outbreak cluster detection and assessment system for infectious disease epidemiologists. Running just in R, it reads laboratory-confirmed infections automatically, detects statistical and rule-based aberrations, reconciles them into persistent clusters, and gives epidemiologists a dossier to assess each one, with a full audit trail and outbreak reports for clinical colleagues (e.g. clinical microbiologists) and infection prevention nurses. It can send notifications of new clusters automatically via email, MS Teams, Slack, or even an ntfy server.
-
-The dashboard and its outbreak reports are available in English, (Modern Standard) Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and Spanish.
-
-This software is 100% free and open-source, and only allows for local storage of data and configurations. This software is perfectly safe, and all code is open to anyone willing or required to assess.
+**An early warning system for infectious disease outbreaks, built to run in any laboratory, in any country.**
 
 <!--
 Screenshots below live in man/figures/ (ships with the package, so
@@ -17,6 +13,24 @@ they also render on the CRAN page), regenerated against episodic_demo().
   <br>
   <em>A cluster dossier - case stats, status trajectory, an automatically generated interpretation of the evidence, the epidemic curve, and the classification panel, alongside the rail of open clusters.</em>
 </p>
+
+Statistical methods for spotting an unusual rise in infections are not new. The Farrington algorithm and its successors have run at national public health institutes since the early 1990s, and R has long had a solid reference implementation in the `surveillance` package. What has been missing is not a better method, but a system that actually runs one, day after day, in an ordinary laboratory.
+
+An algorithm on its own only produces a single alarm at a single point in time. It does not remember that the alarm it raised yesterday and the one it raises today are the same ongoing event. It does not notice that a signal at ward level and a signal at hospital level are the same outbreak seen at two altitudes, so without reconciliation, one outbreak becomes several unrelated alerts competing for attention. It does not record why an epidemiologist decided a statistically significant blip was clinically irrelevant, or why a real cluster was eventually closed. And it certainly does not write a report an infection prevention nurse can act on.
+
+**EpiSODIC is that system.** It takes a stream of laboratory-confirmed infections and carries it all the way from statistical detection through reconciliation into persistent clusters, structured epidemiologist assessment with a full audit trail, to an outbreak report ready for clinical colleagues, fully automated and running on a schedule of your choosing.
+
+- **Detects.** Combines the Farrington method with rule-based detectors for pathogens too rare for a statistical baseline, and the Moving Epidemic Method for seasonal ones such as influenza and RSV, applied automatically across every ward, institution, and region in your data.
+- **Reconciles.** Recognises the same signal across repeated runs and across geographic levels, so one outbreak stays one dossier, not a pile of restatements.
+- **Assesses.** Gives epidemiologists a dossier per cluster with an automatically generated interpretation of the evidence, and records every judgement made on it, kept as a full, immutable audit trail.
+- **Reports.** Turns a confirmed cluster into an outbreak report for clinical microbiologists and infection prevention practitioners, rendered in the language your colleagues read.
+- **Notifies.** Pushes new clusters to your team the moment they arise, by email, Microsoft Teams, Slack, or an ntfy server.
+- **Adapts.** Works against any laboratory information system, any coding system, any administrative geography. Nothing about how it interprets your data is hardcoded.
+
+Set-up takes minutes, and no data ever leaves your own infrastructure. The dashboard and its outbreak reports are available in English, (Modern Standard) Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and Spanish.
+
+This software is 100% free and open-source, and only allows for local storage of data and configurations. This software is perfectly safe, and all code is open to anyone willing or required to assess.
+
 <p align="center">
   <img src="man/figures/pathogen_screen.png" alt="The Pathogen screen: weekly numbers of cases, reproduction number, with geographic and demographic distribution" width="800">
   <br>
