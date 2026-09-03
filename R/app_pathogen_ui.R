@@ -477,12 +477,22 @@ episodic_ui_pathogen_geo_panel <- function(
     ))
   }
   map_chart <- episodic_ui_geo_map_chart(concentration$rows)
+  # Postcodes named with their province here too, so the same breakdown
+  # reads the same way on this screen as it does in a dossier.
+  bars <- episodic_ui_geo_bar_rows(concentration$rows, lang = lang)
   episodic_ui_panel(
     episodic_tr("panel.geo.title", lang = lang),
     aside = episodic_tr("panel.geo.aside", lang = lang),
+    note = if (!is.na(concentration$province_error %||% NA_character_)) {
+      episodic_tr(
+        "panel.geo.province_error",
+        reason = concentration$province_error,
+        lang = lang
+      )
+    },
     if (is.null(map_chart)) {
       episodic_ui_bars(
-        utils::head(concentration$rows, 12),
+        utils::head(bars, 12),
         unit = episodic_tr("panel.geo.unit", lang = lang)
       )
     } else {
@@ -498,7 +508,7 @@ episodic_ui_pathogen_geo_panel <- function(
           class = "episodic-panel-note",
           episodic_tr("panel.geo.map_note", lang = lang)
         ),
-        episodic_ui_bars(utils::head(concentration$rows, 12))
+        episodic_ui_bars(utils::head(bars, 12))
       )
     }
   )
@@ -567,44 +577,20 @@ episodic_ui_pathogen_clusters_panel <- function(
       episodic_tr("unit.clusters", lang = lang)
     ),
     note = episodic_tr("pathogen.panel.clusters.note", lang = lang),
-    shiny::tags$table(
-      class = "episodic-table",
-      shiny::tags$thead(shiny::tags$tr(
-        # First column: the id is the handle everything else refers to -
-        # what gets quoted in an email or searched for in the archive -
-        # so it leads the row rather than being absent from a table of
-        # clusters entirely.
-        shiny::tags$th(episodic_tr("column.cluster", lang = lang)),
-        shiny::tags$th(episodic_tr(
-          "pathogen.panel.clusters.col.period",
-          lang = lang
-        )),
-        shiny::tags$th(episodic_tr("archive.col.level", lang = lang)),
-        shiny::tags$th(episodic_tr("archive.col.place", lang = lang)),
-        shiny::tags$th(episodic_tr("archive.col.cases", lang = lang)),
-        shiny::tags$th(episodic_tr("panel.similar.col.verdict", lang = lang)),
-        shiny::tags$th(episodic_tr(
-          "pathogen.panel.clusters.col.state",
-          lang = lang
-        ))
-      )),
-      shiny::tags$tbody(lapply(seq_len(nrow(clusters)), function(i) {
-        row <- clusters[i, ]
-        episodic_ui_cluster_link_row(
-          row$cluster_id,
-          lang = lang,
-          shiny::tags$td(episodic_format_date_range(
-            row$first_day,
-            row$last_day,
-            lang = lang
-          )),
-          shiny::tags$td(row$level_label),
-          shiny::tags$td(row$place),
-          shiny::tags$td(row$n_cases),
-          shiny::tags$td(row$verdict_label),
-          shiny::tags$td(row$state_label)
+    episodic_ui_cluster_table(
+      clusters,
+      context = list(
+        episodic_ui_cluster_col_level(lang = lang),
+        episodic_ui_cluster_col_place(lang = lang)
+      ),
+      outcome = list(
+        episodic_ui_cluster_col_verdict(lang = lang),
+        episodic_ui_cluster_col(
+          episodic_tr("column.state", lang = lang),
+          function(row) row$state_label
         )
-      }))
+      ),
+      lang = lang
     )
   )
 }

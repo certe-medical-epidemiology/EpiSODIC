@@ -253,3 +253,190 @@ test_that("episodic_geo_labels() labels the biggest areas first and caps how man
   expect_match(labels$label[1], "9$")
   expect_true(all(c("x", "y", "label") %in% names(labels)))
 })
+
+
+test_that("an unset EPISODIC_PC_PROVINCE_MAP falls back to the shipped demo ranges", {
+  expect_true(is.na(episodic_pc_province_map_problem(NA_character_)))
+  expect_true(is.na(episodic_pc_province_map_problem("")))
+  expect_null(episodic_pc_province_map_resolve(NA_character_))
+  expect_equal(
+    episodic_pc_to_province(c("9713", "8911", "7411", "1012"), path = NA),
+    c("PROV_GRONINGEN", "PROV_FRYSLAN", "PROV_DRENTHE", NA)
+  )
+})
+
+test_that("a configured EPISODIC_PC_PROVINCE_MAP that cannot be used is named, not fallen back from", {
+  # Quietly substituting the demo ranges here hands an operator who
+  # supplied their own mapping a lattice built on somebody else's
+  # provinces, with nothing anywhere to say why - the one outcome this
+  # package refuses to produce.
+  problem <- function(path) episodic_pc_province_map_problem(path)
+
+  expect_match(
+    problem(file.path(tempdir(), "no-such-file.csv")),
+    "no file exists there"
+  )
+
+  wrong_cols <- tempfile(fileext = ".csv")
+  utils::write.csv(
+    data.frame(postcode = "9713", province = "Groningen"),
+    wrong_cols,
+    row.names = FALSE
+  )
+  on.exit(unlink(wrong_cols), add = TRUE)
+  expect_match(problem(wrong_cols), "province_code", fixed = TRUE)
+  # and it names what the file actually has, so the mismatch is visible
+  expect_match(problem(wrong_cols), "postcode", fixed = TRUE)
+
+  empty <- tempfile(fileext = ".csv")
+  utils::write.csv(
+    data.frame(pc = character(0), province_code = character(0)),
+    empty,
+    row.names = FALSE
+  )
+  on.exit(unlink(empty), add = TRUE)
+  expect_match(problem(empty), "no rows", fixed = TRUE)
+
+  repeated <- tempfile(fileext = ".csv")
+  utils::write.csv(
+    data.frame(
+      pc = c("9713", "9713"),
+      province_code = c("Groningen", "Drenthe")
+    ),
+    repeated,
+    row.names = FALSE
+  )
+  on.exit(unlink(repeated), add = TRUE)
+  expect_match(problem(repeated), "more than one", fixed = TRUE)
+
+  # the lookup underneath stays total: it is what both the cron and the
+  # dashboard derive stream membership through, so it must not throw
+  for (path in c(wrong_cols, empty, repeated)) {
+    expect_null(episodic_pc_province_map_resolve(path))
+    expect_silent(episodic_pc_to_province("9713", path = path))
+  }
+})
+
+test_that("a detection run refuses to start on a PC-to-province mapping it cannot use", {
+  wrong_cols <- tempfile(fileext = ".csv")
+  utils::write.csv(
+    data.frame(postcode = "9713", province = "Groningen"),
+    wrong_cols,
+    row.names = FALSE
+  )
+  old <- Sys.getenv("EPISODIC_PC_PROVINCE_MAP", unset = NA)
+  on.exit(
+    {
+      unlink(wrong_cols)
+      if (is.na(old)) {
+        Sys.unsetenv("EPISODIC_PC_PROVINCE_MAP")
+      } else {
+        Sys.setenv(EPISODIC_PC_PROVINCE_MAP = old)
+      }
+    },
+    add = TRUE
+  )
+  Sys.setenv(EPISODIC_PC_PROVINCE_MAP = wrong_cols)
+
+  db <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(db), add = TRUE)
+  cases <- episodic_synthetic_cases(
+    start_date = as.Date("2024-06-01"),
+    end_date = as.Date("2024-06-30"),
+    seed = 3
+  )
+  # It refuses with the pre-run checks, before the transaction opens, so
+  # nothing is written and the run row carries the reason for the
+  # Activity screen to show.
+  expect_error(
+    suppressMessages(episodic_run_cron(
+      db_path = db,
+      cases = cases,
+      run_date = as.Date("2024-06-30")
+    )),
+    "province_code",
+    fixed = TRUE
+  )
+  con <- episodic_db_connect(db)
+  on.exit(DBI::dbDisconnect(con), add = TRUE)
+  run <- DBI::dbGetQuery(
+    con,
+    "SELECT status, error_text FROM episodic_detection_run"
+  )
+  expect_equal(run$status, "failed")
+  expect_match(run$error_text, "province_code", fixed = TRUE)
+  expect_equal(
+    DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM episodic_case")$n,
+    0
+  )
+})
+
+test_that("a usable EPISODIC_PC_PROVINCE_MAP is what the lattice maps postcodes with", {
+  mapping <- tempfile(fileext = ".csv")
+  utils::write.csv(
+    data.frame(
+      pc = c("9713", "8911"),
+      province_code = c("Groningen", "Fryslan")
+    ),
+    mapping,
+    row.names = FALSE
+  )
+  on.exit(unlink(mapping), add = TRUE)
+
+  expect_true(is.na(episodic_pc_province_map_problem(mapping)))
+  expect_equal(
+    episodic_pc_to_province(c("9713", "8911", "1012"), path = mapping),
+    c("Groningen", "Fryslan", NA)
+  )
+  # the demo ranges are not consulted at all once a mapping is supplied:
+  # 7411 is Drenthe under the demo default and nothing under this file
+  expect_equal(episodic_pc_to_province("7411", path = mapping), NA_character_)
+})
+
+test_that("the dossier shows the province next to each postcode, and says so when it cannot", {
+  mapping <- tempfile(fileext = ".csv")
+  utils::write.csv(
+    data.frame(pc = "9713", province_code = "Groningen"),
+    mapping,
+    row.names = FALSE
+  )
+  old <- Sys.getenv("EPISODIC_PC_PROVINCE_MAP", unset = NA)
+  on.exit(
+    {
+      unlink(mapping)
+      if (is.na(old)) {
+        Sys.unsetenv("EPISODIC_PC_PROVINCE_MAP")
+      } else {
+        Sys.setenv(EPISODIC_PC_PROVINCE_MAP = old)
+      }
+    },
+    add = TRUE
+  )
+
+  Sys.setenv(EPISODIC_PC_PROVINCE_MAP = mapping)
+  cases <- data.frame(pc = c("9713", "9713", "1012"), stringsAsFactors = FALSE)
+  conc <- episodic_app_concentration(cases)
+  expect_equal(conc$rows$province[conc$rows$label == "9713"], "Groningen")
+  expect_true(is.na(conc$rows$province[conc$rows$label == "1012"]))
+  expect_true(is.na(conc$province_error))
+
+  # `label` stays the bare PC: it is what the map geometry joins on
+  expect_setequal(conc$rows$label, c("9713", "1012"))
+  bars <- episodic_ui_geo_bar_rows(conc$rows, lang = "en")
+  expect_true("9713 · Groningen" %in% bars$label)
+  expect_true("1012" %in% bars$label)
+
+  # a mapping that cannot be read does not take the dossier down; the
+  # reason reaches the reader in the panel instead
+  Sys.setenv(EPISODIC_PC_PROVINCE_MAP = file.path(tempdir(), "gone.csv"))
+  broken <- episodic_app_concentration(cases)
+  expect_true(all(is.na(broken$rows$province)))
+  expect_false(is.na(broken$province_error))
+  expect_match(broken$province_error, "no file exists there", fixed = TRUE)
+  panel <- as.character(episodic_ui_geo_panel(
+    list(concentration = broken, n_cases = 3L),
+    lang = "en"
+  ))
+  expect_true(grepl("no file exists there", panel, fixed = TRUE))
+  expect_false(grepl("[[", panel, fixed = TRUE))
+})

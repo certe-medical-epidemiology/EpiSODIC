@@ -409,54 +409,6 @@ episodic_ui_pyramid <- function(demo, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   )
 }
 
-#' A table row that opens a cluster's dossier
-#'
-#' Used by every table that lists clusters - the Pathogen screen's
-#' clusters panel and the Archive - so the id column, the click target
-#' and the keyboard handling stay identical between them rather than
-#' being written twice and drifting.
-#'
-#' The whole row is the target and the id is the visible affordance: a
-#' row is a generous thing to hit, but nothing about a bare table row
-#' says it can be clicked. `tabindex` and the key handler are there
-#' because a `<tr>` has no focus or activation behaviour of its own; the
-#' server side is `input$open_cluster`, which sets the selection and
-#' switches to the clusters view.
-#'
-#' @param cluster_id The cluster the row opens.
-#' @param lang Session language.
-#' @param ... The remaining cells, in order, after the id cell.
-#' @return A `shiny::tags$tr`.
-#' @keywords internal
-#' @noRd
-episodic_ui_cluster_link_row <- function(
-    cluster_id,
-    lang = Sys.getenv("EPISODIC_LANGUAGE"),
-    ...) {
-  open_js <- sprintf(
-    "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
-    as.integer(cluster_id)
-  )
-  shiny::tags$tr(
-    class = "episodic-row-link",
-    tabindex = "0",
-    title = episodic_tr("cluster.open_hint", lang = lang),
-    onclick = open_js,
-    onkeydown = sprintf(
-      "if(event.key==='Enter'||event.key===' '){event.preventDefault();%s}",
-      open_js
-    ),
-    shiny::tags$td(
-      class = "episodic-cell-id",
-      shiny::tags$span(
-        class = "episodic-id-link",
-        episodic_tr("dossier.cluster_ref", id = cluster_id, lang = lang)
-      )
-    ),
-    ...
-  )
-}
-
 #' @param state One of `episodic_derive_state()`'s state strings.
 #' @keywords internal
 #' @noRd

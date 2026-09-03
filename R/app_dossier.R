@@ -210,8 +210,7 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       )
     ))
   )
-  duration_days <- as.integer(as.Date(obj$last_day) - as.Date(obj$first_day)) +
-    1L
+  duration_days <- episodic_cluster_duration_days(obj$first_day, obj$last_day)
   if (!is.na(duration_days)) {
     stats <- c(
       stats,
@@ -489,44 +488,17 @@ episodic_ui_similar_clusters_panel <- function(
   }
   episodic_ui_panel(
     episodic_tr("panel.similar.title", lang = lang),
-    shiny::tags$table(
-      class = "episodic-table",
-      shiny::tags$thead(shiny::tags$tr(
-        # First column: the id is the handle everything else refers to,
-        # and the row it leads is reachable rather than only listed -
-        # matching every other table of clusters (the Pathogen screen's
-        # clusters panel, the Archive).
-        shiny::tags$th(episodic_tr("column.cluster", lang = lang)),
-        shiny::tags$th(episodic_tr("panel.similar.col.place", lang = lang)),
-        shiny::tags$th(episodic_tr("panel.similar.col.cases", lang = lang)),
-        shiny::tags$th(episodic_tr("panel.similar.col.verdict", lang = lang)),
-        shiny::tags$th(episodic_tr("panel.similar.col.closed_at", lang = lang))
+    episodic_ui_cluster_table(
+      similar,
+      context = list(episodic_ui_cluster_col(
+        episodic_tr("column.place", lang = lang),
+        function(row) paste0(row$level_label, " \u00b7 ", row$place)
       )),
-      shiny::tags$tbody(
-        lapply(seq_len(nrow(similar)), function(i) {
-          row <- similar[i, ]
-          episodic_ui_cluster_link_row(
-            row$cluster_id,
-            lang = lang,
-            shiny::tags$td(paste0(row$level_label, " \u00b7 ", row$place)),
-            shiny::tags$td(row$n_cases),
-            shiny::tags$td(
-              if (is.na(row$verdict_label)) {
-                episodic_tr("misc.dash", lang = lang)
-              } else {
-                row$verdict_label
-              }
-            ),
-            shiny::tags$td(
-              if (is.na(row$closed_at)) {
-                episodic_tr("misc.unknown", lang = lang)
-              } else {
-                episodic_format_date(row$closed_at, lang = lang)
-              }
-            )
-          )
-        })
-      )
+      outcome = list(
+        episodic_ui_cluster_col_verdict(lang = lang),
+        episodic_ui_cluster_col_closed_at(lang = lang)
+      ),
+      lang = lang
     )
   )
 }
@@ -596,24 +568,45 @@ episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     episodic_ui_geo_map_chart(obj$concentration$rows, crop = FALSE)
   }
   n_unknown <- obj$concentration$n_unknown_pc %||% 0
-  note <- if (n_unknown > 0) {
-    # Stated rather than silently dropped: the concentration share, and
-    # with it the spatial term of the priority score, is computed over
-    # the cases with a known PC only.
-    episodic_tr(
-      "panel.geo.unknown_pc",
-      n = n_unknown,
-      total = obj$n_cases,
-      lang = lang
-    )
-  }
+  notes <- c(
+    if (n_unknown > 0) {
+      # Stated rather than silently dropped: the concentration share, and
+      # with it the spatial term of the priority score, is computed over
+      # the cases with a known PC only.
+      episodic_tr(
+        "panel.geo.unknown_pc",
+        n = n_unknown,
+        total = obj$n_cases,
+        lang = lang
+      )
+    },
+    # A PC-to-province mapping that cannot be read is a configuration
+    # problem an epidemiologist reading this panel is the first to feel -
+    # the provinces beside the postcodes simply stop appearing - so the
+    # reason is here, in words, rather than only in the operator's log.
+    if (!is.na(obj$concentration$province_error %||% NA_character_)) {
+      episodic_tr(
+        "panel.geo.province_error",
+        reason = obj$concentration$province_error,
+        lang = lang
+      )
+    }
+  )
+  note <- if (length(notes) > 0) paste(notes, collapse = " ")
+  # Each postcode under the province it is actually detected under (the
+  # lattice's own L4 unit, see `episodic_pc_to_province()`), because
+  # "9713" says nothing on its own to anyone who does not already know
+  # the region, and a cluster spread over two provinces is a different
+  # thing from one inside a single province. `rows$label` itself stays
+  # the bare PC - it is the map's join key.
+  bars <- episodic_ui_geo_bar_rows(obj$concentration$rows, lang = lang)
   episodic_ui_panel(
     episodic_tr("panel.geo.title", lang = lang),
     aside = episodic_tr("panel.geo.aside", lang = lang),
     note = note,
     if (is.null(map_chart)) {
       episodic_ui_bars(
-        utils::head(obj$concentration$rows, 8),
+        utils::head(bars, 8),
         unit = episodic_tr("panel.geo.unit", lang = lang)
       )
     } else {
@@ -640,10 +633,37 @@ episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
           class = "episodic-panel-note",
           episodic_tr("panel.geo.map_note", lang = lang)
         ),
-        episodic_ui_bars(utils::head(obj$concentration$rows, 8))
+        episodic_ui_bars(utils::head(bars, 8))
       )
     }
   )
+}
+
+#' PC bars labelled with the province each PC falls in
+#'
+#' The concentration rows keep `label` as the bare PC because
+#' `episodic_geo_join()` joins the map geometry on it. This is the
+#' display form of the same rows: `"9713 · PROV_GRONINGEN"`, and the bare
+#' PC where no province resolved, so a missing mapping shows as a missing
+#' province rather than as an invented one.
+#'
+#' The province code is shown exactly as configured, for the same reason
+#' `episodic_app_format_region()` does: an operator has to be able to see,
+#' character for character, whether their own mapping is producing what
+#' they expect.
+#'
+#' @param rows `episodic_app_concentration()$rows`.
+#' @param lang Session language.
+#' @return The same data frame with `label` rewritten for display.
+#' @keywords internal
+#' @noRd
+episodic_ui_geo_bar_rows <- function(
+    rows,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  province <- rows$province %||% rep(NA_character_, nrow(rows))
+  named <- !is.na(province) & nzchar(province)
+  rows$label[named] <- paste0(rows$label[named], " · ", province[named])
+  rows
 }
 
 #' @keywords internal
@@ -757,55 +777,44 @@ episodic_ui_related_panel <- function(
     return(NULL)
   }
 
-  # Both relations in one place, because to an epidemiologist they are one
+  # Both relations in one table, because to an epidemiologist they are one
   # question - what else are these cases in? - and they differ only in
   # what was done about it: absorbed into this dossier, or left standing
-  # as its own.
-  row_for <- function(row, relation, clickable) {
-    label <- episodic_tr(paste0("relation.", relation), lang = lang)
-    ref <- episodic_tr("dossier.cluster_ref", id = row$cluster_id, lang = lang)
-    shiny::tags$tr(
-      class = if (clickable) "episodic-row-link" else NULL,
-      tabindex = if (clickable) "0" else NULL,
-      title = if (clickable) {
-        episodic_tr("cluster.open_hint", lang = lang)
-      },
-      onclick = if (clickable) {
-        sprintf(
-          "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
-          as.integer(row$cluster_id)
-        )
-      },
-      shiny::tags$td(
-        class = "episodic-cell-id",
-        shiny::tags$span(
-          class = if (clickable) "episodic-id-link" else NULL,
-          ref
-        )
-      ),
-      shiny::tags$td(episodic_tr(paste0("level.", row$level), lang = lang)),
-      shiny::tags$td(label),
-      shiny::tags$td(episodic_count_phrase(
-        row$n_cases,
-        episodic_tr("unit.case", lang = lang),
-        episodic_tr("unit.cases", lang = lang)
-      )),
-      shiny::tags$td(episodic_format_date_range(
-        row$first_day,
-        row$last_day,
-        lang = lang
-      ))
-    )
-  }
-
-  rows <- c(
-    # Linked first: those are dossiers somebody still has to assess.
-    lapply(seq_len(nrow(linked)), function(i) {
-      row_for(linked[i, ], "linked", clickable = TRUE)
-    }),
-    lapply(seq_len(nrow(suppressed)), function(i) {
-      row_for(suppressed[i, ], "suppressed", clickable = FALSE)
-    })
+  # as its own. That difference is what `unlinked_reason` carries: a
+  # linked cluster is a dossier of its own and its row opens it, while a
+  # suppressed one was a cluster in its own right until this dossier
+  # absorbed it, so its id is marked and hovering it says exactly that.
+  cols <- c(
+    "cluster_id",
+    "level",
+    "n_cases",
+    "first_day",
+    "last_day",
+    "priority_score"
+  )
+  related <- rbind(
+    if (nrow(linked) > 0) {
+      cbind(
+        linked[, cols],
+        relation = "linked",
+        shared_cases = linked$shared_cases,
+        unlinked_reason = NA_character_,
+        stringsAsFactors = FALSE
+      )
+    },
+    if (nrow(suppressed) > 0) {
+      cbind(
+        suppressed[, cols],
+        relation = "suppressed",
+        shared_cases = NA_integer_,
+        unlinked_reason = episodic_tr(
+          "cluster.unlinked.suppressed",
+          ref = episodic_tr("dossier.cluster_ref", id = cluster_id, lang = lang),
+          lang = lang
+        ),
+        stringsAsFactors = FALSE
+      )
+    }
   )
 
   episodic_ui_panel(
@@ -815,18 +824,33 @@ episodic_ui_related_panel <- function(
         class = "episodic-panel-note",
         episodic_tr("panel.related.note", lang = lang)
       ),
-      shiny::tags$table(
-        class = "episodic-table",
-        shiny::tags$thead(shiny::tags$tr(
-          shiny::tags$th(episodic_tr("panel.related.col.id", lang = lang)),
-          shiny::tags$th(episodic_tr("panel.related.col.level", lang = lang)),
-          shiny::tags$th(
-            episodic_tr("panel.related.col.relation", lang = lang)
+      episodic_ui_cluster_table(
+        related,
+        context = list(
+          episodic_ui_cluster_col(
+            episodic_tr("column.level", lang = lang),
+            function(row) {
+              episodic_tr(paste0("level.", row$level), lang = lang)
+            }
           ),
-          shiny::tags$th(episodic_tr("panel.related.col.size", lang = lang)),
-          shiny::tags$th(episodic_tr("panel.related.col.period", lang = lang))
+          episodic_ui_cluster_col(
+            episodic_tr("column.relation", lang = lang),
+            function(row) {
+              episodic_tr(paste0("relation.", row$relation), lang = lang)
+            }
+          )
+        ),
+        outcome = list(episodic_ui_cluster_col(
+          episodic_tr("column.shared_cases", lang = lang),
+          function(row) {
+            if (is.na(row$shared_cases)) {
+              episodic_tr("misc.dash", lang = lang)
+            } else {
+              row$shared_cases
+            }
+          }
         )),
-        shiny::tags$tbody(rows)
+        lang = lang
       )
     )
   )

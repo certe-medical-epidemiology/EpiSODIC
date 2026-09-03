@@ -214,6 +214,32 @@ test_that("the dossier shows what a cluster suppressed", {
   expect_true(grepl("institution", rendered, ignore.case = TRUE))
   expect_true(grepl("suppressed", rendered, ignore.case = TRUE))
   expect_false(grepl("[[", rendered, fixed = TRUE))
+
+  # It is not a dossier of its own, so the row does not open one - and
+  # rather than a link that goes nowhere, the id is marked and says why.
+  expect_false(grepl("open_cluster", rendered, fixed = TRUE))
+  expect_true(grepl("episodic-id-unlinked", rendered, fixed = TRUE))
+  expect_true(grepl(
+    episodic_tr(
+      "cluster.unlinked.suppressed",
+      ref = episodic_tr("dossier.cluster_ref", id = env$children[1], lang = "en"),
+      lang = "en"
+    ),
+    rendered,
+    fixed = TRUE
+  ))
+
+  # and it carries the same spine every other cluster table does
+  for (key in c(
+    "column.cluster",
+    "column.cases",
+    "column.first_day",
+    "column.last_day",
+    "column.duration",
+    "column.priority"
+  )) {
+    expect_true(grepl(episodic_tr(key, lang = "en"), rendered, fixed = TRUE))
+  }
 })
 
 test_that("a cluster sharing cases with one that stands separately says so, and links to it", {

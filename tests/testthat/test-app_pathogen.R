@@ -555,19 +555,35 @@ test_that("the signals table leads with the cluster id", {
     fixed = TRUE
   ))
   expect_true(grepl("episodic-cell-id", html, fixed = TRUE))
-  # id column first: its header precedes the period header
+  # id column first: its header precedes every other column's
   expect_lt(
-    regexpr(
-      episodic_tr("pathogen.panel.clusters.col.id", lang = "en"),
+    as.integer(regexpr(
+      episodic_tr("column.cluster", lang = "en"),
       html,
       fixed = TRUE
-    ),
-    regexpr(
-      episodic_tr("pathogen.panel.clusters.col.period", lang = "en"),
+    )),
+    as.integer(regexpr(
+      episodic_tr("column.level", lang = "en"),
       html,
       fixed = TRUE
-    )
+    ))
   )
+  # and the shared spine, priority and both case days included
+  for (key in c(
+    "column.cases",
+    "column.first_day",
+    "column.last_day",
+    "column.duration",
+    "column.priority"
+  )) {
+    expect_true(grepl(episodic_tr(key, lang = "en"), html, fixed = TRUE))
+  }
+  expect_true(grepl(
+    episodic_format_date("2025-01-22", lang = "en"),
+    html,
+    fixed = TRUE
+  ))
+  expect_false(grepl("[[", html, fixed = TRUE))
 })
 
 test_that("each cluster row links through to its dossier, by click and by keyboard", {

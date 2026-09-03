@@ -1000,7 +1000,8 @@ episodic_app_pathogen_institutions <- function(
 #' @param resolved The resolved period.
 #' @param lang Session language.
 #' @return A data frame with `cluster_id`, `level_label`, `place`,
-#'   `first_day`, `last_day`, `n_cases`, `verdict_label`, `state_label`.
+#'   `first_day`, `last_day`, `n_cases`, `priority_score`,
+#'   `verdict_label` (`NA` when never classified) and `state_label`.
 #' @keywords internal
 #' @noRd
 episodic_app_pathogen_clusters <- function(
@@ -1015,6 +1016,7 @@ episodic_app_pathogen_clusters <- function(
     first_day = character(0),
     last_day = character(0),
     n_cases = integer(0),
+    priority_score = numeric(0),
     verdict_label = character(0),
     state_label = character(0),
     stringsAsFactors = FALSE
@@ -1084,8 +1086,12 @@ episodic_app_pathogen_clusters <- function(
       first_day = row$first_day,
       last_day = row$last_day,
       n_cases = row$n_cases,
+      priority_score = row$priority_score,
+      # NA rather than a dash: the cluster table's own verdict column is
+      # what turns "never classified" into the dash, once, for every
+      # screen that shows one.
       verdict_label = if (is.na(verdict)) {
-        episodic_tr("misc.dash", lang = lang)
+        NA_character_
       } else {
         episodic_verdict_label(verdict, level = stream$level, lang = lang)
       },

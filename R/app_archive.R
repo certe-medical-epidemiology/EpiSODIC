@@ -88,55 +88,18 @@ episodic_ui_archive_screen <- function(
         episodic_tr("archive.empty", lang = lang)
       )
     } else {
-      shiny::tags$table(
-        class = "episodic-table",
-        shiny::tags$thead(shiny::tags$tr(
-          shiny::tags$th(episodic_tr("column.cluster", lang = lang)),
-          shiny::tags$th(episodic_tr("archive.col.pathogen", lang = lang)),
-          shiny::tags$th(episodic_tr("archive.col.level", lang = lang)),
-          shiny::tags$th(episodic_tr("archive.col.place", lang = lang)),
-          shiny::tags$th(episodic_tr("archive.col.period", lang = lang)),
-          shiny::tags$th(episodic_tr("archive.col.duration", lang = lang)),
-          shiny::tags$th(episodic_tr("archive.col.cases", lang = lang)),
-          shiny::tags$th(episodic_tr("archive.col.priority", lang = lang)),
-          shiny::tags$th(episodic_tr("archive.col.closed_at", lang = lang))
-        )),
-        shiny::tags$tbody(
-          lapply(seq_len(nrow(archive)), function(i) {
-            row <- archive[i, ]
-            # Reachable, not just listed. Last winter's assessment is only
-            # a useful precedent if you can open it and read the reasoning,
-            # and until now the archive named clusters it gave no way in to.
-            episodic_ui_cluster_link_row(
-              row$cluster_id,
-              lang = lang,
-              shiny::tags$td(shiny::HTML(episodic_ui_italicise_taxon(
-                row$pathogen
-              ))),
-              shiny::tags$td(row$level_label),
-              shiny::tags$td(row$place),
-              shiny::tags$td(episodic_format_date_range(
-                row$first_day,
-                row$last_day,
-                lang = lang
-              )),
-              shiny::tags$td(episodic_count_phrase(
-                row$duration_days,
-                episodic_tr("unit.day", lang = lang),
-                episodic_tr("unit.days", lang = lang)
-              )),
-              shiny::tags$td(row$n_cases),
-              shiny::tags$td(round(row$priority_score, 0)),
-              shiny::tags$td(
-                if (is.na(row$closed_at)) {
-                  episodic_tr("misc.unknown", lang = lang)
-                } else {
-                  episodic_format_date(row$closed_at, lang = lang)
-                }
-              )
-            )
-          })
-        )
+      # Reachable, not just listed. Last winter's assessment is only a
+      # useful precedent if you can open it and read the reasoning, and
+      # the shared cluster table is what makes every row a way in to one.
+      episodic_ui_cluster_table(
+        archive,
+        context = list(
+          episodic_ui_cluster_col_pathogen(lang = lang),
+          episodic_ui_cluster_col_level(lang = lang),
+          episodic_ui_cluster_col_place(lang = lang)
+        ),
+        outcome = list(episodic_ui_cluster_col_closed_at(lang = lang)),
+        lang = lang
       )
     }
   )

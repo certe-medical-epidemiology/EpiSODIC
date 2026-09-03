@@ -80,14 +80,39 @@ episodic_app_server_factory <- function(
       selected_cluster_id(input$rail_select)
     )
 
-    # Deep link from the Pathogen screen's cluster table. Setting the
-    # selection before the view means the dossier pane has its cluster
-    # ready by the time the clusters view renders, and the observer above
-    # will leave it alone whichever order the two land in.
+    # Deep link from any cluster table (see `R/app_cluster_table.R`).
+    # Setting the selection before the view means the dossier pane has
+    # its cluster ready by the time the clusters view renders, and the
+    # observer above will leave it alone whichever order the two land in.
     shiny::observeEvent(input$open_cluster, {
       selected_cluster_id(as.integer(input$open_cluster))
       view("clusters")
     })
+
+    # The same deep link from outside the app: `?cluster=123` opens that
+    # cluster's dossier on load. It is what makes the id in a
+    # notification a link somebody can follow (see
+    # `episodic_notify_cluster_url()`) rather than a reference they have
+    # to go and find in the queue. An id that names nothing viewable is
+    # ignored rather than blanking the screen - a link from an old email
+    # to a cluster since merged away should land on the queue, not on an
+    # error.
+    session$onFlushed(
+      function() {
+        requested <- episodic_app_url_cluster_id(
+          session$clientData$url_search
+        )
+        if (is.null(requested)) {
+          return()
+        }
+        if (!episodic_app_cluster_viewable(con, requested)) {
+          return()
+        }
+        selected_cluster_id(requested)
+        view("clusters")
+      },
+      once = TRUE
+    )
 
     streams_page <- shiny::reactiveVal(1L)
     shiny::observeEvent(
@@ -457,6 +482,36 @@ episodic_ui_format_datetime <- function(
     return(iso)
   }
   format(parsed, fmt, tz = tz)
+}
+
+#' The cluster id a `?cluster=` deep link asks for
+#'
+#' Parsed rather than trusted: the query string is whatever a reader's
+#' browser was pointed at, so anything that is not a single positive
+#' integer is no request at all. Refusing to guess is the point - a
+#' malformed link must leave the app where it would have been, never
+#' select some other cluster.
+#'
+#' @param search A URL query string including its leading `"?"`
+#'   (`session$clientData$url_search`), or `NULL`.
+#' @return A single integer, or `NULL` when no usable `cluster` parameter
+#'   is present.
+#' @keywords internal
+#' @noRd
+episodic_app_url_cluster_id <- function(search) {
+  if (is.null(search) || length(search) != 1 || is.na(search)) {
+    return(NULL)
+  }
+  parsed <- shiny::parseQueryString(search)
+  value <- parsed$cluster
+  if (is.null(value) || length(value) != 1 || !grepl("^[0-9]+$", value)) {
+    return(NULL)
+  }
+  id <- suppressWarnings(as.integer(value))
+  if (is.na(id) || id <= 0L) {
+    return(NULL)
+  }
+  id
 }
 
 #' The open-cluster rail, with an optional bulk-assessment bar

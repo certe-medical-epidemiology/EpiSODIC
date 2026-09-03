@@ -855,6 +855,18 @@ dl.episodic-settings dd { margin: 0; }
 }
 .episodic-table tr.episodic-row-link:hover .episodic-id-link { text-decoration: underline; }
 
+/* A cluster that no longer stands as a dossier of its own - the lattice
+   suppression pass folded it into another. Its row does not open, so the
+   id says so rather than looking like a link that does nothing: the
+   theme's warning colour, a dotted underline for the hover affordance,
+   and a help cursor over the title that explains why. */
+.episodic-id-unlinked {
+  color: var(--episodic-warning);
+  font-weight: 500;
+  cursor: help;
+  border-bottom: 1px dotted var(--episodic-warning);
+}
+
 /* Settings screen: notification channel cards, read-only detection config
    grid, and the user-management table. */
 

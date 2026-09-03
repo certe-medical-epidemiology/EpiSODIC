@@ -131,8 +131,8 @@ episodic_app_actor_label <- function(
 #'   `c("pathogen_province", "pathogen_region")`), or `NULL`/empty for
 #'   every level.
 #' @param lang Session language.
-#' @return A data frame, one row per closed cluster, most recently closed
-#'   first.
+#' @return A data frame, one row per closed cluster, in
+#'   `episodic_cluster_table_order()` - most recent last case day first.
 #' @keywords internal
 #' @noRd
 episodic_app_archive <- function(
@@ -226,18 +226,19 @@ episodic_app_archive <- function(
     return(empty)
   }
 
-  # Inclusive day count: a cluster first and last seen the same day ran
-  # for 1 day, not 0.
-  closed$duration_days <- as.integer(
-    as.Date(closed$last_day) - as.Date(closed$first_day)
-  ) +
-    1L
+  closed$duration_days <- episodic_cluster_duration_days(
+    closed$first_day,
+    closed$last_day
+  )
 
-  # Sorted on the Period column shown in the table (first_day), not on
-  # closed_at: an operator scanning the archive reads it as a timeline of
-  # outbreaks, and wants the most recent period on top regardless of the
-  # order clusters happened to be closed in.
-  closed <- closed[order(closed$first_day, decreasing = TRUE, na.last = TRUE), ]
+  # Sorted the way every cluster table in the app is sorted - most recent
+  # last case day first - rather than on closed_at: an operator scanning
+  # the archive reads it as a timeline of outbreaks, and wants the most
+  # recently active on top regardless of the order clusters happened to
+  # be closed in. `episodic_ui_cluster_table()` applies the same order
+  # again when it renders; doing it here as well means any other caller
+  # gets the rows in the order the screen shows them.
+  closed <- closed[episodic_cluster_table_order(closed), ]
   closed[, c(
     "cluster_id",
     "pathogen",
