@@ -243,3 +243,29 @@ test_that("a ?cluster= deep link is parsed, and anything else is ignored", {
   expect_null(episodic_app_url_cluster_id("?cluster=abc"))
   expect_null(episodic_app_url_cluster_id("?other=1"))
 })
+
+test_that("a day value that does not parse yields NA rather than taking the screen down", {
+  # as.Date() on a character vector errors on an unparseable value, so a
+  # single malformed day would otherwise blow up the whole table.
+  expect_true(is.na(episodic_cluster_duration_days("garbage", "2025-01-06")))
+  expect_equal(
+    episodic_cluster_duration_days(
+      as.Date("2025-01-02"),
+      as.Date("2025-01-06")
+    ),
+    5L
+  )
+  clusters <- data.frame(
+    cluster_id = c(1L, 2L),
+    n_cases = c(1L, 1L),
+    first_day = c("2025-01-01", "2025-03-01"),
+    last_day = c("nonsense", "2025-03-20"),
+    priority_score = c(90, 10),
+    stringsAsFactors = FALSE
+  )
+  expect_equal(
+    clusters$cluster_id[episodic_cluster_table_order(clusters)],
+    c(2L, 1L)
+  )
+  expect_silent(episodic_ui_cluster_table(clusters, lang = "en"))
+})

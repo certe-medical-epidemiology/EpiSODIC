@@ -39,6 +39,25 @@
 # how long, at what priority - is the same column in the same place
 # everywhere.
 
+#' A cluster's stored day column, as dates
+#'
+#' `as.Date()` on a character vector *errors* on a value it cannot parse
+#' rather than returning `NA`, which would take a whole screen down over
+#' one malformed row. Every day column in this database is ISO
+#' `YYYY-MM-DD` (`episodic_sql_date()`), so naming that format is both
+#' the right reading and the one that yields `NA` for anything else.
+#'
+#' @param x A character or `Date` vector.
+#' @return A `Date` vector the same length as `x`.
+#' @keywords internal
+#' @noRd
+episodic_cluster_day <- function(x) {
+  if (inherits(x, "Date")) {
+    return(x)
+  }
+  as.Date(as.character(x), format = "%Y-%m-%d")
+}
+
 #' The number of days a cluster ran, inclusive of both end days
 #'
 #' A cluster whose first and last case fell on the same day ran for one
@@ -50,9 +69,10 @@
 #' @keywords internal
 #' @noRd
 episodic_cluster_duration_days <- function(first_day, last_day) {
-  first <- suppressWarnings(as.Date(first_day))
-  last <- suppressWarnings(as.Date(last_day))
-  as.integer(last - first) + 1L
+  as.integer(
+    episodic_cluster_day(last_day) - episodic_cluster_day(first_day)
+  ) +
+    1L
 }
 
 #' The order every cluster table is read in
@@ -75,7 +95,7 @@ episodic_cluster_table_order <- function(clusters) {
   if (nrow(clusters) == 0) {
     return(integer(0))
   }
-  last <- as.numeric(suppressWarnings(as.Date(clusters$last_day)))
+  last <- as.numeric(episodic_cluster_day(clusters$last_day))
   priority <- as.numeric(clusters$priority_score)
   priority[is.na(priority)] <- -Inf
   id <- as.numeric(clusters$cluster_id)
