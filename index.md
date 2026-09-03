@@ -31,10 +31,10 @@ choosing.
 
 ### It Detects
 
-Combines the Farrington method with rule-based detectors for pathogens
-too rare for a statistical baseline, and the Moving Epidemic Method for
-seasonal ones such as influenza and RSV, applied automatically across
-every ward, institution, and region in your data.
+Combines the Improved Farrington method with rule-based detectors for
+pathogens too rare for a statistical baseline, and the Moving Epidemic
+Method for seasonal ones such as influenza and RSV, applied
+automatically across every ward, institution, and region in your data.
 
 ### It Reconciles
 
@@ -56,7 +56,7 @@ language your colleagues read.
 ### It Notifies
 
 Pushes new clusters to your team the moment they arise, by email,
-Microsoft Teams, Slack, or an ntfy server.
+Microsoft Teams, Slack, or even an ntfy server.
 
 ### It Adapts
 
