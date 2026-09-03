@@ -120,13 +120,15 @@ YAML-based, with recursive merge. `inst/config/default.yaml` ships
 documented defaults. An operator’s instance config (pointed at by
 `EPISODIC_CONFIG`) overlays key-by-key. The resolved configuration is
 hashed (SHA-1 over canonical JSON) and stored on every run for
-reproducibility. `notifications` is deliberately excluded from the hash
-so that notification settings (which contain secrets) never alter
-detection reproducibility and never reach `config_snapshot`.
+reproducibility. `notifications` and `access` are deliberately excluded
+from the hash (see `episodic_config_unhashed_sections`): both govern how
+the instance is operated rather than what a run computes, and
+notification settings additionally contain secrets that must never reach
+`config_snapshot`.
 
 Key config sections: `reconciliation`, `eligibility`,
 `effect_size_floor`, `same_place`, `farrington`, `mem`, `rare_trigger`,
-`priority_score`, `notifications`, `suppression`.
+`priority_score`, `notifications`, `suppression`, `access`.
 
 Pathogen-specific parameters (episode length, serial interval, severity
 weight) live in `inst/config/pathogen_config.csv`.
@@ -267,9 +269,17 @@ from index”.
   Suggests. Gate optional packages at runtime with
   [`rlang::check_installed()`](https://rlang.r-lib.org/reference/is_installed.html)
   or [`requireNamespace()`](https://rdrr.io/r/base/ns-load.html).
-- Config hash: the `notifications` key is stripped before hashing. Any
-  new config section that contains secrets or is operationally
-  irrelevant to detection should follow the same pattern.
+- Config hash: the keys in `episodic_config_unhashed_sections`
+  (`notifications`, `access`) are stripped before hashing. Any new
+  config section that contains secrets or is operationally irrelevant to
+  detection should be added there.
+- Anonymous access: `access.require_login` closes the app to visitors
+  who have not signed in. It is enforced server-side, by not rendering -
+  `episodic_app_access_granted()` gates every output and every
+  data-bearing observer, so nothing reaches the page to be uncovered
+  client-side. Any new output or observer that reads surveillance data
+  must go behind the same gate. It is YAML-only, with no Settings-screen
+  override, on purpose.
 - Error handling: notification and report-rendering errors must not
   propagate to the cron pipeline. Wrap in `tryCatch` and log via
   `episodic_trace()`.

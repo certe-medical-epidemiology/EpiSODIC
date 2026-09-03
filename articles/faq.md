@@ -400,10 +400,16 @@ Two independent things are configurable, and both are optional:
 - **L4 (province-level) stream detection**: separately from the map, the
   lattice’s province level needs to know which of your postcodes belong
   to which province/region, via `EPISODIC_PC_PROVINCE_MAP` - a CSV with
-  `pc` and `province_code` columns. Left unset, this also falls back to
-  the same Dutch demo default, which only ever matches Dutch postcodes;
-  outside that region L4 simply never has anything to detect on until
-  you supply your own mapping (L1-L3 and L5 are unaffected either way).
+  `pc` and `province_code` columns. The same mapping is what names the
+  province beside each postcode in the dashboard’s geography panel. Left
+  unset, this also falls back to the same Dutch demo default, which only
+  ever matches Dutch postcodes; outside that region L4 simply never has
+  anything to detect on until you supply your own mapping (L1-L3 and L5
+  are unaffected either way). Set to a file that cannot be used, it
+  stops the run and names the problem instead of falling back - a
+  mapping you supplied and a mapping you did not are two different
+  situations, and quietly treating the first as the second is how a
+  lattice ends up built on somebody else’s provinces.
 
 See
 [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)’s

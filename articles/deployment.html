@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -151,12 +151,39 @@ never part of the detection-reproducibility guarantee
 <div class="section level2">
 <h2 id="accounts">Accounts<a class="anchor" aria-label="anchor" href="#accounts"></a>
 </h2>
-<p>Aggregate data is anonymous - the app opens read-only for anyone who
-reaches it. Signing in unlocks patient-level detail (the line list) for
-both roles below. Accounts are never created by users themselves; either
-an <code>is_admin</code> account provisions them from the in-app
-Settings screen, or whoever administers the database runs
+<p>By default, aggregate data is anonymous - the app opens read-only for
+anyone who reaches it. Signing in unlocks patient-level detail (the line
+list) for both roles below. Accounts are never created by users
+themselves; either an <code>is_admin</code> account provisions them from
+the in-app Settings screen, or whoever administers the database runs
 <code><a href="../reference/episodic_provision_user.html">episodic_provision_user()</a></code> at the console.</p>
+<div class="section level3">
+<h3 id="closing-the-app-to-anonymous-visitors">Closing the app to anonymous visitors<a class="anchor" aria-label="anchor" href="#closing-the-app-to-anonymous-visitors"></a>
+</h3>
+<p>If the instance is reachable from anywhere its data should not be,
+set <code>access.require_login</code> in your
+<code>EPISODIC_CONFIG</code> YAML:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">access</span><span class="kw">:</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="at">  </span><span class="fu">require_login</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<p>An anonymous visitor then gets a sign-in prompt and nothing else: no
+navigation, no status strip, not one row of data. This is enforced on
+the <strong>server</strong>, not in the browser - none of those screens
+is rendered for a session that has not signed in, so nothing they would
+contain is ever serialised into the page. There is correspondingly
+nothing for a browser’s developer tools to uncover by removing the
+prompt: what is not sent cannot be inspected. The same gate covers
+inputs a client can set for itself, not only the links the navigation
+offers.</p>
+<p>This is a YAML-only setting on purpose, with no override on the
+Settings screen: a login wall an admin account can switch off from
+inside the app is a login wall that falls with that one account. Turning
+it off takes file access to the machine. The Settings screen does
+<em>report</em> which way it is set, so an admin can confirm it without
+SSH access.</p>
+<p>It is excluded from <code>config_hash</code> alongside
+<code>notifications</code>: it governs how the instance is operated,
+never what a detection run computes, so turning it on does not make
+historic runs look incomparable with current ones.</p>
 <p>There are exactly two roles:</p>
 <ul>
 <li>
@@ -176,7 +203,7 @@ Detection parameters themselves stay read-only there deliberately -
 changing them is still a <code>EPISODIC_CONFIG</code> YAML change, so
 every past result stays traceable to the exact configuration that
 produced it (see “Configuration” above).</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span>  <span class="co"># or pass db_path explicitly below</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/episodic_provision_user.html">episodic_provision_user</a></span><span class="op">(</span></span>
@@ -197,6 +224,7 @@ forces the holder to set their own password before continuing. Pass
 access as well - you need at least one such account to manage anything
 from the dashboard itself; every account after that can be provisioned
 either way.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="where-the-database-lives">Where the database lives<a class="anchor" aria-label="anchor" href="#where-the-database-lives"></a>
@@ -220,7 +248,7 @@ deployment that already runs a database server and would rather point
 EpiSODIC at it than manage a SQLite file on disk - the schema and every
 query work identically against either backend.</li>
 </ul>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="fu"><a href="../reference/episodic_db_dsn_mariadb.html">episodic_db_dsn_mariadb</a></span><span class="op">(</span></span>
 <span>  host <span class="op">=</span> <span class="st">"db.internal"</span>, dbname <span class="op">=</span> <span class="st">"episodic"</span>,</span>
 <span>  user <span class="op">=</span> <span class="st">"episodic_app"</span>, password <span class="op">=</span> <span class="st">"s3cr3t!"</span></span>
@@ -239,7 +267,7 @@ ignored.</p>
 <div class="section level2">
 <h2 id="running-the-app">Running the app<a class="anchor" aria-label="anchor" href="#running-the-app"></a>
 </h2>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/episodic_run_app.html">episodic_run_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/episodic_run_app.html">episodic_run_app()</a></code>’s <code>db_path</code> argument

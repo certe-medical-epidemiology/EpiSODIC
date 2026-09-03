@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -425,10 +425,16 @@ by <code>pc</code> value, exactly as if this feature did not exist.</li>
 from the map, the lattice’s province level needs to know which of your
 postcodes belong to which province/region, via
 <code>EPISODIC_PC_PROVINCE_MAP</code> - a CSV with <code>pc</code> and
-<code>province_code</code> columns. Left unset, this also falls back to
-the same Dutch demo default, which only ever matches Dutch postcodes;
-outside that region L4 simply never has anything to detect on until you
-supply your own mapping (L1-L3 and L5 are unaffected either way).</li>
+<code>province_code</code> columns. The same mapping is what names the
+province beside each postcode in the dashboard’s geography panel. Left
+unset, this also falls back to the same Dutch demo default, which only
+ever matches Dutch postcodes; outside that region L4 simply never has
+anything to detect on until you supply your own mapping (L1-L3 and L5
+are unaffected either way). Set to a file that cannot be used, it stops
+the run and names the problem instead of falling back - a mapping you
+supplied and a mapping you did not are two different situations, and
+quietly treating the first as the second is how a lattice ends up built
+on somebody else’s provinces.</li>
 </ul>
 <p>See <code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic reference
 data” section for the exact contract these files need to satisfy.</p>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,15 +33,37 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.10.3" id="episodic-0103">EpiSODIC 0.10.3<a class="anchor" aria-label="anchor" href="#episodic-0103"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.10.4" id="episodic-0104">EpiSODIC 0.10.4<a class="anchor" aria-label="anchor" href="#episodic-0104"></a></h2>
 <div class="section level3">
-<h3 id="changed-0-10-3">Changed<a class="anchor" aria-label="anchor" href="#changed-0-10-3"></a></h3>
-<ul><li>The dashboard’s area/province/region place label now shows <code>region_code</code> verbatim instead of cosmetically reformatting it, so an operator can see at a glance, character for character, whether <code>EPISODIC_PC_PROVINCE_MAP</code> resolved the code they expected, without risking a mangled real place name (e.g. the hyphen in “Noord-Holland”)</li>
+<h3 id="new-0-10-4">New<a class="anchor" aria-label="anchor" href="#new-0-10-4"></a></h3>
+<ul><li>New <code>access.require_login</code> configuration key (default <code>false</code>, keeping the current behaviour): when <code>true</code>, an anonymous visitor gets a sign-in prompt and nothing else, because the server renders no navigation, no status strip and no screen for them rather than hiding it client-side</li>
+<li>The Settings screen has a read-only “Dashboard access” panel reporting which way <code>access.require_login</code> is set; it is deliberately not editable in-app, so a login wall cannot be switched off from inside the app by a single account</li>
+<li>A cluster’s dossier can now be opened by URL: <code>?cluster=&lt;id&gt;</code> on the dashboard address selects that cluster on the Clusters screen</li>
+<li>New-cluster notifications now link each cluster id straight to its dossier when <code>dashboard_url</code> is configured</li>
+<li>The geography panel and the outbreak report now name the province each postcode falls in, alongside the postcode itself</li>
+<li>The Info screen has a “Reference data” panel reporting, per <code>EPISODIC_*</code> variable, whether the instance’s own file was read, was rejected, or was read and matched nothing, and what it delivered</li>
+<li>The reference-data panel reports how many of the case data’s own postcodes resolve to a province, which is what distinguishes a <code>EPISODIC_PC_PROVINCE_MAP</code> that was never read from one whose postcode format does not match the case data</li>
 </ul></div>
+<div class="section level3">
+<h3 id="changed-0-10-4">Changed<a class="anchor" aria-label="anchor" href="#changed-0-10-4"></a></h3>
+<ul><li>Every table of clusters (Archive, Pathogen screen, the dossier’s related and similar-clusters panels, the outbreak report and the new-cluster notification) now shares one implementation with the same columns in the same order: cluster id, then context, then cases, first case, last case, duration and priority</li>
+<li>Every table of clusters is now sorted on the last case day, most recent first, with priority and cluster id breaking ties</li>
+<li>A cluster row that does not open a dossier, because lattice suppression folded it into another, now shows its id in the warning colour with a tooltip explaining why, instead of a link that does nothing</li>
+<li>The per-screen cluster table column translation keys are replaced by one <code>column.*</code> family shared by every cluster table</li>
+<li>
+<code><a href="../reference/episodic_config_hash.html">episodic_config_hash()</a></code> now also excludes the <code>access</code> section, for the same reason it excludes <code>notifications</code>: it governs how the instance is operated, never what a run computes</li>
+<li>
+<code>EPISODIC_PC_PROVINCE_MAP</code> pointing at a missing, unreadable, empty, wrongly-columned or duplicate-postcode CSV is now a run-stopping error naming the file and the problem, instead of a silent fall back to the shipped Dutch demo ranges</li>
+<li>A detection run in which no postcode resolves to a province now says so in its trace, instead of leaving province-level detection silently empty</li>
+<li>The dashboard’s area/province/region place label now shows <code>region_code</code> verbatim instead of cosmetically reformatting it, so an operator can see at a glance, character for character, whether <code>EPISODIC_PC_PROVINCE_MAP</code> resolved the code they expected, without risking a mangled real place name (e.g. the hyphen in “Noord-Holland”)</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.10.3" id="episodic-0103">EpiSODIC 0.10.3<a class="anchor" aria-label="anchor" href="#episodic-0103"></a></h2>
 <div class="section level3">
 <h3 id="fixed-0-10-3">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-10-3"></a></h3>
 <ul><li>Email/notification messages for new clusters and run failures are now rendered in <code>EPISODIC_LANGUAGE</code>, in all 8 shipped languages, instead of always in English</li>
-<li>The new-clusters email’s Cases, Expected, Ratio, Priority, and Period columns are now horizontally centred, and the Period column is formatted the same way the dashboard formats date ranges</li>
+<li>The new-clusters email’s numeric columns are now horizontally centred, and its dates are formatted the same way the dashboard formats them</li>
 <li>
 <code>microsoft365</code> notifications under the cached-login flow (Option C) now honour <code>from</code>: when set, mail is sent from that mailbox via <code>Microsoft365R::get_business_outlook(shared_mbox_email = from)</code> instead of always sending as the signed-in account</li>
 <li>Fixed a <code>grepl(..., ignore.case = TRUE, fixed = TRUE)</code> warning when matching a Microsoft 365 tenant against cached Azure AD logins; the match is now done case-insensitively without triggering the warning</li>

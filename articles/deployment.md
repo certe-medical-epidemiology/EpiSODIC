@@ -95,13 +95,43 @@ display concern, never part of the detection-reproducibility guarantee
 
 ## Accounts
 
-Aggregate data is anonymous - the app opens read-only for anyone who
-reaches it. Signing in unlocks patient-level detail (the line list) for
-both roles below. Accounts are never created by users themselves; either
-an `is_admin` account provisions them from the in-app Settings screen,
-or whoever administers the database runs
+By default, aggregate data is anonymous - the app opens read-only for
+anyone who reaches it. Signing in unlocks patient-level detail (the line
+list) for both roles below. Accounts are never created by users
+themselves; either an `is_admin` account provisions them from the in-app
+Settings screen, or whoever administers the database runs
 [`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md)
 at the console.
+
+### Closing the app to anonymous visitors
+
+If the instance is reachable from anywhere its data should not be, set
+`access.require_login` in your `EPISODIC_CONFIG` YAML:
+
+``` yaml
+access:
+  require_login: true
+```
+
+An anonymous visitor then gets a sign-in prompt and nothing else: no
+navigation, no status strip, not one row of data. This is enforced on
+the **server**, not in the browser - none of those screens is rendered
+for a session that has not signed in, so nothing they would contain is
+ever serialised into the page. There is correspondingly nothing for a
+browser’s developer tools to uncover by removing the prompt: what is not
+sent cannot be inspected. The same gate covers inputs a client can set
+for itself, not only the links the navigation offers.
+
+This is a YAML-only setting on purpose, with no override on the Settings
+screen: a login wall an admin account can switch off from inside the app
+is a login wall that falls with that one account. Turning it off takes
+file access to the machine. The Settings screen does *report* which way
+it is set, so an admin can confirm it without SSH access.
+
+It is excluded from `config_hash` alongside `notifications`: it governs
+how the instance is operated, never what a detection run computes, so
+turning it on does not make historic runs look incomparable with current
+ones.
 
 There are exactly two roles:
 

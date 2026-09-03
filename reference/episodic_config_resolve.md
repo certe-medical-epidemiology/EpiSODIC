@@ -70,7 +70,7 @@ names(config)
 #>  [1] "reconciliation"    "eligibility"       "effect_size_floor"
 #>  [4] "same_place"        "farrington"        "mem"              
 #>  [7] "rare_trigger"      "priority_score"    "notifications"    
-#> [10] "suppression"      
+#> [10] "suppression"       "access"           
 config$eligibility$min_baseline_weeks
 #> [1] 52
 ```

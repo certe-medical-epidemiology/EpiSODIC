@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -135,8 +135,8 @@
 </div>
 <div class="section level3">
 <h3 id="configuration">Configuration<a class="anchor" aria-label="anchor" href="#configuration"></a></h3>
-<p>YAML-based, with recursive merge. <code>inst/config/default.yaml</code> ships documented defaults. An operator’s instance config (pointed at by <code>EPISODIC_CONFIG</code>) overlays key-by-key. The resolved configuration is hashed (SHA-1 over canonical JSON) and stored on every run for reproducibility. <code>notifications</code> is deliberately excluded from the hash so that notification settings (which contain secrets) never alter detection reproducibility and never reach <code>config_snapshot</code>.</p>
-<p>Key config sections: <code>reconciliation</code>, <code>eligibility</code>, <code>effect_size_floor</code>, <code>same_place</code>, <code>farrington</code>, <code>mem</code>, <code>rare_trigger</code>, <code>priority_score</code>, <code>notifications</code>, <code>suppression</code>.</p>
+<p>YAML-based, with recursive merge. <code>inst/config/default.yaml</code> ships documented defaults. An operator’s instance config (pointed at by <code>EPISODIC_CONFIG</code>) overlays key-by-key. The resolved configuration is hashed (SHA-1 over canonical JSON) and stored on every run for reproducibility. <code>notifications</code> and <code>access</code> are deliberately excluded from the hash (see <code>episodic_config_unhashed_sections</code>): both govern how the instance is operated rather than what a run computes, and notification settings additionally contain secrets that must never reach <code>config_snapshot</code>.</p>
+<p>Key config sections: <code>reconciliation</code>, <code>eligibility</code>, <code>effect_size_floor</code>, <code>same_place</code>, <code>farrington</code>, <code>mem</code>, <code>rare_trigger</code>, <code>priority_score</code>, <code>notifications</code>, <code>suppression</code>, <code>access</code>.</p>
 <p>Pathogen-specific parameters (episode length, serial interval, severity weight) live in <code>inst/config/pathogen_config.csv</code>.</p>
 </div>
 <div class="section level3">
@@ -231,7 +231,8 @@ vignettes/                  # 7 vignettes</code></pre>
 <li>Logging: use <code>episodic_trace()</code> (defined in <code>run_cron.R</code>) for cron-side logging, <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code> for interactive functions.</li>
 <li>Database: all SQL is inline (no ORM). Parameterised queries (<code>DBI::dbGetQuery(con, sql, params = ...)</code>) throughout, never string interpolation of user values.</li>
 <li>Dependencies: hard dependencies in Imports, optional integrations in Suggests. Gate optional packages at runtime with <code><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">rlang::check_installed()</a></code> or <code><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace()</a></code>.</li>
-<li>Config hash: the <code>notifications</code> key is stripped before hashing. Any new config section that contains secrets or is operationally irrelevant to detection should follow the same pattern.</li>
+<li>Config hash: the keys in <code>episodic_config_unhashed_sections</code> (<code>notifications</code>, <code>access</code>) are stripped before hashing. Any new config section that contains secrets or is operationally irrelevant to detection should be added there.</li>
+<li>Anonymous access: <code>access.require_login</code> closes the app to visitors who have not signed in. It is enforced server-side, by not rendering - <code>episodic_app_access_granted()</code> gates every output and every data-bearing observer, so nothing reaches the page to be uncovered client-side. Any new output or observer that reads surveillance data must go behind the same gate. It is YAML-only, with no Settings-screen override, on purpose.</li>
 <li>Error handling: notification and report-rendering errors must not propagate to the cron pipeline. Wrap in <code>tryCatch</code> and log via <code>episodic_trace()</code>.</li>
 <li>Event sourcing: the app only inserts into <code>episodic_assessment_event</code>, never updates or deletes. Current state is derived from the event stream.</li>
 </ul></div>

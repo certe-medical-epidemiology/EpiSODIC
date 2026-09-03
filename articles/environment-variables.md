@@ -11,11 +11,11 @@ them picks the setting up automatically.
 |----|----|----|
 | `EPISODIC_DB` | [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md), [`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md) (`db_path` argument) | Path to the instance’s SQLite database, or a `mysql://` DSN pointing at a MariaDB/MySQL database instead - see “Database backend” above. |
 | `EPISODIC_LANGUAGE` | every `lang` argument - [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md), [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md), [`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md), [`episodic_tr()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_tr.md) and every renderer beneath them | Dashboard/report language: `en`, `ar`, `nl`, `fr`, `de`, `hi`, `zh`, or `es`. Defaults to `en` if unset. Fixed for the whole running app - there is no in-app language switcher. |
-| `EPISODIC_CONFIG` | [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md) (`episodic_config_path` argument) | Path to an instance override of detection configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings), overlaid key-by-key on `inst/config/default.yaml`’s shipped defaults. |
+| `EPISODIC_CONFIG` | [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md) (`episodic_config_path` argument), [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md) | Path to an instance override of configuration (pathogen thresholds, `same_place`/`rare_trigger`/Farrington settings, notification channels, and `access.require_login`), overlaid key-by-key on `inst/config/default.yaml`’s shipped defaults. See [`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)’s “Closing the app to anonymous visitors” for `access.require_login`. |
 | `EPISODIC_PALETTE_CONFIG` | [`episodic_palette()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.md) (`palette_config_path` argument) | Path to an instance override of the UI colour palette, overlaid key-by-key on `inst/config/palette.yaml`’s shipped defaults. Deliberately separate from `EPISODIC_CONFIG`: colour is a display concern, never part of [`episodic_config_hash()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_hash.md)’s detection-reproducibility guarantee. |
 | `EPISODIC_GEO_DATA` | [`episodic_geo_source_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_geo.md) (`path` argument) | Path to an `.rds` file holding your own geographic reference data (an `sf` object with `pc`/`geometry` columns) for the choropleth map - any country, any area unit. EpiSODIC ships one worked example (Dutch postcodes), used only when this is unset. See [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)’s “Geographic reference data” section. |
 | `EPISODIC_GEO_DATA_OVERLAY` | [`episodic_geo_overlay_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_geo.md) (`path` argument) | Path to an `.rds` file holding an optional region-outline overlay (an `sf` object with just a `geometry` column), drawn on top of the choropleth. No default. See [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)’s “Geographic reference data” section. |
-| `EPISODIC_PC_PROVINCE_MAP` | `episodic_pc_to_province()` (`path` argument) | Path to a CSV (`pc`, `province_code` columns) mapping your postcodes to provinces/states/regions, for L4 stream detection. Defaults to Dutch demo ranges that only match Dutch postcodes. See [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)’s “Geographic reference data” section. |
+| `EPISODIC_PC_PROVINCE_MAP` | `episodic_pc_to_province()` (`path` argument) | Path to a CSV (`pc`, `province_code` columns) mapping your postcodes to provinces/states/regions, for L4 stream detection and for naming the province beside each postcode in the dashboard. Unset, it defaults to Dutch demo ranges that only match Dutch postcodes; set but unusable (no such file, unreadable, no rows, wrong columns, or a repeated `pc`) stops the run and says which of those it is, rather than falling back. See [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)’s “Geographic reference data” section. |
 | `EPISODIC_QUARTO_REPORT` | [`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md) (`qmd_path` argument) | Path to an operator’s own Quarto report template, overriding the shipped `inst/report/cluster_report.qmd`. See “Custom report templates” above. |
 
 None of these need to be set to run the demo -
@@ -27,3 +27,29 @@ context (database backend, custom report templates), and
 [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)’s
 “Geographic reference data” section for the detail behind
 `EPISODIC_GEO_DATA` and `EPISODIC_GEO_DATA_OVERLAY`.
+
+## Checking what they actually delivered
+
+Setting a variable and seeing nothing change on screen has, until now,
+been indistinguishable from setting it wrongly. The dashboard’s **Info**
+screen carries a “Reference data” panel that resolves each of these live
+and reports, per variable, whether the instance’s own file is in use,
+the shipped default is standing in, nothing is configured, the file was
+configured and could not be used (with the reason), or an optional
+package the feature needs is missing - alongside what it put into the
+app: how many areas the map geometry holds, how many postcodes the
+province mapping maps and to how many provinces, and how many of the
+distinct postcodes in your own case data resolve to a province.
+
+That last figure is the one worth reading first when a province is not
+appearing where you expect: a mapping read successfully but matching
+none of your postcodes looks, on every other screen, exactly like a
+mapping that was never read.
+
+The resolved file paths are shown only to a signed-in user. By default
+the Info screen itself needs no sign-in, so the statuses and counts -
+the part that answers “is my file being used” - are readable without
+one, while the paths, which say more about the machine than a visitor
+needs, are not. On an instance with `access.require_login` set the whole
+screen is behind the sign-in like every other, so a signed-in reader
+sees the paths there too.

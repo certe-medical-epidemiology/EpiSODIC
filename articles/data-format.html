@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -577,6 +577,30 @@ anywhere else: outside that one region, L4 simply never has anything to
 detect on until you supply your own mapping. L1-L3 and L5 do not depend
 on this at all. See <code>episodic_pc_to_province()</code> for the exact
 contract.</p>
+<p>Unset and unusable are two different things. Once the variable
+<em>is</em> set, a file that does not exist, cannot be read as a CSV,
+holds no rows, has no <code>pc</code> or no <code>province_code</code>
+column, or repeats a <code>pc</code> is a configuration error: the run
+stops and <code>error_text</code> names the file and which of those it
+is. It does not fall back to the demo ranges - doing so would hand an
+operator who supplied their own mapping a lattice built on somebody
+else’s provinces, with nothing anywhere to say why.</p>
+<p>The run also says so in its trace when the mapping loads but places
+no case at all, which is almost always a formatting mismatch:
+<code>"9713"</code> in the CSV against <code>"9713 AB"</code> in the
+case data, or the reverse. The same mapping is what puts a province name
+beside each postcode in the dashboard’s geography panel, so a mapping
+that is not being used is visible there too.</p>
+<p>The dashboard’s <strong>Info</strong> screen answers the same
+question directly, for this and every other <code>EPISODIC_*</code>
+file: its “Reference data” panel says whether each one was read, was
+rejected (and why), or was read fine, and what it put into the app - for
+the postcode mapping, how many postcodes it holds, how many provinces
+they resolve to, and how many of the distinct postcodes in your own case
+data it actually covers. That last number is the one that separates a
+mapping that was never read from one whose postcode format does not
+match yours. The resolved file paths on that panel are shown only to a
+signed-in user.</p>
 </div>
 </div>
 <div class="section level2">

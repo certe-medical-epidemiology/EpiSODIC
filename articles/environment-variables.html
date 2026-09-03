@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,11 +109,14 @@ switcher.</td>
 <td><code>EPISODIC_CONFIG</code></td>
 <td>
 <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> (<code>episodic_config_path</code>
-argument)</td>
-<td>Path to an instance override of detection configuration (pathogen
-thresholds, <code>same_place</code>/<code>rare_trigger</code>/Farrington
-settings), overlaid key-by-key on
-<code>inst/config/default.yaml</code>’s shipped defaults.</td>
+argument), <code><a href="../reference/episodic_run_app.html">episodic_run_app()</a></code>
+</td>
+<td>Path to an instance override of configuration (pathogen thresholds,
+<code>same_place</code>/<code>rare_trigger</code>/Farrington settings,
+notification channels, and <code>access.require_login</code>), overlaid
+key-by-key on <code>inst/config/default.yaml</code>’s shipped defaults.
+See <code><a href="../articles/deployment.html">vignette("deployment")</a></code>’s “Closing the app to anonymous
+visitors” for <code>access.require_login</code>.</td>
 </tr>
 <tr class="even">
 <td><code>EPISODIC_PALETTE_CONFIG</code></td>
@@ -157,9 +160,13 @@ section.</td>
 argument)</td>
 <td>Path to a CSV (<code>pc</code>, <code>province_code</code> columns)
 mapping your postcodes to provinces/states/regions, for L4 stream
-detection. Defaults to Dutch demo ranges that only match Dutch
-postcodes. See <code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic
-reference data” section.</td>
+detection and for naming the province beside each postcode in the
+dashboard. Unset, it defaults to Dutch demo ranges that only match Dutch
+postcodes; set but unusable (no such file, unreadable, no rows, wrong
+columns, or a repeated <code>pc</code>) stops the run and says which of
+those it is, rather than falling back. See
+<code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic reference data”
+section.</td>
 </tr>
 <tr class="even">
 <td><code>EPISODIC_QUARTO_REPORT</code></td>
@@ -181,6 +188,33 @@ context (database backend, custom report templates), and
 <code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic reference data”
 section for the detail behind <code>EPISODIC_GEO_DATA</code> and
 <code>EPISODIC_GEO_DATA_OVERLAY</code>.</p>
+<div class="section level2">
+<h2 id="checking-what-they-actually-delivered">Checking what they actually delivered<a class="anchor" aria-label="anchor" href="#checking-what-they-actually-delivered"></a>
+</h2>
+<p>Setting a variable and seeing nothing change on screen has, until
+now, been indistinguishable from setting it wrongly. The dashboard’s
+<strong>Info</strong> screen carries a “Reference data” panel that
+resolves each of these live and reports, per variable, whether the
+instance’s own file is in use, the shipped default is standing in,
+nothing is configured, the file was configured and could not be used
+(with the reason), or an optional package the feature needs is missing -
+alongside what it put into the app: how many areas the map geometry
+holds, how many postcodes the province mapping maps and to how many
+provinces, and how many of the distinct postcodes in your own case data
+resolve to a province.</p>
+<p>That last figure is the one worth reading first when a province is
+not appearing where you expect: a mapping read successfully but matching
+none of your postcodes looks, on every other screen, exactly like a
+mapping that was never read.</p>
+<p>The resolved file paths are shown only to a signed-in user. By
+default the Info screen itself needs no sign-in, so the statuses and
+counts - the part that answers “is my file being used” - are readable
+without one, while the paths, which say more about the machine than a
+visitor needs, are not. On an instance with
+<code>access.require_login</code> set the whole screen is behind the
+sign-in like every other, so a signed-in reader sees the paths there
+too.</p>
+</div>
   </main>
 </div>
 
