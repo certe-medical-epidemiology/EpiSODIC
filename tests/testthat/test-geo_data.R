@@ -423,7 +423,7 @@ test_that("the dossier shows the province next to each postcode, and says so whe
   # `label` stays the bare PC: it is what the map geometry joins on
   expect_setequal(conc$rows$label, c("9713", "1012"))
   bars <- episodic_ui_geo_bar_rows(conc$rows, lang = "en")
-  expect_true("9713 · Groningen" %in% bars$label)
+  expect_true(paste0("9713 \u00b7 Groningen") %in% bars$label)
   expect_true("1012" %in% bars$label)
 
   # a mapping that cannot be read does not take the dossier down; the

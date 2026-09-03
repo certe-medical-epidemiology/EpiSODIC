@@ -643,9 +643,14 @@ episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #'
 #' The concentration rows keep `label` as the bare PC because
 #' `episodic_geo_join()` joins the map geometry on it. This is the
-#' display form of the same rows: `"9713 · PROV_GRONINGEN"`, and the bare
-#' PC where no province resolved, so a missing mapping shows as a missing
-#' province rather than as an invented one.
+#' display form of the same rows - `"9713"` and its province, separated
+#' by a middot - and the bare PC where no province resolved, so a missing
+#' mapping shows as a missing province rather than as an invented one.
+#'
+#' The separator is written as a `\u00b7` escape rather than as a literal
+#' character, as everywhere else in this codebase: source parsed under a
+#' non-UTF-8 locale mangles the literal into the text `<U+00B7>`, which
+#' is then what an epidemiologist reads on the screen.
 #'
 #' The province code is shown exactly as configured, for the same reason
 #' `episodic_app_format_region()` does: an operator has to be able to see,
@@ -662,7 +667,11 @@ episodic_ui_geo_bar_rows <- function(
     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   province <- rows$province %||% rep(NA_character_, nrow(rows))
   named <- !is.na(province) & nzchar(province)
-  rows$label[named] <- paste0(rows$label[named], " · ", province[named])
+  rows$label[named] <- paste0(
+    rows$label[named],
+    " \u00b7 ",
+    province[named]
+  )
   rows
 }
 
