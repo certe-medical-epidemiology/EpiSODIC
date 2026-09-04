@@ -394,6 +394,14 @@ episodic_app_server_factory <- function(
       current_user = current_user,
       selected_cluster_id = selected_cluster_id
     )
+    episodic_app_server_notes(
+      input,
+      output,
+      session,
+      con,
+      current_user = current_user,
+      selected_cluster_id = selected_cluster_id
+    )
     episodic_app_server_settings(
       input,
       output,

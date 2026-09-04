@@ -12,6 +12,8 @@
 - `episodic_default_style.yaml` (and `EPISODIC_STYLE`) now also carries typography: `font` (a CSS font-family stack) and `font_size_base`, which scales every other font size in the dashboard, since those are now expressed in `rem` relative to it
 - Every cluster table now has a "Case days" column: the number of distinct dates with at least one case, as its own figure next to the case count and the calendar duration - a cluster can run 90 days with cases on only 10 of them (a sharp peak) or on 39 of them (a flat, sustained rise), the same duration and case count, two different epidemic shapes
 - `episodic_add_user()` is now exported, so accounts can be provisioned from a script without reaching into the package's internals
+- Every cluster now has a notes panel next to the interpretation panel: a free-text, markdown-formatted scratchpad open to any signed-in role, stored as plain text and rendered on display
+- New `episodic_add_manual_cluster()` adds clusters detected by another algorithm or system, vectorised over any number of clusters in one call, never connected to this instance's own case data - for output from another programming language or system, fed in as already-parsed R values
 
 ## Changed
 

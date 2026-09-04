@@ -43,6 +43,7 @@
   "dossier.meta.first_last": "erster Fall {first}, letzter {last}",
   "dossier.meta.detected_by": "erkannt durch {detectors}",
   "dossier.changed_badge": "Seit Bewertung geändert",
+  "dossier.manual_badge": "Manuell hinzugefügt",
 
   "state.new": "Neu",
   "state.assessing": "In Bewertung",
@@ -77,6 +78,11 @@
   "panel.interpretation.title": "Einordnung",
   "panel.interpretation.aside": "automatisch erstellt",
   "panel.interpretation.empty": "Für dieses Cluster liegt noch keine Einordnung vor.",
+
+  "panel.notes.title": "Notizen",
+  "panel.notes.empty": "Für dieses Cluster liegen noch keine Notizen vor.",
+  "notes.edit_button": "Bearbeiten",
+  "notes.save_button": "Speichern",
 
   "panel.epicurve.title": "Epidemiekurve",
   "panel.epicurve.note": "Die schattierte Zone umfasst die letzten {days_phrase}: die empirische Meldeverzögerung aus dem Meldedreieck. Fälle mit einem Probendatum in diesem Zeitfenster sind noch nicht vollständig gemeldet. Ein hier abfallender Verlauf ist kein tatsächlicher Rückgang.",

@@ -55,7 +55,17 @@ episodic_ui_dossier <- function(
     episodic_ui_dossier_header(obj, state, lang = lang, linked = linked),
     episodic_ui_stat_grid(obj, lang = lang),
     episodic_ui_trajectory(obj, timeline, lang = lang),
-    episodic_ui_interpretation_panel(obj, lang = lang),
+    shiny::tags$div(
+      style = "display:flex;gap:16px;",
+      shiny::tags$div(
+        style = "flex:1;min-width:0;",
+        episodic_ui_interpretation_panel(obj, lang = lang)
+      ),
+      shiny::tags$div(
+        style = "flex:1;min-width:0;",
+        episodic_ui_notes_panel(con, cluster_id, current_user, lang = lang)
+      )
+    ),
     episodic_ui_epicurve_panel(con, cluster_id, obj, lang = lang),
     episodic_ui_rt_panel(obj, lang = lang),
     episodic_ui_trend_panel(con, obj, lang = lang),
@@ -133,6 +143,15 @@ episodic_ui_dossier_header <- function(
         episodic_ui_state_colour(state),
         filled = TRUE
       ),
+      # Origin = "manual": added through episodic_add_manual_cluster(),
+      # never produced by this instance's own detectors - always worth
+      # flagging, since it changes what "detected by" further down means.
+      if (identical(obj$origin, "manual")) {
+        episodic_ui_chip(
+          episodic_tr("dossier.manual_badge", lang = lang),
+          pal$tertiary_dark
+        )
+      },
       if (isTRUE(obj$changed_since_assessment)) {
         episodic_ui_chip(
           episodic_tr("dossier.changed_badge", lang = lang),
@@ -158,12 +177,19 @@ episodic_ui_dossier_header <- function(
         last = episodic_format_date(obj$last_day, lang = lang),
         lang = lang
       )),
-      shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
-      shiny::tags$span(shiny::HTML(episodic_tr(
-        "dossier.meta.detected_by",
-        detectors = episodic_ui_code_join(obj$detectors, sep = " en "),
-        lang = lang
-      )))
+      # A manual cluster carries no detectors at all - the origin badge
+      # above already says so, and "detected by: (nothing)" would only
+      # repeat that badly.
+      if (!identical(obj$origin, "manual")) {
+        shiny::tagList(
+          shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
+          shiny::tags$span(shiny::HTML(episodic_tr(
+            "dossier.meta.detected_by",
+            detectors = episodic_ui_code_join(obj$detectors, sep = " en "),
+            lang = lang
+          )))
+        )
+      }
     )
   )
 }
@@ -391,6 +417,82 @@ episodic_ui_interpretation_panel <- function(
         shiny::tags$div(class = "episodic-advies", recommendation[1])
       }
     )
+  )
+}
+
+#' A free-text, markdown-formatted note per cluster
+#'
+#' Open to any signed-in role, not only epidemiologists - unlike the
+#' assessment rationale, this is a scratchpad, not a formal verdict. Two
+#' mutually-exclusive `<div>`s (rendered view, editable textarea) and two
+#' mutually-exclusive buttons ("edit" swaps to the textarea and reveals
+#' "save"), toggled by plain client-side `style.display` - the same idiom
+#' every other interactive element in this file uses; see
+#' [episodic_ui_report_panel()]'s render button for the precedent. Saving
+#' fires `note_save_submit`, handled by
+#' `episodic_app_server_notes()`, which re-renders the whole dossier pane
+#' on success - that redraw is what puts this panel back in view mode
+#' showing the freshly saved note, so no client-side "cancel" path is
+#' needed.
+#' @keywords internal
+#' @noRd
+episodic_ui_notes_panel <- function(
+    con,
+    cluster_id,
+    current_user,
+    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  note <- episodic_db_cluster_note_current(con, cluster_id)
+  note_text <- if (nrow(note) > 0) note$note_text[1] else ""
+
+  episodic_ui_panel(
+    episodic_tr("panel.notes.title", lang = lang),
+    shiny::tags$div(
+      id = "notes-view",
+      if (nzchar(trimws(note_text))) {
+        episodic_ui_render_markdown(note_text)
+      } else {
+        shiny::tags$p(
+          class = "episodic-panel-empty",
+          episodic_tr("panel.notes.empty", lang = lang)
+        )
+      }
+    ),
+    if (!is.null(current_user)) {
+      shiny::tagList(
+        shiny::tags$div(
+          id = "notes-edit",
+          class = "episodic-form-group",
+          style = "display:none;",
+          shiny::tags$textarea(
+            id = "notes-textarea",
+            rows = 6,
+            note_text
+          )
+        ),
+        shiny::tags$button(
+          id = "notes-edit-button",
+          class = "episodic-btn",
+          style = "margin-top:8px;",
+          onclick = paste0(
+            "document.getElementById('notes-view').style.display='none'; ",
+            "document.getElementById('notes-edit').style.display='block'; ",
+            "this.style.display='none'; ",
+            "document.getElementById('notes-save-button').style.display='inline-block';"
+          ),
+          episodic_tr("notes.edit_button", lang = lang)
+        ),
+        shiny::tags$button(
+          id = "notes-save-button",
+          class = "episodic-btn episodic-btn-primary",
+          style = "display:none;margin-top:8px;",
+          onclick = sprintf(
+            "Shiny.setInputValue('note_save_submit', {cluster_id: %d, note_text: document.getElementById('notes-textarea').value}, {priority: 'event'});",
+            cluster_id
+          ),
+          episodic_tr("notes.save_button", lang = lang)
+        )
+      )
+    }
   )
 }
 

@@ -77,8 +77,12 @@ Single schema in `inst/sql/schema.sql`, written in SQLite dialect. Adapted at lo
 | `episodic_app_user` | app | Dashboard accounts |
 | `episodic_case` | cron | Deduplicated case records |
 | `episodic_institution` | cron | Institution reference data |
+| `episodic_cluster_note` | app | Per-cluster free-text notes (append-only) |
+| `episodic_cluster_manual_case` | `episodic_add_manual_cluster()` | Case-level detail for `origin = 'manual'` clusters only |
 
 Write ownership is strict: cron-owned tables are written only by `episodic_run_cron()`, app-owned tables only by the Shiny app. The app never updates or deletes, only inserts (event-sourced).
+
+One deliberate exception: `episodic_add_manual_cluster()` (in `R/cluster_manual.R`) is a third, console-invoked write path into `episodic_stream`, `episodic_cluster` and `episodic_cluster_manual_case` (all otherwise cron-owned), for clusters detected by another algorithm or system rather than by `episodic_run_cron()` itself - exactly the same kind of exception `episodic_add_user()` already is for the app-owned `episodic_app_user` table. Such a cluster gets `origin = 'manual'` on `episodic_cluster` and is excluded from `episodic_reconcile_stream()`'s matching and auto-closure (see `episodic_db_clusters_for_stream()`); its case-level detail, if any, lives in `episodic_cluster_manual_case`, never in `episodic_case`, so it can never reach denominators, line lists or patient search.
 
 ### Configuration
 
@@ -115,6 +119,7 @@ R/
   reconcile.R         # match detections to persistent clusters
   reconcile_closure.R # auto-close stale clusters
   reconcile_suppress.R # lattice suppression
+  cluster_manual.R    # episodic_add_manual_cluster() - clusters from other systems
   detect_*.R          # the four detectors
   notify.R            # notification dispatcher and message building
   notify_channels.R   # per-channel send functions (ntfy, smtp, etc.)
@@ -124,6 +129,7 @@ R/
   db_app_write.R      # all app-side DB writes (append-only)
   schema_migrate.R    # schema creation and migration
   app_server.R        # Shiny server
+  app_server_notes.R  # wires the cluster notes save button
   app_ui.R            # Shiny UI
   app_dossier.R       # cluster dossier (the main assessment screen)
   app_pathogen.R      # pathogen overview panel

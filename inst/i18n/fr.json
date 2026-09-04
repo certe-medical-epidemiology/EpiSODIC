@@ -43,6 +43,7 @@
   "dossier.meta.first_last": "premier cas {first}, dernier {last}",
   "dossier.meta.detected_by": "détecté par {detectors}",
   "dossier.changed_badge": "Modifié depuis l'évaluation",
+  "dossier.manual_badge": "Ajouté manuellement",
 
   "state.new": "Nouveau",
   "state.assessing": "En évaluation",
@@ -77,6 +78,11 @@
   "panel.interpretation.title": "Interprétation",
   "panel.interpretation.aside": "générée automatiquement",
   "panel.interpretation.empty": "Aucune interprétation disponible pour l'instant pour ce cluster.",
+
+  "panel.notes.title": "Notes",
+  "panel.notes.empty": "Aucune note pour l'instant pour ce cluster.",
+  "notes.edit_button": "Modifier",
+  "notes.save_button": "Enregistrer",
 
   "panel.epicurve.title": "Courbe épidémique",
   "panel.epicurve.note": "La zone grisée couvre les derniers {days_phrase} : le délai de déclaration empirique issu du triangle de déclaration. Les cas dont la date de prélèvement se situe dans cette fenêtre ne sont pas encore entièrement déclarés. Une queue descendante ici n'est pas un déclin réel.",

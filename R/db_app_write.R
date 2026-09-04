@@ -90,6 +90,28 @@ episodic_db_assessment_event_insert <- function(
 
 #' @keywords internal
 #' @noRd
+episodic_db_cluster_note_insert <- function(
+    con,
+    cluster_id,
+    user_id,
+    note_text) {
+  params <- list(
+    cluster_id,
+    user_id,
+    episodic_now(),
+    as.character(note_text)
+  )
+  DBI::dbExecute(
+    con,
+    "INSERT INTO episodic_cluster_note (cluster_id, user_id, created_at, note_text)
+     VALUES (?, ?, ?, ?)",
+    params = params
+  )
+  episodic_db_last_insert_id(con)
+}
+
+#' @keywords internal
+#' @noRd
 episodic_db_stream_mute_insert <- function(
     con,
     stream_id,

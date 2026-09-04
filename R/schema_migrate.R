@@ -692,6 +692,9 @@ episodic_db_schema_statements <- function(dialect) {
       episodic_app_config_event = c(
         "  created_at  TEXT NOT NULL," = "  created_at  VARCHAR(30) NOT NULL,",
         "  section     TEXT NOT NULL CHECK (section IN ('notifications'))," = "  section     VARCHAR(20) NOT NULL CHECK (section IN ('notifications')),"
+      ),
+      episodic_cluster = c(
+        "  origin                   TEXT NOT NULL DEFAULT 'detected' CHECK (origin IN ('detected', 'manual'))" = "  origin                   VARCHAR(20) NOT NULL DEFAULT 'detected' CHECK (origin IN ('detected', 'manual'))"
       )
     )
     for (table in names(text_to_varchar)) {

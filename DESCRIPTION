@@ -42,7 +42,9 @@ Imports:
     shiny,
     bslib,
     ggplot2,
-    sodium
+    sodium,
+    commonmark,
+    htmltools
 Suggests:
     testthat (>= 3.0.0),
     EpiEstim,

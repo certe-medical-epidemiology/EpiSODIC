@@ -482,7 +482,11 @@ episodic_db_cluster_insert <- function(
     ratio = NA,
     priority_score,
     detector_agreement,
-    run_id) {
+    # NA for origin = "manual": such a cluster was never produced by a
+    # detection run, and inst/sql/schema.sql makes last_detected_run
+    # nullable for exactly this case.
+    run_id = NA,
+    origin = "detected") {
   params <- list(
     stream_id,
     first_day,
@@ -494,15 +498,16 @@ episodic_db_cluster_insert <- function(
     priority_score,
     detector_agreement,
     episodic_now(),
-    run_id
+    if (is.na(run_id)) NA else run_id,
+    origin
   )
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_cluster
       (stream_id, first_day, last_day, n_cases, expected, excess, ratio, priority_score,
        detector_agreement, opened_at, last_detected_run, runs_since_detected,
-       changed_since_assessment, suppressed_by, merged_into)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, NULL, NULL)",
+       changed_since_assessment, suppressed_by, merged_into, origin)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, NULL, NULL, ?)",
     params = params
   )
   episodic_db_last_insert_id(con)

@@ -86,6 +86,13 @@ reference:
   - episodic_synthetic_denominators
   - episodic_synthetic_institution_activity
 
+- title: Add clusters from another system
+  desc: >
+    Add clusters detected by another algorithm or system - never
+    connected to your own case data.
+  contents:
+  - episodic_add_manual_cluster
+
 - title: Set up a database
   desc: >
     Create and connect to the database EpiSODIC stores its data in.
