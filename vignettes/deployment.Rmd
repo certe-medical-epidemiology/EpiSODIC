@@ -83,7 +83,7 @@ dashboard first learns why without going near a log file.
 
 Detection thresholds, baseline lengths, `same_place` rules and MEM
 seasons are *operational data*, not software, and are never committed
-to this repository. `inst/config/episodic_default_config.yaml` ships the documented
+to this repository. `r doc_system_file("inst/config/episodic_default_config.yaml")` ships the documented
 defaults; point `EPISODIC_CONFIG` at a YAML file with only the keys you
 want to override, and it is merged key-by-key on top of the shipped
 defaults. Every run records the resolved configuration's hash and full
@@ -92,7 +92,7 @@ past result stay recoverable from the database alone, regardless of
 what has since changed on disk.
 
 The UI's colour palette and typography work the same way, deliberately
-through a *separate* environment variable (`EPISODIC_PALETTE_CONFIG`):
+through a *separate* environment variable (`EPISODIC_STYLE`):
 colour and font choice are display concerns, never part of the
 detection-reproducibility guarantee `EPISODIC_CONFIG`'s hash provides.
 
@@ -201,7 +201,7 @@ Sys.setenv(EPISODIC_DB = episodic_db_dsn_mariadb(
 Connecting to MariaDB/MySQL requires the `RMariaDB` package
 (`install.packages("RMariaDB")`); it is a `Suggests` dependency, not
 installed automatically, so SQLite-only deployments never need it. The
-schema (`inst/sql/schema.sql`) is written once, in SQLite syntax, and
+schema (`r doc_system_file("inst/sql/schema.sql")`) is written once, in SQLite syntax, and
 adapted at load time for the handful of tokens that differ under
 MariaDB/MySQL - there is no separate schema file to keep in sync.
 `CHECK` constraints are enforced from MariaDB 10.2.1 / MySQL 8.0.16
@@ -221,7 +221,7 @@ alone, with no R code to edit between instances.
 
 ## Custom report templates
 
-`episodic_report_render()` renders `inst/report/episodic_default_report.qmd`
+`episodic_report_render()` renders the shipped `r doc_system_file("inst/report/episodic_default_report.qmd")`
 (embedded as self-contained HTML via Quarto) unless `EPISODIC_QUARTO_REPORT`
 points at an operator's own `.qmd` file, in which case that is used
 instead - for an organisation that wants its own letterhead, section order,
@@ -253,8 +253,8 @@ the DESCRIPTION for the published methods this package is built on.
 
 House-style colours and typography are not an optional-dependency concern
 at all: the app always ships an organisation-neutral default palette
-(`inst/config/episodic_default_style.yaml`), overridable per instance by pointing
-`EPISODIC_PALETTE_CONFIG` at an organisation's own YAML file with its real
+(`r doc_system_file("inst/config/episodic_default_style.yaml")`), overridable per instance by pointing
+`EPISODIC_STYLE` at an organisation's own YAML file with its real
 colours and font - no package dependency involved either way. A webfont
 named there still needs delivering (self-hosted, or linked from its own
 provider), typically via a custom `www/episodic.css`; a system font needs

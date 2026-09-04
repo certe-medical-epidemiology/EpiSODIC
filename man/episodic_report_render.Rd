@@ -67,7 +67,7 @@ later.
 By default the report uses EpiSODIC's own report template. If your
 organisation needs its own layout or branding, set the
 \code{EPISODIC_QUARTO_REPORT} environment variable to your own \code{.qmd} file;
-the installed \verb{\\Sexpr\{system.file("report", "episodic_default_report.qmd", package = "EpiSODIC")\}}
+the default \href{https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd}{\code{inst/report/episodic_default_report.qmd}}
 is a good starting point to copy and adapt.
 
 Rendering requires \href{https://quarto.org}{Quarto} to be installed

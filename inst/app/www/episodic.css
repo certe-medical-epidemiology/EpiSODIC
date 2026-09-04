@@ -22,7 +22,7 @@
 /* EpiSODIC app stylesheet.
    Colour values are injected as CSS custom properties from
    episodic_palette() (see R/app_ui.R) so the shipped default palette and
-   an instance's own EPISODIC_PALETTE_CONFIG override produce
+   an instance's own EPISODIC_STYLE override produce
    byte-identical CSS. */
 
 /* Both custom properties below have shipped fallbacks here so the app

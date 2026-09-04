@@ -17,12 +17,6 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-doc_palette <- function() {
-  vals <- readLines(system.file("config", "episodic_default_style.yaml", package = "EpiSODIC"))
-  vals <- vals[grepl(": ", vals) & !grepl("^#", vals)]
-  paste0("`", vals, "`", collapse = "\n\n")
-}
-
 #' The Dashboard's Colour Palette and Typography
 #'
 #' Returns the colours and typography used throughout the EpiSODIC dashboard
@@ -30,8 +24,8 @@ doc_palette <- function() {
 #' reports to the house style, or check what colour a given status uses.
 #'
 #' The palette ships with an organisation-neutral default
-#' (installed in `\Sexpr[results=text]{system.file("config", "episodic_default_style.yaml", package = "EpiSODIC")}`). To use your own institute's colours or fonts instead,
-#' point the `EPISODIC_PALETTE_CONFIG` environment variable at a YAML file
+#' (`r doc_system_file("inst/config/episodic_default_style.yaml")`). To use your own institute's colours or fonts instead,
+#' point the `EPISODIC_STYLE` environment variable at a YAML file
 #' that overrides only the roles you want to change - anything you do not set
 #' keeps its shipped default.
 #'
@@ -39,10 +33,17 @@ doc_palette <- function() {
 #' on purpose: colours and typography never affect the `config_hash` recorded
 #' with a detection run, since they have no bearing on reproducibility.
 #'
-#' @section Default colours, typography and changeable YAML keys:
-#' These are all the default values, and all can be changed using a custom YAML file, `primary_dark` is the background colour of the navigation bar. `font` is a CSS font-family stack, and `font_size_base` is the app's base font size - every other font size in the dashboard is set in `rem` relative to it, so changing `font_size_base` scales the whole app's type proportionally (useful when swapping in a font that reads naturally smaller or larger than the default at the same pixel size). Changing `font` only changes the CSS declaration; if it names a webfont rather than a system font, delivering that font (a self-hosted `@font-face` or a link to its provider) is the operator's own concern, typically via a custom `www/episodic.css`:
-#'
+#' @section Default font and colours:
+#' These are all the default values, and all can be changed using a custom YAML file.
+#' 
 #' `r doc_palette()`
+#' 
+#' Of note:
+#' 
+#' * `primary_dark` is the background colour of the navigation bar. 
+#' * `font` is a CSS font-family stack, and `font_size_base` is the app's base font size.
+#'   * Every other font size in the dashboard is set in `rem` relative to it, so changing `font_size_base` scales the whole app's type proportionally (useful when swapping in a font that reads naturally smaller or larger than the default at the same pixel size).
+#'   * Changing `font` only changes the CSS declaration; if it names a webfont rather than a system font, delivering that font (a self-hosted `@font-face` or a link to its provider) is the operator's own concern.
 #'
 #' @return A named list. The greyscale neutrals are
 #'   `ink` (default text), `muted` (secondary text), `faint` (tertiary text),
@@ -74,12 +75,12 @@ episodic_palette_cache <- new.env(parent = emptyenv())
 #'
 #' @param palette_config_path Path to an instance palette file, overlaid
 #'   key-by-key on the shipped defaults. Defaults to the
-#'   `EPISODIC_PALETTE_CONFIG` environment variable.
+#'   `EPISODIC_STYLE` environment variable.
 #' @return A named list of role-named hex colours (see [episodic_palette()]).
 #' @keywords internal
 #' @noRd
 episodic_palette_config_resolve <- function(
-    palette_config_path = Sys.getenv("EPISODIC_PALETTE_CONFIG", unset = NA)) {
+    palette_config_path = Sys.getenv("EPISODIC_STYLE", unset = NA)) {
   # `[[` on an environment requires a non-empty name - "" (from an unset
   # env var) errors with "zero-length variable name" - hence the sentinel
   # rather than caching under palette_config_path itself.

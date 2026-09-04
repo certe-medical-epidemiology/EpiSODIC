@@ -203,7 +203,7 @@ Yet, `_pkgdown.yml` groups every exported topic into a section. When adding a ne
 |---|---|
 | `EPISODIC_DB` | Database path (SQLite) or DSN (MariaDB) |
 | `EPISODIC_CONFIG` | Instance detection + notification config YAML |
-| `EPISODIC_PALETTE_CONFIG` | Instance colour palette YAML |
+| `EPISODIC_STYLE` | Instance colour palette YAML |
 | `EPISODIC_LANGUAGE` | Dashboard/report language (en, ar, nl, fr, de, hi, zh, es) |
 | `EPISODIC_GEO_DATA` | Geographic reference data (.rds, sf object) |
 | `EPISODIC_GEO_DATA_OVERLAY` | Optional region-outline overlay (.rds) |

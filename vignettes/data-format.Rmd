@@ -143,7 +143,7 @@ to the schema, not something to force into how cases are counted today.
 
 EpiSODIC collapses positives for the same patient and pathogen into one
 case per episode, using the episode length configured per pathogen in
-`inst/config/episodic_default_pathogen_config.csv` - and it does this correctly across
+the shipped `r doc_system_file("inst/config/episodic_default_pathogen_config.csv")` - and it does this correctly across
 runs, not just within one extract: each run checks incoming positives
 against the most recent episode already on file for that
 patient/pathogen, so a recurring extract only has to cover a recent
@@ -291,7 +291,7 @@ The dossier's geography panel shows a choropleth when both the `sf`
 package and a geographic reference dataset are available; otherwise it
 falls back to a plain bar breakdown by PC value, exactly as if this
 feature did not exist. EpiSODIC ships a Dutch postcode default
-(`inst/extdata/geo_postcodes4_nl.rds`, geometry only, sourced from
+(`r doc_system_file("inst/extdata/geo_postcodes4_nl.rds")`), geometry only, sourced from
 `certegis` under the same GPL-2 licence - see `data-raw/
 geo_postcodes4_nl.R` for provenance) purely as a working example: point
 `EPISODIC_GEO_DATA` at your own `.rds` file holding an

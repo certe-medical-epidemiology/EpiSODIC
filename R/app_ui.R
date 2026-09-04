@@ -40,7 +40,7 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     shiny::tags$head(
       # Only fetched when the resolved palette still uses the shipped
       # default font - the moment an instance overrides `font` in its
-      # EPISODIC_PALETTE_CONFIG, this Google Fonts request for a face
+      # EPISODIC_STYLE, this Google Fonts request for a face
       # nobody asked for would otherwise keep firing on every page load.
       # Serving a substitute font is then the operator's own concern
       # (a system font needs no webfont link at all; a different webfont
