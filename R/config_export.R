@@ -104,7 +104,7 @@ episodic_config_export <- function(
     file.copy(pathogen_csv, file.path(work_dir, "episodic_default_pathogen_config.csv"))
   }
 
-  palette_path <- Sys.getenv("EPISODIC_PALETTE_CONFIG", unset = NA)
+  palette_path <- Sys.getenv("EPISODIC_STYLE", unset = NA)
   if (
     !is.na(palette_path) && nzchar(palette_path) && file.exists(palette_path)
   ) {

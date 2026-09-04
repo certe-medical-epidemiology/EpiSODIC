@@ -2,82 +2,78 @@
 % Please edit documentation in R/app_palette.R
 \name{episodic_palette}
 \alias{episodic_palette}
-\title{The dashboard's colour palette}
+\title{The dashboard's colour palette and typography}
 \usage{
 episodic_palette()
 }
 \value{
-A named list of hex colour strings. The greyscale neutrals are
+A named list. The greyscale neutrals are
 \code{ink} (default text), \code{muted} (secondary text), \code{faint} (tertiary text),
 \code{border}, \code{bg_subtle}, \code{bg}, and \code{surface}. The semantic roles are
 \code{primary}, \code{secondary}, \code{tertiary}, \code{success}, \code{warning}, and \code{danger},
-each with \verb{_dark}/\verb{_light}/\verb{_tint} variants where used.
+each with \verb{_dark}/\verb{_light}/\verb{_tint} variants where used. \code{font} and
+\code{font_size_base} hold the app's typography, not a colour.
 }
 \description{
-Returns the colours used throughout the EpiSODIC dashboard and charts, as
-a named list of hex codes. Useful if you want to match your own plots or
+Returns the colours and typography used throughout the EpiSODIC dashboard
+and charts, as a named list. Useful if you want to match your own plots or
 reports to the house style, or check what colour a given status uses.
 }
 \details{
 The palette ships with an organisation-neutral default
-(installed in \verb{\\Sexpr\{system.file("config", "episodic_default_style.yaml", package = "EpiSODIC")\}}). To use your own institute's colours instead,
-point the \code{EPISODIC_PALETTE_CONFIG} environment variable at a YAML file
+(\href{https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_style.yaml}{\code{inst/config/episodic_default_style.yaml}}). To use your own institute's colours or fonts instead,
+point the \code{EPISODIC_STYLE} environment variable at a YAML file
 that overrides only the roles you want to change - anything you do not set
 keeps its shipped default.
 
 This is independent of \code{episodic_config_resolve()}
-on purpose: colours never affect the \code{config_hash} recorded with a
-detection run, since they have no bearing on reproducibility.
+on purpose: colours and typography never affect the \code{config_hash} recorded
+with a detection run, since they have no bearing on reproducibility.
 }
-\section{Default colours and changeable YAML keys}{
+\section{Default font and colours}{
 
-These are all the default values, and all can be changed using a custom YAML file, \code{primary_dark} is the background colour of the navigation bar:
+These are all the default values, and all can be changed using a custom YAML file.
 
-\code{ink: "#222222"}
+\if{html}{\out{<div class="sourceCode yaml">}}\preformatted{font:            '"IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif'
+font_size_base:  "13px"
+ink:             "#222222"
+muted:           "#495057"
+faint:           "#ADB5BD"
+border:          "#DEE2E6"
+bg_subtle:       "#EBEBEB"
+bg:              "#F8F9FA"
+surface:         "#FFFFFF"
+primary:         "#008CBA"
+primary_dark:    "#005F7A"
+primary_light:   "#66BAD6"
+primary_tint:    "#D9EDF5"
+secondary:       "#333333"
+secondary_dark:  "#1A1A1A"
+tertiary:        "#20C997"
+tertiary_dark:   "#168D6A"
+success:         "#43AC6A"
+success_dark:    "#2F784A"
+warning:         "#F8AC59"
+warning_dark:    "#AE783E"
+danger:          "#F36A5A"
+danger_dark:     "#AA4A3F"
+}\if{html}{\out{</div>}}
 
-\code{muted: "#495057"}
-
-\code{faint: "#ADB5BD"}
-
-\code{border: "#DEE2E6"}
-
-\code{bg_subtle: "#EBEBEB"}
-
-\code{bg: "#F8F9FA"}
-
-\code{surface: "#FFFFFF"}
-
-\code{primary: "#008CBA"}
-
-\code{primary_dark: "#005F7A"}
-
-\code{primary_light: "#66BAD6"}
-
-\code{primary_tint: "#D9EDF5"}
-
-\code{secondary: "#333333"}
-
-\code{secondary_dark: "#1A1A1A"}
-
-\code{tertiary: "#20C997"}
-
-\code{tertiary_dark: "#168D6A"}
-
-\code{success: "#43AC6A"}
-
-\code{success_dark: "#2F784A"}
-
-\code{warning: "#F8AC59"}
-
-\code{warning_dark: "#AE783E"}
-
-\code{danger: "#F36A5A"}
-
-\code{danger_dark: "#AA4A3F"}
+Of note:
+\itemize{
+\item \code{primary_dark} is the background colour of the navigation bar.
+\item \code{font} is a CSS font-family stack, and \code{font_size_base} is the app's base font size.
+\itemize{
+\item Every other font size in the dashboard is set in \code{rem} relative to it, so changing \code{font_size_base} scales the whole app's type proportionally (useful when swapping in a font that reads naturally smaller or larger than the default at the same pixel size).
+\item Changing \code{font} only changes the CSS declaration; if it names a webfont rather than a system font, delivering that font (a self-hosted \verb{@font-face} or a link to its provider) is the operator's own concern.
+}
+}
 }
 
 \examples{
 pal <- episodic_palette()
 pal$primary
 pal$danger
+pal$font
+pal$font_size_base
 }

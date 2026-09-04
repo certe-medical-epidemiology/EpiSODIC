@@ -24,17 +24,29 @@
 # must never affect episodic_config_hash()/config_snapshot - that
 # reproducibility guarantee is about detection results, not colour
 # swatches. Resolved the same way: this file's values are the defaults,
-# an operator overrides them by pointing EPISODIC_PALETTE_CONFIG at their
+# an operator overrides them by pointing EPISODIC_STYLE at their
 # own YAML with only the keys they want to change - any organisation runs
 # EpiSODIC in its own house colours this way, without EpiSODIC ever
 # shipping (or depending on) any specific organisation's house-style
 # package.
-#
-# Named by role (Bootstrap-style), not by raw hue word - a config key
-# should say what a colour is *for*, not what it looks like.
-#
-# These defaults match the Bootswatch "Yeti" theme (light variant), the
-# same theme the pkgdown site (_pkgdown.yml) is built with, so the Shiny
+
+
+
+# Typography: a CSS font-family stack (quote any name containing a space)
+# and the base font size the rest of the app scales from. Every font-size
+# in inst/app/www/episodic.css is expressed in rem, so font_size_base is
+# the single dial for the whole app's type scale - an instance that
+# swaps in a font reading naturally smaller or larger than IBM Plex Sans
+# at the same pixel size can compensate here without touching CSS. Keys
+# are named to match the CSS custom properties they become (`font` ->
+# `--episodic-font`, `font_size_base` -> `--episodic-font-size-base`),
+# same as every colour role above.
+font: '"IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif'
+font_size_base: "13px"
+
+
+# Colours: rhese defaults match the Bootswatch "Yeti" theme (light variant),
+# the same theme the pkgdown site (_pkgdown.yml) is built with, so the Shiny
 # app and the documentation site share one visual identity out of the
 # box.
 #
@@ -75,15 +87,3 @@ warning_dark: "#AE783E"
 
 danger: "#F36A5A"
 danger_dark: "#AA4A3F"
-
-# Typography: a CSS font-family stack (quote any name containing a space)
-# and the base font size the rest of the app scales from. Every font-size
-# in inst/app/www/episodic.css is expressed in rem, so font_size_base is
-# the single dial for the whole app's type scale - an instance that
-# swaps in a font reading naturally smaller or larger than IBM Plex Sans
-# at the same pixel size can compensate here without touching CSS. Keys
-# are named to match the CSS custom properties they become (`font` ->
-# `--episodic-font`, `font_size_base` -> `--episodic-font-size-base`),
-# same as every colour role above.
-font: '"IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif'
-font_size_base: "13px"

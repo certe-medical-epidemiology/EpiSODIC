@@ -17,10 +17,6 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-doc_vect <- function(x) {
-  paste0("one of: ", paste0('`"', x, '"`', collapse = ", "))
-}
-
 #' Connect your own laboratory data
 #'
 #' EpiSODIC does not connect to any laboratory or hospital system itself.
@@ -128,8 +124,7 @@ doc_vect <- function(x) {
 #'     since detection has to work for anything a lab can report, viral or
 #'     not. Spelling must be stable across runs - `"Influenza A"` and
 #'     `"influenza a"` are two different pathogens as far as detection is
-#'     concerned. Names matching in the default config (currently installed
-#'     in `\Sexpr[results=text]{system.file("config", "episodic_default_pathogen_config.csv", package = "EpiSODIC")}`)
+#'     concerned. Names matching in the default config (`r doc_system_file("inst/config/episodic_default_pathogen_config.csv")`)
 #'     pick up that pathogen's episode length, incubation window and serial
 #'     interval; anything else falls back to the schema defaults (30-day
 #'     episode, 14 case-free days, no Rt, no MEM). The same positive may
