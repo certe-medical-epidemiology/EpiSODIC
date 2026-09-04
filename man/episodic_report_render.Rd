@@ -2,7 +2,7 @@
 % Please edit documentation in R/report_render.R
 \name{episodic_report_render}
 \alias{episodic_report_render}
-\title{Render an outbreak report for clinical colleagues}
+\title{Render an Outbreak Report for Clinical Colleagues}
 \usage{
 episodic_report_render(
   con,

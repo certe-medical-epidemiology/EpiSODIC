@@ -2,7 +2,7 @@
 % Please edit documentation in R/notify.R
 \name{episodic_setup_microsoft365}
 \alias{episodic_setup_microsoft365}
-\title{Set up Microsoft 365 authentication for notifications}
+\title{Set Up Microsoft 365 Authentication for Notifications}
 \usage{
 episodic_setup_microsoft365(
   tenant_id,

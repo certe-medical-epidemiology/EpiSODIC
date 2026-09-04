@@ -2,7 +2,7 @@
 % Please edit documentation in R/cases_check.R
 \name{episodic_check_cases}
 \alias{episodic_check_cases}
-\title{Check your case data before you hand it to EpiSODIC}
+\title{Check Your Case Data Before You Hand It to EpiSODIC}
 \usage{
 episodic_check_cases(cases, stop_on_problem = FALSE)
 }

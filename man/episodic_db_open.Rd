@@ -2,7 +2,7 @@
 % Please edit documentation in R/schema_migrate.R
 \name{episodic_db_open}
 \alias{episodic_db_open}
-\title{Connect using the \code{EPISODIC_DB} environment variable}
+\title{Connect Using the \code{EPISODIC_DB} Environment Variable}
 \usage{
 episodic_db_open(db_path = Sys.getenv("EPISODIC_DB", unset = NA))
 }

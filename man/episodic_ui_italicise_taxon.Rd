@@ -3,7 +3,7 @@
 \name{episodic_ui_italicise_taxon}
 \alias{episodic_ui_italicise_taxon}
 \alias{episodic_ui_code_join}
-\title{Format text for outbreak reports and the dashboard}
+\title{Format Text for Outbreak Reports and the Dashboard}
 \usage{
 episodic_ui_italicise_taxon(pathogen)
 

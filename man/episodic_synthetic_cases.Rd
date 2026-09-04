@@ -2,7 +2,7 @@
 % Please edit documentation in R/cases_synthetic.R
 \name{episodic_synthetic_cases}
 \alias{episodic_synthetic_cases}
-\title{Generate synthetic outbreak data}
+\title{Generate Synthetic Outbreak Data}
 \usage{
 episodic_synthetic_cases(
   start_date = end_date - 5 * 365,

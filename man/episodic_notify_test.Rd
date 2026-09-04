@@ -2,7 +2,7 @@
 % Please edit documentation in R/notify.R
 \name{episodic_notify_test}
 \alias{episodic_notify_test}
-\title{Send a test notification through all configured channels}
+\title{Send a Test Notification Through All Configured Channels}
 \usage{
 episodic_notify_test(
   episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)

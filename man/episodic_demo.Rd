@@ -2,7 +2,7 @@
 % Please edit documentation in R/demo.R
 \name{episodic_demo}
 \alias{episodic_demo}
-\title{Try EpiSODIC with synthetic outbreak data}
+\title{Try EpiSODIC With Synthetic Outbreak Data}
 \usage{
 episodic_demo(
   db_path = tempfile(fileext = ".sqlite"),

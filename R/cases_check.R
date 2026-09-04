@@ -59,7 +59,7 @@
 #'   [episodic_case_data] describes, or a zero-argument function returning
 #'   one. Anything else is itself reported as a problem rather
 #'   than throwing - the point of this function is that it always answers.
-#' @param stop_on_problem A [logical] to indicate whether an error must be 
+#' @param stop_on_problem A [logical] to indicate whether an error must be
 #'   thrown if any problem is found. Default is `FALSE`.
 #' @return A data frame of findings with class `episodic_case_check` and
 #'   one row per finding, with columns `severity` (`"problem"` or
@@ -86,11 +86,10 @@
 #' report$column[report$severity == "problem"]
 #' @export
 episodic_check_cases <- function(cases, stop_on_problem = FALSE) {
-  
   if (isTRUE(stop_on_problem)) {
-    episodic_validate_cases(cases) 
+    episodic_validate_cases(cases)
   }
-  
+
   resolved <- tryCatch(episodic_resolve_data(cases), error = function(e) e)
   if (inherits(resolved, "condition")) {
     return(episodic_check_report(list(episodic_check_finding(

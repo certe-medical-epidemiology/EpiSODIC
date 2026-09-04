@@ -2,7 +2,7 @@
 % Please edit documentation in R/schema_migrate.R
 \name{episodic_db_create}
 \alias{episodic_db_create}
-\title{Set up a new EpiSODIC database}
+\title{Set Up a New EpiSODIC Database}
 \usage{
 episodic_db_create(path, overwrite = FALSE)
 }

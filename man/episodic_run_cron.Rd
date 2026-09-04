@@ -2,7 +2,7 @@
 % Please edit documentation in R/run_cron.R
 \name{episodic_run_cron}
 \alias{episodic_run_cron}
-\title{Run one surveillance detection cycle}
+\title{Run One Surveillance Detection Cycle}
 \usage{
 episodic_run_cron(
   cases,

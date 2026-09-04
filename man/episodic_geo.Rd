@@ -4,7 +4,7 @@
 \alias{episodic_geo}
 \alias{episodic_geo_overlay_resolve}
 \alias{episodic_geo_source_resolve}
-\title{Show clusters on a map}
+\title{Show Clusters on a Map}
 \usage{
 episodic_geo_overlay_resolve(
   path = Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/app_palette.R
 \name{episodic_palette}
 \alias{episodic_palette}
-\title{The dashboard's colour palette and typography}
+\title{The Dashboard's Colour Palette and Typography}
 \usage{
 episodic_palette()
 }

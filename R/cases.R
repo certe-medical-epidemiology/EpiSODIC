@@ -40,7 +40,7 @@
 #' The only case data shipped with the package is what the synthetic
 #' generator ([episodic_synthetic_cases()]) returns for the bundled
 #' demo - a useful template for the shape your own data should have.
-#' 
+#'
 #' @section Required columns:
 #'
 #' \tabular{llll}{
@@ -147,7 +147,7 @@
 #'   \item{`institution_type`}{Character, required. Exactly one of
 #'     `"hospital"`, `"ltc_institution"` (long-term care),
 #'     `"gp_municipality"`, `"ooh_service"` (out-of-hours service), or
-#'     `"other"`. Anything else is rejected. This decides how the 
+#'     `"other"`. Anything else is rejected. This decides how the
 #'     institution is handled: `"hospital"` institutions
 #'     are monitored as first-class entities and are the only ones
 #'     eligible for patient-day normalisation, while a `"gp_municipality"`
@@ -341,7 +341,6 @@ episodic_validate_allowed <- function(data,
                                       allowed,
                                       na_ok,
                                       what = "Case data") {
-  
   values <- data[[column]]
   bad <- if (isTRUE(na_ok)) {
     values[!is.na(values) & !values %in% allowed]

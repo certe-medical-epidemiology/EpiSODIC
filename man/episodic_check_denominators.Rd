@@ -2,7 +2,7 @@
 % Please edit documentation in R/denominators.R
 \name{episodic_check_denominators}
 \alias{episodic_check_denominators}
-\title{Check your positivity data before you hand it to EpiSODIC}
+\title{Check Your Positivity Data Before You Hand It to EpiSODIC}
 \usage{
 episodic_check_denominators(denominators)
 }

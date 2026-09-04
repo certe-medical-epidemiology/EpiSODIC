@@ -2,7 +2,7 @@
 % Please edit documentation in R/cases_synthetic.R
 \name{episodic_synthetic_cases_calibration}
 \alias{episodic_synthetic_cases_calibration}
-\title{Generate synthetic data at tunable cluster volume}
+\title{Generate Synthetic Data at Tunable Cluster Volume}
 \usage{
 episodic_synthetic_cases_calibration(
   start_date = end_date - 5 * 365,

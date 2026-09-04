@@ -35,12 +35,12 @@
 #'
 #' @section Default font and colours:
 #' These are all the default values, and all can be changed using a custom YAML file.
-#' 
+#'
 #' `r doc_palette()`
-#' 
+#'
 #' Of note:
-#' 
-#' * `primary_dark` is the background colour of the navigation bar. 
+#'
+#' * `primary_dark` is the background colour of the navigation bar.
 #' * `font` is a CSS font-family stack, and `font_size_base` is the app's base font size.
 #'   * Every other font size in the dashboard is set in `rem` relative to it, so changing `font_size_base` scales the whole app's type proportionally (useful when swapping in a font that reads naturally smaller or larger than the default at the same pixel size).
 #'   * Changing `font` only changes the CSS declaration; if it names a webfont rather than a system font, delivering that font (a self-hosted `@font-face` or a link to its provider) is the operator's own concern.

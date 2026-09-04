@@ -93,7 +93,7 @@ episodic_report_render <- function(
       call. = FALSE
     )
   }
-  
+
   config <- episodic_config_resolve(episodic_config_path)
 
   threshold <- small_count_threshold %||%

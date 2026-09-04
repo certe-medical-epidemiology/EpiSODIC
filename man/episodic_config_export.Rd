@@ -2,7 +2,7 @@
 % Please edit documentation in R/config_export.R
 \name{episodic_config_export}
 \alias{episodic_config_export}
-\title{Export the resolved configuration as a zip file}
+\title{Export the Resolved Configuration as a Zip File}
 \usage{
 episodic_config_export(
   db_path = Sys.getenv("EPISODIC_DB", unset = NA),

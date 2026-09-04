@@ -2,7 +2,7 @@
 % Please edit documentation in R/auth.R
 \name{episodic_add_user}
 \alias{episodic_add_user}
-\title{Create an account for a new epidemiologist or viewer}
+\title{Create an Account for a New Epidemiologist or Viewer}
 \usage{
 episodic_add_user(
   db_path = Sys.getenv("EPISODIC_DB", unset = NA),
