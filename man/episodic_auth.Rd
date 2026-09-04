@@ -10,7 +10,7 @@ classify them) and by \code{"viewer"} accounts for anyone who needs to see
 cluster detail, including patient-level data, without classifying
 anything themselves. Both roles sign in with a username and password;
 there is no self-service registration - an administrator creates each
-account with \code{\link[=episodic_provision_user]{episodic_provision_user()}}, and the new user sets their
+account with \code{\link[=episodic_add_user]{episodic_add_user()}}, and the new user sets their
 own password on first sign-in.
 }
 \details{

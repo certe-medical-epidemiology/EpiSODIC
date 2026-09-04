@@ -17,6 +17,12 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
+doc_palette <- function() {
+  vals <- readLines(system.file("config/palette.yaml", package = "EpiSODIC"))
+  vals <- vals[grepl(": ", vals) & !grepl("^#", vals)]
+  paste0("`", vals, "`", collapse = "\n\n")
+}
+
 #' The dashboard's colour palette
 #'
 #' Returns the colours used throughout the EpiSODIC dashboard and charts, as
@@ -24,12 +30,19 @@
 #' reports to the house style, or check what colour a given status uses.
 #'
 #' The palette ships with an organisation-neutral default
-#' (`inst/config/palette.yaml`). To use your own institute's colours instead,
+#' (installed in ``r system.file("config/palette.yaml", package = "EpiSODIC")``). To use your own institute's colours instead,
 #' point the `EPISODIC_PALETTE_CONFIG` environment variable at a YAML file
 #' that overrides only the roles you want to change - anything you do not set
-#' keeps its shipped default. This is independent of [episodic_config_resolve()]
+#' keeps its shipped default.
+#' 
+#' This is independent of `episodic_config_resolve()`
 #' on purpose: colours never affect the `config_hash` recorded with a
 #' detection run, since they have no bearing on reproducibility.
+#' 
+#' @section Default colours and changeable YAML keys: 
+#' These are all the default values, and all can be changed using a custom YAML file, `primary_dark` is the background colour of the navigation bar:
+#' 
+#' `r doc_palette()`
 #'
 #' @return A named list of hex colour strings. The greyscale neutrals are
 #'   `ink` (default text), `muted` (secondary text), `faint` (tertiary text),

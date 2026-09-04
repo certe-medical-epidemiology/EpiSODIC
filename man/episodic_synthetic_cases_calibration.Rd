@@ -27,7 +27,7 @@ volume responds.}
 \item{seed}{RNG seed, for reproducible runs.}
 }
 \value{
-A data frame satisfying \code{\link[=episodic_validate_cases]{episodic_validate_cases()}},
+A data frame satisfying \code{\link[=episodic_check_cases]{episodic_check_cases()}},
 including everything \code{\link[=episodic_synthetic_cases]{episodic_synthetic_cases()}} produces
 (background baseline, the six demo outbreaks) plus the extra volume.
 }

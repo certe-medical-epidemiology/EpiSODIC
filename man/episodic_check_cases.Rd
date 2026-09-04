@@ -4,7 +4,7 @@
 \alias{episodic_check_cases}
 \title{Check your case data before you hand it to EpiSODIC}
 \usage{
-episodic_check_cases(cases)
+episodic_check_cases(cases, stop_on_problem = FALSE)
 }
 \arguments{
 \item{cases}{Your case data: a data frame or \code{tibble} in the shape
@@ -12,6 +12,9 @@ episodic_check_cases(cases)
 one (resolved with \code{\link[=episodic_resolve_data]{episodic_resolve_data()}} first, so you can check
 either form). Anything else is itself reported as a problem rather
 than throwing - the point of this function is that it always answers.}
+
+\item{stop_on_problem}{A \link{logical} to indicate whether an error must be
+thrown if any problem is found. Default is \code{FALSE}.}
 }
 \value{
 A data frame of findings with class \code{episodic_case_check} and
@@ -31,11 +34,9 @@ while you are still building your extract step, and the first call to
 make when a run did not produce what you expected.
 }
 \details{
-\code{\link[=episodic_validate_cases]{episodic_validate_cases()}} is the same checks with a different
-answer: it throws an error listing the problems that must be fixed, and
-is what \code{\link[=episodic_run_cron]{episodic_run_cron()}} itself calls before a run. Use
-\code{episodic_check_cases()} when you want to \emph{look}, and
-\code{episodic_validate_cases()} when you want a script to stop.
+Use \code{episodic_check_cases()} plainly when you want to \emph{look}, or
+\code{episodic_check_cases(..., stop_on_problem = TRUE)} when you want a script
+to stop. The latter is what \code{\link[=episodic_run_cron]{episodic_run_cron()}} itself calls before a run.
 }
 \section{What it reports}{
 
@@ -81,6 +82,5 @@ report$column[report$severity == "problem"]
 }
 \seealso{
 \link{episodic_case_data} for what each column means and which
-values it accepts; \code{\link[=episodic_validate_cases]{episodic_validate_cases()}} for the same checks as
-an error.
+values it accepts.
 }

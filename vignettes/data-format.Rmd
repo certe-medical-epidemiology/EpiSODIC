@@ -204,8 +204,9 @@ one), no `ward` on any hospital row (nothing for ward-level detection to
 group on), a `patient_key` that never repeats (nothing for deduplication
 to do), postcodes the map cannot place, sample dates in the future.
 
-`episodic_validate_cases()` runs the same checks and throws instead, for
-use in a script. `episodic_run_cron()` runs it for you before every run:
+Setting `episodic_check_cases(cases, stop_on_problem = TRUE)` makes the checks
+return an error if there is at least one problem, for
+use in a script. `episodic_run_cron()` runs that before every run:
 data it cannot use stops the run with the same message, before anything is
 written, and that message is recorded against the run so it is also
 visible in the dashboard's status strip and activity screen. A failed run

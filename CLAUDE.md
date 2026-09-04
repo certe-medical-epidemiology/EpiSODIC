@@ -99,7 +99,7 @@ Two roles for dashboard access:
 - `epidemiologist`: read + write (assess clusters, classify, close, mute, render reports)
 - `viewer`: read-only (sees everything including patient-level detail, but cannot record assessments)
 
-Accounts are provisioned via `episodic_provision_user()` at the R console; there is no in-app account management.
+Accounts are added via `episodic_add_user()` at the R console; there is also in-app account management.
 
 ## File layout
 

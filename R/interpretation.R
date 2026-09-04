@@ -36,7 +36,8 @@
 #' fragment is used; a section with nothing applicable (for example, the
 #' testing-volume section when no positivity data was supplied) is simply
 #' omitted rather than filled with a placeholder sentence.
-#' @name episodic_interpretation
+#' @keywords internal
+#' @noRd
 NULL
 
 #' @keywords internal
@@ -280,10 +281,7 @@ episodic_interpretation_fragments <- function() {
   )
 }
 
-#' @rdname episodic_interpretation
-#' @examples
-#' episodic_interpretation_slots
-#' @export
+#' @noRd
 episodic_interpretation_slots <- c(
   "magnitude",
   "curve_shape",
@@ -300,7 +298,7 @@ episodic_interpretation_slots <- c(
 #' @param lang Session language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
 #'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
-#' @param instance_i18n Optional operator overrides, passed to [episodic_tr()].
+#' @param instance_i18n Optional operator overrides, passed to `episodic_tr()`.
 #' @return A list with `text` (a character vector, one string per slot that
 #'   fired, in slot order) and `fired` (a character vector of the fragment
 #'   ids that fired, same order) - every fragment records which

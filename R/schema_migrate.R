@@ -469,8 +469,8 @@ episodic_db_connect <- function(path) {
 #'
 #' Like [episodic_db_connect()], but falls back to the `EPISODIC_DB`
 #' environment variable when you do not pass a path explicitly - handy for
-#' one-off console use, e.g. [episodic_provision_user()] uses it
-#' internally so provisioning an account needs only a username and
+#' one-off console use, e.g. [episodic_add_user()] uses it
+#' internally so adding an account needs only a username and
 #' password, not a connection you build yourself first.
 #'
 #' @param db_path Path to an existing SQLite database, or a `mysql://` DSN

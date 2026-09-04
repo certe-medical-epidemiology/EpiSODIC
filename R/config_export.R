@@ -33,7 +33,7 @@
 #'   the `EPISODIC_DB` environment variable. Only used to read a
 #'   Settings-screen `notifications` override, if one exists - `NA`/unset
 #'   skips this and exports the YAML-resolved configuration only.
-#' @param episodic_config_path Passed to [episodic_config_resolve()].
+#' @param episodic_config_path The config path.
 #' @param output_dir Directory to write the zip into. Defaults to a
 #'   `config_exports/` directory next to `db_path` (mirroring where
 #'   [episodic_report_render()] writes outbreak reports), or a temporary

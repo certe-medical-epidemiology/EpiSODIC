@@ -20,7 +20,7 @@
 # Small windows throughout: episodic_demo()'s own defaults (the full
 # multi-year synthetic generator) are what a real demo should use, but
 # these tests only need to confirm the plumbing (db created, cron ran,
-# account provisioned, credentials work) - not exercise a representative
+# account added, credentials work) - not exercise a representative
 # dataset, which is already covered by test-run_cron.R.
 small_cases <- function() {
   episodic_synthetic_cases(

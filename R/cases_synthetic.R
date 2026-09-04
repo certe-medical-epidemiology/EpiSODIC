@@ -68,7 +68,7 @@
 #'   before `end_date` - Farrington needs four of them before it will
 #'   compare anything against anything.
 #' @param seed RNG seed, for reproducible demo data.
-#' @return A data frame satisfying [episodic_validate_cases()].
+#' @return A data frame satisfying [episodic_check_cases()].
 #' @seealso [episodic_check_cases()] to see what the contract makes of it,
 #'   and [episodic_synthetic_cases_calibration()] for many more clusters
 #'   than a demo wants, to tune a configuration against.
@@ -340,9 +340,7 @@ episodic_synthetic_pathogen_profiles <- function() {
 #' @param institution A data frame of institution rows, one per case (or a
 #'   single row, recycled).
 #' @param ward Ward per case, `NA` outside hospitals.
-#' @return A data frame in [episodic_case_columns] order, minus
-#'   `source_key` and `lab_number`, which the assembling function stamps
-#'   on at the end.
+#' @return A data frame
 #' @keywords internal
 #' @noRd
 episodic_synthetic_case_rows <- function(
@@ -755,7 +753,7 @@ episodic_synthetic_places <- function(institutions) {
 #'   generated per calendar month. Raise or lower this to see how detection
 #'   volume responds.
 #' @param seed RNG seed, for reproducible runs.
-#' @return A data frame satisfying [episodic_validate_cases()],
+#' @return A data frame satisfying [episodic_check_cases()],
 #'   including everything [episodic_synthetic_cases()] produces
 #'   (background baseline, the six demo outbreaks) plus the extra volume.
 #' @examples

@@ -54,8 +54,7 @@
 #'   breakdown tables are suppressed (shown as `"<threshold"`) below this
 #'   value, to avoid identifying individuals in a small population.
 #'   Defaults to `config$report$small_count_threshold`.
-#' @param config The resolved configuration (see [episodic_config_resolve()]);
-#'   only `config$report` is used.
+#' @param episodic_config_path The config path.
 #' @param lang Report language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
 #'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
@@ -82,7 +81,7 @@ episodic_report_render <- function(
     user_id = NA,
     include_linelist = TRUE,
     small_count_threshold = NULL,
-    config = episodic_config_resolve(),
+    episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
     lang = Sys.getenv("EPISODIC_LANGUAGE"),
     qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)) {
   if (!episodic_quarto_available()) {
@@ -94,6 +93,8 @@ episodic_report_render <- function(
       call. = FALSE
     )
   }
+  
+  config <- episodic_config_resolve(episodic_config_path)
 
   threshold <- small_count_threshold %||%
     config$report$small_count_threshold %||%

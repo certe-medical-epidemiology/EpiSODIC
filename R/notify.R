@@ -826,7 +826,7 @@ episodic_notify_validate_config <- function(config) {
 #' your instance configuration to verify that notifications work end to
 #' end.
 #'
-#' @param episodic_config_path Passed to [episodic_config_resolve()].
+#' @param episodic_config_path The config path.
 #' @return Invisibly, a named logical vector: `TRUE` for each channel
 #'   that succeeded, `FALSE` for each that failed.
 #' @examples
@@ -835,8 +835,7 @@ episodic_notify_validate_config <- function(config) {
 #' episodic_notify_test()
 #' }
 #' @export
-episodic_notify_test <- function(
-    episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
+episodic_notify_test <- function(episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
   config <- episodic_config_resolve(episodic_config_path)
   notif <- config$notifications
 

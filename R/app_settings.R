@@ -19,7 +19,7 @@
 
 # The Settings screen (episodic_ui_settings_screen()/episodic_app_server_settings())
 # is the in-app alternative to editing EPISODIC_CONFIG by hand and running
-# episodic_provision_user() at the console - see issue "Admin role and
+# episodic_add_user() at the console - see issue "Admin role and
 # settings UI". Visible only to an is_admin account
 # (episodic_user_is_admin()); everyone else never sees the "Settings" nav
 # link at all (episodic_ui_nav_links() omits it), and every server-side
@@ -34,7 +34,7 @@
 #    episodic_config_resolve() - changing it deliberately still requires
 #    editing EPISODIC_CONFIG
 #  - dashboard accounts: create, and change role/admin/active state, via
-#    episodic_provision_user()'s underlying insert and the
+#    episodic_add_user()'s underlying insert and the
 #    episodic_auth_set_*() event writers
 
 #' The editable notification-channel field specification

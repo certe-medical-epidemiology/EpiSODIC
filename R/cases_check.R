@@ -27,11 +27,9 @@
 #' while you are still building your extract step, and the first call to
 #' make when a run did not produce what you expected.
 #'
-#' [episodic_validate_cases()] is the same checks with a different
-#' answer: it throws an error listing the problems that must be fixed, and
-#' is what [episodic_run_cron()] itself calls before a run. Use
-#' `episodic_check_cases()` when you want to *look*, and
-#' `episodic_validate_cases()` when you want a script to stop.
+#' Use `episodic_check_cases()` plainly when you want to *look*, or
+#' `episodic_check_cases(..., stop_on_problem = TRUE)` when you want a script
+#' to stop. The latter is what [episodic_run_cron()] itself calls before a run.
 #'
 #' @section What it reports:
 #'
@@ -62,6 +60,8 @@
 #'   one (resolved with [episodic_resolve_data()] first, so you can check
 #'   either form). Anything else is itself reported as a problem rather
 #'   than throwing - the point of this function is that it always answers.
+#' @param stop_on_problem A [logical] to indicate whether an error must be 
+#'   thrown if any problem is found. Default is `FALSE`.
 #' @return A data frame of findings with class `episodic_case_check` and
 #'   one row per finding, with columns `severity` (`"problem"` or
 #'   `"advice"`), `issue`, `column`, `n_rows`, `rows`, `values`,
@@ -69,8 +69,7 @@
 #'   A summary of what was read (rows, columns, date range, counts) is
 #'   attached as the `"summary"` attribute and shown when printing.
 #' @seealso [episodic_case_data] for what each column means and which
-#'   values it accepts; [episodic_validate_cases()] for the same checks as
-#'   an error.
+#'   values it accepts.
 #' @examples
 #' cases <- episodic_synthetic_cases(
 #'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-01-31")
@@ -87,7 +86,12 @@
 #' # it is a data frame too
 #' report$column[report$severity == "problem"]
 #' @export
-episodic_check_cases <- function(cases) {
+episodic_check_cases <- function(cases, stop_on_problem = FALSE) {
+  
+  if (isTRUE(stop_on_problem)) {
+    episodic_validate_cases(cases) 
+  }
+  
   resolved <- tryCatch(episodic_resolve_data(cases), error = function(e) e)
   if (inherits(resolved, "condition")) {
     return(episodic_check_report(list(episodic_check_finding(

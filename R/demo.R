@@ -110,7 +110,7 @@ episodic_demo <- function(
   )
   message("OK")
 
-  episodic_provision_user(
+  episodic_add_user(
     db_path = db_path,
     username = username,
     full_name = full_name,

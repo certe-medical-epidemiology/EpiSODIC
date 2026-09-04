@@ -31,7 +31,7 @@ if (!file.exists(db_path)) {
     denominators = episodic_synthetic_denominators
   )
 
-  episodic_provision_user(
+  episodic_add_user(
     username = "5580",
     full_name = "Matthijs Berends",
     email = "m.berends@domain.com",

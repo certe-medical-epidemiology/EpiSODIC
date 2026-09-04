@@ -9,7 +9,7 @@ episodic_notify_test(
 )
 }
 \arguments{
-\item{episodic_config_path}{Passed to \code{\link[=episodic_config_resolve]{episodic_config_resolve()}}.}
+\item{episodic_config_path}{The config path.}
 }
 \value{
 Invisibly, a named logical vector: \code{TRUE} for each channel

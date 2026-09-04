@@ -20,13 +20,62 @@ reports to the house style, or check what colour a given status uses.
 }
 \details{
 The palette ships with an organisation-neutral default
-(\code{inst/config/palette.yaml}). To use your own institute's colours instead,
+(installed in \verb{/Users/m.s.berends/Unishare/Git/EpiSODIC/inst/config/palette.yaml}). To use your own institute's colours instead,
 point the \code{EPISODIC_PALETTE_CONFIG} environment variable at a YAML file
 that overrides only the roles you want to change - anything you do not set
-keeps its shipped default. This is independent of \code{\link[=episodic_config_resolve]{episodic_config_resolve()}}
+keeps its shipped default.
+
+This is independent of \code{episodic_config_resolve()}
 on purpose: colours never affect the \code{config_hash} recorded with a
 detection run, since they have no bearing on reproducibility.
 }
+\section{Default colours and changeable YAML keys}{
+
+These are all the default values, and all can be changed using a custom YAML file, \code{primary_dark} is the background colour of the navigation bar:
+
+\code{ink: "#222222"}
+
+\code{muted: "#495057"}
+
+\code{faint: "#ADB5BD"}
+
+\code{border: "#DEE2E6"}
+
+\code{bg_subtle: "#EBEBEB"}
+
+\code{bg: "#F8F9FA"}
+
+\code{surface: "#FFFFFF"}
+
+\code{primary: "#008CBA"}
+
+\code{primary_dark: "#005F7A"}
+
+\code{primary_light: "#66BAD6"}
+
+\code{primary_tint: "#D9EDF5"}
+
+\code{secondary: "#333333"}
+
+\code{secondary_dark: "#1A1A1A"}
+
+\code{tertiary: "#20C997"}
+
+\code{tertiary_dark: "#168D6A"}
+
+\code{success: "#43AC6A"}
+
+\code{success_dark: "#2F784A"}
+
+\code{warning: "#F8AC59"}
+
+\code{warning_dark: "#AE783E"}
+
+\code{danger: "#F36A5A"}
+
+\code{danger_dark: "#AA4A3F"}
+}
+
 \examples{
 pal <- episodic_palette()
 pal$primary

@@ -11,7 +11,7 @@ episodic_report_render(
   user_id = NA,
   include_linelist = TRUE,
   small_count_threshold = NULL,
-  config = episodic_config_resolve(),
+  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
   lang = Sys.getenv("EPISODIC_LANGUAGE"),
   qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)
 )
@@ -36,8 +36,7 @@ breakdown tables are suppressed (shown as \code{"<threshold"}) below this
 value, to avoid identifying individuals in a small population.
 Defaults to \code{config$report$small_count_threshold}.}
 
-\item{config}{The resolved configuration (see \code{\link[=episodic_config_resolve]{episodic_config_resolve()}});
-only \code{config$report} is used.}
+\item{episodic_config_path}{The config path.}
 
 \item{lang}{Report language: \code{"en"}, \code{"ar"}, \code{"nl"}, \code{"fr"}, \code{"de"},
 \code{"hi"}, \code{"zh"}, or \code{"es"}. Defaults to the \code{EPISODIC_LANGUAGE}

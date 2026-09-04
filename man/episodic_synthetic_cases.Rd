@@ -22,7 +22,7 @@ whatever year the package was released in.}
 \item{seed}{RNG seed, for reproducible demo data.}
 }
 \value{
-A data frame satisfying \code{\link[=episodic_validate_cases]{episodic_validate_cases()}}.
+A data frame satisfying \code{\link[=episodic_check_cases]{episodic_check_cases()}}.
 }
 \description{
 Produces several years of laboratory surveillance data for a fictional

@@ -18,7 +18,7 @@ the \code{EPISODIC_DB} environment variable. Only used to read a
 Settings-screen \code{notifications} override, if one exists - \code{NA}/unset
 skips this and exports the YAML-resolved configuration only.}
 
-\item{episodic_config_path}{Passed to \code{\link[=episodic_config_resolve]{episodic_config_resolve()}}.}
+\item{episodic_config_path}{The config path.}
 
 \item{output_dir}{Directory to write the zip into. Defaults to a
 \verb{config_exports/} directory next to \code{db_path} (mirroring where
