@@ -128,9 +128,16 @@ episodic_app_server_factory <- function(
     # error.
     session$onFlushed(
       function() {
-        requested <- episodic_app_url_cluster_id(
+        # onFlushed's callback runs outside any reactive consumer, but
+        # clientData's fields are themselves reactive values - reading
+        # url_search here needs isolate() or it throws "Can't access
+        # reactive value ... outside of reactive consumer". isolate() is
+        # also the right call, not observe(): this reads the query string
+        # once on initial load (once = TRUE) and must not re-fire if it
+        # changes later.
+        requested <- shiny::isolate(episodic_app_url_cluster_id(
           session$clientData$url_search
-        )
+        ))
         if (is.null(requested)) {
           return()
         }
