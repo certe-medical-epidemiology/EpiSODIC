@@ -170,7 +170,7 @@ test_that("every reference variable gets a row, with a known status", {
       "EPISODIC_GEO_DATA_OVERLAY",
       "EPISODIC_LANGUAGE",
       "EPISODIC_CONFIG",
-      "EPISODIC_PALETTE_CONFIG",
+      "EPISODIC_STYLE",
       "EPISODIC_QUARTO_REPORT"
     )
   )

@@ -23,11 +23,11 @@
 # component library. Styling lives in inst/app/www/episodic.css; these
 # functions only assign class names and content.
 
-#' Format text for outbreak reports and the dashboard
+
+#' Format Text for Outbreak Reports and the Dashboard
 #'
 #' Small HTML formatting helpers used when building dossier text, both in
-#' the dashboard and in the Quarto outbreak report template
-#' (`inst/report/cluster_report.qmd`). Both are exported so that a custom
+#' the dashboard and in the Quarto outbreak report template. Both are exported so that a custom
 #' report template of your own (set via `EPISODIC_QUARTO_REPORT`) can use
 #' the same formatting as the shipped one. Input text is always HTML-escaped
 #' first, so the result is safe to pass on to [shiny::HTML()].
@@ -228,10 +228,7 @@ episodic_ui_chip_link <- function(
     colour,
     cluster_id,
     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  open_js <- sprintf(
-    "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
-    as.integer(cluster_id)
-  )
+  open_js <- sprintf("episodicOpenCluster(%d);", as.integer(cluster_id))
   shiny::tags$span(
     class = "episodic-chip episodic-chip-outline episodic-chip-link",
     style = sprintf("color:%s;border:1px solid %s66;", colour, colour),

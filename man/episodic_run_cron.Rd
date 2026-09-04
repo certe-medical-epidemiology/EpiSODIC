@@ -2,7 +2,7 @@
 % Please edit documentation in R/run_cron.R
 \name{episodic_run_cron}
 \alias{episodic_run_cron}
-\title{Run one surveillance detection cycle}
+\title{Run One Surveillance Detection Cycle}
 \usage{
 episodic_run_cron(
   cases,
@@ -34,7 +34,7 @@ expected shape), normally as a data set, or as a function taking the
 current institutions table. Leave as \code{NULL} (the default) if you have
 none - detection falls back to raw case counts.}
 
-\item{episodic_config_path}{Passed to \code{\link[=episodic_config_resolve]{episodic_config_resolve()}}.}
+\item{episodic_config_path}{The config path.}
 
 \item{db_path}{Path to the EpiSODIC database: a SQLite file (created
 automatically if it does not exist yet) or a MariaDB/MySQL DSN (see
@@ -87,11 +87,10 @@ values), and optionally \code{denominators} and \code{institution_activity} for
 testing volume and hospital activity. A data set is the normal case; if
 producing the data only makes sense at run time (a live database query,
 for instance), a zero-argument function returning one is accepted just
-as well - see \code{\link[=episodic_resolve_data]{episodic_resolve_data()}}.
+as well.
 
-The exact detection settings used are recorded with the run (see
-\code{\link[=episodic_config_hash]{episodic_config_hash()}}), so any past result can always be traced back
-to the configuration that produced it.
+The exact detection settings used are recorded with the run, so any past
+result can always be traced back to the configuration that produced it.
 
 So is what each feed delivered. Before the run writes anything, your
 case data goes through \code{\link[=episodic_check_cases]{episodic_check_cases()}}. Structural problems -
@@ -128,8 +127,8 @@ It also reports what is merely worth a look: one pathogen spelled two
 ways (two streams instead of one), no \code{ward} on any hospital row (no
 ward-level detection), a \code{patient_key} that never repeats (no
 deduplication), postcodes the map cannot place, sample dates in the
-future. \code{\link[=episodic_validate_cases]{episodic_validate_cases()}} runs the same checks but throws,
-for use in a script; \code{\link[=episodic_run_cron]{episodic_run_cron()}} runs it for you before every
+future. \code{episodic_check_cases(..., stop_on_problem = TRUE)} runs the same checks but throws an error,
+for use in a script. \code{\link[=episodic_run_cron]{episodic_run_cron()}} runs that before every
 run, and refuses to start on data it cannot use, naming what to fix.
 }
 

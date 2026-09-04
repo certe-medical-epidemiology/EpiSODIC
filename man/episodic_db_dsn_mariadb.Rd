@@ -3,7 +3,7 @@
 \name{episodic_db_dsn_mariadb}
 \alias{episodic_db_dsn_mariadb}
 \alias{episodic_db_dsn_mysql}
-\title{Connect EpiSODIC to a MariaDB or MySQL server}
+\title{Connect EpiSODIC to a MariaDB or MySQL Server}
 \usage{
 episodic_db_dsn_mariadb(host, dbname, user, password, port = 3306L)
 

@@ -25,7 +25,7 @@
 #' cluster detail, including patient-level data, without classifying
 #' anything themselves. Both roles sign in with a username and password;
 #' there is no self-service registration - an administrator creates each
-#' account with [episodic_provision_user()], and the new user sets their
+#' account with [episodic_add_user()], and the new user sets their
 #' own password on first sign-in.
 #'
 #' Passwords are hashed (never stored in plain text) and login history is
@@ -134,7 +134,7 @@ episodic_auth_is_active <- function(con, user) {
 #'
 #' `episodic_auth_login()` and the Settings screen's user list both need
 #' `role`/`is_admin`/`is_active` as they currently stand, not as the
-#' account was first provisioned - this bundles the three
+#' account was first added - this bundles the three
 #' `episodic_auth_latest_value()` calls into the row itself so callers
 #' downstream (e.g. `episodic_user_is_epidemiologist()`,
 #' `episodic_user_is_admin()`) can keep reading `user$role`/`user$is_admin`
@@ -275,9 +275,9 @@ episodic_auth_change_password <- function(con, user_id, new_password) {
   invisible(NULL)
 }
 
-#' Create an account for a new epidemiologist or viewer
+#' Create an Account for a New Epidemiologist or Viewer
 #'
-#' There is no self-service registration: an account is provisioned either
+#' There is no self-service registration: an account is added either
 #' from the Settings screen (by an `is_admin` account) or with this
 #' function at the R console. The password you supply is temporary - the
 #' new account is flagged to require a password change, so the account
@@ -311,7 +311,7 @@ episodic_auth_change_password <- function(con, user_id, new_password) {
 #' con <- episodic_db_create(db_path)
 #' DBI::dbDisconnect(con)
 #'
-#' user_id <- episodic_provision_user(
+#' user_id <- episodic_add_user(
 #'   db_path,
 #'   username = "jdoe", full_name = "Jane Doe",
 #'   email = "jane@example.org", password = "temporary-password"
@@ -320,7 +320,7 @@ episodic_auth_change_password <- function(con, user_id, new_password) {
 #'
 #' file.remove(db_path)
 #' @export
-episodic_provision_user <- function(
+episodic_add_user <- function(
     db_path = Sys.getenv("EPISODIC_DB", unset = NA),
     username,
     full_name,
@@ -448,7 +448,7 @@ episodic_user_is_admin <- function(user) {
 #' login wall that falls with that one account.
 #'
 #' @param config A resolved configuration from
-#'   [episodic_config_resolve()], or `NULL` to resolve one here.
+#'   `episodic_config_resolve()`, or `NULL` to resolve one here.
 #' @return A single logical, never `NA`.
 #' @keywords internal
 #' @noRd

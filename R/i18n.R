@@ -22,14 +22,10 @@
 #' The dashboard is available in English, (Modern Standard) Arabic,
 #' Dutch, French, German, Hindi, Mandarin Chinese, and Spanish. All user-facing
 #' text is stored as translation keys (e.g. `"nav.clusters"`) rather than
-#' hardcoded in R code, and [episodic_tr()] looks a key up in the requested
+#' hardcoded in R code, and `episodic_tr()` looks a key up in the requested
 #' language. A key that does not exist in any language is shown as
 #' `[[key]]` rather than silently left blank, so a missing translation is
 #' easy to spot.
-#'
-#' @name i18n
-NULL
-
 #' @keywords internal
 #' @noRd
 episodic_i18n_cache <- new.env(parent = emptyenv())
@@ -66,7 +62,7 @@ episodic_i18n_load <- function(lang) {
 #' Every function that renders text takes `lang` and defaults it to the
 #' `EPISODIC_LANGUAGE` environment variable, which is how an instance
 #' picks its language once rather than at every call site. An unset (or
-#' empty) variable means English - the same fallback [episodic_tr()]
+#' empty) variable means English - the same fallback `episodic_tr()`
 #' applies to a key it cannot find in the requested language.
 #'
 #' Anything that *branches* on the language rather than looking a key up -
@@ -105,11 +101,8 @@ episodic_lang <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @param instance_i18n An optional named character vector of your own
 #'   wording overrides (key -> template), checked before the shipped
 #'   translations. `NULL` (the default) uses only the shipped text.
-#' @return A single character string.
-#' @examples
-#' episodic_tr("nav.clusters", lang = "nl")
-#' episodic_tr("nav.clusters", lang = "en")
-#' @export
+#' @keywords internal
+#' @noRd
 episodic_tr <- function(
     key,
     ...,

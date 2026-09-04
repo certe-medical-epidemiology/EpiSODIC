@@ -17,29 +17,46 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' The dashboard's colour palette
+#' The Dashboard's Colour Palette and Typography
 #'
-#' Returns the colours used throughout the EpiSODIC dashboard and charts, as
-#' a named list of hex codes. Useful if you want to match your own plots or
+#' Returns the colours and typography used throughout the EpiSODIC dashboard
+#' and charts, as a named list. Useful if you want to match your own plots or
 #' reports to the house style, or check what colour a given status uses.
 #'
 #' The palette ships with an organisation-neutral default
-#' (`inst/config/palette.yaml`). To use your own institute's colours instead,
-#' point the `EPISODIC_PALETTE_CONFIG` environment variable at a YAML file
+#' (`r doc_system_file("inst/config/episodic_default_style.yaml")`). To use your own institute's colours or fonts instead,
+#' point the `EPISODIC_STYLE` environment variable at a YAML file
 #' that overrides only the roles you want to change - anything you do not set
-#' keeps its shipped default. This is independent of [episodic_config_resolve()]
-#' on purpose: colours never affect the `config_hash` recorded with a
-#' detection run, since they have no bearing on reproducibility.
+#' keeps its shipped default.
 #'
-#' @return A named list of hex colour strings. The greyscale neutrals are
+#' This is independent of `episodic_config_resolve()`
+#' on purpose: colours and typography never affect the `config_hash` recorded
+#' with a detection run, since they have no bearing on reproducibility.
+#'
+#' @section Default font and colours:
+#' These are all the default values, and all can be changed using a custom YAML file.
+#'
+#' `r doc_palette()`
+#'
+#' Of note:
+#'
+#' * `primary_dark` is the background colour of the navigation bar.
+#' * `font` is a CSS font-family stack, and `font_size_base` is the app's base font size.
+#'   * Every other font size in the dashboard is set in `rem` relative to it, so changing `font_size_base` scales the whole app's type proportionally (useful when swapping in a font that reads naturally smaller or larger than the default at the same pixel size).
+#'   * Changing `font` only changes the CSS declaration; if it names a webfont rather than a system font, delivering that font (a self-hosted `@font-face` or a link to its provider) is the operator's own concern.
+#'
+#' @return A named list. The greyscale neutrals are
 #'   `ink` (default text), `muted` (secondary text), `faint` (tertiary text),
 #'   `border`, `bg_subtle`, `bg`, and `surface`. The semantic roles are
 #'   `primary`, `secondary`, `tertiary`, `success`, `warning`, and `danger`,
-#'   each with `_dark`/`_light`/`_tint` variants where used.
+#'   each with `_dark`/`_light`/`_tint` variants where used. `font` and
+#'   `font_size_base` hold the app's typography, not a colour.
 #' @examples
 #' pal <- episodic_palette()
 #' pal$primary
 #' pal$danger
+#' pal$font
+#' pal$font_size_base
 #' @export
 episodic_palette <- function() {
   episodic_palette_config_resolve()
@@ -58,12 +75,12 @@ episodic_palette_cache <- new.env(parent = emptyenv())
 #'
 #' @param palette_config_path Path to an instance palette file, overlaid
 #'   key-by-key on the shipped defaults. Defaults to the
-#'   `EPISODIC_PALETTE_CONFIG` environment variable.
+#'   `EPISODIC_STYLE` environment variable.
 #' @return A named list of role-named hex colours (see [episodic_palette()]).
 #' @keywords internal
 #' @noRd
 episodic_palette_config_resolve <- function(
-    palette_config_path = Sys.getenv("EPISODIC_PALETTE_CONFIG", unset = NA)) {
+    palette_config_path = Sys.getenv("EPISODIC_STYLE", unset = NA)) {
   # `[[` on an environment requires a non-empty name - "" (from an unset
   # env var) errors with "zero-length variable name" - hence the sentinel
   # rather than caching under palette_config_path itself.
@@ -77,9 +94,9 @@ episodic_palette_config_resolve <- function(
     return(cached)
   }
 
-  defaults_path <- system.file("config", "palette.yaml", package = "EpiSODIC")
+  defaults_path <- system.file("config", "episodic_default_style.yaml", package = "EpiSODIC")
   if (identical(defaults_path, "")) {
-    defaults_path <- file.path("inst", "config", "palette.yaml")
+    defaults_path <- file.path("inst", "config", "episodic_default_style.yaml")
   }
   base <- yaml::read_yaml(defaults_path)
 

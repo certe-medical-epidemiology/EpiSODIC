@@ -2,7 +2,7 @@
 % Please edit documentation in R/schema_migrate.R
 \name{episodic_db_connect}
 \alias{episodic_db_connect}
-\title{Connect to an existing EpiSODIC database}
+\title{Connect to an Existing EpiSODIC Database}
 \usage{
 episodic_db_connect(path)
 }

@@ -58,7 +58,7 @@ test_that("episodic_quarto_available() is FALSE without the CLI, and episodic_re
 
 test_that("episodic_report_qmd_path() falls back to the shipped template when unset, missing or invalid", {
   expect_true(file.exists(episodic_report_qmd_path(NA)))
-  expect_true(basename(episodic_report_qmd_path(NA)) == "cluster_report.qmd")
+  expect_true(basename(episodic_report_qmd_path(NA)) == "episodic_default_report.qmd")
   expect_true(file.exists(episodic_report_qmd_path("")))
   expect_true(file.exists(episodic_report_qmd_path("/no/such/file.qmd")))
 })

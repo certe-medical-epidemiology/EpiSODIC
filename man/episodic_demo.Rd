@@ -2,7 +2,7 @@
 % Please edit documentation in R/demo.R
 \name{episodic_demo}
 \alias{episodic_demo}
-\title{Try EpiSODIC with synthetic outbreak data}
+\title{Try EpiSODIC With Synthetic Outbreak Data}
 \usage{
 episodic_demo(
   db_path = tempfile(fileext = ".sqlite"),
@@ -81,8 +81,8 @@ It also reports what is merely worth a look: one pathogen spelled two
 ways (two streams instead of one), no \code{ward} on any hospital row (no
 ward-level detection), a \code{patient_key} that never repeats (no
 deduplication), postcodes the map cannot place, sample dates in the
-future. \code{\link[=episodic_validate_cases]{episodic_validate_cases()}} runs the same checks but throws,
-for use in a script; \code{\link[=episodic_run_cron]{episodic_run_cron()}} runs it for you before every
+future. \code{episodic_check_cases(..., stop_on_problem = TRUE)} runs the same checks but throws an error,
+for use in a script. \code{\link[=episodic_run_cron]{episodic_run_cron()}} runs that before every
 run, and refuses to start on data it cannot use, naming what to fix.
 }
 

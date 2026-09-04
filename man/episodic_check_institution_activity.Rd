@@ -2,7 +2,7 @@
 % Please edit documentation in R/institution_activity.R
 \name{episodic_check_institution_activity}
 \alias{episodic_check_institution_activity}
-\title{Check your hospital activity data before you hand it to EpiSODIC}
+\title{Check Your Hospital Activity Data Before You Hand It to EpiSODIC}
 \usage{
 episodic_check_institution_activity(institution_activity)
 }

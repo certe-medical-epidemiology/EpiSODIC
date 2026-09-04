@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Generate synthetic outbreak data
+#' Generate Synthetic Outbreak Data
 #'
 #' Produces several years of laboratory surveillance data for a fictional
 #' northern-Netherlands region - eight hospitals, twenty long-term care
@@ -68,7 +68,7 @@
 #'   before `end_date` - Farrington needs four of them before it will
 #'   compare anything against anything.
 #' @param seed RNG seed, for reproducible demo data.
-#' @return A data frame satisfying [episodic_validate_cases()].
+#' @return A data frame satisfying [episodic_check_cases()].
 #' @seealso [episodic_check_cases()] to see what the contract makes of it,
 #'   and [episodic_synthetic_cases_calibration()] for many more clusters
 #'   than a demo wants, to tune a configuration against.
@@ -308,7 +308,7 @@ episodic_synthetic_pc_pool <- function() {
 #' the clusters in the demo are the injected ones rather than coincidence.
 #' amplitude/phase_day describe a sinusoidal season, phase_day being the
 #' day-of-year of peak incidence. `pathogen` values match
-#' `inst/config/pathogen_config.csv` exactly, as raw lab-provided strings.
+#' `inst/config/episodic_default_pathogen_config.csv` exactly, as raw lab-provided strings.
 #' @keywords internal
 #' @noRd
 episodic_synthetic_pathogen_profiles <- function() {
@@ -340,9 +340,7 @@ episodic_synthetic_pathogen_profiles <- function() {
 #' @param institution A data frame of institution rows, one per case (or a
 #'   single row, recycled).
 #' @param ward Ward per case, `NA` outside hospitals.
-#' @return A data frame in [episodic_case_columns] order, minus
-#'   `source_key` and `lab_number`, which the assembling function stamps
-#'   on at the end.
+#' @return A data frame
 #' @keywords internal
 #' @noRd
 episodic_synthetic_case_rows <- function(
@@ -732,7 +730,7 @@ episodic_synthetic_places <- function(institutions) {
   rbind(do.call(rbind, per_hospital), others)
 }
 
-#' Generate synthetic data at tunable cluster volume
+#' Generate Synthetic Data at Tunable Cluster Volume
 #'
 #' [episodic_synthetic_cases()] injects six outbreaks in total - enough to
 #' show every detector working, and few enough that a demo dashboard reads
@@ -755,7 +753,7 @@ episodic_synthetic_places <- function(institutions) {
 #'   generated per calendar month. Raise or lower this to see how detection
 #'   volume responds.
 #' @param seed RNG seed, for reproducible runs.
-#' @return A data frame satisfying [episodic_validate_cases()],
+#' @return A data frame satisfying [episodic_check_cases()],
 #'   including everything [episodic_synthetic_cases()] produces
 #'   (background baseline, the six demo outbreaks) plus the extra volume.
 #' @examples

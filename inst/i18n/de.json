@@ -478,7 +478,7 @@
   "relation.suppressed": "unterdrückt",
   "dossier.linked_badge": "Verknüpft mit {ref}",
   "dossier.linked_more": "+{n} weitere",
-  "panel.related.note": "Andere Cluster mit einem Teil dieser Fälle. Verknüpfte sind ein eigenes Dossier und noch zu bewerten; unterdrückte sind in diesem aufgegangen.",
+  "panel.related.note": "Andere Cluster mit einem Teil dieser Fälle. Verknüpfte sind ein eigenes Dossier und noch zu bewerten; unterdrückte sind in diesem aufgegangen.\nVerknüpft = eigenes Dossier, teilt Fälle. Unterdrückt = kein eigenes Dossier mehr, Fälle sind hier aufgegangen.",
   "panel.similar.unavailable": "Keine ähnlichen abgeschlossenen Cluster für diesen Erreger gefunden.",
 
   "panel.report.title": "Ausbruchsbericht",
@@ -570,6 +570,8 @@
   "column.cases": "Fälle",
   "column.first_day": "Erster Fall",
   "column.last_day": "Letzter Fall",
+  "column.period": "Fallzeitraum",
+  "column.case_days": "Falltage",
   "column.duration": "Dauer",
   "column.priority": "Priorität",
   "column.verdict": "Klassifikation",

@@ -2,7 +2,7 @@
 % Please edit documentation in R/report_render.R
 \name{episodic_report_render}
 \alias{episodic_report_render}
-\title{Render an outbreak report for clinical colleagues}
+\title{Render an Outbreak Report for Clinical Colleagues}
 \usage{
 episodic_report_render(
   con,
@@ -11,7 +11,7 @@ episodic_report_render(
   user_id = NA,
   include_linelist = TRUE,
   small_count_threshold = NULL,
-  config = episodic_config_resolve(),
+  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
   lang = Sys.getenv("EPISODIC_LANGUAGE"),
   qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)
 )
@@ -36,8 +36,7 @@ breakdown tables are suppressed (shown as \code{"<threshold"}) below this
 value, to avoid identifying individuals in a small population.
 Defaults to \code{config$report$small_count_threshold}.}
 
-\item{config}{The resolved configuration (see \code{\link[=episodic_config_resolve]{episodic_config_resolve()}});
-only \code{config$report} is used.}
+\item{episodic_config_path}{The config path.}
 
 \item{lang}{Report language: \code{"en"}, \code{"ar"}, \code{"nl"}, \code{"fr"}, \code{"de"},
 \code{"hi"}, \code{"zh"}, or \code{"es"}. Defaults to the \code{EPISODIC_LANGUAGE}
@@ -68,8 +67,8 @@ later.
 By default the report uses EpiSODIC's own report template. If your
 organisation needs its own layout or branding, set the
 \code{EPISODIC_QUARTO_REPORT} environment variable to your own \code{.qmd} file;
-\code{inst/report/cluster_report.qmd} in the package source is a good
-starting point to copy and adapt.
+the default \href{https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd}{\code{inst/report/episodic_default_report.qmd}}
+is a good starting point to copy and adapt.
 
 Rendering requires \href{https://quarto.org}{Quarto} to be installed
 separately (both the \code{quarto} R package and the Quarto command-line

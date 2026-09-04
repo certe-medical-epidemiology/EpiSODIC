@@ -11,7 +11,7 @@ db_path <- tempfile(fileext = ".sqlite")
 Sys.setenv(
   EPISODIC_DB = db_path,
   EPISODIC_LANGUAGE = "nl",
-  EPISODIC_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),
+  EPISODIC_CONFIG = system.file("config", "episodic_default_config.yaml", package = "EpiSODIC"),
   EPISODIC_GEO_DATA = system.file(
     "extdata",
     "geo_postcodes4_nl.rds",
@@ -31,7 +31,7 @@ if (!file.exists(db_path)) {
     denominators = episodic_synthetic_denominators
   )
 
-  episodic_provision_user(
+  episodic_add_user(
     username = "5580",
     full_name = "Matthijs Berends",
     email = "m.berends@domain.com",

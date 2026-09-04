@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Check your case data before you hand it to EpiSODIC
+#' Check Your Case Data Before You Hand It to EpiSODIC
 #'
 #' Runs every check the [episodic_case_data] contract implies over your
 #' extract and reports *everything* it finds in one go - what is wrong,
@@ -27,11 +27,9 @@
 #' while you are still building your extract step, and the first call to
 #' make when a run did not produce what you expected.
 #'
-#' [episodic_validate_cases()] is the same checks with a different
-#' answer: it throws an error listing the problems that must be fixed, and
-#' is what [episodic_run_cron()] itself calls before a run. Use
-#' `episodic_check_cases()` when you want to *look*, and
-#' `episodic_validate_cases()` when you want a script to stop.
+#' Use `episodic_check_cases()` plainly when you want to *look*, or
+#' `episodic_check_cases(..., stop_on_problem = TRUE)` when you want a script
+#' to stop. The latter is what [episodic_run_cron()] itself calls before a run.
 #'
 #' @section What it reports:
 #'
@@ -59,9 +57,10 @@
 #'
 #' @param cases Your case data: a data frame or `tibble` in the shape
 #'   [episodic_case_data] describes, or a zero-argument function returning
-#'   one (resolved with [episodic_resolve_data()] first, so you can check
-#'   either form). Anything else is itself reported as a problem rather
+#'   one. Anything else is itself reported as a problem rather
 #'   than throwing - the point of this function is that it always answers.
+#' @param stop_on_problem A [logical] to indicate whether an error must be
+#'   thrown if any problem is found. Default is `FALSE`.
 #' @return A data frame of findings with class `episodic_case_check` and
 #'   one row per finding, with columns `severity` (`"problem"` or
 #'   `"advice"`), `issue`, `column`, `n_rows`, `rows`, `values`,
@@ -69,8 +68,7 @@
 #'   A summary of what was read (rows, columns, date range, counts) is
 #'   attached as the `"summary"` attribute and shown when printing.
 #' @seealso [episodic_case_data] for what each column means and which
-#'   values it accepts; [episodic_validate_cases()] for the same checks as
-#'   an error.
+#'   values it accepts.
 #' @examples
 #' cases <- episodic_synthetic_cases(
 #'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-01-31")
@@ -87,7 +85,11 @@
 #' # it is a data frame too
 #' report$column[report$severity == "problem"]
 #' @export
-episodic_check_cases <- function(cases) {
+episodic_check_cases <- function(cases, stop_on_problem = FALSE) {
+  if (isTRUE(stop_on_problem)) {
+    episodic_validate_cases(cases)
+  }
+
   resolved <- tryCatch(episodic_resolve_data(cases), error = function(e) e)
   if (inherits(resolved, "condition")) {
     return(episodic_check_report(list(episodic_check_finding(
@@ -664,7 +666,7 @@ episodic_check_pathogen_advice <- function(cases) {
           "Not an error: these fall back to the schema defaults - a ",
           "30-day episode, 14 case-free days before a cluster closes, no ",
           "reproduction number and no MEM. Add them to ",
-          "inst/config/pathogen_config.csv (or match the spelling used ",
+          "inst/config/episodic_default_pathogen_config.csv (or match the spelling used ",
           "there) to get pathogen-specific behaviour."
         )
       )
@@ -1151,9 +1153,9 @@ episodic_check_column_guesses <- function(extra_cols) {
 #' @keywords internal
 #' @noRd
 episodic_check_configured_pathogens <- function() {
-  path <- system.file("config", "pathogen_config.csv", package = "EpiSODIC")
+  path <- system.file("config", "episodic_default_pathogen_config.csv", package = "EpiSODIC")
   if (identical(path, "")) {
-    path <- file.path("inst", "config", "pathogen_config.csv")
+    path <- file.path("inst", "config", "episodic_default_pathogen_config.csv")
   }
   if (!file.exists(path)) {
     return(NULL)
@@ -1263,7 +1265,7 @@ episodic_check_failure_message <- function(problems, what = "Case data") {
 #' @keywords internal
 #' @noRd
 episodic_check_case_data_link <- function() {
-  cli::format_inline("{.help [?episodic_case_data](episodic_case_data)}")
+  cli::format_inline("{.help [?episodic_case_data](EpiSODIC::episodic_case_data)}")
 }
 
 #' @param x An `episodic_case_check` report, as returned by

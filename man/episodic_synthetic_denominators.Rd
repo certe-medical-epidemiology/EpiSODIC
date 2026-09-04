@@ -2,7 +2,7 @@
 % Please edit documentation in R/denominators.R
 \name{episodic_synthetic_denominators}
 \alias{episodic_synthetic_denominators}
-\title{Add a testing-volume (positivity) feed}
+\title{Add a Testing-Volume (Positivity) Feed}
 \usage{
 episodic_synthetic_denominators(
   start_date = end_date - 5 * 365,

@@ -31,7 +31,7 @@
 #' shipped defaults are enough on their own.
 #'
 #' Every detection run stores the exact configuration it used (see
-#' [episodic_config_hash()]), so you can always trace a past result back to
+#' `episodic_config_hash()`), so you can always trace a past result back to
 #' the settings that produced it, even after you have since changed them.
 #'
 #' An `is_admin` account can additionally override the `notifications`
@@ -52,17 +52,14 @@
 #'   snapshots) do not need one.
 #' @return A nested list with the resolved configuration, e.g.
 #'   `config$eligibility$min_baseline_weeks` or `config$priority_score$weights`.
-#' @examples
-#' config <- episodic_config_resolve()
-#' names(config)
-#' config$eligibility$min_baseline_weeks
-#' @export
+#' @keywords internal
+#' @noRd
 episodic_config_resolve <- function(
     episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
     con = NULL) {
-  defaults_path <- system.file("config", "default.yaml", package = "EpiSODIC")
+  defaults_path <- system.file("config", "episodic_default_config.yaml", package = "EpiSODIC")
   if (identical(defaults_path, "")) {
-    defaults_path <- file.path("inst", "config", "default.yaml")
+    defaults_path <- file.path("inst", "config", "episodic_default_config.yaml")
   }
   config <- yaml::read_yaml(defaults_path)
 
@@ -155,13 +152,11 @@ episodic_config_unhashed_sections <- c("notifications", "access")
 #' configuration from a stored hash and snapshot.
 #'
 #' @param config A resolved configuration, as returned by
-#'   [episodic_config_resolve()].
+#'   `episodic_config_resolve()`.
 #' @return A list with `hash` (a 40-character hex digest) and `snapshot`
 #'   (the canonical configuration, as a JSON string).
-#' @examples
-#' hashed <- episodic_config_hash(episodic_config_resolve())
-#' hashed$hash
-#' @export
+#' @keywords internal
+#' @noRd
 episodic_config_hash <- function(config) {
   config_for_hash <- config
   # Sections that govern how the instance is operated rather than what a

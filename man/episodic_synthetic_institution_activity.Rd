@@ -2,7 +2,7 @@
 % Please edit documentation in R/institution_activity.R
 \name{episodic_synthetic_institution_activity}
 \alias{episodic_synthetic_institution_activity}
-\title{Add a hospital activity feed (patient-days)}
+\title{Add a Hospital Activity Feed (Patient-Days)}
 \usage{
 episodic_synthetic_institution_activity(
   institutions,

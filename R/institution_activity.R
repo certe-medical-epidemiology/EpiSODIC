@@ -153,7 +153,7 @@ episodic_validate_institution_activity <- function(activity) {
   invisible(NULL)
 }
 
-#' Check your hospital activity data before you hand it to EpiSODIC
+#' Check Your Hospital Activity Data Before You Hand It to EpiSODIC
 #'
 #' The same purpose as [episodic_check_cases()], for the optional
 #' `institution_activity` feed: every check
@@ -437,7 +437,7 @@ episodic_check_institution_activity_advice <- function(activity) {
   found
 }
 
-#' Add a hospital activity feed (patient-days)
+#' Add a Hospital Activity Feed (Patient-Days)
 #'
 #' Raw case counts at a hospital can rise simply because the hospital is
 #' busier, not because infection risk has increased. If you can supply

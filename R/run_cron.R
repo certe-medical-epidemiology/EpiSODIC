@@ -210,7 +210,7 @@ episodic_pkg_versions_extended <- function() {
   )
 }
 
-#' Run one surveillance detection cycle
+#' Run One Surveillance Detection Cycle
 #'
 #' This is the function you schedule to run regularly (e.g. daily, via
 #' cron): it pulls in new laboratory data, checks every monitored stream
@@ -228,11 +228,10 @@ episodic_pkg_versions_extended <- function() {
 #' testing volume and hospital activity. A data set is the normal case; if
 #' producing the data only makes sense at run time (a live database query,
 #' for instance), a zero-argument function returning one is accepted just
-#' as well - see [episodic_resolve_data()].
+#' as well.
 #'
-#' The exact detection settings used are recorded with the run (see
-#' [episodic_config_hash()]), so any past result can always be traced back
-#' to the configuration that produced it.
+#' The exact detection settings used are recorded with the run, so any past
+#' result can always be traced back to the configuration that produced it.
 #'
 #' So is what each feed delivered. Before the run writes anything, your
 #' case data goes through [episodic_check_cases()]. Structural problems -
@@ -270,7 +269,7 @@ episodic_pkg_versions_extended <- function() {
 #'   expected shape), normally as a data set, or as a function taking the
 #'   current institutions table. Leave as `NULL` (the default) if you have
 #'   none - detection falls back to raw case counts.
-#' @param episodic_config_path Passed to [episodic_config_resolve()].
+#' @param episodic_config_path The config path.
 #' @param host,account Recorded with the run for audit purposes; default
 #'   to the current machine and account.
 #' @param run_date The date to treat as "today". Defaults to the system
@@ -387,11 +386,7 @@ episodic_run_cron <- function(
         nrow(cases),
         " rows)"
       )
-      report <- episodic_check_cases(cases)
-      problems <- report[report$severity == "problem", , drop = FALSE]
-      if (nrow(problems) > 0) {
-        stop(episodic_check_failure_message(problems), call. = FALSE)
-      }
+      report <- episodic_validate_cases(cases)
       episodic_trace(
         "Case data checked: ",
         nrow(cases),
@@ -669,7 +664,7 @@ episodic_run_statuses_complete <- c("success", "partial")
 #' contains. To find out whether your case data can actually be used -
 #' which columns are missing, which values are outside their allowed set,
 #' which dates do not read as dates, and which rows those are - run
-#' [episodic_check_cases()] on it, or [episodic_validate_cases()] if you
+#' [episodic_check_cases()] on it, or `episodic_check_cases(..., stop_on_problem = TRUE)` if you
 #' want a script to stop. Both accept the same two forms this does, so you
 #' can check a data set and the function that produces it alike.
 #'
@@ -677,9 +672,6 @@ episodic_run_statuses_complete <- c("success", "partial")
 #' @param ... Passed to `x` if it is a function; ignored otherwise.
 #' @return `NULL` if `x` is `NULL`; `x` itself if it is a data frame (a
 #'   `tibble` included); the result of calling `x` otherwise.
-#' @inheritSection episodic_case_data Check your data before you run anything
-#' @seealso [episodic_check_cases()] to check the resolved data against
-#'   the [episodic_case_data] contract.
 #' @examples
 #' df <- data.frame(x = 1:3)
 #' identical(episodic_resolve_data(df), df)
@@ -693,7 +685,8 @@ episodic_run_statuses_complete <- c("success", "partial")
 #'   )
 #' }
 #' episodic_check_cases(episodic_resolve_data(my_extract))
-#' @export
+#' @keywords internal
+#' @noRd
 episodic_resolve_data <- function(x, ...) {
   if (is.null(x)) {
     return(NULL)
@@ -725,11 +718,11 @@ episodic_run_cron_body <- function(
   episodic_trace("Loading pathogen configuration")
   pathogen_config_path <- system.file(
     "config",
-    "pathogen_config.csv",
+    "episodic_default_pathogen_config.csv",
     package = "EpiSODIC"
   )
   if (identical(pathogen_config_path, "")) {
-    pathogen_config_path <- file.path("inst", "config", "pathogen_config.csv")
+    pathogen_config_path <- file.path("inst", "config", "episodic_default_pathogen_config.csv")
   }
   pathogen_config <- utils::read.csv(
     pathogen_config_path,

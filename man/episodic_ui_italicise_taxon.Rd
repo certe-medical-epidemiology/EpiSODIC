@@ -3,7 +3,7 @@
 \name{episodic_ui_italicise_taxon}
 \alias{episodic_ui_italicise_taxon}
 \alias{episodic_ui_code_join}
-\title{Format text for outbreak reports and the dashboard}
+\title{Format Text for Outbreak Reports and the Dashboard}
 \usage{
 episodic_ui_italicise_taxon(pathogen)
 
@@ -22,8 +22,7 @@ string), safe to pass to \code{\link[shiny:HTML]{shiny::HTML()}}.
 }
 \description{
 Small HTML formatting helpers used when building dossier text, both in
-the dashboard and in the Quarto outbreak report template
-(\code{inst/report/cluster_report.qmd}). Both are exported so that a custom
+the dashboard and in the Quarto outbreak report template. Both are exported so that a custom
 report template of your own (set via \code{EPISODIC_QUARTO_REPORT}) can use
 the same formatting as the shipped one. Input text is always HTML-escaped
 first, so the result is safe to pass on to \code{\link[shiny:HTML]{shiny::HTML()}}.

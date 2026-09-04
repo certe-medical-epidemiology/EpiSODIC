@@ -478,7 +478,7 @@
   "relation.suppressed": "suprimido",
   "dossier.linked_badge": "Vinculado a {ref}",
   "dossier.linked_more": "+{n} más",
-  "panel.related.note": "Otros conglomerados que contienen parte de estos casos. Los vinculados son un expediente propio y aún deben evaluarse; los suprimidos se han absorbido en este.",
+  "panel.related.note": "Otros conglomerados que contienen parte de estos casos. Los vinculados son un expediente propio y aún deben evaluarse; los suprimidos se han absorbido en este.\nVinculado = expediente propio, comparte casos. Suprimido = ya sin expediente propio, sus casos se absorbieron aquí.",
   "panel.similar.unavailable": "No se encontraron clústeres cerrados similares para este patógeno.",
 
   "panel.report.title": "Informe de brote",
@@ -570,6 +570,8 @@
   "column.cases": "Casos",
   "column.first_day": "Primer caso",
   "column.last_day": "Último caso",
+  "column.period": "Período de casos",
+  "column.case_days": "Días con casos",
   "column.duration": "Duración",
   "column.priority": "Prioridad",
   "column.verdict": "Clasificación",

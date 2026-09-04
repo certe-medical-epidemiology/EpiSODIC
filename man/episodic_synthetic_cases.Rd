@@ -2,7 +2,7 @@
 % Please edit documentation in R/cases_synthetic.R
 \name{episodic_synthetic_cases}
 \alias{episodic_synthetic_cases}
-\title{Generate synthetic outbreak data}
+\title{Generate Synthetic Outbreak Data}
 \usage{
 episodic_synthetic_cases(
   start_date = end_date - 5 * 365,
@@ -22,7 +22,7 @@ whatever year the package was released in.}
 \item{seed}{RNG seed, for reproducible demo data.}
 }
 \value{
-A data frame satisfying \code{\link[=episodic_validate_cases]{episodic_validate_cases()}}.
+A data frame satisfying \code{\link[=episodic_check_cases]{episodic_check_cases()}}.
 }
 \description{
 Produces several years of laboratory surveillance data for a fictional

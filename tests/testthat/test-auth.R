@@ -35,11 +35,11 @@ auth_test_user <- function(con, password = "initial123", must_change = TRUE) {
   user_id
 }
 
-test_that("episodic_provision_user() takes a db_path (not an open connection) and creates an account that can immediately log in, flagged must_change", {
+test_that("episodic_add_user() takes a db_path (not an open connection) and creates an account that can immediately log in, flagged must_change", {
   db_path <- tempfile(fileext = ".sqlite")
   DBI::dbDisconnect(episodic_db_create(db_path))
 
-  episodic_provision_user(
+  episodic_add_user(
     db_path,
     "jdoe",
     "Jane Doe",
@@ -55,7 +55,7 @@ test_that("episodic_provision_user() takes a db_path (not an open connection) an
   expect_true(result$must_change)
 })
 
-test_that("episodic_provision_user() falls back to the EPISODIC_DB environment variable when db_path is not given", {
+test_that("episodic_add_user() falls back to the EPISODIC_DB environment variable when db_path is not given", {
   db_path <- tempfile(fileext = ".sqlite")
   DBI::dbDisconnect(episodic_db_create(db_path))
   old_env <- Sys.getenv("EPISODIC_DB", unset = NA)
@@ -68,7 +68,7 @@ test_that("episodic_provision_user() falls back to the EPISODIC_DB environment v
   )
   Sys.setenv(EPISODIC_DB = db_path)
 
-  episodic_provision_user(
+  episodic_add_user(
     username = "asmith",
     full_name = "Ann Smith",
     email = "a@x.nl",
@@ -183,11 +183,11 @@ test_that("episodic_db_user_by_username() and episodic_db_user_by_id() return NU
   expect_null(episodic_db_user_by_id(con, 99999L))
 })
 
-test_that("episodic_provision_user() defaults to the epidemiologist role", {
+test_that("episodic_add_user() defaults to the epidemiologist role", {
   db_path <- tempfile(fileext = ".sqlite")
   DBI::dbDisconnect(episodic_db_create(db_path))
 
-  episodic_provision_user(
+  episodic_add_user(
     db_path,
     "jdoe",
     "Jane Doe",
@@ -201,11 +201,11 @@ test_that("episodic_provision_user() defaults to the epidemiologist role", {
   expect_equal(user$role, "epidemiologist")
 })
 
-test_that("episodic_provision_user() also accepts the viewer role, and rejects anything else", {
+test_that("episodic_add_user() also accepts the viewer role, and rejects anything else", {
   db_path <- tempfile(fileext = ".sqlite")
   DBI::dbDisconnect(episodic_db_create(db_path))
 
-  episodic_provision_user(
+  episodic_add_user(
     db_path,
     "vsmith",
     "Val Smith",
@@ -220,7 +220,7 @@ test_that("episodic_provision_user() also accepts the viewer role, and rejects a
   expect_equal(user$role, "viewer")
 
   expect_error(
-    episodic_provision_user(
+    episodic_add_user(
       db_path,
       "other",
       "Other Person",
@@ -237,20 +237,20 @@ test_that("episodic_user_is_epidemiologist() is TRUE only for a signed-in epidem
   expect_false(episodic_user_is_epidemiologist(NULL))
 })
 
-test_that("episodic_provision_user() defaults is_admin to FALSE, and accepts TRUE", {
+test_that("episodic_add_user() defaults is_admin to FALSE, and accepts TRUE", {
   db_path <- tempfile(fileext = ".sqlite")
   DBI::dbDisconnect(episodic_db_create(db_path))
   con <- episodic_db_connect(db_path)
   on.exit(DBI::dbDisconnect(con))
 
-  episodic_provision_user(
+  episodic_add_user(
     db_path,
     "jdoe",
     "Jane Doe",
     "j@x.nl",
     "a-temporary-password"
   )
-  episodic_provision_user(
+  episodic_add_user(
     db_path,
     "asmith",
     "Ann Smith",

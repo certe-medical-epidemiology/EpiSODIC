@@ -70,7 +70,6 @@ reference:
   contents:
   - episodic_run_cron
   - episodic_run_app
-  - episodic_resolve_data
 
 - title: Connect your own data
   desc: >
@@ -82,7 +81,6 @@ reference:
   - episodic_check_cases
   - episodic_check_denominators
   - episodic_check_institution_activity
-  - episodic_validate_cases
   - episodic_synthetic_cases
   - episodic_synthetic_cases_calibration
   - episodic_synthetic_denominators
@@ -101,15 +99,7 @@ reference:
 - title: Accounts and sign-in
   contents:
   - episodic_auth
-  - episodic_provision_user
-
-- title: Configure detection
-  desc: >
-    Detection thresholds, priority scoring, and reproducibility.
-  contents:
-  - episodic_config_resolve
-  - episodic_config_hash
-  - episodic_config_export
+  - episodic_add_user
 
 - title: Interpret and report results
   desc: >
@@ -137,7 +127,11 @@ reference:
   contents:
   - episodic_palette
   - episodic_geo
-  - i18n
-  - episodic_tr
   - episodic_charts
   - episodic_ui_italicise_taxon
+
+- title: Configure export
+  desc: >
+    Make sure to export the settings.
+  contents:
+  - episodic_config_export

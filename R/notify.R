@@ -122,6 +122,7 @@ episodic_notify_cluster_details <- function(con, cluster_ids) {
       ward = character(0),
       region_code = character(0),
       n_cases = integer(0),
+      case_days = integer(0),
       expected = numeric(0),
       excess = numeric(0),
       ratio = numeric(0),
@@ -153,7 +154,8 @@ episodic_notify_cluster_details <- function(con, cluster_ids) {
     " ORDER BY c.cluster_id"
   )
   params <- as.list(as.integer(cluster_ids))
-  DBI::dbGetQuery(con, sql, params = params)
+  details <- DBI::dbGetQuery(con, sql, params = params)
+  episodic_db_attach_case_days(con, details)
 }
 
 #' A cluster's deep link into the dashboard's Clusters screen
@@ -325,13 +327,13 @@ episodic_notify_build_new_clusters <- function(
         episodic_html_escape(location),
         "</td>",
         "<td style='text-align:center'>",
+        episodic_html_escape(period_str),
+        "</td>",
+        "<td style='text-align:center'>",
         row$n_cases,
         "</td>",
         "<td style='text-align:center'>",
-        episodic_html_escape(episodic_format_date(row$first_day, lang = lang)),
-        "</td>",
-        "<td style='text-align:center'>",
-        episodic_html_escape(episodic_format_date(row$last_day, lang = lang)),
+        row$case_days,
         "</td>",
         "<td style='text-align:center'>",
         episodic_html_escape(duration_str),
@@ -390,7 +392,7 @@ episodic_notify_build_new_clusters <- function(
 
   # The same spine of columns, in the same order, as every cluster table
   # on screen (see `R/app_cluster_table.R`): id, then what and where,
-  # then cases, first case, last case, duration and priority. Expected
+  # then case period, cases, case days, duration and priority. Expected
   # and ratio close the row - the detection evidence an alert carries and
   # a screen does not.
   header <- function(key, align) {
@@ -410,9 +412,9 @@ episodic_notify_build_new_clusters <- function(
       header("column.cluster", "left"),
       header("column.pathogen", "left"),
       header("column.place", "left"),
+      header("column.period", "center"),
       header("column.cases", "center"),
-      header("column.first_day", "center"),
-      header("column.last_day", "center"),
+      header("column.case_days", "center"),
       header("column.duration", "center"),
       header("column.priority", "center"),
       header("notif.table.expected", "center"),
@@ -819,14 +821,14 @@ episodic_notify_validate_config <- function(config) {
   problems
 }
 
-#' Send a test notification through all configured channels
+#' Send a Test Notification Through All Configured Channels
 #'
 #' Validates the notification configuration and sends a test message
 #' through every enabled channel. Run this interactively after setting up
 #' your instance configuration to verify that notifications work end to
 #' end.
 #'
-#' @param episodic_config_path Passed to [episodic_config_resolve()].
+#' @param episodic_config_path The config path.
 #' @return Invisibly, a named logical vector: `TRUE` for each channel
 #'   that succeeded, `FALSE` for each that failed.
 #' @examples
@@ -835,8 +837,7 @@ episodic_notify_validate_config <- function(config) {
 #' episodic_notify_test()
 #' }
 #' @export
-episodic_notify_test <- function(
-    episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
+episodic_notify_test <- function(episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
   config <- episodic_config_resolve(episodic_config_path)
   notif <- config$notifications
 
@@ -940,7 +941,7 @@ episodic_notify_test <- function(
   invisible(results)
 }
 
-#' Set up Microsoft 365 authentication for notifications
+#' Set Up Microsoft 365 Authentication for Notifications
 #'
 #' Runs an interactive Azure AD login and caches the refresh token for
 #' subsequent unattended use by [episodic_run_cron()]. You only need to

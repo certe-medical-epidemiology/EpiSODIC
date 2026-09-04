@@ -21,6 +21,7 @@ cluster_table_frame <- function() {
   data.frame(
     cluster_id = c(11L, 12L, 13L),
     n_cases = c(4L, 9L, 2L),
+    case_days = c(3L, 6L, 2L),
     first_day = c("2025-01-02", "2025-02-01", "2025-03-01"),
     last_day = c("2025-01-06", "2025-03-20", "2025-03-20"),
     priority_score = c(50, 61.4, 88.6),
@@ -95,13 +96,15 @@ test_that("the table carries the whole spine, in order, whatever the screen", {
     regexpr(episodic_tr("dossier.cluster_ref", id = 13L, lang = "en"), html),
     regexpr(episodic_tr("dossier.cluster_ref", id = 11L, lang = "en"), html)
   )
+  # first case and last case as one range, not two separate date columns
   expect_true(grepl(
-    episodic_format_date("2025-03-20", lang = "en"),
+    episodic_format_date_range("2025-01-02", "2025-01-06", lang = "en"),
     html,
     fixed = TRUE
   ))
   expect_true(grepl("<td>89</td>", html, fixed = TRUE))
   expect_true(grepl("<td>5 days</td>", html, fixed = TRUE))
+  expect_true(grepl("<td>6</td>", html, fixed = TRUE)) # cluster 12's case_days
 })
 
 test_that("context columns follow the id and outcome columns close the row", {
@@ -125,9 +128,15 @@ test_that("context columns follow the id and outcome columns close the row", {
     regexpr(episodic_tr("column.place", lang = "en"), html, fixed = TRUE),
     regexpr(episodic_tr("column.cases", lang = "en"), html, fixed = TRUE)
   )
+  # outcome sits right after "case days", ahead of duration/priority - see
+  # the file header on episodic_cluster_table_spine_outcome_after
   expect_lt(
-    regexpr(episodic_tr("column.priority", lang = "en"), html, fixed = TRUE),
+    regexpr(episodic_tr("column.case_days", lang = "en"), html, fixed = TRUE),
     regexpr(episodic_tr("column.state", lang = "en"), html, fixed = TRUE)
+  )
+  expect_lt(
+    regexpr(episodic_tr("column.state", lang = "en"), html, fixed = TRUE),
+    regexpr(episodic_tr("column.priority", lang = "en"), html, fixed = TRUE)
   )
   expect_true(grepl("Ward A", html, fixed = TRUE))
 })
@@ -157,8 +166,10 @@ test_that("a row opens its dossier, by click and by keyboard", {
     shiny::tags$td("a cell"),
     lang = "en"
   ))
-  expect_true(grepl("Shiny.setInputValue", row, fixed = TRUE))
-  expect_true(grepl("open_cluster", row, fixed = TRUE))
+  # episodicOpenCluster() (see R/app_ui.R) both sets the `open_cluster`
+  # Shiny input and moves the rail's own highlight - a row must call it
+  # rather than setInputValue directly, or the rail goes stale on click.
+  expect_true(grepl("episodicOpenCluster(42)", row, fixed = TRUE))
   expect_true(grepl("42", row, fixed = TRUE))
   expect_true(grepl("tabindex", row, fixed = TRUE))
   expect_true(grepl("onkeydown", row, fixed = TRUE))
@@ -179,7 +190,7 @@ test_that("a cluster that no longer stands on its own says so instead of dead-li
     lang = "en"
   ))
   # no click target at all, rather than one that goes nowhere
-  expect_false(grepl("open_cluster", row, fixed = TRUE))
+  expect_false(grepl("episodicOpenCluster", row, fixed = TRUE))
   expect_false(grepl("episodic-row-link", row, fixed = TRUE))
   expect_false(grepl("tabindex", row, fixed = TRUE))
   # the id is still there, marked, and hovering it explains why
@@ -258,6 +269,7 @@ test_that("a day value that does not parse yields NA rather than taking the scre
   clusters <- data.frame(
     cluster_id = c(1L, 2L),
     n_cases = c(1L, 1L),
+    case_days = c(1L, 1L),
     first_day = c("2025-01-01", "2025-03-01"),
     last_day = c("nonsense", "2025-03-20"),
     priority_score = c(90, 10),
@@ -268,4 +280,70 @@ test_that("a day value that does not parse yields NA rather than taking the scre
     c(2L, 1L)
   )
   expect_silent(episodic_ui_cluster_table(clusters, lang = "en"))
+})
+
+test_that("case_days counts distinct dates with a case, not the case count or the calendar span", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+
+  run_id <- episodic_db_run_start(con, "test", "test", Sys.Date())
+  stream_id <- episodic_db_stream_upsert(
+    con,
+    stream_key = episodic_stream_key(
+      "pathogen_region",
+      "Test pathogen",
+      region_code = "NL"
+    ),
+    level = "pathogen_region",
+    pathogen = "Test pathogen",
+    region_code = "NL",
+    observed_date = "2025-01-01"
+  )
+  cluster_id <- episodic_db_cluster_insert(
+    con,
+    stream_id = stream_id,
+    first_day = "2025-01-01",
+    last_day = "2025-01-10",
+    n_cases = 4L,
+    priority_score = 50,
+    detector_agreement = 1L,
+    run_id = run_id
+  )
+  # 4 cases, but only 2 distinct sample dates - a sharp two-day peak, not
+  # a spread across the whole 10-day window this cluster runs.
+  sample_dates <- c("2025-01-01", "2025-01-01", "2025-01-02", "2025-01-02")
+  case_ids <- vapply(seq_along(sample_dates), function(i) {
+    DBI::dbExecute(
+      con,
+      "INSERT INTO episodic_case
+        (source_key, lab_number, patient_key, sample_date, pathogen, first_seen_run)
+       VALUES (?, ?, ?, ?, ?, ?)",
+      params = list(
+        paste0("case-", i),
+        paste0("lab-", i),
+        paste0("pt-", i),
+        sample_dates[i],
+        "Test pathogen",
+        run_id
+      )
+    )
+    DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+  }, integer(1))
+  episodic_db_cluster_case_link_many(con, cluster_id, case_ids)
+
+  batch <- episodic_db_case_days_batch(con, cluster_id)
+  expect_equal(batch$case_days[batch$cluster_id == cluster_id], 2L)
+
+  clusters <- data.frame(cluster_id = cluster_id, stringsAsFactors = FALSE)
+  attached <- episodic_db_attach_case_days(con, clusters)
+  expect_equal(attached$case_days, 2L)
+
+  # a cluster id the batch query never saw (no linked cases at all) gets
+  # 0, not NA - NA would print as a dash next to a cluster that plainly
+  # has cases
+  clusters2 <- data.frame(cluster_id = c(cluster_id, 999999L))
+  attached2 <- episodic_db_attach_case_days(con, clusters2)
+  expect_equal(attached2$case_days, c(2L, 0L))
+
+  expect_equal(nrow(episodic_db_case_days_batch(con, integer(0))), 0)
 })

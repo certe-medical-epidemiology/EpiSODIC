@@ -2,7 +2,7 @@
 % Please edit documentation in R/schema_migrate.R
 \name{episodic_db_open}
 \alias{episodic_db_open}
-\title{Connect using the \code{EPISODIC_DB} environment variable}
+\title{Connect Using the \code{EPISODIC_DB} Environment Variable}
 \usage{
 episodic_db_open(db_path = Sys.getenv("EPISODIC_DB", unset = NA))
 }
@@ -18,8 +18,8 @@ disconnecting it.
 \description{
 Like \code{\link[=episodic_db_connect]{episodic_db_connect()}}, but falls back to the \code{EPISODIC_DB}
 environment variable when you do not pass a path explicitly - handy for
-one-off console use, e.g. \code{\link[=episodic_provision_user]{episodic_provision_user()}} uses it
-internally so provisioning an account needs only a username and
+one-off console use, e.g. \code{\link[=episodic_add_user]{episodic_add_user()}} uses it
+internally so adding an account needs only a username and
 password, not a connection you build yourself first.
 }
 \examples{

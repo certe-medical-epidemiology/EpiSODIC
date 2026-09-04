@@ -38,12 +38,42 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     theme = bslib::bs_theme(version = 5),
     title = episodic_tr("app.title", lang = lang),
     shiny::tags$head(
-      shiny::tags$link(
-        rel = "stylesheet",
-        href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"
-      ),
+      # Only fetched when the resolved palette still uses the shipped
+      # default font - the moment an instance overrides `font` in its
+      # EPISODIC_STYLE, this Google Fonts request for a face
+      # nobody asked for would otherwise keep firing on every page load.
+      # Serving a substitute font is then the operator's own concern
+      # (a system font needs no webfont link at all; a different webfont
+      # is loaded the same way - self-hosted, or linked from its own
+      # provider - by shipping a custom `www/episodic.css` alongside it).
+      if (grepl("IBM Plex Sans", pal$font, fixed = TRUE)) {
+        shiny::tags$link(
+          rel = "stylesheet",
+          href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+        )
+      },
       shiny::tags$link(rel = "stylesheet", href = "www/episodic.css"),
-      shiny::tags$style(episodic_app_palette_css(pal))
+      shiny::tags$style(episodic_app_palette_css(pal)),
+      # The one place that opens a cluster from outside the rail itself -
+      # a cluster table row, a "linked to #N" chip - has to be able to
+      # move the rail's own "active" highlight, which output$rail_pane
+      # deliberately does not re-render on every selection (see its own
+      # comment in app_server.R, about not losing scroll position).
+      # Defined globally, once, rather than per-caller: every place that
+      # used to inline `Shiny.setInputValue('open_cluster', ...)`
+      # (episodic_ui_cluster_row(), episodic_ui_chip_link()) now calls
+      # this instead, so the rail highlight and the dossier selection can
+      # never drift apart again. A no-op when the target cluster is not
+      # in the rail's current list (a closed cluster, or an id opened
+      # while the rail is not on screen) - there is simply nothing to
+      # highlight yet.
+      shiny::tags$script(shiny::HTML(paste0(
+        "function episodicOpenCluster(id){",
+        "Shiny.setInputValue('open_cluster', id, {priority: 'event'});",
+        "document.querySelectorAll('.episodic-rail-item').forEach(function(el){",
+        "el.classList.toggle('active', el.dataset.clusterId === String(id));",
+        "});}"
+      )))
     ),
     shiny::tags$div(
       class = "episodic-header",

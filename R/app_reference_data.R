@@ -121,14 +121,14 @@ episodic_app_reference_data <- function(
       path = env("EPISODIC_CONFIG")
     )),
     list(episodic_reference_row(
-      "EPISODIC_PALETTE_CONFIG",
-      if (is.na(env("EPISODIC_PALETTE_CONFIG"))) "default" else "in_use",
-      tr(if (is.na(env("EPISODIC_PALETTE_CONFIG"))) {
+      "EPISODIC_STYLE",
+      if (is.na(env("EPISODIC_STYLE"))) "default" else "in_use",
+      tr(if (is.na(env("EPISODIC_STYLE"))) {
         "info.reference.file.default"
       } else {
         "info.reference.file.custom"
       }),
-      path = env("EPISODIC_PALETTE_CONFIG")
+      path = env("EPISODIC_STYLE")
     )),
     list(episodic_reference_row(
       "EPISODIC_QUARTO_REPORT",

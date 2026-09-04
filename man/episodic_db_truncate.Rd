@@ -2,7 +2,7 @@
 % Please edit documentation in R/schema_migrate.R
 \name{episodic_db_truncate}
 \alias{episodic_db_truncate}
-\title{Empty every EpiSODIC table, keeping the schema itself}
+\title{Empty Every EpiSODIC Table, Keeping the Schema Itself}
 \usage{
 episodic_db_truncate(path)
 }

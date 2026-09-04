@@ -28,16 +28,32 @@
 #
 # The spine is deliberately fixed and cannot be switched off by a caller:
 #
-#   cluster id | <context> | cases | first case | last case | duration |
-#   priority | <outcome>
+#   cluster id | <context> | case period | cases | case days |
+#   <outcome> | duration | priority
 #
 # `context` (what and where: pathogen, level, place, relation) and
 # `outcome` (what was decided: classification, state, closure date) are
 # the only per-screen variation, because those are the parts that
 # genuinely differ between an archive and a dossier panel. Everything a
-# reader compares between screens - how many cases, over which days, for
-# how long, at what priority - is the same column in the same place
-# everywhere.
+# reader compares between screens - when, how many cases, over how many
+# of those days, for how long, at what priority - is the same column in
+# the same place everywhere. `outcome` sits right after `case days`
+# rather than at the very end: it is what was decided about the signal
+# the columns before it describe, so it reads as the conclusion to that
+# evidence rather than as an afterthought tacked on past
+# `duration`/`priority`, which describe the signal's shape, not its
+# handling.
+#
+# `case period` is `first_day`-`last_day` as one range
+# (`episodic_format_date_range()`), not two separate date columns - a
+# table already carrying context and outcome columns has no room to
+# spare for two, and the range reads just as well as one.
+#
+# `case days` (`episodic_db_attach_case_days()`) is distinct from
+# `duration`: duration is the calendar span from first case to last case
+# inclusive, so a cluster can run 90 days with cases on only 10 of them
+# (a sharp peak) or on 39 of them (a flat, sustained rise) - the same
+# duration and case count, two different epidemic shapes.
 
 #' A cluster's stored day column, as dates
 #'
@@ -106,28 +122,39 @@ episodic_cluster_table_order <- function(clusters) {
 #'
 #' Named for the `column.*` translation keys they render, and shared with
 #' the notification email so a column that exists on screen exists in the
-#' message too.
+#' message too. `<outcome>` (see the file header) is spliced in right
+#' after `episodic_cluster_table_spine_outcome_after`, not appended to
+#' this vector - a caller never sees that split, only the one rendered
+#' order it produces.
 #' @keywords internal
 #' @noRd
 episodic_cluster_table_spine <- c(
   "cluster",
+  "period",
   "cases",
-  "first_day",
-  "last_day",
+  "case_days",
   "duration",
   "priority"
 )
+
+#' @keywords internal
+#' @noRd
+episodic_cluster_table_spine_outcome_after <- "case_days"
 
 #' The columns a cluster table needs to be given
 #'
 #' `duration_days` is deliberately absent: it is derived from the two day
 #' columns rather than carried, so a caller cannot supply one that
-#' disagrees with the dates next to it.
+#' disagrees with the dates next to it. `case_days` cannot be derived the
+#' same way - it needs the case-level link table, not just the two day
+#' columns - so unlike duration it *is* required input; a caller builds
+#' it with `episodic_db_attach_case_days()`.
 #' @keywords internal
 #' @noRd
 episodic_cluster_table_required <- c(
   "cluster_id",
   "n_cases",
+  "case_days",
   "first_day",
   "last_day",
   "priority_score"
@@ -199,10 +226,7 @@ episodic_ui_cluster_row <- function(
     ))
   }
 
-  open_js <- sprintf(
-    "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
-    as.integer(cluster_id)
-  )
+  open_js <- sprintf("episodicOpenCluster(%d);", as.integer(cluster_id))
   shiny::tags$tr(
     class = "episodic-row-link",
     tabindex = "0",
@@ -231,8 +255,9 @@ episodic_ui_cluster_row <- function(
 #'   `episodic_ui_cluster_row()`).
 #' @param context Extra columns placed directly after the id - what and
 #'   where the cluster is. A list of `episodic_ui_cluster_col()`.
-#' @param outcome Extra columns placed at the end - what was decided about
-#'   it. A list of `episodic_ui_cluster_col()`.
+#' @param outcome Extra columns placed right after "case days" - what was
+#'   decided about the cluster the columns before it describe. A list of
+#'   `episodic_ui_cluster_col()`.
 #' @param lang Session language.
 #' @return A `shiny::tags$table`.
 #' @keywords internal
@@ -274,42 +299,87 @@ episodic_ui_cluster_table <- function(
   reasons <- clusters$unlinked_reason %||%
     rep(NA_character_, nrow(clusters))
 
-  spine_labels <- vapply(
-    episodic_cluster_table_spine,
-    function(key) episodic_tr(paste0("column.", key), lang = lang),
-    character(1)
-  )
+  col_label <- function(key) episodic_tr(paste0("column.", key), lang = lang)
+
+  # Each spine key becomes exactly one header/cell pair.
+  spine_header <- function(key) {
+    list(shiny::tags$th(col_label(key)))
+  }
+
+  spine_cell <- function(key, row, i) {
+    if (identical(key, "period")) {
+      return(list(shiny::tags$td(
+        episodic_format_date_range(row$first_day, row$last_day, lang = lang)
+      )))
+    }
+    if (identical(key, "cases")) {
+      return(list(shiny::tags$td(row$n_cases)))
+    }
+    if (identical(key, "case_days")) {
+      return(list(shiny::tags$td(row$case_days)))
+    }
+    if (identical(key, "duration")) {
+      return(list(shiny::tags$td(if (is.na(duration[i])) {
+        dash
+      } else {
+        episodic_count_phrase(
+          duration[i],
+          episodic_tr("unit.day", lang = lang),
+          episodic_tr("unit.days", lang = lang)
+        )
+      })))
+    }
+    # "priority"
+    list(shiny::tags$td(if (is.na(row$priority_score)) {
+      dash
+    } else {
+      round(row$priority_score, 0)
+    }))
+  }
+
+  # The spine minus "cluster" (already the row's own leading id cell, via
+  # episodic_ui_cluster_row()), spliced with `outcome` right after
+  # episodic_cluster_table_spine_outcome_after - the one place the
+  # rendered order actually departs from the spine vector's own order,
+  # and the reason that marker exists rather than a caller having to
+  # know where to insert `outcome` by re-reading this function. `per_key`
+  # is `spine_header`/`spine_cell` (partially applied per row for cells),
+  # `outcome_tags` the already-built outcome `<th>`/`<td>` list for this
+  # splice point.
+  rest <- episodic_cluster_table_spine[-1]
+  splice_after_outcome <- function(per_key, outcome_tags) {
+    # do.call(c, ...) rather than unlist(..., recursive = FALSE): each
+    # per-key result and outcome_tags is itself a list of shiny tag
+    # objects (which are themselves lists), and c() concatenates lists
+    # one level deep without touching what is inside each element - the
+    # same idiom this file already uses for context/outcome elsewhere.
+    # unlist() risks looking one level too far into a tag's own internals.
+    do.call(c, lapply(rest, function(key) {
+      if (identical(key, episodic_cluster_table_spine_outcome_after)) {
+        c(per_key(key), outcome_tags)
+      } else {
+        per_key(key)
+      }
+    }))
+  }
+
   headers <- c(
-    spine_labels[1],
-    vapply(context, function(col) col$label, character(1)),
-    spine_labels[-1],
-    vapply(outcome, function(col) col$label, character(1))
+    list(shiny::tags$th(col_label("cluster"))),
+    lapply(context, function(col) shiny::tags$th(col$label)),
+    splice_after_outcome(
+      spine_header,
+      lapply(outcome, function(col) shiny::tags$th(col$label))
+    )
   )
 
   body <- lapply(seq_len(nrow(clusters)), function(i) {
     row <- clusters[i, , drop = FALSE]
     cells <- c(
       lapply(context, function(col) shiny::tags$td(col$render(row))),
-      list(
-        shiny::tags$td(row$n_cases),
-        shiny::tags$td(episodic_format_date(row$first_day, lang = lang)),
-        shiny::tags$td(episodic_format_date(row$last_day, lang = lang)),
-        shiny::tags$td(if (is.na(duration[i])) {
-          dash
-        } else {
-          episodic_count_phrase(
-            duration[i],
-            episodic_tr("unit.day", lang = lang),
-            episodic_tr("unit.days", lang = lang)
-          )
-        }),
-        shiny::tags$td(if (is.na(row$priority_score)) {
-          dash
-        } else {
-          round(row$priority_score, 0)
-        })
-      ),
-      lapply(outcome, function(col) shiny::tags$td(col$render(row)))
+      splice_after_outcome(
+        function(key) spine_cell(key, row, i),
+        lapply(outcome, function(col) shiny::tags$td(col$render(row)))
+      )
     )
     do.call(
       episodic_ui_cluster_row,
@@ -326,7 +396,7 @@ episodic_ui_cluster_table <- function(
 
   shiny::tags$table(
     class = "episodic-table",
-    shiny::tags$thead(shiny::tags$tr(lapply(headers, shiny::tags$th))),
+    shiny::tags$thead(shiny::tags$tr(headers)),
     shiny::tags$tbody(body)
   )
 }

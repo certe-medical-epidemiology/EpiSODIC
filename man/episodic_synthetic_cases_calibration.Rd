@@ -2,7 +2,7 @@
 % Please edit documentation in R/cases_synthetic.R
 \name{episodic_synthetic_cases_calibration}
 \alias{episodic_synthetic_cases_calibration}
-\title{Generate synthetic data at tunable cluster volume}
+\title{Generate Synthetic Data at Tunable Cluster Volume}
 \usage{
 episodic_synthetic_cases_calibration(
   start_date = end_date - 5 * 365,
@@ -27,7 +27,7 @@ volume responds.}
 \item{seed}{RNG seed, for reproducible runs.}
 }
 \value{
-A data frame satisfying \code{\link[=episodic_validate_cases]{episodic_validate_cases()}},
+A data frame satisfying \code{\link[=episodic_check_cases]{episodic_check_cases()}},
 including everything \code{\link[=episodic_synthetic_cases]{episodic_synthetic_cases()}} produces
 (background baseline, the six demo outbreaks) plus the extra volume.
 }

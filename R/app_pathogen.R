@@ -1000,7 +1000,7 @@ episodic_app_pathogen_institutions <- function(
 #' @param resolved The resolved period.
 #' @param lang Session language.
 #' @return A data frame with `cluster_id`, `level_label`, `place`,
-#'   `first_day`, `last_day`, `n_cases`, `priority_score`,
+#'   `first_day`, `last_day`, `n_cases`, `case_days`, `priority_score`,
 #'   `verdict_label` (`NA` when never classified) and `state_label`.
 #' @keywords internal
 #' @noRd
@@ -1016,6 +1016,7 @@ episodic_app_pathogen_clusters <- function(
     first_day = character(0),
     last_day = character(0),
     n_cases = integer(0),
+    case_days = integer(0),
     priority_score = numeric(0),
     verdict_label = character(0),
     state_label = character(0),
@@ -1054,6 +1055,7 @@ episodic_app_pathogen_clusters <- function(
   clusters$pathogen <- pathogen
   events_all <- episodic_db_assessment_events_batch(con, clusters$cluster_id)
   states <- episodic_app_derive_states_batch(con, clusters)
+  clusters <- episodic_db_attach_case_days(con, clusters)
 
   rows <- lapply(seq_len(nrow(clusters)), function(i) {
     row <- clusters[i, ]
@@ -1086,6 +1088,7 @@ episodic_app_pathogen_clusters <- function(
       first_day = row$first_day,
       last_day = row$last_day,
       n_cases = row$n_cases,
+      case_days = row$case_days,
       priority_score = row$priority_score,
       # NA rather than a dash: the cluster table's own verdict column is
       # what turns "never classified" into the dash, once, for every

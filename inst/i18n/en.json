@@ -478,7 +478,7 @@
   "relation.suppressed": "suppressed",
   "dossier.linked_badge": "Linked to {ref}",
   "dossier.linked_more": "+{n} more",
-  "panel.related.note": "Other clusters holding some of these cases. Linked ones stand as their own dossier and still need assessing; suppressed ones were absorbed into this one.",
+  "panel.related.note": "Other clusters holding some of these cases. Linked ones stand as their own dossier and still need assessing; suppressed ones were absorbed into this one.\nLinked = its own dossier, shares cases. Suppressed = no longer its own dossier, its cases are now in this one.",
   "panel.similar.unavailable": "No similar closed clusters found for this pathogen.",
 
   "panel.report.title": "Outbreak report",
@@ -570,6 +570,8 @@
   "column.cases": "Cases",
   "column.first_day": "First case",
   "column.last_day": "Last case",
+  "column.period": "Case period",
+  "column.case_days": "Case days",
   "column.duration": "Duration",
   "column.priority": "Priority",
   "column.verdict": "Classification",

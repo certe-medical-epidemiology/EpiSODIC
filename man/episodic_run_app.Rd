@@ -2,7 +2,7 @@
 % Please edit documentation in R/run_app.R
 \name{episodic_run_app}
 \alias{episodic_run_app}
-\title{Open the EpiSODIC dashboard}
+\title{Open the EpiSODIC Dashboard}
 \usage{
 episodic_run_app(
   db_path = Sys.getenv("EPISODIC_DB", unset = NA),

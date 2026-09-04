@@ -5,7 +5,7 @@
 \alias{episodic_ui_epi_curve_chart}
 \alias{episodic_ui_trend_chart}
 \alias{episodic_ui_rt_chart}
-\title{Draw the dashboard charts (epidemic curve, trend, and Rt)}
+\title{Draw the Dashboard Charts (Epidemic Curve, Trend, and Rt)}
 \usage{
 episodic_ui_epi_curve_chart(curve, lang = Sys.getenv("EPISODIC_LANGUAGE"))
 

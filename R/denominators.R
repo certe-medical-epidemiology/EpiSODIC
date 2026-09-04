@@ -191,7 +191,7 @@ episodic_validate_denominators <- function(denominators) {
   invisible(NULL)
 }
 
-#' Check your positivity data before you hand it to EpiSODIC
+#' Check Your Positivity Data Before You Hand It to EpiSODIC
 #'
 #' The same purpose as [episodic_check_cases()], for the optional
 #' `denominators` feed: every check `episodic_validate_denominators()`
@@ -466,7 +466,7 @@ episodic_check_denominators_advice <- function(denominators) {
   found
 }
 
-#' Add a testing-volume (positivity) feed
+#' Add a Testing-Volume (Positivity) Feed
 #'
 #' Case counts alone cannot distinguish a rise in infections from a rise in
 #' testing. If you can supply how many tests were performed - even as a

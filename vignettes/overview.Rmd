@@ -43,17 +43,17 @@ the detection engine reusable by any laboratory: every dependency is a
 CRAN-hosted package (`surveillance` for Farrington; no private,
 organisation-specific package is required or even referenced).
 
-House colours (`episodic_palette()`) come from a shipped,
+House colours and typography (`episodic_palette()`) come from a shipped,
 organisation-neutral default, overridable per instance by pointing
-`EPISODIC_PALETTE_CONFIG` at a YAML file with an organisation's own
-colours - the same mechanism used for detection configuration, a custom
-report template, and geographic reference data (see
+`EPISODIC_STYLE` at a YAML file with an organisation's own
+colours and font - the same mechanism used for detection configuration, a
+custom report template, and geographic reference data (see
 `vignette("deployment")` and `vignette("environment-variables")`).
 Geography (the choropleth panel) is not tied to any one organisation or
 country either.
 
 Detection thresholds and priority score weights are configurable per
-instance (`inst/config/default.yaml`, `EPISODIC_CONFIG`), so an
+instance (`r EpiSODIC:::doc_system_file("inst/config/episodic_default_config.yaml")`, `EPISODIC_CONFIG`), so an
 organisation can tune them against its own signal volume as its evidence
 base grows - see `vignette("detection-reconciliation")` for how the
 detectors themselves work, and the FAQ for how to change the

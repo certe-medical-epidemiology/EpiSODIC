@@ -478,7 +478,7 @@
   "relation.suppressed": "已抑制",
   "dossier.linked_badge": "关联 {ref}",
   "dossier.linked_more": "另有 {n} 个",
-  "panel.related.note": "包含其中部分病例的其他聚集。已关联的聚集是独立档案，仍需评估；被抑制的聚集已并入本档案。",
+  "panel.related.note": "包含其中部分病例的其他聚集。已关联的聚集是独立档案，仍需评估；被抑制的聚集已并入本档案。\n已关联＝独立档案，共享病例。被抑制＝不再是独立档案，其病例已并入本档案。",
   "panel.similar.unavailable": "未找到该病原体的相似已结案聚集事件。",
 
   "panel.report.title": "疫情报告",
@@ -570,6 +570,8 @@
   "column.cases": "病例数",
   "column.first_day": "首例",
   "column.last_day": "末例",
+  "column.period": "病例期间",
+  "column.case_days": "病例天数",
   "column.duration": "持续时间",
   "column.priority": "优先级",
   "column.verdict": "分类",

@@ -150,6 +150,7 @@ episodic_app_archive <- function(
     last_day = character(0),
     duration_days = integer(0),
     n_cases = integer(0),
+    case_days = integer(0),
     priority_score = numeric(0),
     closed_at = character(0),
     stringsAsFactors = FALSE
@@ -230,6 +231,7 @@ episodic_app_archive <- function(
     closed$first_day,
     closed$last_day
   )
+  closed <- episodic_db_attach_case_days(con, closed)
 
   # Sorted the way every cluster table in the app is sorted - most recent
   # last case day first - rather than on closed_at: an operator scanning
@@ -249,6 +251,7 @@ episodic_app_archive <- function(
     "last_day",
     "duration_days",
     "n_cases",
+    "case_days",
     "priority_score",
     "closed_at"
   )]

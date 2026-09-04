@@ -2,20 +2,7 @@
 % Please edit documentation in R/cases.R
 \name{episodic_case_data}
 \alias{episodic_case_data}
-\alias{episodic_case_columns}
-\alias{episodic_care_lines}
-\alias{episodic_institution_types}
-\alias{episodic_sex_codes}
 \title{Connect your own laboratory data}
-\usage{
-episodic_case_columns
-
-episodic_care_lines
-
-episodic_institution_types
-
-episodic_sex_codes
-}
 \description{
 EpiSODIC does not connect to any laboratory or hospital system itself.
 Instead, you extract and transform your own positive-result data
@@ -29,7 +16,7 @@ is, your own extract step is the only place that needs to know about it.
 A data set is the normal case, and the one to reach for. If producing
 the data only makes sense at run time - a live database query, for
 instance - you can pass a zero-argument function returning such a data
-set instead; EpiSODIC accepts either (see \code{\link[=episodic_resolve_data]{episodic_resolve_data()}}).
+set instead; EpiSODIC accepts either.
 
 Only confirmed-positive results belong here - there is no outcome
 column, so do not include negative results. If you also want a
@@ -43,16 +30,32 @@ demo - a useful template for the shape your own data should have.
 \section{Required columns}{
 
 
-\code{episodic_case_columns} lists all sixteen, in order. The set is an
-explicit allow-list: a column outside it, or one missing from it, is
-rejected by \code{\link[=episodic_validate_cases]{episodic_validate_cases()}} rather than silently ignored.
-"Required" means the column must be present; several may be \code{NA}
-throughout if your laboratory does not record them.
+\tabular{llll}{
+\strong{Column} \tab \strong{Data type} \tab \strong{\code{NA} allowed} \tab \strong{Accepts (see below for more info)} \cr
+\code{source_key} \tab \code{character} \tab no \tab any string, unique within the data set \cr
+\code{lab_number} \tab \code{character} \tab no \tab any string, your lab's own specimen/culture number \cr
+\code{patient_key} \tab \code{character} \tab no \tab any string, stable per patient \cr
+\code{sample_date} \tab \code{Date} or \code{character} \tab no \tab Format \code{YYYY-MM-DD} only \cr
+\code{receipt_date} \tab \code{Date} or \code{character} \tab yes \tab Format \code{YYYY-MM-DD} only \cr
+\code{pathogen} \tab \code{character} \tab no \tab free text, spelled the same every run \cr
+\code{care_line} \tab \code{character} \tab yes \tab one of: \code{"first"}, \code{"second"}, \code{"third"}, \code{"other"}, \code{"unknown"} \cr
+\code{institution_key} \tab \code{character} \tab no \tab any string, stable per institution \cr
+\code{institution_display_name} \tab \code{character} \tab no \tab any string \cr
+\code{institution_type} \tab \code{character} \tab no \tab one of: \code{"hospital"}, \code{"ltc_institution"}, \code{"gp_municipality"}, \code{"ooh_service"}, \code{"other"} \cr
+\code{municipality} \tab \code{character} \tab yes \tab any string \cr
+\code{ward} \tab \code{character} \tab yes \tab any string, spelled the same every run \cr
+\code{specialism} \tab \code{character} \tab yes \tab any string \cr
+\code{pc} \tab \code{character} \tab yes \tab postcode digits as text, or anything that connects to your maps \cr
+\code{sex} \tab \code{character} \tab yes \tab one of: \code{"M"}, \code{"F"}, \code{"U"} \cr
+\code{age} \tab \code{numeric} \tab yes \tab whole years, not an age group \cr
+}
 
-Three columns accept only a fixed set of values, given as
-\code{episodic_care_lines}, \code{episodic_institution_types} and
-\code{episodic_sex_codes} so you can map onto them in your extract step
-rather than copying the strings out of this page.
+Every column is required to be \emph{present}; "empty allowed" says whether
+its values may be \code{NA}. Dates may be a real \code{Date} column or ISO 8601
+text, and nothing else: \code{"01-01-2025"} is rejected rather than read as
+the first of January in the year 1. Numbers stored as text, dates
+stored as date-times, and text stored as a factor are all common
+extract mistakes, and all named for what they are by the check below.
 
 \describe{
 \item{\code{source_key}}{Character, required, no \code{NA}, unique within the
@@ -108,8 +111,8 @@ unconstrained: used verbatim and never matched against a taxonomy,
 since detection has to work for anything a lab can report, viral or
 not. Spelling must be stable across runs - \code{"Influenza A"} and
 \code{"influenza a"} are two different pathogens as far as detection is
-concerned. Names matching \code{inst/config/pathogen_config.csv} pick up
-that pathogen's episode length, incubation window and serial
+concerned. Names matching in the default config (\href{https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv}{\code{inst/config/episodic_default_pathogen_config.csv}})
+pick up that pathogen's episode length, incubation window and serial
 interval; anything else falls back to the schema defaults (30-day
 episode, 14 case-free days, no Rt, no MEM). The same positive may
 appear under more than one \code{pathogen} value where that is
@@ -117,8 +120,7 @@ epidemiologically useful - an ETEC positive reported as both
 \code{"Escherichia coli"} and \code{"ETEC"}, so each is monitored separately.}
 \item{\code{care_line}}{Character; \code{NA} allowed. One of \code{"first"}
 (primary care), \code{"second"} (secondary care), \code{"third"} (tertiary
-care), \code{"other"}, or \code{"unknown"} - the values in
-\code{episodic_care_lines}. Anything else is
+care), \code{"other"}, or \code{"unknown"}. Anything else is
 rejected. \code{NA} is read as \code{"unknown"} and stored that way, so you
 need not map missing values yourself: an empty \code{care_line}, an
 R \code{NA} and a database \code{NULL} all mean the same thing here, and the
@@ -132,9 +134,8 @@ human-readable institution name shown in the dashboard.}
 \item{\code{institution_type}}{Character, required. Exactly one of
 \code{"hospital"}, \code{"ltc_institution"} (long-term care),
 \code{"gp_municipality"}, \code{"ooh_service"} (out-of-hours service), or
-\code{"other"} - the values in \code{episodic_institution_types}. Anything
-else is rejected. This decides how the institution is handled:
-\code{"hospital"} institutions
+\code{"other"}. Anything else is rejected. This decides how the
+institution is handled: \code{"hospital"} institutions
 are monitored as first-class entities and are the only ones
 eligible for patient-day normalisation, while a \code{"gp_municipality"}
 is collapsed to its municipality.}
@@ -156,43 +157,14 @@ preserved, so store it as character and not as a number). With your
 own \code{EPISODIC_GEO_DATA}, it must match that file's \code{pc} column
 instead.}
 \item{\code{sex}}{Character; \code{NA} allowed. Exactly one of \code{"M"}, \code{"F"}, or
-\code{"U"} (unknown) when present - the values in \code{episodic_sex_codes}.
+\code{"U"} (unknown) when present.
 Anything else is rejected, so map your own coding (\code{1}/\code{2},
 \code{"male"}/\code{"female"}) in your extract step.}
 \item{\code{age}}{Integer; \code{NA} allowed. Age in whole years at sampling.
-Not age group - the dashboard bands it itself.}
+Not age group - the dashboard bands it itself. Use \code{\link[AMR:age]{AMR::age()}} to
+determine the age based on a patient's date of birth and the date
+of specimen receipt at the lab.}
 }
-}
-
-\section{Types at a glance}{
-
-
-\tabular{llll}{
-\strong{Column} \tab \strong{Type} \tab \strong{Empty allowed} \tab \strong{Accepts} \cr
-\code{source_key} \tab character \tab no \tab any string, unique within the data set \cr
-\code{lab_number} \tab character \tab no \tab any string, your lab's own specimen/culture number \cr
-\code{patient_key} \tab character \tab no \tab any string, stable per patient \cr
-\code{sample_date} \tab \code{Date} or character \tab no \tab \code{YYYY-MM-DD} only \cr
-\code{receipt_date} \tab \code{Date} or character \tab yes \tab \code{YYYY-MM-DD} only \cr
-\code{pathogen} \tab character \tab no \tab free text, spelled the same every run \cr
-\code{care_line} \tab character \tab yes (read as \code{"unknown"}) \tab \code{episodic_care_lines} \cr
-\code{institution_key} \tab character \tab no \tab any string, stable per institution \cr
-\code{institution_display_name} \tab character \tab no \tab any string \cr
-\code{institution_type} \tab character \tab no \tab \code{episodic_institution_types} \cr
-\code{municipality} \tab character \tab yes \tab any string \cr
-\code{ward} \tab character \tab yes \tab any string, spelled the same every run \cr
-\code{specialism} \tab character \tab yes \tab any string \cr
-\code{pc} \tab character \tab yes \tab four digits as text, for the shipped map \cr
-\code{sex} \tab character \tab yes \tab \code{episodic_sex_codes} \cr
-\code{age} \tab numeric \tab yes \tab whole years, not an age group \cr
-}
-
-Every column is required to be \emph{present}; "empty allowed" says whether
-its values may be \code{NA}. Dates may be a real \code{Date} column or ISO 8601
-text, and nothing else: \code{"01-01-2025"} is rejected rather than read as
-the first of January in the year 1. Numbers stored as text, dates
-stored as date-times, and text stored as a factor are all common
-extract mistakes, and all named for what they are by the check below.
 }
 
 \section{Check your data before you run anything}{
@@ -211,8 +183,8 @@ It also reports what is merely worth a look: one pathogen spelled two
 ways (two streams instead of one), no \code{ward} on any hospital row (no
 ward-level detection), a \code{patient_key} that never repeats (no
 deduplication), postcodes the map cannot place, sample dates in the
-future. \code{\link[=episodic_validate_cases]{episodic_validate_cases()}} runs the same checks but throws,
-for use in a script; \code{\link[=episodic_run_cron]{episodic_run_cron()}} runs it for you before every
+future. \code{episodic_check_cases(..., stop_on_problem = TRUE)} runs the same checks but throws an error,
+for use in a script. \code{\link[=episodic_run_cron]{episodic_run_cron()}} runs that before every
 run, and refuses to start on data it cannot use, naming what to fix.
 }
 
@@ -240,7 +212,4 @@ cases <- data.frame(
 )
 episodic_check_cases(cases)
 
-episodic_case_columns
-episodic_care_lines
-episodic_institution_types
 }

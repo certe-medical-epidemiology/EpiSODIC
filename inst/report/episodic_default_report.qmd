@@ -142,8 +142,8 @@ if (!is.null(d$timeline) && nrow(d$timeline) > 0) {
 
 ```{r similar-section, results='asis'}
 # The same spine of columns, in the same order, as every cluster table on
-# the dashboard (see R/app_cluster_table.R): id, place, cases, first
-# case, last case, duration, priority, classification - and the same
+# the dashboard (see R/app_cluster_table.R): id, place, case period,
+# cases, case days, classification, duration, priority - and the same
 # ordering, most recent last case day first.
 if (!is.null(d$similar) && nrow(d$similar) > 0) {
   similar <- d$similar[EpiSODIC:::episodic_cluster_table_order(d$similar), ]
@@ -153,19 +153,20 @@ if (!is.null(d$similar) && nrow(d$similar) > 0) {
   )
   cat("## ", tr("panel.similar.title"), "\n\n", sep = "")
   cat(
-    "|", tr("column.cluster"), "|", tr("column.place"), "|", tr("column.cases"), "|",
-    tr("column.first_day"), "|", tr("column.last_day"), "|", tr("column.duration"), "|",
-    tr("column.priority"), "|", tr("column.verdict"), "|\n"
+    "|", tr("column.cluster"), "|", tr("column.place"), "|",
+    tr("column.period"), "|", tr("column.cases"), "|",
+    tr("column.case_days"), "|", tr("column.verdict"), "|",
+    tr("column.duration"), "|", tr("column.priority"), "|\n"
   )
   cat("|---|---|---|---|---|---|---|---|\n")
   for (i in seq_len(nrow(similar))) {
     row <- similar[i, ]
     cat(
-      "|", tr("dossier.cluster_ref", id = row$cluster_id), "|", row$place, "|", row$n_cases, "|",
-      EpiSODIC:::episodic_format_date(row$first_day, lang = lang), "|",
-      EpiSODIC:::episodic_format_date(row$last_day, lang = lang), "|",
-      na_dash(duration[i]), "|", na_dash(round(row$priority_score, 0)), "|",
-      na_dash(row$verdict_label), "|\n"
+      "|", tr("dossier.cluster_ref", id = row$cluster_id), "|", row$place, "|",
+      EpiSODIC:::episodic_format_date_range(row$first_day, row$last_day, lang = lang), "|",
+      row$n_cases, "|", row$case_days, "|",
+      na_dash(row$verdict_label), "|",
+      na_dash(duration[i]), "|", na_dash(round(row$priority_score, 0)), "|\n"
     )
   }
 }

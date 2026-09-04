@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Render an outbreak report for clinical colleagues
+#' Render an Outbreak Report for Clinical Colleagues
 #'
 #' Produces a self-contained HTML outbreak report for one cluster - the
 #' document you send to a treating physician, an infection prevention
@@ -34,8 +34,8 @@
 #' By default the report uses EpiSODIC's own report template. If your
 #' organisation needs its own layout or branding, set the
 #' `EPISODIC_QUARTO_REPORT` environment variable to your own `.qmd` file;
-#' `inst/report/cluster_report.qmd` in the package source is a good
-#' starting point to copy and adapt.
+#' the default `r doc_system_file("inst/report/episodic_default_report.qmd")`
+#' is a good starting point to copy and adapt.
 #'
 #' Rendering requires [Quarto](https://quarto.org) to be installed
 #' separately (both the `quarto` R package and the Quarto command-line
@@ -54,8 +54,7 @@
 #'   breakdown tables are suppressed (shown as `"<threshold"`) below this
 #'   value, to avoid identifying individuals in a small population.
 #'   Defaults to `config$report$small_count_threshold`.
-#' @param config The resolved configuration (see [episodic_config_resolve()]);
-#'   only `config$report` is used.
+#' @param episodic_config_path The config path.
 #' @param lang Report language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
 #'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
@@ -82,7 +81,7 @@ episodic_report_render <- function(
     user_id = NA,
     include_linelist = TRUE,
     small_count_threshold = NULL,
-    config = episodic_config_resolve(),
+    episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
     lang = Sys.getenv("EPISODIC_LANGUAGE"),
     qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)) {
   if (!episodic_quarto_available()) {
@@ -94,6 +93,8 @@ episodic_report_render <- function(
       call. = FALSE
     )
   }
+
+  config <- episodic_config_resolve(episodic_config_path)
 
   threshold <- small_count_threshold %||%
     config$report$small_count_threshold %||%
@@ -146,14 +147,14 @@ episodic_report_render <- function(
   work_dir <- tempfile("episodic_report_")
   dir.create(work_dir)
   on.exit(unlink(work_dir, recursive = TRUE), add = TRUE)
-  file.copy(qmd_path, file.path(work_dir, "cluster_report.qmd"))
+  file.copy(qmd_path, file.path(work_dir, "episodic_default_report.qmd"))
   data_path <- file.path(work_dir, "report_data.rds")
   saveRDS(report_data, data_path)
 
   tryCatch(
     {
       quarto::quarto_render(
-        input = file.path(work_dir, "cluster_report.qmd"),
+        input = file.path(work_dir, "episodic_default_report.qmd"),
         execute_params = list(data_path = "report_data.rds"),
         # quiet = FALSE (not TRUE): the quarto R package always captures the
         # CLI's stderr into the condition it raises on failure, but only
@@ -239,7 +240,7 @@ episodic_quarto_available <- function() {
 #'
 #' An operator's own template, if `EPISODIC_QUARTO_REPORT` (or the
 #' explicit `qmd_path` argument) names a file that actually exists;
-#' otherwise the shipped `inst/report/cluster_report.qmd` default -
+#' otherwise the shipped `inst/report/episodic_default_report.qmd` default -
 #' matching the shape `EPISODIC_CONFIG`/`EPISODIC_GEO_DATA`/... already
 #' establish.
 #' @param qmd_path A path, or `NA`.
@@ -253,11 +254,11 @@ episodic_report_qmd_path <- function(
   }
   default_path <- system.file(
     "report",
-    "cluster_report.qmd",
+    "episodic_default_report.qmd",
     package = "EpiSODIC"
   )
   if (identical(default_path, "")) {
-    default_path <- file.path("inst", "report", "cluster_report.qmd")
+    default_path <- file.path("inst", "report", "episodic_default_report.qmd")
   }
   default_path
 }
