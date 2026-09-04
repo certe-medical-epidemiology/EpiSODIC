@@ -87,17 +87,19 @@ episodic_demo <- function(
     lang = Sys.getenv("EPISODIC_LANGUAGE"),
     cases = function() episodic_synthetic_cases(end_date = run_date),
     denominators = function() episodic_synthetic_denominators(end_date = run_date)) {
+  EPISODIC_CONFIG.old <- Sys.getenv("EPISODIC_CONFIG")
+  EPISODIC_DB.old <- Sys.getenv("EPISODIC_DB")
+  EPISODIC_GEO_DATA.old <- Sys.getenv("EPISODIC_GEO_DATA")
   Sys.setenv(
-    EPISODIC_CONFIG = system.file(
-      "config",
-      "episodic_default_config.yaml",
-      package = "EpiSODIC"
-    ),
+    EPISODIC_CONFIG = system.file("config", "episodic_default_config.yaml", package = "EpiSODIC"),
     EPISODIC_DB = db_path,
-    EPISODIC_GEO_DATA = system.file(
-      "extdata",
-      "geo_postcodes4_nl.rds",
-      package = "EpiSODIC"
+    EPISODIC_GEO_DATA = system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
+  )
+  on.exit(
+    Sys.setenv(
+      EPISODIC_CONFIG = EPISODIC_CONFIG.old,
+      EPISODIC_DB = EPISODIC_DB.old,
+      EPISODIC_GEO_DATA = EPISODIC_GEO_DATA.old
     )
   )
 

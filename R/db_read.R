@@ -414,7 +414,7 @@ episodic_db_case_days_batch <- function(con, cluster_ids) {
 
 #' Attach `case_days` to a cluster data frame, in one batched query
 #'
-#' The merge every caller of [episodic_db_case_days_batch()] needs:
+#' The merge every caller of `episodic_db_case_days_batch()` needs:
 #' `left_join`-shaped (every row of `clusters` kept), with `0L` rather
 #' than `NA` for a cluster the batch query did not return a row for (one
 #' with no linked cases at all - `NA` would print as a dash next to a

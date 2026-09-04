@@ -148,7 +148,7 @@ episodic_cluster_table_spine_outcome_after <- "case_days"
 #' disagrees with the dates next to it. `case_days` cannot be derived the
 #' same way - it needs the case-level link table, not just the two day
 #' columns - so unlike duration it *is* required input; a caller builds
-#' it with [episodic_db_attach_case_days()].
+#' it with `episodic_db_attach_case_days()`.
 #' @keywords internal
 #' @noRd
 episodic_cluster_table_required <- c(
