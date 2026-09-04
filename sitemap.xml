@@ -14,6 +14,7 @@
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/index.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/news/index.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/EpiSODIC-package.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_auth.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_charts.html</loc></url>
@@ -21,8 +22,6 @@
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_export.html</loc></url>
-<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_hash.html</loc></url>
-<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_resolve.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_connect.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_create.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.html</loc></url>
@@ -30,13 +29,10 @@
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_truncate.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_geo.html</loc></url>
-<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_interpretation.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notifications.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notify_test.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.html</loc></url>
-<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.html</loc></url>
-<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_resolve_data.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_setup_microsoft365.html</loc></url>
@@ -44,10 +40,7 @@
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases_calibration.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_denominators.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity.html</loc></url>
-<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_tr.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ui_italicise_taxon.html</loc></url>
-<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.html</loc></url>
-<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/i18n.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/index.html</loc></url>
 </urlset>
 

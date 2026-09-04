@@ -1,4 +1,4 @@
-# Set up Microsoft 365 authentication for notifications
+# Set Up Microsoft 365 Authentication for Notifications
 
 Runs an interactive Azure AD login and caches the refresh token for
 subsequent unattended use by

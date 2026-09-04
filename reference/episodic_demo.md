@@ -1,4 +1,4 @@
-# Try EpiSODIC with synthetic outbreak data
+# Try EpiSODIC With Synthetic Outbreak Data
 
 The fastest way to see what EpiSODIC does: this single call creates a
 fresh database, generates several years of synthetic laboratory data,
@@ -97,12 +97,11 @@ It also reports what is merely worth a look: one pathogen spelled two
 ways (two streams instead of one), no `ward` on any hospital row (no
 ward-level detection), a `patient_key` that never repeats (no
 deduplication), postcodes the map cannot place, sample dates in the
-future.
-[`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
-runs the same checks but throws, for use in a script;
+future. `episodic_check_cases(..., stop_on_problem = TRUE)` runs the
+same checks but throws an error, for use in a script.
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
-runs it for you before every run, and refuses to start on data it cannot
-use, naming what to fix.
+runs that before every run, and refuses to start on data it cannot use,
+naming what to fix.
 
 ## See also
 
@@ -127,33 +126,33 @@ cases <- episodic_synthetic_cases(
 )
 db_path <- episodic_demo(launch = FALSE, cases = cases, denominators = NULL)
 #> Creating synthetic cases...
-#> 2026-09-03 20:20:57.539 | episodic_run_cron() starting (host=runnervmejwal, account=runner)
-#> 2026-09-03 20:20:57.539 | Resolving configuration
-#> 2026-09-03 20:20:57.543 | Configuration resolved (hash f198adfd3d37)
-#> 2026-09-03 20:20:57.543 | Connecting to database
-#> 2026-09-03 20:20:57.543 | No existing database found - creating one
-#> 2026-09-03 20:20:57.554 | Database connected (dialect: sqlite)
-#> 2026-09-03 20:20:57.556 | Run 1 started
-#> 2026-09-03 20:20:57.556 | Resolving and checking case data
-#> 2026-09-03 20:20:57.565 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
-#> 2026-09-03 20:20:57.566 | Beginning transaction
-#> 2026-09-03 20:20:57.567 | Loading pathogen configuration
-#> 2026-09-03 20:20:57.574 | Pathogen configuration loaded (23 pathogen(s))
-#> 2026-09-03 20:20:57.574 | Loading case data into the database
-#> 2026-09-03 20:20:57.638 | Case data loaded: supplied=419, deduplicated=410, inserted=410
-#> 2026-09-03 20:20:57.638 | Fetching all known cases and institutions
-#> 2026-09-03 20:20:57.640 | Enumerating lattice streams
-#> 2026-09-03 20:20:57.671 | Running same-place detector
-#> 2026-09-03 20:20:57.717 | Same-place detector found 4 detection(s)
-#> 2026-09-03 20:20:57.717 | Running rare-trigger detector
-#> 2026-09-03 20:20:57.720 | Rare-trigger detector found 1 detection(s)
-#> 2026-09-03 20:20:57.721 | Farrington owes 8 week(s) this run
-#> 2026-09-03 20:20:57.722 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
-#> 2026-09-03 20:20:58.219 | Stream reconciliation done: 5 detection(s), 5 new signal(s), 0 updated signal(s)
-#> 2026-09-03 20:20:58.219 | Suppressing lattice
-#> 2026-09-03 20:20:58.223 | Committing transaction
-#> 2026-09-03 20:20:58.226 | Finishing run 1 (status: success)
-#> 2026-09-03 20:20:59.239 | episodic_run_cron() finished in 1.7s (status: success)
+#> 2026-09-04 18:08:40.279 | episodic_run_cron() starting (host=runnervmejwal, account=runner)
+#> 2026-09-04 18:08:40.279 | Resolving configuration
+#> 2026-09-04 18:08:40.285 | Configuration resolved (hash f198adfd3d37)
+#> 2026-09-04 18:08:40.285 | Connecting to database
+#> 2026-09-04 18:08:40.285 | No existing database found - creating one
+#> 2026-09-04 18:08:40.302 | Database connected (dialect: sqlite)
+#> 2026-09-04 18:08:40.303 | Run 1 started
+#> 2026-09-04 18:08:40.303 | Resolving and checking case data
+#> 2026-09-04 18:08:40.317 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
+#> 2026-09-04 18:08:40.317 | Beginning transaction
+#> 2026-09-04 18:08:40.319 | Loading pathogen configuration
+#> 2026-09-04 18:08:40.321 | Pathogen configuration loaded (23 pathogen(s))
+#> 2026-09-04 18:08:40.321 | Loading case data into the database
+#> 2026-09-04 18:08:40.419 | Case data loaded: supplied=419, deduplicated=410, inserted=410
+#> 2026-09-04 18:08:40.419 | Fetching all known cases and institutions
+#> 2026-09-04 18:08:40.421 | Enumerating lattice streams
+#> 2026-09-04 18:08:40.456 | Running same-place detector
+#> 2026-09-04 18:08:40.523 | Same-place detector found 4 detection(s)
+#> 2026-09-04 18:08:40.524 | Running rare-trigger detector
+#> 2026-09-04 18:08:40.527 | Rare-trigger detector found 1 detection(s)
+#> 2026-09-04 18:08:40.528 | Farrington owes 8 week(s) this run
+#> 2026-09-04 18:08:40.530 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
+#> 2026-09-04 18:08:41.185 | Stream reconciliation done: 5 detection(s), 5 new signal(s), 0 updated signal(s)
+#> 2026-09-04 18:08:41.186 | Suppressing lattice
+#> 2026-09-04 18:08:41.191 | Committing transaction
+#> 2026-09-04 18:08:41.194 | Finishing run 1 (status: success)
+#> 2026-09-04 18:08:42.495 | episodic_run_cron() finished in 2.2s (status: success)
 #> OK
 #> ===========================================================================
 #> 

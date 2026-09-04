@@ -10,25 +10,12 @@ described here. This keeps EpiSODIC decoupled from any specific
 laboratory information system: whatever your source system is, your own
 extract step is the only place that needs to know about it.
 
-## Usage
-
-``` r
-episodic_case_columns
-
-episodic_care_lines
-
-episodic_institution_types
-
-episodic_sex_codes
-```
-
 ## Details
 
 A data set is the normal case, and the one to reach for. If producing
 the data only makes sense at run time - a live database query, for
 instance - you can pass a zero-argument function returning such a data
-set instead; EpiSODIC accepts either (see
-[`episodic_resolve_data()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_resolve_data.md)).
+set instead; EpiSODIC accepts either.
 
 Only confirmed-positive results belong here - there is no outcome
 column, so do not include negative results. If you also want a
@@ -44,18 +31,32 @@ data should have.
 
 ## Required columns
 
-`episodic_case_columns` lists all sixteen, in order. The set is an
-explicit allow-list: a column outside it, or one missing from it, is
-rejected by
-[`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
-rather than silently ignored. "Required" means the column must be
-present; several may be `NA` throughout if your laboratory does not
-record them.
+|  |  |  |  |
+|----|----|----|----|
+| **Column** | **Data type** | **`NA` allowed** | **Accepts (see below for more info)** |
+| `source_key` | `character` | no | any string, unique within the data set |
+| `lab_number` | `character` | no | any string, your lab's own specimen/culture number |
+| `patient_key` | `character` | no | any string, stable per patient |
+| `sample_date` | `Date` or `character` | no | Format `YYYY-MM-DD` only |
+| `receipt_date` | `Date` or `character` | yes | Format `YYYY-MM-DD` only |
+| `pathogen` | `character` | no | free text, spelled the same every run |
+| `care_line` | `character` | yes | one of: `"first"`, `"second"`, `"third"`, `"other"`, `"unknown"` |
+| `institution_key` | `character` | no | any string, stable per institution |
+| `institution_display_name` | `character` | no | any string |
+| `institution_type` | `character` | no | one of: `"hospital"`, `"ltc_institution"`, `"gp_municipality"`, `"ooh_service"`, `"other"` |
+| `municipality` | `character` | yes | any string |
+| `ward` | `character` | yes | any string, spelled the same every run |
+| `specialism` | `character` | yes | any string |
+| `pc` | `character` | yes | postcode digits as text, or anything that connects to your maps |
+| `sex` | `character` | yes | one of: `"M"`, `"F"`, `"U"` |
+| `age` | `numeric` | yes | whole years, not an age group |
 
-Three columns accept only a fixed set of values, given as
-`episodic_care_lines`, `episodic_institution_types` and
-`episodic_sex_codes` so you can map onto them in your extract step
-rather than copying the strings out of this page.
+Every column is required to be *present*; "empty allowed" says whether
+its values may be `NA`. Dates may be a real `Date` column or ISO 8601
+text, and nothing else: `"01-01-2025"` is rejected rather than read as
+the first of January in the year 1. Numbers stored as text, dates stored
+as date-times, and text stored as a factor are all common extract
+mistakes, and all named for what they are by the check below.
 
 - `source_key`:
 
@@ -124,24 +125,24 @@ rather than copying the strings out of this page.
   and never matched against a taxonomy, since detection has to work for
   anything a lab can report, viral or not. Spelling must be stable
   across runs - `"Influenza A"` and `"influenza a"` are two different
-  pathogens as far as detection is concerned. Names matching
-  `inst/config/pathogen_config.csv` pick up that pathogen's episode
-  length, incubation window and serial interval; anything else falls
-  back to the schema defaults (30-day episode, 14 case-free days, no Rt,
-  no MEM). The same positive may appear under more than one `pathogen`
-  value where that is epidemiologically useful - an ETEC positive
-  reported as both `"Escherichia coli"` and `"ETEC"`, so each is
-  monitored separately.
+  pathogens as far as detection is concerned. Names matching in the
+  default config
+  ([`inst/config/episodic_default_pathogen_config.csv`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv))
+  pick up that pathogen's episode length, incubation window and serial
+  interval; anything else falls back to the schema defaults (30-day
+  episode, 14 case-free days, no Rt, no MEM). The same positive may
+  appear under more than one `pathogen` value where that is
+  epidemiologically useful - an ETEC positive reported as both
+  `"Escherichia coli"` and `"ETEC"`, so each is monitored separately.
 
 - `care_line`:
 
   Character; `NA` allowed. One of `"first"` (primary care), `"second"`
   (secondary care), `"third"` (tertiary care), `"other"`, or
-  `"unknown"` - the values in `episodic_care_lines`. Anything else is
-  rejected. `NA` is read as `"unknown"` and stored that way, so you need
-  not map missing values yourself: an empty `care_line`, an R `NA` and a
-  database `NULL` all mean the same thing here, and the dashboard shows
-  all three as "unknown".
+  `"unknown"`. Anything else is rejected. `NA` is read as `"unknown"`
+  and stored that way, so you need not map missing values yourself: an
+  empty `care_line`, an R `NA` and a database `NULL` all mean the same
+  thing here, and the dashboard shows all three as "unknown".
 
 - `institution_key`:
 
@@ -159,11 +160,11 @@ rather than copying the strings out of this page.
 
   Character, required. Exactly one of `"hospital"`, `"ltc_institution"`
   (long-term care), `"gp_municipality"`, `"ooh_service"` (out-of-hours
-  service), or `"other"` - the values in `episodic_institution_types`.
-  Anything else is rejected. This decides how the institution is
-  handled: `"hospital"` institutions are monitored as first-class
-  entities and are the only ones eligible for patient-day normalisation,
-  while a `"gp_municipality"` is collapsed to its municipality.
+  service), or `"other"`. Anything else is rejected. This decides how
+  the institution is handled: `"hospital"` institutions are monitored as
+  first-class entities and are the only ones eligible for patient-day
+  normalisation, while a `"gp_municipality"` is collapsed to its
+  municipality.
 
 - `municipality`:
 
@@ -195,43 +196,16 @@ rather than copying the strings out of this page.
 - `sex`:
 
   Character; `NA` allowed. Exactly one of `"M"`, `"F"`, or `"U"`
-  (unknown) when present - the values in `episodic_sex_codes`. Anything
-  else is rejected, so map your own coding (`1`/`2`,
-  `"male"`/`"female"`) in your extract step.
+  (unknown) when present. Anything else is rejected, so map your own
+  coding (`1`/`2`, `"male"`/`"female"`) in your extract step.
 
 - `age`:
 
   Integer; `NA` allowed. Age in whole years at sampling. Not age group -
-  the dashboard bands it itself.
-
-## Types at a glance
-
-|  |  |  |  |
-|----|----|----|----|
-| **Column** | **Type** | **Empty allowed** | **Accepts** |
-| `source_key` | character | no | any string, unique within the data set |
-| `lab_number` | character | no | any string, your lab's own specimen/culture number |
-| `patient_key` | character | no | any string, stable per patient |
-| `sample_date` | `Date` or character | no | `YYYY-MM-DD` only |
-| `receipt_date` | `Date` or character | yes | `YYYY-MM-DD` only |
-| `pathogen` | character | no | free text, spelled the same every run |
-| `care_line` | character | yes (read as `"unknown"`) | `episodic_care_lines` |
-| `institution_key` | character | no | any string, stable per institution |
-| `institution_display_name` | character | no | any string |
-| `institution_type` | character | no | `episodic_institution_types` |
-| `municipality` | character | yes | any string |
-| `ward` | character | yes | any string, spelled the same every run |
-| `specialism` | character | yes | any string |
-| `pc` | character | yes | four digits as text, for the shipped map |
-| `sex` | character | yes | `episodic_sex_codes` |
-| `age` | numeric | yes | whole years, not an age group |
-
-Every column is required to be *present*; "empty allowed" says whether
-its values may be `NA`. Dates may be a real `Date` column or ISO 8601
-text, and nothing else: `"01-01-2025"` is rejected rather than read as
-the first of January in the year 1. Numbers stored as text, dates stored
-as date-times, and text stored as a factor are all common extract
-mistakes, and all named for what they are by the check below.
+  the dashboard bands it itself. Use
+  [`AMR::age()`](https://amr-for-r.org/reference/age.html) to determine
+  the age based on a patient's date of birth and the date of specimen
+  receipt at the lab.
 
 ## Check your data before you run anything
 
@@ -248,12 +222,11 @@ It also reports what is merely worth a look: one pathogen spelled two
 ways (two streams instead of one), no `ward` on any hospital row (no
 ward-level detection), a `patient_key` that never repeats (no
 deduplication), postcodes the map cannot place, sample dates in the
-future.
-[`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
-runs the same checks but throws, for use in a script;
+future. `episodic_check_cases(..., stop_on_problem = TRUE)` runs the
+same checks but throws an error, for use in a script.
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
-runs it for you before every run, and refuses to start on data it cannot
-use, naming what to fix.
+runs that before every run, and refuses to start on data it cannot use,
+naming what to fix.
 
 ## Examples
 
@@ -286,21 +259,6 @@ episodic_check_cases(cases)
 #>    1 pathogen, 1 institution, 1 patient
 #> 
 #> v This data set satisfies the case data contract, and is ready for
-#>   episodic_run_cron(). See ?episodic_case_data (`?episodic_case_data()`) for what each
+#>   episodic_run_cron(). See ?episodic_case_data (`?EpiSODIC::episodic_case_data()`) for what each
 #>   column means.
-
-episodic_case_columns
-#>  [1] "source_key"               "lab_number"              
-#>  [3] "patient_key"              "sample_date"             
-#>  [5] "receipt_date"             "pathogen"                
-#>  [7] "care_line"                "institution_key"         
-#>  [9] "institution_display_name" "institution_type"        
-#> [11] "municipality"             "ward"                    
-#> [13] "specialism"               "pc"                      
-#> [15] "sex"                      "age"                     
-episodic_care_lines
-#> [1] "first"   "second"  "third"   "other"   "unknown"
-episodic_institution_types
-#> [1] "hospital"        "ltc_institution" "gp_municipality" "ooh_service"    
-#> [5] "other"          
 ```

@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.11.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -128,10 +128,9 @@ failure never rolls back a successful detection run.</p>
 <p>Notification settings go in your instance YAML configuration file,
 the same file that <code>EPISODIC_CONFIG</code> points at (see
 <code><a href="../articles/environment-variables.html">vignette("environment-variables")</a></code>). Add a
-<code>notifications</code> key at the top level. The shipped
-<code>inst/config/default.yaml</code> contains commented-out examples
-for every channel; copy the ones you need into your instance file and
-fill in the values.</p>
+<code>notifications</code> key at the top level. The shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml" class="external-link"><code>inst/config/episodic_default_config.yaml</code></a>
+contains commented-out examples for every channel; copy the ones you
+need into your instance file and fill in the values.</p>
 <p>Notification configuration is deliberately <strong>excluded</strong>
 from the detection <code>config_hash</code>. This means:</p>
 <ul>

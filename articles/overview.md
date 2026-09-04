@@ -31,13 +31,13 @@ by any laboratory: every dependency is a CRAN-hosted package
 (`surveillance` for Farrington; no private, organisation-specific
 package is required or even referenced).
 
-House colours
+House colours and typography
 ([`episodic_palette()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.md))
 come from a shipped, organisation-neutral default, overridable per
-instance by pointing `EPISODIC_PALETTE_CONFIG` at a YAML file with an
-organisation’s own colours - the same mechanism used for detection
-configuration, a custom report template, and geographic reference data
-(see
+instance by pointing `EPISODIC_STYLE` at a YAML file with an
+organisation’s own colours and font - the same mechanism used for
+detection configuration, a custom report template, and geographic
+reference data (see
 [`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)
 and
 [`vignette("environment-variables")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md)).
@@ -45,9 +45,10 @@ Geography (the choropleth panel) is not tied to any one organisation or
 country either.
 
 Detection thresholds and priority score weights are configurable per
-instance (`inst/config/default.yaml`, `EPISODIC_CONFIG`), so an
-organisation can tune them against its own signal volume as its evidence
-base grows - see
+instance
+([`inst/config/episodic_default_config.yaml`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml),
+`EPISODIC_CONFIG`), so an organisation can tune them against its own
+signal volume as its evidence base grows - see
 [`vignette("detection-reconciliation")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.md)
 for how the detectors themselves work, and the FAQ for how to change the
 configuration.

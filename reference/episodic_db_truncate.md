@@ -1,4 +1,4 @@
-# Empty every EpiSODIC table, keeping the schema itself
+# Empty Every EpiSODIC Table, Keeping the Schema Itself
 
 A hard reset back to "freshly created, no data" - every row in every
 EpiSODIC table is deleted, but the tables, indexes and constraints stay

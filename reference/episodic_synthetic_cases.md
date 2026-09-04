@@ -1,4 +1,4 @@
-# Generate synthetic outbreak data
+# Generate Synthetic Outbreak Data
 
 Produces several years of laboratory surveillance data for a fictional
 northern-Netherlands region - eight hospitals, twenty long-term care
@@ -40,7 +40,7 @@ episodic_synthetic_cases(
 ## Value
 
 A data frame satisfying
-[`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md).
+[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md).
 
 ## What it puts in
 

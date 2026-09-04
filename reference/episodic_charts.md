@@ -1,4 +1,4 @@
-# Draw the dashboard charts (epidemic curve, trend, and Rt)
+# Draw the Dashboard Charts (Epidemic Curve, Trend, and Rt)
 
 These functions build the three time-series charts used throughout the
 EpiSODIC dashboard and outbreak reports: an epidemic curve, a trend

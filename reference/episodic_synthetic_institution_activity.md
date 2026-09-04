@@ -1,4 +1,4 @@
-# Add a hospital activity feed (patient-days)
+# Add a Hospital Activity Feed (Patient-Days)
 
 Raw case counts at a hospital can rise simply because the hospital is
 busier, not because infection risk has increased. If you can supply

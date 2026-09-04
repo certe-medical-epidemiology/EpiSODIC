@@ -1,4 +1,4 @@
-# Export the resolved configuration as a zip file
+# Export the Resolved Configuration as a Zip File
 
 Bundles the fully-resolved configuration (shipped defaults, your
 `EPISODIC_CONFIG` YAML overlay, and - if `db_path` points at a
@@ -33,8 +33,7 @@ episodic_config_export(
 
 - episodic_config_path:
 
-  Passed to
-  [`episodic_config_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_resolve.md).
+  The config path.
 
 - output_dir:
 

@@ -116,22 +116,22 @@ deletes, only inserts (event-sourced).
 
 ### Configuration
 
-YAML-based, with recursive merge. `inst/config/default.yaml` ships
-documented defaults. An operator’s instance config (pointed at by
-`EPISODIC_CONFIG`) overlays key-by-key. The resolved configuration is
-hashed (SHA-1 over canonical JSON) and stored on every run for
-reproducibility. `notifications` and `access` are deliberately excluded
-from the hash (see `episodic_config_unhashed_sections`): both govern how
-the instance is operated rather than what a run computes, and
-notification settings additionally contain secrets that must never reach
-`config_snapshot`.
+YAML-based, with recursive merge.
+`inst/config/episodic_default_config.yaml` ships documented defaults. An
+operator’s instance config (pointed at by `EPISODIC_CONFIG`) overlays
+key-by-key. The resolved configuration is hashed (SHA-1 over canonical
+JSON) and stored on every run for reproducibility. `notifications` and
+`access` are deliberately excluded from the hash (see
+`episodic_config_unhashed_sections`): both govern how the instance is
+operated rather than what a run computes, and notification settings
+additionally contain secrets that must never reach `config_snapshot`.
 
 Key config sections: `reconciliation`, `eligibility`,
 `effect_size_floor`, `same_place`, `farrington`, `mem`, `rare_trigger`,
 `priority_score`, `notifications`, `suppression`, `access`.
 
 Pathogen-specific parameters (episode length, serial interval, severity
-weight) live in `inst/config/pathogen_config.csv`.
+weight) live in `inst/config/episodic_default_pathogen_config.csv`.
 
 ### Notifications
 
@@ -151,9 +151,9 @@ Two roles for dashboard access:
 - `viewer`: read-only (sees everything including patient-level detail,
   but cannot record assessments)
 
-Accounts are provisioned via
-[`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md)
-at the R console; there is no in-app account management.
+Accounts are added via
+[`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
+at the R console; there is also in-app account management.
 
 ## File layout
 
@@ -187,9 +187,9 @@ at the R console; there is no in-app account management.
       interpretation.R    # AI/template-based narrative summaries
       report_render.R     # Quarto outbreak report rendering
     inst/
-      config/default.yaml       # shipped detection defaults
-      config/palette.yaml       # shipped colour palette defaults
-      config/pathogen_config.csv # per-pathogen parameters
+      config/episodic_default_config.yaml       # shipped detection defaults
+      config/episodic_default_style.yaml       # shipped colour palette defaults
+      config/episodic_default_pathogen_config.csv # per-pathogen parameters
       sql/schema.sql            # database schema (SQLite dialect)
       app/                      # Shiny app assets (CSS, JS)
       i18n/                     # translation JSON files (en, nl, de, fr, es, ar, hi, zh)
@@ -293,7 +293,7 @@ from index”.
 |----|----|
 | `EPISODIC_DB` | Database path (SQLite) or DSN (MariaDB) |
 | `EPISODIC_CONFIG` | Instance detection + notification config YAML |
-| `EPISODIC_PALETTE_CONFIG` | Instance colour palette YAML |
+| `EPISODIC_STYLE` | Instance colour palette YAML |
 | `EPISODIC_LANGUAGE` | Dashboard/report language (en, ar, nl, fr, de, hi, zh, es) |
 | `EPISODIC_GEO_DATA` | Geographic reference data (.rds, sf object) |
 | `EPISODIC_GEO_DATA_OVERLAY` | Optional region-outline overlay (.rds) |

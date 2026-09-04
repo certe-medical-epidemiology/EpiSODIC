@@ -1,4 +1,4 @@
-# Check your case data before you hand it to EpiSODIC
+# Check Your Case Data Before You Hand It to EpiSODIC
 
 Runs every check the
 [episodic_case_data](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
@@ -12,7 +12,7 @@ the first call to make when a run did not produce what you expected.
 ## Usage
 
 ``` r
-episodic_check_cases(cases)
+episodic_check_cases(cases, stop_on_problem = FALSE)
 ```
 
 ## Arguments
@@ -21,11 +21,14 @@ episodic_check_cases(cases)
 
   Your case data: a data frame or `tibble` in the shape
   [episodic_case_data](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
-  describes, or a zero-argument function returning one (resolved with
-  [`episodic_resolve_data()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_resolve_data.md)
-  first, so you can check either form). Anything else is itself reported
-  as a problem rather than throwing - the point of this function is that
-  it always answers.
+  describes, or a zero-argument function returning one. Anything else is
+  itself reported as a problem rather than throwing - the point of this
+  function is that it always answers.
+
+- stop_on_problem:
+
+  A [logical](https://rdrr.io/r/base/logical.html) to indicate whether
+  an error must be thrown if any problem is found. Default is `FALSE`.
 
 ## Value
 
@@ -38,14 +41,11 @@ attribute and shown when printing.
 
 ## Details
 
-[`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
-is the same checks with a different answer: it throws an error listing
-the problems that must be fixed, and is what
+Use `episodic_check_cases()` plainly when you want to *look*, or
+`episodic_check_cases(..., stop_on_problem = TRUE)` when you want a
+script to stop. The latter is what
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
-itself calls before a run. Use `episodic_check_cases()` when you want to
-*look*, and
-[`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
-when you want a script to stop.
+itself calls before a run.
 
 ## What it reports
 
@@ -74,9 +74,7 @@ finding, so you can work with it programmatically (see the examples).
 ## See also
 
 [episodic_case_data](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
-for what each column means and which values it accepts;
-[`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
-for the same checks as an error.
+for what each column means and which values it accepts.
 
 ## Examples
 
@@ -91,7 +89,7 @@ episodic_check_cases(cases)
 #>    10 pathogens, 62 institutions, 200 patients
 #> 
 #> v This data set satisfies the case data contract, and is ready for
-#>   episodic_run_cron(). See ?episodic_case_data (`?episodic_case_data()`) for what each
+#>   episodic_run_cron(). See ?episodic_case_data (`?EpiSODIC::episodic_case_data()`) for what each
 #>   column means.
 
 # a typical extract mistake: dates written day-first, sex as words
@@ -126,7 +124,7 @@ report
 #>              that refuses to read.
 #> 
 #> Nothing was changed here. Fix the problems above in your own extract step,
-#> then check again. See ?episodic_case_data (`?episodic_case_data()`) for what each column means
+#> then check again. See ?episodic_case_data (`?EpiSODIC::episodic_case_data()`) for what each column means
 #>   and which values it accepts.
 
 # it is a data frame too

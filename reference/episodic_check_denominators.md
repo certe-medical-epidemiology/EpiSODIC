@@ -1,4 +1,4 @@
-# Check your positivity data before you hand it to EpiSODIC
+# Check Your Positivity Data Before You Hand It to EpiSODIC
 
 The same purpose as
 [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md),

@@ -19,7 +19,7 @@ is, your own extract step is the only place that needs to know about it."><meta 
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.11.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,23 +55,13 @@ any specific laboratory information system: whatever your source system
 is, your own extract step is the only place that needs to know about it.</p>
     </div>
 
-    <div class="section level2">
-    <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="va">episodic_case_columns</span></span>
-<span></span>
-<span><span class="va">episodic_care_lines</span></span>
-<span></span>
-<span><span class="va">episodic_institution_types</span></span>
-<span></span>
-<span><span class="va">episodic_sex_codes</span></span></code></pre></div>
-    </div>
 
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>A data set is the normal case, and the one to reach for. If producing
 the data only makes sense at run time - a live database query, for
 instance - you can pass a zero-argument function returning such a data
-set instead; EpiSODIC accepts either (see <code><a href="episodic_resolve_data.html">episodic_resolve_data()</a></code>).</p>
+set instead; EpiSODIC accepts either.</p>
 <p>Only confirmed-positive results belong here - there is no outcome
 column, so do not include negative results. If you also want a
 denominator (tests performed, for a positivity rate), supply that
@@ -85,15 +75,12 @@ demo - a useful template for the shape your own data should have.</p>
 
 
 
-<p><code>episodic_case_columns</code> lists all sixteen, in order. The set is an
-explicit allow-list: a column outside it, or one missing from it, is
-rejected by <code><a href="episodic_validate_cases.html">episodic_validate_cases()</a></code> rather than silently ignored.
-"Required" means the column must be present; several may be <code>NA</code>
-throughout if your laboratory does not record them.</p>
-<p>Three columns accept only a fixed set of values, given as
-<code>episodic_care_lines</code>, <code>episodic_institution_types</code> and
-<code>episodic_sex_codes</code> so you can map onto them in your extract step
-rather than copying the strings out of this page.</p>
+<table class="table table"><tr><td><strong>Column</strong></td><td><strong>Data type</strong></td><td><strong><code>NA</code> allowed</strong></td><td><strong>Accepts (see below for more info)</strong></td></tr><tr><td><code>source_key</code></td><td><code>character</code></td><td>no</td><td>any string, unique within the data set</td></tr><tr><td><code>lab_number</code></td><td><code>character</code></td><td>no</td><td>any string, your lab's own specimen/culture number</td></tr><tr><td><code>patient_key</code></td><td><code>character</code></td><td>no</td><td>any string, stable per patient</td></tr><tr><td><code>sample_date</code></td><td><code>Date</code> or <code>character</code></td><td>no</td><td>Format <code>YYYY-MM-DD</code> only</td></tr><tr><td><code>receipt_date</code></td><td><code>Date</code> or <code>character</code></td><td>yes</td><td>Format <code>YYYY-MM-DD</code> only</td></tr><tr><td><code>pathogen</code></td><td><code>character</code></td><td>no</td><td>free text, spelled the same every run</td></tr><tr><td><code>care_line</code></td><td><code>character</code></td><td>yes</td><td>one of: <code>"first"</code>, <code>"second"</code>, <code>"third"</code>, <code>"other"</code>, <code>"unknown"</code></td></tr><tr><td><code>institution_key</code></td><td><code>character</code></td><td>no</td><td>any string, stable per institution</td></tr><tr><td><code>institution_display_name</code></td><td><code>character</code></td><td>no</td><td>any string</td></tr><tr><td><code>institution_type</code></td><td><code>character</code></td><td>no</td><td>one of: <code>"hospital"</code>, <code>"ltc_institution"</code>, <code>"gp_municipality"</code>, <code>"ooh_service"</code>, <code>"other"</code></td></tr><tr><td><code>municipality</code></td><td><code>character</code></td><td>yes</td><td>any string</td></tr><tr><td><code>ward</code></td><td><code>character</code></td><td>yes</td><td>any string, spelled the same every run</td></tr><tr><td><code>specialism</code></td><td><code>character</code></td><td>yes</td><td>any string</td></tr><tr><td><code>pc</code></td><td><code>character</code></td><td>yes</td><td>postcode digits as text, or anything that connects to your maps</td></tr><tr><td><code>sex</code></td><td><code>character</code></td><td>yes</td><td>one of: <code>"M"</code>, <code>"F"</code>, <code>"U"</code></td></tr><tr><td><code>age</code></td><td><code>numeric</code></td><td>yes</td><td>whole years, not an age group</td></tr></table><p>Every column is required to be <em>present</em>; "empty allowed" says whether
+its values may be <code>NA</code>. Dates may be a real <code>Date</code> column or ISO 8601
+text, and nothing else: <code>"01-01-2025"</code> is rejected rather than read as
+the first of January in the year 1. Numbers stored as text, dates
+stored as date-times, and text stored as a factor are all common
+extract mistakes, and all named for what they are by the check below.</p>
 <dl><dt><code>source_key</code></dt>
 <dd><p>Character, required, no <code>NA</code>, unique within the
 data set as a whole - across every pathogen and every patient, not
@@ -158,8 +145,8 @@ unconstrained: used verbatim and never matched against a taxonomy,
 since detection has to work for anything a lab can report, viral or
 not. Spelling must be stable across runs - <code>"Influenza A"</code> and
 <code>"influenza a"</code> are two different pathogens as far as detection is
-concerned. Names matching <code>inst/config/pathogen_config.csv</code> pick up
-that pathogen's episode length, incubation window and serial
+concerned. Names matching in the default config (<a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv" class="external-link"><code>inst/config/episodic_default_pathogen_config.csv</code></a>)
+pick up that pathogen's episode length, incubation window and serial
 interval; anything else falls back to the schema defaults (30-day
 episode, 14 case-free days, no Rt, no MEM). The same positive may
 appear under more than one <code>pathogen</code> value where that is
@@ -169,8 +156,7 @@ epidemiologically useful - an ETEC positive reported as both
 <dt><code>care_line</code></dt>
 <dd><p>Character; <code>NA</code> allowed. One of <code>"first"</code>
 (primary care), <code>"second"</code> (secondary care), <code>"third"</code> (tertiary
-care), <code>"other"</code>, or <code>"unknown"</code> - the values in
-<code>episodic_care_lines</code>. Anything else is
+care), <code>"other"</code>, or <code>"unknown"</code>. Anything else is
 rejected. <code>NA</code> is read as <code>"unknown"</code> and stored that way, so you
 need not map missing values yourself: an empty <code>care_line</code>, an
 R <code>NA</code> and a database <code>NULL</code> all mean the same thing here, and the
@@ -190,9 +176,8 @@ human-readable institution name shown in the dashboard.</p></dd>
 <dd><p>Character, required. Exactly one of
 <code>"hospital"</code>, <code>"ltc_institution"</code> (long-term care),
 <code>"gp_municipality"</code>, <code>"ooh_service"</code> (out-of-hours service), or
-<code>"other"</code> - the values in <code>episodic_institution_types</code>. Anything
-else is rejected. This decides how the institution is handled:
-<code>"hospital"</code> institutions
+<code>"other"</code>. Anything else is rejected. This decides how the
+institution is handled: <code>"hospital"</code> institutions
 are monitored as first-class entities and are the only ones
 eligible for patient-day normalisation, while a <code>"gp_municipality"</code>
 is collapsed to its municipality.</p></dd>
@@ -224,28 +209,18 @@ instead.</p></dd>
 
 <dt><code>sex</code></dt>
 <dd><p>Character; <code>NA</code> allowed. Exactly one of <code>"M"</code>, <code>"F"</code>, or
-<code>"U"</code> (unknown) when present - the values in <code>episodic_sex_codes</code>.
+<code>"U"</code> (unknown) when present.
 Anything else is rejected, so map your own coding (<code>1</code>/<code>2</code>,
 <code>"male"</code>/<code>"female"</code>) in your extract step.</p></dd>
 
 <dt><code>age</code></dt>
 <dd><p>Integer; <code>NA</code> allowed. Age in whole years at sampling.
-Not age group - the dashboard bands it itself.</p></dd>
+Not age group - the dashboard bands it itself. Use <code><a href="https://amr-for-r.org/reference/age.html" class="external-link">AMR::age()</a></code> to
+determine the age based on a patient's date of birth and the date
+of specimen receipt at the lab.</p></dd>
 
 
 </dl></div>
-    <div class="section level2">
-    <h2 id="types-at-a-glance">Types at a glance<a class="anchor" aria-label="anchor" href="#types-at-a-glance"></a></h2>
-
-
-
-<table class="table table"><tr><td><strong>Column</strong></td><td><strong>Type</strong></td><td><strong>Empty allowed</strong></td><td><strong>Accepts</strong></td></tr><tr><td><code>source_key</code></td><td>character</td><td>no</td><td>any string, unique within the data set</td></tr><tr><td><code>lab_number</code></td><td>character</td><td>no</td><td>any string, your lab's own specimen/culture number</td></tr><tr><td><code>patient_key</code></td><td>character</td><td>no</td><td>any string, stable per patient</td></tr><tr><td><code>sample_date</code></td><td><code>Date</code> or character</td><td>no</td><td><code>YYYY-MM-DD</code> only</td></tr><tr><td><code>receipt_date</code></td><td><code>Date</code> or character</td><td>yes</td><td><code>YYYY-MM-DD</code> only</td></tr><tr><td><code>pathogen</code></td><td>character</td><td>no</td><td>free text, spelled the same every run</td></tr><tr><td><code>care_line</code></td><td>character</td><td>yes (read as <code>"unknown"</code>)</td><td><code>episodic_care_lines</code></td></tr><tr><td><code>institution_key</code></td><td>character</td><td>no</td><td>any string, stable per institution</td></tr><tr><td><code>institution_display_name</code></td><td>character</td><td>no</td><td>any string</td></tr><tr><td><code>institution_type</code></td><td>character</td><td>no</td><td><code>episodic_institution_types</code></td></tr><tr><td><code>municipality</code></td><td>character</td><td>yes</td><td>any string</td></tr><tr><td><code>ward</code></td><td>character</td><td>yes</td><td>any string, spelled the same every run</td></tr><tr><td><code>specialism</code></td><td>character</td><td>yes</td><td>any string</td></tr><tr><td><code>pc</code></td><td>character</td><td>yes</td><td>four digits as text, for the shipped map</td></tr><tr><td><code>sex</code></td><td>character</td><td>yes</td><td><code>episodic_sex_codes</code></td></tr><tr><td><code>age</code></td><td>numeric</td><td>yes</td><td>whole years, not an age group</td></tr></table><p>Every column is required to be <em>present</em>; "empty allowed" says whether
-its values may be <code>NA</code>. Dates may be a real <code>Date</code> column or ISO 8601
-text, and nothing else: <code>"01-01-2025"</code> is rejected rather than read as
-the first of January in the year 1. Numbers stored as text, dates
-stored as date-times, and text stored as a factor are all common
-extract mistakes, and all named for what they are by the check below.</p>
-    </div>
     <div class="section level2">
     <h2 id="check-your-data-before-you-run-anything">Check your data before you run anything<a class="anchor" aria-label="anchor" href="#check-your-data-before-you-run-anything"></a></h2>
 
@@ -261,8 +236,8 @@ what to do about each:</p>
 ways (two streams instead of one), no <code>ward</code> on any hospital row (no
 ward-level detection), a <code>patient_key</code> that never repeats (no
 deduplication), postcodes the map cannot place, sample dates in the
-future. <code><a href="episodic_validate_cases.html">episodic_validate_cases()</a></code> runs the same checks but throws,
-for use in a script; <code><a href="episodic_run_cron.html">episodic_run_cron()</a></code> runs it for you before every
+future. <code>episodic_check_cases(..., stop_on_problem = TRUE)</code> runs the same checks but throws an error,
+for use in a script. <code><a href="episodic_run_cron.html">episodic_run_cron()</a></code> runs that before every
 run, and refuses to start on data it cannot use, naming what to fix.</p>
     </div>
 
@@ -296,23 +271,9 @@ run, and refuses to start on data it cannot use, naming what to fix.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    1 pathogen, 1 institution, 1 patient</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> v This data set satisfies the case data contract, and is ready for</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   episodic_run_cron(). See ?episodic_case_data (`?episodic_case_data()`) for what each</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   episodic_run_cron(). See ?episodic_case_data (`?EpiSODIC::episodic_case_data()`) for what each</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   column means.</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">episodic_case_columns</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "source_key"               "lab_number"              </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [3] "patient_key"              "sample_date"             </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [5] "receipt_date"             "pathogen"                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "care_line"                "institution_key"         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [9] "institution_display_name" "institution_type"        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11] "municipality"             "ward"                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13] "specialism"               "pc"                      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [15] "sex"                      "age"                     </span>
-<span class="r-in"><span><span class="va">episodic_care_lines</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "first"   "second"  "third"   "other"   "unknown"</span>
-<span class="r-in"><span><span class="va">episodic_institution_types</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "hospital"        "ltc_institution" "gp_municipality" "ooh_service"    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [5] "other"          </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

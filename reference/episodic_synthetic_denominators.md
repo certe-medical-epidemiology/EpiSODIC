@@ -1,4 +1,4 @@
-# Add a testing-volume (positivity) feed
+# Add a Testing-Volume (Positivity) Feed
 
 Case counts alone cannot distinguish a rise in infections from a rise in
 testing. If you can supply how many tests were performed - even as a

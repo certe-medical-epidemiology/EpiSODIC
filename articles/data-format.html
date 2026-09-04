@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.11.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -87,7 +87,7 @@ laboratory.</p>
 for. If producing the data only makes sense at run time (e.g. a live
 database query), a zero-argument function returning one is accepted just
 as well - EpiSODIC resolves either
-(<code><a href="../reference/episodic_resolve_data.html">episodic_resolve_data()</a></code>).</p>
+(<code>episodic_resolve_data()</code>).</p>
 <p><strong>Extract a recent window, not your full history.</strong> A
 scheduled extract should cover only the last few weeks, with some
 overlap (two weeks is a reasonable default) as a safety margin against a
@@ -344,15 +344,15 @@ cases are counted today.</p>
 </h3>
 <p>EpiSODIC collapses positives for the same patient and pathogen into
 one case per episode, using the episode length configured per pathogen
-in <code>inst/config/pathogen_config.csv</code> - and it does this
-correctly across runs, not just within one extract: each run checks
-incoming positives against the most recent episode already on file for
-that patient/pathogen, so a recurring extract only has to cover a recent
-window (with a couple of weeks of overlap, so nothing slips through if a
-run is ever missed) rather than a patient’s full history every time.
-Re-sending a row EpiSODIC has already seen (same
-<code>source_key</code>) is always safe regardless - it is simply a
-no-op.</p>
+in the shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv" class="external-link"><code>inst/config/episodic_default_pathogen_config.csv</code></a>
+- and it does this correctly across runs, not just within one extract:
+each run checks incoming positives against the most recent episode
+already on file for that patient/pathogen, so a recurring extract only
+has to cover a recent window (with a couple of weeks of overlap, so
+nothing slips through if a run is ever missed) rather than a patient’s
+full history every time. Re-sending a row EpiSODIC has already seen
+(same <code>source_key</code>) is always safe regardless - it is simply
+a no-op.</p>
 <p><strong>Do not send negative results here.</strong> This feed drives
 every detector; it is deliberately positives-only so an operator never
 has to ship a multi-year, per-test linelist just to run detection.</p>
@@ -405,12 +405,14 @@ one pathogen spelled two ways (two streams instead of one), no
 to group on), a <code>patient_key</code> that never repeats (nothing for
 deduplication to do), postcodes the map cannot place, sample dates in
 the future.</p>
-<p><code><a href="../reference/episodic_validate_cases.html">episodic_validate_cases()</a></code> runs the same checks and
-throws instead, for use in a script. <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code>
-runs it for you before every run: data it cannot use stops the run with
-the same message, before anything is written, and that message is
-recorded against the run so it is also visible in the dashboard’s status
-strip and activity screen. A failed run never passes in silence.</p>
+<p>Setting
+<code>episodic_check_cases(cases, stop_on_problem = TRUE)</code> makes
+the checks return an error if there is at least one problem, for use in
+a script. <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> runs that before every run:
+data it cannot use stops the run with the same message, before anything
+is written, and that message is recorded against the run so it is also
+visible in the dashboard’s status strip and activity screen. A failed
+run never passes in silence.</p>
 <p>The optional feeds below have the same non-throwing check, over their
 own contract: <code><a href="../reference/episodic_check_denominators.html">episodic_check_denominators()</a></code> for positivity
 metadata, <code><a href="../reference/episodic_check_institution_activity.html">episodic_check_institution_activity()</a></code> for
@@ -541,7 +543,7 @@ set - the rest of the dashboard works the same regardless.</p>
 <code>sf</code> package and a geographic reference dataset are
 available; otherwise it falls back to a plain bar breakdown by PC value,
 exactly as if this feature did not exist. EpiSODIC ships a Dutch
-postcode default (<code>inst/extdata/geo_postcodes4_nl.rds</code>,
+postcode default (<a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/extdata/geo_postcodes4_nl.rds" class="external-link"><code>inst/extdata/geo_postcodes4_nl.rds</code></a>),
 geometry only, sourced from <code>certegis</code> under the same GPL-2
 licence - see <code>data-raw/ geo_postcodes4_nl.R</code> for provenance)
 purely as a working example: point <code>EPISODIC_GEO_DATA</code> at

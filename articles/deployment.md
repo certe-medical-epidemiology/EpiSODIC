@@ -27,8 +27,7 @@ episodic_run_cron(
 data frame or tibble, as above - that is what these arguments are
 written for. If producing the data only makes sense at run time (a live
 database query, for instance), a zero-argument function returning one is
-accepted just as well - see
-[`episodic_resolve_data()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_resolve_data.md).
+accepted just as well - see `episodic_resolve_data()`.
 [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
 documents the exact columns each of the four data sources (cases,
 positivity metadata, institution activity, geographic reference data)
@@ -49,7 +48,7 @@ Check your extract against that contract before you schedule anything:
 ``` r
 
 episodic_check_cases(cases)
-episodic_check_denominators(denominators)              # if you supply positivity data
+episodic_check_denominators(denominators)                  # if you supply positivity data
 episodic_check_institution_activity(institution_activity)  # if you supply activity data
 ```
 
@@ -58,10 +57,11 @@ wrong with the data at once - the column, the number of rows affected,
 which rows those are, the offending values, and what to do about each -
 along with what is merely worth a look (one pathogen spelled two ways,
 no `ward` on any hospital row, a `patient_key` that never repeats).
-[`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
-runs the same checks as
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
-and throws instead, for a script that should stop.
+Setting `episodic_check_cases(cases, stop_on_problem = TRUE)` makes the
+checks return an error if there is at least one problem, for use in a
+script.
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+runs that before every run.
 
 Schedule
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
@@ -80,18 +80,19 @@ learns why without going near a log file.
 
 Detection thresholds, baseline lengths, `same_place` rules and MEM
 seasons are *operational data*, not software, and are never committed to
-this repository. `inst/config/default.yaml` ships the documented
-defaults; point `EPISODIC_CONFIG` at a YAML file with only the keys you
-want to override, and it is merged key-by-key on top of the shipped
-defaults. Every run records the resolved configuration’s hash and full
-snapshot on `episodic_detection_run`, so the exact parameters behind any
-past result stay recoverable from the database alone, regardless of what
-has since changed on disk.
+this repository.
+[`inst/config/episodic_default_config.yaml`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml)
+ships the documented defaults; point `EPISODIC_CONFIG` at a YAML file
+with only the keys you want to override, and it is merged key-by-key on
+top of the shipped defaults. Every run records the resolved
+configuration’s hash and full snapshot on `episodic_detection_run`, so
+the exact parameters behind any past result stay recoverable from the
+database alone, regardless of what has since changed on disk.
 
-The UI’s colour palette works the same way, deliberately through a
-*separate* environment variable (`EPISODIC_PALETTE_CONFIG`): colour is a
-display concern, never part of the detection-reproducibility guarantee
-`EPISODIC_CONFIG`’s hash provides.
+The UI’s colour palette and typography work the same way, deliberately
+through a *separate* environment variable (`EPISODIC_STYLE`): colour and
+font choice are display concerns, never part of the
+detection-reproducibility guarantee `EPISODIC_CONFIG`’s hash provides.
 
 ## Accounts
 
@@ -100,7 +101,7 @@ anyone who reaches it. Signing in unlocks patient-level detail (the line
 list) for both roles below. Accounts are never created by users
 themselves; either an `is_admin` account provisions them from the in-app
 Settings screen, or whoever administers the database runs
-[`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md)
+[`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
 at the console.
 
 ### Closing the app to anonymous visitors
@@ -153,7 +154,7 @@ the exact configuration that produced it (see “Configuration” above).
 
 Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")  # or pass db_path explicitly below
 
-episodic_provision_user(
+episodic_add_user(
   username = "jdoe",
   role = "epidemiologist",  # or "viewer"
   full_name = "Dr Jane Doe",
@@ -162,18 +163,17 @@ episodic_provision_user(
 )
 ```
 
-[`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md)
+[`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
 takes `db_path` (defaulting to `EPISODIC_DB`, see
 [`vignette("environment-variables")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md)),
 not an open connection - it opens and closes its own via
 [`episodic_db_open()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_open.md),
-so provisioning an account is one call at the console. The account is
-created with `must_change = TRUE`, so its first real sign-in forces the
-holder to set their own password before continuing. Pass
-`is_admin = TRUE` to give the new account Settings-screen access as
-well - you need at least one such account to manage anything from the
-dashboard itself; every account after that can be provisioned either
-way.
+so adding an account is one call at the console. The account is created
+with `must_change = TRUE`, so its first real sign-in forces the holder
+to set their own password before continuing. Pass `is_admin = TRUE` to
+give the new account Settings-screen access as well - you need at least
+one such account to manage anything from the dashboard itself; every
+account after that can be added either way.
 
 ## Where the database lives
 
@@ -205,11 +205,13 @@ Sys.setenv(EPISODIC_DB = episodic_db_dsn_mariadb(
 Connecting to MariaDB/MySQL requires the `RMariaDB` package
 (`install.packages("RMariaDB")`); it is a `Suggests` dependency, not
 installed automatically, so SQLite-only deployments never need it. The
-schema (`inst/sql/schema.sql`) is written once, in SQLite syntax, and
-adapted at load time for the handful of tokens that differ under
-MariaDB/MySQL - there is no separate schema file to keep in sync.
-`CHECK` constraints are enforced from MariaDB 10.2.1 / MySQL 8.0.16
-onwards; on older servers they are accepted but silently ignored.
+schema
+([`inst/sql/schema.sql`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/sql/schema.sql))
+is written once, in SQLite syntax, and adapted at load time for the
+handful of tokens that differ under MariaDB/MySQL - there is no separate
+schema file to keep in sync. `CHECK` constraints are enforced from
+MariaDB 10.2.1 / MySQL 8.0.16 onwards; on older servers they are
+accepted but silently ignored.
 
 ## Running the app
 
@@ -221,7 +223,7 @@ episodic_run_app()
 
 [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md)’s
 `db_path` argument defaults to `EPISODIC_DB` exactly like
-[`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md)’s
+[`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)’s
 does, so a systemd unit or Docker container can configure everything
 through environment variables alone, with no R code to edit between
 instances.
@@ -229,16 +231,18 @@ instances.
 ## Custom report templates
 
 [`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md)
-renders `inst/report/cluster_report.qmd` (embedded as self-contained
-HTML via Quarto) unless `EPISODIC_QUARTO_REPORT` points at an operator’s
-own `.qmd` file, in which case that is used instead - for an
-organisation that wants its own letterhead, section order, or house
-style. A custom template only needs to `readRDS(params$data_path)` and
-read from the same list the shipped one does (`obj`, `epi_curve`,
-`trend`, `linelist`, `timeline`, `similar`, `small_count_threshold`,
-`rendered_at`, `lang`, `package_version`); see the shipped template for
-the exact shape, including how it calls
-`episodic_tr(..., lang = d$lang)` for a bilingual report.
+renders the shipped
+[`inst/report/episodic_default_report.qmd`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd)
+(embedded as self-contained HTML via Quarto) unless
+`EPISODIC_QUARTO_REPORT` points at an operator’s own `.qmd` file, in
+which case that is used instead - for an organisation that wants its own
+letterhead, section order, or house style. A custom template only needs
+to `readRDS(params$data_path)` and read from the same list the shipped
+one does (`obj`, `epi_curve`, `trend`, `linelist`, `timeline`,
+`similar`, `small_count_threshold`, `rendered_at`, `lang`,
+`package_version`); see the shipped template for the exact shape,
+including how it calls `episodic_tr(..., lang = d$lang)` for a bilingual
+report.
 
 ## Optional pieces, and their fallbacks
 
@@ -263,11 +267,15 @@ reads
 There is no fallback for either, by design - see the DESCRIPTION for the
 published methods this package is built on.
 
-House-style colours are not an optional-dependency concern at all: the
-app always ships an organisation-neutral default palette
-(`inst/config/palette.yaml`), overridable per instance by pointing
-`EPISODIC_PALETTE_CONFIG` at an organisation’s own YAML file with its
-real colours - no package dependency involved either way.
+House-style colours and typography are not an optional-dependency
+concern at all: the app always ships an organisation-neutral default
+palette
+([`inst/config/episodic_default_style.yaml`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_style.yaml)),
+overridable per instance by pointing `EPISODIC_STYLE` at an
+organisation’s own YAML file with its real colours and font - no package
+dependency involved either way. A webfont named there still needs
+delivering (self-hosted, or linked from its own provider), typically via
+a custom `www/episodic.css`; a system font needs no such link at all.
 
 None of these are required to run the demo, the detection engine, or the
 interface - each is additive.

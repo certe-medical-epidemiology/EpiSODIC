@@ -1,4 +1,4 @@
-# Connect to an existing EpiSODIC database
+# Connect to an Existing EpiSODIC Database
 
 Opens a connection to a database you have already set up with
 [`episodic_db_create()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_create.md),

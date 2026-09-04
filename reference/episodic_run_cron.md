@@ -1,4 +1,4 @@
-# Run one surveillance detection cycle
+# Run One Surveillance Detection Cycle
 
 This is the function you schedule to run regularly (e.g. daily, via
 cron): it pulls in new laboratory data, checks every monitored stream
@@ -53,8 +53,7 @@ episodic_run_cron(
 
 - episodic_config_path:
 
-  Passed to
-  [`episodic_config_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_resolve.md).
+  The config path.
 
 - db_path:
 
@@ -108,13 +107,10 @@ for the required columns and their allowed values), and optionally
 `denominators` and `institution_activity` for testing volume and
 hospital activity. A data set is the normal case; if producing the data
 only makes sense at run time (a live database query, for instance), a
-zero-argument function returning one is accepted just as well - see
-[`episodic_resolve_data()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_resolve_data.md).
+zero-argument function returning one is accepted just as well.
 
-The exact detection settings used are recorded with the run (see
-[`episodic_config_hash()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_hash.md)),
-so any past result can always be traced back to the configuration that
-produced it.
+The exact detection settings used are recorded with the run, so any past
+result can always be traced back to the configuration that produced it.
 
 So is what each feed delivered. Before the run writes anything, your
 case data goes through
@@ -152,11 +148,10 @@ It also reports what is merely worth a look: one pathogen spelled two
 ways (two streams instead of one), no `ward` on any hospital row (no
 ward-level detection), a `patient_key` that never repeats (no
 deduplication), postcodes the map cannot place, sample dates in the
-future.
-[`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
-runs the same checks but throws, for use in a script;
-`episodic_run_cron()` runs it for you before every run, and refuses to
-start on data it cannot use, naming what to fix.
+future. `episodic_check_cases(..., stop_on_problem = TRUE)` runs the
+same checks but throws an error, for use in a script.
+`episodic_run_cron()` runs that before every run, and refuses to start
+on data it cannot use, naming what to fix.
 
 ## See also
 
@@ -175,33 +170,33 @@ cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
 run_id <- episodic_run_cron(db_path = db_path, cases = cases)
-#> 2026-09-03 20:21:01.846 | episodic_run_cron() starting (host=runnervmejwal, account=runner)
-#> 2026-09-03 20:21:01.846 | Resolving configuration
-#> 2026-09-03 20:21:01.849 | Configuration resolved (hash f198adfd3d37)
-#> 2026-09-03 20:21:01.850 | Connecting to database
-#> 2026-09-03 20:21:01.850 | No existing database found - creating one
-#> 2026-09-03 20:21:01.861 | Database connected (dialect: sqlite)
-#> 2026-09-03 20:21:01.863 | Run 1 started
-#> 2026-09-03 20:21:01.863 | Resolving and checking case data
-#> 2026-09-03 20:21:01.872 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
-#> 2026-09-03 20:21:01.872 | Beginning transaction
-#> 2026-09-03 20:21:01.873 | Loading pathogen configuration
-#> 2026-09-03 20:21:01.874 | Pathogen configuration loaded (23 pathogen(s))
-#> 2026-09-03 20:21:01.875 | Loading case data into the database
-#> 2026-09-03 20:21:01.945 | Case data loaded: supplied=419, deduplicated=410, inserted=410
-#> 2026-09-03 20:21:01.945 | Fetching all known cases and institutions
-#> 2026-09-03 20:21:01.947 | Enumerating lattice streams
-#> 2026-09-03 20:21:01.972 | Running same-place detector
-#> 2026-09-03 20:21:02.014 | Same-place detector found 4 detection(s)
-#> 2026-09-03 20:21:02.014 | Running rare-trigger detector
-#> 2026-09-03 20:21:02.017 | Rare-trigger detector found 1 detection(s)
-#> 2026-09-03 20:21:02.018 | Farrington owes 8 week(s) this run
-#> 2026-09-03 20:21:02.019 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
-#> 2026-09-03 20:21:02.432 | Stream reconciliation done: 5 detection(s), 5 new signal(s), 0 updated signal(s)
-#> 2026-09-03 20:21:02.432 | Suppressing lattice
-#> 2026-09-03 20:21:02.436 | Committing transaction
-#> 2026-09-03 20:21:02.438 | Finishing run 1 (status: success)
-#> 2026-09-03 20:21:02.440 | episodic_run_cron() finished in 0.6s (status: success)
+#> 2026-09-04 18:08:44.991 | episodic_run_cron() starting (host=runnervmejwal, account=runner)
+#> 2026-09-04 18:08:44.992 | Resolving configuration
+#> 2026-09-04 18:08:44.996 | Configuration resolved (hash f198adfd3d37)
+#> 2026-09-04 18:08:44.996 | Connecting to database
+#> 2026-09-04 18:08:44.996 | No existing database found - creating one
+#> 2026-09-04 18:08:45.013 | Database connected (dialect: sqlite)
+#> 2026-09-04 18:08:45.014 | Run 1 started
+#> 2026-09-04 18:08:45.015 | Resolving and checking case data
+#> 2026-09-04 18:08:45.028 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
+#> 2026-09-04 18:08:45.029 | Beginning transaction
+#> 2026-09-04 18:08:45.029 | Loading pathogen configuration
+#> 2026-09-04 18:08:45.032 | Pathogen configuration loaded (23 pathogen(s))
+#> 2026-09-04 18:08:45.032 | Loading case data into the database
+#> 2026-09-04 18:08:45.120 | Case data loaded: supplied=419, deduplicated=410, inserted=410
+#> 2026-09-04 18:08:45.121 | Fetching all known cases and institutions
+#> 2026-09-04 18:08:45.123 | Enumerating lattice streams
+#> 2026-09-04 18:08:45.157 | Running same-place detector
+#> 2026-09-04 18:08:45.228 | Same-place detector found 4 detection(s)
+#> 2026-09-04 18:08:45.229 | Running rare-trigger detector
+#> 2026-09-04 18:08:45.232 | Rare-trigger detector found 1 detection(s)
+#> 2026-09-04 18:08:45.232 | Farrington owes 8 week(s) this run
+#> 2026-09-04 18:08:45.234 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
+#> 2026-09-04 18:08:45.785 | Stream reconciliation done: 5 detection(s), 5 new signal(s), 0 updated signal(s)
+#> 2026-09-04 18:08:45.786 | Suppressing lattice
+#> 2026-09-04 18:08:45.790 | Committing transaction
+#> 2026-09-04 18:08:45.793 | Finishing run 1 (status: success)
+#> 2026-09-04 18:08:45.796 | episodic_run_cron() finished in 0.8s (status: success)
 file.remove(db_path)
 #> [1] TRUE
 # }

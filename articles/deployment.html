@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.11.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -89,7 +89,7 @@ laboratory rather than tied to one:</p>
 tibble, as above - that is what these arguments are written for. If
 producing the data only makes sense at run time (a live database query,
 for instance), a zero-argument function returning one is accepted just
-as well - see <code><a href="../reference/episodic_resolve_data.html">episodic_resolve_data()</a></code>.
+as well - see <code>episodic_resolve_data()</code>.
 <code><a href="../articles/data-format.html">vignette("data-format")</a></code> documents the exact columns each of
 the four data sources (cases, positivity metadata, institution activity,
 geographic reference data) expects; only cases are mandatory.</p>
@@ -107,16 +107,18 @@ twice.</p>
 anything:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/episodic_check_cases.html">episodic_check_cases</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/episodic_check_denominators.html">episodic_check_denominators</a></span><span class="op">(</span><span class="va">denominators</span><span class="op">)</span>              <span class="co"># if you supply positivity data</span></span>
+<span><span class="fu"><a href="../reference/episodic_check_denominators.html">episodic_check_denominators</a></span><span class="op">(</span><span class="va">denominators</span><span class="op">)</span>                  <span class="co"># if you supply positivity data</span></span>
 <span><span class="fu"><a href="../reference/episodic_check_institution_activity.html">episodic_check_institution_activity</a></span><span class="op">(</span><span class="va">institution_activity</span><span class="op">)</span>  <span class="co"># if you supply activity data</span></span></code></pre></div>
 <p>All three need no database and change nothing, and report everything
 wrong with the data at once - the column, the number of rows affected,
 which rows those are, the offending values, and what to do about each -
 along with what is merely worth a look (one pathogen spelled two ways,
 no <code>ward</code> on any hospital row, a <code>patient_key</code>
-that never repeats). <code><a href="../reference/episodic_validate_cases.html">episodic_validate_cases()</a></code> runs the
-same checks as <code><a href="../reference/episodic_check_cases.html">episodic_check_cases()</a></code> and throws instead,
-for a script that should stop.</p>
+that never repeats). Setting
+<code>episodic_check_cases(cases, stop_on_problem = TRUE)</code> makes
+the checks return an error if there is at least one problem, for use in
+a script. <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> runs that before every
+run.</p>
 <p>Schedule <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> however your environment
 normally schedules R jobs (cron, a Windows scheduled task, a CI
 pipeline) - there is nothing EpiSODIC-specific about the scheduling
@@ -134,18 +136,18 @@ a log file.</p>
 </h2>
 <p>Detection thresholds, baseline lengths, <code>same_place</code> rules
 and MEM seasons are <em>operational data</em>, not software, and are
-never committed to this repository.
-<code>inst/config/default.yaml</code> ships the documented defaults;
-point <code>EPISODIC_CONFIG</code> at a YAML file with only the keys you
-want to override, and it is merged key-by-key on top of the shipped
-defaults. Every run records the resolved configuration’s hash and full
-snapshot on <code>episodic_detection_run</code>, so the exact parameters
-behind any past result stay recoverable from the database alone,
-regardless of what has since changed on disk.</p>
-<p>The UI’s colour palette works the same way, deliberately through a
-<em>separate</em> environment variable
-(<code>EPISODIC_PALETTE_CONFIG</code>): colour is a display concern,
-never part of the detection-reproducibility guarantee
+never committed to this repository. <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml" class="external-link"><code>inst/config/episodic_default_config.yaml</code></a>
+ships the documented defaults; point <code>EPISODIC_CONFIG</code> at a
+YAML file with only the keys you want to override, and it is merged
+key-by-key on top of the shipped defaults. Every run records the
+resolved configuration’s hash and full snapshot on
+<code>episodic_detection_run</code>, so the exact parameters behind any
+past result stay recoverable from the database alone, regardless of what
+has since changed on disk.</p>
+<p>The UI’s colour palette and typography work the same way,
+deliberately through a <em>separate</em> environment variable
+(<code>EPISODIC_STYLE</code>): colour and font choice are display
+concerns, never part of the detection-reproducibility guarantee
 <code>EPISODIC_CONFIG</code>’s hash provides.</p>
 </div>
 <div class="section level2">
@@ -156,7 +158,7 @@ anyone who reaches it. Signing in unlocks patient-level detail (the line
 list) for both roles below. Accounts are never created by users
 themselves; either an <code>is_admin</code> account provisions them from
 the in-app Settings screen, or whoever administers the database runs
-<code><a href="../reference/episodic_provision_user.html">episodic_provision_user()</a></code> at the console.</p>
+<code><a href="../reference/episodic_add_user.html">episodic_add_user()</a></code> at the console.</p>
 <div class="section level3">
 <h3 id="closing-the-app-to-anonymous-visitors">Closing the app to anonymous visitors<a class="anchor" aria-label="anchor" href="#closing-the-app-to-anonymous-visitors"></a>
 </h3>
@@ -206,24 +208,24 @@ produced it (see “Configuration” above).</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span>  <span class="co"># or pass db_path explicitly below</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/episodic_provision_user.html">episodic_provision_user</a></span><span class="op">(</span></span>
+<span><span class="fu"><a href="../reference/episodic_add_user.html">episodic_add_user</a></span><span class="op">(</span></span>
 <span>  username <span class="op">=</span> <span class="st">"jdoe"</span>,</span>
 <span>  role <span class="op">=</span> <span class="st">"epidemiologist"</span>,  <span class="co"># or "viewer"</span></span>
 <span>  full_name <span class="op">=</span> <span class="st">"Dr Jane Doe"</span>,</span>
 <span>  email <span class="op">=</span> <span class="st">"j.doe@example.org"</span>,</span>
 <span>  password <span class="op">=</span> <span class="st">"a-temporary-password"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="../reference/episodic_provision_user.html">episodic_provision_user()</a></code> takes <code>db_path</code>
+<p><code><a href="../reference/episodic_add_user.html">episodic_add_user()</a></code> takes <code>db_path</code>
 (defaulting to <code>EPISODIC_DB</code>, see
 <code><a href="../articles/environment-variables.html">vignette("environment-variables")</a></code>), not an open connection
 - it opens and closes its own via <code><a href="../reference/episodic_db_open.html">episodic_db_open()</a></code>, so
-provisioning an account is one call at the console. The account is
-created with <code>must_change = TRUE</code>, so its first real sign-in
-forces the holder to set their own password before continuing. Pass
+adding an account is one call at the console. The account is created
+with <code>must_change = TRUE</code>, so its first real sign-in forces
+the holder to set their own password before continuing. Pass
 <code>is_admin = TRUE</code> to give the new account Settings-screen
 access as well - you need at least one such account to manage anything
-from the dashboard itself; every account after that can be provisioned
-either way.</p>
+from the dashboard itself; every account after that can be added either
+way.</p>
 </div>
 </div>
 <div class="section level2">
@@ -256,13 +258,12 @@ query work identically against either backend.</li>
 <p>Connecting to MariaDB/MySQL requires the <code>RMariaDB</code>
 package (<code>install.packages("RMariaDB")</code>); it is a
 <code>Suggests</code> dependency, not installed automatically, so
-SQLite-only deployments never need it. The schema
-(<code>inst/sql/schema.sql</code>) is written once, in SQLite syntax,
-and adapted at load time for the handful of tokens that differ under
-MariaDB/MySQL - there is no separate schema file to keep in sync.
-<code>CHECK</code> constraints are enforced from MariaDB 10.2.1 / MySQL
-8.0.16 onwards; on older servers they are accepted but silently
-ignored.</p>
+SQLite-only deployments never need it. The schema (<a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/sql/schema.sql" class="external-link"><code>inst/sql/schema.sql</code></a>)
+is written once, in SQLite syntax, and adapted at load time for the
+handful of tokens that differ under MariaDB/MySQL - there is no separate
+schema file to keep in sync. <code>CHECK</code> constraints are enforced
+from MariaDB 10.2.1 / MySQL 8.0.16 onwards; on older servers they are
+accepted but silently ignored.</p>
 </div>
 <div class="section level2">
 <h2 id="running-the-app">Running the app<a class="anchor" aria-label="anchor" href="#running-the-app"></a>
@@ -272,19 +273,19 @@ ignored.</p>
 <span><span class="fu"><a href="../reference/episodic_run_app.html">episodic_run_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/episodic_run_app.html">episodic_run_app()</a></code>’s <code>db_path</code> argument
 defaults to <code>EPISODIC_DB</code> exactly like
-<code><a href="../reference/episodic_provision_user.html">episodic_provision_user()</a></code>’s does, so a systemd unit or
-Docker container can configure everything through environment variables
-alone, with no R code to edit between instances.</p>
+<code><a href="../reference/episodic_add_user.html">episodic_add_user()</a></code>’s does, so a systemd unit or Docker
+container can configure everything through environment variables alone,
+with no R code to edit between instances.</p>
 </div>
 <div class="section level2">
 <h2 id="custom-report-templates">Custom report templates<a class="anchor" aria-label="anchor" href="#custom-report-templates"></a>
 </h2>
-<p><code><a href="../reference/episodic_report_render.html">episodic_report_render()</a></code> renders
-<code>inst/report/cluster_report.qmd</code> (embedded as self-contained
-HTML via Quarto) unless <code>EPISODIC_QUARTO_REPORT</code> points at an
-operator’s own <code>.qmd</code> file, in which case that is used
-instead - for an organisation that wants its own letterhead, section
-order, or house style. A custom template only needs to
+<p><code><a href="../reference/episodic_report_render.html">episodic_report_render()</a></code> renders the shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd" class="external-link"><code>inst/report/episodic_default_report.qmd</code></a>
+(embedded as self-contained HTML via Quarto) unless
+<code>EPISODIC_QUARTO_REPORT</code> points at an operator’s own
+<code>.qmd</code> file, in which case that is used instead - for an
+organisation that wants its own letterhead, section order, or house
+style. A custom template only needs to
 <code>readRDS(params$data_path)</code> and read from the same list the
 shipped one does (<code>obj</code>, <code>epi_curve</code>,
 <code>trend</code>, <code>linelist</code>, <code>timeline</code>,
@@ -350,12 +351,15 @@ italicisation (<code><a href="../reference/episodic_ui_italicise_taxon.html">epi
 <code><a href="https://amr-for-r.org/reference/microorganisms.html" class="external-link">AMR::microorganisms</a></code>. There is no fallback for either, by
 design - see the DESCRIPTION for the published methods this package is
 built on.</p>
-<p>House-style colours are not an optional-dependency concern at all:
-the app always ships an organisation-neutral default palette
-(<code>inst/config/palette.yaml</code>), overridable per instance by
-pointing <code>EPISODIC_PALETTE_CONFIG</code> at an organisation’s own
-YAML file with its real colours - no package dependency involved either
-way.</p>
+<p>House-style colours and typography are not an optional-dependency
+concern at all: the app always ships an organisation-neutral default
+palette (<a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_style.yaml" class="external-link"><code>inst/config/episodic_default_style.yaml</code></a>),
+overridable per instance by pointing <code>EPISODIC_STYLE</code> at an
+organisation’s own YAML file with its real colours and font - no package
+dependency involved either way. A webfont named there still needs
+delivering (self-hosted, or linked from its own provider), typically via
+a custom <code>www/episodic.css</code>; a system font needs no such link
+at all.</p>
 <p>None of these are required to run the demo, the detection engine, or
 the interface - each is additive.</p>
 </div>

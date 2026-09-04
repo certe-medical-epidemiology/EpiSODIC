@@ -37,10 +37,12 @@ on - which is what makes suppression (below) meaningful.
   individually too sparse for a statistical baseline, and it also runs
   alongside Farrington at hospitals, where it can fire first on a fast
   cluster before a weekly aggregation has produced a point to test.
-- **`rare_trigger`** - a curated list of organisms (in
-  `inst/config/default.yaml`) where a single occurrence anywhere is
-  itself the signal - certain notifiable or exceptionally rare pathogens
-  do not need a second case to warrant a look.
+- **`rare_trigger`** - a curated list of organisms (default is the
+  shipped
+  [`inst/config/episodic_default_config.yaml`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml))
+  where a single occurrence anywhere is itself the signal - certain
+  notifiable or exceptionally rare pathogens do not need a second case
+  to warrant a look.
 - **`mem`** (the `mem` package’s Moving Epidemic Method) - for organisms
   flagged `mem_applicable` (influenza, RSV), answering “has the epidemic
   started” rather than “are counts elevated”, with pre-/post-epidemic

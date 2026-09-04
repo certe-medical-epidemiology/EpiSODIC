@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.11.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -135,9 +135,9 @@
 </div>
 <div class="section level3">
 <h3 id="configuration">Configuration<a class="anchor" aria-label="anchor" href="#configuration"></a></h3>
-<p>YAML-based, with recursive merge. <code>inst/config/default.yaml</code> ships documented defaults. An operator’s instance config (pointed at by <code>EPISODIC_CONFIG</code>) overlays key-by-key. The resolved configuration is hashed (SHA-1 over canonical JSON) and stored on every run for reproducibility. <code>notifications</code> and <code>access</code> are deliberately excluded from the hash (see <code>episodic_config_unhashed_sections</code>): both govern how the instance is operated rather than what a run computes, and notification settings additionally contain secrets that must never reach <code>config_snapshot</code>.</p>
+<p>YAML-based, with recursive merge. <code>inst/config/episodic_default_config.yaml</code> ships documented defaults. An operator’s instance config (pointed at by <code>EPISODIC_CONFIG</code>) overlays key-by-key. The resolved configuration is hashed (SHA-1 over canonical JSON) and stored on every run for reproducibility. <code>notifications</code> and <code>access</code> are deliberately excluded from the hash (see <code>episodic_config_unhashed_sections</code>): both govern how the instance is operated rather than what a run computes, and notification settings additionally contain secrets that must never reach <code>config_snapshot</code>.</p>
 <p>Key config sections: <code>reconciliation</code>, <code>eligibility</code>, <code>effect_size_floor</code>, <code>same_place</code>, <code>farrington</code>, <code>mem</code>, <code>rare_trigger</code>, <code>priority_score</code>, <code>notifications</code>, <code>suppression</code>, <code>access</code>.</p>
-<p>Pathogen-specific parameters (episode length, serial interval, severity weight) live in <code>inst/config/pathogen_config.csv</code>.</p>
+<p>Pathogen-specific parameters (episode length, serial interval, severity weight) live in <code>inst/config/episodic_default_pathogen_config.csv</code>.</p>
 </div>
 <div class="section level3">
 <h3 id="notifications">Notifications<a class="anchor" aria-label="anchor" href="#notifications"></a></h3>
@@ -150,7 +150,7 @@
 <code>epidemiologist</code>: read + write (assess clusters, classify, close, mute, render reports)</li>
 <li>
 <code>viewer</code>: read-only (sees everything including patient-level detail, but cannot record assessments)</li>
-</ul><p>Accounts are provisioned via <code><a href="reference/episodic_provision_user.html">episodic_provision_user()</a></code> at the R console; there is no in-app account management.</p>
+</ul><p>Accounts are added via <code><a href="reference/episodic_add_user.html">episodic_add_user()</a></code> at the R console; there is also in-app account management.</p>
 </div>
 </div>
 <div class="section level2">
@@ -185,9 +185,9 @@
   interpretation.R    # AI/template-based narrative summaries
   report_render.R     # Quarto outbreak report rendering
 inst/
-  config/default.yaml       # shipped detection defaults
-  config/palette.yaml       # shipped colour palette defaults
-  config/pathogen_config.csv # per-pathogen parameters
+  config/episodic_default_config.yaml       # shipped detection defaults
+  config/episodic_default_style.yaml       # shipped colour palette defaults
+  config/episodic_default_pathogen_config.csv # per-pathogen parameters
   sql/schema.sql            # database schema (SQLite dialect)
   app/                      # Shiny app assets (CSS, JS)
   i18n/                     # translation JSON files (en, nl, de, fr, es, ar, hi, zh)
@@ -244,7 +244,7 @@ vignettes/                  # 7 vignettes</code></pre>
 <td>Database path (SQLite) or DSN (MariaDB)</td>
 </tr><tr><td><code>EPISODIC_CONFIG</code></td>
 <td>Instance detection + notification config YAML</td>
-</tr><tr><td><code>EPISODIC_PALETTE_CONFIG</code></td>
+</tr><tr><td><code>EPISODIC_STYLE</code></td>
 <td>Instance colour palette YAML</td>
 </tr><tr><td><code>EPISODIC_LANGUAGE</code></td>
 <td>Dashboard/report language (en, ar, nl, fr, de, hi, zh, es)</td>

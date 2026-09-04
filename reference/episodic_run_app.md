@@ -1,4 +1,4 @@
-# Open the EpiSODIC dashboard
+# Open the EpiSODIC Dashboard
 
 Launches the Shiny dashboard against a database already populated by
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md):

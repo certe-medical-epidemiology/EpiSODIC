@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.11.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -87,9 +87,8 @@ point that falls back to them picks the setting up automatically.</p>
 <tr class="odd">
 <td><code>EPISODIC_DB</code></td>
 <td>
-<code><a href="../reference/episodic_run_app.html">episodic_run_app()</a></code>,
-<code><a href="../reference/episodic_provision_user.html">episodic_provision_user()</a></code> (<code>db_path</code>
-argument)</td>
+<code><a href="../reference/episodic_run_app.html">episodic_run_app()</a></code>, <code><a href="../reference/episodic_add_user.html">episodic_add_user()</a></code>
+(<code>db_path</code> argument)</td>
 <td>Path to the instance’s SQLite database, or a <code>mysql://</code>
 DSN pointing at a MariaDB/MySQL database instead - see “Database
 backend” above.</td>
@@ -97,8 +96,7 @@ backend” above.</td>
 <tr class="even">
 <td><code>EPISODIC_LANGUAGE</code></td>
 <td>every <code>lang</code> argument - <code><a href="../reference/episodic_run_app.html">episodic_run_app()</a></code>,
-<code><a href="../reference/episodic_demo.html">episodic_demo()</a></code>, <code><a href="../reference/episodic_report_render.html">episodic_report_render()</a></code>,
-<code><a href="../reference/episodic_tr.html">episodic_tr()</a></code> and every renderer beneath them</td>
+<code><a href="../reference/episodic_demo.html">episodic_demo()</a></code>, and every renderer beneath them</td>
 <td>Dashboard/report language: <code>en</code>, <code>ar</code>,
 <code>nl</code>, <code>fr</code>, <code>de</code>, <code>hi</code>,
 <code>zh</code>, or <code>es</code>. Defaults to <code>en</code> if
@@ -114,19 +112,20 @@ argument), <code><a href="../reference/episodic_run_app.html">episodic_run_app()
 <td>Path to an instance override of configuration (pathogen thresholds,
 <code>same_place</code>/<code>rare_trigger</code>/Farrington settings,
 notification channels, and <code>access.require_login</code>), overlaid
-key-by-key on <code>inst/config/default.yaml</code>’s shipped defaults.
+key-by-key on the shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml" class="external-link"><code>inst/config/episodic_default_config.yaml</code></a>.
 See <code><a href="../articles/deployment.html">vignette("deployment")</a></code>’s “Closing the app to anonymous
 visitors” for <code>access.require_login</code>.</td>
 </tr>
 <tr class="even">
-<td><code>EPISODIC_PALETTE_CONFIG</code></td>
+<td><code>EPISODIC_STYLE</code></td>
 <td>
 <code><a href="../reference/episodic_palette.html">episodic_palette()</a></code> (<code>palette_config_path</code>
 argument)</td>
-<td>Path to an instance override of the UI colour palette, overlaid
-key-by-key on <code>inst/config/palette.yaml</code>’s shipped defaults.
-Deliberately separate from <code>EPISODIC_CONFIG</code>: colour is a
-display concern, never part of <code><a href="../reference/episodic_config_hash.html">episodic_config_hash()</a></code>’s
+<td>Path to an instance override of the UI colour palette and typography
+(<code>font</code>, <code>font_size_base</code>), overlaid key-by-key on
+the shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_style.yaml" class="external-link"><code>inst/config/episodic_default_style.yaml</code></a>.
+Deliberately separate from <code>EPISODIC_CONFIG</code>: colour and
+typography are display concerns, never part of the
 detection-reproducibility guarantee.</td>
 </tr>
 <tr class="odd">
@@ -174,8 +173,8 @@ section.</td>
 <code><a href="../reference/episodic_report_render.html">episodic_report_render()</a></code> (<code>qmd_path</code>
 argument)</td>
 <td>Path to an operator’s own Quarto report template, overriding the
-shipped <code>inst/report/cluster_report.qmd</code>. See “Custom report
-templates” above.</td>
+shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd" class="external-link"><code>inst/report/episodic_default_report.qmd</code></a>.
+See “Custom report templates” above.</td>
 </tr>
 </tbody>
 </table>
@@ -183,8 +182,8 @@ templates” above.</td>
 <code><a href="../reference/episodic_demo.html">episodic_demo()</a></code> uses a temporary SQLite file and every
 shipped default. See <code><a href="../articles/deployment.html">vignette("deployment")</a></code> for
 <code>EPISODIC_DB</code> and
-<code>EPISODIC_CONFIG</code>/<code>EPISODIC_PALETTE_CONFIG</code> in
-context (database backend, custom report templates), and
+<code>EPISODIC_CONFIG</code>/<code>EPISODIC_STYLE</code> in context
+(database backend, custom report templates), and
 <code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic reference data”
 section for the detail behind <code>EPISODIC_GEO_DATA</code> and
 <code>EPISODIC_GEO_DATA_OVERLAY</code>.</p>

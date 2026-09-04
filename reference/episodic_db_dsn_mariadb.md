@@ -1,4 +1,4 @@
-# Connect EpiSODIC to a MariaDB or MySQL server
+# Connect EpiSODIC to a MariaDB or MySQL Server
 
 EpiSODIC stores its data in either a SQLite file (the default, and all
 you need for a single-server deployment) or a MariaDB/MySQL database.

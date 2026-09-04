@@ -1,4 +1,4 @@
-# Render an outbreak report for clinical colleagues
+# Render an Outbreak Report for Clinical Colleagues
 
 Produces a self-contained HTML outbreak report for one cluster - the
 document you send to a treating physician, an infection prevention
@@ -17,7 +17,7 @@ episodic_report_render(
   user_id = NA,
   include_linelist = TRUE,
   small_count_threshold = NULL,
-  config = episodic_config_resolve(),
+  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
   lang = Sys.getenv("EPISODIC_LANGUAGE"),
   qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)
 )
@@ -57,11 +57,9 @@ episodic_report_render(
   identifying individuals in a small population. Defaults to
   `config$report$small_count_threshold`.
 
-- config:
+- episodic_config_path:
 
-  The resolved configuration (see
-  [`episodic_config_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_resolve.md));
-  only `config$report` is used.
+  The config path.
 
 - lang:
 
@@ -90,8 +88,9 @@ later.
 By default the report uses EpiSODIC's own report template. If your
 organisation needs its own layout or branding, set the
 `EPISODIC_QUARTO_REPORT` environment variable to your own `.qmd` file;
-`inst/report/cluster_report.qmd` in the package source is a good
-starting point to copy and adapt.
+the default
+[`inst/report/episodic_default_report.qmd`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd)
+is a good starting point to copy and adapt.
 
 Rendering requires [Quarto](https://quarto.org) to be installed
 separately (both the `quarto` R package and the Quarto command-line

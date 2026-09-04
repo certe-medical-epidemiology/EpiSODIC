@@ -1,4 +1,4 @@
-# Set up a new EpiSODIC database
+# Set Up a New EpiSODIC Database
 
 Run this once, when setting up a new EpiSODIC instance: it creates a new
 database at `path` and builds all the required tables. Refuses to run

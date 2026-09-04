@@ -219,9 +219,10 @@ with only the keys you want to change:
 Sys.setenv(EPISODIC_CONFIG = "/path/to/my_overrides.yaml")
 ```
 
-It is merged key-by-key on top of `inst/config/default.yaml`’s shipped
-defaults, so you only ever need to write down what differs for your
-organisation. Every run records the resolved configuration’s full
+It is merged key-by-key on top of the
+[`inst/config/episodic_default_config.yaml`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml)’s
+shipped defaults, so you only ever need to write down what differs for
+your organisation. Every run records the resolved configuration’s full
 snapshot and hash on `episodic_detection_run`, so whatever parameters
 were behind any past result stay reproducible from the database alone -
 you can tune with confidence, since nothing about a past run’s meaning
@@ -269,7 +270,7 @@ open-ended. If that is you, it is one function call:
 
 Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")  # or your MariaDB/MySQL DSN
 
-EpiSODIC::episodic_provision_user(
+EpiSODIC::episodic_add_user(
   username = "jdoe",
   full_name = "Dr Jane Doe",
   role = "epidemiologist", # or "viewer"

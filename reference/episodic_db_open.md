@@ -1,11 +1,11 @@
-# Connect using the `EPISODIC_DB` environment variable
+# Connect Using the `EPISODIC_DB` Environment Variable
 
 Like
 [`episodic_db_connect()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_connect.md),
 but falls back to the `EPISODIC_DB` environment variable when you do not
 pass a path explicitly - handy for one-off console use, e.g.
-[`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md)
-uses it internally so provisioning an account needs only a username and
+[`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
+uses it internally so adding an account needs only a username and
 password, not a connection you build yourself first.
 
 ## Usage

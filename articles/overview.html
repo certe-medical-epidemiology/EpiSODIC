@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.11.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -97,17 +97,17 @@ what that shape is. This keeps the detection engine reusable by any
 laboratory: every dependency is a CRAN-hosted package
 (<code>surveillance</code> for Farrington; no private,
 organisation-specific package is required or even referenced).</p>
-<p>House colours (<code><a href="../reference/episodic_palette.html">episodic_palette()</a></code>) come from a shipped,
-organisation-neutral default, overridable per instance by pointing
-<code>EPISODIC_PALETTE_CONFIG</code> at a YAML file with an
-organisation’s own colours - the same mechanism used for detection
-configuration, a custom report template, and geographic reference data
-(see <code><a href="../articles/deployment.html">vignette("deployment")</a></code> and
+<p>House colours and typography (<code><a href="../reference/episodic_palette.html">episodic_palette()</a></code>) come
+from a shipped, organisation-neutral default, overridable per instance
+by pointing <code>EPISODIC_STYLE</code> at a YAML file with an
+organisation’s own colours and font - the same mechanism used for
+detection configuration, a custom report template, and geographic
+reference data (see <code><a href="../articles/deployment.html">vignette("deployment")</a></code> and
 <code><a href="../articles/environment-variables.html">vignette("environment-variables")</a></code>). Geography (the
 choropleth panel) is not tied to any one organisation or country
 either.</p>
 <p>Detection thresholds and priority score weights are configurable per
-instance (<code>inst/config/default.yaml</code>,
+instance (<a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml" class="external-link"><code>inst/config/episodic_default_config.yaml</code></a>,
 <code>EPISODIC_CONFIG</code>), so an organisation can tune them against
 its own signal volume as its evidence base grows - see
 <code><a href="../articles/detection-reconciliation.html">vignette("detection-reconciliation")</a></code> for how the detectors

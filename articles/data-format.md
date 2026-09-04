@@ -24,8 +24,7 @@ episodic_run_cron(
 A data set is the normal case, and what these arguments are written for.
 If producing the data only makes sense at run time (e.g. a live database
 query), a zero-argument function returning one is accepted just as
-well - EpiSODIC resolves either
-([`episodic_resolve_data()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_resolve_data.md)).
+well - EpiSODIC resolves either (`episodic_resolve_data()`).
 
 **Extract a recent window, not your full history.** A scheduled extract
 should cover only the last few weeks, with some overlap (two weeks is a
@@ -140,14 +139,15 @@ cases are counted today.
 
 EpiSODIC collapses positives for the same patient and pathogen into one
 case per episode, using the episode length configured per pathogen in
-`inst/config/pathogen_config.csv` - and it does this correctly across
-runs, not just within one extract: each run checks incoming positives
-against the most recent episode already on file for that
-patient/pathogen, so a recurring extract only has to cover a recent
-window (with a couple of weeks of overlap, so nothing slips through if a
-run is ever missed) rather than a patient’s full history every time.
-Re-sending a row EpiSODIC has already seen (same `source_key`) is always
-safe regardless - it is simply a no-op.
+the shipped
+[`inst/config/episodic_default_pathogen_config.csv`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv) -
+and it does this correctly across runs, not just within one extract:
+each run checks incoming positives against the most recent episode
+already on file for that patient/pathogen, so a recurring extract only
+has to cover a recent window (with a couple of weeks of overlap, so
+nothing slips through if a run is ever missed) rather than a patient’s
+full history every time. Re-sending a row EpiSODIC has already seen
+(same `source_key`) is always safe regardless - it is simply a no-op.
 
 **Do not send negative results here.** This feed drives every detector;
 it is deliberately positives-only so an operator never has to ship a
@@ -204,13 +204,14 @@ detection to group on), a `patient_key` that never repeats (nothing for
 deduplication to do), postcodes the map cannot place, sample dates in
 the future.
 
-[`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md)
-runs the same checks and throws instead, for use in a script.
+Setting `episodic_check_cases(cases, stop_on_problem = TRUE)` makes the
+checks return an error if there is at least one problem, for use in a
+script.
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
-runs it for you before every run: data it cannot use stops the run with
-the same message, before anything is written, and that message is
-recorded against the run so it is also visible in the dashboard’s status
-strip and activity screen. A failed run never passes in silence.
+runs that before every run: data it cannot use stops the run with the
+same message, before anything is written, and that message is recorded
+against the run so it is also visible in the dashboard’s status strip
+and activity screen. A failed run never passes in silence.
 
 The optional feeds below have the same non-throwing check, over their
 own contract:
@@ -296,9 +297,9 @@ The dossier’s geography panel shows a choropleth when both the `sf`
 package and a geographic reference dataset are available; otherwise it
 falls back to a plain bar breakdown by PC value, exactly as if this
 feature did not exist. EpiSODIC ships a Dutch postcode default
-(`inst/extdata/geo_postcodes4_nl.rds`, geometry only, sourced from
-`certegis` under the same GPL-2 licence - see
-`data-raw/ geo_postcodes4_nl.R` for provenance) purely as a working
+([`inst/extdata/geo_postcodes4_nl.rds`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/extdata/geo_postcodes4_nl.rds)),
+geometry only, sourced from `certegis` under the same GPL-2 licence -
+see `data-raw/ geo_postcodes4_nl.R` for provenance) purely as a working
 example: point `EPISODIC_GEO_DATA` at your own `.rds` file holding an
 [`sf`](https://r-spatial.github.io/sf/) object with a `pc` column
 (matching whatever your own `episodic_case.pc` values are - postcodes,

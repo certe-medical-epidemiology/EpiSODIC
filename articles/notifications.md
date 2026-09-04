@@ -28,9 +28,9 @@ Notification settings go in your instance YAML configuration file, the
 same file that `EPISODIC_CONFIG` points at (see
 [`vignette("environment-variables")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md)).
 Add a `notifications` key at the top level. The shipped
-`inst/config/default.yaml` contains commented-out examples for every
-channel; copy the ones you need into your instance file and fill in the
-values.
+[`inst/config/episodic_default_config.yaml`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml)
+contains commented-out examples for every channel; copy the ones you
+need into your instance file and fill in the values.
 
 Notification configuration is deliberately **excluded** from the
 detection `config_hash`. This means:

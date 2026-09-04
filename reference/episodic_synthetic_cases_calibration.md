@@ -1,4 +1,4 @@
-# Generate synthetic data at tunable cluster volume
+# Generate Synthetic Data at Tunable Cluster Volume
 
 [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
 injects six outbreaks in total - enough to show every detector working,
@@ -50,7 +50,7 @@ episodic_synthetic_cases_calibration(
 ## Value
 
 A data frame satisfying
-[`episodic_validate_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_cases.md),
+[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md),
 including everything
 [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
 produces (background baseline, the six demo outbreaks) plus the extra

@@ -7,7 +7,7 @@ cluster detail, including patient-level data, without classifying
 anything themselves. Both roles sign in with a username and password;
 there is no self-service registration - an administrator creates each
 account with
-[`episodic_provision_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_provision_user.md),
+[`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md),
 and the new user sets their own password on first sign-in.
 
 ## Details

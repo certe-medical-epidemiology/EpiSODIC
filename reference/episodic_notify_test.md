@@ -1,4 +1,4 @@
-# Send a test notification through all configured channels
+# Send a Test Notification Through All Configured Channels
 
 Validates the notification configuration and sends a test message
 through every enabled channel. Run this interactively after setting up
@@ -17,8 +17,7 @@ episodic_notify_test(
 
 - episodic_config_path:
 
-  Passed to
-  [`episodic_config_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_resolve.md).
+  The config path.
 
 ## Value
 
