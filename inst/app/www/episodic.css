@@ -500,29 +500,6 @@ table.episodic-table td {
   font-variant-numeric: tabular-nums;
 }
 
-/* Every cluster table (R/app_cluster_table.R) renders "first case" and
-   "last case" as two columns AND, in the same row, one combined "case
-   period" column - always both, never just one. Only one set is ever
-   visible: on a normal-width screen the two dates read more directly,
-   but a table already carrying context and outcome columns (e.g. the
-   dossier's related-clusters panel: level, relation, ..., shared cases)
-   can run out of room for two separate date columns, and the range
-   reads just as well as one. */
-.episodic-col-period-combined,
-.episodic-cell-period-combined {
-  display: none;
-}
-@media (max-width: 860px) {
-  .episodic-col-period-split,
-  .episodic-cell-period-split {
-    display: none;
-  }
-  .episodic-col-period-combined,
-  .episodic-cell-period-combined {
-    display: table-cell;
-  }
-}
-
 dl.episodic-settings {
   font-size: 0.962rem;
 }

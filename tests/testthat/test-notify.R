@@ -185,25 +185,12 @@ test_that("episodic_notify_build_new_clusters() renders the Period column like t
     stringsAsFactors = FALSE
   )
   msg <- episodic_notify_build_new_clusters(details, 1L, "2026-08-15", NULL)
-  # The table carries the two case days as their own columns, formatted
-  # the way the app formats a date; the one-line plain-text fallback is a
-  # sentence, so it keeps the compact range.
-  expect_match(
-    msg$html,
-    episodic_format_date("2026-08-01", lang = "en"),
-    fixed = TRUE
-  )
-  expect_match(
-    msg$html,
-    episodic_format_date("2026-08-15", lang = "en"),
-    fixed = TRUE
-  )
+  # The table carries first case and last case as one range, the same
+  # way the app's own cluster tables do, not as two separate date columns.
+  range_str <- episodic_format_date_range("2026-08-01", "2026-08-15", lang = "en")
+  expect_match(msg$html, range_str, fixed = TRUE)
   expect_match(msg$html, "15 days", fixed = TRUE)
-  expect_match(
-    msg$plain,
-    episodic_format_date_range("2026-08-01", "2026-08-15", lang = "en"),
-    fixed = TRUE
-  )
+  expect_match(msg$plain, range_str, fixed = TRUE)
 })
 
 test_that("episodic_notify_build_new_clusters() centre-aligns everything after the place", {
@@ -232,19 +219,19 @@ test_that("episodic_notify_build_new_clusters() centre-aligns everything after t
     msg$html,
     perl = TRUE
   )
-  # cluster, pathogen and place read as text; first case, last case,
-  # cases, case days, duration, priority, expected and ratio are all
-  # numbers (or, for the two dates, numeric-ish and centred the same way)
+  # cluster, pathogen and place read as text; case period, cases, case
+  # days, duration, priority, expected and ratio are all numbers (or,
+  # for the period, a range centred the same way)
   expect_equal(
     lengths(regmatches(header, gregexpr("text-align:left", header))),
     3
   )
   expect_equal(
     lengths(regmatches(header, gregexpr("text-align:center", header))),
-    8
+    7
   )
   row <- sub(".*(<tr>.*?</tr>).*", "\\1", msg$html, perl = TRUE)
-  expect_equal(lengths(regmatches(row, gregexpr("text-align:center", row))), 8)
+  expect_equal(lengths(regmatches(row, gregexpr("text-align:center", row))), 7)
 })
 
 test_that("episodic_notify_build_new_clusters() and episodic_notify_build_failure() honour lang", {

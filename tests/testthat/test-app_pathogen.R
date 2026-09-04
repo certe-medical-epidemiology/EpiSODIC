@@ -568,12 +568,11 @@ test_that("the signals table leads with the cluster id", {
       fixed = TRUE
     ))
   )
-  # and the shared spine, priority and both case days included
+  # and the shared spine, priority and case days included
   for (key in c(
+    "column.period",
     "column.cases",
     "column.case_days",
-    "column.first_day",
-    "column.last_day",
     "column.duration",
     "column.priority"
   )) {

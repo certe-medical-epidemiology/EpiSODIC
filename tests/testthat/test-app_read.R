@@ -719,11 +719,10 @@ test_that("the archive lists cluster ids and links each row through to its dossi
       fixed = TRUE
     )
   )
-  # both dates, duration, case count and priority, per the row's own cluster
+  # case period, duration, case count and priority, per the row's own cluster
   for (key in c(
+    "column.period",
     "column.cases",
-    "column.first_day",
-    "column.last_day",
     "column.duration",
     "column.priority"
   )) {

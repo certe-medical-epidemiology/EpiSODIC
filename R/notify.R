@@ -327,10 +327,7 @@ episodic_notify_build_new_clusters <- function(
         episodic_html_escape(location),
         "</td>",
         "<td style='text-align:center'>",
-        episodic_html_escape(episodic_format_date(row$first_day, lang = lang)),
-        "</td>",
-        "<td style='text-align:center'>",
-        episodic_html_escape(episodic_format_date(row$last_day, lang = lang)),
+        episodic_html_escape(period_str),
         "</td>",
         "<td style='text-align:center'>",
         row$n_cases,
@@ -380,7 +377,7 @@ episodic_notify_build_new_clusters <- function(
     html_rows <- c(
       html_rows,
       paste0(
-        "<tr><td colspan='11' style='font-style:italic'>",
+        "<tr><td colspan='10' style='font-style:italic'>",
         episodic_html_escape(more),
         "</td></tr>"
       )
@@ -395,12 +392,9 @@ episodic_notify_build_new_clusters <- function(
 
   # The same spine of columns, in the same order, as every cluster table
   # on screen (see `R/app_cluster_table.R`): id, then what and where,
-  # then first case, last case, cases, case days, duration and priority.
-  # Expected and ratio close the row - the detection evidence an alert
-  # carries and a screen does not. Unlike the on-screen tables, this is a
-  # plain HTML table with no @media support to fall back to across email
-  # clients, so first/last case are always the two split columns, never
-  # collapsed to one "case period" column.
+  # then case period, cases, case days, duration and priority. Expected
+  # and ratio close the row - the detection evidence an alert carries and
+  # a screen does not.
   header <- function(key, align) {
     paste0(
       "<th style='text-align:",
@@ -418,8 +412,7 @@ episodic_notify_build_new_clusters <- function(
       header("column.cluster", "left"),
       header("column.pathogen", "left"),
       header("column.place", "left"),
-      header("column.first_day", "center"),
-      header("column.last_day", "center"),
+      header("column.period", "center"),
       header("column.cases", "center"),
       header("column.case_days", "center"),
       header("column.duration", "center"),

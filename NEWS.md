@@ -11,11 +11,10 @@
 - The reference-data panel reports how many of the case data's own postcodes resolve to a province, which is what distinguishes a `EPISODIC_PC_PROVINCE_MAP` that was never read from one whose postcode format does not match the case data
 - `episodic_default_style.yaml` (and `EPISODIC_STYLE`) now also carries typography: `font` (a CSS font-family stack) and `font_size_base`, which scales every other font size in the dashboard, since those are now expressed in `rem` relative to it
 - Every cluster table now has a "Case days" column: the number of distinct dates with at least one case, as its own figure next to the case count and the calendar duration - a cluster can run 90 days with cases on only 10 of them (a sharp peak) or on 39 of them (a flat, sustained rise), the same duration and case count, two different epidemic shapes
-- On the dashboard (not the outbreak report or the notification email, neither of which has @media to fall back to), a cluster table narrow enough to need it collapses "first case"/"last case" into one "case period" column
 
 ## Changed
 
-- Every table of clusters (Archive, Pathogen screen, the dossier's related and similar-clusters panels, the outbreak report and the new-cluster notification) now shares one implementation with the same columns in the same order: cluster id, then context, then first case, last case, cases, case days, then what was decided (classification/state/closure date/shared cases), then duration and priority
+- Every table of clusters (Archive, Pathogen screen, the dossier's related and similar-clusters panels, the outbreak report and the new-cluster notification) now shares one implementation with the same columns in the same order: cluster id, then context, then the case period (first case - last case, as one range), cases, case days, then what was decided (classification/state/closure date/shared cases), then duration and priority
 - Every table of clusters is now sorted on the last case day, most recent first, with priority and cluster id breaking ties
 - A cluster row that does not open a dossier, because lattice suppression folded it into another, now shows its id in the warning colour with a tooltip explaining why, instead of a link that does nothing
 - The per-screen cluster table column translation keys are replaced by one `column.*` family shared by every cluster table

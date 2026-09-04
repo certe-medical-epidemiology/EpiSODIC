@@ -28,21 +28,26 @@
 #
 # The spine is deliberately fixed and cannot be switched off by a caller:
 #
-#   cluster id | <context> | first case | last case | cases | case days |
+#   cluster id | <context> | case period | cases | case days |
 #   <outcome> | duration | priority
 #
 # `context` (what and where: pathogen, level, place, relation) and
 # `outcome` (what was decided: classification, state, closure date) are
 # the only per-screen variation, because those are the parts that
 # genuinely differ between an archive and a dossier panel. Everything a
-# reader compares between screens - how many cases, over how many of
-# those days, over which calendar span, for how long, at what priority -
-# is the same column in the same place everywhere. `outcome` sits right
-# after `case days` rather than at the very end: it is what was decided
-# about the signal the columns before it describe, so it reads as the
-# conclusion to that evidence rather than as an afterthought tacked on
-# past `duration`/`priority`, which describe the signal's shape, not its
+# reader compares between screens - when, how many cases, over how many
+# of those days, for how long, at what priority - is the same column in
+# the same place everywhere. `outcome` sits right after `case days`
+# rather than at the very end: it is what was decided about the signal
+# the columns before it describe, so it reads as the conclusion to that
+# evidence rather than as an afterthought tacked on past
+# `duration`/`priority`, which describe the signal's shape, not its
 # handling.
+#
+# `case period` is `first_day`-`last_day` as one range
+# (`episodic_format_date_range()`), not two separate date columns - a
+# table already carrying context and outcome columns has no room to
+# spare for two, and the range reads just as well as one.
 #
 # `case days` (`episodic_db_attach_case_days()`) is distinct from
 # `duration`: duration is the calendar span from first case to last case
@@ -125,8 +130,7 @@ episodic_cluster_table_order <- function(clusters) {
 #' @noRd
 episodic_cluster_table_spine <- c(
   "cluster",
-  "first_day",
-  "last_day",
+  "period",
   "cases",
   "case_days",
   "duration",
@@ -297,46 +301,16 @@ episodic_ui_cluster_table <- function(
 
   col_label <- function(key) episodic_tr(paste0("column.", key), lang = lang)
 
-  # Each spine key becomes one header cell, except "first_day" and
-  # "last_day": together they become the period triple - two split
-  # columns plus one combined "Case period" column, all three always in
-  # the DOM. inst/app/www/episodic.css shows exactly one set via @media,
-  # collapsing to the range once the table has too many columns to keep
-  # both dates legible; a static server-rendered table cannot pick the
-  # breakpoint itself, so both renderings ship and CSS chooses.
+  # Each spine key becomes exactly one header/cell pair.
   spine_header <- function(key) {
-    if (identical(key, "first_day")) {
-      return(list(
-        shiny::tags$th(class = "episodic-col-period-split", col_label("first_day")),
-        shiny::tags$th(class = "episodic-col-period-split", col_label("last_day")),
-        shiny::tags$th(class = "episodic-col-period-combined", col_label("period"))
-      ))
-    }
-    if (identical(key, "last_day")) {
-      return(list()) # folded into the "first_day" triple above
-    }
     list(shiny::tags$th(col_label(key)))
   }
 
   spine_cell <- function(key, row, i) {
-    if (identical(key, "first_day")) {
-      return(list(
-        shiny::tags$td(
-          class = "episodic-cell-period-split",
-          episodic_format_date(row$first_day, lang = lang)
-        ),
-        shiny::tags$td(
-          class = "episodic-cell-period-split",
-          episodic_format_date(row$last_day, lang = lang)
-        ),
-        shiny::tags$td(
-          class = "episodic-cell-period-combined",
-          episodic_format_date_range(row$first_day, row$last_day, lang = lang)
-        )
-      ))
-    }
-    if (identical(key, "last_day")) {
-      return(list()) # folded into the "first_day" triple above
+    if (identical(key, "period")) {
+      return(list(shiny::tags$td(
+        episodic_format_date_range(row$first_day, row$last_day, lang = lang)
+      )))
     }
     if (identical(key, "cases")) {
       return(list(shiny::tags$td(row$n_cases)))

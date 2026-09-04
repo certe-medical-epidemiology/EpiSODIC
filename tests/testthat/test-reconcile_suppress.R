@@ -232,9 +232,8 @@ test_that("the dossier shows what a cluster suppressed", {
   # and it carries the same spine every other cluster table does
   for (key in c(
     "column.cluster",
+    "column.period",
     "column.cases",
-    "column.first_day",
-    "column.last_day",
     "column.duration",
     "column.priority"
   )) {

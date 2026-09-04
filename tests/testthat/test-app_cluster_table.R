@@ -96,26 +96,14 @@ test_that("the table carries the whole spine, in order, whatever the screen", {
     regexpr(episodic_tr("dossier.cluster_ref", id = 13L, lang = "en"), html),
     regexpr(episodic_tr("dossier.cluster_ref", id = 11L, lang = "en"), html)
   )
-  expect_true(grepl(
-    episodic_format_date("2025-03-20", lang = "en"),
-    html,
-    fixed = TRUE
-  ))
-  expect_true(grepl("<td>89</td>", html, fixed = TRUE))
-  expect_true(grepl("<td>5 days</td>", html, fixed = TRUE))
-
-  # first/last case (always in the DOM) and the combined "case period"
-  # column (in the DOM but hidden by default - see episodic.css) both
-  # render, and case_days is its own cell value, not folded into duration
-  expect_true(grepl("episodic-cell-period-split", html, fixed = TRUE))
-  expect_true(grepl("episodic-cell-period-combined", html, fixed = TRUE))
-  expect_true(grepl("episodic-col-period-split", html, fixed = TRUE))
-  expect_true(grepl("episodic-col-period-combined", html, fixed = TRUE))
+  # first case and last case as one range, not two separate date columns
   expect_true(grepl(
     episodic_format_date_range("2025-01-02", "2025-01-06", lang = "en"),
     html,
     fixed = TRUE
   ))
+  expect_true(grepl("<td>89</td>", html, fixed = TRUE))
+  expect_true(grepl("<td>5 days</td>", html, fixed = TRUE))
   expect_true(grepl("<td>6</td>", html, fixed = TRUE)) # cluster 12's case_days
 })
 
