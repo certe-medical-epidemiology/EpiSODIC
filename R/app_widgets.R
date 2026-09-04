@@ -24,7 +24,7 @@
 # functions only assign class names and content.
 
 
-#' Format text for outbreak reports and the dashboard
+#' Format Text for Outbreak Reports and the Dashboard
 #'
 #' Small HTML formatting helpers used when building dossier text, both in
 #' the dashboard and in the Quarto outbreak report template. Both are exported so that a custom

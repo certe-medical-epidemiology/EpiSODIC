@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Try EpiSODIC with synthetic outbreak data
+#' Try EpiSODIC With Synthetic Outbreak Data
 #'
 #' The fastest way to see what EpiSODIC does: this single call creates a
 #' fresh database, generates several years of synthetic laboratory data,

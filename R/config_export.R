@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Export the resolved configuration as a zip file
+#' Export the Resolved Configuration as a Zip File
 #'
 #' Bundles the fully-resolved configuration (shipped defaults, your
 #' `EPISODIC_CONFIG` YAML overlay, and - if `db_path` points at a

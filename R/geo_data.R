@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Show clusters on a map
+#' Show Clusters on a Map
 #'
 #' The dashboard can plot cluster case counts on a choropleth map by postcode
 #' (or any other geographic unit you use), provided the optional `sf`

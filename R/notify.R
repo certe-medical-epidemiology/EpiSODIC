@@ -819,7 +819,7 @@ episodic_notify_validate_config <- function(config) {
   problems
 }
 
-#' Send a test notification through all configured channels
+#' Send a Test Notification Through All Configured Channels
 #'
 #' Validates the notification configuration and sends a test message
 #' through every enabled channel. Run this interactively after setting up
@@ -939,7 +939,7 @@ episodic_notify_test <- function(episodic_config_path = Sys.getenv("EPISODIC_CON
   invisible(results)
 }
 
-#' Set up Microsoft 365 authentication for notifications
+#' Set Up Microsoft 365 Authentication for Notifications
 #'
 #' Runs an interactive Azure AD login and caches the refresh token for
 #' subsequent unattended use by [episodic_run_cron()]. You only need to

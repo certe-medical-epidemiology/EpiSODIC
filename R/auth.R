@@ -275,7 +275,7 @@ episodic_auth_change_password <- function(con, user_id, new_password) {
   invisible(NULL)
 }
 
-#' Create an account for a new epidemiologist or viewer
+#' Create an Account for a New Epidemiologist or Viewer
 #'
 #' There is no self-service registration: an account is added either
 #' from the Settings screen (by an `is_admin` account) or with this

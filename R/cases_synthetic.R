@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Generate synthetic outbreak data
+#' Generate Synthetic Outbreak Data
 #'
 #' Produces several years of laboratory surveillance data for a fictional
 #' northern-Netherlands region - eight hospitals, twenty long-term care
@@ -730,7 +730,7 @@ episodic_synthetic_places <- function(institutions) {
   rbind(do.call(rbind, per_hospital), others)
 }
 
-#' Generate synthetic data at tunable cluster volume
+#' Generate Synthetic Data at Tunable Cluster Volume
 #'
 #' [episodic_synthetic_cases()] injects six outbreaks in total - enough to
 #' show every detector working, and few enough that a demo dashboard reads

@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Check your case data before you hand it to EpiSODIC
+#' Check Your Case Data Before You Hand It to EpiSODIC
 #'
 #' Runs every check the [episodic_case_data] contract implies over your
 #' extract and reports *everything* it finds in one go - what is wrong,

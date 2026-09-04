@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Open the EpiSODIC dashboard
+#' Open the EpiSODIC Dashboard
 #'
 #' Launches the Shiny dashboard against a database already populated by
 #' [episodic_run_cron()]: an overview of monitored surveillance streams and

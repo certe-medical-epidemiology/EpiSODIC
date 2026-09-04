@@ -210,7 +210,7 @@ episodic_pkg_versions_extended <- function() {
   )
 }
 
-#' Run one surveillance detection cycle
+#' Run One Surveillance Detection Cycle
 #'
 #' This is the function you schedule to run regularly (e.g. daily, via
 #' cron): it pulls in new laboratory data, checks every monitored stream

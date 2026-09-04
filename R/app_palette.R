@@ -23,7 +23,7 @@ doc_palette <- function() {
   paste0("`", vals, "`", collapse = "\n\n")
 }
 
-#' The dashboard's colour palette and typography
+#' The Dashboard's Colour Palette and Typography
 #'
 #' Returns the colours and typography used throughout the EpiSODIC dashboard
 #' and charts, as a named list. Useful if you want to match your own plots or

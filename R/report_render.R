@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Render an outbreak report for clinical colleagues
+#' Render an Outbreak Report for Clinical Colleagues
 #'
 #' Produces a self-contained HTML outbreak report for one cluster - the
 #' document you send to a treating physician, an infection prevention

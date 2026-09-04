@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-#' Connect EpiSODIC to a MariaDB or MySQL server
+#' Connect EpiSODIC to a MariaDB or MySQL Server
 #'
 #' EpiSODIC stores its data in either a SQLite file (the default, and all
 #' you need for a single-server deployment) or a MariaDB/MySQL database.
@@ -152,7 +152,7 @@ episodic_db_mariadb_connect <- function(dsn) {
   )
 }
 
-#' Set up a new EpiSODIC database
+#' Set Up a New EpiSODIC Database
 #'
 #' Run this once, when setting up a new EpiSODIC instance: it creates a new
 #' database at `path` and builds all the required tables. Refuses to run
@@ -262,7 +262,7 @@ episodic_db_create <- function(path, overwrite = FALSE) {
   invisible(con)
 }
 
-#' Empty every EpiSODIC table, keeping the schema itself
+#' Empty Every EpiSODIC Table, Keeping the Schema Itself
 #'
 #' A hard reset back to "freshly created, no data" - every row in every
 #' EpiSODIC table is deleted, but the tables, indexes and constraints
@@ -432,7 +432,7 @@ episodic_db_truncate <- function(path) {
   invisible(truncated)
 }
 
-#' Connect to an existing EpiSODIC database
+#' Connect to an Existing EpiSODIC Database
 #'
 #' Opens a connection to a database you have already set up with
 #' [episodic_db_create()], with the settings EpiSODIC needs enabled (for
@@ -465,7 +465,7 @@ episodic_db_connect <- function(path) {
   con
 }
 
-#' Connect using the `EPISODIC_DB` environment variable
+#' Connect Using the `EPISODIC_DB` Environment Variable
 #'
 #' Like [episodic_db_connect()], but falls back to the `EPISODIC_DB`
 #' environment variable when you do not pass a path explicitly - handy for
