@@ -57,9 +57,9 @@
 episodic_config_resolve <- function(
     episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
     con = NULL) {
-  defaults_path <- system.file("config", "default.yaml", package = "EpiSODIC")
+  defaults_path <- system.file("config", "episodic_default_config.yaml", package = "EpiSODIC")
   if (identical(defaults_path, "")) {
-    defaults_path <- file.path("inst", "config", "default.yaml")
+    defaults_path <- file.path("inst", "config", "episodic_default_config.yaml")
   }
   config <- yaml::read_yaml(defaults_path)
 

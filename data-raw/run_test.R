@@ -11,7 +11,7 @@ db_path <- tempfile(fileext = ".sqlite")
 Sys.setenv(
   EPISODIC_DB = db_path,
   EPISODIC_LANGUAGE = "nl",
-  EPISODIC_CONFIG = system.file("config", "default.yaml", package = "EpiSODIC"),
+  EPISODIC_CONFIG = system.file("config", "episodic_default_config.yaml", package = "EpiSODIC"),
   EPISODIC_GEO_DATA = system.file(
     "extdata",
     "geo_postcodes4_nl.rds",

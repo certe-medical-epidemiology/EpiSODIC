@@ -46,7 +46,7 @@
 #'
 #' This is priority ranking, not exclusion: the score never removes a
 #' candidate from the queue, it only orders it. Component weights are
-#' configurable per instance in `inst/config/default.yaml`, so a
+#' configurable per instance in `inst/config/episodic_default_config.yaml`, so a
 #' department can rebalance them against its own signal volume as
 #' evidence accumulates.
 #'

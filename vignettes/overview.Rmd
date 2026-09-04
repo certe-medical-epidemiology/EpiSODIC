@@ -53,7 +53,7 @@ Geography (the choropleth panel) is not tied to any one organisation or
 country either.
 
 Detection thresholds and priority score weights are configurable per
-instance (`inst/config/default.yaml`, `EPISODIC_CONFIG`), so an
+instance (`inst/config/episodic_default_config.yaml`, `EPISODIC_CONFIG`), so an
 organisation can tune them against its own signal volume as its evidence
 base grows - see `vignette("detection-reconciliation")` for how the
 detectors themselves work, and the FAQ for how to change the

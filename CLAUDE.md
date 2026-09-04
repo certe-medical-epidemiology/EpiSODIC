@@ -82,11 +82,11 @@ Write ownership is strict: cron-owned tables are written only by `episodic_run_c
 
 ### Configuration
 
-YAML-based, with recursive merge. `inst/config/default.yaml` ships documented defaults. An operator's instance config (pointed at by `EPISODIC_CONFIG`) overlays key-by-key. The resolved configuration is hashed (SHA-1 over canonical JSON) and stored on every run for reproducibility. `notifications` and `access` are deliberately excluded from the hash (see `episodic_config_unhashed_sections`): both govern how the instance is operated rather than what a run computes, and notification settings additionally contain secrets that must never reach `config_snapshot`.
+YAML-based, with recursive merge. `inst/config/episodic_default_config.yaml` ships documented defaults. An operator's instance config (pointed at by `EPISODIC_CONFIG`) overlays key-by-key. The resolved configuration is hashed (SHA-1 over canonical JSON) and stored on every run for reproducibility. `notifications` and `access` are deliberately excluded from the hash (see `episodic_config_unhashed_sections`): both govern how the instance is operated rather than what a run computes, and notification settings additionally contain secrets that must never reach `config_snapshot`.
 
 Key config sections: `reconciliation`, `eligibility`, `effect_size_floor`, `same_place`, `farrington`, `mem`, `rare_trigger`, `priority_score`, `notifications`, `suppression`, `access`.
 
-Pathogen-specific parameters (episode length, serial interval, severity weight) live in `inst/config/pathogen_config.csv`.
+Pathogen-specific parameters (episode length, serial interval, severity weight) live in `inst/config/episodic_default_pathogen_config.csv`.
 
 ### Notifications
 
@@ -134,9 +134,9 @@ R/
   interpretation.R    # AI/template-based narrative summaries
   report_render.R     # Quarto outbreak report rendering
 inst/
-  config/default.yaml       # shipped detection defaults
-  config/palette.yaml       # shipped colour palette defaults
-  config/pathogen_config.csv # per-pathogen parameters
+  config/episodic_default_config.yaml       # shipped detection defaults
+  config/episodic_default_style.yaml       # shipped colour palette defaults
+  config/episodic_default_pathogen_config.csv # per-pathogen parameters
   sql/schema.sql            # database schema (SQLite dialect)
   app/                      # Shiny app assets (CSS, JS)
   i18n/                     # translation JSON files (en, nl, de, fr, es, ar, hi, zh)

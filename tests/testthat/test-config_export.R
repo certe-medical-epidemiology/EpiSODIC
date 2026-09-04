@@ -49,7 +49,7 @@ test_that("episodic_config_export() writes a zip containing the resolved config,
   zip::unzip(path, exdir = extract_dir)
   expect_true(file.exists(file.path(extract_dir, "config_resolved.yaml")))
   expect_true(file.exists(file.path(extract_dir, "config_manifest.txt")))
-  expect_true(file.exists(file.path(extract_dir, "pathogen_config.csv")))
+  expect_true(file.exists(file.path(extract_dir, "episodic_default_pathogen_config.csv")))
 
   resolved <- yaml::read_yaml(file.path(extract_dir, "config_resolved.yaml"))
   expect_equal(resolved$reconciliation$close_after_runs, 14)

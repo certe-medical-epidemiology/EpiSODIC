@@ -23,7 +23,7 @@
 #' near-namesake of anything else in this codebase) supplies pre-epidemic
 #' and post-epidemic thresholds from historical seasons, for pathogens
 #' flagged `mem_applicable` (Influenza A/B, RSV in the shipped
-#' `pathogen_config.csv`). Farrington answers whether counts exceed a
+#' `episodic_default_pathogen_config.csv`). Farrington answers whether counts exceed a
 #' statistical expectation; MEM answers a different, more clinically
 #' relevant question for a seasonal pathogen: has the epidemic started.
 #'

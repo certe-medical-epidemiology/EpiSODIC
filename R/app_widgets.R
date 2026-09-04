@@ -23,11 +23,11 @@
 # component library. Styling lives in inst/app/www/episodic.css; these
 # functions only assign class names and content.
 
+
 #' Format text for outbreak reports and the dashboard
 #'
 #' Small HTML formatting helpers used when building dossier text, both in
-#' the dashboard and in the Quarto outbreak report template
-#' (`inst/report/cluster_report.qmd`). Both are exported so that a custom
+#' the dashboard and in the Quarto outbreak report template. Both are exported so that a custom
 #' report template of your own (set via `EPISODIC_QUARTO_REPORT`) can use
 #' the same formatting as the shipped one. Input text is always HTML-escaped
 #' first, so the result is safe to pass on to [shiny::HTML()].

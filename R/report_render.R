@@ -34,8 +34,8 @@
 #' By default the report uses EpiSODIC's own report template. If your
 #' organisation needs its own layout or branding, set the
 #' `EPISODIC_QUARTO_REPORT` environment variable to your own `.qmd` file;
-#' `inst/report/cluster_report.qmd` in the package source is a good
-#' starting point to copy and adapt.
+#' the installed `\Sexpr{system.file("report", "episodic_default_report.qmd", package = "EpiSODIC")}`
+#' is a good starting point to copy and adapt.
 #'
 #' Rendering requires [Quarto](https://quarto.org) to be installed
 #' separately (both the `quarto` R package and the Quarto command-line
@@ -147,14 +147,14 @@ episodic_report_render <- function(
   work_dir <- tempfile("episodic_report_")
   dir.create(work_dir)
   on.exit(unlink(work_dir, recursive = TRUE), add = TRUE)
-  file.copy(qmd_path, file.path(work_dir, "cluster_report.qmd"))
+  file.copy(qmd_path, file.path(work_dir, "episodic_default_report.qmd"))
   data_path <- file.path(work_dir, "report_data.rds")
   saveRDS(report_data, data_path)
 
   tryCatch(
     {
       quarto::quarto_render(
-        input = file.path(work_dir, "cluster_report.qmd"),
+        input = file.path(work_dir, "episodic_default_report.qmd"),
         execute_params = list(data_path = "report_data.rds"),
         # quiet = FALSE (not TRUE): the quarto R package always captures the
         # CLI's stderr into the condition it raises on failure, but only
@@ -240,7 +240,7 @@ episodic_quarto_available <- function() {
 #'
 #' An operator's own template, if `EPISODIC_QUARTO_REPORT` (or the
 #' explicit `qmd_path` argument) names a file that actually exists;
-#' otherwise the shipped `inst/report/cluster_report.qmd` default -
+#' otherwise the shipped `inst/report/episodic_default_report.qmd` default -
 #' matching the shape `EPISODIC_CONFIG`/`EPISODIC_GEO_DATA`/... already
 #' establish.
 #' @param qmd_path A path, or `NA`.
@@ -254,11 +254,11 @@ episodic_report_qmd_path <- function(
   }
   default_path <- system.file(
     "report",
-    "cluster_report.qmd",
+    "episodic_default_report.qmd",
     package = "EpiSODIC"
   )
   if (identical(default_path, "")) {
-    default_path <- file.path("inst", "report", "cluster_report.qmd")
+    default_path <- file.path("inst", "report", "episodic_default_report.qmd")
   }
   default_path
 }

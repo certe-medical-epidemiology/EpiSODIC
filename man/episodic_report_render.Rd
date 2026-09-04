@@ -67,8 +67,8 @@ later.
 By default the report uses EpiSODIC's own report template. If your
 organisation needs its own layout or branding, set the
 \code{EPISODIC_QUARTO_REPORT} environment variable to your own \code{.qmd} file;
-\code{inst/report/cluster_report.qmd} in the package source is a good
-starting point to copy and adapt.
+the installed \verb{\\Sexpr\{system.file("report", "episodic_default_report.qmd", package = "EpiSODIC")\}}
+is a good starting point to copy and adapt.
 
 Rendering requires \href{https://quarto.org}{Quarto} to be installed
 separately (both the \code{quarto} R package and the Quarto command-line

@@ -16,7 +16,7 @@ is, your own extract step is the only place that needs to know about it.
 A data set is the normal case, and the one to reach for. If producing
 the data only makes sense at run time - a live database query, for
 instance - you can pass a zero-argument function returning such a data
-set instead; EpiSODIC accepts either (see \code{\link[=episodic_resolve_data]{episodic_resolve_data()}}).
+set instead; EpiSODIC accepts either.
 
 Only confirmed-positive results belong here - there is no outcome
 column, so do not include negative results. If you also want a
@@ -27,18 +27,18 @@ The only case data shipped with the package is what the synthetic
 generator (\code{\link[=episodic_synthetic_cases]{episodic_synthetic_cases()}}) returns for the bundled
 demo - a useful template for the shape your own data should have.
 }
-\section{Required columns at a glance}{
+\section{Required columns}{
 
 
 \tabular{llll}{
-\strong{Column} \tab \strong{Data type} \tab \strong{Empty allowed} \tab \strong{Accepts (see below for more info)} \cr
+\strong{Column} \tab \strong{Data type} \tab \strong{\code{NA} allowed} \tab \strong{Accepts (see below for more info)} \cr
 \code{source_key} \tab \code{character} \tab no \tab any string, unique within the data set \cr
 \code{lab_number} \tab \code{character} \tab no \tab any string, your lab's own specimen/culture number \cr
 \code{patient_key} \tab \code{character} \tab no \tab any string, stable per patient \cr
 \code{sample_date} \tab \code{Date} or \code{character} \tab no \tab Format \code{YYYY-MM-DD} only \cr
 \code{receipt_date} \tab \code{Date} or \code{character} \tab yes \tab Format \code{YYYY-MM-DD} only \cr
 \code{pathogen} \tab \code{character} \tab no \tab free text, spelled the same every run \cr
-\code{care_line} \tab \code{character} \tab yes (read as \code{"unknown"}) \tab one of: \code{"first"}, \code{"second"}, \code{"third"}, \code{"other"}, \code{"unknown"} \cr
+\code{care_line} \tab \code{character} \tab yes \tab one of: \code{"first"}, \code{"second"}, \code{"third"}, \code{"other"}, \code{"unknown"} \cr
 \code{institution_key} \tab \code{character} \tab no \tab any string, stable per institution \cr
 \code{institution_display_name} \tab \code{character} \tab no \tab any string \cr
 \code{institution_type} \tab \code{character} \tab no \tab one of: \code{"hospital"}, \code{"ltc_institution"}, \code{"gp_municipality"}, \code{"ooh_service"}, \code{"other"} \cr
@@ -56,10 +56,6 @@ text, and nothing else: \code{"01-01-2025"} is rejected rather than read as
 the first of January in the year 1. Numbers stored as text, dates
 stored as date-times, and text stored as a factor are all common
 extract mistakes, and all named for what they are by the check below.
-}
-
-\section{Full explanation on each column}{
-
 
 \describe{
 \item{\code{source_key}}{Character, required, no \code{NA}, unique within the
@@ -115,8 +111,9 @@ unconstrained: used verbatim and never matched against a taxonomy,
 since detection has to work for anything a lab can report, viral or
 not. Spelling must be stable across runs - \code{"Influenza A"} and
 \code{"influenza a"} are two different pathogens as far as detection is
-concerned. Names matching \code{inst/config/pathogen_config.csv} pick up
-that pathogen's episode length, incubation window and serial
+concerned. Names matching in the default config (currently installed
+in \verb{\\Sexpr\{system.file("config", "episodic_default_pathogen_config.csv", package = "EpiSODIC")\}})
+pick up that pathogen's episode length, incubation window and serial
 interval; anything else falls back to the schema defaults (30-day
 episode, 14 case-free days, no Rt, no MEM). The same positive may
 appear under more than one \code{pathogen} value where that is

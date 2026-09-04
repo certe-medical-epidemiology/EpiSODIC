@@ -57,8 +57,7 @@
 #'
 #' @param cases Your case data: a data frame or `tibble` in the shape
 #'   [episodic_case_data] describes, or a zero-argument function returning
-#'   one (resolved with [episodic_resolve_data()] first, so you can check
-#'   either form). Anything else is itself reported as a problem rather
+#'   one. Anything else is itself reported as a problem rather
 #'   than throwing - the point of this function is that it always answers.
 #' @param stop_on_problem A [logical] to indicate whether an error must be 
 #'   thrown if any problem is found. Default is `FALSE`.
@@ -668,7 +667,7 @@ episodic_check_pathogen_advice <- function(cases) {
           "Not an error: these fall back to the schema defaults - a ",
           "30-day episode, 14 case-free days before a cluster closes, no ",
           "reproduction number and no MEM. Add them to ",
-          "inst/config/pathogen_config.csv (or match the spelling used ",
+          "inst/config/episodic_default_pathogen_config.csv (or match the spelling used ",
           "there) to get pathogen-specific behaviour."
         )
       )
@@ -1155,9 +1154,9 @@ episodic_check_column_guesses <- function(extra_cols) {
 #' @keywords internal
 #' @noRd
 episodic_check_configured_pathogens <- function() {
-  path <- system.file("config", "pathogen_config.csv", package = "EpiSODIC")
+  path <- system.file("config", "episodic_default_pathogen_config.csv", package = "EpiSODIC")
   if (identical(path, "")) {
-    path <- file.path("inst", "config", "pathogen_config.csv")
+    path <- file.path("inst", "config", "episodic_default_pathogen_config.csv")
   }
   if (!file.exists(path)) {
     return(NULL)
@@ -1267,7 +1266,7 @@ episodic_check_failure_message <- function(problems, what = "Case data") {
 #' @keywords internal
 #' @noRd
 episodic_check_case_data_link <- function() {
-  cli::format_inline("{.help [?episodic_case_data](episodic_case_data)}")
+  cli::format_inline("{.help [?episodic_case_data](EpiSODIC::episodic_case_data)}")
 }
 
 #' @param x An `episodic_case_check` report, as returned by

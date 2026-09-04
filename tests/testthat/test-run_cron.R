@@ -124,7 +124,7 @@ test_that("a second positive sent in a later, non-overlapping run still joins it
     cases = raw_case("K1", "2025-01-01"),
     run_date = as.Date("2025-01-01")
   )
-  # Test pathogen is not in inst/config/pathogen_config.csv, so it falls
+  # Test pathogen is not in inst/config/episodic_default_pathogen_config.csv, so it falls
   # back to the schema default of 30 days - day 20 is well within that.
   episodic_run_cron(
     db_path = path,

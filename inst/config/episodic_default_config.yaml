@@ -55,7 +55,7 @@ effect_size_floor:
 # same_place rule-based detector.
 # Defaults of n = 3 within 14 days, tightened per pathogen for the ones
 # that matter. Keys are raw `pathogen` strings, matching
-# inst/config/pathogen_config.csv and whatever the operator's lab feed uses.
+# inst/config/episodic_default_pathogen_config.csv and whatever the operator's lab feed uses.
 same_place:
   # NOTE: keys are n_cases/k_days rather than the more conventional "n"
   # because YAML 1.1 parses a bare unquoted `n:` key as the boolean FALSE
@@ -98,7 +98,7 @@ farrington:
   max_weeks_tested: 8
 
 # MEM seasonal detector (mem::memmodel()), for pathogens flagged
-# mem_applicable in pathogen_config.csv.
+# mem_applicable in episodic_default_pathogen_config.csv.
 mem:
   min_seasons: 2   # fully-observed prior seasons required before MEM fits
                    # at all. The same "need real baseline history first"
@@ -113,7 +113,7 @@ mem:
 # Match is against the raw `pathogen` string, case-insensitively.
 #
 # Deliberately excludes Bordetella pertussis, an otherwise plausible
-# candidate: it is also rt_applicable in pathogen_config.csv (endemic,
+# candidate: it is also rt_applicable in episodic_default_pathogen_config.csv (endemic,
 # seasonal, tracked via Rt/Farrington), and
 # putting it on both lists means every sporadic case fires rare_trigger
 # redundantly with what the statistical detectors already cover. A pathogen
@@ -137,7 +137,7 @@ priority_score:
   weights:
     excess_component: 0.25     # magnitude of cases above the model's own upper bound
     ratio_component: 0.15      # how far observed/expected exceeds 1 (capped at ratio 5)
-    severity_component: 0.20   # the pathogen's configured clinical severity weight (pathogen_config.csv), independent of case counts
+    severity_component: 0.20   # the pathogen's configured clinical severity weight (episodic_default_pathogen_config.csv), independent of case counts
     growth_component: 0.15     # whether the cluster is accelerating (slope of case counts over the last 3 periods)
     agreement_component: 0.10  # share of the 4 detectors that fired on this cluster
     density_component: 0.10    # incidence per 1,000 patient-days versus that stream's own baseline density

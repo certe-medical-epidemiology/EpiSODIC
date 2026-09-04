@@ -20,7 +20,7 @@ reports to the house style, or check what colour a given status uses.
 }
 \details{
 The palette ships with an organisation-neutral default
-(installed in \verb{/Users/m.s.berends/Unishare/Git/EpiSODIC/inst/config/palette.yaml}). To use your own institute's colours instead,
+(installed in \verb{\\Sexpr\{system.file("config", "episodic_default_style.yaml", package = "EpiSODIC")\}}). To use your own institute's colours instead,
 point the \code{EPISODIC_PALETTE_CONFIG} environment variable at a YAML file
 that overrides only the roles you want to change - anything you do not set
 keeps its shipped default.

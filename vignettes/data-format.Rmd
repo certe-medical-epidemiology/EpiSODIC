@@ -143,7 +143,7 @@ to the schema, not something to force into how cases are counted today.
 
 EpiSODIC collapses positives for the same patient and pathogen into one
 case per episode, using the episode length configured per pathogen in
-`inst/config/pathogen_config.csv` - and it does this correctly across
+`inst/config/episodic_default_pathogen_config.csv` - and it does this correctly across
 runs, not just within one extract: each run checks incoming positives
 against the most recent episode already on file for that
 patient/pathogen, so a recurring extract only has to cover a recent

@@ -602,7 +602,7 @@ episodic_ui_pathogen_clusters_panel <- function(
 #' (`episodic_cases_deduplicate()`), the case-free/cool-down days that
 #' decide when a cluster is closable, whether Rt and a seasonal baseline
 #' apply, and what feeds them. All of it lives in
-#' `inst/config/pathogen_config.csv` (or an instance's own override of
+#' `inst/config/episodic_default_pathogen_config.csv` (or an instance's own override of
 #' it) and is otherwise invisible from this screen - readable here
 #' rather than only in the source file.
 #' @keywords internal

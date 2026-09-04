@@ -94,21 +94,21 @@ episodic_config_export <- function(
 
   pathogen_csv <- system.file(
     "config",
-    "pathogen_config.csv",
+    "episodic_default_pathogen_config.csv",
     package = "EpiSODIC"
   )
   if (identical(pathogen_csv, "")) {
-    pathogen_csv <- file.path("inst", "config", "pathogen_config.csv")
+    pathogen_csv <- file.path("inst", "config", "episodic_default_pathogen_config.csv")
   }
   if (file.exists(pathogen_csv)) {
-    file.copy(pathogen_csv, file.path(work_dir, "pathogen_config.csv"))
+    file.copy(pathogen_csv, file.path(work_dir, "episodic_default_pathogen_config.csv"))
   }
 
   palette_path <- Sys.getenv("EPISODIC_PALETTE_CONFIG", unset = NA)
   if (
     !is.na(palette_path) && nzchar(palette_path) && file.exists(palette_path)
   ) {
-    file.copy(palette_path, file.path(work_dir, "palette.yaml"))
+    file.copy(palette_path, file.path(work_dir, "episodic_default_style.yaml"))
   }
 
   stamp <- format(Sys.time(), "%Y%m%dT%H%M%SZ", tz = "UTC")

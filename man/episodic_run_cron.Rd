@@ -87,11 +87,10 @@ values), and optionally \code{denominators} and \code{institution_activity} for
 testing volume and hospital activity. A data set is the normal case; if
 producing the data only makes sense at run time (a live database query,
 for instance), a zero-argument function returning one is accepted just
-as well - see \code{\link[=episodic_resolve_data]{episodic_resolve_data()}}.
+as well.
 
-The exact detection settings used are recorded with the run (see
-\code{episodic_config_hash()}), so any past result can always be traced back
-to the configuration that produced it.
+The exact detection settings used are recorded with the run, so any past
+result can always be traced back to the configuration that produced it.
 
 So is what each feed delivered. Before the run writes anything, your
 case data goes through \code{\link[=episodic_check_cases]{episodic_check_cases()}}. Structural problems -

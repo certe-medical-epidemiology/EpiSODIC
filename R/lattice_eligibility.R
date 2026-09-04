@@ -27,7 +27,7 @@
 #' fall-through detectors); only the gate itself lives here.
 #'
 #' The numeric thresholds are configurable defaults shipped in
-#' `inst/config/default.yaml`, tuned for a typical department's signal
+#' `inst/config/episodic_default_config.yaml`, tuned for a typical department's signal
 #' volume.
 #'
 #' @param cases_for_stream A data frame of cases belonging to one stream,

@@ -48,7 +48,7 @@ on - which is what makes suppression (below) meaningful.
   alongside Farrington at hospitals, where it can fire first on a fast
   cluster before a weekly aggregation has produced a point to test.
 - **`rare_trigger`** - a curated list of organisms (in
-  `inst/config/default.yaml`) where a single occurrence anywhere is
+  `inst/config/episodic_default_config.yaml`) where a single occurrence anywhere is
   itself the signal - certain notifiable or exceptionally rare
   pathogens do not need a second case to warrant a look.
 - **`mem`** (the `mem` package's Moving Epidemic Method) - for organisms

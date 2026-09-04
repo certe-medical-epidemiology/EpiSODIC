@@ -90,7 +90,7 @@ episodic_demo <- function(
   Sys.setenv(
     EPISODIC_CONFIG = system.file(
       "config",
-      "default.yaml",
+      "episodic_default_config.yaml",
       package = "EpiSODIC"
     ),
     EPISODIC_DB = db_path,

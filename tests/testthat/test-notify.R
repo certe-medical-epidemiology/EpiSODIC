@@ -665,7 +665,7 @@ test_that("episodic_reconcile_stream() returns new_cluster_ids", {
     con,
     cases,
     utils::read.csv(
-      system.file("config", "pathogen_config.csv", package = "EpiSODIC"),
+      system.file("config", "episodic_default_pathogen_config.csv", package = "EpiSODIC"),
       stringsAsFactors = FALSE,
       na.strings = c("", "NA")
     ),

@@ -18,7 +18,7 @@
 # ===================================================================== #
 
 doc_palette <- function() {
-  vals <- readLines(system.file("config/palette.yaml", package = "EpiSODIC"))
+  vals <- readLines(system.file("config", "episodic_default_style.yaml", package = "EpiSODIC"))
   vals <- vals[grepl(": ", vals) & !grepl("^#", vals)]
   paste0("`", vals, "`", collapse = "\n\n")
 }
@@ -30,7 +30,7 @@ doc_palette <- function() {
 #' reports to the house style, or check what colour a given status uses.
 #'
 #' The palette ships with an organisation-neutral default
-#' (installed in ``r system.file("config/palette.yaml", package = "EpiSODIC")``). To use your own institute's colours instead,
+#' (installed in `\Sexpr{system.file("config", "episodic_default_style.yaml", package = "EpiSODIC")}`). To use your own institute's colours instead,
 #' point the `EPISODIC_PALETTE_CONFIG` environment variable at a YAML file
 #' that overrides only the roles you want to change - anything you do not set
 #' keeps its shipped default.
@@ -90,9 +90,9 @@ episodic_palette_config_resolve <- function(
     return(cached)
   }
 
-  defaults_path <- system.file("config", "palette.yaml", package = "EpiSODIC")
+  defaults_path <- system.file("config", "episodic_default_style.yaml", package = "EpiSODIC")
   if (identical(defaults_path, "")) {
-    defaults_path <- file.path("inst", "config", "palette.yaml")
+    defaults_path <- file.path("inst", "config", "episodic_default_style.yaml")
   }
   base <- yaml::read_yaml(defaults_path)
 

@@ -2,7 +2,7 @@
    inst/app/www/episodic.css): a darker background than Yeti's own
    $primary used elsewhere on the site, plus the same multi-colour strip
    beneath it (warning, success, danger, primary, secondary from
-   inst/config/palette.yaml, in five equal hard-edged stripes).
+   inst/config/episodic_default_style.yaml, in five equal hard-edged stripes).
    Set directly rather than via template.bslib.navbar-bg: without a
    navbar.bg utility class in _pkgdown.yml, pkgdown's navbar template
    never gets a bg-* class, so that Sass variable has nothing to attach

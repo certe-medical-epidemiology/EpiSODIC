@@ -228,11 +228,10 @@ episodic_pkg_versions_extended <- function() {
 #' testing volume and hospital activity. A data set is the normal case; if
 #' producing the data only makes sense at run time (a live database query,
 #' for instance), a zero-argument function returning one is accepted just
-#' as well - see [episodic_resolve_data()].
+#' as well.
 #'
-#' The exact detection settings used are recorded with the run (see
-#' `episodic_config_hash()`), so any past result can always be traced back
-#' to the configuration that produced it.
+#' The exact detection settings used are recorded with the run, so any past
+#' result can always be traced back to the configuration that produced it.
 #'
 #' So is what each feed delivered. Before the run writes anything, your
 #' case data goes through [episodic_check_cases()]. Structural problems -
@@ -719,11 +718,11 @@ episodic_run_cron_body <- function(
   episodic_trace("Loading pathogen configuration")
   pathogen_config_path <- system.file(
     "config",
-    "pathogen_config.csv",
+    "episodic_default_pathogen_config.csv",
     package = "EpiSODIC"
   )
   if (identical(pathogen_config_path, "")) {
-    pathogen_config_path <- file.path("inst", "config", "pathogen_config.csv")
+    pathogen_config_path <- file.path("inst", "config", "episodic_default_pathogen_config.csv")
   }
   pathogen_config <- utils::read.csv(
     pathogen_config_path,

@@ -122,9 +122,9 @@ episodic_test_seed_completion <- function(
 }
 
 episodic_test_pathogen_config <- function() {
-  path <- system.file("config", "pathogen_config.csv", package = "EpiSODIC")
+  path <- system.file("config", "episodic_default_pathogen_config.csv", package = "EpiSODIC")
   if (identical(path, "")) {
-    path <- file.path("inst", "config", "pathogen_config.csv")
+    path <- file.path("inst", "config", "episodic_default_pathogen_config.csv")
   }
   utils::read.csv(path, stringsAsFactors = FALSE, na.strings = c("", "NA"))
 }

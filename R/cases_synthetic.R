@@ -308,7 +308,7 @@ episodic_synthetic_pc_pool <- function() {
 #' the clusters in the demo are the injected ones rather than coincidence.
 #' amplitude/phase_day describe a sinusoidal season, phase_day being the
 #' day-of-year of peak incidence. `pathogen` values match
-#' `inst/config/pathogen_config.csv` exactly, as raw lab-provided strings.
+#' `inst/config/episodic_default_pathogen_config.csv` exactly, as raw lab-provided strings.
 #' @keywords internal
 #' @noRd
 episodic_synthetic_pathogen_profiles <- function() {

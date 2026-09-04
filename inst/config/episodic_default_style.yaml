@@ -19,7 +19,7 @@
 
 # EpiSODIC's shipped default UI palette.
 #
-# Deliberately a separate file from default.yaml: this is a display-only
+# Deliberately a separate file from episodic_default_config.yaml: this is a display-only
 # concern (the app's colours), not part of detection configuration, so it
 # must never affect episodic_config_hash()/config_snapshot - that
 # reproducibility guarantee is about detection results, not colour
