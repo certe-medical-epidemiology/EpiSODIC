@@ -36,7 +36,7 @@ failure never rolls back a successful detection run.
 Notification settings go in your instance YAML configuration file, the
 same file that `EPISODIC_CONFIG` points at (see
 `vignette("environment-variables")`). Add a `notifications` key at the
-top level. The shipped `r doc_system_file("inst/config/episodic_default_config.yaml")` contains commented-out
+top level. The shipped `r EpiSODIC:::doc_system_file("inst/config/episodic_default_config.yaml")` contains commented-out
 examples for every channel; copy the ones you need into your instance
 file and fill in the values.
 

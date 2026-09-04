@@ -229,7 +229,7 @@ with only the keys you want to change:
 Sys.setenv(EPISODIC_CONFIG = "/path/to/my_overrides.yaml")
 ```
 
-It is merged key-by-key on top of the `r doc_system_file("inst/config/episodic_default_config.yaml")`'s shipped
+It is merged key-by-key on top of the `r EpiSODIC:::doc_system_file("inst/config/episodic_default_config.yaml")`'s shipped
 defaults, so you only ever need to write down what differs for your
 organisation. Every run records the resolved configuration's full
 snapshot and hash on `episodic_detection_run`, so whatever parameters
