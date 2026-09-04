@@ -1,4 +1,4 @@
-# EpiSODIC 0.10.4
+# EpiSODIC 0.11.0
 
 ## New
 
@@ -11,9 +11,12 @@
 - The reference-data panel reports how many of the case data's own postcodes resolve to a province, which is what distinguishes a `EPISODIC_PC_PROVINCE_MAP` that was never read from one whose postcode format does not match the case data
 - `episodic_default_style.yaml` (and `EPISODIC_STYLE`) now also carries typography: `font` (a CSS font-family stack) and `font_size_base`, which scales every other font size in the dashboard, since those are now expressed in `rem` relative to it
 - Every cluster table now has a "Case days" column: the number of distinct dates with at least one case, as its own figure next to the case count and the calendar duration - a cluster can run 90 days with cases on only 10 of them (a sharp peak) or on 39 of them (a flat, sustained rise), the same duration and case count, two different epidemic shapes
+- `episodic_add_user()` is now exported, so accounts can be provisioned from a script without reaching into the package's internals
 
 ## Changed
 
+- Trimmed the exported API surface to what an operator actually needs: `episodic_care_lines()`, `episodic_case_columns()`, `episodic_config_hash()`, `episodic_config_resolve()`, `episodic_institution_types()`, `episodic_interpretation_slots()`, `episodic_provision_user()`, `episodic_resolve_data()`, `episodic_sex_codes()`, `episodic_tr()` and `episodic_validate_cases()` are no longer exported (still used internally)
+- The shipped default config, style, pathogen and report files are renamed to self-explanatory names: `default.yaml` -> `episodic_default_config.yaml`, `palette.yaml` -> `episodic_default_style.yaml`, `pathogen_config.csv` -> `episodic_default_pathogen_config.csv`, `cluster_report.qmd` -> `episodic_default_report.qmd`
 - Every table of clusters (Archive, Pathogen screen, the dossier's related and similar-clusters panels, the outbreak report and the new-cluster notification) now shares one implementation with the same columns in the same order: cluster id, then context, then the case period (first case - last case, as one range), cases, case days, then what was decided (classification/state/closure date/shared cases), then duration and priority
 - Every table of clusters is now sorted on the last case day, most recent first, with priority and cluster id breaking ties
 - A cluster row that does not open a dossier, because lattice suppression folded it into another, now shows its id in the warning colour with a tooltip explaining why, instead of a link that does nothing
@@ -26,6 +29,8 @@
 ## Fixed
 
 - Opening a cluster from a table row or a "linked to #N" chip now moves the rail's own highlight to match; it used to leave the rail showing whichever cluster was selected before, because the rail deliberately does not re-render on every selection
+- Opening the dashboard via a `?cluster=<id>` link no longer crashes with "Can't access reactive value 'url_search' outside of reactive consumer"
+- `episodic_demo()` no longer leaves `EPISODIC_CONFIG`/`EPISODIC_DB`/`EPISODIC_GEO_DATA` permanently overwritten for the rest of the R session once it returns
 
 
 # EpiSODIC 0.10.3
