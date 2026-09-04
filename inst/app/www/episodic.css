@@ -354,6 +354,12 @@ input:focus-visible {
   color: var(--episodic-muted);
   line-height: 1.6;
   margin-top: 14px;
+  /* A note is plain text (episodic_tr() output, never shiny::HTML()), so
+     a translation string is the only place a line break can come from -
+     e.g. panel.related.note's second line spelling out what "linked"
+     and "suppressed" mean. Browsers collapse a literal "\n" to a single
+     space by default; this is what makes it print as an actual break. */
+  white-space: pre-line;
 }
 /* The geo panel's cropped detail map beside its uncropped region-context
    map. Side by side above a shared minimum width, stacked below it -

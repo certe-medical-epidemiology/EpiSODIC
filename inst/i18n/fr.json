@@ -478,7 +478,7 @@
   "relation.suppressed": "supprimée",
   "dossier.linked_badge": "Liée à {ref}",
   "dossier.linked_more": "+{n} autres",
-  "panel.related.note": "D'autres grappes contenant une partie de ces cas. Les grappes liées constituent leur propre dossier et restent à évaluer ; les grappes supprimées ont été absorbées par celle-ci.",
+  "panel.related.note": "D'autres grappes contenant une partie de ces cas. Les grappes liées constituent leur propre dossier et restent à évaluer ; les grappes supprimées ont été absorbées par celle-ci.\nLiée = dossier propre, partage des cas. Supprimée = plus de dossier propre, ses cas sont absorbés ici.",
   "panel.similar.unavailable": "Aucun cluster clôturé similaire trouvé pour ce pathogène.",
 
   "panel.report.title": "Rapport d'épidémie",
