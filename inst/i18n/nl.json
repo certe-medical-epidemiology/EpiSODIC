@@ -478,7 +478,7 @@
   "relation.suppressed": "onderdrukt",
   "dossier.linked_badge": "Gekoppeld aan {ref}",
   "dossier.linked_more": "+{n} meer",
-  "panel.related.note": "Andere clusters met een deel van deze casussen. Gekoppelde clusters zijn een eigen dossier en moeten nog beoordeeld worden; onderdrukte clusters zijn in dit dossier opgegaan.\nGekoppeld = eigen dossier, deelt casussen. Onderdrukt = geen eigen dossier meer, casussen zijn hier opgegaan.",
+  "panel.related.note": "Andere clusters met een deel van deze casussen. Gekoppelde clusters zijn een eigen dossier en moeten nog beoordeeld worden; onderdrukte clusters zijn in dit dossier opgegaan.\nGekoppeld = eigen dossier, deelt casussen. Onderdrukt = geen eigen dossier meer, casussen zijn in dit cluster opgegaan.",
   "panel.similar.unavailable": "Geen vergelijkbare afgesloten clusters gevonden voor deze verwekker.",
 
   "panel.report.title": "Uitbraakrapport",
