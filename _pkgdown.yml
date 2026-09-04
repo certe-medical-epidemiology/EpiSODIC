@@ -101,12 +101,10 @@ reference:
   - episodic_auth
   - episodic_add_user
 
-- title: Interpret and report results
+- title: Report results
   desc: >
-    How the dashboard's narrative summary is generated, and how to send
-    an outbreak report to clinical colleagues.
+    How to send an outbreak report to clinical colleagues.
   contents:
-  - episodic_interpretation
   - episodic_report_render
 
 - title: Notifications
