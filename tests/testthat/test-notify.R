@@ -107,6 +107,7 @@ test_that("episodic_notify_build_new_clusters() produces all message formats", {
     ward = NA_character_,
     region_code = NA_character_,
     n_cases = 5L,
+    case_days = 4L,
     expected = 1.2,
     excess = 3.8,
     ratio = 4.2,
@@ -139,6 +140,7 @@ test_that("episodic_notify_build_new_clusters() caps at 10 and shows remainder",
     ward = rep(NA_character_, 12),
     region_code = rep("NL", 12),
     n_cases = rep(3L, 12),
+    case_days = rep(3L, 12),
     expected = rep(1.0, 12),
     excess = rep(2.0, 12),
     ratio = rep(3.0, 12),
@@ -172,6 +174,7 @@ test_that("episodic_notify_build_new_clusters() renders the Period column like t
     ward = NA_character_,
     region_code = NA_character_,
     n_cases = 5L,
+    case_days = 4L,
     expected = 1.2,
     excess = 3.8,
     ratio = 4.2,
@@ -212,6 +215,7 @@ test_that("episodic_notify_build_new_clusters() centre-aligns everything after t
     ward = NA_character_,
     region_code = NA_character_,
     n_cases = 5L,
+    case_days = 4L,
     expected = 1.2,
     excess = 3.8,
     ratio = 4.2,
@@ -228,18 +232,19 @@ test_that("episodic_notify_build_new_clusters() centre-aligns everything after t
     msg$html,
     perl = TRUE
   )
-  # cluster, pathogen and place read as text; cases, first case, last
-  # case, duration, priority, expected and ratio are all numbers
+  # cluster, pathogen and place read as text; first case, last case,
+  # cases, case days, duration, priority, expected and ratio are all
+  # numbers (or, for the two dates, numeric-ish and centred the same way)
   expect_equal(
     lengths(regmatches(header, gregexpr("text-align:left", header))),
     3
   )
   expect_equal(
     lengths(regmatches(header, gregexpr("text-align:center", header))),
-    7
+    8
   )
   row <- sub(".*(<tr>.*?</tr>).*", "\\1", msg$html, perl = TRUE)
-  expect_equal(lengths(regmatches(row, gregexpr("text-align:center", row))), 7)
+  expect_equal(lengths(regmatches(row, gregexpr("text-align:center", row))), 8)
 })
 
 test_that("episodic_notify_build_new_clusters() and episodic_notify_build_failure() honour lang", {
@@ -251,6 +256,7 @@ test_that("episodic_notify_build_new_clusters() and episodic_notify_build_failur
     ward = NA_character_,
     region_code = NA_character_,
     n_cases = 5L,
+    case_days = 4L,
     expected = 1.2,
     excess = 3.8,
     ratio = 4.2,
@@ -301,6 +307,7 @@ test_that("episodic_notify_build_new_clusters() includes dashboard link when giv
     ward = NA_character_,
     region_code = NA_character_,
     n_cases = 5L,
+    case_days = 4L,
     expected = 1.2,
     excess = 3.8,
     ratio = 4.2,
@@ -361,6 +368,7 @@ test_that("the notification names every cluster by id and shows them last case d
     ward = rep(NA_character_, 3),
     region_code = rep("NL", 3),
     n_cases = c(4L, 9L, 2L),
+    case_days = c(3L, 6L, 2L),
     expected = rep(1.0, 3),
     excess = rep(2.0, 3),
     ratio = rep(3.0, 3),

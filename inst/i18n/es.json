@@ -570,6 +570,8 @@
   "column.cases": "Casos",
   "column.first_day": "Primer caso",
   "column.last_day": "Último caso",
+  "column.period": "Período de casos",
+  "column.case_days": "Días con casos",
   "column.duration": "Duración",
   "column.priority": "Prioridad",
   "column.verdict": "Clasificación",

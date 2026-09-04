@@ -50,7 +50,7 @@
 #' @param n Maximum number of results.
 #' @return A data frame, one row per similar cluster, the `n` most similar
 #'   first: `cluster_id`, `pathogen`, `level_label`, `place`, `first_day`,
-#'   `last_day`, `n_cases`, `priority_score`, `verdict_label`,
+#'   `last_day`, `n_cases`, `case_days`, `priority_score`, `verdict_label`,
 #'   `closed_at`. Zero rows if there is no closed precedent for this
 #'   pathogen. Similarity decides *which* rows come back; the panel that
 #'   renders them re-sorts into `episodic_cluster_table_order()`, like
@@ -70,6 +70,7 @@ episodic_app_similar_clusters <- function(
     first_day = character(0),
     last_day = character(0),
     n_cases = integer(0),
+    case_days = integer(0),
     priority_score = numeric(0),
     verdict_label = character(0),
     closed_at = character(0),
@@ -192,6 +193,7 @@ episodic_app_similar_clusters <- function(
     episodic_db_cluster_states_batch(con, clusters$cluster_id),
     clusters$cluster_id
   )
+  clusters <- episodic_db_attach_case_days(con, clusters)
 
   clusters[, c(
     "cluster_id",
@@ -201,6 +203,7 @@ episodic_app_similar_clusters <- function(
     "first_day",
     "last_day",
     "n_cases",
+    "case_days",
     "priority_score",
     "verdict_label",
     "closed_at"

@@ -366,6 +366,79 @@ episodic_db_cluster_cases <- function(con, cluster_id) {
   )
 }
 
+#' The number of distinct dates with at least one case, for a set of clusters
+#'
+#' Not the same number as the duration (`last_day - first_day + 1`): a
+#' cluster running 90 days with cases packed into 10 of them is a sharp
+#' peak, while one spread over 39 of those 90 days is a flat, sustained
+#' rise - two different epidemic shapes that duration and case count
+#' alone cannot tell apart. Computed at read time from the case-level
+#' link table rather than stored on `episodic_cluster`, the same way
+#' `episodic_db_clusters_linked_to()` computes `shared_cases`: it is a
+#' display aggregate, not an input to detection, so it has no reason to
+#' live in the cron-owned, reproducibility-hashed write path.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_ids A vector of `cluster_id`s.
+#' @return A data frame with `cluster_id` and `case_days`, one row per id
+#'   that has at least one linked case. A caller merges this onto its own
+#'   cluster data frame by `cluster_id`; an id absent from the result has
+#'   no linked cases yet (a caller should treat that as `0L`, not `NA`).
+#'   Empty (but correctly shaped) if `cluster_ids` is empty.
+#' @keywords internal
+#' @noRd
+episodic_db_case_days_batch <- function(con, cluster_ids) {
+  empty <- data.frame(
+    cluster_id = integer(0),
+    case_days = integer(0),
+    stringsAsFactors = FALSE
+  )
+  cluster_ids <- unique(cluster_ids)
+  if (length(cluster_ids) == 0) {
+    return(empty)
+  }
+  placeholders <- paste(rep("?", length(cluster_ids)), collapse = ", ")
+  DBI::dbGetQuery(
+    con,
+    sprintf(
+      "SELECT cc.cluster_id, COUNT(DISTINCT c.sample_date) AS case_days
+       FROM episodic_cluster_case cc
+       INNER JOIN episodic_case c ON c.case_id = cc.case_id
+       WHERE cc.cluster_id IN (%s)
+       GROUP BY cc.cluster_id",
+      placeholders
+    ),
+    params = as.list(as.integer(cluster_ids))
+  )
+}
+
+#' Attach `case_days` to a cluster data frame, in one batched query
+#'
+#' The merge every caller of [episodic_db_case_days_batch()] needs:
+#' `left_join`-shaped (every row of `clusters` kept), with `0L` rather
+#' than `NA` for a cluster the batch query did not return a row for (one
+#' with no linked cases at all - `NA` would print as a dash next to a
+#' cluster that plainly has cases, which is a worse lie than `0`).
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param clusters A data frame with a `cluster_id` column.
+#' @return `clusters` with a new `case_days` integer column. Unchanged
+#'   (no column added) if `clusters` has zero rows, since there is
+#'   nothing to look up and no `cluster_id` type to coerce.
+#' @keywords internal
+#' @noRd
+episodic_db_attach_case_days <- function(con, clusters) {
+  if (nrow(clusters) == 0) {
+    return(clusters)
+  }
+  case_days <- episodic_db_case_days_batch(con, clusters$cluster_id)
+  clusters$case_days <- case_days$case_days[
+    match(clusters$cluster_id, case_days$cluster_id)
+  ]
+  clusters$case_days[is.na(clusters$case_days)] <- 0L
+  clusters
+}
+
 #' @keywords internal
 #' @noRd
 episodic_db_assessment_events <- function(con, cluster_id) {

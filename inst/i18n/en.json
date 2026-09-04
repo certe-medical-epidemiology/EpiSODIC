@@ -570,6 +570,8 @@
   "column.cases": "Cases",
   "column.first_day": "First case",
   "column.last_day": "Last case",
+  "column.period": "Case period",
+  "column.case_days": "Case days",
   "column.duration": "Duration",
   "column.priority": "Priority",
   "column.verdict": "Classification",

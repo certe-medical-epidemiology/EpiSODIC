@@ -825,6 +825,7 @@ episodic_ui_related_panel <- function(
       )
     }
   )
+  related <- episodic_db_attach_case_days(con, related)
 
   episodic_ui_panel(
     episodic_tr("panel.related.title", lang = lang),

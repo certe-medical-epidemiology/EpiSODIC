@@ -571,6 +571,7 @@ test_that("the signals table leads with the cluster id", {
   # and the shared spine, priority and both case days included
   for (key in c(
     "column.cases",
+    "column.case_days",
     "column.first_day",
     "column.last_day",
     "column.duration",
@@ -605,7 +606,9 @@ test_that("each cluster row links through to its dossier, by click and by keyboa
   screen <- episodic_app_pathogen_screen(env$con, period = "all", lang = "en")
   html <- as.character(episodic_ui_pathogen_clusters_panel(screen, lang = "en"))
 
-  expect_true(grepl("open_cluster", html, fixed = TRUE))
+  # episodicOpenCluster() (see R/app_ui.R) both sets the `open_cluster`
+  # Shiny input and moves the rail's own highlight
+  expect_true(grepl("episodicOpenCluster", html, fixed = TRUE))
   expect_true(grepl(as.character(cluster_id), html, fixed = TRUE))
   expect_true(grepl("episodic-row-link", html, fixed = TRUE))
   # a <tr> has no keyboard access of its own

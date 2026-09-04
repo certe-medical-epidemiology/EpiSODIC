@@ -570,6 +570,8 @@
   "column.cases": "الحالات",
   "column.first_day": "أول حالة",
   "column.last_day": "آخر حالة",
+  "column.period": "فترة الحالات",
+  "column.case_days": "أيام الحالات",
   "column.duration": "المدة",
   "column.priority": "الأولوية",
   "column.verdict": "التصنيف",

@@ -570,6 +570,8 @@
   "column.cases": "病例数",
   "column.first_day": "首例",
   "column.last_day": "末例",
+  "column.period": "病例期间",
+  "column.case_days": "病例天数",
   "column.duration": "持续时间",
   "column.priority": "优先级",
   "column.verdict": "分类",

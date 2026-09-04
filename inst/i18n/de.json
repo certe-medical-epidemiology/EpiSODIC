@@ -570,6 +570,8 @@
   "column.cases": "Fälle",
   "column.first_day": "Erster Fall",
   "column.last_day": "Letzter Fall",
+  "column.period": "Fallzeitraum",
+  "column.case_days": "Falltage",
   "column.duration": "Dauer",
   "column.priority": "Priorität",
   "column.verdict": "Klassifikation",

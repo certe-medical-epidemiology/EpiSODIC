@@ -570,6 +570,8 @@
   "column.cases": "Casussen",
   "column.first_day": "Eerste casus",
   "column.last_day": "Laatste casus",
+  "column.period": "Casusperiode",
+  "column.case_days": "Casusdagen",
   "column.duration": "Duur",
   "column.priority": "Prioriteit",
   "column.verdict": "Classificatie",
