@@ -25,15 +25,30 @@
    an instance's own EPISODIC_PALETTE_CONFIG override produce
    byte-identical CSS. */
 
+/* Both custom properties below have shipped fallbacks here so the app
+   still renders correctly if this stylesheet is ever loaded without the
+   palette <style> block (see episodic_app_palette_css() in R/app_ui.R)
+   injecting its own :root override - the injected block always wins on
+   source order, since it is a later same-specificity :root rule. All
+   font-size declarations throughout this file are in rem, so --episodic-
+   font-size-base is the single dial that scales the whole app; some
+   fonts read comfortably smaller or larger than IBM Plex Sans at the
+   same pixel size, hence a font-family change is often paired with a
+   base size change (see episodic_default_style.yaml). */
 :root {
   --episodic-font: "IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --episodic-font-size-base: 13px;
+}
+
+html {
+  font-size: var(--episodic-font-size-base);
 }
 
 body {
   font-family: var(--episodic-font);
   background: var(--episodic-bg);
   color: var(--episodic-ink);
-  font-size: 13px;
+  font-size: 1rem;
 }
 
 .episodic-header {
@@ -48,7 +63,7 @@ body {
 .episodic-header .episodic-brand {
   font-weight: 600;
   letter-spacing: 0.4px;
-  font-size: 15px;
+  font-size: 1.154rem;
   cursor: help;
   padding-bottom: 1px;
 }
@@ -61,7 +76,7 @@ body {
   margin-left: 18px;
 }
 .episodic-nav a {
-  font-size: 12px;
+  font-size: 0.923rem;
   padding: 4px 10px;
   border-radius: 2px;
   color: #BDD0DA;
@@ -72,7 +87,7 @@ body {
   color: #fff;
 }
 .episodic-demodata {
-  font-size: 10.5px;
+  font-size: 0.808rem;
   color: #8FAAB8;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -82,7 +97,7 @@ body {
   display: flex;
   align-items: center;
   gap: 18px;
-  font-size: 11.5px;
+  font-size: 0.885rem;
   color: #BDD0DA;
 }
 .episodic-status-dot {
@@ -117,13 +132,13 @@ body {
   border-bottom: 1px solid var(--episodic-border);
 }
 .episodic-rail-title {
-  font-size: 10.5px;
+  font-size: 0.808rem;
   letter-spacing: 0.6px;
   text-transform: uppercase;
   color: var(--episodic-muted);
 }
 .episodic-rail-count {
-  font-size: 11.5px;
+  font-size: 0.885rem;
   color: var(--episodic-muted);
   margin-top: 3px;
 }
@@ -143,7 +158,7 @@ body {
   border-left-color: var(--episodic-primary);
 }
 .episodic-rail-item .episodic-rail-pathogen {
-  font-size: 13px;
+  font-size: 1rem;
   font-weight: 500;
 }
 /* The bulk-select checkbox, inline with the pathogen name rather than on
@@ -157,14 +172,14 @@ body {
 .episodic-rail-pathogen .episodic-chip {
   margin-left: 6px;
   vertical-align: 1px;
-  font-size: 9px;
+  font-size: 0.692rem;
   padding: 1px 5px;
 }
 /* The cluster id, set beside the pathogen name in the rail list - same
    idea as .episodic-dossier-id, so an epidemiologist can quote or search
    by it without opening the dossier. */
 .episodic-rail-id {
-  font-size: 10.5px;
+  font-size: 0.808rem;
   font-weight: 500;
   font-style: normal;
   color: var(--episodic-muted);
@@ -173,12 +188,12 @@ body {
   margin-left: 2px;
 }
 .episodic-rail-item .episodic-rail-meta {
-  font-size: 11px;
+  font-size: 0.846rem;
   color: var(--episodic-muted);
   margin-top: 3px;
 }
 .episodic-rail-item .episodic-rail-state {
-  font-size: 11px;
+  font-size: 0.846rem;
   color: var(--episodic-muted);
   margin-top: 6px;
   display: flex;
@@ -199,7 +214,7 @@ body {
   padding: 18px 20px 40px;
 }
 .episodic-dossier-title {
-  font-size: 25px;
+  font-size: 1.923rem;
   font-weight: 600;
   line-height: 1.15;
   display: inline;
@@ -208,7 +223,7 @@ body {
    Upright and muted at a smaller size, so it reads as a reference on the
    name rather than as part of the taxon - which is italicised. */
 .episodic-dossier-id {
-  font-size: 15px;
+  font-size: 1.154rem;
   font-weight: 500;
   font-style: normal;
   color: var(--episodic-muted);
@@ -216,13 +231,13 @@ body {
   white-space: nowrap;
 }
 .episodic-dossier-meta {
-  font-size: 12.5px;
+  font-size: 0.962rem;
   color: var(--episodic-muted);
   margin-top: 6px;
 }
 
 .episodic-chip {
-  font-size: 10.5px;
+  font-size: 0.808rem;
   letter-spacing: 0.3px;
   text-transform: uppercase;
   padding: 2px 7px;
@@ -258,20 +273,20 @@ input:focus-visible {
   flex-wrap: wrap;
 }
 .episodic-stat-label {
-  font-size: 10px;
+  font-size: 0.769rem;
   letter-spacing: 0.6px;
   text-transform: uppercase;
   color: var(--episodic-muted);
 }
 .episodic-stat-value {
-  font-size: 24px;
+  font-size: 1.846rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--episodic-ink);
   line-height: 1.15;
 }
 .episodic-stat-sub {
-  font-size: 11.5px;
+  font-size: 0.885rem;
   color: var(--episodic-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -284,7 +299,7 @@ input:focus-visible {
   margin-bottom: 16px;
 }
 .episodic-trajectory-title {
-  font-size: 10.5px;
+  font-size: 0.808rem;
   letter-spacing: 0.6px;
   text-transform: uppercase;
   color: var(--episodic-muted);
@@ -299,11 +314,11 @@ input:focus-visible {
   border-radius: 1px;
 }
 .episodic-trajectory-seg-label {
-  font-size: 11px;
+  font-size: 0.846rem;
   margin-top: 5px;
 }
 .episodic-trajectory-seg-time {
-  font-size: 10.5px;
+  font-size: 0.808rem;
   color: var(--episodic-faint);
   font-variant-numeric: tabular-nums;
 }
@@ -322,20 +337,20 @@ input:focus-visible {
   justify-content: space-between;
 }
 .episodic-panel-title {
-  font-size: 13.5px;
+  font-size: 1.038rem;
   font-weight: 600;
   letter-spacing: 0.2px;
   margin: 0;
 }
 .episodic-panel-aside {
-  font-size: 11.5px;
+  font-size: 0.885rem;
   color: var(--episodic-muted);
 }
 .episodic-panel-body {
   padding: 18px;
 }
 .episodic-panel-note {
-  font-size: 12px;
+  font-size: 0.923rem;
   color: var(--episodic-muted);
   line-height: 1.6;
   margin-top: 14px;
@@ -370,7 +385,7 @@ input:focus-visible {
   margin: 0 auto;
 }
 .episodic-panel-empty {
-  font-size: 12.5px;
+  font-size: 0.962rem;
   color: var(--episodic-muted);
   font-style: italic;
 }
@@ -386,7 +401,7 @@ input:focus-visible {
 }
 
 .episodic-interpretation p {
-  font-size: 13.5px;
+  font-size: 1.038rem;
   line-height: 1.65;
   margin-bottom: 10px;
   color: var(--episodic-ink);
@@ -399,7 +414,7 @@ input:focus-visible {
   background: var(--episodic-primary-tint);
   border-left: 3px solid var(--episodic-primary);
   border-radius: 2px;
-  font-size: 13px;
+  font-size: 1rem;
   line-height: 1.6;
 }
 
@@ -411,7 +426,7 @@ input:focus-visible {
 }
 .episodic-bar-label {
   width: 280px;
-  font-size: 12px;
+  font-size: 0.923rem;
   color: var(--episodic-ink);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -429,7 +444,7 @@ input:focus-visible {
 }
 .episodic-bar-value {
   width: 30px;
-  font-size: 12px;
+  font-size: 0.923rem;
   text-align: right;
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
@@ -454,7 +469,7 @@ input:focus-visible {
 .episodic-pyramid-band {
   width: 56px;
   text-align: center;
-  font-size: 11px;
+  font-size: 0.846rem;
   color: var(--episodic-muted);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
@@ -462,13 +477,13 @@ input:focus-visible {
 
 table.episodic-table {
   width: 100%;
-  font-size: 12.5px;
+  font-size: 0.962rem;
   border-collapse: collapse;
 }
 table.episodic-table th {
   text-align: left;
   font-weight: 500;
-  font-size: 11px;
+  font-size: 0.846rem;
   color: var(--episodic-muted);
   padding: 5px 8px 8px 0;
   border-bottom: 1px solid var(--episodic-border);
@@ -480,7 +495,7 @@ table.episodic-table td {
 }
 
 dl.episodic-settings {
-  font-size: 12.5px;
+  font-size: 0.962rem;
 }
 dl.episodic-settings > div {
   display: flex;
@@ -499,14 +514,14 @@ dl.episodic-settings dd { margin: 0; }
   padding: 16px;
 }
 .episodic-verloop-title {
-  font-size: 10.5px;
+  font-size: 0.808rem;
   letter-spacing: 0.6px;
   text-transform: uppercase;
   color: var(--episodic-muted);
   margin-bottom: 10px;
 }
 .episodic-verloop-empty {
-  font-size: 12.5px;
+  font-size: 0.962rem;
   color: var(--episodic-muted);
   line-height: 1.55;
 }
@@ -555,24 +570,24 @@ dl.episodic-settings dd { margin: 0; }
   flex: none;
 }
 .episodic-info-about-name {
-  font-size: 26px;
+  font-size: 2rem;
   font-weight: 700;
   color: var(--episodic-primary-dark);
 }
 .episodic-info-about-full-name {
-  font-size: 18px;
+  font-size: 1.385rem;
   font-weight: 700;
   color: var(--episodic-primary-dark);
 }
 .episodic-info-about-version {
   margin-left: 8px;
-  font-size: 13px;
+  font-size: 1rem;
   font-weight: 400;
   color: var(--episodic-primary-dark);
 }
 .episodic-info-about-desc {
   margin-top: 8px;
-  font-size: 14px;
+  font-size: 1.077rem;
   line-height: 1.5;
   color: var(--episodic-primary-dark);
   max-width: 640px;
@@ -581,7 +596,7 @@ dl.episodic-settings dd { margin: 0; }
   margin-top: 10px;
   display: flex;
   gap: 18px;
-  font-size: 12.5px;
+  font-size: 0.962rem;
   color: var(--episodic-muted);
 }
 .episodic-info-about-links a {
@@ -590,7 +605,7 @@ dl.episodic-settings dd { margin: 0; }
 
 /* M3: auth, classification form, archive, activity */
 .episodic-auth-link {
-  font-size: 11.5px;
+  font-size: 0.885rem;
   color: #BDD0DA;
   cursor: pointer;
   text-decoration: none;
@@ -601,7 +616,7 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-form-group { margin-bottom: 12px; }
 .episodic-form-label {
   display: block;
-  font-size: 10.5px;
+  font-size: 0.808rem;
   letter-spacing: 0.4px;
   text-transform: uppercase;
   color: var(--episodic-muted);
@@ -616,7 +631,7 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-form-group select {
   width: 100%;
   font-family: var(--episodic-font);
-  font-size: 12.5px;
+  font-size: 0.962rem;
   padding: 6px 8px;
   border: 1px solid var(--episodic-border);
   border-radius: 3px;
@@ -629,18 +644,18 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-form-checkbox-label {
   display: flex;
   align-items: center;
-  font-size: 12.5px;
+  font-size: 0.962rem;
   color: var(--episodic-ink);
   text-transform: none;
   letter-spacing: normal;
 }
 .episodic-form-hint {
-  font-size: 10.5px;
+  font-size: 0.808rem;
   color: var(--episodic-faint);
   margin-top: 3px;
 }
 .episodic-form-error {
-  font-size: 11.5px;
+  font-size: 0.885rem;
   color: var(--episodic-danger-dark);
   margin-top: 6px;
 }
@@ -651,7 +666,7 @@ dl.episodic-settings dd { margin: 0; }
 }
 .episodic-btn {
   font-family: var(--episodic-font);
-  font-size: 12px;
+  font-size: 0.923rem;
   padding: 6px 14px;
   border-radius: 3px;
   border: 1px solid var(--episodic-border);
@@ -676,7 +691,7 @@ dl.episodic-settings dd { margin: 0; }
   width: 100%;
   text-align: left;
   font-family: var(--episodic-font);
-  font-size: 12px;
+  font-size: 0.923rem;
   padding: 7px 10px;
   margin-bottom: 4px;
   border-radius: 3px;
@@ -687,7 +702,7 @@ dl.episodic-settings dd { margin: 0; }
 }
 .episodic-picker-btn.active { color: #fff; }
 .episodic-picker-hint {
-  font-size: 10.5px;
+  font-size: 0.808rem;
   opacity: 0.8;
   margin-top: 2px;
 }
@@ -698,11 +713,11 @@ dl.episodic-settings dd { margin: 0; }
   color: var(--episodic-muted);
 }
 .episodic-locked-panel .episodic-lock-icon {
-  font-size: 20px;
+  font-size: 1.538rem;
   margin-bottom: 6px;
   display: block;
 }
-.episodic-locked-panel p { font-size: 12.5px; line-height: 1.5; }
+.episodic-locked-panel p { font-size: 0.962rem; line-height: 1.5; }
 
 /* The whole main view, on an instance with access.require_login set and
    nobody signed in. There is nothing behind this card: the server
@@ -724,17 +739,17 @@ dl.episodic-settings dd { margin: 0; }
   padding: 32px 28px;
 }
 .episodic-locked-card .episodic-lock-icon {
-  font-size: 28px;
+  font-size: 2.154rem;
   display: block;
   margin-bottom: 10px;
 }
 .episodic-locked-title {
-  font-size: 17px;
+  font-size: 1.308rem;
   font-weight: 600;
   margin: 0 0 8px;
 }
 .episodic-locked-body {
-  font-size: 12.5px;
+  font-size: 0.962rem;
   line-height: 1.6;
   color: var(--episodic-muted);
   margin: 0 0 18px;
@@ -743,11 +758,11 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-timeline-entry {
   padding: 10px 0;
   border-bottom: 1px solid var(--episodic-border);
-  font-size: 12px;
+  font-size: 0.923rem;
 }
 .episodic-timeline-entry:last-child { border-bottom: none; }
 .episodic-timeline-meta {
-  font-size: 10.5px;
+  font-size: 0.808rem;
   color: var(--episodic-faint);
   margin-bottom: 3px;
 }
@@ -765,7 +780,7 @@ dl.episodic-settings dd { margin: 0; }
   width: 320px;
   max-width: 100%;
   font-family: var(--episodic-font);
-  font-size: 12.5px;
+  font-size: 0.962rem;
   padding: 6px 10px;
   border: 1px solid var(--episodic-border);
   border-radius: 3px;
@@ -778,18 +793,18 @@ dl.episodic-settings dd { margin: 0; }
    and italic, which is right for the log entry and wrong for a control
    inside it. */
 .episodic-run-detail-btn {
-  font-size: 11px;
+  font-size: 0.846rem;
   font-style: normal;
   padding: 2px 8px;
   margin-top: 4px;
 }
 .episodic-run-modal-when {
-  font-size: 12px;
+  font-size: 0.923rem;
   color: var(--episodic-muted);
   margin-bottom: 12px;
 }
 .episodic-run-modal-heading {
-  font-size: 11px;
+  font-size: 0.846rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -799,7 +814,7 @@ dl.episodic-settings dd { margin: 0; }
 }
 .episodic-run-modal-error {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 11.5px;
+  font-size: 0.885rem;
   line-height: 1.45;
   white-space: pre-wrap;
   overflow-x: auto;
@@ -810,11 +825,11 @@ dl.episodic-settings dd { margin: 0; }
   background: var(--episodic-bg-subtle);
 }
 .episodic-run-modal-hint {
-  font-size: 12px;
+  font-size: 0.923rem;
   color: var(--episodic-muted);
 }
 .episodic-run-modal-provenance {
-  font-size: 11px;
+  font-size: 0.846rem;
   color: var(--episodic-faint);
   margin-top: 16px;
 }
@@ -847,7 +862,7 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-select,
 .episodic-date-input {
   font-family: var(--episodic-font);
-  font-size: 12.5px;
+  font-size: 0.962rem;
   padding: 6px 10px;
   border: 1px solid var(--episodic-border);
   border-radius: 3px;
@@ -859,7 +874,7 @@ dl.episodic-settings dd { margin: 0; }
   max-width: 100%;
 }
 .episodic-pathogen-period-label {
-  font-size: 11.5px;
+  font-size: 0.885rem;
   color: var(--episodic-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -897,7 +912,7 @@ dl.episodic-settings dd { margin: 0; }
    set, and muted because the sentence above it is the finding. */
 .episodic-reference-path {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 11px;
+  font-size: 0.846rem;
   color: var(--episodic-muted);
   margin-top: 3px;
   word-break: break-all;
@@ -977,7 +992,7 @@ dl.episodic-settings dd { margin: 0; }
   outline-offset: 2px;
 }
 .episodic-toggle-label {
-  font-size: 12px;
+  font-size: 0.923rem;
   color: var(--episodic-ink);
 }
 
@@ -1021,7 +1036,7 @@ dl.episodic-settings dd { margin: 0; }
   flex-direction: column;
 }
 .episodic-settings-channel-title {
-  font-size: 12.5px;
+  font-size: 0.962rem;
   font-weight: 600;
   color: var(--episodic-ink);
   margin: 0 0 12px;
@@ -1054,7 +1069,7 @@ dl.episodic-settings dd { margin: 0; }
   margin-bottom: 0;
 }
 .episodic-settings-section-title {
-  font-size: 10.5px;
+  font-size: 0.808rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1070,14 +1085,14 @@ dl.episodic-settings dd { margin: 0; }
   min-width: 0;
 }
 .episodic-settings-readonly-grid .episodic-settings-kv-label {
-  font-size: 11px;
+  font-size: 0.846rem;
   color: var(--episodic-muted);
   display: block;
   margin-bottom: 2px;
   overflow-wrap: break-word;
 }
 .episodic-settings-readonly-grid .episodic-settings-kv-value {
-  font-size: 12.5px;
+  font-size: 0.962rem;
   color: var(--episodic-ink);
   font-variant-numeric: tabular-nums;
   overflow-wrap: break-word;

@@ -23,36 +23,39 @@ doc_palette <- function() {
   paste0("`", vals, "`", collapse = "\n\n")
 }
 
-#' The dashboard's colour palette
+#' The dashboard's colour palette and typography
 #'
-#' Returns the colours used throughout the EpiSODIC dashboard and charts, as
-#' a named list of hex codes. Useful if you want to match your own plots or
+#' Returns the colours and typography used throughout the EpiSODIC dashboard
+#' and charts, as a named list. Useful if you want to match your own plots or
 #' reports to the house style, or check what colour a given status uses.
 #'
 #' The palette ships with an organisation-neutral default
-#' (installed in `\Sexpr{system.file("config", "episodic_default_style.yaml", package = "EpiSODIC")}`). To use your own institute's colours instead,
+#' (installed in `\Sexpr[results=text]{system.file("config", "episodic_default_style.yaml", package = "EpiSODIC")}`). To use your own institute's colours or fonts instead,
 #' point the `EPISODIC_PALETTE_CONFIG` environment variable at a YAML file
 #' that overrides only the roles you want to change - anything you do not set
 #' keeps its shipped default.
-#' 
+#'
 #' This is independent of `episodic_config_resolve()`
-#' on purpose: colours never affect the `config_hash` recorded with a
-#' detection run, since they have no bearing on reproducibility.
-#' 
-#' @section Default colours and changeable YAML keys: 
-#' These are all the default values, and all can be changed using a custom YAML file, `primary_dark` is the background colour of the navigation bar:
-#' 
+#' on purpose: colours and typography never affect the `config_hash` recorded
+#' with a detection run, since they have no bearing on reproducibility.
+#'
+#' @section Default colours, typography and changeable YAML keys:
+#' These are all the default values, and all can be changed using a custom YAML file, `primary_dark` is the background colour of the navigation bar. `font` is a CSS font-family stack, and `font_size_base` is the app's base font size - every other font size in the dashboard is set in `rem` relative to it, so changing `font_size_base` scales the whole app's type proportionally (useful when swapping in a font that reads naturally smaller or larger than the default at the same pixel size). Changing `font` only changes the CSS declaration; if it names a webfont rather than a system font, delivering that font (a self-hosted `@font-face` or a link to its provider) is the operator's own concern, typically via a custom `www/episodic.css`:
+#'
 #' `r doc_palette()`
 #'
-#' @return A named list of hex colour strings. The greyscale neutrals are
+#' @return A named list. The greyscale neutrals are
 #'   `ink` (default text), `muted` (secondary text), `faint` (tertiary text),
 #'   `border`, `bg_subtle`, `bg`, and `surface`. The semantic roles are
 #'   `primary`, `secondary`, `tertiary`, `success`, `warning`, and `danger`,
-#'   each with `_dark`/`_light`/`_tint` variants where used.
+#'   each with `_dark`/`_light`/`_tint` variants where used. `font` and
+#'   `font_size_base` hold the app's typography, not a colour.
 #' @examples
 #' pal <- episodic_palette()
 #' pal$primary
 #' pal$danger
+#' pal$font
+#' pal$font_size_base
 #' @export
 episodic_palette <- function() {
   episodic_palette_config_resolve()

@@ -38,10 +38,20 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     theme = bslib::bs_theme(version = 5),
     title = episodic_tr("app.title", lang = lang),
     shiny::tags$head(
-      shiny::tags$link(
-        rel = "stylesheet",
-        href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"
-      ),
+      # Only fetched when the resolved palette still uses the shipped
+      # default font - the moment an instance overrides `font` in its
+      # EPISODIC_PALETTE_CONFIG, this Google Fonts request for a face
+      # nobody asked for would otherwise keep firing on every page load.
+      # Serving a substitute font is then the operator's own concern
+      # (a system font needs no webfont link at all; a different webfont
+      # is loaded the same way - self-hosted, or linked from its own
+      # provider - by shipping a custom `www/episodic.css` alongside it).
+      if (grepl("IBM Plex Sans", pal$font, fixed = TRUE)) {
+        shiny::tags$link(
+          rel = "stylesheet",
+          href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+        )
+      },
       shiny::tags$link(rel = "stylesheet", href = "www/episodic.css"),
       shiny::tags$style(episodic_app_palette_css(pal))
     ),

@@ -9,6 +9,7 @@
 - The geography panel and the outbreak report now name the province each postcode falls in, alongside the postcode itself
 - The Info screen has a "Reference data" panel reporting, per `EPISODIC_*` variable, whether the instance's own file was read, was rejected, or was read and matched nothing, and what it delivered
 - The reference-data panel reports how many of the case data's own postcodes resolve to a province, which is what distinguishes a `EPISODIC_PC_PROVINCE_MAP` that was never read from one whose postcode format does not match the case data
+- `episodic_default_style.yaml` (and `EPISODIC_PALETTE_CONFIG`) now also carries typography: `font` (a CSS font-family stack) and `font_size_base`, which scales every other font size in the dashboard, since those are now expressed in `rem` relative to it
 
 ## Changed
 

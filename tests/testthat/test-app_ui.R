@@ -116,11 +116,25 @@ test_that("episodic_palette() and episodic_brand_bar() return usable hex colours
     ) %in%
       names(pal)
   ))
-  expect_true(all(grepl("^#[0-9A-Fa-f]{6}$", unlist(pal))))
+  colour_roles <- pal[!names(pal) %in% c("font", "font_size_base")]
+  expect_true(all(grepl("^#[0-9A-Fa-f]{6}$", unlist(colour_roles))))
+
+  # typography roles are not colours, but must resolve to something usable
+  # in CSS - a non-empty font-family stack and a valid CSS length
+  expect_true(nzchar(pal$font))
+  expect_true(grepl("^[0-9.]+(px|rem|em|pt)$", pal$font_size_base))
 
   bar <- episodic_brand_bar()
   expect_length(bar, 5)
   expect_true(all(grepl("^#[0-9A-Fa-f]{6}$", bar)))
+})
+
+test_that("episodic_app_palette_css() injects both colour roles and typography as CSS custom properties", {
+  css <- episodic_app_palette_css(episodic_palette())
+  expect_true(grepl("^:root \\{", css))
+  expect_true(grepl("--episodic-primary: #", css, fixed = FALSE))
+  expect_true(grepl("--episodic-font: ", css, fixed = TRUE))
+  expect_true(grepl("--episodic-font-size-base: ", css, fixed = TRUE))
 })
 
 test_that("an instance palette override propagates, other roles keep the shipped default", {
@@ -131,6 +145,23 @@ test_that("an instance palette override propagates, other roles keep the shipped
   expect_equal(pal$primary, "#123456")
   expect_false(identical(pal$primary_dark, "#123456")) # untouched keys keep the shipped default
   expect_false(identical(pal$secondary, "#123456"))
+})
+
+test_that("an instance palette override can change typography without touching colours", {
+  override_path <- tempfile(fileext = ".yaml")
+  yaml::write_yaml(
+    list(font = "Arial, sans-serif", font_size_base = "15px"),
+    override_path
+  )
+
+  pal <- episodic_palette_config_resolve(override_path)
+  expect_equal(pal$font, "Arial, sans-serif")
+  expect_equal(pal$font_size_base, "15px")
+  expect_false(identical(pal$primary, "Arial, sans-serif")) # untouched keys keep the shipped default
+
+  css <- episodic_app_palette_css(pal)
+  expect_true(grepl("--episodic-font: Arial, sans-serif;", css, fixed = TRUE))
+  expect_true(grepl("--episodic-font-size-base: 15px;", css, fixed = TRUE))
 })
 
 test_that("episodic_ui_code_join() wraps each item in <code> and escapes, HTML-safe", {

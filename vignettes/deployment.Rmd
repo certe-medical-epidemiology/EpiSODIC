@@ -91,10 +91,10 @@ snapshot on `episodic_detection_run`, so the exact parameters behind any
 past result stay recoverable from the database alone, regardless of
 what has since changed on disk.
 
-The UI's colour palette works the same way, deliberately through a
-*separate* environment variable (`EPISODIC_PALETTE_CONFIG`): colour is a
-display concern, never part of the detection-reproducibility guarantee
-`EPISODIC_CONFIG`'s hash provides.
+The UI's colour palette and typography work the same way, deliberately
+through a *separate* environment variable (`EPISODIC_PALETTE_CONFIG`):
+colour and font choice are display concerns, never part of the
+detection-reproducibility guarantee `EPISODIC_CONFIG`'s hash provides.
 
 ## Accounts
 
@@ -251,11 +251,14 @@ and pathogen-name italicisation (`episodic_ui_italicise_taxon()`) reads
 `AMR::microorganisms`. There is no fallback for either, by design - see
 the DESCRIPTION for the published methods this package is built on.
 
-House-style colours are not an optional-dependency concern at all: the
-app always ships an organisation-neutral default palette
+House-style colours and typography are not an optional-dependency concern
+at all: the app always ships an organisation-neutral default palette
 (`inst/config/episodic_default_style.yaml`), overridable per instance by pointing
 `EPISODIC_PALETTE_CONFIG` at an organisation's own YAML file with its real
-colours - no package dependency involved either way.
+colours and font - no package dependency involved either way. A webfont
+named there still needs delivering (self-hosted, or linked from its own
+provider), typically via a custom `www/episodic.css`; a system font needs
+no such link at all.
 
 None of these are required to run the demo, the detection engine, or the
 interface - each is additive.

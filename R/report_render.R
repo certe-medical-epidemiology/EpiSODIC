@@ -34,7 +34,7 @@
 #' By default the report uses EpiSODIC's own report template. If your
 #' organisation needs its own layout or branding, set the
 #' `EPISODIC_QUARTO_REPORT` environment variable to your own `.qmd` file;
-#' the installed `\Sexpr{system.file("report", "episodic_default_report.qmd", package = "EpiSODIC")}`
+#' the installed `\Sexpr[results=text]{system.file("report", "episodic_default_report.qmd", package = "EpiSODIC")}`
 #' is a good starting point to copy and adapt.
 #'
 #' Rendering requires [Quarto](https://quarto.org) to be installed
