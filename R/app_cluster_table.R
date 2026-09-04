@@ -199,10 +199,7 @@ episodic_ui_cluster_row <- function(
     ))
   }
 
-  open_js <- sprintf(
-    "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
-    as.integer(cluster_id)
-  )
+  open_js <- sprintf("episodicOpenCluster(%d);", as.integer(cluster_id))
   shiny::tags$tr(
     class = "episodic-row-link",
     tabindex = "0",

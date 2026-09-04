@@ -74,6 +74,26 @@ test_that("episodic_ui_rail() shows a full-month date range and the priority sco
   expect_true(grepl("score 2", html, fixed = TRUE))
 })
 
+test_that("episodic_ui_rail() marks each item with the cluster id episodicOpenCluster() reads back", {
+  open <- data.frame(
+    cluster_id = 7L,
+    pathogen = "Norovirus",
+    level_label = "L1",
+    state = "new",
+    state_label = "Nieuw",
+    n_cases = 3L,
+    priority_score = NA_real_,
+    first_day = "2025-01-07",
+    last_day = "2025-01-15",
+    stringsAsFactors = FALSE
+  )
+  html <- as.character(episodic_ui_rail(open, selected_id = NULL, lang = "nl"))
+  # a click that opens a cluster from outside the rail (a table row, a
+  # "linked to #N" chip) has to be able to find and highlight this exact
+  # item - see episodicOpenCluster() in R/app_ui.R
+  expect_true(grepl('data-cluster-id="7"', html, fixed = TRUE))
+})
+
 test_that("episodic_ui_rail() renders a colour-coded chip only for the first/second/third care lines", {
   open <- data.frame(
     cluster_id = 1L,
@@ -205,6 +225,17 @@ test_that("episodic_ui_info_screen() shows the package's own version, descriptio
   expect_true(grepl(paste0("License: ", meta$license), html, fixed = TRUE))
   expect_true(grepl(meta$url, html, fixed = TRUE))
   expect_true(grepl("www/logo.svg", html, fixed = TRUE))
+})
+
+test_that("episodic_ui_chip_link() opens through episodicOpenCluster(), not a bare setInputValue", {
+  # so the rail highlight moves with it - the same reason
+  # episodic_ui_cluster_row() calls it instead of Shiny.setInputValue
+  # directly (see R/app_ui.R for the shared helper).
+  chip <- as.character(
+    episodic_ui_chip_link("Linked to #9", "#AA4A3F", cluster_id = 9L, lang = "en")
+  )
+  expect_true(grepl("episodicOpenCluster(9)", chip, fixed = TRUE))
+  expect_false(grepl("Shiny.setInputValue", chip, fixed = TRUE))
 })
 
 test_that("app widgets render to shiny tags without error, including empty-data edge cases", {

@@ -746,6 +746,10 @@ episodic_ui_rail <- function(
         active <- identical(row$cluster_id, selected_id)
         shiny::tags$div(
           class = paste("episodic-rail-item", if (active) "active" else ""),
+          # The id every episodicOpenCluster() call (a cluster table row, a
+          # linked-cluster chip) reads back to find and highlight this item
+          # when the selection changes from outside the rail itself.
+          `data-cluster-id` = row$cluster_id,
           onclick = sprintf(
             "document.querySelectorAll('.episodic-rail-item').forEach(function(el){el.classList.remove('active');}); this.classList.add('active'); Shiny.setInputValue('rail_select', %d, {priority: 'event'})",
             row$cluster_id

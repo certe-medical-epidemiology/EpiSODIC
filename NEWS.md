@@ -22,6 +22,10 @@
 - A detection run in which no postcode resolves to a province now says so in its trace, instead of leaving province-level detection silently empty
 - The dashboard's area/province/region place label now shows `region_code` verbatim instead of cosmetically reformatting it, so an operator can see at a glance, character for character, whether `EPISODIC_PC_PROVINCE_MAP` resolved the code they expected, without risking a mangled real place name (e.g. the hyphen in "Noord-Holland")
 
+## Fixed
+
+- Opening a cluster from a table row or a "linked to #N" chip now moves the rail's own highlight to match; it used to leave the rail showing whichever cluster was selected before, because the rail deliberately does not re-render on every selection
+
 
 # EpiSODIC 0.10.3
 

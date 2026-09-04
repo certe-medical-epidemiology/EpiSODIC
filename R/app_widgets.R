@@ -228,10 +228,7 @@ episodic_ui_chip_link <- function(
     colour,
     cluster_id,
     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  open_js <- sprintf(
-    "Shiny.setInputValue('open_cluster', %d, {priority: 'event'});",
-    as.integer(cluster_id)
-  )
+  open_js <- sprintf("episodicOpenCluster(%d);", as.integer(cluster_id))
   shiny::tags$span(
     class = "episodic-chip episodic-chip-outline episodic-chip-link",
     style = sprintf("color:%s;border:1px solid %s66;", colour, colour),
