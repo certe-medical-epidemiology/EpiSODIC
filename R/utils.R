@@ -31,7 +31,7 @@ doc_palette <- function() {
 }
 
 doc_system_file <- function(path) {
-  urls <- trimws(strsplit(packageDescription("EpiSODIC")$URL, ",", fixed = TRUE)[[1]])
+  urls <- trimws(strsplit(utils::packageDescription("EpiSODIC")$URL, ",", fixed = TRUE)[[1]])
   url <- urls[grepl("github.com", urls)][1]
   url_remote <- paste0(url, "/blob/main/", path)
   return(paste0("[`", path, "`](", url_remote, ")"))
