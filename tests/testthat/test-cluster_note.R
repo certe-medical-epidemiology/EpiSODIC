@@ -143,8 +143,12 @@ test_that("the notes panel's History button appears only once a note has been sa
   episodic_db_cluster_note_insert(env$con, env$cluster_id, user_id, "first note")
 
   html_after <- as.character(episodic_ui_notes_panel(env$con, env$cluster_id, NULL, lang = "en"))
+  # Attribute values come back HTML-escaped (htmltools turns ' into
+  # &#39;), so match on the unquoted parts - see
+  # test-app_ui.R's episodic_ui_nav_link() test for the same idiom.
+  expect_true(grepl("note_history_open", html_after, fixed = TRUE))
   expect_true(grepl(
-    sprintf("note_history_open', %d", env$cluster_id),
+    sprintf("%d, {priority", env$cluster_id),
     html_after,
     fixed = TRUE
   ))
@@ -179,25 +183,36 @@ test_that("episodic_db_cluster_note_history() returns every version, oldest firs
 test_that("episodic_ui_notes_history_modal() diffs every version against the one before it, newest first", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  user_id <- episodic_db_app_user_insert(
+  user1 <- episodic_db_app_user_insert(
     env$con,
-    username = "jdoe",
-    full_name = "Jane Doe",
-    email = "jdoe@example.com",
+    username = "afirst",
+    full_name = "A First",
+    email = "afirst@example.com",
     password_hash = "x",
     role = "viewer"
   )
-  episodic_db_cluster_note_insert(env$con, env$cluster_id, user_id, "alpha")
-  episodic_db_cluster_note_insert(env$con, env$cluster_id, user_id, "bravo")
+  user2 <- episodic_db_app_user_insert(
+    env$con,
+    username = "zsecond",
+    full_name = "Z Second",
+    email = "zsecond@example.com",
+    password_hash = "x",
+    role = "viewer"
+  )
+  episodic_db_cluster_note_insert(env$con, env$cluster_id, user1, "alpha")
+  # Appending rather than replacing keeps this version's diff an
+  # insertion only ("alpha" carries over unchanged) - a full replacement
+  # would show the old text too (as a deletion within this very entry),
+  # which would confound a position-based ordering check below.
+  episodic_db_cluster_note_insert(env$con, env$cluster_id, user2, "alpha bravo")
 
   html <- as.character(episodic_ui_notes_history_modal(env$con, env$cluster_id, lang = "en"))
-  expect_true(grepl("jdoe", html, fixed = TRUE))
-  # the very first version has nothing to diff against, so it is rendered
-  # as one long insertion, same as a first commit in `git diff`
+  expect_true(grepl("afirst", html, fixed = TRUE))
+  expect_true(grepl("zsecond", html, fixed = TRUE))
   expect_true(grepl("episodic-notes-diff-ins", html, fixed = TRUE))
-  # newest first: "bravo" (the second, current version) must appear before
-  # "alpha" (the first) in the rendered order
-  expect_true(regexpr("bravo", html, fixed = TRUE) < regexpr("alpha", html, fixed = TRUE))
+  # newest first: the second version's entry (by "zsecond", its author)
+  # must appear before the first version's entry (by "afirst")
+  expect_true(regexpr("zsecond", html, fixed = TRUE) < regexpr("afirst", html, fixed = TRUE))
 })
 
 test_that("episodic_ui_notes_history_modal() shows an empty state when no note was ever saved", {
