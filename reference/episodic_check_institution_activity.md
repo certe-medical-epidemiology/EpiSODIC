@@ -60,5 +60,5 @@ episodic_check_institution_activity(activity)
 #> -- EpiSODIC institution activity data check --------------------------------
 #>    13 rows, 6 columns
 #> 
-#> v Institution activity data satisfies its contract, and is ready for episodic_run_cron().
+#> v Institution activity data satisfies its requirements, and is ready for episodic_run_cron().
 ```

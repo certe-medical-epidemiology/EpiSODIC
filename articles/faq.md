@@ -38,7 +38,7 @@ two ways, no `ward` on any hospital row). Run it, fix what it flags as a
 problem, run it again - most people get to a clean report in two or
 three passes.
 [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
-has the full column contract this is checking against, including the
+has the full column requirements this is checking against, including the
 exact allowed values for `care_line`, `institution_type`, and `sex`.
 
 If you are also supplying the optional positivity or hospital-activity
@@ -236,7 +236,7 @@ transform step hands to
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md),
 so combining several source systems is exactly that: your transform
 step’s job, done before EpiSODIC is ever called. Bring each source into
-the shared column contract,
+the shared column requirements,
 [`rbind()`](https://rdrr.io/r/base/cbind.html) (or
 [`dplyr::bind_rows()`](https://dplyr.tidyverse.org/reference/bind_rows.html))
 them together, and check the combined result with
@@ -372,8 +372,8 @@ is enough to assess a cluster and to look a case up in your own source
 system if needed, but - given a properly pseudonymised `patient_key` -
 not enough to identify who is in it from the dashboard alone. See
 [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
-for the exact column contract, including what “pseudonymised” needs to
-mean for this guarantee to hold.
+for the exact column requirements, including what “pseudonymised” needs
+to mean for this guarantee to hold.
 
 **My organisation is outside the Netherlands - does the geography panel
 (the choropleth map) still work for us?**
@@ -414,5 +414,5 @@ Two independent things are configurable, and both are optional:
 
 See
 [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)’s
-“Geographic reference data” section for the exact contract these files
-need to satisfy.
+“Geographic reference data” section for the exact requirements these
+files need to satisfy.

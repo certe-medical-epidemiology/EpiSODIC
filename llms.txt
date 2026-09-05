@@ -115,7 +115,7 @@ page:
 | Read this… | …for |
 |----|----|
 | [Overview](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/overview.html) | What EpiSODIC does: the Clusters and Pathogen screens’ two altitudes, and the Performance, Archive, Streams, Activity and Info screens around them. |
-| [Getting your data in](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html) | The case data contract - every column, what’s optional, and [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)/[`episodic_check_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.md)/[`episodic_check_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.md) to check your extract before anything runs. |
+| [Getting your data in](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html) | The case data requirements - every column, what’s optional, [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)/[`episodic_check_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.md)/[`episodic_check_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.md) to check your extract before anything runs, and [`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md) for clusters detected by another system entirely. |
 | [Deployment](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) | Standing up a real instance: scheduling, accounts, the database backend, custom report templates. |
 | [Environment variables](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) | The full `EPISODIC_*` reference table. |
 | [Detection and reconciliation](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html) | How a laboratory result becomes a dossier: the four detectors, reconciliation, and suppression. |
@@ -154,7 +154,7 @@ the dashboard for your board to review the results.
 
 How to plug in your laboratory results and, optionally, testing volume
 and hospital activity data - and how to check your extract against the
-contract before you run anything.
+requirements before you run anything.
 
 - [`episodic_case_data`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
   : Connect your own laboratory data
@@ -172,6 +172,14 @@ contract before you run anything.
   : Add a Testing-Volume (Positivity) Feed
 - [`episodic_synthetic_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity.md)
   : Add a Hospital Activity Feed (Patient-Days)
+
+## Add clusters from another system
+
+Add clusters detected by another algorithm or system - never connected
+to your own case data.
+
+- [`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
+  : Add One or More Manual (External) Clusters
 
 ## Set up a database
 

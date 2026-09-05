@@ -79,7 +79,7 @@ the range you asked for.
 ## See also
 
 [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
-to see what the contract makes of it, and
+to see what the requirements make of it, and
 [`episodic_synthetic_cases_calibration()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases_calibration.md)
 for many more clusters than a demo wants, to tune a configuration
 against.

@@ -48,5 +48,5 @@ episodic_check_denominators(denom)
 #> -- EpiSODIC denominator data check -----------------------------------------
 #>    13 rows, 5 columns
 #> 
-#> v Denominator data satisfies its contract, and is ready for episodic_run_cron().
+#> v Denominator data satisfies its requirements, and is ready for episodic_run_cron().
 ```

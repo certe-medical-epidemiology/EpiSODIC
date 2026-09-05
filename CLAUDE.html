@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.11.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -131,7 +131,14 @@
 </tr><tr><td><code>episodic_institution</code></td>
 <td>cron</td>
 <td>Institution reference data</td>
+</tr><tr><td><code>episodic_cluster_note</code></td>
+<td>app</td>
+<td>Per-cluster free-text notes (append-only)</td>
+</tr><tr><td><code>episodic_cluster_manual_case</code></td>
+<td><code><a href="reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code></td>
+<td>Case-level detail for <code>origin = 'manual'</code> clusters only</td>
 </tr></tbody></table><p>Write ownership is strict: cron-owned tables are written only by <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code>, app-owned tables only by the Shiny app. The app never updates or deletes, only inserts (event-sourced).</p>
+<p>One deliberate exception: <code><a href="reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code> (in <code>R/cluster_manual.R</code>) is a third, console-invoked write path into <code>episodic_stream</code>, <code>episodic_cluster</code> and <code>episodic_cluster_manual_case</code> (all otherwise cron-owned), for clusters detected by another algorithm or system rather than by <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> itself - exactly the same kind of exception <code><a href="reference/episodic_add_user.html">episodic_add_user()</a></code> already is for the app-owned <code>episodic_app_user</code> table. Such a cluster gets <code>origin = 'manual'</code> on <code>episodic_cluster</code> and is excluded from <code>episodic_reconcile_stream()</code>’s matching and auto-closure (see <code>episodic_db_clusters_for_stream()</code>); its case-level detail, if any, lives in <code>episodic_cluster_manual_case</code>, never in <code>episodic_case</code>, so it can never reach denominators, line lists or patient search.</p>
 </div>
 <div class="section level3">
 <h3 id="configuration">Configuration<a class="anchor" aria-label="anchor" href="#configuration"></a></h3>
@@ -159,13 +166,14 @@
   run_cron.R          # cron entry point, episodic_trace(), the full pipeline
   run_app.R           # Shiny app entry point
   config.R            # YAML config: resolve, merge, canonicalise, hash
-  cases.R             # case data contract and deduplication entry
+  cases.R             # case data requirements and deduplication entry
   cases_check.R       # episodic_check_cases() validation
   cases_dedup.R       # episode deduplication (via AMR::get_episode)
   cases_load.R        # loading cases into the database
   reconcile.R         # match detections to persistent clusters
   reconcile_closure.R # auto-close stale clusters
   reconcile_suppress.R # lattice suppression
+  cluster_manual.R    # episodic_add_manual_cluster() - clusters from other systems
   detect_*.R          # the four detectors
   notify.R            # notification dispatcher and message building
   notify_channels.R   # per-channel send functions (ntfy, smtp, etc.)
@@ -175,6 +183,7 @@
   db_app_write.R      # all app-side DB writes (append-only)
   schema_migrate.R    # schema creation and migration
   app_server.R        # Shiny server
+  app_server_notes.R  # wires the cluster notes save button
   app_ui.R            # Shiny UI
   app_dossier.R       # cluster dossier (the main assessment screen)
   app_pathogen.R      # pathogen overview panel
@@ -227,10 +236,11 @@ vignettes/                  # 7 vignettes</code></pre>
 <div class="section level3">
 <h3 id="code-style">Code style<a class="anchor" aria-label="anchor" href="#code-style"></a></h3>
 <ul><li>File header: the standard Certe GPL-2 banner (17-line comment block) goes at the top of every R file.</li>
+<li>Multi-line function signatures: use hanging-indent, not single-indent - the first argument stays on the same line as <code>function(</code>, continuation lines align under it, and <code>) {</code> shares the line with the last argument (never on its own line). Both are permitted by the tidyverse style guide (style.tidyverse.org/functions.html), but styler &gt;= 1.11.0 defaults to single-indent with <code>) {</code> isolated, which this project does not want. Styler cannot be configured to prefer one over the other (raised and declined upstream: github.com/r-lib/styler/pull/1235) - it detects the shape per function from the source itself (<code>is_single_indent_function_declaration()</code> in styler’s <code>R/rules-indention.R</code>: first argument on a new line after <code>function(</code> means single-indent; first argument sharing that line, with continuation lines indented more than <code>2 * indent_by</code> i.e. more than 4 spaces by default, means hanging-indent) and preserves whichever you wrote, so writing it this way is stable across <code>styler::style_pkg()</code> runs regardless of styler version. One real cost: renaming a function invalidates every continuation line’s alignment in its own signature, since styler will not recompute it for you - realign by hand when that happens.</li>
 <li>Internal functions: use <code>@keywords internal</code> and <code>@noRd</code> for functions that should not have a man page. Also, don’t reference functions as <code>[some_function()]</code> there, but use `some_function()` instead, as otherwise roxygen2 gives a warning.</li>
 <li>Logging: use <code>episodic_trace()</code> (defined in <code>run_cron.R</code>) for cron-side logging, <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code> for interactive functions.</li>
 <li>Database: all SQL is inline (no ORM). Parameterised queries (<code>DBI::dbGetQuery(con, sql, params = ...)</code>) throughout, never string interpolation of user values.</li>
-<li>Dependencies: hard dependencies in Imports, optional integrations in Suggests. Gate optional packages at runtime with <code><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">rlang::check_installed()</a></code> or <code><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace()</a></code>.</li>
+<li>Dependencies: hard dependencies in Imports, optional integrations in Suggests. Gate optional packages at runtime with <code><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">rlang::check_installed()</a></code> or <code><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace()</a></code>. Exception: <code>bslib</code>, <code>cli</code>, <code>commonmark</code>, <code>htmltools</code> and <code>jsonlite</code> are used unconditionally but live in Suggests, not Imports - <code>shiny</code> (a hard Import) already Imports every one of them, so they are guaranteed present whenever EpiSODIC is, without EpiSODIC also declaring them. Always call them with <code>pkg::fun()</code>, never <code>@importFrom</code>, since no NAMESPACE import backs them. <code>rlang</code> itself stays a real Import, not this exception: <code>R/app_charts.R</code> imports its <code>.data</code> pronoun (<code>@importFrom rlang .data</code>), which <code><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">ggplot2::aes()</a></code> only recognises as a data-mask pronoun when referenced by the bare symbol <code>.data</code> - <code>rlang::.data$col</code> is a different expression to <code>aes()</code>’s NSE and errors with “Can’t subset <code>.data</code> outside of a data mask context”. Every other <code>rlang::</code> call in the codebase (<code>check_installed()</code>, <code>cnd_message()</code>, etc.) is an ordinary function call and would have been fine moved to Suggests; the <code>.data</code> import is the one thing forcing the whole package to stay in Imports.</li>
 <li>Config hash: the keys in <code>episodic_config_unhashed_sections</code> (<code>notifications</code>, <code>access</code>) are stripped before hashing. Any new config section that contains secrets or is operationally irrelevant to detection should be added there.</li>
 <li>Anonymous access: <code>access.require_login</code> closes the app to visitors who have not signed in. It is enforced server-side, by not rendering - <code>episodic_app_access_granted()</code> gates every output and every data-bearing observer, so nothing reaches the page to be uncovered client-side. Any new output or observer that reads surveillance data must go behind the same gate. It is YAML-only, with no Settings-screen override, on purpose.</li>
 <li>Error handling: notification and report-rendering errors must not propagate to the cron pipeline. Wrap in <code>tryCatch</code> and log via <code>episodic_trace()</code>.</li>

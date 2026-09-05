@@ -258,7 +258,7 @@ episodic_check_cases(cases)
 #>    sample_date from 2025-01-06 to 2025-01-09
 #>    1 pathogen, 1 institution, 1 patient
 #> 
-#> v This data set satisfies the case data contract, and is ready for
+#> v This data set satisfies the case data requirements, and is ready for
 #>   episodic_run_cron(). See ?episodic_case_data (`?EpiSODIC::episodic_case_data()`) for what each
 #>   column means.
 ```

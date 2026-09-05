@@ -43,7 +43,8 @@ pathogen, so a result that reappears inside your overlap window, or one
 that continues an episode whose earlier result is not in this batch at
 all, is still recognised correctly rather than counted twice.
 
-Check your extract against that contract before you schedule anything:
+Check your extract against those requirements before you schedule
+anything:
 
 ``` r
 
@@ -68,8 +69,8 @@ Schedule
 however your environment normally schedules R jobs (cron, a Windows
 scheduled task, a CI pipeline) - there is nothing EpiSODIC-specific
 about the scheduling itself. It validates the case data itself before
-writing anything: a run on data that does not satisfy the contract stops
-with that same message, records it on the run row, and leaves the
+writing anything: a run on data that does not satisfy the requirements
+stops with that same message, records it on the run row, and leaves the
 database untouched, so a scheduled job fails visibly (a non-zero exit,
 an error in the job’s log) rather than completing over data it could not
 read. The recorded message is what the dashboard’s status strip and
@@ -293,7 +294,7 @@ supported channel.
 ## See also
 
 - [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
-  for the case data contract this vignette’s
+  for the case data requirements this vignette’s
   [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
   calls expect.
 - [`vignette("environment-variables")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md)

@@ -126,8 +126,8 @@ of it.
 only one survives deduplication as “the case” (and is now shown on the
 line list, so an epidemiologist can look the rest up in the source
 system if needed). Antibiogram-level detail - which isolate had which
-resistance pattern - is not itself part of the case data contract, and
-is a separate concern from whether EpiSODIC counts one case or two:
+resistance pattern - is not itself part of the case data requirements,
+and is a separate concern from whether EpiSODIC counts one case or two:
 nothing in the detection or reconciliation algorithms needs it, since
 they work from case counts, not resistance phenotypes. If per-isolate
 resistance data ever becomes something the dossier should show
@@ -214,7 +214,7 @@ against the run so it is also visible in the dashboard’s status strip
 and activity screen. A failed run never passes in silence.
 
 The optional feeds below have the same non-throwing check, over their
-own contract:
+own requirements:
 [`episodic_check_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.md)
 for positivity metadata,
 [`episodic_check_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.md)
@@ -227,6 +227,13 @@ anything, whenever they are supplied as a plain data frame (a
 zero-argument function is instead resolved and validated once the run is
 already under way, since it may depend on data - e.g. the institutions
 table - that only exists once the case feed has loaded).
+
+None of this applies to a cluster added with
+[`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
+(see “Clusters from another system” below): it never goes near
+[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md),
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md),
+or your own case data at all.
 
 ## Positivity metadata (optional)
 
@@ -305,7 +312,7 @@ example: point `EPISODIC_GEO_DATA` at your own `.rds` file holding an
 (matching whatever your own `episodic_case.pc` values are - postcodes,
 zip codes, municipality codes, census tracts, anything with a shape) and
 a `geometry` column, and it is used instead of the shipped default. See
-`R/geo_data.R` for the exact contract.
+`R/geo_data.R` for the exact requirements.
 
 A second, independent layer can be drawn on top for orientation - region
 outlines (provinces, counties, states, whatever is useful), colour but
@@ -328,7 +335,8 @@ unset, this defaults to the ranges the Dutch demo data happens to use,
 which - being specific to that data - will not match postcodes from
 anywhere else: outside that one region, L4 simply never has anything to
 detect on until you supply your own mapping. L1-L3 and L5 do not depend
-on this at all. See `episodic_pc_to_province()` for the exact contract.
+on this at all. See `episodic_pc_to_province()` for the exact
+requirements.
 
 Unset and unusable are two different things. Once the variable *is* set,
 a file that does not exist, cannot be read as a CSV, holds no rows, has
@@ -386,6 +394,67 @@ outcome the design refuses to report as green.
 Both `success` and `partial` are usable runs, and the dashboard reads
 from the most recent of either.
 
+## Clusters from another system (optional)
+
+Everything above is about your own laboratory-confirmed positives,
+running through
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)’s
+own detectors. Some outbreaks are found a different way entirely - a
+public health service’s own surveillance system, a research model, a
+colleague’s script in another language - and still belong on the same
+dashboard, assessed the same way, without pretending they came from your
+case data when they did not.
+
+[`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
+adds exactly that kind of cluster directly, bypassing detection and
+reconciliation altogether. Pass it already-parsed R values (its own
+requirements, not `episodic_case_data`’s - there is no file format to
+match, since the input is whatever your own code already extracted from
+the other system) rather than a file:
+
+``` r
+
+episodic_add_manual_cluster(
+  user_id = 1L,
+  pathogen = "Measles virus",
+  level = "pathogen_area",
+  first_day = "2025-01-10",
+  last_day = "2025-01-20",
+  region_code = "GR",
+  case_dates = list(as.Date(c("2025-01-10", "2025-01-14", "2025-01-20"))),
+  pc = list(c("9711AA", "9711AB", "9712CD")),
+  note = "Reported by municipal health service, outside our own lab data."
+)
+```
+
+Every argument is vectorised: pass length-`n` vectors/lists to add `n`
+clusters in one call, each getting its own new cluster id, all in one
+transaction. A few things distinguish a manual cluster from a detected
+one:
+
+- It gets a real stream identity (pathogen, level, location) from the
+  same fields `episodic_stream_key()` uses, so it appears in the
+  dashboard’s filtering, sorting and geography exactly like a detected
+  cluster.
+- Its case-level detail, if you supply any
+  (`case_dates`/`pc`/`sex`/`age`), is stored entirely separately from
+  `episodic_case` - it is never joined into denominators, line lists, or
+  patient search, and is never treated as your own patients. Omit it
+  entirely for a source that only hands you an aggregate count; the
+  cluster still gets created, its epi curve/demography/geography panels
+  just have nothing to draw.
+- It never closes on its own:
+  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)’s
+  reconciliation and automatic closure both skip it, so it stays open
+  until an epidemiologist records a verdict on it, the same as any other
+  cluster.
+- Its priority score is computed the same way a detected cluster’s is
+  (unless you override it), so the two sort comparably on the dashboard.
+
+See
+[`?episodic_add_manual_cluster`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
+for every argument.
+
 ## See also
 
 - [`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)
@@ -398,3 +467,6 @@ from the most recent of either.
 - [`vignette("faq")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.md)
   for combining more than one source system, resending data safely, and
   handling a rectified/corrected lab result.
+- [`?episodic_add_manual_cluster`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
+  for clusters detected by another system entirely - see “Clusters from
+  another system” above.

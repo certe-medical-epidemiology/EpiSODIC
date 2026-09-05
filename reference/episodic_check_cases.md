@@ -2,8 +2,8 @@
 
 Runs every check the
 [episodic_case_data](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
-contract implies over your extract and reports *everything* it finds in
-one go - what is wrong, how many rows are affected, which rows those
+requirements imply over your extract and reports *everything* it finds
+in one go - what is wrong, how many rows are affected, which rows those
 are, what the offending values look like, and what to do about each one.
 Nothing is written, nothing is changed, and no database is needed: this
 is the call to make while you are still building your extract step, and
@@ -47,6 +47,11 @@ script to stop. The latter is what
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
 itself calls before a run.
 
+None of this applies to a cluster added with
+[`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md):
+it is never connected to your own case data, so it never goes through
+these requirements (or any other check here) at all.
+
 ## What it reports
 
 Two kinds of finding, deliberately kept apart:
@@ -88,7 +93,7 @@ episodic_check_cases(cases)
 #>    sample_date from 2025-01-01 to 2025-01-31
 #>    10 pathogens, 62 institutions, 200 patients
 #> 
-#> v This data set satisfies the case data contract, and is ready for
+#> v This data set satisfies the case data requirements, and is ready for
 #>   episodic_run_cron(). See ?episodic_case_data (`?EpiSODIC::episodic_case_data()`) for what each
 #>   column means.
 

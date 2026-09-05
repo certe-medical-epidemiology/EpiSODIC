@@ -150,8 +150,8 @@ confirming which build is deployed.
 ## Where to go next
 
 - **[`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)** -
-  the case data contract: what columns to send, what each means, and how
-  to check your extract before you schedule anything.
+  the case data requirements: what columns to send, what each means, and
+  how to check your extract before you schedule anything.
 - **[`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)** -
   standing up a real instance: accounts, the database backend, and where
   configuration lives.

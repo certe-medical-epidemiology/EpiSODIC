@@ -22,7 +22,7 @@ the dashboard for your board to review the results.
 
 How to plug in your laboratory results and, optionally, testing volume
 and hospital activity data - and how to check your extract against the
-contract before you run anything.
+requirements before you run anything.
 
 - [`episodic_case_data`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
   : Connect your own laboratory data
@@ -40,6 +40,14 @@ contract before you run anything.
   : Add a Testing-Volume (Positivity) Feed
 - [`episodic_synthetic_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity.md)
   : Add a Hospital Activity Feed (Patient-Days)
+
+## Add clusters from another system
+
+Add clusters detected by another algorithm or system - never connected
+to your own case data.
+
+- [`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
+  : Add One or More Manual (External) Clusters
 
 ## Set up a database
 

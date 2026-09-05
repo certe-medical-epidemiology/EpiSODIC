@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.11.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -103,7 +103,7 @@ patient and pathogen, so a result that reappears inside your overlap
 window, or one that continues an episode whose earlier result is not in
 this batch at all, is still recognised correctly rather than counted
 twice.</p>
-<p>Check your extract against that contract before you schedule
+<p>Check your extract against those requirements before you schedule
 anything:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/episodic_check_cases.html">episodic_check_cases</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span></span>
@@ -123,13 +123,13 @@ run.</p>
 normally schedules R jobs (cron, a Windows scheduled task, a CI
 pipeline) - there is nothing EpiSODIC-specific about the scheduling
 itself. It validates the case data itself before writing anything: a run
-on data that does not satisfy the contract stops with that same message,
-records it on the run row, and leaves the database untouched, so a
-scheduled job fails visibly (a non-zero exit, an error in the job’s log)
-rather than completing over data it could not read. The recorded message
-is what the dashboard’s status strip and activity screen show, so
-whoever notices the empty dashboard first learns why without going near
-a log file.</p>
+on data that does not satisfy the requirements stops with that same
+message, records it on the run row, and leaves the database untouched,
+so a scheduled job fails visibly (a non-zero exit, an error in the job’s
+log) rather than completing over data it could not read. The recorded
+message is what the dashboard’s status strip and activity screen show,
+so whoever notices the empty dashboard first learns why without going
+near a log file.</p>
 </div>
 <div class="section level2">
 <h2 id="configuration-lives-outside-the-repository">Configuration lives outside the repository<a class="anchor" aria-label="anchor" href="#configuration-lives-outside-the-repository"></a>
@@ -378,8 +378,8 @@ with step-by-step instructions for every supported channel.</p>
 </h2>
 <ul>
 <li>
-<code><a href="../articles/data-format.html">vignette("data-format")</a></code> for the case data contract this
-vignette’s <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> calls expect.</li>
+<code><a href="../articles/data-format.html">vignette("data-format")</a></code> for the case data requirements
+this vignette’s <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> calls expect.</li>
 <li>
 <code><a href="../articles/environment-variables.html">vignette("environment-variables")</a></code> for the full
 <code>EPISODIC_*</code> reference table, including every variable named

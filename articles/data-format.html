@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.11.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -330,12 +330,12 @@ the Farrington baseline, the priority score, all of it.</p>
 even though only one survives deduplication as “the case” (and is now
 shown on the line list, so an epidemiologist can look the rest up in the
 source system if needed). Antibiogram-level detail - which isolate had
-which resistance pattern - is not itself part of the case data contract,
-and is a separate concern from whether EpiSODIC counts one case or two:
-nothing in the detection or reconciliation algorithms needs it, since
-they work from case counts, not resistance phenotypes. If per-isolate
-resistance data ever becomes something the dossier should show
-(e.g. “this cluster includes an ESBL-positive isolate”), that is a
+which resistance pattern - is not itself part of the case data
+requirements, and is a separate concern from whether EpiSODIC counts one
+case or two: nothing in the detection or reconciliation algorithms needs
+it, since they work from case counts, not resistance phenotypes. If
+per-isolate resistance data ever becomes something the dossier should
+show (e.g. “this cluster includes an ESBL-positive isolate”), that is a
 future, separate addition to the schema, not something to force into how
 cases are counted today.</p>
 </div>
@@ -414,9 +414,9 @@ is written, and that message is recorded against the run so it is also
 visible in the dashboard’s status strip and activity screen. A failed
 run never passes in silence.</p>
 <p>The optional feeds below have the same non-throwing check, over their
-own contract: <code><a href="../reference/episodic_check_denominators.html">episodic_check_denominators()</a></code> for positivity
-metadata, <code><a href="../reference/episodic_check_institution_activity.html">episodic_check_institution_activity()</a></code> for
-institution activity. Both read the same way as
+own requirements: <code><a href="../reference/episodic_check_denominators.html">episodic_check_denominators()</a></code> for
+positivity metadata, <code><a href="../reference/episodic_check_institution_activity.html">episodic_check_institution_activity()</a></code>
+for institution activity. Both read the same way as
 <code><a href="../reference/episodic_check_cases.html">episodic_check_cases()</a></code> does - no database, nothing changed,
 problems versus advice - and <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> validates
 both the same way it validates <code>cases</code>, before writing
@@ -424,6 +424,10 @@ anything, whenever they are supplied as a plain data frame (a
 zero-argument function is instead resolved and validated once the run is
 already under way, since it may depend on data - e.g. the institutions
 table - that only exists once the case feed has loaded).</p>
+<p>None of this applies to a cluster added with
+<code><a href="../reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code> (see “Clusters from another
+system” below): it never goes near <code><a href="../reference/episodic_check_cases.html">episodic_check_cases()</a></code>,
+<code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code>, or your own case data at all.</p>
 </div>
 <div class="section level2">
 <h2 id="positivity-metadata-optional">Positivity metadata (optional)<a class="anchor" aria-label="anchor" href="#positivity-metadata-optional"></a>
@@ -552,7 +556,7 @@ your own <code>.rds</code> file holding an <a href="https://r-spatial.github.io/
 <code>episodic_case.pc</code> values are - postcodes, zip codes,
 municipality codes, census tracts, anything with a shape) and a
 <code>geometry</code> column, and it is used instead of the shipped
-default. See <code>R/geo_data.R</code> for the exact contract.</p>
+default. See <code>R/geo_data.R</code> for the exact requirements.</p>
 <p>A second, independent layer can be drawn on top for orientation -
 region outlines (provinces, counties, states, whatever is useful),
 colour but no fill, a thicker line than the choropleth itself. Point
@@ -578,7 +582,7 @@ which - being specific to that data - will not match postcodes from
 anywhere else: outside that one region, L4 simply never has anything to
 detect on until you supply your own mapping. L1-L3 and L5 do not depend
 on this at all. See <code>episodic_pc_to_province()</code> for the exact
-contract.</p>
+requirements.</p>
 <p>Unset and unusable are two different things. Once the variable
 <em>is</em> set, a file that does not exist, cannot be read as a CSV,
 holds no rows, has no <code>pc</code> or no <code>province_code</code>
@@ -658,6 +662,60 @@ as green.</p>
 and the dashboard reads from the most recent of either.</p>
 </div>
 <div class="section level2">
+<h2 id="clusters-from-another-system-optional">Clusters from another system (optional)<a class="anchor" aria-label="anchor" href="#clusters-from-another-system-optional"></a>
+</h2>
+<p>Everything above is about your own laboratory-confirmed positives,
+running through <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code>’s own detectors. Some
+outbreaks are found a different way entirely - a public health service’s
+own surveillance system, a research model, a colleague’s script in
+another language - and still belong on the same dashboard, assessed the
+same way, without pretending they came from your case data when they did
+not.</p>
+<p><code><a href="../reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code> adds exactly that kind of
+cluster directly, bypassing detection and reconciliation altogether.
+Pass it already-parsed R values (its own requirements, not
+<code>episodic_case_data</code>’s - there is no file format to match,
+since the input is whatever your own code already extracted from the
+other system) rather than a file:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster</a></span><span class="op">(</span></span>
+<span>  user_id <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>  pathogen <span class="op">=</span> <span class="st">"Measles virus"</span>,</span>
+<span>  level <span class="op">=</span> <span class="st">"pathogen_area"</span>,</span>
+<span>  first_day <span class="op">=</span> <span class="st">"2025-01-10"</span>,</span>
+<span>  last_day <span class="op">=</span> <span class="st">"2025-01-20"</span>,</span>
+<span>  region_code <span class="op">=</span> <span class="st">"GR"</span>,</span>
+<span>  case_dates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2025-01-10"</span>, <span class="st">"2025-01-14"</span>, <span class="st">"2025-01-20"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  pc <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"9711AA"</span>, <span class="st">"9711AB"</span>, <span class="st">"9712CD"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  note <span class="op">=</span> <span class="st">"Reported by municipal health service, outside our own lab data."</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Every argument is vectorised: pass length-<code>n</code>
+vectors/lists to add <code>n</code> clusters in one call, each getting
+its own new cluster id, all in one transaction. A few things distinguish
+a manual cluster from a detected one:</p>
+<ul>
+<li>It gets a real stream identity (pathogen, level, location) from the
+same fields <code>episodic_stream_key()</code> uses, so it appears in
+the dashboard’s filtering, sorting and geography exactly like a detected
+cluster.</li>
+<li>Its case-level detail, if you supply any
+(<code>case_dates</code>/<code>pc</code>/<code>sex</code>/<code>age</code>),
+is stored entirely separately from <code>episodic_case</code> - it is
+never joined into denominators, line lists, or patient search, and is
+never treated as your own patients. Omit it entirely for a source that
+only hands you an aggregate count; the cluster still gets created, its
+epi curve/demography/geography panels just have nothing to draw.</li>
+<li>It never closes on its own: <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code>’s
+reconciliation and automatic closure both skip it, so it stays open
+until an epidemiologist records a verdict on it, the same as any other
+cluster.</li>
+<li>Its priority score is computed the same way a detected cluster’s is
+(unless you override it), so the two sort comparably on the
+dashboard.</li>
+</ul>
+<p>See <code><a href="../reference/episodic_add_manual_cluster.html">?episodic_add_manual_cluster</a></code> for every argument.</p>
+</div>
+<div class="section level2">
 <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a>
 </h2>
 <ul>
@@ -673,6 +731,9 @@ and every other <code>EPISODIC_*</code> variable mentioned above.</li>
 <code><a href="../articles/faq.html">vignette("faq")</a></code> for combining more than one source
 system, resending data safely, and handling a rectified/corrected lab
 result.</li>
+<li>
+<code><a href="../reference/episodic_add_manual_cluster.html">?episodic_add_manual_cluster</a></code> for clusters detected by
+another system entirely - see “Clusters from another system” above.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

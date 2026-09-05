@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.11.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -97,8 +97,8 @@ and <strong>advice</strong> (a run proceeds regardless, but it is worth
 a look - one pathogen spelled two ways, no <code>ward</code> on any
 hospital row). Run it, fix what it flags as a problem, run it again -
 most people get to a clean report in two or three passes.
-<code><a href="../articles/data-format.html">vignette("data-format")</a></code> has the full column contract this
-is checking against, including the exact allowed values for
+<code><a href="../articles/data-format.html">vignette("data-format")</a></code> has the full column requirements
+this is checking against, including the exact allowed values for
 <code>care_line</code>, <code>institution_type</code>, and
 <code>sex</code>.</p>
 <p>If you are also supplying the optional positivity or
@@ -272,7 +272,7 @@ combine them into one feed?</strong>
 own transform step hands to <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code>, so
 combining several source systems is exactly that: your transform step’s
 job, done before EpiSODIC is ever called. Bring each source into the
-shared column contract, <code><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind()</a></code> (or
+shared column requirements, <code><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind()</a></code> (or
 <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">dplyr::bind_rows()</a></code>) them together, and check the combined
 result with <code><a href="../reference/episodic_check_cases.html">episodic_check_cases()</a></code> as normal. The one thing
 to get right across sources is <code>source_key</code>: it needs to be
@@ -393,8 +393,8 @@ geography, and dates. That is enough to assess a cluster and to look a
 case up in your own source system if needed, but - given a properly
 pseudonymised <code>patient_key</code> - not enough to identify who is
 in it from the dashboard alone. See <code><a href="../articles/data-format.html">vignette("data-format")</a></code>
-for the exact column contract, including what “pseudonymised” needs to
-mean for this guarantee to hold.</p>
+for the exact column requirements, including what “pseudonymised” needs
+to mean for this guarantee to hold.</p>
 </details><details><summary><strong>My organisation is outside the Netherlands - does the geography
 panel (the choropleth map) still work for us?</strong>
 </summary><p>Yes. EpiSODIC is not built for the Netherlands specifically - the
@@ -436,7 +436,8 @@ quietly treating the first as the second is how a lattice ends up built
 on somebody else’s provinces.</li>
 </ul>
 <p>See <code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic reference
-data” section for the exact contract these files need to satisfy.</p>
+data” section for the exact requirements these files need to
+satisfy.</p>
 </details>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

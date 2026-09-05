@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.11.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,21 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.12.0" id="episodic-0120">EpiSODIC 0.12.0<a class="anchor" aria-label="anchor" href="#episodic-0120"></a></h2>
+<div class="section level3">
+<h3 id="new-0-12-0">New<a class="anchor" aria-label="anchor" href="#new-0-12-0"></a></h3>
+<ul><li>Every cluster now has a notes panel next to the interpretation panel: a free-text, markdown-formatted scratchpad open to any signed-in role, stored as plain text and rendered on display</li>
+<li>New <code><a href="../reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code> adds clusters detected by another algorithm or system, vectorised over any number of clusters in one call, never connected to this instance’s own case data - for output from another programming language or system, fed in as already-parsed R values</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-12-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-12-0"></a></h3>
+<ul><li>
+<code>bslib</code>, <code>cli</code>, <code>commonmark</code>, <code>htmltools</code> and <code>jsonlite</code> moved from Imports to Suggests: <code>shiny</code> (a hard Import) already Imports every one of them, so they were never an independent dependency in the first place</li>
+<li>
+<code><a href="../articles/data-format.html">vignette("data-format")</a></code> documents <code><a href="../reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code> in a new “Clusters from another system” section</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.11.0" id="episodic-0110">EpiSODIC 0.11.0<a class="anchor" aria-label="anchor" href="#episodic-0110"></a></h2>
 <div class="section level3">
@@ -243,7 +258,7 @@
 <div class="section level3">
 <h3 id="fixed-0-8-7">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-8-7"></a></h3>
 <ul><li>
-<code>care_line</code>’s <code>"third"</code> (tertiary care) value was missing from every column-contract table and roxygen doc listing its allowed values - <code>episodic_care_lines</code> already included it, the docs just did not</li>
+<code>care_line</code>’s <code>"third"</code> (tertiary care) value was missing from every column-requirements table and roxygen doc listing its allowed values - <code>episodic_care_lines</code> already included it, the docs just did not</li>
 </ul></div>
 </div>
     <div class="section level2">
@@ -326,7 +341,7 @@
 <p>This release includes a database schema migration (<code>episodic_case</code> gains a required <code>lab_number</code> column) - existing databases need to be recreated or migrated before running against this version.</p>
 <div class="section level3">
 <h3 id="new-0-7-0">New<a class="anchor" aria-label="anchor" href="#new-0-7-0"></a></h3>
-<ul><li>Case data contract gains a required <code>lab_number</code> column: your laboratory’s own specimen/culture number, distinct from <code>source_key</code> and, unlike it, not required to be unique - two rows may share one when a single culture yields more than one reported result. Shown on the line list alongside <code>patient_key</code>, replacing the previously-shown (and not useful) <code>source_key</code>
+<ul><li>Case data requirements gain a required <code>lab_number</code> column: your laboratory’s own specimen/culture number, distinct from <code>source_key</code> and, unlike it, not required to be unique - two rows may share one when a single culture yields more than one reported result. Shown on the line list alongside <code>patient_key</code>, replacing the previously-shown (and not useful) <code>source_key</code>
 </li>
 <li>Similar-clusters panel on the dossier gains a cluster ID column and opens the same way every other cluster table does</li>
 </ul></div>
@@ -445,7 +460,7 @@
 <li>Exported <code>episodic_care_lines</code>, <code>episodic_institution_types</code>, <code>episodic_sex_codes</code>
 </li>
 <li>
-<code>episodic_validate_cases()</code> enforces the full data contract</li>
+<code>episodic_validate_cases()</code> enforces the full data requirements</li>
 <li>
 <code>episodic_detection_run</code> records per-feed supply/dedup/insert/skip counts</li>
 <li>Activity screen shows per-run arrival and skip counts</li>

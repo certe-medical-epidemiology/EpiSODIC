@@ -1,5 +1,30 @@
 # Changelog
 
+## EpiSODIC 0.12.0
+
+### New
+
+- Every cluster now has a notes panel next to the interpretation panel:
+  a free-text, markdown-formatted scratchpad open to any signed-in role,
+  stored as plain text and rendered on display
+- New
+  [`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
+  adds clusters detected by another algorithm or system, vectorised over
+  any number of clusters in one call, never connected to this instance’s
+  own case data - for output from another programming language or
+  system, fed in as already-parsed R values
+
+### Changed
+
+- `bslib`, `cli`, `commonmark`, `htmltools` and `jsonlite` moved from
+  Imports to Suggests: `shiny` (a hard Import) already Imports every one
+  of them, so they were never an independent dependency in the first
+  place
+- [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
+  documents
+  [`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
+  in a new “Clusters from another system” section
+
 ## EpiSODIC 0.11.0
 
 ### New
@@ -335,7 +360,7 @@
 ### Fixed
 
 - `care_line`’s `"third"` (tertiary care) value was missing from every
-  column-contract table and roxygen doc listing its allowed values -
+  column-requirements table and roxygen doc listing its allowed values -
   `episodic_care_lines` already included it, the docs just did not
 
 ## EpiSODIC 0.8.6
@@ -503,7 +528,7 @@ recreated or migrated before running against this version.
 
 ### New
 
-- Case data contract gains a required `lab_number` column: your
+- Case data requirements gain a required `lab_number` column: your
   laboratory’s own specimen/culture number, distinct from `source_key`
   and, unlike it, not required to be unique - two rows may share one
   when a single culture yields more than one reported result. Shown on
@@ -675,7 +700,7 @@ recreated or migrated before running against this version.
 - Every case column documents type, nullability and permitted values
 - Exported `episodic_care_lines`, `episodic_institution_types`,
   `episodic_sex_codes`
-- `episodic_validate_cases()` enforces the full data contract
+- `episodic_validate_cases()` enforces the full data requirements
 - `episodic_detection_run` records per-feed supply/dedup/insert/skip
   counts
 - Activity screen shows per-run arrival and skip counts
