@@ -70,7 +70,20 @@ test_that("episodic_ui_render_markdown() renders markdown but neutralises embedd
   expect_true(grepl("&lt;script&gt;", unsafe, fixed = TRUE))
 })
 
-test_that("the dossier's notes panel is shown to any signed-in role and hidden from an anonymous visitor", {
+test_that("the dossier wires the notes panel behind its own uiOutput", {
+  # episodic_ui_notes_panel() itself is exercised below; what belongs to
+  # episodic_ui_dossier() is only that the placeholder is there for
+  # output$notes_pane (see app_server.R) to fill in - not the panel's
+  # content, which a note save must be able to redraw without the rest of
+  # the dossier (several panels of which are plots) redrawing with it.
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  html <- as.character(episodic_ui_dossier(env$con, env$cluster_id, lang = "en"))
+  expect_true(grepl("notes_pane", html, fixed = TRUE))
+})
+
+test_that("the notes panel is shown to any signed-in role and hidden from an anonymous visitor", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   viewer <- data.frame(
@@ -81,21 +94,21 @@ test_that("the dossier's notes panel is shown to any signed-in role and hidden f
     stringsAsFactors = FALSE
   )
 
-  html_anon <- as.character(episodic_ui_dossier(env$con, env$cluster_id, lang = "en"))
+  html_anon <- as.character(episodic_ui_notes_panel(env$con, env$cluster_id, NULL, lang = "en"))
   expect_true(grepl(episodic_tr("panel.notes.title", lang = "en"), html_anon, fixed = TRUE))
   expect_false(grepl("note_save_submit", html_anon, fixed = TRUE))
 
-  html_viewer <- as.character(episodic_ui_dossier(
+  html_viewer <- as.character(episodic_ui_notes_panel(
     env$con,
     env$cluster_id,
-    lang = "en",
-    current_user = viewer
+    viewer,
+    lang = "en"
   ))
   expect_true(grepl("note_save_submit", html_viewer, fixed = TRUE))
   expect_true(grepl(episodic_tr("notes.edit_button", lang = "en"), html_viewer, fixed = TRUE))
 })
 
-test_that("the dossier shows a saved note rendered as markdown", {
+test_that("the notes panel shows a saved note rendered as markdown", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   user_id <- episodic_db_app_user_insert(
@@ -108,6 +121,89 @@ test_that("the dossier shows a saved note rendered as markdown", {
   )
   episodic_db_cluster_note_insert(env$con, env$cluster_id, user_id, "*hello*")
 
-  html <- as.character(episodic_ui_dossier(env$con, env$cluster_id, lang = "en"))
+  html <- as.character(episodic_ui_notes_panel(env$con, env$cluster_id, NULL, lang = "en"))
   expect_true(grepl("<em>hello</em>", html, fixed = TRUE))
+})
+
+test_that("the notes panel's History button appears only once a note has been saved", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  html_before <- as.character(episodic_ui_notes_panel(env$con, env$cluster_id, NULL, lang = "en"))
+  expect_false(grepl("note_history_open", html_before, fixed = TRUE))
+
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    username = "jdoe",
+    full_name = "Jane Doe",
+    email = "jdoe@example.com",
+    password_hash = "x",
+    role = "viewer"
+  )
+  episodic_db_cluster_note_insert(env$con, env$cluster_id, user_id, "first note")
+
+  html_after <- as.character(episodic_ui_notes_panel(env$con, env$cluster_id, NULL, lang = "en"))
+  expect_true(grepl(
+    sprintf("note_history_open', %d", env$cluster_id),
+    html_after,
+    fixed = TRUE
+  ))
+  expect_true(grepl(episodic_tr("notes.history_button", lang = "en"), html_after, fixed = TRUE))
+})
+
+test_that("episodic_db_cluster_note_history() returns every version, oldest first, joined to the username", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    username = "jdoe",
+    full_name = "Jane Doe",
+    email = "jdoe@example.com",
+    password_hash = "x",
+    role = "viewer"
+  )
+
+  expect_equal(nrow(episodic_db_cluster_note_history(env$con, env$cluster_id)), 0L)
+
+  episodic_db_cluster_note_insert(env$con, env$cluster_id, user_id, "first")
+  episodic_db_cluster_note_insert(env$con, env$cluster_id, user_id, "second")
+  episodic_db_cluster_note_insert(env$con, env$cluster_id, user_id, "third")
+
+  history <- episodic_db_cluster_note_history(env$con, env$cluster_id)
+  expect_equal(nrow(history), 3L)
+  expect_equal(history$note_text, c("first", "second", "third"))
+  expect_true(all(history$username == "jdoe"))
+  expect_true(all(diff(history$note_id) > 0))
+})
+
+test_that("episodic_ui_notes_history_modal() diffs every version against the one before it, newest first", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    username = "jdoe",
+    full_name = "Jane Doe",
+    email = "jdoe@example.com",
+    password_hash = "x",
+    role = "viewer"
+  )
+  episodic_db_cluster_note_insert(env$con, env$cluster_id, user_id, "alpha")
+  episodic_db_cluster_note_insert(env$con, env$cluster_id, user_id, "bravo")
+
+  html <- as.character(episodic_ui_notes_history_modal(env$con, env$cluster_id, lang = "en"))
+  expect_true(grepl("jdoe", html, fixed = TRUE))
+  # the very first version has nothing to diff against, so it is rendered
+  # as one long insertion, same as a first commit in `git diff`
+  expect_true(grepl("episodic-notes-diff-ins", html, fixed = TRUE))
+  # newest first: "bravo" (the second, current version) must appear before
+  # "alpha" (the first) in the rendered order
+  expect_true(regexpr("bravo", html, fixed = TRUE) < regexpr("alpha", html, fixed = TRUE))
+})
+
+test_that("episodic_ui_notes_history_modal() shows an empty state when no note was ever saved", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  html <- as.character(episodic_ui_notes_history_modal(env$con, env$cluster_id, lang = "en"))
+  expect_true(grepl(episodic_tr("notes.history_empty", lang = "en"), html, fixed = TRUE))
 })
