@@ -18,12 +18,12 @@ Source:
 
 Berends MS (2026). *EpiSODIC: Epidemiological Signal Observation,
 Detection, Identification, and Classification*. R package version
-0.12.0, <https://certe-medical-epidemiology.github.io/EpiSODIC>.
+0.12.1, <https://certe-medical-epidemiology.github.io/EpiSODIC>.
 
     @Manual{,
       title = {EpiSODIC: Epidemiological Signal Observation, Detection, Identification, and Classification},
       author = {Matthijs S. Berends},
       year = {2026},
-      note = {R package version 0.12.0},
+      note = {R package version 0.12.1},
       url = {https://certe-medical-epidemiology.github.io/EpiSODIC},
     }

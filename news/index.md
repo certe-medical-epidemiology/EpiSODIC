@@ -1,5 +1,15 @@
 # Changelog
 
+## EpiSODIC 0.12.1
+
+### Changed
+
+- The notes panel has a History button showing every past version of the
+  note as a word-level diff, with the saving user and timestamp per
+  version
+- Saving a cluster note now only redraws the notes panel, instead of the
+  whole dossier including every plot
+
 ## EpiSODIC 0.12.0
 
 ### New
