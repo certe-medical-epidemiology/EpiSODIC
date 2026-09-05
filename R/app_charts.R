@@ -30,7 +30,6 @@
 #' layers.
 #'
 #' @name episodic_charts
-#' @importFrom rlang .data
 NULL
 
 #' Text sizes shared by every chart
@@ -231,10 +230,10 @@ episodic_ui_epi_curve_chart <- function(
   curve$alpha <- ifelse(curve$incomplete, 0.45, 1)
   ggplot2::ggplot(
     curve,
-    ggplot2::aes(x = .data$sample_date, y = .data$n_cases)
+    ggplot2::aes(x = rlang::.data$sample_date, y = rlang::.data$n_cases)
   ) +
     ggplot2::geom_col(
-      ggplot2::aes(alpha = .data$alpha),
+      ggplot2::aes(alpha = rlang::.data$alpha),
       fill = pal$primary,
       width = 0.7,
       show.legend = FALSE
@@ -267,19 +266,19 @@ episodic_ui_trend_chart <- function(
     obs = episodic_tr("panel.trend.legend_observed", lang = lang),
     exp = episodic_tr("panel.trend.legend_expected", lang = lang)
   )
-  ggplot2::ggplot(trend, ggplot2::aes(x = .data$week_start)) +
+  ggplot2::ggplot(trend, ggplot2::aes(x = rlang::.data$week_start)) +
     ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = 0, ymax = .data$upperbound),
+      ggplot2::aes(ymin = 0, ymax = rlang::.data$upperbound),
       fill = pal$primary_tint,
       alpha = 0.35
     ) +
     ggplot2::geom_line(
-      ggplot2::aes(y = .data$expected, colour = "exp"),
+      ggplot2::aes(y = rlang::.data$expected, colour = "exp"),
       linewidth = 0.6,
       linetype = "dashed"
     ) +
     ggplot2::geom_line(
-      ggplot2::aes(y = .data$n_cases, colour = "obs"),
+      ggplot2::aes(y = rlang::.data$n_cases, colour = "obs"),
       linewidth = 0.9
     ) +
     ggplot2::scale_colour_manual(
@@ -306,7 +305,7 @@ episodic_ui_trend_chart <- function(
 #' @export
 episodic_ui_rt_chart <- function(rt, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
-  ggplot2::ggplot(rt, ggplot2::aes(x = .data$window_end)) +
+  ggplot2::ggplot(rt, ggplot2::aes(x = rlang::.data$window_end)) +
     ggplot2::geom_hline(
       yintercept = 1,
       colour = pal$faint,
@@ -314,12 +313,12 @@ episodic_ui_rt_chart <- function(rt, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       linetype = "dashed"
     ) +
     ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = .data$lower, ymax = .data$upper),
+      ggplot2::aes(ymin = rlang::.data$lower, ymax = rlang::.data$upper),
       fill = pal$primary_tint,
       alpha = 0.5
     ) +
     ggplot2::geom_line(
-      ggplot2::aes(y = .data$mean),
+      ggplot2::aes(y = rlang::.data$mean),
       colour = pal$primary,
       linewidth = 0.9
     ) +
@@ -436,7 +435,7 @@ episodic_ui_geo_map_chart <- function(
 
       p <- ggplot2::ggplot(plotted) +
         ggplot2::geom_sf(
-          ggplot2::aes(fill = .data$n),
+          ggplot2::aes(fill = rlang::.data$n),
           colour = pal$border,
           linewidth = 0.1
         ) +
@@ -477,7 +476,7 @@ episodic_ui_geo_map_chart <- function(
         p <- p +
           ggplot2::geom_text(
             data = labels,
-            ggplot2::aes(x = .data$x, y = .data$y, label = .data$label),
+            ggplot2::aes(x = rlang::.data$x, y = rlang::.data$y, label = rlang::.data$label),
             inherit.aes = FALSE,
             size = 2.9,
             lineheight = 0.95,
@@ -670,19 +669,19 @@ episodic_ui_denominator_chart <- function(
   # one place a rate has to fit on a percentage axis.
   series$positivity_scaled <- pmin(series$positivity, 1) * scale_factor
 
-  ggplot2::ggplot(series, ggplot2::aes(x = .data$week_start)) +
+  ggplot2::ggplot(series, ggplot2::aes(x = rlang::.data$week_start)) +
     ggplot2::geom_col(
-      ggplot2::aes(y = .data$n_tests),
+      ggplot2::aes(y = rlang::.data$n_tests),
       fill = pal$secondary,
       width = 4
     ) +
     ggplot2::geom_line(
-      ggplot2::aes(y = .data$positivity_scaled),
+      ggplot2::aes(y = rlang::.data$positivity_scaled),
       colour = pal$danger,
       linewidth = 0.9
     ) +
     ggplot2::geom_point(
-      ggplot2::aes(y = .data$positivity_scaled),
+      ggplot2::aes(y = rlang::.data$positivity_scaled),
       colour = pal$danger,
       size = 1.6
     ) +
@@ -741,10 +740,10 @@ episodic_ui_pathogen_curve_chart <- function(
 
   p <- ggplot2::ggplot(
     weekly,
-    ggplot2::aes(x = .data$week_start, y = .data$n_cases)
+    ggplot2::aes(x = rlang::.data$week_start, y = rlang::.data$n_cases)
   ) +
     ggplot2::geom_col(
-      ggplot2::aes(alpha = .data$alpha),
+      ggplot2::aes(alpha = rlang::.data$alpha),
       fill = pal$primary,
       width = 5.5,
       show.legend = FALSE
@@ -758,7 +757,7 @@ episodic_ui_pathogen_curve_chart <- function(
     p <- p +
       ggplot2::geom_hline(
         data = lines,
-        ggplot2::aes(yintercept = .data$value, colour = .data$key),
+        ggplot2::aes(yintercept = rlang::.data$value, colour = rlang::.data$key),
         linewidth = 0.7,
         linetype = "dashed"
       ) +
@@ -865,10 +864,10 @@ episodic_ui_pathogen_overlay_chart <- function(
   p <- ggplot2::ggplot(
     rows,
     ggplot2::aes(
-      x = .data$week_index,
-      y = .data$n_cases,
-      group = .data$group,
-      colour = .data$group
+      x = rlang::.data$week_index,
+      y = rlang::.data$n_cases,
+      group = rlang::.data$group,
+      colour = rlang::.data$group
     )
   ) +
     ggplot2::geom_line(linewidth = 0.7, na.rm = TRUE)

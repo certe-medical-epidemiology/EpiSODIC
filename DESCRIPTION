@@ -32,19 +32,13 @@ Imports:
     AMR (>= 3.0.0),
     DBI,
     RSQLite,
-    cli,
     dplyr,
     yaml,
-    rlang,
-    jsonlite,
     digest,
     surveillance,
     shiny,
-    bslib,
     ggplot2,
-    sodium,
-    commonmark,
-    htmltools
+    sodium
 Suggests:
     testthat (>= 3.0.0),
     EpiEstim,
@@ -60,7 +54,13 @@ Suggests:
     Microsoft365R,
     AzureGraph,
     AzureAuth,
-    zip
+    zip,
+    bslib,
+    cli,
+    commonmark,
+    htmltools,
+    jsonlite,
+    rlang
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 URL: https://certe-medical-epidemiology.github.io/EpiSODIC, https://github.com/certe-medical-epidemiology/EpiSODIC
