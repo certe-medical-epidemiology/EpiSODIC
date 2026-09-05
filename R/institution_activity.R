@@ -103,7 +103,7 @@ episodic_institution_activity_load <- function(con, activity) {
   ))
 }
 
-#' Check the optional institution activity feed against its own contract
+#' Check the optional institution activity feed against its own requirements
 #'
 #' Split out of the load step so [episodic_run_cron()] can run it before
 #' the run writes anything, mirroring `episodic_validate_denominators()`.
@@ -471,11 +471,10 @@ episodic_check_institution_activity_advice <- function(activity) {
 #' )
 #' head(activity)
 #' @export
-episodic_synthetic_institution_activity <- function(
-    institutions,
-    start_date = end_date - 5 * 365,
-    end_date = Sys.Date(),
-    seed = 1) {
+episodic_synthetic_institution_activity <- function(institutions,
+                                                    start_date = end_date - 5 * 365,
+                                                    end_date = Sys.Date(),
+                                                    seed = 1) {
   set.seed(seed)
   hospitals <- institutions[institutions$institution_type == "hospital", ]
   if (nrow(hospitals) == 0) {

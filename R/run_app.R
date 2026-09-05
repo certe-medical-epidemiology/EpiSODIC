@@ -46,10 +46,9 @@
 #' episodic_run_app("/path/to/episodic.sqlite")
 #' }
 #' @export
-episodic_run_app <- function(
-    db_path = Sys.getenv("EPISODIC_DB", unset = NA),
-    lang = Sys.getenv("EPISODIC_LANGUAGE"),
-    ...) {
+episodic_run_app <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA),
+                             lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                             ...) {
   rlang::check_installed(c("shiny", "bslib"))
   if (is.na(db_path) || !nzchar(db_path)) {
     stop(

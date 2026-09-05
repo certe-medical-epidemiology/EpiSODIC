@@ -141,7 +141,7 @@ episodic_denominator_key <- function(rows) {
   paste(rows$pathogen, rows$sample_date, rows$care_line, area_code, sep = "\r")
 }
 
-#' Check the optional denominator feed against its own contract
+#' Check the optional denominator feed against its own requirements
 #'
 #' Split out of the load step so [episodic_run_cron()] can run it before
 #' the run writes anything: an operator who supplies a testing-volume feed
@@ -494,10 +494,9 @@ episodic_check_denominators_advice <- function(denominators) {
 #' )
 #' head(denom)
 #' @export
-episodic_synthetic_denominators <- function(
-    start_date = end_date - 5 * 365,
-    end_date = Sys.Date(),
-    seed = 1) {
+episodic_synthetic_denominators <- function(start_date = end_date - 5 * 365,
+                                            end_date = Sys.Date(),
+                                            seed = 1) {
   set.seed(seed)
   week_starts <- seq(start_date, end_date, by = "week")
   n <- length(week_starts)

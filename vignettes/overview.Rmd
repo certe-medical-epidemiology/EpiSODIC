@@ -157,7 +157,7 @@ simply confirming which build is deployed.
 
 ## Where to go next
 
-- **`vignette("data-format")`** - the case data contract: what columns to
+- **`vignette("data-format")`** - the case data requirements: what columns to
   send, what each means, and how to check your extract before you
   schedule anything.
 - **`vignette("deployment")`** - standing up a real instance: accounts,

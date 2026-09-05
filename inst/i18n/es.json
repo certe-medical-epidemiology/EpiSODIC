@@ -43,6 +43,7 @@
   "dossier.meta.first_last": "primer caso {first}, último {last}",
   "dossier.meta.detected_by": "detectado por {detectors}",
   "dossier.changed_badge": "Modificado desde la evaluación",
+  "dossier.manual_badge": "Añadido manualmente",
 
   "state.new": "Nuevo",
   "state.assessing": "En evaluación",
@@ -77,6 +78,11 @@
   "panel.interpretation.title": "Interpretación",
   "panel.interpretation.aside": "generada automáticamente",
   "panel.interpretation.empty": "Todavía no hay interpretación disponible para este clúster.",
+
+  "panel.notes.title": "Notas",
+  "panel.notes.empty": "Todavía no hay notas para este clúster.",
+  "notes.edit_button": "Editar",
+  "notes.save_button": "Guardar",
 
   "panel.epicurve.title": "Curva epidémica",
   "panel.epicurve.note": "La zona sombreada cubre los últimos {days_phrase}: el retraso empírico de notificación según el triángulo de notificación. Los casos con fecha de muestra en esta ventana aún no se han notificado por completo. Una cola descendente aquí no es un descenso real.",

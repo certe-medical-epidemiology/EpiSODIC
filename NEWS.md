@@ -1,53 +1,93 @@
+# EpiSODIC 0.12.0
+
+## New
+
+- Every cluster now has a notes panel next to the interpretation panel: a free-text, markdown-formatted scratchpad open to any signed-in role, stored
+  as plain text and rendered on display
+- New `episodic_add_manual_cluster()` adds clusters detected by another algorithm or system, vectorised over any number of clusters in one call,
+  never connected to this instance's own case data - for output from another programming language or system, fed in as already-parsed R values
+
+## Changed
+
+- `bslib`, `cli`, `commonmark`, `htmltools` and `jsonlite` moved from Imports to Suggests: `shiny` (a hard Import) already Imports every one of them,
+  so they were never an independent dependency in the first place
+- `vignette("data-format")` documents `episodic_add_manual_cluster()` in a new "Clusters from another system" section
+
+
 # EpiSODIC 0.11.0
 
 ## New
 
-- New `access.require_login` configuration key (default `false`, keeping the current behaviour): when `true`, an anonymous visitor gets a sign-in prompt and nothing else, because the server renders no navigation, no status strip and no screen for them rather than hiding it client-side
-- The Settings screen has a read-only "Dashboard access" panel reporting which way `access.require_login` is set; it is deliberately not editable in-app, so a login wall cannot be switched off from inside the app by a single account
+- New `access.require_login` configuration key (default `false`, keeping the current behaviour): when `true`, an anonymous visitor gets a sign-in
+  prompt and nothing else, because the server renders no navigation, no status strip and no screen for them rather than hiding it client-side
+- The Settings screen has a read-only "Dashboard access" panel reporting which way `access.require_login` is set; it is deliberately not editable
+  in-app, so a login wall cannot be switched off from inside the app by a single account
 - A cluster's dossier can now be opened by URL: `?cluster=<id>` on the dashboard address selects that cluster on the Clusters screen
 - New-cluster notifications now link each cluster id straight to its dossier when `dashboard_url` is configured
 - The geography panel and the outbreak report now name the province each postcode falls in, alongside the postcode itself
-- The Info screen has a "Reference data" panel reporting, per `EPISODIC_*` variable, whether the instance's own file was read, was rejected, or was read and matched nothing, and what it delivered
-- The reference-data panel reports how many of the case data's own postcodes resolve to a province, which is what distinguishes a `EPISODIC_PC_PROVINCE_MAP` that was never read from one whose postcode format does not match the case data
-- `episodic_default_style.yaml` (and `EPISODIC_STYLE`) now also carries typography: `font` (a CSS font-family stack) and `font_size_base`, which scales every other font size in the dashboard, since those are now expressed in `rem` relative to it
-- Every cluster table now has a "Case days" column: the number of distinct dates with at least one case, as its own figure next to the case count and the calendar duration - a cluster can run 90 days with cases on only 10 of them (a sharp peak) or on 39 of them (a flat, sustained rise), the same duration and case count, two different epidemic shapes
+- The Info screen has a "Reference data" panel reporting, per `EPISODIC_*` variable, whether the instance's own file was read, was rejected, or was
+  read and matched nothing, and what it delivered
+- The reference-data panel reports how many of the case data's own postcodes resolve to a province, which is what distinguishes a
+  `EPISODIC_PC_PROVINCE_MAP` that was never read from one whose postcode format does not match the case data
+- `episodic_default_style.yaml` (and `EPISODIC_STYLE`) now also carries typography: `font` (a CSS font-family stack) and `font_size_base`, which
+  scales every other font size in the dashboard, since those are now expressed in `rem` relative to it
+- Every cluster table now has a "Case days" column: the number of distinct dates with at least one case, as its own figure next to the case count and
+  the calendar duration - a cluster can run 90 days with cases on only 10 of them (a sharp peak) or on 39 of them (a flat, sustained rise), the same
+  duration and case count, two different epidemic shapes
 - `episodic_add_user()` is now exported, so accounts can be provisioned from a script without reaching into the package's internals
 
 ## Changed
 
-- Trimmed the exported API surface to what an operator actually needs: `episodic_care_lines()`, `episodic_case_columns()`, `episodic_config_hash()`, `episodic_config_resolve()`, `episodic_institution_types()`, `episodic_interpretation_slots()`, `episodic_provision_user()`, `episodic_resolve_data()`, `episodic_sex_codes()`, `episodic_tr()` and `episodic_validate_cases()` are no longer exported (still used internally)
-- The shipped default config, style, pathogen and report files are renamed to self-explanatory names: `default.yaml` -> `episodic_default_config.yaml`, `palette.yaml` -> `episodic_default_style.yaml`, `pathogen_config.csv` -> `episodic_default_pathogen_config.csv`, `cluster_report.qmd` -> `episodic_default_report.qmd`
-- Every table of clusters (Archive, Pathogen screen, the dossier's related and similar-clusters panels, the outbreak report and the new-cluster notification) now shares one implementation with the same columns in the same order: cluster id, then context, then the case period (first case - last case, as one range), cases, case days, then what was decided (classification/state/closure date/shared cases), then duration and priority
+- Trimmed the exported API surface to what an operator actually needs: `episodic_care_lines()`, `episodic_case_columns()`, `episodic_config_hash()`,
+  `episodic_config_resolve()`, `episodic_institution_types()`, `episodic_interpretation_slots()`, `episodic_provision_user()`,
+  `episodic_resolve_data()`, `episodic_sex_codes()`, `episodic_tr()` and `episodic_validate_cases()` are no longer exported (still used internally)
+- The shipped default config, style, pathogen and report files are renamed to self-explanatory names: `default.yaml` ->
+  `episodic_default_config.yaml`, `palette.yaml` -> `episodic_default_style.yaml`, `pathogen_config.csv` -> `episodic_default_pathogen_config.csv`,
+  `cluster_report.qmd` -> `episodic_default_report.qmd`
+- Every table of clusters (Archive, Pathogen screen, the dossier's related and similar-clusters panels, the outbreak report and the new-cluster
+  notification) now shares one implementation with the same columns in the same order: cluster id, then context, then the case period (first case -
+  last case, as one range), cases, case days, then what was decided (classification/state/closure date/shared cases), then duration and priority
 - Every table of clusters is now sorted on the last case day, most recent first, with priority and cluster id breaking ties
-- A cluster row that does not open a dossier, because lattice suppression folded it into another, now shows its id in the warning colour with a tooltip explaining why, instead of a link that does nothing
+- A cluster row that does not open a dossier, because lattice suppression folded it into another, now shows its id in the warning colour with a
+  tooltip explaining why, instead of a link that does nothing
 - The per-screen cluster table column translation keys are replaced by one `column.*` family shared by every cluster table
-- `episodic_config_hash()` now also excludes the `access` section, for the same reason it excludes `notifications`: it governs how the instance is operated, never what a run computes
-- `EPISODIC_PC_PROVINCE_MAP` pointing at a missing, unreadable, empty, wrongly-columned or duplicate-postcode CSV is now a run-stopping error naming the file and the problem, instead of a silent fall back to the shipped Dutch demo ranges
+- `episodic_config_hash()` now also excludes the `access` section, for the same reason it excludes `notifications`: it governs how the instance is
+  operated, never what a run computes
+- `EPISODIC_PC_PROVINCE_MAP` pointing at a missing, unreadable, empty, wrongly-columned or duplicate-postcode CSV is now a run-stopping error naming
+  the file and the problem, instead of a silent fall back to the shipped Dutch demo ranges
 - A detection run in which no postcode resolves to a province now says so in its trace, instead of leaving province-level detection silently empty
-- The dashboard's area/province/region place label now shows `region_code` verbatim instead of cosmetically reformatting it, so an operator can see at a glance, character for character, whether `EPISODIC_PC_PROVINCE_MAP` resolved the code they expected, without risking a mangled real place name (e.g. the hyphen in "Noord-Holland")
+- The dashboard's area/province/region place label now shows `region_code` verbatim instead of cosmetically reformatting it, so an operator can see
+  at a glance, character for character, whether `EPISODIC_PC_PROVINCE_MAP` resolved the code they expected, without risking a mangled real place name
+  (e.g. the hyphen in "Noord-Holland")
 
 ## Fixed
 
-- Opening a cluster from a table row or a "linked to #N" chip now moves the rail's own highlight to match; it used to leave the rail showing whichever cluster was selected before, because the rail deliberately does not re-render on every selection
+- Opening a cluster from a table row or a "linked to #N" chip now moves the rail's own highlight to match; it used to leave the rail showing
+  whichever cluster was selected before, because the rail deliberately does not re-render on every selection
 - Opening the dashboard via a `?cluster=<id>` link no longer crashes with "Can't access reactive value 'url_search' outside of reactive consumer"
-- `episodic_demo()` no longer leaves `EPISODIC_CONFIG`/`EPISODIC_DB`/`EPISODIC_GEO_DATA` permanently overwritten for the rest of the R session once it returns
+- `episodic_demo()` no longer leaves `EPISODIC_CONFIG`/`EPISODIC_DB`/`EPISODIC_GEO_DATA` permanently overwritten for the rest of the R session once
+  it returns
 
 
 # EpiSODIC 0.10.3
 
 ## Fixed
 
-- Email/notification messages for new clusters and run failures are now rendered in `EPISODIC_LANGUAGE`, in all 8 shipped languages, instead of always in English
+- Email/notification messages for new clusters and run failures are now rendered in `EPISODIC_LANGUAGE`, in all 8 shipped languages, instead of
+  always in English
 - The new-clusters email's numeric columns are now horizontally centred, and its dates are formatted the same way the dashboard formats them
-- `microsoft365` notifications under the cached-login flow (Option C) now honour `from`: when set, mail is sent from that mailbox via `Microsoft365R::get_business_outlook(shared_mbox_email = from)` instead of always sending as the signed-in account
-- Fixed a `grepl(..., ignore.case = TRUE, fixed = TRUE)` warning when matching a Microsoft 365 tenant against cached Azure AD logins; the match is now done case-insensitively without triggering the warning
+- `microsoft365` notifications under the cached-login flow (Option C) now honour `from`: when set, mail is sent from that mailbox via
+  `Microsoft365R::get_business_outlook(shared_mbox_email = from)` instead of always sending as the signed-in account
+- Fixed a `grepl(..., ignore.case = TRUE, fixed = TRUE)` warning when matching a Microsoft 365 tenant against cached Azure AD logins; the match is
+  now done case-insensitively without triggering the warning
 
 
 # EpiSODIC 0.10.2
 
 ## New
 
-- `microsoft365` notifications can now reuse an already-cached Azure AD login (e.g. one obtained via `Microsoft365R::get_business_outlook()` or `episodic_setup_microsoft365()`) by tenant, with no `client_id`, `client_secret`, or `from` required
+- `microsoft365` notifications can now reuse an already-cached Azure AD login (e.g. one obtained via `Microsoft365R::get_business_outlook()` or
+  `episodic_setup_microsoft365()`) by tenant, with no `client_id`, `client_secret`, or `from` required
 
 
 # EpiSODIC 0.10.1
@@ -58,7 +98,9 @@
 
 ## Changed
 
-- Redesigned the Settings screen: notification channels now sit in a compact wrapping card grid with a toggle switch per channel instead of full-width stacked blocks, and the read-only detection configuration is grouped by section with readable field labels instead of one dense grid of dotted, all-caps keys
+- Redesigned the Settings screen: notification channels now sit in a compact wrapping card grid with a toggle switch per channel instead of
+  full-width stacked blocks, and the read-only detection configuration is grouped by section with readable field labels instead of one dense grid of
+  dotted, all-caps keys
 - Documentation updates
 
 
@@ -68,7 +110,8 @@
 
 - Implemented various ways to send notifications of new clusters: ntfy, SMTP, sendmail, Microsoft 365, Teams (Power Automate Workflow), Slack
 - Added `vignette("notifications")` with setup steps per channel
-- Added an `is_admin` account property and an in-app Settings screen for managing notification channels, dashboard accounts, and viewing (read-only) detection configuration, without needing server access
+- Added an `is_admin` account property and an in-app Settings screen for managing notification channels, dashboard accounts, and viewing (read-only)
+  detection configuration, without needing server access
 - Added `episodic_config_export()` to export the resolved configuration as a zip file, with notification secrets masked by default
 
 ## Fixed
@@ -78,7 +121,8 @@
 ## Changed
 
 - Documented every `episodic_default_config.yaml` config key with a short inline explanation
-- Every write action now re-resolves the signed-in account against the database immediately before writing (`episodic_auth_refresh_user()`), so deactivating or demoting an account from the Settings screen takes effect on its already-open sessions too, not only on its next sign-in
+- Every write action now re-resolves the signed-in account against the database immediately before writing (`episodic_auth_refresh_user()`), so
+  deactivating or demoting an account from the Settings screen takes effect on its already-open sessions too, not only on its next sign-in
 - An `is_admin` account can no longer revoke its own admin access or deactivate its own account from the Settings screen (self-lockout guard)
 
 
@@ -184,78 +228,120 @@
 
 ## Changed
 
-- Author list trimmed to its actual contributors and copyright holders: Matthijs Berends, Certe Medical Diagnostics & Advice Foundation, and University Medical Center Groningen (ROR-identified, same format as Certe)
+- Author list trimmed to its actual contributors and copyright holders: Matthijs Berends, Certe Medical Diagnostics & Advice Foundation, and
+  University Medical Center Groningen (ROR-identified, same format as Certe)
 - Every language listing (README, vignettes, roxygen docs) now orders English first, then the rest alphabetically, instead of leading with Dutch
-- Geography is documented as operator-supplied throughout, not Netherlands-specific: the "Geographic reference data" section in `vignette("data-format")` is substantially expanded, now also covering `EPISODIC_PC_PROVINCE_MAP` (L4 stream detection) alongside the map data, and the FAQ's geography entry does the same
-- `vignette("overview")`'s screen-by-screen section no longer stops at three screens ("a third screen closes the loop") - it now covers all seven (Clusters, Pathogen, Performance, Archive, Streams, Activity, Info)
-- `episodic_check_denominators()` and `episodic_check_institution_activity()` are now mentioned alongside `episodic_check_cases()` everywhere the docs discuss checking input data before a run (`vignette("data-format")`, `vignette("deployment")`, `vignette("faq")`, README)
+- Geography is documented as operator-supplied throughout, not Netherlands-specific: the "Geographic reference data" section in
+  `vignette("data-format")` is substantially expanded, now also covering `EPISODIC_PC_PROVINCE_MAP` (L4 stream detection) alongside the map data, and
+  the FAQ's geography entry does the same
+- `vignette("overview")`'s screen-by-screen section no longer stops at three screens ("a third screen closes the loop") - it now covers all seven
+  (Clusters, Pathogen, Performance, Archive, Streams, Activity, Info)
+- `episodic_check_denominators()` and `episodic_check_institution_activity()` are now mentioned alongside `episodic_check_cases()` everywhere the
+  docs discuss checking input data before a run (`vignette("data-format")`, `vignette("deployment")`, `vignette("faq")`, README)
 
 ## Fixed
 
-- `care_line`'s `"third"` (tertiary care) value was missing from every column-contract table and roxygen doc listing its allowed values - `episodic_care_lines` already included it, the docs just did not
+- `care_line`'s `"third"` (tertiary care) value was missing from every column-requirements table and roxygen doc listing its allowed values -
+  `episodic_care_lines` already included it, the docs just did not
 
 
 # EpiSODIC 0.8.6
 
 ## Changed
 
-- Reverted 0.8.5's `gc(full = TRUE)` forcing in `episodic_run_cron(debug = TRUE)`: a second lab reproduction, with that forcing in place, showed a `gc()` completing cleanly immediately after `episodic_growth_slope()` and then the crash landing on the very next call, `episodic_spatial_concentration()` - ruling out delayed-onset corruption from an earlier call and pointing at that one call on that specific data instead, which the extra `gc()` calls were never able to help with and were only slowing every run down (~600-1000ms added per stream, a ~5 minute run turning into "10-20 seconds on SQLite" by the lab's own comparison)
-- `episodic_spatial_concentration()` (the isolated crash site) no longer uses `table()`/`factor()`, which sort their levels and so invoke locale-aware string collation - not guaranteed safe against a string whose declared encoding does not match its actual bytes, which is exactly what a client/server character-set mismatch can hand back from a MariaDB connection. Counts via `tabulate(match(pc, unique(pc)))` instead, which only ever hashes and byte-compares the strings themselves and sorts nothing but the resulting integer codes
-- `episodic_run_cron(debug = TRUE)` now dumps each reconciliation candidate's `pc` values (encoding, validity, raw bytes) immediately before `episodic_spatial_concentration()` runs, in place of the removed `gc()` forcing - cheap (a handful of values at most) and aimed squarely at confirming or ruling out the character-encoding hypothesis above
+- Reverted 0.8.5's `gc(full = TRUE)` forcing in `episodic_run_cron(debug = TRUE)`: a second lab reproduction, with that forcing in place, showed a
+  `gc()` completing cleanly immediately after `episodic_growth_slope()` and then the crash landing on the very next call,
+  `episodic_spatial_concentration()` - ruling out delayed-onset corruption from an earlier call and pointing at that one call on that specific data
+  instead, which the extra `gc()` calls were never able to help with and were only slowing every run down (~600-1000ms added per stream, a ~5 minute
+  run turning into "10-20 seconds on SQLite" by the lab's own comparison)
+- `episodic_spatial_concentration()` (the isolated crash site) no longer uses `table()`/`factor()`, which sort their levels and so invoke
+  locale-aware string collation - not guaranteed safe against a string whose declared encoding does not match its actual bytes, which is exactly what
+  a client/server character-set mismatch can hand back from a MariaDB connection. Counts via `tabulate(match(pc, unique(pc)))` instead, which only
+  ever hashes and byte-compares the strings themselves and sorts nothing but the resulting integer codes
+- `episodic_run_cron(debug = TRUE)` now dumps each reconciliation candidate's `pc` values (encoding, validity, raw bytes) immediately before
+  `episodic_spatial_concentration()` runs, in place of the removed `gc()` forcing - cheap (a handful of values at most) and aimed squarely at
+  confirming or ruling out the character-encoding hypothesis above
 
 
 # EpiSODIC 0.8.5
 
 ## Changed
 
-- `episodic_run_cron(debug = TRUE)` now forces a full garbage collection (`gc(full = TRUE)`) immediately after every database round trip inside the per-stream reconciliation loop. A fatal crash from corrupted memory typically surfaces later than its actual cause - whenever R's own, otherwise lazily scheduled, garbage collector happens to stumble on the damage - so forcing one right after each call is what lets the trace log land on the actual culprit instead of a downstream symptom several calls away. Confirmed necessary: a lab reproduction of the ongoing MariaDB crash showed the trace stopping at a different line on each run (once after `episodic_growth_slope()`, once mid-`episodic_app_density()`) despite hitting the exact same stream and data, the signature of exactly this kind of delayed-onset corruption. Noisy and slow; `debug = TRUE` was already meant only for chasing a failure like this, not for routine runs
+- `episodic_run_cron(debug = TRUE)` now forces a full garbage collection (`gc(full = TRUE)`) immediately after every database round trip inside the
+  per-stream reconciliation loop. A fatal crash from corrupted memory typically surfaces later than its actual cause - whenever R's own, otherwise
+  lazily scheduled, garbage collector happens to stumble on the damage - so forcing one right after each call is what lets the trace log land on the
+  actual culprit instead of a downstream symptom several calls away. Confirmed necessary: a lab reproduction of the ongoing MariaDB crash showed the
+  trace stopping at a different line on each run (once after `episodic_growth_slope()`, once mid-`episodic_app_density()`) despite hitting the exact
+  same stream and data, the signature of exactly this kind of delayed-onset corruption. Noisy and slow; `debug = TRUE` was already meant only for
+  chasing a failure like this, not for routine runs
 
 
 # EpiSODIC 0.8.4
 
 ## Fixed
 
-- `episodic_db_truncate()` against MariaDB/MySQL crashed with `Error: bad_weak_ptr` right after successfully truncating every table. `on.exit(..., add = TRUE)` appends to the end of the exit-handler list, so the handler that restores `FOREIGN_KEY_CHECKS` (registered after the connection's own `on.exit(dbDisconnect(con))`) ran *after* the connection had already been closed - RMariaDB's response to a query against a freed connection is a C++ abort, not a catchable R error. Now restores foreign-key checks explicitly right after truncating, with the `on.exit` handler only as a safety net for the error path, registered with `after = FALSE` so it runs before the disconnect even then
+- `episodic_db_truncate()` against MariaDB/MySQL crashed with `Error: bad_weak_ptr` right after successfully truncating every table. `on.exit(...,
+  add = TRUE)` appends to the end of the exit-handler list, so the handler that restores `FOREIGN_KEY_CHECKS` (registered after the connection's own
+  `on.exit(dbDisconnect(con))`) ran *after* the connection had already been closed - RMariaDB's response to a query against a freed connection is a
+  C++ abort, not a catchable R error. Now restores foreign-key checks explicitly right after truncating, with the `on.exit` handler only as a safety
+  net for the error path, registered with `after = FALSE` so it runs before the disconnect even then
 
 
 # EpiSODIC 0.8.3
 
 ## New
 
-- `episodic_db_truncate()`: empties every EpiSODIC table (including dashboard accounts) while keeping the schema itself, for a hard reset back to "freshly created, no data" without a schema migration. Refuses to run outside an interactive session, and requires typing the database's own name back at a prompt before it deletes anything
+- `episodic_db_truncate()`: empties every EpiSODIC table (including dashboard accounts) while keeping the schema itself, for a hard reset back to
+  "freshly created, no data" without a schema migration. Refuses to run outside an interactive session, and requires typing the database's own name
+  back at a prompt before it deletes anything
 
 
 # EpiSODIC 0.8.2
 
 ## Fixed
 
-- Every cron-side database write function's optional parameters defaulted to a bare, untyped `NA` (R's logical `NA`) rather than the column's own type (`NA_integer_`, `NA_real_`, `NA_character_`). RSQLite coerces this silently; RMariaDB does not treat a logical `NA` bound to a non-logical column the same way as a properly typed one, which is a documented source of crashes rather than a catchable error. Most notably, `episodic_db_detection_insert()`'s `cluster_id` - untyped, and hit on every single detection insert in every run, since a detection is always written before a cluster is attached to it - now defaults to `NA_integer_`
+- Every cron-side database write function's optional parameters defaulted to a bare, untyped `NA` (R's logical `NA`) rather than the column's own
+  type (`NA_integer_`, `NA_real_`, `NA_character_`). RSQLite coerces this silently; RMariaDB does not treat a logical `NA` bound to a non-logical
+  column the same way as a properly typed one, which is a documented source of crashes rather than a catchable error. Most notably,
+  `episodic_db_detection_insert()`'s `cluster_id` - untyped, and hit on every single detection insert in every run, since a detection is always
+  written before a cluster is attached to it - now defaults to `NA_integer_`
 
 
 # EpiSODIC 0.8.1
 
 ## Changed
 
-- `episodic_run_cron(debug = TRUE)` traces every sub-step inside a stream's own reconciliation (triangle update, MEM/Farrington detection, baseline exclusion, population vector, trend caching, detection insert, and each reconciliation candidate's priority-score components) instead of only the stream as a whole - narrows a crash or a stall down to the exact call inside a single stream's processing, not just which stream
+- `episodic_run_cron(debug = TRUE)` traces every sub-step inside a stream's own reconciliation (triangle update, MEM/Farrington detection, baseline
+  exclusion, population vector, trend caching, detection insert, and each reconciliation candidate's priority-score components) instead of only the
+  stream as a whole - narrows a crash or a stall down to the exact call inside a single stream's processing, not just which stream
 
 
 # EpiSODIC 0.8.0
 
 ## New
 
-- `episodic_check_denominators()` and `episodic_check_institution_activity()`: the same non-throwing pre-flight report `episodic_check_cases()` gives the case feed, now available for the optional positivity and hospital-activity feeds too
-- `episodic_run_cron()` now refuses on a malformed `institution_activity` feed before writing anything (when handed as a plain data frame), instead of only mid-transaction
-- `episodic_run_cron()` writes a timestamped `message()` at every phase of a run (config resolution, DB connect, each feed load, lattice enumeration, each detector, and each stream's reconciliation), always on - useful in any interactive load-through and in a real cron job's own log. A new `debug = TRUE` argument adds `sessionInfo()`, package/driver versions, memory snapshots, and per-stream detail on top, for chasing a failure (including a crashed session) that leaves no R-level error behind
+- `episodic_check_denominators()` and `episodic_check_institution_activity()`: the same non-throwing pre-flight report `episodic_check_cases()` gives
+  the case feed, now available for the optional positivity and hospital-activity feeds too
+- `episodic_run_cron()` now refuses on a malformed `institution_activity` feed before writing anything (when handed as a plain data frame), instead
+  of only mid-transaction
+- `episodic_run_cron()` writes a timestamped `message()` at every phase of a run (config resolution, DB connect, each feed load, lattice enumeration,
+  each detector, and each stream's reconciliation), always on - useful in any interactive load-through and in a real cron job's own log. A new `debug
+  = TRUE` argument adds `sessionInfo()`, package/driver versions, memory snapshots, and per-stream detail on top, for chasing a failure (including a
+  crashed session) that leaves no R-level error behind
 
 ## Changed
 
-- L4 (province) stream derivation supports an operator-supplied PC-to-province lookup via `EPISODIC_PC_PROVINCE_MAP`, falling back to the bundled Northern Netherlands demo ranges as before - a deployment outside that demo region previously got no L4 streams at all, silently
+- L4 (province) stream derivation supports an operator-supplied PC-to-province lookup via `EPISODIC_PC_PROVINCE_MAP`, falling back to the bundled
+  Northern Netherlands demo ranges as before - a deployment outside that demo region previously got no L4 streams at all, silently
 - Archive screen sorts by Period (descending) instead of by closing date
-- Dossier top card reorders to confirmed, unique patients, duration (new), doubling time, case-free days, priority, with ratio/incidence density (where shown) moved after priority
+- Dossier top card reorders to confirmed, unique patients, duration (new), doubling time, case-free days, priority, with ratio/incidence density
+  (where shown) moved after priority
 - Pathogen screen's detection parameter table shows a long `source_ref` reference in the "What it does" column instead of "Value"
 - Pathogen screen's positivity chart no longer renders a percentage axis past 100%
-- Pathogen screen's weekly incidence and season/year comparison charts share the same x-axis span for any period that falls within a single season/year
-- Geography map charts drop their fill legend (redundant with the on-map count labels) so the render height computed for the map's own aspect ratio is not shortened by legend space, removing the whitespace above/below the map
+- Pathogen screen's weekly incidence and season/year comparison charts share the same x-axis span for any period that falls within a single
+  season/year
+- Geography map charts drop their fill legend (redundant with the on-map count labels) so the render height computed for the map's own aspect ratio
+  is not shortened by legend space, removing the whitespace above/below the map
 - `.shiny-plot-output` centres its contents vertically and horizontally; the geo-panel map group centres horizontally as well
 
 
@@ -267,12 +353,15 @@ recreated or migrated before running against this version.
 
 ## New
 
-- Case data contract gains a required `lab_number` column: your laboratory's own specimen/culture number, distinct from `source_key` and, unlike it, not required to be unique - two rows may share one when a single culture yields more than one reported result. Shown on the line list alongside `patient_key`, replacing the previously-shown (and not useful) `source_key`
+- Case data requirements gain a required `lab_number` column: your laboratory's own specimen/culture number, distinct from `source_key` and, unlike
+  it, not required to be unique - two rows may share one when a single culture yields more than one reported result. Shown on the line list
+  alongside `patient_key`, replacing the previously-shown (and not useful) `source_key`
 - Similar-clusters panel on the dossier gains a cluster ID column and opens the same way every other cluster table does
 
 ## Changed
 
-- `episodic_db_case_insert_new()` batches its existence check and insert into chunked round trips instead of one query pair per row, a large speedup for larger imports
+- `episodic_db_case_insert_new()` batches its existence check and insert into chunked round trips instead of one query pair per row, a large speedup
+  for larger imports
 
 
 # EpiSODIC 0.6.*
@@ -308,7 +397,8 @@ recreated or migrated before running against this version.
 - Deduplication now checks against the most recently stored episode, not just the current batch
 - "Isolate" renamed to "positive" throughout the app, reports and validation advice
 - New "Frequently asked questions" vignette
-- Rail cards show the cluster's care line as a colour-coded chip (1st/2nd/3rd line) beside the pathogen name, and the cluster id in small type next to it
+- Rail cards show the cluster's care line as a colour-coded chip (1st/2nd/3rd line) beside the pathogen name, and the cluster id in small type next
+  to it
 - The geography panel shows a second, uncropped choropleth alongside the existing cropped one, for region-wide context
 - `episodic_care_lines` gains `"third"` (tertiary care)
 
@@ -324,7 +414,8 @@ recreated or migrated before running against this version.
 - `lang` now defaults correctly to `EPISODIC_LANGUAGE` everywhere; unset means English
 - Empty strings in required columns are now treated as invalid, like `NA`
 - Cluster status chips render filled (colour background, white text) throughout, not just outlined
-- Rail card dates spell the month out when the range falls within a single month (`"2-12 January 2025"`), abbreviated otherwise (`"12 Jan. - 4 Feb. 2025"`)
+- Rail card dates spell the month out when the range falls within a single month (`"2-12 January 2025"`), abbreviated otherwise (`"12 Jan. - 4 Feb.
+  2025"`)
 - Rail card's last line shows case count and priority score; ratio dropped
 - Bar chart labels widen from ~30 to ~50 characters before truncating, with a mouse-over tooltip for the full value
 
@@ -335,13 +426,27 @@ recreated or migrated before running against this version.
 - Reconciliation no longer opens duplicate dossiers for an ageing cluster
 - Translation placeholders no longer break on backslashes
 - Epidemic curve thousands separator now follows the language by default
-- `episodic_run_cron()` no longer corrupts `sample_date`/`receipt_date`/`period_start`/`period_end` when the operator supplies them as `Date` columns (as `episodic_case_data` explicitly allows) - RSQLite was binding them by their raw numeric epoch value instead of `YYYY-MM-DD` text, so a later read failed with "character string is not in a standard unambiguous format"
-- `episodic_check_cases()`'s allowed-value messages (`care_line`, `institution_type`, `sex`) now quote each value, and its `?episodic_case_data` references are clickable in terminals/RStudio that support it
-- `episodic_db_create()` against MySQL no longer fails with "BLOB/TEXT column can't have a default value" [1101] - `episodic_stream.denominator` and `episodic_case.care_line` are now widened to `VARCHAR` under the `mariadb` dialect, since MySQL (unlike MariaDB and SQLite) rejects a `DEFAULT` on `TEXT` columns outright
-- `episodic_db_create()` against MySQL no longer fails with "BLOB/TEXT column ... used in key specification without a key length" [1170] - every remaining `TEXT` column used in a `PRIMARY KEY`, composite `PRIMARY KEY`, or `CREATE INDEX` (`pathogen`, `patient_key`, `sample_date`, `run_date`, `week_start`, `period_start`, `care_line`, `area_code`) is now widened to a bounded `VARCHAR` under the `mariadb` dialect, since MySQL requires an explicit key length on `TEXT`/`BLOB` columns used as a key
-- `episodic_denominators_load()` against MySQL no longer fails to write a denominator row with no area stratum (`area_code = NA`, which `episodic_validate_denominators()` has always allowed) - `episodic_denominator`'s composite `PRIMARY KEY` included the nullable `area_code`, and MySQL implicitly forces every `PRIMARY KEY` column `NOT NULL`; it now has a surrogate `denominator_id` primary key with the natural key as a `UNIQUE` constraint instead, which permits multiple `NULL`s in both MySQL and SQLite
-- `episodic_db_create()` against MySQL no longer fails with "you have an error in your SQL syntax ... near 'trigger'" [1064] - `trigger` is a reserved word in MySQL; `episodic_cluster_state.trigger` and the raw SQL that reads/writes it are now backtick-quoted
-- `episodic_detect_same_place()` no longer hardcodes `care_line = NA` on every stream it creates or upserts - it is the detector responsible for the institution-level streams (LTC, out-of-hours, general practice) that lattice enumeration never creates on its own, and for hospital ward-level streams, so this had silently hidden the care line on almost every stream capable of showing one
+- `episodic_run_cron()` no longer corrupts `sample_date`/`receipt_date`/`period_start`/`period_end` when the operator supplies them as `Date` columns
+  (as `episodic_case_data` explicitly allows) - RSQLite was binding them by their raw numeric epoch value instead of `YYYY-MM-DD` text, so a later
+  read failed with "character string is not in a standard unambiguous format"
+- `episodic_check_cases()`'s allowed-value messages (`care_line`, `institution_type`, `sex`) now quote each value, and its `?episodic_case_data`
+  references are clickable in terminals/RStudio that support it
+- `episodic_db_create()` against MySQL no longer fails with "BLOB/TEXT column can't have a default value" [1101] - `episodic_stream.denominator` and
+  `episodic_case.care_line` are now widened to `VARCHAR` under the `mariadb` dialect, since MySQL (unlike MariaDB and SQLite) rejects a `DEFAULT` on
+  `TEXT` columns outright
+- `episodic_db_create()` against MySQL no longer fails with "BLOB/TEXT column ... used in key specification without a key length" [1170] - every
+  remaining `TEXT` column used in a `PRIMARY KEY`, composite `PRIMARY KEY`, or `CREATE INDEX` (`pathogen`, `patient_key`, `sample_date`, `run_date`,
+  `week_start`, `period_start`, `care_line`, `area_code`) is now widened to a bounded `VARCHAR` under the `mariadb` dialect, since MySQL requires an
+  explicit key length on `TEXT`/`BLOB` columns used as a key
+- `episodic_denominators_load()` against MySQL no longer fails to write a denominator row with no area stratum (`area_code = NA`, which
+  `episodic_validate_denominators()` has always allowed) - `episodic_denominator`'s composite `PRIMARY KEY` included the nullable `area_code`, and
+  MySQL implicitly forces every `PRIMARY KEY` column `NOT NULL`; it now has a surrogate `denominator_id` primary key with the natural key as a
+  `UNIQUE` constraint instead, which permits multiple `NULL`s in both MySQL and SQLite
+- `episodic_db_create()` against MySQL no longer fails with "you have an error in your SQL syntax ... near 'trigger'" [1064] - `trigger` is a
+  reserved word in MySQL; `episodic_cluster_state.trigger` and the raw SQL that reads/writes it are now backtick-quoted
+- `episodic_detect_same_place()` no longer hardcodes `care_line = NA` on every stream it creates or upserts - it is the detector responsible for the
+  institution-level streams (LTC, out-of-hours, general practice) that lattice enumeration never creates on its own, and for hospital ward-level
+  streams, so this had silently hidden the care line on almost every stream capable of showing one
 - Logo no longer shows an opaque white background outside the hexagon
 
 
@@ -361,7 +466,7 @@ recreated or migrated before running against this version.
 
 - Every case column documents type, nullability and permitted values
 - Exported `episodic_care_lines`, `episodic_institution_types`, `episodic_sex_codes`
-- `episodic_validate_cases()` enforces the full data contract
+- `episodic_validate_cases()` enforces the full data requirements
 - `episodic_detection_run` records per-feed supply/dedup/insert/skip counts
 - Activity screen shows per-run arrival and skip counts
 

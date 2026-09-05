@@ -143,10 +143,9 @@ episodic_db_last_case_dates <- function(con, patient_keys, pathogens) {
 #' @param open_only If `TRUE`, exclude clusters with `merged_into` set.
 #' @keywords internal
 #' @noRd
-episodic_db_clusters <- function(
-    con,
-    open_only = FALSE,
-    include_suppressed = FALSE) {
+episodic_db_clusters <- function(con,
+                                 open_only = FALSE,
+                                 include_suppressed = FALSE) {
   sql <- "SELECT * FROM episodic_cluster"
   where <- character(0)
   if (open_only) {
@@ -243,10 +242,19 @@ episodic_db_clusters_for_suppression <- function(con) {
 #' @keywords internal
 #' @noRd
 episodic_db_clusters_for_stream <- function(con, stream_id) {
+  # The one caller is episodic_reconcile_stream() (matching new detections
+  # against, and ageing/auto-closing, a stream's open clusters) - `origin
+  # = 'manual'` clusters are excluded so a hand-added cluster is never
+  # folded into a real detection by coincidental stream identity, and
+  # never auto-closed by a case-free clock its own (non-existent, or
+  # separately tracked) case data has no bearing on. Any other listing of
+  # a stream's clusters (e.g. for display) wants every origin and should
+  # not call this function.
   params <- list(stream_id)
   DBI::dbGetQuery(
     con,
-    "SELECT * FROM episodic_cluster WHERE stream_id = ? AND merged_into IS NULL",
+    "SELECT * FROM episodic_cluster
+      WHERE stream_id = ? AND merged_into IS NULL AND origin = 'detected'",
     params = params
   )
 }
@@ -295,12 +303,11 @@ episodic_db_clusters_for_streams <- function(con, stream_ids) {
 #'   reason to fall back to a detector's own count.
 #' @keywords internal
 #' @noRd
-episodic_db_cases_for_stream_id <- function(
-    con,
-    stream_id,
-    columns = c("case_id", "sample_date"),
-    first_day = NULL,
-    last_day = NULL) {
+episodic_db_cases_for_stream_id <- function(con,
+                                            stream_id,
+                                            columns = c("case_id", "sample_date"),
+                                            first_day = NULL,
+                                            last_day = NULL) {
   params <- list(stream_id)
   stream <- DBI::dbGetQuery(
     con,
@@ -362,6 +369,45 @@ episodic_db_cluster_cases <- function(con, cluster_id) {
     "SELECT c.* FROM episodic_case c
      INNER JOIN episodic_cluster_case cc ON cc.case_id = c.case_id
      WHERE cc.cluster_id = ?",
+    params = list(cluster_id)
+  )
+}
+
+#' Case-level detail for an origin = 'manual' cluster
+#'
+#' The `episodic_cluster_manual_case` analogue of
+#' `episodic_db_cluster_cases()`, returned with the same column names
+#' (`sample_date`, `pc`, `sex`, `age`) so downstream chart-building code
+#' does not need to know which table a cluster's cases came from.
+#' @param cluster_id A single `cluster_id`.
+#' @keywords internal
+#' @noRd
+episodic_db_cluster_manual_cases <- function(con, cluster_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT sample_date, pc, sex, age
+     FROM episodic_cluster_manual_case
+     WHERE cluster_id = ?",
+    params = list(cluster_id)
+  )
+}
+
+#' The most recent note for a cluster
+#'
+#' `episodic_cluster_note` is event-sourced like `episodic_assessment_event`:
+#' the "current" note is simply the most recent row. Returns a zero-row
+#' data frame when no note has ever been saved for this cluster.
+#' @param cluster_id A single `cluster_id`.
+#' @keywords internal
+#' @noRd
+episodic_db_cluster_note_current <- function(con, cluster_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT note_id, user_id, created_at, note_text
+     FROM episodic_cluster_note
+     WHERE cluster_id = ?
+     ORDER BY note_id DESC
+     LIMIT 1",
     params = list(cluster_id)
   )
 }

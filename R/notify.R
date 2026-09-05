@@ -219,12 +219,11 @@ episodic_notify_location <- function(row, lang = episodic_lang()) {
 #' @return A list with `title`, `plain`, `html`, `teams_card`, `slack_blocks`.
 #' @keywords internal
 #' @noRd
-episodic_notify_build_new_clusters <- function(
-    details,
-    n_new,
-    run_date,
-    dashboard_url = NULL,
-    lang = episodic_lang()) {
+episodic_notify_build_new_clusters <- function(details,
+                                               n_new,
+                                               run_date,
+                                               dashboard_url = NULL,
+                                               lang = episodic_lang()) {
   count_phrase <- episodic_count_phrase(
     n_new,
     episodic_tr("notif.new_cluster.singular", lang = lang),
@@ -467,11 +466,10 @@ episodic_notify_build_new_clusters <- function(
 #'   dashboard.
 #' @keywords internal
 #' @noRd
-episodic_notify_build_failure <- function(
-    error_text,
-    run_date,
-    host,
-    lang = episodic_lang()) {
+episodic_notify_build_failure <- function(error_text,
+                                          run_date,
+                                          host,
+                                          lang = episodic_lang()) {
   title <- episodic_tr("notif.title_failed", lang = lang)
   label_date <- episodic_tr("notif.label.date", lang = lang)
   label_host <- episodic_tr("notif.label.host", lang = lang)
@@ -560,11 +558,10 @@ episodic_html_escape <- function(x) {
 #' Wrap HTML notification body in a minimal document
 #' @keywords internal
 #' @noRd
-episodic_notify_html_wrap <- function(
-    title,
-    body_html,
-    dashboard_url,
-    lang = episodic_lang()) {
+episodic_notify_html_wrap <- function(title,
+                                      body_html,
+                                      dashboard_url,
+                                      lang = episodic_lang()) {
   footer <- ""
   if (!is.null(dashboard_url) && nzchar(dashboard_url)) {
     footer <- paste0(
@@ -589,11 +586,10 @@ episodic_notify_html_wrap <- function(
 #' Build a Teams Adaptive Card JSON structure
 #' @keywords internal
 #' @noRd
-episodic_notify_teams_card <- function(
-    title,
-    facts,
-    dashboard_url,
-    lang = episodic_lang()) {
+episodic_notify_teams_card <- function(title,
+                                       facts,
+                                       dashboard_url,
+                                       lang = episodic_lang()) {
   body <- list(
     list(
       type = "TextBlock",
@@ -972,10 +968,9 @@ episodic_notify_test <- function(episodic_config_path = Sys.getenv("EPISODIC_CON
 #' episodic_setup_microsoft365(tenant_id = "your-tenant-id")
 #' }
 #' @export
-episodic_setup_microsoft365 <- function(
-    tenant_id,
-    client_id = NULL,
-    scopes = c("Mail.Send", "User.Read", "openid", "offline_access")) {
+episodic_setup_microsoft365 <- function(tenant_id,
+                                        client_id = NULL,
+                                        scopes = c("Mail.Send", "User.Read", "openid", "offline_access")) {
   rlang::check_installed("Microsoft365R")
   rlang::check_installed("AzureGraph")
   rlang::check_installed("AzureAuth")

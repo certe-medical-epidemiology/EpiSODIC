@@ -75,7 +75,7 @@ reference:
   desc: >
     How to plug in your laboratory results and, optionally, testing
     volume and hospital activity data - and how to check your extract
-    against the contract before you run anything.
+    against the requirements before you run anything.
   contents:
   - episodic_case_data
   - episodic_check_cases
@@ -85,6 +85,13 @@ reference:
   - episodic_synthetic_cases_calibration
   - episodic_synthetic_denominators
   - episodic_synthetic_institution_activity
+
+- title: Add clusters from another system
+  desc: >
+    Add clusters detected by another algorithm or system - never
+    connected to your own case data.
+  contents:
+  - episodic_add_manual_cluster
 
 - title: Set up a database
   desc: >

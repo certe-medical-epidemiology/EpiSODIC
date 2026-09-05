@@ -17,12 +17,11 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-same_place_case <- function(
-    source_key,
-    sample_date,
-    institution_id,
-    pathogen = "Test pathogen",
-    ward = "ICU") {
+same_place_case <- function(source_key,
+                            sample_date,
+                            institution_id,
+                            pathogen = "Test pathogen",
+                            ward = "ICU") {
   data.frame(
     source_key = source_key,
     pathogen = pathogen,

@@ -339,7 +339,7 @@ test_that("a partial run still counts as the latest usable run", {
   )
 })
 
-test_that("case data that violates the contract fails the run out loud, and records why", {
+test_that("case data that violates the requirements fails the run out loud, and records why", {
   path <- tempfile(fileext = ".sqlite")
   on.exit(unlink(path), add = TRUE)
 
@@ -348,7 +348,7 @@ test_that("case data that violates the contract fails the run out loud, and reco
     end_date = as.Date("2024-06-30"),
     seed = 6
   )
-  cases$pathogen <- NULL # violates the case data contract
+  cases$pathogen <- NULL # violates the case data requirements
 
   # Reaching the operator matters as much as recording it: a run that
   # returned quietly here left somebody staring at an empty dashboard.

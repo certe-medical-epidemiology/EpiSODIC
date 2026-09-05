@@ -51,14 +51,13 @@
 #' @return Invisible `NULL`; called for its side effects.
 #' @keywords internal
 #' @noRd
-episodic_app_server_assessment_actions <- function(
-    input,
-    output,
-    session,
-    con,
-    current_user,
-    selected_cluster_id,
-    db_touch) {
+episodic_app_server_assessment_actions <- function(input,
+                                                   output,
+                                                   session,
+                                                   con,
+                                                   current_user,
+                                                   selected_cluster_id,
+                                                   db_touch) {
   refresh <- function() {
     # Re-trigger the dossier/assessment renderers by "reselecting" the
     # same cluster - both read from the database, not from this value's

@@ -43,6 +43,7 @@
   "dossier.meta.first_last": "أول حالة {first}، آخر حالة {last}",
   "dossier.meta.detected_by": "اكتُشف بواسطة {detectors}",
   "dossier.changed_badge": "تغيّر منذ التقييم",
+  "dossier.manual_badge": "أُضيف يدويًا",
 
   "state.new": "جديد",
   "state.assessing": "قيد التقييم",
@@ -77,6 +78,11 @@
   "panel.interpretation.title": "التفسير",
   "panel.interpretation.aside": "مُولَّد تلقائيًا",
   "panel.interpretation.empty": "لا يتوفر تفسير بعد لهذا التجمع.",
+
+  "panel.notes.title": "الملاحظات",
+  "panel.notes.empty": "لا توجد ملاحظات بعد لهذا التجمع.",
+  "notes.edit_button": "تعديل",
+  "notes.save_button": "حفظ",
 
   "panel.epicurve.title": "المنحنى الوبائي",
   "panel.epicurve.note": "تغطي المنطقة المظلَّلة آخر {days_phrase}: التأخير التجريبي في الإبلاغ المستمد من مثلث الإبلاغ. الحالات التي يقع تاريخ عيّنتها ضمن هذه النافذة لم تُبلَّغ بعد بشكل كامل. الانخفاض في نهاية المنحنى هنا لا يمثل تراجعًا حقيقيًا.",

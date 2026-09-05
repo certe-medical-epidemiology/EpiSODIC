@@ -77,7 +77,7 @@ nrow(cases)
 head(cases)
 }
 \seealso{
-\code{\link[=episodic_check_cases]{episodic_check_cases()}} to see what the contract makes of it,
+\code{\link[=episodic_check_cases]{episodic_check_cases()}} to see what the requirements make of it,
 and \code{\link[=episodic_synthetic_cases_calibration]{episodic_synthetic_cases_calibration()}} for many more clusters
 than a demo wants, to tune a configuration against.
 }

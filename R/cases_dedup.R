@@ -28,7 +28,7 @@
 #' internally by `get_episode()`, one call per patient/pathogen group so
 #' each group's own `episode_days` window applies independently.
 #'
-#' @param cases A data frame satisfying the case data contract
+#' @param cases A data frame satisfying the case data requirements
 #'   (`R/cases.R`), already validated.
 #' @param pathogen_config A data frame from `inst/config/episodic_default_pathogen_config.csv`
 #'   (or `episodic_db_pathogen_config()`), providing `episode_days` per
@@ -60,10 +60,9 @@
 #' @importFrom AMR get_episode
 #' @keywords internal
 #' @noRd
-episodic_cases_deduplicate <- function(
-    cases,
-    pathogen_config,
-    existing = NULL) {
+episodic_cases_deduplicate <- function(cases,
+                                       pathogen_config,
+                                       existing = NULL) {
   if (nrow(cases) == 0) {
     return(cases)
   }

@@ -43,6 +43,7 @@
   "dossier.meta.first_last": "eerste casus {first}, laatste {last}",
   "dossier.meta.detected_by": "gedetecteerd door {detectors}",
   "dossier.changed_badge": "Gewijzigd na beoordeling",
+  "dossier.manual_badge": "Handmatig toegevoegd",
 
   "state.new": "Nieuw",
   "state.assessing": "In beoordeling",
@@ -77,6 +78,11 @@
   "panel.interpretation.title": "Duiding",
   "panel.interpretation.aside": "automatisch opgesteld",
   "panel.interpretation.empty": "Nog geen duiding beschikbaar voor dit cluster.",
+
+  "panel.notes.title": "Notities",
+  "panel.notes.empty": "Nog geen notities voor dit cluster.",
+  "notes.edit_button": "Bewerken",
+  "notes.save_button": "Opslaan",
 
   "panel.epicurve.title": "Epidemische curve",
   "panel.epicurve.note": "De gearceerde zone beslaat de laatste {days_phrase}: de empirische rapportagevertraging uit de rapportagedriehoek. Casussen met een afnamedatum in dit venster zijn nog niet volledig binnen. Een dalende staart is hier geen afname.",

@@ -19,7 +19,7 @@
 
 #' Check Your Case Data Before You Hand It to EpiSODIC
 #'
-#' Runs every check the [episodic_case_data] contract implies over your
+#' Runs every check the [episodic_case_data] requirements imply over your
 #' extract and reports *everything* it finds in one go - what is wrong,
 #' how many rows are affected, which rows those are, what the offending
 #' values look like, and what to do about each one. Nothing is written,
@@ -30,6 +30,10 @@
 #' Use `episodic_check_cases()` plainly when you want to *look*, or
 #' `episodic_check_cases(..., stop_on_problem = TRUE)` when you want a script
 #' to stop. The latter is what [episodic_run_cron()] itself calls before a run.
+#'
+#' None of this applies to a cluster added with [episodic_add_manual_cluster()]:
+#' it is never connected to your own case data, so it never goes through these
+#' requirements (or any other check here) at all.
 #'
 #' @section What it reports:
 #'
@@ -809,15 +813,14 @@ episodic_check_institution_advice <- function(cases) {
 #' frame an operator can filter, and the printed version is one code path.
 #' @keywords internal
 #' @noRd
-episodic_check_finding <- function(
-    severity,
-    issue,
-    column = NA_character_,
-    n_rows = NA_integer_,
-    rows = integer(0),
-    values = character(0),
-    message,
-    fix = NA_character_) {
+episodic_check_finding <- function(severity,
+                                   issue,
+                                   column = NA_character_,
+                                   n_rows = NA_integer_,
+                                   rows = integer(0),
+                                   values = character(0),
+                                   message,
+                                   fix = NA_character_) {
   data.frame(
     severity = severity,
     issue = issue,
@@ -839,11 +842,10 @@ episodic_check_finding <- function(
 #'   `episodic_check_institution_activity()` pass their own.
 #' @keywords internal
 #' @noRd
-episodic_check_report <- function(
-    found,
-    info = list(),
-    title = "EpiSODIC case data check",
-    what = "Case data") {
+episodic_check_report <- function(found,
+                                  info = list(),
+                                  title = "EpiSODIC case data check",
+                                  what = "Case data") {
   problems <- if (length(found) == 0) {
     data.frame(
       severity = character(0),
@@ -902,7 +904,7 @@ episodic_check_chr <- function(values) {
   as.character(values)
 }
 
-#' Parse only what the contract calls a date, so nothing reads as year 1
+#' Parse only what the requirements call a date, so nothing reads as year 1
 #' @keywords internal
 #' @noRd
 episodic_check_as_date <- function(values) {
@@ -1401,7 +1403,7 @@ print.episodic_case_check <- function(x, ...) {
   if (nrow(problems) == 0) {
     if (is_cases) {
       cat(
-        "v This data set satisfies the case data contract, and is ready ",
+        "v This data set satisfies the case data requirements, and is ready ",
         "for\n  episodic_run_cron(). See ",
         episodic_check_case_data_link(),
         " for what each\n  column means.\n",
@@ -1411,7 +1413,7 @@ print.episodic_case_check <- function(x, ...) {
       cat(
         "v ",
         what,
-        " satisfies its contract, and is ready for episodic_run_cron().\n",
+        " satisfies its requirements, and is ready for episodic_run_cron().\n",
         sep = ""
       )
     }

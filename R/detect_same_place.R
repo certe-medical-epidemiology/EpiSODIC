@@ -95,12 +95,11 @@ episodic_detect_same_place <- function(con, cases, institutions, config) {
 
 #' @keywords internal
 #' @noRd
-episodic_same_place_scan <- function(
-    cases,
-    group_cols,
-    config,
-    stream_level,
-    con) {
+episodic_same_place_scan <- function(cases,
+                                     group_cols,
+                                     config,
+                                     stream_level,
+                                     con) {
   key_df <- cases[, group_cols, drop = FALSE]
   key_str <- do.call(paste, c(key_df, sep = "\r"))
   groups <- split(seq_len(nrow(cases)), key_str)

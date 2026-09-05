@@ -225,9 +225,8 @@ episodic_region_code_all <- "NORTHERN_NETHERLANDS"
 #'   or `NA` where `pc` has no entry in the mapping.
 #' @keywords internal
 #' @noRd
-episodic_pc_to_province <- function(
-    pc,
-    path = Sys.getenv("EPISODIC_PC_PROVINCE_MAP", unset = NA)) {
+episodic_pc_to_province <- function(pc,
+                                    path = Sys.getenv("EPISODIC_PC_PROVINCE_MAP", unset = NA)) {
   mapping <- episodic_pc_province_map_resolve(path)
   if (!is.null(mapping)) {
     return(unname(mapping[as.character(pc)]))
@@ -266,8 +265,7 @@ episodic_pc_to_province <- function(
 #'   problem.
 #' @keywords internal
 #' @noRd
-episodic_pc_province_map_problem <- function(
-    path = Sys.getenv("EPISODIC_PC_PROVINCE_MAP", unset = NA)) {
+episodic_pc_province_map_problem <- function(path = Sys.getenv("EPISODIC_PC_PROVINCE_MAP", unset = NA)) {
   if (length(path) != 1 || is.na(path) || !nzchar(path)) {
     return(NA_character_)
   }
@@ -362,16 +360,15 @@ episodic_pc_province_map_resolve <- function(path) {
 
 #' @keywords internal
 #' @noRd
-episodic_lattice_upsert_group <- function(
-    con,
-    cases,
-    level,
-    group_cols,
-    care_line_col = NULL,
-    institution_col = NULL,
-    region_col = NULL,
-    ward_col = NULL,
-    denominator = "none") {
+episodic_lattice_upsert_group <- function(con,
+                                          cases,
+                                          level,
+                                          group_cols,
+                                          care_line_col = NULL,
+                                          institution_col = NULL,
+                                          region_col = NULL,
+                                          ward_col = NULL,
+                                          denominator = "none") {
   key_df <- cases[, group_cols, drop = FALSE]
   # Separated, not concatenated. Glued together, institution 1 on ward "2A"
   # and institution 12 on ward "A" are the same group, and the two wards

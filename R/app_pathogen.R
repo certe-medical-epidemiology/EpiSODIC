@@ -116,12 +116,11 @@ episodic_as_single_date <- function(x) {
 #'   `NULL`).
 #' @keywords internal
 #' @noRd
-episodic_app_resolve_period <- function(
-    period = "season_current",
-    from = NULL,
-    to = NULL,
-    asof = Sys.Date(),
-    data_from = NULL) {
+episodic_app_resolve_period <- function(period = "season_current",
+                                        from = NULL,
+                                        to = NULL,
+                                        asof = Sys.Date(),
+                                        data_from = NULL) {
   asof <- as.Date(asof)
   period <- if (is.null(period) || !period %in% episodic_pathogen_period_ids) {
     "season_current"
@@ -235,17 +234,16 @@ episodic_app_resolve_period <- function(
 #' @param lang Session language, for labels.
 #' @return A list; see the source for which sections are populated and
 #'   from where. Sections that cannot be computed are `NULL`, and their
-#'   panels skip themselves - the same contract
+#'   panels skip themselves - the same convention
 #'   `episodic_cluster_object()` uses.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_screen <- function(
-    con,
-    pathogen = NULL,
-    period = "year_current",
-    from = NULL,
-    to = NULL,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_app_pathogen_screen <- function(con,
+                                         pathogen = NULL,
+                                         period = "year_current",
+                                         from = NULL,
+                                         to = NULL,
+                                         lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   options <- episodic_app_pathogen_options(con)
   asof <- episodic_app_data_asof(con)
 
@@ -473,11 +471,10 @@ episodic_app_weekly_counts <- function(dates, from, to) {
 #' @return A data frame with `week_start`, `n_cases`, `incomplete`.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_weekly <- function(
-    window_cases,
-    resolved,
-    incomplete_days = 0L,
-    asof = Sys.Date()) {
+episodic_app_pathogen_weekly <- function(window_cases,
+                                         resolved,
+                                         incomplete_days = 0L,
+                                         asof = Sys.Date()) {
   weekly <- episodic_app_weekly_counts(
     window_cases$sample_date,
     resolved$from,
@@ -572,12 +569,11 @@ episodic_app_pathogen_mem <- function(all_cases, resolved, asof = Sys.Date()) {
 #'   `NULL` when fewer than two periods have data.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_overlay <- function(
-    all_cases,
-    resolved,
-    seasonal = FALSE,
-    max_periods = 6L,
-    asof = NULL) {
+episodic_app_pathogen_overlay <- function(all_cases,
+                                          resolved,
+                                          seasonal = FALSE,
+                                          max_periods = 6L,
+                                          asof = NULL) {
   if (nrow(all_cases) == 0) {
     return(NULL)
   }
@@ -685,11 +681,10 @@ episodic_app_pathogen_overlay <- function(
 #'   axis.
 #' @keywords internal
 #' @noRd
-episodic_app_overlay_period_range <- function(
-    resolved,
-    seasonal,
-    current,
-    week_order) {
+episodic_app_overlay_period_range <- function(resolved,
+                                              seasonal,
+                                              current,
+                                              week_order) {
   if (is.null(resolved$from) || is.null(resolved$to)) {
     return(NULL)
   }
@@ -739,12 +734,11 @@ episodic_app_overlay_period_range <- function(
 #'   its quiet weeks are observations, not gaps.
 #' @keywords internal
 #' @noRd
-episodic_app_overlay_truncate <- function(
-    rows,
-    week_order,
-    groups,
-    seasonal = FALSE,
-    asof = NULL) {
+episodic_app_overlay_truncate <- function(rows,
+                                          week_order,
+                                          groups,
+                                          seasonal = FALSE,
+                                          asof = NULL) {
   if (is.null(asof)) {
     return(rows)
   }
@@ -804,13 +798,12 @@ episodic_app_overlay_truncate <- function(
 #'   `NULL`.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_rt <- function(
-    all_cases,
-    pc,
-    resolved,
-    incomplete_days = 0L,
-    asof = Sys.Date(),
-    lead_in_days = 90L) {
+episodic_app_pathogen_rt <- function(all_cases,
+                                     pc,
+                                     resolved,
+                                     incomplete_days = 0L,
+                                     asof = Sys.Date(),
+                                     lead_in_days = 90L) {
   if (is.null(pc) || nrow(all_cases) == 0) {
     return(NULL)
   }
@@ -849,11 +842,10 @@ episodic_app_pathogen_rt <- function(
 #'   `positivity`, or `NULL`.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_denominator <- function(
-    con,
-    pathogen,
-    all_cases,
-    resolved) {
+episodic_app_pathogen_denominator <- function(con,
+                                              pathogen,
+                                              all_cases,
+                                              resolved) {
   denom <- episodic_db_denominator_for_pathogen(con, pathogen)
   if (nrow(denom) == 0) {
     return(NULL)
@@ -935,10 +927,9 @@ episodic_app_pathogen_demography <- function(all_cases, window_cases) {
 #' @return A data frame with `label` and `n`, or `NULL`.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_breakdown <- function(
-    window_cases,
-    column,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_app_pathogen_breakdown <- function(window_cases,
+                                            column,
+                                            lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (nrow(window_cases) == 0 || all(is.na(window_cases[[column]]))) {
     return(NULL)
   }
@@ -968,11 +959,10 @@ episodic_app_pathogen_breakdown <- function(
 #' @return A data frame with `label` and `n`, or `NULL`.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_institutions <- function(
-    con,
-    window_cases,
-    top = 10L,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_app_pathogen_institutions <- function(con,
+                                               window_cases,
+                                               top = 10L,
+                                               lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   ids <- window_cases$institution_id[!is.na(window_cases$institution_id)]
   if (length(ids) == 0) {
     return(NULL)
@@ -1004,11 +994,10 @@ episodic_app_pathogen_institutions <- function(
 #'   `verdict_label` (`NA` when never classified) and `state_label`.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_clusters <- function(
-    con,
-    pathogen,
-    resolved,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_app_pathogen_clusters <- function(con,
+                                           pathogen,
+                                           resolved,
+                                           lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   empty <- data.frame(
     cluster_id = integer(0),
     level_label = character(0),

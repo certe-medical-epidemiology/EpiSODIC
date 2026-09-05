@@ -52,7 +52,7 @@
 #'   [episodic_synthetic_cases()]) and pass it here for a quicker
 #'   demo. Trying the demo with your own extract is a good way to see
 #'   EpiSODIC work end to end: `cases` is checked against the
-#'   [episodic_case_data] contract first, so data it cannot use stops here
+#'   [episodic_case_data] requirements first, so data it cannot use stops here
 #'   with an explanation of what to fix, rather than opening a dashboard
 #'   with nothing in it. Run [episodic_check_cases()] on your extract
 #'   yourself to see the same findings, plus the advisory ones.
@@ -76,17 +76,16 @@
 #' file.remove(db_path)
 #' }
 #' @export
-episodic_demo <- function(
-    db_path = tempfile(fileext = ".sqlite"),
-    username = "demo",
-    full_name = "Demo User",
-    email = "demo@example.org",
-    password = "demo",
-    launch = TRUE,
-    run_date = episodic_synthetic_week_end(),
-    lang = Sys.getenv("EPISODIC_LANGUAGE"),
-    cases = function() episodic_synthetic_cases(end_date = run_date),
-    denominators = function() episodic_synthetic_denominators(end_date = run_date)) {
+episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
+                          username = "demo",
+                          full_name = "Demo User",
+                          email = "demo@example.org",
+                          password = "demo",
+                          launch = TRUE,
+                          run_date = episodic_synthetic_week_end(),
+                          lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                          cases = function() episodic_synthetic_cases(end_date = run_date),
+                          denominators = function() episodic_synthetic_denominators(end_date = run_date)) {
   EPISODIC_CONFIG.old <- Sys.getenv("EPISODIC_CONFIG")
   EPISODIC_DB.old <- Sys.getenv("EPISODIC_DB")
   EPISODIC_GEO_DATA.old <- Sys.getenv("EPISODIC_GEO_DATA")

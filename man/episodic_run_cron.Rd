@@ -66,7 +66,7 @@ runs.}
 Invisibly, the \code{run_id} of the completed run. The run's row in
 \code{episodic_detection_run} holds its status, the per-feed load counts,
 and \code{error_text} if it failed. Case data that does not satisfy the
-contract throws instead of returning - the run row is still written,
+requirements throws instead of returning - the run row is still written,
 with \code{status = "failed"} and the same message in \code{error_text}.
 }
 \description{
@@ -145,5 +145,5 @@ file.remove(db_path)
 \seealso{
 \code{\link[=episodic_check_cases]{episodic_check_cases()}} to see what EpiSODIC makes of your
 extract before you schedule anything, and \link{episodic_case_data} for
-the contract it checks against.
+the requirements it checks against.
 }

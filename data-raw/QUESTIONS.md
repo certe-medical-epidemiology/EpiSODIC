@@ -10,5 +10,5 @@ Gaps and parked decisions not yet resolved in the codebase.
   tools exist (Prestatie screen, synthetic calibration generator); the
   calibration itself needs a real instance with real history.
 - **Mute revocation** and **region-reference naming beyond the
-  choropleth's own geometry contract** are documented, narrow gaps, not
+  choropleth's own geometry requirements** are documented, narrow gaps, not
   yet built.

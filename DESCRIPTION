@@ -2,7 +2,7 @@ Package: EpiSODIC
 Type: Package
 Title: Epidemiological Signal Observation, Detection, Identification, and
     Classification
-Version: 0.11.0
+Version: 0.12.0
 Authors@R: c(
     person(given = c("Matthijs", "S."),
            family = "Berends",
@@ -31,33 +31,35 @@ Depends:
 Imports:
     AMR (>= 3.0.0),
     DBI,
-    RSQLite,
-    cli,
-    dplyr,
-    yaml,
-    rlang,
-    jsonlite,
     digest,
-    surveillance,
-    shiny,
-    bslib,
+    dplyr,
     ggplot2,
-    sodium
+    rlang,
+    RSQLite,
+    shiny,
+    sodium,
+    surveillance,
+    yaml
 Suggests:
-    testthat (>= 3.0.0),
-    EpiEstim,
-    quarto,
-    mem,
-    sf,
-    knitr,
-    rmarkdown,
-    pkgdown,
-    RMariaDB,
-    curl,
-    httr2,
-    Microsoft365R,
-    AzureGraph,
     AzureAuth,
+    AzureGraph,
+    bslib,
+    cli,
+    commonmark,
+    curl,
+    EpiEstim,
+    htmltools,
+    httr2,
+    jsonlite,
+    knitr,
+    mem,
+    Microsoft365R,
+    pkgdown,
+    quarto,
+    RMariaDB,
+    rmarkdown,
+    sf,
+    testthat (>= 3.0.0),
     zip
 Config/testthat/edition: 3
 VignetteBuilder: knitr

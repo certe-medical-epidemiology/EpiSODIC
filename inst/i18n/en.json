@@ -43,6 +43,7 @@
   "dossier.meta.first_last": "first case {first}, last {last}",
   "dossier.meta.detected_by": "detected by {detectors}",
   "dossier.changed_badge": "Changed since assessment",
+  "dossier.manual_badge": "Manually added",
 
   "state.new": "New",
   "state.assessing": "Assessing",
@@ -77,6 +78,11 @@
   "panel.interpretation.title": "Interpretation",
   "panel.interpretation.aside": "automatically generated",
   "panel.interpretation.empty": "No interpretation available yet for this cluster.",
+
+  "panel.notes.title": "Notes",
+  "panel.notes.empty": "No notes yet for this cluster.",
+  "notes.edit_button": "Edit",
+  "notes.save_button": "Save",
 
   "panel.epicurve.title": "Epidemic curve",
   "panel.epicurve.note": "The shaded zone covers the last {days_phrase}: the empirical reporting delay from the reporting triangle. Cases with a sample date in this window are not yet fully reported. A falling tail here is not a decline.",

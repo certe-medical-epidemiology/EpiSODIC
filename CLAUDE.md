@@ -77,8 +77,12 @@ Single schema in `inst/sql/schema.sql`, written in SQLite dialect. Adapted at lo
 | `episodic_app_user` | app | Dashboard accounts |
 | `episodic_case` | cron | Deduplicated case records |
 | `episodic_institution` | cron | Institution reference data |
+| `episodic_cluster_note` | app | Per-cluster free-text notes (append-only) |
+| `episodic_cluster_manual_case` | `episodic_add_manual_cluster()` | Case-level detail for `origin = 'manual'` clusters only |
 
 Write ownership is strict: cron-owned tables are written only by `episodic_run_cron()`, app-owned tables only by the Shiny app. The app never updates or deletes, only inserts (event-sourced).
+
+One deliberate exception: `episodic_add_manual_cluster()` (in `R/cluster_manual.R`) is a third, console-invoked write path into `episodic_stream`, `episodic_cluster` and `episodic_cluster_manual_case` (all otherwise cron-owned), for clusters detected by another algorithm or system rather than by `episodic_run_cron()` itself - exactly the same kind of exception `episodic_add_user()` already is for the app-owned `episodic_app_user` table. Such a cluster gets `origin = 'manual'` on `episodic_cluster` and is excluded from `episodic_reconcile_stream()`'s matching and auto-closure (see `episodic_db_clusters_for_stream()`); its case-level detail, if any, lives in `episodic_cluster_manual_case`, never in `episodic_case`, so it can never reach denominators, line lists or patient search.
 
 ### Configuration
 
@@ -108,13 +112,14 @@ R/
   run_cron.R          # cron entry point, episodic_trace(), the full pipeline
   run_app.R           # Shiny app entry point
   config.R            # YAML config: resolve, merge, canonicalise, hash
-  cases.R             # case data contract and deduplication entry
+  cases.R             # case data requirements and deduplication entry
   cases_check.R       # episodic_check_cases() validation
   cases_dedup.R       # episode deduplication (via AMR::get_episode)
   cases_load.R        # loading cases into the database
   reconcile.R         # match detections to persistent clusters
   reconcile_closure.R # auto-close stale clusters
   reconcile_suppress.R # lattice suppression
+  cluster_manual.R    # episodic_add_manual_cluster() - clusters from other systems
   detect_*.R          # the four detectors
   notify.R            # notification dispatcher and message building
   notify_channels.R   # per-channel send functions (ntfy, smtp, etc.)
@@ -124,6 +129,7 @@ R/
   db_app_write.R      # all app-side DB writes (append-only)
   schema_migrate.R    # schema creation and migration
   app_server.R        # Shiny server
+  app_server_notes.R  # wires the cluster notes save button
   app_ui.R            # Shiny UI
   app_dossier.R       # cluster dossier (the main assessment screen)
   app_pathogen.R      # pathogen overview panel
@@ -188,10 +194,11 @@ Yet, `_pkgdown.yml` groups every exported topic into a section. When adding a ne
 ### Code style
 
 - File header: the standard Certe GPL-2 banner (17-line comment block) goes at the top of every R file.
+- Multi-line function signatures: use hanging-indent, not single-indent - the first argument stays on the same line as `function(`, continuation lines align under it, and `) {` shares the line with the last argument (never on its own line). Both are permitted by the tidyverse style guide (style.tidyverse.org/functions.html), but styler >= 1.11.0 defaults to single-indent with `) {` isolated, which this project does not want. Styler cannot be configured to prefer one over the other (raised and declined upstream: github.com/r-lib/styler/pull/1235) - it detects the shape per function from the source itself (`is_single_indent_function_declaration()` in styler's `R/rules-indention.R`: first argument on a new line after `function(` means single-indent; first argument sharing that line, with continuation lines indented more than `2 * indent_by` i.e. more than 4 spaces by default, means hanging-indent) and preserves whichever you wrote, so writing it this way is stable across `styler::style_pkg()` runs regardless of styler version. One real cost: renaming a function invalidates every continuation line's alignment in its own signature, since styler will not recompute it for you - realign by hand when that happens.
 - Internal functions: use `@keywords internal` and `@noRd` for functions that should not have a man page. Also, don't reference functions as `[some_function()]` there, but use \`some_function()\` instead, as otherwise roxygen2 gives a warning.
 - Logging: use `episodic_trace()` (defined in `run_cron.R`) for cron-side logging, `message()` for interactive functions.
 - Database: all SQL is inline (no ORM). Parameterised queries (`DBI::dbGetQuery(con, sql, params = ...)`) throughout, never string interpolation of user values.
-- Dependencies: hard dependencies in Imports, optional integrations in Suggests. Gate optional packages at runtime with `rlang::check_installed()` or `requireNamespace()`.
+- Dependencies: hard dependencies in Imports, optional integrations in Suggests. Gate optional packages at runtime with `rlang::check_installed()` or `requireNamespace()`. Exception: `bslib`, `cli`, `commonmark`, `htmltools` and `jsonlite` are used unconditionally but live in Suggests, not Imports - `shiny` (a hard Import) already Imports every one of them, so they are guaranteed present whenever EpiSODIC is, without EpiSODIC also declaring them. Always call them with `pkg::fun()`, never `@importFrom`, since no NAMESPACE import backs them. `rlang` itself stays a real Import, not this exception: `R/app_charts.R` imports its `.data` pronoun (`@importFrom rlang .data`), which `ggplot2::aes()` only recognises as a data-mask pronoun when referenced by the bare symbol `.data` - `rlang::.data$col` is a different expression to `aes()`'s NSE and errors with "Can't subset `.data` outside of a data mask context". Every other `rlang::` call in the codebase (`check_installed()`, `cnd_message()`, etc.) is an ordinary function call and would have been fine moved to Suggests; the `.data` import is the one thing forcing the whole package to stay in Imports.
 - Config hash: the keys in `episodic_config_unhashed_sections` (`notifications`, `access`) are stripped before hashing. Any new config section that contains secrets or is operationally irrelevant to detection should be added there.
 - Anonymous access: `access.require_login` closes the app to visitors who have not signed in. It is enforced server-side, by not rendering - `episodic_app_access_granted()` gates every output and every data-bearing observer, so nothing reaches the page to be uncovered client-side. Any new output or observer that reads surveillance data must go behind the same gate. It is YAML-only, with no Settings-screen override, on purpose.
 - Error handling: notification and report-rendering errors must not propagate to the cron pipeline. Wrap in `tryCatch` and log via `episodic_trace()`.

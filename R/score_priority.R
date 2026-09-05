@@ -64,16 +64,15 @@
 #' @return A single numeric score, 0-100.
 #' @keywords internal
 #' @noRd
-episodic_priority_score <- function(
-    excess = NA,
-    ratio = NA,
-    severity_weight = 1,
-    growth_slope = 0,
-    detector_agreement = 1,
-    n_detectors = 1,
-    density_ratio = NA,
-    spatial_concentration = 0,
-    weights) {
+episodic_priority_score <- function(excess = NA,
+                                    ratio = NA,
+                                    severity_weight = 1,
+                                    growth_slope = 0,
+                                    detector_agreement = 1,
+                                    n_detectors = 1,
+                                    density_ratio = NA,
+                                    spatial_concentration = 0,
+                                    weights) {
   components <- c(
     excess_component = episodic_rescale(log1p(pmax(excess, 0, na.rm = FALSE))),
     ratio_component = episodic_rescale(pmin(ratio, 5) - 1),
@@ -140,11 +139,10 @@ episodic_cases_in_window <- function(cases, first_day, last_day) {
 #' @return A single numeric, `0` when there is nothing to fit.
 #' @keywords internal
 #' @noRd
-episodic_growth_slope <- function(
-    cases,
-    last_day,
-    n_periods = 3L,
-    period_days = 7L) {
+episodic_growth_slope <- function(cases,
+                                  last_day,
+                                  n_periods = 3L,
+                                  period_days = 7L) {
   if (is.null(cases) || nrow(cases) == 0 || n_periods < 2L) {
     return(0)
   }

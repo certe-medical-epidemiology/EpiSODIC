@@ -24,14 +24,14 @@
 # Source: certe-medical-epidemiology/certegis's `geo_postcodes4` dataset
 # (data/geo_postcodes4.rda), GPL-2 licensed, same licence as this package.
 # certegis itself is no longer a dependency of EpiSODIC: the geography
-# panel's data contract (R/geo_data.R) is deliberately generic - an sf
+# panel's data requirements (R/geo_data.R) is deliberately generic - an sf
 # object with `pc`/`geometry` columns - so any operator, anywhere, can
 # point EPISODIC_GEO_DATA at their own equivalent file. `pc` matches
 # `episodic_case.pc`'s own generic values (postcodes, zip codes,
 # municipality codes, anything); it is not itself Dutch-postcode-specific
 # despite the shipped default being Dutch four-digit postcodes.
 # This script only produces that shipped Netherlands default, trimmed to
-# the two columns the contract actually needs (certegis's own copy also
+# the two columns the requirements actually need (certegis's own copy also
 # carries population and area, which this package has no use for and
 # should not redistribute beyond what the choropleth needs).
 #

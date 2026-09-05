@@ -32,9 +32,8 @@
 #'   descending (newest last case day first).
 #' @keywords internal
 #' @noRd
-episodic_app_open_clusters <- function(
-    con,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_app_open_clusters <- function(con,
+                                       lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   clusters <- episodic_db_clusters(con, open_only = TRUE)
   if (nrow(clusters) == 0) {
     return(clusters[, c("cluster_id", "priority_score"), drop = FALSE])
@@ -307,10 +306,9 @@ episodic_app_closed_at_from <- function(states_all, cluster_ids) {
 #'   dossier panels skip themselves.
 #' @keywords internal
 #' @noRd
-episodic_cluster_object <- function(
-    con,
-    cluster_id,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_cluster_object <- function(con,
+                                    cluster_id,
+                                    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   cluster <- DBI::dbGetQuery(
     con,
     "SELECT * FROM episodic_cluster WHERE cluster_id = ?",
@@ -337,7 +335,19 @@ episodic_cluster_object <- function(
   }
   pc <- episodic_db_pathogen_config_get(con, stream$pathogen)
 
-  cases <- episodic_db_cluster_cases(con, cluster_id)
+  # origin = "manual": case-level detail (if any) lives in
+  # episodic_cluster_manual_case, never in episodic_case - see
+  # episodic_add_manual_cluster(). Every downstream function fed `cases`
+  # here only ever reads sample_date/pc/sex/age, so the two sources are
+  # interchangeable from this point on; the one exception is
+  # patient_key (unique_patients below), which a manual cluster has none
+  # of by design.
+  is_manual <- identical(cluster$origin, "manual")
+  cases <- if (is_manual) {
+    episodic_db_cluster_manual_cases(con, cluster_id)
+  } else {
+    episodic_db_cluster_cases(con, cluster_id)
+  }
   detections <- DBI::dbGetQuery(
     con,
     "SELECT DISTINCT detector FROM episodic_detection WHERE cluster_id = ?",
@@ -375,8 +385,11 @@ episodic_cluster_object <- function(
     asof = asof,
     demography = episodic_app_demography_shift(con, stream$stream_id, cases),
     completeness = completeness,
-    unique_patients = length(unique(cases$patient_key)),
+    # No patient_key to dedup on for a manual cluster - each row is
+    # assumed to already be one distinct case, exactly as reported.
+    unique_patients = if (is_manual) nrow(cases) else length(unique(cases$patient_key)),
     n_positives = nrow(cases),
+    origin = cluster$origin,
     case_free = list(
       since = if (nrow(cases) > 0) {
         as.integer(Sys.Date() - max(as.Date(cases$sample_date)))
@@ -454,10 +467,9 @@ episodic_rt_unavailable_reason <- function(pc) {
 #' @return A single string.
 #' @keywords internal
 #' @noRd
-episodic_app_level_label <- function(
-    level,
-    care_line = NA,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_app_level_label <- function(level,
+                                     care_line = NA,
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   label <- episodic_tr(paste0("level.", level), lang = lang)
   if (is.na(care_line)) {
     return(label)
@@ -471,10 +483,9 @@ episodic_app_level_label <- function(
 
 #' @keywords internal
 #' @noRd
-episodic_app_place_label <- function(
-    stream,
-    institution,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_app_place_label <- function(stream,
+                                     institution,
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   care_line_suffix <- if (!is.na(stream$care_line)) {
     paste0(
       " \u00b7 ",
@@ -623,11 +634,10 @@ episodic_app_density <- function(con, stream, cases, debug = FALSE) {
 #'   outbreak.
 #' @keywords internal
 #' @noRd
-episodic_app_doubling_time <- function(
-    cases,
-    incomplete_days = 0L,
-    asof = Sys.Date(),
-    window_days = 14L) {
+episodic_app_doubling_time <- function(cases,
+                                       incomplete_days = 0L,
+                                       asof = Sys.Date(),
+                                       window_days = 14L) {
   if (nrow(cases) < 3) {
     return(NA_real_)
   }
@@ -1106,7 +1116,19 @@ episodic_app_data_asof <- function(con) {
 #' @keywords internal
 #' @noRd
 episodic_app_epi_curve <- function(con, cluster_id) {
-  cases <- episodic_db_cluster_cases(con, cluster_id)
+  cluster <- DBI::dbGetQuery(
+    con,
+    "SELECT stream_id, origin FROM episodic_cluster WHERE cluster_id = ?",
+    params = list(cluster_id)
+  )
+  is_manual <- identical(cluster$origin[1], "manual")
+  # origin = "manual": case-level detail, if any, lives in
+  # episodic_cluster_manual_case - see episodic_add_manual_cluster().
+  cases <- if (is_manual) {
+    episodic_db_cluster_manual_cases(con, cluster_id)
+  } else {
+    episodic_db_cluster_cases(con, cluster_id)
+  }
   if (nrow(cases) == 0) {
     return(data.frame(
       sample_date = as.Date(character(0)),
@@ -1114,15 +1136,14 @@ episodic_app_epi_curve <- function(con, cluster_id) {
       incomplete = logical(0)
     ))
   }
-  cluster <- DBI::dbGetQuery(
-    con,
-    "SELECT stream_id FROM episodic_cluster WHERE cluster_id = ?",
-    params = list(cluster_id)
-  )
-  incomplete_days <- episodic_app_completeness(
-    con,
-    cluster$stream_id[1]
-  )$incomplete_days
+  # Reporting-delay completeness is a cron-computed property of a stream's
+  # real case data; a manual cluster's case detail (if supplied at all) is
+  # reported as final by the external system, never incomplete.
+  incomplete_days <- if (is_manual) {
+    0L
+  } else {
+    episodic_app_completeness(con, cluster$stream_id[1])$incomplete_days
+  }
   asof <- episodic_app_data_asof(con)
 
   dates <- as.Date(cases$sample_date)

@@ -44,10 +44,9 @@ episodic_archive_levels <- c(
 #' @return A `shiny::tags` element.
 #' @keywords internal
 #' @noRd
-episodic_ui_archive_screen <- function(
-    archive,
-    selected_levels = character(0),
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_ui_archive_screen <- function(archive,
+                                       selected_levels = character(0),
+                                       lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   level_options <- lapply(episodic_archive_levels, function(lvl) {
     list(value = lvl, label = episodic_app_level_label(lvl, lang = lang))
   })
@@ -112,9 +111,8 @@ episodic_ui_archive_screen <- function(
 #' @return A `shiny::tags` element.
 #' @keywords internal
 #' @noRd
-episodic_ui_activity_screen <- function(
-    activity,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_ui_activity_screen <- function(activity,
+                                        lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(
@@ -208,10 +206,9 @@ episodic_ui_activity_screen <- function(
 #' @return A `shiny::modalDialog`.
 #' @keywords internal
 #' @noRd
-episodic_ui_run_modal <- function(
-    con,
-    run,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_ui_run_modal <- function(con,
+                                  run,
+                                  lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   heading <- function(key) {
     shiny::tags$div(
       class = "episodic-run-modal-heading",

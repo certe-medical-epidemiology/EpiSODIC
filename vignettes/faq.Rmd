@@ -42,7 +42,7 @@ does not parse, a value outside the allowed set) and **advice** (a run
 proceeds regardless, but it is worth a look - one pathogen spelled two
 ways, no `ward` on any hospital row). Run it, fix what it flags as a
 problem, run it again - most people get to a clean report in two or
-three passes. `vignette("data-format")` has the full column contract
+three passes. `vignette("data-format")` has the full column requirements
 this is checking against, including the exact allowed values for
 `care_line`, `institution_type`, and `sex`.
 
@@ -246,7 +246,7 @@ Yes - EpiSODIC only ever sees the single data frame (or tibble) your own
 transform step hands to `episodic_run_cron()`, so combining several
 source systems is exactly that: your transform step's job, done before
 EpiSODIC is ever called. Bring each source into the shared column
-contract, `rbind()` (or `dplyr::bind_rows()`) them together, and check
+requirements, `rbind()` (or `dplyr::bind_rows()`) them together, and check
 the combined result with `episodic_check_cases()` as normal. The one
 thing to get right across sources is `source_key`: it needs to be
 unique *per row of the combined data set*, so if two systems could
@@ -377,7 +377,7 @@ specialism, postcode-level geography, and dates. That is enough to
 assess a cluster and to look a case up in your own source system if
 needed, but - given a properly pseudonymised `patient_key` - not enough
 to identify who is in it from the dashboard alone. See
-`vignette("data-format")` for the exact column contract, including what
+`vignette("data-format")` for the exact column requirements, including what
 "pseudonymised" needs to mean for this guarantee to hold.
 
 </details>
@@ -420,6 +420,6 @@ Two independent things are configurable, and both are optional:
   is how a lattice ends up built on somebody else's provinces.
 
 See `vignette("data-format")`'s "Geographic reference data" section for
-the exact contract these files need to satisfy.
+the exact requirements these files need to satisfy.
 
 </details>

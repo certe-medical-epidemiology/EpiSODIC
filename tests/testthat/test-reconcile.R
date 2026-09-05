@@ -60,13 +60,12 @@ reconcile_setup <- function() {
 # Inserts n_cases real episodic_case rows spanning [first_day, last_day] (so
 # episodic_reconcile_case_count() has something real to recount) and returns
 # the matching detection record for episodic_reconcile_stream().
-reconcile_detect <- function(
-    env,
-    run_id,
-    first_day,
-    last_day,
-    n_cases,
-    detector = "same_place") {
+reconcile_detect <- function(env,
+                             run_id,
+                             first_day,
+                             last_day,
+                             n_cases,
+                             detector = "same_place") {
   dates <- seq(as.Date(first_day), as.Date(last_day), length.out = n_cases)
   dates <- as.character(as.Date(dates))
   for (i in seq_len(n_cases)) {
@@ -99,14 +98,13 @@ noop_priority_score <- function(candidate) 50
 noop_has_assessment <- function(cluster_id) FALSE
 noop_verdict <- function(cluster_id) NA_character_
 
-reconcile_run <- function(
-    env,
-    run_id,
-    det,
-    case_free_days = 14,
-    close_after_runs = 14,
-    has_assessment_fn = noop_has_assessment,
-    verdict_fn = noop_verdict) {
+reconcile_run <- function(env,
+                          run_id,
+                          det,
+                          case_free_days = 14,
+                          close_after_runs = 14,
+                          has_assessment_fn = noop_has_assessment,
+                          verdict_fn = noop_verdict) {
   episodic_reconcile_stream(
     env$con,
     env$stream_id,
@@ -337,7 +335,7 @@ test_that("a failed run inside the cron transaction leaves no partial state", {
       start_date = as.Date("2024-01-01"),
       end_date = as.Date("2024-01-05")
     )
-    raw$pathogen <- NULL # violates the case data contract, forces an error mid-run
+    raw$pathogen <- NULL # violates the case data requirements, forces an error mid-run
     raw
   }
 

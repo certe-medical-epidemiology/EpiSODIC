@@ -50,14 +50,13 @@
 #' @return `TRUE` if the closure criterion has fired.
 #' @keywords internal
 #' @noRd
-episodic_closure_criterion_met <- function(
-    last_case_date,
-    verdict,
-    case_free_days,
-    incub_max_days = NA,
-    mem_applicable = FALSE,
-    mem_status = NULL,
-    today = Sys.Date()) {
+episodic_closure_criterion_met <- function(last_case_date,
+                                           verdict,
+                                           case_free_days,
+                                           incub_max_days = NA,
+                                           mem_applicable = FALSE,
+                                           mem_status = NULL,
+                                           today = Sys.Date()) {
   days_since <- as.integer(as.Date(today) - as.Date(last_case_date))
 
   if (isTRUE(mem_applicable)) {

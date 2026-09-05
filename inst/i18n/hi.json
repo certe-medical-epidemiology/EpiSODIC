@@ -43,6 +43,7 @@
   "dossier.meta.first_last": "पहला मामला {first}, अंतिम {last}",
   "dossier.meta.detected_by": "{detectors} द्वारा संसूचित",
   "dossier.changed_badge": "मूल्यांकन के बाद परिवर्तित",
+  "dossier.manual_badge": "मैन्युअल रूप से जोड़ा गया",
 
   "state.new": "नया",
   "state.assessing": "मूल्यांकनाधीन",
@@ -77,6 +78,11 @@
   "panel.interpretation.title": "व्याख्या",
   "panel.interpretation.aside": "स्वतः तैयार",
   "panel.interpretation.empty": "इस क्लस्टर के लिए अभी कोई व्याख्या उपलब्ध नहीं है।",
+
+  "panel.notes.title": "नोट्स",
+  "panel.notes.empty": "इस क्लस्टर के लिए अभी कोई नोट्स उपलब्ध नहीं हैं।",
+  "notes.edit_button": "संपादित करें",
+  "notes.save_button": "सहेजें",
 
   "panel.epicurve.title": "महामारी वक्र",
   "panel.epicurve.note": "छायांकित क्षेत्र अंतिम {days_phrase} को दर्शाता है: रिपोर्टिंग त्रिकोण से प्राप्त अनुभवजन्य रिपोर्टिंग विलंब। इस अवधि में नमूना तिथि वाले मामलों की रिपोर्टिंग अभी पूरी नहीं हुई है। यहाँ घटता हुआ अंत वास्तविक कमी नहीं है।",

@@ -68,6 +68,28 @@ episodic_ui_code_join <- function(detectors, sep = ", ") {
   paste(sprintf("<code>%s</code>", escaped), collapse = sep)
 }
 
+#' Render a user-authored markdown note as safe HTML
+#'
+#' Used for the cluster notes panel, whose stored text is always raw
+#' markdown, never HTML (see `episodic_cluster_note` in
+#' `inst/sql/schema.sql`). `text` is HTML-escaped *before* it reaches
+#' `commonmark::markdown_html()`, not after: escaping first turns any
+#' literal `<script>`/`<img onerror=...>` etc. the author typed into inert
+#' text (`&lt;script&gt;`), while leaving markdown syntax (`#`, `*`,
+#' `` ` ``, ...) untouched for commonmark to interpret normally.
+#' Escaping the *output* instead would also escape the HTML tags
+#' commonmark itself just generated, breaking the formatting outright.
+#' This ordering is the one thing that must never be swapped - it is what
+#' makes it safe to render a value one signed-in user wrote for another
+#' user to see.
+#' @param text A single markdown string.
+#' @return A `shiny::HTML()` value.
+#' @keywords internal
+#' @noRd
+episodic_ui_render_markdown <- function(text) {
+  shiny::HTML(commonmark::markdown_html(htmltools::htmlEscape(text)))
+}
+
 #' A vertical list of colour-coded buttons standing in for a `<select>`
 #'
 #' Used for the classification and mute-reason pickers on the assessment
@@ -136,11 +158,10 @@ episodic_ui_picker <- function(input_id, options, selected = NULL) {
 #' @return A `shiny::tags$div`.
 #' @keywords internal
 #' @noRd
-episodic_ui_multi_picker <- function(
-    input_id,
-    options,
-    selected = character(0),
-    all_label = "All") {
+episodic_ui_multi_picker <- function(input_id,
+                                     options,
+                                     selected = character(0),
+                                     all_label = "All") {
   pal <- episodic_palette()
   active_style <- sprintf(
     "background:%s;border-color:%s;color:#fff;",
@@ -223,11 +244,10 @@ episodic_ui_chip <- function(text, colour, filled = FALSE) {
 #' @return A `shiny::tags$span`.
 #' @keywords internal
 #' @noRd
-episodic_ui_chip_link <- function(
-    text,
-    colour,
-    cluster_id,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_ui_chip_link <- function(text,
+                                  colour,
+                                  cluster_id,
+                                  lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   open_js <- sprintf("episodicOpenCluster(%d);", as.integer(cluster_id))
   shiny::tags$span(
     class = "episodic-chip episodic-chip-outline episodic-chip-link",
@@ -511,10 +531,9 @@ episodic_verdict_outbreak_levels <- c("pathogen_ward", "pathogen_institution")
 #' @return A single string, or `NA_character_` if `verdict` is `NA`.
 #' @keywords internal
 #' @noRd
-episodic_verdict_label <- function(
-    verdict,
-    level = NULL,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_verdict_label <- function(verdict,
+                                   level = NULL,
+                                   lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (is.na(verdict)) {
     return(NA_character_)
   }

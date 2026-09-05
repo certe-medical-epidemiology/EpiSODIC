@@ -241,11 +241,24 @@ CREATE TABLE episodic_cluster (
   priority_score           REAL NOT NULL,
   detector_agreement       INTEGER NOT NULL,
   opened_at                TEXT NOT NULL,
-  last_detected_run        INTEGER NOT NULL REFERENCES episodic_detection_run(run_id),
+  -- NULL only for origin = 'manual': a cluster added through
+  -- episodic_add_manual_cluster() was never produced by a detection run,
+  -- so there is no run to reference here.
+  last_detected_run        INTEGER REFERENCES episodic_detection_run(run_id),
   runs_since_detected      INTEGER NOT NULL DEFAULT 0,
   changed_since_assessment INTEGER NOT NULL DEFAULT 0 CHECK (changed_since_assessment IN (0, 1)),
   suppressed_by            INTEGER REFERENCES episodic_cluster(cluster_id),
-  merged_into              INTEGER REFERENCES episodic_cluster(cluster_id)
+  merged_into              INTEGER REFERENCES episodic_cluster(cluster_id),
+  -- 'detected': produced by episodic_reconcile_stream() from real
+  -- detector output, the only kind that existed before this column.
+  -- 'manual': added directly through episodic_add_manual_cluster(), for
+  -- output from another algorithm/system, never connected to this
+  -- instance's own episodic_case data. Manual clusters are excluded from
+  -- reconciliation matching (R/reconcile.R) and from automatic
+  -- staleness/closure (R/reconcile_closure.R); their case-level detail
+  -- (if any) lives in episodic_cluster_manual_case, never in
+  -- episodic_case/episodic_cluster_case.
+  origin                   TEXT NOT NULL DEFAULT 'detected' CHECK (origin IN ('detected', 'manual'))
 );
 
 -- Note what this table does NOT carry: verdict, state, closed_at,
@@ -261,6 +274,23 @@ CREATE TABLE episodic_cluster_case (
 );
 
 CREATE INDEX idx_episodic_cluster_case_case ON episodic_cluster_case(case_id);
+
+-- Case-level detail for origin = 'manual' clusters only: enough to drive
+-- the epi curve/demography/geo panels (sample_date, pc, sex, age), and
+-- deliberately nothing else - no patient_key, lab_number or source_key,
+-- so a manual cluster can never be joined back to a real patient. Kept
+-- fully separate from episodic_case/episodic_cluster_case so this data
+-- never reaches denominators, line lists, or patient search.
+CREATE TABLE episodic_cluster_manual_case (
+  manual_case_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  cluster_id     INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
+  sample_date    TEXT NOT NULL,
+  pc             TEXT,
+  sex            TEXT CHECK (sex IS NULL OR sex IN ('M', 'F', 'U')),
+  age            INTEGER
+);
+
+CREATE INDEX idx_episodic_cluster_manual_case_cluster ON episodic_cluster_manual_case(cluster_id);
 
 -- ---------------------------------------------------------------------
 -- 5.6 Assessments (app, append-only)
@@ -282,6 +312,27 @@ CREATE TABLE episodic_assessment_event (
 );
 
 CREATE INDEX idx_episodic_assessment_event_cluster ON episodic_assessment_event(cluster_id);
+
+-- ---------------------------------------------------------------------
+-- 5.6.1 Cluster notes (app, append-only)
+--
+-- A free-text scratchpad per cluster, open to any signed-in role (not
+-- gated on epidemiologist, unlike the assessment form) - distinct from
+-- episodic_assessment_event, which is a formal verdict trail, not a
+-- place for informal working notes. Event-sourced like every other
+-- app-authored table: "current" is the most recent row per cluster_id.
+-- note_text is always the raw markdown source, rendered to HTML only at
+-- display time, never stored as HTML.
+-- ---------------------------------------------------------------------
+CREATE TABLE episodic_cluster_note (
+  note_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+  cluster_id INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
+  user_id    INTEGER NOT NULL REFERENCES episodic_app_user(user_id),
+  created_at TEXT NOT NULL,
+  note_text  TEXT NOT NULL
+);
+
+CREATE INDEX idx_episodic_cluster_note_cluster ON episodic_cluster_note(cluster_id);
 
 -- ---------------------------------------------------------------------
 -- Weekly Farrington trend points (cron). The multi-year trend panel needs
