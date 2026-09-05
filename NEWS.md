@@ -9,8 +9,8 @@
 
 ## Changed
 
-- `bslib`, `cli`, `commonmark`, `htmltools`, `jsonlite` and `rlang` moved from Imports to Suggests: `shiny` (a hard Import) already Imports every one
-  of them, so they were never an independent dependency in the first place
+- `bslib`, `cli`, `commonmark`, `htmltools` and `jsonlite` moved from Imports to Suggests: `shiny` (a hard Import) already Imports every one of them,
+  so they were never an independent dependency in the first place
 
 
 # EpiSODIC 0.11.0
