@@ -52,7 +52,7 @@
 #'   [episodic_synthetic_cases()]) and pass it here for a quicker
 #'   demo. Trying the demo with your own extract is a good way to see
 #'   EpiSODIC work end to end: `cases` is checked against the
-#'   [episodic_case_data] contract first, so data it cannot use stops here
+#'   [episodic_case_data] requirements first, so data it cannot use stops here
 #'   with an explanation of what to fix, rather than opening a dashboard
 #'   with nothing in it. Run [episodic_check_cases()] on your extract
 #'   yourself to see the same findings, plus the advisory ones.

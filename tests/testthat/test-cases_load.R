@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-# One institution_key, two rows. Nothing in the case data contract says a
+# One institution_key, two rows. Nothing in the case data requirements says a
 # hospital may not report both a second- and a third-line care line, and
 # real extracts do. While institutions were upserted one at a time this was
 # invisible - each row was its own statement, and the second updated what

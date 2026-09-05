@@ -131,7 +131,7 @@ curve, the Farrington baseline, the priority score, all of it.
 only one survives deduplication as "the case" (and is now shown on the
 line list, so an epidemiologist can look the rest up in the source
 system if needed). Antibiogram-level detail - which isolate had which
-resistance pattern - is not itself part of the case data contract, and is
+resistance pattern - is not itself part of the case data requirements, and is
 a separate concern from whether EpiSODIC counts one case or two: nothing
 in the detection or reconciliation algorithms needs it, since they work
 from case counts, not resistance phenotypes. If per-isolate resistance
@@ -213,7 +213,7 @@ visible in the dashboard's status strip and activity screen. A failed run
 never passes in silence.
 
 The optional feeds below have the same non-throwing check, over their
-own contract: `episodic_check_denominators()` for positivity metadata,
+own requirements: `episodic_check_denominators()` for positivity metadata,
 `episodic_check_institution_activity()` for institution activity. Both
 read the same way as `episodic_check_cases()` does - no database,
 nothing changed, problems versus advice - and `episodic_run_cron()`
@@ -303,7 +303,7 @@ geo_postcodes4_nl.R` for provenance) purely as a working example: point
 (matching whatever your own `episodic_case.pc` values are - postcodes,
 zip codes, municipality codes, census tracts, anything with a shape) and
 a `geometry` column, and it is used instead of the shipped default. See
-`R/geo_data.R` for the exact contract.
+`R/geo_data.R` for the exact requirements.
 
 A second, independent layer can be drawn on top for orientation - region
 outlines (provinces, counties, states, whatever is useful), colour but
@@ -326,7 +326,7 @@ unset, this defaults to the ranges the Dutch demo data happens to use,
 which - being specific to that data - will not match postcodes from
 anywhere else: outside that one region, L4 simply never has anything to
 detect on until you supply your own mapping. L1-L3 and L5 do not depend
-on this at all. See `episodic_pc_to_province()` for the exact contract.
+on this at all. See `episodic_pc_to_province()` for the exact requirements.
 
 Unset and unusable are two different things. Once the variable *is* set,
 a file that does not exist, cannot be read as a CSV, holds no rows, has
@@ -393,7 +393,7 @@ they came from your case data when they did not.
 
 `episodic_add_manual_cluster()` adds exactly that kind of cluster directly,
 bypassing detection and reconciliation altogether. Pass it already-parsed R
-values (its own contract, not `episodic_case_data`'s - there is no file
+values (its own requirements, not `episodic_case_data`'s - there is no file
 format to match, since the input is whatever your own code already
 extracted from the other system) rather than a file:
 

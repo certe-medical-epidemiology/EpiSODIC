@@ -235,7 +235,7 @@ episodic_app_resolve_period <- function(
 #' @param lang Session language, for labels.
 #' @return A list; see the source for which sections are populated and
 #'   from where. Sections that cannot be computed are `NULL`, and their
-#'   panels skip themselves - the same contract
+#'   panels skip themselves - the same convention
 #'   `episodic_cluster_object()` uses.
 #' @keywords internal
 #' @noRd

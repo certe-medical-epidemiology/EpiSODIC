@@ -292,12 +292,12 @@ episodic_pkg_versions_extended <- function() {
 #' @return Invisibly, the `run_id` of the completed run. The run's row in
 #'   `episodic_detection_run` holds its status, the per-feed load counts,
 #'   and `error_text` if it failed. Case data that does not satisfy the
-#'   contract throws instead of returning - the run row is still written,
+#'   requirements throws instead of returning - the run row is still written,
 #'   with `status = "failed"` and the same message in `error_text`.
 #' @inheritSection episodic_case_data Check your data before you run anything
 #' @seealso [episodic_check_cases()] to see what EpiSODIC makes of your
 #'   extract before you schedule anything, and [episodic_case_data] for
-#'   the contract it checks against.
+#'   the requirements it checks against.
 #' @examples
 #' \donttest{
 #' db_path <- tempfile(fileext = ".sqlite")
@@ -406,7 +406,7 @@ episodic_run_cron <- function(
       # institution_activity is resolved against the institutions table,
       # which only exists once cases have loaded, so it cannot be
       # resolved and checked here the way cases and denominators are -
-      # but its own contract (columns, filled, dates, patient_days) does
+      # but its own requirements (columns, filled, dates, patient_days) do
       # not depend on that, so it is still worth refusing on up front
       # rather than mid-transaction if it was handed over as a plain
       # data frame rather than a function.

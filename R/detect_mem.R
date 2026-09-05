@@ -243,7 +243,7 @@ episodic_mem_status <- function(
 #'
 #' Read defensively rather than indexed straight: `mem::memmodel()`'s
 #' return shape for the intensity thresholds is not part of a stable
-#' documented contract the way `pre.post.intervals` is, and a shape this
+#' documented interface the way `pre.post.intervals` is, and a shape this
 #' does not recognise must leave the intensity bands unavailable rather
 #' than take the whole seasonal panel down with it - the same posture
 #' every other optional panel in this codebase takes.

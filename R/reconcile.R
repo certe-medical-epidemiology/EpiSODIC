@@ -765,7 +765,7 @@ episodic_reconcile_find_cooldown_match <- function(
 #'
 #' Populates `episodic_cluster_case`, which nothing else in the
 #' reconciliation loop writes to otherwise. This is part of the handoff
-#' contract between the cron and the app: the line list panel and the
+#' convention between the cron and the app: the line list panel and the
 #' report's `case_ids` both read from this table rather than
 #' recomputing a stream/date filter at read time.
 #' @keywords internal

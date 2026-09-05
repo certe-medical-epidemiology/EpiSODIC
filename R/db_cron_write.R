@@ -26,7 +26,7 @@
 # R/db_app_write.R for the insert-only counterparts. Parameters
 # throughout are one row's worth of columns for the table each function
 # name identifies - see inst/sql/schema.sql for the exact column
-# contracts (nullability, enums, defaults).
+# requirements (nullability, enums, defaults).
 
 # Every function here binds its parameters through a `params` local built
 # immediately before the `DBI` call, never as an inline
@@ -751,7 +751,7 @@ episodic_now <- function() {
 #' `as.Date()` on what it gets back and only ever expects `"2025-01-01"`,
 #' so that stored digit-string fails to parse with "character string is
 #' not in a standard unambiguous format" the moment it is read back - the
-#' case data contract explicitly allows `sample_date` etc. to arrive as
+#' case data requirements explicitly allow `sample_date` etc. to arrive as
 #' `Date` (see `episodic_validate_dates()`), so this is not an edge case.
 #' Applied at every write site that accepts an operator-supplied date
 #' column, so the fix holds regardless of whether the caller remembered

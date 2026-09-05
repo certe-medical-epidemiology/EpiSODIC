@@ -112,7 +112,7 @@ R/
   run_cron.R          # cron entry point, episodic_trace(), the full pipeline
   run_app.R           # Shiny app entry point
   config.R            # YAML config: resolve, merge, canonicalise, hash
-  cases.R             # case data contract and deduplication entry
+  cases.R             # case data requirements and deduplication entry
   cases_check.R       # episodic_check_cases() validation
   cases_dedup.R       # episode deduplication (via AMR::get_episode)
   cases_load.R        # loading cases into the database

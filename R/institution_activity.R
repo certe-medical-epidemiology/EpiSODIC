@@ -103,7 +103,7 @@ episodic_institution_activity_load <- function(con, activity) {
   ))
 }
 
-#' Check the optional institution activity feed against its own contract
+#' Check the optional institution activity feed against its own requirements
 #'
 #' Split out of the load step so [episodic_run_cron()] can run it before
 #' the run writes anything, mirroring `episodic_validate_denominators()`.

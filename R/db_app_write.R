@@ -25,7 +25,7 @@
 # absence is load-bearing and should be verified by inspection whenever
 # this file changes. Parameters throughout are one row's worth of
 # columns for the table each function name identifies - see
-# inst/sql/schema.sql for the exact column contracts (nullability,
+# inst/sql/schema.sql for the exact column requirements (nullability,
 # enums, defaults).
 
 # Every function here binds its parameters through a `params` local built

@@ -69,7 +69,7 @@
 #'   compare anything against anything.
 #' @param seed RNG seed, for reproducible demo data.
 #' @return A data frame satisfying [episodic_check_cases()].
-#' @seealso [episodic_check_cases()] to see what the contract makes of it,
+#' @seealso [episodic_check_cases()] to see what the requirements make of it,
 #'   and [episodic_synthetic_cases_calibration()] for many more clusters
 #'   than a demo wants, to tune a configuration against.
 #' @examples

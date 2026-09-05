@@ -38,7 +38,7 @@
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cases A data frame (or tibble) satisfying the case data
-#'   contract, e.g. from [episodic_synthetic_cases()].
+#'   requirements, e.g. from [episodic_synthetic_cases()].
 #' @param pathogen_config A data frame from `episodic_db_pathogen_config()`.
 #' @param run_id The `run_id` of the current detection run
 #'   (`episodic_case.first_seen_run`).
@@ -106,7 +106,7 @@ episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
 #' Upsert every distinct institution referenced in a batch of cases
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param cases A data frame with the case data contract's
+#' @param cases A data frame with the case data's
 #'   `institution_key`/`institution_display_name`/`institution_type`/
 #'   `care_line`/`municipality` columns.
 #' @return A named integer vector mapping the supplied `institution_key` to the
@@ -121,7 +121,7 @@ episodic_institutions_resolve <- function(con, cases) {
   #
   # Taking distinct *combinations* of the five columns instead let one key
   # appear twice in the same batch - a hospital reporting two care lines is
-  # enough, and nothing about the contract forbids it - and a batched insert
+  # enough, and nothing about the requirements forbids it - and a batched insert
   # cannot upsert a row against another row of its own statement: MariaDB
   # rejects the second copy on institution_key's UNIQUE index and the whole
   # run rolls back before a single case is written. The loop tolerated it

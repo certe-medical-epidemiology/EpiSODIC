@@ -125,7 +125,7 @@ test_that("episodic_geo_overlay_resolve() loads an operator-supplied overlay nee
   )
 
   base <- episodic_geo_source_default()
-  overlay <- base[seq_len(2), "geometry"] # no pc column at all - the point of this contract
+  overlay <- base[seq_len(2), "geometry"] # no pc column at all - the point of these requirements
   tmp <- tempfile(fileext = ".rds")
   on.exit(unlink(tmp), add = TRUE)
   saveRDS(overlay, tmp)

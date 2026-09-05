@@ -337,7 +337,7 @@ test_that("a failed run inside the cron transaction leaves no partial state", {
       start_date = as.Date("2024-01-01"),
       end_date = as.Date("2024-01-05")
     )
-    raw$pathogen <- NULL # violates the case data contract, forces an error mid-run
+    raw$pathogen <- NULL # violates the case data requirements, forces an error mid-run
     raw
   }
 

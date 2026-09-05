@@ -343,7 +343,7 @@ test_that("episodic_db_last_case_dates() returns the latest sample_date per pati
 })
 
 test_that("episodic_db_case_insert_new() stores a Date-typed sample_date as ISO text, not its numeric epoch value", {
-  # The case data contract explicitly allows sample_date/receipt_date to
+  # The case data requirements explicitly allow sample_date/receipt_date to
   # arrive as a real Date column (episodic_validate_dates() accepts it
   # directly), but RSQLite binds a Date parameter by its underlying
   # double rather than its printed form - a TEXT-affinity column then

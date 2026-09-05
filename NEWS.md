@@ -241,7 +241,7 @@
 
 ## Fixed
 
-- `care_line`'s `"third"` (tertiary care) value was missing from every column-contract table and roxygen doc listing its allowed values -
+- `care_line`'s `"third"` (tertiary care) value was missing from every column-requirements table and roxygen doc listing its allowed values -
   `episodic_care_lines` already included it, the docs just did not
 
 
@@ -353,9 +353,9 @@ recreated or migrated before running against this version.
 
 ## New
 
-- Case data contract gains a required `lab_number` column: your laboratory's own specimen/culture number, distinct from `source_key` and, unlike it,
-  not required to be unique - two rows may share one when a single culture yields more than one reported result. Shown on the line list alongside
-  `patient_key`, replacing the previously-shown (and not useful) `source_key`
+- Case data requirements gain a required `lab_number` column: your laboratory's own specimen/culture number, distinct from `source_key` and, unlike
+  it, not required to be unique - two rows may share one when a single culture yields more than one reported result. Shown on the line list
+  alongside `patient_key`, replacing the previously-shown (and not useful) `source_key`
 - Similar-clusters panel on the dossier gains a cluster ID column and opens the same way every other cluster table does
 
 ## Changed
@@ -466,7 +466,7 @@ recreated or migrated before running against this version.
 
 - Every case column documents type, nullability and permitted values
 - Exported `episodic_care_lines`, `episodic_institution_types`, `episodic_sex_codes`
-- `episodic_validate_cases()` enforces the full data contract
+- `episodic_validate_cases()` enforces the full data requirements
 - `episodic_detection_run` records per-feed supply/dedup/insert/skip counts
 - Activity screen shows per-run arrival and skip counts
 

@@ -972,7 +972,7 @@ episodic_ui_related_panel <- function(
 #' @noRd
 episodic_ui_resistance_panel <- function(
     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  # Susceptibility data is not part of the case data contract, so this
+  # Susceptibility data is not part of the case data requirements, so this
   # panel is always a placeholder.
   episodic_ui_panel_empty(
     episodic_tr("panel.resistance.title", lang = lang),
