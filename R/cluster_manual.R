@@ -24,7 +24,7 @@
 #' values (an operator's own code is responsible for reading whatever
 #' JSON/CSV that other system produces). A manual cluster is never
 #' connected to this instance's own case data: it gets a real
-#' [episodic_stream] identity (so it appears in the dashboard's normal
+#' `episodic_stream` identity (so it appears in the dashboard's normal
 #' filtering, sorting and geography panels, exactly like a detected
 #' cluster), but its case-level detail, if you supply any, is stored
 #' separately in `episodic_cluster_manual_case` and never touches
@@ -63,10 +63,10 @@
 #'   which case it defaults to that detail's own length; required
 #'   otherwise, since there is then nothing else to derive it from.
 #' @param care_line,region_code,institution_id,ward The remaining
-#'   [episodic_stream] identity fields, exactly as
-#'   [episodic_stream_key()] expects them. `institution_id` must already
+#'   `episodic_stream` identity fields, exactly as
+#'   `episodic_stream_key()` expects them. `institution_id` must already
 #'   exist in `episodic_institution` (e.g. resolved earlier via
-#'   [episodic_institutions_resolve()]) - this function does not create
+#'   `episodic_institutions_resolve()`) - this function does not create
 #'   institutions.
 #' @param expected,excess,ratio Optional pass-through metrics, for
 #'   external algorithms that do produce a baseline comparison. `NA`
@@ -75,7 +75,7 @@
 #' @param detector_agreement How many independent sources agree on this
 #'   cluster. Defaults to `1L` (a single external source).
 #' @param priority_score Optional override. When `NA` (the default), it
-#'   is computed with the same [episodic_priority_score()] used for
+#'   is computed with the same `episodic_priority_score()` used for
 #'   detected clusters, so manual and detected clusters sort comparably -
 #'   from `expected`/`excess`/`ratio`, `detector_agreement`, and, when
 #'   per-cluster case-level detail is supplied, growth slope and spatial

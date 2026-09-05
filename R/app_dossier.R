@@ -428,7 +428,7 @@ episodic_ui_interpretation_panel <- function(
 #' mutually-exclusive buttons ("edit" swaps to the textarea and reveals
 #' "save"), toggled by plain client-side `style.display` - the same idiom
 #' every other interactive element in this file uses; see
-#' [episodic_ui_report_panel()]'s render button for the precedent. Saving
+#' `episodic_ui_report_panel()`'s render button for the precedent. Saving
 #' fires `note_save_submit`, handled by
 #' `episodic_app_server_notes()`, which re-renders the whole dossier pane
 #' on success - that redraw is what puts this panel back in view mode

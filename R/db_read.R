@@ -378,7 +378,7 @@ episodic_db_cluster_cases <- function(con, cluster_id) {
 #' Case-level detail for an origin = 'manual' cluster
 #'
 #' The `episodic_cluster_manual_case` analogue of
-#' [episodic_db_cluster_cases()], returned with the same column names
+#' `episodic_db_cluster_cases()`, returned with the same column names
 #' (`sample_date`, `pc`, `sex`, `age`) so downstream chart-building code
 #' does not need to know which table a cluster's cases came from.
 #' @param cluster_id A single `cluster_id`.

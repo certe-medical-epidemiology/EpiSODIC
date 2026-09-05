@@ -21,7 +21,7 @@
 #'
 #' Re-resolves `current_user()` with `episodic_auth_refresh_user()` and
 #' requires only that *someone* is signed in - unlike
-#' [episodic_app_server_report()]/[episodic_app_server_assessment_actions()],
+#' `episodic_app_server_report()`/`episodic_app_server_assessment_actions()`,
 #' this is deliberately not further gated on
 #' `episodic_user_is_epidemiologist()`: the notes panel is open to any
 #' role. The DOM/onclick is still not a trust boundary, so a session whose
@@ -32,7 +32,7 @@
 #' @param current_user A `shiny::reactiveVal` holding the signed-in user's
 #'   account row, or `NULL`.
 #' @param selected_cluster_id A `shiny::reactiveVal`; toggled (per
-#'   [episodic_app_server_report()]'s own precedent) to force the dossier
+#'   `episodic_app_server_report()`'s own precedent) to force the dossier
 #'   pane to redraw with the freshly saved note.
 #' @return Invisible `NULL`; called for its side effects.
 #' @keywords internal
