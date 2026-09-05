@@ -83,6 +83,9 @@
   "panel.notes.empty": "Todavía no hay notas para este clúster.",
   "notes.edit_button": "Editar",
   "notes.save_button": "Guardar",
+  "notes.history_button": "Historial",
+  "notes.history_modal_title": "Historial de notas",
+  "notes.history_empty": "Todavía no se ha guardado ninguna nota para este clúster.",
 
   "panel.epicurve.title": "Curva epidémica",
   "panel.epicurve.note": "La zona sombreada cubre los últimos {days_phrase}: el retraso empírico de notificación según el triángulo de notificación. Los casos con fecha de muestra en esta ventana aún no se han notificado por completo. Una cola descendente aquí no es un descenso real.",

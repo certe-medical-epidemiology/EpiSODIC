@@ -83,6 +83,9 @@
   "panel.notes.empty": "Nog geen notities voor dit cluster.",
   "notes.edit_button": "Bewerken",
   "notes.save_button": "Opslaan",
+  "notes.history_button": "Geschiedenis",
+  "notes.history_modal_title": "Notitiegeschiedenis",
+  "notes.history_empty": "Nog geen notities opgeslagen voor dit cluster.",
 
   "panel.epicurve.title": "Epidemische curve",
   "panel.epicurve.note": "De gearceerde zone beslaat de laatste {days_phrase}: de empirische rapportagevertraging uit de rapportagedriehoek. Casussen met een afnamedatum in dit venster zijn nog niet volledig binnen. Een dalende staart is hier geen afname.",

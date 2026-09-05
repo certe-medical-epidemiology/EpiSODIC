@@ -83,6 +83,9 @@
   "panel.notes.empty": "No notes yet for this cluster.",
   "notes.edit_button": "Edit",
   "notes.save_button": "Save",
+  "notes.history_button": "History",
+  "notes.history_modal_title": "Note history",
+  "notes.history_empty": "No notes have been saved for this cluster yet.",
 
   "panel.epicurve.title": "Epidemic curve",
   "panel.epicurve.note": "The shaded zone covers the last {days_phrase}: the empirical reporting delay from the reporting triangle. Cases with a sample date in this window are not yet fully reported. A falling tail here is not a decline.",

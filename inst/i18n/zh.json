@@ -83,6 +83,9 @@
   "panel.notes.empty": "该聚集事件暂无备注。",
   "notes.edit_button": "编辑",
   "notes.save_button": "保存",
+  "notes.history_button": "历史记录",
+  "notes.history_modal_title": "备注历史记录",
+  "notes.history_empty": "该聚集事件尚未保存任何备注。",
 
   "panel.epicurve.title": "流行曲线",
   "panel.epicurve.note": "阴影区域覆盖最近 {days_phrase}：即根据报告三角推算的经验性报告延迟。采样日期落在此窗口内的病例尚未完全上报。此处曲线末端的下降并不代表真实下降。",

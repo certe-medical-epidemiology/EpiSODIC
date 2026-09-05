@@ -782,6 +782,43 @@ dl.episodic-settings dd { margin: 0; }
   line-height: 1.5;
 }
 
+/* The History button in the notes panel header, and the diff timeline its
+   modal shows - see episodic_ui_notes_panel()/episodic_ui_notes_history_modal()
+   in R/app_dossier.R. The button sits inside .episodic-panel-aside's <span>,
+   which is fine: .episodic-btn's own color/font-size override the muted
+   caption styling that span would otherwise apply. */
+.episodic-notes-history-btn {
+  font-size: 0.846rem;
+  padding: 2px 10px;
+}
+.episodic-notes-history-entry {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--episodic-border);
+}
+.episodic-notes-history-entry:last-child { border-bottom: none; }
+.episodic-notes-diff-body {
+  font-size: 0.923rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+/* color-mix() keeps these tied to the instance's own palette (see
+   episodic_palette()/EPISODIC_STYLE) without the palette system having to
+   ship separate rgb-component variables just for this - var(--episodic-
+   success)/var(--episodic-danger) already carry the plain hex colour used
+   everywhere else. */
+.episodic-notes-diff-ins {
+  background: color-mix(in srgb, var(--episodic-success) 22%, transparent);
+  color: var(--episodic-success-dark);
+  border-radius: 2px;
+}
+.episodic-notes-diff-del {
+  background: color-mix(in srgb, var(--episodic-danger) 18%, transparent);
+  color: var(--episodic-danger-dark);
+  text-decoration: line-through;
+  border-radius: 2px;
+}
+
 .episodic-search-input {
   width: 320px;
   max-width: 100%;

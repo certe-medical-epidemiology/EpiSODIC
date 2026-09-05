@@ -417,7 +417,9 @@ episodic_app_server_factory <- function(db_path,
       session,
       con,
       current_user = current_user,
-      notes_version = notes_version
+      notes_version = notes_version,
+      access_granted = access_granted,
+      lang = lang
     )
     episodic_app_server_settings(
       input,

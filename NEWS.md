@@ -4,6 +4,7 @@
 
 - Every cluster now has a notes panel next to the interpretation panel: a free-text, markdown-formatted scratchpad open to any signed-in role, stored
   as plain text and rendered on display
+- The notes panel has a History button showing every past version of the note as a word-level diff, with the saving user and timestamp per version
 - New `episodic_add_manual_cluster()` adds clusters detected by another algorithm or system, vectorised over any number of clusters in one call,
   never connected to this instance's own case data - for output from another programming language or system, fed in as already-parsed R values
 

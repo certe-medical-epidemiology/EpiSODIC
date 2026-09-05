@@ -443,6 +443,17 @@ episodic_ui_notes_panel <- function(con,
 
   episodic_ui_panel(
     episodic_tr("panel.notes.title", lang = lang),
+    aside = if (nrow(note) > 0) {
+      shiny::tags$button(
+        class = "episodic-btn episodic-notes-history-btn",
+        type = "button",
+        onclick = sprintf(
+          "Shiny.setInputValue('note_history_open', %d, {priority: 'event'});",
+          cluster_id
+        ),
+        episodic_tr("notes.history_button", lang = lang)
+      )
+    },
     shiny::tags$div(
       id = "notes-view",
       if (nzchar(trimws(note_text))) {
@@ -489,6 +500,68 @@ episodic_ui_notes_panel <- function(con,
           episodic_tr("notes.save_button", lang = lang)
         )
       )
+    }
+  )
+}
+
+#' The cluster notes' full change history, as a diff timeline
+#'
+#' Every saved version, newest first, each diffed against the version
+#' that preceded it (`episodic_notes_diff_html()`) - the very first
+#' version is diffed against an empty string, so it renders as one long
+#' insertion, matching how a first commit reads in `git diff`. The
+#' meta line reuses the "datetime \u00b7 actor" idiom of
+#' `episodic_ui_timeline_entry()` in the assessment rail.
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A cluster id.
+#' @param lang Session language.
+#' @return A `shiny::modalDialog`.
+#' @keywords internal
+#' @noRd
+episodic_ui_notes_history_modal <- function(con,
+                                            cluster_id,
+                                            lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  history <- episodic_db_cluster_note_history(con, cluster_id)
+  unknown <- episodic_tr("misc.unknown", lang = lang)
+
+  shiny::modalDialog(
+    title = episodic_tr("notes.history_modal_title", lang = lang),
+    easyClose = TRUE,
+    size = "l",
+    footer = shiny::tags$button(
+      class = "episodic-btn",
+      type = "button",
+      `data-bs-dismiss` = "modal",
+      episodic_tr("misc.close", lang = lang)
+    ),
+    if (nrow(history) == 0) {
+      shiny::tags$p(
+        class = "episodic-panel-empty",
+        episodic_tr("notes.history_empty", lang = lang)
+      )
+    } else {
+      lapply(rev(seq_len(nrow(history))), function(i) {
+        previous_text <- if (i == 1) "" else history$note_text[i - 1]
+        username <- history$username[i]
+        shiny::tags$div(
+          class = "episodic-notes-history-entry",
+          shiny::tags$div(
+            class = "episodic-timeline-meta",
+            sprintf(
+              "%s \u00b7 %s",
+              episodic_ui_format_datetime(
+                history$created_at[i],
+                fmt = "%d-%m-%Y %H:%M"
+              ),
+              if (is.na(username)) unknown else username
+            )
+          ),
+          shiny::tags$div(
+            class = "episodic-notes-diff-body",
+            episodic_notes_diff_html(previous_text, history$note_text[i])
+          )
+        )
+      })
     }
   )
 }

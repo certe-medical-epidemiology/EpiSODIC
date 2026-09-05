@@ -83,6 +83,9 @@
   "panel.notes.empty": "Aucune note pour l'instant pour ce cluster.",
   "notes.edit_button": "Modifier",
   "notes.save_button": "Enregistrer",
+  "notes.history_button": "Historique",
+  "notes.history_modal_title": "Historique des notes",
+  "notes.history_empty": "Aucune note n'a encore été enregistrée pour ce cluster.",
 
   "panel.epicurve.title": "Courbe épidémique",
   "panel.epicurve.note": "La zone grisée couvre les derniers {days_phrase} : le délai de déclaration empirique issu du triangle de déclaration. Les cas dont la date de prélèvement se situe dans cette fenêtre ne sont pas encore entièrement déclarés. Une queue descendante ici n'est pas un déclin réel.",

@@ -83,6 +83,9 @@
   "panel.notes.empty": "Für dieses Cluster liegen noch keine Notizen vor.",
   "notes.edit_button": "Bearbeiten",
   "notes.save_button": "Speichern",
+  "notes.history_button": "Verlauf",
+  "notes.history_modal_title": "Notizverlauf",
+  "notes.history_empty": "Für dieses Cluster wurden noch keine Notizen gespeichert.",
 
   "panel.epicurve.title": "Epidemiekurve",
   "panel.epicurve.note": "Die schattierte Zone umfasst die letzten {days_phrase}: die empirische Meldeverzögerung aus dem Meldedreieck. Fälle mit einem Probendatum in diesem Zeitfenster sind noch nicht vollständig gemeldet. Ein hier abfallender Verlauf ist kein tatsächlicher Rückgang.",

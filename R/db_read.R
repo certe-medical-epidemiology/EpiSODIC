@@ -412,6 +412,31 @@ episodic_db_cluster_note_current <- function(con, cluster_id) {
   )
 }
 
+#' The full change history of a cluster's notes, oldest first
+#'
+#' `episodic_cluster_note` is append-only (see
+#' `episodic_db_cluster_note_current()`, which returns only the latest
+#' row); this returns every row instead, joined to the acting user's
+#' username, so `episodic_ui_notes_history_modal()` can diff each version
+#' against the one before it.
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A single `cluster_id`.
+#' @return A data frame ordered by `note_id` ascending; zero rows if no
+#'   note has ever been saved for this cluster.
+#' @keywords internal
+#' @noRd
+episodic_db_cluster_note_history <- function(con, cluster_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT n.note_id, n.user_id, n.created_at, n.note_text, u.username
+       FROM episodic_cluster_note n
+       LEFT JOIN episodic_app_user u ON u.user_id = n.user_id
+      WHERE n.cluster_id = ?
+      ORDER BY n.note_id ASC",
+    params = list(cluster_id)
+  )
+}
+
 #' The number of distinct dates with at least one case, for a set of clusters
 #'
 #' Not the same number as the duration (`last_day - first_day + 1`): a
