@@ -109,7 +109,7 @@ episodic_ui_settings_notif_panel <- function(notif,
       )
     ),
     shiny::tags$div(
-      class = "episodic-settings-notif-triggers",
+      class = "episodic-form-group episodic-settings-notif-triggers",
       shiny::tags$label(
         class = "episodic-form-checkbox-label",
         shiny::tags$input(

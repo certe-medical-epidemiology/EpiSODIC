@@ -23,16 +23,6 @@ The dashboard and its outbreak reports are available in English,
 (Modern Standard) Arabic, Dutch, French, German, Hindi, Mandarin
 Chinese, and Spanish.
 
-<!--
-Screenshots below live in man/figures/ (ships with the package, so
-they also render on the CRAN page), regenerated against episodic_demo().
--->
-<p align="center">
-  <img src="../man/figures/main_screen.png" alt="A cluster dossier: case stats, status trajectory, an automatically generated plain-language interpretation, the epidemic curve, and the classification panel" width="800">
-  <br>
-  <em>A cluster dossier - case stats, status trajectory, an automatically generated interpretation of the evidence, the epidemic curve, and the classification panel, alongside the rail of open clusters.</em>
-</p>
-
 ## No dependency on any one laboratory system
 
 EpiSODIC never queries a laboratory information system, data warehouse, or
@@ -81,6 +71,14 @@ the evidence, the epidemic curve, similar past clusters and their
 verdicts as precedent, and the classification panel where an
 epidemiologist records their assessment.
 
+<!--
+Screenshots below live in man/figures/ (ships with the package, so
+they also render on the CRAN page), regenerated against episodic_demo().
+-->
+<p align="center">
+  <img src="../man/figures/main_screen.png" alt="A cluster dossier: case stats, status trajectory, an automatically generated plain-language interpretation, the epidemic curve, and the classification panel" width="800">
+</p>
+
 ### The Pathogen screen: one pathogen over a period
 
 Pick a pathogen and a period - a surveillance season (ISO week 40 to week
@@ -105,9 +103,7 @@ period:
   each one received, as the way back to the operational view.
 
 <p align="center">
-  <img src="../man/figures/pathogen_screen.png" alt="The Pathogen screen: weekly numbers of cases, reproduction number, with geographic and demographic distribution" width="800">
-  <br>
-  <em>The Pathogen screen - weekly numbers of cases, reproduction number, with geographic and demographic distribution.</em>
+  <img src="../man/figures/pathogen_screen.png" alt="The Pathogen screen" width="800">
 </p>
 
 ## Beyond the two altitudes
@@ -125,6 +121,10 @@ assessed, so tuning `EPISODIC_CONFIG` against your own signal volume is
 an evidence-based exercise rather than a guess, once your board has
 classified enough clusters to have a baseline.
 
+<p align="center">
+  <img src="../man/figures/performance_screen.png" alt="The Performance screen" width="800">
+</p>
+
 ### The Archive screen: last winter's precedent
 
 Every closed cluster, searchable by pathogen and place, sorted by
@@ -134,8 +134,6 @@ is often the best prior evidence for judging this winter's cluster.
 
 <p align="center">
   <img src="../man/figures/archive_screen.png" alt="The Archive screen: previously detected clusters" width="800">
-  <br>
-  <em>The Archive screen - previously detected clusters.</em>
 </p>
 
 ### Streams and Activity: how the machinery is behaving
@@ -144,16 +142,39 @@ is often the best prior evidence for judging this winter's cluster.
 (pathogen x level x institution/area/ward/region) alongside the
 detection configuration resolved for it at the latest run - the place
 to look when "why didn't this fire" needs a concrete answer rather than
-a guess. **Activity** is the audit log: every assessment, closure, mute,
+a guess.
+
+<p align="center">
+  <img src="../man/figures/streams_screen.png" alt="The Streams screen" width="800">
+</p>
+
+**Activity** is the audit log: every assessment, closure, mute,
 sign-in, and scheduled run, with a system action visually distinct from
 a person's. Between the two, nothing the system did (or did not do) is
 ever only inferable from its effects.
+
+<p align="center">
+  <img src="../man/figures/activity_screen.png" alt="The Activity screen" width="800">
+</p>
 
 ### The Info screen
 
 The running instance's own version, licence, and configuration, read
 live from the package itself - useful when reporting an issue, or
 simply confirming which build is deployed.
+
+<p align="center">
+  <img src="../man/figures/info_screen.png" alt="The Info screen" width="800">
+</p>
+
+### The Settings screen
+
+The configurations set for EpiSODIC, including account management, the
+various notifications options, and all specific detection algorithm settings.
+
+<p align="center">
+  <img src="../man/figures/settings_screen.png" alt="The Settings screen" width="800">
+</p>
 
 ## Where to go next
 

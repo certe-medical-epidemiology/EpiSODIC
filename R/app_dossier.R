@@ -57,7 +57,7 @@ episodic_ui_dossier <- function(con,
     shiny::tags$div(
       style = "display:flex;gap:16px;",
       shiny::tags$div(
-        style = "flex:1;min-width:0;",
+        style = "flex:1;min-width:60%;",
         episodic_ui_interpretation_panel(obj, lang = lang)
       ),
       shiny::tags$div(

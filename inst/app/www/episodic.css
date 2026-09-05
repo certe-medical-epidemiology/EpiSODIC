@@ -248,7 +248,7 @@ body {
 .episodic-chip-filled { color: #fff; }
 .episodic-chip-outline { background: transparent; border: 1px solid; }
 
-input:focus-visible {
+:focus-visible {
   outline-color: var(--episodic-primary) !important;
 }
 
@@ -789,7 +789,8 @@ dl.episodic-settings dd { margin: 0; }
    caption styling that span would otherwise apply. */
 .episodic-notes-history-btn {
   font-size: 0.846rem;
-  padding: 2px 10px;
+  padding: 0px 10px;
+  margin-bottom: -1px;
 }
 .episodic-notes-history-entry {
   padding: 10px 0;
@@ -1074,7 +1075,7 @@ dl.episodic-settings dd { margin: 0; }
   border: 1px solid var(--episodic-border);
   border-radius: 6px;
   padding: 14px 16px;
-  background: var(--episodic-bg-subtle);
+  background: var(--episodic-bg);
   display: flex;
   flex-direction: column;
 }
