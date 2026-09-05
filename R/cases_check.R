@@ -31,6 +31,10 @@
 #' `episodic_check_cases(..., stop_on_problem = TRUE)` when you want a script
 #' to stop. The latter is what [episodic_run_cron()] itself calls before a run.
 #'
+#' None of this applies to a cluster added with [episodic_add_manual_cluster()]:
+#' it is never connected to your own case data, so it never goes through this
+#' contract (or any other check here) at all.
+#'
 #' @section What it reports:
 #'
 #' Two kinds of finding, deliberately kept apart:

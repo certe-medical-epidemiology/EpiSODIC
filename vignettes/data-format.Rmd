@@ -223,6 +223,10 @@ zero-argument function is instead resolved and validated once the run
 is already under way, since it may depend on data - e.g. the
 institutions table - that only exists once the case feed has loaded).
 
+None of this applies to a cluster added with `episodic_add_manual_cluster()`
+(see "Clusters from another system" below): it never goes near `episodic_check_cases()`,
+`episodic_run_cron()`, or your own case data at all.
+
 ## Positivity metadata (optional)
 
 If, and only if, you can produce it: a small, pre-aggregated table of test
@@ -378,6 +382,56 @@ design refuses to report as green.
 Both `success` and `partial` are usable runs, and the dashboard reads
 from the most recent of either.
 
+## Clusters from another system (optional)
+
+Everything above is about your own laboratory-confirmed positives, running
+through `episodic_run_cron()`'s own detectors. Some outbreaks are found a
+different way entirely - a public health service's own surveillance system,
+a research model, a colleague's script in another language - and still
+belong on the same dashboard, assessed the same way, without pretending
+they came from your case data when they did not.
+
+`episodic_add_manual_cluster()` adds exactly that kind of cluster directly,
+bypassing detection and reconciliation altogether. Pass it already-parsed R
+values (its own contract, not `episodic_case_data`'s - there is no file
+format to match, since the input is whatever your own code already
+extracted from the other system) rather than a file:
+
+```r
+episodic_add_manual_cluster(
+  user_id = 1L,
+  pathogen = "Measles virus",
+  level = "pathogen_area",
+  first_day = "2025-01-10",
+  last_day = "2025-01-20",
+  region_code = "GR",
+  case_dates = list(as.Date(c("2025-01-10", "2025-01-14", "2025-01-20"))),
+  pc = list(c("9711AA", "9711AB", "9712CD")),
+  note = "Reported by municipal health service, outside our own lab data."
+)
+```
+
+Every argument is vectorised: pass length-`n` vectors/lists to add `n`
+clusters in one call, each getting its own new cluster id, all in one
+transaction. A few things distinguish a manual cluster from a detected one:
+
+- It gets a real stream identity (pathogen, level, location) from the same
+  fields `episodic_stream_key()` uses, so it appears in the dashboard's
+  filtering, sorting and geography exactly like a detected cluster.
+- Its case-level detail, if you supply any (`case_dates`/`pc`/`sex`/`age`),
+  is stored entirely separately from `episodic_case` - it is never joined
+  into denominators, line lists, or patient search, and is never treated
+  as your own patients. Omit it entirely for a source that only hands you
+  an aggregate count; the cluster still gets created, its epi
+  curve/demography/geography panels just have nothing to draw.
+- It never closes on its own: `episodic_run_cron()`'s reconciliation and
+  automatic closure both skip it, so it stays open until an epidemiologist
+  records a verdict on it, the same as any other cluster.
+- Its priority score is computed the same way a detected cluster's is
+  (unless you override it), so the two sort comparably on the dashboard.
+
+See `?episodic_add_manual_cluster` for every argument.
+
 ## See also
 
 - `vignette("deployment")` for scheduling `episodic_run_cron()`, the
@@ -387,3 +441,5 @@ from the most recent of either.
   mentioned above.
 - `vignette("faq")` for combining more than one source system, resending
   data safely, and handling a rectified/corrected lab result.
+- `?episodic_add_manual_cluster` for clusters detected by another system
+  entirely - see "Clusters from another system" above.

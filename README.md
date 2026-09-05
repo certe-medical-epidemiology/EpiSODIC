@@ -75,7 +75,7 @@ Everything past "what is this and how do I try it" lives in the package's vignet
 | Read this... | ...for |
 |---|---|
 | [Overview](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/overview.html) | What EpiSODIC does: the Clusters and Pathogen screens' two altitudes, and the Performance, Archive, Streams, Activity and Info screens around them. |
-| [Getting your data in](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html) | The case data contract - every column, what's optional, and `episodic_check_cases()`/`episodic_check_denominators()`/`episodic_check_institution_activity()` to check your extract before anything runs. |
+| [Getting your data in](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html) | The case data contract - every column, what's optional, `episodic_check_cases()`/`episodic_check_denominators()`/`episodic_check_institution_activity()` to check your extract before anything runs, and `episodic_add_manual_cluster()` for clusters detected by another system entirely. |
 | [Deployment](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) | Standing up a real instance: scheduling, accounts, the database backend, custom report templates. |
 | [Environment variables](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) | The full `EPISODIC_*` reference table. |
 | [Detection and reconciliation](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html) | How a laboratory result becomes a dossier: the four detectors, reconciliation, and suppression. |
