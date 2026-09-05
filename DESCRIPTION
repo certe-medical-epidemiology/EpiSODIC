@@ -2,7 +2,7 @@ Package: EpiSODIC
 Type: Package
 Title: Epidemiological Signal Observation, Detection, Identification, and
     Classification
-Version: 0.12.0
+Version: 0.12.1
 Authors@R: c(
     person(given = c("Matthijs", "S."),
            family = "Berends",
@@ -34,6 +34,7 @@ Imports:
     digest,
     dplyr,
     ggplot2,
+    mem,
     rlang,
     RSQLite,
     shiny,
@@ -52,7 +53,6 @@ Suggests:
     httr2,
     jsonlite,
     knitr,
-    mem,
     Microsoft365R,
     pkgdown,
     quarto,

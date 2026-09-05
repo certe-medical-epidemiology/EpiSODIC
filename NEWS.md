@@ -1,10 +1,17 @@
+# EpiSODIC 0.12.1
+
+## Changed
+
+- The notes panel has a History button showing every past version of the note as a word-level diff, with the saving user and timestamp per version
+- Saving a cluster note now only redraws the notes panel, instead of the whole dossier including every plot
+
+
 # EpiSODIC 0.12.0
 
 ## New
 
 - Every cluster now has a notes panel next to the interpretation panel: a free-text, markdown-formatted scratchpad open to any signed-in role, stored
   as plain text and rendered on display
-- The notes panel has a History button showing every past version of the note as a word-level diff, with the saving user and timestamp per version
 - New `episodic_add_manual_cluster()` adds clusters detected by another algorithm or system, vectorised over any number of clusters in one call,
   never connected to this instance's own case data - for output from another programming language or system, fed in as already-parsed R values
 
@@ -13,7 +20,6 @@
 - `bslib`, `cli`, `commonmark`, `htmltools` and `jsonlite` moved from Imports to Suggests: `shiny` (a hard Import) already Imports every one of them,
   so they were never an independent dependency in the first place
 - `vignette("data-format")` documents `episodic_add_manual_cluster()` in a new "Clusters from another system" section
-- Saving a cluster note now only redraws the notes panel, instead of the whole dossier including every plot
 
 
 # EpiSODIC 0.11.0
