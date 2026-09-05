@@ -31,9 +31,10 @@
 #' @param con A [DBI::DBIConnection-class].
 #' @param current_user A `shiny::reactiveVal` holding the signed-in user's
 #'   account row, or `NULL`.
-#' @param selected_cluster_id A `shiny::reactiveVal`; toggled (per
-#'   `episodic_app_server_report()`'s own precedent) to force the dossier
-#'   pane to redraw with the freshly saved note.
+#' @param notes_version A `shiny::reactiveVal` bumped on a successful save
+#'   to invalidate `output$notes_pane` (see `app_server.R`) - unlike the
+#'   `selected_cluster_id` toggle this used to piggyback on, it leaves the
+#'   rest of the dossier, several panels of which are plots, untouched.
 #' @return Invisible `NULL`; called for its side effects.
 #' @keywords internal
 #' @noRd
@@ -42,7 +43,7 @@ episodic_app_server_notes <- function(input,
                                       session,
                                       con,
                                       current_user,
-                                      selected_cluster_id) {
+                                      notes_version) {
   shiny::observeEvent(input$note_save_submit, {
     user <- episodic_auth_refresh_user(con, current_user())
     shiny::req(!is.null(user))
@@ -56,9 +57,7 @@ episodic_app_server_notes <- function(input,
       note_text = note_text
     )
 
-    id <- selected_cluster_id()
-    selected_cluster_id(NULL)
-    selected_cluster_id(id)
+    notes_version(notes_version() + 1L)
   })
 
   invisible(NULL)

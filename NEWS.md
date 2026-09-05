@@ -12,6 +12,7 @@
 - `bslib`, `cli`, `commonmark`, `htmltools` and `jsonlite` moved from Imports to Suggests: `shiny` (a hard Import) already Imports every one of them,
   so they were never an independent dependency in the first place
 - `vignette("data-format")` documents `episodic_add_manual_cluster()` in a new "Clusters from another system" section
+- Saving a cluster note now only redraws the notes panel, instead of the whole dossier including every plot
 
 
 # EpiSODIC 0.11.0

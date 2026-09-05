@@ -81,6 +81,11 @@ episodic_app_server_factory <- function(db_path,
     })
 
     selected_cluster_id <- shiny::reactiveVal(NULL)
+    # Bumped by `episodic_app_server_notes()` on a successful save, purely
+    # to invalidate `output$notes_pane` below - the rest of the dossier
+    # (several panels of which are plots) has no reason to redraw just
+    # because a note changed, unlike a cluster selection change.
+    notes_version <- shiny::reactiveVal(0L)
     # Fills the dossier pane on first load, and moves on when whatever was
     # selected has genuinely gone. It used to reset the selection whenever
     # the selected cluster was not in the *open* list, which is a
@@ -310,6 +315,19 @@ episodic_app_server_factory <- function(db_path,
       )
     })
 
+    output$notes_pane <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
+      cluster_id <- selected_cluster_id()
+      notes_version() # invalidate on save, without touching dossier_pane
+      user <- current_user()
+      if (is.null(cluster_id)) {
+        return(NULL)
+      }
+      episodic_ui_notes_panel(con, cluster_id, user, lang = lang)
+    })
+
     output$assessment_pane <- shiny::renderUI({
       if (!access_granted()) {
         return(NULL)
@@ -399,7 +417,7 @@ episodic_app_server_factory <- function(db_path,
       session,
       con,
       current_user = current_user,
-      selected_cluster_id = selected_cluster_id
+      notes_version = notes_version
     )
     episodic_app_server_settings(
       input,

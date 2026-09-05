@@ -62,7 +62,7 @@ episodic_ui_dossier <- function(con,
       ),
       shiny::tags$div(
         style = "flex:1;min-width:0;",
-        episodic_ui_notes_panel(con, cluster_id, current_user, lang = lang)
+        shiny::uiOutput("notes_pane")
       )
     ),
     episodic_ui_epicurve_panel(con, cluster_id, obj, lang = lang),
@@ -424,11 +424,14 @@ episodic_ui_interpretation_panel <- function(obj,
 #' "save"), toggled by plain client-side `style.display` - the same idiom
 #' every other interactive element in this file uses; see
 #' `episodic_ui_report_panel()`'s render button for the precedent. Saving
-#' fires `note_save_submit`, handled by
-#' `episodic_app_server_notes()`, which re-renders the whole dossier pane
-#' on success - that redraw is what puts this panel back in view mode
-#' showing the freshly saved note, so no client-side "cancel" path is
-#' needed.
+#' fires `note_save_submit`, handled by `episodic_app_server_notes()`,
+#' which re-renders only `output$notes_pane` (see `app_server.R`) on
+#' success, not the rest of the dossier - that redraw is what puts this
+#' panel back in view mode showing the freshly saved note, so no
+#' client-side "cancel" path is needed. Keeping this panel behind its own
+#' `uiOutput()` rather than inline in `episodic_ui_dossier()` is what
+#' makes that possible: the dossier's other panels, several of them
+#' plots, are otherwise untouched by a note save.
 #' @keywords internal
 #' @noRd
 episodic_ui_notes_panel <- function(con,
