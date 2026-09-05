@@ -813,16 +813,14 @@ episodic_check_institution_advice <- function(cases) {
 #' frame an operator can filter, and the printed version is one code path.
 #' @keywords internal
 #' @noRd
-episodic_check_finding <- function(
-  severity,
-  issue,
-  column = NA_character_,
-  n_rows = NA_integer_,
-  rows = integer(0),
-  values = character(0),
-  message,
-  fix = NA_character_
-) {
+episodic_check_finding <- function(severity,
+                                   issue,
+                                   column = NA_character_,
+                                   n_rows = NA_integer_,
+                                   rows = integer(0),
+                                   values = character(0),
+                                   message,
+                                   fix = NA_character_) {
   data.frame(
     severity = severity,
     issue = issue,
@@ -844,12 +842,10 @@ episodic_check_finding <- function(
 #'   `episodic_check_institution_activity()` pass their own.
 #' @keywords internal
 #' @noRd
-episodic_check_report <- function(
-  found,
-  info = list(),
-  title = "EpiSODIC case data check",
-  what = "Case data"
-) {
+episodic_check_report <- function(found,
+                                  info = list(),
+                                  title = "EpiSODIC case data check",
+                                  what = "Case data") {
   problems <- if (length(found) == 0) {
     data.frame(
       severity = character(0),

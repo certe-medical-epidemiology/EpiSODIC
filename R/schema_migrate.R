@@ -40,13 +40,11 @@
 #'   user = "episodic_app", password = "s3cr3t!"
 #' )
 #' @export
-episodic_db_dsn_mariadb <- function(
-  host,
-  dbname,
-  user,
-  password,
-  port = 3306L
-) {
+episodic_db_dsn_mariadb <- function(host,
+                                    dbname,
+                                    user,
+                                    password,
+                                    port = 3306L) {
   stopifnot(
     is.character(host),
     nzchar(host),

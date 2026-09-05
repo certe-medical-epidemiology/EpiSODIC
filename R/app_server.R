@@ -26,10 +26,8 @@
 #' @return A Shiny server function.
 #' @keywords internal
 #' @noRd
-episodic_app_server_factory <- function(
-  db_path,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_app_server_factory <- function(db_path,
+                                        lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   function(input, output, session) {
     con <- episodic_db_connect(db_path)
     session$onSessionEnded(function() {
@@ -417,10 +415,8 @@ episodic_app_server_factory <- function(
 
 #' @keywords internal
 #' @noRd
-episodic_ui_status_strip <- function(
-  status,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_status_strip <- function(status,
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (identical(status$status, "none")) {
     return(shiny::tags$div(
       class = "episodic-status-strip",
@@ -546,11 +542,9 @@ episodic_ui_first_line <- function(text, max_chars = 160L) {
 #'   for `NA`/`NULL`, or `iso` itself if it does not parse.
 #' @keywords internal
 #' @noRd
-episodic_ui_format_datetime <- function(
-  iso,
-  fmt = "%H:%M",
-  tz = Sys.timezone()
-) {
+episodic_ui_format_datetime <- function(iso,
+                                        fmt = "%H:%M",
+                                        tz = Sys.timezone()) {
   if (is.null(iso) || is.na(iso)) {
     return(episodic_tr("misc.unknown"))
   }
@@ -621,12 +615,10 @@ episodic_app_url_cluster_id <- function(search) {
 #'   signed-out visitor does.
 #' @keywords internal
 #' @noRd
-episodic_ui_rail <- function(
-  open,
-  selected_id,
-  lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  current_user = NULL
-) {
+episodic_ui_rail <- function(open,
+                             selected_id,
+                             lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                             current_user = NULL) {
   pal <- episodic_palette()
   verdicts <- c(
     "artefact",

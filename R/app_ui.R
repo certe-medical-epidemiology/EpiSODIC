@@ -139,11 +139,9 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @return A `shiny::tagList` of links.
 #' @keywords internal
 #' @noRd
-episodic_ui_nav_links <- function(
-  active_view = "clusters",
-  lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  is_admin = FALSE
-) {
+episodic_ui_nav_links <- function(active_view = "clusters",
+                                  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                  is_admin = FALSE) {
   views <- c(
     "clusters",
     # Between the operational views and the configuration ones: it is the

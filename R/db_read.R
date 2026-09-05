@@ -143,11 +143,9 @@ episodic_db_last_case_dates <- function(con, patient_keys, pathogens) {
 #' @param open_only If `TRUE`, exclude clusters with `merged_into` set.
 #' @keywords internal
 #' @noRd
-episodic_db_clusters <- function(
-  con,
-  open_only = FALSE,
-  include_suppressed = FALSE
-) {
+episodic_db_clusters <- function(con,
+                                 open_only = FALSE,
+                                 include_suppressed = FALSE) {
   sql <- "SELECT * FROM episodic_cluster"
   where <- character(0)
   if (open_only) {
@@ -305,13 +303,11 @@ episodic_db_clusters_for_streams <- function(con, stream_ids) {
 #'   reason to fall back to a detector's own count.
 #' @keywords internal
 #' @noRd
-episodic_db_cases_for_stream_id <- function(
-  con,
-  stream_id,
-  columns = c("case_id", "sample_date"),
-  first_day = NULL,
-  last_day = NULL
-) {
+episodic_db_cases_for_stream_id <- function(con,
+                                            stream_id,
+                                            columns = c("case_id", "sample_date"),
+                                            first_day = NULL,
+                                            last_day = NULL) {
   params <- list(stream_id)
   stream <- DBI::dbGetQuery(
     con,

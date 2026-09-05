@@ -43,18 +43,16 @@
 #' @return Invisibly, the new `event_id`.
 #' @keywords internal
 #' @noRd
-episodic_app_submit_assessment <- function(
-  con,
-  cluster_id,
-  user_id,
-  verdict = NA,
-  rationale = "",
-  wpg_notifiable = NA,
-  ggd_informed = NA,
-  ggd_note = NA,
-  snooze_until = NA,
-  supersedes = NA
-) {
+episodic_app_submit_assessment <- function(con,
+                                           cluster_id,
+                                           user_id,
+                                           verdict = NA,
+                                           rationale = "",
+                                           wpg_notifiable = NA,
+                                           ggd_informed = NA,
+                                           ggd_note = NA,
+                                           snooze_until = NA,
+                                           supersedes = NA) {
   state_before <- episodic_app_derive_state_for_cluster(con, cluster_id)
 
   event_id <- episodic_db_assessment_event_insert(

@@ -78,11 +78,9 @@ episodic_app_package_meta <- function() {
 #' @return A `shiny::tags$div`.
 #' @keywords internal
 #' @noRd
-episodic_ui_info_screen <- function(
-  con = NULL,
-  current_user = NULL,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_info_screen <- function(con = NULL,
+                                    current_user = NULL,
+                                    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   meta <- episodic_app_package_meta()
   shiny::tags$div(
     class = "episodic-streams-screen",
@@ -179,9 +177,7 @@ episodic_ui_info_screen <- function(
 
 #' @keywords internal
 #' @noRd
-episodic_ui_info_algorithms_table <- function(
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_info_algorithms_table <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   rows <- list(
     list(
       name = "farringtonFlexible",
@@ -229,9 +225,7 @@ episodic_ui_info_algorithms_table <- function(
 
 #' @keywords internal
 #' @noRd
-episodic_ui_info_states_table <- function(
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_info_states_table <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   states <- c(
     "new",
     "assessing",

@@ -60,11 +60,9 @@
 #' @importFrom AMR get_episode
 #' @keywords internal
 #' @noRd
-episodic_cases_deduplicate <- function(
-  cases,
-  pathogen_config,
-  existing = NULL
-) {
+episodic_cases_deduplicate <- function(cases,
+                                       pathogen_config,
+                                       existing = NULL) {
   if (nrow(cases) == 0) {
     return(cases)
   }

@@ -38,12 +38,10 @@
 #'   (translated), `rationale`.
 #' @keywords internal
 #' @noRd
-episodic_app_assessment_timeline <- function(
-  con,
-  cluster_id,
-  lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  level = NA
-) {
+episodic_app_assessment_timeline <- function(con,
+                                             cluster_id,
+                                             lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                             level = NA) {
   events <- episodic_db_assessment_events(con, cluster_id)
   states <- episodic_db_cluster_states(con, cluster_id)
   closures <- states[states$trigger == "closure", ]
@@ -107,11 +105,9 @@ episodic_app_assessment_timeline <- function(
 #' A user_id (possibly `NA`, meaning the system) as a display label
 #' @keywords internal
 #' @noRd
-episodic_app_actor_label <- function(
-  con,
-  user_id,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_app_actor_label <- function(con,
+                                     user_id,
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (is.na(user_id)) {
     return(episodic_tr("activity.actor_system", lang = lang))
   }
@@ -137,12 +133,10 @@ episodic_app_actor_label <- function(
 #'   `episodic_cluster_table_order()` - most recent last case day first.
 #' @keywords internal
 #' @noRd
-episodic_app_archive <- function(
-  con,
-  query = NULL,
-  level = NULL,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_app_archive <- function(con,
+                                 query = NULL,
+                                 level = NULL,
+                                 lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   empty <- data.frame(
     cluster_id = integer(0),
     pathogen = character(0),
@@ -274,10 +268,8 @@ episodic_app_archive <- function(
 #'   the counters existed, or one that failed before loading anything.
 #' @keywords internal
 #' @noRd
-episodic_app_run_detail <- function(
-  run,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_app_run_detail <- function(run,
+                                    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   # A failed run has no load summary, but it does have a reason, and this
   # screen is where somebody goes to find out why the dashboard is empty.
   # Its first line only, since a validation failure names every offending
@@ -303,10 +295,8 @@ episodic_app_run_detail <- function(
 #'   counts at all.
 #' @keywords internal
 #' @noRd
-episodic_app_run_load_summary <- function(
-  run,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_app_run_load_summary <- function(run,
+                                          lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   # NULL when reading a database written before the counters existed;
   # NA when the run failed before it loaded anything. Neither has a
   # summary to show, and neither should read as "zero cases arrived".
@@ -350,11 +340,9 @@ episodic_app_run_load_summary <- function(
 #'   full run detail for those.
 #' @keywords internal
 #' @noRd
-episodic_app_activity_log <- function(
-  con,
-  limit = 200,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_app_activity_log <- function(con,
+                                      limit = 200,
+                                      lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   # Including suppressed ones: this is the record of what happened, and a
   # cluster somebody acted on has to keep resolving to its own name here
   # however the lattice later decided to file it.

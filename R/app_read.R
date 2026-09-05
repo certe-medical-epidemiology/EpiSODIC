@@ -32,10 +32,8 @@
 #'   descending (newest last case day first).
 #' @keywords internal
 #' @noRd
-episodic_app_open_clusters <- function(
-  con,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_app_open_clusters <- function(con,
+                                       lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   clusters <- episodic_db_clusters(con, open_only = TRUE)
   if (nrow(clusters) == 0) {
     return(clusters[, c("cluster_id", "priority_score"), drop = FALSE])
@@ -308,11 +306,9 @@ episodic_app_closed_at_from <- function(states_all, cluster_ids) {
 #'   dossier panels skip themselves.
 #' @keywords internal
 #' @noRd
-episodic_cluster_object <- function(
-  con,
-  cluster_id,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_cluster_object <- function(con,
+                                    cluster_id,
+                                    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   cluster <- DBI::dbGetQuery(
     con,
     "SELECT * FROM episodic_cluster WHERE cluster_id = ?",
@@ -471,11 +467,9 @@ episodic_rt_unavailable_reason <- function(pc) {
 #' @return A single string.
 #' @keywords internal
 #' @noRd
-episodic_app_level_label <- function(
-  level,
-  care_line = NA,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_app_level_label <- function(level,
+                                     care_line = NA,
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   label <- episodic_tr(paste0("level.", level), lang = lang)
   if (is.na(care_line)) {
     return(label)
@@ -489,11 +483,9 @@ episodic_app_level_label <- function(
 
 #' @keywords internal
 #' @noRd
-episodic_app_place_label <- function(
-  stream,
-  institution,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_app_place_label <- function(stream,
+                                     institution,
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   care_line_suffix <- if (!is.na(stream$care_line)) {
     paste0(
       " \u00b7 ",
@@ -642,12 +634,10 @@ episodic_app_density <- function(con, stream, cases, debug = FALSE) {
 #'   outbreak.
 #' @keywords internal
 #' @noRd
-episodic_app_doubling_time <- function(
-  cases,
-  incomplete_days = 0L,
-  asof = Sys.Date(),
-  window_days = 14L
-) {
+episodic_app_doubling_time <- function(cases,
+                                       incomplete_days = 0L,
+                                       asof = Sys.Date(),
+                                       window_days = 14L) {
   if (nrow(cases) < 3) {
     return(NA_real_)
   }

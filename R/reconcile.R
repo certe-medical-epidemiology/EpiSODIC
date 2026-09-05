@@ -98,23 +98,21 @@
 #'   and `new_cluster_ids` (integer vector of cluster IDs created this call).
 #' @keywords internal
 #' @noRd
-episodic_reconcile_stream <- function(
-  con,
-  stream_id,
-  detections,
-  case_free_days,
-  run_id,
-  close_after_runs,
-  priority_score_fn,
-  has_assessment_fn,
-  verdict_fn,
-  cooldown_days = NA,
-  cooldown_reopen_ratio = NA,
-  min_excess_over_upperbound = NA,
-  min_ratio_observed_expected = NA,
-  stale_open_days = NA,
-  today = Sys.Date()
-) {
+episodic_reconcile_stream <- function(con,
+                                      stream_id,
+                                      detections,
+                                      case_free_days,
+                                      run_id,
+                                      close_after_runs,
+                                      priority_score_fn,
+                                      has_assessment_fn,
+                                      verdict_fn,
+                                      cooldown_days = NA,
+                                      cooldown_reopen_ratio = NA,
+                                      min_excess_over_upperbound = NA,
+                                      min_ratio_observed_expected = NA,
+                                      stale_open_days = NA,
+                                      today = Sys.Date()) {
   n_new <- 0L
   n_updated <- 0L
   n_merged <- 0L
@@ -587,11 +585,9 @@ episodic_reconcile_merge_detections <- function(detections) {
 #' @return `TRUE` if the candidate may open a cluster.
 #' @keywords internal
 #' @noRd
-episodic_reconcile_clears_floor <- function(
-  metrics,
-  min_excess_over_upperbound = NA,
-  min_ratio_observed_expected = NA
-) {
+episodic_reconcile_clears_floor <- function(metrics,
+                                            min_excess_over_upperbound = NA,
+                                            min_ratio_observed_expected = NA) {
   below <- function(value, threshold) {
     !is.na(threshold) && !is.na(value) && value < threshold
   }
@@ -636,12 +632,10 @@ episodic_reconcile_candidate_metrics <- function(candidate) {
 
 #' @keywords internal
 #' @noRd
-episodic_reconcile_link_detections <- function(
-  con,
-  detections,
-  candidate,
-  cluster_id
-) {
+episodic_reconcile_link_detections <- function(con,
+                                               detections,
+                                               candidate,
+                                               cluster_id) {
   in_candidate <- as.Date(detections$first_day) <= as.Date(candidate$last_day) &
     as.Date(detections$last_day) >= as.Date(candidate$first_day)
   ids <- detections$detection_id[in_candidate]
@@ -660,11 +654,9 @@ episodic_reconcile_link_detections <- function(
 #'   or more than 1).
 #' @keywords internal
 #' @noRd
-episodic_reconcile_find_matches <- function(
-  open_clusters,
-  candidate,
-  case_free_days
-) {
+episodic_reconcile_find_matches <- function(open_clusters,
+                                            candidate,
+                                            case_free_days) {
   if (nrow(open_clusters) == 0) {
     return(integer(0))
   }
@@ -714,14 +706,12 @@ episodic_reconcile_find_matches <- function(
 #'   `cluster_id` and `reopen` (logical).
 #' @keywords internal
 #' @noRd
-episodic_reconcile_find_cooldown_match <- function(
-  open_clusters,
-  candidate,
-  case_free_days,
-  cooldown_days,
-  cooldown_reopen_ratio,
-  verdict_fn
-) {
+episodic_reconcile_find_cooldown_match <- function(open_clusters,
+                                                   candidate,
+                                                   case_free_days,
+                                                   cooldown_days,
+                                                   cooldown_reopen_ratio,
+                                                   verdict_fn) {
   if (nrow(open_clusters) == 0) {
     return(NULL)
   }
@@ -775,13 +765,11 @@ episodic_reconcile_find_cooldown_match <- function(
 #' recomputing a stream/date filter at read time.
 #' @keywords internal
 #' @noRd
-episodic_reconcile_link_cases <- function(
-  con,
-  stream_id,
-  cluster_id,
-  first_day,
-  last_day
-) {
+episodic_reconcile_link_cases <- function(con,
+                                          stream_id,
+                                          cluster_id,
+                                          first_day,
+                                          last_day) {
   # Membership comes from episodic_db_cases_for_stream_id(), which is the
   # one place the rule lives. It used to be spelled out again here, and
   # spelling it out twice is how episodic_reconcile_case_count() came to
@@ -819,14 +807,12 @@ episodic_reconcile_link_cases <- function(
 #' that appeared to succeed is worse than a run that fails and says so.
 #' @keywords internal
 #' @noRd
-episodic_reconcile_case_count <- function(
-  con,
-  stream_id,
-  first_day,
-  last_day,
-  existing,
-  candidate
-) {
+episodic_reconcile_case_count <- function(con,
+                                          stream_id,
+                                          first_day,
+                                          last_day,
+                                          existing,
+                                          candidate) {
   cases <- episodic_db_cases_for_stream_id(
     con,
     stream_id,

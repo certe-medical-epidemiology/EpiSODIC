@@ -87,9 +87,7 @@ episodic_chart_theme <- function() {
 #' @return A character vector of length 12.
 #' @keywords internal
 #' @noRd
-episodic_chart_month_abbrevs <- function(
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_chart_month_abbrevs <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   vapply(
     sprintf("%02d", 1:12),
     function(mm) episodic_tr(paste0("date.month.", mm), lang = lang),
@@ -110,9 +108,7 @@ episodic_chart_month_abbrevs <- function(
 #' @return A function suitable as `ggplot2::scale_*_continuous(labels =)`.
 #' @keywords internal
 #' @noRd
-episodic_chart_number_labels <- function(
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_chart_number_labels <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   marks <- if (identical(episodic_lang(lang), "en")) {
     list(big = ",", decimal = ".")
   } else {
@@ -151,11 +147,9 @@ episodic_chart_number_labels <- function(
 #'   `NULL` when there is nothing to label.
 #' @keywords internal
 #' @noRd
-episodic_chart_week_axis <- function(
-  week_starts,
-  lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  max_labels = 14L
-) {
+episodic_chart_week_axis <- function(week_starts,
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                     max_labels = 14L) {
   week_starts <- sort(unique(as.Date(week_starts)))
   week_starts <- week_starts[!is.na(week_starts)]
   n <- length(week_starts)
@@ -198,10 +192,8 @@ episodic_chart_week_axis <- function(
 #' @return A `scale_x_date` layer, or `NULL` (which `+` ignores).
 #' @keywords internal
 #' @noRd
-episodic_chart_week_scale <- function(
-  week_starts,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_chart_week_scale <- function(week_starts,
+                                      lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   axis <- episodic_chart_week_axis(week_starts, lang = lang)
   if (is.null(axis)) {
     return(NULL)
@@ -228,10 +220,8 @@ episodic_chart_week_scale <- function(
 #' )
 #' episodic_ui_epi_curve_chart(curve, lang = "en")
 #' @export
-episodic_ui_epi_curve_chart <- function(
-  curve,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_epi_curve_chart <- function(curve,
+                                        lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
   curve$alpha <- ifelse(curve$incomplete, 0.45, 1)
   ggplot2::ggplot(
@@ -263,10 +253,8 @@ episodic_ui_epi_curve_chart <- function(
 #' )
 #' episodic_ui_trend_chart(trend, lang = "en")
 #' @export
-episodic_ui_trend_chart <- function(
-  trend,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_trend_chart <- function(trend,
+                                    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
   trend$week_start <- as.Date(trend$week_start)
   legend_labels <- c(
@@ -390,13 +378,11 @@ episodic_ui_rt_chart <- function(rt, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #'   postcode boundaries).
 #' @keywords internal
 #' @noRd
-episodic_ui_geo_map_chart <- function(
-  rows,
-  pad_share = 0.45,
-  min_pad_share = 0.02,
-  max_labels = 30L,
-  crop = TRUE
-) {
+episodic_ui_geo_map_chart <- function(rows,
+                                      pad_share = 0.45,
+                                      min_pad_share = 0.02,
+                                      max_labels = 30L,
+                                      crop = TRUE) {
   if (nrow(rows) == 0) {
     return(NULL)
   }
@@ -575,13 +561,11 @@ episodic_geo_aspect_ratio <- function(geo, frame) {
 #' @return An integer height in px.
 #' @keywords internal
 #' @noRd
-episodic_ui_map_render_height <- function(
-  map_chart,
-  width = 640,
-  default = 430,
-  min_height = 260,
-  max_height = 600
-) {
+episodic_ui_map_render_height <- function(map_chart,
+                                          width = 640,
+                                          default = 430,
+                                          min_height = 260,
+                                          max_height = 600) {
   ratio <- attr(map_chart, "episodic_aspect_ratio")
   height <- if (is.null(ratio) || !is.finite(ratio) || ratio <= 0) {
     default
@@ -600,12 +584,10 @@ episodic_ui_map_render_height <- function(
 #'   [sf::st_crop()].
 #' @keywords internal
 #' @noRd
-episodic_geo_frame <- function(
-  geo,
-  matched,
-  pad_share = 0.45,
-  min_pad_share = 0.02
-) {
+episodic_geo_frame <- function(geo,
+                               matched,
+                               pad_share = 0.45,
+                               min_pad_share = 0.02) {
   bb <- sf::st_bbox(matched)
   full <- sf::st_bbox(geo)
 
@@ -665,10 +647,8 @@ episodic_geo_labels <- function(matched, max_labels = 30L) {
 #' @param series A data frame with `week_start`, `n_tests`, `positivity`.
 #' @keywords internal
 #' @noRd
-episodic_ui_denominator_chart <- function(
-  series,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_denominator_chart <- function(series,
+                                          lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
   max_tests <- max(series$n_tests, 1)
   scale_factor <- max_tests
@@ -741,11 +721,9 @@ episodic_ui_denominator_chart <- function(
 #' @return A [ggplot2::ggplot] object.
 #' @keywords internal
 #' @noRd
-episodic_ui_pathogen_curve_chart <- function(
-  weekly,
-  thresholds = NULL,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_pathogen_curve_chart <- function(weekly,
+                                             thresholds = NULL,
+                                             lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
   weekly$week_start <- as.Date(weekly$week_start)
   weekly$alpha <- ifelse(weekly$incomplete %in% TRUE, 0.45, 1)
@@ -790,10 +768,8 @@ episodic_ui_pathogen_curve_chart <- function(
 #' @return A data frame with `key`, `value`, `label`, `colour`, or `NULL`.
 #' @keywords internal
 #' @noRd
-episodic_mem_threshold_lines <- function(
-  thresholds,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_mem_threshold_lines <- function(thresholds,
+                                         lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (is.null(thresholds)) {
     return(NULL)
   }
@@ -839,10 +815,8 @@ episodic_mem_threshold_lines <- function(
 #' @return A [ggplot2::ggplot] object.
 #' @keywords internal
 #' @noRd
-episodic_ui_pathogen_overlay_chart <- function(
-  overlay,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_pathogen_overlay_chart <- function(overlay,
+                                               lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
   rows <- overlay$rows
   groups <- sort(unique(rows$group))

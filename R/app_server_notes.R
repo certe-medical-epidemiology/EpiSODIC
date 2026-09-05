@@ -37,14 +37,12 @@
 #' @return Invisible `NULL`; called for its side effects.
 #' @keywords internal
 #' @noRd
-episodic_app_server_notes <- function(
-  input,
-  output,
-  session,
-  con,
-  current_user,
-  selected_cluster_id
-) {
+episodic_app_server_notes <- function(input,
+                                      output,
+                                      session,
+                                      con,
+                                      current_user,
+                                      selected_cluster_id) {
   shiny::observeEvent(input$note_save_submit, {
     user <- episodic_auth_refresh_user(con, current_user())
     shiny::req(!is.null(user))

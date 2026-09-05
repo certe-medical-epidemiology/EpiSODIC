@@ -56,12 +56,10 @@
 #' implemented by the `mem` package and called directly here).
 #' @keywords internal
 #' @noRd
-episodic_detect_mem <- function(
-  cases_for_stream,
-  stream_id,
-  run_date = Sys.Date(),
-  config = episodic_config_resolve()
-) {
+episodic_detect_mem <- function(cases_for_stream,
+                                stream_id,
+                                run_date = Sys.Date(),
+                                config = episodic_config_resolve()) {
   empty <- episodic_detection_record(
     integer(0),
     character(0),
@@ -146,11 +144,9 @@ episodic_detect_mem <- function(
 #'   meaningful; the counts and thresholds are `NA`.
 #' @keywords internal
 #' @noRd
-episodic_mem_status <- function(
-  cases,
-  run_date = Sys.Date(),
-  config = episodic_config_resolve()
-) {
+episodic_mem_status <- function(cases,
+                                run_date = Sys.Date(),
+                                config = episodic_config_resolve()) {
   min_seasons <- as.integer(config$mem$min_seasons %||% 2L)
   evaluated <- episodic_mem_evaluation_week(run_date)
 
@@ -432,11 +428,9 @@ episodic_season_shift <- function(season, n = 1L) {
 #'   when `mem` is unavailable or too little earlier history exists.
 #' @keywords internal
 #' @noRd
-episodic_mem_thresholds_for_season <- function(
-  cases,
-  season,
-  config = episodic_config_resolve()
-) {
+episodic_mem_thresholds_for_season <- function(cases,
+                                               season,
+                                               config = episodic_config_resolve()) {
   min_seasons <- as.integer(config$mem$min_seasons %||% 2L)
   if (!requireNamespace("mem", quietly = TRUE)) {
     return(NULL)

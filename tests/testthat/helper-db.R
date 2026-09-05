@@ -67,12 +67,10 @@ episodic_test_r_source_dir <- function() {
 # `seen_by_lag` is a named list mapping lag (days after `sample_date`, as a
 # character) to the cumulative number of cases visible at that lag. Cases
 # are created so those cumulative totals come out exactly.
-episodic_test_seed_completion <- function(
-  con,
-  stream_id,
-  sample_date,
-  seen_by_lag
-) {
+episodic_test_seed_completion <- function(con,
+                                          stream_id,
+                                          sample_date,
+                                          seen_by_lag) {
   # The cases have to satisfy the stream's own membership rule, or
   # episodic_db_cases_for_stream_id() will not see them and the curve
   # comes back empty.
@@ -144,15 +142,13 @@ episodic_test_config <- function() {
 # A test that needs to state it outright - because it hands the same value
 # to a detector as well, or wants a combination a run would not produce -
 # passes it, and gets one UPDATE for it.
-episodic_test_institution <- function(
-  con,
-  key,
-  display_name = "Test Hospital",
-  institution_type = "hospital",
-  care_line = "second",
-  municipality = NA_character_,
-  is_monitored = NULL
-) {
+episodic_test_institution <- function(con,
+                                      key,
+                                      display_name = "Test Hospital",
+                                      institution_type = "hospital",
+                                      care_line = "second",
+                                      municipality = NA_character_,
+                                      is_monitored = NULL) {
   ids <- episodic_institutions_resolve(
     con,
     data.frame(

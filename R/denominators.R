@@ -494,11 +494,9 @@ episodic_check_denominators_advice <- function(denominators) {
 #' )
 #' head(denom)
 #' @export
-episodic_synthetic_denominators <- function(
-  start_date = end_date - 5 * 365,
-  end_date = Sys.Date(),
-  seed = 1
-) {
+episodic_synthetic_denominators <- function(start_date = end_date - 5 * 365,
+                                            end_date = Sys.Date(),
+                                            seed = 1) {
   set.seed(seed)
   week_starts <- seq(start_date, end_date, by = "week")
   n <- length(week_starts)

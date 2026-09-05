@@ -243,15 +243,13 @@ episodic_app_settings_build_notifications <- function(input, existing) {
 #' @return Invisible `NULL`; called for its side effects.
 #' @keywords internal
 #' @noRd
-episodic_app_server_settings <- function(
-  input,
-  output,
-  session,
-  con,
-  db_path,
-  lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  current_user
-) {
+episodic_app_server_settings <- function(input,
+                                         output,
+                                         session,
+                                         con,
+                                         db_path,
+                                         lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                         current_user) {
   settings_message <- shiny::reactiveVal(NULL)
   settings_version <- shiny::reactiveVal(0)
   settings_touch <- function() settings_version(settings_version() + 1)

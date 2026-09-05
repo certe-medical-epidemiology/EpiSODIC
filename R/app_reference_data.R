@@ -92,10 +92,8 @@ episodic_reference_row <- function(variable, status, detail, path = NA) {
 #' @return A list of rows from `episodic_reference_row()`.
 #' @keywords internal
 #' @noRd
-episodic_app_reference_data <- function(
-  con = NULL,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_app_reference_data <- function(con = NULL,
+                                        lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   tr <- function(key, ...) episodic_tr(key, ..., lang = lang)
   env <- function(name) {
     value <- Sys.getenv(name, unset = NA)
@@ -156,10 +154,8 @@ episodic_app_reference_data <- function(
 #' outside to the mapping never having been read at all.
 #' @keywords internal
 #' @noRd
-episodic_app_reference_pc_province <- function(
-  con = NULL,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_app_reference_pc_province <- function(con = NULL,
+                                               lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   tr <- function(key, ...) episodic_tr(key, ..., lang = lang)
   path <- Sys.getenv("EPISODIC_PC_PROVINCE_MAP", unset = NA)
   problem <- episodic_pc_province_map_problem(path)
@@ -294,9 +290,7 @@ episodic_app_reference_geo <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' The optional region-outline overlay's own row
 #' @keywords internal
 #' @noRd
-episodic_app_reference_geo_overlay <- function(
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_app_reference_geo_overlay <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   tr <- function(key, ...) episodic_tr(key, ..., lang = lang)
   path <- Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)
   if (is.na(path) || !nzchar(path)) {
@@ -345,11 +339,9 @@ episodic_app_reference_geo_overlay <- function(
 #' @return A `shiny::tags` element.
 #' @keywords internal
 #' @noRd
-episodic_ui_info_reference_panel <- function(
-  con = NULL,
-  current_user = NULL,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_info_reference_panel <- function(con = NULL,
+                                             current_user = NULL,
+                                             lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   rows <- episodic_app_reference_data(con, lang = lang)
   episodic_ui_panel(
     episodic_tr("info.reference.title", lang = lang),

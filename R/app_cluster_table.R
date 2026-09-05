@@ -202,12 +202,10 @@ episodic_ui_cluster_col <- function(label, render) {
 #' @return A `shiny::tags$tr`.
 #' @keywords internal
 #' @noRd
-episodic_ui_cluster_row <- function(
-  cluster_id,
-  ...,
-  unlinked_reason = NA_character_,
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_cluster_row <- function(cluster_id,
+                                    ...,
+                                    unlinked_reason = NA_character_,
+                                    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   ref <- episodic_tr("dossier.cluster_ref", id = cluster_id, lang = lang)
   unlinked <- length(unlinked_reason) == 1 &&
     !is.na(unlinked_reason) &&
@@ -263,12 +261,10 @@ episodic_ui_cluster_row <- function(
 #' @return A `shiny::tags$table`.
 #' @keywords internal
 #' @noRd
-episodic_ui_cluster_table <- function(
-  clusters,
-  context = list(),
-  outcome = list(),
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_cluster_table <- function(clusters,
+                                      context = list(),
+                                      outcome = list(),
+                                      lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   # A cluster table that quietly rendered a blank column would be a table
   # an epidemiologist reads as "no cases" or "no priority" rather than as
   # "this screen forgot to fetch it", so a missing column stops here.
@@ -412,9 +408,7 @@ episodic_ui_cluster_table <- function(
 #' recompute it.
 #' @keywords internal
 #' @noRd
-episodic_ui_cluster_col_pathogen <- function(
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_cluster_col_pathogen <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   episodic_ui_cluster_col(
     episodic_tr("column.pathogen", lang = lang),
     function(row) shiny::HTML(episodic_ui_italicise_taxon(row$pathogen))
@@ -423,9 +417,7 @@ episodic_ui_cluster_col_pathogen <- function(
 
 #' @keywords internal
 #' @noRd
-episodic_ui_cluster_col_level <- function(
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_cluster_col_level <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   episodic_ui_cluster_col(
     episodic_tr("column.level", lang = lang),
     function(row) row$level_label
@@ -434,9 +426,7 @@ episodic_ui_cluster_col_level <- function(
 
 #' @keywords internal
 #' @noRd
-episodic_ui_cluster_col_place <- function(
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_cluster_col_place <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   episodic_ui_cluster_col(
     episodic_tr("column.place", lang = lang),
     function(row) row$place
@@ -445,9 +435,7 @@ episodic_ui_cluster_col_place <- function(
 
 #' @keywords internal
 #' @noRd
-episodic_ui_cluster_col_closed_at <- function(
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_cluster_col_closed_at <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   episodic_ui_cluster_col(
     episodic_tr("column.closed_at", lang = lang),
     function(row) {
@@ -462,9 +450,7 @@ episodic_ui_cluster_col_closed_at <- function(
 
 #' @keywords internal
 #' @noRd
-episodic_ui_cluster_col_verdict <- function(
-  lang = Sys.getenv("EPISODIC_LANGUAGE")
-) {
+episodic_ui_cluster_col_verdict <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   episodic_ui_cluster_col(
     episodic_tr("column.verdict", lang = lang),
     function(row) {
