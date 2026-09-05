@@ -12,13 +12,6 @@ The dashboard and its outbreak reports are available in English, (Modern
 Standard) Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and
 Spanish.
 
-![A cluster dossier: case stats, status trajectory, an automatically
-generated plain-language interpretation, the epidemic curve, and the
-classification panel](../reference/figures/main_screen.png)  
-*A cluster dossier - case stats, status trajectory, an automatically
-generated interpretation of the evidence, the epidemic curve, and the
-classification panel, alongside the rail of open clusters.*
-
 ## No dependency on any one laboratory system
 
 EpiSODIC never queries a laboratory information system, data warehouse,
@@ -75,6 +68,10 @@ the evidence, the epidemic curve, similar past clusters and their
 verdicts as precedent, and the classification panel where an
 epidemiologist records their assessment.
 
+![A cluster dossier: case stats, status trajectory, an automatically
+generated plain-language interpretation, the epidemic curve, and the
+classification panel](../reference/figures/main_screen.png)
+
 ### The Pathogen screen: one pathogen over a period
 
 Pick a pathogen and a period - a surveillance season (ISO week 40 to
@@ -98,11 +95,7 @@ that period:
 - and the clusters that were raised during the period, with the verdict
   each one received, as the way back to the operational view.
 
-![The Pathogen screen: weekly numbers of cases, reproduction number,
-with geographic and demographic
-distribution](../reference/figures/pathogen_screen.png)  
-*The Pathogen screen - weekly numbers of cases, reproduction number,
-with geographic and demographic distribution.*
+![The Pathogen screen](../reference/figures/pathogen_screen.png)
 
 ## Beyond the two altitudes
 
@@ -119,6 +112,8 @@ assessed, so tuning `EPISODIC_CONFIG` against your own signal volume is
 an evidence-based exercise rather than a guess, once your board has
 classified enough clusters to have a baseline.
 
+![The Performance screen](../reference/figures/performance_screen.png)
+
 ### The Archive screen: last winter’s precedent
 
 Every closed cluster, searchable by pathogen and place, sorted by
@@ -127,8 +122,7 @@ reasoned exactly the way an open one is, since last winter’s assessment
 is often the best prior evidence for judging this winter’s cluster.
 
 ![The Archive screen: previously detected
-clusters](../reference/figures/archive_screen.png)  
-*The Archive screen - previously detected clusters.*
+clusters](../reference/figures/archive_screen.png)
 
 ### Streams and Activity: how the machinery is behaving
 
@@ -136,16 +130,32 @@ clusters](../reference/figures/archive_screen.png)
 (pathogen x level x institution/area/ward/region) alongside the
 detection configuration resolved for it at the latest run - the place to
 look when “why didn’t this fire” needs a concrete answer rather than a
-guess. **Activity** is the audit log: every assessment, closure, mute,
-sign-in, and scheduled run, with a system action visually distinct from
-a person’s. Between the two, nothing the system did (or did not do) is
+guess.
+
+![The Streams screen](../reference/figures/streams_screen.png)
+
+**Activity** is the audit log: every assessment, closure, mute, sign-in,
+and scheduled run, with a system action visually distinct from a
+person’s. Between the two, nothing the system did (or did not do) is
 ever only inferable from its effects.
+
+![The Activity screen](../reference/figures/activity_screen.png)
 
 ### The Info screen
 
 The running instance’s own version, licence, and configuration, read
 live from the package itself - useful when reporting an issue, or simply
 confirming which build is deployed.
+
+![The Info screen](../reference/figures/info_screen.png)
+
+### The Settings screen
+
+The configurations set for EpiSODIC, including account management, the
+various notifications options, and all specific detection algorithm
+settings.
+
+![The Settings screen](../reference/figures/settings_screen.png)
 
 ## Where to go next
 
