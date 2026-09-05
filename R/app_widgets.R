@@ -159,10 +159,11 @@ episodic_ui_picker <- function(input_id, options, selected = NULL) {
 #' @keywords internal
 #' @noRd
 episodic_ui_multi_picker <- function(
-    input_id,
-    options,
-    selected = character(0),
-    all_label = "All") {
+  input_id,
+  options,
+  selected = character(0),
+  all_label = "All"
+) {
   pal <- episodic_palette()
   active_style <- sprintf(
     "background:%s;border-color:%s;color:#fff;",
@@ -246,10 +247,11 @@ episodic_ui_chip <- function(text, colour, filled = FALSE) {
 #' @keywords internal
 #' @noRd
 episodic_ui_chip_link <- function(
-    text,
-    colour,
-    cluster_id,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  text,
+  colour,
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   open_js <- sprintf("episodicOpenCluster(%d);", as.integer(cluster_id))
   shiny::tags$span(
     class = "episodic-chip episodic-chip-outline episodic-chip-link",
@@ -534,9 +536,10 @@ episodic_verdict_outbreak_levels <- c("pathogen_ward", "pathogen_institution")
 #' @keywords internal
 #' @noRd
 episodic_verdict_label <- function(
-    verdict,
-    level = NULL,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  verdict,
+  level = NULL,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   if (is.na(verdict)) {
     return(NA_character_)
   }

@@ -75,15 +75,16 @@
 #' }
 #' @export
 episodic_report_render <- function(
-    con,
-    cluster_id,
-    output_dir,
-    user_id = NA,
-    include_linelist = TRUE,
-    small_count_threshold = NULL,
-    episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
-    lang = Sys.getenv("EPISODIC_LANGUAGE"),
-    qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)) {
+  con,
+  cluster_id,
+  output_dir,
+  user_id = NA,
+  include_linelist = TRUE,
+  small_count_threshold = NULL,
+  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)
+) {
   if (!episodic_quarto_available()) {
     stop(
       "Rendering a report needs both the 'quarto' R package and the Quarto ",
@@ -248,7 +249,8 @@ episodic_quarto_available <- function() {
 #' @keywords internal
 #' @noRd
 episodic_report_qmd_path <- function(
-    qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)) {
+  qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)
+) {
   if (!is.na(qmd_path) && nzchar(qmd_path) && file.exists(qmd_path)) {
     return(qmd_path)
   }

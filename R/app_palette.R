@@ -80,7 +80,8 @@ episodic_palette_cache <- new.env(parent = emptyenv())
 #' @keywords internal
 #' @noRd
 episodic_palette_config_resolve <- function(
-    palette_config_path = Sys.getenv("EPISODIC_STYLE", unset = NA)) {
+  palette_config_path = Sys.getenv("EPISODIC_STYLE", unset = NA)
+) {
   # `[[` on an environment requires a non-empty name - "" (from an unset
   # env var) errors with "zero-length variable name" - hence the sentinel
   # rather than caching under palette_config_path itself.

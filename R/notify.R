@@ -220,11 +220,12 @@ episodic_notify_location <- function(row, lang = episodic_lang()) {
 #' @keywords internal
 #' @noRd
 episodic_notify_build_new_clusters <- function(
-    details,
-    n_new,
-    run_date,
-    dashboard_url = NULL,
-    lang = episodic_lang()) {
+  details,
+  n_new,
+  run_date,
+  dashboard_url = NULL,
+  lang = episodic_lang()
+) {
   count_phrase <- episodic_count_phrase(
     n_new,
     episodic_tr("notif.new_cluster.singular", lang = lang),
@@ -468,10 +469,11 @@ episodic_notify_build_new_clusters <- function(
 #' @keywords internal
 #' @noRd
 episodic_notify_build_failure <- function(
-    error_text,
-    run_date,
-    host,
-    lang = episodic_lang()) {
+  error_text,
+  run_date,
+  host,
+  lang = episodic_lang()
+) {
   title <- episodic_tr("notif.title_failed", lang = lang)
   label_date <- episodic_tr("notif.label.date", lang = lang)
   label_host <- episodic_tr("notif.label.host", lang = lang)
@@ -561,10 +563,11 @@ episodic_html_escape <- function(x) {
 #' @keywords internal
 #' @noRd
 episodic_notify_html_wrap <- function(
-    title,
-    body_html,
-    dashboard_url,
-    lang = episodic_lang()) {
+  title,
+  body_html,
+  dashboard_url,
+  lang = episodic_lang()
+) {
   footer <- ""
   if (!is.null(dashboard_url) && nzchar(dashboard_url)) {
     footer <- paste0(
@@ -590,10 +593,11 @@ episodic_notify_html_wrap <- function(
 #' @keywords internal
 #' @noRd
 episodic_notify_teams_card <- function(
-    title,
-    facts,
-    dashboard_url,
-    lang = episodic_lang()) {
+  title,
+  facts,
+  dashboard_url,
+  lang = episodic_lang()
+) {
   body <- list(
     list(
       type = "TextBlock",
@@ -973,9 +977,10 @@ episodic_notify_test <- function(episodic_config_path = Sys.getenv("EPISODIC_CON
 #' }
 #' @export
 episodic_setup_microsoft365 <- function(
-    tenant_id,
-    client_id = NULL,
-    scopes = c("Mail.Send", "User.Read", "openid", "offline_access")) {
+  tenant_id,
+  client_id = NULL,
+  scopes = c("Mail.Send", "User.Read", "openid", "offline_access")
+) {
   rlang::check_installed("Microsoft365R")
   rlang::check_installed("AzureGraph")
   rlang::check_installed("AzureAuth")

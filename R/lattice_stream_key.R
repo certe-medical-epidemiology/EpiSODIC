@@ -40,12 +40,13 @@
 #' @keywords internal
 #' @noRd
 episodic_stream_key <- function(
-    level,
-    pathogen,
-    care_line = NA,
-    region_code = NA,
-    institution_id = NA,
-    ward = NA) {
+  level,
+  pathogen,
+  care_line = NA,
+  region_code = NA,
+  institution_id = NA,
+  ward = NA
+) {
   stopifnot(length(level) == 1, length(pathogen) == 1)
   fields <- vapply(
     list(level, pathogen, care_line, region_code, institution_id, ward),

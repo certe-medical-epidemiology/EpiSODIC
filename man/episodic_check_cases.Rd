@@ -24,7 +24,7 @@ A summary of what was read (rows, columns, date range, counts) is
 attached as the \code{"summary"} attribute and shown when printing.
 }
 \description{
-Runs every check the \link{episodic_case_data} contract implies over your
+Runs every check the \link{episodic_case_data} requirements imply over your
 extract and reports \emph{everything} it finds in one go - what is wrong,
 how many rows are affected, which rows those are, what the offending
 values look like, and what to do about each one. Nothing is written,
@@ -36,6 +36,10 @@ make when a run did not produce what you expected.
 Use \code{episodic_check_cases()} plainly when you want to \emph{look}, or
 \code{episodic_check_cases(..., stop_on_problem = TRUE)} when you want a script
 to stop. The latter is what \code{\link[=episodic_run_cron]{episodic_run_cron()}} itself calls before a run.
+
+None of this applies to a cluster added with \code{\link[=episodic_add_manual_cluster]{episodic_add_manual_cluster()}}:
+it is never connected to your own case data, so it never goes through these
+requirements (or any other check here) at all.
 }
 \section{What it reports}{
 

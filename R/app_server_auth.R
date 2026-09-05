@@ -35,12 +35,13 @@
 #' @keywords internal
 #' @noRd
 episodic_app_server_auth <- function(
-    input,
-    output,
-    session,
-    con,
-    lang = Sys.getenv("EPISODIC_LANGUAGE"),
-    require_login = FALSE) {
+  input,
+  output,
+  session,
+  con,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  require_login = FALSE
+) {
   current_user <- shiny::reactiveVal(NULL)
   prompt <- function(error = FALSE) {
     shiny::showModal(episodic_ui_login_modal(

@@ -50,7 +50,8 @@ NULL
 #' episodic_geo_overlay_resolve(path = NA)
 #' @export
 episodic_geo_overlay_resolve <- function(
-    path = Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)) {
+  path = Sys.getenv("EPISODIC_GEO_DATA_OVERLAY", unset = NA)
+) {
   if (!requireNamespace("sf", quietly = TRUE)) {
     return(NULL)
   }
@@ -76,7 +77,8 @@ episodic_geo_overlay_resolve <- function(
 #' geo <- episodic_geo_source_resolve(path = NA)
 #' @export
 episodic_geo_source_resolve <- function(
-    path = Sys.getenv("EPISODIC_GEO_DATA", unset = NA)) {
+  path = Sys.getenv("EPISODIC_GEO_DATA", unset = NA)
+) {
   if (!requireNamespace("sf", quietly = TRUE)) {
     return(NULL)
   }

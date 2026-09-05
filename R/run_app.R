@@ -47,9 +47,10 @@
 #' }
 #' @export
 episodic_run_app <- function(
-    db_path = Sys.getenv("EPISODIC_DB", unset = NA),
-    lang = Sys.getenv("EPISODIC_LANGUAGE"),
-    ...) {
+  db_path = Sys.getenv("EPISODIC_DB", unset = NA),
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  ...
+) {
   rlang::check_installed(c("shiny", "bslib"))
   if (is.na(db_path) || !nzchar(db_path)) {
     stop(

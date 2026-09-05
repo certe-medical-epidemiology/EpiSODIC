@@ -99,21 +99,22 @@
 #' @keywords internal
 #' @noRd
 episodic_reconcile_stream <- function(
-    con,
-    stream_id,
-    detections,
-    case_free_days,
-    run_id,
-    close_after_runs,
-    priority_score_fn,
-    has_assessment_fn,
-    verdict_fn,
-    cooldown_days = NA,
-    cooldown_reopen_ratio = NA,
-    min_excess_over_upperbound = NA,
-    min_ratio_observed_expected = NA,
-    stale_open_days = NA,
-    today = Sys.Date()) {
+  con,
+  stream_id,
+  detections,
+  case_free_days,
+  run_id,
+  close_after_runs,
+  priority_score_fn,
+  has_assessment_fn,
+  verdict_fn,
+  cooldown_days = NA,
+  cooldown_reopen_ratio = NA,
+  min_excess_over_upperbound = NA,
+  min_ratio_observed_expected = NA,
+  stale_open_days = NA,
+  today = Sys.Date()
+) {
   n_new <- 0L
   n_updated <- 0L
   n_merged <- 0L
@@ -587,9 +588,10 @@ episodic_reconcile_merge_detections <- function(detections) {
 #' @keywords internal
 #' @noRd
 episodic_reconcile_clears_floor <- function(
-    metrics,
-    min_excess_over_upperbound = NA,
-    min_ratio_observed_expected = NA) {
+  metrics,
+  min_excess_over_upperbound = NA,
+  min_ratio_observed_expected = NA
+) {
   below <- function(value, threshold) {
     !is.na(threshold) && !is.na(value) && value < threshold
   }
@@ -635,10 +637,11 @@ episodic_reconcile_candidate_metrics <- function(candidate) {
 #' @keywords internal
 #' @noRd
 episodic_reconcile_link_detections <- function(
-    con,
-    detections,
-    candidate,
-    cluster_id) {
+  con,
+  detections,
+  candidate,
+  cluster_id
+) {
   in_candidate <- as.Date(detections$first_day) <= as.Date(candidate$last_day) &
     as.Date(detections$last_day) >= as.Date(candidate$first_day)
   ids <- detections$detection_id[in_candidate]
@@ -658,9 +661,10 @@ episodic_reconcile_link_detections <- function(
 #' @keywords internal
 #' @noRd
 episodic_reconcile_find_matches <- function(
-    open_clusters,
-    candidate,
-    case_free_days) {
+  open_clusters,
+  candidate,
+  case_free_days
+) {
   if (nrow(open_clusters) == 0) {
     return(integer(0))
   }
@@ -711,12 +715,13 @@ episodic_reconcile_find_matches <- function(
 #' @keywords internal
 #' @noRd
 episodic_reconcile_find_cooldown_match <- function(
-    open_clusters,
-    candidate,
-    case_free_days,
-    cooldown_days,
-    cooldown_reopen_ratio,
-    verdict_fn) {
+  open_clusters,
+  candidate,
+  case_free_days,
+  cooldown_days,
+  cooldown_reopen_ratio,
+  verdict_fn
+) {
   if (nrow(open_clusters) == 0) {
     return(NULL)
   }
@@ -771,11 +776,12 @@ episodic_reconcile_find_cooldown_match <- function(
 #' @keywords internal
 #' @noRd
 episodic_reconcile_link_cases <- function(
-    con,
-    stream_id,
-    cluster_id,
-    first_day,
-    last_day) {
+  con,
+  stream_id,
+  cluster_id,
+  first_day,
+  last_day
+) {
   # Membership comes from episodic_db_cases_for_stream_id(), which is the
   # one place the rule lives. It used to be spelled out again here, and
   # spelling it out twice is how episodic_reconcile_case_count() came to
@@ -814,12 +820,13 @@ episodic_reconcile_link_cases <- function(
 #' @keywords internal
 #' @noRd
 episodic_reconcile_case_count <- function(
-    con,
-    stream_id,
-    first_day,
-    last_day,
-    existing,
-    candidate) {
+  con,
+  stream_id,
+  first_day,
+  last_day,
+  existing,
+  candidate
+) {
   cases <- episodic_db_cases_for_stream_id(
     con,
     stream_id,

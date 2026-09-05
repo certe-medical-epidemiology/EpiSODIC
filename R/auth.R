@@ -75,11 +75,12 @@ episodic_auth_password_hash <- function(con, user) {
 #' @keywords internal
 #' @noRd
 episodic_auth_latest_value <- function(
-    con,
-    user,
-    event_type,
-    new_column,
-    original_column) {
+  con,
+  user,
+  event_type,
+  new_column,
+  original_column
+) {
   events <- episodic_db_app_user_events(con, user$user_id)
   matching <- events[events$event_type == event_type, ]
   if (nrow(matching) == 0) {
@@ -321,13 +322,14 @@ episodic_auth_change_password <- function(con, user_id, new_password) {
 #' file.remove(db_path)
 #' @export
 episodic_add_user <- function(
-    db_path = Sys.getenv("EPISODIC_DB", unset = NA),
-    username,
-    full_name,
-    email,
-    password,
-    role = "epidemiologist",
-    is_admin = FALSE) {
+  db_path = Sys.getenv("EPISODIC_DB", unset = NA),
+  username,
+  full_name,
+  email,
+  password,
+  role = "epidemiologist",
+  is_admin = FALSE
+) {
   rlang::check_installed("sodium")
   role <- match.arg(role, c("epidemiologist", "viewer"))
   con <- episodic_db_open(db_path)

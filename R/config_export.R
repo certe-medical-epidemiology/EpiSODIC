@@ -51,10 +51,11 @@
 #' }
 #' @export
 episodic_config_export <- function(
-    db_path = Sys.getenv("EPISODIC_DB", unset = NA),
-    episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
-    output_dir = NULL,
-    include_secrets = FALSE) {
+  db_path = Sys.getenv("EPISODIC_DB", unset = NA),
+  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
+  output_dir = NULL,
+  include_secrets = FALSE
+) {
   rlang::check_installed("zip")
 
   con <- NULL

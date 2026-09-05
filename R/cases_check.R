@@ -814,14 +814,15 @@ episodic_check_institution_advice <- function(cases) {
 #' @keywords internal
 #' @noRd
 episodic_check_finding <- function(
-    severity,
-    issue,
-    column = NA_character_,
-    n_rows = NA_integer_,
-    rows = integer(0),
-    values = character(0),
-    message,
-    fix = NA_character_) {
+  severity,
+  issue,
+  column = NA_character_,
+  n_rows = NA_integer_,
+  rows = integer(0),
+  values = character(0),
+  message,
+  fix = NA_character_
+) {
   data.frame(
     severity = severity,
     issue = issue,
@@ -844,10 +845,11 @@ episodic_check_finding <- function(
 #' @keywords internal
 #' @noRd
 episodic_check_report <- function(
-    found,
-    info = list(),
-    title = "EpiSODIC case data check",
-    what = "Case data") {
+  found,
+  info = list(),
+  title = "EpiSODIC case data check",
+  what = "Case data"
+) {
   problems <- if (length(found) == 0) {
     data.frame(
       severity = character(0),

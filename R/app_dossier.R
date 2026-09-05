@@ -35,10 +35,11 @@
 #' @keywords internal
 #' @noRd
 episodic_ui_dossier <- function(
-    con,
-    cluster_id,
-    lang = Sys.getenv("EPISODIC_LANGUAGE"),
-    current_user = NULL) {
+  con,
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  current_user = NULL
+) {
   obj <- episodic_cluster_object(con, cluster_id, lang = lang)
   state <- episodic_app_derive_state_for_cluster(con, cluster_id)
   timeline <- episodic_app_assessment_timeline(
@@ -99,7 +100,8 @@ episodic_ui_dossier <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_linelist_locked_panel <- function(
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   episodic_ui_panel(
     episodic_tr("linelist.locked_title", lang = lang),
     shiny::tags$div(
@@ -113,10 +115,11 @@ episodic_ui_linelist_locked_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_dossier_header <- function(
-    obj,
-    state,
-    lang = Sys.getenv("EPISODIC_LANGUAGE"),
-    linked = NULL) {
+  obj,
+  state,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  linked = NULL
+) {
   pal <- episodic_palette()
   shiny::tagList(
     shiny::tags$div(
@@ -344,9 +347,10 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @keywords internal
 #' @noRd
 episodic_ui_trajectory <- function(
-    obj,
-    timeline,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  obj,
+  timeline,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   verdict_events <- timeline[
     timeline$kind == "assessment" & !is.na(timeline$verdict), ,
     drop = FALSE
@@ -390,8 +394,9 @@ episodic_ui_trajectory <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_interpretation_panel <- function(
-    obj,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  obj,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   generated <- episodic_interpretation_generate(obj, lang = lang)
   paragraphs <- generated$text[!startsWith(generated$fired, "recommendation.")]
   recommendation <- generated$text[startsWith(
@@ -437,10 +442,11 @@ episodic_ui_interpretation_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_notes_panel <- function(
-    con,
-    cluster_id,
-    current_user,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  con,
+  cluster_id,
+  current_user,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   note <- episodic_db_cluster_note_current(con, cluster_id)
   note_text <- if (nrow(note) > 0) note$note_text[1] else ""
 
@@ -499,10 +505,11 @@ episodic_ui_notes_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_epicurve_panel <- function(
-    con,
-    cluster_id,
-    obj,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  con,
+  cluster_id,
+  obj,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   curve <- episodic_app_epi_curve(con, cluster_id)
   incomplete_days <- obj$completeness$incomplete_days %||% 0
   days_phrase <- episodic_count_phrase(
@@ -529,9 +536,10 @@ episodic_ui_epicurve_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_trend_panel <- function(
-    con,
-    obj,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  con,
+  obj,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   trend <- episodic_app_trend(con, obj$stream_id)
   if (nrow(trend) < 4) {
     return(episodic_ui_panel_empty(
@@ -578,9 +586,10 @@ episodic_ui_rt_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @keywords internal
 #' @noRd
 episodic_ui_similar_clusters_panel <- function(
-    con,
-    cluster_id,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  con,
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   similar <- episodic_app_similar_clusters(con, cluster_id, lang = lang)
   if (nrow(similar) == 0) {
     return(episodic_ui_panel_empty(
@@ -608,8 +617,9 @@ episodic_ui_similar_clusters_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_denominator_panel <- function(
-    obj,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  obj,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   if (
     is.null(obj$denominator) ||
       is.null(obj$denominator$series) ||
@@ -634,8 +644,9 @@ episodic_ui_denominator_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_demography_panel <- function(
-    obj,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  obj,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   if (is.null(obj$demography) || is.null(obj$demography$bands)) {
     return(episodic_ui_panel_empty(
       episodic_tr("panel.demography.title", lang = lang),
@@ -765,8 +776,9 @@ episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @keywords internal
 #' @noRd
 episodic_ui_geo_bar_rows <- function(
-    rows,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  rows,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   province <- rows$province %||% rep(NA_character_, nrow(rows))
   named <- !is.na(province) & nzchar(province)
   rows$label[named] <- paste0(
@@ -780,10 +792,11 @@ episodic_ui_geo_bar_rows <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_places_panel <- function(
-    con,
-    cluster_id,
-    obj,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  con,
+  cluster_id,
+  obj,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   cases <- episodic_db_cluster_cases(con, cluster_id)
   is_hospital <- obj$level == "pathogen_ward" ||
     (nrow(cases) > 0 && !all(is.na(cases$ward)))
@@ -825,9 +838,10 @@ episodic_ui_places_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_linked_chips <- function(
-    linked,
-    lang = Sys.getenv("EPISODIC_LANGUAGE"),
-    max_chips = 3L) {
+  linked,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  max_chips = 3L
+) {
   if (is.null(linked) || nrow(linked) == 0) {
     return(NULL)
   }
@@ -879,9 +893,10 @@ episodic_ui_linked_chips <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_related_panel <- function(
-    con,
-    cluster_id,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  con,
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   suppressed <- episodic_db_clusters_suppressed_by(con, cluster_id)
   linked <- episodic_db_clusters_linked_to(con, cluster_id)
   if (nrow(suppressed) == 0 && nrow(linked) == 0) {
@@ -971,7 +986,8 @@ episodic_ui_related_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_resistance_panel <- function(
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   # Susceptibility data is not part of the case data requirements, so this
   # panel is always a placeholder.
   episodic_ui_panel_empty(
@@ -983,10 +999,11 @@ episodic_ui_resistance_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_linelist_panel <- function(
-    con,
-    cluster_id,
-    obj,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  con,
+  cluster_id,
+  obj,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   ll <- episodic_app_linelist(con, cluster_id)
   cols <- c(
     "patient_key",
@@ -1057,10 +1074,11 @@ episodic_ui_linelist_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_report_panel <- function(
-    con,
-    cluster_id,
-    current_user,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  con,
+  cluster_id,
+  current_user,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   reports <- episodic_db_reports_for_cluster(con, cluster_id)
   episodic_ui_panel(
     episodic_tr("panel.report.title", lang = lang),
@@ -1118,9 +1136,10 @@ episodic_ui_report_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_settings_panel <- function(
-    con,
-    cluster_id,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  con,
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   settings <- episodic_app_detection_settings(con, cluster_id)
   # list(), not c(): a shiny::HTML() value (the detectors row) loses its
   # "html" class and gets escaped as literal text if combined with a
@@ -1198,10 +1217,11 @@ episodic_ui_settings_panel <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_assessment_rail <- function(
-    con,
-    cluster_id,
-    lang = Sys.getenv("EPISODIC_LANGUAGE"),
-    current_user = NULL) {
+  con,
+  cluster_id,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  current_user = NULL
+) {
   obj <- episodic_cluster_object(con, cluster_id, lang = lang)
   timeline <- episodic_app_assessment_timeline(
     con,
@@ -1244,8 +1264,9 @@ episodic_ui_assessment_rail <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_timeline_entry <- function(
-    row,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  row,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   shiny::tags$div(
     class = "episodic-timeline-entry",
     shiny::tags$div(
@@ -1274,9 +1295,10 @@ episodic_ui_timeline_entry <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_assessment_form <- function(
-    cluster_id,
-    obj,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  cluster_id,
+  obj,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   pal <- episodic_palette()
   # Ordered mild/terminal to severe - artefact and expected_variation
   # are both terminal (close immediately), the rest escalate.
@@ -1430,8 +1452,9 @@ episodic_ui_assessment_form <- function(
 #' @keywords internal
 #' @noRd
 episodic_ui_streams_screen <- function(
-    screen,
-    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  screen,
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+) {
   streams <- screen$streams
   pager <- if (!is.null(screen$n_pages) && screen$n_pages > 1) {
     shiny::tags$div(
