@@ -56,6 +56,7 @@
 #'   with an explanation of what to fix, rather than opening a dashboard
 #'   with nothing in it. Run [episodic_check_cases()] on your extract
 #'   yourself to see the same findings, plus the advisory ones.
+#' @param ... Arguments passed on to [episodic_run_app()].
 #' @return Invisibly, `db_path`.
 #' @inheritSection episodic_case_data Check your data before you run anything
 #' @seealso [episodic_check_cases()] to see what EpiSODIC makes of your
@@ -85,7 +86,8 @@ episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
                           run_date = episodic_synthetic_week_end(),
                           lang = Sys.getenv("EPISODIC_LANGUAGE"),
                           cases = function() episodic_synthetic_cases(end_date = run_date),
-                          denominators = function() episodic_synthetic_denominators(end_date = run_date)) {
+                          denominators = function() episodic_synthetic_denominators(end_date = run_date),
+                          ...) {
   EPISODIC_CONFIG.old <- Sys.getenv("EPISODIC_CONFIG")
   EPISODIC_DB.old <- Sys.getenv("EPISODIC_DB")
   EPISODIC_GEO_DATA.old <- Sys.getenv("EPISODIC_GEO_DATA")
@@ -131,7 +133,7 @@ episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
   ))
 
   if (isTRUE(launch)) {
-    episodic_run_app(db_path = db_path, lang = lang)
+    episodic_run_app(db_path = db_path, lang = lang, ...)
   }
 
   invisible(db_path)

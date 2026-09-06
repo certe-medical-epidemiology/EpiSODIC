@@ -14,7 +14,8 @@ episodic_demo(
   run_date = episodic_synthetic_week_end(),
   lang = Sys.getenv("EPISODIC_LANGUAGE"),
   cases = function() episodic_synthetic_cases(end_date = run_date),
-  denominators = function() episodic_synthetic_denominators(end_date = run_date)
+  denominators = function() episodic_synthetic_denominators(end_date = run_date),
+  ...
 )
 }
 \arguments{
@@ -53,6 +54,8 @@ EpiSODIC work end to end: \code{cases} is checked against the
 with an explanation of what to fix, rather than opening a dashboard
 with nothing in it. Run \code{\link[=episodic_check_cases]{episodic_check_cases()}} on your extract
 yourself to see the same findings, plus the advisory ones.}
+
+\item{...}{Arguments passed on to \code{\link[=episodic_run_app]{episodic_run_app()}}.}
 }
 \value{
 Invisibly, \code{db_path}.

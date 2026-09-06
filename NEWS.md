@@ -1,3 +1,10 @@
+# EpiSODIC 0.13.2
+
+## Changed
+
+- `episodic_demo()` now takes any additional argument that `episodic_run_app()` provides
+
+
 # EpiSODIC 0.13.1
 
 ## Changed
