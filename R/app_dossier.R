@@ -572,6 +572,13 @@ episodic_ui_epicurve_panel <- function(con,
                                        cluster_id,
                                        obj,
                                        lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  graphics_issue <- episodic_graphics_probe()
+  if (!is.null(graphics_issue)) {
+    return(episodic_ui_panel_empty(
+      episodic_tr("panel.epicurve.title", lang = lang),
+      episodic_graphics_error_message(graphics_issue, lang = lang)
+    ))
+  }
   curve <- episodic_app_epi_curve(con, cluster_id)
   incomplete_days <- obj$completeness$incomplete_days %||% 0
   days_phrase <- episodic_count_phrase(
@@ -600,6 +607,13 @@ episodic_ui_epicurve_panel <- function(con,
 episodic_ui_trend_panel <- function(con,
                                     obj,
                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  graphics_issue <- episodic_graphics_probe()
+  if (!is.null(graphics_issue)) {
+    return(episodic_ui_panel_empty(
+      episodic_tr("panel.trend.title", lang = lang),
+      episodic_graphics_error_message(graphics_issue, lang = lang)
+    ))
+  }
   trend <- episodic_app_trend(con, obj$stream_id)
   if (nrow(trend) < 4) {
     return(episodic_ui_panel_empty(
@@ -634,6 +648,13 @@ episodic_ui_rt_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     return(episodic_ui_panel_empty(
       episodic_tr("panel.rt.title", lang = lang),
       msg
+    ))
+  }
+  graphics_issue <- episodic_graphics_probe()
+  if (!is.null(graphics_issue)) {
+    return(episodic_ui_panel_empty(
+      episodic_tr("panel.rt.title", lang = lang),
+      episodic_graphics_error_message(graphics_issue, lang = lang)
     ))
   }
   episodic_ui_panel(
@@ -686,6 +707,13 @@ episodic_ui_denominator_panel <- function(obj,
       episodic_tr("panel.denominator.unavailable", lang = lang)
     ))
   }
+  graphics_issue <- episodic_graphics_probe()
+  if (!is.null(graphics_issue)) {
+    return(episodic_ui_panel_empty(
+      episodic_tr("panel.denominator.title", lang = lang),
+      episodic_graphics_error_message(graphics_issue, lang = lang)
+    ))
+  }
   episodic_ui_panel(
     episodic_tr("panel.denominator.title", lang = lang),
     aside = episodic_tr("panel.denominator.aside", lang = lang),
@@ -734,8 +762,20 @@ episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   context_chart <- if (!is.null(map_chart)) {
     episodic_ui_geo_map_chart(obj$concentration$rows, crop = FALSE)
   }
+  # A broken chart-rendering environment (see episodic_graphics_probe())
+  # cannot draw the map at all - fall back to the bar breakdown exactly as
+  # if no geographic data were available, but say why the map itself is
+  # missing rather than leaving that silent.
+  graphics_issue <- if (!is.null(map_chart)) episodic_graphics_probe()
+  if (!is.null(graphics_issue)) {
+    map_chart <- NULL
+    context_chart <- NULL
+  }
   n_unknown <- obj$concentration$n_unknown_pc %||% 0
   notes <- c(
+    if (!is.null(graphics_issue)) {
+      episodic_graphics_error_message(graphics_issue, lang = lang)
+    },
     if (n_unknown > 0) {
       # Stated rather than silently dropped: the concentration share, and
       # with it the spatial term of the priority score, is computed over

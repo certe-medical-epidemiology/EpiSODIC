@@ -481,6 +481,8 @@
   "panel.rt.note": "Time-varying effective reproduction number (not R0), computed over 7-day sliding windows. Windows within the still-incomplete reporting period are withheld.",
   "panel.rt.unavailable.no_serial_interval": "Rt cannot be computed: this pathogen's configuration is missing a serial interval (si_mean_days/si_sd_days).",
   "panel.rt.unavailable.epiestim_missing": "Rt cannot be computed: the 'EpiEstim' R package is not installed.",
+  "panel.chart.graphics_unavailable": "Chart cannot be rendered: the R package(s) {packages} are installed but incompatible with this R version. Reinstall them for the current R version to restore this chart.",
+  "panel.chart.graphics_unavailable_build": "Chart cannot be rendered: no working PNG graphics device is available on this server (ragg, Cairo, and R's own built-in PNG device all failed to open). This is a build-time configuration issue with the R installation itself, not a package that can be reinstalled - contact whoever manages this server.",
   "panel.rt.unavailable.insufficient_history": "Not enough case history in this cluster yet to compute Rt.",
 
   "panel.similar.title": "Similar clusters",

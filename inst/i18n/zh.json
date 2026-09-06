@@ -479,6 +479,8 @@
   "panel.rt.note": "随时间变化的有效再生数（非基本再生数 R0），基于7天滑动窗口计算。仍处于不完整报告期内的窗口将被略去。",
   "panel.rt.unavailable.no_serial_interval": "无法计算 Rt：该病原体的配置中缺少世代间隔（si_mean_days/si_sd_days）。",
   "panel.rt.unavailable.epiestim_missing": "无法计算 Rt：未安装 R 软件包“EpiEstim”。",
+  "panel.chart.graphics_unavailable": "无法渲染图表：R 软件包 {packages} 已安装，但与当前 R 版本不兼容。请为当前 R 版本重新安装这些软件包以恢复此图表。",
+  "panel.chart.graphics_unavailable_build": "无法渲染图表：此服务器上没有可用的有效 PNG 图形设备（ragg、Cairo 以及 R 自带的内置 PNG 设备均无法打开）。这是 R 安装本身在构建时的配置问题，并非可重新安装的软件包，请联系此服务器的管理员。",
   "panel.rt.unavailable.insufficient_history": "该聚集事件的病例历史数据尚不足以计算 Rt。",
 
   "panel.similar.title": "相似聚集事件",

@@ -479,6 +479,8 @@
   "panel.rt.note": "Tijdsafhankelijk effectief reproductiegetal (niet R0), berekend over 7-daagse voortschrijdende vensters. Vensters binnen de nog onvolledige rapportageperiode zijn weggelaten.",
   "panel.rt.unavailable.no_serial_interval": "Rt kan niet worden berekend: voor deze verwekker ontbreekt een seriële interval in de configuratie (si_mean_days/si_sd_days).",
   "panel.rt.unavailable.epiestim_missing": "Rt kan niet worden berekend: het R-pakket 'EpiEstim' is niet geïnstalleerd.",
+  "panel.chart.graphics_unavailable": "Grafiek kan niet worden weergegeven: het/de R-pakket(ten) {packages} zijn geïnstalleerd, maar niet compatibel met deze R-versie. Installeer ze opnieuw voor de huidige R-versie om deze grafiek te herstellen.",
+  "panel.chart.graphics_unavailable_build": "Grafiek kan niet worden weergegeven: er is geen werkend PNG-grafisch apparaat beschikbaar op deze server (ragg, Cairo en R's eigen ingebouwde PNG-apparaat konden alle niet worden geopend). Dit is een build-tijd configuratieprobleem van de R-installatie zelf, geen pakket dat opnieuw kan worden geïnstalleerd - neem contact op met de beheerder van deze server.",
   "panel.rt.unavailable.insufficient_history": "Nog onvoldoende casushistorie in dit cluster om Rt te berekenen.",
 
   "panel.similar.title": "Vergelijkbare clusters",

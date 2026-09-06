@@ -1,3 +1,11 @@
+# EpiSODIC 0.13.3
+
+## Changed
+
+- Chart panels now name the specific R package(s) at fault instead of showing the raw "Graphics API version mismatch" error when the graphics-rendering stack (e.g. ragg, systemfonts, textshaping) is installed but incompatible with the running R version, in all shipped languages
+- A distinct message covers the rarer case where no PNG graphics device works at all (a build-time R configuration issue), rather than wrongly telling the operator to reinstall a package
+
+
 # EpiSODIC 0.13.2
 
 ## Changed
