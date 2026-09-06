@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,22 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.13.0" id="episodic-0130">EpiSODIC 0.13.0<a class="anchor" aria-label="anchor" href="#episodic-0130"></a></h2>
+<div class="section level3">
+<h3 id="new-0-13-0">New<a class="anchor" aria-label="anchor" href="#new-0-13-0"></a></h3>
+<ul><li>Clusters can now carry a scheduled-report subscription: an epidemiologist sets an every-N-days cadence and a list of recipient email addresses from the Reports panel, for colleagues without an EpiSODIC account (or only a viewer one) who need updates without opening the dashboard</li>
+<li>
+<code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> sends every due scheduled report after each run, as a self-contained HTML attachment through an already-configured, email-capable notification channel (SMTP, sendmail or Microsoft 365); every attempt, sent or failed, is logged</li>
+<li>A schedule sends its first report on the very next cron run, then every N days after the last successful send; it stops automatically, after one final report, once its cluster closes, merges, or is suppressed</li>
+<li>Every outbreak report now shows what changed since the previous version - new cases, and the priority score, ratio and case period deltas - in Quarto callout boxes</li>
+<li>New <code><a href="../articles/scheduled-reports.html">vignette("scheduled-reports")</a></code> documenting the cadence, closure and delivery rules</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-13-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-13-0"></a></h3>
+<ul><li>The dossier’s Reports panel gained a “Scheduled reports” section, gated to the <code>epidemiologist</code> role like every other write action on it</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.12.1" id="episodic-0121">EpiSODIC 0.12.1<a class="anchor" aria-label="anchor" href="#episodic-0121"></a></h2>
 <div class="section level3">

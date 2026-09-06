@@ -51,7 +51,10 @@ made on it, kept as a full, immutable audit trail.
 
 Turns a confirmed cluster into an outbreak report for clinical
 microbiologists and infection prevention practitioners, rendered in the
-language your colleagues read.
+language your colleagues read, with every new version showing what
+changed since the last one. A cluster can also be put on a recurring
+schedule - every N days, to a list of addresses - so colleagues without
+a dashboard account still get their update automatically.
 
 ### It Notifies
 

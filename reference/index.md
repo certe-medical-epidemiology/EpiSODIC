@@ -84,6 +84,8 @@ How to send an outbreak report to clinical colleagues.
 
 - [`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md)
   : Render an Outbreak Report for Clinical Colleagues
+- [`episodic_scheduled_reports`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_scheduled_reports.md)
+  : How scheduled reports work
 
 ## Notifications
 

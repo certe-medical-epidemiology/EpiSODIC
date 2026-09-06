@@ -469,6 +469,9 @@ webhook URL must be an Incoming Webhook, not a Slack API endpoint.
 
 ## See also
 
+- [`vignette("scheduled-reports")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.md)
+  for emailing a recurring outbreak report to colleagues without a
+  dashboard account, through these same channels.
 - [`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)
   for how to stand up an instance and configure `EPISODIC_CONFIG`.
 - [`vignette("environment-variables")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md)

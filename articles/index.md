@@ -15,6 +15,8 @@ instance.
 Set up notifications and other operational knobs.
 
 - [Notifications](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md):
+- [Scheduled
+  reports](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.md):
 
 ### Reference
 

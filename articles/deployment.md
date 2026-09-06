@@ -240,10 +240,26 @@ which case that is used instead - for an organisation that wants its own
 letterhead, section order, or house style. A custom template only needs
 to `readRDS(params$data_path)` and read from the same list the shipped
 one does (`obj`, `epi_curve`, `trend`, `linelist`, `timeline`,
-`similar`, `small_count_threshold`, `rendered_at`, `lang`,
+`similar`, `diff`, `small_count_threshold`, `rendered_at`, `lang`,
 `package_version`); see the shipped template for the exact shape,
 including how it calls `episodic_tr(..., lang = d$lang)` for a bilingual
-report.
+report. `diff` is `NULL` for a cluster’s first-ever render and otherwise
+holds what changed since the previous version - see
+[`vignette("scheduled-reports")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.md)’s
+“What changed since last time” section for what it contains.
+
+## Scheduled reports
+
+A cluster can be put on a recurring email schedule from its dossier -
+every N days, to a list of colleagues without an EpiSODIC account. This
+reuses the report template and the email-capable notification channels
+(`smtp`, `sendmail`, `microsoft365`) described in
+[`vignette("notifications")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md);
+see
+[`vignette("scheduled-reports")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.md)
+for the full setup guide, including the cadence and automatic-closure
+rules and how to extend a custom template with more patient-level detail
+than the shipped one shows.
 
 ## Optional pieces, and their fallbacks
 
@@ -302,5 +318,8 @@ supported channel.
   named above.
 - [`vignette("notifications")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md)
   for setting up alerts on new clusters and run failures.
+- [`vignette("scheduled-reports")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.md)
+  for emailing a recurring outbreak report to colleagues without a
+  dashboard account.
 - [`vignette("faq")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.md)
   for hosting choices, account roles, and other operational questions.

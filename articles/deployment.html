@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -289,11 +289,28 @@ style. A custom template only needs to
 <code>readRDS(params$data_path)</code> and read from the same list the
 shipped one does (<code>obj</code>, <code>epi_curve</code>,
 <code>trend</code>, <code>linelist</code>, <code>timeline</code>,
-<code>similar</code>, <code>small_count_threshold</code>,
-<code>rendered_at</code>, <code>lang</code>,
-<code>package_version</code>); see the shipped template for the exact
-shape, including how it calls
-<code>episodic_tr(..., lang = d$lang)</code> for a bilingual report.</p>
+<code>similar</code>, <code>diff</code>,
+<code>small_count_threshold</code>, <code>rendered_at</code>,
+<code>lang</code>, <code>package_version</code>); see the shipped
+template for the exact shape, including how it calls
+<code>episodic_tr(..., lang = d$lang)</code> for a bilingual report.
+<code>diff</code> is <code>NULL</code> for a cluster’s first-ever render
+and otherwise holds what changed since the previous version - see
+<code><a href="../articles/scheduled-reports.html">vignette("scheduled-reports")</a></code>’s “What changed since last
+time” section for what it contains.</p>
+</div>
+<div class="section level2">
+<h2 id="scheduled-reports">Scheduled reports<a class="anchor" aria-label="anchor" href="#scheduled-reports"></a>
+</h2>
+<p>A cluster can be put on a recurring email schedule from its dossier -
+every N days, to a list of colleagues without an EpiSODIC account. This
+reuses the report template and the email-capable notification channels
+(<code>smtp</code>, <code>sendmail</code>, <code>microsoft365</code>)
+described in <code><a href="../articles/notifications.html">vignette("notifications")</a></code>; see
+<code><a href="../articles/scheduled-reports.html">vignette("scheduled-reports")</a></code> for the full setup guide,
+including the cadence and automatic-closure rules and how to extend a
+custom template with more patient-level detail than the shipped one
+shows.</p>
 </div>
 <div class="section level2">
 <h2 id="optional-pieces-and-their-fallbacks">Optional pieces, and their fallbacks<a class="anchor" aria-label="anchor" href="#optional-pieces-and-their-fallbacks"></a>
@@ -387,6 +404,9 @@ above.</li>
 <li>
 <code><a href="../articles/notifications.html">vignette("notifications")</a></code> for setting up alerts on new
 clusters and run failures.</li>
+<li>
+<code><a href="../articles/scheduled-reports.html">vignette("scheduled-reports")</a></code> for emailing a recurring
+outbreak report to colleagues without a dashboard account.</li>
 <li>
 <code><a href="../articles/faq.html">vignette("faq")</a></code> for hosting choices, account roles, and
 other operational questions.</li>
