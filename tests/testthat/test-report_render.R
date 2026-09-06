@@ -96,3 +96,108 @@ test_that("episodic_report_render() picks version_no = max(existing) + 1, not a 
   existing <- episodic_db_reports_for_cluster(env$con, env$cluster_id)
   expect_equal(max(existing$version_no) + 1L, 4L)
 })
+
+test_that("episodic_report_snapshot() pulls the headline fields from a cluster object", {
+  obj <- list(
+    n_cases = 5, expected = 1.2, ratio = 4.1, priority_score = 62,
+    last_day = "2026-01-10", pathogen = "irrelevant"
+  )
+  snap <- episodic_report_snapshot(obj)
+  expect_equal(
+    snap,
+    list(n_cases = 5, expected = 1.2, ratio = 4.1, priority_score = 62, last_day = "2026-01-10")
+  )
+})
+
+test_that("episodic_report_diff() is NULL for the first-ever render", {
+  existing <- data.frame(
+    version_no = integer(0), rendered_at = character(0),
+    params = character(0), case_ids = character(0)
+  )
+  snapshot <- list(n_cases = 1, expected = NA_real_, ratio = NA_real_, priority_score = 10, last_day = "2026-01-01")
+  expect_null(episodic_report_diff(existing, snapshot, case_ids = 1L))
+})
+
+test_that("episodic_report_diff() is NULL when the previous render predates the snapshot feature", {
+  existing <- data.frame(
+    version_no = 1L,
+    rendered_at = "2026-01-01T00:00:00Z",
+    params = jsonlite::toJSON(list(cluster_id = 1L), auto_unbox = TRUE),
+    case_ids = jsonlite::toJSON(c(1L, 2L)),
+    stringsAsFactors = FALSE
+  )
+  snapshot <- list(n_cases = 3, expected = 1, ratio = 3, priority_score = 20, last_day = "2026-01-05")
+  expect_null(episodic_report_diff(existing, snapshot, case_ids = c(1L, 2L, 3L)))
+})
+
+test_that("episodic_report_diff() computes case, priority, ratio and period deltas", {
+  existing <- data.frame(
+    version_no = 1L,
+    rendered_at = "2026-09-01T07:00:00Z",
+    params = jsonlite::toJSON(list(snapshot = list(
+      n_cases = 3, expected = 1.2, ratio = 2.5, priority_score = 40, last_day = "2026-08-30"
+    )), auto_unbox = TRUE, null = "null", na = "null"),
+    case_ids = jsonlite::toJSON(c(1L, 2L, 3L)),
+    stringsAsFactors = FALSE
+  )
+  snapshot <- list(n_cases = 5, expected = 1.5, ratio = 3.3, priority_score = 55, last_day = "2026-09-05")
+  diff <- episodic_report_diff(existing, snapshot, case_ids = c(1L, 2L, 3L, 4L, 5L))
+
+  expect_equal(diff$previous_version_no, 1L)
+  expect_equal(diff$n_new_cases, 2L)
+  expect_equal(diff$n_cases_delta, 2)
+  expect_equal(diff$priority_score_delta, 15)
+  expect_equal(diff$ratio_delta, 0.8)
+  expect_true(diff$period_extended)
+})
+
+test_that("episodic_report_diff() reports zero new cases and no period extension when nothing changed", {
+  existing <- data.frame(
+    version_no = 2L,
+    rendered_at = "2026-09-01T07:00:00Z",
+    params = jsonlite::toJSON(list(snapshot = list(
+      n_cases = 5, expected = 1.5, ratio = 3.3, priority_score = 55, last_day = "2026-09-05"
+    )), auto_unbox = TRUE, null = "null", na = "null"),
+    case_ids = jsonlite::toJSON(c(1L, 2L, 3L, 4L, 5L)),
+    stringsAsFactors = FALSE
+  )
+  snapshot <- list(n_cases = 5, expected = 1.5, ratio = 3.3, priority_score = 55, last_day = "2026-09-05")
+  diff <- episodic_report_diff(existing, snapshot, case_ids = c(1L, 2L, 3L, 4L, 5L))
+
+  expect_equal(diff$n_new_cases, 0L)
+  expect_equal(diff$n_cases_delta, 0)
+  expect_equal(diff$priority_score_delta, 0)
+  expect_false(diff$period_extended)
+})
+
+test_that("episodic_report_diff() handles a ratio that was or is NA without erroring", {
+  existing <- data.frame(
+    version_no = 1L,
+    rendered_at = "2026-09-01T07:00:00Z",
+    params = jsonlite::toJSON(list(snapshot = list(
+      n_cases = 1, expected = NA_real_, ratio = NA_real_, priority_score = 10, last_day = "2026-09-01"
+    )), auto_unbox = TRUE, null = "null", na = "null"),
+    case_ids = jsonlite::toJSON(1L),
+    stringsAsFactors = FALSE
+  )
+  snapshot <- list(n_cases = 2, expected = 1, ratio = 2, priority_score = 20, last_day = "2026-09-02")
+  diff <- episodic_report_diff(existing, snapshot, case_ids = c(1L, 2L))
+  expect_true(is.na(diff$ratio_delta))
+})
+
+test_that("episodic_report_render() stores a diffable snapshot that a later render can read back", {
+  skip_if_not(episodic_quarto_available(), "quarto CLI is not available in this environment")
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  output_dir <- tempfile()
+
+  first <- episodic_report_render(env$con, env$cluster_id, output_dir = output_dir)
+  second <- episodic_report_render(env$con, env$cluster_id, output_dir = output_dir)
+  expect_equal(second$version_no, first$version_no + 1L)
+
+  reports <- episodic_db_reports_for_cluster(env$con, env$cluster_id)
+  latest_params <- jsonlite::fromJSON(reports$params[reports$version_no == second$version_no])
+  expect_false(is.null(latest_params$snapshot))
+  expect_false(is.null(latest_params$diff))
+  expect_equal(latest_params$diff$previous_version_no, first$version_no)
+})

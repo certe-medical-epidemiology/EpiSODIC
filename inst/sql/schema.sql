@@ -495,3 +495,52 @@ CREATE TABLE episodic_report_render (
 );
 
 CREATE INDEX idx_episodic_report_render_cluster ON episodic_report_render(cluster_id);
+
+-- app. Event-sourced, same shape as episodic_cluster_note: an
+-- epidemiologist "sets" a schedule (an every-N-days cadence plus a
+-- recipient list, for colleagues with no EpiSODIC account and no need
+-- for one - see episodic_scheduled_reports_dispatch()) or "cancels" one;
+-- the current schedule for a cluster is always the latest row for that
+-- cluster_id, exactly like episodic_app_config_latest()'s pattern for
+-- notifications. recipients/channel/interval_days are NULL on a
+-- 'cancel' row - there is nothing left to schedule. channel names one
+-- already-configured, email-capable entry under
+-- notifications.channels (smtp, sendmail or microsoft365): scheduled
+-- reports are delivered through the same channel machinery
+-- episodic_notify() uses, never a separate credential store.
+CREATE TABLE episodic_report_subscription_event (
+  event_id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  cluster_id       INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
+  user_id          INTEGER NOT NULL REFERENCES episodic_app_user(user_id),
+  created_at       TEXT NOT NULL,
+  action           TEXT NOT NULL CHECK (action IN ('set', 'cancel')),
+  interval_days    INTEGER,
+  recipients       TEXT,
+  channel          TEXT,
+  include_linelist INTEGER NOT NULL DEFAULT 0 CHECK (include_linelist IN (0, 1))
+);
+
+CREATE INDEX idx_episodic_report_subscription_event_cluster ON episodic_report_subscription_event(cluster_id, created_at);
+
+-- cron. One row per attempted send of a scheduled report - "attempted"
+-- because a failed send (channel misconfigured, SMTP unreachable) is
+-- still logged, never silently dropped, so an epidemiologist can see why
+-- a colleague never received an update. subscription_event_id pins the
+-- send to the exact schedule settings in effect at the time (recipients
+-- may since have changed); recipients is a snapshot of who it actually
+-- went to. `final` marks the one closure/suppression send that ends a
+-- schedule automatically (see episodic_scheduled_reports_dispatch()).
+CREATE TABLE episodic_report_subscription_send (
+  send_id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  cluster_id            INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
+  subscription_event_id INTEGER NOT NULL REFERENCES episodic_report_subscription_event(event_id),
+  run_id                INTEGER REFERENCES episodic_detection_run(run_id),
+  sent_at               TEXT NOT NULL,
+  report_id             INTEGER REFERENCES episodic_report_render(report_id),
+  recipients            TEXT NOT NULL,
+  status                TEXT NOT NULL CHECK (status IN ('sent', 'failed')),
+  error_text            TEXT,
+  final                 INTEGER NOT NULL DEFAULT 0 CHECK (final IN (0, 1))
+);
+
+CREATE INDEX idx_episodic_report_subscription_send_cluster ON episodic_report_subscription_send(cluster_id, sent_at);

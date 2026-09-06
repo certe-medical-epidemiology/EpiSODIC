@@ -471,6 +471,9 @@ endpoint.
 
 ## See also
 
+- `vignette("scheduled-reports")` for emailing a recurring outbreak
+  report to colleagues without a dashboard account, through these same
+  channels.
 - `vignette("deployment")` for how to stand up an instance and
   configure `EPISODIC_CONFIG`.
 - `vignette("environment-variables")` for the full reference table

@@ -506,6 +506,28 @@ episodic_run_cron <- function(cases,
     }
   )
 
+  # Independent of whether this run's own detection succeeded: a
+  # schedule an epidemiologist set up promises a colleague an update
+  # every N days, and a transient detection failure - already rolled
+  # back, changing nothing about the data a report would show - is not a
+  # reason to also skip the report they are expecting. Every send
+  # attempt is logged by episodic_scheduled_reports_dispatch() itself, so
+  # nothing here needs its own tryCatch beyond the one already inside it
+  # (kept anyway, as the same backstop episodic_notify() gets above).
+  tryCatch(
+    episodic_scheduled_reports_dispatch(
+      con,
+      notify_config,
+      run_id,
+      run_date,
+      db_path,
+      episodic_config_path
+    ),
+    error = function(e) {
+      episodic_trace("Scheduled report dispatch failed: ", conditionMessage(e))
+    }
+  )
+
   episodic_trace(
     "Finishing run ",
     run_id,

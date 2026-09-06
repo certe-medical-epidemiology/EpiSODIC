@@ -184,6 +184,56 @@ episodic_db_report_render_insert <- function(con,
   episodic_db_last_insert_id(con)
 }
 
+#' Set or cancel a cluster's scheduled-report subscription
+#'
+#' Event-sourced like every other app write: this always inserts, it
+#' never updates the row a previous call wrote. The current schedule for
+#' `cluster_id` is simply the latest row - see
+#' `episodic_report_subscription_current()`.
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A cluster id.
+#' @param user_id The epidemiologist setting or cancelling the schedule.
+#' @param action `"set"` or `"cancel"`.
+#' @param interval_days Send every this many days. `NA` when
+#'   `action = "cancel"`.
+#' @param recipients_json A JSON array of email addresses. `NA` when
+#'   `action = "cancel"`.
+#' @param channel Name of the `notifications.channels.*` entry to send
+#'   through (`"smtp"`, `"sendmail"` or `"microsoft365"`). `NA` when
+#'   `action = "cancel"`.
+#' @param include_linelist Whether the emailed report includes the case
+#'   line list. Ignored (stored as `FALSE`) when `action = "cancel"`.
+#' @return The new `event_id`.
+#' @keywords internal
+#' @noRd
+episodic_db_report_subscription_event_insert <- function(con,
+                                                         cluster_id,
+                                                         user_id,
+                                                         action,
+                                                         interval_days = NA,
+                                                         recipients_json = NA,
+                                                         channel = NA,
+                                                         include_linelist = FALSE) {
+  params <- list(
+    cluster_id,
+    user_id,
+    episodic_now(),
+    action,
+    if (is.na(interval_days)) NA else as.integer(interval_days),
+    recipients_json,
+    channel,
+    as.integer(isTRUE(include_linelist))
+  )
+  DBI::dbExecute(
+    con,
+    "INSERT INTO episodic_report_subscription_event
+      (cluster_id, user_id, created_at, action, interval_days, recipients, channel, include_linelist)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    params = params
+  )
+  episodic_db_last_insert_id(con)
+}
+
 #' @keywords internal
 #' @noRd
 episodic_db_app_user_insert <- function(con,

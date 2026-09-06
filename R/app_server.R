@@ -421,6 +421,15 @@ episodic_app_server_factory <- function(db_path,
       access_granted = access_granted,
       lang = lang
     )
+    episodic_app_server_report_subscription(
+      input,
+      output,
+      session,
+      con,
+      current_user = current_user,
+      selected_cluster_id = selected_cluster_id,
+      lang = lang
+    )
     episodic_app_server_settings(
       input,
       output,
