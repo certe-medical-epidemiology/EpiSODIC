@@ -126,33 +126,33 @@ cases <- episodic_synthetic_cases(
 )
 db_path <- episodic_demo(launch = FALSE, cases = cases, denominators = NULL)
 #> Creating synthetic cases...
-#> 2026-09-06 11:50:05.060 | episodic_run_cron() starting (host=runnervmejwal, account=runner)
-#> 2026-09-06 11:50:05.060 | Resolving configuration
-#> 2026-09-06 11:50:05.064 | Configuration resolved (hash f198adfd3d37)
-#> 2026-09-06 11:50:05.064 | Connecting to database
-#> 2026-09-06 11:50:05.065 | No existing database found - creating one
-#> 2026-09-06 11:50:05.077 | Database connected (dialect: sqlite)
-#> 2026-09-06 11:50:05.078 | Run 1 started
-#> 2026-09-06 11:50:05.079 | Resolving and checking case data
-#> 2026-09-06 11:50:05.089 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
-#> 2026-09-06 11:50:05.089 | Beginning transaction
-#> 2026-09-06 11:50:05.090 | Loading pathogen configuration
-#> 2026-09-06 11:50:05.092 | Pathogen configuration loaded (23 pathogen(s))
-#> 2026-09-06 11:50:05.092 | Loading case data into the database
-#> 2026-09-06 11:50:05.304 | Case data loaded: supplied=419, deduplicated=410, inserted=410
-#> 2026-09-06 11:50:05.304 | Fetching all known cases and institutions
-#> 2026-09-06 11:50:05.306 | Enumerating lattice streams
-#> 2026-09-06 11:50:05.333 | Running same-place detector
-#> 2026-09-06 11:50:05.381 | Same-place detector found 4 detection(s)
-#> 2026-09-06 11:50:05.382 | Running rare-trigger detector
-#> 2026-09-06 11:50:05.385 | Rare-trigger detector found 1 detection(s)
-#> 2026-09-06 11:50:05.385 | Farrington owes 8 week(s) this run
-#> 2026-09-06 11:50:05.387 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
-#> 2026-09-06 11:50:05.917 | Stream reconciliation done: 5 detection(s), 5 new signal(s), 0 updated signal(s)
-#> 2026-09-06 11:50:05.917 | Suppressing lattice
-#> 2026-09-06 11:50:05.920 | Committing transaction
-#> 2026-09-06 11:50:05.923 | Finishing run 1 (status: success)
-#> 2026-09-06 11:50:06.913 | episodic_run_cron() finished in 1.9s (status: success)
+#> 2026-09-06 12:14:45.736 | episodic_run_cron() starting (host=runnervmejwal, account=runner)
+#> 2026-09-06 12:14:45.736 | Resolving configuration
+#> 2026-09-06 12:14:45.742 | Configuration resolved (hash f198adfd3d37)
+#> 2026-09-06 12:14:45.742 | Connecting to database
+#> 2026-09-06 12:14:45.742 | No existing database found - creating one
+#> 2026-09-06 12:14:45.762 | Database connected (dialect: sqlite)
+#> 2026-09-06 12:14:45.764 | Run 1 started
+#> 2026-09-06 12:14:45.764 | Resolving and checking case data
+#> 2026-09-06 12:14:45.777 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
+#> 2026-09-06 12:14:45.777 | Beginning transaction
+#> 2026-09-06 12:14:45.778 | Loading pathogen configuration
+#> 2026-09-06 12:14:45.781 | Pathogen configuration loaded (23 pathogen(s))
+#> 2026-09-06 12:14:45.781 | Loading case data into the database
+#> 2026-09-06 12:14:46.042 | Case data loaded: supplied=419, deduplicated=410, inserted=410
+#> 2026-09-06 12:14:46.042 | Fetching all known cases and institutions
+#> 2026-09-06 12:14:46.045 | Enumerating lattice streams
+#> 2026-09-06 12:14:46.082 | Running same-place detector
+#> 2026-09-06 12:14:46.157 | Same-place detector found 4 detection(s)
+#> 2026-09-06 12:14:46.158 | Running rare-trigger detector
+#> 2026-09-06 12:14:46.162 | Rare-trigger detector found 1 detection(s)
+#> 2026-09-06 12:14:46.163 | Farrington owes 8 week(s) this run
+#> 2026-09-06 12:14:46.165 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
+#> 2026-09-06 12:14:46.895 | Stream reconciliation done: 5 detection(s), 5 new signal(s), 0 updated signal(s)
+#> 2026-09-06 12:14:46.896 | Suppressing lattice
+#> 2026-09-06 12:14:46.901 | Committing transaction
+#> 2026-09-06 12:14:46.904 | Finishing run 1 (status: success)
+#> 2026-09-06 12:14:48.146 | episodic_run_cron() finished in 2.4s (status: success)
 #> OK
 #> ===========================================================================
 #> 

@@ -242,9 +242,10 @@ to `readRDS(params$data_path)` and read from the same list the shipped
 one does (`obj`, `epi_curve`, `trend`, `linelist`, `timeline`,
 `similar`, `diff`, `small_count_threshold`, `rendered_at`, `lang`,
 `package_version`); see the shipped template for the exact shape,
-including how it calls `episodic_tr(..., lang = d$lang)` for a bilingual
-report. `diff` is `NULL` for a cluster’s first-ever render and otherwise
-holds what changed since the previous version - see
+including how it calls `episodic_tr(..., lang = d$lang)` to render in
+any of the dashboard’s supported languages. `diff` is `NULL` for a
+cluster’s first-ever render and otherwise holds what changed since the
+previous version - see
 [`vignette("scheduled-reports")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.md)’s
 “What changed since last time” section for what it contains.
 
