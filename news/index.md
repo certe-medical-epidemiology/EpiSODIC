@@ -1,5 +1,14 @@
 # Changelog
 
+## EpiSODIC 0.13.2
+
+### Changed
+
+- [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+  now takes any additional argument that
+  [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md)
+  provides
+
 ## EpiSODIC 0.13.1
 
 ### Changed
