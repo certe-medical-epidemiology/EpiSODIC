@@ -148,8 +148,12 @@ episodic_graphics_probe <- function() {
   on.exit(unlink(file), add = TRUE)
   result <- tryCatch(
     {
-      dv <- pngfun(filename = file, width = 10, height = 10)
-      grDevices::dev.off(dv)
+      # Mirrors shiny:::startPNG(): the device-opening functions
+      # (ragg::agg_png(), Cairo::CairoPNG(), grDevices::png()) all return
+      # NULL invisibly rather than a device number, so the device to
+      # close is read back via dev.cur(), not from their return value.
+      pngfun(filename = file, width = 10, height = 10)
+      grDevices::dev.off(grDevices::dev.cur())
       NULL
     },
     error = function(e) list(packages = implicated, kind = kind)
