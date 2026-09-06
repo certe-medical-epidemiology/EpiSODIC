@@ -41,7 +41,7 @@ obj <- d$obj
 # resolves the empty string itself). A template must not have a language
 # of its own.
 lang <- if (is.null(d$lang)) Sys.getenv("EPISODIC_LANGUAGE") else d$lang
-tr <- function(key, ...) episodic_tr(key, lang = lang, ...)
+tr <- function(key, ...) EpiSODIC:::episodic_tr(key, lang = lang, ...)
 na_dash <- function(x) if (is.na(x)) "-" else x
 ```
 
