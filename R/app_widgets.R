@@ -139,6 +139,62 @@ episodic_ui_picker <- function(input_id, options, selected = NULL) {
   )
 }
 
+#' The phone-tier pane switcher for the clusters screen
+#'
+#' Below 768px, `.episodic-body`'s three panes (rail, dossier, assessment)
+#' show one at a time, switched by this sticky bottom bar - see the
+#' "Responsive layout" section at the end of `episodic.css` and
+#' `episodicSelectPane()` in `R/app_ui.R`. Static markup, not a Shiny output:
+#' it reads no surveillance data of its own and never re-renders on a tap
+#' (see `episodicSelectPane()`'s own comment for why that matters), so it
+#' carries no `episodic_app_access_granted()` gate of its own either - it is
+#' only ever placed inside the already-gated clusters view.
+#'
+#' Hidden entirely by CSS at 768px and above; harmless to render there too.
+#'
+#' @param lang Session language.
+#' @return A `shiny::tags$div`.
+#' @keywords internal
+#' @noRd
+episodic_ui_pane_switcher <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  shiny::tags$div(
+    class = "episodic-pane-switcher",
+    # Filled client-side by episodicSyncPaneBar() from the rail's own
+    # already-rendered active item - see that function's comment in
+    # R/app_ui.R for why this does not need a Shiny output of its own.
+    shiny::tags$div(
+      class = "episodic-pane-switcher-label",
+      id = "episodic-pane-switcher-label"
+    ),
+    shiny::tags$div(
+      class = "episodic-pane-switcher-tabs",
+      episodic_ui_pane_tab("rail", episodic_tr("nav.clusters", lang = lang)),
+      episodic_ui_pane_tab(
+        "dossier",
+        episodic_tr("pane.dossier", lang = lang)
+      ),
+      episodic_ui_pane_tab(
+        "assessment",
+        episodic_tr("assessment.verdict_label", lang = lang)
+      )
+    )
+  )
+}
+
+#' @param pane The `data-pane` value this tab switches `.episodic-body` to.
+#' @param label The tab's visible text.
+#' @keywords internal
+#' @noRd
+episodic_ui_pane_tab <- function(pane, label) {
+  shiny::tags$button(
+    type = "button",
+    class = "episodic-pane-tab",
+    `data-pane-target` = pane,
+    onclick = sprintf("episodicSelectPane('%s');", pane),
+    label
+  )
+}
+
 #' A row of toggle chips for a multi-value filter (e.g. "L4 and L5 only")
 #'
 #' Unlike `episodic_ui_picker()`, more than one chip can be active at

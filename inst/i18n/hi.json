@@ -11,6 +11,7 @@
   "nav.performance": "प्रदर्शन",
   "nav.info": "जानकारी",
   "nav.settings": "सेटिंग्स",
+  "nav.menu_label": "मेनू",
 
   "rail.title": "खुले क्लस्टर",
   "rail.count_suffix": "नए या सक्रिय",
@@ -19,6 +20,8 @@
   "rail.bulk_selected": "चयनित",
   "rail.bulk_apply": "चयनित पर वर्गीकरण लागू करें",
   "rail.bulk_clear": "चयन साफ़ करें",
+
+  "pane.dossier": "डोज़ियर",
 
   "dossier.stat.observed": "पुष्टिकृत",
   "dossier.stat.observed_sub": "अपेक्षित {expected}",

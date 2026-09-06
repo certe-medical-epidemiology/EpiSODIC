@@ -11,6 +11,7 @@
   "nav.performance": "Rendimiento",
   "nav.info": "Info",
   "nav.settings": "Configuración",
+  "nav.menu_label": "Menú",
 
   "rail.title": "Clústeres abiertos",
   "rail.count_suffix": "nuevos o activos",
@@ -19,6 +20,8 @@
   "rail.bulk_selected": "seleccionados",
   "rail.bulk_apply": "Aplicar clasificación a los seleccionados",
   "rail.bulk_clear": "Borrar selección",
+
+  "pane.dossier": "Dosier",
 
   "dossier.stat.observed": "Confirmados",
   "dossier.stat.observed_sub": "esperado {expected}",

@@ -513,9 +513,9 @@ episodic_ui_pathogen_breakdown_panels <- function(screen,
   care_lines <- screen$care_lines
   institutions <- screen$institutions
   shiny::tags$div(
-    style = "display:flex;gap:16px;align-items:flex-start;",
+    class = "episodic-split-row",
     shiny::tags$div(
-      style = "flex:1;",
+      class = "episodic-split-col",
       if (is.null(care_lines)) {
         episodic_ui_panel_empty(
           episodic_tr("pathogen.panel.care_line.title", lang = lang),
@@ -530,7 +530,7 @@ episodic_ui_pathogen_breakdown_panels <- function(screen,
       }
     ),
     shiny::tags$div(
-      style = "flex:1;",
+      class = "episodic-split-col",
       if (is.null(institutions)) {
         episodic_ui_panel_empty(
           episodic_tr("pathogen.panel.institutions.title", lang = lang),
