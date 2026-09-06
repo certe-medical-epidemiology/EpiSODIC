@@ -69,11 +69,11 @@
   "careline.short.other": "other",
   "careline.short.unknown": "unknown",
 
-  "verloop.title": "Timeline",
-  "verloop.not_assessed": "Not yet assessed. Detected on {first} by {detectors}.",
+  "timeline.title": "Timeline",
+  "timeline.not_assessed": "Not yet assessed. Detected on {first} by {detectors}.",
 
-  "statusverloop.title": "Status trajectory",
-  "statusverloop.unassessed": "Unassessed",
+  "status_trajectory.title": "Status trajectory",
+  "status_trajectory.unassessed": "Unassessed",
 
   "panel.interpretation.title": "Interpretation",
   "panel.interpretation.aside": "automatically generated",

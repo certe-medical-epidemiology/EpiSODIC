@@ -326,7 +326,7 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' note-only assessments that carry no classification and closures,
 #' neither of which change what the cluster was judged to be) - the time
 #' before the first one is its own segment, always labelled
-#' `statusverloop.unassessed` rather than the generic "new" state label,
+#' `status_trajectory.unassessed` rather than the generic "new" state label,
 #' since "New" is easily misread as "recently created" rather than what
 #' it actually means here: nobody has looked at it yet.
 #'
@@ -349,7 +349,7 @@ episodic_ui_trajectory <- function(obj,
   ]
   starts <- c(obj$opened_at, verdict_events$at)
   labels <- c(
-    episodic_tr("statusverloop.unassessed", lang = lang),
+    episodic_tr("status_trajectory.unassessed", lang = lang),
     verdict_events$verdict_label
   )
   colours <- c(
@@ -361,7 +361,7 @@ episodic_ui_trajectory <- function(obj,
     class = "episodic-trajectory",
     shiny::tags$div(
       class = "episodic-trajectory-title",
-      episodic_tr("statusverloop.title", lang = lang)
+      episodic_tr("status_trajectory.title", lang = lang)
     ),
     shiny::tags$div(
       class = "episodic-trajectory-track",
@@ -1422,7 +1422,7 @@ episodic_ui_settings_panel <- function(con,
 
 #' The right-hand assessment rail
 #'
-#' The timeline ("Verloop") is always visible, to signed-out visitors
+#' The timeline is always visible, to signed-out visitors
 #' too, as an append-only record of every assessment. The classification
 #' form, closure and mute actions render only for a signed-in epidemiologist -
 #' viewer accounts see the same timeline but cannot classify, and
@@ -1448,16 +1448,16 @@ episodic_ui_assessment_rail <- function(con,
   shiny::tags$div(
     class = "episodic-assessment-rail",
     shiny::tags$div(
-      class = "episodic-verloop",
+      class = "episodic-timeline",
       shiny::tags$div(
-        class = "episodic-verloop-title",
-        episodic_tr("verloop.title", lang = lang)
+        class = "episodic-timeline-title",
+        episodic_tr("timeline.title", lang = lang)
       ),
       if (nrow(timeline) == 0) {
         shiny::tags$p(
-          class = "episodic-verloop-empty",
+          class = "episodic-timeline-empty",
           shiny::HTML(episodic_tr(
-            "verloop.not_assessed",
+            "timeline.not_assessed",
             first = episodic_format_date(obj$first_day, lang = lang),
             detectors = episodic_ui_code_join(obj$detectors, sep = " en "),
             lang = lang

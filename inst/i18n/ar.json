@@ -69,11 +69,11 @@
   "careline.short.other": "أخرى",
   "careline.short.unknown": "غير معروف",
 
-  "verloop.title": "الجدول الزمني",
-  "verloop.not_assessed": "لم يُقيَّم بعد. اكتُشف في {first} بواسطة {detectors}.",
+  "timeline.title": "الجدول الزمني",
+  "timeline.not_assessed": "لم يُقيَّم بعد. اكتُشف في {first} بواسطة {detectors}.",
 
-  "statusverloop.title": "مسار الحالة",
-  "statusverloop.unassessed": "غير مقيَّم",
+  "status_trajectory.title": "مسار الحالة",
+  "status_trajectory.unassessed": "غير مقيَّم",
 
   "panel.interpretation.title": "التفسير",
   "panel.interpretation.aside": "مُولَّد تلقائيًا",

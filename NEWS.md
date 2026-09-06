@@ -1,3 +1,10 @@
+# EpiSODIC 0.13.1
+
+## Changed
+
+- Renamed the `verloop.*` and `statusverloop.*` translation keys to `timeline.*` and `status_trajectory.*`, and the matching `episodic-verloop*` CSS classes to `episodic-timeline*`: every translation key and CSS class name is now full English, regardless of language content
+
+
 # EpiSODIC 0.13.0
 
 ## New

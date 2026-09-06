@@ -69,11 +69,11 @@
   "careline.short.other": "otro",
   "careline.short.unknown": "desconocido",
 
-  "verloop.title": "Cronología",
-  "verloop.not_assessed": "Aún sin evaluar. Detectado el {first} por {detectors}.",
+  "timeline.title": "Cronología",
+  "timeline.not_assessed": "Aún sin evaluar. Detectado el {first} por {detectors}.",
 
-  "statusverloop.title": "Trayectoria del estado",
-  "statusverloop.unassessed": "Sin evaluar",
+  "status_trajectory.title": "Trayectoria del estado",
+  "status_trajectory.unassessed": "Sin evaluar",
 
   "panel.interpretation.title": "Interpretación",
   "panel.interpretation.aside": "generada automáticamente",
