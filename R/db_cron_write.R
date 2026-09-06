@@ -22,7 +22,8 @@
 # episodic_stream, episodic_institution, episodic_institution_activity,
 # episodic_case, episodic_denominator,
 # episodic_detection, episodic_cluster, episodic_cluster_case,
-# episodic_detection_run and (for pre-renders) episodic_report_render. See
+# episodic_detection_run, episodic_report_subscription_send and (for
+# pre-renders) episodic_report_render. See
 # R/db_app_write.R for the insert-only counterparts. Parameters
 # throughout are one row's worth of columns for the table each function
 # name identifies - see inst/sql/schema.sql for the exact column
@@ -724,6 +725,58 @@ episodic_db_run_finish <- function(con,
     params = params
   )
   invisible(NULL)
+}
+
+#' Log one attempted scheduled-report send
+#'
+#' Always inserted, sent or failed - a schedule an epidemiologist set up
+#' for colleagues without EpiSODIC access must leave a trail even when
+#' the send itself failed (channel misconfigured, SMTP unreachable),
+#' since nobody watching a dashboard will otherwise notice a silent gap
+#' in a colleague's inbox. See `R/scheduled_reports.R`.
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A cluster id.
+#' @param subscription_event_id The `event_id` of the schedule settings
+#'   this send used.
+#' @param run_id The cron run this send happened during.
+#' @param report_id The `episodic_report_render` row that was sent, or
+#'   `NA` when the send failed before a report was rendered.
+#' @param recipients_json A JSON array snapshot of who it was sent to.
+#' @param status `"sent"` or `"failed"`.
+#' @param error_text The error message, when `status = "failed"`.
+#' @param final `TRUE` for the one closure/suppression send that ends a
+#'   schedule automatically.
+#' @return The new `send_id`.
+#' @keywords internal
+#' @noRd
+episodic_db_report_subscription_send_insert <- function(con,
+                                                        cluster_id,
+                                                        subscription_event_id,
+                                                        run_id,
+                                                        report_id = NA,
+                                                        recipients_json,
+                                                        status,
+                                                        error_text = NA,
+                                                        final = FALSE) {
+  params <- list(
+    cluster_id,
+    subscription_event_id,
+    run_id,
+    episodic_now(),
+    if (is.na(report_id)) NA else as.integer(report_id),
+    recipients_json,
+    status,
+    error_text,
+    as.integer(isTRUE(final))
+  )
+  DBI::dbExecute(
+    con,
+    "INSERT INTO episodic_report_subscription_send
+      (cluster_id, subscription_event_id, run_id, sent_at, report_id, recipients, status, error_text, final)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    params = params
+  )
+  episodic_db_last_insert_id(con)
 }
 
 #' @keywords internal

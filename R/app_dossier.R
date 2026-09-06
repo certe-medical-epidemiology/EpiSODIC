@@ -1169,7 +1169,186 @@ episodic_ui_report_panel <- function(con,
           episodic_tr("panel.report.pending", lang = lang)
         )
       )
+    },
+    if (episodic_user_is_epidemiologist(current_user)) {
+      episodic_ui_report_schedule_section(con, cluster_id, lang = lang)
     }
+  )
+}
+
+#' The "scheduled reports" section of the Reports panel
+#'
+#' A standing subscription is for colleagues without an EpiSODIC account
+#' (or only a `viewer` one) who need this report on a cadence without
+#' opening the dashboard - see [episodic_scheduled_reports]. Shows either
+#' the form to set one up (no active schedule), or the current schedule
+#' plus its most recent send attempt and a cancel button - including,
+#' when the cron already ended it, a note saying so, rather than the
+#' cancel button silently doing nothing were an epidemiologist to click
+#' it on an already-finalised schedule.
+#' @keywords internal
+#' @noRd
+episodic_ui_report_schedule_section <- function(con,
+                                                cluster_id,
+                                                lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  config <- episodic_config_resolve(con = con)
+  available_channels <- episodic_report_subscription_available_channels(config)
+  subscription <- episodic_report_subscription_current(con, cluster_id)
+  sends <- episodic_db_report_subscription_sends(con, cluster_id)
+
+  shiny::tags$div(
+    class = "episodic-report-schedule",
+    style = "margin-top:16px;padding-top:12px;border-top:1px solid var(--episodic-border);",
+    shiny::tags$strong(episodic_tr("panel.report.schedule_title", lang = lang)),
+    shiny::tags$p(
+      class = "episodic-panel-empty",
+      style = "margin:4px 0 10px;",
+      episodic_tr("panel.report.schedule_intro", lang = lang)
+    ),
+    shiny::uiOutput("report_schedule_error"),
+    if (!is.null(subscription)) {
+      # Shown regardless of available_channels: a schedule already set
+      # up (and, until now, actually sending) must stay visible and
+      # cancellable even if its channel was disabled afterwards - not
+      # disappear behind the "no channel configured" message below,
+      # which only concerns setting up a *new* schedule.
+      episodic_ui_report_schedule_current(con, cluster_id, subscription, sends, lang = lang)
+    } else if (length(available_channels) == 0) {
+      shiny::tags$p(
+        class = "episodic-form-error",
+        episodic_tr("panel.report.schedule_no_channel", lang = lang)
+      )
+    } else {
+      episodic_ui_report_schedule_form(cluster_id, available_channels, lang = lang)
+    }
+  )
+}
+
+#' @keywords internal
+#' @noRd
+episodic_ui_report_schedule_current <- function(con, cluster_id, subscription, sends, lang) {
+  set_by <- episodic_db_user_by_id(con, subscription$user_id)
+  last_send <- sends[sends$subscription_event_id == subscription$event_id, , drop = FALSE]
+  last_send <- if (nrow(last_send) > 0) last_send[1, ] else NULL
+  finalised <- !is.null(last_send) && isTRUE(as.logical(last_send$final))
+
+  shiny::tagList(
+    shiny::tags$p(
+      episodic_tr(
+        "panel.report.schedule_current",
+        interval = episodic_count_phrase(
+          subscription$interval_days,
+          episodic_tr("unit.day", lang = lang),
+          episodic_tr("unit.days", lang = lang)
+        ),
+        recipients = paste(subscription$recipients, collapse = ", "),
+        channel = episodic_tr(paste0("channel.", subscription$channel), lang = lang),
+        lang = lang
+      )
+    ),
+    if (isTRUE(subscription$include_linelist)) {
+      shiny::tags$p(episodic_tr("panel.report.schedule_current_linelist", lang = lang))
+    },
+    shiny::tags$p(
+      style = "font-size:12.5px;color:var(--episodic-muted);",
+      episodic_tr(
+        "panel.report.schedule_set_by",
+        user = if (!is.null(set_by)) set_by$username else episodic_tr("misc.unknown", lang = lang),
+        when = episodic_ui_format_datetime(subscription$set_at, fmt = "%d-%m-%Y %H:%M"),
+        lang = lang
+      )
+    ),
+    if (!is.null(last_send)) {
+      shiny::tags$p(
+        style = "font-size:12.5px;color:var(--episodic-muted);",
+        episodic_tr(
+          "panel.report.schedule_last_attempt",
+          when = episodic_ui_format_datetime(last_send$sent_at, fmt = "%d-%m-%Y %H:%M"),
+          status = episodic_tr(
+            paste0("panel.report.schedule_status_", last_send$status),
+            lang = lang
+          ),
+          lang = lang
+        )
+      )
+    },
+    if (finalised) {
+      shiny::tags$p(
+        class = "episodic-panel-empty",
+        episodic_tr("panel.report.schedule_finalised", lang = lang)
+      )
+    } else {
+      shiny::tags$button(
+        class = "episodic-btn",
+        onclick = sprintf(
+          "Shiny.setInputValue('report_schedule_cancel', %d, {priority: 'event'})",
+          cluster_id
+        ),
+        episodic_tr("panel.report.schedule_cancel_button", lang = lang)
+      )
+    }
+  )
+}
+
+#' @keywords internal
+#' @noRd
+episodic_ui_report_schedule_form <- function(cluster_id, available_channels, lang) {
+  shiny::tagList(
+    shiny::tags$div(
+      class = "episodic-form-group",
+      shiny::tags$label(episodic_tr("panel.report.schedule_interval_label", lang = lang)),
+      shiny::tags$input(
+        id = "report-schedule-interval",
+        type = "number",
+        min = 1,
+        step = 1,
+        value = 7,
+        style = "width:70px;margin-left:8px;margin-right:6px;"
+      ),
+      episodic_tr("panel.report.schedule_interval_unit", lang = lang)
+    ),
+    shiny::tags$div(
+      class = "episodic-form-group",
+      shiny::tags$label(episodic_tr("panel.report.schedule_recipients_label", lang = lang)),
+      shiny::tags$textarea(
+        id = "report-schedule-recipients",
+        rows = 3,
+        style = "width:100%;",
+        placeholder = episodic_tr("panel.report.schedule_recipients_hint", lang = lang)
+      )
+    ),
+    shiny::tags$div(
+      class = "episodic-form-group",
+      shiny::tags$label(episodic_tr("panel.report.schedule_channel_label", lang = lang)),
+      shiny::tags$select(
+        id = "report-schedule-channel",
+        lapply(available_channels, function(ch) {
+          shiny::tags$option(value = ch, episodic_tr(paste0("channel.", ch), lang = lang))
+        })
+      )
+    ),
+    shiny::tags$div(
+      class = "episodic-form-group",
+      shiny::tags$label(
+        shiny::tags$input(id = "report-schedule-linelist", type = "checkbox"),
+        episodic_tr("panel.report.schedule_linelist_label", lang = lang)
+      )
+    ),
+    shiny::tags$button(
+      class = "episodic-btn episodic-btn-primary",
+      onclick = sprintf(
+        paste0(
+          "Shiny.setInputValue('report_schedule_save', {cluster_id: %d, ",
+          "interval_days: document.getElementById('report-schedule-interval').value, ",
+          "recipients: document.getElementById('report-schedule-recipients').value, ",
+          "channel: document.getElementById('report-schedule-channel').value, ",
+          "include_linelist: document.getElementById('report-schedule-linelist').checked}, ",
+          "{priority: 'event'});"
+        ),
+        cluster_id
+      ),
+      episodic_tr("panel.report.schedule_save_button", lang = lang)
+    )
   )
 }
 

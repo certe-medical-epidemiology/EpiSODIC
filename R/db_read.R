@@ -812,6 +812,82 @@ episodic_db_reports_for_cluster <- function(con, cluster_id) {
   )
 }
 
+#' A cluster's scheduled-report subscription history, oldest first
+#'
+#' The current schedule (or "no schedule") is the last row - see
+#' `episodic_report_subscription_current()`, which reduces this to that
+#' single current state. Kept as its own read (rather than only ever
+#' reducing) because the Reports panel also shows who set the current
+#' schedule and when, which needs the row itself, not just its fields.
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A cluster id.
+#' @return A data frame, one row per `set`/`cancel` event, oldest first.
+#' @keywords internal
+#' @noRd
+episodic_db_report_subscription_events <- function(con, cluster_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_report_subscription_event
+      WHERE cluster_id = ? ORDER BY created_at, event_id",
+    params = list(cluster_id)
+  )
+}
+
+#' Every scheduled-report subscription event, across every cluster
+#'
+#' Used only by `episodic_scheduled_reports_dispatch()`, which has to
+#' find every cluster with an active schedule and does not know their
+#' ids in advance - one read of the whole (typically small) event table,
+#' reduced to "current schedule per cluster" in R by
+#' `episodic_report_subscription_current_all()`, rather than one query
+#' per cluster.
+#' @param con A [DBI::DBIConnection-class].
+#' @return A data frame with the same columns as
+#'   `episodic_db_report_subscription_events()`, for every cluster,
+#'   ordered by `cluster_id`, `created_at`, `event_id`.
+#' @keywords internal
+#' @noRd
+episodic_db_report_subscription_events_all <- function(con) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_report_subscription_event
+      ORDER BY cluster_id, created_at, event_id"
+  )
+}
+
+#' A cluster's scheduled-report send log, most recent first
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A cluster id.
+#' @return A data frame, one row per attempted send (sent or failed).
+#' @keywords internal
+#' @noRd
+episodic_db_report_subscription_sends <- function(con, cluster_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_report_subscription_send
+      WHERE cluster_id = ? ORDER BY sent_at DESC, send_id DESC",
+    params = list(cluster_id)
+  )
+}
+
+#' Every scheduled-report send, across every cluster
+#'
+#' Used only by `episodic_scheduled_reports_dispatch()`, to compute
+#' whether each cluster's current schedule is due without one query per
+#' cluster - see `episodic_db_report_subscription_events_all()`.
+#' @param con A [DBI::DBIConnection-class].
+#' @return A data frame with the same columns as
+#'   `episodic_db_report_subscription_sends()`, for every cluster.
+#' @keywords internal
+#' @noRd
+episodic_db_report_subscription_sends_all <- function(con) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_report_subscription_send
+      ORDER BY cluster_id, sent_at, send_id"
+  )
+}
+
 #' @param institution_id An `episodic_institution` id.
 #' @keywords internal
 #' @noRd

@@ -28,7 +28,7 @@ Recognises the same signal across repeated runs and across geographic levels, so
 Gives epidemiologists a dossier per cluster with an automatically generated interpretation of the evidence, and records every judgement made on it, kept as a full, immutable audit trail.
 
 ### It Reports
-Turns a confirmed cluster into an outbreak report for clinical microbiologists and infection prevention practitioners, rendered in the language your colleagues read.
+Turns a confirmed cluster into an outbreak report for clinical microbiologists and infection prevention practitioners, rendered in the language your colleagues read, with every new version showing what changed since the last one. A cluster can also be put on a recurring schedule - every N days, to a list of addresses - so colleagues without a dashboard account still get their update automatically.
 
 ### It Notifies
 Pushes new clusters to your team the moment they arise, by email, Microsoft Teams, Slack, or even an ntfy server.

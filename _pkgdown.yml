@@ -46,6 +46,7 @@ articles:
     Set up notifications and other operational knobs.
   contents:
   - notifications
+  - scheduled-reports
 
 - title: Reference
   desc: >
@@ -113,6 +114,7 @@ reference:
     How to send an outbreak report to clinical colleagues.
   contents:
   - episodic_report_render
+  - episodic_scheduled_reports
 
 - title: Notifications
   desc: >

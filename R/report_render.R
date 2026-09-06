@@ -124,6 +124,14 @@ episodic_report_render <- function(con,
     )
   }
 
+  qmd_path <- episodic_report_qmd_path(qmd_path)
+
+  dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+  existing <- episodic_db_reports_for_cluster(con, cluster_id)
+  version_no <- if (nrow(existing) == 0) 1L else max(existing$version_no) + 1L
+  snapshot <- episodic_report_snapshot(obj)
+  diff <- episodic_report_diff(existing, snapshot, case_ids)
+
   report_data <- list(
     obj = obj,
     epi_curve = epi_curve,
@@ -131,17 +139,12 @@ episodic_report_render <- function(con,
     linelist = linelist,
     timeline = timeline,
     similar = similar,
+    diff = diff,
     small_count_threshold = threshold,
     rendered_at = episodic_now(),
     lang = lang,
     package_version = as.character(utils::packageVersion("EpiSODIC"))
   )
-
-  qmd_path <- episodic_report_qmd_path(qmd_path)
-
-  dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
-  existing <- episodic_db_reports_for_cluster(con, cluster_id)
-  version_no <- if (nrow(existing) == 0) 1L else max(existing$version_no) + 1L
 
   work_dir <- tempfile("episodic_report_")
   dir.create(work_dir)
@@ -195,9 +198,13 @@ episodic_report_render <- function(con,
       cluster_id = cluster_id,
       include_linelist = include_linelist,
       small_count_threshold = threshold,
-      lang = lang
+      lang = lang,
+      snapshot = snapshot,
+      diff = diff
     ),
-    auto_unbox = TRUE
+    auto_unbox = TRUE,
+    null = "null",
+    na = "null"
   ))
   case_ids_json <- as.character(jsonlite::toJSON(case_ids))
 
@@ -288,4 +295,82 @@ episodic_report_suppress_small_counts <- function(df, count_col, threshold) {
   out[small] <- paste0("<", threshold)
   df[[count_col]] <- out
   df
+}
+
+#' Build the comparable "snapshot" of one report render
+#'
+#' Stored alongside every render's other parameters (inside `params`, as
+#' `episodic_db_reports_for_cluster()` already returns it - no schema
+#' change needed) so the *next* render of the same cluster can compute
+#' what changed since this one, without re-deriving anything from case
+#' data that may since have moved on (dedup, corrections). Deliberately
+#' just the handful of headline numbers a reader compares report to
+#' report - not a copy of `obj` itself, which carries far more than a
+#' diff needs.
+#' @param obj A cluster object, as returned by `episodic_cluster_object()`.
+#' @return A list of scalars, JSON-serialisable.
+#' @keywords internal
+#' @noRd
+episodic_report_snapshot <- function(obj) {
+  list(
+    n_cases = obj$n_cases,
+    expected = obj$expected,
+    ratio = obj$ratio,
+    priority_score = obj$priority_score,
+    last_day = obj$last_day
+  )
+}
+
+#' What changed since the previous rendered version of this report
+#'
+#' `NULL` when there is no previous version, or when the previous
+#' version predates this feature and therefore carries no `snapshot` in
+#' its stored `params` - in both cases the report simply omits the
+#' "changes since the previous report" section rather than showing a
+#' diff against nothing.
+#' @param existing The cluster's existing `episodic_report_render` rows,
+#'   as returned by `episodic_db_reports_for_cluster()` (zero rows for
+#'   the first-ever render).
+#' @param snapshot This render's own snapshot, from
+#'   `episodic_report_snapshot()`.
+#' @param case_ids This render's case ids, for an exact new-case count
+#'   even when a late-arriving result backdates into the earlier period.
+#' @return A list with `previous_version_no`, `previous_rendered_at`,
+#'   `n_new_cases`, `n_cases_delta`, `priority_score_delta`,
+#'   `ratio_delta`, and `period_extended` (logical) - or `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_report_diff <- function(existing, snapshot, case_ids) {
+  if (nrow(existing) == 0) {
+    return(NULL)
+  }
+  previous_row <- existing[which.max(existing$version_no), ]
+  previous_params <- tryCatch(
+    jsonlite::fromJSON(previous_row$params),
+    error = function(e) NULL
+  )
+  previous_snapshot <- previous_params$snapshot
+  if (is.null(previous_snapshot)) {
+    return(NULL)
+  }
+  previous_case_ids <- tryCatch(
+    jsonlite::fromJSON(previous_row$case_ids),
+    error = function(e) integer(0)
+  )
+  previous_ratio <- previous_snapshot$ratio %||% NA_real_
+
+  list(
+    previous_version_no = previous_row$version_no,
+    previous_rendered_at = previous_row$rendered_at,
+    n_new_cases = length(setdiff(case_ids, previous_case_ids)),
+    n_cases_delta = snapshot$n_cases - previous_snapshot$n_cases,
+    priority_score_delta = snapshot$priority_score - previous_snapshot$priority_score,
+    ratio_delta = if (is.na(snapshot$ratio) || is.na(previous_ratio)) {
+      NA_real_
+    } else {
+      snapshot$ratio - previous_ratio
+    },
+    period_extended = !identical(snapshot$last_day, previous_snapshot$last_day) &&
+      as.Date(snapshot$last_day) > as.Date(previous_snapshot$last_day)
+  )
 }

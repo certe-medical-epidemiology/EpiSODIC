@@ -1,3 +1,18 @@
+# EpiSODIC 0.13.0
+
+## New
+
+- Clusters can now carry a scheduled-report subscription: an epidemiologist sets an every-N-days cadence and a list of recipient email addresses from the Reports panel, for colleagues without an EpiSODIC account (or only a viewer one) who need updates without opening the dashboard
+- `episodic_run_cron()` sends every due scheduled report after each run, as a self-contained HTML attachment through an already-configured, email-capable notification channel (SMTP, sendmail or Microsoft 365); every attempt, sent or failed, is logged
+- A schedule sends its first report on the very next cron run, then every N days after the last successful send; it stops automatically, after one final report, once its cluster closes, merges, or is suppressed
+- Every outbreak report now shows what changed since the previous version - new cases, and the priority score, ratio and case period deltas - in Quarto callout boxes
+- New `vignette("scheduled-reports")` documenting the cadence, closure and delivery rules
+
+## Changed
+
+- The dossier's Reports panel gained a "Scheduled reports" section, gated to the `epidemiologist` role like every other write action on it
+
+
 # EpiSODIC 0.12.1
 
 ## Changed

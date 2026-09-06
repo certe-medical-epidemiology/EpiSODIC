@@ -72,7 +72,8 @@ episodic_notify_smtp <- function(channel, message) {
     from,
     to,
     message$title,
-    message$html
+    message$html,
+    attachment_path = message$attachment_path
   )
 
   smtp_url <- paste0("smtp://", host, ":", port)
@@ -95,25 +96,61 @@ episodic_notify_smtp <- function(channel, message) {
 }
 
 #' Build a MIME message for SMTP/sendmail
+#'
+#' Two shapes, chosen by whether `attachment_path` is given: a plain
+#' `text/html` message (every ordinary notification: new clusters, run
+#' failures), or a `multipart/mixed` message carrying that same HTML
+#' body alongside one file attachment (a scheduled report - see
+#' `R/scheduled_reports.R`), base64-encoded, `Content-Disposition:
+#' attachment` so it opens as a file rather than rendering inline.
+#' @param from,to,subject,html_body As sent to the recipient.
+#' @param attachment_path Path to a file to attach, or `NULL` (default)
+#'   for a plain message.
 #' @keywords internal
 #' @noRd
-episodic_notify_mime_message <- function(from, to, subject, html_body) {
+episodic_notify_mime_message <- function(from, to, subject, html_body, attachment_path = NULL) {
   to_header <- paste(to, collapse = ", ")
+  headers <- paste0(
+    "From: ", from, "\r\n",
+    "To: ", to_header, "\r\n",
+    "Subject: ", subject, "\r\n",
+    "MIME-Version: 1.0\r\n"
+  )
+
+  if (is.null(attachment_path)) {
+    return(paste0(
+      headers,
+      "Content-Type: text/html; charset=UTF-8\r\n",
+      "Content-Transfer-Encoding: 8bit\r\n",
+      "\r\n",
+      html_body
+    ))
+  }
+
+  # A boundary that cannot plausibly collide with anything in the HTML
+  # body or the base64-encoded attachment that follows it.
+  boundary <- paste0("EpiSODIC-", digest::digest(list(subject, attachment_path, Sys.time())))
+  attachment_raw <- readBin(attachment_path, what = "raw", n = file.size(attachment_path))
+  attachment_b64 <- jsonlite::base64_enc(attachment_raw)
+
   paste0(
-    "From: ",
-    from,
+    headers,
+    "Content-Type: multipart/mixed; boundary=\"", boundary, "\"\r\n",
     "\r\n",
-    "To: ",
-    to_header,
-    "\r\n",
-    "Subject: ",
-    subject,
-    "\r\n",
-    "MIME-Version: 1.0\r\n",
+    "--", boundary, "\r\n",
     "Content-Type: text/html; charset=UTF-8\r\n",
     "Content-Transfer-Encoding: 8bit\r\n",
     "\r\n",
-    html_body
+    html_body,
+    "\r\n\r\n",
+    "--", boundary, "\r\n",
+    "Content-Type: text/html; name=\"", basename(attachment_path), "\"\r\n",
+    "Content-Transfer-Encoding: base64\r\n",
+    "Content-Disposition: attachment; filename=\"", basename(attachment_path), "\"\r\n",
+    "\r\n",
+    attachment_b64,
+    "\r\n",
+    "--", boundary, "--\r\n"
   )
 }
 
@@ -133,7 +170,8 @@ episodic_notify_sendmail <- function(channel, message) {
     from,
     to,
     message$title,
-    message$html
+    message$html,
+    attachment_path = message$attachment_path
   )
 
   args <- c("-f", from, to)
@@ -260,6 +298,9 @@ episodic_notify_microsoft365 <- function(channel, message) {
     subject = message$title,
     to = to
   )
+  if (!is.null(message$attachment_path)) {
+    email$add_attachment(message$attachment_path)
+  }
   email$send()
   invisible(NULL)
 }

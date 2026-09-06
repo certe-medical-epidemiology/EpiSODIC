@@ -41,7 +41,7 @@ obj <- d$obj
 # resolves the empty string itself). A template must not have a language
 # of its own.
 lang <- if (is.null(d$lang)) Sys.getenv("EPISODIC_LANGUAGE") else d$lang
-tr <- function(key, ...) episodic_tr(key, lang = lang, ...)
+tr <- function(key, ...) EpiSODIC:::episodic_tr(key, lang = lang, ...)
 na_dash <- function(x) if (is.na(x)) "-" else x
 ```
 
@@ -54,6 +54,75 @@ na_dash <- function(x) if (is.na(x)) "-" else x
 ::: {.callout-note}
 `r tr("report.note_versioned")`
 :::
+
+```{r diff-section, results='asis'}
+# NULL for the first-ever render of a cluster, or when the previous
+# version predates this feature (see episodic_report_diff()) - either
+# way, nothing to compare against, so the section is simply omitted.
+if (!is.null(d$diff)) {
+  diff <- d$diff
+  callout_type <- if (
+    diff$n_new_cases > 0 ||
+      (!is.na(diff$priority_score_delta) && diff$priority_score_delta > 0)
+  ) {
+    "callout-important"
+  } else {
+    "callout-tip"
+  }
+  cat(
+    "::: {.", callout_type, ' title="', tr("report.diff_section_title"), '"}\n\n',
+    sep = ""
+  )
+  cat(
+    tr(
+      "report.diff_compared_to",
+      version = diff$previous_version_no,
+      when = EpiSODIC:::episodic_ui_format_datetime(diff$previous_rendered_at, fmt = "%d-%m-%Y %H:%M")
+    ),
+    "\n\n",
+    sep = ""
+  )
+  if (diff$n_new_cases > 0) {
+    cases_phrase <- EpiSODIC:::episodic_count_phrase(
+      diff$n_new_cases,
+      tr("unit.new_case"),
+      tr("unit.new_cases")
+    )
+    cat("- ", tr("report.diff_new_cases", cases_phrase = cases_phrase), "\n", sep = "")
+  } else {
+    cat("- ", tr("report.diff_no_new_cases"), "\n", sep = "")
+  }
+  if (!is.na(diff$priority_score_delta) && diff$priority_score_delta != 0) {
+    cat(
+      "- ",
+      tr(
+        "report.diff_priority_change",
+        previous = round(obj$priority_score - diff$priority_score_delta, 0),
+        current = round(obj$priority_score, 0),
+        delta = sprintf("%+.0f", diff$priority_score_delta)
+      ),
+      "\n",
+      sep = ""
+    )
+  }
+  if (!is.na(diff$ratio_delta) && diff$ratio_delta != 0) {
+    cat(
+      "- ",
+      tr(
+        "report.diff_ratio_change",
+        previous = round(obj$ratio - diff$ratio_delta, 1),
+        current = round(obj$ratio, 1)
+      ),
+      "\n",
+      sep = ""
+    )
+  }
+  if (isTRUE(diff$period_extended)) {
+    cat("- ", tr("report.diff_period_extended", date = obj$last_day), "\n", sep = "")
+  }
+  cat("\n:::\n\n")
+}
+```
 
 ## `r tr("report.key_figures_title")`
 

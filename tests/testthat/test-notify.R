@@ -621,6 +621,42 @@ test_that("episodic_notify_microsoft365() does not request a shared mailbox when
   expect_false("shared_mbox_email" %in% names(captured$args))
 })
 
+test_that("episodic_notify_microsoft365() attaches a file when the message carries one", {
+  testthat::skip_if_not_installed("Microsoft365R")
+  testthat::skip_if_not_installed("AzureGraph")
+  testthat::skip_if_not_installed("AzureAuth")
+
+  fake_login <- list(tenant = "contoso.onmicrosoft.com", token = "the-token")
+  local_mocked_bindings(
+    list_graph_logins = function() list(contoso = list(hash1 = fake_login)),
+    .package = "AzureGraph"
+  )
+
+  captured <- new.env()
+  captured$attached <- character(0)
+  fake_draft <- list(
+    add_attachment = function(path) {
+      captured$attached <<- c(captured$attached, path)
+      invisible(NULL)
+    },
+    send = function() invisible(NULL)
+  )
+  fake_outlook <- list(
+    create_email = function(body, content_type, subject, to) fake_draft
+  )
+  local_mocked_bindings(
+    get_business_outlook = function(...) fake_outlook,
+    .package = "Microsoft365R"
+  )
+
+  episodic_notify_microsoft365(
+    list(tenant_id = "contoso", to = "team-lead@example.org"),
+    list(title = "t", html = "<p>x</p>", attachment_path = "report.html")
+  )
+
+  expect_equal(captured$attached, "report.html")
+})
+
 test_that("episodic_notify_teams_card() produces valid JSON", {
   card <- episodic_notify_teams_card(
     "Test title",
@@ -738,4 +774,55 @@ test_that("episodic_notify_mime_message() builds a valid MIME header", {
   expect_match(mime, "Subject: Test Subject")
   expect_match(mime, "Content-Type: text/html")
   expect_match(mime, "<p>Hello</p>")
+  expect_no_match(mime, "multipart/mixed")
+})
+
+test_that("episodic_notify_mime_message() builds a multipart message with a base64 attachment", {
+  attachment <- tempfile(fileext = ".html")
+  on.exit(unlink(attachment))
+  writeLines("<html><body>report</body></html>", attachment)
+
+  mime <- episodic_notify_mime_message(
+    "from@example.org",
+    c("to@example.org"),
+    "Test Subject",
+    "<p>Hello</p>",
+    attachment_path = attachment
+  )
+  expect_match(mime, "Content-Type: multipart/mixed", fixed = TRUE)
+  expect_match(mime, "<p>Hello</p>", fixed = TRUE)
+  expect_match(mime, "Content-Disposition: attachment", fixed = TRUE)
+  expect_match(mime, basename(attachment), fixed = TRUE)
+
+  # The attachment content is recoverable: decoding the base64 block
+  # reproduces the original file exactly.
+  encoded <- sub(
+    ".*Content-Disposition: attachment[^\r\n]*\r\n\r\n(.*?)\r\n--.*",
+    "\\1",
+    mime
+  )
+  decoded <- jsonlite::base64_dec(encoded)
+  expect_equal(decoded, readBin(attachment, "raw", n = file.size(attachment)))
+})
+
+test_that("episodic_notify_smtp()/episodic_notify_sendmail() pass the attachment through", {
+  testthat::skip_if_not_installed("curl")
+  attachment <- tempfile(fileext = ".html")
+  on.exit(unlink(attachment))
+  writeLines("<html></html>", attachment)
+
+  captured <- new.env()
+  local_mocked_bindings(
+    send_mail = function(mail_from, mail_rcpt, message, smtp_server, ...) {
+      captured$message <- paste(readLines(message), collapse = "\n")
+      invisible(NULL)
+    },
+    .package = "curl"
+  )
+  episodic_notify_smtp(
+    list(host = "smtp.example.org", from = "from@example.org", to = "to@example.org"),
+    list(title = "Subject", html = "<p>Hi</p>", attachment_path = attachment)
+  )
+  expect_match(captured$message, "multipart/mixed", fixed = TRUE)
+  expect_match(captured$message, basename(attachment), fixed = TRUE)
 })
