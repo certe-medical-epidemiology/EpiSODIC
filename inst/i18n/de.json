@@ -69,11 +69,11 @@
   "careline.short.other": "sonstige",
   "careline.short.unknown": "unbekannt",
 
-  "verloop.title": "Zeitverlauf",
-  "verloop.not_assessed": "Noch nicht bewertet. Erkannt am {first} durch {detectors}.",
+  "timeline.title": "Zeitverlauf",
+  "timeline.not_assessed": "Noch nicht bewertet. Erkannt am {first} durch {detectors}.",
 
-  "statusverloop.title": "Statusverlauf",
-  "statusverloop.unassessed": "Unbewertet",
+  "status_trajectory.title": "Statusverlauf",
+  "status_trajectory.unassessed": "Unbewertet",
 
   "panel.interpretation.title": "Einordnung",
   "panel.interpretation.aside": "automatisch erstellt",

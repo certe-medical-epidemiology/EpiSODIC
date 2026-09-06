@@ -20,7 +20,7 @@
 # Read models: assessment timeline, archive, activity. Cheap reads only,
 # same as R/app_read.R.
 
-#' The assessment rail's timeline ("Verloop")
+#' The assessment rail's timeline
 #'
 #' Every classification, closure and mute affecting this cluster, in one
 #' chronological feed - "assessments rendered as an append-only timeline,

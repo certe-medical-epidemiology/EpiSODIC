@@ -69,11 +69,11 @@
   "careline.short.other": "अन्य",
   "careline.short.unknown": "अज्ञात",
 
-  "verloop.title": "समयरेखा",
-  "verloop.not_assessed": "अभी तक मूल्यांकन नहीं हुआ है। {first} को {detectors} द्वारा संसूचित।",
+  "timeline.title": "समयरेखा",
+  "timeline.not_assessed": "अभी तक मूल्यांकन नहीं हुआ है। {first} को {detectors} द्वारा संसूचित।",
 
-  "statusverloop.title": "स्थिति परिवर्तन",
-  "statusverloop.unassessed": "अमूल्यांकित",
+  "status_trajectory.title": "स्थिति परिवर्तन",
+  "status_trajectory.unassessed": "अमूल्यांकित",
 
   "panel.interpretation.title": "व्याख्या",
   "panel.interpretation.aside": "स्वतः तैयार",

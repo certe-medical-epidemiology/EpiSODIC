@@ -69,11 +69,11 @@
   "careline.short.other": "其他",
   "careline.short.unknown": "未知",
 
-  "verloop.title": "时间线",
-  "verloop.not_assessed": "尚未评估。于 {first} 由 {detectors} 检出。",
+  "timeline.title": "时间线",
+  "timeline.not_assessed": "尚未评估。于 {first} 由 {detectors} 检出。",
 
-  "statusverloop.title": "状态变化",
-  "statusverloop.unassessed": "未评估",
+  "status_trajectory.title": "状态变化",
+  "status_trajectory.unassessed": "未评估",
 
   "panel.interpretation.title": "解读",
   "panel.interpretation.aside": "自动生成",

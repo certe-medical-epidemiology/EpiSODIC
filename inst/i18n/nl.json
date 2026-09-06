@@ -69,11 +69,11 @@
   "careline.short.other": "overig",
   "careline.short.unknown": "onbekend",
 
-  "verloop.title": "Verloop",
-  "verloop.not_assessed": "Nog niet beoordeeld. Gedetecteerd op {first} door {detectors}.",
+  "timeline.title": "Verloop",
+  "timeline.not_assessed": "Nog niet beoordeeld. Gedetecteerd op {first} door {detectors}.",
 
-  "statusverloop.title": "Statusverloop",
-  "statusverloop.unassessed": "Onbeoordeeld",
+  "status_trajectory.title": "Statusverloop",
+  "status_trajectory.unassessed": "Onbeoordeeld",
 
   "panel.interpretation.title": "Duiding",
   "panel.interpretation.aside": "automatisch opgesteld",

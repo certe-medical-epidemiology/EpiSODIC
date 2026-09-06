@@ -516,17 +516,17 @@ dl.episodic-settings dt {
 }
 dl.episodic-settings dd { margin: 0; }
 
-.episodic-verloop {
+.episodic-timeline {
   padding: 16px;
 }
-.episodic-verloop-title {
+.episodic-timeline-title {
   font-size: 0.808rem;
   letter-spacing: 0.6px;
   text-transform: uppercase;
   color: var(--episodic-muted);
   margin-bottom: 10px;
 }
-.episodic-verloop-empty {
+.episodic-timeline-empty {
   font-size: 0.962rem;
   color: var(--episodic-muted);
   line-height: 1.55;
@@ -541,7 +541,7 @@ dl.episodic-settings dd { margin: 0; }
 }
 
 .episodic-streams-screen {
-  /* Shared by the Streams, Archief, Activiteit, Prestatie and Info
+  /* Shared by the Streams, Archive, Activity, Performance and Info
      screens. None of these sit inside .episodic-body's own fixed-height
      flex layout (that wraps only the default clusters view), so without
      its own height+scroll a long one - the Streams screen especially,

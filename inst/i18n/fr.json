@@ -69,11 +69,11 @@
   "careline.short.other": "autre",
   "careline.short.unknown": "inconnu",
 
-  "verloop.title": "Chronologie",
-  "verloop.not_assessed": "Pas encore évalué. Détecté le {first} par {detectors}.",
+  "timeline.title": "Chronologie",
+  "timeline.not_assessed": "Pas encore évalué. Détecté le {first} par {detectors}.",
 
-  "statusverloop.title": "Trajectoire du statut",
-  "statusverloop.unassessed": "Non évalué",
+  "status_trajectory.title": "Trajectoire du statut",
+  "status_trajectory.unassessed": "Non évalué",
 
   "panel.interpretation.title": "Interprétation",
   "panel.interpretation.aside": "générée automatiquement",

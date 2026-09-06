@@ -203,7 +203,7 @@ test_that("the status trajectory shows classifications, and labels the pre-asses
     lang = "nl"
   ))
   expect_true(grepl(
-    episodic_tr("statusverloop.unassessed", lang = "nl"),
+    episodic_tr("status_trajectory.unassessed", lang = "nl"),
     before,
     fixed = TRUE
   ))
@@ -241,7 +241,7 @@ test_that("the status trajectory shows classifications, and labels the pre-asses
     lang = "nl"
   ))
   expect_true(grepl(
-    episodic_tr("statusverloop.unassessed", lang = "nl"),
+    episodic_tr("status_trajectory.unassessed", lang = "nl"),
     after,
     fixed = TRUE
   ))

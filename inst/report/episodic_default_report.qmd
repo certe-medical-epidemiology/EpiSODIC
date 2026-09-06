@@ -192,7 +192,7 @@ if (!is.null(obj$concentration) && nrow(obj$concentration$rows) > 0) {
 }
 ```
 
-## `r tr("verloop.title")`
+## `r tr("timeline.title")`
 
 ```{r timeline, results='asis'}
 if (!is.null(d$timeline) && nrow(d$timeline) > 0) {
