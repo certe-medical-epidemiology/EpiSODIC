@@ -254,8 +254,8 @@ CREATE TABLE episodic_cluster (
   -- 'manual': added directly through episodic_add_manual_cluster(), for
   -- output from another algorithm/system, never connected to this
   -- instance's own episodic_case data. Manual clusters are excluded from
-  -- reconciliation matching (R/reconcile.R) and from automatic
-  -- staleness/closure (R/reconcile_closure.R); their case-level detail
+  -- reconciliation matching and from automatic staleness/closure
+  -- (both in R/reconcile.R); their case-level detail
   -- (if any) lives in episodic_cluster_manual_case, never in
   -- episodic_case/episodic_cluster_case.
   origin                   TEXT NOT NULL DEFAULT 'detected' CHECK (origin IN ('detected', 'manual'))
