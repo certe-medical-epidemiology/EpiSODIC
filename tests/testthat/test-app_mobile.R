@@ -197,7 +197,13 @@ test_that("the interpretation/notes pair and the pathogen breakdown pair use cla
 })
 
 test_that("episodicSelectPane/episodicSyncPaneBar/episodicToggleNav are each defined exactly once in the page head", {
-  html <- as.character(episodic_app_ui("en"))
+  # as.character() on a shiny.tag.list renders only htmltools::renderTags()'s
+  # $html (the body) - tags$head() content is deliberately excluded there so
+  # a full page render (Shiny's own renderDocument()) can splice it into the
+  # document's actual <head> instead. Reassembling $head + $html here is the
+  # only way to see that content from a unit test.
+  rendered <- htmltools::renderTags(episodic_app_ui("en"))
+  html <- paste(c(rendered$head, rendered$html), collapse = "\n")
   for (fn in c("episodicSelectPane", "episodicSyncPaneBar", "episodicToggleNav")) {
     expect_equal(
       lengths(regmatches(
@@ -225,6 +231,10 @@ test_that("the rail item's onclick still sets rail_select and now also switches 
   )
   html <- as.character(episodic_ui_rail(open, selected_id = NULL, lang = "en"))
   expect_true(grepl("rail_select", html, fixed = TRUE))
-  expect_true(grepl("episodicSelectPane('dossier')", html, fixed = TRUE))
+  # Attribute values come back HTML-escaped (htmltools turns ' into &#39;),
+  # so match on the unquoted parts - see test-app_ui.R's
+  # episodic_ui_nav_link() test for the same idiom.
+  expect_true(grepl("episodicSelectPane(", html, fixed = TRUE))
+  expect_true(grepl("dossier&#39;)", html, fixed = TRUE))
   expect_true(grepl("episodicSyncPaneBar()", html, fixed = TRUE))
 })
