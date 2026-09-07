@@ -629,6 +629,22 @@ dl.episodic-settings dd { margin: 0; }
   flex-shrink: 0;
   overflow-y: auto;
 }
+#notes-view h1 {
+  font-size: 1.55rem;
+}
+#notes-view h2 {
+  font-size: 1.4rem;
+}
+#notes-view h3 {
+  font-size: 1.25rem;
+}
+#notes-view h4 {
+  font-size: 1.1rem;
+}
+#notes-view h5, #notes-view h6, #notes-view h7 {
+  font-size: 1rem;
+  font-weight: normal;
+}
 
 .episodic-streams-screen {
   /* Shared by the Streams, Archive, Activity, Performance and Info
