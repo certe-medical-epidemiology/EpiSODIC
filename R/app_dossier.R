@@ -55,13 +55,13 @@ episodic_ui_dossier <- function(con,
     episodic_ui_stat_grid(obj, lang = lang),
     episodic_ui_trajectory(obj, timeline, lang = lang),
     shiny::tags$div(
-      style = "display:flex;gap:16px;",
+      class = "episodic-split-row",
       shiny::tags$div(
-        style = "flex:1;min-width:60%;",
+        class = "episodic-split-col-wide",
         episodic_ui_interpretation_panel(obj, lang = lang)
       ),
       shiny::tags$div(
-        style = "flex:1;min-width:0;",
+        class = "episodic-split-col",
         shiny::uiOutput("notes_pane")
       )
     ),

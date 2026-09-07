@@ -261,9 +261,40 @@ episodic_app_server_factory <- function(db_path,
       } else {
         shiny::tags$div(
           class = "episodic-body",
+          # Which pane is on top below 1200px - see episodicSelectPane()
+          # in R/app_ui.R and the "Responsive layout" section at the end
+          # of episodic.css. Inert above 1200px: no rule there reads it.
+          `data-pane` = "dossier",
+          # Off-canvas rail toggle: shown only in the 768-1199px tier,
+          # where the rail slides in as an overlay over dossier+assessment
+          # rather than sharing a row with them - the rail is a list you
+          # consult and leave, the assessment is what you write into while
+          # reading the dossier, so the rail is what gets shed at this
+          # width rather than the assessment. Hidden again below 768px,
+          # where the segmented control's own "clusters" tab does the
+          # same job.
+          shiny::tags$button(
+            type = "button",
+            class = "episodic-rail-toggle",
+            # Reuses rail.title ("Open clusters") rather than a new key:
+            # it already says exactly what pressing this button reveals.
+            `aria-label` = episodic_tr("rail.title", lang = lang),
+            onclick = "episodicSelectPane('rail');",
+            "\u2630"
+          ),
+          # Closes the off-canvas rail again on an outside tap. Only ever
+          # visible (via CSS) while data-pane="rail" in the 768-1199px
+          # tier - at >=1200px the rail is never off-canvas, and below
+          # 768px it is a full pane rather than an overlay, so there is
+          # nothing behind it to reveal.
+          shiny::tags$div(
+            class = "episodic-pane-backdrop",
+            onclick = "episodicSelectPane('dossier');"
+          ),
           shiny::uiOutput("rail_pane"),
           shiny::uiOutput("dossier_pane"),
-          shiny::uiOutput("assessment_pane")
+          shiny::uiOutput("assessment_pane"),
+          episodic_ui_pane_switcher(lang = lang)
         )
       }
     })
@@ -784,7 +815,17 @@ episodic_ui_rail <- function(open,
           # when the selection changes from outside the rail itself.
           `data-cluster-id` = row$cluster_id,
           onclick = sprintf(
-            "document.querySelectorAll('.episodic-rail-item').forEach(function(el){el.classList.remove('active');}); this.classList.add('active'); Shiny.setInputValue('rail_select', %d, {priority: 'event'})",
+            paste0(
+              "document.querySelectorAll('.episodic-rail-item').forEach(function(el){el.classList.remove('active');}); ",
+              "this.classList.add('active'); ",
+              "Shiny.setInputValue('rail_select', %d, {priority: 'event'}); ",
+              # Picking a cluster from the rail itself: bring the dossier
+              # forward and refresh the pane switcher's cluster label the
+              # same way episodicOpenCluster() does for a click that opens
+              # a cluster from somewhere else.
+              "episodicSelectPane('dossier'); ",
+              "episodicSyncPaneBar();"
+            ),
             row$cluster_id
           ),
           shiny::tags$div(

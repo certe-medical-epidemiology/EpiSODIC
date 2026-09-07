@@ -11,6 +11,7 @@
   "nav.performance": "性能",
   "nav.info": "信息",
   "nav.settings": "设置",
+  "nav.menu_label": "菜单",
 
   "rail.title": "未结聚集事件",
   "rail.count_suffix": "新增或活跃",
@@ -19,6 +20,8 @@
   "rail.bulk_selected": "已选择",
   "rail.bulk_apply": "对所选项应用分类",
   "rail.bulk_clear": "清除选择",
+
+  "pane.dossier": "档案",
 
   "dossier.stat.observed": "已确认",
   "dossier.stat.observed_sub": "预期 {expected}",

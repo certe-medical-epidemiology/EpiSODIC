@@ -1,9 +1,23 @@
-# EpiSODIC 0.13.3
+# EpiSODIC 0.14.1
 
 ## Changed
 
 - Chart panels now name the specific R package(s) at fault instead of showing the raw "Graphics API version mismatch" error when the graphics-rendering stack (e.g. ragg, systemfonts, textshaping) is installed but incompatible with the running R version, in all shipped languages
 - A distinct message covers the rarer case where no PNG graphics device works at all (a build-time R configuration issue), rather than wrongly telling the operator to reinstall a package
+
+
+# EpiSODIC 0.14.0
+
+## New
+
+- The dashboard now adapts to phone and tablet screens: the clusters screen's rail goes off-canvas below 1200px, and below 768px shows one of rail, dossier or assessment at a time through a sticky segmented control that also names the open cluster
+- The header's navigation collapses behind a menu button below 1200px
+- Tables, charts and controls throughout the dashboard get a horizontal scroll, larger tap targets and iOS-safe input sizing below 1200px
+
+## Changed
+
+- `.episodic-body`/`.episodic-streams-screen` no longer size themselves with a hardcoded `calc(100vh - 44px)`; the app shell is now a column flex so the header can grow past its usual height without breaking either screen's layout
+- The dossier's interpretation/notes pair and the Pathogen screen's care-line/institution pair now stack below 768px instead of staying side by side
 
 
 # EpiSODIC 0.13.2

@@ -11,6 +11,7 @@
   "nav.performance": "Prestatie",
   "nav.info": "Info",
   "nav.settings": "Instellingen",
+  "nav.menu_label": "Menu",
 
   "rail.title": "Openstaande clusters",
   "rail.count_suffix": "nieuw of actief",
@@ -19,6 +20,8 @@
   "rail.bulk_selected": "geselecteerd",
   "rail.bulk_apply": "Classificatie toepassen op geselecteerde",
   "rail.bulk_clear": "Selectie wissen",
+
+  "pane.dossier": "Dossier",
 
   "dossier.stat.observed": "Vastgesteld",
   "dossier.stat.observed_sub": "verwacht {expected}",
