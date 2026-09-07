@@ -11,6 +11,7 @@
   "nav.performance": "الأداء",
   "nav.info": "معلومات",
   "nav.settings": "الإعدادات",
+  "nav.menu_label": "القائمة",
 
   "rail.title": "التجمعات المفتوحة",
   "rail.count_suffix": "جديدة أو نشطة",
@@ -19,6 +20,8 @@
   "rail.bulk_selected": "محدَّدة",
   "rail.bulk_apply": "تطبيق التصنيف على المحدَّد",
   "rail.bulk_clear": "مسح التحديد",
+
+  "pane.dossier": "الملف",
 
   "dossier.stat.observed": "مؤكَّدة",
   "dossier.stat.observed_sub": "المتوقَّع {expected}",
