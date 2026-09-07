@@ -8,6 +8,7 @@
 - A cluster explicitly closed and then reassessed shows a banner naming who closed it, when, and that new cases have come in since
 - `reconciliation.autoclose_unassessed` (default `true`) controls whether the cron auto-closes a cluster nobody ever assessed once it goes stale
 - The Archive now names who closed each cluster (a person's full name, or "System" for an automatic closure)
+- A closed cluster's assessment form is hidden behind a "Re-open" button instead of staying open for a new assessment, reachable the same way from the rail, the Archive, or any related/similar-clusters panel
 
 ## Changed
 

@@ -349,6 +349,8 @@
   "assessment.confirm_close": "确定要记录为{verdict}并结案该聚集事件吗？若该监测序列上出现新病例，将自动重新开放以供重新评估。",
   "assessment.confirm_open": "确定要记录为{verdict}吗？该聚集事件将继续留在队列中开放，以供进一步审阅。",
   "assessment.reopened_banner": "该聚集事件曾由{actor}于{date}结案。此后该监测序列上出现了新病例，因此需要重新评估。",
+  "assessment.closed_notice": "该聚集事件已结案。请重新打开以记录新的评估。",
+  "assessment.reopen_button": "重新打开",
   "assessment.mute_button": "静音该监测序列",
   "assessment.mute_intro": "暂时抑制该监测序列的新检出——例如在已知的季节性高峰或筛查活动期间——避免同一原因反复被标记。",
   "assessment.mute_title": "静音监测序列",

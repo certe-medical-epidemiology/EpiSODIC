@@ -351,6 +351,8 @@
   "assessment.confirm_close": "Record this as {verdict} and close the cluster? It will reopen automatically for reassessment if new cases come in on this stream.",
   "assessment.confirm_open": "Record this as {verdict}? The cluster will stay open in the rail for further review.",
   "assessment.reopened_banner": "This cluster was closed by {actor} on {date}. New cases have since come in on this stream, so it needs reassessing.",
+  "assessment.closed_notice": "This cluster is closed. Re-open it to record a new assessment.",
+  "assessment.reopen_button": "Re-open",
   "assessment.mute_button": "Mute stream",
   "assessment.mute_intro": "Temporarily suppresses new detections for this stream - for a known seasonal peak or screening campaign, say - so the same cause is not flagged again and again.",
   "assessment.mute_title": "Mute stream",

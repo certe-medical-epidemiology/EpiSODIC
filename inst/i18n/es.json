@@ -349,6 +349,8 @@
   "assessment.confirm_close": "¿Registrar esto como {verdict} y cerrar el clúster? Se reabrirá automáticamente para reevaluación si llegan casos nuevos a esta serie de vigilancia.",
   "assessment.confirm_open": "¿Registrar esto como {verdict}? El clúster permanecerá abierto en la cola para su revisión posterior.",
   "assessment.reopened_banner": "Este clúster fue cerrado por {actor} el {date}. Desde entonces han llegado casos nuevos a esta serie de vigilancia, por lo que necesita reevaluarse.",
+  "assessment.closed_notice": "Este clúster está cerrado. Vuelva a abrirlo para registrar una nueva evaluación.",
+  "assessment.reopen_button": "Reabrir",
   "assessment.mute_button": "Silenciar serie",
   "assessment.mute_intro": "Suprime temporalmente las nuevas detecciones de esta serie, por ejemplo durante un pico estacional conocido o una campaña de cribado, para que no se señale la misma causa una y otra vez.",
   "assessment.mute_title": "Silenciar serie",

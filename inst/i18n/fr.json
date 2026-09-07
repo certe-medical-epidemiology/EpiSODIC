@@ -349,6 +349,8 @@
   "assessment.confirm_close": "Enregistrer ceci comme {verdict} et clôturer le cluster ? Il sera automatiquement rouvert pour réévaluation si de nouveaux cas apparaissent sur cette série de surveillance.",
   "assessment.confirm_open": "Enregistrer ceci comme {verdict} ? Le cluster restera ouvert dans la file pour un examen ultérieur.",
   "assessment.reopened_banner": "Ce cluster a été clôturé par {actor} le {date}. De nouveaux cas sont survenus depuis sur cette série de surveillance, une réévaluation est donc nécessaire.",
+  "assessment.closed_notice": "Ce cluster est clôturé. Rouvrez-le pour enregistrer une nouvelle évaluation.",
+  "assessment.reopen_button": "Rouvrir",
   "assessment.mute_button": "Mettre le flux en sourdine",
   "assessment.mute_intro": "Supprime temporairement les nouvelles détections pour ce flux, par exemple lors d'un pic saisonnier connu ou d'une campagne de dépistage, afin que la même cause ne soit pas signalée encore et encore.",
   "assessment.mute_title": "Mettre le flux en sourdine",

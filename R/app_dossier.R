@@ -1553,6 +1553,19 @@ episodic_ui_assessment_form <- function(con,
                                         lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
   reopened <- episodic_app_reopened_closure(con, cluster_id, lang = lang)
+  # A closed cluster's classification/closure controls stay in the DOM but
+  # hidden ([hidden], not [id="assess_close_wrap"]'s own kind of hidden)
+  # behind a "Re-open" button - reachable from a cluster table, the
+  # Archive, or the similar/related panels alike, since all of them land
+  # on this same form for a given cluster_id. Re-opening is a pure
+  # visibility toggle, not a write: nothing changes in the database until
+  # an actual assessment is submitted, at which point the new event's
+  # timestamp already makes explicitly_closed() FALSE on its own - no
+  # separate "reopened" state or write is needed for that to take effect.
+  closed <- identical(
+    episodic_app_derive_state_for_cluster(con, cluster_id),
+    "closed"
+  )
   # Ordered mild/terminal to severe - artefact and expected_variation
   # are both terminal (close immediately), the rest escalate.
   verdicts <- c(
@@ -1596,88 +1609,104 @@ episodic_ui_assessment_form <- function(con,
   shiny::tags$div(
     class = "episodic-panel-body",
     style = "border-top:1px solid var(--episodic-rule);padding:16px;",
-    if (!is.null(reopened)) {
-      shiny::tags$p(
-        class = "episodic-form-hint",
-        style = "margin-bottom:12px;",
-        episodic_tr(
-          "assessment.reopened_banner",
-          actor = reopened$actor,
-          date = episodic_ui_format_datetime(reopened$at, fmt = "%d-%m-%Y"),
-          lang = lang
+    if (isTRUE(closed)) {
+      shiny::tagList(
+        shiny::tags$p(
+          class = "episodic-form-hint",
+          episodic_tr("assessment.closed_notice", lang = lang)
+        ),
+        shiny::tags$button(
+          class = "episodic-btn",
+          onclick = "document.getElementById('assess_form_fields').hidden = false; this.hidden = true;",
+          episodic_tr("assessment.reopen_button", lang = lang)
         )
       )
     },
     shiny::tags$div(
-      class = "episodic-form-group",
-      shiny::tags$label(
-        class = "episodic-form-label",
-        episodic_tr("assessment.verdict_label", lang = lang)
+      id = "assess_form_fields",
+      hidden = if (isTRUE(closed)) NA else NULL,
+      if (!is.null(reopened)) {
+        shiny::tags$p(
+          class = "episodic-form-hint",
+          style = "margin-bottom:12px;",
+          episodic_tr(
+            "assessment.reopened_banner",
+            actor = reopened$actor,
+            date = episodic_ui_format_datetime(reopened$at, fmt = "%d-%m-%Y"),
+            lang = lang
+          )
+        )
+      },
+      shiny::tags$div(
+        class = "episodic-form-group",
+        shiny::tags$label(
+          class = "episodic-form-label",
+          episodic_tr("assessment.verdict_label", lang = lang)
+        ),
+        shiny::tags$div(
+          onclick = "episodicAssessVerdictChanged()",
+          episodic_ui_picker("assess_verdict", verdict_options)
+        )
       ),
       shiny::tags$div(
-        onclick = "episodicAssessVerdictChanged()",
-        episodic_ui_picker("assess_verdict", verdict_options)
-      )
-    ),
-    shiny::tags$div(
-      class = "episodic-form-group",
-      shiny::tags$label(
-        class = "episodic-form-label",
-        episodic_tr("assessment.rationale_label", lang = lang)
-      ),
-      shiny::tags$textarea(
-        id = "assess_rationale",
-        rows = 3,
-        placeholder = episodic_tr(
-          "assessment.rationale_placeholder",
-          lang = lang
+        class = "episodic-form-group",
+        shiny::tags$label(
+          class = "episodic-form-label",
+          episodic_tr("assessment.rationale_label", lang = lang)
+        ),
+        shiny::tags$textarea(
+          id = "assess_rationale",
+          rows = 3,
+          placeholder = episodic_tr(
+            "assessment.rationale_placeholder",
+            lang = lang
+          )
         )
-      )
-    ),
-    shiny::tags$div(
-      class = "episodic-form-group",
-      shiny::tags$label(
-        class = "episodic-form-label",
-        episodic_tr("assessment.snooze_label", lang = lang)
       ),
-      shiny::tags$input(type = "date", id = "assess_snooze")
-    ),
-    shiny::tags$div(
-      class = "episodic-form-group",
-      id = "assess_close_wrap",
-      shiny::tags$label(
-        style = "display:flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer;",
-        shiny::tags$input(type = "checkbox", id = "assess_close_checkbox"),
-        episodic_tr("assessment.close_checkbox_label", lang = lang)
+      shiny::tags$div(
+        class = "episodic-form-group",
+        shiny::tags$label(
+          class = "episodic-form-label",
+          episodic_tr("assessment.snooze_label", lang = lang)
+        ),
+        shiny::tags$input(type = "date", id = "assess_snooze")
       ),
-      shiny::tags$p(
-        class = "episodic-form-hint",
-        episodic_tr("assessment.close_checkbox_hint", lang = lang)
-      )
-    ),
-    shiny::tags$div(id = "assess_error"),
-    shiny::tags$div(
-      class = "episodic-form-actions",
-      shiny::tags$button(
-        class = "episodic-btn episodic-btn-primary",
-        onclick = sprintf("episodicSubmitAssessment(%d)", cluster_id),
-        episodic_tr("assessment.submit", lang = lang)
-      )
-    ),
-    # One global helper pair, redefined (harmlessly) on every re-render of
-    # this form: episodicAssessVerdictChanged() pre-ticks (and highlights)
-    # the closure checkbox the moment artefact/expected_variation is
-    # picked - a suggestion the epidemiologist can always untick, never an
-    # automatic closure - and episodicSubmitAssessment() confirms in plain
-    # language what submitting will do before it fires assess_submit, since
-    # closing (or not) is a deliberate, one-way-feeling act worth a second
-    # look. Delegated onto the picker's wrapping div (below) rather than a
-    # 'change' listener, since episodic_ui_picker()'s buttons set the
-    # hidden input's value directly with no native change event of their
-    # own; the wrapping div's onclick still fires on bubble, after the
-    # button's own onclick has already updated the value.
-    shiny::tags$script(shiny::HTML(sprintf(
-      "window.episodicAssessVerdictLabels = %s;
+      shiny::tags$div(
+        class = "episodic-form-group",
+        id = "assess_close_wrap",
+        shiny::tags$label(
+          style = "display:flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer;",
+          shiny::tags$input(type = "checkbox", id = "assess_close_checkbox"),
+          episodic_tr("assessment.close_checkbox_label", lang = lang)
+        ),
+        shiny::tags$p(
+          class = "episodic-form-hint",
+          episodic_tr("assessment.close_checkbox_hint", lang = lang)
+        )
+      ),
+      shiny::tags$div(id = "assess_error"),
+      shiny::tags$div(
+        class = "episodic-form-actions",
+        shiny::tags$button(
+          class = "episodic-btn episodic-btn-primary",
+          onclick = sprintf("episodicSubmitAssessment(%d)", cluster_id),
+          episodic_tr("assessment.submit", lang = lang)
+        )
+      ),
+      # One global helper pair, redefined (harmlessly) on every re-render of
+      # this form: episodicAssessVerdictChanged() pre-ticks (and highlights)
+      # the closure checkbox the moment artefact/expected_variation is
+      # picked - a suggestion the epidemiologist can always untick, never an
+      # automatic closure - and episodicSubmitAssessment() confirms in plain
+      # language what submitting will do before it fires assess_submit, since
+      # closing (or not) is a deliberate, one-way-feeling act worth a second
+      # look. Delegated onto the picker's wrapping div (below) rather than a
+      # 'change' listener, since episodic_ui_picker()'s buttons set the
+      # hidden input's value directly with no native change event of their
+      # own; the wrapping div's onclick still fires on bubble, after the
+      # button's own onclick has already updated the value.
+      shiny::tags$script(shiny::HTML(sprintf(
+        "window.episodicAssessVerdictLabels = %s;
 window.episodicAssessCloseConfirm = %s;
 window.episodicAssessOpenConfirm = %s;
 function episodicAssessVerdictChanged() {
@@ -1705,22 +1734,23 @@ function episodicSubmitAssessment(clusterId) {
   }
   Shiny.setInputValue('assess_submit', {cluster_id: clusterId, verdict: verdict, rationale: rationale, snooze: snooze, close: close}, {priority: 'event'});
 }",
-      jsonlite::toJSON(
-        stats::setNames(
-          vapply(verdict_options[-1], function(o) o$label, character(1)),
-          vapply(verdict_options[-1], function(o) o$value, character(1))
+        jsonlite::toJSON(
+          stats::setNames(
+            vapply(verdict_options[-1], function(o) o$label, character(1)),
+            vapply(verdict_options[-1], function(o) o$value, character(1))
+          ),
+          auto_unbox = TRUE
         ),
-        auto_unbox = TRUE
-      ),
-      jsonlite::toJSON(
-        episodic_tr("assessment.confirm_close", lang = lang),
-        auto_unbox = TRUE
-      ),
-      jsonlite::toJSON(
-        episodic_tr("assessment.confirm_open", lang = lang),
-        auto_unbox = TRUE
-      )
-    ))),
+        jsonlite::toJSON(
+          episodic_tr("assessment.confirm_close", lang = lang),
+          auto_unbox = TRUE
+        ),
+        jsonlite::toJSON(
+          episodic_tr("assessment.confirm_open", lang = lang),
+          auto_unbox = TRUE
+        )
+      )))
+    ),
     shiny::tags$hr(),
     shiny::tags$p(
       class = "episodic-form-hint",

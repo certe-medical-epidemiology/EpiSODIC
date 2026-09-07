@@ -349,6 +349,8 @@
   "assessment.confirm_close": "Dit vastleggen als {verdict} en het cluster afsluiten? Het wordt automatisch heropend voor herbeoordeling zodra er nieuwe casussen bij deze signaleringsreeks komen.",
   "assessment.confirm_open": "Dit vastleggen als {verdict}? Het cluster blijft open staan in de wachtrij voor verdere beoordeling.",
   "assessment.reopened_banner": "Dit cluster is afgesloten door {actor} op {date}. Er zijn sindsdien nieuwe casussen bijgekomen bij deze signaleringsreeks, dus het vraagt om herbeoordeling.",
+  "assessment.closed_notice": "Dit cluster is afgesloten. Heropen het om een nieuwe beoordeling vast te leggen.",
+  "assessment.reopen_button": "Heropenen",
   "assessment.mute_button": "Signaleringsreeks dempen",
   "assessment.mute_intro": "Onderdrukt tijdelijk nieuwe detecties voor deze signaleringsreeks, bijvoorbeeld tijdens een bekende seizoenspiek of screeningscampagne, zodat dezelfde oorzaak niet telkens opnieuw wordt gesignaleerd.",
   "assessment.mute_title": "Signaleringsreeks dempen",

@@ -349,6 +349,8 @@
   "assessment.confirm_close": "Als {verdict} erfassen und das Cluster abschließen? Es wird automatisch zur Neubewertung wiedereröffnet, sobald neue Fälle bei dieser Meldereihe eingehen.",
   "assessment.confirm_open": "Als {verdict} erfassen? Das Cluster bleibt zur weiteren Prüfung in der Warteschlange offen.",
   "assessment.reopened_banner": "Dieses Cluster wurde von {actor} am {date} abgeschlossen. Seitdem sind neue Fälle bei dieser Meldereihe eingegangen, daher ist eine Neubewertung erforderlich.",
+  "assessment.closed_notice": "Dieses Cluster ist abgeschlossen. Öffnen Sie es erneut, um eine neue Bewertung zu erfassen.",
+  "assessment.reopen_button": "Erneut öffnen",
   "assessment.mute_button": "Meldereihe stummschalten",
   "assessment.mute_intro": "Unterdrückt vorübergehend neue Erkennungen für diese Meldereihe - etwa bei einem bekannten saisonalen Höhepunkt oder einer Screening-Kampagne - damit dieselbe Ursache nicht immer wieder gemeldet wird.",
   "assessment.mute_title": "Meldereihe stummschalten",
