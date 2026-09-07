@@ -96,22 +96,30 @@ episodic_graphics_probe_env <- new.env(parent = emptyenv())
 #' one now running, which fails with the opaque R-level error "Graphics
 #' API version mismatch" - cannot be caught by a `tryCatch()` around a
 #' panel's chart code no matter how it is written: the failure happens
-#' before that code ever runs. The only way to catch it, and to know
-#' which package is actually implicated, is to open the same device
-#' ourselves, under our own `tryCatch()`, using the exact same device
-#' selection Shiny itself uses (mirrored from `shiny:::startPNG()`).
+#' before that code ever runs. The only way to catch it is to open the
+#' same device ourselves, under our own `tryCatch()` - which is done by
+#' calling `shiny::plotPNG()` itself (an exported function of `shiny`,
+#' already a hard dependency of this package, that opens the device via
+#' shiny's own unexported `startPNG()`) on a no-op function, rather than
+#' reimplementing its ragg/Cairo/`grDevices::png()` selection here:
+#' EpiSODIC then never calls `ragg::`/`Cairo::` or
+#' `requireNamespace("ragg")`/`requireNamespace("Cairo")` itself, so
+#' neither becomes a dependency of this package (declared or otherwise)
+#' - it merely exercises, once, the exact call `shiny::renderPlot()`
+#' would have made anyway.
 #'
-#' If `ragg` (or `Cairo`) is not installed at all, it is simply skipped in
-#' favour of the next device in the same chain Shiny itself falls back to
-#' - that is the ordinary, error-free case, since a missing optional
-#' package with a working fallback is not a problem for the person
-#' looking at a chart. Only the device actually selected is opened, so a
-#' genuinely absent `ragg`/`Cairo` is never itself "implicated" - it is
-#' never blamed for a failure it had no chance to cause. The one caveat:
-#' if every fallback down to R's own built-in PNG device also fails, there
-#' is no CRAN package left to name or reinstall - that is a build-time R
-#' configuration issue (R compiled without PNG/graphics library support),
-#' reported with `kind = "build"` rather than naming a package.
+#' To name the implicated package(s) in the message without ever loading
+#' either namespace, `rlang::is_installed()` (a presence check, not a
+#' load) is used to mirror `shiny:::startPNG()`'s own selection - ragg,
+#' then the AQUA-backed `grDevices::png()` on macOS, then Cairo, then
+#' `grDevices::png()` - so the same package `shiny::plotPNG()` would
+#' have picked is the one named if it then fails to open. If neither
+#' `ragg` nor `Cairo` is installed (or selection falls through to the
+#' AQUA device), `grDevices::png()` is what Shiny would actually use;
+#' failing there leaves no CRAN package to name or reinstall - that is a
+#' build-time R configuration issue (R compiled without PNG/graphics
+#' library support), reported with `kind = "build"` rather than naming a
+#' package.
 #'
 #' @return `NULL` if the device opens fine, or a list with `packages` (a
 #'   character vector of the implicated package name(s), `NULL` for the
@@ -124,39 +132,37 @@ episodic_graphics_probe <- function() {
     return(episodic_graphics_probe_env$result)
   }
 
-  if (
-    (getOption("shiny.useragg") %||% TRUE) &&
-      requireNamespace("ragg", quietly = TRUE)
+  implicated <- if (
+    (getOption("shiny.useragg") %||% TRUE) && rlang::is_installed("ragg")
   ) {
-    pngfun <- ragg::agg_png
-    implicated <- c("ragg", "systemfonts", "textshaping")
-    kind <- "package"
+    c("ragg", "systemfonts", "textshaping")
+  } else if (capabilities("aqua")) {
+    NULL
   } else if (
-    (getOption("shiny.usecairo") %||% TRUE) &&
-      requireNamespace("Cairo", quietly = TRUE)
+    (getOption("shiny.usecairo") %||% TRUE) && rlang::is_installed("Cairo")
   ) {
-    pngfun <- Cairo::CairoPNG
-    implicated <- "Cairo"
-    kind <- "package"
+    "Cairo"
   } else {
-    pngfun <- grDevices::png
-    implicated <- NULL
-    kind <- "build"
+    NULL
   }
 
   file <- tempfile(fileext = ".png")
   on.exit(unlink(file), add = TRUE)
   result <- tryCatch(
     {
-      # Mirrors shiny:::startPNG(): the device-opening functions
-      # (ragg::agg_png(), Cairo::CairoPNG(), grDevices::png()) all return
-      # NULL invisibly rather than a device number, so the device to
-      # close is read back via dev.cur(), not from their return value.
-      pngfun(filename = file, width = 10, height = 10)
-      grDevices::dev.off(grDevices::dev.cur())
+      # shiny::plotPNG() opens the device via shiny's own (unexported)
+      # startPNG() - the exact call shiny::renderPlot() makes - runs
+      # `func()` on it, and closes it again; an empty `func` is enough to
+      # prove the device itself opens and closes cleanly.
+      shiny::plotPNG(function() NULL, filename = file, width = 10, height = 10, res = 72)
       NULL
     },
-    error = function(e) list(packages = implicated, kind = kind)
+    error = function(e) {
+      list(
+        packages = implicated,
+        kind = if (is.null(implicated)) "build" else "package"
+      )
+    }
   )
 
   episodic_graphics_probe_env$done <- TRUE
