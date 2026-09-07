@@ -144,8 +144,7 @@ episodic_notes_diff_html <- function(old, new) {
     ops,
     function(op) {
       text <- htmltools::htmlEscape(op$text)
-      switch(
-        op$type,
+      switch(op$type,
         eq = text,
         ins = paste0('<span class="episodic-notes-diff-ins">', text, "</span>"),
         del = paste0('<span class="episodic-notes-diff-del">', text, "</span>")

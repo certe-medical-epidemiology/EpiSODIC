@@ -1706,7 +1706,7 @@ function episodicSubmitAssessment(clusterId) {
   Shiny.setInputValue('assess_submit', {cluster_id: clusterId, verdict: verdict, rationale: rationale, snooze: snooze, close: close}, {priority: 'event'});
 }",
       jsonlite::toJSON(
-        setNames(
+        stats::setNames(
           vapply(verdict_options[-1], function(o) o$label, character(1)),
           vapply(verdict_options[-1], function(o) o$value, character(1))
         ),
