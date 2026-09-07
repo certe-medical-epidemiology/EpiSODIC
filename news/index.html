@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,14 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.14.1" id="episodic-0141">EpiSODIC 0.14.1<a class="anchor" aria-label="anchor" href="#episodic-0141"></a></h2>
+<div class="section level3">
+<h3 id="changed-0-14-1">Changed<a class="anchor" aria-label="anchor" href="#changed-0-14-1"></a></h3>
+<ul><li>Chart panels now name the specific R package(s) at fault instead of showing the raw “Graphics API version mismatch” error when the graphics-rendering stack (e.g. ragg, systemfonts, textshaping) is installed but incompatible with the running R version, in all shipped languages</li>
+<li>A distinct message covers the rarer case where no PNG graphics device works at all (a build-time R configuration issue), rather than wrongly telling the operator to reinstall a package</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.14.0" id="episodic-0140">EpiSODIC 0.14.0<a class="anchor" aria-label="anchor" href="#episodic-0140"></a></h2>
 <div class="section level3">
