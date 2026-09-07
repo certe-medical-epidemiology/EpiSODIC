@@ -593,6 +593,7 @@
   "column.verdict": "Classification",
   "column.state": "État",
   "column.closed_at": "Clôturé le",
+  "column.closed_by": "Clôturé par",
   "column.shared_cases": "Cas partagés",
   "cluster.unlinked.suppressed": "Ce n'est plus un cluster à part entière : supprimé par le cluster {ref}, la même flambée vue à un autre niveau, il n'y a donc pas de dossier propre à ouvrir.",
   "pathogen.threshold.pre_epidemic": "Seuil de début d'épidémie",

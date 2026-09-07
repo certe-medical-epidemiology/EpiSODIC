@@ -593,6 +593,7 @@
   "column.verdict": "分类",
   "column.state": "状态",
   "column.closed_at": "结案日期",
+  "column.closed_by": "结案人",
   "column.shared_cases": "共有病例",
   "cluster.unlinked.suppressed": "不再是独立的聚集事件：已被聚集事件 {ref} 抑制，即同一疫情在另一层级的呈现，因此没有可打开的独立档案。",
   "pathogen.threshold.pre_epidemic": "流行开始阈值",

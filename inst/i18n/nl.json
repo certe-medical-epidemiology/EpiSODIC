@@ -593,6 +593,7 @@
   "column.verdict": "Classificatie",
   "column.state": "Status",
   "column.closed_at": "Afgesloten op",
+  "column.closed_by": "Afgesloten door",
   "column.shared_cases": "Gedeelde casussen",
   "cluster.unlinked.suppressed": "Geen zelfstandig cluster meer: onderdrukt door cluster {ref}, dezelfde uitbraak op een ander niveau, dus er is geen eigen dossier om te openen.",
   "pathogen.threshold.pre_epidemic": "Drempel epidemiestart",

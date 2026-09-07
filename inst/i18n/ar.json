@@ -593,6 +593,7 @@
   "column.verdict": "التصنيف",
   "column.state": "الحالة",
   "column.closed_at": "أُغلق في",
+  "column.closed_by": "أغلقه",
   "column.shared_cases": "الحالات المشتركة",
   "cluster.unlinked.suppressed": "لم يعد تجمعًا قائمًا بذاته: كُبت بواسطة التجمع {ref}، وهو الفاشية نفسها على مستوى آخر، ولذلك لا يوجد ملف خاص به لفتحه.",
   "pathogen.threshold.pre_epidemic": "عتبة بدء الوباء",

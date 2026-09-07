@@ -593,6 +593,7 @@
   "column.verdict": "Klassifikation",
   "column.state": "Status",
   "column.closed_at": "Abgeschlossen am",
+  "column.closed_by": "Abgeschlossen von",
   "column.shared_cases": "Gemeinsame Fälle",
   "cluster.unlinked.suppressed": "Kein eigenständiges Cluster mehr: von Cluster {ref} unterdrückt, dasselbe Geschehen auf einer anderen Ebene, daher gibt es keine eigene Akte zu öffnen.",
   "pathogen.threshold.pre_epidemic": "Schwelle Epidemiebeginn",

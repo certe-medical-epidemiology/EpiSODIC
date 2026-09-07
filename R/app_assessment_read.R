@@ -204,6 +204,7 @@ episodic_app_archive <- function(con,
     case_days = integer(0),
     priority_score = numeric(0),
     closed_at = character(0),
+    closed_by = character(0),
     stringsAsFactors = FALSE
   )
   clusters <- episodic_db_clusters(con, open_only = TRUE)
@@ -261,9 +262,13 @@ episodic_app_archive <- function(con,
     },
     character(1)
   )
-  closed$closed_at <- episodic_app_closed_at_from(
-    episodic_db_cluster_states_batch(con, closed$cluster_id),
-    closed$cluster_id
+  closed_states <- episodic_db_cluster_states_batch(con, closed$cluster_id)
+  closed$closed_at <- episodic_app_closed_at_from(closed_states, closed$cluster_id)
+  closed$closed_by <- episodic_app_closed_by_from(
+    con,
+    closed_states,
+    closed$cluster_id,
+    lang = lang
   )
 
   if (!is.null(query) && nzchar(query)) {
@@ -304,7 +309,8 @@ episodic_app_archive <- function(con,
     "n_cases",
     "case_days",
     "priority_score",
-    "closed_at"
+    "closed_at",
+    "closed_by"
   )]
 }
 

@@ -593,6 +593,7 @@
   "column.verdict": "Clasificación",
   "column.state": "Estado",
   "column.closed_at": "Cerrado el",
+  "column.closed_by": "Cerrado por",
   "column.shared_cases": "Casos compartidos",
   "cluster.unlinked.suppressed": "Ya no es un clúster por derecho propio: suprimido por el clúster {ref}, el mismo brote visto en otro nivel, por lo que no tiene un expediente propio que abrir.",
   "pathogen.threshold.pre_epidemic": "Umbral de inicio de epidemia",

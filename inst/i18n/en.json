@@ -633,6 +633,7 @@
   "column.verdict": "Classification",
   "column.state": "State",
   "column.closed_at": "Closed on",
+  "column.closed_by": "Closed by",
   "column.shared_cases": "Shared cases",
   "cluster.unlinked.suppressed": "No longer a cluster in its own right: suppressed by cluster {ref}, the same outbreak seen at another level, so there is no dossier of its own to open.",
   "pathogen.threshold.pre_epidemic": "Epidemic start threshold",

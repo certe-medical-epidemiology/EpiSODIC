@@ -227,6 +227,61 @@ test_that("a cron auto-close (trigger = system) with no classification at all re
   )
 })
 
+test_that("episodic_app_closed_by_from() resolves a person's full name, the system label, or NA", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
+  episodic_db_cluster_state_insert(
+    env$con,
+    cluster_id = env$cluster_id,
+    state = "closed",
+    trigger = "closure",
+    user_id = user_id
+  )
+
+  other_cluster_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$stream_id,
+    first_day = "2025-02-01",
+    last_day = "2025-02-02",
+    n_cases = 2,
+    priority_score = 10,
+    detector_agreement = 1,
+    run_id = env$run_id
+  )
+  episodic_db_cluster_state_insert(
+    env$con,
+    cluster_id = other_cluster_id,
+    state = "closed",
+    trigger = "system"
+  )
+
+  never_closed_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$stream_id,
+    first_day = "2025-03-01",
+    last_day = "2025-03-02",
+    n_cases = 1,
+    priority_score = 5,
+    detector_agreement = 1,
+    run_id = env$run_id
+  )
+
+  ids <- c(env$cluster_id, other_cluster_id, never_closed_id)
+  states <- episodic_db_cluster_states_batch(env$con, ids)
+  closed_by <- episodic_app_closed_by_from(env$con, states, ids, lang = "en")
+
+  expect_equal(closed_by[1], "Test User")
+  expect_equal(closed_by[2], episodic_tr("activity.actor_system", lang = "en"))
+  expect_true(is.na(closed_by[3]))
+})
+
 test_that("episodic_cluster_object() populates concentration, density and case_free", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
@@ -745,6 +800,10 @@ test_that("the archive lists cluster ids and links each row through to its dossi
   )) {
     expect_true(grepl(episodic_tr(key, lang = "en"), html, fixed = TRUE))
   }
+  # who closed it - the full name, never the login name
+  expect_true(grepl(episodic_tr("column.closed_by", lang = "en"), html, fixed = TRUE))
+  expect_true(grepl("Test User", html, fixed = TRUE))
+  expect_false(grepl(">tester<", html, fixed = TRUE))
   # the level filter chips, one per lattice level plus "all"
   expect_true(grepl("archive_level_filter", html, fixed = TRUE))
   expect_true(grepl(

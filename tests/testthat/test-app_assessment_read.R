@@ -98,6 +98,7 @@ test_that("episodic_app_archive() lists only closed clusters, most recent first,
   expect_equal(nrow(archive), 1)
   expect_equal(archive$pathogen[1], "Norovirus")
   expect_false(is.na(archive$closed_at[1]))
+  expect_equal(archive$closed_by[1], "Test User") # full name, never the login name
   expect_false(is.na(archive$first_day[1]))
   expect_false(is.na(archive$last_day[1]))
   expect_equal(

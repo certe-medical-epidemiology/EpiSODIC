@@ -97,7 +97,10 @@ episodic_ui_archive_screen <- function(archive,
           episodic_ui_cluster_col_level(lang = lang),
           episodic_ui_cluster_col_place(lang = lang)
         ),
-        outcome = list(episodic_ui_cluster_col_closed_at(lang = lang)),
+        outcome = list(
+          episodic_ui_cluster_col_closed_at(lang = lang),
+          episodic_ui_cluster_col_closed_by(lang = lang)
+        ),
         lang = lang
       )
     }

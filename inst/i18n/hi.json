@@ -593,6 +593,7 @@
   "column.verdict": "वर्गीकरण",
   "column.state": "स्थिति",
   "column.closed_at": "बंद हुआ",
+  "column.closed_by": "बंद करने वाला",
   "column.shared_cases": "साझा मामले",
   "cluster.unlinked.suppressed": "अब यह स्वयं में क्लस्टर नहीं है: क्लस्टर {ref} द्वारा दबाया गया, वही प्रकोप दूसरे स्तर पर देखा गया, इसलिए खोलने के लिए अपना कोई डोसियर नहीं है।",
   "pathogen.threshold.pre_epidemic": "महामारी आरंभ सीमा",

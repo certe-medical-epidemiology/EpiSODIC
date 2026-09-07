@@ -223,6 +223,43 @@ episodic_app_closed_at_from <- function(states_all, cluster_ids) {
   as.character(last$entered_at[match(cluster_ids, last$cluster_id)])
 }
 
+#' Who closed each of many clusters, from states fetched in bulk
+#'
+#' The Archive companion to `episodic_app_closed_at_from()` - same "last
+#' `state == 'closed'` row per cluster" logic, resolved to a display label
+#' (`episodic_app_actor_label()`: a person's full name, or the system
+#' label for an automatic closure) instead of a timestamp.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param states_all Rows from `episodic_db_cluster_states_batch()`.
+#' @param cluster_ids The cluster ids to answer for, in the order wanted.
+#' @param lang Session language.
+#' @return A character vector of actor labels, one per id, `NA` for a
+#'   cluster with no recorded closure.
+#' @keywords internal
+#' @noRd
+episodic_app_closed_by_from <- function(con,
+                                        states_all,
+                                        cluster_ids,
+                                        lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  closures <- states_all[states_all$state == "closed", ]
+  if (nrow(closures) == 0) {
+    return(rep(NA_character_, length(cluster_ids)))
+  }
+  last <- closures[!duplicated(closures$cluster_id, fromLast = TRUE), ]
+  idx <- match(cluster_ids, last$cluster_id)
+  vapply(
+    idx,
+    function(i) {
+      if (is.na(i)) {
+        return(NA_character_)
+      }
+      episodic_app_actor_label(con, last$user_id[i], lang = lang)
+    },
+    character(1)
+  )
+}
+
 #' Build the cluster object consumed by the interpretation engine and the dossier
 #'
 #' @param con A [DBI::DBIConnection-class].
