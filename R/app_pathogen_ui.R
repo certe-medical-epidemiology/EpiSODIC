@@ -631,8 +631,9 @@ episodic_ui_pathogen_clusters_panel <- function(screen,
 #' What this instance is actually working from for this pathogen: the
 #' episode window that decides one case per episode
 #' (`episodic_cases_deduplicate()`), the case-free/cool-down days that
-#' decide when a cluster is closable, whether Rt and a seasonal baseline
-#' apply, and what feeds them. All of it lives in
+#' separate clusters and decide when a never-assessed one auto-closes,
+#' whether Rt and a seasonal baseline apply, and what feeds them. All of
+#' it lives in
 #' `inst/config/episodic_default_pathogen_config.csv` (or an instance's own override of
 #' it) and is otherwise invisible from this screen - readable here
 #' rather than only in the source file.

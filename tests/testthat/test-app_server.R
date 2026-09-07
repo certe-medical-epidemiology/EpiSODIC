@@ -196,8 +196,16 @@ test_that("closing a cluster actually updates the rail and the Archief screen wi
     # Closing without ever touching nav_view (input$rail_select stays on
     # "clusters" throughout) - this is what actually happened in the app:
     # neither the rail nor the Archief screen has any reason to notice a
-    # write unless something explicitly invalidates them.
-    session$setInputs(assess_close = cluster_id)
+    # write unless something explicitly invalidates them. Closure is now
+    # the assessment form's own checkbox, submitted alongside the (here,
+    # rationale-only) assessment rather than as a separate input.
+    session$setInputs(assess_submit = list(
+      cluster_id = cluster_id,
+      verdict = "",
+      rationale = "",
+      snooze = "",
+      close = TRUE
+    ))
     session$flushReact()
 
     rail_after <- paste(output$rail_pane, collapse = "\n")

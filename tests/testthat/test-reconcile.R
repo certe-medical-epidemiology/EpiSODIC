@@ -103,6 +103,7 @@ reconcile_run <- function(env,
                           det,
                           case_free_days = 14,
                           close_after_runs = 14,
+                          autoclose_unassessed = TRUE,
                           has_assessment_fn = noop_has_assessment,
                           verdict_fn = noop_verdict) {
   episodic_reconcile_stream(
@@ -112,6 +113,7 @@ reconcile_run <- function(env,
     case_free_days = case_free_days,
     run_id = run_id,
     close_after_runs = close_after_runs,
+    autoclose_unassessed = autoclose_unassessed,
     priority_score_fn = noop_priority_score,
     has_assessment_fn = has_assessment_fn,
     verdict_fn = verdict_fn
@@ -509,6 +511,95 @@ test_that("cooldown_days = NA disables the escape hatch entirely, for backward c
 
   clusters <- episodic_db_clusters_for_stream(env$con, env$stream_id)
   expect_equal(nrow(clusters), 2) # opens as new, exactly the pre-existing behaviour
+})
+
+test_that("a terminal-verdict cluster never auto-closes via close_after_runs, unlike an unassessed one", {
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  run1 <- episodic_db_run_start(env$con, "h", "a")
+  det1 <- reconcile_detect(env, run1, "2025-01-01", "2025-01-03", 3)
+  reconcile_run(env, run1, det1, case_free_days = 14, close_after_runs = 2)
+  cluster_id <- episodic_db_clusters_for_stream(
+    env$con,
+    env$stream_id
+  )$cluster_id[1]
+
+  # Three runs with no detection at all for this stream: close_after_runs
+  # (2) is exceeded either way, but only the unassessed cluster closes -
+  # a verdict, terminal or not, is never enough for the system to close a
+  # cluster by itself.
+  no_detections <- reconcile_detect(env, run1, "2025-01-01", "2025-01-01", 0)[0, ]
+  for (i in 1:3) {
+    run <- episodic_db_run_start(env$con, "h", "a")
+    reconcile_run(
+      env,
+      run,
+      no_detections,
+      close_after_runs = 2,
+      verdict_fn = function(id) "artefact"
+    )
+  }
+  states <- episodic_db_cluster_states(env$con, cluster_id)
+  expect_false("closed" %in% states$state)
+
+  # the same three runs, but genuinely unassessed (no verdict at all), do close
+  env2 <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env2$con), add = TRUE)
+  run1b <- episodic_db_run_start(env2$con, "h", "a")
+  det1b <- reconcile_detect(env2, run1b, "2025-01-01", "2025-01-03", 3)
+  reconcile_run(env2, run1b, det1b, case_free_days = 14, close_after_runs = 2)
+  cluster_id_b <- episodic_db_clusters_for_stream(
+    env2$con,
+    env2$stream_id
+  )$cluster_id[1]
+  no_detections_b <- reconcile_detect(
+    env2,
+    run1b,
+    "2025-01-01",
+    "2025-01-01",
+    0
+  )[0, ]
+  for (i in 1:3) {
+    run <- episodic_db_run_start(env2$con, "h", "a")
+    reconcile_run(env2, run, no_detections_b, close_after_runs = 2)
+  }
+  states_b <- episodic_db_cluster_states(env2$con, cluster_id_b)
+  expect_true("closed" %in% states_b$state)
+})
+
+test_that("autoclose_unassessed = FALSE disables both close_after_runs and stale_open_days auto-close", {
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  run1 <- episodic_db_run_start(env$con, "h", "a")
+  det1 <- reconcile_detect(env, run1, "2025-01-01", "2025-01-03", 3)
+  reconcile_run(env, run1, det1, case_free_days = 14)
+  cluster_id <- episodic_db_clusters_for_stream(
+    env$con,
+    env$stream_id
+  )$cluster_id[1]
+
+  no_detections <- reconcile_detect(env, run1, "2025-01-01", "2025-01-01", 0)[0, ]
+  for (i in 1:3) {
+    run <- episodic_db_run_start(env$con, "h", "a")
+    episodic_reconcile_stream(
+      env$con,
+      env$stream_id,
+      no_detections,
+      case_free_days = 14,
+      run_id = run,
+      close_after_runs = 2,
+      autoclose_unassessed = FALSE,
+      stale_open_days = 60,
+      priority_score_fn = noop_priority_score,
+      has_assessment_fn = noop_has_assessment,
+      verdict_fn = noop_verdict,
+      today = as.Date("2025-06-01") # also well beyond stale_open_days
+    )
+  }
+  states <- episodic_db_cluster_states(env$con, cluster_id)
+  expect_false("closed" %in% states$state)
 })
 
 test_that("an unassessed cluster auto-closes once its last_day is beyond stale_open_days, even with few runs_since_detected", {

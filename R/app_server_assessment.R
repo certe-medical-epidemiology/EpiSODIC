@@ -82,18 +82,8 @@ episodic_app_server_assessment_actions <- function(input,
       # wpg_notifiable/ggd_informed are left at episodic_app_submit_assessment()'s
       # own NA default - the form no longer collects them (Wpg and GGD are
       # Netherlands-specific, out of scope for a general-purpose deployment).
-      snooze_until = if (nzchar(payload$snooze %||% "")) payload$snooze else NA
-    )
-    refresh()
-  })
-
-  shiny::observeEvent(input$assess_close, {
-    user <- episodic_auth_refresh_user(con, current_user())
-    shiny::req(episodic_user_is_epidemiologist(user))
-    episodic_app_submit_closure(
-      con,
-      cluster_id = input$assess_close,
-      user_id = user$user_id
+      snooze_until = if (nzchar(payload$snooze %||% "")) payload$snooze else NA,
+      close = isTRUE(payload$close)
     )
     refresh()
   })
@@ -114,7 +104,8 @@ episodic_app_server_assessment_actions <- function(input,
         cluster_id = cluster_id,
         user_id = user$user_id,
         verdict = verdict,
-        rationale = rationale
+        rationale = rationale,
+        close = isTRUE(payload$close)
       )
     }
     refresh()

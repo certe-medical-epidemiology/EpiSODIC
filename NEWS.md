@@ -1,3 +1,28 @@
+# EpiSODIC 0.15.0
+
+## New
+
+- The assessment form gets a "close this cluster" checkbox, submitted alongside the classification, so closure is always a deliberate, individual decision rather than implied by a verdict
+- The checkbox is pre-ticked (with a highlighted outline) when artefact/expected variation is chosen, but can always be unticked to leave the cluster open for a second opinion
+- Submitting an assessment now asks for confirmation, naming the verdict and stating plainly whether it will close the cluster
+- A cluster explicitly closed and then reassessed shows a banner naming who closed it, when, and that new cases have come in since
+- `reconciliation.autoclose_unassessed` (default `true`) controls whether the cron auto-closes a cluster nobody ever assessed once it goes stale
+- The Archive now names who closed each cluster (a person's full name, or "System" for an automatic closure)
+
+## Changed
+
+- No verdict, including artefact/expected variation, closes a cluster by itself any more - closure is always a separate, deliberate act, whether taken by a person or by the cron's unassessed-and-stale rule
+- A cluster explicitly closed reopens into "Reassessment needed" the moment new cases arrive on its stream, rather than staying closed regardless
+- The `"closable"` cluster state is removed; a classified, unclosed cluster now reads as "Monitoring" regardless of verdict
+- The dossier's large case-count stat now reads "Cases" instead of "Confirmed"
+- Cluster notes and the config-change audit log now show the acting user's full name, never their login name
+
+## Fixed
+
+- The cluster notes history modal showed the login name instead of the full name
+- The scheduled report panel's "set by" line showed the login name instead of the full name
+
+
 # EpiSODIC 0.14.1
 
 ## Changed

@@ -1153,6 +1153,8 @@ episodic_run_cron_body <- function(con,
       case_free_days = case_free_days,
       run_id = run_id,
       close_after_runs = config$reconciliation$close_after_runs,
+      autoclose_unassessed = config$reconciliation$autoclose_unassessed %||%
+        TRUE,
       cooldown_days = cooldown_days,
       cooldown_reopen_ratio = config$reconciliation$cooldown_reopen_ratio %||%
         NA,

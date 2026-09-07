@@ -78,7 +78,7 @@ test_that("episodic_app_open_clusters() sorts by last_day descending, not priori
   expect_equal(open$cluster_id[2], older_id) # last_day 2025-01-02
 })
 
-test_that("a cluster with an assessment event is excluded once closed, included otherwise", {
+test_that("a cluster with a terminal verdict alone stays open, only an explicit closure excludes it", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   episodic_db_app_user_insert(
@@ -96,7 +96,17 @@ test_that("a cluster with an assessment event is excluded once closed, included 
     rationale = "test"
   )
   open <- episodic_app_open_clusters(env$con)
-  expect_equal(nrow(open), 0) # artefact is terminal -> closed -> not open
+  expect_equal(nrow(open), 1) # a verdict alone, terminal or not, never closes it
+
+  episodic_db_cluster_state_insert(
+    env$con,
+    cluster_id = env$cluster_id,
+    state = "closed",
+    trigger = "closure",
+    user_id = 1L
+  )
+  open_after_closure <- episodic_app_open_clusters(env$con)
+  expect_equal(nrow(open_after_closure), 0)
 })
 
 test_that("a non-terminal verdict explicitly closed via episodic_cluster_state (trigger = closure) reads as closed", {
@@ -118,7 +128,7 @@ test_that("a non-terminal verdict explicitly closed via episodic_cluster_state (
   )
   expect_equal(
     episodic_app_derive_state_for_cluster(env$con, env$cluster_id),
-    "closable"
+    "monitoring"
   )
 
   episodic_db_cluster_state_insert(
@@ -134,7 +144,7 @@ test_that("a non-terminal verdict explicitly closed via episodic_cluster_state (
   )
 })
 
-test_that("episodic_app_open_clusters()'s batch state derivation agrees with episodic_app_derive_state_for_cluster() for a closable, non-terminal verdict", {
+test_that("episodic_app_open_clusters()'s batch state derivation agrees with episodic_app_derive_state_for_cluster() for a monitored, non-terminal verdict", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   episodic_db_app_user_insert(
@@ -153,10 +163,10 @@ test_that("episodic_app_open_clusters()'s batch state derivation agrees with epi
   )
   expect_equal(
     episodic_app_derive_state_for_cluster(env$con, env$cluster_id),
-    "closable"
+    "monitoring"
   )
   open <- episodic_app_open_clusters(env$con)
-  expect_equal(open$state[open$cluster_id == env$cluster_id], "closable")
+  expect_equal(open$state[open$cluster_id == env$cluster_id], "monitoring")
 })
 
 test_that("a later assessment event re-opens a cluster that was previously explicitly closed", {
@@ -198,7 +208,7 @@ test_that("a later assessment event re-opens a cluster that was previously expli
   )
   expect_equal(
     episodic_app_derive_state_for_cluster(env$con, env$cluster_id),
-    "closable"
+    "monitoring"
   )
 })
 

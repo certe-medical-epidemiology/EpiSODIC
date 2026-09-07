@@ -33,6 +33,7 @@ reconciliation:
   close_after_runs: 14         # consecutive runs with no new case before an unconfirmed cluster auto-closes (never for a confirmed outbreak)
   cooldown_reopen_ratio: 1.5   # escape hatch ("half again"): a cool-down absorption at least this many times the cluster's size flags it for reassessment instead of being silently absorbed; NA disables this
   stale_open_days: 60          # force-closes any still-unassessed cluster this many days since its last case, regardless of close_after_runs - catches backfilled clusters that would otherwise never age out
+  autoclose_unassessed: true   # let close_after_runs/stale_open_days auto-close a cluster nobody ever assessed (e.g. an old backlog on first import); a cluster carrying any assessment, including artefact/expected variation, is never auto-closed - only a person can close it, deliberately, from the dashboard
 
 # Eligibility gate: a stream must clear all three thresholds before the
 # statistical detectors (Farrington/MEM) run against it at all; a stream

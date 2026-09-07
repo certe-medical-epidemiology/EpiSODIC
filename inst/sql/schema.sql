@@ -397,7 +397,7 @@ CREATE TABLE episodic_cluster_state (
   state_id   INTEGER PRIMARY KEY AUTOINCREMENT,
   cluster_id INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
   state      TEXT NOT NULL CHECK (state IN (
-               'new', 'assessing', 'monitoring', 'closable', 'closed', 'reassess')),
+               'new', 'assessing', 'monitoring', 'closed', 'reassess')),
   -- Append-only, so a state's end is the next row's entered_at; there is
   -- deliberately no left_at to keep in step with it.
   entered_at TEXT NOT NULL,

@@ -772,6 +772,14 @@ dl.episodic-settings dd { margin: 0; }
   color: var(--episodic-faint);
   margin-top: 3px;
 }
+/* Marks the closure checkbox as auto-ticked (artefact/expected variation
+   suggests closing) rather than the epidemiologist's own click -
+   episodicAssessVerdictChanged() in R/app_dossier.R toggles this class. */
+.episodic-close-suggested {
+  outline: 2px solid var(--episodic-primary);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
 .episodic-form-error {
   font-size: 0.885rem;
   color: var(--episodic-danger-dark);

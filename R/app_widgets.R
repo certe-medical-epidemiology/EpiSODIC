@@ -501,7 +501,6 @@ episodic_ui_state_colour <- function(state) {
     new = pal$primary_light,
     assessing = pal$primary,
     monitoring = pal$danger,
-    closable = pal$warning_dark,
     closed = pal$success_dark,
     reassess = pal$tertiary_dark,
     pal$muted

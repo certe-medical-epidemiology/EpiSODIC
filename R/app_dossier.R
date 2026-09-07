@@ -206,7 +206,7 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   }
   stats <- list(
     episodic_ui_stat(
-      episodic_tr("dossier.stat.observed", lang = lang),
+      episodic_tr("column.cases", lang = lang),
       obj$n_cases,
       episodic_tr(
         "dossier.stat.observed_sub",
@@ -542,7 +542,7 @@ episodic_ui_notes_history_modal <- function(con,
     } else {
       lapply(rev(seq_len(nrow(history))), function(i) {
         previous_text <- if (i == 1) "" else history$note_text[i - 1]
-        username <- history$username[i]
+        full_name <- history$full_name[i]
         shiny::tags$div(
           class = "episodic-notes-history-entry",
           shiny::tags$div(
@@ -553,7 +553,7 @@ episodic_ui_notes_history_modal <- function(con,
                 history$created_at[i],
                 fmt = "%d-%m-%Y %H:%M"
               ),
-              if (is.na(username)) unknown else username
+              if (is.na(full_name)) unknown else full_name
             )
           ),
           shiny::tags$div(
@@ -1293,7 +1293,7 @@ episodic_ui_report_schedule_current <- function(con, cluster_id, subscription, s
       style = "font-size:12.5px;color:var(--episodic-muted);",
       episodic_tr(
         "panel.report.schedule_set_by",
-        user = if (!is.null(set_by)) set_by$username else episodic_tr("misc.unknown", lang = lang),
+        user = if (!is.null(set_by)) set_by$full_name else episodic_tr("misc.unknown", lang = lang),
         when = episodic_ui_format_datetime(subscription$set_at, fmt = "%d-%m-%Y %H:%M"),
         lang = lang
       )
@@ -1510,7 +1510,7 @@ episodic_ui_assessment_rail <- function(con,
       }
     ),
     if (episodic_user_is_epidemiologist(current_user)) {
-      episodic_ui_assessment_form(cluster_id, obj, lang = lang)
+      episodic_ui_assessment_form(con, cluster_id, obj, lang = lang)
     }
   )
 }
@@ -1547,10 +1547,12 @@ episodic_ui_timeline_entry <- function(row,
 #' The classification form, closure and mute actions for a signed-in user
 #' @keywords internal
 #' @noRd
-episodic_ui_assessment_form <- function(cluster_id,
+episodic_ui_assessment_form <- function(con,
+                                        cluster_id,
                                         obj,
                                         lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
+  reopened <- episodic_app_reopened_closure(con, cluster_id, lang = lang)
   # Ordered mild/terminal to severe - artefact and expected_variation
   # are both terminal (close immediately), the rest escalate.
   verdicts <- c(
@@ -1594,13 +1596,28 @@ episodic_ui_assessment_form <- function(cluster_id,
   shiny::tags$div(
     class = "episodic-panel-body",
     style = "border-top:1px solid var(--episodic-rule);padding:16px;",
+    if (!is.null(reopened)) {
+      shiny::tags$p(
+        class = "episodic-form-hint",
+        style = "margin-bottom:12px;",
+        episodic_tr(
+          "assessment.reopened_banner",
+          actor = reopened$actor,
+          date = episodic_ui_format_datetime(reopened$at, fmt = "%d-%m-%Y"),
+          lang = lang
+        )
+      )
+    },
     shiny::tags$div(
       class = "episodic-form-group",
       shiny::tags$label(
         class = "episodic-form-label",
         episodic_tr("assessment.verdict_label", lang = lang)
       ),
-      episodic_ui_picker("assess_verdict", verdict_options)
+      shiny::tags$div(
+        onclick = "episodicAssessVerdictChanged()",
+        episodic_ui_picker("assess_verdict", verdict_options)
+      )
     ),
     shiny::tags$div(
       class = "episodic-form-group",
@@ -1625,27 +1642,85 @@ episodic_ui_assessment_form <- function(cluster_id,
       ),
       shiny::tags$input(type = "date", id = "assess_snooze")
     ),
+    shiny::tags$div(
+      class = "episodic-form-group",
+      id = "assess_close_wrap",
+      shiny::tags$label(
+        style = "display:flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer;",
+        shiny::tags$input(type = "checkbox", id = "assess_close_checkbox"),
+        episodic_tr("assessment.close_checkbox_label", lang = lang)
+      ),
+      shiny::tags$p(
+        class = "episodic-form-hint",
+        episodic_tr("assessment.close_checkbox_hint", lang = lang)
+      )
+    ),
     shiny::tags$div(id = "assess_error"),
     shiny::tags$div(
       class = "episodic-form-actions",
       shiny::tags$button(
         class = "episodic-btn episodic-btn-primary",
-        onclick = sprintf(
-          "Shiny.setInputValue('assess_submit', {cluster_id: %d, verdict: document.getElementById('assess_verdict').value, rationale: document.getElementById('assess_rationale').value, snooze: document.getElementById('assess_snooze').value}, {priority: 'event'})",
-          cluster_id
-        ),
+        onclick = sprintf("episodicSubmitAssessment(%d)", cluster_id),
         episodic_tr("assessment.submit", lang = lang)
-      ),
-      shiny::tags$button(
-        class = "episodic-btn",
-        `data-confirm` = episodic_tr("assessment.close_confirm", lang = lang),
-        onclick = sprintf(
-          "if(confirm(this.dataset.confirm)){ Shiny.setInputValue('assess_close', %d, {priority: 'event'}) }",
-          cluster_id
-        ),
-        episodic_tr("assessment.close_button", lang = lang)
       )
     ),
+    # One global helper pair, redefined (harmlessly) on every re-render of
+    # this form: episodicAssessVerdictChanged() pre-ticks (and highlights)
+    # the closure checkbox the moment artefact/expected_variation is
+    # picked - a suggestion the epidemiologist can always untick, never an
+    # automatic closure - and episodicSubmitAssessment() confirms in plain
+    # language what submitting will do before it fires assess_submit, since
+    # closing (or not) is a deliberate, one-way-feeling act worth a second
+    # look. Delegated onto the picker's wrapping div (below) rather than a
+    # 'change' listener, since episodic_ui_picker()'s buttons set the
+    # hidden input's value directly with no native change event of their
+    # own; the wrapping div's onclick still fires on bubble, after the
+    # button's own onclick has already updated the value.
+    shiny::tags$script(shiny::HTML(sprintf(
+      "window.episodicAssessVerdictLabels = %s;
+window.episodicAssessCloseConfirm = %s;
+window.episodicAssessOpenConfirm = %s;
+function episodicAssessVerdictChanged() {
+  var v = document.getElementById('assess_verdict').value;
+  var box = document.getElementById('assess_close_checkbox');
+  var wrap = document.getElementById('assess_close_wrap');
+  if (v === 'artefact' || v === 'expected_variation') {
+    box.checked = true;
+    wrap.classList.add('episodic-close-suggested');
+  } else {
+    wrap.classList.remove('episodic-close-suggested');
+  }
+}
+function episodicSubmitAssessment(clusterId) {
+  var verdict = document.getElementById('assess_verdict').value;
+  var rationale = document.getElementById('assess_rationale').value;
+  var snooze = document.getElementById('assess_snooze').value;
+  var close = document.getElementById('assess_close_checkbox').checked;
+  if (verdict) {
+    var label = window.episodicAssessVerdictLabels[verdict] || verdict;
+    var template = close ? window.episodicAssessCloseConfirm : window.episodicAssessOpenConfirm;
+    if (!confirm(template.replace('{verdict}', label))) {
+      return;
+    }
+  }
+  Shiny.setInputValue('assess_submit', {cluster_id: clusterId, verdict: verdict, rationale: rationale, snooze: snooze, close: close}, {priority: 'event'});
+}",
+      jsonlite::toJSON(
+        setNames(
+          vapply(verdict_options[-1], function(o) o$label, character(1)),
+          vapply(verdict_options[-1], function(o) o$value, character(1))
+        ),
+        auto_unbox = TRUE
+      ),
+      jsonlite::toJSON(
+        episodic_tr("assessment.confirm_close", lang = lang),
+        auto_unbox = TRUE
+      ),
+      jsonlite::toJSON(
+        episodic_tr("assessment.confirm_open", lang = lang),
+        auto_unbox = TRUE
+      )
+    ))),
     shiny::tags$hr(),
     shiny::tags$p(
       class = "episodic-form-hint",

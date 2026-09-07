@@ -40,15 +40,18 @@
 #'      others via `merged_into`; nothing is deleted and no assessment
 #'      history is lost.
 #' 4. Open clusters in the stream with no candidate this run get
-#'    `runs_since_detected + 1`; unassessed clusters, or those assessed
-#'    `artefact`/`expected_variation`, close after `close_after_runs` runs
-#'    undetected this way.
-#' 5. Separately, any unassessed open cluster (matched this run or not)
-#'    whose `last_day` is more than `stale_open_days` in the past closes
-#'    the same way - a cluster reconciled from a whole backfilled history
-#'    in one run is "matched" in the very run that creates it, so this has
-#'    to be judged against every live cluster, not only the undetected set
-#'    step 4 looks at.
+#'    `runs_since_detected + 1`; if `autoclose_unassessed` is `TRUE`, a
+#'    cluster that has never been assessed at all closes after
+#'    `close_after_runs` runs undetected this way. A cluster carrying any
+#'    verdict, including `artefact`/`expected_variation`, is never closed
+#'    by this step - only a person can close an assessed cluster
+#'    (`episodic_app_submit_closure()`).
+#' 5. Separately, if `autoclose_unassessed` is `TRUE`, any unassessed open
+#'    cluster (matched this run or not) whose `last_day` is more than
+#'    `stale_open_days` in the past closes the same way - a cluster
+#'    reconciled from a whole backfilled history in one run is "matched"
+#'    in the very run that creates it, so this has to be judged against
+#'    every live cluster, not only the undetected set step 4 looks at.
 #'
 #' This function is idempotent by construction: it is keyed on `stream_key`
 #' and interval overlap rather than on insertion order (section 5.3), so
@@ -65,6 +68,16 @@
 #'   `episodic_pathogen_config`.
 #' @param run_id The current `run_id`.
 #' @param close_after_runs From `config$reconciliation$close_after_runs`.
+#' @param autoclose_unassessed From
+#'   `config$reconciliation$autoclose_unassessed`. When `TRUE` (the
+#'   default), a cluster nobody ever assessed still auto-closes once it
+#'   is stale enough (steps 4 and 5) - the dashboard is meant to be
+#'   reviewed daily/weekly, so a genuinely dead, never-looked-at stream is
+#'   not left open forever. When `FALSE`, neither step ever closes
+#'   anything: every cluster, assessed or not, waits in the rail for a
+#'   person to close it deliberately. Never affects a cluster that
+#'   carries a verdict - closing one of those always requires a person,
+#'   regardless of this setting.
 #' @param priority_score_fn A function `(candidate) -> numeric(1)` computing
 #'   the priority score for a candidate episode; injected so reconciliation
 #'   does not depend on `R/score_*.R` implementation details.
@@ -104,6 +117,7 @@ episodic_reconcile_stream <- function(con,
                                       case_free_days,
                                       run_id,
                                       close_after_runs,
+                                      autoclose_unassessed = TRUE,
                                       priority_score_fn,
                                       has_assessment_fn,
                                       verdict_fn,
@@ -385,7 +399,12 @@ episodic_reconcile_stream <- function(con,
     }
   }
 
-  # step 4: age out and auto-close clusters with no candidate this run.
+  # step 4: age out clusters with no candidate this run, and (if
+  # autoclose_unassessed allows it) auto-close the ones that were never
+  # assessed at all. A verdict - including artefact/expected_variation -
+  # never makes a cluster eligible for system auto-close by itself: a
+  # live classification always waits for a person to close it
+  # deliberately (episodic_app_submit_closure()), no matter how stale.
   # Judged on the clusters this run started with: one it opened itself is
   # matched by definition, and would otherwise be aged on the run that
   # created it.
@@ -401,8 +420,7 @@ episodic_reconcile_stream <- function(con,
 
     runs_since <- undetected$runs_since_detected[i] + 1L
     verdict <- verdict_fn(cluster_id)
-    eligible_for_autoclose <- is.na(verdict) ||
-      verdict %in% c("artefact", "expected_variation")
+    eligible_for_autoclose <- isTRUE(autoclose_unassessed) && is.na(verdict)
 
     if (runs_since > close_after_runs && eligible_for_autoclose) {
       episodic_db_cluster_state_insert(
@@ -423,7 +441,7 @@ episodic_reconcile_stream <- function(con,
   # undetected set above would never catch it - last_day age is a
   # property of the cluster, not of what this run's detections happened
   # to find.
-  if (!is.na(stale_open_days)) {
+  if (isTRUE(autoclose_unassessed) && !is.na(stale_open_days)) {
     for (i in seq_len(nrow(live_clusters))) {
       cluster_id <- live_clusters$cluster_id[i]
       if (as.character(cluster_id) %in% closed_this_run) {
