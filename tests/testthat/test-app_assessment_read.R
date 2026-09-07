@@ -90,7 +90,8 @@ test_that("episodic_app_archive() lists only closed clusters, most recent first,
     env$cluster_id,
     user_id,
     verdict = "artefact",
-    rationale = "false alarm"
+    rationale = "false alarm",
+    close = TRUE
   )
 
   archive <- episodic_app_archive(env$con)

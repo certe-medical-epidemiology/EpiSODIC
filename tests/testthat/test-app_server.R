@@ -287,13 +287,14 @@ test_that("bulk_assess_submit applies one classification to several clusters in 
       bulk_assess_submit = list(
         cluster_ids = unname(cluster_ids),
         verdict = "artefact",
-        rationale = "batch: both were reagent lot issues"
+        rationale = "batch: both were reagent lot issues",
+        close = TRUE
       )
     )
     session$flushReact()
 
     rail_after <- paste(output$rail_pane, collapse = "\n")
-    expect_false(grepl("Norovirus", rail_after)) # artefact is terminal: both close, both leave the rail
+    expect_false(grepl("Norovirus", rail_after)) # closed deliberately: both leave the rail
     expect_false(grepl("Influenza", rail_after))
 
     # A second connection, to read the database back. Named apart from the

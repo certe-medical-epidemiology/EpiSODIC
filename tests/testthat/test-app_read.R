@@ -701,6 +701,13 @@ test_that("the archive lists cluster ids and links each row through to its dossi
     verdict = "artefact",
     rationale = "test"
   )
+  episodic_db_cluster_state_insert(
+    env$con,
+    cluster_id = env$cluster_id,
+    state = "closed",
+    trigger = "closure",
+    user_id = 1L
+  )
 
   archive <- episodic_app_archive(env$con, lang = "en")
   expect_equal(nrow(archive), 1)
