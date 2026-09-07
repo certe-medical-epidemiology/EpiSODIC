@@ -482,6 +482,8 @@
   "panel.rt.note": "Número de reproducción efectivo variable en el tiempo (no R0), calculado en ventanas móviles de 7 días. Se omiten las ventanas dentro del periodo de notificación todavía incompleto.",
   "panel.rt.unavailable.no_serial_interval": "No se puede calcular Rt: a la configuración de este patógeno le falta un intervalo serial (si_mean_days/si_sd_days).",
   "panel.rt.unavailable.epiestim_missing": "No se puede calcular Rt: el paquete de R 'EpiEstim' no está instalado.",
+  "panel.chart.graphics_unavailable": "No se puede generar el gráfico: el/los paquete(s) de R {packages} están instalados pero son incompatibles con esta versión de R. Reinstálelos para la versión de R actual para recuperar este gráfico.",
+  "panel.chart.graphics_unavailable_build": "No se puede generar el gráfico: no hay ningún dispositivo gráfico PNG funcional disponible en este servidor (ragg, Cairo y el dispositivo PNG integrado de R no pudieron abrirse). Se trata de un problema de configuración en tiempo de compilación de la propia instalación de R, no de un paquete que se pueda reinstalar; póngase en contacto con quien administra este servidor.",
   "panel.rt.unavailable.insufficient_history": "Todavía no hay suficiente historial de casos en este clúster para calcular Rt.",
 
   "panel.similar.title": "Clústeres similares",

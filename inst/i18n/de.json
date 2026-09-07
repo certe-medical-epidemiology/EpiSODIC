@@ -482,6 +482,8 @@
   "panel.rt.note": "Zeitlich veränderliche effektive Reproduktionszahl (nicht R0), berechnet über gleitende 7-Tage-Fenster. Fenster innerhalb des noch unvollständigen Meldezeitraums werden ausgelassen.",
   "panel.rt.unavailable.no_serial_interval": "Rt kann nicht berechnet werden: In der Konfiguration dieses Erregers fehlt ein serielles Intervall (si_mean_days/si_sd_days).",
   "panel.rt.unavailable.epiestim_missing": "Rt kann nicht berechnet werden: Das R-Paket 'EpiEstim' ist nicht installiert.",
+  "panel.chart.graphics_unavailable": "Diagramm kann nicht dargestellt werden: Das/die R-Paket(e) {packages} sind installiert, aber mit dieser R-Version nicht kompatibel. Installieren Sie sie für die aktuelle R-Version neu, um dieses Diagramm wiederherzustellen.",
+  "panel.chart.graphics_unavailable_build": "Diagramm kann nicht dargestellt werden: Auf diesem Server ist kein funktionierendes PNG-Grafikgerät verfügbar (ragg, Cairo und R's eingebautes PNG-Gerät konnten alle nicht geöffnet werden). Dies ist ein Konfigurationsproblem der R-Installation selbst zur Build-Zeit, kein Paket, das neu installiert werden kann - wenden Sie sich an die Verwaltung dieses Servers.",
   "panel.rt.unavailable.insufficient_history": "In diesem Cluster liegt noch nicht genügend Fallhistorie vor, um Rt zu berechnen.",
 
   "panel.similar.title": "Ähnliche Cluster",

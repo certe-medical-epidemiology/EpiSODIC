@@ -77,6 +77,121 @@ episodic_chart_theme <- function() {
     )
 }
 
+#' Cache for `episodic_graphics_probe()`
+#'
+#' A stale compiled graphics package does not repair itself mid-session -
+#' only a reinstall plus a fresh R process fixes it - so probing again on
+#' every chart panel would just repeat the same failing device-open call
+#' once per card, for no new information.
+#' @keywords internal
+#' @noRd
+episodic_graphics_probe_env <- new.env(parent = emptyenv())
+
+#' Whether the PNG device Shiny will use to render a chart actually opens
+#'
+#' `shiny::renderPlot()` opens its PNG device (`shiny:::startPNG()`)
+#' *before* handing control to the panel's own chart-building code, so a
+#' broken device - most commonly `ragg` (or its own dependencies
+#' `systemfonts`/`textshaping`) built against a different R version to the
+#' one now running, which fails with the opaque R-level error "Graphics
+#' API version mismatch" - cannot be caught by a `tryCatch()` around a
+#' panel's chart code no matter how it is written: the failure happens
+#' before that code ever runs. The only way to catch it is to open the
+#' same device ourselves, under our own `tryCatch()` - which is done by
+#' calling `shiny::plotPNG()` itself (an exported function of `shiny`,
+#' already a hard dependency of this package, that opens the device via
+#' shiny's own unexported `startPNG()`) on a no-op function, rather than
+#' reimplementing its ragg/Cairo/`grDevices::png()` selection here:
+#' EpiSODIC then never calls `ragg::`/`Cairo::` or
+#' `requireNamespace("ragg")`/`requireNamespace("Cairo")` itself, so
+#' neither becomes a dependency of this package (declared or otherwise)
+#' - it merely exercises, once, the exact call `shiny::renderPlot()`
+#' would have made anyway.
+#'
+#' To name the implicated package(s) in the message without ever loading
+#' either namespace, `rlang::is_installed()` (a presence check, not a
+#' load) is used to mirror `shiny:::startPNG()`'s own selection - ragg,
+#' then the AQUA-backed `grDevices::png()` on macOS, then Cairo, then
+#' `grDevices::png()` - so the same package `shiny::plotPNG()` would
+#' have picked is the one named if it then fails to open. If neither
+#' `ragg` nor `Cairo` is installed (or selection falls through to the
+#' AQUA device), `grDevices::png()` is what Shiny would actually use;
+#' failing there leaves no CRAN package to name or reinstall - that is a
+#' build-time R configuration issue (R compiled without PNG/graphics
+#' library support), reported with `kind = "build"` rather than naming a
+#' package.
+#'
+#' @return `NULL` if the device opens fine, or a list with `packages` (a
+#'   character vector of the implicated package name(s), `NULL` for the
+#'   build case) and `kind` (`"package"` or `"build"`), for
+#'   `episodic_graphics_error_message()`.
+#' @keywords internal
+#' @noRd
+episodic_graphics_probe <- function() {
+  if (!is.null(episodic_graphics_probe_env$done)) {
+    return(episodic_graphics_probe_env$result)
+  }
+
+  implicated <- if (
+    (getOption("shiny.useragg") %||% TRUE) && rlang::is_installed("ragg")
+  ) {
+    c("ragg", "systemfonts", "textshaping")
+  } else if (capabilities("aqua")) {
+    NULL
+  } else if (
+    (getOption("shiny.usecairo") %||% TRUE) && rlang::is_installed("Cairo")
+  ) {
+    "Cairo"
+  } else {
+    NULL
+  }
+
+  file <- tempfile(fileext = ".png")
+  on.exit(unlink(file), add = TRUE)
+  result <- tryCatch(
+    {
+      # shiny::plotPNG() opens the device via shiny's own (unexported)
+      # startPNG() - the exact call shiny::renderPlot() makes - runs
+      # `func()` on it, and closes it again; an empty `func` is enough to
+      # prove the device itself opens and closes cleanly.
+      shiny::plotPNG(function() NULL, filename = file, width = 10, height = 10, res = 72)
+      NULL
+    },
+    error = function(e) {
+      list(
+        packages = implicated,
+        kind = if (is.null(implicated)) "build" else "package"
+      )
+    }
+  )
+
+  episodic_graphics_probe_env$done <- TRUE
+  episodic_graphics_probe_env$result <- result
+  result
+}
+
+#' A specific, translated message for a broken chart-rendering environment
+#'
+#' @param issue The list returned by `episodic_graphics_probe()` for a
+#'   failed probe (i.e. not `NULL`).
+#' @param lang Session language.
+#' @return A single translated string: naming the package(s) at fault for
+#'   `kind = "package"`, or describing the build-level cause for
+#'   `kind = "build"` (there is no package to name or reinstall there).
+#' @keywords internal
+#' @noRd
+episodic_graphics_error_message <- function(issue,
+                                            lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (identical(issue$kind, "build")) {
+    return(episodic_tr("panel.chart.graphics_unavailable_build", lang = lang))
+  }
+  episodic_tr(
+    "panel.chart.graphics_unavailable",
+    packages = paste(issue$packages, collapse = ", "),
+    lang = lang
+  )
+}
+
 #' Translated month abbreviations, in month order
 #'
 #' The same `date.month.NN` keys `episodic_format_date_range()` reads, so

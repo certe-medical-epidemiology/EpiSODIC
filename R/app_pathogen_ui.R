@@ -321,6 +321,13 @@ episodic_ui_pathogen_curve_panel <- function(screen,
       episodic_tr("pathogen.panel.curve.empty", lang = lang)
     ))
   }
+  graphics_issue <- episodic_graphics_probe()
+  if (!is.null(graphics_issue)) {
+    return(episodic_ui_panel_empty(
+      episodic_tr("pathogen.panel.curve.title", lang = lang),
+      episodic_graphics_error_message(graphics_issue, lang = lang)
+    ))
+  }
   thresholds <- screen$mem$thresholds
   note <- if (!is.null(thresholds)) {
     episodic_tr(
@@ -363,6 +370,13 @@ episodic_ui_pathogen_overlay_panel <- function(screen,
       episodic_tr("pathogen.panel.overlay.empty", lang = lang)
     ))
   }
+  graphics_issue <- episodic_graphics_probe()
+  if (!is.null(graphics_issue)) {
+    return(episodic_ui_panel_empty(
+      episodic_tr("pathogen.panel.overlay.title", lang = lang),
+      episodic_graphics_error_message(graphics_issue, lang = lang)
+    ))
+  }
   episodic_ui_panel(
     episodic_tr("pathogen.panel.overlay.title", lang = lang),
     aside = episodic_tr(
@@ -394,6 +408,13 @@ episodic_ui_pathogen_rt_panel <- function(screen,
       msg
     ))
   }
+  graphics_issue <- episodic_graphics_probe()
+  if (!is.null(graphics_issue)) {
+    return(episodic_ui_panel_empty(
+      episodic_tr("pathogen.panel.rt.title", lang = lang),
+      episodic_graphics_error_message(graphics_issue, lang = lang)
+    ))
+  }
   episodic_ui_panel(
     episodic_tr("pathogen.panel.rt.title", lang = lang),
     note = episodic_tr("pathogen.panel.rt.note", lang = lang),
@@ -413,6 +434,13 @@ episodic_ui_pathogen_denominator_panel <- function(screen,
     return(episodic_ui_panel_empty(
       episodic_tr("panel.denominator.title", lang = lang),
       episodic_tr("panel.denominator.unavailable", lang = lang)
+    ))
+  }
+  graphics_issue <- episodic_graphics_probe()
+  if (!is.null(graphics_issue)) {
+    return(episodic_ui_panel_empty(
+      episodic_tr("panel.denominator.title", lang = lang),
+      episodic_graphics_error_message(graphics_issue, lang = lang)
     ))
   }
   episodic_ui_panel(
@@ -468,19 +496,33 @@ episodic_ui_pathogen_geo_panel <- function(screen,
     ))
   }
   map_chart <- episodic_ui_geo_map_chart(concentration$rows)
+  # A broken chart-rendering environment (see episodic_graphics_probe())
+  # cannot draw the map at all - fall back to the bar breakdown exactly as
+  # if no geographic data were available, but say why the map itself is
+  # missing rather than leaving that silent.
+  graphics_issue <- if (!is.null(map_chart)) episodic_graphics_probe()
+  if (!is.null(graphics_issue)) {
+    map_chart <- NULL
+  }
   # Postcodes named with their province here too, so the same breakdown
   # reads the same way on this screen as it does in a dossier.
   bars <- episodic_ui_geo_bar_rows(concentration$rows, lang = lang)
-  episodic_ui_panel(
-    episodic_tr("panel.geo.title", lang = lang),
-    aside = episodic_tr("panel.geo.aside", lang = lang),
-    note = if (!is.na(concentration$province_error %||% NA_character_)) {
+  notes <- c(
+    if (!is.null(graphics_issue)) {
+      episodic_graphics_error_message(graphics_issue, lang = lang)
+    },
+    if (!is.na(concentration$province_error %||% NA_character_)) {
       episodic_tr(
         "panel.geo.province_error",
         reason = concentration$province_error,
         lang = lang
       )
-    },
+    }
+  )
+  episodic_ui_panel(
+    episodic_tr("panel.geo.title", lang = lang),
+    aside = episodic_tr("panel.geo.aside", lang = lang),
+    note = if (length(notes) > 0) paste(notes, collapse = " "),
     if (is.null(map_chart)) {
       episodic_ui_bars(
         utils::head(bars, 12),
