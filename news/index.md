@@ -1,5 +1,27 @@
 # Changelog
 
+## EpiSODIC 0.14.0
+
+### New
+
+- The dashboard now adapts to phone and tablet screens: the clusters
+  screen’s rail goes off-canvas below 1200px, and below 768px shows one
+  of rail, dossier or assessment at a time through a sticky segmented
+  control that also names the open cluster
+- The header’s navigation collapses behind a menu button below 1200px
+- Tables, charts and controls throughout the dashboard get a horizontal
+  scroll, larger tap targets and iOS-safe input sizing below 1200px
+
+### Changed
+
+- `.episodic-body`/`.episodic-streams-screen` no longer size themselves
+  with a hardcoded `calc(100vh - 44px)`; the app shell is now a column
+  flex so the header can grow past its usual height without breaking
+  either screen’s layout
+- The dossier’s interpretation/notes pair and the Pathogen screen’s
+  care-line/institution pair now stack below 768px instead of staying
+  side by side
+
 ## EpiSODIC 0.13.2
 
 ### Changed

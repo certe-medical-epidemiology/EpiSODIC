@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,21 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.14.0" id="episodic-0140">EpiSODIC 0.14.0<a class="anchor" aria-label="anchor" href="#episodic-0140"></a></h2>
+<div class="section level3">
+<h3 id="new-0-14-0">New<a class="anchor" aria-label="anchor" href="#new-0-14-0"></a></h3>
+<ul><li>The dashboard now adapts to phone and tablet screens: the clusters screen’s rail goes off-canvas below 1200px, and below 768px shows one of rail, dossier or assessment at a time through a sticky segmented control that also names the open cluster</li>
+<li>The header’s navigation collapses behind a menu button below 1200px</li>
+<li>Tables, charts and controls throughout the dashboard get a horizontal scroll, larger tap targets and iOS-safe input sizing below 1200px</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-14-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-14-0"></a></h3>
+<ul><li>
+<code>.episodic-body</code>/<code>.episodic-streams-screen</code> no longer size themselves with a hardcoded <code>calc(100vh - 44px)</code>; the app shell is now a column flex so the header can grow past its usual height without breaking either screen’s layout</li>
+<li>The dossier’s interpretation/notes pair and the Pathogen screen’s care-line/institution pair now stack below 768px instead of staying side by side</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.13.2" id="episodic-0132">EpiSODIC 0.13.2<a class="anchor" aria-label="anchor" href="#episodic-0132"></a></h2>
 <div class="section level3">
