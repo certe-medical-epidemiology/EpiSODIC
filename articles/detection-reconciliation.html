@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -167,10 +167,12 @@ merge, with the oldest surviving and the others’ assessment history
 preserved, never discarded.</li>
 <li>A cluster nobody’s seen a new candidate for this run gets its
 <code>runs_since_detected</code> counter incremented; past a threshold,
-with no assessment ever recorded, it closes itself automatically as
-expected variation. Anything an epidemiologist has actually classified
-as worth watching is never auto-closed - only a person closes
-those.</li>
+if it has never been assessed at all, it closes itself automatically - a
+plain system closure, no verdict attached. A cluster an epidemiologist
+has actually classified, whether as noise or as worth watching, is never
+auto-closed by any verdict of its own - closing it always takes a
+person’s deliberate decision, from the assessment form’s own closure
+checkbox.</li>
 </ol>
 <p>Because the anchor is the sample date, a late-arriving case can
 legitimately change an already-detected signal retrospectively -

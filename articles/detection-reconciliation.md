@@ -70,10 +70,13 @@ number of *persistent* clusters an epidemiologist can actually track:
     with the oldest surviving and the others’ assessment history
     preserved, never discarded.
 3.  A cluster nobody’s seen a new candidate for this run gets its
-    `runs_since_detected` counter incremented; past a threshold, with no
-    assessment ever recorded, it closes itself automatically as expected
-    variation. Anything an epidemiologist has actually classified as
-    worth watching is never auto-closed - only a person closes those.
+    `runs_since_detected` counter incremented; past a threshold, if it
+    has never been assessed at all, it closes itself automatically - a
+    plain system closure, no verdict attached. A cluster an
+    epidemiologist has actually classified, whether as noise or as worth
+    watching, is never auto-closed by any verdict of its own - closing
+    it always takes a person’s deliberate decision, from the assessment
+    form’s own closure checkbox.
 
 Because the anchor is the sample date, a late-arriving case can
 legitimately change an already-detected signal retrospectively -

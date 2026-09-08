@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,33 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.15.0" id="episodic-0150">EpiSODIC 0.15.0<a class="anchor" aria-label="anchor" href="#episodic-0150"></a></h2>
+<div class="section level3">
+<h3 id="new-0-15-0">New<a class="anchor" aria-label="anchor" href="#new-0-15-0"></a></h3>
+<ul><li>The assessment form gets a “close this cluster” checkbox, submitted alongside the classification, so closure is always a deliberate, individual decision rather than implied by a verdict</li>
+<li>The checkbox is pre-ticked (with a highlighted outline) when artefact/expected variation is chosen, but can always be unticked to leave the cluster open for a second opinion</li>
+<li>Submitting an assessment now asks for confirmation, naming the verdict and stating plainly whether it will close the cluster</li>
+<li>A cluster explicitly closed and then reassessed shows a banner naming who closed it, when, and that new cases have come in since</li>
+<li>
+<code>reconciliation.autoclose_unassessed</code> (default <code>true</code>) controls whether the cron auto-closes a cluster nobody ever assessed once it goes stale</li>
+<li>The Archive now names who closed each cluster (a person’s full name, or “System” for an automatic closure)</li>
+<li>A closed cluster’s assessment form is hidden behind a “Re-open” button instead of staying open for a new assessment, reachable the same way from the rail, the Archive, or any related/similar-clusters panel</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-15-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-15-0"></a></h3>
+<ul><li>No verdict, including artefact/expected variation, closes a cluster by itself any more - closure is always a separate, deliberate act, whether taken by a person or by the cron’s unassessed-and-stale rule</li>
+<li>A cluster explicitly closed reopens into “Reassessment needed” the moment new cases arrive on its stream, rather than staying closed regardless</li>
+<li>The <code>"closable"</code> cluster state is removed; a classified, unclosed cluster now reads as “Monitoring” regardless of verdict</li>
+<li>The dossier’s large case-count stat now reads “Cases” instead of “Confirmed”</li>
+<li>Cluster notes and the config-change audit log now show the acting user’s full name, never their login name</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-15-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-15-0"></a></h3>
+<ul><li>The cluster notes history modal showed the login name instead of the full name</li>
+<li>The scheduled report panel’s “set by” line showed the login name instead of the full name</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.14.1" id="episodic-0141">EpiSODIC 0.14.1<a class="anchor" aria-label="anchor" href="#episodic-0141"></a></h2>
 <div class="section level3">

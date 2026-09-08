@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -170,8 +170,7 @@
   cases_check.R       # episodic_check_cases() validation
   cases_dedup.R       # episode deduplication (via AMR::get_episode)
   cases_load.R        # loading cases into the database
-  reconcile.R         # match detections to persistent clusters
-  reconcile_closure.R # auto-close stale clusters
+  reconcile.R         # match detections to persistent clusters, incl. auto-close of stale unassessed clusters
   reconcile_suppress.R # lattice suppression
   cluster_manual.R    # episodic_add_manual_cluster() - clusters from other systems
   detect_*.R          # the four detectors
