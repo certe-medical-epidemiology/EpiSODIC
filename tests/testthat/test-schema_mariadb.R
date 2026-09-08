@@ -187,30 +187,51 @@ test_that("every indexed column in the schema is safe for MySQL", {
   # Keyed off the schema file rather than a hand-kept list: a new
   # CREATE INDEX on a TEXT column fails at table-creation time on
   # MariaDB and nowhere else, which is the worst place to find out.
+  #
+  # Scoped per table, which is the whole difficulty: `created_at` and
+  # `sample_date` are indexed in one table each and plain TEXT in half a
+  # dozen others, where they are perfectly safe. Matching on the column
+  # name alone flags every one of those.
   schema_path <- system.file("sql", "schema.sql", package = "EpiSODIC")
   if (identical(schema_path, "")) {
     schema_path <- file.path("inst", "sql", "schema.sql")
   }
   skip_if_not(file.exists(schema_path))
   lines <- readLines(schema_path, warn = FALSE)
-  indexes <- grep("^CREATE INDEX", lines, value = TRUE)
-  indexed <- unique(unlist(lapply(indexes, function(line) {
-    inside <- sub("^.*\\(([^)]*)\\).*$", "\\1", line)
-    trimws(strsplit(inside, ",", fixed = TRUE)[[1]])
-  })))
+
+  indexed <- list()
+  for (line in grep("^CREATE INDEX", lines, value = TRUE)) {
+    table <- sub("^CREATE INDEX\\s+\\S+\\s+ON\\s+([A-Za-z0-9_]+)\\s*\\(.*$", "\\1", line)
+    cols <- trimws(strsplit(
+      sub("^.*\\(([^)]*)\\).*$", "\\1", line),
+      ",",
+      fixed = TRUE
+    )[[1]])
+    cols <- gsub("`", "", cols, fixed = TRUE)
+    indexed[[table]] <- unique(c(indexed[[table]], cols))
+  }
+  expect_gt(length(indexed), 0)
 
   statements <- episodic_db_schema_statements("mariadb")
-  creates <- paste(
-    grep("CREATE TABLE", statements, value = TRUE, fixed = TRUE),
-    collapse = "\n"
-  )
-  for (column in indexed) {
-    bare <- gsub("`", "", column, fixed = TRUE)
-    offending <- grep(
-      paste0("^\\s*", bare, "\\s+TEXT\\b"),
-      strsplit(creates, "\n", fixed = TRUE)[[1]],
+  for (table in names(indexed)) {
+    block <- grep(
+      paste0("CREATE TABLE\\s+", table, "\\s*\\("),
+      statements,
       value = TRUE
     )
-    expect_equal(offending, character(0), info = bare)
+    expect_length(block, 1)
+    block_lines <- strsplit(block, "\n", fixed = TRUE)[[1]]
+    for (column in indexed[[table]]) {
+      offending <- grep(
+        paste0("^\\s*", column, "\\s+TEXT\\b"),
+        block_lines,
+        value = TRUE
+      )
+      expect_equal(
+        offending,
+        character(0),
+        info = paste(table, column, sep = ".")
+      )
+    }
   }
 })

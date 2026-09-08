@@ -56,11 +56,21 @@ test_that("episodic_quarto_available() is FALSE without the CLI, and episodic_re
   )
 })
 
-test_that("episodic_report_qmd_path() falls back to the shipped template when unset, missing or invalid", {
+test_that("episodic_report_qmd_path() uses the shipped template when nothing is configured", {
   expect_true(file.exists(episodic_report_qmd_path(NA)))
   expect_true(basename(episodic_report_qmd_path(NA)) == "episodic_default_report.qmd")
   expect_true(file.exists(episodic_report_qmd_path("")))
-  expect_true(file.exists(episodic_report_qmd_path("/no/such/file.qmd")))
+})
+
+test_that("episodic_report_qmd_path() refuses a configured path that does not exist", {
+  # Not a fallback: rendering the shipped template instead would send an
+  # organisation's outbreak reports out under EpiSODIC's own layout
+  # rather than theirs, which nobody notices until the report has left
+  # the building.
+  expect_error(
+    episodic_report_qmd_path("/no/such/file.qmd"),
+    "no file exists there"
+  )
 })
 
 test_that("episodic_report_qmd_path() honours an operator-supplied path that actually exists", {

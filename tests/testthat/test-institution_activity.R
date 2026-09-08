@@ -114,9 +114,10 @@ test_that("episodic_institution_activity_load() warns, naming the unmatched keys
 test_that("episodic_institution_activity_load() is silent when nothing is skipped", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  institution <- episodic_db_institutions(env$con)
+  # The operator's own key, which is what the feed carries; the stored
+  # one is a hash of it.
   activity <- data.frame(
-    institution_key = institution$institution_key[1],
+    institution_key = "hosp-app-read",
     period_start = "2025-03-01",
     period_end = "2025-03-07",
     patient_days = 500,

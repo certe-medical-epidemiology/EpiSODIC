@@ -45,6 +45,7 @@
 - The dossier narrative could state that positivity had risen, or stayed flat, for a cluster whose positivity was never measured at all
 - A first positive test was reported as positivity rising
 - `episodic_html_escape()` left single quotes unescaped, and every attribute in the notification HTML is single-quoted
+- `same_place` merged its hit windows on gaps in index rather than gaps in time, so two outbreaks years apart at one place became a single window spanning both
 
 # EpiSODIC 0.15.0
 

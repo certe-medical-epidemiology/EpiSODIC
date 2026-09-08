@@ -74,7 +74,10 @@ test_that("a positive within episode_days of an already-stored episode is droppe
   deduped <- episodic_cases_deduplicate(
     raw,
     pathogen_config_fixture,
-    existing = c("P1Test pathogen" = "2025-01-01")
+    existing = stats::setNames(
+      "2025-01-01",
+      episodic_case_group_key("P1", "Test pathogen")
+    )
   )
   expect_equal(nrow(deduped), 0)
 })
@@ -84,7 +87,10 @@ test_that("a positive beyond episode_days of an already-stored episode starts a 
   deduped <- episodic_cases_deduplicate(
     raw,
     pathogen_config_fixture,
-    existing = c("P1Test pathogen" = "2025-01-01")
+    existing = stats::setNames(
+      "2025-01-01",
+      episodic_case_group_key("P1", "Test pathogen")
+    )
   )
   expect_equal(nrow(deduped), 1)
   expect_equal(deduped$sample_date, "2025-03-01")
@@ -95,7 +101,10 @@ test_that("existing anchors for other patients/pathogens are ignored", {
   deduped <- episodic_cases_deduplicate(
     raw,
     pathogen_config_fixture,
-    existing = c("P2Other pathogen" = "2025-01-01")
+    existing = stats::setNames(
+      "2025-01-01",
+      episodic_case_group_key("P2", "Other pathogen")
+    )
   )
   expect_equal(nrow(deduped), 1)
 })
@@ -108,7 +117,10 @@ test_that("a batch spanning both a continuation and a new episode keeps only the
   deduped <- episodic_cases_deduplicate(
     raw,
     pathogen_config_fixture,
-    existing = c("P1Test pathogen" = "2025-01-01")
+    existing = stats::setNames(
+      "2025-01-01",
+      episodic_case_group_key("P1", "Test pathogen")
+    )
   )
   expect_equal(nrow(deduped), 1)
   expect_equal(deduped$source_key, "K3")
@@ -332,7 +344,10 @@ test_that("episodic_db_last_case_dates() returns the latest sample_date per pati
 
   result <- episodic_db_last_case_dates(con, "P1", "Test pathogen")
   expect_equal(unname(result), "2025-01-01")
-  expect_equal(names(result), "P1Test pathogen")
+  expect_equal(
+    names(result),
+    episodic_case_group_key("P1", "Test pathogen")
+  )
 
   # a patient/pathogen combination with nothing stored yet
   expect_equal(

@@ -91,11 +91,28 @@ test_that("every shipped language has a file, and Arabic is right to left", {
 })
 
 test_that("the dashboard declares its language and direction on the document", {
-  ui <- as.character(episodic_app_ui(lang = "ar"))
-  expect_match(ui, "setAttribute\\('lang', 'ar'\\)")
-  expect_match(ui, "setAttribute\\('dir', 'rtl'\\)")
-  ui_en <- as.character(episodic_app_ui(lang = "en"))
-  expect_match(ui_en, "setAttribute\\('dir', 'ltr'\\)")
+  # `as.character()` on a bslib page renders the body only - the <head>
+  # is carried separately and comes back from `htmltools::renderTags()`,
+  # which is where anything in `shiny::tags$head()` actually lands.
+  head_of <- function(lang) {
+    rendered <- htmltools::renderTags(episodic_app_ui(lang = lang))
+    paste(
+      c(as.character(rendered$head), as.character(rendered$html)),
+      collapse = "\n"
+    )
+  }
+  ar <- head_of("ar")
+  expect_match(ar, "setAttribute('lang', 'ar')", fixed = TRUE)
+  expect_match(ar, "setAttribute('dir', 'rtl')", fixed = TRUE)
+
+  en <- head_of("en")
+  expect_match(en, "setAttribute('lang', 'en')", fixed = TRUE)
+  expect_match(en, "setAttribute('dir', 'ltr')", fixed = TRUE)
+
+  # An unshipped language falls back to English in both attributes, so
+  # the page never claims a language it has no text for.
+  expect_warning(pt <- head_of("pt"), "no translations")
+  expect_match(pt, "setAttribute('lang', 'en')", fixed = TRUE)
 })
 
 test_that("the stylesheet stays free of physical left/right properties", {

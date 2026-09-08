@@ -46,7 +46,11 @@ test_that("episodic_demo(launch = FALSE) sets up a working demo database in one 
       db_path = db_path,
       launch = FALSE,
       cases = small_cases,
-      denominators = small_denominator
+      denominators = small_denominator,
+      # As of the data, not as of today: the detectors report signals
+      # within their configured lookback of `run_date`, so a run dated
+      # now against a June 2024 extract correctly finds nothing at all.
+      run_date = as.Date("2024-06-30")
     ),
     "demo account"
   )

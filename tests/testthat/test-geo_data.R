@@ -17,6 +17,25 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
+# EpiSODIC has no built-in map: `episodic_geo_source_resolve()` returns
+# NULL unless EPISODIC_GEO_DATA names one, because a default map is a
+# default *country*. Any test about what the chart draws therefore has to
+# configure geography first, exactly as `episodic_demo()` and any real
+# instance do.
+with_geo_data <- function(code) {
+  old <- Sys.getenv("EPISODIC_GEO_DATA", unset = NA)
+  on.exit(
+    if (is.na(old)) {
+      Sys.unsetenv("EPISODIC_GEO_DATA")
+    } else {
+      Sys.setenv(EPISODIC_GEO_DATA = old)
+    },
+    add = TRUE
+  )
+  Sys.setenv(EPISODIC_GEO_DATA = episodic_geo_source_default_path())
+  force(code)
+}
+
 test_that("episodic_geo_source_resolve() returns NULL when sf is not installed", {
   skip_if(
     requireNamespace("sf", quietly = TRUE),
@@ -189,7 +208,7 @@ test_that("episodic_ui_geo_map_chart() draws the overlay layer without disturbin
   rows <- data.frame(label = as.character(geo$pc[1]), n = 4)
 
   Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY")
-  plot_without <- episodic_ui_geo_map_chart(rows)
+  plot_without <- with_geo_data(episodic_ui_geo_map_chart(rows))
   expect_s3_class(plot_without, "ggplot")
   # choropleth + the PC/count labels drawn over the case-bearing areas
   expect_equal(length(plot_without$layers), 2)
@@ -200,7 +219,7 @@ test_that("episodic_ui_geo_map_chart() draws the overlay layer without disturbin
   saveRDS(overlay, tmp)
   Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = tmp)
 
-  plot_with <- episodic_ui_geo_map_chart(rows)
+  plot_with <- with_geo_data(episodic_ui_geo_map_chart(rows))
   expect_s3_class(plot_with, "ggplot")
   # choropleth, overlay, labels - the overlay stays layer 2, drawn over
   # the choropleth but under the labels
@@ -226,7 +245,7 @@ test_that("episodic_ui_geo_map_chart() frames on the case-bearing areas, not the
   skip_if(is.null(geo) || nrow(geo) < 50, "shipped geometry unavailable")
 
   rows <- data.frame(label = as.character(geo$pc[1]), n = 4)
-  plot <- episodic_ui_geo_map_chart(rows)
+  plot <- with_geo_data(episodic_ui_geo_map_chart(rows))
   expect_s3_class(plot, "ggplot")
 
   # The frame has to be a small window on the reference set, otherwise

@@ -492,13 +492,15 @@ test_that("episodic_lattice_enumerate() creates distinct streams per level", {
   episodic_lattice_enumerate(con, cases, institutions)
 
   streams <- episodic_db_streams(con)
+  # No province level: that one needs an operator-supplied
+  # EPISODIC_PC_PROVINCE_MAP, and there is deliberately no built-in rule
+  # for deriving a province from a postcode (see episodic_pc_to_province()).
   expect_setequal(
     streams$level,
     c(
       "pathogen_ward",
       "pathogen_institution",
       "pathogen_area",
-      "pathogen_province",
       "pathogen_region"
     )
   )
@@ -654,7 +656,11 @@ test_that("muting a stream suppresses its new detections, and unmuting restores 
     con,
     stream_id = target,
     muted_from = "2024-09-01",
-    muted_until = "2024-12-31",
+    # Short enough that the run after it still falls inside the
+    # rule-based detectors' own lookback window: a run four months after
+    # the last case reports nothing whether the stream is muted or not,
+    # which would make this test pass for the wrong reason.
+    muted_until = "2024-09-30",
     reason = "seasonal",
     note = NA,
     user_id = user_id
@@ -692,7 +698,7 @@ test_that("muting a stream suppresses its new detections, and unmuting restores 
   episodic_run_cron(
     db_path = path,
     cases = cases,
-    run_date = as.Date("2025-01-15")
+    run_date = as.Date("2024-10-05")
   )
   after <- DBI::dbGetQuery(
     con,

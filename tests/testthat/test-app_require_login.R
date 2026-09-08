@@ -92,32 +92,40 @@ require_login_db <- function(pathogen = "Norovirus") {
   list(db_path = db_path, cluster_id = cluster_id, pathogen = pathogen)
 }
 
-test_that("require_login is read defensively, and off unless unambiguously on", {
-  expect_false(episodic_app_require_login(list()))
-  expect_false(episodic_app_require_login(list(access = list())))
-  expect_false(episodic_app_require_login(list(access = list(
-    require_login = FALSE
-  ))))
+test_that("require_login is read defensively, and on unless unambiguously off", {
+  # Read in the safe direction, which is the opposite of the direction
+  # this used to read in. The two mistakes do not cost the same: a
+  # wrongly-closed dashboard is an operator editing one YAML key, a
+  # wrongly-open one is patient-level surveillance data served to
+  # whoever reaches the port.
+  expect_true(episodic_app_require_login(list()))
+  expect_true(episodic_app_require_login(list(access = list())))
   expect_true(episodic_app_require_login(list(access = list(
     require_login = TRUE
   ))))
-  # A malformed value must never silently lock an instance out of its own
-  # dashboard, nor silently open one that asked to be closed.
+  # Only an unambiguous false opens it.
   expect_false(episodic_app_require_login(list(access = list(
+    require_login = FALSE
+  ))))
+  expect_false(episodic_app_require_login(list(access = list(
+    require_login = "FALSE"
+  ))))
+  # A malformed value is a configuration nobody can vouch for, and
+  # leaves the wall up.
+  expect_true(episodic_app_require_login(list(access = list(
     require_login = "perhaps"
   ))))
-  expect_false(episodic_app_require_login(list(access = list(
-    require_login = NA
-  ))))
   expect_true(episodic_app_require_login(list(access = list(
-    require_login = "TRUE"
+    require_login = NA
   ))))
 })
 
-test_that("the shipped default leaves the app open, as it has always been", {
+test_that("the shipped default closes the app to anonymous visitors", {
+  # The shipped state is the state of every deployment where nobody read
+  # the configuration file.
   config <- episodic_config_resolve(episodic_config_path = NA)
   expect_false(is.null(config$access))
-  expect_false(episodic_app_require_login(config))
+  expect_true(episodic_app_require_login(config))
 })
 
 test_that("an instance YAML can close the app, through the ordinary config overlay", {

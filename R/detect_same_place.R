@@ -218,10 +218,16 @@ episodic_same_place_rule <- function(config, pathogen) {
 
 #' Find maximal windows where >= n cases fall within k_days of each other
 #'
+#' Two passes: which cases are part of *any* qualifying k-day window, and
+#' then how those cases divide into episodes. The second is on the gaps
+#' in time between flagged cases, so two separate outbreaks at the same
+#' place are two windows however far apart they are - see the comment
+#' inside for what happened when it was on gaps in index instead.
+#'
 #' @param dates_sorted A sorted `Date` vector (may contain duplicates).
 #' @param n,k_days The rule threshold.
-#' @return A list of `list(first_day, last_day, n_cases)`, one per maximal
-#'   merged hit window.
+#' @return A list of `list(first_day, last_day, n_cases)`, one per merged
+#'   hit window, in date order.
 #' @keywords internal
 #' @noRd
 episodic_same_place_hit_windows <- function(dates_sorted, n, k_days) {
@@ -239,16 +245,29 @@ episodic_same_place_hit_windows <- function(dates_sorted, n, k_days) {
     return(list())
   }
 
-  # Merge the TRUE positions of `hit` into contiguous runs (by index, since
-  # dates_sorted is sorted, contiguous indices are the correct merge unit).
-  runs <- rle(hit)
-  ends <- cumsum(runs$lengths)
-  starts <- ends - runs$lengths + 1
-  is_true_run <- runs$values
+  # Split the flagged cases into episodes on the gaps *in time* between
+  # them, not on gaps in their index. Contiguous indices were the merge
+  # unit here, on the reasoning that `dates_sorted` is sorted - but sorted
+  # says nothing about proximity. A ward with a cluster in 2021 and
+  # another in 2025 flags every one of those cases, and every one of them
+  # is index-adjacent to the next, so the two merged into a single
+  # "window" running from 2021 to 2025 with all six cases in it. That
+  # candidate then reached reconciliation, where it overlapped and
+  # absorbed everything else on the stream and had its case count
+  # recomputed over the whole four years.
+  #
+  # Two flagged cases belong to the same episode when they are within
+  # `k_days` of each other, transitively - the detector's own definition
+  # of "at the same place within k days", applied to deciding where one
+  # episode ends and the next begins as well as to deciding what counts
+  # as a hit at all.
+  hit_idx <- which(hit)
+  gaps <- as.numeric(diff(dates_sorted[hit_idx]), units = "days")
+  episode <- cumsum(c(TRUE, gaps > k_days))
 
   windows <- list()
-  for (r in which(is_true_run)) {
-    idx <- starts[r]:ends[r]
+  for (e in unique(episode)) {
+    idx <- hit_idx[episode == e]
     windows[[length(windows) + 1]] <- list(
       first_day = as.character(min(dates_sorted[idx])),
       last_day = as.character(max(dates_sorted[idx])),

@@ -238,7 +238,13 @@ test_that("episodic_synthetic_cases_calibration() runs through detection and pro
     streams$stream_id
   )]
   n_cdiff_clusters <- sum(clusters$pathogen == "Clostridioides difficile")
-  expect_gt(n_cdiff_clusters, 10) # real signal volume, not the 0-2 the baseline alone would give
+  # Real signal volume, not the 0-2 the baseline alone would give. Not
+  # every bump in the window: the rule-based detectors report only those
+  # whose most recent case falls inside `same_place$lookback_days` of
+  # `run_date`, so one run over a six-month calibration set opens
+  # dossiers for its recent months rather than for all of it - which is
+  # what a run on any given day is supposed to do.
+  expect_gt(n_cdiff_clusters, 5)
 })
 
 test_that("episodic_synthetic_denominators() produces a valid denominator source", {
