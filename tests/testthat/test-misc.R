@@ -45,49 +45,6 @@ test_that("episodic_eligibility_gate() fails a stream with a full year but almos
   expect_false(episodic_eligibility_gate(cases, as.Date("2024-01-01"), config))
 })
 
-test_that("episodic_closure_criterion_met() fires once case_free_days has elapsed", {
-  expect_false(episodic_closure_criterion_met(
-    "2025-01-01",
-    NA,
-    case_free_days = 14,
-    today = as.Date("2025-01-10")
-  ))
-  expect_true(episodic_closure_criterion_met(
-    "2025-01-01",
-    NA,
-    case_free_days = 14,
-    today = as.Date("2025-01-15")
-  ))
-})
-
-test_that("episodic_closure_criterion_met() extends to two incubation periods for a confirmed epidemic", {
-  # case_free_days alone (14) would fire at day 15, but 2 * incub_max_days (2*10=20) is stricter
-  expect_false(episodic_closure_criterion_met(
-    "2025-01-01",
-    "confirmed_epidemic",
-    case_free_days = 14,
-    incub_max_days = 10,
-    today = as.Date("2025-01-16")
-  ))
-  expect_true(episodic_closure_criterion_met(
-    "2025-01-01",
-    "confirmed_epidemic",
-    case_free_days = 14,
-    incub_max_days = 10,
-    today = as.Date("2025-01-22")
-  ))
-})
-
-test_that("episodic_closure_criterion_met() never fires for mem_applicable streams in M1", {
-  expect_false(episodic_closure_criterion_met(
-    "2020-01-01",
-    NA,
-    case_free_days = 14,
-    mem_applicable = TRUE,
-    today = as.Date("2030-01-01")
-  ))
-})
-
 test_that("episodic_priority_score() stays within 0-100 across a range of inputs", {
   weights <- episodic_test_config()$priority_score$weights
   scores <- vapply(

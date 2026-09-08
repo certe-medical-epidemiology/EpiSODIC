@@ -80,7 +80,7 @@ test_that("episodic_app_submit_assessment() does not write a cluster_state row w
   expect_equal(nrow(episodic_db_cluster_states(env$con, env$cluster_id)), 1) # unchanged
 })
 
-test_that("episodic_app_submit_assessment() with a terminal verdict transitions straight to closed", {
+test_that("episodic_app_submit_assessment() with a terminal verdict alone stays open, awaiting a deliberate closure", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   user_id <- episodic_db_app_user_insert(
@@ -100,12 +100,44 @@ test_that("episodic_app_submit_assessment() with a terminal verdict transitions 
   )
   expect_equal(
     episodic_app_derive_state_for_cluster(env$con, env$cluster_id),
-    "closed"
+    "monitoring"
   )
 
   states <- episodic_db_cluster_states(env$con, env$cluster_id)
-  expect_equal(states$state[1], "closed")
+  expect_equal(states$state[1], "monitoring")
   expect_equal(states$event_id[1], event_id)
+})
+
+test_that("episodic_app_submit_assessment(close = TRUE) records the verdict and closes it in one action", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
+
+  event_id <- episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    verdict = "artefact",
+    rationale = "detector artefact",
+    close = TRUE
+  )
+  expect_equal(
+    episodic_app_derive_state_for_cluster(env$con, env$cluster_id),
+    "closed"
+  )
+
+  events <- episodic_db_assessment_events(env$con, env$cluster_id)
+  expect_equal(events$verdict[events$event_id == event_id], "artefact")
+
+  states <- episodic_db_cluster_states(env$con, env$cluster_id)
+  expect_equal(states$state[nrow(states)], "closed")
+  expect_equal(states$trigger[nrow(states)], "closure")
 })
 
 test_that("episodic_app_submit_closure() closes a non-terminal classification without a new assessment event", {

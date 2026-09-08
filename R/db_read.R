@@ -417,7 +417,8 @@ episodic_db_cluster_note_current <- function(con, cluster_id) {
 #' `episodic_cluster_note` is append-only (see
 #' `episodic_db_cluster_note_current()`, which returns only the latest
 #' row); this returns every row instead, joined to the acting user's
-#' username, so `episodic_ui_notes_history_modal()` can diff each version
+#' full name (never the login name - nothing user-facing shows a login
+#' name), so `episodic_ui_notes_history_modal()` can diff each version
 #' against the one before it.
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A single `cluster_id`.
@@ -428,7 +429,7 @@ episodic_db_cluster_note_current <- function(con, cluster_id) {
 episodic_db_cluster_note_history <- function(con, cluster_id) {
   DBI::dbGetQuery(
     con,
-    "SELECT n.note_id, n.user_id, n.created_at, n.note_text, u.username
+    "SELECT n.note_id, n.user_id, n.created_at, n.note_text, u.full_name
        FROM episodic_cluster_note n
        LEFT JOIN episodic_app_user u ON u.user_id = n.user_id
       WHERE n.cluster_id = ?
@@ -674,14 +675,14 @@ episodic_db_app_config_latest <- function(con, section) {
 #' @param section Optional section filter; `NULL` (default) returns every
 #'   section.
 #' @param limit Maximum number of rows to return.
-#' @return A data frame, joined with the acting user's username.
+#' @return A data frame, joined with the acting user's full name.
 #' @keywords internal
 #' @noRd
 episodic_db_app_config_events <- function(con, section = NULL, limit = 200) {
   if (is.null(section)) {
     DBI::dbGetQuery(
       con,
-      "SELECT e.*, u.username AS actor_username
+      "SELECT e.*, u.full_name AS actor_full_name
         FROM episodic_app_config_event e
         LEFT JOIN episodic_app_user u ON u.user_id = e.user_id
         ORDER BY e.created_at DESC, e.event_id DESC
@@ -691,7 +692,7 @@ episodic_db_app_config_events <- function(con, section = NULL, limit = 200) {
   } else {
     DBI::dbGetQuery(
       con,
-      "SELECT e.*, u.username AS actor_username
+      "SELECT e.*, u.full_name AS actor_full_name
         FROM episodic_app_config_event e
         LEFT JOIN episodic_app_user u ON u.user_id = e.user_id
         WHERE e.section = ?

@@ -230,7 +230,6 @@ episodic_ui_info_states_table <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")
     "new",
     "assessing",
     "monitoring",
-    "closable",
     "reassess",
     "closed"
   )

@@ -25,9 +25,13 @@
 
 #' Submit a classification
 #'
-#' Inserts the assessment event, then re-derives state; if it changed,
-#' appends an `episodic_cluster_state` row (`trigger = "assessment"`)
-#' recording the transition and which event caused it.
+#' Inserts the assessment event, then either closes the cluster
+#' (`close = TRUE`, via `episodic_app_submit_closure()`) or re-derives
+#' state and, if it changed, appends an `episodic_cluster_state` row
+#' (`trigger = "assessment"`) recording the transition and which event
+#' caused it. No verdict, including `artefact`/`expected_variation`, ever
+#' closes a cluster on its own - `close` is always a separate, deliberate
+#' choice made alongside the classification, never implied by it.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
@@ -40,6 +44,8 @@
 #' @param ggd_note Free text, or `NA`.
 #' @param snooze_until A date, or `NA`.
 #' @param supersedes An earlier `event_id` this event supersedes, or `NA`.
+#' @param close If `TRUE`, close the cluster in the same action as
+#'   recording this assessment (the assessment form's closure checkbox).
 #' @return Invisibly, the new `event_id`.
 #' @keywords internal
 #' @noRd
@@ -52,7 +58,8 @@ episodic_app_submit_assessment <- function(con,
                                            ggd_informed = NA,
                                            ggd_note = NA,
                                            snooze_until = NA,
-                                           supersedes = NA) {
+                                           supersedes = NA,
+                                           close = FALSE) {
   state_before <- episodic_app_derive_state_for_cluster(con, cluster_id)
 
   event_id <- episodic_db_assessment_event_insert(
@@ -67,6 +74,11 @@ episodic_app_submit_assessment <- function(con,
     snooze_until = snooze_until,
     supersedes = supersedes
   )
+
+  if (isTRUE(close)) {
+    episodic_app_submit_closure(con, cluster_id = cluster_id, user_id = user_id)
+    return(invisible(event_id))
+  }
 
   state_after <- episodic_app_derive_state_for_cluster(con, cluster_id)
   if (!identical(state_before, state_after)) {
@@ -85,10 +97,12 @@ episodic_app_submit_assessment <- function(con,
 
 #' Explicitly close a cluster
 #'
-#' Closure is an act, not a classification:
-#' it needs no new rationale, since the classification that is being
-#' closed already carries its own. Always available on a non-terminal
-#' classification, whether or not the closure criterion has fired.
+#' Closure is an act, not a classification: it needs no new rationale,
+#' since the classification that is being closed already carries its
+#' own. Reached from the assessment form's closure checkbox
+#' (`episodic_app_submit_assessment(..., close = TRUE)`), for any verdict
+#' at all - closure is always deliberate, never implied by a verdict, not
+#' even artefact/expected variation.
 #'
 #' @inheritParams episodic_app_submit_assessment
 #' @return Invisibly, the new `episodic_cluster_state` row's `state_id`.

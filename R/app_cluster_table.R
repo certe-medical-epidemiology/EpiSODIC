@@ -450,6 +450,21 @@ episodic_ui_cluster_col_closed_at <- function(lang = Sys.getenv("EPISODIC_LANGUA
 
 #' @keywords internal
 #' @noRd
+episodic_ui_cluster_col_closed_by <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  episodic_ui_cluster_col(
+    episodic_tr("column.closed_by", lang = lang),
+    function(row) {
+      if (is.na(row$closed_by)) {
+        episodic_tr("misc.unknown", lang = lang)
+      } else {
+        row$closed_by
+      }
+    }
+  )
+}
+
+#' @keywords internal
+#' @noRd
 episodic_ui_cluster_col_verdict <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   episodic_ui_cluster_col(
     episodic_tr("column.verdict", lang = lang),

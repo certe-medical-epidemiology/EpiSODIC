@@ -81,8 +81,9 @@ test_that("episodic_mem_status() takes its season requirement from the configura
 })
 
 test_that("episodic_mem_status() reports off-season as a fact, not as an inability to compute", {
-  # The distinction is what gives a seasonal cluster a closure route in
-  # July; see episodic_closure_criterion_met().
+  # The distinction matters for whether the epidemic has genuinely
+  # begun/ended, independent of any closure decision (closure is always
+  # a deliberate, separate act - see R/app_write.R).
   status <- episodic_mem_status(
     episodic_mem_synthetic_seasons(n_seasons = 5),
     run_date = as.Date("2024-07-01")
@@ -190,69 +191,4 @@ test_that("episodic_detect_mem() returns an empty record with no cases or mem no
     nrow(episodic_detect_mem(data.frame(sample_date = character(0)), 1L)),
     0
   )
-})
-
-test_that("episodic_closure_criterion_met() in season uses mem_status's post-epidemic threshold, never case-free days", {
-  # below threshold -> closure met
-  status_low <- list(
-    in_season = TRUE,
-    current_week_count = 2,
-    post_epidemic_threshold = 5
-  )
-  expect_true(episodic_closure_criterion_met(
-    "2025-01-01",
-    "possible_epidemic",
-    case_free_days = 14,
-    mem_applicable = TRUE,
-    mem_status = status_low
-  ))
-  # above threshold -> not met, regardless of how long case-free
-  status_high <- list(
-    in_season = TRUE,
-    current_week_count = 20,
-    post_epidemic_threshold = 5
-  )
-  expect_false(episodic_closure_criterion_met(
-    "2020-01-01",
-    "possible_epidemic",
-    case_free_days = 14,
-    mem_applicable = TRUE,
-    mem_status = status_high
-  ))
-  # no mem_status at all (mem unavailable, or too little history) ->
-  # never closes via this criterion
-  expect_false(episodic_closure_criterion_met(
-    "2020-01-01",
-    "possible_epidemic",
-    case_free_days = 14,
-    mem_applicable = TRUE,
-    mem_status = NULL
-  ))
-})
-
-test_that("episodic_closure_criterion_met() out of season falls back to the case-free interval", {
-  off <- list(
-    in_season = FALSE,
-    current_week_count = NA_integer_,
-    post_epidemic_threshold = NA_real_
-  )
-  # Long case-free: the season is over and so is the cluster.
-  expect_true(episodic_closure_criterion_met(
-    "2025-04-01",
-    "confirmed_epidemic",
-    case_free_days = 14,
-    mem_applicable = TRUE,
-    mem_status = off,
-    today = as.Date("2025-07-01")
-  ))
-  # Cases last week: the season lapsing around it is not on its own a
-  # reason to call the cluster closable.
-  expect_false(episodic_closure_criterion_met(
-    "2025-06-28",
-    "confirmed_epidemic",
-    case_free_days = 14,
-    mem_applicable = TRUE,
-    mem_status = off,
-    today = as.Date("2025-07-01")
-  ))
 })

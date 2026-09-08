@@ -118,6 +118,60 @@ episodic_app_actor_label <- function(con,
   user$full_name
 }
 
+#' The closure a cluster's current "reassess" state reopened, if any
+#'
+#' `episodic_derive_state()` reaches `"reassess"` two different ways: a
+#' live, never-closed cluster whose data changed since its last
+#' assessment, or a cluster that *was* explicitly closed and has since
+#' had new cases added to its stream (`changed_since_assessment`). The
+#' assessment form only wants to explain itself in the second case - the
+#' first is an ordinary re-look, not a reopening. Reuses
+#' `episodic_app_explicitly_closed_from()` so this agrees with
+#' `episodic_derive_state()` by construction rather than duplicating its
+#' branching.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A cluster id.
+#' @param lang Session language.
+#' @return A list with `actor` (a display label, `episodic_app_actor_label()`)
+#'   and `at` (the closure's `entered_at`), or `NULL` if this cluster's
+#'   current state was not reached by reopening a prior closure.
+#' @keywords internal
+#' @noRd
+episodic_app_reopened_closure <- function(con,
+                                          cluster_id,
+                                          lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  cluster <- DBI::dbGetQuery(
+    con,
+    "SELECT changed_since_assessment FROM episodic_cluster WHERE cluster_id = ?",
+    params = list(cluster_id)
+  )
+  if (
+    nrow(cluster) == 0 ||
+      !isTRUE(as.logical(cluster$changed_since_assessment[1]))
+  ) {
+    return(NULL)
+  }
+
+  events <- episodic_db_assessment_events(con, cluster_id)
+  states <- episodic_db_cluster_states(con, cluster_id)
+  if (!episodic_app_explicitly_closed_from(states, events)) {
+    return(NULL)
+  }
+
+  closures <- states[
+    states$trigger %in% c("closure", "system") & states$state == "closed",
+  ]
+  if (nrow(closures) == 0) {
+    return(NULL)
+  }
+  last_closure <- closures[nrow(closures), ]
+  list(
+    actor = episodic_app_actor_label(con, last_closure$user_id, lang = lang),
+    at = last_closure$entered_at
+  )
+}
+
 #' The Archive screen: closed clusters, searchable
 #'
 #' Last winter's assessment is the best prior for this winter's cluster.
@@ -150,6 +204,7 @@ episodic_app_archive <- function(con,
     case_days = integer(0),
     priority_score = numeric(0),
     closed_at = character(0),
+    closed_by = character(0),
     stringsAsFactors = FALSE
   )
   clusters <- episodic_db_clusters(con, open_only = TRUE)
@@ -207,9 +262,13 @@ episodic_app_archive <- function(con,
     },
     character(1)
   )
-  closed$closed_at <- episodic_app_closed_at_from(
-    episodic_db_cluster_states_batch(con, closed$cluster_id),
-    closed$cluster_id
+  closed_states <- episodic_db_cluster_states_batch(con, closed$cluster_id)
+  closed$closed_at <- episodic_app_closed_at_from(closed_states, closed$cluster_id)
+  closed$closed_by <- episodic_app_closed_by_from(
+    con,
+    closed_states,
+    closed$cluster_id,
+    lang = lang
   )
 
   if (!is.null(query) && nzchar(query)) {
@@ -250,7 +309,8 @@ episodic_app_archive <- function(con,
     "n_cases",
     "case_days",
     "priority_score",
-    "closed_at"
+    "closed_at",
+    "closed_by"
   )]
 }
 

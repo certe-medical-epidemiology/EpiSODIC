@@ -185,7 +185,7 @@ test_that("episodic_db_app_config_event_insert()/episodic_db_app_config_latest()
 
   events <- episodic_db_app_config_events(con, section = "notifications")
   expect_equal(nrow(events), 2)
-  expect_equal(events$actor_username[1], "admin1")
+  expect_equal(events$actor_full_name[1], "Admin One")
 })
 
 test_that("episodic_db_app_config_event_insert() rejects an unknown section", {

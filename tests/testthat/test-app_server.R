@@ -196,8 +196,16 @@ test_that("closing a cluster actually updates the rail and the Archief screen wi
     # Closing without ever touching nav_view (input$rail_select stays on
     # "clusters" throughout) - this is what actually happened in the app:
     # neither the rail nor the Archief screen has any reason to notice a
-    # write unless something explicitly invalidates them.
-    session$setInputs(assess_close = cluster_id)
+    # write unless something explicitly invalidates them. Closure is now
+    # the assessment form's own checkbox, submitted alongside the (here,
+    # rationale-only) assessment rather than as a separate input.
+    session$setInputs(assess_submit = list(
+      cluster_id = cluster_id,
+      verdict = "",
+      rationale = "",
+      snooze = "",
+      close = TRUE
+    ))
     session$flushReact()
 
     rail_after <- paste(output$rail_pane, collapse = "\n")
@@ -279,13 +287,14 @@ test_that("bulk_assess_submit applies one classification to several clusters in 
       bulk_assess_submit = list(
         cluster_ids = unname(cluster_ids),
         verdict = "artefact",
-        rationale = "batch: both were reagent lot issues"
+        rationale = "batch: both were reagent lot issues",
+        close = TRUE
       )
     )
     session$flushReact()
 
     rail_after <- paste(output$rail_pane, collapse = "\n")
-    expect_false(grepl("Norovirus", rail_after)) # artefact is terminal: both close, both leave the rail
+    expect_false(grepl("Norovirus", rail_after)) # closed deliberately: both leave the rail
     expect_false(grepl("Influenza", rail_after))
 
     # A second connection, to read the database back. Named apart from the

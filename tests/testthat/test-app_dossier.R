@@ -156,6 +156,69 @@ test_that("episodic_ui_assessment_rail() renders the classification and mute pic
   expect_false(grepl("gestart", rendered, fixed = TRUE))
 })
 
+test_that("a closed cluster's assessment form is hidden behind a Re-open button, reachable from any entry point", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  fake_user <- data.frame(
+    user_id = 1L,
+    username = "jdoe",
+    full_name = "Jane Doe",
+    role = "epidemiologist",
+    stringsAsFactors = FALSE
+  )
+
+  open_rendered <- as.character(episodic_ui_assessment_rail(
+    env$con,
+    env$cluster_id,
+    lang = "en",
+    current_user = fake_user
+  ))
+  expect_false(grepl(
+    episodic_tr("assessment.reopen_button", lang = "en"),
+    open_rendered,
+    fixed = TRUE
+  ))
+  expect_false(grepl('id="assess_form_fields" hidden', open_rendered, fixed = TRUE))
+
+  episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id = 1L,
+    verdict = "artefact",
+    rationale = "false alarm",
+    close = TRUE
+  )
+
+  closed_rendered <- as.character(episodic_ui_assessment_rail(
+    env$con,
+    env$cluster_id,
+    lang = "en",
+    current_user = fake_user
+  ))
+  expect_true(grepl(
+    episodic_tr("assessment.closed_notice", lang = "en"),
+    closed_rendered,
+    fixed = TRUE
+  ))
+  expect_true(grepl(
+    episodic_tr("assessment.reopen_button", lang = "en"),
+    closed_rendered,
+    fixed = TRUE
+  ))
+  # the fields are still in the DOM (reachable from the rail, the
+  # Archive, or any related/similar-clusters panel, all of which render
+  # this same form for a given cluster_id) - just hidden until clicked
+  expect_true(grepl('id="assess_form_fields" hidden', closed_rendered, fixed = TRUE))
+  expect_true(grepl("assess_verdict", closed_rendered, fixed = TRUE))
+})
+
 test_that("the concentration read model carries the full per-PC breakdown, not just the dominant PC", {
   # episodic_ui_geo_panel() itself renders either a bar breakdown or a
   # choropleth map, depending on whether sf and geographic reference data

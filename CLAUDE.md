@@ -116,8 +116,7 @@ R/
   cases_check.R       # episodic_check_cases() validation
   cases_dedup.R       # episode deduplication (via AMR::get_episode)
   cases_load.R        # loading cases into the database
-  reconcile.R         # match detections to persistent clusters
-  reconcile_closure.R # auto-close stale clusters
+  reconcile.R         # match detections to persistent clusters, incl. auto-close of stale unassessed clusters
   reconcile_suppress.R # lattice suppression
   cluster_manual.R    # episodic_add_manual_cluster() - clusters from other systems
   detect_*.R          # the four detectors

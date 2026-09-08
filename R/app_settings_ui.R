@@ -624,7 +624,7 @@ episodic_ui_settings_audit_panel <- function(audit,
               fmt = "%d-%m-%Y %H:%M"
             )),
             shiny::tags$td(
-              row$actor_username %||% episodic_tr("misc.unknown", lang = lang)
+              row$actor_full_name %||% episodic_tr("misc.unknown", lang = lang)
             ),
             shiny::tags$td(row$section)
           )

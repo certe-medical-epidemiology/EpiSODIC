@@ -39,13 +39,10 @@ events_one <- function(verdict = NA, snooze_until = NA) {
 
 test_that("no assessment event is always Nieuw (new)", {
   expect_equal(episodic_derive_state(events_none()), "new")
-  # unaffected by other flags: absence of events dominates
+  # unaffected by other flags: absence of events dominates unless
+  # explicitly_closed is set
   expect_equal(
     episodic_derive_state(events_none(), changed_since_assessment = TRUE),
-    "new"
-  )
-  expect_equal(
-    episodic_derive_state(events_none(), closure_criterion_met = TRUE),
     "new"
   )
 })
@@ -57,7 +54,7 @@ test_that("an event with no verdict yet is In beoordeling (assessing)", {
   )
 })
 
-test_that("explicit closure wins over any classification history", {
+test_that("explicit closure wins over any classification history, including a terminal verdict", {
   expect_equal(
     episodic_derive_state(
       events_one(verdict = "confirmed_epidemic"),
@@ -72,12 +69,18 @@ test_that("explicit closure wins over any classification history", {
     ),
     "closed"
   )
+  expect_equal(
+    episodic_derive_state(
+      events_one(verdict = "artefact"),
+      explicitly_closed = TRUE
+    ),
+    "closed"
+  )
 })
 
 test_that("a cluster with no assessment history is closed if explicitly_closed, new otherwise", {
-  # This does arise from real use: the cron auto-closes a cluster with no
-  # assessment at all after close_after_runs, which never creates an
-  # assessment event - only an
+  # This does arise from real use: the cron auto-closes a never-assessed,
+  # stale cluster, which never creates an assessment event - only an
   # episodic_cluster_state row (trigger = "system"). Without checking
   # explicitly_closed here too, such a cluster would read as "new" forever
   # and never leave the open rail.
@@ -113,40 +116,16 @@ test_that("an expired snooze does not suppress the verdict-derived state", {
   )
 })
 
-test_that("terminal verdicts (artefact, expected_variation) are Afgesloten (closed), unless the cool-down escape hatch flagged them changed", {
-  expect_equal(
-    episodic_derive_state(events_one(verdict = "artefact")),
-    "closed"
-  )
-  expect_equal(
-    episodic_derive_state(events_one(verdict = "expected_variation")),
-    "closed"
-  )
-  # closure_criterion_met alone (not the escape hatch) leaves a terminal verdict closed
-  expect_equal(
-    episodic_derive_state(
-      events_one(verdict = "expected_variation"),
-      closure_criterion_met = TRUE
-    ),
-    "closed"
-  )
-  # changed_since_assessment on a terminal verdict IS the cool-down
-  # escape hatch - it must surface as Herbeoordeling nodig (reassess),
-  # not stay silently closed
-  expect_equal(
-    episodic_derive_state(
-      events_one(verdict = "artefact"),
-      changed_since_assessment = TRUE
-    ),
-    "reassess"
-  )
-  expect_equal(
-    episodic_derive_state(
-      events_one(verdict = "expected_variation"),
-      changed_since_assessment = TRUE
-    ),
-    "reassess"
-  )
+test_that("a terminal verdict (artefact, expected_variation) alone never closes a cluster", {
+  # No verdict, terminal or not, implies closure by itself any more -
+  # closure is always a deliberate, separate act.
+  for (v in c("artefact", "expected_variation")) {
+    expect_equal(
+      episodic_derive_state(events_one(verdict = v)),
+      "monitoring",
+      info = v
+    )
+  }
 })
 
 test_that("a non-terminal verdict with changed data is Herbeoordeling nodig (reassess)", {
@@ -162,38 +141,33 @@ test_that("a non-terminal verdict with changed data is Herbeoordeling nodig (rea
   }
 })
 
-test_that("changed_since_assessment takes priority over the closure criterion", {
+test_that("changed_since_assessment reopens an explicitly closed cluster into reassess", {
   expect_equal(
     episodic_derive_state(
-      events_one(verdict = "possible_epidemic"),
-      changed_since_assessment = TRUE,
-      closure_criterion_met = TRUE
+      events_one(verdict = "artefact"),
+      explicitly_closed = TRUE,
+      changed_since_assessment = TRUE
+    ),
+    "reassess"
+  )
+  expect_equal(
+    episodic_derive_state(
+      events_none(),
+      explicitly_closed = TRUE,
+      changed_since_assessment = TRUE
     ),
     "reassess"
   )
 })
 
-test_that("a non-terminal verdict with unmet closure criterion is Monitoring", {
-  for (v in c("cluster_not_yet", "possible_epidemic", "confirmed_epidemic")) {
+test_that("every verdict, terminal or not, is Monitoring until closed or changed", {
+  for (v in c(
+    "artefact", "expected_variation",
+    "cluster_not_yet", "possible_epidemic", "confirmed_epidemic"
+  )) {
     expect_equal(
-      episodic_derive_state(
-        events_one(verdict = v),
-        closure_criterion_met = FALSE
-      ),
+      episodic_derive_state(events_one(verdict = v)),
       "monitoring",
-      info = v
-    )
-  }
-})
-
-test_that("a non-terminal verdict with the closure criterion met is Af te sluiten (closable)", {
-  for (v in c("cluster_not_yet", "possible_epidemic", "confirmed_epidemic")) {
-    expect_equal(
-      episodic_derive_state(
-        events_one(verdict = v),
-        closure_criterion_met = TRUE
-      ),
-      "closable",
       info = v
     )
   }
@@ -209,10 +183,10 @@ test_that("the latest event in a multi-row history is what determines state", {
       created_at = "2025-02-01T00:00:00Z"
     )
   )
-  expect_equal(episodic_derive_state(events), "closed")
+  expect_equal(episodic_derive_state(events), "monitoring")
 })
 
-test_that("exhaustive: every (verdict-class x changed x closure x snooze x explicit) combination is covered", {
+test_that("exhaustive: every (verdict-class x changed x explicit) combination is covered", {
   verdict_classes <- list(
     none = NA_character_,
     terminal = "artefact",
@@ -220,45 +194,37 @@ test_that("exhaustive: every (verdict-class x changed x closure x snooze x expli
   )
   for (vc_name in names(verdict_classes)) {
     for (changed in c(FALSE, TRUE)) {
-      for (closure in c(FALSE, TRUE)) {
-        for (explicit in c(FALSE, TRUE)) {
-          verdict <- verdict_classes[[vc_name]]
-          events <- if (vc_name == "none") {
-            events_none()
-          } else {
-            events_one(verdict = verdict)
-          }
-          state <- episodic_derive_state(
-            events,
-            changed_since_assessment = changed,
-            closure_criterion_met = closure,
-            explicitly_closed = explicit
-          )
-          expected <- if (vc_name == "none") {
-            if (explicit) "closed" else "new"
-          } else if (explicit) {
-            "closed"
-          } else if (vc_name == "terminal") {
-            if (changed) "reassess" else "closed" # cool-down escape hatch
-          } else if (changed) {
-            "reassess"
-          } else if (closure) {
-            "closable"
-          } else {
-            "monitoring"
-          }
-          expect_equal(
-            state,
-            expected,
-            info = sprintf(
-              "verdict_class=%s changed=%s closure=%s explicit=%s",
-              vc_name,
-              changed,
-              closure,
-              explicit
-            )
-          )
+      for (explicit in c(FALSE, TRUE)) {
+        verdict <- verdict_classes[[vc_name]]
+        events <- if (vc_name == "none") {
+          events_none()
+        } else {
+          events_one(verdict = verdict)
         }
+        state <- episodic_derive_state(
+          events,
+          changed_since_assessment = changed,
+          explicitly_closed = explicit
+        )
+        expected <- if (explicit) {
+          if (changed) "reassess" else "closed"
+        } else if (vc_name == "none") {
+          "new"
+        } else if (changed) {
+          "reassess"
+        } else {
+          "monitoring"
+        }
+        expect_equal(
+          state,
+          expected,
+          info = sprintf(
+            "verdict_class=%s changed=%s explicit=%s",
+            vc_name,
+            changed,
+            explicit
+          )
+        )
       }
     }
   }

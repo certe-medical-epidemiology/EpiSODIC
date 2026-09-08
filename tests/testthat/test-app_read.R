@@ -78,7 +78,7 @@ test_that("episodic_app_open_clusters() sorts by last_day descending, not priori
   expect_equal(open$cluster_id[2], older_id) # last_day 2025-01-02
 })
 
-test_that("a cluster with an assessment event is excluded once closed, included otherwise", {
+test_that("a cluster with a terminal verdict alone stays open, only an explicit closure excludes it", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   episodic_db_app_user_insert(
@@ -96,7 +96,17 @@ test_that("a cluster with an assessment event is excluded once closed, included 
     rationale = "test"
   )
   open <- episodic_app_open_clusters(env$con)
-  expect_equal(nrow(open), 0) # artefact is terminal -> closed -> not open
+  expect_equal(nrow(open), 1) # a verdict alone, terminal or not, never closes it
+
+  episodic_db_cluster_state_insert(
+    env$con,
+    cluster_id = env$cluster_id,
+    state = "closed",
+    trigger = "closure",
+    user_id = 1L
+  )
+  open_after_closure <- episodic_app_open_clusters(env$con)
+  expect_equal(nrow(open_after_closure), 0)
 })
 
 test_that("a non-terminal verdict explicitly closed via episodic_cluster_state (trigger = closure) reads as closed", {
@@ -118,7 +128,7 @@ test_that("a non-terminal verdict explicitly closed via episodic_cluster_state (
   )
   expect_equal(
     episodic_app_derive_state_for_cluster(env$con, env$cluster_id),
-    "closable"
+    "monitoring"
   )
 
   episodic_db_cluster_state_insert(
@@ -134,7 +144,7 @@ test_that("a non-terminal verdict explicitly closed via episodic_cluster_state (
   )
 })
 
-test_that("episodic_app_open_clusters()'s batch state derivation agrees with episodic_app_derive_state_for_cluster() for a closable, non-terminal verdict", {
+test_that("episodic_app_open_clusters()'s batch state derivation agrees with episodic_app_derive_state_for_cluster() for a monitored, non-terminal verdict", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   episodic_db_app_user_insert(
@@ -153,10 +163,10 @@ test_that("episodic_app_open_clusters()'s batch state derivation agrees with epi
   )
   expect_equal(
     episodic_app_derive_state_for_cluster(env$con, env$cluster_id),
-    "closable"
+    "monitoring"
   )
   open <- episodic_app_open_clusters(env$con)
-  expect_equal(open$state[open$cluster_id == env$cluster_id], "closable")
+  expect_equal(open$state[open$cluster_id == env$cluster_id], "monitoring")
 })
 
 test_that("a later assessment event re-opens a cluster that was previously explicitly closed", {
@@ -198,7 +208,7 @@ test_that("a later assessment event re-opens a cluster that was previously expli
   )
   expect_equal(
     episodic_app_derive_state_for_cluster(env$con, env$cluster_id),
-    "closable"
+    "monitoring"
   )
 })
 
@@ -215,6 +225,61 @@ test_that("a cron auto-close (trigger = system) with no classification at all re
     episodic_app_derive_state_for_cluster(env$con, env$cluster_id),
     "closed"
   )
+})
+
+test_that("episodic_app_closed_by_from() resolves a person's full name, the system label, or NA", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
+  episodic_db_cluster_state_insert(
+    env$con,
+    cluster_id = env$cluster_id,
+    state = "closed",
+    trigger = "closure",
+    user_id = user_id
+  )
+
+  other_cluster_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$stream_id,
+    first_day = "2025-02-01",
+    last_day = "2025-02-02",
+    n_cases = 2,
+    priority_score = 10,
+    detector_agreement = 1,
+    run_id = env$run_id
+  )
+  episodic_db_cluster_state_insert(
+    env$con,
+    cluster_id = other_cluster_id,
+    state = "closed",
+    trigger = "system"
+  )
+
+  never_closed_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$stream_id,
+    first_day = "2025-03-01",
+    last_day = "2025-03-02",
+    n_cases = 1,
+    priority_score = 5,
+    detector_agreement = 1,
+    run_id = env$run_id
+  )
+
+  ids <- c(env$cluster_id, other_cluster_id, never_closed_id)
+  states <- episodic_db_cluster_states_batch(env$con, ids)
+  closed_by <- episodic_app_closed_by_from(env$con, states, ids, lang = "en")
+
+  expect_equal(closed_by[1], "Test User")
+  expect_equal(closed_by[2], episodic_tr("activity.actor_system", lang = "en"))
+  expect_true(is.na(closed_by[3]))
 })
 
 test_that("episodic_cluster_object() populates concentration, density and case_free", {
@@ -691,6 +756,13 @@ test_that("the archive lists cluster ids and links each row through to its dossi
     verdict = "artefact",
     rationale = "test"
   )
+  episodic_db_cluster_state_insert(
+    env$con,
+    cluster_id = env$cluster_id,
+    state = "closed",
+    trigger = "closure",
+    user_id = 1L
+  )
 
   archive <- episodic_app_archive(env$con, lang = "en")
   expect_equal(nrow(archive), 1)
@@ -728,6 +800,10 @@ test_that("the archive lists cluster ids and links each row through to its dossi
   )) {
     expect_true(grepl(episodic_tr(key, lang = "en"), html, fixed = TRUE))
   }
+  # who closed it - the full name, never the login name
+  expect_true(grepl(episodic_tr("column.closed_by", lang = "en"), html, fixed = TRUE))
+  expect_true(grepl("Test User", html, fixed = TRUE))
+  expect_false(grepl(">tester<", html, fixed = TRUE))
   # the level filter chips, one per lattice level plus "all"
   expect_true(grepl("archive_level_filter", html, fixed = TRUE))
   expect_true(grepl(

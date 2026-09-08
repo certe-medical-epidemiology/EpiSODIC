@@ -155,7 +155,7 @@ test_that("the notes panel's History button appears only once a note has been sa
   expect_true(grepl(episodic_tr("notes.history_button", lang = "en"), html_after, fixed = TRUE))
 })
 
-test_that("episodic_db_cluster_note_history() returns every version, oldest first, joined to the username", {
+test_that("episodic_db_cluster_note_history() returns every version, oldest first, joined to the full name", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   user_id <- episodic_db_app_user_insert(
@@ -176,7 +176,7 @@ test_that("episodic_db_cluster_note_history() returns every version, oldest firs
   history <- episodic_db_cluster_note_history(env$con, env$cluster_id)
   expect_equal(nrow(history), 3L)
   expect_equal(history$note_text, c("first", "second", "third"))
-  expect_true(all(history$username == "jdoe"))
+  expect_true(all(history$full_name == "Jane Doe"))
   expect_true(all(diff(history$note_id) > 0))
 })
 
@@ -207,12 +207,15 @@ test_that("episodic_ui_notes_history_modal() diffs every version against the one
   episodic_db_cluster_note_insert(env$con, env$cluster_id, user2, "alpha bravo")
 
   html <- as.character(episodic_ui_notes_history_modal(env$con, env$cluster_id, lang = "en"))
-  expect_true(grepl("afirst", html, fixed = TRUE))
-  expect_true(grepl("zsecond", html, fixed = TRUE))
+  # The full name is shown, never the login name.
+  expect_false(grepl("afirst", html, fixed = TRUE))
+  expect_false(grepl("zsecond", html, fixed = TRUE))
+  expect_true(grepl("A First", html, fixed = TRUE))
+  expect_true(grepl("Z Second", html, fixed = TRUE))
   expect_true(grepl("episodic-notes-diff-ins", html, fixed = TRUE))
-  # newest first: the second version's entry (by "zsecond", its author)
-  # must appear before the first version's entry (by "afirst")
-  expect_true(regexpr("zsecond", html, fixed = TRUE) < regexpr("afirst", html, fixed = TRUE))
+  # newest first: the second version's entry (by "Z Second", its author)
+  # must appear before the first version's entry (by "A First")
+  expect_true(regexpr("Z Second", html, fixed = TRUE) < regexpr("A First", html, fixed = TRUE))
 })
 
 test_that("episodic_ui_notes_history_modal() shows an empty state when no note was ever saved", {

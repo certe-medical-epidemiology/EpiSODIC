@@ -73,18 +73,16 @@ episodic_app_open_clusters <- function(con,
 #' Derive state for many clusters at once
 #'
 #' What the rail actually needs from `episodic_app_derive_state_for_cluster()`,
-#' but without its one-query-per-cluster cost: `episodic_db_assessment_events()`,
-#' `episodic_db_cluster_states()` and (for a `mem_applicable` pathogen)
-#' `episodic_db_cases_for_pathogen()` are each fetched once per distinct
-#' cluster/pathogen here instead of once per cluster, which is what made
-#' the rail's own render cost scale with the number of open clusters
-#' rather than being flat.
+#' but without its one-query-per-cluster cost: `episodic_db_assessment_events()`
+#' and `episodic_db_cluster_states()` are each fetched once for every
+#' cluster in one batched query here, instead of once per cluster, which
+#' is what made the rail's own render cost scale with the number of open
+#' clusters rather than being flat.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param clusters A data frame with (at least) `cluster_id`, `pathogen`,
-#'   `last_day` and `changed_since_assessment` columns - `episodic_db_clusters()`'s
-#'   own shape, with `pathogen` joined in from `episodic_db_streams()`, is
-#'   exactly this.
+#' @param clusters A data frame with (at least) `cluster_id` and
+#'   `changed_since_assessment` columns - `episodic_db_clusters()`'s own
+#'   shape is exactly this.
 #' @return A character vector of states, one per row of `clusters`, in the
 #'   same order.
 #' @keywords internal
@@ -97,23 +95,6 @@ episodic_app_derive_states_batch <- function(con, clusters) {
   ids <- clusters$cluster_id
   events_all <- episodic_db_assessment_events_batch(con, ids)
   states_all <- episodic_db_cluster_states_batch(con, ids)
-  pathogen_config <- episodic_db_pathogen_config(con)
-
-  # mem_status is only worth computing for pathogens that are both
-  # mem_applicable and actually have a non-terminal latest verdict among
-  # these clusters - episodic_db_cases_for_pathogen() reads every case for
-  # the pathogen, so it is memoised per pathogen rather than per cluster.
-  mem_cache <- new.env(parent = emptyenv())
-  mem_status_for <- function(pathogen) {
-    if (!exists(pathogen, envir = mem_cache, inherits = FALSE)) {
-      status <- episodic_mem_status(episodic_db_cases_for_pathogen(
-        con,
-        pathogen
-      ))
-      assign(pathogen, status, envir = mem_cache)
-    }
-    get(pathogen, envir = mem_cache, inherits = FALSE)
-  }
 
   vapply(
     seq_len(nrow(clusters)),
@@ -122,32 +103,9 @@ episodic_app_derive_states_batch <- function(con, clusters) {
       events <- events_all[events_all$cluster_id == row$cluster_id, ]
       states <- states_all[states_all$cluster_id == row$cluster_id, ]
 
-      closure_met <- FALSE
-      if (nrow(events) > 0 && any(!is.na(events$verdict))) {
-        latest_verdict <- events$verdict[!is.na(events$verdict)]
-        latest_verdict <- latest_verdict[length(latest_verdict)]
-        pc <- pathogen_config[pathogen_config$pathogen == row$pathogen, ]
-        if (nrow(pc) > 0) {
-          pc <- pc[1, ]
-          mem_status <- NULL
-          if (isTRUE(as.logical(pc$mem_applicable))) {
-            mem_status <- mem_status_for(row$pathogen)
-          }
-          closure_met <- episodic_closure_criterion_met(
-            row$last_day,
-            latest_verdict,
-            case_free_days = pc$case_free_days,
-            incub_max_days = pc$incub_max_days,
-            mem_applicable = as.logical(pc$mem_applicable),
-            mem_status = mem_status
-          )
-        }
-      }
-
       episodic_derive_state(
         events,
         changed_since_assessment = as.logical(row$changed_since_assessment),
-        closure_criterion_met = closure_met,
         explicitly_closed = episodic_app_explicitly_closed_from(
           states,
           events
@@ -162,8 +120,8 @@ episodic_app_derive_states_batch <- function(con, clusters) {
 #'
 #' Thin wrapper around `episodic_derive_state()` that fetches the inputs
 #' from the database: the cluster's assessment events, its
-#' `changed_since_assessment` flag, the closure criterion, and whether it
-#' has been explicitly closed.
+#' `changed_since_assessment` flag, and whether it has been explicitly
+#' closed.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
@@ -182,52 +140,23 @@ episodic_app_derive_state_for_cluster <- function(con, cluster_id) {
   }
   cluster <- cluster[1, ]
 
-  closure_met <- FALSE
-  if (nrow(events) > 0 && any(!is.na(events$verdict))) {
-    latest_verdict <- events$verdict[!is.na(events$verdict)]
-    latest_verdict <- latest_verdict[length(latest_verdict)]
-    stream <- DBI::dbGetQuery(
-      con,
-      "SELECT pathogen FROM episodic_stream WHERE stream_id = ?",
-      params = list(cluster$stream_id)
-    )
-    pc <- episodic_db_pathogen_config_get(con, stream$pathogen[1])
-    if (!is.null(pc)) {
-      mem_status <- NULL
-      if (isTRUE(as.logical(pc$mem_applicable))) {
-        stream_cases <- episodic_db_cases_for_pathogen(con, stream$pathogen[1])
-        mem_status <- episodic_mem_status(stream_cases)
-      }
-      closure_met <- episodic_closure_criterion_met(
-        cluster$last_day,
-        latest_verdict,
-        case_free_days = pc$case_free_days,
-        incub_max_days = pc$incub_max_days,
-        mem_applicable = as.logical(pc$mem_applicable),
-        mem_status = mem_status
-      )
-    }
-  }
-
   episodic_derive_state(
     events,
     changed_since_assessment = as.logical(cluster$changed_since_assessment),
-    closure_criterion_met = closure_met,
     explicitly_closed = episodic_app_explicitly_closed(con, cluster_id, events)
   )
 }
 
 #' Whether a person explicitly closed a cluster
 #'
-#' A non-terminal verdict (`cluster_not_yet`, `possible_epidemic`,
-#' `confirmed_epidemic`) can be closed by an epidemiologist's decision alone,
-#' without the classification itself changing - "an epidemic closes when
-#' a person says so, whether or not any criterion has fired". That act is
-#' recorded as an `episodic_cluster_state` row (`trigger = "closure"`), not
-#' as a new assessment event (the classification's own rationale already
-#' exists; closure records that it is over, not what it was). It counts
-#' as still in effect only if nothing has happened since - in practice, no
-#' newer assessment event exists.
+#' Any verdict, including artefact/expected variation, is closed only by an
+#' epidemiologist's deliberate decision, never by the classification
+#' itself - "a cluster closes when a person says so", full stop. That act
+#' is recorded as an `episodic_cluster_state` row (`trigger = "closure"`),
+#' not as a new assessment event (the classification's own rationale
+#' already exists; closure records that it is over, not what it was). It
+#' counts as still in effect only if nothing has happened since - in
+#' practice, no newer assessment event exists.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
@@ -292,6 +221,43 @@ episodic_app_closed_at_from <- function(states_all, cluster_ids) {
   }
   last <- closures[!duplicated(closures$cluster_id, fromLast = TRUE), ]
   as.character(last$entered_at[match(cluster_ids, last$cluster_id)])
+}
+
+#' Who closed each of many clusters, from states fetched in bulk
+#'
+#' The Archive companion to `episodic_app_closed_at_from()` - same "last
+#' `state == 'closed'` row per cluster" logic, resolved to a display label
+#' (`episodic_app_actor_label()`: a person's full name, or the system
+#' label for an automatic closure) instead of a timestamp.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param states_all Rows from `episodic_db_cluster_states_batch()`.
+#' @param cluster_ids The cluster ids to answer for, in the order wanted.
+#' @param lang Session language.
+#' @return A character vector of actor labels, one per id, `NA` for a
+#'   cluster with no recorded closure.
+#' @keywords internal
+#' @noRd
+episodic_app_closed_by_from <- function(con,
+                                        states_all,
+                                        cluster_ids,
+                                        lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  closures <- states_all[states_all$state == "closed", ]
+  if (nrow(closures) == 0) {
+    return(rep(NA_character_, length(cluster_ids)))
+  }
+  last <- closures[!duplicated(closures$cluster_id, fromLast = TRUE), ]
+  idx <- match(cluster_ids, last$cluster_id)
+  vapply(
+    idx,
+    function(i) {
+      if (is.na(i)) {
+        return(NA_character_)
+      }
+      episodic_app_actor_label(con, last$user_id[i], lang = lang)
+    },
+    character(1)
+  )
 }
 
 #' Build the cluster object consumed by the interpretation engine and the dossier
