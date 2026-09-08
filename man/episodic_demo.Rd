@@ -11,10 +11,10 @@ episodic_demo(
   email = "demo@example.org",
   password = "demo",
   launch = TRUE,
-  run_date = episodic_synthetic_week_end(),
+  run_date = NULL,
   lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  cases = function() episodic_synthetic_cases(end_date = run_date),
-  denominators = function() episodic_synthetic_denominators(end_date = run_date),
+  cases = NULL,
+  denominators = NULL,
   ...
 )
 }
@@ -33,10 +33,20 @@ anything beyond a local demo.}
 \code{FALSE} to only build the demo database and return its path, e.g. for
 scripting or screenshots.}
 
-\item{run_date}{The date to run detection as of. Defaults to the end of
-the last complete week, so the week the statistical detectors test is
-a full one however far into the week you happen to run the demo -
-which is how surveillance reads its own weeks anyway.}
+\item{run_date}{The date to run detection as of. Left \code{NULL} (the
+default) it is chosen for you, and which way depends on whose data
+this is: for the bundled synthetic data, the end of the last
+complete week, so the week the statistical detectors test is a full
+one however far into the week you happen to run the demo; for a
+\code{cases} extract you supply yourself, the last day that extract
+covers, and the demo says so when it does it.
+
+That second rule is the demo's alone. Detection is bounded to a
+lookback window around \code{run_date}, so a run dated today against an
+extract from last year correctly finds nothing - which is right for
+a scheduled run and useless for someone trying the system out on a
+historical export. \code{\link[=episodic_run_cron]{episodic_run_cron()}} therefore keeps dating its
+runs from the system date, as a real surveillance run must.}
 
 \item{lang}{Dashboard language when \code{launch = TRUE}: \code{"en"}, \code{"ar"},
 \code{"nl"}, \code{"fr"}, \code{"de"}, \code{"hi"}, \code{"zh"}, or \code{"es"}. Defaults to the
