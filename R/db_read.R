@@ -655,6 +655,24 @@ episodic_db_app_users <- function(con) {
 #' @param section A section name, e.g. `"notifications"`.
 #' @return The most recent `episodic_app_config_event` row for `section`,
 #'   or `NULL` if an admin has never saved one.
+#' Every recorded sign-in failure, most recent first
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param limit Maximum rows to return.
+#' @return A data frame with `failure_id`, `attempted_at`, `username`,
+#'   `user_id` and `reason`.
+#' @keywords internal
+#' @noRd
+episodic_db_app_login_failures <- function(con, limit = 200) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_app_login_failure
+      ORDER BY attempted_at DESC, failure_id DESC
+      LIMIT ?",
+    params = list(as.integer(limit))
+  )
+}
+
 #' @keywords internal
 #' @noRd
 episodic_db_app_config_latest <- function(con, section) {

@@ -125,21 +125,77 @@ test_that("a freshly created database records the schema version it was built at
   expect_equal(episodic_db_schema_version(con), episodic_schema_version)
 })
 
-test_that("a database from before schema versioning is refused, then adopted", {
+test_that("a database from before schema versioning is refused, then adopted and brought forward", {
   path <- episodic_test_db_path()
   on.exit(unlink(path))
 
-  # Exactly the shape EpiSODIC 0.12.x left behind: every table but this one.
+  # Exactly the shape EpiSODIC 0.12.x left behind: no version table, and
+  # none of the tables added since.
+  con <- episodic_db_connect(path)
+  DBI::dbExecute(con, "DROP TABLE episodic_schema_version")
+  DBI::dbExecute(con, "DROP TABLE episodic_app_login_failure")
+  DBI::dbDisconnect(con)
+
+  expect_error(episodic_db_connect(path), "episodic_db_migrate")
+  expect_message(
+    version <- episodic_db_migrate(path),
+    "schema version 1"
+  )
+  expect_equal(version, episodic_schema_version)
+
+  con <- episodic_db_connect(path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+  expect_equal(episodic_db_schema_version(con), episodic_schema_version)
+  # Every step it passed through is recorded, not just the last.
+  expect_setequal(
+    DBI::dbGetQuery(con, "SELECT version FROM episodic_schema_version")$version,
+    seq_len(episodic_schema_version)
+  )
+  # And the migration built the real table, not an approximation of it.
+  expect_true(DBI::dbExistsTable(con, "episodic_app_login_failure"))
+  expect_setequal(
+    DBI::dbListFields(con, "episodic_app_login_failure"),
+    c("failure_id", "attempted_at", "username", "user_id", "reason")
+  )
+})
+
+test_that("a migration that fails is rolled back and does not record its version", {
+  path <- episodic_test_db_path()
+  on.exit(unlink(path))
   con <- episodic_db_connect(path)
   DBI::dbExecute(con, "DROP TABLE episodic_schema_version")
   DBI::dbDisconnect(con)
 
-  expect_error(episodic_db_connect(path), "episodic_db_migrate")
-  expect_message(episodic_db_migrate(path), "schema version 1")
+  local_mocked_bindings(
+    episodic_db_migrations = function() {
+      list("2" = function(con, dialect) stop("deliberate failure", call. = FALSE))
+    }
+  )
+  expect_error(episodic_db_migrate(path), "rolled back")
 
-  con <- episodic_db_connect(path)
+  con <- episodic_db_connect(path, check_schema_version = FALSE)
   on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+  # Adopted at 1, and stopped there: the failed step wrote nothing.
   expect_equal(episodic_db_schema_version(con), 1L)
+})
+
+test_that("a migration re-run after a partial MariaDB-style failure completes", {
+  # MariaDB and MySQL commit implicitly on DDL, so a step can leave its
+  # table behind with no version row recorded. Every migration is
+  # written to skip what it finds already done, so the second attempt
+  # is the fix rather than a second failure.
+  path <- episodic_test_db_path()
+  on.exit(unlink(path))
+  con <- episodic_db_connect(path)
+  # Exactly that state: the new table present, the version table gone.
+  DBI::dbExecute(con, "DROP TABLE episodic_schema_version")
+  DBI::dbDisconnect(con)
+
+  expect_message(
+    version <- episodic_db_migrate(path),
+    "schema version"
+  )
+  expect_equal(version, episodic_schema_version)
 })
 
 test_that("a database from a newer EpiSODIC is refused rather than half-read", {
@@ -163,6 +219,20 @@ test_that("migrating an already-current database changes nothing", {
   on.exit(unlink(path))
   expect_message(version <- episodic_db_migrate(path), "schema version")
   expect_equal(version, episodic_schema_version)
+})
+
+test_that("every version between 1 and the current one has a migration registered", {
+  # A version bumped without a migration is a database nobody can bring
+  # forward, discovered by an operator on upgrade day rather than here.
+  migrations <- episodic_db_migrations()
+  expect_setequal(
+    names(migrations),
+    as.character(seq_len(episodic_schema_version)[-1])
+  )
+  for (step in migrations) {
+    expect_type(step, "closure")
+    expect_named(formals(step), c("con", "dialect"))
+  }
 })
 
 # ---- Mail encoding ------------------------------------------------------

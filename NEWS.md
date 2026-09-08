@@ -8,6 +8,8 @@
 - `config$report$small_count_threshold` is documented in the shipped defaults instead of only existing in code
 - An instance configuration is validated against the shipped defaults: an unknown key, a wrong type, or a null where a value is needed stops the run and names the key
 - `episodic_add_user()` gains `must_change`, for an account that does not need a forced password change
+- Refused sign-ins are recorded in `episodic_app_login_failure` with the username tried and which of the three reasons it was
+- The Activity screen gains category filter chips: assessments, closures, mutes, sign-ins, detection runs
 
 ## Changed
 
@@ -21,6 +23,8 @@
 - Mail headers are RFC 2047 encoded and message bodies base64 encoded, so non-ASCII subjects and reports survive every relay
 - `episodic_demo()` configures its geography through the documented environment variables rather than relying on built-in defaults
 - An explicit YAML `null` now keeps its key during the configuration merge instead of removing it
+- Sign-in rows on the Activity screen are withheld from a reader who has not signed in
+- `episodic_run_cron(debug = TRUE)` no longer prints per-query SQL and encoding dumps; it reports phase and per-stream progress
 
 ## Fixed
 

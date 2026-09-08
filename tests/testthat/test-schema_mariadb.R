@@ -166,3 +166,51 @@ test_that("episodic_db_create() with a mysql:// DSN errors clearly when RMariaDB
     "RMariaDB"
   )
 })
+
+test_that("episodic_db_schema_statements(\"mariadb\") bounds episodic_app_login_failure's indexed TEXT column", {
+  statements <- episodic_db_schema_statements("mariadb")
+  create <- grep(
+    "CREATE TABLE episodic_app_login_failure",
+    statements,
+    value = TRUE,
+    fixed = TRUE
+  )
+  expect_length(create, 1)
+  # attempted_at carries the table's only index, and MySQL rejects a bare
+  # TEXT column in a key specification without a key length.
+  expect_match(create, "attempted_at VARCHAR(30) NOT NULL", fixed = TRUE)
+  # username and reason are not indexed, so they stay TEXT.
+  expect_match(create, "username     TEXT NOT NULL", fixed = TRUE)
+})
+
+test_that("every indexed column in the schema is safe for MySQL", {
+  # Keyed off the schema file rather than a hand-kept list: a new
+  # CREATE INDEX on a TEXT column fails at table-creation time on
+  # MariaDB and nowhere else, which is the worst place to find out.
+  schema_path <- system.file("sql", "schema.sql", package = "EpiSODIC")
+  if (identical(schema_path, "")) {
+    schema_path <- file.path("inst", "sql", "schema.sql")
+  }
+  skip_if_not(file.exists(schema_path))
+  lines <- readLines(schema_path, warn = FALSE)
+  indexes <- grep("^CREATE INDEX", lines, value = TRUE)
+  indexed <- unique(unlist(lapply(indexes, function(line) {
+    inside <- sub("^.*\\(([^)]*)\\).*$", "\\1", line)
+    trimws(strsplit(inside, ",", fixed = TRUE)[[1]])
+  })))
+
+  statements <- episodic_db_schema_statements("mariadb")
+  creates <- paste(
+    grep("CREATE TABLE", statements, value = TRUE, fixed = TRUE),
+    collapse = "\n"
+  )
+  for (column in indexed) {
+    bare <- gsub("`", "", column, fixed = TRUE)
+    offending <- grep(
+      paste0("^\\s*", bare, "\\s+TEXT\\b"),
+      strsplit(creates, "\n", fixed = TRUE)[[1]],
+      value = TRUE
+    )
+    expect_equal(offending, character(0), info = bare)
+  }
+})

@@ -159,6 +159,17 @@ episodic_app_server_factory <- function(db_path,
       input$streams_page_select,
       streams_page(input$streams_page_select)
     )
+    # The Activity screen's category chips, held the same way the
+    # archive's level chips are: the chip carries the next full
+    # selection, the server holds it, and the next render redraws every
+    # chip from it (see `episodic_ui_multi_picker()`).
+    activity_categories <- shiny::reactiveVal(character(0))
+    shiny::observeEvent(input$activity_category_filter, {
+      v <- input$activity_category_filter
+      activity_categories(
+        if (!nzchar(v)) character(0) else strsplit(v, ",", fixed = TRUE)[[1]]
+      )
+    })
 
     # Pathogen screen selection. Held here rather than derived from the
     # inputs at render time so that switching away to a cluster dossier
@@ -229,7 +240,13 @@ episodic_app_server_factory <- function(db_path,
         shiny::uiOutput("archive_screen")
       } else if (view() == "activity") {
         episodic_ui_activity_screen(
-          episodic_app_activity_log(con, lang = lang),
+          episodic_app_activity_log(
+            con,
+            lang = lang,
+            user = current_user(),
+            category = activity_categories()
+          ),
+          selected_categories = activity_categories(),
           lang = lang
         )
       } else if (view() == "pathogen") {
@@ -388,6 +405,7 @@ episodic_app_server_factory <- function(db_path,
         if (!nzchar(v)) character(0) else strsplit(v, ",", fixed = TRUE)[[1]]
       )
     })
+
     output$archive_screen <- shiny::renderUI({
       if (!access_granted()) {
         return(NULL)

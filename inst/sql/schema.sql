@@ -546,7 +546,40 @@ CREATE TABLE episodic_report_subscription_send (
 CREATE INDEX idx_episodic_report_subscription_send_cluster ON episodic_report_subscription_send(cluster_id, sent_at);
 
 -- ---------------------------------------------------------------------
--- 5.11 Schema version (created by episodic_db_create(), advanced by
+-- 5.11 Failed sign-in attempts (app, append-only)
+--
+-- Successful sign-ins are an account event and live in
+-- episodic_app_user_event ('login'); a failed one may have no account at
+-- all - a username nobody has, typed by somebody probing or by a
+-- colleague who mistyped - and episodic_app_user_event.user_id is NOT
+-- NULL by design, so it cannot hold them. Hence a table of its own,
+-- rather than an event type that would need a fictional user_id.
+--
+-- episodic_auth_login() deliberately tells the visitor nothing about
+-- WHY a sign-in failed (unknown username, wrong password and deactivated
+-- account are one generic outcome to them). That is a statement about
+-- the response, not about the record: which of the three it was is
+-- exactly what the operator reading the audit trail needs, so it is
+-- recorded here in full.
+--
+-- `username` is stored as typed and may therefore be anything a visitor
+-- can send. It is written by parameterised query, truncated at write
+-- time, and rendered as text, never as markup.
+-- ---------------------------------------------------------------------
+CREATE TABLE episodic_app_login_failure (
+  failure_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+  attempted_at TEXT NOT NULL,
+  username     TEXT NOT NULL,   -- as typed; may match no account
+  -- Filled when the username does name an account, NULL when it does not.
+  user_id      INTEGER REFERENCES episodic_app_user(user_id),
+  reason       TEXT NOT NULL CHECK (reason IN (
+                 'unknown_username', 'wrong_password', 'inactive_account'))
+);
+
+CREATE INDEX idx_episodic_app_login_failure_at ON episodic_app_login_failure(attempted_at);
+
+-- ---------------------------------------------------------------------
+-- 5.12 Schema version (created by episodic_db_create(), advanced by
 -- episodic_db_migrate())
 --
 -- EpiSODIC is deployed at laboratories that then upgrade the package,
@@ -557,11 +590,14 @@ CREATE INDEX idx_episodic_report_subscription_send_cluster ON episodic_report_su
 -- unexplained SQL error on the first run after the update - or worse,
 -- does not fail, and reads a column that means something else now.
 --
--- One row per applied version, never updated or deleted: the current
--- version is the highest one present, and the table doubles as the
--- record of when each step was applied. episodic_db_connect() compares
--- it against what the installed package expects and refuses a mismatch
--- by name rather than letting the query layer discover it.
+-- Append-only: the current version is the highest row present, and the
+-- table doubles as the record of when each step was applied and by which
+-- package version. A database created fresh records only the version it
+-- was built at (the intermediate ones were never applied to it); one
+-- brought forward by episodic_db_migrate() gains a row per step.
+-- episodic_db_connect() compares the highest against what the installed
+-- package expects and refuses a mismatch by name rather than letting the
+-- query layer discover it.
 -- ---------------------------------------------------------------------
 CREATE TABLE episodic_schema_version (
   version    INTEGER PRIMARY KEY,

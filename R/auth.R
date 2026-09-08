@@ -28,12 +28,22 @@
 #' account with [episodic_add_user()], and the new user sets their
 #' own password on first sign-in.
 #'
-#' Passwords are hashed (never stored in plain text) and login history is
-#' kept for audit purposes. This login exists to attribute who assessed
-#' what, not to defend the system against attackers: EpiSODIC does not
-#' implement TLS, account lockout, or rate limiting, so it should always be
-#' deployed behind your own organisation's network controls (VPN, internal
-#' network, or a reverse proxy that terminates TLS).
+#' Passwords are hashed (never stored in plain text). Both outcomes are
+#' recorded: a successful sign-in as a `login` event on the account, a
+#' refused one - with which of unknown username, wrong password or
+#' deactivated account it was, and the username as typed - in
+#' `episodic_app_login_failure`. Both appear on the dashboard's Activity
+#' screen, to signed-in readers only, where the sign-in category can be
+#' filtered to on its own.
+#'
+#' That record is an audit trail, not a defence. This login exists to
+#' attribute who assessed what, not to keep an attacker out: EpiSODIC
+#' does not implement TLS, account lockout, or rate limiting, so it
+#' should always be deployed behind your own organisation's network
+#' controls (VPN, internal network, or a reverse proxy that terminates
+#' TLS). What the failure log gives you is the ability to *notice* -
+#' a burst of refused attempts on one account is visible on the Activity
+#' screen the same day it happens.
 #'
 #' @name episodic_auth
 NULL
@@ -218,12 +228,19 @@ episodic_auth_must_change <- function(con, user) {
 #' Attempt to log in
 #'
 #' Verifies `username`/`password` against the account's current password
-#' hash and, on success, records a
-#' `login` event. Deliberately silent about *why* a login failed (unknown
-#' username vs. wrong password vs. inactive account are folded into the
-#' same generic outcome) - the login exists to attribute assessments made
-#' by people already inside the building, not to resist an attacker who
-#' would learn more from a distinguishing error message.
+#' hash and records the outcome either way: a `login` event on success,
+#' a row in `episodic_app_login_failure` otherwise.
+#'
+#' What the *visitor* is told is deliberately undifferentiated - unknown
+#' username, wrong password and deactivated account are one generic
+#' outcome to them, since the sign-in exists to attribute assessments
+#' made by people already inside the building, not to hand a stranger a
+#' username oracle. What the *record* says is the opposite: which of the
+#' three it was, and the username as typed. An epidemiologist locked out
+#' by a deactivated account and somebody working through a colleague's
+#' likely passwords look identical from the login screen and must not
+#' look identical in the audit trail. Both appear on the Activity screen,
+#' to signed-in readers only (see `episodic_app_activity_log()`).
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param username,password Login credentials.
@@ -234,9 +251,22 @@ episodic_auth_must_change <- function(con, user) {
 #' @noRd
 episodic_auth_login <- function(con, username, password) {
   rlang::check_installed("sodium")
+  refuse <- function(reason, user_id = NA) {
+    episodic_db_app_login_failure_insert(
+      con,
+      username = username,
+      user_id = user_id,
+      reason = reason
+    )
+    list(ok = FALSE)
+  }
+
   user <- episodic_db_user_by_username(con, username)
-  if (is.null(user) || !episodic_auth_is_active(con, user)) {
-    return(list(ok = FALSE))
+  if (is.null(user)) {
+    return(refuse("unknown_username"))
+  }
+  if (!episodic_auth_is_active(con, user)) {
+    return(refuse("inactive_account", user$user_id))
   }
   hash <- episodic_auth_password_hash(con, user)
   verified <- tryCatch(
@@ -244,7 +274,7 @@ episodic_auth_login <- function(con, username, password) {
     error = function(e) FALSE
   )
   if (!isTRUE(verified)) {
-    return(list(ok = FALSE))
+    return(refuse("wrong_password", user$user_id))
   }
   episodic_db_app_user_event_insert(con, user$user_id, "login")
   list(

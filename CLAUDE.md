@@ -83,6 +83,7 @@ Single schema in `inst/sql/schema.sql`, written in SQLite dialect. Adapted at lo
 | `episodic_institution` | cron | Institution reference data |
 | `episodic_cluster_note` | app | Per-cluster free-text notes (append-only) |
 | `episodic_cluster_manual_case` | `episodic_add_manual_cluster()` | Case-level detail for `origin = 'manual'` clusters only |
+| `episodic_app_login_failure` | app | Refused sign-ins (username tried, reason) |
 | `episodic_schema_version` | `episodic_db_create()`, `episodic_db_migrate()` | One row per applied schema version |
 
 The schema is versioned. `episodic_schema_version` (in `R/schema_migrate.R`) is what this build expects; `episodic_db_connect()` refuses a database at any other version, naming `episodic_db_migrate()` as the fix. Any change to `inst/sql/schema.sql` that an existing database has to be brought along for means bumping that constant and adding a matching entry to `episodic_db_migrations()` - a function `(con, dialect)` that is idempotent, runs inside a transaction, and never drops or rewrites data.
@@ -115,6 +116,8 @@ Two roles for dashboard access:
 - `viewer`: read-only (sees everything including patient-level detail, but cannot record assessments)
 
 `access.require_login` ships as `true`: an instance is closed to anonymous visitors unless an operator deliberately opens it. `episodic_app_require_login()` fails closed on anything it cannot read as `false`.
+
+Both sign-in outcomes are recorded: a success as a `login` event on the account, a refusal in `episodic_app_login_failure` (which of unknown username / wrong password / deactivated account, plus the username as typed - a failure may name no account, which is why it is not an `episodic_app_user_event`). Both surface on the Activity screen under the `signin` category, and are withheld from a reader who has not signed in - on an instance running open, "who has an account here" is not for a stranger. `episodic_auth_login()` still tells the visitor nothing about which of the three it was.
 
 Accounts are added via `episodic_add_user()` at the R console; there is also in-app account management.
 

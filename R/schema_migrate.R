@@ -270,7 +270,7 @@ episodic_db_create <- function(path, overwrite = FALSE) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 1L
+episodic_schema_version <- 2L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -332,7 +332,65 @@ episodic_db_schema_version <- function(con) {
 #' @keywords internal
 #' @noRd
 episodic_db_migrations <- function() {
-  list()
+  list(
+    # 2: episodic_app_login_failure, the audit record of sign-ins that
+    # did not succeed. Purely additive - one new table and its index,
+    # taken from the same schema file every other table comes from, so
+    # there is still only one place the table is defined.
+    #
+    # The existence check is not belt and braces: MariaDB/MySQL commit
+    # implicitly on DDL, so a migration that creates a table and then
+    # fails before its version row is written leaves the table behind
+    # and nothing recorded. Skipping what is already there is what makes
+    # the second attempt work rather than fail on "table already
+    # exists". (Under SQLite the whole step really is transactional and
+    # this never fires.)
+    "2" = function(con, dialect) {
+      if (DBI::dbExistsTable(con, "episodic_app_login_failure")) {
+        return(invisible(NULL))
+      }
+      for (statement in episodic_db_schema_statements_for(
+        dialect,
+        "episodic_app_login_failure"
+      )) {
+        DBI::dbExecute(con, statement)
+      }
+      invisible(NULL)
+    }
+  )
+}
+
+#' The `CREATE` statements naming one table, from the dialect-adapted schema
+#'
+#' A migration that adds a table must create exactly the table the
+#' schema file describes, or a migrated database and a freshly created
+#' one drift apart - so it takes the statements from there rather than
+#' repeating the DDL. Matches the table's `CREATE TABLE` and every
+#' `CREATE INDEX` on it, and nothing else: a plain substring match would
+#' give `episodic_app_user` every statement belonging to
+#' `episodic_app_user_event` as well.
+#'
+#' @param dialect `"sqlite"` or `"mariadb"`.
+#' @param table The table name.
+#' @return A character vector of SQL statements, in schema-file order.
+#' @keywords internal
+#' @noRd
+episodic_db_schema_statements_for <- function(dialect, table) {
+  statements <- episodic_db_schema_statements(dialect)
+  wanted <- paste0(
+    "(CREATE TABLE\\s+", table, "\\s*\\(|CREATE INDEX\\s+\\S+\\s+ON\\s+", table, "\\s*\\()"
+  )
+  matches <- statements[grepl(wanted, statements)]
+  if (length(matches) == 0) {
+    stop(
+      "No statements for table \"",
+      table,
+      "\" in inst/sql/schema.sql. The package installation may be ",
+      "corrupted.",
+      call. = FALSE
+    )
+  }
+  matches
 }
 
 #' Bring an Existing Database up to the Current Schema
@@ -350,6 +408,13 @@ episodic_db_migrations <- function() {
 #' assessments and your audit trail are carried forward untouched. Take
 #' a backup first anyway - that advice does not stop being good because
 #' the code is careful.
+#'
+#' Each step runs inside a transaction, which under SQLite covers the
+#' schema changes themselves. MariaDB and MySQL commit implicitly on
+#' every `CREATE`/`ALTER`, so there a failed step can leave its schema
+#' change in place with no version row recorded; every migration is
+#' written to skip what it finds already done, so simply running this
+#' again is the correct response.
 #'
 #' A database created by EpiSODIC 0.12.x or earlier carries no version
 #' at all, since the version table postdates it. Such a database is
@@ -449,13 +514,10 @@ episodic_db_migrate <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA))
 #'
 #' Needed on its own by `episodic_db_migrate()`, to give a
 #' pre-versioning database somewhere to record that it is version 1.
-#' Taken from the same dialect-adapted schema every other table comes
-#' from, so there is still only one place the table is defined.
 #' @keywords internal
 #' @noRd
 episodic_db_schema_version_statements <- function(dialect) {
-  statements <- episodic_db_schema_statements(dialect)
-  statements[grepl("episodic_schema_version", statements, fixed = TRUE)]
+  episodic_db_schema_statements_for(dialect, "episodic_schema_version")
 }
 
 #' Empty Every EpiSODIC Table, Keeping the Schema Itself
@@ -969,6 +1031,9 @@ episodic_db_schema_statements <- function(dialect) {
       ),
       episodic_report_subscription_send = c(
         "  sent_at               TEXT NOT NULL," = "  sent_at               VARCHAR(30) NOT NULL,"
+      ),
+      episodic_app_login_failure = c(
+        "  attempted_at TEXT NOT NULL," = "  attempted_at VARCHAR(30) NOT NULL,"
       )
     )
     for (table in names(text_to_varchar)) {
