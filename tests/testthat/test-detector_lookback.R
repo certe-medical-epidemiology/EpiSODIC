@@ -74,8 +74,10 @@ test_that("a window is judged on its last day, not its first", {
   )
   kept <- episodic_detector_windows_within(windows, cutoff)
   expect_equal(length(kept), 2)
-  expect_equal(vapply(kept, function(w) w$last_day, character(1)),
-               c("2025-06-01", "2025-05-10"))
+  expect_equal(
+    vapply(kept, function(w) w$last_day, character(1)),
+    c("2025-06-01", "2025-05-10")
+  )
   # no cutoff keeps everything
   expect_equal(length(episodic_detector_windows_within(windows, NULL)), 3)
 })

@@ -14,10 +14,20 @@ account with \code{\link[=episodic_add_user]{episodic_add_user()}}, and the new 
 own password on first sign-in.
 }
 \details{
-Passwords are hashed (never stored in plain text) and login history is
-kept for audit purposes. This login exists to attribute who assessed
-what, not to defend the system against attackers: EpiSODIC does not
-implement TLS, account lockout, or rate limiting, so it should always be
-deployed behind your own organisation's network controls (VPN, internal
-network, or a reverse proxy that terminates TLS).
+Passwords are hashed (never stored in plain text). Both outcomes are
+recorded: a successful sign-in as a \code{login} event on the account, a
+refused one - with which of unknown username, wrong password or
+deactivated account it was, and the username as typed - in
+\code{episodic_app_login_failure}. Both appear on the dashboard's Activity
+screen, to signed-in readers only, where the sign-in category can be
+filtered to on its own.
+
+That record is an audit trail, not a defence. This login exists to
+attribute who assessed what, not to keep an attacker out: EpiSODIC
+does not implement TLS, account lockout, or rate limiting, so it
+should always be deployed behind your own organisation's network
+controls (VPN, internal network, or a reverse proxy that terminates
+TLS). What the failure log gives you is the ability to \emph{notice} -
+a burst of refused attempts on one account is visible on the Activity
+screen the same day it happens.
 }

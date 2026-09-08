@@ -68,6 +68,24 @@ dashboard - all without needing access to any real laboratory system or
 an instance configuration file. Everything used here is a shipped
 default, so it works right after installing the package.
 }
+\section{What the demo writes beside the database}{
+
+EpiSODIC has no built-in geography - no default map, and no built-in
+rule for turning a postcode into a province - because a default for
+either would be a default for one country. The demo therefore
+configures its own, exactly the way a real deployment does: two files
+named after \code{db_path} (\verb{<name>-config.yaml} and
+\verb{<name>-pc-province.csv}), plus the Netherlands postcode geometry
+bundled with the package.
+
+They are left in place, so a database built with \code{launch = FALSE} can
+be re-opened later with the same geography by setting \code{EPISODIC_DB},
+\code{EPISODIC_CONFIG}, \code{EPISODIC_PC_PROVINCE_MAP} and \code{EPISODIC_GEO_DATA}
+back to them - the paths are printed when the demo finishes. Without
+them the database still opens; it simply shows no map and no
+provinces.
+}
+
 \section{Check your data before you run anything}{
 
 

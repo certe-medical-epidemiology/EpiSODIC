@@ -4,12 +4,21 @@
 \alias{episodic_db_open}
 \title{Connect Using the \code{EPISODIC_DB} Environment Variable}
 \usage{
-episodic_db_open(db_path = Sys.getenv("EPISODIC_DB", unset = NA))
+episodic_db_open(
+  db_path = Sys.getenv("EPISODIC_DB", unset = NA),
+  check_schema_version = TRUE
+)
 }
 \arguments{
 \item{db_path}{Path to an existing SQLite database, or a \verb{mysql://} DSN
 (see \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}). Defaults to the \code{EPISODIC_DB}
 environment variable.}
+
+\item{check_schema_version}{Whether to refuse a database whose schema
+version is not the one this build of EpiSODIC expects, with an
+error naming \code{\link[=episodic_db_migrate]{episodic_db_migrate()}} as the fix. \code{TRUE} (the
+default) everywhere except inside \code{episodic_db_migrate()} itself,
+which by definition has to open a database that is out of date.}
 }
 \value{
 An open \link[DBI:DBIConnection-class]{DBI::DBIConnection}; you are responsible for
