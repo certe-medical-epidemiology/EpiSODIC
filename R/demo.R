@@ -37,10 +37,20 @@
 #'   [episodic_run_app()]); this call blocks until you close it. Set to
 #'   `FALSE` to only build the demo database and return its path, e.g. for
 #'   scripting or screenshots.
-#' @param run_date The date to run detection as of. Defaults to the end of
-#'   the last complete week, so the week the statistical detectors test is
-#'   a full one however far into the week you happen to run the demo -
-#'   which is how surveillance reads its own weeks anyway.
+#' @param run_date The date to run detection as of. Left `NULL` (the
+#'   default) it is chosen for you, and which way depends on whose data
+#'   this is: for the bundled synthetic data, the end of the last
+#'   complete week, so the week the statistical detectors test is a full
+#'   one however far into the week you happen to run the demo; for a
+#'   `cases` extract you supply yourself, the last day that extract
+#'   covers, and the demo says so when it does it.
+#'
+#'   That second rule is the demo's alone. Detection is bounded to a
+#'   lookback window around `run_date`, so a run dated today against an
+#'   extract from last year correctly finds nothing - which is right for
+#'   a scheduled run and useless for someone trying the system out on a
+#'   historical export. [episodic_run_cron()] therefore keeps dating its
+#'   runs from the system date, as a real surveillance run must.
 #' @param lang Dashboard language when `launch = TRUE`: `"en"`, `"ar"`,
 #'   `"nl"`, `"fr"`, `"de"`, `"hi"`, `"zh"`, or `"es"`. Defaults to the
 #'   `EPISODIC_LANGUAGE` environment variable, falling back to `"en"` if
@@ -98,11 +108,54 @@ episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
                           email = "demo@example.org",
                           password = "demo",
                           launch = TRUE,
-                          run_date = episodic_synthetic_week_end(),
+                          run_date = NULL,
                           lang = Sys.getenv("EPISODIC_LANGUAGE"),
-                          cases = function() episodic_synthetic_cases(end_date = run_date),
-                          denominators = function() episodic_synthetic_denominators(end_date = run_date),
+                          cases = NULL,
+                          denominators = NULL,
                           ...) {
+  # Resolved here rather than in the signature, because each of these
+  # defaults depends on the others and R cannot express that: the
+  # synthetic generators are anchored to `run_date`, while `run_date`
+  # for somebody's own extract has to come from the extract.
+  #
+  # `missing()`, not a `NULL` sentinel: `denominators = NULL` is a
+  # meaningful thing for a caller to write - it says "no denominator
+  # feed at all", and the examples below do exactly that - so "not
+  # supplied" and "supplied as NULL" have to stay distinguishable.
+  # Captured up front, since `missing()` stops being reliable once the
+  # formal it asks about has been assigned to.
+  # `NULL` counts as "not supplied" for `cases` and `run_date`, where it
+  # says nothing a caller could mean, and as a real value for
+  # `denominators`, where it means "no denominator feed".
+  supplied_cases <- !missing(cases) && !is.null(cases)
+  supplied_run_date <- !missing(run_date) && !is.null(run_date)
+  supplied_denominators <- !missing(denominators)
+
+  # `cases` is resolved to a data frame once, and the data frame is what
+  # goes to `episodic_run_cron()`. Resolving a generator function twice
+  # would produce two different data sets, and date the run from one of
+  # them while detecting on the other.
+  if (supplied_cases) {
+    cases <- episodic_resolve_data(cases)
+    if (!supplied_run_date) {
+      run_date <- episodic_demo_run_date(cases)
+      message(
+        "Running detection as of ",
+        format(run_date),
+        ", the last day your case data covers."
+      )
+    }
+  }
+  if (!supplied_run_date && !supplied_cases) {
+    run_date <- episodic_synthetic_week_end()
+  }
+  if (!supplied_cases) {
+    cases <- function() episodic_synthetic_cases(end_date = run_date)
+  }
+  if (!supplied_denominators) {
+    denominators <- function() episodic_synthetic_denominators(end_date = run_date)
+  }
+
   EPISODIC_CONFIG.old <- Sys.getenv("EPISODIC_CONFIG")
   EPISODIC_DB.old <- Sys.getenv("EPISODIC_DB")
   EPISODIC_GEO_DATA.old <- Sys.getenv("EPISODIC_GEO_DATA")
@@ -254,4 +307,27 @@ episodic_demo_pc_province_map <- function() {
     province_code = unname(province),
     stringsAsFactors = FALSE
   )
+}
+
+#' The date to run a demo of somebody's own extract as of
+#'
+#' The last day the extract covers. Anything later is a run that looks
+#' back at data older than its own detection window and finds nothing,
+#' which is correct behaviour and a poor first impression - and the
+#' reason `episodic_demo()` does this while `episodic_run_cron()`
+#' deliberately does not.
+#'
+#' @param cases A resolved case data frame.
+#' @return A single `Date`; the synthetic default's own anchor when the
+#'   extract carries no usable `sample_date` at all, since there is
+#'   nothing in it to date the run from.
+#' @keywords internal
+#' @noRd
+episodic_demo_run_date <- function(cases) {
+  dates <- suppressWarnings(as.Date(cases$sample_date))
+  dates <- dates[!is.na(dates)]
+  if (length(dates) == 0) {
+    return(episodic_synthetic_week_end())
+  }
+  max(dates)
 }

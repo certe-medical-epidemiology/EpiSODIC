@@ -22,6 +22,7 @@
 - The dashboard sets `lang` and `dir` on the document, and the stylesheet uses logical properties, so Arabic renders right to left
 - Mail headers are RFC 2047 encoded and message bodies base64 encoded, so non-ASCII subjects and reports survive every relay
 - `episodic_demo()` configures its geography through the documented environment variables rather than relying on built-in defaults
+- `episodic_demo()` dates its run from the last day a supplied `cases` extract covers, and says so; `episodic_run_cron()` still dates every run from the system date
 - An explicit YAML `null` now keeps its key during the configuration merge instead of removing it
 - Sign-in rows on the Activity screen are withheld from a reader who has not signed in
 - `episodic_run_cron(debug = TRUE)` no longer prints per-query SQL and encoding dumps; it reports phase and per-stream progress
