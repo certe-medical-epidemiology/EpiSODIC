@@ -10,6 +10,7 @@ EpiSODIC is a complete and automated outbreak detection and assessment system. I
 
 - No shortcuts, no placeholder logic, no "good enough for now". If a proper implementation is more effort than a shortcut, implement it properly or check with the user.
 - No silent failures. Every error path must be handled explicitly and must fail loudly, never fail quietly and produce a plausible-looking wrong result.
+- **Absence of a measurement is never a measurement of zero.** This is the failure mode this codebase produces most often, and it has been found in four separate places: lattice suppression read a manual cluster's zero case-overlap as "the rise is spread thinly" rather than "there is nothing here to measure"; the reporting-completion curve dropped the lags at which nothing had arrived yet instead of counting them as zero; the priority score's own docstring gets it right, and `episodic_add_manual_cluster()` still scored agreement on a different denominator; and three dossier narrative fragments passed `NA` positivity through `%||% 0` and then wrote sentences about it. Note that `%||%` in this package (`R/interpretation.R`) also swallows `NA`, not only `NULL`, which is exactly how the last of those happened. When a quantity cannot be computed, drop the component, skip the fragment, or return `NULL` - never substitute a zero and carry on.
 - No hidden assumptions about a specific laboratory's data structure, coding system, or naming convention. Anything laboratory-specific must be configurable, not hardcoded.
 - No untested code paths merged into main. Every function that touches detection logic, data transformation, or reporting must have accompanying tests before it is considered complete, and must be placed in a separate branch WITH a PR, so every change regarding these items must automatically be put into a PR.
 - No inconsistent interfaces. Function signatures, argument naming, return types, and error conventions must be uniform across the entire codebase, as if written by a single disciplined author, not accreted piecemeal.
@@ -80,7 +81,7 @@ Single schema in `inst/sql/schema.sql`, written in SQLite dialect. Adapted at lo
 | `episodic_assessment_event` | app | Epidemiologist assessments (append-only) |
 | `episodic_app_user` | app | Dashboard accounts |
 | `episodic_case` | cron | Deduplicated case records |
-| `episodic_institution` | cron | Institution reference data |
+| `episodic_institution` | cron | Institution reference data (`institution_key` is a SHA-1 of the operator's own key, never the key itself) |
 | `episodic_cluster_note` | app | Per-cluster free-text notes (append-only) |
 | `episodic_cluster_manual_case` | `episodic_add_manual_cluster()` | Case-level detail for `origin = 'manual'` clusters only |
 | `episodic_app_login_failure` | app | Refused sign-ins (username tried, reason) |
@@ -103,6 +104,13 @@ An instance config is validated against the shipped defaults before merging (`ep
 `EPISODIC_CONFIG`, `EPISODIC_STYLE` and `EPISODIC_QUARTO_REPORT` set to a path that does not exist are errors, not fallbacks - the same rule `EPISODIC_PC_PROVINCE_MAP` already followed.
 
 Pathogen-specific parameters (episode length, serial interval, severity weight) live in `inst/config/episodic_default_pathogen_config.csv`.
+
+### Keys that must agree across feeds
+
+Two identifiers are transformed on the way in, and every feed that names one has to transform it the same way or it silently matches nothing:
+
+- **`institution_key`** is hashed by `episodic_institution_key_hash()` before it is stored, so the case feed and the institution-activity feed both supply the operator's own key and both are hashed to match. The activity loader once compared the raw key against the stored hash, which meant patient-day normalisation never engaged on any real deployment.
+- **The patient-and-pathogen episode key** is built by `episodic_case_group_key()`, which separates its parts with a control character rather than concatenating them. `episodic_cases_deduplicate()` groups on it and `episodic_db_last_case_dates()` names its anchor dates with it; if the two ever disagree, a stored episode is never matched and an incoming positive arrives as a spurious second case.
 
 ### Notifications
 
