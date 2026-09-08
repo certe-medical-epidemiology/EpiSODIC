@@ -15,13 +15,17 @@ episodic_demo(
   lang = Sys.getenv("EPISODIC_LANGUAGE"),
   cases = NULL,
   denominators = NULL,
+  overwrite = FALSE,
   ...
 )
 }
 \arguments{
 \item{db_path}{Path to the SQLite database to create. Defaults to a
 temporary file, so repeated calls never collide and nothing is left
-behind once the R session ends.}
+behind once the R session ends. A database that already exists is
+refused, and a MariaDB/MySQL DSN is refused outright: this call
+generates synthetic cases and runs detection over them, which is
+contamination anywhere but a throwaway database.}
 
 \item{username, full_name, email, password}{Credentials for the demo
 epidemiologist account this creates, so you can sign in and classify a
@@ -64,6 +68,12 @@ EpiSODIC work end to end: \code{cases} is checked against the
 with an explanation of what to fix, rather than opening a dashboard
 with nothing in it. Run \code{\link[=episodic_check_cases]{episodic_check_cases()}} on your extract
 yourself to see the same findings, plus the advisory ones.}
+
+\item{overwrite}{If \code{TRUE}, an existing demo database at \code{db_path} and
+the two configuration files beside it are deleted and rebuilt.
+\code{FALSE} (the default) refuses instead. This deletes whatever is at
+that path, so it is deliberately not something the demo decides for
+you.}
 
 \item{...}{Arguments passed on to \code{\link[=episodic_run_app]{episodic_run_app()}}.}
 }
