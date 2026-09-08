@@ -44,6 +44,9 @@
   full name
 - The scheduled report panel’s “set by” line showed the login name
   instead of the full name
+- The assessment form’s rationale field, close checkbox and submit
+  button are now disabled until a verdict is picked, so recording an
+  assessment without one is no longer possible
 
 ## EpiSODIC 0.14.1
 
