@@ -242,7 +242,8 @@ episodic_db_app_user_insert <- function(con,
                                         email,
                                         password_hash,
                                         role = "epidemiologist",
-                                        is_admin = FALSE) {
+                                        is_admin = FALSE,
+                                        must_change = TRUE) {
   params <- list(
     username,
     full_name,
@@ -250,13 +251,14 @@ episodic_db_app_user_insert <- function(con,
     password_hash,
     role,
     as.integer(isTRUE(is_admin)),
+    as.integer(isTRUE(must_change)),
     episodic_now()
   )
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_app_user
       (username, full_name, email, password_hash, role, is_admin, is_active, must_change, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, 1, 1, ?)",
+     VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)",
     params = params
   )
   episodic_db_last_insert_id(con)

@@ -99,13 +99,35 @@ episodic_palette_config_resolve <- function(palette_config_path = Sys.getenv("EP
   }
   base <- yaml::read_yaml(defaults_path)
 
-  if (
-    !is.na(palette_config_path) &&
-      nzchar(palette_config_path) &&
-      file.exists(palette_config_path)
-  ) {
-    instance_palette <- yaml::read_yaml(palette_config_path)
-    base <- episodic_config_merge(base, instance_palette)
+  if (!is.na(palette_config_path) && nzchar(palette_config_path)) {
+    # Set but unusable is a configuration error, not a fallback - the
+    # same rule EPISODIC_CONFIG and EPISODIC_PC_PROVINCE_MAP follow. An
+    # operator who pointed EPISODIC_STYLE at a mistyped path used to get
+    # the shipped palette with nothing said, and reasonably concluded
+    # their own house colours simply had not been applied properly.
+    if (!file.exists(palette_config_path)) {
+      stop(
+        "EPISODIC_STYLE points at '",
+        palette_config_path,
+        "', but no file exists there. Correct the path, or unset it to ",
+        "use the shipped palette.",
+        call. = FALSE
+      )
+    }
+    instance_palette <- tryCatch(
+      yaml::read_yaml(palette_config_path),
+      error = function(e) e
+    )
+    if (inherits(instance_palette, "condition")) {
+      stop(
+        "EPISODIC_STYLE points at '",
+        palette_config_path,
+        "', which could not be read as YAML: ",
+        conditionMessage(instance_palette),
+        call. = FALSE
+      )
+    }
+    base <- episodic_config_merge(base, instance_palette %||% list())
   }
 
   episodic_palette_cache[[cache_key]] <- base

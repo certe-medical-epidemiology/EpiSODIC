@@ -42,13 +42,17 @@ reference_row_for <- function(rows, variable) {
   match[[1]]
 }
 
-test_that("an unconfigured PC-to-province mapping says the demo ranges are standing in", {
+test_that("an unconfigured PC-to-province mapping says the province level is off", {
+  # There is no built-in rule to stand in - deriving a province from a
+  # postcode is country-specific, and the one that used to be here
+  # silently gave Dutch province names to any instance whose postcodes
+  # started 7, 8 or 9.
   row <- with_pc_province_map(
     NA,
     episodic_app_reference_pc_province(NULL, lang = "en")
   )
-  expect_equal(row$status, "default")
-  expect_match(row$detail, "demo ranges", fixed = TRUE)
+  expect_equal(row$status, "unset")
+  expect_match(row$detail, "province level of the lattice is empty", fixed = TRUE)
   expect_true(is.na(row$path))
 })
 

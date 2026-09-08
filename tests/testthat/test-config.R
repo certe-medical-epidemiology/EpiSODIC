@@ -35,9 +35,147 @@ test_that("an instance config overrides only the keys it sets, recursively", {
   expect_equal(config$eligibility$min_baseline_weeks, 52)
 })
 
-test_that("a nonexistent EPISODIC_CONFIG path falls back to defaults without error", {
-  config <- episodic_config_resolve("/no/such/file.yaml")
-  expect_equal(config$reconciliation$close_after_runs, 14)
+test_that("a nonexistent EPISODIC_CONFIG path is refused, not quietly ignored", {
+  # Ignoring it runs the instance on shipped defaults while the operator
+  # believes their own thresholds, same_place overrides and notification
+  # channels are in force, with nothing anywhere to say otherwise.
+  expect_error(
+    episodic_config_resolve("/no/such/file.yaml"),
+    "no file exists there"
+  )
+})
+
+test_that("an EPISODIC_CONFIG file that is not YAML is refused by name", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path))
+  writeLines("reconciliation: [unclosed", path)
+  expect_error(episodic_config_resolve(path), "could not be read as YAML")
+})
+
+test_that("a misspelled configuration key is refused, with the key it meant", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path))
+  writeLines(c("reconciliation:", "  close_after_run: 21"), path)
+  err <- expect_error(episodic_config_resolve(path))
+  expect_match(conditionMessage(err), "reconciliation.close_after_run", fixed = TRUE)
+  expect_match(conditionMessage(err), "close_after_runs", fixed = TRUE)
+})
+
+test_that("an unknown top-level section is refused", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path))
+  writeLines(c("reconcilliation:", "  close_after_runs: 21"), path)
+  expect_error(episodic_config_resolve(path), "reconcilliation")
+})
+
+test_that("a value of the wrong type is refused rather than reaching arithmetic", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path))
+  writeLines(c("reconciliation:", "  close_after_runs: fourteen"), path)
+  expect_error(episodic_config_resolve(path), "must be a number, but is text")
+})
+
+test_that("null is refused where it would leave a caller holding NULL", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path))
+  writeLines(c("reconciliation:", "  case_free_days_default: ~"), path)
+  expect_error(episodic_config_resolve(path), "cannot be null")
+})
+
+test_that("null is accepted where a setting documents it as 'disable'", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path))
+  writeLines(c("reconciliation:", "  stale_open_days: ~"), path)
+  config <- episodic_config_resolve(path)
+  # Present and null, not silently removed by the merge: `~` means what
+  # YAML says it means.
+  expect_true("stale_open_days" %in% names(config$reconciliation))
+  expect_null(config$reconciliation$stale_open_days)
+})
+
+test_that("operator-named subtrees accept keys EpiSODIC cannot enumerate", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path))
+  writeLines(
+    c(
+      "same_place:",
+      "  overrides:",
+      "    Some Local Pathogen: {n_cases: 2, k_days: 5}",
+      "rare_trigger:",
+      "  pathogens:",
+      "    - Some Local Pathogen",
+      "notifications:",
+      "  enabled: true",
+      "  channels:",
+      "    ntfy: {enabled: true, server: 'https://ntfy.sh', topic: 't'}"
+    ),
+    path
+  )
+  config <- episodic_config_resolve(path)
+  expect_equal(config$same_place$overrides[["Some Local Pathogen"]]$n_cases, 2)
+  expect_true(isTRUE(config$notifications$enabled))
+})
+
+test_that("EpiSODIC ships closed to anonymous visitors", {
+  # The shipped state is the state of every deployment where nobody read
+  # the configuration file.
+  defaults <- episodic_config_resolve(NA)
+  expect_true(isTRUE(defaults$access$require_login))
+  expect_true(episodic_app_require_login(defaults))
+})
+
+test_that("an access policy that cannot be read leaves the login wall up", {
+  expect_true(episodic_app_require_login(list()))
+  expect_true(episodic_app_require_login(list(access = list())))
+  expect_true(episodic_app_require_login(list(access = list(require_login = "yes please"))))
+  expect_false(episodic_app_require_login(list(access = list(require_login = FALSE))))
+})
+
+test_that("geography names are configuration, not hardcoded to one country", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path))
+  writeLines(
+    c(
+      "geography:",
+      "  region_code: NAIROBI_COUNTY",
+      "  area_code_prefix: 'ZONE-'",
+      "  area_pc_characters: 3"
+    ),
+    path
+  )
+  geography <- episodic_geography_config(episodic_config_resolve(path))
+  expect_equal(geography$region_code, "NAIROBI_COUNTY")
+  cases <- data.frame(pc = c("00100", NA), stringsAsFactors = FALSE)
+  expect_equal(
+    episodic_case_region_code(cases, "pathogen_area", geography),
+    c("ZONE-001", NA)
+  )
+  expect_equal(
+    episodic_case_region_code(cases, "pathogen_region", geography),
+    rep("NAIROBI_COUNTY", 2)
+  )
+})
+
+test_that("geography is hashed but report and access are not", {
+  base <- episodic_config_resolve(NA)
+  expect_false(identical(
+    episodic_config_hash(base)$hash,
+    episodic_config_hash(
+      utils::modifyList(base, list(geography = list(region_code = "ELSEWHERE")))
+    )$hash
+  ))
+  expect_identical(
+    episodic_config_hash(base)$hash,
+    episodic_config_hash(
+      utils::modifyList(base, list(report = list(small_count_threshold = 11)))
+    )$hash
+  )
+  expect_identical(
+    episodic_config_hash(base)$hash,
+    episodic_config_hash(
+      utils::modifyList(base, list(access = list(require_login = FALSE)))
+    )$hash
+  )
 })
 
 test_that("episodic_config_hash() is deterministic and key-order independent", {

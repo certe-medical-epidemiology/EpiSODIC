@@ -29,16 +29,42 @@
 #' enumeration, so `same_place` detections reconcile into the same
 #' `episodic_stream`/`episodic_cluster` tables as every other detector.
 #'
+#' # The lookback window
+#'
+#' Only hits whose most recent case falls within
+#' `config$same_place$lookback_days` of `run_date` are reported. Without
+#' that bound this detector rescanned the entire case history on every
+#' run and re-emitted every hit window it had ever found, which is wrong
+#' in three separate ways and not merely wasteful: `episodic_detection`
+#' grew by the whole historical hit count on every single run; each
+#' re-emitted historical window matched its own long-settled cluster in
+#' reconciliation, resetting `runs_since_detected` to zero, so
+#' `reconciliation.close_after_runs` could never fire for any cluster
+#' this detector had ever touched; and the run's own detection count -
+#' the number the dashboard's activity screen reports - counted the
+#' archive rather than the day. It is the same bound
+#' `farrington.max_weeks_tested` places on the statistical detector, for
+#' the same reason.
+#'
+#' The scan itself still runs over the full history, so a window is
+#' always assembled from every case that belongs to it; only which
+#' windows are *reported* is bounded.
+#'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cases A data frame of cases to scan, with `pathogen`,
 #'   `institution_id`, `ward`, `sample_date`.
 #' @param institutions A data frame from `episodic_db_institutions()`.
 #' @param config The resolved configuration; uses `config$same_place`.
+#' @param run_date The date to treat as "today", for the lookback window.
 #' @return A data frame of detection records (`episodic_detection_record()`
 #'   shape) plus a `stream_id` column, one row per hit.
 #' @keywords internal
 #' @noRd
-episodic_detect_same_place <- function(con, cases, institutions, config) {
+episodic_detect_same_place <- function(con,
+                                       cases,
+                                       institutions,
+                                       config,
+                                       run_date = Sys.Date()) {
   cases <- cases[!is.na(cases$institution_id), ]
   if (nrow(cases) == 0) {
     return(episodic_detection_record(
@@ -65,7 +91,8 @@ episodic_detect_same_place <- function(con, cases, institutions, config) {
       group_cols = c("pathogen", "institution_id", "ward"),
       config = config,
       stream_level = "pathogen_ward",
-      con = con
+      con = con,
+      run_date = run_date
     )
   }
 
@@ -76,7 +103,8 @@ episodic_detect_same_place <- function(con, cases, institutions, config) {
       group_cols = c("pathogen", "institution_id"),
       config = config,
       stream_level = "pathogen_institution",
-      con = con
+      con = con,
+      run_date = run_date
     )
   }
 
@@ -99,7 +127,12 @@ episodic_same_place_scan <- function(cases,
                                      group_cols,
                                      config,
                                      stream_level,
-                                     con) {
+                                     con,
+                                     run_date = Sys.Date()) {
+  cutoff <- episodic_detector_lookback_cutoff(
+    run_date,
+    config$same_place$lookback_days
+  )
   key_df <- cases[, group_cols, drop = FALSE]
   key_str <- do.call(paste, c(key_df, sep = "\r"))
   groups <- split(seq_len(nrow(cases)), key_str)
@@ -116,6 +149,7 @@ episodic_same_place_scan <- function(cases,
       n = rule$n,
       k_days = rule$k_days
     )
+    windows <- episodic_detector_windows_within(windows, cutoff)
     if (length(windows) == 0) {
       next
     }

@@ -94,7 +94,7 @@ body {
   font-size: 1.077rem;
   line-height: 1;
   padding: 4px 9px;
-  margin-left: 12px;
+  margin-inline-start: 12px;
   cursor: pointer;
 }
 .episodic-header .episodic-brand .episodic-brand-accent {
@@ -103,7 +103,7 @@ body {
 .episodic-nav {
   display: flex;
   gap: 2px;
-  margin-left: 18px;
+  margin-inline-start: 18px;
 }
 .episodic-nav a {
   font-size: 0.923rem;
@@ -121,7 +121,7 @@ body {
   color: #8FAAB8;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  margin-left: 18px;
+  margin-inline-start: 18px;
 }
 .episodic-status-strip {
   display: flex;
@@ -135,7 +135,7 @@ body {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  margin-right: 6px;
+  margin-inline-end: 6px;
 }
 
 /* The whole app shell: header, brand bar, then whatever screen is on
@@ -190,7 +190,7 @@ body {
 .episodic-rail {
   width: 250px;
   background: var(--episodic-surface);
-  border-right: 1px solid var(--episodic-border);
+  border-inline-end: 1px solid var(--episodic-border);
   overflow-y: auto;
   flex-shrink: 0;
 }
@@ -212,17 +212,17 @@ body {
 .episodic-rail-item {
   display: block;
   width: 100%;
-  text-align: left;
+  text-align: start;
   padding: 11px 14px;
   border: none;
   background: transparent;
-  border-left: 3px solid transparent;
+  border-inline-start: 3px solid transparent;
   border-bottom: 1px solid var(--episodic-border);
   cursor: pointer;
 }
 .episodic-rail-item.active {
   background: var(--episodic-primary-tint);
-  border-left-color: var(--episodic-primary);
+  border-inline-start-color: var(--episodic-primary);
 }
 .episodic-rail-item .episodic-rail-pathogen {
   font-size: 1rem;
@@ -231,13 +231,13 @@ body {
 /* The bulk-select checkbox, inline with the pathogen name rather than on
    its own line - the rail card is already tight on vertical space. */
 .episodic-rail-select {
-  margin-right: 6px;
+  margin-inline-end: 6px;
   vertical-align: -1px;
 }
 /* The care-line chip beside the pathogen name - inline with the text,
    not pushed to its own line, since the rail card is already tight. */
 .episodic-rail-pathogen .episodic-chip {
-  margin-left: 6px;
+  margin-inline-start: 6px;
   vertical-align: 1px;
   font-size: 0.692rem;
   padding: 1px 5px;
@@ -252,7 +252,7 @@ body {
   color: var(--episodic-muted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  margin-left: 2px;
+  margin-inline-start: 2px;
 }
 .episodic-rail-item .episodic-rail-meta {
   font-size: 0.846rem;
@@ -508,7 +508,7 @@ body {
   margin-top: 14px;
   padding: 12px;
   background: var(--episodic-primary-tint);
-  border-left: 3px solid var(--episodic-primary);
+  border-inline-start: 3px solid var(--episodic-primary);
   border-radius: 2px;
   font-size: 1rem;
   line-height: 1.6;
@@ -541,7 +541,7 @@ body {
 .episodic-bar-value {
   width: 30px;
   font-size: 0.923rem;
-  text-align: right;
+  text-align: end;
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
@@ -577,15 +577,17 @@ table.episodic-table {
   border-collapse: collapse;
 }
 table.episodic-table th {
-  text-align: left;
+  text-align: start;
   font-weight: 500;
   font-size: 0.846rem;
   color: var(--episodic-muted);
-  padding: 5px 8px 8px 0;
+  padding-block: 5px 8px;
+  padding-inline: 0 8px;
   border-bottom: 1px solid var(--episodic-border);
 }
 table.episodic-table td {
-  padding: 6px 8px 6px 0;
+  padding-block: 6px;
+  padding-inline: 0 8px;
   border-bottom: 1px solid var(--episodic-border);
   font-variant-numeric: tabular-nums;
 }
@@ -625,7 +627,7 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-assessment-rail {
   width: 330px;
   background: var(--episodic-surface);
-  border-left: 1px solid var(--episodic-border);
+  border-inline-start: 1px solid var(--episodic-border);
   flex-shrink: 0;
   overflow-y: auto;
 }
@@ -698,7 +700,7 @@ dl.episodic-settings dd { margin: 0; }
   color: var(--episodic-primary-dark);
 }
 .episodic-info-about-version {
-  margin-left: 8px;
+  margin-inline-start: 8px;
   font-size: 1rem;
   font-weight: 400;
   color: var(--episodic-primary-dark);
@@ -757,7 +759,7 @@ dl.episodic-settings dd { margin: 0; }
   color: var(--episodic-ink);
 }
 .episodic-form-group input[type="checkbox"] {
-  margin-right: 6px;
+  margin-inline-end: 6px;
 }
 .episodic-form-checkbox-label {
   display: flex;
@@ -815,7 +817,7 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-picker-btn {
   display: block;
   width: 100%;
-  text-align: left;
+  text-align: start;
   font-family: var(--episodic-font);
   font-size: 0.923rem;
   padding: 7px 10px;
@@ -1119,7 +1121,7 @@ dl.episodic-settings dd { margin: 0; }
      jumping to a "new void" and clipping the scrollable content below it. */
   position: absolute;
   top: 0;
-  left: 0;
+  inset-inline-start: 0;
   opacity: 0;
   width: 1px;
   height: 1px;
@@ -1137,7 +1139,7 @@ dl.episodic-settings dd { margin: 0; }
   content: "";
   position: absolute;
   top: 2px;
-  left: 2px;
+  inset-inline-start: 2px;
   width: 13px;
   height: 13px;
   border-radius: 50%;
@@ -1148,8 +1150,14 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-toggle input:checked + .episodic-toggle-track {
   background: var(--episodic-primary);
 }
+/* `translateX` is a physical direction, so the knob would slide off the
+   left edge of a right-to-left track; the logical equivalent is to
+   negate it there. */
 .episodic-toggle input:checked + .episodic-toggle-track::after {
   transform: translateX(13px);
+}
+[dir="rtl"] .episodic-toggle input:checked + .episodic-toggle-track::after {
+  transform: translateX(-13px);
 }
 .episodic-toggle input:focus-visible + .episodic-toggle-track {
   outline: 2px solid var(--episodic-primary);
@@ -1662,4 +1670,34 @@ dl.episodic-settings dd { margin: 0; }
   .episodic-panel-body > .shiny-plot-output {
     min-width: 480px;
   }
+}
+
+/* ---------------------------------------------------------------------
+   Right-to-left
+
+   Arabic is one of the eight languages EpiSODIC ships, and the app sets
+   `dir` on <html> from the resolved language (see episodic_lang_dir() in
+   R/i18n.R). Everything above therefore uses CSS *logical* properties -
+   margin-inline-start/end, border-inline-start/end, padding-inline,
+   inset-inline-start, text-align: start/end - rather than their
+   physical left/right equivalents, so the whole layout mirrors itself
+   with no per-direction rules to keep in step. Keep it that way: a
+   `margin-left` added here is a component that stays stubbornly
+   left-aligned in Arabic while everything around it has moved.
+
+   The only things that cannot be expressed logically are `transform`
+   translations, which name a physical axis; those get an explicit
+   [dir="rtl"] rule beside the rule they invert (see
+   .episodic-toggle-track::after above).
+
+   Numerals are deliberately left as they come: `font-variant-numeric:
+   tabular-nums` on the table and stat cells keeps counts aligned in
+   either direction, and Arabic-Indic digit shaping is the browser's and
+   the reader's choice, not this stylesheet's.
+   --------------------------------------------------------------------- */
+/* The five-colour brand bar is a fixed left-to-right sequence, and the
+   header above it mirrors; flipping the bar keeps the two reading in the
+   same direction. */
+[dir="rtl"] .episodic-brandbar {
+  flex-direction: row-reverse;
 }

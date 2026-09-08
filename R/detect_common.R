@@ -67,3 +67,60 @@ episodic_detection_record <- function(stream_id,
     stringsAsFactors = FALSE
   )
 }
+
+#' The oldest `last_day` a rule-based detector may still report
+#'
+#' `same_place` and `rare_trigger` need no baseline, so nothing in their
+#' own logic bounds how far back they look - and unbounded is what they
+#' were, rescanning the whole case history on every run and re-emitting
+#' every hit it had ever contained. That is not a performance nicety: a
+#' re-emitted historical detection matches its own settled cluster during
+#' reconciliation and resets `runs_since_detected` to zero, so
+#' `reconciliation.close_after_runs` never fires for it and the cluster
+#' stays on the board for good. `farrington.max_weeks_tested` bounds the
+#' statistical detector for the same reason; this is that bound for the
+#' rule-based ones.
+#'
+#' @param run_date The date the run treats as "today".
+#' @param lookback_days The configured window, in days. `NULL`, `NA` or a
+#'   value that is not a positive finite number means "no bound", which
+#'   is the pre-existing behaviour and is what a configuration that
+#'   deliberately sets `lookback_days: ~` asks for.
+#' @return A single `Date`, or `NULL` for "no bound".
+#' @keywords internal
+#' @noRd
+episodic_detector_lookback_cutoff <- function(run_date, lookback_days) {
+  if (length(lookback_days) != 1) {
+    return(NULL)
+  }
+  lookback_days <- suppressWarnings(as.numeric(lookback_days))
+  if (is.na(lookback_days) || !is.finite(lookback_days) || lookback_days < 0) {
+    return(NULL)
+  }
+  as.Date(run_date) - lookback_days
+}
+
+#' Drop hit windows that ended before the lookback cutoff
+#'
+#' Judged on `last_day`, not `first_day`: a long window whose cases run
+#' up to yesterday is current news however far back it started, and a
+#' window that ended before the cutoff is settled history whatever its
+#' length.
+#'
+#' @param windows A list of `list(first_day, last_day, n_cases)`.
+#' @param cutoff From `episodic_detector_lookback_cutoff()`; `NULL` keeps
+#'   every window.
+#' @return The kept subset of `windows`.
+#' @keywords internal
+#' @noRd
+episodic_detector_windows_within <- function(windows, cutoff) {
+  if (is.null(cutoff) || length(windows) == 0) {
+    return(windows)
+  }
+  keep <- vapply(
+    windows,
+    function(w) as.Date(w$last_day) >= cutoff,
+    logical(1)
+  )
+  windows[keep]
+}

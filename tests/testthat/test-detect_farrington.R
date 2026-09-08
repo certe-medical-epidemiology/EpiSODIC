@@ -30,6 +30,14 @@ farrington_cases_from_weekly_counts <- function(week_starts, counts) {
   data.frame(sample_date = dates, stringsAsFactors = FALSE)
 }
 
+# `week_starts[n_weeks] + 6` throughout, rather than a weekday: weekly
+# bins end at the last COMPLETE week, so a mid-week run_date leaves that
+# week out of the series entirely. That is deliberate - a partial week is
+# a partial count, and comparing three days against a baseline of full
+# weeks is a systematic undercount - but it means a fixture whose signal
+# is in its final week has to be run as of that week's Sunday for the
+# detector to have seen it at all.
+
 test_that("a sharp current-week spike against a stable baseline fires an alarm", {
   set.seed(1)
   n_weeks <- 4 * 52 + 10 # comfortably above the default b=3 requirement
@@ -39,7 +47,7 @@ test_that("a sharp current-week spike against a stable baseline fires an alarm",
 
   cases <- farrington_cases_from_weekly_counts(week_starts, counts)
   config <- episodic_test_config()
-  run_date <- week_starts[n_weeks] + 3
+  run_date <- week_starts[n_weeks] + 6
 
   result <- episodic_detect_farrington(
     cases,
@@ -61,7 +69,7 @@ test_that("a flat, unremarkable series produces no alarm", {
 
   cases <- farrington_cases_from_weekly_counts(week_starts, counts)
   config <- episodic_test_config()
-  run_date <- week_starts[n_weeks] + 3
+  run_date <- week_starts[n_weeks] + 6
 
   result <- episodic_detect_farrington(
     cases,

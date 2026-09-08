@@ -200,10 +200,14 @@ episodic_auth_refresh_user <- function(con, cached_user) {
 #' @keywords internal
 #' @noRd
 episodic_auth_must_change <- function(con, user) {
-  if (identical(user$username, "demo") && isTRUE(sodium::password_verify(user$password_hash, "demo"))) {
-    # No required password change for demo user
-    return(FALSE)
-  }
+  # No special case for any particular username here, deliberately.
+  # There used to be one - "demo", verified against the literal password
+  # "demo" - which is a hardcoded credential in the sign-in path of a
+  # package other people deploy, and it would have exempted a real
+  # account that happened to be called `demo` too. Whether an account
+  # must change its password is a property of the account, recorded on
+  # the account row; `episodic_demo()` simply creates its throwaway
+  # account with `must_change = FALSE`.
   if (!as.logical(user$must_change)) {
     return(FALSE)
   }
@@ -304,6 +308,12 @@ episodic_auth_change_password <- function(con, user_id, new_password) {
 #'   screen (manage notification channels, other accounts, and export the
 #'   configuration). Independent of `role` - an admin is still either an
 #'   epidemiologist or a viewer for everything outside Settings.
+#' @param must_change Whether the account holder is required to replace
+#'   `password` the first time they sign in. `TRUE` (the default) is
+#'   right for every real account: the password you type here has been
+#'   in your shell history and quite possibly in a message to the person
+#'   it belongs to. `FALSE` is for a throwaway account in a throwaway
+#'   database, which is what [episodic_demo()] creates.
 #' @return Invisibly, the new account's `user_id`.
 #' @examples
 #' db_path <- tempfile(fileext = ".sqlite")
@@ -325,7 +335,8 @@ episodic_add_user <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA),
                               email,
                               password,
                               role = "epidemiologist",
-                              is_admin = FALSE) {
+                              is_admin = FALSE,
+                              must_change = TRUE) {
   rlang::check_installed("sodium")
   role <- match.arg(role, c("epidemiologist", "viewer"))
   con <- episodic_db_open(db_path)
@@ -337,7 +348,8 @@ episodic_add_user <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA),
     email = email,
     password_hash = sodium::password_store(password),
     role = role,
-    is_admin = is_admin
+    is_admin = is_admin,
+    must_change = must_change
   ))
 }
 
@@ -436,10 +448,19 @@ episodic_user_is_admin <- function(user) {
 
 #' Whether this instance closes the app to anonymous visitors
 #'
-#' `access.require_login` in the resolved configuration, read defensively:
-#' anything that is not unambiguously true leaves the app in the
-#' behaviour it has always had, so a malformed or absent value can never
-#' silently lock an instance out of its own dashboard.
+#' `access.require_login` in the resolved configuration, read defensively
+#' in the safe direction: anything that is not unambiguously false leaves
+#' the login wall up. A missing, malformed or unparseable value is a
+#' configuration nobody can vouch for, and the cost of the two readings
+#' is not symmetric - a wrongly-closed dashboard is an operator editing
+#' one YAML key, a wrongly-open one is patient-level surveillance data
+#' served to whoever reaches the port.
+#'
+#' This used to default open, on the reasoning that a malformed value
+#' should never lock an instance out of its own dashboard. That is the
+#' right instinct about lockout and the wrong one about disclosure, and
+#' EpiSODIC is now shipped closed by default (see `access` in
+#' `inst/config/episodic_default_config.yaml`).
 #'
 #' Deliberately a YAML-only setting, with no Settings-screen override: a
 #' login wall an admin account can switch off from inside the app is a
@@ -452,7 +473,8 @@ episodic_user_is_admin <- function(user) {
 #' @noRd
 episodic_app_require_login <- function(config = NULL) {
   config <- config %||% episodic_config_resolve()
-  isTRUE(as.logical(config$access$require_login %||% FALSE))
+  value <- suppressWarnings(as.logical(config$access$require_login %||% TRUE))
+  !isFALSE(value[1])
 }
 
 #' Whether this session may be shown anything at all

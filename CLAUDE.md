@@ -16,7 +16,7 @@ EpiSODIC is a complete and automated outbreak detection and assessment system. I
 
 The operator provides case data in a documented format; EpiSODIC handles everything from statistical detection through cluster reconciliation to dashboard presentation and outbreak reporting.
 
-The dashboard and reports are available in English, Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and Spanish.
+The dashboard and reports are available in English, Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and Spanish. The app sets `lang` and `dir` on the document from the resolved language, and `inst/app/www/episodic.css` uses CSS *logical* properties throughout (`margin-inline-start`, `border-inline-start`, `text-align: start`, `inset-inline-start`) rather than physical `left`/`right` ones, so Arabic mirrors correctly. A `margin-left` added to that stylesheet is a bug.
 
 ## Architecture
 
@@ -40,6 +40,8 @@ case data (data frame)
 
 Four independent detectors, each producing detections per stream:
 
+Both rule-based detectors (`same_place`, `rare_trigger`) are bounded by a configured `lookback_days` and report only hits whose most recent case falls inside it. Unbounded, they re-emit the whole case history on every run, which resets `runs_since_detected` and makes `reconciliation.close_after_runs` unreachable. Farrington is bounded the same way, by `farrington.max_weeks_tested`, and aggregates to the last *complete* week relative to `run_date` - never the partial week `run_date` falls in.
+
 | Detector | Method | File |
 |---|---|---|
 | Farrington | Improved Farrington (surveillance::farringtonFlexible) | `R/detect_farrington.R` |
@@ -61,6 +63,8 @@ Detection runs against every eligible stream independently. After detection, lat
 
 Stream keys are SHA-1 hashes of (pathogen, level, institution_id, ward, region_code), computed in `R/lattice_stream_key.R`.
 
+Nothing about the lattice's geography is hardcoded to one country. The whole-catchment code (L5) and the area-code rule (L3) are `config$geography`, resolved by `episodic_geography_config()`; the province level (L4) is an operator-supplied `pc` -> `province_code` CSV pointed at by `EPISODIC_PC_PROVINCE_MAP`, with no built-in rule at all, since deriving a province from a postcode is country-specific. Unconfigured, L4 stays empty and says so on the dashboard's Info screen. Likewise `EPISODIC_GEO_DATA` has no default: without it there is no map, never another country's.
+
 ### Database
 
 Single schema in `inst/sql/schema.sql`, written in SQLite dialect. Adapted at load time for MariaDB/MySQL (there is no separate schema file). Key tables:
@@ -79,6 +83,9 @@ Single schema in `inst/sql/schema.sql`, written in SQLite dialect. Adapted at lo
 | `episodic_institution` | cron | Institution reference data |
 | `episodic_cluster_note` | app | Per-cluster free-text notes (append-only) |
 | `episodic_cluster_manual_case` | `episodic_add_manual_cluster()` | Case-level detail for `origin = 'manual'` clusters only |
+| `episodic_schema_version` | `episodic_db_create()`, `episodic_db_migrate()` | One row per applied schema version |
+
+The schema is versioned. `episodic_schema_version` (in `R/schema_migrate.R`) is what this build expects; `episodic_db_connect()` refuses a database at any other version, naming `episodic_db_migrate()` as the fix. Any change to `inst/sql/schema.sql` that an existing database has to be brought along for means bumping that constant and adding a matching entry to `episodic_db_migrations()` - a function `(con, dialect)` that is idempotent, runs inside a transaction, and never drops or rewrites data.
 
 Write ownership is strict: cron-owned tables are written only by `episodic_run_cron()`, app-owned tables only by the Shiny app. The app never updates or deletes, only inserts (event-sourced).
 
@@ -88,7 +95,11 @@ One deliberate exception: `episodic_add_manual_cluster()` (in `R/cluster_manual.
 
 YAML-based, with recursive merge. `inst/config/episodic_default_config.yaml` ships documented defaults. An operator's instance config (pointed at by `EPISODIC_CONFIG`) overlays key-by-key. The resolved configuration is hashed (SHA-1 over canonical JSON) and stored on every run for reproducibility. `notifications` and `access` are deliberately excluded from the hash (see `episodic_config_unhashed_sections`): both govern how the instance is operated rather than what a run computes, and notification settings additionally contain secrets that must never reach `config_snapshot`.
 
-Key config sections: `reconciliation`, `eligibility`, `effect_size_floor`, `same_place`, `farrington`, `mem`, `rare_trigger`, `priority_score`, `notifications`, `suppression`, `access`.
+Key config sections: `reconciliation`, `eligibility`, `effect_size_floor`, `same_place`, `farrington`, `mem`, `rare_trigger`, `priority_score`, `geography`, `report`, `notifications`, `suppression`, `access`.
+
+An instance config is validated against the shipped defaults before merging (`episodic_config_validate()`): the defaults document the complete valid key set, so an unknown key, a value of the wrong type, or a null where a value is needed stops the run and names the key path. Adding a new key therefore means adding it to `inst/config/episodic_default_config.yaml`, or, if its children are named by the operator (pathogens, channels), to `episodic_config_open_sections`. A setting documented as "set to ~ to disable" must also be listed in `episodic_config_nullable_keys`.
+
+`EPISODIC_CONFIG`, `EPISODIC_STYLE` and `EPISODIC_QUARTO_REPORT` set to a path that does not exist are errors, not fallbacks - the same rule `EPISODIC_PC_PROVINCE_MAP` already followed.
 
 Pathogen-specific parameters (episode length, serial interval, severity weight) live in `inst/config/episodic_default_pathogen_config.csv`.
 
@@ -102,6 +113,8 @@ Two roles for dashboard access:
 
 - `epidemiologist`: read + write (assess clusters, classify, close, mute, render reports)
 - `viewer`: read-only (sees everything including patient-level detail, but cannot record assessments)
+
+`access.require_login` ships as `true`: an instance is closed to anonymous visitors unless an operator deliberately opens it. `episodic_app_require_login()` fails closed on anything it cannot read as `false`.
 
 Accounts are added via `episodic_add_user()` at the R console; there is also in-app account management.
 

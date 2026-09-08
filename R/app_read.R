@@ -478,12 +478,12 @@ episodic_app_place_label <- function(stream,
 
 #' A stream's `region_code`, verbatim
 #'
-#' At `pathogen_area`/`pathogen_province` level, `region_code` is either
-#' the shipped demo's own internal fallback (`"PROV_GRONINGEN"`,
-#' `"NORTHERN_NETHERLANDS"`, see `R/lattice_enumerate.R`) or, in a real
-#' deployment, whatever `province_code` an operator's own
-#' `EPISODIC_PC_PROVINCE_MAP` resolved a postcode to (see
-#' `episodic_pc_to_province()`). It is shown exactly as configured -
+#' At `pathogen_area` level, `region_code` is built from
+#' `config$geography` (see `episodic_geography_config()`); at
+#' `pathogen_province` level it is whatever `province_code` the
+#' operator's own `EPISODIC_PC_PROVINCE_MAP` resolved a postcode to (see
+#' `episodic_pc_to_province()`). Either way it is a name the operator
+#' chose, so it is shown exactly as configured -
 #' cosmetic reformatting would risk mangling a real name (a hyphen in
 #' "Noord-Holland" is part of the name, not a code separator to strip)
 #' and would leave the operator unable to see, character for character,

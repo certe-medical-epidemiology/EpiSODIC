@@ -1169,7 +1169,7 @@ episodic_ui_report_panel <- function(con,
       )
     } else {
       shiny::tags$ul(
-        style = "font-size:12.5px;padding-left:18px;",
+        style = "font-size:12.5px;padding-inline-start:18px;",
         lapply(rev(seq_len(nrow(reports))), function(i) {
           row <- reports[i, ]
           shiny::tags$li(episodic_tr(
@@ -1343,7 +1343,7 @@ episodic_ui_report_schedule_form <- function(cluster_id, available_channels, lan
         min = 1,
         step = 1,
         value = 7,
-        style = "width:70px;margin-left:8px;margin-right:6px;"
+        style = "width:70px;margin-inline-start:8px;margin-inline-end:6px;"
       ),
       episodic_tr("panel.report.schedule_interval_unit", lang = lang)
     ),

@@ -98,22 +98,35 @@ detection-reproducibility guarantee `EPISODIC_CONFIG`'s hash provides.
 
 ## Accounts
 
-By default, aggregate data is anonymous - the app opens read-only for
-anyone who reaches it. Signing in unlocks patient-level detail (the line
-list) for both roles below. Accounts are never created by users
-themselves; either an `is_admin` account provisions them from the in-app
-Settings screen, or whoever administers the database runs
-`episodic_add_user()` at the console.
+By default the app is **closed**: an anonymous visitor gets a sign-in
+prompt and nothing else. Accounts are never created by users themselves;
+either an `is_admin` account provisions them from the in-app Settings
+screen, or whoever administers the database runs `episodic_add_user()`
+at the console. Signing in unlocks everything the account's role allows,
+patient-level detail (the line list) included, for both roles below.
 
-### Closing the app to anonymous visitors
+### Opening the app to anonymous visitors
 
-If the instance is reachable from anywhere its data should not be, set
-`access.require_login` in your `EPISODIC_CONFIG` YAML:
+An instance already behind network controls that make anonymous
+reachability impossible may prefer to let colleagues read the aggregate
+screens - clusters, streams, the archive - without signing in, leaving
+sign-in needed only for the line list and for writing. Set
+`access.require_login` to `false` in your `EPISODIC_CONFIG` YAML:
 
 ```yaml
 access:
-  require_login: true
+  require_login: false
 ```
+
+Weigh that deliberately rather than by habit. A cluster row names a
+pathogen, a ward or an institution, and a date range; in a small
+population that combination is often enough to identify who, even
+without the line list. The shipped default is `true` for the same
+reason: a surveillance system distributed to laboratories worldwide has
+to be safe in the state it arrives in, because the deployment that goes
+wrong is the one where nobody read this file.
+
+With `require_login: true` (the default):
 
 An anonymous visitor then gets a sign-in prompt and nothing else: no
 navigation, no status strip, not one row of data. This is enforced on the

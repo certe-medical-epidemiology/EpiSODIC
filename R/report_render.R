@@ -254,7 +254,21 @@ episodic_quarto_available <- function() {
 #' @keywords internal
 #' @noRd
 episodic_report_qmd_path <- function(qmd_path = Sys.getenv("EPISODIC_QUARTO_REPORT", unset = NA)) {
-  if (!is.na(qmd_path) && nzchar(qmd_path) && file.exists(qmd_path)) {
+  if (!is.na(qmd_path) && nzchar(qmd_path)) {
+    # Set but missing is a configuration error, not a fallback. Silently
+    # rendering the shipped template instead sends an organisation's
+    # outbreak reports out under EpiSODIC's own layout and branding
+    # rather than theirs, which is exactly the kind of thing nobody
+    # notices until the report has already left the building.
+    if (!file.exists(qmd_path)) {
+      stop(
+        "EPISODIC_QUARTO_REPORT points at '",
+        qmd_path,
+        "', but no file exists there. Correct the path, or unset it to ",
+        "render the shipped report template.",
+        call. = FALSE
+      )
+    }
     return(qmd_path)
   }
   default_path <- system.file(

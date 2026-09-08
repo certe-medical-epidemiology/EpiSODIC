@@ -712,18 +712,22 @@ test_that("episodic_reconcile_stream() returns new_cluster_ids", {
     skip("No streams created from synthetic data")
   }
   stream <- streams[1, ]
+  all_cases <- episodic_db_cases(con)
+  detect_as_of <- as.Date(max(all_cases$sample_date))
   detections <- episodic_detect_rare_trigger(
     con,
-    episodic_db_cases(con),
-    episodic_config_resolve(NA)
+    all_cases,
+    episodic_config_resolve(NA),
+    run_date = detect_as_of
   )
   stream_det <- detections[detections$stream_id == stream$stream_id, ]
   if (nrow(stream_det) == 0) {
     stream_det <- episodic_detect_same_place(
       con,
-      episodic_db_cases(con),
+      all_cases,
       episodic_db_institutions(con),
-      episodic_config_resolve(NA)
+      episodic_config_resolve(NA),
+      run_date = detect_as_of
     )
     stream_det <- stream_det[stream_det$stream_id == stream$stream_id, ]
   }
@@ -773,8 +777,22 @@ test_that("episodic_notify_mime_message() builds a valid MIME header", {
   expect_match(mime, "To: to@example.org")
   expect_match(mime, "Subject: Test Subject")
   expect_match(mime, "Content-Type: text/html")
-  expect_match(mime, "<p>Hello</p>")
   expect_no_match(mime, "multipart/mixed")
+  # The body is base64 now, not raw 8-bit: `8BITMIME` is an SMTP
+  # extension a relay is free not to advertise, and one that does not
+  # either strips the high bit or refuses the message - so a Dutch
+  # location or an entire Arabic report arrived corrupted or not at all,
+  # depending on the hop. Recoverable, of course.
+  expect_match(mime, "Content-Transfer-Encoding: base64", fixed = TRUE)
+  body <- sub(
+    ".*Content-Transfer-Encoding: base64\r\n\r\n(.*)",
+    "\\1",
+    mime
+  )
+  expect_equal(
+    rawToChar(jsonlite::base64_dec(gsub("[\r\n]", "", body))),
+    "<p>Hello</p>"
+  )
 })
 
 test_that("episodic_notify_mime_message() builds a multipart message with a base64 attachment", {
@@ -790,7 +808,6 @@ test_that("episodic_notify_mime_message() builds a multipart message with a base
     attachment_path = attachment
   )
   expect_match(mime, "Content-Type: multipart/mixed", fixed = TRUE)
-  expect_match(mime, "<p>Hello</p>", fixed = TRUE)
   expect_match(mime, "Content-Disposition: attachment", fixed = TRUE)
   expect_match(mime, basename(attachment), fixed = TRUE)
 
@@ -801,7 +818,9 @@ test_that("episodic_notify_mime_message() builds a multipart message with a base
     "\\1",
     mime
   )
-  decoded <- jsonlite::base64_dec(encoded)
+  # Base64 bodies are CRLF-wrapped at 76 characters (RFC 2045), so the
+  # line breaks come out with the block.
+  decoded <- jsonlite::base64_dec(gsub("[\r\n]", "", encoded))
   expect_equal(decoded, readBin(attachment, "raw", n = file.size(attachment)))
 })
 

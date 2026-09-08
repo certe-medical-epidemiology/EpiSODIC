@@ -825,7 +825,7 @@ episodic_run_cron_body <- function(con,
   }
 
   episodic_trace("Enumerating lattice streams")
-  episodic_lattice_enumerate(con, cases_all, institutions)
+  episodic_lattice_enumerate(con, cases_all, institutions, config)
 
   n_detections_total <- 0L
   n_new_total <- 0L
@@ -843,7 +843,8 @@ episodic_run_cron_body <- function(con,
     con,
     cases_all,
     institutions,
-    config
+    config,
+    run_date = run_date
   )
   episodic_trace(
     "Same-place detector found ",
@@ -854,7 +855,8 @@ episodic_run_cron_body <- function(con,
   rare_trigger_detections <- episodic_detect_rare_trigger(
     con,
     cases_all,
-    config
+    config,
+    run_date = run_date
   )
   episodic_trace(
     "Rare-trigger detector found ",
@@ -1161,6 +1163,13 @@ episodic_run_cron_body <- function(con,
       min_excess_over_upperbound = min_excess,
       min_ratio_observed_expected = min_ratio,
       stale_open_days = config$reconciliation$stale_open_days %||% NA,
+      # `run_date` is documented as "the date to treat as today" and every
+      # other phase of the run honours it; reconciliation did not, so a
+      # backfill or a replay judged staleness against the wall clock
+      # instead - two runs over identical data on different days closed
+      # different clusters, which is precisely the reproducibility the
+      # config hash exists to promise.
+      today = run_date,
       # Five of the seven priority components are properties of the
       # candidate episode and its cases, so they are computed here, where
       # both are in hand. They used to be left at their defaults - most

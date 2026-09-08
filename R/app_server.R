@@ -542,7 +542,7 @@ episodic_ui_status_strip <- function(status,
       if (!status$status %in% c("none", episodic_run_statuses_complete)) {
         shiny::tags$span(
           class = "episodic-status-hint",
-          style = "margin-left:8px;opacity:0.85;",
+          style = "margin-inline-start:8px;opacity:0.85;",
           episodic_tr("status.run_failed_hint", lang = lang)
         )
       }

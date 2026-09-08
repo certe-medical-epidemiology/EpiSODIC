@@ -544,3 +544,28 @@ CREATE TABLE episodic_report_subscription_send (
 );
 
 CREATE INDEX idx_episodic_report_subscription_send_cluster ON episodic_report_subscription_send(cluster_id, sent_at);
+
+-- ---------------------------------------------------------------------
+-- 5.11 Schema version (created by episodic_db_create(), advanced by
+-- episodic_db_migrate())
+--
+-- EpiSODIC is deployed at laboratories that then upgrade the package,
+-- and a schema is not a fixed thing: every column added in a future
+-- release has to reach a database that already holds years of
+-- surveillance data. Without a recorded version there is no way to tell
+-- which shape a given database is in, so the upgrade fails as an
+-- unexplained SQL error on the first run after the update - or worse,
+-- does not fail, and reads a column that means something else now.
+--
+-- One row per applied version, never updated or deleted: the current
+-- version is the highest one present, and the table doubles as the
+-- record of when each step was applied. episodic_db_connect() compares
+-- it against what the installed package expects and refuses a mismatch
+-- by name rather than letting the query layer discover it.
+-- ---------------------------------------------------------------------
+CREATE TABLE episodic_schema_version (
+  version    INTEGER PRIMARY KEY,
+  applied_at TEXT NOT NULL,
+  -- The package version that applied it, for the audit trail.
+  applied_by TEXT
+);

@@ -35,10 +35,17 @@ episodic_notify_ntfy <- function(channel, message) {
   req <- httr2::request(url)
   req <- httr2::req_headers(
     req,
-    Title = message$title,
+    # ntfy reads Title as an HTTP header, which is ASCII; it accepts an
+    # RFC 2047 encoded-word there, which is what a title in any of the
+    # seven non-English languages EpiSODIC ships needs.
+    Title = episodic_notify_header_encode(message$title),
     Priority = as.character(channel$priority %||% 4L)
   )
-  req <- httr2::req_body_raw(req, message$plain, type = "text/plain")
+  req <- httr2::req_body_raw(
+    req,
+    charToRaw(enc2utf8(message$plain)),
+    type = "text/plain; charset=utf-8"
+  )
 
   auth <- channel$auth
   if (
@@ -80,7 +87,12 @@ episodic_notify_smtp <- function(channel, message) {
 
   msg_file <- tempfile(fileext = ".eml")
   on.exit(unlink(msg_file), add = TRUE)
-  writeLines(mail_body, msg_file, useBytes = TRUE)
+  # `cat()`, not `writeLines()`: the message already ends in the CRLF its
+  # own format requires, and `writeLines()` would append a bare LF after
+  # the terminating boundary. The message is 7-bit ASCII by construction
+  # now (`episodic_notify_mime_message()` base64-encodes both the headers
+  # that need it and the body), so no encoding conversion can apply.
+  cat(mail_body, file = msg_file, sep = "")
 
   curl::send_mail(
     mail_from = from,
@@ -95,6 +107,63 @@ episodic_notify_smtp <- function(channel, message) {
   invisible(NULL)
 }
 
+#' Encode a header value that may contain non-ASCII text (RFC 2047)
+#'
+#' Message headers are ASCII. EpiSODIC renders its dashboard and its
+#' reports in eight languages, four of which are not written in the Latin
+#' alphabet at all, so an Arabic, Hindi or Chinese subject line - or
+#' merely a Dutch or Spanish one carrying a single accented character -
+#' is the normal case rather than an edge one, and putting those bytes
+#' into a header raw, as this used to,
+#' gets them mangled into replacement characters by some relays and the
+#' whole message rejected by others. Pure-ASCII values are left exactly
+#' as they are, so nothing changes for an English instance.
+#'
+#' Encoded as one base64 "encoded-word" rather than split at the 75
+#' characters RFC 2047 nominally allows: splitting a UTF-8 subject
+#' safely means splitting on character boundaries that base64 hides, and
+#' every mail client in practice accepts the long form. `\r` and `\n`
+#' are stripped first regardless of alphabet - a newline in a header
+#' value is header injection, and a subject line is built from a
+#' pathogen name and a location that ultimately came from an operator's
+#' own data feed.
+#'
+#' @param value A single header value.
+#' @return The value, encoded if it needs to be.
+#' @keywords internal
+#' @noRd
+episodic_notify_header_encode <- function(value) {
+  value <- gsub("[\r\n]", " ", paste(value, collapse = " "))
+  if (!any(grepl("[^\x01-\x7F]", value, useBytes = TRUE))) {
+    return(value)
+  }
+  paste0(
+    "=?UTF-8?B?",
+    jsonlite::base64_enc(charToRaw(enc2utf8(value))),
+    "?="
+  )
+}
+
+#' Wrap base64 at the line length RFC 2045 requires
+#'
+#' `jsonlite::base64_enc()` returns one unbroken string; a MIME body part
+#' whose lines exceed 998 octets is not a valid message and is rejected
+#' or silently truncated by strict relays, which for a report attachment
+#' of any size is every time.
+#' @param x A base64 string.
+#' @param width Line length; 76 is the RFC 2045 maximum.
+#' @return The same base64, CRLF-wrapped.
+#' @keywords internal
+#' @noRd
+episodic_notify_base64_wrap <- function(x, width = 76L) {
+  x <- gsub("[\r\n]", "", paste(x, collapse = ""))
+  if (!nzchar(x)) {
+    return(x)
+  }
+  starts <- seq(1L, nchar(x), by = width)
+  paste(substring(x, starts, starts + width - 1L), collapse = "\r\n")
+}
+
 #' Build a MIME message for SMTP/sendmail
 #'
 #' Two shapes, chosen by whether `attachment_path` is given: a plain
@@ -103,27 +172,45 @@ episodic_notify_smtp <- function(channel, message) {
 #' body alongside one file attachment (a scheduled report - see
 #' `R/scheduled_reports.R`), base64-encoded, `Content-Disposition:
 #' attachment` so it opens as a file rather than rendering inline.
+#'
+#' Both the headers and the HTML body are transfer-encoded rather than
+#' sent as raw 8-bit octets. `8BITMIME` is an SMTP extension a relay is
+#' free not to advertise, and a relay that does not will either strip the
+#' high bit or refuse the message - so a Dutch cluster location, a
+#' Spanish pathogen name or an entire Arabic or Chinese report email was
+#' arriving corrupted or not at all, depending on the hop. Base64 is
+#' 7-bit clean by construction and is understood everywhere.
+#'
 #' @param from,to,subject,html_body As sent to the recipient.
 #' @param attachment_path Path to a file to attach, or `NULL` (default)
 #'   for a plain message.
+#' @param attachment_type The attachment's MIME type.
 #' @keywords internal
 #' @noRd
-episodic_notify_mime_message <- function(from, to, subject, html_body, attachment_path = NULL) {
-  to_header <- paste(to, collapse = ", ")
+episodic_notify_mime_message <- function(from,
+                                         to,
+                                         subject,
+                                         html_body,
+                                         attachment_path = NULL,
+                                         attachment_type = "text/html") {
   headers <- paste0(
-    "From: ", from, "\r\n",
-    "To: ", to_header, "\r\n",
-    "Subject: ", subject, "\r\n",
+    "From: ", episodic_notify_header_encode(from), "\r\n",
+    "To: ", episodic_notify_header_encode(paste(to, collapse = ", ")), "\r\n",
+    "Subject: ", episodic_notify_header_encode(subject), "\r\n",
     "MIME-Version: 1.0\r\n"
+  )
+  body_b64 <- episodic_notify_base64_wrap(
+    jsonlite::base64_enc(charToRaw(enc2utf8(html_body)))
   )
 
   if (is.null(attachment_path)) {
     return(paste0(
       headers,
       "Content-Type: text/html; charset=UTF-8\r\n",
-      "Content-Transfer-Encoding: 8bit\r\n",
+      "Content-Transfer-Encoding: base64\r\n",
       "\r\n",
-      html_body
+      body_b64,
+      "\r\n"
     ))
   }
 
@@ -131,7 +218,14 @@ episodic_notify_mime_message <- function(from, to, subject, html_body, attachmen
   # body or the base64-encoded attachment that follows it.
   boundary <- paste0("EpiSODIC-", digest::digest(list(subject, attachment_path, Sys.time())))
   attachment_raw <- readBin(attachment_path, what = "raw", n = file.size(attachment_path))
-  attachment_b64 <- jsonlite::base64_enc(attachment_raw)
+  attachment_b64 <- episodic_notify_base64_wrap(
+    jsonlite::base64_enc(attachment_raw)
+  )
+  # A filename is not a header value and gets no encoded-word: a
+  # `filename*` parameter (RFC 2231) is the correct spelling for a
+  # non-ASCII one, and EpiSODIC's own render names files
+  # `cluster-<id>-v<n>.html`, which is ASCII by construction.
+  filename <- gsub('["\r\n]', "", basename(attachment_path))
 
   paste0(
     headers,
@@ -139,14 +233,14 @@ episodic_notify_mime_message <- function(from, to, subject, html_body, attachmen
     "\r\n",
     "--", boundary, "\r\n",
     "Content-Type: text/html; charset=UTF-8\r\n",
-    "Content-Transfer-Encoding: 8bit\r\n",
+    "Content-Transfer-Encoding: base64\r\n",
     "\r\n",
-    html_body,
+    body_b64,
     "\r\n\r\n",
     "--", boundary, "\r\n",
-    "Content-Type: text/html; name=\"", basename(attachment_path), "\"\r\n",
+    "Content-Type: ", attachment_type, "; charset=UTF-8; name=\"", filename, "\"\r\n",
     "Content-Transfer-Encoding: base64\r\n",
-    "Content-Disposition: attachment; filename=\"", basename(attachment_path), "\"\r\n",
+    "Content-Disposition: attachment; filename=\"", filename, "\"\r\n",
     "\r\n",
     attachment_b64,
     "\r\n",
@@ -312,7 +406,11 @@ episodic_notify_teams <- function(channel, message) {
   rlang::check_installed("httr2")
 
   req <- httr2::request(channel$webhook_url)
-  req <- httr2::req_body_raw(req, message$teams_card, type = "application/json")
+  req <- httr2::req_body_raw(
+    req,
+    charToRaw(enc2utf8(as.character(message$teams_card))),
+    type = "application/json; charset=utf-8"
+  )
   httr2::req_perform(req)
   invisible(NULL)
 }
@@ -329,7 +427,11 @@ episodic_notify_slack <- function(channel, message) {
   )
 
   req <- httr2::request(channel$webhook_url)
-  req <- httr2::req_body_raw(req, payload, type = "application/json")
+  req <- httr2::req_body_raw(
+    req,
+    charToRaw(enc2utf8(as.character(payload))),
+    type = "application/json; charset=utf-8"
+  )
   httr2::req_perform(req)
   invisible(NULL)
 }

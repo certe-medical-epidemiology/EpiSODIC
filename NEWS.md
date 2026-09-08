@@ -1,3 +1,37 @@
+# EpiSODIC 0.16.0
+
+## New
+
+- `episodic_db_migrate()` brings an existing database up to the current schema; the schema now carries a recorded version and `episodic_db_connect()` refuses a database it does not recognise
+- `config$geography` names the whole-catchment code and the area-code rule, so the two coarsest lattice levels are no longer hardcoded to one country
+- `config$same_place$lookback_days` and `config$rare_trigger$lookback_days` bound how far back the rule-based detectors report hits
+- `config$report$small_count_threshold` is documented in the shipped defaults instead of only existing in code
+- An instance configuration is validated against the shipped defaults: an unknown key, a wrong type, or a null where a value is needed stops the run and names the key
+- `episodic_add_user()` gains `must_change`, for an account that does not need a forced password change
+
+## Changed
+
+- BREAKING: `access.require_login` now defaults to `true`, so a freshly installed instance is closed to anonymous visitors
+- BREAKING: `EPISODIC_CONFIG`, `EPISODIC_STYLE` and `EPISODIC_QUARTO_REPORT` set to a path that does not exist are now errors rather than silent fallbacks
+- BREAKING: `EPISODIC_GEO_DATA` no longer falls back to the bundled Netherlands geometry; without it the dashboard shows its bar-chart fallback
+- BREAKING: `EPISODIC_PC_PROVINCE_MAP` no longer falls back to Dutch province ranges; without it the province level of the lattice stays empty
+- BREAKING: the whole-catchment region code and the `GEBIED-` area prefix are now `config$geography`, which changes every geographic stream key
+- An unsupported `EPISODIC_LANGUAGE` warns once and falls back to English instead of erroring on every render
+- The dashboard sets `lang` and `dir` on the document, and the stylesheet uses logical properties, so Arabic renders right to left
+- Mail headers are RFC 2047 encoded and message bodies base64 encoded, so non-ASCII subjects and reports survive every relay
+- `episodic_demo()` configures its geography through the documented environment variables rather than relying on built-in defaults
+- An explicit YAML `null` now keeps its key during the configuration merge instead of removing it
+
+## Fixed
+
+- `same_place` and `rare_trigger` re-emitted every hit in the entire case history on every run, which reset `runs_since_detected` so `close_after_runs` could never fire and grew `episodic_detection` without bound
+- Farrington aggregated to the week containing `run_date`, testing a partial week against full-week baselines, so it was near-blind on every day except Sunday
+- `episodic_run_cron(run_date = ...)` was ignored by reconciliation, which judged staleness against the wall clock
+- An already-closed cluster was closed again on every subsequent run, filling `episodic_cluster_state` with duplicate closures
+- A closed cluster that was re-detected went on absorbing cases silently instead of returning to the board for reassessment
+- A merge into an already-assessed cluster did not flag it as changed since assessment
+- The forced password change was skipped for any account named `demo` whose password was `demo`
+
 # EpiSODIC 0.15.0
 
 ## New

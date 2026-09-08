@@ -57,6 +57,21 @@ episodic_i18n_load <- function(lang) {
   flat
 }
 
+#' The languages EpiSODIC ships translations for
+#' @keywords internal
+#' @noRd
+episodic_languages <- c("en", "ar", "nl", "fr", "de", "hi", "zh", "es")
+
+#' Languages written right to left
+#' @keywords internal
+#' @noRd
+episodic_languages_rtl <- c("ar")
+
+#' Warn about a given unsupported language code only once per session
+#' @keywords internal
+#' @noRd
+episodic_lang_warned <- new.env(parent = emptyenv())
+
 #' The language to render in, resolved
 #'
 #' Every function that renders text takes `lang` and defaults it to the
@@ -65,20 +80,69 @@ episodic_i18n_load <- function(lang) {
 #' empty) variable means English - the same fallback `episodic_tr()`
 #' applies to a key it cannot find in the requested language.
 #'
+#' A value that is set but is not one EpiSODIC ships also means English,
+#' with a warning, once per session per value. It used to mean a hard
+#' error from `episodic_i18n_load()` on *every* render, which took the
+#' whole dashboard down: `EPISODIC_LANGUAGE=pt` is a reasonable thing for
+#' an operator to try, and so is the locale-shaped `en_GB` or `nl_NL`,
+#' and none of them is a reason to serve a stack trace instead of a
+#' surveillance dashboard.
+#'
 #' Anything that *branches* on the language rather than looking a key up -
 #' the charts' thousands separator, for instance - has to resolve it
 #' first, or an unset variable would read as "not English" and take the
 #' wrong branch while every word around it came out in English.
 #'
 #' @param lang A language code, or `""`/`NA` for "not set".
-#' @return A single language code.
+#' @return A single language code, always one of `episodic_languages`.
 #' @keywords internal
 #' @noRd
 episodic_lang <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (length(lang) != 1 || is.na(lang) || !nzchar(lang)) {
     return("en")
   }
-  lang
+  if (lang %in% episodic_languages) {
+    return(lang)
+  }
+  if (is.null(episodic_lang_warned[[lang]])) {
+    episodic_lang_warned[[lang]] <- TRUE
+    warning(
+      "EpiSODIC has no translations for language '",
+      lang,
+      "', so English is used instead. Set EPISODIC_LANGUAGE to one of: ",
+      paste(episodic_languages, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+  "en"
+}
+
+#' Whether a language is written right to left
+#'
+#' Arabic is one of the eight shipped languages, and until this existed
+#' the dashboard rendered it left to right with no `dir` attribute
+#' anywhere on the page - every navigation bar, table and chart axis
+#' mirrored the wrong way round. Kept as a predicate over
+#' `episodic_languages_rtl` rather than an `identical(lang, "ar")` at
+#' each of the call sites, so adding Hebrew, Persian or Urdu later is
+#' one entry rather than a search.
+#'
+#' @param lang A language code (resolved or not).
+#' @return A single logical.
+#' @keywords internal
+#' @noRd
+episodic_lang_is_rtl <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  episodic_lang(lang) %in% episodic_languages_rtl
+}
+
+#' `"rtl"` or `"ltr"`, for an HTML `dir` attribute
+#' @inheritParams episodic_lang_is_rtl
+#' @return A single string.
+#' @keywords internal
+#' @noRd
+episodic_lang_dir <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (episodic_lang_is_rtl(lang)) "rtl" else "ltr"
 }
 
 #' Translate a dashboard text key
