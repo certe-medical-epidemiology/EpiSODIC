@@ -1657,6 +1657,7 @@ episodic_ui_assessment_form <- function(con,
         shiny::tags$textarea(
           id = "assess_rationale",
           rows = 3,
+          disabled = "disabled",
           placeholder = episodic_tr(
             "assessment.rationale_placeholder",
             lang = lang
@@ -1676,7 +1677,11 @@ episodic_ui_assessment_form <- function(con,
         id = "assess_close_wrap",
         shiny::tags$label(
           style = "display:flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer;",
-          shiny::tags$input(type = "checkbox", id = "assess_close_checkbox"),
+          shiny::tags$input(
+            type = "checkbox",
+            id = "assess_close_checkbox",
+            disabled = "disabled"
+          ),
           episodic_tr("assessment.close_checkbox_label", lang = lang)
         ),
         shiny::tags$p(
@@ -1688,7 +1693,9 @@ episodic_ui_assessment_form <- function(con,
       shiny::tags$div(
         class = "episodic-form-actions",
         shiny::tags$button(
+          id = "assess_submit_btn",
           class = "episodic-btn episodic-btn-primary",
+          disabled = "disabled",
           onclick = sprintf("episodicSubmitAssessment(%d)", cluster_id),
           episodic_tr("assessment.submit", lang = lang)
         )
@@ -1713,6 +1720,15 @@ function episodicAssessVerdictChanged() {
   var v = document.getElementById('assess_verdict').value;
   var box = document.getElementById('assess_close_checkbox');
   var wrap = document.getElementById('assess_close_wrap');
+  var rationale = document.getElementById('assess_rationale');
+  var submitBtn = document.getElementById('assess_submit_btn');
+  var hasVerdict = !!v;
+  rationale.disabled = !hasVerdict;
+  box.disabled = !hasVerdict;
+  submitBtn.disabled = !hasVerdict;
+  if (!hasVerdict) {
+    box.checked = false;
+  }
   if (v === 'artefact' || v === 'expected_variation') {
     box.checked = true;
     wrap.classList.add('episodic-close-suggested');
@@ -1722,15 +1738,16 @@ function episodicAssessVerdictChanged() {
 }
 function episodicSubmitAssessment(clusterId) {
   var verdict = document.getElementById('assess_verdict').value;
+  if (!verdict) {
+    return;
+  }
   var rationale = document.getElementById('assess_rationale').value;
   var snooze = document.getElementById('assess_snooze').value;
   var close = document.getElementById('assess_close_checkbox').checked;
-  if (verdict) {
-    var label = window.episodicAssessVerdictLabels[verdict] || verdict;
-    var template = close ? window.episodicAssessCloseConfirm : window.episodicAssessOpenConfirm;
-    if (!confirm(template.replace('{verdict}', label))) {
-      return;
-    }
+  var label = window.episodicAssessVerdictLabels[verdict] || verdict;
+  var template = close ? window.episodicAssessCloseConfirm : window.episodicAssessOpenConfirm;
+  if (!confirm(template.replace('{verdict}', label))) {
+    return;
   }
   Shiny.setInputValue('assess_submit', {cluster_id: clusterId, verdict: verdict, rationale: rationale, snooze: snooze, close: close}, {priority: 'event'});
 }",
