@@ -299,3 +299,124 @@ test_that("the header names at most three links and counts the rest", {
   expect_true(grepl("+2 more", chips, fixed = TRUE))
   expect_null(episodic_ui_linked_chips(linked[0, ], lang = "en"))
 })
+
+# ---------------------------------------------------------------------
+# What suppression must never do
+# ---------------------------------------------------------------------
+
+test_that("a manual cluster neither suppresses nor is suppressed", {
+  # A manual cluster's case detail lives in episodic_cluster_manual_case,
+  # never in episodic_case, so it has no episodic_cluster_case rows and
+  # every share computed for it is zero. Read as "spread thinly across
+  # its children" rather than as "unmeasurable", that would let a
+  # hand-added cluster with no case data hide every real cluster that
+  # happened to overlap it in time.
+  env <- suppress_setup(n_cases = 10, n_children = 3, child_share = 0.9)
+  on.exit(DBI::dbDisconnect(env$con))
+
+  clusters <- episodic_db_clusters_for_suppression(env$con)
+  expect_true(all(clusters$origin == "detected"))
+  expect_equal(nrow(clusters), 1 + length(env$children))
+
+  # Turn the parent into a manual cluster and it leaves the picture
+  # entirely - the children stand on their own.
+  DBI::dbExecute(
+    env$con,
+    "UPDATE episodic_cluster SET origin = 'manual' WHERE cluster_id = ?",
+    params = list(env$parent)
+  )
+  remaining <- episodic_db_clusters_for_suppression(env$con)
+  expect_false(env$parent %in% remaining$cluster_id)
+
+  episodic_suppress_lattice(env$con, episodic_config_resolve(NA))
+  for (child_id in env$children) {
+    expect_true(is.na(suppressed_by(env$con, child_id)), info = child_id)
+  }
+  expect_true(is.na(suppressed_by(env$con, env$parent)))
+})
+
+test_that("a parent with no linked cases suppresses nothing", {
+  # Zero shares are the absence of a measurement, not evidence of a
+  # diffuse rise.
+  env <- suppress_setup(n_cases = 10, n_children = 3, child_share = 0.9)
+  on.exit(DBI::dbDisconnect(env$con))
+  DBI::dbExecute(
+    env$con,
+    "DELETE FROM episodic_cluster_case WHERE cluster_id = ?",
+    params = list(env$parent)
+  )
+
+  episodic_suppress_lattice(env$con, episodic_config_resolve(NA))
+  for (child_id in env$children) {
+    expect_true(is.na(suppressed_by(env$con, child_id)), info = child_id)
+  }
+})
+
+test_that("suppression never chains: a suppressed cluster suppresses nothing further", {
+  # `suppressed_by` is followed exactly one step by everything that reads
+  # it, so a two-link chain puts a cluster on the dossier of a cluster
+  # that is itself out of the queue - and the one at the far end is shown
+  # nowhere at all. The geographic chain (area -> province -> region) is
+  # where this arises.
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  run_id <- episodic_db_run_start(con, "h", "a")
+
+  geo_stream <- function(level, region_code) {
+    episodic_db_stream_upsert(
+      con,
+      stream_key = episodic_stream_key(
+        level,
+        "Test pathogen",
+        region_code = region_code
+      ),
+      level = level,
+      pathogen = "Test pathogen",
+      region_code = region_code,
+      observed_date = "2026-07-10"
+    )
+  }
+  geo_cluster <- function(stream_id, n) {
+    episodic_db_cluster_insert(
+      con,
+      stream_id = stream_id,
+      first_day = "2026-07-01",
+      last_day = "2026-07-20",
+      n_cases = n,
+      priority_score = 50,
+      detector_agreement = 1,
+      run_id = run_id
+    )
+  }
+
+  area <- geo_cluster(geo_stream("pathogen_area", "AREA-97"), 10)
+  province <- geo_cluster(geo_stream("pathogen_province", "PROV"), 10)
+  region <- geo_cluster(geo_stream("pathogen_region", "REGION"), 10)
+
+  case_ids <- vapply(seq_len(10), function(i) {
+    DBI::dbExecute(
+      con,
+      "INSERT INTO episodic_case
+        (source_key, lab_number, patient_key, sample_date, pathogen, care_line, pc, first_seen_run)
+       VALUES (?, ?, ?, '2026-07-10', 'Test pathogen', 'second', '9711', ?)",
+      params = list(sprintf("G%d", i), sprintf("G%d", i), sprintf("PG%d", i), run_id)
+    )
+    DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+  }, numeric(1))
+
+  # Every level holds the same cases, so the area dominates the province
+  # and the province would dominate the region.
+  for (id in c(area, province, region)) {
+    episodic_db_cluster_case_link_many(con, id, case_ids)
+  }
+
+  episodic_suppress_lattice(con, episodic_config_resolve(NA))
+
+  # The area took the province, as it should.
+  expect_equal(suppressed_by(con, province), area)
+  # And the province, now suppressed itself, did not go on to take the
+  # region: the region stays in the queue rather than pointing at a
+  # cluster nobody can see.
+  expect_true(is.na(suppressed_by(con, region)))
+  expect_true(is.na(suppressed_by(con, area)))
+})

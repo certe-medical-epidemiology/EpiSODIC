@@ -35,6 +35,11 @@
 - A closed cluster that was re-detected went on absorbing cases silently instead of returning to the board for reassessment
 - A merge into an already-assessed cluster did not flag it as changed since assessment
 - The forced password change was skipped for any account named `demo` whose password was `demo`
+- Lattice suppression could hide every detected cluster behind a manually added one, which holds no `episodic_case` rows so scored zero overlap with all of them
+- Lattice suppression could chain, putting a cluster behind one that was itself suppressed and showing the far end of the chain on no dossier at all
+- The reporting-completion curve skipped every lag at which nothing had arrived yet, so short lags read as far more complete than they were and the incompleteness zone sized from it was too narrow
+- Deduplication grouped on `patient_key` and `pathogen` glued together with no separator, so two patients whose keys and pathogens concatenate alike were treated as one and a positive was silently dropped
+- A suppression parent's case list was re-read once per overlapping child
 
 # EpiSODIC 0.15.0
 

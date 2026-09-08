@@ -404,3 +404,53 @@ test_that("episodic_cases_in_window() keeps only the candidate episode's own cas
   window <- episodic_cases_in_window(cases, "2025-01-03", "2025-01-05")
   expect_equal(nrow(window), 3)
 })
+
+test_that("episodic_triangle_completeness() counts a lag at which nothing had arrived as zero", {
+  # A sample date with nothing visible yet at lag D has a completeness of
+  # 0 at lag D, and must: that is what an under-ascertained day looks
+  # like. Dropping those cells averages each short lag over only the
+  # sample dates that happened to have a result back already, which is a
+  # survivorship filter selecting the fastest-reported dates and makes
+  # the curve read far more complete at short lags than the data is.
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  stream_id <- episodic_db_stream_upsert(
+    con,
+    stream_key = episodic_stream_key("pathogen_region", "Test pathogen"),
+    level = "pathogen_region",
+    pathogen = "Test pathogen",
+    observed_date = "2025-01-10"
+  )
+
+  runs <- vapply(
+    c("2025-01-01", "2025-01-02", "2025-01-03"),
+    function(d) {
+      id <- episodic_db_run_start(con, "h", "a", run_date = d)
+      episodic_db_run_finish(con, id, status = "success")
+      id
+    },
+    integer(1)
+  )
+
+  insert_case <- function(key, sample_date, run_id) {
+    DBI::dbExecute(
+      con,
+      "INSERT INTO episodic_case (source_key, lab_number, patient_key, sample_date,
+         pathogen, care_line, first_seen_run)
+       VALUES (?, ?, ?, ?, 'Test pathogen', 'second', ?)",
+      params = list(key, key, key, sample_date, run_id)
+    )
+  }
+  # Sample date 2025-01-01, seen only by the run two days later. So at
+  # lag 0 and lag 1 nothing was visible at all.
+  insert_case("A", "2025-01-01", runs[[3]])
+
+  completeness <- episodic_triangle_completeness(con, stream_id)
+  expect_equal(completeness$completeness[completeness$lag_days == 0], 0)
+  expect_equal(completeness$completeness[completeness$lag_days == 1], 0)
+  expect_equal(completeness$completeness[completeness$lag_days == 2], 1)
+
+  # And the incompleteness zone sized from it covers those days rather
+  # than declaring them complete.
+  expect_equal(episodic_app_completeness(con, stream_id)$incomplete_days, 2L)
+})

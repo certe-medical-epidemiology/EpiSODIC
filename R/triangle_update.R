@@ -42,7 +42,10 @@
 #' @param stream_id The stream to compute completeness for.
 #' @param max_lag_days Maximum reporting lag (in days) to compute.
 #' @return A data frame with columns `lag_days` and `completeness`
-#'   (0-1, the median share of the final count visible at that lag).
+#'   (0-1, the median share of the final count visible at that lag,
+#'   over every sample date that eventually reported anything - including
+#'   the ones that had reported nothing yet at that lag, which count as
+#'   zero).
 #' @keywords internal
 #' @noRd
 episodic_triangle_completeness <- function(con, stream_id, max_lag_days = 21) {
@@ -112,7 +115,23 @@ episodic_triangle_completeness <- function(con, stream_id, max_lag_days = 21) {
   # triangle expressed as the maximum over its rows.
   final_n <- visible[, ncol(visible)]
 
-  ok <- visible > 0 & lag >= 0 & lag <= max_lag_days & final_n > 0
+  # A sample date with nothing yet visible at lag D contributes a
+  # completeness of 0 at lag D, and must: that is what an
+  # under-ascertained day looks like, and it is the whole quantity this
+  # curve exists to measure. Excluding those cells - as `visible > 0`
+  # here used to - averages each short lag over only the sample dates
+  # that happened to have a result back already, which is a survivorship
+  # filter selecting exactly the fastest-reported dates. The curve then
+  # reads far more complete at short lags than the data is,
+  # `episodic_app_completeness()` finds its 95% threshold too early, and
+  # the incompleteness zone it sizes is too narrow - so the epi curve
+  # shades too little and `episodic_compute_rt()` goes on to read a
+  # reporting artefact as a change in transmission, which is the one
+  # thing its own cut-off exists to prevent.
+  #
+  # `final_n > 0` is what excludes a sample date that never reported
+  # anything at all; that is a different question and stays.
+  ok <- lag >= 0 & lag <= max_lag_days & final_n > 0
   if (!any(ok)) {
     return(empty)
   }
