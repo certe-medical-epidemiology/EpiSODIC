@@ -111,6 +111,11 @@ test_that("the dashboard declares its language and direction on the document", {
 
   # An unshipped language falls back to English in both attributes, so
   # the page never claims a language it has no text for.
+  #
+  # `episodic_lang()` warns once per unrecognised value per session, and
+  # an earlier test in this file has already spent "pt" - so clear that
+  # registry rather than assert a warning that has already been issued.
+  rm(list = ls(envir = episodic_lang_warned), envir = episodic_lang_warned)
   expect_warning(pt <- head_of("pt"), "no translations")
   expect_match(pt, "setAttribute('lang', 'en')", fixed = TRUE)
 })

@@ -654,11 +654,39 @@ test_that("episodic_app_data_asof() reads the latest successful run, not today",
   on.exit(DBI::dbDisconnect(env$con))
   asof <- episodic_app_data_asof(env$con)
   expect_s3_class(asof, "Date")
-  expect_equal(asof, Sys.Date()) # the fixture's run finished just now
+  # Against the run's own recorded date rather than against a freshly
+  # evaluated Sys.Date(): the point of the function is that it reads the
+  # run, and comparing to the clock made this fail whenever the two fell
+  # either side of midnight.
+  recorded <- DBI::dbGetQuery(
+    env$con,
+    "SELECT run_date FROM episodic_detection_run ORDER BY run_id DESC LIMIT 1"
+  )$run_date[1]
+  expect_equal(asof, as.Date(recorded))
 
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con), add = TRUE)
   expect_equal(episodic_app_data_asof(con), Sys.Date()) # no run recorded at all
+})
+
+test_that("episodic_app_data_asof() is a local date, not a UTC one, and follows a backfill", {
+  # `finished_at` is a UTC instant, so the date taken from it is a day
+  # behind for the hours after local midnight in any timezone ahead of
+  # UTC - and for a run replayed as of a past date it is simply the
+  # wrong date, which would measure that run's reporting lag from today.
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  run_id <- episodic_db_run_start(con, "h", "a", run_date = as.Date("2024-06-30"))
+  episodic_db_run_finish(con, run_id, status = "success")
+  expect_equal(episodic_app_data_asof(con), as.Date("2024-06-30"))
+
+  # And a finished_at whose UTC date differs from run_date does not move it.
+  DBI::dbExecute(
+    con,
+    "UPDATE episodic_detection_run SET finished_at = ? WHERE run_id = ?",
+    params = list("2024-07-01T23:30:00.0Z", run_id)
+  )
+  expect_equal(episodic_app_data_asof(con), as.Date("2024-06-30"))
 })
 
 test_that("episodic_app_epi_curve() stops shading a cluster whose reporting finished long ago", {

@@ -1029,18 +1029,34 @@ episodic_app_cluster_viewable <- function(con, cluster_id) {
 #' cases was fully reported. Reporting lag is a property of *now*, not of
 #' the cluster.
 #'
+#' Read from `run_date`, not from `finished_at`, for two reasons.
+#'
+#' `finished_at` is a UTC instant (`episodic_now()`), and the date
+#' extracted from it is therefore a UTC date compared against a local
+#' `Sys.Date()` everywhere else. For an instance in CEST that makes
+#' `asof` a day behind for the two hours after local midnight, and for
+#' one in UTC+12 for half of every day - so the incompleteness window,
+#' the epi curve's shading and `episodic_compute_rt()`'s cut-off all
+#' shift by a day depending on the hour.
+#'
+#' `run_date` is a plain local date the run was told to treat as today,
+#' with no timezone in it at all. It is also the right answer for a
+#' backfill: a run replayed today as of 2024-06-30 has data current as
+#' of 2024-06-30, and measuring its reporting lag from this morning
+#' would grey out months of a curve that was fully reported long ago.
+#'
 #' @param con A [DBI::DBIConnection-class].
-#' @return A `Date`: the latest successful run's finish date, falling
-#'   back to today's date when no run has been recorded yet.
+#' @return A `Date`: the latest complete run's `run_date`, falling back
+#'   to today's date when no run has been recorded yet.
 #' @keywords internal
 #' @noRd
 episodic_app_data_asof <- function(con) {
   run <- episodic_db_latest_run(con, status = episodic_run_statuses_complete)
-  if (is.null(run) || is.na(run$finished_at)) {
+  if (is.null(run) || is.na(run$run_date)) {
     return(Sys.Date())
   }
   parsed <- tryCatch(
-    as.Date(substr(run$finished_at, 1, 10)),
+    as.Date(substr(run$run_date, 1, 10)),
     error = function(e) NA
   )
   if (is.na(parsed)) Sys.Date() else parsed

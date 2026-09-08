@@ -47,6 +47,8 @@
 - A first positive test was reported as positivity rising
 - `episodic_html_escape()` left single quotes unescaped, and every attribute in the notification HTML is single-quoted
 - `same_place` merged its hit windows on gaps in index rather than gaps in time, so two outbreaks years apart at one place became a single window spanning both
+- `same_place` and `rare_trigger` reported cases sampled after `run_date`, so a replayed run reported outbreaks from its own future
+- `episodic_app_data_asof()` took its date from a UTC timestamp and compared it against a local one, putting the incompleteness window a day out for the hours after local midnight, and read the wrong date entirely for a backfilled run
 
 # EpiSODIC 0.15.0
 

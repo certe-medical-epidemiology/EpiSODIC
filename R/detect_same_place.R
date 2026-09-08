@@ -46,9 +46,11 @@
 #' `farrington.max_weeks_tested` places on the statistical detector, for
 #' the same reason.
 #'
-#' The scan itself still runs over the full history, so a window is
-#' always assembled from every case that belongs to it; only which
-#' windows are *reported* is bounded.
+#' The scan itself still runs over the full history up to `run_date`, so
+#' a window is always assembled from every case that belongs to it; only
+#' which windows are *reported* is bounded. Cases sampled after
+#' `run_date` are not part of this run's history at all - see
+#' `episodic_detector_cases_asof()`.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cases A data frame of cases to scan, with `pathogen`,
@@ -65,6 +67,7 @@ episodic_detect_same_place <- function(con,
                                        institutions,
                                        config,
                                        run_date = Sys.Date()) {
+  cases <- episodic_detector_cases_asof(cases, run_date)
   cases <- cases[!is.na(cases$institution_id), ]
   if (nrow(cases) == 0) {
     return(episodic_detection_record(

@@ -636,12 +636,19 @@ test_that("muting a stream suppresses its new detections, and unmuting restores 
   con <- episodic_db_connect(path)
   on.exit(DBI::dbDisconnect(con))
 
+  # A stream whose detections are recent, not merely numerous: the
+  # rule-based detectors report only windows inside their lookback of
+  # `run_date`, so a stream whose signal sits at the start of the case
+  # window would drop out of the later runs on its own and this test
+  # would pass, or fail, for a reason that has nothing to do with muting.
   detected <- DBI::dbGetQuery(
     con,
     "SELECT stream_id, COUNT(*) n FROM episodic_detection
-      GROUP BY stream_id ORDER BY n DESC LIMIT 1"
+      WHERE last_day >= ?
+      GROUP BY stream_id ORDER BY n DESC LIMIT 1",
+    params = list("2024-08-01")
   )
-  skip_if(nrow(detected) == 0, "no detections in this window to mute")
+  skip_if(nrow(detected) == 0, "no recent detections in this window to mute")
   target <- detected$stream_id[1]
 
   user_id <- episodic_db_app_user_insert(
@@ -660,7 +667,7 @@ test_that("muting a stream suppresses its new detections, and unmuting restores 
     # rule-based detectors' own lookback window: a run four months after
     # the last case reports nothing whether the stream is muted or not,
     # which would make this test pass for the wrong reason.
-    muted_until = "2024-09-30",
+    muted_until = "2024-09-03",
     reason = "seasonal",
     note = NA,
     user_id = user_id
@@ -677,7 +684,7 @@ test_that("muting a stream suppresses its new detections, and unmuting restores 
   episodic_run_cron(
     db_path = path,
     cases = cases,
-    run_date = as.Date("2024-09-15")
+    run_date = as.Date("2024-09-02")
   )
   during <- DBI::dbGetQuery(
     con,
@@ -698,7 +705,7 @@ test_that("muting a stream suppresses its new detections, and unmuting restores 
   episodic_run_cron(
     db_path = path,
     cases = cases,
-    run_date = as.Date("2024-10-05")
+    run_date = as.Date("2024-09-05")
   )
   after <- DBI::dbGetQuery(
     con,

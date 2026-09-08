@@ -66,6 +66,10 @@ episodic_detect_rare_trigger <- function(con,
     return(empty)
   }
 
+  cases <- episodic_detector_cases_asof(cases, run_date)
+  if (nrow(cases) == 0) {
+    return(empty)
+  }
   matches <- tolower(cases$pathogen) %in% tolower(rt$pathogens)
   cutoff <- episodic_detector_lookback_cutoff(run_date, rt$lookback_days)
   if (!is.null(cutoff)) {
