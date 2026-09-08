@@ -46,6 +46,38 @@ NULL
   if (is.null(x) || (length(x) == 1 && is.na(x))) y else x
 }
 
+#' The two ends of a cluster's positivity window, when both were measured
+#'
+#' `positivity` is `NA` for any week with no tests at all
+#' (`episodic_app_denominator_series()`), which is a different thing from
+#' a positivity of zero and must not be compared as though it were one.
+#' Returns `NULL` unless both ends are real numbers, so a fragment
+#' gating on it says nothing rather than saying something untrue.
+#'
+#' @param cl A cluster object, see `episodic_cluster_object()`.
+#' @return A list with `first`, `last`, `n_tests_first` and
+#'   `n_tests_last`, or `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_interpretation_positivity <- function(cl) {
+  d <- cl$denominator
+  if (is.null(d)) {
+    return(NULL)
+  }
+  measured <- function(x) {
+    !is.null(x) && length(x) == 1 && !is.na(x) && is.finite(x)
+  }
+  if (!measured(d$positivity_first) || !measured(d$positivity_last)) {
+    return(NULL)
+  }
+  list(
+    first = d$positivity_first,
+    last = d$positivity_last,
+    n_tests_first = d$n_tests_first,
+    n_tests_last = d$n_tests_last
+  )
+}
+
 #' Build the placeholder context for a cluster
 #'
 #' One shared set of pre-formatted placeholder strings, so every fragment
@@ -202,16 +234,25 @@ episodic_interpretation_fragments <- function() {
     ),
 
     # -- denominator --------------------------------------------------------
+    #
+    # Every one of these gates on `episodic_interpretation_positivity()`
+    # rather than on `!is.null(cl$denominator)`. Positivity is `NA` in
+    # any week with no tests at all, and `%||% 0` turned that into a
+    # measured zero - so "positivity stayed flat" and "positivity is
+    # rising" could both be written about a comparison with an
+    # unmeasured end, and "stable" was written whenever a denominator
+    # feed existed at all, however empty. A sentence in a dossier is
+    # read and reasoned from; a section with nothing to say is omitted,
+    # which is what this module promises everywhere else.
     list(
       id = "denominator.rising_volume_flat_positivity",
       slot = "denominator",
       condition = function(cl) {
-        d <- cl$denominator
-        !is.null(d) &&
-          isTRUE(d$n_tests_last > d$n_tests_first * 1.3) &&
-          isTRUE(
-            abs((d$positivity_last %||% 0) - (d$positivity_first %||% 0)) < 0.01
-          )
+        p <- episodic_interpretation_positivity(cl)
+        !is.null(p) &&
+          isTRUE(p$n_tests_first > 0) &&
+          isTRUE(p$n_tests_last > p$n_tests_first * 1.3) &&
+          isTRUE(abs(p$last - p$first) < 0.01)
       },
       key = "interpretation.fragment.denominator.rising_volume_flat_positivity"
     ),
@@ -219,16 +260,17 @@ episodic_interpretation_fragments <- function() {
       id = "denominator.rising_positivity",
       slot = "denominator",
       condition = function(cl) {
-        d <- cl$denominator
-        !is.null(d) &&
-          isTRUE((d$positivity_last %||% 0) > (d$positivity_first %||% 0) * 1.5)
+        p <- episodic_interpretation_positivity(cl)
+        # A rise of half again on a baseline of zero is not a rise, it is
+        # the first positive test.
+        !is.null(p) && isTRUE(p$first > 0) && isTRUE(p$last > p$first * 1.5)
       },
       key = "interpretation.fragment.denominator.rising_positivity"
     ),
     list(
       id = "denominator.stable",
       slot = "denominator",
-      condition = function(cl) !is.null(cl$denominator),
+      condition = function(cl) !is.null(episodic_interpretation_positivity(cl)),
       key = "interpretation.fragment.denominator.stable"
     ),
 

@@ -70,6 +70,10 @@ test_that("episodic_html_escape() escapes special characters", {
   expect_equal(episodic_html_escape("a & b"), "a &amp; b")
   expect_equal(episodic_html_escape("x=\"y\""), "x=&quot;y&quot;")
   expect_equal(episodic_html_escape("plain"), "plain")
+  # Single quotes too: every attribute in the HTML built here is
+  # single-quoted, so an apostrophe would close it and the rest would be
+  # read as markup.
+  expect_equal(episodic_html_escape("O'Brien"), "O&#39;Brien")
 })
 
 test_that("episodic_notify_location() describes streams", {

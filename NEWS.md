@@ -42,6 +42,9 @@
 - A suppression parent's case list was re-read once per overlapping child
 - The institution activity feed compared the operator's own `institution_key` against the stored hash of it, so every row was skipped and patient-day normalisation never engaged on any real deployment
 - A manual cluster's detector agreement was scored out of one detector instead of four, so every manual cluster outranked a comparable detected one
+- The dossier narrative could state that positivity had risen, or stayed flat, for a cluster whose positivity was never measured at all
+- A first positive test was reported as positivity rising
+- `episodic_html_escape()` left single quotes unescaped, and every attribute in the notification HTML is single-quoted
 
 # EpiSODIC 0.15.0
 
