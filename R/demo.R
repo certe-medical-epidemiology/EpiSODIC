@@ -28,7 +28,15 @@
 #'
 #' @param db_path Path to the SQLite database to create. Defaults to a
 #'   temporary file, so repeated calls never collide and nothing is left
-#'   behind once the R session ends.
+#'   behind once the R session ends. A database that already exists is
+#'   refused, and a MariaDB/MySQL DSN is refused outright: this call
+#'   generates synthetic cases and runs detection over them, which is
+#'   contamination anywhere but a throwaway database.
+#' @param overwrite If `TRUE`, an existing demo database at `db_path` and
+#'   the two configuration files beside it are deleted and rebuilt.
+#'   `FALSE` (the default) refuses instead. This deletes whatever is at
+#'   that path, so it is deliberately not something the demo decides for
+#'   you.
 #' @param username,full_name,email,password Credentials for the demo
 #'   epidemiologist account this creates, so you can sign in and classify a
 #'   cluster right away. These are placeholder values - change them for
@@ -112,7 +120,10 @@ episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
                           lang = Sys.getenv("EPISODIC_LANGUAGE"),
                           cases = NULL,
                           denominators = NULL,
+                          overwrite = FALSE,
                           ...) {
+  episodic_demo_check_db_path(db_path, overwrite = overwrite)
+
   # Resolved here rather than in the signature, because each of these
   # defaults depends on the others and R cannot express that: the
   # synthetic generators are anchored to `run_date`, while `run_date`
@@ -246,6 +257,73 @@ episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
   }
 
   invisible(db_path)
+}
+
+#' Refuse to build a demo anywhere but a throwaway database
+#'
+#' `episodic_demo()` generates synthetic cases and runs detection over
+#' them. Pointed at a database that already holds data, that is not a
+#' demo: the synthetic cases land in `episodic_case` alongside the real
+#' ones, reach every denominator, line list and patient search, and
+#' cannot be told apart afterwards without knowing which run wrote them.
+#' A MariaDB/MySQL DSN is refused whatever it contains, since the demo
+#' writes two configuration files named after `db_path` and a DSN is a
+#' server instance rather than a scratch file.
+#'
+#' @param db_path The path the demo was asked to build at.
+#' @param overwrite Whether the caller explicitly asked for an existing
+#'   demo database to be deleted and rebuilt.
+#' @return Invisible `NULL`, or an error.
+#' @keywords internal
+#' @noRd
+episodic_demo_check_db_path <- function(db_path, overwrite = FALSE) {
+  usable <- is.character(db_path) && length(db_path) == 1 &&
+    !is.na(db_path) && nzchar(db_path)
+  if (!usable) {
+    stop(
+      "`db_path` must be a single non-empty path to an SQLite file.",
+      call. = FALSE
+    )
+  }
+  if (episodic_db_dialect(db_path) != "sqlite") {
+    stop(
+      "episodic_demo() builds a throwaway SQLite database and writes two ",
+      "configuration files beside it, so it cannot be pointed at a ",
+      "MariaDB/MySQL instance. Leave `db_path` at its default, or give a ",
+      "path to a file that does not exist yet.",
+      call. = FALSE
+    )
+  }
+  if (!file.exists(db_path)) {
+    return(invisible(NULL))
+  }
+  if (!isTRUE(overwrite)) {
+    stop(
+      "There is already a database at ",
+      db_path,
+      ". episodic_demo() generates synthetic cases and runs detection over ",
+      "them, so building a demo here would mix synthetic data into whatever ",
+      "is already stored - irreversibly, and invisibly, if this is a real ",
+      "instance. Give a `db_path` that does not exist yet, or pass ",
+      "overwrite = TRUE to delete this one and rebuild it.",
+      call. = FALSE
+    )
+  }
+
+  demo <- episodic_demo_files(db_path)
+  existing <- c(db_path, demo$config, demo$pc_province_map)
+  existing <- existing[file.exists(existing)]
+  removed <- unlink(existing)
+  if (removed != 0 || any(file.exists(existing))) {
+    stop(
+      "Could not remove the existing demo at ",
+      db_path,
+      " - delete it yourself, or give a `db_path` that does not exist yet.",
+      call. = FALSE
+    )
+  }
+  message("Removed the existing demo at ", db_path, ".")
+  invisible(NULL)
 }
 
 #' Where `episodic_demo()` writes the configuration it runs against

@@ -161,3 +161,65 @@ test_that("an explicit run_date still wins, and the demo says nothing about choo
     "2024-06-20"
   )
 })
+
+test_that("the demo refuses a database that already exists rather than adding synthetic cases to it", {
+  # The whole point: a demo generates synthetic cases and runs detection
+  # over them. Pointed at a live instance it would file those cases in
+  # episodic_case alongside the real ones, where they reach every
+  # denominator, line list and patient search and cannot be told apart
+  # afterwards.
+  db_path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(db_path))
+  writeLines("not empty", db_path)
+
+  expect_error(
+    episodic_demo(db_path = db_path, launch = FALSE, cases = small_cases),
+    "already a database"
+  )
+  expect_error(
+    episodic_demo(db_path = db_path, launch = FALSE, cases = small_cases),
+    "overwrite = TRUE",
+    fixed = TRUE
+  )
+  # It refused before generating anything, so the file is untouched.
+  expect_equal(readLines(db_path), "not empty")
+})
+
+test_that("the demo refuses a MariaDB DSN outright", {
+  expect_error(
+    episodic_demo(
+      db_path = "mysql://user:secret@db.example.org:3306/episodic",
+      launch = FALSE
+    ),
+    "cannot be pointed at a"
+  )
+})
+
+test_that("episodic_demo_check_db_path() rejects a db_path that is not a single path", {
+  expect_error(episodic_demo_check_db_path(character(0)), "single non-empty path")
+  expect_error(episodic_demo_check_db_path(NA_character_), "single non-empty path")
+  expect_error(episodic_demo_check_db_path(""), "single non-empty path")
+})
+
+test_that("overwrite = TRUE removes the existing demo and its configuration files first", {
+  db_path <- tempfile(fileext = ".sqlite")
+  demo <- episodic_demo_files(db_path)
+  on.exit(unlink(c(db_path, demo$config, demo$pc_province_map)))
+  writeLines("old database", db_path)
+  writeLines("old config", demo$config)
+  writeLines("old map", demo$pc_province_map)
+
+  expect_message(
+    episodic_demo_check_db_path(db_path, overwrite = TRUE),
+    "Removed the existing demo"
+  )
+  expect_false(file.exists(db_path))
+  expect_false(file.exists(demo$config))
+  expect_false(file.exists(demo$pc_province_map))
+})
+
+test_that("a db_path that does not exist yet is accepted silently", {
+  expect_silent(
+    expect_null(episodic_demo_check_db_path(tempfile(fileext = ".sqlite")))
+  )
+})

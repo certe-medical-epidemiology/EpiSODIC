@@ -18,6 +18,7 @@
 - BREAKING: `EPISODIC_GEO_DATA` no longer falls back to the bundled Netherlands geometry; without it the dashboard shows its bar-chart fallback
 - BREAKING: `EPISODIC_PC_PROVINCE_MAP` no longer falls back to Dutch province ranges; without it the province level of the lattice stays empty
 - BREAKING: the whole-catchment region code and the `GEBIED-` area prefix are now `config$geography`, which changes every geographic stream key
+- BREAKING: `episodic_demo()` refuses a `db_path` that already exists and refuses a MariaDB DSN; `overwrite = TRUE` rebuilds a demo in place
 - An unsupported `EPISODIC_LANGUAGE` warns once and falls back to English instead of erroring on every render
 - The dashboard sets `lang` and `dir` on the document, and the stylesheet uses logical properties, so Arabic renders right to left
 - Mail headers are RFC 2047 encoded and message bodies base64 encoded, so non-ASCII subjects and reports survive every relay
