@@ -17,6 +17,23 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
+#' How many detectors the agreement component is scored out of
+#'
+#' The four in `R/detect_*.R`: Farrington, `same_place`, `rare_trigger`
+#' and MEM. `agreement_component` is `detector_agreement / n_detectors`,
+#' so the denominator *is* the scale that component is expressed on, and
+#' every caller has to use the same one or the scores are not comparable.
+#' `episodic_add_manual_cluster()` passed 1, which handed every manual
+#' cluster a full agreement component where an equivalent
+#' single-detector cluster scores a quarter of one - contradicting that
+#' function's own promise that manual and detected clusters sort
+#' comparably. A manual cluster's `detector_agreement` now means what it
+#' means everywhere else: how much corroboration there is, on the scale
+#' the four built-in detectors define.
+#' @keywords internal
+#' @noRd
+episodic_n_detectors <- 4L
+
 #' Priority score
 #'
 #' A weighted mean of seven rescaled components, 0-100. Any component

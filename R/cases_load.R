@@ -138,11 +138,8 @@ episodic_institutions_resolve <- function(con, cases) {
     drop = FALSE
   ]
 
-  distinct$hashed_key <- vapply(
-    distinct$institution_key,
-    function(k) digest::digest(k, algo = "sha1", serialize = FALSE),
-    character(1),
-    USE.NAMES = FALSE
+  distinct$hashed_key <- episodic_institution_key_hash(
+    distinct$institution_key
   )
 
   # Read what is on file once, write the batch once, then read the ids
@@ -228,4 +225,36 @@ episodic_institutions_resolve <- function(con, cases) {
     on_file$institution_id[match(distinct$hashed_key, on_file$institution_key)]
   )
   stats::setNames(ids, distinct$institution_key)
+}
+
+#' The stored form of an operator's own institution identifier
+#'
+#' `episodic_institution.institution_key` holds a SHA-1 of whatever
+#' identifier the operator uses internally, never the identifier itself,
+#' so an institution can be tracked across runs without EpiSODIC's
+#' database carrying a laboratory's internal codes in the clear. Every
+#' feed that names an institution therefore has to be hashed the same way
+#' before it can be matched.
+#'
+#' In one place because it was in two, and only one of them did it: the
+#' case feed hashed, and `episodic_institution_activity_load()` compared
+#' the operator's raw key against the stored hash. Since
+#' `vignette("data-format")` tells an operator the activity feed's
+#' `institution_key` "matches the cases feed", every real deployment's
+#' activity rows were skipped, patient-day normalisation never engaged,
+#' and every run finished `partial` with a warning saying the keys
+#' matched no institution - which was true, and entirely the wrong thing
+#' to go looking for.
+#'
+#' @param institution_key A character vector of operator-supplied keys.
+#' @return A character vector of 40-character SHA-1 hex digests.
+#' @keywords internal
+#' @noRd
+episodic_institution_key_hash <- function(institution_key) {
+  vapply(
+    as.character(institution_key),
+    function(k) digest::digest(k, algo = "sha1", serialize = FALSE),
+    character(1),
+    USE.NAMES = FALSE
+  )
 }

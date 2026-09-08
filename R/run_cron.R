@@ -175,8 +175,11 @@ episodic_pkg_versions_extended <- function() {
 #' @param institution_activity Optional: your hospital patient-days
 #'   data (see [episodic_synthetic_institution_activity()] for the
 #'   expected shape), normally as a data set, or as a function taking the
-#'   current institutions table. Leave as `NULL` (the default) if you have
-#'   none - detection falls back to raw case counts.
+#'   current institutions table. Its `institution_key` is the same
+#'   identifier your case data uses - EpiSODIC hashes both on load, so a
+#'   key taken from the institutions table this passes a function is
+#'   already hashed and will match nothing. Leave as `NULL` (the default)
+#'   if you have none - detection falls back to raw case counts.
 #' @param episodic_config_path The config path.
 #' @param host,account Recorded with the run for audit purposes; default
 #'   to the current machine and account.
@@ -1085,7 +1088,7 @@ episodic_run_cron_body <- function(con,
           severity_weight = if (nrow(pc) > 0) pc$severity_weight[1] else 1,
           growth_slope = growth_slope,
           detector_agreement = candidate$detector_agreement,
-          n_detectors = 4, # farrington, same_place, rare_trigger, mem
+          n_detectors = episodic_n_detectors,
           density_ratio = density_ratio,
           spatial_concentration = spatial_concentration,
           weights = weights

@@ -50,8 +50,12 @@ test_that("episodic_institution_activity_load() resolves institution_key to inst
   on.exit(DBI::dbDisconnect(env$con))
   institution <- episodic_db_institutions(env$con)
 
+  # The operator's own key, not the stored hash of it. This is the
+  # documented requirement ("matches the cases feed") and it is what a
+  # real activity extract carries; the loader hashes it to match, exactly
+  # as the case feed's own key was hashed on the way in.
   activity <- data.frame(
-    institution_key = institution$institution_key[1],
+    institution_key = "hosp-app-read",
     period_start = "2025-03-01",
     period_end = "2025-03-07",
     patient_days = 500,
@@ -148,4 +152,73 @@ test_that("episodic_institution_activity_load() errors clearly when required col
     ),
     "required column"
   )
+})
+
+test_that("the activity feed keys institutions exactly as the case feed does", {
+  # vignette("data-format") tells an operator the activity feed's
+  # `institution_key` "matches the cases feed". The case feed's key is
+  # hashed on load and this one was not, so it was compared raw against
+  # the stored hash and could never match: every activity row was
+  # skipped, patient-day normalisation never engaged, and the run
+  # finished `partial` blaming a data problem that did not exist.
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  institution <- episodic_db_institutions(env$con)
+
+  # What is stored is the hash, not the operator's own key.
+  expect_equal(
+    institution$institution_key[1],
+    episodic_institution_key_hash("hosp-app-read")
+  )
+  expect_false(institution$institution_key[1] == "hosp-app-read")
+
+  activity <- data.frame(
+    institution_key = "hosp-app-read",
+    period_start = "2025-04-01",
+    period_end = "2025-04-07",
+    patient_days = 700,
+    stringsAsFactors = FALSE
+  )
+  counts <- episodic_institution_activity_load(env$con, activity)
+  expect_equal(counts$n_written, 1)
+  expect_equal(counts$n_skipped, 0)
+})
+
+test_that("an activity feed built from the stored hashes is skipped, and says why", {
+  # The specific, easily-made mistake: taking the key from
+  # episodic_db_institutions() rather than from your own extract. It
+  # reads as "none of my institutions are known", which sends somebody
+  # looking in the wrong feed entirely.
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  institution <- episodic_db_institutions(env$con)
+
+  activity <- data.frame(
+    institution_key = institution$institution_key[1],
+    period_start = "2025-04-01",
+    period_end = "2025-04-07",
+    patient_days = 700,
+    stringsAsFactors = FALSE
+  )
+  expect_warning(
+    counts <- episodic_institution_activity_load(env$con, activity),
+    "look like stored hashes"
+  )
+  expect_equal(counts$n_skipped, 1)
+})
+
+test_that("the synthetic activity feed carries the same keys the synthetic case feed does", {
+  # Both come from the same registry, so an operator copying the demo
+  # gets a feed that actually matches - and the suite stops exercising a
+  # path no real deployment can follow.
+  activity <- episodic_synthetic_institution_activity(
+    start_date = as.Date("2025-01-06"),
+    end_date = as.Date("2025-02-03")
+  )
+  cases <- episodic_synthetic_cases(
+    start_date = as.Date("2025-01-06"),
+    end_date = as.Date("2025-02-03")
+  )
+  expect_true(all(activity$institution_key %in% cases$institution_key))
+  expect_true(any(grepl("^HOSP-", activity$institution_key)))
 })

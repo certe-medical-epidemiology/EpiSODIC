@@ -73,7 +73,11 @@
 #'   (the default) when the source has no such concept - exactly as for
 #'   a detected cluster whose detector cannot produce one.
 #' @param detector_agreement How many independent sources agree on this
-#'   cluster. Defaults to `1L` (a single external source).
+#'   cluster. Defaults to `1L` (a single external source). Scored on the
+#'   same scale as a detected cluster's, i.e. out of the four built-in
+#'   detectors, so `2L` here carries the weight of two detectors
+#'   agreeing and the two kinds of cluster rank against each other
+#'   honestly.
 #' @param priority_score Optional override. When `NA` (the default), it
 #'   is computed with the same `episodic_priority_score()` used for
 #'   detected clusters, so manual and detected clusters sort comparably -
@@ -230,7 +234,12 @@ episodic_add_one_manual_cluster <- function(con, spec, i, user_id, weights) {
       severity_weight = severity_weight,
       growth_slope = growth_slope,
       detector_agreement = spec$detector_agreement[i],
-      n_detectors = 1,
+      # The same scale the cron scores on, not 1 - see
+      # `episodic_n_detectors`. Scored out of 1, every manual cluster
+      # took a full agreement component while an equivalent
+      # single-detector cluster takes a quarter of one, which is not
+      # "sorts comparably" in any sense a board would recognise.
+      n_detectors = episodic_n_detectors,
       density_ratio = NA,
       spatial_concentration = spatial_concentration,
       weights = weights

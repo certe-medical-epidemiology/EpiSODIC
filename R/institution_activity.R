@@ -50,12 +50,20 @@ episodic_institution_activity_load <- function(con, activity) {
   episodic_validate_institution_activity(activity)
 
   institutions <- episodic_db_institutions(con)
+  # Hashed to match, exactly as the case feed's own `institution_key` is
+  # (`episodic_institution_key_hash()`). This compared the operator's raw
+  # key against the stored hash, which cannot ever match - so for every
+  # deployment that followed the documented requirement ("matches the
+  # cases feed") the entire activity feed was skipped, patient-day
+  # normalisation silently never engaged, and every run finished
+  # `partial` pointing at a data problem that did not exist.
+  hashed <- episodic_institution_key_hash(activity$institution_key)
   n_written <- 0L
   skipped_keys <- character(0)
   for (i in seq_len(nrow(activity))) {
     row <- activity[i, ]
     institution_id <- institutions$institution_id[
-      institutions$institution_key == row$institution_key
+      institutions$institution_key == hashed[i]
     ]
     if (length(institution_id) == 0) {
       skipped_keys <- c(skipped_keys, row$institution_key)
@@ -81,6 +89,13 @@ episodic_institution_activity_load <- function(con, activity) {
   if (length(skipped_keys) > 0) {
     unmatched <- unique(skipped_keys)
     shown <- if (length(unmatched) > 5) unmatched[1:5] else unmatched
+    # A key that is already 40 hex characters is almost certainly the
+    # stored hash, taken from `episodic_db_institutions()` rather than
+    # from the operator's own extract - a specific and easily-made
+    # mistake that otherwise reads as "none of my institutions are
+    # known", which sends somebody looking for a problem in the wrong
+    # feed entirely.
+    looks_hashed <- all(grepl("^[0-9a-f]{40}$", unmatched))
     warning(
       length(skipped_keys),
       " of ",
@@ -91,6 +106,15 @@ episodic_institution_activity_load <- function(con, activity) {
       paste(shown, collapse = ", "),
       if (length(unmatched) > length(shown)) ", ..." else "",
       "). ",
+      if (looks_hashed) {
+        paste0(
+          "These look like stored hashes rather than your own keys: supply ",
+          "the same `institution_key` your case data uses, which EpiSODIC ",
+          "hashes on load. "
+        )
+      } else {
+        ""
+      },
       "Detection falls back to raw counts for those institutions.",
       call. = FALSE
     )
@@ -452,9 +476,18 @@ episodic_check_institution_activity_advice <- function(activity) {
 #' pass to [episodic_run_cron()] as `institution_activity` -
 #' normally a data frame or `tibble`.
 #'
-#' @param institutions A data frame (or tibble) of institutions (as
-#'   returned by your own institution registry), filtered internally to
-#'   hospitals only.
+#' @param institutions A data frame (or tibble) of institutions from
+#'   **your own** registry, with `institution_key`, `institution_type`
+#'   and `n_beds`; filtered internally to hospitals only. Defaults to the
+#'   synthetic registry `episodic_synthetic_cases()` draws on, so the two
+#'   feeds line up with no arguments at all.
+#'
+#'   `institution_key` must be the same identifier your case feed uses,
+#'   not the one `episodic_db_institutions()` returns: EpiSODIC stores a
+#'   hash of your key rather than the key itself, and both feeds are
+#'   hashed on load. Handing this function the database's own table
+#'   produces a feed whose keys are already hashed, and none of it will
+#'   match.
 #' @param start_date,end_date The period to generate weekly rows for.
 #'   Defaults to the five years up to today, matching
 #'   [episodic_synthetic_cases()].
@@ -471,7 +504,7 @@ episodic_check_institution_activity_advice <- function(activity) {
 #' )
 #' head(activity)
 #' @export
-episodic_synthetic_institution_activity <- function(institutions,
+episodic_synthetic_institution_activity <- function(institutions = episodic_synthetic_institutions(),
                                                     start_date = end_date - 5 * 365,
                                                     end_date = Sys.Date(),
                                                     seed = 1) {

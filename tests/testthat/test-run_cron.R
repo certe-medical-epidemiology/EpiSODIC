@@ -217,9 +217,10 @@ test_that("episodic_run_cron() writes institution activity rows only when instit
   episodic_run_cron(
     db_path = path_with,
     cases = small_source,
+    # Raw keys, exactly as an operator's own extract carries them - the
+    # institutions table this function is handed holds hashed ones.
     institution_activity = function(institutions) {
       episodic_synthetic_institution_activity(
-        institutions,
         start_date = as.Date("2024-06-01"),
         end_date = as.Date("2024-06-30")
       )
@@ -452,9 +453,7 @@ test_that("episodic_run_cron() accepts a data frame directly for cases/denominat
     0
   )
 
-  institutions <- episodic_db_institutions(con)
   small_activity <- episodic_synthetic_institution_activity(
-    institutions,
     start_date = as.Date("2024-06-01"),
     end_date = as.Date("2024-06-30")
   )

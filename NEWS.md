@@ -40,6 +40,8 @@
 - The reporting-completion curve skipped every lag at which nothing had arrived yet, so short lags read as far more complete than they were and the incompleteness zone sized from it was too narrow
 - Deduplication grouped on `patient_key` and `pathogen` glued together with no separator, so two patients whose keys and pathogens concatenate alike were treated as one and a positive was silently dropped
 - A suppression parent's case list was re-read once per overlapping child
+- The institution activity feed compared the operator's own `institution_key` against the stored hash of it, so every row was skipped and patient-day normalisation never engaged on any real deployment
+- A manual cluster's detector agreement was scored out of one detector instead of four, so every manual cluster outranked a comparable detected one
 
 # EpiSODIC 0.15.0
 
