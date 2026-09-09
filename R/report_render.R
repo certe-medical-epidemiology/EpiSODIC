@@ -242,6 +242,69 @@ episodic_quarto_available <- function() {
   requireNamespace("quarto", quietly = TRUE) && !is.null(quarto::quarto_path())
 }
 
+#' Resolve the directory reports or config exports are written to
+#'
+#' `config$report$output_dir`, once set, always wins, and a value that
+#' cannot be created is refused rather than silently falling back to
+#' something else - a configured path pointing nowhere is an error, not
+#' a fallback. Left unset, `db_path` is taken as a SQLite filesystem path
+#' and `<subdir>` resolved next to it, which is the behaviour every call
+#' site had before this existed.
+#'
+#' That fallback only means something for SQLite. For a MariaDB/MySQL
+#' DSN (`mysql://user:password@host:port/db`), `db_path` is not a
+#' filesystem path at all, and taking its "parent directory" turns the
+#' DSN's own text, credentials included, into a directory name on disk -
+#' the database password ends up on the filesystem, in backups, in `ls`
+#' output. So with no `report.output_dir` configured and a DSN for
+#' `db_path`, this refuses outright rather than deriving anything from
+#' it.
+#'
+#' Used by every call site that used to compute
+#' `file.path(dirname(db_path), <subdir>)` directly - the scheduled
+#' report dispatcher, the dossier's on-demand render button, and
+#' [episodic_config_export()] - so they cannot drift from each other or
+#' from this rule. Pure aside from the `dir.create()` needed to validate
+#' a configured path; takes a config list and a path string, not a
+#' connection, so it is unit-testable without a database.
+#'
+#' @param config The resolved configuration.
+#' @param db_path Path to the EpiSODIC database, or a MariaDB/MySQL DSN.
+#' @param subdir The subdirectory to resolve within the base directory,
+#'   e.g. `"reports"` or `"config_exports"`.
+#' @return The resolved directory path, as a single string.
+#' @keywords internal
+#' @noRd
+episodic_report_output_dir <- function(config, db_path, subdir) {
+  configured <- config$report$output_dir
+  if (!is.null(configured) && !is.na(configured) && nzchar(configured)) {
+    output_dir <- file.path(configured, subdir)
+    dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+    if (!dir.exists(output_dir)) {
+      stop(
+        "'report.output_dir' is set to '", configured, "', but '",
+        output_dir, "' could not be created. Point it at a directory ",
+        "that exists, or whose parent is writable.",
+        call. = FALSE
+      )
+    }
+    return(output_dir)
+  }
+
+  if (episodic_db_dialect(db_path) != "sqlite") {
+    stop(
+      "The database is a MariaDB/MySQL DSN, and 'report.output_dir' is ",
+      "not configured, so there is no filesystem path to derive one ",
+      "from. Deriving it from the DSN would put the database password ",
+      "into a directory name on disk, so this refuses instead - set ",
+      "'report.output_dir' in the instance configuration.",
+      call. = FALSE
+    )
+  }
+
+  file.path(dirname(db_path), subdir)
+}
+
 #' Resolve the Quarto report template to use
 #'
 #' An operator's own template, if `EPISODIC_QUARTO_REPORT` (or the

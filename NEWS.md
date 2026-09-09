@@ -21,6 +21,7 @@
 - Half the lattice resolved its geography from the run's own configuration and half from `EPISODIC_CONFIG`, so a run given a config path silently matched no case to any geographic stream
 - `episodic_db_create()` leaked the connection it opened when refusing a database that already had tables
 - With `EPISODIC_PC_PROVINCE_MAP` unset, a run said the shipped Dutch province ranges were in use, which they no longer are
+- Scheduled reports, on-demand renders and config exports derived their output directory from `dirname()` of the database path, which for a MariaDB DSN turned the database password into a directory name on disk; a new `report.output_dir` config key is now required for a DSN and refuses outright when unset
 
 # EpiSODIC 0.16.0
 
