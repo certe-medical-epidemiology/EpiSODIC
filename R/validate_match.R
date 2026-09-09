@@ -175,6 +175,10 @@ episodic_validation_overlap <- function(cluster_cases, truth_cases) {
 #' different questions and reporting only the flattering one would be a
 #' choice rather than a measurement:
 #'
+#' - `opened_run` is the run that first raised the matched cluster at all,
+#'   whatever it held then. This is the earliest date anything appeared
+#'   on the board that turned out to be this outbreak, and it is the most
+#'   generous of the three.
 #' - `detected_run` is the first run at which the matched cluster held
 #'   `min_recall` of the outbreak *as it stood that day*. This is the
 #'   operational answer: the day a dossier existed that was mostly this
@@ -184,6 +188,10 @@ episodic_validation_overlap <- function(cluster_cases, truth_cases) {
 #'   after `detected_run`, and for a slowly accruing outbreak it can be
 #'   much later, because it is partly a measure of how fast the outbreak
 #'   grew.
+#'
+#' All three are reported. Picking one and calling it the delay would be
+#' choosing a number rather than measuring one, and they can be days
+#' apart.
 #'
 #' An outbreak nothing matched is not dropped, and its delay is not zero,
 #' absent or imputed: `detected` is `FALSE`, every delay is `NA`, and
@@ -198,6 +206,10 @@ episodic_validation_overlap <- function(cluster_cases, truth_cases) {
 #'   `source_key`, `sample_date`.
 #' @param run_dates Every run date in the replay, in order.
 #' @param min_recall,min_precision The matching thresholds.
+#' @param cluster_opened The run each cluster first appeared in, as a
+#'   `Date` vector named by `cluster_id`. `NULL` leaves `opened_run` and
+#'   `delay_from_open` `NA`, which is what a caller with no cluster table
+#'   in hand gets - not a zero, and not the first run date.
 #' @return A data frame with one row per outbreak in `truth`.
 #' @keywords internal
 #' @noRd
@@ -206,7 +218,8 @@ episodic_validation_outbreak_rows <- function(overlap,
                                               truth_cases,
                                               run_dates,
                                               min_recall = 0.5,
-                                              min_precision = 0.5) {
+                                              min_precision = 0.5,
+                                              cluster_opened = NULL) {
   run_dates <- sort(as.Date(run_dates))
   if (length(run_dates) == 0) {
     stop(
@@ -264,6 +277,11 @@ episodic_validation_outbreak_rows <- function(overlap,
     } else {
       sum(own_dates > detected_run)
     }
+    opened_run <- if (is.na(cluster_id) || is.null(cluster_opened)) {
+      as.Date(NA)
+    } else {
+      as.Date(unname(cluster_opened[as.character(cluster_id)]))
+    }
     data.frame(
       outbreak_id = id,
       label = ob$label,
@@ -285,8 +303,10 @@ episodic_validation_outbreak_rows <- function(overlap,
       cluster_id = cluster_id,
       recall_full = if (is.null(best)) NA_real_ else best$recall_full,
       precision = if (is.null(best)) NA_real_ else best$precision,
+      opened_run = opened_run,
       detected_run = detected_run,
       captured_run = captured_run,
+      delay_from_open = as.numeric(opened_run - ob$first_day),
       delay_from_first = as.numeric(detected_run - ob$first_day),
       delay_from_third = if (length(own_dates) >= 3) {
         as.numeric(detected_run - own_dates[3])
@@ -362,8 +382,10 @@ episodic_validation_outbreak_rows_empty <- function() {
     cluster_id = integer(0),
     recall_full = numeric(0),
     precision = numeric(0),
+    opened_run = as.Date(character(0)),
     detected_run = as.Date(character(0)),
     captured_run = as.Date(character(0)),
+    delay_from_open = numeric(0),
     delay_from_first = numeric(0),
     delay_from_third = numeric(0),
     censor_days = numeric(0),

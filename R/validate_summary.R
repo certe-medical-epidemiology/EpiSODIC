@@ -197,6 +197,19 @@ episodic_validation_summarise <- function(outbreaks, clusters, runs) {
 
   # ------------------------------------------------------------------
   # 2. Timeliness
+  # Three delays, because the day something first appeared on the board,
+  # the day what appeared was mostly this outbreak, and the day it held
+  # most of the whole outbreak are three different claims, and they can
+  # be days apart. Reporting one of them as "the delay" would be a
+  # choice rather than a measurement.
+  add(episodic_validation_value_row(
+    "delay_from_cluster_opening",
+    "overall",
+    "detected outbreaks that began inside the window",
+    timeliness$seed,
+    timeliness$delay_from_open,
+    unit = "days"
+  ))
   add(episodic_validation_value_row(
     "delay_from_first_case",
     "overall",

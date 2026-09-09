@@ -158,6 +158,49 @@ test_that("an outbreak is detected when a cluster holds enough of it", {
   expect_equal(rows$delay_from_first, 4)
   expect_equal(rows$n_cases_remaining, 2L)
   expect_equal(rows$share_remaining, 0.5)
+  # No cluster table was passed, so when the cluster first appeared is
+  # not known here. NA, not the first run date.
+  expect_true(is.na(rows$opened_run))
+  expect_true(is.na(rows$delay_from_open))
+})
+
+test_that("the delay is also measured from when the cluster first appeared", {
+  membership <- cluster_cases(
+    # The cluster exists from 5 January holding three endemic cases, and
+    # only becomes this outbreak's dossier a week later.
+    list("2025-01-05", 1L, c("x1", "x2", "x3")),
+    list("2025-01-12", 1L, c("a1", "a2", "a3"))
+  )
+  truth <- data.frame(
+    outbreak_id = "A",
+    label = "Test",
+    pathogen = "Norovirus",
+    institution_key = "H1",
+    ward = "W1",
+    first_day = as.Date("2025-01-01"),
+    peak_day = as.Date("2025-01-02"),
+    last_day = as.Date("2025-01-11"),
+    n_cases = 4L,
+    expected_channel = "same_place",
+    expected_level = "pathogen_ward",
+    stringsAsFactors = FALSE
+  )
+  rows <- episodic_validation_outbreak_rows(
+    episodic_validation_overlap(membership, truth_cases),
+    truth,
+    truth_cases[truth_cases$outbreak_id == "A", ],
+    as.Date(c("2025-01-05", "2025-01-12")),
+    min_recall = 0.5,
+    cluster_opened = stats::setNames(as.Date("2025-01-05"), "1")
+  )
+
+  expect_equal(rows$opened_run, as.Date("2025-01-05"))
+  expect_equal(rows$delay_from_open, 4)
+  # Something was on the board four days in; it was not mostly this
+  # outbreak until eleven. Both are true, and they are what the two
+  # columns are for.
+  expect_equal(rows$detected_run, as.Date("2025-01-12"))
+  expect_equal(rows$delay_from_first, 11)
 })
 
 test_that("an outbreak nothing found is censored, not dropped", {
