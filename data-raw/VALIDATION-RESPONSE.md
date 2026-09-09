@@ -160,49 +160,67 @@ parse them into existence. A MySQL instance still gets 24 tables and 0
 foreign keys, silently, and `episodic_db_dsn_mysql()` still advertises
 MySQL as supported.
 
-### The open decision, now a live one
+### Fixed, once the maintainer confirmed nothing is deployed
 
-It is no longer hypothetical: there is a production MySQL instance running
-EpiSODIC today with no referential integrity on any of its tables.
+The mariadb dialect now moves every inline reference to a **table-level**
+`FOREIGN KEY (col) REFERENCES tbl(col)` clause, which both servers honour.
+It is **derived from the schema**, not listed beside it: a list is a second
+place to forget a foreign key, and forgetting one is silent on MySQL. A
+reference added to `schema.sql` tomorrow is converted tomorrow, and
+`test-schema_mariadb.R` asserts that the number of clauses generated equals
+the number of references in the file, that none is left inline, and that
+every target is a table the schema declares. That is the answer to Task B
+item 3: the part that could silently drift is now derived rather than
+maintained.
 
-Emitting **table-level** `FOREIGN KEY (col) REFERENCES tbl(col)` clauses
-for the mariadb/mysql dialect would give both servers real constraints and
-would remove the need for the `FOREIGN_KEY_CHECKS` dance on MariaDB. It is
-the correct fix and it is not a small one:
+Measured, after the change:
 
-- the rewrite layer would have to derive the constraint list from the
-  SQLite schema rather than find-and-replace it, which is the "something
-  that cannot silently drift" the brief asks about in Task B item 3;
-- an existing MySQL instance rebuilt under it would begin enforcing
-  constraints it has never enforced, and any orphan rows already in it
-  would surface at that moment;
-- it needs its own tests on both servers;
-- and a live MySQL instance cannot simply be rebuilt. Adding the
-  constraints to one that already holds data means a migration that finds
-  the orphan rows first and names them, rather than failing on the first
-  `ALTER TABLE` with an errno and no list. Any orphans that exist are
-  themselves a finding: they are rows that the SQLite path would never
-  have allowed.
+| Server | Tables | Foreign keys | Orphan row |
+|---|---|---|---|
+| MariaDB 10.11 | 24 | **37** | refused |
+| MariaDB 11.8 | 24 | **37** | refused |
+| MySQL 8.4 | 24 | **37** | refused |
 
-I have not done it. It is a decision about a second dialect's semantics,
-not a defect to be quietly patched inside a validation PR, and the
-maintainer should say whether it belongs to #45, to #49, or to an issue of
-its own. My recommendation is an issue of its own, done next, because it
-is the last thing standing between "the MariaDB path is tested" and "the
-MariaDB path is correct".
+Thirty-seven is exactly the number of inline references in
+`inst/sql/schema.sql`. The live test asserts the count against
+`information_schema.REFERENTIAL_CONSTRAINTS` rather than merely asserting
+that some constraint exists, because a schema that lost half of them looks
+exactly like one that kept them until something writes an orphan.
+
+The SQLite path is untouched. SQLite honours inline references, so
+`schema.sql` keeps them and rewriting a schema that already works would be
+a change with only risk in it.
+
+**A MariaDB or MySQL database created before this has no constraints and
+cannot gain them without being recreated.** No migration is offered,
+because there is nothing deployed to migrate: the maintainer has confirmed
+the one test instance can be dropped. If that ever stops being true, the
+migration has to find the orphan rows first and name them, rather than
+failing on the first `ALTER TABLE` with an errno and no list - and any
+orphans it finds are themselves a finding, since the SQLite path would
+never have allowed them.
+
+### A third defect, found by running the live tests against MySQL
+
+`episodic_db_runs()` bound `limit` to `LIMIT ?` without `as.integer()`,
+which its three sibling functions all do. `limit = 200` is a double in R,
+and MySQL's prepared-statement protocol refuses a double there:
+`Incorrect arguments to mysqld_stmt_execute`. The Activity screen worked on
+SQLite and on MariaDB and failed on MySQL, which is the dialect the only
+real instance runs.
 
 ### What is in CI now
 
-`.github/workflows/mariadb.yaml` runs the whole suite against a
-`mariadb:11` service container on one Linux job, and fails the build if the
-live tests skipped themselves - a green job that proved nothing is the
-failure the workflow exists to prevent. It does not test MySQL. Adding a
-MySQL job is cheap and worth doing once the decision above is made,
-because today a MySQL job would pass while creating no constraints.
+`.github/workflows/mariadb.yaml` runs the whole suite against **both**
+`mariadb:11` and `mysql:8` service containers, one Linux job each, and
+fails the build if the live tests skipped themselves - a green job that
+proved nothing is the failure the workflow exists to prevent. Testing one
+server is what hid the inline-reference behaviour for the life of the
+package: the two servers disagree, and only one of them says so out loud.
 
 ---
 
-## 3b. A second defect, found by the same route, not yet fixed
+## 3b. A second defect, found by the same route, fixed
 
 The production instance shares its schema with another application's
 `brmo_*` tables. That shape breaks a different thing.
@@ -247,9 +265,10 @@ The fix is small and in two parts:
   means "created by 0.12.x or earlier"; it can equally mean "never created
   at all", and those need different answers.
 
-Not done, pending the maintainer's word on whether it belongs here, in
-#45, or in an issue of its own. It is unrelated to detection and does not
-block the harness, which is why I stopped rather than fixing it.
+Both parts are done, at the maintainer's instruction, in #49.
+`tests/testthat/test-shared_schema.R` covers the migration guard, and
+`test-mariadb_live.R` covers the routing against a real server with a
+co-tenant table in the schema.
 
 ---
 
@@ -340,11 +359,10 @@ and does not require rebasing anything.
 
 ## 7. What is not done
 
-- **Table-level foreign keys for the mariadb/mysql dialect** (§3), and the
-  migration that would add them to the live instance. The decision is the
-  maintainer's; the instance has none today.
-- **The shared-schema misrouting** (§3b), which is small and unrelated to
-  detection.
+- **A migration that adds foreign keys to an existing MySQL/MariaDB
+  database.** Not needed today, since nothing is deployed and the one test
+  instance can be dropped and recreated. It becomes needed the first time
+  an instance holds data worth keeping.
 - **A MySQL job in CI.** Worth adding, but not before the above, because it
   would pass today while creating no constraints.
 - **Issues #46, #47, #48**, untouched, as the brief instructed. Note for
