@@ -214,6 +214,17 @@ report:
   # which is a disclosure decision, not a display preference.
   small_count_threshold: 5
 
+  # Base directory rendered outbreak reports and configuration exports
+  # are written into, as <output_dir>/reports and
+  # <output_dir>/config_exports respectively. Set to ~ (the default) to
+  # derive it instead: the sibling directory next to the database file,
+  # for a SQLite EPISODIC_DB. That derivation is meaningless for a
+  # MariaDB/MySQL DSN - its "parent directory" is text cut out of the
+  # DSN itself, credentials included - so this key is mandatory whenever
+  # EPISODIC_DB is a DSN; a scheduled report or an on-demand render then
+  # refuses outright rather than writing anywhere.
+  output_dir: ~
+
 # Notifications: not configured by default. Set in the instance
 # configuration file (EPISODIC_CONFIG) to enable. This key is excluded
 # from config_hash so notification settings never alter detection

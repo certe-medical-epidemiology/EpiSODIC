@@ -34,10 +34,11 @@
 #'   Settings-screen `notifications` override, if one exists - `NA`/unset
 #'   skips this and exports the YAML-resolved configuration only.
 #' @param episodic_config_path The config path.
-#' @param output_dir Directory to write the zip into. Defaults to a
-#'   `config_exports/` directory next to `db_path` (mirroring where
-#'   [episodic_report_render()] writes outbreak reports), or a temporary
-#'   directory if `db_path` is not set.
+#' @param output_dir Directory to write the zip into. Defaults to what
+#'   `episodic_report_output_dir()` resolves for a `config_exports/`
+#'   subdirectory (mirroring where [episodic_report_render()] writes
+#'   outbreak reports), or a temporary directory if `db_path` is not
+#'   set.
 #' @param include_secrets If `FALSE` (the default), notification secrets
 #'   (SMTP/webhook/client passwords) are replaced with `"***"` in the
 #'   exported configuration - the same masking the Settings screen applies
@@ -70,7 +71,7 @@ episodic_config_export <- function(db_path = Sys.getenv("EPISODIC_DB", unset = N
 
   if (is.null(output_dir)) {
     output_dir <- if (!is.na(db_path) && nzchar(db_path)) {
-      file.path(dirname(db_path), "config_exports")
+      episodic_report_output_dir(config, db_path, "config_exports")
     } else {
       tempdir()
     }

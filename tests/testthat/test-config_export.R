@@ -38,6 +38,14 @@ test_that("episodic_config_mask_secrets() returns NULL for NULL input", {
   expect_null(episodic_config_mask_secrets(NULL))
 })
 
+test_that("episodic_config_export() derives output_dir from a SQLite db_path when not given one", {
+  skip_if_not_installed("zip")
+  db_path <- episodic_test_db_path()
+  on.exit(unlink(db_path))
+  path <- episodic_config_export(db_path = db_path)
+  expect_equal(dirname(path), file.path(dirname(db_path), "config_exports"))
+})
+
 test_that("episodic_config_export() writes a zip containing the resolved config, without a database", {
   skip_if_not_installed("zip")
   out_dir <- tempfile("episodic_export_")

@@ -79,6 +79,68 @@ test_that("episodic_report_qmd_path() honours an operator-supplied path that act
   expect_equal(episodic_report_qmd_path(custom), custom)
 })
 
+test_that("episodic_report_output_dir() derives a sibling directory from a SQLite db_path when unset", {
+  db_path <- file.path(tempdir(), "episodic_test.sqlite")
+  config <- list(report = list(output_dir = NULL))
+  expect_equal(
+    episodic_report_output_dir(config, db_path, "reports"),
+    file.path(dirname(db_path), "reports")
+  )
+  config2 <- list(report = list(output_dir = NA))
+  expect_equal(
+    episodic_report_output_dir(config2, db_path, "config_exports"),
+    file.path(dirname(db_path), "config_exports")
+  )
+})
+
+test_that("episodic_report_output_dir() refuses a MariaDB DSN when report.output_dir is unset", {
+  dsn <- "mysql://episodic:episodic@127.0.0.1:3306/episodic_test"
+  config <- list(report = list(output_dir = NULL))
+  expect_error(
+    episodic_report_output_dir(config, dsn, "reports"),
+    "report.output_dir",
+    fixed = TRUE
+  )
+  # the DSN's own text, credentials included, must never reach a
+  # filesystem path - so it must not even appear in the error message
+  err <- tryCatch(
+    episodic_report_output_dir(config, dsn, "reports"),
+    error = function(e) e
+  )
+  expect_false(grepl("episodic:episodic", conditionMessage(err), fixed = TRUE))
+})
+
+test_that("episodic_report_output_dir() honours a configured output_dir for either dialect", {
+  base <- tempfile("episodic_output_dir_")
+  config <- list(report = list(output_dir = base))
+
+  sqlite_dir <- episodic_report_output_dir(config, "/some/db.sqlite", "reports")
+  expect_equal(sqlite_dir, file.path(base, "reports"))
+  expect_true(dir.exists(sqlite_dir))
+
+  dsn <- "mysql://episodic:episodic@127.0.0.1:3306/episodic_test"
+  dsn_dir <- episodic_report_output_dir(config, dsn, "config_exports")
+  expect_equal(dsn_dir, file.path(base, "config_exports"))
+  expect_true(dir.exists(dsn_dir))
+
+  # a resolved directory never contains the DSN's credentials, whichever
+  # branch produced it
+  expect_false(grepl("@", dsn_dir, fixed = TRUE))
+  expect_false(grepl("://", dsn_dir, fixed = TRUE))
+})
+
+test_that("episodic_report_output_dir() refuses a configured output_dir that cannot be created", {
+  # a file, not a directory, so dir.create() underneath it fails
+  blocker <- tempfile("episodic_output_dir_blocker_")
+  writeLines("not a directory", blocker)
+  config <- list(report = list(output_dir = file.path(blocker, "nested")))
+  expect_error(
+    episodic_report_output_dir(config, "/some/db.sqlite", "reports"),
+    "report.output_dir",
+    fixed = TRUE
+  )
+})
+
 test_that("episodic_report_render() picks version_no = max(existing) + 1, not a fixed increment", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))

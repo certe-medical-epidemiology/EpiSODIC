@@ -79,9 +79,10 @@ episodic_scheduled_report_terminal <- function(cluster_row) {
 #'   Settings-screen channel change reaches this without a redeploy).
 #' @param run_id The current run ID, recorded on every send it makes.
 #' @param run_date The run date, for judging cadence.
-#' @param db_path Path to the database (or MariaDB DSN) - used only to
-#'   derive the sibling `reports/` directory renders are written to,
-#'   exactly like the dossier's on-demand render button does.
+#' @param db_path Path to the database (or MariaDB DSN) - passed to
+#'   `episodic_report_output_dir()` to resolve the `reports/` directory
+#'   renders are written to, exactly like the dossier's on-demand render
+#'   button does.
 #' @param episodic_config_path Passed through to
 #'   [episodic_report_render()] unchanged.
 #' @return Invisible `NULL`.
@@ -188,7 +189,7 @@ episodic_scheduled_report_send_one <- function(con,
       rendered <- episodic_report_render(
         con,
         cluster_id = subscription$cluster_id,
-        output_dir = file.path(dirname(db_path), "reports"),
+        output_dir = episodic_report_output_dir(config, db_path, "reports"),
         user_id = NA,
         include_linelist = subscription$include_linelist,
         episodic_config_path = episodic_config_path,

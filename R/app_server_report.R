@@ -23,14 +23,15 @@
 #' re-checks `episodic_user_is_epidemiologist()` server-side before
 #' rendering, same as every other write action (the DOM/onclick is not a
 #' trust boundary, and an account deactivated or demoted mid-session must
-#' not keep writing on its already-open session). Reports are written to
-#' `<directory containing db_path>/reports/`, so a report lands next to
-#' the database rather than needing its own configuration knob.
+#' not keep writing on its already-open session). The report is written
+#' to the directory `episodic_report_output_dir()` resolves - by default
+#' `<directory containing db_path>/reports/`, next to the database,
+#' unless `report.output_dir` is configured.
 #'
 #' @param input,output,session The Shiny server function's own arguments.
 #' @param con A [DBI::DBIConnection-class].
-#' @param db_path Path to the SQLite database (used only to derive the
-#'   sibling `reports/` directory).
+#' @param db_path Path to the database, or a MariaDB DSN - passed to
+#'   `episodic_report_output_dir()` to resolve the `reports/` directory.
 #' @param lang Session language.
 #' @param current_user A `shiny::reactiveVal` holding the signed-in user's
 #'   account row, or `NULL`.
@@ -75,13 +76,20 @@ episodic_app_server_report <- function(input,
     render_error(NULL)
 
     result <- tryCatch(
-      episodic_report_render(
-        con,
-        cluster_id = input$report_render_submit,
-        output_dir = file.path(dirname(db_path), "reports"),
-        user_id = user$user_id,
-        lang = lang
-      ),
+      {
+        output_dir <- episodic_report_output_dir(
+          episodic_config_resolve(con = con),
+          db_path,
+          "reports"
+        )
+        episodic_report_render(
+          con,
+          cluster_id = input$report_render_submit,
+          output_dir = output_dir,
+          user_id = user$user_id,
+          lang = lang
+        )
+      },
       error = function(e) e
     )
 

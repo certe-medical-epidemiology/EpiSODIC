@@ -20,10 +20,11 @@ skips this and exports the YAML-resolved configuration only.}
 
 \item{episodic_config_path}{The config path.}
 
-\item{output_dir}{Directory to write the zip into. Defaults to a
-\verb{config_exports/} directory next to \code{db_path} (mirroring where
-\code{\link[=episodic_report_render]{episodic_report_render()}} writes outbreak reports), or a temporary
-directory if \code{db_path} is not set.}
+\item{output_dir}{Directory to write the zip into. Defaults to what
+\code{episodic_report_output_dir()} resolves for a \verb{config_exports/}
+subdirectory (mirroring where \code{\link[=episodic_report_render]{episodic_report_render()}} writes
+outbreak reports), or a temporary directory if \code{db_path} is not
+set.}
 
 \item{include_secrets}{If \code{FALSE} (the default), notification secrets
 (SMTP/webhook/client passwords) are replaced with \code{"***"} in the
