@@ -15,7 +15,7 @@ chart of case counts by area instead of a map."><meta property="og:image" conten
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,8 +65,8 @@ chart of case counts by area instead of a map.</p>
 <dl><dt id="arg-path">path<a class="anchor" aria-label="anchor" href="#arg-path"></a></dt>
 <dd><p>Path to an <code>.rds</code> file holding an <code>sf</code> object with <code>pc</code>
 and <code>geometry</code> columns. Defaults to the <code>EPISODIC_GEO_DATA</code>
-environment variable; if unset (or the file does not exist), falls
-back to the shipped Netherlands postcode default.</p></dd>
+environment variable. With none set, there is no map and the
+dashboard shows its bar-chart fallback instead.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -87,15 +87,32 @@ orientation, via <code>EPISODIC_GEO_DATA_OVERLAY</code> and
 <code>episodic_geo_overlay_resolve()</code>. This layer carries no case counts, so
 it only needs a <code>geometry</code> column.</p>
     </div>
+    <div class="section level2">
+    <h2 id="why-there-is-no-default-map">Why there is no default map<a class="anchor" aria-label="anchor" href="#why-there-is-no-default-map"></a></h2>
+
+
+<p>This used to fall back to the Netherlands PC4 geometry bundled with
+the package whenever <code>EPISODIC_GEO_DATA</code> was unset, and even after
+warning about an operator file it could not use. Postcode-like codes
+are four digits in a great many countries, so a laboratory anywhere
+else got a silent, confident map of the Netherlands with its own case
+counts joined onto whichever Dutch postcodes happened to share a
+number - a plausible-looking wrong answer, which is worse than no
+answer. There is now no default: with nothing configured the map is
+simply absent, and the dashboard falls back to a bar chart of case
+counts by area, which is correct everywhere.</p>
+<p><code><a href="episodic_demo.html">episodic_demo()</a></code> sets <code>EPISODIC_GEO_DATA</code> to the bundled Netherlands
+geometry itself, so the demo still shows a map.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># NULL when unset (or when the sf package is not installed)</span></span></span>
 <span class="r-in"><span><span class="fu">episodic_geo_overlay_resolve</span><span class="op">(</span>path <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
-<span class="r-in"><span><span class="co"># falls back to the shipped Netherlands postcode default when sf is</span></span></span>
-<span class="r-in"><span><span class="co"># installed, or NULL when it is not</span></span></span>
-<span class="r-in"><span><span class="va">geo</span> <span class="op">&lt;-</span> <span class="fu">episodic_geo_source_resolve</span><span class="op">(</span>path <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># NULL when unset (or when the sf package is not installed)</span></span></span>
+<span class="r-in"><span><span class="fu">episodic_geo_source_resolve</span><span class="op">(</span>path <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

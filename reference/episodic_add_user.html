@@ -15,7 +15,7 @@ holder chooses their own password the first time they sign in."><meta property="
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,7 +58,8 @@ holder chooses their own password the first time they sign in.</p>
 <span>  <span class="va">email</span>,</span>
 <span>  <span class="va">password</span>,</span>
 <span>  role <span class="op">=</span> <span class="st">"epidemiologist"</span>,</span>
-<span>  is_admin <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  is_admin <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  must_change <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -97,6 +98,15 @@ detail.</p></dd>
 screen (manage notification channels, other accounts, and export the
 configuration). Independent of <code>role</code> - an admin is still either an
 epidemiologist or a viewer for everything outside Settings.</p></dd>
+
+
+<dt id="arg-must-change">must_change<a class="anchor" aria-label="anchor" href="#arg-must-change"></a></dt>
+<dd><p>Whether the account holder is required to replace
+<code>password</code> the first time they sign in. <code>TRUE</code> (the default) is
+right for every real account: the password you type here has been
+in your shell history and quite possibly in a message to the person
+it belongs to. <code>FALSE</code> is for a throwaway account in a throwaway
+database, which is what <code><a href="episodic_demo.html">episodic_demo()</a></code> creates.</p></dd>
 
 </dl></div>
     <div class="section level2">

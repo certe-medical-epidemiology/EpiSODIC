@@ -99,7 +99,10 @@ episodic_add_manual_cluster(
 - detector_agreement:
 
   How many independent sources agree on this cluster. Defaults to `1L`
-  (a single external source).
+  (a single external source). Scored on the same scale as a detected
+  cluster's, i.e. out of the four built-in detectors, so `2L` here
+  carries the weight of two detectors agreeing and the two kinds of
+  cluster rank against each other honestly.
 
 - priority_score:
 

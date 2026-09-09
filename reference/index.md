@@ -64,6 +64,9 @@ Create and connect to the database EpiSODIC stores its data in.
 
   Connect Using the `EPISODIC_DB` Environment Variable
 
+- [`episodic_db_migrate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_migrate.md)
+  : Bring an Existing Database up to the Current Schema
+
 - [`episodic_db_truncate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_truncate.md)
   : Empty Every EpiSODIC Table, Keeping the Schema Itself
 

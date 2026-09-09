@@ -17,10 +17,11 @@ episodic_demo(
   email = "demo@example.org",
   password = "demo",
   launch = TRUE,
-  run_date = episodic_synthetic_week_end(),
+  run_date = NULL,
   lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  cases = function() episodic_synthetic_cases(end_date = run_date),
-  denominators = function() episodic_synthetic_denominators(end_date = run_date),
+  cases = NULL,
+  denominators = NULL,
+  overwrite = FALSE,
   ...
 )
 ```
@@ -31,7 +32,10 @@ episodic_demo(
 
   Path to the SQLite database to create. Defaults to a temporary file,
   so repeated calls never collide and nothing is left behind once the R
-  session ends.
+  session ends. A database that already exists is refused, and a
+  MariaDB/MySQL DSN is refused outright: this call generates synthetic
+  cases and runs detection over them, which is contamination anywhere
+  but a throwaway database.
 
 - username, full_name, email, password:
 
@@ -48,10 +52,22 @@ episodic_demo(
 
 - run_date:
 
-  The date to run detection as of. Defaults to the end of the last
-  complete week, so the week the statistical detectors test is a full
-  one however far into the week you happen to run the demo - which is
-  how surveillance reads its own weeks anyway.
+  The date to run detection as of. Left `NULL` (the default) it is
+  chosen for you, and which way depends on whose data this is: for the
+  bundled synthetic data, the end of the last complete week, so the week
+  the statistical detectors test is a full one however far into the week
+  you happen to run the demo; for a `cases` extract you supply yourself,
+  the last day that extract covers, and the demo says so when it does
+  it.
+
+  That second rule is the demo's alone. Detection is bounded to a
+  lookback window around `run_date`, so a run dated today against an
+  extract from last year correctly finds nothing - which is right for a
+  scheduled run and useless for someone trying the system out on a
+  historical export.
+  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  therefore keeps dating its runs from the system date, as a real
+  surveillance run must.
 
 - lang:
 
@@ -79,6 +95,13 @@ episodic_demo(
   on your extract yourself to see the same findings, plus the advisory
   ones.
 
+- overwrite:
+
+  If `TRUE`, an existing demo database at `db_path` and the two
+  configuration files beside it are deleted and rebuilt. `FALSE` (the
+  default) refuses instead. This deletes whatever is at that path, so it
+  is deliberately not something the demo decides for you.
+
 - ...:
 
   Arguments passed on to
@@ -87,6 +110,21 @@ episodic_demo(
 ## Value
 
 Invisibly, `db_path`.
+
+## What the demo writes beside the database
+
+EpiSODIC has no built-in geography - no default map, and no built-in
+rule for turning a postcode into a province - because a default for
+either would be a default for one country. The demo therefore configures
+its own, exactly the way a real deployment does: two files named after
+`db_path` (`<name>-config.yaml` and `<name>-pc-province.csv`), plus the
+Netherlands postcode geometry bundled with the package.
+
+They are left in place, so a database built with `launch = FALSE` can be
+re-opened later with the same geography by setting `EPISODIC_DB`,
+`EPISODIC_CONFIG`, `EPISODIC_PC_PROVINCE_MAP` and `EPISODIC_GEO_DATA`
+back to them - the paths are printed when the demo finishes. Without
+them the database still opens; it simply shows no map and no provinces.
 
 ## Check your data before you run anything
 
@@ -131,38 +169,45 @@ cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
 db_path <- episodic_demo(launch = FALSE, cases = cases, denominators = NULL)
+#> Running detection as of 2025-03-31, the last day your case data covers.
 #> Creating synthetic cases...
-#> 2026-09-08 05:51:05.008 | episodic_run_cron() starting (host=runnervmejwal, account=runner)
-#> 2026-09-08 05:51:05.008 | Resolving configuration
-#> 2026-09-08 05:51:05.013 | Configuration resolved (hash ac437073d10a)
-#> 2026-09-08 05:51:05.013 | Connecting to database
-#> 2026-09-08 05:51:05.013 | No existing database found - creating one
-#> 2026-09-08 05:51:05.026 | Database connected (dialect: sqlite)
-#> 2026-09-08 05:51:05.027 | Run 1 started
-#> 2026-09-08 05:51:05.027 | Resolving and checking case data
-#> 2026-09-08 05:51:05.036 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
-#> 2026-09-08 05:51:05.037 | Beginning transaction
-#> 2026-09-08 05:51:05.038 | Loading pathogen configuration
-#> 2026-09-08 05:51:05.040 | Pathogen configuration loaded (23 pathogen(s))
-#> 2026-09-08 05:51:05.040 | Loading case data into the database
-#> 2026-09-08 05:51:05.112 | Case data loaded: supplied=419, deduplicated=410, inserted=410
-#> 2026-09-08 05:51:05.113 | Fetching all known cases and institutions
-#> 2026-09-08 05:51:05.114 | Enumerating lattice streams
-#> 2026-09-08 05:51:05.307 | Running same-place detector
-#> 2026-09-08 05:51:05.350 | Same-place detector found 4 detection(s)
-#> 2026-09-08 05:51:05.350 | Running rare-trigger detector
-#> 2026-09-08 05:51:05.353 | Rare-trigger detector found 1 detection(s)
-#> 2026-09-08 05:51:05.354 | Farrington owes 8 week(s) this run
-#> 2026-09-08 05:51:05.355 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
-#> 2026-09-08 05:51:05.819 | Stream reconciliation done: 5 detection(s), 5 new signal(s), 0 updated signal(s)
-#> 2026-09-08 05:51:05.819 | Suppressing lattice
-#> 2026-09-08 05:51:05.823 | Committing transaction
-#> 2026-09-08 05:51:05.826 | Finishing run 1 (status: success)
-#> 2026-09-08 05:51:06.937 | episodic_run_cron() finished in 1.9s (status: success)
+#> 2026-09-09 09:33:40.058 | episodic_run_cron() starting (host=runnervmejwal, account=runner)
+#> 2026-09-09 09:33:40.059 | Resolving configuration
+#> 2026-09-09 09:33:40.065 | Configuration resolved (hash 2b3e2271751c)
+#> 2026-09-09 09:33:40.065 | Connecting to database
+#> 2026-09-09 09:33:40.066 | No existing database found - creating one
+#> 2026-09-09 09:33:40.260 | Database connected (dialect: sqlite)
+#> 2026-09-09 09:33:40.261 | Run 1 started
+#> 2026-09-09 09:33:40.262 | Resolving and checking case data
+#> 2026-09-09 09:33:40.277 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
+#> 2026-09-09 09:33:40.277 | Beginning transaction
+#> 2026-09-09 09:33:40.279 | Loading pathogen configuration
+#> 2026-09-09 09:33:40.282 | Pathogen configuration loaded (23 pathogen(s))
+#> 2026-09-09 09:33:40.282 | Loading case data into the database
+#> 2026-09-09 09:33:40.393 | Case data loaded: supplied=419, deduplicated=410, inserted=410
+#> 2026-09-09 09:33:40.393 | Fetching all known cases and institutions
+#> 2026-09-09 09:33:40.396 | Enumerating lattice streams
+#> 2026-09-09 09:33:40.454 | Running same-place detector
+#> 2026-09-09 09:33:40.546 | Same-place detector found 6 detection(s)
+#> 2026-09-09 09:33:40.547 | Running rare-trigger detector
+#> 2026-09-09 09:33:40.554 | Rare-trigger detector found 1 detection(s)
+#> 2026-09-09 09:33:40.555 | Farrington owes 8 week(s) this run
+#> 2026-09-09 09:33:40.557 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
+#> 2026-09-09 09:33:41.248 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)
+#> 2026-09-09 09:33:41.248 | Suppressing lattice
+#> 2026-09-09 09:33:41.253 | Committing transaction
+#> 2026-09-09 09:33:41.257 | Finishing run 1 (status: success)
+#> 2026-09-09 09:33:42.662 | episodic_run_cron() finished in 2.6s (status: success)
 #> OK
 #> ===========================================================================
 #> 
 #>   EpiSODIC demo account (admin) - username: demo, password: demo
+#> 
+#>   To re-open this demo later, with its geography:
+#>     Sys.setenv(EPISODIC_DB = "/tmp/RtmpCjYnD7/file1d9674e26d7e.sqlite",
+#>                EPISODIC_CONFIG = "/tmp/RtmpCjYnD7/file1d9674e26d7e-config.yaml",
+#>                EPISODIC_PC_PROVINCE_MAP = "/tmp/RtmpCjYnD7/file1d9674e26d7e-pc-province.csv")
+#>     episodic_run_app()
 #> 
 #> ===========================================================================
 file.remove(db_path)

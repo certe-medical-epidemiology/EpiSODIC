@@ -29,7 +29,7 @@ cluster only closes when an epidemiologist records that verdict."><meta property
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -156,7 +156,11 @@ a detected cluster whose detector cannot produce one.</p></dd>
 
 <dt id="arg-detector-agreement">detector_agreement<a class="anchor" aria-label="anchor" href="#arg-detector-agreement"></a></dt>
 <dd><p>How many independent sources agree on this
-cluster. Defaults to <code>1L</code> (a single external source).</p></dd>
+cluster. Defaults to <code>1L</code> (a single external source). Scored on the
+same scale as a detected cluster's, i.e. out of the four built-in
+detectors, so <code>2L</code> here carries the weight of two detectors
+agreeing and the two kinds of cluster rank against each other
+honestly.</p></dd>
 
 
 <dt id="arg-priority-score">priority_score<a class="anchor" aria-label="anchor" href="#arg-priority-score"></a></dt>

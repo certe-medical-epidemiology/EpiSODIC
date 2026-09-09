@@ -1,5 +1,130 @@
 # Changelog
 
+## EpiSODIC 0.16.0
+
+### New
+
+- [`episodic_db_migrate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_migrate.md)
+  brings an existing database up to the current schema; the schema now
+  carries a recorded version and
+  [`episodic_db_connect()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_connect.md)
+  refuses a database it does not recognise
+- `config$geography` names the whole-catchment code and the area-code
+  rule, so the two coarsest lattice levels are no longer hardcoded to
+  one country
+- `config$same_place$lookback_days` and
+  `config$rare_trigger$lookback_days` bound how far back the rule-based
+  detectors report hits
+- `config$report$small_count_threshold` is documented in the shipped
+  defaults instead of only existing in code
+- An instance configuration is validated against the shipped defaults:
+  an unknown key, a wrong type, or a null where a value is needed stops
+  the run and names the key
+- [`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
+  gains `must_change`, for an account that does not need a forced
+  password change
+- Refused sign-ins are recorded in `episodic_app_login_failure` with the
+  username tried and which of the three reasons it was
+- The Activity screen gains category filter chips: assessments,
+  closures, mutes, sign-ins, detection runs
+
+### Changed
+
+- BREAKING: `access.require_login` now defaults to `true`, so a freshly
+  installed instance is closed to anonymous visitors
+- BREAKING: `EPISODIC_CONFIG`, `EPISODIC_STYLE` and
+  `EPISODIC_QUARTO_REPORT` set to a path that does not exist are now
+  errors rather than silent fallbacks
+- BREAKING: `EPISODIC_GEO_DATA` no longer falls back to the bundled
+  Netherlands geometry; without it the dashboard shows its bar-chart
+  fallback
+- BREAKING: `EPISODIC_PC_PROVINCE_MAP` no longer falls back to Dutch
+  province ranges; without it the province level of the lattice stays
+  empty
+- BREAKING: the whole-catchment region code and the `GEBIED-` area
+  prefix are now `config$geography`, which changes every geographic
+  stream key
+- BREAKING:
+  [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+  refuses a `db_path` that already exists and refuses a MariaDB DSN;
+  `overwrite = TRUE` rebuilds a demo in place
+- An unsupported `EPISODIC_LANGUAGE` warns once and falls back to
+  English instead of erroring on every render
+- The dashboard sets `lang` and `dir` on the document, and the
+  stylesheet uses logical properties, so Arabic renders right to left
+- Mail headers are RFC 2047 encoded and message bodies base64 encoded,
+  so non-ASCII subjects and reports survive every relay
+- [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+  configures its geography through the documented environment variables
+  rather than relying on built-in defaults
+- [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+  dates its run from the last day a supplied `cases` extract covers, and
+  says so;
+  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  still dates every run from the system date
+- An explicit YAML `null` now keeps its key during the configuration
+  merge instead of removing it
+- Sign-in rows on the Activity screen are withheld from a reader who has
+  not signed in
+- `episodic_run_cron(debug = TRUE)` no longer prints per-query SQL and
+  encoding dumps; it reports phase and per-stream progress
+
+### Fixed
+
+- `same_place` and `rare_trigger` re-emitted every hit in the entire
+  case history on every run, which reset `runs_since_detected` so
+  `close_after_runs` could never fire and grew `episodic_detection`
+  without bound
+- Farrington aggregated to the week containing `run_date`, testing a
+  partial week against full-week baselines, so it was near-blind on
+  every day except Sunday
+- `episodic_run_cron(run_date = ...)` was ignored by reconciliation,
+  which judged staleness against the wall clock
+- An already-closed cluster was closed again on every subsequent run,
+  filling `episodic_cluster_state` with duplicate closures
+- A closed cluster that was re-detected went on absorbing cases silently
+  instead of returning to the board for reassessment
+- A merge into an already-assessed cluster did not flag it as changed
+  since assessment
+- The forced password change was skipped for any account named `demo`
+  whose password was `demo`
+- Lattice suppression could hide every detected cluster behind a
+  manually added one, which holds no `episodic_case` rows so scored zero
+  overlap with all of them
+- Lattice suppression could chain, putting a cluster behind one that was
+  itself suppressed and showing the far end of the chain on no dossier
+  at all
+- The reporting-completion curve skipped every lag at which nothing had
+  arrived yet, so short lags read as far more complete than they were
+  and the incompleteness zone sized from it was too narrow
+- Deduplication grouped on `patient_key` and `pathogen` glued together
+  with no separator, so two patients whose keys and pathogens
+  concatenate alike were treated as one and a positive was silently
+  dropped
+- A suppression parent’s case list was re-read once per overlapping
+  child
+- The institution activity feed compared the operator’s own
+  `institution_key` against the stored hash of it, so every row was
+  skipped and patient-day normalisation never engaged on any real
+  deployment
+- A manual cluster’s detector agreement was scored out of one detector
+  instead of four, so every manual cluster outranked a comparable
+  detected one
+- The dossier narrative could state that positivity had risen, or stayed
+  flat, for a cluster whose positivity was never measured at all
+- A first positive test was reported as positivity rising
+- `episodic_html_escape()` left single quotes unescaped, and every
+  attribute in the notification HTML is single-quoted
+- `same_place` merged its hit windows on gaps in index rather than gaps
+  in time, so two outbreaks years apart at one place became a single
+  window spanning both
+- `same_place` and `rare_trigger` reported cases sampled after
+  `run_date`, so a replayed run reported outbreaks from its own future
+- `episodic_app_data_asof()` took its date from a UTC timestamp and
+  compared it against a local one, putting the incompleteness window a
+  day out for the hours after local midnight, and read the wrong date
+  entirely for a backfilled run
+
 ## EpiSODIC 0.15.0
 
 ### New

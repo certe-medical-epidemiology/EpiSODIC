@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -100,8 +100,12 @@ backend” above.</td>
 <td>Dashboard/report language: <code>en</code>, <code>ar</code>,
 <code>nl</code>, <code>fr</code>, <code>de</code>, <code>hi</code>,
 <code>zh</code>, or <code>es</code>. Defaults to <code>en</code> if
-unset. Fixed for the whole running app - there is no in-app language
-switcher.</td>
+unset, and falls back to <code>en</code> with a warning (once, not on
+every render) for anything else - a locale-shaped <code>en_GB</code> or
+<code>nl_NL</code> is a language EpiSODIC has no translations for. Also
+sets the document’s <code>lang</code> and <code>dir</code>, so Arabic
+renders right to left. Fixed for the whole running app - there is no
+in-app language switcher.</td>
 </tr>
 <tr class="odd">
 <td><code>EPISODIC_CONFIG</code></td>
@@ -113,7 +117,11 @@ argument), <code><a href="../reference/episodic_run_app.html">episodic_run_app()
 <code>same_place</code>/<code>rare_trigger</code>/Farrington settings,
 notification channels, and <code>access.require_login</code>), overlaid
 key-by-key on the shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml" class="external-link"><code>inst/config/episodic_default_config.yaml</code></a>.
-See <code><a href="../articles/deployment.html">vignette("deployment")</a></code>’s “Closing the app to anonymous
+Set to a path that does not exist, or to a file that is not valid YAML,
+this stops with an error rather than falling back to the defaults; every
+key it sets is checked against the shipped defaults, so a misspelled key
+or a value of the wrong type is named rather than silently ignored. See
+<code><a href="../articles/deployment.html">vignette("deployment")</a></code>’s “Opening the app to anonymous
 visitors” for <code>access.require_login</code>.</td>
 </tr>
 <tr class="even">
@@ -124,6 +132,8 @@ argument)</td>
 <td>Path to an instance override of the UI colour palette and typography
 (<code>font</code>, <code>font_size_base</code>), overlaid key-by-key on
 the shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_style.yaml" class="external-link"><code>inst/config/episodic_default_style.yaml</code></a>.
+Set to a path that does not exist, or to a file that is not valid YAML,
+this stops with an error rather than quietly using the shipped palette.
 Deliberately separate from <code>EPISODIC_CONFIG</code>: colour and
 typography are display concerns, never part of the
 detection-reproducibility guarantee.</td>
@@ -136,10 +146,12 @@ argument)</td>
 <td>Path to an <code>.rds</code> file holding your own geographic
 reference data (an <code>sf</code> object with
 <code>pc</code>/<code>geometry</code> columns) for the choropleth map -
-any country, any area unit. EpiSODIC ships one worked example (Dutch
-postcodes), used only when this is unset. See
-<code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic reference data”
-section.</td>
+any country, any area unit. There is no default: with this unset the
+dashboard shows its bar-chart fallback instead of a map, since a default
+map is a default <em>country</em>. EpiSODIC does bundle one worked
+example (Dutch postcodes) that <code><a href="../reference/episodic_demo.html">episodic_demo()</a></code> points this
+at. See <code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic reference
+data” section.</td>
 </tr>
 <tr class="even">
 <td><code>EPISODIC_GEO_DATA_OVERLAY</code></td>
@@ -160,11 +172,12 @@ argument)</td>
 <td>Path to a CSV (<code>pc</code>, <code>province_code</code> columns)
 mapping your postcodes to provinces/states/regions, for L4 stream
 detection and for naming the province beside each postcode in the
-dashboard. Unset, it defaults to Dutch demo ranges that only match Dutch
-postcodes; set but unusable (no such file, unreadable, no rows, wrong
-columns, or a repeated <code>pc</code>) stops the run and says which of
-those it is, rather than falling back. See
-<code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic reference data”
+dashboard. Unset, no postcode resolves to a province and L4 simply has
+nothing to detect on - there is no built-in rule, because deriving a
+province from a postcode is country-specific; set but unusable (no such
+file, unreadable, no rows, wrong columns, or a repeated <code>pc</code>)
+stops the run and says which of those it is, rather than falling back.
+See <code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic reference data”
 section.</td>
 </tr>
 <tr class="even">
@@ -174,7 +187,9 @@ section.</td>
 argument)</td>
 <td>Path to an operator’s own Quarto report template, overriding the
 shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd" class="external-link"><code>inst/report/episodic_default_report.qmd</code></a>.
-See “Custom report templates” above.</td>
+Set to a path that does not exist, this stops with an error rather than
+silently sending reports out under EpiSODIC’s own layout instead of
+yours. See “Custom report templates” above.</td>
 </tr>
 </tbody>
 </table>

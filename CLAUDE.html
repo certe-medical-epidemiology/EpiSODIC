@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,11 +41,13 @@
 <p>EpiSODIC is a complete and automated outbreak detection and assessment system. It is designed to run at any laboratory, in any country, against any set of pathogens, with no dependency on any one laboratory information system or data warehouse. Therefore, the aimed quality standard admits no concessions. Every component, from data ingestion to signal detection to reporting, must be production-grade, and must remain so after every change:</p>
 <ul><li>No shortcuts, no placeholder logic, no “good enough for now”. If a proper implementation is more effort than a shortcut, implement it properly or check with the user.</li>
 <li>No silent failures. Every error path must be handled explicitly and must fail loudly, never fail quietly and produce a plausible-looking wrong result.</li>
+<li>
+<strong>Absence of a measurement is never a measurement of zero.</strong> This is the failure mode this codebase produces most often, and it has been found in four separate places: lattice suppression read a manual cluster’s zero case-overlap as “the rise is spread thinly” rather than “there is nothing here to measure”; the reporting-completion curve dropped the lags at which nothing had arrived yet instead of counting them as zero; the priority score’s own docstring gets it right, and <code><a href="reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code> still scored agreement on a different denominator; and three dossier narrative fragments passed <code>NA</code> positivity through <code>%||% 0</code> and then wrote sentences about it. Note that <code>%||%</code> in this package (<code>R/interpretation.R</code>) also swallows <code>NA</code>, not only <code>NULL</code>, which is exactly how the last of those happened. When a quantity cannot be computed, drop the component, skip the fragment, or return <code>NULL</code> - never substitute a zero and carry on.</li>
 <li>No hidden assumptions about a specific laboratory’s data structure, coding system, or naming convention. Anything laboratory-specific must be configurable, not hardcoded.</li>
 <li>No untested code paths merged into main. Every function that touches detection logic, data transformation, or reporting must have accompanying tests before it is considered complete, and must be placed in a separate branch WITH a PR, so every change regarding these items must automatically be put into a PR.</li>
 <li>No inconsistent interfaces. Function signatures, argument naming, return types, and error conventions must be uniform across the entire codebase, as if written by a single disciplined author, not accreted piecemeal.</li>
 </ul><p>The operator provides case data in a documented format; EpiSODIC handles everything from statistical detection through cluster reconciliation to dashboard presentation and outbreak reporting.</p>
-<p>The dashboard and reports are available in English, Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and Spanish.</p>
+<p>The dashboard and reports are available in English, Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and Spanish. The app sets <code>lang</code> and <code>dir</code> on the document from the resolved language, and <code>inst/app/www/episodic.css</code> uses CSS <em>logical</em> properties throughout (<code>margin-inline-start</code>, <code>border-inline-start</code>, <code>text-align: start</code>, <code>inset-inline-start</code>) rather than physical <code>left</code>/<code>right</code> ones, so Arabic mirrors correctly. A <code>margin-left</code> added to that stylesheet is a bug.</p>
 </div>
 <div class="section level2">
 <h2 id="architecture">Architecture<a class="anchor" aria-label="anchor" href="#architecture"></a></h2>
@@ -66,6 +68,7 @@
 <div class="section level3">
 <h3 id="detectors">Detectors<a class="anchor" aria-label="anchor" href="#detectors"></a></h3>
 <p>Four independent detectors, each producing detections per stream:</p>
+<p>Both rule-based detectors (<code>same_place</code>, <code>rare_trigger</code>) are bounded by a configured <code>lookback_days</code> and report only hits whose most recent case falls inside it. Unbounded, they re-emit the whole case history on every run, which resets <code>runs_since_detected</code> and makes <code>reconciliation.close_after_runs</code> unreachable. Farrington is bounded the same way, by <code>farrington.max_weeks_tested</code>, and aggregates to the last <em>complete</em> week relative to <code>run_date</code> - never the partial week <code>run_date</code> falls in.</p>
 <table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>Detector</th>
 <th>Method</th>
 <th>File</th>
@@ -94,6 +97,7 @@
 <code>pathogen_region</code> (coarsest)</li>
 </ul><p>Detection runs against every eligible stream independently. After detection, lattice suppression removes redundant signals (a hospital-level cluster that is entirely explained by a ward-level cluster in the same hospital).</p>
 <p>Stream keys are SHA-1 hashes of (pathogen, level, institution_id, ward, region_code), computed in <code>R/lattice_stream_key.R</code>.</p>
+<p>Nothing about the lattice’s geography is hardcoded to one country. The whole-catchment code (L5) and the area-code rule (L3) are <code>config$geography</code>, resolved by <code>episodic_geography_config()</code>; the province level (L4) is an operator-supplied <code>pc</code> -&gt; <code>province_code</code> CSV pointed at by <code>EPISODIC_PC_PROVINCE_MAP</code>, with no built-in rule at all, since deriving a province from a postcode is country-specific. Unconfigured, L4 stays empty and says so on the dashboard’s Info screen. Likewise <code>EPISODIC_GEO_DATA</code> has no default: without it there is no map, never another country’s.</p>
 </div>
 <div class="section level3">
 <h3 id="database">Database<a class="anchor" aria-label="anchor" href="#database"></a></h3>
@@ -130,22 +134,41 @@
 <td>Deduplicated case records</td>
 </tr><tr><td><code>episodic_institution</code></td>
 <td>cron</td>
-<td>Institution reference data</td>
+<td>Institution reference data (<code>institution_key</code> is a SHA-1 of the operator’s own key, never the key itself)</td>
 </tr><tr><td><code>episodic_cluster_note</code></td>
 <td>app</td>
 <td>Per-cluster free-text notes (append-only)</td>
 </tr><tr><td><code>episodic_cluster_manual_case</code></td>
 <td><code><a href="reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code></td>
 <td>Case-level detail for <code>origin = 'manual'</code> clusters only</td>
-</tr></tbody></table><p>Write ownership is strict: cron-owned tables are written only by <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code>, app-owned tables only by the Shiny app. The app never updates or deletes, only inserts (event-sourced).</p>
+</tr><tr><td><code>episodic_app_login_failure</code></td>
+<td>app</td>
+<td>Refused sign-ins (username tried, reason)</td>
+</tr><tr><td><code>episodic_schema_version</code></td>
+<td>
+<code><a href="reference/episodic_db_create.html">episodic_db_create()</a></code>, <code><a href="reference/episodic_db_migrate.html">episodic_db_migrate()</a></code>
+</td>
+<td>One row per applied schema version</td>
+</tr></tbody></table><p>The schema is versioned. <code>episodic_schema_version</code> (in <code>R/schema_migrate.R</code>) is what this build expects; <code><a href="reference/episodic_db_connect.html">episodic_db_connect()</a></code> refuses a database at any other version, naming <code><a href="reference/episodic_db_migrate.html">episodic_db_migrate()</a></code> as the fix. Any change to <code>inst/sql/schema.sql</code> that an existing database has to be brought along for means bumping that constant and adding a matching entry to <code>episodic_db_migrations()</code> - a function <code>(con, dialect)</code> that is idempotent, runs inside a transaction, and never drops or rewrites data.</p>
+<p>Write ownership is strict: cron-owned tables are written only by <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code>, app-owned tables only by the Shiny app. The app never updates or deletes, only inserts (event-sourced).</p>
 <p>One deliberate exception: <code><a href="reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code> (in <code>R/cluster_manual.R</code>) is a third, console-invoked write path into <code>episodic_stream</code>, <code>episodic_cluster</code> and <code>episodic_cluster_manual_case</code> (all otherwise cron-owned), for clusters detected by another algorithm or system rather than by <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> itself - exactly the same kind of exception <code><a href="reference/episodic_add_user.html">episodic_add_user()</a></code> already is for the app-owned <code>episodic_app_user</code> table. Such a cluster gets <code>origin = 'manual'</code> on <code>episodic_cluster</code> and is excluded from <code>episodic_reconcile_stream()</code>’s matching and auto-closure (see <code>episodic_db_clusters_for_stream()</code>); its case-level detail, if any, lives in <code>episodic_cluster_manual_case</code>, never in <code>episodic_case</code>, so it can never reach denominators, line lists or patient search.</p>
 </div>
 <div class="section level3">
 <h3 id="configuration">Configuration<a class="anchor" aria-label="anchor" href="#configuration"></a></h3>
 <p>YAML-based, with recursive merge. <code>inst/config/episodic_default_config.yaml</code> ships documented defaults. An operator’s instance config (pointed at by <code>EPISODIC_CONFIG</code>) overlays key-by-key. The resolved configuration is hashed (SHA-1 over canonical JSON) and stored on every run for reproducibility. <code>notifications</code> and <code>access</code> are deliberately excluded from the hash (see <code>episodic_config_unhashed_sections</code>): both govern how the instance is operated rather than what a run computes, and notification settings additionally contain secrets that must never reach <code>config_snapshot</code>.</p>
-<p>Key config sections: <code>reconciliation</code>, <code>eligibility</code>, <code>effect_size_floor</code>, <code>same_place</code>, <code>farrington</code>, <code>mem</code>, <code>rare_trigger</code>, <code>priority_score</code>, <code>notifications</code>, <code>suppression</code>, <code>access</code>.</p>
+<p>Key config sections: <code>reconciliation</code>, <code>eligibility</code>, <code>effect_size_floor</code>, <code>same_place</code>, <code>farrington</code>, <code>mem</code>, <code>rare_trigger</code>, <code>priority_score</code>, <code>geography</code>, <code>report</code>, <code>notifications</code>, <code>suppression</code>, <code>access</code>.</p>
+<p>An instance config is validated against the shipped defaults before merging (<code>episodic_config_validate()</code>): the defaults document the complete valid key set, so an unknown key, a value of the wrong type, or a null where a value is needed stops the run and names the key path. Adding a new key therefore means adding it to <code>inst/config/episodic_default_config.yaml</code>, or, if its children are named by the operator (pathogens, channels), to <code>episodic_config_open_sections</code>. A setting documented as “set to ~ to disable” must also be listed in <code>episodic_config_nullable_keys</code>.</p>
+<p><code>EPISODIC_CONFIG</code>, <code>EPISODIC_STYLE</code> and <code>EPISODIC_QUARTO_REPORT</code> set to a path that does not exist are errors, not fallbacks - the same rule <code>EPISODIC_PC_PROVINCE_MAP</code> already followed.</p>
 <p>Pathogen-specific parameters (episode length, serial interval, severity weight) live in <code>inst/config/episodic_default_pathogen_config.csv</code>.</p>
 </div>
+<div class="section level3">
+<h3 id="keys-that-must-agree-across-feeds">Keys that must agree across feeds<a class="anchor" aria-label="anchor" href="#keys-that-must-agree-across-feeds"></a></h3>
+<p>Two identifiers are transformed on the way in, and every feed that names one has to transform it the same way or it silently matches nothing:</p>
+<ul><li>
+<strong><code>institution_key</code></strong> is hashed by <code>episodic_institution_key_hash()</code> before it is stored, so the case feed and the institution-activity feed both supply the operator’s own key and both are hashed to match. The activity loader once compared the raw key against the stored hash, which meant patient-day normalisation never engaged on any real deployment.</li>
+<li>
+<strong>The patient-and-pathogen episode key</strong> is built by <code>episodic_case_group_key()</code>, which separates its parts with a control character rather than concatenating them. <code>episodic_cases_deduplicate()</code> groups on it and <code>episodic_db_last_case_dates()</code> names its anchor dates with it; if the two ever disagree, a stored episode is never matched and an incoming positive arrives as a spurious second case.</li>
+</ul></div>
 <div class="section level3">
 <h3 id="notifications">Notifications<a class="anchor" aria-label="anchor" href="#notifications"></a></h3>
 <p>Configured under the <code>notifications</code> key in the instance YAML. Six channels: ntfy, SMTP, sendmail, Microsoft 365, Teams, Slack. Dispatched after the detection transaction commits, never inside it. Errors are caught and logged, never propagated. Implementation split across <code>R/notify.R</code> (dispatcher, message building) and <code>R/notify_channels.R</code> (per-channel send functions).</p>
@@ -157,7 +180,9 @@
 <code>epidemiologist</code>: read + write (assess clusters, classify, close, mute, render reports)</li>
 <li>
 <code>viewer</code>: read-only (sees everything including patient-level detail, but cannot record assessments)</li>
-</ul><p>Accounts are added via <code><a href="reference/episodic_add_user.html">episodic_add_user()</a></code> at the R console; there is also in-app account management.</p>
+</ul><p><code>access.require_login</code> ships as <code>true</code>: an instance is closed to anonymous visitors unless an operator deliberately opens it. <code>episodic_app_require_login()</code> fails closed on anything it cannot read as <code>false</code>.</p>
+<p>Both sign-in outcomes are recorded: a success as a <code>login</code> event on the account, a refusal in <code>episodic_app_login_failure</code> (which of unknown username / wrong password / deactivated account, plus the username as typed - a failure may name no account, which is why it is not an <code>episodic_app_user_event</code>). Both surface on the Activity screen under the <code>signin</code> category, and are withheld from a reader who has not signed in - on an instance running open, “who has an account here” is not for a stranger. <code>episodic_auth_login()</code> still tells the visitor nothing about which of the three it was.</p>
+<p>Accounts are added via <code><a href="reference/episodic_add_user.html">episodic_add_user()</a></code> at the R console; there is also in-app account management.</p>
 </div>
 </div>
 <div class="section level2">

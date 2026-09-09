@@ -21,9 +21,9 @@ episodic_geo_source_resolve(path = Sys.getenv("EPISODIC_GEO_DATA", unset = NA))
 - path:
 
   Path to an `.rds` file holding an `sf` object with `pc` and `geometry`
-  columns. Defaults to the `EPISODIC_GEO_DATA` environment variable; if
-  unset (or the file does not exist), falls back to the shipped
-  Netherlands postcode default.
+  columns. Defaults to the `EPISODIC_GEO_DATA` environment variable.
+  With none set, there is no map and the dashboard shows its bar-chart
+  fallback instead.
 
 ## Value
 
@@ -44,13 +44,30 @@ orientation, via `EPISODIC_GEO_DATA_OVERLAY` and
 `episodic_geo_overlay_resolve()`. This layer carries no case counts, so
 it only needs a `geometry` column.
 
+## Why there is no default map
+
+This used to fall back to the Netherlands PC4 geometry bundled with the
+package whenever `EPISODIC_GEO_DATA` was unset, and even after warning
+about an operator file it could not use. Postcode-like codes are four
+digits in a great many countries, so a laboratory anywhere else got a
+silent, confident map of the Netherlands with its own case counts joined
+onto whichever Dutch postcodes happened to share a number - a
+plausible-looking wrong answer, which is worse than no answer. There is
+now no default: with nothing configured the map is simply absent, and
+the dashboard falls back to a bar chart of case counts by area, which is
+correct everywhere.
+
+[`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+sets `EPISODIC_GEO_DATA` to the bundled Netherlands geometry itself, so
+the demo still shows a map.
+
 ## Examples
 
 ``` r
 # NULL when unset (or when the sf package is not installed)
 episodic_geo_overlay_resolve(path = NA)
 #> NULL
-# falls back to the shipped Netherlands postcode default when sf is
-# installed, or NULL when it is not
-geo <- episodic_geo_source_resolve(path = NA)
+# NULL when unset (or when the sf package is not installed)
+episodic_geo_source_resolve(path = NA)
+#> NULL
 ```

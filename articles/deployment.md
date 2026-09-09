@@ -97,23 +97,36 @@ detection-reproducibility guarantee `EPISODIC_CONFIG`’s hash provides.
 
 ## Accounts
 
-By default, aggregate data is anonymous - the app opens read-only for
-anyone who reaches it. Signing in unlocks patient-level detail (the line
-list) for both roles below. Accounts are never created by users
-themselves; either an `is_admin` account provisions them from the in-app
-Settings screen, or whoever administers the database runs
+By default the app is **closed**: an anonymous visitor gets a sign-in
+prompt and nothing else. Accounts are never created by users themselves;
+either an `is_admin` account provisions them from the in-app Settings
+screen, or whoever administers the database runs
 [`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
-at the console.
+at the console. Signing in unlocks everything the account’s role allows,
+patient-level detail (the line list) included, for both roles below.
 
-### Closing the app to anonymous visitors
+### Opening the app to anonymous visitors
 
-If the instance is reachable from anywhere its data should not be, set
-`access.require_login` in your `EPISODIC_CONFIG` YAML:
+An instance already behind network controls that make anonymous
+reachability impossible may prefer to let colleagues read the aggregate
+screens - clusters, streams, the archive - without signing in, leaving
+sign-in needed only for the line list and for writing. Set
+`access.require_login` to `false` in your `EPISODIC_CONFIG` YAML:
 
 ``` yaml
 access:
-  require_login: true
+  require_login: false
 ```
+
+Weigh that deliberately rather than by habit. A cluster row names a
+pathogen, a ward or an institution, and a date range; in a small
+population that combination is often enough to identify who, even
+without the line list. The shipped default is `true` for the same
+reason: a surveillance system distributed to laboratories worldwide has
+to be safe in the state it arrives in, because the deployment that goes
+wrong is the one where nobody read this file.
+
+With `require_login: true` (the default):
 
 An anonymous visitor then gets a sign-in prompt and nothing else: no
 navigation, no status strip, not one row of data. This is enforced on
@@ -176,6 +189,34 @@ give the new account Settings-screen access as well - you need at least
 one such account to manage anything from the dashboard itself; every
 account after that can be added either way.
 
+### Watching sign-ins
+
+Both outcomes are recorded. A successful sign-in becomes a `login` event
+on the account; a refused one is written to `episodic_app_login_failure`
+with the username as typed and which of three reasons it was - no
+account with that username, wrong password, or account deactivated. The
+sign-in screen itself still says none of that to whoever is typing:
+unknown username and wrong password are one generic refusal to them, so
+that a stranger cannot use the login form to find out which usernames
+exist. The distinction is for the operator, in the record, afterwards.
+
+Both appear on the **Activity** screen, where the filter chips at the
+top narrow the log to sign-ins alone. A run of refused attempts on one
+account, or a series of usernames nobody has, is then visible the same
+day it happens.
+
+Sign-in rows are the one part of the Activity screen withheld from a
+reader who has not signed in - on an instance running with
+`require_login: false`, “who has an account here, and which usernames
+somebody has been trying” is precisely what not to hand a visitor.
+
+This is a record, not a defence: EpiSODIC has no account lockout and no
+rate limiting, and deliberately so - a surveillance dashboard that locks
+an epidemiologist out mid-outbreak because somebody else mistyped their
+username is worse than the attack it prevents. Keeping attackers off the
+port is your network’s job (see the top of this vignette); noticing that
+one got as far as the login form is this log’s.
+
 ## Where the database lives
 
 `EPISODIC_DB` (and every `db_path` argument that falls back to it) works
@@ -213,6 +254,34 @@ handful of tokens that differ under MariaDB/MySQL - there is no separate
 schema file to keep in sync. `CHECK` constraints are enforced from
 MariaDB 10.2.1 / MySQL 8.0.16 onwards; on older servers they are
 accepted but silently ignored.
+
+## Upgrading EpiSODIC
+
+The database records which version of EpiSODIC’s schema it was built
+with, and
+[`episodic_db_connect()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_connect.md)
+refuses one it does not recognise rather than failing later with an
+unexplained SQL error - or, worse, not failing and reading a column that
+has since come to mean something else. So when you update the package
+and its schema has moved on, the next run stops with an error naming the
+fix:
+
+``` r
+
+episodic_db_migrate()   # or episodic_db_migrate(db_path)
+```
+
+Migrations are additive: they add tables, add columns and backfill
+values, in one transaction per step, and never drop or rewrite anything.
+Your surveillance history, your assessments and your audit trail are
+carried forward untouched. Take a backup first anyway - that advice does
+not stop being good because the code is careful.
+
+A database built by EpiSODIC 0.12.x or earlier carries no version at
+all, since the version table postdates it.
+[`episodic_db_migrate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_migrate.md)
+adopts such a database at version 1 rather than refusing it, then brings
+it forward from there. Run it once, on each instance, after upgrading.
 
 ## Running the app
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,75 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.16.0" id="episodic-0160">EpiSODIC 0.16.0<a class="anchor" aria-label="anchor" href="#episodic-0160"></a></h2>
+<div class="section level3">
+<h3 id="new-0-16-0">New<a class="anchor" aria-label="anchor" href="#new-0-16-0"></a></h3>
+<ul><li>
+<code><a href="../reference/episodic_db_migrate.html">episodic_db_migrate()</a></code> brings an existing database up to the current schema; the schema now carries a recorded version and <code><a href="../reference/episodic_db_connect.html">episodic_db_connect()</a></code> refuses a database it does not recognise</li>
+<li>
+<code>config$geography</code> names the whole-catchment code and the area-code rule, so the two coarsest lattice levels are no longer hardcoded to one country</li>
+<li>
+<code>config$same_place$lookback_days</code> and <code>config$rare_trigger$lookback_days</code> bound how far back the rule-based detectors report hits</li>
+<li>
+<code>config$report$small_count_threshold</code> is documented in the shipped defaults instead of only existing in code</li>
+<li>An instance configuration is validated against the shipped defaults: an unknown key, a wrong type, or a null where a value is needed stops the run and names the key</li>
+<li>
+<code><a href="../reference/episodic_add_user.html">episodic_add_user()</a></code> gains <code>must_change</code>, for an account that does not need a forced password change</li>
+<li>Refused sign-ins are recorded in <code>episodic_app_login_failure</code> with the username tried and which of the three reasons it was</li>
+<li>The Activity screen gains category filter chips: assessments, closures, mutes, sign-ins, detection runs</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-16-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-16-0"></a></h3>
+<ul><li>BREAKING: <code>access.require_login</code> now defaults to <code>true</code>, so a freshly installed instance is closed to anonymous visitors</li>
+<li>BREAKING: <code>EPISODIC_CONFIG</code>, <code>EPISODIC_STYLE</code> and <code>EPISODIC_QUARTO_REPORT</code> set to a path that does not exist are now errors rather than silent fallbacks</li>
+<li>BREAKING: <code>EPISODIC_GEO_DATA</code> no longer falls back to the bundled Netherlands geometry; without it the dashboard shows its bar-chart fallback</li>
+<li>BREAKING: <code>EPISODIC_PC_PROVINCE_MAP</code> no longer falls back to Dutch province ranges; without it the province level of the lattice stays empty</li>
+<li>BREAKING: the whole-catchment region code and the <code>GEBIED-</code> area prefix are now <code>config$geography</code>, which changes every geographic stream key</li>
+<li>BREAKING: <code><a href="../reference/episodic_demo.html">episodic_demo()</a></code> refuses a <code>db_path</code> that already exists and refuses a MariaDB DSN; <code>overwrite = TRUE</code> rebuilds a demo in place</li>
+<li>An unsupported <code>EPISODIC_LANGUAGE</code> warns once and falls back to English instead of erroring on every render</li>
+<li>The dashboard sets <code>lang</code> and <code>dir</code> on the document, and the stylesheet uses logical properties, so Arabic renders right to left</li>
+<li>Mail headers are RFC 2047 encoded and message bodies base64 encoded, so non-ASCII subjects and reports survive every relay</li>
+<li>
+<code><a href="../reference/episodic_demo.html">episodic_demo()</a></code> configures its geography through the documented environment variables rather than relying on built-in defaults</li>
+<li>
+<code><a href="../reference/episodic_demo.html">episodic_demo()</a></code> dates its run from the last day a supplied <code>cases</code> extract covers, and says so; <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> still dates every run from the system date</li>
+<li>An explicit YAML <code>null</code> now keeps its key during the configuration merge instead of removing it</li>
+<li>Sign-in rows on the Activity screen are withheld from a reader who has not signed in</li>
+<li>
+<code>episodic_run_cron(debug = TRUE)</code> no longer prints per-query SQL and encoding dumps; it reports phase and per-stream progress</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-16-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-16-0"></a></h3>
+<ul><li>
+<code>same_place</code> and <code>rare_trigger</code> re-emitted every hit in the entire case history on every run, which reset <code>runs_since_detected</code> so <code>close_after_runs</code> could never fire and grew <code>episodic_detection</code> without bound</li>
+<li>Farrington aggregated to the week containing <code>run_date</code>, testing a partial week against full-week baselines, so it was near-blind on every day except Sunday</li>
+<li>
+<code>episodic_run_cron(run_date = ...)</code> was ignored by reconciliation, which judged staleness against the wall clock</li>
+<li>An already-closed cluster was closed again on every subsequent run, filling <code>episodic_cluster_state</code> with duplicate closures</li>
+<li>A closed cluster that was re-detected went on absorbing cases silently instead of returning to the board for reassessment</li>
+<li>A merge into an already-assessed cluster did not flag it as changed since assessment</li>
+<li>The forced password change was skipped for any account named <code>demo</code> whose password was <code>demo</code>
+</li>
+<li>Lattice suppression could hide every detected cluster behind a manually added one, which holds no <code>episodic_case</code> rows so scored zero overlap with all of them</li>
+<li>Lattice suppression could chain, putting a cluster behind one that was itself suppressed and showing the far end of the chain on no dossier at all</li>
+<li>The reporting-completion curve skipped every lag at which nothing had arrived yet, so short lags read as far more complete than they were and the incompleteness zone sized from it was too narrow</li>
+<li>Deduplication grouped on <code>patient_key</code> and <code>pathogen</code> glued together with no separator, so two patients whose keys and pathogens concatenate alike were treated as one and a positive was silently dropped</li>
+<li>A suppression parent’s case list was re-read once per overlapping child</li>
+<li>The institution activity feed compared the operator’s own <code>institution_key</code> against the stored hash of it, so every row was skipped and patient-day normalisation never engaged on any real deployment</li>
+<li>A manual cluster’s detector agreement was scored out of one detector instead of four, so every manual cluster outranked a comparable detected one</li>
+<li>The dossier narrative could state that positivity had risen, or stayed flat, for a cluster whose positivity was never measured at all</li>
+<li>A first positive test was reported as positivity rising</li>
+<li>
+<code>episodic_html_escape()</code> left single quotes unescaped, and every attribute in the notification HTML is single-quoted</li>
+<li>
+<code>same_place</code> merged its hit windows on gaps in index rather than gaps in time, so two outbreaks years apart at one place became a single window spanning both</li>
+<li>
+<code>same_place</code> and <code>rare_trigger</code> reported cases sampled after <code>run_date</code>, so a replayed run reported outbreaks from its own future</li>
+<li>
+<code>episodic_app_data_asof()</code> took its date from a UTC timestamp and compared it against a local one, putting the incompleteness window a day out for the hours after local midnight, and read the wrong date entirely for a backfilled run</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.15.0" id="episodic-0150">EpiSODIC 0.15.0<a class="anchor" aria-label="anchor" href="#episodic-0150"></a></h2>
 <div class="section level3">

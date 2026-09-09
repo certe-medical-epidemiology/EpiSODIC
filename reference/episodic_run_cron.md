@@ -48,7 +48,10 @@ episodic_run_cron(
   Optional: your hospital patient-days data (see
   [`episodic_synthetic_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity.md)
   for the expected shape), normally as a data set, or as a function
-  taking the current institutions table. Leave as `NULL` (the default)
+  taking the current institutions table. Its `institution_key` is the
+  same identifier your case data uses - EpiSODIC hashes both on load, so
+  a key taken from the institutions table this passes a function is
+  already hashed and will match nothing. Leave as `NULL` (the default)
   if you have none - detection falls back to raw case counts.
 
 - episodic_config_path:
@@ -73,21 +76,16 @@ episodic_run_cron(
 
 - debug:
 
-  If `TRUE`, print a lot more than the phase-by-phase progress this
-  function always writes:
+  If `TRUE`, print a good deal more than the phase-by-phase progress
+  this function always writes:
   [`sessionInfo()`](https://rdrr.io/r/utils/sessionInfo.html), the
-  versions of every package a fatal (non-catchable) crash is most likely
-  to originate in, memory snapshots, per-stream detail inside the
-  detection loop, and - for the calls implicated so far in a known
-  MariaDB-only crash (`episodic_app_density()`, the population-vector
-  lookup, the trend/detection writes, the assessment-event lookups, and
-  `episodic_spatial_concentration()`'s own input) - the exact SQL and
-  every bound parameter's value, class and encoding immediately before
-  each such call runs, not only once it returns. Meant for chasing
-  exactly the kind of failure that leaves no R-level error behind at
-  all - a crashed session, a run that silently never returns - where the
-  normal progress trace does not narrow things down enough on its own.
-  Noisy; leave off for routine scheduled runs.
+  versions of every package whose own behaviour a run depends on, memory
+  snapshots at the start and end, and per-stream detail inside the
+  detection loop - which stream, how many cases, whether it cleared the
+  eligibility gate, what each detector did with it. Useful when a run's
+  *results* are not what an operator expects and the question is which
+  stream, or which phase, they diverged at. Noisy; leave off for routine
+  scheduled runs.
 
 ## Value
 
@@ -170,33 +168,34 @@ cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
 run_id <- episodic_run_cron(db_path = db_path, cases = cases)
-#> 2026-09-08 05:51:09.266 | episodic_run_cron() starting (host=runnervmejwal, account=runner)
-#> 2026-09-08 05:51:09.266 | Resolving configuration
-#> 2026-09-08 05:51:09.269 | Configuration resolved (hash ac437073d10a)
-#> 2026-09-08 05:51:09.270 | Connecting to database
-#> 2026-09-08 05:51:09.270 | No existing database found - creating one
-#> 2026-09-08 05:51:09.283 | Database connected (dialect: sqlite)
-#> 2026-09-08 05:51:09.284 | Run 1 started
-#> 2026-09-08 05:51:09.284 | Resolving and checking case data
-#> 2026-09-08 05:51:09.293 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
-#> 2026-09-08 05:51:09.293 | Beginning transaction
-#> 2026-09-08 05:51:09.294 | Loading pathogen configuration
-#> 2026-09-08 05:51:09.296 | Pathogen configuration loaded (23 pathogen(s))
-#> 2026-09-08 05:51:09.296 | Loading case data into the database
-#> 2026-09-08 05:51:09.357 | Case data loaded: supplied=419, deduplicated=410, inserted=410
-#> 2026-09-08 05:51:09.357 | Fetching all known cases and institutions
-#> 2026-09-08 05:51:09.359 | Enumerating lattice streams
-#> 2026-09-08 05:51:09.385 | Running same-place detector
-#> 2026-09-08 05:51:09.433 | Same-place detector found 4 detection(s)
-#> 2026-09-08 05:51:09.433 | Running rare-trigger detector
-#> 2026-09-08 05:51:09.435 | Rare-trigger detector found 1 detection(s)
-#> 2026-09-08 05:51:09.436 | Farrington owes 8 week(s) this run
-#> 2026-09-08 05:51:09.437 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
-#> 2026-09-08 05:51:09.847 | Stream reconciliation done: 5 detection(s), 5 new signal(s), 0 updated signal(s)
-#> 2026-09-08 05:51:09.847 | Suppressing lattice
-#> 2026-09-08 05:51:09.850 | Committing transaction
-#> 2026-09-08 05:51:09.853 | Finishing run 1 (status: success)
-#> 2026-09-08 05:51:09.855 | episodic_run_cron() finished in 0.6s (status: success)
+#> 2026-09-09 09:33:44.867 | episodic_run_cron() starting (host=runnervmejwal, account=runner)
+#> 2026-09-09 09:33:44.867 | Resolving configuration
+#> 2026-09-09 09:33:44.872 | Configuration resolved (hash 97497805e413)
+#> 2026-09-09 09:33:44.873 | Connecting to database
+#> 2026-09-09 09:33:44.873 | No existing database found - creating one
+#> 2026-09-09 09:33:44.907 | Database connected (dialect: sqlite)
+#> 2026-09-09 09:33:44.908 | Run 1 started
+#> 2026-09-09 09:33:44.909 | Resolving and checking case data
+#> 2026-09-09 09:33:44.922 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
+#> 2026-09-09 09:33:44.923 | Beginning transaction
+#> 2026-09-09 09:33:44.923 | Loading pathogen configuration
+#> 2026-09-09 09:33:44.926 | Pathogen configuration loaded (23 pathogen(s))
+#> 2026-09-09 09:33:44.926 | Loading case data into the database
+#> 2026-09-09 09:33:45.029 | Case data loaded: supplied=419, deduplicated=410, inserted=410
+#> 2026-09-09 09:33:45.029 | Fetching all known cases and institutions
+#> 2026-09-09 09:33:45.031 | Enumerating lattice streams
+#> 2026-09-09 09:33:45.062 | no province could be resolved for any of the 106 postcode values in this run - province-level (L4) detection has nothing to run on. EPISODIC_PC_PROVINCE_MAP is unset, so the shipped Northern Netherlands demo ranges are in use and match only Dutch 7xxx-9xxx postcodes. Point it at your own pc/province_code CSV.
+#> 2026-09-09 09:33:45.067 | Running same-place detector
+#> 2026-09-09 09:33:45.137 | Same-place detector found 0 detection(s)
+#> 2026-09-09 09:33:45.137 | Running rare-trigger detector
+#> 2026-09-09 09:33:45.142 | Rare-trigger detector found 0 detection(s)
+#> 2026-09-09 09:33:45.143 | Farrington owes 8 week(s) this run
+#> 2026-09-09 09:33:45.145 | Reconciling 365 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
+#> 2026-09-09 09:33:45.811 | Stream reconciliation done: 0 detection(s), 0 new signal(s), 0 updated signal(s)
+#> 2026-09-09 09:33:45.812 | Suppressing lattice
+#> 2026-09-09 09:33:45.813 | Committing transaction
+#> 2026-09-09 09:33:45.816 | Finishing run 1 (status: success)
+#> 2026-09-09 09:33:45.818 | episodic_run_cron() finished in 1s (status: success)
 file.remove(db_path)
 #> [1] TRUE
 # }

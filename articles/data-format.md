@@ -303,16 +303,25 @@ dashboard works the same regardless.
 The dossier’s geography panel shows a choropleth when both the `sf`
 package and a geographic reference dataset are available; otherwise it
 falls back to a plain bar breakdown by PC value, exactly as if this
-feature did not exist. EpiSODIC ships a Dutch postcode default
-([`inst/extdata/geo_postcodes4_nl.rds`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/extdata/geo_postcodes4_nl.rds)),
+feature did not exist. Point `EPISODIC_GEO_DATA` at an `.rds` file
+holding an [`sf`](https://r-spatial.github.io/sf/) object with a `pc`
+column (matching whatever your own `episodic_case.pc` values are -
+postcodes, zip codes, municipality codes, census tracts, anything with a
+shape) and a `geometry` column. See `R/geo_data.R` for the exact
+requirements.
+
+There is deliberately **no default map**. EpiSODIC does bundle Dutch
+four-digit postcode geometry
+([`inst/extdata/geo_postcodes4_nl.rds`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/extdata/geo_postcodes4_nl.rds),
 geometry only, sourced from `certegis` under the same GPL-2 licence -
-see `data-raw/ geo_postcodes4_nl.R` for provenance) purely as a working
-example: point `EPISODIC_GEO_DATA` at your own `.rds` file holding an
-[`sf`](https://r-spatial.github.io/sf/) object with a `pc` column
-(matching whatever your own `episodic_case.pc` values are - postcodes,
-zip codes, municipality codes, census tracts, anything with a shape) and
-a `geometry` column, and it is used instead of the shipped default. See
-`R/geo_data.R` for the exact requirements.
+see `data-raw/geo_postcodes4_nl.R` for provenance), and
+[`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+points the variable at it, but nothing falls back to it. Postcode-like
+codes are four digits in a great many countries, so an instance
+elsewhere would have got a confident map of the Netherlands with its own
+case counts joined onto whichever Dutch postcodes happened to share a
+number. A bar chart that is right everywhere beats a map that is wrong
+somewhere.
 
 A second, independent layer can be drawn on top for orientation - region
 outlines (provinces, counties, states, whatever is useful), colour but
@@ -331,20 +340,23 @@ that coarser unit - a choropleth `sf` file already has geometry for
 every postcode, but not which province each one belongs to. Point
 `EPISODIC_PC_PROVINCE_MAP` at a CSV with `pc` (matching your case data’s
 `pc` values exactly, not a prefix) and `province_code` columns. Left
-unset, this defaults to the ranges the Dutch demo data happens to use,
-which - being specific to that data - will not match postcodes from
-anywhere else: outside that one region, L4 simply never has anything to
-detect on until you supply your own mapping. L1-L3 and L5 do not depend
-on this at all. See `episodic_pc_to_province()` for the exact
-requirements.
+unset, nothing resolves to a province: L4 has nothing to detect on, and
+no province is shown beside a postcode in the dashboard, which says so
+on its Info screen. L1-L3 and L5 do not depend on this at all. See
+`episodic_pc_to_province()` for the exact requirements.
+
+There is no built-in rule, and deliberately so. Deriving a province from
+a postcode is country-specific; the one that used to be here read the
+first digit and returned one of three Dutch provinces, which meant an
+instance anywhere else whose postcodes started 7, 8 or 9 got Dutch
+province names on its own streams, its own dashboard and its own
+outbreak reports, silently.
 
 Unset and unusable are two different things. Once the variable *is* set,
 a file that does not exist, cannot be read as a CSV, holds no rows, has
 no `pc` or no `province_code` column, or repeats a `pc` is a
 configuration error: the run stops and `error_text` names the file and
-which of those it is. It does not fall back to the demo ranges - doing
-so would hand an operator who supplied their own mapping a lattice built
-on somebody else’s provinces, with nothing anywhere to say why.
+which of those it is.
 
 The run also says so in its trace when the mapping loads but places no
 case at all, which is almost always a formatting mismatch: `"9713"` in

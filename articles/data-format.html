@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -546,17 +546,24 @@ set - the rest of the dashboard works the same regardless.</p>
 <p>The dossier’s geography panel shows a choropleth when both the
 <code>sf</code> package and a geographic reference dataset are
 available; otherwise it falls back to a plain bar breakdown by PC value,
-exactly as if this feature did not exist. EpiSODIC ships a Dutch
-postcode default (<a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/extdata/geo_postcodes4_nl.rds" class="external-link"><code>inst/extdata/geo_postcodes4_nl.rds</code></a>),
-geometry only, sourced from <code>certegis</code> under the same GPL-2
-licence - see <code>data-raw/ geo_postcodes4_nl.R</code> for provenance)
-purely as a working example: point <code>EPISODIC_GEO_DATA</code> at
-your own <code>.rds</code> file holding an <a href="https://r-spatial.github.io/sf/" class="external-link"><code>sf</code></a> object with a
-<code>pc</code> column (matching whatever your own
+exactly as if this feature did not exist. Point
+<code>EPISODIC_GEO_DATA</code> at an <code>.rds</code> file holding an
+<a href="https://r-spatial.github.io/sf/" class="external-link"><code>sf</code></a> object
+with a <code>pc</code> column (matching whatever your own
 <code>episodic_case.pc</code> values are - postcodes, zip codes,
 municipality codes, census tracts, anything with a shape) and a
-<code>geometry</code> column, and it is used instead of the shipped
-default. See <code>R/geo_data.R</code> for the exact requirements.</p>
+<code>geometry</code> column. See <code>R/geo_data.R</code> for the
+exact requirements.</p>
+<p>There is deliberately <strong>no default map</strong>. EpiSODIC does
+bundle Dutch four-digit postcode geometry (<a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/extdata/geo_postcodes4_nl.rds" class="external-link"><code>inst/extdata/geo_postcodes4_nl.rds</code></a>,
+geometry only, sourced from <code>certegis</code> under the same GPL-2
+licence - see <code>data-raw/geo_postcodes4_nl.R</code> for provenance),
+and <code><a href="../reference/episodic_demo.html">episodic_demo()</a></code> points the variable at it, but nothing
+falls back to it. Postcode-like codes are four digits in a great many
+countries, so an instance elsewhere would have got a confident map of
+the Netherlands with its own case counts joined onto whichever Dutch
+postcodes happened to share a number. A bar chart that is right
+everywhere beats a map that is wrong somewhere.</p>
 <p>A second, independent layer can be drawn on top for orientation -
 region outlines (provinces, counties, states, whatever is useful),
 colour but no fill, a thicker line than the choropleth itself. Point
@@ -577,20 +584,22 @@ already has geometry for every postcode, but not which province each one
 belongs to. Point <code>EPISODIC_PC_PROVINCE_MAP</code> at a CSV with
 <code>pc</code> (matching your case data’s <code>pc</code> values
 exactly, not a prefix) and <code>province_code</code> columns. Left
-unset, this defaults to the ranges the Dutch demo data happens to use,
-which - being specific to that data - will not match postcodes from
-anywhere else: outside that one region, L4 simply never has anything to
-detect on until you supply your own mapping. L1-L3 and L5 do not depend
-on this at all. See <code>episodic_pc_to_province()</code> for the exact
-requirements.</p>
+unset, nothing resolves to a province: L4 has nothing to detect on, and
+no province is shown beside a postcode in the dashboard, which says so
+on its Info screen. L1-L3 and L5 do not depend on this at all. See
+<code>episodic_pc_to_province()</code> for the exact requirements.</p>
+<p>There is no built-in rule, and deliberately so. Deriving a province
+from a postcode is country-specific; the one that used to be here read
+the first digit and returned one of three Dutch provinces, which meant
+an instance anywhere else whose postcodes started 7, 8 or 9 got Dutch
+province names on its own streams, its own dashboard and its own
+outbreak reports, silently.</p>
 <p>Unset and unusable are two different things. Once the variable
 <em>is</em> set, a file that does not exist, cannot be read as a CSV,
 holds no rows, has no <code>pc</code> or no <code>province_code</code>
 column, or repeats a <code>pc</code> is a configuration error: the run
 stops and <code>error_text</code> names the file and which of those it
-is. It does not fall back to the demo ranges - doing so would hand an
-operator who supplied their own mapping a lattice built on somebody
-else’s provinces, with nothing anywhere to say why.</p>
+is.</p>
 <p>The run also says so in its trace when the mapping loads but places
 no case at all, which is almost always a formatting mismatch:
 <code>"9713"</code> in the CSV against <code>"9713 AB"</code> in the

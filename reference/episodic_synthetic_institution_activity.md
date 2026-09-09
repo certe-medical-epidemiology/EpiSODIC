@@ -11,7 +11,7 @@ to raw counts, which is a reasonable default, not a broken one.
 
 ``` r
 episodic_synthetic_institution_activity(
-  institutions,
+  institutions = episodic_synthetic_institutions(),
   start_date = end_date - 5 * 365,
   end_date = Sys.Date(),
   seed = 1
@@ -22,8 +22,17 @@ episodic_synthetic_institution_activity(
 
 - institutions:
 
-  A data frame (or tibble) of institutions (as returned by your own
-  institution registry), filtered internally to hospitals only.
+  A data frame (or tibble) of institutions from **your own** registry,
+  with `institution_key`, `institution_type` and `n_beds`; filtered
+  internally to hospitals only. Defaults to the synthetic registry
+  [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
+  draws on, so the two feeds line up with no arguments at all.
+
+  `institution_key` must be the same identifier your case feed uses, not
+  the one `episodic_db_institutions()` returns: EpiSODIC stores a hash
+  of your key rather than the key itself, and both feeds are hashed on
+  load. Handing this function the database's own table produces a feed
+  whose keys are already hashed, and none of it will match.
 
 - start_date, end_date:
 

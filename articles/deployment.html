@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -153,20 +153,32 @@ concerns, never part of the detection-reproducibility guarantee
 <div class="section level2">
 <h2 id="accounts">Accounts<a class="anchor" aria-label="anchor" href="#accounts"></a>
 </h2>
-<p>By default, aggregate data is anonymous - the app opens read-only for
-anyone who reaches it. Signing in unlocks patient-level detail (the line
-list) for both roles below. Accounts are never created by users
-themselves; either an <code>is_admin</code> account provisions them from
-the in-app Settings screen, or whoever administers the database runs
-<code><a href="../reference/episodic_add_user.html">episodic_add_user()</a></code> at the console.</p>
+<p>By default the app is <strong>closed</strong>: an anonymous visitor
+gets a sign-in prompt and nothing else. Accounts are never created by
+users themselves; either an <code>is_admin</code> account provisions
+them from the in-app Settings screen, or whoever administers the
+database runs <code><a href="../reference/episodic_add_user.html">episodic_add_user()</a></code> at the console. Signing
+in unlocks everything the account’s role allows, patient-level detail
+(the line list) included, for both roles below.</p>
 <div class="section level3">
-<h3 id="closing-the-app-to-anonymous-visitors">Closing the app to anonymous visitors<a class="anchor" aria-label="anchor" href="#closing-the-app-to-anonymous-visitors"></a>
+<h3 id="opening-the-app-to-anonymous-visitors">Opening the app to anonymous visitors<a class="anchor" aria-label="anchor" href="#opening-the-app-to-anonymous-visitors"></a>
 </h3>
-<p>If the instance is reachable from anywhere its data should not be,
-set <code>access.require_login</code> in your
+<p>An instance already behind network controls that make anonymous
+reachability impossible may prefer to let colleagues read the aggregate
+screens - clusters, streams, the archive - without signing in, leaving
+sign-in needed only for the line list and for writing. Set
+<code>access.require_login</code> to <code>false</code> in your
 <code>EPISODIC_CONFIG</code> YAML:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">access</span><span class="kw">:</span></span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="at">  </span><span class="fu">require_login</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="at">  </span><span class="fu">require_login</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span></code></pre></div>
+<p>Weigh that deliberately rather than by habit. A cluster row names a
+pathogen, a ward or an institution, and a date range; in a small
+population that combination is often enough to identify who, even
+without the line list. The shipped default is <code>true</code> for the
+same reason: a surveillance system distributed to laboratories worldwide
+has to be safe in the state it arrives in, because the deployment that
+goes wrong is the one where nobody read this file.</p>
+<p>With <code>require_login: true</code> (the default):</p>
 <p>An anonymous visitor then gets a sign-in prompt and nothing else: no
 navigation, no status strip, not one row of data. This is enforced on
 the <strong>server</strong>, not in the browser - none of those screens
@@ -227,6 +239,34 @@ access as well - you need at least one such account to manage anything
 from the dashboard itself; every account after that can be added either
 way.</p>
 </div>
+<div class="section level3">
+<h3 id="watching-sign-ins">Watching sign-ins<a class="anchor" aria-label="anchor" href="#watching-sign-ins"></a>
+</h3>
+<p>Both outcomes are recorded. A successful sign-in becomes a
+<code>login</code> event on the account; a refused one is written to
+<code>episodic_app_login_failure</code> with the username as typed and
+which of three reasons it was - no account with that username, wrong
+password, or account deactivated. The sign-in screen itself still says
+none of that to whoever is typing: unknown username and wrong password
+are one generic refusal to them, so that a stranger cannot use the login
+form to find out which usernames exist. The distinction is for the
+operator, in the record, afterwards.</p>
+<p>Both appear on the <strong>Activity</strong> screen, where the filter
+chips at the top narrow the log to sign-ins alone. A run of refused
+attempts on one account, or a series of usernames nobody has, is then
+visible the same day it happens.</p>
+<p>Sign-in rows are the one part of the Activity screen withheld from a
+reader who has not signed in - on an instance running with
+<code>require_login: false</code>, “who has an account here, and which
+usernames somebody has been trying” is precisely what not to hand a
+visitor.</p>
+<p>This is a record, not a defence: EpiSODIC has no account lockout and
+no rate limiting, and deliberately so - a surveillance dashboard that
+locks an epidemiologist out mid-outbreak because somebody else mistyped
+their username is worse than the attack it prevents. Keeping attackers
+off the port is your network’s job (see the top of this vignette);
+noticing that one got as far as the login form is this log’s.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="where-the-database-lives">Where the database lives<a class="anchor" aria-label="anchor" href="#where-the-database-lives"></a>
@@ -266,9 +306,31 @@ from MariaDB 10.2.1 / MySQL 8.0.16 onwards; on older servers they are
 accepted but silently ignored.</p>
 </div>
 <div class="section level2">
+<h2 id="upgrading-episodic">Upgrading EpiSODIC<a class="anchor" aria-label="anchor" href="#upgrading-episodic"></a>
+</h2>
+<p>The database records which version of EpiSODIC’s schema it was built
+with, and <code><a href="../reference/episodic_db_connect.html">episodic_db_connect()</a></code> refuses one it does not
+recognise rather than failing later with an unexplained SQL error - or,
+worse, not failing and reading a column that has since come to mean
+something else. So when you update the package and its schema has moved
+on, the next run stops with an error naming the fix:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/episodic_db_migrate.html">episodic_db_migrate</a></span><span class="op">(</span><span class="op">)</span>   <span class="co"># or episodic_db_migrate(db_path)</span></span></code></pre></div>
+<p>Migrations are additive: they add tables, add columns and backfill
+values, in one transaction per step, and never drop or rewrite anything.
+Your surveillance history, your assessments and your audit trail are
+carried forward untouched. Take a backup first anyway - that advice does
+not stop being good because the code is careful.</p>
+<p>A database built by EpiSODIC 0.12.x or earlier carries no version at
+all, since the version table postdates it.
+<code><a href="../reference/episodic_db_migrate.html">episodic_db_migrate()</a></code> adopts such a database at version 1
+rather than refusing it, then brings it forward from there. Run it once,
+on each instance, after upgrading.</p>
+</div>
+<div class="section level2">
 <h2 id="running-the-app">Running the app<a class="anchor" aria-label="anchor" href="#running-the-app"></a>
 </h2>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/episodic_run_app.html">episodic_run_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/episodic_run_app.html">episodic_run_app()</a></code>’s <code>db_path</code> argument

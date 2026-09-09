@@ -19,7 +19,7 @@ failed run is always safe to simply retry."><meta property="og:image" content="h
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -93,8 +93,11 @@ supply - positivity panels simply stay blank.</p></dd>
 <dd><p>Optional: your hospital patient-days
 data (see <code><a href="episodic_synthetic_institution_activity.html">episodic_synthetic_institution_activity()</a></code> for the
 expected shape), normally as a data set, or as a function taking the
-current institutions table. Leave as <code>NULL</code> (the default) if you have
-none - detection falls back to raw case counts.</p></dd>
+current institutions table. Its <code>institution_key</code> is the same
+identifier your case data uses - EpiSODIC hashes both on load, so a
+key taken from the institutions table this passes a function is
+already hashed and will match nothing. Leave as <code>NULL</code> (the default)
+if you have none - detection falls back to raw case counts.</p></dd>
 
 
 <dt id="arg-episodic-config-path">episodic_config_path<a class="anchor" aria-label="anchor" href="#arg-episodic-config-path"></a></dt>
@@ -118,21 +121,15 @@ date; mainly useful to override in tests.</p></dd>
 
 
 <dt id="arg-debug">debug<a class="anchor" aria-label="anchor" href="#arg-debug"></a></dt>
-<dd><p>If <code>TRUE</code>, print a lot more than the phase-by-phase
-progress this function always writes: <code><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo()</a></code>, the versions
-of every package a fatal (non-catchable) crash is most likely to
-originate in, memory snapshots, per-stream detail inside the
-detection loop, and - for the calls implicated so far in a known
-MariaDB-only crash (<code>episodic_app_density()</code>, the population-vector
-lookup, the trend/detection writes, the assessment-event lookups,
-and <code>episodic_spatial_concentration()</code>'s own input) - the exact SQL
-and every bound parameter's value, class and encoding immediately
-before each such call runs, not only once it returns. Meant for
-chasing exactly the kind of failure that leaves no R-level error
-behind at all - a crashed session, a run that silently never
-returns - where the normal progress trace does not narrow things
-down enough on its own. Noisy; leave off for routine scheduled
-runs.</p></dd>
+<dd><p>If <code>TRUE</code>, print a good deal more than the
+phase-by-phase progress this function always writes:
+<code><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo()</a></code>, the versions of every package whose own behaviour a
+run depends on, memory snapshots at the start and end, and
+per-stream detail inside the detection loop - which stream, how many
+cases, whether it cleared the eligibility gate, what each detector
+did with it. Useful when a run's <em>results</em> are not what an operator
+expects and the question is which stream, or which phase, they
+diverged at. Noisy; leave off for routine scheduled runs.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -209,33 +206,34 @@ the requirements it checks against.</p></div>
 <span class="r-in"><span>  start_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2025-01-01"</span><span class="op">)</span>, end_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2025-03-31"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">run_id</span> <span class="op">&lt;-</span> <span class="fu">episodic_run_cron</span><span class="op">(</span>db_path <span class="op">=</span> <span class="va">db_path</span>, cases <span class="op">=</span> <span class="va">cases</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.266 | episodic_run_cron() starting (host=runnervmejwal, account=runner)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.266 | Resolving configuration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.269 | Configuration resolved (hash ac437073d10a)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.270 | Connecting to database</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.270 | No existing database found - creating one</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.283 | Database connected (dialect: sqlite)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.284 | Run 1 started</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.284 | Resolving and checking case data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.293 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.293 | Beginning transaction</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.294 | Loading pathogen configuration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.296 | Pathogen configuration loaded (23 pathogen(s))</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.296 | Loading case data into the database</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.357 | Case data loaded: supplied=419, deduplicated=410, inserted=410</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.357 | Fetching all known cases and institutions</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.359 | Enumerating lattice streams</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.385 | Running same-place detector</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.433 | Same-place detector found 4 detection(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.433 | Running rare-trigger detector</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.435 | Rare-trigger detector found 1 detection(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.436 | Farrington owes 8 week(s) this run</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.437 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.847 | Stream reconciliation done: 5 detection(s), 5 new signal(s), 0 updated signal(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.847 | Suppressing lattice</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.850 | Committing transaction</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.853 | Finishing run 1 (status: success)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-08 05:51:09.855 | episodic_run_cron() finished in 0.6s (status: success)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:44.867 | episodic_run_cron() starting (host=runnervmejwal, account=runner)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:44.867 | Resolving configuration</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:44.872 | Configuration resolved (hash 97497805e413)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:44.873 | Connecting to database</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:44.873 | No existing database found - creating one</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:44.907 | Database connected (dialect: sqlite)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:44.908 | Run 1 started</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:44.909 | Resolving and checking case data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:44.922 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:44.923 | Beginning transaction</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:44.923 | Loading pathogen configuration</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:44.926 | Pathogen configuration loaded (23 pathogen(s))</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:44.926 | Loading case data into the database</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:45.029 | Case data loaded: supplied=419, deduplicated=410, inserted=410</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:45.029 | Fetching all known cases and institutions</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:45.031 | Enumerating lattice streams</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:45.062 | no province could be resolved for any of the 106 postcode values in this run - province-level (L4) detection has nothing to run on. EPISODIC_PC_PROVINCE_MAP is unset, so the shipped Northern Netherlands demo ranges are in use and match only Dutch 7xxx-9xxx postcodes. Point it at your own pc/province_code CSV.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:45.067 | Running same-place detector</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:45.137 | Same-place detector found 0 detection(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:45.137 | Running rare-trigger detector</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:45.142 | Rare-trigger detector found 0 detection(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:45.143 | Farrington owes 8 week(s) this run</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:45.145 | Reconciling 365 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:45.811 | Stream reconciliation done: 0 detection(s), 0 new signal(s), 0 updated signal(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:45.812 | Suppressing lattice</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:45.813 | Committing transaction</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:45.816 | Finishing run 1 (status: success)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 09:33:45.818 | episodic_run_cron() finished in 1s (status: success)</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.remove</a></span><span class="op">(</span><span class="va">db_path</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>

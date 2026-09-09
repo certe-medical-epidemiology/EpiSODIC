@@ -13,7 +13,7 @@ Remember to disconnect with DBI::dbDisconnect() when you are done."><meta proper
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,7 +48,7 @@ Remember to disconnect with <code><a href="https://dbi.r-dbi.org/reference/dbDis
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">episodic_db_connect</span><span class="op">(</span><span class="va">path</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">episodic_db_connect</span><span class="op">(</span><span class="va">path</span>, check_schema_version <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -59,6 +59,14 @@ Remember to disconnect with <code><a href="https://dbi.r-dbi.org/reference/dbDis
 <dd><p>Path to an existing SQLite file, or a <code>mysql://</code> DSN (see
 <code><a href="episodic_db_dsn_mariadb.html">episodic_db_dsn_mariadb()</a></code>) pointing at an existing MariaDB/MySQL
 database.</p></dd>
+
+
+<dt id="arg-check-schema-version">check_schema_version<a class="anchor" aria-label="anchor" href="#arg-check-schema-version"></a></dt>
+<dd><p>Whether to refuse a database whose schema
+version is not the one this build of EpiSODIC expects, with an
+error naming <code><a href="episodic_db_migrate.html">episodic_db_migrate()</a></code> as the fix. <code>TRUE</code> (the
+default) everywhere except inside <code><a href="episodic_db_migrate.html">episodic_db_migrate()</a></code> itself,
+which by definition has to open a database that is out of date.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -16,7 +16,8 @@ episodic_add_user(
   email,
   password,
   role = "epidemiologist",
-  is_admin = FALSE
+  is_admin = FALSE,
+  must_change = TRUE
 )
 ```
 
@@ -53,6 +54,16 @@ episodic_add_user(
   notification channels, other accounts, and export the configuration).
   Independent of `role` - an admin is still either an epidemiologist or
   a viewer for everything outside Settings.
+
+- must_change:
+
+  Whether the account holder is required to replace `password` the first
+  time they sign in. `TRUE` (the default) is right for every real
+  account: the password you type here has been in your shell history and
+  quite possibly in a message to the person it belongs to. `FALSE` is
+  for a throwaway account in a throwaway database, which is what
+  [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+  creates.
 
 ## Value
 
