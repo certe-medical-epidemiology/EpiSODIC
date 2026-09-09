@@ -81,6 +81,35 @@ Farrington 18/20 and by Farrington+MEM 2/20 - the diffuse signal no rule
 can see. The nursing-home outbreak went to `same_place` 15/20 and
 Farrington 5/20. The propagated outbreak went to `same_place` 19/19.
 
+### What MEM is doing, which is the study's most interesting result
+
+Dropping `mem` costs no sensitivity at all and removes 14 of the 43 false
+alarms. The tempting reading is that this generator gives MEM nothing to
+find. The cluster table says otherwise:
+
+- MEM fired on **29 of 199 clusters**.
+- **13 were raised by MEM alone, and all 13 are false alarms** - every one
+  `pathogen_region`, every one RSV (5) or Influenza A (8), across 8 of the
+  20 seeds.
+- The other 16 are `farrington+mem`, all Influenza A, 14 of them true
+  positives: the seeded wave, which Farrington found as well.
+
+MEM is doing exactly what MEM is for - detecting the onset of the epidemic
+season in seasonal respiratory viruses, on four years of history that
+contains precisely that. The generator is not at fault.
+
+Where the signal goes is. A seasonal onset is not an outbreak; an
+epidemiologist shown one would classify it `expected_variation`. EpiSODIC
+routes it into the same queue as aberration signals, so every MEM-only
+detection is a dossier raised about the arrival of winter.
+
+That is a design question rather than a threshold to nudge: MEM's output
+may belong on the Pathogen screen as seasonal context, or `mem_applicable`
+may need to be narrower, or the pre-epidemic threshold may need
+configuring. It wants its own issue, and it is not something a validation
+PR should settle by tuning - which is the one thing the brief is most
+explicit about.
+
 Three results are unflattering and are reported as they are:
 
 - **Only 25% were detected before their own peak**, and a median of 13% of
@@ -90,7 +119,8 @@ Three results are unflattering and are reported as they are:
   identical, because fragmentation was 1 everywhere: there was never a
   redundant parent to suppress. On this data the mechanism has nothing to
   do. That is not evidence it is wrong, but it is evidence this generator
-  cannot exercise it.
+  cannot exercise it - and unlike the MEM result above, this one really is
+  a gap in the generator.
 - **The propagated outbreak is the only shape ever missed** (19/20), and it
   is found by `same_place`, not by Farrington. See §4 on which channel it
   is supposed to exercise.
