@@ -47,7 +47,18 @@
 #'
 #' Both thresholds are arguments because both are choices, and a result
 #' that only holds at one particular pair of values is not a result.
-#' Sweep them and see (`data-raw/validation/` does).
+#' Sweep them and see ([episodic_validate_rethreshold()] does it without
+#' replaying anything; `data-raw/validation/` does it over a grid).
+#'
+#' @section Three delays, not one:
+#'
+#' The day something first appeared on the board that turned out to be
+#' this outbreak (`delay_from_open`), the day what was on the board was
+#' mostly this outbreak (`delay_from_first`), and the day it held most of
+#' the whole outbreak, cases still to come included, are three different
+#' claims. They can be days apart. All three are reported, because
+#' picking one and calling it "the delay" would be choosing a number
+#' rather than measuring one.
 #'
 #' @section Why it replays week by week:
 #'
@@ -111,9 +122,9 @@
 #' @return An `episodic_validation` object: a list of
 #'   \describe{
 #'     \item{`outbreaks`}{One row per (seed, seeded outbreak): whether it
-#'       was detected, by which cluster, how much of it that cluster
-#'       held, how late, and how much of it was still to come at that
-#'       moment.}
+#'       was detected, by which cluster and which detector, how much of
+#'       it that cluster held, how late (three ways - see below), and how
+#'       much of it was still to come at that moment.}
 #'     \item{`clusters`}{One row per (seed, cluster raised): its case-set
 #'       precision, whether it counts as a true positive, its priority
 #'       score, and which detectors fired on it.}
