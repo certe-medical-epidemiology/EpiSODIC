@@ -50,6 +50,15 @@ Both rule-based detectors (`same_place`, `rare_trigger`) are bounded by a config
 | rare_trigger | Single-case alert for curated rare pathogens | `R/detect_rare_trigger.R` |
 | MEM | Moving Epidemic Method seasonal threshold (mem::memmodel) | `R/detect_mem.R` |
 
+Each detector's config section carries `enabled`, shipped `true`, read
+through `episodic_detector_enabled()` inside the detector itself so every
+caller respects it. It lives in the config rather than in an argument to
+`episodic_run_cron()` because which detectors ran changes what a run
+computes, and so has to be inside `config_hash`. `farrington.enabled:
+false` stops the detector, not the multi-year baseline cached for the
+Pathogen screen, which is a display of the same model rather than a
+detection.
+
 ### Streams and the lattice
 
 A "stream" is a unique surveillance unit: a (pathogen, level, location) tuple. Levels form a geographic lattice from finest to coarsest:
@@ -63,6 +72,17 @@ A "stream" is a unique surveillance unit: a (pathogen, level, location) tuple. L
 Detection runs against every eligible stream independently. After detection, lattice suppression removes redundant signals (a hospital-level cluster that is entirely explained by a ward-level cluster in the same hospital).
 
 Stream keys are SHA-1 hashes of (pathogen, level, institution_id, ward, region_code), computed in `R/lattice_stream_key.R`.
+
+The geography a run uses is resolved once, from that run's own config, and
+passed down: `episodic_lattice_enumerate()`, `episodic_cases_for_stream()`,
+`episodic_db_cases_for_stream_id()` and `episodic_reconcile_stream()` all
+take it as an argument. Resolving it separately at each site meant a run
+given `episodic_config_path` named its L5 catchment from one configuration
+and its L3 areas from another, and then tested case membership against a
+third - so every geographic stream matched no case however many arrived,
+and any cluster opened there was written with none linked to it, silently.
+The default still resolves `EPISODIC_CONFIG`, which is the right answer on
+the dashboard side, where there is no run to take it from.
 
 Nothing about the lattice's geography is hardcoded to one country. The whole-catchment code (L5) and the area-code rule (L3) are `config$geography`, resolved by `episodic_geography_config()`; the province level (L4) is an operator-supplied `pc` -> `province_code` CSV pointed at by `EPISODIC_PC_PROVINCE_MAP`, with no built-in rule at all, since deriving a province from a postcode is country-specific. Unconfigured, L4 stays empty and says so on the dashboard's Info screen. Likewise `EPISODIC_GEO_DATA` has no default: without it there is no map, never another country's.
 
@@ -162,6 +182,12 @@ R/
   i18n.R              # translation system (episodic_tr)
   interpretation.R    # AI/template-based narrative summaries
   report_render.R     # Quarto outbreak report rendering
+  validate_detection.R  # episodic_validate_detection(): the prospective replay
+  validate_match.R      # matching clusters to seeded outbreaks on case sets
+  validate_metrics.R    # Wilson/Poisson intervals, Kaplan-Meier, AUC
+  validate_summary.R    # the headline numbers, as one long table
+  validate_comparator.R # naive rules measured the same way
+  validate_rethreshold.R # re-match a finished replay at other thresholds
 inst/
   config/episodic_default_config.yaml       # shipped detection defaults
   config/episodic_default_style.yaml       # shipped colour palette defaults
@@ -170,9 +196,49 @@ inst/
   app/                      # Shiny app assets (CSS, JS)
   i18n/                     # translation JSON files (en, nl, de, fr, es, ar, hi, zh)
   report/                   # Quarto report template
-tests/testthat/             # ~480 test blocks across 40 files
-vignettes/                  # 7 vignettes
+tests/testthat/             # ~500 test blocks across 47 files
+vignettes/                  # 8 vignettes
+data-raw/validation/        # the full detection validation study (never ships)
 ```
+
+## Measuring detection
+
+The Performance screen measures the instance against its own
+epidemiologists' verdicts, which is a good operational metric and a
+circular one for a paper: sensitivity is structurally unmeasurable that
+way, because an outbreak the detectors miss never becomes a cluster for
+anyone to judge.
+
+`episodic_validate_detection()` measures against known truth instead. It
+generates history with `episodic_synthetic_cases()`, replays it week by
+week through `episodic_run_cron()` against a throwaway SQLite database
+handing each run only the cases sampled by that date, and matches
+clusters to seeded outbreaks **on case sets, in both directions** - an
+endemic winter cluster overlaps a seeded outbreak perfectly in time and
+shares not one case with it, so interval overlap decides nothing here.
+
+Ground truth is data, not a naming convention:
+`episodic_synthetic_ground_truth()` returns what was injected. The
+`PT-OUTBREAK-*` patient keys are a convenience for a human reading a line
+list; nothing measures against them.
+
+Rules that hold throughout: a metric with no denominator is `NA`, never 0
+(a negative control has no sensitivity, not a sensitivity of zero); an
+outbreak nothing found is right-censored at the time it was watched for,
+never dropped from the median; and a threshold sweep re-matches a
+finished replay (`episodic_validate_rethreshold()`) rather than running
+detection again.
+
+The exported entry point defaults to one seed and a short window so it
+returns in seconds. The multi-seed study, the negative control, the
+drop-one analysis, the comparators and the operating-point sweep live in
+`data-raw/validation/run_study.R`, which is in `.Rbuildignore` and must
+stay there: nothing that takes minutes may reach the suite, CI, an
+example or a vignette.
+
+If a result is unflattering, it is reported. Tuning
+`inst/config/episodic_default_config.yaml` until a number looks better and
+then quoting the number is fitting the evaluation to the answer.
 
 ## Development
 
@@ -185,6 +251,14 @@ Rscript -e 'devtools::test()'
 ```
 
 All tests run against temporary SQLite databases created in `helper-db.R`. No external services or credentials are needed.
+
+Except `tests/testthat/test-mariadb_live.R`, which skips itself unless
+`EPISODIC_TEST_MARIADB_DSN` names a scratch MariaDB/MySQL database it may
+create and drop tables in. `.github/workflows/mariadb.yaml` runs the suite
+against a service container on one Linux job and fails the build if those
+tests skipped themselves, because the MariaDB dialect is produced by
+rewriting the SQLite schema and nothing else proves a server accepts the
+result.
 
 ### Building documentation
 

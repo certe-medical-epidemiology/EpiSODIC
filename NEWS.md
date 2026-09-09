@@ -10,6 +10,14 @@
 - `episodic_add_user()` gains `must_change`, for an account that does not need a forced password change
 - Refused sign-ins are recorded in `episodic_app_login_failure` with the username tried and which of the three reasons it was
 - The Activity screen gains category filter chips: assessments, closures, mutes, sign-ins, detection runs
+- `episodic_validate_detection()` replays generated history week by week and measures the detectors against the outbreaks that were injected into it
+- `episodic_validate_comparator()` runs a naive same-place rule or a 2-SD Shewhart limit over the same data, through the same metrics
+- `episodic_validate_rethreshold()` re-matches a validation result at different thresholds without replaying anything
+- `episodic_synthetic_ground_truth()` returns what `episodic_synthetic_cases()` injected, per outbreak and per case
+- `episodic_synthetic_cases()` gains `outbreaks`, for a history with none injected, and `outbreak_offsets`, to disperse them across the window
+- `config$<detector>$enabled` switches any of the four detectors off, and is part of `config_hash`
+- `data-raw/validation/` runs the full multi-seed study and writes the numbers a paper would quote
+- CI runs the suite against a real MariaDB server, so DDL a server rejects fails the build
 
 ## Changed
 
@@ -38,6 +46,10 @@
 - A merge into an already-assessed cluster did not flag it as changed since assessment
 - The forced password change was skipped for any account named `demo` whose password was `demo`
 - Lattice suppression could hide every detected cluster behind a manually added one, which holds no `episodic_case` rows so scored zero overlap with all of them
+- The MariaDB schema was never accepted by a real server: the tables are declared in reading order, not foreign-key order, so creation failed on the first statement
+- Half the lattice resolved its geography from the run's own configuration and half from `EPISODIC_CONFIG`, so a run given a config path silently matched no case to any geographic stream
+- `episodic_db_create()` leaked the connection it opened when refusing a database that already had tables
+- With `EPISODIC_PC_PROVINCE_MAP` unset, a run said the shipped Dutch province ranges were in use, which they no longer are
 - Lattice suppression could chain, putting a cluster behind one that was itself suppressed and showing the far end of the chain on no dossier at all
 - The reporting-completion curve skipped every lag at which nothing had arrived yet, so short lags read as far more complete than they were and the incompleteness zone sized from it was too narrow
 - Deduplication grouped on `patient_key` and `pathogen` glued together with no separator, so two patients whose keys and pathogens concatenate alike were treated as one and a positive was silently dropped

@@ -54,6 +54,7 @@ articles:
   contents:
   - environment-variables
   - detection-reconciliation
+  - detection-validation
   - faq
 
 reference:
