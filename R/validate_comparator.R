@@ -437,9 +437,19 @@ episodic_validation_rule_shewhart <- function(extract, run_date, params) {
     # backwards week by week, each against its own baseline, so the
     # alarm's identity is the week the rise started and does not change
     # as the rise continues.
+    #
+    # Bounded at the first week the extract holds. The walk does stop on
+    # its own once it reaches weeks with no cases in them - an all-zero
+    # baseline gives a limit of zero and a count of zero does not exceed
+    # it - but relying on that is relying on the data, and a rule this
+    # simple should not be able to walk off the start of its own extract.
+    earliest <- min(week_start)
     start <- tested_week
     repeat {
       previous <- start - 7L
+      if (previous < earliest) {
+        break
+      }
       window <- seq(previous - 7L * params$baseline_weeks, previous, by = 7)
       window_counts <- vapply(
         window,

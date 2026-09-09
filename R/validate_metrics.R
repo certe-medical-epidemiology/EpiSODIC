@@ -105,7 +105,14 @@ episodic_poisson_ci <- function(x, exposure, conf_level = 0.95) {
 #' @return A data frame of `time`, `n_risk`, `n_event`, `n_censored`,
 #'   `survival` (the share still undetected) and `detected` (its
 #'   complement), one row per distinct event time, with a row at time 0.
-#'   Zero rows plus that origin row when there is nothing to estimate.
+#'   Only the origin row when there is nothing to estimate.
+#'
+#'   `n_censored` counts censorings falling on that same event time, and
+#'   so does not add up to the number censored overall: a censoring
+#'   between two event times has no row of its own. It is there to
+#'   explain a drop in `n_risk`, not to be totalled. The estimate does
+#'   not depend on it - Kaplan-Meier needs `n_risk` at the event times
+#'   and nothing else.
 #' @keywords internal
 #' @noRd
 episodic_validation_km <- function(time, event) {
