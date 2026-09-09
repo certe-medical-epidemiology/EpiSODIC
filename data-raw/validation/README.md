@@ -20,8 +20,15 @@ Rscript data-raw/validation/run_study.R
 
 Roughly three hours on a modern laptop: twenty seeds by twenty-six weekly
 runs, each of which refits Farrington for every eligible stream, times
-seven scenarios, plus a seven-point operating-curve sweep at five seeds.
-Check the wall clock before raising the seed count.
+six detection scenarios, plus a six-point operating-curve sweep at five
+seeds. The five comparator runs are arithmetic over the same generated
+data and take seconds. Check the wall clock before raising the seed
+count.
+
+The naive same-place rule is run at both three-in-seven and
+three-in-fourteen days. Reporting only the tighter setting would make the
+comparator look weak for a reason that has nothing to do with it being
+naive: `same_place` itself is configured for fourteen.
 
 For a five-minute smoke test that exercises every scenario at a fraction
 of the size:

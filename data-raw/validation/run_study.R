@@ -209,13 +209,42 @@ for (dropped in episodic_validation_detectors()) {
   )
 }
 
-scenarios$comparator_same_place <- run_comparator(
-  "comparator_same_place",
-  "same_place"
+# Two settings of the naive same-place rule, not one. Three cases within
+# seven days is the rule the brief proposes; three within fourteen is
+# what `same_place` itself is configured to do. Reporting only the
+# tighter one would make the comparator look weak for a reason that has
+# nothing to do with it being naive, and a reviewer would say so.
+scenarios$comparator_same_place_7 <- run_comparator(
+  "comparator_same_place_7",
+  "same_place",
+  n_cases = 3,
+  k_days = 7
+)
+scenarios$comparator_same_place_14 <- run_comparator(
+  "comparator_same_place_14",
+  "same_place",
+  n_cases = 3,
+  k_days = 14
 )
 scenarios$comparator_shewhart <- run_comparator(
   "comparator_shewhart",
   "shewhart"
+)
+
+# And the same rules on a history with nothing seeded in it, so their
+# alarm rate can be read next to EpiSODIC's own negative control rather
+# than only next to its seeded one.
+scenarios$comparator_same_place_14_control <- run_comparator(
+  "comparator_same_place_14_control",
+  "same_place",
+  n_cases = 3,
+  k_days = 14,
+  outbreaks = FALSE
+)
+scenarios$comparator_shewhart_control <- run_comparator(
+  "comparator_shewhart_control",
+  "shewhart",
+  outbreaks = FALSE
 )
 
 # --------------------------------------------------------------------
