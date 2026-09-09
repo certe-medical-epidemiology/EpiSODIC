@@ -224,27 +224,59 @@ scenarios$comparator_shewhart <- run_comparator(
 # detector. A sweep for the paper, presented as a curve. It is not a
 # licence to move the shipped defaults.
 # --------------------------------------------------------------------
+#
+# The shipped configuration is one point, run once, and belongs to both
+# curves: it is farrington alpha 0.05 and same_place 3-in-14 at the same
+# time. Listing it under each heading would run the identical
+# configuration twice and put two identical points on the plot.
 operating_points <- list(
-  list(label = "farrington alpha 0.01", config = list(farrington = list(alpha = 0.01))),
-  list(label = "farrington alpha 0.05 (shipped)", config = NULL),
-  list(label = "farrington alpha 0.10", config = list(farrington = list(alpha = 0.10))),
-  list(label = "same_place 2 in 14", config = list(same_place = list(default_n_cases = 2, default_k_days = 14))),
-  list(label = "same_place 3 in 14 (shipped)", config = NULL),
-  list(label = "same_place 4 in 14", config = list(same_place = list(default_n_cases = 4, default_k_days = 14))),
-  list(label = "same_place 3 in 7", config = list(same_place = list(default_n_cases = 3, default_k_days = 7)))
+  list(
+    key = "shipped",
+    dimension = "shipped",
+    label = "shipped defaults (alpha 0.05, same_place 3 in 14)",
+    config = NULL
+  ),
+  list(
+    key = "farrington_alpha_001",
+    dimension = "farrington.alpha",
+    label = "farrington alpha 0.01",
+    config = list(farrington = list(alpha = 0.01))
+  ),
+  list(
+    key = "farrington_alpha_010",
+    dimension = "farrington.alpha",
+    label = "farrington alpha 0.10",
+    config = list(farrington = list(alpha = 0.10))
+  ),
+  list(
+    key = "same_place_2_in_14",
+    dimension = "same_place",
+    label = "same_place 2 in 14",
+    config = list(same_place = list(default_n_cases = 2, default_k_days = 14))
+  ),
+  list(
+    key = "same_place_4_in_14",
+    dimension = "same_place",
+    label = "same_place 4 in 14",
+    config = list(same_place = list(default_n_cases = 4, default_k_days = 14))
+  ),
+  list(
+    key = "same_place_3_in_7",
+    dimension = "same_place",
+    label = "same_place 3 in 7",
+    config = list(same_place = list(default_n_cases = 3, default_k_days = 7))
+  )
 )
 sweep <- list()
 for (point in operating_points) {
-  key <- paste0("sweep_", gsub("[^a-z0-9]+", "_", tolower(point$label)))
-  if (!is.null(sweep[[key]])) {
-    next
-  }
+  key <- paste0("sweep_", point$key)
   sweep[[key]] <- run_scenario(
     key,
     seeds = study$sweep_seeds,
     config = point$config
   )
   attr(sweep[[key]], "label") <- point$label
+  attr(sweep[[key]], "dimension") <- point$dimension
 }
 
 # --------------------------------------------------------------------
@@ -346,7 +378,8 @@ curve <- do.call(rbind, lapply(names(sweep), function(name) {
   }
   data.frame(
     point = name,
-    label = attr(result, "label") %||% name,
+    dimension = attr(result, "dimension"),
+    label = attr(result, "label"),
     config_hash = result$meta$config_hash,
     sensitivity = pick("sensitivity", "all outbreaks"),
     ppv = pick("ppv", "all clusters raised"),
