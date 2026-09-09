@@ -57,8 +57,7 @@ episodic_validation_summarise <- function(outbreaks, clusters, runs) {
   counted <- clusters[clusters$counted, , drop = FALSE]
   visible <- counted[!counted$suppressed, , drop = FALSE]
   timeliness <- outbreaks[
-    outbreaks$detected & outbreaks$fully_prospective,
-    ,
+    outbreaks$detected & outbreaks$fully_prospective, ,
     drop = FALSE
   ]
 
@@ -122,8 +121,7 @@ episodic_validation_summarise <- function(outbreaks, clusters, runs) {
         strsplit(counted$detectors, "+", fixed = TRUE),
         function(x) detector %in% x,
         logical(1)
-      )),
-      ,
+      )), ,
       drop = FALSE
     ]
     add(episodic_validation_proportion_row(

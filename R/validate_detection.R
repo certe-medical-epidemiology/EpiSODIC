@@ -122,6 +122,10 @@
 #'     \item{`overlap`}{Every (run, cluster, outbreak) that shared a
 #'       case, which is the raw material both tables above are derived
 #'       from.}
+#'     \item{`truth`}{What was injected: the outbreak table and the
+#'       case-level membership, per seed. Kept with the result so the
+#'       matching thresholds can be varied afterwards
+#'       ([episodic_validate_rethreshold()]) without replaying anything.}
 #'     \item{`summary`}{The headline numbers, one row per metric and
 #'       group.}
 #'     \item{`meta`}{The package version, the resolved `config_hash`, the
@@ -204,6 +208,10 @@ episodic_validate_detection <- function(seeds = 1,
       clusters = cluster_rows,
       runs = run_rows,
       overlap = bind("overlap"),
+      truth = list(
+        outbreaks = bind("truth_outbreaks"),
+        cases = bind("truth_cases")
+      ),
       summary = episodic_validation_summarise(
         outbreak_rows,
         cluster_rows,
@@ -394,15 +402,22 @@ episodic_validation_replicate <- function(seed,
     integer(1)
   )
 
-  outbreak_rows$seed <- seed
-  clusters$seed <- seed
-  runs$seed <- seed
-  overlap$seed <- seed
+  # rep() rather than plain assignment: a replicate that raised no
+  # clusters at all - which is what a negative control usually is - has
+  # zero-row frames here, and `frame$seed <- seed` refuses those.
+  outbreak_rows$seed <- rep(seed, nrow(outbreak_rows))
+  clusters$seed <- rep(seed, nrow(clusters))
+  runs$seed <- rep(seed, nrow(runs))
+  overlap$seed <- rep(seed, nrow(overlap))
+  truth$outbreaks$seed <- rep(seed, nrow(truth$outbreaks))
+  truth_cases$seed <- rep(seed, nrow(truth_cases))
   list(
     outbreaks = outbreak_rows,
     clusters = clusters,
     runs = runs,
-    overlap = overlap
+    overlap = overlap,
+    truth_outbreaks = truth$outbreaks,
+    truth_cases = truth_cases
   )
 }
 
@@ -449,22 +464,39 @@ episodic_validation_capture <- function(db_path, run_id, run_date) {
       n_detections = as.integer(run$n_detections[1]),
       stringsAsFactors = FALSE
     ),
-    clusters = data.frame(
-      run_date = run_date,
-      cluster_id = clusters$cluster_id,
-      n_cases = clusters$n_cases,
-      priority_score = clusters$priority_score,
-      suppressed = !is.na(clusters$suppressed_by),
-      merged = !is.na(clusters$merged_into),
-      stringsAsFactors = FALSE
+    clusters = episodic_validation_stamp(
+      run_date,
+      data.frame(
+        cluster_id = clusters$cluster_id,
+        n_cases = clusters$n_cases,
+        priority_score = clusters$priority_score,
+        suppressed = !is.na(clusters$suppressed_by),
+        merged = !is.na(clusters$merged_into),
+        stringsAsFactors = FALSE
+      )
     ),
-    membership = data.frame(
-      run_date = run_date,
-      cluster_id = membership$cluster_id,
-      source_key = membership$source_key,
-      stringsAsFactors = FALSE
+    membership = episodic_validation_stamp(
+      run_date,
+      data.frame(
+        cluster_id = membership$cluster_id,
+        source_key = membership$source_key,
+        stringsAsFactors = FALSE
+      )
     )
   )
+}
+
+#' Put the run's date on every row of a snapshot, including none of them
+#'
+#' `data.frame(run_date = a_date, cluster_id = integer(0))` is an error
+#' about differing numbers of rows, and a run that raised no clusters at
+#' all is the ordinary state of a negative control rather than a
+#' mistake.
+#' @keywords internal
+#' @noRd
+episodic_validation_stamp <- function(run_date, frame) {
+  frame$run_date <- rep(as.Date(run_date), nrow(frame))
+  frame[, c("run_date", setdiff(names(frame), "run_date")), drop = FALSE]
 }
 
 #' Every cluster the replay raised, in its final state
@@ -616,17 +648,19 @@ episodic_validation_config_file <- function(detectors, config) {
 #' The last run date of a replay: the end of the last complete week
 #'
 #' The statistical detectors test whole weeks, so a replay that stepped
-#' to an arbitrary weekday would hand the last run a partial one - the
-#' partial-week comparison `episodic_last_complete_week_start()` exists
-#' to prevent.
+#' to an arbitrary weekday would hand the last run a partial one. Which
+#' week counts as complete is `episodic_last_complete_week_start()`'s
+#' answer and not a second one taken here: two definitions of the same
+#' boundary would put the replay's run dates a week away from the weeks
+#' Farrington actually tested at them.
 #' @keywords internal
 #' @noRd
 episodic_validation_last_run_date <- function(end_date) {
   end_date <- as.Date(end_date)
-  if (is.na(end_date)) {
-    stop("`end_date` must be a date.", call. = FALSE)
+  if (length(end_date) != 1 || is.na(end_date)) {
+    stop("`end_date` must be a single date.", call. = FALSE)
   }
-  end_date - as.integer(format(end_date, "%u"))
+  episodic_last_complete_week_start(end_date) + 6
 }
 
 #' @keywords internal

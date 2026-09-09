@@ -335,8 +335,7 @@ episodic_validation_first_run <- function(overlap_for_outbreak,
     return(as.Date(NA))
   }
   mine <- overlap_for_outbreak[
-    overlap_for_outbreak$cluster_id == cluster_id,
-    ,
+    overlap_for_outbreak$cluster_id == cluster_id, ,
     drop = FALSE
   ]
   value <- mine[[column]]
@@ -408,10 +407,11 @@ episodic_validation_cluster_rows <- function(overlap,
     c("cluster_id", "n_cases", "merged"),
     "clusters"
   )
-  clusters$outbreak_id <- NA_character_
-  clusters$n_overlap <- 0L
-  clusters$precision <- 0
-  clusters$recall_full <- NA_real_
+  n <- nrow(clusters)
+  clusters$outbreak_id <- rep(NA_character_, n)
+  clusters$n_overlap <- rep(0L, n)
+  clusters$precision <- rep(0, n)
+  clusters$recall_full <- rep(NA_real_, n)
   if (nrow(clusters) > 0 && nrow(overlap) > 0) {
     for (i in seq_len(nrow(clusters))) {
       mine <- overlap[overlap$cluster_id == clusters$cluster_id[i], ]

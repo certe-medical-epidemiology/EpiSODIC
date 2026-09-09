@@ -79,6 +79,10 @@ raised, and how many of those survived lattice suppression.}
 \item{\code{overlap}}{Every (run, cluster, outbreak) that shared a
 case, which is the raw material both tables above are derived
 from.}
+\item{\code{truth}}{What was injected: the outbreak table and the
+case-level membership, per seed. Kept with the result so the
+matching thresholds can be varied afterwards
+(\code{\link[=episodic_validate_rethreshold]{episodic_validate_rethreshold()}}) without replaying anything.}
 \item{\code{summary}}{The headline numbers, one row per metric and
 group.}
 \item{\code{meta}}{The package version, the resolved \code{config_hash}, the

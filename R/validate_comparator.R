@@ -131,6 +131,10 @@ episodic_validate_comparator <- function(method = c("same_place", "shewhart"),
       clusters = cluster_rows,
       runs = run_rows,
       overlap = bind("overlap"),
+      truth = list(
+        outbreaks = bind("truth_outbreaks"),
+        cases = bind("truth_cases")
+      ),
       summary = episodic_validation_summarise(
         outbreak_rows,
         cluster_rows,
@@ -210,11 +214,13 @@ episodic_validation_comparator_replicate <- function(method,
     # identity as it grows.
     new_keys <- setdiff(unique(alarms$alarm_key), registry)
     registry <- c(registry, new_keys)
-    membership[[length(membership) + 1]] <- data.frame(
-      run_date = run_date,
-      cluster_id = match(alarms$alarm_key, registry),
-      source_key = alarms$source_key,
-      stringsAsFactors = FALSE
+    membership[[length(membership) + 1]] <- episodic_validation_stamp(
+      run_date,
+      data.frame(
+        cluster_id = match(alarms$alarm_key, registry),
+        source_key = alarms$source_key,
+        stringsAsFactors = FALSE
+      )
     )
     run_rows[[length(run_rows) + 1]] <- data.frame(
       run_date = run_date,
@@ -286,15 +292,22 @@ episodic_validation_comparator_replicate <- function(method,
   )
   runs$n_clusters_new_visible <- runs$n_clusters_new
 
-  outbreak_rows$seed <- seed
-  clusters$seed <- seed
-  runs$seed <- seed
-  overlap$seed <- seed
+  # rep() rather than plain assignment: a replicate that raised no
+  # clusters at all - which is what a negative control usually is - has
+  # zero-row frames here, and `frame$seed <- seed` refuses those.
+  outbreak_rows$seed <- rep(seed, nrow(outbreak_rows))
+  clusters$seed <- rep(seed, nrow(clusters))
+  runs$seed <- rep(seed, nrow(runs))
+  overlap$seed <- rep(seed, nrow(overlap))
+  truth$outbreaks$seed <- rep(seed, nrow(truth$outbreaks))
+  truth_cases$seed <- rep(seed, nrow(truth_cases))
   list(
     outbreaks = outbreak_rows,
     clusters = clusters,
     runs = runs,
-    overlap = overlap
+    overlap = overlap,
+    truth_outbreaks = truth$outbreaks,
+    truth_cases = truth_cases
   )
 }
 
@@ -398,9 +411,8 @@ episodic_validation_rule_shewhart <- function(extract, run_date, params) {
   if (nrow(extract) == 0) {
     return(empty)
   }
-  week_start <- extract$sample_date -
-    (as.integer(format(extract$sample_date, "%u")) - 1L)
-  tested_week <- episodic_validation_last_run_date(run_date) - 6L
+  week_start <- episodic_week_start(extract$sample_date)
+  tested_week <- episodic_last_complete_week_start(run_date)
   rows <- lapply(unique(extract$pathogen), function(pathogen) {
     mine <- extract$pathogen == pathogen
     weeks <- seq(
