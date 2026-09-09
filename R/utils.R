@@ -30,6 +30,24 @@ doc_palette <- function() {
   paste0("```yaml\n", paste0(paste(keys, values), collapse = "\n"), "\n```")
 }
 
+#' How many foreign keys the schema declares
+#'
+#' For `vignette("deployment")`, which tells an operator what to expect
+#' from `information_schema.REFERENTIAL_CONSTRAINTS` on their own server.
+#' Counted from the schema rather than written down, so a reference added
+#' to `inst/sql/schema.sql` does not leave the vignette quoting a number
+#' that stopped being true.
+#' @return A single integer.
+#' @keywords internal
+#' @noRd
+doc_foreign_key_count <- function() {
+  sum(vapply(
+    strsplit(episodic_db_schema_statements("mariadb"), "\n", fixed = TRUE),
+    function(lines) sum(grepl("^\\s*FOREIGN KEY \\(", lines, perl = TRUE)),
+    integer(1)
+  ))
+}
+
 doc_system_file <- function(path) {
   urls <- trimws(strsplit(utils::packageDescription("EpiSODIC")$URL, ",", fixed = TRUE)[[1]])
   url <- urls[grepl("github.com", urls)][1]

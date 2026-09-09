@@ -8,8 +8,11 @@ episodic_db_create(path, overwrite = FALSE)
 }
 \arguments{
 \item{path}{Path to a SQLite file to create, or a \verb{mysql://} DSN (see
-\code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}) pointing at an empty MariaDB/MySQL
-database.}
+\code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}) pointing at a MariaDB/MySQL database.
+The schema does not have to be empty: EpiSODIC only ever enumerates
+and touches its own tables, so it can share one with another
+application. It does have to be free of \emph{EpiSODIC's} tables, unless
+\code{overwrite = TRUE}.}
 
 \item{overwrite}{If \code{TRUE}, delete an existing SQLite file (or drop all
 tables in an existing MariaDB/MySQL database) first. Use with care -

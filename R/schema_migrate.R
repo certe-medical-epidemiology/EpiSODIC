@@ -194,8 +194,11 @@ episodic_db_mariadb_connect <- function(dsn) {
 #' [episodic_db_connect()] to open a database you have already set up.
 #'
 #' @param path Path to a SQLite file to create, or a `mysql://` DSN (see
-#'   [episodic_db_dsn_mariadb()]) pointing at an empty MariaDB/MySQL
-#'   database.
+#'   [episodic_db_dsn_mariadb()]) pointing at a MariaDB/MySQL database.
+#'   The schema does not have to be empty: EpiSODIC only ever enumerates
+#'   and touches its own tables, so it can share one with another
+#'   application. It does have to be free of *EpiSODIC's* tables, unless
+#'   `overwrite = TRUE`.
 #' @param overwrite If `TRUE`, delete an existing SQLite file (or drop all
 #'   tables in an existing MariaDB/MySQL database) first. Use with care -
 #'   this destroys any data already there.

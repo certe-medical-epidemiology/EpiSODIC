@@ -230,8 +230,7 @@ against two backends:
   built with `episodic_db_dsn_mariadb()` rather than assembled by hand.
   Requires the `RMariaDB` package. This is the option for a deployment
   that already runs a database server and would rather point EpiSODIC
-  at it than manage a SQLite file on disk - the schema and every query
-  work identically against either backend.
+  at it than manage a SQLite file on disk.
 
 ```r
 Sys.setenv(EPISODIC_DB = episodic_db_dsn_mariadb(
@@ -244,10 +243,57 @@ Connecting to MariaDB/MySQL requires the `RMariaDB` package
 (`install.packages("RMariaDB")`); it is a `Suggests` dependency, not
 installed automatically, so SQLite-only deployments never need it. The
 schema (`r EpiSODIC:::doc_system_file("inst/sql/schema.sql")`) is written once, in SQLite syntax, and
-adapted at load time for the handful of tokens that differ under
-MariaDB/MySQL - there is no separate schema file to keep in sync.
+adapted at load time for what differs under MariaDB/MySQL - there is no
+separate schema file to keep in sync.
+
+### Which servers this is tested against
+
+Every release runs the full test suite against a real **MariaDB 11** and
+a real **MySQL 8** server, not only against SQLite, and a schema change
+either server rejects fails the build. The suite has also been run by
+hand against MariaDB 10.11.
+
+Both are tested because they are not the same server. MariaDB and MySQL
+disagree about how a foreign key written on the column rather than at the
+end of the table should be treated - MariaDB creates it, MySQL parses it
+and discards it - and EpiSODIC's schema is written in the form SQLite
+wants. It is translated for these servers so that the constraints exist
+on all three, and the suite counts them on a live server rather than
+assuming.
+
 `CHECK` constraints are enforced from MariaDB 10.2.1 / MySQL 8.0.16
 onwards; on older servers they are accepted but silently ignored.
+
+### Sharing a schema with something else
+
+EpiSODIC does not need a database of its own. Its tables can sit in a
+schema alongside another application's, which is a common way to be
+given a database by an infrastructure team, and every operation that
+enumerates tables - creating the schema, `overwrite = TRUE`, and
+`episodic_db_truncate()` - is scoped to EpiSODIC's own tables and cannot
+touch a co-tenant's.
+
+### If you already have a MariaDB or MySQL database
+
+**One created by EpiSODIC 0.15.x or earlier has no foreign keys.** They
+were declared in the schema and the server discarded them without saying
+so, so such a database has been accepting rows that reference nothing.
+There is no migration that adds them, because a constraint cannot be added
+to a table that already violates it: recreate the database with
+`episodic_db_create(overwrite = TRUE)` and load your case data again.
+SQLite databases are unaffected and always had them.
+
+To check what your server actually created:
+
+```sql
+SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS
+ WHERE CONSTRAINT_SCHEMA = DATABASE()
+   AND TABLE_NAME LIKE 'episodic\_%';
+```
+
+Anything other than `r EpiSODIC:::doc_foreign_key_count()` means the
+schema and the server disagree, and the suite's own live tests check that
+same number against a live server on every run.
 
 ## Upgrading EpiSODIC
 
