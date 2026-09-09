@@ -31,8 +31,8 @@ episodic_ui_performance_screen <- function(performance,
     } else {
       episodic_tr(
         "performance.timeliness_value",
-        days = round(entry$median_days, 1),
-        n = entry$n,
+        days = episodic_format_number(entry$median_days, digits = 1, lang = lang),
+        n = episodic_format_number(entry$n, lang = lang),
         lang = lang
       )
     }
@@ -89,7 +89,7 @@ episodic_ui_performance_screen <- function(performance,
         shiny::tags$tbody(lapply(seq_len(nrow(dist)), function(i) {
           shiny::tags$tr(
             shiny::tags$td(dist$verdict_label[i]),
-            shiny::tags$td(dist$n[i])
+            shiny::tags$td(episodic_format_number(dist$n[i], lang = lang))
           )
         }))
       )
@@ -122,12 +122,22 @@ episodic_ui_performance_screen <- function(performance,
             shiny::tags$td(shiny::HTML(episodic_ui_italicise_taxon(
               row$pathogen
             ))),
-            shiny::tags$td(row$n_detections),
+            shiny::tags$td(episodic_format_number(
+              row$n_detections,
+              lang = lang
+            )),
             shiny::tags$td(
               if (is.na(row$ppv)) {
                 episodic_tr("misc.dash", lang = lang)
               } else {
-                paste0(round(row$ppv * 100, 0), "%")
+                paste0(
+                  episodic_format_number(
+                    row$ppv * 100,
+                    digits = 0,
+                    lang = lang
+                  ),
+                  "%"
+                )
               }
             )
           )

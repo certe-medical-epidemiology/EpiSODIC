@@ -320,3 +320,128 @@ test_that("every language names the Pathogen screen the same way in its nav entr
     )
   }
 })
+
+test_that("episodic_format_number() writes each language's own marks, not the C locale's", {
+  # The four languages that swap the two marks round.
+  expect_equal(episodic_format_number(1234.5, lang = "en"), "1,234.5")
+  expect_equal(episodic_format_number(1234.5, lang = "nl"), "1.234,5")
+  expect_equal(episodic_format_number(1234.5, lang = "de"), "1.234,5")
+  expect_equal(episodic_format_number(1234.5, lang = "es"), "1.234,5")
+  # French groups with a no-break space (U+00A0), not a plain one. The
+  # escape is written out rather than the character itself, as
+  # everywhere else in this codebase.
+  expect_equal(episodic_format_number(1234.5, lang = "fr"), "1\u00a0234,5")
+
+  # And the three that do not, which the old en/everything-else split in
+  # the chart labeller got wrong: with Western digits, Arabic, Hindi and
+  # Chinese all write 1,234.5.
+  for (lang in c("ar", "hi", "zh")) {
+    expect_equal(episodic_format_number(1234.5, lang = lang), "1,234.5", info = lang)
+  }
+})
+
+test_that("episodic_format_number() groups Hindi the Indian way and Spanish not at four digits", {
+  # Lakh/crore grouping: 12,34,567, not 1,234,567.
+  expect_equal(episodic_format_number(1234567, lang = "hi"), "12,34,567")
+  expect_equal(episodic_format_number(1234567, lang = "en"), "1,234,567")
+
+  # CLDR's minimumGroupingDigits: Spanish writes 2000 unseparated, and
+  # separates from five digits up.
+  expect_equal(episodic_format_number(2000, lang = "es"), "2000")
+  expect_equal(episodic_format_number(12345, lang = "es"), "12.345")
+  expect_equal(episodic_format_number(2000, lang = "nl"), "2.000")
+})
+
+test_that("episodic_format_number() rounds to `digits` and drops trailing zeros", {
+  expect_equal(episodic_format_number(2, digits = 1, lang = "en"), "2")
+  expect_equal(episodic_format_number(2.35, digits = 1, lang = "en"), "2.4")
+  expect_equal(episodic_format_number(2.35, digits = 1, lang = "nl"), "2,4")
+  expect_equal(episodic_format_number(61.6, digits = 0, lang = "nl"), "62")
+  # A value large enough that as.character() would have gone scientific.
+  expect_equal(episodic_format_number(1e5, lang = "en"), "100,000")
+})
+
+test_that("episodic_format_number() keeps the sign, passes NA through, and is vectorised", {
+  expect_equal(episodic_format_number(-1234.5, lang = "nl"), "-1.234,5")
+  expect_true(is.na(episodic_format_number(NA, lang = "nl")))
+  expect_true(is.na(episodic_format_number(NA_real_, lang = "nl")))
+  expect_equal(
+    episodic_format_number(c(1000, NA, 2.5), lang = "de"),
+    c("1.000", NA, "2,5")
+  )
+  expect_equal(episodic_format_number(numeric(0), lang = "de"), character(0))
+  # Not a plain number: reported as R renders it rather than rewritten.
+  expect_equal(episodic_format_number(Inf, lang = "nl"), "Inf")
+})
+
+test_that("episodic_format_number() ignores options(OutDec), which is a session setting and not a language", {
+  # A Dutch R session sets OutDec = ",", and format() honours it. Two
+  # people reading the same dashboard must not see two different numbers
+  # because one of them set an option.
+  previous <- options(OutDec = ",")
+  on.exit(options(previous), add = TRUE)
+  expect_equal(episodic_format_number(1234.5, lang = "en"), "1,234.5")
+  expect_equal(episodic_format_number(1234.5, lang = "nl"), "1.234,5")
+  expect_equal(episodic_format_number(2.5, digits = 1, lang = "en"), "2.5")
+})
+
+test_that("a grouping value that is not a whole number warns and falls back to threes", {
+  # A translation file is edited by translators, and "every third" is the
+  # kind of thing that can land in a key like this. It must not take a
+  # dashboard down, and it must not pass silently either.
+  local_mocked_bindings(
+    episodic_tr = function(key, ..., lang = "en", instance_i18n = NULL) {
+      switch(key,
+        "misc.decimal.mark" = ".",
+        "misc.thousands.mark" = ",",
+        "misc.thousands.grouping" = "every third",
+        "misc.thousands.minimum" = "1",
+        key
+      )
+    }
+  )
+  expect_warning(
+    marks <- episodic_number_marks("en"),
+    "misc.thousands.grouping"
+  )
+  expect_equal(marks$sizes, 3L)
+})
+
+test_that("episodic_number_group() takes its group sizes right to left, repeating the last", {
+  marks <- list(decimal = ".", thousands = ",", sizes = 3L, minimum = 1L)
+  expect_equal(episodic_number_group("1234567", marks), "1,234,567")
+  expect_equal(
+    episodic_number_group("1234567", utils::modifyList(marks, list(sizes = c(3L, 2L)))),
+    "12,34,567"
+  )
+  # A language that does not group at all leaves the digits alone.
+  expect_equal(
+    episodic_number_group("1234567", utils::modifyList(marks, list(thousands = ""))),
+    "1234567"
+  )
+})
+
+test_that("every shipped language names all eight languages, in its own words", {
+  for (lang in episodic_shipped_langs) {
+    for (code in episodic_shipped_langs) {
+      label <- episodic_language_label(code, lang = lang)
+      expect_true(nzchar(label), info = paste(lang, code))
+      expect_false(grepl("[[", label, fixed = TRUE), info = paste(lang, code))
+      # A name, not the code it stands in for.
+      expect_false(identical(label, code), info = paste(lang, code))
+    }
+  }
+  expect_equal(episodic_language_label("nl", lang = "en"), "Dutch")
+  expect_equal(episodic_language_label("nl", lang = "nl"), "Nederlands")
+  expect_equal(episodic_language_label("en", lang = "de"), "Englisch")
+  # An unknown code is still the truest thing that can be said about it.
+  expect_equal(episodic_language_label("pt", lang = "en"), "pt")
+})
+
+test_that("the unsupported-language warning names both the code and the language", {
+  # The code is what goes in EPISODIC_LANGUAGE; the name is what tells an
+  # operator which code they want.
+  choices <- episodic_language_choices(lang = "en")
+  expect_true("nl (Dutch)" %in% choices)
+  expect_equal(length(choices), length(episodic_shipped_langs))
+})

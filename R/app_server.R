@@ -522,12 +522,14 @@ episodic_ui_status_strip <- function(status,
       streams_phrase = episodic_count_phrase(
         status$n_streams %||% 0,
         episodic_tr("unit.stream", lang = lang),
-        episodic_tr("unit.streams", lang = lang)
+        episodic_tr("unit.streams", lang = lang),
+        lang = lang
       ),
       clusters_phrase = episodic_count_phrase(
         status$n_clusters_open %||% 0,
         episodic_tr("unit.cluster", lang = lang),
-        episodic_tr("unit.clusters", lang = lang)
+        episodic_tr("unit.clusters", lang = lang),
+        lang = lang
       )
     )
   } else {
@@ -847,7 +849,8 @@ episodic_ui_rail <- function(open,
         episodic_count_phrase(
           nrow(open),
           episodic_tr("unit.cluster", lang = lang),
-          episodic_tr("unit.clusters", lang = lang)
+          episodic_tr("unit.clusters", lang = lang),
+          lang = lang
         ),
         " ",
         episodic_tr("rail.count_suffix", lang = lang)
@@ -939,12 +942,17 @@ episodic_ui_rail <- function(open,
                 episodic_count_phrase(
                   row$n_cases,
                   episodic_tr("unit.case", lang = lang),
-                  episodic_tr("unit.cases", lang = lang)
+                  episodic_tr("unit.cases", lang = lang),
+                  lang = lang
                 ),
                 if (!is.na(row$priority_score)) {
                   episodic_tr(
                     "rail.priority",
-                    score = trimws(format(round(row$priority_score, 0))),
+                    score = episodic_format_number(
+                      row$priority_score,
+                      digits = 0,
+                      lang = lang
+                    ),
                     lang = lang
                   )
                 }

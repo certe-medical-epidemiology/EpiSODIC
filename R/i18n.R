@@ -88,10 +88,11 @@ episodic_lang_warned <- new.env(parent = emptyenv())
 #' and none of them is a reason to serve a stack trace instead of a
 #' surveillance dashboard.
 #'
-#' Anything that *branches* on the language rather than looking a key up -
-#' the charts' thousands separator, for instance - has to resolve it
-#' first, or an unset variable would read as "not English" and take the
-#' wrong branch while every word around it came out in English.
+#' Anything that *branches* on the language rather than looking a key up
+#' has to resolve it first, or an unset variable would read as "not
+#' English" and take the wrong branch while every word around it came
+#' out in English. (The charts' thousands separator used to be exactly
+#' that; it is a key lookup now - see `episodic_format_number()`.)
 #'
 #' @param lang A language code, or `""`/`NA` for "not set".
 #' @return A single language code, always one of `episodic_languages`.
@@ -110,12 +111,56 @@ episodic_lang <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       "EpiSODIC has no translations for language '",
       lang,
       "', so English is used instead. Set EPISODIC_LANGUAGE to one of: ",
-      paste(episodic_languages, collapse = ", "),
+      # The code and the name, not one or the other: the code is what
+      # goes in the environment variable, and the name is what tells an
+      # operator which code they want.
+      paste(episodic_language_choices(lang = "en"), collapse = ", "),
       ".",
       call. = FALSE
     )
   }
   "en"
+}
+
+#' What a language is called, rather than what its code is
+#'
+#' `"nl"` is what an operator sets `EPISODIC_LANGUAGE` to; it is not
+#' what anyone calls the language. Every shipped file names all eight in
+#' its own language, so an English message says "Dutch" and a Dutch
+#' screen says "Nederlands", from the same key.
+#'
+#' @param code A language code. One that is not shipped comes back as
+#'   itself - it is still the truest thing that can be said about it.
+#' @param lang The language to name it *in*.
+#' @return A single string.
+#' @keywords internal
+#' @noRd
+episodic_language_label <- function(code,
+                                    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (length(code) != 1 || is.na(code) || !code %in% episodic_languages) {
+    return(as.character(code))
+  }
+  episodic_tr(paste0("misc.language.", code), lang = lang)
+}
+
+#' Every shipped language, as "code (Name)"
+#'
+#' For the one message that has to name them all - the one telling an
+#' operator which values `EPISODIC_LANGUAGE` takes.
+#'
+#' @param lang The language to name them in.
+#' @return A character vector, one entry per shipped language.
+#' @keywords internal
+#' @noRd
+episodic_language_choices <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  vapply(
+    episodic_languages,
+    function(code) {
+      sprintf("%s (%s)", code, episodic_language_label(code, lang = lang))
+    },
+    character(1),
+    USE.NAMES = FALSE
+  )
 }
 
 #' Whether a language is written right to left
@@ -213,22 +258,35 @@ episodic_i18n_substitute <- function(template, values) {
   template
 }
 
-#' Dutch/English count phrase with correct number agreement
+#' Count phrase with correct number agreement
 #'
 #' `1 geval` against `2 gevallen`. Deliberately takes explicit singular/plural forms
 #' rather than guessing a plural suffix, since Dutch (and English) plurals
 #' are often irregular.
 #'
+#' The number itself goes through `episodic_format_number()`, so a count
+#' of four figures reads as the language writes one - this is where most
+#' of the app's counts reach a sentence.
+#'
 #' @param n A count.
 #' @param singular,plural The singular and plural noun forms.
 #' @param with_number If `TRUE` (default), prefix with the number.
+#' @param lang Session language, for the number's own marks.
 #' @return `"1 geval"`, `"2 gevallen"`, `"0 gevallen"`, etc. Dutch and
 #'   English both pluralise away from exactly 1.
 #' @keywords internal
 #' @noRd
-episodic_count_phrase <- function(n, singular, plural, with_number = TRUE) {
+episodic_count_phrase <- function(n,
+                                  singular,
+                                  plural,
+                                  with_number = TRUE,
+                                  lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   word <- if (n == 1) singular else plural
-  if (with_number) paste(n, word) else word
+  if (with_number) {
+    paste(episodic_format_number(n, lang = lang), word)
+  } else {
+    word
+  }
 }
 
 #' Format a date range compactly, collapsing shared month/year
@@ -318,4 +376,196 @@ episodic_format_date_range <- function(x,
 #' @noRd
 episodic_format_date <- function(d, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   episodic_format_date_range(d, d, lang = lang)
+}
+
+#' Format a Number the Way the Session's Language Writes One
+#'
+#' English writes 1,234.5 and Dutch, German, French and Spanish write it
+#' with the two marks the other way round. A surveillance dashboard that
+#' ignores that is not merely untidy: a Dutch reader seeing an \eqn{R_t}
+#' of "1.4" reads fourteen hundred before reading 1.4, on the one chart
+#' where the difference between just above and just below 1 is the whole
+#' point.
+#'
+#' The marks come from the language files, not from `options(OutDec)`
+#' and not from the system locale: an EpiSODIC instance renders in the
+#' language `EPISODIC_LANGUAGE` names, on whatever machine and under
+#' whatever locale the operator happens to run R with, and two people
+#' reading the same dashboard must not see two different numbers. Four
+#' keys carry it, per language:
+#'
+#' \describe{
+#'   \item{`misc.decimal.mark`}{What separates the whole part from the
+#'     fraction.}
+#'   \item{`misc.thousands.mark`}{What separates the groups of the whole
+#'     part - a no-break space in French, empty for a language that does
+#'     not group at all.}
+#'   \item{`misc.thousands.grouping`}{The group sizes, right to left,
+#'     comma-separated. `"3"` everywhere except Hindi, where `"3,2"`
+#'     gives the Indian lakh/crore grouping (12,34,567, not 1,234,567).}
+#'   \item{`misc.thousands.minimum`}{How many digits must stand before
+#'     the first separator for a number to be grouped at all (CLDR's
+#'     `minimumGroupingDigits`). `"1"` everywhere except Spanish, where
+#'     four-digit numbers are written unseparated (2000, but 12.345).}
+#' }
+#'
+#' Arabic gets the *Latin* marks (1,234.5), not `U+066B`/`U+066C`: those
+#' belong with Arabic-Indic digits (١٢٣), and EpiSODIC renders Western
+#' digits throughout - which is also what CLDR's `ar`-with-`latn`
+#' numbering does.
+#'
+#' @param x A numeric vector.
+#' @param digits Round to this many decimal places first. `NULL` (the
+#'   default) leaves the value as it is. Trailing zeros are dropped
+#'   either way, so `digits = 1` renders 2 as "2" and 2.35 as "2.4".
+#' @param lang Session language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
+#'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   environment variable, falling back to `"en"` if that is unset.
+#' @return A character vector the same length as `x`. `NA` in is
+#'   `NA_character_` out - a number that does not exist is not a number
+#'   to format, and every caller already decides for itself what to show
+#'   in its place. Anything else that does not parse as a plain number
+#'   (`Inf`, `NaN`) comes back as R renders it, rather than being
+#'   silently rewritten.
+#' @keywords internal
+#' @noRd
+episodic_format_number <- function(x,
+                                   digits = NULL,
+                                   lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (length(x) == 0) {
+    return(character(0))
+  }
+  marks <- episodic_number_marks(lang)
+  vapply(
+    x,
+    function(one) episodic_format_number_one(one, digits, marks),
+    character(1),
+    USE.NAMES = FALSE
+  )
+}
+
+#' The four number-formatting values for one language
+#'
+#' Read through `episodic_tr()`, so an instance's own i18n override
+#' reaches them like any other key. A grouping or minimum that is not a
+#' positive whole number is a translation-file mistake rather than
+#' something to render around: it warns once and falls back to grouping
+#' by threes, which is what seven of the eight shipped languages use.
+#'
+#' @param lang Session language.
+#' @return A list with `decimal`, `thousands`, `sizes` and `minimum`.
+#' @keywords internal
+#' @noRd
+episodic_number_marks <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  lang <- episodic_lang(lang)
+  whole <- function(key, fallback) {
+    raw <- strsplit(episodic_tr(key, lang = lang), ",", fixed = TRUE)[[1]]
+    parsed <- suppressWarnings(as.integer(trimws(raw)))
+    if (length(parsed) == 0 || anyNA(parsed) || any(parsed < 1)) {
+      if (is.null(episodic_number_warned[[paste0(lang, key)]])) {
+        episodic_number_warned[[paste0(lang, key)]] <- TRUE
+        warning(
+          "The '",
+          lang,
+          "' translation file gives '",
+          key,
+          "' a value that is not a whole number, so numbers are grouped ",
+          "the default way instead. Fix the value, or override the key ",
+          "for this instance.",
+          call. = FALSE
+        )
+      }
+      return(fallback)
+    }
+    parsed
+  }
+  list(
+    decimal = episodic_tr("misc.decimal.mark", lang = lang),
+    thousands = episodic_tr("misc.thousands.mark", lang = lang),
+    sizes = whole("misc.thousands.grouping", 3L),
+    minimum = whole("misc.thousands.minimum", 1L)[1]
+  )
+}
+
+#' Warn about one broken number key only once per session
+#' @keywords internal
+#' @noRd
+episodic_number_warned <- new.env(parent = emptyenv())
+
+#' One number, rendered with one language's marks
+#'
+#' The plain form is built first and then taken apart on whatever
+#' character R used as its decimal point, rather than on `"."`: that is
+#' what makes this immune to `options(OutDec = ",")` without having to
+#' read, set or restore it. A string that does not match a plain signed
+#' number at all is handed back untouched.
+#'
+#' @param x A single numeric.
+#' @param digits Passed from `episodic_format_number()`.
+#' @param marks From `episodic_number_marks()`.
+#' @return A single string, or `NA_character_`.
+#' @keywords internal
+#' @noRd
+episodic_format_number_one <- function(x, digits, marks) {
+  if (is.na(x)) {
+    return(NA_character_)
+  }
+  if (!is.null(digits)) {
+    x <- round(x, digits)
+  }
+  plain <- format(x, scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+  parts <- regmatches(
+    plain,
+    regexec("^(-?)([0-9]+)(?:[^0-9]([0-9]+))?$", plain)
+  )[[1]]
+  if (length(parts) == 0) {
+    return(plain)
+  }
+  whole <- episodic_number_group(parts[3], marks)
+  # A number with no fraction leaves that group unmatched, which
+  # `regmatches()` reports as an empty string - never as a missing one,
+  # but `nzchar(NA)` is TRUE and would append the word "NA" to a whole
+  # number if it ever did.
+  fraction <- if (length(parts) >= 4 && !is.na(parts[4])) parts[4] else ""
+  if (nzchar(fraction)) {
+    whole <- paste0(whole, marks$decimal, fraction)
+  }
+  paste0(parts[2], whole)
+}
+
+#' Insert one language's thousands mark into a run of digits
+#'
+#' Right to left, taking `sizes` in turn and repeating the last one -
+#' `3` gives 1,234,567 and `3,2` gives 12,34,567, the Indian grouping.
+#' Nothing is inserted while fewer than `minimum` digits would stand
+#' before the first separator, which is what keeps Spanish's four-digit
+#' numbers unseparated.
+#'
+#' @param digits A string of digits, no sign and no decimal part.
+#' @param marks From `episodic_number_marks()`.
+#' @return The same digits, grouped.
+#' @keywords internal
+#' @noRd
+episodic_number_group <- function(digits, marks) {
+  if (!nzchar(marks$thousands)) {
+    return(digits)
+  }
+  chars <- strsplit(digits, "", fixed = TRUE)[[1]]
+  groups <- character(0)
+  last <- length(chars)
+  step <- 1L
+  while (last > 0) {
+    size <- marks$sizes[min(step, length(marks$sizes))]
+    first <- max(last - size + 1L, 1L)
+    groups <- c(paste(chars[first:last], collapse = ""), groups)
+    last <- first - 1L
+    step <- step + 1L
+  }
+  # CLDR's minimumGroupingDigits, which is a count of the digits standing
+  # *before* the first separator, not a count of groups: Spanish writes
+  # 2000 unseparated and 12.345 separated, and both have two groups.
+  if (length(groups) == 1 || nchar(groups[1]) < marks$minimum) {
+    return(digits)
+  }
+  paste(groups, collapse = marks$thousands)
 }

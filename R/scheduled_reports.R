@@ -319,7 +319,8 @@ episodic_scheduled_report_message <- function(con, subscription, final, attachme
         cases_phrase = episodic_count_phrase(
           diff$n_new_cases,
           episodic_tr("unit.new_case", lang = lang),
-          episodic_tr("unit.new_cases", lang = lang)
+          episodic_tr("unit.new_cases", lang = lang),
+          lang = lang
         ),
         lang = lang
       ),
@@ -341,7 +342,8 @@ episodic_scheduled_report_message <- function(con, subscription, final, attachme
         interval = episodic_count_phrase(
           subscription$interval_days,
           episodic_tr("unit.day", lang = lang),
-          episodic_tr("unit.days", lang = lang)
+          episodic_tr("unit.days", lang = lang),
+          lang = lang
         ),
         lang = lang
       ),

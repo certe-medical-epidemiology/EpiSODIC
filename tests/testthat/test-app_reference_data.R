@@ -236,3 +236,22 @@ test_that("the Info screen carries the reference panel", {
   expect_true(grepl("EPISODIC_GEO_DATA", html, fixed = TRUE))
   expect_false(grepl("[[", html, fixed = TRUE))
 })
+
+test_that("the reference-data screen names the language rather than printing its code", {
+  # "The dashboard and reports render in 'nl'." is a code shown to a
+  # human. The code still belongs there - it is what EPISODIC_LANGUAGE
+  # takes - but beside the name, not instead of it.
+  row <- reference_row_for(
+    episodic_app_reference_data(NULL, lang = "en"),
+    "EPISODIC_LANGUAGE"
+  )
+  expect_true(grepl("English", row$detail, fixed = TRUE))
+  expect_true(grepl("(en)", row$detail, fixed = TRUE))
+
+  dutch <- reference_row_for(
+    episodic_app_reference_data(NULL, lang = "nl"),
+    "EPISODIC_LANGUAGE"
+  )
+  expect_true(grepl("Nederlands", dutch$detail, fixed = TRUE))
+  expect_true(grepl("(nl)", dutch$detail, fixed = TRUE))
+})

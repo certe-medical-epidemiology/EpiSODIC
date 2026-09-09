@@ -364,11 +364,12 @@ episodic_app_run_load_summary <- function(run,
     return(NA_character_)
   }
 
+  num <- function(x) episodic_format_number(x, lang = lang)
   detail <- episodic_tr(
     "activity.detail_run",
-    inserted = run$n_cases_inserted,
-    supplied = run$n_cases_supplied,
-    deduplicated = run$n_cases_deduplicated,
+    inserted = num(run$n_cases_inserted),
+    supplied = num(run$n_cases_supplied),
+    deduplicated = num(run$n_cases_deduplicated),
     lang = lang
   )
   if (isTRUE(run$n_activity_skipped > 0)) {
@@ -376,7 +377,7 @@ episodic_app_run_load_summary <- function(run,
       detail,
       episodic_tr(
         "activity.detail_run_skipped",
-        skipped = run$n_activity_skipped,
+        skipped = num(run$n_activity_skipped),
         lang = lang
       ),
       sep = " \u00b7 "

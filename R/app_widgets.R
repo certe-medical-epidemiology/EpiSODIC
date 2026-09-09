@@ -442,9 +442,13 @@ episodic_css_pct <- function(x) sprintf("%.4f%%", x)
 #' @param rows A data frame with `label` and `n` columns.
 #' @param unit Optional footnote under the bars.
 #' @param colour Bar fill colour.
+#' @param lang Session language, for the value beside each bar.
 #' @keywords internal
 #' @noRd
-episodic_ui_bars <- function(rows, unit = NULL, colour = NULL) {
+episodic_ui_bars <- function(rows,
+                             unit = NULL,
+                             colour = NULL,
+                             lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (nrow(rows) == 0) {
     return(shiny::tags$p(class = "episodic-panel-empty", "..."))
   }
@@ -470,7 +474,16 @@ episodic_ui_bars <- function(rows, unit = NULL, colour = NULL) {
           )
         )
       ),
-      shiny::tags$div(class = "episodic-bar-value", rows$n[i])
+      shiny::tags$div(
+        class = "episodic-bar-value",
+        # A suppressed count arrives as "<5" and is left alone; anything
+        # numeric is written the way the language writes a number.
+        if (is.numeric(rows$n)) {
+          episodic_format_number(rows$n[i], lang = lang)
+        } else {
+          rows$n[i]
+        }
+      )
     )
   })
   shiny::tagList(

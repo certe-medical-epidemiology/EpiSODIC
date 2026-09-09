@@ -311,10 +311,14 @@ episodic_ui_cluster_table <- function(clusters,
       )))
     }
     if (identical(key, "cases")) {
-      return(list(shiny::tags$td(row$n_cases)))
+      return(list(shiny::tags$td(
+        episodic_format_number(row$n_cases, lang = lang)
+      )))
     }
     if (identical(key, "case_days")) {
-      return(list(shiny::tags$td(row$case_days)))
+      return(list(shiny::tags$td(
+        episodic_format_number(row$case_days, lang = lang)
+      )))
     }
     if (identical(key, "duration")) {
       return(list(shiny::tags$td(if (is.na(duration[i])) {
@@ -323,7 +327,8 @@ episodic_ui_cluster_table <- function(clusters,
         episodic_count_phrase(
           duration[i],
           episodic_tr("unit.day", lang = lang),
-          episodic_tr("unit.days", lang = lang)
+          episodic_tr("unit.days", lang = lang),
+          lang = lang
         )
       })))
     }
@@ -331,7 +336,7 @@ episodic_ui_cluster_table <- function(clusters,
     list(shiny::tags$td(if (is.na(row$priority_score)) {
       dash
     } else {
-      round(row$priority_score, 0)
+      episodic_format_number(row$priority_score, digits = 0, lang = lang)
     }))
   }
 

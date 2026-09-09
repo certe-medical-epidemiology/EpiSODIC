@@ -100,7 +100,12 @@ episodic_ui_pathogen_controls <- function(screen,
         "pathogen.select_option",
         lang = lang,
         pathogen = row$pathogen,
-        cases = episodic_count_phrase(row$n_cases, case_words[1], case_words[2])
+        cases = episodic_count_phrase(
+          row$n_cases,
+          case_words[1],
+          case_words[2],
+          lang = lang
+        )
       )
     )
   })
@@ -221,12 +226,16 @@ episodic_ui_pathogen_stats <- function(screen,
   stats <- list(
     episodic_ui_stat(
       episodic_tr("pathogen.stat.cases", lang = lang),
-      s$n_cases,
-      episodic_tr("pathogen.stat.cases_sub", weeks = s$n_weeks, lang = lang)
+      episodic_format_number(s$n_cases, lang = lang),
+      episodic_tr(
+        "pathogen.stat.cases_sub",
+        weeks = episodic_format_number(s$n_weeks, lang = lang),
+        lang = lang
+      )
     ),
     episodic_ui_stat(
       episodic_tr("pathogen.stat.patients", lang = lang),
-      s$n_patients,
+      episodic_format_number(s$n_patients, lang = lang),
       episodic_tr("pathogen.stat.patients_sub", lang = lang)
     )
   )
@@ -235,7 +244,7 @@ episodic_ui_pathogen_stats <- function(screen,
       stats,
       list(episodic_ui_stat(
         episodic_tr("pathogen.stat.peak", lang = lang),
-        s$peak_n,
+        episodic_format_number(s$peak_n, lang = lang),
         episodic_tr(
           "pathogen.stat.peak_sub",
           week = episodic_format_date(s$peak_week, lang = lang),
@@ -248,14 +257,24 @@ episodic_ui_pathogen_stats <- function(screen,
     change <- if (is.na(s$change_pct)) {
       episodic_tr("misc.dash", lang = lang)
     } else {
-      sprintf("%+d%%", as.integer(s$change_pct))
+      # The sign is part of the reading, so it is kept explicitly; the
+      # number itself is written the way the language writes one.
+      sprintf(
+        "%s%s%%",
+        if (s$change_pct > 0) "+" else "",
+        episodic_format_number(s$change_pct, digits = 0, lang = lang)
+      )
     }
     stats <- c(
       stats,
       list(episodic_ui_stat(
         episodic_tr("pathogen.stat.change", lang = lang),
         change,
-        episodic_tr("pathogen.stat.change_sub", n = s$n_previous, lang = lang),
+        episodic_tr(
+          "pathogen.stat.change_sub",
+          n = episodic_format_number(s$n_previous, lang = lang),
+          lang = lang
+        ),
         colour = if (!is.na(s$change_pct) && s$change_pct > 0) {
           pal$danger
         } else if (!is.na(s$change_pct) && s$change_pct < 0) {
@@ -334,8 +353,16 @@ episodic_ui_pathogen_curve_panel <- function(screen,
       "pathogen.panel.curve.mem_note",
       lang = lang,
       seasons = length(thresholds$seasons_used),
-      pre = round(thresholds$pre_epidemic, 1),
-      post = round(thresholds$post_epidemic, 1)
+      pre = episodic_format_number(
+        thresholds$pre_epidemic,
+        digits = 1,
+        lang = lang
+      ),
+      post = episodic_format_number(
+        thresholds$post_epidemic,
+        digits = 1,
+        lang = lang
+      )
     )
   } else if (isTRUE(screen$seasonal)) {
     episodic_tr("pathogen.panel.curve.mem_unavailable", lang = lang)
@@ -347,7 +374,7 @@ episodic_ui_pathogen_curve_panel <- function(screen,
     episodic_tr("pathogen.panel.curve.title", lang = lang),
     aside = episodic_tr(
       "pathogen.panel.curve.aside",
-      weeks = nrow(screen$weekly),
+      weeks = episodic_format_number(nrow(screen$weekly), lang = lang),
       lang = lang
     ),
     note = shiny::HTML(note),
@@ -472,8 +499,12 @@ episodic_ui_pathogen_demography_panel <- function(screen,
     episodic_tr(
       "pathogen.panel.demography.note",
       lang = lang,
-      median = round(demo$median_age, 0),
-      baseline = round(demo$baseline_median_age, 0)
+      median = episodic_format_number(demo$median_age, digits = 0, lang = lang),
+      baseline = episodic_format_number(
+        demo$baseline_median_age,
+        digits = 0,
+        lang = lang
+      )
     )
   }
   episodic_ui_panel(
@@ -526,7 +557,8 @@ episodic_ui_pathogen_geo_panel <- function(screen,
     if (is.null(map_chart)) {
       episodic_ui_bars(
         utils::head(bars, 12),
-        unit = episodic_tr("panel.geo.unit", lang = lang)
+        unit = episodic_tr("panel.geo.unit", lang = lang),
+        lang = lang
       )
     } else {
       shiny::tagList(
@@ -541,7 +573,7 @@ episodic_ui_pathogen_geo_panel <- function(screen,
           class = "episodic-panel-note",
           episodic_tr("panel.geo.map_note", lang = lang)
         ),
-        episodic_ui_bars(utils::head(bars, 12))
+        episodic_ui_bars(utils::head(bars, 12), lang = lang)
       )
     }
   )
@@ -567,7 +599,7 @@ episodic_ui_pathogen_breakdown_panels <- function(screen,
         episodic_ui_panel(
           episodic_tr("pathogen.panel.care_line.title", lang = lang),
           note = episodic_tr("pathogen.panel.care_line.note", lang = lang),
-          episodic_ui_bars(care_lines)
+          episodic_ui_bars(care_lines, lang = lang)
         )
       }
     ),
@@ -581,7 +613,7 @@ episodic_ui_pathogen_breakdown_panels <- function(screen,
       } else {
         episodic_ui_panel(
           episodic_tr("pathogen.panel.institutions.title", lang = lang),
-          episodic_ui_bars(institutions)
+          episodic_ui_bars(institutions, lang = lang)
         )
       }
     )
@@ -605,7 +637,8 @@ episodic_ui_pathogen_clusters_panel <- function(screen,
     aside = episodic_count_phrase(
       nrow(clusters),
       episodic_tr("unit.cluster", lang = lang),
-      episodic_tr("unit.clusters", lang = lang)
+      episodic_tr("unit.clusters", lang = lang),
+      lang = lang
     ),
     note = episodic_tr("pathogen.panel.clusters.note", lang = lang),
     episodic_ui_cluster_table(
@@ -673,7 +706,8 @@ episodic_ui_pathogen_config_panel <- function(screen,
     episodic_count_phrase(
       n,
       episodic_tr("unit.day", lang = lang),
-      episodic_tr("unit.days", lang = lang)
+      episodic_tr("unit.days", lang = lang),
+      lang = lang
     )
   }
 
@@ -774,7 +808,11 @@ episodic_ui_pathogen_config_panel <- function(screen,
           "pathogen.panel.config.severity.label",
           lang = lang
         ),
-        value = as.character(pc$severity_weight %||% dash),
+        value = if (is.null(pc$severity_weight) || is.na(pc$severity_weight)) {
+          dash
+        } else {
+          episodic_format_number(pc$severity_weight, lang = lang)
+        },
         meaning = episodic_tr(
           "pathogen.panel.config.severity.meaning",
           lang = lang

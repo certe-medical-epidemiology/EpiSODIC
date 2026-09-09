@@ -242,6 +242,7 @@ episodic_ui_run_modal <- function(con,
   moment <- function(at) {
     episodic_ui_format_stamp(at, lang = lang)
   }
+  num <- function(x) episodic_format_number(x, lang = lang)
   unknown <- episodic_tr("misc.unknown", lang = lang)
   load_summary <- episodic_app_run_load_summary(run, lang = lang)
   failed <- identical(run$status, "failed") &&
@@ -291,15 +292,15 @@ episodic_ui_run_modal <- function(con,
         heading("activity.run_modal_detection"),
         shiny::tags$p(episodic_tr(
           "activity.run_modal_detection_line",
-          streams = run$n_streams,
-          detections = run$n_detections %||% 0,
-          new = run$n_signals_new %||% 0,
-          updated = run$n_signals_updated %||% 0,
+          streams = num(run$n_streams),
+          detections = num(run$n_detections %||% 0),
+          new = num(run$n_signals_new %||% 0),
+          updated = num(run$n_signals_updated %||% 0),
           lang = lang
         )),
         shiny::tags$p(episodic_tr(
           "activity.run_modal_autoclosed_line",
-          closed = episodic_db_run_autoclosed_count(con, run),
+          closed = num(episodic_db_run_autoclosed_count(con, run)),
           lang = lang
         ))
       )

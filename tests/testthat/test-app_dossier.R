@@ -522,3 +522,35 @@ test_that("the stat grid says 'unknown' rather than printing NA for a priority s
     fixed = TRUE
   ))
 })
+
+test_that("the stat grid writes its numbers the way the session language writes them", {
+  # The whole point of episodic_format_number(): a Dutch reader seeing a
+  # ratio of "1.4" reads fourteen hundred before reading 1.4.
+  obj <- list(
+    id = 44L,
+    n_cases = 1234L,
+    n_positives = 1234L,
+    unique_patients = 1200L,
+    expected = 1234.5,
+    # An exactly representable half, so the assertion is about the marks
+    # and not about how a binary double rounds.
+    ratio = 1.5,
+    priority_score = 61.6,
+    doubling_days = NA_real_,
+    first_day = "2025-01-10",
+    last_day = "2025-01-13",
+    density = NULL,
+    case_free = list(since = NA_integer_, need = NA_integer_)
+  )
+
+  en <- as.character(episodic_ui_stat_grid(obj, lang = "en"))
+  expect_true(grepl(">1,234<", en, fixed = TRUE))
+  expect_true(grepl("1,234.5", en, fixed = TRUE))
+  expect_true(grepl(">1.5<", en, fixed = TRUE))
+
+  nl <- as.character(episodic_ui_stat_grid(obj, lang = "nl"))
+  expect_true(grepl(">1.234<", nl, fixed = TRUE))
+  expect_true(grepl("1.234,5", nl, fixed = TRUE))
+  expect_true(grepl(">1,5<", nl, fixed = TRUE))
+  expect_false(grepl(">1,234<", nl, fixed = TRUE))
+})

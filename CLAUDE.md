@@ -19,6 +19,10 @@ The operator provides case data in a documented format; EpiSODIC handles everyth
 
 The dashboard and reports are available in English, Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and Spanish. The app sets `lang` and `dir` on the document from the resolved language, and `inst/app/www/episodic.css` uses CSS *logical* properties throughout (`margin-inline-start`, `border-inline-start`, `text-align: start`, `inset-inline-start`) rather than physical `left`/`right` ones, so Arabic mirrors correctly. A `margin-left` added to that stylesheet is a bug.
 
+Numbers are part of that. Every number a reader sees goes through `episodic_format_number()`, which takes its decimal mark, thousands mark, group sizes and minimum grouping from four `misc.decimal.mark`/`misc.thousands.*` keys per language - never from `options(OutDec)` or the system locale, which are properties of whoever started R rather than of the instance. Hindi groups by the Indian lakh/crore rule and Spanish leaves four-digit numbers unseparated because those keys say so, not because anything branches on a language code. A `format(x, big.mark = ",")` reaching a screen is a bug; `episodic_css_pct()` is the one deliberate exception, and it formats a machine-read CSS value rather than a number anyone reads. Identifiers are not quantities: a cluster id, a page number, a schema version or a report version is rendered as-is, never grouped.
+
+The languages themselves have names, in `misc.language.<code>`, one set per file in that file's own language. A message that would otherwise print `nl` at a human says "Dutch" in English and "Nederlands" in Dutch; where the reader has to *type* the code (`EPISODIC_LANGUAGE`), both are given - see `episodic_language_label()` and `episodic_language_choices()`.
+
 ## Architecture
 
 ### Pipeline

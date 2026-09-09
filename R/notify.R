@@ -227,7 +227,8 @@ episodic_notify_build_new_clusters <- function(details,
   count_phrase <- episodic_count_phrase(
     n_new,
     episodic_tr("notif.new_cluster.singular", lang = lang),
-    episodic_tr("notif.new_cluster.plural", lang = lang)
+    episodic_tr("notif.new_cluster.plural", lang = lang),
+    lang = lang
   )
   title <- episodic_tr(
     "notif.title_new_clusters",
@@ -258,9 +259,22 @@ episodic_notify_build_new_clusters <- function(details,
     ref <- episodic_tr("dossier.cluster_ref", id = row$cluster_id, lang = lang)
     url <- episodic_notify_cluster_url(dashboard_url, row$cluster_id)
     location <- episodic_notify_location(row, lang = lang)
-    expected_str <- if (is.na(row$expected)) "n/a" else round(row$expected, 1)
-    ratio_str <- if (is.na(row$ratio)) "n/a" else round(row$ratio, 1)
-    priority_str <- round(row$priority_score, 0)
+    expected_str <- if (is.na(row$expected)) {
+      "n/a"
+    } else {
+      episodic_format_number(row$expected, digits = 1, lang = lang)
+    }
+    ratio_str <- if (is.na(row$ratio)) {
+      "n/a"
+    } else {
+      episodic_format_number(row$ratio, digits = 1, lang = lang)
+    }
+    priority_str <- episodic_format_number(
+      row$priority_score,
+      digits = 0,
+      lang = lang
+    )
+    cases_str <- episodic_format_number(row$n_cases, lang = lang)
     period_str <- episodic_format_date_range(
       row$first_day,
       row$last_day,
@@ -272,7 +286,8 @@ episodic_notify_build_new_clusters <- function(details,
       episodic_count_phrase(
         durations[i],
         episodic_tr("unit.day", lang = lang),
-        episodic_tr("unit.days", lang = lang)
+        episodic_tr("unit.days", lang = lang),
+        lang = lang
       )
     }
     line <- episodic_tr(
@@ -280,7 +295,7 @@ episodic_notify_build_new_clusters <- function(details,
       ref = ref,
       pathogen = row$pathogen,
       location = location,
-      cases = row$n_cases,
+      cases = cases_str,
       expected = expected_str,
       ratio = ratio_str,
       priority = priority_str,
@@ -289,7 +304,7 @@ episodic_notify_build_new_clusters <- function(details,
     )
     summary_str <- episodic_tr(
       "notif.cluster_summary",
-      cases = row$n_cases,
+      cases = cases_str,
       expected = expected_str,
       priority = priority_str,
       lang = lang
@@ -329,10 +344,10 @@ episodic_notify_build_new_clusters <- function(details,
         episodic_html_escape(period_str),
         "</td>",
         "<td style='text-align:center'>",
-        row$n_cases,
+        cases_str,
         "</td>",
         "<td style='text-align:center'>",
-        row$case_days,
+        episodic_format_number(row$case_days, lang = lang),
         "</td>",
         "<td style='text-align:center'>",
         episodic_html_escape(duration_str),

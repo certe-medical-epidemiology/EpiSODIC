@@ -213,34 +213,19 @@ episodic_chart_month_abbrevs <- function(lang = Sys.getenv("EPISODIC_LANGUAGE"))
 
 #' A numeric axis labeller in the session language's own conventions
 #'
-#' English writes 1,234.5 and every other language this package speaks
-#' writes 1.234,5. A chart axis that ignores that is not merely untidy: a
-#' Dutch reader seeing an \eqn{R_t} of "1.4" reads fourteen hundred before
-#' reading 1.4, on the one chart where the difference between just above
-#' and just below 1 is the whole point.
+#' Every axis label goes through `episodic_format_number()`, the same
+#' place every other number on the screen comes from. This used to split
+#' the world into English and "everything else, which writes 1.234,5",
+#' which is right for Dutch, German, French and Spanish and wrong for
+#' the other three: Arabic, Hindi and Chinese all write 1,234.5 with the
+#' Western digits this package renders.
 #'
 #' @param lang Session language.
 #' @return A function suitable as `ggplot2::scale_*_continuous(labels =)`.
 #' @keywords internal
 #' @noRd
 episodic_chart_number_labels <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  marks <- if (identical(episodic_lang(lang), "en")) {
-    list(big = ",", decimal = ".")
-  } else {
-    list(big = ".", decimal = ",")
-  }
-  function(x) {
-    # trim = TRUE: format() otherwise pads every label to the width of
-    # the longest one, so an axis running to 100 renders its zero as
-    # "  0" and ggplot2 centres the padded string, not the number.
-    format(
-      x,
-      big.mark = marks$big,
-      decimal.mark = marks$decimal,
-      scientific = FALSE,
-      trim = TRUE
-    )
-  }
+  function(x) episodic_format_number(x, lang = lang)
 }
 
 #' Breaks and labels for a weekly x axis
