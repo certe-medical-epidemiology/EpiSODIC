@@ -192,7 +192,225 @@ and the script reports any that did not.
 Numbers are in `results/`. Every row carries the package version, the
 resolved `config_hash`, and the seeds, runs and stream-weeks behind it.
 
-<!-- RESULTS -->
+### 4.1 Detection performance
+
+20 seeds x 26 weekly runs, 468,710 stream-weeks, config `9b97cc3f4a58`,
+EpiSODIC 0.17.0. Proportions carry Wilson intervals, rates exact Poisson
+intervals.
+
+| | value | 95% CI |
+|---|---|---|
+| **Sensitivity** | 119/120 = **0.992** | 0.954-0.999 |
+| **PPV** | 156/199 = **0.784** | 0.722-0.835 |
+| **PPV after lattice suppression** | 156/199 = 0.784 | 0.722-0.835 |
+| **False alarms** | 43/468,710 = **9.2 x 10<sup>-5</sup> per stream-week** | 6.6-12.4 x 10<sup>-5</sup> |
+| **All alarms** | 199/468,710 = 4.2 x 10<sup>-4</sup> per stream-week | 3.7-4.9 x 10<sup>-4</sup> |
+| Never detected | 1/120 = 0.008 | 0.001-0.046 |
+
+Per outbreak shape, over 20 seeds each:
+
+| Shape | Detected | | Design channel | Detected |
+|---|---|---|---|---|
+| `RARE` | 20/20 | | `rare_trigger` | 20/20 |
+| `WARD` | 20/20 | | `farrington` | 20/20 |
+| `LTC` | 20/20 | | `same_place` | 79/80 |
+| `PS` | 20/20 | | | |
+| `PROP` | **19/20** | | | |
+| `WAVE` | 20/20 | | | |
+
+PPV by the detector that first raised the cluster:
+
+| First detector | PPV | |
+|---|---|---|
+| `rare_trigger` | 20/20 = 1.000 | |
+| `farrington` | 50/53 = 0.943 | 0.846-0.981 |
+| `same_place` | 84/110 = 0.764 | 0.676-0.833 |
+| `farrington+mem` | 2/3 = 0.667 | 0.208-0.939 |
+| **`mem` alone** | **0/13 = 0.000** | **0-0.228** |
+
+Case-level agreement is not marginal. The median cluster was **0.983**
+outbreak cases by its own composition, and the median outbreak was
+captured at **recall 1.00** by its best-matching cluster.
+**Fragmentation was 1** for every detected outbreak: none was split
+across dossiers.
+
+### 4.2 Timeliness
+
+Medians with interquartile range across seeds, over the 119 detected
+outbreaks that began inside the evaluation window.
+
+| | median | IQR |
+|---|---|---|
+| Delay from the outbreak's first case | **6 days** | 5.5-6 |
+| Delay from the run that first raised the cluster | 6 days | 5.5-6 |
+| Delay from the outbreak's third case | **5 days** | 3-6 |
+| Kaplan-Meier median, misses censored | **5 days** | 119 events of 120 |
+| Cases still to come at the moment of detection | **0.130** | 0.071-0.223 |
+| Detected before the outbreak's own peak | 30/119 = **0.252** | 0.183-0.337 |
+
+The Kaplan-Meier median and the plain median agree here because almost
+everything was detected. They would not agree on a method that missed
+more, which is why both are reported.
+
+### 4.3 Alarm burden and specificity
+
+| | |
+|---|---|
+| Streams watched per run | median **903** (IQR 893-907) |
+| New clusters per run | median **0** (IQR 0-0), 199 over 520 run-weeks |
+| Negative control alarm rate | 32/466,037 = **6.9 x 10<sup>-5</sup> per stream-week** |
+
+The negative control is the same endemic history with nothing seeded in
+it, so every alarm on it is false by construction. It produced **32 alarms
+across 20 seeds and 26 weeks** - about 1.6 dossiers per six-month replay
+across nine hundred streams. On the seeded data the false-alarm rate is
+9.2 x 10<sup>-5</sup>, statistically indistinguishable from the control's
+6.9 x 10<sup>-5</sup>, which is what you would expect if the seeded
+outbreaks are not themselves generating spurious neighbours.
+
+Lattice suppression removed nothing (§5.3).
+
+### 4.4 What each detector contributes
+
+| Removed | Sensitivity | Lost | False alarms | Shapes it alone found |
+|---|---|---|---|---|
+| `same_place` | 0.592 | **0.400** | 43 -> 17 | WARD 20/20, PROP 19/20, LTC 9/20 |
+| `rare_trigger` | 0.825 | 0.167 | 43 -> 43 | RARE 20/20 |
+| `farrington` | 0.942 | 0.050 | 43 -> 42 | WAVE 6/20 |
+| `mem` | 0.992 | **0.000** | 43 -> 29 | none |
+
+Which detector got there first, per shape, over 20 seeds:
+
+| Shape | First detector |
+|---|---|
+| `RARE` | `rare_trigger` 20/20 |
+| `WARD` | `same_place` 20/20 |
+| `PROP` | `same_place` 19/19 |
+| `LTC` | `same_place` 15/20, `farrington` 5/20 |
+| `PS` | `same_place` 18/20, `farrington` 2/20 |
+| `WAVE` | `farrington` 18/20, `farrington+mem` 2/20 |
+
+Two things are worth stating plainly.
+
+**Farrington's contribution looks small and is not.** Removing it costs
+only 0.05 sensitivity, because `same_place` picks up most shapes anyway.
+But it is the only detector that finds the regional wave - the diffuse
+signal deliberately spread one case to a place so that no local rule can
+see it - and it does so with the highest PPV of any channel (0.943).
+A drop-one figure understates a detector that covers a shape nothing else
+covers.
+
+**MEM contributes nothing here, and it is not because it is idle.** MEM
+fired on 29 of the 199 clusters. Thirteen were raised by MEM alone, and
+**all thirteen are false alarms** - every one region-level, every one RSV
+or Influenza A, across 8 of the 20 seeds. The other 16 are
+`farrington+mem`, all Influenza A, 14 of them the seeded wave that
+Farrington found too.
+
+MEM is doing exactly what MEM is for: detecting the onset of the epidemic
+season in seasonal respiratory viruses, on four years of history that
+contains precisely that. The generator is not at fault. What is at fault
+is where the signal goes: a seasonal onset is not an outbreak, an
+epidemiologist shown one would classify it `expected_variation`, and
+EpiSODIC routes it into the same assessment queue as aberration signals.
+So every MEM-only detection is a dossier raised about the arrival of
+winter, and MEM accounts for 14 of the 43 false alarms while adding no
+sensitivity.
+
+That is a design question - whether MEM's output belongs on the Pathogen
+screen as seasonal context rather than in the queue, or whether
+`mem_applicable` should be narrower, or the pre-epidemic threshold
+configured - and it is deliberately left open rather than settled by
+moving a threshold.
+
+### 4.5 Does the priority score rank the real ones first?
+
+| | median | IQR |
+|---|---|---|
+| **AUC, true positives against false alarms** | **0.866** | 0.792-0.961 |
+| Priority score, true positives (n = 156) | 58.0 | 57.3-59.3 |
+| Priority score, false alarms (n = 43) | 47.3 | 43.0-50.3 |
+
+The score does rank real outbreaks above false alarms, with an AUC
+around 0.87 and a median separation of roughly eleven points. The
+calibration by score band is in `priority_score_calibration.csv`; with 199
+clusters in five bands it is thin, and should be read as indicative.
+
+### 4.6 Robustness to the matching thresholds
+
+The headline does not depend on the pair chosen. `min_precision` cannot
+affect sensitivity and `min_recall` cannot affect PPV, and the table shows
+exactly that, which is also a check that the two rules are independent as
+intended.
+
+Sensitivity, by `min_recall` (rows):
+
+| | 0.2 | 0.35 | 0.5 | 0.65 | 0.8 |
+|---|---|---|---|---|---|
+| **0.2** | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| **0.35** | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| **0.5** | 0.992 | 0.992 | 0.992 | 0.992 | 0.992 |
+| **0.65** | 0.992 | 0.992 | 0.992 | 0.992 | 0.992 |
+| **0.8** | 0.958 | 0.958 | 0.958 | 0.958 | 0.958 |
+
+PPV, by `min_precision` (columns): 0.844, 0.784, 0.784, 0.754, 0.688.
+
+Over the whole grid sensitivity moves between 0.958 and 1.000, and PPV
+between 0.688 and 0.844. Nothing here rests on the 0.5/0.5 default.
+
+### 4.7 Against a rule anyone could write in an afternoon
+
+Same generated data, same replay, same metrics.
+
+| | sensitivity | PPV | alarms per unit-week | denominator |
+|---|---|---|---|---|
+| **EpiSODIC** | **0.992** | **0.784** | 4.2 x 10<sup>-4</sup> | 468,710 stream-weeks |
+| Naive same-place, 3 in 14 days | 0.667 | 0.433 | 3.9 x 10<sup>-4</sup> | 501,009 place-weeks |
+| Naive same-place, 3 in 7 days | 0.500 | 0.604 | 2.0 x 10<sup>-4</sup> | 501,009 place-weeks |
+| 2-SD Shewhart on weekly regional counts | 0.625 | 0.451 | 6.3 x 10<sup>-2</sup> | 4,697 pathogen-weeks |
+
+**Read the denominators before comparing the rates.** They are not the
+same unit: EpiSODIC watches the lattice, the same-place rule watches
+places, and Shewhart watches one series per pathogen. Only the sensitivity
+and PPV columns are directly comparable.
+
+The naive same-place rule is run at three-in-fourteen days, which is what
+EpiSODIC's own `same_place` is configured for, as well as at the tighter
+three-in-seven. At the matched setting it reaches 0.667 sensitivity at
+0.433 PPV; EpiSODIC reaches 0.992 at 0.784 on the same data. The margin is
+therefore not an artefact of giving the comparator a harsher parameter.
+
+On a clean history both comparators alarm as well: the same-place rule at
+2.0 x 10<sup>-4</sup> per place-week, Shewhart at 4.1 x 10<sup>-2</sup> per
+pathogen-week.
+
+### 4.8 The operating-point curve
+
+Five seeds per point, otherwise the main configuration. **This is a curve
+for the paper, not a proposal to move the shipped defaults.**
+
+| Setting | Sensitivity | PPV | False alarms per stream-week | Median delay |
+|---|---|---|---|---|
+| **shipped** (alpha 0.05, 3 in 14) | 1.000 | 0.760 | 1.0 x 10<sup>-4</sup> | 6 days |
+| farrington alpha 0.01 | 1.000 | 0.714 | 1.2 x 10<sup>-4</sup> | 8.5 days |
+| farrington alpha 0.10 | 1.000 | 0.717 | 1.3 x 10<sup>-4</sup> | 6 days |
+| same_place 2 in 14 | 1.000 | 0.534 | 6.9 x 10<sup>-4</sup> | 6 days |
+| same_place 4 in 14 | 0.967 | **0.867** | **5.1 x 10<sup>-5</sup>** | 5.5 days |
+| same_place 3 in 7 | 0.900 | 0.848 | 6.0 x 10<sup>-5</sup> | 5 days |
+
+Loosening `same_place` to two cases costs a great deal of PPV and gains no
+sensitivity. Tightening it to four raises PPV to 0.867 and halves the
+false-alarm rate for 0.033 of sensitivity. Whether that is a trade worth
+making is a decision for the maintainer, taken deliberately and
+separately; it is recorded here because the sweep found it, not because
+this work is recommending it.
+
+### 4.9 Reproducibility
+
+The study was run twice from a cleared cache with the same seeds, and the
+main scenario came out identical to the case: 119/120, 156/199, 43 false
+alarms of 468,710 stream-weeks, median delay 6 days, same `config_hash`.
+The seeds fully determine the result.
 
 ---
 
