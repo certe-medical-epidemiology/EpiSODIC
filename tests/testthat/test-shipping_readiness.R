@@ -152,10 +152,12 @@ test_that("a database from before schema versioning is refused, then adopted and
   on.exit(unlink(path))
 
   # Exactly the shape EpiSODIC 0.12.x left behind: no version table, and
-  # none of the tables added since.
+  # none of the tables or indexes added since.
   con <- episodic_db_connect(path)
   DBI::dbExecute(con, "DROP TABLE episodic_schema_version")
   DBI::dbExecute(con, "DROP TABLE episodic_app_login_failure")
+  DBI::dbExecute(con, "DROP TABLE episodic_report_version_claim")
+  DBI::dbExecute(con, "DROP INDEX idx_episodic_report_render_version")
   DBI::dbDisconnect(con)
 
   expect_error(episodic_db_connect(path), "episodic_db_migrate")
@@ -173,12 +175,23 @@ test_that("a database from before schema versioning is refused, then adopted and
     DBI::dbGetQuery(con, "SELECT version FROM episodic_schema_version")$version,
     seq_len(episodic_schema_version)
   )
-  # And the migration built the real table, not an approximation of it.
+  # And the migration built the real tables, not an approximation of them.
   expect_true(DBI::dbExistsTable(con, "episodic_app_login_failure"))
   expect_setequal(
     DBI::dbListFields(con, "episodic_app_login_failure"),
     c("failure_id", "attempted_at", "username", "user_id", "reason")
   )
+  expect_true(DBI::dbExistsTable(con, "episodic_report_version_claim"))
+  expect_setequal(
+    DBI::dbListFields(con, "episodic_report_version_claim"),
+    c("claim_id", "cluster_id", "version_no", "claimed_at", "claimed_by")
+  )
+  expect_true(episodic_db_index_exists(
+    con,
+    "sqlite",
+    "idx_episodic_report_render_version",
+    "episodic_report_render"
+  ))
 })
 
 test_that("a migration that fails is rolled back and does not record its version", {

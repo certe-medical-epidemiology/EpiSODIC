@@ -172,10 +172,7 @@ episodic_ui_activity_screen <- function(activity,
               } else {
                 "episodic-activity-row"
               },
-              shiny::tags$td(episodic_ui_format_datetime(
-                row$at,
-                fmt = "%d-%m-%Y %H:%M"
-              )),
+              shiny::tags$td(episodic_ui_format_stamp(row$at, lang = lang)),
               shiny::tags$td(row$actor),
               shiny::tags$td(
                 row$action,
@@ -243,7 +240,7 @@ episodic_ui_run_modal <- function(con,
     )
   }
   moment <- function(at) {
-    episodic_ui_format_datetime(at, fmt = "%d-%m-%Y %H:%M")
+    episodic_ui_format_stamp(at, lang = lang)
   }
   unknown <- episodic_tr("misc.unknown", lang = lang)
   load_summary <- episodic_app_run_load_summary(run, lang = lang)

@@ -90,6 +90,7 @@
 
   "panel.epicurve.title": "Curva epidémica",
   "panel.epicurve.note": "La zona sombreada cubre los últimos {days_phrase}: el retraso empírico de notificación según el triángulo de notificación. Los casos con fecha de muestra en esta ventana aún no se han notificado por completo. Una cola descendente aquí no es un descenso real.",
+  "panel.epicurve.note_unknown": "No se ha podido medir ningún retraso de notificación para este flujo, por lo que ningún día de esta curva puede considerarse completamente notificado. Toda la curva se muestra sombreada.",
   "panel.epicurve.ylab": "Casos",
 
   "panel.trend.title": "Tendencia plurianual",
@@ -184,6 +185,7 @@
 
   "misc.unknown": "desconocido",
   "misc.none": "ninguno",
+  "misc.list_separator_and": " y ",
   "misc.close": "Cerrar",
   "misc.dash": "—",
 
@@ -487,6 +489,7 @@
   "info.access.body": "La lectura es anónima: cualquiera que acceda a la aplicación puede ver clústeres, series y el archivo sin iniciar sesión. Iniciar sesión solo es necesario para clasificar un clúster, cerrarlo o silenciar una serie; cada escritura se atribuye al usuario con sesión iniciada.",
 
   "streams.col.farrington": "Farrington",
+  "streams.farrington_hint": "Farrington necesita {need} semanas de historial para la b configurada; este flujo tiene {have}.",
   "streams.col.baseline_excluded": "Línea base excluida",
 
   "interpretation.fragment.curve_shape.point_source": "Todos los casos caen dentro de un único periodo de incubación máximo, lo que apunta a una fuente puntual: una exposición compartida en torno a un momento, en lugar de transmisión de persona a persona.",
@@ -500,6 +503,7 @@
   "panel.chart.graphics_unavailable": "No se puede generar el gráfico: el/los paquete(s) de R {packages} están instalados pero son incompatibles con esta versión de R. Reinstálelos para la versión de R actual para recuperar este gráfico.",
   "panel.chart.graphics_unavailable_build": "No se puede generar el gráfico: no hay ningún dispositivo gráfico PNG funcional disponible en este servidor (ragg, Cairo y el dispositivo PNG integrado de R no pudieron abrirse). Se trata de un problema de configuración en tiempo de compilación de la propia instalación de R, no de un paquete que se pueda reinstalar; póngase en contacto con quien administra este servidor.",
   "panel.rt.unavailable.insufficient_history": "Todavía no hay suficiente historial de casos en este clúster para calcular Rt.",
+  "panel.rt.unavailable.completeness_unknown": "No se puede calcular el Rt: no se ha podido medir ningún retraso de notificación para este flujo, por lo que no es posible retener las ventanas que aún se están completando.",
 
   "panel.similar.title": "Clústeres similares",
   "panel.related.title": "Conglomerados relacionados",

@@ -343,7 +343,7 @@ episodic_cluster_object <- function(con,
     density = episodic_app_density(con, stream, cases),
     doubling_days = episodic_app_doubling_time(
       cases,
-      incomplete_days = completeness$incomplete_days %||% 0L,
+      incomplete_days = completeness$incomplete_days,
       asof = asof
     ),
     concentration = episodic_app_concentration(cases),
@@ -376,13 +376,16 @@ episodic_cluster_object <- function(con,
       episodic_compute_rt(
         cases,
         pc,
-        incomplete_days = completeness$incomplete_days %||% 0L,
+        incomplete_days = completeness$incomplete_days,
         asof = asof
       )
     } else {
       NULL
     },
-    rt_unavailable_reason = episodic_rt_unavailable_reason(pc)
+    rt_unavailable_reason = episodic_rt_unavailable_reason(
+      pc,
+      incomplete_days = completeness$incomplete_days
+    )
   )
 }
 
@@ -400,16 +403,26 @@ episodic_cluster_object <- function(con,
 #' `pc` without re-running the computation.
 #'
 #' @param pc A single-row pathogen config, or `NULL`.
-#' @return One of `"no_serial_interval"`, `"epiestim_missing"`,
-#'   `"insufficient_history"`, or `NA` if Rt is not applicable at all.
+#' @param incomplete_days From `episodic_app_completeness()`. `NA` there
+#'   means the reporting delay was never measured, which is its own
+#'   reason: `episodic_compute_rt()` withholds every window rather than
+#'   publish estimates it cannot tell apart from still-filling ones, and
+#'   saying "not enough case history" instead would send an
+#'   epidemiologist looking for cases that are already there.
+#' @return One of `"completeness_unknown"`, `"no_serial_interval"`,
+#'   `"epiestim_missing"`, `"insufficient_history"`, or `NA` if Rt is not
+#'   applicable at all.
 #' @keywords internal
 #' @noRd
-episodic_rt_unavailable_reason <- function(pc) {
+episodic_rt_unavailable_reason <- function(pc, incomplete_days = 0L) {
   if (is.null(pc) || !isTRUE(as.logical(pc$rt_applicable))) {
     return(NA_character_)
   }
   if (is.na(pc$si_mean_days) || is.na(pc$si_sd_days)) {
     return("no_serial_interval")
+  }
+  if (length(incomplete_days) != 1 || is.na(incomplete_days)) {
+    return("completeness_unknown")
   }
   if (!requireNamespace("EpiEstim", quietly = TRUE)) {
     return("epiestim_missing")
@@ -587,6 +600,13 @@ episodic_app_doubling_time <- function(cases,
                                        incomplete_days = 0L,
                                        asof = Sys.Date(),
                                        window_days = 14L) {
+  # `NA` is "the reporting delay was never measured", so there is no
+  # trailing window to trim and no way to know how much of the slope is
+  # reporting lag. A doubling time fitted anyway would be biased
+  # downwards by an unknown amount, which is worse than no tile at all.
+  if (length(incomplete_days) != 1 || is.na(incomplete_days)) {
+    return(NA_real_)
+  }
   if (nrow(cases) < 3) {
     return(NA_real_)
   }
@@ -965,13 +985,25 @@ episodic_app_demography_bars <- function(cases) {
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param stream_id The stream to summarise.
-#' @return A list with `incomplete_days`.
+#' @return A list with `incomplete_days` - `NA_integer_` when there is no
+#'   completion curve to read at all, which is not the same thing as a
+#'   reporting delay of zero and is handled as its own case by every
+#'   caller.
 #' @keywords internal
 #' @noRd
 episodic_app_completeness <- function(con, stream_id) {
   completeness <- episodic_triangle_completeness(con, stream_id)
   if (nrow(completeness) == 0) {
-    return(list(incomplete_days = 0L))
+    # `NA`, not `0L`. There is no completion curve for this stream at
+    # all - no case of it has ever been seen by a run that committed -
+    # so the reporting delay was not measured, which is a different
+    # statement from a reporting delay of zero. Saying zero here told
+    # the epi curve that its last days were final, the doubling-time
+    # fit that it could use them, and `episodic_compute_rt()` that it
+    # could publish its trailing windows: three plausible-looking wrong
+    # answers derived from a measurement nobody took. Every caller
+    # handles `NA` explicitly.
+    return(list(incomplete_days = NA_integer_))
   }
   completeness <- completeness[order(completeness$lag_days), ]
 
@@ -1114,10 +1146,23 @@ episodic_app_epi_curve <- function(con, cluster_id) {
   dates <- as.Date(cases$sample_date)
   all_days <- seq(min(dates), max(dates), by = "day")
   counts <- vapply(all_days, function(d) sum(dates == d), integer(1))
+  # An unmeasured reporting delay (`NA`, see `episodic_app_completeness()`)
+  # gets the same treatment as a stream that never reaches 95%: every day
+  # shaded. "We cannot tell whether these days are final" and "these days
+  # are not final" call for the same caution, and the alternative -
+  # shading nothing - is the claim that the curve is complete, made from
+  # no measurement at all. The panel says why in words
+  # (`panel.epicurve.note_unknown`), so a fully shaded curve is never
+  # left to be puzzled over.
+  incomplete <- if (is.na(incomplete_days)) {
+    rep(TRUE, length(all_days))
+  } else {
+    all_days > (asof - incomplete_days)
+  }
   data.frame(
     sample_date = all_days,
     n_cases = counts,
-    incomplete = all_days > (asof - incomplete_days)
+    incomplete = incomplete
   )
 }
 

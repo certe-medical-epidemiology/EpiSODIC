@@ -214,22 +214,10 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   )
 }
 
-#' One top-navigation link
-#'
-#' The stylesheet has always had an `.active` rule for these, but nothing
-#' ever applied the class, so the nav gave no indication of which screen
-#' you were on. Handled client-side at click time rather than by
-#' re-rendering the header from the server, the same approach
-#' `episodic_ui_rail()` takes for its own selection highlight and for the
-#' same reason: the header is not otherwise reactive, and making it so to
-#' move one CSS class would rebuild the sign-in control and status strip
-#' on every navigation.
-#'
-#' @param view The view id this link switches to.
-#' @param label The link's visible text.
-#' @param active Whether this link starts out highlighted - true for the
-#'   view the app opens on.
 #' The top navigation links, with the current view marked
+#'
+#' `episodic_ui_nav_link()` below builds one of them, and documents its
+#' own arguments.
 #'
 #' @param active_view The view id currently on screen.
 #' @param lang Session language.
@@ -268,6 +256,21 @@ episodic_ui_nav_links <- function(active_view = "clusters",
   }))
 }
 
+#' One top-navigation link
+#'
+#' The stylesheet has always had an `.active` rule for these, but nothing
+#' ever applied the class, so the nav gave no indication of which screen
+#' you were on. Handled client-side at click time rather than by
+#' re-rendering the header from the server, the same approach
+#' `episodic_ui_rail()` takes for its own selection highlight and for the
+#' same reason: the header is not otherwise reactive, and making it so to
+#' move one CSS class would rebuild the sign-in control and status strip
+#' on every navigation.
+#'
+#' @param view The view id this link switches to.
+#' @param label The link's visible text.
+#' @param active Whether this link starts out highlighted - true for the
+#'   view the app opens on.
 #' @keywords internal
 #' @noRd
 episodic_ui_nav_link <- function(view, label, active = FALSE) {

@@ -636,6 +636,49 @@ episodic_ui_format_datetime <- function(iso,
   format(parsed, fmt, tz = tz)
 }
 
+#' A stored timestamp as a date in the session's language, plus the time
+#'
+#' `episodic_ui_format_datetime()` takes a `strftime` format, and every
+#' call site that wanted a date passed `"%d-%m-%Y %H:%M"` - day-month-year
+#' with hyphens, which is one country's convention written into a
+#' dashboard shipped in eight languages. The date half goes through
+#' `episodic_format_date()` instead, which spells the month out of the
+#' same translation table the charts and the date ranges already use, so
+#' "9 Sep 2026" reads as itself in English and as its own wording in
+#' Arabic, Hindi or Chinese. The clock half is the same everywhere and
+#' stays `%H:%M`.
+#'
+#' The conversion to local time happens first and once: the *date* a
+#' timestamp falls on is itself timezone-dependent, so formatting the
+#' date from UTC and the time from local time would put the two halves
+#' on different days for anything near midnight.
+#'
+#' @param iso An ISO-8601 UTC string (`episodic_now()`'s format), or `NA`.
+#' @param lang Session language.
+#' @param with_time Whether to append the local `%H:%M`.
+#' @param tz Target IANA timezone; see `episodic_ui_format_datetime()`.
+#' @return A single string, `episodic_tr("misc.unknown")` for `NA`/`NULL`,
+#'   or `iso` itself if it does not parse.
+#' @keywords internal
+#' @noRd
+episodic_ui_format_stamp <- function(iso,
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                     with_time = TRUE,
+                                     tz = Sys.timezone()) {
+  local <- episodic_ui_format_datetime(iso, fmt = "%Y-%m-%d %H:%M", tz = tz)
+  if (!grepl("^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}$", local)) {
+    # Either the "unknown" label or the unparseable input itself, both of
+    # which episodic_ui_format_datetime() has already decided on.
+    return(local)
+  }
+  parts <- strsplit(local, " ", fixed = TRUE)[[1]]
+  date <- episodic_format_date(parts[1], lang = lang)
+  if (!isTRUE(with_time)) {
+    return(date)
+  }
+  paste(date, parts[2])
+}
+
 #' The cluster id a `?cluster=` deep link asks for
 #'
 #' Parsed rather than trusted: the query string is whatever a reader's

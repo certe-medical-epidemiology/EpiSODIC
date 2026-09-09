@@ -107,6 +107,7 @@ Single schema in `inst/sql/schema.sql`, written in SQLite dialect. Adapted at lo
 | `episodic_cluster_manual_case` | `episodic_add_manual_cluster()` | Case-level detail for `origin = 'manual'` clusters only |
 | `episodic_app_login_failure` | app | Refused sign-ins (username tried, reason) |
 | `episodic_schema_version` | `episodic_db_create()`, `episodic_db_migrate()` | One row per applied schema version |
+| `episodic_report_version_claim` | `episodic_report_render()` | The register of report version numbers handed out, taken before the render (see `episodic_db_report_version_claim()`) |
 
 Two things the adapter does that are not cosmetic. It **derives table-level
 `FOREIGN KEY` clauses** from the schema's inline column-level `REFERENCES`,

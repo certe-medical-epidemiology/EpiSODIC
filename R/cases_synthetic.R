@@ -112,6 +112,8 @@ episodic_synthetic_cases <- function(start_date = end_date - 5 * 365,
                                      seed = 1,
                                      outbreaks = TRUE,
                                      outbreak_offsets = NULL) {
+  previous_seed <- episodic_seed_snapshot()
+  on.exit(episodic_seed_restore(previous_seed), add = TRUE)
   set.seed(seed)
 
   institutions <- episodic_synthetic_institutions()
@@ -126,7 +128,10 @@ episodic_synthetic_cases <- function(start_date = end_date - 5 * 365,
     pc_pool,
     pathogens
   )
-  baseline$outbreak_id <- NA_character_
+  # rep(), not a bare NA: assigning a length-1 value to a zero-row data
+  # frame is an error, and a window short enough to draw no baseline case
+  # at all is a real thing to ask for.
+  baseline$outbreak_id <- rep(NA_character_, nrow(baseline))
   injected <- episodic_synthetic_outbreaks(
     institutions,
     pc_pool,
@@ -149,6 +154,53 @@ episodic_synthetic_cases <- function(start_date = end_date - 5 * 365,
   cases <- episodic_validate_cases(cases)
   attr(cases, "episodic_ground_truth") <- truth
   invisible(cases)
+}
+
+#' Take, and put back, the session's random stream
+#'
+#' `set.seed()` is global and permanent: a generator that calls it leaves
+#' the session's random stream wherever its own last draw happened to
+#' end, so every `sample()`, `rnorm()` or bootstrap the caller runs
+#' afterwards is silently a continuation of ours. Reproducibility is the
+#' reason to seed at all and is untouched by this - the seed is still set
+#' exactly as before, and everything generated inside the call is
+#' identical - but what the caller had going is handed back on the way
+#' out, including on the error path.
+#'
+#' Snapshot before `set.seed()`, restore from `on.exit()`:
+#'
+#' ```
+#' previous_seed <- episodic_seed_snapshot()
+#' on.exit(episodic_seed_restore(previous_seed), add = TRUE)
+#' set.seed(seed)
+#' ```
+#'
+#' @param previous The value `episodic_seed_snapshot()` returned -
+#'   `NULL` when no stream had been started at all, in which case
+#'   restoring means removing the one this call left behind.
+#' @return `episodic_seed_snapshot()` returns the stored seed or `NULL`;
+#'   `episodic_seed_restore()` returns invisible `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_seed_snapshot <- function() {
+  if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+    get(".Random.seed", envir = globalenv(), inherits = FALSE)
+  } else {
+    NULL
+  }
+}
+
+#' @keywords internal
+#' @noRd
+episodic_seed_restore <- function(previous) {
+  if (is.null(previous)) {
+    if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+      rm(".Random.seed", envir = globalenv())
+    }
+  } else {
+    assign(".Random.seed", previous, envir = globalenv())
+  }
+  invisible(NULL)
 }
 
 #' The fictional region: who reports, and how much of the total they see
@@ -524,6 +576,24 @@ episodic_synthetic_baseline_cases <- function(dates,
       frame[[column]] <- frame[[column]][first]
     }
     rows[[length(rows) + 1]] <- frame
+  }
+  if (length(rows) == 0) {
+    # Every pathogen drew zero cases - a one-day window, or a negative
+    # control over a very short one. `do.call(rbind, list())` is `NULL`,
+    # and a `NULL` baseline turns the caller's `baseline$outbreak_id <-`
+    # into a list rather than a data frame, which then fails somewhere
+    # else entirely. An empty case set is a real answer; it gets a
+    # zero-row frame of the right shape.
+    return(episodic_synthetic_case_rows(
+      patient_key = character(0),
+      sample_date = as.Date(character(0)),
+      pathogen = character(0),
+      institution = institutions[0, , drop = FALSE],
+      ward = character(0),
+      pc = character(0),
+      sex = character(0),
+      age = integer(0)
+    ))
   }
   do.call(rbind, rows)
 }
@@ -1108,6 +1178,8 @@ episodic_synthetic_cases_calibration <- function(start_date = end_date - 5 * 365
                                                  pathogen = "Clostridioides difficile",
                                                  n_bumps_per_month = 3,
                                                  seed = 1) {
+  previous_seed <- episodic_seed_snapshot()
+  on.exit(episodic_seed_restore(previous_seed), add = TRUE)
   set.seed(seed)
 
   institutions <- episodic_synthetic_institutions()

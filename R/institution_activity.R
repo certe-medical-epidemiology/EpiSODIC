@@ -508,6 +508,8 @@ episodic_synthetic_institution_activity <- function(institutions = episodic_synt
                                                     start_date = end_date - 5 * 365,
                                                     end_date = Sys.Date(),
                                                     seed = 1) {
+  previous_seed <- episodic_seed_snapshot()
+  on.exit(episodic_seed_restore(previous_seed), add = TRUE)
   set.seed(seed)
   hospitals <- institutions[institutions$institution_type == "hospital", ]
   if (nrow(hospitals) == 0) {

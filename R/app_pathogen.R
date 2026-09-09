@@ -279,10 +279,15 @@ episodic_app_pathogen_screen <- function(con,
 
   pc <- episodic_db_pathogen_config_get(con, pathogen)
   region_stream_id <- episodic_app_pathogen_region_stream(con, pathogen)
+  # `NA`, not `0L`, when there is no L5 stream to read a completion
+  # curve from: the reporting delay for this pathogen was not measured,
+  # and this screen's weekly curve, its Rt panel and its trailing weeks
+  # all have to say so rather than assume it is nil. See
+  # `episodic_app_completeness()`.
   incomplete_days <- if (is.null(region_stream_id)) {
-    0L
+    NA_integer_
   } else {
-    episodic_app_completeness(con, region_stream_id)$incomplete_days %||% 0L
+    episodic_app_completeness(con, region_stream_id)$incomplete_days
   }
 
   seasonal <- !is.null(pc) && isTRUE(as.logical(pc$mem_applicable))
@@ -295,7 +300,15 @@ episodic_app_pathogen_screen <- function(con,
     config = pc,
     seasonal = seasonal,
     incomplete_days = incomplete_days,
-    summary = episodic_app_pathogen_summary(all_cases, window_cases, resolved),
+    summary = episodic_app_pathogen_summary(
+      all_cases,
+      window_cases,
+      resolved,
+      # The database's own coverage start, not this pathogen's first
+      # case: a pathogen genuinely absent from an observed period really
+      # did have no cases in it, and that comparison is worth making.
+      data_start = suppressWarnings(min(as.Date(options$first_day)))
+    ),
     weekly = episodic_app_pathogen_weekly(
       window_cases,
       resolved,
@@ -320,7 +333,10 @@ episodic_app_pathogen_screen <- function(con,
       incomplete_days,
       asof
     ),
-    rt_unavailable_reason = episodic_rt_unavailable_reason(pc),
+    rt_unavailable_reason = episodic_rt_unavailable_reason(
+      pc,
+      incomplete_days = incomplete_days
+    ),
     denominator = episodic_app_pathogen_denominator(
       con,
       pathogen,
@@ -374,12 +390,26 @@ episodic_app_pathogen_region_stream <- function(con, pathogen) {
 #' @param all_cases Every case of the pathogen.
 #' @param window_cases Those inside the period.
 #' @param resolved The resolved period.
+#' @param data_start The first day this database holds any case at all.
+#'   The comparison against the previous period is withheld when that
+#'   period starts before it: no case in a window nobody was collecting
+#'   in is "no cases then", and a "-100%" against it is a fabricated
+#'   number, not a quiet season. `NULL` skips the check, for a caller
+#'   that has no coverage start to offer.
 #' @return A list of scalars.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_summary <- function(all_cases, window_cases, resolved) {
+episodic_app_pathogen_summary <- function(all_cases,
+                                          window_cases,
+                                          resolved,
+                                          data_start = NULL) {
   previous <- resolved$previous
-  n_previous <- if (is.null(previous)) {
+  covered <- is.null(previous) ||
+    is.null(data_start) ||
+    length(data_start) != 1 ||
+    is.na(data_start) ||
+    previous$from >= as.Date(data_start)
+  n_previous <- if (is.null(previous) || !covered) {
     NA_integer_
   } else {
     sum(
@@ -466,7 +496,10 @@ episodic_app_weekly_counts <- function(dates, from, to) {
 #'
 #' @param window_cases Cases inside the period.
 #' @param resolved The resolved period.
-#' @param incomplete_days From `episodic_app_completeness()`.
+#' @param incomplete_days From `episodic_app_completeness()`. `NA` (the
+#'   reporting delay was never measured) flags every week rather than
+#'   none: the alternative is telling a reader that weeks nobody
+#'   measured the delay for are complete.
 #' @param asof The date the data is current as of.
 #' @return A data frame with `week_start`, `n_cases`, `incomplete`.
 #' @keywords internal
@@ -480,8 +513,13 @@ episodic_app_pathogen_weekly <- function(window_cases,
     resolved$from,
     resolved$to
   )
-  cutoff <- as.Date(asof) - as.integer(incomplete_days)
-  weekly$incomplete <- weekly$week_start + 6 > cutoff
+  weekly$incomplete <- if (
+    length(incomplete_days) != 1 || is.na(incomplete_days)
+  ) {
+    rep(TRUE, nrow(weekly))
+  } else {
+    weekly$week_start + 6 > as.Date(asof) - as.integer(incomplete_days)
+  }
   weekly
 }
 

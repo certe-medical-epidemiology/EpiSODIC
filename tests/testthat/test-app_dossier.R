@@ -397,3 +397,128 @@ test_that("the dossier title carries the cluster id beside the pathogen name", {
   expect_gt(id_pos, title_pos)
   expect_lt(id_pos, meta_pos)
 })
+
+test_that("the settings panel names the versions the run recorded, and says unknown when it recorded none", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  # The fixture's run finished without pkg_versions, which is what a run
+  # from an older build looks like: the panel has to say so, not fail.
+  html <- as.character(episodic_ui_settings_panel(
+    env$con,
+    env$cluster_id,
+    lang = "en"
+  ))
+  expect_true(grepl(
+    episodic_tr("panel.settings.pkg_versions", lang = "en"),
+    html,
+    fixed = TRUE
+  ))
+  expect_true(grepl(episodic_tr("misc.unknown", lang = "en"), html, fixed = TRUE))
+
+  run_id <- episodic_db_run_start(env$con, "host", "account")
+  episodic_db_run_finish(
+    env$con,
+    run_id,
+    status = "success",
+    pkg_versions = as.character(jsonlite::toJSON(
+      list(EpiSODIC = "0.17.1"),
+      auto_unbox = TRUE
+    ))
+  )
+  html <- as.character(episodic_ui_settings_panel(
+    env$con,
+    env$cluster_id,
+    lang = "en"
+  ))
+  expect_true(grepl("<code>EpiSODIC</code> v0.17.1", html, fixed = TRUE))
+})
+
+test_that("the dossier joins detector names with the session language's own word for 'and'", {
+  # It was joined with " en " - Dutch - inside a translated sentence, on
+  # every one of the eight languages.
+  obj <- list(
+    id = 41L,
+    pathogen = "Norovirus",
+    level = "pathogen_ward",
+    care_line = "second",
+    place = "Hospital A - B4",
+    origin = "detected",
+    changed_since_assessment = FALSE,
+    first_day = "2025-01-10",
+    last_day = "2025-01-13",
+    detectors = c("farrington", "same_place")
+  )
+  for (lang in c("en", "nl", "de")) {
+    html <- as.character(episodic_ui_dossier_header(obj, "new", lang = lang))
+    expect_true(
+      grepl(episodic_tr("misc.list_separator_and", lang = lang), html, fixed = TRUE),
+      info = lang
+    )
+  }
+  expect_false(grepl(
+    " en ",
+    as.character(episodic_ui_dossier_header(obj, "new", lang = "en")),
+    fixed = TRUE
+  ))
+})
+
+test_that("the stat grid drops the case-free tile when there is no case to count days from", {
+  # `case_free$since` is NA for a cluster with no case linked to it, and
+  # `need < since` is then not a condition but an error that took the
+  # whole dossier down.
+  obj <- list(
+    id = 42L,
+    n_cases = 0L,
+    n_positives = 0L,
+    unique_patients = 0L,
+    expected = NA_real_,
+    ratio = NA_real_,
+    priority_score = 12,
+    doubling_days = NA_real_,
+    first_day = "2025-01-10",
+    last_day = "2025-01-13",
+    density = NULL,
+    case_free = list(since = NA_integer_, need = 14L)
+  )
+  html <- as.character(episodic_ui_stat_grid(obj, lang = "en"))
+  expect_false(grepl(
+    episodic_tr("dossier.stat.case_free", lang = "en"),
+    html,
+    fixed = TRUE
+  ))
+
+  # With a case behind it, the tile is back.
+  obj$case_free$since <- 3L
+  expect_true(grepl(
+    episodic_tr("dossier.stat.case_free", lang = "en"),
+    as.character(episodic_ui_stat_grid(obj, lang = "en")),
+    fixed = TRUE
+  ))
+})
+
+test_that("the stat grid says 'unknown' rather than printing NA for a priority score it has not got", {
+  obj <- list(
+    id = 43L,
+    n_cases = 3L,
+    n_positives = 3L,
+    unique_patients = 3L,
+    # A real expectation, so "unknown" can only have come from the
+    # priority score.
+    expected = 1.2,
+    ratio = NA_real_,
+    priority_score = NA_real_,
+    doubling_days = NA_real_,
+    first_day = "2025-01-10",
+    last_day = "2025-01-13",
+    density = NULL,
+    case_free = list(since = NA_integer_, need = NA_integer_)
+  )
+  html <- as.character(episodic_ui_stat_grid(obj, lang = "en"))
+  expect_false(grepl(">NA<", html, fixed = TRUE))
+  expect_true(grepl(
+    episodic_tr("misc.unknown", lang = "en"),
+    html,
+    fixed = TRUE
+  ))
+})

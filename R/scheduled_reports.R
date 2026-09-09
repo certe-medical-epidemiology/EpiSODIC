@@ -301,11 +301,15 @@ episodic_scheduled_report_message <- function(con, subscription, final, attachme
   ))
 
   reports_so_far <- episodic_db_reports_for_cluster(con, subscription$cluster_id)
-  latest_report <- reports_so_far[which.max(reports_so_far$version_no), ]
-  params <- tryCatch(
-    jsonlite::fromJSON(latest_report$params),
-    error = function(e) NULL
-  )
+  latest_report <- episodic_report_latest_render(reports_so_far)
+  params <- if (is.null(latest_report)) {
+    NULL
+  } else {
+    tryCatch(
+      jsonlite::fromJSON(latest_report$params),
+      error = function(e) NULL
+    )
+  }
   diff <- params$diff
   if (!is.null(diff) && isTRUE(diff$n_new_cases > 0)) {
     lines <- c(lines, paste0(

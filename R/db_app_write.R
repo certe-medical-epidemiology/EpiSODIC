@@ -184,6 +184,132 @@ episodic_db_report_render_insert <- function(con,
   episodic_db_last_insert_id(con)
 }
 
+#' Claim the next report version number for a cluster
+#'
+#' The version a render will carry, taken *before* the render rather
+#' than derived from `episodic_report_render` afterwards. Reading the
+#' highest existing version and inserting a row with the next one after
+#' Quarto finished left the whole render - seconds to tens of seconds -
+#' as a window in which a second render of the same cluster read the
+#' same number: two files with one name, one of them overwritten, and a
+#' `file_sha256` on the losing row describing bytes that are no longer
+#' on disk.
+#'
+#' Nothing waits for anything here. The claim is one insert against
+#' `UNIQUE (cluster_id, version_no)`; whichever process gets there first
+#' keeps the number, and the other is refused, reads again and takes the
+#' next one. Both then render concurrently, into their own file.
+#'
+#' A refusal is recognised by the message the driver raises, and only a
+#' refusal is retried - every other error is re-raised untouched, so a
+#' database that is unreachable, read-only or otherwise broken fails
+#' here rather than spinning until the attempt budget runs out and
+#' failing with the wrong explanation.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The cluster being reported on.
+#' @param claimed_by Who took the number - host and process id by
+#'   default, which is what makes an unfinished render traceable.
+#' @param max_attempts How many refusals to absorb before giving up.
+#'   Only reached when that many renders of one cluster start at once.
+#' @return The claimed `version_no`, as a single integer.
+#' @keywords internal
+#' @noRd
+episodic_db_report_version_claim <- function(con,
+                                             cluster_id,
+                                             claimed_by = episodic_report_claimant(),
+                                             max_attempts = 25L) {
+  for (attempt in seq_len(max_attempts)) {
+    version_no <- episodic_db_report_version_next(con, cluster_id)
+    outcome <- tryCatch(
+      {
+        DBI::dbExecute(
+          con,
+          "INSERT INTO episodic_report_version_claim
+            (cluster_id, version_no, claimed_at, claimed_by)
+           VALUES (?, ?, ?, ?)",
+          params = list(
+            cluster_id,
+            version_no,
+            episodic_now(),
+            claimed_by
+          )
+        )
+        TRUE
+      },
+      error = function(e) e
+    )
+    if (isTRUE(outcome)) {
+      return(version_no)
+    }
+    if (!episodic_db_is_unique_violation(outcome)) {
+      stop(outcome)
+    }
+  }
+  stop(
+    "Could not claim a report version number for cluster ",
+    cluster_id,
+    " after ",
+    max_attempts,
+    " attempts - every number this process reached for had just been ",
+    "taken by another render. Nothing was rendered and nothing was ",
+    "written.",
+    call. = FALSE
+  )
+}
+
+#' The version number a claim would take next, for one cluster
+#'
+#' Over the claims *and* the renders, not the claims alone: a database
+#' migrated from before the claim register existed carries renders that
+#' were never claimed, and those numbers are as taken as any other.
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A cluster id.
+#' @return A single integer, `1L` for a cluster with no report yet.
+#' @keywords internal
+#' @noRd
+episodic_db_report_version_next <- function(con, cluster_id) {
+  highest <- DBI::dbGetQuery(
+    con,
+    "SELECT MAX(version_no) AS highest FROM (
+       SELECT version_no FROM episodic_report_version_claim WHERE cluster_id = ?
+       UNION ALL
+       SELECT version_no FROM episodic_report_render WHERE cluster_id = ?
+     ) AS taken",
+    params = list(cluster_id, cluster_id)
+  )$highest[[1]]
+  if (is.na(highest)) 1L else as.integer(highest) + 1L
+}
+
+#' Whether an error is a unique-constraint refusal
+#'
+#' Neither SQLite nor MariaDB gives DBI a portable condition class for
+#' this, so the message is what there is to go on: SQLite raises
+#' "UNIQUE constraint failed: ...", MariaDB/MySQL "Duplicate entry ...
+#' for key ...".
+#' @param e A condition.
+#' @return A single logical.
+#' @keywords internal
+#' @noRd
+episodic_db_is_unique_violation <- function(e) {
+  grepl(
+    "UNIQUE constraint failed|Duplicate entry|duplicate key",
+    conditionMessage(e),
+    ignore.case = TRUE
+  )
+}
+
+#' Who is claiming a report version number
+#'
+#' Host and process id, so a claim with no render behind it names the
+#' process that started that render.
+#' @return A single string.
+#' @keywords internal
+#' @noRd
+episodic_report_claimant <- function() {
+  paste0(Sys.info()[["nodename"]], "/", Sys.getpid())
+}
+
 #' Set or cancel a cluster's scheduled-report subscription
 #'
 #' Event-sourced like every other app write: this always inserts, it

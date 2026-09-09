@@ -619,10 +619,9 @@ episodic_ui_settings_audit_panel <- function(audit,
         shiny::tags$tbody(lapply(seq_len(nrow(audit)), function(i) {
           row <- audit[i, ]
           shiny::tags$tr(
-            shiny::tags$td(episodic_ui_format_datetime(
-              row$created_at,
-              fmt = "%d-%m-%Y %H:%M"
-            )),
+            shiny::tags$td(
+              episodic_ui_format_stamp(row$created_at, lang = lang)
+            ),
             shiny::tags$td(
               row$actor_full_name %||% episodic_tr("misc.unknown", lang = lang)
             ),

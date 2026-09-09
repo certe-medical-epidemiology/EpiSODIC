@@ -360,7 +360,7 @@ episodic_db_apply_schema <- function(con, dialect) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 2L
+episodic_schema_version <- 3L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -446,8 +446,158 @@ episodic_db_migrations <- function() {
         DBI::dbExecute(con, statement)
       }
       invisible(NULL)
+    },
+    # 3: episodic_report_version_claim, the register that hands out a
+    # report's version_no before the render rather than after it, and
+    # the unique index on episodic_report_render that keeps any future
+    # regression loud (see issue #48). Additive: one new table, one new
+    # index, and a backfill of the register from the renders already
+    # recorded, so a migrated database allocates from the same place a
+    # fresh one does.
+    #
+    # The index cannot be created over rows that already violate it, and
+    # renumbering them would be rewriting an audit trail - so a database
+    # that carries duplicates is refused here, by name, with the two
+    # facts an operator needs to reconcile them by hand.
+    "3" = function(con, dialect) {
+      duplicates <- DBI::dbGetQuery(
+        con,
+        "SELECT cluster_id, version_no, COUNT(*) AS n
+           FROM episodic_report_render
+          GROUP BY cluster_id, version_no
+         HAVING COUNT(*) > 1
+          ORDER BY cluster_id, version_no"
+      )
+      if (nrow(duplicates) > 0) {
+        stop(
+          "This database already holds ",
+          nrow(duplicates),
+          " report version number(s) used more than once: ",
+          paste(
+            sprintf(
+              "cluster %d version %d (%d renders)",
+              as.integer(duplicates$cluster_id),
+              as.integer(duplicates$version_no),
+              as.integer(duplicates$n)
+            ),
+            collapse = "; "
+          ),
+          ". Each of those rows carries a file_sha256 and only one of ",
+          "them can match the file on disk, so which render the record ",
+          "describes is a question about your reports, not one this ",
+          "migration may answer by renumbering an audit trail. Decide ",
+          "per cluster which row is authoritative, correct ",
+          "episodic_report_render by hand, and run episodic_db_migrate() ",
+          "again.",
+          call. = FALSE
+        )
+      }
+      if (!DBI::dbExistsTable(con, "episodic_report_version_claim")) {
+        for (statement in episodic_db_schema_statements_for(
+          dialect,
+          "episodic_report_version_claim"
+        )) {
+          DBI::dbExecute(con, statement)
+        }
+      }
+      # Additive, and idempotent by the NOT EXISTS: every version
+      # already rendered is a version already taken, and the register
+      # has to say so or the first claim after a migration hands out a
+      # number a report is using.
+      DBI::dbExecute(
+        con,
+        "INSERT INTO episodic_report_version_claim
+           (cluster_id, version_no, claimed_at, claimed_by)
+         SELECT r.cluster_id, r.version_no, r.rendered_at, ?
+           FROM episodic_report_render r
+          WHERE NOT EXISTS (
+            SELECT 1 FROM episodic_report_version_claim c
+             WHERE c.cluster_id = r.cluster_id
+               AND c.version_no = r.version_no
+          )",
+        params = list("migration to schema version 3")
+      )
+      if (!episodic_db_index_exists(
+        con,
+        dialect,
+        "idx_episodic_report_render_version",
+        "episodic_report_render"
+      )) {
+        DBI::dbExecute(
+          con,
+          episodic_db_schema_index_statement(
+            dialect,
+            "idx_episodic_report_render_version"
+          )
+        )
+      }
+      invisible(NULL)
     }
   )
+}
+
+#' Whether an index already exists on a table
+#'
+#' Asked the way each server answers it: SQLite lists indexes in
+#' `sqlite_master`, MariaDB/MySQL in `information_schema.STATISTICS` for
+#' the schema the connection is already using. Needed because a MariaDB
+#' migration that fails after its `CREATE INDEX` leaves the index behind
+#' with no version row recorded, and the retry must not fall over on
+#' "Duplicate key name".
+#' @param con A [DBI::DBIConnection-class].
+#' @param dialect `"sqlite"` or `"mariadb"`.
+#' @param index The index name.
+#' @param table The table it belongs to.
+#' @return A single logical.
+#' @keywords internal
+#' @noRd
+episodic_db_index_exists <- function(con, dialect, index, table) {
+  if (dialect == "sqlite") {
+    found <- DBI::dbGetQuery(
+      con,
+      "SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?",
+      params = list(index)
+    )
+  } else {
+    found <- DBI::dbGetQuery(
+      con,
+      "SELECT INDEX_NAME FROM information_schema.STATISTICS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = ?
+          AND INDEX_NAME = ?",
+      params = list(table, index)
+    )
+  }
+  nrow(found) > 0
+}
+
+#' One `CREATE INDEX` statement, by name, from the dialect-adapted schema
+#'
+#' Same reason `episodic_db_schema_statements_for()` exists: a migration
+#' that adds an index adds exactly the index the schema file declares,
+#' rather than a second copy of the DDL that can drift from it.
+#' @param dialect `"sqlite"` or `"mariadb"`.
+#' @param index The index name.
+#' @return A single SQL statement.
+#' @keywords internal
+#' @noRd
+episodic_db_schema_index_statement <- function(dialect, index) {
+  statements <- episodic_db_schema_statements(dialect)
+  wanted <- statements[grepl(
+    paste0("CREATE (UNIQUE )?INDEX\\s+", index, "\\s+ON\\s"),
+    statements
+  )]
+  if (length(wanted) != 1) {
+    stop(
+      "Expected exactly one statement creating index \"",
+      index,
+      "\" in inst/sql/schema.sql, found ",
+      length(wanted),
+      ". The package installation may be corrupted.",
+      call. = FALSE
+    )
+  }
+  wanted
 }
 
 #' The `CREATE` statements naming one table, from the dialect-adapted schema

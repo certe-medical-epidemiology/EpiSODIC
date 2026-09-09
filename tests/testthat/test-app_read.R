@@ -863,3 +863,64 @@ test_that("the archive lists cluster ids and links each row through to its dossi
     1
   )
 })
+
+test_that("episodic_app_completeness() says NA, not zero, when there is no completion curve at all", {
+  # A stream whose cases were never seen by a run that committed has no
+  # reporting-delay measurement. Reporting it as zero is the difference
+  # between "these last days are final" and "we do not know whether they
+  # are", and every panel downstream believed the first one.
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  DBI::dbExecute(env$con, "UPDATE episodic_detection_run SET status = 'failed'")
+
+  expect_true(is.na(
+    episodic_app_completeness(env$con, env$stream_id)$incomplete_days
+  ))
+})
+
+test_that("an unmeasured reporting delay shades the whole epi curve rather than none of it", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  DBI::dbExecute(env$con, "UPDATE episodic_detection_run SET status = 'failed'")
+
+  curve <- episodic_app_epi_curve(env$con, env$cluster_id)
+  expect_gt(nrow(curve), 0)
+  expect_true(all(curve$incomplete))
+  expect_false(anyNA(curve$incomplete))
+})
+
+test_that("episodic_app_doubling_time() returns NA when the reporting delay was never measured", {
+  counts <- c(1, 2, 4, 8, 16, 32, 1, 1, 1)
+  days <- rep(
+    seq(as.Date("2025-01-01"), by = "day", length.out = 9),
+    times = counts
+  )
+  cases <- data.frame(sample_date = as.character(days))
+  expect_true(is.na(episodic_app_doubling_time(
+    cases,
+    incomplete_days = NA_integer_,
+    asof = as.Date("2025-01-09")
+  )))
+})
+
+test_that("episodic_rt_unavailable_reason() names an unmeasured reporting delay as its own reason", {
+  pc <- data.frame(
+    rt_applicable = 1,
+    si_mean_days = 3,
+    si_sd_days = 1.5,
+    stringsAsFactors = FALSE
+  )
+  expect_equal(
+    episodic_rt_unavailable_reason(pc, incomplete_days = NA_integer_),
+    "completeness_unknown"
+  )
+  expect_equal(
+    episodic_rt_unavailable_reason(pc, incomplete_days = 0L),
+    "insufficient_history"
+  )
+  # A key exists for it, in every shipped language.
+  expect_true(nzchar(episodic_tr(
+    "panel.rt.unavailable.completeness_unknown",
+    lang = "en"
+  )))
+})

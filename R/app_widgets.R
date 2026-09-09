@@ -68,6 +68,56 @@ episodic_ui_code_join <- function(detectors, sep = ", ") {
   paste(sprintf("<code>%s</code>", escaped), collapse = sep)
 }
 
+#' Render a run's recorded package versions as inline HTML
+#'
+#' The JSON on `episodic_detection_run.pkg_versions` is written by
+#' `episodic_pkg_versions()`. There is none at all until a run has
+#' completed, and an individual entry is JSON `null` when that package
+#' was not installed on the host that ran it. Neither is a version, and
+#' neither may be printed as one: `NULL` is returned when nothing is
+#' known, so the caller falls through to its own "unknown" label, and an
+#' entry without a version is dropped rather than rendered as `v NA`.
+#'
+#' @param pkg_versions_json A single JSON string, `NA`, or `NULL`.
+#' @return A [shiny::HTML()] value, or `NULL` when there is nothing to show.
+#' @keywords internal
+#' @noRd
+episodic_ui_pkg_versions_html <- function(pkg_versions_json) {
+  if (is.null(pkg_versions_json) || length(pkg_versions_json) != 1) {
+    return(NULL)
+  }
+  if (is.na(pkg_versions_json) || !nzchar(trimws(pkg_versions_json))) {
+    return(NULL)
+  }
+  versions <- jsonlite::fromJSON(pkg_versions_json)
+  if (length(versions) == 0 || is.null(names(versions))) {
+    return(NULL)
+  }
+  known <- vapply(
+    versions,
+    function(v) length(v) == 1 && !is.na(v) && nzchar(as.character(v)),
+    logical(1)
+  )
+  if (!any(known)) {
+    return(NULL)
+  }
+  versions <- versions[known]
+  shiny::HTML(paste(
+    vapply(
+      seq_along(versions),
+      function(i) {
+        paste0(
+          episodic_ui_code_join(names(versions)[i]),
+          " v",
+          htmltools::htmlEscape(as.character(versions[[i]]))
+        )
+      },
+      character(1)
+    ),
+    collapse = " \u00b7 "
+  ))
+}
+
 #' Render a user-authored markdown note as safe HTML
 #'
 #' Used for the cluster notes panel, whose stored text is always raw
@@ -209,15 +259,17 @@ episodic_ui_pane_tab <- function(pane, label) {
 #'   to (`""` when nothing is selected, i.e. no filter).
 #' @param options A list of `list(value, label)`.
 #' @param selected Character vector of currently-selected `value`s.
-#' @param all_label Label for the leading "clear the filter" chip.
-#' @param lang Session language, for the active-chip colour only.
+#' @param all_label Label for the leading "clear the filter" chip. No
+#'   default: it is the one visible string this widget does not get from
+#'   its caller's options, and a default here would be an English word
+#'   on an Arabic screen the first time somebody forgot it.
 #' @return A `shiny::tags$div`.
 #' @keywords internal
 #' @noRd
 episodic_ui_multi_picker <- function(input_id,
                                      options,
                                      selected = character(0),
-                                     all_label = "All") {
+                                     all_label) {
   pal <- episodic_palette()
   active_style <- sprintf(
     "background:%s;border-color:%s;color:#fff;",

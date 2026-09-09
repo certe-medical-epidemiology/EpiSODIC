@@ -182,7 +182,10 @@ episodic_ui_dossier_header <- function(obj,
           shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
           shiny::tags$span(shiny::HTML(episodic_tr(
             "dossier.meta.detected_by",
-            detectors = episodic_ui_code_join(obj$detectors, sep = " en "),
+            detectors = episodic_ui_code_join(
+              obj$detectors,
+              sep = episodic_tr("misc.list_separator_and", lang = lang)
+            ),
             lang = lang
           )))
         )
@@ -212,8 +215,7 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         "dossier.stat.observed_sub",
         expected = expected_label,
         lang = lang
-      ),
-      # colour = pal$danger_dark
+      )
     )
   )
   positive_phrase <- episodic_count_phrase(
@@ -254,7 +256,11 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       ))
     )
   }
-  if (!is.na(obj$case_free$need)) {
+  # Both, not just `need`: `since` is `NA` for a cluster with no case
+  # linked to it at all, and `need < since` is then not a condition but
+  # an error - "missing value where TRUE/FALSE needed", taking the whole
+  # dossier down with it. No case is no day count, so no tile.
+  if (!is.na(obj$case_free$need) && !is.na(obj$case_free$since)) {
     stats <- c(
       stats,
       list(episodic_ui_stat(
@@ -281,7 +287,11 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     stats,
     list(episodic_ui_stat(
       episodic_tr("dossier.stat.priority", lang = lang),
-      trimws(format(round(obj$priority_score, 0))),
+      if (is.null(obj$priority_score) || is.na(obj$priority_score)) {
+        episodic_tr("misc.unknown", lang = lang)
+      } else {
+        trimws(format(round(obj$priority_score, 0)))
+      },
       episodic_tr("dossier.stat.priority_sub", lang = lang)
     ))
   )
@@ -549,10 +559,7 @@ episodic_ui_notes_history_modal <- function(con,
             class = "episodic-timeline-meta",
             sprintf(
               "%s \u00b7 %s",
-              episodic_ui_format_datetime(
-                history$created_at[i],
-                fmt = "%d-%m-%Y %H:%M"
-              ),
+              episodic_ui_format_stamp(history$created_at[i], lang = lang),
               if (is.na(full_name)) unknown else full_name
             )
           ),
@@ -580,14 +587,24 @@ episodic_ui_epicurve_panel <- function(con,
     ))
   }
   curve <- episodic_app_epi_curve(con, cluster_id)
-  incomplete_days <- obj$completeness$incomplete_days %||% 0
-  days_phrase <- episodic_count_phrase(
-    incomplete_days,
-    episodic_tr("unit.day", lang = lang),
-    episodic_tr("unit.days", lang = lang)
-  )
-  note <- if (incomplete_days > 0) {
-    episodic_tr("panel.epicurve.note", days_phrase = days_phrase, lang = lang)
+  # Not `%||% 0`: `%||%` swallows `NA` as well as `NULL` (see
+  # `R/interpretation.R`), and `NA` here is the one case that has to be
+  # told apart - no reporting delay was ever measured for this stream,
+  # so `episodic_app_epi_curve()` has shaded the whole curve and this
+  # note is what explains it.
+  incomplete_days <- obj$completeness$incomplete_days
+  note <- if (length(incomplete_days) != 1 || is.na(incomplete_days)) {
+    episodic_tr("panel.epicurve.note_unknown", lang = lang)
+  } else if (incomplete_days > 0) {
+    episodic_tr(
+      "panel.epicurve.note",
+      days_phrase = episodic_count_phrase(
+        incomplete_days,
+        episodic_tr("unit.day", lang = lang),
+        episodic_tr("unit.days", lang = lang)
+      ),
+      lang = lang
+    )
   } else {
     NULL
   }
@@ -1175,10 +1192,7 @@ episodic_ui_report_panel <- function(con,
           shiny::tags$li(episodic_tr(
             "panel.report.version_line",
             version = row$version_no,
-            when = episodic_ui_format_datetime(
-              row$rendered_at,
-              fmt = "%d-%m-%Y %H:%M"
-            ),
+            when = episodic_ui_format_stamp(row$rendered_at, lang = lang),
             lang = lang
           ))
         })
@@ -1294,7 +1308,7 @@ episodic_ui_report_schedule_current <- function(con, cluster_id, subscription, s
       episodic_tr(
         "panel.report.schedule_set_by",
         user = if (!is.null(set_by)) set_by$full_name else episodic_tr("misc.unknown", lang = lang),
-        when = episodic_ui_format_datetime(subscription$set_at, fmt = "%d-%m-%Y %H:%M"),
+        when = episodic_ui_format_stamp(subscription$set_at, lang = lang),
         lang = lang
       )
     ),
@@ -1303,7 +1317,7 @@ episodic_ui_report_schedule_current <- function(con, cluster_id, subscription, s
         style = "font-size:12.5px;color:var(--episodic-muted);",
         episodic_tr(
           "panel.report.schedule_last_attempt",
-          when = episodic_ui_format_datetime(last_send$sent_at, fmt = "%d-%m-%Y %H:%M"),
+          when = episodic_ui_format_stamp(last_send$sent_at, lang = lang),
           status = episodic_tr(
             paste0("panel.report.schedule_status_", last_send$status),
             lang = lang
@@ -1398,10 +1412,7 @@ episodic_ui_settings_panel <- function(con,
                                        cluster_id,
                                        lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   settings <- episodic_app_detection_settings(con, cluster_id)
-  if (!is.null(settings$pkg_versions)) {
-    pkg_versions <- jsonlite::fromJSON(settings$pkg_versions)
-    settings$pkg_versions <- shiny::HTML(paste(paste0("<code>", names(pkg_versions), "</code> v", unlist(pkg_versions)), collapse = " \u00b7 "))
-  }
+  settings$pkg_versions <- episodic_ui_pkg_versions_html(settings$pkg_versions)
   # list(), not c(): a shiny::HTML() value (the detectors row) loses its
   # "html" class and gets escaped as literal text if combined with a
   # plain string via c() - list() keeps each element intact.
@@ -1438,10 +1449,7 @@ episodic_ui_settings_panel <- function(con,
         ) {
           episodic_tr("misc.unknown", lang = lang)
         } else {
-          episodic_ui_format_datetime(
-            settings$last_run_when,
-            fmt = "%d-%m-%Y %H:%M"
-          )
+          episodic_ui_format_stamp(settings$last_run_when, lang = lang)
         },
         host = settings$last_run_host %||%
           episodic_tr("misc.unknown", lang = lang),
@@ -1503,7 +1511,10 @@ episodic_ui_assessment_rail <- function(con,
           shiny::HTML(episodic_tr(
             "timeline.not_assessed",
             first = episodic_format_date(obj$first_day, lang = lang),
-            detectors = episodic_ui_code_join(obj$detectors, sep = " en "),
+            detectors = episodic_ui_code_join(
+              obj$detectors,
+              sep = episodic_tr("misc.list_separator_and", lang = lang)
+            ),
             lang = lang
           ))
         )
@@ -1528,7 +1539,11 @@ episodic_ui_timeline_entry <- function(row,
     class = "episodic-timeline-entry",
     shiny::tags$div(
       class = "episodic-timeline-meta",
-      sprintf("%s \u00b7 %s", episodic_ui_format_datetime(row$at), row$actor)
+      sprintf(
+        "%s \u00b7 %s",
+        episodic_ui_format_stamp(row$at, lang = lang),
+        row$actor
+      )
     ),
     if (row$kind == "closure") {
       shiny::tags$div(episodic_tr("activity.action_closed", lang = lang))
@@ -1636,7 +1651,11 @@ episodic_ui_assessment_form <- function(con,
           episodic_tr(
             "assessment.reopened_banner",
             actor = reopened$actor,
-            date = episodic_ui_format_datetime(reopened$at, fmt = "%d-%m-%Y"),
+            date = episodic_ui_format_stamp(
+              reopened$at,
+              lang = lang,
+              with_time = FALSE
+            ),
             lang = lang
           )
         )
@@ -1929,15 +1948,19 @@ episodic_ui_streams_screen <- function(screen,
               shiny::tags$td(episodic_format_date(row$first_seen, lang = lang)),
               shiny::tags$td(episodic_format_date(row$last_seen, lang = lang)),
               shiny::tags$td(excluded_text),
-              # Numbers only, deliberately: "weeks of history / weeks the
-              # configured b needs". A dash means Farrington is running on
-              # this stream. Saying it this way needs no translated phrase
-              # beyond the detector's own name, which is a proper noun.
+              # The cell itself is numbers only, deliberately: "weeks of
+              # history / weeks the configured b needs", with a dash when
+              # Farrington is running on this stream. The tooltip that
+              # says what those two numbers are is a sentence, though,
+              # and a sentence on a screen shipped in eight languages is
+              # a translation key - it was written in English here and
+              # stayed English on every one of them.
               shiny::tags$td(
-                title = sprintf(
-                  "Farrington needs %s weeks of history for the configured b; this stream has %s.",
-                  row$farrington_weeks_need,
-                  row$farrington_weeks_have
+                title = episodic_tr(
+                  "streams.farrington_hint",
+                  need = row$farrington_weeks_need,
+                  have = row$farrington_weeks_have,
+                  lang = lang
                 ),
                 if (isTRUE(row$farrington_ready)) {
                   episodic_tr("misc.dash", lang = lang)

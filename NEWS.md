@@ -1,3 +1,29 @@
+# EpiSODIC 0.17.1
+
+## New
+
+- `episodic_report_version_claim` registers a report's version number before the render rather than after it, so two concurrent renders of one cluster never collide
+- Schema version 3: `episodic_report_version_claim`, and a unique index on `episodic_report_render(cluster_id, version_no)`
+
+## Changed
+
+- A reporting delay that could not be measured is now `NA` rather than 0, and the epi curve, the pathogen curve, Rt and the doubling time each say so instead of assuming complete reporting
+- Timestamps on the dashboard and in reports are written in the session language rather than as `%d-%m-%Y`
+- The report's similar-clusters table applies the same small-count suppression as the concentration table
+- The synthetic generators put the caller's random stream back when they are done, instead of leaving their own behind
+
+## Fixed
+
+- The dossier failed to render at all on a database whose last run recorded no package versions, taking eleven tests down with it
+- The dossier crashed on a cluster with no case linked to it, where the case-free tile compared against a day count that does not exist
+- Detector names were joined with the Dutch word "en" in all eight languages
+- The Streams screen's Farrington tooltip was written in English on every language
+- An `NA` in an epi curve's incomplete flag silently dropped that day's bar from the chart
+- The Pathogen screen counted a comparison period that predates the database as zero cases rather than as no data
+- `episodic_report_diff()` and the scheduled-report mail picked their previous version by row order when two shared a version number
+- A failed `file.copy()` of a rendered report was recorded as a successful render
+- A synthetic window too short to produce a baseline case returned a list where a data frame was expected
+
 # EpiSODIC 0.17.0
 
 ## New

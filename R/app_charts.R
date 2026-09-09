@@ -230,11 +230,15 @@ episodic_chart_number_labels <- function(lang = Sys.getenv("EPISODIC_LANGUAGE"))
     list(big = ".", decimal = ",")
   }
   function(x) {
+    # trim = TRUE: format() otherwise pads every label to the width of
+    # the longest one, so an axis running to 100 renders its zero as
+    # "  0" and ggplot2 centres the padded string, not the number.
     format(
       x,
       big.mark = marks$big,
       decimal.mark = marks$decimal,
-      scientific = FALSE
+      scientific = FALSE,
+      trim = TRUE
     )
   }
 }
@@ -338,7 +342,11 @@ episodic_chart_week_scale <- function(week_starts,
 episodic_ui_epi_curve_chart <- function(curve,
                                         lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
-  curve$alpha <- ifelse(curve$incomplete, 0.45, 1)
+  # `%in% TRUE`, not the bare column: an `NA` there would make the whole
+  # bar's alpha `NA` and the bar itself vanish from the chart without a
+  # word. The pathogen curve has always read its own flag this way; this
+  # one did not.
+  curve$alpha <- ifelse(curve$incomplete %in% TRUE, 0.45, 1)
   ggplot2::ggplot(
     curve,
     ggplot2::aes(x = .data$sample_date, y = .data$n_cases)
@@ -765,7 +773,11 @@ episodic_geo_labels <- function(matched, max_labels = 30L) {
 episodic_ui_denominator_chart <- function(series,
                                           lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
-  max_tests <- max(series$n_tests, 1)
+  # na.rm: a week whose testing volume was never supplied leaves an NA in
+  # the column, and an NA maximum makes the whole y scale NA - the chart
+  # then fails to draw at all rather than drawing the weeks that do have
+  # a denominator.
+  max_tests <- max(series$n_tests, 1, na.rm = TRUE)
   scale_factor <- max_tests
   # A positivity rate above 100% is not a real reading - it means the
   # supplied testing-volume feed does not cover every case counted (a

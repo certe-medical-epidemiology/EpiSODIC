@@ -128,7 +128,13 @@ episodic_report_render <- function(con,
 
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
   existing <- episodic_db_reports_for_cluster(con, cluster_id)
-  version_no <- if (nrow(existing) == 0) 1L else max(existing$version_no) + 1L
+  # Claimed here, before the render, not derived from `existing` after
+  # it: the render below is the slowest thing this package does, and a
+  # second render of the same cluster starting inside that window used
+  # to reach for the same number - see
+  # `episodic_db_report_version_claim()`. The claim is a single insert
+  # and returns immediately; no lock is held across the render.
+  version_no <- episodic_db_report_version_claim(con, cluster_id)
   snapshot <- episodic_report_snapshot(obj)
   diff <- episodic_report_diff(existing, snapshot, case_ids)
 
@@ -149,7 +155,14 @@ episodic_report_render <- function(con,
   work_dir <- tempfile("episodic_report_")
   dir.create(work_dir)
   on.exit(unlink(work_dir, recursive = TRUE), add = TRUE)
-  file.copy(qmd_path, file.path(work_dir, "episodic_default_report.qmd"))
+  if (!file.copy(qmd_path, file.path(work_dir, "episodic_default_report.qmd"))) {
+    stop(
+      "The report template '",
+      qmd_path,
+      "' could not be copied into the working directory for rendering.",
+      call. = FALSE
+    )
+  }
   data_path <- file.path(work_dir, "report_data.rds")
   saveRDS(report_data, data_path)
 
@@ -190,7 +203,21 @@ episodic_report_render <- function(con,
     output_dir,
     sprintf("cluster-%d-v%d.html", cluster_id, version_no)
   )
-  file.copy(rendered_path, out_file, overwrite = TRUE)
+  # file.copy() reports a failure by returning FALSE, not by raising:
+  # unchecked, a report that never arrived in output_dir would go on to
+  # be hashed and recorded as though it had.
+  if (!file.copy(rendered_path, out_file, overwrite = TRUE)) {
+    stop(
+      "The rendered report could not be written to '",
+      out_file,
+      "'. Nothing was recorded for this render; version ",
+      version_no,
+      " of cluster ",
+      cluster_id,
+      " stays unused.",
+      call. = FALSE
+    )
+  }
 
   file_sha256 <- digest::digest(out_file, algo = "sha256", file = TRUE)
   params_json <- as.character(jsonlite::toJSON(
@@ -374,6 +401,43 @@ episodic_report_suppress_small_counts <- function(df, count_col, threshold) {
   df
 }
 
+#' The most recent render among a cluster's report rows
+#'
+#' `which.max()` on `version_no` alone returns the *first* row holding
+#' the highest value, which is only unambiguous while no two renders of
+#' one cluster share a version number. They cannot any more (see
+#' `episodic_db_report_version_claim()` and the unique index behind it),
+#' but a database migrated from before that carries whatever the old
+#' race left it, and "the previous report" deciding itself by row order
+#' is not something to leave in place: the later row - the higher
+#' `report_id` - is the one that was rendered last.
+#'
+#' @param existing A cluster's `episodic_report_render` rows, as
+#'   returned by `episodic_db_reports_for_cluster()`.
+#' @return A single-row data frame, or `NULL` when there are no rows.
+#' @keywords internal
+#' @noRd
+episodic_report_latest_render <- function(existing) {
+  if (is.null(existing) || nrow(existing) == 0) {
+    return(NULL)
+  }
+  absent <- setdiff(c("version_no", "report_id"), names(existing))
+  if (length(absent) > 0) {
+    stop(
+      "Report rows without ",
+      paste0("`", absent, "`", collapse = " and "),
+      " cannot be ordered; pass the rows episodic_db_reports_for_cluster() ",
+      "returns.",
+      call. = FALSE
+    )
+  }
+  ordered <- existing[
+    order(existing$version_no, existing$report_id), ,
+    drop = FALSE
+  ]
+  ordered[nrow(ordered), ]
+}
+
 #' Build the comparable "snapshot" of one report render
 #'
 #' Stored alongside every render's other parameters (inside `params`, as
@@ -421,7 +485,7 @@ episodic_report_diff <- function(existing, snapshot, case_ids) {
   if (nrow(existing) == 0) {
     return(NULL)
   }
-  previous_row <- existing[which.max(existing$version_no), ]
+  previous_row <- episodic_report_latest_render(existing)
   previous_params <- tryCatch(
     jsonlite::fromJSON(previous_row$params),
     error = function(e) NULL

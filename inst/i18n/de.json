@@ -90,6 +90,7 @@
 
   "panel.epicurve.title": "Epidemiekurve",
   "panel.epicurve.note": "Die schattierte Zone umfasst die letzten {days_phrase}: die empirische Meldeverzögerung aus dem Meldedreieck. Fälle mit einem Probendatum in diesem Zeitfenster sind noch nicht vollständig gemeldet. Ein hier abfallender Verlauf ist kein tatsächlicher Rückgang.",
+  "panel.epicurve.note_unknown": "Für diesen Stream konnte keine Meldeverzögerung gemessen werden, daher kann kein Tag dieser Kurve als vollständig gemeldet gelten. Die gesamte Kurve ist deshalb schattiert.",
   "panel.epicurve.ylab": "Fälle",
 
   "panel.trend.title": "Mehrjahrestrend",
@@ -184,6 +185,7 @@
 
   "misc.unknown": "unbekannt",
   "misc.none": "keine",
+  "misc.list_separator_and": " und ",
   "misc.close": "Schließen",
   "misc.dash": "—",
 
@@ -487,6 +489,7 @@
   "info.access.body": "Lesen ist anonym: Jeder, der die App erreicht, kann Cluster, Meldereihen und das Archiv einsehen, ohne sich anzumelden. Eine Anmeldung ist nur erforderlich, um ein Cluster zu klassifizieren, abzuschließen oder eine Meldereihe stummzuschalten - jede Schreibaktion wird dem angemeldeten Benutzer zugeordnet.",
 
   "streams.col.farrington": "Farrington",
+  "streams.farrington_hint": "Farrington benötigt {need} Wochen Historie für das konfigurierte b; dieser Stream hat {have}.",
   "streams.col.baseline_excluded": "Basislinie ausgeschlossen",
 
   "interpretation.fragment.curve_shape.point_source": "Alle Fälle liegen innerhalb einer einzigen maximalen Inkubationszeit, was auf eine Punktquelle hindeutet: eine gemeinsame Exposition um einen Zeitpunkt herum statt einer Übertragung von Mensch zu Mensch.",
@@ -500,6 +503,7 @@
   "panel.chart.graphics_unavailable": "Diagramm kann nicht dargestellt werden: Das/die R-Paket(e) {packages} sind installiert, aber mit dieser R-Version nicht kompatibel. Installieren Sie sie für die aktuelle R-Version neu, um dieses Diagramm wiederherzustellen.",
   "panel.chart.graphics_unavailable_build": "Diagramm kann nicht dargestellt werden: Auf diesem Server ist kein funktionierendes PNG-Grafikgerät verfügbar (ragg, Cairo und R's eingebautes PNG-Gerät konnten alle nicht geöffnet werden). Dies ist ein Konfigurationsproblem der R-Installation selbst zur Build-Zeit, kein Paket, das neu installiert werden kann - wenden Sie sich an die Verwaltung dieses Servers.",
   "panel.rt.unavailable.insufficient_history": "In diesem Cluster liegt noch nicht genügend Fallhistorie vor, um Rt zu berechnen.",
+  "panel.rt.unavailable.completeness_unknown": "Rt kann nicht berechnet werden: Für diesen Stream konnte keine Meldeverzögerung gemessen werden, daher lassen sich die noch unvollständigen Zeitfenster nicht zurückhalten.",
 
   "panel.similar.title": "Ähnliche Cluster",
   "panel.related.title": "Verwandte Cluster",

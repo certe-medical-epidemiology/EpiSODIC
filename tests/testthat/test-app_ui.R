@@ -368,3 +368,113 @@ test_that("episodic_ui_nav_link() clears the highlight from the other links befo
     fixed = TRUE
   ))
 })
+
+test_that("episodic_ui_pkg_versions_html() renders what a run recorded, and nothing when a run recorded nothing", {
+  # No run has completed yet: the column is NA, not JSON. Parsing it is
+  # what broke every dossier render on a fresh instance.
+  expect_null(episodic_ui_pkg_versions_html(NA))
+  expect_null(episodic_ui_pkg_versions_html(NA_character_))
+  expect_null(episodic_ui_pkg_versions_html(NULL))
+  expect_null(episodic_ui_pkg_versions_html(""))
+  expect_null(episodic_ui_pkg_versions_html("   "))
+  expect_null(episodic_ui_pkg_versions_html("{}"))
+
+  html <- as.character(episodic_ui_pkg_versions_html(
+    as.character(jsonlite::toJSON(
+      list(EpiSODIC = "0.17.1", surveillance = "1.24.1"),
+      auto_unbox = TRUE
+    ))
+  ))
+  expect_true(grepl("<code>EpiSODIC</code> v0.17.1", html, fixed = TRUE))
+  expect_true(grepl("<code>surveillance</code> v1.24.1", html, fixed = TRUE))
+  expect_true(grepl("·", html, fixed = TRUE))
+})
+
+test_that("episodic_ui_pkg_versions_html() drops a package the run had no version for, rather than printing 'v NA'", {
+  # episodic_pkg_versions() records NA for a package that was not
+  # installed on the host that ran, which JSON-encodes to null. Not
+  # installed is not a version, and the old unlist() also silently
+  # misaligned the remaining versions against the full name vector.
+  json <- as.character(jsonlite::toJSON(
+    list(EpiSODIC = "0.17.1", surveillance = NA, EpiEstim = "2.2-4"),
+    auto_unbox = TRUE
+  ))
+  html <- as.character(episodic_ui_pkg_versions_html(json))
+  expect_true(grepl("<code>EpiSODIC</code> v0.17.1", html, fixed = TRUE))
+  expect_true(grepl("<code>EpiEstim</code> v2.2-4", html, fixed = TRUE))
+  expect_false(grepl("surveillance", html, fixed = TRUE))
+  expect_false(grepl("NA", html, fixed = TRUE))
+
+  expect_null(episodic_ui_pkg_versions_html(as.character(jsonlite::toJSON(
+    list(EpiSODIC = NA, surveillance = NA),
+    auto_unbox = TRUE
+  ))))
+})
+
+test_that("episodic_ui_format_stamp() spells the date in the session language and keeps the local clock", {
+  # "15-01-2025" is one country's convention, and it was written into
+  # every timestamp on a dashboard shipped in eight languages.
+  expect_equal(
+    episodic_ui_format_stamp(
+      "2025-01-15T10:00:00Z",
+      lang = "en",
+      tz = "Europe/Amsterdam"
+    ),
+    paste(episodic_format_date("2025-01-15", lang = "en"), "11:00")
+  )
+  expect_equal(
+    episodic_ui_format_stamp(
+      "2025-01-15T10:00:00Z",
+      lang = "nl",
+      tz = "Europe/Amsterdam"
+    ),
+    paste(episodic_format_date("2025-01-15", lang = "nl"), "11:00")
+  )
+  expect_false(identical(
+    episodic_ui_format_stamp("2025-01-15T10:00:00Z", lang = "en", tz = "UTC"),
+    episodic_ui_format_stamp("2025-01-15T10:00:00Z", lang = "zh", tz = "UTC")
+  ))
+})
+
+test_that("episodic_ui_format_stamp() takes the date from local time, not from UTC", {
+  # 23:30 UTC is the next day in Amsterdam: formatting the date half from
+  # UTC and the time half from local time would print two different days'
+  # worth of one instant.
+  expect_equal(
+    episodic_ui_format_stamp(
+      "2025-01-15T23:30:00Z",
+      lang = "en",
+      tz = "Europe/Amsterdam"
+    ),
+    paste(episodic_format_date("2025-01-16", lang = "en"), "00:30")
+  )
+})
+
+test_that("episodic_ui_format_stamp() can drop the time, and passes NA/unparseable input through", {
+  expect_equal(
+    episodic_ui_format_stamp(
+      "2025-01-15T10:00:00Z",
+      lang = "en",
+      with_time = FALSE,
+      tz = "UTC"
+    ),
+    episodic_format_date("2025-01-15", lang = "en")
+  )
+  expect_equal(episodic_ui_format_stamp(NA), episodic_tr("misc.unknown"))
+  expect_equal(episodic_ui_format_stamp(NULL), episodic_tr("misc.unknown"))
+  expect_equal(episodic_ui_format_stamp("not-a-timestamp"), "not-a-timestamp")
+})
+
+test_that("episodic_ui_epi_curve_chart() survives an incomplete flag that is NA", {
+  # ifelse() on a bare NA gives an NA alpha, and a bar with an NA alpha
+  # is simply not drawn - a case count silently missing from an epidemic
+  # curve.
+  curve <- data.frame(
+    sample_date = seq(as.Date("2025-01-01"), by = "day", length.out = 3),
+    n_cases = c(1, 2, 3),
+    incomplete = c(FALSE, NA, TRUE)
+  )
+  p <- episodic_ui_epi_curve_chart(curve, lang = "en")
+  expect_s3_class(p, "ggplot")
+  expect_false(anyNA(p$data$alpha))
+})
