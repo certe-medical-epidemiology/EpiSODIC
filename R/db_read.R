@@ -105,7 +105,7 @@ episodic_db_cases_for_pathogen <- function(con, pathogen) {
 #'   actually paired in the batch itself, which is harmless - the caller
 #'   only ever looks up the exact pairs it has.
 #' @return A named character vector of `YYYY-MM-DD` dates, one per
-#'   patient/pathogen combination found, named `paste0(patient_key,
+#'   patient/pathogen combination found, named by `episodic_case_group_key(patient_key,
 #'   pathogen)` (matching `episodic_cases_deduplicate()`'s own internal
 #'   grouping key). Empty (but named-vector-shaped) if nothing matches or
 #'   either input is empty.
@@ -134,9 +134,13 @@ episodic_db_last_case_dates <- function(con, patient_keys, pathogens) {
   if (nrow(res) == 0) {
     return(empty)
   }
+  # Keyed exactly as `episodic_cases_deduplicate()` groups - see
+  # `episodic_case_group_key()`. If the two ever disagree, an incoming
+  # positive is silently never matched against the episode already
+  # stored for it, and arrives as a spurious second case.
   stats::setNames(
     as.character(res$last_date),
-    paste0(res$patient_key, res$pathogen)
+    episodic_case_group_key(res$patient_key, res$pathogen)
   )
 }
 
@@ -229,12 +233,23 @@ episodic_db_clusters_linked_to <- function(con, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_clusters_for_suppression <- function(con) {
+  # `origin = 'manual'` excluded, for the same reason
+  # `episodic_db_clusters_for_stream()` excludes it, and one more that is
+  # specific to suppression: a manual cluster's case-level detail lives
+  # in `episodic_cluster_manual_case`, never in `episodic_case`, so it
+  # has no `episodic_cluster_case` rows at all. Every share
+  # `episodic_suppression_share()` computes for it is therefore zero -
+  # which the diffuse rule reads as "spread thinly across its children"
+  # rather than as "unmeasurable". Left in, a hand-added cluster with no
+  # case data could suppress every real detected cluster that happened to
+  # overlap it in time, and could itself be hidden behind one it shares
+  # nothing with.
   DBI::dbGetQuery(
     con,
     "SELECT c.*, s.pathogen, s.level
      FROM episodic_cluster c
      INNER JOIN episodic_stream s ON s.stream_id = c.stream_id
-     WHERE c.merged_into IS NULL"
+     WHERE c.merged_into IS NULL AND c.origin = 'detected'"
   )
 }
 
@@ -655,6 +670,24 @@ episodic_db_app_users <- function(con) {
 #' @param section A section name, e.g. `"notifications"`.
 #' @return The most recent `episodic_app_config_event` row for `section`,
 #'   or `NULL` if an admin has never saved one.
+#' Every recorded sign-in failure, most recent first
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param limit Maximum rows to return.
+#' @return A data frame with `failure_id`, `attempted_at`, `username`,
+#'   `user_id` and `reason`.
+#' @keywords internal
+#' @noRd
+episodic_db_app_login_failures <- function(con, limit = 200) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_app_login_failure
+      ORDER BY attempted_at DESC, failure_id DESC
+      LIMIT ?",
+    params = list(as.integer(limit))
+  )
+}
+
 #' @keywords internal
 #' @noRd
 episodic_db_app_config_latest <- function(con, section) {

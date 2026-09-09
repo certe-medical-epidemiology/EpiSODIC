@@ -69,7 +69,11 @@ external algorithms that do produce a baseline comparison. \code{NA}
 a detected cluster whose detector cannot produce one.}
 
 \item{detector_agreement}{How many independent sources agree on this
-cluster. Defaults to \code{1L} (a single external source).}
+cluster. Defaults to \code{1L} (a single external source). Scored on the
+same scale as a detected cluster's, i.e. out of the four built-in
+detectors, so \code{2L} here carries the weight of two detectors
+agreeing and the two kinds of cluster rank against each other
+honestly.}
 
 \item{priority_score}{Optional override. When \code{NA} (the default), it
 is computed with the same \code{episodic_priority_score()} used for

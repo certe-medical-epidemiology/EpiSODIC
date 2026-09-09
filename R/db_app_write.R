@@ -242,7 +242,8 @@ episodic_db_app_user_insert <- function(con,
                                         email,
                                         password_hash,
                                         role = "epidemiologist",
-                                        is_admin = FALSE) {
+                                        is_admin = FALSE,
+                                        must_change = TRUE) {
   params <- list(
     username,
     full_name,
@@ -250,16 +251,54 @@ episodic_db_app_user_insert <- function(con,
     password_hash,
     role,
     as.integer(isTRUE(is_admin)),
+    as.integer(isTRUE(must_change)),
     episodic_now()
   )
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_app_user
       (username, full_name, email, password_hash, role, is_admin, is_active, must_change, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, 1, 1, ?)",
+     VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)",
     params = params
   )
   episodic_db_last_insert_id(con)
+}
+
+#' Record a sign-in attempt that did not succeed
+#'
+#' Append-only, like every other app-side write. Kept in its own table
+#' rather than as an `episodic_app_user_event` type because a failure
+#' may have no account behind it at all - a username nobody has - and
+#' that table's `user_id` is `NOT NULL` by design.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param username The username as typed. Truncated here: it is
+#'   whatever a visitor sent, and an audit row is not a place to store an
+#'   unbounded string somebody else chose.
+#' @param reason One of `"unknown_username"`, `"wrong_password"`,
+#'   `"inactive_account"`.
+#' @param user_id The account it names, or `NA` when it names none.
+#' @return Invisibly, the new row's `failure_id`.
+#' @keywords internal
+#' @noRd
+episodic_db_app_login_failure_insert <- function(con,
+                                                 username,
+                                                 reason,
+                                                 user_id = NA) {
+  params <- list(
+    episodic_now(),
+    substr(as.character(username %||% ""), 1, 191),
+    if (is.na(user_id)) NA_integer_ else as.integer(user_id),
+    reason
+  )
+  DBI::dbExecute(
+    con,
+    "INSERT INTO episodic_app_login_failure
+      (attempted_at, username, user_id, reason)
+     VALUES (?, ?, ?, ?)",
+    params = params
+  )
+  invisible(episodic_db_last_insert_id(con))
 }
 
 #' @keywords internal

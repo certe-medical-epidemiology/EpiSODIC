@@ -11,7 +11,8 @@ episodic_add_user(
   email,
   password,
   role = "epidemiologist",
-  is_admin = FALSE
+  is_admin = FALSE,
+  must_change = TRUE
 )
 }
 \arguments{
@@ -37,6 +38,13 @@ detail.}
 screen (manage notification channels, other accounts, and export the
 configuration). Independent of \code{role} - an admin is still either an
 epidemiologist or a viewer for everything outside Settings.}
+
+\item{must_change}{Whether the account holder is required to replace
+\code{password} the first time they sign in. \code{TRUE} (the default) is
+right for every real account: the password you type here has been
+in your shell history and quite possibly in a message to the person
+it belongs to. \code{FALSE} is for a throwaway account in a throwaway
+database, which is what \code{\link[=episodic_demo]{episodic_demo()}} creates.}
 }
 \value{
 Invisibly, the new account's \code{user_id}.

@@ -87,3 +87,139 @@ test_that("episodic_demo() accepts custom credentials", {
   expect_equal(user$full_name, "Jane Doe")
   expect_true(episodic_auth_login(con, "jdoe", "s3cret-enough")$ok)
 })
+
+test_that("the demo dates its run from the extract it was given, not from today", {
+  # Detection is bounded to a lookback window around `run_date`, so a run
+  # dated today against last year's export correctly finds nothing -
+  # right for a scheduled run, and a poor first impression for somebody
+  # trying the system out on a historical extract. The demo therefore
+  # dates itself from the data. `episodic_run_cron()` deliberately does
+  # not: a real surveillance run is always as of today.
+  cases <- small_cases()
+  expect_equal(
+    episodic_demo_run_date(cases),
+    max(as.Date(cases$sample_date))
+  )
+  # Nothing in the extract to date the run from falls back rather than
+  # erroring.
+  expect_s3_class(
+    episodic_demo_run_date(data.frame(sample_date = as.Date(NA))),
+    "Date"
+  )
+})
+
+test_that("episodic_demo() says which date it chose, and records it on the run", {
+  skip_if_not_installed("sodium")
+  db_path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(db_path))
+
+  # Computed from the fixture rather than written out, so the test says
+  # "the last day the extract covers" rather than restating a date that
+  # would have to be kept in step by hand.
+  expected <- format(max(as.Date(small_cases()$sample_date)))
+
+  expect_message(
+    episodic_demo(
+      db_path = db_path,
+      launch = FALSE,
+      cases = small_cases,
+      denominators = NULL
+    ),
+    expected,
+    fixed = TRUE
+  )
+
+  con <- episodic_db_connect(db_path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+  expect_equal(
+    DBI::dbGetQuery(con, "SELECT run_date FROM episodic_detection_run")$run_date[1],
+    expected
+  )
+  # denominators = NULL means no denominator feed, not "generate one".
+  expect_equal(
+    DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM episodic_denominator")$n,
+    0
+  )
+})
+
+test_that("an explicit run_date still wins, and the demo says nothing about choosing one", {
+  skip_if_not_installed("sodium")
+  db_path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(db_path))
+
+  episodic_demo(
+    db_path = db_path,
+    launch = FALSE,
+    cases = small_cases,
+    denominators = NULL,
+    run_date = as.Date("2024-06-20")
+  )
+  con <- episodic_db_connect(db_path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+  expect_equal(
+    DBI::dbGetQuery(con, "SELECT run_date FROM episodic_detection_run")$run_date[1],
+    "2024-06-20"
+  )
+})
+
+test_that("the demo refuses a database that already exists rather than adding synthetic cases to it", {
+  # The whole point: a demo generates synthetic cases and runs detection
+  # over them. Pointed at a live instance it would file those cases in
+  # episodic_case alongside the real ones, where they reach every
+  # denominator, line list and patient search and cannot be told apart
+  # afterwards.
+  db_path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(db_path))
+  writeLines("not empty", db_path)
+
+  expect_error(
+    episodic_demo(db_path = db_path, launch = FALSE, cases = small_cases),
+    "already a database"
+  )
+  expect_error(
+    episodic_demo(db_path = db_path, launch = FALSE, cases = small_cases),
+    "overwrite = TRUE",
+    fixed = TRUE
+  )
+  # It refused before generating anything, so the file is untouched.
+  expect_equal(readLines(db_path), "not empty")
+})
+
+test_that("the demo refuses a MariaDB DSN outright", {
+  expect_error(
+    episodic_demo(
+      db_path = "mysql://user:secret@db.example.org:3306/episodic",
+      launch = FALSE
+    ),
+    "cannot be pointed at a"
+  )
+})
+
+test_that("episodic_demo_check_db_path() rejects a db_path that is not a single path", {
+  expect_error(episodic_demo_check_db_path(character(0)), "single non-empty path")
+  expect_error(episodic_demo_check_db_path(NA_character_), "single non-empty path")
+  expect_error(episodic_demo_check_db_path(""), "single non-empty path")
+})
+
+test_that("overwrite = TRUE removes the existing demo and its configuration files first", {
+  db_path <- tempfile(fileext = ".sqlite")
+  demo <- episodic_demo_files(db_path)
+  on.exit(unlink(c(db_path, demo$config, demo$pc_province_map)))
+  writeLines("old database", db_path)
+  writeLines("old config", demo$config)
+  writeLines("old map", demo$pc_province_map)
+
+  expect_message(
+    episodic_demo_check_db_path(db_path, overwrite = TRUE),
+    "Removed the existing demo"
+  )
+  expect_false(file.exists(db_path))
+  expect_false(file.exists(demo$config))
+  expect_false(file.exists(demo$pc_province_map))
+})
+
+test_that("a db_path that does not exist yet is accepted silently", {
+  expect_silent(
+    expect_null(episodic_demo_check_db_path(tempfile(fileext = ".sqlite")))
+  )
+})

@@ -63,7 +63,13 @@ test_that("n or more cases within k days at the same ward fires a hit", {
     same_place_case("K3", "2025-01-05", id)
   )
   config <- episodic_test_config()
-  result <- episodic_detect_same_place(con, cases, institutions, config)
+  result <- episodic_detect_same_place(
+    con,
+    cases,
+    institutions,
+    config,
+    run_date = as.Date(max(cases$sample_date))
+  )
   expect_equal(nrow(result), 1)
   expect_equal(result$n_cases[1], 3)
   expect_equal(result$detector[1], "same_place")
@@ -79,7 +85,13 @@ test_that("fewer than n cases produces no hit", {
     same_place_case("K2", "2025-01-03", id)
   )
   config <- episodic_test_config()
-  result <- episodic_detect_same_place(con, cases, institutions, config)
+  result <- episodic_detect_same_place(
+    con,
+    cases,
+    institutions,
+    config,
+    run_date = as.Date(max(cases$sample_date))
+  )
   expect_equal(nrow(result), 0)
 })
 
@@ -96,7 +108,13 @@ test_that("cases spread beyond k days do not combine into one hit", {
     same_place_case("K5", "2025-03-03", id)
   )
   config <- episodic_test_config()
-  result <- episodic_detect_same_place(con, cases, institutions, config)
+  result <- episodic_detect_same_place(
+    con,
+    cases,
+    institutions,
+    config,
+    run_date = as.Date(max(cases$sample_date))
+  )
   expect_equal(nrow(result), 1) # only the March run of 3 clears the default n=3
   expect_equal(result$n_cases[1], 3)
 })
@@ -112,7 +130,13 @@ test_that("a per-pathogen override tightens the threshold (norovirus: n=3 within
     same_place_case("K3", "2025-01-10", id, pathogen = "Norovirus")
   )
   config <- episodic_test_config()
-  result <- episodic_detect_same_place(con, cases, institutions, config)
+  result <- episodic_detect_same_place(
+    con,
+    cases,
+    institutions,
+    config,
+    run_date = as.Date(max(cases$sample_date))
+  )
   expect_equal(nrow(result), 0) # never 3 cases within any 7-day window
 })
 
@@ -131,7 +155,13 @@ test_that("non-hospital institutions are scanned at institution level, not ward 
     same_place_case("K3", "2025-01-05", id, ward = NA_character_)
   )
   config <- episodic_test_config()
-  result <- episodic_detect_same_place(con, cases, institutions, config)
+  result <- episodic_detect_same_place(
+    con,
+    cases,
+    institutions,
+    config,
+    run_date = as.Date(max(cases$sample_date))
+  )
   expect_equal(nrow(result), 1)
 
   stream <- DBI::dbGetQuery(

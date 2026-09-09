@@ -17,6 +17,25 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
+# EpiSODIC has no built-in map: `episodic_geo_source_resolve()` returns
+# NULL unless EPISODIC_GEO_DATA names one, because a default map is a
+# default *country*. Any test about what the chart draws therefore has to
+# configure geography first, exactly as `episodic_demo()` and any real
+# instance do.
+with_geo_data <- function(code) {
+  old <- Sys.getenv("EPISODIC_GEO_DATA", unset = NA)
+  on.exit(
+    if (is.na(old)) {
+      Sys.unsetenv("EPISODIC_GEO_DATA")
+    } else {
+      Sys.setenv(EPISODIC_GEO_DATA = old)
+    },
+    add = TRUE
+  )
+  Sys.setenv(EPISODIC_GEO_DATA = episodic_geo_source_default_path())
+  force(code)
+}
+
 test_that("episodic_geo_source_resolve() returns NULL when sf is not installed", {
   skip_if(
     requireNamespace("sf", quietly = TRUE),
@@ -35,7 +54,7 @@ test_that("episodic_geo_source_default() ships a Netherlands PC sf object", {
   expect_gt(nrow(geo), 0)
 })
 
-test_that("episodic_geo_source_resolve() falls back to the default when EPISODIC_GEO_DATA is unset or invalid", {
+test_that("episodic_geo_source_resolve() never substitutes another country's geometry", {
   skip_if_not_installed("sf")
   old_env <- Sys.getenv("EPISODIC_GEO_DATA", unset = NA)
   on.exit(
@@ -46,11 +65,29 @@ test_that("episodic_geo_source_resolve() falls back to the default when EPISODIC
     }
   )
 
+  # Unset: no map at all, so the dashboard shows its bar-chart fallback.
+  # It must not quietly draw the bundled Netherlands geometry - postcodes
+  # are four digits in many countries, and a false match there is a
+  # confident map of the wrong country.
   Sys.unsetenv("EPISODIC_GEO_DATA")
-  expect_s3_class(episodic_geo_source_resolve(), "sf")
+  expect_null(episodic_geo_source_resolve())
 
+  # Set but missing, and set but unusable: both say so, and neither
+  # falls back.
   Sys.setenv(EPISODIC_GEO_DATA = "/no/such/file.rds")
-  expect_s3_class(episodic_geo_source_resolve(), "sf")
+  expect_warning(
+    expect_null(episodic_geo_source_resolve()),
+    "no file exists"
+  )
+
+  wrong_shape <- tempfile(fileext = ".rds")
+  on.exit(unlink(wrong_shape), add = TRUE)
+  saveRDS(data.frame(x = 1), wrong_shape)
+  Sys.setenv(EPISODIC_GEO_DATA = wrong_shape)
+  expect_warning(
+    expect_null(episodic_geo_source_resolve()),
+    "could not be read"
+  )
 })
 
 test_that("episodic_geo_source_resolve() honours an operator-supplied EPISODIC_GEO_DATA file", {
@@ -171,7 +208,7 @@ test_that("episodic_ui_geo_map_chart() draws the overlay layer without disturbin
   rows <- data.frame(label = as.character(geo$pc[1]), n = 4)
 
   Sys.unsetenv("EPISODIC_GEO_DATA_OVERLAY")
-  plot_without <- episodic_ui_geo_map_chart(rows)
+  plot_without <- with_geo_data(episodic_ui_geo_map_chart(rows))
   expect_s3_class(plot_without, "ggplot")
   # choropleth + the PC/count labels drawn over the case-bearing areas
   expect_equal(length(plot_without$layers), 2)
@@ -182,7 +219,7 @@ test_that("episodic_ui_geo_map_chart() draws the overlay layer without disturbin
   saveRDS(overlay, tmp)
   Sys.setenv(EPISODIC_GEO_DATA_OVERLAY = tmp)
 
-  plot_with <- episodic_ui_geo_map_chart(rows)
+  plot_with <- with_geo_data(episodic_ui_geo_map_chart(rows))
   expect_s3_class(plot_with, "ggplot")
   # choropleth, overlay, labels - the overlay stays layer 2, drawn over
   # the choropleth but under the labels
@@ -208,7 +245,7 @@ test_that("episodic_ui_geo_map_chart() frames on the case-bearing areas, not the
   skip_if(is.null(geo) || nrow(geo) < 50, "shipped geometry unavailable")
 
   rows <- data.frame(label = as.character(geo$pc[1]), n = 4)
-  plot <- episodic_ui_geo_map_chart(rows)
+  plot <- with_geo_data(episodic_ui_geo_map_chart(rows))
   expect_s3_class(plot, "ggplot")
 
   # The frame has to be a small window on the reference set, otherwise
@@ -255,13 +292,38 @@ test_that("episodic_geo_labels() labels the biggest areas first and caps how man
 })
 
 
-test_that("an unset EPISODIC_PC_PROVINCE_MAP falls back to the shipped demo ranges", {
+test_that("an unset EPISODIC_PC_PROVINCE_MAP resolves nothing, rather than guessing", {
+  # Not configured is not a problem to report - it is a level of the
+  # lattice this instance has not enabled.
   expect_true(is.na(episodic_pc_province_map_problem(NA_character_)))
   expect_true(is.na(episodic_pc_province_map_problem("")))
   expect_null(episodic_pc_province_map_resolve(NA_character_))
+  # There used to be a built-in fallback here: the postcode ranges of the
+  # three provinces the demo data covers. Any instance elsewhere whose
+  # postcodes started 7, 8 or 9 silently got Dutch province names on its
+  # own streams and its own outbreak reports.
   expect_equal(
     episodic_pc_to_province(c("9713", "8911", "7411", "1012"), path = NA),
-    c("PROV_GRONINGEN", "PROV_FRYSLAN", "PROV_DRENTHE", NA)
+    rep(NA_character_, 4)
+  )
+  expect_equal(episodic_pc_to_province(character(0), path = NA), character(0))
+})
+
+test_that("a configured EPISODIC_PC_PROVINCE_MAP is the only thing that resolves a province", {
+  mapping <- tempfile(fileext = ".csv")
+  on.exit(unlink(mapping))
+  utils::write.csv(
+    data.frame(
+      pc = c("9713", "8911"),
+      province_code = c("Groningen", "Fryslan"),
+      stringsAsFactors = FALSE
+    ),
+    mapping,
+    row.names = FALSE
+  )
+  expect_equal(
+    episodic_pc_to_province(c("9713", "8911", "7411"), path = mapping),
+    c("Groningen", "Fryslan", NA)
   )
 })
 

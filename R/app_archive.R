@@ -110,12 +110,21 @@ episodic_ui_archive_screen <- function(archive,
 #' The Activity screen
 #'
 #' @param activity A data frame from `episodic_app_activity_log()`.
+#' @param selected_categories Categories the filter chips currently have
+#'   active, from `episodic_activity_categories`. Empty means no filter.
 #' @param lang Session language.
 #' @return A `shiny::tags` element.
 #' @keywords internal
 #' @noRd
 episodic_ui_activity_screen <- function(activity,
+                                        selected_categories = character(0),
                                         lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  category_options <- lapply(episodic_activity_categories, function(value) {
+    list(
+      value = value,
+      label = episodic_tr(paste0("activity.category.", value), lang = lang)
+    )
+  })
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(
@@ -125,6 +134,20 @@ episodic_ui_activity_screen <- function(activity,
     shiny::tags$p(
       style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:16px;",
       episodic_tr("activity.note", lang = lang)
+    ),
+    shiny::tags$div(
+      class = "episodic-form-group",
+      style = "margin-bottom:14px;",
+      shiny::tags$label(
+        class = "episodic-form-label",
+        episodic_tr("activity.filter_label", lang = lang)
+      ),
+      episodic_ui_multi_picker(
+        "activity_category_filter",
+        category_options,
+        selected = selected_categories,
+        all_label = episodic_tr("activity.filter_all", lang = lang)
+      )
     ),
     if (nrow(activity) == 0) {
       shiny::tags$p(
@@ -156,9 +179,10 @@ episodic_ui_activity_screen <- function(activity,
               shiny::tags$td(row$actor),
               shiny::tags$td(
                 row$action,
-                # What a run took in, under the run's own line: an operator
-                # reading the log should not have to query the database to
-                # find out whether last night's extract arrived in full.
+                # The second line under an action: what a run took in (an
+                # operator reading the log should not have to query the
+                # database to find out whether last night's extract
+                # arrived in full), or why a sign-in was refused.
                 if (!is.na(row$detail)) {
                   shiny::tags$div(
                     style = "font-size:11.5px;color:var(--episodic-muted);margin-top:2px;",

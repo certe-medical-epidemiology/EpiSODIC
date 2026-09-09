@@ -37,8 +37,9 @@
 #' @param existing A named character vector of already-stored episode
 #'   anchor dates (`YYYY-MM-DD`), one per patient/pathogen combination
 #'   already present in the database, from
-#'   `episodic_db_last_case_dates()`. Names are `paste0(patient_key,
-#'   pathogen)`, matching this function's own internal grouping key. Lets
+#'   `episodic_db_last_case_dates()`. Names are the patient key and the
+#'   pathogen joined by a control character, matching this function's own
+#'   internal grouping key (see `episodic_case_group_key()`). Lets
 #'   an operator send only a recent window of positives on each run - an
 #'   incoming positive that falls within `episode_days` of that
 #'   patient/pathogen's last stored episode is recognised as a
@@ -73,7 +74,7 @@ episodic_cases_deduplicate <- function(cases,
   cases$.episode_days[is.na(cases$.episode_days)] <- 30
 
   cases$.sample_date <- as.Date(cases$sample_date)
-  group_key <- paste(cases$patient_key, cases$pathogen, sep = "")
+  group_key <- episodic_case_group_key(cases$patient_key, cases$pathogen)
   groups <- split(seq_len(nrow(cases)), group_key)
 
   keep <- logical(nrow(cases))
@@ -112,4 +113,32 @@ episodic_cases_deduplicate <- function(cases,
   ]
   rownames(result) <- NULL
   result
+}
+
+#' The patient-and-pathogen key deduplication groups on
+#'
+#' Separated, not concatenated, for the same reason
+#' `episodic_lattice_upsert_group()` separates its own group columns:
+#' glued straight together, patient `"AB"` with pathogen `"CD"` and
+#' patient `"A"` with pathogen `"BCD"` are one key. Here that is worse
+#' than a mis-grouped stream - two patients would be treated as one
+#' patient's episode history, and one of them silently dropped as a
+#' duplicate positive. `patient_key` is whatever pseudonym an operator
+#' chose and `pathogen` is deliberately unconstrained free text, so
+#' neither side's shape can be relied on to prevent it.
+#'
+#' A control character cannot occur in either, so it separates without
+#' being mistakable for content.
+#'
+#' Used by `episodic_cases_deduplicate()` and by
+#' `episodic_db_last_case_dates()`, which names the anchor dates it
+#' returns with it - the two must agree exactly or an incoming positive
+#' is never matched against the episode already stored for it.
+#'
+#' @param patient_key,pathogen Character vectors of the same length.
+#' @return A character vector of group keys.
+#' @keywords internal
+#' @noRd
+episodic_case_group_key <- function(patient_key, pathogen) {
+  paste(patient_key, pathogen, sep = "\r")
 }

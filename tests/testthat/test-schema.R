@@ -41,10 +41,22 @@ test_that("episodic_db_create() builds every expected table", {
       "episodic_app_config_event",
       "episodic_report_render",
       "episodic_report_subscription_event",
-      "episodic_report_subscription_send"
+      "episodic_report_subscription_send",
+      "episodic_schema_version"
     ) %in%
       tables
   ))
+})
+
+test_that("every table the schema file declares is actually created", {
+  # Keyed off the schema file rather than a hand-kept list, so a table
+  # added there and forgotten here still cannot go uncreated.
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  expect_setequal(
+    intersect(episodic_db_schema_tables(), DBI::dbListTables(con)),
+    episodic_db_schema_tables()
+  )
 })
 
 test_that("episodic_db_create() refuses to overwrite an existing file without overwrite = TRUE", {

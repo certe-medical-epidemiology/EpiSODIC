@@ -74,7 +74,10 @@ test_that("a positive within episode_days of an already-stored episode is droppe
   deduped <- episodic_cases_deduplicate(
     raw,
     pathogen_config_fixture,
-    existing = c("P1Test pathogen" = "2025-01-01")
+    existing = stats::setNames(
+      "2025-01-01",
+      episodic_case_group_key("P1", "Test pathogen")
+    )
   )
   expect_equal(nrow(deduped), 0)
 })
@@ -84,7 +87,10 @@ test_that("a positive beyond episode_days of an already-stored episode starts a 
   deduped <- episodic_cases_deduplicate(
     raw,
     pathogen_config_fixture,
-    existing = c("P1Test pathogen" = "2025-01-01")
+    existing = stats::setNames(
+      "2025-01-01",
+      episodic_case_group_key("P1", "Test pathogen")
+    )
   )
   expect_equal(nrow(deduped), 1)
   expect_equal(deduped$sample_date, "2025-03-01")
@@ -95,7 +101,10 @@ test_that("existing anchors for other patients/pathogens are ignored", {
   deduped <- episodic_cases_deduplicate(
     raw,
     pathogen_config_fixture,
-    existing = c("P2Other pathogen" = "2025-01-01")
+    existing = stats::setNames(
+      "2025-01-01",
+      episodic_case_group_key("P2", "Other pathogen")
+    )
   )
   expect_equal(nrow(deduped), 1)
 })
@@ -108,7 +117,10 @@ test_that("a batch spanning both a continuation and a new episode keeps only the
   deduped <- episodic_cases_deduplicate(
     raw,
     pathogen_config_fixture,
-    existing = c("P1Test pathogen" = "2025-01-01")
+    existing = stats::setNames(
+      "2025-01-01",
+      episodic_case_group_key("P1", "Test pathogen")
+    )
   )
   expect_equal(nrow(deduped), 1)
   expect_equal(deduped$source_key, "K3")
@@ -332,7 +344,10 @@ test_that("episodic_db_last_case_dates() returns the latest sample_date per pati
 
   result <- episodic_db_last_case_dates(con, "P1", "Test pathogen")
   expect_equal(unname(result), "2025-01-01")
-  expect_equal(names(result), "P1Test pathogen")
+  expect_equal(
+    names(result),
+    episodic_case_group_key("P1", "Test pathogen")
+  )
 
   # a patient/pathogen combination with nothing stored yet
   expect_equal(
@@ -391,4 +406,73 @@ test_that("episodic_db_last_case_dates() returns an empty named vector when eith
   result <- episodic_db_last_case_dates(con, character(0), "Test pathogen")
   expect_equal(length(result), 0)
   expect_true(is.character(result))
+})
+
+test_that("two patients whose keys and pathogens concatenate alike stay separate", {
+  # `patient_key` is whatever pseudonym an operator chose and `pathogen`
+  # is deliberately unconstrained free text, so "AB" + "CD" and "A" +
+  # "BCD" glue to the same string. Grouped on that, two patients become
+  # one patient's episode history and one of them is silently dropped as
+  # a duplicate positive.
+  cases <- data.frame(
+    source_key = c("K1", "K2"),
+    lab_number = c("L1", "L2"),
+    patient_key = c("AB", "A"),
+    pathogen = c("CD", "BCD"),
+    sample_date = as.Date(c("2025-01-01", "2025-01-02")),
+    care_line = "second",
+    stringsAsFactors = FALSE
+  )
+  pathogen_config <- data.frame(
+    pathogen = c("CD", "BCD"),
+    episode_days = c(30, 30),
+    stringsAsFactors = FALSE
+  )
+
+  expect_equal(
+    episodic_case_group_key(cases$patient_key, cases$pathogen),
+    c("AB\rCD", "A\rBCD")
+  )
+  result <- episodic_cases_deduplicate(cases, pathogen_config)
+  expect_equal(nrow(result), 2)
+  expect_setequal(result$source_key, c("K1", "K2"))
+})
+
+test_that("the stored-anchor lookup is keyed exactly as deduplication groups", {
+  # The two must agree character for character, or an incoming positive
+  # is never matched against the episode already stored for it and
+  # arrives as a spurious second case.
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  run_id <- episodic_db_run_start(con, "h", "a")
+  DBI::dbExecute(
+    con,
+    "INSERT INTO episodic_case (source_key, lab_number, patient_key, sample_date,
+       pathogen, care_line, first_seen_run)
+     VALUES ('A', 'A', 'PT-1', '2025-01-01', 'Norovirus', 'second', ?)",
+    params = list(run_id)
+  )
+  existing <- episodic_db_last_case_dates(con, "PT-1", "Norovirus")
+  expect_equal(names(existing), episodic_case_group_key("PT-1", "Norovirus"))
+
+  # A positive within episode_days of the stored one is a continuation,
+  # so nothing new is kept.
+  incoming <- data.frame(
+    source_key = "B",
+    lab_number = "B",
+    patient_key = "PT-1",
+    pathogen = "Norovirus",
+    sample_date = as.Date("2025-01-05"),
+    care_line = "second",
+    stringsAsFactors = FALSE
+  )
+  pathogen_config <- data.frame(
+    pathogen = "Norovirus",
+    episode_days = 30,
+    stringsAsFactors = FALSE
+  )
+  expect_equal(
+    nrow(episodic_cases_deduplicate(incoming, pathogen_config, existing)),
+    0
+  )
 })

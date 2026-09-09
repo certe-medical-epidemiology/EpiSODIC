@@ -28,12 +28,22 @@
 #' account with [episodic_add_user()], and the new user sets their
 #' own password on first sign-in.
 #'
-#' Passwords are hashed (never stored in plain text) and login history is
-#' kept for audit purposes. This login exists to attribute who assessed
-#' what, not to defend the system against attackers: EpiSODIC does not
-#' implement TLS, account lockout, or rate limiting, so it should always be
-#' deployed behind your own organisation's network controls (VPN, internal
-#' network, or a reverse proxy that terminates TLS).
+#' Passwords are hashed (never stored in plain text). Both outcomes are
+#' recorded: a successful sign-in as a `login` event on the account, a
+#' refused one - with which of unknown username, wrong password or
+#' deactivated account it was, and the username as typed - in
+#' `episodic_app_login_failure`. Both appear on the dashboard's Activity
+#' screen, to signed-in readers only, where the sign-in category can be
+#' filtered to on its own.
+#'
+#' That record is an audit trail, not a defence. This login exists to
+#' attribute who assessed what, not to keep an attacker out: EpiSODIC
+#' does not implement TLS, account lockout, or rate limiting, so it
+#' should always be deployed behind your own organisation's network
+#' controls (VPN, internal network, or a reverse proxy that terminates
+#' TLS). What the failure log gives you is the ability to *notice* -
+#' a burst of refused attempts on one account is visible on the Activity
+#' screen the same day it happens.
 #'
 #' @name episodic_auth
 NULL
@@ -200,10 +210,14 @@ episodic_auth_refresh_user <- function(con, cached_user) {
 #' @keywords internal
 #' @noRd
 episodic_auth_must_change <- function(con, user) {
-  if (identical(user$username, "demo") && isTRUE(sodium::password_verify(user$password_hash, "demo"))) {
-    # No required password change for demo user
-    return(FALSE)
-  }
+  # No special case for any particular username here, deliberately.
+  # There used to be one - "demo", verified against the literal password
+  # "demo" - which is a hardcoded credential in the sign-in path of a
+  # package other people deploy, and it would have exempted a real
+  # account that happened to be called `demo` too. Whether an account
+  # must change its password is a property of the account, recorded on
+  # the account row; `episodic_demo()` simply creates its throwaway
+  # account with `must_change = FALSE`.
   if (!as.logical(user$must_change)) {
     return(FALSE)
   }
@@ -214,12 +228,19 @@ episodic_auth_must_change <- function(con, user) {
 #' Attempt to log in
 #'
 #' Verifies `username`/`password` against the account's current password
-#' hash and, on success, records a
-#' `login` event. Deliberately silent about *why* a login failed (unknown
-#' username vs. wrong password vs. inactive account are folded into the
-#' same generic outcome) - the login exists to attribute assessments made
-#' by people already inside the building, not to resist an attacker who
-#' would learn more from a distinguishing error message.
+#' hash and records the outcome either way: a `login` event on success,
+#' a row in `episodic_app_login_failure` otherwise.
+#'
+#' What the *visitor* is told is deliberately undifferentiated - unknown
+#' username, wrong password and deactivated account are one generic
+#' outcome to them, since the sign-in exists to attribute assessments
+#' made by people already inside the building, not to hand a stranger a
+#' username oracle. What the *record* says is the opposite: which of the
+#' three it was, and the username as typed. An epidemiologist locked out
+#' by a deactivated account and somebody working through a colleague's
+#' likely passwords look identical from the login screen and must not
+#' look identical in the audit trail. Both appear on the Activity screen,
+#' to signed-in readers only (see `episodic_app_activity_log()`).
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param username,password Login credentials.
@@ -230,9 +251,22 @@ episodic_auth_must_change <- function(con, user) {
 #' @noRd
 episodic_auth_login <- function(con, username, password) {
   rlang::check_installed("sodium")
+  refuse <- function(reason, user_id = NA) {
+    episodic_db_app_login_failure_insert(
+      con,
+      username = username,
+      user_id = user_id,
+      reason = reason
+    )
+    list(ok = FALSE)
+  }
+
   user <- episodic_db_user_by_username(con, username)
-  if (is.null(user) || !episodic_auth_is_active(con, user)) {
-    return(list(ok = FALSE))
+  if (is.null(user)) {
+    return(refuse("unknown_username"))
+  }
+  if (!episodic_auth_is_active(con, user)) {
+    return(refuse("inactive_account", user$user_id))
   }
   hash <- episodic_auth_password_hash(con, user)
   verified <- tryCatch(
@@ -240,7 +274,7 @@ episodic_auth_login <- function(con, username, password) {
     error = function(e) FALSE
   )
   if (!isTRUE(verified)) {
-    return(list(ok = FALSE))
+    return(refuse("wrong_password", user$user_id))
   }
   episodic_db_app_user_event_insert(con, user$user_id, "login")
   list(
@@ -304,6 +338,12 @@ episodic_auth_change_password <- function(con, user_id, new_password) {
 #'   screen (manage notification channels, other accounts, and export the
 #'   configuration). Independent of `role` - an admin is still either an
 #'   epidemiologist or a viewer for everything outside Settings.
+#' @param must_change Whether the account holder is required to replace
+#'   `password` the first time they sign in. `TRUE` (the default) is
+#'   right for every real account: the password you type here has been
+#'   in your shell history and quite possibly in a message to the person
+#'   it belongs to. `FALSE` is for a throwaway account in a throwaway
+#'   database, which is what [episodic_demo()] creates.
 #' @return Invisibly, the new account's `user_id`.
 #' @examples
 #' db_path <- tempfile(fileext = ".sqlite")
@@ -325,7 +365,8 @@ episodic_add_user <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA),
                               email,
                               password,
                               role = "epidemiologist",
-                              is_admin = FALSE) {
+                              is_admin = FALSE,
+                              must_change = TRUE) {
   rlang::check_installed("sodium")
   role <- match.arg(role, c("epidemiologist", "viewer"))
   con <- episodic_db_open(db_path)
@@ -337,7 +378,8 @@ episodic_add_user <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA),
     email = email,
     password_hash = sodium::password_store(password),
     role = role,
-    is_admin = is_admin
+    is_admin = is_admin,
+    must_change = must_change
   ))
 }
 
@@ -436,10 +478,19 @@ episodic_user_is_admin <- function(user) {
 
 #' Whether this instance closes the app to anonymous visitors
 #'
-#' `access.require_login` in the resolved configuration, read defensively:
-#' anything that is not unambiguously true leaves the app in the
-#' behaviour it has always had, so a malformed or absent value can never
-#' silently lock an instance out of its own dashboard.
+#' `access.require_login` in the resolved configuration, read defensively
+#' in the safe direction: anything that is not unambiguously false leaves
+#' the login wall up. A missing, malformed or unparseable value is a
+#' configuration nobody can vouch for, and the cost of the two readings
+#' is not symmetric - a wrongly-closed dashboard is an operator editing
+#' one YAML key, a wrongly-open one is patient-level surveillance data
+#' served to whoever reaches the port.
+#'
+#' This used to default open, on the reasoning that a malformed value
+#' should never lock an instance out of its own dashboard. That is the
+#' right instinct about lockout and the wrong one about disclosure, and
+#' EpiSODIC is now shipped closed by default (see `access` in
+#' `inst/config/episodic_default_config.yaml`).
 #'
 #' Deliberately a YAML-only setting, with no Settings-screen override: a
 #' login wall an admin account can switch off from inside the app is a
@@ -452,7 +503,8 @@ episodic_user_is_admin <- function(user) {
 #' @noRd
 episodic_app_require_login <- function(config = NULL) {
   config <- config %||% episodic_config_resolve()
-  isTRUE(as.logical(config$access$require_login %||% FALSE))
+  value <- suppressWarnings(as.logical(config$access$require_login %||% TRUE))
+  !isFALSE(value[1])
 }
 
 #' Whether this session may be shown anything at all

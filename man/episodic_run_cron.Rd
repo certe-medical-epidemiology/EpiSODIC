@@ -31,8 +31,11 @@ supply - positivity panels simply stay blank.}
 \item{institution_activity}{Optional: your hospital patient-days
 data (see \code{\link[=episodic_synthetic_institution_activity]{episodic_synthetic_institution_activity()}} for the
 expected shape), normally as a data set, or as a function taking the
-current institutions table. Leave as \code{NULL} (the default) if you have
-none - detection falls back to raw case counts.}
+current institutions table. Its \code{institution_key} is the same
+identifier your case data uses - EpiSODIC hashes both on load, so a
+key taken from the institutions table this passes a function is
+already hashed and will match nothing. Leave as \code{NULL} (the default)
+if you have none - detection falls back to raw case counts.}
 
 \item{episodic_config_path}{The config path.}
 
@@ -46,21 +49,15 @@ to the current machine and account.}
 \item{run_date}{The date to treat as "today". Defaults to the system
 date; mainly useful to override in tests.}
 
-\item{debug}{If \code{TRUE}, print a lot more than the phase-by-phase
-progress this function always writes: \code{sessionInfo()}, the versions
-of every package a fatal (non-catchable) crash is most likely to
-originate in, memory snapshots, per-stream detail inside the
-detection loop, and - for the calls implicated so far in a known
-MariaDB-only crash (\code{episodic_app_density()}, the population-vector
-lookup, the trend/detection writes, the assessment-event lookups,
-and \code{episodic_spatial_concentration()}'s own input) - the exact SQL
-and every bound parameter's value, class and encoding immediately
-before each such call runs, not only once it returns. Meant for
-chasing exactly the kind of failure that leaves no R-level error
-behind at all - a crashed session, a run that silently never
-returns - where the normal progress trace does not narrow things
-down enough on its own. Noisy; leave off for routine scheduled
-runs.}
+\item{debug}{If \code{TRUE}, print a good deal more than the
+phase-by-phase progress this function always writes:
+\code{sessionInfo()}, the versions of every package whose own behaviour a
+run depends on, memory snapshots at the start and end, and
+per-stream detail inside the detection loop - which stream, how many
+cases, whether it cleared the eligibility gate, what each detector
+did with it. Useful when a run's \emph{results} are not what an operator
+expects and the question is which stream, or which phase, they
+diverged at. Noisy; leave off for routine scheduled runs.}
 }
 \value{
 Invisibly, the \code{run_id} of the completed run. The run's row in

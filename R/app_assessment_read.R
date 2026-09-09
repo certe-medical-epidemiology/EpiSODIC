@@ -385,24 +385,63 @@ episodic_app_run_load_summary <- function(run,
   detail
 }
 
+#' The categories the Activity screen can be filtered to
+#'
+#' Every row `episodic_app_activity_log()` returns carries exactly one
+#' of these in its `category` column. Kept as a constant, rather than as
+#' string literals at the three places that need them (the log, the
+#' filter chips, the tests), so a category cannot exist in one and not
+#' the others.
+#' @keywords internal
+#' @noRd
+episodic_activity_categories <- c(
+  "assessment",
+  "closure",
+  "mute",
+  "signin",
+  "run"
+)
+
 #' The Activity screen: every recorded action, with system runs visually distinct
 #'
 #' Name, timestamp, action, target, with system-authored runs visually
 #' distinct from human actions.
 #'
+#' Sign-in rows - successful and failed alike - are withheld from a
+#' session that has not signed in. On an instance running with
+#' `access.require_login: false` the Activity screen is otherwise
+#' readable by anyone who reaches it, and "who has an account here, and
+#' which usernames somebody has been trying" is precisely the thing not
+#' to hand a stranger. Everything else on the screen is already visible
+#' to such a reader.
+#'
 #' @param con A [DBI::DBIConnection-class].
 #' @param limit Maximum number of rows to return, most recent first.
 #' @param lang Session language.
+#' @param user The session's signed-in user row, or `NULL`. Only decides
+#'   whether sign-in rows are included; every other category is
+#'   unaffected.
+#' @param category Categories to keep, from
+#'   `episodic_activity_categories`. Empty (the default) keeps them all -
+#'   the same convention `episodic_app_archive()`'s `level` filter uses.
 #' @return A data frame with `at`, `actor`, `action`, `target`, `detail`,
-#'   `is_system` and `run_id`. `detail` is the run load summary on run
-#'   rows (or, for a failed run, why it failed), and `NA` on human ones;
-#'   `run_id` is filled on run rows only, so the screen can offer the
-#'   full run detail for those.
+#'   `category`, `is_system` and `run_id`. `detail` is the run load
+#'   summary on run rows (or, for a failed run, why it failed) and the
+#'   reason on a failed sign-in, `NA` elsewhere; `run_id` is filled on
+#'   run rows only, so the screen can offer the full run detail for those.
 #' @keywords internal
 #' @noRd
 episodic_app_activity_log <- function(con,
                                       limit = 200,
-                                      lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+                                      lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                      user = NULL,
+                                      category = character(0)) {
+  wanted <- if (length(category) == 0) {
+    episodic_activity_categories
+  } else {
+    intersect(category, episodic_activity_categories)
+  }
+  include <- function(name) name %in% wanted
   # Including suppressed ones: this is the record of what happened, and a
   # cluster somebody acted on has to keep resolving to its own name here
   # however the lattice later decided to file it.
@@ -421,7 +460,11 @@ episodic_app_activity_log <- function(con,
 
   rows <- list()
 
-  events <- DBI::dbGetQuery(con, "SELECT * FROM episodic_assessment_event")
+  events <- if (include("assessment")) {
+    DBI::dbGetQuery(con, "SELECT * FROM episodic_assessment_event")
+  } else {
+    data.frame()
+  }
   if (nrow(events) > 0) {
     rows[[length(rows) + 1]] <- data.frame(
       at = events$created_at,
@@ -439,16 +482,21 @@ episodic_app_activity_log <- function(con,
       ),
       target = vapply(events$cluster_id, cluster_target, character(1)),
       detail = NA_character_,
+      category = "assessment",
       is_system = FALSE,
       run_id = NA_integer_,
       stringsAsFactors = FALSE
     )
   }
 
-  states <- DBI::dbGetQuery(
-    con,
-    "SELECT * FROM episodic_cluster_state WHERE `trigger` = 'closure'"
-  )
+  states <- if (include("closure")) {
+    DBI::dbGetQuery(
+      con,
+      "SELECT * FROM episodic_cluster_state WHERE `trigger` = 'closure'"
+    )
+  } else {
+    data.frame()
+  }
   if (nrow(states) > 0) {
     rows[[length(rows) + 1]] <- data.frame(
       at = states$entered_at,
@@ -462,13 +510,18 @@ episodic_app_activity_log <- function(con,
       action = episodic_tr("activity.action_closed", lang = lang),
       target = vapply(states$cluster_id, cluster_target, character(1)),
       detail = NA_character_,
+      category = "closure",
       is_system = FALSE,
       run_id = NA_integer_,
       stringsAsFactors = FALSE
     )
   }
 
-  mutes <- DBI::dbGetQuery(con, "SELECT * FROM episodic_stream_mute")
+  mutes <- if (include("mute")) {
+    DBI::dbGetQuery(con, "SELECT * FROM episodic_stream_mute")
+  } else {
+    data.frame()
+  }
   if (nrow(mutes) > 0) {
     rows[[length(rows) + 1]] <- data.frame(
       at = mutes$created_at,
@@ -489,16 +542,26 @@ episodic_app_activity_log <- function(con,
         character(1)
       ),
       detail = NA_character_,
+      category = "mute",
       is_system = FALSE,
       run_id = NA_integer_,
       stringsAsFactors = FALSE
     )
   }
 
-  logins <- DBI::dbGetQuery(
-    con,
-    "SELECT * FROM episodic_app_user_event WHERE event_type = 'login'"
-  )
+  # Withheld from an anonymous reader entirely - see this function's own
+  # documentation. `include()` is asked as well, so the filter chips
+  # behave the same way for this category as for every other.
+  signin_visible <- include("signin") && !is.null(user)
+
+  logins <- if (signin_visible) {
+    DBI::dbGetQuery(
+      con,
+      "SELECT * FROM episodic_app_user_event WHERE event_type = 'login'"
+    )
+  } else {
+    data.frame()
+  }
   if (nrow(logins) > 0) {
     rows[[length(rows) + 1]] <- data.frame(
       at = logins$created_at,
@@ -512,13 +575,62 @@ episodic_app_activity_log <- function(con,
       action = episodic_tr("activity.action_login", lang = lang),
       target = NA_character_,
       detail = NA_character_,
+      category = "signin",
       is_system = FALSE,
       run_id = NA_integer_,
       stringsAsFactors = FALSE
     )
   }
 
-  runs <- episodic_db_runs(con, limit = limit)
+  failures <- if (signin_visible) {
+    episodic_db_app_login_failures(con, limit = limit)
+  } else {
+    data.frame()
+  }
+  if (nrow(failures) > 0) {
+    rows[[length(rows) + 1]] <- data.frame(
+      at = failures$attempted_at,
+      # The account when the username names one; a neutral label when it
+      # does not. The typed username goes in `target`, where it reads as
+      # what was tried rather than as who tried it - it is a string a
+      # stranger chose, and this table has no business presenting it as
+      # a person. Branched per row rather than with `ifelse()`, which
+      # would evaluate both arms and so ask
+      # `episodic_app_actor_label()` about every NA `user_id` only to
+      # throw the answer away - and its answer for NA is "System", which
+      # a refused sign-in most certainly was not.
+      actor = vapply(
+        failures$user_id,
+        function(id) {
+          if (is.na(id)) {
+            episodic_tr("activity.actor_unknown", lang = lang)
+          } else {
+            episodic_app_actor_label(con, id, lang = lang)
+          }
+        },
+        character(1)
+      ),
+      action = episodic_tr("activity.action_login_failed", lang = lang),
+      target = failures$username,
+      detail = vapply(
+        failures$reason,
+        function(r) {
+          episodic_tr(paste0("activity.login_failed.", r), lang = lang)
+        },
+        character(1)
+      ),
+      category = "signin",
+      is_system = FALSE,
+      run_id = NA_integer_,
+      stringsAsFactors = FALSE
+    )
+  }
+
+  runs <- if (include("run")) {
+    episodic_db_runs(con, limit = limit)
+  } else {
+    data.frame()
+  }
   if (nrow(runs) > 0) {
     rows[[length(rows) + 1]] <- data.frame(
       at = ifelse(is.na(runs$finished_at), runs$started_at, runs$finished_at),
@@ -534,6 +646,7 @@ episodic_app_activity_log <- function(con,
         function(i) episodic_app_run_detail(runs[i, ], lang),
         character(1)
       ),
+      category = "run",
       is_system = TRUE,
       run_id = runs$run_id,
       stringsAsFactors = FALSE
@@ -547,6 +660,7 @@ episodic_app_activity_log <- function(con,
       action = character(0),
       target = character(0),
       detail = character(0),
+      category = character(0),
       is_system = logical(0),
       run_id = integer(0),
       stringsAsFactors = FALSE

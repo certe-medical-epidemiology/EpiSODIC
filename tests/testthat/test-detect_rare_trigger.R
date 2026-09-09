@@ -45,7 +45,8 @@ test_that("a single case of a curated rare pathogen fires a detection", {
   result <- episodic_detect_rare_trigger(
     con,
     cases,
-    config
+    config,
+    run_date = as.Date(max(cases$sample_date))
   )
   expect_equal(nrow(result), 1)
   expect_equal(result$detector[1], "rare_trigger")
@@ -62,7 +63,8 @@ test_that("a pathogen not on the curated list never fires", {
   result <- episodic_detect_rare_trigger(
     con,
     cases,
-    config
+    config,
+    run_date = as.Date(max(cases$sample_date))
   )
   expect_equal(nrow(result), 0)
 })
@@ -77,7 +79,8 @@ test_that("matching is case-insensitive against the curated list", {
   result <- episodic_detect_rare_trigger(
     con,
     cases,
-    config
+    config,
+    run_date = as.Date(max(cases$sample_date))
   )
   expect_equal(nrow(result), 1)
 })
@@ -90,7 +93,8 @@ test_that("an empty cases data frame produces no detections", {
   result <- episodic_detect_rare_trigger(
     con,
     empty,
-    config
+    config,
+    run_date = as.Date("2025-01-01")
   )
   expect_equal(nrow(result), 0)
 })

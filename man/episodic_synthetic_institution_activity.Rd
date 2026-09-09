@@ -5,16 +5,25 @@
 \title{Add a Hospital Activity Feed (Patient-Days)}
 \usage{
 episodic_synthetic_institution_activity(
-  institutions,
+  institutions = episodic_synthetic_institutions(),
   start_date = end_date - 5 * 365,
   end_date = Sys.Date(),
   seed = 1
 )
 }
 \arguments{
-\item{institutions}{A data frame (or tibble) of institutions (as
-returned by your own institution registry), filtered internally to
-hospitals only.}
+\item{institutions}{A data frame (or tibble) of institutions from
+\strong{your own} registry, with \code{institution_key}, \code{institution_type}
+and \code{n_beds}; filtered internally to hospitals only. Defaults to the
+synthetic registry \code{episodic_synthetic_cases()} draws on, so the two
+feeds line up with no arguments at all.
+
+\code{institution_key} must be the same identifier your case feed uses,
+not the one \code{episodic_db_institutions()} returns: EpiSODIC stores a
+hash of your key rather than the key itself, and both feeds are
+hashed on load. Handing this function the database's own table
+produces a feed whose keys are already hashed, and none of it will
+match.}
 
 \item{start_date, end_date}{The period to generate weekly rows for.
 Defaults to the five years up to today, matching

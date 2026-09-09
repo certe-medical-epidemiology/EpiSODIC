@@ -1222,3 +1222,143 @@ test_that("recounting falls back to the inputs only when the stream is absent, n
     )
   )
 })
+
+# ---------------------------------------------------------------------
+# Closure: never twice, and never silently
+# ---------------------------------------------------------------------
+
+test_that("an aged-out cluster is closed once, not once per run for ever", {
+  # Nothing removes a closed-but-unassessed cluster from the set the
+  # ageing step walks, so without a guard it collected one further
+  # identical "closed by system" row on every run - an unbounded table,
+  # and an audit trail in which the closure that actually happened is
+  # buried under hundreds of copies of itself.
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  run1 <- episodic_db_run_start(env$con, "h", "a")
+  det1 <- reconcile_detect(env, run1, "2025-01-01", "2025-01-05", 3)
+  reconcile_run(env, run1, det1, close_after_runs = 1)
+  cluster_id <- episodic_db_clusters_for_stream(env$con, env$stream_id)$cluster_id[1]
+
+  empty <- det1[0, , drop = FALSE]
+  for (i in seq_len(5)) {
+    run_i <- episodic_db_run_start(env$con, "h", "a")
+    reconcile_run(env, run_i, empty, close_after_runs = 1)
+  }
+
+  states <- episodic_db_cluster_states(env$con, cluster_id)
+  closures <- states[states$state == "closed", ]
+  expect_equal(nrow(closures), 1)
+  expect_equal(closures$trigger[1], "system")
+})
+
+test_that("a closed cluster that starts producing cases again returns to the board", {
+  # The worst outcome a surveillance system can produce: an outbreak that
+  # resumed after a lull was recorded in full, on a dossier that stayed
+  # "closed", and shown to nobody.
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  run1 <- episodic_db_run_start(env$con, "h", "a")
+  det1 <- reconcile_detect(env, run1, "2025-01-01", "2025-01-05", 3)
+  reconcile_run(env, run1, det1, close_after_runs = 1)
+  cluster_id <- episodic_db_clusters_for_stream(env$con, env$stream_id)$cluster_id[1]
+
+  empty <- det1[0, , drop = FALSE]
+  for (i in seq_len(3)) {
+    run_i <- episodic_db_run_start(env$con, "h", "a")
+    reconcile_run(env, run_i, empty, close_after_runs = 1)
+  }
+  expect_true(episodic_reconcile_is_closed(env$con, cluster_id))
+
+  # A new case within case_free_days of the closed cluster's interval
+  # matches it, so it is extended rather than opened anew - which is
+  # right - and it must say so.
+  run_back <- episodic_db_run_start(env$con, "h", "a")
+  det_back <- reconcile_detect(env, run_back, "2025-01-12", "2025-01-13", 2)
+  reconcile_run(env, run_back, det_back, close_after_runs = 1)
+
+  cluster <- episodic_db_clusters_for_stream(env$con, env$stream_id)
+  expect_equal(nrow(cluster), 1)
+  expect_equal(cluster$last_day[1], "2025-01-13")
+  expect_true(as.logical(cluster$changed_since_assessment[1]))
+  expect_equal(
+    episodic_derive_state(
+      episodic_db_assessment_events(env$con, cluster_id),
+      changed_since_assessment = TRUE,
+      explicitly_closed = TRUE
+    ),
+    "reassess"
+  )
+})
+
+test_that("a merge into an assessed cluster flags it for reassessment", {
+  # A merge is the largest change a cluster can undergo without a person
+  # touching it: the survivor absorbs other clusters' intervals and their
+  # cases. Left unflagged, the assessor's verdict went on being shown as
+  # though it had been reached on this, larger, evidence.
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  run1 <- episodic_db_run_start(env$con, "h", "a")
+  reconcile_run(env, run1, reconcile_detect(env, run1, "2025-01-01", "2025-01-02", 2))
+  older_id <- episodic_db_clusters_for_stream(env$con, env$stream_id)$cluster_id[1]
+
+  run2 <- episodic_db_run_start(env$con, "h", "a")
+  reconcile_run(env, run2, reconcile_detect(env, run2, "2025-03-01", "2025-03-02", 2))
+  expect_equal(nrow(episodic_db_clusters_for_stream(env$con, env$stream_id)), 2)
+
+  # A candidate spanning the gap merges the two, into a cluster somebody
+  # has already assessed.
+  run3 <- episodic_db_run_start(env$con, "h", "a")
+  det3 <- reconcile_detect(env, run3, "2025-01-10", "2025-02-25", 6)
+  reconcile_run(env, run3, det3, has_assessment_fn = function(cluster_id) TRUE)
+
+  survivor <- episodic_db_clusters_for_stream(env$con, env$stream_id)
+  survivor <- survivor[survivor$cluster_id == older_id, ]
+  expect_equal(nrow(survivor), 1)
+  expect_true(as.logical(survivor$changed_since_assessment[1]))
+})
+
+test_that("staleness is judged as of the run date, not the wall clock", {
+  # `run_date` is documented as "the date to treat as today", and every
+  # other phase of a run honours it. Reconciliation did not, so two runs
+  # over identical data on different days closed different clusters.
+  env <- reconcile_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  run1 <- episodic_db_run_start(env$con, "h", "a")
+  det1 <- reconcile_detect(env, run1, "2025-01-01", "2025-01-05", 3)
+  episodic_reconcile_stream(
+    env$con,
+    env$stream_id,
+    det1,
+    case_free_days = 14,
+    run_id = run1,
+    close_after_runs = 99,
+    priority_score_fn = noop_priority_score,
+    has_assessment_fn = noop_has_assessment,
+    verdict_fn = noop_verdict,
+    stale_open_days = 60,
+    today = as.Date("2025-01-10")
+  )
+  cluster_id <- episodic_db_clusters_for_stream(env$con, env$stream_id)$cluster_id[1]
+  expect_false(episodic_reconcile_is_closed(env$con, cluster_id))
+
+  run2 <- episodic_db_run_start(env$con, "h", "a")
+  episodic_reconcile_stream(
+    env$con,
+    env$stream_id,
+    det1[0, , drop = FALSE],
+    case_free_days = 14,
+    run_id = run2,
+    close_after_runs = 99,
+    priority_score_fn = noop_priority_score,
+    has_assessment_fn = noop_has_assessment,
+    verdict_fn = noop_verdict,
+    stale_open_days = 60,
+    today = as.Date("2025-06-01")
+  )
+  expect_true(episodic_reconcile_is_closed(env$con, cluster_id))
+})

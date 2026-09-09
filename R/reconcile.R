@@ -34,18 +34,26 @@
 #'    interval overlaps it, or lies within `case_free_days` of it.
 #'    - No match: open a new cluster.
 #'    - One match: extend it, recount, recompute score; if it already
-#'      carries an assessment and the interval or case count changed, flag
-#'      `changed_since_assessment`.
+#'      carries an assessment *or is already closed*, and the interval or
+#'      case count changed, flag `changed_since_assessment` so it derives
+#'      as `"reassess"` and returns to the board. A closed cluster that
+#'      starts producing cases again is the case that matters here:
+#'      unflagged, it went on absorbing them behind a dossier nobody was
+#'      shown.
 #'    - Multiple matches: merge. The oldest surviving cluster absorbs the
 #'      others via `merged_into`; nothing is deleted and no assessment
-#'      history is lost.
+#'      history is lost. The survivor is flagged by the same rule as a
+#'      single match - a merge is the largest change a cluster can undergo
+#'      without a person touching it.
 #' 4. Open clusters in the stream with no candidate this run get
 #'    `runs_since_detected + 1`; if `autoclose_unassessed` is `TRUE`, a
 #'    cluster that has never been assessed at all closes after
 #'    `close_after_runs` runs undetected this way. A cluster carrying any
 #'    verdict, including `artefact`/`expected_variation`, is never closed
 #'    by this step - only a person can close an assessed cluster
-#'    (`episodic_app_submit_closure()`).
+#'    (`episodic_app_submit_closure()`) - and neither is one that is
+#'    already closed, which would otherwise collect an identical closure
+#'    row on every run for ever.
 #' 5. Separately, if `autoclose_unassessed` is `TRUE`, any unassessed open
 #'    cluster (matched this run or not) whose `last_day` is more than
 #'    `stale_open_days` in the past closes the same way - a cluster
@@ -297,7 +305,18 @@ episodic_reconcile_stream <- function(con,
         candidate
       )
 
-      changed <- has_assessment_fn(cluster_id) &&
+      # A cluster that is already closed counts here exactly as an
+      # assessed one does. Without it, a cluster the cron auto-closed as
+      # stale-and-unassessed went on quietly absorbing every candidate
+      # that landed within `case_free_days` of it - growing its interval
+      # and its case count, run after run, while `episodic_derive_state()`
+      # kept returning "closed" (no verdict, no `changed_since_assessment`)
+      # and nothing ever put it back in front of anyone. An outbreak that
+      # resumed after a lull was recorded in full and shown to no one,
+      # which is the single worst thing a surveillance system can do.
+      # Flagged, it derives as "reassess" and returns to the board.
+      changed <- (has_assessment_fn(cluster_id) ||
+        episodic_reconcile_is_closed(con, cluster_id)) &&
         (as.character(new_first) != existing$first_day ||
           as.character(new_last) != existing$last_day ||
           new_n != existing$n_cases)
@@ -357,6 +376,19 @@ episodic_reconcile_stream <- function(con,
         candidate
       )
 
+      # A merge is the largest change a cluster can undergo without a
+      # person touching it: the survivor absorbs other clusters' intervals
+      # and their cases. Judged by exactly the same rule as the
+      # single-match branch, which this branch simply did not apply - so a
+      # dossier somebody had already assessed could silently become a
+      # different, larger dossier, still showing their verdict as if it
+      # had been reached on this evidence.
+      survivor_changed <- (has_assessment_fn(survivor_id) ||
+        episodic_reconcile_is_closed(con, survivor_id)) &&
+        (as.character(all_first) != open_clusters$first_day[survivor_idx] ||
+          as.character(all_last) != open_clusters$last_day[survivor_idx] ||
+          combined_n != open_clusters$n_cases[survivor_idx])
+
       metrics <- episodic_reconcile_candidate_metrics(candidate)
       # Forced before the write opens a statement, never inline - see the
       # cool-down branch above for why.
@@ -375,7 +407,8 @@ episodic_reconcile_stream <- function(con,
           open_clusters$detector_agreement[matches],
           candidate$detector_agreement
         ),
-        run_id = run_id
+        run_id = run_id,
+        changed_since_assessment = if (survivor_changed) TRUE else NULL
       )
       for (m in to_merge) {
         episodic_db_cluster_set_merged_into(con, m, survivor_id)
@@ -422,7 +455,17 @@ episodic_reconcile_stream <- function(con,
     verdict <- verdict_fn(cluster_id)
     eligible_for_autoclose <- isTRUE(autoclose_unassessed) && is.na(verdict)
 
-    if (runs_since > close_after_runs && eligible_for_autoclose) {
+    # Same guard step 5 has always had, and for the same reason: nothing
+    # ever removes a closed-but-unassessed cluster from the set this loop
+    # walks, so without it every such cluster collected one further
+    # identical "closed by system" row on every run, for ever - an
+    # unbounded table and an audit trail in which the one closure that
+    # actually happened is buried under hundreds of copies of itself.
+    if (
+      runs_since > close_after_runs &&
+        eligible_for_autoclose &&
+        !episodic_reconcile_is_closed(con, cluster_id)
+    ) {
       episodic_db_cluster_state_insert(
         con,
         cluster_id = cluster_id,
@@ -451,13 +494,11 @@ episodic_reconcile_stream <- function(con,
       if (!is.na(verdict)) {
         next
       }
-      # Already closed as of its own latest recorded transition - skip,
-      # rather than inserting an identical "closed" row on every future
-      # run forever (verdict stays NA and last_day stays stale, so
-      # nothing above would otherwise ever stop matching this cluster
-      # again).
-      states <- episodic_db_cluster_states(con, cluster_id)
-      if (nrow(states) > 0 && identical(states$state[nrow(states)], "closed")) {
+      # Already closed - skip, rather than inserting an identical
+      # "closed" row on every future run forever (verdict stays NA and
+      # last_day stays stale, so nothing above would otherwise ever stop
+      # matching this cluster again).
+      if (episodic_reconcile_is_closed(con, cluster_id)) {
         next
       }
       days_since_last_case <- as.integer(
@@ -480,6 +521,31 @@ episodic_reconcile_stream <- function(con,
     n_merged = n_merged,
     new_cluster_ids = new_cluster_ids
   ))
+}
+
+#' Is this cluster currently closed?
+#'
+#' Reconciliation asks this in three places - whether to auto-close
+#' (steps 4 and 5, which must not re-close what is already closed) and
+#' whether a candidate landing on a closed cluster has to put it back in
+#' front of a person - and all three must agree with what the dashboard
+#' shows, or the cron and the app hold different opinions about the same
+#' dossier. So it is `episodic_app_explicitly_closed_from()`, the same
+#' predicate `episodic_derive_state()` is driven by, rather than a
+#' second reading of the state table that happens to agree most of the
+#' time: a closure followed by a re-assessment is a reopened cluster, and
+#' only that function knows it.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The cluster to ask about.
+#' @return A single logical.
+#' @keywords internal
+#' @noRd
+episodic_reconcile_is_closed <- function(con, cluster_id) {
+  episodic_app_explicitly_closed_from(
+    episodic_db_cluster_states(con, cluster_id),
+    episodic_db_assessment_events(con, cluster_id)
+  )
 }
 
 #' Merge same-run detections whose intervals overlap into candidate episodes

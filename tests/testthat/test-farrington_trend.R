@@ -38,7 +38,7 @@ test_that("episodic_farrington_trend() backfills up to max_backfill_weeks on a f
   trend <- episodic_farrington_trend(
     cases,
     config,
-    run_date = week_starts[n_weeks] + 3,
+    run_date = week_starts[n_weeks] + 6,
     n_weeks_existing = 0,
     max_backfill_weeks = 20
   )
@@ -59,7 +59,7 @@ test_that("episodic_farrington_trend() only computes one week when trend rows al
   trend <- episodic_farrington_trend(
     cases,
     config,
-    run_date = week_starts[n_weeks] + 3,
+    run_date = week_starts[n_weeks] + 6,
     n_weeks_existing = 100
   )
   expect_equal(nrow(trend), 1)

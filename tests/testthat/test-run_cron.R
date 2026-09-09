@@ -217,9 +217,10 @@ test_that("episodic_run_cron() writes institution activity rows only when instit
   episodic_run_cron(
     db_path = path_with,
     cases = small_source,
+    # Raw keys, exactly as an operator's own extract carries them - the
+    # institutions table this function is handed holds hashed ones.
     institution_activity = function(institutions) {
       episodic_synthetic_institution_activity(
-        institutions,
         start_date = as.Date("2024-06-01"),
         end_date = as.Date("2024-06-30")
       )
@@ -452,9 +453,7 @@ test_that("episodic_run_cron() accepts a data frame directly for cases/denominat
     0
   )
 
-  institutions <- episodic_db_institutions(con)
   small_activity <- episodic_synthetic_institution_activity(
-    institutions,
     start_date = as.Date("2024-06-01"),
     end_date = as.Date("2024-06-30")
   )
@@ -493,13 +492,15 @@ test_that("episodic_lattice_enumerate() creates distinct streams per level", {
   episodic_lattice_enumerate(con, cases, institutions)
 
   streams <- episodic_db_streams(con)
+  # No province level: that one needs an operator-supplied
+  # EPISODIC_PC_PROVINCE_MAP, and there is deliberately no built-in rule
+  # for deriving a province from a postcode (see episodic_pc_to_province()).
   expect_setequal(
     streams$level,
     c(
       "pathogen_ward",
       "pathogen_institution",
       "pathogen_area",
-      "pathogen_province",
       "pathogen_region"
     )
   )
@@ -561,20 +562,26 @@ test_that("a geographic stream gets its own area's cases, not the whole region's
     )
   }
 
-  area <- episodic_cases_for_stream(cases, stream("pathogen_area", "GEBIED-97"))
+  area <- episodic_cases_for_stream(
+    cases,
+    stream("pathogen_area", episodic_test_area_code("9711"))
+  )
   expect_equal(area$pc, c("9711", "9712"))
 
+  # The province level is an operator-supplied lookup with no built-in
+  # rule, so with none configured nothing resolves to a province and no
+  # case belongs to a province stream. See episodic_pc_to_province().
   province <- episodic_cases_for_stream(
     cases,
     stream("pathogen_province", "PROV_GRONINGEN")
   )
-  expect_equal(province$pc, c("9711", "9712"))
+  expect_equal(nrow(province), 0)
 
   # the whole catchment is every case, including the one with no postcode
   # to place it by
   region <- episodic_cases_for_stream(
     cases,
-    stream("pathogen_region", episodic_region_code_all)
+    stream("pathogen_region", episodic_test_region_code())
   )
   expect_equal(nrow(region), 5)
 })
@@ -586,15 +593,23 @@ test_that("episodic_case_region_code() places a case the same way at every level
   )
   expect_equal(
     episodic_case_region_code(cases, "pathogen_area"),
-    c("GEBIED-97", "GEBIED-89", "GEBIED-78", NA)
+    c(
+      episodic_test_area_code("9711"),
+      episodic_test_area_code("8911"),
+      episodic_test_area_code("7811"),
+      NA
+    )
   )
+  # No EPISODIC_PC_PROVINCE_MAP configured: every postcode resolves to no
+  # province at all, rather than to the provinces of whichever country
+  # EpiSODIC happened to be written in.
   expect_equal(
     episodic_case_region_code(cases, "pathogen_province"),
-    c("PROV_GRONINGEN", "PROV_FRYSLAN", "PROV_DRENTHE", NA)
+    rep(NA_character_, 4)
   )
   expect_equal(
     episodic_case_region_code(cases, "pathogen_region"),
-    rep(episodic_region_code_all, 4)
+    rep(episodic_test_region_code(), 4)
   )
   # a level with no geography places nothing
   expect_true(all(is.na(episodic_case_region_code(cases, "pathogen_ward"))))
@@ -621,12 +636,19 @@ test_that("muting a stream suppresses its new detections, and unmuting restores 
   con <- episodic_db_connect(path)
   on.exit(DBI::dbDisconnect(con))
 
+  # A stream whose detections are recent, not merely numerous: the
+  # rule-based detectors report only windows inside their lookback of
+  # `run_date`, so a stream whose signal sits at the start of the case
+  # window would drop out of the later runs on its own and this test
+  # would pass, or fail, for a reason that has nothing to do with muting.
   detected <- DBI::dbGetQuery(
     con,
     "SELECT stream_id, COUNT(*) n FROM episodic_detection
-      GROUP BY stream_id ORDER BY n DESC LIMIT 1"
+      WHERE last_day >= ?
+      GROUP BY stream_id ORDER BY n DESC LIMIT 1",
+    params = list("2024-08-01")
   )
-  skip_if(nrow(detected) == 0, "no detections in this window to mute")
+  skip_if(nrow(detected) == 0, "no recent detections in this window to mute")
   target <- detected$stream_id[1]
 
   user_id <- episodic_db_app_user_insert(
@@ -641,7 +663,11 @@ test_that("muting a stream suppresses its new detections, and unmuting restores 
     con,
     stream_id = target,
     muted_from = "2024-09-01",
-    muted_until = "2024-12-31",
+    # Short enough that the run after it still falls inside the
+    # rule-based detectors' own lookback window: a run four months after
+    # the last case reports nothing whether the stream is muted or not,
+    # which would make this test pass for the wrong reason.
+    muted_until = "2024-09-03",
     reason = "seasonal",
     note = NA,
     user_id = user_id
@@ -658,7 +684,7 @@ test_that("muting a stream suppresses its new detections, and unmuting restores 
   episodic_run_cron(
     db_path = path,
     cases = cases,
-    run_date = as.Date("2024-09-15")
+    run_date = as.Date("2024-09-02")
   )
   during <- DBI::dbGetQuery(
     con,
@@ -679,7 +705,7 @@ test_that("muting a stream suppresses its new detections, and unmuting restores 
   episodic_run_cron(
     db_path = path,
     cases = cases,
-    run_date = as.Date("2025-01-15")
+    run_date = as.Date("2024-09-05")
   )
   after <- DBI::dbGetQuery(
     con,

@@ -406,3 +406,42 @@ test_that("episodic_auth_login() returns a user row with role/is_admin/is_active
   expect_true(episodic_user_is_epidemiologist(result$user))
   expect_true(episodic_user_is_admin(result$user))
 })
+
+test_that("must_change is a property of the account, not of a hardcoded username", {
+  # There used to be a special case in the sign-in path for the literal
+  # username "demo" verified against the literal password "demo" - a
+  # hardcoded credential in a package other people deploy, which would
+  # also have exempted a real account that happened to be called `demo`.
+  db_path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(db_path))
+  DBI::dbDisconnect(episodic_db_create(db_path))
+
+  episodic_add_user(
+    db_path,
+    "demo",
+    "Demo User",
+    "demo@example.org",
+    "demo",
+    must_change = FALSE
+  )
+  episodic_add_user(
+    db_path,
+    "jdoe",
+    "Jane Doe",
+    "j@x.nl",
+    "initial123"
+  )
+
+  con <- episodic_db_connect(db_path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+
+  demo <- episodic_auth_login(con, "demo", "demo")
+  expect_true(demo$ok)
+  expect_false(demo$must_change)
+
+  # Every ordinary account still has to replace the password it was
+  # handed, whatever it is called.
+  jane <- episodic_auth_login(con, "jdoe", "initial123")
+  expect_true(jane$ok)
+  expect_true(jane$must_change)
+})

@@ -345,3 +345,68 @@ test_that("the engine never errors on a minimal cluster object with everything o
   expect_silent(result <- episodic_interpretation_generate(minimal))
   expect_true(length(result$text) >= 1) # magnitude.default and recommendation.default always fire
 })
+
+test_that("the denominator slot says nothing when positivity was never measured", {
+  # `positivity` is NA for a week with no tests at all, which is not a
+  # positivity of zero. Compared as though it were, the dossier would
+  # write "testing volume rose while positivity stayed flat" about a
+  # comparison with an unmeasured end - a sentence an epidemiologist
+  # reads and reasons from.
+  unmeasured <- base_cluster(
+    denominator = list(
+      n_tests_first = 0,
+      n_tests_last = 40,
+      positivity_first = NA_real_,
+      positivity_last = 0
+    )
+  )
+  result <- episodic_interpretation_generate(unmeasured)
+  expect_false(any(startsWith(result$fired, "denominator.")))
+
+  both_unmeasured <- base_cluster(
+    denominator = list(
+      n_tests_first = 0,
+      n_tests_last = 0,
+      positivity_first = NA_real_,
+      positivity_last = NA_real_
+    )
+  )
+  expect_false(any(
+    startsWith(episodic_interpretation_generate(both_unmeasured)$fired, "denominator.")
+  ))
+})
+
+test_that("a first positive test is not reported as positivity rising", {
+  # Half again on a baseline of zero is not a rise.
+  from_zero <- base_cluster(
+    denominator = list(
+      n_tests_first = 80,
+      n_tests_last = 82,
+      positivity_first = 0,
+      positivity_last = 0.03
+    )
+  )
+  fired <- episodic_interpretation_generate(from_zero)$fired
+  expect_false("denominator.rising_positivity" %in% fired)
+  # It is still a measured comparison, so the section is not silent.
+  expect_true("denominator.stable" %in% fired)
+})
+
+test_that("episodic_interpretation_positivity() demands both ends be real numbers", {
+  measured <- list(
+    denominator = list(
+      n_tests_first = 10,
+      n_tests_last = 20,
+      positivity_first = 0.1,
+      positivity_last = 0.2
+    )
+  )
+  expect_equal(episodic_interpretation_positivity(measured)$first, 0.1)
+  expect_null(episodic_interpretation_positivity(list(denominator = NULL)))
+  expect_null(episodic_interpretation_positivity(
+    list(denominator = list(positivity_first = NA_real_, positivity_last = 0.2))
+  ))
+  expect_null(episodic_interpretation_positivity(
+    list(denominator = list(positivity_first = 0.1, positivity_last = NaN))
+  ))
+})

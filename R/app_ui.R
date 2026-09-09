@@ -33,11 +33,34 @@
 #' @noRd
 episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
+  resolved_lang <- episodic_lang(lang)
 
   bslib::page_fluid(
     theme = bslib::bs_theme(version = 5),
     title = episodic_tr("app.title", lang = lang),
     shiny::tags$head(
+      # `lang` is what a screen reader picks its voice and pronunciation
+      # rules from, and `dir` is what makes a right-to-left language read
+      # right to left. The page carried neither, while Arabic has been
+      # one of the eight shipped languages all along - so an Arabic
+      # dashboard rendered left to right, with its navigation, tables,
+      # chart labels and assessment form all mirrored the wrong way
+      # round, and every language was announced to assistive technology
+      # as whatever the browser guessed.
+      #
+      # Written onto <html> from script rather than passed to
+      # `bslib::page_fluid()`: the page function's own handling of these
+      # attributes differs across bslib versions, and this works on all
+      # of them. See `episodic_lang_dir()` and the "Right-to-left"
+      # section of episodic.css.
+      shiny::tags$script(shiny::HTML(sprintf(
+        paste0(
+          "document.documentElement.setAttribute('lang', '%s');",
+          "document.documentElement.setAttribute('dir', '%s');"
+        ),
+        resolved_lang,
+        episodic_lang_dir(resolved_lang)
+      ))),
       # Only fetched when the resolved palette still uses the shipped
       # default font - the moment an instance overrides `font` in its
       # EPISODIC_STYLE, this Google Fonts request for a face

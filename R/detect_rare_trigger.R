@@ -29,16 +29,30 @@
 #' operators supply free text and a curated list
 #' should not silently miss a hit over a capitalisation difference.
 #'
+#' Only cases sampled within `config$rare_trigger$lookback_days` of
+#' `run_date` are considered. A single case is notable when it is
+#' *news*; the same case is not news again every night for the rest of
+#' the instance's life, which is what an unbounded rescan of the whole
+#' case history made it - one detection row per historical rare case per
+#' run, and a `runs_since_detected` reset that kept every cluster this
+#' detector had ever opened permanently ineligible for
+#' `reconciliation.close_after_runs`. See
+#' `episodic_detector_lookback_cutoff()`.
+#'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cases A data frame of cases to scan, with `pathogen`,
 #'   `institution_id`, `sample_date`.
 #' @param config The resolved configuration; uses `config$rare_trigger`.
+#' @param run_date The date to treat as "today", for the lookback window.
 #' @return A data frame of detection records plus a `stream_id` column, one
 #'   row per matching case (or per institution-day group when several
 #'   matching cases share an institution and date).
 #' @keywords internal
 #' @noRd
-episodic_detect_rare_trigger <- function(con, cases, config) {
+episodic_detect_rare_trigger <- function(con,
+                                         cases,
+                                         config,
+                                         run_date = Sys.Date()) {
   empty <- episodic_detection_record(
     integer(0),
     character(0),
@@ -52,8 +66,16 @@ episodic_detect_rare_trigger <- function(con, cases, config) {
     return(empty)
   }
 
+  cases <- episodic_detector_cases_asof(cases, run_date)
+  if (nrow(cases) == 0) {
+    return(empty)
+  }
   matches <- tolower(cases$pathogen) %in% tolower(rt$pathogens)
-  hits <- cases[matches, ]
+  cutoff <- episodic_detector_lookback_cutoff(run_date, rt$lookback_days)
+  if (!is.null(cutoff)) {
+    matches <- matches & as.Date(cases$sample_date) >= cutoff
+  }
+  hits <- cases[which(matches), ]
   if (nrow(hits) == 0) {
     return(empty)
   }

@@ -201,7 +201,11 @@ episodic_app_reference_pc_province <- function(con = NULL,
 
   episodic_reference_row(
     "EPISODIC_PC_PROVINCE_MAP",
-    if (is.null(mapping)) "default" else "in_use",
+    # "unset", not "default": there is no built-in rule to fall back to
+    # any more, because deriving a province from a postcode is
+    # country-specific. Nothing configured means the province level of
+    # the lattice is simply off.
+    if (is.null(mapping)) "unset" else "in_use",
     detail,
     path = path
   )
@@ -270,18 +274,22 @@ episodic_app_reference_geo <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       path = path
     ))
   }
+  # Nothing configured is not a fault, and no longer means "somebody
+  # else's country's map": there is no default geography at all, so the
+  # panel falls back to a bar breakdown. Said in its own words rather
+  # than reusing the "sf is not installed" line, which was the only
+  # thing this state could produce back when a default existed.
   if (is.null(geo)) {
     return(episodic_reference_row(
       "EPISODIC_GEO_DATA",
-      "unavailable",
-      tr("info.reference.geo.no_sf"),
+      "unset",
+      tr("info.reference.geo.none"),
       path = path
     ))
   }
-  used_own <- !is.na(path) && nzchar(path) && file.exists(path)
   episodic_reference_row(
     "EPISODIC_GEO_DATA",
-    if (used_own) "in_use" else "default",
+    "in_use",
     tr("info.reference.areas", n = nrow(geo)),
     path = path
   )

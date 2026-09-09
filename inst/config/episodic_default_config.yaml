@@ -63,6 +63,18 @@ same_place:
   # (the classic Norway-problem gotcha). n_cases means the same thing.
   default_n_cases: 3
   default_k_days: 14
+  # How far back a run reports hits from. This detector needs no
+  # baseline, so nothing in its own logic bounds it: unbounded, it
+  # rescanned the entire case history every run and re-emitted every hit
+  # window it had ever found, which is not merely wasteful - each
+  # re-emitted historical window matches its own long-settled cluster
+  # during reconciliation and resets `runs_since_detected` to zero, so
+  # `reconciliation.close_after_runs` could never fire for any cluster
+  # this detector had touched. The same bound `farrington.max_weeks_tested`
+  # places on the statistical detector. Judged on a window's LAST day, so
+  # a long window running up to yesterday is always reported. Set to ~ for
+  # no bound (which is the old behaviour, and is not recommended).
+  lookback_days: 90
   overrides:
     Clostridioides difficile: {n_cases: 3, k_days: 14}
     MRSA: {n_cases: 3, k_days: 14}
@@ -128,6 +140,11 @@ rare_trigger:
     - Carbapenemase-producing Enterobacterales
     - Candida auris
   min_cases: 1   # cases required in the window to fire; almost always 1, since a pathogen only belongs on this list if a single case is already notable
+  # As same_place.lookback_days, and for the same reason. A single case
+  # of Candida auris is notable when it is news; it is not news again
+  # every night for the rest of the instance's life. Set to ~ for no
+  # bound (not recommended).
+  lookback_days: 90
 
 # Priority score weights. Sum to 1.00. Each component is independently
 # rescaled/clamped before being combined as a weighted mean; a component
@@ -143,6 +160,45 @@ priority_score:
     agreement_component: 0.10  # share of the 4 detectors that fired on this cluster
     density_component: 0.10    # incidence per 1,000 patient-days versus that stream's own baseline density
     spatial_component: 0.05    # how concentrated cases are in one location versus spread across several
+
+# Geography: how the two coarsest lattice levels name places.
+#
+# EpiSODIC runs at any laboratory in any country, so it cannot know what
+# an operator's regions are called. These were hardcoded to the catchment
+# the package was first written for - the whole-catchment code was
+# literally "NORTHERN_NETHERLANDS" and an area was "GEBIED-" (Dutch for
+# "area") plus two postcode characters - which a laboratory anywhere else
+# would have found baked into its own stream keys, dashboard and outbreak
+# reports.
+#
+# Both values enter episodic_stream_key(), so changing either changes
+# every geographic stream's identity: set them once, before an instance
+# accrues history. They are part of config_hash for the same reason
+# (unlike notifications and access, they genuinely change what a run
+# computes).
+#
+# The province level (L4) has no settings here at all: deriving a
+# province from a postcode is a country-specific rule with no defensible
+# default, so it is an explicit CSV lookup supplied through the
+# EPISODIC_PC_PROVINCE_MAP environment variable. Without one, L4 simply
+# stays empty, and the dashboard's Info screen says so.
+geography:
+  # L5, the whole catchment, as one code. Name your own service area.
+  region_code: REGION
+  # L3, an area: this prefix followed by the first `area_pc_characters`
+  # characters of a case's `pc`. A coarse but deterministic and
+  # contiguous grouping, which is all L3 is meant to be.
+  area_code_prefix: "AREA-"
+  area_pc_characters: 2
+
+# Outbreak reports.
+report:
+  # Counts below this in the report's geography/institution breakdown
+  # tables are shown as "<threshold" rather than exactly, since a
+  # single-digit count at a named place can identify an individual in a
+  # small population. Set to 1 (or 0) to disable suppression entirely -
+  # which is a disclosure decision, not a display preference.
+  small_count_threshold: 5
 
 # Notifications: not configured by default. Set in the instance
 # configuration file (EPISODIC_CONFIG) to enable. This key is excluded
@@ -202,16 +258,23 @@ suppression:
 # can switch off from inside the app is a login wall that falls with that
 # one account. Turning it off takes file access to the machine.
 access:
-  # FALSE (the shipped default) keeps the behaviour EpiSODIC has always
-  # had: anyone who reaches the app reads clusters, streams and the
-  # archive without signing in, and signing in is needed only for the
-  # line list and for writing (see vignette("deployment")).
+  # TRUE (the shipped default) closes the app to anonymous visitors
+  # entirely. A visitor gets a sign-in prompt and nothing else - not the
+  # navigation, not the status strip, not one row of data - because the
+  # server renders none of it rather than hiding it client-side. There is
+  # correspondingly nothing for a browser's developer tools to reveal:
+  # the data never reaches the page.
   #
-  # TRUE closes the app to anonymous visitors entirely. A visitor gets a
-  # sign-in prompt and nothing else - not the navigation, not the status
-  # strip, not one row of data - because the server renders none of it
-  # rather than hiding it client-side. There is correspondingly nothing
-  # for a browser's developer tools to reveal: the data never reaches the
-  # page. Set this if the instance is reachable from anywhere its data
-  # should not be.
-  require_login: false
+  # FALSE lets anyone who reaches the app read clusters, streams and the
+  # archive without signing in; signing in is then needed only for the
+  # patient-level line list and for writing (see vignette("deployment")).
+  # Cluster rows are not anonymous data - a ward, an institution, a
+  # pathogen and a date is often enough to identify who - so this is a
+  # deliberate choice for an instance already behind network controls
+  # that make anonymous reachability impossible, not a convenience.
+  #
+  # The default used to be FALSE, i.e. open. A surveillance system
+  # shipped to laboratories worldwide has to be safe in its shipped
+  # state, because the deployment that goes wrong is the one where
+  # nobody read this file.
+  require_login: true

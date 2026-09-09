@@ -257,8 +257,267 @@ episodic_db_create <- function(path, overwrite = FALSE) {
   for (statement in episodic_db_schema_statements(dialect)) {
     DBI::dbExecute(con, statement)
   }
+  episodic_db_schema_version_stamp(con, episodic_schema_version)
 
   invisible(con)
+}
+
+#' The schema version this build of EpiSODIC expects
+#'
+#' Bumped by one whenever `inst/sql/schema.sql` changes shape in a way an
+#' existing database has to be brought along for, with a matching entry
+#' added to `episodic_db_migrations()`. Never bumped for a comment, and
+#' never reused.
+#' @keywords internal
+#' @noRd
+episodic_schema_version <- 2L
+
+#' Record that a schema version has been applied
+#' @keywords internal
+#' @noRd
+episodic_db_schema_version_stamp <- function(con, version) {
+  DBI::dbExecute(
+    con,
+    "INSERT INTO episodic_schema_version (version, applied_at, applied_by)
+     VALUES (?, ?, ?)",
+    params = list(
+      as.integer(version),
+      episodic_now(),
+      as.character(utils::packageVersion("EpiSODIC"))
+    )
+  )
+  invisible(NULL)
+}
+
+#' The schema version a database is currently at
+#'
+#' `NA_integer_` for a database created before the version table
+#' existed - which is every database written by EpiSODIC up to and
+#' including 0.12.x. Those are schema version 1 by construction (the
+#' table is the only thing they lack), so `episodic_db_migrate()` adopts
+#' them rather than refusing them.
+#' @param con A [DBI::DBIConnection-class].
+#' @return A single integer, or `NA_integer_`.
+#' @keywords internal
+#' @noRd
+episodic_db_schema_version <- function(con) {
+  if (!DBI::dbExistsTable(con, "episodic_schema_version")) {
+    return(NA_integer_)
+  }
+  versions <- DBI::dbGetQuery(
+    con,
+    "SELECT version FROM episodic_schema_version"
+  )$version
+  if (length(versions) == 0) {
+    return(NA_integer_)
+  }
+  as.integer(max(versions))
+}
+
+#' The forward migrations this build knows how to apply
+#'
+#' A named list, one entry per version above 1, each a function
+#' `(con, dialect)` that brings a database from the previous version to
+#' that one. Empty at version 1: there is nothing before it to migrate
+#' from. It exists now rather than when it is first needed because the
+#' alternative - discovering on the day of the first schema change that
+#' every deployed instance has no upgrade path - is how a research tool
+#' becomes a tool people stop upgrading.
+#'
+#' A migration must be idempotent per version (it runs exactly once,
+#' inside a transaction, and the version row is written in the same
+#' transaction) and must never destroy data: adding a column, adding a
+#' table, backfilling a value. A change that cannot be made that way is
+#' a change that needs a documented export/reimport, not a silent one.
+#' @keywords internal
+#' @noRd
+episodic_db_migrations <- function() {
+  list(
+    # 2: episodic_app_login_failure, the audit record of sign-ins that
+    # did not succeed. Purely additive - one new table and its index,
+    # taken from the same schema file every other table comes from, so
+    # there is still only one place the table is defined.
+    #
+    # The existence check is not belt and braces: MariaDB/MySQL commit
+    # implicitly on DDL, so a migration that creates a table and then
+    # fails before its version row is written leaves the table behind
+    # and nothing recorded. Skipping what is already there is what makes
+    # the second attempt work rather than fail on "table already
+    # exists". (Under SQLite the whole step really is transactional and
+    # this never fires.)
+    "2" = function(con, dialect) {
+      if (DBI::dbExistsTable(con, "episodic_app_login_failure")) {
+        return(invisible(NULL))
+      }
+      for (statement in episodic_db_schema_statements_for(
+        dialect,
+        "episodic_app_login_failure"
+      )) {
+        DBI::dbExecute(con, statement)
+      }
+      invisible(NULL)
+    }
+  )
+}
+
+#' The `CREATE` statements naming one table, from the dialect-adapted schema
+#'
+#' A migration that adds a table must create exactly the table the
+#' schema file describes, or a migrated database and a freshly created
+#' one drift apart - so it takes the statements from there rather than
+#' repeating the DDL. Matches the table's `CREATE TABLE` and every
+#' `CREATE INDEX` on it, and nothing else: a plain substring match would
+#' give `episodic_app_user` every statement belonging to
+#' `episodic_app_user_event` as well.
+#'
+#' @param dialect `"sqlite"` or `"mariadb"`.
+#' @param table The table name.
+#' @return A character vector of SQL statements, in schema-file order.
+#' @keywords internal
+#' @noRd
+episodic_db_schema_statements_for <- function(dialect, table) {
+  statements <- episodic_db_schema_statements(dialect)
+  wanted <- paste0(
+    "(CREATE TABLE\\s+", table, "\\s*\\(|CREATE INDEX\\s+\\S+\\s+ON\\s+", table, "\\s*\\()"
+  )
+  matches <- statements[grepl(wanted, statements)]
+  if (length(matches) == 0) {
+    stop(
+      "No statements for table \"",
+      table,
+      "\" in inst/sql/schema.sql. The package installation may be ",
+      "corrupted.",
+      call. = FALSE
+    )
+  }
+  matches
+}
+
+#' Bring an Existing Database up to the Current Schema
+#'
+#' EpiSODIC records which version of its schema a database was built
+#' with, and refuses to open one it does not recognise rather than
+#' failing later with an unexplained SQL error (or, worse, not failing
+#' and reading a column that has since come to mean something else).
+#' When you upgrade the package and its schema has moved on, this is what
+#' brings your existing database along - in one transaction per step, so
+#' a failed migration leaves the database exactly as it was.
+#'
+#' Nothing is ever dropped or rewritten: migrations add tables, add
+#' columns, and backfill values. Your surveillance history, your
+#' assessments and your audit trail are carried forward untouched. Take
+#' a backup first anyway - that advice does not stop being good because
+#' the code is careful.
+#'
+#' Each step runs inside a transaction, which under SQLite covers the
+#' schema changes themselves. MariaDB and MySQL commit implicitly on
+#' every `CREATE`/`ALTER`, so there a failed step can leave its schema
+#' change in place with no version row recorded; every migration is
+#' written to skip what it finds already done, so simply running this
+#' again is the correct response.
+#'
+#' A database created by EpiSODIC 0.12.x or earlier carries no version
+#' at all, since the version table postdates it. Such a database is
+#' adopted at version 1 (which is the shape it already has) rather than
+#' refused.
+#'
+#' @param db_path Path to an existing SQLite database, or a MariaDB/MySQL
+#'   DSN (see [episodic_db_dsn_mariadb()]). Defaults to the `EPISODIC_DB`
+#'   environment variable.
+#' @return Invisibly, the schema version the database is at afterwards.
+#' @examples
+#' db_path <- tempfile(fileext = ".sqlite")
+#' con <- episodic_db_create(db_path)
+#' DBI::dbDisconnect(con)
+#'
+#' # already current: reports so and changes nothing
+#' episodic_db_migrate(db_path)
+#'
+#' file.remove(db_path)
+#' @export
+episodic_db_migrate <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA)) {
+  con <- episodic_db_open(db_path, check_schema_version = FALSE)
+  on.exit(DBI::dbDisconnect(con))
+  dialect <- episodic_db_dialect(db_path)
+
+  current <- episodic_db_schema_version(con)
+  if (is.na(current)) {
+    # Pre-versioning database: it is version 1 by construction, so record
+    # that rather than refusing it or trying to migrate it from nowhere.
+    if (!DBI::dbExistsTable(con, "episodic_schema_version")) {
+      for (statement in episodic_db_schema_version_statements(dialect)) {
+        DBI::dbExecute(con, statement)
+      }
+    }
+    episodic_db_schema_version_stamp(con, 1L)
+    current <- 1L
+    message("Adopted this database at schema version 1.")
+  }
+
+  if (current > episodic_schema_version) {
+    stop(
+      "This database is at schema version ",
+      current,
+      ", which is newer than the version this EpiSODIC (",
+      as.character(utils::packageVersion("EpiSODIC")),
+      ") knows about (",
+      episodic_schema_version,
+      "). Upgrade the package rather than downgrading the database.",
+      call. = FALSE
+    )
+  }
+
+  migrations <- episodic_db_migrations()
+  pending <- setdiff(seq_len(episodic_schema_version), seq_len(current))
+  for (version in pending) {
+    step <- migrations[[as.character(version)]]
+    if (is.null(step)) {
+      stop(
+        "No migration is registered for schema version ",
+        version,
+        ", so this database cannot be brought up to date. This is a bug ",
+        "in EpiSODIC; please report it.",
+        call. = FALSE
+      )
+    }
+    message("Applying schema version ", version, "...")
+    DBI::dbBegin(con)
+    ok <- tryCatch(
+      {
+        step(con, dialect)
+        episodic_db_schema_version_stamp(con, version)
+        TRUE
+      },
+      error = function(e) e
+    )
+    if (!isTRUE(ok)) {
+      DBI::dbRollback(con)
+      stop(
+        "Migration to schema version ",
+        version,
+        " failed and was rolled back; the database is unchanged at ",
+        version - 1L,
+        ". ",
+        conditionMessage(ok),
+        call. = FALSE
+      )
+    }
+    DBI::dbCommit(con)
+  }
+
+  final <- episodic_db_schema_version(con)
+  message("Database is at schema version ", final, ".")
+  invisible(final)
+}
+
+#' The `CREATE TABLE` statements for `episodic_schema_version` alone
+#'
+#' Needed on its own by `episodic_db_migrate()`, to give a
+#' pre-versioning database somewhere to record that it is version 1.
+#' @keywords internal
+#' @noRd
+episodic_db_schema_version_statements <- function(dialect) {
+  episodic_db_schema_statements_for(dialect, "episodic_schema_version")
 }
 
 #' Empty Every EpiSODIC Table, Keeping the Schema Itself
@@ -310,7 +569,15 @@ episodic_db_truncate <- function(path) {
   on.exit(DBI::dbDisconnect(con), add = TRUE)
   dialect <- episodic_db_dialect(path)
 
-  tables <- intersect(episodic_db_schema_tables(), DBI::dbListTables(con))
+  # `episodic_schema_version` is schema metadata, not data: emptying it
+  # leaves a database that is structurally intact and that
+  # `episodic_db_connect()` then refuses as unversioned. "The schema
+  # itself is kept" is what this function promises, and the recorded
+  # version is part of the schema.
+  tables <- setdiff(
+    intersect(episodic_db_schema_tables(), DBI::dbListTables(con)),
+    "episodic_schema_version"
+  )
   if (length(tables) == 0) {
     message(
       "No EpiSODIC tables found on this connection - nothing to truncate."
@@ -441,6 +708,11 @@ episodic_db_truncate <- function(path) {
 #' @param path Path to an existing SQLite file, or a `mysql://` DSN (see
 #'   [episodic_db_dsn_mariadb()]) pointing at an existing MariaDB/MySQL
 #'   database.
+#' @param check_schema_version Whether to refuse a database whose schema
+#'   version is not the one this build of EpiSODIC expects, with an
+#'   error naming [episodic_db_migrate()] as the fix. `TRUE` (the
+#'   default) everywhere except inside `episodic_db_migrate()` itself,
+#'   which by definition has to open a database that is out of date.
 #' @return An open [DBI::DBIConnection-class].
 #' @examples
 #' db_path <- tempfile(fileext = ".sqlite")
@@ -450,7 +722,7 @@ episodic_db_truncate <- function(path) {
 #' DBI::dbDisconnect(con)
 #' file.remove(db_path)
 #' @export
-episodic_db_connect <- function(path) {
+episodic_db_connect <- function(path, check_schema_version = TRUE) {
   dialect <- episodic_db_dialect(path)
   if (dialect == "sqlite") {
     if (!file.exists(path)) {
@@ -461,7 +733,64 @@ episodic_db_connect <- function(path) {
     con <- episodic_db_mariadb_connect(path)
   }
   episodic_db_pragmas(con)
+  if (isTRUE(check_schema_version)) {
+    episodic_db_check_schema_version(con)
+  }
   con
+}
+
+#' Refuse a database this build of EpiSODIC does not understand
+#'
+#' Checked once, on connect, and stated as an instruction rather than
+#' discovered later as "no such column: x" halfway through a detection
+#' run - by which point the operator has an error naming a column
+#' instead of an error naming the upgrade they have not run.
+#'
+#' Disconnects before throwing, so the caller's `on.exit()` (which has
+#' not been registered yet, since the connection never reached them) is
+#' not the thing responsible for a leaked handle.
+#'
+#' @param con An open connection.
+#' @return Invisibly `TRUE`; throws otherwise.
+#' @keywords internal
+#' @noRd
+episodic_db_check_schema_version <- function(con) {
+  version <- episodic_db_schema_version(con)
+  if (!is.na(version) && version == episodic_schema_version) {
+    return(invisible(TRUE))
+  }
+  refuse <- function(...) {
+    if (DBI::dbIsValid(con)) {
+      DBI::dbDisconnect(con)
+    }
+    stop(..., call. = FALSE)
+  }
+  if (is.na(version)) {
+    refuse(
+      "This database carries no schema version, so it was created by ",
+      "EpiSODIC 0.12.x or earlier. Run episodic_db_migrate() on it once ",
+      "to bring it up to date (nothing is dropped or rewritten)."
+    )
+  }
+  if (version < episodic_schema_version) {
+    refuse(
+      "This database is at schema version ",
+      version,
+      ", and this EpiSODIC expects ",
+      episodic_schema_version,
+      ". Run episodic_db_migrate() on it (nothing is dropped or ",
+      "rewritten)."
+    )
+  }
+  refuse(
+    "This database is at schema version ",
+    version,
+    ", which is newer than the version this EpiSODIC (",
+    as.character(utils::packageVersion("EpiSODIC")),
+    ") knows about (",
+    episodic_schema_version,
+    "). Upgrade the package rather than downgrading the database."
+  )
 }
 
 #' Connect Using the `EPISODIC_DB` Environment Variable
@@ -475,6 +804,7 @@ episodic_db_connect <- function(path) {
 #' @param db_path Path to an existing SQLite database, or a `mysql://` DSN
 #'   (see [episodic_db_dsn_mariadb()]). Defaults to the `EPISODIC_DB`
 #'   environment variable.
+#' @inheritParams episodic_db_connect
 #' @return An open [DBI::DBIConnection-class]; you are responsible for
 #'   disconnecting it.
 #' @examples
@@ -486,7 +816,8 @@ episodic_db_connect <- function(path) {
 #' DBI::dbDisconnect(con)
 #' file.remove(db_path)
 #' @export
-episodic_db_open <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA)) {
+episodic_db_open <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA),
+                             check_schema_version = TRUE) {
   if (is.na(db_path) || !nzchar(db_path)) {
     stop(
       "No database path given and EPISODIC_DB is not set. Pass db_path ",
@@ -494,7 +825,7 @@ episodic_db_open <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA)) {
       call. = FALSE
     )
   }
-  episodic_db_connect(db_path)
+  episodic_db_connect(db_path, check_schema_version = check_schema_version)
 }
 
 #' @keywords internal
@@ -700,6 +1031,9 @@ episodic_db_schema_statements <- function(dialect) {
       ),
       episodic_report_subscription_send = c(
         "  sent_at               TEXT NOT NULL," = "  sent_at               VARCHAR(30) NOT NULL,"
+      ),
+      episodic_app_login_failure = c(
+        "  attempted_at TEXT NOT NULL," = "  attempted_at VARCHAR(30) NOT NULL,"
       )
     )
     for (table in names(text_to_varchar)) {

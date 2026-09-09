@@ -170,7 +170,11 @@ test_that("episodic_app_activity_log() surfaces assessments, closures, mutes, lo
   second_run <- episodic_db_run_start(env$con, "host", "account")
   episodic_db_run_finish(env$con, second_run, status = "failed")
 
-  activity <- episodic_app_activity_log(env$con, lang = "nl")
+  activity <- episodic_app_activity_log(
+    env$con,
+    lang = "nl",
+    user = list(user_id = user_id)
+  )
   expect_true("aangemeld" %in% activity$action) # login
   expect_true("geclassificeerd" %in% activity$action) # assessment
   expect_true("signaleringsreeks gedempt" %in% activity$action) # mute
@@ -203,7 +207,11 @@ test_that("episodic_app_activity_log() carries a load summary on run rows and no
     n_cases_inserted = 120
   )
 
-  activity <- episodic_app_activity_log(env$con, lang = "en")
+  activity <- episodic_app_activity_log(
+    env$con,
+    lang = "en",
+    user = list(user_id = user_id)
+  )
   detail <- activity$detail[!is.na(activity$detail)]
   expect_true(any(grepl("120", detail, fixed = TRUE)))
   expect_true(any(grepl("400", detail, fixed = TRUE)))
@@ -262,7 +270,11 @@ test_that("run rows carry their run_id so the screen can offer the run detail, h
   run_id <- episodic_db_run_start(env$con, "host", "account")
   episodic_db_run_finish(env$con, run_id, status = "success")
 
-  activity <- episodic_app_activity_log(env$con, lang = "en")
+  activity <- episodic_app_activity_log(
+    env$con,
+    lang = "en",
+    user = list(user_id = 1L)
+  )
   expect_true(run_id %in% activity$run_id[activity$is_system])
   expect_true(all(is.na(activity$run_id[!activity$is_system])))
 })
@@ -391,4 +403,177 @@ test_that("episodic_ui_run_modal() shows what a successful run loaded, and no fa
   expect_false(grepl("Why this run failed", rendered, fixed = TRUE))
   expect_false(grepl("episodic_check_cases()", rendered, fixed = TRUE))
   expect_false(grepl("[[", rendered, fixed = TRUE))
+})
+
+# ---------------------------------------------------------------------
+# Sign-ins on the Activity screen
+# ---------------------------------------------------------------------
+
+activity_login_env <- function() {
+  env <- app_read_setup()
+  env$user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    sodium::password_store("pw12345")
+  )
+  env
+}
+
+test_that("a refused sign-in is recorded with which of the three reasons it was", {
+  # The visitor is told nothing about why; the audit trail is told
+  # everything. An epidemiologist locked out by a deactivated account and
+  # somebody working through a colleague's likely passwords look
+  # identical from the login screen and must not look identical here.
+  env <- activity_login_env()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  expect_false(episodic_auth_login(env$con, "tester", "wrong")$ok)
+  expect_false(episodic_auth_login(env$con, "nobody", "whatever")$ok)
+  episodic_auth_set_active(env$con, env$user_id, env$user_id, FALSE)
+  expect_false(episodic_auth_login(env$con, "tester", "pw12345")$ok)
+
+  failures <- episodic_db_app_login_failures(env$con)
+  expect_equal(nrow(failures), 3)
+  expect_setequal(
+    failures$reason,
+    c("wrong_password", "unknown_username", "inactive_account")
+  )
+  # The account is named where there is one, and only there.
+  expect_equal(
+    failures$user_id[failures$reason == "unknown_username"],
+    NA_integer_
+  )
+  expect_equal(
+    failures$user_id[failures$reason == "wrong_password"],
+    env$user_id
+  )
+  expect_equal(failures$username[failures$reason == "unknown_username"], "nobody")
+})
+
+test_that("a refused sign-in reaches the Activity screen with its reason", {
+  env <- activity_login_env()
+  on.exit(DBI::dbDisconnect(env$con))
+  episodic_auth_login(env$con, "tester", "wrong")
+
+  activity <- episodic_app_activity_log(
+    env$con,
+    lang = "en",
+    user = list(user_id = env$user_id)
+  )
+  refused <- activity[activity$action == "sign-in refused", ]
+  expect_equal(nrow(refused), 1)
+  expect_equal(refused$category[1], "signin")
+  expect_equal(refused$target[1], "tester")
+  expect_equal(refused$detail[1], "wrong password")
+  expect_false(refused$is_system[1])
+})
+
+test_that("an attempt on a username nobody has is not presented as a person", {
+  env <- activity_login_env()
+  on.exit(DBI::dbDisconnect(env$con))
+  episodic_auth_login(env$con, "root", "hunter2")
+
+  activity <- episodic_app_activity_log(
+    env$con,
+    lang = "en",
+    user = list(user_id = env$user_id)
+  )
+  refused <- activity[activity$action == "sign-in refused", ]
+  expect_equal(refused$actor[1], "Unknown account")
+  expect_equal(refused$target[1], "root")
+})
+
+test_that("sign-in rows are withheld from a reader who has not signed in", {
+  # On an instance with access.require_login FALSE the Activity screen is
+  # readable by anyone who reaches it, and "who has an account here, and
+  # which usernames somebody has been trying" is exactly what not to hand
+  # a stranger.
+  env <- activity_login_env()
+  on.exit(DBI::dbDisconnect(env$con))
+  episodic_auth_login(env$con, "tester", "pw12345")
+  episodic_auth_login(env$con, "tester", "wrong")
+
+  anonymous <- episodic_app_activity_log(env$con, lang = "en", user = NULL)
+  expect_false("signin" %in% anonymous$category)
+  # Everything else is unaffected: the runs are still there.
+  expect_true("run" %in% anonymous$category)
+
+  signed_in <- episodic_app_activity_log(
+    env$con,
+    lang = "en",
+    user = list(user_id = env$user_id)
+  )
+  expect_true("signin" %in% signed_in$category)
+})
+
+test_that("the category filter keeps exactly what it names", {
+  env <- activity_login_env()
+  on.exit(DBI::dbDisconnect(env$con))
+  episodic_auth_login(env$con, "tester", "pw12345")
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    env$user_id,
+    verdict = "cluster_not_yet",
+    rationale = "watching"
+  )
+
+  user <- list(user_id = env$user_id)
+  all_rows <- episodic_app_activity_log(env$con, lang = "en", user = user)
+  expect_true(all(all_rows$category %in% episodic_activity_categories))
+  expect_true(length(unique(all_rows$category)) > 1)
+
+  only_runs <- episodic_app_activity_log(
+    env$con,
+    lang = "en",
+    user = user,
+    category = "run"
+  )
+  expect_setequal(unique(only_runs$category), "run")
+
+  two <- episodic_app_activity_log(
+    env$con,
+    lang = "en",
+    user = user,
+    category = c("run", "signin")
+  )
+  expect_setequal(unique(two$category), c("run", "signin"))
+
+  # An unrecognised category filters everything out rather than being
+  # ignored - a filter that silently means "everything" is worse than an
+  # empty screen.
+  expect_equal(
+    nrow(episodic_app_activity_log(
+      env$con,
+      lang = "en",
+      user = user,
+      category = "nonsense"
+    )),
+    0
+  )
+})
+
+test_that("the Activity screen renders its filter chips in every shipped language", {
+  activity <- data.frame(
+    at = "2025-06-01T08:00:00Z",
+    actor = "Test User",
+    action = "signed in",
+    target = NA_character_,
+    detail = NA_character_,
+    category = "signin",
+    is_system = FALSE,
+    run_id = NA_integer_,
+    stringsAsFactors = FALSE
+  )
+  for (lang in c("en", "nl", "de", "fr", "es", "ar", "hi", "zh")) {
+    html <- as.character(episodic_ui_activity_screen(
+      activity,
+      selected_categories = "signin",
+      lang = lang
+    ))
+    expect_false(grepl("[[", html, fixed = TRUE), info = lang)
+    expect_true(grepl("activity_category_filter", html, fixed = TRUE), info = lang)
+  }
 })

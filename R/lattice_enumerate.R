@@ -24,24 +24,32 @@
 #' Care line is a filter, not a level, so it is folded into the L1/L2
 #' streams (where it is available) but not into L3-L5.
 #'
-#' L3 (Gebied) is derived from the PC's first two digits, a coarse but
-#' deterministic and contiguous grouping. L4 (Provincie) defaults to the PC
-#' ranges used by the synthetic generator (9xxx Groningen, 8xxx Fryslan,
-#' 7xxx Drenthe), which is specific to the bundled demo data; a real
-#' deployment outside that region supplies its own PC-to-province lookup
-#' via `EPISODIC_PC_PROVINCE_MAP` (see `episodic_pc_to_province()`) -
-#' without it, every postcode outside the demo's three provinces resolves
-#' to no province at all, and L4 never has anything to detect on.
+#' L3 (area) groups cases by the leading characters of their `pc`, a
+#' coarse but deterministic and contiguous grouping; how many characters,
+#' and what the resulting codes are prefixed with, is
+#' `config$geography` (see `episodic_geography_config()`), as is L5's
+#' single whole-catchment code. L4 (province) is an explicit lookup an
+#' operator supplies through `EPISODIC_PC_PROVINCE_MAP` (see
+#' `episodic_pc_to_province()`); without one, every postcode resolves to
+#' no province at all and L4 simply has nothing to detect on. There is
+#' deliberately no built-in fallback: guessing a province from a postcode
+#' is a country-specific rule, and applying one country's rule to another
+#' country's postcodes produces confident, plausible, wrong provinces.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cases A data frame of newly-loaded (or all) cases, with at least
 #'   `pathogen`, `sample_date`, `care_line`, `institution_id`, `pc`.
 #' @param institutions A data frame from `episodic_db_institutions()`.
+#' @param config The resolved configuration, for `config$geography`.
+#'   `NULL` resolves one.
 #' @return A data frame of `stream_id` values touched by this run, one row
 #'   per (stream, level) combination created or refreshed.
 #' @keywords internal
 #' @noRd
-episodic_lattice_enumerate <- function(con, cases, institutions) {
+episodic_lattice_enumerate <- function(con,
+                                       cases,
+                                       institutions,
+                                       config = NULL) {
   if (nrow(cases) == 0) {
     return(data.frame(stream_id = integer(0)))
   }
@@ -149,7 +157,7 @@ episodic_lattice_enumerate <- function(con, cases, institutions) {
 
   # L5: pathogen x regio (whole catchment)
   l5 <- cases
-  l5$.region_code <- episodic_region_code_all
+  l5$.region_code <- episodic_geography_config(config)$region_code
   touched$l5 <- episodic_lattice_upsert_group(
     con,
     l5,
@@ -177,7 +185,9 @@ episodic_lattice_enumerate <- function(con, cases, institutions) {
 #'   case has no `pc` to place it by.
 #' @keywords internal
 #' @noRd
-episodic_case_region_code <- function(cases, level) {
+episodic_case_region_code <- function(cases,
+                                      level,
+                                      geography = episodic_geography_config()) {
   if (nrow(cases) == 0) {
     return(character(0))
   }
@@ -185,7 +195,10 @@ episodic_case_region_code <- function(cases, level) {
   switch(level,
     pathogen_area = ifelse(
       has_pc,
-      paste0("GEBIED-", substr(cases$pc, 1, 2)),
+      paste0(
+        geography$area_code_prefix,
+        substr(cases$pc, 1, geography$area_pc_characters)
+      ),
       NA_character_
     ),
     pathogen_province = ifelse(
@@ -193,63 +206,100 @@ episodic_case_region_code <- function(cases, level) {
       episodic_pc_to_province(cases$pc),
       NA_character_
     ),
-    pathogen_region = rep(episodic_region_code_all, nrow(cases)),
+    pathogen_region = rep(geography$region_code, nrow(cases)),
     rep(NA_character_, nrow(cases))
   )
 }
 
-#' The whole catchment, as one region code
+#' The geographic conventions of this instance's lattice
+#'
+#' The two coarsest levels of the lattice need names for places, and
+#' EpiSODIC cannot know an operator's. They used to be hardcoded to the
+#' catchment this package was first written for - the whole-catchment
+#' code was literally `"NORTHERN_NETHERLANDS"` and an area was
+#' `"GEBIED-"` (Dutch for "area") plus the first two characters of a
+#' postcode - which a laboratory in Nairobi or Lima would have found
+#' baked into its own stream keys, its own dashboard and its own
+#' outbreak reports with no way to change it.
+#'
+#' Part of `config_hash`, deliberately and unlike `notifications` or
+#' `access`: `region_code` and the area rule both enter
+#' `episodic_stream_key()`, so changing either genuinely changes what a
+#' run computes and two runs either side of such a change are not
+#' comparable.
+#'
+#' @param config A resolved configuration, or `NULL` to resolve one.
+#' @return A list with `region_code`, `area_code_prefix` and
+#'   `area_pc_characters`, each guaranteed present and of the right shape.
 #' @keywords internal
 #' @noRd
-episodic_region_code_all <- "NORTHERN_NETHERLANDS"
+episodic_geography_config <- function(config = NULL) {
+  geography <- (config %||% episodic_config_resolve())$geography
+  characters <- suppressWarnings(as.integer(
+    geography$area_pc_characters %||% 2L
+  ))
+  if (is.na(characters) || characters < 1L) {
+    characters <- 2L
+  }
+  list(
+    region_code = as.character(geography$region_code %||% "REGION"),
+    area_code_prefix = as.character(geography$area_code_prefix %||% "AREA-"),
+    area_pc_characters = characters
+  )
+}
 
 #' Map a postcode to its L4 province/region code
 #'
-#' Falls back to the PC ranges used by the bundled Northern Netherlands
-#' demo data (9xxx Groningen, 8xxx Fryslan, 7xxx Drenthe) only when no
-#' operator-supplied mapping is configured. Left unconfigured in a real
-#' deployment outside that specific demo region, every `pc` resolves to
-#' `NA` here, so no province ever gets an L4 stream and L4 detection -
-#' and everything downstream that reads it, including the Pathogen
-#' screen's map - stays permanently empty however many cases accumulate.
+#' Entirely operator-supplied: with no `EPISODIC_PC_PROVINCE_MAP`
+#' configured, every `pc` resolves to `NA` here, so no province gets an
+#' L4 stream and everything downstream that reads it - L4 detection, the
+#' Pathogen screen's province breakdown - stays empty. That is stated
+#' plainly on the dashboard's own reference-data panel
+#' (`episodic_app_reference_pc_province()`), so an instance can tell
+#' "not configured" from "configured and matching nothing".
+#'
+#' There used to be a fallback here: the postcode ranges of the three
+#' provinces the bundled demo data covers (9xxx, 8xxx, 7xxx). It fired
+#' whenever no mapping was configured - including for an instance in
+#' another country whose postcodes happen to start with those digits,
+#' which then got Dutch province names on its own streams, its own
+#' dashboard and its own outbreak reports, silently and with nothing
+#' anywhere to say why. Deriving a province from a postcode is a
+#' country-specific rule; there is no defensible default, so there is
+#' now none. `episodic_demo()` writes the demo's own mapping to a
+#' temporary CSV and points the environment variable at it, exercising
+#' exactly the mechanism a real deployment uses.
 #'
 #' @param pc A character vector of postcode values, matching the `pc`
 #'   column of your case data.
 #' @param path Path to a CSV with columns `pc` (matching your case
 #'   data's `pc` values exactly - not a prefix) and `province_code`.
-#'   Defaults to the `EPISODIC_PC_PROVINCE_MAP` environment variable; if
-#'   unset, falls back to the shipped Northern Netherlands demo default.
-#'   A path that *is* set but cannot be used is an error, not a fallback -
+#'   Defaults to the `EPISODIC_PC_PROVINCE_MAP` environment variable. A
+#'   path that *is* set but cannot be used is an error, not a fallback -
 #'   see `episodic_pc_province_map_resolve()`.
 #' @return A character vector the same length as `pc`: the province code,
-#'   or `NA` where `pc` has no entry in the mapping.
+#'   or `NA` where `pc` has no entry in the mapping (or none is
+#'   configured at all).
 #' @keywords internal
 #' @noRd
 episodic_pc_to_province <- function(pc,
                                     path = Sys.getenv("EPISODIC_PC_PROVINCE_MAP", unset = NA)) {
   mapping <- episodic_pc_province_map_resolve(path)
-  if (!is.null(mapping)) {
-    return(unname(mapping[as.character(pc)]))
+  if (is.null(mapping)) {
+    return(rep(NA_character_, length(pc)))
   }
-  digit1 <- substr(pc, 1, 1)
-  dplyr::case_when(
-    digit1 == "9" ~ "PROV_GRONINGEN",
-    digit1 == "8" ~ "PROV_FRYSLAN",
-    digit1 == "7" ~ "PROV_DRENTHE",
-    TRUE ~ NA_character_
-  )
+  unname(mapping[as.character(pc)])
 }
 
 #' What is wrong with the configured PC-to-province mapping, if anything
 #'
-#' Unset and unusable are two different things, and only the first is a
-#' fallback. `EPISODIC_PC_PROVINCE_MAP` left unset means "this instance
-#' has not configured one", and the shipped Northern Netherlands demo
-#' ranges stand in. A variable that *is* set and does not resolve to a
-#' readable CSV with the documented columns is a configuration error:
-#' quietly substituting the demo ranges there would hand an operator who
-#' supplied their own mapping a lattice built on somebody else's
-#' provinces, or none at all, with nothing anywhere to say why.
+#' Unset and unusable are two different things. `EPISODIC_PC_PROVINCE_MAP`
+#' left unset means "this instance has not configured one", and the
+#' province level of the lattice simply stays empty. A variable that *is*
+#' set and does not resolve to a readable CSV with the documented columns
+#' is a configuration error: carrying on as though none had been
+#' configured would hand an operator who supplied their own mapping an
+#' empty province level with nothing anywhere to say why.
 #'
 #' Stated as a returned message rather than thrown, so that the one
 #' description of the problem serves both sides. `episodic_run_cron()`
@@ -276,7 +326,7 @@ episodic_pc_province_map_problem <- function(path = Sys.getenv("EPISODIC_PC_PROV
       "', but ",
       ...,
       ". Point it at a CSV with `pc` and `province_code` columns, or ",
-      "unset it to fall back to the shipped demo mapping."
+      "unset it to leave the province level of the lattice empty."
     )
   }
   if (!file.exists(path)) {
@@ -339,10 +389,10 @@ episodic_pc_province_map_problem <- function(path = Sys.getenv("EPISODIC_PC_PROV
 #' @keywords internal
 #' @noRd
 episodic_pc_province_map_resolve <- function(path) {
-  # Two ways to have no mapping, and both mean the demo ranges stand in
-  # here: none configured at all, and one configured that cannot be used.
-  # Only the second is something to say out loud, and saying it is
-  # `episodic_pc_province_map_problem()`'s job, not this one's.
+  # Two ways to have no mapping: none configured at all, and one
+  # configured that cannot be used. Only the second is something to say
+  # out loud, and saying it is `episodic_pc_province_map_problem()`'s
+  # job, not this one's.
   if (length(path) != 1 || is.na(path) || !nzchar(path)) {
     return(NULL)
   }

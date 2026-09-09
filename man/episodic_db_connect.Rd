@@ -4,12 +4,18 @@
 \alias{episodic_db_connect}
 \title{Connect to an Existing EpiSODIC Database}
 \usage{
-episodic_db_connect(path)
+episodic_db_connect(path, check_schema_version = TRUE)
 }
 \arguments{
 \item{path}{Path to an existing SQLite file, or a \verb{mysql://} DSN (see
 \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}) pointing at an existing MariaDB/MySQL
 database.}
+
+\item{check_schema_version}{Whether to refuse a database whose schema
+version is not the one this build of EpiSODIC expects, with an
+error naming \code{\link[=episodic_db_migrate]{episodic_db_migrate()}} as the fix. \code{TRUE} (the
+default) everywhere except inside \code{episodic_db_migrate()} itself,
+which by definition has to open a database that is out of date.}
 }
 \value{
 An open \link[DBI:DBIConnection-class]{DBI::DBIConnection}.

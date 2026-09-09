@@ -293,3 +293,71 @@ test_that("episodic_ui_dossier() renders a manual cluster with the origin badge"
   expect_true(grepl(episodic_tr("dossier.manual_badge", lang = "nl"), html_nl, fixed = TRUE))
   expect_true(grepl(episodic_tr("dossier.manual_badge", lang = "en"), html_en, fixed = TRUE))
 })
+
+test_that("a manual cluster's detector agreement is scored on the same scale as a detected one's", {
+  # episodic_add_manual_cluster() promises that manual and detected
+  # clusters sort comparably. Scored out of 1 rather than out of the four
+  # built-in detectors, every manual cluster took a full agreement
+  # component while an equivalent single-source detected cluster takes a
+  # quarter of one.
+  weights <- episodic_config_resolve(NA)$priority_score$weights
+  score <- function(n_detectors) {
+    episodic_priority_score(
+      excess = NA,
+      ratio = NA,
+      severity_weight = 1,
+      growth_slope = 0,
+      detector_agreement = 1L,
+      n_detectors = n_detectors,
+      density_ratio = NA,
+      spatial_concentration = 0,
+      weights = weights
+    )
+  }
+  expect_equal(episodic_n_detectors, 4L)
+  expect_lt(score(episodic_n_detectors), score(1L))
+})
+
+test_that("a manual cluster and a detected one with the same evidence score the same", {
+  db_path <- episodic_test_db_path()
+  on.exit(unlink(db_path))
+  con <- episodic_db_connect(db_path)
+  user_id <- episodic_db_app_user_insert(
+    con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    sodium::password_store("pw12345")
+  )
+  DBI::dbDisconnect(con)
+
+  ids <- episodic_add_manual_cluster(
+    db_path = db_path,
+    user_id = user_id,
+    pathogen = "Norovirus",
+    level = "pathogen_region",
+    first_day = "2025-01-01",
+    last_day = "2025-01-10",
+    n_cases = 5,
+    region_code = "REGION"
+  )
+
+  con <- episodic_db_connect(db_path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+  manual <- episodic_db_clusters(con, include_suppressed = TRUE)
+  manual <- manual[manual$cluster_id == ids[1], ]
+
+  severity <- episodic_db_pathogen_config_get(con, "Norovirus")$severity_weight
+  expected <- episodic_priority_score(
+    excess = NA,
+    ratio = NA,
+    severity_weight = if (is.null(severity)) 1 else severity,
+    growth_slope = 0,
+    detector_agreement = 1L,
+    n_detectors = episodic_n_detectors,
+    density_ratio = NA,
+    spatial_concentration = 0,
+    weights = episodic_config_resolve(NA)$priority_score$weights
+  )
+  expect_equal(manual$priority_score[1], expected)
+})

@@ -478,12 +478,12 @@ episodic_app_place_label <- function(stream,
 
 #' A stream's `region_code`, verbatim
 #'
-#' At `pathogen_area`/`pathogen_province` level, `region_code` is either
-#' the shipped demo's own internal fallback (`"PROV_GRONINGEN"`,
-#' `"NORTHERN_NETHERLANDS"`, see `R/lattice_enumerate.R`) or, in a real
-#' deployment, whatever `province_code` an operator's own
-#' `EPISODIC_PC_PROVINCE_MAP` resolved a postcode to (see
-#' `episodic_pc_to_province()`). It is shown exactly as configured -
+#' At `pathogen_area` level, `region_code` is built from
+#' `config$geography` (see `episodic_geography_config()`); at
+#' `pathogen_province` level it is whatever `province_code` the
+#' operator's own `EPISODIC_PC_PROVINCE_MAP` resolved a postcode to (see
+#' `episodic_pc_to_province()`). Either way it is a name the operator
+#' chose, so it is shown exactly as configured -
 #' cosmetic reformatting would risk mangling a real name (a hyphen in
 #' "Noord-Holland" is part of the name, not a code separator to strip)
 #' and would leave the operator unable to see, character for character,
@@ -499,24 +499,13 @@ episodic_app_format_region <- function(region_code) {
   region_code
 }
 
-#' @param debug If `TRUE`, print the exact SQL and bound parameters for
-#'   every query this function issues, via `episodic_trace_query()`, and
-#'   print `message()`s of its own progress via `episodic_trace()`. Only
-#'   ever passed by `episodic_run_cron()`'s own `debug` argument; every
-#'   other caller (the dossier's own density stat) leaves this `FALSE`.
 #' @keywords internal
 #' @noRd
-episodic_app_density <- function(con, stream, cases, debug = FALSE) {
+episodic_app_density <- function(con, stream, cases) {
   if (is.na(stream$institution_id) || nrow(cases) == 0) {
     return(NULL)
   }
-  episodic_trace_query(
-    debug,
-    "SELECT * FROM episodic_institution_activity WHERE institution_id = ? ORDER BY period_start",
-    list(stream$institution_id)
-  )
   activity <- episodic_db_institution_activity(con, stream$institution_id)
-  episodic_trace_debug(debug, "debug:         institution_activity query done")
   if (nrow(activity) == 0) {
     return(NULL)
   }
@@ -530,17 +519,11 @@ episodic_app_density <- function(con, stream, cases, debug = FALSE) {
   # not a fitted model (that is farringtonFlexible's own populationOffset
   # baseline), just the descriptive rate the cluster's own density is
   # being read against.
-  episodic_trace_query(
-    debug,
-    "SELECT sample_date FROM episodic_case WHERE pathogen = ? AND institution_id = ?",
-    list(stream$pathogen, stream$institution_id)
-  )
   all_cases <- DBI::dbGetQuery(
     con,
     "SELECT sample_date FROM episodic_case WHERE pathogen = ? AND institution_id = ?",
     params = list(stream$pathogen, stream$institution_id)
   )
-  episodic_trace_debug(debug, "debug:         case-history query done")
   baseline <- NA_real_
   if (nrow(all_cases) >= 5) {
     span_start <- min(as.Date(all_cases$sample_date))
@@ -1046,18 +1029,34 @@ episodic_app_cluster_viewable <- function(con, cluster_id) {
 #' cases was fully reported. Reporting lag is a property of *now*, not of
 #' the cluster.
 #'
+#' Read from `run_date`, not from `finished_at`, for two reasons.
+#'
+#' `finished_at` is a UTC instant (`episodic_now()`), and the date
+#' extracted from it is therefore a UTC date compared against a local
+#' `Sys.Date()` everywhere else. For an instance in CEST that makes
+#' `asof` a day behind for the two hours after local midnight, and for
+#' one in UTC+12 for half of every day - so the incompleteness window,
+#' the epi curve's shading and `episodic_compute_rt()`'s cut-off all
+#' shift by a day depending on the hour.
+#'
+#' `run_date` is a plain local date the run was told to treat as today,
+#' with no timezone in it at all. It is also the right answer for a
+#' backfill: a run replayed today as of 2024-06-30 has data current as
+#' of 2024-06-30, and measuring its reporting lag from this morning
+#' would grey out months of a curve that was fully reported long ago.
+#'
 #' @param con A [DBI::DBIConnection-class].
-#' @return A `Date`: the latest successful run's finish date, falling
-#'   back to today's date when no run has been recorded yet.
+#' @return A `Date`: the latest complete run's `run_date`, falling back
+#'   to today's date when no run has been recorded yet.
 #' @keywords internal
 #' @noRd
 episodic_app_data_asof <- function(con) {
   run <- episodic_db_latest_run(con, status = episodic_run_statuses_complete)
-  if (is.null(run) || is.na(run$finished_at)) {
+  if (is.null(run) || is.na(run$run_date)) {
     return(Sys.Date())
   }
   parsed <- tryCatch(
-    as.Date(substr(run$finished_at, 1, 10)),
+    as.Date(substr(run$run_date, 1, 10)),
     error = function(e) NA
   )
   if (is.na(parsed)) Sys.Date() else parsed

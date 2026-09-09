@@ -67,52 +67,88 @@ episodic_geo_overlay_resolve <- function(path = Sys.getenv("EPISODIC_GEO_DATA_OV
 #' @rdname episodic_geo
 #' @param path Path to an `.rds` file holding an `sf` object with `pc`
 #'   and `geometry` columns. Defaults to the `EPISODIC_GEO_DATA`
-#'   environment variable; if unset (or the file does not exist), falls
-#'   back to the shipped Netherlands postcode default.
+#'   environment variable. With none set, there is no map and the
+#'   dashboard shows its bar-chart fallback instead.
+#' @section Why there is no default map:
+#' This used to fall back to the Netherlands PC4 geometry bundled with
+#' the package whenever `EPISODIC_GEO_DATA` was unset, and even after
+#' warning about an operator file it could not use. Postcode-like codes
+#' are four digits in a great many countries, so a laboratory anywhere
+#' else got a silent, confident map of the Netherlands with its own case
+#' counts joined onto whichever Dutch postcodes happened to share a
+#' number - a plausible-looking wrong answer, which is worse than no
+#' answer. There is now no default: with nothing configured the map is
+#' simply absent, and the dashboard falls back to a bar chart of case
+#' counts by area, which is correct everywhere.
+#'
+#' `episodic_demo()` sets `EPISODIC_GEO_DATA` to the bundled Netherlands
+#' geometry itself, so the demo still shows a map.
 #' @examples
-#' # falls back to the shipped Netherlands postcode default when sf is
-#' # installed, or NULL when it is not
-#' geo <- episodic_geo_source_resolve(path = NA)
+#' # NULL when unset (or when the sf package is not installed)
+#' episodic_geo_source_resolve(path = NA)
 #' @export
 episodic_geo_source_resolve <- function(path = Sys.getenv("EPISODIC_GEO_DATA", unset = NA)) {
   if (!requireNamespace("sf", quietly = TRUE)) {
     return(NULL)
   }
-
-  if (!is.na(path) && nzchar(path) && file.exists(path)) {
-    geo <- tryCatch(readRDS(path), error = function(e) NULL)
-    if (!is.null(geo) && all(c("pc", "geometry") %in% names(geo))) {
-      return(geo)
-    } else {
-      warning(
-        "'sf' object found for postcodes in '",
-        path,
-        "', but it does not contain columns 'pc' and 'geometry' - ignoring file",
-        call. = FALSE
-      )
-    }
+  if (length(path) != 1 || is.na(path) || !nzchar(path)) {
+    return(NULL)
   }
-  episodic_geo_source_default()
+  if (!file.exists(path)) {
+    warning(
+      "EPISODIC_GEO_DATA points at '",
+      path,
+      "', but no file exists there - the map falls back to a bar chart.",
+      call. = FALSE
+    )
+    return(NULL)
+  }
+  geo <- tryCatch(readRDS(path), error = function(e) NULL)
+  if (is.null(geo) || !all(c("pc", "geometry") %in% names(geo))) {
+    warning(
+      "The geographic reference data at '",
+      path,
+      "' could not be read as an 'sf' object with 'pc' and 'geometry' ",
+      "columns - the map falls back to a bar chart.",
+      call. = FALSE
+    )
+    return(NULL)
+  }
+  geo
 }
 
-#' The shipped Netherlands postcode default
+#' The Netherlands PC4 geometry bundled with the package
 #'
-#' @return An `sf` object with `pc`, `geometry`, or `NULL` if `sf` is not
-#'   installed.
+#' Shipped so that `episodic_demo()` has a map to draw, and so that the
+#' package's own tests have a real `sf` object to exercise the map code
+#' against. Deliberately **not** a fallback for
+#' `episodic_geo_source_resolve()`: an instance that has not configured
+#' its own geography gets no map, never somebody else's country's.
+#'
+#' @return An `sf` object with `pc` and `geometry`, or `NULL` if `sf` is
+#'   not installed or the file is missing.
 #' @keywords internal
 #' @noRd
 episodic_geo_source_default <- function() {
   if (!requireNamespace("sf", quietly = TRUE)) {
     return(NULL)
   }
-  path <- system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
-  if (identical(path, "")) {
-    path <- file.path("inst", "extdata", "geo_postcodes4_nl.rds")
-  }
+  path <- episodic_geo_source_default_path()
   if (!file.exists(path)) {
     return(NULL)
   }
   readRDS(path)
+}
+
+#' Where the bundled Netherlands PC4 geometry lives
+#' @keywords internal
+#' @noRd
+episodic_geo_source_default_path <- function() {
+  path <- system.file("extdata", "geo_postcodes4_nl.rds", package = "EpiSODIC")
+  if (identical(path, "")) {
+    path <- file.path("inst", "extdata", "geo_postcodes4_nl.rds")
+  }
+  path
 }
 
 #' Join case counts onto geographic reference data

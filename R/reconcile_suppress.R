@@ -37,6 +37,19 @@
 #' suppressed it (`episodic_cluster.suppressed_by`), which is where the
 #' dossier shows it.
 #'
+#' Chains are not formed. `suppressed_by` is followed exactly one step
+#' by everything that reads it (`episodic_db_clusters_suppressed_by()`,
+#' the dossier), so a cluster suppressed this run never goes on to
+#' suppress another, and a cluster that has already absorbed one is
+#' never itself suppressed. Without that, the geographic chain
+#' (area -> province -> region) could put a cluster behind one that is
+#' itself behind a third: the reader follows the link out of the queue
+#' and lands somewhere that is also not in the queue, and the cluster at
+#' the far end is shown on no dossier at all. First writer wins, and the
+#' effect of the rule is always to leave a cluster visible rather than
+#' to hide it - which is the direction a surveillance system should err
+#' in.
+#'
 #' Recomputed from scratch every run: a rise that was local last week and
 #' has spread this week must be able to change which cluster survives, and
 #' a suppression nothing justifies any more has to lift.
@@ -69,6 +82,15 @@ episodic_suppress_lattice <- function(con, config) {
   }
   clusters$suppressed_by <- NA_integer_
 
+  # Every cluster that has been suppressed this run, and every cluster
+  # that has suppressed one. A cluster in either set is out of the
+  # running for the other role - see this function's own documentation
+  # for why chains are refused rather than resolved.
+  suppressed_ids <- integer(0)
+  suppressor_ids <- integer(0)
+  free_to_suppress <- function(id) !(id %in% suppressed_ids)
+  free_to_be_suppressed <- function(id) !(id %in% suppressor_ids)
+
   n_suppressed <- 0L
   for (pathogen in unique(clusters$pathogen)) {
     same_pathogen <- clusters[clusters$pathogen == pathogen, ]
@@ -88,10 +110,28 @@ episodic_suppress_lattice <- function(con, config) {
           next
         }
 
+        # Read once per parent, not once per child: the shares are all
+        # measured against the same set, and a parent with twenty
+        # overlapping children was re-fetching it twenty times.
+        parent_cases <- episodic_db_cluster_cases(
+          con,
+          parent$cluster_id
+        )$case_id
+        # Nothing to measure a share against. Zero shares would otherwise
+        # read as "spread thinly across the children", which is a
+        # statement about the data this parent does not have.
+        if (length(parent_cases) == 0) {
+          next
+        }
+
         shares <- vapply(
           seq_len(nrow(overlapping)),
           function(k) {
-            episodic_suppression_share(con, parent, overlapping[k, ])
+            episodic_suppression_share(
+              con,
+              parent_cases,
+              overlapping$cluster_id[k]
+            )
           },
           numeric(1)
         )
@@ -102,17 +142,41 @@ episodic_suppress_lattice <- function(con, config) {
           # survives, and it is the one the cases are actually in.
           strongest <- dominant[which.max(shares[dominant])]
           winner <- overlapping$cluster_id[strongest]
-          n_suppressed <- n_suppressed +
-            episodic_suppression_apply(con, parent$cluster_id, winner)
+          if (
+            free_to_suppress(winner) &&
+              free_to_be_suppressed(parent$cluster_id)
+          ) {
+            applied <- episodic_suppression_apply(
+              con,
+              parent$cluster_id,
+              winner
+            )
+            if (applied > 0L) {
+              suppressed_ids <- c(suppressed_ids, parent$cluster_id)
+              suppressor_ids <- c(suppressor_ids, winner)
+              n_suppressed <- n_suppressed + applied
+            }
+          }
           next
         }
 
         diffuse <- all(shares < parent_diffuse) &&
           length(shares) >= min_children
-        if (diffuse) {
+        if (diffuse && free_to_suppress(parent$cluster_id)) {
           for (child_id in overlapping$cluster_id) {
-            n_suppressed <- n_suppressed +
-              episodic_suppression_apply(con, child_id, parent$cluster_id)
+            if (!free_to_be_suppressed(child_id)) {
+              next
+            }
+            applied <- episodic_suppression_apply(
+              con,
+              child_id,
+              parent$cluster_id
+            )
+            if (applied > 0L) {
+              suppressed_ids <- c(suppressed_ids, child_id)
+              suppressor_ids <- c(suppressor_ids, parent$cluster_id)
+              n_suppressed <- n_suppressed + applied
+            }
           }
         }
       }
@@ -151,14 +215,20 @@ episodic_suppression_overlaps <- function(parent, children) {
 #' Counted in cases the two actually share, not in the size of each: two
 #' unrelated clusters of similar size in the same weeks would otherwise
 #' read as one dominating the other.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param parent_cases The parent's own `case_id`s, already fetched -
+#'   the caller holds them because every child in a parent's group is
+#'   measured against the same set.
+#' @param child_id The child cluster to measure.
+#' @return The share of the parent's cases the child also holds, 0 to 1.
 #' @keywords internal
 #' @noRd
-episodic_suppression_share <- function(con, parent, child) {
-  parent_cases <- episodic_db_cluster_cases(con, parent$cluster_id)$case_id
+episodic_suppression_share <- function(con, parent_cases, child_id) {
   if (length(parent_cases) == 0) {
     return(0)
   }
-  child_cases <- episodic_db_cluster_cases(con, child$cluster_id)$case_id
+  child_cases <- episodic_db_cluster_cases(con, child_id)$case_id
   length(intersect(parent_cases, child_cases)) / length(parent_cases)
 }
 

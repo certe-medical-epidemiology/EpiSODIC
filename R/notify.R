@@ -545,6 +545,14 @@ episodic_notify_build_failure <- function(error_text,
 }
 
 #' Escape HTML special characters
+#'
+#' Both quote characters, not only the double: every attribute in the
+#' HTML built here is single-quoted (`<a href='...'>`), so a value
+#' carrying an apostrophe would close the attribute and everything after
+#' it would be read as markup. The values that reach an attribute are
+#' the operator's own `dashboard_url` rather than anything from a case
+#' feed, which is why this has never mattered in practice - and is not a
+#' reason for an escaper to be partial.
 #' @keywords internal
 #' @noRd
 episodic_html_escape <- function(x) {
@@ -552,6 +560,7 @@ episodic_html_escape <- function(x) {
   x <- gsub("<", "&lt;", x, fixed = TRUE)
   x <- gsub(">", "&gt;", x, fixed = TRUE)
   x <- gsub("\"", "&quot;", x, fixed = TRUE)
+  x <- gsub("'", "&#39;", x, fixed = TRUE)
   x
 }
 

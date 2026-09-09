@@ -11,17 +11,21 @@ episodic_demo(
   email = "demo@example.org",
   password = "demo",
   launch = TRUE,
-  run_date = episodic_synthetic_week_end(),
+  run_date = NULL,
   lang = Sys.getenv("EPISODIC_LANGUAGE"),
-  cases = function() episodic_synthetic_cases(end_date = run_date),
-  denominators = function() episodic_synthetic_denominators(end_date = run_date),
+  cases = NULL,
+  denominators = NULL,
+  overwrite = FALSE,
   ...
 )
 }
 \arguments{
 \item{db_path}{Path to the SQLite database to create. Defaults to a
 temporary file, so repeated calls never collide and nothing is left
-behind once the R session ends.}
+behind once the R session ends. A database that already exists is
+refused, and a MariaDB/MySQL DSN is refused outright: this call
+generates synthetic cases and runs detection over them, which is
+contamination anywhere but a throwaway database.}
 
 \item{username, full_name, email, password}{Credentials for the demo
 epidemiologist account this creates, so you can sign in and classify a
@@ -33,10 +37,20 @@ anything beyond a local demo.}
 \code{FALSE} to only build the demo database and return its path, e.g. for
 scripting or screenshots.}
 
-\item{run_date}{The date to run detection as of. Defaults to the end of
-the last complete week, so the week the statistical detectors test is
-a full one however far into the week you happen to run the demo -
-which is how surveillance reads its own weeks anyway.}
+\item{run_date}{The date to run detection as of. Left \code{NULL} (the
+default) it is chosen for you, and which way depends on whose data
+this is: for the bundled synthetic data, the end of the last
+complete week, so the week the statistical detectors test is a full
+one however far into the week you happen to run the demo; for a
+\code{cases} extract you supply yourself, the last day that extract
+covers, and the demo says so when it does it.
+
+That second rule is the demo's alone. Detection is bounded to a
+lookback window around \code{run_date}, so a run dated today against an
+extract from last year correctly finds nothing - which is right for
+a scheduled run and useless for someone trying the system out on a
+historical export. \code{\link[=episodic_run_cron]{episodic_run_cron()}} therefore keeps dating its
+runs from the system date, as a real surveillance run must.}
 
 \item{lang}{Dashboard language when \code{launch = TRUE}: \code{"en"}, \code{"ar"},
 \code{"nl"}, \code{"fr"}, \code{"de"}, \code{"hi"}, \code{"zh"}, or \code{"es"}. Defaults to the
@@ -55,6 +69,12 @@ with an explanation of what to fix, rather than opening a dashboard
 with nothing in it. Run \code{\link[=episodic_check_cases]{episodic_check_cases()}} on your extract
 yourself to see the same findings, plus the advisory ones.}
 
+\item{overwrite}{If \code{TRUE}, an existing demo database at \code{db_path} and
+the two configuration files beside it are deleted and rebuilt.
+\code{FALSE} (the default) refuses instead. This deletes whatever is at
+that path, so it is deliberately not something the demo decides for
+you.}
+
 \item{...}{Arguments passed on to \code{\link[=episodic_run_app]{episodic_run_app()}}.}
 }
 \value{
@@ -68,6 +88,24 @@ dashboard - all without needing access to any real laboratory system or
 an instance configuration file. Everything used here is a shipped
 default, so it works right after installing the package.
 }
+\section{What the demo writes beside the database}{
+
+EpiSODIC has no built-in geography - no default map, and no built-in
+rule for turning a postcode into a province - because a default for
+either would be a default for one country. The demo therefore
+configures its own, exactly the way a real deployment does: two files
+named after \code{db_path} (\verb{<name>-config.yaml} and
+\verb{<name>-pc-province.csv}), plus the Netherlands postcode geometry
+bundled with the package.
+
+They are left in place, so a database built with \code{launch = FALSE} can
+be re-opened later with the same geography by setting \code{EPISODIC_DB},
+\code{EPISODIC_CONFIG}, \code{EPISODIC_PC_PROVINCE_MAP} and \code{EPISODIC_GEO_DATA}
+back to them - the paths are printed when the demo finishes. Without
+them the database still opens; it simply shows no map and no
+provinces.
+}
+
 \section{Check your data before you run anything}{
 
 

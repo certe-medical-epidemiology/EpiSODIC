@@ -26,15 +26,20 @@
 #' used for the underlying `sts` object, the conventional approximation
 #' (a true year is ~52.18 weeks, so bin-to-calendar alignment drifts
 #' slightly over many years - a documented, widely-accepted simplification,
-#' not an EpiSODIC-specific one). Detection is only evaluated for the most
-#' recent complete week relative to `run_date`.
+#' not an EpiSODIC-specific one). Detection is only evaluated for
+#' complete weeks - the last bin is the last week whose Sunday is on or
+#' before `run_date`, never the week `run_date` itself falls in. The
+#' documentation said so all along; the binning did not, and comparing a
+#' three-day partial week against a baseline of full weeks is a
+#' systematic undercount that made this detector near-blind on every day
+#' of the week except Sunday. See `episodic_weekly_bins()`.
 #'
 #' @param cases_for_stream A data frame of a single stream's cases, with
 #'   `sample_date`.
 #' @param stream_id The stream these cases belong to.
 #' @param config The resolved configuration; uses `config$farrington`.
 #' @param run_date The date to treat as "today"; the most recent week
-#'   evaluated is the one containing this date.
+#'   evaluated is the last complete one on or before it.
 #' @param n_weeks How many trailing weeks to test, ending with the most
 #'   recent complete week. One on a nightly run, more when the previous
 #'   run is further back: a run that did not happen must not leave its
@@ -332,18 +337,46 @@ episodic_farrington_population_vector <- function(con,
 
 #' Aggregate case dates into Monday-starting weekly counts
 #'
+#' The final bin is the most recent **complete** ISO week - the last week
+#' whose Sunday is on or before `run_date` - not the week `run_date`
+#' falls in. A partial week is a partial count: on a Wednesday it holds
+#' three days of cases, and comparing three days against a baseline of
+#' full weeks is a systematic undercount that suppresses the very alarm
+#' the run exists to raise. Binning to the week containing `run_date` (as
+#' this used to) therefore made Farrington near-blind on every day of the
+#' week except Sunday, silently and without any output saying so, which
+#' is exactly the class of failure this package refuses everywhere else.
+#'
+#' The cost is one week of latency, which is inherent to weekly
+#' aggregation and is what every Farrington-style system in routine use
+#' accepts. `same_place` and `rare_trigger` do not aggregate at all and
+#' still see today's cases, so the current week is not unwatched.
+#'
 #' @param dates A `Date` vector of sample dates.
-#' @param run_date The last date to cover; the final bin is the week
-#'   containing this date, even if it has no cases yet (a zero-count current
-#'   week is a legitimate, informative data point for Farrington).
+#' @param run_date The date to treat as "today". The final bin is the
+#'   most recent complete week relative to it, even if that week has no
+#'   cases (a zero-count week is a legitimate, informative data point for
+#'   Farrington).
 #' @return A list with `week_start` (a `Date` vector, one per bin) and
-#'   `counts` (an integer vector, same length).
+#'   `counts` (an integer vector, same length). Both are zero-length when
+#'   no complete week has elapsed since the first case.
 #' @keywords internal
 #' @noRd
 episodic_weekly_bins <- function(dates, run_date) {
-  floor_to_monday <- function(d) d - (as.integer(format(d, "%u")) - 1)
-  first_week <- floor_to_monday(min(dates))
-  last_week <- floor_to_monday(as.Date(run_date))
+  dates <- as.Date(dates)
+  dates <- dates[!is.na(dates)]
+  # `min()` of nothing is `Inf` with a warning, and `Inf` is not a date a
+  # sequence can start at. Reachable whenever every one of a stream's
+  # cases falls inside a confirmed-epidemic window that baseline
+  # exclusion removes.
+  if (length(dates) == 0) {
+    return(list(week_start = as.Date(character(0)), counts = integer(0)))
+  }
+  first_week <- episodic_week_start(min(dates))
+  last_week <- episodic_last_complete_week_start(run_date)
+  if (last_week < first_week) {
+    return(list(week_start = as.Date(character(0)), counts = integer(0)))
+  }
   week_start <- seq(first_week, last_week, by = "week")
   counts <- vapply(
     week_start,
@@ -351,4 +384,30 @@ episodic_weekly_bins <- function(dates, run_date) {
     integer(1)
   )
   list(week_start = week_start, counts = counts)
+}
+
+#' The Monday of the ISO week a date falls in
+#'
+#' `%u` is 1 (Monday) to 7 (Sunday) regardless of locale, unlike `%w`/`%a`.
+#' @param d A `Date` (vector).
+#' @return A `Date` (vector) of Mondays.
+#' @keywords internal
+#' @noRd
+episodic_week_start <- function(d) {
+  d <- as.Date(d)
+  d - (as.integer(format(d, "%u")) - 1L)
+}
+
+#' The Monday of the most recent week that has fully elapsed
+#'
+#' A week is complete once its Sunday is on or before `run_date`, so this
+#' is the current week only when `run_date` is itself a Sunday.
+#' @param run_date The date to treat as "today".
+#' @return A single `Date`.
+#' @keywords internal
+#' @noRd
+episodic_last_complete_week_start <- function(run_date) {
+  run_date <- as.Date(run_date)
+  this_week <- episodic_week_start(run_date)
+  if (run_date >= this_week + 6) this_week else this_week - 7
 }
