@@ -90,16 +90,6 @@ Nothing about the lattice's geography is hardcoded to one country. The whole-cat
 
 Single schema in `inst/sql/schema.sql`, written in SQLite dialect. Adapted at load time for MariaDB/MySQL (there is no separate schema file). Key tables:
 
-Two things the adapter does that are not cosmetic. It **derives table-level
-`FOREIGN KEY` clauses** from the schema's inline column-level `REFERENCES`,
-because MySQL parses an inline reference and discards it: relying on them
-gave a MySQL instance all its tables and not one constraint, silently,
-which is what the first real deployment had. Derived rather than listed, so
-a reference added to `schema.sql` is converted without anyone remembering
-to, and `test-schema_mariadb.R` asserts the counts match. And it applies
-the schema with `FOREIGN_KEY_CHECKS = 0`, because the tables are declared
-in the order they read best rather than in foreign-key order, which MariaDB
-refuses outright.
 
 | Table | Owner | Purpose |
 |---|---|---|
@@ -117,6 +107,17 @@ refuses outright.
 | `episodic_cluster_manual_case` | `episodic_add_manual_cluster()` | Case-level detail for `origin = 'manual'` clusters only |
 | `episodic_app_login_failure` | app | Refused sign-ins (username tried, reason) |
 | `episodic_schema_version` | `episodic_db_create()`, `episodic_db_migrate()` | One row per applied schema version |
+
+Two things the adapter does that are not cosmetic. It **derives table-level
+`FOREIGN KEY` clauses** from the schema's inline column-level `REFERENCES`,
+because MySQL parses an inline reference and discards it: relying on them
+gave a MySQL instance all its tables and not one constraint, silently,
+which is what the first real deployment had. Derived rather than listed, so
+a reference added to `schema.sql` is converted without anyone remembering
+to, and `test-schema_mariadb.R` asserts the counts match. And it applies
+the schema with `FOREIGN_KEY_CHECKS = 0`, because the tables are declared
+in the order they read best rather than in foreign-key order, which MariaDB
+refuses outright.
 
 The schema is versioned. `episodic_schema_version` (in `R/schema_migrate.R`) is what this build expects; `episodic_db_connect()` refuses a database at any other version, naming `episodic_db_migrate()` as the fix. Any change to `inst/sql/schema.sql` that an existing database has to be brought along for means bumping that constant and adding a matching entry to `episodic_db_migrations()` - a function `(con, dialect)` that is idempotent, runs inside a transaction, and never drops or rewrites data.
 

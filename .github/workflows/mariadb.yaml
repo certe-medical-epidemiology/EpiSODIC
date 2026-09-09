@@ -26,16 +26,24 @@
 # reading the strings it produced. Nothing checked that a server would
 # accept them, and the first time one was asked, it did not.
 #
-# One Linux job, not the five-way matrix in R-CMD-check.yaml: a service
-# container on every configuration would be four containers spent proving
-# the same thing. The dialect adapter is a property of the package, not of
-# the platform it runs on.
+# Two servers, not one, and not the five-way OS matrix in
+# R-CMD-check.yaml. The dialect adapter is a property of the package
+# rather than of the platform it runs on, so one Linux job per server is
+# enough - but MariaDB and MySQL are genuinely different servers here, and
+# testing only one hid a real defect for the life of the package. MariaDB
+# honours an inline column-level REFERENCES and refuses a table whose
+# parent does not exist yet; MySQL parses the same clause and throws it
+# away, so a schema that relied on inline references got every table and
+# not one constraint there, silently.
 #
-# To run these locally instead:
+# To run these locally instead, against either server:
 #
 #   docker run -d --name episodic-mariadb -p 13306:3306 \
 #     -e MARIADB_ROOT_PASSWORD=episodic -e MARIADB_DATABASE=episodic_test \
 #     -e MARIADB_USER=episodic -e MARIADB_PASSWORD=episodic mariadb:11
+#   docker run -d --name episodic-mysql -p 13308:3306 \
+#     -e MYSQL_ROOT_PASSWORD=episodic -e MYSQL_DATABASE=episodic_test \
+#     -e MYSQL_USER=episodic -e MYSQL_PASSWORD=episodic mysql:8
 #   EPISODIC_TEST_MARIADB_DSN=mysql://episodic:episodic@127.0.0.1:13306/episodic_test \
 #     Rscript -e 'devtools::test()'
 #
@@ -54,31 +62,49 @@ name: mariadb.yaml
 permissions: read-all
 
 jobs:
-  mariadb:
+  server:
     runs-on: ubuntu-latest
-    name: ubuntu-latest (release) with MariaDB
+    name: ubuntu-latest (release) with ${{ matrix.server.name }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        server:
+          # The health check differs per image: MariaDB ships its own
+          # script, and `mariadb-admin ping` would not do - ping answers
+          # as soon as a server responds on the socket, which the
+          # entrypoint's temporary initialisation server does before the
+          # database and user below exist. A job that started connecting
+          # then would fail on its first statement, at random, and look
+          # like a schema problem.
+          - name: MariaDB 11
+            image: mariadb:11
+            health: healthcheck.sh --connect --innodb_initialized
+          - name: MySQL 8
+            image: mysql:8
+            health: mysqladmin ping -h 127.0.0.1 --silent
 
     services:
-      mariadb:
-        image: mariadb:11
+      database:
+        image: ${{ matrix.server.image }}
+        # Both images ignore the other's variables, so one block serves
+        # both.
         env:
           MARIADB_ROOT_PASSWORD: episodic
           MARIADB_DATABASE: episodic_test
           MARIADB_USER: episodic
           MARIADB_PASSWORD: episodic
+          MYSQL_ROOT_PASSWORD: episodic
+          MYSQL_DATABASE: episodic_test
+          MYSQL_USER: episodic
+          MYSQL_PASSWORD: episodic
         ports:
           - 3306:3306
-        # The image's own health check, not `mariadb-admin ping`: ping
-        # answers as soon as a server responds on the socket, which the
-        # entrypoint's temporary initialisation server does before the
-        # database and user in the environment above exist. A job that
-        # started connecting then would fail on its first statement, at
-        # random, and look like a schema problem.
         options: >-
-          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-cmd="${{ matrix.server.health }}"
           --health-interval=5s
           --health-timeout=5s
-          --health-retries=20
+          --health-retries=30
           --health-start-period=30s
 
     env:
