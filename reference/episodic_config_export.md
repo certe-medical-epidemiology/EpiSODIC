@@ -37,8 +37,9 @@ episodic_config_export(
 
 - output_dir:
 
-  Directory to write the zip into. Defaults to a `config_exports/`
-  directory next to `db_path` (mirroring where
+  Directory to write the zip into. Defaults to what
+  `episodic_report_output_dir()` resolves for a `config_exports/`
+  subdirectory (mirroring where
   [`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md)
   writes outbreak reports), or a temporary directory if `db_path` is not
   set.

@@ -52,6 +52,12 @@
   had tables
 - With `EPISODIC_PC_PROVINCE_MAP` unset, a run said the shipped Dutch
   province ranges were in use, which they no longer are
+- Scheduled reports, on-demand renders and config exports derived their
+  output directory from
+  [`dirname()`](https://rdrr.io/r/base/basename.html) of the database
+  path, which for a MariaDB DSN turned the database password into a
+  directory name on disk; a new `report.output_dir` config key is now
+  required for a DSN and refuses outright when unset
 
 ## EpiSODIC 0.16.0
 

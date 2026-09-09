@@ -85,10 +85,11 @@ skips this and exports the YAML-resolved configuration only.</p></dd>
 
 
 <dt id="arg-output-dir">output_dir<a class="anchor" aria-label="anchor" href="#arg-output-dir"></a></dt>
-<dd><p>Directory to write the zip into. Defaults to a
-<code>config_exports/</code> directory next to <code>db_path</code> (mirroring where
-<code><a href="episodic_report_render.html">episodic_report_render()</a></code> writes outbreak reports), or a temporary
-directory if <code>db_path</code> is not set.</p></dd>
+<dd><p>Directory to write the zip into. Defaults to what
+<code>episodic_report_output_dir()</code> resolves for a <code>config_exports/</code>
+subdirectory (mirroring where <code><a href="episodic_report_render.html">episodic_report_render()</a></code> writes
+outbreak reports), or a temporary directory if <code>db_path</code> is not
+set.</p></dd>
 
 
 <dt id="arg-include-secrets">include_secrets<a class="anchor" aria-label="anchor" href="#arg-include-secrets"></a></dt>
