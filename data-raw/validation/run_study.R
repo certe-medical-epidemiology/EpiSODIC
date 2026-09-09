@@ -282,14 +282,20 @@ for (point in operating_points) {
 # --------------------------------------------------------------------
 # Writing it out
 # --------------------------------------------------------------------
+# Every row says what produced it and what it rests on: the package
+# version and resolved config_hash, so a number in the paper traces back
+# to the configuration that computed it, and the seeds, runs and
+# stream-weeks behind it, so a rate is never read without its denominator
+# in the same file.
 stamp <- function(df, scenario, result) {
-  if (nrow(df) == 0) {
-    df <- df[0, , drop = FALSE]
-  }
+  n <- nrow(df)
   cbind(
-    scenario = rep(scenario, nrow(df)),
-    package_version = rep(result$meta$package_version, nrow(df)),
-    config_hash = rep(result$meta$config_hash %||% NA_character_, nrow(df)),
+    scenario = rep(scenario, n),
+    package_version = rep(result$meta$package_version, n),
+    config_hash = rep(result$meta$config_hash %||% NA_character_, n),
+    n_seeds_total = rep(result$meta$n_seeds, n),
+    n_runs = rep(result$meta$n_runs, n),
+    n_stream_weeks = rep(result$meta$n_stream_weeks, n),
     df,
     stringsAsFactors = FALSE
   )
@@ -367,25 +373,89 @@ threshold_rows <- do.call(rbind, lapply(seq_len(nrow(threshold_grid)), function(
 }))
 write_csv(threshold_rows, "threshold_sensitivity.csv")
 
+# What each detector actually adds. Which one fired first says who got
+# there first, not what would be lost without it: two detectors may both
+# find an outbreak, and the loser looks worthless until the winner is
+# removed. This is that comparison, stated directly rather than left to
+# be read out of two rows of summary.csv.
+headline <- function(result, metric, group, column = "estimate") {
+  row <- result$summary[
+    result$summary$metric == metric & result$summary$group == group,
+  ]
+  if (nrow(row) == 0) NA_real_ else row[[column]][1]
+}
+drop_one <- do.call(rbind, lapply(episodic_validation_detectors(), function(dropped) {
+  scenario <- scenarios[[paste0("drop_", dropped)]]
+  base_sensitivity <- headline(scenarios$main, "sensitivity", "all outbreaks")
+  base_alarms <- headline(scenarios$main, "false_alarms", "all clusters raised")
+  without_sensitivity <- headline(scenario, "sensitivity", "all outbreaks")
+  without_alarms <- headline(scenario, "false_alarms", "all clusters raised")
+  found_only_by_it <- vapply(
+    sort(unique(scenarios$main$outbreaks$outbreak_id)),
+    function(id) {
+      with_it <- scenarios$main$outbreaks
+      without <- scenario$outbreaks
+      sum(with_it$detected[with_it$outbreak_id == id]) -
+        sum(without$detected[without$outbreak_id == id])
+    },
+    numeric(1)
+  )
+  data.frame(
+    detector_removed = dropped,
+    config_hash = scenario$meta$config_hash,
+    sensitivity_with = base_sensitivity,
+    sensitivity_without = without_sensitivity,
+    sensitivity_lost = base_sensitivity - without_sensitivity,
+    false_alarms_with = base_alarms,
+    false_alarms_without = without_alarms,
+    false_alarms_saved = base_alarms - without_alarms,
+    # The rates above are per stream-week, and the two scenarios do not
+    # watch the same number of streams: same_place and rare_trigger
+    # create streams of their own, so removing one shrinks the
+    # denominator as well as the numerator, and the difference of two
+    # rates can come out the wrong sign. The counts and their
+    # denominators are here so that never has to be guessed at.
+    false_alarm_count_with = headline(
+      scenarios$main, "false_alarms", "all clusters raised", "numerator"
+    ),
+    false_alarm_count_without = headline(
+      scenario, "false_alarms", "all clusters raised", "numerator"
+    ),
+    stream_weeks_with = scenarios$main$meta$n_stream_weeks,
+    stream_weeks_without = scenario$meta$n_stream_weeks,
+    # Which shapes stop being found at all when it goes, counted in
+    # seed-detections rather than in outbreaks, so a channel that only
+    # matters in some realisations is still visible.
+    detections_lost_by_shape = paste(
+      names(found_only_by_it)[found_only_by_it > 0],
+      found_only_by_it[found_only_by_it > 0],
+      sep = "=",
+      collapse = " "
+    ),
+    stringsAsFactors = FALSE
+  )
+}))
+write_csv(drop_one, "drop_one.csv")
+
 # The operating-point curve itself, one row per point.
 curve <- do.call(rbind, lapply(names(sweep), function(name) {
   result <- sweep[[name]]
-  pick <- function(metric, group) {
-    row <- result$summary[
-      result$summary$metric == metric & result$summary$group == group,
-    ]
-    if (nrow(row) == 0) NA_real_ else row$estimate[1]
-  }
   data.frame(
     point = name,
     dimension = attr(result, "dimension"),
     label = attr(result, "label"),
     config_hash = result$meta$config_hash,
-    sensitivity = pick("sensitivity", "all outbreaks"),
-    ppv = pick("ppv", "all clusters raised"),
-    false_alarms_per_stream_week = pick("false_alarms", "all clusters raised"),
+    n_seeds = result$meta$n_seeds,
+    sensitivity = headline(result, "sensitivity", "all outbreaks"),
+    ppv = headline(result, "ppv", "all clusters raised"),
+    false_alarms_per_stream_week = headline(
+      result,
+      "false_alarms",
+      "all clusters raised"
+    ),
     stream_weeks = result$meta$n_stream_weeks,
-    median_delay_days = pick(
+    median_delay_days = headline(
+      result,
       "delay_from_first_case",
       "detected outbreaks that began inside the window"
     ),

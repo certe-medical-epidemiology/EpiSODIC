@@ -53,6 +53,7 @@ it.
 | `outbreaks.csv` | (scenario, seed, seeded outbreak) |
 | `clusters.csv` | (scenario, seed, cluster raised) |
 | `runs.csv` | (scenario, seed, weekly run) |
+| `drop_one.csv` | detector removed - sensitivity lost, false alarms saved |
 | `time_to_detection_km.csv` | (scenario, event time) on the Kaplan-Meier curve |
 | `priority_score_calibration.csv` | score bin |
 | `threshold_sensitivity.csv` | (min_recall, min_precision, metric, group) |
@@ -61,7 +62,8 @@ it.
 
 Every row carries the package version and the resolved `config_hash` that
 produced it, so a number in the paper can be traced back to the
-configuration it came from.
+configuration it came from, and the seeds, runs and stream-weeks behind
+it, so a rate is never read without its denominator in the same file.
 
 ## Reading the numbers
 
