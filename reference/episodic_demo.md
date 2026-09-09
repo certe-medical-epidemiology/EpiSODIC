@@ -171,42 +171,42 @@ cases <- episodic_synthetic_cases(
 db_path <- episodic_demo(launch = FALSE, cases = cases, denominators = NULL)
 #> Running detection as of 2025-03-31, the last day your case data covers.
 #> Creating synthetic cases...
-#> 2026-09-09 13:36:35.032 | episodic_run_cron() starting (host=runnervmlun5p, account=runner)
-#> 2026-09-09 13:36:35.033 | Resolving configuration
-#> 2026-09-09 13:36:35.037 | Configuration resolved (hash da68bff26789)
-#> 2026-09-09 13:36:35.038 | Connecting to database
-#> 2026-09-09 13:36:35.038 | No existing database found - creating one
-#> 2026-09-09 13:36:35.053 | Database connected (dialect: sqlite)
-#> 2026-09-09 13:36:35.054 | Run 1 started
-#> 2026-09-09 13:36:35.055 | Resolving and checking case data
-#> 2026-09-09 13:36:35.066 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
-#> 2026-09-09 13:36:35.066 | Beginning transaction
-#> 2026-09-09 13:36:35.068 | Loading pathogen configuration
-#> 2026-09-09 13:36:35.070 | Pathogen configuration loaded (23 pathogen(s))
-#> 2026-09-09 13:36:35.070 | Loading case data into the database
-#> 2026-09-09 13:36:35.154 | Case data loaded: supplied=419, deduplicated=410, inserted=410
-#> 2026-09-09 13:36:35.155 | Fetching all known cases and institutions
-#> 2026-09-09 13:36:35.156 | Enumerating lattice streams
-#> 2026-09-09 13:36:35.186 | Running same-place detector
-#> 2026-09-09 13:36:35.240 | Same-place detector found 6 detection(s)
-#> 2026-09-09 13:36:35.240 | Running rare-trigger detector
-#> 2026-09-09 13:36:35.246 | Rare-trigger detector found 1 detection(s)
-#> 2026-09-09 13:36:35.247 | Farrington owes 8 week(s) this run
-#> 2026-09-09 13:36:35.248 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
-#> 2026-09-09 13:36:35.618 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)
-#> 2026-09-09 13:36:35.619 | Suppressing lattice
-#> 2026-09-09 13:36:35.623 | Committing transaction
-#> 2026-09-09 13:36:35.626 | Finishing run 1 (status: success)
-#> 2026-09-09 13:36:36.760 | episodic_run_cron() finished in 1.7s (status: success)
+#> 2026-09-09 14:17:58.451 | episodic_run_cron() starting (host=runnervmlun5p, account=runner)
+#> 2026-09-09 14:17:58.451 | Resolving configuration
+#> 2026-09-09 14:17:58.458 | Configuration resolved (hash da68bff26789)
+#> 2026-09-09 14:17:58.458 | Connecting to database
+#> 2026-09-09 14:17:58.459 | No existing database found - creating one
+#> 2026-09-09 14:17:58.482 | Database connected (dialect: sqlite)
+#> 2026-09-09 14:17:58.484 | Run 1 started
+#> 2026-09-09 14:17:58.484 | Resolving and checking case data
+#> 2026-09-09 14:17:58.499 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
+#> 2026-09-09 14:17:58.500 | Beginning transaction
+#> 2026-09-09 14:17:58.502 | Loading pathogen configuration
+#> 2026-09-09 14:17:58.505 | Pathogen configuration loaded (23 pathogen(s))
+#> 2026-09-09 14:17:58.505 | Loading case data into the database
+#> 2026-09-09 14:17:58.640 | Case data loaded: supplied=419, deduplicated=410, inserted=410
+#> 2026-09-09 14:17:58.640 | Fetching all known cases and institutions
+#> 2026-09-09 14:17:58.643 | Enumerating lattice streams
+#> 2026-09-09 14:17:58.684 | Running same-place detector
+#> 2026-09-09 14:17:58.765 | Same-place detector found 6 detection(s)
+#> 2026-09-09 14:17:58.765 | Running rare-trigger detector
+#> 2026-09-09 14:17:58.772 | Rare-trigger detector found 1 detection(s)
+#> 2026-09-09 14:17:58.773 | Farrington owes 8 week(s) this run
+#> 2026-09-09 14:17:58.775 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
+#> 2026-09-09 14:17:59.310 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)
+#> 2026-09-09 14:17:59.311 | Suppressing lattice
+#> 2026-09-09 14:17:59.316 | Committing transaction
+#> 2026-09-09 14:17:59.320 | Finishing run 1 (status: success)
+#> 2026-09-09 14:18:00.687 | episodic_run_cron() finished in 2.2s (status: success)
 #> OK
 #> ===========================================================================
 #> 
 #>   EpiSODIC demo account (admin) - username: demo, password: demo
 #> 
 #>   To re-open this demo later, with its geography:
-#>     Sys.setenv(EPISODIC_DB = "/tmp/RtmpOwOY84/file1ced27576124.sqlite",
-#>                EPISODIC_CONFIG = "/tmp/RtmpOwOY84/file1ced27576124-config.yaml",
-#>                EPISODIC_PC_PROVINCE_MAP = "/tmp/RtmpOwOY84/file1ced27576124-pc-province.csv")
+#>     Sys.setenv(EPISODIC_DB = "/tmp/RtmpG0I9D6/file1dcd9248c63.sqlite",
+#>                EPISODIC_CONFIG = "/tmp/RtmpG0I9D6/file1dcd9248c63-config.yaml",
+#>                EPISODIC_PC_PROVINCE_MAP = "/tmp/RtmpG0I9D6/file1dcd9248c63-pc-province.csv")
 #>     episodic_run_app()
 #> 
 #> ===========================================================================
