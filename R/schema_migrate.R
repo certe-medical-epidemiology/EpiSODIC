@@ -80,6 +80,16 @@ episodic_db_dialect <- function(path) {
 #' EpiSODIC tables have already been created in it. Used by entry points
 #' such as [episodic_run_cron()] that connect to an already-initialised
 #' database or create a fresh one, whichever applies.
+#'
+#' "EpiSODIC's tables", not "any tables". A schema shared with another
+#' application - which is a perfectly ordinary way to deploy, and is how
+#' the first real instance was deployed - holds that other application's
+#' tables before EpiSODIC has created anything at all. Asked whether the
+#' schema had any tables in it, this said yes, so the first
+#' `episodic_run_cron()` was routed to "open an existing database",
+#' refused for having no schema version, and told the operator to run
+#' `episodic_db_migrate()`. Following that instruction stamped the schema
+#' as current with two of the twenty-four tables in it.
 #' @param path Path to a SQLite file, or a `mysql://` DSN.
 #' @return `TRUE`/`FALSE`.
 #' @keywords internal
@@ -90,7 +100,31 @@ episodic_db_exists <- function(path) {
   }
   con <- episodic_db_mariadb_connect(path)
   on.exit(DBI::dbDisconnect(con))
-  length(DBI::dbListTables(con)) > 0
+  mine <- intersect(DBI::dbListTables(con), episodic_db_schema_tables())
+  length(mine) > 0
+}
+
+#' The tables an EpiSODIC database has had since before schema versioning
+#'
+#' A database with no `episodic_schema_version` table is either a real
+#' EpiSODIC database from 0.12.x or earlier, or a schema where EpiSODIC
+#' has never created anything. `episodic_db_migrate()` has to tell those
+#' apart, because the answer to the first is "adopt it at version 1" and
+#' the answer to the second is "you wanted `episodic_db_create()`".
+#'
+#' These four have carried the core of the model since long before
+#' versioning existed, so a database missing any of them is not an old
+#' EpiSODIC database that needs bringing forward.
+#' @return A character vector of table names.
+#' @keywords internal
+#' @noRd
+episodic_db_core_tables <- function() {
+  c(
+    "episodic_stream",
+    "episodic_case",
+    "episodic_cluster",
+    "episodic_detection_run"
+  )
 }
 
 #' @keywords internal
@@ -495,6 +529,27 @@ episodic_db_migrate <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA))
 
   current <- episodic_db_schema_version(con)
   if (is.na(current)) {
+    # "No schema version" means one of two things, and they need
+    # different answers: a real EpiSODIC database from before versioning
+    # existed, or a database EpiSODIC has never created anything in.
+    # Adopting the second at version 1 stamps it as current and then
+    # applies the migrations from there, which on a schema holding
+    # nothing of ours left two tables out of twenty-four behind a version
+    # gate that then passed on every subsequent connection.
+    missing <- setdiff(episodic_db_core_tables(), DBI::dbListTables(con))
+    if (length(missing) > 0) {
+      DBI::dbDisconnect(con)
+      on.exit()
+      stop(
+        "This database carries no schema version and is missing ",
+        paste0("`", missing, "`", collapse = ", "),
+        ", so it is not an EpiSODIC database to bring forward - it is a ",
+        "database EpiSODIC has never created anything in. Run ",
+        "episodic_db_create() on it instead. (A schema shared with another ",
+        "application looks non-empty without holding any EpiSODIC table.)",
+        call. = FALSE
+      )
+    }
     # Pre-versioning database: it is version 1 by construction, so record
     # that rather than refusing it or trying to migrate it from nowhere.
     if (!DBI::dbExistsTable(con, "episodic_schema_version")) {

@@ -129,6 +129,42 @@ test_that("a database with no version table is migrated without losing data", {
   )
 })
 
+test_that("a schema shared with another application is not mistaken for ours", {
+  dsn <- mariadb_dsn()
+  con <- episodic_db_connect(dsn, check_schema_version = FALSE)
+  # With checks on, the tables cannot be dropped in an arbitrary order -
+  # they really do reference each other now, which is the point of the
+  # rest of this file.
+  DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 0")
+  for (table in DBI::dbListTables(con)) {
+    DBI::dbExecute(con, paste0("DROP TABLE IF EXISTS `", table, "`"))
+  }
+  DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 1")
+  # A co-tenant's table, and nothing of ours.
+  DBI::dbExecute(con, "CREATE TABLE brmo_orders (id INT PRIMARY KEY)")
+  DBI::dbDisconnect(con)
+
+  expect_false(episodic_db_exists(dsn))
+
+  # So a first run creates the schema rather than refusing for having no
+  # schema version and sending the operator to episodic_db_migrate(),
+  # which used to stamp the schema as current with two tables in it.
+  end_date <- as.Date("2025-06-29")
+  suppressMessages(episodic_run_cron(
+    cases = mariadb_cases(end_date),
+    db_path = dsn,
+    run_date = end_date
+  ))
+
+  con <- episodic_db_connect(dsn)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+  tables <- DBI::dbListTables(con)
+  expect_true(all(episodic_db_schema_tables() %in% tables))
+  # And the co-tenant is untouched.
+  expect_true("brmo_orders" %in% tables)
+  expect_equal(episodic_db_schema_version(con), episodic_schema_version)
+})
+
 test_that("a full detection run completes against MariaDB", {
   skip_on_cran()
   dsn <- mariadb_fresh()
