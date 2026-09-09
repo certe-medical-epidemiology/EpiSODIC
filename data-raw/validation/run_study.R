@@ -322,19 +322,10 @@ write_csv(collect(all_results, "runs"), "runs.csv")
 # observations. A median over the detected ones alone is biased downward,
 # and the bias is worst exactly where the method is weakest.
 km_rows <- do.call(rbind, lapply(names(all_results), function(name) {
-  outbreaks <- all_results[[name]]$outbreaks
-  prospective <- outbreaks[outbreaks$fully_prospective, , drop = FALSE]
-  if (nrow(prospective) == 0) {
+  km <- all_results[[name]]$time_to_detection
+  if (nrow(km) == 0) {
     return(NULL)
   }
-  km <- episodic_validation_km(
-    ifelse(
-      prospective$detected,
-      prospective$delay_from_first,
-      prospective$censor_days
-    ),
-    prospective$detected
-  )
   cbind(scenario = name, km, stringsAsFactors = FALSE)
 }))
 write_csv(km_rows, "time_to_detection_km.csv")

@@ -94,6 +94,7 @@ episodic_validate_rethreshold <- function(result,
   out <- result
   out$outbreaks <- outbreaks
   out$clusters <- clusters
+  out$time_to_detection <- episodic_validation_km_from(outbreaks)
   out$summary <- episodic_validation_summarise(outbreaks, clusters, result$runs)
   out$meta$rethresholded_from <- c(
     min_recall = result$meta$min_recall,

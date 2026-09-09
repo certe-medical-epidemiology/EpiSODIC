@@ -126,6 +126,10 @@
 #'       case-level membership, per seed. Kept with the result so the
 #'       matching thresholds can be varied afterwards
 #'       ([episodic_validate_rethreshold()]) without replaying anything.}
+#'     \item{`time_to_detection`}{The Kaplan-Meier curve of days to
+#'       detection over the outbreaks that began inside the evaluation
+#'       window, with the ones nothing found kept in as right-censored
+#'       observations rather than dropped.}
 #'     \item{`summary`}{The headline numbers, one row per metric and
 #'       group.}
 #'     \item{`meta`}{The package version, the resolved `config_hash`, the
@@ -212,6 +216,7 @@ episodic_validate_detection <- function(seeds = 1,
         outbreaks = bind("truth_outbreaks"),
         cases = bind("truth_cases")
       ),
+      time_to_detection = episodic_validation_km_from(outbreak_rows),
       summary = episodic_validation_summarise(
         outbreak_rows,
         cluster_rows,
@@ -283,6 +288,27 @@ print.episodic_validation <- function(x, ...) {
   ]
   print(headline, row.names = FALSE, digits = 3)
   invisible(x)
+}
+
+#' The censored time-to-detection curve for a set of outbreak rows
+#'
+#' Over the outbreaks that began inside the evaluation window only: one
+#' that was already over when the replay started was handed to the first
+#' run whole, so its delay measures the replay's start date.
+#' @param outbreaks Per-outbreak rows.
+#' @return `episodic_validation_km()`'s data frame.
+#' @keywords internal
+#' @noRd
+episodic_validation_km_from <- function(outbreaks) {
+  prospective <- outbreaks[outbreaks$fully_prospective, , drop = FALSE]
+  episodic_validation_km(
+    ifelse(
+      prospective$detected,
+      prospective$delay_from_first,
+      prospective$censor_days
+    ),
+    prospective$detected
+  )
 }
 
 #' The four detectors, as configuration section names

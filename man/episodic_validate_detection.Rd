@@ -83,6 +83,10 @@ from.}
 case-level membership, per seed. Kept with the result so the
 matching thresholds can be varied afterwards
 (\code{\link[=episodic_validate_rethreshold]{episodic_validate_rethreshold()}}) without replaying anything.}
+\item{\code{time_to_detection}}{The Kaplan-Meier curve of days to
+detection over the outbreaks that began inside the evaluation
+window, with the ones nothing found kept in as right-censored
+observations rather than dropped.}
 \item{\code{summary}}{The headline numbers, one row per metric and
 group.}
 \item{\code{meta}}{The package version, the resolved \code{config_hash}, the

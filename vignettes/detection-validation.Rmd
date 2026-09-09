@@ -125,12 +125,13 @@ never detected beside the plain median. Quote them together, or quote the
 censored one; never the plain median alone.
 
 ```{r}
-prospective <- result$outbreaks[result$outbreaks$fully_prospective, ]
-km <- episodic_validation_km(
-  ifelse(prospective$detected, prospective$delay_from_first, prospective$censor_days),
-  prospective$detected
-)
+result$time_to_detection
+result$summary[result$summary$metric == "time_to_detection_km_median", ]
 ```
+
+`time_to_detection` is that curve: `time` in days, `survival` the share
+still undetected, and `n_risk` falling as outbreaks are found and as the
+ones that never were drop out of the risk set.
 
 ## A comparator, and a control
 

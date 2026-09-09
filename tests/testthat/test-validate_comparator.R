@@ -140,7 +140,16 @@ test_that("a comparator is reported in the same shape as a real replay", {
   expect_s3_class(result, "episodic_validation")
   expect_named(
     result,
-    c("outbreaks", "clusters", "runs", "overlap", "truth", "summary", "meta")
+    c(
+      "outbreaks",
+      "clusters",
+      "runs",
+      "overlap",
+      "truth",
+      "time_to_detection",
+      "summary",
+      "meta"
+    )
   )
   expect_equal(nrow(result$outbreaks), 6)
   expect_equal(result$meta$method, "same_place")

@@ -135,6 +135,7 @@ episodic_validate_comparator <- function(method = c("same_place", "shewhart"),
         outbreaks = bind("truth_outbreaks"),
         cases = bind("truth_cases")
       ),
+      time_to_detection = episodic_validation_km_from(outbreak_rows),
       summary = episodic_validation_summarise(
         outbreak_rows,
         cluster_rows,

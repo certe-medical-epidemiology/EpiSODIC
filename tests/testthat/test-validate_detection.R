@@ -39,7 +39,16 @@ test_that("the replay returns the documented structure", {
   expect_s3_class(result, "episodic_validation")
   expect_named(
     result,
-    c("outbreaks", "clusters", "runs", "overlap", "truth", "summary", "meta")
+    c(
+      "outbreaks",
+      "clusters",
+      "runs",
+      "overlap",
+      "truth",
+      "time_to_detection",
+      "summary",
+      "meta"
+    )
   )
   expect_equal(nrow(result$outbreaks), 6)
   expect_equal(nrow(result$truth$outbreaks), 6)
@@ -228,5 +237,23 @@ test_that("rethresholding refuses anything that is not a validation result", {
   expect_error(
     episodic_validate_rethreshold(data.frame(a = 1)),
     "episodic_validate_detection"
+  )
+})
+
+test_that("the censored time-to-detection curve travels with the result", {
+  skip_on_cran()
+  result <- tiny()
+  km <- result$time_to_detection
+
+  expect_true(all(c("time", "n_risk", "survival", "detected") %in% names(km)))
+  expect_equal(km$time[1], 0)
+  expect_equal(km$survival[1], 1)
+  expect_true(all(diff(km$survival) <= 0))
+  # It is estimated over the outbreaks that began inside the window, and
+  # over all of them - the ones nothing found included, as censored
+  # observations, which is the whole reason it exists.
+  expect_equal(
+    km$n_risk[1],
+    sum(result$outbreaks$fully_prospective)
   )
 })
