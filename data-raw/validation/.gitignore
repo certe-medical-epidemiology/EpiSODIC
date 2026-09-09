@@ -1,0 +1,4 @@
+# The full result object of every scenario, saved so a summary can be
+# recomputed without re-running the study. Large, and regenerable by
+# run_study.R, so it stays out of git; the CSVs beside it are committed.
+results/raw/
