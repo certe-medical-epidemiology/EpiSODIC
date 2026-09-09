@@ -88,6 +88,29 @@ test_that("the generated DDL is accepted by a real server", {
   )
 })
 
+test_that("every reference in the schema exists as a constraint on the server", {
+  dsn <- mariadb_fresh()
+  con <- episodic_db_connect(dsn)
+  on.exit(DBI::dbDisconnect(con))
+
+  # The count, not merely "some": MySQL discards inline column-level
+  # references silently, so a schema that lost half its constraints looks
+  # exactly like one that kept them until something writes an orphan.
+  declared <- sum(vapply(
+    strsplit(episodic_db_schema_statements("mariadb"), "\n", fixed = TRUE),
+    function(lines) sum(grepl("^\\s*FOREIGN KEY \\(", lines, perl = TRUE)),
+    integer(1)
+  ))
+  created <- DBI::dbGetQuery(
+    con,
+    "SELECT COUNT(*) AS n FROM information_schema.REFERENTIAL_CONSTRAINTS
+      WHERE CONSTRAINT_SCHEMA = DATABASE()
+        AND TABLE_NAME LIKE 'episodic\\_%'"
+  )$n
+  expect_gt(declared, 0)
+  expect_equal(created, declared)
+})
+
 test_that("a created database connects and reports its schema version", {
   dsn <- mariadb_fresh()
   con <- episodic_db_connect(dsn)

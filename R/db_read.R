@@ -751,10 +751,15 @@ episodic_db_app_config_events <- function(con, section = NULL, limit = 200) {
 #' @keywords internal
 #' @noRd
 episodic_db_runs <- function(con, limit = 200) {
+  # as.integer(), as its three siblings above already do. MySQL's
+  # prepared-statement protocol refuses a double bound to LIMIT with
+  # "Incorrect arguments to mysqld_stmt_execute", and `limit = 200` is a
+  # double in R. SQLite accepts it, so the Activity screen worked
+  # everywhere except on the one dialect nothing was testing.
   DBI::dbGetQuery(
     con,
     "SELECT * FROM episodic_detection_run ORDER BY run_id DESC LIMIT ?",
-    params = list(limit)
+    params = list(as.integer(limit))
   )
 }
 

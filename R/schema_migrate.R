@@ -1173,7 +1173,130 @@ episodic_db_schema_statements <- function(dialect) {
     }
   }
 
+  if (dialect == "mariadb") {
+    # Comments go first, then the foreign keys, because appending a
+    # table-level clause means putting a comma on the line above and
+    # several of those lines end in a `--` comment. A comma added after
+    # one of those is a comma inside a comment, which the split below
+    # strips along with the comment, leaving invalid SQL.
+    schema_sql <- episodic_strip_sql_comments(schema_sql)
+    schema_sql <- episodic_mariadb_table_level_foreign_keys(schema_sql)
+  }
+
   episodic_split_sql_statements(schema_sql)
+}
+
+#' Turn inline column references into table-level FOREIGN KEY clauses
+#'
+#' Every foreign key in `inst/sql/schema.sql` is written the SQLite way,
+#' inline on the column: `institution_id INTEGER REFERENCES
+#' episodic_institution(institution_id)`. SQLite honours that. MariaDB
+#' honours it too, and refuses the table outright when the referenced
+#' table has not been declared yet. **MySQL parses it and throws it
+#' away.** That is documented MySQL behaviour for inline column-level
+#' references, and its consequence here was a MySQL instance with all
+#' twenty-four tables, not one foreign key, and orphan rows accepted
+#' without complaint - measured on MySQL 8.4, and on the first real
+#' deployment, where every constraint in the schema file was absent and
+#' another application's tables in the same schema had theirs.
+#'
+#' So for this dialect the references are rewritten into the table-level
+#' form, which both servers honour. Derived from the schema rather than
+#' listed beside it: a hand-kept list is a second place for a foreign key
+#' to be forgotten, and forgetting one here is silent on MySQL. A
+#' reference added to `schema.sql` tomorrow is converted tomorrow,
+#' without anyone remembering to.
+#'
+#' @param schema_sql The whole schema, comments already stripped.
+#' @return The same SQL with every inline reference moved to a
+#'   table-level clause.
+#' @keywords internal
+#' @noRd
+episodic_mariadb_table_level_foreign_keys <- function(schema_sql) {
+  spans <- gregexpr(
+    "(?s)CREATE TABLE [A-Za-z_][A-Za-z0-9_]* *\\(.*?\\n\\);",
+    schema_sql,
+    perl = TRUE
+  )
+  blocks <- regmatches(schema_sql, spans)[[1]]
+  if (length(blocks) == 0) {
+    stop(
+      "episodic_db_schema_statements(): no CREATE TABLE block could be ",
+      "found to rewrite foreign keys in. inst/sql/schema.sql may have ",
+      "changed shape.",
+      call. = FALSE
+    )
+  }
+  regmatches(schema_sql, spans) <- list(
+    vapply(blocks, episodic_mariadb_block_foreign_keys, character(1), USE.NAMES = FALSE)
+  )
+  schema_sql
+}
+
+#' One `CREATE TABLE` block, with its references moved to the end
+#' @param block One complete `CREATE TABLE ... );` block.
+#' @return The rewritten block, or `block` unchanged when it declares no
+#'   references.
+#' @keywords internal
+#' @noRd
+episodic_mariadb_block_foreign_keys <- function(block) {
+  lines <- strsplit(block, "\n", fixed = TRUE)[[1]]
+  pattern <- paste0(
+    "^(\\s+[A-Za-z_][A-Za-z0-9_]*\\s+.*?)",
+    "\\s+REFERENCES\\s+([A-Za-z_][A-Za-z0-9_]*)",
+    "\\s*\\(\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*\\)(.*)$"
+  )
+  keys <- character(0)
+  for (i in seq_along(lines)) {
+    if (!grepl(pattern, lines[i], perl = TRUE)) {
+      next
+    }
+    column <- sub(
+      "^\\s+([A-Za-z_][A-Za-z0-9_]*).*$",
+      "\\1",
+      lines[i],
+      perl = TRUE
+    )
+    keys <- c(keys, sprintf(
+      "  FOREIGN KEY (%s) REFERENCES %s(%s)",
+      column,
+      sub(pattern, "\\2", lines[i], perl = TRUE),
+      sub(pattern, "\\3", lines[i], perl = TRUE)
+    ))
+    lines[i] <- sub(pattern, "\\1\\4", lines[i], perl = TRUE)
+  }
+  if (length(keys) == 0) {
+    return(block)
+  }
+
+  # The closing `);` is the last line; the element before it carries no
+  # trailing comma, and now has to.
+  closing <- length(lines)
+  last_element <- max(which(
+    nzchar(trimws(lines[seq_len(closing - 1)]))
+  ))
+  lines[last_element] <- paste0(sub("\\s+$", "", lines[last_element]), ",")
+  # Every clause but the last one needs its own comma too.
+  if (length(keys) > 1) {
+    keys[-length(keys)] <- paste0(keys[-length(keys)], ",")
+  }
+  paste(
+    c(lines[seq_len(last_element)], keys, lines[seq(last_element + 1, closing)]),
+    collapse = "\n"
+  )
+}
+
+#' Strip `--` line comments from a SQL file
+#'
+#' The same rule `episodic_split_sql_statements()` applies, pulled out so
+#' it can be applied earlier as well. Idempotent.
+#' @param sql A single string holding SQL.
+#' @return The same SQL with line comments removed.
+#' @keywords internal
+#' @noRd
+episodic_strip_sql_comments <- function(sql) {
+  lines <- strsplit(sql, "\n", fixed = TRUE)[[1]]
+  paste(sub("--.*$", "", lines), collapse = "\n")
 }
 
 #' Split a SQL file into individual statements

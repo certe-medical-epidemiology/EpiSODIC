@@ -47,6 +47,9 @@
 - The forced password change was skipped for any account named `demo` whose password was `demo`
 - Lattice suppression could hide every detected cluster behind a manually added one, which holds no `episodic_case` rows so scored zero overlap with all of them
 - The MariaDB schema was never accepted by a real server: the tables are declared in reading order, not foreign-key order, so creation failed on the first statement
+- On MySQL the schema created no foreign keys at all: inline column-level `REFERENCES` are parsed and discarded there, so every constraint was silently absent
+- `episodic_db_exists()` treated a schema shared with another application as an existing EpiSODIC database, so a first run refused and sent the operator to `episodic_db_migrate()`, which stamped it current with two of its twenty-four tables
+- `episodic_db_runs()` bound a double to `LIMIT`, which MySQL refuses, so the Activity screen failed on that dialect
 - Half the lattice resolved its geography from the run's own configuration and half from `EPISODIC_CONFIG`, so a run given a config path silently matched no case to any geographic stream
 - `episodic_db_create()` leaked the connection it opened when refusing a database that already had tables
 - With `EPISODIC_PC_PROVINCE_MAP` unset, a run said the shipped Dutch province ranges were in use, which they no longer are

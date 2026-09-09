@@ -152,8 +152,16 @@ test_that("episodic_db_schema_statements(\"mariadb\") bounds episodic_app_config
     combined,
     fixed = TRUE
   ))
+  # The reference has moved off the column and to the end of the table:
+  # MySQL discards an inline column-level REFERENCES, so relying on one
+  # is relying on a constraint that is not there.
   expect_true(grepl(
-    "CREATE TABLE episodic_app_config_event (\n  event_id    INTEGER PRIMARY KEY AUTO_INCREMENT,\n  user_id     INTEGER NOT NULL REFERENCES episodic_app_user(user_id),\n  created_at  VARCHAR(30) NOT NULL,",
+    "CREATE TABLE episodic_app_config_event (\n  event_id    INTEGER PRIMARY KEY AUTO_INCREMENT,\n  user_id     INTEGER NOT NULL,\n  created_at  VARCHAR(30) NOT NULL,",
+    combined,
+    fixed = TRUE
+  ))
+  expect_true(grepl(
+    "  FOREIGN KEY (user_id) REFERENCES episodic_app_user(user_id)",
     combined,
     fixed = TRUE
   ))
@@ -181,6 +189,90 @@ test_that("episodic_db_schema_statements(\"mariadb\") bounds episodic_app_login_
   expect_match(create, "attempted_at VARCHAR(30) NOT NULL", fixed = TRUE)
   # username and reason are not indexed, so they stay TEXT.
   expect_match(create, "username     TEXT NOT NULL", fixed = TRUE)
+})
+
+schema_file <- function() {
+  path <- system.file("sql", "schema.sql", package = "EpiSODIC")
+  if (identical(path, "")) {
+    path <- file.path("inst", "sql", "schema.sql")
+  }
+  path
+}
+
+schema_references <- function() {
+  lines <- readLines(schema_file(), warn = FALSE)
+  lines <- sub("--.*$", "", lines)
+  matches <- regmatches(
+    lines,
+    regexpr(
+      "^\\s+[A-Za-z_][A-Za-z0-9_]*\\s+.*?\\s+REFERENCES\\s+[A-Za-z_][A-Za-z0-9_]*\\s*\\([A-Za-z_][A-Za-z0-9_]*\\)",
+      lines,
+      perl = TRUE
+    )
+  )
+  matches[nzchar(matches)]
+}
+
+test_that("every inline reference becomes a table-level FOREIGN KEY", {
+  # MySQL parses inline column-level REFERENCES and discards them, so a
+  # schema that relies on them gets no constraints at all there - which is
+  # what the first real deployment had. Derived from the schema rather
+  # than from a list kept beside it: a list is a second place to forget a
+  # foreign key, and forgetting one is silent on MySQL.
+  statements <- episodic_db_schema_statements("mariadb")
+  declared <- sum(vapply(
+    strsplit(statements, "\n", fixed = TRUE),
+    function(lines) sum(grepl("^\\s*FOREIGN KEY \\(", lines, perl = TRUE)),
+    integer(1)
+  ))
+  expect_equal(declared, length(schema_references()))
+  expect_gt(declared, 0)
+})
+
+test_that("no reference is left inline in the MariaDB dialect", {
+  statements <- episodic_db_schema_statements("mariadb")
+  creates <- grep("^CREATE TABLE", statements, value = TRUE)
+  inline <- unlist(lapply(strsplit(creates, "\n", fixed = TRUE), function(lines) {
+    lines[grepl(
+      "^\\s+[A-Za-z_][A-Za-z0-9_]*\\s+INTEGER.*REFERENCES",
+      lines,
+      perl = TRUE
+    )]
+  }))
+  expect_length(inline, 0)
+})
+
+test_that("the SQLite dialect keeps its references inline", {
+  # SQLite honours them, and rewriting a schema that already works is a
+  # change with only risk in it.
+  statements <- episodic_db_schema_statements("sqlite")
+  inline <- sum(vapply(
+    strsplit(statements, "\n", fixed = TRUE),
+    function(lines) {
+      sum(grepl(
+        "^\\s+[A-Za-z_][A-Za-z0-9_]*\\s+INTEGER.*REFERENCES",
+        lines,
+        perl = TRUE
+      ))
+    },
+    integer(1)
+  ))
+  expect_equal(inline, length(schema_references()))
+  expect_false(any(grepl("^\\s*FOREIGN KEY \\(", statements, perl = TRUE)))
+})
+
+test_that("a FOREIGN KEY clause names a table the schema declares", {
+  statements <- episodic_db_schema_statements("mariadb")
+  targets <- unlist(lapply(strsplit(statements, "\n", fixed = TRUE), function(lines) {
+    keys <- lines[grepl("^\\s*FOREIGN KEY \\(", lines, perl = TRUE)]
+    sub(
+      "^.*REFERENCES\\s+([A-Za-z_][A-Za-z0-9_]*)\\(.*$",
+      "\\1",
+      keys,
+      perl = TRUE
+    )
+  }))
+  expect_true(all(targets %in% episodic_db_schema_tables()))
 })
 
 test_that("every indexed column in the schema is safe for MySQL", {

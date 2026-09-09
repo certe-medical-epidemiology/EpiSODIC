@@ -90,6 +90,17 @@ Nothing about the lattice's geography is hardcoded to one country. The whole-cat
 
 Single schema in `inst/sql/schema.sql`, written in SQLite dialect. Adapted at load time for MariaDB/MySQL (there is no separate schema file). Key tables:
 
+Two things the adapter does that are not cosmetic. It **derives table-level
+`FOREIGN KEY` clauses** from the schema's inline column-level `REFERENCES`,
+because MySQL parses an inline reference and discards it: relying on them
+gave a MySQL instance all its tables and not one constraint, silently,
+which is what the first real deployment had. Derived rather than listed, so
+a reference added to `schema.sql` is converted without anyone remembering
+to, and `test-schema_mariadb.R` asserts the counts match. And it applies
+the schema with `FOREIGN_KEY_CHECKS = 0`, because the tables are declared
+in the order they read best rather than in foreign-key order, which MariaDB
+refuses outright.
+
 | Table | Owner | Purpose |
 |---|---|---|
 | `episodic_stream` | cron | Surveillance units |
