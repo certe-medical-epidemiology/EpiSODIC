@@ -1,5 +1,8 @@
 # Detection validation study
 
+**For the methods, the results and the limitations, read
+[`HANDOVER.md`](HANDOVER.md).** This file is only how to run it.
+
 `episodic_app_performance()` measures an instance against its own
 epidemiologists' verdicts on the clusters it showed them. That is a good
 operational metric and a circular one for a paper, and sensitivity is
