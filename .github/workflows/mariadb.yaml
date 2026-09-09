@@ -68,11 +68,18 @@ jobs:
           MARIADB_PASSWORD: episodic
         ports:
           - 3306:3306
+        # The image's own health check, not `mariadb-admin ping`: ping
+        # answers as soon as a server responds on the socket, which the
+        # entrypoint's temporary initialisation server does before the
+        # database and user in the environment above exist. A job that
+        # started connecting then would fail on its first statement, at
+        # random, and look like a schema problem.
         options: >-
-          --health-cmd="mariadb-admin ping --silent"
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=20
+          --health-start-period=30s
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
