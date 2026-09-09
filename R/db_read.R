@@ -311,6 +311,12 @@ episodic_db_clusters_for_streams <- function(con, stream_ids) {
 #' @param columns Case columns to select. `ward` and `pc` are always
 #'   fetched regardless, since the ward and region filters need them.
 #' @param first_day,last_day Optional inclusive `sample_date` bounds.
+#' @param geography The resolved geography (`episodic_geography_config()`),
+#'   which is what turns a case's `pc` into the `region_code` a geographic
+#'   stream is keyed on. Defaults to this instance's own, which is right
+#'   for the dashboard; a caller working under a configuration other than
+#'   `EPISODIC_CONFIG`'s has to pass that one, or geographic streams match
+#'   no case at all and say nothing about it.
 #' @return A data frame of the stream's cases. Carries an
 #'   `episodic_stream_exists` attribute, so a caller can tell "this stream
 #'   has no cases" from "there is no such stream" - which
@@ -322,7 +328,8 @@ episodic_db_cases_for_stream_id <- function(con,
                                             stream_id,
                                             columns = c("case_id", "sample_date"),
                                             first_day = NULL,
-                                            last_day = NULL) {
+                                            last_day = NULL,
+                                            geography = episodic_geography_config()) {
   params <- list(stream_id)
   stream <- DBI::dbGetQuery(
     con,
@@ -369,7 +376,11 @@ episodic_db_cases_for_stream_id <- function(con,
     cases <- cases[!is.na(cases$ward) & cases$ward == stream$ward[1], ]
   }
   if (!is.na(stream$region_code[1]) && nrow(cases) > 0) {
-    region <- episodic_case_region_code(cases, stream$level[1])
+    region <- episodic_case_region_code(
+      cases,
+      stream$level[1],
+      geography = geography
+    )
     cases <- cases[!is.na(region) & region == stream$region_code[1], ]
   }
   exists_marker(cases)
@@ -740,10 +751,15 @@ episodic_db_app_config_events <- function(con, section = NULL, limit = 200) {
 #' @keywords internal
 #' @noRd
 episodic_db_runs <- function(con, limit = 200) {
+  # as.integer(), as its three siblings above already do. MySQL's
+  # prepared-statement protocol refuses a double bound to LIMIT with
+  # "Incorrect arguments to mysqld_stmt_execute", and `limit = 200` is a
+  # double in R. SQLite accepts it, so the Activity screen worked
+  # everywhere except on the one dialect nothing was testing.
   DBI::dbGetQuery(
     con,
     "SELECT * FROM episodic_detection_run ORDER BY run_id DESC LIMIT ?",
-    params = list(limit)
+    params = list(as.integer(limit))
   )
 }
 

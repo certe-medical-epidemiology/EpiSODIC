@@ -67,16 +67,13 @@ episodic_detect_same_place <- function(con,
                                        institutions,
                                        config,
                                        run_date = Sys.Date()) {
+  if (!episodic_detector_enabled(config, "same_place")) {
+    return(episodic_detection_none())
+  }
   cases <- episodic_detector_cases_asof(cases, run_date)
   cases <- cases[!is.na(cases$institution_id), ]
   if (nrow(cases) == 0) {
-    return(episodic_detection_record(
-      integer(0),
-      character(0),
-      character(0),
-      character(0),
-      integer(0)
-    ))
+    return(episodic_detection_none())
   }
 
   inst_type <- institutions$institution_type[match(

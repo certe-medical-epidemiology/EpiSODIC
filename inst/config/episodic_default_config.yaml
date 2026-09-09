@@ -58,6 +58,17 @@ effect_size_floor:
 # that matter. Keys are raw `pathogen` strings, matching
 # inst/config/episodic_default_pathogen_config.csv and whatever the operator's lab feed uses.
 same_place:
+  # Every detector section carries `enabled`. Set to false and that
+  # detector contributes nothing to a run: no detections, and so no
+  # clusters opened or kept alive by it. It is a configuration setting
+  # rather than an argument to episodic_run_cron() because it changes
+  # what a run computes, and so belongs inside config_hash - two runs
+  # over the same data with different detectors switched on must not
+  # come out looking identical. Note that farrington: enabled: false
+  # stops the Farrington DETECTOR only; the multi-year baseline shown on
+  # the Pathogen screen is a display of the same model, not a detection,
+  # and goes on being cached.
+  enabled: true
   # NOTE: keys are n_cases/k_days rather than the more conventional "n"
   # because YAML 1.1 parses a bare unquoted `n:` key as the boolean FALSE
   # (the classic Norway-problem gotcha). n_cases means the same thing.
@@ -85,6 +96,7 @@ same_place:
 
 # Farrington detector (surveillance::farringtonFlexible()).
 farrington:
+  enabled: true            # see same_place.enabled
   aggregation: week        # cases are aggregated to weekly counts before fitting
   b: 2                     # number of years of history to compare against.
                             # The detector needs (b + 1) * 52 weeks before it
@@ -113,6 +125,7 @@ farrington:
 # MEM seasonal detector (mem::memmodel()), for pathogens flagged
 # mem_applicable in episodic_default_pathogen_config.csv.
 mem:
+  enabled: true    # see same_place.enabled
   min_seasons: 2   # fully-observed prior seasons required before MEM fits
                    # at all. The same "need real baseline history first"
                    # dial as farrington.b, and with the same consequence if
@@ -134,6 +147,7 @@ mem:
 # (no meaningful "expected baseline" exists for it at all), not merely when
 # it is serious.
 rare_trigger:
+  enabled: true  # see same_place.enabled
   pathogens:
     - Neisseria meningitidis
     - Corynebacterium diphtheriae

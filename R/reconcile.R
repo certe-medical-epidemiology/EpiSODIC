@@ -115,6 +115,12 @@
 #'   gets. `NA` (default)
 #'   disables the check entirely, for callers that predate it.
 #' @param today The date to evaluate `stale_open_days` as of.
+#' @param geography The run's own resolved geography, from
+#'   `episodic_geography_config(config)`. It decides which cases belong to
+#'   a geographic stream, so it has to be the same one the streams were
+#'   enumerated under: resolved separately from `EPISODIC_CONFIG` here, a
+#'   run given a different configuration opened area- and region-level
+#'   clusters with no cases linked to them at all, and said nothing.
 #' @return Invisibly, a list with `n_new`, `n_updated`, `n_merged`,
 #'   and `new_cluster_ids` (integer vector of cluster IDs created this call).
 #' @keywords internal
@@ -134,7 +140,8 @@ episodic_reconcile_stream <- function(con,
                                       min_excess_over_upperbound = NA,
                                       min_ratio_observed_expected = NA,
                                       stale_open_days = NA,
-                                      today = Sys.Date()) {
+                                      today = Sys.Date(),
+                                      geography = episodic_geography_config()) {
   n_new <- 0L
   n_updated <- 0L
   n_merged <- 0L
@@ -192,7 +199,8 @@ episodic_reconcile_stream <- function(con,
         new_first,
         new_last,
         existing,
-        candidate
+        candidate,
+        geography = geography
       )
       metrics <- episodic_reconcile_candidate_metrics(candidate)
 
@@ -243,7 +251,8 @@ episodic_reconcile_stream <- function(con,
         stream_id,
         cluster_id,
         as.character(new_first),
-        as.character(new_last)
+        as.character(new_last),
+        geography = geography
       )
     } else if (length(matches) == 0) {
       metrics <- episodic_reconcile_candidate_metrics(candidate)
@@ -286,7 +295,8 @@ episodic_reconcile_stream <- function(con,
         stream_id,
         cluster_id,
         candidate$first_day,
-        candidate$last_day
+        candidate$last_day,
+        geography = geography
       )
     } else if (length(matches) == 1) {
       cluster_id <- open_clusters$cluster_id[matches]
@@ -302,7 +312,8 @@ episodic_reconcile_stream <- function(con,
         new_first,
         new_last,
         existing,
-        candidate
+        candidate,
+        geography = geography
       )
 
       # A cluster that is already closed counts here exactly as an
@@ -350,7 +361,8 @@ episodic_reconcile_stream <- function(con,
         stream_id,
         cluster_id,
         as.character(new_first),
-        as.character(new_last)
+        as.character(new_last),
+        geography = geography
       )
     } else {
       survivor_idx <- matches[which.min(as.Date(open_clusters$opened_at[
@@ -373,7 +385,8 @@ episodic_reconcile_stream <- function(con,
         all_first,
         all_last,
         open_clusters[survivor_idx, ],
-        candidate
+        candidate,
+        geography = geography
       )
 
       # A merge is the largest change a cluster can undergo without a
@@ -427,7 +440,8 @@ episodic_reconcile_stream <- function(con,
         stream_id,
         survivor_id,
         as.character(all_first),
-        as.character(all_last)
+        as.character(all_last),
+        geography = geography
       )
     }
   }
@@ -853,7 +867,8 @@ episodic_reconcile_link_cases <- function(con,
                                           stream_id,
                                           cluster_id,
                                           first_day,
-                                          last_day) {
+                                          last_day,
+                                          geography = episodic_geography_config()) {
   # Membership comes from episodic_db_cases_for_stream_id(), which is the
   # one place the rule lives. It used to be spelled out again here, and
   # spelling it out twice is how episodic_reconcile_case_count() came to
@@ -864,7 +879,8 @@ episodic_reconcile_link_cases <- function(con,
     stream_id,
     columns = c("case_id", "sample_date"),
     first_day = first_day,
-    last_day = last_day
+    last_day = last_day,
+    geography = geography
   )
   episodic_db_cluster_case_link_many(con, cluster_id, cases$case_id)
   invisible(NULL)
@@ -896,13 +912,15 @@ episodic_reconcile_case_count <- function(con,
                                           first_day,
                                           last_day,
                                           existing,
-                                          candidate) {
+                                          candidate,
+                                          geography = episodic_geography_config()) {
   cases <- episodic_db_cases_for_stream_id(
     con,
     stream_id,
     columns = c("case_id", "sample_date"),
     first_day = as.character(first_day),
-    last_day = as.character(last_day)
+    last_day = as.character(last_day),
+    geography = geography
   )
   if (is.null(attr(cases, "episodic_stream_exists", exact = TRUE))) {
     return(max(existing$n_cases, candidate$n_cases))

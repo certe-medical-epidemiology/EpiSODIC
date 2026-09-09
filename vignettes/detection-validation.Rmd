@@ -1,0 +1,194 @@
+---
+title: "Measuring detection against known truth"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Measuring detection against known truth}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+The dashboard's Performance screen reports how your board's own verdicts
+fell out: of the clusters EpiSODIC put in front of them, how many were
+judged real, and how long each took to assess. That is the right question
+to ask of a running instance, and the wrong one to answer a different
+question with. It is circular - it reports what the board thought of what
+the system showed them - and sensitivity cannot be got out of it at all,
+because an outbreak the detectors miss never becomes a cluster for
+anybody to have an opinion about.
+
+`episodic_validate_detection()` answers the other question. It measures
+the detectors against outbreaks that are known to be there because they
+were put there.
+
+## What it does
+
+```{r}
+library(EpiSODIC)
+
+result <- episodic_validate_detection()
+result
+```
+
+Four things happen inside that call.
+
+**It generates history.** `episodic_synthetic_cases()` produces years of
+endemic laboratory data for a fictional region and injects six outbreaks
+into it, each shaped for a different detection channel: a single case of
+an always-notable pathogen, a three-case ward cluster, a nursing-home
+outbreak, a tight point source, a propagated outbreak over four
+generations, and a regional wave deliberately spread so thin that no
+single place ever sees enough of it for a rule to notice.
+
+**It replays that history one week at a time.** Each run gets only the
+cases sampled on or before its own date - what a laboratory extract taken
+that day would actually have contained. A single run over the whole
+history would see an outbreak's last case at the same moment as its
+first, which says nothing at all about timeliness.
+
+**It matches on case sets, in both directions.** Not on overlapping
+dates: an endemic winter cluster spans the same fortnight as a seeded
+outbreak and shares not one case with it.
+
+**It reports what it found**, with the denominators and the intervals
+that belong to each number.
+
+## The ground truth is data
+
+```{r}
+cases <- episodic_synthetic_cases(
+  start_date = as.Date("2025-01-01"), end_date = as.Date("2025-12-31")
+)
+truth <- episodic_synthetic_ground_truth(cases)
+
+truth$outbreaks[, c("outbreak_id", "pathogen", "n_cases", "first_day")]
+head(truth$cases)
+```
+
+Every injected case also carries a `PT-OUTBREAK-*` patient key, and it is
+tempting to recover membership by matching on it. Do not. That couples
+whatever is doing the matching to a naming convention nobody has
+undertaken to keep, and it fails quietly - as a smaller set of outbreak
+cases, not as an error - the first time the convention changes.
+
+## The two matching rules
+
+An **outbreak is detected** when some cluster's final membership holds at
+least `min_recall` of its cases. A **cluster is a true positive** when at
+least `min_precision` of *its own* cases belong to one seeded outbreak.
+A dossier that is one part outbreak to five parts background is a false
+alarm, and counting it otherwise would be flattering rather than
+measuring.
+
+Both are choices, and a result that only holds at one particular pair of
+values is not a result. `episodic_validate_rethreshold()` re-matches a
+replay that has already been run, so sweeping them costs arithmetic
+rather than another few hours of detection:
+
+```{r}
+strict <- episodic_validate_rethreshold(
+  result,
+  min_recall = 0.8, min_precision = 0.8
+)
+strict$summary[strict$summary$metric == "sensitivity", ]
+```
+
+## What it reports, and how to read it
+
+`result$summary` is one row per (metric, group). Proportions -
+sensitivity, PPV - carry a numerator, a denominator and a Wilson
+interval. False alarms are a **rate** per stream-week, with the
+stream-week denominator stated and an exact Poisson interval: a count of
+false alarms without its denominator is uninterpretable, and here the
+denominator is large and moves with the configuration.
+
+```{r}
+result$summary[result$summary$metric == "false_alarms", ]
+result$meta$n_stream_weeks
+```
+
+Two conventions run through all of it.
+
+**A metric with no denominator is `NA`, never 0.** A history with nothing
+injected has no sensitivity; that is not a sensitivity of zero, and
+averaging it as one would be a mistake.
+
+**An outbreak nothing found is censored, not dropped.** A median delay
+computed over the outbreaks that were detected is biased downward, and
+the bias is worst exactly where the method is weakest, because the shapes
+it misses are the slow ones. So the summary carries a Kaplan-Meier median
+that keeps the misses in as right-censored observations, and the share
+never detected beside the plain median. Quote them together, or quote the
+censored one; never the plain median alone.
+
+```{r}
+result$time_to_detection
+result$summary[result$summary$metric == "time_to_detection_km_median", ]
+```
+
+`time_to_detection` is that curve: `time` in days, `survival` the share
+still undetected, and `n_risk` falling as outbreaks are found and as the
+ones that never were drop out of the risk set.
+
+## A comparator, and a control
+
+Sensitivity and false-alarm figures mean little in isolation.
+`episodic_validate_comparator()` runs a rule anyone could write in an
+afternoon over exactly the same data, through exactly the same metrics:
+
+```{r}
+naive <- episodic_validate_comparator(method = "same_place")
+shewhart <- episodic_validate_comparator(method = "shewhart")
+```
+
+And a negative control - the same endemic history with nothing seeded in
+it - is the only clean specificity measurement available, because on
+seeded data every "false" alarm might be a real cluster the generator
+produced by chance:
+
+```{r}
+control <- episodic_validate_detection(outbreaks = FALSE)
+control$summary[control$summary$metric == "alarms", ]
+```
+
+## Which detector earns its place
+
+Which detector fired first answers "who got there first", not "what does
+each channel add": two detectors may both find an outbreak, and the loser
+looks worthless until you remove the winner. So the question is asked by
+removing them, one at a time:
+
+```{r}
+without_mem <- episodic_validate_detection(
+  detectors = c("farrington", "same_place", "rare_trigger")
+)
+```
+
+`config$<detector>$enabled` is what that sets, and it is part of
+`config_hash`, so two runs over the same data with different detectors
+switched on can never come out looking identical.
+
+## Where the real numbers live
+
+The defaults above are deliberately small - one seed, a short window, a
+single year of history - so that this returns in seconds and can be run
+from an example. They are a demonstration of the machinery and not a
+study: at one year of history the statistical detectors have no baseline
+to fit against, and one seed is one realisation.
+
+The study itself is `data-raw/validation/run_study.R`: twenty seeds by
+twenty-six weekly runs, four years of history, a negative control, a
+drop-one analysis for each of the four detectors, two comparators and an
+operating-point sweep. It takes hours, it writes its results to
+`data-raw/validation/results/` as CSV with the package version and
+`config_hash` on every row, and it ships with nothing - `data-raw/` is in
+`.Rbuildignore`, so none of it is in the built package, none of it runs
+under `R CMD check`, and none of it is reachable from an installed
+EpiSODIC.
+
+If a number it produces is unflattering, that is a finding. Tuning the
+shipped defaults until it looks better and then quoting it would be
+fitting the evaluation to the answer.

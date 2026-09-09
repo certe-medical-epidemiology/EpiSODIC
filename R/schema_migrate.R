@@ -80,6 +80,16 @@ episodic_db_dialect <- function(path) {
 #' EpiSODIC tables have already been created in it. Used by entry points
 #' such as [episodic_run_cron()] that connect to an already-initialised
 #' database or create a fresh one, whichever applies.
+#'
+#' "EpiSODIC's tables", not "any tables". A schema shared with another
+#' application - which is a perfectly ordinary way to deploy, and is how
+#' the first real instance was deployed - holds that other application's
+#' tables before EpiSODIC has created anything at all. Asked whether the
+#' schema had any tables in it, this said yes, so the first
+#' `episodic_run_cron()` was routed to "open an existing database",
+#' refused for having no schema version, and told the operator to run
+#' `episodic_db_migrate()`. Following that instruction stamped the schema
+#' as current with two of the twenty-four tables in it.
 #' @param path Path to a SQLite file, or a `mysql://` DSN.
 #' @return `TRUE`/`FALSE`.
 #' @keywords internal
@@ -90,7 +100,31 @@ episodic_db_exists <- function(path) {
   }
   con <- episodic_db_mariadb_connect(path)
   on.exit(DBI::dbDisconnect(con))
-  length(DBI::dbListTables(con)) > 0
+  mine <- intersect(DBI::dbListTables(con), episodic_db_schema_tables())
+  length(mine) > 0
+}
+
+#' The tables an EpiSODIC database has had since before schema versioning
+#'
+#' A database with no `episodic_schema_version` table is either a real
+#' EpiSODIC database from 0.12.x or earlier, or a schema where EpiSODIC
+#' has never created anything. `episodic_db_migrate()` has to tell those
+#' apart, because the answer to the first is "adopt it at version 1" and
+#' the answer to the second is "you wanted `episodic_db_create()`".
+#'
+#' These four have carried the core of the model since long before
+#' versioning existed, so a database missing any of them is not an old
+#' EpiSODIC database that needs bringing forward.
+#' @return A character vector of table names.
+#' @keywords internal
+#' @noRd
+episodic_db_core_tables <- function() {
+  c(
+    "episodic_stream",
+    "episodic_case",
+    "episodic_cluster",
+    "episodic_detection_run"
+  )
 }
 
 #' @keywords internal
@@ -160,8 +194,11 @@ episodic_db_mariadb_connect <- function(dsn) {
 #' [episodic_db_connect()] to open a database you have already set up.
 #'
 #' @param path Path to a SQLite file to create, or a `mysql://` DSN (see
-#'   [episodic_db_dsn_mariadb()]) pointing at an empty MariaDB/MySQL
-#'   database.
+#'   [episodic_db_dsn_mariadb()]) pointing at a MariaDB/MySQL database.
+#'   The schema does not have to be empty: EpiSODIC only ever enumerates
+#'   and touches its own tables, so it can share one with another
+#'   application. It does have to be free of *EpiSODIC's* tables, unless
+#'   `overwrite = TRUE`.
 #' @param overwrite If `TRUE`, delete an existing SQLite file (or drop all
 #'   tables in an existing MariaDB/MySQL database) first. Use with care -
 #'   this destroys any data already there.
@@ -196,18 +233,29 @@ episodic_db_create <- function(path, overwrite = FALSE) {
   } else {
     con <- episodic_db_mariadb_connect(path)
 
+    # Refusing has to close the connection it opened to find out, the
+    # same way episodic_db_check_schema_version() does: the caller never
+    # received it, so nobody else can, and RMariaDB complains about the
+    # leak whenever the handle is finally collected - long after the
+    # call that caused it.
+    refuse <- function(...) {
+      if (DBI::dbIsValid(con)) {
+        DBI::dbDisconnect(con)
+      }
+      stop(..., call. = FALSE)
+    }
+
     existing_tables <- DBI::dbListTables(con)
     intended_tables <- episodic_db_schema_tables()
     tables_to_drop <- intersect(existing_tables, intended_tables)
 
     if (length(tables_to_drop) > 0) {
       if (!overwrite) {
-        stop(
+        refuse(
           "Database already contains these EpiSODIC tables: ",
           paste(sprintf('"%s"', tables_to_drop), collapse = ", "),
           ". Pass overwrite = TRUE to drop and recreate them, ",
-          "or use episodic_db_connect() to open an existing database.",
-          call. = FALSE
+          "or use episodic_db_connect() to open an existing database."
         )
       }
 
@@ -237,7 +285,7 @@ episodic_db_create <- function(path, overwrite = FALSE) {
       }
 
       if (!is.null(failed)) {
-        stop(
+        refuse(
           "Failed to drop table \"",
           failed$table,
           "\" while recreating the schema. ",
@@ -245,21 +293,63 @@ episodic_db_create <- function(path, overwrite = FALSE) {
           if (length(dropped)) paste(dropped, collapse = ", ") else "(none)",
           ". Database is now in a partially-dropped state and must be inspected manually. ",
           "Original error: ",
-          conditionMessage(failed$error),
-          call. = FALSE
+          conditionMessage(failed$error)
         )
       }
     }
   }
 
   episodic_db_pragmas(con)
-
-  for (statement in episodic_db_schema_statements(dialect)) {
-    DBI::dbExecute(con, statement)
-  }
+  episodic_db_apply_schema(con, dialect)
   episodic_db_schema_version_stamp(con, episodic_schema_version)
 
   invisible(con)
+}
+
+#' Run the schema statements, in an order MySQL will accept
+#'
+#' `inst/sql/schema.sql` is written in the order the tables read best,
+#' which is not a topological order of their foreign keys:
+#' `episodic_stream` references `episodic_institution` sixty lines before
+#' that table is declared, and `episodic_stream_mute` references
+#' `episodic_app_user` several hundred lines before it. SQLite does not
+#' mind - it resolves a foreign key when a row is written, not when the
+#' table is declared - so this went unnoticed for as long as nothing ever
+#' pointed a real MySQL server at the generated DDL. MariaDB refuses the
+#' very first statement with `errno: 150, Foreign key constraint is
+#' incorrectly formed`, and refuses it whatever else is wrong or right
+#' about the rest of the schema.
+#'
+#' `FOREIGN_KEY_CHECKS = 0` is the documented way to declare a forward
+#' reference: the constraint is still created, and still enforced from
+#' the moment the flag goes back on. It is only reordering, not
+#' relaxation, and the flag is put back before this returns - including
+#' on the error path, so a half-built schema is never left with foreign
+#' keys switched off.
+#'
+#' Sorting the statements instead was the alternative, and it is worse: a
+#' topological sort is one more thing to keep correct as the schema
+#' grows, and it fails outright the first time two tables genuinely
+#' reference each other.
+#'
+#' @param con An open connection.
+#' @param dialect `"sqlite"` or `"mariadb"`.
+#' @return Invisibly `TRUE`.
+#' @keywords internal
+#' @noRd
+episodic_db_apply_schema <- function(con, dialect) {
+  if (dialect == "mariadb") {
+    DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 0")
+    on.exit(
+      DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 1"),
+      add = TRUE,
+      after = FALSE
+    )
+  }
+  for (statement in episodic_db_schema_statements(dialect)) {
+    DBI::dbExecute(con, statement)
+  }
+  invisible(TRUE)
 }
 
 #' The schema version this build of EpiSODIC expects
@@ -442,6 +532,27 @@ episodic_db_migrate <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA))
 
   current <- episodic_db_schema_version(con)
   if (is.na(current)) {
+    # "No schema version" means one of two things, and they need
+    # different answers: a real EpiSODIC database from before versioning
+    # existed, or a database EpiSODIC has never created anything in.
+    # Adopting the second at version 1 stamps it as current and then
+    # applies the migrations from there, which on a schema holding
+    # nothing of ours left two tables out of twenty-four behind a version
+    # gate that then passed on every subsequent connection.
+    missing <- setdiff(episodic_db_core_tables(), DBI::dbListTables(con))
+    if (length(missing) > 0) {
+      DBI::dbDisconnect(con)
+      on.exit()
+      stop(
+        "This database carries no schema version and is missing ",
+        paste0("`", missing, "`", collapse = ", "),
+        ", so it is not an EpiSODIC database to bring forward - it is a ",
+        "database EpiSODIC has never created anything in. Run ",
+        "episodic_db_create() on it instead. (A schema shared with another ",
+        "application looks non-empty without holding any EpiSODIC table.)",
+        call. = FALSE
+      )
+    }
     # Pre-versioning database: it is version 1 by construction, so record
     # that rather than refusing it or trying to migrate it from nowhere.
     if (!DBI::dbExistsTable(con, "episodic_schema_version")) {
@@ -1065,7 +1176,130 @@ episodic_db_schema_statements <- function(dialect) {
     }
   }
 
+  if (dialect == "mariadb") {
+    # Comments go first, then the foreign keys, because appending a
+    # table-level clause means putting a comma on the line above and
+    # several of those lines end in a `--` comment. A comma added after
+    # one of those is a comma inside a comment, which the split below
+    # strips along with the comment, leaving invalid SQL.
+    schema_sql <- episodic_strip_sql_comments(schema_sql)
+    schema_sql <- episodic_mariadb_table_level_foreign_keys(schema_sql)
+  }
+
   episodic_split_sql_statements(schema_sql)
+}
+
+#' Turn inline column references into table-level FOREIGN KEY clauses
+#'
+#' Every foreign key in `inst/sql/schema.sql` is written the SQLite way,
+#' inline on the column: `institution_id INTEGER REFERENCES
+#' episodic_institution(institution_id)`. SQLite honours that. MariaDB
+#' honours it too, and refuses the table outright when the referenced
+#' table has not been declared yet. **MySQL parses it and throws it
+#' away.** That is documented MySQL behaviour for inline column-level
+#' references, and its consequence here was a MySQL instance with all
+#' twenty-four tables, not one foreign key, and orphan rows accepted
+#' without complaint - measured on MySQL 8.4, and on the first real
+#' deployment, where every constraint in the schema file was absent and
+#' another application's tables in the same schema had theirs.
+#'
+#' So for this dialect the references are rewritten into the table-level
+#' form, which both servers honour. Derived from the schema rather than
+#' listed beside it: a hand-kept list is a second place for a foreign key
+#' to be forgotten, and forgetting one here is silent on MySQL. A
+#' reference added to `schema.sql` tomorrow is converted tomorrow,
+#' without anyone remembering to.
+#'
+#' @param schema_sql The whole schema, comments already stripped.
+#' @return The same SQL with every inline reference moved to a
+#'   table-level clause.
+#' @keywords internal
+#' @noRd
+episodic_mariadb_table_level_foreign_keys <- function(schema_sql) {
+  spans <- gregexpr(
+    "(?s)CREATE TABLE [A-Za-z_][A-Za-z0-9_]* *\\(.*?\\n\\);",
+    schema_sql,
+    perl = TRUE
+  )
+  blocks <- regmatches(schema_sql, spans)[[1]]
+  if (length(blocks) == 0) {
+    stop(
+      "episodic_db_schema_statements(): no CREATE TABLE block could be ",
+      "found to rewrite foreign keys in. inst/sql/schema.sql may have ",
+      "changed shape.",
+      call. = FALSE
+    )
+  }
+  regmatches(schema_sql, spans) <- list(
+    vapply(blocks, episodic_mariadb_block_foreign_keys, character(1), USE.NAMES = FALSE)
+  )
+  schema_sql
+}
+
+#' One `CREATE TABLE` block, with its references moved to the end
+#' @param block One complete `CREATE TABLE ... );` block.
+#' @return The rewritten block, or `block` unchanged when it declares no
+#'   references.
+#' @keywords internal
+#' @noRd
+episodic_mariadb_block_foreign_keys <- function(block) {
+  lines <- strsplit(block, "\n", fixed = TRUE)[[1]]
+  pattern <- paste0(
+    "^(\\s+[A-Za-z_][A-Za-z0-9_]*\\s+.*?)",
+    "\\s+REFERENCES\\s+([A-Za-z_][A-Za-z0-9_]*)",
+    "\\s*\\(\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*\\)(.*)$"
+  )
+  keys <- character(0)
+  for (i in seq_along(lines)) {
+    if (!grepl(pattern, lines[i], perl = TRUE)) {
+      next
+    }
+    column <- sub(
+      "^\\s+([A-Za-z_][A-Za-z0-9_]*).*$",
+      "\\1",
+      lines[i],
+      perl = TRUE
+    )
+    keys <- c(keys, sprintf(
+      "  FOREIGN KEY (%s) REFERENCES %s(%s)",
+      column,
+      sub(pattern, "\\2", lines[i], perl = TRUE),
+      sub(pattern, "\\3", lines[i], perl = TRUE)
+    ))
+    lines[i] <- sub(pattern, "\\1\\4", lines[i], perl = TRUE)
+  }
+  if (length(keys) == 0) {
+    return(block)
+  }
+
+  # The closing `);` is the last line; the element before it carries no
+  # trailing comma, and now has to.
+  closing <- length(lines)
+  last_element <- max(which(
+    nzchar(trimws(lines[seq_len(closing - 1)]))
+  ))
+  lines[last_element] <- paste0(sub("\\s+$", "", lines[last_element]), ",")
+  # Every clause but the last one needs its own comma too.
+  if (length(keys) > 1) {
+    keys[-length(keys)] <- paste0(keys[-length(keys)], ",")
+  }
+  paste(
+    c(lines[seq_len(last_element)], keys, lines[seq(last_element + 1, closing)]),
+    collapse = "\n"
+  )
+}
+
+#' Strip `--` line comments from a SQL file
+#'
+#' The same rule `episodic_split_sql_statements()` applies, pulled out so
+#' it can be applied earlier as well. Idempotent.
+#' @param sql A single string holding SQL.
+#' @return The same SQL with line comments removed.
+#' @keywords internal
+#' @noRd
+episodic_strip_sql_comments <- function(sql) {
+  lines <- strsplit(sql, "\n", fixed = TRUE)[[1]]
+  paste(sub("--.*$", "", lines), collapse = "\n")
 }
 
 #' Split a SQL file into individual statements

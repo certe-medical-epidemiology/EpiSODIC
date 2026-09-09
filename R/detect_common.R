@@ -68,6 +68,73 @@ episodic_detection_record <- function(stream_id,
   )
 }
 
+#' An empty detection result, in the shape every detector returns
+#'
+#' Five call sites built this by hand from `episodic_detection_record()`'s
+#' zero-length branch, which is five places for the column set to drift
+#' apart in.
+#' @return A zero-row data frame with the detection columns.
+#' @keywords internal
+#' @noRd
+episodic_detection_none <- function() {
+  episodic_detection_record(
+    integer(0),
+    character(0),
+    character(0),
+    character(0),
+    integer(0)
+  )
+}
+
+#' Whether a detector is switched on for this run
+#'
+#' Each detector's own configuration section carries `enabled`, shipped
+#' `true`. Switched off, the detector contributes no detections at all -
+#' which is what a drop-one analysis needs (see
+#' `episodic_validate_detection()`), and what an operator who runs, say,
+#' no seasonal detector at all needs too.
+#'
+#' It lives in the configuration rather than in an argument to
+#' `episodic_run_cron()` deliberately: which detectors ran changes what a
+#' run computes, so it belongs inside `config_hash`, where two runs over
+#' the same data with different detectors on cannot come out looking
+#' identical.
+#'
+#' Fails closed on anything it cannot read as a single `TRUE`/`FALSE`,
+#' the way `episodic_app_require_login()` does: a detector silently left
+#' running by a malformed setting is the more dangerous of the two
+#' mistakes only for a login wall, but a detector silently switched off
+#' by one is the more dangerous here, so an unreadable value is an error
+#' rather than either default.
+#'
+#' @param config The resolved configuration.
+#' @param detector The configuration section's name, e.g. `"farrington"`.
+#' @return `TRUE` or `FALSE`.
+#' @keywords internal
+#' @noRd
+episodic_detector_enabled <- function(config, detector) {
+  enabled <- config[[detector]]$enabled
+  if (is.null(enabled)) {
+    # An instance configuration cannot remove the key (the shipped
+    # defaults always supply it and the merge is key-by-key), so this is
+    # only reachable from a hand-built config in a test or a caller
+    # passing a fragment. Treat it as configured on, which is what the
+    # shipped defaults say.
+    return(TRUE)
+  }
+  if (!is.logical(enabled) || length(enabled) != 1 || is.na(enabled)) {
+    stop(
+      "`",
+      detector,
+      ".enabled` must be true or false, not ",
+      paste(format(enabled), collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+  enabled
+}
+
 #' The oldest `last_day` a rule-based detector may still report
 #'
 #' `same_place` and `rare_trigger` need no baseline, so nothing in their

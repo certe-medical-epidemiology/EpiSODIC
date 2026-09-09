@@ -1,3 +1,27 @@
+# EpiSODIC 0.17.0
+
+## New
+
+- `episodic_validate_detection()` replays generated history week by week and measures the detectors against the outbreaks that were injected into it
+- `episodic_validate_comparator()` runs a naive same-place rule or a 2-SD Shewhart limit over the same data, through the same metrics
+- `episodic_validate_rethreshold()` re-matches a validation result at different thresholds without replaying anything
+- `episodic_synthetic_ground_truth()` returns what `episodic_synthetic_cases()` injected, per outbreak and per case
+- `episodic_synthetic_cases()` gains `outbreaks`, for a history with none injected, and `outbreak_offsets`, to disperse them across the window
+- `config$<detector>$enabled` switches any of the four detectors off, and is part of `config_hash`
+- `data-raw/validation/` runs the full multi-seed study and writes the numbers a paper would quote
+- CI runs the suite against a real MariaDB server, so DDL a server rejects fails the build
+- CI also runs the suite against a real MySQL server, which is a different server: the two disagree about column-level foreign keys
+
+## Fixed
+
+- The MariaDB schema was never accepted by a real server: the tables are declared in reading order, not foreign-key order, so creation failed on the first statement
+- On MySQL the schema created no foreign keys at all: inline column-level `REFERENCES` are parsed and discarded there, so every constraint was silently absent
+- `episodic_db_exists()` treated a schema shared with another application as an existing EpiSODIC database, so a first run refused and sent the operator to `episodic_db_migrate()`, which stamped it current with two of its twenty-four tables
+- `episodic_db_runs()` bound a double to `LIMIT`, which MySQL refuses, so the Activity screen failed on that dialect
+- Half the lattice resolved its geography from the run's own configuration and half from `EPISODIC_CONFIG`, so a run given a config path silently matched no case to any geographic stream
+- `episodic_db_create()` leaked the connection it opened when refusing a database that already had tables
+- With `EPISODIC_PC_PROVINCE_MAP` unset, a run said the shipped Dutch province ranges were in use, which they no longer are
+
 # EpiSODIC 0.16.0
 
 ## New

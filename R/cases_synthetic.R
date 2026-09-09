@@ -55,11 +55,19 @@
 #' diffuse signal no amount of local vigilance would catch - is half the
 #' reason the statistical detectors exist.
 #'
-#' Every injected case carries a `PT-OUTBREAK-*` patient key, so it is
-#' always identifiable as an injected signal rather than baseline noise.
 #' Outbreaks are anchored to `end_date` and clipped to the window you ask
 #' for, so a short window returns a partial one rather than cases outside
 #' the range you asked for.
+#'
+#' @section What was injected, as data:
+#'
+#' The result carries its own ground truth: which outbreaks were injected,
+#' where and when each of them ran, and exactly which cases belong to
+#' which. Read it with [episodic_synthetic_ground_truth()]. Injected cases
+#' also carry a `PT-OUTBREAK-*` patient key, but that is a convenience for
+#' a human reading a line list and not an interface: anything measuring
+#' detection against what was injected takes the ground truth, never a
+#' pattern match on a key.
 #'
 #' @param end_date Last sample date to generate. Defaults to today, so a
 #'   demo built from this always shows current surveillance rather than
@@ -68,8 +76,28 @@
 #'   before `end_date` - Farrington needs four of them before it will
 #'   compare anything against anything.
 #' @param seed RNG seed, for reproducible demo data.
-#' @return A data frame satisfying [episodic_check_cases()].
-#' @seealso [episodic_check_cases()] to see what the requirements make of it,
+#' @param outbreaks Which outbreaks to inject: `TRUE` for all six (the
+#'   default), `FALSE` for none, or a character vector of outbreak
+#'   identifiers (`"RARE"`, `"WARD"`, `"LTC"`, `"PS"`, `"PROP"`,
+#'   `"WAVE"`). A history with none injected is what a negative control
+#'   needs: every alarm raised on it is a false one, which is the only
+#'   clean way to measure an alarm rate. Each outbreak draws from the
+#'   random stream whether or not it is kept, so a given seed always
+#'   produces the same cases for a given outbreak regardless of which
+#'   others were asked for.
+#' @param outbreak_offsets Days to move outbreaks further back from
+#'   `end_date`. All six are anchored to `end_date`, so by default they
+#'   sit in the last few months of whatever window is generated - fine
+#'   for a demo, wrong for a prospective evaluation, which needs them
+#'   dispersed across the window instead. Either a single number applied
+#'   to all of them, or a named vector giving days per outbreak
+#'   identifier (any not named stays at 0). `NULL`, the default, leaves
+#'   every outbreak anchored to `end_date`.
+#' @return A data frame satisfying [episodic_check_cases()], carrying the
+#'   ground truth of what was injected as an attribute - see
+#'   [episodic_synthetic_ground_truth()].
+#' @seealso [episodic_synthetic_ground_truth()] for what was injected,
+#'   [episodic_check_cases()] to see what the requirements make of it,
 #'   and [episodic_synthetic_cases_calibration()] for many more clusters
 #'   than a demo wants, to tune a configuration against.
 #' @examples
@@ -81,7 +109,9 @@
 #' @export
 episodic_synthetic_cases <- function(start_date = end_date - 5 * 365,
                                      end_date = Sys.Date(),
-                                     seed = 1) {
+                                     seed = 1,
+                                     outbreaks = TRUE,
+                                     outbreak_offsets = NULL) {
   set.seed(seed)
 
   institutions <- episodic_synthetic_institutions()
@@ -96,21 +126,29 @@ episodic_synthetic_cases <- function(start_date = end_date - 5 * 365,
     pc_pool,
     pathogens
   )
-  outbreaks <- episodic_synthetic_outbreaks(
+  baseline$outbreak_id <- NA_character_
+  injected <- episodic_synthetic_outbreaks(
     institutions,
     pc_pool,
     start_date,
-    end_date
+    end_date,
+    which = outbreaks,
+    offsets = outbreak_offsets
   )
 
-  cases <- rbind(baseline, outbreaks)
+  cases <- rbind(baseline, injected)
   cases$source_key <- sprintf("SYN-%08d", seq_len(nrow(cases)))
   cases$lab_number <- sprintf("LABSYN-%08d", seq_len(nrow(cases)))
 
   cases <- cases[order(cases$sample_date), ]
   rownames(cases) <- NULL
 
-  episodic_validate_cases(cases)
+  truth <- episodic_synthetic_truth(cases)
+  cases$outbreak_id <- NULL
+
+  cases <- episodic_validate_cases(cases)
+  attr(cases, "episodic_ground_truth") <- truth
+  invisible(cases)
 }
 
 #' The fictional region: who reports, and how much of the total they see
@@ -490,31 +528,343 @@ episodic_synthetic_baseline_cases <- function(dates,
   do.call(rbind, rows)
 }
 
-#' The six injected outbreaks, clipped to the window asked for
+#' What each of the six injected outbreaks is, and what it is for
 #'
-#' Anchored to `end_date` so a demo opens on recent signal, and filtered
-#' to `[start_date, end_date]` afterwards: a generator asked for January
-#' must not return December.
+#' One row per outbreak, and the single place the identifiers, the
+#' generator behind each of them and the channel each shape was built to
+#' exercise are written down. `episodic_synthetic_outbreaks()` deals from
+#' it, `episodic_synthetic_truth()` labels from it, and nothing else in
+#' the package needs to know the six exist.
+#'
+#' `expected_channel` and `expected_level` are the design intent recorded
+#' by the generator that produces each shape, not a prediction: which
+#' detector actually fires first, and at which lattice level, is a
+#' measurement, and `episodic_validate_detection()` makes it.
+#' @keywords internal
+#' @noRd
+episodic_synthetic_outbreak_catalogue <- function() {
+  data.frame(
+    outbreak_id = c("RARE", "WARD", "LTC", "PS", "PROP", "WAVE"),
+    label = c(
+      "Invasive meningococcal disease",
+      "Ward cluster",
+      "Nursing home outbreak",
+      "Point source",
+      "Propagated",
+      "Regional wave"
+    ),
+    expected_channel = c(
+      "rare_trigger",
+      "same_place",
+      "same_place",
+      "same_place",
+      "same_place",
+      "farrington"
+    ),
+    expected_level = c(
+      "pathogen_ward",
+      "pathogen_ward",
+      "pathogen_institution",
+      "pathogen_ward",
+      "pathogen_institution",
+      "pathogen_region"
+    ),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' Which outbreaks an `outbreaks =` argument asks for
+#'
+#' Always returned in catalogue order, so the generators run in the same
+#' order whatever was asked for.
+#' @keywords internal
+#' @noRd
+episodic_synthetic_outbreak_ids <- function(which) {
+  known <- episodic_synthetic_outbreak_catalogue()$outbreak_id
+  if (isTRUE(which)) {
+    return(known)
+  }
+  if (isFALSE(which)) {
+    return(character(0))
+  }
+  if (!is.character(which) || anyNA(which)) {
+    stop(
+      "`outbreaks` must be TRUE (inject all of them), FALSE (inject none) ",
+      "or a character vector naming outbreaks to inject (",
+      paste(known, collapse = ", "),
+      ").",
+      call. = FALSE
+    )
+  }
+  unknown <- setdiff(which, known)
+  if (length(unknown) > 0) {
+    stop(
+      "`outbreaks` names no such outbreak: ",
+      paste(unknown, collapse = ", "),
+      ". Known outbreaks are ",
+      paste(known, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+  known[known %in% which]
+}
+
+#' Days back from `end_date` to anchor each outbreak at
+#'
+#' @return A named numeric vector, one element per element of `ids`.
+#' @keywords internal
+#' @noRd
+episodic_synthetic_outbreak_offsets_resolve <- function(offsets, ids) {
+  resolved <- stats::setNames(rep(0, length(ids)), ids)
+  if (is.null(offsets)) {
+    return(resolved)
+  }
+  if (!is.numeric(offsets) || anyNA(offsets) || length(offsets) == 0) {
+    stop(
+      "`outbreak_offsets` must be a numeric vector of days without NA, or ",
+      "NULL to anchor every outbreak to `end_date`.",
+      call. = FALSE
+    )
+  }
+  if (any(offsets < 0)) {
+    stop(
+      "`outbreak_offsets` are days back from `end_date`, so they cannot be ",
+      "negative: no outbreak can be injected after the last day generated.",
+      call. = FALSE
+    )
+  }
+  if (is.null(names(offsets))) {
+    if (length(offsets) != 1) {
+      stop(
+        "An unnamed `outbreak_offsets` is one number applied to every ",
+        "outbreak, so it must be length 1. Name its elements (",
+        paste(episodic_synthetic_outbreak_catalogue()$outbreak_id, collapse = ", "),
+        ") to set an offset per outbreak.",
+        call. = FALSE
+      )
+    }
+    resolved[] <- offsets
+    return(resolved)
+  }
+  known <- episodic_synthetic_outbreak_catalogue()$outbreak_id
+  unknown <- setdiff(names(offsets), known)
+  if (length(unknown) > 0) {
+    stop(
+      "`outbreak_offsets` names no such outbreak: ",
+      paste(unknown, collapse = ", "),
+      ". Known outbreaks are ",
+      paste(known, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+  named <- intersect(names(offsets), ids)
+  resolved[named] <- offsets[named]
+  resolved
+}
+
+#' The injected outbreaks, clipped to the window asked for
+#'
+#' Anchored to `end_date` (less each outbreak's own offset) so a demo
+#' opens on recent signal, and filtered to `[start_date, end_date]`
+#' afterwards: a generator asked for January must not return December.
+#'
+#' Every generator is called whether or not its outbreak was asked for,
+#' and the unwanted ones are dropped afterwards. That costs a handful of
+#' random draws and buys the property a validation harness needs: one
+#' seed produces one set of cases per outbreak, and asking for fewer
+#' outbreaks does not silently reshape the ones that remain.
 #' @keywords internal
 #' @noRd
 episodic_synthetic_outbreaks <- function(institutions,
                                          pc_pool,
                                          start_date,
-                                         end_date) {
-  parts <- list(
-    episodic_synthetic_outbreak_rare_case(institutions, pc_pool, end_date),
-    episodic_synthetic_outbreak_ward_cluster(institutions, pc_pool, end_date),
-    episodic_synthetic_outbreak_ltc(institutions, pc_pool, end_date),
-    episodic_synthetic_outbreak_point_source(institutions, pc_pool, end_date),
-    episodic_synthetic_outbreak_propagated(institutions, pc_pool, end_date),
-    episodic_synthetic_outbreak_regional_wave(institutions, pc_pool, end_date)
+                                         end_date,
+                                         which = TRUE,
+                                         offsets = NULL) {
+  ids <- episodic_synthetic_outbreak_ids(which)
+  offsets <- episodic_synthetic_outbreak_offsets_resolve(offsets, ids)
+  generators <- list(
+    RARE = episodic_synthetic_outbreak_rare_case,
+    WARD = episodic_synthetic_outbreak_ward_cluster,
+    LTC = episodic_synthetic_outbreak_ltc,
+    PS = episodic_synthetic_outbreak_point_source,
+    PROP = episodic_synthetic_outbreak_propagated,
+    WAVE = episodic_synthetic_outbreak_regional_wave
   )
-  parts <- parts[!vapply(parts, is.null, logical(1))]
+  parts <- list()
+  for (id in names(generators)) {
+    anchor <- if (id %in% ids) end_date - offsets[[id]] else end_date
+    part <- generators[[id]](institutions, pc_pool, anchor)
+    if (!(id %in% ids) || is.null(part) || nrow(part) == 0) {
+      next
+    }
+    part$outbreak_id <- id
+    parts[[length(parts) + 1]] <- part
+  }
+  if (length(parts) == 0) {
+    return(NULL)
+  }
   out <- do.call(rbind, parts)
   in_window <- as.Date(out$sample_date) >= start_date &
     as.Date(out$sample_date) <= end_date
   out <- out[in_window, ]
   if (nrow(out) == 0) NULL else out
+}
+
+#' Read Back What Was Injected Into Synthetic Data
+#'
+#' [episodic_synthetic_cases()] injects outbreaks into an otherwise
+#' endemic history. This reads back exactly what it injected: one row per
+#' outbreak saying where and when it ran and how large it was, and the
+#' case-level membership that goes with it. It is what makes a detection
+#' result measurable against known truth rather than against an
+#' epidemiologist's verdict on it - see [episodic_validate_detection()].
+#'
+#' Injected cases also carry a recognisable `PT-OUTBREAK-*` patient key,
+#' and it is tempting to recover membership by matching on it. Do not:
+#' that couples whatever does the matching to a naming convention nobody
+#' has undertaken to keep, and it fails silently, as a smaller set of
+#' outbreak cases rather than an error, the first time the convention
+#' changes.
+#'
+#' @param cases A data frame from [episodic_synthetic_cases()].
+#' @return A list of two data frames:
+#'   \describe{
+#'     \item{`outbreaks`}{One row per injected outbreak: `outbreak_id`,
+#'       `label`, `pathogen`, `institution_key` and `ward` (both `NA`
+#'       where the outbreak was not confined to one), `first_day`,
+#'       `peak_day`, `last_day`, `n_cases`, and the `expected_channel`
+#'       and `expected_level` the shape was designed to exercise.}
+#'     \item{`cases`}{One row per injected case: `outbreak_id` and the
+#'       `source_key` it carries in the case data, which is what joins it
+#'       to `episodic_case` once a run has loaded it.}
+#'   }
+#'   Both are empty (zero rows, same columns) when nothing was injected.
+#' @seealso [episodic_synthetic_cases()], [episodic_validate_detection()]
+#' @examples
+#' cases <- episodic_synthetic_cases(
+#'   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
+#' )
+#' truth <- episodic_synthetic_ground_truth(cases)
+#' truth$outbreaks[, c("outbreak_id", "pathogen", "n_cases")]
+#' @export
+episodic_synthetic_ground_truth <- function(cases) {
+  truth <- attr(cases, "episodic_ground_truth", exact = TRUE)
+  if (is.null(truth)) {
+    stop(
+      "This data carries no ground truth. It has to come from ",
+      "episodic_synthetic_cases(), and the attribute has to survive ",
+      "whatever happened to it since - subsetting rows keeps it, but ",
+      "selecting columns, dplyr verbs and most round trips through a file ",
+      "do not.",
+      call. = FALSE
+    )
+  }
+  truth
+}
+
+#' Describe the injected outbreaks present in a generated case set
+#'
+#' Built from the cases that survived clipping to the requested window,
+#' never from what the generators were asked for, so a partially clipped
+#' outbreak is described by the part that is actually there.
+#' @param cases The assembled case data, still carrying its
+#'   `outbreak_id` column and with `source_key` already assigned.
+#' @return The list `episodic_synthetic_ground_truth()` returns.
+#' @keywords internal
+#' @noRd
+episodic_synthetic_truth <- function(cases) {
+  catalogue <- episodic_synthetic_outbreak_catalogue()
+  injected <- cases[!is.na(cases$outbreak_id), , drop = FALSE]
+  ids <- catalogue$outbreak_id[
+    catalogue$outbreak_id %in% unique(injected$outbreak_id)
+  ]
+  rows <- lapply(ids, function(id) {
+    part <- injected[injected$outbreak_id == id, , drop = FALSE]
+    meta <- catalogue[catalogue$outbreak_id == id, ]
+    if (length(unique(part$pathogen)) != 1) {
+      stop(
+        "Injected outbreak '",
+        id,
+        "' spans more than one pathogen (",
+        paste(sort(unique(part$pathogen)), collapse = ", "),
+        "), which no generator here is meant to produce.",
+        call. = FALSE
+      )
+    }
+    days <- as.Date(part$sample_date)
+    per_day <- table(days)
+    data.frame(
+      outbreak_id = id,
+      label = meta$label,
+      pathogen = part$pathogen[1],
+      institution_key = episodic_synthetic_truth_single(part$institution_key),
+      ward = episodic_synthetic_truth_single(part$ward),
+      first_day = min(days),
+      peak_day = as.Date(names(per_day)[which.max(per_day)]),
+      last_day = max(days),
+      n_cases = nrow(part),
+      expected_channel = meta$expected_channel,
+      expected_level = meta$expected_level,
+      stringsAsFactors = FALSE
+    )
+  })
+  outbreaks <- if (length(rows) == 0) {
+    episodic_synthetic_truth_empty()
+  } else {
+    do.call(rbind, rows)
+  }
+  rownames(outbreaks) <- NULL
+  list(
+    outbreaks = outbreaks,
+    cases = data.frame(
+      outbreak_id = injected$outbreak_id,
+      source_key = injected$source_key,
+      stringsAsFactors = FALSE,
+      row.names = NULL
+    )
+  )
+}
+
+#' The one value a column holds, or `NA` when it holds several
+#'
+#' An outbreak confined to one ward has a ward; the regional wave, spread
+#' across every place in the region, has none. `NA` there says "this
+#' outbreak was not at one place", which is a different statement from
+#' any particular place, and the difference matters to anything matching
+#' clusters against it.
+#' @keywords internal
+#' @noRd
+episodic_synthetic_truth_single <- function(x) {
+  values <- unique(x)
+  if (length(values) == 1) as.character(values) else NA_character_
+}
+
+#' A zero-row ground-truth table with the columns a full one has
+#'
+#' Returned when nothing was injected. Nothing injected is a real state -
+#' it is what a negative control is - so it gets an empty table of the
+#' right shape rather than `NULL`, and every caller can bind and subset
+#' it without a special case.
+#' @keywords internal
+#' @noRd
+episodic_synthetic_truth_empty <- function() {
+  data.frame(
+    outbreak_id = character(0),
+    label = character(0),
+    pathogen = character(0),
+    institution_key = character(0),
+    ward = character(0),
+    first_day = as.Date(character(0)),
+    peak_day = as.Date(character(0)),
+    last_day = as.Date(character(0)),
+    n_cases = integer(0),
+    expected_channel = character(0),
+    expected_level = character(0),
+    stringsAsFactors = FALSE
+  )
 }
 
 #' One case of an always-notable pathogen: the `rare_trigger` channel
@@ -771,7 +1121,7 @@ episodic_synthetic_cases_calibration <- function(start_date = end_date - 5 * 365
     pc_pool,
     pathogens
   )
-  outbreaks <- episodic_synthetic_outbreaks(
+  injected <- episodic_synthetic_outbreaks(
     institutions,
     pc_pool,
     start_date,
@@ -786,7 +1136,16 @@ episodic_synthetic_cases_calibration <- function(start_date = end_date - 5 * 365
     n_bumps_per_month = n_bumps_per_month
   )
 
-  cases <- rbind(baseline, outbreaks, volume)
+  # No ground truth is attached here, deliberately. The extra bumps are
+  # real seeded case clusters that nothing labels, so a ground-truth
+  # table covering only the six injected outbreaks would have a
+  # validation harness count every bump it found as a false alarm. Tune a
+  # configuration with this; measure detection with
+  # episodic_synthetic_cases().
+  if (!is.null(injected)) {
+    injected$outbreak_id <- NULL
+  }
+  cases <- rbind(baseline, injected, volume)
   cases$source_key <- sprintf("SYN-%08d", seq_len(nrow(cases)))
   cases$lab_number <- sprintf("LABSYN-%08d", seq_len(nrow(cases)))
 
