@@ -1,0 +1,7 @@
+"point","dimension","label","config_hash","n_seeds","sensitivity","ppv","false_alarms_per_stream_week","stream_weeks","median_delay_days"
+"sweep_shipped","shipped","shipped defaults (alpha 0.05, same_place 3 in 14)","9b97cc3f4a58930263747e5bed741e401860ad34",5,1,0.76,0.000102413545898337,117172,6
+"sweep_farrington_alpha_001","farrington.alpha","farrington alpha 0.01","aa6d1b60f800ddba70ba3e7be34bdd7b8d29e18a",5,1,0.714285714285714,0.000119482470214727,117172,8.5
+"sweep_farrington_alpha_010","farrington.alpha","farrington alpha 0.10","fabab941c3309f71b77bb31e9f4f20f083b3d018",5,1,0.716981132075472,0.000128016932372922,117172,6
+"sweep_same_place_2_in_14","same_place","same_place 2 in 14","6eb9c0c0fd4ceea1a70230509f635ab1d663cafb",5,1,0.534090909090909,0.00069423866570715,118115,6
+"sweep_same_place_4_in_14","same_place","same_place 4 in 14","2c0dd200a1d29a8ed2059d84db1894d84fe7be38",5,0.966666666666667,0.866666666666667,5.12386954628135e-05,117099,5.5
+"sweep_same_place_3_in_7","same_place","same_place 3 in 7","f5dce101c6c2768ca60bdee46550c92ee1bac81c",5,0.9,0.847826086956522,5.97789885395139e-05,117098,5

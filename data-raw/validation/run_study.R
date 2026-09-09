@@ -47,6 +47,20 @@ suppressMessages(pkgload::load_all(quiet = TRUE))
 
 quick <- tolower(Sys.getenv("EPISODIC_VALIDATION_QUICK")) %in% c("true", "1", "yes")
 
+# A three-hour script that cannot resume loses three hours to any
+# interruption, and to any mistake found in the last scenario. Each
+# scenario's full result is saved under results/raw/ and reused if it is
+# already there.
+#
+# The cache is keyed on the file name alone, and knows nothing about the
+# package code that produced it. So it is only safe while the code has not
+# moved: change anything under R/ and the scenarios that exercise it must
+# be re-run. Delete results/raw/, or set EPISODIC_VALIDATION_FRESH=true,
+# which ignores the cache entirely. The committed CSVs must always be
+# reproducible by a fresh run, so a fresh run is what settles any
+# disagreement.
+fresh <- tolower(Sys.getenv("EPISODIC_VALIDATION_FRESH")) %in% c("true", "1", "yes")
+
 study <- list(
   # Pinned, not Sys.Date(): the generator anchors its seasons and its
   # outbreaks to the end of the window, so a study run on a different day
@@ -147,7 +161,20 @@ if (fits) {
 # --------------------------------------------------------------------
 # The scenarios
 # --------------------------------------------------------------------
+cached_scenario <- function(name) {
+  path <- file.path(raw_dir, paste0(name, ".rds"))
+  if (fresh || !file.exists(path)) {
+    return(NULL)
+  }
+  say("scenario '", name, "' reused from ", path)
+  readRDS(path)
+}
+
 run_scenario <- function(name, ...) {
+  cached <- cached_scenario(name)
+  if (!is.null(cached)) {
+    return(cached)
+  }
   say("scenario '", name, "' starting")
   t0 <- Sys.time()
   result <- episodic_validate_detection(
@@ -168,6 +195,10 @@ run_scenario <- function(name, ...) {
 }
 
 run_comparator <- function(name, method, ...) {
+  cached <- cached_scenario(name)
+  if (!is.null(cached)) {
+    return(cached)
+  }
   say("comparator '", name, "' starting")
   result <- episodic_validate_comparator(
     method = method,

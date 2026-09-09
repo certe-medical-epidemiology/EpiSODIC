@@ -201,6 +201,7 @@ episodic_validation_comparator_replicate <- function(method,
   membership <- list()
   run_rows <- list()
   registry <- character(0)
+  raised <- list()
 
   for (run_date in as.list(run_dates)) {
     extract <- cases[cases$sample_date <= run_date, , drop = FALSE]
@@ -215,13 +216,40 @@ episodic_validation_comparator_replicate <- function(method,
     # identity as it grows.
     new_keys <- setdiff(unique(alarms$alarm_key), registry)
     registry <- c(registry, new_keys)
-    membership[[length(membership) + 1]] <- episodic_validation_stamp(
-      run_date,
+
+    # An alarm, once raised, stays on the board with the cases it holds,
+    # and is still there at the end of the replay. That is what a cluster
+    # does, and a comparator judged on a different rule is not a
+    # comparator. The Shewhart rule in particular only speaks while the
+    # week it is testing exceeds its limit, so without this its alarms
+    # vanished from the snapshot as soon as the rise passed - and the
+    # final-state matching then scored a rule that had held an outbreak
+    # at recall 1.00 as having missed it entirely.
+    for (key in unique(alarms$alarm_key)) {
+      raised[[key]] <- union(
+        raised[[key]],
+        alarms$source_key[alarms$alarm_key == key]
+      )
+    }
+    standing <- if (length(raised) == 0) {
       data.frame(
-        cluster_id = match(alarms$alarm_key, registry),
-        source_key = alarms$source_key,
+        cluster_id = integer(0),
+        source_key = character(0),
         stringsAsFactors = FALSE
       )
+    } else {
+      data.frame(
+        cluster_id = rep(
+          match(names(raised), registry),
+          lengths(raised)
+        ),
+        source_key = unlist(raised, use.names = FALSE),
+        stringsAsFactors = FALSE
+      )
+    }
+    membership[[length(membership) + 1]] <- episodic_validation_stamp(
+      run_date,
+      standing
     )
     run_rows[[length(run_rows) + 1]] <- data.frame(
       run_date = run_date,

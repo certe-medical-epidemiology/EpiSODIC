@@ -30,6 +30,20 @@ three-in-fourteen days. Reporting only the tighter setting would make the
 comparator look weak for a reason that has nothing to do with it being
 naive: `same_place` itself is configured for fourteen.
 
+Each scenario's full result is cached under `results/raw/` and reused if
+it is already there, so an interrupted run resumes rather than starting
+over. **The cache knows nothing about the code that produced it**: change
+anything under `R/` and the scenarios that exercise it must be re-run.
+Delete `results/raw/`, or:
+
+```bash
+EPISODIC_VALIDATION_FRESH=true Rscript data-raw/validation/run_study.R
+```
+
+which ignores the cache entirely. The committed CSVs must always be
+reproducible by a fresh run, and a fresh run is what settles any
+disagreement.
+
 For a five-minute smoke test that exercises every scenario at a fraction
 of the size:
 
