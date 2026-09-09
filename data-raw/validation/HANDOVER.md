@@ -309,19 +309,34 @@ Farrington found too.
 
 MEM is doing exactly what MEM is for: detecting the onset of the epidemic
 season in seasonal respiratory viruses, on four years of history that
-contains precisely that. The generator is not at fault. What is at fault
-is where the signal goes: a seasonal onset is not an outbreak, an
-epidemiologist shown one would classify it `expected_variation`, and
-EpiSODIC routes it into the same assessment queue as aberration signals.
-So every MEM-only detection is a dossier raised about the arrival of
-winter, and MEM accounts for 14 of the 43 false alarms while adding no
-sensitivity.
+contains precisely that.
 
-That is a design question - whether MEM's output belongs on the Pathogen
-screen as seasonal context rather than in the queue, or whether
-`mem_applicable` should be narrower, or the pre-epidemic threshold
-configured - and it is deliberately left open rather than settled by
-moving a threshold.
+**That 0/13 is partly an artefact of the ground truth, and must not be
+read as damning.** The generator injects six outbreaks and none of them is
+"the influenza season started", so a seasonal onset can never be scored a
+true positive - there is nothing in the truth table for it to match, and
+it is counted a false alarm by construction. The measurement says *MEM's
+output does not correspond to any seeded outbreak*, which is true and is
+not the same statement as *MEM's output is worthless*. Measuring MEM
+fairly would require the seasonal onset to be a labelled ground-truth
+event, which it is not (§5.3, and issue #46).
+
+Nor is MEM redundant with Farrington, which the drop-one figure might be
+taken to imply. Farrington compares the current week against the same
+calendar weeks of previous years, so it is *designed to be blind to
+expected seasonality*: a normal winter rise is what its baseline predicts,
+and it does not fire. Farrington answers "is this more than the season
+would predict?"; MEM answers "has the season started?". The study shows
+the difference empirically - on all 13 MEM-only clusters, Farrington was
+silent. Nothing else in the system produces that signal.
+
+What survives the caveat is narrower and still real: under an assessment
+queue whose unit is "a possible outbreak to investigate", MEM contributes
+about one dossier per seasonal pathogen per year that is not one, and an
+epidemiologist opening it would classify it `expected_variation`. Whether
+a seasonal onset should be a cluster at all, or a distinct class of signal
+with its own place in the app, is issue #50. It is deliberately left open
+rather than settled by moving a threshold.
 
 ### 4.5 Does the priority score rank the real ones first?
 
@@ -450,14 +465,30 @@ therefore **untested by this study**, and its absence from the results
 should not be read as evidence that it works. It is a gap in the
 generator, and it is recorded on issue #46.
 
-### 5.4 The matching rule is a choice
+### 5.4 The ground truth contains only outbreaks
+
+The six injected events are all outbreaks in the ordinary sense: a rise
+above what is expected, at a place or across a region. The truth table
+contains no *seasonal epidemic onset*, even though the generator produces
+seasonal baselines for eight pathogens across four years and an
+epidemiologist would certainly call the start of the influenza season a
+reportable moment.
+
+Any detector whose job is to identify that moment is therefore scored
+against a ground truth that does not contain it, and every signal it
+raises is a false alarm by definition. This is exactly what happened to
+MEM (§4.4), and it is why that result is presented with a caveat rather
+than as a verdict. The same caution applies to any future detector aimed
+at something the generator does not label.
+
+### 5.5 The matching rule is a choice
 
 `min_recall` and `min_precision` at 0.5 are defensible and arbitrary. The
 threshold sweep (§4.6) exists so that a reader can see how much the
 headline moves; it moves, and the direction is what you would expect.
 Anyone quoting a single number should quote the threshold with it.
 
-### 5.5 The version measured is the version this harness fixed
+### 5.6 The version measured is the version this harness fixed
 
 Building the harness uncovered defects that were fixed before the study
 ran. The most consequential: the geography was resolved from two places
@@ -471,7 +502,7 @@ earlier version**. Anyone comparing against an older deployment is
 comparing against different software. The defects and their fixes are in
 `NEWS.md` and in pull request #49.
 
-### 5.6 Detection is not assessment
+### 5.7 Detection is not assessment
 
 The harness measures which clusters were raised, not what an
 epidemiologist did with them. The priority-score discrimination in §4.5 is
