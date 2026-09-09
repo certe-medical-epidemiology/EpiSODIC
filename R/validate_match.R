@@ -206,10 +206,11 @@ episodic_validation_overlap <- function(cluster_cases, truth_cases) {
 #'   `source_key`, `sample_date`.
 #' @param run_dates Every run date in the replay, in order.
 #' @param min_recall,min_precision The matching thresholds.
-#' @param cluster_opened The run each cluster first appeared in, as a
-#'   `Date` vector named by `cluster_id`. `NULL` leaves `opened_run` and
-#'   `delay_from_open` `NA`, which is what a caller with no cluster table
-#'   in hand gets - not a zero, and not the first run date.
+#' @param clusters The per-cluster table, for the two things about the
+#'   matched cluster that belong on the outbreak's own row: when it was
+#'   first raised (`opened_run`) and what raised it (`first_detector`).
+#'   `NULL` leaves both `NA`, which is what a caller with no cluster
+#'   table in hand gets - not a zero, and not the first run date.
 #' @return A data frame with one row per outbreak in `truth`.
 #' @keywords internal
 #' @noRd
@@ -219,7 +220,7 @@ episodic_validation_outbreak_rows <- function(overlap,
                                               run_dates,
                                               min_recall = 0.5,
                                               min_precision = 0.5,
-                                              cluster_opened = NULL) {
+                                              clusters = NULL) {
   run_dates <- sort(as.Date(run_dates))
   if (length(run_dates) == 0) {
     stop(
@@ -277,10 +278,20 @@ episodic_validation_outbreak_rows <- function(overlap,
     } else {
       sum(own_dates > detected_run)
     }
-    opened_run <- if (is.na(cluster_id) || is.null(cluster_opened)) {
+    matched <- if (is.na(cluster_id) || is.null(clusters)) {
+      NULL
+    } else {
+      clusters[clusters$cluster_id == cluster_id, , drop = FALSE]
+    }
+    opened_run <- if (is.null(matched) || nrow(matched) != 1) {
       as.Date(NA)
     } else {
-      as.Date(unname(cluster_opened[as.character(cluster_id)]))
+      as.Date(matched$opened_run[1])
+    }
+    first_detector <- if (is.null(matched) || nrow(matched) != 1) {
+      NA_character_
+    } else {
+      matched$first_detector[1]
     }
     data.frame(
       outbreak_id = id,
@@ -304,6 +315,7 @@ episodic_validation_outbreak_rows <- function(overlap,
       recall_full = if (is.null(best)) NA_real_ else best$recall_full,
       precision = if (is.null(best)) NA_real_ else best$precision,
       opened_run = opened_run,
+      first_detector = first_detector,
       detected_run = detected_run,
       captured_run = captured_run,
       delay_from_open = as.numeric(opened_run - ob$first_day),
@@ -383,6 +395,7 @@ episodic_validation_outbreak_rows_empty <- function() {
     recall_full = numeric(0),
     precision = numeric(0),
     opened_run = as.Date(character(0)),
+    first_detector = character(0),
     detected_run = as.Date(character(0)),
     captured_run = as.Date(character(0)),
     delay_from_open = numeric(0),

@@ -409,10 +409,7 @@ episodic_validation_replicate <- function(seed,
     run_dates,
     min_recall = min_recall,
     min_precision = min_precision,
-    cluster_opened = stats::setNames(
-      clusters$opened_run,
-      as.character(clusters$cluster_id)
-    )
+    clusters = clusters
   )
 
   # How many clusters each run put in front of an epidemiologist, before

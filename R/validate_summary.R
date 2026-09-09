@@ -195,6 +195,29 @@ episodic_validation_summarise <- function(outbreaks, clusters, runs) {
     unit = "clusters"
   ))
 
+  # Which channel found each shape. Not the same question as PPV per
+  # detector, and not answerable by it: this is what actually got there
+  # first for an outbreak that is known to be real, per seed, so a
+  # detector that wins in half the realisations is visible as half.
+  detected_outbreaks <- outbreaks[outbreaks$detected, , drop = FALSE]
+  for (id in sort(unique(detected_outbreaks$outbreak_id))) {
+    mine <- detected_outbreaks[
+      detected_outbreaks$outbreak_id == id, ,
+      drop = FALSE
+    ]
+    for (detector in episodic_validation_detector_groups(mine$first_detector)) {
+      add(episodic_validation_proportion_row(
+        "found_first_by",
+        "outbreak_shape",
+        paste(id, detector, sep = ": "),
+        per_seed(mine, function(d) {
+          sum(!is.na(d$first_detector) & d$first_detector == detector)
+        }),
+        per_seed(mine, function(d) sum(!is.na(d$first_detector)))
+      ))
+    }
+  }
+
   # ------------------------------------------------------------------
   # 2. Timeliness
   # Three delays, because the day something first appeared on the board,

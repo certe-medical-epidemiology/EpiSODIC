@@ -281,10 +281,7 @@ episodic_validation_comparator_replicate <- function(method,
     run_dates,
     min_recall = min_recall,
     min_precision = min_precision,
-    cluster_opened = stats::setNames(
-      clusters$opened_run,
-      as.character(clusters$cluster_id)
-    )
+    clusters = clusters
   )
 
   new_at <- function(d) {

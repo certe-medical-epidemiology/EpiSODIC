@@ -158,10 +158,12 @@ test_that("an outbreak is detected when a cluster holds enough of it", {
   expect_equal(rows$delay_from_first, 4)
   expect_equal(rows$n_cases_remaining, 2L)
   expect_equal(rows$share_remaining, 0.5)
-  # No cluster table was passed, so when the cluster first appeared is
-  # not known here. NA, not the first run date.
+  # No cluster table was passed, so when the cluster first appeared and
+  # what raised it are not known here. NA, not the first run date and not
+  # an empty string.
   expect_true(is.na(rows$opened_run))
   expect_true(is.na(rows$delay_from_open))
+  expect_true(is.na(rows$first_detector))
 })
 
 test_that("the delay is also measured from when the cluster first appeared", {
@@ -191,11 +193,17 @@ test_that("the delay is also measured from when the cluster first appeared", {
     truth_cases[truth_cases$outbreak_id == "A", ],
     as.Date(c("2025-01-05", "2025-01-12")),
     min_recall = 0.5,
-    cluster_opened = stats::setNames(as.Date("2025-01-05"), "1")
+    clusters = data.frame(
+      cluster_id = 1L,
+      opened_run = as.Date("2025-01-05"),
+      first_detector = "farrington",
+      stringsAsFactors = FALSE
+    )
   )
 
   expect_equal(rows$opened_run, as.Date("2025-01-05"))
   expect_equal(rows$delay_from_open, 4)
+  expect_equal(rows$first_detector, "farrington")
   # Something was on the board four days in; it was not mostly this
   # outbreak until eleven. Both are true, and they are what the two
   # columns are for.
