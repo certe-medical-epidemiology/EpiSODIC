@@ -745,6 +745,7 @@ episodic_run_cron_body <- function(con,
 
   episodic_trace("Enumerating lattice streams")
   episodic_lattice_enumerate(con, cases_all, institutions, config)
+  geography <- episodic_geography_config(config)
 
   n_detections_total <- 0L
   n_new_total <- 0L
@@ -808,7 +809,7 @@ episodic_run_cron_body <- function(con,
 
   for (i in seq_len(nrow(streams))) {
     stream <- streams[i, ]
-    stream_cases <- episodic_cases_for_stream(cases_all, stream)
+    stream_cases <- episodic_cases_for_stream(cases_all, stream, geography)
     episodic_trace_debug(
       debug,
       "debug: [",
@@ -1048,6 +1049,7 @@ episodic_run_cron_body <- function(con,
       min_excess_over_upperbound = min_excess,
       min_ratio_observed_expected = min_ratio,
       stale_open_days = config$reconciliation$stale_open_days %||% NA,
+      geography = geography,
       # `run_date` is documented as "the date to treat as today" and every
       # other phase of the run honours it; reconciliation did not, so a
       # backfill or a replay judged staleness against the wall clock
@@ -1199,10 +1201,17 @@ episodic_run_cron_body <- function(con,
 #'
 #' @param cases All currently known cases.
 #' @param stream A single-row stream (from `episodic_db_streams()`).
+#' @param geography This run's own resolved geography, from
+#'   `episodic_geography_config(config)`. Not left to default inside the
+#'   loop: the default resolves `EPISODIC_CONFIG` afresh, and a run given
+#'   a different configuration then filtered its geographic streams
+#'   against a region code no stream in the database carries.
 #' @return The subset of `cases` belonging to `stream`.
 #' @keywords internal
 #' @noRd
-episodic_cases_for_stream <- function(cases, stream) {
+episodic_cases_for_stream <- function(cases,
+                                      stream,
+                                      geography = episodic_geography_config()) {
   matches <- cases$pathogen == stream$pathogen
   if (!is.na(stream$institution_id)) {
     matches <- matches &
@@ -1217,7 +1226,11 @@ episodic_cases_for_stream <- function(cases, stream) {
   # the region's counts under the area's name - one signal, and a cluster
   # per area to go with it.
   if (!is.na(stream$region_code)) {
-    region <- episodic_case_region_code(cases, stream$level)
+    region <- episodic_case_region_code(
+      cases,
+      stream$level,
+      geography = geography
+    )
     matches <- matches & !is.na(region) & region == stream$region_code
   }
   cases[matches, ]

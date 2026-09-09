@@ -88,10 +88,23 @@ episodic_lattice_enumerate <- function(con,
     )
   }
 
+  # Resolved once, from the configuration this run was given, and handed
+  # to every level. Left to its own default, `episodic_case_region_code()`
+  # resolves the geography from EPISODIC_CONFIG instead - so a run passed
+  # `episodic_config_path` pointing anywhere else named its L3 areas from
+  # one configuration and its L5 catchment from another, and then filtered
+  # cases against a third. Nothing said so: the geographic streams simply
+  # matched no case and the statistical detectors had nothing to run on.
+  geography <- episodic_geography_config(config)
+
   # L3: pathogen x gebied (coarse PC grouping: first 2 digits)
   l3 <- cases[!is.na(cases$pc), ]
   if (nrow(l3) > 0) {
-    l3$.region_code <- episodic_case_region_code(l3, "pathogen_area")
+    l3$.region_code <- episodic_case_region_code(
+      l3,
+      "pathogen_area",
+      geography = geography
+    )
     touched$l3 <- episodic_lattice_upsert_group(
       con,
       l3,
@@ -105,7 +118,11 @@ episodic_lattice_enumerate <- function(con,
   # L4: pathogen x provincie
   l4 <- cases[!is.na(cases$pc), ]
   if (nrow(l4) > 0) {
-    l4$.region_code <- episodic_case_region_code(l4, "pathogen_province")
+    l4$.region_code <- episodic_case_region_code(
+      l4,
+      "pathogen_province",
+      geography = geography
+    )
     # A mapping that places no case at all is not a mapping: it is a
     # postcode column formatted one way being looked up against
     # postcodes formatted another ("9713" against "9713 AB", say). The
@@ -157,7 +174,7 @@ episodic_lattice_enumerate <- function(con,
 
   # L5: pathogen x regio (whole catchment)
   l5 <- cases
-  l5$.region_code <- episodic_geography_config(config)$region_code
+  l5$.region_code <- geography$region_code
   touched$l5 <- episodic_lattice_upsert_group(
     con,
     l5,
