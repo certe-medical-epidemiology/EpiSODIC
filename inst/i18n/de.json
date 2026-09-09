@@ -198,6 +198,8 @@
   "misc.language.hi": "Hindi",
   "misc.language.zh": "Chinesisch",
   "misc.language.es": "Spanisch",
+  "misc.language.en-US": "Amerikanisches Englisch",
+  "misc.language.es-419": "Lateinamerikanisches Spanisch",
   "misc.close": "Schließen",
   "misc.dash": "—",
 
@@ -225,6 +227,10 @@
   "date.month_full.10": "Oktober",
   "date.month_full.11": "November",
   "date.month_full.12": "Dezember",
+  "date.format.single": "{day}. {month} {year}",
+  "date.format.range_month": "{day_from}.-{day_to}. {month} {year}",
+  "date.format.range_year": "{day_from}. {month_from} - {day_to}. {month_to} {year}",
+  "date.format.range_full": "{day_from}. {month_from} {year_from} - {day_to}. {month_to} {year_to}",
 
   "interpretation.fragment.magnitude.rare_trigger": "{obs_phrase} innerhalb dieses Clusters gemeldet. Für diesen Erreger gilt keine statistische Signalschwelle: Die Erkennung stammt aus der kuratierten Trigger-Liste, die jeden gemeldeten Fall unabhängig von der Basislinie erfasst.",
   "interpretation.fragment.magnitude.high_ratio": "{obs_phrase} gegenüber einer Erwartung von {expected}: ein Verhältnis von {ratio}.",

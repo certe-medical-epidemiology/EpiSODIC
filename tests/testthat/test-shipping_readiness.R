@@ -70,13 +70,17 @@ test_that("an unsupported EPISODIC_LANGUAGE falls back to English instead of cra
   # a locale-shaped value is a reasonable thing for an operator to set.
   expect_warning(resolved <- episodic_lang("pt"), "no translations")
   expect_equal(resolved, "en")
-  expect_warning(resolved <- episodic_lang("en_GB"), "no translations")
-  expect_equal(resolved, "en")
   # Warned once per value per session, not on every render.
   expect_silent(episodic_lang("pt"))
   expect_equal(episodic_lang(""), "en")
   expect_equal(episodic_lang(NA), "en")
   expect_equal(episodic_lang("nl"), "nl")
+
+  # `en_GB` used to land here too, and was answered in English by way of
+  # a warning that its language did not exist. It is British English
+  # written out, which is what `en` is.
+  expect_silent(resolved <- episodic_lang("en_GB"))
+  expect_equal(resolved, "en")
 })
 
 test_that("every shipped language has a file, and Arabic is right to left", {

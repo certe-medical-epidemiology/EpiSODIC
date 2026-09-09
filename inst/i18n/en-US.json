@@ -1,0 +1,9 @@
+{
+  "misc.language.en": "British English",
+  "info.about.license": "License: {license}",
+  "interpretation.fragment.demography.shifted": "The age distribution has shifted toward the {dominant_band} group, against a baseline of {baseline_band}.",
+  "date.format.single": "{month} {day}, {year}",
+  "date.format.range_month": "{month} {day_from}-{day_to}, {year}",
+  "date.format.range_year": "{month_from} {day_from} - {month_to} {day_to}, {year}",
+  "date.format.range_full": "{month_from} {day_from}, {year_from} - {month_to} {day_to}, {year_to}"
+}

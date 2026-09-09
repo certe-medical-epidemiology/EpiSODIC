@@ -56,7 +56,8 @@
 #'   Defaults to `config$report$small_count_threshold`.
 #' @param episodic_config_path The config path.
 #' @param lang Report language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
-#'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   `"hi"`, `"zh"`, or `"es"`, or a regional variant of
+#'   one (`"en-US"`, `"es-419"`). Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
 #' @param qmd_path Path to the Quarto template to render. Defaults to the
 #'   `EPISODIC_QUARTO_REPORT` environment variable, falling back to the

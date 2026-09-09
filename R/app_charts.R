@@ -312,7 +312,8 @@ episodic_chart_week_scale <- function(week_starts,
 #'   reduced opacity as a visual reminder not to over-interpret a downturn
 #'   that is really just a reporting lag).
 #' @param lang Language for axis labels: `"en"`, `"ar"`, `"nl"`, `"fr"`,
-#'   `"de"`, `"hi"`, `"zh"`, or `"es"`. Defaults to the
+#'   `"de"`, `"hi"`, `"zh"`, or `"es"`, or a regional variant of
+#'   one (`"en-US"`, `"es-419"`). Defaults to the
 #'   `EPISODIC_LANGUAGE` environment variable, falling back to `"en"` if
 #'   that is unset.
 #' @return A [ggplot2::ggplot] object.

@@ -21,6 +21,8 @@ The dashboard and reports are available in English, Arabic, Dutch, French, Germa
 
 Numbers are part of that. Every number a reader sees goes through `episodic_format_number()`, which takes its decimal mark, thousands mark, group sizes and minimum grouping from four `misc.decimal.mark`/`misc.thousands.*` keys per language - never from `options(OutDec)` or the system locale, which are properties of whoever started R rather than of the instance. Hindi groups by the Indian lakh/crore rule and Spanish leaves four-digit numbers unseparated because those keys say so, not because anything branches on a language code. A `format(x, big.mark = ",")` reaching a screen is a bug; `episodic_css_pct()` is the one deliberate exception, and it formats a machine-read CSS value rather than a number anyone reads. Identifiers are not quantities: a cluster id, a page number, a schema version or a report version is rendered as-is, never grouped.
 
+Regional variants are files of their own that carry **only what differs** from the language they belong to (`episodic_language_variants`): `en-US.json` is a spelling, a date order and a name; `es-419.json` is two number marks and a name. Everything else is inherited by `episodic_i18n_load()`. They are deliberately not copies - `en` and `en-US` differ in three keys out of six hundred and seventy-nine, and two copies would have to be kept in step for ever. `en` *is* British English and `es` *is* Spain's Spanish, so `en-GB`/`es-ES` are aliases of those files rather than variants of them, and a region that is not shipped (`nl-BE`) resolves to its language rather than to English. `episodic_lang()` resolves a code, `episodic_lang_base()` gives the language a variant belongs to (which is what decides RTL and month names), and the four `date.format.*` keys per language are why a date reads "7 January 2025" in British English, "January 7, 2025" in American, "7. Januar 2025" in German and "2025年1月7日" in Chinese.
+
 The languages themselves have names, in `misc.language.<code>`, one set per file in that file's own language. A message that would otherwise print `nl` at a human says "Dutch" in English and "Nederlands" in Dutch; where the reader has to *type* the code (`EPISODIC_LANGUAGE`), both are given - see `episodic_language_label()` and `episodic_language_choices()`.
 
 ## Architecture
@@ -325,7 +327,7 @@ Yet, `_pkgdown.yml` groups every exported topic into a section. When adding a ne
 | `EPISODIC_DB` | Database path (SQLite) or DSN (MariaDB) |
 | `EPISODIC_CONFIG` | Instance detection + notification config YAML |
 | `EPISODIC_STYLE` | Instance colour palette YAML |
-| `EPISODIC_LANGUAGE` | Dashboard/report language (en, ar, nl, fr, de, hi, zh, es) |
+| `EPISODIC_LANGUAGE` | Dashboard/report language (en, ar, nl, fr, de, hi, zh, es, or a regional variant: en-US, es-419) |
 | `EPISODIC_GEO_DATA` | Geographic reference data (.rds, sf object) |
 | `EPISODIC_GEO_DATA_OVERLAY` | Optional region-outline overlay (.rds) |
 | `EPISODIC_PC_PROVINCE_MAP` | Postcode-to-province CSV mapping |

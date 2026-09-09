@@ -34,7 +34,8 @@
 #'   `EPISODIC_DB` environment variable.
 #' @param lang Dashboard language, fixed for the whole running app - there
 #'   is no in-app language switcher. One of `"en"`, `"ar"`, `"nl"`, `"fr"`,
-#'   `"de"`, `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   `"de"`, `"hi"`, `"zh"`, or `"es"`, or a regional variant of
+#'   one (`"en-US"`, `"es-419"`). Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
 #' @param ... Passed on to [shiny::runApp()], e.g. `port` or `host`.
 #' @return Invisible; called for its side effect of starting the app. This

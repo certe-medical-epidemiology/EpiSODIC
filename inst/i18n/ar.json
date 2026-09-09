@@ -198,6 +198,8 @@
   "misc.language.hi": "الهندية",
   "misc.language.zh": "الصينية",
   "misc.language.es": "الإسبانية",
+  "misc.language.en-US": "الإنجليزية الأمريكية",
+  "misc.language.es-419": "الإسبانية في أمريكا اللاتينية",
   "misc.close": "إغلاق",
   "misc.dash": "—",
 
@@ -225,6 +227,10 @@
   "date.month_full.10": "أكتوبر",
   "date.month_full.11": "نوفمبر",
   "date.month_full.12": "ديسمبر",
+  "date.format.single": "{day} {month} {year}",
+  "date.format.range_month": "{day_from}-{day_to} {month} {year}",
+  "date.format.range_year": "{day_from} {month_from} - {day_to} {month_to} {year}",
+  "date.format.range_full": "{day_from} {month_from} {year_from} - {day_to} {month_to} {year_to}",
 
   "interpretation.fragment.magnitude.rare_trigger": "أُبلغ عن {obs_phrase} ضمن هذا التجمع. لا تنطبق أي عتبة إشارة إحصائية على هذا العامل الممرض: الكشف يستند إلى قائمة محفزات منتقاة تلتقط كل حالة مُبلَّغ عنها بغض النظر عن خط الأساس.",
   "interpretation.fragment.magnitude.high_ratio": "{obs_phrase} مقابل توقُّع قدره {expected}: بنسبة {ratio}.",

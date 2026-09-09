@@ -200,6 +200,8 @@
   "misc.language.hi": "Hindi",
   "misc.language.zh": "Chinese",
   "misc.language.es": "Spanish",
+  "misc.language.en-US": "US English",
+  "misc.language.es-419": "Latin American Spanish",
   "misc.close": "Close",
   "misc.dash": "—",
 
@@ -227,6 +229,10 @@
   "date.month_full.10": "October",
   "date.month_full.11": "November",
   "date.month_full.12": "December",
+  "date.format.single": "{day} {month} {year}",
+  "date.format.range_month": "{day_from}-{day_to} {month} {year}",
+  "date.format.range_year": "{day_from} {month_from} - {day_to} {month_to} {year}",
+  "date.format.range_full": "{day_from} {month_from} {year_from} - {day_to} {month_to} {year_to}",
 
   "interpretation.fragment.magnitude.rare_trigger": "{obs_phrase} reported within this cluster. No statistical signal threshold applies to this pathogen: detection comes from the curated trigger list, which picks up every reported case regardless of baseline.",
   "interpretation.fragment.magnitude.high_ratio": "{obs_phrase} against an expectation of {expected}: a ratio of {ratio}.",
@@ -453,7 +459,7 @@
   "info.title": "Info",
   "info.intro": "Background on EpiSODIC's detection algorithms, cluster states and access model.",
   "info.about.website": "Website",
-  "info.about.license": "License: {license}",
+  "info.about.license": "Licence: {license}",
   "info.algorithms.title": "Detection algorithms",
   "info.algorithms.note": "A cluster can be detected by more than one algorithm at once; see \"detected by\" on the dossier.",
   "info.algorithms.col.name": "Name",

@@ -198,6 +198,8 @@
   "misc.language.hi": "hindi",
   "misc.language.zh": "chino",
   "misc.language.es": "español",
+  "misc.language.en-US": "inglés estadounidense",
+  "misc.language.es-419": "español de América Latina",
   "misc.close": "Cerrar",
   "misc.dash": "—",
 
@@ -225,6 +227,10 @@
   "date.month_full.10": "octubre",
   "date.month_full.11": "noviembre",
   "date.month_full.12": "diciembre",
+  "date.format.single": "{day} de {month} de {year}",
+  "date.format.range_month": "{day_from}-{day_to} de {month} de {year}",
+  "date.format.range_year": "{day_from} de {month_from} - {day_to} de {month_to} de {year}",
+  "date.format.range_full": "{day_from} de {month_from} de {year_from} - {day_to} de {month_to} de {year_to}",
 
   "interpretation.fragment.magnitude.rare_trigger": "{obs_phrase} notificados en este clúster. No se aplica ningún umbral de señal estadístico a este patógeno: la detección procede de la lista de activadores curada, que recoge cada caso notificado sin importar la línea base.",
   "interpretation.fragment.magnitude.high_ratio": "{obs_phrase} frente a una expectativa de {expected}: una razón de {ratio}.",

@@ -26,7 +26,8 @@
 #' injected as CSS custom properties.
 #'
 #' @param lang Session language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
-#'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   `"hi"`, `"zh"`, or `"es"`, or a regional variant of
+#'   one (`"en-US"`, `"es-419"`). Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
 #' @return The page returned by [bslib::page_fluid()].
 #' @keywords internal

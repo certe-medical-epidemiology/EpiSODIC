@@ -198,6 +198,8 @@
   "misc.language.hi": "印地语",
   "misc.language.zh": "中文",
   "misc.language.es": "西班牙语",
+  "misc.language.en-US": "美式英语",
+  "misc.language.es-419": "拉丁美洲西班牙语",
   "misc.close": "关闭",
   "misc.dash": "—",
 
@@ -225,6 +227,10 @@
   "date.month_full.10": "10月",
   "date.month_full.11": "11月",
   "date.month_full.12": "12月",
+  "date.format.single": "{year}年{month}{day}日",
+  "date.format.range_month": "{year}年{month}{day_from}日至{day_to}日",
+  "date.format.range_year": "{year}年{month_from}{day_from}日至{month_to}{day_to}日",
+  "date.format.range_full": "{year_from}年{month_from}{day_from}日至{year_to}年{month_to}{day_to}日",
 
   "interpretation.fragment.magnitude.rare_trigger": "该聚集事件已报告 {obs_phrase}。此病原体不适用统计信号阈值：检出依据的是精选触发清单，无论基线如何，每例报告病例都会被纳入。",
   "interpretation.fragment.magnitude.high_ratio": "{obs_phrase}，预期值为 {expected}，比率为 {ratio}。",

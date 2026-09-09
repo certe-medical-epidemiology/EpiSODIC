@@ -73,7 +73,8 @@ episodic_app_package_meta <- function() {
 #' @param current_user The session's signed-in user row, or `NULL`. Only
 #'   the reference-data panel's resolved file paths are gated on it.
 #' @param lang Session language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
-#'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   `"hi"`, `"zh"`, or `"es"`, or a regional variant of
+#'   one (`"en-US"`, `"es-419"`). Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
 #' @return A `shiny::tags$div`.
 #' @keywords internal

@@ -348,7 +348,8 @@ episodic_interpretation_slots <- c(
 #'
 #' @param cluster A cluster object, see `episodic_cluster_object()`.
 #' @param lang Session language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
-#'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   `"hi"`, `"zh"`, or `"es"`, or a regional variant of
+#'   one (`"en-US"`, `"es-419"`). Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
 #' @param instance_i18n Optional operator overrides, passed to `episodic_tr()`.
 #' @return A list with `text` (a character vector, one string per slot that

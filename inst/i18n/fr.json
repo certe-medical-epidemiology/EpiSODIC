@@ -198,6 +198,8 @@
   "misc.language.hi": "hindi",
   "misc.language.zh": "chinois",
   "misc.language.es": "espagnol",
+  "misc.language.en-US": "anglais américain",
+  "misc.language.es-419": "espagnol d'Amérique latine",
   "misc.close": "Fermer",
   "misc.dash": "—",
 
@@ -225,6 +227,10 @@
   "date.month_full.10": "octobre",
   "date.month_full.11": "novembre",
   "date.month_full.12": "décembre",
+  "date.format.single": "{day} {month} {year}",
+  "date.format.range_month": "{day_from}-{day_to} {month} {year}",
+  "date.format.range_year": "{day_from} {month_from} - {day_to} {month_to} {year}",
+  "date.format.range_full": "{day_from} {month_from} {year_from} - {day_to} {month_to} {year_to}",
 
   "interpretation.fragment.magnitude.rare_trigger": "{obs_phrase} signalés au sein de ce cluster. Aucun seuil de signal statistique ne s'applique à ce pathogène : la détection provient de la liste de déclencheurs sélectionnée, qui relève chaque cas signalé quelle que soit la référence.",
   "interpretation.fragment.magnitude.high_ratio": "{obs_phrase} contre une attente de {expected} : un ratio de {ratio}.",

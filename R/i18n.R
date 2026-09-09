@@ -32,8 +32,19 @@ episodic_i18n_cache <- new.env(parent = emptyenv())
 
 #' Load one language's flat translation table
 #'
-#' @param lang A language code: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
-#'   `"hi"`, `"zh"`, or `"es"`.
+#' A regional variant (`episodic_language_variants`) carries only the
+#' keys that differ from the language it belongs to, so loading one is
+#' its base's table with the variant's own keys written over the top.
+#' That is the whole reason variants are cheap: `en-US` says "License"
+#' and writes its dates month-first, and inherits everything else rather
+#' than copying it, where a copy would have to be kept in step with
+#' every key added to `en.json` for ever.
+#'
+#' A variant key that its base does not have would be inherited by
+#' nothing and read by nobody. `test-i18n.R` refuses one; this does not
+#' check again per load.
+#'
+#' @param lang A language code, already resolved by `episodic_lang()`.
 #' @return A named character vector (dotted key -> template string).
 #' @keywords internal
 #' @noRd
@@ -43,6 +54,23 @@ episodic_i18n_load <- function(lang) {
     return(cached)
   }
 
+  flat <- episodic_i18n_read(lang)
+  base <- episodic_language_variants[[lang]]
+  if (!is.null(base)) {
+    inherited <- episodic_i18n_load(base)
+    inherited[names(flat)] <- unname(flat)
+    flat <- inherited
+  }
+  episodic_i18n_cache[[lang]] <- flat
+  flat
+}
+
+#' Read one `inst/i18n/<lang>.json` file, without inheritance
+#' @param lang A language code.
+#' @return A named character vector.
+#' @keywords internal
+#' @noRd
+episodic_i18n_read <- function(lang) {
   path <- system.file("i18n", paste0(lang, ".json"), package = "EpiSODIC")
   if (identical(path, "")) {
     path <- file.path("inst", "i18n", paste0(lang, ".json"))
@@ -50,19 +78,58 @@ episodic_i18n_load <- function(lang) {
   if (!file.exists(path)) {
     stop("No i18n file for language '", lang, "' at ", path, call. = FALSE)
   }
-
-  raw <- jsonlite::fromJSON(path)
-  flat <- unlist(raw)
-  episodic_i18n_cache[[lang]] <- flat
-  flat
+  unlist(jsonlite::fromJSON(path))
 }
 
 #' The languages EpiSODIC ships translations for
+#'
+#' One complete file each, in `inst/i18n/`. `en` is British English and
+#' `es` is Spain's Spanish; their other regions are variants of these,
+#' not files of their own - see `episodic_language_variants`.
 #' @keywords internal
 #' @noRd
 episodic_languages <- c("en", "ar", "nl", "fr", "de", "hi", "zh", "es")
 
+#' Regional variants, and the language each one is a variant of
+#'
+#' A variant is a file holding *only* what differs from its base:
+#' `en-US.json` is a spelling, a date order and a name, and `es-419.json`
+#' is the number marks Latin America writes and a name. Everything else
+#' is inherited (`episodic_i18n_load()`).
+#'
+#' Deliberately not a copy of the base file: `en-US.json` is seven keys
+#' where `en.json` is six hundred and eighty-five. Kept as copies, every
+#' key added to one would have to be added to the other for ever, and
+#' the day somebody forgot, the variant would quietly serve stale
+#' wording rather than the missing key's own loud `[[key]]`.
+#' @keywords internal
+#' @noRd
+episodic_language_variants <- c("en-US" = "en", "es-419" = "es")
+
+#' Locale codes that name a shipped language exactly
+#'
+#' `en` *is* British English and `es` *is* Spain's Spanish, so `en-GB`
+#' and `es-ES` are those files rather than variants of them. Accepted
+#' rather than refused: an operator who writes the region out has said
+#' precisely what they meant, and being told their language is not
+#' shipped would be both wrong and unhelpful.
+#' @keywords internal
+#' @noRd
+episodic_language_aliases <- c("en-GB" = "en", "es-ES" = "es")
+
+#' Every code that has a translation table behind it
+#' @return A character vector of language and variant codes.
+#' @keywords internal
+#' @noRd
+episodic_languages_all <- function() {
+  c(episodic_languages, names(episodic_language_variants))
+}
+
 #' Languages written right to left
+#'
+#' Bases, not variants: a variant of a right-to-left language is
+#' right-to-left too, which `episodic_lang_is_rtl()` gets by resolving to
+#' the base first.
 #' @keywords internal
 #' @noRd
 episodic_languages_rtl <- c("ar")
@@ -80,13 +147,23 @@ episodic_lang_warned <- new.env(parent = emptyenv())
 #' empty) variable means English - the same fallback `episodic_tr()`
 #' applies to a key it cannot find in the requested language.
 #'
-#' A value that is set but is not one EpiSODIC ships also means English,
-#' with a warning, once per session per value. It used to mean a hard
-#' error from `episodic_i18n_load()` on *every* render, which took the
-#' whole dashboard down: `EPISODIC_LANGUAGE=pt` is a reasonable thing for
-#' an operator to try, and so is the locale-shaped `en_GB` or `nl_NL`,
-#' and none of them is a reason to serve a stack trace instead of a
-#' surveillance dashboard.
+#' What a value can be, in the order it is tried:
+#'
+#' \describe{
+#'   \item{a shipped language or variant}{`nl`, `en-US`, `es-419`.}
+#'   \item{a locale naming one exactly}{`en-GB` and `es-ES` are `en`
+#'     and `es` - see `episodic_language_aliases`.}
+#'   \item{a region of a shipped language that is not itself shipped}{
+#'     `nl-BE`, `es-MX`: the language, with a warning saying so once.
+#'     `EPISODIC_LANGUAGE=nl_NL` is a reasonable thing for an operator to
+#'     write, and answering it in English (which is what this did) was
+#'     never right.}
+#'   \item{anything else}{English, with a warning, once per value.}
+#' }
+#'
+#' Case and separator do not matter (`en_us`, `EN-US`); a hard error from
+#' `episodic_i18n_load()` on *every* render, which is what an unshipped
+#' value used to mean, took the whole dashboard down for a typo.
 #'
 #' Anything that *branches* on the language rather than looking a key up
 #' has to resolve it first, or an unset variable would read as "not
@@ -95,18 +172,52 @@ episodic_lang_warned <- new.env(parent = emptyenv())
 #' that; it is a key lookup now - see `episodic_format_number()`.)
 #'
 #' @param lang A language code, or `""`/`NA` for "not set".
-#' @return A single language code, always one of `episodic_languages`.
+#' @return A single code, always one of `episodic_languages_all()`.
 #' @keywords internal
 #' @noRd
 episodic_lang <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (length(lang) != 1 || is.na(lang) || !nzchar(lang)) {
     return("en")
   }
-  if (lang %in% episodic_languages) {
-    return(lang)
+  code <- episodic_lang_normalise(lang)
+  if (code %in% episodic_languages_all()) {
+    return(code)
   }
-  if (is.null(episodic_lang_warned[[lang]])) {
-    episodic_lang_warned[[lang]] <- TRUE
+  if (code %in% names(episodic_language_aliases)) {
+    return(unname(episodic_language_aliases[[code]]))
+  }
+
+  base <- strsplit(code, "-", fixed = TRUE)[[1]][1]
+  if (base %in% episodic_languages) {
+    if (is.null(episodic_lang_warned[[code]])) {
+      episodic_lang_warned[[code]] <- TRUE
+      warning(
+        "EpiSODIC ships no '",
+        code,
+        "' translations, so '",
+        base,
+        "' (",
+        episodic_language_label(base, lang = "en"),
+        ") is used instead - which is that language as it is written ",
+        "where the base file was written, and may not be the regional ",
+        "convention you meant. The variants that do exist: ",
+        paste(
+          episodic_language_choices(lang = "en", variants_only = TRUE),
+          collapse = ", "
+        ),
+        ".",
+        call. = FALSE
+      )
+    }
+    return(base)
+  }
+
+  # Keyed on the normalised code where there is one: `EPISODIC_LANGUAGE=-`
+  # normalises to nothing at all, and an environment has no such name to
+  # remember it by.
+  warned_as <- if (nzchar(code)) code else lang
+  if (is.null(episodic_lang_warned[[warned_as]])) {
+    episodic_lang_warned[[warned_as]] <- TRUE
     warning(
       "EpiSODIC has no translations for language '",
       lang,
@@ -120,6 +231,52 @@ episodic_lang <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     )
   }
   "en"
+}
+
+#' A language code in the one shape everything else here compares against
+#'
+#' `en_us`, `EN-US` and `en-US` are the same request. The language
+#' subtag is lowercased and an alphabetic region uppercased, which is
+#' the BCP 47 convention; a numeric region (`419`, Latin America) is
+#' left as it is, having no case to speak of.
+#'
+#' @param lang A language code as an operator wrote it.
+#' @return A single normalised code.
+#' @keywords internal
+#' @noRd
+episodic_lang_normalise <- function(lang) {
+  parts <- strsplit(gsub("_", "-", lang, fixed = TRUE), "-", fixed = TRUE)[[1]]
+  parts <- parts[nzchar(parts)]
+  if (length(parts) == 0) {
+    return("")
+  }
+  code <- tolower(parts[1])
+  if (length(parts) >= 2) {
+    region <- parts[2]
+    code <- paste0(
+      code,
+      "-",
+      if (grepl("^[0-9]+$", region)) region else toupper(region)
+    )
+  }
+  code
+}
+
+#' The shipped language a code renders in, variants resolved to their base
+#'
+#' For everything that is a property of the language rather than of the
+#' region: which way it reads, which month names it has. `en-US` is
+#' `en` here; `en-US` is still `en-US` to `episodic_lang()`, which is
+#' what the HTML `lang` attribute and the translation table want.
+#'
+#' @inheritParams episodic_lang
+#' @return A single code, always one of `episodic_languages`.
+#' @keywords internal
+#' @noRd
+episodic_lang_base <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  resolved <- episodic_lang(lang)
+  base <- episodic_language_variants[[resolved]]
+  if (is.null(base)) resolved else base
 }
 
 #' What a language is called, rather than what its code is
@@ -137,7 +294,7 @@ episodic_lang <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @noRd
 episodic_language_label <- function(code,
                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  if (length(code) != 1 || is.na(code) || !code %in% episodic_languages) {
+  if (length(code) != 1 || is.na(code) || !code %in% episodic_languages_all()) {
     return(as.character(code))
   }
   episodic_tr(paste0("misc.language.", code), lang = lang)
@@ -145,16 +302,27 @@ episodic_language_label <- function(code,
 
 #' Every shipped language, as "code (Name)"
 #'
-#' For the one message that has to name them all - the one telling an
-#' operator which values `EPISODIC_LANGUAGE` takes.
+#' For the messages that have to name them - the ones telling an
+#' operator which values `EPISODIC_LANGUAGE` takes. Aliases
+#' (`episodic_language_aliases`) are accepted but not listed: `en-GB` is
+#' `en` spelled out, and offering both as choices would suggest a
+#' difference that is not there.
 #'
 #' @param lang The language to name them in.
-#' @return A character vector, one entry per shipped language.
+#' @param variants_only List only the regional variants, for the message
+#'   that has just told an operator their own region is not one of them.
+#' @return A character vector, one entry per code.
 #' @keywords internal
 #' @noRd
-episodic_language_choices <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_language_choices <- function(lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                      variants_only = FALSE) {
+  codes <- if (isTRUE(variants_only)) {
+    names(episodic_language_variants)
+  } else {
+    episodic_languages_all()
+  }
   vapply(
-    episodic_languages,
+    codes,
     function(code) {
       sprintf("%s (%s)", code, episodic_language_label(code, lang = lang))
     },
@@ -178,7 +346,7 @@ episodic_language_choices <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @keywords internal
 #' @noRd
 episodic_lang_is_rtl <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  episodic_lang(lang) %in% episodic_languages_rtl
+  episodic_lang_base(lang) %in% episodic_languages_rtl
 }
 
 #' `"rtl"` or `"ltr"`, for an HTML `dir` attribute
@@ -205,7 +373,8 @@ episodic_lang_dir <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @param ... Named values substituted into `{name}` placeholders in the
 #'   template.
 #' @param lang Language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`, `"hi"`,
-#'   `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE` environment
+#'   `"zh"`, or `"es"`, or a regional variant of one (`"en-US"`,
+#'   `"es-419"`). Defaults to the `EPISODIC_LANGUAGE` environment
 #'   variable, falling back to `"en"` if that is unset.
 #' @param instance_i18n An optional named character vector of your own
 #'   wording overrides (key -> template), checked before the shipped
@@ -291,6 +460,13 @@ episodic_count_phrase <- function(n,
 
 #' Format a date range compactly, collapsing shared month/year
 #'
+#' The four shapes - one date, a range inside one month, a range inside
+#' one year, and a range across two - are `date.format.*` templates in
+#' the language files, so each language writes a date the way it writes
+#' one. `{month}` is the full month name in the first two (only one
+#' month name appears, so there is room to spell it out) and the
+#' abbreviation in the other two.
+#'
 #' `"7-15 January 2025"` rather than `"2025-01-07 to 2025-01-15"`: shared
 #' month and year are stated once, not repeated per endpoint. Falls back
 #' one step at a time as the range widens (same month -> same year ->
@@ -308,7 +484,8 @@ episodic_count_phrase <- function(n,
 #' @param x,y Range endpoints - `Date`, or a string `as.Date()` accepts.
 #'   Order does not matter; the earlier date is always shown first.
 #' @param lang Session language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
-#'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   `"hi"`, `"zh"`, or `"es"`, or a regional variant of
+#'   one (`"en-US"`, `"es-419"`). Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
 #' @return A character string, or `episodic_tr("misc.unknown", lang =
 #'   lang)` if either endpoint fails to parse.
@@ -343,21 +520,53 @@ episodic_format_date_range <- function(x,
   day <- function(d) as.integer(format(d, "%d"))
   yr <- function(d) format(d, "%Y")
 
+  # The four shapes are templates rather than sprintf() formats, because
+  # the order of a date is a property of the language and not of this
+  # function: British English writes 7 January 2025 and American English
+  # January 7, 2025, German puts a point after the day, Spanish two
+  # "de"s in, and Chinese writes the year first with 年月日 around the
+  # parts. Every one of those was wrong here until the patterns moved
+  # into the language files.
+  #
+  # Neither the day nor the year goes through `episodic_format_number()`:
+  # a year is a name for a year, and "2.025" is not one.
   if (identical(x, y)) {
-    sprintf("%d %s %s", day(x), mon(x), yr(x))
+    episodic_tr(
+      "date.format.single",
+      day = day(x),
+      month = mon(x),
+      year = yr(x),
+      lang = lang
+    )
   } else if (format(x, "%Y-%m") == format(y, "%Y-%m")) {
-    sprintf("%d-%d %s %s", day(x), day(y), mon(x), yr(x))
+    episodic_tr(
+      "date.format.range_month",
+      day_from = day(x),
+      day_to = day(y),
+      month = mon(x),
+      year = yr(x),
+      lang = lang
+    )
   } else if (yr(x) == yr(y)) {
-    sprintf("%d %s - %d %s %s", day(x), mon_abbr(x), day(y), mon_abbr(y), yr(x))
+    episodic_tr(
+      "date.format.range_year",
+      day_from = day(x),
+      month_from = mon_abbr(x),
+      day_to = day(y),
+      month_to = mon_abbr(y),
+      year = yr(x),
+      lang = lang
+    )
   } else {
-    sprintf(
-      "%d %s %s - %d %s %s",
-      day(x),
-      mon_abbr(x),
-      yr(x),
-      day(y),
-      mon_abbr(y),
-      yr(y)
+    episodic_tr(
+      "date.format.range_full",
+      day_from = day(x),
+      month_from = mon_abbr(x),
+      year_from = yr(x),
+      day_to = day(y),
+      month_to = mon_abbr(y),
+      year_to = yr(y),
+      lang = lang
     )
   }
 }
@@ -403,10 +612,10 @@ episodic_format_date <- function(d, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #'   \item{`misc.thousands.grouping`}{The group sizes, right to left,
 #'     comma-separated. `"3"` everywhere except Hindi, where `"3,2"`
 #'     gives the Indian lakh/crore grouping (12,34,567, not 1,234,567).}
-#'   \item{`misc.thousands.minimum`}{How many digits must stand before
-#'     the first separator for a number to be grouped at all (CLDR's
+#'   \item{`misc.thousands.minimum`}{How many digits a number needs on
+#'     top of one whole group before it is grouped at all (CLDR's
 #'     `minimumGroupingDigits`). `"1"` everywhere except Spanish, where
-#'     four-digit numbers are written unseparated (2000, but 12.345).}
+#'     `"2"` means grouping starts at five digits: 2000, but 12.345.}
 #' }
 #'
 #' Arabic gets the *Latin* marks (1,234.5), not `U+066B`/`U+066C`: those
@@ -419,7 +628,8 @@ episodic_format_date <- function(d, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #'   default) leaves the value as it is. Trailing zeros are dropped
 #'   either way, so `digits = 1` renders 2 as "2" and 2.35 as "2.4".
 #' @param lang Session language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
-#'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   `"hi"`, `"zh"`, or `"es"`, or a regional variant of
+#'   one (`"en-US"`, `"es-419"`). Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
 #' @return A character vector the same length as `x`. `NA` in is
 #'   `NA_character_` out - a number that does not exist is not a number
@@ -537,9 +747,8 @@ episodic_format_number_one <- function(x, digits, marks) {
 #'
 #' Right to left, taking `sizes` in turn and repeating the last one -
 #' `3` gives 1,234,567 and `3,2` gives 12,34,567, the Indian grouping.
-#' Nothing is inserted while fewer than `minimum` digits would stand
-#' before the first separator, which is what keeps Spanish's four-digit
-#' numbers unseparated.
+#' Nothing is inserted below `sizes[1] + minimum` digits, which is what
+#' keeps Spanish's four-digit numbers unseparated.
 #'
 #' @param digits A string of digits, no sign and no decimal part.
 #' @param marks From `episodic_number_marks()`.
@@ -548,6 +757,16 @@ episodic_format_number_one <- function(x, digits, marks) {
 #' @noRd
 episodic_number_group <- function(digits, marks) {
   if (!nzchar(marks$thousands)) {
+    return(digits)
+  }
+  # CLDR's minimumGroupingDigits: a number is grouped at all only once
+  # its whole part is at least one group plus that many digits long.
+  # With the 1 seven of the eight languages use, that is "from four
+  # digits up", the ordinary rule; Spanish's 2 makes it "from five", so
+  # 2000 stands unseparated while 12.345 and 1.234.567 do not. Reading
+  # it as a length for the leading group instead would have left
+  # 1234567 unseparated too, which no Spanish writes.
+  if (nchar(digits) < marks$sizes[1] + marks$minimum) {
     return(digits)
   }
   chars <- strsplit(digits, "", fixed = TRUE)[[1]]
@@ -560,12 +779,6 @@ episodic_number_group <- function(digits, marks) {
     groups <- c(paste(chars[first:last], collapse = ""), groups)
     last <- first - 1L
     step <- step + 1L
-  }
-  # CLDR's minimumGroupingDigits, which is a count of the digits standing
-  # *before* the first separator, not a count of groups: Spanish writes
-  # 2000 unseparated and 12.345 separated, and both have two groups.
-  if (length(groups) == 1 || nchar(groups[1]) < marks$minimum) {
-    return(digits)
   }
   paste(groups, collapse = marks$thousands)
 }
