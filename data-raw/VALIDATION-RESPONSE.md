@@ -126,17 +126,25 @@ Two things follow.
 schema as of `main` (783116e), pre-#45, fails identically on MariaDB
 10.11. The ordering has been wrong for the life of the package.
 
-**So a working pre-#45 instance was not MariaDB with foreign keys.** It was
-SQLite (the default), or MySQL, or a server with `foreign_key_checks`
-disabled globally. If it was MySQL, that instance has **no referential
-integrity at all** and never had. One query settles it:
+**So a working pre-#45 instance was not MariaDB with foreign keys.**
+
+Confirmed against the maintainer's own production instance, which is
+MySQL: the schema holds five foreign keys, all of them on the `brmo_*`
+tables of another application sharing it, and **not one on any
+`episodic_*` table**. Same server, same schema, other tables constrained.
+That pins the cause on the inline column-level `REFERENCES` beyond any
+question of server configuration.
+
+Scoped to EpiSODIC's own tables, which is what to ask on a shared schema:
 
 ```sql
 SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS
- WHERE CONSTRAINT_SCHEMA = DATABASE();
+ WHERE CONSTRAINT_SCHEMA = DATABASE()
+   AND TABLE_NAME LIKE 'episodic\_%';
 ```
 
-Zero means the constraints in the schema file were never created.
+Zero there means the constraints in the schema file were never created.
+On the production instance it is zero.
 
 ### What #49 fixed, and what it did not
 
@@ -152,7 +160,10 @@ parse them into existence. A MySQL instance still gets 24 tables and 0
 foreign keys, silently, and `episodic_db_dsn_mysql()` still advertises
 MySQL as supported.
 
-### The open decision
+### The open decision, now a live one
+
+It is no longer hypothetical: there is a production MySQL instance running
+EpiSODIC today with no referential integrity on any of its tables.
 
 Emitting **table-level** `FOREIGN KEY (col) REFERENCES tbl(col)` clauses
 for the mariadb/mysql dialect would give both servers real constraints and
@@ -165,7 +176,13 @@ the correct fix and it is not a small one:
 - an existing MySQL instance rebuilt under it would begin enforcing
   constraints it has never enforced, and any orphan rows already in it
   would surface at that moment;
-- it needs its own tests on both servers.
+- it needs its own tests on both servers;
+- and a live MySQL instance cannot simply be rebuilt. Adding the
+  constraints to one that already holds data means a migration that finds
+  the orphan rows first and names them, rather than failing on the first
+  `ALTER TABLE` with an errno and no list. Any orphans that exist are
+  themselves a finding: they are rows that the SQLite path would never
+  have allowed.
 
 I have not done it. It is a decision about a second dialect's semantics,
 not a defect to be quietly patched inside a validation PR, and the
@@ -185,6 +202,57 @@ because today a MySQL job would pass while creating no constraints.
 
 ---
 
+## 3b. A second defect, found by the same route, not yet fixed
+
+The production instance shares its schema with another application's
+`brmo_*` tables. That shape breaks a different thing.
+
+`episodic_db_exists()` decides which branch `episodic_run_cron()` takes -
+open an existing database, or create one. For a `mysql://` DSN it asks
+whether the schema holds **any** tables:
+
+```r
+length(DBI::dbListTables(con)) > 0
+```
+
+On a shared schema that is `TRUE` because of somebody else's tables, even
+when no EpiSODIC table has ever been created. Measured, against MySQL 8.4,
+on a schema holding one foreign table and nothing else:
+
+1. `episodic_db_exists()` returns `TRUE`.
+2. `episodic_run_cron()` therefore calls `episodic_db_connect()` instead of
+   `episodic_db_create()`, and refuses: *"This database carries no schema
+   version, so it was created by EpiSODIC 0.12.x or earlier. Run
+   `episodic_db_migrate()` on it once to bring it up to date."*
+3. That advice is wrong, and following it is worse.
+   `episodic_db_migrate()` adopts the schema at version 1, applies
+   migration 2, and reports *"Database is at schema version 2."*
+4. The schema now holds **2 of the 24 EpiSODIC tables**
+   (`episodic_schema_version` and `episodic_app_login_failure`) and claims
+   to be current. `episodic_db_connect()` opens it happily from then on,
+   because the version gate passes.
+
+An operator following the instruction the software gave them ends up with
+a database that says it is up to date and is missing 22 tables.
+
+The fix is small and in two parts:
+
+- `episodic_db_exists()` should ask whether *EpiSODIC's* tables exist, not
+  whether any do: `intersect(DBI::dbListTables(con), episodic_db_schema_tables())`.
+  Both `episodic_db_create(overwrite = TRUE)` and `episodic_db_truncate()`
+  already scope themselves that way, so neither can touch a co-tenant's
+  tables; this is the one place that does not.
+- `episodic_db_migrate()` should refuse to adopt a database at version 1
+  unless the core tables are actually present. "No version table" currently
+  means "created by 0.12.x or earlier"; it can equally mean "never created
+  at all", and those need different answers.
+
+Not done, pending the maintainer's word on whether it belongs here, in
+#45, or in an issue of its own. It is unrelated to detection and does not
+block the harness, which is why I stopped rather than fixing it.
+
+---
+
 ## 4. Things that belong to #45, which I have not changed
 
 **`dplyr` is in `Imports` and no longer used.** #45 removed the last
@@ -201,13 +269,13 @@ the brief, and the study confirms it empirically: `same_place` found it
 first in 19 of 19 seeds where it was found at all. The brief's table should
 be corrected, or the roxygen should, but not both ways.
 
-**One thing I did change, and will revert on request.** With
+**One thing I did change, since approved by the maintainer.** With
 `EPISODIC_PC_PROVINCE_MAP` unset, a run told the operator that "the shipped
 Northern Netherlands demo ranges are in use and match only Dutch 7xxx-9xxx
 postcodes". That fallback is exactly what #45 removed, so the message had
 become false: it tells an operator their instance is doing something it no
 longer does. I rewrote the message and nothing else. It is one hunk in
-`R/lattice_enumerate.R`.
+`R/lattice_enumerate.R`, and the maintainer has confirmed it should stay.
 
 ---
 
@@ -272,8 +340,11 @@ and does not require rebasing anything.
 
 ## 7. What is not done
 
-- **Table-level foreign keys for the mariadb/mysql dialect** (§3). The
-  decision is the maintainer's.
+- **Table-level foreign keys for the mariadb/mysql dialect** (§3), and the
+  migration that would add them to the live instance. The decision is the
+  maintainer's; the instance has none today.
+- **The shared-schema misrouting** (§3b), which is small and unrelated to
+  detection.
 - **A MySQL job in CI.** Worth adding, but not before the above, because it
   would pass today while creating no constraints.
 - **Issues #46, #47, #48**, untouched, as the brief instructed. Note for
