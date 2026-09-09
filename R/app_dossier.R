@@ -1398,6 +1398,10 @@ episodic_ui_settings_panel <- function(con,
                                        cluster_id,
                                        lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   settings <- episodic_app_detection_settings(con, cluster_id)
+  if (!is.null(settings$pkg_versions)) {
+    pkg_versions <- jsonlite::fromJSON(settings$pkg_versions)
+    settings$pkg_versions <- shiny::HTML(paste(paste0("<code>", names(pkg_versions), "</code> v", unlist(pkg_versions)), collapse = " \u00b7 "))
+  }
   # list(), not c(): a shiny::HTML() value (the detectors row) loses its
   # "html" class and gets escaped as literal text if combined with a
   # plain string via c() - list() keeps each element intact.
