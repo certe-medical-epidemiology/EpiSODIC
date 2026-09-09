@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -135,6 +135,43 @@
 
         </dt>
         <dd>Add a Hospital Activity Feed (Patient-Days)</dd>
+
+        <dt>
+
+          <code><a href="episodic_synthetic_ground_truth.html">episodic_synthetic_ground_truth()</a></code>
+
+        </dt>
+        <dd>Read Back What Was Injected Into Synthetic Data</dd>
+      </dl></div><div class="section level2">
+      <h2 id="measure-how-well-detection-works">Measure how well detection works<a class="anchor" aria-label="anchor" href="#measure-how-well-detection-works"></a></h2>
+
+      <div class="section-desc"><p>Replay generated history through the detectors week by week and compare what they found against the outbreaks that were put there - sensitivity, timeliness and alarm burden against known truth, rather than against your board’s own verdicts.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="episodic_validate_detection.html">episodic_validate_detection()</a></code> <code><a href="episodic_validate_detection.html">print(<i>&lt;episodic_validation&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Measure Detection Against Known Truth</dd>
+
+        <dt>
+
+          <code><a href="episodic_validate_comparator.html">episodic_validate_comparator()</a></code>
+
+        </dt>
+        <dd>Measure a Trivial Rule Against the Same Known Truth</dd>
+
+        <dt>
+
+          <code><a href="episodic_validate_rethreshold.html">episodic_validate_rethreshold()</a></code>
+
+        </dt>
+        <dd>Re-Match a Validation Result at Different Thresholds</dd>
       </dl></div><div class="section level2">
       <h2 id="add-clusters-from-another-system">Add clusters from another system<a class="anchor" aria-label="anchor" href="#add-clusters-from-another-system"></a></h2>
 

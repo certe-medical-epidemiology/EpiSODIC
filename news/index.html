@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,42 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.17.0" id="episodic-0170">EpiSODIC 0.17.0<a class="anchor" aria-label="anchor" href="#episodic-0170"></a></h2>
+<div class="section level3">
+<h3 id="new-0-17-0">New<a class="anchor" aria-label="anchor" href="#new-0-17-0"></a></h3>
+<ul><li>
+<code><a href="../reference/episodic_validate_detection.html">episodic_validate_detection()</a></code> replays generated history week by week and measures the detectors against the outbreaks that were injected into it</li>
+<li>
+<code><a href="../reference/episodic_validate_comparator.html">episodic_validate_comparator()</a></code> runs a naive same-place rule or a 2-SD Shewhart limit over the same data, through the same metrics</li>
+<li>
+<code><a href="../reference/episodic_validate_rethreshold.html">episodic_validate_rethreshold()</a></code> re-matches a validation result at different thresholds without replaying anything</li>
+<li>
+<code><a href="../reference/episodic_synthetic_ground_truth.html">episodic_synthetic_ground_truth()</a></code> returns what <code><a href="../reference/episodic_synthetic_cases.html">episodic_synthetic_cases()</a></code> injected, per outbreak and per case</li>
+<li>
+<code><a href="../reference/episodic_synthetic_cases.html">episodic_synthetic_cases()</a></code> gains <code>outbreaks</code>, for a history with none injected, and <code>outbreak_offsets</code>, to disperse them across the window</li>
+<li>
+<code>config$&lt;detector&gt;$enabled</code> switches any of the four detectors off, and is part of <code>config_hash</code>
+</li>
+<li>
+<code>data-raw/validation/</code> runs the full multi-seed study and writes the numbers a paper would quote</li>
+<li>CI runs the suite against a real MariaDB server, so DDL a server rejects fails the build</li>
+<li>CI also runs the suite against a real MySQL server, which is a different server: the two disagree about column-level foreign keys</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-17-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-17-0"></a></h3>
+<ul><li>The MariaDB schema was never accepted by a real server: the tables are declared in reading order, not foreign-key order, so creation failed on the first statement</li>
+<li>On MySQL the schema created no foreign keys at all: inline column-level <code>REFERENCES</code> are parsed and discarded there, so every constraint was silently absent</li>
+<li>
+<code>episodic_db_exists()</code> treated a schema shared with another application as an existing EpiSODIC database, so a first run refused and sent the operator to <code><a href="../reference/episodic_db_migrate.html">episodic_db_migrate()</a></code>, which stamped it current with two of its twenty-four tables</li>
+<li>
+<code>episodic_db_runs()</code> bound a double to <code>LIMIT</code>, which MySQL refuses, so the Activity screen failed on that dialect</li>
+<li>Half the lattice resolved its geography from the run’s own configuration and half from <code>EPISODIC_CONFIG</code>, so a run given a config path silently matched no case to any geographic stream</li>
+<li>
+<code><a href="../reference/episodic_db_create.html">episodic_db_create()</a></code> leaked the connection it opened when refusing a database that already had tables</li>
+<li>With <code>EPISODIC_PC_PROVINCE_MAP</code> unset, a run said the shipped Dutch province ranges were in use, which they no longer are</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.16.0" id="episodic-0160">EpiSODIC 0.16.0<a class="anchor" aria-label="anchor" href="#episodic-0160"></a></h2>
 <div class="section level3">

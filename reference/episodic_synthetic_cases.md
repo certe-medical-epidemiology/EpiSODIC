@@ -15,7 +15,9 @@ shape your own data should have (see
 episodic_synthetic_cases(
   start_date = end_date - 5 * 365,
   end_date = Sys.Date(),
-  seed = 1
+  seed = 1,
+  outbreaks = TRUE,
+  outbreak_offsets = NULL
 )
 ```
 
@@ -37,10 +39,33 @@ episodic_synthetic_cases(
 
   RNG seed, for reproducible demo data.
 
+- outbreaks:
+
+  Which outbreaks to inject: `TRUE` for all six (the default), `FALSE`
+  for none, or a character vector of outbreak identifiers (`"RARE"`,
+  `"WARD"`, `"LTC"`, `"PS"`, `"PROP"`, `"WAVE"`). A history with none
+  injected is what a negative control needs: every alarm raised on it is
+  a false one, which is the only clean way to measure an alarm rate.
+  Each outbreak draws from the random stream whether or not it is kept,
+  so a given seed always produces the same cases for a given outbreak
+  regardless of which others were asked for.
+
+- outbreak_offsets:
+
+  Days to move outbreaks further back from `end_date`. All six are
+  anchored to `end_date`, so by default they sit in the last few months
+  of whatever window is generated - fine for a demo, wrong for a
+  prospective evaluation, which needs them dispersed across the window
+  instead. Either a single number applied to all of them, or a named
+  vector giving days per outbreak identifier (any not named stays at 0).
+  `NULL`, the default, leaves every outbreak anchored to `end_date`.
+
 ## Value
 
 A data frame satisfying
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md).
+[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md),
+carrying the ground truth of what was injected as an attribute - see
+[`episodic_synthetic_ground_truth()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md).
 
 ## What it puts in
 
@@ -70,14 +95,25 @@ only the statistical baseline comparison finds it. That contrast - a
 diffuse signal no amount of local vigilance would catch - is half the
 reason the statistical detectors exist.
 
-Every injected case carries a `PT-OUTBREAK-*` patient key, so it is
-always identifiable as an injected signal rather than baseline noise.
 Outbreaks are anchored to `end_date` and clipped to the window you ask
 for, so a short window returns a partial one rather than cases outside
 the range you asked for.
 
+## What was injected, as data
+
+The result carries its own ground truth: which outbreaks were injected,
+where and when each of them ran, and exactly which cases belong to
+which. Read it with
+[`episodic_synthetic_ground_truth()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md).
+Injected cases also carry a `PT-OUTBREAK-*` patient key, but that is a
+convenience for a human reading a line list and not an interface:
+anything measuring detection against what was injected takes the ground
+truth, never a pattern match on a key.
+
 ## See also
 
+[`episodic_synthetic_ground_truth()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md)
+for what was injected,
 [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
 to see what the requirements make of it, and
 [`episodic_synthetic_cases_calibration()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases_calibration.md)

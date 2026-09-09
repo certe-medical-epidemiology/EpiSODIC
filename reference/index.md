@@ -40,6 +40,23 @@ requirements before you run anything.
   : Add a Testing-Volume (Positivity) Feed
 - [`episodic_synthetic_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity.md)
   : Add a Hospital Activity Feed (Patient-Days)
+- [`episodic_synthetic_ground_truth()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md)
+  : Read Back What Was Injected Into Synthetic Data
+
+## Measure how well detection works
+
+Replay generated history through the detectors week by week and compare
+what they found against the outbreaks that were put there - sensitivity,
+timeliness and alarm burden against known truth, rather than against
+your board’s own verdicts.
+
+- [`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+  [`print(`*`<episodic_validation>`*`)`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+  : Measure Detection Against Known Truth
+- [`episodic_validate_comparator()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_comparator.md)
+  : Measure a Trivial Rule Against the Same Known Truth
+- [`episodic_validate_rethreshold()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_rethreshold.md)
+  : Re-Match a Validation Result at Different Thresholds
 
 ## Add clusters from another system
 

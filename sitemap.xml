@@ -5,6 +5,7 @@
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/index.html</loc></url>
@@ -43,8 +44,12 @@
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases_calibration.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_denominators.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ui_italicise_taxon.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_comparator.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_rethreshold.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/index.html</loc></url>
 </urlset>
 

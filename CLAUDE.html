@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -84,7 +84,8 @@
 </tr><tr><td>MEM</td>
 <td>Moving Epidemic Method seasonal threshold (mem::memmodel)</td>
 <td><code>R/detect_mem.R</code></td>
-</tr></tbody></table></div>
+</tr></tbody></table><p>Each detector’s config section carries <code>enabled</code>, shipped <code>true</code>, read through <code>episodic_detector_enabled()</code> inside the detector itself so every caller respects it. It lives in the config rather than in an argument to <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> because which detectors ran changes what a run computes, and so has to be inside <code>config_hash</code>. <code>farrington.enabled: false</code> stops the detector, not the multi-year baseline cached for the Pathogen screen, which is a display of the same model rather than a detection.</p>
+</div>
 <div class="section level3">
 <h3 id="streams-and-the-lattice">Streams and the lattice<a class="anchor" aria-label="anchor" href="#streams-and-the-lattice"></a></h3>
 <p>A “stream” is a unique surveillance unit: a (pathogen, level, location) tuple. Levels form a geographic lattice from finest to coarsest:</p>
@@ -97,6 +98,7 @@
 <code>pathogen_region</code> (coarsest)</li>
 </ul><p>Detection runs against every eligible stream independently. After detection, lattice suppression removes redundant signals (a hospital-level cluster that is entirely explained by a ward-level cluster in the same hospital).</p>
 <p>Stream keys are SHA-1 hashes of (pathogen, level, institution_id, ward, region_code), computed in <code>R/lattice_stream_key.R</code>.</p>
+<p>The geography a run uses is resolved once, from that run’s own config, and passed down: <code>episodic_lattice_enumerate()</code>, <code>episodic_cases_for_stream()</code>, <code>episodic_db_cases_for_stream_id()</code> and <code>episodic_reconcile_stream()</code> all take it as an argument. Resolving it separately at each site meant a run given <code>episodic_config_path</code> named its L5 catchment from one configuration and its L3 areas from another, and then tested case membership against a third - so every geographic stream matched no case however many arrived, and any cluster opened there was written with none linked to it, silently. The default still resolves <code>EPISODIC_CONFIG</code>, which is the right answer on the dashboard side, where there is no run to take it from.</p>
 <p>Nothing about the lattice’s geography is hardcoded to one country. The whole-catchment code (L5) and the area-code rule (L3) are <code>config$geography</code>, resolved by <code>episodic_geography_config()</code>; the province level (L4) is an operator-supplied <code>pc</code> -&gt; <code>province_code</code> CSV pointed at by <code>EPISODIC_PC_PROVINCE_MAP</code>, with no built-in rule at all, since deriving a province from a postcode is country-specific. Unconfigured, L4 stays empty and says so on the dashboard’s Info screen. Likewise <code>EPISODIC_GEO_DATA</code> has no default: without it there is no map, never another country’s.</p>
 </div>
 <div class="section level3">
@@ -149,7 +151,8 @@
 <code><a href="reference/episodic_db_create.html">episodic_db_create()</a></code>, <code><a href="reference/episodic_db_migrate.html">episodic_db_migrate()</a></code>
 </td>
 <td>One row per applied schema version</td>
-</tr></tbody></table><p>The schema is versioned. <code>episodic_schema_version</code> (in <code>R/schema_migrate.R</code>) is what this build expects; <code><a href="reference/episodic_db_connect.html">episodic_db_connect()</a></code> refuses a database at any other version, naming <code><a href="reference/episodic_db_migrate.html">episodic_db_migrate()</a></code> as the fix. Any change to <code>inst/sql/schema.sql</code> that an existing database has to be brought along for means bumping that constant and adding a matching entry to <code>episodic_db_migrations()</code> - a function <code>(con, dialect)</code> that is idempotent, runs inside a transaction, and never drops or rewrites data.</p>
+</tr></tbody></table><p>Two things the adapter does that are not cosmetic. It <strong>derives table-level <code>FOREIGN KEY</code> clauses</strong> from the schema’s inline column-level <code>REFERENCES</code>, because MySQL parses an inline reference and discards it: relying on them gave a MySQL instance all its tables and not one constraint, silently, which is what the first real deployment had. Derived rather than listed, so a reference added to <code>schema.sql</code> is converted without anyone remembering to, and <code>test-schema_mariadb.R</code> asserts the counts match. And it applies the schema with <code>FOREIGN_KEY_CHECKS = 0</code>, because the tables are declared in the order they read best rather than in foreign-key order, which MariaDB refuses outright.</p>
+<p>The schema is versioned. <code>episodic_schema_version</code> (in <code>R/schema_migrate.R</code>) is what this build expects; <code><a href="reference/episodic_db_connect.html">episodic_db_connect()</a></code> refuses a database at any other version, naming <code><a href="reference/episodic_db_migrate.html">episodic_db_migrate()</a></code> as the fix. Any change to <code>inst/sql/schema.sql</code> that an existing database has to be brought along for means bumping that constant and adding a matching entry to <code>episodic_db_migrations()</code> - a function <code>(con, dialect)</code> that is idempotent, runs inside a transaction, and never drops or rewrites data.</p>
 <p>Write ownership is strict: cron-owned tables are written only by <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code>, app-owned tables only by the Shiny app. The app never updates or deletes, only inserts (event-sourced).</p>
 <p>One deliberate exception: <code><a href="reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code> (in <code>R/cluster_manual.R</code>) is a third, console-invoked write path into <code>episodic_stream</code>, <code>episodic_cluster</code> and <code>episodic_cluster_manual_case</code> (all otherwise cron-owned), for clusters detected by another algorithm or system rather than by <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> itself - exactly the same kind of exception <code><a href="reference/episodic_add_user.html">episodic_add_user()</a></code> already is for the app-owned <code>episodic_app_user</code> table. Such a cluster gets <code>origin = 'manual'</code> on <code>episodic_cluster</code> and is excluded from <code>episodic_reconcile_stream()</code>’s matching and auto-closure (see <code>episodic_db_clusters_for_stream()</code>); its case-level detail, if any, lives in <code>episodic_cluster_manual_case</code>, never in <code>episodic_case</code>, so it can never reach denominators, line lists or patient search.</p>
 </div>
@@ -217,6 +220,12 @@
   i18n.R              # translation system (episodic_tr)
   interpretation.R    # AI/template-based narrative summaries
   report_render.R     # Quarto outbreak report rendering
+  validate_detection.R  # episodic_validate_detection(): the prospective replay
+  validate_match.R      # matching clusters to seeded outbreaks on case sets
+  validate_metrics.R    # Wilson/Poisson intervals, Kaplan-Meier, AUC
+  validate_summary.R    # the headline numbers, as one long table
+  validate_comparator.R # naive rules measured the same way
+  validate_rethreshold.R # re-match a finished replay at other thresholds
 inst/
   config/episodic_default_config.yaml       # shipped detection defaults
   config/episodic_default_style.yaml       # shipped colour palette defaults
@@ -225,8 +234,18 @@ inst/
   app/                      # Shiny app assets (CSS, JS)
   i18n/                     # translation JSON files (en, nl, de, fr, es, ar, hi, zh)
   report/                   # Quarto report template
-tests/testthat/             # ~480 test blocks across 40 files
-vignettes/                  # 7 vignettes</code></pre>
+tests/testthat/             # ~500 test blocks across 47 files
+vignettes/                  # 8 vignettes
+data-raw/validation/        # the full detection validation study (never ships)</code></pre>
+</div>
+<div class="section level2">
+<h2 id="measuring-detection">Measuring detection<a class="anchor" aria-label="anchor" href="#measuring-detection"></a></h2>
+<p>The Performance screen measures the instance against its own epidemiologists’ verdicts, which is a good operational metric and a circular one for a paper: sensitivity is structurally unmeasurable that way, because an outbreak the detectors miss never becomes a cluster for anyone to judge.</p>
+<p><code><a href="reference/episodic_validate_detection.html">episodic_validate_detection()</a></code> measures against known truth instead. It generates history with <code><a href="reference/episodic_synthetic_cases.html">episodic_synthetic_cases()</a></code>, replays it week by week through <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> against a throwaway SQLite database handing each run only the cases sampled by that date, and matches clusters to seeded outbreaks <strong>on case sets, in both directions</strong> - an endemic winter cluster overlaps a seeded outbreak perfectly in time and shares not one case with it, so interval overlap decides nothing here.</p>
+<p>Ground truth is data, not a naming convention: <code><a href="reference/episodic_synthetic_ground_truth.html">episodic_synthetic_ground_truth()</a></code> returns what was injected. The <code>PT-OUTBREAK-*</code> patient keys are a convenience for a human reading a line list; nothing measures against them.</p>
+<p>Rules that hold throughout: a metric with no denominator is <code>NA</code>, never 0 (a negative control has no sensitivity, not a sensitivity of zero); an outbreak nothing found is right-censored at the time it was watched for, never dropped from the median; and a threshold sweep re-matches a finished replay (<code><a href="reference/episodic_validate_rethreshold.html">episodic_validate_rethreshold()</a></code>) rather than running detection again.</p>
+<p>The exported entry point defaults to one seed and a short window so it returns in seconds. The multi-seed study, the negative control, the drop-one analysis, the comparators and the operating-point sweep live in <code>data-raw/validation/run_study.R</code>, which is in <code>.Rbuildignore</code> and must stay there: nothing that takes minutes may reach the suite, CI, an example or a vignette.</p>
+<p>If a result is unflattering, it is reported. Tuning <code>inst/config/episodic_default_config.yaml</code> until a number looks better and then quoting the number is fitting the evaluation to the answer.</p>
 </div>
 <div class="section level2">
 <h2 id="development">Development<a class="anchor" aria-label="anchor" href="#development"></a></h2>
@@ -235,6 +254,7 @@ vignettes/                  # 7 vignettes</code></pre>
 <h3 id="running-tests">Running tests<a class="anchor" aria-label="anchor" href="#running-tests"></a></h3>
 <div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'devtools::test()'</span></span></code></pre></div>
 <p>All tests run against temporary SQLite databases created in <code>helper-db.R</code>. No external services or credentials are needed.</p>
+<p>Except <code>tests/testthat/test-mariadb_live.R</code>, which skips itself unless <code>EPISODIC_TEST_MARIADB_DSN</code> names a scratch MariaDB/MySQL database it may create and drop tables in. <code>.github/workflows/mariadb.yaml</code> runs the suite against a service container on one Linux job and fails the build if those tests skipped themselves, because the MariaDB dialect is produced by rewriting the SQLite schema and nothing else proves a server accepts the result.</p>
 </div>
 <div class="section level3">
 <h3 id="building-documentation">Building documentation<a class="anchor" aria-label="anchor" href="#building-documentation"></a></h3>

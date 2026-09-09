@@ -19,7 +19,10 @@ episodic_db_create(path, overwrite = FALSE)
 
   Path to a SQLite file to create, or a `mysql://` DSN (see
   [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md))
-  pointing at an empty MariaDB/MySQL database.
+  pointing at a MariaDB/MySQL database. The schema does not have to be
+  empty: EpiSODIC only ever enumerates and touches its own tables, so it
+  can share one with another application. It does have to be free of
+  *EpiSODIC's* tables, unless `overwrite = TRUE`.
 
 - overwrite:
 

@@ -19,7 +19,7 @@ episodic_case_data)."><meta property="og:image" content="https://certe-medical-e
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,7 +60,9 @@ worked example of the shape your own data should have (see
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">episodic_synthetic_cases</span><span class="op">(</span></span>
 <span>  start_date <span class="op">=</span> <span class="va">end_date</span> <span class="op">-</span> <span class="fl">5</span> <span class="op">*</span> <span class="fl">365</span>,</span>
 <span>  end_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  seed <span class="op">=</span> <span class="fl">1</span></span>
+<span>  seed <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  outbreaks <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  outbreak_offsets <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -83,10 +85,35 @@ whatever year the package was released in.</p></dd>
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
 <dd><p>RNG seed, for reproducible demo data.</p></dd>
 
+
+<dt id="arg-outbreaks">outbreaks<a class="anchor" aria-label="anchor" href="#arg-outbreaks"></a></dt>
+<dd><p>Which outbreaks to inject: <code>TRUE</code> for all six (the
+default), <code>FALSE</code> for none, or a character vector of outbreak
+identifiers (<code>"RARE"</code>, <code>"WARD"</code>, <code>"LTC"</code>, <code>"PS"</code>, <code>"PROP"</code>,
+<code>"WAVE"</code>). A history with none injected is what a negative control
+needs: every alarm raised on it is a false one, which is the only
+clean way to measure an alarm rate. Each outbreak draws from the
+random stream whether or not it is kept, so a given seed always
+produces the same cases for a given outbreak regardless of which
+others were asked for.</p></dd>
+
+
+<dt id="arg-outbreak-offsets">outbreak_offsets<a class="anchor" aria-label="anchor" href="#arg-outbreak-offsets"></a></dt>
+<dd><p>Days to move outbreaks further back from
+<code>end_date</code>. All six are anchored to <code>end_date</code>, so by default they
+sit in the last few months of whatever window is generated - fine
+for a demo, wrong for a prospective evaluation, which needs them
+dispersed across the window instead. Either a single number applied
+to all of them, or a named vector giving days per outbreak
+identifier (any not named stays at 0). <code>NULL</code>, the default, leaves
+every outbreak anchored to <code>end_date</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A data frame satisfying <code><a href="episodic_check_cases.html">episodic_check_cases()</a></code>.</p>
+    <p>A data frame satisfying <code><a href="episodic_check_cases.html">episodic_check_cases()</a></code>, carrying the
+ground truth of what was injected as an attribute - see
+<code><a href="episodic_synthetic_ground_truth.html">episodic_synthetic_ground_truth()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="what-it-puts-in">What it puts in<a class="anchor" aria-label="anchor" href="#what-it-puts-in"></a></h2>
@@ -106,15 +133,27 @@ institution sees enough of it for a rule-based detector to notice, and
 only the statistical baseline comparison finds it. That contrast - a
 diffuse signal no amount of local vigilance would catch - is half the
 reason the statistical detectors exist.</p>
-<p>Every injected case carries a <code>PT-OUTBREAK-*</code> patient key, so it is
-always identifiable as an injected signal rather than baseline noise.
-Outbreaks are anchored to <code>end_date</code> and clipped to the window you ask
+<p>Outbreaks are anchored to <code>end_date</code> and clipped to the window you ask
 for, so a short window returns a partial one rather than cases outside
 the range you asked for.</p>
     </div>
     <div class="section level2">
+    <h2 id="what-was-injected-as-data">What was injected, as data<a class="anchor" aria-label="anchor" href="#what-was-injected-as-data"></a></h2>
+
+
+
+<p>The result carries its own ground truth: which outbreaks were injected,
+where and when each of them ran, and exactly which cases belong to
+which. Read it with <code><a href="episodic_synthetic_ground_truth.html">episodic_synthetic_ground_truth()</a></code>. Injected cases
+also carry a <code>PT-OUTBREAK-*</code> patient key, but that is a convenience for
+a human reading a line list and not an interface: anything measuring
+detection against what was injected takes the ground truth, never a
+pattern match on a key.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="episodic_check_cases.html">episodic_check_cases()</a></code> to see what the requirements make of it,
+    <div class="dont-index"><p><code><a href="episodic_synthetic_ground_truth.html">episodic_synthetic_ground_truth()</a></code> for what was injected,
+<code><a href="episodic_check_cases.html">episodic_check_cases()</a></code> to see what the requirements make of it,
 and <code><a href="episodic_synthetic_cases_calibration.html">episodic_synthetic_cases_calibration()</a></code> for many more clusters
 than a demo wants, to tune a configuration against.</p></div>
     </div>

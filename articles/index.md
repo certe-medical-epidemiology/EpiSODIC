@@ -26,5 +26,7 @@ Look these up as needed rather than reading start to finish.
   variables](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md):
 - [Detection and
   reconciliation](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.md):
+- [Measuring detection against known
+  truth](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.md):
 - [Frequently asked
   questions](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.md):
