@@ -242,6 +242,20 @@ episodic_run_cron <- function(cases,
     substr(hashed$hash, 1, 12),
     ")"
   )
+  # A detector switched off says so once, here. Left to speak for
+  # itself it reports "found 0 detection(s)", which is what a detector
+  # that ran and cleared every stream also reports, and the two are not
+  # the same statement.
+  detectors_off <- Filter(
+    function(detector) !episodic_detector_enabled(config, detector),
+    c("farrington", "mem", "same_place", "rare_trigger")
+  )
+  if (length(detectors_off) > 0) {
+    episodic_trace(
+      "Switched off by configuration, and so raising nothing this run: ",
+      paste(detectors_off, collapse = ", ")
+    )
+  }
 
   episodic_trace("Connecting to database")
   con <- if (episodic_db_exists(db_path)) {

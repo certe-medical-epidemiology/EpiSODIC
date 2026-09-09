@@ -60,13 +60,11 @@ episodic_detect_mem <- function(cases_for_stream,
                                 stream_id,
                                 run_date = Sys.Date(),
                                 config = episodic_config_resolve()) {
-  empty <- episodic_detection_record(
-    integer(0),
-    character(0),
-    character(0),
-    character(0),
-    integer(0)
-  )
+  empty <- episodic_detection_none()
+
+  if (!episodic_detector_enabled(config, "mem")) {
+    return(empty)
+  }
   if (!requireNamespace("mem", quietly = TRUE)) {
     return(empty)
   }

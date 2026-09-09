@@ -53,14 +53,11 @@ episodic_detect_rare_trigger <- function(con,
                                          cases,
                                          config,
                                          run_date = Sys.Date()) {
-  empty <- episodic_detection_record(
-    integer(0),
-    character(0),
-    character(0),
-    character(0),
-    integer(0)
-  )
+  empty <- episodic_detection_none()
 
+  if (!episodic_detector_enabled(config, "rare_trigger")) {
+    return(empty)
+  }
   rt <- config$rare_trigger
   if (is.null(rt) || length(rt$pathogens) == 0) {
     return(empty)

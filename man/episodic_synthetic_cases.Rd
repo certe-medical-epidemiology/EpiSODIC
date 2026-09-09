@@ -7,7 +7,9 @@
 episodic_synthetic_cases(
   start_date = end_date - 5 * 365,
   end_date = Sys.Date(),
-  seed = 1
+  seed = 1,
+  outbreaks = TRUE,
+  outbreak_offsets = NULL
 )
 }
 \arguments{
@@ -20,9 +22,30 @@ demo built from this always shows current surveillance rather than
 whatever year the package was released in.}
 
 \item{seed}{RNG seed, for reproducible demo data.}
+
+\item{outbreaks}{Which outbreaks to inject: \code{TRUE} for all six (the
+default), \code{FALSE} for none, or a character vector of outbreak
+identifiers (\code{"RARE"}, \code{"WARD"}, \code{"LTC"}, \code{"PS"}, \code{"PROP"},
+\code{"WAVE"}). A history with none injected is what a negative control
+needs: every alarm raised on it is a false one, which is the only
+clean way to measure an alarm rate. Each outbreak draws from the
+random stream whether or not it is kept, so a given seed always
+produces the same cases for a given outbreak regardless of which
+others were asked for.}
+
+\item{outbreak_offsets}{Days to move outbreaks further back from
+\code{end_date}. All six are anchored to \code{end_date}, so by default they
+sit in the last few months of whatever window is generated - fine
+for a demo, wrong for a prospective evaluation, which needs them
+dispersed across the window instead. Either a single number applied
+to all of them, or a named vector giving days per outbreak
+identifier (any not named stays at 0). \code{NULL}, the default, leaves
+every outbreak anchored to \code{end_date}.}
 }
 \value{
-A data frame satisfying \code{\link[=episodic_check_cases]{episodic_check_cases()}}.
+A data frame satisfying \code{\link[=episodic_check_cases]{episodic_check_cases()}}, carrying the
+ground truth of what was injected as an attribute - see
+\code{\link[=episodic_synthetic_ground_truth]{episodic_synthetic_ground_truth()}}.
 }
 \description{
 Produces several years of laboratory surveillance data for a fictional
@@ -62,11 +85,21 @@ only the statistical baseline comparison finds it. That contrast - a
 diffuse signal no amount of local vigilance would catch - is half the
 reason the statistical detectors exist.
 
-Every injected case carries a \verb{PT-OUTBREAK-*} patient key, so it is
-always identifiable as an injected signal rather than baseline noise.
 Outbreaks are anchored to \code{end_date} and clipped to the window you ask
 for, so a short window returns a partial one rather than cases outside
 the range you asked for.
+}
+
+\section{What was injected, as data}{
+
+
+The result carries its own ground truth: which outbreaks were injected,
+where and when each of them ran, and exactly which cases belong to
+which. Read it with \code{\link[=episodic_synthetic_ground_truth]{episodic_synthetic_ground_truth()}}. Injected cases
+also carry a \verb{PT-OUTBREAK-*} patient key, but that is a convenience for
+a human reading a line list and not an interface: anything measuring
+detection against what was injected takes the ground truth, never a
+pattern match on a key.
 }
 
 \examples{
@@ -77,6 +110,7 @@ nrow(cases)
 head(cases)
 }
 \seealso{
+\code{\link[=episodic_synthetic_ground_truth]{episodic_synthetic_ground_truth()}} for what was injected,
 \code{\link[=episodic_check_cases]{episodic_check_cases()}} to see what the requirements make of it,
 and \code{\link[=episodic_synthetic_cases_calibration]{episodic_synthetic_cases_calibration()}} for many more clusters
 than a demo wants, to tune a configuration against.

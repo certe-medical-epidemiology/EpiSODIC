@@ -86,6 +86,17 @@ reference:
   - episodic_synthetic_cases_calibration
   - episodic_synthetic_denominators
   - episodic_synthetic_institution_activity
+  - episodic_synthetic_ground_truth
+
+- title: Measure how well detection works
+  desc: >
+    Replay generated history through the detectors week by week and
+    compare what they found against the outbreaks that were put there -
+    sensitivity, timeliness and alarm burden against known truth, rather
+    than against your board's own verdicts.
+  contents:
+  - episodic_validate_detection
+  - episodic_validate_comparator
 
 - title: Add clusters from another system
   desc: >

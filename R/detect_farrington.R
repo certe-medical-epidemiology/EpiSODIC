@@ -78,14 +78,11 @@ episodic_detect_farrington <- function(cases_for_stream,
                                        run_date = Sys.Date(),
                                        population = NULL,
                                        n_weeks = 1L) {
-  empty <- episodic_detection_record(
-    integer(0),
-    character(0),
-    character(0),
-    character(0),
-    integer(0)
-  )
+  empty <- episodic_detection_none()
 
+  if (!episodic_detector_enabled(config, "farrington")) {
+    return(empty)
+  }
   dates <- as.Date(cases_for_stream$sample_date)
   if (length(dates) == 0) {
     return(empty)
