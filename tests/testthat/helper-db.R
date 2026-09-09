@@ -120,6 +120,41 @@ episodic_test_seed_completion <- function(con,
   invisible(n)
 }
 
+# Whether a *fresh* R session could `library(EpiSODIC)`.
+#
+# The shipped report template opens with `library(EpiSODIC)`, and quarto
+# renders it in a subprocess of its own, so rendering needs the package
+# installed in a library that subprocess can see - not merely loaded into
+# this session by `pkgload::load_all()`. Under `R CMD check` it always is;
+# under `devtools::test()` it depends on whether the developer happens to
+# have a copy installed, and on CI it depended on whether a stale copy had
+# been left in the runner's cache. That made one job fail and its twin
+# pass on the same commit, with `there is no package called 'EpiSODIC'`
+# from inside quarto and nothing to say why.
+#
+# `find.package()` resolves to the installed copy even under `load_all()`,
+# and a `Built` field is what distinguishes an installed package from a
+# source tree.
+episodic_test_package_installed <- function() {
+  path <- tryCatch(
+    find.package("EpiSODIC", lib.loc = .libPaths(), quiet = TRUE),
+    error = function(e) character(0)
+  )
+  if (length(path) == 0) {
+    return(FALSE)
+  }
+  fields <- tryCatch(
+    colnames(read.dcf(file.path(path[1], "DESCRIPTION"))),
+    error = function(e) character(0)
+  )
+  "Built" %in% fields
+}
+
+# Both preconditions a report render has, as one reason.
+episodic_test_can_render_report <- function() {
+  episodic_quarto_available() && episodic_test_package_installed()
+}
+
 episodic_test_pathogen_config <- function() {
   path <- system.file("config", "episodic_default_pathogen_config.csv", package = "EpiSODIC")
   if (identical(path, "")) {

@@ -196,7 +196,10 @@ test_that("episodic_report_diff() handles a ratio that was or is NA without erro
 })
 
 test_that("episodic_report_render() stores a diffable snapshot that a later render can read back", {
-  skip_if_not(episodic_quarto_available(), "quarto CLI is not available in this environment")
+  skip_if_not(
+    episodic_test_can_render_report(),
+    "needs the quarto CLI and an installed EpiSODIC (the template library()s it)"
+  )
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   output_dir <- tempfile()

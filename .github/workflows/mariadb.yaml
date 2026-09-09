@@ -131,9 +131,19 @@ jobs:
           extra-packages: any::RMariaDB, any::testthat, any::devtools
           needs: check
 
+      # The shipped report template opens with library(EpiSODIC), and
+      # quarto renders it in a subprocess, so that render needs the
+      # package installed - not merely loaded from source by
+      # testthat::test_local(). Without this the report test passed or
+      # failed on whether a stale copy happened to be in the runner's
+      # cache, which made one matrix leg fail and the other pass on the
+      # same commit.
+      - name: Install the package, so the report template can library() it
+        run: R CMD INSTALL .
+
       # The whole suite, not only the MariaDB tests: a change that breaks
       # the dialect adapter and something else besides should report both.
-      - name: Run the test suite against MariaDB
+      - name: Run the test suite against ${{ matrix.server.name }}
         run: |
           Rscript -e 'stopifnot(requireNamespace("RMariaDB", quietly = TRUE))'
           Rscript -e 'testthat::test_local(stop_on_failure = TRUE)'
