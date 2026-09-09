@@ -196,18 +196,29 @@ episodic_db_create <- function(path, overwrite = FALSE) {
   } else {
     con <- episodic_db_mariadb_connect(path)
 
+    # Refusing has to close the connection it opened to find out, the
+    # same way episodic_db_check_schema_version() does: the caller never
+    # received it, so nobody else can, and RMariaDB complains about the
+    # leak whenever the handle is finally collected - long after the
+    # call that caused it.
+    refuse <- function(...) {
+      if (DBI::dbIsValid(con)) {
+        DBI::dbDisconnect(con)
+      }
+      stop(..., call. = FALSE)
+    }
+
     existing_tables <- DBI::dbListTables(con)
     intended_tables <- episodic_db_schema_tables()
     tables_to_drop <- intersect(existing_tables, intended_tables)
 
     if (length(tables_to_drop) > 0) {
       if (!overwrite) {
-        stop(
+        refuse(
           "Database already contains these EpiSODIC tables: ",
           paste(sprintf('"%s"', tables_to_drop), collapse = ", "),
           ". Pass overwrite = TRUE to drop and recreate them, ",
-          "or use episodic_db_connect() to open an existing database.",
-          call. = FALSE
+          "or use episodic_db_connect() to open an existing database."
         )
       }
 
@@ -237,7 +248,7 @@ episodic_db_create <- function(path, overwrite = FALSE) {
       }
 
       if (!is.null(failed)) {
-        stop(
+        refuse(
           "Failed to drop table \"",
           failed$table,
           "\" while recreating the schema. ",
@@ -245,21 +256,63 @@ episodic_db_create <- function(path, overwrite = FALSE) {
           if (length(dropped)) paste(dropped, collapse = ", ") else "(none)",
           ". Database is now in a partially-dropped state and must be inspected manually. ",
           "Original error: ",
-          conditionMessage(failed$error),
-          call. = FALSE
+          conditionMessage(failed$error)
         )
       }
     }
   }
 
   episodic_db_pragmas(con)
-
-  for (statement in episodic_db_schema_statements(dialect)) {
-    DBI::dbExecute(con, statement)
-  }
+  episodic_db_apply_schema(con, dialect)
   episodic_db_schema_version_stamp(con, episodic_schema_version)
 
   invisible(con)
+}
+
+#' Run the schema statements, in an order MySQL will accept
+#'
+#' `inst/sql/schema.sql` is written in the order the tables read best,
+#' which is not a topological order of their foreign keys:
+#' `episodic_stream` references `episodic_institution` sixty lines before
+#' that table is declared, and `episodic_stream_mute` references
+#' `episodic_app_user` several hundred lines before it. SQLite does not
+#' mind - it resolves a foreign key when a row is written, not when the
+#' table is declared - so this went unnoticed for as long as nothing ever
+#' pointed a real MySQL server at the generated DDL. MariaDB refuses the
+#' very first statement with `errno: 150, Foreign key constraint is
+#' incorrectly formed`, and refuses it whatever else is wrong or right
+#' about the rest of the schema.
+#'
+#' `FOREIGN_KEY_CHECKS = 0` is the documented way to declare a forward
+#' reference: the constraint is still created, and still enforced from
+#' the moment the flag goes back on. It is only reordering, not
+#' relaxation, and the flag is put back before this returns - including
+#' on the error path, so a half-built schema is never left with foreign
+#' keys switched off.
+#'
+#' Sorting the statements instead was the alternative, and it is worse: a
+#' topological sort is one more thing to keep correct as the schema
+#' grows, and it fails outright the first time two tables genuinely
+#' reference each other.
+#'
+#' @param con An open connection.
+#' @param dialect `"sqlite"` or `"mariadb"`.
+#' @return Invisibly `TRUE`.
+#' @keywords internal
+#' @noRd
+episodic_db_apply_schema <- function(con, dialect) {
+  if (dialect == "mariadb") {
+    DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 0")
+    on.exit(
+      DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 1"),
+      add = TRUE,
+      after = FALSE
+    )
+  }
+  for (statement in episodic_db_schema_statements(dialect)) {
+    DBI::dbExecute(con, statement)
+  }
+  invisible(TRUE)
 }
 
 #' The schema version this build of EpiSODIC expects

@@ -152,9 +152,10 @@ episodic_lattice_enumerate <- function(con,
           )
         } else {
           paste0(
-            "EPISODIC_PC_PROVINCE_MAP is unset, so the shipped Northern ",
-            "Netherlands demo ranges are in use and match only Dutch 7xxx-",
-            "9xxx postcodes. Point it at your own pc/province_code CSV."
+            "EPISODIC_PC_PROVINCE_MAP is unset, and there is no built-in ",
+            "rule to fall back on - deriving a province from a postcode is ",
+            "country-specific. Point it at your own pc/province_code CSV, ",
+            "or leave it unset and the province level stays empty."
           )
         }
       )

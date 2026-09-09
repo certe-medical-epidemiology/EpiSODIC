@@ -1,0 +1,126 @@
+# ===================================================================== #
+#  An R package by Certe:                                               #
+#  https://github.com/certe-medical-epidemiology                        #
+#                                                                       #
+#  Licensed as GPL-v2.0.                                                #
+#                                                                       #
+#  Developed at non-profit organisation Certe Medical Diagnostics &     #
+#  Advice, department of Medical Epidemiology.                          #
+#                                                                       #
+#  This R package is free software; you can freely use and distribute   #
+#  it for both personal and commercial purposes under the terms of the  #
+#  GNU General Public License version 2.0 (GNU GPL-2), as published by  #
+#  the Free Software Foundation.                                        #
+#                                                                       #
+#  We created this package for both routine data analysis and academic  #
+#  research and it was publicly released in the hope that it will be    #
+#  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
+
+# The suite against a real MariaDB server.
+#
+# EpiSODIC stores its data in SQLite or in MariaDB/MySQL, and the second
+# dialect is produced by rewriting the first: episodic_db_schema_statements()
+# turns inst/sql/schema.sql into MySQL-safe DDL with a hand-maintained
+# per-table find-and-replace table. Everything about that was checked by
+# reading the strings it produced. Nothing checked that a server would
+# accept them, and the first time one was asked, it did not.
+#
+# One Linux job, not the five-way matrix in R-CMD-check.yaml: a service
+# container on every configuration would be four containers spent proving
+# the same thing. The dialect adapter is a property of the package, not of
+# the platform it runs on.
+#
+# To run these locally instead:
+#
+#   docker run -d --name episodic-mariadb -p 13306:3306 \
+#     -e MARIADB_ROOT_PASSWORD=episodic -e MARIADB_DATABASE=episodic_test \
+#     -e MARIADB_USER=episodic -e MARIADB_PASSWORD=episodic mariadb:11
+#   EPISODIC_TEST_MARIADB_DSN=mysql://episodic:episodic@127.0.0.1:13306/episodic_test \
+#     Rscript -e 'devtools::test()'
+#
+# Point it at a scratch database and nothing else: every test in
+# tests/testthat/test-mariadb_live.R begins by dropping every EpiSODIC
+# table it finds.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+name: mariadb.yaml
+
+permissions: read-all
+
+jobs:
+  mariadb:
+    runs-on: ubuntu-latest
+    name: ubuntu-latest (release) with MariaDB
+
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: episodic
+          MARIADB_DATABASE: episodic_test
+          MARIADB_USER: episodic
+          MARIADB_PASSWORD: episodic
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mariadb-admin ping --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+      # Credentials for a throwaway container that exists for the length
+      # of this job and holds nothing but synthetic cases. The live tests
+      # skip themselves when this is unset, which is what keeps the suite
+      # green on a laptop with no MariaDB.
+      EPISODIC_TEST_MARIADB_DSN: mysql://episodic:episodic@127.0.0.1:3306/episodic_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::RMariaDB, any::testthat, any::devtools
+          needs: check
+
+      # The whole suite, not only the MariaDB tests: a change that breaks
+      # the dialect adapter and something else besides should report both.
+      - name: Run the test suite against MariaDB
+        run: |
+          Rscript -e 'stopifnot(requireNamespace("RMariaDB", quietly = TRUE))'
+          Rscript -e 'testthat::test_local(stop_on_failure = TRUE)'
+
+      # A skipped MariaDB test in this job is a job that proved nothing.
+      # It is the exact failure this workflow exists to prevent, so it
+      # fails the build rather than passing quietly.
+      - name: Refuse a run in which the live tests skipped themselves
+        run: |
+          Rscript -e '
+            suppressMessages(pkgload::load_all(quiet = TRUE))
+            results <- testthat::test_file(
+              "tests/testthat/test-mariadb_live.R",
+              reporter = "silent"
+            )
+            skipped <- sum(vapply(results, function(f) {
+              sum(vapply(f$results, function(r) inherits(r, "expectation_skip"), logical(1)))
+            }, integer(1)))
+            if (skipped > 0) {
+              stop(skipped, " live MariaDB test(s) skipped - the server was not reachable.")
+            }
+            cat("live MariaDB tests all ran\n")
+          '
