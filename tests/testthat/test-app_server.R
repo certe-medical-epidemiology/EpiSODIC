@@ -774,8 +774,8 @@ test_that("the navigation highlight follows a deep link, not just its own clicks
     session$flushReact()
     expect_equal(active(paste(output$nav_links, collapse = "\n")), "pathogen")
 
-    # the bug: opening a cluster from the Pathogen screen's table moved
-    # the content but left the highlight behind on Pathogen
+    # Opening a cluster from the Pathogen screen's table moves the
+    # content, so the nav highlight has to move with it
     session$setInputs(open_cluster = cluster_id)
     session$flushReact()
     expect_equal(active(paste(output$nav_links, collapse = "\n")), "clusters")

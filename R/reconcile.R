@@ -38,8 +38,7 @@
 #'      case count changed, flag `changed_since_assessment` so it derives
 #'      as `"reassess"` and returns to the board. A closed cluster that
 #'      starts producing cases again is the case that matters here:
-#'      unflagged, it went on absorbing them behind a dossier nobody was
-#'      shown.
+#'      unflagged, it absorbs them behind a dossier nobody is shown.
 #'    - Multiple matches: merge. The oldest surviving cluster absorbs the
 #'      others via `merged_into`; nothing is deleted and no assessment
 #'      history is lost. The survivor is flagged by the same rule as a
@@ -161,9 +160,9 @@ episodic_reconcile_stream <- function(con,
     candidate <- candidates[i, ]
     # Re-read every time round: an earlier candidate in this same run may
     # have opened a cluster or extended one, and this is what the next
-    # candidate is matched against. Kept stale, a cluster went on
-    # advertising the last day it had when the run started, stopped
-    # matching once that was case_free_days behind, and split one
+    # candidate is matched against. Held stale, a cluster keeps
+    # advertising the last day it had when the run started, stops
+    # matching once that is `case_free_days` behind, and splits one
     # continuous outbreak into a new dossier every fortnight.
     open_clusters <- episodic_db_clusters_for_stream(con, stream_id)
     matches <- episodic_reconcile_find_matches(
@@ -318,14 +317,14 @@ episodic_reconcile_stream <- function(con,
 
       # A cluster that is already closed counts here exactly as an
       # assessed one does. Without it, a cluster the cron auto-closed as
-      # stale-and-unassessed went on quietly absorbing every candidate
-      # that landed within `case_free_days` of it - growing its interval
-      # and its case count, run after run, while `episodic_derive_state()`
-      # kept returning "closed" (no verdict, no `changed_since_assessment`)
-      # and nothing ever put it back in front of anyone. An outbreak that
-      # resumed after a lull was recorded in full and shown to no one,
-      # which is the single worst thing a surveillance system can do.
-      # Flagged, it derives as "reassess" and returns to the board.
+      # stale-and-unassessed quietly absorbs every candidate landing
+      # within `case_free_days` of it - growing its interval and its case
+      # count, run after run - while `episodic_derive_state()` goes on
+      # returning "closed" (no verdict, no `changed_since_assessment`)
+      # and nothing puts it back in front of anyone. An outbreak that
+      # resumes after a lull would be recorded in full and shown to no
+      # one, which is the single worst thing a surveillance system can
+      # do. Flagged, it derives as "reassess" and returns to the board.
       changed <- (has_assessment_fn(cluster_id) ||
         episodic_reconcile_is_closed(con, cluster_id)) &&
         (as.character(new_first) != existing$first_day ||
@@ -643,13 +642,14 @@ episodic_reconcile_merge_detections <- function(detections) {
 #'
 #' `episodic_cluster` carries `expected`, `excess` and `ratio` columns,
 #' and both the dossier's stat grid and the interpretation engine's
-#' magnitude fragments read them - but until these were derived here,
-#' nothing ever wrote them: every cluster was persisted with all three
-#' left at their `NA` defaults, so the O/E ratio never appeared on a
-#' dossier, never appeared in the rail, and the `magnitude.high_ratio`/
-#' `magnitude.moderate_ratio` fragments could not fire. The detections
-#' had the numbers all along (`episodic_detection.expected`/
-#' `upperbound`); they simply were not carried through reconciliation.
+#' magnitude fragments read them. Reconciliation is the only place that
+#' can fill them: the numbers live on the detections
+#' (`episodic_detection.expected`/`upperbound`) and the cluster is what
+#' anyone reads. Derived anywhere else, or nowhere, every cluster
+#' persists with all three at their `NA` defaults, and the O/E ratio
+#' reaches neither the dossier nor the rail while the
+#' `magnitude.high_ratio`/`magnitude.moderate_ratio` fragments cannot
+#' fire.
 #'
 #' All three describe the **candidate episode this run**, not the
 #' cluster's whole lifetime: `expected` is a baseline for a specific

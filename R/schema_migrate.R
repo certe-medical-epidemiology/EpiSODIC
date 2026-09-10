@@ -446,11 +446,11 @@ episodic_db_migrations <- function() {
     },
     # 3: episodic_report_version_claim, the register that hands out a
     # report's version_no before the render rather than after it, and
-    # the unique index on episodic_report_render that keeps any future
-    # regression loud (see issue #48). Additive: one new table, one new
-    # index, and a backfill of the register from the renders already
-    # recorded, so a migrated database allocates from the same place a
-    # fresh one does.
+    # the unique index on episodic_report_render that makes a duplicate
+    # number an error rather than a quiet overwrite. Additive: one new
+    # table, one new index, and a backfill of the register from the
+    # renders already recorded, so a migrated database allocates from the
+    # same place a fresh one does.
     #
     # The index cannot be created over rows that already violate it, and
     # renumbering them would be rewriting an audit trail - so a database

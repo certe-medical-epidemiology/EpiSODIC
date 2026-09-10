@@ -51,12 +51,12 @@ episodic_institution_activity_load <- function(con, activity) {
 
   institutions <- episodic_db_institutions(con)
   # Hashed to match, exactly as the case feed's own `institution_key` is
-  # (`episodic_institution_key_hash()`). This compared the operator's raw
-  # key against the stored hash, which cannot ever match - so for every
-  # deployment that followed the documented requirement ("matches the
-  # cases feed") the entire activity feed was skipped, patient-day
-  # normalisation silently never engaged, and every run finished
-  # `partial` pointing at a data problem that did not exist.
+  # (`episodic_institution_key_hash()`). Comparing the operator's raw key
+  # against the stored hash can never match, and the failure is quiet in
+  # the worst way: every deployment that follows the documented
+  # requirement ("matches the cases feed") has its whole activity feed
+  # skipped, patient-day normalisation never engages, and every run
+  # finishes `partial` pointing at a data problem that does not exist.
   hashed <- episodic_institution_key_hash(activity$institution_key)
   n_written <- 0L
   skipped_keys <- character(0)

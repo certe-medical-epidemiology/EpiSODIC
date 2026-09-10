@@ -42,15 +42,16 @@ episodic_n_detectors <- 4L
 #' keeping its weight: a stream that structurally *cannot* produce a
 #' measurement must not be penalised relative to one that can.
 #'
-#' That rule was originally written for the density component (a stream
-#' with no patient-day denominator) but applies just as forcefully to
-#' `excess` and `ratio`, which only exist for detectors that fit a
-#' baseline. `same_place` and `rare_trigger` never produce either, so
-#' scoring their absence as zero-with-weight meant every ward-level
-#' same-place cluster - the kind an infection prevention nurse has to act
-#' on the same day - was systematically outranked by Farrington signals
-#' purely because Farrington is the detector that happens to report an
-#' expectation. Absence of a baseline is not evidence of a small excess.
+#' The rule holds for the density component (a stream with no
+#' patient-day denominator) and just as forcefully for `excess` and
+#' `ratio`, which only exist for detectors that fit a baseline.
+#' `same_place` and `rare_trigger` never produce either, so scoring
+#' their absence as zero-with-weight would systematically outrank every
+#' ward-level same-place cluster - the kind an infection prevention
+#' nurse has to act on the same day - beneath Farrington signals, purely
+#' because Farrington is the detector that happens to report an
+#' expectation. Absence of a baseline is not evidence of a small
+#' excess.
 #'
 #' The rescaled components are anchored so that "unremarkable" is zero,
 #' not a half score: `ratio` and `density_ratio` are both ratios against

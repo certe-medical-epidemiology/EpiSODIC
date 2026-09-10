@@ -76,15 +76,15 @@ same_place:
   default_k_days: 14
   # How far back a run reports hits from. This detector needs no
   # baseline, so nothing in its own logic bounds it: unbounded, it
-  # rescanned the entire case history every run and re-emitted every hit
-  # window it had ever found, which is not merely wasteful - each
+  # rescans the entire case history every run and re-emits every hit
+  # window it has ever found, which is not merely wasteful - each
   # re-emitted historical window matches its own long-settled cluster
   # during reconciliation and resets `runs_since_detected` to zero, so
-  # `reconciliation.close_after_runs` could never fire for any cluster
-  # this detector had touched. The same bound `farrington.max_weeks_tested`
+  # `reconciliation.close_after_runs` can never fire for any cluster this
+  # detector has touched. The same bound `farrington.max_weeks_tested`
   # places on the statistical detector. Judged on a window's LAST day, so
-  # a long window running up to yesterday is always reported. Set to ~ for
-  # no bound (which is the old behaviour, and is not recommended).
+  # a long window running up to yesterday is always reported. Set to ~ to
+  # remove the bound, which is not recommended, for the reason above.
   lookback_days: 90
   overrides:
     Clostridioides difficile: {n_cases: 3, k_days: 14}

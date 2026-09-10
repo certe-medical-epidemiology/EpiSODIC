@@ -235,15 +235,14 @@ episodic_institutions_resolve <- function(con, cases) {
 #' feed that names an institution therefore has to be hashed the same way
 #' before it can be matched.
 #'
-#' In one place because it was in two, and only one of them did it: the
-#' case feed hashed, and `episodic_institution_activity_load()` compared
-#' the operator's raw key against the stored hash. Since
-#' `vignette("data-format")` tells an operator the activity feed's
-#' `institution_key` "matches the cases feed", every real deployment's
-#' activity rows were skipped, patient-day normalisation never engaged,
-#' and every run finished `partial` with a warning saying the keys
-#' matched no institution - which was true, and entirely the wrong thing
-#' to go looking for.
+#' In one place, because a second place to do the hashing is a place to
+#' forget it. `vignette("data-format")` tells an operator the activity
+#' feed's `institution_key` "matches the cases feed", so a loader that
+#' compares that key raw against the stored hash matches nothing on any
+#' correctly prepared deployment: activity rows skipped, patient-day
+#' normalisation never engaged, and every run finishing `partial` with a
+#' warning that the keys match no institution - true, and entirely the
+#' wrong thing to send anyone looking for.
 #'
 #' @param institution_key A character vector of operator-supplied keys.
 #' @return A character vector of 40-character SHA-1 hex digests.

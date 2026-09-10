@@ -23,7 +23,7 @@
 #
 # Source: certe-medical-epidemiology/certegis's `geo_postcodes4` dataset
 # (data/geo_postcodes4.rda), GPL-2 licensed, same licence as this package.
-# certegis itself is no longer a dependency of EpiSODIC: the geography
+# certegis itself is not a dependency of EpiSODIC: the geography
 # panel's data requirements (R/geo_data.R) is deliberately generic - an sf
 # object with `pc`/`geometry` columns - so any operator, anywhere, can
 # point EPISODIC_GEO_DATA at their own equivalent file. `pc` matches

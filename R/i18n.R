@@ -332,13 +332,12 @@ episodic_language_choices <- function(lang = Sys.getenv("EPISODIC_LANGUAGE"),
 
 #' Whether a language is written right to left
 #'
-#' Arabic is one of the eight shipped languages, and until this existed
-#' the dashboard rendered it left to right with no `dir` attribute
-#' anywhere on the page - every navigation bar, table and chart axis
-#' mirrored the wrong way round. Kept as a predicate over
-#' `episodic_languages_rtl` rather than an `identical(lang, "ar")` at
-#' each of the call sites, so adding Hebrew, Persian or Urdu later is
-#' one entry rather than a search.
+#' Arabic is one of the eight shipped languages, so the page needs a
+#' `dir` attribute: without one the dashboard renders left to right and
+#' every navigation bar, table and chart axis mirrors the wrong way
+#' round. A predicate over `episodic_languages_rtl` rather than an
+#' `identical(lang, "ar")` at each call site, so adding Hebrew, Persian
+#' or Urdu is one entry rather than a search.
 #'
 #' @param lang A language code (resolved or not).
 #' @return A single logical.

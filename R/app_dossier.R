@@ -339,11 +339,11 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' The status trajectory band: one segment per classification held, not
 #' per derived state
 #'
-#' Earlier version rendered a single bar labelled with the current
-#' derived state (new/assessing/monitoring/...), which cannot answer the
-#' one question this band exists for: was this ever thought to be a
-#' possible epidemic before being confirmed, or was it artefact from the
-#' start? Segments are therefore built from verdict-*setting* events only
+#' A single bar labelled with the cluster's current derived state
+#' (new/assessing/monitoring/...) cannot answer the one question this
+#' band exists for: was this ever thought to be a possible epidemic
+#' before being confirmed, or was it artefact from the start? Segments
+#' are therefore built from verdict-*setting* events only
 #' (`episodic_app_assessment_timeline()`'s `verdict` column, ignoring
 #' note-only assessments that carry no classification and closures,
 #' neither of which change what the cluster was judged to be) - the time
@@ -1972,8 +1972,8 @@ episodic_ui_streams_screen <- function(screen,
               # Farrington is running on this stream. The tooltip that
               # says what those two numbers are is a sentence, though,
               # and a sentence on a screen shipped in eight languages is
-              # a translation key - it was written in English here and
-              # stayed English on every one of them.
+              # a translation key: written in English here, it stays
+              # English in all eight.
               shiny::tags$td(
                 title = episodic_tr(
                   "streams.farrington_hint",

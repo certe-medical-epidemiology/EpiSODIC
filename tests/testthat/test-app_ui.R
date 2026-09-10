@@ -412,8 +412,8 @@ test_that("episodic_ui_pkg_versions_html() drops a package the run had no versio
 })
 
 test_that("episodic_ui_format_stamp() spells the date in the session language and keeps the local clock", {
-  # "15-01-2025" is one country's convention, and it was written into
-  # every timestamp on a dashboard shipped in eight languages.
+  # "15-01-2025" is one country's convention, and this stamp appears on
+  # a dashboard shipped in eight languages.
   expect_equal(
     episodic_ui_format_stamp(
       "2025-01-15T10:00:00Z",

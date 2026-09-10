@@ -189,9 +189,9 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
           # Rendered from the server's own view(), not written once here:
           # the highlight has to follow every way the view can change, and
           # not every one of them is a click on these links. The Pathogen
-          # screen's cluster table switches views from a table row, and a
-          # nav that only updated itself on its own clicks was left
-          # pointing at the screen you had just left.
+          # screen's cluster table switches views from a table row, so a
+          # nav updating itself only on its own clicks would point at the
+          # screen the reader has just left.
           shiny::uiOutput(
             "nav_links",
             container = shiny::tags$div,

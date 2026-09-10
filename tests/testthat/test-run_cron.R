@@ -539,10 +539,11 @@ test_that("two groups whose fields concatenate to the same string stay two strea
 })
 
 test_that("a geographic stream gets its own area's cases, not the whole region's", {
-  # The bug this guards: only lattice enumeration knew how a case maps to
-  # a region code, so every area and province stream was handed the whole
-  # catchment and reported the region's counts under its own name - one
-  # signal, and a cluster per area to go with it.
+  # Case-to-region mapping has to be the same rule here as in lattice
+  # enumeration. Known to only one of the two, every area and province
+  # stream is handed the whole catchment and reports the region's counts
+  # under its own name - one signal, and a cluster per area to go with
+  # it.
   cases <- data.frame(
     pathogen = "Norovirus",
     institution_id = NA_integer_,

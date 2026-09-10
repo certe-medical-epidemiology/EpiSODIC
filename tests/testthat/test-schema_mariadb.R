@@ -215,10 +215,10 @@ schema_references <- function() {
 
 test_that("every inline reference becomes a table-level FOREIGN KEY", {
   # MySQL parses inline column-level REFERENCES and discards them, so a
-  # schema that relies on them gets no constraints at all there - which is
-  # what the first real deployment had. Derived from the schema rather
-  # than from a list kept beside it: a list is a second place to forget a
-  # foreign key, and forgetting one is silent on MySQL.
+  # schema relying on them gets every table and not one constraint there,
+  # silently. Derived from the schema rather than from a list kept beside
+  # it: a list is a second place to forget a foreign key, and forgetting
+  # one is silent on MySQL.
   statements <- episodic_db_schema_statements("mariadb")
   declared <- sum(vapply(
     strsplit(statements, "\n", fixed = TRUE),

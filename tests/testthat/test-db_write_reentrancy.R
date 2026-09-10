@@ -121,15 +121,15 @@ test_that("episodic_db_last_insert_id() returns a plain integer", {
   # MariaDB's LAST_INSERT_ID() is BIGINT, which RMariaDB would otherwise
   # hand back as a bit64::integer64 - a double carrying the integer's bit
   # pattern. Subassigning one into an ordinary vector drops the class and
-  # keeps the payload, so a real id silently became a subnormal double and
-  # was written into an INTEGER column as 0. Asserting the plain type here
-  # is what stops that reaching the database again.
+  # keeps the payload, so a real id becomes a subnormal double and is
+  # written into an INTEGER column as 0. Asserting the plain type here is
+  # what keeps that out of the database.
   #
-  # The run row stands in for every id read back this way. Institutions no
-  # longer are: episodic_institutions_resolve(), where that bug surfaced,
-  # now writes the batch and reads the ids back by key, which keeps
-  # LAST_INSERT_ID() out of that path altogether. Clusters, detections and
-  # runs still take theirs from here.
+  # The run row stands in for every id read back this way: clusters,
+  # detections and runs all take theirs from here.
+  # episodic_institutions_resolve() does not, since it writes the batch
+  # and reads the ids back by key, which keeps LAST_INSERT_ID() out of
+  # that path altogether.
   expect_type(id, "integer")
   expect_false(inherits(id, "integer64"))
   expect_equal(id, 1L)

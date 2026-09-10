@@ -10,7 +10,7 @@ EpiSODIC is a complete and automated outbreak detection and assessment system. I
 
 - No shortcuts, no placeholder logic, no "good enough for now". If a proper implementation is more effort than a shortcut, implement it properly or check with the user.
 - No silent failures. Every error path must be handled explicitly and must fail loudly, never fail quietly and produce a plausible-looking wrong result.
-- **Absence of a measurement is never a measurement of zero.** This is the failure mode this codebase produces most often, and it has been found in four separate places: lattice suppression read a manual cluster's zero case-overlap as "the rise is spread thinly" rather than "there is nothing here to measure"; the reporting-completion curve dropped the lags at which nothing had arrived yet instead of counting them as zero; the priority score's own docstring gets it right, and `episodic_add_manual_cluster()` still scored agreement on a different denominator; and three dossier narrative fragments passed `NA` positivity through `%||% 0` and then wrote sentences about it. Note that `%||%` in this package (`R/interpretation.R`) also swallows `NA`, not only `NULL`, which is exactly how the last of those happened. When a quantity cannot be computed, drop the component, skip the fragment, or return `NULL` - never substitute a zero and carry on.
+- **Absence of a measurement is never a measurement of zero.** This is the failure mode this codebase is most prone to, and it wears the same disguise every time: a zero is a legal value of the quantity, so substituting one for "cannot be computed" produces a number that reads as a finding. A zero case-overlap becomes "the rise is spread thinly" rather than "there is nothing here to measure"; a lag at which nothing has arrived yet becomes a completion of zero rather than a lag with no denominator; a component that a stream structurally cannot produce becomes a score of zero carrying its full weight; an `NA` positivity becomes a sentence about a positivity of nought. Watch `%||%` in particular: this package's own (`R/interpretation.R`) swallows `NA` as well as `NULL`, so `x %||% 0` turns an unmeasured quantity into a measured zero without a word. When a quantity cannot be computed, drop the component, skip the fragment, or return `NULL` - never substitute a zero and carry on.
 - No hidden assumptions about a specific laboratory's data structure, coding system, or naming convention. Anything laboratory-specific must be configurable, not hardcoded.
 - No untested code paths merged into main. Every function that touches detection logic, data transformation, or reporting must have accompanying tests before it is considered complete, and must be placed in a separate branch WITH a PR, so every change regarding these items must automatically be put into a PR.
 - No inconsistent interfaces. Function signatures, argument naming, return types, and error conventions must be uniform across the entire codebase, as if written by a single disciplined author, not accreted piecemeal.
@@ -82,13 +82,13 @@ Stream keys are SHA-1 hashes of (pathogen, level, institution_id, ward, region_c
 The geography a run uses is resolved once, from that run's own config, and
 passed down: `episodic_lattice_enumerate()`, `episodic_cases_for_stream()`,
 `episodic_db_cases_for_stream_id()` and `episodic_reconcile_stream()` all
-take it as an argument. Resolving it separately at each site meant a run
-given `episodic_config_path` named its L5 catchment from one configuration
-and its L3 areas from another, and then tested case membership against a
-third - so every geographic stream matched no case however many arrived,
-and any cluster opened there was written with none linked to it, silently.
-The default still resolves `EPISODIC_CONFIG`, which is the right answer on
-the dashboard side, where there is no run to take it from.
+take it as an argument. Resolved separately at each site, a run given
+`episodic_config_path` names its L5 catchment from one configuration and
+its L3 areas from another, then tests case membership against a third - so
+every geographic stream matches no case however many arrive, and any
+cluster opened there is written with none linked to it, silently. The
+default resolves `EPISODIC_CONFIG`, which is the right answer on the
+dashboard side, where there is no run to take it from.
 
 Nothing about the lattice's geography is hardcoded to one country. The whole-catchment code (L5) and the area-code rule (L3) are `config$geography`, resolved by `episodic_geography_config()`; the province level (L4) is an operator-supplied `pc` -> `province_code` CSV pointed at by `EPISODIC_PC_PROVINCE_MAP`, with no built-in rule at all, since deriving a province from a postcode is country-specific. Unconfigured, L4 stays empty and says so on the dashboard's Info screen. Likewise `EPISODIC_GEO_DATA` has no default: without it there is no map, never another country's.
 
@@ -118,8 +118,8 @@ Single schema in `inst/sql/schema.sql`, written in SQLite dialect. Adapted at lo
 Two things the adapter does that are not cosmetic. It **derives table-level
 `FOREIGN KEY` clauses** from the schema's inline column-level `REFERENCES`,
 because MySQL parses an inline reference and discards it: relying on them
-gave a MySQL instance all its tables and not one constraint, silently,
-which is what the first real deployment had. Derived rather than listed, so
+gives a MySQL instance all its tables and not one constraint, silently.
+Derived rather than listed, so
 a reference added to `schema.sql` is converted without anyone remembering
 to, and `test-schema_mariadb.R` asserts the counts match. And it applies
 the schema with `FOREIGN_KEY_CHECKS = 0`, because the tables are declared
@@ -148,7 +148,7 @@ Pathogen-specific parameters (episode length, serial interval, severity weight) 
 
 Two identifiers are transformed on the way in, and every feed that names one has to transform it the same way or it silently matches nothing:
 
-- **`institution_key`** is hashed by `episodic_institution_key_hash()` before it is stored, so the case feed and the institution-activity feed both supply the operator's own key and both are hashed to match. The activity loader once compared the raw key against the stored hash, which meant patient-day normalisation never engaged on any real deployment.
+- **`institution_key`** is hashed by `episodic_institution_key_hash()` before it is stored, so the case feed and the institution-activity feed both supply the operator's own key and both are hashed to match. A loader comparing the raw key against the stored hash matches nothing on any correctly prepared deployment, and patient-day normalisation simply never engages.
 - **The patient-and-pathogen episode key** is built by `episodic_case_group_key()`, which separates its parts with a control character rather than concatenating them. `episodic_cases_deduplicate()` groups on it and `episodic_db_last_case_dates()` names its anchor dates with it; if the two ever disagree, a stored episode is never matched and an incoming positive arrives as a spurious second case.
 
 ### Notifications
