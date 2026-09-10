@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.18.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -223,6 +223,59 @@ everything supplied was validated and detections are valid, but some
 optional-feed rows were skipped (e.g. institution activity for an
 institution EpiSODIC does not know) - both <code>success</code> and
 <code>partial</code> are usable runs.</p>
+</details><details><summary><strong>I loaded years of history. What happens to the old clusters in
+it?</strong>
+</summary><p>They are found, opened, and mostly closed again, in that one run.</p>
+<p>The <strong>first</strong> run against a database is a backfill: it
+reports every hit in the case history it was given, rather than only
+what falls inside the detectors’ lookback windows. Any cluster whose
+last case is further back than
+<code>reconciliation.stale_open_days</code> (60 by default) is closed by
+the same run that opened it and appears in the Archive, complete, with
+its real case period. What is still recent stays open for assessment.
+The run says how the two divided.</p>
+<p>Every run after the first is bounded again, so none of that is
+reported twice. That bound is why it matters: without it a settled
+historical hit is re-emitted on every run, matches its own long-closed
+cluster, and resets <code>runs_since_detected</code>, which stops
+<code>reconciliation.close_after_runs</code> from ever firing again.</p>
+<p>Note what a backfilled cluster’s <code>opened_at</code> means. It is
+the day the archive was imported, not the day anything was noticed, so
+the Performance screen leaves these clusters out of time-to-detection.
+They still count towards positive predictive value if a person assesses
+one, because that is a judgement about the detectors like any other.</p>
+<p>To override the decision, pass <code>backfill</code> to
+<code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> explicitly. <code>FALSE</code> bounds
+even the first run, which is what a prospective replay needs.</p>
+</details><details><summary><strong>A run found nothing at all. Is detection broken?</strong>
+</summary><p>The run’s own log says which bound you met.</p>
+<ul>
+<li>
+<code>same_place</code> and <code>rare_trigger</code> report only
+hits whose most recent case falls inside their
+<code>lookback_days</code> (90 by default). A run says how many further
+hits that kept out, so “found 0 detection(s)” with nothing after it
+means a quiet catchment, and “did not report 137 further hit(s)” means
+history that an earlier run already reported.</li>
+<li>Farrington needs <code>(farrington.b + 1) * 52</code> weeks of
+history on a stream before it fits at all - 156 weeks at the shipped
+<code>b: 2</code>. An instance carrying two years of history therefore
+gets nothing from it anywhere, and the run says on how many of the
+eligible streams it fitted. Lower <code>farrington.b</code> (at
+<code>b: 1</code> it needs 104 weeks) or wait for the history to
+accrue.</li>
+<li>MEM only runs on regional streams, for pathogens flagged
+<code>mem_applicable</code>, and only outside its own pre-epidemic
+threshold.</li>
+</ul>
+<p>If your extract does not run up to today, a run dated today sees a
+catchment that stopped weeks ago. It says so outright when the newest
+case on file is older than every rule-based lookback. Give
+<code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> a <code>run_date</code> inside the
+extract’s own window, and run it one date at a time if the dates a
+cluster was opened on need to mean anything - which is how
+<code><a href="../reference/episodic_validate_detection.html">episodic_validate_detection()</a></code> replays a generated history
+week by week.</p>
 </details><details><summary><strong>Can I try EpiSODIC out before pointing it at anything
 real?</strong>
 </summary><p>Yes, and this is the easiest way to get a feel for it. One call:</p>

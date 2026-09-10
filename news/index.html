@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.18.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,32 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.18.0" id="episodic-0180">EpiSODIC 0.18.0<a class="anchor" aria-label="anchor" href="#episodic-0180"></a></h2>
+<div class="section level3">
+<h3 id="new-0-18-0">New<a class="anchor" aria-label="anchor" href="#new-0-18-0"></a></h3>
+<ul><li>The first run against a database reports the whole case history it is given, so importing years of history fills the Archive instead of leaving an empty dashboard</li>
+<li>Clusters a backfill opens whose last case is past <code>reconciliation.stale_open_days</code> close in that same run, and go straight to the Archive</li>
+<li>
+<code>episodic_run_cron(backfill =)</code> overrides that decision; <code><a href="../reference/episodic_validate_detection.html">episodic_validate_detection()</a></code> passes <code>FALSE</code>, so a replay still measures detection delay rather than an import</li>
+<li>Schema version 4: <code>episodic_cluster.opened_in_backfill</code> and <code>episodic_detection_run.is_backfill</code>
+</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-18-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-18-0"></a></h3>
+<ul><li>The Performance screen’s time-to-detection excludes clusters a backfill opened, since their <code>opened_at</code> is the day the archive was imported</li>
+<li>Farrington tests every week its streams can carry on a backfill run, rather than the <code>max_weeks_tested</code> catch-up cap</li>
+<li>A run states the span of the case history it holds, and says outright when the newest case is older than every rule-based detector’s lookback window</li>
+<li>
+<code>same_place</code> and <code>rare_trigger</code> report how many hits their lookback window kept out, so a run that reports nothing says which kind of nothing it found</li>
+<li>The Farrington history-shortfall line says how many of the eligible streams it fitted on, not only how many it skipped</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-18-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-18-0"></a></h3>
+<ul><li>The Pathogen screen wrote a pathogen’s serial interval and incubation range in R’s own marks rather than the session language’s</li>
+<li>The Streams screen’s Farrington tooltip and a notification’s “and N more” line ignored the session language the same way</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.17.2" id="episodic-0172">EpiSODIC 0.17.2<a class="anchor" aria-label="anchor" href="#episodic-0172"></a></h2>
 <div class="section level3">

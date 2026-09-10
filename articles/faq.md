@@ -167,6 +167,63 @@ optional-feed rows were skipped (e.g. institution activity for an
 institution EpiSODIC does not know) - both `success` and `partial` are
 usable runs.
 
+**I loaded years of history. What happens to the old clusters in it?**
+
+They are found, opened, and mostly closed again, in that one run.
+
+The **first** run against a database is a backfill: it reports every hit
+in the case history it was given, rather than only what falls inside the
+detectors’ lookback windows. Any cluster whose last case is further back
+than `reconciliation.stale_open_days` (60 by default) is closed by the
+same run that opened it and appears in the Archive, complete, with its
+real case period. What is still recent stays open for assessment. The
+run says how the two divided.
+
+Every run after the first is bounded again, so none of that is reported
+twice. That bound is why it matters: without it a settled historical hit
+is re-emitted on every run, matches its own long-closed cluster, and
+resets `runs_since_detected`, which stops
+`reconciliation.close_after_runs` from ever firing again.
+
+Note what a backfilled cluster’s `opened_at` means. It is the day the
+archive was imported, not the day anything was noticed, so the
+Performance screen leaves these clusters out of time-to-detection. They
+still count towards positive predictive value if a person assesses one,
+because that is a judgement about the detectors like any other.
+
+To override the decision, pass `backfill` to
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+explicitly. `FALSE` bounds even the first run, which is what a
+prospective replay needs.
+
+**A run found nothing at all. Is detection broken?**
+
+The run’s own log says which bound you met.
+
+- `same_place` and `rare_trigger` report only hits whose most recent
+  case falls inside their `lookback_days` (90 by default). A run says
+  how many further hits that kept out, so “found 0 detection(s)” with
+  nothing after it means a quiet catchment, and “did not report 137
+  further hit(s)” means history that an earlier run already reported.
+- Farrington needs `(farrington.b + 1) * 52` weeks of history on a
+  stream before it fits at all - 156 weeks at the shipped `b: 2`. An
+  instance carrying two years of history therefore gets nothing from it
+  anywhere, and the run says on how many of the eligible streams it
+  fitted. Lower `farrington.b` (at `b: 1` it needs 104 weeks) or wait
+  for the history to accrue.
+- MEM only runs on regional streams, for pathogens flagged
+  `mem_applicable`, and only outside its own pre-epidemic threshold.
+
+If your extract does not run up to today, a run dated today sees a
+catchment that stopped weeks ago. It says so outright when the newest
+case on file is older than every rule-based lookback. Give
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+a `run_date` inside the extract’s own window, and run it one date at a
+time if the dates a cluster was opened on need to mean anything - which
+is how
+[`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+replays a generated history week by week.
+
 **Can I try EpiSODIC out before pointing it at anything real?**
 
 Yes, and this is the easiest way to get a feel for it. One call:
