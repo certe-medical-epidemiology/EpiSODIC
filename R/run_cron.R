@@ -304,7 +304,7 @@ episodic_run_cron <- function(cases,
         nrow(cases),
         " rows)"
       )
-      report <- episodic_validate_cases(cases)
+      report <- episodic_check_cases(cases, stop_on_problem = TRUE)
       episodic_trace(
         "Case data checked: ",
         nrow(cases),

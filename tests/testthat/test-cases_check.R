@@ -287,3 +287,32 @@ test_that("episodic_validate_cases() stays silent about advice, which is not its
   cases$ward <- NA_character_
   expect_silent(episodic_validate_cases(cases))
 })
+
+test_that("stop_on_problem = TRUE throws on a problem and returns the report otherwise", {
+  cases <- check_case()
+  cases$sex <- "male"
+  expect_error(
+    episodic_check_cases(cases, stop_on_problem = TRUE),
+    "sex",
+    fixed = TRUE
+  )
+
+  # What a caller that survives the throw gets back is the report itself,
+  # with its severity column: the advisory findings a run proceeds on are
+  # read off it.
+  clean <- check_case()
+  clean$ward <- NA_character_
+  report <- episodic_check_cases(clean, stop_on_problem = TRUE)
+  expect_s3_class(report, "episodic_case_check")
+  expect_true("severity" %in% names(report))
+  expect_equal(nrow(problems_of(report)), 0)
+  expect_gt(nrow(advice_of(report)), 0)
+})
+
+test_that("stop_on_problem = TRUE throws on something that is not a data set", {
+  expect_error(
+    episodic_check_cases("not a data set", stop_on_problem = TRUE),
+    "data frame",
+    fixed = TRUE
+  )
+})
