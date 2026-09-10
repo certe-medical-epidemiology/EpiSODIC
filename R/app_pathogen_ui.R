@@ -693,6 +693,17 @@ episodic_ui_pathogen_config_panel <- function(screen,
   }
 
   dash <- episodic_tr("misc.dash", lang = lang)
+  # Every quantity on this panel is written in the session language's own
+  # marks, so a serial interval reads 2,6 to a Dutch reader and 2.6 to an
+  # English one. `episodic_format_number()` gives back `NA_character_` for
+  # a value the configuration leaves empty, which `%||%` turns into the
+  # dash - a parameter this instance does not set, rather than a nought.
+  num <- function(x) {
+    if (length(x) != 1) {
+      return(dash)
+    }
+    episodic_format_number(x, lang = lang) %||% dash
+  }
   yes_no <- function(x) {
     episodic_tr(
       if (isTRUE(as.logical(x))) "misc.yes" else "misc.no",
@@ -727,8 +738,8 @@ episodic_ui_pathogen_config_panel <- function(screen,
         ),
         value = episodic_tr(
           "pathogen.panel.config.incubation.value",
-          min = pc$incub_min_days %||% dash,
-          max = pc$incub_max_days %||% dash,
+          min = num(pc$incub_min_days),
+          max = num(pc$incub_max_days),
           lang = lang
         ),
         meaning = episodic_tr(
@@ -779,8 +790,8 @@ episodic_ui_pathogen_config_panel <- function(screen,
         label = episodic_tr("pathogen.panel.config.si.label", lang = lang),
         value = episodic_tr(
           "pathogen.panel.config.si.value",
-          mean = pc$si_mean_days,
-          sd = pc$si_sd_days %||% dash,
+          mean = num(pc$si_mean_days),
+          sd = num(pc$si_sd_days),
           dist = pc$si_dist %||% dash,
           lang = lang
         ),

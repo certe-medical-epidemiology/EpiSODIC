@@ -119,7 +119,12 @@ CREATE TABLE episodic_detection_run (
   pkg_versions      TEXT,
   config_hash       TEXT CHECK (config_hash IS NULL OR length(config_hash) = 40),
   config_snapshot   TEXT,
-  error_text        TEXT
+  error_text        TEXT,
+  -- This run reported the whole case history rather than only what falls
+  -- inside the detectors' lookback windows, because it was the first run
+  -- on this database. Recorded so a run that opened three hundred
+  -- clusters can say why it did.
+  is_backfill       INTEGER NOT NULL DEFAULT 0 CHECK (is_backfill IN (0, 1))
 );
 
 -- ---------------------------------------------------------------------
@@ -258,7 +263,16 @@ CREATE TABLE episodic_cluster (
   -- (both in R/reconcile.R); their case-level detail
   -- (if any) lives in episodic_cluster_manual_case, never in
   -- episodic_case/episodic_cluster_case.
-  origin                   TEXT NOT NULL DEFAULT 'detected' CHECK (origin IN ('detected', 'manual'))
+  origin                   TEXT NOT NULL DEFAULT 'detected' CHECK (origin IN ('detected', 'manual')),
+  -- Opened by a backfill run: the first run on a database, which reports
+  -- the whole case history it was given rather than only what falls
+  -- inside the detectors' lookback windows. Such a cluster is a
+  -- 'detected' cluster in every other respect - it reconciles, ages,
+  -- suppresses and closes exactly as any other, which is why this is a
+  -- flag rather than a third `origin` - but the day it was opened is the
+  -- day the archive was imported, not the day anything was noticed, so
+  -- the Performance screen's time-to-detection excludes it.
+  opened_in_backfill       INTEGER NOT NULL DEFAULT 0 CHECK (opened_in_backfill IN (0, 1))
 );
 
 -- Note what this table does NOT carry: verdict, state, closed_at,

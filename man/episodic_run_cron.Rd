@@ -13,6 +13,7 @@ episodic_run_cron(
   host = Sys.info()[["nodename"]],
   account = Sys.info()[["user"]],
   run_date = Sys.Date(),
+  backfill = NULL,
   debug = FALSE
 )
 }
@@ -47,7 +48,28 @@ automatically if it does not exist yet) or a MariaDB/MySQL DSN (see
 to the current machine and account.}
 
 \item{run_date}{The date to treat as "today". Defaults to the system
-date; mainly useful to override in tests.}
+date. Every detector anchors on it: \code{same_place} and \code{rare_trigger}
+report only hits inside their \code{lookback_days} of it, and Farrington
+tests only weeks that are complete on or before it. Detection
+against a historical extract is therefore one run per date with a
+\code{run_date} inside the extract's own window, not one run dated today
+holding the whole archive - a run dated today reports what is
+current, and the archive is not. \code{episodic_validate_detection()}
+replays exactly that way.}
+
+\item{backfill}{Whether this run reports the whole case history it is
+given rather than only what falls inside the detectors' lookback
+windows. \code{NULL}, the default, decides from the database: a run with
+no completed run behind it is a backfill, so a first import of years
+of history arrives as years of clusters (the settled ones closed in
+that same run by \code{reconciliation.stale_open_days}, and so straight
+into the Archive) rather than as an empty dashboard. Every run after
+it is bounded again, so nothing is ever reported twice. Pass \code{FALSE}
+to bound the first run too, which is what a prospective replay
+wants: \code{episodic_validate_detection()} measures detection delay, and
+a first replay run that reported its whole baseline at once would
+measure the import instead. \code{TRUE} forces it on, for a database
+whose history was imported by something other than a run.}
 
 \item{debug}{If \code{TRUE}, print a good deal more than the
 phase-by-phase progress this function always writes:

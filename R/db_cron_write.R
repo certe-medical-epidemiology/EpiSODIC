@@ -477,7 +477,12 @@ episodic_db_cluster_insert <- function(con,
                                        # detection run, and inst/sql/schema.sql makes last_detected_run
                                        # nullable for exactly this case.
                                        run_id = NA,
-                                       origin = "detected") {
+                                       origin = "detected",
+                                       # Opened by the run that reported the archive rather than the day.
+                                       # `origin` still says "detected": such a cluster reconciles, ages,
+                                       # suppresses and closes as any other, and the readers that select
+                                       # on origin = 'detected' must go on finding it.
+                                       opened_in_backfill = FALSE) {
   params <- list(
     stream_id,
     first_day,
@@ -490,15 +495,16 @@ episodic_db_cluster_insert <- function(con,
     detector_agreement,
     episodic_now(),
     if (is.na(run_id)) NA else run_id,
-    origin
+    origin,
+    if (isTRUE(opened_in_backfill)) 1L else 0L
   )
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_cluster
       (stream_id, first_day, last_day, n_cases, expected, excess, ratio, priority_score,
        detector_agreement, opened_at, last_detected_run, runs_since_detected,
-       changed_since_assessment, suppressed_by, merged_into, origin)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, NULL, NULL, ?)",
+       changed_since_assessment, suppressed_by, merged_into, origin, opened_in_backfill)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, NULL, NULL, ?, ?)",
     params = params
   )
   episodic_db_last_insert_id(con)
@@ -687,7 +693,12 @@ episodic_db_run_finish <- function(con,
                                    pkg_versions = NA,
                                    config_hash = NA,
                                    config_snapshot = NA,
-                                   error_text = NA) {
+                                   error_text = NA,
+                                   # Written here rather than at run_start because a run's
+                                   # own row already exists by the time the question is
+                                   # asked, and one UPDATE carries every fact about how the
+                                   # run went.
+                                   is_backfill = FALSE) {
   params <- list(
     episodic_now(),
     status,
@@ -707,6 +718,7 @@ episodic_db_run_finish <- function(con,
     config_hash,
     config_snapshot,
     error_text,
+    if (isTRUE(is_backfill)) 1L else 0L,
     run_id
   )
   DBI::dbExecute(
@@ -716,7 +728,8 @@ episodic_db_run_finish <- function(con,
       n_cases_supplied = ?, n_cases_deduplicated = ?, n_cases_inserted = ?,
       n_denominators_written = ?, n_activity_supplied = ?, n_activity_written = ?,
       n_activity_skipped = ?, code_version = ?,
-      pkg_versions = ?, config_hash = ?, config_snapshot = ?, error_text = ?
+      pkg_versions = ?, config_hash = ?, config_snapshot = ?, error_text = ?,
+      is_backfill = ?
      WHERE run_id = ?",
     params = params
   )

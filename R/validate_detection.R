@@ -379,7 +379,13 @@ episodic_validation_replicate <- function(seed,
         episodic_config_path = config_path,
         run_date = run_date,
         host = "validation",
-        account = "validation"
+        account = "validation",
+        # Bounded from the very first replay run. A replay measures how
+        # late a detection was, and the first run of one is the first run
+        # on its throwaway database - left to decide for itself it would
+        # report the whole generated baseline at once, and every delay
+        # measured after that would be a delay from an import.
+        backfill = FALSE
       )
     }
     run_id <- if (isTRUE(quiet)) suppressMessages(run()) else run()

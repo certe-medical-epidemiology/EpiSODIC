@@ -130,6 +130,51 @@ test_that("episodic_app_performance() only counts a cluster's latest verdict, no
   expect_equal(perf$by_detector_pathogen$n_false_positive, 0)
 })
 
+test_that("time-to-detection excludes a cluster the backfill opened, and the rest do not", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  live <- episodic_app_performance(env$con)$timeliness
+  expect_equal(live$to_detection$n, 1)
+
+  # A cluster opened by a backfill run was opened on the day the archive
+  # was imported, so `opened_at - first_day` is the age of the extract.
+  # Left in, one three-year-old import moves a median that is supposed to
+  # describe how quickly this instance notices things.
+  DBI::dbExecute(
+    env$con,
+    "UPDATE episodic_cluster SET opened_in_backfill = 1 WHERE cluster_id = ?",
+    params = list(env$cluster_id)
+  )
+  backfilled <- episodic_app_performance(env$con)$timeliness
+  expect_equal(backfilled$to_detection$n, 0)
+  expect_true(is.na(backfilled$to_detection$median_days))
+
+  # The two measured from `opened_at` forwards time an epidemiologist
+  # rather than a detector, so they are as honest here as anywhere and
+  # are not excluded.
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    verdict = "confirmed_epidemic",
+    rationale = "real outbreak"
+  )
+  assessed <- episodic_app_performance(env$con)
+  expect_equal(assessed$timeliness$to_first_assessment$n, 1)
+  expect_equal(assessed$timeliness$to_classification$n, 1)
+  # And PPV counts it: a backfilled cluster somebody actually judged is
+  # evidence about the detectors like any other.
+  expect_equal(assessed$by_detector_pathogen$n_true_positive, 1)
+})
+
 test_that("episodic_ui_performance_screen() renders without error, empty and populated", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))

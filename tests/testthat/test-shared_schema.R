@@ -71,3 +71,66 @@ test_that("the core tables are a subset of the schema's own", {
     episodic_db_core_tables() %in% episodic_db_schema_tables()
   ))
 })
+
+test_that("migration 4 adds the backfill columns, and adds them once", {
+  path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(path))
+  con <- episodic_db_create(path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+
+  # A database created at the current version already has them.
+  expect_true(
+    episodic_db_column_exists(con, "sqlite", "episodic_cluster", "opened_in_backfill")
+  )
+  expect_true(
+    episodic_db_column_exists(con, "sqlite", "episodic_detection_run", "is_backfill")
+  )
+
+  # Run the step against a database that already carries them: MariaDB
+  # commits on DDL, so a step that failed halfway leaves its first column
+  # behind and the retry must not fall over on a duplicate name.
+  migration <- episodic_db_migrations()[["4"]]
+  expect_silent(migration(con, "sqlite"))
+  expect_silent(migration(con, "sqlite"))
+})
+
+test_that("a cluster from before the backfill columns existed reads as not backfilled", {
+  # NOT NULL DEFAULT 0 is what stamps every row already on file, and it
+  # has to say "not a backfill" rather than NULL: no run before this
+  # version could report an archive, so 0 is the truth about all of them,
+  # and the Performance screen's time-to-detection depends on it.
+  path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(path))
+  con <- episodic_db_create(path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+
+  stream_id <- episodic_db_stream_upsert(
+    con,
+    stream_key = episodic_stream_key(
+      "pathogen_region",
+      "Norovirus",
+      region_code = "R"
+    ),
+    level = "pathogen_region",
+    pathogen = "Norovirus",
+    region_code = "R",
+    observed_date = "2025-01-01"
+  )
+  run_id <- episodic_db_run_start(con, "host", "account")
+  cluster_id <- episodic_db_cluster_insert(
+    con,
+    stream_id = stream_id,
+    first_day = "2025-01-01",
+    last_day = "2025-01-10",
+    n_cases = 3L,
+    priority_score = 0.5,
+    detector_agreement = 1L,
+    run_id = run_id
+  )
+  row <- DBI::dbGetQuery(
+    con,
+    "SELECT opened_in_backfill FROM episodic_cluster WHERE cluster_id = ?",
+    params = list(cluster_id)
+  )
+  expect_equal(as.integer(row$opened_in_backfill[1]), 0L)
+})

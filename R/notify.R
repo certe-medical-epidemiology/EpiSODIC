@@ -386,7 +386,11 @@ episodic_notify_build_new_clusters <- function(details,
   }
 
   if (remainder > 0) {
-    more <- episodic_tr("notif.and_more", n = remainder, lang = lang)
+    more <- episodic_tr(
+      "notif.and_more",
+      n = episodic_format_number(remainder, lang = lang),
+      lang = lang
+    )
     plain_lines <- c(plain_lines, paste0("  ", more))
     html_rows <- c(
       html_rows,

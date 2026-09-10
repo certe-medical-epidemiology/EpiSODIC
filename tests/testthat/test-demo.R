@@ -89,12 +89,14 @@ test_that("episodic_demo() accepts custom credentials", {
 })
 
 test_that("the demo dates its run from the extract it was given, not from today", {
-  # Detection is bounded to a lookback window around `run_date`, so a run
-  # dated today against last year's export correctly finds nothing -
-  # right for a scheduled run, and a poor first impression for somebody
-  # trying the system out on a historical extract. The demo therefore
-  # dates itself from the data. `episodic_run_cron()` deliberately does
-  # not: a real surveillance run is always as of today.
+  # Every screen the demo opens on is dated: the epi curves, the "as of"
+  # on the Pathogen screen, the weeks Farrington aggregates to. Dated
+  # from today against last year's export, all of them sit months past
+  # the last case and show a flat run of empty weeks. The demo therefore
+  # dates itself from the data it was given. `episodic_run_cron()`
+  # deliberately does not: a real surveillance run is always as of today,
+  # and reaches a historical extract through `backfill` instead, which
+  # reports the archive without pretending the archive is the present.
   cases <- small_cases()
   expect_equal(
     episodic_demo_run_date(cases),

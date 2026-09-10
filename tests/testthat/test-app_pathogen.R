@@ -444,6 +444,61 @@ test_that("episodic_ui_pathogen_screen() renders without error, empty database i
   ))
 })
 
+test_that("the pathogen config panel writes its numbers in the session language's marks", {
+  env <- pathogen_screen_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  screen <- episodic_app_pathogen_screen(
+    env$con,
+    pathogen = "Influenza A",
+    period = "all",
+    lang = "nl"
+  )
+
+  # A quantity on this panel is a quantity like any other: the serial
+  # interval reads 2,6 to a Dutch reader, never 2.6.
+  dutch <- as.character(episodic_ui_pathogen_config_panel(screen, lang = "nl"))
+  expect_true(grepl("2,6", dutch, fixed = TRUE))
+  expect_true(grepl("1,1", dutch, fixed = TRUE))
+  expect_false(grepl("2.6", dutch, fixed = TRUE))
+  expect_false(grepl("1.1", dutch, fixed = TRUE))
+
+  english <- as.character(episodic_ui_pathogen_config_panel(screen, lang = "en"))
+  expect_true(grepl("2.6", english, fixed = TRUE))
+  expect_true(grepl("1.1", english, fixed = TRUE))
+})
+
+test_that("the pathogen config panel dashes a parameter this instance leaves unset", {
+  screen <- list(
+    pathogen = "Test pathogen",
+    config = data.frame(
+      pathogen = "Test pathogen",
+      episode_days = 14,
+      incub_min_days = 2,
+      incub_max_days = NA_real_,
+      case_free_days = 14,
+      cooldown_days = 14,
+      rt_applicable = 1,
+      si_mean_days = 2.6,
+      si_sd_days = NA_real_,
+      si_dist = "gamma",
+      mem_applicable = 0,
+      severity_weight = 0.6,
+      source_ref = NA_character_,
+      stringsAsFactors = FALSE
+    )
+  )
+  html <- as.character(episodic_ui_pathogen_config_panel(screen, lang = "nl"))
+  # A parameter the configuration leaves empty is written as the dash: an
+  # incubation maximum nobody set is not an incubation maximum of nought,
+  # and formatting it must not turn it into the letters NA either.
+  dash <- episodic_tr("misc.dash", lang = "nl")
+  expect_true(grepl(dash, html, fixed = TRUE))
+  expect_false(grepl(">NA<", html, fixed = TRUE))
+  expect_false(grepl("NA ", html, fixed = TRUE))
+  # The measured half of each pair is still written, in Dutch marks.
+  expect_true(grepl("2,6", html, fixed = TRUE))
+})
+
 test_that("episodic_ui_intensity_colour() gives every MEM band a colour and never fails on an unknown one", {
   levels <- c("baseline", "low", "medium", "high", "very_high")
   colours <- vapply(levels, episodic_ui_intensity_colour, character(1))

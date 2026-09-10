@@ -747,3 +747,153 @@ test_that("a run over case data with advisory findings reports them and proceeds
   on.exit(DBI::dbDisconnect(con), add = TRUE)
   expect_identical(episodic_db_latest_run(con)$status, "success")
 })
+
+# The first run against a database reports the whole case history it was
+# given; every run after it is bounded to the detectors' lookback
+# windows again. The bound exists to stop a settled hit being re-emitted
+# and resetting its own cluster's `runs_since_detected`, which is a
+# pathology that begins at the second run - on the first there is no
+# cluster on the board and no clock to reset.
+
+backfill_history <- function() {
+  # Two outbreaks at one ward, two years apart, and neither inside the
+  # 90-day lookback of the run date below.
+  dates <- c(
+    "2024-01-01", "2024-01-03", "2024-01-05",
+    "2026-01-06", "2026-01-08", "2026-01-10"
+  )
+  data.frame(
+    source_key = paste0("BF", seq_along(dates)),
+    lab_number = paste0("L", seq_along(dates)),
+    patient_key = paste0("P", seq_along(dates)),
+    sample_date = dates,
+    receipt_date = dates,
+    pathogen = "Norovirus",
+    care_line = "second",
+    institution_key = "HOSP-1",
+    institution_display_name = "Test Hospital",
+    institution_type = "hospital",
+    municipality = "Testtown",
+    ward = "ICU",
+    specialism = NA_character_,
+    pc = "1234",
+    sex = "F",
+    age = 70L,
+    stringsAsFactors = FALSE
+  )
+}
+
+test_that("the first run reports the whole history and the second does not repeat it", {
+  path <- tempfile(fileext = ".sqlite")
+  cases <- backfill_history()
+  run_date <- as.Date("2026-09-10")
+
+  suppressMessages(episodic_run_cron(
+    db_path = path,
+    cases = cases,
+    run_date = run_date
+  ))
+  con <- episodic_db_connect(path)
+  on.exit(DBI::dbDisconnect(con))
+
+  first_run <- episodic_db_latest_run(con)
+  expect_equal(as.integer(first_run$is_backfill), 1L)
+
+  clusters <- episodic_db_clusters(con, include_suppressed = TRUE)
+  # Both outbreaks are years outside the lookback window, so a bounded
+  # run would have reported neither.
+  expect_gte(nrow(clusters), 2)
+  expect_true(all(as.integer(clusters$opened_in_backfill) == 1L))
+  expect_true(any(as.Date(clusters$first_day) < as.Date("2025-01-01")))
+
+  # Both are far past `stale_open_days`, so the run that opened them also
+  # closed them: they belong in the Archive, not in the queue.
+  closed <- DBI::dbGetQuery(
+    con,
+    "SELECT DISTINCT cluster_id FROM episodic_cluster_state
+      WHERE state = 'closed' AND `trigger` = 'system'"
+  )
+  expect_equal(nrow(closed), nrow(clusters))
+
+  # The second run is bounded again. Nothing in this history falls inside
+  # the window, so it opens nothing, and - the point of the bound - it
+  # does not re-emit the hits the first run already reported.
+  suppressMessages(episodic_run_cron(
+    db_path = path,
+    cases = cases,
+    run_date = run_date + 1
+  ))
+  second_run <- episodic_db_latest_run(con)
+  expect_equal(as.integer(second_run$is_backfill), 0L)
+  expect_equal(as.integer(second_run$n_signals_new), 0L)
+  expect_equal(
+    nrow(episodic_db_clusters(con, include_suppressed = TRUE)),
+    nrow(clusters)
+  )
+  # And a re-emitted historical hit is what would have reset this.
+  detections_second <- DBI::dbGetQuery(
+    con,
+    "SELECT COUNT(*) n FROM episodic_detection WHERE run_id = ?",
+    params = list(second_run$run_id)
+  )$n
+  expect_equal(detections_second, 0)
+})
+
+test_that("a caller can bound the first run outright, which is what a replay does", {
+  path <- tempfile(fileext = ".sqlite")
+  suppressMessages(episodic_run_cron(
+    db_path = path,
+    cases = backfill_history(),
+    run_date = as.Date("2026-09-10"),
+    backfill = FALSE
+  ))
+  con <- episodic_db_connect(path)
+  on.exit(DBI::dbDisconnect(con))
+
+  run <- episodic_db_latest_run(con)
+  expect_equal(as.integer(run$is_backfill), 0L)
+  expect_equal(as.integer(run$n_signals_new), 0L)
+  expect_equal(nrow(episodic_db_clusters(con, include_suppressed = TRUE)), 0)
+})
+
+test_that("episodic_run_is_backfill() is true only until a run completes", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  expect_true(episodic_run_is_backfill(con))
+
+  run_id <- episodic_db_run_start(con, "host", "account")
+  # A run still in flight is not a completed run: its own detectors are
+  # asking, and it must not answer itself.
+  expect_true(episodic_run_is_backfill(con))
+
+  episodic_db_run_finish(con, run_id, status = "failed")
+  # Nor is a failed one, which wrote nothing at all - the retry after it
+  # is still the first run this database has had.
+  expect_true(episodic_run_is_backfill(con))
+
+  episodic_db_run_finish(con, run_id, status = "success")
+  expect_false(episodic_run_is_backfill(con))
+})
+
+test_that("Farrington's week budget is a catch-up cap, lifted for a backfill", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  config <- episodic_test_config()
+  config$farrington$max_weeks_tested <- 8L
+
+  expect_equal(
+    episodic_farrington_weeks_owed(con, as.Date("2026-09-10"), config),
+    8L
+  )
+  # Lifted rather than raised: the first week tested is then decided by
+  # the baseline Farrington needs, not by this number. It stays well
+  # inside integer range, since the caller subtracts it from a week index.
+  owed <- episodic_farrington_weeks_owed(
+    con,
+    as.Date("2026-09-10"),
+    config,
+    backfill = TRUE
+  )
+  expect_gt(owed, 10000L)
+  expect_false(is.na(100L - owed + 1L))
+})

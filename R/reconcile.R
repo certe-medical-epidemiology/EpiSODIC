@@ -120,6 +120,14 @@
 #'   enumerated under: resolved separately from `EPISODIC_CONFIG` here, a
 #'   run given a different configuration opened area- and region-level
 #'   clusters with no cases linked to them at all, and said nothing.
+#' @param backfill From `episodic_run_is_backfill()`. Stamped on every
+#'   cluster this call opens (`opened_in_backfill`), because such a
+#'   cluster's `opened_at` is the day the archive was imported rather
+#'   than the day anything was noticed, and a time-to-detection computed
+#'   from it would measure the import. It changes nothing else: the
+#'   cluster matches, ages, suppresses and auto-closes exactly as any
+#'   other, and `stale_open_days` is what closes the old ones in this
+#'   same call.
 #' @return Invisibly, a list with `n_new`, `n_updated`, `n_merged`,
 #'   and `new_cluster_ids` (integer vector of cluster IDs created this call).
 #' @keywords internal
@@ -140,7 +148,8 @@ episodic_reconcile_stream <- function(con,
                                       min_ratio_observed_expected = NA,
                                       stale_open_days = NA,
                                       today = Sys.Date(),
-                                      geography = episodic_geography_config()) {
+                                      geography = episodic_geography_config(),
+                                      backfill = FALSE) {
   n_new <- 0L
   n_updated <- 0L
   n_merged <- 0L
@@ -283,7 +292,8 @@ episodic_reconcile_stream <- function(con,
         ratio = metrics$ratio,
         priority_score = priority_score,
         detector_agreement = candidate$detector_agreement,
-        run_id = run_id
+        run_id = run_id,
+        opened_in_backfill = backfill
       )
       n_new <- n_new + 1L
       new_cluster_ids <- c(new_cluster_ids, cluster_id)

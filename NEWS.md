@@ -1,3 +1,25 @@
+# EpiSODIC 0.18.0
+
+## New
+
+- The first run against a database reports the whole case history it is given, so importing years of history fills the Archive instead of leaving an empty dashboard
+- Clusters a backfill opens whose last case is past `reconciliation.stale_open_days` close in that same run, and go straight to the Archive
+- `episodic_run_cron(backfill =)` overrides that decision; `episodic_validate_detection()` passes `FALSE`, so a replay still measures detection delay rather than an import
+- Schema version 4: `episodic_cluster.opened_in_backfill` and `episodic_detection_run.is_backfill`
+
+## Changed
+
+- The Performance screen's time-to-detection excludes clusters a backfill opened, since their `opened_at` is the day the archive was imported
+- Farrington tests every week its streams can carry on a backfill run, rather than the `max_weeks_tested` catch-up cap
+- A run states the span of the case history it holds, and says outright when the newest case is older than every rule-based detector's lookback window
+- `same_place` and `rare_trigger` report how many hits their lookback window kept out, so a run that reports nothing says which kind of nothing it found
+- The Farrington history-shortfall line says how many of the eligible streams it fitted on, not only how many it skipped
+
+## Fixed
+
+- The Pathogen screen wrote a pathogen's serial interval and incubation range in R's own marks rather than the session language's
+- The Streams screen's Farrington tooltip and a notification's "and N more" line ignored the session language the same way
+
 # EpiSODIC 0.17.2
 
 ## Changed
