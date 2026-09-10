@@ -857,7 +857,7 @@ episodic_db_denominator_for_pathogen <- function(con, pathogen) {
 episodic_db_reports_for_cluster <- function(con, cluster_id) {
   DBI::dbGetQuery(
     con,
-    "SELECT * FROM episodic_report_render WHERE cluster_id = ? ORDER BY version_no",
+    "SELECT * FROM episodic_report_render WHERE cluster_id = ? ORDER BY version_no, report_id",
     params = list(cluster_id)
   )
 }

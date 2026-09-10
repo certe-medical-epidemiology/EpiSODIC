@@ -1,3 +1,41 @@
+# EpiSODIC 0.17.1
+
+## New
+
+- `episodic_report_version_claim` registers a report's version number before the render rather than after it, so two concurrent renders of one cluster never collide
+- Schema version 3: `episodic_report_version_claim`, and a unique index on `episodic_report_render(cluster_id, version_no)`
+- `episodic_format_number()` writes every number a reader sees in the session language's own marks, from four `misc.decimal.mark`/`misc.thousands.*` keys per language
+- Hindi numbers group the Indian way (12,34,567) and Spanish starts grouping at five digits (2000, but 12.345), both from those keys
+- `misc.language.<code>` names all eight languages in every language file, so a message can say "Dutch" where it used to say `nl`
+- `EPISODIC_LANGUAGE` takes regional variants: `en-US` writes January 7, 2025 and `es-419` writes 1,234.5
+- `en-GB` and `es-ES` are accepted as names for `en` and `es`, and a region that is not shipped (`nl-BE`) now falls back to its language rather than to English
+- Four `date.format.*` keys per language, so German puts a point after the day, Spanish two "de"s in, and Chinese writes 2025年1月7日
+
+## Changed
+
+- A reporting delay that could not be measured is now `NA` rather than 0, and the epi curve, the pathogen curve, Rt and the doubling time each say so instead of assuming complete reporting
+- Timestamps on the dashboard and in reports are written in the session language rather than as `%d-%m-%Y`
+- The report's similar-clusters table applies the same small-count suppression as the concentration table
+- The synthetic generators put the caller's random stream back when they are done, instead of leaving their own behind
+- The Info screen names the language it renders in, with the code beside it, rather than printing the code alone
+- The unsupported-language warning lists each code with the language it stands for
+
+## Fixed
+
+- The dossier failed to render at all on a database whose last run recorded no package versions, taking eleven tests down with it
+- The dossier crashed on a cluster with no case linked to it, where the case-free tile compared against a day count that does not exist
+- Detector names were joined with the Dutch word "en" in all eight languages
+- The Streams screen's Farrington tooltip was written in English on every language
+- An `NA` in an epi curve's incomplete flag silently dropped that day's bar from the chart
+- The Pathogen screen counted a comparison period that predates the database as zero cases rather than as no data
+- Chart axes wrote 1.234,5 in Arabic, Hindi and Chinese, which all write 1,234.5 with the digits this package renders
+- Dates were written day-month-year in every language, including the three that do not write them that way
+- The English translation wrote "License" where British English writes "licence"
+- Numbers on every screen ignored the session language: an R-formatted 1,234.5 reached a Dutch, German, French or Spanish reader unchanged
+- `episodic_report_diff()` and the scheduled-report mail picked their previous version by row order when two shared a version number
+- A failed `file.copy()` of a rendered report was recorded as a successful render
+- A synthetic window too short to produce a baseline case returned a list where a data frame was expected
+
 # EpiSODIC 0.17.0
 
 ## New

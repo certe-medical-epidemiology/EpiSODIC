@@ -837,10 +837,10 @@ episodic_run_cron_body <- function(con,
     # A muted stream produces no new detections, which is exactly what the
     # app promises when it offers the action ("temporarily suppresses new
     # detections for this stream ... so the same cause is not flagged again
-    # and again"). Until now the mute was written, shown in the activity
-    # log, and consulted by nothing: an epidemiologist could mute a stream
-    # for a known seasonal peak and the next run would open a dossier on it
-    # regardless.
+    # and again"). A mute written, shown in the activity log and consulted
+    # by nothing is a promise the dashboard makes and the pipeline breaks:
+    # an epidemiologist mutes a stream for a known seasonal peak and the
+    # next run opens a dossier on it regardless.
     #
     # Detections only. Reconciliation still runs below, so clusters that
     # were already open go on ageing and closing normally - a mute quiets
@@ -975,10 +975,9 @@ episodic_run_cron_body <- function(con,
     # episodic_reconcile_stream(): that is where a stream's open clusters
     # age (runs_since_detected) and where an unassessed cluster gone stale
     # (stale_open_days) or long undetected (close_after_runs) actually
-    # gets auto-closed. Skipping the call entirely for a quiet stream - as
-    # this used to - left every cluster on such a stream ineligible for
-    # either kind of auto-close for as long as the stream stayed quiet,
-    # which is exactly the case a truly dormant stream is in forever.
+    # gets auto-closed. Skipping the call for a quiet stream leaves every
+    # cluster on it ineligible for either kind of auto-close for as long
+    # as the stream stays quiet, which for a dormant stream is forever.
     if (nrow(stream_detections) > 0) {
       detection_ids <- integer(nrow(stream_detections))
       for (j in seq_len(nrow(stream_detections))) {
@@ -1059,11 +1058,10 @@ episodic_run_cron_body <- function(con,
       today = run_date,
       # Five of the seven priority components are properties of the
       # candidate episode and its cases, so they are computed here, where
-      # both are in hand. They used to be left at their defaults - most
-      # damagingly `ratio = n_cases / max(n_cases, 1)`, which is
-      # identically 1 for every candidate - which collapsed the ranking
-      # that orders the whole assessment queue down to severity weight
-      # and detector agreement alone.
+      # both are in hand. Left at their defaults - most damagingly
+      # `ratio = n_cases / max(n_cases, 1)`, identically 1 for every
+      # candidate - the ranking that orders the whole assessment queue
+      # collapses to severity weight and detector agreement alone.
       priority_score_fn = function(candidate) {
         metrics <- episodic_reconcile_candidate_metrics(candidate)
         candidate_cases <- episodic_cases_in_window(

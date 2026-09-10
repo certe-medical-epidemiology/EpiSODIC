@@ -38,8 +38,7 @@
 #'      case count changed, flag `changed_since_assessment` so it derives
 #'      as `"reassess"` and returns to the board. A closed cluster that
 #'      starts producing cases again is the case that matters here:
-#'      unflagged, it went on absorbing them behind a dossier nobody was
-#'      shown.
+#'      unflagged, it absorbs them behind a dossier nobody is shown.
 #'    - Multiple matches: merge. The oldest surviving cluster absorbs the
 #'      others via `merged_into`; nothing is deleted and no assessment
 #'      history is lost. The survivor is flagged by the same rule as a
@@ -161,9 +160,9 @@ episodic_reconcile_stream <- function(con,
     candidate <- candidates[i, ]
     # Re-read every time round: an earlier candidate in this same run may
     # have opened a cluster or extended one, and this is what the next
-    # candidate is matched against. Kept stale, a cluster went on
-    # advertising the last day it had when the run started, stopped
-    # matching once that was case_free_days behind, and split one
+    # candidate is matched against. Held stale, a cluster keeps
+    # advertising the last day it had when the run started, stops
+    # matching once that is `case_free_days` behind, and splits one
     # continuous outbreak into a new dossier every fortnight.
     open_clusters <- episodic_db_clusters_for_stream(con, stream_id)
     matches <- episodic_reconcile_find_matches(
@@ -214,10 +213,10 @@ episodic_reconcile_stream <- function(con,
       # nested SELECT closes the half-built statement, and `dbBind()` - which
       # unlike `dbFetch()` does not check that its result is still active -
       # then binds into freed memory. That is a native crash, not an R
-      # condition: it took the whole session down mid-run, reproducibly, and
-      # only ever against MariaDB (RSQLite allows concurrent results per
-      # connection, so the same code is harmless there). Every argument to a
-      # database write must be a plain value before the write begins.
+      # condition - it takes the whole session down mid-run, and only ever
+      # against MariaDB, since RSQLite allows concurrent results per
+      # connection and the same code is harmless there. Every argument to
+      # a database write must be a plain value before the write begins.
       priority_score <- priority_score_fn(candidate)
       episodic_db_cluster_update(
         con,
@@ -318,14 +317,14 @@ episodic_reconcile_stream <- function(con,
 
       # A cluster that is already closed counts here exactly as an
       # assessed one does. Without it, a cluster the cron auto-closed as
-      # stale-and-unassessed went on quietly absorbing every candidate
-      # that landed within `case_free_days` of it - growing its interval
-      # and its case count, run after run, while `episodic_derive_state()`
-      # kept returning "closed" (no verdict, no `changed_since_assessment`)
-      # and nothing ever put it back in front of anyone. An outbreak that
-      # resumed after a lull was recorded in full and shown to no one,
-      # which is the single worst thing a surveillance system can do.
-      # Flagged, it derives as "reassess" and returns to the board.
+      # stale-and-unassessed quietly absorbs every candidate landing
+      # within `case_free_days` of it - growing its interval and its case
+      # count, run after run - while `episodic_derive_state()` goes on
+      # returning "closed" (no verdict, no `changed_since_assessment`)
+      # and nothing puts it back in front of anyone. An outbreak that
+      # resumes after a lull would be recorded in full and shown to no
+      # one, which is the single worst thing a surveillance system can
+      # do. Flagged, it derives as "reassess" and returns to the board.
       changed <- (has_assessment_fn(cluster_id) ||
         episodic_reconcile_is_closed(con, cluster_id)) &&
         (as.character(new_first) != existing$first_day ||
@@ -643,13 +642,14 @@ episodic_reconcile_merge_detections <- function(detections) {
 #'
 #' `episodic_cluster` carries `expected`, `excess` and `ratio` columns,
 #' and both the dossier's stat grid and the interpretation engine's
-#' magnitude fragments read them - but until these were derived here,
-#' nothing ever wrote them: every cluster was persisted with all three
-#' left at their `NA` defaults, so the O/E ratio never appeared on a
-#' dossier, never appeared in the rail, and the `magnitude.high_ratio`/
-#' `magnitude.moderate_ratio` fragments could not fire. The detections
-#' had the numbers all along (`episodic_detection.expected`/
-#' `upperbound`); they simply were not carried through reconciliation.
+#' magnitude fragments read them. Reconciliation is the only place that
+#' can fill them: the numbers live on the detections
+#' (`episodic_detection.expected`/`upperbound`) and the cluster is what
+#' anyone reads. Derived anywhere else, or nowhere, every cluster
+#' persists with all three at their `NA` defaults, and the O/E ratio
+#' reaches neither the dossier nor the rail while the
+#' `magnitude.high_ratio`/`magnitude.moderate_ratio` fragments cannot
+#' fire.
 #'
 #' All three describe the **candidate episode this run**, not the
 #' cluster's whole lifetime: `expected` is a baseline for a specific
@@ -870,10 +870,9 @@ episodic_reconcile_link_cases <- function(con,
                                           last_day,
                                           geography = episodic_geography_config()) {
   # Membership comes from episodic_db_cases_for_stream_id(), which is the
-  # one place the rule lives. It used to be spelled out again here, and
-  # spelling it out twice is how episodic_reconcile_case_count() came to
-  # count the whole building for a ward cluster while this function
-  # correctly counted the ward.
+  # one place the rule lives. Spelling it out a second time here is how
+  # two functions on the same question come to disagree - one counting a
+  # ward, the other the whole building.
   cases <- episodic_db_cases_for_stream_id(
     con,
     stream_id,
@@ -893,13 +892,13 @@ episodic_reconcile_link_cases <- function(con,
 #' at their boundaries.
 #'
 #' Counted through `episodic_db_cases_for_stream_id()`, so a ward stream is
-#' counted over its ward and an area stream over its area. This used to
-#' filter on pathogen and institution alone, which meant a three-case ward
-#' cluster was recorded as holding every case in the hospital and an
-#' area-level cluster every case of that pathogen anywhere - and since
-#' `n_cases` drives `ratio = n_cases / expected`, that inflated the priority
-#' score and reordered the assessment queue. `episodic_reconcile_link_cases()`
-#' already applied the ward and region filters; this did not.
+#' counted over its ward and an area stream over its area - the same
+#' filters `episodic_reconcile_link_cases()` applies, from the same
+#' place. Filtering on pathogen and institution alone would record a
+#' three-case ward cluster as holding every case in the hospital, and an
+#' area-level cluster every case of that pathogen anywhere; `n_cases`
+#' drives `ratio = n_cases / expected`, so it would inflate the priority
+#' score and reorder the assessment queue with it.
 #'
 #' A stream that does not exist yields the inputs' own counts, which is what
 #' lets tests pass synthetic clusters and candidates with no stream row. A

@@ -260,3 +260,60 @@ test_that("episodic_synthetic_denominators() produces a valid denominator source
   expect_gt(nrow(denom), 0)
   expect_true(all(denom$n_tests >= 0))
 })
+
+test_that("the generators hand the caller's random stream back rather than leaving their own behind", {
+  # set.seed() is global: a generator that sets one and walks away makes
+  # every sample() the caller runs afterwards a continuation of its own
+  # draws. What it generates is still fully reproducible - that is what
+  # the seed is for - but the session's stream is the caller's.
+  set.seed(99)
+  expected <- runif(3)
+
+  set.seed(99)
+  invisible(episodic_synthetic_cases(
+    start_date = as.Date("2025-01-01"),
+    end_date = as.Date("2025-01-31"),
+    seed = 7
+  ))
+  expect_equal(runif(3), expected)
+
+  set.seed(99)
+  invisible(episodic_synthetic_denominators(
+    start_date = as.Date("2025-01-01"),
+    end_date = as.Date("2025-01-31"),
+    seed = 7
+  ))
+  expect_equal(runif(3), expected)
+
+  # And seeding still means what it always did.
+  first <- episodic_synthetic_cases(
+    start_date = as.Date("2025-01-01"),
+    end_date = as.Date("2025-01-31"),
+    seed = 7
+  )
+  second <- episodic_synthetic_cases(
+    start_date = as.Date("2025-01-01"),
+    end_date = as.Date("2025-01-31"),
+    seed = 7
+  )
+  expect_equal(first$source_key, second$source_key)
+  expect_equal(first$sample_date, second$sample_date)
+})
+
+test_that("a window too short to produce a single baseline case still returns a case table", {
+  # do.call(rbind, list()) is NULL, and a NULL baseline turned the
+  # caller's `baseline$outbreak_id <- NA` into a list rather than a data
+  # frame - failing somewhere else entirely, several steps later.
+  baseline <- episodic_synthetic_baseline_cases(
+    dates = as.Date("2025-01-01"),
+    institutions = episodic_synthetic_institutions(),
+    pc_pool = episodic_synthetic_pc_pool(),
+    pathogens = episodic_synthetic_pathogen_profiles()[0, , drop = FALSE]
+  )
+  expect_s3_class(baseline, "data.frame")
+  expect_equal(nrow(baseline), 0)
+  expect_true(all(
+    c("patient_key", "sample_date", "pathogen", "institution_key") %in%
+      names(baseline)
+  ))
+})

@@ -408,10 +408,10 @@ test_that("episodic_auth_login() returns a user row with role/is_admin/is_active
 })
 
 test_that("must_change is a property of the account, not of a hardcoded username", {
-  # There used to be a special case in the sign-in path for the literal
-  # username "demo" verified against the literal password "demo" - a
-  # hardcoded credential in a package other people deploy, which would
-  # also have exempted a real account that happened to be called `demo`.
+  # A special case in the sign-in path for the literal username "demo"
+  # against the literal password "demo" would be a hardcoded credential
+  # in a package other people deploy, and would exempt a real account
+  # that happened to be called `demo` as well.
   db_path <- tempfile(fileext = ".sqlite")
   on.exit(unlink(db_path))
   DBI::dbDisconnect(episodic_db_create(db_path))

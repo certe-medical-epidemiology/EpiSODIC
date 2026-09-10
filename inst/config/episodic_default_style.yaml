@@ -51,12 +51,10 @@ font_size_base: "13px"
 # box.
 #
 # Neutrals: text, borders and backgrounds are their own true grey scale,
-# independent of whichever hue is "primary" - so body text is never
-# tinted by the brand colour (this used to derive "ink" etc. straight
-# from the primary hue's own dark step, which looked fine when primary
-# happened to be a muted blue-grey but became visibly wrong the moment
-# primary became a saturated colour: every letter of body text was
-# rendered in it).
+# independent of whichever hue is "primary", so body text is never
+# tinted by the brand colour. Deriving "ink" from the primary hue's own
+# dark step passes for a muted blue-grey and renders every letter of
+# body text in the brand colour the moment primary is saturated.
 ink: "#222222"
 muted: "#495057"
 faint: "#ADB5BD"

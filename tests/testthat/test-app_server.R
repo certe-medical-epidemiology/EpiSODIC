@@ -194,10 +194,10 @@ test_that("closing a cluster actually updates the rail and the Archief screen wi
     expect_false(grepl("Norovirus", archive_before))
 
     # Closing without ever touching nav_view (input$rail_select stays on
-    # "clusters" throughout) - this is what actually happened in the app:
-    # neither the rail nor the Archief screen has any reason to notice a
-    # write unless something explicitly invalidates them. Closure is now
-    # the assessment form's own checkbox, submitted alongside the (here,
+    # "clusters" throughout), which is how it happens in the app: neither
+    # the rail nor the Archief screen has any reason to notice a write
+    # unless something explicitly invalidates them. Closure is the
+    # assessment form's own checkbox, submitted alongside the (here,
     # rationale-only) assessment rather than as a separate input.
     session$setInputs(assess_submit = list(
       cluster_id = cluster_id,
@@ -298,8 +298,8 @@ test_that("bulk_assess_submit applies one classification to several clusters in 
     expect_false(grepl("Influenza", rail_after))
 
     # A second connection, to read the database back. Named apart from the
-    # factory's own `con`, which is in scope here and which this used to
-    # shadow - leaving the server's connection both unreachable and open.
+    # factory's own `con`, which is in scope here: shadowing it leaves the
+    # server's connection both unreachable and open.
     check_con <- episodic_db_connect(db_path)
     events <- DBI::dbGetQuery(
       check_con,
@@ -376,8 +376,8 @@ test_that("bulk_assess_submit records an event even without a rationale", {
     session$flushReact()
 
     # A second connection, to read the database back. Named apart from the
-    # factory's own `con`, which is in scope here and which this used to
-    # shadow - leaving the server's connection both unreachable and open.
+    # factory's own `con`, which is in scope here: shadowing it leaves the
+    # server's connection both unreachable and open.
     check_con <- episodic_db_connect(db_path)
     events <- DBI::dbGetQuery(
       check_con,
@@ -600,9 +600,9 @@ test_that("input$open_cluster jumps to the Clusters screen on that very cluster"
 })
 
 test_that("a deep link to a closed cluster is not redirected to the top of the rail", {
-  # The Pathogen screen lists closed clusters too, and the rail's
-  # auto-select used to reset any selection that was not currently open -
-  # which would have silently sent every such link somewhere else.
+  # The Pathogen screen lists closed clusters too, so a rail auto-select
+  # that resets any selection not currently open would silently send
+  # every such link somewhere else.
   db_path <- tempfile(fileext = ".sqlite")
   con <- episodic_db_create(db_path)
   stream_id <- episodic_db_stream_upsert(
@@ -774,8 +774,8 @@ test_that("the navigation highlight follows a deep link, not just its own clicks
     session$flushReact()
     expect_equal(active(paste(output$nav_links, collapse = "\n")), "pathogen")
 
-    # the bug: opening a cluster from the Pathogen screen's table moved
-    # the content but left the highlight behind on Pathogen
+    # Opening a cluster from the Pathogen screen's table moves the
+    # content, so the nav highlight has to move with it
     session$setInputs(open_cluster = cluster_id)
     session$flushReact()
     expect_equal(active(paste(output$nav_links, collapse = "\n")), "clusters")

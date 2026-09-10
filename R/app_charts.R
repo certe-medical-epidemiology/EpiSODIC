@@ -213,30 +213,20 @@ episodic_chart_month_abbrevs <- function(lang = Sys.getenv("EPISODIC_LANGUAGE"))
 
 #' A numeric axis labeller in the session language's own conventions
 #'
-#' English writes 1,234.5 and every other language this package speaks
-#' writes 1.234,5. A chart axis that ignores that is not merely untidy: a
-#' Dutch reader seeing an \eqn{R_t} of "1.4" reads fourteen hundred before
-#' reading 1.4, on the one chart where the difference between just above
-#' and just below 1 is the whole point.
+#' Every axis label goes through `episodic_format_number()`, the same
+#' place every other number on the screen comes from. Splitting the
+#' world into English and "everything else, which writes 1.234,5" is
+#' close but not close enough: it is right for Dutch, German, French and
+#' Spanish, and wrong for the other three, since Arabic, Hindi and
+#' Chinese all write 1,234.5 with the Western digits this package
+#' renders.
 #'
 #' @param lang Session language.
 #' @return A function suitable as `ggplot2::scale_*_continuous(labels =)`.
 #' @keywords internal
 #' @noRd
 episodic_chart_number_labels <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  marks <- if (identical(episodic_lang(lang), "en")) {
-    list(big = ",", decimal = ".")
-  } else {
-    list(big = ".", decimal = ",")
-  }
-  function(x) {
-    format(
-      x,
-      big.mark = marks$big,
-      decimal.mark = marks$decimal,
-      scientific = FALSE
-    )
-  }
+  function(x) episodic_format_number(x, lang = lang)
 }
 
 #' Breaks and labels for a weekly x axis
@@ -323,7 +313,8 @@ episodic_chart_week_scale <- function(week_starts,
 #'   reduced opacity as a visual reminder not to over-interpret a downturn
 #'   that is really just a reporting lag).
 #' @param lang Language for axis labels: `"en"`, `"ar"`, `"nl"`, `"fr"`,
-#'   `"de"`, `"hi"`, `"zh"`, or `"es"`. Defaults to the
+#'   `"de"`, `"hi"`, `"zh"`, or `"es"`, or a regional variant of
+#'   one (`"en-US"`, `"es-419"`). Defaults to the
 #'   `EPISODIC_LANGUAGE` environment variable, falling back to `"en"` if
 #'   that is unset.
 #' @return A [ggplot2::ggplot] object.
@@ -338,7 +329,11 @@ episodic_chart_week_scale <- function(week_starts,
 episodic_ui_epi_curve_chart <- function(curve,
                                         lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
-  curve$alpha <- ifelse(curve$incomplete, 0.45, 1)
+  # `%in% TRUE`, not the bare column: an `NA` there would make the whole
+  # bar's alpha `NA` and the bar itself vanish from the chart without a
+  # word. The pathogen curve has always read its own flag this way; this
+  # one did not.
+  curve$alpha <- ifelse(curve$incomplete %in% TRUE, 0.45, 1)
   ggplot2::ggplot(
     curve,
     ggplot2::aes(x = .data$sample_date, y = .data$n_cases)
@@ -765,7 +760,11 @@ episodic_geo_labels <- function(matched, max_labels = 30L) {
 episodic_ui_denominator_chart <- function(series,
                                           lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
-  max_tests <- max(series$n_tests, 1)
+  # na.rm: a week whose testing volume was never supplied leaves an NA in
+  # the column, and an NA maximum makes the whole y scale NA - the chart
+  # then fails to draw at all rather than drawing the weeks that do have
+  # a denominator.
+  max_tests <- max(series$n_tests, 1, na.rm = TRUE)
   scale_factor <- max_tests
   # A positivity rate above 100% is not a real reading - it means the
   # supplied testing-volume feed does not cover every case counted (a

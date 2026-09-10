@@ -301,11 +301,15 @@ episodic_scheduled_report_message <- function(con, subscription, final, attachme
   ))
 
   reports_so_far <- episodic_db_reports_for_cluster(con, subscription$cluster_id)
-  latest_report <- reports_so_far[which.max(reports_so_far$version_no), ]
-  params <- tryCatch(
-    jsonlite::fromJSON(latest_report$params),
-    error = function(e) NULL
-  )
+  latest_report <- episodic_report_latest_render(reports_so_far)
+  params <- if (is.null(latest_report)) {
+    NULL
+  } else {
+    tryCatch(
+      jsonlite::fromJSON(latest_report$params),
+      error = function(e) NULL
+    )
+  }
   diff <- params$diff
   if (!is.null(diff) && isTRUE(diff$n_new_cases > 0)) {
     lines <- c(lines, paste0(
@@ -315,7 +319,8 @@ episodic_scheduled_report_message <- function(con, subscription, final, attachme
         cases_phrase = episodic_count_phrase(
           diff$n_new_cases,
           episodic_tr("unit.new_case", lang = lang),
-          episodic_tr("unit.new_cases", lang = lang)
+          episodic_tr("unit.new_cases", lang = lang),
+          lang = lang
         ),
         lang = lang
       ),
@@ -337,7 +342,8 @@ episodic_scheduled_report_message <- function(con, subscription, final, attachme
         interval = episodic_count_phrase(
           subscription$interval_days,
           episodic_tr("unit.day", lang = lang),
-          episodic_tr("unit.days", lang = lang)
+          episodic_tr("unit.days", lang = lang),
+          lang = lang
         ),
         lang = lang
       ),

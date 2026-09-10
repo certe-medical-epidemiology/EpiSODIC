@@ -232,13 +232,12 @@ episodic_case_region_code <- function(cases,
 #' The geographic conventions of this instance's lattice
 #'
 #' The two coarsest levels of the lattice need names for places, and
-#' EpiSODIC cannot know an operator's. They used to be hardcoded to the
-#' catchment this package was first written for - the whole-catchment
-#' code was literally `"NORTHERN_NETHERLANDS"` and an area was
-#' `"GEBIED-"` (Dutch for "area") plus the first two characters of a
-#' postcode - which a laboratory in Nairobi or Lima would have found
-#' baked into its own stream keys, its own dashboard and its own
-#' outbreak reports with no way to change it.
+#' EpiSODIC cannot know an operator's - so they are configuration, not
+#' constants. A hardcoded whole-catchment code and area rule (say
+#' `"NORTHERN_NETHERLANDS"`, and `"GEBIED-"` plus the first two
+#' characters of a postcode) would be baked into a laboratory's own
+#' stream keys, dashboard and outbreak reports in Nairobi or Lima with
+#' no way to change it.
 #'
 #' Part of `config_hash`, deliberately and unlike `notifications` or
 #' `access`: `region_code` and the area rule both enter
@@ -276,17 +275,16 @@ episodic_geography_config <- function(config = NULL) {
 #' (`episodic_app_reference_pc_province()`), so an instance can tell
 #' "not configured" from "configured and matching nothing".
 #'
-#' There used to be a fallback here: the postcode ranges of the three
-#' provinces the bundled demo data covers (9xxx, 8xxx, 7xxx). It fired
-#' whenever no mapping was configured - including for an instance in
-#' another country whose postcodes happen to start with those digits,
-#' which then got Dutch province names on its own streams, its own
-#' dashboard and its own outbreak reports, silently and with nothing
-#' anywhere to say why. Deriving a province from a postcode is a
-#' country-specific rule; there is no defensible default, so there is
-#' now none. `episodic_demo()` writes the demo's own mapping to a
-#' temporary CSV and points the environment variable at it, exercising
-#' exactly the mechanism a real deployment uses.
+#' There is no fallback rule, deliberately. A built-in one - say the
+#' postcode ranges of the three provinces the bundled demo data covers
+#' (9xxx, 8xxx, 7xxx) - would fire for an instance in another country
+#' whose postcodes happen to start with those digits, putting Dutch
+#' province names on its own streams, dashboard and outbreak reports
+#' with nothing anywhere to say why. Deriving a province from a postcode
+#' is country-specific, and there is no defensible default.
+#' `episodic_demo()` writes the demo's own mapping to a temporary CSV
+#' and points the environment variable at it, exercising exactly the
+#' mechanism a real deployment uses.
 #'
 #' @param pc A character vector of postcode values, matching the `pc`
 #'   column of your case data.
@@ -449,10 +447,10 @@ episodic_lattice_upsert_group <- function(con,
 
   # One row per group, assembled in R first. The database is then touched
   # three times for the whole level instead of three times per stream (a
-  # SELECT on stream_key, an INSERT or UPDATE, and a LAST_INSERT_ID()),
-  # which is what made enumerating a few hundred streams take seventeen
-  # seconds against a networked database. Group order is preserved, so
-  # newly created streams still get their ids in the order they always did.
+  # SELECT on stream_key, an INSERT or UPDATE, and a LAST_INSERT_ID()) -
+  # against a networked database, the per-stream form costs seventeen
+  # seconds for a few hundred streams. Group order is preserved, so newly
+  # created streams get their ids in group order.
   heads <- vapply(groups, function(g) g[1], integer(1))
   reps <- cases[heads, , drop = FALSE]
   pick <- function(col) if (is.null(col)) rep(NA, nrow(reps)) else reps[[col]]

@@ -90,6 +90,7 @@
 
   "panel.epicurve.title": "Epidemische curve",
   "panel.epicurve.note": "De gearceerde zone beslaat de laatste {days_phrase}: de empirische rapportagevertraging uit de rapportagedriehoek. Casussen met een afnamedatum in dit venster zijn nog niet volledig binnen. Een dalende staart is hier geen afname.",
+  "panel.epicurve.note_unknown": "Voor deze stroom kon geen rapportagevertraging worden gemeten, dus geen enkele dag van deze curve kan als volledig gerapporteerd worden beschouwd. De hele curve is daarom gearceerd.",
   "panel.epicurve.ylab": "Casussen",
 
   "panel.trend.title": "Meerjarige trend",
@@ -184,6 +185,21 @@
 
   "misc.unknown": "onbekend",
   "misc.none": "geen",
+  "misc.list_separator_and": " en ",
+  "misc.decimal.mark": ",",
+  "misc.thousands.mark": ".",
+  "misc.thousands.grouping": "3",
+  "misc.thousands.minimum": "1",
+  "misc.language.en": "Engels",
+  "misc.language.ar": "Arabisch",
+  "misc.language.nl": "Nederlands",
+  "misc.language.fr": "Frans",
+  "misc.language.de": "Duits",
+  "misc.language.hi": "Hindi",
+  "misc.language.zh": "Chinees",
+  "misc.language.es": "Spaans",
+  "misc.language.en-US": "Amerikaans Engels",
+  "misc.language.es-419": "Latijns-Amerikaans Spaans",
   "misc.close": "Sluiten",
   "misc.dash": "—",
 
@@ -211,6 +227,10 @@
   "date.month_full.10": "oktober",
   "date.month_full.11": "november",
   "date.month_full.12": "december",
+  "date.format.single": "{day} {month} {year}",
+  "date.format.range_month": "{day_from}-{day_to} {month} {year}",
+  "date.format.range_year": "{day_from} {month_from} - {day_to} {month_to} {year}",
+  "date.format.range_full": "{day_from} {month_from} {year_from} - {day_to} {month_to} {year_to}",
 
   "interpretation.fragment.magnitude.rare_trigger": "{obs_phrase} gerapporteerd binnen dit cluster. Voor deze verwekker geldt geen statistische signaalgrens: de detectie komt van de curatieve triggerlijst, waarbij elke gerapporteerde casus wordt opgepakt ongeacht basislijn.",
   "interpretation.fragment.magnitude.high_ratio": "{obs_phrase} tegen een verwachting van {expected}: een ratio van {ratio}.",
@@ -478,7 +498,7 @@
   "info.reference.overlay.unusable": "Het ingestelde bestand kon niet worden gelezen als sf-object met een kolom geometry, dus er worden geen omtrekken getekend.",
   "info.reference.geo.no_sf": "Het pakket sf is niet geïnstalleerd, dus het geografiepaneel toont een staafverdeling in plaats van een kaart.",
   "info.reference.geo.none": "Geen geografische referentiedata geconfigureerd, dus het geografiepaneel toont een staafverdeling per gebied in plaats van een kaart. Stel EPISODIC_GEO_DATA in op een .rds-bestand met een sf-object met de kolommen `pc` en `geometry` voor uw eigen regio.",
-  "info.reference.language": "Het dashboard en de rapporten worden weergegeven in '{language}'.",
+  "info.reference.language": "Het dashboard en de rapporten worden weergegeven in het {language} ({code}).",
   "info.reference.file.default": "Alleen meegeleverde standaardwaarden; geen instantiebestand ingesteld.",
   "info.reference.file.custom": "Uw eigen bestand is ingesteld en gaat voor op de meegeleverde standaardwaarden.",
   "info.reference.path": "Leest: {path}",
@@ -487,6 +507,7 @@
   "info.access.body": "Lezen is anoniem: iedereen die de app bereikt kan clusters, signaleringsreeksen en het archief bekijken zonder aan te melden. Aanmelden is alleen nodig om een cluster te classificeren, te sluiten of een signaleringsreeks te dempen - elke schrijfactie wordt aan de aangemelde gebruiker toegeschreven.",
 
   "streams.col.farrington": "Farrington",
+  "streams.farrington_hint": "Farrington heeft {need} weken historie nodig voor de ingestelde b; deze stroom heeft er {have}.",
   "streams.col.baseline_excluded": "Basislijn uitgesloten",
 
   "interpretation.fragment.curve_shape.point_source": "Alle casussen vallen binnen een enkele maximale incubatieperiode, wat wijst op een puntbron: een gedeelde blootstelling op of rond een moment, eerder dan verspreiding van mens op mens.",
@@ -500,6 +521,7 @@
   "panel.chart.graphics_unavailable": "Grafiek kan niet worden weergegeven: het/de R-pakket(ten) {packages} zijn geïnstalleerd, maar niet compatibel met deze R-versie. Installeer ze opnieuw voor de huidige R-versie om deze grafiek te herstellen.",
   "panel.chart.graphics_unavailable_build": "Grafiek kan niet worden weergegeven: er is geen werkend PNG-grafisch apparaat beschikbaar op deze server (ragg, Cairo en R's eigen ingebouwde PNG-apparaat konden alle niet worden geopend). Dit is een build-tijd configuratieprobleem van de R-installatie zelf, geen pakket dat opnieuw kan worden geïnstalleerd - neem contact op met de beheerder van deze server.",
   "panel.rt.unavailable.insufficient_history": "Nog onvoldoende casushistorie in dit cluster om Rt te berekenen.",
+  "panel.rt.unavailable.completeness_unknown": "Rt kan niet worden berekend: voor deze stroom kon geen rapportagevertraging worden gemeten, dus de vensters die nog vollopen kunnen niet worden achtergehouden.",
 
   "panel.similar.title": "Vergelijkbare clusters",
   "panel.related.title": "Gerelateerde clusters",

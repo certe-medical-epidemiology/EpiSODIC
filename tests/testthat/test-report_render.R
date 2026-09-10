@@ -141,10 +141,13 @@ test_that("episodic_report_output_dir() refuses a configured output_dir that can
   )
 })
 
-test_that("episodic_report_render() picks version_no = max(existing) + 1, not a fixed increment", {
+test_that("a claimed version number is one above the highest already taken, gaps included", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
-  # simulate two prior renders including a gap, as episodic_db_report_render_insert() would leave them
+  expect_equal(episodic_db_report_version_next(env$con, env$cluster_id), 1L)
+
+  # two prior renders including a gap, as episodic_db_report_render_insert()
+  # would leave them after a render that failed between claim and insert
   episodic_db_report_render_insert(
     env$con,
     env$cluster_id,
@@ -165,8 +168,129 @@ test_that("episodic_report_render() picks version_no = max(existing) + 1, not a 
     case_ids_json = "[]",
     version_no = 3
   )
-  existing <- episodic_db_reports_for_cluster(env$con, env$cluster_id)
-  expect_equal(max(existing$version_no) + 1L, 4L)
+  # A render that was never claimed (an older database, brought forward)
+  # still holds its number.
+  expect_equal(episodic_db_report_version_next(env$con, env$cluster_id), 4L)
+  expect_equal(episodic_db_report_version_claim(env$con, env$cluster_id), 4L)
+  expect_equal(episodic_db_report_version_claim(env$con, env$cluster_id), 5L)
+})
+
+test_that("two renders of one cluster that overlap are handed different version numbers", {
+  # The real ordering, without needing two processes: the second claim
+  # happens while the first render is still going, i.e. before any
+  # episodic_report_render row exists for it at all. Deriving the
+  # version from episodic_report_render after the render is what gave
+  # both of them the same number.
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  first <- episodic_db_report_version_claim(env$con, env$cluster_id)
+  second <- episodic_db_report_version_claim(env$con, env$cluster_id)
+  expect_equal(c(first, second), c(1L, 2L))
+
+  # ... and each render then records its own row under its own number.
+  episodic_db_report_render_insert(
+    env$con,
+    env$cluster_id,
+    user_id = NA,
+    file_path = sprintf("cluster-%d-v%d.html", env$cluster_id, second),
+    file_sha256 = strrep("b", 64),
+    params_json = "{}",
+    case_ids_json = "[]",
+    version_no = second
+  )
+  episodic_db_report_render_insert(
+    env$con,
+    env$cluster_id,
+    user_id = NA,
+    file_path = sprintf("cluster-%d-v%d.html", env$cluster_id, first),
+    file_sha256 = strrep("a", 64),
+    params_json = "{}",
+    case_ids_json = "[]",
+    version_no = first
+  )
+  reports <- episodic_db_reports_for_cluster(env$con, env$cluster_id)
+  expect_equal(sort(reports$version_no), c(1L, 2L))
+  expect_equal(length(unique(reports$file_path)), 2L)
+})
+
+test_that("the database refuses a second render row under a version number already used", {
+  # The backstop behind the claim register: a regression that went back
+  # to computing the version in R fails loudly here instead of quietly
+  # recording a file_sha256 for bytes that have been overwritten.
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  episodic_db_report_render_insert(
+    env$con,
+    env$cluster_id,
+    user_id = NA,
+    file_path = "a.html",
+    file_sha256 = strrep("a", 64),
+    params_json = "{}",
+    case_ids_json = "[]",
+    version_no = 1
+  )
+  expect_error(
+    episodic_db_report_render_insert(
+      env$con,
+      env$cluster_id,
+      user_id = NA,
+      file_path = "a-again.html",
+      file_sha256 = strrep("c", 64),
+      params_json = "{}",
+      case_ids_json = "[]",
+      version_no = 1
+    ),
+    "UNIQUE"
+  )
+})
+
+test_that("a claim that collides is retried, and anything else is raised as it is", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  # Every attempt is refused: the claim gives up loudly rather than
+  # rendering under a number it never got.
+  local_mocked_bindings(
+    episodic_db_report_version_next = function(con, cluster_id) 1L
+  )
+  expect_equal(episodic_db_report_version_claim(env$con, env$cluster_id), 1L)
+  expect_error(
+    episodic_db_report_version_claim(env$con, env$cluster_id, max_attempts = 3L),
+    "after 3 attempts"
+  )
+})
+
+test_that("a claim does not retry an error that is not a collision", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  local_mocked_bindings(
+    episodic_db_report_version_next = function(con, cluster_id) {
+      stop("the database is on fire", call. = FALSE)
+    }
+  )
+  expect_error(
+    episodic_db_report_version_claim(env$con, env$cluster_id),
+    "on fire"
+  )
+})
+
+test_that("episodic_report_latest_render() breaks a version tie on the later row", {
+  # Nothing can write a tie any more, but a database migrated from
+  # before the unique index may already hold one, and which of the two
+  # is "the previous report" must not depend on row order.
+  existing <- data.frame(
+    report_id = c(7L, 9L, 3L),
+    version_no = c(4L, 4L, 2L),
+    rendered_at = c("2026-01-02", "2026-01-03", "2026-01-01"),
+    stringsAsFactors = FALSE
+  )
+  expect_equal(episodic_report_latest_render(existing)$report_id, 9L)
+  expect_null(episodic_report_latest_render(existing[0, ]))
+  expect_null(episodic_report_latest_render(NULL))
+  expect_error(
+    episodic_report_latest_render(data.frame(version_no = 1L)),
+    "report_id"
+  )
 })
 
 test_that("episodic_report_snapshot() pulls the headline fields from a cluster object", {
@@ -183,7 +307,8 @@ test_that("episodic_report_snapshot() pulls the headline fields from a cluster o
 
 test_that("episodic_report_diff() is NULL for the first-ever render", {
   existing <- data.frame(
-    version_no = integer(0), rendered_at = character(0),
+    report_id = integer(0), version_no = integer(0),
+    rendered_at = character(0),
     params = character(0), case_ids = character(0)
   )
   snapshot <- list(n_cases = 1, expected = NA_real_, ratio = NA_real_, priority_score = 10, last_day = "2026-01-01")
@@ -192,6 +317,7 @@ test_that("episodic_report_diff() is NULL for the first-ever render", {
 
 test_that("episodic_report_diff() is NULL when the previous render predates the snapshot feature", {
   existing <- data.frame(
+    report_id = 1L,
     version_no = 1L,
     rendered_at = "2026-01-01T00:00:00Z",
     params = jsonlite::toJSON(list(cluster_id = 1L), auto_unbox = TRUE),
@@ -204,6 +330,7 @@ test_that("episodic_report_diff() is NULL when the previous render predates the 
 
 test_that("episodic_report_diff() computes case, priority, ratio and period deltas", {
   existing <- data.frame(
+    report_id = 1L,
     version_no = 1L,
     rendered_at = "2026-09-01T07:00:00Z",
     params = jsonlite::toJSON(list(snapshot = list(
@@ -225,6 +352,7 @@ test_that("episodic_report_diff() computes case, priority, ratio and period delt
 
 test_that("episodic_report_diff() reports zero new cases and no period extension when nothing changed", {
   existing <- data.frame(
+    report_id = 1L,
     version_no = 2L,
     rendered_at = "2026-09-01T07:00:00Z",
     params = jsonlite::toJSON(list(snapshot = list(
@@ -244,6 +372,7 @@ test_that("episodic_report_diff() reports zero new cases and no period extension
 
 test_that("episodic_report_diff() handles a ratio that was or is NA without erroring", {
   existing <- data.frame(
+    report_id = 1L,
     version_no = 1L,
     rendered_at = "2026-09-01T07:00:00Z",
     params = jsonlite::toJSON(list(snapshot = list(

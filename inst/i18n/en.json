@@ -90,6 +90,7 @@
 
   "panel.epicurve.title": "Epidemic curve",
   "panel.epicurve.note": "The shaded zone covers the last {days_phrase}: the empirical reporting delay from the reporting triangle. Cases with a sample date in this window are not yet fully reported. A falling tail here is not a decline.",
+  "panel.epicurve.note_unknown": "No reporting delay could be measured for this stream, so no day of this curve can be treated as fully reported. The whole curve is shown shaded.",
   "panel.epicurve.ylab": "Cases",
 
   "panel.trend.title": "Multi-year trend",
@@ -186,6 +187,21 @@
 
   "misc.unknown": "unknown",
   "misc.none": "none",
+  "misc.list_separator_and": " and ",
+  "misc.decimal.mark": ".",
+  "misc.thousands.mark": ",",
+  "misc.thousands.grouping": "3",
+  "misc.thousands.minimum": "1",
+  "misc.language.en": "English",
+  "misc.language.ar": "Arabic",
+  "misc.language.nl": "Dutch",
+  "misc.language.fr": "French",
+  "misc.language.de": "German",
+  "misc.language.hi": "Hindi",
+  "misc.language.zh": "Chinese",
+  "misc.language.es": "Spanish",
+  "misc.language.en-US": "US English",
+  "misc.language.es-419": "Latin American Spanish",
   "misc.close": "Close",
   "misc.dash": "—",
 
@@ -213,6 +229,10 @@
   "date.month_full.10": "October",
   "date.month_full.11": "November",
   "date.month_full.12": "December",
+  "date.format.single": "{day} {month} {year}",
+  "date.format.range_month": "{day_from}-{day_to} {month} {year}",
+  "date.format.range_year": "{day_from} {month_from} - {day_to} {month_to} {year}",
+  "date.format.range_full": "{day_from} {month_from} {year_from} - {day_to} {month_to} {year_to}",
 
   "interpretation.fragment.magnitude.rare_trigger": "{obs_phrase} reported within this cluster. No statistical signal threshold applies to this pathogen: detection comes from the curated trigger list, which picks up every reported case regardless of baseline.",
   "interpretation.fragment.magnitude.high_ratio": "{obs_phrase} against an expectation of {expected}: a ratio of {ratio}.",
@@ -439,7 +459,7 @@
   "info.title": "Info",
   "info.intro": "Background on EpiSODIC's detection algorithms, cluster states and access model.",
   "info.about.website": "Website",
-  "info.about.license": "License: {license}",
+  "info.about.license": "Licence: {license}",
   "info.algorithms.title": "Detection algorithms",
   "info.algorithms.note": "A cluster can be detected by more than one algorithm at once; see \"detected by\" on the dossier.",
   "info.algorithms.col.name": "Name",
@@ -480,7 +500,7 @@
   "info.reference.overlay.unusable": "The configured file could not be read as an sf object with a geometry column, so no outlines are drawn.",
   "info.reference.geo.no_sf": "The sf package is not installed, so the geography panel shows a bar breakdown instead of a map.",
   "info.reference.geo.none": "No geographic reference data configured, so the geography panel shows a bar breakdown by area instead of a map. Set EPISODIC_GEO_DATA to an .rds file holding an sf object with `pc` and `geometry` columns for your own region.",
-  "info.reference.language": "The dashboard and reports render in '{language}'.",
+  "info.reference.language": "The dashboard and reports render in {language} ({code}).",
   "info.reference.file.default": "Shipped defaults only; no instance file configured.",
   "info.reference.file.custom": "Your own file is configured and takes precedence over the shipped defaults.",
   "info.reference.path": "Reading: {path}",
@@ -489,6 +509,7 @@
   "info.access.body": "Reading is anonymous: anyone who reaches the app can view clusters, streams and the archive without signing in. Signing in is only needed to classify a cluster, close it, or mute a stream - every write is attributed to the signed-in user.",
 
   "streams.col.farrington": "Farrington",
+  "streams.farrington_hint": "Farrington needs {need} weeks of history for the configured b; this stream has {have}.",
   "streams.col.baseline_excluded": "Baseline excluded",
 
   "interpretation.fragment.curve_shape.point_source": "All cases fall within a single maximum incubation period, pointing to a point source: a shared exposure around one moment, rather than person-to-person spread.",
@@ -502,6 +523,7 @@
   "panel.chart.graphics_unavailable": "Chart cannot be rendered: the R package(s) {packages} are installed but incompatible with this R version. Reinstall them for the current R version to restore this chart.",
   "panel.chart.graphics_unavailable_build": "Chart cannot be rendered: no working PNG graphics device is available on this server (ragg, Cairo, and R's own built-in PNG device all failed to open). This is a build-time configuration issue with the R installation itself, not a package that can be reinstalled - contact whoever manages this server.",
   "panel.rt.unavailable.insufficient_history": "Not enough case history in this cluster yet to compute Rt.",
+  "panel.rt.unavailable.completeness_unknown": "Rt cannot be computed: no reporting delay could be measured for this stream, so the windows that are still filling up cannot be withheld.",
 
   "panel.similar.title": "Similar clusters",
   "panel.related.title": "Related clusters",

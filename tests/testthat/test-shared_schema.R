@@ -19,11 +19,10 @@
 
 # A schema EpiSODIC shares with another application.
 #
-# This is an ordinary way to deploy, and it is how the first real instance
-# was deployed: EpiSODIC's tables beside another system's in one MySQL
-# schema. Asked whether "the database exists", EpiSODIC used to answer
-# from the presence of any table at all, so the co-tenant's tables made a
-# schema EpiSODIC had never touched look like an existing instance.
+# An ordinary way to deploy: EpiSODIC's tables beside another system's in
+# one MySQL schema. Answering "does the database exist" from the presence
+# of any table at all makes the co-tenant's tables look like an existing
+# EpiSODIC instance in a schema EpiSODIC has never touched.
 #
 # The SQLite half is testable anywhere; the routing itself needs a server
 # with a schema in it, and lives in test-mariadb_live.R.

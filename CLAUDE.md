@@ -10,7 +10,7 @@ EpiSODIC is a complete and automated outbreak detection and assessment system. I
 
 - No shortcuts, no placeholder logic, no "good enough for now". If a proper implementation is more effort than a shortcut, implement it properly or check with the user.
 - No silent failures. Every error path must be handled explicitly and must fail loudly, never fail quietly and produce a plausible-looking wrong result.
-- **Absence of a measurement is never a measurement of zero.** This is the failure mode this codebase produces most often, and it has been found in four separate places: lattice suppression read a manual cluster's zero case-overlap as "the rise is spread thinly" rather than "there is nothing here to measure"; the reporting-completion curve dropped the lags at which nothing had arrived yet instead of counting them as zero; the priority score's own docstring gets it right, and `episodic_add_manual_cluster()` still scored agreement on a different denominator; and three dossier narrative fragments passed `NA` positivity through `%||% 0` and then wrote sentences about it. Note that `%||%` in this package (`R/interpretation.R`) also swallows `NA`, not only `NULL`, which is exactly how the last of those happened. When a quantity cannot be computed, drop the component, skip the fragment, or return `NULL` - never substitute a zero and carry on.
+- **Absence of a measurement is never a measurement of zero.** This is the failure mode this codebase is most prone to, and it wears the same disguise every time: a zero is a legal value of the quantity, so substituting one for "cannot be computed" produces a number that reads as a finding. A zero case-overlap becomes "the rise is spread thinly" rather than "there is nothing here to measure"; a lag at which nothing has arrived yet becomes a completion of zero rather than a lag with no denominator; a component that a stream structurally cannot produce becomes a score of zero carrying its full weight; an `NA` positivity becomes a sentence about a positivity of nought. Watch `%||%` in particular: this package's own (`R/interpretation.R`) swallows `NA` as well as `NULL`, so `x %||% 0` turns an unmeasured quantity into a measured zero without a word. When a quantity cannot be computed, drop the component, skip the fragment, or return `NULL` - never substitute a zero and carry on.
 - No hidden assumptions about a specific laboratory's data structure, coding system, or naming convention. Anything laboratory-specific must be configurable, not hardcoded.
 - No untested code paths merged into main. Every function that touches detection logic, data transformation, or reporting must have accompanying tests before it is considered complete, and must be placed in a separate branch WITH a PR, so every change regarding these items must automatically be put into a PR.
 - No inconsistent interfaces. Function signatures, argument naming, return types, and error conventions must be uniform across the entire codebase, as if written by a single disciplined author, not accreted piecemeal.
@@ -18,6 +18,12 @@ EpiSODIC is a complete and automated outbreak detection and assessment system. I
 The operator provides case data in a documented format; EpiSODIC handles everything from statistical detection through cluster reconciliation to dashboard presentation and outbreak reporting.
 
 The dashboard and reports are available in English, Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and Spanish. The app sets `lang` and `dir` on the document from the resolved language, and `inst/app/www/episodic.css` uses CSS *logical* properties throughout (`margin-inline-start`, `border-inline-start`, `text-align: start`, `inset-inline-start`) rather than physical `left`/`right` ones, so Arabic mirrors correctly. A `margin-left` added to that stylesheet is a bug.
+
+Numbers are part of that. Every number a reader sees goes through `episodic_format_number()`, which takes its decimal mark, thousands mark, group sizes and minimum grouping from four `misc.decimal.mark`/`misc.thousands.*` keys per language - never from `options(OutDec)` or the system locale, which are properties of whoever started R rather than of the instance. Hindi groups by the Indian lakh/crore rule and Spanish leaves four-digit numbers unseparated because those keys say so, not because anything branches on a language code. A `format(x, big.mark = ",")` reaching a screen is a bug; `episodic_css_pct()` is the one deliberate exception, and it formats a machine-read CSS value rather than a number anyone reads. Identifiers are not quantities: a cluster id, a page number, a schema version or a report version is rendered as-is, never grouped.
+
+Regional variants are files of their own that carry **only what differs** from the language they belong to (`episodic_language_variants`): `en-US.json` is a spelling, a date order and a name; `es-419.json` is two number marks and a name. Everything else is inherited by `episodic_i18n_load()`. They are deliberately not copies - `en` and `en-US` differ in three keys out of six hundred and seventy-nine, and two copies would have to be kept in step for ever. `en` *is* British English and `es` *is* Spain's Spanish, so `en-GB`/`es-ES` are aliases of those files rather than variants of them, and a region that is not shipped (`nl-BE`) resolves to its language rather than to English. `episodic_lang()` resolves a code, `episodic_lang_base()` gives the language a variant belongs to (which is what decides RTL and month names), and the four `date.format.*` keys per language are why a date reads "7 January 2025" in British English, "January 7, 2025" in American, "7. Januar 2025" in German and "2025年1月7日" in Chinese.
+
+The languages themselves have names, in `misc.language.<code>`, one set per file in that file's own language. A message that would otherwise print `nl` at a human says "Dutch" in English and "Nederlands" in Dutch; where the reader has to *type* the code (`EPISODIC_LANGUAGE`), both are given - see `episodic_language_label()` and `episodic_language_choices()`.
 
 ## Architecture
 
@@ -76,13 +82,13 @@ Stream keys are SHA-1 hashes of (pathogen, level, institution_id, ward, region_c
 The geography a run uses is resolved once, from that run's own config, and
 passed down: `episodic_lattice_enumerate()`, `episodic_cases_for_stream()`,
 `episodic_db_cases_for_stream_id()` and `episodic_reconcile_stream()` all
-take it as an argument. Resolving it separately at each site meant a run
-given `episodic_config_path` named its L5 catchment from one configuration
-and its L3 areas from another, and then tested case membership against a
-third - so every geographic stream matched no case however many arrived,
-and any cluster opened there was written with none linked to it, silently.
-The default still resolves `EPISODIC_CONFIG`, which is the right answer on
-the dashboard side, where there is no run to take it from.
+take it as an argument. Resolved separately at each site, a run given
+`episodic_config_path` names its L5 catchment from one configuration and
+its L3 areas from another, then tests case membership against a third - so
+every geographic stream matches no case however many arrive, and any
+cluster opened there is written with none linked to it, silently. The
+default resolves `EPISODIC_CONFIG`, which is the right answer on the
+dashboard side, where there is no run to take it from.
 
 Nothing about the lattice's geography is hardcoded to one country. The whole-catchment code (L5) and the area-code rule (L3) are `config$geography`, resolved by `episodic_geography_config()`; the province level (L4) is an operator-supplied `pc` -> `province_code` CSV pointed at by `EPISODIC_PC_PROVINCE_MAP`, with no built-in rule at all, since deriving a province from a postcode is country-specific. Unconfigured, L4 stays empty and says so on the dashboard's Info screen. Likewise `EPISODIC_GEO_DATA` has no default: without it there is no map, never another country's.
 
@@ -107,12 +113,13 @@ Single schema in `inst/sql/schema.sql`, written in SQLite dialect. Adapted at lo
 | `episodic_cluster_manual_case` | `episodic_add_manual_cluster()` | Case-level detail for `origin = 'manual'` clusters only |
 | `episodic_app_login_failure` | app | Refused sign-ins (username tried, reason) |
 | `episodic_schema_version` | `episodic_db_create()`, `episodic_db_migrate()` | One row per applied schema version |
+| `episodic_report_version_claim` | `episodic_report_render()` | The register of report version numbers handed out, taken before the render (see `episodic_db_report_version_claim()`) |
 
 Two things the adapter does that are not cosmetic. It **derives table-level
 `FOREIGN KEY` clauses** from the schema's inline column-level `REFERENCES`,
 because MySQL parses an inline reference and discards it: relying on them
-gave a MySQL instance all its tables and not one constraint, silently,
-which is what the first real deployment had. Derived rather than listed, so
+gives a MySQL instance all its tables and not one constraint, silently.
+Derived rather than listed, so
 a reference added to `schema.sql` is converted without anyone remembering
 to, and `test-schema_mariadb.R` asserts the counts match. And it applies
 the schema with `FOREIGN_KEY_CHECKS = 0`, because the tables are declared
@@ -141,7 +148,7 @@ Pathogen-specific parameters (episode length, serial interval, severity weight) 
 
 Two identifiers are transformed on the way in, and every feed that names one has to transform it the same way or it silently matches nothing:
 
-- **`institution_key`** is hashed by `episodic_institution_key_hash()` before it is stored, so the case feed and the institution-activity feed both supply the operator's own key and both are hashed to match. The activity loader once compared the raw key against the stored hash, which meant patient-day normalisation never engaged on any real deployment.
+- **`institution_key`** is hashed by `episodic_institution_key_hash()` before it is stored, so the case feed and the institution-activity feed both supply the operator's own key and both are hashed to match. A loader comparing the raw key against the stored hash matches nothing on any correctly prepared deployment, and patient-day normalisation simply never engages.
 - **The patient-and-pathogen episode key** is built by `episodic_case_group_key()`, which separates its parts with a control character rather than concatenating them. `episodic_cases_deduplicate()` groups on it and `episodic_db_last_case_dates()` names its anchor dates with it; if the two ever disagree, a stored episode is never matched and an incoming positive arrives as a spurious second case.
 
 ### Notifications
@@ -304,6 +311,7 @@ Yet, `_pkgdown.yml` groups every exported topic into a section. When adding a ne
 
 - File header: the standard Certe GPL-2 banner (17-line comment block) goes at the top of every R file.
 - Multi-line function signatures: use hanging-indent, not single-indent - the first argument stays on the same line as `function(`, continuation lines align under it, and `) {` shares the line with the last argument (never on its own line). Both are permitted by the tidyverse style guide (style.tidyverse.org/functions.html), but styler >= 1.11.0 defaults to single-indent with `) {` isolated, which this project does not want. Styler cannot be configured to prefer one over the other (raised and declined upstream: github.com/r-lib/styler/pull/1235) - it detects the shape per function from the source itself (`is_single_indent_function_declaration()` in styler's `R/rules-indention.R`: first argument on a new line after `function(` means single-indent; first argument sharing that line, with continuation lines indented more than `2 * indent_by` i.e. more than 4 spaces by default, means hanging-indent) and preserves whichever you wrote, so writing it this way is stable across `styler::style_pkg()` runs regardless of styler version. One real cost: renaming a function invalidates every continuation line's alignment in its own signature, since styler will not recompute it for you - realign by hand when that happens.
+- **Comments describe the code as it is, never as it was.** No "this used to", "was wrong until", "the earlier version", "the exact bug report this fixes", "which is how the first deployment ended up with". A file whose comments narrate their own defect history reads as a pile of bandages rather than a design, and every one of those sentences ages into a scar nobody can see any more. Keep the *reason* and drop the incident: name the alternative and what it costs, in the present tense, as a property of the design - "filtering on pathogen and institution alone would count every case in the hospital for a ward cluster, and `n_cases` drives the priority score". The same applies to test comments: state the invariant the test holds, not the regression that prompted it. History belongs in the commit message, the pull request and `NEWS.md`, which are the records built to carry it.
 - Internal functions: use `@keywords internal` and `@noRd` for functions that should not have a man page. Also, don't reference functions as `[some_function()]` there, but use \`some_function()\` instead, as otherwise roxygen2 gives a warning.
 - Logging: use `episodic_trace()` (defined in `run_cron.R`) for cron-side logging, `message()` for interactive functions.
 - Database: all SQL is inline (no ORM). Parameterised queries (`DBI::dbGetQuery(con, sql, params = ...)`) throughout, never string interpolation of user values.
@@ -320,7 +328,7 @@ Yet, `_pkgdown.yml` groups every exported topic into a section. When adding a ne
 | `EPISODIC_DB` | Database path (SQLite) or DSN (MariaDB) |
 | `EPISODIC_CONFIG` | Instance detection + notification config YAML |
 | `EPISODIC_STYLE` | Instance colour palette YAML |
-| `EPISODIC_LANGUAGE` | Dashboard/report language (en, ar, nl, fr, de, hi, zh, es) |
+| `EPISODIC_LANGUAGE` | Dashboard/report language (en, ar, nl, fr, de, hi, zh, es, or a regional variant: en-US, es-419) |
 | `EPISODIC_GEO_DATA` | Geographic reference data (.rds, sf object) |
 | `EPISODIC_GEO_DATA_OVERLAY` | Optional region-outline overlay (.rds) |
 | `EPISODIC_PC_PROVINCE_MAP` | Postcode-to-province CSV mapping |

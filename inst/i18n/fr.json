@@ -90,6 +90,7 @@
 
   "panel.epicurve.title": "Courbe épidémique",
   "panel.epicurve.note": "La zone grisée couvre les derniers {days_phrase} : le délai de déclaration empirique issu du triangle de déclaration. Les cas dont la date de prélèvement se situe dans cette fenêtre ne sont pas encore entièrement déclarés. Une queue descendante ici n'est pas un déclin réel.",
+  "panel.epicurve.note_unknown": "Aucun délai de déclaration n'a pu être mesuré pour ce flux ; aucun jour de cette courbe ne peut donc être considéré comme entièrement déclaré. La courbe entière est grisée.",
   "panel.epicurve.ylab": "Cas",
 
   "panel.trend.title": "Tendance pluriannuelle",
@@ -184,6 +185,21 @@
 
   "misc.unknown": "inconnu",
   "misc.none": "aucun",
+  "misc.list_separator_and": " et ",
+  "misc.decimal.mark": ",",
+  "misc.thousands.mark": "\u00a0",
+  "misc.thousands.grouping": "3",
+  "misc.thousands.minimum": "1",
+  "misc.language.en": "anglais",
+  "misc.language.ar": "arabe",
+  "misc.language.nl": "néerlandais",
+  "misc.language.fr": "français",
+  "misc.language.de": "allemand",
+  "misc.language.hi": "hindi",
+  "misc.language.zh": "chinois",
+  "misc.language.es": "espagnol",
+  "misc.language.en-US": "anglais américain",
+  "misc.language.es-419": "espagnol d'Amérique latine",
   "misc.close": "Fermer",
   "misc.dash": "—",
 
@@ -211,6 +227,10 @@
   "date.month_full.10": "octobre",
   "date.month_full.11": "novembre",
   "date.month_full.12": "décembre",
+  "date.format.single": "{day} {month} {year}",
+  "date.format.range_month": "{day_from}-{day_to} {month} {year}",
+  "date.format.range_year": "{day_from} {month_from} - {day_to} {month_to} {year}",
+  "date.format.range_full": "{day_from} {month_from} {year_from} - {day_to} {month_to} {year_to}",
 
   "interpretation.fragment.magnitude.rare_trigger": "{obs_phrase} signalés au sein de ce cluster. Aucun seuil de signal statistique ne s'applique à ce pathogène : la détection provient de la liste de déclencheurs sélectionnée, qui relève chaque cas signalé quelle que soit la référence.",
   "interpretation.fragment.magnitude.high_ratio": "{obs_phrase} contre une attente de {expected} : un ratio de {ratio}.",
@@ -478,7 +498,7 @@
   "info.reference.overlay.unusable": "Le fichier configuré n'a pas pu être lu comme un objet sf doté d'une colonne geometry ; aucun contour n'est donc tracé.",
   "info.reference.geo.no_sf": "Le paquet sf n'est pas installé : le panneau géographique affiche une répartition en barres au lieu d'une carte.",
   "info.reference.geo.none": "Aucune donnée géographique de référence n'est configurée : le panneau géographique affiche donc une répartition en barres par zone plutôt qu'une carte. Définissez EPISODIC_GEO_DATA sur un fichier .rds contenant un objet sf avec les colonnes `pc` et `geometry` pour votre propre région.",
-  "info.reference.language": "Le tableau de bord et les rapports s'affichent en '{language}'.",
+  "info.reference.language": "Le tableau de bord et les rapports s'affichent en {language} ({code}).",
   "info.reference.file.default": "Valeurs fournies par défaut uniquement ; aucun fichier d'instance configuré.",
   "info.reference.file.custom": "Votre propre fichier est configuré et prime sur les valeurs fournies par défaut.",
   "info.reference.path": "Lecture de : {path}",
@@ -487,6 +507,7 @@
   "info.access.body": "La lecture est anonyme : toute personne accédant à l'application peut consulter les clusters, les flux et les archives sans se connecter. La connexion n'est nécessaire que pour classer un cluster, le clôturer ou mettre un flux en sourdine - chaque écriture est attribuée à l'utilisateur connecté.",
 
   "streams.col.farrington": "Farrington",
+  "streams.farrington_hint": "Farrington a besoin de {need} semaines d'historique pour le b configuré ; ce flux en a {have}.",
   "streams.col.baseline_excluded": "Référence exclue",
 
   "interpretation.fragment.curve_shape.point_source": "Tous les cas se situent dans une seule période d'incubation maximale, ce qui indique une source ponctuelle : une exposition partagée autour d'un même moment, plutôt qu'une transmission de personne à personne.",
@@ -500,6 +521,7 @@
   "panel.chart.graphics_unavailable": "Le graphique ne peut pas être affiché : le(s) paquet(s) R {packages} sont installés mais incompatibles avec cette version de R. Réinstallez-les pour la version de R actuelle afin de rétablir ce graphique.",
   "panel.chart.graphics_unavailable_build": "Le graphique ne peut pas être affiché : aucun périphérique graphique PNG fonctionnel n'est disponible sur ce serveur (ragg, Cairo et le périphérique PNG intégré de R n'ont pas pu être ouverts). Il s'agit d'un problème de configuration au moment de la compilation de l'installation R elle-même, pas d'un paquet réinstallable - contactez l'administrateur de ce serveur.",
   "panel.rt.unavailable.insufficient_history": "Historique de cas encore insuffisant dans ce cluster pour calculer le Rt.",
+  "panel.rt.unavailable.completeness_unknown": "Le Rt ne peut pas être calculé : aucun délai de déclaration n'a pu être mesuré pour ce flux, les fenêtres encore incomplètes ne peuvent donc pas être écartées.",
 
   "panel.similar.title": "Clusters similaires",
   "panel.related.title": "Grappes liées",

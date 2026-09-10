@@ -496,6 +496,46 @@ CREATE TABLE episodic_report_render (
 
 CREATE INDEX idx_episodic_report_render_cluster ON episodic_report_render(cluster_id);
 
+-- A backstop, not the mechanism: the version a render carries is handed
+-- out by episodic_db_report_version_claim() before the render starts,
+-- so two overlapping renders of one cluster never reach for the same
+-- number. This index is what makes any future regression fail loudly
+-- instead of writing a second v4 whose file_sha256 describes bytes the
+-- first render's file.copy() has since overwritten.
+CREATE UNIQUE INDEX idx_episodic_report_render_version ON episodic_report_render(cluster_id, version_no);
+
+-- app, and cron for scheduled dispatches. The register of report
+-- version numbers handed out, one row per number, taken before the
+-- Quarto render rather than after it.
+--
+-- A render takes seconds to tens of seconds, and two of them overlap
+-- routinely: two epidemiologists on the same dossier, or a scheduled
+-- dispatch while somebody has that dossier open. Reading the highest
+-- version_no in episodic_report_render and inserting a row with the
+-- next one after the render finishes gives both renders the same
+-- number: one file written twice, and the loser's file_sha256
+-- describing bytes that are not on disk - a silent falsehood in an
+-- audit trail whose whole purpose is to prove a report has not been
+-- altered since it was rendered.
+--
+-- Claiming is a single insert against the UNIQUE constraint below: the
+-- loser of a race is refused, takes the next number and carries on, and
+-- nobody waits for anybody else's render. No lock is held for the
+-- duration of anything.
+--
+-- A claim with no matching episodic_report_render row is a render that
+-- was started and did not finish. That leaves a gap in a cluster's
+-- version numbers, which is the honest record of what happened - the
+-- row is never deleted or reused to close it.
+CREATE TABLE episodic_report_version_claim (
+  claim_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+  cluster_id INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
+  version_no INTEGER NOT NULL,
+  claimed_at TEXT NOT NULL,
+  claimed_by TEXT NOT NULL,  -- host and process id, so a gap can be traced back
+  UNIQUE (cluster_id, version_no)
+);
+
 -- app. Event-sourced, same shape as episodic_cluster_note: an
 -- epidemiologist "sets" a schedule (an every-N-days cadence plus a
 -- recipient list, for colleagues with no EpiSODIC account and no need

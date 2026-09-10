@@ -113,11 +113,10 @@ episodic_notify_smtp <- function(channel, message) {
 #' reports in eight languages, four of which are not written in the Latin
 #' alphabet at all, so an Arabic, Hindi or Chinese subject line - or
 #' merely a Dutch or Spanish one carrying a single accented character -
-#' is the normal case rather than an edge one, and putting those bytes
-#' into a header raw, as this used to,
-#' gets them mangled into replacement characters by some relays and the
-#' whole message rejected by others. Pure-ASCII values are left exactly
-#' as they are, so nothing changes for an English instance.
+#' is the normal case rather than an edge one. Put into a header raw,
+#' those bytes are mangled into replacement characters by some relays
+#' and get the whole message rejected by others. Pure-ASCII values are
+#' left exactly as they are, so an English instance is unaffected.
 #'
 #' Encoded as one base64 "encoded-word" rather than split at the 75
 #' characters RFC 2047 nominally allows: splitting a UTF-8 subject

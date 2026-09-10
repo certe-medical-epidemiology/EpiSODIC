@@ -56,7 +56,8 @@
 #'   Defaults to `config$report$small_count_threshold`.
 #' @param episodic_config_path The config path.
 #' @param lang Report language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
-#'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   `"hi"`, `"zh"`, or `"es"`, or a regional variant of
+#'   one (`"en-US"`, `"es-419"`). Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
 #' @param qmd_path Path to the Quarto template to render. Defaults to the
 #'   `EPISODIC_QUARTO_REPORT` environment variable, falling back to the
@@ -128,7 +129,13 @@ episodic_report_render <- function(con,
 
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
   existing <- episodic_db_reports_for_cluster(con, cluster_id)
-  version_no <- if (nrow(existing) == 0) 1L else max(existing$version_no) + 1L
+  # Claimed here, before the render, not derived from `existing` after
+  # it: the render below is the slowest thing this package does, and a
+  # second render of the same cluster starting inside that window used
+  # to reach for the same number - see
+  # `episodic_db_report_version_claim()`. The claim is a single insert
+  # and returns immediately; no lock is held across the render.
+  version_no <- episodic_db_report_version_claim(con, cluster_id)
   snapshot <- episodic_report_snapshot(obj)
   diff <- episodic_report_diff(existing, snapshot, case_ids)
 
@@ -149,7 +156,14 @@ episodic_report_render <- function(con,
   work_dir <- tempfile("episodic_report_")
   dir.create(work_dir)
   on.exit(unlink(work_dir, recursive = TRUE), add = TRUE)
-  file.copy(qmd_path, file.path(work_dir, "episodic_default_report.qmd"))
+  if (!file.copy(qmd_path, file.path(work_dir, "episodic_default_report.qmd"))) {
+    stop(
+      "The report template '",
+      qmd_path,
+      "' could not be copied into the working directory for rendering.",
+      call. = FALSE
+    )
+  }
   data_path <- file.path(work_dir, "report_data.rds")
   saveRDS(report_data, data_path)
 
@@ -190,7 +204,21 @@ episodic_report_render <- function(con,
     output_dir,
     sprintf("cluster-%d-v%d.html", cluster_id, version_no)
   )
-  file.copy(rendered_path, out_file, overwrite = TRUE)
+  # file.copy() reports a failure by returning FALSE, not by raising:
+  # unchecked, a report that never arrived in output_dir would go on to
+  # be hashed and recorded as though it had.
+  if (!file.copy(rendered_path, out_file, overwrite = TRUE)) {
+    stop(
+      "The rendered report could not be written to '",
+      out_file,
+      "'. Nothing was recorded for this render; version ",
+      version_no,
+      " of cluster ",
+      cluster_id,
+      " stays unused.",
+      call. = FALSE
+    )
+  }
 
   file_sha256 <- digest::digest(out_file, algo = "sha256", file = TRUE)
   params_json <- as.character(jsonlite::toJSON(
@@ -248,8 +276,7 @@ episodic_quarto_available <- function() {
 #' cannot be created is refused rather than silently falling back to
 #' something else - a configured path pointing nowhere is an error, not
 #' a fallback. Left unset, `db_path` is taken as a SQLite filesystem path
-#' and `<subdir>` resolved next to it, which is the behaviour every call
-#' site had before this existed.
+#' and `<subdir>` resolved next to it.
 #'
 #' That fallback only means something for SQLite. For a MariaDB/MySQL
 #' DSN (`mysql://user:password@host:port/db`), `db_path` is not a
@@ -260,11 +287,10 @@ episodic_quarto_available <- function() {
 #' `db_path`, this refuses outright rather than deriving anything from
 #' it.
 #'
-#' Used by every call site that used to compute
-#' `file.path(dirname(db_path), <subdir>)` directly - the scheduled
-#' report dispatcher, the dossier's on-demand render button, and
-#' [episodic_config_export()] - so they cannot drift from each other or
-#' from this rule. Pure aside from the `dir.create()` needed to validate
+#' The one place an output directory is resolved - the scheduled report
+#' dispatcher, the dossier's on-demand render button and
+#' [episodic_config_export()] all come through here, so they cannot
+#' drift from each other or from this rule. Pure aside from the `dir.create()` needed to validate
 #' a configured path; takes a config list and a path string, not a
 #' connection, so it is unit-testable without a database.
 #'
@@ -374,6 +400,43 @@ episodic_report_suppress_small_counts <- function(df, count_col, threshold) {
   df
 }
 
+#' The most recent render among a cluster's report rows
+#'
+#' `which.max()` on `version_no` alone returns the *first* row holding
+#' the highest value, which is only unambiguous while no two renders of
+#' one cluster share a version number. They cannot any more (see
+#' `episodic_db_report_version_claim()` and the unique index behind it),
+#' but a database migrated from before that carries whatever the old
+#' race left it, and "the previous report" deciding itself by row order
+#' is not something to leave in place: the later row - the higher
+#' `report_id` - is the one that was rendered last.
+#'
+#' @param existing A cluster's `episodic_report_render` rows, as
+#'   returned by `episodic_db_reports_for_cluster()`.
+#' @return A single-row data frame, or `NULL` when there are no rows.
+#' @keywords internal
+#' @noRd
+episodic_report_latest_render <- function(existing) {
+  if (is.null(existing) || nrow(existing) == 0) {
+    return(NULL)
+  }
+  absent <- setdiff(c("version_no", "report_id"), names(existing))
+  if (length(absent) > 0) {
+    stop(
+      "Report rows without ",
+      paste0("`", absent, "`", collapse = " and "),
+      " cannot be ordered; pass the rows episodic_db_reports_for_cluster() ",
+      "returns.",
+      call. = FALSE
+    )
+  }
+  ordered <- existing[
+    order(existing$version_no, existing$report_id), ,
+    drop = FALSE
+  ]
+  ordered[nrow(ordered), ]
+}
+
 #' Build the comparable "snapshot" of one report render
 #'
 #' Stored alongside every render's other parameters (inside `params`, as
@@ -421,7 +484,7 @@ episodic_report_diff <- function(existing, snapshot, case_ids) {
   if (nrow(existing) == 0) {
     return(NULL)
   }
-  previous_row <- existing[which.max(existing$version_no), ]
+  previous_row <- episodic_report_latest_render(existing)
   previous_params <- tryCatch(
     jsonlite::fromJSON(previous_row$params),
     error = function(e) NULL

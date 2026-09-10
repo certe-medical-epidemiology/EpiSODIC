@@ -101,43 +101,54 @@ episodic_interpretation_context <- function(cluster,
     episodic_tr("unit.days", lang = lang)
   )
 
+  # Every number here is on its way into a sentence, so every number
+  # here is written the way the sentence's own language writes one - see
+  # `episodic_format_number()`. `NA` stays `NA` exactly as `round()` left
+  # it, so the fragments that guard on it behave as they did.
+  num <- function(x, digits = NULL) {
+    episodic_format_number(x, digits = digits, lang = lang)
+  }
+
   list(
-    obs = cluster$n_cases,
+    obs = num(cluster$n_cases),
     obs_phrase = episodic_count_phrase(
       cluster$n_cases,
       case_word[1],
-      case_word[2]
+      case_word[2],
+      lang = lang
     ),
-    expected = round(cluster$expected %||% NA, 1),
-    ratio = round(cluster$ratio %||% NA, 1),
+    expected = num(cluster$expected %||% NA, digits = 1),
+    ratio = num(cluster$ratio %||% NA, digits = 1),
     dominant_label = cluster$concentration$dominant_label %||% "",
-    dominant_share_pct = round(
-      (cluster$concentration$dominant_share %||% 0) * 100
+    dominant_share_pct = num(
+      (cluster$concentration$dominant_share %||% 0) * 100,
+      digits = 0
     ),
-    dominant_n = cluster$concentration$dominant_n %||% NA,
-    total_n = cluster$concentration$total %||% cluster$n_cases,
-    test_first = cluster$denominator$n_tests_first %||% NA,
-    test_last = cluster$denominator$n_tests_last %||% NA,
-    positivity_first_pct = round(
-      (cluster$denominator$positivity_first %||% 0) * 1000
-    ) /
-      10,
-    positivity_last_pct = round(
-      (cluster$denominator$positivity_last %||% 0) * 1000
-    ) /
-      10,
+    dominant_n = num(cluster$concentration$dominant_n %||% NA),
+    total_n = num(cluster$concentration$total %||% cluster$n_cases),
+    test_first = num(cluster$denominator$n_tests_first %||% NA),
+    test_last = num(cluster$denominator$n_tests_last %||% NA),
+    positivity_first_pct = num(
+      (cluster$denominator$positivity_first %||% 0) * 100,
+      digits = 1
+    ),
+    positivity_last_pct = num(
+      (cluster$denominator$positivity_last %||% 0) * 100,
+      digits = 1
+    ),
     dominant_band = cluster$demography$dominant_band %||% "",
     baseline_band = cluster$demography$baseline_band %||% "",
-    incomplete_days = cluster$completeness$incomplete_days %||% 0,
+    incomplete_days = num(cluster$completeness$incomplete_days %||% 0),
     incomplete_days_phrase = episodic_count_phrase(
       cluster$completeness$incomplete_days %||% 0,
       day_word[1],
-      day_word[2]
+      day_word[2],
+      lang = lang
     ),
-    density_value = cluster$density$value %||% NA,
-    density_baseline = cluster$density$baseline %||% NA,
+    density_value = num(cluster$density$value %||% NA),
+    density_baseline = num(cluster$density$baseline %||% NA),
     place = cluster$place %||% "",
-    priority_score = cluster$priority_score %||% NA
+    priority_score = num(cluster$priority_score %||% NA, digits = 0)
   )
 }
 
@@ -237,13 +248,13 @@ episodic_interpretation_fragments <- function() {
     #
     # Every one of these gates on `episodic_interpretation_positivity()`
     # rather than on `!is.null(cl$denominator)`. Positivity is `NA` in
-    # any week with no tests at all, and `%||% 0` turned that into a
-    # measured zero - so "positivity stayed flat" and "positivity is
-    # rising" could both be written about a comparison with an
-    # unmeasured end, and "stable" was written whenever a denominator
-    # feed existed at all, however empty. A sentence in a dossier is
-    # read and reasoned from; a section with nothing to say is omitted,
-    # which is what this module promises everywhere else.
+    # any week with no tests at all, and `%||% 0` turns that into a
+    # measured zero - "positivity stayed flat" and "positivity is
+    # rising" both become writable about a comparison with an unmeasured
+    # end, and "stable" gets written whenever a denominator feed exists
+    # at all, however empty. A sentence in a dossier is read and
+    # reasoned from; a section with nothing to say is omitted, which is
+    # what this module promises everywhere else.
     list(
       id = "denominator.rising_volume_flat_positivity",
       slot = "denominator",
@@ -337,7 +348,8 @@ episodic_interpretation_slots <- c(
 #'
 #' @param cluster A cluster object, see `episodic_cluster_object()`.
 #' @param lang Session language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
-#'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   `"hi"`, `"zh"`, or `"es"`, or a regional variant of
+#'   one (`"en-US"`, `"es-419"`). Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
 #' @param instance_i18n Optional operator overrides, passed to `episodic_tr()`.
 #' @return A list with `text` (a character vector, one string per slot that

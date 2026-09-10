@@ -90,6 +90,7 @@
 
   "panel.epicurve.title": "Epidemiekurve",
   "panel.epicurve.note": "Die schattierte Zone umfasst die letzten {days_phrase}: die empirische Meldeverzögerung aus dem Meldedreieck. Fälle mit einem Probendatum in diesem Zeitfenster sind noch nicht vollständig gemeldet. Ein hier abfallender Verlauf ist kein tatsächlicher Rückgang.",
+  "panel.epicurve.note_unknown": "Für diesen Stream konnte keine Meldeverzögerung gemessen werden, daher kann kein Tag dieser Kurve als vollständig gemeldet gelten. Die gesamte Kurve ist deshalb schattiert.",
   "panel.epicurve.ylab": "Fälle",
 
   "panel.trend.title": "Mehrjahrestrend",
@@ -184,6 +185,21 @@
 
   "misc.unknown": "unbekannt",
   "misc.none": "keine",
+  "misc.list_separator_and": " und ",
+  "misc.decimal.mark": ",",
+  "misc.thousands.mark": ".",
+  "misc.thousands.grouping": "3",
+  "misc.thousands.minimum": "1",
+  "misc.language.en": "Englisch",
+  "misc.language.ar": "Arabisch",
+  "misc.language.nl": "Niederländisch",
+  "misc.language.fr": "Französisch",
+  "misc.language.de": "Deutsch",
+  "misc.language.hi": "Hindi",
+  "misc.language.zh": "Chinesisch",
+  "misc.language.es": "Spanisch",
+  "misc.language.en-US": "Amerikanisches Englisch",
+  "misc.language.es-419": "Lateinamerikanisches Spanisch",
   "misc.close": "Schließen",
   "misc.dash": "—",
 
@@ -211,6 +227,10 @@
   "date.month_full.10": "Oktober",
   "date.month_full.11": "November",
   "date.month_full.12": "Dezember",
+  "date.format.single": "{day}. {month} {year}",
+  "date.format.range_month": "{day_from}.-{day_to}. {month} {year}",
+  "date.format.range_year": "{day_from}. {month_from} - {day_to}. {month_to} {year}",
+  "date.format.range_full": "{day_from}. {month_from} {year_from} - {day_to}. {month_to} {year_to}",
 
   "interpretation.fragment.magnitude.rare_trigger": "{obs_phrase} innerhalb dieses Clusters gemeldet. Für diesen Erreger gilt keine statistische Signalschwelle: Die Erkennung stammt aus der kuratierten Trigger-Liste, die jeden gemeldeten Fall unabhängig von der Basislinie erfasst.",
   "interpretation.fragment.magnitude.high_ratio": "{obs_phrase} gegenüber einer Erwartung von {expected}: ein Verhältnis von {ratio}.",
@@ -478,7 +498,7 @@
   "info.reference.overlay.unusable": "Die konfigurierte Datei konnte nicht als sf-Objekt mit einer geometry-Spalte gelesen werden, daher werden keine Umrisse gezeichnet.",
   "info.reference.geo.no_sf": "Das Paket sf ist nicht installiert, daher zeigt das Geografie-Panel eine Balkenaufteilung statt einer Karte.",
   "info.reference.geo.none": "Keine geografischen Referenzdaten konfiguriert, daher zeigt das Geografie-Panel eine Balkenaufteilung nach Gebiet statt einer Karte. Setzen Sie EPISODIC_GEO_DATA auf eine .rds-Datei mit einem sf-Objekt mit den Spalten `pc` und `geometry` für Ihre eigene Region.",
-  "info.reference.language": "Dashboard und Berichte werden in '{language}' dargestellt.",
+  "info.reference.language": "Dashboard und Berichte werden in {language} ({code}) dargestellt.",
   "info.reference.file.default": "Nur mitgelieferte Vorgaben; keine Instanzdatei konfiguriert.",
   "info.reference.file.custom": "Ihre eigene Datei ist konfiguriert und hat Vorrang vor den mitgelieferten Vorgaben.",
   "info.reference.path": "Gelesen wird: {path}",
@@ -487,6 +507,7 @@
   "info.access.body": "Lesen ist anonym: Jeder, der die App erreicht, kann Cluster, Meldereihen und das Archiv einsehen, ohne sich anzumelden. Eine Anmeldung ist nur erforderlich, um ein Cluster zu klassifizieren, abzuschließen oder eine Meldereihe stummzuschalten - jede Schreibaktion wird dem angemeldeten Benutzer zugeordnet.",
 
   "streams.col.farrington": "Farrington",
+  "streams.farrington_hint": "Farrington benötigt {need} Wochen Historie für das konfigurierte b; dieser Stream hat {have}.",
   "streams.col.baseline_excluded": "Basislinie ausgeschlossen",
 
   "interpretation.fragment.curve_shape.point_source": "Alle Fälle liegen innerhalb einer einzigen maximalen Inkubationszeit, was auf eine Punktquelle hindeutet: eine gemeinsame Exposition um einen Zeitpunkt herum statt einer Übertragung von Mensch zu Mensch.",
@@ -500,6 +521,7 @@
   "panel.chart.graphics_unavailable": "Diagramm kann nicht dargestellt werden: Das/die R-Paket(e) {packages} sind installiert, aber mit dieser R-Version nicht kompatibel. Installieren Sie sie für die aktuelle R-Version neu, um dieses Diagramm wiederherzustellen.",
   "panel.chart.graphics_unavailable_build": "Diagramm kann nicht dargestellt werden: Auf diesem Server ist kein funktionierendes PNG-Grafikgerät verfügbar (ragg, Cairo und R's eingebautes PNG-Gerät konnten alle nicht geöffnet werden). Dies ist ein Konfigurationsproblem der R-Installation selbst zur Build-Zeit, kein Paket, das neu installiert werden kann - wenden Sie sich an die Verwaltung dieses Servers.",
   "panel.rt.unavailable.insufficient_history": "In diesem Cluster liegt noch nicht genügend Fallhistorie vor, um Rt zu berechnen.",
+  "panel.rt.unavailable.completeness_unknown": "Rt kann nicht berechnet werden: Für diesen Stream konnte keine Meldeverzögerung gemessen werden, daher lassen sich die noch unvollständigen Zeitfenster nicht zurückhalten.",
 
   "panel.similar.title": "Ähnliche Cluster",
   "panel.related.title": "Verwandte Cluster",

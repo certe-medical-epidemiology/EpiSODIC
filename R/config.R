@@ -64,12 +64,12 @@ episodic_config_resolve <- function(episodic_config_path = Sys.getenv("EPISODIC_
 
   if (!is.na(episodic_config_path) && nzchar(episodic_config_path)) {
     # Set but unusable is a configuration error, not a fallback. Ignoring
-    # it - as this used to - runs the instance on the shipped defaults
-    # while the operator believes their own thresholds, their own
-    # `same_place` overrides and their own notification channels are in
-    # force, and nothing anywhere says otherwise. A typo in a path is not
-    # a rare event; a surveillance system silently running settings
-    # nobody chose is not an acceptable consequence of one.
+    # it runs the instance on the shipped defaults while the operator
+    # believes their own thresholds, their own `same_place` overrides and
+    # their own notification channels are in force, with nothing anywhere
+    # saying otherwise. A typo in a path is not a rare event; a
+    # surveillance system silently running settings nobody chose is not
+    # an acceptable consequence of one.
     if (!file.exists(episodic_config_path)) {
       stop(
         "EPISODIC_CONFIG points at '",

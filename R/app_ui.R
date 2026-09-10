@@ -26,7 +26,8 @@
 #' injected as CSS custom properties.
 #'
 #' @param lang Session language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
-#'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   `"hi"`, `"zh"`, or `"es"`, or a regional variant of
+#'   one (`"en-US"`, `"es-419"`). Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
 #' @return The page returned by [bslib::page_fluid()].
 #' @keywords internal
@@ -83,10 +84,10 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       # deliberately does not re-render on every selection (see its own
       # comment in app_server.R, about not losing scroll position).
       # Defined globally, once, rather than per-caller: every place that
-      # used to inline `Shiny.setInputValue('open_cluster', ...)`
-      # (episodic_ui_cluster_row(), episodic_ui_chip_link()) now calls
-      # this instead, so the rail highlight and the dossier selection can
-      # never drift apart again. A no-op when the target cluster is not
+      # opens a cluster (episodic_ui_cluster_row(),
+      # episodic_ui_chip_link()) calls this rather than inlining its own
+      # `Shiny.setInputValue('open_cluster', ...)`, so the rail highlight
+      # and the dossier selection cannot drift apart. A no-op when the target cluster is not
       # in the rail's current list (a closed cluster, or an id opened
       # while the rail is not on screen) - there is simply nothing to
       # highlight yet. Also switches the mobile pane to the dossier and
@@ -188,9 +189,9 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
           # Rendered from the server's own view(), not written once here:
           # the highlight has to follow every way the view can change, and
           # not every one of them is a click on these links. The Pathogen
-          # screen's cluster table switches views from a table row, and a
-          # nav that only updated itself on its own clicks was left
-          # pointing at the screen you had just left.
+          # screen's cluster table switches views from a table row, so a
+          # nav updating itself only on its own clicks would point at the
+          # screen the reader has just left.
           shiny::uiOutput(
             "nav_links",
             container = shiny::tags$div,
@@ -214,22 +215,10 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   )
 }
 
-#' One top-navigation link
-#'
-#' The stylesheet has always had an `.active` rule for these, but nothing
-#' ever applied the class, so the nav gave no indication of which screen
-#' you were on. Handled client-side at click time rather than by
-#' re-rendering the header from the server, the same approach
-#' `episodic_ui_rail()` takes for its own selection highlight and for the
-#' same reason: the header is not otherwise reactive, and making it so to
-#' move one CSS class would rebuild the sign-in control and status strip
-#' on every navigation.
-#'
-#' @param view The view id this link switches to.
-#' @param label The link's visible text.
-#' @param active Whether this link starts out highlighted - true for the
-#'   view the app opens on.
 #' The top navigation links, with the current view marked
+#'
+#' `episodic_ui_nav_link()` below builds one of them, and documents its
+#' own arguments.
 #'
 #' @param active_view The view id currently on screen.
 #' @param lang Session language.
@@ -268,6 +257,21 @@ episodic_ui_nav_links <- function(active_view = "clusters",
   }))
 }
 
+#' One top-navigation link
+#'
+#' The stylesheet has always had an `.active` rule for these, but nothing
+#' ever applied the class, so the nav gave no indication of which screen
+#' you were on. Handled client-side at click time rather than by
+#' re-rendering the header from the server, the same approach
+#' `episodic_ui_rail()` takes for its own selection highlight and for the
+#' same reason: the header is not otherwise reactive, and making it so to
+#' move one CSS class would rebuild the sign-in control and status strip
+#' on every navigation.
+#'
+#' @param view The view id this link switches to.
+#' @param label The link's visible text.
+#' @param active Whether this link starts out highlighted - true for the
+#'   view the app opens on.
 #' @keywords internal
 #' @noRd
 episodic_ui_nav_link <- function(view, label, active = FALSE) {

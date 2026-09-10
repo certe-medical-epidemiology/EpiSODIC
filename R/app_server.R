@@ -21,7 +21,8 @@
 #'
 #' @param db_path Path to the SQLite database.
 #' @param lang Session language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
-#'   `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
+#'   `"hi"`, `"zh"`, or `"es"`, or a regional variant of
+#'   one (`"en-US"`, `"es-419"`). Defaults to the `EPISODIC_LANGUAGE`
 #'   environment variable, falling back to `"en"` if that is unset.
 #' @return A Shiny server function.
 #' @keywords internal
@@ -87,12 +88,11 @@ episodic_app_server_factory <- function(db_path,
     # because a note changed, unlike a cluster selection change.
     notes_version <- shiny::reactiveVal(0L)
     # Fills the dossier pane on first load, and moves on when whatever was
-    # selected has genuinely gone. It used to reset the selection whenever
-    # the selected cluster was not in the *open* list, which is a
+    # selected has genuinely gone. "Not in the *open* list" is a
     # different and too-broad condition: the Pathogen screen links to
     # clusters by id and most of the ones it lists are closed, so that
-    # rule would have silently redirected every such link to the top of
-    # the rail. A cluster that closes while you are reading it also has no
+    # rule would silently redirect every such link to the top of the
+    # rail. A cluster that closes while you are reading it also has no
     # business disappearing out from under you - the state chip says it
     # closed, which is the answer you were looking for.
     #
@@ -522,12 +522,14 @@ episodic_ui_status_strip <- function(status,
       streams_phrase = episodic_count_phrase(
         status$n_streams %||% 0,
         episodic_tr("unit.stream", lang = lang),
-        episodic_tr("unit.streams", lang = lang)
+        episodic_tr("unit.streams", lang = lang),
+        lang = lang
       ),
       clusters_phrase = episodic_count_phrase(
         status$n_clusters_open %||% 0,
         episodic_tr("unit.cluster", lang = lang),
-        episodic_tr("unit.clusters", lang = lang)
+        episodic_tr("unit.clusters", lang = lang),
+        lang = lang
       )
     )
   } else {
@@ -636,6 +638,49 @@ episodic_ui_format_datetime <- function(iso,
   format(parsed, fmt, tz = tz)
 }
 
+#' A stored timestamp as a date in the session's language, plus the time
+#'
+#' `episodic_ui_format_datetime()` takes a `strftime` format, and every
+#' call site that wanted a date passed `"%d-%m-%Y %H:%M"` - day-month-year
+#' with hyphens, which is one country's convention written into a
+#' dashboard shipped in eight languages. The date half goes through
+#' `episodic_format_date()` instead, which spells the month out of the
+#' same translation table the charts and the date ranges already use, so
+#' "9 Sep 2026" reads as itself in English and as its own wording in
+#' Arabic, Hindi or Chinese. The clock half is the same everywhere and
+#' stays `%H:%M`.
+#'
+#' The conversion to local time happens first and once: the *date* a
+#' timestamp falls on is itself timezone-dependent, so formatting the
+#' date from UTC and the time from local time would put the two halves
+#' on different days for anything near midnight.
+#'
+#' @param iso An ISO-8601 UTC string (`episodic_now()`'s format), or `NA`.
+#' @param lang Session language.
+#' @param with_time Whether to append the local `%H:%M`.
+#' @param tz Target IANA timezone; see `episodic_ui_format_datetime()`.
+#' @return A single string, `episodic_tr("misc.unknown")` for `NA`/`NULL`,
+#'   or `iso` itself if it does not parse.
+#' @keywords internal
+#' @noRd
+episodic_ui_format_stamp <- function(iso,
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                     with_time = TRUE,
+                                     tz = Sys.timezone()) {
+  local <- episodic_ui_format_datetime(iso, fmt = "%Y-%m-%d %H:%M", tz = tz)
+  if (!grepl("^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}$", local)) {
+    # Either the "unknown" label or the unparseable input itself, both of
+    # which episodic_ui_format_datetime() has already decided on.
+    return(local)
+  }
+  parts <- strsplit(local, " ", fixed = TRUE)[[1]]
+  date <- episodic_format_date(parts[1], lang = lang)
+  if (!isTRUE(with_time)) {
+    return(date)
+  }
+  paste(date, parts[2])
+}
+
 #' The cluster id a `?cluster=` deep link asks for
 #'
 #' Parsed rather than trusted: the query string is whatever a reader's
@@ -678,7 +723,7 @@ episodic_app_url_cluster_id <- function(search) {
 #' deliberately decoupled from `selected_cluster_id()` so a click does
 #' not replace the whole list and lose scroll position (see
 #' `output$rail_pane`'s own comment); round-tripping every checkbox
-#' toggle through the server would reintroduce exactly that problem.
+#' toggle through the server would recreate exactly that problem.
 #' `episodic_app_server_assessment_actions()`'s `bulk_assess_submit`
 #' observer is the write side.
 #'
@@ -804,7 +849,8 @@ episodic_ui_rail <- function(open,
         episodic_count_phrase(
           nrow(open),
           episodic_tr("unit.cluster", lang = lang),
-          episodic_tr("unit.clusters", lang = lang)
+          episodic_tr("unit.clusters", lang = lang),
+          lang = lang
         ),
         " ",
         episodic_tr("rail.count_suffix", lang = lang)
@@ -896,12 +942,17 @@ episodic_ui_rail <- function(open,
                 episodic_count_phrase(
                   row$n_cases,
                   episodic_tr("unit.case", lang = lang),
-                  episodic_tr("unit.cases", lang = lang)
+                  episodic_tr("unit.cases", lang = lang),
+                  lang = lang
                 ),
                 if (!is.na(row$priority_score)) {
                   episodic_tr(
                     "rail.priority",
-                    score = trimws(format(round(row$priority_score, 0))),
+                    score = episodic_format_number(
+                      row$priority_score,
+                      digits = 0,
+                      lang = lang
+                    ),
                     lang = lang
                   )
                 }

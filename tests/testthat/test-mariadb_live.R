@@ -133,18 +133,34 @@ test_that("a database with no version table is migrated without losing data", {
      VALUES (?, 'Kept', 'hospital', 'second')",
     params = list(strrep("a", 40))
   )
-  # Version 1 is "created before the version table existed", and the
-  # login-failure table is what version 2 added.
+  # Version 1 is "created before the version table existed"; the
+  # login-failure table is what version 2 added, and the report version
+  # register plus its unique index what version 3 did.
   DBI::dbExecute(con, "DROP TABLE episodic_schema_version")
   DBI::dbExecute(con, "DROP TABLE episodic_app_login_failure")
+  DBI::dbExecute(con, "DROP TABLE episodic_report_version_claim")
+  DBI::dbExecute(
+    con,
+    "DROP INDEX idx_episodic_report_render_version ON episodic_report_render"
+  )
   DBI::dbDisconnect(con)
 
-  expect_message(episodic_db_migrate(dsn), "schema version 2")
+  expect_message(
+    episodic_db_migrate(dsn),
+    paste("schema version", episodic_schema_version)
+  )
 
   con <- episodic_db_connect(dsn)
   on.exit(DBI::dbDisconnect(con))
   expect_equal(episodic_db_schema_version(con), episodic_schema_version)
   expect_true(DBI::dbExistsTable(con, "episodic_app_login_failure"))
+  expect_true(DBI::dbExistsTable(con, "episodic_report_version_claim"))
+  expect_true(episodic_db_index_exists(
+    con,
+    "mariadb",
+    "idx_episodic_report_render_version",
+    "episodic_report_render"
+  ))
   # A migration never drops or rewrites data.
   expect_equal(
     DBI::dbGetQuery(con, "SELECT count(*) AS n FROM episodic_institution")$n,
@@ -171,7 +187,7 @@ test_that("a schema shared with another application is not mistaken for ours", {
 
   # So a first run creates the schema rather than refusing for having no
   # schema version and sending the operator to episodic_db_migrate(),
-  # which used to stamp the schema as current with two tables in it.
+  # which would stamp the schema as current with two tables in it.
   end_date <- as.Date("2025-06-29")
   suppressMessages(episodic_run_cron(
     cases = mariadb_cases(end_date),

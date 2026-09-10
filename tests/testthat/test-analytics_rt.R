@@ -116,3 +116,19 @@ test_that("episodic_compute_rt() does not estimate inside one mean serial interv
   # Never before the very first window EpiEstim itself permits.
   expect_true(min(short_si$window_end) >= min(as.Date(cases$sample_date)) + 7)
 })
+
+test_that("episodic_compute_rt() withholds everything when the reporting delay was never measured", {
+  # `incomplete_days = NA` made the cutoff NA, and `window_end <= NA` a
+  # vector of NAs, which selects a data frame of NA rows rather than no
+  # rows - an Rt chart of missing values instead of no chart.
+  set.seed(1)
+  dates <- as.Date("2025-01-01") + sample(0:40, 150, replace = TRUE)
+  cases <- data.frame(sample_date = as.character(dates))
+  pc <- data.frame(rt_applicable = 1, si_mean_days = 3, si_sd_days = 1.5)
+  expect_null(episodic_compute_rt(
+    cases,
+    pc,
+    incomplete_days = NA_integer_,
+    asof = max(dates)
+  ))
+})

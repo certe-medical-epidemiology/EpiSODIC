@@ -90,6 +90,7 @@
 
   "panel.epicurve.title": "महामारी वक्र",
   "panel.epicurve.note": "छायांकित क्षेत्र अंतिम {days_phrase} को दर्शाता है: रिपोर्टिंग त्रिकोण से प्राप्त अनुभवजन्य रिपोर्टिंग विलंब। इस अवधि में नमूना तिथि वाले मामलों की रिपोर्टिंग अभी पूरी नहीं हुई है। यहाँ घटता हुआ अंत वास्तविक कमी नहीं है।",
+  "panel.epicurve.note_unknown": "इस स्ट्रीम के लिए कोई रिपोर्टिंग विलंब मापा नहीं जा सका, इसलिए इस वक्र के किसी भी दिन को पूर्ण रूप से रिपोर्ट किया गया नहीं माना जा सकता। इसीलिए पूरा वक्र छायांकित दिखाया गया है।",
   "panel.epicurve.ylab": "मामले",
 
   "panel.trend.title": "बहु-वर्षीय प्रवृत्ति",
@@ -184,6 +185,21 @@
 
   "misc.unknown": "अज्ञात",
   "misc.none": "कोई नहीं",
+  "misc.list_separator_and": " और ",
+  "misc.decimal.mark": ".",
+  "misc.thousands.mark": ",",
+  "misc.thousands.grouping": "3,2",
+  "misc.thousands.minimum": "1",
+  "misc.language.en": "अंग्रेज़ी",
+  "misc.language.ar": "अरबी",
+  "misc.language.nl": "डच",
+  "misc.language.fr": "फ़्रेंच",
+  "misc.language.de": "जर्मन",
+  "misc.language.hi": "हिन्दी",
+  "misc.language.zh": "चीनी",
+  "misc.language.es": "स्पेनिश",
+  "misc.language.en-US": "अमेरिकी अंग्रेज़ी",
+  "misc.language.es-419": "लैटिन अमेरिकी स्पेनिश",
   "misc.close": "बंद करें",
   "misc.dash": "—",
 
@@ -211,6 +227,10 @@
   "date.month_full.10": "अक्टूबर",
   "date.month_full.11": "नवंबर",
   "date.month_full.12": "दिसंबर",
+  "date.format.single": "{day} {month} {year}",
+  "date.format.range_month": "{day_from}-{day_to} {month} {year}",
+  "date.format.range_year": "{day_from} {month_from} - {day_to} {month_to} {year}",
+  "date.format.range_full": "{day_from} {month_from} {year_from} - {day_to} {month_to} {year_to}",
 
   "interpretation.fragment.magnitude.rare_trigger": "इस क्लस्टर में {obs_phrase} की सूचना मिली है। इस रोगजनक पर कोई सांख्यिकीय संकेत सीमा लागू नहीं होती: संसूचन क्यूरेटेड ट्रिगर सूची से आता है, जो आधार रेखा की परवाह किए बिना हर रिपोर्ट किए गए मामले को पकड़ती है।",
   "interpretation.fragment.magnitude.high_ratio": "{expected} की अपेक्षा के मुक़ाबले {obs_phrase}: {ratio} का अनुपात।",
@@ -478,7 +498,7 @@
   "info.reference.overlay.unusable": "कॉन्फ़िगर की गई फ़ाइल को geometry कॉलम वाले sf ऑब्जेक्ट के रूप में नहीं पढ़ा जा सका, इसलिए कोई रूपरेखा नहीं खींची जाती।",
   "info.reference.geo.no_sf": "sf पैकेज इंस्टॉल नहीं है, इसलिए भूगोल पैनल मानचित्र के बजाय बार विभाजन दिखाता है।",
   "info.reference.geo.none": "कोई भौगोलिक संदर्भ डेटा कॉन्फ़िगर नहीं किया गया है, इसलिए भूगोल पैनल मानचित्र के बजाय क्षेत्रवार बार विभाजन दिखाता है। अपने क्षेत्र के लिए EPISODIC_GEO_DATA को ऐसी .rds फ़ाइल पर सेट करें जिसमें `pc` और `geometry` स्तंभों वाला sf ऑब्जेक्ट हो।",
-  "info.reference.language": "डैशबोर्ड और रिपोर्टें '{language}' में प्रस्तुत होती हैं।",
+  "info.reference.language": "डैशबोर्ड और रिपोर्टें {language} ({code}) में प्रस्तुत होती हैं।",
   "info.reference.file.default": "केवल अंतर्निहित डिफ़ॉल्ट; कोई इंस्टैंस फ़ाइल कॉन्फ़िगर नहीं।",
   "info.reference.file.custom": "आपकी अपनी फ़ाइल कॉन्फ़िगर है और अंतर्निहित डिफ़ॉल्ट पर वरीयता रखती है।",
   "info.reference.path": "पढ़ा जा रहा है: {path}",
@@ -487,6 +507,7 @@
   "info.access.body": "पढ़ना गुमनाम है: जो कोई भी ऐप तक पहुँचता है वह बिना साइन इन किए क्लस्टर, स्ट्रीम और पुरालेख देख सकता है। साइन इन केवल किसी क्लस्टर को वर्गीकृत करने, उसे बंद करने या किसी स्ट्रीम को म्यूट करने के लिए आवश्यक है - हर लेखन कार्रवाई साइन-इन उपयोगकर्ता को जिम्मेदार ठहराई जाती है।",
 
   "streams.col.farrington": "Farrington",
+  "streams.farrington_hint": "कॉन्फ़िगर किए गए b के लिए Farrington को {need} सप्ताह के इतिहास की आवश्यकता है; इस स्ट्रीम के पास {have} हैं।",
   "streams.col.baseline_excluded": "आधार रेखा से बाहर रखा गया",
 
   "interpretation.fragment.curve_shape.point_source": "सभी मामले एक ही अधिकतम ऊष्मायन अवधि के भीतर आते हैं, जो एक बिंदु स्रोत की ओर इशारा करता है: व्यक्ति-से-व्यक्ति फैलाव के बजाय एक समय के आसपास साझा जोखिम।",
@@ -500,6 +521,7 @@
   "panel.chart.graphics_unavailable": "चार्ट प्रस्तुत नहीं किया जा सकता: R पैकेज {packages} स्थापित हैं, लेकिन इस R संस्करण के साथ असंगत हैं। इस चार्ट को पुनः सक्षम करने के लिए इन्हें वर्तमान R संस्करण के लिए फिर से स्थापित करें।",
   "panel.chart.graphics_unavailable_build": "चार्ट प्रस्तुत नहीं किया जा सकता: इस सर्वर पर कोई कार्यशील PNG ग्राफ़िक्स डिवाइस उपलब्ध नहीं है (ragg, Cairo, और R का अपना अंतर्निहित PNG डिवाइस, सभी खुलने में विफल रहे)। यह R इंस्टॉलेशन की बिल्ड-टाइम कॉन्फ़िगरेशन समस्या है, कोई ऐसा पैकेज नहीं जिसे फिर से स्थापित किया जा सके - इस सर्वर का प्रबंधन करने वाले व्यक्ति से संपर्क करें।",
   "panel.rt.unavailable.insufficient_history": "Rt की गणना के लिए इस क्लस्टर में अभी तक पर्याप्त मामला इतिहास नहीं है।",
+  "panel.rt.unavailable.completeness_unknown": "Rt की गणना नहीं की जा सकती: इस स्ट्रीम के लिए कोई रिपोर्टिंग विलंब मापा नहीं जा सका, इसलिए अभी भर रही अवधियों को रोका नहीं जा सकता।",
 
   "panel.similar.title": "समान क्लस्टर",
   "panel.related.title": "संबंधित क्लस्टर",

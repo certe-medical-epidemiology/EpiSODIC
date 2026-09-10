@@ -476,8 +476,8 @@ body {
 /* Two side-by-side panels that are otherwise unrelated: interpretation +
    notes in the dossier, and care-line + institution breakdowns on the
    Pathogen screen. Classes rather than each caller's own inline
-   `style="display:flex;..."` (as both used to be), for the same reason
-   as .episodic-header-left/-right above - a media query cannot stack
+   `style="display:flex;..."`, for the same reason as
+   .episodic-header-left/-right above - a media query cannot stack
    them below 1200px without reaching past an inline style's own
    specificity. -wide keeps the interpretation column's 60% floor; the
    plain column has none, since two equal-width breakdown panels do not
@@ -659,11 +659,11 @@ dl.episodic-settings dd { margin: 0; }
      tab scrolls the document fine; an embedded viewer, e.g. RStudio's,
      often does not without an explicit inner scroll container). Height
      is 100% of #main_view (see .episodic-shell above) rather than a
-     "calc(100vh - 44px)" of its own - the same fixed 44px this comment
-     used to subtract, just resolved once by the shell's flex layout
-     instead of hardcoded here, so it keeps working if the header ever
-     renders at a different height (it does, below 1200px, once the nav
-     collapses behind a toggle and the header can wrap to two rows). */
+     "calc(100vh - 44px)" of its own - the header's height resolved once
+     by the shell's flex layout rather than hardcoded here, so it keeps
+     working when the header renders at a different height (it does,
+     below 1200px, once the nav collapses behind a toggle and the header
+     can wrap to two rows). */
   height: 100%;
   overflow-y: auto;
   box-sizing: border-box;
@@ -1409,7 +1409,7 @@ dl.episodic-settings dd { margin: 0; }
     width: 120px;
   }
 
-  /* .episodic-header-left/-right replace what used to be each half's own
+  /* .episodic-header-left/-right are classes rather than each half's own
      inline style, precisely so this rule can reach them. The nav itself
      collapses behind .episodic-nav-toggle (hidden above this breakpoint,
      see its own rule further down); the header is allowed to grow past

@@ -22,13 +22,24 @@ obj <- d$obj
 lang <- if (is.null(d$lang)) Sys.getenv("EPISODIC_LANGUAGE") else d$lang
 tr <- function(key, ...) EpiSODIC:::episodic_tr(key, lang = lang, ...)
 na_dash <- function(x) if (is.na(x)) "-" else x
+# Every number in this report is written the way `lang` writes one (see
+# episodic_format_number()); a value already suppressed to "<5" by
+# episodic_report_suppress_small_counts() is text by then and is left as
+# it is.
+num <- function(x, digits = NULL) {
+  if (is.numeric(x)) {
+    EpiSODIC:::episodic_format_number(x, digits = digits, lang = lang)
+  } else {
+    x
+  }
+}
 ```
 
 # `r episodic_ui_italicise_taxon(obj$pathogen)` — `r tr(paste0("level.", obj$level))`
 
 **`r obj$place`** &middot; `r tr("report.cluster")` #`r obj$id` &middot; `r EpiSODIC:::episodic_format_date_range(obj$first_day, obj$last_day, lang = lang)`
 
-`r tr("report.rendered_label")`: `r d$rendered_at` &middot; EpiSODIC `r d$package_version`
+`r tr("report.rendered_label")`: `r EpiSODIC:::episodic_ui_format_stamp(d$rendered_at, lang = lang)` &middot; EpiSODIC `r d$package_version`
 
 ::: {.callout-note}
 `r tr("report.note_versioned")`
@@ -56,7 +67,7 @@ if (!is.null(d$diff)) {
     tr(
       "report.diff_compared_to",
       version = diff$previous_version_no,
-      when = EpiSODIC:::episodic_ui_format_datetime(diff$previous_rendered_at, fmt = "%d-%m-%Y %H:%M")
+      when = EpiSODIC:::episodic_ui_format_stamp(diff$previous_rendered_at, lang = lang)
     ),
     "\n\n",
     sep = ""
@@ -65,7 +76,8 @@ if (!is.null(d$diff)) {
     cases_phrase <- EpiSODIC:::episodic_count_phrase(
       diff$n_new_cases,
       tr("unit.new_case"),
-      tr("unit.new_cases")
+      tr("unit.new_cases"),
+      lang = lang
     )
     cat("- ", tr("report.diff_new_cases", cases_phrase = cases_phrase), "\n", sep = "")
   } else {
@@ -76,9 +88,12 @@ if (!is.null(d$diff)) {
       "- ",
       tr(
         "report.diff_priority_change",
-        previous = round(obj$priority_score - diff$priority_score_delta, 0),
-        current = round(obj$priority_score, 0),
-        delta = sprintf("%+.0f", diff$priority_score_delta)
+        previous = num(obj$priority_score - diff$priority_score_delta, 0),
+        current = num(obj$priority_score, 0),
+        delta = paste0(
+          if (diff$priority_score_delta > 0) "+" else "",
+          num(diff$priority_score_delta, 0)
+        )
       ),
       "\n",
       sep = ""
@@ -89,8 +104,8 @@ if (!is.null(d$diff)) {
       "- ",
       tr(
         "report.diff_ratio_change",
-        previous = round(obj$ratio - diff$ratio_delta, 1),
-        current = round(obj$ratio, 1)
+        previous = num(obj$ratio - diff$ratio_delta, 1),
+        current = num(obj$ratio, 1)
       ),
       "\n",
       sep = ""
@@ -107,11 +122,11 @@ if (!is.null(d$diff)) {
 
 | `r tr("report.col_metric")` | `r tr("report.col_value")` |
 |---|---|
-| `r tr("dossier.stat.observed")` | `r obj$n_cases` |
-| `r tr("panel.trend.legend_expected")` | `r if (is.na(obj$expected)) tr("report.na") else round(obj$expected, 1)` |
-| `r tr("dossier.stat.ratio")` | `r if (is.na(obj$ratio)) tr("report.na") else round(obj$ratio, 1)` |
-| `r tr("dossier.stat.unique_patients")` | `r obj$unique_patients` (`r tr("report.positives_suffix", n = obj$n_positives)`) |
-| `r tr("report.priority_score")` | `r round(obj$priority_score, 0)` |
+| `r tr("dossier.stat.observed")` | `r num(obj$n_cases)` |
+| `r tr("panel.trend.legend_expected")` | `r if (is.na(obj$expected)) tr("report.na") else num(obj$expected, 1)` |
+| `r tr("dossier.stat.ratio")` | `r if (is.na(obj$ratio)) tr("report.na") else num(obj$ratio, 1)` |
+| `r tr("dossier.stat.unique_patients")` | `r num(obj$unique_patients)` (`r tr("report.positives_suffix", n = num(obj$n_positives))`) |
+| `r tr("report.priority_score")` | `r num(obj$priority_score, 0)` |
 | `r tr("report.detected_by")` | `r episodic_ui_code_join(obj$detectors)` |
 
 ```{r curve-shape, results='asis'}
@@ -163,7 +178,7 @@ if (!is.null(obj$concentration) && nrow(obj$concentration$rows) > 0) {
   rows <- EpiSODIC:::episodic_ui_geo_bar_rows(obj$concentration$rows, lang = lang)
   cat("|", tr("panel.geo.aside"), "|", tr("report.col_count"), "|\n|---|---|\n")
   for (i in seq_len(min(nrow(rows), 10))) {
-    cat("|", rows$label[i], "|", rows$n[i], "|\n")
+    cat("|", rows$label[i], "|", num(rows$n[i]), "|\n")
   }
   cat("\n*", tr("report.suppressed_note", threshold = d$small_count_threshold), "*\n", sep = "")
 } else {
@@ -177,7 +192,12 @@ if (!is.null(obj$concentration) && nrow(obj$concentration$rows) > 0) {
 if (!is.null(d$timeline) && nrow(d$timeline) > 0) {
   for (i in seq_len(nrow(d$timeline))) {
     row <- d$timeline[i, ]
-    cat("-", row$at, "&middot;", row$actor)
+    cat(
+      "-",
+      EpiSODIC:::episodic_ui_format_stamp(row$at, lang = lang),
+      "&middot;",
+      row$actor
+    )
     if (!is.na(row$verdict_label)) cat(" &middot; **", row$verdict_label, "**", sep = "")
     if (row$kind == "closure") cat(" &middot;", tr("report.closed_note"))
     cat("\n")
@@ -195,6 +215,18 @@ if (!is.null(d$timeline) && nrow(d$timeline) > 0) {
 # ordering, most recent last case day first.
 if (!is.null(d$similar) && nrow(d$similar) > 0) {
   similar <- d$similar[EpiSODIC:::episodic_cluster_table_order(d$similar), ]
+  # Same disclosure rule as the concentration table above, and for the
+  # same reason: these are *other* clusters, each named with the place it
+  # happened at, so "2 cases" at a named nursing home is the kind of cell
+  # the threshold exists for. The report's own cluster is not suppressed
+  # - saying how many cases it has is what the report is for - but its
+  # neighbours in the archive are context, and context does not need
+  # counts that small.
+  similar <- EpiSODIC:::episodic_report_suppress_small_counts(
+    similar,
+    "n_cases",
+    d$small_count_threshold
+  )
   duration <- EpiSODIC:::episodic_cluster_duration_days(
     similar$first_day,
     similar$last_day
@@ -212,9 +244,9 @@ if (!is.null(d$similar) && nrow(d$similar) > 0) {
     cat(
       "|", tr("dossier.cluster_ref", id = row$cluster_id), "|", row$place, "|",
       EpiSODIC:::episodic_format_date_range(row$first_day, row$last_day, lang = lang), "|",
-      row$n_cases, "|", row$case_days, "|",
+      num(row$n_cases), "|", num(row$case_days), "|",
       na_dash(row$verdict_label), "|",
-      na_dash(duration[i]), "|", na_dash(round(row$priority_score, 0)), "|\n"
+      na_dash(num(duration[i])), "|", na_dash(num(row$priority_score, 0)), "|\n"
     )
   }
 }
@@ -232,7 +264,7 @@ if (!is.null(d$linelist) && nrow(d$linelist) > 0) {
   for (i in seq_len(nrow(d$linelist))) {
     row <- d$linelist[i, ]
     cat(
-      "|", row$patient_key, "|", row$lab_number, "|", row$sample_date, "|", na_dash(row$sex), "|", na_dash(row$age), "|",
+      "|", row$patient_key, "|", row$lab_number, "|", row$sample_date, "|", na_dash(row$sex), "|", na_dash(num(row$age)), "|",
       na_dash(row$pc), "|", na_dash(row$ward), "|", na_dash(row$specialism), "|\n"
     )
   }

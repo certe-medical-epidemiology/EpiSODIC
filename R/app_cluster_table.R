@@ -188,11 +188,10 @@ episodic_ui_cluster_col <- function(label, render) {
 #' `input$open_cluster`, which sets the selection and switches to the
 #' Clusters screen.
 #'
-#' A row whose cluster no longer stands as a dossier of its own - one the
+#' A row whose cluster does not stand as a dossier of its own - one the
 #' lattice suppression pass folded into another - is not silently
 #' rendered as a dead link. It keeps its id, in the theme's warning
-#' colour, and hovering it says why the row does not open: it used to be
-#' a cluster in its own right and no longer is.
+#' colour, and hovering it says why the row does not open.
 #'
 #' @param cluster_id The cluster the row is about.
 #' @param ... The remaining cells, in order, after the id cell.
@@ -311,10 +310,14 @@ episodic_ui_cluster_table <- function(clusters,
       )))
     }
     if (identical(key, "cases")) {
-      return(list(shiny::tags$td(row$n_cases)))
+      return(list(shiny::tags$td(
+        episodic_format_number(row$n_cases, lang = lang)
+      )))
     }
     if (identical(key, "case_days")) {
-      return(list(shiny::tags$td(row$case_days)))
+      return(list(shiny::tags$td(
+        episodic_format_number(row$case_days, lang = lang)
+      )))
     }
     if (identical(key, "duration")) {
       return(list(shiny::tags$td(if (is.na(duration[i])) {
@@ -323,7 +326,8 @@ episodic_ui_cluster_table <- function(clusters,
         episodic_count_phrase(
           duration[i],
           episodic_tr("unit.day", lang = lang),
-          episodic_tr("unit.days", lang = lang)
+          episodic_tr("unit.days", lang = lang),
+          lang = lang
         )
       })))
     }
@@ -331,7 +335,7 @@ episodic_ui_cluster_table <- function(clusters,
     list(shiny::tags$td(if (is.na(row$priority_score)) {
       dash
     } else {
-      round(row$priority_score, 0)
+      episodic_format_number(row$priority_score, digits = 0, lang = lang)
     }))
   }
 

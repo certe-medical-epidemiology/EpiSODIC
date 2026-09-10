@@ -90,6 +90,7 @@
 
   "panel.epicurve.title": "流行曲线",
   "panel.epicurve.note": "阴影区域覆盖最近 {days_phrase}：即根据报告三角推算的经验性报告延迟。采样日期落在此窗口内的病例尚未完全上报。此处曲线末端的下降并不代表真实下降。",
+  "panel.epicurve.note_unknown": "无法测得该数据流的报告延迟，因此本曲线中没有任何一天可以视为已完全上报。整条曲线因此均以阴影显示。",
   "panel.epicurve.ylab": "病例数",
 
   "panel.trend.title": "多年趋势",
@@ -184,6 +185,21 @@
 
   "misc.unknown": "未知",
   "misc.none": "无",
+  "misc.list_separator_and": "、",
+  "misc.decimal.mark": ".",
+  "misc.thousands.mark": ",",
+  "misc.thousands.grouping": "3",
+  "misc.thousands.minimum": "1",
+  "misc.language.en": "英语",
+  "misc.language.ar": "阿拉伯语",
+  "misc.language.nl": "荷兰语",
+  "misc.language.fr": "法语",
+  "misc.language.de": "德语",
+  "misc.language.hi": "印地语",
+  "misc.language.zh": "中文",
+  "misc.language.es": "西班牙语",
+  "misc.language.en-US": "美式英语",
+  "misc.language.es-419": "拉丁美洲西班牙语",
   "misc.close": "关闭",
   "misc.dash": "—",
 
@@ -211,6 +227,10 @@
   "date.month_full.10": "10月",
   "date.month_full.11": "11月",
   "date.month_full.12": "12月",
+  "date.format.single": "{year}年{month}{day}日",
+  "date.format.range_month": "{year}年{month}{day_from}日至{day_to}日",
+  "date.format.range_year": "{year}年{month_from}{day_from}日至{month_to}{day_to}日",
+  "date.format.range_full": "{year_from}年{month_from}{day_from}日至{year_to}年{month_to}{day_to}日",
 
   "interpretation.fragment.magnitude.rare_trigger": "该聚集事件已报告 {obs_phrase}。此病原体不适用统计信号阈值：检出依据的是精选触发清单，无论基线如何，每例报告病例都会被纳入。",
   "interpretation.fragment.magnitude.high_ratio": "{obs_phrase}，预期值为 {expected}，比率为 {ratio}。",
@@ -478,7 +498,7 @@
   "info.reference.overlay.unusable": "配置的文件无法作为带 geometry 列的 sf 对象读取，因此不绘制任何轮廓。",
   "info.reference.geo.no_sf": "未安装 sf 包，因此地理面板显示条形分布而非地图。",
   "info.reference.geo.none": "未配置地理参考数据，因此地理面板显示按区域划分的条形分布而非地图。请将 EPISODIC_GEO_DATA 设置为包含 sf 对象（含 `pc` 与 `geometry` 两列）的 .rds 文件，以显示您所在区域的地图。",
-  "info.reference.language": "仪表板与报告以 '{language}' 呈现。",
+  "info.reference.language": "仪表板与报告以{language}（{code}）呈现。",
   "info.reference.file.default": "仅使用内置默认值；未配置实例文件。",
   "info.reference.file.custom": "已配置您自己的文件，其优先于内置默认值。",
   "info.reference.path": "读取自：{path}",
@@ -487,6 +507,7 @@
   "info.access.body": "阅读是匿名的：任何访问该应用的人都可以在不登录的情况下查看聚集事件、监测序列和归档记录。仅在需要对聚集事件进行分类、结案或静音某监测序列时才需要登录——每次写入操作都会归属于当前登录的用户。",
 
   "streams.col.farrington": "Farrington",
+  "streams.farrington_hint": "对于所配置的 b，Farrington 需要 {need} 周的历史数据；该数据流目前有 {have} 周。",
   "streams.col.baseline_excluded": "已排除基线",
 
   "interpretation.fragment.curve_shape.point_source": "所有病例均落在单一最长潜伏期范围内，提示为点源暴露：即在某一时间点前后存在共同暴露，而非人际传播。",
@@ -500,6 +521,7 @@
   "panel.chart.graphics_unavailable": "无法渲染图表：R 软件包 {packages} 已安装，但与当前 R 版本不兼容。请为当前 R 版本重新安装这些软件包以恢复此图表。",
   "panel.chart.graphics_unavailable_build": "无法渲染图表：此服务器上没有可用的有效 PNG 图形设备（ragg、Cairo 以及 R 自带的内置 PNG 设备均无法打开）。这是 R 安装本身在构建时的配置问题，并非可重新安装的软件包，请联系此服务器的管理员。",
   "panel.rt.unavailable.insufficient_history": "该聚集事件的病例历史数据尚不足以计算 Rt。",
+  "panel.rt.unavailable.completeness_unknown": "无法计算 Rt：无法测得该数据流的报告延迟，因此无法排除仍在补报中的时间窗。",
 
   "panel.similar.title": "相似聚集事件",
   "panel.related.title": "相关聚集",

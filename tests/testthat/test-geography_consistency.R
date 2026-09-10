@@ -21,13 +21,13 @@
 #
 # `episodic_run_cron(episodic_config_path = ...)` is a documented way to
 # run under a configuration other than EPISODIC_CONFIG's, and the
-# geography is part of what it configures. Half the lattice used to
-# resolve that setting from the run's own configuration and half of it
-# from the environment: L5 named its catchment from one and L3 named its
-# areas from the other, and case membership was then tested against a
-# third. The result was silent - geographic streams that matched no case
-# however many arrived, so the statistical detectors never ran on them,
-# and clusters opened with nothing linked to them.
+# geography is part of what it configures. Resolved separately at each
+# site, half the lattice reads that setting from the run's own
+# configuration and half from the environment: L5 names its catchment
+# from one, L3 its areas from the other, and case membership is tested
+# against a third. The result is silent - geographic streams that match
+# no case however many arrive, so the statistical detectors never run on
+# them, and clusters open with nothing linked to them.
 
 instance_config <- function() {
   directory <- tempfile("episodic-geography-")

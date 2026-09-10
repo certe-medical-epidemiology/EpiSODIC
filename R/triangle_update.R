@@ -26,17 +26,16 @@
 #' completion curve decides how many trailing days are under-ascertained
 #' by construction.
 #'
-#' Derived, not stored. This used to read `episodic_reporting_triangle`,
-#' a table the cron rewrote in full on every run: one row per stream per
-#' distinct sample date per run, so a nightly run added tens of thousands
-#' of rows whether or not a single case had arrived, and the table grew
-#' without bound. It was also redundant. `episodic_case.first_seen_run`
-#' records the run that first saw each case and
-#' `episodic_detection_run.run_date` dates every run, so "how many cases
-#' with sample date D were visible at run R" is a `cumsum()` over data
-#' the database already holds exactly. Deriving it is cheaper to write
-#' (nothing), cheaper to store (nothing), and strictly more faithful than
-#' a cache that could only ever record the runs that happened to fire.
+#' Derived, not stored. A stored triangle - one row per stream per
+#' distinct sample date per run - grows without bound, adding tens of
+#' thousands of rows a night whether or not a single case arrived, and
+#' it is redundant: `episodic_case.first_seen_run` records the run that
+#' first saw each case and `episodic_detection_run.run_date` dates every
+#' run, so "how many cases with sample date D were visible at run R" is
+#' a `cumsum()` over data the database already holds exactly. Deriving
+#' it is cheaper to write (nothing), cheaper to store (nothing), and
+#' strictly more faithful than a cache that can only ever record the
+#' runs that happened to fire.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param stream_id The stream to compute completeness for.
@@ -118,9 +117,9 @@ episodic_triangle_completeness <- function(con, stream_id, max_lag_days = 21) {
   # A sample date with nothing yet visible at lag D contributes a
   # completeness of 0 at lag D, and must: that is what an
   # under-ascertained day looks like, and it is the whole quantity this
-  # curve exists to measure. Excluding those cells - as `visible > 0`
-  # here used to - averages each short lag over only the sample dates
-  # that happened to have a result back already, which is a survivorship
+  # curve exists to measure. Excluding those cells (a `visible > 0`
+  # filter) averages each short lag over only the sample dates that
+  # happened to have a result back already, which is a survivorship
   # filter selecting exactly the fastest-reported dates. The curve then
   # reads far more complete at short lags than the data is,
   # `episodic_app_completeness()` finds its 95% threshold too early, and

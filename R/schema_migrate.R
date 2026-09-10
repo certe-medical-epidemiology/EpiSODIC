@@ -82,13 +82,12 @@ episodic_db_dialect <- function(path) {
 #' database or create a fresh one, whichever applies.
 #'
 #' "EpiSODIC's tables", not "any tables". A schema shared with another
-#' application - which is a perfectly ordinary way to deploy, and is how
-#' the first real instance was deployed - holds that other application's
-#' tables before EpiSODIC has created anything at all. Asked whether the
-#' schema had any tables in it, this said yes, so the first
-#' `episodic_run_cron()` was routed to "open an existing database",
-#' refused for having no schema version, and told the operator to run
-#' `episodic_db_migrate()`. Following that instruction stamped the schema
+#' application - a perfectly ordinary way to deploy - holds that other
+#' application's tables before EpiSODIC has created anything at all.
+#' Answering "are there any tables here" instead routes the first
+#' `episodic_run_cron()` to "open an existing database", which refuses
+#' it for having no schema version and sends the operator to
+#' `episodic_db_migrate()`; following that instruction stamps the schema
 #' as current with two of the twenty-four tables in it.
 #' @param path Path to a SQLite file, or a `mysql://` DSN.
 #' @return `TRUE`/`FALSE`.
@@ -176,11 +175,11 @@ episodic_db_mariadb_connect <- function(dsn) {
     # Never bit64::integer64, RMariaDB's default. An integer64 is a double
     # holding an integer's bit pattern, and every base operation that drops
     # its class (subassignment into an ordinary vector, `c()`, `ifelse()`)
-    # silently turns it into a subnormal double instead of erroring - which
-    # is how ids fetched here ended up written back as 0. Nothing in this
-    # package needs 64-bit ids, so the safest thing is for them never to
-    # exist: `episodic_db_last_insert_id()` guards the same boundary for
-    # callers that reach the database another way.
+    # silently turns it into a subnormal double instead of erroring, so an
+    # id fetched here is written back as 0. Nothing in this package needs
+    # 64-bit ids, so the safest thing is for them never to exist:
+    # `episodic_db_last_insert_id()` guards the same boundary for callers
+    # that reach the database another way.
     bigint = "integer"
   )
 }
@@ -314,11 +313,9 @@ episodic_db_create <- function(path, overwrite = FALSE) {
 #' that table is declared, and `episodic_stream_mute` references
 #' `episodic_app_user` several hundred lines before it. SQLite does not
 #' mind - it resolves a foreign key when a row is written, not when the
-#' table is declared - so this went unnoticed for as long as nothing ever
-#' pointed a real MySQL server at the generated DDL. MariaDB refuses the
-#' very first statement with `errno: 150, Foreign key constraint is
-#' incorrectly formed`, and refuses it whatever else is wrong or right
-#' about the rest of the schema.
+#' table is declared - but MariaDB refuses the very first statement with
+#' `errno: 150, Foreign key constraint is incorrectly formed`, and
+#' refuses it whatever else is right about the rest of the schema.
 #'
 #' `FOREIGN_KEY_CHECKS = 0` is the documented way to declare a forward
 #' reference: the constraint is still created, and still enforced from
@@ -360,7 +357,7 @@ episodic_db_apply_schema <- function(con, dialect) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 2L
+episodic_schema_version <- 3L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -446,8 +443,158 @@ episodic_db_migrations <- function() {
         DBI::dbExecute(con, statement)
       }
       invisible(NULL)
+    },
+    # 3: episodic_report_version_claim, the register that hands out a
+    # report's version_no before the render rather than after it, and
+    # the unique index on episodic_report_render that makes a duplicate
+    # number an error rather than a quiet overwrite. Additive: one new
+    # table, one new index, and a backfill of the register from the
+    # renders already recorded, so a migrated database allocates from the
+    # same place a fresh one does.
+    #
+    # The index cannot be created over rows that already violate it, and
+    # renumbering them would be rewriting an audit trail - so a database
+    # that carries duplicates is refused here, by name, with the two
+    # facts an operator needs to reconcile them by hand.
+    "3" = function(con, dialect) {
+      duplicates <- DBI::dbGetQuery(
+        con,
+        "SELECT cluster_id, version_no, COUNT(*) AS n
+           FROM episodic_report_render
+          GROUP BY cluster_id, version_no
+         HAVING COUNT(*) > 1
+          ORDER BY cluster_id, version_no"
+      )
+      if (nrow(duplicates) > 0) {
+        stop(
+          "This database already holds ",
+          nrow(duplicates),
+          " report version number(s) used more than once: ",
+          paste(
+            sprintf(
+              "cluster %d version %d (%d renders)",
+              as.integer(duplicates$cluster_id),
+              as.integer(duplicates$version_no),
+              as.integer(duplicates$n)
+            ),
+            collapse = "; "
+          ),
+          ". Each of those rows carries a file_sha256 and only one of ",
+          "them can match the file on disk, so which render the record ",
+          "describes is a question about your reports, not one this ",
+          "migration may answer by renumbering an audit trail. Decide ",
+          "per cluster which row is authoritative, correct ",
+          "episodic_report_render by hand, and run episodic_db_migrate() ",
+          "again.",
+          call. = FALSE
+        )
+      }
+      if (!DBI::dbExistsTable(con, "episodic_report_version_claim")) {
+        for (statement in episodic_db_schema_statements_for(
+          dialect,
+          "episodic_report_version_claim"
+        )) {
+          DBI::dbExecute(con, statement)
+        }
+      }
+      # Additive, and idempotent by the NOT EXISTS: every version
+      # already rendered is a version already taken, and the register
+      # has to say so or the first claim after a migration hands out a
+      # number a report is using.
+      DBI::dbExecute(
+        con,
+        "INSERT INTO episodic_report_version_claim
+           (cluster_id, version_no, claimed_at, claimed_by)
+         SELECT r.cluster_id, r.version_no, r.rendered_at, ?
+           FROM episodic_report_render r
+          WHERE NOT EXISTS (
+            SELECT 1 FROM episodic_report_version_claim c
+             WHERE c.cluster_id = r.cluster_id
+               AND c.version_no = r.version_no
+          )",
+        params = list("migration to schema version 3")
+      )
+      if (!episodic_db_index_exists(
+        con,
+        dialect,
+        "idx_episodic_report_render_version",
+        "episodic_report_render"
+      )) {
+        DBI::dbExecute(
+          con,
+          episodic_db_schema_index_statement(
+            dialect,
+            "idx_episodic_report_render_version"
+          )
+        )
+      }
+      invisible(NULL)
     }
   )
+}
+
+#' Whether an index already exists on a table
+#'
+#' Asked the way each server answers it: SQLite lists indexes in
+#' `sqlite_master`, MariaDB/MySQL in `information_schema.STATISTICS` for
+#' the schema the connection is already using. Needed because a MariaDB
+#' migration that fails after its `CREATE INDEX` leaves the index behind
+#' with no version row recorded, and the retry must not fall over on
+#' "Duplicate key name".
+#' @param con A [DBI::DBIConnection-class].
+#' @param dialect `"sqlite"` or `"mariadb"`.
+#' @param index The index name.
+#' @param table The table it belongs to.
+#' @return A single logical.
+#' @keywords internal
+#' @noRd
+episodic_db_index_exists <- function(con, dialect, index, table) {
+  if (dialect == "sqlite") {
+    found <- DBI::dbGetQuery(
+      con,
+      "SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?",
+      params = list(index)
+    )
+  } else {
+    found <- DBI::dbGetQuery(
+      con,
+      "SELECT INDEX_NAME FROM information_schema.STATISTICS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = ?
+          AND INDEX_NAME = ?",
+      params = list(table, index)
+    )
+  }
+  nrow(found) > 0
+}
+
+#' One `CREATE INDEX` statement, by name, from the dialect-adapted schema
+#'
+#' Same reason `episodic_db_schema_statements_for()` exists: a migration
+#' that adds an index adds exactly the index the schema file declares,
+#' rather than a second copy of the DDL that can drift from it.
+#' @param dialect `"sqlite"` or `"mariadb"`.
+#' @param index The index name.
+#' @return A single SQL statement.
+#' @keywords internal
+#' @noRd
+episodic_db_schema_index_statement <- function(dialect, index) {
+  statements <- episodic_db_schema_statements(dialect)
+  wanted <- statements[grepl(
+    paste0("CREATE (UNIQUE )?INDEX\\s+", index, "\\s+ON\\s"),
+    statements
+  )]
+  if (length(wanted) != 1) {
+    stop(
+      "Expected exactly one statement creating index \"",
+      index,
+      "\" in inst/sql/schema.sql, found ",
+      length(wanted),
+      ". The package installation may be corrupted.",
+      call. = FALSE
+    )
+  }
+  wanted
 }
 
 #' The `CREATE` statements naming one table, from the dialect-adapted schema
@@ -985,12 +1132,11 @@ episodic_db_last_insert_id <- function(con) {
   # integer's *bit pattern*, not its value. Assigning one into an ordinary
   # vector (`ids <- integer(n); ids[i] <- ...`, as
   # `episodic_institutions_resolve()` does) drops the class and keeps the
-  # payload, so institution 368 silently became 1.8e-321 and was then
-  # written into an INTEGER column as 0. That is how every case in a
-  # MariaDB run ended up pointing at a non-existent institution 0, while
-  # SQLite - whose last_insert_rowid() is a plain numeric - was correct all
-  # along. `as.numeric()` is bit64's own method and yields the real value,
-  # never the bit pattern.
+  # payload, so institution 368 becomes 1.8e-321 and is written into an
+  # INTEGER column as 0 - every case in a MariaDB run pointing at a
+  # non-existent institution 0, where SQLite, whose last_insert_rowid()
+  # is a plain numeric, is unaffected. `as.numeric()` is bit64's own
+  # method and yields the real value, never the bit pattern.
   id <- as.numeric(id)
   if (is.na(id) || id > .Machine$integer.max) {
     stop(
@@ -1197,11 +1343,9 @@ episodic_db_schema_statements <- function(dialect) {
 #' honours it too, and refuses the table outright when the referenced
 #' table has not been declared yet. **MySQL parses it and throws it
 #' away.** That is documented MySQL behaviour for inline column-level
-#' references, and its consequence here was a MySQL instance with all
-#' twenty-four tables, not one foreign key, and orphan rows accepted
-#' without complaint - measured on MySQL 8.4, and on the first real
-#' deployment, where every constraint in the schema file was absent and
-#' another application's tables in the same schema had theirs.
+#' references, measured on MySQL 8.4, and its consequence here is a
+#' MySQL instance with all twenty-four tables, not one foreign key, and
+#' orphan rows accepted without complaint.
 #'
 #' So for this dialect the references are rewritten into the table-level
 #' form, which both servers honour. Derived from the schema rather than

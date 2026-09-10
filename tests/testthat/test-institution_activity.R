@@ -158,10 +158,10 @@ test_that("episodic_institution_activity_load() errors clearly when required col
 test_that("the activity feed keys institutions exactly as the case feed does", {
   # vignette("data-format") tells an operator the activity feed's
   # `institution_key` "matches the cases feed". The case feed's key is
-  # hashed on load and this one was not, so it was compared raw against
-  # the stored hash and could never match: every activity row was
-  # skipped, patient-day normalisation never engaged, and the run
-  # finished `partial` blaming a data problem that did not exist.
+  # hashed on load, so this one must be too: compared raw against the
+  # stored hash it can never match, and every activity row is skipped,
+  # patient-day normalisation never engages, and the run finishes
+  # `partial` blaming a data problem that does not exist.
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
   institution <- episodic_db_institutions(env$con)

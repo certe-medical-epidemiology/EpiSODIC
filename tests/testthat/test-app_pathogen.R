@@ -131,7 +131,8 @@ test_that("episodic_app_resolve_period() steps back one whole season for the pre
 test_that("episodic_app_resolve_period() falls back rather than erroring on an unusable custom range", {
   asof <- as.Date("2025-01-15")
   # Blank date pickers hand over NULL, which as.Date() turns into a
-  # zero-length Date - the shape that used to break the is.na() guard.
+  # zero-length Date - a shape `is.na()` answers with `logical(0)`, and
+  # `if (logical(0))` is an error rather than a fallback.
   blank <- episodic_app_resolve_period(
     "custom",
     from = NULL,
@@ -723,4 +724,61 @@ test_that("episodic_chart_theme() sets axis and legend text readably", {
   expect_equal(theme$axis.text$colour, pal$muted)
   expect_gte(theme$axis.text$size, 10)
   expect_gte(theme$legend.text$size, 10)
+})
+
+test_that("episodic_app_pathogen_weekly() flags every week when the reporting delay was never measured", {
+  # Unknown is not zero: the alternative is telling a reader that weeks
+  # nobody measured the delay for are complete.
+  cases <- data.frame(
+    sample_date = as.Date(c("2025-01-06", "2025-01-13", "2025-01-20"))
+  )
+  resolved <- list(from = as.Date("2025-01-06"), to = as.Date("2025-01-26"))
+  weekly <- episodic_app_pathogen_weekly(
+    cases,
+    resolved,
+    incomplete_days = NA_integer_,
+    asof = as.Date("2025-02-28")
+  )
+  expect_true(all(weekly$incomplete))
+  expect_false(anyNA(weekly$incomplete))
+})
+
+test_that("episodic_app_pathogen_summary() withholds the comparison when the previous period predates the data", {
+  cases <- data.frame(
+    sample_date = as.Date(c("2025-01-06", "2025-01-13", "2025-01-20")),
+    patient_key = c("A", "B", "C"),
+    stringsAsFactors = FALSE
+  )
+  resolved <- list(
+    from = as.Date("2025-01-06"),
+    to = as.Date("2025-01-26"),
+    previous = list(
+      from = as.Date("2024-12-16"),
+      to = as.Date("2025-01-05"),
+      label = NA_character_
+    )
+  )
+
+  # The database starts in 2025: the comparison window is a period
+  # nobody was collecting in, so "0 cases then" is not an observation
+  # and "-100%" is not a change.
+  withheld <- episodic_app_pathogen_summary(
+    cases,
+    cases,
+    resolved,
+    data_start = as.Date("2025-01-01")
+  )
+  expect_true(is.na(withheld$n_previous))
+  expect_true(is.na(withheld$change_pct))
+
+  # Inside the covered period, zero really is zero, and stays a
+  # measurement rather than a percentage.
+  covered <- episodic_app_pathogen_summary(
+    cases,
+    cases,
+    resolved,
+    data_start = as.Date("2024-01-01")
+  )
+  expect_equal(covered$n_previous, 0L)
+  expect_true(is.na(covered$change_pct))
 })

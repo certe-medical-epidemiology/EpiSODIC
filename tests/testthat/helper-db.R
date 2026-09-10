@@ -60,9 +60,9 @@ episodic_test_r_source_dir <- function() {
 
 
 # Seed a stream's completion curve by creating the runs and case arrivals
-# that produce it. Replaces the old approach of writing rows straight into
-# episodic_reporting_triangle, which no longer exists - the curve is now
-# derived from episodic_case.first_seen_run and episodic_detection_run.
+# that produce it, since the curve is derived from
+# episodic_case.first_seen_run and episodic_detection_run rather than
+# stored (see episodic_triangle_completeness()).
 #
 # `seen_by_lag` is a named list mapping lag (days after `sample_date`, as a
 # character) to the cumulative number of cases visible at that lag. Cases

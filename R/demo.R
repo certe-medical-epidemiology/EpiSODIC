@@ -60,7 +60,8 @@
 #'   historical export. [episodic_run_cron()] therefore keeps dating its
 #'   runs from the system date, as a real surveillance run must.
 #' @param lang Dashboard language when `launch = TRUE`: `"en"`, `"ar"`,
-#'   `"nl"`, `"fr"`, `"de"`, `"hi"`, `"zh"`, or `"es"`. Defaults to the
+#'   `"nl"`, `"fr"`, `"de"`, `"hi"`, `"zh"`, or `"es"`, or a regional variant of
+#'   one (`"en-US"`, `"es-419"`). Defaults to the
 #'   `EPISODIC_LANGUAGE` environment variable, falling back to `"en"` if
 #'   that is unset.
 #' @param cases,denominators The data to generate the demo
@@ -229,10 +230,9 @@ episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
     role = "epidemiologist",
     # The one account in a throwaway database, whose password is printed
     # two lines below - there is nothing for a forced change to protect.
-    # This used to be arranged by `episodic_auth_must_change()` special-
-    # casing the literal username "demo" against the literal password
-    # "demo", which is a hardcoded credential in the sign-in path of a
-    # package other people deploy.
+    # Recorded on the account, not arranged by `episodic_auth_must_change()`
+    # special-casing the username: that would be a hardcoded credential in
+    # the sign-in path of a package other people deploy.
     must_change = FALSE
   )
   message(paste0(

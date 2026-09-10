@@ -93,8 +93,7 @@ require_login_db <- function(pathogen = "Norovirus") {
 }
 
 test_that("require_login is read defensively, and on unless unambiguously off", {
-  # Read in the safe direction, which is the opposite of the direction
-  # this used to read in. The two mistakes do not cost the same: a
+  # Read in the safe direction: the two mistakes do not cost the same. A
   # wrongly-closed dashboard is an operator editing one YAML key, a
   # wrongly-open one is patient-level surveillance data served to
   # whoever reaches the port.

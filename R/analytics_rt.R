@@ -65,7 +65,12 @@
 #' @param cases A data frame of the cluster's cases, with `sample_date`.
 #' @param pc A single-row pathogen config (`episodic_db_pathogen_config_get()`).
 #' @param incomplete_days From `episodic_app_completeness()`; the number
-#'   of trailing days before `asof` considered under-ascertained.
+#'   of trailing days before `asof` considered under-ascertained. `NA`
+#'   means the reporting delay was never measured for this stream, and
+#'   no estimate is returned at all: the trailing windows cannot be
+#'   withheld without knowing how many of them are still filling up, and
+#'   an Rt reading off a window that is still filling up reads low for
+#'   no reason anyone looking at it could see.
 #' @param asof The date the case data is current as of, from
 #'   `episodic_app_data_asof()`. Defaults to today.
 #' @param window_days Sliding window width, days. Fixed at 7 (weekly),
@@ -90,6 +95,9 @@ episodic_compute_rt <- function(cases,
     return(NULL)
   }
   if (is.na(pc$si_mean_days) || is.na(pc$si_sd_days)) {
+    return(NULL)
+  }
+  if (length(incomplete_days) != 1 || is.na(incomplete_days)) {
     return(NULL)
   }
   if (is.null(cases) || nrow(cases) == 0) {
