@@ -39,7 +39,8 @@ Defaults to \code{config$report$small_count_threshold}.}
 \item{episodic_config_path}{The config path.}
 
 \item{lang}{Report language: \code{"en"}, \code{"ar"}, \code{"nl"}, \code{"fr"}, \code{"de"},
-\code{"hi"}, \code{"zh"}, or \code{"es"}. Defaults to the \code{EPISODIC_LANGUAGE}
+\code{"hi"}, \code{"zh"}, or \code{"es"}, or a regional variant of
+one (\code{"en-US"}, \code{"es-419"}). Defaults to the \code{EPISODIC_LANGUAGE}
 environment variable, falling back to \code{"en"} if that is unset.}
 
 \item{qmd_path}{Path to the Quarto template to render. Defaults to the

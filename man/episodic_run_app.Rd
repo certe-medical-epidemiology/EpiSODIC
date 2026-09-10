@@ -17,7 +17,8 @@ MariaDB/MySQL DSN (see \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mar
 
 \item{lang}{Dashboard language, fixed for the whole running app - there
 is no in-app language switcher. One of \code{"en"}, \code{"ar"}, \code{"nl"}, \code{"fr"},
-\code{"de"}, \code{"hi"}, \code{"zh"}, or \code{"es"}. Defaults to the \code{EPISODIC_LANGUAGE}
+\code{"de"}, \code{"hi"}, \code{"zh"}, or \code{"es"}, or a regional variant of
+one (\code{"en-US"}, \code{"es-419"}). Defaults to the \code{EPISODIC_LANGUAGE}
 environment variable, falling back to \code{"en"} if that is unset.}
 
 \item{...}{Passed on to \code{\link[shiny:runApp]{shiny::runApp()}}, e.g. \code{port} or \code{host}.}

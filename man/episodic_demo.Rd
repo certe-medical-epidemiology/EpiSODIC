@@ -53,7 +53,8 @@ historical export. \code{\link[=episodic_run_cron]{episodic_run_cron()}} therefo
 runs from the system date, as a real surveillance run must.}
 
 \item{lang}{Dashboard language when \code{launch = TRUE}: \code{"en"}, \code{"ar"},
-\code{"nl"}, \code{"fr"}, \code{"de"}, \code{"hi"}, \code{"zh"}, or \code{"es"}. Defaults to the
+\code{"nl"}, \code{"fr"}, \code{"de"}, \code{"hi"}, \code{"zh"}, or \code{"es"}, or a regional variant of
+one (\code{"en-US"}, \code{"es-419"}). Defaults to the
 \code{EPISODIC_LANGUAGE} environment variable, falling back to \code{"en"} if
 that is unset.}
 
