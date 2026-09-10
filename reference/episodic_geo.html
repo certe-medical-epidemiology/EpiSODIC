@@ -15,7 +15,7 @@ chart of case counts by area instead of a map."><meta property="og:image" conten
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -91,14 +91,13 @@ it only needs a <code>geometry</code> column.</p>
     <h2 id="why-there-is-no-default-map">Why there is no default map<a class="anchor" aria-label="anchor" href="#why-there-is-no-default-map"></a></h2>
 
 
-<p>This used to fall back to the Netherlands PC4 geometry bundled with
-the package whenever <code>EPISODIC_GEO_DATA</code> was unset, and even after
-warning about an operator file it could not use. Postcode-like codes
-are four digits in a great many countries, so a laboratory anywhere
-else got a silent, confident map of the Netherlands with its own case
-counts joined onto whichever Dutch postcodes happened to share a
-number - a plausible-looking wrong answer, which is worse than no
-answer. There is now no default: with nothing configured the map is
+<p>A default map is a default <em>country</em>. Falling back to the Netherlands
+PC4 geometry bundled with the package would give a laboratory
+anywhere else a silent, confident map of the Netherlands with its own
+case counts joined onto whichever Dutch postcodes happened to share a
+number - postcode-like codes are four digits in a great many
+countries - and a plausible-looking wrong answer is worse than no
+answer. So there is no default: with nothing configured the map is
 simply absent, and the dashboard falls back to a bar chart of case
 counts by area, which is correct everywhere.</p>
 <p><code><a href="episodic_demo.html">episodic_demo()</a></code> sets <code>EPISODIC_GEO_DATA</code> to the bundled Netherlands

@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -589,11 +589,10 @@ no province is shown beside a postcode in the dashboard, which says so
 on its Info screen. L1-L3 and L5 do not depend on this at all. See
 <code>episodic_pc_to_province()</code> for the exact requirements.</p>
 <p>There is no built-in rule, and deliberately so. Deriving a province
-from a postcode is country-specific; the one that used to be here read
-the first digit and returned one of three Dutch provinces, which meant
-an instance anywhere else whose postcodes started 7, 8 or 9 got Dutch
-province names on its own streams, its own dashboard and its own
-outbreak reports, silently.</p>
+from a postcode is country-specific: a rule reading the first digit and
+returning one of three Dutch provinces would put Dutch province names on
+the streams, dashboard and outbreak reports of any instance elsewhere
+whose postcodes start 7, 8 or 9, silently.</p>
 <p>Unset and unusable are two different things. Once the variable
 <em>is</em> set, a file that does not exist, cannot be read as a CSV,
 holds no rows, has no <code>pc</code> or no <code>province_code</code>

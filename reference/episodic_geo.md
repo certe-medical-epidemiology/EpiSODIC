@@ -46,15 +46,14 @@ it only needs a `geometry` column.
 
 ## Why there is no default map
 
-This used to fall back to the Netherlands PC4 geometry bundled with the
-package whenever `EPISODIC_GEO_DATA` was unset, and even after warning
-about an operator file it could not use. Postcode-like codes are four
-digits in a great many countries, so a laboratory anywhere else got a
-silent, confident map of the Netherlands with its own case counts joined
-onto whichever Dutch postcodes happened to share a number - a
-plausible-looking wrong answer, which is worse than no answer. There is
-now no default: with nothing configured the map is simply absent, and
-the dashboard falls back to a bar chart of case counts by area, which is
+A default map is a default *country*. Falling back to the Netherlands
+PC4 geometry bundled with the package would give a laboratory anywhere
+else a silent, confident map of the Netherlands with its own case counts
+joined onto whichever Dutch postcodes happened to share a number -
+postcode-like codes are four digits in a great many countries - and a
+plausible-looking wrong answer is worse than no answer. So there is no
+default: with nothing configured the map is simply absent, and the
+dashboard falls back to a bar chart of case counts by area, which is
 correct everywhere.
 
 [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)

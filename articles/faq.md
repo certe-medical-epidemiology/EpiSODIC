@@ -196,6 +196,21 @@ Sys.setenv(EPISODIC_LANGUAGE = "es")
 episodic_run_app()
 ```
 
+Two of those have a regional variant, which differ in the conventions
+rather than the words - what a decimal mark is, which way round a date
+runs:
+
+``` r
+
+Sys.setenv(EPISODIC_LANGUAGE = "es-419") # Latin America: 1,234.5
+Sys.setenv(EPISODIC_LANGUAGE = "en-US")  # January 7, 2025
+```
+
+`en` is British English and `es` is Spain’s Spanish, so `en-GB` and
+`es-ES` name those and are accepted as such. A region that is not
+shipped falls back to its language rather than to English - `nl-BE`
+renders in Dutch - and says so once.
+
 This covers the dashboard interface and the outbreak reports it
 generates alike. It is fixed for the whole running instance - there is
 no in-app language switcher - so if different people need different

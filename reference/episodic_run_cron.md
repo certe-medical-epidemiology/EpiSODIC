@@ -168,34 +168,34 @@ cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
 run_id <- episodic_run_cron(db_path = db_path, cases = cases)
-#> 2026-09-09 15:02:13.978 | episodic_run_cron() starting (host=runnervmejwal, account=runner)
-#> 2026-09-09 15:02:13.979 | Resolving configuration
-#> 2026-09-09 15:02:13.982 | Configuration resolved (hash 9b97cc3f4a58)
-#> 2026-09-09 15:02:13.983 | Connecting to database
-#> 2026-09-09 15:02:13.983 | No existing database found - creating one
-#> 2026-09-09 15:02:14.000 | Database connected (dialect: sqlite)
-#> 2026-09-09 15:02:14.002 | Run 1 started
-#> 2026-09-09 15:02:14.002 | Resolving and checking case data
-#> 2026-09-09 15:02:14.013 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
-#> 2026-09-09 15:02:14.013 | Beginning transaction
-#> 2026-09-09 15:02:14.014 | Loading pathogen configuration
-#> 2026-09-09 15:02:14.016 | Pathogen configuration loaded (23 pathogen(s))
-#> 2026-09-09 15:02:14.016 | Loading case data into the database
-#> 2026-09-09 15:02:14.088 | Case data loaded: supplied=419, deduplicated=410, inserted=410
-#> 2026-09-09 15:02:14.088 | Fetching all known cases and institutions
-#> 2026-09-09 15:02:14.090 | Enumerating lattice streams
-#> 2026-09-09 15:02:14.112 | no province could be resolved for any of the 106 postcode values in this run - province-level (L4) detection has nothing to run on. EPISODIC_PC_PROVINCE_MAP is unset, and there is no built-in rule to fall back on - deriving a province from a postcode is country-specific. Point it at your own pc/province_code CSV, or leave it unset and the province level stays empty.
-#> 2026-09-09 15:02:14.115 | Running same-place detector
-#> 2026-09-09 15:02:14.170 | Same-place detector found 0 detection(s)
-#> 2026-09-09 15:02:14.171 | Running rare-trigger detector
-#> 2026-09-09 15:02:14.174 | Rare-trigger detector found 0 detection(s)
-#> 2026-09-09 15:02:14.175 | Farrington owes 8 week(s) this run
-#> 2026-09-09 15:02:14.177 | Reconciling 365 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
-#> 2026-09-09 15:02:14.555 | Stream reconciliation done: 0 detection(s), 0 new signal(s), 0 updated signal(s)
-#> 2026-09-09 15:02:14.556 | Suppressing lattice
-#> 2026-09-09 15:02:14.556 | Committing transaction
-#> 2026-09-09 15:02:14.559 | Finishing run 1 (status: success)
-#> 2026-09-09 15:02:14.561 | episodic_run_cron() finished in 0.6s (status: success)
+#> 2026-09-10 05:56:43.669 | episodic_run_cron() starting (host=runnervmejwal, account=runner)
+#> 2026-09-10 05:56:43.669 | Resolving configuration
+#> 2026-09-10 05:56:43.674 | Configuration resolved (hash 9b97cc3f4a58)
+#> 2026-09-10 05:56:43.674 | Connecting to database
+#> 2026-09-10 05:56:43.674 | No existing database found - creating one
+#> 2026-09-10 05:56:43.697 | Database connected (dialect: sqlite)
+#> 2026-09-10 05:56:43.699 | Run 1 started
+#> 2026-09-10 05:56:43.699 | Resolving and checking case data
+#> 2026-09-10 05:56:43.712 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
+#> 2026-09-10 05:56:43.712 | Beginning transaction
+#> 2026-09-10 05:56:43.713 | Loading pathogen configuration
+#> 2026-09-10 05:56:43.715 | Pathogen configuration loaded (23 pathogen(s))
+#> 2026-09-10 05:56:43.716 | Loading case data into the database
+#> 2026-09-10 05:56:43.816 | Case data loaded: supplied=419, deduplicated=410, inserted=410
+#> 2026-09-10 05:56:43.817 | Fetching all known cases and institutions
+#> 2026-09-10 05:56:43.819 | Enumerating lattice streams
+#> 2026-09-10 05:56:43.847 | no province could be resolved for any of the 106 postcode values in this run - province-level (L4) detection has nothing to run on. EPISODIC_PC_PROVINCE_MAP is unset, and there is no built-in rule to fall back on - deriving a province from a postcode is country-specific. Point it at your own pc/province_code CSV, or leave it unset and the province level stays empty.
+#> 2026-09-10 05:56:43.851 | Running same-place detector
+#> 2026-09-10 05:56:43.925 | Same-place detector found 0 detection(s)
+#> 2026-09-10 05:56:43.926 | Running rare-trigger detector
+#> 2026-09-10 05:56:43.930 | Rare-trigger detector found 0 detection(s)
+#> 2026-09-10 05:56:43.931 | Farrington owes 8 week(s) this run
+#> 2026-09-10 05:56:43.933 | Reconciling 365 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
+#> 2026-09-10 05:56:44.441 | Stream reconciliation done: 0 detection(s), 0 new signal(s), 0 updated signal(s)
+#> 2026-09-10 05:56:44.441 | Suppressing lattice
+#> 2026-09-10 05:56:44.442 | Committing transaction
+#> 2026-09-10 05:56:44.445 | Finishing run 1 (status: success)
+#> 2026-09-10 05:56:44.448 | episodic_run_cron() finished in 0.8s (status: success)
 file.remove(db_path)
 #> [1] TRUE
 # }

@@ -297,7 +297,7 @@ SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS
    AND TABLE_NAME LIKE 'episodic\_%';
 ```
 
-Anything other than 37 means the schema and the server disagree, and the
+Anything other than 38 means the schema and the server disagree, and the
 suite’s own live tests check that same number against a live server on
 every run.
 

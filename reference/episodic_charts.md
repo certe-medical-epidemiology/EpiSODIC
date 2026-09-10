@@ -35,8 +35,9 @@ episodic_ui_rt_chart(rt, lang = Sys.getenv("EPISODIC_LANGUAGE"))
 - lang:
 
   Language for axis labels: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
-  `"hi"`, `"zh"`, or `"es"`. Defaults to the `EPISODIC_LANGUAGE`
-  environment variable, falling back to `"en"` if that is unset.
+  `"hi"`, `"zh"`, or `"es"`, or a regional variant of one (`"en-US"`,
+  `"es-419"`). Defaults to the `EPISODIC_LANGUAGE` environment variable,
+  falling back to `"en"` if that is unset.
 
 - trend:
 

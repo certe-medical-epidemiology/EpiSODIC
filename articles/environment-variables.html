@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -99,13 +99,18 @@ backend” above.</td>
 <code><a href="../reference/episodic_demo.html">episodic_demo()</a></code>, and every renderer beneath them</td>
 <td>Dashboard/report language: <code>en</code>, <code>ar</code>,
 <code>nl</code>, <code>fr</code>, <code>de</code>, <code>hi</code>,
-<code>zh</code>, or <code>es</code>. Defaults to <code>en</code> if
-unset, and falls back to <code>en</code> with a warning (once, not on
-every render) for anything else - a locale-shaped <code>en_GB</code> or
-<code>nl_NL</code> is a language EpiSODIC has no translations for. Also
-sets the document’s <code>lang</code> and <code>dir</code>, so Arabic
-renders right to left. Fixed for the whole running app - there is no
-in-app language switcher.</td>
+<code>zh</code>, or <code>es</code>, or one of the regional variants
+<code>en-US</code> and <code>es-419</code> (Latin American Spanish).
+<code>en</code> is British English and <code>es</code> is Spain’s
+Spanish, so <code>en-GB</code> and <code>es-ES</code> name those exactly
+and are accepted as such. Case and separator do not matter
+(<code>en_us</code> is <code>en-US</code>). Defaults to <code>en</code>
+if unset. A region EpiSODIC does not ship falls back to the language
+itself, with a warning saying so once (<code>nl-BE</code> renders in
+Dutch); anything else falls back to <code>en</code> with a warning,
+once, not on every render. Also sets the document’s <code>lang</code>
+and <code>dir</code>, so Arabic renders right to left. Fixed for the
+whole running app - there is no in-app language switcher.</td>
 </tr>
 <tr class="odd">
 <td><code>EPISODIC_CONFIG</code></td>

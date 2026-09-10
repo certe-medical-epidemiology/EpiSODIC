@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -243,6 +243,17 @@ before starting the app (it defaults to <code>en</code> if unset):</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_LANGUAGE <span class="op">=</span> <span class="st">"es"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/episodic_run_app.html">episodic_run_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>Two of those have a regional variant, which differ in the conventions
+rather than the words - what a decimal mark is, which way round a date
+runs:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_LANGUAGE <span class="op">=</span> <span class="st">"es-419"</span><span class="op">)</span> <span class="co"># Latin America: 1,234.5</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_LANGUAGE <span class="op">=</span> <span class="st">"en-US"</span><span class="op">)</span>  <span class="co"># January 7, 2025</span></span></code></pre></div>
+<p><code>en</code> is British English and <code>es</code> is Spain’s
+Spanish, so <code>en-GB</code> and <code>es-ES</code> name those and are
+accepted as such. A region that is not shipped falls back to its
+language rather than to English - <code>nl-BE</code> renders in Dutch -
+and says so once.</p>
 <p>This covers the dashboard interface and the outbreak reports it
 generates alike. It is fixed for the whole running instance - there is
 no in-app language switcher - so if different people need different
@@ -257,7 +268,7 @@ detection thresholds, baseline lengths, <code>same_place</code> rules,
 MEM seasons, and priority score weights are all <em>operational
 data</em>, kept out of this repository on purpose. Point the environment
 variable at a YAML file with only the keys you want to change:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_CONFIG <span class="op">=</span> <span class="st">"/path/to/my_overrides.yaml"</span><span class="op">)</span></span></code></pre></div>
 <p>It is merged key-by-key on top of the <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml" class="external-link"><code>inst/config/episodic_default_config.yaml</code></a>’s
 shipped defaults, so you only ever need to write down what differs for
@@ -300,7 +311,7 @@ culture yielding more than one reported result).</p>
 whoever administers your instance’s database provisions accounts, which
 keeps sign-in tied to real board membership rather than being
 open-ended. If that is you, it is one function call:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span>  <span class="co"># or your MariaDB/MySQL DSN</span></span>
 <span></span>
 <span><span class="fu">EpiSODIC</span><span class="fu">::</span><span class="fu"><a href="../reference/episodic_add_user.html">episodic_add_user</a></span><span class="op">(</span></span>

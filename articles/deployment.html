@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -344,7 +344,7 @@ had them.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="kw">SELECT</span> <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">FROM</span> information_schema.REFERENTIAL_CONSTRAINTS</span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a> <span class="kw">WHERE</span> CONSTRAINT_SCHEMA <span class="op">=</span> <span class="kw">DATABASE</span>()</span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>   <span class="kw">AND</span> TABLE_NAME <span class="kw">LIKE</span> <span class="st">'episodic\_%'</span>;</span></code></pre></div>
-<p>Anything other than 37 means the schema and the server disagree, and
+<p>Anything other than 38 means the schema and the server disagree, and
 the suite’s own live tests check that same number against a live server
 on every run.</p>
 </div>

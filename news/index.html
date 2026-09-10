@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,54 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.17.1" id="episodic-0171">EpiSODIC 0.17.1<a class="anchor" aria-label="anchor" href="#episodic-0171"></a></h2>
+<div class="section level3">
+<h3 id="new-0-17-1">New<a class="anchor" aria-label="anchor" href="#new-0-17-1"></a></h3>
+<ul><li>
+<code>episodic_report_version_claim</code> registers a report’s version number before the render rather than after it, so two concurrent renders of one cluster never collide</li>
+<li>Schema version 3: <code>episodic_report_version_claim</code>, and a unique index on <code>episodic_report_render(cluster_id, version_no)</code>
+</li>
+<li>
+<code>episodic_format_number()</code> writes every number a reader sees in the session language’s own marks, from four <code>misc.decimal.mark</code>/<code>misc.thousands.*</code> keys per language</li>
+<li>Hindi numbers group the Indian way (12,34,567) and Spanish starts grouping at five digits (2000, but 12.345), both from those keys</li>
+<li>
+<code>misc.language.&lt;code&gt;</code> names all eight languages in every language file, so a message can say “Dutch” where it used to say <code>nl</code>
+</li>
+<li>
+<code>EPISODIC_LANGUAGE</code> takes regional variants: <code>en-US</code> writes January 7, 2025 and <code>es-419</code> writes 1,234.5</li>
+<li>
+<code>en-GB</code> and <code>es-ES</code> are accepted as names for <code>en</code> and <code>es</code>, and a region that is not shipped (<code>nl-BE</code>) now falls back to its language rather than to English</li>
+<li>Four <code>date.format.*</code> keys per language, so German puts a point after the day, Spanish two “de”s in, and Chinese writes 2025年1月7日</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-17-1">Changed<a class="anchor" aria-label="anchor" href="#changed-0-17-1"></a></h3>
+<ul><li>A reporting delay that could not be measured is now <code>NA</code> rather than 0, and the epi curve, the pathogen curve, Rt and the doubling time each say so instead of assuming complete reporting</li>
+<li>Timestamps on the dashboard and in reports are written in the session language rather than as <code>%d-%m-%Y</code>
+</li>
+<li>The report’s similar-clusters table applies the same small-count suppression as the concentration table</li>
+<li>The synthetic generators put the caller’s random stream back when they are done, instead of leaving their own behind</li>
+<li>The Info screen names the language it renders in, with the code beside it, rather than printing the code alone</li>
+<li>The unsupported-language warning lists each code with the language it stands for</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-17-1">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-17-1"></a></h3>
+<ul><li>The dossier failed to render at all on a database whose last run recorded no package versions, taking eleven tests down with it</li>
+<li>The dossier crashed on a cluster with no case linked to it, where the case-free tile compared against a day count that does not exist</li>
+<li>Detector names were joined with the Dutch word “en” in all eight languages</li>
+<li>The Streams screen’s Farrington tooltip was written in English on every language</li>
+<li>An <code>NA</code> in an epi curve’s incomplete flag silently dropped that day’s bar from the chart</li>
+<li>The Pathogen screen counted a comparison period that predates the database as zero cases rather than as no data</li>
+<li>Chart axes wrote 1.234,5 in Arabic, Hindi and Chinese, which all write 1,234.5 with the digits this package renders</li>
+<li>Dates were written day-month-year in every language, including the three that do not write them that way</li>
+<li>The English translation wrote “License” where British English writes “licence”</li>
+<li>Numbers on every screen ignored the session language: an R-formatted 1,234.5 reached a Dutch, German, French or Spanish reader unchanged</li>
+<li>
+<code>episodic_report_diff()</code> and the scheduled-report mail picked their previous version by row order when two shared a version number</li>
+<li>A failed <code><a href="https://rdrr.io/r/base/files.html" class="external-link">file.copy()</a></code> of a rendered report was recorded as a successful render</li>
+<li>A synthetic window too short to produce a baseline case returned a list where a data frame was expected</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.17.0" id="episodic-0170">EpiSODIC 0.17.0<a class="anchor" aria-label="anchor" href="#episodic-0170"></a></h2>
 <div class="section level3">

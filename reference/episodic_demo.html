@@ -17,7 +17,7 @@ default, so it works right after installing the package."><meta property="og:ima
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -115,7 +115,8 @@ runs from the system date, as a real surveillance run must.</p></dd>
 
 <dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>
 <dd><p>Dashboard language when <code>launch = TRUE</code>: <code>"en"</code>, <code>"ar"</code>,
-<code>"nl"</code>, <code>"fr"</code>, <code>"de"</code>, <code>"hi"</code>, <code>"zh"</code>, or <code>"es"</code>. Defaults to the
+<code>"nl"</code>, <code>"fr"</code>, <code>"de"</code>, <code>"hi"</code>, <code>"zh"</code>, or <code>"es"</code>, or a regional variant of
+one (<code>"en-US"</code>, <code>"es-419"</code>). Defaults to the
 <code>EPISODIC_LANGUAGE</code> environment variable, falling back to <code>"en"</code> if
 that is unset.</p></dd>
 
@@ -209,42 +210,42 @@ own extract first, and <a href="episodic_case_data.html">episodic_case_data</a> 
 <span class="r-in"><span><span class="va">db_path</span> <span class="op">&lt;-</span> <span class="fu">episodic_demo</span><span class="op">(</span>launch <span class="op">=</span> <span class="cn">FALSE</span>, cases <span class="op">=</span> <span class="va">cases</span>, denominators <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Running detection as of 2025-03-31, the last day your case data covers.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Creating synthetic cases...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.336 | episodic_run_cron() starting (host=runnervmejwal, account=runner)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.336 | Resolving configuration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.341 | Configuration resolved (hash da68bff26789)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.341 | Connecting to database</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.342 | No existing database found - creating one</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.359 | Database connected (dialect: sqlite)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.360 | Run 1 started</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.360 | Resolving and checking case data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.372 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.373 | Beginning transaction</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.374 | Loading pathogen configuration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.376 | Pathogen configuration loaded (23 pathogen(s))</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.376 | Loading case data into the database</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.471 | Case data loaded: supplied=419, deduplicated=410, inserted=410</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.471 | Fetching all known cases and institutions</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.473 | Enumerating lattice streams</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.503 | Running same-place detector</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.562 | Same-place detector found 6 detection(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.562 | Running rare-trigger detector</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.568 | Rare-trigger detector found 1 detection(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.569 | Farrington owes 8 week(s) this run</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.571 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.964 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.964 | Suppressing lattice</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.969 | Committing transaction</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:10.972 | Finishing run 1 (status: success)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-09 15:02:12.149 | episodic_run_cron() finished in 1.8s (status: success)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.530 | episodic_run_cron() starting (host=runnervmejwal, account=runner)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.531 | Resolving configuration</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.537 | Configuration resolved (hash da68bff26789)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.537 | Connecting to database</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.537 | No existing database found - creating one</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.560 | Database connected (dialect: sqlite)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.562 | Run 1 started</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.562 | Resolving and checking case data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.576 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.577 | Beginning transaction</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.578 | Loading pathogen configuration</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.581 | Pathogen configuration loaded (23 pathogen(s))</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.582 | Loading case data into the database</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.710 | Case data loaded: supplied=419, deduplicated=410, inserted=410</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.711 | Fetching all known cases and institutions</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.713 | Enumerating lattice streams</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.753 | Running same-place detector</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.830 | Same-place detector found 6 detection(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.830 | Running rare-trigger detector</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.837 | Rare-trigger detector found 1 detection(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.838 | Farrington owes 8 week(s) this run</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:39.840 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:40.352 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:40.352 | Suppressing lattice</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:40.358 | Committing transaction</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:40.361 | Finishing run 1 (status: success)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-10 05:56:41.668 | episodic_run_cron() finished in 2.1s (status: success)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> OK</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ===========================================================================</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   EpiSODIC demo account (admin) - username: demo, password: demo</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   To re-open this demo later, with its geography:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>     Sys.setenv(EPISODIC_DB = "/tmp/RtmpWdPh45/file1d06759ee388.sqlite",</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_CONFIG = "/tmp/RtmpWdPh45/file1d06759ee388-config.yaml",</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_PC_PROVINCE_MAP = "/tmp/RtmpWdPh45/file1d06759ee388-pc-province.csv")</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>     Sys.setenv(EPISODIC_DB = "/tmp/Rtmp1M0NEV/file1daf4c32e0b9.sqlite",</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_CONFIG = "/tmp/Rtmp1M0NEV/file1daf4c32e0b9-config.yaml",</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_PC_PROVINCE_MAP = "/tmp/Rtmp1M0NEV/file1daf4c32e0b9-pc-province.csv")</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>     episodic_run_app()</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ===========================================================================</span>
