@@ -230,11 +230,7 @@ NULL
 #' @noRd
 episodic_validate_cases <- function(cases) {
   cases <- episodic_resolve_data(cases)
-  report <- episodic_check_cases(cases)
-  problems <- report[report$severity == "problem", , drop = FALSE]
-  if (nrow(problems) > 0) {
-    stop(episodic_check_failure_message(problems), call. = FALSE)
-  }
+  episodic_check_cases(cases, stop_on_problem = TRUE)
   invisible(cases)
 }
 

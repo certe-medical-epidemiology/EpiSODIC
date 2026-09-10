@@ -90,13 +90,9 @@
 #' report$column[report$severity == "problem"]
 #' @export
 episodic_check_cases <- function(cases, stop_on_problem = FALSE) {
-  if (isTRUE(stop_on_problem)) {
-    episodic_validate_cases(cases)
-  }
-
   resolved <- tryCatch(episodic_resolve_data(cases), error = function(e) e)
-  if (inherits(resolved, "condition")) {
-    return(episodic_check_report(list(episodic_check_finding(
+  report <- if (inherits(resolved, "condition")) {
+    episodic_check_report(list(episodic_check_finding(
       severity = "problem",
       issue = "not_a_data_set",
       message = paste0(
@@ -109,10 +105,9 @@ episodic_check_cases <- function(cases, stop_on_problem = FALSE) {
         "Hand over the extract itself, e.g. ",
         "episodic_check_cases(my_cases)."
       )
-    ))))
-  }
-  if (!is.data.frame(resolved)) {
-    return(episodic_check_report(list(episodic_check_finding(
+    )))
+  } else if (!is.data.frame(resolved)) {
+    episodic_check_report(list(episodic_check_finding(
       severity = "problem",
       issue = "not_a_data_set",
       message = paste0(
@@ -124,15 +119,27 @@ episodic_check_cases <- function(cases, stop_on_problem = FALSE) {
         "A function passed as `cases` must return the data set itself, ",
         "not something built from it."
       )
-    ))))
+    )))
+  } else {
+    found <- c(
+      episodic_check_structure(resolved),
+      episodic_check_values(resolved),
+      episodic_check_advice(resolved)
+    )
+    episodic_check_report(found, info = episodic_check_summary(resolved))
   }
 
-  found <- c(
-    episodic_check_structure(resolved),
-    episodic_check_values(resolved),
-    episodic_check_advice(resolved)
-  )
-  episodic_check_report(found, info = episodic_check_summary(resolved))
+  # The report is built once and then thrown on, rather than the checks
+  # being run a second time behind `episodic_validate_cases()`: on a
+  # large extract that second pass is the whole check suite again, and
+  # the caller who asked to stop is the one paying for it.
+  if (isTRUE(stop_on_problem)) {
+    problems <- report[report$severity == "problem", , drop = FALSE]
+    if (nrow(problems) > 0) {
+      stop(episodic_check_failure_message(problems), call. = FALSE)
+    }
+  }
+  report
 }
 
 #' Columns: present, allow-listed, and one row per result

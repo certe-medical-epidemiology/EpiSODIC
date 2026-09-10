@@ -715,3 +715,35 @@ test_that("muting a stream suppresses its new detections, and unmuting restores 
   )$n
   expect_gt(after, during)
 })
+
+test_that("a run over case data with advisory findings reports them and proceeds", {
+  path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(path), add = TRUE)
+
+  cases <- episodic_synthetic_cases(
+    start_date = as.Date("2024-06-01"),
+    end_date = as.Date("2024-06-30"),
+    seed = 6
+  )
+  # Clinical rows without a ward are advice, never a problem: the run
+  # says so once and carries on.
+  cases$ward <- NA_character_
+  report <- episodic_check_cases(cases)
+  expect_gt(sum(report$severity == "advice"), 0)
+
+  logged <- testthat::capture_messages(
+    episodic_run_cron(
+      db_path = path,
+      cases = cases,
+      run_date = as.Date("2024-06-30")
+    )
+  )
+
+  expect_match(logged, "advisory finding", all = FALSE)
+  expect_match(logged, "0 problems", all = FALSE)
+  expect_false(any(grepl("0 advisory finding", logged, fixed = TRUE)))
+
+  con <- episodic_db_connect(path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE)
+  expect_identical(episodic_db_latest_run(con)$status, "success")
+})
