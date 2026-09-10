@@ -514,9 +514,25 @@ test_that("a regional variant resolves to itself, an alias to the language it na
   expect_equal(episodic_lang_base("nl"), "nl")
 })
 
+test_that("asking which language a code varies from answers for any code, variant or not", {
+  # Most codes are not variants, and every one of them asks this
+  # question: it is what tells episodic_i18n_load() whether there is a
+  # base file to inherit before the overlay goes on top.
+  for (lang in episodic_shipped_langs) {
+    expect_null(episodic_language_variant_base(lang), info = lang)
+    expect_equal(episodic_lang_base(lang), lang)
+  }
+  for (lang in episodic_shipped_variants) {
+    base <- episodic_language_variant_base(lang)
+    expect_true(base %in% episodic_shipped_langs, info = lang)
+    expect_equal(episodic_lang_base(lang), base)
+  }
+  expect_null(episodic_language_variant_base("nl-BE"))
+})
+
 test_that("a region EpiSODIC does not ship falls back to the language, saying so once", {
-  # Not to English, which is what this did: a Belgian instance asking for
-  # nl-BE wants Dutch, and got a warning that Dutch does not exist.
+  # Not to English: a Belgian instance asking for nl-BE wants Dutch, and
+  # being told Dutch does not exist would be both wrong and unhelpful.
   expect_warning(resolved <- episodic_lang("nl-BE"), "ships no 'nl-BE'")
   expect_equal(resolved, "nl")
   expect_silent(episodic_lang("nl-BE"))

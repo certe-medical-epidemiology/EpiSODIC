@@ -55,7 +55,7 @@ episodic_i18n_load <- function(lang) {
   }
 
   flat <- episodic_i18n_read(lang)
-  base <- episodic_language_variants[[lang]]
+  base <- episodic_language_variant_base(lang)
   if (!is.null(base)) {
     inherited <- episodic_i18n_load(base)
     inherited[names(flat)] <- unname(flat)
@@ -116,6 +116,23 @@ episodic_language_variants <- c("en-US" = "en", "es-419" = "es")
 #' @keywords internal
 #' @noRd
 episodic_language_aliases <- c("en-GB" = "en", "es-ES" = "es")
+
+#' The language a regional variant belongs to
+#'
+#' `episodic_language_variants` is an atomic vector, so `[[code]]` on a
+#' code that is not a variant is an error rather than a `NULL` - and
+#' every base language is such a code. Both callers ask the question of
+#' any code at all, so they ask it here.
+#'
+#' @param code A language code.
+#' @return The base language's code, or `NULL` when `code` names no
+#'   variant.
+#' @keywords internal
+#' @noRd
+episodic_language_variant_base <- function(code) {
+  at <- match(code, names(episodic_language_variants))
+  if (is.na(at)) NULL else unname(episodic_language_variants[[at]])
+}
 
 #' Every code that has a translation table behind it
 #' @return A character vector of language and variant codes.
@@ -274,7 +291,7 @@ episodic_lang_normalise <- function(lang) {
 #' @noRd
 episodic_lang_base <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   resolved <- episodic_lang(lang)
-  base <- episodic_language_variants[[resolved]]
+  base <- episodic_language_variant_base(resolved)
   if (is.null(base)) resolved else base
 }
 

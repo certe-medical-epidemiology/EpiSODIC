@@ -221,6 +221,7 @@ episodic_db_report_version_claim <- function(con,
                                              max_attempts = 25L) {
   for (attempt in seq_len(max_attempts)) {
     version_no <- episodic_db_report_version_next(con, cluster_id)
+    params <- list(cluster_id, version_no, episodic_now(), claimed_by)
     outcome <- tryCatch(
       {
         DBI::dbExecute(
@@ -228,12 +229,7 @@ episodic_db_report_version_claim <- function(con,
           "INSERT INTO episodic_report_version_claim
             (cluster_id, version_no, claimed_at, claimed_by)
            VALUES (?, ?, ?, ?)",
-          params = list(
-            cluster_id,
-            version_no,
-            episodic_now(),
-            claimed_by
-          )
+          params = params
         )
         TRUE
       },
@@ -269,6 +265,7 @@ episodic_db_report_version_claim <- function(con,
 #' @keywords internal
 #' @noRd
 episodic_db_report_version_next <- function(con, cluster_id) {
+  params <- list(cluster_id, cluster_id)
   highest <- DBI::dbGetQuery(
     con,
     "SELECT MAX(version_no) AS highest FROM (
@@ -276,7 +273,7 @@ episodic_db_report_version_next <- function(con, cluster_id) {
        UNION ALL
        SELECT version_no FROM episodic_report_render WHERE cluster_id = ?
      ) AS taken",
-    params = list(cluster_id, cluster_id)
+    params = params
   )$highest[[1]]
   if (is.na(highest)) 1L else as.integer(highest) + 1L
 }
