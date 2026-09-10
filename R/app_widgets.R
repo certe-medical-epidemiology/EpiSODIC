@@ -372,6 +372,38 @@ episodic_ui_chip_link <- function(text,
   )
 }
 
+#' Plain text that opens a cluster
+#'
+#' `episodic_ui_chip_link()` without the chip: for places where the
+#' reference to a cluster is a sentence in a table cell rather than a
+#' badge beside a heading, and dressing it as a chip would make an
+#' ordinary row look like a status. Same keyboard contract, for the same
+#' reason - a link a keyboard user cannot follow is not a link.
+#'
+#' @param text The visible text.
+#' @param cluster_id The cluster to open.
+#' @param lang Session language.
+#' @return A `shiny::tags$span`.
+#' @keywords internal
+#' @noRd
+episodic_ui_cluster_link <- function(text,
+                                     cluster_id,
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  open_js <- sprintf("episodicOpenCluster(%d);", as.integer(cluster_id))
+  shiny::tags$span(
+    class = "episodic-cluster-link",
+    tabindex = "0",
+    role = "link",
+    title = episodic_tr("cluster.open_hint", lang = lang),
+    onclick = open_js,
+    onkeydown = sprintf(
+      "if(event.key==='Enter'||event.key===' '){event.preventDefault();%s}",
+      open_js
+    ),
+    text
+  )
+}
+
 #' @param title Panel title.
 #' @param aside Optional right-aligned header text.
 #' @param note Optional footnote paragraph.

@@ -425,11 +425,17 @@ episodic_activity_categories <- c(
 #' @param category Categories to keep, from
 #'   `episodic_activity_categories`. Empty (the default) keeps them all -
 #'   the same convention `episodic_app_archive()`'s `level` filter uses.
-#' @return A data frame with `at`, `actor`, `action`, `target`, `detail`,
-#'   `category`, `is_system` and `run_id`. `detail` is the run load
-#'   summary on run rows (or, for a failed run, why it failed) and the
-#'   reason on a failed sign-in, `NA` elsewhere; `run_id` is filled on
-#'   run rows only, so the screen can offer the full run detail for those.
+#' @return A data frame with `at`, `actor`, `action`, `target`,
+#'   `target_cluster_id`, `detail`, `category`, `is_system` and `run_id`.
+#'   `detail` is the run load summary on run rows (or, for a failed run,
+#'   why it failed) and the reason on a failed sign-in, `NA` elsewhere;
+#'   `run_id` is filled on run rows only, so the screen can offer the
+#'   full run detail for those. `target_cluster_id` is filled wherever
+#'   `target` names a cluster rather than a stream, a host or a typed
+#'   username, and is what lets the screen make those rows open the
+#'   dossier they are talking about - the id is carried rather than
+#'   parsed back out of the rendered label, which is a translated
+#'   sentence in eight languages.
 #' @keywords internal
 #' @noRd
 episodic_app_activity_log <- function(con,
@@ -448,14 +454,26 @@ episodic_app_activity_log <- function(con,
   # however the lattice later decided to file it.
   clusters <- episodic_db_clusters(con, include_suppressed = TRUE)
   streams <- episodic_db_streams(con, active_only = FALSE)
-  cluster_target <- function(cluster_id) {
-    stream_id <- clusters$stream_id[clusters$cluster_id == cluster_id]
-    pathogen <- streams$pathogen[streams$stream_id == stream_id][1]
-    episodic_tr(
-      "activity.target_cluster",
-      pathogen = pathogen %||% "?",
-      id = cluster_id,
-      lang = lang
+  # Matched rather than scanned per row: this table is the whole
+  # assessment history, and a linear search of every cluster for each of
+  # its rows is what makes the screen's cost the product of the two.
+  cluster_pathogen <- streams$pathogen[match(
+    clusters$stream_id,
+    streams$stream_id
+  )]
+  cluster_target <- function(cluster_ids) {
+    pathogens <- cluster_pathogen[match(cluster_ids, clusters$cluster_id)]
+    vapply(
+      seq_along(cluster_ids),
+      function(i) {
+        episodic_tr(
+          "activity.target_cluster",
+          pathogen = if (is.na(pathogens[i])) "?" else pathogens[i],
+          id = cluster_ids[i],
+          lang = lang
+        )
+      },
+      character(1)
     )
   }
 
@@ -481,7 +499,8 @@ episodic_app_activity_log <- function(con,
         episodic_tr("activity.action_note", lang = lang),
         episodic_tr("activity.action_classified", lang = lang)
       ),
-      target = vapply(events$cluster_id, cluster_target, character(1)),
+      target = cluster_target(events$cluster_id),
+      target_cluster_id = as.integer(events$cluster_id),
       detail = NA_character_,
       category = "assessment",
       is_system = FALSE,
@@ -509,7 +528,8 @@ episodic_app_activity_log <- function(con,
         lang = lang
       ),
       action = episodic_tr("activity.action_closed", lang = lang),
-      target = vapply(states$cluster_id, cluster_target, character(1)),
+      target = cluster_target(states$cluster_id),
+      target_cluster_id = as.integer(states$cluster_id),
       detail = NA_character_,
       category = "closure",
       is_system = FALSE,
@@ -542,6 +562,7 @@ episodic_app_activity_log <- function(con,
         },
         character(1)
       ),
+      target_cluster_id = NA_integer_,
       detail = NA_character_,
       category = "mute",
       is_system = FALSE,
@@ -575,6 +596,7 @@ episodic_app_activity_log <- function(con,
       ),
       action = episodic_tr("activity.action_login", lang = lang),
       target = NA_character_,
+      target_cluster_id = NA_integer_,
       detail = NA_character_,
       category = "signin",
       is_system = FALSE,
@@ -613,6 +635,7 @@ episodic_app_activity_log <- function(con,
       ),
       action = episodic_tr("activity.action_login_failed", lang = lang),
       target = failures$username,
+      target_cluster_id = NA_integer_,
       detail = vapply(
         failures$reason,
         function(r) {
@@ -642,6 +665,7 @@ episodic_app_activity_log <- function(con,
         character(1)
       ),
       target = runs$host,
+      target_cluster_id = NA_integer_,
       detail = vapply(
         seq_len(nrow(runs)),
         function(i) episodic_app_run_detail(runs[i, ], lang),
@@ -660,6 +684,7 @@ episodic_app_activity_log <- function(con,
       actor = character(0),
       action = character(0),
       target = character(0),
+      target_cluster_id = integer(0),
       detail = character(0),
       category = character(0),
       is_system = logical(0),

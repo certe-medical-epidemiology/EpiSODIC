@@ -722,6 +722,47 @@ test_that("episodic_app_concentration() measures the share among cases whose PC 
   expect_null(episodic_app_concentration(data.frame(pc = c(NA, NA))))
 })
 
+test_that("episodic_week_counts() counts each seven-day window on its own terms", {
+  dates <- as.Date(c(
+    "2025-01-05",
+    "2025-01-06",
+    "2025-01-08",
+    "2025-01-12",
+    "2025-01-13"
+  ))
+  starts <- as.Date(c("2025-01-06", "2025-01-13"))
+  expect_equal(episodic_week_counts(dates, starts), c(3L, 1L))
+
+  # A date on the last day of a window is inside it; the next day's is
+  # not - the boundary the per-window `>= ws & < ws + 7` drew.
+  expect_equal(
+    episodic_week_counts(as.Date("2025-01-12"), as.Date("2025-01-06")),
+    1L
+  )
+  expect_equal(
+    episodic_week_counts(as.Date("2025-01-13"), as.Date("2025-01-06")),
+    0L
+  )
+
+  # Overlapping windows are each counted in full rather than partitioned
+  # between them.
+  expect_equal(
+    episodic_week_counts(dates, as.Date(c("2025-01-06", "2025-01-08"))),
+    c(3L, 3L)
+  )
+
+  # No dates is a count of zero for every window; no windows is no
+  # counts at all.
+  expect_equal(
+    episodic_week_counts(as.Date(character(0)), starts),
+    c(0L, 0L)
+  )
+  expect_equal(
+    episodic_week_counts(dates, as.Date(character(0))),
+    integer(0)
+  )
+})
+
 test_that("episodic_app_denominator_series() computes positivity from region-wide cases, not cluster ones", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))

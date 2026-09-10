@@ -128,6 +128,36 @@ test_that("episodic_app_resolve_period() steps back one whole season for the pre
   expect_equal(period$to, as.Date("2024-05-19"))
 })
 
+test_that("episodic_app_resolve_period() resolves a three-month window of whole weeks", {
+  asof <- as.Date("2025-01-15")
+  period <- episodic_app_resolve_period("last_3m", asof = asof)
+
+  expect_equal(period$id, "last_3m")
+  expect_equal(period$to, asof)
+  # 13 whole weeks, so the window starts on the weekday it ends on and
+  # the weekly bins line up - the same rule last_12m and last_5y follow.
+  expect_equal(as.integer(period$to - period$from) + 1L, 13L * 7L)
+  expect_equal(
+    format(period$from, "%u"),
+    format(period$to, "%u")
+  )
+  expect_true(is.na(period$season))
+  # The comparison window is the equally long one ending the day before.
+  expect_equal(period$previous$to, period$from - 1)
+})
+
+test_that("the Pathogen screen offers three months to the left of twelve", {
+  ids <- episodic_pathogen_period_ids
+  expect_true("last_3m" %in% ids)
+  expect_equal(which(ids == "last_3m") + 1L, which(ids == "last_12m"))
+  for (lang in episodic_languages) {
+    expect_false(
+      startsWith(episodic_tr("pathogen.period.last_3m", lang = lang), "[["),
+      info = lang
+    )
+  }
+})
+
 test_that("episodic_app_resolve_period() falls back rather than erroring on an unusable custom range", {
   asof <- as.Date("2025-01-15")
   # Blank date pickers hand over NULL, which as.Date() turns into a

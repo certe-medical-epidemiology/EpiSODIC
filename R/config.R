@@ -56,13 +56,63 @@
 #' @noRd
 episodic_config_resolve <- function(episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
                                     con = NULL) {
+  config <- episodic_config_resolve_files(episodic_config_path)
+
+  if (!is.null(con)) {
+    latest <- episodic_db_app_config_latest(con, "notifications")
+    if (!is.null(latest)) {
+      overlay <- jsonlite::fromJSON(
+        latest$config_json,
+        simplifyVector = FALSE
+      )
+      config$notifications <- episodic_config_merge(
+        config$notifications %||% list(),
+        overlay
+      )
+    }
+  }
+
+  config
+}
+
+# `episodic_geography_config()` is a default argument on
+# `episodic_cases_for_stream()`, `episodic_db_cases_for_stream_id()`,
+# `episodic_lattice_enumerate()` and `episodic_reconcile_stream()`, so
+# every caller that does not pass a geography of its own re-reads,
+# re-validates and re-merges the same two YAML files - a dossier render
+# and a detection run each do it dozens of times for a value that is a
+# function of the files alone. Cached per instance path *and* per file
+# stamp, so an operator who edits their YAML between two
+# `episodic_run_cron()` calls in one R session gets the file they just
+# wrote rather than the one this session happened to read first.
+episodic_config_cache <- new.env(parent = emptyenv())
+
+#' The YAML half of `episodic_config_resolve()`, cached per file stamp
+#'
+#' @param episodic_config_path See `episodic_config_resolve()`.
+#' @return The resolved configuration, before any Settings-screen
+#'   overlay - that layer comes from the database, can change while a
+#'   session is up, and is therefore applied fresh by the caller.
+#' @keywords internal
+#' @noRd
+episodic_config_resolve_files <- function(episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
   defaults_path <- system.file("config", "episodic_default_config.yaml", package = "EpiSODIC")
   if (identical(defaults_path, "")) {
     defaults_path <- file.path("inst", "config", "episodic_default_config.yaml")
   }
+  has_instance <- !is.na(episodic_config_path) && nzchar(episodic_config_path)
+  cache_key <- episodic_config_cache_key(
+    defaults_path,
+    if (has_instance) episodic_config_path else NULL
+  )
+  cached <- episodic_config_cache[[cache_key]]
+  if (!is.null(cached)) {
+    return(cached)
+  }
+
   config <- yaml::read_yaml(defaults_path)
 
-  if (!is.na(episodic_config_path) && nzchar(episodic_config_path)) {
+  if (has_instance) {
     # Set but unusable is a configuration error, not a fallback. Ignoring
     # it runs the instance on the shipped defaults while the operator
     # believes their own thresholds, their own `same_place` overrides and
@@ -99,21 +149,45 @@ episodic_config_resolve <- function(episodic_config_path = Sys.getenv("EPISODIC_
     config <- episodic_config_merge(config, instance_config)
   }
 
-  if (!is.null(con)) {
-    latest <- episodic_db_app_config_latest(con, "notifications")
-    if (!is.null(latest)) {
-      overlay <- jsonlite::fromJSON(
-        latest$config_json,
-        simplifyVector = FALSE
-      )
-      config$notifications <- episodic_config_merge(
-        config$notifications %||% list(),
-        overlay
-      )
-    }
-  }
-
+  episodic_config_cache[[cache_key]] <- config
   config
+}
+
+#' A cache key that changes whenever either configuration file does
+#'
+#' The path plus a hash of the file's own bytes, not its modification
+#' time: mtime has one-second resolution on some filesystems, and a
+#' test - or an operator - that rewrites a configuration and resolves it
+#' again within that second would otherwise be handed the previous
+#' file's settings with nothing said. Hashing a few kilobytes costs a
+#' fraction of the parse, validation and merge it saves.
+#'
+#' A path that does not exist contributes its name and `NA`, which keeps
+#' the key distinct and leaves the error to
+#' `episodic_config_resolve_files()`, where it is worded for the
+#' operator.
+#'
+#' @param ... File paths, `NULL` for an absent one.
+#' @return A single string.
+#' @keywords internal
+#' @noRd
+episodic_config_cache_key <- function(...) {
+  paths <- Filter(Negate(is.null), list(...))
+  paste(
+    vapply(
+      paths,
+      function(path) {
+        hash <- if (file.exists(path)) {
+          digest::digest(file = path, algo = "sha1")
+        } else {
+          NA_character_
+        }
+        paste(path, hash, sep = "|")
+      },
+      character(1)
+    ),
+    collapse = "||"
+  )
 }
 
 #' Configuration subtrees whose child keys an operator names themselves

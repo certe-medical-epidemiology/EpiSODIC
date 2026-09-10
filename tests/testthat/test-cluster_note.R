@@ -225,3 +225,98 @@ test_that("episodic_ui_notes_history_modal() shows an empty state when no note w
   html <- as.character(episodic_ui_notes_history_modal(env$con, env$cluster_id, lang = "en"))
   expect_true(grepl(episodic_tr("notes.history_empty", lang = "en"), html, fixed = TRUE))
 })
+
+test_that("episodic_note_is_new() refuses a note the record already carries", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    username = "jdoe",
+    full_name = "Jane Doe",
+    email = "jdoe@example.com",
+    password_hash = "x",
+    role = "viewer"
+  )
+
+  # An empty note on a cluster that has never had one records nothing,
+  # so it is not a version.
+  expect_false(episodic_note_is_new(env$con, env$cluster_id, ""))
+  expect_true(episodic_note_is_new(env$con, env$cluster_id, "Ward B, two rooms"))
+
+  episodic_db_cluster_note_insert(
+    env$con,
+    env$cluster_id,
+    user_id,
+    "Ward B, two rooms"
+  )
+  expect_false(
+    episodic_note_is_new(env$con, env$cluster_id, "Ward B, two rooms")
+  )
+  # Whitespace around the same text is the same text: the panel is a
+  # textarea, and re-indenting is not an edit anyone made.
+  expect_false(
+    episodic_note_is_new(env$con, env$cluster_id, "Ward B, two rooms")
+  )
+  expect_true(
+    episodic_note_is_new(env$con, env$cluster_id, "Ward B, three rooms")
+  )
+  # Emptying a note that does say something is a deliberate act, and is
+  # recorded like any other change.
+  expect_true(episodic_note_is_new(env$con, env$cluster_id, ""))
+})
+
+test_that("the notes observer writes a version only when the note changed", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    username = "jdoe",
+    full_name = "Jane Doe",
+    email = "jdoe@example.com",
+    password_hash = "x",
+    role = "epidemiologist"
+  )
+  user <- episodic_db_user_by_id(env$con, user_id)
+
+  count_notes <- function() {
+    nrow(DBI::dbGetQuery(
+      env$con,
+      "SELECT note_id FROM episodic_cluster_note WHERE cluster_id = ?",
+      params = list(env$cluster_id)
+    ))
+  }
+  submit <- function(session, text) {
+    session$setInputs(note_save_submit = list(
+      cluster_id = env$cluster_id,
+      note_text = text
+    ))
+  }
+
+  shiny::testServer(
+    function(input, output, session) {
+      episodic_app_server_notes(
+        input,
+        output,
+        session,
+        env$con,
+        current_user = shiny::reactiveVal(user),
+        notes_version = shiny::reactiveVal(0L),
+        access_granted = shiny::reactive(TRUE),
+        lang = "en"
+      )
+    },
+    {
+      submit(session, "Two rooms on ward B")
+      expect_equal(count_notes(), 1L)
+
+      # The same text again, and the same text with different
+      # surrounding whitespace, are both the note already on file.
+      submit(session, "Two rooms on ward B")
+      submit(session, "  Two rooms on ward B\n")
+      expect_equal(count_notes(), 1L)
+
+      submit(session, "Three rooms on ward B")
+      expect_equal(count_notes(), 2L)
+    }
+  )
+})

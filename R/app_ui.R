@@ -104,6 +104,19 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         "episodicSyncPaneBar();",
         "}"
       ))),
+      # The rail header's "open by number" box (see episodic_ui_rail()).
+      # Defined here rather than beside the input, because the rail is
+      # re-rendered whenever the open-cluster list changes and a script
+      # tag inside it would be re-evaluated every time.
+      shiny::tags$script(shiny::HTML(paste0(
+        "function episodicRailOpen(){",
+        "var el = document.querySelector('.episodic-rail-open-input'); ",
+        "if(!el){return;} ",
+        "var id = parseInt(el.value, 10); ",
+        "if(isNaN(id)){return;} ",
+        "Shiny.setInputValue('rail_open_cluster', id, {priority: 'event'});",
+        "}"
+      ))),
       # Client-side pane switching for the 768-1199px and <768px tiers
       # (see the "Responsive layout" section at the end of episodic.css).
       # A single data-pane attribute on .episodic-body carries which pane
@@ -163,6 +176,25 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         "var open = nav.classList.toggle('open'); ",
         "btn.setAttribute('aria-expanded', open ? 'true' : 'false');",
         "}"
+      ))),
+      # Marks one nav link as the current screen and closes the mobile
+      # dropdown. Called from a link's own onclick, so the highlight
+      # moves on the click rather than a round trip later, and from the
+      # server whenever view() changes by any other route (see
+      # output$nav_links in app_server.R for why the nav is not simply
+      # re-rendered). A view with no link of its own leaves every link
+      # unmarked rather than guessing one.
+      shiny::tags$script(shiny::HTML(paste0(
+        "function episodicSetActiveNav(view){",
+        "document.querySelectorAll('.episodic-nav-link').forEach(function(a){",
+        "a.classList.toggle('active', a.dataset.view === String(view));",
+        "}); ",
+        "var nav = document.querySelector('.episodic-nav'); ",
+        "if(nav){nav.classList.remove('open'); ",
+        "var t = document.querySelector('.episodic-nav-toggle'); ",
+        "if(t){t.setAttribute('aria-expanded', 'false');}}",
+        "}",
+        "$(function(){Shiny.addCustomMessageHandler('episodicSetActiveNav', episodicSetActiveNav);});"
       )))
     ),
     shiny::tags$div(
@@ -259,14 +291,12 @@ episodic_ui_nav_links <- function(active_view = "clusters",
 
 #' One top-navigation link
 #'
-#' The stylesheet has always had an `.active` rule for these, but nothing
-#' ever applied the class, so the nav gave no indication of which screen
-#' you were on. Handled client-side at click time rather than by
-#' re-rendering the header from the server, the same approach
-#' `episodic_ui_rail()` takes for its own selection highlight and for the
-#' same reason: the header is not otherwise reactive, and making it so to
-#' move one CSS class would rebuild the sign-in control and status strip
-#' on every navigation.
+#' The highlight is moved client-side, by `episodicSetActiveNav()`, the
+#' same approach `episodic_ui_rail()` takes for its own selection: the
+#' nav is rendered once per sign-in state, and re-rendering it to move
+#' one CSS class would put it behind whichever screen the reader is
+#' navigating to (see `output$nav_links`). `active` is therefore only
+#' the starting state, for the view the app happens to open on.
 #'
 #' @param view The view id this link switches to.
 #' @param label The link's visible text.
@@ -283,17 +313,19 @@ episodic_ui_nav_link <- function(view, label, active = FALSE) {
       "episodic-nav-link"
     },
     `data-view` = view,
+    # The highlight moves here, on the click, rather than waiting for
+    # the server to answer: episodicSetActiveNav() does exactly what the
+    # server's own view() observer does, so a link cannot end up marked
+    # differently depending on which of the two got there first. It also
+    # closes the mobile dropdown behind .episodic-nav-toggle - a no-op
+    # above 1200px, where .episodic-nav never gains the "open" class in
+    # the first place.
     onclick = sprintf(
       paste0(
-        "document.querySelectorAll('.episodic-nav-link').forEach(function(a){a.classList.remove('active');}); ",
-        "this.classList.add('active'); ",
-        # Closes the mobile dropdown behind .episodic-nav-toggle again -
-        # a no-op above 1200px, where .episodic-nav never gains the
-        # "open" class in the first place.
-        "var nav = document.querySelector('.episodic-nav'); ",
-        "if(nav){nav.classList.remove('open'); var t = document.querySelector('.episodic-nav-toggle'); if(t){t.setAttribute('aria-expanded', 'false');}} ",
+        "episodicSetActiveNav('%s'); ",
         "Shiny.setInputValue('nav_view', '%s', {priority: 'event'}); return false;"
       ),
+      view,
       view
     ),
     label

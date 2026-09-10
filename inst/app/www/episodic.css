@@ -209,6 +209,29 @@ body {
   color: var(--episodic-muted);
   margin-top: 3px;
 }
+/* Open-by-number, under the counts it belongs beside. The input is
+   narrow on purpose: it takes a cluster number, and a full-width field
+   invites a search term it cannot answer. */
+.episodic-rail-open {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-block-start: 8px;
+}
+.episodic-rail-open-input {
+  width: 6.5em;
+  flex: 0 0 auto;
+  font-size: 0.885rem;
+  padding: 3px 6px;
+  border: 1px solid var(--episodic-border);
+  border-radius: 2px;
+  background: var(--episodic-bg);
+  color: var(--episodic-ink);
+}
+.episodic-rail-open-btn {
+  padding: 3px 10px;
+  font-size: 0.885rem;
+}
 .episodic-rail-item {
   display: block;
   width: 100%;
@@ -325,6 +348,19 @@ body {
 .episodic-chip-link { cursor: pointer; }
 .episodic-chip-link:hover { text-decoration: underline; }
 .episodic-chip-link:focus-visible {
+  outline: 2px solid var(--episodic-primary);
+  outline-offset: 1px;
+}
+
+/* The same link, undressed: a cluster reference inside a table cell.
+   Coloured rather than underlined at rest, so a column of them does not
+   read as a solid block of rules. */
+.episodic-cluster-link {
+  cursor: pointer;
+  color: var(--episodic-primary);
+}
+.episodic-cluster-link:hover { text-decoration: underline; }
+.episodic-cluster-link:focus-visible {
   outline: 2px solid var(--episodic-primary);
   outline-offset: 1px;
 }
@@ -1272,6 +1308,74 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-settings-user-row select,
 .episodic-settings-user-row input[type="checkbox"] {
   width: auto;
+}
+
+/* ===================================================================== *
+ * Per-output loading state                                              *
+ * ===================================================================== *
+ * Shiny marks every bound output ".recalculating" from the moment the
+ * server starts computing it until its value arrives, so this needs no
+ * wiring of its own: each panel, chart and table says that it is the
+ * thing being waited for. That is the point of doing it per output
+ * rather than with one page-level overlay - a dossier builds a dozen
+ * panels of differing cost, and a reader who can see which ones have
+ * already landed is not waiting on the whole screen.
+ *
+ * The dimming keeps the previous value legible underneath while it is
+ * replaced, which is what makes a re-render read as a refresh rather
+ * than as the screen emptying.
+ */
+@keyframes episodic-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.shiny-bound-output.recalculating {
+  position: relative;
+  opacity: 0.4;
+  transition: opacity 0.15s linear;
+}
+/* Inline outputs (the header's status strip and sign-in control) carry
+   a line of text beside other text, so they dim and no more: a spinner
+   box in the middle of a flex row would move its neighbours every time
+   a run finished. Everything else gets room for the spinner even when
+   it has never held a value, which is the state the whole page is in
+   on first load. */
+.shiny-bound-output.recalculating:not(span) {
+  min-height: 44px;
+}
+.shiny-bound-output.recalculating:not(span)::after {
+  content: "";
+  position: absolute;
+  /* Centred without naming a side: "inset-inline: 0 + margin-inline:
+     auto" holds in both directions, where a translate off one edge
+     would have to be flipped for Arabic. */
+  inset-inline: 0;
+  inset-block-start: 50%;
+  width: 18px;
+  height: 18px;
+  margin-inline: auto;
+  margin-block-start: -9px;
+  border: 2px solid var(--episodic-primary-tint);
+  border-block-start-color: var(--episodic-primary);
+  border-radius: 50%;
+  animation: episodic-spin 0.7s linear infinite;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shiny-bound-output.recalculating:not(span)::after {
+    animation-duration: 2.4s;
+  }
+}
+/* The header is a bar of a fixed height holding the navigation and two
+   status lines. Reserving spinner room in it would push the brand bar
+   and the whole screen below it down and back on every run, so up here
+   the dimming is the entire indication. */
+.episodic-header .shiny-bound-output.recalculating {
+  min-height: 0;
+}
+.episodic-header .shiny-bound-output.recalculating::after {
+  content: none;
 }
 
 /* ===================================================================== *

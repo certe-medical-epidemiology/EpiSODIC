@@ -94,6 +94,76 @@ test_that("the whole lattice is named from the run's own configuration", {
   expect_true(all(startsWith(area$region_code, "ZONE-")))
 })
 
+test_that("an area stream's postcode prefix is derived from its own code, or not at all", {
+  geography <- list(
+    region_code = "OTHER_REGION",
+    area_code_prefix = "ZONE-",
+    area_pc_characters = 2
+  )
+  area <- data.frame(
+    level = "pathogen_area",
+    region_code = "ZONE-97",
+    stringsAsFactors = FALSE
+  )
+  expect_equal(episodic_stream_area_pc_prefix(area, geography), "97")
+
+  # Every other level is either every postcode (region), a mapping no
+  # prefix describes (province), or not geographic at all.
+  for (level in c("pathogen_region", "pathogen_province", "pathogen_ward")) {
+    other <- area
+    other$level <- level
+    expect_null(episodic_stream_area_pc_prefix(other, geography))
+  }
+
+  # A stream keyed under a different area rule: no prefix, so the
+  # database narrows nothing and the exact test in R still decides.
+  # Guessing one here would filter on postcodes starting "ZONE-97",
+  # which is no case anywhere.
+  stale <- area
+  stale$region_code <- "AREA-97"
+  expect_null(episodic_stream_area_pc_prefix(stale, geography))
+})
+
+test_that("an area stream sees its own cases once the database has narrowed them", {
+  config_path <- instance_config()
+  db_path <- tempfile(fileext = ".sqlite")
+  on.exit({
+    unlink(dirname(config_path), recursive = TRUE)
+    unlink(db_path)
+  })
+  suppressMessages(episodic_run_cron(
+    cases = small_cases(),
+    db_path = db_path,
+    episodic_config_path = config_path,
+    run_date = as.Date("2025-05-08")
+  ))
+  con <- episodic_db_connect(db_path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+
+  geography <- episodic_geography_config(episodic_config_resolve(config_path))
+  streams <- episodic_db_streams(con)
+  area <- streams[streams$level == "pathogen_area", ][1, ]
+  cases_all <- episodic_db_cases(con)
+
+  # The prefilter is a prefilter: the same cases either way.
+  expect_equal(
+    nrow(episodic_db_cases_for_stream_id(
+      con,
+      area$stream_id,
+      geography = geography
+    )),
+    nrow(episodic_cases_for_stream(cases_all, area, geography))
+  )
+  expect_equal(
+    nrow(episodic_db_cases_for_stream_id(
+      con,
+      area$stream_id,
+      geography = geography
+    )),
+    6
+  )
+})
+
 test_that("a geographic stream sees its own cases under that configuration", {
   config_path <- instance_config()
   db_path <- tempfile(fileext = ".sqlite")
