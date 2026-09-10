@@ -222,9 +222,14 @@ test_that("episodic_ui_info_screen() shows the package's own version, descriptio
   # the description contains "<doi:...>" markup, HTML-escaped on render -
   # a stable, escaping-safe substring instead of the raw field.
   expect_true(grepl("automated surveillance system", html, fixed = TRUE))
-  expect_true(grepl(paste0("License: ", meta$license), html, fixed = TRUE))
+  # en is British English, so the label is spelled the British way; the
+  # American spelling is what en-US carries the key for.
+  expect_true(grepl(paste0("Licence: ", meta$license), html, fixed = TRUE))
   expect_true(grepl(meta$url, html, fixed = TRUE))
   expect_true(grepl("www/logo.svg", html, fixed = TRUE))
+
+  american <- as.character(episodic_ui_info_screen(lang = "en-US"))
+  expect_true(grepl(paste0("License: ", meta$license), american, fixed = TRUE))
 })
 
 test_that("episodic_ui_chip_link() opens through episodicOpenCluster(), not a bare setInputValue", {
