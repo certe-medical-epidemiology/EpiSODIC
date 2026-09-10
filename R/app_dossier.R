@@ -1977,8 +1977,14 @@ episodic_ui_streams_screen <- function(screen,
               shiny::tags$td(
                 title = episodic_tr(
                   "streams.farrington_hint",
-                  need = row$farrington_weeks_need,
-                  have = row$farrington_weeks_have,
+                  need = episodic_format_number(
+                    row$farrington_weeks_need,
+                    lang = lang
+                  ),
+                  have = episodic_format_number(
+                    row$farrington_weeks_have,
+                    lang = lang
+                  ),
                   lang = lang
                 ),
                 if (isTRUE(row$farrington_ready)) {

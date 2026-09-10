@@ -59,7 +59,8 @@
 #' @param config The resolved configuration; uses `config$same_place`.
 #' @param run_date The date to treat as "today", for the lookback window.
 #' @return A data frame of detection records (`episodic_detection_record()`
-#'   shape) plus a `stream_id` column, one row per hit.
+#'   shape) plus a `stream_id` column, one row per hit, carrying what the
+#'   lookback kept out of it (`episodic_detector_lookback_note()`).
 #' @keywords internal
 #' @noRd
 episodic_detect_same_place <- function(con,
@@ -82,11 +83,11 @@ episodic_detect_same_place <- function(con,
   )]
   is_hospital <- inst_type == "hospital" & !is.na(cases$ward)
 
-  hits <- list()
+  scans <- list()
 
   if (any(is_hospital, na.rm = TRUE)) {
     ward_cases <- cases[which(is_hospital), ]
-    hits$ward <- episodic_same_place_scan(
+    scans$ward <- episodic_same_place_scan(
       ward_cases,
       group_cols = c("pathogen", "institution_id", "ward"),
       config = config,
@@ -98,7 +99,7 @@ episodic_detect_same_place <- function(con,
 
   non_hospital <- cases[which(!is_hospital), ]
   if (nrow(non_hospital) > 0) {
-    hits$institution <- episodic_same_place_scan(
+    scans$institution <- episodic_same_place_scan(
       non_hospital,
       group_cols = c("pathogen", "institution_id"),
       config = config,
@@ -108,17 +109,29 @@ episodic_detect_same_place <- function(con,
     )
   }
 
+  hits <- lapply(scans, function(s) s$records)
   hits <- hits[!vapply(hits, is.null, logical(1))]
-  if (length(hits) == 0) {
-    return(episodic_detection_record(
+  records <- if (length(hits) == 0) {
+    episodic_detection_record(
       integer(0),
       character(0),
       character(0),
       character(0),
       integer(0)
-    ))
+    )
+  } else {
+    do.call(rbind, hits)
   }
-  do.call(rbind, hits)
+
+  episodic_detector_lookback_note(
+    records,
+    dropped = sum(vapply(scans, function(s) s$dropped, integer(1))),
+    cutoff = episodic_detector_lookback_cutoff(
+      run_date,
+      config$same_place$lookback_days
+    ),
+    lookback_days = config$same_place$lookback_days
+  )
 }
 
 #' @keywords internal
@@ -138,6 +151,7 @@ episodic_same_place_scan <- function(cases,
   groups <- split(seq_len(nrow(cases)), key_str)
 
   records <- list()
+  n_dropped <- 0L
   for (g in groups) {
     grp <- cases[g, ]
     pathogen <- grp$pathogen[1]
@@ -149,7 +163,9 @@ episodic_same_place_scan <- function(cases,
       n = rule$n,
       k_days = rule$k_days
     )
-    windows <- episodic_detector_windows_within(windows, cutoff)
+    current <- episodic_detector_windows_within(windows, cutoff)
+    n_dropped <- n_dropped + (length(windows) - length(current))
+    windows <- current
     if (length(windows) == 0) {
       next
     }
@@ -198,10 +214,10 @@ episodic_same_place_scan <- function(cases,
       )
     }
   }
-  if (length(records) == 0) {
-    return(NULL)
-  }
-  do.call(rbind, records)
+  list(
+    records = if (length(records) == 0) NULL else do.call(rbind, records),
+    dropped = n_dropped
+  )
 }
 
 #' @keywords internal

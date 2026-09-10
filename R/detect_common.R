@@ -191,6 +191,152 @@ episodic_detector_windows_within <- function(windows, cutoff) {
   windows[keep]
 }
 
+#' What a lookback window kept out of a detector's own output
+#'
+#' A rule-based detector that reports nothing says the same thing in the
+#' trace whether it found nothing at all or found a hundred hits and
+#' discarded every one of them for being older than
+#' `lookback_days`. Those are opposite findings: the first is a quiet
+#' catchment, the second is an archive the run is deliberately not
+#' reporting, which is what a first run against a backfilled history
+#' looks like. Recorded here as an attribute on the detector's own
+#' result - the same way `episodic_farrington_insufficient()` records a
+#' history shortfall - and read back by `episodic_detector_trace_lookback()`.
+#'
+#' @param x The detection record the detector is about to return.
+#' @param dropped How many hits the lookback kept out.
+#' @param cutoff The cutoff applied, from
+#'   `episodic_detector_lookback_cutoff()`; `NULL` when unbounded.
+#' @param lookback_days The configured window, for the message.
+#' @return `x`, annotated.
+#' @keywords internal
+#' @noRd
+episodic_detector_lookback_note <- function(x,
+                                            dropped,
+                                            cutoff,
+                                            lookback_days) {
+  attr(x, "episodic_lookback") <- list(
+    dropped = as.integer(dropped),
+    cutoff = cutoff,
+    lookback_days = lookback_days
+  )
+  x
+}
+
+#' Say in the trace what the lookback kept out, when it kept anything out
+#'
+#' Silent when the detector reported everything it found, so an ordinary
+#' nightly run gains no line; a run that discarded hits says how many,
+#' from when, and which setting decided it.
+#'
+#' @param x A detection record annotated by
+#'   `episodic_detector_lookback_note()`.
+#' @param detector The detector's name, for the message.
+#' @return Invisible `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_detector_trace_lookback <- function(x, detector) {
+  note <- attr(x, "episodic_lookback", exact = TRUE)
+  if (is.null(note) || is.null(note$dropped) || note$dropped < 1) {
+    return(invisible(NULL))
+  }
+  episodic_trace(
+    detector,
+    " did not report ",
+    note$dropped,
+    " further hit(s), whose last case fell before ",
+    format(note$cutoff),
+    " (",
+    detector,
+    ".lookback_days is ",
+    note$lookback_days,
+    "). A run reports what falls inside that window, so a first run ",
+    "against a backfilled history reports none of the archive it holds."
+  )
+  invisible(NULL)
+}
+
+#' Say where the case history ends relative to the date the run treats as today
+#'
+#' Both rule-based detectors report only what falls inside their
+#' `lookback_days`, and Farrington only tests weeks that end on or before
+#' `run_date`. An extract whose newest case is older than those windows
+#' therefore produces a run that detects nothing while every log line in
+#' it reads as an ordinary quiet night. Stating the span turns that into
+#' something an operator can see; saying so outright, when the newest case
+#' is beyond every rule-based lookback there is, names the reason before
+#' they go looking for a defect in the detectors.
+#'
+#' A historical extract is detected against by giving `episodic_run_cron()`
+#' a `run_date` inside the extract's own window, which is what a
+#' prospective replay (`episodic_validate_detection()`) does week by week.
+#'
+#' @param cases The run's full case history, with `sample_date`.
+#' @param config The resolved configuration.
+#' @param run_date The date the run treats as today.
+#' @return Invisible `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_trace_case_recency <- function(cases, config, run_date) {
+  # A diagnostic must never be the thing that stops a run, so it says
+  # nothing at all about input it cannot read.
+  if (is.null(cases) || nrow(cases) == 0 || is.null(cases$sample_date)) {
+    return(invisible(NULL))
+  }
+  dates <- suppressWarnings(as.Date(cases$sample_date))
+  dates <- dates[!is.na(dates)]
+  if (length(dates) == 0) {
+    return(invisible(NULL))
+  }
+  run_date <- as.Date(run_date)
+  newest <- max(dates)
+  behind <- as.integer(run_date - newest)
+  episodic_trace(
+    "Case history on file spans ",
+    format(min(dates)),
+    " to ",
+    format(newest),
+    ", ending ",
+    behind,
+    " day(s) before this run's date (",
+    format(run_date),
+    ")"
+  )
+
+  # The longest window any rule-based detector will still report from. A
+  # detector left unbounded (`lookback_days: ~`) reports from any date at
+  # all, so there is nothing to warn about at any distance.
+  cutoffs <- list(
+    episodic_detector_lookback_cutoff(
+      run_date,
+      config$same_place$lookback_days
+    ),
+    episodic_detector_lookback_cutoff(
+      run_date,
+      config$rare_trigger$lookback_days
+    )
+  )
+  if (any(vapply(cutoffs, is.null, logical(1)))) {
+    return(invisible(NULL))
+  }
+  earliest <- min(do.call(c, cutoffs))
+  if (newest >= earliest) {
+    return(invisible(NULL))
+  }
+  episodic_trace(
+    "the newest case on file is ",
+    behind,
+    " day(s) before this run's date, which is older than every ",
+    "rule-based detector's lookback window (the longest reaches back to ",
+    format(earliest),
+    ") - same_place and rare_trigger can report nothing this run, ",
+    "whatever the case history contains. Detect against a historical ",
+    "extract by giving episodic_run_cron() a run_date inside the ",
+    "extract's own window."
+  )
+  invisible(NULL)
+}
+
 #' A run's own cases: everything sampled on or before its `run_date`
 #'
 #' Farrington has always had this bound, since `episodic_weekly_bins()`

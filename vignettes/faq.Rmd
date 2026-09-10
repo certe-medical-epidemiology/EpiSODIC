@@ -176,6 +176,38 @@ usable runs.
 </details>
 
 <details>
+<summary><strong>I loaded years of history and got no clusters at all. Is detection broken?</strong></summary>
+
+Almost certainly not, and the run's own log says which of three bounds
+you met. A run reports what is *current* as of its `run_date`, which
+defaults to today; the archive it holds is history, and history is not
+re-reported.
+
+- `same_place` and `rare_trigger` report only hits whose most recent case
+  falls inside their `lookback_days` (90 by default). A run says how many
+  further hits that kept out, so "found 0 detection(s)" with nothing after
+  it means a quiet catchment, and "did not report 137 further hit(s)"
+  means an archive it is deliberately not reporting.
+- Farrington needs `(farrington.b + 1) * 52` weeks of history on a stream
+  before it fits at all - 156 weeks at the shipped `b: 2`. An instance
+  carrying two years of history therefore gets nothing from it anywhere,
+  and the run says on how many of the eligible streams it fitted. Lower
+  `farrington.b` (at `b: 1` it needs 104 weeks) or wait for the history
+  to accrue.
+- MEM only runs on regional streams, for pathogens flagged
+  `mem_applicable`, and only outside its own pre-epidemic threshold.
+
+If your extract does not run up to today, say so: give
+`episodic_run_cron()` a `run_date` inside the extract's own window. A run
+whose newest case is older than every rule-based lookback says that
+outright rather than quietly detecting nothing. To detect against a
+historical extract properly, run it one date at a time, the way
+`episodic_validate_detection()` replays a generated history week by week
+- that is the only way the dates a cluster was opened on mean anything.
+
+</details>
+
+<details>
 <summary><strong>Can I try EpiSODIC out before pointing it at anything real?</strong></summary>
 
 Yes, and this is the easiest way to get a feel for it. One call:

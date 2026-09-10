@@ -46,7 +46,8 @@
 #' @param run_date The date to treat as "today", for the lookback window.
 #' @return A data frame of detection records plus a `stream_id` column, one
 #'   row per matching case (or per institution-day group when several
-#'   matching cases share an institution and date).
+#'   matching cases share an institution and date), carrying what the
+#'   lookback kept out of it (`episodic_detector_lookback_note()`).
 #' @keywords internal
 #' @noRd
 episodic_detect_rare_trigger <- function(con,
@@ -69,12 +70,20 @@ episodic_detect_rare_trigger <- function(con,
   }
   matches <- tolower(cases$pathogen) %in% tolower(rt$pathogens)
   cutoff <- episodic_detector_lookback_cutoff(run_date, rt$lookback_days)
+  current <- matches
   if (!is.null(cutoff)) {
-    matches <- matches & as.Date(cases$sample_date) >= cutoff
+    current <- matches & as.Date(cases$sample_date) >= cutoff
   }
-  hits <- cases[which(matches), ]
+  # Counted before the cases are cut down, so a run that reports nothing
+  # can still say whether there was nothing to report or an archive of
+  # it - see `episodic_detector_lookback_note()`.
+  dropped <- sum(matches, na.rm = TRUE) - sum(current, na.rm = TRUE)
+  note <- function(x) {
+    episodic_detector_lookback_note(x, dropped, cutoff, rt$lookback_days)
+  }
+  hits <- cases[which(current), ]
   if (nrow(hits) == 0) {
-    return(empty)
+    return(note(empty))
   }
 
   min_cases <- if (is.null(rt$min_cases)) 1L else rt$min_cases
@@ -130,7 +139,7 @@ episodic_detect_rare_trigger <- function(con,
     )
   }
   if (length(records) == 0) {
-    return(empty)
+    return(note(empty))
   }
-  do.call(rbind, records)
+  note(do.call(rbind, records))
 }

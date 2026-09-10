@@ -184,7 +184,14 @@ episodic_pkg_versions_extended <- function() {
 #' @param host,account Recorded with the run for audit purposes; default
 #'   to the current machine and account.
 #' @param run_date The date to treat as "today". Defaults to the system
-#'   date; mainly useful to override in tests.
+#'   date. Every detector anchors on it: `same_place` and `rare_trigger`
+#'   report only hits inside their `lookback_days` of it, and Farrington
+#'   tests only weeks that are complete on or before it. Detection
+#'   against a historical extract is therefore one run per date with a
+#'   `run_date` inside the extract's own window, not one run dated today
+#'   holding the whole archive - a run dated today reports what is
+#'   current, and the archive is not. `episodic_validate_detection()`
+#'   replays exactly that way.
 #' @param debug If `TRUE`, print a good deal more than the
 #'   phase-by-phase progress this function always writes:
 #'   `sessionInfo()`, the versions of every package whose own behaviour a
@@ -743,6 +750,8 @@ episodic_run_cron_body <- function(con,
     )
   }
 
+  episodic_trace_case_recency(cases_all, config, run_date)
+
   episodic_trace("Enumerating lattice streams")
   episodic_lattice_enumerate(con, cases_all, institutions, config)
   geography <- episodic_geography_config(config)
@@ -755,6 +764,13 @@ episodic_run_cron_body <- function(con,
   # its configured `b` needs. Collected so the run can say so once, rather
   # than each stream quietly producing nothing.
   farrington_short <- NULL
+  # Counted so the run can say what share of the eligible streams
+  # Farrington actually fitted on. "Too little history on 4 streams" and
+  # "Farrington fitted nowhere" are the same sentence when 4 is also the
+  # number of streams that were eligible, and only the second one tells
+  # an operator that the statistical detector contributed nothing at all
+  # to this run.
+  n_eligible_streams <- 0L
   n_muted_streams <- 0L
   muted_stream_ids <- episodic_db_muted_stream_ids(con, run_date)
 
@@ -771,6 +787,7 @@ episodic_run_cron_body <- function(con,
     nrow(same_place_detections),
     " detection(s)"
   )
+  episodic_detector_trace_lookback(same_place_detections, "same_place")
   episodic_trace("Running rare-trigger detector")
   rare_trigger_detections <- episodic_detect_rare_trigger(
     con,
@@ -783,6 +800,7 @@ episodic_run_cron_body <- function(con,
     nrow(rare_trigger_detections),
     " detection(s)"
   )
+  episodic_detector_trace_lookback(rare_trigger_detections, "rare_trigger")
 
   # Asked once, not per stream: it is a property of the run, not of any
   # one stream.
@@ -876,6 +894,7 @@ episodic_run_cron_body <- function(con,
       episodic_eligibility_gate(stream_cases, run_date, config)
     episodic_trace_debug(debug, "debug:   eligibility gate: ", eligible)
     if (eligible) {
+      n_eligible_streams <- n_eligible_streams + 1L
       # A period this stream's own history shows was a confirmed
       # epidemic must not silently raise next winter's baseline.
       # Excluded from the cases fed to Farrington only
@@ -1137,9 +1156,13 @@ episodic_run_cron_body <- function(con,
   }
   if (!is.null(farrington_short) && nrow(farrington_short) > 0) {
     episodic_trace(
-      "Farrington had too little history on ",
+      "Farrington fitted on ",
+      n_eligible_streams - nrow(farrington_short),
+      " of the ",
+      n_eligible_streams,
+      " eligible stream(s): the other ",
       nrow(farrington_short),
-      " of the eligible stream(s) and did not run there: it needs ",
+      " had too little history. It needs ",
       max(farrington_short$need),
       " weeks for the configured b, and the longest of those streams has ",
       max(farrington_short$have),

@@ -1,3 +1,16 @@
+# EpiSODIC 0.17.3
+
+## Changed
+
+- A run states the span of the case history it holds, and says outright when the newest case is older than every rule-based detector's lookback window
+- `same_place` and `rare_trigger` report how many hits their lookback window kept out, so a run that reports nothing says which kind of nothing it found
+- The Farrington history-shortfall line says how many of the eligible streams it fitted on, not only how many it skipped
+
+## Fixed
+
+- The Pathogen screen wrote a pathogen's serial interval and incubation range in R's own marks rather than the session language's
+- The Streams screen's Farrington tooltip and a notification's "and N more" line ignored the session language the same way
+
 # EpiSODIC 0.17.2
 
 ## Changed

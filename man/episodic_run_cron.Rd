@@ -47,7 +47,14 @@ automatically if it does not exist yet) or a MariaDB/MySQL DSN (see
 to the current machine and account.}
 
 \item{run_date}{The date to treat as "today". Defaults to the system
-date; mainly useful to override in tests.}
+date. Every detector anchors on it: \code{same_place} and \code{rare_trigger}
+report only hits inside their \code{lookback_days} of it, and Farrington
+tests only weeks that are complete on or before it. Detection
+against a historical extract is therefore one run per date with a
+\code{run_date} inside the extract's own window, not one run dated today
+holding the whole archive - a run dated today reports what is
+current, and the archive is not. \code{episodic_validate_detection()}
+replays exactly that way.}
 
 \item{debug}{If \code{TRUE}, print a good deal more than the
 phase-by-phase progress this function always writes:
