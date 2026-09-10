@@ -809,6 +809,44 @@ episodic_db_run_autoclosed_count <- function(con, run) {
   )$n[1]
 }
 
+#' How many of these clusters the system has already closed
+#'
+#' Used by a backfill run to say what it did: a run that reports the
+#' whole archive opens clusters from years back and closes the settled
+#' ones in the same call (`stale_open_days`), and "opened 312, closed
+#' 287, 25 left for assessment" is the difference between a dashboard an
+#' operator can act on and one they think is broken.
+#'
+#' Counted on `trigger = 'system'` closures: during the run that opened
+#' these clusters nobody has had the chance to close one by hand, and a
+#' reopen cannot have happened either, so the most recent state does not
+#' have to be reconstructed here.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_ids An integer vector of cluster ids.
+#' @return A single integer, `0L` for an empty input.
+#' @keywords internal
+#' @noRd
+episodic_db_clusters_autoclosed_count <- function(con, cluster_ids) {
+  cluster_ids <- unique(cluster_ids[!is.na(cluster_ids)])
+  if (length(cluster_ids) == 0) {
+    return(0L)
+  }
+  placeholders <- paste(rep("?", length(cluster_ids)), collapse = ", ")
+  res <- DBI::dbGetQuery(
+    con,
+    paste0(
+      "SELECT COUNT(DISTINCT cluster_id) AS n FROM episodic_cluster_state
+        WHERE state = 'closed' AND `trigger` = 'system'
+          AND cluster_id IN (",
+      placeholders,
+      ")"
+    ),
+    params = as.list(as.integer(cluster_ids))
+  )
+  as.integer(res$n[1])
+}
+
 #' @param status If given, only the latest run with one of these
 #'   statuses. Pass `episodic_run_statuses_complete` for "the latest run
 #'   that produced usable results", which is what almost every caller

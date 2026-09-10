@@ -148,15 +148,31 @@ episodic_detector_enabled <- function(config, detector) {
 #' statistical detector for the same reason; this is that bound for the
 #' rule-based ones.
 #'
+#' A backfill run lifts the bound entirely, once. The pathology above is
+#' re-emission, not emission: a historical window matches a cluster that
+#' is already on the board and resets its clock. On the first run against
+#' a database there is no cluster on the board and no clock to reset, so
+#' reporting the archive costs nothing and withholding it is what leaves
+#' an operator with an empty dashboard and no way to tell that from a
+#' broken one. Every run after it is bounded again, so nothing is ever
+#' reported twice. See `episodic_run_is_backfill()`.
+#'
 #' @param run_date The date the run treats as "today".
 #' @param lookback_days The configured window, in days. `NULL`, `NA` or a
 #'   value that is not a positive finite number means "no bound", which
-#'   is the pre-existing behaviour and is what a configuration that
-#'   deliberately sets `lookback_days: ~` asks for.
+#'   is what a configuration that deliberately sets `lookback_days: ~`
+#'   asks for.
+#' @param backfill When `TRUE`, no bound at all, whatever
+#'   `lookback_days` says.
 #' @return A single `Date`, or `NULL` for "no bound".
 #' @keywords internal
 #' @noRd
-episodic_detector_lookback_cutoff <- function(run_date, lookback_days) {
+episodic_detector_lookback_cutoff <- function(run_date,
+                                              lookback_days,
+                                              backfill = FALSE) {
+  if (isTRUE(backfill)) {
+    return(NULL)
+  }
   if (length(lookback_days) != 1) {
     return(NULL)
   }
@@ -274,10 +290,16 @@ episodic_detector_trace_lookback <- function(x, detector) {
 #' @param cases The run's full case history, with `sample_date`.
 #' @param config The resolved configuration.
 #' @param run_date The date the run treats as today.
+#' @param backfill From `episodic_run_is_backfill()`. The span is stated
+#'   either way; the notice about the lookback windows is not, since on a
+#'   backfill run they keep nothing out and there is nothing to warn of.
 #' @return Invisible `NULL`.
 #' @keywords internal
 #' @noRd
-episodic_trace_case_recency <- function(cases, config, run_date) {
+episodic_trace_case_recency <- function(cases,
+                                        config,
+                                        run_date,
+                                        backfill = FALSE) {
   # A diagnostic must never be the thing that stops a run, so it says
   # nothing at all about input it cannot read.
   if (is.null(cases) || nrow(cases) == 0 || is.null(cases$sample_date)) {
@@ -302,6 +324,10 @@ episodic_trace_case_recency <- function(cases, config, run_date) {
     format(run_date),
     ")"
   )
+
+  if (isTRUE(backfill)) {
+    return(invisible(NULL))
+  }
 
   # The longest window any rule-based detector will still report from. A
   # detector left unbounded (`lookback_days: ~`) reports from any date at

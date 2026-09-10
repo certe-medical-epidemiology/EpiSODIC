@@ -192,6 +192,19 @@ episodic_pkg_versions_extended <- function() {
 #'   holding the whole archive - a run dated today reports what is
 #'   current, and the archive is not. `episodic_validate_detection()`
 #'   replays exactly that way.
+#' @param backfill Whether this run reports the whole case history it is
+#'   given rather than only what falls inside the detectors' lookback
+#'   windows. `NULL`, the default, decides from the database: a run with
+#'   no completed run behind it is a backfill, so a first import of years
+#'   of history arrives as years of clusters (the settled ones closed in
+#'   that same run by `reconciliation.stale_open_days`, and so straight
+#'   into the Archive) rather than as an empty dashboard. Every run after
+#'   it is bounded again, so nothing is ever reported twice. Pass `FALSE`
+#'   to bound the first run too, which is what a prospective replay
+#'   wants: `episodic_validate_detection()` measures detection delay, and
+#'   a first replay run that reported its whole baseline at once would
+#'   measure the import instead. `TRUE` forces it on, for a database
+#'   whose history was imported by something other than a run.
 #' @param debug If `TRUE`, print a good deal more than the
 #'   phase-by-phase progress this function always writes:
 #'   `sessionInfo()`, the versions of every package whose own behaviour a
@@ -228,6 +241,7 @@ episodic_run_cron <- function(cases,
                               host = Sys.info()[["nodename"]],
                               account = Sys.info()[["user"]],
                               run_date = Sys.Date(),
+                              backfill = NULL,
                               debug = FALSE) {
   start_time <- Sys.time()
   episodic_trace(
@@ -398,6 +412,7 @@ episodic_run_cron <- function(cases,
         denominators,
         institution_activity,
         run_date,
+        backfill = backfill,
         debug = debug
       )
       episodic_trace("Committing transaction")
@@ -497,27 +512,75 @@ episodic_run_cron <- function(cases,
   invisible(run_id)
 }
 
+#' Whether this run is the one that reports the archive
+#'
+#' A run is a backfill when no run has ever completed against this
+#' database. The rule-based detectors' lookback windows and Farrington's
+#' catch-up cap both exist to stop a run re-reporting what an earlier run
+#' already reported; with no earlier run there is nothing to re-report,
+#' and applying them anyway is what leaves an operator importing three
+#' years of history with an empty dashboard, a log full of
+#' `0 detection(s)`, and no way to tell that from a broken instance.
+#'
+#' Deliberately not a configuration key. It is a fact about the database,
+#' asked of the database, and an instance that wants a clean start gets
+#' one by starting a clean database. It is asked through the same
+#' `episodic_db_latest_run()` that decides Farrington's catch-up, so the
+#' two can never disagree about what counts as a previous run: a run that
+#' failed left nothing behind, so the retry after it is still the first.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @return A single logical.
+#' @keywords internal
+#' @noRd
+episodic_run_is_backfill <- function(con) {
+  previous <- episodic_db_latest_run(
+    con,
+    status = episodic_run_statuses_complete
+  )
+  is.null(previous) || is.na(previous$finished_at)
+}
+
 #' How many weeks of Farrington this run owes
 #'
 #' A nightly run owes one: the week that just became testable. A run
 #' following a gap owes every week since the last completed one, because
 #' nothing else will ever test those - a detector that only ever looks at
 #' the current week turns a server outage into a hole in the surveillance
-#' record. A first run, with no completed run behind it, owes the cap: an
-#' instance starting against a backfilled history should open on the
-#' current picture rather than on one week of it, and the cap is what
-#' stops years of backfill arriving as years of dossiers.
+#' record.
+#'
+#' A backfill run owes every week its streams can carry. The cap is a
+#' catch-up limit, and there is nothing to catch up to on a database
+#' whose history nothing has ever tested; capping it there would leave
+#' the archive with `same_place` clusters from three years back and
+#' Farrington clusters from the last eight weeks only, which is not a
+#' record of anything. `episodic_detect_farrington()` still starts at the
+#' first week its own baseline requirement allows, so "every week" means
+#' every week that was ever testable, not every week on file.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param run_date The date this run treats as today.
 #' @param config The resolved configuration; uses
 #'   `config$farrington$max_weeks_tested`, defaulting to 8.
+#' @param backfill From `episodic_run_is_backfill()`.
 #' @return A positive integer.
 #' @keywords internal
 #' @noRd
-episodic_farrington_weeks_owed <- function(con, run_date, config) {
+episodic_farrington_weeks_owed <- function(con,
+                                           run_date,
+                                           config,
+                                           backfill = FALSE) {
   cap <- as.integer(config$farrington$max_weeks_tested %||% 8L)
   cap <- max(1L, cap)
+  if (isTRUE(backfill)) {
+    # Larger than any stream's week count can plausibly be (a million
+    # weeks is nineteen thousand years), so
+    # `episodic_detect_farrington()`'s own `max(min_weeks_required, ...)`
+    # is what decides the first week tested. Not `.Machine$integer.max`:
+    # that function subtracts this from a week index in integer
+    # arithmetic, which overflows to `NA` at the top of the range.
+    return(1000000L)
+  }
 
   previous <- episodic_db_latest_run(
     con,
@@ -583,7 +646,8 @@ episodic_run_cron_finish <- function(con, run_id, hashed, result) {
     pkg_versions = as.character(pkg_versions),
     config_hash = hashed$hash,
     config_snapshot = hashed$snapshot,
-    error_text = result$error_text
+    error_text = result$error_text,
+    is_backfill = isTRUE(result$is_backfill)
   )
   invisible(NULL)
 }
@@ -660,6 +724,7 @@ episodic_run_cron_body <- function(con,
                                    denominators,
                                    institution_activity,
                                    run_date,
+                                   backfill = NULL,
                                    debug = FALSE) {
   episodic_trace("Loading pathogen configuration")
   pathogen_config_path <- system.file(
@@ -750,7 +815,45 @@ episodic_run_cron_body <- function(con,
     )
   }
 
-  episodic_trace_case_recency(cases_all, config, run_date)
+  # Asked once, before any detector runs, and passed down: it decides
+  # what every detector on this run is allowed to report, so it must be
+  # the same answer for all of them. `NULL` from the caller means "decide
+  # from the database", which is what an operator's scheduled run always
+  # wants; a replay passes `FALSE` outright.
+  backfill <- if (is.null(backfill)) {
+    episodic_run_is_backfill(con)
+  } else {
+    isTRUE(backfill)
+  }
+  if (backfill) {
+    stale_days <- config$reconciliation$stale_open_days %||% NA
+    episodic_trace(
+      "First run on this database: reporting the whole case history ",
+      "rather than only what falls inside the detectors' lookback ",
+      "windows. ",
+      if (is.na(stale_days)) {
+        paste0(
+          "reconciliation.stale_open_days is unset, so nothing opened ",
+          "here can close on its own: every cluster found in the ",
+          "history arrives as an assessment to make. "
+        )
+      } else {
+        paste0(
+          "Clusters whose last case is more than ",
+          stale_days,
+          " day(s) before this run's date close in this same run and go ",
+          "straight to the Archive; the rest open for assessment. "
+        )
+      },
+      "Every run after this one is bounded again, so nothing here is ",
+      "reported twice."
+    )
+  }
+
+  # After the backfill decision, and told it: the notice this writes is
+  # about what the lookback windows keep out, and on a backfill run they
+  # keep nothing out.
+  episodic_trace_case_recency(cases_all, config, run_date, backfill = backfill)
 
   episodic_trace("Enumerating lattice streams")
   episodic_lattice_enumerate(con, cases_all, institutions, config)
@@ -780,7 +883,8 @@ episodic_run_cron_body <- function(con,
     cases_all,
     institutions,
     config,
-    run_date = run_date
+    run_date = run_date,
+    backfill = backfill
   )
   episodic_trace(
     "Same-place detector found ",
@@ -793,7 +897,8 @@ episodic_run_cron_body <- function(con,
     con,
     cases_all,
     config,
-    run_date = run_date
+    run_date = run_date,
+    backfill = backfill
   )
   episodic_trace(
     "Rare-trigger detector found ",
@@ -804,8 +909,22 @@ episodic_run_cron_body <- function(con,
 
   # Asked once, not per stream: it is a property of the run, not of any
   # one stream.
-  farrington_weeks <- episodic_farrington_weeks_owed(con, run_date, config)
-  episodic_trace("Farrington owes ", farrington_weeks, " week(s) this run")
+  farrington_weeks <- episodic_farrington_weeks_owed(
+    con,
+    run_date,
+    config,
+    backfill = backfill
+  )
+  if (backfill) {
+    episodic_trace(
+      "Farrington tests every week its streams can carry this run, ",
+      "rather than the ",
+      config$farrington$max_weeks_tested %||% 8L,
+      "-week catch-up cap: there is no earlier run to catch up to"
+    )
+  } else {
+    episodic_trace("Farrington owes ", farrington_weeks, " week(s) this run")
+  }
 
   streams <- episodic_db_streams(con) # refresh: same_place/rare_trigger may have created streams
   # Read once for the whole run rather than once per stream inside
@@ -1068,6 +1187,7 @@ episodic_run_cron_body <- function(con,
       min_ratio_observed_expected = min_ratio,
       stale_open_days = config$reconciliation$stale_open_days %||% NA,
       geography = geography,
+      backfill = backfill,
       # `run_date` is documented as "the date to treat as today" and every
       # other phase of the run honours it; reconciliation did not, so a
       # backfill or a replay judged staleness against the wall clock
@@ -1178,6 +1298,21 @@ episodic_run_cron_body <- function(con,
     n_updated_total,
     " updated signal(s)"
   )
+  if (backfill) {
+    n_backfill_closed <- episodic_db_clusters_autoclosed_count(
+      con,
+      new_cluster_ids_all
+    )
+    episodic_trace(
+      "Backfill: ",
+      n_new_total,
+      " cluster(s) opened from the case history, ",
+      n_backfill_closed,
+      " of them already closed by the system and in the Archive, ",
+      n_new_total - n_backfill_closed,
+      " left open for assessment"
+    )
+  }
 
   # Suppression is a statement about the lattice as a whole - which level
   # of the same outbreak is the one worth a dossier - so it waits until
@@ -1208,6 +1343,7 @@ episodic_run_cron_body <- function(con,
     n_activity_written = activity_counts$n_written,
     n_activity_skipped = activity_counts$n_skipped,
     new_cluster_ids = new_cluster_ids_all,
+    is_backfill = backfill,
     error_text = NA
   )
 }

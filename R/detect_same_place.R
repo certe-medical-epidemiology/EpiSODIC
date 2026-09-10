@@ -58,6 +58,9 @@
 #' @param institutions A data frame from `episodic_db_institutions()`.
 #' @param config The resolved configuration; uses `config$same_place`.
 #' @param run_date The date to treat as "today", for the lookback window.
+#' @param backfill When `TRUE`, the lookback window does not apply: this
+#'   run reports every hit in the history it was given. See
+#'   `episodic_detector_lookback_cutoff()`.
 #' @return A data frame of detection records (`episodic_detection_record()`
 #'   shape) plus a `stream_id` column, one row per hit, carrying what the
 #'   lookback kept out of it (`episodic_detector_lookback_note()`).
@@ -67,7 +70,8 @@ episodic_detect_same_place <- function(con,
                                        cases,
                                        institutions,
                                        config,
-                                       run_date = Sys.Date()) {
+                                       run_date = Sys.Date(),
+                                       backfill = FALSE) {
   if (!episodic_detector_enabled(config, "same_place")) {
     return(episodic_detection_none())
   }
@@ -93,7 +97,8 @@ episodic_detect_same_place <- function(con,
       config = config,
       stream_level = "pathogen_ward",
       con = con,
-      run_date = run_date
+      run_date = run_date,
+      backfill = backfill
     )
   }
 
@@ -105,7 +110,8 @@ episodic_detect_same_place <- function(con,
       config = config,
       stream_level = "pathogen_institution",
       con = con,
-      run_date = run_date
+      run_date = run_date,
+      backfill = backfill
     )
   }
 
@@ -128,7 +134,8 @@ episodic_detect_same_place <- function(con,
     dropped = sum(vapply(scans, function(s) s$dropped, integer(1))),
     cutoff = episodic_detector_lookback_cutoff(
       run_date,
-      config$same_place$lookback_days
+      config$same_place$lookback_days,
+      backfill = backfill
     ),
     lookback_days = config$same_place$lookback_days
   )
@@ -141,10 +148,12 @@ episodic_same_place_scan <- function(cases,
                                      config,
                                      stream_level,
                                      con,
-                                     run_date = Sys.Date()) {
+                                     run_date = Sys.Date(),
+                                     backfill = FALSE) {
   cutoff <- episodic_detector_lookback_cutoff(
     run_date,
-    config$same_place$lookback_days
+    config$same_place$lookback_days,
+    backfill = backfill
   )
   key_df <- cases[, group_cols, drop = FALSE]
   key_str <- do.call(paste, c(key_df, sep = "\r"))

@@ -352,12 +352,36 @@ episodic_performance_timeliness <- function(clusters, events, verdicts) {
   names(first_classification)[2] <- "first_classification_at"
 
   t <- clusters[, c("cluster_id", "first_day", "opened_at")]
+  # A cluster opened by a backfill run was opened on the day the archive
+  # was imported, whatever its cases are dated, so `opened_at -
+  # first_day` measures the age of the extract rather than how quickly
+  # anything was noticed. Dropped from time-to-detection outright: a
+  # median taken over the two mixed together is a number about neither.
+  #
+  # Only from this one measure. The two below run from `opened_at`
+  # forwards and time an epidemiologist rather than a detector, which is
+  # as honest for a backfilled cluster as for any other. And PPV needs no
+  # exclusion at all - it already counts only clusters carrying a
+  # verdict, and a backfilled cluster that a person did assess is
+  # evidence like any other.
+  #
+  # Carried as a column rather than as an index, because `merge()` below
+  # reorders rows and a position taken before it would point at the wrong
+  # cluster after it. A database migrated from before the column existed
+  # reads `NA` here, which `%in%` treats as "not a backfill" - true of
+  # every cluster opened before any run could report an archive.
+  t$opened_in_backfill <- clusters$opened_in_backfill[match(
+    t$cluster_id,
+    clusters$cluster_id
+  )]
+
   t <- merge(t, first_assessment, by = "cluster_id", all.x = TRUE)
   t <- merge(t, first_classification, by = "cluster_id", all.x = TRUE)
+  detected_live <- !(t$opened_in_backfill %in% 1)
 
   list(
     to_detection = summarise_days(as.numeric(
-      as.Date(t$opened_at) - as.Date(t$first_day)
+      as.Date(t$opened_at[detected_live]) - as.Date(t$first_day[detected_live])
     )),
     to_first_assessment = summarise_days(as.numeric(
       as.Date(t$first_assessment_at) - as.Date(t$opened_at)

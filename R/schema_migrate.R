@@ -357,7 +357,7 @@ episodic_db_apply_schema <- function(con, dialect) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 3L
+episodic_schema_version <- 4L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -529,8 +529,85 @@ episodic_db_migrations <- function() {
         )
       }
       invisible(NULL)
+    },
+    # 4: the two backfill flags. `episodic_cluster.opened_in_backfill`
+    # marks a cluster opened by a run that reported the whole case
+    # history rather than only what falls inside the detectors' lookback
+    # windows, and `episodic_detection_run.is_backfill` marks the run
+    # that did it.
+    #
+    # Two added columns, both NOT NULL DEFAULT 0, so every row already on
+    # file is stamped "not a backfill" - which is true of every cluster
+    # opened before this version existed, since no run before it could
+    # report an archive. `ALTER TABLE ... ADD COLUMN` is the one schema
+    # change SQLite performs in place, so nothing here rebuilds a table
+    # or rewrites a row.
+    #
+    # A flag rather than a third `origin`: a backfilled cluster is a
+    # detected cluster in every respect that matters to the pipeline, and
+    # `episodic_db_clusters_for_stream()` and
+    # `episodic_db_clusters_for_suppression()` both select on `origin =
+    # 'detected'`. Under a third origin value they would exclude it from
+    # reconciliation and from suppression, so it would never age, never
+    # close, and the next run to detect on that stream would open a
+    # duplicate cluster beside it.
+    "4" = function(con, dialect) {
+      add <- function(table, column, definition) {
+        if (episodic_db_column_exists(con, dialect, table, column)) {
+          return(invisible(NULL))
+        }
+        DBI::dbExecute(
+          con,
+          paste0("ALTER TABLE ", table, " ADD COLUMN ", column, " ", definition)
+        )
+        invisible(NULL)
+      }
+      add(
+        "episodic_cluster",
+        "opened_in_backfill",
+        "INTEGER NOT NULL DEFAULT 0 CHECK (opened_in_backfill IN (0, 1))"
+      )
+      add(
+        "episodic_detection_run",
+        "is_backfill",
+        "INTEGER NOT NULL DEFAULT 0 CHECK (is_backfill IN (0, 1))"
+      )
+      invisible(NULL)
     }
   )
+}
+
+#' Whether a column already exists on a table
+#'
+#' Asked the way each server answers it, and for the same reason
+#' `episodic_db_index_exists()` is: MariaDB/MySQL commit implicitly on
+#' DDL, so a migration that adds one column and fails before the next
+#' leaves the first behind with no version row recorded, and the retry
+#' must not fall over on "Duplicate column name".
+#' @param con A [DBI::DBIConnection-class].
+#' @param dialect `"sqlite"` or `"mariadb"`.
+#' @param table The table to look in.
+#' @param column The column name.
+#' @return A single logical.
+#' @keywords internal
+#' @noRd
+episodic_db_column_exists <- function(con, dialect, table, column) {
+  if (dialect == "sqlite") {
+    found <- DBI::dbGetQuery(
+      con,
+      paste0("PRAGMA table_info(", table, ")")
+    )
+    return(column %in% found$name)
+  }
+  found <- DBI::dbGetQuery(
+    con,
+    "SELECT COLUMN_NAME FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = ?
+        AND COLUMN_NAME = ?",
+    params = list(table, column)
+  )
+  nrow(found) > 0
 }
 
 #' Whether an index already exists on a table

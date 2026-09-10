@@ -44,6 +44,9 @@
 #'   `institution_id`, `sample_date`.
 #' @param config The resolved configuration; uses `config$rare_trigger`.
 #' @param run_date The date to treat as "today", for the lookback window.
+#' @param backfill When `TRUE`, the lookback window does not apply: this
+#'   run reports every matching case in the history it was given. See
+#'   `episodic_detector_lookback_cutoff()`.
 #' @return A data frame of detection records plus a `stream_id` column, one
 #'   row per matching case (or per institution-day group when several
 #'   matching cases share an institution and date), carrying what the
@@ -53,7 +56,8 @@
 episodic_detect_rare_trigger <- function(con,
                                          cases,
                                          config,
-                                         run_date = Sys.Date()) {
+                                         run_date = Sys.Date(),
+                                         backfill = FALSE) {
   empty <- episodic_detection_none()
 
   if (!episodic_detector_enabled(config, "rare_trigger")) {
@@ -69,7 +73,11 @@ episodic_detect_rare_trigger <- function(con,
     return(empty)
   }
   matches <- tolower(cases$pathogen) %in% tolower(rt$pathogens)
-  cutoff <- episodic_detector_lookback_cutoff(run_date, rt$lookback_days)
+  cutoff <- episodic_detector_lookback_cutoff(
+    run_date,
+    rt$lookback_days,
+    backfill = backfill
+  )
   current <- matches
   if (!is.null(cutoff)) {
     current <- matches & as.Date(cases$sample_date) >= cutoff

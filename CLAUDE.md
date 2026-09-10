@@ -49,6 +49,8 @@ Four independent detectors, each producing detections per stream:
 
 Both rule-based detectors (`same_place`, `rare_trigger`) are bounded by a configured `lookback_days` and report only hits whose most recent case falls inside it. Unbounded, they re-emit the whole case history on every run, which resets `runs_since_detected` and makes `reconciliation.close_after_runs` unreachable. Farrington is bounded the same way, by `farrington.max_weeks_tested`, and aggregates to the last *complete* week relative to `run_date` - never the partial week `run_date` falls in.
 
+Every bound in that paragraph is lifted for exactly one run: the first one against a database (`episodic_run_is_backfill()`). The pathology those bounds prevent is *re-emission* - a settled hit matching its own long-closed cluster and resetting its clock - and re-emission begins at the second run. On the first there is no cluster on the board and no clock to reset, so an operator importing three years of history gets three years of clusters, the settled ones closed by `reconciliation.stale_open_days` in that same run and so straight into the Archive. Withholding them instead is what leaves a first run looking indistinguishable from a broken instance. A backfilled cluster carries `opened_in_backfill`, because its `opened_at` is the day the archive was imported: the Performance screen's time-to-detection drops it, while PPV keeps it, since a cluster a person judged is evidence about the detectors whatever run opened it. It is a flag rather than a third `origin` deliberately - `episodic_db_clusters_for_stream()` and `episodic_db_clusters_for_suppression()` both select on `origin = 'detected'`, so a third value would exclude such a cluster from reconciliation and suppression, and the next run to detect on that stream would open a duplicate beside it. `episodic_run_cron(backfill =)` overrides the decision; `episodic_validate_detection()` passes `FALSE`, since a replay that reported its whole baseline on run one would measure the import rather than the detectors.
+
 | Detector | Method | File |
 |---|---|---|
 | Farrington | Improved Farrington (surveillance::farringtonFlexible) | `R/detect_farrington.R` |
@@ -114,6 +116,8 @@ Single schema in `inst/sql/schema.sql`, written in SQLite dialect. Adapted at lo
 | `episodic_app_login_failure` | app | Refused sign-ins (username tried, reason) |
 | `episodic_schema_version` | `episodic_db_create()`, `episodic_db_migrate()` | One row per applied schema version |
 | `episodic_report_version_claim` | `episodic_report_render()` | The register of report version numbers handed out, taken before the render (see `episodic_db_report_version_claim()`) |
+
+`episodic_cluster.opened_in_backfill` and `episodic_detection_run.is_backfill` mark the first run against a database and everything it opened - see the Detectors section above for what a backfill is and why it is a flag rather than an `origin`.
 
 Two things the adapter does that are not cosmetic. It **derives table-level
 `FOREIGN KEY` clauses** from the schema's inline column-level `REFERENCES`,

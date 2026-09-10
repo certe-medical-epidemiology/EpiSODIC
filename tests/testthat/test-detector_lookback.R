@@ -320,3 +320,39 @@ test_that("an unbounded detector makes the recency warning meaningless, so it is
   )
   expect_false(any(grepl("can report nothing", msgs)))
 })
+
+test_that("the recency notice is about a bound, so a backfill run does not give it", {
+  config <- episodic_test_config()
+  config$same_place$lookback_days <- 90
+  config$rare_trigger$lookback_days <- 90
+  cases <- data.frame(sample_date = "2024-01-01", stringsAsFactors = FALSE)
+
+  bounded <- capture_messages(
+    episodic_trace_case_recency(cases, config, as.Date("2026-09-10"))
+  )
+  expect_true(any(grepl("can report nothing this run", bounded)))
+
+  # Same data, same date, no bound in force: the span is still worth
+  # stating, the warning would be false.
+  backfilled <- capture_messages(
+    episodic_trace_case_recency(
+      cases,
+      config,
+      as.Date("2026-09-10"),
+      backfill = TRUE
+    )
+  )
+  expect_true(any(grepl("Case history on file spans", backfilled)))
+  expect_false(any(grepl("can report nothing", backfilled)))
+})
+
+test_that("a backfill lifts the lookback bound, and only for that run", {
+  run_date <- as.Date("2026-09-10")
+  expect_equal(
+    episodic_detector_lookback_cutoff(run_date, 90),
+    as.Date("2026-06-12")
+  )
+  expect_null(
+    episodic_detector_lookback_cutoff(run_date, 90, backfill = TRUE)
+  )
+})
