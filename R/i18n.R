@@ -90,6 +90,17 @@ episodic_i18n_read <- function(lang) {
 #' @noRd
 episodic_languages <- c("en", "ar", "nl", "fr", "de", "hi", "zh", "es")
 
+#' The language everything falls back to
+#'
+#' What an unset `EPISODIC_LANGUAGE` resolves to, what `episodic_tr()`
+#' reads a key from when the requested language has not translated it,
+#' and the language `episodic_lang()`'s own warnings are written in: a
+#' warning about a language that could not be resolved cannot be
+#' written in that language.
+#' @keywords internal
+#' @noRd
+episodic_language_fallback <- "en"
+
 #' Regional variants, and the language each one is a variant of
 #'
 #' A variant is a file holding *only* what differs from its base:
@@ -193,7 +204,7 @@ episodic_lang_warned <- new.env(parent = emptyenv())
 #' @noRd
 episodic_lang <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (length(lang) != 1 || is.na(lang) || !nzchar(lang)) {
-    return("en")
+    return(episodic_language_fallback)
   }
   code <- episodic_lang_normalise(lang)
   if (code %in% episodic_languages_all()) {
@@ -213,12 +224,15 @@ episodic_lang <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         "' translations, so '",
         base,
         "' (",
-        episodic_language_label(base, lang = "en"),
+        episodic_language_label(base, lang = episodic_language_fallback),
         ") is used instead - which is that language as it is written ",
         "where the base file was written, and may not be the regional ",
         "convention you meant. The variants that do exist: ",
         paste(
-          episodic_language_choices(lang = "en", variants_only = TRUE),
+          episodic_language_choices(
+            lang = episodic_language_fallback,
+            variants_only = TRUE
+          ),
           collapse = ", "
         ),
         ".",
@@ -241,12 +255,15 @@ episodic_lang <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       # The code and the name, not one or the other: the code is what
       # goes in the environment variable, and the name is what tells an
       # operator which code they want.
-      paste(episodic_language_choices(lang = "en"), collapse = ", "),
+      paste(
+        episodic_language_choices(lang = episodic_language_fallback),
+        collapse = ", "
+      ),
       ".",
       call. = FALSE
     )
   }
-  "en"
+  episodic_language_fallback
 }
 
 #' A language code in the one shape everything else here compares against
@@ -410,8 +427,8 @@ episodic_tr <- function(key,
     table <- episodic_i18n_load(lang)
     if (key %in% names(table)) template <- table[[key]]
   }
-  if (is.null(template) && lang != "en") {
-    table_en <- episodic_i18n_load("en")
+  if (is.null(template) && lang != episodic_language_fallback) {
+    table_en <- episodic_i18n_load(episodic_language_fallback)
     if (key %in% names(table_en)) template <- table_en[[key]]
   }
   if (is.null(template)) {
