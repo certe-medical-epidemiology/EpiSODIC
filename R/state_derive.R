@@ -40,11 +40,10 @@
 #' No verdict, including `artefact`/`expected_variation`, ever closes a
 #' cluster by itself - closure is always a deliberate, separate act (see
 #' `episodic_app_submit_closure()`), whether taken by a person or by the
-#' cron's stale-and-unassessed rule. There used to be a sixth state,
-#' `"closable"`, for a non-terminal verdict whose case-free/MEM closure
-#' criterion had fired - removed together with that criterion
-#' (`R/reconcile_closure.R`), since closure is deliberate now and nothing
-#' still needed the hint that it would soon become possible.
+#' cron's stale-and-unassessed rule. Five states, not six: a "closable"
+#' state - a non-terminal verdict whose closure criterion has fired -
+#' only means something where closure is automatic, and here it is
+#' deliberate.
 #'
 #' @param events A data frame of this cluster's assessment events, ordered
 #'   ascending by `created_at`/`event_id` (as returned by

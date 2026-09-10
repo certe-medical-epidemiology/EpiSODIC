@@ -137,9 +137,9 @@ test_that("episodic_tr() with no instance override uses the shipped file", {
 test_that("no function hardcodes its default language: EPISODIC_LANGUAGE decides", {
   # The instance picks its language once, through the environment
   # variable, and every entry point defaults to it. A function defaulting
-  # to a language of its own reintroduces the bug this replaced: a
-  # dashboard that is English at the top and Dutch three panels down,
-  # depending on which internal helper rendered what.
+  # to a language of its own gives a dashboard that is English at the top
+  # and Dutch three panels down, depending on which internal helper
+  # rendered what.
   r_files <- list.files(
     file.path(testthat::test_path(), "..", "..", "R"),
     pattern = "\\.R$",
@@ -359,9 +359,9 @@ test_that("episodic_format_number() writes each language's own marks, not the C 
   # everywhere else in this codebase.
   expect_equal(episodic_format_number(1234.5, lang = "fr"), "1\u00a0234,5")
 
-  # And the three that do not, which the old en/everything-else split in
-  # the chart labeller got wrong: with Western digits, Arabic, Hindi and
-  # Chinese all write 1,234.5.
+  # And the three that do not: with the Western digits this package
+  # renders, Arabic, Hindi and Chinese all write 1,234.5. An
+  # English-versus-everything-else split gets all three wrong.
   for (lang in c("ar", "hi", "zh")) {
     expect_equal(episodic_format_number(1234.5, lang = lang), "1,234.5", info = lang)
   }

@@ -55,10 +55,10 @@ episodic_denominators_load <- function(con, denominators) {
 
   # (pathogen, sample_date, care_line, area_code) is the table's unique key,
   # so one row per key goes in - the last, as with an institution keyed
-  # twice. A feed naming the same day twice used to be absorbed by the loop
-  # this replaced, whose second iteration updated what its first had
-  # inserted; a batched insert collides on the unique index instead, and
-  # takes the whole run down with it.
+  # twice. A row-at-a-time loop absorbs a feed that names the same day
+  # twice, its second iteration updating what its first inserted; a
+  # batched insert collides on the unique index instead, and takes the
+  # whole run down with it.
   keys <- episodic_denominator_key(denominators)
   keep <- !duplicated(keys, fromLast = TRUE)
   denominators <- denominators[keep, , drop = FALSE]
@@ -72,9 +72,9 @@ episodic_denominators_load <- function(con, denominators) {
   # The matching is done in R rather than by an upsert on the unique index,
   # and has to be: area_code is nullable, and NULL is not equal to NULL in
   # SQL, so no conflict would ever be detected for the rows that leave it
-  # empty. Every such row would insert afresh on every run, for ever. The
-  # loop this replaced hand-wrote `area_code IS NULL` matching for exactly
-  # that reason; in R, NA is a value like any other.
+  # empty. Every such row would insert afresh on every run, for ever. In
+  # SQL that needs `area_code IS NULL` written by hand for exactly those
+  # rows; in R, NA is a value like any other.
   #
   # Bounded by the feed's own date span: a row outside it cannot match any
   # key in the batch, so there is no reason to carry years of history back

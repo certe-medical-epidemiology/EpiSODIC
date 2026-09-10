@@ -101,10 +101,9 @@ episodic_palette_config_resolve <- function(palette_config_path = Sys.getenv("EP
 
   if (!is.na(palette_config_path) && nzchar(palette_config_path)) {
     # Set but unusable is a configuration error, not a fallback - the
-    # same rule EPISODIC_CONFIG and EPISODIC_PC_PROVINCE_MAP follow. An
-    # operator who pointed EPISODIC_STYLE at a mistyped path used to get
-    # the shipped palette with nothing said, and reasonably concluded
-    # their own house colours simply had not been applied properly.
+    # same rule EPISODIC_CONFIG and EPISODIC_PC_PROVINCE_MAP follow.
+    # Serving the shipped palette instead, with nothing said, leaves an
+    # operator to conclude their own house colours simply do not work.
     if (!file.exists(palette_config_path)) {
       stop(
         "EPISODIC_STYLE points at '",

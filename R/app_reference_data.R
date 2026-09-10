@@ -281,11 +281,10 @@ episodic_app_reference_geo <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       path = path
     ))
   }
-  # Nothing configured is not a fault, and no longer means "somebody
-  # else's country's map": there is no default geography at all, so the
-  # panel falls back to a bar breakdown. Said in its own words rather
-  # than reusing the "sf is not installed" line, which was the only
-  # thing this state could produce back when a default existed.
+  # Nothing configured is not a fault: there is no default geography at
+  # all, so the panel falls back to a bar breakdown. Said in its own
+  # words rather than borrowing the "sf is not installed" line, which is
+  # a different state with a different remedy.
   if (is.null(geo)) {
     return(episodic_reference_row(
       "EPISODIC_GEO_DATA",

@@ -187,7 +187,7 @@ test_that("a schema shared with another application is not mistaken for ours", {
 
   # So a first run creates the schema rather than refusing for having no
   # schema version and sending the operator to episodic_db_migrate(),
-  # which used to stamp the schema as current with two tables in it.
+  # which would stamp the schema as current with two tables in it.
   end_date <- as.Date("2025-06-29")
   suppressMessages(episodic_run_cron(
     cases = mariadb_cases(end_date),

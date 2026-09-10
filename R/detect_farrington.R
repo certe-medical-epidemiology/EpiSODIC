@@ -339,10 +339,10 @@ episodic_farrington_population_vector <- function(con,
 #' falls in. A partial week is a partial count: on a Wednesday it holds
 #' three days of cases, and comparing three days against a baseline of
 #' full weeks is a systematic undercount that suppresses the very alarm
-#' the run exists to raise. Binning to the week containing `run_date` (as
-#' this used to) therefore made Farrington near-blind on every day of the
-#' week except Sunday, silently and without any output saying so, which
-#' is exactly the class of failure this package refuses everywhere else.
+#' the run exists to raise. Binning to the week containing `run_date`
+#' instead leaves Farrington near-blind on every day of the week except
+#' Sunday, silently and with no output saying so, which is exactly the
+#' class of failure this package refuses everywhere else.
 #'
 #' The cost is one week of latency, which is inherent to weekly
 #' aggregation and is what every Farrington-style system in routine use

@@ -539,10 +539,10 @@ test_that("episodic_app_similar_clusters() finds a closed same-pathogen cluster 
 })
 
 test_that("episodic_app_doubling_time() refuses a doubling time for a flat series", {
-  # The regression this exists for: regressing log(*cumulative*) cases on
-  # day gives a positive slope for any series at all, because a constant
-  # incidence still makes the cumulative count climb. Every cluster with
-  # three cases used to report a finite doubling time.
+  # Regressing log(*cumulative*) cases on day gives a positive slope for
+  # any series at all, because a constant incidence still makes the
+  # cumulative count climb - every cluster with three cases would report
+  # a finite doubling time.
   flat <- data.frame(
     sample_date = as.character(rep(
       seq(as.Date("2025-01-01"), by = "day", length.out = 14),
@@ -613,8 +613,8 @@ test_that("episodic_app_completeness() reads the leading run of incomplete lags,
 
   # Completion curve: incomplete at lags 0-2, complete from lag 3, with a
   # single noisy dip at lag 11. A median over a modest number of sample
-  # dates is not monotone, and taking the largest sub-95% lag used to
-  # shade eleven days of complete data.
+  # dates is not monotone, so taking the largest sub-95% lag would shade
+  # eleven days of complete data.
   episodic_test_seed_completion(
     env$con,
     sid,
@@ -701,8 +701,7 @@ test_that("episodic_app_epi_curve() stops shading a cluster whose reporting fini
   )
   # The fixture's cases are from January 2025 and the run is today, so
   # none of them can still be filling up. Anchoring the window on the
-  # cluster's own last case day (as this used to) would fade its tail
-  # permanently.
+  # cluster's own last case day would fade its tail permanently.
   curve <- episodic_app_epi_curve(env$con, env$cluster_id)
   expect_false(any(curve$incomplete))
 })

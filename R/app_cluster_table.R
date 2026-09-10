@@ -188,11 +188,10 @@ episodic_ui_cluster_col <- function(label, render) {
 #' `input$open_cluster`, which sets the selection and switches to the
 #' Clusters screen.
 #'
-#' A row whose cluster no longer stands as a dossier of its own - one the
+#' A row whose cluster does not stand as a dossier of its own - one the
 #' lattice suppression pass folded into another - is not silently
 #' rendered as a dead link. It keeps its id, in the theme's warning
-#' colour, and hovering it says why the row does not open: it used to be
-#' a cluster in its own right and no longer is.
+#' colour, and hovering it says why the row does not open.
 #'
 #' @param cluster_id The cluster the row is about.
 #' @param ... The remaining cells, in order, after the id cell.

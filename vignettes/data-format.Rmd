@@ -336,11 +336,10 @@ on its Info screen. L1-L3 and L5 do not depend on this at all. See
 `episodic_pc_to_province()` for the exact requirements.
 
 There is no built-in rule, and deliberately so. Deriving a province from
-a postcode is country-specific; the one that used to be here read the
-first digit and returned one of three Dutch provinces, which meant an
-instance anywhere else whose postcodes started 7, 8 or 9 got Dutch
-province names on its own streams, its own dashboard and its own
-outbreak reports, silently.
+a postcode is country-specific: a rule reading the first digit and
+returning one of three Dutch provinces would put Dutch province names on
+the streams, dashboard and outbreak reports of any instance elsewhere
+whose postcodes start 7, 8 or 9, silently.
 
 Unset and unusable are two different things. Once the variable *is* set,
 a file that does not exist, cannot be read as a CSV, holds no rows, has

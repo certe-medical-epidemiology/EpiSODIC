@@ -43,10 +43,9 @@ reference_row_for <- function(rows, variable) {
 }
 
 test_that("an unconfigured PC-to-province mapping says the province level is off", {
-  # There is no built-in rule to stand in - deriving a province from a
-  # postcode is country-specific, and the one that used to be here
-  # silently gave Dutch province names to any instance whose postcodes
-  # started 7, 8 or 9.
+  # There is no built-in rule to stand in: deriving a province from a
+  # postcode is country-specific, and a Dutch one would silently name
+  # provinces for any instance whose postcodes start 7, 8 or 9.
   row <- with_pc_province_map(
     NA,
     episodic_app_reference_pc_province(NULL, lang = "en")

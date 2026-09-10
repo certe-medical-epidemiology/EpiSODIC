@@ -298,8 +298,7 @@ access:
   # deliberate choice for an instance already behind network controls
   # that make anonymous reachability impossible, not a convenience.
   #
-  # The default used to be FALSE, i.e. open. A surveillance system
-  # shipped to laboratories worldwide has to be safe in its shipped
-  # state, because the deployment that goes wrong is the one where
-  # nobody read this file.
+  # True, not false: a surveillance system shipped to laboratories
+  # worldwide has to be safe in its shipped state, because the
+  # deployment that goes wrong is the one where nobody read this file.
   require_login: true

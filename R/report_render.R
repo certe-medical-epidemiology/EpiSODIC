@@ -276,8 +276,7 @@ episodic_quarto_available <- function() {
 #' cannot be created is refused rather than silently falling back to
 #' something else - a configured path pointing nowhere is an error, not
 #' a fallback. Left unset, `db_path` is taken as a SQLite filesystem path
-#' and `<subdir>` resolved next to it, which is the behaviour every call
-#' site had before this existed.
+#' and `<subdir>` resolved next to it.
 #'
 #' That fallback only means something for SQLite. For a MariaDB/MySQL
 #' DSN (`mysql://user:password@host:port/db`), `db_path` is not a
@@ -288,11 +287,10 @@ episodic_quarto_available <- function() {
 #' `db_path`, this refuses outright rather than deriving anything from
 #' it.
 #'
-#' Used by every call site that used to compute
-#' `file.path(dirname(db_path), <subdir>)` directly - the scheduled
-#' report dispatcher, the dossier's on-demand render button, and
-#' [episodic_config_export()] - so they cannot drift from each other or
-#' from this rule. Pure aside from the `dir.create()` needed to validate
+#' The one place an output directory is resolved - the scheduled report
+#' dispatcher, the dossier's on-demand render button and
+#' [episodic_config_export()] all come through here, so they cannot
+#' drift from each other or from this rule. Pure aside from the `dir.create()` needed to validate
 #' a configured path; takes a config list and a path string, not a
 #' connection, so it is unit-testable without a database.
 #'

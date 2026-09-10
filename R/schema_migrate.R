@@ -82,13 +82,12 @@ episodic_db_dialect <- function(path) {
 #' database or create a fresh one, whichever applies.
 #'
 #' "EpiSODIC's tables", not "any tables". A schema shared with another
-#' application - which is a perfectly ordinary way to deploy, and is how
-#' the first real instance was deployed - holds that other application's
-#' tables before EpiSODIC has created anything at all. Asked whether the
-#' schema had any tables in it, this said yes, so the first
-#' `episodic_run_cron()` was routed to "open an existing database",
-#' refused for having no schema version, and told the operator to run
-#' `episodic_db_migrate()`. Following that instruction stamped the schema
+#' application - a perfectly ordinary way to deploy - holds that other
+#' application's tables before EpiSODIC has created anything at all.
+#' Answering "are there any tables here" instead routes the first
+#' `episodic_run_cron()` to "open an existing database", which refuses
+#' it for having no schema version and sends the operator to
+#' `episodic_db_migrate()`; following that instruction stamps the schema
 #' as current with two of the twenty-four tables in it.
 #' @param path Path to a SQLite file, or a `mysql://` DSN.
 #' @return `TRUE`/`FALSE`.
@@ -176,11 +175,11 @@ episodic_db_mariadb_connect <- function(dsn) {
     # Never bit64::integer64, RMariaDB's default. An integer64 is a double
     # holding an integer's bit pattern, and every base operation that drops
     # its class (subassignment into an ordinary vector, `c()`, `ifelse()`)
-    # silently turns it into a subnormal double instead of erroring - which
-    # is how ids fetched here ended up written back as 0. Nothing in this
-    # package needs 64-bit ids, so the safest thing is for them never to
-    # exist: `episodic_db_last_insert_id()` guards the same boundary for
-    # callers that reach the database another way.
+    # silently turns it into a subnormal double instead of erroring, so an
+    # id fetched here is written back as 0. Nothing in this package needs
+    # 64-bit ids, so the safest thing is for them never to exist:
+    # `episodic_db_last_insert_id()` guards the same boundary for callers
+    # that reach the database another way.
     bigint = "integer"
   )
 }
@@ -314,11 +313,9 @@ episodic_db_create <- function(path, overwrite = FALSE) {
 #' that table is declared, and `episodic_stream_mute` references
 #' `episodic_app_user` several hundred lines before it. SQLite does not
 #' mind - it resolves a foreign key when a row is written, not when the
-#' table is declared - so this went unnoticed for as long as nothing ever
-#' pointed a real MySQL server at the generated DDL. MariaDB refuses the
-#' very first statement with `errno: 150, Foreign key constraint is
-#' incorrectly formed`, and refuses it whatever else is wrong or right
-#' about the rest of the schema.
+#' table is declared - but MariaDB refuses the very first statement with
+#' `errno: 150, Foreign key constraint is incorrectly formed`, and
+#' refuses it whatever else is right about the rest of the schema.
 #'
 #' `FOREIGN_KEY_CHECKS = 0` is the documented way to declare a forward
 #' reference: the constraint is still created, and still enforced from
@@ -1135,12 +1132,11 @@ episodic_db_last_insert_id <- function(con) {
   # integer's *bit pattern*, not its value. Assigning one into an ordinary
   # vector (`ids <- integer(n); ids[i] <- ...`, as
   # `episodic_institutions_resolve()` does) drops the class and keeps the
-  # payload, so institution 368 silently became 1.8e-321 and was then
-  # written into an INTEGER column as 0. That is how every case in a
-  # MariaDB run ended up pointing at a non-existent institution 0, while
-  # SQLite - whose last_insert_rowid() is a plain numeric - was correct all
-  # along. `as.numeric()` is bit64's own method and yields the real value,
-  # never the bit pattern.
+  # payload, so institution 368 becomes 1.8e-321 and is written into an
+  # INTEGER column as 0 - every case in a MariaDB run pointing at a
+  # non-existent institution 0, where SQLite, whose last_insert_rowid()
+  # is a plain numeric, is unaffected. `as.numeric()` is bit64's own
+  # method and yields the real value, never the bit pattern.
   id <- as.numeric(id)
   if (is.na(id) || id > .Machine$integer.max) {
     stop(
@@ -1347,11 +1343,9 @@ episodic_db_schema_statements <- function(dialect) {
 #' honours it too, and refuses the table outright when the referenced
 #' table has not been declared yet. **MySQL parses it and throws it
 #' away.** That is documented MySQL behaviour for inline column-level
-#' references, and its consequence here was a MySQL instance with all
-#' twenty-four tables, not one foreign key, and orphan rows accepted
-#' without complaint - measured on MySQL 8.4, and on the first real
-#' deployment, where every constraint in the schema file was absent and
-#' another application's tables in the same schema had theirs.
+#' references, measured on MySQL 8.4, and its consequence here is a
+#' MySQL instance with all twenty-four tables, not one foreign key, and
+#' orphan rows accepted without complaint.
 #'
 #' So for this dialect the references are rewritten into the table-level
 #' form, which both servers honour. Derived from the schema rather than

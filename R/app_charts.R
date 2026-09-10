@@ -214,11 +214,12 @@ episodic_chart_month_abbrevs <- function(lang = Sys.getenv("EPISODIC_LANGUAGE"))
 #' A numeric axis labeller in the session language's own conventions
 #'
 #' Every axis label goes through `episodic_format_number()`, the same
-#' place every other number on the screen comes from. This used to split
-#' the world into English and "everything else, which writes 1.234,5",
-#' which is right for Dutch, German, French and Spanish and wrong for
-#' the other three: Arabic, Hindi and Chinese all write 1,234.5 with the
-#' Western digits this package renders.
+#' place every other number on the screen comes from. Splitting the
+#' world into English and "everything else, which writes 1.234,5" is
+#' close but not close enough: it is right for Dutch, German, French and
+#' Spanish, and wrong for the other three, since Arabic, Hindi and
+#' Chinese all write 1,234.5 with the Western digits this package
+#' renders.
 #'
 #' @param lang Session language.
 #' @return A function suitable as `ggplot2::scale_*_continuous(labels =)`.

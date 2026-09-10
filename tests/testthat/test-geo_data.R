@@ -298,10 +298,10 @@ test_that("an unset EPISODIC_PC_PROVINCE_MAP resolves nothing, rather than guess
   expect_true(is.na(episodic_pc_province_map_problem(NA_character_)))
   expect_true(is.na(episodic_pc_province_map_problem("")))
   expect_null(episodic_pc_province_map_resolve(NA_character_))
-  # There used to be a built-in fallback here: the postcode ranges of the
-  # three provinces the demo data covers. Any instance elsewhere whose
-  # postcodes started 7, 8 or 9 silently got Dutch province names on its
-  # own streams and its own outbreak reports.
+  # No built-in fallback, deliberately: one built on the postcode ranges
+  # of the three provinces the demo data covers would put Dutch province
+  # names on the streams and outbreak reports of any instance elsewhere
+  # whose postcodes start 7, 8 or 9.
   expect_equal(
     episodic_pc_to_province(c("9713", "8911", "7411", "1012"), path = NA),
     rep(NA_character_, 4)

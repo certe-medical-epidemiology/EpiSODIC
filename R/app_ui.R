@@ -84,10 +84,10 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       # deliberately does not re-render on every selection (see its own
       # comment in app_server.R, about not losing scroll position).
       # Defined globally, once, rather than per-caller: every place that
-      # used to inline `Shiny.setInputValue('open_cluster', ...)`
-      # (episodic_ui_cluster_row(), episodic_ui_chip_link()) now calls
-      # this instead, so the rail highlight and the dossier selection can
-      # never drift apart again. A no-op when the target cluster is not
+      # opens a cluster (episodic_ui_cluster_row(),
+      # episodic_ui_chip_link()) calls this rather than inlining its own
+      # `Shiny.setInputValue('open_cluster', ...)`, so the rail highlight
+      # and the dossier selection cannot drift apart. A no-op when the target cluster is not
       # in the rail's current list (a closed cluster, or an id opened
       # while the rail is not on screen) - there is simply nothing to
       # highlight yet. Also switches the mobile pane to the dossier and

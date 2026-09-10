@@ -279,8 +279,8 @@ test_that("a run that skipped activity rows finishes 'partial', not 'success'", 
     end_date = as.Date("2024-06-30"),
     seed = 4
   )
-  # an activity feed keyed on institutions the case feed never mentions -
-  # the exact situation that used to report a clean success
+  # an activity feed keyed on institutions the case feed never mentions:
+  # every row skipped, which a run may not report as a clean success
   activity <- data.frame(
     institution_key = c("UNKNOWN-1", "UNKNOWN-2"),
     period_start = "2024-06-03",
@@ -507,11 +507,10 @@ test_that("episodic_lattice_enumerate() creates distinct streams per level", {
 })
 
 test_that("two groups whose fields concatenate to the same string stay two streams", {
-  # The grouping key used to be the group columns pasted together with no
-  # separator, so "Flu A" in area 12 and "Flu A1" in area 2 both keyed on
-  # "Flu A12": two streams collapsed into one, and whichever of them was not
-  # the first row simply stopped existing. A surveillance system may report
-  # nothing, but it may not lose a stream silently.
+  # Pasted together with no separator, "Flu A" in area 12 and "Flu A1" in
+  # area 2 both key on "Flu A12": two streams collapse into one, and
+  # whichever of them is not the first row stops existing. A surveillance
+  # system may report nothing, but it may not lose a stream silently.
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
 
@@ -673,9 +672,10 @@ test_that("muting a stream suppresses its new detections, and unmuting restores 
     user_id = user_id
   )
 
-  # The app promises a mute "temporarily suppresses new detections for this
-  # stream". It used to promise only that: the mute was recorded, shown in
-  # the activity log, and read by nothing that decides anything.
+  # The app promises a mute "temporarily suppresses new detections for
+  # this stream", so the cron has to read it. Recorded and shown in the
+  # activity log but read by nothing that decides anything, it is a
+  # promise the dashboard makes and the pipeline does not keep.
   before <- DBI::dbGetQuery(
     con,
     "SELECT COUNT(*) n FROM episodic_detection WHERE stream_id = ?",

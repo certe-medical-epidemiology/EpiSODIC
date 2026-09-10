@@ -42,9 +42,9 @@
 #' @param current_user A `shiny::reactiveVal` holding the signed-in user's
 #'   account row, or `NULL`.
 #' @param notes_version A `shiny::reactiveVal` bumped on a successful save
-#'   to invalidate `output$notes_pane` (see `app_server.R`) - unlike the
-#'   `selected_cluster_id` toggle this used to piggyback on, it leaves the
-#'   rest of the dossier, several panels of which are plots, untouched.
+#'   to invalidate `output$notes_pane` (see `app_server.R`) and nothing
+#'   else - a toggle of `selected_cluster_id` would redraw the whole
+#'   dossier, several panels of which are plots.
 #' @param access_granted A `shiny::reactive` as returned by
 #'   `episodic_app_access_granted()`.
 #' @param lang Session language.

@@ -230,10 +230,9 @@ episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
     role = "epidemiologist",
     # The one account in a throwaway database, whose password is printed
     # two lines below - there is nothing for a forced change to protect.
-    # This used to be arranged by `episodic_auth_must_change()` special-
-    # casing the literal username "demo" against the literal password
-    # "demo", which is a hardcoded credential in the sign-in path of a
-    # package other people deploy.
+    # Recorded on the account, not arranged by `episodic_auth_must_change()`
+    # special-casing the username: that would be a hardcoded credential in
+    # the sign-in path of a package other people deploy.
     must_change = FALSE
   )
   message(paste0(

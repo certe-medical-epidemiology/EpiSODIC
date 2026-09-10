@@ -214,10 +214,10 @@ episodic_reconcile_stream <- function(con,
       # nested SELECT closes the half-built statement, and `dbBind()` - which
       # unlike `dbFetch()` does not check that its result is still active -
       # then binds into freed memory. That is a native crash, not an R
-      # condition: it took the whole session down mid-run, reproducibly, and
-      # only ever against MariaDB (RSQLite allows concurrent results per
-      # connection, so the same code is harmless there). Every argument to a
-      # database write must be a plain value before the write begins.
+      # condition - it takes the whole session down mid-run, and only ever
+      # against MariaDB, since RSQLite allows concurrent results per
+      # connection and the same code is harmless there. Every argument to
+      # a database write must be a plain value before the write begins.
       priority_score <- priority_score_fn(candidate)
       episodic_db_cluster_update(
         con,
@@ -870,10 +870,9 @@ episodic_reconcile_link_cases <- function(con,
                                           last_day,
                                           geography = episodic_geography_config()) {
   # Membership comes from episodic_db_cases_for_stream_id(), which is the
-  # one place the rule lives. It used to be spelled out again here, and
-  # spelling it out twice is how episodic_reconcile_case_count() came to
-  # count the whole building for a ward cluster while this function
-  # correctly counted the ward.
+  # one place the rule lives. Spelling it out a second time here is how
+  # two functions on the same question come to disagree - one counting a
+  # ward, the other the whole building.
   cases <- episodic_db_cases_for_stream_id(
     con,
     stream_id,
@@ -893,13 +892,13 @@ episodic_reconcile_link_cases <- function(con,
 #' at their boundaries.
 #'
 #' Counted through `episodic_db_cases_for_stream_id()`, so a ward stream is
-#' counted over its ward and an area stream over its area. This used to
-#' filter on pathogen and institution alone, which meant a three-case ward
-#' cluster was recorded as holding every case in the hospital and an
-#' area-level cluster every case of that pathogen anywhere - and since
-#' `n_cases` drives `ratio = n_cases / expected`, that inflated the priority
-#' score and reordered the assessment queue. `episodic_reconcile_link_cases()`
-#' already applied the ward and region filters; this did not.
+#' counted over its ward and an area stream over its area - the same
+#' filters `episodic_reconcile_link_cases()` applies, from the same
+#' place. Filtering on pathogen and institution alone would record a
+#' three-case ward cluster as holding every case in the hospital, and an
+#' area-level cluster every case of that pathogen anywhere; `n_cases`
+#' drives `ratio = n_cases / expected`, so it would inflate the priority
+#' score and reorder the assessment queue with it.
 #'
 #' A stream that does not exist yields the inputs' own counts, which is what
 #' lets tests pass synthetic clusters and candidates with no stream row. A

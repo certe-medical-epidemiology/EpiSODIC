@@ -112,11 +112,11 @@ episodic_detect_mem <- function(cases_for_stream,
 #' 2. **Whether it is in season at all.** Outside the week 40-20
 #'    surveillance window there is no seasonal question to answer, and
 #'    this returns `in_season = FALSE` rather than `NULL`. The
-#'    distinction matters at the other end: a `mem_applicable` cluster
-#'    used to have no closure route whatsoever between May and
-#'    September, because "MEM could not be computed" and "the season is
-#'    over" were the same answer - so every confirmed influenza epidemic
-#'    stayed open on the rail right through the summer. The calendar
+#'    distinction matters at the other end: collapsed into `NULL`, "MEM
+#'    could not be computed" and "the season is over" become the same
+#'    answer, which leaves a `mem_applicable` cluster no closure route
+#'    at all between May and September and every confirmed influenza
+#'    epidemic open on the rail right through the summer. The calendar
 #'    answers "has the epidemic ended" perfectly well in July.
 #'
 #' 3. **Which seasons may serve as history.** Only seasons the case data

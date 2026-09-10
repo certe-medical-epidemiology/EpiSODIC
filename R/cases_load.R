@@ -115,9 +115,8 @@ episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
 #' @noRd
 episodic_institutions_resolve <- function(con, cases) {
   # An institution is keyed on institution_key alone, so keep exactly one
-  # row per key: the last, which is where the per-institution upsert loop
-  # this replaced ended up, and what episodic_check_cases() already tells an
-  # operator to expect when one key carries two names.
+  # row per key: the last, which is what episodic_check_cases() already
+  # tells an operator to expect when one key carries two names.
   #
   # Taking distinct *combinations* of the five columns instead let one key
   # appear twice in the same batch - a hospital reporting two care lines is

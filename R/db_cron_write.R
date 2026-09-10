@@ -188,12 +188,11 @@ episodic_db_stream_upsert <- function(con,
 
 #' Insert or upsert many rows in one statement per chunk
 #'
-#' The package's write helpers used to send one row per `DBI` call, which
-#' on a local SQLite file costs nothing and against a networked MariaDB
-#' costs a full round trip each - the difference between a run that takes
-#' seconds and one that takes minutes.
+#' One `DBI` call per row costs nothing on a local SQLite file and a full
+#' round trip each against a networked MariaDB - the difference between a
+#' run that takes seconds and one that takes minutes.
 #'
-#' Chunked `dbBind()` is not the fix, despite looking like it: RMariaDB
+#' Chunked `dbBind()` is not the answer, despite looking like it: RMariaDB
 #' binds a multi-row parameter list with `while (bind_next_row())
 #' { execute(); }`, one `mysql_stmt_execute()` per row, so it saves the
 #' parse but still pays every round trip. What does collapse them is one
@@ -295,11 +294,9 @@ episodic_db_chunk_size <- 500L
 
 #' The subset of `keys` already present in `episodic_case.source_key`
 #'
-#' One `IN (...)` query per chunk instead of one `SELECT` per row - the
-#' loop this replaced sent as many round trips to the database as there
-#' were cases in the batch, which is what made a run's own case-insert
-#' step the slow part of an import that was otherwise dominated by
-#' network latency rather than by the data itself.
+#' One `IN (...)` query per chunk, not one `SELECT` per row: a row-at-a-
+#' time loop sends as many round trips as there are cases in the batch,
+#' which on a networked database is the whole cost of an import.
 #' @keywords internal
 #' @noRd
 episodic_db_existing_source_keys <- function(con, keys) {
@@ -336,11 +333,10 @@ episodic_db_case_insert_new <- function(con, cases, run_id) {
     return(0L)
   }
 
-  # Every row's placeholders in one statement. This used to bind a single
-  # prepared statement in chunks, which reads like a batch but is not one:
-  # RMariaDB executes a multi-row parameter list one row at a time, so the
-  # only thing that saved was the parse, and 2,400 cases still cost 2,400
-  # round trips.
+  # Every row's placeholders in one statement. Binding a single prepared
+  # statement in chunks reads like a batch but is not one: RMariaDB
+  # executes a multi-row parameter list one row at a time, so all that
+  # saves is the parse, and 2,400 cases still cost 2,400 round trips.
   episodic_db_write_many(
     con,
     table = "episodic_case",
@@ -797,8 +793,7 @@ episodic_now <- function() {
 #' case data requirements explicitly allow `sample_date` etc. to arrive as
 #' `Date` (see `episodic_validate_dates()`), so this is not an edge case.
 #' Applied at every write site that accepts an operator-supplied date
-#' column, so the fix holds regardless of whether the caller remembered
-#' to convert.
+#' column, so it holds regardless of whether the caller converted.
 #' @keywords internal
 #' @noRd
 episodic_sql_date <- function(x) {

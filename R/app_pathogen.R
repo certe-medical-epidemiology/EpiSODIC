@@ -1072,13 +1072,13 @@ episodic_app_pathogen_clusters <- function(con,
   institutions <- episodic_db_institutions(con)
 
   # Both read once for the whole screen rather than once per cluster. Per
-  # cluster this used to be an assessment-event query plus
-  # `episodic_app_derive_state_for_cluster()`'s own five - one of which
-  # re-fetched the very events already in hand - so a pathogen with a
-  # hundred clusters spent hundreds of round trips here. Against a local
+  # cluster it is an assessment-event query plus
+  # `episodic_app_derive_state_for_cluster()`'s own five, one of which
+  # re-fetches the very events already in hand, so a pathogen with a
+  # hundred clusters spends hundreds of round trips here. Against a local
   # SQLite file that is invisible; against a database over the network it
-  # is the whole render, and it is what made this screen take tens of
-  # seconds to open.
+  # is the whole render, and the difference between opening this screen
+  # and waiting tens of seconds for it.
   clusters$pathogen <- pathogen
   events_all <- episodic_db_assessment_events_batch(con, clusters$cluster_id)
   states <- episodic_app_derive_states_batch(con, clusters)

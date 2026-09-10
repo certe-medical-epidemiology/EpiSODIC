@@ -17,10 +17,10 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-# The complete-week rule, the language fallback, the schema version, and
-# the mail encoding: four things that were each individually silent, and
-# each of which a laboratory outside the one this package was written at
-# would have hit first.
+# The complete-week rule, the language fallback, the schema version and
+# the mail encoding: four things that fail silently when they fail, and
+# that a laboratory outside the one this package was written at meets
+# first.
 
 # ---- Farrington weekly bins --------------------------------------------
 
@@ -76,9 +76,8 @@ test_that("an unsupported EPISODIC_LANGUAGE falls back to English instead of cra
   expect_equal(episodic_lang(NA), "en")
   expect_equal(episodic_lang("nl"), "nl")
 
-  # `en_GB` used to land here too, and was answered in English by way of
-  # a warning that its language did not exist. It is British English
-  # written out, which is what `en` is.
+  # `en_GB` is British English written out, which is what `en` is - not
+  # a language EpiSODIC has no translations for.
   expect_silent(resolved <- episodic_lang("en_GB"))
   expect_equal(resolved, "en")
 })

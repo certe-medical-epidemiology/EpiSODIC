@@ -189,11 +189,11 @@ episodic_db_report_render_insert <- function(con,
 #' The version a render will carry, taken *before* the render rather
 #' than derived from `episodic_report_render` afterwards. Reading the
 #' highest existing version and inserting a row with the next one after
-#' Quarto finished left the whole render - seconds to tens of seconds -
-#' as a window in which a second render of the same cluster read the
+#' Quarto finishes leaves the whole render - seconds to tens of seconds
+#' - as a window in which a second render of the same cluster reads the
 #' same number: two files with one name, one of them overwritten, and a
-#' `file_sha256` on the losing row describing bytes that are no longer
-#' on disk.
+#' `file_sha256` on the losing row describing bytes that are not on
+#' disk any more.
 #'
 #' Nothing waits for anything here. The claim is one insert against
 #' `UNIQUE (cluster_id, version_no)`; whichever process gets there first

@@ -88,12 +88,11 @@ episodic_app_server_factory <- function(db_path,
     # because a note changed, unlike a cluster selection change.
     notes_version <- shiny::reactiveVal(0L)
     # Fills the dossier pane on first load, and moves on when whatever was
-    # selected has genuinely gone. It used to reset the selection whenever
-    # the selected cluster was not in the *open* list, which is a
+    # selected has genuinely gone. "Not in the *open* list" is a
     # different and too-broad condition: the Pathogen screen links to
     # clusters by id and most of the ones it lists are closed, so that
-    # rule would have silently redirected every such link to the top of
-    # the rail. A cluster that closes while you are reading it also has no
+    # rule would silently redirect every such link to the top of the
+    # rail. A cluster that closes while you are reading it also has no
     # business disappearing out from under you - the state chip says it
     # closed, which is the answer you were looking for.
     #
@@ -724,7 +723,7 @@ episodic_app_url_cluster_id <- function(search) {
 #' deliberately decoupled from `selected_cluster_id()` so a click does
 #' not replace the whole list and lose scroll position (see
 #' `output$rail_pane`'s own comment); round-tripping every checkbox
-#' toggle through the server would reintroduce exactly that problem.
+#' toggle through the server would recreate exactly that problem.
 #' `episodic_app_server_assessment_actions()`'s `bulk_assess_submit`
 #' observer is the write side.
 #'

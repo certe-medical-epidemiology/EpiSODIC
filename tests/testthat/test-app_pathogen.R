@@ -131,7 +131,8 @@ test_that("episodic_app_resolve_period() steps back one whole season for the pre
 test_that("episodic_app_resolve_period() falls back rather than erroring on an unusable custom range", {
   asof <- as.Date("2025-01-15")
   # Blank date pickers hand over NULL, which as.Date() turns into a
-  # zero-length Date - the shape that used to break the is.na() guard.
+  # zero-length Date - a shape `is.na()` answers with `logical(0)`, and
+  # `if (logical(0))` is an error rather than a fallback.
   blank <- episodic_app_resolve_period(
     "custom",
     from = NULL,

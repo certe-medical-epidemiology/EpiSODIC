@@ -98,10 +98,10 @@ episodic_languages <- c("en", "ar", "nl", "fr", "de", "hi", "zh", "es")
 #' is inherited (`episodic_i18n_load()`).
 #'
 #' Deliberately not a copy of the base file: `en-US.json` is seven keys
-#' where `en.json` is six hundred and eighty-five. Kept as copies, every
-#' key added to one would have to be added to the other for ever, and
-#' the day somebody forgot, the variant would quietly serve stale
-#' wording rather than the missing key's own loud `[[key]]`.
+#' where `en.json` is six hundred and eighty-five. Two copies would have
+#' to be kept in step with every key ever added to either, and an
+#' omission there is silent - the variant serves the base's wording
+#' rather than a missing key's own loud `[[key]]`.
 #' @keywords internal
 #' @noRd
 episodic_language_variants <- c("en-US" = "en", "es-419" = "es")
@@ -154,22 +154,21 @@ episodic_lang_warned <- new.env(parent = emptyenv())
 #'   \item{a locale naming one exactly}{`en-GB` and `es-ES` are `en`
 #'     and `es` - see `episodic_language_aliases`.}
 #'   \item{a region of a shipped language that is not itself shipped}{
-#'     `nl-BE`, `es-MX`: the language, with a warning saying so once.
-#'     `EPISODIC_LANGUAGE=nl_NL` is a reasonable thing for an operator to
-#'     write, and answering it in English (which is what this did) was
-#'     never right.}
+#'     `nl-BE`, `es-MX`: the language, with a warning saying so once. A
+#'     Belgian instance asking for `nl-BE` wants Dutch, and English is
+#'     not a closer answer than Dutch is.}
 #'   \item{anything else}{English, with a warning, once per value.}
 #' }
 #'
-#' Case and separator do not matter (`en_us`, `EN-US`); a hard error from
-#' `episodic_i18n_load()` on *every* render, which is what an unshipped
-#' value used to mean, took the whole dashboard down for a typo.
+#' Case and separator do not matter (`en_us`, `EN-US`). Nothing here
+#' raises: an unshipped value is a typo in an environment variable, and
+#' a typo may not take a surveillance dashboard down.
 #'
 #' Anything that *branches* on the language rather than looking a key up
-#' has to resolve it first, or an unset variable would read as "not
-#' English" and take the wrong branch while every word around it came
-#' out in English. (The charts' thousands separator used to be exactly
-#' that; it is a key lookup now - see `episodic_format_number()`.)
+#' has to resolve it first, or an unset variable reads as "not English"
+#' and takes the wrong branch while every word around it comes out in
+#' English. Little does branch - conventions that vary by language are
+#' keys of their own, see `episodic_format_number()`.
 #'
 #' @param lang A language code, or `""`/`NA` for "not set".
 #' @return A single code, always one of `episodic_languages_all()`.
@@ -520,13 +519,11 @@ episodic_format_date_range <- function(x,
   day <- function(d) as.integer(format(d, "%d"))
   yr <- function(d) format(d, "%Y")
 
-  # The four shapes are templates rather than sprintf() formats, because
-  # the order of a date is a property of the language and not of this
-  # function: British English writes 7 January 2025 and American English
-  # January 7, 2025, German puts a point after the day, Spanish two
-  # "de"s in, and Chinese writes the year first with 年月日 around the
-  # parts. Every one of those was wrong here until the patterns moved
-  # into the language files.
+  # Templates rather than sprintf() formats, because the order of a date
+  # is a property of the language and not of this function: British
+  # English writes 7 January 2025 and American English January 7, 2025,
+  # German puts a point after the day, Spanish two "de"s in, and Chinese
+  # writes the year first with 年月日 around the parts.
   #
   # Neither the day nor the year goes through `episodic_format_number()`:
   # a year is a name for a year, and "2.025" is not one.
@@ -763,9 +760,9 @@ episodic_number_group <- function(digits, marks) {
   # its whole part is at least one group plus that many digits long.
   # With the 1 seven of the eight languages use, that is "from four
   # digits up", the ordinary rule; Spanish's 2 makes it "from five", so
-  # 2000 stands unseparated while 12.345 and 1.234.567 do not. Reading
-  # it as a length for the leading group instead would have left
-  # 1234567 unseparated too, which no Spanish writes.
+  # 2000 stands unseparated while 12.345 and 1.234.567 do not. Read as a
+  # length for the leading group instead, it leaves 1234567 unseparated
+  # too, which no Spanish writes.
   if (nchar(digits) < marks$sizes[1] + marks$minimum) {
     return(digits)
   }

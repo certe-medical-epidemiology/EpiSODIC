@@ -393,8 +393,8 @@ test_that("episodic_ui_pkg_versions_html() renders what a run recorded, and noth
 test_that("episodic_ui_pkg_versions_html() drops a package the run had no version for, rather than printing 'v NA'", {
   # episodic_pkg_versions() records NA for a package that was not
   # installed on the host that ran, which JSON-encodes to null. Not
-  # installed is not a version, and the old unlist() also silently
-  # misaligned the remaining versions against the full name vector.
+  # installed is not a version, and an unlist() over the values silently
+  # misaligns the ones that remain against the full name vector.
   json <- as.character(jsonlite::toJSON(
     list(EpiSODIC = "0.17.1", surveillance = NA, EpiEstim = "2.2-4"),
     auto_unbox = TRUE

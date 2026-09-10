@@ -512,10 +512,10 @@ CREATE UNIQUE INDEX idx_episodic_report_render_version ON episodic_report_render
 -- routinely: two epidemiologists on the same dossier, or a scheduled
 -- dispatch while somebody has that dossier open. Reading the highest
 -- version_no in episodic_report_render and inserting a row with the
--- next one after the render finished meant both renders picked the
--- same number, wrote the same file, and left the loser's file_sha256
--- describing bytes that are no longer on disk - a silent falsehood in
--- an audit trail whose whole purpose is to prove a report has not been
+-- next one after the render finishes gives both renders the same
+-- number: one file written twice, and the loser's file_sha256
+-- describing bytes that are not on disk - a silent falsehood in an
+-- audit trail whose whole purpose is to prove a report has not been
 -- altered since it was rendered.
 --
 -- Claiming is a single insert against the UNIQUE constraint below: the

@@ -202,11 +202,11 @@ episodic_app_explicitly_closed_from <- function(states, events) {
 #' When each of many clusters was last closed, from states fetched in bulk
 #'
 #' The archive and the similar-clusters panel both show a "closed on"
-#' column, and both used to fill it with one
-#' `episodic_db_cluster_states()` query per row. Given
-#' `episodic_db_cluster_states_batch()`'s output - already ordered by
-#' `cluster_id, entered_at, state_id`, so a cluster's last closure is its
-#' last row - the same answer is a `match()`.
+#' column, and one `episodic_db_cluster_states()` query per row is a
+#' round trip per row. Given `episodic_db_cluster_states_batch()`'s
+#' output - already ordered by `cluster_id, entered_at, state_id`, so a
+#' cluster's last closure is its last row - the same answer is a
+#' `match()`.
 #'
 #' @param states_all Rows from `episodic_db_cluster_states_batch()`.
 #' @param cluster_ids The cluster ids to answer for, in the order wanted.
@@ -561,17 +561,17 @@ episodic_app_density <- function(con, stream, cases) {
 #' fitted log-linear growth rate, and is `NA` unless that rate is
 #' positive.
 #'
-#' The obvious cheaper thing - regressing log(*cumulative*) cases on day
-#' - is what this used to do, and it is wrong in a way that matters:
-#' under constant, non-growing incidence the cumulative count still
-#' climbs linearly, so \eqn{\log(\mathrm{cum})} climbs like \eqn{\log t},
-#' whose OLS slope is positive for any flat series. Every cluster with
-#' three or more cases therefore reported a finite doubling time,
-#' including ones that were not growing at all - the single stat on the
-#' dossier an epidemiologist is most likely to read as "this is accelerating".
-#' Fitting the daily counts instead makes a flat series return a slope of
-#' about zero, and a declining one a negative slope, both of which yield
-#' `NA` and no stat tile.
+#' Daily counts, not the obvious cheaper thing: regressing
+#' log(*cumulative*) cases on day is wrong in a way that matters. Under
+#' constant, non-growing incidence the cumulative count still climbs
+#' linearly, so \eqn{\log(\mathrm{cum})} climbs like \eqn{\log t},
+#' whose OLS slope is positive for any flat series - every cluster with
+#' three or more cases would report a finite doubling time, including
+#' ones that are not growing at all, on the single stat an
+#' epidemiologist is most likely to read as "this is accelerating".
+#' Fitting the daily counts makes a flat series return a slope of about
+#' zero, and a declining one a negative slope, both of which yield `NA`
+#' and no stat tile.
 #'
 #' Zero-case days inside the window are counted as zeros rather than
 #' being absent, since a run of empty days is exactly the evidence that
@@ -667,15 +667,15 @@ episodic_app_doubling_time <- function(cases,
 #' lattice level.
 #'
 #' `dominant_share` is a share of the cases whose PC is actually known,
-#' not of every case in the cluster. Dividing by `nrow(cases)` - as this
-#' used to - silently diluted the measure by however many cases had no
-#' postcode: a cluster of ten cases, six of them in one PC and four with
-#' no PC recorded, read as 60% concentrated when what was actually
-#' observed was 100%. That share drives the concentration fragments in
-#' the interpretation engine and the spatial component of the priority
-#' score, so under-recorded postcodes were quietly pushing genuinely
-#' localised clusters down the queue. A missing postcode is absence of
-#' evidence about localisation, not evidence of dispersal.
+#' not of every case in the cluster. Dividing by `nrow(cases)` instead
+#' dilutes the measure by however many cases have no postcode: a cluster
+#' of ten cases, six of them in one PC and four with no PC recorded,
+#' would read as 60% concentrated where what was observed is 100%. That
+#' share drives the concentration fragments in the interpretation engine
+#' and the spatial component of the priority score, so under-recorded
+#' postcodes would push genuinely localised clusters down the queue. A
+#' missing postcode is absence of evidence about localisation, not
+#' evidence of dispersal.
 #'
 #' @param cases A data frame of the cluster's cases, with `pc`.
 #' @return A list, or `NULL` when no case carries a PC. `total` is the
@@ -749,13 +749,13 @@ episodic_app_pc_provinces <- function(pc) {
 #'
 #' `positivity_first`/`positivity_last` are the two ends of the *windowed*
 #' series (see `episodic_app_denominator_series()`), which is what makes
-#' them comparable at all. Read over the whole recorded history, as they
-#' used to be, "first" was the earliest week the operator ever supplied a
-#' denominator for and "last" was the most recent one - so the
-#' interpretation engine's `denominator.rising_positivity` fragment was
-#' comparing a week two years before a cluster began against a week
-#' possibly long after it ended, and reporting the difference as evidence
-#' about that cluster.
+#' them comparable at all. Read over the whole recorded history instead,
+#' "first" would be the earliest week the operator ever supplied a
+#' denominator for and "last" the most recent one - and the
+#' interpretation engine's `denominator.rising_positivity` fragment
+#' would be comparing a week two years before a cluster began against a
+#' week possibly long after it ended, reporting the difference as
+#' evidence about that cluster.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param pathogen The stream's pathogen.
@@ -785,16 +785,15 @@ episodic_app_denominator_summary <- function(con, pathogen, cases) {
 #' Weekly (n_tests, n_cases, positivity) series aligned for charting
 #'
 #' Positivity is *this pathogen's* confirmed cases over *this pathogen's*
-#' tests, both counted region-wide over the same week. It used to be the
-#' cluster's own case count over the region-wide test count, which is not
-#' a positivity rate at all: numerator and denominator were drawn from
-#' different populations, so the line tracked how big the cluster was
-#' rather than how much of the testing was coming back positive, and sat
-#' near zero for any cluster smaller than the region. That mattered
-#' beyond the chart - the panel's whole stated purpose is telling a real
-#' rise apart from a denominator effect ("if the bars rise but the line
-#' stays flat, the increase is a denominator effect"), and a line
-#' computed this way cannot answer that question.
+#' tests, both counted region-wide over the same week. The cluster's own
+#' case count over the region-wide test count is not a positivity rate
+#' at all: numerator and denominator come from different populations, so
+#' the line would track how big the cluster is rather than how much of
+#' the testing is coming back positive, and sit near zero for any
+#' cluster smaller than the region. The panel's whole stated purpose is
+#' telling a real rise apart from a denominator effect ("if the bars
+#' rise but the line stays flat, the increase is a denominator
+#' effect"), and a line computed that way cannot answer that.
 #'
 #' The cluster's own weekly counts stay available as `n_cluster_cases`,
 #' for context alongside the rate rather than as part of it.
@@ -970,13 +969,13 @@ episodic_app_demography_bars <- function(cases) {
 #' exactly the days at lags `0 .. incomplete_days - 1` are the
 #' under-ascertained ones.
 #'
-#' Two things were wrong with taking `max(lag_days)` over every lag below
-#' 95%, as this used to. It was one day short even on a well-behaved
+#' The leading run of incomplete lags, not `max(lag_days)` over every lag
+#' below 95%. That reading is one day long even on a well-behaved
 #' completion curve (the largest incomplete lag is `incomplete_days - 1`,
-#' not `incomplete_days`). And `episodic_triangle_completeness()` returns
+#' not `incomplete_days`), and `episodic_triangle_completeness()` returns
 #' a *median* share per lag, which over a modest number of historical
 #' sample dates is not monotone in practice: a single dip at, say, lag 11
-#' in an otherwise fully-reported curve dragged the shaded zone out to
+#' in an otherwise fully-reported curve would drag the shaded zone out to
 #' eleven days, greying out - and, via `episodic_compute_rt()`,
 #' withholding Rt over - a week and a half of complete data. Reading the
 #' run from the front treats a late dip as the noise it is, while a
@@ -1100,12 +1099,12 @@ episodic_app_data_asof <- function(con) {
 #' `incomplete_days` days before the date the data is current as of
 #' (`episodic_app_data_asof()`).
 #'
-#' That anchor is the fix: the window used to be measured back from the
-#' cluster's own last case day, so a cluster that stopped generating
-#' cases weeks ago still had its final days drawn at reduced opacity -
-#' permanently implying "more cases may still arrive here" about a tail
-#' that had finished reporting long before. Reporting lag is a property
-#' of now, not of the cluster.
+#' That anchor matters: measured back from the cluster's own last case
+#' day instead, a cluster that stopped generating cases weeks ago would
+#' have its final days drawn at reduced opacity for ever, permanently
+#' implying "more cases may still arrive here" about a tail that
+#' finished reporting long ago. Reporting lag is a property of now, not
+#' of the cluster.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
@@ -1250,10 +1249,10 @@ episodic_app_detection_settings <- function(con, cluster_id) {
 #' in the UI: `baseline_excluded` is one DB round trip per stream (via
 #' `episodic_baseline_excluded_windows()`, itself one round trip per
 #' cluster in that stream), so computing it for every stream regardless
-#' of what is actually shown made this screen slow to load once a real
-#' instance's stream count grew past a few dozen - the exact bug report
-#' this was written to fix. Slicing to `page` before that loop runs means
-#' the cost is bounded by `page_size`, not by the total stream count.
+#' of what is shown makes the screen slow to load once an instance's
+#' stream count passes a few dozen. Slicing to `page` before that loop
+#' runs bounds the cost by `page_size` rather than by the total stream
+#' count.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param page 1-based page number.

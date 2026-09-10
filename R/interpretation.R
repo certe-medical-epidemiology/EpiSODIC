@@ -248,13 +248,13 @@ episodic_interpretation_fragments <- function() {
     #
     # Every one of these gates on `episodic_interpretation_positivity()`
     # rather than on `!is.null(cl$denominator)`. Positivity is `NA` in
-    # any week with no tests at all, and `%||% 0` turned that into a
-    # measured zero - so "positivity stayed flat" and "positivity is
-    # rising" could both be written about a comparison with an
-    # unmeasured end, and "stable" was written whenever a denominator
-    # feed existed at all, however empty. A sentence in a dossier is
-    # read and reasoned from; a section with nothing to say is omitted,
-    # which is what this module promises everywhere else.
+    # any week with no tests at all, and `%||% 0` turns that into a
+    # measured zero - "positivity stayed flat" and "positivity is
+    # rising" both become writable about a comparison with an unmeasured
+    # end, and "stable" gets written whenever a denominator feed exists
+    # at all, however empty. A sentence in a dossier is read and
+    # reasoned from; a section with nothing to say is omitted, which is
+    # what this module promises everywhere else.
     list(
       id = "denominator.rising_volume_flat_positivity",
       slot = "denominator",

@@ -208,9 +208,9 @@ episodic_seed_restore <- function(previous) {
 #' `weight` is the share of baseline cases a place draws, before
 #' seasonality: hospitals and the larger municipalities see more than a
 #' nursing home does. It is also what keeps the baseline thin enough per
-#' place that coincidence alone does not fire `same_place` - which is what
-#' made an earlier version of this generator produce hundreds of
-#' three-case clusters and bury the six real ones.
+#' place that coincidence alone does not fire `same_place`: a baseline
+#' any thicker produces hundreds of three-case clusters and buries the
+#' six real ones.
 #' @keywords internal
 #' @noRd
 episodic_synthetic_institutions <- function() {

@@ -210,14 +210,13 @@ episodic_auth_refresh_user <- function(con, cached_user) {
 #' @keywords internal
 #' @noRd
 episodic_auth_must_change <- function(con, user) {
-  # No special case for any particular username here, deliberately.
-  # There used to be one - "demo", verified against the literal password
-  # "demo" - which is a hardcoded credential in the sign-in path of a
-  # package other people deploy, and it would have exempted a real
-  # account that happened to be called `demo` too. Whether an account
-  # must change its password is a property of the account, recorded on
-  # the account row; `episodic_demo()` simply creates its throwaway
-  # account with `must_change = FALSE`.
+  # No special case for any particular username here, deliberately: a
+  # name like "demo" checked against a literal password is a hardcoded
+  # credential in the sign-in path of a package other people deploy, and
+  # it would exempt a real account that happened to be called that too.
+  # Whether an account must change its password is a property of the
+  # account, recorded on the account row; `episodic_demo()` simply
+  # creates its throwaway account with `must_change = FALSE`.
   if (!as.logical(user$must_change)) {
     return(FALSE)
   }
@@ -486,10 +485,10 @@ episodic_user_is_admin <- function(user) {
 #' one YAML key, a wrongly-open one is patient-level surveillance data
 #' served to whoever reaches the port.
 #'
-#' This used to default open, on the reasoning that a malformed value
-#' should never lock an instance out of its own dashboard. That is the
-#' right instinct about lockout and the wrong one about disclosure, and
-#' EpiSODIC is now shipped closed by default (see `access` in
+#' Defaulting open protects against lockout - a malformed value never
+#' locks an instance out of its own dashboard - which is the right
+#' instinct about lockout and the wrong one about disclosure. EpiSODIC
+#' ships closed instead (see `access` in
 #' `inst/config/episodic_default_config.yaml`).
 #'
 #' Deliberately a YAML-only setting, with no Settings-screen override: a
