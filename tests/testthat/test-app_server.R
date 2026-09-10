@@ -843,16 +843,29 @@ test_that("the navigation highlight follows a deep link, not just its own clicks
   server <- episodic_app_server_factory(db_path, lang = "en")
   shiny::testServer(server, {
     session$flushReact()
+    # The nav is rendered once, marked with the view the app opens on.
     expect_equal(active(paste(output$nav_links, collapse = "\n")), "clusters")
 
+    # From here the highlight is moved client-side, by
+    # episodicSetActiveNav(), which the server calls for every change of
+    # view() and a nav link calls for its own click (see
+    # output$nav_links, and test-app_ui.R for both ends of that). What
+    # this test holds is the server-side half of it: view() follows a
+    # deep link, not only a click on the nav, so there is something for
+    # that helper to be called with.
     session$setInputs(nav_view = "pathogen")
     session$flushReact()
-    expect_equal(active(paste(output$nav_links, collapse = "\n")), "pathogen")
+    expect_equal(view(), "pathogen")
 
     # Opening a cluster from the Pathogen screen's table moves the
-    # content, so the nav highlight has to move with it
+    # content, so the highlight has to move with it.
     session$setInputs(open_cluster = cluster_id)
     session$flushReact()
+    expect_equal(view(), "clusters")
+
+    # And through all of it the nav itself is not re-rendered: it must
+    # not queue behind output$main_view, which depends on view() too and
+    # is where a screen's whole cost is paid.
     expect_equal(active(paste(output$nav_links, collapse = "\n")), "clusters")
 
     # The factory opened this connection; the mock session does not

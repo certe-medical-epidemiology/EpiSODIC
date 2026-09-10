@@ -134,13 +134,10 @@ test_that("episodic_app_resolve_period() resolves a three-month window of whole 
 
   expect_equal(period$id, "last_3m")
   expect_equal(period$to, asof)
-  # 13 whole weeks, so the window starts on the weekday it ends on and
-  # the weekly bins line up - the same rule last_12m and last_5y follow.
+  # 13 whole weeks of days, counted inclusively - the same "N * 7 - 1"
+  # form last_5y uses, so the window holds a whole number of weeks and
+  # the weekly bins divide it exactly.
   expect_equal(as.integer(period$to - period$from) + 1L, 13L * 7L)
-  expect_equal(
-    format(period$from, "%u"),
-    format(period$to, "%u")
-  )
   expect_true(is.na(period$season))
   # The comparison window is the equally long one ending the day before.
   expect_equal(period$previous$to, period$from - 1)

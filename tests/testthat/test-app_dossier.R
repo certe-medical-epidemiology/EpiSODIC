@@ -47,7 +47,7 @@ test_that("the dossier, its settings panel and the assessment rail all draw the 
   # is used rather than rebuilt.
   obj <- episodic_cluster_object(env$con, env$cluster_id, lang = "en")
   obj$pathogen <- "Marked pathogen"
-  obj$detectors <- "same_place"
+  obj$detectors <- "marked_detector"
 
   html <- as.character(episodic_ui_dossier(
     env$con,
@@ -66,15 +66,18 @@ test_that("the dossier, its settings panel and the assessment rail all draw the 
     lang = "en",
     obj = obj
   ))
-  expect_true(grepl("<code>same_place</code>", settings, fixed = TRUE))
+  expect_true(grepl("<code>marked_detector</code>", settings, fixed = TRUE))
 
+  # The rail names the detectors that opened the cluster rather than the
+  # pathogen, so that is what it is marked by here - on the fixture's
+  # unassessed cluster, that is the line its empty timeline carries.
   rail <- as.character(episodic_ui_assessment_rail(
     env$con,
     env$cluster_id,
     lang = "en",
     obj = obj
   ))
-  expect_true(grepl("Marked pathogen", rail, fixed = TRUE))
+  expect_true(grepl("<code>marked_detector</code>", rail, fixed = TRUE))
 
   # And with no object given, each still builds its own, so every other
   # caller is unaffected.

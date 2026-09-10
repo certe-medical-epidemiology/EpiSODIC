@@ -74,9 +74,17 @@ test_that("a Settings-screen override is read from the database on every resolve
   on.exit(DBI::dbDisconnect(con))
   expect_null(episodic_config_resolve(NA, con = con)$notifications$ntfy$topic)
 
+  user_id <- episodic_db_app_user_insert(
+    con,
+    "admin",
+    "Admin User",
+    "a@example.com",
+    "hash",
+    is_admin = TRUE
+  )
   episodic_db_app_config_event_insert(
     con,
-    user_id = NA_integer_,
+    user_id = user_id,
     section = "notifications",
     config_json = '{"ntfy": {"topic": "outbreaks"}}'
   )

@@ -378,8 +378,20 @@ test_that("episodic_ui_nav_link() moves the highlight through the one shared hel
   ))
 })
 
+# The page's own scripts live in tags$head(), and htmltools lifts head
+# content out into its own slot - so as.character() on the page returns
+# the body alone and finds none of them. Rendered in full here.
+episodic_test_ui_html <- function(lang = "en") {
+  rendered <- htmltools::renderTags(episodic_app_ui(lang = lang))
+  paste(
+    paste(as.character(rendered$head), collapse = "\n"),
+    rendered$html,
+    sep = "\n"
+  )
+}
+
 test_that("episodic_app_ui() defines the nav helper the server sends to, and registers it", {
-  html <- as.character(episodic_app_ui(lang = "en"))
+  html <- episodic_test_ui_html()
   expect_true(grepl("function episodicSetActiveNav(", html, fixed = TRUE))
   expect_true(grepl(
     "Shiny.addCustomMessageHandler('episodicSetActiveNav'",
@@ -391,7 +403,7 @@ test_that("episodic_app_ui() defines the nav helper the server sends to, and reg
 test_that("episodic_app_ui() defines the rail's open-by-number helper", {
   # Defined once at page level rather than inside episodic_ui_rail(),
   # which is re-rendered every time the open-cluster list changes.
-  html <- as.character(episodic_app_ui(lang = "en"))
+  html <- episodic_test_ui_html()
   expect_true(grepl("function episodicRailOpen(", html, fixed = TRUE))
   expect_true(grepl("rail_open_cluster", html, fixed = TRUE))
 })

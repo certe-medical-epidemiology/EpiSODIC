@@ -242,10 +242,12 @@ test_that("the Activity screen makes a cluster row open that cluster and leaves 
   html <- as.character(episodic_ui_activity_screen(activity, lang = "en"))
 
   expect_true(grepl("episodicOpenCluster(7)", html, fixed = TRUE))
-  expect_true(grepl("episodic-cluster-link", html, fixed = TRUE))
-  # One link, not two: the run row's host is not a cluster.
+  # One link, not two: the run row's host is not a cluster. Counted by
+  # the class rather than by the call, which every link makes twice -
+  # once on click and once on Enter or Space, so a keyboard reaches it
+  # too.
   expect_equal(
-    lengths(regmatches(html, gregexpr("episodicOpenCluster\\(", html)))[[1]],
+    lengths(regmatches(html, gregexpr("episodic-cluster-link", html)))[[1]],
     1
   )
 })
