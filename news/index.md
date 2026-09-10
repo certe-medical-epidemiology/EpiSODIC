@@ -1,5 +1,19 @@
 # Changelog
 
+## EpiSODIC 0.17.2
+
+### Changed
+
+- `episodic_check_cases(stop_on_problem = TRUE)` runs its checks once
+  and throws on that report, instead of running the whole check suite
+  twice
+
+### Fixed
+
+- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  failed on any case data at all, reading the case data itself where the
+  check report was expected
+
 ## EpiSODIC 0.17.1
 
 ### New
