@@ -357,7 +357,7 @@ episodic_db_apply_schema <- function(con, dialect) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 4L
+episodic_schema_version <- 5L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -572,6 +572,27 @@ episodic_db_migrations <- function() {
         "is_backfill",
         "INTEGER NOT NULL DEFAULT 0 CHECK (is_backfill IN (0, 1))"
       )
+      invisible(NULL)
+    },
+    # 5: the two composite indexes on episodic_case that the dashboard's
+    # pathogen reads need - see their own comment in
+    # inst/sql/schema.sql for what each serves. Purely additive: two
+    # indexes, no column added, no row touched, and taken from the
+    # schema file rather than restated here so a migrated database
+    # carries exactly the index a fresh one does.
+    "5" = function(con, dialect) {
+      for (index in c(
+        "idx_episodic_case_pathogen_date",
+        "idx_episodic_case_pathogen_institution"
+      )) {
+        if (episodic_db_index_exists(con, dialect, index, "episodic_case")) {
+          next
+        }
+        DBI::dbExecute(
+          con,
+          episodic_db_schema_index_statement(dialect, index)
+        )
+      }
       invisible(NULL)
     }
   )

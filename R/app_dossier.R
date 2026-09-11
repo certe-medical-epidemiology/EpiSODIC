@@ -31,14 +31,26 @@
 #'   otherwise unrestricted throughout; the line list is the one panel
 #'   gated on sign-in, and the classification form and report-render
 #'   button are further gated on the `"epidemiologist"` role.
+#' @param obj The cluster object from `episodic_cluster_object()`, or
+#'   `NULL` to build one. It is a parameter because that object is
+#'   the expensive part of drawing a cluster - the density baseline, the
+#'   denominator series, the demography baseline, the completion curve
+#'   and the Rt fit are all in it - while the dossier, the assessment
+#'   rail and the settings panel are three separate renders of the same
+#'   cluster. Built once per selection by the server and handed to each
+#'   of them, it is computed once rather than three times; the default
+#'   keeps every other caller working unchanged.
 #' @return A `shiny::tagList`.
 #' @keywords internal
 #' @noRd
 episodic_ui_dossier <- function(con,
                                 cluster_id,
                                 lang = Sys.getenv("EPISODIC_LANGUAGE"),
-                                current_user = NULL) {
-  obj <- episodic_cluster_object(con, cluster_id, lang = lang)
+                                current_user = NULL,
+                                obj = NULL) {
+  if (is.null(obj)) {
+    obj <- episodic_cluster_object(con, cluster_id, lang = lang)
+  }
   state <- episodic_app_derive_state_for_cluster(con, cluster_id)
   timeline <- episodic_app_assessment_timeline(
     con,
@@ -86,7 +98,7 @@ episodic_ui_dossier <- function(con,
     } else {
       episodic_ui_linelist_panel(con, cluster_id, obj, lang = lang)
     },
-    episodic_ui_settings_panel(con, cluster_id, lang = lang)
+    episodic_ui_settings_panel(con, cluster_id, lang = lang, obj = obj)
   )
 }
 
@@ -598,7 +610,11 @@ episodic_ui_epicurve_panel <- function(con,
       episodic_graphics_error_message(graphics_issue, lang = lang)
     ))
   }
-  curve <- episodic_app_epi_curve(con, cluster_id)
+  curve <- episodic_app_epi_curve(
+    con,
+    cluster_id,
+    completeness = obj$completeness
+  )
   # Not `%||% 0`: `%||%` swallows `NA` as well as `NULL` (see
   # `R/interpretation.R`), and `NA` here is the one case that has to be
   # told apart - no reporting delay was ever measured for this stream,
@@ -1425,12 +1441,21 @@ episodic_ui_report_schedule_form <- function(cluster_id, available_channels, lan
   )
 }
 
+#' The dossier's detection-settings panel
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A cluster id.
+#' @param lang Session language.
+#' @param obj The cluster object from `episodic_cluster_object()`, or
+#'   `NULL` to build one - see `episodic_ui_dossier()`, which passes its
+#'   own rather than having this panel rebuild it.
 #' @keywords internal
 #' @noRd
 episodic_ui_settings_panel <- function(con,
                                        cluster_id,
-                                       lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  settings <- episodic_app_detection_settings(con, cluster_id)
+                                       lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                       obj = NULL) {
+  settings <- episodic_app_detection_settings(con, cluster_id, obj = obj)
   settings$pkg_versions <- episodic_ui_pkg_versions_html(settings$pkg_versions)
   # list(), not c(): a shiny::HTML() value (the detectors row) loses its
   # "html" class and gets escaped as literal text if combined with a
@@ -1502,13 +1527,25 @@ episodic_ui_settings_panel <- function(con,
 #' @param cluster_id A cluster id.
 #' @param lang Session language.
 #' @param current_user The session's signed-in user row, or `NULL`.
+#' @param obj The cluster object from `episodic_cluster_object()`, or
+#'   `NULL` to build one. It is a parameter because that object is
+#'   the expensive part of drawing a cluster - the density baseline, the
+#'   denominator series, the demography baseline, the completion curve
+#'   and the Rt fit are all in it - while the dossier, the assessment
+#'   rail and the settings panel are three separate renders of the same
+#'   cluster. Built once per selection by the server and handed to each
+#'   of them, it is computed once rather than three times; the default
+#'   keeps every other caller working unchanged.
 #' @keywords internal
 #' @noRd
 episodic_ui_assessment_rail <- function(con,
                                         cluster_id,
                                         lang = Sys.getenv("EPISODIC_LANGUAGE"),
-                                        current_user = NULL) {
-  obj <- episodic_cluster_object(con, cluster_id, lang = lang)
+                                        current_user = NULL,
+                                        obj = NULL) {
+  if (is.null(obj)) {
+    obj <- episodic_cluster_object(con, cluster_id, lang = lang)
+  }
   timeline <- episodic_app_assessment_timeline(
     con,
     cluster_id,

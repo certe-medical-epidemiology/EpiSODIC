@@ -1,3 +1,31 @@
+# EpiSODIC 0.19.0
+
+## New
+
+- Per-output loading spinners in the primary colour, so each panel, chart and table says it is the one being waited for
+- A "Last 3 months" period on the Pathogen screen, left of "Last 12 months"
+- An open-by-number box in the rail header, which opens any cluster the instance will show, closed and archived ones included
+- A row about a cluster on the Activity screen opens that cluster
+- Schema version 5: two composite indexes on `episodic_case`, for the dashboard's date-bounded and institution-bounded pathogen reads
+
+## Changed
+
+- The header navigation renders once per sign-in state instead of on every navigation, so it no longer arrives with the screen it exists to navigate away from
+- The active-screen highlight moves through one client-side helper, called both by a nav link's own click and by the server when the view changes any other way
+- The resolved YAML configuration is cached per file content, instead of being re-read, re-validated and re-merged at every `episodic_geography_config()` call
+- The denominator panel reads only the weeks it plots, rather than a pathogen's whole recorded history
+- Weekly case counts are computed by binary search rather than a pass over every date per week
+- The demography baseline query is a correlated `NOT EXISTS` rather than a nested `NOT IN`
+- The Activity screen resolves a row's cluster by lookup rather than by scanning every cluster per row
+- The open-cluster list is no longer invalidated by leaving the Clusters screen and coming back
+- Opening a cluster builds its cluster object once instead of three times, and its completion curve once instead of twice
+- A ward stream's cases and an area stream's postcodes are narrowed by the database rather than after every case of the pathogen has reached R
+
+## Fixed
+
+- Saving a cluster note that repeats the note already on file no longer records a version in which nothing changed, and an empty note on a cluster that never had one is not recorded at all
+- A cluster id that names nothing viewable no longer selects an absent cluster in the dossier
+
 # EpiSODIC 0.18.0
 
 ## New

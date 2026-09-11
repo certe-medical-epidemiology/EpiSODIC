@@ -201,9 +201,23 @@ episodic_ui_activity_screen <- function(activity,
                   )
                 }
               ),
+              # A row about a cluster opens that cluster. The id is
+              # carried on the row rather than read back out of the
+              # label, which is a translated sentence; a row about a
+              # stream, a host or a typed username has none and stays
+              # plain text.
               shiny::tags$td(
                 if (is.na(row$target)) {
                   episodic_tr("misc.dash", lang = lang)
+                } else if (
+                  !is.null(row$target_cluster_id) &&
+                    !is.na(row$target_cluster_id)
+                ) {
+                  episodic_ui_cluster_link(
+                    row$target,
+                    row$target_cluster_id,
+                    lang = lang
+                  )
                 } else {
                   row$target
                 }

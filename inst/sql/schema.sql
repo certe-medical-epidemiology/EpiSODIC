@@ -207,6 +207,17 @@ CREATE INDEX idx_episodic_case_institution ON episodic_case(institution_id);
 -- Serves episodic_db_last_case_dates(), the per-run lookup that lets an
 -- operator send only a recent window of positives instead of full history.
 CREATE INDEX idx_episodic_case_patient_pathogen ON episodic_case(patient_key, pathogen, sample_date);
+-- The dashboard's two shapes of pathogen read. Bounded by date
+-- (episodic_db_cases_for_pathogen(), the denominator panel's weekly
+-- counts) the leading pair turns a scan of every case of the pathogen
+-- into a range seek, and since sample_date is in the index the row
+-- itself is never visited. Bounded by institution instead
+-- (episodic_db_cases_for_stream_id() for an institution- or ward-level
+-- stream, episodic_app_density()'s long-run baseline) the second column
+-- does the same job; neither ordering serves the other, which is why
+-- both exist rather than one composite.
+CREATE INDEX idx_episodic_case_pathogen_date ON episodic_case(pathogen, sample_date);
+CREATE INDEX idx_episodic_case_pathogen_institution ON episodic_case(pathogen, institution_id, sample_date);
 -- Finds every other result from the same culture (e.g. two isolates of
 -- the same pathogen reported separately with different antibiograms).
 CREATE INDEX idx_episodic_case_lab_number ON episodic_case(lab_number);

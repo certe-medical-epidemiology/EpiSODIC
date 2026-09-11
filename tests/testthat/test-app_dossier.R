@@ -35,6 +35,59 @@ test_that("episodic_ui_dossier() and episodic_ui_assessment_rail() render the fi
   )
 })
 
+test_that("the dossier, its settings panel and the assessment rail all draw the cluster object they are given", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  # Building that object is the expensive part of drawing a cluster -
+  # the density baseline, the denominator series, the demography
+  # baseline, the completion curve and the Rt fit are all in it - so the
+  # server builds one per selection and hands it to each render rather
+  # than having three of them build their own. A marked object proves it
+  # is used rather than rebuilt.
+  obj <- episodic_cluster_object(env$con, env$cluster_id, lang = "en")
+  obj$pathogen <- "Marked pathogen"
+  obj$detectors <- "marked_detector"
+
+  html <- as.character(episodic_ui_dossier(
+    env$con,
+    env$cluster_id,
+    lang = "en",
+    obj = obj
+  ))
+  expect_true(grepl("Marked pathogen", html, fixed = TRUE))
+
+  # The settings panel is one of the three, reached through the dossier
+  # rather than called directly in the app - it takes the same object
+  # instead of building a second one for the same cluster.
+  settings <- as.character(episodic_ui_settings_panel(
+    env$con,
+    env$cluster_id,
+    lang = "en",
+    obj = obj
+  ))
+  expect_true(grepl("<code>marked_detector</code>", settings, fixed = TRUE))
+
+  # The rail names the detectors that opened the cluster rather than the
+  # pathogen, so that is what it is marked by here - on the fixture's
+  # unassessed cluster, that is the line its empty timeline carries.
+  rail <- as.character(episodic_ui_assessment_rail(
+    env$con,
+    env$cluster_id,
+    lang = "en",
+    obj = obj
+  ))
+  expect_true(grepl("<code>marked_detector</code>", rail, fixed = TRUE))
+
+  # And with no object given, each still builds its own, so every other
+  # caller is unaffected.
+  expect_false(grepl(
+    "Marked pathogen",
+    as.character(episodic_ui_dossier(env$con, env$cluster_id, lang = "en")),
+    fixed = TRUE
+  ))
+})
+
 test_that("episodic_ui_dossier() renders the new M5 panels (Rt, similar clusters, report) with their expected content", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))

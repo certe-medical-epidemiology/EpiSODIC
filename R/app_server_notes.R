@@ -64,10 +64,16 @@ episodic_app_server_notes <- function(input,
     shiny::req(!is.null(user))
 
     payload <- input$note_save_submit
-    note_text <- if (is.null(payload$note_text)) "" else payload$note_text
+    cluster_id <- as.integer(payload$cluster_id)
+    note_text <- trimws(
+      if (is.null(payload$note_text)) "" else as.character(payload$note_text)
+    )
+    if (!episodic_note_is_new(con, cluster_id, note_text)) {
+      return(invisible(NULL))
+    }
     episodic_db_cluster_note_insert(
       con,
-      cluster_id = as.integer(payload$cluster_id),
+      cluster_id = cluster_id,
       user_id = user$user_id,
       note_text = note_text
     )
@@ -85,4 +91,34 @@ episodic_app_server_notes <- function(input,
   })
 
   invisible(NULL)
+}
+
+#' Whether a submitted note says something the record does not already
+#'
+#' `episodic_cluster_note` is append-only, so every save is a version in
+#' the history modal and in the Activity log. A save that repeats the
+#' note already on file therefore does not record that nothing changed -
+#' it records a change that did not happen, over the name and timestamp
+#' of whoever pressed the button, and the next reader cannot tell the
+#' two apart. Pressing Save on an unedited panel is the ordinary way
+#' that arises.
+#'
+#' Two things are refused, then: text identical to the most recent note
+#' (compared after `trimws()`, so re-indenting is not a version), and an
+#' empty note on a cluster that has never had one, which would open a
+#' history with a blank first entry. Emptying a note that does say
+#' something is a deliberate act and is recorded like any other.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The cluster the note belongs to.
+#' @param note_text The submitted text, already trimmed.
+#' @return A single logical.
+#' @keywords internal
+#' @noRd
+episodic_note_is_new <- function(con, cluster_id, note_text) {
+  current <- episodic_db_cluster_note_current(con, cluster_id)
+  if (nrow(current) == 0) {
+    return(nzchar(note_text))
+  }
+  !identical(note_text, trimws(as.character(current$note_text[1])))
 }

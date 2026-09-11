@@ -782,6 +782,39 @@ episodic_app_denominator_summary <- function(con, pathogen, cases) {
   )
 }
 
+#' How many dates fall in each seven-day window
+#'
+#' One sort and two binary searches per window, rather than a full pass
+#' over every date for every window: the same counts, at a cost that
+#' stops scaling with the product of the two.
+#'
+#' `week_starts` need not be regularly spaced or disjoint - each window
+#' is counted on its own terms, which is what keeps this a drop-in for
+#' the per-window `sum(dates >= ws & dates < ws + 7)` it replaces.
+#'
+#' @param dates A `Date` vector, `NA`s already removed.
+#' @param week_starts A `Date` vector of window starts; each window is
+#'   `[start, start + 7)`.
+#' @return An integer vector, one count per `week_starts` entry.
+#' @keywords internal
+#' @noRd
+episodic_week_counts <- function(dates, week_starts) {
+  if (length(week_starts) == 0) {
+    return(integer(0))
+  }
+  if (length(dates) == 0) {
+    return(rep(0L, length(week_starts)))
+  }
+  sorted <- sort(as.numeric(dates))
+  starts <- as.numeric(week_starts)
+  # `Date` values are whole days, so "before the window ends" is "on or
+  # before its last day" and no half-open boundary has to be expressed
+  # in floating point.
+  as.integer(
+    findInterval(starts + 6, sorted) - findInterval(starts - 1, sorted)
+  )
+}
+
 #' Weekly (n_tests, n_cases, positivity) series aligned for charting
 #'
 #' Positivity is *this pathogen's* confirmed cases over *this pathogen's*
@@ -848,24 +881,29 @@ episodic_app_denominator_series <- function(con, pathogen, cases, weeks = 26L) {
     }
   }
 
+  # Bounded by the weeks actually plotted, and by `sample_date` in SQL
+  # rather than by discarding rows in R afterwards: a case outside
+  # [first week start, last week end] cannot fall in any of these
+  # buckets, so reading a pathogen's whole recorded history to count
+  # half a year of it is work that grows with the archive and answers
+  # nothing.
+  window_from <- min(denom$week_start)
+  window_to <- max(denom$week_start) + 6
   pathogen_dates <- as.Date(
-    episodic_db_cases_for_pathogen(con, pathogen)$sample_date
+    episodic_db_cases_for_pathogen(
+      con,
+      pathogen,
+      columns = "sample_date",
+      from = window_from,
+      to = window_to
+    )$sample_date
   )
   pathogen_dates <- pathogen_dates[!is.na(pathogen_dates)]
 
-  denom$n_cases <- vapply(
-    denom$week_start,
-    function(ws) {
-      sum(pathogen_dates >= ws & pathogen_dates < ws + 7)
-    },
-    integer(1)
-  )
-  denom$n_cluster_cases <- vapply(
-    denom$week_start,
-    function(ws) {
-      sum(cluster_dates >= ws & cluster_dates < ws + 7)
-    },
-    integer(1)
+  denom$n_cases <- episodic_week_counts(pathogen_dates, denom$week_start)
+  denom$n_cluster_cases <- episodic_week_counts(
+    cluster_dates,
+    denom$week_start
   )
   denom$positivity <- ifelse(
     denom$n_tests > 0,
@@ -913,11 +951,23 @@ episodic_app_demography_shift <- function(con, stream_id, cases) {
   # worth surfacing. Same principle as the baseline exclusion Farrington
   # already applies (`episodic_baseline_excluded_windows()`): a detected
   # aberration must not become part of what counts as normal.
+  #
+  # Expressed as NOT EXISTS rather than a nested NOT IN: the two select
+  # the same rows, but the correlated form is answered per candidate
+  # case through `idx_episodic_cluster_case_case`, where the nested one
+  # materialises every case id of every cluster in the stream first.
   all_cases <- DBI::dbGetQuery(
     con,
-    "SELECT age FROM episodic_case WHERE pathogen = ? AND case_id NOT IN
-            (SELECT case_id FROM episodic_cluster_case WHERE cluster_id IN
-               (SELECT cluster_id FROM episodic_cluster WHERE stream_id = ?))",
+    "SELECT c.age
+       FROM episodic_case c
+      WHERE c.pathogen = ?
+        AND NOT EXISTS (
+          SELECT 1
+            FROM episodic_cluster_case cc
+            JOIN episodic_cluster cl ON cl.cluster_id = cc.cluster_id
+           WHERE cc.case_id = c.case_id
+             AND cl.stream_id = ?
+        )",
     params = list(stream_pathogen, stream_id)
   )
   if (nrow(all_cases) < 5 || all(is.na(all_cases$age))) {
@@ -1108,10 +1158,16 @@ episodic_app_data_asof <- function(con) {
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
+#' @param completeness The stream's completion curve from
+#'   `episodic_app_completeness()`, or `NULL` to read it here. The
+#'   dossier already holds one on its cluster object, and deriving it
+#'   costs a reporting triangle over the stream's whole case history -
+#'   so the panel passes that rather than building a second identical
+#'   one for the same stream in the same render.
 #' @return A data frame with `sample_date`, `n_cases`, `incomplete`.
 #' @keywords internal
 #' @noRd
-episodic_app_epi_curve <- function(con, cluster_id) {
+episodic_app_epi_curve <- function(con, cluster_id, completeness = NULL) {
   cluster <- DBI::dbGetQuery(
     con,
     "SELECT stream_id, origin FROM episodic_cluster WHERE cluster_id = ?",
@@ -1137,8 +1193,10 @@ episodic_app_epi_curve <- function(con, cluster_id) {
   # reported as final by the external system, never incomplete.
   incomplete_days <- if (is_manual) {
     0L
-  } else {
+  } else if (is.null(completeness)) {
     episodic_app_completeness(con, cluster$stream_id[1])$incomplete_days
+  } else {
+    completeness$incomplete_days
   }
   asof <- episodic_app_data_asof(con)
 
@@ -1214,11 +1272,21 @@ episodic_app_linelist <- function(con, cluster_id) {
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
+#' @param obj The cluster object from `episodic_cluster_object()`, or
+#'   `NULL` to build one. Nothing read from it here is
+#'   language-dependent (which detectors fired, whether Rt applies,
+#'   whether a density baseline exists, the case-free requirement), so
+#'   an object built in any session language is the right answer for
+#'   this panel.
 #' @return A named list of display-ready values.
 #' @keywords internal
 #' @noRd
-episodic_app_detection_settings <- function(con, cluster_id) {
-  cluster_obj <- episodic_cluster_object(con, cluster_id)
+episodic_app_detection_settings <- function(con, cluster_id, obj = NULL) {
+  cluster_obj <- if (is.null(obj)) {
+    episodic_cluster_object(con, cluster_id)
+  } else {
+    obj
+  }
   run <- episodic_db_latest_run(con, status = episodic_run_statuses_complete)
   list(
     detectors = cluster_obj$detectors,

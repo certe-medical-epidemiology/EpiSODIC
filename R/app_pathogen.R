@@ -76,6 +76,7 @@ episodic_pathogen_period_ids <- c(
   "year_current",
   "season_current",
   "season_previous",
+  "last_3m",
   "last_12m",
   "last_5y",
   "all",
@@ -171,6 +172,15 @@ episodic_app_resolve_period <- function(period = "season_current",
       episodic_season_containing(asof),
       1L
     )),
+    # 13 and 52 weeks rather than 90 and 365 days, for the reason
+    # spelled out at last_5y below: the window starts on the same
+    # weekday it ends on, so the weekly bins line up.
+    last_3m = list(
+      id = period,
+      from = asof - (13 * 7 - 1),
+      to = asof,
+      season = NA_character_
+    ),
     last_12m = list(
       id = period,
       from = asof - 364,

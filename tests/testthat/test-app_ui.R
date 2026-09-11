@@ -359,12 +359,16 @@ test_that("episodic_app_ui() leaves the nav to the server rather than fixing it 
   expect_false(grepl("episodic-nav-link active", html, fixed = TRUE))
 })
 
-test_that("episodic_ui_nav_link() clears the highlight from the other links before setting its own", {
-  # Attribute values come back HTML-escaped (htmltools turns ' into
-  # &#39;), so match on the unquoted parts.
+test_that("episodic_ui_nav_link() moves the highlight through the one shared helper, and tells the server", {
+  # Both halves matter: the click marks its own link immediately
+  # (through episodicSetActiveNav(), the same function the server's
+  # view() observer calls, so the two cannot disagree about which
+  # screen is current), and it reports the view so everything else
+  # follows. Attribute values come back HTML-escaped (htmltools turns
+  # ' into &#39;), so match on the unquoted parts.
   link <- as.character(episodic_ui_nav_link("streams", "Streams"))
-  expect_true(grepl("classList.remove", link, fixed = TRUE))
-  expect_true(grepl("classList.add", link, fixed = TRUE))
+  expect_true(grepl("episodicSetActiveNav(", link, fixed = TRUE))
+  expect_true(grepl("streams", link, fixed = TRUE))
   expect_true(grepl("nav_view", link, fixed = TRUE))
   expect_false(grepl("episodic-nav-link active", link, fixed = TRUE))
   expect_true(grepl(
@@ -372,6 +376,36 @@ test_that("episodic_ui_nav_link() clears the highlight from the other links befo
     as.character(episodic_ui_nav_link("clusters", "Clusters", active = TRUE)),
     fixed = TRUE
   ))
+})
+
+# The page's own scripts live in tags$head(), and htmltools lifts head
+# content out into its own slot - so as.character() on the page returns
+# the body alone and finds none of them. Rendered in full here.
+episodic_test_ui_html <- function(lang = "en") {
+  rendered <- htmltools::renderTags(episodic_app_ui(lang = lang))
+  paste(
+    paste(as.character(rendered$head), collapse = "\n"),
+    rendered$html,
+    sep = "\n"
+  )
+}
+
+test_that("episodic_app_ui() defines the nav helper the server sends to, and registers it", {
+  html <- episodic_test_ui_html()
+  expect_true(grepl("function episodicSetActiveNav(", html, fixed = TRUE))
+  expect_true(grepl(
+    "Shiny.addCustomMessageHandler('episodicSetActiveNav'",
+    html,
+    fixed = TRUE
+  ))
+})
+
+test_that("episodic_app_ui() defines the rail's open-by-number helper", {
+  # Defined once at page level rather than inside episodic_ui_rail(),
+  # which is re-rendered every time the open-cluster list changes.
+  html <- episodic_test_ui_html()
+  expect_true(grepl("function episodicRailOpen(", html, fixed = TRUE))
+  expect_true(grepl("rail_open_cluster", html, fixed = TRUE))
 })
 
 test_that("episodic_ui_pkg_versions_html() renders what a run recorded, and nothing when a run recorded nothing", {

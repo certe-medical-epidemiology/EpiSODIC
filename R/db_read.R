@@ -76,13 +76,45 @@ episodic_db_cases <- function(con) {
   DBI::dbGetQuery(con, "SELECT * FROM episodic_case")
 }
 
+#' Every case of one pathogen, optionally bounded
+#'
+#' `columns` and `from`/`to` exist because the unbounded form reads a
+#' pathogen's whole recorded history into R, and grows with it: a caller
+#' that needs six months of sample dates should not pay for six years of
+#' every column. Both default to the unbounded read, so a caller that
+#' genuinely wants the lot still gets it by asking for nothing.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param pathogen The pathogen to read.
+#' @param columns Columns to select. `"*"` (the default) for every one.
+#' @param from,to Inclusive `sample_date` bounds, or `NULL` for
+#'   unbounded. Anything `episodic_sql_date()` accepts.
+#' @return A data frame, ordered by `sample_date`.
 #' @keywords internal
 #' @noRd
-episodic_db_cases_for_pathogen <- function(con, pathogen) {
+episodic_db_cases_for_pathogen <- function(con,
+                                           pathogen,
+                                           columns = "*",
+                                           from = NULL,
+                                           to = NULL) {
+  where <- "pathogen = ?"
+  params <- list(pathogen)
+  if (!is.null(from)) {
+    where <- paste(where, "AND sample_date >= ?")
+    params <- c(params, list(episodic_sql_date(from)))
+  }
+  if (!is.null(to)) {
+    where <- paste(where, "AND sample_date <= ?")
+    params <- c(params, list(episodic_sql_date(to)))
+  }
   DBI::dbGetQuery(
     con,
-    "SELECT * FROM episodic_case WHERE pathogen = ? ORDER BY sample_date",
-    params = list(pathogen)
+    sprintf(
+      "SELECT %s FROM episodic_case WHERE %s ORDER BY sample_date",
+      paste(columns, collapse = ", "),
+      where
+    ),
+    params = params
   )
 }
 
@@ -355,6 +387,23 @@ episodic_db_cases_for_stream_id <- function(con,
     stream$institution_id[1],
     stream$institution_id[1]
   )
+  # The ward is an equality the database can answer, and the one below
+  # narrows an area stream to the postcodes that can possibly be in it.
+  # Both are prefilters, not the test itself: the exact membership
+  # decision stays in R below, so a dialect that compares or matches
+  # differently can only hand over rows that are then dropped, never
+  # withhold one that belongs. Without them a stream of a common
+  # pathogen reads every case of that pathogen out of the database in
+  # order to keep a ward's worth.
+  if (!is.na(stream$ward[1])) {
+    where <- paste(where, "AND ward = ?")
+    params <- c(params, list(stream$ward[1]))
+  }
+  area_prefix <- episodic_stream_area_pc_prefix(stream, geography)
+  if (!is.null(area_prefix)) {
+    where <- paste(where, "AND pc LIKE ?")
+    params <- c(params, list(paste0(area_prefix, "%")))
+  }
   if (!is.null(first_day)) {
     where <- paste(where, "AND sample_date >= ?")
     params <- c(params, list(episodic_sql_date(first_day)))
@@ -384,6 +433,46 @@ episodic_db_cases_for_stream_id <- function(con,
     cases <- cases[!is.na(region) & region == stream$region_code[1], ]
   }
   exists_marker(cases)
+}
+
+#' The postcode prefix an area stream's cases must start with
+#'
+#' `episodic_case_region_code()` builds an L3 area code as the
+#' configured prefix followed by the first few characters of the case's
+#' postcode, so a stream's own `region_code` names exactly which
+#' postcodes can belong to it - which makes it something the database
+#' can narrow on before any row reaches R.
+#'
+#' `NULL` for every other level, and for an area stream whose
+#' `region_code` does not begin with the prefix this run's geography
+#' names. That happens when the area rule has been changed since the
+#' stream was keyed, and it is precisely the case where guessing a
+#' prefix would hand back a filter that matches nothing: no prefilter is
+#' the safe answer, since the exact membership test still runs in R.
+#'
+#' @param stream A one-row stream, with `level` and `region_code`.
+#' @param geography From `episodic_geography_config()`.
+#' @return A single string, or `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_stream_area_pc_prefix <- function(stream, geography) {
+  if (!identical(stream$level[1], "pathogen_area")) {
+    return(NULL)
+  }
+  region_code <- stream$region_code[1]
+  prefix <- geography$area_code_prefix
+  if (
+    is.na(region_code) ||
+      !nzchar(prefix) ||
+      !startsWith(region_code, prefix)
+  ) {
+    return(NULL)
+  }
+  pc_prefix <- substring(region_code, nchar(prefix) + 1L)
+  if (!nzchar(pc_prefix)) {
+    return(NULL)
+  }
+  pc_prefix
 }
 
 #' @param cluster_id A single `cluster_id`.

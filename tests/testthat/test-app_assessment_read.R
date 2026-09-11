@@ -185,6 +185,73 @@ test_that("episodic_app_activity_log() surfaces assessments, closures, mutes, lo
   expect_true(all(diff(as.numeric(as.POSIXct(activity$at, tz = "UTC"))) <= 0)) # descending
 })
 
+test_that("episodic_app_activity_log() names the cluster a row is about, and only where there is one", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    sodium::password_store("pw12345")
+  )
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    verdict = "cluster_not_yet",
+    rationale = "watching"
+  )
+  episodic_db_stream_mute_insert(
+    env$con,
+    stream_id = env$stream_id,
+    muted_from = "2025-01-01",
+    muted_until = "2025-02-01",
+    reason = "seasonal",
+    user_id = user_id
+  )
+
+  activity <- episodic_app_activity_log(env$con, lang = "en")
+
+  # The id is carried beside the label rather than parsed back out of
+  # it: the label is a translated sentence in eight languages.
+  assessment <- activity[activity$category == "assessment", ]
+  expect_equal(nrow(assessment), 1L)
+  expect_equal(assessment$target_cluster_id[1], as.integer(env$cluster_id))
+
+  # A mute is about a stream and a run is about a host; neither names a
+  # cluster, and neither may pretend to.
+  expect_true(all(is.na(
+    activity$target_cluster_id[activity$category %in% c("mute", "run")]
+  )))
+})
+
+test_that("the Activity screen makes a cluster row open that cluster and leaves the rest as text", {
+  activity <- data.frame(
+    at = c("2025-02-01 09:00:00", "2025-02-01 08:00:00"),
+    actor = c("Test User", "System"),
+    action = c("classified", "detection run succeeded"),
+    target = c("Norovirus (cluster #7)", "hostname"),
+    target_cluster_id = c(7L, NA_integer_),
+    detail = c(NA_character_, NA_character_),
+    category = c("assessment", "run"),
+    is_system = c(FALSE, TRUE),
+    run_id = c(NA_integer_, 3L),
+    stringsAsFactors = FALSE
+  )
+  html <- as.character(episodic_ui_activity_screen(activity, lang = "en"))
+
+  expect_true(grepl("episodicOpenCluster(7)", html, fixed = TRUE))
+  # One link, not two: the run row's host is not a cluster. Counted by
+  # the class rather than by the call, which every link makes twice -
+  # once on click and once on Enter or Space, so a keyboard reaches it
+  # too.
+  expect_equal(
+    lengths(regmatches(html, gregexpr("episodic-cluster-link", html)))[[1]],
+    1
+  )
+})
+
 test_that("episodic_app_activity_log() carries a load summary on run rows and nothing on human rows", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))

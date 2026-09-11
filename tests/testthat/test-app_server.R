@@ -489,6 +489,81 @@ test_that("assess_submit is a no-op for a signed-in viewer, even bypassing the c
   })
 })
 
+test_that("the header nav renders once and does not wait behind the screen being navigated to", {
+  db_path <- episodic_test_db_path()
+
+  server <- episodic_app_server_factory(db_path, lang = "nl")
+  shiny::testServer(server, {
+    session$flushReact()
+    before <- paste(output$nav_links, collapse = "\n")
+    expect_true(grepl("Signaleringsreeksen", before, fixed = TRUE))
+
+    # Navigating does not invalidate the nav: output$main_view depends
+    # on view() and takes orders of magnitude longer to build, and
+    # Shiny sends a flush's output values only once every output in it
+    # has finished. The highlight moves through
+    # episodicSetActiveNav(), client-side, instead.
+    session$setInputs(nav_view = "info")
+    session$flushReact()
+    expect_equal(paste(output$nav_links, collapse = "\n"), before)
+
+    DBI::dbDisconnect(con)
+  })
+})
+
+test_that("the rail's open-by-number box opens a real cluster and answers a number that names none", {
+  db_path <- tempfile(fileext = ".sqlite")
+  con <- episodic_db_create(db_path)
+  institution_id <- episodic_test_institution(con, "hosp-server-open")
+  stream_id <- episodic_db_stream_upsert(
+    con,
+    stream_key = episodic_stream_key(
+      "pathogen_institution",
+      "Norovirus",
+      institution_id = institution_id
+    ),
+    level = "pathogen_institution",
+    pathogen = "Norovirus",
+    institution_id = institution_id,
+    observed_date = "2025-01-01"
+  )
+  run_id <- episodic_db_run_start(con, "h", "a")
+  cluster_id <- episodic_db_cluster_insert(
+    con,
+    stream_id = stream_id,
+    first_day = "2025-01-01",
+    last_day = "2025-01-02",
+    n_cases = 3,
+    priority_score = 50,
+    detector_agreement = 1,
+    run_id = run_id
+  )
+  DBI::dbDisconnect(con)
+
+  server <- episodic_app_server_factory(db_path, lang = "en")
+  shiny::testServer(server, {
+    session$setInputs(nav_view = "archive")
+    session$flushReact()
+
+    session$setInputs(rail_open_cluster = cluster_id)
+    session$flushReact()
+    # A number that resolves opens that cluster, from wherever the
+    # reader happened to be.
+    expect_equal(selected_cluster_id(), as.integer(cluster_id))
+    expect_equal(view(), "clusters")
+
+    # A number that resolves to nothing leaves the selection alone
+    # rather than blanking the dossier - and, unlike every other way a
+    # cluster is opened, this one was typed by a person, so it is
+    # answered rather than ignored.
+    session$setInputs(rail_open_cluster = cluster_id + 999L)
+    session$flushReact()
+    expect_equal(selected_cluster_id(), as.integer(cluster_id))
+
+    DBI::dbDisconnect(con)
+  })
+})
+
 test_that("output$main_view actually renders the info screen when nav_view is set to 'info'", {
   db_path <- episodic_test_db_path()
 
@@ -768,16 +843,29 @@ test_that("the navigation highlight follows a deep link, not just its own clicks
   server <- episodic_app_server_factory(db_path, lang = "en")
   shiny::testServer(server, {
     session$flushReact()
+    # The nav is rendered once, marked with the view the app opens on.
     expect_equal(active(paste(output$nav_links, collapse = "\n")), "clusters")
 
+    # From here the highlight is moved client-side, by
+    # episodicSetActiveNav(), which the server calls for every change of
+    # view() and a nav link calls for its own click (see
+    # output$nav_links, and test-app_ui.R for both ends of that). What
+    # this test holds is the server-side half of it: view() follows a
+    # deep link, not only a click on the nav, so there is something for
+    # that helper to be called with.
     session$setInputs(nav_view = "pathogen")
     session$flushReact()
-    expect_equal(active(paste(output$nav_links, collapse = "\n")), "pathogen")
+    expect_equal(view(), "pathogen")
 
     # Opening a cluster from the Pathogen screen's table moves the
-    # content, so the nav highlight has to move with it
+    # content, so the highlight has to move with it.
     session$setInputs(open_cluster = cluster_id)
     session$flushReact()
+    expect_equal(view(), "clusters")
+
+    # And through all of it the nav itself is not re-rendered: it must
+    # not queue behind output$main_view, which depends on view() too and
+    # is where a screen's whole cost is paid.
     expect_equal(active(paste(output$nav_links, collapse = "\n")), "clusters")
 
     # The factory opened this connection; the mock session does not

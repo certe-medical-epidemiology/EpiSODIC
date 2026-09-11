@@ -35,6 +35,65 @@ test_that("an instance config overrides only the keys it sets, recursively", {
   expect_equal(config$eligibility$min_baseline_weeks, 52)
 })
 
+test_that("a resolved configuration is cached per file, and a rewritten file is read again", {
+  instance_path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(instance_path))
+  writeLines("reconciliation:\n  close_after_runs: 21\n", instance_path)
+  expect_equal(
+    episodic_config_resolve(instance_path)$reconciliation$close_after_runs,
+    21
+  )
+
+  # The cache is keyed on what the file says, not on when it was last
+  # written: a rewrite that keeps the same path and length - and, on a
+  # filesystem with second-resolution timestamps, the same mtime - is
+  # still a different configuration and has to be resolved as one.
+  writeLines("reconciliation:\n  close_after_runs: 12\n", instance_path)
+  expect_equal(
+    episodic_config_resolve(instance_path)$reconciliation$close_after_runs,
+    12
+  )
+
+  # And a second path with its own contents is its own answer, not the
+  # one already cached.
+  other_path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(other_path), add = TRUE)
+  writeLines("reconciliation:\n  close_after_runs: 30\n", other_path)
+  expect_equal(
+    episodic_config_resolve(other_path)$reconciliation$close_after_runs,
+    30
+  )
+  expect_equal(
+    episodic_config_resolve(instance_path)$reconciliation$close_after_runs,
+    12
+  )
+})
+
+test_that("a Settings-screen override is read from the database on every resolve, never cached with the file", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  expect_null(episodic_config_resolve(NA, con = con)$notifications$ntfy$topic)
+
+  user_id <- episodic_db_app_user_insert(
+    con,
+    "admin",
+    "Admin User",
+    "a@example.com",
+    "hash",
+    is_admin = TRUE
+  )
+  episodic_db_app_config_event_insert(
+    con,
+    user_id = user_id,
+    section = "notifications",
+    config_json = '{"ntfy": {"topic": "outbreaks"}}'
+  )
+  expect_equal(
+    episodic_config_resolve(NA, con = con)$notifications$ntfy$topic,
+    "outbreaks"
+  )
+})
+
 test_that("a nonexistent EPISODIC_CONFIG path is refused, not quietly ignored", {
   # Ignoring it runs the instance on shipped defaults while the operator
   # believes their own thresholds, same_place overrides and notification

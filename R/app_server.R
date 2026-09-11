@@ -74,10 +74,15 @@ episodic_app_server_factory <- function(db_path,
     db_version <- shiny::reactiveVal(0)
     db_touch <- function() db_version(db_version() + 1)
 
+    # Deliberately not gated on `view()`. A reactive is lazy, so this
+    # costs nothing until the rail (or the selection observer below)
+    # asks for it; gating it on the view as well made *leaving* the
+    # clusters screen and coming back invalidate the whole open-cluster
+    # list, so every return from the Archive or the Pathogen screen
+    # rebuilt it from the database before anything could be drawn.
     open_clusters <- shiny::reactive({
       db_version()
       shiny::req(access_granted())
-      shiny::req(view() == "clusters")
       episodic_app_open_clusters(con, lang = lang)
     })
 
@@ -118,7 +123,41 @@ episodic_app_server_factory <- function(db_path,
     # its cluster ready by the time the clusters view renders, and the
     # observer above will leave it alone whichever order the two land in.
     shiny::observeEvent(input$open_cluster, {
-      selected_cluster_id(as.integer(input$open_cluster))
+      requested <- as.integer(input$open_cluster)
+      # An id that names nothing viewable is ignored rather than
+      # selected: `output$dossier_pane` has no empty state for a cluster
+      # that is not there, and a chip pointing at one merged away since
+      # the page was drawn should leave the screen as it is.
+      if (!episodic_app_cluster_viewable(con, requested)) {
+        return(invisible(NULL))
+      }
+      selected_cluster_id(requested)
+      view("clusters")
+    })
+
+    # The rail header's open-by-number box. Unlike every other way a
+    # cluster is opened, this one is a number a person typed, so an id
+    # that resolves to nothing is answered rather than ignored - they
+    # are owed the difference between "no such cluster" and a dashboard
+    # that did nothing when they pressed a button.
+    shiny::observeEvent(input$rail_open_cluster, {
+      shiny::req(access_granted())
+      requested <- suppressWarnings(as.integer(input$rail_open_cluster))
+      if (is.na(requested) || !episodic_app_cluster_viewable(con, requested)) {
+        shiny::showNotification(
+          # As typed, ungrouped: a cluster number is an identifier, not
+          # a quantity, and is written the way it is quoted everywhere
+          # else in the app.
+          episodic_tr(
+            "rail.open_not_found",
+            id = as.character(input$rail_open_cluster),
+            lang = lang
+          ),
+          type = "warning"
+        )
+        return(invisible(NULL))
+      }
+      selected_cluster_id(requested)
       view("clusters")
     })
 
@@ -205,15 +244,34 @@ episodic_app_server_factory <- function(db_path,
     # The navigation is a map of what there is to read, and the status
     # strip carries the last run's outcome and completeness. Neither is a
     # cluster, and both are withheld from a visitor who may see nothing.
+    #
+    # `view()` is read isolated, so this renders once per sign-in state
+    # rather than on every navigation. It has to be: `output$main_view`
+    # depends on `view()` too, Shiny sends a flush's output values only
+    # once every output in it has finished, and the screens underneath
+    # take orders of magnitude longer to build than eight links do - so
+    # a nav that re-rendered on navigation would arrive with the screen
+    # it exists to navigate away from. The highlight still follows every
+    # way the view can change, including the ones that are not a click
+    # on these links (a cluster table row on the Pathogen or Activity
+    # screen), through the observer below.
     output$nav_links <- shiny::renderUI({
       if (!access_granted()) {
         return(NULL)
       }
       episodic_ui_nav_links(
-        view(),
+        shiny::isolate(view()),
         lang = lang,
         is_admin = episodic_user_is_admin(current_user())
       )
+    })
+
+    # Moves the "active" class alone, without rebuilding the nav. A
+    # message rather than a re-render for the reason above, and harmless
+    # when the nav is not on the page: episodicSetActiveNav() finds no
+    # links and does nothing.
+    shiny::observeEvent(view(), {
+      session$sendCustomMessage("episodicSetActiveNav", view())
     })
 
     output$status_strip <- shiny::renderUI({
@@ -343,6 +401,22 @@ episodic_app_server_factory <- function(db_path,
       )
     })
 
+    # The expensive part of drawing a cluster, built once per selection
+    # and handed to both panes that need it. The dossier, its own
+    # settings panel and the assessment rail each used to build their
+    # own, so opening one cluster ran the density baseline, the
+    # denominator series, the demography baseline, the completion curve
+    # and the Rt fit three times over. `db_version()` is read so the
+    # object is rebuilt after any write, rather than serving a
+    # classification or closure from before it.
+    cluster_object <- shiny::reactive({
+      shiny::req(access_granted())
+      cluster_id <- selected_cluster_id()
+      shiny::req(!is.null(cluster_id))
+      db_version()
+      episodic_cluster_object(con, cluster_id, lang = lang)
+    })
+
     output$dossier_pane <- shiny::renderUI({
       if (!access_granted()) {
         return(NULL)
@@ -359,7 +433,8 @@ episodic_app_server_factory <- function(db_path,
         con,
         cluster_id,
         lang = lang,
-        current_user = current_user()
+        current_user = current_user(),
+        obj = cluster_object()
       )
     })
 
@@ -389,7 +464,8 @@ episodic_app_server_factory <- function(db_path,
         con,
         cluster_id,
         lang = lang,
-        current_user = user
+        current_user = user,
+        obj = cluster_object()
       )
     })
 
@@ -854,6 +930,41 @@ episodic_ui_rail <- function(open,
         ),
         " ",
         episodic_tr("rail.count_suffix", lang = lang)
+      ),
+      # An epidemiologist who has a cluster number - from a
+      # notification, a report, a colleague's email - can open it here
+      # rather than searching the archive for a cluster they can already
+      # name. Any cluster the instance will show, not only the ones in
+      # the list below it: a number that resolves to a closed or
+      # archived cluster is exactly the case this exists for. The server
+      # decides whether it resolves at all (`rail_open_cluster` in
+      # app_server.R), since a number nobody typed a cluster for has to
+      # say so rather than blank the dossier.
+      shiny::tags$div(
+        class = "episodic-rail-open",
+        # No `id`, deliberately: Shiny binds every `input[type=number]`
+        # that carries one, which would make this a reactive input
+        # sending a round trip on each keystroke of a number nothing
+        # reads until Open is pressed. Found by class instead, from
+        # episodicRailOpen().
+        shiny::tags$input(
+          type = "number",
+          min = "1",
+          step = "1",
+          class = "episodic-rail-open-input",
+          `aria-label` = episodic_tr("rail.open_label", lang = lang),
+          placeholder = episodic_tr("rail.open_placeholder", lang = lang),
+          onkeydown = paste0(
+            "if(event.key==='Enter'){event.preventDefault();",
+            "episodicRailOpen();}"
+          )
+        ),
+        shiny::tags$button(
+          type = "button",
+          class = "episodic-btn episodic-rail-open-btn",
+          onclick = "episodicRailOpen();",
+          episodic_tr("rail.open_button", lang = lang)
+        )
       )
     ),
     bulk_bar,
