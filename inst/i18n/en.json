@@ -11,7 +11,15 @@
   "nav.performance": "Performance",
   "nav.info": "Info",
   "nav.settings": "Settings",
+  "nav.instance": "Instance",
   "nav.menu_label": "Menu",
+  "instance.lead": "What this instance watches, what it has done, and how it is configured.",
+  "instance.schema_version": "Schema version {version}",
+  "instance.card.streams": "Every surveillance unit the detectors run against, and whether each one is eligible.",
+  "instance.card.activity": "The audit trail: detection runs, assessments and sign-ins.",
+  "instance.card.performance": "How the detectors measure up against the epidemiologists' own verdicts.",
+  "instance.card.info": "What this build is, which reference files it read, and what the terms mean.",
+  "instance.card.settings": "Accounts and instance configuration.",
 
   "rail.title": "Open clusters",
   "rail.count_suffix": "new or active",
@@ -24,8 +32,10 @@
   "rail.bulk_selected": "selected",
   "rail.bulk_apply": "Apply classification to selected",
   "rail.bulk_clear": "Clear selection",
+  "rail.bulk_select": "Select for bulk assessment",
 
   "pane.dossier": "Dossier",
+  "pane.switcher_label": "Show",
 
   "dossier.stat.observed_sub": "expected {expected}",
   "dossier.stat.ratio": "Ratio O/E",
@@ -188,6 +198,10 @@
   "unit.new_cases": "new cases",
   "unit.week": "week",
   "unit.weeks": "weeks",
+  "unit.run": "run",
+  "unit.runs": "runs",
+  "unit.account": "account",
+  "unit.accounts": "accounts",
 
   "misc.unknown": "unknown",
   "misc.none": "none",

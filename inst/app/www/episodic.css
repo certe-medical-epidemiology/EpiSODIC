@@ -58,22 +58,20 @@ body {
   height: 40px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
 }
-/* The header's two halves - plain classes rather than the inline
-   `style="display:flex;..."` they replaced, so the responsive rules at
-   the end of this file can reach them (a media query cannot override an
-   inline style without !important, which this project avoids in favour
-   of moving the style to a class - see the interpretation/notes and
-   pathogen-breakdown pairs below for the same reasoning). */
-.episodic-header-left {
-  display: flex;
-  align-items: center;
-}
+/* Pushed to the end of the row by its own margin rather than by
+   `justify-content: space-between` on the header: the header has three
+   children, not two, and spreading them evenly would set the navigation
+   adrift in the middle instead of beside the brand it belongs to. A
+   class rather than an inline style, so the responsive rules at the end
+   of this file can reach it - a media query cannot override an inline
+   style without !important, which this project avoids in favour of
+   moving the style to a class. */
 .episodic-header-right {
   display: flex;
   align-items: center;
   gap: 14px;
+  margin-inline-start: auto;
 }
 .episodic-header .episodic-brand {
   font-weight: 600;
@@ -82,40 +80,58 @@ body {
   cursor: help;
   padding-bottom: 1px;
 }
-/* The header's mobile hamburger, toggling .episodic-nav's "open" class
-   (see episodicToggleNav() in R/app_ui.R). Hidden here, unconditionally -
-   only the responsive section below turns it on, below 1200px. */
-.episodic-nav-toggle {
-  display: none;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  color: #fff;
-  border-radius: 3px;
-  font-size: 1.077rem;
-  line-height: 1;
-  padding: 4px 9px;
-  margin-inline-start: 12px;
-  cursor: pointer;
-}
-.episodic-header .episodic-brand .episodic-brand-accent {
-  color: var(--episodic-secondary);
-}
+/* The navigation bar: four links, visible at every width. The five
+   screens that describe the instance rather than a cluster are reached
+   from the Instance screen (see episodic_ui_instance_screen()), and it
+   is that split - rather than any amount of collapsing - which is why
+   this bar fits a narrow viewport with nothing hidden behind a control
+   somebody has to find and open first. Below 768px it takes a row of
+   its own; it never collapses, and it never scrolls out of reach. */
 .episodic-nav {
   display: flex;
   gap: 2px;
   margin-inline-start: 18px;
 }
-.episodic-nav a {
+.episodic-header .episodic-brand .episodic-brand-accent {
+  color: var(--episodic-secondary);
+}
+.episodic-nav-link {
   font-size: 0.923rem;
   padding: 4px 10px;
   border-radius: 2px;
   color: #BDD0DA;
   text-decoration: none;
+  white-space: nowrap;
+  /* Drops the browser's wait for a possible double-tap. That wait is
+     the whole difference between a bar that answers a press and one
+     that arrives a beat after it. */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
-.episodic-nav a.active {
+/* Which link is lit is derived here, from `data-nav` on .episodic-shell,
+   which is the one place the current view is held. No class anywhere in
+   the app marks a link as current, so there is no second copy of this
+   state to fall out of step with the first and no re-render of the bar
+   can lose the highlight. The four rules are the whole mapping: the
+   instance-level screens light the Instance link, because that is where
+   a reader reached them from. */
+.episodic-shell[data-nav="clusters"] .episodic-nav-link[data-view="clusters"],
+.episodic-shell[data-nav="pathogen"] .episodic-nav-link[data-view="pathogen"],
+.episodic-shell[data-nav="archive"] .episodic-nav-link[data-view="archive"],
+.episodic-shell[data-nav="instance"] .episodic-nav-link[data-view="instance"] {
   background: rgba(255,255,255,0.16);
   color: #fff;
 }
+/* A press has to look like it landed before the screen has had time to
+   change, or it reads as a press that missed and gets repeated. */
+.episodic-nav-link:active {
+  background: rgba(255,255,255,0.28);
+}
+.episodic-nav-link:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+}
+
 .episodic-demodata {
   font-size: 0.808rem;
   color: #8FAAB8;
@@ -144,7 +160,7 @@ body {
    subtracted from 100vh as a "calc(100vh - 44px)" on .episodic-body and
    .episodic-streams-screen further down) is what lets the header wrap to
    a second row below 1200px without the body's own height arithmetic
-   going stale - #main_view (shiny::uiOutput()'s own wrapper div) takes
+   going stale - .episodic-screens (see below) takes
    whatever height remains after the header and brand bar's actual
    rendered height, however tall that turns out to be. 100dvh is listed
    after 100vh, not instead of it: 100vh is what browsers without dvh
@@ -163,16 +179,80 @@ body {
 .episodic-shell > .episodic-brandbar {
   flex: none;
 }
-/* shiny::uiOutput("main_view")'s own wrapper div - id, not class, since
-   Shiny assigns it directly and no episodic-* class exists to hook. */
-#main_view {
+/* Every screen is in the page at once and exactly one is shown, chosen
+   by `data-view` on .episodic-shell. That is what makes a navigation
+   cost nothing on the server: Shiny suspends the outputs inside a hidden
+   screen, so a screen is built the first time it is looked at and coming
+   back to it re-runs nothing unless its data changed in the meantime.
+   The alternative - one renderUI switching on the view - tears the
+   current screen out of the page and rebuilds the destination from the
+   database on every navigation, then rebuilds the first one again on
+   the way back.
+
+   This is what needs shiny (>= 1.14.0): output visibility is tracked
+   there with ResizeObserver/IntersectionObserver rather than jQuery
+   shown/hidden events, which is what lets a stylesheet alone decide
+   what is visible. On an older Shiny a CSS-only show/hide is invisible
+   to the suspension machinery and every hidden screen keeps
+   recomputing. */
+.episodic-screens {
   flex: 1;
   /* Without this, a flex item's default min-height is "auto" (its
-     content's own height), which would make #main_view grow to fit
-     .episodic-body/.episodic-streams-screen's content instead of the
-     other way around, defeating the fixed-viewport-height layout those
-     two rely on entirely. */
+     content's own height), which would make this grow to fit the
+     screen's content instead of the other way around, defeating the
+     fixed-viewport-height layout .episodic-body and
+     .episodic-streams-screen rely on entirely. */
   min-height: 0;
+}
+.episodic-screen {
+  display: none;
+  flex-direction: column;
+  min-height: 0;
+}
+/* A screen's content arrives inside shiny::uiOutput()'s own wrapper div,
+   and that wrapper is what this container lays out - so the height has
+   to reach it, or a screen sized at 100% of it resolves against nothing
+   and scrolls the document instead of itself. */
+.episodic-screen > * {
+  flex: 1;
+  min-height: 0;
+}
+.episodic-shell[data-view="clusters"] .episodic-screen[data-screen="clusters"],
+.episodic-shell[data-view="pathogen"] .episodic-screen[data-screen="pathogen"],
+.episodic-shell[data-view="archive"] .episodic-screen[data-screen="archive"],
+.episodic-shell[data-view="instance"] .episodic-screen[data-screen="instance"],
+.episodic-shell[data-view="streams"] .episodic-screen[data-screen="streams"],
+.episodic-shell[data-view="activity"] .episodic-screen[data-screen="activity"],
+.episodic-shell[data-view="performance"] .episodic-screen[data-screen="performance"],
+.episodic-shell[data-view="info"] .episodic-screen[data-screen="info"],
+.episodic-shell[data-view="settings"] .episodic-screen[data-screen="settings"] {
+  display: flex;
+}
+
+/* An instance that requires a sign-in shows the locked screen in place
+   of every other. Which of the two states the session is in is
+   `data-access` on the shell, written by the server (see
+   episodic_app_access_granted()) - not inferred here from the
+   locked-screen output coming back empty. `:empty` on a Shiny output is
+   a guess about whitespace, and the way that guess fails is by hiding
+   every screen from a reader entitled to all of them.
+
+   The attribute is absent until the server sets it, so the default is
+   the app rather than the wall: a session that may read never sees a
+   locked screen flash past, and a session that may not sees empty
+   screens for the one round trip it takes to arrive - every screen's
+   output withholds its own data in its own right. */
+#locked_screen {
+  display: none;
+}
+.episodic-shell[data-access="locked"] #locked_screen {
+  display: block;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.episodic-shell[data-access="locked"] .episodic-screens {
+  display: none;
 }
 
 .episodic-brandbar {
@@ -186,14 +266,41 @@ body {
   height: 100%;
 }
 
-/* rail */
-.episodic-rail {
+/* The clusters screen's three panes.
+   
+   These classes sit on shiny::uiOutput()'s own containers (see
+   episodic_app_ui()), not on an element inside them. They have to: the
+   container is what .episodic-body's flex layout actually lays out, so
+   a `flex: 1` one level further in addresses nothing and a pane's own
+   `overflow-y: auto` never engages, leaving the document to scroll
+   instead of the pane. Carrying the box here also gives each pane a
+   real one for the recalculating spinner, so a pane being rebuilt says
+   so in place rather than emptying. */
+.episodic-pane {
+  min-height: 0;
+}
+.episodic-pane-rail {
   width: 250px;
   background: var(--episodic-surface);
   border-inline-end: 1px solid var(--episodic-border);
   overflow-y: auto;
-  flex-shrink: 0;
+  flex: none;
 }
+.episodic-pane-dossier {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 18px 20px 40px;
+}
+.episodic-pane-assessment {
+  width: 330px;
+  background: var(--episodic-surface);
+  border-inline-start: 1px solid var(--episodic-border);
+  overflow-y: auto;
+  flex: none;
+}
+
+/* rail */
 .episodic-rail-header {
   padding: 12px 14px;
   border-bottom: 1px solid var(--episodic-border);
@@ -232,30 +339,68 @@ body {
   padding: 3px 10px;
   font-size: 0.885rem;
 }
+/* The row is the container and the marker; the button inside it is what
+   opens the cluster. They are separate elements because the bulk-select
+   checkbox is a sibling of that button rather than a child of it - a
+   form control inside a button is invalid, and browsers differ on
+   whether it can be ticked at all. */
 .episodic-rail-item {
+  position: relative;
+  border-inline-start: 3px solid transparent;
+  border-bottom: 1px solid var(--episodic-border);
+}
+/* aria-current, not a class beside it: which row is open is one fact,
+   and it is written once (by episodic-nav.js, from a click here or from
+   the server's own selection whichever route it arrived by) and read
+   here. A class saying the same thing is a second copy of it. */
+.episodic-rail-item[aria-current="true"] {
+  background: var(--episodic-primary-tint);
+  border-inline-start-color: var(--episodic-primary);
+}
+.episodic-rail-item-open {
   display: block;
   width: 100%;
   text-align: start;
   padding: 11px 14px;
   border: none;
   background: transparent;
-  border-inline-start: 3px solid transparent;
-  border-bottom: 1px solid var(--episodic-border);
   cursor: pointer;
+  font: inherit;
+  color: inherit;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
-.episodic-rail-item.active {
+.episodic-rail-item-open:active {
   background: var(--episodic-primary-tint);
-  border-inline-start-color: var(--episodic-primary);
+}
+.episodic-rail-item-open:focus-visible {
+  outline: 2px solid var(--episodic-primary);
+  outline-offset: -2px;
+}
+/* Room for the checkbox, which is taken out of flow so that the button
+   beside it can still cover the whole row. Only on the rows that have
+   one: it is rendered for a signed-in epidemiologist and for nobody
+   else, and a reader who cannot bulk-assess should not be looking at an
+   indent reserved for a control they never see. */
+.episodic-rail-item-selectable .episodic-rail-item-open {
+  padding-inline-start: 34px;
 }
 .episodic-rail-item .episodic-rail-pathogen {
   font-size: 1rem;
   font-weight: 500;
 }
-/* The bulk-select checkbox, inline with the pathogen name rather than on
-   its own line - the rail card is already tight on vertical space. */
+/* The bulk-select checkbox, set against the first line of the row -
+   the rail card is already tight on vertical space, so it shares that
+   line rather than taking one of its own. Positioned rather than
+   in flow, so the button it sits beside can still cover the whole row.
+   The 44px hit area is the label around it below 1200px; the box itself
+   stays the size a checkbox is. */
 .episodic-rail-select {
-  margin-inline-end: 6px;
-  vertical-align: -1px;
+  position: absolute;
+  inset-block-start: 13px;
+  inset-inline-start: 14px;
+  z-index: 1;
+  margin: 0;
 }
 /* The care-line chip beside the pathogen name - inline with the text,
    not pushed to its own line, since the rail card is already tight. */
@@ -298,11 +443,6 @@ body {
 }
 
 /* dossier */
-.episodic-dossier {
-  flex: 1;
-  overflow-y: auto;
-  padding: 18px 20px 40px;
-}
 .episodic-dossier-title {
   font-size: 1.923rem;
   font-weight: 600;
@@ -513,8 +653,8 @@ body {
    notes in the dossier, and care-line + institution breakdowns on the
    Pathogen screen. Classes rather than each caller's own inline
    `style="display:flex;..."`, for the same reason as
-   .episodic-header-left/-right above - a media query cannot stack
-   them below 1200px without reaching past an inline style's own
+   .episodic-header-right above - a media query cannot stack
+   them below 768px without reaching past an inline style's own
    specificity. -wide keeps the interpretation column's 60% floor; the
    plain column has none, since two equal-width breakdown panels do not
    need one. */
@@ -660,13 +800,6 @@ dl.episodic-settings dd { margin: 0; }
   line-height: 1.55;
 }
 
-.episodic-assessment-rail {
-  width: 330px;
-  background: var(--episodic-surface);
-  border-inline-start: 1px solid var(--episodic-border);
-  flex-shrink: 0;
-  overflow-y: auto;
-}
 #notes-view h1 {
   font-size: 1.55rem;
 }
@@ -694,12 +827,11 @@ dl.episodic-settings dd { margin: 0; }
      scroll, which is not reliable across every host (a plain browser
      tab scrolls the document fine; an embedded viewer, e.g. RStudio's,
      often does not without an explicit inner scroll container). Height
-     is 100% of #main_view (see .episodic-shell above) rather than a
+     is 100% of its screen (see .episodic-screens above) rather than a
      "calc(100vh - 44px)" of its own - the header's height resolved once
      by the shell's flex layout rather than hardcoded here, so it keeps
      working when the header renders at a different height (it does,
-     below 1200px, once the nav collapses behind a toggle and the header
-     can wrap to two rows). */
+     below 768px, where the navigation takes a row of its own). */
   height: 100%;
   overflow-y: auto;
   box-sizing: border-box;
@@ -1377,69 +1509,81 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-header .shiny-bound-output.recalculating::after {
   content: none;
 }
+/* The locked screen is empty on a session that may read, and a spinner
+   box reserved for it would push the whole app down for the length of a
+   flush - the same reasoning as the header above. */
+#locked_screen.recalculating {
+  min-height: 0;
+}
+#locked_screen.recalculating::after {
+  content: none;
+}
 
 /* ===================================================================== *
  * Responsive layout                                                     *
  * ===================================================================== *
- * Everything below this line is additive: it changes nothing above
- * 1200px. Two breakpoints, three tiers:
+ * Three tiers, one mechanism.
  *
- *   >= 1200px  unchanged - the rules above this section render exactly
- *              as they did before this section existed.
- *   768-1199px the clusters screen's rail goes off-canvas behind a
- *              toggle; dossier and assessment stay side by side (the
- *              rail is a list you consult and leave, the assessment is
- *              what you write into while reading the dossier).
- *   < 768px    .episodic-body shows exactly one of rail/dossier/
- *              assessment at a time, switched by a sticky bottom
- *              segmented control that also names the open cluster.
+ *   >= 1200px  rail, dossier and assessment share a row.
+ *   768-1199px the rail goes off-canvas behind a labelled button; the
+ *              dossier and assessment keep sharing the row. The rail is
+ *              a list you consult and leave; the assessment is what you
+ *              write into while reading the dossier, so the rail is what
+ *              gets shed at this width.
+ *   < 768px    one of the three at a time, chosen by a fixed bottom
+ *              segmented control, and the navigation bar takes a row of
+ *              its own in the header.
  *
- * One mechanism carries all three tiers: a `data-pane` attribute on
- * .episodic-body (values "rail"/"dossier"/"assessment"), flipped
- * client-side by episodicSelectPane() (R/app_ui.R) and never touching a
- * Shiny reactive - switching panes must never be a server round trip
- * (see output$rail_pane's own comment in app_server.R on why a
- * re-render there loses the rail's scroll position). Above 1200px no
- * selector below reads the attribute, so it is inert there regardless
- * of its value. */
+ * `data-pane` on .episodic-shell carries which pane is forward, and
+ * every rule below derives from it. It is written by episodic-nav.js
+ * alone and never round-trips to the server, so switching panes cannot
+ * re-render output$rail_pane and lose its scroll position. Above 1200px
+ * no selector reads it, so it is inert there whatever it says.
+ *
+ * The navigation is not in this section at all, beyond taking its own
+ * row: it is four links, and it is visible at every width. Nothing here
+ * hides it, and nothing here has an open or closed state. */
 
-/* These three exist only for the tiers below 1200px (the rail's off-canvas
-   toggle and its backdrop, and the phone-tier segmented control) and so
-   are hidden unconditionally here, above/outside every media query - a
-   <button> and a <div> both default to visible otherwise, which is
-   exactly what caught this the first time: without this rule all three
-   rendered, unstyled, on a plain desktop view. Each tier's own media
-   query below turns the ones it needs back on. */
+/* Bootstrap's reboot carries this, but the pane switcher and the bulk
+   bar depend on it and a media query below sets `display: flex` on the
+   first - which would beat a non-important `display: none`. Stated here
+   so the behaviour is a property of this stylesheet rather than of
+   whichever Bootstrap the theme resolves to. */
+[hidden] {
+  display: none !important;
+}
+
+/* These three exist only below 1200px (the rail's off-canvas button and
+   its backdrop, and the phone-tier segmented control) and are hidden
+   unconditionally here, outside every media query: a <button> and a
+   <div> both default to visible, so without this they would render,
+   unstyled, on a desktop view. Each tier's own query turns back on the
+   ones it needs. */
 .episodic-rail-toggle,
 .episodic-pane-backdrop,
 .episodic-pane-switcher {
   display: none;
 }
 
-/* bslib::page_fluid() wraps the app in Bootstrap's .container-fluid,
-   whose 12px gutters are otherwise never reset - confirmed by inspecting
-   the rendered page: they inset the header and .episodic-shell equally
-   on both sides, which is invisible on a wide desktop viewport but costs
-   24px of a 360px phone's width, enough on its own to force sideways
-   scrolling once combined with anything else below that runs edge to
-   edge. Reset only in this media query - above 1200px the gutter is left
-   exactly as it always was, since nothing above this line has ever
-   accounted for its absence. */
 @media (max-width: 1199px) {
+  /* bslib::page_fluid() wraps the app in Bootstrap's .container-fluid,
+     whose 12px gutters are otherwise never reset: they inset the header
+     and .episodic-shell equally on both sides, which is invisible on a
+     wide viewport but costs 24px of a 360px phone's width. Reset only
+     here - above 1200px the gutter is left exactly as it was, since
+     nothing there accounts for its absence. */
   .container-fluid {
     padding-inline: 0;
   }
-}
 
-/* iOS Safari zooms the whole page in when a focused text input computes
-   to under 16px, and every text-ish input/select/textarea here inherits
-   from the 13px shipped base (or an instance's own smaller
-   EPISODIC_STYLE base) by design elsewhere in this file. 16px is a
-   browser threshold, not a step on the type scale, so it is a plain
-   pixel value here rather than another rem multiple of
-   --episodic-font-size-base - rem would still zoom on an instance that
-   ships a smaller base, which is exactly the case this exists to cover. */
-@media (max-width: 1199px) {
+  /* iOS Safari zooms the whole page in when a focused text input
+     computes to under 16px, and every text-ish control here inherits
+     from the 13px shipped base (or an instance's own smaller
+     EPISODIC_STYLE base) by design. 16px is a browser threshold, not a
+     step on the type scale, so it is a plain pixel value rather than
+     another rem multiple of --episodic-font-size-base - rem would still
+     zoom on an instance that ships a smaller base, which is exactly the
+     case this exists to cover. */
   .episodic-form-group input[type="text"],
   .episodic-form-group input[type="password"],
   .episodic-form-group input[type="date"],
@@ -1457,37 +1601,69 @@ dl.episodic-settings dd { margin: 0; }
 
   /* min-width beats max-width when the two conflict (CSS's own priority
      order, not a specificity accident), so .episodic-select's shipped
-     `min-width: 320px; max-width: 100%;` overflows any container
-     narrower than 320px regardless of the max-width already sitting
-     right next to it - a 360px phone, once the container-fluid gutter
-     and a panel's own padding are counted, comfortably is. Dropping the
-     floor here is what lets max-width:100% actually take effect. */
+     `min-width: 320px; max-width: 100%` overflows any container
+     narrower than 320px regardless of the max-width sitting right next
+     to it. Dropping the floor is what lets max-width take effect. */
   .episodic-select {
     min-width: 0;
   }
 
-  /* Tap targets: .episodic-btn/.episodic-picker-btn compute to roughly
-     30px tall from their padding alone, under the ~40px a touch target
-     wants. Buttons and picker buttons are grown outright (padding, not
-     just min-height, so multi-line labels do not look pinched); a chip
-     that merely acts as a link (.episodic-chip-link) keeps its inline
-     visual size - inflating a chip sitting mid-sentence to 40px would
-     look broken - and instead gets an invisible, centred hit-area
-     extension via ::after, the standard way to widen a tap target
-     without widening the thing itself. */
+  /* Touch targets. Every control a finger is expected to find is at
+     least 44px on its short side, and every one of them answers a press
+     visibly before the screen has had time to change - a press that
+     looks like it missed gets repeated, which is most of what "it
+     doesn't always respond" turns out to mean. A chip that merely acts
+     as a link keeps its inline visual size (inflating a chip sitting
+     mid-sentence to 44px would look broken) and gets an invisible,
+     centred hit-area extension instead. */
+  .episodic-btn,
+  .episodic-picker-btn,
+  .episodic-nav-link,
+  .episodic-rail-item-open,
+  .episodic-rail-toggle,
+  .episodic-pane-tab,
+  .episodic-rail-open-btn {
+    touch-action: manipulation;
+  }
   .episodic-btn {
-    min-height: 40px;
-    padding-block: 9px;
+    min-height: 44px;
+    padding-block: 11px;
   }
   .episodic-picker-btn {
-    min-height: 40px;
+    min-height: 44px;
     display: flex;
     align-items: center;
-    padding-block: 9px;
+    padding-block: 11px;
     box-sizing: border-box;
   }
   .episodic-picker-inline .episodic-picker-btn {
     display: inline-flex;
+  }
+  .episodic-nav-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+  }
+  .episodic-rail-item-open {
+    min-height: 44px;
+  }
+  /* The checkbox's own hit area, widened around it rather than by
+     growing the box: a 44px checkbox beside a line of text reads as a
+     mistake, and the press still has to land. */
+  .episodic-rail-select {
+    inset-block-start: 8px;
+    width: 18px;
+    height: 18px;
+  }
+  .episodic-rail-select::after {
+    content: "";
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
   }
   .episodic-chip-link {
     position: relative;
@@ -1497,8 +1673,8 @@ dl.episodic-settings dd { margin: 0; }
     position: absolute;
     inset-block-start: 50%;
     inset-inline-start: 50%;
-    width: max(40px, 100%);
-    height: max(40px, 100%);
+    width: max(44px, 100%);
+    height: max(44px, 100%);
     transform: translate(-50%, -50%);
   }
 
@@ -1513,14 +1689,10 @@ dl.episodic-settings dd { margin: 0; }
     width: 120px;
   }
 
-  /* .episodic-header-left/-right are classes rather than each half's own
-     inline style, precisely so this rule can reach them. The nav itself
-     collapses behind .episodic-nav-toggle (hidden above this breakpoint,
-     see its own rule further down); the header is allowed to grow past
-     its shipped 40px and wrap when the status strip's own sentence does
-     not fit beside brand + toggle + auth on one line - .episodic-shell's
-     column-flex layout (see above) means nothing else here has to know
-     the header's height changed. */
+  /* The header is allowed to grow past its shipped 40px and wrap when
+     the status strip's own sentence does not fit beside brand, nav and
+     the sign-in control. .episodic-shell's column-flex layout means
+     nothing else has to know the header's height changed. */
   .episodic-header {
     height: auto;
     min-height: 44px;
@@ -1536,79 +1708,43 @@ dl.episodic-settings dd { margin: 0; }
     flex-basis: 100%;
     order: 3;
   }
-  .episodic-nav-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 40px;
-    min-height: 32px;
-  }
-  /* .episodic-nav's dropdown positions itself against this: without a
-     positioned ancestor here, "position: absolute" falls through to the
-     initial containing block (the viewport) instead of the header, and
-     the dropdown renders wherever 100% of the whole page's height
-     happens to be rather than just under the toggle. */
-  .episodic-header-left {
-    position: relative;
-  }
-  /* Collapsed into a dropdown under the toggle instead of an inline row.
-     episodic_ui_nav_link()'s own onclick still does exactly what it does
-     above 1200px (move the "active" class), plus closing this dropdown -
-     the links themselves, and the server-driven active-state logic that
-     colours them, are untouched. */
-  .episodic-nav {
-    display: none;
-    position: absolute;
-    inset-inline-start: 16px;
-    top: 100%;
-    margin-top: 4px;
-    flex-direction: column;
-    background: var(--episodic-primary-dark);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 4px;
-    padding: 6px;
-    gap: 2px;
-    z-index: 80;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
-  }
-  .episodic-nav.open {
-    display: flex;
-  }
-  .episodic-nav a {
-    padding: 9px 12px;
-  }
 }
 
-/* 768-1199px: the rail goes off-canvas; dossier and assessment keep
-   sharing the row exactly as they do at >=1200px (removing the rail from
-   flow is enough - neither needs a width override of its own). */
+/* 768-1199px: the rail goes off-canvas. Removing it from flow is enough
+   - the dossier and the assessment keep the widths they have at every
+   larger size, with no override of their own. */
 @media (min-width: 768px) and (max-width: 1199px) {
+  /* A labelled button, not a second hamburger: with the navigation's own
+     ☰ gone there is no glyph left in the app whose meaning has to be
+     guessed, and this one says what it opens. Anchored to the bottom
+     rather than the top because the header's height is no longer fixed
+     at this tier - it wraps once the status sentence does not fit - and
+     a fixed offset from the top would overlap the brand on exactly the
+     runs whose status message is longest. */
   .episodic-rail-toggle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     position: fixed;
-    /* Anchored to the bottom, not the top: the header's height is no
-       longer a fixed 40px at this tier (it wraps to two rows once the
-       status strip does not fit beside brand + toggle + auth, see
-       .episodic-header's own rule above), and a fixed offset from the
-       top would overlap the brand on exactly the runs where the status
-       message is long enough to wrap - caught by screenshotting the
-       mock at 820px with a realistic status sentence. The bottom of the
-       viewport has no such moving part to collide with. */
     bottom: 16px;
     inset-inline-start: 16px;
     z-index: 70;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 22px;
     border: 1px solid var(--episodic-border);
     background: var(--episodic-surface);
     color: var(--episodic-ink);
+    font-family: var(--episodic-font);
+    font-size: 0.923rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     cursor: pointer;
   }
-  .episodic-rail {
+  .episodic-rail-toggle:focus-visible {
+    outline: 2px solid var(--episodic-primary);
+    outline-offset: 2px;
+  }
+  .episodic-pane-rail {
     position: fixed;
     inset-block: 0;
     inset-inline-start: 0;
@@ -1618,71 +1754,75 @@ dl.episodic-settings dd { margin: 0; }
     transition: transform 0.2s ease;
     box-shadow: 2px 0 16px rgba(0, 0, 0, 0.25);
   }
-  .episodic-body[data-pane="rail"] .episodic-rail {
+  /* `transform` names a physical axis and cannot be written logically,
+     so this is the one place that needs a direction of its own - see the
+     Right-to-left section below. */
+  [dir="rtl"] .episodic-pane-rail {
+    transform: translateX(100%);
+  }
+  .episodic-shell[data-pane="rail"] .episodic-pane-rail {
     transform: translateX(0);
   }
-  .episodic-pane-backdrop {
-    display: none;
+  @media (prefers-reduced-motion: reduce) {
+    .episodic-pane-rail {
+      transition: none;
+    }
   }
-  .episodic-body[data-pane="rail"] .episodic-pane-backdrop {
+  .episodic-shell[data-pane="rail"] .episodic-pane-backdrop {
     display: block;
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.35);
     z-index: 90;
   }
-  /* Only the phone tier below switches dossier/assessment themselves, so
-     the bottom segmented control has nothing to do at this width. */
-  .episodic-pane-switcher {
-    display: none;
-  }
 }
 
-/* < 768px: one pane at a time, switched by the segmented control. */
+/* < 768px: one pane at a time. */
 @media (max-width: 767px) {
   /* A modest bump, expressed relative to the dial rather than a fixed
      px value - see the file header comment on --episodic-font-size-base.
-     An instance with its own smaller/larger EPISODIC_STYLE base is
+     An instance with its own smaller or larger EPISODIC_STYLE base is
      scaled from its own number, not overwritten by this one. */
   html {
     font-size: calc(var(--episodic-font-size-base) * 1.1);
   }
 
-  .episodic-rail-toggle {
-    display: none;
+  /* The navigation takes a row of its own, beneath the brand and the
+     sign-in control. `order` is why the bar is a sibling of those two in
+     the markup rather than nested with the brand: it arranges an
+     element against its own siblings and nothing else. If a language's
+     four labels ever did overrun a line, the bar wraps to a second row
+     - it degrades by wrapping, never by hiding. */
+  .episodic-nav {
+    order: 3;
+    flex-basis: 100%;
+    margin-inline-start: 0;
+    flex-wrap: wrap;
+    row-gap: 4px;
   }
 
-  .episodic-rail,
-  .episodic-dossier,
-  .episodic-assessment-rail {
+  .episodic-pane {
     display: none;
     width: 100%;
-    /* The room the fixed segmented control below needs, so its last
-       row of content is not hidden behind it - the same reasoning as
-       the shipped 44px header offset this file already carried before
-       .episodic-shell replaced it with a flex layout: a fixed overlay's
-       height has to be accounted for somewhere, and this is that
-       somewhere for a value now, rather than a viewport calc(). */
+    /* The room the fixed segmented control below needs, so a pane's last
+       row of content is not hidden behind it. */
     padding-bottom: 88px;
     box-sizing: border-box;
   }
-  .episodic-body[data-pane="rail"] .episodic-rail,
-  .episodic-body[data-pane="dossier"] .episodic-dossier,
-  .episodic-body[data-pane="assessment"] .episodic-assessment-rail {
+  .episodic-shell[data-pane="rail"] .episodic-pane-rail,
+  .episodic-shell[data-pane="dossier"] .episodic-pane-dossier,
+  .episodic-shell[data-pane="assessment"] .episodic-pane-assessment {
     display: block;
-  }
-  /* Not visible without a pane's own scroll reaching the bottom, but the
-     off-canvas transform/backdrop rules from the 768-1199px tier above
-     do not apply down here - the rail is a full pane, not an overlay,
-     so nothing needs to sit behind it. */
-  .episodic-pane-backdrop {
-    display: none;
+    /* The one visible pane is the row: it takes the whole width and the
+       whole height, and scrolls inside itself rather than letting the
+       document scroll under a fixed bar. */
+    flex: 1 1 auto;
   }
 
-  /* The sticky bottom segmented control - see episodic_ui_pane_switcher()
-     in R/app_widgets.R. Fixed rather than sticky: .episodic-body itself
-     never scrolls (its three panes each scroll internally), so there is
-     no scrolling ancestor for `position: sticky` to stick within. */
+  /* The sticky bottom segmented control. Fixed rather than sticky:
+     .episodic-body itself never scrolls (its panes each scroll
+     internally), so there is no scrolling ancestor for `position:
+     sticky` to stick within. */
   .episodic-pane-switcher {
     display: flex;
     flex-direction: column;
@@ -1692,6 +1832,8 @@ dl.episodic-settings dd { margin: 0; }
     z-index: 60;
     background: var(--episodic-surface);
     border-top: 1px solid var(--episodic-border);
+    /* Keeps the segments clear of the home indicator, where a press is
+       the system's gesture rather than the page's. */
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .episodic-pane-switcher-label {
@@ -1707,7 +1849,7 @@ dl.episodic-settings dd { margin: 0; }
   }
   .episodic-pane-tab {
     flex: 1;
-    min-height: 44px;
+    min-height: 48px;
     padding: 6px 4px;
     border: none;
     background: transparent;
@@ -1716,16 +1858,33 @@ dl.episodic-settings dd { margin: 0; }
     font-size: 0.808rem;
     line-height: 1.25;
     text-align: center;
-    /* Allowed to wrap to two lines rather than truncated: "Klassifikation"/
-       "Clasificación" (German/Spanish for the assessment segment, reusing
-       assessment.verdict_label) do not reliably fit one line at a third of
-       a 360px bar, and a cut-off tab label defeats the point of naming it. */
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    /* Allowed to wrap to two lines rather than truncated:
+       "Klassifikation" and "Clasificación" (German and Spanish for the
+       assessment segment) do not reliably fit one line at a third of a
+       360px bar, and a cut-off label defeats the point of naming it. */
     white-space: normal;
   }
-  .episodic-pane-tab.active {
+  /* Derived from the shell's own `data-pane`, like every other current
+     marking in the app: a segment cannot end up lit for a pane that is
+     not the one on screen, and there is no class here for a re-render to
+     lose. `aria-current` says the same thing to a screen reader, and is
+     deliberately not what this reads - the two cannot disagree about
+     which segment is current if only one of them decides it. */
+  .episodic-shell[data-pane="rail"] .episodic-pane-tab[data-episodic-pane="rail"],
+  .episodic-shell[data-pane="dossier"] .episodic-pane-tab[data-episodic-pane="dossier"],
+  .episodic-shell[data-pane="assessment"] .episodic-pane-tab[data-episodic-pane="assessment"] {
     color: var(--episodic-primary);
     font-weight: 600;
     box-shadow: inset 0 2px 0 var(--episodic-primary);
+  }
+  .episodic-pane-tab:active {
+    background: var(--episodic-primary-tint);
+  }
+  .episodic-pane-tab:focus-visible {
+    outline: 2px solid var(--episodic-primary);
+    outline-offset: -2px;
   }
 
   /* Two side-by-side pairs that otherwise never stack below 768px - see
@@ -1738,6 +1897,11 @@ dl.episodic-settings dd { margin: 0; }
   .episodic-split-col-wide {
     width: 100%;
     min-width: 0;
+  }
+
+  /* The Instance screen's cards go to one column. */
+  .episodic-instance-cards {
+    grid-template-columns: 1fr;
   }
 
   /* Tables: 8-11 columns at width:100% do not fit a 360px screen at any
@@ -1774,6 +1938,70 @@ dl.episodic-settings dd { margin: 0; }
   .episodic-panel-body > .shiny-plot-output {
     min-width: 480px;
   }
+}
+
+/* ---------------------------------------------------------------------
+   The Instance screen
+
+   The five screens that describe the instance rather than a cluster.
+   Cards rather than a menu: reaching one is an ordinary navigation, so
+   there is no collapsed state anywhere in the app that can be left open,
+   and each card has room to say what its screen is for.
+   --------------------------------------------------------------------- */
+.episodic-screen-title {
+  font-size: 1.692rem;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+.episodic-screen-lead {
+  font-size: 1rem;
+  color: var(--episodic-muted);
+  margin: 0 0 20px;
+  max-width: 60ch;
+}
+.episodic-instance-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  max-width: 1100px;
+}
+.episodic-instance-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  min-height: 44px;
+  background: var(--episodic-surface);
+  border: 1px solid var(--episodic-border);
+  border-inline-start: 3px solid var(--episodic-primary);
+  border-radius: 3px;
+  color: inherit;
+  text-decoration: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.episodic-instance-card:hover,
+.episodic-instance-card:active {
+  background: var(--episodic-primary-tint);
+}
+.episodic-instance-card:focus-visible {
+  outline: 2px solid var(--episodic-primary);
+  outline-offset: 2px;
+}
+.episodic-instance-card-title {
+  font-size: 1.154rem;
+  font-weight: 600;
+}
+.episodic-instance-card-desc {
+  font-size: 0.923rem;
+  color: var(--episodic-muted);
+  line-height: 1.45;
+}
+.episodic-instance-card-meta {
+  font-size: 0.846rem;
+  color: var(--episodic-muted);
+  font-variant-numeric: tabular-nums;
+  margin-top: 4px;
 }
 
 /* ---------------------------------------------------------------------

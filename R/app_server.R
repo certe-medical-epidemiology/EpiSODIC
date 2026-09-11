@@ -64,7 +64,15 @@ episodic_app_server_factory <- function(db_path,
     })
 
     view <- shiny::reactiveVal("clusters")
-    shiny::observeEvent(input$nav_view, view(input$nav_view))
+    # Checked against the screens that exist rather than trusted: any
+    # client can set any input, and a view id naming no screen would
+    # leave the shell showing none of them.
+    shiny::observeEvent(input$nav_view, {
+      if (!isTRUE(input$nav_view %in% episodic_app_views())) {
+        return(invisible(NULL))
+      }
+      view(input$nav_view)
+    })
 
     # Bumped by every write action (episodic_app_server_assessment_actions()'s
     # refresh()) so read models with no other reason to invalidate - the
@@ -245,33 +253,58 @@ episodic_app_server_factory <- function(db_path,
     # strip carries the last run's outcome and completeness. Neither is a
     # cluster, and both are withheld from a visitor who may see nothing.
     #
-    # `view()` is read isolated, so this renders once per sign-in state
-    # rather than on every navigation. It has to be: `output$main_view`
-    # depends on `view()` too, Shiny sends a flush's output values only
-    # once every output in it has finished, and the screens underneath
-    # take orders of magnitude longer to build than eight links do - so
-    # a nav that re-rendered on navigation would arrive with the screen
-    # it exists to navigate away from. The highlight still follows every
-    # way the view can change, including the ones that are not a click
-    # on these links (a cluster table row on the Pathogen or Activity
-    # screen), through the observer below.
+    # It depends on nothing else. The four links are the same for every
+    # reader (the admin-only Settings screen is reached from the Instance
+    # screen, which gates it there), and which one is lit is not in this
+    # markup at all - so this renders once per access state, and a
+    # navigation never touches it.
     output$nav_links <- shiny::renderUI({
       if (!access_granted()) {
         return(NULL)
       }
-      episodic_ui_nav_links(
-        shiny::isolate(view()),
-        lang = lang,
-        is_admin = episodic_user_is_admin(current_user())
+      episodic_ui_nav_links(lang = lang)
+    })
+
+    # The authoritative half of the navigation state. The click has
+    # already moved the highlight and the screen with no round trip in
+    # it; this says which view the server actually settled on, whether
+    # that was the click's doing or a cluster table row, a `?cluster=`
+    # link or the open-by-number box. Both go through the same function
+    # in `episodic-nav.js` and this one lands last, so the two cannot
+    # end up disagreeing.
+    shiny::observeEvent(view(), {
+      session$sendCustomMessage(
+        "episodic_view",
+        list(view = view(), nav = episodic_app_nav_group(view()))
       )
     })
 
-    # Moves the "active" class alone, without rebuilding the nav. A
-    # message rather than a re-render for the reason above, and harmless
-    # when the nav is not on the page: episodicSetActiveNav() finds no
-    # links and does nothing.
-    shiny::observeEvent(view(), {
-      session$sendCustomMessage("episodicSetActiveNav", view())
+    # The same contract for the rail's own highlight, which the
+    # stylesheet cannot derive: a cluster id is not known when the
+    # stylesheet is written. An id that names no row in the rail marks no
+    # row, which is the honest answer for a closed cluster opened from
+    # the Pathogen screen - `output$pane_label` is what names it.
+    shiny::observeEvent(
+      selected_cluster_id(),
+      session$sendCustomMessage(
+        "episodic_cluster",
+        list(cluster = selected_cluster_id())
+      ),
+      ignoreNULL = FALSE
+    )
+
+    # Which cluster the phone-tier segmented control's other two segments
+    # refer to. Gated in its own right, like every output that reads
+    # surveillance data.
+    output$pane_label <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
+      cluster_id <- selected_cluster_id()
+      if (is.null(cluster_id)) {
+        return(NULL)
+      }
+      episodic_ui_pane_label(con, cluster_id, lang = lang)
     })
 
     output$status_strip <- shiny::renderUI({
@@ -281,110 +314,126 @@ episodic_app_server_factory <- function(db_path,
       episodic_ui_status_strip(episodic_app_status(con), lang = lang)
     })
 
-    output$main_view <- shiny::renderUI({
-      # Every screen below reads the database. On an instance that
-      # requires a sign-in, an anonymous session never gets past here, so
-      # none of those reads happens and nothing they would return is
-      # serialised into the page.
+    # Every screen is in the page all the time and one of them is shown
+    # (see `episodic_app_ui()`); each is its own output so that Shiny can
+    # suspend the ones that are hidden. That is what makes a navigation
+    # cost nothing: a screen is built the first time it is looked at, and
+    # coming back to it re-runs nothing unless its data changed in the
+    # meantime.
+    #
+    # Each returns NULL to a visitor who may see nothing, so that the
+    # reads below never happen and nothing they would return is
+    # serialised into the page. `output$locked_screen` is what such a
+    # visitor sees instead.
+    output$locked_screen <- shiny::renderUI({
+      if (access_granted()) {
+        return(NULL)
+      }
+      episodic_ui_locked_screen(lang = lang)
+    })
+
+    # Which of the two states the page is in. The locked screen and the
+    # screens it stands in for are both in the page; this is what says
+    # which is shown. Server-owned because the access decision is, and
+    # sent for the initial state as well as every change - a session
+    # starts out showing the app, so a locked one has to be told.
+    shiny::observeEvent(
+      access_granted(),
+      session$sendCustomMessage(
+        "episodic_access",
+        list(access = if (isTRUE(access_granted())) "open" else "locked")
+      ),
+      ignoreNULL = FALSE
+    )
+
+    output$streams_screen <- shiny::renderUI({
       if (!access_granted()) {
-        return(episodic_ui_locked_screen(lang = lang))
+        return(NULL)
       }
-      if (view() == "streams") {
-        episodic_ui_streams_screen(
-          episodic_app_streams_screen(con, page = streams_page()),
-          lang = lang
-        )
-      } else if (view() == "archive") {
-        shiny::uiOutput("archive_screen")
-      } else if (view() == "activity") {
-        episodic_ui_activity_screen(
-          episodic_app_activity_log(
-            con,
-            lang = lang,
-            user = current_user(),
-            category = activity_categories()
-          ),
-          selected_categories = activity_categories(),
-          lang = lang
-        )
-      } else if (view() == "pathogen") {
-        range <- pathogen_range()
-        episodic_ui_pathogen_screen(
-          episodic_app_pathogen_screen(
-            con,
-            pathogen = pathogen_selected(),
-            period = pathogen_period(),
-            from = range$from,
-            to = range$to,
-            lang = lang
-          ),
-          lang = lang
-        )
-      } else if (view() == "performance") {
-        episodic_ui_performance_screen(
-          episodic_app_performance(con, lang = lang),
-          lang = lang
-        )
-      } else if (view() == "info") {
-        episodic_ui_info_screen(
+      episodic_ui_streams_screen(
+        episodic_app_streams_screen(con, page = streams_page()),
+        lang = lang
+      )
+    })
+
+    output$activity_screen <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
+      episodic_ui_activity_screen(
+        episodic_app_activity_log(
           con,
-          current_user = current_user(),
-          lang = lang
-        )
-      } else if (view() == "settings") {
-        shiny::uiOutput("settings_screen")
-      } else {
-        shiny::tags$div(
-          class = "episodic-body",
-          # Which pane is on top below 1200px - see episodicSelectPane()
-          # in R/app_ui.R and the "Responsive layout" section at the end
-          # of episodic.css. Inert above 1200px: no rule there reads it.
-          `data-pane` = "dossier",
-          # Off-canvas rail toggle: shown only in the 768-1199px tier,
-          # where the rail slides in as an overlay over dossier+assessment
-          # rather than sharing a row with them - the rail is a list you
-          # consult and leave, the assessment is what you write into while
-          # reading the dossier, so the rail is what gets shed at this
-          # width rather than the assessment. Hidden again below 768px,
-          # where the segmented control's own "clusters" tab does the
-          # same job.
-          shiny::tags$button(
-            type = "button",
-            class = "episodic-rail-toggle",
-            # Reuses rail.title ("Open clusters") rather than a new key:
-            # it already says exactly what pressing this button reveals.
-            `aria-label` = episodic_tr("rail.title", lang = lang),
-            onclick = "episodicSelectPane('rail');",
-            "\u2630"
-          ),
-          # Closes the off-canvas rail again on an outside tap. Only ever
-          # visible (via CSS) while data-pane="rail" in the 768-1199px
-          # tier - at >=1200px the rail is never off-canvas, and below
-          # 768px it is a full pane rather than an overlay, so there is
-          # nothing behind it to reveal.
-          shiny::tags$div(
-            class = "episodic-pane-backdrop",
-            onclick = "episodicSelectPane('dossier');"
-          ),
-          shiny::uiOutput("rail_pane"),
-          shiny::uiOutput("dossier_pane"),
-          shiny::uiOutput("assessment_pane"),
-          episodic_ui_pane_switcher(lang = lang)
-        )
+          lang = lang,
+          user = current_user(),
+          category = activity_categories()
+        ),
+        selected_categories = activity_categories(),
+        lang = lang
+      )
+    })
+
+    output$pathogen_screen <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
       }
+      range <- pathogen_range()
+      episodic_ui_pathogen_screen(
+        episodic_app_pathogen_screen(
+          con,
+          pathogen = pathogen_selected(),
+          period = pathogen_period(),
+          from = range$from,
+          to = range$to,
+          lang = lang
+        ),
+        lang = lang
+      )
+    })
+
+    output$performance_screen <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
+      episodic_ui_performance_screen(
+        episodic_app_performance(con, lang = lang),
+        lang = lang
+      )
+    })
+
+    output$info_screen <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
+      episodic_ui_info_screen(
+        con,
+        current_user = current_user(),
+        lang = lang
+      )
+    })
+
+    output$instance_screen <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
+      db_version()
+      episodic_ui_instance_screen(
+        episodic_app_instance(con, lang = lang),
+        current_user = current_user(),
+        lang = lang
+      )
     })
 
     # Deliberately not dependent on selected_cluster_id(): the rail's own
     # HTML only needs to change when the open-cluster list itself changes,
     # not on every click. If it re-rendered on selection too, the whole
     # rail's DOM (and with it, its scroll position) would be replaced on
-    # every click - episodic_ui_rail()'s onclick handles the "active"
-    # highlight itself, client-side, instead.
+    # every click - the row's own `aria-current`, written client-side by
+    # `episodic-nav.js`, carries the highlight instead.
     output$rail_pane <- shiny::renderUI({
-      # Gated in its own right, not only through `main_view` not placing
-      # it: an output nothing binds is an output nothing computes, but
-      # that is a property of how it happens to be reached today, and
-      # this is a leak if it ever stops being true.
+      # Gated in its own right, not only through the clusters screen
+      # being hidden: a hidden output is a suspended output rather than
+      # an absent one, and a suspension is a performance property, not
+      # an access one.
       if (!access_granted()) {
         return(NULL)
       }
@@ -424,10 +473,7 @@ episodic_app_server_factory <- function(db_path,
       cluster_id <- selected_cluster_id()
       current_user() # re-render on sign in/out (line list lock, classification form)
       if (is.null(cluster_id)) {
-        return(shiny::tags$div(
-          class = "episodic-dossier",
-          shiny::tags$p(episodic_tr("rail.empty", lang = lang))
-        ))
+        return(shiny::tags$p(episodic_tr("rail.empty", lang = lang)))
       }
       episodic_ui_dossier(
         con,
@@ -793,9 +839,9 @@ episodic_app_url_cluster_id <- function(search) {
 #' clusters and classify all of them in one submit, rather than opening
 #' each dossier in turn for what is frequently the same verdict
 #' (`artefact`) and a shared rationale. Selection itself is tracked
-#' entirely client-side (a checkbox's own `checked` state, read from the
-#' DOM at submit time via `episodicBulkUpdate()`/the submit button's
-#' onclick) rather than in a Shiny reactive - the rail's own render is
+#' entirely client-side - a checkbox's own `checked` state, counted by
+#' `episodic-nav.js` and read from the DOM when Apply is pressed -
+#' rather than in a Shiny reactive, because the rail's own render is
 #' deliberately decoupled from `selected_cluster_id()` so a click does
 #' not replace the whole list and lose scroll position (see
 #' `output$rail_pane`'s own comment); round-tripping every checkbox
@@ -812,6 +858,8 @@ episodic_app_url_cluster_id <- function(search) {
 #'   only render for a signed-in epidemiologist, same gate as the single-cluster
 #'   assessment form. A signed-in viewer sees the rail exactly as a
 #'   signed-out visitor does.
+#' @return A `shiny::tagList` of the rail's contents. The rail's own box
+#'   is `output$rail_pane`'s container - see `episodic_app_ui()`.
 #' @keywords internal
 #' @noRd
 episodic_ui_rail <- function(open,
@@ -848,7 +896,10 @@ episodic_ui_rail <- function(open,
   bulk_bar <- if (episodic_user_is_epidemiologist(current_user)) {
     shiny::tags$div(
       id = "episodic-bulk-bar",
-      style = "display:none;",
+      # `hidden`, not an inline display style: `episodic-nav.js` toggles
+      # the property rather than writing a style string, and a media
+      # query can still reach the class without fighting an inline rule.
+      hidden = NA,
       class = "episodic-panel-body",
       shiny::tags$div(
         style = "font-size:12.5px;font-weight:600;margin-bottom:6px;",
@@ -884,36 +935,23 @@ episodic_ui_rail <- function(open,
         shiny::tags$button(
           class = "episodic-btn",
           type = "button",
-          onclick = paste0(
-            "var ids=Array.from(document.querySelectorAll('.episodic-rail-select:checked')).map(function(el){return parseInt(el.value);}); ",
-            "if(ids.length===0){return;} ",
-            "var rationale=document.getElementById('bulk_assess_rationale').value; ",
-            "Shiny.setInputValue('bulk_assess_submit', {cluster_ids: ids, verdict: document.getElementById('bulk_assess_verdict').value, rationale: rationale}, {priority: 'event'});"
-          ),
+          `data-episodic-action` = "bulk-apply",
           episodic_tr("rail.bulk_apply", lang = lang)
         ),
         shiny::tags$button(
           class = "episodic-btn",
           type = "button",
-          onclick = paste0(
-            "document.querySelectorAll('.episodic-rail-select').forEach(function(el){el.checked=false;}); episodicBulkUpdate();"
-          ),
+          `data-episodic-action` = "bulk-clear",
           episodic_tr("rail.bulk_clear", lang = lang)
         )
       )
     )
   }
 
-  shiny::tags$div(
-    class = "episodic-rail",
-    if (episodic_user_is_epidemiologist(current_user)) {
-      shiny::tags$script(shiny::HTML(paste0(
-        "function episodicBulkUpdate(){var n=document.querySelectorAll('.episodic-rail-select:checked').length; ",
-        "var bar=document.getElementById('episodic-bulk-bar'); if(!bar){return;} ",
-        "bar.style.display = n>0 ? 'block' : 'none'; ",
-        "var c=document.getElementById('episodic-bulk-count'); if(c){c.textContent=n;}}"
-      )))
-    },
+  # A tagList rather than a div of its own: the rail's geometry is on
+  # `output$rail_pane`'s own container (see `episodic_app_ui()`), which is
+  # the element `.episodic-body` actually lays out.
+  shiny::tagList(
     shiny::tags$div(
       class = "episodic-rail-header",
       shiny::tags$div(
@@ -945,24 +983,20 @@ episodic_ui_rail <- function(open,
         # No `id`, deliberately: Shiny binds every `input[type=number]`
         # that carries one, which would make this a reactive input
         # sending a round trip on each keystroke of a number nothing
-        # reads until Open is pressed. Found by class instead, from
-        # episodicRailOpen().
+        # reads until Open is pressed. Found by class instead, by
+        # `episodic-nav.js`.
         shiny::tags$input(
           type = "number",
           min = "1",
           step = "1",
           class = "episodic-rail-open-input",
           `aria-label` = episodic_tr("rail.open_label", lang = lang),
-          placeholder = episodic_tr("rail.open_placeholder", lang = lang),
-          onkeydown = paste0(
-            "if(event.key==='Enter'){event.preventDefault();",
-            "episodicRailOpen();}"
-          )
+          placeholder = episodic_tr("rail.open_placeholder", lang = lang)
         ),
         shiny::tags$button(
           type = "button",
           class = "episodic-btn episodic-rail-open-btn",
-          onclick = "episodicRailOpen();",
+          `data-episodic-action` = "rail-open",
           episodic_tr("rail.open_button", lang = lang)
         )
       )
@@ -983,98 +1017,107 @@ episodic_ui_rail <- function(open,
         row$care_line <- row$care_line %||% NA_character_
         row$priority_score <- row$priority_score %||% NA_real_
         active <- identical(row$cluster_id, selected_id)
+        selectable <- episodic_user_is_epidemiologist(current_user)
+        # The row is a container; what opens the cluster is a real
+        # <button> inside it, covering everything but the bulk-select
+        # checkbox. The checkbox is the reason for the split: a form
+        # control nested inside a button is invalid, and browsers differ
+        # on whether it can be ticked at all. As siblings, each is
+        # exactly what it is - one opens a dossier, the other selects a
+        # cluster for a bulk verdict - and neither has to stop the
+        # other's event to say so.
         shiny::tags$div(
-          class = paste("episodic-rail-item", if (active) "active" else ""),
-          # The id every episodicOpenCluster() call (a cluster table row, a
-          # linked-cluster chip) reads back to find and highlight this item
-          # when the selection changes from outside the rail itself.
+          class = if (selectable) {
+            "episodic-rail-item episodic-rail-item-selectable"
+          } else {
+            "episodic-rail-item"
+          },
+          # Which row is marked is `aria-current`, written only by
+          # `episodic-nav.js` (from a click here, and from the server's
+          # own selection whichever route it came by) and read by the
+          # stylesheet. One attribute is both the accessible state and
+          # the styling hook, so there is no class beside it saying the
+          # same thing and no way for the two to disagree.
+          `aria-current` = if (active) "true",
+          # The id every other place that opens a cluster - a table row,
+          # a linked-cluster chip - reads back to find and mark this row.
           `data-cluster-id` = row$cluster_id,
-          onclick = sprintf(
-            paste0(
-              "document.querySelectorAll('.episodic-rail-item').forEach(function(el){el.classList.remove('active');}); ",
-              "this.classList.add('active'); ",
-              "Shiny.setInputValue('rail_select', %d, {priority: 'event'}); ",
-              # Picking a cluster from the rail itself: bring the dossier
-              # forward and refresh the pane switcher's cluster label the
-              # same way episodicOpenCluster() does for a click that opens
-              # a cluster from somewhere else.
-              "episodicSelectPane('dossier'); ",
-              "episodicSyncPaneBar();"
+          if (selectable) {
+            shiny::tags$input(
+              type = "checkbox",
+              class = "episodic-rail-select",
+              `aria-label` = episodic_tr("rail.bulk_select", lang = lang),
+              value = row$cluster_id
+            )
+          },
+          shiny::tags$button(
+            type = "button",
+            class = "episodic-rail-item-open",
+            `data-episodic-cluster` = row$cluster_id,
+            shiny::tags$div(
+              class = "episodic-rail-pathogen",
+              shiny::HTML(episodic_ui_italicise_taxon(row$pathogen)),
+              shiny::tags$span(
+                class = "episodic-rail-id",
+                episodic_tr(
+                  "dossier.cluster_ref",
+                  id = row$cluster_id,
+                  lang = lang
+                )
+              ),
+              if (!is.na(row$care_line)) {
+                care_line_colour <- episodic_ui_care_line_colour(row$care_line)
+                if (!is.null(care_line_colour)) {
+                  episodic_ui_chip(
+                    episodic_tr(
+                      paste0("careline.short.", row$care_line),
+                      lang = lang
+                    ),
+                    care_line_colour,
+                    filled = TRUE
+                  )
+                }
+              }
             ),
-            row$cluster_id
-          ),
-          shiny::tags$div(
-            class = "episodic-rail-pathogen",
-            if (episodic_user_is_epidemiologist(current_user)) {
-              shiny::tags$input(
-                type = "checkbox",
-                class = "episodic-rail-select",
-                value = row$cluster_id,
-                onclick = "event.stopPropagation(); episodicBulkUpdate();",
-                onchange = "episodicBulkUpdate();"
-              )
-            },
-            shiny::HTML(episodic_ui_italicise_taxon(row$pathogen)),
-            shiny::tags$span(
-              class = "episodic-rail-id",
-              episodic_tr(
-                "dossier.cluster_ref",
-                id = row$cluster_id,
+            shiny::tags$div(class = "episodic-rail-meta", row$level_label),
+            shiny::tags$div(
+              class = "episodic-rail-meta",
+              episodic_format_date_range(
+                row$first_day,
+                row$last_day,
                 lang = lang
               )
             ),
-            if (!is.na(row$care_line)) {
-              care_line_colour <- episodic_ui_care_line_colour(row$care_line)
-              if (!is.null(care_line_colour)) {
-                episodic_ui_chip(
-                  episodic_tr(
-                    paste0("careline.short.", row$care_line),
+            shiny::tags$div(
+              class = "episodic-rail-meta",
+              paste(
+                c(
+                  episodic_count_phrase(
+                    row$n_cases,
+                    episodic_tr("unit.case", lang = lang),
+                    episodic_tr("unit.cases", lang = lang),
                     lang = lang
                   ),
-                  care_line_colour,
-                  filled = TRUE
-                )
-              }
-            }
-          ),
-          shiny::tags$div(class = "episodic-rail-meta", row$level_label),
-          shiny::tags$div(
-            class = "episodic-rail-meta",
-            episodic_format_date_range(
-              row$first_day,
-              row$last_day,
-              lang = lang
-            )
-          ),
-          shiny::tags$div(
-            class = "episodic-rail-meta",
-            paste(
-              c(
-                episodic_count_phrase(
-                  row$n_cases,
-                  episodic_tr("unit.case", lang = lang),
-                  episodic_tr("unit.cases", lang = lang),
-                  lang = lang
-                ),
-                if (!is.na(row$priority_score)) {
-                  episodic_tr(
-                    "rail.priority",
-                    score = episodic_format_number(
-                      row$priority_score,
-                      digits = 0,
+                  if (!is.na(row$priority_score)) {
+                    episodic_tr(
+                      "rail.priority",
+                      score = episodic_format_number(
+                        row$priority_score,
+                        digits = 0,
+                        lang = lang
+                      ),
                       lang = lang
-                    ),
-                    lang = lang
-                  )
-                }
-              ),
-              collapse = " \u00b7 "
+                    )
+                  }
+                ),
+                collapse = " \u00b7 "
+              )
+            ),
+            shiny::tags$div(
+              class = "episodic-rail-state",
+              episodic_ui_state_dot(row$state),
+              row$state_label
             )
-          ),
-          shiny::tags$div(
-            class = "episodic-rail-state",
-            episodic_ui_state_dot(row$state),
-            row$state_label
           )
         )
       })

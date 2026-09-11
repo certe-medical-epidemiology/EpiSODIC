@@ -70,3 +70,6 @@ data/
 *credential*
 *secret*
 
+
+# Verification harness output (see data-raw/verification/README.md)
+data-raw/verification/output/

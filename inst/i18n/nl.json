@@ -11,7 +11,15 @@
   "nav.performance": "Prestatie",
   "nav.info": "Info",
   "nav.settings": "Instellingen",
+  "nav.instance": "Instantie",
   "nav.menu_label": "Menu",
+  "instance.lead": "Wat deze instantie bewaakt, wat zij heeft gedaan en hoe zij is ingericht.",
+  "instance.schema_version": "Schemaversie {version}",
+  "instance.card.streams": "Elke signaleringsreeks waarop de detectoren draaien, en of deze in aanmerking komt.",
+  "instance.card.activity": "Het audittrail: detectieruns, beoordelingen en aanmeldingen.",
+  "instance.card.performance": "Hoe de detectoren zich verhouden tot de oordelen van de epidemiologen zelf.",
+  "instance.card.info": "Wat deze versie is, welke referentiebestanden zijn gelezen en wat de termen betekenen.",
+  "instance.card.settings": "Accounts en instellingen van de instantie.",
 
   "rail.title": "Openstaande clusters",
   "rail.count_suffix": "nieuw of actief",
@@ -24,8 +32,10 @@
   "rail.bulk_selected": "geselecteerd",
   "rail.bulk_apply": "Classificatie toepassen op geselecteerde",
   "rail.bulk_clear": "Selectie wissen",
+  "rail.bulk_select": "Selecteren voor gezamenlijke beoordeling",
 
   "pane.dossier": "Dossier",
+  "pane.switcher_label": "Tonen",
 
   "dossier.stat.observed_sub": "verwacht {expected}",
   "dossier.stat.ratio": "Ratio O/V",
@@ -186,6 +196,10 @@
   "unit.days": "dagen",
   "unit.week": "week",
   "unit.weeks": "weken",
+  "unit.run": "run",
+  "unit.runs": "runs",
+  "unit.account": "account",
+  "unit.accounts": "accounts",
 
   "misc.unknown": "onbekend",
   "misc.none": "geen",

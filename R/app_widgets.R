@@ -191,16 +191,14 @@ episodic_ui_picker <- function(input_id, options, selected = NULL) {
 
 #' The phone-tier pane switcher for the clusters screen
 #'
-#' Below 768px, `.episodic-body`'s three panes (rail, dossier, assessment)
-#' show one at a time, switched by this sticky bottom bar - see the
-#' "Responsive layout" section at the end of `episodic.css` and
-#' `episodicSelectPane()` in `R/app_ui.R`. Static markup, not a Shiny output:
-#' it reads no surveillance data of its own and never re-renders on a tap
-#' (see `episodicSelectPane()`'s own comment for why that matters), so it
-#' carries no `episodic_app_access_granted()` gate of its own either - it is
-#' only ever placed inside the already-gated clusters view.
+#' Below 768px the clusters screen shows one of its three panes at a
+#' time, switched by this bar. Which one is showing is `data-pane` on
+#' `.episodic-shell`, and which segment is lit is derived from that by
+#' the stylesheet, so a segment cannot end up marked for a pane that is
+#' not the one on screen and a re-render has no highlight to lose.
 #'
-#' Hidden entirely by CSS at 768px and above; harmless to render there too.
+#' Hidden by CSS at 768px and above, where all three panes are on screen
+#' together and there is nothing to switch between.
 #'
 #' @param lang Session language.
 #' @return A `shiny::tags$div`.
@@ -209,12 +207,18 @@ episodic_ui_picker <- function(input_id, options, selected = NULL) {
 episodic_ui_pane_switcher <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   shiny::tags$div(
     class = "episodic-pane-switcher",
-    # Filled client-side by episodicSyncPaneBar() from the rail's own
-    # already-rendered active item - see that function's comment in
-    # R/app_ui.R for why this does not need a Shiny output of its own.
-    shiny::tags$div(
-      class = "episodic-pane-switcher-label",
-      id = "episodic-pane-switcher-label"
+    role = "group",
+    `aria-label` = episodic_tr("pane.switcher_label", lang = lang),
+    # Which cluster the other two segments refer to, from the server's
+    # own selection rather than copied out of the rail's markup. A
+    # cluster opened from the Pathogen screen, from a `?cluster=` link or
+    # from the open-by-number box is frequently not in the rail at all,
+    # and reading the label off a row that is not there leaves it blank -
+    # which says "nothing is open" about a cluster that is.
+    shiny::uiOutput(
+      "pane_label",
+      container = shiny::tags$div,
+      class = "episodic-pane-switcher-label"
     ),
     shiny::tags$div(
       class = "episodic-pane-switcher-tabs",
@@ -231,16 +235,15 @@ episodic_ui_pane_switcher <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   )
 }
 
-#' @param pane The `data-pane` value this tab switches `.episodic-body` to.
-#' @param label The tab's visible text.
+#' @param pane The pane this segment brings forward.
+#' @param label The segment's visible text.
 #' @keywords internal
 #' @noRd
 episodic_ui_pane_tab <- function(pane, label) {
   shiny::tags$button(
     type = "button",
     class = "episodic-pane-tab",
-    `data-pane-target` = pane,
-    onclick = sprintf("episodicSelectPane('%s');", pane),
+    `data-episodic-pane` = pane,
     label
   )
 }
@@ -356,18 +359,15 @@ episodic_ui_chip_link <- function(text,
                                   colour,
                                   cluster_id,
                                   lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  open_js <- sprintf("episodicOpenCluster(%d);", as.integer(cluster_id))
   shiny::tags$span(
     class = "episodic-chip episodic-chip-outline episodic-chip-link",
     style = sprintf("color:%s;border:1px solid %s66;", colour, colour),
     tabindex = "0",
     role = "link",
     title = episodic_tr("cluster.open_hint", lang = lang),
-    onclick = open_js,
-    onkeydown = sprintf(
-      "if(event.key==='Enter'||event.key===' '){event.preventDefault();%s}",
-      open_js
-    ),
+    # Both the click and Enter/Space are picked up by
+    # `episodic-nav.js`'s delegated listeners, from this one attribute.
+    `data-episodic-cluster` = as.integer(cluster_id),
     text
   )
 }
@@ -389,17 +389,12 @@ episodic_ui_chip_link <- function(text,
 episodic_ui_cluster_link <- function(text,
                                      cluster_id,
                                      lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  open_js <- sprintf("episodicOpenCluster(%d);", as.integer(cluster_id))
   shiny::tags$span(
     class = "episodic-cluster-link",
     tabindex = "0",
     role = "link",
     title = episodic_tr("cluster.open_hint", lang = lang),
-    onclick = open_js,
-    onkeydown = sprintf(
-      "if(event.key==='Enter'||event.key===' '){event.preventDefault();%s}",
-      open_js
-    ),
+    `data-episodic-cluster` = as.integer(cluster_id),
     text
   )
 }

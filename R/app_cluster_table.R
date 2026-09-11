@@ -224,16 +224,15 @@ episodic_ui_cluster_row <- function(cluster_id,
     ))
   }
 
-  open_js <- sprintf("episodicOpenCluster(%d);", as.integer(cluster_id))
   shiny::tags$tr(
     class = "episodic-row-link",
     tabindex = "0",
     title = episodic_tr("cluster.open_hint", lang = lang),
-    onclick = open_js,
-    onkeydown = sprintf(
-      "if(event.key==='Enter'||event.key===' '){event.preventDefault();%s}",
-      open_js
-    ),
+    # Click and Enter/Space both reach `episodic-nav.js`'s delegated
+    # listeners from here. A table of a hundred rows therefore carries a
+    # hundred short attributes rather than a hundred copies of the same
+    # two lines of JavaScript.
+    `data-episodic-cluster` = as.integer(cluster_id),
     shiny::tags$td(
       class = "episodic-cell-id",
       shiny::tags$span(class = "episodic-id-link", ref)
