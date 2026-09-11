@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.18.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.19.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,36 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.19.0" id="episodic-0190">EpiSODIC 0.19.0<a class="anchor" aria-label="anchor" href="#episodic-0190"></a></h2>
+<div class="section level3">
+<h3 id="new-0-19-0">New<a class="anchor" aria-label="anchor" href="#new-0-19-0"></a></h3>
+<ul><li>Per-output loading spinners in the primary colour, so each panel, chart and table says it is the one being waited for</li>
+<li>A “Last 3 months” period on the Pathogen screen, left of “Last 12 months”</li>
+<li>An open-by-number box in the rail header, which opens any cluster the instance will show, closed and archived ones included</li>
+<li>A row about a cluster on the Activity screen opens that cluster</li>
+<li>Schema version 5: two composite indexes on <code>episodic_case</code>, for the dashboard’s date-bounded and institution-bounded pathogen reads</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-19-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-19-0"></a></h3>
+<ul><li>The header navigation renders once per sign-in state instead of on every navigation, so it no longer arrives with the screen it exists to navigate away from</li>
+<li>The active-screen highlight moves through one client-side helper, called both by a nav link’s own click and by the server when the view changes any other way</li>
+<li>The resolved YAML configuration is cached per file content, instead of being re-read, re-validated and re-merged at every <code>episodic_geography_config()</code> call</li>
+<li>The denominator panel reads only the weeks it plots, rather than a pathogen’s whole recorded history</li>
+<li>Weekly case counts are computed by binary search rather than a pass over every date per week</li>
+<li>The demography baseline query is a correlated <code>NOT EXISTS</code> rather than a nested <code>NOT IN</code>
+</li>
+<li>The Activity screen resolves a row’s cluster by lookup rather than by scanning every cluster per row</li>
+<li>The open-cluster list is no longer invalidated by leaving the Clusters screen and coming back</li>
+<li>Opening a cluster builds its cluster object once instead of three times, and its completion curve once instead of twice</li>
+<li>A ward stream’s cases and an area stream’s postcodes are narrowed by the database rather than after every case of the pathogen has reached R</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-19-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-19-0"></a></h3>
+<ul><li>Saving a cluster note that repeats the note already on file no longer records a version in which nothing changed, and an empty note on a cluster that never had one is not recorded at all</li>
+<li>A cluster id that names nothing viewable no longer selects an absent cluster in the dossier</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.18.0" id="episodic-0180">EpiSODIC 0.18.0<a class="anchor" aria-label="anchor" href="#episodic-0180"></a></h2>
 <div class="section level3">

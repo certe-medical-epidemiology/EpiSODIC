@@ -54,7 +54,7 @@ DBI::dbDisconnect(con)
 
 # already current: reports so and changes nothing
 episodic_db_migrate(db_path)
-#> Database is at schema version 4.
+#> Database is at schema version 5.
 
 file.remove(db_path)
 #> [1] TRUE
