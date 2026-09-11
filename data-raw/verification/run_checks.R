@@ -64,7 +64,8 @@ record <- function(name, ok, detail = "") {
     ok = isTRUE(ok),
     detail = detail
   )
-  message(sprintf("[%s] %s%s",
+  message(sprintf(
+    "[%s] %s%s",
     if (isTRUE(ok)) "pass" else "FAIL",
     name,
     if (nzchar(detail)) paste0(" - ", detail) else ""
@@ -101,7 +102,7 @@ if (!is.null(test_results)) {
     )
   )
   utils::write.csv(
-    test_results,
+    test_results[, !vapply(test_results, is.list, logical(1)), drop = FALSE],
     file.path(out_dir, "test-results.csv"),
     row.names = FALSE
   )
@@ -157,7 +158,11 @@ if (!is.null(check)) {
 
 message("\n== styler::style_pkg(dry = 'on') ==")
 styled <- tryCatch(
-  styler::style_pkg(dry = "on"),
+  # R CMD check, run just above, has already written a full package copy
+  # (vignettes purled to .R included) into out_dir. Left unexcluded, that
+  # copy is still under the package root when styler scans it, so this
+  # step would flag build output it wrote itself rather than source.
+  styler::style_pkg(dry = "on", exclude_dirs = c("renv", "packrat", "data-raw/verification/output")),
   error = function(e) {
     record("formatting", FALSE, conditionMessage(e))
     NULL

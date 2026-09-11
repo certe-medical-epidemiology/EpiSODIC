@@ -267,7 +267,7 @@ body {
 }
 
 /* The clusters screen's three panes.
-   
+
    These classes sit on shiny::uiOutput()'s own containers (see
    episodic_app_ui()), not on an element inside them. They have to: the
    container is what .episodic-body's flex layout actually lays out, so
@@ -275,28 +275,42 @@ body {
    `overflow-y: auto` never engages, leaving the document to scroll
    instead of the pane. Carrying the box here also gives each pane a
    real one for the recalculating spinner, so a pane being rebuilt says
-   so in place rather than emptying. */
+   so in place rather than emptying.
+
+   Each of the three renderers (episodic_ui_rail(), episodic_ui_dossier(),
+   episodic_ui_assessment_rail()) hands its container a tagList of several
+   top-level tags rather than one wrapping div, for the same reason this
+   comment gives: a second div here would be the box, not this one. Shiny
+   itself reacts to that shape by setting the container's own `display`
+   to `contents` - the right default for an anonymous wrapper, but it
+   also voids every property below on the element the wrapper is not
+   anonymous: width, background, border and overflow all stop applying,
+   and each pane's children fall straight into `.episodic-body`'s row as
+   uncontained flex items, wide as their content and never wrapped. The
+   `!important` is what a shiny (>= 1.14.0) uiOutput() cannot out-rank -
+   this container is exactly the one case that has to keep its box. */
 .episodic-pane {
   min-height: 0;
+  display: block !important;
 }
 .episodic-pane-rail {
   width: 250px;
   background: var(--episodic-surface);
   border-inline-end: 1px solid var(--episodic-border);
-  overflow-y: auto;
+  overflow: hidden auto;
   flex: none;
 }
 .episodic-pane-dossier {
   flex: 1 1 0;
   min-width: 0;
-  overflow-y: auto;
+  overflow: hidden auto;
   padding: 18px 20px 40px;
 }
 .episodic-pane-assessment {
   width: 330px;
   background: var(--episodic-surface);
   border-inline-start: 1px solid var(--episodic-border);
-  overflow-y: auto;
+  overflow: hidden auto;
   flex: none;
 }
 
@@ -1801,8 +1815,14 @@ dl.episodic-settings dd { margin: 0; }
     row-gap: 4px;
   }
 
+  /* `!important` on both: below 768px only one of the three may be
+     visible at a time, which the base `.episodic-pane` rule's own
+     `display: block !important` (needed to out-rank shiny's
+     `display: contents` on a multi-root uiOutput - see that rule's own
+     comment) would otherwise defeat regardless of media-query nesting,
+     since importance does not respect scope. */
   .episodic-pane {
-    display: none;
+    display: none !important;
     width: 100%;
     /* The room the fixed segmented control below needs, so a pane's last
        row of content is not hidden behind it. */
@@ -1812,7 +1832,7 @@ dl.episodic-settings dd { margin: 0; }
   .episodic-shell[data-pane="rail"] .episodic-pane-rail,
   .episodic-shell[data-pane="dossier"] .episodic-pane-dossier,
   .episodic-shell[data-pane="assessment"] .episodic-pane-assessment {
-    display: block;
+    display: block !important;
     /* The one visible pane is the row: it takes the whole width and the
        whole height, and scrolls inside itself rather than letting the
        document scroll under a fixed bar. */

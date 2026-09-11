@@ -172,7 +172,9 @@ test_that("a row opens its dossier, by click and by keyboard", {
   expect_true(grepl('data-episodic-cluster="42"', row, fixed = TRUE))
   expect_true(grepl("42", row, fixed = TRUE))
   expect_true(grepl("tabindex", row, fixed = TRUE))
-  expect_true(grepl("onkeydown", row, fixed = TRUE))
+  # Enter and Space reach it through episodic-nav.js's delegated keydown
+  # listener, not an inline handler repeated on every row.
+  expect_false(grepl("onkeydown", row, fixed = TRUE))
   expect_true(grepl("episodic-id-link", row, fixed = TRUE))
   expect_true(grepl("a cell", row, fixed = TRUE))
   # the id cell comes first, before whatever cells the caller passed

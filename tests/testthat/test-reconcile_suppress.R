@@ -262,7 +262,9 @@ test_that("a cluster sharing cases with one that stands separately says so, and 
   # instead of Shiny.setInputValue('open_cluster', ...) directly.
   opens <- paste0('data-episodic-cluster="', env$children[1], '"')
   expect_true(grepl(opens, chips, fixed = TRUE))
-  expect_true(grepl("onkeydown", chips, fixed = TRUE))
+  # Keyboard access comes from episodic-nav.js's delegated keydown
+  # listener, not an inline handler on every chip.
+  expect_false(grepl("onkeydown", chips, fixed = TRUE))
 
   # and the panel carries it, marked as standing separately
   panel <- as.character(episodic_ui_related_panel(

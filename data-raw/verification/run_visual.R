@@ -85,6 +85,11 @@ PORT <- 7391L
 
 results <- list()
 record <- function(context, name, ok, detail = "") {
+  # An absent shell attribute (data-pane, data-access, ...) reaches here
+  # as NULL by way of shell_attr()'s getAttribute() returning JS null -
+  # exactly the detail worth recording on a failing check, not a reason
+  # to crash the run before it is shown.
+  detail <- detail %||% "NULL"
   results[[length(results) + 1L]] <<- list(
     context = context,
     name = name,
@@ -92,8 +97,10 @@ record <- function(context, name, ok, detail = "") {
     detail = detail
   )
   if (!isTRUE(ok)) {
-    message(sprintf("  FAIL  %s :: %s%s", context, name,
-      if (nzchar(detail)) paste0(" - ", detail) else ""))
+    message(sprintf(
+      "  FAIL  %s :: %s%s", context, name,
+      if (nzchar(detail)) paste0(" - ", detail) else ""
+    ))
   }
 }
 
@@ -138,6 +145,21 @@ start_app <- function(lang, config) {
         EPISODIC_LANGUAGE = lang
       )
       pkgload::load_all(root, quiet = TRUE)
+      # load_all() also sources tests/testthat/helper-*.R, for the
+      # convenience of using the suite's own fixtures at an interactive
+      # console. helper-config.R's own top-level code does exactly that -
+      # it points EPISODIC_CONFIG at a test config of its own so the rest
+      # of the suite runs unlocked - which silently replaces the config
+      # this harness was asked to run under, unlocked-vs-locked included.
+      # Reasserted here, after load_all() and before the app starts, so
+      # this session runs under the config named above rather than the
+      # suite's.
+      Sys.setenv(
+        EPISODIC_DB = db_path,
+        EPISODIC_CONFIG = config,
+        EPISODIC_PC_PROVINCE_MAP = pc_map,
+        EPISODIC_LANGUAGE = lang
+      )
       # The package's own entry point, not a shinyApp() assembled here:
       # it is what registers the www/ resource path, and a harness that
       # serves the stylesheet and the navigation script differently from
@@ -224,7 +246,17 @@ wait_until <- function(b, expr, timeout = 30, what = expr) {
   deadline <- Sys.time() + timeout
   repeat {
     if (isTRUE(js(b, expr))) {
-      return(invisible(TRUE))
+      # A screen shown by a pure attribute flip settles by this
+      # predicate before shiny (>= 1.14.0)'s own visibility-driven
+      # bind/resume of the newly-shown output has finished its own
+      # microtask tail - a click landing in that gap is a click the
+      # delegated listener never sees. One confirming read, a beat
+      # later, is what a real end-to-end harness calls settled rather
+      # than "true on one poll".
+      Sys.sleep(0.1)
+      if (isTRUE(js(b, expr))) {
+        return(invisible(TRUE))
+      }
     }
     if (Sys.time() > deadline) {
       stop("Timed out waiting for: ", what)
@@ -233,19 +265,51 @@ wait_until <- function(b, expr, timeout = 30, what = expr) {
   }
 }
 
-# Shiny is finished with a flush when nothing is still recalculating and
-# the page has stopped being busy. Both, because an output that has not
-# started yet is not recalculating either.
+# Shiny is finished with a flush when nothing *visible* is still
+# recalculating and the page has stopped being busy. Visible, because
+# shiny (>= 1.14.0, see DESCRIPTION) suspends a bound output for as long
+# as its element is hidden - every screen but the one on show, and every
+# phone-only control at a non-phone width - and never computes it until
+# it is. Waiting on the full `.recalculating` count instead would wait
+# for screens nothing has navigated to yet, forever.
 settled <- paste0(
   "(function () {",
-  "  return document.querySelectorAll('.recalculating').length === 0 &&",
+  "  var stuck = Array.prototype.filter.call(",
+  "    document.querySelectorAll('.recalculating'),",
+  "    function (el) {",
+  "      return el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0;",
+  "    }",
+  "  );",
+  "  return stuck.length === 0 &&",
   "         !document.body.classList.contains('shiny-busy');",
   "})()"
 )
 
 open_app <- function(b) {
-  b$Page$navigate(sprintf("http://127.0.0.1:%d/", PORT))
-  b$Page$loadEventFired(wait_ = TRUE)
+  # This runs a navigation per viewport per language - forty-odd over a
+  # full pass - on whatever else the machine is doing (see README.md:
+  # weekly, unattended, never the critical path of anything). A `Page`
+  # load event that does not fire within chromote's default window is
+  # more often that than a broken navigation, so it gets one retry with
+  # room to breathe before this counts as a failure.
+  loaded <- FALSE
+  for (attempt in 1:2) {
+    ok <- tryCatch(
+      {
+        b$Page$navigate(sprintf("http://127.0.0.1:%d/", PORT))
+        b$Page$loadEventFired(wait_ = TRUE, timeout_ = 30)
+        TRUE
+      },
+      error = function(e) FALSE
+    )
+    if (ok) {
+      loaded <- TRUE
+      break
+    }
+  }
+  if (!loaded) {
+    stop("The app page did not load after two attempts.")
+  }
   wait_until(
     b,
     "!!document.querySelector('.episodic-shell')",
@@ -270,7 +334,7 @@ set_viewport <- function(b, vp) {
 # covered by a sticky bar or an invisible overlay fails here rather than
 # silently swallowing presses in production.
 hit_test <- function(b, selector) {
-  js(b, sprintf(
+  expr <- sprintf(
     "(function () {
        var el = document.querySelector(%s);
        if (!el) return 'missing';
@@ -285,7 +349,23 @@ hit_test <- function(b, selector) {
        return el.contains(at) || at.contains(el) ? 'ok' : 'covered-by:' + at.className;
      })()",
     jsonlite::toJSON(selector, auto_unbox = TRUE)
-  ))
+  )
+  # A screen shown by a pure attribute flip (no Shiny round trip, so
+  # `settled` sees nothing to wait for) still needs the browser's own
+  # layout and, for the off-canvas rail, a 0.2s CSS transform transition
+  # - both land a beat after the flip and both can leave a hit test
+  # reading 'missing', 'zero-size' or 'covered-by' the rail still sliding
+  # over it. Retried the same way for up to a second; a verdict that
+  # still isn't 'ok' once that budget is spent is the real defect this
+  # test exists to catch, not another frame away from being one.
+  deadline <- Sys.time() + 1
+  repeat {
+    result <- js(b, expr)
+    if (identical(result, "ok") || Sys.time() > deadline) {
+      return(result)
+    }
+    Sys.sleep(0.03)
+  }
 }
 
 click <- function(b, selector) {
@@ -329,8 +409,10 @@ check_viewport <- function(b, ctx, vp, lang) {
         };
       }
     )")
-  record(ctx, "four nav links", length(links) == 4,
-    sprintf("found %d", length(links)))
+  record(
+    ctx, "four nav links", length(links) == 4,
+    sprintf("found %d", length(links))
+  )
   for (l in links) {
     record(
       ctx,
@@ -412,8 +494,10 @@ check_viewport <- function(b, ctx, vp, lang) {
 
   # 6. Arabic mirrors. The bar starts at the right edge, not the left.
   if (identical(lang, "ar")) {
-    record(ctx, "document direction is rtl",
-      identical(js(b, "document.documentElement.dir"), "rtl"))
+    record(
+      ctx, "document direction is rtl",
+      identical(js(b, "document.documentElement.dir"), "rtl")
+    )
     first_right <- js(b, "
       document.querySelector('.episodic-nav-link')
         .getBoundingClientRect().right")
@@ -486,9 +570,11 @@ check_pane_survives_navigation <- function(b, ctx) {
     record(ctx, "pane survives a navigation", FALSE, hit)
     return(invisible(NULL))
   }
-  record(ctx, "the segmented control switches pane",
+  record(
+    ctx, "the segmented control switches pane",
     identical(shell_attr(b, "data-pane"), "assessment"),
-    shell_attr(b, "data-pane"))
+    shell_attr(b, "data-pane")
+  )
 
   click(b, ".episodic-nav-link[data-view='archive']")
   wait_until(b, settled, timeout = 60, what = "the Archive screen")
@@ -506,9 +592,11 @@ check_pane_survives_navigation <- function(b, ctx) {
 
 check_escape_closes_rail <- function(b, ctx) {
   click(b, ".episodic-rail-toggle")
-  record(ctx, "the rail toggle opens the rail",
+  record(
+    ctx, "the rail toggle opens the rail",
     identical(shell_attr(b, "data-pane"), "rail"),
-    shell_attr(b, "data-pane"))
+    shell_attr(b, "data-pane")
+  )
   for (type in c("keyDown", "keyUp")) {
     b$Input$dispatchKeyEvent(
       type = type,
@@ -519,9 +607,11 @@ check_escape_closes_rail <- function(b, ctx) {
     )
   }
   Sys.sleep(0.2)
-  record(ctx, "Escape closes the rail",
+  record(
+    ctx, "Escape closes the rail",
     identical(shell_attr(b, "data-pane"), "dossier"),
-    shell_attr(b, "data-pane"))
+    shell_attr(b, "data-pane")
+  )
 }
 
 check_return_is_free <- function(b, ctx) {
@@ -629,9 +719,11 @@ for (vp in VIEWPORTS) {
   )
   overflow <- js(b, "
     ({ scroll: document.documentElement.scrollWidth, inner: window.innerWidth })")
-  record(ctx, "no horizontal overflow",
+  record(
+    ctx, "no horizontal overflow",
     overflow$scroll <= overflow$inner + 1,
-    sprintf("%d vs %d", overflow$scroll, overflow$inner))
+    sprintf("%d vs %d", overflow$scroll, overflow$inner)
+  )
   screenshot(b, "locked", vp, "locked")
 }
 check_no_js_errors(b, "locked")

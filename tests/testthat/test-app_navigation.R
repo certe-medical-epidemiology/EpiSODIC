@@ -314,8 +314,11 @@ test_that("the locked screen is shown by server-owned state, not by guessing at 
   ))
   # `:empty` on a Shiny output is a guess about whitespace, and the way
   # that guess fails is by hiding every screen from a reader entitled to
-  # all of them.
-  expect_false(grepl(":empty", css, fixed = TRUE))
+  # all of them. Checked on the declarations, not the raw text: the
+  # paragraph above says `:empty` while explaining why the rule doesn't
+  # use it, and a comment is not a selector.
+  declarations <- gsub("(?s)/\\*.*?\\*/", "", css, perl = TRUE)
+  expect_false(grepl(":empty", declarations, fixed = TRUE))
 })
 
 test_that("no media query ever hides the navigation", {
@@ -365,9 +368,12 @@ test_that("the panes carry their own geometry, on the output containers", {
   # dossier's `flex: 1` addresses nothing and no pane scrolls inside
   # itself.
   for (pane in c("rail", "dossier", "assessment")) {
+    # shiny::uiOutput(class =) prepends its own "shiny-html-output" token
+    # ahead of whatever class is passed, so the two pane classes are the
+    # end of the attribute, not the whole of it.
     expect_true(
       grepl(
-        sprintf('class="episodic-pane episodic-pane-%s"', pane),
+        sprintf('episodic-pane episodic-pane-%s"', pane),
         html,
         fixed = TRUE
       ),
