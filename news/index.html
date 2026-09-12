@@ -42,6 +42,14 @@
 <li>An open-by-number box in the rail header, which opens any cluster the instance will show, closed and archived ones included</li>
 <li>A row about a cluster on the Activity screen opens that cluster</li>
 <li>Schema version 5: two composite indexes on <code>episodic_case</code>, for the dashboard’s date-bounded and institution-bounded pathogen reads</li>
+<li>MEM derives its season anchor and seasonality eligibility from the data, so it fires in any ISO week for any pathogen whose cases show a season, in either hemisphere</li>
+<li>MEM runs at province (L4) and region (L5) level, configurable via <code>mem.levels</code>
+</li>
+<li>
+<code>mem_mode</code> replaces <code>mem_applicable</code>: a three-state override (auto, yes, no) per pathogen</li>
+<li>Schema version 6: <code>mem_mode</code> column on <code>episodic_pathogen_config</code>
+</li>
+<li>Full-year MEM seasons with no NA off-season period</li>
 </ul></div>
 <div class="section level3">
 <h3 id="changed-0-19-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-19-0"></a></h3>

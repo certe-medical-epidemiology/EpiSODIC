@@ -171,45 +171,80 @@ cases <- episodic_synthetic_cases(
 db_path <- episodic_demo(launch = FALSE, cases = cases, denominators = NULL)
 #> Running detection as of 2025-03-31, the last day your case data covers.
 #> Creating synthetic cases...
-#> 2026-09-12 13:59:45.787 | episodic_run_cron() starting (host=runnervmlun5p, account=runner)
-#> 2026-09-12 13:59:45.787 | Resolving configuration
-#> 2026-09-12 13:59:45.791 | Configuration resolved (hash da68bff26789)
-#> 2026-09-12 13:59:45.792 | Connecting to database
-#> 2026-09-12 13:59:45.792 | No existing database found - creating one
-#> 2026-09-12 13:59:45.805 | Database connected (dialect: sqlite)
-#> 2026-09-12 13:59:45.806 | Run 1 started
-#> 2026-09-12 13:59:45.806 | Resolving and checking case data
-#> 2026-09-12 13:59:45.816 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
-#> 2026-09-12 13:59:45.817 | Beginning transaction
-#> 2026-09-12 13:59:45.818 | Loading pathogen configuration
-#> 2026-09-12 13:59:45.820 | Pathogen configuration loaded (23 pathogen(s))
-#> 2026-09-12 13:59:45.820 | Loading case data into the database
-#> 2026-09-12 13:59:45.889 | Case data loaded: supplied=419, deduplicated=410, inserted=410
-#> 2026-09-12 13:59:45.889 | Fetching all known cases and institutions
-#> 2026-09-12 13:59:45.891 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.
-#> 2026-09-12 13:59:45.893 | Case history on file spans 2025-01-01 to 2025-03-31, ending 0 day(s) before this run's date (2025-03-31)
-#> 2026-09-12 13:59:45.893 | Enumerating lattice streams
-#> 2026-09-12 13:59:45.918 | Running same-place detector
-#> 2026-09-12 13:59:45.963 | Same-place detector found 6 detection(s)
-#> 2026-09-12 13:59:45.963 | Running rare-trigger detector
-#> 2026-09-12 13:59:45.967 | Rare-trigger detector found 1 detection(s)
-#> 2026-09-12 13:59:45.967 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to
-#> 2026-09-12 13:59:45.969 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
-#> 2026-09-12 13:59:46.266 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)
-#> 2026-09-12 13:59:46.267 | Backfill: 7 cluster(s) opened from the case history, 2 of them already closed by the system and in the Archive, 5 left open for assessment
-#> 2026-09-12 13:59:46.267 | Suppressing lattice
-#> 2026-09-12 13:59:46.270 | Committing transaction
-#> 2026-09-12 13:59:46.273 | Finishing run 1 (status: success)
-#> 2026-09-12 13:59:47.306 | episodic_run_cron() finished in 1.5s (status: success)
+#> 2026-09-12 21:50:38.806 | episodic_run_cron() starting (host=runnervmlun5p, account=runner)
+#> 2026-09-12 21:50:38.807 | Resolving configuration
+#> 2026-09-12 21:50:38.814 | Configuration resolved (hash 2178fe7385a5)
+#> 2026-09-12 21:50:38.814 | Connecting to database
+#> 2026-09-12 21:50:38.815 | No existing database found - creating one
+#> 2026-09-12 21:50:38.838 | Database connected (dialect: sqlite)
+#> 2026-09-12 21:50:38.840 | Run 1 started
+#> 2026-09-12 21:50:38.840 | Resolving and checking case data
+#> 2026-09-12 21:50:38.858 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
+#> 2026-09-12 21:50:38.858 | Beginning transaction
+#> 2026-09-12 21:50:38.860 | Loading pathogen configuration
+#> 2026-09-12 21:50:38.864 | Pathogen configuration loaded (23 pathogen(s))
+#> 2026-09-12 21:50:38.864 | Loading case data into the database
+#> 2026-09-12 21:50:38.986 | Case data loaded: supplied=419, deduplicated=410, inserted=410
+#> 2026-09-12 21:50:38.987 | Fetching all known cases and institutions
+#> 2026-09-12 21:50:38.990 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.
+#> 2026-09-12 21:50:38.992 | Case history on file spans 2025-01-01 to 2025-03-31, ending 0 day(s) before this run's date (2025-03-31)
+#> 2026-09-12 21:50:38.992 | Enumerating lattice streams
+#> 2026-09-12 21:50:39.031 | Running same-place detector
+#> 2026-09-12 21:50:39.108 | Same-place detector found 6 detection(s)
+#> 2026-09-12 21:50:39.109 | Running rare-trigger detector
+#> 2026-09-12 21:50:39.114 | Rare-trigger detector found 1 detection(s)
+#> 2026-09-12 21:50:39.114 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to
+#> 2026-09-12 21:50:39.121 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
+#> ! 2026-09-12 21:50:39.464 | MEM: declined stream Bordetella pertussis/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.473 | MEM: declined stream Campylobacter/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.486 | MEM: declined stream Campylobacter/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.494 | MEM: declined stream Campylobacter/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.501 | MEM: declined stream Clostridioides difficile/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.508 | MEM: declined stream Clostridioides difficile/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.515 | MEM: declined stream Clostridioides difficile/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.522 | MEM: declined stream Giardia lamblia/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.529 | MEM: declined stream Giardia lamblia/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.537 | MEM: declined stream Influenza A/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.544 | MEM: declined stream Influenza A/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.552 | MEM: declined stream Influenza A/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.560 | MEM: declined stream MRSA/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.567 | MEM: declined stream MRSA/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.574 | MEM: declined stream MRSA/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.581 | MEM: declined stream Neisseria meningitidis/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.588 | MEM: declined stream Norovirus/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.595 | MEM: declined stream Norovirus/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.603 | MEM: declined stream Norovirus/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.611 | MEM: declined stream RSV/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.618 | MEM: declined stream RSV/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.625 | MEM: declined stream RSV/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.633 | MEM: declined stream Salmonella/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.640 | MEM: declined stream Salmonella/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.648 | MEM: declined stream Salmonella/pathogen_province, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.652 | MEM: declined stream Bordetella pertussis/pathogen_region, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.656 | MEM: declined stream Campylobacter/pathogen_region, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.660 | MEM: declined stream Clostridioides difficile/pathogen_region, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.665 | MEM: declined stream Giardia lamblia/pathogen_region, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.670 | MEM: declined stream Influenza A/pathogen_region, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.675 | MEM: declined stream MRSA/pathogen_region, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.679 | MEM: declined stream Neisseria meningitidis/pathogen_region, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.683 | MEM: declined stream Norovirus/pathogen_region, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.688 | MEM: declined stream RSV/pathogen_region, insufficient history for climatology
+#> ! 2026-09-12 21:50:39.692 | MEM: declined stream Salmonella/pathogen_region, insufficient history for climatology
+#> 2026-09-12 21:50:39.739 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)
+#> 2026-09-12 21:50:39.740 | Backfill: 7 cluster(s) opened from the case history, 2 of them already closed by the system and in the Archive, 5 left open for assessment
+#> 2026-09-12 21:50:39.741 | Suppressing lattice
+#> 2026-09-12 21:50:39.746 | Committing transaction
+#> 2026-09-12 21:50:39.749 | Finishing run 1 (status: success)
+#> 2026-09-12 21:50:41.026 | episodic_run_cron() finished in 2.2s (status: success)
 #> OK
 #> ===========================================================================
 #> 
 #>   EpiSODIC demo account (admin) - username: demo, password: demo
 #> 
 #>   To re-open this demo later, with its geography:
-#>     Sys.setenv(EPISODIC_DB = "/tmp/RtmpZDkhgT/file1ce46386935b.sqlite",
-#>                EPISODIC_CONFIG = "/tmp/RtmpZDkhgT/file1ce46386935b-config.yaml",
-#>                EPISODIC_PC_PROVINCE_MAP = "/tmp/RtmpZDkhgT/file1ce46386935b-pc-province.csv")
+#>     Sys.setenv(EPISODIC_DB = "/tmp/Rtmp0LHk2c/file1e38beaae39.sqlite",
+#>                EPISODIC_CONFIG = "/tmp/Rtmp0LHk2c/file1e38beaae39-config.yaml",
+#>                EPISODIC_PC_PROVINCE_MAP = "/tmp/Rtmp0LHk2c/file1e38beaae39-pc-province.csv")
 #>     episodic_run_app()
 #> 
 #> ===========================================================================
