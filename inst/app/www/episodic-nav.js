@@ -423,6 +423,15 @@
     });
     window.Shiny.addCustomMessageHandler("episodic_cluster", function (msg) {
       setCluster(msg.cluster);
+      /* The same default the click-driven opener gives itself
+         (setCluster + setPane("dossier") together, above): a session
+         that starts, or lands on a `?cluster=` link or the Pathogen
+         screen's own opener, with a cluster already selected but no
+         pane chosen yet is one the phone tier would otherwise show
+         blank until the reader found the segmented control themselves. */
+      if (msg.cluster !== null) {
+        setPane("dossier");
+      }
     });
     window.Shiny.addCustomMessageHandler("episodic_access", function (msg) {
       setAccess(msg.access);
