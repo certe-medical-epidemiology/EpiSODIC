@@ -609,25 +609,21 @@ episodic_db_migrations <- function() {
       )) {
         return(invisible(NULL))
       }
-      DBI::dbExecute(
-        con,
-        paste0(
-          "ALTER TABLE episodic_pathogen_config ADD COLUMN ",
-          "mem_mode TEXT NOT NULL DEFAULT 'auto'",
-          if (dialect == "sqlite") {
-            " CHECK (mem_mode IN ('auto', 'yes', 'no'))"
-          } else {
-            ""
-          }
-        )
-      )
       if (dialect == "mariadb") {
         DBI::dbExecute(
           con,
           paste0(
-            "ALTER TABLE episodic_pathogen_config ",
-            "MODIFY COLUMN mem_mode ",
-            "VARCHAR(4) NOT NULL DEFAULT 'auto'"
+            "ALTER TABLE episodic_pathogen_config ADD COLUMN ",
+            "mem_mode VARCHAR(4) NOT NULL DEFAULT 'auto'"
+          )
+        )
+      } else {
+        DBI::dbExecute(
+          con,
+          paste0(
+            "ALTER TABLE episodic_pathogen_config ADD COLUMN ",
+            "mem_mode TEXT NOT NULL DEFAULT 'auto'",
+            " CHECK (mem_mode IN ('auto', 'yes', 'no'))"
           )
         )
       }
@@ -1403,7 +1399,8 @@ episodic_db_schema_statements <- function(dialect) {
         "  period_start   TEXT NOT NULL," = "  period_start   VARCHAR(10) NOT NULL,"
       ),
       episodic_pathogen_config = c(
-        "  pathogen        TEXT NOT NULL PRIMARY KEY,  -- matches episodic_case.pathogen exactly" = "  pathogen        VARCHAR(191) NOT NULL PRIMARY KEY,  -- matches episodic_case.pathogen exactly"
+        "  pathogen        TEXT NOT NULL PRIMARY KEY,  -- matches episodic_case.pathogen exactly" = "  pathogen        VARCHAR(191) NOT NULL PRIMARY KEY,  -- matches episodic_case.pathogen exactly",
+        "mem_mode        TEXT NOT NULL DEFAULT 'auto' CHECK (mem_mode IN ('auto', 'yes', 'no'))" = "mem_mode        VARCHAR(4) NOT NULL DEFAULT 'auto' CHECK (mem_mode IN ('auto', 'yes', 'no'))"
       ),
       episodic_case = c(
         "source_key     TEXT NOT NULL UNIQUE," = "source_key     VARCHAR(191) NOT NULL UNIQUE,",
