@@ -194,37 +194,37 @@ cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
 run_id <- episodic_run_cron(db_path = db_path, cases = cases)
-#> 2026-09-12 13:54:37.700 | episodic_run_cron() starting (host=runnervmlun5p, account=runner)
-#> 2026-09-12 13:54:37.701 | Resolving configuration
-#> 2026-09-12 13:54:37.704 | Configuration resolved (hash 9b97cc3f4a58)
-#> 2026-09-12 13:54:37.705 | Connecting to database
-#> 2026-09-12 13:54:37.705 | No existing database found - creating one
-#> 2026-09-12 13:54:37.723 | Database connected (dialect: sqlite)
-#> 2026-09-12 13:54:37.724 | Run 1 started
-#> 2026-09-12 13:54:37.724 | Resolving and checking case data
-#> 2026-09-12 13:54:37.735 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
-#> 2026-09-12 13:54:37.735 | Beginning transaction
-#> 2026-09-12 13:54:37.736 | Loading pathogen configuration
-#> 2026-09-12 13:54:37.737 | Pathogen configuration loaded (23 pathogen(s))
-#> 2026-09-12 13:54:37.738 | Loading case data into the database
-#> 2026-09-12 13:54:37.806 | Case data loaded: supplied=419, deduplicated=410, inserted=410
-#> 2026-09-12 13:54:37.807 | Fetching all known cases and institutions
-#> 2026-09-12 13:54:37.809 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.
-#> 2026-09-12 13:54:37.810 | Case history on file spans 2025-01-01 to 2025-03-31, ending 530 day(s) before this run's date (2026-09-12)
-#> 2026-09-12 13:54:37.811 | Enumerating lattice streams
-#> ! 2026-09-12 13:54:37.832 | no province could be resolved for any of the 106 postcode values in this run - province-level (L4) detection has nothing to run on. EPISODIC_PC_PROVINCE_MAP is unset, and there is no built-in rule to fall back on - deriving a province from a postcode is country-specific. Point it at your own pc/province_code CSV, or leave it unset and the province level stays empty.
-#> 2026-09-12 13:54:37.838 | Running same-place detector
-#> 2026-09-12 13:54:37.898 | Same-place detector found 6 detection(s)
-#> 2026-09-12 13:54:37.898 | Running rare-trigger detector
-#> 2026-09-12 13:54:37.902 | Rare-trigger detector found 1 detection(s)
-#> 2026-09-12 13:54:37.902 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to
-#> 2026-09-12 13:54:37.904 | Reconciling 368 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
-#> 2026-09-12 13:54:38.322 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)
-#> 2026-09-12 13:54:38.323 | Backfill: 7 cluster(s) opened from the case history, 7 of them already closed by the system and in the Archive, 0 left open for assessment
-#> 2026-09-12 13:54:38.323 | Suppressing lattice
-#> 2026-09-12 13:54:38.328 | Committing transaction
-#> 2026-09-12 13:54:38.331 | Finishing run 1 (status: success)
-#> 2026-09-12 13:54:38.333 | episodic_run_cron() finished in 0.6s (status: success)
+#> 2026-09-12 13:59:49.249 | episodic_run_cron() starting (host=runnervmlun5p, account=runner)
+#> 2026-09-12 13:59:49.250 | Resolving configuration
+#> 2026-09-12 13:59:49.253 | Configuration resolved (hash 9b97cc3f4a58)
+#> 2026-09-12 13:59:49.253 | Connecting to database
+#> 2026-09-12 13:59:49.253 | No existing database found - creating one
+#> 2026-09-12 13:59:49.267 | Database connected (dialect: sqlite)
+#> 2026-09-12 13:59:49.268 | Run 1 started
+#> 2026-09-12 13:59:49.268 | Resolving and checking case data
+#> 2026-09-12 13:59:49.276 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
+#> 2026-09-12 13:59:49.277 | Beginning transaction
+#> 2026-09-12 13:59:49.277 | Loading pathogen configuration
+#> 2026-09-12 13:59:49.279 | Pathogen configuration loaded (23 pathogen(s))
+#> 2026-09-12 13:59:49.279 | Loading case data into the database
+#> 2026-09-12 13:59:49.331 | Case data loaded: supplied=419, deduplicated=410, inserted=410
+#> 2026-09-12 13:59:49.331 | Fetching all known cases and institutions
+#> 2026-09-12 13:59:49.333 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.
+#> 2026-09-12 13:59:49.334 | Case history on file spans 2025-01-01 to 2025-03-31, ending 530 day(s) before this run's date (2026-09-12)
+#> 2026-09-12 13:59:49.334 | Enumerating lattice streams
+#> ! 2026-09-12 13:59:49.351 | no province could be resolved for any of the 106 postcode values in this run - province-level (L4) detection has nothing to run on. EPISODIC_PC_PROVINCE_MAP is unset, and there is no built-in rule to fall back on - deriving a province from a postcode is country-specific. Point it at your own pc/province_code CSV, or leave it unset and the province level stays empty.
+#> 2026-09-12 13:59:49.355 | Running same-place detector
+#> 2026-09-12 13:59:49.402 | Same-place detector found 6 detection(s)
+#> 2026-09-12 13:59:49.402 | Running rare-trigger detector
+#> 2026-09-12 13:59:49.405 | Rare-trigger detector found 1 detection(s)
+#> 2026-09-12 13:59:49.405 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to
+#> 2026-09-12 13:59:49.406 | Reconciling 368 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
+#> 2026-09-12 13:59:49.702 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)
+#> 2026-09-12 13:59:49.702 | Backfill: 7 cluster(s) opened from the case history, 7 of them already closed by the system and in the Archive, 0 left open for assessment
+#> 2026-09-12 13:59:49.703 | Suppressing lattice
+#> 2026-09-12 13:59:49.705 | Committing transaction
+#> 2026-09-12 13:59:49.707 | Finishing run 1 (status: success)
+#> 2026-09-12 13:59:49.709 | episodic_run_cron() finished in 0.5s (status: success)
 file.remove(db_path)
 #> [1] TRUE
 # }
