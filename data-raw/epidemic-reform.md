@@ -8,6 +8,9 @@ Tracking issue: **#50**. Related: **#46** (synthetic ground truth).
 
 This file is not shipped: `data-raw` is in `.Rbuildignore`.
 
+**Starting cold?** Read section 0, then the status board in section 1, which
+names the milestone to do next. Do that one milestone, and no more.
+
 ---
 
 ## 0. How to use this document
@@ -55,7 +58,7 @@ in section 7 and do only that milestone.
 | | |
 |---|---|
 | Next milestone to start | **M0** |
-| Integration branch | `epidemic-reform` (not yet created) |
+| Integration branch | `claude/epidemic-reform` (not yet created) |
 | Schema version on `main` | 5 (`episodic_schema_version` in `R/schema_migrate.R`) |
 | Execution environment | Must have a working R. See the precondition in section 7. |
 
@@ -84,6 +87,8 @@ done, what was not, and anything surprising. No narrative.
   (no Rscript, no /usr/lib/R), so nothing could be run. Recorded that as a
   hard precondition in section 7. Every milestone runs where R runs.
   Milestone checks go through the existing data-raw/verification harness.
+  Branch names made flat: git refs are paths, so an integration branch and a
+  branch nested under its own name cannot coexist.
 ```
 
 ---
@@ -394,15 +399,36 @@ longer true, fix it here as part of your milestone.
   and is merged to `main` by its own PR. It fixes a defect on its own terms
   and de-risks everything after, because it is where the derived anchor and
   the derived eligibility test first meet real data.
-- **M1 onwards live on a long-lived integration branch**, `epidemic-reform`,
-  cut from `main` *after* M0 has merged. Each milestone is a PR from
-  `epidemic-reform/mN-shortname` into `epidemic-reform`. When the whole reform
-  is tested, one PR from `epidemic-reform` into `main`.
-- **Merge `main` into `epidemic-reform` at the start of every milestone.** Not
-  at the end of the reform, or the final merge is where all the pain arrives at
-  once.
-- Never push to `main` directly. Never force-push a shared branch.
+- **M1 onwards live on a long-lived integration branch**,
+  `claude/epidemic-reform`, cut from `main` *after* M0 has merged. Each
+  milestone is its own branch, `claude/epidemic-reform-mN-shortname`, with a PR
+  into the integration branch. When the whole reform is tested, one PR from
+  `claude/epidemic-reform` into `main`.
+
+  Branch names are flat, with a hyphen and not a slash after
+  `claude/epidemic-reform`. Git refs are filesystem paths, so a branch
+  `claude/epidemic-reform` and a branch `claude/epidemic-reform/m1-schema`
+  cannot both exist: the first is a file where the second needs a directory of
+  the same name, and git refuses the second.
+
+- **Why a branch and a PR per milestone**, rather than committing straight onto
+  the integration branch: `CLAUDE.md` requires any change to detection logic,
+  data transformation or reporting to go through a PR, and a milestone that
+  goes wrong can then be abandoned without touching the integration branch.
+  That second property matters more here than it would for a person, because
+  each milestone is a separate session starting cold.
+
+- **Merge `main` into `claude/epidemic-reform` at the start of every
+  milestone**, and then into your milestone branch. Not at the end of the
+  reform, or the final merge is where all the pain arrives at once.
+
+- Never push to `main` directly. Never force-push a branch anyone else may have
+  checked out.
+
 - Commit messages carry the history this document does not. Reference #50.
+
+- `claude/issue-50-mem-epidemic-m0so73` is identical to `main` and holds no
+  work. Despite its name it is **not** the M0 branch. Ignore it.
 
 ---
 
@@ -633,8 +659,8 @@ file only if the value genuinely differs there.
 
 ### M1. Schema: scale, the seasonal satellite, the link table
 
-**Branch:** `epidemic-reform/m1-schema` off `epidemic-reform` (create
-`epidemic-reform` from `main` first, after M0 has merged).
+**Branch:** `claude/epidemic-reform-m1-schema` off `claude/epidemic-reform`
+(create `claude/epidemic-reform` from `main` first, after M0 has merged).
 **Schema version:** bump by one (expected: 7).
 
 #### Goal
@@ -734,7 +760,7 @@ Follow the migration at `R/schema_migrate.R:435` as the model.
 
 ### M2. Write path: routing, epidemic closure, continuity, links
 
-**Branch:** `epidemic-reform/m2-write`.
+**Branch:** `claude/epidemic-reform-m2-write`.
 
 #### Goal
 
@@ -818,7 +844,7 @@ one that crosses it. Add a test that a cross-scale suppression still fires.
 
 ### M3. Read path and the Epidemics screen (MVP)
 
-**Branch:** `epidemic-reform/m3-screen`.
+**Branch:** `claude/epidemic-reform-m3-screen`.
 
 #### Goal
 
@@ -900,7 +926,7 @@ New keys in all eight full language files.
 
 ### M4. Vocabulary: ids, wording, i18n
 
-**Branch:** `epidemic-reform/m4-wording`.
+**Branch:** `claude/epidemic-reform-m4-wording`.
 
 #### Goal
 
@@ -938,7 +964,7 @@ longer or shorter label breaks a layout that fitted before.
 
 ### M5. Documentation
 
-**Branch:** `epidemic-reform/m5-docs`.
+**Branch:** `claude/epidemic-reform-m5-docs`.
 
 Update `CLAUDE.md` (the pipeline diagram, the detectors table, the streams and
 lattice section, the database table list, the config sections, the file
