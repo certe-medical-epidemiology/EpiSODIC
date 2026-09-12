@@ -59,6 +59,11 @@
 - A ward stream’s cases and an area stream’s postcodes are narrowed by
   the database rather than after every case of the pathogen has reached
   R
+- A run log line saying a component produced nothing it could have
+  produced is marked as a warning, and one saying something failed
+  outright as an error
+- The Activity screen’s run modal marks a failed or partial run, rows
+  the run skipped, and a run that had no eligible stream to detect on
 
 ### Fixed
 

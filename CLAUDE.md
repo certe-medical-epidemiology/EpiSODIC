@@ -575,7 +575,12 @@ from index”.
   otherwise roxygen2 gives a warning.
 - Logging: use `episodic_trace()` (defined in `run_cron.R`) for
   cron-side logging, [`message()`](https://rdrr.io/r/base/message.html)
-  for interactive functions.
+  for interactive functions. Its `severity` (`plain`, `warn`, `danger`)
+  is for a line saying a component produced nothing it structurally
+  could not have produced, or that a setting means it never will, or
+  that failed outright - never a phase heading, a count or decoration,
+  or the log becomes a wall of colour in which nothing stands out again.
+  The Activity screen’s run modal marks its own lines on the same rule.
 - Database: all SQL is inline (no ORM). Parameterised queries
   (`DBI::dbGetQuery(con, sql, params = ...)`) throughout, never string
   interpolation of user values.
