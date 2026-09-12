@@ -92,6 +92,25 @@ require_login_db <- function(pathogen = "Norovirus") {
   list(db_path = db_path, cluster_id = cluster_id, pathogen = pathogen)
 }
 
+# Every output that can put surveillance data on the page. With each
+# screen its own output, "nothing reached the page" is a statement about
+# all of them rather than about one renderUI that happened to be
+# switched to a locked state - so these tests assert it of each.
+require_login_screen_outputs <- c(
+  "rail_pane",
+  "dossier_pane",
+  "assessment_pane",
+  "pane_label",
+  "pathogen_screen",
+  "archive_screen",
+  "instance_screen",
+  "streams_screen",
+  "activity_screen",
+  "performance_screen",
+  "info_screen",
+  "settings_screen"
+)
+
 test_that("require_login is read defensively, and on unless unambiguously off", {
   # Read in the safe direction: the two mistakes do not cost the same. A
   # wrongly-closed dashboard is an operator editing one YAML key, a
@@ -173,24 +192,21 @@ test_that("an anonymous session on a login-required instance is served no data a
       # Not one screen, not the navigation, not the status strip. What
       # the server produced is what a browser's developer tools can
       # reach, so these are the assertions that matter.
-      main <- paste(output$main_view, collapse = "\n")
-      expect_false(grepl(env$pathogen, main, fixed = TRUE))
-      expect_true(grepl("episodic-locked-screen", main, fixed = TRUE))
+      locked <- paste(output$locked_screen, collapse = "\n")
+      expect_true(grepl("episodic-locked-screen", locked, fixed = TRUE))
       expect_true(grepl(
         episodic_tr("auth.required_title", lang = "en"),
-        main,
+        locked,
         fixed = TRUE
       ))
 
       expect_equal(paste(output$nav_links, collapse = ""), "")
       expect_equal(paste(output$status_strip, collapse = ""), "")
-      for (pane in list(
-        output$rail_pane,
-        output$dossier_pane,
-        output$assessment_pane,
-        output$archive_screen
-      )) {
-        expect_false(grepl(env$pathogen, paste(pane, collapse = "\n")))
+      for (nm in require_login_screen_outputs) {
+        expect_false(
+          grepl(env$pathogen, paste(output[[nm]], collapse = "\n"), fixed = TRUE),
+          info = nm
+        )
       }
 
       # Switching view from the client reaches no data either: an input
@@ -207,10 +223,21 @@ test_that("an anonymous session on a login-required instance is served no data a
       )) {
         session$setInputs(nav_view = v)
         session$flushReact()
-        rendered <- paste(output$main_view, collapse = "\n")
         expect_true(
-          grepl("episodic-locked-screen", rendered, fixed = TRUE),
+          grepl(
+            "episodic-locked-screen",
+            paste(output$locked_screen, collapse = "\n"),
+            fixed = TRUE
+          ),
           info = v
+        )
+        rendered <- paste(
+          vapply(
+            require_login_screen_outputs,
+            function(nm) paste(output[[nm]], collapse = "\n"),
+            character(1)
+          ),
+          collapse = "\n"
         )
         expect_false(grepl(env$pathogen, rendered, fixed = TRUE), info = v)
       }
@@ -237,7 +264,7 @@ test_that("signing in on a login-required instance opens the app, and signing ou
       session$flushReact()
       expect_false(grepl(
         env$pathogen,
-        paste(output$main_view, collapse = "\n"),
+        paste(output$rail_pane, collapse = "\n"),
         fixed = TRUE
       ))
 
@@ -258,18 +285,14 @@ test_that("signing in on a login-required instance opens the app, and signing ou
         paste(output$nav_links, collapse = "\n"),
         fixed = TRUE
       ))
-      expect_false(grepl(
-        "episodic-locked-screen",
-        paste(output$main_view, collapse = "\n"),
-        fixed = TRUE
-      ))
+      expect_equal(paste(output$locked_screen, collapse = ""), "")
 
       session$setInputs(auth_signout = 1)
       session$flushReact()
 
       expect_true(grepl(
         "episodic-locked-screen",
-        paste(output$main_view, collapse = "\n"),
+        paste(output$locked_screen, collapse = "\n"),
         fixed = TRUE
       ))
       expect_false(grepl(
@@ -300,7 +323,7 @@ test_that("an anonymous client cannot pull run detail out of a login-required in
       expect_silent(session$flushReact())
       expect_false(grepl(
         env$pathogen,
-        paste(output$main_view, collapse = "\n"),
+        paste(output$activity_screen, collapse = "\n"),
         fixed = TRUE
       ))
       DBI::dbDisconnect(con)
@@ -327,11 +350,7 @@ test_that("with require_login off, the app behaves exactly as it always has for 
         paste(output$nav_links, collapse = "\n"),
         fixed = TRUE
       ))
-      expect_false(grepl(
-        "episodic-locked-screen",
-        paste(output$main_view, collapse = "\n"),
-        fixed = TRUE
-      ))
+      expect_equal(paste(output$locked_screen, collapse = ""), "")
       DBI::dbDisconnect(con)
     })
   })

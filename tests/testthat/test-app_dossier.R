@@ -21,17 +21,20 @@ test_that("episodic_ui_dossier() and episodic_ui_assessment_rail() render the fi
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
 
+  # A tagList, not a tag: the dossier's and the assessment rail's own
+  # wrapping div was moved to the output container in episodic_app_ui()
+  # so each pane carries its geometry there instead of one level in.
   expect_s3_class(
     episodic_ui_dossier(env$con, env$cluster_id, lang = "nl"),
-    "shiny.tag"
+    "shiny.tag.list"
   )
   expect_s3_class(
     episodic_ui_dossier(env$con, env$cluster_id, lang = "en"),
-    "shiny.tag"
+    "shiny.tag.list"
   )
   expect_s3_class(
     episodic_ui_assessment_rail(env$con, env$cluster_id, lang = "nl"),
-    "shiny.tag"
+    "shiny.tag.list"
   )
 })
 

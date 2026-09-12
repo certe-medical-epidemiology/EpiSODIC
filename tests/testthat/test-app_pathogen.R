@@ -688,14 +688,16 @@ test_that("each cluster row links through to its dossier, by click and by keyboa
   screen <- episodic_app_pathogen_screen(env$con, period = "all", lang = "en")
   html <- as.character(episodic_ui_pathogen_clusters_panel(screen, lang = "en"))
 
-  # episodicOpenCluster() (see R/app_ui.R) both sets the `open_cluster`
+  # The shared opener attribute (see inst/app/www/episodic-nav.js) sets the `open_cluster`
   # Shiny input and moves the rail's own highlight
-  expect_true(grepl("episodicOpenCluster", html, fixed = TRUE))
+  expect_true(grepl("data-episodic-cluster", html, fixed = TRUE))
   expect_true(grepl(as.character(cluster_id), html, fixed = TRUE))
   expect_true(grepl("episodic-row-link", html, fixed = TRUE))
-  # a <tr> has no keyboard access of its own
+  # a <tr> has no keyboard access of its own; tabindex gives it a stop
+  # and episodic-nav.js's delegated keydown listener gives it a Enter/Space
+  # action, rather than an inline handler on every row.
   expect_true(grepl("tabindex", html, fixed = TRUE))
-  expect_true(grepl("onkeydown", html, fixed = TRUE))
+  expect_false(grepl("onkeydown", html, fixed = TRUE))
 })
 
 test_that("the clusters panel is titled for clusters, not for signals", {

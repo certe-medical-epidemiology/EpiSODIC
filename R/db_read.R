@@ -1075,3 +1075,60 @@ episodic_db_institution_activity <- function(con, institution_id) {
     params = list(institution_id)
   )
 }
+
+#' What a cluster is called, for a label with no room for a dossier
+#'
+#' The pathogen and level of one cluster, and nothing else. Its own read
+#' rather than `episodic_cluster_object()`'s, which fits baselines and
+#' completion curves: the phone-tier pane switcher needs three words, not
+#' a model.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A cluster id.
+#' @return A one-row data frame with `pathogen` and `level`, or `NULL`
+#'   when the id names no cluster.
+#' @keywords internal
+#' @noRd
+episodic_db_cluster_label <- function(con, cluster_id) {
+  found <- DBI::dbGetQuery(
+    con,
+    "SELECT s.pathogen AS pathogen, s.level AS level
+       FROM episodic_cluster c
+       JOIN episodic_stream s ON s.stream_id = c.stream_id
+      WHERE c.cluster_id = ?",
+    params = list(cluster_id)
+  )
+  if (nrow(found) != 1) {
+    return(NULL)
+  }
+  found
+}
+
+#' The counts the Instance screen puts on its cards
+#'
+#' Four `COUNT(*)`s over indexed tables and nothing else. The screen is a
+#' way of reaching five others, so what it costs to open has to stay
+#' close to nothing: anything here that grew with the size of the
+#' database would turn a navigation into a query.
+#'
+#' The Performance card deliberately has no number. Measuring the
+#' instance against its epidemiologists' verdicts is a real computation
+#' (`episodic_app_performance()`), and running it to fill in a line
+#' nobody asked for, every time somebody passes through on the way to
+#' Settings, is the opposite of what this screen is for.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @return A named list of integers.
+#' @keywords internal
+#' @noRd
+episodic_db_instance_counts <- function(con) {
+  one <- function(sql) {
+    as.integer(DBI::dbGetQuery(con, sql)$n[1])
+  }
+  list(
+    streams = one("SELECT COUNT(*) AS n FROM episodic_stream WHERE is_active = 1"),
+    runs = one("SELECT COUNT(*) AS n FROM episodic_detection_run"),
+    users = one("SELECT COUNT(*) AS n FROM episodic_app_user WHERE is_active = 1"),
+    clusters = one("SELECT COUNT(*) AS n FROM episodic_cluster")
+  )
+}

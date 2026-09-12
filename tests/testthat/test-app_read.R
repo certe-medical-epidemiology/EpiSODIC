@@ -837,9 +837,9 @@ test_that("the archive lists cluster ids and links each row through to its dossi
   html <- as.character(episodic_ui_archive_screen(archive, lang = "en"))
 
   # last winter's assessment is only a useful precedent if you can open it
-  # (episodicOpenCluster() both sets `open_cluster` and moves the rail
+  # (the shared opener attribute both sets `open_cluster` and moves the rail
   # highlight - see R/app_ui.R)
-  expect_true(grepl("episodicOpenCluster", html, fixed = TRUE))
+  expect_true(grepl("data-episodic-cluster", html, fixed = TRUE))
   expect_true(grepl("episodic-row-link", html, fixed = TRUE))
   expect_true(grepl(
     paste0(

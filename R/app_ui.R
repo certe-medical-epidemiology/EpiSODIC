@@ -17,13 +17,83 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
+#' Every screen the dashboard has
+#'
+#' The order is the order the screens are written into the page, which is
+#' also their tab order. Which one is *shown* is `data-view` on
+#' `.episodic-shell`; every screen is in the page all the time.
+#'
+#' A view id is also the value `input$nav_view` carries, and any client
+#' can set any input, so `episodic_app_server_factory()` checks an
+#' incoming value against this vector rather than trusting it - an id
+#' that is not one of these would otherwise leave the shell showing no
+#' screen at all.
+#'
+#' @return A character vector of view ids.
+#' @keywords internal
+#' @noRd
+episodic_app_views <- function() {
+  c(
+    "clusters",
+    "pathogen",
+    "archive",
+    "instance",
+    "streams",
+    "activity",
+    "performance",
+    "info",
+    "settings"
+  )
+}
+
+#' The navigation link a screen lights up
+#'
+#' Four links carry nine screens. The three surveillance screens are
+#' their own group; the five that describe the instance rather than a
+#' cluster are reached from the Instance screen and light its link, so a
+#' reader on the Performance screen can still see where they are.
+#'
+#' This mapping is stated once, here, and reaches the browser twice: as
+#' `data-nav` on whatever element navigates (so a click needs no mapping
+#' of its own) and in the message the server sends when the view changes
+#' by any other route. `episodic-nav.js` never computes it.
+#'
+#' @param view A view id from `episodic_app_views()`.
+#' @return A single nav group id.
+#' @keywords internal
+#' @noRd
+episodic_app_nav_group <- function(view) {
+  if (view %in% c("clusters", "pathogen", "archive")) {
+    return(view)
+  }
+  "instance"
+}
+
 #' The application shell
 #'
-#' Custom header, nav and brand bar rather than a stock `bslib::page_navbar`,
-#' to match the intended house-style layout precisely. `bslib` supplies
-#' the Bootstrap reset and font-loading helper only; all
-#' visual design comes from `inst/app/www/episodic.css` and the palette
-#' injected as CSS custom properties.
+#' Custom header, nav and brand bar rather than a stock
+#' `bslib::page_navbar`, to match the intended house-style layout
+#' precisely. `bslib` supplies the Bootstrap reset and font-loading
+#' helper only; all visual design comes from `inst/app/www/episodic.css`
+#' and the palette injected as CSS custom properties.
+#'
+#' Every screen is written into the page here, once, and shown or hidden
+#' by `data-view` on `.episodic-shell`. That is what makes navigation
+#' cost nothing: a screen is built the first time it is shown, because
+#' Shiny suspends the outputs inside a hidden one, and coming back to it
+#' re-runs nothing unless its data actually changed (`Observer$resume()`
+#' schedules a re-execution only for an observer invalidated while it was
+#' suspended). The alternative, one `renderUI` switching on the view,
+#' tears the current screen out of the page and rebuilds the destination
+#' from the database on every single navigation, and rebuilds the one you
+#' came from again on the way back.
+#'
+#' This needs `shiny (>= 1.14.0)`, which is where output visibility
+#' started being tracked with `ResizeObserver`/`IntersectionObserver`
+#' instead of jQuery `shown`/`hidden` events. That is what lets a
+#' stylesheet alone decide what is visible: on an older Shiny, a
+#' CSS-only show/hide is invisible to the suspension machinery and every
+#' hidden screen would keep recomputing.
 #'
 #' @param lang Session language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
 #'   `"hi"`, `"zh"`, or `"es"`, or a regional variant of
@@ -42,18 +112,17 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     shiny::tags$head(
       # `lang` is what a screen reader picks its voice and pronunciation
       # rules from, and `dir` is what makes a right-to-left language read
-      # right to left. The page carried neither, while Arabic has been
-      # one of the eight shipped languages all along - so an Arabic
-      # dashboard rendered left to right, with its navigation, tables,
-      # chart labels and assessment form all mirrored the wrong way
-      # round, and every language was announced to assistive technology
-      # as whatever the browser guessed.
+      # right to left. Written onto <html> from script rather than passed
+      # to `bslib::page_fluid()`: the page function's own handling of
+      # these attributes differs across bslib versions, and this works on
+      # all of them.
       #
-      # Written onto <html> from script rather than passed to
-      # `bslib::page_fluid()`: the page function's own handling of these
-      # attributes differs across bslib versions, and this works on all
-      # of them. See `episodic_lang_dir()` and the "Right-to-left"
-      # section of episodic.css.
+      # Inline, and first in the head, rather than in episodic-nav.js:
+      # this is the one thing that must be true before the first paint,
+      # and a deferred script would show an Arabic reader a
+      # left-to-right layout for as long as it took to load. See
+      # `episodic_lang_dir()` and the "Right-to-left" section of
+      # episodic.css.
       shiny::tags$script(shiny::HTML(sprintf(
         paste0(
           "document.documentElement.setAttribute('lang', '%s');",
@@ -70,165 +139,66 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       # (a system font needs no webfont link at all; a different webfont
       # is loaded the same way - self-hosted, or linked from its own
       # provider - by shipping a custom `www/episodic.css` alongside it).
+      #
+      # `preconnect` to the font host beside it, because the stylesheet
+      # and the font file it names are on different origins: without it
+      # the DNS lookup and TLS handshake for the second only begin once
+      # the first has been parsed, which is a round trip added to first
+      # paint on every cold load.
       if (grepl("IBM Plex Sans", pal$font, fixed = TRUE)) {
-        shiny::tags$link(
-          rel = "stylesheet",
-          href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+        shiny::tagList(
+          shiny::tags$link(rel = "preconnect", href = "https://fonts.googleapis.com"),
+          shiny::tags$link(
+            rel = "preconnect",
+            href = "https://fonts.gstatic.com",
+            crossorigin = ""
+          ),
+          shiny::tags$link(
+            rel = "stylesheet",
+            href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+          )
         )
       },
       shiny::tags$link(rel = "stylesheet", href = "www/episodic.css"),
       shiny::tags$style(episodic_app_palette_css(pal)),
-      # The one place that opens a cluster from outside the rail itself -
-      # a cluster table row, a "linked to #N" chip - has to be able to
-      # move the rail's own "active" highlight, which output$rail_pane
-      # deliberately does not re-render on every selection (see its own
-      # comment in app_server.R, about not losing scroll position).
-      # Defined globally, once, rather than per-caller: every place that
-      # opens a cluster (episodic_ui_cluster_row(),
-      # episodic_ui_chip_link()) calls this rather than inlining its own
-      # `Shiny.setInputValue('open_cluster', ...)`, so the rail highlight
-      # and the dossier selection cannot drift apart. A no-op when the target cluster is not
-      # in the rail's current list (a closed cluster, or an id opened
-      # while the rail is not on screen) - there is simply nothing to
-      # highlight yet. Also switches the mobile pane to the dossier and
-      # refreshes the pane switcher's cluster label (see episodicSelectPane()/
-      # episodicSyncPaneBar() below) - a no-op above 1200px, since neither
-      # function finds the elements it looks for there.
-      shiny::tags$script(shiny::HTML(paste0(
-        "function episodicOpenCluster(id){",
-        "Shiny.setInputValue('open_cluster', id, {priority: 'event'});",
-        "document.querySelectorAll('.episodic-rail-item').forEach(function(el){",
-        "el.classList.toggle('active', el.dataset.clusterId === String(id));",
-        "});",
-        "episodicSelectPane('dossier');",
-        "episodicSyncPaneBar();",
-        "}"
-      ))),
-      # The rail header's "open by number" box (see episodic_ui_rail()).
-      # Defined here rather than beside the input, because the rail is
-      # re-rendered whenever the open-cluster list changes and a script
-      # tag inside it would be re-evaluated every time.
-      shiny::tags$script(shiny::HTML(paste0(
-        "function episodicRailOpen(){",
-        "var el = document.querySelector('.episodic-rail-open-input'); ",
-        "if(!el){return;} ",
-        "var id = parseInt(el.value, 10); ",
-        "if(isNaN(id)){return;} ",
-        "Shiny.setInputValue('rail_open_cluster', id, {priority: 'event'});",
-        "}"
-      ))),
-      # Client-side pane switching for the 768-1199px and <768px tiers
-      # (see the "Responsive layout" section at the end of episodic.css).
-      # A single data-pane attribute on .episodic-body carries which pane
-      # is on top/visible; the CSS below 1200px gives it meaning, and the
-      # attribute is otherwise inert (no rule above 1200px reads it), so
-      # this function is harmless to call from a desktop session too.
-      # Deliberately not a Shiny input: switching panes must never be a
-      # server round trip (it would re-render output$rail_pane on every
-      # tap and lose its scroll position, see that output's own comment
-      # in app_server.R).
-      shiny::tags$script(shiny::HTML(paste0(
-        "function episodicSelectPane(pane){",
-        "var body = document.querySelector('.episodic-body'); ",
-        "if(!body){return;} ",
-        "body.dataset.pane = pane; ",
-        "document.querySelectorAll('.episodic-pane-tab').forEach(function(btn){",
-        "btn.classList.toggle('active', btn.dataset.paneTarget === pane);",
-        "});",
-        "}"
-      ))),
-      # The phone-tier segmented control (see episodic_ui_pane_switcher() in
-      # R/app_widgets.R) also names the cluster the other two segments refer
-      # to. Copied client-side from the rail's own already-rendered active
-      # item rather than read from a new server output, so no output added
-      # here needs its own episodic_app_access_granted() gate - it is
-      # already gated once, upstream, on output$rail_pane. The checkbox and
-      # care-line chip are stripped from the clone: they belong to the rail
-      # row, not to a "which cluster is this" label.
-      shiny::tags$script(shiny::HTML(paste0(
-        "function episodicSyncPaneBar(){",
-        "var label = document.getElementById('episodic-pane-switcher-label'); ",
-        "if(!label){return;} ",
-        "var active = document.querySelector('.episodic-rail-item.active .episodic-rail-pathogen'); ",
-        "if(!active){label.innerHTML = ''; return;} ",
-        "var clone = active.cloneNode(true); ",
-        "clone.querySelectorAll('input, .episodic-chip').forEach(function(el){el.remove();}); ",
-        "label.innerHTML = clone.innerHTML;",
-        "}"
-      ))),
-      # Keeps the pane-switcher label in step with output$rail_pane even
-      # when the active item changes without a click of its own - the
-      # initial render (the cron's first-cluster default selection) and
-      # any later re-render of the rail's cluster list (sign-in/out,
-      # a new detection run). shiny:value fires for every output on every
-      # render, including the first, so this alone also covers page load.
-      shiny::tags$script(shiny::HTML(
-        "$(document).on('shiny:value', function(ev){ if(ev.name === 'rail_pane'){ episodicSyncPaneBar(); } });"
-      )),
-      # Collapses the header nav below 1200px (see .episodic-nav-toggle in
-      # episodic.css). episodic_ui_nav_link()'s own onclick closes it again
-      # on the next navigation, the same way it already clears the other
-      # links' "active" class.
-      shiny::tags$script(shiny::HTML(paste0(
-        "function episodicToggleNav(btn){",
-        "var nav = document.querySelector('.episodic-nav'); ",
-        "if(!nav){return;} ",
-        "var open = nav.classList.toggle('open'); ",
-        "btn.setAttribute('aria-expanded', open ? 'true' : 'false');",
-        "}"
-      ))),
-      # Marks one nav link as the current screen and closes the mobile
-      # dropdown. Called from a link's own onclick, so the highlight
-      # moves on the click rather than a round trip later, and from the
-      # server whenever view() changes by any other route (see
-      # output$nav_links in app_server.R for why the nav is not simply
-      # re-rendered). A view with no link of its own leaves every link
-      # unmarked rather than guessing one.
-      shiny::tags$script(shiny::HTML(paste0(
-        "function episodicSetActiveNav(view){",
-        "document.querySelectorAll('.episodic-nav-link').forEach(function(a){",
-        "a.classList.toggle('active', a.dataset.view === String(view));",
-        "}); ",
-        "var nav = document.querySelector('.episodic-nav'); ",
-        "if(nav){nav.classList.remove('open'); ",
-        "var t = document.querySelector('.episodic-nav-toggle'); ",
-        "if(t){t.setAttribute('aria-expanded', 'false');}}",
-        "}",
-        "$(function(){Shiny.addCustomMessageHandler('episodicSetActiveNav', episodicSetActiveNav);});"
-      )))
+      # All navigation behaviour, in one cached file rather than in a
+      # handful of <script> blocks rebuilt into the page on every render
+      # and an `onclick` attribute on every element. See the file's own
+      # header for the rule it holds to.
+      shiny::tags$script(src = "www/episodic-nav.js")
     ),
     shiny::tags$div(
       class = "episodic-shell",
-      shiny::tags$div(
+      # The whole of the dashboard's navigation state, and the only
+      # place it is held. `episodic-nav.js` writes these three; the
+      # stylesheet reads the first two; nothing else stores a copy.
+      # Shiny never replaces this element, which is the entire reason
+      # they live here rather than on anything a `renderUI` produces.
+      `data-view` = "clusters",
+      `data-nav` = "clusters",
+      `data-cluster` = "",
+      # Brand, navigation and status are siblings rather than the
+      # navigation being nested inside a left-hand half: below 768px the
+      # bar takes a row of its own beneath the other two, and `order`
+      # only arranges elements against their own siblings.
+      shiny::tags$header(
         class = "episodic-header",
-        shiny::tags$div(
-          class = "episodic-header-left",
-          shiny::tags$span(
-            class = "episodic-brand",
-            title = episodic_tr("app.full_name", lang = lang),
-            "EpiSODIC"
-          ),
-          # Icon-only hamburger: hidden entirely at >=1200px, where the
-          # nav is always shown inline and there is nothing to expand.
-          shiny::tags$button(
-            type = "button",
-            class = "episodic-nav-toggle",
-            `aria-label` = episodic_tr("nav.menu_label", lang = lang),
-            `aria-expanded` = "false",
-            onclick = "episodicToggleNav(this);",
-            "\u2630"
-          ),
-          # Rendered from the server's own view(), not written once here:
-          # the highlight has to follow every way the view can change, and
-          # not every one of them is a click on these links. The Pathogen
-          # screen's cluster table switches views from a table row, so a
-          # nav updating itself only on its own clicks would point at the
-          # screen the reader has just left.
-          shiny::uiOutput(
-            "nav_links",
-            container = shiny::tags$div,
-            class = "episodic-nav"
-          )
+        shiny::tags$span(
+          class = "episodic-brand",
+          title = episodic_tr("app.full_name", lang = lang),
+          "EpiSODIC"
+        ),
+        # Rendered from the server rather than written once here only so
+        # that it can be withheld from a visitor who has not signed in -
+        # the navigation is a map of what there is to read. The links
+        # are the same for every reader and the highlight is not in them
+        # (see `episodic_ui_nav_link()`), so this renders once per access
+        # state and a navigation never touches it.
+        shiny::uiOutput(
+          "nav_links",
+          container = shiny::tags$nav,
+          class = "episodic-nav",
+          `aria-label` = episodic_tr("nav.menu_label", lang = lang)
         ),
         shiny::tags$div(
           class = "episodic-header-right",
@@ -242,92 +212,133 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
           shiny::tags$div(style = sprintf("background:%s;", colour))
         })
       ),
-      shiny::uiOutput("main_view")
+      # Shown in place of every screen on an instance that requires a
+      # sign-in. Its own output rather than a branch inside each screen:
+      # the screens already return NULL to a visitor who may see
+      # nothing, so this is the only thing left to draw.
+      shiny::uiOutput("locked_screen"),
+      shiny::tags$div(
+        class = "episodic-screens",
+        episodic_ui_screen(
+          "clusters",
+          shiny::tags$div(
+            class = "episodic-body",
+            # Shown only in the 768-1199px tier, where the rail slides
+            # in over the dossier and assessment rather than sharing a
+            # row with them: the rail is a list you consult and leave,
+            # the assessment is what you write into while reading the
+            # dossier, so the rail is what gets shed at that width.
+            # Below 768px the segmented control's own first segment does
+            # the same job, and above 1200px there is nothing to reveal.
+            shiny::tags$button(
+              type = "button",
+              class = "episodic-rail-toggle",
+              `data-episodic-pane` = "rail",
+              episodic_tr("rail.title", lang = lang)
+            ),
+            shiny::tags$div(
+              class = "episodic-pane-backdrop",
+              `data-episodic-pane` = "dossier"
+            ),
+            # The three panes are the outputs themselves rather than
+            # wrappers around elements carrying the geometry: an
+            # `shiny::uiOutput()` renders a div of its own, and that div
+            # is what `.episodic-body`'s flex layout actually lays out.
+            # With `width`/`flex`/`overflow-y` one level further in, the
+            # dossier's `flex: 1` addresses nothing and none of the
+            # three can scroll inside itself. Carrying the geometry here
+            # also gives each pane a real box for the recalculating
+            # spinner, so a pane being rebuilt says so in place instead
+            # of emptying.
+            shiny::uiOutput(
+              "rail_pane",
+              container = shiny::tags$div,
+              class = "episodic-pane episodic-pane-rail"
+            ),
+            shiny::uiOutput(
+              "dossier_pane",
+              container = shiny::tags$div,
+              class = "episodic-pane episodic-pane-dossier"
+            ),
+            shiny::uiOutput(
+              "assessment_pane",
+              container = shiny::tags$div,
+              class = "episodic-pane episodic-pane-assessment"
+            ),
+            episodic_ui_pane_switcher(lang = lang)
+          )
+        ),
+        episodic_ui_screen("pathogen", shiny::uiOutput("pathogen_screen")),
+        episodic_ui_screen("archive", shiny::uiOutput("archive_screen")),
+        episodic_ui_screen("instance", shiny::uiOutput("instance_screen")),
+        episodic_ui_screen("streams", shiny::uiOutput("streams_screen")),
+        episodic_ui_screen("activity", shiny::uiOutput("activity_screen")),
+        episodic_ui_screen(
+          "performance",
+          shiny::uiOutput("performance_screen")
+        ),
+        episodic_ui_screen("info", shiny::uiOutput("info_screen")),
+        episodic_ui_screen("settings", shiny::uiOutput("settings_screen"))
+      )
     )
   )
 }
 
-#' The top navigation links, with the current view marked
+#' One screen of the dashboard
 #'
-#' `episodic_ui_nav_link()` below builds one of them, and documents its
-#' own arguments.
+#' A plain container carrying the view id it belongs to. The stylesheet
+#' shows the one matching `.episodic-shell`'s `data-view` and hides the
+#' rest; nothing here knows which of those it is.
 #'
-#' @param active_view The view id currently on screen.
+#' @param view The view id this screen is shown for.
+#' @param ... The screen's content, normally a single `shiny::uiOutput()`.
+#' @return A `shiny::tags$div`.
+#' @keywords internal
+#' @noRd
+episodic_ui_screen <- function(view, ...) {
+  shiny::tags$div(class = "episodic-screen", `data-screen` = view, ...)
+}
+
+#' The top navigation links
+#'
+#' Four links, the same for every reader. Which one is lit is not in this
+#' markup at all - see `episodic_ui_nav_link()` - so this renders once
+#' per access state and never on a navigation.
+#'
 #' @param lang Session language.
-#' @param is_admin Whether the signed-in account may see the Settings
-#'   screen - `FALSE`/`NULL` (the default: nobody signed in, or a
-#'   non-admin) omits the link entirely, so a non-admin never sees a link
-#'   to a screen that server-side re-checks the same flag and refuses to
-#'   render regardless (see `episodic_app_server_settings()`).
 #' @return A `shiny::tagList` of links.
 #' @keywords internal
 #' @noRd
-episodic_ui_nav_links <- function(active_view = "clusters",
-                                  lang = Sys.getenv("EPISODIC_LANGUAGE"),
-                                  is_admin = FALSE) {
-  views <- c(
-    "clusters",
-    # Between the operational views and the configuration ones: it is the
-    # same surveillance data read at a different altitude, not a settings
-    # screen.
-    "pathogen",
-    "streams",
-    "archive",
-    "activity",
-    "performance",
-    "info"
-  )
-  if (isTRUE(is_admin)) {
-    views <- c(views, "settings")
-  }
-  shiny::tagList(lapply(views, function(v) {
-    episodic_ui_nav_link(
-      v,
-      episodic_tr(paste0("nav.", v), lang = lang),
-      active = identical(v, active_view)
-    )
-  }))
+episodic_ui_nav_links <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  shiny::tagList(lapply(
+    c("clusters", "pathogen", "archive", "instance"),
+    function(v) {
+      episodic_ui_nav_link(v, episodic_tr(paste0("nav.", v), lang = lang))
+    }
+  ))
 }
 
 #' One top-navigation link
 #'
-#' The highlight is moved client-side, by `episodicSetActiveNav()`, the
-#' same approach `episodic_ui_rail()` takes for its own selection: the
-#' nav is rendered once per sign-in state, and re-rendering it to move
-#' one CSS class would put it behind whichever screen the reader is
-#' navigating to (see `output$nav_links`). `active` is therefore only
-#' the starting state, for the view the app happens to open on.
+#' It carries no highlight of its own. Which link is lit is derived by
+#' the stylesheet from `data-nav` on `.episodic-shell`, so there is no
+#' class here for a re-render to lose and no second writer to disagree
+#' with the first. The click is picked up by `episodic-nav.js`'s one
+#' delegated listener, which is why there is no `onclick` either: an
+#' attribute of a few bytes rather than a line of JavaScript re-sent and
+#' re-parsed with every render of the bar.
 #'
 #' @param view The view id this link switches to.
 #' @param label The link's visible text.
-#' @param active Whether this link starts out highlighted - true for the
-#'   view the app opens on.
 #' @keywords internal
 #' @noRd
-episodic_ui_nav_link <- function(view, label, active = FALSE) {
+episodic_ui_nav_link <- function(view, label) {
   shiny::tags$a(
     href = "#",
-    class = if (isTRUE(active)) {
-      "episodic-nav-link active"
-    } else {
-      "episodic-nav-link"
-    },
+    class = "episodic-nav-link",
     `data-view` = view,
-    # The highlight moves here, on the click, rather than waiting for
-    # the server to answer: episodicSetActiveNav() does exactly what the
-    # server's own view() observer does, so a link cannot end up marked
-    # differently depending on which of the two got there first. It also
-    # closes the mobile dropdown behind .episodic-nav-toggle - a no-op
-    # above 1200px, where .episodic-nav never gains the "open" class in
-    # the first place.
-    onclick = sprintf(
-      paste0(
-        "episodicSetActiveNav('%s'); ",
-        "Shiny.setInputValue('nav_view', '%s', {priority: 'event'}); return false;"
-      ),
-      view,
-      view
-    ),
+    `data-episodic-nav` = view,
+    `data-nav` = episodic_app_nav_group(view),
     label
   )
 }

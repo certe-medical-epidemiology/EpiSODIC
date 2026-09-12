@@ -496,13 +496,11 @@ test_that("the header nav renders once and does not wait behind the screen being
   shiny::testServer(server, {
     session$flushReact()
     before <- paste(output$nav_links, collapse = "\n")
-    expect_true(grepl("Signaleringsreeksen", before, fixed = TRUE))
+    expect_true(grepl("Instantie", before, fixed = TRUE))
 
-    # Navigating does not invalidate the nav: output$main_view depends
-    # on view() and takes orders of magnitude longer to build, and
-    # Shiny sends a flush's output values only once every output in it
-    # has finished. The highlight moves through
-    # episodicSetActiveNav(), client-side, instead.
+    # Navigating does not invalidate the nav: the four links are the
+    # same for every reader and which one is lit is not in them, so
+    # there is nothing about a navigation for this output to depend on.
     session$setInputs(nav_view = "info")
     session$flushReact()
     expect_equal(paste(output$nav_links, collapse = "\n"), before)
@@ -564,14 +562,14 @@ test_that("the rail's open-by-number box opens a real cluster and answers a numb
   })
 })
 
-test_that("output$main_view actually renders the info screen when nav_view is set to 'info'", {
+test_that("output$info_screen actually renders the info screen when nav_view is set to 'info'", {
   db_path <- episodic_test_db_path()
 
   server <- episodic_app_server_factory(db_path, lang = "nl")
   shiny::testServer(server, {
     session$setInputs(nav_view = "info")
     session$flushReact()
-    rendered <- paste(output$main_view, collapse = "\n")
+    rendered <- paste(output$info_screen, collapse = "\n")
     expect_true(grepl("<code>same_place</code>", rendered, fixed = TRUE))
 
     # The factory opened this connection; the mock session does not
@@ -581,14 +579,14 @@ test_that("output$main_view actually renders the info screen when nav_view is se
   })
 })
 
-test_that("output$main_view actually renders the performance screen when nav_view is set to 'performance'", {
+test_that("output$performance_screen actually renders the performance screen when nav_view is set to 'performance'", {
   db_path <- episodic_test_db_path()
 
   server <- episodic_app_server_factory(db_path, lang = "nl")
   shiny::testServer(server, {
     session$setInputs(nav_view = "performance")
     session$flushReact()
-    rendered <- paste(output$main_view, collapse = "\n")
+    rendered <- paste(output$performance_screen, collapse = "\n")
     expect_true(grepl("Prestatie", rendered, fixed = TRUE))
     expect_true(grepl("Tijdigheid", rendered, fixed = TRUE))
 
@@ -660,12 +658,11 @@ test_that("input$open_cluster jumps to the Clusters screen on that very cluster"
     dossier <- paste(output$dossier_pane, collapse = "\n")
     expect_true(grepl(ref(first), dossier, fixed = TRUE))
     expect_false(grepl(ref(second), dossier, fixed = TRUE))
-    # and it actually switched screens. The dossier itself is rendered
-    # into output$dossier_pane; main_view only carries the clusters
-    # container and its placeholders, so that is what proves the switch.
-    main <- paste(output$main_view, collapse = "\n")
-    expect_true(grepl("episodic-body", main, fixed = TRUE))
-    expect_false(grepl("episodic-pathogen-controls", main, fixed = TRUE))
+    # and it actually switched screens. Every screen is in the page at
+    # once and which one is shown is `data-view` on the shell, so what
+    # proves the switch is view() itself rather than what one renderUI
+    # happened to return.
+    expect_equal(view(), "clusters")
 
     # The factory opened this connection; the mock session does not
     # run onSessionEnded, so close it here. Safe either way - the
@@ -826,47 +823,46 @@ test_that("the navigation highlight follows a deep link, not just its own clicks
   )
   DBI::dbDisconnect(con)
 
-  active <- function(html) {
-    m <- regmatches(
-      html,
-      gregexpr('data-view="[a-z]+" class="episodic-nav-link active"', html)
-    )[[1]]
-    if (length(m) == 0) {
-      m <- regmatches(
-        html,
-        gregexpr('class="episodic-nav-link active" data-view="[a-z]+"', html)
-      )[[1]]
-    }
-    gsub('.*data-view="([a-z]+)".*', "\\1", m)
+  links <- function(html) {
+    regmatches(html, gregexpr('data-view="[a-z]+"', html))[[1]]
   }
 
   server <- episodic_app_server_factory(db_path, lang = "en")
   shiny::testServer(server, {
     session$flushReact()
-    # The nav is rendered once, marked with the view the app opens on.
-    expect_equal(active(paste(output$nav_links, collapse = "\n")), "clusters")
+    before <- links(paste(output$nav_links, collapse = "\n"))
+    expect_length(before, 4)
 
-    # From here the highlight is moved client-side, by
-    # episodicSetActiveNav(), which the server calls for every change of
-    # view() and a nav link calls for its own click (see
-    # output$nav_links, and test-app_ui.R for both ends of that). What
-    # this test holds is the server-side half of it: view() follows a
-    # deep link, not only a click on the nav, so there is something for
-    # that helper to be called with.
+    # Which screen is current is held on the shell and derived from
+    # there by the stylesheet; what this test holds is the server-side
+    # half of it, that view() follows every route and not only a click
+    # on the bar.
     session$setInputs(nav_view = "pathogen")
     session$flushReact()
     expect_equal(view(), "pathogen")
 
-    # Opening a cluster from the Pathogen screen's table moves the
-    # content, so the highlight has to move with it.
+    # A screen reached from the Instance screen is a view of its own,
+    # and it lights the Instance link rather than none.
+    session$setInputs(nav_view = "performance")
+    session$flushReact()
+    expect_equal(view(), "performance")
+    expect_equal(episodic_app_nav_group(view()), "instance")
+
+    # A view id naming no screen is ignored rather than trusted: any
+    # client can set any input, and a shell told to show a screen that
+    # does not exist would show none of them.
+    session$setInputs(nav_view = "not_a_screen")
+    session$flushReact()
+    expect_equal(view(), "performance")
+
+    # Opening a cluster from a cluster table moves the content, so the
+    # current screen has to move with it.
     session$setInputs(open_cluster = cluster_id)
     session$flushReact()
     expect_equal(view(), "clusters")
 
-    # And through all of it the nav itself is not re-rendered: it must
-    # not queue behind output$main_view, which depends on view() too and
-    # is where a screen's whole cost is paid.
-    expect_equal(active(paste(output$nav_links, collapse = "\n")), "clusters")
+    # And through all of it the bar itself is never re-rendered.
+    expect_equal(links(paste(output$nav_links, collapse = "\n")), before)
 
     # The factory opened this connection; the mock session does not
     # run onSessionEnded, so close it here. Safe either way - the

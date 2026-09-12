@@ -36,7 +36,7 @@ Imports:
     mem,
     rlang,
     RSQLite,
-    shiny,
+    shiny (>= 1.14.0),
     sodium,
     surveillance,
     yaml

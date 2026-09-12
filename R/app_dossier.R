@@ -61,8 +61,10 @@ episodic_ui_dossier <- function(con,
   linked <- episodic_db_clusters_linked_to(con, cluster_id)
   pal <- episodic_palette()
 
-  shiny::tags$div(
-    class = "episodic-dossier",
+  # A tagList: the dossier's own box is `output$dossier_pane`'s container
+  # (see `episodic_app_ui()`), which is what `.episodic-body` lays out
+  # and what scrolls.
+  shiny::tagList(
     episodic_ui_dossier_header(obj, state, lang = lang, linked = linked),
     episodic_ui_stat_grid(obj, lang = lang),
     episodic_ui_trajectory(obj, timeline, lang = lang),
@@ -254,7 +256,11 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       stats,
       list(episodic_ui_stat(
         episodic_tr("dossier.stat.duration", lang = lang),
-        paste0(episodic_format_number(duration_days, lang = lang), " d"),
+        episodic_tr(
+          "dossier.stat.days_value",
+          n = episodic_format_number(duration_days, lang = lang),
+          lang = lang
+        ),
         episodic_tr("dossier.stat.duration_sub", lang = lang)
       ))
     )
@@ -264,9 +270,10 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       stats,
       list(episodic_ui_stat(
         episodic_tr("dossier.stat.doubling", lang = lang),
-        paste0(
-          episodic_format_number(obj$doubling_days, lang = lang),
-          " d"
+        episodic_tr(
+          "dossier.stat.days_value",
+          n = episodic_format_number(obj$doubling_days, lang = lang),
+          lang = lang
         ),
         episodic_tr("dossier.stat.doubling_sub", lang = lang)
       ))
@@ -1536,6 +1543,8 @@ episodic_ui_settings_panel <- function(con,
 #'   cluster. Built once per selection by the server and handed to each
 #'   of them, it is computed once rather than three times; the default
 #'   keeps every other caller working unchanged.
+#' @return A `shiny::tagList` of the assessment rail's contents. Its own
+#'   box is `output$assessment_pane`'s container - see `episodic_app_ui()`.
 #' @keywords internal
 #' @noRd
 episodic_ui_assessment_rail <- function(con,
@@ -1553,8 +1562,9 @@ episodic_ui_assessment_rail <- function(con,
     level = obj$level
   )
 
-  shiny::tags$div(
-    class = "episodic-assessment-rail",
+  # As with the dossier: the box belongs to `output$assessment_pane`'s
+  # own container, not to another div inside it.
+  shiny::tagList(
     shiny::tags$div(
       class = "episodic-timeline",
       shiny::tags$div(

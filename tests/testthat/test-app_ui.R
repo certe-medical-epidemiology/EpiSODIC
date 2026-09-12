@@ -74,7 +74,7 @@ test_that("episodic_ui_rail() shows a full-month date range and the priority sco
   expect_true(grepl("score 2", html, fixed = TRUE))
 })
 
-test_that("episodic_ui_rail() marks each item with the cluster id episodicOpenCluster() reads back", {
+test_that("episodic_ui_rail() marks each row with the cluster id every other opener reads back", {
   open <- data.frame(
     cluster_id = 7L,
     pathogen = "Norovirus",
@@ -88,9 +88,9 @@ test_that("episodic_ui_rail() marks each item with the cluster id episodicOpenCl
     stringsAsFactors = FALSE
   )
   html <- as.character(episodic_ui_rail(open, selected_id = NULL, lang = "nl"))
-  # a click that opens a cluster from outside the rail (a table row, a
-  # "linked to #N" chip) has to be able to find and highlight this exact
-  # item - see episodicOpenCluster() in R/app_ui.R
+  # A click that opens a cluster from outside the rail (a table row, a
+  # "linked to #N" chip) has to be able to find and mark this exact row
+  # - see setCluster() in inst/app/www/episodic-nav.js.
   expect_true(grepl('data-cluster-id="7"', html, fixed = TRUE))
 })
 
@@ -232,15 +232,16 @@ test_that("episodic_ui_info_screen() shows the package's own version, descriptio
   expect_true(grepl(paste0("License: ", meta$license), american, fixed = TRUE))
 })
 
-test_that("episodic_ui_chip_link() opens through episodicOpenCluster(), not a bare setInputValue", {
-  # so the rail highlight moves with it - the same reason
-  # episodic_ui_cluster_row() calls it instead of Shiny.setInputValue
-  # directly (see R/app_ui.R for the shared helper).
+test_that("episodic_ui_chip_link() opens a cluster through the shared attribute", {
+  # The same attribute every other opener carries, so the rail's mark,
+  # the dossier and the phone's pane all move together and no caller
+  # writes a line of JavaScript of its own.
   chip <- as.character(
     episodic_ui_chip_link("Linked to #9", "#AA4A3F", cluster_id = 9L, lang = "en")
   )
-  expect_true(grepl("episodicOpenCluster(9)", chip, fixed = TRUE))
+  expect_true(grepl('data-episodic-cluster="9"', chip, fixed = TRUE))
   expect_false(grepl("Shiny.setInputValue", chip, fixed = TRUE))
+  expect_false(grepl("onclick", chip, fixed = TRUE))
 })
 
 test_that("app widgets render to shiny tags without error, including empty-data edge cases", {
@@ -320,62 +321,73 @@ test_that("chart builders produce ggplot objects for typical and edge-case input
   expect_s3_class(episodic_ui_denominator_chart(series), "ggplot")
 })
 
-test_that("episodic_ui_nav_links() marks exactly the view being shown", {
-  for (view in c("clusters", "pathogen", "archive", "info")) {
-    html <- as.character(episodic_ui_nav_links(view, lang = "en"))
+test_that("episodic_ui_nav_links() renders four links and no highlight of its own", {
+  html <- as.character(episodic_ui_nav_links(lang = "en"))
+  for (view in c("clusters", "pathogen", "archive", "instance")) {
     expect_true(
-      grepl(
-        sprintf("data-view=\"%s\" class=\"episodic-nav-link active\"", view),
-        html,
-        fixed = TRUE
-      ) ||
-        grepl(
-          sprintf("class=\"episodic-nav-link active\" data-view=\"%s\"", view),
-          html,
-          fixed = TRUE
-        ),
+      grepl(sprintf('data-view="%s"', view), html, fixed = TRUE),
       info = view
     )
-    # exactly one, so the highlight can never sit on two screens at once
-    expect_equal(
-      lengths(regmatches(html, gregexpr("episodic-nav-link active", html)))[[
-        1
-      ]],
-      1
+  }
+  # Four, and only four: every other screen is reached from the Instance
+  # screen, which is what lets the bar fit a narrow viewport with nothing
+  # hidden behind a control that has to be opened first.
+  expect_equal(
+    lengths(regmatches(html, gregexpr("episodic-nav-link", html)))[[1]],
+    4
+  )
+  for (view in c("streams", "activity", "performance", "info", "settings")) {
+    expect_false(
+      grepl(sprintf('data-view="%s"', view), html, fixed = TRUE),
+      info = view
     )
   }
-  expect_true(grepl(
-    episodic_tr("nav.pathogen", lang = "en"),
-    as.character(episodic_ui_nav_links("clusters", lang = "en")),
-    fixed = TRUE
-  ))
+  # Which link is lit lives in one place, `data-nav` on .episodic-shell,
+  # and is derived from there by the stylesheet. Nothing in this markup
+  # says it, so no re-render of the bar can lose it and no second writer
+  # can disagree with the first.
+  expect_false(grepl("active", html, fixed = TRUE))
 })
 
-test_that("episodic_app_ui() leaves the nav to the server rather than fixing it at page load", {
-  # The highlight has to follow server-driven view changes too - the
-  # Pathogen screen's cluster table switches views from a table row.
-  html <- as.character(episodic_app_ui(lang = "en"))
-  expect_true(grepl("nav_links", html, fixed = TRUE))
-  expect_false(grepl("episodic-nav-link active", html, fixed = TRUE))
+test_that("every nav link carries the group its screen belongs to", {
+  html <- as.character(episodic_ui_nav_links(lang = "en"))
+  for (view in c("clusters", "pathogen", "archive", "instance")) {
+    expect_true(
+      grepl(
+        sprintf('data-view="%s" data-episodic-nav="%s" data-nav="%s"', view, view, view),
+        html,
+        fixed = TRUE
+      ),
+      info = view
+    )
+  }
 })
 
-test_that("episodic_ui_nav_link() moves the highlight through the one shared helper, and tells the server", {
-  # Both halves matter: the click marks its own link immediately
-  # (through episodicSetActiveNav(), the same function the server's
-  # view() observer calls, so the two cannot disagree about which
-  # screen is current), and it reports the view so everything else
-  # follows. Attribute values come back HTML-escaped (htmltools turns
-  # ' into &#39;), so match on the unquoted parts.
-  link <- as.character(episodic_ui_nav_link("streams", "Streams"))
-  expect_true(grepl("episodicSetActiveNav(", link, fixed = TRUE))
-  expect_true(grepl("streams", link, fixed = TRUE))
-  expect_true(grepl("nav_view", link, fixed = TRUE))
-  expect_false(grepl("episodic-nav-link active", link, fixed = TRUE))
-  expect_true(grepl(
-    "episodic-nav-link active",
-    as.character(episodic_ui_nav_link("clusters", "Clusters", active = TRUE)),
-    fixed = TRUE
-  ))
+test_that("episodic_app_nav_group() sends every instance-level screen to one link", {
+  expect_equal(episodic_app_nav_group("clusters"), "clusters")
+  expect_equal(episodic_app_nav_group("pathogen"), "pathogen")
+  expect_equal(episodic_app_nav_group("archive"), "archive")
+  for (v in c("instance", "streams", "activity", "performance", "info", "settings")) {
+    expect_equal(episodic_app_nav_group(v), "instance", info = v)
+  }
+  # Every screen resolves to a group, so no view can leave the bar with
+  # nothing lit.
+  for (v in episodic_app_views()) {
+    expect_true(
+      episodic_app_nav_group(v) %in%
+        c("clusters", "pathogen", "archive", "instance"),
+      info = v
+    )
+  }
+})
+
+test_that("a nav link navigates through a data attribute, never an inline handler", {
+  link <- as.character(episodic_ui_nav_link("archive", "Archive"))
+  expect_true(grepl('data-episodic-nav="archive"', link, fixed = TRUE))
+  # One delegated listener in a cached file, rather than a line of
+  # JavaScript re-sent and re-parsed with every render of the bar.
+  expect_false(grepl("onclick", link, fixed = TRUE))
+  expect_false(grepl("Shiny.setInputValue", link, fixed = TRUE))
 })
 
 # The page's own scripts live in tags$head(), and htmltools lifts head
@@ -390,22 +402,13 @@ episodic_test_ui_html <- function(lang = "en") {
   )
 }
 
-test_that("episodic_app_ui() defines the nav helper the server sends to, and registers it", {
+test_that("episodic_app_ui() loads its navigation from one cached script", {
+  # One file, fetched once per browser, rather than a handful of
+  # <script> blocks rebuilt into the page on every render. What it
+  # contains is held in test-app_navigation.R.
   html <- episodic_test_ui_html()
-  expect_true(grepl("function episodicSetActiveNav(", html, fixed = TRUE))
-  expect_true(grepl(
-    "Shiny.addCustomMessageHandler('episodicSetActiveNav'",
-    html,
-    fixed = TRUE
-  ))
-})
-
-test_that("episodic_app_ui() defines the rail's open-by-number helper", {
-  # Defined once at page level rather than inside episodic_ui_rail(),
-  # which is re-rendered every time the open-cluster list changes.
-  html <- episodic_test_ui_html()
-  expect_true(grepl("function episodicRailOpen(", html, fixed = TRUE))
-  expect_true(grepl("rail_open_cluster", html, fixed = TRUE))
+  expect_true(grepl('src="www/episodic-nav.js"', html, fixed = TRUE))
+  expect_false(grepl("function episodic", html, fixed = TRUE))
 })
 
 test_that("episodic_ui_pkg_versions_html() renders what a run recorded, and nothing when a run recorded nothing", {
