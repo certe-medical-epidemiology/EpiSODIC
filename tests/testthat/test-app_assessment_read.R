@@ -472,6 +472,64 @@ test_that("episodic_ui_run_modal() shows what a successful run loaded, and no fa
   expect_false(grepl("[[", rendered, fixed = TRUE))
 })
 
+test_that("episodic_ui_run_modal() marks what is bad news, and only that", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  run <- data.frame(
+    run_id = 14L,
+    host = "srv-01",
+    account = "cron",
+    started_at = "2025-06-01T08:00:00Z",
+    finished_at = "2025-06-01T08:01:00Z",
+    status = "success",
+    n_streams = 42L,
+    n_detections = 0L,
+    n_signals_new = 0L,
+    n_signals_updated = 0L,
+    n_cases_supplied = 400L,
+    n_cases_deduplicated = 350L,
+    n_cases_inserted = 120L,
+    n_activity_skipped = 0L,
+    code_version = "0.5.0",
+    config_hash = strrep("a", 40),
+    error_text = NA_character_,
+    stringsAsFactors = FALSE
+  )
+
+  # A run that enumerated its streams, ran every detector and found
+  # nothing is a quiet night, not a fault, and is marked as neither.
+  quiet <- as.character(episodic_ui_run_modal(con, run, lang = "en"))
+  expect_false(grepl("episodic-severity", quiet, fixed = TRUE))
+
+  # No eligible stream means no detector could have run at all.
+  run$n_streams <- 0L
+  expect_true(grepl(
+    "episodic-severity-warn",
+    as.character(episodic_ui_run_modal(con, run, lang = "en")),
+    fixed = TRUE
+  ))
+  run$n_streams <- 42L
+
+  # Rows the operator supplied that this run did not store.
+  run$status <- "partial"
+  run$n_activity_skipped <- 7L
+  partial <- as.character(episodic_ui_run_modal(con, run, lang = "en"))
+  expect_equal(
+    lengths(regmatches(partial, gregexpr("episodic-severity-warn", partial))),
+    2L
+  )
+  expect_false(grepl("episodic-severity-danger", partial, fixed = TRUE))
+
+  # A run that wrote nothing at all.
+  run$status <- "failed"
+  run$error_text <- "Case data cannot be used by EpiSODIC: 2 problems."
+  expect_true(grepl(
+    "episodic-severity-danger",
+    as.character(episodic_ui_run_modal(con, run, lang = "en")),
+    fixed = TRUE
+  ))
+})
+
 # ---------------------------------------------------------------------
 # Sign-ins on the Activity screen
 # ---------------------------------------------------------------------

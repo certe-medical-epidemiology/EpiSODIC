@@ -358,7 +358,8 @@ episodic_trace_case_recency <- function(cases,
     ") - same_place and rare_trigger can report nothing this run, ",
     "whatever the case history contains. Detect against a historical ",
     "extract by giving episodic_run_cron() a run_date inside the ",
-    "extract's own window."
+    "extract's own window.",
+    severity = "warn"
   )
   invisible(NULL)
 }

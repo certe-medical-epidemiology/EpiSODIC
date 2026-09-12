@@ -685,7 +685,8 @@ episodic_notify_dispatch <- function(channels, message) {
           "Notification via ",
           name,
           " failed: ",
-          conditionMessage(e)
+          conditionMessage(e),
+          severity = "danger"
         )
       }
     )

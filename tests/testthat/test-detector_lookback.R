@@ -302,6 +302,13 @@ test_that("a run says where its case history ends relative to its own run_date",
     episodic_trace_case_recency(cases, config, as.Date("2026-09-10"))
   )
   expect_true(any(grepl("can report nothing this run", stale)))
+  # And is marked as a line about a detector that can contribute
+  # nothing, rather than arriving in the same prose as the span above
+  # it, which is progress: a marked line no longer opens with its
+  # timestamp.
+  expect_false(any(grepl("^[0-9]", stale[grepl("can report nothing", stale)])))
+  spans <- stale[grepl("history on file spans", stale)]
+  expect_true(any(grepl("^[0-9]", spans)))
 
   # Inside the window, there is nothing to say beyond the span itself.
   current <- capture_messages(

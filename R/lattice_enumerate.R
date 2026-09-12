@@ -157,7 +157,8 @@ episodic_lattice_enumerate <- function(con,
             "country-specific. Point it at your own pc/province_code CSV, ",
             "or leave it unset and the province level stays empty."
           )
-        }
+        },
+        severity = "warn"
       )
     }
     l4 <- l4[!is.na(l4$.region_code), ]
