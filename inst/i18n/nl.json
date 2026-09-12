@@ -51,6 +51,7 @@
   "dossier.stat.duration_sub": "eerste tot laatste geval",
   "dossier.stat.case_free": "Casusvrij",
   "dossier.stat.case_free_value": "{since} d",
+  "dossier.stat.days_value": "{n} d",
   "dossier.stat.case_free_sub": "drempel {need} d",
   "dossier.stat.priority": "Prioriteit",
   "dossier.stat.priority_sub": "samengestelde score",

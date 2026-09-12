@@ -256,7 +256,11 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       stats,
       list(episodic_ui_stat(
         episodic_tr("dossier.stat.duration", lang = lang),
-        paste0(episodic_format_number(duration_days, lang = lang), " d"),
+        episodic_tr(
+          "dossier.stat.days_value",
+          n = episodic_format_number(duration_days, lang = lang),
+          lang = lang
+        ),
         episodic_tr("dossier.stat.duration_sub", lang = lang)
       ))
     )
@@ -266,9 +270,10 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       stats,
       list(episodic_ui_stat(
         episodic_tr("dossier.stat.doubling", lang = lang),
-        paste0(
-          episodic_format_number(obj$doubling_days, lang = lang),
-          " d"
+        episodic_tr(
+          "dossier.stat.days_value",
+          n = episodic_format_number(obj$doubling_days, lang = lang),
+          lang = lang
         ),
         episodic_tr("dossier.stat.doubling_sub", lang = lang)
       ))

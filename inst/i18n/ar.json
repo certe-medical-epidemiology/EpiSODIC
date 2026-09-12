@@ -51,6 +51,7 @@
   "dossier.stat.duration_sub": "من أول حالة إلى آخر حالة",
   "dossier.stat.case_free": "خالٍ من الحالات",
   "dossier.stat.case_free_value": "{since} يومًا",
+  "dossier.stat.days_value": "{n} يومًا",
   "dossier.stat.case_free_sub": "الحد {need} يومًا",
   "dossier.stat.priority": "الأولوية",
   "dossier.stat.priority_sub": "درجة مركّبة",

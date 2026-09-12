@@ -51,6 +51,7 @@
   "dossier.stat.duration_sub": "首例至末例",
   "dossier.stat.case_free": "无新增病例",
   "dossier.stat.case_free_value": "{since} 天",
+  "dossier.stat.days_value": "{n} 天",
   "dossier.stat.case_free_sub": "阈值 {need} 天",
   "dossier.stat.priority": "优先级",
   "dossier.stat.priority_sub": "综合评分",

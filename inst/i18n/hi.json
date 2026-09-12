@@ -51,6 +51,7 @@
   "dossier.stat.duration_sub": "पहले मामले से अंतिम मामले तक",
   "dossier.stat.case_free": "प्रकरण-मुक्त",
   "dossier.stat.case_free_value": "{since} दि.",
+  "dossier.stat.days_value": "{n} दि.",
   "dossier.stat.case_free_sub": "सीमा {need} दि.",
   "dossier.stat.priority": "प्राथमिकता",
   "dossier.stat.priority_sub": "संयुक्त स्कोर",

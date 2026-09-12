@@ -51,6 +51,7 @@
   "dossier.stat.duration_sub": "primer a último caso",
   "dossier.stat.case_free": "Sin casos",
   "dossier.stat.case_free_value": "{since} d",
+  "dossier.stat.days_value": "{n} d",
   "dossier.stat.case_free_sub": "umbral {need} d",
   "dossier.stat.priority": "Prioridad",
   "dossier.stat.priority_sub": "puntuación compuesta",

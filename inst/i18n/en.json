@@ -51,6 +51,7 @@
   "dossier.stat.duration_sub": "first case to last case",
   "dossier.stat.case_free": "Case-free",
   "dossier.stat.case_free_value": "{since} d",
+  "dossier.stat.days_value": "{n} d",
   "dossier.stat.case_free_sub": "threshold {need} d",
   "dossier.stat.priority": "Priority",
   "dossier.stat.priority_sub": "composite score",

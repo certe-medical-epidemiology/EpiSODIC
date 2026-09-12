@@ -51,6 +51,7 @@
   "dossier.stat.duration_sub": "erster bis letzter Fall",
   "dossier.stat.case_free": "Fallfrei",
   "dossier.stat.case_free_value": "{since} T",
+  "dossier.stat.days_value": "{n} T",
   "dossier.stat.case_free_sub": "Schwelle {need} T",
   "dossier.stat.priority": "Priorität",
   "dossier.stat.priority_sub": "zusammengesetzter Score",
