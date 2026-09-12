@@ -264,6 +264,33 @@ episodic_ui_run_modal <- function(con,
     !is.na(run$error_text) &&
     nzchar(run$error_text)
 
+  # The same rule the run log follows (see `episodic_trace()`): a line is
+  # marked when it says a component produced nothing it structurally
+  # could not have produced, or failed outright. A quiet night - streams
+  # enumerated, detectors run, nothing found - is not that, and stays
+  # unmarked, or the modal becomes a wall of colour in which nothing
+  # stands out.
+  severe <- function(base, severity) {
+    if (identical(severity, "plain")) {
+      base
+    } else {
+      paste(c(base, paste0("episodic-severity-", severity)), collapse = " ")
+    }
+  }
+  status_severity <- switch(run$status,
+    failed = "danger",
+    partial = "warn",
+    "plain"
+  )
+  # Rows the operator supplied and this run did not store. A run that
+  # skipped any finishes 'partial' rather than 'success', and the count
+  # itself is inside the load summary.
+  load_severity <- if (isTRUE(run$n_activity_skipped > 0)) "warn" else "plain"
+  # No eligible stream is no surveillance unit for any detector to run
+  # against, so this run could not have detected anything whatever the
+  # case data held.
+  detection_severity <- if (isTRUE(run$n_streams == 0)) "warn" else "plain"
+
   shiny::modalDialog(
     title = episodic_tr(
       "activity.run_modal_title",
@@ -283,7 +310,7 @@ episodic_ui_run_modal <- function(con,
       episodic_tr("misc.close", lang = lang)
     ),
     shiny::tags$div(
-      class = "episodic-run-modal-when",
+      class = severe("episodic-run-modal-when", status_severity),
       episodic_tr(paste0("activity.action_run_", run$status), lang = lang),
       " \u00b7 ",
       episodic_tr(
@@ -295,6 +322,7 @@ episodic_ui_run_modal <- function(con,
     ),
     heading("activity.run_modal_load"),
     shiny::tags$p(
+      class = severe(NULL, load_severity),
       if (is.na(load_summary)) {
         episodic_tr("activity.run_modal_no_load", lang = lang)
       } else {
@@ -304,14 +332,17 @@ episodic_ui_run_modal <- function(con,
     if (!is.null(run$n_streams) && !is.na(run$n_streams)) {
       shiny::tagList(
         heading("activity.run_modal_detection"),
-        shiny::tags$p(episodic_tr(
-          "activity.run_modal_detection_line",
-          streams = num(run$n_streams),
-          detections = num(run$n_detections %||% 0),
-          new = num(run$n_signals_new %||% 0),
-          updated = num(run$n_signals_updated %||% 0),
-          lang = lang
-        )),
+        shiny::tags$p(
+          class = severe(NULL, detection_severity),
+          episodic_tr(
+            "activity.run_modal_detection_line",
+            streams = num(run$n_streams),
+            detections = num(run$n_detections %||% 0),
+            new = num(run$n_signals_new %||% 0),
+            updated = num(run$n_signals_updated %||% 0),
+            lang = lang
+          )
+        ),
         shiny::tags$p(episodic_tr(
           "activity.run_modal_autoclosed_line",
           closed = num(episodic_db_run_autoclosed_count(con, run)),

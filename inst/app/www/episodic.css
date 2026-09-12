@@ -1176,6 +1176,19 @@ dl.episodic-settings dd { margin: 0; }
   font-size: 0.923rem;
   color: var(--episodic-muted);
 }
+/* Severity in the run modal, on the same rule the run log follows: a
+   line saying a component produced nothing it structurally could not
+   have produced, or failed outright. An accent rather than a wash, and
+   inline-start so it sits at the reading edge in Arabic too. */
+.episodic-severity-warn,
+.episodic-severity-danger {
+  border-inline-start: 3px solid var(--episodic-warning);
+  padding-inline-start: 8px;
+}
+.episodic-severity-danger {
+  border-inline-start-color: var(--episodic-danger);
+  color: var(--episodic-danger-dark);
+}
 .episodic-run-modal-provenance {
   font-size: 0.846rem;
   color: var(--episodic-faint);

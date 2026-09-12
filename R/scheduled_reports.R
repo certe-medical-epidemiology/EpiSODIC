@@ -153,7 +153,8 @@ episodic_scheduled_reports_dispatch <- function(con,
           "Scheduled report dispatch for cluster ",
           subscription$cluster_id,
           " failed unexpectedly: ",
-          conditionMessage(e)
+          conditionMessage(e),
+          severity = "danger"
         )
       }
     )
@@ -228,7 +229,8 @@ episodic_scheduled_report_send_one <- function(con,
         "Scheduled report for cluster ",
         subscription$cluster_id,
         " failed: ",
-        conditionMessage(e)
+        conditionMessage(e),
+        severity = "danger"
       )
       list(status = "failed", report_id = NA, error_text = conditionMessage(e))
     }

@@ -26,10 +26,64 @@
 #' crashed" localise to a phase without needing to reproduce anything,
 #' which is exactly the information a silent run (or a fatal crash that
 #' leaves no R-level error at all) otherwise never gives up.
+#'
+#' @param severity `"plain"` for the run's own progress, `"warn"` for a
+#'   line saying a component produced nothing it structurally could not
+#'   have produced (or that a setting means it never will), `"danger"`
+#'   for one that was meant to produce something and failed outright.
+#'   Nothing else takes a severity: a phase heading, a count and a
+#'   summary stay plain, or a run log becomes a wall of colour in which
+#'   nothing stands out again, which is the state this argument exists to
+#'   leave behind.
 #' @keywords internal
 #' @noRd
-episodic_trace <- function(...) {
-  message(format(Sys.time(), "%Y-%m-%d %H:%M:%OS3"), " | ", ...)
+episodic_trace <- function(..., severity = c("plain", "warn", "danger")) {
+  severity <- match.arg(severity)
+  # Collapsed the way `message()` collapses its own `...`: a fragment
+  # that arrives as a vector belongs on the one line with the rest of
+  # them, not on a line of its own per element.
+  line <- paste0(
+    c(
+      format(Sys.time(), "%Y-%m-%d %H:%M:%OS3"),
+      " | ",
+      unlist(lapply(list(...), as.character))
+    ),
+    collapse = ""
+  )
+  if (identical(severity, "plain")) {
+    message(line)
+    return(invisible(NULL))
+  }
+  # cli formats the alert; `message()` emits it, as every plain line is
+  # emitted, so a caller teeing a run's log to a file with a message
+  # handler receives the severe lines through the same condition as the
+  # rest of them. cli's own unicode and emoji fallbacks are left to
+  # decide the symbol: a terminal, a cron mail and a systemd journal
+  # each get the one they can render.
+  #
+  # Only the row carrying the timestamp is marked: the rows after it are
+  # the caller's own (a validation report names one problem per line)
+  # and go out unchanged, rather than being folded into the alert's
+  # paragraph. The width is lifted for the call for the same reason -
+  # cli otherwise wraps to the console, and a wrapped row carries
+  # neither the timestamp nor the alert symbol, which is the log an
+  # operator greps. `{head_row}` interpolates the text rather than
+  # passing it as a format string, so a brace in a configuration path or
+  # an error message is text and not cli markup.
+  rows <- strsplit(line, "\n", fixed = TRUE)[[1]]
+  head_row <- rows[1]
+  old_width <- options(cli.width = 10000L)
+  on.exit(options(old_width), add = TRUE)
+  formatted <- cli::cli_fmt(switch(
+    severity,
+    warn = cli::cli_alert_warning("{head_row}", .envir = environment()),
+    danger = cli::cli_alert_danger("{head_row}", .envir = environment())
+  ))
+  message(paste(
+    c(sub("\n+$", "", paste(formatted, collapse = "\n")), rows[-1]),
+    collapse = "\n"
+  ))
+  invisible(NULL)
 }
 
 #' The extra detail `debug = TRUE` adds on top of every `episodic_trace()` line
@@ -274,7 +328,8 @@ episodic_run_cron <- function(cases,
   if (length(detectors_off) > 0) {
     episodic_trace(
       "Switched off by configuration, and so raising nothing this run: ",
-      paste(detectors_off, collapse = ", ")
+      paste(detectors_off, collapse = ", "),
+      severity = "warn"
     )
   }
 
@@ -364,7 +419,11 @@ episodic_run_cron <- function(cases,
     error = function(e) e
   )
   if (inherits(prepared, "condition")) {
-    episodic_trace("Pre-run checks failed: ", conditionMessage(prepared))
+    episodic_trace(
+      "Pre-run checks failed: ",
+      conditionMessage(prepared),
+      severity = "danger"
+    )
     episodic_run_cron_finish(
       con,
       run_id,
@@ -422,7 +481,8 @@ episodic_run_cron <- function(cases,
     error = function(e) {
       episodic_trace(
         "Error during run body, rolling back: ",
-        conditionMessage(e)
+        conditionMessage(e),
+        severity = "danger"
       )
       DBI::dbRollback(con)
       episodic_run_cron_failure(conditionMessage(e))
@@ -443,7 +503,11 @@ episodic_run_cron <- function(cases,
   tryCatch(
     episodic_notify(con, notify_config, result, run_id, run_date, host),
     error = function(e) {
-      episodic_trace("Notification dispatch failed: ", conditionMessage(e))
+      episodic_trace(
+        "Notification dispatch failed: ",
+        conditionMessage(e),
+        severity = "danger"
+      )
     }
   )
 
@@ -465,7 +529,11 @@ episodic_run_cron <- function(cases,
       episodic_config_path
     ),
     error = function(e) {
-      episodic_trace("Scheduled report dispatch failed: ", conditionMessage(e))
+      episodic_trace(
+        "Scheduled report dispatch failed: ",
+        conditionMessage(e),
+        severity = "danger"
+      )
     }
   )
 
@@ -846,7 +914,13 @@ episodic_run_cron_body <- function(con,
         )
       },
       "Every run after this one is bounded again, so nothing here is ",
-      "reported twice."
+      "reported twice.",
+      # An unset stale_open_days on the run that reports the whole
+      # archive is the setting deciding that none of what it opens can
+      # close on its own, which is the queue an epidemiologist arrives
+      # to; with it set, the sentence is an ordinary statement of what
+      # the run did.
+      severity = if (is.na(stale_days)) "warn" else "plain"
     )
   }
 
@@ -1275,9 +1349,10 @@ episodic_run_cron_body <- function(con,
     )
   }
   if (!is.null(farrington_short) && nrow(farrington_short) > 0) {
+    n_farrington_fitted <- n_eligible_streams - nrow(farrington_short)
     episodic_trace(
       "Farrington fitted on ",
-      n_eligible_streams - nrow(farrington_short),
+      n_farrington_fitted,
       " of the ",
       n_eligible_streams,
       " eligible stream(s): the other ",
@@ -1286,7 +1361,10 @@ episodic_run_cron_body <- function(con,
       max(farrington_short$need),
       " weeks for the configured b, and the longest of those streams has ",
       max(farrington_short$have),
-      ". Lower `farrington.b` or wait for the history to accrue."
+      ". Lower `farrington.b` or wait for the history to accrue.",
+      # Fitted nowhere is the statistical detector contributing nothing
+      # at all to the run; fitted on some of them is a count.
+      severity = if (n_farrington_fitted == 0) "warn" else "plain"
     )
   }
   episodic_trace(
