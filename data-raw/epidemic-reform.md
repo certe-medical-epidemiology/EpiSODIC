@@ -83,6 +83,7 @@ done, what was not, and anything surprising. No narrative.
   M0 was attempted here and abandoned: Claude Code on the web has no R
   (no Rscript, no /usr/lib/R), so nothing could be run. Recorded that as a
   hard precondition in section 7. Every milestone runs where R runs.
+  Milestone checks go through the existing data-raw/verification harness.
 ```
 
 ---
@@ -432,16 +433,43 @@ and leave the testing to them. Propose moving the session to a machine with R.
 This is not a style preference; a detection change merged untested breaches the
 no-untested-code rule in `CLAUDE.md`.
 
-Where R is present, run before opening any PR:
+Where R is present, the checks already exist. Use them rather than growing a
+second convention beside them:
 
 ```bash
-Rscript -e 'devtools::test()'
-Rscript -e 'devtools::document()'
-Rscript -e 'styler::style_pkg()'
+Rscript -e 'devtools::document()'                 # after any roxygen change
+Rscript data-raw/verification/run_checks.R        # suite, R CMD check, formatter
+Rscript data-raw/verification/run_visual.R        # browser checks, M3 and M4
 ```
 
-`devtools::test()` must be clean, not "clean apart from". Report the actual
-output in the PR body, including any skips and why they skipped.
+`run_checks.R` runs `devtools::test()` failing on any failure, error or
+warning; `R CMD build` and `R CMD check --as-cran` failing on any ERROR or
+WARNING, with the one expected `Authors@R` NOTE allowed; and
+`styler::style_pkg(dry = "on")` failing if any file would change. It exits
+non-zero if anything failed, so the exit code is the whole contract. Read
+`data-raw/verification/README.md` before the first run.
+
+Run the formatter in dry mode first and read the diff before letting it write:
+styler cannot be configured to prefer this project's hanging-indent
+signatures, it detects the shape per function from the source, so a signature
+it wants to reflow is one somebody wrote in the other shape.
+
+`run_visual.R` drives the app in headless Chrome via chromote and asserts what
+no string comparison against the stylesheet can: that the page never scrolls
+sideways at any width in Arabic as well as English, that every navigation
+control clears 44px measured from the rendered box, that exactly one screen is
+visible at a time, that a pane survives a navigation, that a screen returned to
+is not rebuilt, and that Arabic mirrors. Every one of those is a property M3
+and M4 can break. It needs a Chrome or Chromium binary chromote can find
+(`CHROMOTE_CHROME` if it is somewhere unusual) and no display.
+
+**M3 and M4 must extend it.** The view list at `run_visual.R:516` is hardcoded
+(`c("pathogen", "archive", "instance", "clusters")`); adding the `epidemics`
+view means adding it there, or the new screen is the one screen nothing
+renders.
+
+Report the actual output in the PR body, including any skips and why they
+skipped. Clean means clean, not "clean apart from".
 
 ---
 
@@ -863,6 +891,10 @@ New keys in all eight full language files.
 - A viewer cannot declare. Test.
 - Nothing renders for a signed-out visitor when `access.require_login` is true.
   Test.
+- `epidemics` added to the view list at `data-raw/verification/run_visual.R:516`
+  and to `tests/testthat/test-app_navigation.R`, and `run_visual.R` passing at
+  every viewport in English and Arabic. Look at the screenshots it writes; they
+  are the half no assertion covers.
 
 ---
 
@@ -898,8 +930,9 @@ The interface says Outbreak and Epidemic, in eight languages, and ids read
 
 `test-i18n.R` passes: equal key sets, equal placeholder tokens, variants
 carrying only genuine differences. No user-facing string says "cluster" where
-it means one of the two objects. A screenshot in Arabic still mirrors
-correctly.
+it means one of the two objects. `run_visual.R` passes in every language it
+covers, and the Arabic screenshots still mirror: a wording sweep is where a
+longer or shorter label breaks a layout that fitted before.
 
 ---
 
