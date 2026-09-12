@@ -210,45 +210,45 @@ own extract first, and <a href="episodic_case_data.html">episodic_case_data</a> 
 <span class="r-in"><span><span class="va">db_path</span> <span class="op">&lt;-</span> <span class="fu">episodic_demo</span><span class="op">(</span>launch <span class="op">=</span> <span class="cn">FALSE</span>, cases <span class="op">=</span> <span class="va">cases</span>, denominators <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Running detection as of 2025-03-31, the last day your case data covers.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Creating synthetic cases...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.276 | episodic_run_cron() starting (host=runnervmlun5p, account=runner)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.276 | Resolving configuration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.282 | Configuration resolved (hash da68bff26789)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.283 | Connecting to database</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.283 | No existing database found - creating one</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.302 | Database connected (dialect: sqlite)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.304 | Run 1 started</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.304 | Resolving and checking case data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.318 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.319 | Beginning transaction</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.320 | Loading pathogen configuration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.323 | Pathogen configuration loaded (23 pathogen(s))</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.323 | Loading case data into the database</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.419 | Case data loaded: supplied=419, deduplicated=410, inserted=410</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.420 | Fetching all known cases and institutions</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.422 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.424 | Case history on file spans 2025-01-01 to 2025-03-31, ending 0 day(s) before this run's date (2025-03-31)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.425 | Enumerating lattice streams</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.462 | Running same-place detector</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.522 | Same-place detector found 6 detection(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.522 | Running rare-trigger detector</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.527 | Rare-trigger detector found 1 detection(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.528 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.530 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.955 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.956 | Backfill: 7 cluster(s) opened from the case history, 2 of them already closed by the system and in the Archive, 5 left open for assessment</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.956 | Suppressing lattice</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.961 | Committing transaction</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:05.964 | Finishing run 1 (status: success)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 08:16:07.233 | episodic_run_cron() finished in 2s (status: success)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.220 | episodic_run_cron() starting (host=runnervmlun5p, account=runner)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.220 | Resolving configuration</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.225 | Configuration resolved (hash da68bff26789)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.225 | Connecting to database</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.225 | No existing database found - creating one</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.238 | Database connected (dialect: sqlite)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.239 | Run 1 started</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.239 | Resolving and checking case data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.249 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.249 | Beginning transaction</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.251 | Loading pathogen configuration</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.253 | Pathogen configuration loaded (23 pathogen(s))</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.253 | Loading case data into the database</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.319 | Case data loaded: supplied=419, deduplicated=410, inserted=410</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.320 | Fetching all known cases and institutions</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.322 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.323 | Case history on file spans 2025-01-01 to 2025-03-31, ending 0 day(s) before this run's date (2025-03-31)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.323 | Enumerating lattice streams</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.348 | Running same-place detector</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.388 | Same-place detector found 6 detection(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.389 | Running rare-trigger detector</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.392 | Rare-trigger detector found 1 detection(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.392 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.398 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.679 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.680 | Backfill: 7 cluster(s) opened from the case history, 2 of them already closed by the system and in the Archive, 5 left open for assessment</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.680 | Suppressing lattice</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.684 | Committing transaction</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:46.686 | Finishing run 1 (status: success)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-12 13:47:47.692 | episodic_run_cron() finished in 1.5s (status: success)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> OK</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ===========================================================================</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   EpiSODIC demo account (admin) - username: demo, password: demo</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   To re-open this demo later, with its geography:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>     Sys.setenv(EPISODIC_DB = "/tmp/RtmpEjrryZ/file1d0114676d9a.sqlite",</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_CONFIG = "/tmp/RtmpEjrryZ/file1d0114676d9a-config.yaml",</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_PC_PROVINCE_MAP = "/tmp/RtmpEjrryZ/file1d0114676d9a-pc-province.csv")</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>     Sys.setenv(EPISODIC_DB = "/tmp/Rtmpk5kbiP/file1ce38b25b53.sqlite",</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_CONFIG = "/tmp/Rtmpk5kbiP/file1ce38b25b53-config.yaml",</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_PC_PROVINCE_MAP = "/tmp/Rtmpk5kbiP/file1ce38b25b53-pc-province.csv")</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>     episodic_run_app()</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ===========================================================================</span>
