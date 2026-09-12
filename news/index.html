@@ -36,7 +36,8 @@
 <h2 class="pkg-version" data-toc-text="0.19.0" id="episodic-0190">EpiSODIC 0.19.0<a class="anchor" aria-label="anchor" href="#episodic-0190"></a></h2>
 <div class="section level3">
 <h3 id="new-0-19-0">New<a class="anchor" aria-label="anchor" href="#new-0-19-0"></a></h3>
-<ul><li>Per-output loading spinners in the primary colour, so each panel, chart and table says it is the one being waited for</li>
+<ul><li>An Instance screen, holding the Streams, Activity, Performance, Info and Settings screens the navigation bar no longer carries</li>
+<li>Per-output loading spinners in the primary colour, so each panel, chart and table says it is the one being waited for</li>
 <li>A “Last 3 months” period on the Pathogen screen, left of “Last 12 months”</li>
 <li>An open-by-number box in the rail header, which opens any cluster the instance will show, closed and archived ones included</li>
 <li>A row about a cluster on the Activity screen opens that cluster</li>
@@ -44,8 +45,17 @@
 </ul></div>
 <div class="section level3">
 <h3 id="changed-0-19-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-19-0"></a></h3>
-<ul><li>The header navigation renders once per sign-in state instead of on every navigation, so it no longer arrives with the screen it exists to navigate away from</li>
-<li>The active-screen highlight moves through one client-side helper, called both by a nav link’s own click and by the server when the view changes any other way</li>
+<ul><li>The navigation bar is four links and is visible at every width, with no collapsed menu anywhere in the app</li>
+<li>Every screen is rendered once and shown or hidden, instead of being torn out and rebuilt from the database on every navigation</li>
+<li>Navigation, pane and cluster state live in three data attributes on the app shell, and every highlight is derived from them by the stylesheet</li>
+<li>All navigation behaviour moved into one cached script, replacing the inline event handlers on nav links, rail rows, cluster table rows and chips</li>
+<li>The clusters screen’s three panes carry their own geometry, so each scrolls inside itself instead of scrolling the document</li>
+<li>The rail row is a button beside its bulk-select checkbox rather than a div wrapped around it</li>
+<li>The phone-tier pane switcher names the open cluster from the server’s selection instead of copying it out of the rail’s markup</li>
+<li>Every navigation control is at least 44px on a touch viewport and answers a press before the screen changes</li>
+<li>
+<code>shiny</code> is required at version 1.14.0 or newer, for observer-based output visibility tracking</li>
+<li>The header navigation renders once per access state instead of on every navigation, so it no longer arrives with the screen it exists to navigate away from</li>
 <li>The resolved YAML configuration is cached per file content, instead of being re-read, re-validated and re-merged at every <code>episodic_geography_config()</code> call</li>
 <li>The denominator panel reads only the weeks it plots, rather than a pathogen’s whole recorded history</li>
 <li>Weekly case counts are computed by binary search rather than a pass over every date per week</li>

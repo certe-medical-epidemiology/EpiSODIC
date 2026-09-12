@@ -4,6 +4,8 @@
 
 ### New
 
+- An Instance screen, holding the Streams, Activity, Performance, Info
+  and Settings screens the navigation bar no longer carries
 - Per-output loading spinners in the primary colour, so each panel,
   chart and table says it is the one being waited for
 - A “Last 3 months” period on the Pathogen screen, left of “Last 12
@@ -16,12 +18,29 @@
 
 ### Changed
 
-- The header navigation renders once per sign-in state instead of on
+- The navigation bar is four links and is visible at every width, with
+  no collapsed menu anywhere in the app
+- Every screen is rendered once and shown or hidden, instead of being
+  torn out and rebuilt from the database on every navigation
+- Navigation, pane and cluster state live in three data attributes on
+  the app shell, and every highlight is derived from them by the
+  stylesheet
+- All navigation behaviour moved into one cached script, replacing the
+  inline event handlers on nav links, rail rows, cluster table rows and
+  chips
+- The clusters screen’s three panes carry their own geometry, so each
+  scrolls inside itself instead of scrolling the document
+- The rail row is a button beside its bulk-select checkbox rather than a
+  div wrapped around it
+- The phone-tier pane switcher names the open cluster from the server’s
+  selection instead of copying it out of the rail’s markup
+- Every navigation control is at least 44px on a touch viewport and
+  answers a press before the screen changes
+- `shiny` is required at version 1.14.0 or newer, for observer-based
+  output visibility tracking
+- The header navigation renders once per access state instead of on
   every navigation, so it no longer arrives with the screen it exists to
   navigate away from
-- The active-screen highlight moves through one client-side helper,
-  called both by a nav link’s own click and by the server when the view
-  changes any other way
 - The resolved YAML configuration is cached per file content, instead of
   being re-read, re-validated and re-merged at every
   `episodic_geography_config()` call
