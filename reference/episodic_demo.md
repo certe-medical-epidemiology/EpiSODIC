@@ -171,45 +171,45 @@ cases <- episodic_synthetic_cases(
 db_path <- episodic_demo(launch = FALSE, cases = cases, denominators = NULL)
 #> Running detection as of 2025-03-31, the last day your case data covers.
 #> Creating synthetic cases...
-#> 2026-09-12 13:47:46.220 | episodic_run_cron() starting (host=runnervmlun5p, account=runner)
-#> 2026-09-12 13:47:46.220 | Resolving configuration
-#> 2026-09-12 13:47:46.225 | Configuration resolved (hash da68bff26789)
-#> 2026-09-12 13:47:46.225 | Connecting to database
-#> 2026-09-12 13:47:46.225 | No existing database found - creating one
-#> 2026-09-12 13:47:46.238 | Database connected (dialect: sqlite)
-#> 2026-09-12 13:47:46.239 | Run 1 started
-#> 2026-09-12 13:47:46.239 | Resolving and checking case data
-#> 2026-09-12 13:47:46.249 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
-#> 2026-09-12 13:47:46.249 | Beginning transaction
-#> 2026-09-12 13:47:46.251 | Loading pathogen configuration
-#> 2026-09-12 13:47:46.253 | Pathogen configuration loaded (23 pathogen(s))
-#> 2026-09-12 13:47:46.253 | Loading case data into the database
-#> 2026-09-12 13:47:46.319 | Case data loaded: supplied=419, deduplicated=410, inserted=410
-#> 2026-09-12 13:47:46.320 | Fetching all known cases and institutions
-#> 2026-09-12 13:47:46.322 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.
-#> 2026-09-12 13:47:46.323 | Case history on file spans 2025-01-01 to 2025-03-31, ending 0 day(s) before this run's date (2025-03-31)
-#> 2026-09-12 13:47:46.323 | Enumerating lattice streams
-#> 2026-09-12 13:47:46.348 | Running same-place detector
-#> 2026-09-12 13:47:46.388 | Same-place detector found 6 detection(s)
-#> 2026-09-12 13:47:46.389 | Running rare-trigger detector
-#> 2026-09-12 13:47:46.392 | Rare-trigger detector found 1 detection(s)
-#> 2026-09-12 13:47:46.392 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to
-#> 2026-09-12 13:47:46.398 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
-#> 2026-09-12 13:47:46.679 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)
-#> 2026-09-12 13:47:46.680 | Backfill: 7 cluster(s) opened from the case history, 2 of them already closed by the system and in the Archive, 5 left open for assessment
-#> 2026-09-12 13:47:46.680 | Suppressing lattice
-#> 2026-09-12 13:47:46.684 | Committing transaction
-#> 2026-09-12 13:47:46.686 | Finishing run 1 (status: success)
-#> 2026-09-12 13:47:47.692 | episodic_run_cron() finished in 1.5s (status: success)
+#> 2026-09-12 13:52:14.508 | episodic_run_cron() starting (host=runnervmlun5p, account=runner)
+#> 2026-09-12 13:52:14.509 | Resolving configuration
+#> 2026-09-12 13:52:14.514 | Configuration resolved (hash da68bff26789)
+#> 2026-09-12 13:52:14.514 | Connecting to database
+#> 2026-09-12 13:52:14.514 | No existing database found - creating one
+#> 2026-09-12 13:52:14.532 | Database connected (dialect: sqlite)
+#> 2026-09-12 13:52:14.533 | Run 1 started
+#> 2026-09-12 13:52:14.534 | Resolving and checking case data
+#> 2026-09-12 13:52:14.547 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
+#> 2026-09-12 13:52:14.548 | Beginning transaction
+#> 2026-09-12 13:52:14.549 | Loading pathogen configuration
+#> 2026-09-12 13:52:14.552 | Pathogen configuration loaded (23 pathogen(s))
+#> 2026-09-12 13:52:14.552 | Loading case data into the database
+#> 2026-09-12 13:52:14.642 | Case data loaded: supplied=419, deduplicated=410, inserted=410
+#> 2026-09-12 13:52:14.642 | Fetching all known cases and institutions
+#> 2026-09-12 13:52:14.644 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.
+#> 2026-09-12 13:52:14.646 | Case history on file spans 2025-01-01 to 2025-03-31, ending 0 day(s) before this run's date (2025-03-31)
+#> 2026-09-12 13:52:14.646 | Enumerating lattice streams
+#> 2026-09-12 13:52:14.676 | Running same-place detector
+#> 2026-09-12 13:52:14.733 | Same-place detector found 6 detection(s)
+#> 2026-09-12 13:52:14.733 | Running rare-trigger detector
+#> 2026-09-12 13:52:14.737 | Rare-trigger detector found 1 detection(s)
+#> 2026-09-12 13:52:14.737 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to
+#> 2026-09-12 13:52:14.744 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
+#> 2026-09-12 13:52:15.124 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)
+#> 2026-09-12 13:52:15.125 | Backfill: 7 cluster(s) opened from the case history, 2 of them already closed by the system and in the Archive, 5 left open for assessment
+#> 2026-09-12 13:52:15.125 | Suppressing lattice
+#> 2026-09-12 13:52:15.130 | Committing transaction
+#> 2026-09-12 13:52:15.133 | Finishing run 1 (status: success)
+#> 2026-09-12 13:52:16.312 | episodic_run_cron() finished in 1.8s (status: success)
 #> OK
 #> ===========================================================================
 #> 
 #>   EpiSODIC demo account (admin) - username: demo, password: demo
 #> 
 #>   To re-open this demo later, with its geography:
-#>     Sys.setenv(EPISODIC_DB = "/tmp/Rtmpk5kbiP/file1ce38b25b53.sqlite",
-#>                EPISODIC_CONFIG = "/tmp/Rtmpk5kbiP/file1ce38b25b53-config.yaml",
-#>                EPISODIC_PC_PROVINCE_MAP = "/tmp/Rtmpk5kbiP/file1ce38b25b53-pc-province.csv")
+#>     Sys.setenv(EPISODIC_DB = "/tmp/Rtmpip8oUi/file1cf231d13822.sqlite",
+#>                EPISODIC_CONFIG = "/tmp/Rtmpip8oUi/file1cf231d13822-config.yaml",
+#>                EPISODIC_PC_PROVINCE_MAP = "/tmp/Rtmpip8oUi/file1cf231d13822-pc-province.csv")
 #>     episodic_run_app()
 #> 
 #> ===========================================================================
