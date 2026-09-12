@@ -808,7 +808,10 @@ episodic_ui_pathogen_config_panel <- function(screen,
           "pathogen.panel.config.seasonal.label",
           lang = lang
         ),
-        value = yes_no(pc$mem_applicable),
+        value = episodic_tr(
+          paste0("pathogen.panel.config.seasonal.", pc$mem_mode %||% "auto"),
+          lang = lang
+        ),
         meaning = episodic_tr(
           "pathogen.panel.config.seasonal.meaning",
           lang = lang

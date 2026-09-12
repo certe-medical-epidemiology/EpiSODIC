@@ -74,8 +74,7 @@ episodic_trace <- function(..., severity = c("plain", "warn", "danger")) {
   head_row <- rows[1]
   old_width <- options(cli.width = 10000L)
   on.exit(options(old_width), add = TRUE)
-  formatted <- cli::cli_fmt(switch(
-    severity,
+  formatted <- cli::cli_fmt(switch(severity,
     warn = cli::cli_alert_warning("{head_row}", .envir = environment()),
     danger = cli::cli_alert_danger("{head_row}", .envir = environment())
   ))
@@ -1066,19 +1065,23 @@ episodic_run_cron_body <- function(con,
       )
     }
 
-    # MEM runs on pathogen_region (L5) streams only, for pathogens
-    # flagged mem_applicable - see episodic_detect_mem()'s own docs for
-    # why L5 rather than every level.
     pc_mem <- pathogen_config[pathogen_config$pathogen == stream$pathogen, ]
+    mem_levels <- config$mem$levels %||% "pathogen_region"
     if (
       nrow(pc_mem) > 0 &&
         !muted &&
-        isTRUE(as.logical(pc_mem$mem_applicable[1])) &&
-        identical(stream$level, "pathogen_region")
+        stream$level %in% mem_levels
     ) {
       stream_detections <- rbind(
         stream_detections,
-        episodic_detect_mem(stream_cases, stream$stream_id, run_date, config)
+        episodic_detect_mem(
+          stream_cases,
+          stream$stream_id,
+          run_date,
+          config,
+          mem_mode = as.character(pc_mem$mem_mode[1]),
+          stream_label = paste0(stream$pathogen, "/", stream$level)
+        )
       )
     }
 

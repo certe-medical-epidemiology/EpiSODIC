@@ -62,13 +62,13 @@ episodic_db_pathogen_config_load <- function(con, pathogen_config) {
     "si_mean_days",
     "si_sd_days",
     "si_dist",
-    "mem_applicable",
+    "mem_mode",
     "severity_weight",
     "source_ref"
   )
   values <- as.list(pathogen_config[, cols, drop = FALSE])
   values$rt_applicable <- as.integer(values$rt_applicable)
-  values$mem_applicable <- as.integer(values$mem_applicable)
+  values$mem_mode <- as.character(values$mem_mode)
   episodic_db_write_many(
     con,
     table = "episodic_pathogen_config",

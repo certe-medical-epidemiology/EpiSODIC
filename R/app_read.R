@@ -366,7 +366,7 @@ episodic_cluster_object <- function(con,
     ),
     rt_applicable = if (!is.null(pc)) as.logical(pc$rt_applicable) else FALSE,
     case_free_days = if (!is.null(pc)) pc$case_free_days else NA_integer_,
-    mem_applicable = if (!is.null(pc)) as.logical(pc$mem_applicable) else FALSE,
+    mem_mode = if (!is.null(pc)) as.character(pc$mem_mode) else "auto",
     curve_shape = if (!is.null(pc)) {
       episodic_classify_curve_shape(cases, pc$incub_max_days)
     } else {

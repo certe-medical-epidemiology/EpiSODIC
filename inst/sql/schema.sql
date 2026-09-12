@@ -174,7 +174,7 @@ CREATE TABLE episodic_pathogen_config (
   si_mean_days    REAL,
   si_sd_days      REAL,
   si_dist         TEXT CHECK (si_dist IS NULL OR si_dist IN ('gamma', 'lognormal', 'weibull')),
-  mem_applicable  INTEGER NOT NULL DEFAULT 0 CHECK (mem_applicable IN (0, 1)),
+  mem_mode        TEXT NOT NULL DEFAULT 'auto' CHECK (mem_mode IN ('auto', 'yes', 'no')),
   severity_weight REAL NOT NULL DEFAULT 1.00,
   source_ref      TEXT
 );

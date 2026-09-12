@@ -19,33 +19,26 @@
 
 #' `mem` seasonal detector
 #'
-#' The Moving Epidemic Method (`mem` package - not an R base/CRAN
-#' near-namesake of anything else in this codebase) supplies pre-epidemic
-#' and post-epidemic thresholds from historical seasons, for pathogens
-#' flagged `mem_applicable` (Influenza A/B, RSV in the shipped
-#' `episodic_default_pathogen_config.csv`). Farrington answers whether counts exceed a
-#' statistical expectation; MEM answers a different, more clinically
-#' relevant question for a seasonal pathogen: has the epidemic started.
+#' The Moving Epidemic Method (`mem` package) supplies pre-epidemic and
+#' post-epidemic thresholds from historical seasons. Eligibility is
+#' derived from each stream's own data: the season anchor, the seasonal
+#' concentration statistic, and the minimum history are all computed
+#' rather than configured per pathogen.
 #'
-#' Runs only against `pathogen_region` (L5) streams: MEM needs a stable,
-#' population-level weekly series across several historical seasons to
-#' fit at all, which no ward or single institution has enough volume to
-#' support, and seasonal surveillance is inherently a population-level
-#' question, not an institutional one. `same_place` and
-#' Farrington continue to run at every other level exactly as before;
-#' this is additive, not a replacement.
+#' Whether MEM fits a stream at all is governed by `mem_mode` on the
+#' pathogen configuration: `'auto'` (shipped default) fits only when the
+#' stream's own data show a season, `'yes'` fits whenever the data
+#' physically allow it regardless of the seasonality statistic, and
+#' `'no'` never fits. `config$mem$levels` controls which lattice levels
+#' MEM runs at (shipped: `pathogen_province` and `pathogen_region`).
 #'
-#' Requires at least `config$mem$min_seasons` complete prior seasons in the
-#' historical matrix before firing at all, the same "need real baseline
-#' history first" posture Farrington already takes for its own `b`
-#' parameter - and, like `b`, a configured value rather than a literal, so
-#' an instance can raise it without touching the code.
-#'
-#' @param cases_for_stream A data frame of a single (L5) stream's cases,
+#' @param cases_for_stream A data frame of a single stream's cases,
 #'   with `sample_date`.
 #' @param stream_id The stream these cases belong to.
 #' @param run_date The date to treat as "today".
 #' @param config The resolved configuration; uses `config$mem`.
+#' @param mem_mode One of `"auto"`, `"yes"`, `"no"`.
+#' @param stream_label Optional label for refusal log messages.
 #' @return A data frame of detection records (zero or one row).
 #' @references
 #' Vega T, Lozano JE, Meerhoff T, Snacken R, Mott J, Ortiz de Lejarazu R,
@@ -59,7 +52,9 @@
 episodic_detect_mem <- function(cases_for_stream,
                                 stream_id,
                                 run_date = Sys.Date(),
-                                config = episodic_config_resolve()) {
+                                config = episodic_config_resolve(),
+                                mem_mode = "auto",
+                                stream_label = NULL) {
   empty <- episodic_detection_none()
 
   if (!episodic_detector_enabled(config, "mem")) {
@@ -72,7 +67,48 @@ episodic_detect_mem <- function(cases_for_stream,
     return(empty)
   }
 
-  status <- episodic_mem_status(cases_for_stream, run_date, config)
+  tag <- stream_label %||% stream_id
+
+  if (identical(mem_mode, "no")) {
+    episodic_trace(
+      "MEM: declined stream ", tag, ", disabled by mem_mode",
+      severity = "warn"
+    )
+    return(empty)
+  }
+
+  anchor <- episodic_mem_season_anchor(cases_for_stream, config)
+  if (is.null(anchor)) {
+    episodic_trace(
+      "MEM: declined stream ", tag, ", insufficient history for climatology",
+      severity = "warn"
+    )
+    return(empty)
+  }
+
+  seasonality_stat <- NA_real_
+  if (identical(mem_mode, "auto")) {
+    seas <- episodic_mem_seasonality(cases_for_stream, config)
+    if (is.null(seas)) {
+      episodic_trace(
+        "MEM: declined stream ", tag,
+        ", insufficient history for seasonality test",
+        severity = "warn"
+      )
+      return(empty)
+    }
+    if (!isTRUE(seas$seasonal)) {
+      episodic_trace(
+        "MEM: declined stream ", tag,
+        ", not seasonal (statistic = ", round(seas$statistic, 3), ")",
+        severity = "warn"
+      )
+      return(empty)
+    }
+    seasonality_stat <- seas$statistic
+  }
+
+  status <- episodic_mem_status(cases_for_stream, run_date, config, anchor)
   if (is.null(status) || !isTRUE(status$epidemic_started)) {
     return(empty)
   }
@@ -85,83 +121,311 @@ episodic_detect_mem <- function(cases_for_stream,
     n_cases = status$current_week_count,
     expected = NA_real_,
     upperbound = status$pre_epidemic_threshold,
-    params = list(post_epidemic_threshold = status$post_epidemic_threshold)
+    params = list(
+      anchor_week = anchor$anchor_week,
+      seasonality_statistic = seasonality_stat,
+      seasons_used = paste(status$seasons_used, collapse = ", "),
+      post_epidemic_threshold = status$post_epidemic_threshold
+    )
   )
 }
 
+# -- Anchor derivation ------------------------------------------------
+
+#' Derive the season anchor from a stream's own case history
+#'
+#' Builds a 52-week climatology (median count per ISO week pooled across
+#' complete years), smooths it circularly, and places the anchor at the
+#' first week of the longest contiguous trough run.
+#'
+#' @param cases A data frame with `sample_date`.
+#' @param config The resolved configuration. Reads
+#'   `config$mem$min_climatology_years`,
+#'   `config$mem$climatology_smooth_weeks` and
+#'   `config$mem$trough_percentile`.
+#' @return A list with `anchor_week` (integer 1-52), `trough_run`
+#'   (integer vector of ISO week numbers in the trough), and
+#'   `climatology` (numeric length-52, the smoothed profile, indexed by
+#'   ISO week 1 to 52). `NULL` when the case history spans fewer than
+#'   `min_climatology_years` complete years.
+#' @keywords internal
+#' @noRd
+episodic_mem_season_anchor <- function(cases,
+                                       config = episodic_config_resolve()) {
+  dates <- as.Date(cases$sample_date)
+  dates <- dates[!is.na(dates)]
+  if (length(dates) == 0) {
+    return(NULL)
+  }
+
+  min_years <- as.integer(config$mem$min_climatology_years %||% 3L)
+  smooth_weeks <- as.integer(config$mem$climatology_smooth_weeks %||% 5L)
+  trough_pctl <- as.numeric(config$mem$trough_percentile %||% 0.25)
+
+  data_start <- min(dates)
+  data_end <- max(dates)
+  all_years <- sort(unique(as.integer(format(dates, "%G"))))
+  complete <- vapply(all_years, function(yr) {
+    data_start <= episodic_iso_week_start(yr, 1L) &&
+      data_end >= episodic_iso_week_start(yr, 52L) + 6L
+  }, logical(1))
+  complete_years <- all_years[complete]
+
+  if (length(complete_years) < min_years) {
+    return(NULL)
+  }
+
+  iso_weeks <- pmin(as.integer(format(dates, "%V")), 52L)
+  iso_years <- as.integer(format(dates, "%G"))
+  in_complete <- iso_years %in% complete_years
+
+  counts_df <- stats::aggregate(
+    list(n = rep(1L, sum(in_complete))),
+    by = list(
+      year = iso_years[in_complete],
+      week = iso_weeks[in_complete]
+    ),
+    FUN = sum
+  )
+
+  climatology <- vapply(1:52, function(w) {
+    year_counts <- vapply(complete_years, function(yr) {
+      idx <- counts_df$year == yr & counts_df$week == w
+      if (any(idx)) counts_df$n[idx] else 0L
+    }, integer(1))
+    stats::median(year_counts)
+  }, numeric(1))
+
+  half_w <- smooth_weeks %/% 2L
+  smoothed <- vapply(1:52, function(i) {
+    indices <- ((i - 1L - half_w):(i - 1L + half_w)) %% 52L + 1L
+    mean(climatology[indices])
+  }, numeric(1))
+
+  threshold <- stats::quantile(smoothed, probs = trough_pctl, names = FALSE)
+  is_trough <- smoothed <= threshold
+
+  runs <- episodic_mem_circular_runs(which(is_trough), 52L)
+  if (length(runs) == 0) {
+    return(NULL)
+  }
+
+  best <- NULL
+  for (run in runs) {
+    if (is.null(best) ||
+      length(run) > length(best) ||
+      (length(run) == length(best) &&
+        min(smoothed[run]) < min(smoothed[best]))) {
+      best <- run
+    }
+  }
+
+  list(
+    anchor_week = as.integer(best[1]),
+    trough_run = as.integer(best),
+    climatology = smoothed
+  )
+}
+
+#' Find contiguous circular runs in a set of positions
+#'
+#' @param positions Integer vector of positions (1..n) that qualify.
+#' @param n The cycle length (52 for ISO weeks).
+#' @return A list of integer vectors, each a contiguous circular run.
+#' @keywords internal
+#' @noRd
+episodic_mem_circular_runs <- function(positions, n) {
+  if (length(positions) == 0) {
+    return(list())
+  }
+  positions <- sort(unique(as.integer(positions)))
+  if (length(positions) == n) {
+    return(list(positions))
+  }
+
+  runs <- list()
+  current_run <- positions[1]
+
+  for (i in seq_along(positions)[-1]) {
+    if (positions[i] == positions[i - 1L] + 1L) {
+      current_run <- c(current_run, positions[i])
+    } else {
+      runs <- c(runs, list(current_run))
+      current_run <- positions[i]
+    }
+  }
+  runs <- c(runs, list(current_run))
+
+  if (length(runs) > 1L) {
+    last <- runs[[length(runs)]]
+    first <- runs[[1]]
+    if (last[length(last)] == n && first[1] == 1L) {
+      runs <- c(list(c(last, first)), runs[-c(1, length(runs))])
+    }
+  }
+
+  runs
+}
+
+# -- Seasonality derivation -------------------------------------------
+
+#' Derive whether a stream's pathogen shows a season
+#'
+#' Detrends the weekly series (divides by a centred 52-week moving
+#' average) and measures the share of each year's detrended activity
+#' falling in the peak `seasonality_peak_weeks` consecutive weeks,
+#' averaged across complete years. A flat series with a strong upward
+#' trend scores near `peak_weeks / 52` after detrending; a genuinely
+#' seasonal series scores well above it.
+#'
+#' @param cases A data frame with `sample_date`.
+#' @param config The resolved configuration. Reads
+#'   `config$mem$min_climatology_years`,
+#'   `config$mem$seasonality_peak_weeks` and
+#'   `config$mem$seasonality_min_peak_share`.
+#' @return A list with `statistic` (the averaged peak share) and
+#'   `seasonal` (logical). `NULL` when the case history spans fewer
+#'   than `min_climatology_years` complete years.
+#' @keywords internal
+#' @noRd
+episodic_mem_seasonality <- function(cases,
+                                     config = episodic_config_resolve()) {
+  dates <- as.Date(cases$sample_date)
+  dates <- dates[!is.na(dates)]
+  if (length(dates) == 0) {
+    return(NULL)
+  }
+
+  min_years <- as.integer(config$mem$min_climatology_years %||% 3L)
+  peak_weeks <- as.integer(config$mem$seasonality_peak_weeks %||% 8L)
+  min_share <- as.numeric(config$mem$seasonality_min_peak_share %||% 0.40)
+
+  iso_weeks <- pmin(as.integer(format(dates, "%V")), 52L)
+  iso_years <- as.integer(format(dates, "%G"))
+
+  data_start <- min(dates)
+  data_end <- max(dates)
+  all_years <- sort(unique(iso_years))
+  complete <- vapply(all_years, function(yr) {
+    data_start <= episodic_iso_week_start(yr, 1L) &&
+      data_end >= episodic_iso_week_start(yr, 52L) + 6L
+  }, logical(1))
+  complete_years <- all_years[complete]
+
+  if (length(complete_years) < min_years) {
+    return(NULL)
+  }
+
+  in_complete <- iso_years %in% complete_years
+  counts_df <- stats::aggregate(
+    list(n = rep(1L, sum(in_complete))),
+    by = list(
+      year = iso_years[in_complete],
+      week = iso_weeks[in_complete]
+    ),
+    FUN = sum
+  )
+
+  n_years <- length(complete_years)
+  mat <- matrix(0L,
+    nrow = 52L, ncol = n_years,
+    dimnames = list(NULL, as.character(complete_years))
+  )
+  for (i in seq_len(nrow(counts_df))) {
+    w <- counts_df$week[i]
+    y <- as.character(counts_df$year[i])
+    mat[w, y] <- counts_df$n[i]
+  }
+
+  ts_values <- as.numeric(as.vector(mat))
+  n_total <- length(ts_values)
+
+  # Centred 52-week moving average for detrending
+  half <- 26L
+  detrended <- rep(NA_real_, n_total)
+  for (i in seq_len(n_total)) {
+    lo <- max(1L, i - half)
+    hi <- min(n_total, i + half - 1L)
+    ma <- mean(ts_values[lo:hi])
+    detrended[i] <- if (ma > 0) ts_values[i] / ma else NA_real_
+  }
+
+  detrended_mat <- matrix(detrended, nrow = 52L, ncol = n_years)
+
+  shares <- vapply(seq_len(n_years), function(j) {
+    ratios <- detrended_mat[, j]
+    ratios[is.na(ratios)] <- 0
+    total <- sum(ratios)
+    if (total <= 0) {
+      return(NA_real_)
+    }
+    extended <- c(ratios, ratios[seq_len(peak_weeks - 1L)])
+    best_sum <- -Inf
+    for (start in seq_len(52L)) {
+      s <- sum(extended[start:(start + peak_weeks - 1L)])
+      if (s > best_sum) best_sum <- s
+    }
+    best_sum / total
+  }, numeric(1))
+
+  shares <- shares[!is.na(shares)]
+  if (length(shares) == 0) {
+    return(NULL)
+  }
+
+  statistic <- mean(shares)
+  list(
+    statistic = statistic,
+    seasonal = statistic >= min_share
+  )
+}
+
+# -- MEM status --------------------------------------------------------
+
 #' Compute this stream's current MEM status
 #'
-#' Shared by `episodic_detect_mem()` (fires on `epidemic_started`) and the
-#' seasonal closure criterion (fires when the evaluated count has fallen
-#' back under `post_epidemic_threshold`), so both read the same fitted
-#' model rather than risking two slightly different ones.
+#' Shared by `episodic_detect_mem()` (fires on `epidemic_started`) and
+#' the epidemic closure criterion (fires when the evaluated count has
+#' fallen back under `post_epidemic_threshold`).
 #'
-#' Three things decide whether this can say anything at all, in order:
+#' Which week to evaluate: the last *complete* epidemiological week,
+#' never the one in progress. The week containing the run date is
+#' partial by construction, on a Tuesday it holds two days of cases,
+#' and its count is too low by the same direction every time. Evaluating
+#' last week costs a week of latency and buys a count that means what
+#' the threshold means.
 #'
-#' 1. **Which week to evaluate.** The last *complete* epidemiological
-#'    week, never the one in progress. The week containing the run date
-#'    is partial by construction - on a Tuesday it holds two days of
-#'    cases - and on top of that its cases have not finished being
-#'    reported. Comparing that count against a threshold fitted on whole
-#'    weeks is comparing unlike quantities, and always in the same
-#'    direction: the count is too low, so an epidemic start is declared
-#'    late and a post-epidemic closure declared early. Evaluating last
-#'    week costs a week of latency and buys a count that means what the
-#'    threshold means.
+#' Which seasons may serve as history: only seasons the case data spans
+#' end to end. A season column exists as soon as one case falls in it,
+#' so a site whose data begins mid-season carries a season that is
+#' structural zeros for its first half; fed to `mem::memmodel()` it
+#' drags the threshold down.
 #'
-#' 2. **Whether it is in season at all.** Outside the week 40-20
-#'    surveillance window there is no seasonal question to answer, and
-#'    this returns `in_season = FALSE` rather than `NULL`. The
-#'    distinction matters at the other end: collapsed into `NULL`, "MEM
-#'    could not be computed" and "the season is over" become the same
-#'    answer, which leaves a `mem_applicable` cluster no closure route
-#'    at all between May and September and every confirmed influenza
-#'    epidemic open on the rail right through the summer. The calendar
-#'    answers "has the epidemic ended" perfectly well in July.
-#'
-#' 3. **Which seasons may serve as history.** Only seasons the case data
-#'    actually spans end to end. A season column exists as soon as one
-#'    case falls in it, so a site whose data begins in January carries a
-#'    season that is three-quarters structural zeros; fed to
-#'    `mem::memmodel()` as if it were an observed season, it drags the
-#'    pre-epidemic threshold down and makes the next winter's epidemic
-#'    start fire early. Half a season is not a quiet season.
-#'
-#' @param cases A data frame with `sample_date`, all of a stream's known
-#'   cases (not just one cluster's).
+#' @param cases A data frame with `sample_date`, all of a stream's
+#'   known cases.
 #' @param run_date The date to treat as "today".
-#' @param config The resolved configuration; `config$mem$min_seasons` is
-#'   the minimum number of fully-observed prior seasons required.
-#' @return `NULL` if `mem` is not installed, there is no case data, or
-#'   fewer than that many fully-observed prior seasons exist.
-#'   Otherwise a list: `in_season` (logical), `epidemic_started`
-#'   (logical), `current_week_count`, `pre_epidemic_threshold`,
-#'   `post_epidemic_threshold`, `week_start`, `week_end` (the evaluated
-#'   week's `Date` bounds). Out of season, only `in_season`,
-#'   `epidemic_started` (always `FALSE`) and the week bounds are
-#'   meaningful; the counts and thresholds are `NA`.
+#' @param config The resolved configuration.
+#' @param anchor The result of `episodic_mem_season_anchor()`: a list
+#'   with `anchor_week`, `trough_run` and `climatology`.
+#' @return `NULL` when MEM cannot compute (no `mem` package, no data,
+#'   or too few fully-observed prior seasons). Otherwise a list:
+#'   `in_trough` (logical), `epidemic_started` (logical),
+#'   `current_week_count`, `pre_epidemic_threshold`,
+#'   `post_epidemic_threshold`, `intensity_thresholds`,
+#'   `intensity_level`, `anchor_week`, `season`, `seasons_used`,
+#'   `week_start`, `week_end`.
 #' @keywords internal
 #' @noRd
 episodic_mem_status <- function(cases,
                                 run_date = Sys.Date(),
-                                config = episodic_config_resolve()) {
-  min_seasons <- as.integer(config$mem$min_seasons %||% 2L)
-  evaluated <- episodic_mem_evaluation_week(run_date)
-
-  # Deliberately settled before the `mem` and case-data guards below:
-  # whether the surveillance season has lapsed is a fact about the
-  # calendar, and stays knowable when nothing else here is.
-  if (is.na(evaluated$season)) {
-    return(list(
-      in_season = FALSE,
-      epidemic_started = FALSE,
-      current_week_count = NA_integer_,
-      pre_epidemic_threshold = NA_real_,
-      post_epidemic_threshold = NA_real_,
-      week_start = evaluated$week_start,
-      week_end = evaluated$week_start + 6
-    ))
+                                config = episodic_config_resolve(),
+                                anchor = NULL) {
+  if (is.null(anchor)) {
+    return(NULL)
   }
+  min_seasons <- as.integer(config$mem$min_seasons %||% 2L)
+  anchor_week <- anchor$anchor_week
+  evaluated <- episodic_mem_evaluation_week(run_date, anchor_week)
 
   if (!requireNamespace("mem", quietly = TRUE)) {
     return(NULL)
@@ -170,13 +434,15 @@ episodic_mem_status <- function(cases,
     return(NULL)
   }
 
-  built <- episodic_mem_seasonal_matrix(cases)
+  built <- episodic_mem_seasonal_matrix(cases, anchor_week)
   if (is.null(built) || is.null(built$matrix)) {
     return(NULL)
   }
 
   prior_seasons <- setdiff(colnames(built$matrix), evaluated$season)
-  prior_seasons <- episodic_mem_observed_seasons(prior_seasons, cases)
+  prior_seasons <- episodic_mem_observed_seasons(
+    prior_seasons, cases, anchor_week
+  )
   if (length(prior_seasons) < min_seasons) {
     return(NULL)
   }
@@ -193,7 +459,6 @@ episodic_mem_status <- function(cases,
     return(NULL)
   }
 
-  # "Threhold is the upper limit of the confidence interval" (?mem::memmodel).
   pre_threshold <- fit$pre.post.intervals["pre.i", 3]
   post_threshold <- fit$pre.post.intervals["post.i", 3]
   intensity <- episodic_mem_intensity_thresholds(fit)
@@ -202,16 +467,17 @@ episodic_mem_status <- function(cases,
   if (!week_label %in% rownames(built$matrix)) {
     return(NULL)
   }
-  # A season with no cases yet has no column of its own; that is a count
-  # of zero, not an unknown.
   current_count <- if (evaluated$season %in% colnames(built$matrix)) {
     built$matrix[week_label, evaluated$season]
   } else {
     0L
   }
 
+  eval_iso_week <- as.integer(week_label)
+  in_trough <- eval_iso_week %in% anchor$trough_run
+
   list(
-    in_season = TRUE,
+    in_trough = in_trough,
     epidemic_started = isTRUE(current_count > pre_threshold),
     current_week_count = as.integer(current_count),
     pre_epidemic_threshold = as.numeric(pre_threshold),
@@ -222,6 +488,7 @@ episodic_mem_status <- function(cases,
       pre_threshold,
       intensity
     ),
+    anchor_week = anchor_week,
     season = evaluated$season,
     seasons_used = prior_seasons,
     week_start = evaluated$week_start,
@@ -232,17 +499,11 @@ episodic_mem_status <- function(cases,
 #' MEM's medium/high/very high intensity thresholds, if this `mem` build
 #' reports them in the shape expected
 #'
-#' Detection only ever needed the pre-epidemic threshold, so these were
-#' never read; displaying seasonal activity needs them, since "the
-#' epidemic has started" and "the epidemic is severe" are different
-#' statements and an epidemiologist assessing a season wants both.
-#'
 #' Read defensively rather than indexed straight: `mem::memmodel()`'s
 #' return shape for the intensity thresholds is not part of a stable
-#' documented interface the way `pre.post.intervals` is, and a shape this
-#' does not recognise must leave the intensity bands unavailable rather
-#' than take the whole seasonal panel down with it - the same posture
-#' every other optional panel in this codebase takes.
+#' documented interface the way `pre.post.intervals` is, and a shape
+#' this does not recognise must leave the intensity bands unavailable
+#' rather than take the whole seasonal panel down with it.
 #'
 #' @param fit A `mem::memmodel()` result.
 #' @return A named numeric of length 3 (`medium`, `high`, `very_high`),
@@ -290,27 +551,31 @@ episodic_mem_intensity_level <- function(count, pre_threshold, intensity) {
   "low"
 }
 
+# -- Season assignment -------------------------------------------------
+
 #' The last fully-elapsed epidemiological week before the run date
 #'
 #' @param run_date The date to treat as "today".
+#' @param anchor_week Integer 1-52, the ISO week the season starts at.
 #' @return `episodic_mem_season_week()`'s output for that week.
 #' @keywords internal
 #' @noRd
-episodic_mem_evaluation_week <- function(run_date) {
+episodic_mem_evaluation_week <- function(run_date, anchor_week) {
   today <- as.Date(run_date)
   this_monday <- today - (as.integer(format(today, "%u")) - 1L)
-  episodic_mem_season_week(this_monday - 7)
+  episodic_mem_season_week(this_monday - 7, anchor_week)
 }
 
 #' Keep only the seasons the case data spans end to end
 #'
 #' @param seasons Season labels (`"YYYY/YYYY"`).
-#' @param cases A data frame with `sample_date`; its full date span (not
-#'   only its in-season dates) is what defines the observation window.
+#' @param cases A data frame with `sample_date`; its full date span
+#'   defines the observation window.
+#' @param anchor_week Integer 1-52, the ISO week the season starts at.
 #' @return The subset of `seasons` falling entirely inside that window.
 #' @keywords internal
 #' @noRd
-episodic_mem_observed_seasons <- function(seasons, cases) {
+episodic_mem_observed_seasons <- function(seasons, cases, anchor_week) {
   if (length(seasons) == 0) {
     return(seasons)
   }
@@ -325,7 +590,7 @@ episodic_mem_observed_seasons <- function(seasons, cases) {
   keep <- vapply(
     seasons,
     function(season) {
-      bounds <- episodic_mem_season_bounds(season)
+      bounds <- episodic_mem_season_bounds(season, anchor_week)
       if (is.null(bounds)) {
         return(FALSE)
       }
@@ -338,15 +603,16 @@ episodic_mem_observed_seasons <- function(seasons, cases) {
 
 #' The calendar span of a surveillance season
 #'
-#' Week 40 of the first year through week 20 of the second, the same
-#' convention `episodic_mem_season_week()` assigns dates by.
+#' A season labelled `"Y1/Y2"` starts at `anchor_week` of year Y1 and
+#' ends the day before `anchor_week` of year Y2.
 #'
 #' @param season A season label, `"YYYY/YYYY"`.
-#' @return A list with `start` and `end` (`Date`), or `NULL` if `season`
-#'   is not a well-formed label.
+#' @param anchor_week Integer 1-52, the ISO week the season starts at.
+#' @return A list with `start` and `end` (`Date`), or `NULL` if
+#'   `season` is not a well-formed label.
 #' @keywords internal
 #' @noRd
-episodic_mem_season_bounds <- function(season) {
+episodic_mem_season_bounds <- function(season, anchor_week) {
   years <- suppressWarnings(as.integer(strsplit(
     as.character(season),
     "/",
@@ -355,33 +621,24 @@ episodic_mem_season_bounds <- function(season) {
   if (length(years) != 2 || anyNA(years)) {
     return(NULL)
   }
+  anchor_week <- as.integer(anchor_week)
   list(
-    start = episodic_iso_week_start(years[1], 40L),
-    end = episodic_iso_week_start(years[2], 20L) + 6L
+    start = episodic_iso_week_start(years[1], anchor_week),
+    end = episodic_iso_week_start(years[2], anchor_week) - 1L
   )
 }
 
-#' The surveillance season a date belongs to, in season or out
+#' The season a date belongs to
 #'
-#' `episodic_mem_season_week()` deliberately answers `NA` off-season,
-#' because MEM has nothing to say there. The activity screen has a
-#' different question - "which season's chart am I looking at" - and in
-#' July the answer is the season that just finished, not "none".
+#' Every week of the year belongs to a season; there is no off-season.
 #'
 #' @param date A single `Date`.
+#' @param anchor_week Integer 1-52, the ISO week the season starts at.
 #' @return A season label, `"YYYY/YYYY"`.
 #' @keywords internal
 #' @noRd
-episodic_season_containing <- function(date) {
-  date <- as.Date(date)
-  in_season <- episodic_mem_season_week(date)
-  if (!is.na(in_season$season)) {
-    return(in_season$season)
-  }
-  # The off-season window (weeks 21-39) always sits inside one calendar
-  # year, so the season that just ended is unambiguous.
-  year <- as.integer(format(date, "%Y"))
-  sprintf("%d/%d", year - 1L, year)
+episodic_season_containing <- function(date, anchor_week) {
+  episodic_mem_season_week(date, anchor_week)$season
 }
 
 #' Step a season label back by `n` seasons
@@ -405,30 +662,31 @@ episodic_season_shift <- function(season, n = 1L) {
 
 #' MEM thresholds for one season, fitted only on the seasons before it
 #'
-#' `episodic_mem_status()` answers "where are we right now"; this answers
-#' "what were the thresholds for the season being looked at", which is
-#' what the activity screen draws a season's weekly curve against.
+#' `episodic_mem_status()` answers "where are we right now"; this
+#' answers "what were the thresholds for the season being looked at",
+#' which is what the Pathogen screen draws a season's weekly curve
+#' against.
 #'
 #' The season itself is excluded from its own fit. Including it would be
 #' look-ahead: a severe season would raise the very thresholds used to
-#' call it severe, flattening exactly the signal an epidemiologist opened
-#' the chart to see.
+#' call it severe.
 #'
 #' @param cases A data frame with `sample_date`.
 #' @param season The season label the thresholds are for.
-#' @param config The resolved configuration; `config$mem$min_seasons` is
-#'   the minimum number of fully-observed earlier seasons required - the
-#'   same dial `episodic_mem_status()` reads, so raising it cannot leave
-#'   the detector silent while this screen keeps drawing thresholds fitted
-#'   on fewer seasons than the detector is willing to trust.
-#' @return A list with `pre_epidemic`, `post_epidemic`, `intensity` (see
-#'   `episodic_mem_intensity_thresholds()`) and `seasons_used`, or `NULL`
-#'   when `mem` is unavailable or too little earlier history exists.
+#' @param config The resolved configuration.
+#' @param anchor_week Integer 1-52, the ISO week the season starts at.
+#' @return A list with `pre_epidemic`, `post_epidemic`, `intensity` and
+#'   `seasons_used`, or `NULL` when `mem` is unavailable or too little
+#'   earlier history exists.
 #' @keywords internal
 #' @noRd
 episodic_mem_thresholds_for_season <- function(cases,
                                                season,
-                                               config = episodic_config_resolve()) {
+                                               config = episodic_config_resolve(),
+                                               anchor_week = NULL) {
+  if (is.null(anchor_week)) {
+    return(NULL)
+  }
   min_seasons <- as.integer(config$mem$min_seasons %||% 2L)
   if (!requireNamespace("mem", quietly = TRUE)) {
     return(NULL)
@@ -437,17 +695,15 @@ episodic_mem_thresholds_for_season <- function(cases,
     return(NULL)
   }
 
-  built <- episodic_mem_seasonal_matrix(cases)
+  built <- episodic_mem_seasonal_matrix(cases, anchor_week)
   if (is.null(built) || is.null(built$matrix)) {
     return(NULL)
   }
 
-  # "YYYY/YYYY" labels sort chronologically as plain strings, so a
-  # string comparison is a chronological one here.
   earlier <- colnames(built$matrix)[
     colnames(built$matrix) < as.character(season)
   ]
-  earlier <- episodic_mem_observed_seasons(earlier, cases)
+  earlier <- episodic_mem_observed_seasons(earlier, cases, anchor_week)
   if (length(earlier) < min_seasons) {
     return(NULL)
   }
@@ -475,10 +731,11 @@ episodic_mem_thresholds_for_season <- function(cases,
 
 #' The Monday of a given ISO week
 #'
-#' ISO 8601 week 1 is the week containing 4 January, so its Monday is the
-#' Monday of that week and every later week is a multiple of seven days
-#' on from it. Written out rather than round-tripped through `format()`
-#' codes because `%G`/`%V` parse inconsistently across platforms.
+#' ISO 8601 week 1 is the week containing 4 January, so its Monday is
+#' the Monday of that week and every later week is a multiple of seven
+#' days on from it. Written out rather than round-tripped through
+#' `format()` codes because `%G`/`%V` parse inconsistently across
+#' platforms.
 #'
 #' @param iso_year,iso_week ISO year and week number.
 #' @return A `Date`.
@@ -490,41 +747,53 @@ episodic_iso_week_start <- function(iso_year, iso_week) {
   week1_monday + 7L * (as.integer(iso_week) - 1L)
 }
 
-#' Build a `mem`-shaped season x week case-count matrix
+# -- Matrix and week assignment ----------------------------------------
+
+#' The week order within a season, from anchor round to anchor-1
 #'
-#' Surveillance seasons run ISO week 40 to week 20 of the following
-#' calendar year, the standard northern-hemisphere influenza-season
-#' convention, matching `mem`'s own documented convention and its
-#' bundled `flucyl` example dataset's row/column shape (33 weeks: 40-52,
-#' then 1-20; one column per season, named `"YYYY/YYYY"`). Week 53 (some
-#' years have one) is folded into week 52 - a documented simplification:
-#' `mem`'s own guidance describes handling it as a distinct column,
-#' which this does not attempt.
-#'
-#' @param cases A data frame with `sample_date`.
-#' @return `NULL` if `cases` has no in-season data at all, else a list
-#'   with `matrix` (weeks x seasons, `NA`-free, zero-filled).
+#' @param anchor_week Integer 1-52.
+#' @return Character vector of length 52.
 #' @keywords internal
 #' @noRd
-episodic_mem_seasonal_matrix <- function(cases) {
+episodic_mem_week_order <- function(anchor_week) {
+  anchor_week <- as.integer(anchor_week)
+  if (anchor_week == 1L) {
+    as.character(1:52)
+  } else {
+    as.character(c(anchor_week:52, 1:(anchor_week - 1L)))
+  }
+}
+
+#' Build a `mem`-shaped season x week case-count matrix
+#'
+#' A 52-row matrix, one row per ISO week from the anchor round to the
+#' week before it, one column per season labelled `"YYYY/YYYY"`, every
+#' cell an integer count, zero-filled. Week 53 is folded into week 52,
+#' a documented simplification already in place.
+#'
+#' @param cases A data frame with `sample_date`.
+#' @param anchor_week Integer 1-52, the ISO week the season starts at.
+#' @return A list with `matrix` (weeks x seasons, `NA`-free), or `NULL`
+#'   if `cases` has no data.
+#' @keywords internal
+#' @noRd
+episodic_mem_seasonal_matrix <- function(cases, anchor_week) {
   dates <- as.Date(cases$sample_date)
-  assigned <- lapply(dates, episodic_mem_season_week)
+  if (length(dates) == 0) {
+    return(NULL)
+  }
+  assigned <- lapply(dates, episodic_mem_season_week,
+    anchor_week = anchor_week
+  )
   seasons <- vapply(assigned, function(a) a$season, character(1))
   weeks <- vapply(assigned, function(a) a$week_label, character(1))
 
-  in_season <- !is.na(seasons)
-  if (!any(in_season)) {
-    return(NULL)
-  }
-  seasons <- seasons[in_season]
-  weeks <- weeks[in_season]
-
-  week_order <- c(as.character(40:52), as.character(1:20))
+  week_order <- episodic_mem_week_order(anchor_week)
   season_levels <- sort(unique(seasons))
 
   mat <- matrix(
     0L,
-    nrow = length(week_order),
+    nrow = 52L,
     ncol = length(season_levels),
     dimnames = list(week_order, season_levels)
   )
@@ -537,39 +806,38 @@ episodic_mem_seasonal_matrix <- function(cases) {
   list(matrix = mat)
 }
 
-#' Which surveillance season/week a date falls in
+#' Which season and week a date falls in
+#'
+#' Every week of the year belongs to exactly one season; there is no
+#' off-season. Given anchor week `a`, the season labelled `"Y1/Y2"`
+#' contains ISO weeks `a` through 52 of year Y1 and weeks 1 through
+#' `a-1` of year Y2.
 #'
 #' @param date A single `Date`.
-#' @return A list: `season` (`"YYYY/YYYY"`, or `NA` if `date` falls in the
-#'   May-September off-season window), `week_label` (character, one of
-#'   `"40"`..`"52"`, `"1"`..`"20"`), `week_start` (the `Date` of that ISO
-#'   week's Monday).
+#' @param anchor_week Integer 1-52, the ISO week the season starts at.
+#' @return A list: `season` (`"YYYY/YYYY"`, never `NA`), `week_label`
+#'   (character, the ISO week number as a string), `week_start` (the
+#'   `Date` of that ISO week's Monday).
 #' @keywords internal
 #' @noRd
-episodic_mem_season_week <- function(date) {
+episodic_mem_season_week <- function(date, anchor_week) {
   date <- as.Date(date)
   iso_week <- as.integer(format(date, "%V"))
   iso_year <- as.integer(format(date, "%G"))
   week_start <- date - (as.integer(format(date, "%u")) - 1)
 
-  if (iso_week >= 40) {
-    week_capped <- min(iso_week, 52L) # fold week 53 into 52
-    list(
-      season = sprintf("%d/%d", iso_year, iso_year + 1L),
-      week_label = as.character(week_capped),
-      week_start = week_start
-    )
-  } else if (iso_week <= 20) {
-    list(
-      season = sprintf("%d/%d", iso_year - 1L, iso_year),
-      week_label = as.character(iso_week),
-      week_start = week_start
-    )
+  week_capped <- min(iso_week, 52L)
+  anchor_week <- as.integer(anchor_week)
+
+  if (week_capped >= anchor_week) {
+    season <- sprintf("%d/%d", iso_year, iso_year + 1L)
   } else {
-    list(
-      season = NA_character_,
-      week_label = NA_character_,
-      week_start = week_start
-    )
+    season <- sprintf("%d/%d", iso_year - 1L, iso_year)
   }
+
+  list(
+    season = season,
+    week_label = as.character(week_capped),
+    week_start = week_start
+  )
 }

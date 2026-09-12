@@ -57,14 +57,15 @@ in section 7 and do only that milestone.
 
 | | |
 |---|---|
-| Next milestone to start | **M0** |
+| Next milestone to start | **M1** |
 | Integration branch | `claude/epidemic-reform` (not yet created) |
 | Schema version on `main` | 5 (`episodic_schema_version` in `R/schema_migrate.R`) |
+| Schema version on M0 branch | 6 (`mem_mode` column) |
 | Execution environment | Must have a working R. See the precondition in section 7. |
 
 | Milestone | State | Branch | PR | Notes |
 |---|---|---|---|---|
-| M0 MEM: full-year seasons, derived anchor, derived eligibility | not started | | | goes straight to `main`, not to the integration branch |
+| M0 MEM: full-year seasons, derived anchor, derived eligibility | done | `claude/mem-agnostic-seasons` | pending | goes straight to `main`, not to the integration branch |
 | M1 Schema: scale, epidemic season satellite, link table | not started | | | |
 | M2 Write path: routing, epidemic closure, continuity, links | not started | | | |
 | M3 Read path: Epidemics screen MVP | not started | | | |
@@ -89,6 +90,23 @@ done, what was not, and anything surprising. No narrative.
   Milestone checks go through the existing data-raw/verification harness.
   Branch names made flat: git refs are paths, so an integration branch and a
   branch nested under its own name cannot coexist.
+
+2026-09-12 (Opus 4.6, M0 implementation)
+  Complete rewrite of R/detect_mem.R: season anchor derived from 52-week
+  climatology, seasonality eligibility from peak concentration statistic,
+  full-year seasons (no NA off-season), mem_mode three-state override.
+  MEM runs at L4+L5 via configurable mem.levels in default config.
+  Schema v6: mem_applicable -> mem_mode on episodic_pathogen_config.
+  Updated all 8 i18n files (3 new keys each, 5 changed).
+  Complete rewrite of test-detect_mem.R, extensive updates to
+  test-app_pathogen.R. Full suite: 0 failures, 10183 passes.
+  Files changed: R/detect_mem.R, R/app_pathogen.R, R/app_pathogen_ui.R,
+  R/app_read.R, R/db_cron_write.R, R/run_cron.R, R/schema_migrate.R,
+  inst/config/episodic_default_config.yaml,
+  inst/config/episodic_default_pathogen_config.csv, inst/sql/schema.sql,
+  inst/i18n/{ar,de,en,es,fr,hi,nl,zh}.json, tests/testthat/helper-db.R,
+  tests/testthat/test-detect_mem.R, tests/testthat/test-app_pathogen.R.
+  Spanned two context windows due to volume of changes.
 ```
 
 ---

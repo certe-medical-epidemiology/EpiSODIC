@@ -121,7 +121,8 @@ episodic_app_resolve_period <- function(period = "season_current",
                                         from = NULL,
                                         to = NULL,
                                         asof = Sys.Date(),
-                                        data_from = NULL) {
+                                        data_from = NULL,
+                                        anchor_week = NULL) {
   asof <- as.Date(asof)
   period <- if (is.null(period) || !period %in% episodic_pathogen_period_ids) {
     "season_current"
@@ -130,7 +131,10 @@ episodic_app_resolve_period <- function(period = "season_current",
   }
 
   season_window <- function(season) {
-    bounds <- episodic_mem_season_bounds(season)
+    if (is.null(season) || is.null(anchor_week)) {
+      return(NULL)
+    }
+    bounds <- episodic_mem_season_bounds(season, anchor_week)
     if (is.null(bounds)) {
       return(NULL)
     }
@@ -138,7 +142,7 @@ episodic_app_resolve_period <- function(period = "season_current",
     previous_bounds <- if (is.null(previous)) {
       NULL
     } else {
-      episodic_mem_season_bounds(previous)
+      episodic_mem_season_bounds(previous, anchor_week)
     }
     list(
       id = period,
@@ -167,11 +171,19 @@ episodic_app_resolve_period <- function(period = "season_current",
       ),
       season = NA_character_
     ),
-    season_current = season_window(episodic_season_containing(asof)),
-    season_previous = season_window(episodic_season_shift(
-      episodic_season_containing(asof),
-      1L
-    )),
+    season_current = if (is.null(anchor_week)) {
+      NULL
+    } else {
+      season_window(episodic_season_containing(asof, anchor_week))
+    },
+    season_previous = if (is.null(anchor_week)) {
+      NULL
+    } else {
+      season_window(episodic_season_shift(
+        episodic_season_containing(asof, anchor_week),
+        1L
+      ))
+    },
     # 13 and 52 weeks rather than 90 and 365 days, for the reason
     # spelled out at last_5y below: the window starts on the same
     # weekday it ends on, so the weekly bins line up.
@@ -269,38 +281,46 @@ episodic_app_pathogen_screen <- function(con,
     pathogen <- options$pathogen[1]
   }
 
-  data_from <- as.Date(options$first_day[options$pathogen == pathogen][1])
-  resolved <- episodic_app_resolve_period(
-    period,
-    from,
-    to,
-    asof,
-    data_from = data_from
-  )
-
   all_cases <- episodic_db_cases_for_pathogen(con, pathogen)
   all_cases$sample_date <- as.Date(all_cases$sample_date)
   all_cases <- all_cases[!is.na(all_cases$sample_date), , drop = FALSE]
-  window_cases <- all_cases[
-    all_cases$sample_date >= resolved$from &
-      all_cases$sample_date <= resolved$to, ,
-    drop = FALSE
-  ]
 
   pc <- episodic_db_pathogen_config_get(con, pathogen)
   region_stream_id <- episodic_app_pathogen_region_stream(con, pathogen)
-  # `NA`, not `0L`, when there is no L5 stream to read a completion
-  # curve from: the reporting delay for this pathogen was not measured,
-  # and this screen's weekly curve, its Rt panel and its trailing weeks
-  # all have to say so rather than assume it is nil. See
-  # `episodic_app_completeness()`.
   incomplete_days <- if (is.null(region_stream_id)) {
     NA_integer_
   } else {
     episodic_app_completeness(con, region_stream_id)$incomplete_days
   }
 
-  seasonal <- !is.null(pc) && isTRUE(as.logical(pc$mem_applicable))
+  mem_mode <- if (!is.null(pc)) as.character(pc$mem_mode) else "auto"
+  anchor <- if (!identical(mem_mode, "no") && nrow(all_cases) > 0) {
+    episodic_mem_season_anchor(all_cases)
+  } else {
+    NULL
+  }
+  anchor_week <- if (!is.null(anchor)) anchor$anchor_week else NULL
+  seasonal <- if (identical(mem_mode, "no")) {
+    FALSE
+  } else if (identical(mem_mode, "yes")) {
+    !is.null(anchor)
+  } else {
+    seas <- if (!is.null(anchor)) episodic_mem_seasonality(all_cases) else NULL
+    !is.null(seas) && isTRUE(seas$seasonal)
+  }
+
+  data_from <- as.Date(options$first_day[options$pathogen == pathogen][1])
+  resolved <- episodic_app_resolve_period(
+    period, from, to, asof,
+    data_from = data_from,
+    anchor_week = anchor_week
+  )
+
+  window_cases <- all_cases[
+    all_cases$sample_date >= resolved$from &
+      all_cases$sample_date <= resolved$to, ,
+    drop = FALSE
+  ]
 
   list(
     pathogens = options,
@@ -309,6 +329,7 @@ episodic_app_pathogen_screen <- function(con,
     period = resolved,
     config = pc,
     seasonal = seasonal,
+    anchor_week = anchor_week,
     incomplete_days = incomplete_days,
     summary = episodic_app_pathogen_summary(
       all_cases,
@@ -325,8 +346,8 @@ episodic_app_pathogen_screen <- function(con,
       incomplete_days,
       asof
     ),
-    mem = if (seasonal) {
-      episodic_app_pathogen_mem(all_cases, resolved, asof)
+    mem = if (seasonal && !is.null(anchor_week)) {
+      episodic_app_pathogen_mem(all_cases, resolved, asof, anchor_week)
     } else {
       NULL
     },
@@ -334,7 +355,8 @@ episodic_app_pathogen_screen <- function(con,
       all_cases,
       resolved,
       seasonal = seasonal,
-      asof = asof
+      asof = asof,
+      anchor_week = anchor_week
     ),
     rt = episodic_app_pathogen_rt(
       all_cases,
@@ -545,21 +567,28 @@ episodic_app_pathogen_weekly <- function(window_cases,
 #'   reached), or `NULL` when nothing can be fitted.
 #' @keywords internal
 #' @noRd
-episodic_app_pathogen_mem <- function(all_cases, resolved, asof = Sys.Date()) {
-  season <- resolved$season
-  if (is.na(season)) {
-    season <- episodic_season_containing(resolved$to)
+episodic_app_pathogen_mem <- function(all_cases,
+                                      resolved,
+                                      asof = Sys.Date(),
+                                      anchor_week = NULL) {
+  if (is.null(anchor_week)) {
+    return(NULL)
   }
-  thresholds <- episodic_mem_thresholds_for_season(all_cases, season)
+  season <- resolved$season
+  if (is.null(season) || is.na(season)) {
+    season <- episodic_season_containing(resolved$to, anchor_week)
+  }
+  thresholds <- episodic_mem_thresholds_for_season(
+    all_cases, season,
+    anchor_week = anchor_week
+  )
   if (is.null(thresholds)) {
     return(NULL)
   }
 
-  # The live status is only meaningful when the period being looked at
-  # actually reaches the present; on a historical season "the current
-  # week" is not part of the picture at all.
-  status <- if (resolved$to >= as.Date(asof) - 7) {
-    episodic_mem_status(all_cases, run_date = asof)
+  anchor <- episodic_mem_season_anchor(all_cases)
+  status <- if (!is.null(anchor) && resolved$to >= as.Date(asof) - 7) {
+    episodic_mem_status(all_cases, run_date = asof, anchor = anchor)
   } else {
     NULL
   }
@@ -621,24 +650,22 @@ episodic_app_pathogen_overlay <- function(all_cases,
                                           resolved,
                                           seasonal = FALSE,
                                           max_periods = 6L,
-                                          asof = NULL) {
+                                          asof = NULL,
+                                          anchor_week = NULL) {
   if (nrow(all_cases) == 0) {
     return(NULL)
   }
   dates <- all_cases$sample_date
 
-  if (isTRUE(seasonal)) {
-    # `dates[i]` rather than iterating the vector directly: `[` keeps the
-    # Date class, where handing elements straight to lapply is at the
-    # mercy of how a classed atomic vector is subset.
+  if (isTRUE(seasonal) && !is.null(anchor_week)) {
     assigned <- lapply(seq_along(dates), function(i) {
-      episodic_mem_season_week(dates[i])
+      episodic_mem_season_week(dates[i], anchor_week)
     })
     group <- vapply(assigned, function(a) a$season, character(1))
     week_label <- vapply(assigned, function(a) a$week_label, character(1))
-    week_order <- c(as.character(40:52), as.character(1:20))
-    keep <- !is.na(group)
-    current <- episodic_season_containing(resolved$to)
+    week_order <- episodic_mem_week_order(anchor_week)
+    keep <- rep(TRUE, length(dates))
+    current <- episodic_season_containing(resolved$to, anchor_week)
   } else {
     iso_year <- as.integer(format(dates, "%G"))
     iso_week <- pmin(as.integer(format(dates, "%V")), 52L)
@@ -686,7 +713,8 @@ episodic_app_pathogen_overlay <- function(all_cases,
     week_order,
     groups,
     seasonal = seasonal,
-    asof = asof
+    asof = asof,
+    anchor_week = anchor_week
   )
 
   list(
@@ -700,7 +728,8 @@ episodic_app_pathogen_overlay <- function(all_cases,
       resolved,
       seasonal,
       current,
-      week_order
+      week_order,
+      anchor_week = anchor_week
     )
   )
 }
@@ -732,7 +761,8 @@ episodic_app_pathogen_overlay <- function(all_cases,
 episodic_app_overlay_period_range <- function(resolved,
                                               seasonal,
                                               current,
-                                              week_order) {
+                                              week_order,
+                                              anchor_week = NULL) {
   if (is.null(resolved$from) || is.null(resolved$to)) {
     return(NULL)
   }
@@ -740,8 +770,8 @@ episodic_app_overlay_period_range <- function(resolved,
     return(NULL)
   }
   week_of <- function(d) {
-    if (isTRUE(seasonal)) {
-      wk <- episodic_mem_season_week(d)
+    if (isTRUE(seasonal) && !is.null(anchor_week)) {
+      wk <- episodic_mem_season_week(d, anchor_week)
       list(group = wk$season, label = wk$week_label)
     } else {
       list(
@@ -786,7 +816,8 @@ episodic_app_overlay_truncate <- function(rows,
                                           week_order,
                                           groups,
                                           seasonal = FALSE,
-                                          asof = NULL) {
+                                          asof = NULL,
+                                          anchor_week = NULL) {
   if (is.null(asof)) {
     return(rows)
   }
@@ -795,17 +826,14 @@ episodic_app_overlay_truncate <- function(rows,
     return(rows)
   }
 
-  if (isTRUE(seasonal)) {
-    current <- episodic_mem_season_week(asof)
+  if (isTRUE(seasonal) && !is.null(anchor_week)) {
+    current <- episodic_mem_season_week(asof, anchor_week)
     running <- current$season
     week <- current$week_label
   } else {
     running <- format(asof, "%G")
     week <- as.character(min(as.integer(format(asof, "%V")), 52L))
   }
-  # Off-season, `episodic_mem_season_week()` reports no week at all, and
-  # that is the right answer here too: the season it follows is over, so
-  # every one of its weeks was genuinely observed.
   cutoff <- match(week, week_order)
   if (is.na(running) || is.na(cutoff) || !running %in% groups) {
     return(rows)
