@@ -32,7 +32,7 @@ pathogen_screen_setup <- function() {
     si_mean_days = c(2.6, NA),
     si_sd_days = c(1.1, NA),
     si_dist = c("gamma", NA),
-    mem_applicable = c(1, 0),
+    mem_mode = c("auto", "auto"),
     severity_weight = c(0.6, 0.7),
     source_ref = NA,
     stringsAsFactors = FALSE
@@ -53,12 +53,20 @@ pathogen_screen_setup <- function() {
   )
   run_id <- episodic_db_run_start(con, "host", "account")
 
-  # Winter peaks in January of 2023, 2024 and 2025, rising each year.
-  flu_dates <- unlist(lapply(seq_along(c(2023, 2024, 2025)), function(i) {
-    year <- c(2023, 2024, 2025)[i]
+  # Winter peaks in January of 2021 to 2025, rising each year. The
+  # full-year background (one case per fortnight) gives the anchor
+  # derivation three complete calendar years to work with.
+  flu_peak <- unlist(lapply(seq_along(2021:2025), function(i) {
+    year <- (2021:2025)[i]
     peak <- as.Date(sprintf("%d-01-15", year))
     as.character(rep(peak + seq(-28, 28, by = 7), times = i * 2))
   }))
+  flu_bg <- as.character(seq(
+    as.Date("2021-01-01"),
+    as.Date("2025-03-01"),
+    by = "14 days"
+  ))
+  flu_dates <- c(flu_peak, flu_bg)
   gi_dates <- as.character(as.Date("2024-08-01") + seq(0, 60, by = 6))
 
   dates <- c(flu_dates, gi_dates)
@@ -97,35 +105,49 @@ pathogen_screen_setup <- function() {
   list(con = con, stream_id = stream_id, run_id = run_id)
 }
 
-test_that("episodic_app_resolve_period() turns a season preset into week 40 through week 20", {
+test_that("episodic_app_resolve_period() turns a season preset into the anchor's 52-week window", {
   period <- episodic_app_resolve_period(
     "season_current",
-    asof = as.Date("2025-01-15")
+    asof = as.Date("2025-01-15"),
+    anchor_week = 40L
   )
   expect_equal(period$season, "2024/2025")
   expect_equal(period$from, as.Date("2024-09-30"))
-  # Never runs past the day the data is current as of.
   expect_equal(period$to, as.Date("2025-01-15"))
   expect_equal(period$previous$label, "2023/2024")
 })
 
-test_that("episodic_app_resolve_period() out of season still names the season that just ended", {
-  # Mid-July is outside week 40-20 entirely; the answer is not "none".
+test_that("episodic_app_resolve_period() in the trough still names the current season", {
   period <- episodic_app_resolve_period(
     "season_current",
-    asof = as.Date("2025-07-15")
+    asof = as.Date("2025-07-15"),
+    anchor_week = 40L
   )
   expect_equal(period$season, "2024/2025")
-  expect_equal(period$to, as.Date("2025-05-18"))
+  expect_equal(period$to, as.Date("2025-07-15"))
 })
 
 test_that("episodic_app_resolve_period() steps back one whole season for the previous preset", {
   period <- episodic_app_resolve_period(
     "season_previous",
-    asof = as.Date("2025-01-15")
+    asof = as.Date("2025-01-15"),
+    anchor_week = 40L
   )
   expect_equal(period$season, "2023/2024")
-  expect_equal(period$to, as.Date("2024-05-19"))
+  expect_equal(period$to, as.Date("2024-09-29"))
+})
+
+test_that("episodic_app_resolve_period() falls back to last_12m for season presets without anchor_week", {
+  p1 <- episodic_app_resolve_period(
+    "season_current",
+    asof = as.Date("2025-01-15")
+  )
+  expect_equal(p1$id, "last_12m")
+  p2 <- episodic_app_resolve_period(
+    "season_previous",
+    asof = as.Date("2025-01-15")
+  )
+  expect_equal(p2$id, "last_12m")
 })
 
 test_that("episodic_app_resolve_period() resolves a three-month window of whole weeks", {
@@ -178,7 +200,7 @@ test_that("episodic_app_resolve_period() falls back rather than erroring on an u
   expect_equal(reversed$id, "last_12m")
 
   nonsense <- episodic_app_resolve_period("not-a-preset", asof = asof)
-  expect_equal(nonsense$season, "2024/2025")
+  expect_equal(nonsense$id, "last_12m")
 })
 
 test_that("episodic_app_resolve_period() honours an explicit custom range", {
@@ -234,7 +256,7 @@ test_that("episodic_app_pathogen_weekly() fades only the weeks still reporting",
   expect_false(any(complete$incomplete))
 })
 
-test_that("episodic_app_pathogen_overlay() lays seasons out week 40 first, not week 1 first", {
+test_that("episodic_app_pathogen_overlay() lays seasons out from the anchor week, not week 1", {
   env <- pathogen_screen_setup()
   on.exit(DBI::dbDisconnect(env$con))
   cases <- episodic_db_cases_for_pathogen(env$con, "Influenza A")
@@ -243,14 +265,13 @@ test_that("episodic_app_pathogen_overlay() lays seasons out week 40 first, not w
   overlay <- episodic_app_pathogen_overlay(
     cases,
     list(to = as.Date("2025-01-15")),
-    seasonal = TRUE
+    seasonal = TRUE,
+    anchor_week = 40L
   )
   expect_equal(overlay$kind, "season")
   expect_equal(overlay$current, "2024/2025")
-  # A season runs 40..52 then 1..20; ordering it numerically would put
-  # January to the left of October.
   expect_equal(overlay$rows$week_label[1], "40")
-  expect_equal(max(overlay$rows$week_index), 33)
+  expect_equal(max(overlay$rows$week_index), 52)
   expect_true(all(c("2022/2023", "2023/2024", "2024/2025") %in% overlay$groups))
 })
 
@@ -508,7 +529,7 @@ test_that("the pathogen config panel dashes a parameter this instance leaves uns
       si_mean_days = 2.6,
       si_sd_days = NA_real_,
       si_dist = "gamma",
-      mem_applicable = 0,
+      mem_mode = "auto",
       severity_weight = 0.6,
       source_ref = NA_character_,
       stringsAsFactors = FALSE
@@ -746,57 +767,57 @@ test_that("the overlay stops the period in progress at the current week", {
 })
 
 test_that("episodic_app_overlay_truncate() leaves a completed season alone", {
-  week_order <- c(as.character(40:52), as.character(1:20))
+  week_order <- episodic_mem_week_order(40L)
   rows <- data.frame(
-    group = rep("2023/2024", 33),
+    group = rep("2023/2024", 52),
     week_index = seq_along(week_order),
     week_label = week_order,
     n_cases = 1L,
     stringsAsFactors = FALSE
   )
 
-  # mid-July is outside the week 40-20 window: that season is over, so
-  # every one of its weeks was genuinely observed
   untouched <- episodic_app_overlay_truncate(
     rows,
     week_order,
     "2023/2024",
     seasonal = TRUE,
-    asof = as.Date("2024-07-15")
+    asof = as.Date("2024-10-15"),
+    anchor_week = 40L
   )
   expect_false(any(is.na(untouched$n_cases)))
 
-  # and with no asof at all, nothing is assumed
   expect_false(any(is.na(
     episodic_app_overlay_truncate(
       rows,
       week_order,
       "2023/2024",
       seasonal = TRUE,
-      asof = NULL
+      asof = NULL,
+      anchor_week = 40L
     )$n_cases
   )))
 })
 
 test_that("episodic_app_overlay_truncate() cuts a season in progress at its current week", {
-  week_order <- c(as.character(40:52), as.character(1:20))
+  week_order <- episodic_mem_week_order(40L)
   rows <- data.frame(
-    group = rep("2024/2025", 33),
+    group = rep("2024/2025", 52),
     week_index = seq_along(week_order),
     week_label = week_order,
     n_cases = 1L,
     stringsAsFactors = FALSE
   )
-  # 15 January 2025 is ISO week 3, which is position 16 in a season
-  # running 40..52 then 1..20
+  # 15 January 2025 is ISO week 3; in a season starting at week 40 that
+  # is position 16 (13 weeks for 40-52 plus 3 weeks for 1-3)
   out <- episodic_app_overlay_truncate(
     rows,
     week_order,
     "2024/2025",
     seasonal = TRUE,
-    asof = as.Date("2025-01-15")
+    asof = as.Date("2025-01-15"),
+    anchor_week = 40L
   )
-  expect_equal(which(is.na(out$n_cases)), 17:33)
+  expect_equal(which(is.na(out$n_cases)), 17:52)
 })
 
 test_that("episodic_chart_theme() sets axis and legend text readably", {

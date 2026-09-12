@@ -230,7 +230,7 @@ app_read_setup <- function() {
     si_mean_days = 3,
     si_sd_days = 1.5,
     si_dist = "gamma",
-    mem_applicable = 0,
+    mem_mode = "auto",
     severity_weight = 0.6,
     source_ref = NA,
     stringsAsFactors = FALSE

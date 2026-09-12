@@ -357,7 +357,7 @@ episodic_db_apply_schema <- function(con, dialect) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 5L
+episodic_schema_version <- 6L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -592,6 +592,57 @@ episodic_db_migrations <- function() {
           con,
           episodic_db_schema_index_statement(dialect, index)
         )
+      }
+      invisible(NULL)
+    },
+    # 6: mem_applicable -> mem_mode. The boolean column is replaced by a
+    # three-state text column ('auto', 'yes', 'no') so that an operator
+    # can override the derived seasonality test per pathogen. Existing
+    # rows map: 0 -> 'auto' (not 'no', because the old 0 meant "not
+    # curated", and 'auto' is the new equivalent: let the data decide),
+    # 1 -> 'auto' (the old 1 meant "fits", and under the new scheme
+    # 'auto' also fits when the data show a season, which is exactly the
+    # case for the pathogens that shipped with mem_applicable = 1).
+    "6" = function(con, dialect) {
+      if (episodic_db_column_exists(
+        con, dialect, "episodic_pathogen_config", "mem_mode"
+      )) {
+        return(invisible(NULL))
+      }
+      DBI::dbExecute(
+        con,
+        paste0(
+          "ALTER TABLE episodic_pathogen_config ADD COLUMN ",
+          "mem_mode TEXT NOT NULL DEFAULT 'auto'",
+          if (dialect == "sqlite") {
+            " CHECK (mem_mode IN ('auto', 'yes', 'no'))"
+          } else {
+            ""
+          }
+        )
+      )
+      if (dialect == "mariadb") {
+        DBI::dbExecute(
+          con,
+          paste0(
+            "ALTER TABLE episodic_pathogen_config ",
+            "MODIFY COLUMN mem_mode ",
+            "VARCHAR(4) NOT NULL DEFAULT 'auto'"
+          )
+        )
+      }
+      if (episodic_db_column_exists(
+        con, dialect, "episodic_pathogen_config", "mem_applicable"
+      )) {
+        if (dialect == "sqlite") {
+          # SQLite cannot DROP COLUMN on older versions, but the column
+          # is harmless once mem_mode exists: no code reads it.
+        } else {
+          DBI::dbExecute(
+            con,
+            "ALTER TABLE episodic_pathogen_config DROP COLUMN mem_applicable"
+          )
+        }
       }
       invisible(NULL)
     }

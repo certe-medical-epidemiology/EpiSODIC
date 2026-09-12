@@ -122,8 +122,9 @@ farrington:
   # every alarming week in the archive.
   max_weeks_tested: 8
 
-# MEM seasonal detector (mem::memmodel()), for pathogens flagged
-# mem_applicable in episodic_default_pathogen_config.csv.
+# MEM seasonal detector (mem::memmodel()). Eligibility is derived from
+# each stream's own data; mem_mode on episodic_default_pathogen_config.csv
+# overrides the automatic seasonality test per pathogen.
 mem:
   enabled: true    # see same_place.enabled
   min_seasons: 2   # fully-observed prior seasons required before MEM fits
@@ -133,6 +134,23 @@ mem:
                    # Two is the practical floor; more prior seasons give a
                    # steadier pre-epidemic threshold, so raise this as
                    # history accrues.
+  levels:          # lattice levels MEM runs at; must have enough volume
+    - pathogen_province
+    - pathogen_region
+  min_climatology_years: 3    # complete ISO years of case history required
+                              # to derive a season anchor; fewer returns no
+                              # anchor, so MEM stays silent
+  climatology_smooth_weeks: 5 # centred moving-average window (odd, in
+                              # weeks) for the 52-week climatology used to
+                              # find the trough
+  trough_percentile: 0.25     # quantile of the smoothed climatology at or
+                              # below which a week is part of the trough
+  seasonality_peak_weeks: 8   # consecutive weeks in the peak-concentration
+                              # window of the seasonality test
+  seasonality_min_peak_share: 0.40  # minimum share of a year's (detrended)
+                                    # cases in the peak window for the
+                                    # pathogen to count as seasonal under
+                                    # mem_mode = 'auto'
 
 # rare_trigger: a curated absolute-rarity list. A single case of any
 # pathogen listed here fires a detection; no baseline is computed at all.
