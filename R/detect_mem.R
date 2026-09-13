@@ -113,6 +113,7 @@ episodic_detect_mem <- function(cases_for_stream,
     return(empty)
   }
 
+  intensity <- status$intensity_thresholds
   episodic_detection_record(
     stream_id = stream_id,
     detector = "mem",
@@ -125,7 +126,11 @@ episodic_detect_mem <- function(cases_for_stream,
       anchor_week = anchor$anchor_week,
       seasonality_statistic = seasonality_stat,
       seasons_used = paste(status$seasons_used, collapse = ", "),
-      post_epidemic_threshold = status$post_epidemic_threshold
+      season = status$season,
+      post_epidemic_threshold = status$post_epidemic_threshold,
+      intensity_medium = if (!is.null(intensity)) intensity[["medium"]] else NA,
+      intensity_high = if (!is.null(intensity)) intensity[["high"]] else NA,
+      intensity_very_high = if (!is.null(intensity)) intensity[["very_high"]] else NA
     )
   )
 }
@@ -384,9 +389,10 @@ episodic_mem_seasonality <- function(cases,
 
 #' Compute this stream's current MEM status
 #'
-#' Shared by `episodic_detect_mem()` (fires on `epidemic_started`) and
-#' the epidemic closure criterion (fires when the evaluated count has
-#' fallen back under `post_epidemic_threshold`).
+#' Used by `episodic_detect_mem()` (fires on `epidemic_started`) and by
+#' `episodic_epidemic_closure()` (fires when the evaluated count has
+#' fallen back at or below `post_epidemic_threshold`, or when the
+#' evaluated week is inside the pathogen's derived trough).
 #'
 #' Which week to evaluate: the last *complete* epidemiological week,
 #' never the one in progress. The week containing the run date is
@@ -840,4 +846,67 @@ episodic_mem_season_week <- function(date, anchor_week) {
     week_label = as.character(week_capped),
     week_start = week_start
   )
+}
+
+# -- Epidemic closure ---------------------------------------------------
+
+#' Check whether an open seasonal epidemic should close
+#'
+#' The primary criterion is the post-epidemic threshold stored on the
+#' satellite: the epidemic closes when the evaluated week's count falls
+#' at or below it. The backstop is the derived trough: when the count
+#' has fallen but never crosses the threshold cleanly on a noisy series,
+#' the epidemic closes once the evaluated week enters the pathogen's own
+#' trough. These are two different pieces of evidence, and the audit
+#' trail records which one fired.
+#'
+#' @param cases_for_stream A data frame with `sample_date`, the stream's
+#'   full case history (needed to derive the anchor and count the
+#'   evaluated week).
+#' @param run_date The date to treat as "today".
+#' @param config The resolved configuration.
+#' @param satellite A one-row data frame from
+#'   `episodic_db_open_seasonal_epidemics()`, carrying
+#'   `post_epidemic_threshold` and `anchor_week`.
+#' @return `NULL` if the epidemic should stay open, otherwise a list
+#'   with `ended_week_start` (Date) and `ended_reason` (character).
+#' @keywords internal
+#' @noRd
+episodic_epidemic_closure <- function(cases_for_stream,
+                                      run_date,
+                                      config,
+                                      satellite) {
+  anchor_week <- as.integer(satellite$anchor_week)
+  anchor <- episodic_mem_season_anchor(cases_for_stream, config)
+  if (is.null(anchor)) {
+    return(NULL)
+  }
+
+  evaluated <- episodic_mem_evaluation_week(run_date, anchor_week)
+  week_start <- evaluated$week_start
+  week_end <- week_start + 6
+
+  dates <- as.Date(cases_for_stream$sample_date)
+  week_count <- sum(
+    dates >= week_start & dates <= week_end,
+    na.rm = TRUE
+  )
+
+  post_threshold <- as.numeric(satellite$post_epidemic_threshold)
+  if (!is.na(post_threshold) && week_count <= post_threshold) {
+    return(list(
+      ended_week_start = as.character(week_start),
+      ended_reason = "post_epidemic_threshold"
+    ))
+  }
+
+  eval_iso_week <- as.integer(evaluated$week_label)
+  if (eval_iso_week %in% anchor$trough_run) {
+    return(list(
+      ended_week_start = as.character(week_start),
+      ended_reason = "trough"
+    ))
+  }
+
+  NULL
 }

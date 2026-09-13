@@ -22,6 +22,7 @@
 # episodic_stream, episodic_institution, episodic_institution_activity,
 # episodic_case, episodic_denominator,
 # episodic_detection, episodic_cluster, episodic_cluster_case,
+# episodic_epidemic_season, episodic_cluster_link,
 # episodic_detection_run, episodic_report_subscription_send and (for
 # pre-renders) episodic_report_render. See
 # R/db_app_write.R for the insert-only counterparts. Parameters
@@ -482,7 +483,8 @@ episodic_db_cluster_insert <- function(con,
                                        # `origin` still says "detected": such a cluster reconciles, ages,
                                        # suppresses and closes as any other, and the readers that select
                                        # on origin = 'detected' must go on finding it.
-                                       opened_in_backfill = FALSE) {
+                                       opened_in_backfill = FALSE,
+                                       scale = "outbreak") {
   params <- list(
     stream_id,
     first_day,
@@ -496,15 +498,16 @@ episodic_db_cluster_insert <- function(con,
     episodic_now(),
     if (is.na(run_id)) NA else run_id,
     origin,
-    if (isTRUE(opened_in_backfill)) 1L else 0L
+    if (isTRUE(opened_in_backfill)) 1L else 0L,
+    scale
   )
   DBI::dbExecute(
     con,
     "INSERT INTO episodic_cluster
       (stream_id, first_day, last_day, n_cases, expected, excess, ratio, priority_score,
        detector_agreement, opened_at, last_detected_run, runs_since_detected,
-       changed_since_assessment, suppressed_by, merged_into, origin, opened_in_backfill)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, NULL, NULL, ?, ?)",
+       changed_since_assessment, suppressed_by, merged_into, origin, opened_in_backfill, scale)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, NULL, NULL, ?, ?, ?)",
     params = params
   )
   episodic_db_last_insert_id(con)
@@ -815,4 +818,115 @@ episodic_sql_date <- function(x) {
   } else {
     x
   }
+}
+
+#' Write the seasonal satellite for an epidemic cluster
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The epidemic cluster this satellite belongs to.
+#' @param season_label `"YYYY/YYYY"` season label.
+#' @param anchor_week Integer 1-52.
+#' @param onset_week_start The week the pre-epidemic threshold was crossed.
+#' @param pre_epidemic_threshold,post_epidemic_threshold MEM thresholds.
+#' @param intensity_medium,intensity_high,intensity_very_high Nullable
+#'   intensity band thresholds.
+#' @param seasons_used Comma-separated season labels used in the fit.
+#' @keywords internal
+#' @noRd
+episodic_db_epidemic_season_insert <- function(con,
+                                               cluster_id,
+                                               season_label,
+                                               anchor_week,
+                                               onset_week_start = NA,
+                                               pre_epidemic_threshold = NA,
+                                               post_epidemic_threshold = NA,
+                                               intensity_medium = NA,
+                                               intensity_high = NA,
+                                               intensity_very_high = NA,
+                                               seasons_used = NA) {
+  params <- list(
+    cluster_id,
+    season_label,
+    as.integer(anchor_week),
+    if (is.na(onset_week_start)) NA else as.character(onset_week_start),
+    pre_epidemic_threshold,
+    post_epidemic_threshold,
+    intensity_medium,
+    intensity_high,
+    intensity_very_high,
+    seasons_used
+  )
+  DBI::dbExecute(
+    con,
+    "INSERT INTO episodic_epidemic_season
+      (cluster_id, season_label, anchor_week, onset_week_start,
+       pre_epidemic_threshold, post_epidemic_threshold,
+       intensity_medium, intensity_high, intensity_very_high,
+       seasons_used)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    params = params
+  )
+  invisible(NULL)
+}
+
+#' Record the end of a seasonal epidemic
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The epidemic cluster.
+#' @param ended_week_start The week the epidemic ended.
+#' @param ended_reason `"post_epidemic_threshold"` or `"trough"`.
+#' @keywords internal
+#' @noRd
+episodic_db_epidemic_season_update_ended <- function(con,
+                                                     cluster_id,
+                                                     ended_week_start,
+                                                     ended_reason) {
+  params <- list(
+    as.character(ended_week_start),
+    ended_reason,
+    cluster_id
+  )
+  DBI::dbExecute(
+    con,
+    "UPDATE episodic_epidemic_season
+       SET ended_week_start = ?, ended_reason = ?
+     WHERE cluster_id = ?",
+    params = params
+  )
+  invisible(NULL)
+}
+
+#' Record an outbreak-during-epidemic link
+#'
+#' Idempotent: the `(outbreak_cluster_id, epidemic_cluster_id)` primary
+#' key means a duplicate insert is a no-op.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param outbreak_cluster_id The outbreak cluster.
+#' @param epidemic_cluster_id The epidemic cluster.
+#' @param run_id The run that established the link.
+#' @keywords internal
+#' @noRd
+episodic_db_cluster_link_insert <- function(con,
+                                            outbreak_cluster_id,
+                                            epidemic_cluster_id,
+                                            run_id) {
+  episodic_db_write_many(
+    con,
+    table = "episodic_cluster_link",
+    cols = c(
+      "outbreak_cluster_id",
+      "epidemic_cluster_id",
+      "created_at",
+      "run_id"
+    ),
+    values = list(
+      outbreak_cluster_id = outbreak_cluster_id,
+      epidemic_cluster_id = epidemic_cluster_id,
+      created_at = episodic_now(),
+      run_id = run_id
+    ),
+    key_cols = c("outbreak_cluster_id", "epidemic_cluster_id")
+  )
+  invisible(NULL)
 }

@@ -149,7 +149,8 @@ episodic_reconcile_stream <- function(con,
                                       stale_open_days = NA,
                                       today = Sys.Date(),
                                       geography = episodic_geography_config(),
-                                      backfill = FALSE) {
+                                      backfill = FALSE,
+                                      scale = "outbreak") {
   n_new <- 0L
   n_updated <- 0L
   n_merged <- 0L
@@ -293,7 +294,8 @@ episodic_reconcile_stream <- function(con,
         priority_score = priority_score,
         detector_agreement = candidate$detector_agreement,
         run_id = run_id,
-        opened_in_backfill = backfill
+        opened_in_backfill = backfill,
+        scale = scale
       )
       n_new <- n_new + 1L
       new_cluster_ids <- c(new_cluster_ids, cluster_id)

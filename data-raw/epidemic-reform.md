@@ -66,8 +66,8 @@ in section 7 and do only that milestone.
 | Milestone | State | Branch | PR | Notes |
 |---|---|---|---|---|
 | M0 MEM: full-year seasons, derived anchor, derived eligibility | done | `claude/mem-agnostic-seasons` | #59 merged | goes straight to `main`, not to the integration branch |
-| M1 Schema: scale, epidemic season satellite, link table | done | `claude/epidemic-reform-m1-schema` | pending | PR into `claude/epidemic-reform` |
-| M2 Write path: routing, epidemic closure, continuity, links | not started | | | |
+| M1 Schema: scale, epidemic season satellite, link table | done | `claude/epidemic-reform-m1-schema` | #60 merged | PR into `claude/epidemic-reform` |
+| M2 Write path: routing, epidemic closure, continuity, links | done | `claude/epidemic-reform-m2-write` | pending | PR into `claude/epidemic-reform` |
 | M3 Read path: Epidemics screen MVP | not started | | | |
 | M4 Vocabulary: O-/E- ids, Outbreak wording, i18n sweep | not started | | | |
 | M5 Documentation | not started | | | |
