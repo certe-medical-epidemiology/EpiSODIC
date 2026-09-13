@@ -638,24 +638,29 @@ episodic_ui_verdict_colour <- function(verdict) {
   )
 }
 
-#' Stream levels bounded and local enough to call a cluster an "outbreak"
-#' rather than an "epidemic"
+#' The lattice levels that produce outbreaks rather than epidemics
 #'
-#' A ward or an institution is a contained setting - the standard field
-#' term for a confirmed cluster there is "outbreak" (a norovirus outbreak
-#' on a ward, a Legionella outbreak tied to one care home), same as this
-#' codebase's own commentary already says informally throughout
-#' (`R/reconcile.R`, `R/run_cron.R`, ...). From area level up, a cluster
-#' is a population-level statistical excess over baseline - what
-#' "epidemic" means, and already the Moving Epidemic Method's own
-#' vocabulary elsewhere on the same screens ("epidemic start/end
-#' threshold"). `pathogen_area` is not the fuzzy middle case it looks
-#' like: `episodic_case_region_code()` defines it as a multi-town
-#' postcode district, not a single contained setting, so it sits with
-#' province/region rather than with ward/institution.
+#' Derived from the configured scale boundary: every level not in
+#' `config$scale$epidemic_levels` is an outbreak level. The boundary is
+#' configuration so that a deployment whose L3 area covers more ground
+#' than another's province can move the split.
+#'
+#' @param config Resolved configuration. Defaults to the live config so
+#'   callers inside the Shiny app, which pass no config, get the right
+#'   answer without an explicit argument.
+#' @return A character vector of level names.
 #' @keywords internal
 #' @noRd
-episodic_verdict_outbreak_levels <- c("pathogen_ward", "pathogen_institution")
+episodic_verdict_outbreak_levels <- function(config = episodic_config_resolve()) {
+  all_levels <- c(
+    "pathogen_ward",
+    "pathogen_institution",
+    "pathogen_area",
+    "pathogen_province",
+    "pathogen_region"
+  )
+  setdiff(all_levels, config$scale$epidemic_levels)
+}
 
 #' A verdict's display label, worded for the cluster's own scale
 #'
@@ -664,11 +669,13 @@ episodic_verdict_outbreak_levels <- c("pathogen_ward", "pathogen_institution")
 #' stats all still key off it. Only the wording shown to a reader shifts:
 #' `"cluster_not_yet"`/`"possible_epidemic"`/`"confirmed_epidemic"` read
 #' as "... outbreak" rather than "... epidemic" when the cluster sits at
-#' ward or institution level (see `episodic_verdict_outbreak_levels`).
+#' an outbreak-scale level (see `episodic_verdict_outbreak_levels()`).
 #' `"artefact"`/`"expected_variation"` never mention either word, so
-#' `level` makes no difference to them.
+#' `level` makes no difference to them. The three declaration verdicts
+#' (`"season_started"`, `"season_not_yet"`, `"season_ended"`) are used
+#' only on epidemics and carry no outbreak variant.
 #'
-#' @param verdict One of the five verdict keys, or `NA`.
+#' @param verdict One of the eight verdict keys, or `NA`.
 #' @param level The cluster's stream level (e.g. `"pathogen_ward"`), or
 #'   `NULL` when no single level applies - a bulk action across a mixed
 #'   selection, or a system-wide distribution summed over every level.
@@ -695,7 +702,7 @@ episodic_verdict_label <- function(verdict,
     has_outbreak_variant &&
       !is.null(level) &&
       !is.na(level) &&
-      level %in% episodic_verdict_outbreak_levels
+      level %in% episodic_verdict_outbreak_levels()
   ) {
     key <- paste0(key, ".outbreak")
   }

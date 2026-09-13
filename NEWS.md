@@ -13,6 +13,9 @@
 - `mem_mode` replaces `mem_applicable`: a three-state override (auto, yes, no) per pathogen
 - Schema version 6: `mem_mode` column on `episodic_pathogen_config`
 - Full-year MEM seasons with no NA off-season period
+- Schema version 7: `scale` discriminator on `episodic_cluster`, `episodic_epidemic_season` satellite table, `episodic_cluster_link` relation table, and declaration verdicts on `episodic_assessment_event`
+- Configurable scale boundary (`scale.epidemic_levels`) determines which lattice levels produce epidemics rather than outbreaks
+- Verdict labels derive the outbreak/epidemic boundary from configuration rather than a hardcoded constant
 
 ## Changed
 

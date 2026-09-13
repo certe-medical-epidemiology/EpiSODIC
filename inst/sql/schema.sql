@@ -283,7 +283,12 @@ CREATE TABLE episodic_cluster (
   -- flag rather than a third `origin` - but the day it was opened is the
   -- day the archive was imported, not the day anything was noticed, so
   -- the Performance screen's time-to-detection excludes it.
-  opened_in_backfill       INTEGER NOT NULL DEFAULT 0 CHECK (opened_in_backfill IN (0, 1))
+  opened_in_backfill       INTEGER NOT NULL DEFAULT 0 CHECK (opened_in_backfill IN (0, 1)),
+  -- The cluster's scale, decided by the stream's level at the moment the
+  -- cluster was opened: 'outbreak' for localised levels (L1 to L3),
+  -- 'epidemic' for regional ones (L4 and L5). The boundary is
+  -- configurable (scale.epidemic_levels), not hardcoded.
+  scale                    TEXT NOT NULL DEFAULT 'outbreak' CHECK (scale IN ('outbreak', 'epidemic'))
 );
 
 -- Note what this table does NOT carry: verdict, state, closed_at,
@@ -318,6 +323,47 @@ CREATE TABLE episodic_cluster_manual_case (
 CREATE INDEX idx_episodic_cluster_manual_case_cluster ON episodic_cluster_manual_case(cluster_id);
 
 -- ---------------------------------------------------------------------
+-- 5.5.1 Epidemic season satellite (cron)
+--
+-- One row per epidemic cluster that has a season. A non-seasonal
+-- epidemic (a regional Legionella excess, say) has no row here, and
+-- nothing may read a missing row as a zero or as "season not ended".
+-- ---------------------------------------------------------------------
+CREATE TABLE episodic_epidemic_season (
+  cluster_id              INTEGER PRIMARY KEY REFERENCES episodic_cluster(cluster_id),
+  season_label            TEXT NOT NULL,
+  anchor_week             INTEGER NOT NULL CHECK (anchor_week >= 1 AND anchor_week <= 53),
+  onset_week_start        TEXT,
+  pre_epidemic_threshold  REAL,
+  post_epidemic_threshold REAL,
+  intensity_medium        REAL,
+  intensity_high          REAL,
+  intensity_very_high     REAL,
+  seasons_used            TEXT,
+  ended_week_start        TEXT,
+  ended_reason            TEXT CHECK (ended_reason IS NULL OR ended_reason IN (
+                            'post_epidemic_threshold', 'trough'))
+);
+
+-- ---------------------------------------------------------------------
+-- 5.5.2 Cluster link: the "during" relation (cron)
+--
+-- Records that an outbreak occurred during an epidemic, defined on
+-- pathogen, time overlap and geographic nesting, deliberately not on
+-- case-set containment. An outbreak may link to more than one
+-- epidemic, so this is a table, not a column.
+-- ---------------------------------------------------------------------
+CREATE TABLE episodic_cluster_link (
+  outbreak_cluster_id INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
+  epidemic_cluster_id INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
+  created_at          TEXT NOT NULL,
+  run_id              INTEGER NOT NULL REFERENCES episodic_detection_run(run_id),
+  PRIMARY KEY (outbreak_cluster_id, epidemic_cluster_id)
+);
+
+CREATE INDEX idx_episodic_cluster_link_epidemic ON episodic_cluster_link(epidemic_cluster_id);
+
+-- ---------------------------------------------------------------------
 -- 5.6 Assessments (app, append-only)
 -- ---------------------------------------------------------------------
 CREATE TABLE episodic_assessment_event (
@@ -327,7 +373,8 @@ CREATE TABLE episodic_assessment_event (
   created_at     TEXT NOT NULL,
   verdict        TEXT CHECK (verdict IS NULL OR verdict IN (
                    'artefact', 'expected_variation', 'cluster_not_yet',
-                   'possible_epidemic', 'confirmed_epidemic')),
+                   'possible_epidemic', 'confirmed_epidemic',
+                   'season_started', 'season_not_yet', 'season_ended')),
   rationale      TEXT NOT NULL,
   wpg_notifiable INTEGER CHECK (wpg_notifiable IS NULL OR wpg_notifiable IN (0, 1)),
   ggd_informed   INTEGER CHECK (ggd_informed IS NULL OR ggd_informed IN (0, 1)),
