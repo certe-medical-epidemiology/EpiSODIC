@@ -22,6 +22,11 @@
 - Epidemic identity is preserved across the season anchor rollover
 - Outbreaks are linked to epidemics they occur during, based on pathogen, time overlap and geographic nesting (`episodic_cluster_link`)
 - Lattice suppression works across the outbreak/epidemic scale boundary
+- An Epidemics screen with a rail of open epidemics, a dossier with seasonal evidence, and a declaration form for seasonal verdicts
+- The navigation bar carries five links: Clusters, Epidemics, Pathogen, Archive, Instance
+- The epidemic dossier shows weekly case curve with MEM threshold overlay, tests and positivity, contributing institutions with concentration, and linked outbreaks
+- The Clusters rail and Performance screen filter to outbreaks only (L1-L3)
+- Epidemiologists can record seasonal declarations (`season_started`, `season_not_yet`, `season_ended`) on seasonal epidemics
 
 ## Changed
 

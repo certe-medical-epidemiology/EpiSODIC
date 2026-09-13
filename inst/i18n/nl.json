@@ -2,7 +2,6 @@
   "app.title": "EpiSODIC",
   "app.full_name": "Epidemiological Signal Observation, Detection, Identification, and Classification",
   "app.demodata": "Demodata",
-
   "nav.clusters": "Clusters",
   "nav.pathogen": "Verwekker",
   "nav.streams": "Signaleringsreeksen",
@@ -20,7 +19,6 @@
   "instance.card.performance": "Hoe de detectoren zich verhouden tot de oordelen van de epidemiologen zelf.",
   "instance.card.info": "Wat deze versie is, welke referentiebestanden zijn gelezen en wat de termen betekenen.",
   "instance.card.settings": "Accounts en instellingen van de instantie.",
-
   "rail.title": "Openstaande clusters",
   "rail.count_suffix": "nieuw of actief",
   "rail.empty": "Geen openstaande clusters.",
@@ -33,10 +31,8 @@
   "rail.bulk_apply": "Classificatie toepassen op geselecteerde",
   "rail.bulk_clear": "Selectie wissen",
   "rail.bulk_select": "Selecteren voor gezamenlijke beoordeling",
-
   "pane.dossier": "Dossier",
   "pane.switcher_label": "Tonen",
-
   "dossier.stat.observed_sub": "verwacht {expected}",
   "dossier.stat.ratio": "Ratio O/V",
   "dossier.stat.ratio_sub": "casussen / verwacht",
@@ -55,25 +51,21 @@
   "dossier.stat.case_free_sub": "drempel {need} d",
   "dossier.stat.priority": "Prioriteit",
   "dossier.stat.priority_sub": "samengestelde score",
-
   "dossier.cluster_ref": "#{id}",
   "dossier.meta.first_last": "eerste casus {first}, laatste {last}",
   "dossier.meta.detected_by": "gedetecteerd door {detectors}",
   "dossier.changed_badge": "Gewijzigd na beoordeling",
   "dossier.manual_badge": "Handmatig toegevoegd",
-
   "state.new": "Nieuw",
   "state.assessing": "In beoordeling",
   "state.monitoring": "Monitoring",
   "state.closed": "Afgesloten",
   "state.reassess": "Herbeoordeling nodig",
-
   "level.pathogen_ward": "L1 · afdeling",
   "level.pathogen_institution": "L2 · instelling",
   "level.pathogen_area": "L3 · gebied",
   "level.pathogen_province": "L4 · provincie",
   "level.pathogen_region": "L5 · regio",
-
   "careline.first": "eerste lijn",
   "careline.second": "tweede lijn",
   "careline.third": "derde lijn",
@@ -84,17 +76,13 @@
   "careline.short.third": "3e lijn",
   "careline.short.other": "overig",
   "careline.short.unknown": "onbekend",
-
   "timeline.title": "Verloop",
   "timeline.not_assessed": "Nog niet beoordeeld. Gedetecteerd op {first} door {detectors}.",
-
   "status_trajectory.title": "Statusverloop",
   "status_trajectory.unassessed": "Onbeoordeeld",
-
   "panel.interpretation.title": "Duiding",
   "panel.interpretation.aside": "automatisch opgesteld",
   "panel.interpretation.empty": "Nog geen duiding beschikbaar voor dit cluster.",
-
   "panel.notes.title": "Notities",
   "panel.notes.empty": "Nog geen notities voor dit cluster.",
   "notes.edit_button": "Bewerken",
@@ -102,12 +90,10 @@
   "notes.history_button": "Geschiedenis",
   "notes.history_modal_title": "Notitiegeschiedenis",
   "notes.history_empty": "Nog geen notities opgeslagen voor dit cluster.",
-
   "panel.epicurve.title": "Epidemische curve",
   "panel.epicurve.note": "De gearceerde zone beslaat de laatste {days_phrase}: de empirische rapportagevertraging uit de rapportagedriehoek. Casussen met een afnamedatum in dit venster zijn nog niet volledig binnen. Een dalende staart is hier geen afname.",
   "panel.epicurve.note_unknown": "Voor deze stroom kon geen rapportagevertraging worden gemeten, dus geen enkele dag van deze curve kan als volledig gerapporteerd worden beschouwd. De hele curve is daarom gearceerd.",
   "panel.epicurve.ylab": "Casussen",
-
   "panel.trend.title": "Meerjarige trend",
   "panel.trend.aside": "{weeks} weken",
   "panel.trend.note": "Waargenomen aantallen tegen de verwachting en de signaalgrens uit <code>farringtonFlexible</code>. Bedoeld om te zien of de huidige toename binnen het normale seizoenspatroon valt.",
@@ -115,19 +101,16 @@
   "panel.trend.legend_expected": "Verwacht",
   "panel.trend.legend_upperbound": "Signaalgrens",
   "panel.trend.unavailable": "Nog geen trendgegevens beschikbaar; de signaleringsreeks heeft onvoldoende basislijn voor <code>farringtonFlexible</code>.",
-
   "panel.denominator.title": "Noemer en positiviteit",
   "panel.denominator.aside": "per week",
   "panel.denominator.note": "De meest voorkomende oorzaak van een vals signaal is een stijgend testvolume, niet een stijgende incidentie. Als de staven stijgen maar de lijn vlak blijft, is de toename een noemer-effect.",
   "panel.denominator.legend_tests": "Bepalingen",
   "panel.denominator.legend_positivity": "Positiviteit %",
   "panel.denominator.unavailable": "Geen positiviteitsgegevens beschikbaar voor deze verwekker. Dit is optioneel; niet elke laboratoriummethode kan negatieven rapporteren.",
-
   "panel.demography.title": "Leeftijd en geslacht",
   "panel.demography.note": "Een verschuiving in de getroffen leeftijdsgroep ten opzichte van de historische basislijn is vaak informatiever dan het aantal zelf.",
   "panel.demography.male": "← man",
   "panel.demography.female": "vrouw →",
-
   "panel.geo.title": "Geografische spreiding",
   "panel.geo.aside": "Postcodegebied",
   "panel.geo.unit": "Een kaartweergave verschijnt hier zodra geografische referentiedata is geconfigureerd (EPISODIC_GEO_DATA).",
@@ -135,14 +118,11 @@
   "panel.geo.unknown_pc": "Van {total} casussen hebben er {n} geen postcode; die blijven buiten de kaart en buiten de concentratiemaat.",
   "panel.geo.map_note": "Bijgesneden tot de gebieden met casussen, plus omliggende gebieden als context. Gebieden buiten het kader worden niet getoond, ze zijn niet casusvrij.",
   "panel.geo.province_error": "Er kon geen provincie bij deze postcodes worden getoond: {reason}",
-
   "panel.places.title_ward": "Afdeling",
   "panel.places.title_institution": "Instelling",
-
   "panel.resistance.title": "Fenotypisch resistentieprofiel",
   "panel.resistance.note": "Geen vervanging voor typering, maar een gedeeld profiel maakt een gemeenschappelijke bron plausibeler en kan aanleiding zijn om isolaten in te sturen voor WGS.",
   "panel.resistance.unavailable": "Nog geen resistentiegegevens gekoppeld aan casussen in dit systeem.",
-
   "panel.linelist.title": "Patiëntlijst",
   "panel.linelist.aside": "{shown} van {total} casussen",
   "panel.linelist.col.patient": "Patiënt",
@@ -153,7 +133,6 @@
   "panel.linelist.col.pc": "PC",
   "panel.linelist.col.ward": "Afdeling",
   "panel.linelist.col.specialism": "Specialisme",
-
   "panel.settings.title": "Detectie-instellingen",
   "panel.settings.detectors": "Detectoren",
   "panel.settings.aggregation": "Aggregatie",
@@ -165,7 +144,6 @@
   "panel.settings.last_run": "Laatste run",
   "panel.settings.last_run_value": "{when} · {host}",
   "panel.settings.pkg_versions": "Pakketversies",
-
   "streams.title": "Signaleringsreeksen",
   "streams.note": "De configuratie zoals vastgelegd bij de laatste detectierun, niet zoals momenteel op schijf.",
   "streams.col.stream": "Signaleringsreeks",
@@ -177,14 +155,12 @@
   "streams.page_prev": "Vorige",
   "streams.page_next": "Volgende",
   "streams.page_of": "Pagina {page} van {n_pages}",
-
   "status.run_ok": "Run {time} geslaagd · {streams_phrase} · {clusters_phrase} gedetecteerd",
   "status.run_partial": "Run {time} voltooid met overgeslagen rijen · {streams_phrase} · {clusters_phrase} gedetecteerd",
   "status.run_failed": "Laatste run mislukt · {time}",
   "status.run_failed_hint": "Controleer uw casusdata in R met episodic_check_cases()",
   "status.no_run": "Nog geen detectierun uitgevoerd",
   "status.completeness": "Volledigheid {pct}% ({days_phrase})",
-
   "unit.stream": "signaleringsreeks",
   "unit.streams": "signaleringsreeksen",
   "unit.cluster": "cluster",
@@ -201,7 +177,6 @@
   "unit.runs": "runs",
   "unit.account": "account",
   "unit.accounts": "accounts",
-
   "misc.unknown": "onbekend",
   "misc.none": "geen",
   "misc.list_separator_and": " en ",
@@ -221,7 +196,6 @@
   "misc.language.es-419": "Latijns-Amerikaans Spaans",
   "misc.close": "Sluiten",
   "misc.dash": "—",
-
   "date.month.01": "jan.",
   "date.month.02": "feb.",
   "date.month.03": "mrt.",
@@ -250,29 +224,22 @@
   "date.format.range_month": "{day_from}-{day_to} {month} {year}",
   "date.format.range_year": "{day_from} {month_from} - {day_to} {month_to} {year}",
   "date.format.range_full": "{day_from} {month_from} {year_from} - {day_to} {month_to} {year_to}",
-
   "interpretation.fragment.magnitude.rare_trigger": "{obs_phrase} gerapporteerd binnen dit cluster. Voor deze verwekker geldt geen statistische signaalgrens: de detectie komt van de curatieve triggerlijst, waarbij elke gerapporteerde casus wordt opgepakt ongeacht basislijn.",
   "interpretation.fragment.magnitude.high_ratio": "{obs_phrase} tegen een verwachting van {expected}: een ratio van {ratio}.",
   "interpretation.fragment.magnitude.moderate_ratio": "{obs_phrase} tegen een verwachting van {expected}, een ratio van {ratio} en daarmee een gematigde overschrijding van de basislijn.",
   "interpretation.fragment.magnitude.default": "{obs_phrase} geregistreerd voor deze signaleringsreeks.",
-
   "interpretation.fragment.concentration.high": "{dominant_n} van de {total_n} casussen ({dominant_share_pct}%) zijn afkomstig uit postcode {dominant_label}, wat wijst op sterke plaatsgebonden clustering.",
   "interpretation.fragment.concentration.moderate": "{dominant_n} van de {total_n} casussen ({dominant_share_pct}%) zijn afkomstig uit postcode {dominant_label}, een gematigde concentratie.",
   "interpretation.fragment.concentration.diffuse": "De casussen zijn verspreid over meerdere postcodegebieden; het hoogst epidemische gebied, postcode {dominant_label}, omvat slechts {dominant_share_pct}% van het cluster.",
-
   "interpretation.fragment.denominator.rising_volume_flat_positivity": "Het testvolume steeg van {test_first} naar {test_last} bepalingen per week, terwijl de positiviteit nagenoeg gelijk bleef ({positivity_first_pct}% naar {positivity_last_pct}%). Een deel van de toename is daarmee toe te schrijven aan testvolume, niet aan incidentie.",
   "interpretation.fragment.denominator.rising_positivity": "De positiviteit steeg van {positivity_first_pct}% naar {positivity_last_pct}% bij een vergelijkbaar testvolume. De toename is dus niet toe te schrijven aan testvolume.",
   "interpretation.fragment.denominator.stable": "Het testvolume en de positiviteit zijn stabiel over de weergegeven periode ({positivity_first_pct}% naar {positivity_last_pct}%).",
-
   "interpretation.fragment.demography.shifted": "De leeftijdsverdeling is verschoven naar de groep {dominant_band}, af te zetten tegen de basislijn {baseline_band}.",
-
   "interpretation.fragment.completeness.warning": "Let op: de laatste {incomplete_days_phrase} zijn onvolledig door de rapportagevertraging. Het werkelijke aantal ligt vermoedelijk hoger.",
-
   "interpretation.fragment.recommendation.rare_trigger": "Dit betreft een verwekker van de curatieve triggerlijst; beoordeel per direct en toets de meldingsplicht op grond van de Wet publieke gezondheid.",
   "interpretation.fragment.recommendation.high_priority": "De combinatie van omvang en concentratie rechtvaardigt overweging van classificatie als (mogelijke) epidemie en afstemming met infectiepreventie of de GGD.",
   "interpretation.fragment.recommendation.moderate_priority": "Volg de ontwikkeling van dit cluster; een classificatie als cluster zonder epidemie kan op zijn plaats zijn zolang er geen verdere aanwijzingen voor verspreiding ontstaan.",
   "interpretation.fragment.recommendation.default": "Beoordeel dit cluster op basis van de bovenstaande gegevens; er zijn vooralsnog onvoldoende aanwijzingen voor dringende opvolging.",
-
   "auth.signin": "Aanmelden",
   "auth.signout": "Afmelden",
   "auth.signed_in_as": "Aangemeld als {name}",
@@ -290,7 +257,6 @@
   "auth.change_password": "Wachtwoord wijzigen",
   "auth.password_mismatch": "De wachtwoorden komen niet overeen.",
   "auth.password_too_short": "Het wachtwoord moet minimaal 8 tekens bevatten.",
-
   "settings.no_access": "U heeft geen toegang tot Instellingen.",
   "settings.notif.title": "Meldingen",
   "settings.notif.note": "Wijzigingen hier worden opgeslagen in de database en gelden vanaf de volgende detectierun, bovenop het EPISODIC_CONFIG YAML-bestand - de YAML-overlay blijft gewoon werken zoals voorheen.",
@@ -364,7 +330,6 @@
   "settings.audit.col.when": "Wanneer",
   "settings.audit.col.who": "Wie",
   "settings.audit.col.section": "Sectie",
-
   "verdict.artefact": "Artefact",
   "verdict.artefact.hint": "Het signaal berust op een detectiefout of registratie-effect, geen echte clustering van casussen.",
   "verdict.expected_variation": "Normale variatie",
@@ -375,7 +340,6 @@
   "verdict.possible_epidemic.hint": "Aanwijzingen voor verspreiding tussen casussen, zonder dat dit al is bevestigd.",
   "verdict.confirmed_epidemic": "Bevestigde epidemie",
   "verdict.confirmed_epidemic.hint": "Bevestigde verspreiding tussen casussen binnen dit cluster.",
-
   "assessment.verdict_label": "Classificatie",
   "assessment.verdict_none": "Nog geen classificatie (alleen notitie)",
   "assessment.rationale_label": "Onderbouwing",
@@ -404,15 +368,12 @@
   "assessment.mute_note_label": "Notitie",
   "assessment.mute_submit": "Dempen vastleggen",
   "assessment.autosave_note": "Concept lokaal bewaard.",
-
   "linelist.locked_title": "Patiëntlijst",
   "linelist.locked_message": "Meld u aan om de patiëntlijst met patiëntgegevens te bekijken.",
-
   "archive.title": "Archief",
   "archive.note": "Afgesloten clusters, doorzoekbaar op verwekker en plaats.",
   "archive.search_placeholder": "Zoek op verwekker of plaats…",
   "archive.empty": "Geen afgesloten clusters gevonden.",
-
   "activity.title": "Activiteit",
   "activity.note": "Elke vastgelegde actie, systeemruns visueel onderscheiden.",
   "activity.empty": "Nog geen activiteit vastgelegd.",
@@ -455,7 +416,6 @@
   "activity.run_modal_autoclosed_line": "{closed} clusters automatisch gesloten",
   "activity.run_modal_error": "Waarom deze run is mislukt",
   "activity.run_modal_provenance": "Uitgevoerd op {host} als {account} · EpiSODIC {version} · configuratie {hash}",
-
   "performance.title": "Prestatie",
   "performance.note": "Hoe goed de detectoren voorspellen, en hoe snel een cluster wordt opgemerkt en beoordeeld - gebaseerd op de vastgelegde classificaties, niet op een aanname.",
   "performance.empty": "Nog onvoldoende beoordeelde clusters om dit te berekenen.",
@@ -472,7 +432,6 @@
   "performance.col.pathogen": "Verwekker",
   "performance.col.n_detections": "Aantal detecties",
   "performance.col.ppv": "PPV",
-
   "info.title": "Info",
   "info.intro": "Achtergrond bij de detectiealgoritmen, clusterstatussen en het toegangsmodel van EpiSODIC.",
   "info.about.website": "Website",
@@ -521,18 +480,14 @@
   "info.reference.file.default": "Alleen meegeleverde standaardwaarden; geen instantiebestand ingesteld.",
   "info.reference.file.custom": "Uw eigen bestand is ingesteld en gaat voor op de meegeleverde standaardwaarden.",
   "info.reference.path": "Leest: {path}",
-
   "info.access.title": "Toegang",
   "info.access.body": "Lezen is anoniem: iedereen die de app bereikt kan clusters, signaleringsreeksen en het archief bekijken zonder aan te melden. Aanmelden is alleen nodig om een cluster te classificeren, te sluiten of een signaleringsreeks te dempen - elke schrijfactie wordt aan de aangemelde gebruiker toegeschreven.",
-
   "streams.col.farrington": "Farrington",
   "streams.farrington_hint": "Farrington heeft {need} weken historie nodig voor de ingestelde b; deze stroom heeft er {have}.",
   "streams.col.baseline_excluded": "Basislijn uitgesloten",
-
   "interpretation.fragment.curve_shape.point_source": "Alle casussen vallen binnen een enkele maximale incubatieperiode, wat wijst op een puntbron: een gedeelde blootstelling op of rond een moment, eerder dan verspreiding van mens op mens.",
   "interpretation.fragment.curve_shape.propagated": "De casussen strekken zich uit over aanzienlijk meer dan een maximale incubatieperiode, wat wijst op verspreiding van mens op mens eerder dan een enkele gedeelde blootstelling.",
   "interpretation.fragment.curve_shape.ambiguous": "De spreiding van casussen in de tijd past niet eenduidig bij een puntbron of bij verspreiding van mens op mens; nader onderzoek naar de blootstelling is nodig om dit te onderscheiden.",
-
   "panel.rt.title": "Effectief reproductiegetal (Rt)",
   "panel.rt.note": "Tijdsafhankelijk effectief reproductiegetal (niet R0), berekend over 7-daagse voortschrijdende vensters. Vensters binnen de nog onvolledige rapportageperiode zijn weggelaten.",
   "panel.rt.unavailable.no_serial_interval": "Rt kan niet worden berekend: voor deze verwekker ontbreekt een seriële interval in de configuratie (si_mean_days/si_sd_days).",
@@ -541,7 +496,6 @@
   "panel.chart.graphics_unavailable_build": "Grafiek kan niet worden weergegeven: er is geen werkend PNG-grafisch apparaat beschikbaar op deze server (ragg, Cairo en R's eigen ingebouwde PNG-apparaat konden alle niet worden geopend). Dit is een build-tijd configuratieprobleem van de R-installatie zelf, geen pakket dat opnieuw kan worden geïnstalleerd - neem contact op met de beheerder van deze server.",
   "panel.rt.unavailable.insufficient_history": "Nog onvoldoende casushistorie in dit cluster om Rt te berekenen.",
   "panel.rt.unavailable.completeness_unknown": "Rt kan niet worden berekend: voor deze stroom kon geen rapportagevertraging worden gemeten, dus de vensters die nog vollopen kunnen niet worden achtergehouden.",
-
   "panel.similar.title": "Vergelijkbare clusters",
   "panel.related.title": "Gerelateerde clusters",
   "relation.linked": "gekoppeld",
@@ -550,13 +504,11 @@
   "dossier.linked_more": "+{n} meer",
   "panel.related.note": "Andere clusters met een deel van deze casussen. Gekoppelde clusters zijn een eigen dossier en moeten nog beoordeeld worden; onderdrukte clusters zijn in dit dossier opgegaan.\nGekoppeld = eigen dossier, deelt casussen. Onderdrukt = geen eigen dossier meer, casussen zijn in dit cluster opgegaan.",
   "panel.similar.unavailable": "Geen vergelijkbare afgesloten clusters gevonden voor deze verwekker.",
-
   "panel.report.title": "Uitbraakrapport",
   "panel.report.empty": "Nog geen rapport gerenderd voor dit cluster.",
   "panel.report.version_line": "Versie {version} - {when}",
   "panel.report.render_button": "Rapport genereren",
   "panel.report.pending": "Rapport genereren...",
-
   "report.cluster": "cluster",
   "report.rendered_label": "Gerenderd",
   "report.note_versioned": "Dit is een geautomatiseerd, versiegebonden rapport. Elke nieuwe render krijgt een eigen versienummer; dit exemplaar blijft ongewijzigd na verzending.",
@@ -576,7 +528,6 @@
   "report.timeline_empty": "Nog geen beoordeling vastgelegd.",
   "report.closed_note": "cluster afgesloten",
   "report.footer": "Gegenereerd door EpiSODIC. Dit document bevat geen live koppeling naar de applicatie; alle gegevens zijn bevroren op het moment van renderen.",
-
   "pathogen.title": "Verwekkeractiviteit",
   "pathogen.note": "Eén verwekker over het hele verzorgingsgebied, over een periode die u zelf kiest. Dit is het epidemiologische beeld: hoe een seizoen zich verhoudt tot zijn eigen historie, hoe snel de transmissie regiobreed loopt, en welke signalen er ondertussen zijn opgekomen. Het Clusters-scherm beantwoordt wat er vandaag moet gebeuren; dit scherm beantwoordt wat er aan de hand is.",
   "pathogen.empty": "Er zijn nog geen casussen ingelezen, dus er valt nog niets te beschrijven.",
@@ -693,7 +644,6 @@
   "pathogen.panel.config.severity.label": "Prioriteitsgewicht",
   "pathogen.panel.config.severity.meaning": "Hoe zwaar de clusters van deze verwekker meewegen in de prioriteitenlijst ten opzichte van andere.",
   "pathogen.panel.config.source.label": "Bron",
-
   "notif.title_new_clusters": "EpiSODIC: {count_phrase} gedetecteerd op {date}",
   "notif.new_cluster.singular": "nieuw cluster",
   "notif.new_cluster.plural": "nieuwe clusters",
@@ -719,7 +669,6 @@
   "notif.test.sent_at": "Verzonden om",
   "notif.test.working": "Als u dit bericht ontvangt, werkt dit meldingskanaal.",
   "notif.test.status_value": "Dit is een testmelding.",
-
   "panel.report.schedule_title": "Geplande rapporten",
   "panel.report.schedule_intro": "Verstuur dit rapport automatisch per e-mail naar collega's zonder toegang tot het dashboard, volgens een terugkerend schema.",
   "panel.report.schedule_no_channel": "Er is nog geen notificatiekanaal met e-mailondersteuning (SMTP, sendmail of Microsoft 365) geconfigureerd. Configureer er eerst een - zie vignette(\"notifications\").",
@@ -757,5 +706,43 @@
   "report.diff_ratio_change": "Verhouding waargenomen/verwacht veranderde van {previous} naar {current}.",
   "report.diff_period_extended": "De periode met gevallen loopt nu door tot {date}.",
   "unit.new_case": "nieuw geval",
-  "unit.new_cases": "nieuwe gevallen"
+  "unit.new_cases": "nieuwe gevallen",
+  "nav.epidemics": "Epidemieën",
+  "dossier.epidemic_ref": "E-{id}",
+  "unit.epidemic": "epidemie",
+  "unit.epidemics": "epidemieën",
+  "performance.outbreaks_only_note": "Alle maatstaven op dit scherm tellen alleen uitbraken (afdeling-, instelling- en gebiedsniveau). Epidemieën worden apart beoordeeld.",
+  "verdict.season_started": "Seizoen gestart",
+  "verdict.season_started.hint": "Het epidemieseizoen wordt verklaard gestart te zijn. Dit is een besluit met beleidsmatige gevolgen.",
+  "verdict.season_not_yet": "Seizoen nog niet gestart",
+  "verdict.season_not_yet.hint": "De drempel is overschreden maar het bewijs rechtvaardigt nog geen verklaring.",
+  "verdict.season_ended": "Seizoen beëindigd",
+  "verdict.season_ended.hint": "Het epidemieseizoen wordt verklaard beëindigd te zijn.",
+  "epidemics.rail_title": "Epidemieën",
+  "epidemics.rail_empty": "Geen openstaande epidemieën.",
+  "epidemics.none_detected": "geen gedetecteerd",
+  "epidemics.season_chip": "Seizoen {season}",
+  "epidemics.stat.institutions": "Instellingen",
+  "epidemics.stat.top_share": "{name}: {pct}%",
+  "epidemics.stat.season": "Seizoen",
+  "epidemics.stat.anchor": "Ankerpuntweek {week}",
+  "epidemics.stat.outbreaks_during": "Uitbraken tijdens",
+  "epidemics.panel.curve.title": "Wekelijkse gevallen",
+  "epidemics.panel.curve.empty": "Geen gevallen in deze periode.",
+  "epidemics.panel.curve.threshold_note": "Drempels berekend uit {seasons} eerdere seizoenen. Pre-epidemisch: {pre}, post-epidemisch: {post}.",
+  "epidemics.panel.curve.no_thresholds": "Seizoensgebonden epidemie, maar drempels konden niet worden berekend uit de data van deze instantie.",
+  "epidemics.panel.curve.not_seasonal": "Deze epidemie is niet seizoensgebonden. Sluiting volgt de standaard casusvrije-dagenregel.",
+  "epidemics.panel.denominator.title": "Testen en positiviteit",
+  "epidemics.panel.denominator.empty": "Geen testvolume-gegevens beschikbaar voor deze verwekker.",
+  "epidemics.panel.denominator.note": "Een stijging in gevallen met gelijkblijvende positiviteit is een stijging in testen, niet in incidentie.",
+  "epidemics.panel.institutions.title": "Bijdragende instellingen",
+  "epidemics.panel.institutions.empty": "Geen instellingsgegevens beschikbaar.",
+  "epidemics.panel.institutions.col_name": "Instelling",
+  "epidemics.panel.institutions.col_share": "Aandeel (%)",
+  "epidemics.panel.during.title": "Uitbraken tijdens deze epidemie",
+  "epidemics.declaration_label": "Seizoensverklaring",
+  "epidemics.declaration_rationale_placeholder": "Beschrijf het bewijs dat deze verklaring ondersteunt…",
+  "epidemics.declaration_submit": "Verklaring vastleggen",
+  "epidemics.declaration_no_rationale": "geen onderbouwing gegeven",
+  "column.id": "ID"
 }

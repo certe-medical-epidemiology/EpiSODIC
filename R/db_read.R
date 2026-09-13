@@ -1234,3 +1234,55 @@ episodic_db_cluster_links <- function(con, cluster_id) {
     params = list(cluster_id, cluster_id)
   )
 }
+
+#' Outbreaks recorded as occurring during an epidemic
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param epidemic_cluster_id The epidemic cluster's id.
+#' @return A data frame of outbreak clusters with their pathogen, level,
+#'   and place, oldest first; no rows when none are linked.
+#' @keywords internal
+#' @noRd
+episodic_db_outbreaks_during_epidemic <- function(con, epidemic_cluster_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day,
+            c.n_cases, c.priority_score,
+            s.pathogen, s.level, s.institution_id, s.ward
+       FROM episodic_cluster_link lnk
+       INNER JOIN episodic_cluster c ON c.cluster_id = lnk.outbreak_cluster_id
+       INNER JOIN episodic_stream s ON s.stream_id = c.stream_id
+      WHERE lnk.epidemic_cluster_id = ?
+        AND c.merged_into IS NULL
+        AND c.suppressed_by IS NULL
+      ORDER BY c.first_day, c.cluster_id",
+    params = list(epidemic_cluster_id)
+  )
+}
+
+#' Institutions contributing cases in an epidemic's window
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param pathogen The pathogen.
+#' @param from,to Date range (character, `YYYY-MM-DD`).
+#' @return A data frame with `institution_id`, `display_name`, `n_cases`,
+#'   ordered by `n_cases` descending.
+#' @keywords internal
+#' @noRd
+episodic_db_epidemic_contributing_institutions <- function(con,
+                                                           pathogen,
+                                                           from,
+                                                           to) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT c.institution_id, i.display_name, COUNT(*) AS n_cases
+       FROM episodic_case c
+       INNER JOIN episodic_institution i ON i.institution_id = c.institution_id
+      WHERE c.pathogen = ?
+        AND c.sample_date >= ?
+        AND c.sample_date <= ?
+      GROUP BY c.institution_id, i.display_name
+      ORDER BY n_cases DESC",
+    params = list(pathogen, as.character(from), as.character(to))
+  )
+}

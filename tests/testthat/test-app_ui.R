@@ -321,20 +321,17 @@ test_that("chart builders produce ggplot objects for typical and edge-case input
   expect_s3_class(episodic_ui_denominator_chart(series), "ggplot")
 })
 
-test_that("episodic_ui_nav_links() renders four links and no highlight of its own", {
+test_that("episodic_ui_nav_links() renders five links and no highlight of its own", {
   html <- as.character(episodic_ui_nav_links(lang = "en"))
-  for (view in c("clusters", "pathogen", "archive", "instance")) {
+  for (view in c("clusters", "epidemics", "pathogen", "archive", "instance")) {
     expect_true(
       grepl(sprintf('data-view="%s"', view), html, fixed = TRUE),
       info = view
     )
   }
-  # Four, and only four: every other screen is reached from the Instance
-  # screen, which is what lets the bar fit a narrow viewport with nothing
-  # hidden behind a control that has to be opened first.
   expect_equal(
     lengths(regmatches(html, gregexpr("episodic-nav-link", html)))[[1]],
-    4
+    5
   )
   for (view in c("streams", "activity", "performance", "info", "settings")) {
     expect_false(
@@ -342,16 +339,12 @@ test_that("episodic_ui_nav_links() renders four links and no highlight of its ow
       info = view
     )
   }
-  # Which link is lit lives in one place, `data-nav` on .episodic-shell,
-  # and is derived from there by the stylesheet. Nothing in this markup
-  # says it, so no re-render of the bar can lose it and no second writer
-  # can disagree with the first.
   expect_false(grepl("active", html, fixed = TRUE))
 })
 
 test_that("every nav link carries the group its screen belongs to", {
   html <- as.character(episodic_ui_nav_links(lang = "en"))
-  for (view in c("clusters", "pathogen", "archive", "instance")) {
+  for (view in c("clusters", "epidemics", "pathogen", "archive", "instance")) {
     expect_true(
       grepl(
         sprintf('data-view="%s" data-episodic-nav="%s" data-nav="%s"', view, view, view),
@@ -365,17 +358,16 @@ test_that("every nav link carries the group its screen belongs to", {
 
 test_that("episodic_app_nav_group() sends every instance-level screen to one link", {
   expect_equal(episodic_app_nav_group("clusters"), "clusters")
+  expect_equal(episodic_app_nav_group("epidemics"), "epidemics")
   expect_equal(episodic_app_nav_group("pathogen"), "pathogen")
   expect_equal(episodic_app_nav_group("archive"), "archive")
   for (v in c("instance", "streams", "activity", "performance", "info", "settings")) {
     expect_equal(episodic_app_nav_group(v), "instance", info = v)
   }
-  # Every screen resolves to a group, so no view can leave the bar with
-  # nothing lit.
   for (v in episodic_app_views()) {
     expect_true(
       episodic_app_nav_group(v) %in%
-        c("clusters", "pathogen", "archive", "instance"),
+        c("clusters", "epidemics", "pathogen", "archive", "instance"),
       info = v
     )
   }

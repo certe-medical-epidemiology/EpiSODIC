@@ -513,7 +513,7 @@ check_viewport <- function(b, ctx, vp, lang) {
 check_navigation <- function(b, ctx) {
   # Clicking a nav link changes the screen with nothing waiting on the
   # server: the attribute is read back immediately, before any flush.
-  for (view in c("pathogen", "archive", "instance", "clusters")) {
+  for (view in c("pathogen", "epidemics", "archive", "instance", "clusters")) {
     sel <- sprintf(".episodic-nav-link[data-view='%s']", view)
     hit <- click(b, sel)
     if (!identical(hit, "ok")) {

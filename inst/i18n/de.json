@@ -2,7 +2,6 @@
   "app.title": "EpiSODIC",
   "app.full_name": "Epidemiologische Signalbeobachtung, -erkennung, -identifikation und -klassifikation",
   "app.demodata": "Demodaten",
-
   "nav.clusters": "Cluster",
   "nav.pathogen": "Erreger",
   "nav.streams": "Meldereihen",
@@ -20,7 +19,6 @@
   "instance.card.performance": "Wie die Detektoren im Vergleich zu den Urteilen der Epidemiologen abschneiden.",
   "instance.card.info": "Was dieser Build ist, welche Referenzdateien gelesen wurden und was die Begriffe bedeuten.",
   "instance.card.settings": "Konten und Konfiguration der Instanz.",
-
   "rail.title": "Offene Cluster",
   "rail.count_suffix": "neu oder aktiv",
   "rail.empty": "Keine offenen Cluster.",
@@ -33,10 +31,8 @@
   "rail.bulk_apply": "Klassifikation auf Auswahl anwenden",
   "rail.bulk_clear": "Auswahl leeren",
   "rail.bulk_select": "Für Sammelbewertung auswählen",
-
   "pane.dossier": "Dossier",
   "pane.switcher_label": "Anzeigen",
-
   "dossier.stat.observed_sub": "erwartet {expected}",
   "dossier.stat.ratio": "Verhältnis B/E",
   "dossier.stat.ratio_sub": "Fälle / erwartet",
@@ -55,25 +51,21 @@
   "dossier.stat.case_free_sub": "Schwelle {need} T",
   "dossier.stat.priority": "Priorität",
   "dossier.stat.priority_sub": "zusammengesetzter Score",
-
   "dossier.cluster_ref": "Nr. {id}",
   "dossier.meta.first_last": "erster Fall {first}, letzter {last}",
   "dossier.meta.detected_by": "erkannt durch {detectors}",
   "dossier.changed_badge": "Seit Bewertung geändert",
   "dossier.manual_badge": "Manuell hinzugefügt",
-
   "state.new": "Neu",
   "state.assessing": "In Bewertung",
   "state.monitoring": "Beobachtung",
   "state.closed": "Abgeschlossen",
   "state.reassess": "Neubewertung erforderlich",
-
   "level.pathogen_ward": "E1 · Station",
   "level.pathogen_institution": "E2 · Einrichtung",
   "level.pathogen_area": "E3 · Gebiet",
   "level.pathogen_province": "E4 · Provinz",
   "level.pathogen_region": "E5 · Region",
-
   "careline.first": "Primärversorgung",
   "careline.second": "Sekundärversorgung",
   "careline.third": "Tertiärversorgung",
@@ -84,17 +76,13 @@
   "careline.short.third": "3. Linie",
   "careline.short.other": "sonstige",
   "careline.short.unknown": "unbekannt",
-
   "timeline.title": "Zeitverlauf",
   "timeline.not_assessed": "Noch nicht bewertet. Erkannt am {first} durch {detectors}.",
-
   "status_trajectory.title": "Statusverlauf",
   "status_trajectory.unassessed": "Unbewertet",
-
   "panel.interpretation.title": "Einordnung",
   "panel.interpretation.aside": "automatisch erstellt",
   "panel.interpretation.empty": "Für dieses Cluster liegt noch keine Einordnung vor.",
-
   "panel.notes.title": "Notizen",
   "panel.notes.empty": "Für dieses Cluster liegen noch keine Notizen vor.",
   "notes.edit_button": "Bearbeiten",
@@ -102,12 +90,10 @@
   "notes.history_button": "Verlauf",
   "notes.history_modal_title": "Notizverlauf",
   "notes.history_empty": "Für dieses Cluster wurden noch keine Notizen gespeichert.",
-
   "panel.epicurve.title": "Epidemiekurve",
   "panel.epicurve.note": "Die schattierte Zone umfasst die letzten {days_phrase}: die empirische Meldeverzögerung aus dem Meldedreieck. Fälle mit einem Probendatum in diesem Zeitfenster sind noch nicht vollständig gemeldet. Ein hier abfallender Verlauf ist kein tatsächlicher Rückgang.",
   "panel.epicurve.note_unknown": "Für diesen Stream konnte keine Meldeverzögerung gemessen werden, daher kann kein Tag dieser Kurve als vollständig gemeldet gelten. Die gesamte Kurve ist deshalb schattiert.",
   "panel.epicurve.ylab": "Fälle",
-
   "panel.trend.title": "Mehrjahrestrend",
   "panel.trend.aside": "{weeks} Wochen",
   "panel.trend.note": "Beobachtete Zahlen im Vergleich zur Erwartung und zum Signalschwellenwert aus <code>farringtonFlexible</code>. Zeigt, ob der aktuelle Anstieg innerhalb des normalen saisonalen Musters liegt.",
@@ -115,19 +101,16 @@
   "panel.trend.legend_expected": "Erwartet",
   "panel.trend.legend_upperbound": "Signalschwelle",
   "panel.trend.unavailable": "Noch keine Trenddaten verfügbar; für diese Meldereihe liegt nicht genug Basislinienhistorie für <code>farringtonFlexible</code> vor.",
-
   "panel.denominator.title": "Nenner und Positivität",
   "panel.denominator.aside": "pro Woche",
   "panel.denominator.note": "Die häufigste Ursache eines falschen Signals ist ein steigendes Testvolumen, nicht eine steigende Inzidenz. Steigen die Balken, während die Linie flach bleibt, handelt es sich um einen Nennereffekt.",
   "panel.denominator.legend_tests": "Tests",
   "panel.denominator.legend_positivity": "Positivität %",
   "panel.denominator.unavailable": "Für diesen Erreger sind keine Positivitätsdaten verfügbar. Dies ist optional; nicht jede Labormethode kann negative Ergebnisse melden.",
-
   "panel.demography.title": "Alter und Geschlecht",
   "panel.demography.note": "Eine Verschiebung der betroffenen Altersgruppe gegenüber der historischen Basislinie ist oft aussagekräftiger als die Fallzahl selbst.",
   "panel.demography.male": "← männlich",
   "panel.demography.female": "weiblich →",
-
   "panel.geo.title": "Geografische Verteilung",
   "panel.geo.aside": "PLZ",
   "panel.geo.unit": "Hier erscheint eine Karte, sobald geografische Referenzdaten konfiguriert sind (EPISODIC_GEO_DATA).",
@@ -135,14 +118,11 @@
   "panel.geo.unknown_pc": "Bei {n} von {total} Fällen ist keine Postleitzahl erfasst; sie bleiben außerhalb der Karte und des Konzentrationsmaßes.",
   "panel.geo.map_note": "Auf die Gebiete mit Fällen zugeschnitten, samt umliegender Gebiete als Kontext. Gebiete außerhalb des Ausschnitts werden nicht gezeigt, sie sind nicht fallfrei.",
   "panel.geo.province_error": "Neben diesen Postleitzahlen konnte keine Provinz angezeigt werden: {reason}",
-
   "panel.places.title_ward": "Station",
   "panel.places.title_institution": "Einrichtung",
-
   "panel.resistance.title": "Phänotypisches Resistenzprofil",
   "panel.resistance.note": "Kein Ersatz für eine Typisierung, aber ein gemeinsames Profil macht eine gemeinsame Quelle plausibler und kann Anlass sein, Isolate zur WGS einzusenden.",
   "panel.resistance.unavailable": "In diesem System noch keine Resistenzdaten mit Fällen verknüpft.",
-
   "panel.linelist.title": "Fallliste",
   "panel.linelist.aside": "{shown} von {total} Fällen",
   "panel.linelist.col.patient": "Patient",
@@ -153,7 +133,6 @@
   "panel.linelist.col.pc": "PLZ",
   "panel.linelist.col.ward": "Station",
   "panel.linelist.col.specialism": "Fachrichtung",
-
   "panel.settings.title": "Erkennungseinstellungen",
   "panel.settings.detectors": "Detektoren",
   "panel.settings.aggregation": "Aggregation",
@@ -165,7 +144,6 @@
   "panel.settings.last_run": "Letzter Lauf",
   "panel.settings.last_run_value": "{when} · {host}",
   "panel.settings.pkg_versions": "Paketversionen",
-
   "streams.title": "Meldereihen",
   "streams.note": "Die Konfiguration wie beim letzten Erkennungslauf erfasst, nicht wie aktuell auf der Festplatte.",
   "streams.col.stream": "Meldereihe",
@@ -177,14 +155,12 @@
   "streams.page_prev": "Zurück",
   "streams.page_next": "Weiter",
   "streams.page_of": "Seite {page} von {n_pages}",
-
   "status.run_ok": "Lauf {time} erfolgreich · {streams_phrase} · {clusters_phrase} erkannt",
   "status.run_partial": "Lauf {time} mit übersprungenen Zeilen beendet · {streams_phrase} · {clusters_phrase} erkannt",
   "status.run_failed": "Letzter Lauf fehlgeschlagen · {time}",
   "status.run_failed_hint": "Prüfen Sie Ihre Falldaten in R mit episodic_check_cases()",
   "status.no_run": "Noch kein Erkennungslauf durchgeführt",
   "status.completeness": "Vollständigkeit {pct}% ({days_phrase})",
-
   "unit.stream": "Meldereihe",
   "unit.streams": "Meldereihen",
   "unit.cluster": "Cluster",
@@ -201,7 +177,6 @@
   "unit.runs": "Läufe",
   "unit.account": "Konto",
   "unit.accounts": "Konten",
-
   "misc.unknown": "unbekannt",
   "misc.none": "keine",
   "misc.list_separator_and": " und ",
@@ -221,7 +196,6 @@
   "misc.language.es-419": "Lateinamerikanisches Spanisch",
   "misc.close": "Schließen",
   "misc.dash": "—",
-
   "date.month.01": "Jan.",
   "date.month.02": "Feb.",
   "date.month.03": "März",
@@ -250,29 +224,22 @@
   "date.format.range_month": "{day_from}.-{day_to}. {month} {year}",
   "date.format.range_year": "{day_from}. {month_from} - {day_to}. {month_to} {year}",
   "date.format.range_full": "{day_from}. {month_from} {year_from} - {day_to}. {month_to} {year_to}",
-
   "interpretation.fragment.magnitude.rare_trigger": "{obs_phrase} innerhalb dieses Clusters gemeldet. Für diesen Erreger gilt keine statistische Signalschwelle: Die Erkennung stammt aus der kuratierten Trigger-Liste, die jeden gemeldeten Fall unabhängig von der Basislinie erfasst.",
   "interpretation.fragment.magnitude.high_ratio": "{obs_phrase} gegenüber einer Erwartung von {expected}: ein Verhältnis von {ratio}.",
   "interpretation.fragment.magnitude.moderate_ratio": "{obs_phrase} gegenüber einer Erwartung von {expected}, ein Verhältnis von {ratio}, ein moderater Überschuss gegenüber der Basislinie.",
   "interpretation.fragment.magnitude.default": "{obs_phrase} für diese Meldereihe erfasst.",
-
   "interpretation.fragment.concentration.high": "{dominant_n} der {total_n} Fälle ({dominant_share_pct}%) stammen aus der Postleitzahl {dominant_label}, was auf eine starke ortsgebundene Häufung hindeutet.",
   "interpretation.fragment.concentration.moderate": "{dominant_n} der {total_n} Fälle ({dominant_share_pct}%) stammen aus der Postleitzahl {dominant_label}, eine moderate Konzentration.",
   "interpretation.fragment.concentration.diffuse": "Die Fälle verteilen sich auf mehrere Postleitzahlgebiete; das Gebiet mit den meisten Fällen, Postleitzahl {dominant_label}, macht nur {dominant_share_pct}% des Clusters aus.",
-
   "interpretation.fragment.denominator.rising_volume_flat_positivity": "Das Testvolumen stieg von {test_first} auf {test_last} Tests pro Woche, während die Positivität nahezu konstant blieb ({positivity_first_pct}% auf {positivity_last_pct}%). Ein Teil des Anstiegs ist daher auf das Testvolumen zurückzuführen, nicht auf die Inzidenz.",
   "interpretation.fragment.denominator.rising_positivity": "Die Positivität stieg von {positivity_first_pct}% auf {positivity_last_pct}% bei vergleichbarem Testvolumen. Der Anstieg ist daher nicht auf das Testvolumen zurückzuführen.",
   "interpretation.fragment.denominator.stable": "Testvolumen und Positivität sind im dargestellten Zeitraum stabil ({positivity_first_pct}% auf {positivity_last_pct}%).",
-
   "interpretation.fragment.demography.shifted": "Die Altersverteilung hat sich in Richtung der Gruppe {dominant_band} verschoben, gegenüber einer Basislinie von {baseline_band}.",
-
   "interpretation.fragment.completeness.warning": "Hinweis: Die letzten {incomplete_days_phrase} sind aufgrund der Meldeverzögerung unvollständig. Die tatsächliche Zahl liegt vermutlich höher.",
-
   "interpretation.fragment.recommendation.rare_trigger": "Dies ist ein Erreger der kuratierten Trigger-Liste; umgehend bewerten und die gesetzliche Meldepflicht prüfen.",
   "interpretation.fragment.recommendation.high_priority": "Die Kombination aus Größe und Konzentration rechtfertigt es, eine Einstufung als (mögliche) Epidemie sowie eine Abstimmung mit der Infektionsprävention oder dem Gesundheitsamt in Betracht zu ziehen.",
   "interpretation.fragment.recommendation.moderate_priority": "Verfolgen Sie die Entwicklung dieses Clusters; eine Einstufung als Cluster ohne Epidemie kann angemessen sein, solange keine weiteren Anzeichen einer Ausbreitung auftreten.",
   "interpretation.fragment.recommendation.default": "Bewerten Sie dieses Cluster anhand der obigen Daten; es gibt noch nicht genügend Hinweise für ein dringendes Follow-up.",
-
   "auth.signin": "Anmelden",
   "auth.signout": "Abmelden",
   "auth.signed_in_as": "Angemeldet als {name}",
@@ -290,7 +257,6 @@
   "auth.change_password": "Passwort ändern",
   "auth.password_mismatch": "Die Passwörter stimmen nicht überein.",
   "auth.password_too_short": "Das Passwort muss mindestens 8 Zeichen lang sein.",
-
   "settings.no_access": "Sie haben keinen Zugriff auf die Einstellungen.",
   "settings.notif.title": "Benachrichtigungen",
   "settings.notif.note": "Änderungen hier werden in der Datenbank gespeichert und gelten ab dem nächsten Erkennungslauf, zusätzlich zur EPISODIC_CONFIG-YAML-Datei - die YAML-Überlagerung funktioniert weiterhin wie zuvor.",
@@ -364,7 +330,6 @@
   "settings.audit.col.when": "Wann",
   "settings.audit.col.who": "Wer",
   "settings.audit.col.section": "Abschnitt",
-
   "verdict.artefact": "Artefakt",
   "verdict.artefact.hint": "Das Signal ist ein Erkennungsfehler oder Registrierungseffekt, keine echte Häufung von Fällen.",
   "verdict.expected_variation": "Erwartete Schwankung",
@@ -375,7 +340,6 @@
   "verdict.possible_epidemic.hint": "Hinweise auf Übertragung zwischen Fällen, ohne dass dies bereits bestätigt ist.",
   "verdict.confirmed_epidemic": "Bestätigte Epidemie",
   "verdict.confirmed_epidemic.hint": "Bestätigte Übertragung zwischen Fällen innerhalb dieses Clusters.",
-
   "assessment.verdict_label": "Klassifikation",
   "assessment.verdict_none": "Noch keine Klassifikation (nur Notiz)",
   "assessment.rationale_label": "Begründung",
@@ -404,15 +368,12 @@
   "assessment.mute_note_label": "Notiz",
   "assessment.mute_submit": "Stummschaltung erfassen",
   "assessment.autosave_note": "Entwurf lokal gespeichert.",
-
   "linelist.locked_title": "Fallliste",
   "linelist.locked_message": "Melden Sie sich an, um die patientenbezogene Fallliste einzusehen.",
-
   "archive.title": "Archiv",
   "archive.note": "Abgeschlossene Cluster, durchsuchbar nach Erreger und Ort.",
   "archive.search_placeholder": "Nach Erreger oder Ort suchen…",
   "archive.empty": "Keine abgeschlossenen Cluster gefunden.",
-
   "activity.title": "Aktivität",
   "activity.note": "Jede erfasste Aktion; Systemläufe sind visuell erkennbar.",
   "activity.empty": "Noch keine Aktivität erfasst.",
@@ -455,7 +416,6 @@
   "activity.run_modal_autoclosed_line": "{closed} Cluster automatisch geschlossen",
   "activity.run_modal_error": "Warum dieser Lauf fehlgeschlagen ist",
   "activity.run_modal_provenance": "Ausgeführt auf {host} als {account} · EpiSODIC {version} · Konfiguration {hash}",
-
   "performance.title": "Leistung",
   "performance.note": "Wie gut die Detektoren vorhersagen und wie schnell ein Cluster bemerkt und bewertet wird - basierend auf erfassten Klassifikationen, nicht auf einer Annahme.",
   "performance.empty": "Noch nicht genügend bewertete Cluster, um dies zu berechnen.",
@@ -472,7 +432,6 @@
   "performance.col.pathogen": "Erreger",
   "performance.col.n_detections": "Erkennungen",
   "performance.col.ppv": "PPV",
-
   "info.title": "Info",
   "info.intro": "Hintergrund zu den Erkennungsalgorithmen, Clusterstatus und dem Zugriffsmodell von EpiSODIC.",
   "info.about.website": "Website",
@@ -521,18 +480,14 @@
   "info.reference.file.default": "Nur mitgelieferte Vorgaben; keine Instanzdatei konfiguriert.",
   "info.reference.file.custom": "Ihre eigene Datei ist konfiguriert und hat Vorrang vor den mitgelieferten Vorgaben.",
   "info.reference.path": "Gelesen wird: {path}",
-
   "info.access.title": "Zugriff",
   "info.access.body": "Lesen ist anonym: Jeder, der die App erreicht, kann Cluster, Meldereihen und das Archiv einsehen, ohne sich anzumelden. Eine Anmeldung ist nur erforderlich, um ein Cluster zu klassifizieren, abzuschließen oder eine Meldereihe stummzuschalten - jede Schreibaktion wird dem angemeldeten Benutzer zugeordnet.",
-
   "streams.col.farrington": "Farrington",
   "streams.farrington_hint": "Farrington benötigt {need} Wochen Historie für das konfigurierte b; dieser Stream hat {have}.",
   "streams.col.baseline_excluded": "Basislinie ausgeschlossen",
-
   "interpretation.fragment.curve_shape.point_source": "Alle Fälle liegen innerhalb einer einzigen maximalen Inkubationszeit, was auf eine Punktquelle hindeutet: eine gemeinsame Exposition um einen Zeitpunkt herum statt einer Übertragung von Mensch zu Mensch.",
   "interpretation.fragment.curve_shape.propagated": "Die Fälle erstrecken sich deutlich über mehr als eine maximale Inkubationszeit, was eher auf eine Übertragung von Mensch zu Mensch als auf eine einzelne gemeinsame Exposition hindeutet.",
   "interpretation.fragment.curve_shape.ambiguous": "Die zeitliche Verteilung der Fälle passt nicht eindeutig zu einer Punktquelle oder zu einer Übertragung von Mensch zu Mensch; eine weitere Untersuchung der Exposition ist nötig, um dies zu unterscheiden.",
-
   "panel.rt.title": "Effektive Reproduktionszahl (Rt)",
   "panel.rt.note": "Zeitlich veränderliche effektive Reproduktionszahl (nicht R0), berechnet über gleitende 7-Tage-Fenster. Fenster innerhalb des noch unvollständigen Meldezeitraums werden ausgelassen.",
   "panel.rt.unavailable.no_serial_interval": "Rt kann nicht berechnet werden: In der Konfiguration dieses Erregers fehlt ein serielles Intervall (si_mean_days/si_sd_days).",
@@ -541,7 +496,6 @@
   "panel.chart.graphics_unavailable_build": "Diagramm kann nicht dargestellt werden: Auf diesem Server ist kein funktionierendes PNG-Grafikgerät verfügbar (ragg, Cairo und R's eingebautes PNG-Gerät konnten alle nicht geöffnet werden). Dies ist ein Konfigurationsproblem der R-Installation selbst zur Build-Zeit, kein Paket, das neu installiert werden kann - wenden Sie sich an die Verwaltung dieses Servers.",
   "panel.rt.unavailable.insufficient_history": "In diesem Cluster liegt noch nicht genügend Fallhistorie vor, um Rt zu berechnen.",
   "panel.rt.unavailable.completeness_unknown": "Rt kann nicht berechnet werden: Für diesen Stream konnte keine Meldeverzögerung gemessen werden, daher lassen sich die noch unvollständigen Zeitfenster nicht zurückhalten.",
-
   "panel.similar.title": "Ähnliche Cluster",
   "panel.related.title": "Verwandte Cluster",
   "relation.linked": "verknüpft",
@@ -550,13 +504,11 @@
   "dossier.linked_more": "+{n} weitere",
   "panel.related.note": "Andere Cluster mit einem Teil dieser Fälle. Verknüpfte sind ein eigenes Dossier und noch zu bewerten; unterdrückte sind in diesem aufgegangen.\nVerknüpft = eigenes Dossier, teilt Fälle. Unterdrückt = kein eigenes Dossier mehr, Fälle sind hier aufgegangen.",
   "panel.similar.unavailable": "Keine ähnlichen abgeschlossenen Cluster für diesen Erreger gefunden.",
-
   "panel.report.title": "Ausbruchsbericht",
   "panel.report.empty": "Für dieses Cluster wurde noch kein Bericht erstellt.",
   "panel.report.version_line": "Version {version} - {when}",
   "panel.report.render_button": "Bericht erstellen",
   "panel.report.pending": "Bericht wird erstellt...",
-
   "report.cluster": "Cluster",
   "report.rendered_label": "Erstellt",
   "report.note_versioned": "Dies ist ein automatisiert erstellter, versionsgebundener Bericht. Jede neue Erstellung erhält eine eigene Versionsnummer; dieses Exemplar bleibt nach dem Versand unverändert.",
@@ -576,7 +528,6 @@
   "report.timeline_empty": "Noch keine Bewertung erfasst.",
   "report.closed_note": "Cluster abgeschlossen",
   "report.footer": "Erstellt von EpiSODIC. Dieses Dokument hat keine Live-Verbindung zur Anwendung; alle Daten sind zum Zeitpunkt der Erstellung eingefroren.",
-
   "pathogen.title": "Erregeraktivität",
   "pathogen.note": "Ein Erreger im gesamten Einzugsgebiet, über einen Zeitraum Ihrer Wahl. Das ist die epidemiologische Sicht: wo eine Saison im Vergleich zu ihrer eigenen Vorgeschichte steht, wie schnell die Übertragung regionsweit läuft und welche Signale währenddessen aufgekommen sind. Der Cluster-Bildschirm beantwortet, was heute zu tun ist; dieser beantwortet, was vor sich geht.",
   "pathogen.empty": "Es wurden noch keine Falldaten eingelesen, es gibt also nichts zu beschreiben.",
@@ -693,7 +644,6 @@
   "pathogen.panel.config.severity.label": "Prioritätsgewicht",
   "pathogen.panel.config.severity.meaning": "Wie stark die Cluster dieses Erregers in der Prioritätswarteschlange gegenüber anderen gewichtet werden.",
   "pathogen.panel.config.source.label": "Quelle",
-
   "notif.title_new_clusters": "EpiSODIC: {count_phrase} erkannt am {date}",
   "notif.new_cluster.singular": "neuer Cluster",
   "notif.new_cluster.plural": "neue Cluster",
@@ -719,7 +669,6 @@
   "notif.test.sent_at": "Gesendet um",
   "notif.test.working": "Wenn Sie diese Nachricht erhalten, funktioniert dieser Benachrichtigungskanal.",
   "notif.test.status_value": "Dies ist eine Testbenachrichtigung.",
-
   "panel.report.schedule_title": "Geplante Berichte",
   "panel.report.schedule_intro": "Diesen Bericht automatisch per E-Mail an Kolleginnen und Kollegen ohne Dashboard-Zugang senden, nach einem wiederkehrenden Zeitplan.",
   "panel.report.schedule_no_channel": "Es ist noch kein E-Mail-fähiger Benachrichtigungskanal (SMTP, sendmail oder Microsoft 365) konfiguriert. Richten Sie zuerst einen ein - siehe vignette(\"notifications\").",
@@ -757,5 +706,43 @@
   "report.diff_ratio_change": "Das Verhältnis von beobachtet zu erwartet änderte sich von {previous} auf {current}.",
   "report.diff_period_extended": "Der Fallzeitraum reicht nun bis {date}.",
   "unit.new_case": "neuer Fall",
-  "unit.new_cases": "neue Fälle"
+  "unit.new_cases": "neue Fälle",
+  "nav.epidemics": "Epidemien",
+  "dossier.epidemic_ref": "E-{id}",
+  "unit.epidemic": "Epidemie",
+  "unit.epidemics": "Epidemien",
+  "performance.outbreaks_only_note": "Alle Kennzahlen auf dieser Seite zählen nur Ausbrüche (Stations-, Einrichtungs- und Gebietsebene). Epidemien werden separat bewertet.",
+  "verdict.season_started": "Saison begonnen",
+  "verdict.season_started.hint": "Die Epidemiesaison wird als begonnen erklärt. Dies ist eine Entscheidung mit politischen Konsequenzen.",
+  "verdict.season_not_yet": "Saison noch nicht begonnen",
+  "verdict.season_not_yet.hint": "Der Schwellenwert wurde überschritten, aber die Evidenz rechtfertigt noch keine Erklärung.",
+  "verdict.season_ended": "Saison beendet",
+  "verdict.season_ended.hint": "Die Epidemiesaison wird als beendet erklärt.",
+  "epidemics.rail_title": "Epidemien",
+  "epidemics.rail_empty": "Keine offenen Epidemien.",
+  "epidemics.none_detected": "keine erkannt",
+  "epidemics.season_chip": "Saison {season}",
+  "epidemics.stat.institutions": "Einrichtungen",
+  "epidemics.stat.top_share": "{name}: {pct}%",
+  "epidemics.stat.season": "Saison",
+  "epidemics.stat.anchor": "Ankerwoche {week}",
+  "epidemics.stat.outbreaks_during": "Ausbrüche während",
+  "epidemics.panel.curve.title": "Wöchentliche Fälle",
+  "epidemics.panel.curve.empty": "Keine Fälle in diesem Zeitraum.",
+  "epidemics.panel.curve.threshold_note": "Schwellenwerte aus {seasons} vorherigen Saisons berechnet. Prä-epidemisch: {pre}, post-epidemisch: {post}.",
+  "epidemics.panel.curve.no_thresholds": "Saisonale Epidemie, aber Schwellenwerte konnten nicht aus den Daten dieser Instanz berechnet werden.",
+  "epidemics.panel.curve.not_seasonal": "Diese Epidemie ist nicht saisonal. Die Schließung folgt der standardmäßigen fallfreien-Tage-Regel.",
+  "epidemics.panel.denominator.title": "Tests und Positivität",
+  "epidemics.panel.denominator.empty": "Keine Testvolumendaten für diesen Erreger verfügbar.",
+  "epidemics.panel.denominator.note": "Ein Anstieg der Fälle bei gleichbleibender Positivität ist ein Anstieg der Tests, nicht der Inzidenz.",
+  "epidemics.panel.institutions.title": "Beitragende Einrichtungen",
+  "epidemics.panel.institutions.empty": "Keine Einrichtungsdaten verfügbar.",
+  "epidemics.panel.institutions.col_name": "Einrichtung",
+  "epidemics.panel.institutions.col_share": "Anteil (%)",
+  "epidemics.panel.during.title": "Ausbrüche während dieser Epidemie",
+  "epidemics.declaration_label": "Saisonerklärung",
+  "epidemics.declaration_rationale_placeholder": "Beschreiben Sie die Belege für diese Erklärung…",
+  "epidemics.declaration_submit": "Erklärung aufzeichnen",
+  "epidemics.declaration_no_rationale": "keine Begründung angegeben",
+  "column.id": "ID"
 }

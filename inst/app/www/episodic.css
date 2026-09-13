@@ -116,6 +116,7 @@ body {
    instance-level screens light the Instance link, because that is where
    a reader reached them from. */
 .episodic-shell[data-nav="clusters"] .episodic-nav-link[data-view="clusters"],
+.episodic-shell[data-nav="epidemics"] .episodic-nav-link[data-view="epidemics"],
 .episodic-shell[data-nav="pathogen"] .episodic-nav-link[data-view="pathogen"],
 .episodic-shell[data-nav="archive"] .episodic-nav-link[data-view="archive"],
 .episodic-shell[data-nav="instance"] .episodic-nav-link[data-view="instance"] {
@@ -218,6 +219,7 @@ body {
   min-height: 0;
 }
 .episodic-shell[data-view="clusters"] .episodic-screen[data-screen="clusters"],
+.episodic-shell[data-view="epidemics"] .episodic-screen[data-screen="epidemics"],
 .episodic-shell[data-view="pathogen"] .episodic-screen[data-screen="pathogen"],
 .episodic-shell[data-view="archive"] .episodic-screen[data-screen="archive"],
 .episodic-shell[data-view="instance"] .episodic-screen[data-screen="instance"],

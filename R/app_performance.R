@@ -46,8 +46,12 @@ episodic_ui_performance_screen <- function(performance,
       episodic_tr("performance.title", lang = lang)
     ),
     shiny::tags$p(
-      style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:16px;",
+      style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:8px;",
       episodic_tr("performance.note", lang = lang)
+    ),
+    shiny::tags$p(
+      style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:16px;",
+      episodic_tr("performance.outbreaks_only_note", lang = lang)
     ),
     shiny::tags$h2(
       style = "font-size:15px;font-weight:600;margin:20px 0 6px;",
@@ -192,12 +196,19 @@ episodic_app_performance <- function(con,
   # Including suppressed ones: this screen measures how the detectors
   # behaved, not what the queue looked like, and a detection that fired is
   # a detection whichever level of the lattice ended up carrying it.
+  # Outbreaks only: epidemic-scale clusters have a different assessment
+  # vocabulary (declarations rather than classifications), so mixing the
+  # two denominators would produce a number about neither.
   clusters <- episodic_db_clusters(con, include_suppressed = TRUE)
+  clusters <- clusters[clusters$scale == "outbreak", , drop = FALSE]
   streams <- episodic_db_streams(con, active_only = FALSE)
+  outbreak_ids <- clusters$cluster_id
+  detections <- detections[detections$cluster_id %in% outbreak_ids, , drop = FALSE]
   events <- DBI::dbGetQuery(
     con,
     "SELECT cluster_id, created_at, verdict FROM episodic_assessment_event ORDER BY created_at"
   )
+  events <- events[events$cluster_id %in% outbreak_ids, , drop = FALSE]
   verdicts <- events[!is.na(events$verdict), , drop = FALSE]
   # last row per cluster_id, keeping input order (created_at ascending)
   latest_verdict <- verdicts[
