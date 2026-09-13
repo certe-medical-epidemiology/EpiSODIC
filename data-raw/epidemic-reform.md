@@ -57,16 +57,16 @@ in section 7 and do only that milestone.
 
 | | |
 |---|---|
-| Next milestone to start | **M1** |
-| Integration branch | `claude/epidemic-reform` (not yet created) |
-| Schema version on `main` | 5 (`episodic_schema_version` in `R/schema_migrate.R`) |
-| Schema version on M0 branch | 6 (`mem_mode` column) |
+| Next milestone to start | **M2** |
+| Integration branch | `claude/epidemic-reform` (created from `main` after M0 merged) |
+| Schema version on `main` | 6 (`episodic_schema_version` in `R/schema_migrate.R`) |
+| Schema version on M1 branch | 7 (`scale`, satellite, link, declaration verdicts) |
 | Execution environment | Must have a working R. See the precondition in section 7. |
 
 | Milestone | State | Branch | PR | Notes |
 |---|---|---|---|---|
-| M0 MEM: full-year seasons, derived anchor, derived eligibility | done | `claude/mem-agnostic-seasons` | pending | goes straight to `main`, not to the integration branch |
-| M1 Schema: scale, epidemic season satellite, link table | not started | | | |
+| M0 MEM: full-year seasons, derived anchor, derived eligibility | done | `claude/mem-agnostic-seasons` | #59 merged | goes straight to `main`, not to the integration branch |
+| M1 Schema: scale, epidemic season satellite, link table | done | `claude/epidemic-reform-m1-schema` | pending | PR into `claude/epidemic-reform` |
 | M2 Write path: routing, epidemic closure, continuity, links | not started | | | |
 | M3 Read path: Epidemics screen MVP | not started | | | |
 | M4 Vocabulary: O-/E- ids, Outbreak wording, i18n sweep | not started | | | |
@@ -107,6 +107,26 @@ done, what was not, and anything surprising. No narrative.
   inst/i18n/{ar,de,en,es,fr,hi,nl,zh}.json, tests/testthat/helper-db.R,
   tests/testthat/test-detect_mem.R, tests/testthat/test-app_pathogen.R.
   Spanned two context windows due to volume of changes.
+
+2026-09-13 (Opus 4.6, M1 implementation)
+  Schema v7: `scale` discriminator on `episodic_cluster` (DEFAULT
+  'outbreak', backfilled from stream level via configured boundary),
+  `episodic_epidemic_season` satellite table, `episodic_cluster_link`
+  relation table, declaration verdicts (season_started, season_not_yet,
+  season_ended) on `episodic_assessment_event`.
+  New `scale` config section with `epidemic_levels` list; new
+  `episodic_scale_for_level()` resolver in R/config.R.
+  `episodic_verdict_outbreak_levels` replaced from a hardcoded vector to
+  a function deriving from config, correcting L3 pathogen_area (was
+  reading as "epidemic", now correctly reads as "outbreak").
+  MariaDB rewrite rules updated for the new `scale` VARCHAR column.
+  Full suite: 0 failures, 10269 passes, 3 expected skips.
+  MariaDB live tests: 0 failures, 30 passes.
+  Files changed: inst/sql/schema.sql, R/schema_migrate.R, R/config.R,
+  R/app_widgets.R, inst/config/episodic_default_config.yaml,
+  tests/testthat/test-schema.R, tests/testthat/test-schema_mariadb.R,
+  tests/testthat/test-shared_schema.R, tests/testthat/test-config.R,
+  NEWS.md.
 ```
 
 ---
@@ -356,10 +376,9 @@ longer true, fix it here as part of your milestone.
 
 - The five levels, in lattice order, are listed in `R/app_archive.R:28`
   (`episodic_archive_levels`) and again in `R/cluster_manual.R:369`.
-- `R/app_widgets.R:658`: `episodic_verdict_outbreak_levels <- c("pathogen_ward", "pathogen_institution")`.
-  **This does not match the intended boundary**: L3 `pathogen_area` currently
-  reads as "epidemic" in verdict labels and should read as "outbreak". M1
-  replaces this constant with a derivation from the configured scale boundary.
+- `R/app_widgets.R:654`: `episodic_verdict_outbreak_levels()` is a function
+  deriving from `config$scale$epidemic_levels`. L3 `pathogen_area` now
+  correctly reads as "outbreak" in verdict labels.
 - `R/reconcile_suppress.R:197`, `episodic_suppression_pairs()` returns three
   pairs: ward/institution, area/province, province/region. **The
   institution/area pair is absent.** Exactly one pair, area/province, crosses
@@ -369,24 +388,25 @@ longer true, fix it here as part of your milestone.
 
 ### Schema and database
 
-- `episodic_schema_version <- 5L` at `R/schema_migrate.R:360`.
+- `episodic_schema_version <- 7L` at `R/schema_migrate.R:360`.
   `episodic_db_migrations()` at `:421`. Each migration is
   `function(con, dialect)`, idempotent, transactional, never drops or rewrites
   data, and must guard with an existence check because MySQL commits
   implicitly on DDL.
-- `episodic_cluster` is at `inst/sql/schema.sql:248`. It carries
-  `origin TEXT CHECK (origin IN ('detected', 'manual'))` and
-  `opened_in_backfill`. It deliberately carries no verdict, state, `closed_at`
-  or `snooze_until`: those are derived from `episodic_assessment_event`.
-- `episodic_assessment_event` at `:323` has
-  `verdict TEXT CHECK (verdict IS NULL OR verdict IN ('artefact', 'expected_variation', 'cluster_not_yet', 'possible_epidemic', 'confirmed_epidemic'))`.
-  Adding declaration verdicts means extending that CHECK, in the schema and in
-  a migration.
-- `episodic_detection` at `:228` has a `params TEXT NOT NULL` column, already
+- `episodic_cluster` carries `origin`, `opened_in_backfill` and now `scale`
+  (`'outbreak'` or `'epidemic'`, from `scale.epidemic_levels` config). It
+  deliberately carries no verdict, state, `closed_at` or `snooze_until`.
+- `episodic_epidemic_season` is the seasonal satellite, one row per
+  epidemic cluster that has a season. A non-seasonal epidemic has no row.
+- `episodic_cluster_link` is the "during" relation: outbreak-to-epidemic,
+  composite PK on `(outbreak_cluster_id, epidemic_cluster_id)`.
+- `episodic_assessment_event` verdict CHECK includes the five original
+  values plus `season_started`, `season_not_yet`, `season_ended`.
+- `episodic_detection` has a `params TEXT NOT NULL` column, already
   used for detector-specific JSON. The derived anchor and seasonality statistic
   go there; no schema change needed for that.
-- `episodic_pathogen_config` at `:166` has
-  `mem_applicable INTEGER NOT NULL DEFAULT 0 CHECK (mem_applicable IN (0, 1))`.
+- `episodic_pathogen_config` has
+  `mem_mode TEXT NOT NULL DEFAULT 'auto' CHECK (mem_mode IN ('auto', 'yes', 'no'))`.
 
 ### App
 
@@ -400,7 +420,7 @@ longer true, fix it here as part of your milestone.
 
 ### i18n
 
-- Eight full language files of **705 keys** each: `ar de en es fr hi nl zh`.
+- Eight full language files of **708 keys** each: `ar de en es fr hi nl zh`.
 - Two variant files carrying only differences: `en-US.json` (7 keys),
   `es-419.json` (3 keys). `episodic_language_variants` at `R/i18n.R:118`.
 - `tests/testthat/test-i18n.R` enforces: identical key sets across all full
@@ -959,7 +979,7 @@ The interface says Outbreak and Epidemic, in eight languages, and ids read
    `tests/testthat/test-i18n.R:91` exercises. No `#`. Never grouped as a
    number.
 2. **Wording.** Sweep user-facing "cluster" to "outbreak" or "epidemic" as the
-   scale dictates, across all 705 keys in all eight full files. Add to a
+   scale dictates, across all keys in all eight full files. Add to a
    variant file only where the value genuinely differs; the test enforces this.
 3. **Verdict labels.** `episodic_verdict_label()` keeps keying off the stored
    verdict value and switches wording on scale rather than on a hardcoded level

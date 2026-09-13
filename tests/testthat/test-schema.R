@@ -42,7 +42,9 @@ test_that("episodic_db_create() builds every expected table", {
       "episodic_report_render",
       "episodic_report_subscription_event",
       "episodic_report_subscription_send",
-      "episodic_schema_version"
+      "episodic_schema_version",
+      "episodic_epidemic_season",
+      "episodic_cluster_link"
     ) %in%
       tables
   ))
