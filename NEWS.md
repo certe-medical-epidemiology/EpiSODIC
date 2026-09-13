@@ -16,6 +16,12 @@
 - Schema version 7: `scale` discriminator on `episodic_cluster`, `episodic_epidemic_season` satellite table, `episodic_cluster_link` relation table, and declaration verdicts on `episodic_assessment_event`
 - Configurable scale boundary (`scale.epidemic_levels`) determines which lattice levels produce epidemics rather than outbreaks
 - Verdict labels derive the outbreak/epidemic boundary from configuration rather than a hardcoded constant
+- Clusters opened at epidemic-level streams receive `scale = 'epidemic'`; all others receive `scale = 'outbreak'`
+- A seasonal satellite row (`episodic_epidemic_season`) is written when a new epidemic cluster opens from a MEM detection
+- Seasonal epidemics close automatically when the weekly case count drops below the post-epidemic threshold or the evaluation week enters the trough
+- Epidemic identity is preserved across the season anchor rollover
+- Outbreaks are linked to epidemics they occur during, based on pathogen, time overlap and geographic nesting (`episodic_cluster_link`)
+- Lattice suppression works across the outbreak/epidemic scale boundary
 
 ## Changed
 

@@ -1248,6 +1248,7 @@ episodic_run_cron_body <- function(con,
       )
       next
     }
+    stream_scale <- episodic_scale_for_level(stream$level, config)
     reconcile_result <- episodic_reconcile_stream(
       con,
       stream_id = stream$stream_id,
@@ -1265,6 +1266,7 @@ episodic_run_cron_body <- function(con,
       stale_open_days = config$reconciliation$stale_open_days %||% NA,
       geography = geography,
       backfill = backfill,
+      scale = stream_scale,
       # `run_date` is documented as "the date to treat as today" and every
       # other phase of the run honours it; reconciliation did not, so a
       # backfill or a replay judged staleness against the wall clock
@@ -1343,6 +1345,46 @@ episodic_run_cron_body <- function(con,
       new_cluster_ids_all,
       reconcile_result$new_cluster_ids
     )
+
+    # Write the seasonal satellite for newly opened epidemic clusters
+    # where MEM was among the detectors.
+    if (
+      identical(stream_scale, "epidemic") &&
+        length(reconcile_result$new_cluster_ids) > 0
+    ) {
+      mem_dets <- stream_detections[stream_detections$detector == "mem", ]
+      if (nrow(mem_dets) > 0) {
+        mem_params <- jsonlite::fromJSON(
+          mem_dets$params[nrow(mem_dets)],
+          simplifyVector = FALSE
+        )
+        for (new_id in reconcile_result$new_cluster_ids) {
+          episodic_db_epidemic_season_insert(
+            con,
+            cluster_id = new_id,
+            season_label = mem_params$season %||% NA,
+            anchor_week = mem_params$anchor_week,
+            onset_week_start = mem_dets$first_day[nrow(mem_dets)],
+            pre_epidemic_threshold = as.numeric(
+              mem_dets$upperbound[nrow(mem_dets)]
+            ),
+            post_epidemic_threshold = as.numeric(
+              mem_params$post_epidemic_threshold
+            ),
+            intensity_medium = as.numeric(
+              mem_params$intensity_medium %||% NA
+            ),
+            intensity_high = as.numeric(
+              mem_params$intensity_high %||% NA
+            ),
+            intensity_very_high = as.numeric(
+              mem_params$intensity_very_high %||% NA
+            ),
+            seasons_used = mem_params$seasons_used %||% NA
+          )
+        }
+      }
+    }
   }
   if (n_muted_streams > 0) {
     episodic_trace(
@@ -1392,6 +1434,67 @@ episodic_run_cron_body <- function(con,
       " of them already closed by the system and in the Archive, ",
       n_new_total - n_backfill_closed,
       " left open for assessment"
+    )
+  }
+
+  # Seasonal epidemic closure: after all streams have reconciled, check
+  # each open seasonal epidemic for the post-epidemic threshold or trough
+  # backstop.  Closure is a per-epidemic decision that needs the full
+  # detection picture, so it runs here rather than inside the stream loop.
+  open_seasonal <- episodic_db_open_seasonal_epidemics(con)
+  if (nrow(open_seasonal) > 0) {
+    n_closed_epidemics <- 0L
+    for (j in seq_len(nrow(open_seasonal))) {
+      epi <- open_seasonal[j, ]
+      stream_row <- streams[streams$stream_id == epi$stream_id, ]
+      if (nrow(stream_row) == 0) next
+      epi_cases <- episodic_cases_for_stream(
+        cases_all,
+        stream_row[1, ],
+        geography
+      )
+      closure <- episodic_epidemic_closure(
+        epi_cases,
+        run_date,
+        config,
+        satellite = epi
+      )
+      if (!is.null(closure)) {
+        episodic_db_epidemic_season_update_ended(
+          con,
+          cluster_id = epi$cluster_id,
+          ended_week_start = closure$ended_week_start,
+          ended_reason = closure$ended_reason
+        )
+        episodic_db_cluster_state_insert(
+          con,
+          cluster_id = epi$cluster_id,
+          state = "closed",
+          trigger = "system"
+        )
+        n_closed_epidemics <- n_closed_epidemics + 1L
+      }
+    }
+    if (n_closed_epidemics > 0) {
+      episodic_trace(
+        "Epidemic closure: ",
+        n_closed_epidemics,
+        " seasonal epidemic(s) closed"
+      )
+    }
+  }
+
+  # "During" links: connect each open outbreak to the epidemic(s) it
+  # occurs during, based on pathogen, time overlap and geographic nesting.
+  n_links <- episodic_epidemic_link_outbreaks(
+    con,
+    cases_all,
+    geography,
+    run_id
+  )
+  if (n_links > 0L) {
+    episodic_trace(
+      "During links: ", n_links, " outbreak-to-epidemic link(s) written"
     )
   }
 
@@ -1472,6 +1575,104 @@ episodic_cases_for_stream <- function(cases,
     matches <- matches & !is.na(region) & region == stream$region_code
   }
   cases[matches, ]
+}
+
+#' Does an outbreak's geography nest inside an epidemic's?
+#'
+#' An L5 (region) epidemic covers the whole catchment, so every outbreak
+#' nests. An L4 (province) epidemic covers one province; the outbreak
+#' nests if its cases resolve to the same province code.
+#'
+#' @param outbreak One row from `episodic_db_open_outbreaks()`.
+#' @param epidemic One row from `episodic_db_open_epidemics()`.
+#' @param cases The run's full case data frame.
+#' @param geography The resolved geography for this run.
+#' @return `TRUE` if the outbreak nests inside the epidemic.
+#' @keywords internal
+#' @noRd
+episodic_geography_nests <- function(outbreak, epidemic, cases, geography) {
+  if (epidemic$level == "pathogen_region") {
+    return(TRUE)
+  }
+  if (epidemic$level != "pathogen_province") {
+    return(FALSE)
+  }
+  ob_cases <- episodic_cases_for_stream(cases, outbreak, geography)
+  if (nrow(ob_cases) == 0) {
+    return(FALSE)
+  }
+  province_codes <- episodic_case_region_code(
+    ob_cases,
+    "pathogen_province",
+    geography = geography
+  )
+  any(!is.na(province_codes) & province_codes == epidemic$region_code)
+}
+
+#' Link open outbreaks to open epidemics they occur during
+#'
+#' For each open epidemic, every open outbreak that shares the same
+#' pathogen, overlaps in time, and nests geographically is linked via
+#' `episodic_cluster_link`. Links are additive and idempotent.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cases The run's full case data frame.
+#' @param geography The resolved geography for this run.
+#' @param run_id The current run id.
+#' @return Invisibly, the number of links written.
+#' @keywords internal
+#' @noRd
+episodic_epidemic_link_outbreaks <- function(con, cases, geography, run_id) {
+  epidemics <- episodic_db_open_epidemics(con)
+  outbreaks <- episodic_db_open_outbreaks(con)
+  if (nrow(epidemics) == 0 || nrow(outbreaks) == 0) {
+    return(invisible(0L))
+  }
+
+  epi_open <- !vapply(
+    epidemics$cluster_id,
+    function(id) episodic_reconcile_is_closed(con, id),
+    logical(1)
+  )
+  epidemics <- epidemics[epi_open, ]
+  if (nrow(epidemics) == 0) {
+    return(invisible(0L))
+  }
+
+  ob_open <- !vapply(
+    outbreaks$cluster_id,
+    function(id) episodic_reconcile_is_closed(con, id),
+    logical(1)
+  )
+  outbreaks <- outbreaks[ob_open, ]
+  if (nrow(outbreaks) == 0) {
+    return(invisible(0L))
+  }
+
+  n_linked <- 0L
+  for (i in seq_len(nrow(epidemics))) {
+    epi <- epidemics[i, ]
+    candidates <- outbreaks[outbreaks$pathogen == epi$pathogen, ]
+    if (nrow(candidates) == 0) next
+    overlapping <- candidates[
+      as.Date(candidates$first_day) <= as.Date(epi$last_day) &
+        as.Date(candidates$last_day) >= as.Date(epi$first_day),
+    ]
+    if (nrow(overlapping) == 0) next
+    for (j in seq_len(nrow(overlapping))) {
+      ob <- overlapping[j, ]
+      if (episodic_geography_nests(ob, epi, cases, geography)) {
+        episodic_db_cluster_link_insert(
+          con,
+          outbreak_cluster_id = ob$cluster_id,
+          epidemic_cluster_id = epi$cluster_id,
+          run_id = run_id
+        )
+        n_linked <- n_linked + 1L
+      }
+    }
+  }
+  invisible(n_linked)
 }
 
 #' @keywords internal
