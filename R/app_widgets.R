@@ -634,6 +634,9 @@ episodic_ui_verdict_colour <- function(verdict) {
     cluster_not_yet = pal$success_dark,
     possible_epidemic = pal$warning_dark,
     confirmed_epidemic = pal$danger,
+    season_started = pal$danger,
+    season_not_yet = pal$success_dark,
+    season_ended = pal$muted,
     pal$muted
   )
 }

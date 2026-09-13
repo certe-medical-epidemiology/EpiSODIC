@@ -515,6 +515,102 @@ episodic_app_server_factory <- function(db_path,
       )
     })
 
+    # -- Epidemics screen --------------------------------------------------
+
+    open_epidemics <- shiny::reactive({
+      db_version()
+      shiny::req(access_granted())
+      episodic_app_open_epidemics(con, lang = lang)
+    })
+
+    selected_epidemic_id <- shiny::reactiveVal(NULL)
+    shiny::observeEvent(open_epidemics(), {
+      ids <- open_epidemics()$cluster_id
+      if (length(ids) == 0) {
+        return()
+      }
+      if (!isTRUE(selected_epidemic_id() %in% ids)) {
+        selected_epidemic_id(ids[1])
+      }
+    })
+    shiny::observeEvent(
+      input$epidemic_select,
+      selected_epidemic_id(as.integer(input$epidemic_select))
+    )
+
+    epidemic_object <- shiny::reactive({
+      shiny::req(access_granted())
+      eid <- selected_epidemic_id()
+      shiny::req(!is.null(eid))
+      db_version()
+      episodic_epidemic_object(con, eid, lang = lang)
+    })
+
+    output$epidemics_screen <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
+      episodic_ui_epidemics_screen(
+        open_epidemics(),
+        selected_id = shiny::isolate(selected_epidemic_id()),
+        lang = lang
+      )
+    })
+
+    output$epidemic_dossier_pane <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
+      eid <- selected_epidemic_id()
+      if (is.null(eid)) {
+        return(shiny::tags$p(episodic_tr("epidemics.rail_empty", lang = lang)))
+      }
+      episodic_ui_epidemic_dossier(
+        con,
+        obj = epidemic_object(),
+        lang = lang,
+        current_user = current_user()
+      )
+    })
+
+    output$epidemic_assessment_pane <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
+      eid <- selected_epidemic_id()
+      user <- current_user()
+      if (is.null(eid)) {
+        return(NULL)
+      }
+      episodic_ui_epidemic_assessment_rail(
+        con,
+        eid,
+        lang = lang,
+        current_user = user,
+        obj = epidemic_object()
+      )
+    })
+
+    shiny::observeEvent(input$epidemic_declare_submit, {
+      user <- episodic_auth_refresh_user(con, current_user())
+      shiny::req(episodic_user_is_epidemiologist(user))
+      payload <- input$epidemic_declare_submit
+      rationale <- trimws(payload$rationale %||% "")
+      episodic_app_submit_assessment(
+        con,
+        cluster_id = payload$cluster_id,
+        user_id = user$user_id,
+        verdict = if (nzchar(payload$verdict %||% "")) payload$verdict else NA,
+        rationale = rationale
+      )
+      eid <- selected_epidemic_id()
+      selected_epidemic_id(NULL)
+      selected_epidemic_id(eid)
+      db_touch()
+    })
+
+    # -- Archive -----------------------------------------------------------
+
     archive_query <- shiny::reactiveVal("")
     shiny::observeEvent(
       input$archive_search,

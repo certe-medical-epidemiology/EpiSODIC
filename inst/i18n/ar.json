@@ -2,7 +2,6 @@
   "app.title": "EpiSODIC",
   "app.full_name": "مراقبة الإشارات الوبائية وكشفها وتحديدها وتصنيفها",
   "app.demodata": "بيانات تجريبية",
-
   "nav.clusters": "التجمعات",
   "nav.pathogen": "العامل الممرض",
   "nav.streams": "السلاسل الرصدية",
@@ -20,7 +19,6 @@
   "instance.card.performance": "أداء أدوات الكشف مقارنةً بأحكام علماء الوبائيات أنفسهم.",
   "instance.card.info": "ما هذه النسخة، وأي ملفات مرجعية قُرئت، وماذا تعني المصطلحات.",
   "instance.card.settings": "الحسابات وإعدادات المثيل.",
-
   "rail.title": "التجمعات المفتوحة",
   "rail.count_suffix": "جديدة أو نشطة",
   "rail.empty": "لا توجد تجمعات مفتوحة.",
@@ -33,10 +31,8 @@
   "rail.bulk_apply": "تطبيق التصنيف على المحدَّد",
   "rail.bulk_clear": "مسح التحديد",
   "rail.bulk_select": "تحديد للتقييم الجماعي",
-
   "pane.dossier": "الملف",
   "pane.switcher_label": "عرض",
-
   "dossier.stat.observed_sub": "المتوقَّع {expected}",
   "dossier.stat.ratio": "نسبة الملاحظ إلى المتوقَّع",
   "dossier.stat.ratio_sub": "الحالات / المتوقَّعة",
@@ -55,25 +51,21 @@
   "dossier.stat.case_free_sub": "الحد {need} يومًا",
   "dossier.stat.priority": "الأولوية",
   "dossier.stat.priority_sub": "درجة مركّبة",
-
   "dossier.cluster_ref": "رقم {id}",
   "dossier.meta.first_last": "أول حالة {first}، آخر حالة {last}",
   "dossier.meta.detected_by": "اكتُشف بواسطة {detectors}",
   "dossier.changed_badge": "تغيّر منذ التقييم",
   "dossier.manual_badge": "أُضيف يدويًا",
-
   "state.new": "جديد",
   "state.assessing": "قيد التقييم",
   "state.monitoring": "تحت المراقبة",
   "state.closed": "مغلق",
   "state.reassess": "يتطلب إعادة تقييم",
-
   "level.pathogen_ward": "المستوى 1 · الجناح",
   "level.pathogen_institution": "المستوى 2 · المؤسسة",
   "level.pathogen_area": "المستوى 3 · المنطقة",
   "level.pathogen_province": "المستوى 4 · المحافظة",
   "level.pathogen_region": "المستوى 5 · الإقليم",
-
   "careline.first": "الرعاية الأولية",
   "careline.second": "الرعاية الثانوية",
   "careline.third": "الرعاية الثالثية",
@@ -84,17 +76,13 @@
   "careline.short.third": "الخط الثالث",
   "careline.short.other": "أخرى",
   "careline.short.unknown": "غير معروف",
-
   "timeline.title": "الجدول الزمني",
   "timeline.not_assessed": "لم يُقيَّم بعد. اكتُشف في {first} بواسطة {detectors}.",
-
   "status_trajectory.title": "مسار الحالة",
   "status_trajectory.unassessed": "غير مقيَّم",
-
   "panel.interpretation.title": "التفسير",
   "panel.interpretation.aside": "مُولَّد تلقائيًا",
   "panel.interpretation.empty": "لا يتوفر تفسير بعد لهذا التجمع.",
-
   "panel.notes.title": "الملاحظات",
   "panel.notes.empty": "لا توجد ملاحظات بعد لهذا التجمع.",
   "notes.edit_button": "تعديل",
@@ -102,12 +90,10 @@
   "notes.history_button": "السجل",
   "notes.history_modal_title": "سجل الملاحظات",
   "notes.history_empty": "لم يتم حفظ أي ملاحظات لهذا التجمع بعد.",
-
   "panel.epicurve.title": "المنحنى الوبائي",
   "panel.epicurve.note": "تغطي المنطقة المظلَّلة آخر {days_phrase}: التأخير التجريبي في الإبلاغ المستمد من مثلث الإبلاغ. الحالات التي يقع تاريخ عيّنتها ضمن هذه النافذة لم تُبلَّغ بعد بشكل كامل. الانخفاض في نهاية المنحنى هنا لا يمثل تراجعًا حقيقيًا.",
   "panel.epicurve.note_unknown": "تعذّر قياس أي تأخير في الإبلاغ لهذا المسار، لذلك لا يمكن اعتبار أي يوم من هذا المنحنى مُبلَّغًا عنه بالكامل. لذلك يُعرض المنحنى بأكمله مظلَّلًا.",
   "panel.epicurve.ylab": "الحالات",
-
   "panel.trend.title": "الاتجاه متعدد السنوات",
   "panel.trend.aside": "{weeks} أسبوعًا",
   "panel.trend.note": "الأعداد المرصودة مقابل التوقُّع وعتبة الإشارة المستمدَّين من <code>farringtonFlexible</code>. الهدف بيان ما إذا كانت الزيادة الحالية تقع ضمن النمط الموسمي الطبيعي.",
@@ -115,19 +101,16 @@
   "panel.trend.legend_expected": "متوقَّع",
   "panel.trend.legend_upperbound": "عتبة الإشارة",
   "panel.trend.unavailable": "لا تتوفر بيانات اتجاه بعد؛ لا يملك هذا التدفق تاريخ خط أساس كافيًا لـ <code>farringtonFlexible</code>.",
-
   "panel.denominator.title": "المقام والإيجابية",
   "panel.denominator.aside": "أسبوعيًا",
   "panel.denominator.note": "أكثر أسباب الإشارة الكاذبة شيوعًا هو ارتفاع حجم الفحوصات، وليس ارتفاع الحدوث الفعلي. إذا ارتفعت الأعمدة بينما بقي الخط ثابتًا، فإن الزيادة ناتجة عن أثر المقام.",
   "panel.denominator.legend_tests": "الفحوصات",
   "panel.denominator.legend_positivity": "نسبة الإيجابية %",
   "panel.denominator.unavailable": "لا تتوفر بيانات إيجابية لهذا العامل الممرض. هذا اختياري؛ فليست كل طريقة مخبرية قادرة على الإبلاغ عن النتائج السلبية.",
-
   "panel.demography.title": "العمر والجنس",
   "panel.demography.note": "التحول في الفئة العمرية المتأثرة مقارنة بخط الأساس التاريخي غالبًا ما يكون أكثر دلالة من العدد نفسه.",
   "panel.demography.male": "← ذكر",
   "panel.demography.female": "أنثى →",
-
   "panel.geo.title": "الانتشار الجغرافي",
   "panel.geo.aside": "الرمز البريدي",
   "panel.geo.unit": "ستظهر هنا خريطة بمجرد تهيئة بيانات المرجع الجغرافي (EPISODIC_GEO_DATA).",
@@ -135,14 +118,11 @@
   "panel.geo.unknown_pc": "{n} من أصل {total} حالة بلا رمز بريدي مسجَّل، وهي مستبعَدة من الخريطة ومن مقياس التركّز.",
   "panel.geo.map_note": "مقصوصة على المناطق التي بها حالات، مع المناطق المحيطة للسياق. المناطق خارج الإطار غير معروضة، وليست خالية من الحالات.",
   "panel.geo.province_error": "تعذّر عرض أي مقاطعة بجوار هذه الرموز البريدية: {reason}",
-
   "panel.places.title_ward": "الجناح",
   "panel.places.title_institution": "المؤسسة",
-
   "panel.resistance.title": "مقاومة النمط الظاهري",
   "panel.resistance.note": "لا يُغني عن التنميط، لكن الملف المشترك يجعل وجود مصدر مشترك أكثر ترجيحًا وقد يدفع إلى إرسال العزلات لتحديد التسلسل الجيني الكامل.",
   "panel.resistance.unavailable": "لا تتوفر بعد بيانات مقاومة مرتبطة بحالات في هذا النظام.",
-
   "panel.linelist.title": "قائمة الحالات",
   "panel.linelist.aside": "{shown} من أصل {total} حالة",
   "panel.linelist.col.patient": "المريض",
@@ -153,7 +133,6 @@
   "panel.linelist.col.pc": "الرمز البريدي",
   "panel.linelist.col.ward": "الجناح",
   "panel.linelist.col.specialism": "التخصص",
-
   "panel.settings.title": "إعدادات الكشف",
   "panel.settings.detectors": "كواشف",
   "panel.settings.aggregation": "التجميع",
@@ -165,7 +144,6 @@
   "panel.settings.last_run": "آخر تشغيل",
   "panel.settings.last_run_value": "{when} · {host}",
   "panel.settings.pkg_versions": "إصدارات الحزم",
-
   "streams.title": "السلاسل الرصدية",
   "streams.note": "التهيئة كما سُجِّلت في آخر عملية كشف، وليس كما هي حاليًا على القرص.",
   "streams.col.stream": "السلسلة الرصدية",
@@ -177,14 +155,12 @@
   "streams.page_prev": "السابق",
   "streams.page_next": "التالي",
   "streams.page_of": "الصفحة {page} من {n_pages}",
-
   "status.run_ok": "نجح التشغيل {time} · {streams_phrase} · تم اكتشاف {clusters_phrase}",
   "status.run_partial": "انتهى التشغيل {time} مع تخطي صفوف · {streams_phrase} · {clusters_phrase} تم كشفها",
   "status.run_failed": "فشل آخر تشغيل · {time}",
   "status.run_failed_hint": "تحقق من بيانات الحالات في R باستخدام episodic_check_cases()",
   "status.no_run": "لم يُنفَّذ أي تشغيل كشف بعد",
   "status.completeness": "الاكتمال {pct}% ({days_phrase})",
-
   "unit.stream": "سلسلة رصدية",
   "unit.streams": "سلاسل رصدية",
   "unit.cluster": "تجمع",
@@ -201,7 +177,6 @@
   "unit.runs": "عمليات تشغيل",
   "unit.account": "حساب",
   "unit.accounts": "حسابات",
-
   "misc.unknown": "غير معروف",
   "misc.none": "لا شيء",
   "misc.list_separator_and": " و ",
@@ -221,7 +196,6 @@
   "misc.language.es-419": "الإسبانية في أمريكا اللاتينية",
   "misc.close": "إغلاق",
   "misc.dash": "—",
-
   "date.month.01": "يناير",
   "date.month.02": "فبراير",
   "date.month.03": "مارس",
@@ -250,29 +224,22 @@
   "date.format.range_month": "{day_from}-{day_to} {month} {year}",
   "date.format.range_year": "{day_from} {month_from} - {day_to} {month_to} {year}",
   "date.format.range_full": "{day_from} {month_from} {year_from} - {day_to} {month_to} {year_to}",
-
   "interpretation.fragment.magnitude.rare_trigger": "أُبلغ عن {obs_phrase} ضمن هذا التجمع. لا تنطبق أي عتبة إشارة إحصائية على هذا العامل الممرض: الكشف يستند إلى قائمة محفزات منتقاة تلتقط كل حالة مُبلَّغ عنها بغض النظر عن خط الأساس.",
   "interpretation.fragment.magnitude.high_ratio": "{obs_phrase} مقابل توقُّع قدره {expected}: بنسبة {ratio}.",
   "interpretation.fragment.magnitude.moderate_ratio": "{obs_phrase} مقابل توقُّع قدره {expected}، بنسبة {ratio}، وهي زيادة معتدلة عن خط الأساس.",
   "interpretation.fragment.magnitude.default": "سُجِّل {obs_phrase} لهذه السلسلة الرصدية.",
-
   "interpretation.fragment.concentration.high": "{dominant_n} من أصل {total_n} حالة ({dominant_share_pct}%) تأتي من الرمز البريدي {dominant_label}، مما يشير إلى تجمّع جغرافي قوي.",
   "interpretation.fragment.concentration.moderate": "{dominant_n} من أصل {total_n} حالة ({dominant_share_pct}%) تأتي من الرمز البريدي {dominant_label}، وهو تركّز معتدل.",
   "interpretation.fragment.concentration.diffuse": "تتوزع الحالات على عدة مناطق بريدية؛ المنطقة الأكثر حالات، الرمز البريدي {dominant_label}، لا تمثل سوى {dominant_share_pct}% من التجمع.",
-
   "interpretation.fragment.denominator.rising_volume_flat_positivity": "ارتفع حجم الفحوصات من {test_first} إلى {test_last} فحصًا أسبوعيًا، بينما بقيت الإيجابية شبه ثابتة ({positivity_first_pct}% إلى {positivity_last_pct}%). لذا يُعزى جزء من الارتفاع إلى حجم الفحوصات وليس إلى الحدوث الفعلي.",
   "interpretation.fragment.denominator.rising_positivity": "ارتفعت الإيجابية من {positivity_first_pct}% إلى {positivity_last_pct}% عند حجم فحوصات مماثل. لذا لا يُعزى الارتفاع إلى حجم الفحوصات.",
   "interpretation.fragment.denominator.stable": "حجم الفحوصات والإيجابية مستقران خلال الفترة المعروضة ({positivity_first_pct}% إلى {positivity_last_pct}%).",
-
   "interpretation.fragment.demography.shifted": "تحوَّل توزيع الأعمار نحو فئة {dominant_band}، مقارنة بخط أساس {baseline_band}.",
-
   "interpretation.fragment.completeness.warning": "ملاحظة: آخر {incomplete_days_phrase} غير مكتملة بسبب التأخير في الإبلاغ. من المرجَّح أن يكون العدد الفعلي أعلى.",
-
   "interpretation.fragment.recommendation.rare_trigger": "هذا عامل ممرض مدرج في قائمة المحفزات المنتقاة؛ قيِّم على الفور وتحقَّق من الالتزام القانوني بالإبلاغ.",
   "interpretation.fragment.recommendation.high_priority": "يبرر اجتماع الحجم والتركز النظر في تصنيفه كوباء (محتمل) والتنسيق مع مكافحة العدوى أو الصحة العامة.",
   "interpretation.fragment.recommendation.moderate_priority": "راقب تطور هذا التجمع؛ قد يكون تصنيفه كتجمع دون وباء مناسبًا ما دامت لا تظهر مؤشرات إضافية على الانتشار.",
   "interpretation.fragment.recommendation.default": "قيِّم هذا التجمع استنادًا إلى البيانات أعلاه؛ لا توجد بعد أدلة كافية لمتابعة عاجلة.",
-
   "auth.signin": "تسجيل الدخول",
   "auth.signout": "تسجيل الخروج",
   "auth.signed_in_as": "تم تسجيل الدخول باسم {name}",
@@ -290,7 +257,6 @@
   "auth.change_password": "تغيير كلمة المرور",
   "auth.password_mismatch": "كلمتا المرور غير متطابقتين.",
   "auth.password_too_short": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل.",
-
   "settings.no_access": "ليس لديك صلاحية الوصول إلى الإعدادات.",
   "settings.notif.title": "الإشعارات",
   "settings.notif.note": "يتم حفظ التغييرات هنا في قاعدة البيانات وتصبح سارية في عملية الكشف التالية، فوق ملف EPISODIC_CONFIG YAML - وتستمر طبقة YAML بالعمل كما كانت.",
@@ -364,7 +330,6 @@
   "settings.audit.col.when": "متى",
   "settings.audit.col.who": "من",
   "settings.audit.col.section": "القسم",
-
   "verdict.artefact": "مصنوعة (خلل تقني)",
   "verdict.artefact.hint": "الإشارة ناتجة عن خطأ في الكشف أو أثر تسجيل، وليست تجمعًا حقيقيًا للحالات.",
   "verdict.expected_variation": "تباين متوقَّع",
@@ -375,7 +340,6 @@
   "verdict.possible_epidemic.hint": "مؤشرات على انتقال بين الحالات، دون تأكيد ذلك بعد.",
   "verdict.confirmed_epidemic": "وباء مؤكَّد",
   "verdict.confirmed_epidemic.hint": "انتقال مؤكَّد بين الحالات ضمن هذا التجمع.",
-
   "assessment.verdict_label": "التصنيف",
   "assessment.verdict_none": "لا يوجد تصنيف بعد (ملاحظة فقط)",
   "assessment.rationale_label": "المبرر",
@@ -404,15 +368,12 @@
   "assessment.mute_note_label": "ملاحظة",
   "assessment.mute_submit": "تسجيل الكتم",
   "assessment.autosave_note": "تم حفظ المسودة محليًا.",
-
   "linelist.locked_title": "قائمة الحالات",
   "linelist.locked_message": "سجِّل الدخول لعرض قائمة الحالات على مستوى المريض.",
-
   "archive.title": "الأرشيف",
   "archive.note": "التجمعات المغلقة، قابلة للبحث حسب العامل الممرض والمكان.",
   "archive.search_placeholder": "ابحث حسب العامل الممرض أو المكان…",
   "archive.empty": "لم يُعثر على تجمعات مغلقة.",
-
   "activity.title": "النشاط",
   "activity.note": "كل إجراء مسجَّل؛ تظهر عمليات تشغيل النظام متمايزة بصريًا.",
   "activity.empty": "لم يُسجَّل أي نشاط بعد.",
@@ -455,7 +416,6 @@
   "activity.run_modal_autoclosed_line": "تم إغلاق {closed} من التجمعات تلقائيًا",
   "activity.run_modal_error": "سبب فشل هذه الدورة",
   "activity.run_modal_provenance": "نُفِّذت على {host} باسم {account} · EpiSODIC {version} · التهيئة {hash}",
-
   "performance.title": "الأداء",
   "performance.note": "مدى دقة تنبؤ الكواشف، وسرعة ملاحظة التجمع وتقييمه - استنادًا إلى التصنيفات المسجَّلة، لا إلى افتراض.",
   "performance.empty": "لا توجد بعد تجمعات مقيَّمة كافية لحساب ذلك.",
@@ -472,7 +432,6 @@
   "performance.col.pathogen": "العامل الممرض",
   "performance.col.n_detections": "الاكتشافات",
   "performance.col.ppv": "القيمة التنبؤية الإيجابية",
-
   "info.title": "معلومات",
   "info.intro": "خلفية عن خوارزميات الكشف في EpiSODIC، وحالات التجمعات، ونموذج الوصول.",
   "info.about.website": "الموقع الإلكتروني",
@@ -521,18 +480,14 @@
   "info.reference.file.default": "الإعدادات الافتراضية المرفقة فقط؛ لم يُهيَّأ أي ملف خاص بالنسخة.",
   "info.reference.file.custom": "ملفك الخاص مُهيَّأ وله الأسبقية على الإعدادات الافتراضية المرفقة.",
   "info.reference.path": "تجري القراءة من: {path}",
-
   "info.access.title": "الوصول",
   "info.access.body": "القراءة مجهولة الهوية: يمكن لأي شخص يصل إلى التطبيق عرض التجمعات والسلاسل الرصدية والأرشيف دون تسجيل الدخول. تسجيل الدخول مطلوب فقط لتصنيف تجمع أو إغلاقه أو كتم سلسلة رصدية - وتُنسب كل عملية كتابة إلى المستخدم المسجَّل الدخول.",
-
   "streams.col.farrington": "Farrington",
   "streams.farrington_hint": "يحتاج Farrington إلى {need} أسبوعًا من السجل لقيمة b المُهيّأة؛ يمتلك هذا المسار {have}.",
   "streams.col.baseline_excluded": "مستبعد من خط الأساس",
-
   "interpretation.fragment.curve_shape.point_source": "تقع جميع الحالات ضمن فترة حضانة قصوى واحدة، مما يشير إلى مصدر نقطي: تعرُّض مشترك حول لحظة واحدة، بدلًا من انتقال من شخص إلى آخر.",
   "interpretation.fragment.curve_shape.propagated": "تمتد الحالات إلى ما هو أبعد بكثير من فترة حضانة قصوى واحدة، مما يشير إلى انتقال من شخص إلى آخر بدلًا من تعرُّض مشترك واحد.",
   "interpretation.fragment.curve_shape.ambiguous": "لا يتطابق توزع الحالات عبر الزمن بوضوح مع مصدر نقطي أو مع انتقال من شخص إلى آخر؛ يلزم مزيد من التحقيق في التعرُّض للتمييز بينهما.",
-
   "panel.rt.title": "معدل التكاثر الفعّال (Rt)",
   "panel.rt.note": "معدل التكاثر الفعّال المتغير بمرور الوقت (وليس R0)، محسوب على نوافذ متحركة مدتها 7 أيام. تُستبعد النوافذ الواقعة ضمن فترة الإبلاغ التي لا تزال غير مكتملة.",
   "panel.rt.unavailable.no_serial_interval": "تعذَّر حساب Rt: تفتقر تهيئة هذا العامل الممرض إلى الفاصل التسلسلي (si_mean_days/si_sd_days).",
@@ -541,7 +496,6 @@
   "panel.chart.graphics_unavailable_build": "يتعذَّر عرض الرسم البياني: لا يتوفر جهاز رسوميات PNG صالح للعمل على هذا الخادم (تعذَّر فتح ragg وCairo وجهاز PNG المدمج في R). هذه مشكلة في إعداد تثبيت R نفسه وقت بنائه، وليست حزمة يمكن إعادة تثبيتها - تواصل مع مسؤول هذا الخادم.",
   "panel.rt.unavailable.insufficient_history": "لا يتوفر بعد سجل حالات كافٍ في هذا التجمع لحساب Rt.",
   "panel.rt.unavailable.completeness_unknown": "لا يمكن حساب Rt: تعذّر قياس تأخير الإبلاغ لهذا المسار، لذلك لا يمكن حجب النوافذ التي ما زالت غير مكتملة.",
-
   "panel.similar.title": "تجمعات مشابهة",
   "panel.related.title": "العناقيد ذات الصلة",
   "relation.linked": "مرتبط",
@@ -550,13 +504,11 @@
   "dossier.linked_more": "+{n} أخرى",
   "panel.related.note": "عناقيد أخرى تضم بعض هذه الحالات. المرتبطة منها ملف قائم بذاته ولا يزال يحتاج إلى تقييم؛ أما المكبوتة فقد أُدمجت في هذا الملف.\nمرتبط = ملف مستقل يشارك الحالات. مكبوت = لم يعد ملفًا مستقلاً، اندمجت حالاته هنا.",
   "panel.similar.unavailable": "لم يُعثر على تجمعات مغلقة مشابهة لهذا العامل الممرض.",
-
   "panel.report.title": "تقرير التفشي",
   "panel.report.empty": "لم يُنشأ بعد أي تقرير لهذا التجمع.",
   "panel.report.version_line": "الإصدار {version} - {when}",
   "panel.report.render_button": "إنشاء التقرير",
   "panel.report.pending": "جارٍ إنشاء التقرير...",
-
   "report.cluster": "التجمع",
   "report.rendered_label": "تاريخ الإنشاء",
   "report.note_versioned": "هذا تقرير آلي مرتبط بإصدار. يحصل كل إنشاء جديد على رقم إصدار خاص به؛ وتبقى هذه النسخة دون تغيير بعد إرسالها.",
@@ -576,7 +528,6 @@
   "report.timeline_empty": "لم يُسجَّل بعد أي تقييم.",
   "report.closed_note": "التجمع مغلق",
   "report.footer": "أُنشئ بواسطة EpiSODIC. لا يحتوي هذا المستند على أي رابط مباشر بالتطبيق؛ جميع البيانات مُجمَّدة عند لحظة الإنشاء.",
-
   "pathogen.title": "نشاط العامل الممرض",
   "pathogen.note": "عامل ممرض واحد على امتداد منطقة التغطية كاملةً، خلال مدة تختارها بنفسك. هذا هو المنظور الوبائي: أين يقف موسمٌ ما بالقياس إلى تاريخه هو، وبأي سرعة يجري الانتقال على مستوى المنطقة، وأي إشارات صدرت خلال ذلك. شاشة العناقيد تجيب عمّا ينبغي فعله اليوم؛ وهذه الشاشة تجيب عمّا يجري.",
   "pathogen.empty": "لم تُستورد بعدُ أي بيانات حالات، فليس هناك ما يُوصف.",
@@ -693,7 +644,6 @@
   "pathogen.panel.config.severity.label": "وزن الأولوية",
   "pathogen.panel.config.severity.meaning": "مدى ثقل مجموعات هذا العامل الممرض في قائمة الأولوية مقارنة بغيره.",
   "pathogen.panel.config.source.label": "المصدر",
-
   "notif.title_new_clusters": "EpiSODIC: {count_phrase} تم اكتشافها في {date}",
   "notif.new_cluster.singular": "تجمع جديد",
   "notif.new_cluster.plural": "تجمعات جديدة",
@@ -719,7 +669,6 @@
   "notif.test.sent_at": "أُرسل في",
   "notif.test.working": "إذا تلقيت هذه الرسالة، فإن قناة الإشعارات هذه تعمل.",
   "notif.test.status_value": "هذا إشعار تجريبي.",
-
   "panel.report.schedule_title": "التقارير المجدولة",
   "panel.report.schedule_intro": "إرسال هذا التقرير تلقائيًا عبر البريد الإلكتروني إلى الزملاء الذين لا يملكون وصولاً إلى لوحة التحكم، وفق جدول متكرر.",
   "panel.report.schedule_no_channel": "لم يتم بعد تكوين أي قناة إشعارات تدعم البريد الإلكتروني (SMTP أو sendmail أو Microsoft 365). قم بتكوين واحدة أولاً - انظر vignette(\"notifications\").",
@@ -757,5 +706,43 @@
   "report.diff_ratio_change": "تغيّرت نسبة الملاحظ إلى المتوقع من {previous} إلى {current}.",
   "report.diff_period_extended": "تمتد فترة الحالات الآن حتى {date}.",
   "unit.new_case": "حالة جديدة",
-  "unit.new_cases": "حالات جديدة"
+  "unit.new_cases": "حالات جديدة",
+  "nav.epidemics": "الأوبئة",
+  "dossier.epidemic_ref": "E-{id}",
+  "unit.epidemic": "وباء",
+  "unit.epidemics": "أوبئة",
+  "performance.outbreaks_only_note": "جميع المقاييس في هذه الشاشة تحسب حالات التفشي فقط (مستوى الجناح والمؤسسة والمنطقة). يتم تقييم الأوبئة بشكل منفصل.",
+  "verdict.season_started": "بدأ الموسم",
+  "verdict.season_started.hint": "تم الإعلان عن بدء موسم الوباء. هذا قرار له عواقب سياسية.",
+  "verdict.season_not_yet": "لم يبدأ الموسم بعد",
+  "verdict.season_not_yet.hint": "تم تجاوز العتبة لكن الأدلة لا تبرر بعد الإعلان.",
+  "verdict.season_ended": "انتهى الموسم",
+  "verdict.season_ended.hint": "تم الإعلان عن انتهاء موسم الوباء.",
+  "epidemics.rail_title": "الأوبئة",
+  "epidemics.rail_empty": "لا توجد أوبئة مفتوحة.",
+  "epidemics.none_detected": "لم يتم اكتشاف أي منها",
+  "epidemics.season_chip": "موسم {season}",
+  "epidemics.stat.institutions": "المؤسسات",
+  "epidemics.stat.top_share": "{name}: {pct}%",
+  "epidemics.stat.season": "الموسم",
+  "epidemics.stat.anchor": "أسبوع المرجع {week}",
+  "epidemics.stat.outbreaks_during": "حالات التفشي خلال",
+  "epidemics.panel.curve.title": "الحالات الأسبوعية",
+  "epidemics.panel.curve.empty": "لا توجد حالات في هذه الفترة.",
+  "epidemics.panel.curve.threshold_note": "العتبات محسوبة من {seasons} مواسم سابقة. ما قبل الوباء: {pre}، ما بعد الوباء: {post}.",
+  "epidemics.panel.curve.no_thresholds": "وباء موسمي، لكن لم يتمكن من حساب العتبات من بيانات هذه النسخة.",
+  "epidemics.panel.curve.not_seasonal": "هذا الوباء ليس موسميًا. يتبع الإغلاق قاعدة الأيام الخالية من الحالات.",
+  "epidemics.panel.denominator.title": "الاختبارات والإيجابية",
+  "epidemics.panel.denominator.empty": "لا تتوفر بيانات حجم الاختبارات لهذا العامل الممرض.",
+  "epidemics.panel.denominator.note": "ارتفاع الحالات مع ثبات الإيجابية هو ارتفاع في الاختبارات وليس في الإصابات.",
+  "epidemics.panel.institutions.title": "المؤسسات المساهمة",
+  "epidemics.panel.institutions.empty": "لا تتوفر بيانات مؤسسية.",
+  "epidemics.panel.institutions.col_name": "المؤسسة",
+  "epidemics.panel.institutions.col_share": "الحصة (%)",
+  "epidemics.panel.during.title": "حالات التفشي خلال هذا الوباء",
+  "epidemics.declaration_label": "الإعلان الموسمي",
+  "epidemics.declaration_rationale_placeholder": "صف الأدلة الداعمة لهذا الإعلان…",
+  "epidemics.declaration_submit": "تسجيل الإعلان",
+  "epidemics.declaration_no_rationale": "لم يتم تقديم مبرر",
+  "column.id": "المعرّف"
 }

@@ -551,6 +551,266 @@ test_that("geography_nests returns TRUE for L5 epidemic unconditionally", {
 
 # -- Cross-scale suppression -------------------------------------------
 
+# -- M3: Read path and Epidemics screen -----------------------------------
+
+test_that("open_clusters returns only outbreaks, open_epidemics returns only epidemics", {
+  env <- epidemic_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  ob_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$area_stream_id,
+    first_day = "2026-01-10",
+    last_day = "2026-01-20",
+    n_cases = 5,
+    priority_score = 50,
+    detector_agreement = 1,
+    run_id = env$run_id,
+    scale = "outbreak"
+  )
+  epi_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$province_stream_id,
+    first_day = "2026-01-10",
+    last_day = "2026-01-20",
+    n_cases = 20,
+    priority_score = 60,
+    detector_agreement = 1,
+    run_id = env$run_id,
+    scale = "epidemic"
+  )
+
+  outbreaks <- episodic_app_open_clusters(env$con, lang = "en")
+  epidemics <- episodic_app_open_epidemics(env$con, lang = "en")
+
+  expect_true(ob_id %in% outbreaks$cluster_id)
+  expect_false(epi_id %in% outbreaks$cluster_id)
+
+  expect_true(epi_id %in% epidemics$cluster_id)
+  expect_false(ob_id %in% epidemics$cluster_id)
+})
+
+test_that("epidemic_object assembles dossier data for a seasonal epidemic", {
+  env <- epidemic_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  epi_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$province_stream_id,
+    first_day = "2026-01-10",
+    last_day = "2026-01-20",
+    n_cases = 20,
+    priority_score = 60,
+    detector_agreement = 1,
+    run_id = env$run_id,
+    scale = "epidemic"
+  )
+  episodic_db_epidemic_season_insert(
+    env$con,
+    cluster_id = epi_id,
+    season_label = "2025/2026",
+    anchor_week = 30L,
+    post_epidemic_threshold = 5.0
+  )
+
+  obj <- episodic_epidemic_object(env$con, epi_id, lang = "en")
+  expect_equal(obj$id, epi_id)
+  expect_false(is.null(obj$season))
+  expect_equal(obj$season$season_label, "2025/2026")
+  expect_true(is.data.frame(obj$during_outbreaks))
+})
+
+test_that("epidemic_object has no season for a non-seasonal epidemic", {
+  env <- epidemic_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  epi_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$province_stream_id,
+    first_day = "2026-01-10",
+    last_day = "2026-01-20",
+    n_cases = 20,
+    priority_score = 60,
+    detector_agreement = 1,
+    run_id = env$run_id,
+    scale = "epidemic"
+  )
+
+  obj <- episodic_epidemic_object(env$con, epi_id, lang = "en")
+  expect_null(obj$season)
+})
+
+test_that("epidemic UI renders without error for a seasonal epidemic", {
+  env <- epidemic_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  epi_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$province_stream_id,
+    first_day = "2026-01-10",
+    last_day = "2026-01-20",
+    n_cases = 20,
+    priority_score = 60,
+    detector_agreement = 1,
+    run_id = env$run_id,
+    scale = "epidemic"
+  )
+  episodic_db_epidemic_season_insert(
+    env$con,
+    cluster_id = epi_id,
+    season_label = "2025/2026",
+    anchor_week = 30L,
+    post_epidemic_threshold = 5.0
+  )
+
+  epidemics <- episodic_app_open_epidemics(env$con, lang = "en")
+  html <- as.character(episodic_ui_epidemics_screen(epidemics, NULL, lang = "en"))
+  expect_true(grepl("E-", html, fixed = TRUE))
+  expect_false(grepl("\\[\\[", html))
+})
+
+test_that("epidemic rail shows empty state when no epidemics exist", {
+  empty <- data.frame(
+    cluster_id = integer(0),
+    priority_score = numeric(0),
+    stringsAsFactors = FALSE
+  )
+  html <- as.character(episodic_ui_epidemic_rail(empty, NULL, lang = "en"))
+  expect_true(grepl("No open epidemics", html, fixed = TRUE))
+})
+
+test_that("epidemic during panel says 'none detected' when no outbreaks are linked", {
+  env <- epidemic_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  epi_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$province_stream_id,
+    first_day = "2026-01-10",
+    last_day = "2026-01-20",
+    n_cases = 20,
+    priority_score = 60,
+    detector_agreement = 1,
+    run_id = env$run_id,
+    scale = "epidemic"
+  )
+
+  obj <- episodic_epidemic_object(env$con, epi_id, lang = "en")
+  html <- as.character(
+    episodic_ui_epidemic_during_panel(env$con, obj, lang = "en")
+  )
+  expect_true(grepl("none detected", html, fixed = TRUE))
+})
+
+test_that("epidemic declaration form renders only for seasonal epidemics", {
+  env <- epidemic_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  epi_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$province_stream_id,
+    first_day = "2026-01-10",
+    last_day = "2026-01-20",
+    n_cases = 20,
+    priority_score = 60,
+    detector_agreement = 1,
+    run_id = env$run_id,
+    scale = "epidemic"
+  )
+  episodic_db_epidemic_season_insert(
+    env$con,
+    cluster_id = epi_id,
+    season_label = "2025/2026",
+    anchor_week = 30L,
+    post_epidemic_threshold = 5.0
+  )
+
+  obj <- episodic_epidemic_object(env$con, epi_id, lang = "en")
+  html <- as.character(
+    episodic_ui_epidemic_declaration_form(env$con, epi_id, obj, lang = "en")
+  )
+  expect_true(grepl("season_started", html, fixed = TRUE))
+  expect_true(grepl("season_not_yet", html, fixed = TRUE))
+  expect_true(grepl("season_ended", html, fixed = TRUE))
+  expect_true(grepl("epidemic_declare_submit", html, fixed = TRUE))
+})
+
+test_that("epidemic verdict colours include declaration verdicts", {
+  expect_type(episodic_ui_verdict_colour("season_started"), "character")
+  expect_type(episodic_ui_verdict_colour("season_not_yet"), "character")
+  expect_type(episodic_ui_verdict_colour("season_ended"), "character")
+})
+
+test_that("open_epidemics returns the expected columns for the rail", {
+  env <- epidemic_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  epi_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$province_stream_id,
+    first_day = "2026-01-10",
+    last_day = "2026-01-20",
+    n_cases = 20,
+    priority_score = 60,
+    detector_agreement = 1,
+    run_id = env$run_id,
+    scale = "epidemic"
+  )
+
+  epidemics <- episodic_app_open_epidemics(env$con, lang = "en")
+  expect_true(all(
+    c("cluster_id", "pathogen", "level_label", "state", "state_label") %in%
+      names(epidemics)
+  ))
+})
+
+test_that("db_outbreaks_during_epidemic returns linked outbreaks", {
+  env <- epidemic_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  epi_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$region_stream_id,
+    first_day = "2026-01-01",
+    last_day = "2026-02-15",
+    n_cases = 100,
+    priority_score = 70,
+    detector_agreement = 1,
+    run_id = env$run_id,
+    scale = "epidemic"
+  )
+  ob_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$inst_stream_id,
+    first_day = "2026-01-10",
+    last_day = "2026-01-20",
+    n_cases = 5,
+    priority_score = 40,
+    detector_agreement = 1,
+    run_id = env$run_id,
+    scale = "outbreak"
+  )
+
+  cases <- data.frame(
+    sample_date = "2026-01-15",
+    pathogen = "RSV",
+    institution_id = env$inst_id,
+    ward = NA_character_,
+    pc = "9713AB",
+    care_line = "second",
+    stringsAsFactors = FALSE
+  )
+  geography <- episodic_geography_config(env$config)
+  episodic_epidemic_link_outbreaks(env$con, cases, geography, env$run_id)
+
+  during <- episodic_db_outbreaks_during_epidemic(env$con, epi_id)
+  expect_equal(nrow(during), 1)
+  expect_true("cluster_id" %in% names(during))
+  expect_true("pathogen" %in% names(during))
+})
+
+# -- Cross-scale suppression -------------------------------------------
+
 test_that("suppression fires across the outbreak/epidemic scale boundary", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))

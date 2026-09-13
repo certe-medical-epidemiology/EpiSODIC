@@ -2,7 +2,6 @@
   "app.title": "EpiSODIC",
   "app.full_name": "महामारी विज्ञान संकेत अवलोकन, संसूचन, पहचान और वर्गीकरण",
   "app.demodata": "डेमो डेटा",
-
   "nav.clusters": "क्लस्टर",
   "nav.pathogen": "रोगजनक",
   "nav.streams": "स्ट्रीम",
@@ -20,7 +19,6 @@
   "instance.card.performance": "महामारी विज्ञानियों के अपने निर्णयों की तुलना में संसूचक कैसा प्रदर्शन करते हैं।",
   "instance.card.info": "यह बिल्ड क्या है, कौन-सी संदर्भ फ़ाइलें पढ़ी गईं, और शब्दों का क्या अर्थ है।",
   "instance.card.settings": "खाते और इंस्टैंस विन्यास।",
-
   "rail.title": "खुले क्लस्टर",
   "rail.count_suffix": "नए या सक्रिय",
   "rail.empty": "कोई खुला क्लस्टर नहीं है।",
@@ -33,10 +31,8 @@
   "rail.bulk_apply": "चयनित पर वर्गीकरण लागू करें",
   "rail.bulk_clear": "चयन साफ़ करें",
   "rail.bulk_select": "सामूहिक मूल्यांकन के लिए चुनें",
-
   "pane.dossier": "डोज़ियर",
   "pane.switcher_label": "दिखाएँ",
-
   "dossier.stat.observed_sub": "अपेक्षित {expected}",
   "dossier.stat.ratio": "अनुपात O/E",
   "dossier.stat.ratio_sub": "मामले / अपेक्षित",
@@ -55,25 +51,21 @@
   "dossier.stat.case_free_sub": "सीमा {need} दि.",
   "dossier.stat.priority": "प्राथमिकता",
   "dossier.stat.priority_sub": "संयुक्त स्कोर",
-
   "dossier.cluster_ref": "#{id}",
   "dossier.meta.first_last": "पहला मामला {first}, अंतिम {last}",
   "dossier.meta.detected_by": "{detectors} द्वारा संसूचित",
   "dossier.changed_badge": "मूल्यांकन के बाद परिवर्तित",
   "dossier.manual_badge": "मैन्युअल रूप से जोड़ा गया",
-
   "state.new": "नया",
   "state.assessing": "मूल्यांकनाधीन",
   "state.monitoring": "निगरानी में",
   "state.closed": "बंद",
   "state.reassess": "पुनर्मूल्यांकन आवश्यक",
-
   "level.pathogen_ward": "L1 · वार्ड",
   "level.pathogen_institution": "L2 · संस्थान",
   "level.pathogen_area": "L3 · क्षेत्र",
   "level.pathogen_province": "L4 · प्रांत",
   "level.pathogen_region": "L5 · प्रदेश",
-
   "careline.first": "प्राथमिक देखभाल",
   "careline.second": "द्वितीयक देखभाल",
   "careline.third": "तृतीयक देखभाल",
@@ -84,17 +76,13 @@
   "careline.short.third": "तृतीय पंक्ति",
   "careline.short.other": "अन्य",
   "careline.short.unknown": "अज्ञात",
-
   "timeline.title": "समयरेखा",
   "timeline.not_assessed": "अभी तक मूल्यांकन नहीं हुआ है। {first} को {detectors} द्वारा संसूचित।",
-
   "status_trajectory.title": "स्थिति परिवर्तन",
   "status_trajectory.unassessed": "अमूल्यांकित",
-
   "panel.interpretation.title": "व्याख्या",
   "panel.interpretation.aside": "स्वतः तैयार",
   "panel.interpretation.empty": "इस क्लस्टर के लिए अभी कोई व्याख्या उपलब्ध नहीं है।",
-
   "panel.notes.title": "नोट्स",
   "panel.notes.empty": "इस क्लस्टर के लिए अभी कोई नोट्स उपलब्ध नहीं हैं।",
   "notes.edit_button": "संपादित करें",
@@ -102,12 +90,10 @@
   "notes.history_button": "इतिहास",
   "notes.history_modal_title": "नोट्स का इतिहास",
   "notes.history_empty": "इस क्लस्टर के लिए अभी तक कोई नोट सहेजा नहीं गया है।",
-
   "panel.epicurve.title": "महामारी वक्र",
   "panel.epicurve.note": "छायांकित क्षेत्र अंतिम {days_phrase} को दर्शाता है: रिपोर्टिंग त्रिकोण से प्राप्त अनुभवजन्य रिपोर्टिंग विलंब। इस अवधि में नमूना तिथि वाले मामलों की रिपोर्टिंग अभी पूरी नहीं हुई है। यहाँ घटता हुआ अंत वास्तविक कमी नहीं है।",
   "panel.epicurve.note_unknown": "इस स्ट्रीम के लिए कोई रिपोर्टिंग विलंब मापा नहीं जा सका, इसलिए इस वक्र के किसी भी दिन को पूर्ण रूप से रिपोर्ट किया गया नहीं माना जा सकता। इसीलिए पूरा वक्र छायांकित दिखाया गया है।",
   "panel.epicurve.ylab": "मामले",
-
   "panel.trend.title": "बहु-वर्षीय प्रवृत्ति",
   "panel.trend.aside": "{weeks} सप्ताह",
   "panel.trend.note": "देखी गई संख्याओं की तुलना <code>farringtonFlexible</code> से प्राप्त अपेक्षा और संकेत सीमा से। यह दिखाने के लिए कि क्या वर्तमान वृद्धि सामान्य मौसमी पैटर्न के भीतर है।",
@@ -115,19 +101,16 @@
   "panel.trend.legend_expected": "अपेक्षित",
   "panel.trend.legend_upperbound": "संकेत सीमा",
   "panel.trend.unavailable": "अभी तक कोई प्रवृत्ति डेटा उपलब्ध नहीं है; इस स्ट्रीम के पास <code>farringtonFlexible</code> के लिए पर्याप्त आधार रेखा इतिहास नहीं है।",
-
   "panel.denominator.title": "हर और सकारात्मकता",
   "panel.denominator.aside": "प्रति सप्ताह",
   "panel.denominator.note": "गलत संकेत का सबसे सामान्य कारण बढ़ता हुआ परीक्षण आयतन है, न कि बढ़ती घटना। यदि दंड (बार) बढ़ते हैं लेकिन रेखा स्थिर रहती है, तो वृद्धि हर-प्रभाव है।",
   "panel.denominator.legend_tests": "परीक्षण",
   "panel.denominator.legend_positivity": "सकारात्मकता %",
   "panel.denominator.unavailable": "इस रोगजनक के लिए कोई सकारात्मकता डेटा उपलब्ध नहीं है। यह वैकल्पिक है; हर प्रयोगशाला पद्धति नकारात्मक परिणाम रिपोर्ट नहीं कर सकती।",
-
   "panel.demography.title": "आयु और लिंग",
   "panel.demography.note": "ऐतिहासिक आधार रेखा की तुलना में प्रभावित आयु समूह में बदलाव अक्सर स्वयं संख्या से अधिक जानकारीपूर्ण होता है।",
   "panel.demography.male": "← पुरुष",
   "panel.demography.female": "महिला →",
-
   "panel.geo.title": "भौगोलिक प्रसार",
   "panel.geo.aside": "पिन कोड",
   "panel.geo.unit": "भौगोलिक संदर्भ डेटा (EPISODIC_GEO_DATA) कॉन्फ़िगर होते ही यहाँ एक मानचित्र दिखाई देगा।",
@@ -135,14 +118,11 @@
   "panel.geo.unknown_pc": "{total} में से {n} मामलों का पिन कोड दर्ज नहीं है; वे मानचित्र और सांद्रता माप से बाहर रखे गए हैं।",
   "panel.geo.map_note": "मामलों वाले क्षेत्रों तक सीमित किया गया, साथ में संदर्भ के लिए आसपास के क्षेत्र। चौखटे के बाहर के क्षेत्र दिखाए नहीं गए हैं, वे मामलामुक्त नहीं हैं।",
   "panel.geo.province_error": "इन डाक कोडों के साथ कोई प्रांत नहीं दिखाया जा सका: {reason}",
-
   "panel.places.title_ward": "वार्ड",
   "panel.places.title_institution": "संस्थान",
-
   "panel.resistance.title": "फेनोटाइपिक प्रतिरोध प्रोफ़ाइल",
   "panel.resistance.note": "यह टाइपिंग का विकल्प नहीं है, लेकिन साझा प्रोफ़ाइल किसी सामान्य स्रोत को अधिक संभावित बनाती है और WGS के लिए आइसोलेट भेजने हेतु प्रेरित कर सकती है।",
   "panel.resistance.unavailable": "इस प्रणाली में अभी तक मामलों से जुड़ा कोई प्रतिरोध डेटा नहीं है।",
-
   "panel.linelist.title": "लाइन सूची",
   "panel.linelist.aside": "{total} में से {shown} मामले",
   "panel.linelist.col.patient": "मरीज़",
@@ -153,7 +133,6 @@
   "panel.linelist.col.pc": "पिन कोड",
   "panel.linelist.col.ward": "वार्ड",
   "panel.linelist.col.specialism": "विशेषज्ञता",
-
   "panel.settings.title": "संसूचन सेटिंग्स",
   "panel.settings.detectors": "संसूचक",
   "panel.settings.aggregation": "समुच्चयन",
@@ -165,7 +144,6 @@
   "panel.settings.last_run": "अंतिम रन",
   "panel.settings.last_run_value": "{when} · {host}",
   "panel.settings.pkg_versions": "पैकेज संस्करण",
-
   "streams.title": "स्ट्रीम",
   "streams.note": "यह कॉन्फ़िगरेशन नवीनतम संसूचन रन के समय दर्ज किया गया था, न कि जैसा वर्तमान में डिस्क पर है।",
   "streams.col.stream": "स्ट्रीम",
@@ -177,14 +155,12 @@
   "streams.page_prev": "पिछला",
   "streams.page_next": "अगला",
   "streams.page_of": "पृष्ठ {page} में से {n_pages}",
-
   "status.run_ok": "रन {time} सफल · {streams_phrase} · {clusters_phrase} संसूचित",
   "status.run_partial": "रन {time} पूरा, कुछ पंक्तियाँ छोड़ी गईं · {streams_phrase} · {clusters_phrase} संसूचित",
   "status.run_failed": "अंतिम रन विफल · {time}",
   "status.run_failed_hint": "R में episodic_check_cases() से अपना केस डेटा जाँचें",
   "status.no_run": "अभी तक कोई संसूचन रन नहीं हुआ है",
   "status.completeness": "पूर्णता {pct}% ({days_phrase})",
-
   "unit.stream": "स्ट्रीम",
   "unit.streams": "स्ट्रीम",
   "unit.cluster": "क्लस्टर",
@@ -201,7 +177,6 @@
   "unit.runs": "रन",
   "unit.account": "खाता",
   "unit.accounts": "खाते",
-
   "misc.unknown": "अज्ञात",
   "misc.none": "कोई नहीं",
   "misc.list_separator_and": " और ",
@@ -221,7 +196,6 @@
   "misc.language.es-419": "लैटिन अमेरिकी स्पेनिश",
   "misc.close": "बंद करें",
   "misc.dash": "—",
-
   "date.month.01": "जन.",
   "date.month.02": "फर.",
   "date.month.03": "मार्च",
@@ -250,29 +224,22 @@
   "date.format.range_month": "{day_from}-{day_to} {month} {year}",
   "date.format.range_year": "{day_from} {month_from} - {day_to} {month_to} {year}",
   "date.format.range_full": "{day_from} {month_from} {year_from} - {day_to} {month_to} {year_to}",
-
   "interpretation.fragment.magnitude.rare_trigger": "इस क्लस्टर में {obs_phrase} की सूचना मिली है। इस रोगजनक पर कोई सांख्यिकीय संकेत सीमा लागू नहीं होती: संसूचन क्यूरेटेड ट्रिगर सूची से आता है, जो आधार रेखा की परवाह किए बिना हर रिपोर्ट किए गए मामले को पकड़ती है।",
   "interpretation.fragment.magnitude.high_ratio": "{expected} की अपेक्षा के मुक़ाबले {obs_phrase}: {ratio} का अनुपात।",
   "interpretation.fragment.magnitude.moderate_ratio": "{expected} की अपेक्षा के मुक़ाबले {obs_phrase}, {ratio} का अनुपात, आधार रेखा से मध्यम अधिकता।",
   "interpretation.fragment.magnitude.default": "इस स्ट्रीम के लिए {obs_phrase} दर्ज किए गए।",
-
   "interpretation.fragment.concentration.high": "{total_n} में से {dominant_n} मामले ({dominant_share_pct}%) पिन कोड {dominant_label} से आते हैं, जो मजबूत स्थान-आधारित क्लस्टरिंग का संकेत देता है।",
   "interpretation.fragment.concentration.moderate": "{total_n} में से {dominant_n} मामले ({dominant_share_pct}%) पिन कोड {dominant_label} से आते हैं, जो मध्यम सघनता है।",
   "interpretation.fragment.concentration.diffuse": "मामले कई पिन कोड क्षेत्रों में फैले हुए हैं; सबसे अधिक मामलों वाला क्षेत्र, पिन कोड {dominant_label}, क्लस्टर का केवल {dominant_share_pct}% है।",
-
   "interpretation.fragment.denominator.rising_volume_flat_positivity": "प्रति सप्ताह परीक्षण आयतन {test_first} से बढ़कर {test_last} हो गया, जबकि सकारात्मकता लगभग स्थिर ({positivity_first_pct}% से {positivity_last_pct}%) रही। इसलिए वृद्धि का कुछ हिस्सा परीक्षण आयतन के कारण है, न कि घटना के कारण।",
   "interpretation.fragment.denominator.rising_positivity": "तुलनीय परीक्षण आयतन पर सकारात्मकता {positivity_first_pct}% से बढ़कर {positivity_last_pct}% हो गई। इसलिए वृद्धि परीक्षण आयतन के कारण नहीं है।",
   "interpretation.fragment.denominator.stable": "दर्शाई गई अवधि में परीक्षण आयतन और सकारात्मकता स्थिर हैं ({positivity_first_pct}% से {positivity_last_pct}%)।",
-
   "interpretation.fragment.demography.shifted": "आयु वितरण {baseline_band} की आधार रेखा की तुलना में {dominant_band} समूह की ओर स्थानांतरित हो गया है।",
-
   "interpretation.fragment.completeness.warning": "ध्यान दें: रिपोर्टिंग विलंब के कारण अंतिम {incomplete_days_phrase} अपूर्ण हैं। वास्तविक संख्या संभवतः अधिक है।",
-
   "interpretation.fragment.recommendation.rare_trigger": "यह क्यूरेटेड ट्रिगर सूची का एक रोगजनक है; तुरंत मूल्यांकन करें और वैधानिक अधिसूचना दायित्व की जाँच करें।",
   "interpretation.fragment.recommendation.high_priority": "आकार और सघनता का संयोजन इसे (संभावित) महामारी के रूप में वर्गीकृत करने और संक्रमण रोकथाम या सार्वजनिक स्वास्थ्य के साथ समन्वय पर विचार करने को उचित ठहराता है।",
   "interpretation.fragment.recommendation.moderate_priority": "इस क्लस्टर के विकास पर नज़र रखें; जब तक फैलाव के और संकेत सामने नहीं आते, तब तक बिना महामारी वाले क्लस्टर के रूप में वर्गीकरण उपयुक्त हो सकता है।",
   "interpretation.fragment.recommendation.default": "उपरोक्त डेटा के आधार पर इस क्लस्टर का मूल्यांकन करें; अभी तक तत्काल अनुवर्ती कार्रवाई के लिए पर्याप्त प्रमाण नहीं हैं।",
-
   "auth.signin": "साइन इन करें",
   "auth.signout": "साइन आउट करें",
   "auth.signed_in_as": "{name} के रूप में साइन इन",
@@ -290,7 +257,6 @@
   "auth.change_password": "पासवर्ड बदलें",
   "auth.password_mismatch": "पासवर्ड मेल नहीं खाते।",
   "auth.password_too_short": "पासवर्ड कम से कम 8 अक्षरों का होना चाहिए।",
-
   "settings.no_access": "आपके पास सेटिंग्स तक पहुंच नहीं है।",
   "settings.notif.title": "सूचनाएं",
   "settings.notif.note": "यहां किए गए परिवर्तन डेटाबेस में सहेजे जाते हैं और अगले डिटेक्शन रन में प्रभावी होते हैं, EPISODIC_CONFIG YAML फ़ाइल के ऊपर - YAML ओवरले पहले की तरह ही काम करता रहता है।",
@@ -364,7 +330,6 @@
   "settings.audit.col.when": "कब",
   "settings.audit.col.who": "किसने",
   "settings.audit.col.section": "अनुभाग",
-
   "verdict.artefact": "आर्टिफ़ैक्ट",
   "verdict.artefact.hint": "यह संकेत एक संसूचन त्रुटि या पंजीकरण प्रभाव है, न कि मामलों का वास्तविक क्लस्टरिंग।",
   "verdict.expected_variation": "अपेक्षित भिन्नता",
@@ -375,7 +340,6 @@
   "verdict.possible_epidemic.hint": "मामलों के बीच फैलाव के संकेत, बिना अभी इसकी पुष्टि हुए।",
   "verdict.confirmed_epidemic": "पुष्टिकृत महामारी",
   "verdict.confirmed_epidemic.hint": "इस क्लस्टर के भीतर मामलों के बीच पुष्टिकृत फैलाव।",
-
   "assessment.verdict_label": "वर्गीकरण",
   "assessment.verdict_none": "अभी तक कोई वर्गीकरण नहीं (केवल टिप्पणी)",
   "assessment.rationale_label": "औचित्य",
@@ -404,15 +368,12 @@
   "assessment.mute_note_label": "टिप्पणी",
   "assessment.mute_submit": "म्यूट दर्ज करें",
   "assessment.autosave_note": "मसौदा स्थानीय रूप से सहेजा गया।",
-
   "linelist.locked_title": "लाइन सूची",
   "linelist.locked_message": "रोगी-स्तर की लाइन सूची देखने के लिए साइन इन करें।",
-
   "archive.title": "पुरालेख",
   "archive.note": "बंद क्लस्टर, रोगजनक और स्थान के अनुसार खोजे जा सकते हैं।",
   "archive.search_placeholder": "रोगजनक या स्थान से खोजें…",
   "archive.empty": "कोई बंद क्लस्टर नहीं मिला।",
-
   "activity.title": "गतिविधि",
   "activity.note": "प्रत्येक दर्ज की गई कार्रवाई; सिस्टम रन दृश्य रूप से अलग दिखते हैं।",
   "activity.empty": "अभी तक कोई गतिविधि दर्ज नहीं की गई है।",
@@ -455,7 +416,6 @@
   "activity.run_modal_autoclosed_line": "{closed} क्लस्टर स्वतः बंद किए गए",
   "activity.run_modal_error": "यह रन क्यों विफल हुआ",
   "activity.run_modal_provenance": "{host} पर {account} के रूप में चला · EpiSODIC {version} · कॉन्फ़िगरेशन {hash}",
-
   "performance.title": "प्रदर्शन",
   "performance.note": "संसूचक कितनी अच्छी तरह भविष्यवाणी करते हैं, और किसी क्लस्टर को पहचानने और मूल्यांकित करने में कितना समय लगता है - दर्ज वर्गीकरणों पर आधारित, न कि किसी अनुमान पर।",
   "performance.empty": "इसकी गणना के लिए अभी तक पर्याप्त मूल्यांकित क्लस्टर नहीं हैं।",
@@ -472,7 +432,6 @@
   "performance.col.pathogen": "रोगजनक",
   "performance.col.n_detections": "संसूचन",
   "performance.col.ppv": "PPV",
-
   "info.title": "जानकारी",
   "info.intro": "EpiSODIC के संसूचन एल्गोरिदम, क्लस्टर स्थितियों और पहुँच मॉडल की पृष्ठभूमि।",
   "info.about.website": "वेबसाइट",
@@ -521,18 +480,14 @@
   "info.reference.file.default": "केवल अंतर्निहित डिफ़ॉल्ट; कोई इंस्टैंस फ़ाइल कॉन्फ़िगर नहीं।",
   "info.reference.file.custom": "आपकी अपनी फ़ाइल कॉन्फ़िगर है और अंतर्निहित डिफ़ॉल्ट पर वरीयता रखती है।",
   "info.reference.path": "पढ़ा जा रहा है: {path}",
-
   "info.access.title": "पहुँच",
   "info.access.body": "पढ़ना गुमनाम है: जो कोई भी ऐप तक पहुँचता है वह बिना साइन इन किए क्लस्टर, स्ट्रीम और पुरालेख देख सकता है। साइन इन केवल किसी क्लस्टर को वर्गीकृत करने, उसे बंद करने या किसी स्ट्रीम को म्यूट करने के लिए आवश्यक है - हर लेखन कार्रवाई साइन-इन उपयोगकर्ता को जिम्मेदार ठहराई जाती है।",
-
   "streams.col.farrington": "Farrington",
   "streams.farrington_hint": "कॉन्फ़िगर किए गए b के लिए Farrington को {need} सप्ताह के इतिहास की आवश्यकता है; इस स्ट्रीम के पास {have} हैं।",
   "streams.col.baseline_excluded": "आधार रेखा से बाहर रखा गया",
-
   "interpretation.fragment.curve_shape.point_source": "सभी मामले एक ही अधिकतम ऊष्मायन अवधि के भीतर आते हैं, जो एक बिंदु स्रोत की ओर इशारा करता है: व्यक्ति-से-व्यक्ति फैलाव के बजाय एक समय के आसपास साझा जोखिम।",
   "interpretation.fragment.curve_shape.propagated": "मामले एक अधिकतम ऊष्मायन अवधि से काफी अधिक समय तक फैले हुए हैं, जो एक साझा जोखिम के बजाय व्यक्ति-से-व्यक्ति फैलाव की ओर इशारा करता है।",
   "interpretation.fragment.curve_shape.ambiguous": "समय के साथ मामलों का फैलाव न तो स्पष्ट रूप से बिंदु स्रोत से मेल खाता है और न ही व्यक्ति-से-व्यक्ति फैलाव से; इन दोनों में अंतर करने के लिए जोखिम की आगे जाँच आवश्यक है।",
-
   "panel.rt.title": "प्रभावी प्रजनन संख्या (Rt)",
   "panel.rt.note": "समय-परिवर्तनशील प्रभावी प्रजनन संख्या (R0 नहीं), 7-दिवसीय सरकती खिड़कियों पर गणना की गई। अभी भी अपूर्ण रिपोर्टिंग अवधि के भीतर की खिड़कियों को छोड़ दिया गया है।",
   "panel.rt.unavailable.no_serial_interval": "Rt की गणना नहीं की जा सकती: इस रोगजनक के कॉन्फ़िगरेशन में सीरियल अंतराल (si_mean_days/si_sd_days) गायब है।",
@@ -541,7 +496,6 @@
   "panel.chart.graphics_unavailable_build": "चार्ट प्रस्तुत नहीं किया जा सकता: इस सर्वर पर कोई कार्यशील PNG ग्राफ़िक्स डिवाइस उपलब्ध नहीं है (ragg, Cairo, और R का अपना अंतर्निहित PNG डिवाइस, सभी खुलने में विफल रहे)। यह R इंस्टॉलेशन की बिल्ड-टाइम कॉन्फ़िगरेशन समस्या है, कोई ऐसा पैकेज नहीं जिसे फिर से स्थापित किया जा सके - इस सर्वर का प्रबंधन करने वाले व्यक्ति से संपर्क करें।",
   "panel.rt.unavailable.insufficient_history": "Rt की गणना के लिए इस क्लस्टर में अभी तक पर्याप्त मामला इतिहास नहीं है।",
   "panel.rt.unavailable.completeness_unknown": "Rt की गणना नहीं की जा सकती: इस स्ट्रीम के लिए कोई रिपोर्टिंग विलंब मापा नहीं जा सका, इसलिए अभी भर रही अवधियों को रोका नहीं जा सकता।",
-
   "panel.similar.title": "समान क्लस्टर",
   "panel.related.title": "संबंधित क्लस्टर",
   "relation.linked": "जुड़ा",
@@ -550,13 +504,11 @@
   "dossier.linked_more": "+{n} और",
   "panel.related.note": "इनमें से कुछ मामलों वाले अन्य क्लस्टर। जुड़े हुए क्लस्टर अपना अलग दस्तावेज़ हैं और उनका मूल्यांकन बाकी है; दबाए गए क्लस्टर इसी में समाहित हो गए हैं।\nजुड़ा हुआ = अपना अलग दस्तावेज़, मामले साझा करता है। दबाया गया = अब अलग दस्तावेज़ नहीं, इसके मामले यहाँ समाहित हैं।",
   "panel.similar.unavailable": "इस रोगजनक के लिए कोई समान बंद क्लस्टर नहीं मिला।",
-
   "panel.report.title": "प्रकोप रिपोर्ट",
   "panel.report.empty": "इस क्लस्टर के लिए अभी तक कोई रिपोर्ट प्रस्तुत नहीं की गई है।",
   "panel.report.version_line": "संस्करण {version} - {when}",
   "panel.report.render_button": "रिपोर्ट बनाएँ",
   "panel.report.pending": "रिपोर्ट बनाई जा रही है...",
-
   "report.cluster": "क्लस्टर",
   "report.rendered_label": "प्रस्तुत",
   "report.note_versioned": "यह एक स्वचालित, संस्करण-बद्ध रिपोर्ट है। हर नई प्रस्तुति को अपना संस्करण नंबर मिलता है; यह प्रति भेजे जाने के बाद अपरिवर्तित रहती है।",
@@ -576,7 +528,6 @@
   "report.timeline_empty": "अभी तक कोई मूल्यांकन दर्ज नहीं किया गया है।",
   "report.closed_note": "क्लस्टर बंद",
   "report.footer": "EpiSODIC द्वारा तैयार। इस दस्तावेज़ का ऐप्लिकेशन से कोई लाइव संबंध नहीं है; सभी डेटा प्रस्तुति के समय स्थिर कर दिया गया है।",
-
   "pathogen.title": "रोगजनक गतिविधि",
   "pathogen.note": "आपके चुने हुए कालखंड में, पूरे सेवा-क्षेत्र में एक ही रोगजनक। यह महामारी-विज्ञान का दृष्टिकोण है: कोई मौसम अपने ही इतिहास के सामने कहाँ खड़ा है, क्षेत्रव्यापी संचरण कितनी तेज़ी से चल रहा है, और उस दौरान कौन-से संकेत उठे। क्लस्टर स्क्रीन बताती है कि आज क्या करना है; यह स्क्रीन बताती है कि हो क्या रहा है।",
   "pathogen.empty": "अभी तक कोई केस डेटा नहीं लिया गया है, इसलिए बताने को कुछ नहीं है।",
@@ -693,7 +644,6 @@
   "pathogen.panel.config.severity.label": "प्राथमिकता भार",
   "pathogen.panel.config.severity.meaning": "प्राथमिकता सूची में अन्य रोगजनकों की तुलना में इस रोगजनक के क्लस्टरों को कितना भार दिया जाता है।",
   "pathogen.panel.config.source.label": "स्रोत",
-
   "notif.title_new_clusters": "EpiSODIC: {date} को {count_phrase} का पता चला",
   "notif.new_cluster.singular": "नया क्लस्टर",
   "notif.new_cluster.plural": "नए क्लस्टर",
@@ -719,7 +669,6 @@
   "notif.test.sent_at": "भेजा गया",
   "notif.test.working": "यदि आपको यह संदेश मिला है, तो यह सूचना चैनल काम कर रहा है।",
   "notif.test.status_value": "यह एक परीक्षण सूचना है।",
-
   "panel.report.schedule_title": "अनुसूचित रिपोर्ट",
   "panel.report.schedule_intro": "डैशबोर्ड तक पहुँच न रखने वाले सहयोगियों को यह रिपोर्ट एक आवर्ती अनुसूची के अनुसार स्वचालित रूप से ईमेल करें।",
   "panel.report.schedule_no_channel": "अभी तक कोई ईमेल-सक्षम सूचना चैनल (SMTP, sendmail या Microsoft 365) कॉन्फ़िगर नहीं किया गया है। पहले एक कॉन्फ़िगर करें - देखें vignette(\"notifications\")।",
@@ -757,5 +706,43 @@
   "report.diff_ratio_change": "देखे गए/अपेक्षित अनुपात में {previous} से {current} में बदलाव हुआ।",
   "report.diff_period_extended": "मामलों की अवधि अब {date} तक बढ़ गई है।",
   "unit.new_case": "नया मामला",
-  "unit.new_cases": "नए मामले"
+  "unit.new_cases": "नए मामले",
+  "nav.epidemics": "महामारियाँ",
+  "dossier.epidemic_ref": "E-{id}",
+  "unit.epidemic": "महामारी",
+  "unit.epidemics": "महामारियाँ",
+  "performance.outbreaks_only_note": "इस स्क्रीन पर सभी मीट्रिक केवल प्रकोपों की गणना करते हैं (वार्ड, संस्थान और क्षेत्र स्तर)। महामारियों का अलग से मूल्यांकन किया जाता है।",
+  "verdict.season_started": "मौसम शुरू",
+  "verdict.season_started.hint": "महामारी के मौसम की शुरुआत घोषित की गई है। यह नीतिगत परिणामों वाला निर्णय है।",
+  "verdict.season_not_yet": "मौसम अभी शुरू नहीं हुआ",
+  "verdict.season_not_yet.hint": "सीमा पार हो गई लेकिन साक्ष्य अभी घोषणा को उचित नहीं ठहराते।",
+  "verdict.season_ended": "मौसम समाप्त",
+  "verdict.season_ended.hint": "महामारी के मौसम की समाप्ति घोषित की गई है।",
+  "epidemics.rail_title": "महामारियाँ",
+  "epidemics.rail_empty": "कोई खुली महामारी नहीं।",
+  "epidemics.none_detected": "कोई नहीं पाया गया",
+  "epidemics.season_chip": "मौसम {season}",
+  "epidemics.stat.institutions": "संस्थान",
+  "epidemics.stat.top_share": "{name}: {pct}%",
+  "epidemics.stat.season": "मौसम",
+  "epidemics.stat.anchor": "एंकर सप्ताह {week}",
+  "epidemics.stat.outbreaks_during": "दौरान प्रकोप",
+  "epidemics.panel.curve.title": "साप्ताहिक मामले",
+  "epidemics.panel.curve.empty": "इस अवधि में कोई मामला नहीं।",
+  "epidemics.panel.curve.threshold_note": "{seasons} पिछले मौसमों से सीमा निर्धारित। पूर्व-महामारी: {pre}, उत्तर-महामारी: {post}।",
+  "epidemics.panel.curve.no_thresholds": "मौसमी महामारी, लेकिन इस इंस्टेंस के डेटा से सीमाएँ निर्धारित नहीं की जा सकीं।",
+  "epidemics.panel.curve.not_seasonal": "यह महामारी मौसमी नहीं है। बंद करना मानक मामला-मुक्त-दिन नियम का पालन करता है।",
+  "epidemics.panel.denominator.title": "परीक्षण और सकारात्मकता",
+  "epidemics.panel.denominator.empty": "इस रोगज़नक़ के लिए कोई परीक्षण मात्रा डेटा उपलब्ध नहीं।",
+  "epidemics.panel.denominator.note": "स्थिर सकारात्मकता के साथ मामलों में वृद्धि परीक्षण में वृद्धि है, घटनाओं में नहीं।",
+  "epidemics.panel.institutions.title": "योगदान देने वाले संस्थान",
+  "epidemics.panel.institutions.empty": "कोई संस्थान डेटा उपलब्ध नहीं।",
+  "epidemics.panel.institutions.col_name": "संस्थान",
+  "epidemics.panel.institutions.col_share": "हिस्सा (%)",
+  "epidemics.panel.during.title": "इस महामारी के दौरान प्रकोप",
+  "epidemics.declaration_label": "मौसमी घोषणा",
+  "epidemics.declaration_rationale_placeholder": "इस घोषणा का समर्थन करने वाले साक्ष्य का वर्णन करें…",
+  "epidemics.declaration_submit": "घोषणा दर्ज करें",
+  "epidemics.declaration_no_rationale": "कोई औचित्य नहीं दिया गया",
+  "column.id": "आईडी"
 }

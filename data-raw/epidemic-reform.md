@@ -57,7 +57,7 @@ in section 7 and do only that milestone.
 
 | | |
 |---|---|
-| Next milestone to start | **M2** |
+| Next milestone to start | **M4** |
 | Integration branch | `claude/epidemic-reform` (created from `main` after M0 merged) |
 | Schema version on `main` | 6 (`episodic_schema_version` in `R/schema_migrate.R`) |
 | Schema version on M1 branch | 7 (`scale`, satellite, link, declaration verdicts) |
@@ -67,8 +67,8 @@ in section 7 and do only that milestone.
 |---|---|---|---|---|
 | M0 MEM: full-year seasons, derived anchor, derived eligibility | done | `claude/mem-agnostic-seasons` | #59 merged | goes straight to `main`, not to the integration branch |
 | M1 Schema: scale, epidemic season satellite, link table | done | `claude/epidemic-reform-m1-schema` | #60 merged | PR into `claude/epidemic-reform` |
-| M2 Write path: routing, epidemic closure, continuity, links | done | `claude/epidemic-reform-m2-write` | pending | PR into `claude/epidemic-reform` |
-| M3 Read path: Epidemics screen MVP | not started | | | |
+| M2 Write path: routing, epidemic closure, continuity, links | done | `claude/epidemic-reform-m2-write` | #61 merged | PR into `claude/epidemic-reform` |
+| M3 Read path: Epidemics screen MVP | done | `claude/epidemic-reform-m3-screen` | pending | PR into `claude/epidemic-reform` |
 | M4 Vocabulary: O-/E- ids, Outbreak wording, i18n sweep | not started | | | |
 | M5 Documentation | not started | | | |
 | M6 Table rename (optional) | not started | | | recommend deferring |
@@ -127,6 +127,31 @@ done, what was not, and anything surprising. No narrative.
   tests/testthat/test-schema.R, tests/testthat/test-schema_mariadb.R,
   tests/testthat/test-shared_schema.R, tests/testthat/test-config.R,
   NEWS.md.
+
+2026-09-13 (Opus 4.6, M2 implementation)
+  Scale routing, epidemic closure (post-epidemic threshold and trough
+  backstop), continuity across the season cut, during-links, cross-scale
+  suppression. PR #61 merged into claude/epidemic-reform.
+  Files changed: R/run_cron.R, R/reconcile.R, R/reconcile_suppress.R,
+  R/db_cron_write.R, R/db_read.R, R/config.R,
+  tests/testthat/test-epidemic_reform.R, NEWS.md.
+
+2026-09-13 (Opus 4.6, M3 implementation)
+  Epidemics screen: rail, dossier (header, stat grid, weekly curve with
+  MEM thresholds, denominator, contributing institutions, during-outbreaks
+  table), declaration form for seasonal verdicts.
+  Navigation bar extended to five links. Clusters rail and Performance
+  screen filtered to outbreaks only. New R/app_epidemic_ui.R (UI
+  widgets), epidemic read model in R/app_read.R, new DB reads in
+  R/db_read.R. 37 new i18n keys across all 8 languages.
+  Full suite: 0 failures, 10674 passes, 3 expected skips.
+  Spanned two context windows.
+  Files changed: R/app_epidemic_ui.R (new), R/app_ui.R, R/app_server.R,
+  R/app_read.R, R/app_performance.R, R/app_widgets.R, R/db_read.R,
+  inst/app/www/episodic.css, inst/i18n/{ar,de,en,es,fr,hi,nl,zh}.json,
+  tests/testthat/test-app_ui.R, tests/testthat/test-app_server.R,
+  tests/testthat/test-epidemic_reform.R,
+  data-raw/verification/run_visual.R, NEWS.md.
 ```
 
 ---
