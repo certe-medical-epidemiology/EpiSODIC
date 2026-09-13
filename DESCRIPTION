@@ -59,6 +59,7 @@ Suggests:
     rmarkdown,
     sf,
     testthat (>= 3.0.0),
+    withr,
     zip
 Config/testthat/edition: 3
 VignetteBuilder: knitr
