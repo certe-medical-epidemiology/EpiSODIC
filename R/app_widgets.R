@@ -665,6 +665,37 @@ episodic_verdict_outbreak_levels <- function(config = episodic_config_resolve())
   setdiff(all_levels, config$scale$epidemic_levels)
 }
 
+#' The display reference for a cluster, scale-aware
+#'
+#' Outbreaks render as `O-{id}`, epidemics as `E-{id}`, from two
+#' independent sequences, so `O-12` and `E-12` are different objects.
+#' Accepts either a scale string (`"outbreak"` / `"epidemic"`) or a
+#' level string (resolved via `episodic_scale_for_level()`), so callers
+#' with a level but no scale column can use it directly.
+#'
+#' @param id The cluster id (integer).
+#' @param scale_or_level `"outbreak"`, `"epidemic"`, or a lattice level
+#'   string such as `"pathogen_ward"`.
+#' @param lang Session language.
+#' @return A single string, e.g. `"O-42"` or `"E-7"`.
+#' @keywords internal
+#' @noRd
+episodic_object_ref <- function(id,
+                                scale_or_level,
+                                lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  scale <- if (scale_or_level %in% c("outbreak", "epidemic")) {
+    scale_or_level
+  } else {
+    episodic_scale_for_level(scale_or_level)
+  }
+  key <- if (identical(scale, "epidemic")) {
+    "dossier.epidemic_ref"
+  } else {
+    "dossier.outbreak_ref"
+  }
+  episodic_tr(key, id = id, lang = lang)
+}
+
 #' A verdict's display label, worded for the cluster's own scale
 #'
 #' The stored verdict value (`"possible_epidemic"`, ...) never changes -

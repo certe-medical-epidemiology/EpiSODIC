@@ -127,7 +127,7 @@ test_that("episodic_notify_build_new_clusters() produces all message formats", {
   expect_true(all(
     c("title", "plain", "html", "teams_card", "slack_text") %in% names(msg)
   ))
-  expect_match(msg$title, "1 new cluster")
+  expect_match(msg$title, "1 new signal")
   expect_match(msg$plain, "MRSA")
   expect_match(msg$plain, "Hospital A")
   expect_match(msg$html, "<table")
@@ -156,7 +156,7 @@ test_that("episodic_notify_build_new_clusters() caps at 10 and shows remainder",
   )
   msg <- episodic_notify_build_new_clusters(details, 12L, "2026-08-15", NULL)
   expect_match(msg$plain, "and 2 more")
-  expect_match(msg$title, "12 new clusters")
+  expect_match(msg$title, "12 new signals")
 })
 
 test_that("episodic_notify_build_failure() produces all message formats", {
@@ -264,7 +264,7 @@ test_that("episodic_notify_build_new_clusters() and episodic_notify_build_failur
     NULL,
     lang = "nl"
   )
-  expect_match(msg_nl$title, "nieuw cluster")
+  expect_match(msg_nl$title, "nieuw signaal")
   expect_match(msg_nl$title, "gedetecteerd")
   expect_match(msg_nl$html, "Verwekker")
   expect_match(msg_nl$html, "Prioriteit")
@@ -332,7 +332,7 @@ test_that("episodic_notify_build_new_clusters() includes dashboard link when giv
   )
   expect_match(
     msg$slack_text,
-    "<https://episodic.example.org?cluster=1|#1>",
+    "<https://episodic.example.org?cluster=1|O-1>",
     fixed = TRUE
   )
 })
@@ -371,16 +371,17 @@ test_that("the notification names every cluster by id and shows them last case d
   )
   msg <- episodic_notify_build_new_clusters(details, 3L, "2026-03-21", NULL)
 
-  # the id leads every row, exactly as it does on screen
+  # the id leads every row, exactly as it does on screen;
+  # pathogen_region is L5 (epidemic scale), so these render as E-
   for (id in details$cluster_id) {
     expect_match(
       msg$html,
-      episodic_tr("dossier.cluster_ref", id = id, lang = "en"),
+      episodic_tr("dossier.epidemic_ref", id = id, lang = "en"),
       fixed = TRUE
     )
     expect_match(
       msg$plain,
-      episodic_tr("dossier.cluster_ref", id = id, lang = "en"),
+      episodic_tr("dossier.epidemic_ref", id = id, lang = "en"),
       fixed = TRUE
     )
   }
@@ -391,7 +392,7 @@ test_that("the notification names every cluster by id and shows them last case d
     c(13L, 12L, 11L),
     function(id) {
       as.integer(regexpr(
-        episodic_tr("dossier.cluster_ref", id = id, lang = "en"),
+        episodic_tr("dossier.epidemic_ref", id = id, lang = "en"),
         msg$html,
         fixed = TRUE
       ))

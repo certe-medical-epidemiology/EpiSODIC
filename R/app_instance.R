@@ -190,7 +190,7 @@ episodic_ui_pane_label <- function(con,
     " ",
     shiny::tags$span(
       class = "episodic-rail-id",
-      episodic_tr("dossier.cluster_ref", id = cluster_id, lang = lang)
+      episodic_object_ref(cluster_id, label$level[1], lang = lang)
     )
   )
 }

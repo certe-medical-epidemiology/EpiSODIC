@@ -205,7 +205,7 @@ episodic_ui_cluster_row <- function(cluster_id,
                                     ...,
                                     unlinked_reason = NA_character_,
                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  ref <- episodic_tr("dossier.cluster_ref", id = cluster_id, lang = lang)
+  ref <- episodic_tr("dossier.outbreak_ref", id = cluster_id, lang = lang)
   unlinked <- length(unlinked_reason) == 1 &&
     !is.na(unlinked_reason) &&
     nzchar(unlinked_reason)

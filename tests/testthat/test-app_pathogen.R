@@ -652,7 +652,7 @@ test_that("the signals table leads with the cluster id", {
   expect_true(grepl(
     paste0(
       ">",
-      episodic_tr("dossier.cluster_ref", id = cluster_id, lang = "en"),
+      episodic_tr("dossier.outbreak_ref", id = cluster_id, lang = "en"),
       "<"
     ),
     html,
@@ -721,15 +721,13 @@ test_that("each cluster row links through to its dossier, by click and by keyboa
   expect_false(grepl("onkeydown", html, fixed = TRUE))
 })
 
-test_that("the clusters panel is titled for clusters, not for signals", {
-  # They carry a verdict and a state; a signal is the detection that
-  # started one, which is a different thing this codebase already names.
+test_that("the clusters panel is titled for outbreaks/epidemics, not for signals", {
   title <- episodic_tr("pathogen.panel.clusters.title", lang = "en")
-  expect_match(title, "[Cc]luster")
+  expect_match(title, "[Oo]utbreak")
   expect_false(grepl("signal", title, ignore.case = TRUE))
   expect_match(
     episodic_tr("pathogen.panel.clusters.title", lang = "nl"),
-    "Clusters",
+    "Uitbraken",
     fixed = TRUE
   )
 })

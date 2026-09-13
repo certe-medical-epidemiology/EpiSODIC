@@ -142,7 +142,7 @@ episodic_ui_dossier_header <- function(obj,
         shiny::HTML(episodic_ui_italicise_taxon(obj$pathogen)),
         shiny::tags$span(
           class = "episodic-dossier-id",
-          episodic_tr("dossier.cluster_ref", id = obj$id, lang = lang)
+          episodic_tr("dossier.outbreak_ref", id = obj$id, lang = lang)
         )
       ),
       episodic_ui_chip(
@@ -1003,9 +1003,9 @@ episodic_ui_linked_chips <- function(linked,
     episodic_ui_chip_link(
       episodic_tr(
         "dossier.linked_badge",
-        ref = episodic_tr(
-          "dossier.cluster_ref",
-          id = shown$cluster_id[i],
+        ref = episodic_object_ref(
+          shown$cluster_id[i],
+          shown$level[i],
           lang = lang
         ),
         lang = lang
@@ -1079,7 +1079,7 @@ episodic_ui_related_panel <- function(con,
         shared_cases = NA_integer_,
         unlinked_reason = episodic_tr(
           "cluster.unlinked.suppressed",
-          ref = episodic_tr("dossier.cluster_ref", id = cluster_id, lang = lang),
+          ref = episodic_tr("dossier.outbreak_ref", id = cluster_id, lang = lang),
           lang = lang
         ),
         stringsAsFactors = FALSE

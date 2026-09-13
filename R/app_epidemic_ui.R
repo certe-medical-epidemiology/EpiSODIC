@@ -461,7 +461,7 @@ episodic_ui_epidemic_during_panel <- function(con,
             "Shiny.setInputValue('open_cluster', %d, {priority: 'event'}); return false;",
             as.integer(row$cluster_id)
           ),
-          episodic_tr("dossier.cluster_ref", id = row$cluster_id, lang = lang)
+          episodic_tr("dossier.outbreak_ref", id = row$cluster_id, lang = lang)
         )
       ),
       shiny::tags$td(shiny::HTML(episodic_ui_italicise_taxon(row$pathogen))),

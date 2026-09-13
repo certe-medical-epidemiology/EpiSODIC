@@ -440,7 +440,7 @@ test_that("the dossier title carries the cluster id beside the pathogen name", {
   expect_true(grepl(
     paste0(
       ">",
-      episodic_tr("dossier.cluster_ref", id = env$cluster_id, lang = "en"),
+      episodic_tr("dossier.outbreak_ref", id = env$cluster_id, lang = "en"),
       "<"
     ),
     html,
