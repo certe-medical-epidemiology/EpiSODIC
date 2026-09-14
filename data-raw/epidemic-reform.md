@@ -69,8 +69,8 @@ in section 7 and do only that milestone.
 | M1 Schema: scale, epidemic season satellite, link table | done | `claude/epidemic-reform-m1-schema` | #60 merged | PR into `claude/epidemic-reform` |
 | M2 Write path: routing, epidemic closure, continuity, links | done | `claude/epidemic-reform-m2-write` | #61 merged | PR into `claude/epidemic-reform` |
 | M3 Read path: Epidemics screen MVP | done | `claude/epidemic-reform-m3-screen` | #62 merged | PR into `claude/epidemic-reform` |
-| M4 Vocabulary: O-/E- ids, Outbreak wording, i18n sweep | done | `claude/epidemic-reform-m4-vocabulary` | pending | PR into `claude/epidemic-reform` |
-| M5 Documentation | not started | | | |
+| M4 Vocabulary: O-/E- ids, Outbreak wording, i18n sweep | done | `claude/epidemic-reform-m4-vocabulary` | #63 merged | PR into `claude/epidemic-reform` |
+| M5 Documentation | in progress | `claude/epidemic-reform-m5-documentation` | pending | PR into `claude/epidemic-reform` |
 | M6 Table rename (optional) | not started | | | recommend deferring |
 
 ---
@@ -181,6 +181,27 @@ done, what was not, and anything surprising. No narrative.
   test-app_dossier.R,test-app_read.R,test-reconcile_suppress.R,
   test-app_cluster_table.R,test-app_server.R,test-app_pathogen.R,
   test-app_navigation.R,test-app_assessment_read.R}, NEWS.md.
+
+2026-09-14 (Opus 4.6, M5 implementation)
+  Documentation sweep: CLAUDE.md updated to describe the two-scale
+  model (outbreaks and epidemics), MEM season derivation, the scale
+  boundary, epidemic closure, declarations, the "during" link, and the
+  three new database tables. Pipeline diagram, detectors table, streams
+  section, database table list, config sections, file layout, roles,
+  key invariants, and i18n key counts all brought current.
+  Vignettes updated: overview.Rmd restructured from "Two altitudes" to
+  "Three altitudes" with the Epidemics screen section added;
+  detection-reconciliation.Rmd gains scale routing, epidemic closure,
+  "during" links, and declaration sections, MEM description updated;
+  faq.Rmd and deployment.Rmd mem_applicable references fixed.
+  No new exported functions, so _pkgdown.yml unchanged beyond M4's
+  additions. NEWS.md already carried all reform entries from M1-M4.
+  Full suite: 0 failures, 10680 passes, 3 expected skips.
+  run_checks.R: all checks passed (suite, R CMD check, formatting,
+  GPL banner, logical CSS, pkgdown index).
+  Files changed: CLAUDE.md, data-raw/epidemic-reform.md,
+  vignettes/overview.Rmd, vignettes/detection-reconciliation.Rmd,
+  vignettes/faq.Rmd, vignettes/deployment.Rmd.
 ```
 
 ---
