@@ -27,6 +27,11 @@
 - The epidemic dossier shows weekly case curve with MEM threshold overlay, tests and positivity, contributing institutions with concentration, and linked outbreaks
 - The Clusters rail and Performance screen filter to outbreaks only (L1-L3)
 - Epidemiologists can record seasonal declarations (`season_started`, `season_not_yet`, `season_ended`) on seasonal epidemics
+- Cluster references render as `O-{id}` for outbreaks and `E-{id}` for epidemics, uniform across all eight languages
+- `episodic_object_ref()` helper renders the scale-aware reference from either a scale string or a lattice level
+- User-facing "cluster" wording replaced throughout: outbreak-only contexts say "outbreak", mixed contexts say "outbreaks and epidemics", detection contexts say "signal"
+- Full i18n vocabulary sweep across all eight language files for the outbreak/epidemic terminology
+- Report filenames changed from `cluster-{id}` to `outbreak-{id}`
 
 ## Changed
 

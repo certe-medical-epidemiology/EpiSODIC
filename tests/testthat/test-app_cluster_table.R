@@ -93,8 +93,8 @@ test_that("the table carries the whole spine, in order, whatever the screen", {
   # and the rows themselves, sorted, with every value the spine promises
   expect_true(grepl("episodic-cell-id", html, fixed = TRUE))
   expect_lt(
-    regexpr(episodic_tr("dossier.cluster_ref", id = 13L, lang = "en"), html),
-    regexpr(episodic_tr("dossier.cluster_ref", id = 11L, lang = "en"), html)
+    regexpr(episodic_tr("dossier.outbreak_ref", id = 13L, lang = "en"), html),
+    regexpr(episodic_tr("dossier.outbreak_ref", id = 11L, lang = "en"), html)
   )
   # first case and last case as one range, not two separate date columns
   expect_true(grepl(

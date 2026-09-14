@@ -597,7 +597,7 @@ test_that("the pane label names a cluster the rail does not list", {
     episodic_ui_pane_label(env$con, env$cluster_id, lang = "en")
   )
   expect_true(grepl(
-    episodic_tr("dossier.cluster_ref", id = env$cluster_id, lang = "en"),
+    episodic_tr("dossier.outbreak_ref", id = env$cluster_id, lang = "en"),
     label,
     fixed = TRUE
   ))

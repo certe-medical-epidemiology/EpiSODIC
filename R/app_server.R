@@ -158,7 +158,11 @@ episodic_app_server_factory <- function(db_path,
           # else in the app.
           episodic_tr(
             "rail.open_not_found",
-            id = as.character(input$rail_open_cluster),
+            ref = episodic_tr(
+              "dossier.outbreak_ref",
+              id = input$rail_open_cluster,
+              lang = lang
+            ),
             lang = lang
           ),
           type = "warning"
@@ -1156,7 +1160,7 @@ episodic_ui_rail <- function(open,
               shiny::tags$span(
                 class = "episodic-rail-id",
                 episodic_tr(
-                  "dossier.cluster_ref",
+                  "dossier.outbreak_ref",
                   id = row$cluster_id,
                   lang = lang
                 )

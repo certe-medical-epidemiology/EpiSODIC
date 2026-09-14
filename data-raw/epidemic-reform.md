@@ -57,7 +57,7 @@ in section 7 and do only that milestone.
 
 | | |
 |---|---|
-| Next milestone to start | **M4** |
+| Next milestone to start | **M5** |
 | Integration branch | `claude/epidemic-reform` (created from `main` after M0 merged) |
 | Schema version on `main` | 6 (`episodic_schema_version` in `R/schema_migrate.R`) |
 | Schema version on M1 branch | 7 (`scale`, satellite, link, declaration verdicts) |
@@ -68,8 +68,8 @@ in section 7 and do only that milestone.
 | M0 MEM: full-year seasons, derived anchor, derived eligibility | done | `claude/mem-agnostic-seasons` | #59 merged | goes straight to `main`, not to the integration branch |
 | M1 Schema: scale, epidemic season satellite, link table | done | `claude/epidemic-reform-m1-schema` | #60 merged | PR into `claude/epidemic-reform` |
 | M2 Write path: routing, epidemic closure, continuity, links | done | `claude/epidemic-reform-m2-write` | #61 merged | PR into `claude/epidemic-reform` |
-| M3 Read path: Epidemics screen MVP | done | `claude/epidemic-reform-m3-screen` | pending | PR into `claude/epidemic-reform` |
-| M4 Vocabulary: O-/E- ids, Outbreak wording, i18n sweep | not started | | | |
+| M3 Read path: Epidemics screen MVP | done | `claude/epidemic-reform-m3-screen` | #62 merged | PR into `claude/epidemic-reform` |
+| M4 Vocabulary: O-/E- ids, Outbreak wording, i18n sweep | done | `claude/epidemic-reform-m4-vocabulary` | pending | PR into `claude/epidemic-reform` |
 | M5 Documentation | not started | | | |
 | M6 Table rename (optional) | not started | | | recommend deferring |
 
@@ -152,6 +152,35 @@ done, what was not, and anything surprising. No narrative.
   tests/testthat/test-app_ui.R, tests/testthat/test-app_server.R,
   tests/testthat/test-epidemic_reform.R,
   data-raw/verification/run_visual.R, NEWS.md.
+
+2026-09-14 (Opus 4.6, M4 implementation)
+  Vocabulary sweep: all user-facing "cluster" references replaced with
+  "outbreak", "epidemic", "signal", or "outbreaks and epidemics" as
+  context dictates. New episodic_object_ref() helper in R/app_widgets.R
+  renders O-{id} or E-{id} based on scale or level.
+  Removed dossier.cluster_ref from all 8 i18n files, replaced with
+  dossier.outbreak_ref ("O-{id}", uniform across languages).
+  dossier.epidemic_ref already existed ("E-{id}").
+  All call sites updated: R/app_instance.R, R/app_server.R,
+  R/app_dossier.R, R/app_cluster_table.R, R/notify.R,
+  R/scheduled_reports.R, R/app_epidemic_ui.R, R/app_assessment_read.R,
+  R/report_render.R, inst/report/episodic_default_report.qmd.
+  Report filename changed from cluster-{id} to outbreak-{id} in
+  R/report_render.R and R/notify_channels.R comment.
+  i18n sweep caught by existing tests: Dutch "pathogeen" replaced with
+  "verwekker" (6 keys), Arabic "الكائن" replaced with "العامل" (6 keys).
+  Full suite: 0 failures, 10680 passes, 3 expected skips.
+  Spanned two context windows.
+  Files changed: R/app_widgets.R, R/app_instance.R, R/app_server.R,
+  R/app_dossier.R, R/app_cluster_table.R, R/app_epidemic_ui.R,
+  R/app_assessment_read.R, R/notify.R, R/notify_channels.R,
+  R/report_render.R, R/scheduled_reports.R,
+  inst/report/episodic_default_report.qmd,
+  inst/i18n/{ar,de,en,es,fr,hi,nl,zh}.json,
+  tests/testthat/{test-i18n.R,test-notify.R,test-report_render.R,
+  test-app_dossier.R,test-app_read.R,test-reconcile_suppress.R,
+  test-app_cluster_table.R,test-app_server.R,test-app_pathogen.R,
+  test-app_navigation.R,test-app_assessment_read.R}, NEWS.md.
 ```
 
 ---

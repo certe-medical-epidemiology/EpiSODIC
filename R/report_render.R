@@ -202,7 +202,7 @@ episodic_report_render <- function(con,
 
   out_file <- file.path(
     output_dir,
-    sprintf("cluster-%d-v%d.html", cluster_id, version_no)
+    sprintf("outbreak-%d-v%d.html", cluster_id, version_no)
   )
   # file.copy() reports a failure by returning FALSE, not by raising:
   # unchecked, a report that never arrived in output_dir would go on to

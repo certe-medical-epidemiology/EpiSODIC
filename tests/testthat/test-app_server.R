@@ -641,7 +641,7 @@ test_that("input$open_cluster jumps to the Clusters screen on that very cluster"
     # Matched as a text node (">#2<"), never as a bare "#2": the palette
     # ships #20C997 and #1A1A1A, so a loose needle matches any dossier.
     ref <- function(id) {
-      paste0(">", episodic_tr("dossier.cluster_ref", id = id, lang = "en"), "<")
+      paste0(">", episodic_tr("dossier.outbreak_ref", id = id, lang = "en"), "<")
     }
     # the rail auto-selects the cluster with the newest last case day on load
     expect_true(grepl(
@@ -725,7 +725,7 @@ test_that("a deep link to a closed cluster is not redirected to the top of the r
     session$flushReact()
 
     ref <- function(id) {
-      paste0(">", episodic_tr("dossier.cluster_ref", id = id, lang = "en"), "<")
+      paste0(">", episodic_tr("dossier.outbreak_ref", id = id, lang = "en"), "<")
     }
     dossier <- paste(output$dossier_pane, collapse = "\n")
     expect_true(grepl(ref(closed), dossier, fixed = TRUE))
