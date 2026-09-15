@@ -41,7 +41,7 @@ case data (data frame)
     -> suppress lattice duplicates (continuous across the scale boundary)
     -> notify (if configured)
   -> episodic_run_app()           # Shiny dashboard
-    -> epidemiologist assesses outbreaks (Clusters screen)
+    -> epidemiologist assesses outbreaks (Outbreaks screen)
     -> epidemiologist assesses epidemics and records declarations (Epidemics screen)
     -> outbreak reports rendered
 ```
@@ -211,7 +211,7 @@ R/
   app_server_notes.R  # wires the cluster notes save button
   app_ui.R            # Shiny UI
   app_dossier.R       # outbreak dossier (the main assessment screen)
-  app_epidemic_ui.R   # Epidemics screen: rail, dossier, declaration form
+  app_epidemic_ui.R   # Epidemics screen: rail, dossier, assessment rail
   app_pathogen.R      # pathogen overview panel
   app_charts.R        # reusable chart components
   app_widgets.R       # reusable UI widgets

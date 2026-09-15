@@ -22,8 +22,10 @@
 - Epidemic identity is preserved across the season anchor rollover
 - Outbreaks are linked to epidemics they occur during, based on pathogen, time overlap and geographic nesting (`episodic_cluster_link`)
 - Lattice suppression works across the outbreak/epidemic scale boundary
-- An Epidemics screen with a rail of open epidemics, a dossier with seasonal evidence, and a declaration form for seasonal verdicts
-- The navigation bar carries five links: Clusters, Epidemics, Pathogen, Archive, Instance
+- An Epidemics screen with a rail of open epidemics, a dossier with seasonal evidence, and the assessment pane a season is declared in
+- The navigation bar carries five links: Outbreaks, Epidemics, Pathogen, Archive, Instance
+- An outbreak's dossier header carries a "During E-123" chip for each epidemic it ran during, which opens that epidemic
+- The Epidemics screen carries a notes panel and the full assessment form, so an epidemic is assessed and annotated like any other signal
 - The epidemic dossier shows weekly case curve with MEM threshold overlay, tests and positivity, contributing institutions with concentration, and linked outbreaks
 - The Clusters rail and Performance screen filter to outbreaks only (L1-L3)
 - Epidemiologists can record seasonal declarations (`season_started`, `season_not_yet`, `season_ended`) on seasonal epidemics
@@ -35,6 +37,13 @@
 
 ## Changed
 
+- The Clusters screen is called Outbreaks
+- The Epidemics screen holds its three panes in the app shell, like the Outbreaks screen, so its rail keeps its scroll position and gains the phone-tier pane switcher
+- The Epidemics rail is the Outbreaks rail's markup, with more room per row
+- The seasonal declaration is offered inside the epidemic's assessment form rather than as a form of its own, alongside the ordinary classification verdicts
+- The classification form and the notes panel namespace their element ids, so both surveillance screens can carry one
+- An outbreak's "Linked to" chips cover the outbreak scale only; the epidemic it ran during is a "During" chip instead
+- The confirmed-outbreak classification's explanation no longer names one scale while its label names the other
 - The navigation bar is four links and is visible at every width, with no collapsed menu anywhere in the app
 - Every screen is rendered once and shown or hidden, instead of being torn out and rebuilt from the database on every navigation
 - Navigation, pane and cluster state live in three data attributes on the app shell, and every highlight is derived from them by the stylesheet
@@ -60,6 +69,10 @@
 
 - Saving a cluster note that repeats the note already on file no longer records a version in which nothing changed, and an empty note on a cluster that never had one is not recorded at all
 - A cluster id that names nothing viewable no longer selects an absent cluster in the dossier
+- The epidemic dossier's weekly curve errored instead of drawing, its weekly counts carrying no completeness flag
+- The epidemic dossier's statistics stacked vertically instead of forming a row, from a class the stylesheet does not draw
+- The screen no longer stays behind when a cluster is opened from the Epidemics screen after the reader has returned to a screen the server already believed they were on
+- An outbreak's "during" links no longer name epidemics that lattice suppression has folded into another
 
 # EpiSODIC 0.18.0
 

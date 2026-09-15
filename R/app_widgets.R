@@ -189,40 +189,55 @@ episodic_ui_picker <- function(input_id, options, selected = NULL) {
   )
 }
 
-#' The phone-tier pane switcher for the clusters screen
+#' The phone-tier pane switcher for a three-pane surveillance screen
 #'
-#' Below 768px the clusters screen shows one of its three panes at a
-#' time, switched by this bar. Which one is showing is `data-pane` on
-#' `.episodic-shell`, and which segment is lit is derived from that by
-#' the stylesheet, so a segment cannot end up marked for a pane that is
-#' not the one on screen and a re-render has no highlight to lose.
+#' Below 768px the Outbreaks and Epidemics screens each show one of
+#' their three panes at a time, switched by this bar. Which one is
+#' showing is `data-pane` on `.episodic-shell`, and which segment is lit
+#' is derived from that by the stylesheet, so a segment cannot end up
+#' marked for a pane that is not the one on screen and a re-render has no
+#' highlight to lose. `data-pane` is one attribute for both screens
+#' because only one screen is ever on top, so which pane of it is showing
+#' is one fact.
 #'
 #' Hidden by CSS at 768px and above, where all three panes are on screen
 #' together and there is nothing to switch between.
 #'
+#' @param scale Which screen this switcher belongs to: `"outbreak"` or
+#'   `"epidemic"`. It decides the first segment's label and which
+#'   `uiOutput()` names the open object, since the two screens hold
+#'   separate selections and each has to name its own.
 #' @param lang Session language.
 #' @return A `shiny::tags$div`.
 #' @keywords internal
 #' @noRd
-episodic_ui_pane_switcher <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_ui_pane_switcher <- function(scale = "outbreak",
+                                      lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  is_epidemic <- identical(scale, "epidemic")
   shiny::tags$div(
     class = "episodic-pane-switcher",
     role = "group",
     `aria-label` = episodic_tr("pane.switcher_label", lang = lang),
-    # Which cluster the other two segments refer to, from the server's
+    # Which object the other two segments refer to, from the server's
     # own selection rather than copied out of the rail's markup. A
     # cluster opened from the Pathogen screen, from a `?cluster=` link or
     # from the open-by-number box is frequently not in the rail at all,
     # and reading the label off a row that is not there leaves it blank -
     # which says "nothing is open" about a cluster that is.
     shiny::uiOutput(
-      "pane_label",
+      if (is_epidemic) "epidemic_pane_label" else "pane_label",
       container = shiny::tags$div,
       class = "episodic-pane-switcher-label"
     ),
     shiny::tags$div(
       class = "episodic-pane-switcher-tabs",
-      episodic_ui_pane_tab("rail", episodic_tr("nav.clusters", lang = lang)),
+      episodic_ui_pane_tab(
+        "rail",
+        episodic_tr(
+          if (is_epidemic) "nav.epidemics" else "nav.clusters",
+          lang = lang
+        )
+      ),
       episodic_ui_pane_tab(
         "dossier",
         episodic_tr("pane.dossier", lang = lang)
@@ -352,22 +367,41 @@ episodic_ui_chip <- function(text, colour, filled = FALSE) {
 #' @param colour Chip colour, from [episodic_palette()].
 #' @param cluster_id The cluster to open.
 #' @param lang Session language.
+#' @param scale Which screen the cluster opens on: `"outbreak"` or
+#'   `"epidemic"`. The two are separate screens holding separate
+#'   selections, so a chip has to say which of them it means.
 #' @return A `shiny::tags$span`.
 #' @keywords internal
 #' @noRd
 episodic_ui_chip_link <- function(text,
                                   colour,
                                   cluster_id,
-                                  lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+                                  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                  scale = "outbreak") {
   shiny::tags$span(
     class = "episodic-chip episodic-chip-outline episodic-chip-link",
     style = sprintf("color:%s;border:1px solid %s66;", colour, colour),
     tabindex = "0",
     role = "link",
-    title = episodic_tr("cluster.open_hint", lang = lang),
+    title = episodic_tr(
+      if (identical(scale, "epidemic")) {
+        "epidemic.open_hint"
+      } else {
+        "cluster.open_hint"
+      },
+      lang = lang
+    ),
     # Both the click and Enter/Space are picked up by
-    # `episodic-nav.js`'s delegated listeners, from this one attribute.
-    `data-episodic-cluster` = as.integer(cluster_id),
+    # `episodic-nav.js`'s delegated listeners, from one of these two
+    # attributes. The other is `NULL`, which htmltools drops, so the
+    # chip carries exactly one and no reader of the markup has to work
+    # out which screen it meant.
+    `data-episodic-cluster` = if (!identical(scale, "epidemic")) {
+      as.integer(cluster_id)
+    },
+    `data-episodic-epidemic` = if (identical(scale, "epidemic")) {
+      as.integer(cluster_id)
+    },
     text
   )
 }

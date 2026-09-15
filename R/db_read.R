@@ -251,9 +251,53 @@ episodic_db_clusters_linked_to <- function(con, cluster_id) {
        AND theirs.cluster_id != ?
        AND c.merged_into IS NULL
        AND c.suppressed_by IS NULL
+       AND c.scale = 'outbreak'
      GROUP BY c.cluster_id
      ORDER BY shared_cases DESC, c.cluster_id",
     params = list(cluster_id, cluster_id)
+  )
+}
+
+#' The epidemics an outbreak is recorded as occurring during
+#'
+#' The other direction of `episodic_db_outbreaks_during_epidemic()`, and
+#' the reason both read `episodic_cluster_link` rather than a case
+#' overlap: at province and region level an epidemic contains every case
+#' of its pathogen in the catchment by construction, so a shared-case
+#' test would relate every outbreak to it and say nothing. What the link
+#' records is that the two overlap in time and that the outbreak's place
+#' is inside the epidemic's - which is what "during" means and all it
+#' claims. No causal claim is made in either direction.
+#'
+#' An outbreak is linked to every epidemic whose geography contains it
+#' and whose window it falls in, which at the moment of writing includes
+#' the province-level ones the lattice has not yet folded away. Only the
+#' epidemics that stand as dossiers of their own are read back, the same
+#' rule `episodic_db_outbreaks_during_epidemic()` applies from the other
+#' side: a chip pointing at a cluster suppression has folded into
+#' another is a link to a dossier the app will not open. The link rows
+#' stay, because suppression is a decision a later run can revisit and
+#' the relation itself did not change.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id An outbreak cluster's id.
+#' @return A data frame with `cluster_id`, `pathogen`, `level` and
+#'   `scale`, oldest first; no rows when the outbreak is linked to none.
+#' @keywords internal
+#' @noRd
+episodic_db_epidemics_during_for_outbreak <- function(con, cluster_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT c.cluster_id, c.first_day, c.last_day, c.n_cases, c.scale,
+            s.pathogen, s.level
+       FROM episodic_cluster_link lnk
+       INNER JOIN episodic_cluster c ON c.cluster_id = lnk.epidemic_cluster_id
+       INNER JOIN episodic_stream s ON s.stream_id = c.stream_id
+      WHERE lnk.outbreak_cluster_id = ?
+        AND c.merged_into IS NULL
+        AND c.suppressed_by IS NULL
+      ORDER BY c.first_day, c.cluster_id",
+    params = list(cluster_id)
   )
 }
 

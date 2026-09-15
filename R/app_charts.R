@@ -839,6 +839,20 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
                                              thresholds = NULL,
                                              lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
+  # Named rather than assumed. Without the column, `weekly$incomplete`
+  # is NULL, `NULL %in% TRUE` is `logical(0)`, and the assignment below
+  # fails with "replacement has 0 rows" - an arithmetic complaint about
+  # a caller that handed over a frame it had not flagged. Every weekly
+  # frame in the app comes from `episodic_app_pathogen_weekly()`, which
+  # flags it; this says so where it would otherwise be discovered.
+  if (is.null(weekly$incomplete)) {
+    stop(
+      "`weekly` has no `incomplete` column: build it with ",
+      "`episodic_app_pathogen_weekly()`, which flags the weeks still ",
+      "filling.",
+      call. = FALSE
+    )
+  }
   weekly$week_start <- as.Date(weekly$week_start)
   weekly$alpha <- ifelse(weekly$incomplete %in% TRUE, 0.45, 1)
 

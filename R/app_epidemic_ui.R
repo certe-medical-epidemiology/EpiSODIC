@@ -18,54 +18,36 @@
 # ===================================================================== #
 
 # The Epidemics screen: a rail of open epidemics, a dossier with
-# seasonal evidence, and a declaration form for seasonal verdicts.
-
-#' The Epidemics screen
-#'
-#' Lists open epidemics with their pathogen, level and state. Follows
-#' the same rail pattern the Clusters screen uses: the list is the
-#' navigation, the dossier is the destination.
-#'
-#' @param epidemics A data frame from `episodic_app_open_epidemics()`.
-#' @param selected_id The currently selected epidemic cluster id, or `NULL`.
-#' @param lang Session language.
-#' @return A `shiny::tagList`.
-#' @keywords internal
-#' @noRd
-episodic_ui_epidemics_screen <- function(epidemics,
-                                         selected_id = NULL,
-                                         lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  shiny::tags$div(
-    class = "episodic-body episodic-body-epidemics",
-    shiny::tags$div(
-      class = "episodic-pane episodic-pane-rail",
-      episodic_ui_epidemic_rail(epidemics, selected_id, lang = lang)
-    ),
-    shiny::uiOutput(
-      "epidemic_dossier_pane",
-      container = shiny::tags$div,
-      class = "episodic-pane episodic-pane-dossier"
-    ),
-    shiny::uiOutput(
-      "epidemic_assessment_pane",
-      container = shiny::tags$div,
-      class = "episodic-pane episodic-pane-assessment"
-    )
-  )
-}
+# seasonal evidence, and the assessment pane an epidemiologist declares
+# the season in.
+#
+# The screen's own three-pane body is in `episodic_app_ui()`, beside the
+# Outbreaks screen's, rather than behind an output that renders all of
+# it: a rail whose DOM is replaced whenever the list of open epidemics
+# changes loses its scroll position and the row `episodic-nav.js`
+# marked, on every run and every write.
 
 #' The epidemic rail
 #'
-#' @param epidemics Data frame of open epidemics.
-#' @param selected_id Currently selected epidemic id.
+#' The Outbreaks rail's own markup and classes, with two differences
+#' that follow from what an epidemic is. There is no bulk-assessment
+#' bar: a declaration is a decision about one season of one pathogen,
+#' with policy consequences, and applying one to several at once is not
+#' an act this screen should make easy. And there is no open-by-number
+#' box, because every epidemic the instance holds open is in this list -
+#' at region and province level there are a handful, not a queue.
+#'
+#' @param epidemics A data frame from `episodic_app_open_epidemics()`.
+#' @param selected_id The currently selected epidemic cluster id, or
+#'   `NULL`.
 #' @param lang Session language.
-#' @return A `shiny::tagList`.
+#' @return A `shiny::tagList` of the rail's contents. Its own box is
+#'   `output$epidemic_rail_pane`'s container - see `episodic_app_ui()`.
 #' @keywords internal
 #' @noRd
 episodic_ui_epidemic_rail <- function(epidemics,
                                       selected_id = NULL,
                                       lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  pal <- episodic_palette()
   shiny::tagList(
     shiny::tags$div(
       class = "episodic-rail-header",
@@ -86,62 +68,110 @@ episodic_ui_epidemic_rail <- function(epidemics,
       )
     ),
     if (nrow(epidemics) == 0) {
-      shiny::tags$p(
-        class = "episodic-rail-empty",
+      shiny::tags$div(
+        style = "padding:14px;font-size:12.5px;color:var(--episodic-muted);",
         episodic_tr("epidemics.rail_empty", lang = lang)
       )
     } else {
-      shiny::tags$div(
-        class = "episodic-rail-list",
-        lapply(seq_len(nrow(epidemics)), function(i) {
-          row <- epidemics[i, ]
-          episodic_ui_epidemic_rail_row(
-            row,
-            selected = identical(as.integer(row$cluster_id), as.integer(selected_id)),
-            lang = lang
-          )
-        })
-      )
+      lapply(seq_len(nrow(epidemics)), function(i) {
+        row <- epidemics[i, ]
+        episodic_ui_epidemic_rail_row(
+          row,
+          selected = identical(
+            as.integer(row$cluster_id),
+            as.integer(selected_id)
+          ),
+          lang = lang
+        )
+      })
     }
   )
 }
 
 #' One row in the epidemic rail
+#'
+#' `data-episodic-epidemic` rather than `data-episodic-cluster`: both
+#' carry a cluster id, but one selects within this screen and the other
+#' opens the Outbreaks screen, and `episodic-nav.js` has to tell them
+#' apart. `aria-current` is written server-side here for the first
+#' render and by `episodic-nav.js` after that, exactly as the Outbreaks
+#' rail does it.
+#'
+#' @param row One row of `episodic_app_open_epidemics()`.
+#' @param selected Whether this row is the current selection.
+#' @param lang Session language.
+#' @return A `shiny::tags$div`.
 #' @keywords internal
 #' @noRd
 episodic_ui_epidemic_rail_row <- function(row,
                                           selected = FALSE,
                                           lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  pal <- episodic_palette()
+  # Absent from fixtures that predate them; a bare `row$care_line` on
+  # such a frame returns NULL rather than NA, and `is.na(NULL)` errors
+  # rather than returning FALSE.
+  row$care_line <- row$care_line %||% NA_character_
+  row$priority_score <- row$priority_score %||% NA_real_
+
   shiny::tags$div(
-    class = paste0(
-      "episodic-rail-row",
-      if (selected) " episodic-rail-row-selected"
-    ),
+    class = "episodic-rail-item",
+    `aria-current` = if (selected) "true",
     `data-cluster-id` = row$cluster_id,
-    onclick = sprintf(
-      "Shiny.setInputValue('epidemic_select', %d, {priority: 'event'})",
-      as.integer(row$cluster_id)
-    ),
-    shiny::tags$div(
-      class = "episodic-rail-row-title",
-      shiny::HTML(episodic_ui_italicise_taxon(row$pathogen)),
-      shiny::tags$span(
-        class = "episodic-dossier-id",
-        episodic_tr("dossier.epidemic_ref", id = row$cluster_id, lang = lang)
-      )
-    ),
-    shiny::tags$div(
-      class = "episodic-rail-row-meta",
-      style = "display:flex;gap:6px;flex-wrap:wrap;align-items:center;",
-      episodic_ui_chip(
-        row$level_label,
-        pal$primary
+    shiny::tags$button(
+      type = "button",
+      class = "episodic-rail-item-open",
+      `data-episodic-epidemic` = row$cluster_id,
+      shiny::tags$div(
+        class = "episodic-rail-pathogen",
+        shiny::HTML(episodic_ui_italicise_taxon(row$pathogen)),
+        shiny::tags$span(
+          class = "episodic-rail-id",
+          episodic_tr("dossier.epidemic_ref", id = row$cluster_id, lang = lang)
+        ),
+        if (!is.na(row$care_line)) {
+          care_line_colour <- episodic_ui_care_line_colour(row$care_line)
+          if (!is.null(care_line_colour)) {
+            episodic_ui_chip(
+              episodic_tr(paste0("careline.short.", row$care_line), lang = lang),
+              care_line_colour,
+              filled = TRUE
+            )
+          }
+        }
       ),
-      episodic_ui_chip(
-        row$state_label,
-        episodic_ui_state_colour(row$state),
-        filled = TRUE
+      shiny::tags$div(class = "episodic-rail-meta", row$level_label),
+      shiny::tags$div(
+        class = "episodic-rail-meta",
+        episodic_format_date_range(row$first_day, row$last_day, lang = lang)
+      ),
+      shiny::tags$div(
+        class = "episodic-rail-meta",
+        paste(
+          c(
+            episodic_count_phrase(
+              row$n_cases,
+              episodic_tr("unit.case", lang = lang),
+              episodic_tr("unit.cases", lang = lang),
+              lang = lang
+            ),
+            if (!is.na(row$priority_score)) {
+              episodic_tr(
+                "rail.priority",
+                score = episodic_format_number(
+                  row$priority_score,
+                  digits = 0,
+                  lang = lang
+                ),
+                lang = lang
+              )
+            }
+          ),
+          collapse = " \u00b7 "
+        )
+      ),
+      shiny::tags$div(
+        class = "episodic-rail-state",
+        episodic_ui_state_dot(row$state),
+        row$state_label
       )
     )
   )
@@ -149,41 +179,48 @@ episodic_ui_epidemic_rail_row <- function(row,
 
 #' The epidemic dossier
 #'
-#' Evidence-centric: seasonal curve with thresholds, tests and positivity,
-#' contributing institutions, linked outbreaks. No patient-level line list
-#' (at L5 that is the whole catchment).
+#' Evidence-centric: seasonal curve with thresholds, tests and
+#' positivity, contributing institutions, and the outbreaks that ran
+#' during it. No patient-level line list: at region level that is the
+#' whole catchment, which is a case register rather than a dossier.
+#'
+#' The notes panel is behind its own `uiOutput()`, for the reason the
+#' Outbreaks dossier's is - saving a note re-renders that one panel and
+#' leaves the plots beside it alone.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param obj The epidemic object from `episodic_epidemic_object()`.
 #' @param lang Session language.
-#' @param current_user The session's signed-in user row, or `NULL`.
 #' @return A `shiny::tagList`.
 #' @keywords internal
 #' @noRd
 episodic_ui_epidemic_dossier <- function(con,
                                          obj,
-                                         lang = Sys.getenv("EPISODIC_LANGUAGE"),
-                                         current_user = NULL) {
+                                         lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   state <- episodic_app_derive_state_for_cluster(con, obj$id)
-  timeline <- episodic_app_assessment_timeline(
-    con,
-    obj$id,
-    lang = lang,
-    level = obj$level
-  )
-  pal <- episodic_palette()
-
   shiny::tagList(
     episodic_ui_epidemic_header(obj, state, lang = lang),
     episodic_ui_epidemic_stat_grid(obj, lang = lang),
+    shiny::uiOutput("epidemic_notes_pane"),
     episodic_ui_epidemic_curve_panel(obj, lang = lang),
     episodic_ui_epidemic_denominator_panel(obj, lang = lang),
     episodic_ui_epidemic_institutions_panel(obj, lang = lang),
-    episodic_ui_epidemic_during_panel(con, obj, lang = lang)
+    episodic_ui_epidemic_during_panel(obj, lang = lang)
   )
 }
 
 #' The epidemic dossier header
+#'
+#' The Outbreaks dossier's header, with the season in place of the
+#' origin and linked-cluster badges: at this scale the case-sharing
+#' relation those badges carry is vacuous, since every case in the
+#' catchment is in the regional cluster by construction.
+#'
+#' @param obj The epidemic object.
+#' @param state The derived state, from
+#'   `episodic_app_derive_state_for_cluster()`.
+#' @param lang Session language.
+#' @return A `shiny::tagList`.
 #' @keywords internal
 #' @noRd
 episodic_ui_epidemic_header <- function(obj,
@@ -310,7 +347,7 @@ episodic_ui_epidemic_stat_grid <- function(obj,
     }
   )))
 
-  shiny::tags$div(class = "episodic-stat-grid", stats)
+  shiny::tags$div(class = "episodic-statgrid", stats)
 }
 
 #' The seasonal curve panel with MEM thresholds
@@ -433,10 +470,13 @@ episodic_ui_epidemic_institutions_panel <- function(obj,
 }
 
 #' Outbreaks occurring during this epidemic
+#'
+#' @param obj The epidemic object.
+#' @param lang Session language.
+#' @return A `shiny::tags$section`.
 #' @keywords internal
 #' @noRd
-episodic_ui_epidemic_during_panel <- function(con,
-                                              obj,
+episodic_ui_epidemic_during_panel <- function(obj,
                                               lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   during <- obj$during_outbreaks
   if (is.null(during) || nrow(during) == 0) {
@@ -453,15 +493,16 @@ episodic_ui_epidemic_during_panel <- function(con,
     row <- during[i, ]
     level_label <- episodic_tr(paste0("level.", row$level), lang = lang)
     shiny::tags$tr(
+      # The app's one way of linking to an outbreak, rather than an
+      # `onclick` of this panel's own: `episodic_ui_cluster_link()`
+      # carries the keyboard contract with it, and going through
+      # `episodic-nav.js` is what moves the screen as well as the
+      # selection.
       shiny::tags$td(
-        shiny::tags$a(
-          href = "#",
-          class = "episodic-cluster-link",
-          onclick = sprintf(
-            "Shiny.setInputValue('open_cluster', %d, {priority: 'event'}); return false;",
-            as.integer(row$cluster_id)
-          ),
-          episodic_tr("dossier.outbreak_ref", id = row$cluster_id, lang = lang)
+        episodic_ui_cluster_link(
+          episodic_tr("dossier.outbreak_ref", id = row$cluster_id, lang = lang),
+          cluster_id = row$cluster_id,
+          lang = lang
         )
       ),
       shiny::tags$td(shiny::HTML(episodic_ui_italicise_taxon(row$pathogen))),
@@ -498,125 +539,35 @@ episodic_ui_epidemic_during_panel <- function(con,
   )
 }
 
-#' The declaration form for seasonal verdicts
-#'
-#' An epidemiologist records whether the season has started, has not started
-#' yet, or has ended. Reuses the `episodic_assessment_event` table with the
-#' declaration verdicts (`season_started`, `season_not_yet`, `season_ended`).
-#'
-#' @param con A [DBI::DBIConnection-class].
-#' @param cluster_id The epidemic cluster's id.
-#' @param obj The epidemic object.
-#' @param lang Session language.
-#' @return A `shiny::tags` element.
-#' @keywords internal
-#' @noRd
-episodic_ui_epidemic_declaration_form <- function(con,
-                                                  cluster_id,
-                                                  obj,
-                                                  lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  pal <- episodic_palette()
-  verdicts <- c("season_started", "season_not_yet", "season_ended")
-  verdict_options <- c(
-    list(list(
-      value = "",
-      label = episodic_tr("assessment.verdict_none", lang = lang),
-      colour = pal$muted
-    )),
-    lapply(verdicts, function(v) {
-      list(
-        value = v,
-        label = episodic_tr(paste0("verdict.", v), lang = lang),
-        hint = episodic_tr(paste0("verdict.", v, ".hint"), lang = lang),
-        colour = episodic_ui_verdict_colour(v)
-      )
-    })
-  )
-
-  shiny::tags$div(
-    class = "episodic-panel-body",
-    style = "border-top:1px solid var(--episodic-rule);padding:16px;",
-    shiny::tags$div(
-      class = "episodic-form-group",
-      shiny::tags$label(
-        class = "episodic-form-label",
-        episodic_tr("epidemics.declaration_label", lang = lang)
-      ),
-      shiny::tags$div(
-        onclick = "episodicDeclarationChanged()",
-        episodic_ui_picker("epidemic_declare_verdict", verdict_options)
-      )
-    ),
-    shiny::tags$div(
-      class = "episodic-form-group",
-      shiny::tags$label(
-        class = "episodic-form-label",
-        episodic_tr("assessment.rationale_label", lang = lang)
-      ),
-      shiny::tags$textarea(
-        id = "epidemic_declare_rationale",
-        rows = 3,
-        disabled = "disabled",
-        placeholder = episodic_tr(
-          "epidemics.declaration_rationale_placeholder",
-          lang = lang
-        )
-      )
-    ),
-    shiny::tags$div(id = "epidemic_declare_error"),
-    shiny::tags$div(
-      class = "episodic-form-actions",
-      shiny::tags$button(
-        id = "epidemic_declare_btn",
-        class = "episodic-btn episodic-btn-primary",
-        disabled = "disabled",
-        onclick = sprintf("episodicSubmitDeclaration(%d)", as.integer(cluster_id)),
-        episodic_tr("epidemics.declaration_submit", lang = lang)
-      )
-    ),
-    shiny::tags$script(shiny::HTML(sprintf(
-      "function episodicDeclarationChanged() {
-  var v = document.getElementById('epidemic_declare_verdict').value;
-  var rationale = document.getElementById('epidemic_declare_rationale');
-  var btn = document.getElementById('epidemic_declare_btn');
-  var has = !!v;
-  rationale.disabled = !has;
-  btn.disabled = !has;
-}
-function episodicSubmitDeclaration(clusterId) {
-  var v = document.getElementById('epidemic_declare_verdict').value;
-  var r = document.getElementById('epidemic_declare_rationale').value;
-  if (!v) return;
-  var label = %s;
-  if (!confirm(label[v] + '\\n\\n' + (r || '(%s)'))) return;
-  Shiny.setInputValue('epidemic_declare_submit', {
-    cluster_id: clusterId, verdict: v, rationale: r
-  }, {priority: 'event'});
-}",
-      jsonlite::toJSON(stats::setNames(
-        vapply(
-          verdicts,
-          function(v) episodic_tr(paste0("verdict.", v), lang = lang),
-          character(1)
-        ),
-        verdicts
-      ), auto_unbox = TRUE),
-      episodic_tr("epidemics.declaration_no_rationale", lang = lang)
-    )))
-  )
-}
-
 #' The epidemic assessment rail
 #'
-#' Timeline of assessment events plus the declaration form for
-#' epidemiologists. Viewers see the timeline only.
+#' The Outbreaks screen's assessment rail, for the coarse scale: the
+#' timeline of what has been recorded, and for a signed-in epidemiologist
+#' the same form, carrying its own element ids.
+#'
+#' The form's verdict list is what differs. An epidemic is assessed like
+#' any other signal - it can be an artefact, expected variation, or a
+#' confirmed epidemic - and a *seasonal* epidemic can additionally be
+#' declared started, not yet started, or ended. Those three are the act
+#' the Moving Epidemic Method exists to inform and does not itself
+#' perform: the crossing is a measurement, the declaration is a decision
+#' with an author, a timestamp and a consequence for screening policy.
+#' They are offered only where there is a season to declare, which a
+#' `Legionella` epidemic has none of.
+#'
+#' Muting is offered here for the same reason it is on an outbreak: a
+#' regional stream in a month everyone already knows about is one an
+#' epidemiologist may legitimately silence.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id The epidemic cluster's id.
-#' @param obj The epidemic object.
+#' @param obj The epidemic object from `episodic_epidemic_object()`, or
+#'   `NULL` to build one.
 #' @param lang Session language.
 #' @param current_user The session's signed-in user, or `NULL`.
-#' @return A `shiny::tagList`.
+#' @return A `shiny::tagList` of the assessment rail's contents. Its own
+#'   box is `output$epidemic_assessment_pane`'s container - see
+#'   `episodic_app_ui()`.
 #' @keywords internal
 #' @noRd
 episodic_ui_epidemic_assessment_rail <- function(con,
@@ -633,6 +584,11 @@ episodic_ui_epidemic_assessment_rail <- function(con,
     lang = lang,
     level = obj$level
   )
+  declarations <- if (is.null(obj$season)) {
+    character(0)
+  } else {
+    c("season_started", "season_not_yet", "season_ended")
+  }
 
   shiny::tagList(
     shiny::tags$div(
@@ -660,8 +616,21 @@ episodic_ui_epidemic_assessment_rail <- function(con,
         })
       }
     ),
-    if (episodic_user_is_epidemiologist(current_user) && !is.null(obj$season)) {
-      episodic_ui_epidemic_declaration_form(con, cluster_id, obj, lang = lang)
+    if (episodic_user_is_epidemiologist(current_user)) {
+      episodic_ui_assessment_form(
+        con,
+        cluster_id,
+        obj,
+        lang = lang,
+        prefix = "epidemic_assess",
+        extra_verdicts = declarations,
+        # Declaring a season over is terminal for this epidemic in the
+        # way an artefact is for an outbreak, so it pre-ticks the
+        # closure box - a suggestion, not a closure. The cron closes a
+        # seasonal epidemic from the post-epidemic threshold on its own;
+        # this is the epidemiologist saying so first.
+        close_suggested = c("artefact", "expected_variation", "season_ended")
+      )
     }
   )
 }

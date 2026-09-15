@@ -1521,10 +1521,15 @@ episodic_epidemic_object <- function(con,
 
   from <- as.Date(cluster$first_day)
   to <- max(as.Date(cluster$last_day), asof)
-  weekly <- episodic_app_weekly_counts(
-    cases$sample_date,
-    from - 28,
-    to
+  # `episodic_app_pathogen_weekly()` rather than the bare weekly counts:
+  # it carries the `incomplete` flag, which is what shades the weeks
+  # still filling. A curve drawn without it tells the reader that this
+  # week's dip is a fall in incidence, when what it is is the post.
+  weekly <- episodic_app_pathogen_weekly(
+    data.frame(sample_date = cases$sample_date),
+    list(from = from - 28, to = to),
+    episodic_app_completeness(con, cluster$stream_id)$incomplete_days,
+    asof
   )
 
   thresholds <- if (!is.null(anchor_week) && !is.null(season)) {

@@ -158,7 +158,7 @@ episodic_notify_cluster_details <- function(con, cluster_ids) {
   episodic_db_attach_case_days(con, details)
 }
 
-#' A cluster's deep link into the dashboard's Clusters screen
+#' A cluster's deep link into the dashboard's Outbreaks screen
 #'
 #' The dashboard reads `?cluster=` on load (`R/app_server.R`), so a link
 #' built here opens that cluster's dossier rather than dropping the
