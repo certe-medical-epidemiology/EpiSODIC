@@ -1,3 +1,31 @@
+# EpiSODIC 0.20.0
+
+## New
+
+- An Epidemics screen with a rail of open epidemics, a dossier with seasonal evidence, and the assessment pane a season is declared in
+- The navigation bar carries five links: Outbreaks, Epidemics, Pathogen, Archive, Instance
+- An outbreak's dossier header carries a "During E-123" chip for each epidemic it ran during, which opens that epidemic
+- The Epidemics screen carries a notes panel and the full assessment form, so an epidemic is assessed and annotated like any other signal
+- The epidemic dossier shows weekly case curve with MEM threshold overlay, tests and positivity, contributing institutions with concentration, and linked outbreaks
+- The Clusters rail and Performance screen filter to outbreaks only (L1-L3)
+- Epidemiologists can record seasonal declarations (`season_started`, `season_not_yet`, `season_ended`) on seasonal epidemics
+- Cluster references render as `O-{id}` for outbreaks and `E-{id}` for epidemics, uniform across all eight languages
+- `episodic_object_ref()` helper renders the scale-aware reference from either a scale string or a lattice level
+- User-facing "cluster" wording replaced throughout: outbreak-only contexts say "outbreak", mixed contexts say "outbreaks and epidemics", detection contexts say "signal"
+- Full i18n vocabulary sweep across all eight language files for the outbreak/epidemic terminology
+- Report filenames changed from `cluster-{id}` to `outbreak-{id}`
+
+## Changed
+
+- The Clusters screen is called Outbreaks
+- The Epidemics screen holds its three panes in the app shell, like the Outbreaks screen, so its rail keeps its scroll position and gains the phone-tier pane switcher
+- The Epidemics rail is the Outbreaks rail's markup, with more room per row
+- The seasonal declaration is offered inside the epidemic's assessment form rather than as a form of its own, alongside the ordinary classification verdicts
+- The classification form and the notes panel namespace their element ids, so both surveillance screens can carry one
+- An outbreak's "Linked to" chips cover the outbreak scale only; the epidemic it ran during is a "During" chip instead
+- The confirmed-outbreak classification's explanation no longer names one scale while its label names the other
+
+
 # EpiSODIC 0.19.0
 
 ## New
@@ -22,28 +50,9 @@
 - Epidemic identity is preserved across the season anchor rollover
 - Outbreaks are linked to epidemics they occur during, based on pathogen, time overlap and geographic nesting (`episodic_cluster_link`)
 - Lattice suppression works across the outbreak/epidemic scale boundary
-- An Epidemics screen with a rail of open epidemics, a dossier with seasonal evidence, and the assessment pane a season is declared in
-- The navigation bar carries five links: Outbreaks, Epidemics, Pathogen, Archive, Instance
-- An outbreak's dossier header carries a "During E-123" chip for each epidemic it ran during, which opens that epidemic
-- The Epidemics screen carries a notes panel and the full assessment form, so an epidemic is assessed and annotated like any other signal
-- The epidemic dossier shows weekly case curve with MEM threshold overlay, tests and positivity, contributing institutions with concentration, and linked outbreaks
-- The Clusters rail and Performance screen filter to outbreaks only (L1-L3)
-- Epidemiologists can record seasonal declarations (`season_started`, `season_not_yet`, `season_ended`) on seasonal epidemics
-- Cluster references render as `O-{id}` for outbreaks and `E-{id}` for epidemics, uniform across all eight languages
-- `episodic_object_ref()` helper renders the scale-aware reference from either a scale string or a lattice level
-- User-facing "cluster" wording replaced throughout: outbreak-only contexts say "outbreak", mixed contexts say "outbreaks and epidemics", detection contexts say "signal"
-- Full i18n vocabulary sweep across all eight language files for the outbreak/epidemic terminology
-- Report filenames changed from `cluster-{id}` to `outbreak-{id}`
 
 ## Changed
 
-- The Clusters screen is called Outbreaks
-- The Epidemics screen holds its three panes in the app shell, like the Outbreaks screen, so its rail keeps its scroll position and gains the phone-tier pane switcher
-- The Epidemics rail is the Outbreaks rail's markup, with more room per row
-- The seasonal declaration is offered inside the epidemic's assessment form rather than as a form of its own, alongside the ordinary classification verdicts
-- The classification form and the notes panel namespace their element ids, so both surveillance screens can carry one
-- An outbreak's "Linked to" chips cover the outbreak scale only; the epidemic it ran during is a "During" chip instead
-- The confirmed-outbreak classification's explanation no longer names one scale while its label names the other
 - The navigation bar is four links and is visible at every width, with no collapsed menu anywhere in the app
 - Every screen is rendered once and shown or hidden, instead of being torn out and rebuilt from the database on every navigation
 - Navigation, pane and cluster state live in three data attributes on the app shell, and every highlight is derived from them by the stylesheet

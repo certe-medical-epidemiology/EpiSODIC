@@ -427,7 +427,7 @@ episodic_notify_build_new_clusters <- function(details,
     paste0(
       "<table style='border-collapse:collapse;width:100%'>",
       "<tr style='background:#f0f0f0'>",
-      header("column.cluster", "left"),
+      header("column.id", "left"),
       header("column.pathogen", "left"),
       header("column.place", "left"),
       header("column.period", "center"),

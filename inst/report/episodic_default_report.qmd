@@ -233,7 +233,7 @@ if (!is.null(d$similar) && nrow(d$similar) > 0) {
   )
   cat("## ", tr("panel.similar.title"), "\n\n", sep = "")
   cat(
-    "|", tr("column.cluster"), "|", tr("column.place"), "|",
+    "|", tr("column.id"), "|", tr("column.place"), "|",
     tr("column.period"), "|", tr("column.cases"), "|",
     tr("column.case_days"), "|", tr("column.verdict"), "|",
     tr("column.duration"), "|", tr("column.priority"), "|\n"
