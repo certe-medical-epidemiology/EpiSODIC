@@ -251,9 +251,53 @@ episodic_db_clusters_linked_to <- function(con, cluster_id) {
        AND theirs.cluster_id != ?
        AND c.merged_into IS NULL
        AND c.suppressed_by IS NULL
+       AND c.scale = 'outbreak'
      GROUP BY c.cluster_id
      ORDER BY shared_cases DESC, c.cluster_id",
     params = list(cluster_id, cluster_id)
+  )
+}
+
+#' The epidemics an outbreak is recorded as occurring during
+#'
+#' The other direction of `episodic_db_outbreaks_during_epidemic()`, and
+#' the reason both read `episodic_cluster_link` rather than a case
+#' overlap: at province and region level an epidemic contains every case
+#' of its pathogen in the catchment by construction, so a shared-case
+#' test would relate every outbreak to it and say nothing. What the link
+#' records is that the two overlap in time and that the outbreak's place
+#' is inside the epidemic's - which is what "during" means and all it
+#' claims. No causal claim is made in either direction.
+#'
+#' An outbreak is linked to every epidemic whose geography contains it
+#' and whose window it falls in, which at the moment of writing includes
+#' the province-level ones the lattice has not yet folded away. Only the
+#' epidemics that stand as dossiers of their own are read back, the same
+#' rule `episodic_db_outbreaks_during_epidemic()` applies from the other
+#' side: a chip pointing at a cluster suppression has folded into
+#' another is a link to a dossier the app will not open. The link rows
+#' stay, because suppression is a decision a later run can revisit and
+#' the relation itself did not change.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id An outbreak cluster's id.
+#' @return A data frame with `cluster_id`, `pathogen`, `level` and
+#'   `scale`, oldest first; no rows when the outbreak is linked to none.
+#' @keywords internal
+#' @noRd
+episodic_db_epidemics_during_for_outbreak <- function(con, cluster_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT c.cluster_id, c.first_day, c.last_day, c.n_cases, c.scale,
+            s.pathogen, s.level
+       FROM episodic_cluster_link lnk
+       INNER JOIN episodic_cluster c ON c.cluster_id = lnk.epidemic_cluster_id
+       INNER JOIN episodic_stream s ON s.stream_id = c.stream_id
+      WHERE lnk.outbreak_cluster_id = ?
+        AND c.merged_into IS NULL
+        AND c.suppressed_by IS NULL
+      ORDER BY c.first_day, c.cluster_id",
+    params = list(cluster_id)
   )
 }
 
@@ -1130,5 +1174,159 @@ episodic_db_instance_counts <- function(con) {
     runs = one("SELECT COUNT(*) AS n FROM episodic_detection_run"),
     users = one("SELECT COUNT(*) AS n FROM episodic_app_user WHERE is_active = 1"),
     clusters = one("SELECT COUNT(*) AS n FROM episodic_cluster")
+  )
+}
+
+#' The seasonal satellite for one epidemic cluster, or `NULL`
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A single `cluster_id`.
+#' @return A one-row data frame, or `NULL` when the epidemic has no
+#'   satellite (it is not seasonal, or it is not an epidemic at all).
+#' @keywords internal
+#' @noRd
+episodic_db_epidemic_season <- function(con, cluster_id) {
+  res <- DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_epidemic_season WHERE cluster_id = ?",
+    params = list(cluster_id)
+  )
+  if (nrow(res) == 0) NULL else res[1, ]
+}
+
+#' Every open epidemic cluster with a seasonal satellite
+#'
+#' Used by the epidemic closure step: every open, unmerged, seasonal
+#' epidemic whose satellite has not yet recorded an end.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @return A data frame with columns from both `episodic_cluster` and
+#'   `episodic_epidemic_season` (prefixed to avoid collision where needed),
+#'   one row per open seasonal epidemic still running.
+#' @keywords internal
+#' @noRd
+episodic_db_open_seasonal_epidemics <- function(con) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day,
+            c.scale, c.origin,
+            es.season_label, es.anchor_week,
+            es.post_epidemic_threshold, es.ended_week_start
+       FROM episodic_cluster c
+       INNER JOIN episodic_epidemic_season es ON es.cluster_id = c.cluster_id
+      WHERE c.merged_into IS NULL
+        AND c.origin = 'detected'
+        AND c.scale = 'epidemic'
+        AND es.ended_week_start IS NULL"
+  )
+}
+
+#' Every open epidemic cluster (seasonal or not), for linking
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @return A data frame of open epidemic clusters with their stream's
+#'   pathogen and geographic identifiers.
+#' @keywords internal
+#' @noRd
+episodic_db_open_epidemics <- function(con) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day,
+            c.scale,
+            s.pathogen, s.level, s.region_code, s.institution_id
+       FROM episodic_cluster c
+       INNER JOIN episodic_stream s ON s.stream_id = c.stream_id
+      WHERE c.merged_into IS NULL
+        AND c.origin = 'detected'
+        AND c.scale = 'epidemic'"
+  )
+}
+
+#' Every open outbreak cluster, for linking
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @return A data frame of open outbreak clusters with their stream's
+#'   pathogen and geographic identifiers.
+#' @keywords internal
+#' @noRd
+episodic_db_open_outbreaks <- function(con) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day,
+            c.scale,
+            s.pathogen, s.level, s.region_code, s.institution_id, s.ward
+       FROM episodic_cluster c
+       INNER JOIN episodic_stream s ON s.stream_id = c.stream_id
+      WHERE c.merged_into IS NULL
+        AND c.origin = 'detected'
+        AND c.scale = 'outbreak'"
+  )
+}
+
+#' The "during" links for one cluster
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A cluster id (outbreak or epidemic).
+#' @return A data frame of linked cluster ids.
+#' @keywords internal
+#' @noRd
+episodic_db_cluster_links <- function(con, cluster_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_cluster_link
+      WHERE outbreak_cluster_id = ? OR epidemic_cluster_id = ?",
+    params = list(cluster_id, cluster_id)
+  )
+}
+
+#' Outbreaks recorded as occurring during an epidemic
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param epidemic_cluster_id The epidemic cluster's id.
+#' @return A data frame of outbreak clusters with their pathogen, level,
+#'   and place, oldest first; no rows when none are linked.
+#' @keywords internal
+#' @noRd
+episodic_db_outbreaks_during_epidemic <- function(con, epidemic_cluster_id) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day,
+            c.n_cases, c.priority_score,
+            s.pathogen, s.level, s.institution_id, s.ward
+       FROM episodic_cluster_link lnk
+       INNER JOIN episodic_cluster c ON c.cluster_id = lnk.outbreak_cluster_id
+       INNER JOIN episodic_stream s ON s.stream_id = c.stream_id
+      WHERE lnk.epidemic_cluster_id = ?
+        AND c.merged_into IS NULL
+        AND c.suppressed_by IS NULL
+      ORDER BY c.first_day, c.cluster_id",
+    params = list(epidemic_cluster_id)
+  )
+}
+
+#' Institutions contributing cases in an epidemic's window
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param pathogen The pathogen.
+#' @param from,to Date range (character, `YYYY-MM-DD`).
+#' @return A data frame with `institution_id`, `display_name`, `n_cases`,
+#'   ordered by `n_cases` descending.
+#' @keywords internal
+#' @noRd
+episodic_db_epidemic_contributing_institutions <- function(con,
+                                                           pathogen,
+                                                           from,
+                                                           to) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT c.institution_id, i.display_name, COUNT(*) AS n_cases
+       FROM episodic_case c
+       INNER JOIN episodic_institution i ON i.institution_id = c.institution_id
+      WHERE c.pathogen = ?
+        AND c.sample_date >= ?
+        AND c.sample_date <= ?
+      GROUP BY c.institution_id, i.display_name
+      ORDER BY n_cases DESC",
+    params = list(pathogen, as.character(from), as.character(to))
   )
 }

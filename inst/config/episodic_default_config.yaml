@@ -193,6 +193,22 @@ priority_score:
     density_component: 0.10    # incidence per 1,000 patient-days versus that stream's own baseline density
     spatial_component: 0.05    # how concentrated cases are in one location versus spread across several
 
+# Scale: which lattice levels produce epidemics rather than outbreaks.
+#
+# An outbreak is a localised cluster (L1 to L3), investigated case by
+# case; an epidemic is a regional cluster (L4 or L5), assessed on
+# population curves. The boundary is an operator setting because L3
+# (pathogen_area) is a postcode-derived grouping whose population varies
+# across deployments: a sparse country's area may cover more ground than
+# a dense one's province.
+#
+# Part of config_hash: changing which levels are epidemics changes what a
+# run computes.
+scale:
+  epidemic_levels:
+    - pathogen_province
+    - pathogen_region
+
 # Geography: how the two coarsest lattice levels name places.
 #
 # EpiSODIC runs at any laboratory in any country, so it cannot know what

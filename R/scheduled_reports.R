@@ -279,7 +279,7 @@ episodic_scheduled_report_message <- function(con, subscription, final, attachme
     details$last_day,
     lang = lang
   )
-  ref <- episodic_tr("dossier.cluster_ref", id = subscription$cluster_id, lang = lang)
+  ref <- episodic_tr("dossier.outbreak_ref", id = subscription$cluster_id, lang = lang)
 
   title <- episodic_tr(
     "scheduled_report.email_subject",

@@ -461,15 +461,22 @@ episodic_app_activity_log <- function(con,
     clusters$stream_id,
     streams$stream_id
   )]
+  cluster_scale <- clusters$scale
   cluster_target <- function(cluster_ids) {
-    pathogens <- cluster_pathogen[match(cluster_ids, clusters$cluster_id)]
+    idx <- match(cluster_ids, clusters$cluster_id)
+    pathogens <- cluster_pathogen[idx]
+    scales <- cluster_scale[idx]
     vapply(
       seq_along(cluster_ids),
       function(i) {
         episodic_tr(
           "activity.target_cluster",
           pathogen = if (is.na(pathogens[i])) "?" else pathogens[i],
-          id = cluster_ids[i],
+          ref = episodic_object_ref(
+            cluster_ids[i],
+            if (is.na(scales[i])) "outbreak" else scales[i],
+            lang = lang
+          ),
           lang = lang
         )
       },

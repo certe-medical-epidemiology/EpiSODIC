@@ -191,6 +191,21 @@ test_that("episodic_db_schema_statements(\"mariadb\") bounds episodic_app_login_
   expect_match(create, "username     TEXT NOT NULL", fixed = TRUE)
 })
 
+test_that("episodic_db_schema_statements(\"mariadb\") bounds episodic_cluster's scale column", {
+  statements <- episodic_db_schema_statements("mariadb")
+  create <- grep(
+    "CREATE TABLE episodic_cluster ",
+    statements,
+    value = TRUE,
+    fixed = TRUE
+  )
+  expect_length(create, 1)
+  expect_match(
+    create,
+    "scale\\s+VARCHAR\\(20\\) NOT NULL DEFAULT 'outbreak'"
+  )
+})
+
 schema_file <- function() {
   path <- system.file("sql", "schema.sql", package = "EpiSODIC")
   if (identical(path, "")) {

@@ -209,3 +209,24 @@ test_that("a broken graphics device falls the geo panel back to the bar breakdow
     expect_true(grepl(expected, html, fixed = TRUE))
   })
 })
+
+test_that("the weekly curve chart refuses a frame nobody flagged for completeness", {
+  weekly <- data.frame(
+    week_start = as.Date("2026-01-05") + seq(0, 63, by = 7),
+    n_cases = c(2, 3, 5, 8, 13, 9, 6, 4, 2, 1)
+  )
+  # Without the column, `weekly$incomplete` is NULL and the alpha
+  # assignment fails with "replacement has 0 rows, data has 10" - an
+  # arithmetic complaint about a caller that never flagged its weeks.
+  expect_error(
+    episodic_ui_pathogen_curve_chart(weekly, lang = "en"),
+    "incomplete",
+    fixed = TRUE
+  )
+
+  weekly$incomplete <- weekly$week_start > as.Date("2026-03-01")
+  expect_s3_class(
+    episodic_ui_pathogen_curve_chart(weekly, lang = "en"),
+    "ggplot"
+  )
+})

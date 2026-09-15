@@ -117,6 +117,7 @@ reference:
   - episodic_db_migrate
   - episodic_db_truncate
   - episodic_db_dsn_mariadb
+  - episodic_db_dsn_mysql
 
 - title: Accounts and sign-in
   contents:
@@ -148,7 +149,13 @@ reference:
   contents:
   - episodic_palette
   - episodic_geo
+  - episodic_geo_overlay_resolve
+  - episodic_geo_source_resolve
   - episodic_charts
+  - episodic_ui_code_join
+  - episodic_ui_epi_curve_chart
+  - episodic_ui_rt_chart
+  - episodic_ui_trend_chart
   - episodic_ui_italicise_taxon
 
 - title: Configure export

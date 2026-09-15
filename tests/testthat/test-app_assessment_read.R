@@ -466,7 +466,7 @@ test_that("episodic_ui_run_modal() shows what a successful run loaded, and no fa
 
   expect_true(grepl("120", rendered, fixed = TRUE))
   expect_true(grepl("42", rendered, fixed = TRUE))
-  expect_true(grepl("0 clusters auto-closed", rendered, fixed = TRUE))
+  expect_true(grepl("0 auto-closed", rendered, fixed = TRUE))
   expect_false(grepl("Why this run failed", rendered, fixed = TRUE))
   expect_false(grepl("episodic_check_cases()", rendered, fixed = TRUE))
   expect_false(grepl("[[", rendered, fixed = TRUE))

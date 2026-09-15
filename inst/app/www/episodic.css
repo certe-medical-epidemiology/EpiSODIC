@@ -116,6 +116,7 @@ body {
    instance-level screens light the Instance link, because that is where
    a reader reached them from. */
 .episodic-shell[data-nav="clusters"] .episodic-nav-link[data-view="clusters"],
+.episodic-shell[data-nav="epidemics"] .episodic-nav-link[data-view="epidemics"],
 .episodic-shell[data-nav="pathogen"] .episodic-nav-link[data-view="pathogen"],
 .episodic-shell[data-nav="archive"] .episodic-nav-link[data-view="archive"],
 .episodic-shell[data-nav="instance"] .episodic-nav-link[data-view="instance"] {
@@ -218,6 +219,7 @@ body {
   min-height: 0;
 }
 .episodic-shell[data-view="clusters"] .episodic-screen[data-screen="clusters"],
+.episodic-shell[data-view="epidemics"] .episodic-screen[data-screen="epidemics"],
 .episodic-shell[data-view="pathogen"] .episodic-screen[data-screen="pathogen"],
 .episodic-shell[data-view="archive"] .episodic-screen[data-screen="archive"],
 .episodic-shell[data-view="instance"] .episodic-screen[data-screen="instance"],
@@ -398,6 +400,21 @@ body {
    indent reserved for a control they never see. */
 .episodic-rail-item-selectable .episodic-rail-item-open {
   padding-inline-start: 34px;
+}
+/* The Epidemics rail is the same list, read differently. An instance
+   holds a handful of epidemics open where it holds dozens of outbreaks,
+   and there is no bulk bar above them competing for the height, so the
+   rows are given the room the density of the outbreak queue cannot
+   spare. Padding and leading only: the markup, the classes and the
+   marking are the Outbreaks rail's, so the two cannot drift apart. */
+.episodic-body-epidemics .episodic-rail-item-open {
+  padding: 16px 16px 18px;
+}
+.episodic-body-epidemics .episodic-rail-item .episodic-rail-meta {
+  margin-top: 5px;
+}
+.episodic-body-epidemics .episodic-rail-item .episodic-rail-state {
+  margin-top: 9px;
 }
 .episodic-rail-item .episodic-rail-pathogen {
   font-size: 1rem;
@@ -625,7 +642,7 @@ body {
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
-  /* The pair of maps (Clusters screen: detail + region context) rarely
+  /* The pair of maps (Outbreaks screen: detail + region context) rarely
      fills the panel's full width - centred as a group rather than
      hugging the left edge, matching the single map's own centring
      below. */

@@ -63,7 +63,7 @@ episodic_app_open_clusters <- function(con,
     character(1)
   )
 
-  open <- clusters[clusters$state != "closed", ]
+  open <- clusters[clusters$state != "closed" & clusters$scale == "outbreak", ]
   # Newest last case day first - the rail is a triage queue, and a cluster
   # that just gained a case is more likely to need attention right now
   # than one that scored higher on priority but has gone quiet.
@@ -1420,5 +1420,202 @@ episodic_app_status <- function(con) {
     # their own extract, the reason is the whole message - and the
     # dashboard is where they are looking when they notice.
     error_text = run$error_text %||% NA_character_
+  )
+}
+
+# -- Epidemic screen read layer -------------------------------------------
+
+#' Open epidemics for the epidemic rail
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param lang Session language, for level/state labels.
+#' @return A data frame, one row per open epidemic, ordered by `last_day`
+#'   descending.
+#' @keywords internal
+#' @noRd
+episodic_app_open_epidemics <- function(con,
+                                        lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  clusters <- episodic_db_clusters(con, open_only = TRUE)
+  if (nrow(clusters) == 0) {
+    return(clusters[, c("cluster_id", "priority_score"), drop = FALSE])
+  }
+  streams <- episodic_db_streams(con, active_only = FALSE)
+  clusters$pathogen <- streams$pathogen[match(
+    clusters$stream_id,
+    streams$stream_id
+  )]
+  clusters$level <- streams$level[match(clusters$stream_id, streams$stream_id)]
+  clusters$care_line <- streams$care_line[match(
+    clusters$stream_id,
+    streams$stream_id
+  )]
+
+  clusters$state <- episodic_app_derive_states_batch(con, clusters)
+  clusters$state_label <- vapply(
+    clusters$state,
+    function(s) episodic_tr(paste0("state.", s), lang = lang),
+    character(1)
+  )
+  clusters$level_label <- vapply(
+    clusters$level,
+    function(lv) episodic_tr(paste0("level.", lv), lang = lang),
+    character(1)
+  )
+
+  open <- clusters[clusters$state != "closed" & clusters$scale == "epidemic", ]
+  open[order(as.Date(open$last_day), decreasing = TRUE), ]
+}
+
+#' The epidemic dossier object
+#'
+#' Builds the data a single epidemic dossier needs: the cluster itself,
+#' its seasonal satellite (if any), the cases, the weekly curve with MEM
+#' thresholds, tests/positivity, contributing institutions, and the list
+#' of outbreaks occurring during the epidemic.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A cluster id.
+#' @param lang Session language.
+#' @return A list with elements named for the dossier panels.
+#' @keywords internal
+#' @noRd
+episodic_epidemic_object <- function(con,
+                                     cluster_id,
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  cluster <- DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_cluster WHERE cluster_id = ?",
+    params = list(cluster_id)
+  )
+  if (nrow(cluster) == 0) {
+    stop("No such cluster: ", cluster_id, call. = FALSE)
+  }
+  cluster <- cluster[1, ]
+
+  stream <- DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_stream WHERE stream_id = ?",
+    params = list(cluster$stream_id)
+  )[1, ]
+  pc <- episodic_db_pathogen_config_get(con, stream$pathogen)
+
+  cases <- episodic_db_cluster_cases(con, cluster_id)
+  detections <- DBI::dbGetQuery(
+    con,
+    "SELECT DISTINCT detector FROM episodic_detection WHERE cluster_id = ?",
+    params = list(cluster_id)
+  )$detector
+
+  season <- episodic_db_epidemic_season(con, cluster_id)
+  place <- episodic_app_place_label(stream, NULL, lang = lang)
+  asof <- episodic_app_data_asof(con)
+
+  anchor_week <- if (!is.null(season)) {
+    as.integer(season$anchor_week)
+  } else if (!is.null(pc) && !is.null(cases) && nrow(cases) > 0) {
+    anchor <- episodic_mem_season_anchor(cases)
+    if (!is.null(anchor)) anchor$anchor_week else NULL
+  } else {
+    NULL
+  }
+
+  from <- as.Date(cluster$first_day)
+  to <- max(as.Date(cluster$last_day), asof)
+  # `episodic_app_pathogen_weekly()` rather than the bare weekly counts:
+  # it carries the `incomplete` flag, which is what shades the weeks
+  # still filling. A curve drawn without it tells the reader that this
+  # week's dip is a fall in incidence, when what it is is the post.
+  weekly <- episodic_app_pathogen_weekly(
+    data.frame(sample_date = cases$sample_date),
+    list(from = from - 28, to = to),
+    episodic_app_completeness(con, cluster$stream_id)$incomplete_days,
+    asof
+  )
+
+  thresholds <- if (!is.null(anchor_week) && !is.null(season)) {
+    episodic_mem_thresholds_for_season(
+      episodic_db_cases_for_pathogen(con, stream$pathogen),
+      season$season_label,
+      anchor_week = anchor_week
+    )
+  } else {
+    NULL
+  }
+
+  denominator <- episodic_app_pathogen_denominator(
+    con,
+    stream$pathogen,
+    episodic_db_cases_for_pathogen(con, stream$pathogen),
+    list(from = from - 28, to = to)
+  )
+
+  institutions <- episodic_db_epidemic_contributing_institutions(
+    con,
+    stream$pathogen,
+    cluster$first_day,
+    cluster$last_day
+  )
+
+  during_outbreaks <- episodic_db_outbreaks_during_epidemic(con, cluster_id)
+  if (nrow(during_outbreaks) > 0) {
+    inst_lookup <- episodic_db_institutions(con)
+    during_outbreaks$place <- vapply(
+      seq_len(nrow(during_outbreaks)),
+      function(i) {
+        s <- DBI::dbGetQuery(
+          con,
+          "SELECT * FROM episodic_stream WHERE stream_id = ?",
+          params = list(during_outbreaks$stream_id[i])
+        )[1, ]
+        inst <- if (!is.na(s$institution_id)) {
+          inst_lookup[inst_lookup$institution_id == s$institution_id, ][1, ]
+        } else {
+          NULL
+        }
+        episodic_app_place_label(s, inst, lang = lang)
+      },
+      character(1)
+    )
+  }
+
+  total_cases <- sum(weekly$n_cases, na.rm = TRUE)
+  concentration <- if (nrow(institutions) > 0 && total_cases > 0) {
+    top_share <- institutions$n_cases[1] / sum(institutions$n_cases)
+    list(
+      top_institution = institutions$display_name[1],
+      top_share = top_share,
+      n_institutions = nrow(institutions)
+    )
+  } else {
+    NULL
+  }
+
+  list(
+    id = cluster$cluster_id,
+    stream_id = cluster$stream_id,
+    pathogen = stream$pathogen,
+    level = stream$level,
+    care_line = stream$care_line,
+    scale = cluster$scale,
+    place = place,
+    detectors = detections,
+    first_day = cluster$first_day,
+    last_day = cluster$last_day,
+    opened_at = cluster$opened_at,
+    n_cases = cluster$n_cases,
+    expected = cluster$expected,
+    ratio = cluster$ratio,
+    priority_score = cluster$priority_score,
+    changed_since_assessment = as.logical(cluster$changed_since_assessment),
+    origin = cluster$origin,
+    asof = asof,
+    season = season,
+    anchor_week = anchor_week,
+    weekly = weekly,
+    thresholds = thresholds,
+    denominator = denominator,
+    institutions = institutions,
+    concentration = concentration,
+    during_outbreaks = during_outbreaks
   )
 }

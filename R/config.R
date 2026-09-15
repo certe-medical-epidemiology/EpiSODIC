@@ -475,6 +475,23 @@ episodic_config_merge <- function(base, override) {
 #' @noRd
 episodic_config_unhashed_sections <- c("notifications", "access", "report")
 
+#' The scale a lattice level belongs to
+#'
+#' Returns `"epidemic"` for levels in `config$scale$epidemic_levels`,
+#' `"outbreak"` for everything else. The boundary is configuration, not
+#' a constant, because L3 `pathogen_area` is a postcode-derived grouping
+#' whose population varies across deployments.
+#'
+#' @param level A single lattice level string.
+#' @param config Resolved configuration, as from `episodic_config_resolve()`.
+#' @return `"outbreak"` or `"epidemic"`.
+#' @keywords internal
+#' @noRd
+episodic_scale_for_level <- function(level,
+                                     config = episodic_config_resolve()) {
+  if (level %in% config$scale$epidemic_levels) "epidemic" else "outbreak"
+}
+
 #' Fingerprint a configuration for reproducibility
 #'
 #' Every detection run is stamped with a hash of the exact configuration

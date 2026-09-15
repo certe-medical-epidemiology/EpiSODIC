@@ -35,6 +35,7 @@
 episodic_app_views <- function() {
   c(
     "clusters",
+    "epidemics",
     "pathogen",
     "archive",
     "instance",
@@ -48,7 +49,7 @@ episodic_app_views <- function() {
 
 #' The navigation link a screen lights up
 #'
-#' Four links carry nine screens. The three surveillance screens are
+#' Five links carry ten screens. The four surveillance screens are
 #' their own group; the five that describe the instance rather than a
 #' cluster are reached from the Instance screen and light its link, so a
 #' reader on the Performance screen can still see where they are.
@@ -63,7 +64,7 @@ episodic_app_views <- function() {
 #' @keywords internal
 #' @noRd
 episodic_app_nav_group <- function(view) {
-  if (view %in% c("clusters", "pathogen", "archive")) {
+  if (view %in% c("clusters", "epidemics", "pathogen", "archive")) {
     return(view)
   }
   "instance"
@@ -170,13 +171,18 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     shiny::tags$div(
       class = "episodic-shell",
       # The whole of the dashboard's navigation state, and the only
-      # place it is held. `episodic-nav.js` writes these three; the
+      # place it is held. `episodic-nav.js` writes these four; the
       # stylesheet reads the first two; nothing else stores a copy.
       # Shiny never replaces this element, which is the entire reason
       # they live here rather than on anything a `renderUI` produces.
+      #
+      # The two selections are separate because the two screens are: a
+      # reader who opens an outbreak from an epidemic's dossier and
+      # navigates back should find the epidemic they left still marked.
       `data-view` = "clusters",
       `data-nav` = "clusters",
       `data-cluster` = "",
+      `data-epidemic` = "",
       # Brand, navigation and status are siblings rather than the
       # navigation being nested inside a left-hand half: below 768px the
       # bar takes a row of its own beneath the other two, and `order`
@@ -253,7 +259,12 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
             shiny::uiOutput(
               "rail_pane",
               container = shiny::tags$div,
-              class = "episodic-pane episodic-pane-rail"
+              class = "episodic-pane episodic-pane-rail",
+              # Which rail this is. Both surveillance screens carry one,
+              # each holding its own selection, and `episodic-nav.js`
+              # marks the current row within one of them rather than
+              # across the document.
+              `data-episodic-rail` = "clusters"
             ),
             shiny::uiOutput(
               "dossier_pane",
@@ -266,6 +277,45 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
               class = "episodic-pane episodic-pane-assessment"
             ),
             episodic_ui_pane_switcher(lang = lang)
+          )
+        ),
+        # The same three panes, for the coarse scale. Laid out here
+        # rather than inside a screen-wide `uiOutput()`, for the reason
+        # the Outbreaks screen is: an output that renders the whole body
+        # replaces the rail's DOM, and with it its scroll position and
+        # the row `episodic-nav.js` marked, every time the list of open
+        # epidemics changes.
+        episodic_ui_screen(
+          "epidemics",
+          shiny::tags$div(
+            class = "episodic-body episodic-body-epidemics",
+            shiny::tags$button(
+              type = "button",
+              class = "episodic-rail-toggle",
+              `data-episodic-pane` = "rail",
+              episodic_tr("nav.epidemics", lang = lang)
+            ),
+            shiny::tags$div(
+              class = "episodic-pane-backdrop",
+              `data-episodic-pane` = "dossier"
+            ),
+            shiny::uiOutput(
+              "epidemic_rail_pane",
+              container = shiny::tags$div,
+              class = "episodic-pane episodic-pane-rail",
+              `data-episodic-rail` = "epidemics"
+            ),
+            shiny::uiOutput(
+              "epidemic_dossier_pane",
+              container = shiny::tags$div,
+              class = "episodic-pane episodic-pane-dossier"
+            ),
+            shiny::uiOutput(
+              "epidemic_assessment_pane",
+              container = shiny::tags$div,
+              class = "episodic-pane episodic-pane-assessment"
+            ),
+            episodic_ui_pane_switcher(scale = "epidemic", lang = lang)
           )
         ),
         episodic_ui_screen("pathogen", shiny::uiOutput("pathogen_screen")),
@@ -311,7 +361,7 @@ episodic_ui_screen <- function(view, ...) {
 #' @noRd
 episodic_ui_nav_links <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   shiny::tagList(lapply(
-    c("clusters", "pathogen", "archive", "instance"),
+    c("clusters", "epidemics", "pathogen", "archive", "instance"),
     function(v) {
       episodic_ui_nav_link(v, episodic_tr(paste0("nav.", v), lang = lang))
     }
