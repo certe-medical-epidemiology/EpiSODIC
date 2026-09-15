@@ -57,7 +57,7 @@ in section 7 and do only that milestone.
 
 | | |
 |---|---|
-| Next milestone to start | **M5** |
+| Next milestone to start | **none: the reform is feature-complete. M6 stays deferred.** |
 | Integration branch | `claude/epidemic-reform` (created from `main` after M0 merged) |
 | Schema version on `main` | 6 (`episodic_schema_version` in `R/schema_migrate.R`) |
 | Schema version on M1 branch | 7 (`scale`, satellite, link, declaration verdicts) |
@@ -70,7 +70,8 @@ in section 7 and do only that milestone.
 | M2 Write path: routing, epidemic closure, continuity, links | done | `claude/epidemic-reform-m2-write` | #61 merged | PR into `claude/epidemic-reform` |
 | M3 Read path: Epidemics screen MVP | done | `claude/epidemic-reform-m3-screen` | #62 merged | PR into `claude/epidemic-reform` |
 | M4 Vocabulary: O-/E- ids, Outbreak wording, i18n sweep | done | `claude/epidemic-reform-m4-vocabulary` | #63 merged | PR into `claude/epidemic-reform` |
-| M5 Documentation | in progress | `claude/epidemic-reform-m5-documentation` | pending | PR into `claude/epidemic-reform` |
+| M5 Documentation | done | `claude/epidemic-reform-m5-documentation` | #64 merged | PR into `claude/epidemic-reform` |
+| M7 Consistency sweep of the two screens | done | `claude/epidemic-reform-m7-polish` | pending | PR into `claude/epidemic-reform` |
 | M6 Table rename (optional) | not started | | | recommend deferring |
 
 ---
@@ -202,6 +203,50 @@ done, what was not, and anything surprising. No narrative.
   Files changed: CLAUDE.md, data-raw/epidemic-reform.md,
   vignettes/overview.Rmd, vignettes/detection-reconciliation.Rmd,
   vignettes/faq.Rmd, vignettes/deployment.Rmd.
+
+2026-09-15 (Opus 5, M7 consistency sweep)
+  Raised from a demo run: the two screens did not read as one app.
+  The Epidemics screen now holds its three panes in the app shell like
+  the Outbreaks screen, with its own rail output, pane switcher and
+  pane label; episodic_ui_epidemics_screen() is gone. The rail is the
+  Outbreaks rail's markup and classes, given more room per row by a
+  .episodic-body-epidemics modifier.
+  Four defects found and fixed. The epidemic weekly frame carried no
+  `incomplete` column, so the curve errored ("replacement has 0 rows");
+  episodic_ui_pathogen_curve_chart() now names the missing column
+  instead of failing by arithmetic. The stat grid used
+  `episodic-stat-grid`, which the stylesheet does not draw
+  (`episodic-statgrid`). `nav_view` was a plain input value, so a click
+  back onto the screen the server still held sent nothing and the two
+  drifted apart, after which a server-side view() change invalidated
+  nothing: it is an event now. And the reverse during-link read did not
+  exclude suppressed epidemics, so an outbreak's chips named
+  province-level clusters the app will not open.
+  episodic_ui_assessment_form() and episodic_ui_notes_panel() take a
+  `prefix`, because both screens are in the page at once and
+  getElementById() cannot have two of anything. The seasonal
+  declarations are `extra_verdicts` on that one form rather than a form
+  of their own, so an epidemic is assessed like any other signal and a
+  seasonal one can additionally be declared.
+  New: `data-epidemic` on the shell, `data-episodic-epidemic` as the
+  opener, `data-episodic-rail` scoping each rail's marking, an
+  `episodic_epidemic` message, `episodic_db_epidemics_during_for_outbreak()`
+  and the "During E-123" chip. `episodic_db_clusters_linked_to()` is
+  restricted to the outbreak scale: at L4/L5 case-sharing relates every
+  outbreak to the regional cluster and says nothing (D4).
+  i18n: nav.clusters -> "Outbreaks" and cluster.open_hint reworded in
+  all 8 files; verdict.confirmed_epidemic.hint made scale-neutral; two
+  new keys (dossier.during_badge, epidemic.open_hint).
+  Full suite: 10682 passes, 0 errors, 1 failure - test-app_read.R:957,
+  pre-existing and environmental (EpiEstim will not build in this
+  container; it fails identically on the unmodified branch).
+  Files changed: R/app_charts.R, R/app_dossier.R, R/app_epidemic_ui.R,
+  R/app_read.R, R/app_server.R, R/app_ui.R, R/app_widgets.R,
+  R/db_read.R, inst/app/www/episodic-nav.js, inst/app/www/episodic.css,
+  inst/i18n/{ar,de,en,es,fr,hi,nl,zh}.json,
+  tests/testthat/{test-app_charts_graphics.R,test-app_dossier.R,
+  test-app_navigation.R,test-app_server.R,test-epidemic_reform.R},
+  NEWS.md.
 ```
 
 ---
@@ -1090,6 +1135,22 @@ human act, and the absence-is-not-zero rules that this reform added instances
 of.
 
 ---
+
+### M7. Consistency sweep of the two screens (done)
+
+Raised after a demo run showed the Epidemics screen reading as a different
+app from the Outbreaks screen. Its scope was what a reader could see:
+the navigation's wording, the rail, the dossier header and stat grid, the
+weekly curve, the assessment and notes panes, and the navigation between
+the two scales. It changed no detection behaviour and no schema.
+
+The one design point settled in it: the seasonal declaration is a verdict
+on the ordinary assessment form, not a form beside it. An epidemic is a
+signal like any other and can be an artefact; a *seasonal* epidemic can
+additionally be declared started, not yet started, or ended. Offering the
+declaration where there is no season is offering to record a statement
+about nothing, so the three verdicts appear only where a satellite row
+does.
 
 ### M6. Table rename (optional, recommended deferred)
 

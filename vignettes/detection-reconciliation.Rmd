@@ -70,7 +70,7 @@ winter's outbreak does not silently raise this winter's threshold.
 
 A configurable boundary (`scale.epidemic_levels`) splits the lattice
 into two scales. Streams below the boundary produce **outbreaks**
-(localised, L1 to L3), shown on the Clusters screen. Streams at or
+(localised, L1 to L3), shown on the Outbreaks screen. Streams at or
 above it produce **epidemics** (regional, L4 and L5), shown on the
 Epidemics screen. Each cluster receives its `scale` at creation.
 

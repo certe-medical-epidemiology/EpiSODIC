@@ -57,9 +57,9 @@ because "should we act on this outbreak", "has the epidemic season
 started" and "is this pathogen unusual this season" are different
 questions that need different units of analysis.
 
-### The Clusters screen: one outbreak at a time
+### The Outbreaks screen: one outbreak at a time
 
-The **Clusters** screen is operational: a ranked queue of discrete
+The **Outbreaks** screen is operational: a ranked queue of discrete
 outbreaks (L1 through L3), each one something a person has to make and
 record a decision about. That is the right unit for triage and the wrong
 unit for surveillance, just as a single outbreak dossier cannot tell you
@@ -85,11 +85,18 @@ The **Epidemics** screen shows epidemics, the regional-scale signals at
 province (L4) and catchment (L5) level. An epidemic's dossier carries
 the weekly case curve with MEM threshold overlay, tests and positivity,
 contributing institutions with concentration, and a list of outbreaks
-recorded as occurring during it. A seasonal epidemic carries a
-declaration form where an epidemiologist records whether the season has
-started, has not yet started, or has ended, an act with policy
-consequences across multiple hospitals that the system raises but never
-performs automatically.
+recorded as occurring during it. Each of those outbreaks carries a
+"During E-123" chip on its own dossier, so the relation reads from
+either end.
+
+The screen is laid out exactly like the Outbreaks screen, and an
+epidemic is assessed on the same form: it can be an artefact or expected
+variation like any other signal. Where the epidemic is seasonal, that
+form additionally offers the **declaration** - whether the season has
+started, has not yet started, or has ended. That is an act with policy
+consequences across multiple hospitals, which the system raises but
+never performs automatically, and it is offered only where there is a
+season to declare.
 
 ### The Pathogen screen: one pathogen over a period
 

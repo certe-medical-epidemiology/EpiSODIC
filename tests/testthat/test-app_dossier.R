@@ -610,3 +610,146 @@ test_that("the stat grid writes its numbers the way the session language writes 
   expect_true(grepl(">1,5<", nl, fixed = TRUE))
   expect_false(grepl(">1,234<", nl, fixed = TRUE))
 })
+
+test_that("the assessment form namespaces every id it owns, and its submit input", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  obj <- episodic_cluster_object(env$con, env$cluster_id, lang = "en")
+
+  default <- as.character(episodic_ui_assessment_form(
+    env$con,
+    env$cluster_id,
+    obj,
+    lang = "en"
+  ))
+  prefixed <- as.character(episodic_ui_assessment_form(
+    env$con,
+    env$cluster_id,
+    obj,
+    lang = "en",
+    prefix = "epidemic_assess"
+  ))
+
+  # Both surveillance screens are in the page at once, so a second form
+  # carrying the first's ids would give getElementById() a choice to
+  # make that neither form intends.
+  for (suffix in c(
+    "verdict",
+    "rationale",
+    "snooze",
+    "close_checkbox",
+    "close_wrap",
+    "form_fields",
+    "submit_btn",
+    "mute_reason",
+    "mute_from",
+    "mute_until"
+  )) {
+    expect_true(grepl(
+      sprintf('id="assess_%s"', suffix),
+      default,
+      fixed = TRUE
+    ))
+    expect_true(grepl(
+      sprintf('id="epidemic_assess_%s"', suffix),
+      prefixed,
+      fixed = TRUE
+    ))
+    expect_false(grepl(
+      sprintf('id="assess_%s"', suffix),
+      prefixed,
+      fixed = TRUE
+    ))
+  }
+  # The submit input is `<prefix>_submit`, built client-side from the
+  # prefix each form registers itself under.
+  expect_true(grepl(
+    'window.episodicAssessForms["assess"] = {',
+    default,
+    fixed = TRUE
+  ))
+  expect_true(grepl(
+    'window.episodicAssessForms["epidemic_assess"] = {',
+    prefixed,
+    fixed = TRUE
+  ))
+  expect_true(grepl(
+    "Shiny.setInputValue(prefix + '_submit'",
+    prefixed,
+    fixed = TRUE
+  ))
+  # The mute handler is one input for both forms: it is about a stream,
+  # and which form named it changes nothing about the write.
+  expect_true(grepl("assess_mute_submit", default, fixed = TRUE))
+  expect_true(grepl("assess_mute_submit", prefixed, fixed = TRUE))
+})
+
+test_that("the assessment form offers the verdicts it was given, and suggests closure for the terminal ones", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  obj <- episodic_cluster_object(env$con, env$cluster_id, lang = "en")
+
+  html <- as.character(episodic_ui_assessment_form(
+    env$con,
+    env$cluster_id,
+    obj,
+    lang = "en",
+    prefix = "epidemic_assess",
+    extra_verdicts = c("season_started", "season_ended"),
+    close_suggested = c("artefact", "expected_variation", "season_ended")
+  ))
+  expect_true(grepl("season_started", html, fixed = TRUE))
+  expect_true(grepl("season_ended", html, fixed = TRUE))
+  # An array even when one verdict is suggested, since the client reads
+  # it with indexOf().
+  expect_true(grepl("closeSuggested: [", html, fixed = TRUE))
+  # A verdict nobody offered is never suggested for closure.
+  expect_false(grepl("season_not_yet", html, fixed = TRUE))
+})
+
+test_that("the notes panel namespaces its elements", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  fake_user <- data.frame(
+    user_id = 1L,
+    username = "jdoe",
+    full_name = "Jane Doe",
+    role = "epidemiologist",
+    stringsAsFactors = FALSE
+  )
+
+  default <- as.character(episodic_ui_notes_panel(
+    env$con,
+    env$cluster_id,
+    fake_user,
+    lang = "en"
+  ))
+  prefixed <- as.character(episodic_ui_notes_panel(
+    env$con,
+    env$cluster_id,
+    fake_user,
+    lang = "en",
+    prefix = "epidemic-notes"
+  ))
+
+  for (suffix in c("view", "edit", "textarea", "edit-button", "save-button")) {
+    expect_true(grepl(sprintf('id="notes-%s"', suffix), default, fixed = TRUE))
+    expect_true(grepl(
+      sprintf('id="epidemic-notes-%s"', suffix),
+      prefixed,
+      fixed = TRUE
+    ))
+  }
+  # The edit button must reach its own elements, not the other panel's.
+  # Read back through the attribute escaping htmltools applies, so the
+  # assertion is about the JavaScript a browser runs.
+  onclicks <- gsub("&#39;", "'", prefixed, fixed = TRUE)
+  expect_true(grepl(
+    "getElementById('epidemic-notes-edit')",
+    onclicks,
+    fixed = TRUE
+  ))
+  expect_false(grepl("getElementById('notes-edit')", onclicks, fixed = TRUE))
+  # One input for both panels: the write is about a cluster.
+  expect_true(grepl("note_save_submit", prefixed, fixed = TRUE))
+})

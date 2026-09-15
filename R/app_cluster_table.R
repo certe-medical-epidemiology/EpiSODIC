@@ -186,7 +186,7 @@ episodic_ui_cluster_col <- function(label, render) {
 #' `<tr>` has no focus or activation behaviour of its own, hence
 #' `tabindex` and the key handler; the server side is
 #' `input$open_cluster`, which sets the selection and switches to the
-#' Clusters screen.
+#' Outbreaks screen.
 #'
 #' A row whose cluster does not stand as a dossier of its own - one the
 #' lattice suppression pass folded into another - is not silently
