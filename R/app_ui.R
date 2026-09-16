@@ -37,8 +37,8 @@ episodic_app_views <- function() {
     "clusters",
     "epidemics",
     "pathogen",
-    "archive",
     "instance",
+    "archive",
     "streams",
     "activity",
     "performance",
@@ -64,7 +64,7 @@ episodic_app_views <- function() {
 #' @keywords internal
 #' @noRd
 episodic_app_nav_group <- function(view) {
-  if (view %in% c("clusters", "epidemics", "pathogen", "archive")) {
+  if (view %in% c("clusters", "epidemics", "pathogen")) {
     return(view)
   }
   "instance"
@@ -319,8 +319,8 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
           )
         ),
         episodic_ui_screen("pathogen", shiny::uiOutput("pathogen_screen")),
-        episodic_ui_screen("archive", shiny::uiOutput("archive_screen")),
         episodic_ui_screen("instance", shiny::uiOutput("instance_screen")),
+        episodic_ui_screen("archive", shiny::uiOutput("archive_screen")),
         episodic_ui_screen("streams", shiny::uiOutput("streams_screen")),
         episodic_ui_screen("activity", shiny::uiOutput("activity_screen")),
         episodic_ui_screen(
@@ -361,7 +361,7 @@ episodic_ui_screen <- function(view, ...) {
 #' @noRd
 episodic_ui_nav_links <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   shiny::tagList(lapply(
-    c("clusters", "epidemics", "pathogen", "archive", "instance"),
+    c("clusters", "epidemics", "pathogen", "instance"),
     function(v) {
       episodic_ui_nav_link(v, episodic_tr(paste0("nav.", v), lang = lang))
     }

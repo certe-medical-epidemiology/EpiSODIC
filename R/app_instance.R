@@ -61,6 +61,15 @@ episodic_ui_instance_screen <- function(instance,
   counts <- instance$counts
   cards <- list(
     list(
+      view = "archive",
+      meta = episodic_count_phrase(
+        counts$archive,
+        episodic_tr("unit.archive", lang = lang),
+        episodic_tr("unit.archives", lang = lang),
+        lang = lang
+      )
+    ),
+    list(
       view = "streams",
       meta = episodic_count_phrase(
         counts$streams,

@@ -1170,6 +1170,7 @@ episodic_db_instance_counts <- function(con) {
     as.integer(DBI::dbGetQuery(con, sql)$n[1])
   }
   list(
+    archive = one("SELECT COUNT(*) AS n FROM episodic_stream WHERE is_active = 0"),
     streams = one("SELECT COUNT(*) AS n FROM episodic_stream WHERE is_active = 1"),
     runs = one("SELECT COUNT(*) AS n FROM episodic_detection_run"),
     users = one("SELECT COUNT(*) AS n FROM episodic_app_user WHERE is_active = 1"),

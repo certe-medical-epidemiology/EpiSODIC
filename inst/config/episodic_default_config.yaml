@@ -317,22 +317,18 @@ suppression:
 # can switch off from inside the app is a login wall that falls with that
 # one account. Turning it off takes file access to the machine.
 access:
-  # TRUE (the shipped default) closes the app to anonymous visitors
+  # TRUE closes the app to anonymous visitors
   # entirely. A visitor gets a sign-in prompt and nothing else - not the
   # navigation, not the status strip, not one row of data - because the
   # server renders none of it rather than hiding it client-side. There is
   # correspondingly nothing for a browser's developer tools to reveal:
   # the data never reaches the page.
   #
-  # FALSE lets anyone who reaches the app read clusters, streams and the
-  # archive without signing in; signing in is then needed only for the
-  # patient-level line list and for writing (see vignette("deployment")).
+  # FALSE (the shipped default) lets anyone who reaches the app read clusters,
+  # streams and the archive without signing in; signing in is then needed only
+  # for the patient-level line list and for writing (see vignette("deployment")).
   # Cluster rows are not anonymous data - a ward, an institution, a
   # pathogen and a date is often enough to identify who - so this is a
   # deliberate choice for an instance already behind network controls
   # that make anonymous reachability impossible, not a convenience.
-  #
-  # True, not false: a surveillance system shipped to laboratories
-  # worldwide has to be safe in its shipped state, because the
-  # deployment that goes wrong is the one where nobody read this file.
-  require_login: true
+  require_login: false

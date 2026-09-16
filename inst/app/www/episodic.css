@@ -1844,7 +1844,11 @@ dl.episodic-settings dd { margin: 0; }
     flex-wrap: wrap;
     row-gap: 4px;
   }
-
+  /* Hide the "successful run" info in the navbar */
+  .episodic-status-strip {
+    display: none;
+  }
+  
   /* `!important` on both: below 768px only one of the three may be
      visible at a time, which the base `.episodic-pane` rule's own
      `display: block !important` (needed to out-rank shiny's
@@ -1885,6 +1889,7 @@ dl.episodic-settings dd { margin: 0; }
     /* Keeps the segments clear of the home indicator, where a press is
        the system's gesture rather than the page's. */
     padding-bottom: env(safe-area-inset-bottom, 0px);
+    text-align: center;
   }
   .episodic-pane-switcher-label {
     padding: 6px 12px 0;
@@ -1989,6 +1994,7 @@ dl.episodic-settings dd { margin: 0; }
     min-width: 480px;
   }
 }
+
 
 /* ---------------------------------------------------------------------
    The Instance screen
