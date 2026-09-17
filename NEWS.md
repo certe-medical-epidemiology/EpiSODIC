@@ -3,7 +3,7 @@
 ## New
 
 - An Epidemics screen with a rail of open epidemics, a dossier with seasonal evidence, and the assessment pane a season is declared in
-- The navigation bar carries five links: Outbreaks, Epidemics, Pathogen, Archive, Instance
+- The navigation bar carries four links: Outbreaks, Epidemics, Pathogen, Instance
 - An outbreak's dossier header carries a "During E-123" chip for each epidemic it ran during, which opens that epidemic
 - The Epidemics screen carries a notes panel and the full assessment form, so an epidemic is assessed and annotated like any other signal
 - The epidemic dossier shows weekly case curve with MEM threshold overlay, tests and positivity, contributing institutions with concentration, and linked outbreaks
@@ -17,6 +17,8 @@
 
 ## Changed
 
+- The Archive is reached from a card on the Instance screen instead of its own link, so the navigation bar fits on a phone width
+- `access.require_login` now ships as `false`: a freshly installed instance reads open, and an operator closes it deliberately
 - The Clusters screen is called Outbreaks
 - The Epidemics screen holds its three panes in the app shell, like the Outbreaks screen, so its rail keeps its scroll position and gains the phone-tier pane switcher
 - The Epidemics rail is the Outbreaks rail's markup, with more room per row

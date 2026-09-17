@@ -118,7 +118,6 @@ body {
 .episodic-shell[data-nav="clusters"] .episodic-nav-link[data-view="clusters"],
 .episodic-shell[data-nav="epidemics"] .episodic-nav-link[data-view="epidemics"],
 .episodic-shell[data-nav="pathogen"] .episodic-nav-link[data-view="pathogen"],
-.episodic-shell[data-nav="archive"] .episodic-nav-link[data-view="archive"],
 .episodic-shell[data-nav="instance"] .episodic-nav-link[data-view="instance"] {
   background: rgba(255,255,255,0.16);
   color: #fff;

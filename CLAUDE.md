@@ -179,7 +179,7 @@ Two roles for dashboard access:
 - `epidemiologist`: read + write (assess outbreaks and epidemics, classify, close, mute, record declarations, render reports)
 - `viewer`: read-only (sees everything including patient-level detail, but cannot record assessments or declarations)
 
-`access.require_login` ships as `true`: an instance is closed to anonymous visitors unless an operator deliberately opens it. `episodic_app_require_login()` fails closed on anything it cannot read as `false`.
+`access.require_login` ships as `false`: a freshly installed instance reads open, and an operator who wants it closed to anonymous visitors sets it explicitly. `episodic_app_require_login()` still fails closed (`true`) on anything it cannot read as `false` - a malformed or partial config errs toward requiring a sign-in, never toward opening one that was not asked for.
 
 Both sign-in outcomes are recorded: a success as a `login` event on the account, a refusal in `episodic_app_login_failure` (which of unknown username / wrong password / deactivated account, plus the username as typed - a failure may name no account, which is why it is not an `episodic_app_user_event`). Both surface on the Activity screen under the `signin` category, and are withheld from a reader who has not signed in - on an instance running open, "who has an account here" is not for a stranger. `episodic_auth_login()` still tells the visitor nothing about which of the three it was.
 

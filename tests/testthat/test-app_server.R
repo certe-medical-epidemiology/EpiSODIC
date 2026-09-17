@@ -831,7 +831,7 @@ test_that("the navigation highlight follows a deep link, not just its own clicks
   shiny::testServer(server, {
     session$flushReact()
     before <- links(paste(output$nav_links, collapse = "\n"))
-    expect_length(before, 5)
+    expect_length(before, 4)
 
     # Which screen is current is held on the shell and derived from
     # there by the stylesheet; what this test holds is the server-side

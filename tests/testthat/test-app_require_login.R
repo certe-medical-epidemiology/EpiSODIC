@@ -138,12 +138,12 @@ test_that("require_login is read defensively, and on unless unambiguously off", 
   ))))
 })
 
-test_that("the shipped default closes the app to anonymous visitors", {
+test_that("the shipped default leaves the app open to anonymous visitors", {
   # The shipped state is the state of every deployment where nobody read
   # the configuration file.
   config <- episodic_config_resolve(episodic_config_path = NA)
   expect_false(is.null(config$access))
-  expect_true(episodic_app_require_login(config))
+  expect_false(episodic_app_require_login(config))
 })
 
 test_that("an instance YAML can close the app, through the ordinary config overlay", {

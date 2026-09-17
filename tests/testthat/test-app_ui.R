@@ -321,9 +321,9 @@ test_that("chart builders produce ggplot objects for typical and edge-case input
   expect_s3_class(episodic_ui_denominator_chart(series), "ggplot")
 })
 
-test_that("episodic_ui_nav_links() renders five links and no highlight of its own", {
+test_that("episodic_ui_nav_links() renders four links and no highlight of its own", {
   html <- as.character(episodic_ui_nav_links(lang = "en"))
-  for (view in c("clusters", "epidemics", "pathogen", "archive", "instance")) {
+  for (view in c("clusters", "epidemics", "pathogen", "instance")) {
     expect_true(
       grepl(sprintf('data-view="%s"', view), html, fixed = TRUE),
       info = view
@@ -331,9 +331,11 @@ test_that("episodic_ui_nav_links() renders five links and no highlight of its ow
   }
   expect_equal(
     lengths(regmatches(html, gregexpr("episodic-nav-link", html)))[[1]],
-    5
+    4
   )
-  for (view in c("streams", "activity", "performance", "info", "settings")) {
+  # Archive is reached from an Instance card now, not from the bar - see
+  # `episodic_ui_instance_screen()`.
+  for (view in c("archive", "streams", "activity", "performance", "info", "settings")) {
     expect_false(
       grepl(sprintf('data-view="%s"', view), html, fixed = TRUE),
       info = view
@@ -344,7 +346,7 @@ test_that("episodic_ui_nav_links() renders five links and no highlight of its ow
 
 test_that("every nav link carries the group its screen belongs to", {
   html <- as.character(episodic_ui_nav_links(lang = "en"))
-  for (view in c("clusters", "epidemics", "pathogen", "archive", "instance")) {
+  for (view in c("clusters", "epidemics", "pathogen", "instance")) {
     expect_true(
       grepl(
         sprintf('data-view="%s" data-episodic-nav="%s" data-nav="%s"', view, view, view),
@@ -360,14 +362,13 @@ test_that("episodic_app_nav_group() sends every instance-level screen to one lin
   expect_equal(episodic_app_nav_group("clusters"), "clusters")
   expect_equal(episodic_app_nav_group("epidemics"), "epidemics")
   expect_equal(episodic_app_nav_group("pathogen"), "pathogen")
-  expect_equal(episodic_app_nav_group("archive"), "archive")
-  for (v in c("instance", "streams", "activity", "performance", "info", "settings")) {
+  for (v in c("instance", "archive", "streams", "activity", "performance", "info", "settings")) {
     expect_equal(episodic_app_nav_group(v), "instance", info = v)
   }
   for (v in episodic_app_views()) {
     expect_true(
       episodic_app_nav_group(v) %in%
-        c("clusters", "epidemics", "pathogen", "archive", "instance"),
+        c("clusters", "epidemics", "pathogen", "instance"),
       info = v
     )
   }

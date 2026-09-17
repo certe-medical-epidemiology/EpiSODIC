@@ -19,14 +19,23 @@
 
 #' The Instance screen's own data
 #'
+#' `archive_count` is not one of `episodic_db_instance_counts()`'s cheap
+#' `COUNT(*)`s: "closed" is a state derived from a cluster's assessment
+#' events and closure history (`episodic_app_derive_states_batch()`),
+#' with no indexed column to count directly, so this pays the same cost
+#' opening the Archive screen itself pays rather than pretend a count of
+#' something else (inactive streams, say) stands in for it.
+#'
 #' @param con A [DBI::DBIConnection-class].
 #' @param lang Session language.
-#' @return A list of the counts and the schema version the cards show.
+#' @return A list of the counts, the archive count, and the schema
+#'   version the cards show.
 #' @keywords internal
 #' @noRd
 episodic_app_instance <- function(con, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   list(
     counts = episodic_db_instance_counts(con),
+    archive_count = nrow(episodic_app_archive(con, lang = lang)),
     schema_version = episodic_schema_version
   )
 }
@@ -63,9 +72,9 @@ episodic_ui_instance_screen <- function(instance,
     list(
       view = "archive",
       meta = episodic_count_phrase(
-        counts$archive,
-        episodic_tr("unit.archive", lang = lang),
-        episodic_tr("unit.archives", lang = lang),
+        instance$archive_count,
+        episodic_tr("unit.outbreak_or_epidemic", lang = lang),
+        episodic_tr("unit.outbreaks_and_epidemics", lang = lang),
         lang = lang
       )
     ),

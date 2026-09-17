@@ -139,7 +139,7 @@ test_that("the stylesheet decides what is visible, for every screen and every pa
       info = pane
     )
   }
-  for (group in c("clusters", "pathogen", "archive", "instance")) {
+  for (group in c("clusters", "pathogen", "instance")) {
     expect_true(
       grepl(
         sprintf(
@@ -245,9 +245,16 @@ test_that("everything that navigates says so with one of five data attributes", 
     last_day = "2025-01-05",
     stringsAsFactors = FALSE
   )
+  # Archive is reached from a card on the Instance screen now, not from
+  # the bar - see `episodic_ui_instance_card()`.
+  instance <- list(
+    counts = list(streams = 12L, runs = 4L, users = 3L, clusters = 9L),
+    archive_count = 7L,
+    schema_version = 5L
+  )
   expect_true(grepl(
     'data-episodic-nav="archive"',
-    as.character(episodic_ui_nav_links(lang = "en")),
+    as.character(episodic_ui_instance_screen(instance, lang = "en")),
     fixed = TRUE
   ))
   expect_true(grepl(
@@ -448,13 +455,14 @@ test_that("right-to-left is expressed logically, with the one transform named", 
 # ---------------------------------------------------------------------
 # The Instance screen
 
-test_that("the Instance screen offers the five screens the bar no longer carries", {
+test_that("the Instance screen offers the six screens the bar no longer carries", {
   instance <- list(
     counts = list(streams = 12L, runs = 4L, users = 3L, clusters = 9L),
+    archive_count = 7L,
     schema_version = 5L
   )
   html <- as.character(episodic_ui_instance_screen(instance, lang = "en"))
-  for (view in c("streams", "activity", "performance", "info")) {
+  for (view in c("archive", "streams", "activity", "performance", "info")) {
     expect_true(
       grepl(sprintf('data-episodic-nav="%s"', view), html, fixed = TRUE),
       info = view
@@ -488,6 +496,7 @@ test_that("the Instance screen offers the five screens the bar no longer carries
 test_that("the Performance card deliberately carries no number", {
   instance <- list(
     counts = list(streams = 12L, runs = 4L, users = 3L, clusters = 9L),
+    archive_count = 7L,
     schema_version = 5L
   )
   html <- as.character(episodic_ui_instance_screen(instance, lang = "en"))
@@ -499,18 +508,21 @@ test_that("the Performance card deliberately carries no number", {
     html,
     gregexpr("episodic-instance-card-meta", html, fixed = TRUE)
   ))[[1]]
-  # Four cards, three numbers. Measuring the instance against its
+  # Five cards, four numbers. Measuring the instance against its
   # epidemiologists' verdicts is a real computation, and running it to
   # fill in a line nobody asked for - every time somebody passes through
   # on the way to Settings - would turn opening this screen into a
-  # query.
-  expect_equal(cards, 4)
-  expect_equal(metas, 3)
+  # query. Archive's count is real too, but its cost is what opening the
+  # Archive screen already pays, computed once in
+  # `episodic_app_instance()` rather than repeated here.
+  expect_equal(cards, 5)
+  expect_equal(metas, 4)
 })
 
 test_that("the Instance screen renders in every shipped language with no missing key", {
   instance <- list(
     counts = list(streams = 12L, runs = 4L, users = 3L, clusters = 9L),
+    archive_count = 7L,
     schema_version = 5L
   )
   for (lang in episodic_nav_shipped_langs) {
@@ -533,11 +545,14 @@ test_that("every key the new navigation uses exists in every shipped language", 
     "rail.bulk_select",
     "instance.lead",
     "instance.schema_version",
+    "instance.card.archive",
     "instance.card.streams",
     "instance.card.activity",
     "instance.card.performance",
     "instance.card.info",
     "instance.card.settings",
+    "unit.outbreak_or_epidemic",
+    "unit.outbreaks_and_epidemics",
     "unit.run",
     "unit.runs",
     "unit.account",

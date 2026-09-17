@@ -175,12 +175,12 @@ test_that("operator-named subtrees accept keys EpiSODIC cannot enumerate", {
   expect_true(isTRUE(config$notifications$enabled))
 })
 
-test_that("EpiSODIC ships closed to anonymous visitors", {
+test_that("EpiSODIC ships open to anonymous visitors", {
   # The shipped state is the state of every deployment where nobody read
   # the configuration file.
   defaults <- episodic_config_resolve(NA)
-  expect_true(isTRUE(defaults$access$require_login))
-  expect_true(episodic_app_require_login(defaults))
+  expect_false(isTRUE(defaults$access$require_login))
+  expect_false(episodic_app_require_login(defaults))
 })
 
 test_that("an access policy that cannot be read leaves the login wall up", {
