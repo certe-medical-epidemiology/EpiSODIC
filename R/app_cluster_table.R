@@ -148,11 +148,17 @@ episodic_cluster_table_spine_outcome_after <- "case_days"
 #' disagrees with the dates next to it. `case_days` cannot be derived the
 #' same way - it needs the case-level link table, not just the two day
 #' columns - so unlike duration it *is* required input; a caller builds
-#' it with `episodic_db_attach_case_days()`.
+#' it with `episodic_db_attach_case_days()`. `level` is the raw lattice
+#' level (`"pathogen_ward"`, ...), not `level_label` - it is what the
+#' leading id cell resolves via `episodic_object_ref()` to decide `O-` or
+#' `E-`, since a table of clusters is not one scale just because most of
+#' its rows are: suppression and similarity both cross the outbreak/
+#' epidemic boundary.
 #' @keywords internal
 #' @noRd
 episodic_cluster_table_required <- c(
   "cluster_id",
+  "level",
   "n_cases",
   "case_days",
   "first_day",
@@ -194,6 +200,11 @@ episodic_ui_cluster_col <- function(label, render) {
 #' colour, and hovering it says why the row does not open.
 #'
 #' @param cluster_id The cluster the row is about.
+#' @param level_or_scale The row's own lattice level (`"pathogen_ward"`,
+#'   ...) or scale (`"outbreak"` / `"epidemic"`), passed to
+#'   `episodic_object_ref()` so the id reads `O-` or `E-` for what this
+#'   row actually is, not for whatever scale the surrounding screen
+#'   usually shows.
 #' @param ... The remaining cells, in order, after the id cell.
 #' @param unlinked_reason Why this row does not open a dossier, already
 #'   translated, or `NA` (the default) for a row that does.
@@ -202,10 +213,11 @@ episodic_ui_cluster_col <- function(label, render) {
 #' @keywords internal
 #' @noRd
 episodic_ui_cluster_row <- function(cluster_id,
+                                    level_or_scale,
                                     ...,
                                     unlinked_reason = NA_character_,
                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  ref <- episodic_tr("dossier.outbreak_ref", id = cluster_id, lang = lang)
+  ref <- episodic_object_ref(cluster_id, level_or_scale, lang = lang)
   unlinked <- length(unlinked_reason) == 1 &&
     !is.na(unlinked_reason) &&
     nzchar(unlinked_reason)
@@ -385,7 +397,7 @@ episodic_ui_cluster_table <- function(clusters,
     do.call(
       episodic_ui_cluster_row,
       c(
-        list(row$cluster_id),
+        list(row$cluster_id, row$level),
         cells,
         list(unlinked_reason = reasons[i], lang = lang)
       ),

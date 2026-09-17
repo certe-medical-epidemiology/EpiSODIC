@@ -209,7 +209,7 @@ test_that("the navigation layer carries no inline event handler at all", {
       episodic_ui_instance_card("streams", "Streams", "What it watches.", "12 streams")
     ),
     row = as.character(
-      episodic_ui_cluster_row(7L, shiny::tags$td("x"), lang = "en")
+      episodic_ui_cluster_row(7L, "pathogen_ward", shiny::tags$td("x"), lang = "en")
     ),
     chip = as.character(
       episodic_ui_chip_link("linked", "#123456", 9L, lang = "en")

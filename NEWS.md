@@ -27,6 +27,10 @@
 - An outbreak's "Linked to" chips cover the outbreak scale only; the epidemic it ran during is a "During" chip instead
 - The confirmed-outbreak classification's explanation no longer names one scale while its label names the other
 
+## Fixed
+
+- The shared cluster table (Pathogen screen, Archive, and the dossier's related and similar-clusters panels) always prefixed ids with `O-`; each row now reads its own scale via `episodic_object_ref()`, so an epidemic-scale row reads `E-{id}`
+
 
 # EpiSODIC 0.19.0
 

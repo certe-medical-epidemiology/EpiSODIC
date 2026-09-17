@@ -649,10 +649,13 @@ test_that("the signals table leads with the cluster id", {
   screen <- episodic_app_pathogen_screen(env$con, period = "all", lang = "en")
   html <- as.character(episodic_ui_pathogen_clusters_panel(screen, lang = "en"))
 
+  # env's fixture stream is pathogen_region, an epidemic-scale level (see
+  # `scale.epidemic_levels` in the default config), so the row reads
+  # E-{id}, not O-{id}.
   expect_true(grepl(
     paste0(
       ">",
-      episodic_tr("dossier.outbreak_ref", id = cluster_id, lang = "en"),
+      episodic_tr("dossier.epidemic_ref", id = cluster_id, lang = "en"),
       "<"
     ),
     html,

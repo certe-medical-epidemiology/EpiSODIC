@@ -20,6 +20,7 @@
 cluster_table_frame <- function() {
   data.frame(
     cluster_id = c(11L, 12L, 13L),
+    level = c("pathogen_ward", "pathogen_institution", "pathogen_area"),
     n_cases = c(4L, 9L, 2L),
     case_days = c(3L, 6L, 2L),
     first_day = c("2025-01-02", "2025-02-01", "2025-03-01"),
@@ -163,6 +164,7 @@ test_that("a cluster table refuses to render a column it was not given", {
 test_that("a row opens its dossier, by click and by keyboard", {
   row <- as.character(episodic_ui_cluster_row(
     42L,
+    "pathogen_ward",
     shiny::tags$td("a cell"),
     lang = "en"
   ))
@@ -184,9 +186,46 @@ test_that("a row opens its dossier, by click and by keyboard", {
   )
 })
 
+test_that("a row's id prefix follows its own level, not an assumption from the caller", {
+  outbreak_row <- as.character(episodic_ui_cluster_row(
+    5L,
+    "pathogen_ward",
+    shiny::tags$td("x"),
+    lang = "en"
+  ))
+  expect_true(grepl(">O-5<", outbreak_row, fixed = TRUE))
+  expect_false(grepl(">E-5<", outbreak_row, fixed = TRUE))
+
+  epidemic_row <- as.character(episodic_ui_cluster_row(
+    5L,
+    "pathogen_region",
+    shiny::tags$td("x"),
+    lang = "en"
+  ))
+  expect_true(grepl(">E-5<", epidemic_row, fixed = TRUE))
+  expect_false(grepl(">O-5<", epidemic_row, fixed = TRUE))
+})
+
+test_that("a cluster table mixing outbreak- and epidemic-scale rows labels each one correctly", {
+  # A table of clusters is not one scale just because most rows are - the
+  # Pathogen screen, the Archive and the dossier's related/similar panels
+  # can all mix outbreak- and epidemic-scale rows in one table, and both
+  # scales share one cluster_id sequence (see episodic_object_ref()), so
+  # a wrong prefix here would name a different real object.
+  clusters <- cluster_table_frame()
+  clusters$level <- c("pathogen_ward", "pathogen_province", "pathogen_region")
+  html <- as.character(episodic_ui_cluster_table(clusters, lang = "en"))
+  expect_true(grepl(">O-11<", html, fixed = TRUE))
+  expect_true(grepl(">E-12<", html, fixed = TRUE))
+  expect_true(grepl(">E-13<", html, fixed = TRUE))
+  expect_false(grepl(">O-12<", html, fixed = TRUE))
+  expect_false(grepl(">O-13<", html, fixed = TRUE))
+})
+
 test_that("a cluster that no longer stands on its own says so instead of dead-linking", {
   row <- as.character(episodic_ui_cluster_row(
     42L,
+    "pathogen_ward",
     shiny::tags$td("a cell"),
     unlinked_reason = "it was suppressed",
     lang = "en"
@@ -270,6 +309,7 @@ test_that("a day value that does not parse yields NA rather than taking the scre
   )
   clusters <- data.frame(
     cluster_id = c(1L, 2L),
+    level = c("pathogen_ward", "pathogen_ward"),
     n_cases = c(1L, 1L),
     case_days = c(1L, 1L),
     first_day = c("2025-01-01", "2025-03-01"),
