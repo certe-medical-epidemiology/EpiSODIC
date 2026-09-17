@@ -500,7 +500,7 @@ episodic_ui_epidemic_during_panel <- function(obj,
       # selection.
       shiny::tags$td(
         episodic_ui_cluster_link(
-          episodic_tr("dossier.outbreak_ref", id = row$cluster_id, lang = lang),
+          episodic_object_ref(row$cluster_id, row$level, lang = lang),
           cluster_id = row$cluster_id,
           lang = lang
         )

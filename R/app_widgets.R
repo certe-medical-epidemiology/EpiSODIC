@@ -701,9 +701,13 @@ episodic_verdict_outbreak_levels <- function(config = episodic_config_resolve())
 
 #' The display reference for a cluster, scale-aware
 #'
-#' Outbreaks render as `O-{id}`, epidemics as `E-{id}`, from two
-#' independent sequences, so `O-12` and `E-12` are different objects.
-#' Accepts either a scale string (`"outbreak"` / `"epidemic"`) or a
+#' Outbreaks render as `O-{id}`, epidemics as `E-{id}`. Both share one
+#' `episodic_cluster.cluster_id` sequence - there is no cluster 12 that
+#' is an outbreak and a separate cluster 12 that is an epidemic - so the
+#' prefix is not decoration: read the scale off the row rather than
+#' assume one from context, or the wrong prefix names a real object that
+#' is not the one on screen. Accepts either a scale string
+#' (`"outbreak"` / `"epidemic"`) or a
 #' level string (resolved via `episodic_scale_for_level()`), so callers
 #' with a level but no scale column can use it directly.
 #'

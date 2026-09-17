@@ -755,6 +755,44 @@ test_that("epidemic during panel says 'none detected' when no outbreaks are link
   expect_true(grepl("none detected", html, fixed = TRUE))
 })
 
+test_that("the during panel names each linked row by its own scale, not always an outbreak", {
+  # episodic_db_outbreaks_during_epidemic() only ever links outbreak-scale
+  # clusters today, but the panel takes its `level` column and derives the
+  # prefix from it (episodic_object_ref()) rather than assuming "outbreak"
+  # - both share one cluster_id sequence (see episodic_object_ref()), so a
+  # row at an epidemic-scale level has to read E-{id}, not O-{id}.
+  row <- function(cluster_id, level) {
+    data.frame(
+      cluster_id = cluster_id,
+      stream_id = 1L,
+      first_day = "2026-01-10",
+      last_day = "2026-01-20",
+      n_cases = 5L,
+      priority_score = 50,
+      pathogen = "Norovirus",
+      level = level,
+      institution_id = NA_character_,
+      ward = NA_character_,
+      place = "Ward B",
+      stringsAsFactors = FALSE
+    )
+  }
+
+  outbreak_html <- as.character(episodic_ui_epidemic_during_panel(
+    list(during_outbreaks = row(11L, "pathogen_ward")),
+    lang = "en"
+  ))
+  expect_true(grepl("O-11", outbreak_html, fixed = TRUE))
+  expect_false(grepl("E-11", outbreak_html, fixed = TRUE))
+
+  epidemic_html <- as.character(episodic_ui_epidemic_during_panel(
+    list(during_outbreaks = row(12L, "pathogen_region")),
+    lang = "en"
+  ))
+  expect_true(grepl("E-12", epidemic_html, fixed = TRUE))
+  expect_false(grepl("O-12", epidemic_html, fixed = TRUE))
+})
+
 test_that("the epidemic assessment rail offers declarations only where there is a season", {
   env <- epidemic_setup()
   on.exit(DBI::dbDisconnect(env$con))
