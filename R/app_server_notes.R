@@ -41,10 +41,16 @@
 #' @param con A [DBI::DBIConnection-class].
 #' @param current_user A `shiny::reactiveVal` holding the signed-in user's
 #'   account row, or `NULL`.
-#' @param notes_version A `shiny::reactiveVal` bumped on a successful save
-#'   to invalidate `output$notes_pane` (see `app_server.R`) and nothing
-#'   else - a toggle of `selected_cluster_id` would redraw the whole
-#'   dossier, several panels of which are plots.
+#' @param notes_version A `shiny::reactiveVal` bumped on every submit,
+#'   written or not, to invalidate `output$notes_pane` (see
+#'   `app_server.R`) and nothing else - a toggle of
+#'   `selected_cluster_id` would redraw the whole dossier, several
+#'   panels of which are plots. Bumping it even when
+#'   `episodic_note_is_new()` refuses the write is what collapses the
+#'   panel back to view mode on an unedited Save: the textarea and its
+#'   buttons are plain client-side `style.display` with no cancel path
+#'   of their own (see `episodic_ui_notes_panel()`), so the panel only
+#'   ever leaves edit mode by being re-rendered from scratch.
 #' @param access_granted A `shiny::reactive` as returned by
 #'   `episodic_app_access_granted()`.
 #' @param lang Session language.
@@ -68,15 +74,17 @@ episodic_app_server_notes <- function(input,
     note_text <- trimws(
       if (is.null(payload$note_text)) "" else as.character(payload$note_text)
     )
-    if (!episodic_note_is_new(con, cluster_id, note_text)) {
-      return(invisible(NULL))
+    # An unedited Save writes nothing, but still has to collapse the
+    # panel back to view mode - the bump below is unconditional so that
+    # re-render happens either way.
+    if (episodic_note_is_new(con, cluster_id, note_text)) {
+      episodic_db_cluster_note_insert(
+        con,
+        cluster_id = cluster_id,
+        user_id = user$user_id,
+        note_text = note_text
+      )
     }
-    episodic_db_cluster_note_insert(
-      con,
-      cluster_id = cluster_id,
-      user_id = user$user_id,
-      note_text = note_text
-    )
 
     notes_version(notes_version() + 1L)
   })

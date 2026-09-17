@@ -481,9 +481,11 @@ episodic_ui_interpretation_panel <- function(obj,
 #' `episodic_ui_report_panel()`'s render button for the precedent. Saving
 #' fires `note_save_submit`, handled by `episodic_app_server_notes()`,
 #' which re-renders only `output$notes_pane` (see `app_server.R`) on
-#' success, not the rest of the dossier - that redraw is what puts this
-#' panel back in view mode showing the freshly saved note, so no
-#' client-side "cancel" path is needed. Keeping this panel behind its own
+#' every submit, written or not, not the rest of the dossier - that
+#' redraw is what puts this panel back in view mode, showing the freshly
+#' saved note on a real save and the unchanged one on a Save that wrote
+#' nothing, so no client-side "cancel" path is needed. Keeping this panel
+#' behind its own
 #' `uiOutput()` rather than inline in `episodic_ui_dossier()` is what
 #' makes that possible: the dossier's other panels, several of them
 #' plots, are otherwise untouched by a note save.
