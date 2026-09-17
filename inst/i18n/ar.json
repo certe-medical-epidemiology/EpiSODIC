@@ -2,7 +2,7 @@
   "app.title": "EpiSODIC",
   "app.full_name": "مراقبة الإشارات الوبائية وكشفها وتحديدها وتصنيفها",
   "app.demodata": "بيانات تجريبية",
-  "nav.clusters": "التفشيات",
+  "nav.outbreaks": "التفشيات",
   "nav.pathogen": "العامل الممرض",
   "nav.streams": "السلاسل الرصدية",
   "nav.archive": "الأرشيف",

@@ -2,7 +2,7 @@
   "app.title": "EpiSODIC",
   "app.full_name": "Observación, Detección, Identificación y Clasificación de Señales Epidemiológicas",
   "app.demodata": "Datos de demostración",
-  "nav.clusters": "Brotes",
+  "nav.outbreaks": "Brotes",
   "nav.pathogen": "Patógeno",
   "nav.streams": "Series",
   "nav.archive": "Archivo",

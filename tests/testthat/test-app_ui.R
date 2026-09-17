@@ -90,7 +90,7 @@ test_that("episodic_ui_rail() marks each row with the cluster id every other ope
   html <- as.character(episodic_ui_rail(open, selected_id = NULL, lang = "nl"))
   # A click that opens a cluster from outside the rail (a table row, a
   # "linked to #N" chip) has to be able to find and mark this exact row
-  # - see setCluster() in inst/app/www/episodic-nav.js.
+  # - see setOutbreak() in inst/app/www/episodic-nav.js.
   expect_true(grepl('data-cluster-id="7"', html, fixed = TRUE))
 })
 
@@ -239,7 +239,7 @@ test_that("episodic_ui_chip_link() opens a cluster through the shared attribute"
   chip <- as.character(
     episodic_ui_chip_link("Linked to #9", "#AA4A3F", cluster_id = 9L, lang = "en")
   )
-  expect_true(grepl('data-episodic-cluster="9"', chip, fixed = TRUE))
+  expect_true(grepl('data-episodic-outbreak="9"', chip, fixed = TRUE))
   expect_false(grepl("Shiny.setInputValue", chip, fixed = TRUE))
   expect_false(grepl("onclick", chip, fixed = TRUE))
 })
@@ -323,7 +323,7 @@ test_that("chart builders produce ggplot objects for typical and edge-case input
 
 test_that("episodic_ui_nav_links() renders four links and no highlight of its own", {
   html <- as.character(episodic_ui_nav_links(lang = "en"))
-  for (view in c("clusters", "epidemics", "pathogen", "instance")) {
+  for (view in c("outbreaks", "epidemics", "pathogen", "instance")) {
     expect_true(
       grepl(sprintf('data-view="%s"', view), html, fixed = TRUE),
       info = view
@@ -346,7 +346,7 @@ test_that("episodic_ui_nav_links() renders four links and no highlight of its ow
 
 test_that("every nav link carries the group its screen belongs to", {
   html <- as.character(episodic_ui_nav_links(lang = "en"))
-  for (view in c("clusters", "epidemics", "pathogen", "instance")) {
+  for (view in c("outbreaks", "epidemics", "pathogen", "instance")) {
     expect_true(
       grepl(
         sprintf('data-view="%s" data-episodic-nav="%s" data-nav="%s"', view, view, view),
@@ -359,7 +359,7 @@ test_that("every nav link carries the group its screen belongs to", {
 })
 
 test_that("episodic_app_nav_group() sends every instance-level screen to one link", {
-  expect_equal(episodic_app_nav_group("clusters"), "clusters")
+  expect_equal(episodic_app_nav_group("outbreaks"), "outbreaks")
   expect_equal(episodic_app_nav_group("epidemics"), "epidemics")
   expect_equal(episodic_app_nav_group("pathogen"), "pathogen")
   for (v in c("instance", "archive", "streams", "activity", "performance", "info", "settings")) {
@@ -368,7 +368,7 @@ test_that("episodic_app_nav_group() sends every instance-level screen to one lin
   for (v in episodic_app_views()) {
     expect_true(
       episodic_app_nav_group(v) %in%
-        c("clusters", "epidemics", "pathogen", "instance"),
+        c("outbreaks", "epidemics", "pathogen", "instance"),
       info = v
     )
   }

@@ -63,7 +63,7 @@ episodic_app_server_factory <- function(db_path,
       episodic_app_access_granted(require_login, current_user())
     })
 
-    view <- shiny::reactiveVal("clusters")
+    view <- shiny::reactiveVal("outbreaks")
     # Checked against the screens that exist rather than trusted: any
     # client can set any input, and a view id naming no screen would
     # leave the shell showing none of them.
@@ -85,7 +85,7 @@ episodic_app_server_factory <- function(db_path,
     # Deliberately not gated on `view()`. A reactive is lazy, so this
     # costs nothing until the rail (or the selection observer below)
     # asks for it; gating it on the view as well made *leaving* the
-    # clusters screen and coming back invalidate the whole open-cluster
+    # outbreaks screen and coming back invalidate the whole open-cluster
     # list, so every return from the Archive or the Pathogen screen
     # rebuilt it from the database before anything could be drawn.
     open_clusters <- shiny::reactive({
@@ -128,7 +128,7 @@ episodic_app_server_factory <- function(db_path,
 
     # Deep link from any cluster table (see `R/app_cluster_table.R`).
     # Setting the selection before the view means the dossier pane has
-    # its cluster ready by the time the clusters view renders, and the
+    # its cluster ready by the time the outbreaks view renders, and the
     # observer above will leave it alone whichever order the two land in.
     shiny::observeEvent(input$open_cluster, {
       requested <- as.integer(input$open_cluster)
@@ -140,7 +140,7 @@ episodic_app_server_factory <- function(db_path,
         return(invisible(NULL))
       }
       selected_cluster_id(requested)
-      view("clusters")
+      view("outbreaks")
     })
 
     # The rail header's open-by-number box. Unlike every other way a
@@ -170,7 +170,7 @@ episodic_app_server_factory <- function(db_path,
         return(invisible(NULL))
       }
       selected_cluster_id(requested)
-      view("clusters")
+      view("outbreaks")
     })
 
     # The same deep link from outside the app: `?cluster=123` opens that
@@ -200,7 +200,7 @@ episodic_app_server_factory <- function(db_path,
           return()
         }
         selected_cluster_id(requested)
-        view("clusters")
+        view("outbreaks")
       },
       once = TRUE
     )
@@ -291,8 +291,8 @@ episodic_app_server_factory <- function(db_path,
     shiny::observeEvent(
       selected_cluster_id(),
       session$sendCustomMessage(
-        "episodic_cluster",
-        list(cluster = selected_cluster_id())
+        "episodic_outbreak",
+        list(outbreak = selected_cluster_id())
       ),
       ignoreNULL = FALSE
     )
@@ -557,7 +557,7 @@ episodic_app_server_factory <- function(db_path,
 
     # The epidemic rail's own highlight, and on the phone tier which
     # epidemic the segmented control's other two segments refer to. The
-    # same contract as `episodic_cluster` above, on an attribute of its
+    # same contract as `episodic_outbreak` above, on an attribute of its
     # own: both screens hold a selection at once.
     shiny::observeEvent(
       selected_epidemic_id(),
@@ -1227,7 +1227,7 @@ episodic_ui_rail <- function(open,
           shiny::tags$button(
             type = "button",
             class = "episodic-rail-item-open",
-            `data-episodic-cluster` = row$cluster_id,
+            `data-episodic-outbreak` = row$cluster_id,
             shiny::tags$div(
               class = "episodic-rail-pathogen",
               shiny::HTML(episodic_ui_italicise_taxon(row$pathogen)),

@@ -90,7 +90,7 @@ episodic_ui_epidemic_rail <- function(epidemics,
 
 #' One row in the epidemic rail
 #'
-#' `data-episodic-epidemic` rather than `data-episodic-cluster`: both
+#' `data-episodic-epidemic` rather than `data-episodic-outbreak`: both
 #' carry a cluster id, but one selects within this screen and the other
 #' opens the Outbreaks screen, and `episodic-nav.js` has to tell them
 #' apart. `aria-current` is written server-side here for the first

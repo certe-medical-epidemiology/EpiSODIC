@@ -714,7 +714,7 @@ test_that("each cluster row links through to its dossier, by click and by keyboa
 
   # The shared opener attribute (see inst/app/www/episodic-nav.js) sets the `open_cluster`
   # Shiny input and moves the rail's own highlight
-  expect_true(grepl("data-episodic-cluster", html, fixed = TRUE))
+  expect_true(grepl("data-episodic-outbreak", html, fixed = TRUE))
   expect_true(grepl(as.character(cluster_id), html, fixed = TRUE))
   expect_true(grepl("episodic-row-link", html, fixed = TRUE))
   # a <tr> has no keyboard access of its own; tabindex gives it a stop

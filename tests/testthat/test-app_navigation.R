@@ -62,9 +62,9 @@ test_that("the shell carries the navigation state and nothing else does", {
   html <- as.character(episodic_app_ui("en"))
   expect_true(grepl('class="episodic-shell"', html, fixed = TRUE))
   for (attr in c(
-    'data-view="clusters"',
-    'data-nav="clusters"',
-    'data-cluster=""',
+    'data-view="outbreaks"',
+    'data-nav="outbreaks"',
+    'data-outbreak=""',
     'data-epidemic=""'
   )) {
     expect_true(grepl(attr, html, fixed = TRUE), info = attr)
@@ -139,7 +139,7 @@ test_that("the stylesheet decides what is visible, for every screen and every pa
       info = pane
     )
   }
-  for (group in c("clusters", "pathogen", "instance")) {
+  for (group in c("outbreaks", "pathogen", "instance")) {
     expect_true(
       grepl(
         sprintf(
@@ -265,7 +265,7 @@ test_that("everything that navigates says so with one of five data attributes", 
   rail <- as.character(
     episodic_ui_rail(fixture, selected_id = NULL, lang = "en")
   )
-  expect_true(grepl('data-episodic-cluster="3"', rail, fixed = TRUE))
+  expect_true(grepl('data-episodic-outbreak="3"', rail, fixed = TRUE))
   expect_true(grepl('data-episodic-action="rail-open"', rail, fixed = TRUE))
   # The fifth: an epidemic is selected within its own screen, and a
   # click on one rail must never be read as a click on the other.
@@ -273,12 +273,12 @@ test_that("everything that navigates says so with one of five data attributes", 
     episodic_ui_epidemic_rail(fixture, selected_id = NULL, lang = "en")
   )
   expect_true(grepl('data-episodic-epidemic="3"', epidemic_rail, fixed = TRUE))
-  expect_false(grepl("data-episodic-cluster", epidemic_rail, fixed = TRUE))
+  expect_false(grepl("data-episodic-outbreak", epidemic_rail, fixed = TRUE))
 })
 
 test_that("each rail is marked within its own container, not across the document", {
   html <- as.character(episodic_app_ui("en"))
-  for (scope in c("clusters", "epidemics")) {
+  for (scope in c("outbreaks", "epidemics")) {
     expect_true(
       grepl(sprintf('data-episodic-rail="%s"', scope), html, fixed = TRUE),
       info = scope

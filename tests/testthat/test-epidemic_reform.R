@@ -673,7 +673,7 @@ test_that("epidemic UI renders without error for a seasonal epidemic", {
   expect_true(grepl("episodic-rail-item", html, fixed = TRUE))
   expect_true(grepl("episodic-rail-item-open", html, fixed = TRUE))
   expect_true(grepl("data-episodic-epidemic", html, fixed = TRUE))
-  expect_false(grepl("data-episodic-cluster=", html, fixed = TRUE))
+  expect_false(grepl("data-episodic-outbreak=", html, fixed = TRUE))
   # The selected row is marked for the first render; every render after
   # it is marked client-side from the same attribute.
   expect_true(grepl('aria-current="true"', html, fixed = TRUE))
@@ -1153,7 +1153,7 @@ test_that("an outbreak knows the epidemics it ran during", {
     fixed = TRUE
   ))
   expect_true(grepl("data-episodic-epidemic", html, fixed = TRUE))
-  expect_false(grepl("data-episodic-cluster", html, fixed = TRUE))
+  expect_false(grepl("data-episodic-outbreak", html, fixed = TRUE))
 })
 
 test_that("during chips are empty when the outbreak ran during nothing", {

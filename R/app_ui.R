@@ -34,7 +34,7 @@
 #' @noRd
 episodic_app_views <- function() {
   c(
-    "clusters",
+    "outbreaks",
     "epidemics",
     "pathogen",
     "instance",
@@ -64,7 +64,7 @@ episodic_app_views <- function() {
 #' @keywords internal
 #' @noRd
 episodic_app_nav_group <- function(view) {
-  if (view %in% c("clusters", "epidemics", "pathogen")) {
+  if (view %in% c("outbreaks", "epidemics", "pathogen")) {
     return(view)
   }
   "instance"
@@ -179,9 +179,9 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       # The two selections are separate because the two screens are: a
       # reader who opens an outbreak from an epidemic's dossier and
       # navigates back should find the epidemic they left still marked.
-      `data-view` = "clusters",
-      `data-nav` = "clusters",
-      `data-cluster` = "",
+      `data-view` = "outbreaks",
+      `data-nav` = "outbreaks",
+      `data-outbreak` = "",
       `data-epidemic` = "",
       # Brand, navigation and status are siblings rather than the
       # navigation being nested inside a left-hand half: below 768px the
@@ -226,7 +226,7 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       shiny::tags$div(
         class = "episodic-screens",
         episodic_ui_screen(
-          "clusters",
+          "outbreaks",
           shiny::tags$div(
             class = "episodic-body",
             # Shown only in the 768-1199px tier, where the rail slides
@@ -264,7 +264,7 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
               # each holding its own selection, and `episodic-nav.js`
               # marks the current row within one of them rather than
               # across the document.
-              `data-episodic-rail` = "clusters"
+              `data-episodic-rail` = "outbreaks"
             ),
             shiny::uiOutput(
               "dossier_pane",
@@ -361,7 +361,7 @@ episodic_ui_screen <- function(view, ...) {
 #' @noRd
 episodic_ui_nav_links <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   shiny::tagList(lapply(
-    c("clusters", "epidemics", "pathogen", "instance"),
+    c("outbreaks", "epidemics", "pathogen", "instance"),
     function(v) {
       episodic_ui_nav_link(v, episodic_tr(paste0("nav.", v), lang = lang))
     }

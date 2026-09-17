@@ -2,7 +2,7 @@
   "app.title": "EpiSODIC",
   "app.full_name": "Observation, détection, identification et classification des signaux épidémiologiques",
   "app.demodata": "Données de démonstration",
-  "nav.clusters": "Flambées",
+  "nav.outbreaks": "Flambées",
   "nav.pathogen": "Pathogène",
   "nav.streams": "Flux",
   "nav.archive": "Archives",

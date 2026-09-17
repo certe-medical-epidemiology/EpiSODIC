@@ -31,11 +31,11 @@
  *
  *   data-view     which screen is on top       (10 values, see episodic_app_views())
  *   data-nav      which nav link is lit        (5 values, see episodic_app_nav_group())
- *   data-cluster  which outbreak is open       (a cluster id, or "")
+ *   data-outbreak which outbreak is open       (a cluster id, or "")
  *   data-epidemic which epidemic is open       (a cluster id, or "")
  *   data-access   whether this session may read (absent, or "locked")
  *
- * The first two and the last are read by CSS. `data-cluster` and
+ * The first two and the last are read by CSS. `data-outbreak` and
  * `data-epidemic` cannot be - a stylesheet cannot compare one element's
  * attribute against another's - so the rail row's own `aria-current`
  * carries it, written only by markRail() below and read as
@@ -66,7 +66,7 @@
     return document.querySelector(".episodic-shell");
   }
 
-  /* The clusters screen's three panes, in the order the phone-tier
+  /* The outbreaks screen's three panes, in the order the phone-tier
      segmented control shows them. Used only to validate an incoming
      value, so a malformed one leaves the pane where it was rather than
      hiding all three. */
@@ -152,17 +152,17 @@
     return id === null || id === undefined ? "" : String(id);
   }
 
-  function setCluster(id) {
+  function setOutbreak(id) {
     var el = shell();
     if (!el) {
       return;
     }
-    el.setAttribute("data-cluster", railKey(id));
-    markRail("clusters", railKey(id));
+    el.setAttribute("data-outbreak", railKey(id));
+    markRail("outbreaks", railKey(id));
   }
 
   /* The same contract for the Epidemics screen's own rail. A separate
-     attribute rather than a second meaning for data-cluster: both
+     attribute rather than a second meaning for data-outbreak: both
      screens hold a selection at once, and a reader coming back to
      Epidemics after opening an outbreak should find the epidemic they
      left still marked. */
@@ -209,7 +209,7 @@
     if (!el) {
       return;
     }
-    markRail("clusters", el.getAttribute("data-cluster") || "");
+    markRail("outbreaks", el.getAttribute("data-outbreak") || "");
     markRail("epidemics", el.getAttribute("data-epidemic") || "");
   }
 
@@ -226,7 +226,7 @@
      reader now is, and the server has to hear it every time: as a plain
      value, a click back onto the screen the server still thinks you are
      on sends nothing, and from then on the two disagree - the next
-     `view("clusters")` the server makes sets a reactiveVal to what it
+     `view("outbreaks")` the server makes sets a reactiveVal to what it
      already held, invalidates nothing, and the nav link stays lit on a
      screen the reader left. */
   function tellShinyView(view) {
@@ -381,18 +381,18 @@
       return;
     }
 
-    var opener = target(ev, "[data-episodic-cluster]");
+    var opener = target(ev, "[data-episodic-outbreak]");
     if (opener) {
       ev.preventDefault();
-      var id = parseInt(opener.getAttribute("data-episodic-cluster"), 10);
+      var id = parseInt(opener.getAttribute("data-episodic-outbreak"), 10);
       if (isNaN(id)) {
         return;
       }
       /* Optimistic: the highlight and the pane move now. The server
          answers with the selection it actually made, through
-         episodic_cluster below, which is what puts this right when the
+         episodic_outbreak below, which is what puts this right when the
          id names a cluster since merged away. */
-      setCluster(id);
+      setOutbreak(id);
       setPane("dossier");
       tellShinyEvent("open_cluster", id);
     }
@@ -416,7 +416,7 @@
     if (
       el.closest(
         "[data-episodic-nav],[data-episodic-pane],[data-episodic-action]," +
-          "[data-episodic-cluster],[data-episodic-epidemic]"
+          "[data-episodic-outbreak],[data-episodic-epidemic]"
       )
     ) {
       ev.preventDefault();
@@ -482,15 +482,15 @@
         setPane("dossier");
       }
     });
-    window.Shiny.addCustomMessageHandler("episodic_cluster", function (msg) {
-      setCluster(msg.cluster);
+    window.Shiny.addCustomMessageHandler("episodic_outbreak", function (msg) {
+      setOutbreak(msg.outbreak);
       /* The same default the click-driven opener gives itself
-         (setCluster + setPane("dossier") together, above): a session
+         (setOutbreak + setPane("dossier") together, above): a session
          that starts, or lands on a `?cluster=` link or the Pathogen
          screen's own opener, with a cluster already selected but no
          pane chosen yet is one the phone tier would otherwise show
          blank until the reader found the segmented control themselves. */
-      if (msg.cluster !== null) {
+      if (msg.outbreak !== null) {
         setPane("dossier");
       }
     });

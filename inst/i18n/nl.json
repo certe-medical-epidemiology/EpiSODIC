@@ -2,7 +2,7 @@
   "app.title": "EpiSODIC",
   "app.full_name": "Epidemiological Signal Observation, Detection, Identification, and Classification",
   "app.demodata": "Demodata",
-  "nav.clusters": "Uitbraken",
+  "nav.outbreaks": "Uitbraken",
   "nav.pathogen": "Verwekker",
   "nav.streams": "Signaleringsreeksen",
   "nav.archive": "Archief",

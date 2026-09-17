@@ -99,7 +99,7 @@ detection-reproducibility guarantee `EPISODIC_CONFIG`'s hash provides.
 ## Accounts
 
 By default the app is **open**: an anonymous visitor can read the
-aggregate screens - clusters, epidemics, streams, the archive - without
+aggregate screens - outbreaks, epidemics, streams, the archive - without
 signing in, and needs an account only for the line list and for writing.
 Accounts are never created by users themselves; either an `is_admin`
 account provisions them from the in-app Settings screen, or whoever

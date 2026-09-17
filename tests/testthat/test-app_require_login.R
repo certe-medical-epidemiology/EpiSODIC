@@ -281,7 +281,7 @@ test_that("signing in on a login-required instance opens the app, and signing ou
         fixed = TRUE
       ))
       expect_true(grepl(
-        episodic_tr("nav.clusters", lang = "en"),
+        episodic_tr("nav.outbreaks", lang = "en"),
         paste(output$nav_links, collapse = "\n"),
         fixed = TRUE
       ))
@@ -346,7 +346,7 @@ test_that("with require_login off, the app behaves exactly as it always has for 
         fixed = TRUE
       ))
       expect_true(grepl(
-        episodic_tr("nav.clusters", lang = "en"),
+        episodic_tr("nav.outbreaks", lang = "en"),
         paste(output$nav_links, collapse = "\n"),
         fixed = TRUE
       ))

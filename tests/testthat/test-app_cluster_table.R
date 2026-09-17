@@ -171,7 +171,7 @@ test_that("a row opens its dossier, by click and by keyboard", {
   # The shared opener attribute (see inst/app/www/episodic-nav.js) sets the `open_cluster`
   # Shiny input and moves the rail's own highlight - a row must call it
   # rather than setInputValue directly, or the rail goes stale on click.
-  expect_true(grepl('data-episodic-cluster="42"', row, fixed = TRUE))
+  expect_true(grepl('data-episodic-outbreak="42"', row, fixed = TRUE))
   expect_true(grepl("42", row, fixed = TRUE))
   expect_true(grepl("tabindex", row, fixed = TRUE))
   # Enter and Space reach it through episodic-nav.js's delegated keydown
@@ -231,7 +231,7 @@ test_that("a cluster that no longer stands on its own says so instead of dead-li
     lang = "en"
   ))
   # no click target at all, rather than one that goes nowhere
-  expect_false(grepl("data-episodic-cluster", row, fixed = TRUE))
+  expect_false(grepl("data-episodic-outbreak", row, fixed = TRUE))
   expect_false(grepl("episodic-row-link", row, fixed = TRUE))
   expect_false(grepl("tabindex", row, fixed = TRUE))
   # the id is still there, marked, and hovering it explains why

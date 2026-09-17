@@ -38,6 +38,16 @@
 :root {
   --episodic-font: "IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
   --episodic-font-size-base: 13px;
+  /* One tint per nav group, at an alpha low enough to read as "which
+     screen is this" rather than as a colour anyone would name - each
+     mixes that group's own brandbar hue (see episodic_brand_bar()) into
+     the ordinary page background, so the four screens stay visually
+     distinguishable without the cards sitting on them (which keep their
+     own opaque --episodic-surface) looking tinted at all. */
+  --episodic-tint-outbreaks: color-mix(in srgb, var(--episodic-warning) 6%, var(--episodic-bg));
+  --episodic-tint-epidemics: color-mix(in srgb, var(--episodic-success) 6%, var(--episodic-bg));
+  --episodic-tint-pathogen: color-mix(in srgb, var(--episodic-danger) 6%, var(--episodic-bg));
+  --episodic-tint-instance: color-mix(in srgb, var(--episodic-primary) 6%, var(--episodic-bg));
 }
 
 html {
@@ -115,7 +125,7 @@ body {
    can lose the highlight. The four rules are the whole mapping: the
    instance-level screens light the Instance link, because that is where
    a reader reached them from. */
-.episodic-shell[data-nav="clusters"] .episodic-nav-link[data-view="clusters"],
+.episodic-shell[data-nav="outbreaks"] .episodic-nav-link[data-view="outbreaks"],
 .episodic-shell[data-nav="epidemics"] .episodic-nav-link[data-view="epidemics"],
 .episodic-shell[data-nav="pathogen"] .episodic-nav-link[data-view="pathogen"],
 .episodic-shell[data-nav="instance"] .episodic-nav-link[data-view="instance"] {
@@ -204,6 +214,16 @@ body {
      .episodic-streams-screen rely on entirely. */
   min-height: 0;
 }
+/* The per-screen tint, keyed on the same `data-nav` the nav-link
+   highlight above reads, so the six Instance-group screens (Archive,
+   Streams, Activity, Performance, Info, Settings) share the Instance
+   screen's own tint rather than going untinted. Set here rather than on
+   .episodic-screen itself, since the hidden screens share this one
+   container and a reader is never shown more than one tint at a time. */
+.episodic-shell[data-nav="outbreaks"] .episodic-screens { background: var(--episodic-tint-outbreaks); }
+.episodic-shell[data-nav="epidemics"] .episodic-screens { background: var(--episodic-tint-epidemics); }
+.episodic-shell[data-nav="pathogen"] .episodic-screens { background: var(--episodic-tint-pathogen); }
+.episodic-shell[data-nav="instance"] .episodic-screens { background: var(--episodic-tint-instance); }
 .episodic-screen {
   display: none;
   flex-direction: column;
@@ -217,7 +237,7 @@ body {
   flex: 1;
   min-height: 0;
 }
-.episodic-shell[data-view="clusters"] .episodic-screen[data-screen="clusters"],
+.episodic-shell[data-view="outbreaks"] .episodic-screen[data-screen="outbreaks"],
 .episodic-shell[data-view="epidemics"] .episodic-screen[data-screen="epidemics"],
 .episodic-shell[data-view="pathogen"] .episodic-screen[data-screen="pathogen"],
 .episodic-shell[data-view="archive"] .episodic-screen[data-screen="archive"],
@@ -267,7 +287,7 @@ body {
   height: 100%;
 }
 
-/* The clusters screen's three panes.
+/* The outbreaks screen's three panes.
 
    These classes sit on shiny::uiOutput()'s own containers (see
    episodic_app_ui()), not on an element inside them. They have to: the
@@ -850,7 +870,7 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-streams-screen {
   /* Shared by the Streams, Archive, Activity, Performance and Info
      screens. None of these sit inside .episodic-body's own fixed-height
-     flex layout (that wraps only the default clusters view), so without
+     flex layout (that wraps only the default outbreaks view), so without
      its own height+scroll a long one - the Streams screen especially,
      now that it can hold up to page_size rows - had no y-overflow
      handling of its own and relied on the surrounding page/frame to

@@ -194,7 +194,7 @@ test_that("closing a cluster actually updates the rail and the Archief screen wi
     expect_false(grepl("Norovirus", archive_before))
 
     # Closing without ever touching nav_view (input$rail_select stays on
-    # "clusters" throughout), which is how it happens in the app: neither
+    # "outbreaks" throughout), which is how it happens in the app: neither
     # the rail nor the Archief screen has any reason to notice a write
     # unless something explicitly invalidates them. Closure is the
     # assessment form's own checkbox, submitted alongside the (here,
@@ -548,7 +548,7 @@ test_that("the rail's open-by-number box opens a real cluster and answers a numb
     # A number that resolves opens that cluster, from wherever the
     # reader happened to be.
     expect_equal(selected_cluster_id(), as.integer(cluster_id))
-    expect_equal(view(), "clusters")
+    expect_equal(view(), "outbreaks")
 
     # A number that resolves to nothing leaves the selection alone
     # rather than blanking the dossier - and, unlike every other way a
@@ -662,7 +662,7 @@ test_that("input$open_cluster jumps to the Clusters screen on that very cluster"
     # once and which one is shown is `data-view` on the shell, so what
     # proves the switch is view() itself rather than what one renderUI
     # happened to return.
-    expect_equal(view(), "clusters")
+    expect_equal(view(), "outbreaks")
 
     # The factory opened this connection; the mock session does not
     # run onSessionEnded, so close it here. Safe either way - the
@@ -859,7 +859,7 @@ test_that("the navigation highlight follows a deep link, not just its own clicks
     # current screen has to move with it.
     session$setInputs(open_cluster = cluster_id)
     session$flushReact()
-    expect_equal(view(), "clusters")
+    expect_equal(view(), "outbreaks")
 
     # And through all of it the bar itself is never re-rendered.
     expect_equal(links(paste(output$nav_links, collapse = "\n")), before)
@@ -982,14 +982,14 @@ test_that("opening an object from the other scale moves the screen as well as th
     session$setInputs(open_cluster = outbreak_id)
     session$flushReact()
     expect_equal(selected_cluster_id(), outbreak_id)
-    expect_equal(view(), "clusters")
+    expect_equal(view(), "outbreaks")
 
     # An id naming nothing leaves both where they were, rather than
     # blanking a pane that has no empty state for it.
     session$setInputs(epidemic_select = 999999L)
     session$flushReact()
     expect_equal(selected_epidemic_id(), epidemic_id)
-    expect_equal(view(), "clusters")
+    expect_equal(view(), "outbreaks")
 
     DBI::dbDisconnect(con)
   })

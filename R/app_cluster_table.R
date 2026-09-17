@@ -244,7 +244,7 @@ episodic_ui_cluster_row <- function(cluster_id,
     # listeners from here. A table of a hundred rows therefore carries a
     # hundred short attributes rather than a hundred copies of the same
     # two lines of JavaScript.
-    `data-episodic-cluster` = as.integer(cluster_id),
+    `data-episodic-outbreak` = as.integer(cluster_id),
     shiny::tags$td(
       class = "episodic-cell-id",
       shiny::tags$span(class = "episodic-id-link", ref)

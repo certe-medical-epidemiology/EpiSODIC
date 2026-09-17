@@ -173,14 +173,14 @@ test_that("the environment variable alone decides what an internal renderer prod
 
   Sys.unsetenv("EPISODIC_LANGUAGE")
   expect_equal(
-    episodic_tr("nav.clusters"),
-    episodic_tr("nav.clusters", lang = "en")
+    episodic_tr("nav.outbreaks"),
+    episodic_tr("nav.outbreaks", lang = "en")
   )
 
   Sys.setenv(EPISODIC_LANGUAGE = "nl")
   expect_equal(
-    episodic_tr("nav.clusters"),
-    episodic_tr("nav.clusters", lang = "nl")
+    episodic_tr("nav.outbreaks"),
+    episodic_tr("nav.outbreaks", lang = "nl")
   )
 })
 
@@ -541,13 +541,13 @@ test_that("a region EpiSODIC does not ship falls back to the language, saying so
 test_that("a variant inherits every key it does not carry, and overrides the ones it does", {
   en <- episodic_i18n_load("en")
   us <- episodic_i18n_load("en-US")
-  expect_equal(unname(us[["nav.clusters"]]), unname(en[["nav.clusters"]]))
+  expect_equal(unname(us[["nav.outbreaks"]]), unname(en[["nav.outbreaks"]]))
   expect_equal(unname(en[["info.about.license"]]), "Licence: {license}")
   expect_equal(unname(us[["info.about.license"]]), "License: {license}")
 
   es <- episodic_i18n_load("es")
   latam <- episodic_i18n_load("es-419")
-  expect_equal(unname(latam[["nav.clusters"]]), unname(es[["nav.clusters"]]))
+  expect_equal(unname(latam[["nav.outbreaks"]]), unname(es[["nav.outbreaks"]]))
   expect_equal(unname(es[["misc.decimal.mark"]]), ",")
   expect_equal(unname(latam[["misc.decimal.mark"]]), ".")
 })

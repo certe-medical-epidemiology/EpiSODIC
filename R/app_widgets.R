@@ -234,7 +234,7 @@ episodic_ui_pane_switcher <- function(scale = "outbreak",
       episodic_ui_pane_tab(
         "rail",
         episodic_tr(
-          if (is_epidemic) "nav.epidemics" else "nav.clusters",
+          if (is_epidemic) "nav.epidemics" else "nav.outbreaks",
           lang = lang
         )
       ),
@@ -396,7 +396,7 @@ episodic_ui_chip_link <- function(text,
     # attributes. The other is `NULL`, which htmltools drops, so the
     # chip carries exactly one and no reader of the markup has to work
     # out which screen it meant.
-    `data-episodic-cluster` = if (!identical(scale, "epidemic")) {
+    `data-episodic-outbreak` = if (!identical(scale, "epidemic")) {
       as.integer(cluster_id)
     },
     `data-episodic-epidemic` = if (identical(scale, "epidemic")) {
@@ -428,7 +428,7 @@ episodic_ui_cluster_link <- function(text,
     tabindex = "0",
     role = "link",
     title = episodic_tr("cluster.open_hint", lang = lang),
-    `data-episodic-cluster` = as.integer(cluster_id),
+    `data-episodic-outbreak` = as.integer(cluster_id),
     text
   )
 }

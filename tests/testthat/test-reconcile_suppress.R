@@ -260,7 +260,7 @@ test_that("a cluster sharing cases with one that stands separately says so, and 
   # The shared opener attribute (see inst/app/www/episodic-nav.js) sets the `open_cluster`
   # Shiny input and moves the rail's own highlight, so a chip calls it
   # instead of Shiny.setInputValue('open_cluster', ...) directly.
-  opens <- paste0('data-episodic-cluster="', env$children[1], '"')
+  opens <- paste0('data-episodic-outbreak="', env$children[1], '"')
   expect_true(grepl(opens, chips, fixed = TRUE))
   # Keyboard access comes from episodic-nav.js's delegated keydown
   # listener, not an inline handler on every chip.
