@@ -13,7 +13,7 @@
   "nav.instance": "इंस्टैंस",
   "nav.menu_label": "मेनू",
   "instance.lead": "यह इंस्टैंस क्या देखता है, उसने क्या किया है, और वह कैसे विन्यस्त है।",
-  "instance.schema_version": "स्कीमा संस्करण {version}",
+  "instance.card.info.version": "EpiSODIC v{version}",
   "instance.card.archive": "बंद प्रकोप और महामारी, रोगज़नक़ और स्थान द्वारा खोजने योग्य।",
   "instance.card.streams": "हर निगरानी इकाई जिस पर संसूचक चलते हैं, और वह पात्र है या नहीं।",
   "instance.card.activity": "ऑडिट रिकॉर्ड: संसूचन रन, मूल्यांकन और साइन-इन।",

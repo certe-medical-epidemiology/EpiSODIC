@@ -28,15 +28,15 @@
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param lang Session language.
-#' @return A list of the counts, the archive count, and the schema
-#'   version the cards show.
+#' @return A list of the counts, the archive count, and the package
+#'   version the Info card shows.
 #' @keywords internal
 #' @noRd
 episodic_app_instance <- function(con, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   list(
     counts = episodic_db_instance_counts(con),
     archive_count = nrow(episodic_app_archive(con, lang = lang)),
-    schema_version = episodic_schema_version
+    version = episodic_app_package_meta()$version
   )
 }
 
@@ -101,13 +101,15 @@ episodic_ui_instance_screen <- function(instance,
     list(view = "performance", meta = NULL),
     list(
       view = "info",
-      # A schema version is an identifier, not a quantity, so it is
+      # A version number is an identifier, not a quantity, so it is
       # written as it is rather than grouped.
-      meta = episodic_tr(
-        "instance.schema_version",
-        version = as.character(instance$schema_version),
-        lang = lang
-      )
+      meta = if (!is.null(instance$version)) {
+        episodic_tr(
+          "instance.card.info.version",
+          version = instance$version,
+          lang = lang
+        )
+      }
     )
   )
   if (isTRUE(episodic_user_is_admin(current_user))) {

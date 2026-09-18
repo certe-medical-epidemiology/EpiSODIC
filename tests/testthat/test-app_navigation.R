@@ -250,7 +250,7 @@ test_that("everything that navigates says so with one of five data attributes", 
   instance <- list(
     counts = list(streams = 12L, runs = 4L, users = 3L, clusters = 9L),
     archive_count = 7L,
-    schema_version = 5L
+    version = "1.2.3"
   )
   expect_true(grepl(
     'data-episodic-nav="archive"',
@@ -459,7 +459,7 @@ test_that("the Instance screen offers the six screens the bar no longer carries"
   instance <- list(
     counts = list(streams = 12L, runs = 4L, users = 3L, clusters = 9L),
     archive_count = 7L,
-    schema_version = 5L
+    version = "1.2.3"
   )
   html <- as.character(episodic_ui_instance_screen(instance, lang = "en"))
   for (view in c("archive", "streams", "activity", "performance", "info")) {
@@ -497,7 +497,7 @@ test_that("the Performance card deliberately carries no number", {
   instance <- list(
     counts = list(streams = 12L, runs = 4L, users = 3L, clusters = 9L),
     archive_count = 7L,
-    schema_version = 5L
+    version = "1.2.3"
   )
   html <- as.character(episodic_ui_instance_screen(instance, lang = "en"))
   cards <- lengths(regmatches(
@@ -523,7 +523,7 @@ test_that("the Instance screen renders in every shipped language with no missing
   instance <- list(
     counts = list(streams = 12L, runs = 4L, users = 3L, clusters = 9L),
     archive_count = 7L,
-    schema_version = 5L
+    version = "1.2.3"
   )
   for (lang in episodic_nav_shipped_langs) {
     html <- as.character(episodic_ui_instance_screen(instance, lang = lang))
@@ -544,7 +544,7 @@ test_that("every key the new navigation uses exists in every shipped language", 
     "pane.switcher_label",
     "rail.bulk_select",
     "instance.lead",
-    "instance.schema_version",
+    "instance.card.info.version",
     "instance.card.archive",
     "instance.card.streams",
     "instance.card.activity",

@@ -13,7 +13,7 @@
   "nav.instance": "Instance",
   "nav.menu_label": "Menu",
   "instance.lead": "Ce que cette instance surveille, ce qu'elle a fait et comment elle est configurée.",
-  "instance.schema_version": "Version de schéma {version}",
+  "instance.card.info.version": "EpiSODIC v{version}",
   "instance.card.archive": "Flambées et épidémies clôturées, consultables par agent pathogène et lieu.",
   "instance.card.streams": "Chaque flux de surveillance sur lequel les détecteurs s'exécutent, et son éligibilité.",
   "instance.card.activity": "La piste d'audit : exécutions de détection, évaluations et connexions.",

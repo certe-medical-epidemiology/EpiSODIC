@@ -13,7 +13,7 @@
   "nav.instance": "Instancia",
   "nav.menu_label": "Menú",
   "instance.lead": "Qué vigila esta instancia, qué ha hecho y cómo está configurada.",
-  "instance.schema_version": "Versión de esquema {version}",
+  "instance.card.info.version": "EpiSODIC v{version}",
   "instance.card.archive": "Brotes y epidemias cerrados, buscables por patógeno y lugar.",
   "instance.card.streams": "Cada serie de vigilancia sobre la que se ejecutan los detectores, y si es elegible.",
   "instance.card.activity": "El registro de auditoría: ejecuciones de detección, evaluaciones e inicios de sesión.",

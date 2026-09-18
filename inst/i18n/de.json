@@ -13,7 +13,7 @@
   "nav.instance": "Instanz",
   "nav.menu_label": "Menü",
   "instance.lead": "Was diese Instanz überwacht, was sie getan hat und wie sie konfiguriert ist.",
-  "instance.schema_version": "Schemaversion {version}",
+  "instance.card.info.version": "EpiSODIC v{version}",
   "instance.card.archive": "Abgeschlossene Ausbrüche und Epidemien, durchsuchbar nach Erreger und Ort.",
   "instance.card.streams": "Jede Meldereihe, gegen die die Detektoren laufen, und ob sie infrage kommt.",
   "instance.card.activity": "Der Prüfpfad: Erkennungsläufe, Bewertungen und Anmeldungen.",

@@ -13,7 +13,7 @@
   "nav.instance": "Instance",
   "nav.menu_label": "Menu",
   "instance.lead": "What this instance watches, what it has done, and how it is configured.",
-  "instance.schema_version": "Schema version {version}",
+  "instance.card.info.version": "EpiSODIC v{version}",
   "instance.card.archive": "Closed outbreaks and epidemics, searchable by pathogen and place.",
   "instance.card.streams": "Every surveillance unit the detectors run against, and whether each one is eligible.",
   "instance.card.activity": "The audit trail: detection runs, assessments and sign-ins.",

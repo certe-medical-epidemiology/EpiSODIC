@@ -13,7 +13,7 @@
   "nav.instance": "المثيل",
   "nav.menu_label": "القائمة",
   "instance.lead": "ما يرصده هذا المثيل، وما قام به، وكيف جرى إعداده.",
-  "instance.schema_version": "إصدار المخطط {version}",
+  "instance.card.info.version": "EpiSODIC v{version}",
   "instance.card.archive": "حالات تفشي وأوبئة مغلقة، قابلة للبحث حسب العامل الممرض والمكان.",
   "instance.card.streams": "كل وحدة رصد تعمل عليها أدوات الكشف، وما إذا كانت مؤهلة.",
   "instance.card.activity": "سجل التدقيق: عمليات الكشف والتقييمات وعمليات تسجيل الدخول.",

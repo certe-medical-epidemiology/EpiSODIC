@@ -13,7 +13,7 @@
   "nav.instance": "实例",
   "nav.menu_label": "菜单",
   "instance.lead": "本实例监测什么、做过什么，以及如何配置。",
-  "instance.schema_version": "架构版本 {version}",
+  "instance.card.info.version": "EpiSODIC v{version}",
   "instance.card.archive": "已结案的暴发和流行事件，可按病原体和地点搜索。",
   "instance.card.streams": "检测器所针对的每个监测单元，以及各自是否符合条件。",
   "instance.card.activity": "审计记录：检测运行、评估与登录。",

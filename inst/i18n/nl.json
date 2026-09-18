@@ -13,7 +13,7 @@
   "nav.instance": "Instantie",
   "nav.menu_label": "Menu",
   "instance.lead": "Wat deze instantie bewaakt, wat zij heeft gedaan en hoe zij is ingericht.",
-  "instance.schema_version": "Schemaversie {version}",
+  "instance.card.info.version": "EpiSODIC v{version}",
   "instance.card.archive": "Afgesloten uitbraken en epidemieën, doorzoekbaar op verwekker en locatie.",
   "instance.card.streams": "Elke signaleringsreeks waarop de detectoren draaien, en of deze in aanmerking komt.",
   "instance.card.activity": "Het audittrail: detectieruns, beoordelingen en aanmeldingen.",
