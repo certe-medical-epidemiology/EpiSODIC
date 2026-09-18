@@ -3,7 +3,7 @@
   "app.full_name": "Epidemiological Signal Observation, Detection, Identification, and Classification",
   "app.demodata": "Demo data",
   "nav.outbreaks": "Outbreaks",
-  "nav.pathogen": "Pathogen",
+  "nav.pathogens": "Pathogens",
   "nav.streams": "Streams",
   "nav.archive": "Archive",
   "nav.activity": "Activity",

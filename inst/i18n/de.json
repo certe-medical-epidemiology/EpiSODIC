@@ -3,7 +3,7 @@
   "app.full_name": "Epidemiologische Signalbeobachtung, -erkennung, -identifikation und -klassifikation",
   "app.demodata": "Demodaten",
   "nav.outbreaks": "Ausbrüche",
-  "nav.pathogen": "Erreger",
+  "nav.pathogens": "Erreger",
   "nav.streams": "Meldereihen",
   "nav.archive": "Archiv",
   "nav.activity": "Aktivität",

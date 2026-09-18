@@ -3,7 +3,7 @@
   "app.full_name": "مراقبة الإشارات الوبائية وكشفها وتحديدها وتصنيفها",
   "app.demodata": "بيانات تجريبية",
   "nav.outbreaks": "التفشيات",
-  "nav.pathogen": "العامل الممرض",
+  "nav.pathogens": "العوامل الممرضة",
   "nav.streams": "السلاسل الرصدية",
   "nav.archive": "الأرشيف",
   "nav.activity": "النشاط",

@@ -3,7 +3,7 @@
   "app.full_name": "流行病学信号观测、检测、识别与分类系统",
   "app.demodata": "演示数据",
   "nav.outbreaks": "暴发",
-  "nav.pathogen": "病原体",
+  "nav.pathogens": "病原体",
   "nav.streams": "监测序列",
   "nav.archive": "归档",
   "nav.activity": "活动记录",

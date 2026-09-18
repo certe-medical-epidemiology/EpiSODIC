@@ -650,7 +650,7 @@ test_that("input$open_cluster jumps to the Clusters screen on that very cluster"
       fixed = TRUE
     ))
 
-    session$setInputs(nav_view = "pathogen")
+    session$setInputs(nav_view = "pathogens")
     session$flushReact()
     session$setInputs(open_cluster = first)
     session$flushReact()
@@ -837,9 +837,9 @@ test_that("the navigation highlight follows a deep link, not just its own clicks
     # there by the stylesheet; what this test holds is the server-side
     # half of it, that view() follows every route and not only a click
     # on the bar.
-    session$setInputs(nav_view = "pathogen")
+    session$setInputs(nav_view = "pathogens")
     session$flushReact()
-    expect_equal(view(), "pathogen")
+    expect_equal(view(), "pathogens")
 
     # A screen reached from the Instance screen is a view of its own,
     # and it lights the Instance link rather than none.

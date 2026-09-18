@@ -321,19 +321,30 @@ test_that("no shipped language still calls the concept an organism", {
 test_that("Dutch does use 'verwekker' for the concept, so the rule above is not vacuous", {
   nl <- episodic_i18n_load("nl")
   expect_true(any(grepl("verwekker", nl, ignore.case = TRUE)))
-  expect_equal(unname(nl[["nav.pathogen"]]), "Verwekker")
+  expect_equal(unname(nl[["nav.pathogens"]]), "Verwekkers")
 })
 
 test_that("every language names the Pathogen screen the same way in its nav entry and its title", {
   # A nav entry reading one thing and the screen it opens reading another
   # is the same class of slip as the Dutch one, just harder to spot.
+  # `nav.pathogens` is plural (it is a menu entry, like nav.outbreaks and
+  # nav.epidemics) while `pathogen.title` names the screen's own subject,
+  # one pathogen at a time, so it stays singular - the two are compared
+  # by stem, not by exact match.
+  #
+  # Stripping a trailing "s" recovers that singular stem in every shipped
+  # language except Arabic: its plural (see nav.pathogens) is a broken
+  # plural, formed by changing the word's internal pattern rather than
+  # appending one, so no suffix rule recovers the singular from it, and
+  # the correct stem is supplied directly instead.
+  irregular_stems <- list(ar = "العامل الممرض")
   for (lang in episodic_shipped_langs) {
     table <- episodic_i18n_load(lang)
-    nav <- table[["nav.pathogen"]]
+    nav <- table[["nav.pathogens"]]
     title <- table[["pathogen.title"]]
     # Singular stem, so an inflected or compounded title still matches
-    # (Verwekker -> Verwekkeractiviteit, Patógeno -> del patógeno).
-    stem <- sub("s$", "", tolower(nav))
+    # (Verwekkers -> Verwekkeractiviteit, Patógenos -> del patógeno).
+    stem <- irregular_stems[[lang]] %||% sub("s$", "", tolower(nav))
     expect_true(
       grepl(stem, tolower(title), fixed = TRUE),
       info = paste0(lang, ": nav '", nav, "' vs title '", title, "'")

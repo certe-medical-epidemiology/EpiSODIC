@@ -139,7 +139,7 @@ test_that("the stylesheet decides what is visible, for every screen and every pa
       info = pane
     )
   }
-  for (group in c("outbreaks", "pathogen", "instance")) {
+  for (group in c("outbreaks", "pathogens", "instance")) {
     expect_true(
       grepl(
         sprintf(

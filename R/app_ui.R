@@ -36,7 +36,7 @@ episodic_app_views <- function() {
   c(
     "outbreaks",
     "epidemics",
-    "pathogen",
+    "pathogens",
     "instance",
     "archive",
     "streams",
@@ -64,7 +64,7 @@ episodic_app_views <- function() {
 #' @keywords internal
 #' @noRd
 episodic_app_nav_group <- function(view) {
-  if (view %in% c("outbreaks", "epidemics", "pathogen")) {
+  if (view %in% c("outbreaks", "epidemics", "pathogens")) {
     return(view)
   }
   "instance"
@@ -340,7 +340,7 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
             episodic_ui_pane_switcher(scale = "epidemic", lang = lang)
           )
         ),
-        episodic_ui_screen("pathogen", shiny::uiOutput("pathogen_screen")),
+        episodic_ui_screen("pathogens", shiny::uiOutput("pathogen_screen")),
         episodic_ui_screen("instance", shiny::uiOutput("instance_screen")),
         episodic_ui_screen("archive", shiny::uiOutput("archive_screen")),
         episodic_ui_screen("streams", shiny::uiOutput("streams_screen")),
@@ -383,7 +383,7 @@ episodic_ui_screen <- function(view, ...) {
 #' @noRd
 episodic_ui_nav_links <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   shiny::tagList(lapply(
-    c("outbreaks", "epidemics", "pathogen", "instance"),
+    c("outbreaks", "epidemics", "pathogens", "instance"),
     function(v) {
       episodic_ui_nav_link(v, episodic_tr(paste0("nav.", v), lang = lang))
     }

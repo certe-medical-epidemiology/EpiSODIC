@@ -46,7 +46,7 @@
      own opaque --episodic-surface) looking tinted at all. */
   --episodic-tint-outbreaks: color-mix(in srgb, var(--episodic-warning) 6%, var(--episodic-bg));
   --episodic-tint-epidemics: color-mix(in srgb, var(--episodic-success) 6%, var(--episodic-bg));
-  --episodic-tint-pathogen: color-mix(in srgb, var(--episodic-danger) 6%, var(--episodic-bg));
+  --episodic-tint-pathogens: color-mix(in srgb, var(--episodic-danger) 6%, var(--episodic-bg));
   --episodic-tint-instance: color-mix(in srgb, var(--episodic-primary) 6%, var(--episodic-bg));
 }
 
@@ -134,7 +134,7 @@ body {
    a reader reached them from. */
 .episodic-shell[data-nav="outbreaks"] .episodic-nav-link[data-view="outbreaks"],
 .episodic-shell[data-nav="epidemics"] .episodic-nav-link[data-view="epidemics"],
-.episodic-shell[data-nav="pathogen"] .episodic-nav-link[data-view="pathogen"],
+.episodic-shell[data-nav="pathogens"] .episodic-nav-link[data-view="pathogens"],
 .episodic-shell[data-nav="instance"] .episodic-nav-link[data-view="instance"] {
   background: rgba(255,255,255,0.16);
   color: #fff;
@@ -229,7 +229,7 @@ body {
    container and a reader is never shown more than one tint at a time. */
 .episodic-shell[data-nav="outbreaks"] .episodic-screens { background: var(--episodic-tint-outbreaks); }
 .episodic-shell[data-nav="epidemics"] .episodic-screens { background: var(--episodic-tint-epidemics); }
-.episodic-shell[data-nav="pathogen"] .episodic-screens { background: var(--episodic-tint-pathogen); }
+.episodic-shell[data-nav="pathogens"] .episodic-screens { background: var(--episodic-tint-pathogens); }
 .episodic-shell[data-nav="instance"] .episodic-screens { background: var(--episodic-tint-instance); }
 .episodic-screen {
   display: none;
@@ -246,7 +246,7 @@ body {
 }
 .episodic-shell[data-view="outbreaks"] .episodic-screen[data-screen="outbreaks"],
 .episodic-shell[data-view="epidemics"] .episodic-screen[data-screen="epidemics"],
-.episodic-shell[data-view="pathogen"] .episodic-screen[data-screen="pathogen"],
+.episodic-shell[data-view="pathogens"] .episodic-screen[data-screen="pathogens"],
 .episodic-shell[data-view="archive"] .episodic-screen[data-screen="archive"],
 .episodic-shell[data-view="instance"] .episodic-screen[data-screen="instance"],
 .episodic-shell[data-view="streams"] .episodic-screen[data-screen="streams"],

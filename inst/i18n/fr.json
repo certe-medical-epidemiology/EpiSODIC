@@ -3,7 +3,7 @@
   "app.full_name": "Observation, détection, identification et classification des signaux épidémiologiques",
   "app.demodata": "Données de démonstration",
   "nav.outbreaks": "Flambées",
-  "nav.pathogen": "Pathogène",
+  "nav.pathogens": "Pathogènes",
   "nav.streams": "Flux",
   "nav.archive": "Archives",
   "nav.activity": "Activité",

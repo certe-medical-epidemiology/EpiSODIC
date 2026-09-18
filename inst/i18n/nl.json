@@ -3,7 +3,7 @@
   "app.full_name": "Epidemiological Signal Observation, Detection, Identification, and Classification",
   "app.demodata": "Demodata",
   "nav.outbreaks": "Uitbraken",
-  "nav.pathogen": "Verwekker",
+  "nav.pathogens": "Verwekkers",
   "nav.streams": "Signaleringsreeksen",
   "nav.archive": "Archief",
   "nav.activity": "Activiteit",
