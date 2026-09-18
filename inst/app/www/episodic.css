@@ -224,6 +224,17 @@ body {
 .episodic-shell[data-nav="epidemics"] .episodic-screens { background: var(--episodic-tint-epidemics); }
 .episodic-shell[data-nav="pathogens"] .episodic-screens { background: var(--episodic-tint-pathogens); }
 .episodic-shell[data-nav="instance"] .episodic-screens { background: var(--episodic-tint-instance); }
+/* The current nav section's own hue, redefined per `data-nav` so a
+   consumer (the mobile pane-switcher, the interpretation panel's
+   recommendation box, the recalculating spinner) reads one variable
+   instead of repeating a `[data-nav="..."]` selector of its own for
+   every one of the four sections. Buttons and chips are deliberately
+   never keyed to this - a control's colour should not change with
+   which screen it happens to sit on. */
+.episodic-shell[data-nav="outbreaks"] { --episodic-nav-accent: var(--episodic-warning); --episodic-nav-accent-dark: var(--episodic-warning-dark); }
+.episodic-shell[data-nav="epidemics"] { --episodic-nav-accent: var(--episodic-success); --episodic-nav-accent-dark: var(--episodic-success-dark); }
+.episodic-shell[data-nav="pathogens"] { --episodic-nav-accent: var(--episodic-danger); --episodic-nav-accent-dark: var(--episodic-danger-dark); }
+.episodic-shell[data-nav="instance"] { --episodic-nav-accent: var(--episodic-primary); --episodic-nav-accent-dark: var(--episodic-primary-dark); }
 .episodic-screen {
   display: none;
   flex-direction: column;
@@ -733,8 +744,12 @@ body {
   gap: 9px;
   margin-top: 14px;
   padding: 12px;
-  background: var(--episodic-primary-tint);
-  border-inline-start: 3px solid var(--episodic-primary);
+  /* Only ever shown on the Outbreaks screen (its panel has no epidemic
+     equivalent), so the section's own accent, not a --episodic-nav-
+     accent-tint that would need inventing for roles (warning/success/
+     danger) that, unlike primary, have no shipped _tint step. */
+  background: color-mix(in srgb, var(--episodic-nav-accent) 18%, var(--episodic-surface));
+  border-inline-start: 3px solid var(--episodic-nav-accent);
   border-radius: 2px;
   font-size: 1rem;
   line-height: 1.6;
@@ -1564,8 +1579,12 @@ dl.episodic-settings dd { margin: 0; }
   height: 18px;
   margin-inline: auto;
   margin-block-start: -9px;
-  border: 2px solid var(--episodic-primary-tint);
-  border-block-start-color: var(--episodic-primary);
+  /* --episodic-nav-accent cascades from .episodic-shell[data-nav], so
+     this needs no [data-nav="..."] selector of its own - a spinner
+     inside the Pathogens screen already sits under that data-nav and
+     reads the danger step without being told to. */
+  border: 2px solid color-mix(in srgb, var(--episodic-nav-accent) 25%, var(--episodic-surface));
+  border-block-start-color: var(--episodic-nav-accent);
   border-radius: 50%;
   animation: episodic-spin 0.7s linear infinite;
   pointer-events: none;
@@ -1973,15 +1992,15 @@ dl.episodic-settings dd { margin: 0; }
   .episodic-shell[data-pane="rail"] .episodic-pane-tab[data-episodic-pane="rail"],
   .episodic-shell[data-pane="dossier"] .episodic-pane-tab[data-episodic-pane="dossier"],
   .episodic-shell[data-pane="assessment"] .episodic-pane-tab[data-episodic-pane="assessment"] {
-    color: var(--episodic-primary);
+    color: var(--episodic-nav-accent-dark);
     font-weight: 600;
-    box-shadow: inset 0 2px 0 var(--episodic-primary);
+    box-shadow: inset 0 2px 0 var(--episodic-nav-accent);
   }
   .episodic-pane-tab:active {
-    background: var(--episodic-primary-tint);
+    background: color-mix(in srgb, var(--episodic-nav-accent) 18%, var(--episodic-surface));
   }
   .episodic-pane-tab:focus-visible {
-    outline: 2px solid var(--episodic-primary);
+    outline: 2px solid var(--episodic-nav-accent);
     outline-offset: -2px;
   }
 

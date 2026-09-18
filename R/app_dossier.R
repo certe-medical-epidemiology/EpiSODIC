@@ -680,7 +680,7 @@ episodic_ui_epicurve_panel <- function(con,
     episodic_tr("panel.epicurve.title", lang = lang),
     note = note,
     shiny::renderPlot(
-      episodic_ui_epi_curve_chart(curve, lang = lang),
+      episodic_ui_epi_curve_chart(curve, lang = lang, accent = episodic_nav_accent("outbreaks")),
       height = 210
     )
   )
@@ -713,7 +713,10 @@ episodic_ui_trend_panel <- function(con,
       lang = lang
     ),
     note = shiny::HTML(episodic_tr("panel.trend.note", lang = lang)),
-    shiny::renderPlot(episodic_ui_trend_chart(trend, lang = lang), height = 230)
+    shiny::renderPlot(
+      episodic_ui_trend_chart(trend, lang = lang, accent = episodic_nav_accent("outbreaks")),
+      height = 230
+    )
   )
 }
 
@@ -748,7 +751,10 @@ episodic_ui_rt_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   episodic_ui_panel(
     episodic_tr("panel.rt.title", lang = lang),
     note = episodic_tr("panel.rt.note", lang = lang),
-    shiny::renderPlot(episodic_ui_rt_chart(obj$rt, lang = lang), height = 200)
+    shiny::renderPlot(
+      episodic_ui_rt_chart(obj$rt, lang = lang, accent = episodic_nav_accent("outbreaks")),
+      height = 200
+    )
   )
 }
 
@@ -840,7 +846,8 @@ episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       aside = episodic_tr("panel.geo.aside", lang = lang)
     ))
   }
-  map_chart <- episodic_ui_geo_map_chart(obj$concentration$rows)
+  accent <- episodic_nav_accent("outbreaks")
+  map_chart <- episodic_ui_geo_map_chart(obj$concentration$rows, accent = accent)
   # A second, uncropped map alongside the detail one: the cropped view
   # is deliberately tight around the cases (see panel.geo.map_note), which
   # is exactly what throws away where in the wider region that tight
@@ -848,7 +855,7 @@ episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   # rendered - no point showing region-wide context for a fallback bar
   # breakdown.
   context_chart <- if (!is.null(map_chart)) {
-    episodic_ui_geo_map_chart(obj$concentration$rows, crop = FALSE)
+    episodic_ui_geo_map_chart(obj$concentration$rows, crop = FALSE, accent = accent)
   }
   # A broken chart-rendering environment (see episodic_graphics_probe())
   # cannot draw the map at all - fall back to the bar breakdown exactly as
