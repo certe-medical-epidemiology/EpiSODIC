@@ -106,16 +106,6 @@ episodic_app_nav_group <- function(view) {
 episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
   resolved_lang <- episodic_lang(lang)
-  # Appended to every static asset this function links rather than left
-  # to the browser's own cache heuristics: `www/episodic.css` is the same
-  # URL across every run of the same install, so a browser that already
-  # cached it keeps serving those bytes until something about the URL
-  # changes - which an R restart only achieves by accident, when
-  # `episodic_run_app()` happens to bind a new port. Tying the query
-  # string to the installed version ties the cache lifetime to a release
-  # instead: an upgrade is guaranteed a fresh fetch, and two requests
-  # against the same install still share one cached copy.
-  asset_version <- as.character(utils::packageVersion("EpiSODIC"))
 
   bslib::page_fluid(
     theme = bslib::bs_theme(version = 5),
@@ -194,14 +184,20 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       },
       shiny::tags$link(
         rel = "stylesheet",
-        href = paste0("www/episodic.css?v=", asset_version)
+        href = paste0(
+          "www/episodic.css?v=",
+          episodic_app_asset_version("episodic.css")
+        )
       ),
       shiny::tags$style(episodic_app_palette_css(pal)),
       # All navigation behaviour, in one cached file rather than in a
       # handful of <script> blocks rebuilt into the page on every render
       # and an `onclick` attribute on every element. See the file's own
       # header for the rule it holds to.
-      shiny::tags$script(src = paste0("www/episodic-nav.js?v=", asset_version))
+      shiny::tags$script(src = paste0(
+        "www/episodic-nav.js?v=",
+        episodic_app_asset_version("episodic-nav.js")
+      ))
     ),
     shiny::tags$div(
       class = "episodic-shell",
@@ -442,4 +438,35 @@ episodic_app_palette_css <- function(pal) {
     character(1)
   )
   paste0(":root {\n", paste(vars, collapse = "\n"), "\n}")
+}
+
+#' Cache-busting query string for one file under `inst/app/www`
+#'
+#' `www/episodic.css` and `www/episodic-nav.js` are the same URL across
+#' every request against the same running instance, so a browser that
+#' already cached one keeps serving those bytes until something about
+#' the URL itself changes. A version query string ties that to a
+#' release, but a package reinstall is not the only time these files'
+#' actual bytes change - an edit during development does too, with the
+#' installed version left exactly where it was - so the key here is the
+#' file's own modification time instead, read from wherever
+#' `episodic_run_app()`'s `addResourcePath()` call points `www/` at:
+#' the installed copy normally, or the source tree itself under
+#' `devtools::load_all()`. Either way, this is the same file whose bytes
+#' a browser would actually fetch, so the key changes exactly when they
+#' do - on every edit in development, and on every reinstall for a
+#' release, with no version bump required either way.
+#'
+#' @param filename A file name directly under `inst/app/www`.
+#' @return A short cache-busting string, or the installed package
+#'   version if the file cannot be found (should not happen in a working
+#'   install; a missing asset is not this function's problem to raise).
+#' @keywords internal
+#' @noRd
+episodic_app_asset_version <- function(filename) {
+  path <- system.file("app", "www", filename, package = "EpiSODIC")
+  if (!nzchar(path) || !file.exists(path)) {
+    return(as.character(utils::packageVersion("EpiSODIC")))
+  }
+  as.character(as.integer(file.mtime(path)))
 }
