@@ -422,13 +422,22 @@ episodic_ui_chip_link <- function(text,
 #' @noRd
 episodic_ui_cluster_link <- function(text,
                                      cluster_id,
+                                     scale = "outbreak",
                                      lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   shiny::tags$span(
     class = "episodic-cluster-link",
     tabindex = "0",
     role = "link",
-    title = episodic_tr("cluster.open_hint", lang = lang),
-    `data-episodic-outbreak` = as.integer(cluster_id),
+    title = episodic_tr(
+      if (identical(scale, "epidemic")) "epidemic.open_hint" else "cluster.open_hint",
+      lang = lang
+    ),
+    `data-episodic-outbreak` = if (!identical(scale, "epidemic")) {
+      as.integer(cluster_id)
+    },
+    `data-episodic-epidemic` = if (identical(scale, "epidemic")) {
+      as.integer(cluster_id)
+    },
     text
   )
 }

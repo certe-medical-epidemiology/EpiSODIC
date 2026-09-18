@@ -207,11 +207,6 @@ test_that("a row's id prefix follows its own level, not an assumption from the c
 })
 
 test_that("a cluster table mixing outbreak- and epidemic-scale rows labels each one correctly", {
-  # A table of clusters is not one scale just because most rows are - the
-  # Pathogen screen, the Archive and the dossier's related/similar panels
-  # can all mix outbreak- and epidemic-scale rows in one table, and both
-  # scales share one cluster_id sequence (see episodic_object_ref()), so
-  # a wrong prefix here would name a different real object.
   clusters <- cluster_table_frame()
   clusters$level <- c("pathogen_ward", "pathogen_province", "pathogen_region")
   html <- as.character(episodic_ui_cluster_table(clusters, lang = "en"))
@@ -220,6 +215,35 @@ test_that("a cluster table mixing outbreak- and epidemic-scale rows labels each 
   expect_true(grepl(">E-13<", html, fixed = TRUE))
   expect_false(grepl(">O-12<", html, fixed = TRUE))
   expect_false(grepl(">O-13<", html, fixed = TRUE))
+})
+
+test_that("epidemic-scale rows carry data-episodic-epidemic, outbreak-scale rows carry data-episodic-outbreak", {
+  ob_row <- as.character(episodic_ui_cluster_row(
+    10L,
+    "pathogen_ward",
+    shiny::tags$td("x"),
+    lang = "en"
+  ))
+  expect_true(grepl('data-episodic-outbreak="10"', ob_row, fixed = TRUE))
+  expect_false(grepl("data-episodic-epidemic", ob_row, fixed = TRUE))
+
+  ep_row <- as.character(episodic_ui_cluster_row(
+    10L,
+    "pathogen_region",
+    shiny::tags$td("x"),
+    lang = "en"
+  ))
+  expect_true(grepl('data-episodic-epidemic="10"', ep_row, fixed = TRUE))
+  expect_false(grepl("data-episodic-outbreak", ep_row, fixed = TRUE))
+
+  ep_link <- as.character(episodic_ui_cluster_link(
+    "E-10",
+    10L,
+    scale = "epidemic",
+    lang = "en"
+  ))
+  expect_true(grepl('data-episodic-epidemic="10"', ep_link, fixed = TRUE))
+  expect_false(grepl("data-episodic-outbreak", ep_link, fixed = TRUE))
 })
 
 test_that("a cluster that no longer stands on its own says so instead of dead-linking", {

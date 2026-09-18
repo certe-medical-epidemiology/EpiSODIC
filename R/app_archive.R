@@ -216,6 +216,7 @@ episodic_ui_activity_screen <- function(activity,
                   episodic_ui_cluster_link(
                     row$target,
                     row$target_cluster_id,
+                    scale = row$target_scale %||% "outbreak",
                     lang = lang
                   )
                 } else {

@@ -712,12 +712,10 @@ episodic_db_migrations <- function() {
         }
       }
 
-      # Extend the verdict CHECK on episodic_assessment_event. SQLite
-      # cannot ALTER a CHECK constraint, but the new values are a strict
-      # superset, so existing rows remain valid and new values are only
-      # checked by the application layer until a fresh database carries
-      # the updated CHECK from schema.sql. MariaDB can MODIFY the
-      # column in place.
+      # Extend the verdict CHECK on episodic_assessment_event to
+      # include the three declaration verdicts. SQLite cannot ALTER a
+      # CHECK constraint, so the table is recreated with the extended
+      # one (create-copy-drop-rename). MariaDB can MODIFY in place.
       if (dialect == "mariadb") {
         DBI::dbExecute(
           con,
@@ -729,6 +727,38 @@ episodic_db_migrations <- function() {
             "'season_started', 'season_not_yet', 'season_ended'))"
           )
         )
+      } else {
+        DBI::dbExecute(con, paste0(
+          "CREATE TABLE episodic_assessment_event_new (\n",
+          "  event_id       INTEGER PRIMARY KEY AUTOINCREMENT,\n",
+          "  cluster_id     INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),\n",
+          "  user_id        INTEGER NOT NULL REFERENCES episodic_app_user(user_id),\n",
+          "  created_at     TEXT NOT NULL,\n",
+          "  verdict        TEXT CHECK (verdict IS NULL OR verdict IN (\n",
+          "                   'artefact', 'expected_variation', 'cluster_not_yet',\n",
+          "                   'possible_epidemic', 'confirmed_epidemic',\n",
+          "                   'season_started', 'season_not_yet', 'season_ended')),\n",
+          "  rationale      TEXT NOT NULL,\n",
+          "  wpg_notifiable INTEGER CHECK (wpg_notifiable IS NULL OR wpg_notifiable IN (0, 1)),\n",
+          "  ggd_informed   INTEGER CHECK (ggd_informed IS NULL OR ggd_informed IN (0, 1)),\n",
+          "  ggd_note       TEXT,\n",
+          "  snooze_until   TEXT,\n",
+          "  supersedes     INTEGER REFERENCES episodic_assessment_event_new(event_id)\n",
+          ")"
+        ))
+        DBI::dbExecute(con, paste0(
+          "INSERT INTO episodic_assessment_event_new ",
+          "SELECT * FROM episodic_assessment_event"
+        ))
+        DBI::dbExecute(con, "DROP TABLE episodic_assessment_event")
+        DBI::dbExecute(con, paste0(
+          "ALTER TABLE episodic_assessment_event_new ",
+          "RENAME TO episodic_assessment_event"
+        ))
+        DBI::dbExecute(con, paste0(
+          "CREATE INDEX idx_episodic_assessment_event_cluster ",
+          "ON episodic_assessment_event(cluster_id)"
+        ))
       }
 
       invisible(NULL)

@@ -1347,7 +1347,9 @@ episodic_run_cron_body <- function(con,
     )
 
     # Write the seasonal satellite for newly opened epidemic clusters
-    # where MEM was among the detectors.
+    # where MEM was among the detectors that produced that specific
+    # cluster. A Farrington-only cluster at the same stream has no
+    # season and must not carry one.
     if (
       identical(stream_scale, "epidemic") &&
         length(reconcile_result$new_cluster_ids) > 0
@@ -1359,29 +1361,39 @@ episodic_run_cron_body <- function(con,
           simplifyVector = FALSE
         )
         for (new_id in reconcile_result$new_cluster_ids) {
-          episodic_db_epidemic_season_insert(
+          linked <- DBI::dbGetQuery(
             con,
-            cluster_id = new_id,
-            season_label = mem_params$season %||% NA,
-            anchor_week = mem_params$anchor_week,
-            onset_week_start = mem_dets$first_day[nrow(mem_dets)],
-            pre_epidemic_threshold = as.numeric(
-              mem_dets$upperbound[nrow(mem_dets)]
+            paste0(
+              "SELECT COUNT(*) AS n FROM episodic_detection ",
+              "WHERE cluster_id = ? AND detector = 'mem'"
             ),
-            post_epidemic_threshold = as.numeric(
-              mem_params$post_epidemic_threshold
-            ),
-            intensity_medium = as.numeric(
-              mem_params$intensity_medium %||% NA
-            ),
-            intensity_high = as.numeric(
-              mem_params$intensity_high %||% NA
-            ),
-            intensity_very_high = as.numeric(
-              mem_params$intensity_very_high %||% NA
-            ),
-            seasons_used = mem_params$seasons_used %||% NA
+            params = list(new_id)
           )
+          if (linked$n > 0) {
+            episodic_db_epidemic_season_insert(
+              con,
+              cluster_id = new_id,
+              season_label = mem_params$season %||% NA,
+              anchor_week = mem_params$anchor_week,
+              onset_week_start = mem_dets$first_day[nrow(mem_dets)],
+              pre_epidemic_threshold = as.numeric(
+                mem_dets$upperbound[nrow(mem_dets)]
+              ),
+              post_epidemic_threshold = as.numeric(
+                mem_params$post_epidemic_threshold
+              ),
+              intensity_medium = as.numeric(
+                mem_params$intensity_medium %||% NA
+              ),
+              intensity_high = as.numeric(
+                mem_params$intensity_high %||% NA
+              ),
+              intensity_very_high = as.numeric(
+                mem_params$intensity_very_high %||% NA
+              ),
+              seasons_used = mem_params$seasons_used %||% NA
+            )
+          }
         }
       }
     }
@@ -1579,9 +1591,11 @@ episodic_cases_for_stream <- function(cases,
 
 #' Does an outbreak's geography nest inside an epidemic's?
 #'
-#' An L5 (region) epidemic covers the whole catchment, so every outbreak
-#' nests. An L4 (province) epidemic covers one province; the outbreak
-#' nests if its cases resolve to the same province code.
+#' Resolved generically via `episodic_case_region_code()` at the
+#' epidemic's own level, so any configured epidemic level works: L5
+#' (region) returns the catchment code for every case, so every
+#' outbreak nests; L4 (province) derives a province and compares; an
+#' L3 area would derive an area code the same way.
 #'
 #' @param outbreak One row from `episodic_db_open_outbreaks()`.
 #' @param epidemic One row from `episodic_db_open_epidemics()`.
@@ -1591,22 +1605,16 @@ episodic_cases_for_stream <- function(cases,
 #' @keywords internal
 #' @noRd
 episodic_geography_nests <- function(outbreak, epidemic, cases, geography) {
-  if (epidemic$level == "pathogen_region") {
-    return(TRUE)
-  }
-  if (epidemic$level != "pathogen_province") {
-    return(FALSE)
-  }
   ob_cases <- episodic_cases_for_stream(cases, outbreak, geography)
   if (nrow(ob_cases) == 0) {
     return(FALSE)
   }
-  province_codes <- episodic_case_region_code(
+  codes <- episodic_case_region_code(
     ob_cases,
-    "pathogen_province",
+    epidemic$level,
     geography = geography
   )
-  any(!is.na(province_codes) & province_codes == epidemic$region_code)
+  any(!is.na(codes) & codes == epidemic$region_code)
 }
 
 #' Link open outbreaks to open epidemics they occur during

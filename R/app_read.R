@@ -1094,6 +1094,23 @@ episodic_app_cluster_viewable <- function(con, cluster_id) {
   nrow(found) == 1 && is.na(found$merged_into[1])
 }
 
+#' The scale of a cluster
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A single cluster id.
+#' @return `"outbreak"` or `"epidemic"`, or `"outbreak"` when the
+#'   cluster does not exist.
+#' @keywords internal
+#' @noRd
+episodic_app_cluster_scale <- function(con, cluster_id) {
+  found <- DBI::dbGetQuery(
+    con,
+    "SELECT scale FROM episodic_cluster WHERE cluster_id = ?",
+    params = list(cluster_id)
+  )
+  if (nrow(found) == 0) "outbreak" else found$scale[1]
+}
+
 #' The date the database's case data is current as of
 #'
 #' Every "how recent is this" judgement in the app - which trailing days

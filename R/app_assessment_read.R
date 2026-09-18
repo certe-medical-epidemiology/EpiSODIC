@@ -462,6 +462,10 @@ episodic_app_activity_log <- function(con,
     streams$stream_id
   )]
   cluster_scale <- clusters$scale
+  cluster_target_scale <- function(cluster_ids) {
+    idx <- match(cluster_ids, clusters$cluster_id)
+    ifelse(is.na(idx), NA_character_, cluster_scale[idx])
+  }
   cluster_target <- function(cluster_ids) {
     idx <- match(cluster_ids, clusters$cluster_id)
     pathogens <- cluster_pathogen[idx]
@@ -508,6 +512,7 @@ episodic_app_activity_log <- function(con,
       ),
       target = cluster_target(events$cluster_id),
       target_cluster_id = as.integer(events$cluster_id),
+      target_scale = cluster_target_scale(events$cluster_id),
       detail = NA_character_,
       category = "assessment",
       is_system = FALSE,
@@ -537,6 +542,7 @@ episodic_app_activity_log <- function(con,
       action = episodic_tr("activity.action_closed", lang = lang),
       target = cluster_target(states$cluster_id),
       target_cluster_id = as.integer(states$cluster_id),
+      target_scale = cluster_target_scale(states$cluster_id),
       detail = NA_character_,
       category = "closure",
       is_system = FALSE,
@@ -570,6 +576,7 @@ episodic_app_activity_log <- function(con,
         character(1)
       ),
       target_cluster_id = NA_integer_,
+      target_scale = NA_character_,
       detail = NA_character_,
       category = "mute",
       is_system = FALSE,
@@ -604,6 +611,7 @@ episodic_app_activity_log <- function(con,
       action = episodic_tr("activity.action_login", lang = lang),
       target = NA_character_,
       target_cluster_id = NA_integer_,
+      target_scale = NA_character_,
       detail = NA_character_,
       category = "signin",
       is_system = FALSE,
@@ -643,6 +651,7 @@ episodic_app_activity_log <- function(con,
       action = episodic_tr("activity.action_login_failed", lang = lang),
       target = failures$username,
       target_cluster_id = NA_integer_,
+      target_scale = NA_character_,
       detail = vapply(
         failures$reason,
         function(r) {
@@ -673,6 +682,7 @@ episodic_app_activity_log <- function(con,
       ),
       target = runs$host,
       target_cluster_id = NA_integer_,
+      target_scale = NA_character_,
       detail = vapply(
         seq_len(nrow(runs)),
         function(i) episodic_app_run_detail(runs[i, ], lang),
@@ -692,6 +702,7 @@ episodic_app_activity_log <- function(con,
       action = character(0),
       target = character(0),
       target_cluster_id = integer(0),
+      target_scale = character(0),
       detail = character(0),
       category = character(0),
       is_system = logical(0),

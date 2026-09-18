@@ -236,15 +236,25 @@ episodic_ui_cluster_row <- function(cluster_id,
     ))
   }
 
+  row_scale <- if (level_or_scale %in% c("outbreak", "epidemic")) {
+    level_or_scale
+  } else {
+    episodic_scale_for_level(level_or_scale)
+  }
+
   shiny::tags$tr(
     class = "episodic-row-link",
     tabindex = "0",
-    title = episodic_tr("cluster.open_hint", lang = lang),
-    # Click and Enter/Space both reach `episodic-nav.js`'s delegated
-    # listeners from here. A table of a hundred rows therefore carries a
-    # hundred short attributes rather than a hundred copies of the same
-    # two lines of JavaScript.
-    `data-episodic-outbreak` = as.integer(cluster_id),
+    title = episodic_tr(
+      if (identical(row_scale, "epidemic")) "epidemic.open_hint" else "cluster.open_hint",
+      lang = lang
+    ),
+    `data-episodic-outbreak` = if (!identical(row_scale, "epidemic")) {
+      as.integer(cluster_id)
+    },
+    `data-episodic-epidemic` = if (identical(row_scale, "epidemic")) {
+      as.integer(cluster_id)
+    },
     shiny::tags$td(
       class = "episodic-cell-id",
       shiny::tags$span(class = "episodic-id-link", ref)

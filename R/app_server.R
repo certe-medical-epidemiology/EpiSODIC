@@ -132,15 +132,17 @@ episodic_app_server_factory <- function(db_path,
     # observer above will leave it alone whichever order the two land in.
     shiny::observeEvent(input$open_cluster, {
       requested <- as.integer(input$open_cluster)
-      # An id that names nothing viewable is ignored rather than
-      # selected: `output$dossier_pane` has no empty state for a cluster
-      # that is not there, and a chip pointing at one merged away since
-      # the page was drawn should leave the screen as it is.
       if (!episodic_app_cluster_viewable(con, requested)) {
         return(invisible(NULL))
       }
-      selected_cluster_id(requested)
-      view("outbreaks")
+      cluster_scale <- episodic_app_cluster_scale(con, requested)
+      if (identical(cluster_scale, "epidemic")) {
+        selected_epidemic_id(requested)
+        view("epidemics")
+      } else {
+        selected_cluster_id(requested)
+        view("outbreaks")
+      }
     })
 
     # The rail header's open-by-number box. Unlike every other way a
@@ -153,9 +155,6 @@ episodic_app_server_factory <- function(db_path,
       requested <- suppressWarnings(as.integer(input$rail_open_cluster))
       if (is.na(requested) || !episodic_app_cluster_viewable(con, requested)) {
         shiny::showNotification(
-          # As typed, ungrouped: a cluster number is an identifier, not
-          # a quantity, and is written the way it is quoted everywhere
-          # else in the app.
           episodic_tr(
             "rail.open_not_found",
             ref = episodic_tr(
@@ -169,8 +168,14 @@ episodic_app_server_factory <- function(db_path,
         )
         return(invisible(NULL))
       }
-      selected_cluster_id(requested)
-      view("outbreaks")
+      cluster_scale <- episodic_app_cluster_scale(con, requested)
+      if (identical(cluster_scale, "epidemic")) {
+        selected_epidemic_id(requested)
+        view("epidemics")
+      } else {
+        selected_cluster_id(requested)
+        view("outbreaks")
+      }
     })
 
     # The same deep link from outside the app: `?cluster=123` opens that
@@ -199,8 +204,14 @@ episodic_app_server_factory <- function(db_path,
         if (!episodic_app_cluster_viewable(con, requested)) {
           return()
         }
-        selected_cluster_id(requested)
-        view("outbreaks")
+        cluster_scale <- episodic_app_cluster_scale(con, requested)
+        if (identical(cluster_scale, "epidemic")) {
+          selected_epidemic_id(requested)
+          view("epidemics")
+        } else {
+          selected_cluster_id(requested)
+          view("outbreaks")
+        }
       },
       once = TRUE
     )
