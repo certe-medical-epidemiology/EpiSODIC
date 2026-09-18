@@ -26,7 +26,7 @@
 - The classification form and the notes panel namespace their element ids, so both surveillance screens can carry one
 - An outbreak's "Linked to" chips cover the outbreak scale only; the epidemic it ran during is a "During" chip instead
 - The confirmed-outbreak classification's explanation no longer names one scale while its label names the other
-- The mobile pane-switcher's active tab, the recalculating spinner, the Outbreaks screen's recommendation box, and the epi curve/trend/Rt/map charts now read the current nav section's own colour (`episodic_nav_accent()`) instead of always primary; the MEM threshold chart and the age/sex pyramid keep their own colour-coding unchanged, and buttons and chips are untouched
+- The mobile pane-switcher's active tab, the recalculating spinner, the Outbreaks screen's recommendation box, and the epi curve/trend/Rt/map/weekly-cases charts now read the current nav section's own colour (`episodic_nav_accent()`) instead of always primary; the Pathogens screen's weekly-cases chart and the age/sex pyramid keep their own colour-coding unchanged, since the former's bars would otherwise clash with its own MEM threshold lines, and buttons and chips are untouched
 
 ## Fixed
 

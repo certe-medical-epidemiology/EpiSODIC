@@ -395,7 +395,12 @@ episodic_ui_epidemic_curve_panel <- function(obj,
     episodic_tr("epidemics.panel.curve.title", lang = lang),
     note = shiny::HTML(note),
     shiny::renderPlot(
-      episodic_ui_pathogen_curve_chart(obj$weekly, obj$thresholds, lang = lang),
+      episodic_ui_pathogen_curve_chart(
+        obj$weekly,
+        obj$thresholds,
+        lang = lang,
+        accent = episodic_nav_accent("epidemics")
+      ),
       height = 300
     )
   )

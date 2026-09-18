@@ -854,13 +854,24 @@ episodic_ui_denominator_chart <- function(series,
 #' @param thresholds `episodic_mem_thresholds_for_season()`'s output, or
 #'   `NULL` to draw the bars alone.
 #' @param lang Language for labels.
+#' @param accent Fill colour for the bars. Defaults to the palette's
+#'   `primary`. A caller passing `thresholds` should think twice before
+#'   passing `episodic_nav_accent("pathogens")` here too: the intensity
+#'   bands in `episodic_mem_threshold_lines()` are drawn in
+#'   `warning_dark`/`danger`/`danger_dark`, so a danger-coloured bar
+#'   would sit on top of a same-coloured "very high" threshold line and
+#'   the two would stop reading as separate marks. `episodic_nav_accent(
+#'   "epidemics")` (success/green) has no such clash and is what the
+#'   Epidemics screen passes.
 #' @return A [ggplot2::ggplot] object.
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_curve_chart <- function(weekly,
                                              thresholds = NULL,
-                                             lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+                                             lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                             accent = NULL) {
   pal <- episodic_palette()
+  accent <- accent %||% pal$primary
   # Named rather than assumed. Without the column, `weekly$incomplete`
   # is NULL, `NULL %in% TRUE` is `logical(0)`, and the assignment below
   # fails with "replacement has 0 rows" - an arithmetic complaint about
@@ -884,7 +895,7 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
   ) +
     ggplot2::geom_col(
       ggplot2::aes(alpha = .data$alpha),
-      fill = pal$primary,
+      fill = accent,
       width = 5.5,
       show.legend = FALSE
     ) +
