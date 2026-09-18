@@ -1911,7 +1911,13 @@ dl.episodic-settings dd { margin: 0; }
     text-align: center;
   }
   .episodic-pane-switcher-label {
-    padding: 6px 12px 0;
+    /* Bottom padding, not top: the active-tab underline sits on
+       .episodic-pane-tab's own top border-box edge, immediately below
+       this label, so the split between this padding and the tab's own
+       top padding is what places the line - more here moves it away
+       from the label text, without changing the switcher's total
+       height (the split sums to the same 6px either way). */
+    padding: 0 12px 6px;
     font-size: 0.808rem;
     color: var(--episodic-muted);
     white-space: nowrap;
@@ -1924,7 +1930,12 @@ dl.episodic-settings dd { margin: 0; }
   .episodic-pane-tab {
     flex: 1;
     min-height: 48px;
-    padding: 6px 4px;
+    /* No top padding: the underline (box-shadow on this element's own
+       top edge) sits right at the boundary with the label above it -
+       see that rule's own comment. Keeping the bottom padding is what
+       holds the 48px touch target; min-height, not this padding, sets
+       the button's height. */
+    padding: 0 4px 6px;
     border: none;
     background: transparent;
     color: var(--episodic-muted);

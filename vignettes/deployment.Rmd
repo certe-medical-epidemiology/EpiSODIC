@@ -333,6 +333,16 @@ exactly like `episodic_add_user()`'s does, so a systemd unit or
 Docker container can configure everything through environment variables
 alone, with no R code to edit between instances.
 
+### Behind a reverse proxy
+
+The dashboard holds its connection open as a WebSocket, not a sequence of
+ordinary HTTP requests, so a proxy in front of it needs the `Upgrade`
+handshake forwarded, not only `/`. Give that connection a generous idle
+timeout too: an epidemiologist reading one dossier for minutes sends
+almost nothing over the socket in the meantime, and a timeout sized for
+ordinary HTTP traffic can drop a quiet session and grey out the page
+while the R process behind it is still running.
+
 ## Custom report templates
 
 `episodic_report_render()` renders the shipped `r EpiSODIC:::doc_system_file("inst/report/episodic_default_report.qmd")`
