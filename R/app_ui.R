@@ -124,14 +124,36 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       # left-to-right layout for as long as it took to load. See
       # `episodic_lang_dir()` and the "Right-to-left" section of
       # episodic.css.
+      #
+      # The same block also appends `viewport-fit=cover` to the viewport
+      # meta tag Shiny's own bootstrap dependency injects (it ships
+      # without one), rather than adding a second `<meta name="viewport">`
+      # of our own: two such tags in one document leave which one wins to
+      # the browser, where a plain edit of the existing element does not.
+      # `viewport-fit=cover` is what lets the page draw under the
+      # notch/status-bar safe area at all - without it, every
+      # `env(safe-area-inset-*)` in episodic.css (see the mobile pane
+      # switcher's bottom padding) resolves to zero on an iPhone, not the
+      # real inset.
       shiny::tags$script(shiny::HTML(sprintf(
         paste0(
           "document.documentElement.setAttribute('lang', '%s');",
-          "document.documentElement.setAttribute('dir', '%s');"
+          "document.documentElement.setAttribute('dir', '%s');",
+          "var vp = document.querySelector('meta[name=\"viewport\"]');",
+          "if (vp && vp.content.indexOf('viewport-fit') === -1) {",
+          "vp.content += ', viewport-fit=cover';",
+          "}"
         ),
         resolved_lang,
         episodic_lang_dir(resolved_lang)
       ))),
+      # Tints the browser's own chrome (Safari's toolbar, Android
+      # Chrome's) to the header's colour, so it reads as part of the app
+      # rather than a white bar Safari drew on top of it. Paired with
+      # `html`'s own background in episodic.css: that is what colours the
+      # rubber-band overscroll above the header, which this meta tag does
+      # not reach.
+      shiny::tags$meta(name = "theme-color", content = pal$primary_dark),
       # Only fetched when the resolved palette still uses the shipped
       # default font - the moment an instance overrides `font` in its
       # EPISODIC_STYLE, this Google Fonts request for a face
