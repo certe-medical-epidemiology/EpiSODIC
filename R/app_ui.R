@@ -149,10 +149,7 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       ))),
       # Tints the browser's own chrome (Safari's toolbar, Android
       # Chrome's) to the header's colour, so it reads as part of the app
-      # rather than a white bar Safari drew on top of it. Paired with
-      # `html`'s own background in episodic.css: that is what colours the
-      # rubber-band overscroll above the header, which this meta tag does
-      # not reach.
+      # rather than a white bar Safari drew on top of it.
       shiny::tags$meta(name = "theme-color", content = pal$primary_dark),
       # Only fetched when the resolved palette still uses the shipped
       # default font - the moment an instance overrides `font` in its

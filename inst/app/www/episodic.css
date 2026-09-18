@@ -52,13 +52,6 @@
 
 html {
   font-size: var(--episodic-font-size-base);
-  /* The header, not --episodic-bg: this is what shows in the rubber-band
-     overscroll above the page on a touch browser, and behind the
-     notch/status-bar safe area once viewport-fit=cover is in effect (see
-     the inline script in R/app_ui.R) - both sit above where the header
-     itself has painted, so without this they show through as whatever
-     colour the browser defaults to instead of continuing the header. */
-  background: var(--episodic-primary-dark);
 }
 
 body {
