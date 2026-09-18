@@ -1318,15 +1318,19 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-table tr.episodic-row-link { cursor: pointer; }
 .episodic-table tr.episodic-row-link:hover,
 .episodic-table tr.episodic-row-link:focus {
-  background: var(--episodic-primary-tint);
+  /* --episodic-nav-accent, not a fixed primary: this table is shared
+     by the Pathogen screen, Archive and the dossier's related/similar
+     panels, and a row rendered under a different screen's data-nav
+     picks up that screen's own accent without this rule naming it. */
+  background: color-mix(in srgb, var(--episodic-nav-accent) 18%, var(--episodic-surface));
   outline: none;
 }
 .episodic-table tr.episodic-row-link:focus-visible {
-  outline: 2px solid var(--episodic-primary);
+  outline: 2px solid var(--episodic-nav-accent);
   outline-offset: -2px;
 }
 .episodic-id-link {
-  color: var(--episodic-primary);
+  color: var(--episodic-nav-accent-dark);
   font-weight: 500;
 }
 .episodic-table tr.episodic-row-link:hover .episodic-id-link { text-decoration: underline; }
