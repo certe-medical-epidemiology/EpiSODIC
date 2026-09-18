@@ -449,13 +449,18 @@ episodic_app_palette_css <- function(pal) {
 #' release, but a package reinstall is not the only time these files'
 #' actual bytes change - an edit during development does too, with the
 #' installed version left exactly where it was - so the key here is the
-#' file's own modification time instead, read from wherever
-#' `episodic_run_app()`'s `addResourcePath()` call points `www/` at:
-#' the installed copy normally, or the source tree itself under
-#' `devtools::load_all()`. Either way, this is the same file whose bytes
-#' a browser would actually fetch, so the key changes exactly when they
-#' do - on every edit in development, and on every reinstall for a
-#' release, with no version bump required either way.
+#' file's own content hash instead (`tools::md5sum()`, a base-R
+#' recommended package rather than an added dependency), read from
+#' wherever `episodic_run_app()`'s `addResourcePath()` call points
+#' `www/` at: the installed copy normally, or the source tree itself
+#' under `devtools::load_all()`. Either way, this is the same file whose
+#' bytes a browser would actually fetch, so the key changes exactly when
+#' they do. A modification time would too, but also on every occasion
+#' those bytes are merely *copied* unchanged - `git checkout`,
+#' `R CMD INSTALL`, a Docker `COPY` - which resets a timestamp without
+#' the content it names having moved at all; a hash of a few hundred
+#' kilobytes, read once per new session rather than per asset request,
+#' costs nothing worth avoiding it for.
 #'
 #' @param filename A file name directly under `inst/app/www`.
 #' @return A short cache-busting string, or the installed package
@@ -468,5 +473,5 @@ episodic_app_asset_version <- function(filename) {
   if (!nzchar(path) || !file.exists(path)) {
     return(as.character(utils::packageVersion("EpiSODIC")))
   }
-  as.character(as.integer(file.mtime(path)))
+  unname(tools::md5sum(path))
 }
