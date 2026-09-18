@@ -53,7 +53,7 @@ episodic_ui_archive_screen <- function(archive,
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(
-      style = "font-size:22px;font-weight:600;margin-bottom:4px;",
+      class = "episodic-screen-title",
       episodic_tr("archive.title", lang = lang)
     ),
     shiny::tags$p(
@@ -128,7 +128,7 @@ episodic_ui_activity_screen <- function(activity,
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(
-      style = "font-size:22px;font-weight:600;margin-bottom:4px;",
+      class = "episodic-screen-title",
       episodic_tr("activity.title", lang = lang)
     ),
     shiny::tags$p(

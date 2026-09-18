@@ -888,6 +888,19 @@ dl.episodic-settings dd { margin: 0; }
   padding: 18px 24px 40px;
 }
 
+/* The page-level heading shared by the Pathogens, Streams, Archive,
+   Activity, Performance and Info screens - "Pathogen activity",
+   "Archive", "Info" and so on. In rem like every other size in this
+   file, so it tracks the mobile bump on --episodic-font-size-base
+   (see the < 768px media query below) the same way
+   .episodic-dossier-title already does, rather than sitting fixed
+   while everything rem-based around it grows. */
+.episodic-screen-title {
+  font-size: 1.692rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
 /* Info screen's about block: the logo beside the package's own name,
    version, description and links, rather than stacked above the page's
    own "Info" heading. */

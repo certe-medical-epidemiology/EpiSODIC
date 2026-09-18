@@ -42,7 +42,7 @@ episodic_ui_performance_screen <- function(performance,
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(
-      style = "font-size:22px;font-weight:600;margin-bottom:4px;",
+      class = "episodic-screen-title",
       episodic_tr("performance.title", lang = lang)
     ),
     shiny::tags$p(

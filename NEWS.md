@@ -30,6 +30,7 @@
 ## Fixed
 
 - The shared cluster table (Pathogen screen, Archive, and the dossier's related and similar-clusters panels) always prefixed ids with `O-`; each row now reads its own scale via `episodic_object_ref()`, so an epidemic-scale row reads `E-{id}`
+- Screen titles (Pathogen activity, Archive, Activity, Performance, Info, Streams) were sized in a fixed pixel value and no longer scaled with the mobile font-size bump; a shared rem-based `.episodic-screen-title` class replaces the inline style
 
 
 # EpiSODIC 0.19.0

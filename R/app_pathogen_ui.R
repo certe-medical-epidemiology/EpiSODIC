@@ -34,7 +34,7 @@ episodic_ui_pathogen_screen <- function(screen,
     return(shiny::tags$div(
       class = "episodic-streams-screen",
       shiny::tags$h1(
-        style = "font-size:22px;font-weight:600;margin-bottom:4px;",
+        class = "episodic-screen-title",
         episodic_tr("pathogen.title", lang = lang)
       ),
       shiny::tags$p(
@@ -47,7 +47,7 @@ episodic_ui_pathogen_screen <- function(screen,
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(
-      style = "font-size:22px;font-weight:600;margin-bottom:4px;",
+      class = "episodic-screen-title",
       episodic_tr("pathogen.title", lang = lang)
     ),
     shiny::tags$p(

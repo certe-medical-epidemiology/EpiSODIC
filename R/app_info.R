@@ -145,7 +145,7 @@ episodic_ui_info_screen <- function(con = NULL,
       )
     ),
     shiny::tags$h1(
-      style = "font-size:22px;font-weight:600;margin-bottom:4px;",
+      class = "episodic-screen-title",
       episodic_tr("info.title", lang = lang)
     ),
     shiny::tags$p(
