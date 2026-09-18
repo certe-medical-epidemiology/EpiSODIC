@@ -106,6 +106,16 @@ episodic_app_nav_group <- function(view) {
 episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
   resolved_lang <- episodic_lang(lang)
+  # Appended to every static asset this function links rather than left
+  # to the browser's own cache heuristics: `www/episodic.css` is the same
+  # URL across every run of the same install, so a browser that already
+  # cached it keeps serving those bytes until something about the URL
+  # changes - which an R restart only achieves by accident, when
+  # `episodic_run_app()` happens to bind a new port. Tying the query
+  # string to the installed version ties the cache lifetime to a release
+  # instead: an upgrade is guaranteed a fresh fetch, and two requests
+  # against the same install still share one cached copy.
+  asset_version <- as.character(utils::packageVersion("EpiSODIC"))
 
   bslib::page_fluid(
     theme = bslib::bs_theme(version = 5),
@@ -182,13 +192,16 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
           )
         )
       },
-      shiny::tags$link(rel = "stylesheet", href = "www/episodic.css"),
+      shiny::tags$link(
+        rel = "stylesheet",
+        href = paste0("www/episodic.css?v=", asset_version)
+      ),
       shiny::tags$style(episodic_app_palette_css(pal)),
       # All navigation behaviour, in one cached file rather than in a
       # handful of <script> blocks rebuilt into the page on every render
       # and an `onclick` attribute on every element. See the file's own
       # header for the rule it holds to.
-      shiny::tags$script(src = "www/episodic-nav.js")
+      shiny::tags$script(src = paste0("www/episodic-nav.js?v=", asset_version))
     ),
     shiny::tags$div(
       class = "episodic-shell",

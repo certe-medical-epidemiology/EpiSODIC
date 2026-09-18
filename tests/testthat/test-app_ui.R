@@ -400,7 +400,10 @@ test_that("episodic_app_ui() loads its navigation from one cached script", {
   # <script> blocks rebuilt into the page on every render. What it
   # contains is held in test-app_navigation.R.
   html <- episodic_test_ui_html()
-  expect_true(grepl('src="www/episodic-nav.js"', html, fixed = TRUE))
+  # `?v=<package version>` cache-busts across upgrades (see
+  # episodic_app_ui()'s own asset_version); the fixed src is what this
+  # test cares about, so it checks the prefix rather than an exact match.
+  expect_true(grepl('src="www/episodic-nav.js?v=', html, fixed = TRUE))
   expect_false(grepl("function episodic", html, fixed = TRUE))
 })
 

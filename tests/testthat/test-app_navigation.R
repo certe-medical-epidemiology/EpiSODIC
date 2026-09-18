@@ -575,7 +575,10 @@ test_that("episodic_app_ui() assembles without error in every shipped language",
 
 test_that("the page loads its navigation from one cached file rather than inline scripts", {
   html <- episodic_nav_page("en")
-  expect_true(grepl('src="www/episodic-nav.js"', html, fixed = TRUE))
+  # `?v=<package version>` cache-busts across upgrades (see
+  # episodic_app_ui()'s own asset_version); the fixed src is what this
+  # test cares about, so it checks the prefix rather than an exact match.
+  expect_true(grepl('src="www/episodic-nav.js?v=', html, fixed = TRUE))
   # The only script written into the page is the one thing that has to
   # be true before the first paint: an Arabic reader must not see a
   # left-to-right layout while a file loads.
