@@ -1,7 +1,8 @@
 # Detection and reconciliation
 
-This vignette walks through how a laboratory result becomes a dossier an
-epidemiologist can act on: detection, then reconciliation across runs.
+This vignette walks through how a laboratory result becomes an outbreak
+or epidemic dossier an epidemiologist can act on: detection, scale
+routing, reconciliation, and suppression across runs.
 
 ## The lattice: streams, not one big feed
 
@@ -44,22 +45,39 @@ on - which is what makes suppression (below) meaningful.
   notifiable or exceptionally rare pathogens do not need a second case
   to warrant a look.
 - **`mem`** (the `mem` package’s Moving Epidemic Method) - for organisms
-  flagged `mem_applicable` (influenza, RSV), answering “has the epidemic
+  whose own data show a seasonal pattern (derived automatically, or
+  overridden per pathogen via `mem_mode`), answering “has the epidemic
   started” rather than “are counts elevated”, with pre-/post-epidemic
-  thresholds derived from historical seasons.
+  thresholds derived from historical seasons. The season anchor is
+  derived from a 52-week climatology, so it works in either hemisphere
+  with no configuration. MEM runs at province (L4) and region (L5) by
+  default, configurable via `mem.levels`.
 
 A stream’s own history feeds back into its baseline: a period an
 epidemiologist confirmed as a real epidemic is excluded from what
 `farringtonFlexible()` sees on subsequent runs for that stream, so last
 winter’s outbreak does not silently raise this winter’s threshold.
 
-## Reconciliation: turning detections into clusters
+## Scale routing: outbreaks and epidemics
 
-Detection alone produces a burst of raised signals every run - the same
-underlying cluster would otherwise appear as a new row every single time
-it is still elevated. Reconciliation, run per stream immediately after
-detection inside the same transaction, is what turns that into a small
-number of *persistent* clusters an epidemiologist can actually track:
+A configurable boundary (`scale.epidemic_levels`) splits the lattice
+into two scales. Streams below the boundary produce **outbreaks**
+(localised, L1 to L3), shown on the Outbreaks screen. Streams at or
+above it produce **epidemics** (regional, L4 and L5), shown on the
+Epidemics screen. Each cluster receives its `scale` at creation.
+
+Outbreaks are identified as `O-{id}` and epidemics as `E-{id}`. The two
+are distinct objects from independent sequences, so `O-12` and `E-12`
+are different things.
+
+## Reconciliation: turning detections into outbreaks and epidemics
+
+Detection alone produces a burst of raised signals every run, the same
+underlying outbreak would otherwise appear as a new row every single
+time it is still elevated. Reconciliation, run per stream immediately
+after detection inside the same transaction, is what turns that into a
+small number of *persistent* outbreaks and epidemics an epidemiologist
+can actually track:
 
 1.  Detections from different detectors whose intervals overlap merge
     into one candidate episode.
@@ -69,14 +87,39 @@ number of *persistent* clusters an epidemiologist can actually track:
     the existing one and recomputes its score; multiple matches merge,
     with the oldest surviving and the others’ assessment history
     preserved, never discarded.
-3.  A cluster nobody’s seen a new candidate for this run gets its
+3.  An outbreak nobody has seen a new candidate for gets its
     `runs_since_detected` counter incremented; past a threshold, if it
-    has never been assessed at all, it closes itself automatically - a
-    plain system closure, no verdict attached. A cluster an
+    has never been assessed at all, it closes itself automatically, a
+    plain system closure, no verdict attached. An outbreak an
     epidemiologist has actually classified, whether as noise or as worth
-    watching, is never auto-closed by any verdict of its own - closing
-    it always takes a person’s deliberate decision, from the assessment
+    watching, is never auto-closed by any verdict of its own, closing it
+    always takes a person’s deliberate decision from the assessment
     form’s own closure checkbox.
+
+### Epidemic closure
+
+Seasonal epidemics close automatically when the weekly case count drops
+below the post-epidemic threshold
+(`ended_reason = 'post_epidemic_threshold'`). As a backstop for noisy
+series that never cross cleanly, closure also fires when the evaluated
+week enters the pathogen’s derived trough (`ended_reason = 'trough'`).
+Non-seasonal epidemics close on the same `case_free_days` and
+`stale_open_days` rules as outbreaks.
+
+An epidemic’s identity is preserved across the season anchor rollover: a
+rise that has not been closed keeps its cluster ID when the season label
+changes, and no spurious second epidemic is opened.
+
+### The “during” link
+
+After reconciliation and before suppression, each open outbreak is
+checked against open epidemics for the same pathogen with overlapping
+dates and geographically nested geography. An outbreak that qualifies is
+linked as occurring **during** that epidemic, never **part of** it,
+because claiming a ward outbreak is part of the regional epidemic is a
+transmission claim that cannot be supported without typing data. An
+outbreak can be during more than one epidemic (a province and a region
+epidemic at once).
 
 Because the anchor is the sample date, a late-arriving case can
 legitimately change an already-detected signal retrospectively -
@@ -86,36 +129,46 @@ reconciliation deliberately re-runs over a rolling window, not only
 ## Suppression: one lattice, not five parallel views
 
 Without suppression, one real outbreak would appear as five separate
-clusters - one per level - burying the actual signal in restatements of
+signals, one per level, burying the actual signal in restatements of
 itself. After reconciliation:
 
 - A child cluster suppresses its parent when it accounts for most of the
   parent’s excess (the rise is local; the wider view adds nothing).
 - A parent suppresses its children when the rise is spread across
   several of them with no single dominant one (the rise is diffuse; five
-  separate area-level clusters would just be noise).
-- The suppressed clusters are never discarded - they stay attached as
+  separate area-level outbreaks would be noise).
+- The suppressed clusters are never discarded, they stay attached as
   context, visible on the surviving cluster’s detail screen.
 
-Suppression works within a containment chain - a ward is part of a
-hospital, an area is part of a province is part of the region - and
-deliberately not across the two. The geographic levels group on the
-*patient’s* postcode, so a hospital’s cases sit in no single area; and
-letting a diffuse regional signal suppress a ward outbreak built into it
-would hide the more actionable of the two behind the vaguer one.
+Suppression is continuous across the outbreak/epidemic scale boundary.
+The `pathogen_area` (outbreak) to `pathogen_province` (epidemic) pair
+crosses it, so an area-level outbreak can suppress or be suppressed by a
+province-level epidemic. The geographic levels group on the *patient’s*
+postcode, so a hospital’s cases sit in no single area; and letting a
+diffuse regional signal suppress a ward outbreak built into it would
+hide the more actionable of the two behind the vaguer one.
 
 That leaves clusters which share cases and both stand: a regional
 norovirus rise driven by a ward outbreak and a nursing home is one set
 of cases in three dossiers. Rather than collapse them, the dossier says
-so - each names the others in its header (“Linked to \#123”, which opens
-them) and lists them under Related clusters. Two views of one rise, and
-the epidemiologist is told which is which.
+so, each names the others in its header and lists them under Related
+clusters. Two views of one rise, and the epidemiologist is told which is
+which.
 
 ## Derived state, not a stored status
 
-A cluster’s displayed state (new, assessing, monitoring, ready to close,
-closed, needs reassessment) is *computed*, every time, from its
-classification history, the case-free clock, and whether it changed
-since it was last assessed - never stored and hand-edited. See
-`episodic_derive_state()` for the exact rule and `state_derive.R`’s own
-tests for every transition it covers.
+A cluster’s displayed state (new, assessing, monitoring, closed, needs
+reassessment) is *computed*, every time, from its classification
+history, the case-free clock, and whether it changed since it was last
+assessed, never stored and hand-edited. See `episodic_derive_state()`
+for the exact rule and `state_derive.R`’s own tests for every transition
+it covers.
+
+## Declarations: a human act
+
+MEM’s threshold crossing is a measurement. Declaring the season started
+is a decision with an author, a timestamp and policy consequences across
+multiple hospitals. The system raises the signal; a person declares. An
+epidemiologist records `season_started`, `season_not_yet` or
+`season_ended` through the assessment event stream on the Epidemics
+screen. Nothing in the system writes a declaration automatically.

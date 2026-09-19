@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.19.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.20.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -264,9 +264,9 @@ gets nothing from it anywhere, and the run says on how many of the
 eligible streams it fitted. Lower <code>farrington.b</code> (at
 <code>b: 1</code> it needs 104 weeks) or wait for the history to
 accrue.</li>
-<li>MEM only runs on regional streams, for pathogens flagged
-<code>mem_applicable</code>, and only outside its own pre-epidemic
-threshold.</li>
+<li>MEM runs at province and region streams (configurable via
+<code>mem.levels</code>), for pathogens whose own data show a seasonal
+pattern (or overridden per pathogen via <code>mem_mode</code>).</li>
 </ul>
 <p>If your extract does not run up to today, a run dated today sees a
 catchment that stopped weeks ago. It says so outright when the newest

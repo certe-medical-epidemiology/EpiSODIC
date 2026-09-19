@@ -97,38 +97,40 @@ detection-reproducibility guarantee `EPISODIC_CONFIG`’s hash provides.
 
 ## Accounts
 
-By default the app is **closed**: an anonymous visitor gets a sign-in
-prompt and nothing else. Accounts are never created by users themselves;
-either an `is_admin` account provisions them from the in-app Settings
-screen, or whoever administers the database runs
+By default the app is **open**: an anonymous visitor can read the
+aggregate screens - outbreaks, epidemics, streams, the archive - without
+signing in, and needs an account only for the line list and for writing.
+Accounts are never created by users themselves; either an `is_admin`
+account provisions them from the in-app Settings screen, or whoever
+administers the database runs
 [`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
 at the console. Signing in unlocks everything the account’s role allows,
 patient-level detail (the line list) included, for both roles below.
 
-### Opening the app to anonymous visitors
+### Closing the app to anonymous visitors
 
-An instance already behind network controls that make anonymous
-reachability impossible may prefer to let colleagues read the aggregate
-screens - clusters, streams, the archive - without signing in, leaving
-sign-in needed only for the line list and for writing. Set
-`access.require_login` to `false` in your `EPISODIC_CONFIG` YAML:
+A cluster row names a pathogen, a ward or an institution, and a date
+range; in a small population that combination is often enough to
+identify who, even without the line list. An instance that is reachable
+by anyone other than the colleagues it is meant for - rather than
+sitting behind network controls that already make that impossible -
+should close that gap rather than rely on the open default. Set
+`access.require_login` to `true` in your `EPISODIC_CONFIG` YAML:
 
 ``` yaml
 access:
-  require_login: false
+  require_login: true
 ```
 
-Weigh that deliberately rather than by habit. A cluster row names a
-pathogen, a ward or an institution, and a date range; in a small
-population that combination is often enough to identify who, even
-without the line list. The shipped default is `true` for the same
-reason: a surveillance system distributed to laboratories worldwide has
-to be safe in the state it arrives in, because the deployment that goes
-wrong is the one where nobody read this file.
+With `require_login: false` (the shipped default), an instance is
+already behind network controls that make anonymous reachability
+impossible often enough that closing it too would just be a second
+sign-in nobody needed; weigh the setting deliberately for your own
+deployment rather than leaving it at either value by habit.
 
-With `require_login: true` (the default):
+With `require_login: true`:
 
-An anonymous visitor then gets a sign-in prompt and nothing else: no
+An anonymous visitor gets a sign-in prompt and nothing else: no
 navigation, no status strip, not one row of data. This is enforced on
 the **server**, not in the browser - none of those screens is rendered
 for a session that has not signed in, so nothing they would contain is
@@ -297,7 +299,7 @@ SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS
    AND TABLE_NAME LIKE 'episodic\_%';
 ```
 
-Anything other than 38 means the schema and the server disagree, and the
+Anything other than 42 means the schema and the server disagree, and the
 suite’s own live tests check that same number against a live server on
 every run.
 
@@ -344,6 +346,16 @@ does, so a systemd unit or Docker container can configure everything
 through environment variables alone, with no R code to edit between
 instances.
 
+### Behind a reverse proxy
+
+The dashboard holds its connection open as a WebSocket, not a sequence
+of ordinary HTTP requests, so a proxy in front of it needs the `Upgrade`
+handshake forwarded, not only `/`. Give that connection a generous idle
+timeout too: an epidemiologist reading one dossier for minutes sends
+almost nothing over the socket in the meantime, and a timeout sized for
+ordinary HTTP traffic can drop a quiet session and grey out the page
+while the R process behind it is still running.
+
 ## Custom report templates
 
 [`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md)
@@ -385,7 +397,7 @@ rather than failing when it is absent:
 | Feature | Needs | Fallback |
 |----|----|----|
 | Rt estimation | `EpiEstim` | Panel omitted |
-| MEM seasonal thresholds | `mem` | Detector skipped for `mem_applicable` organisms |
+| MEM seasonal thresholds | `mem` | Detector skipped for pathogens where MEM cannot fit |
 | Outbreak reports | `quarto` R package + the separate Quarto CLI | Render errors clearly instead of silently producing nothing |
 | Choropleth map | `sf` + geographic reference data | Plain bar breakdown by PC value |
 | Notifications | `httr2`, `curl`, `Microsoft365R` + `AzureGraph` + `AzureAuth` (depending on channel) | No alerts; review clusters through the dashboard only |

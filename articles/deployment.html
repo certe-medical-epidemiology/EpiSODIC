@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.19.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.20.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -153,33 +153,35 @@ concerns, never part of the detection-reproducibility guarantee
 <div class="section level2">
 <h2 id="accounts">Accounts<a class="anchor" aria-label="anchor" href="#accounts"></a>
 </h2>
-<p>By default the app is <strong>closed</strong>: an anonymous visitor
-gets a sign-in prompt and nothing else. Accounts are never created by
-users themselves; either an <code>is_admin</code> account provisions
-them from the in-app Settings screen, or whoever administers the
-database runs <code><a href="../reference/episodic_add_user.html">episodic_add_user()</a></code> at the console. Signing
-in unlocks everything the account’s role allows, patient-level detail
-(the line list) included, for both roles below.</p>
+<p>By default the app is <strong>open</strong>: an anonymous visitor can
+read the aggregate screens - outbreaks, epidemics, streams, the archive
+- without signing in, and needs an account only for the line list and
+for writing. Accounts are never created by users themselves; either an
+<code>is_admin</code> account provisions them from the in-app Settings
+screen, or whoever administers the database runs
+<code><a href="../reference/episodic_add_user.html">episodic_add_user()</a></code> at the console. Signing in unlocks
+everything the account’s role allows, patient-level detail (the line
+list) included, for both roles below.</p>
 <div class="section level3">
-<h3 id="opening-the-app-to-anonymous-visitors">Opening the app to anonymous visitors<a class="anchor" aria-label="anchor" href="#opening-the-app-to-anonymous-visitors"></a>
+<h3 id="closing-the-app-to-anonymous-visitors">Closing the app to anonymous visitors<a class="anchor" aria-label="anchor" href="#closing-the-app-to-anonymous-visitors"></a>
 </h3>
-<p>An instance already behind network controls that make anonymous
-reachability impossible may prefer to let colleagues read the aggregate
-screens - clusters, streams, the archive - without signing in, leaving
-sign-in needed only for the line list and for writing. Set
-<code>access.require_login</code> to <code>false</code> in your
+<p>A cluster row names a pathogen, a ward or an institution, and a date
+range; in a small population that combination is often enough to
+identify who, even without the line list. An instance that is reachable
+by anyone other than the colleagues it is meant for - rather than
+sitting behind network controls that already make that impossible -
+should close that gap rather than rely on the open default. Set
+<code>access.require_login</code> to <code>true</code> in your
 <code>EPISODIC_CONFIG</code> YAML:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">access</span><span class="kw">:</span></span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="at">  </span><span class="fu">require_login</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span></code></pre></div>
-<p>Weigh that deliberately rather than by habit. A cluster row names a
-pathogen, a ward or an institution, and a date range; in a small
-population that combination is often enough to identify who, even
-without the line list. The shipped default is <code>true</code> for the
-same reason: a surveillance system distributed to laboratories worldwide
-has to be safe in the state it arrives in, because the deployment that
-goes wrong is the one where nobody read this file.</p>
-<p>With <code>require_login: true</code> (the default):</p>
-<p>An anonymous visitor then gets a sign-in prompt and nothing else: no
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="at">  </span><span class="fu">require_login</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<p>With <code>require_login: false</code> (the shipped default), an
+instance is already behind network controls that make anonymous
+reachability impossible often enough that closing it too would just be a
+second sign-in nobody needed; weigh the setting deliberately for your
+own deployment rather than leaving it at either value by habit.</p>
+<p>With <code>require_login: true</code>:</p>
+<p>An anonymous visitor gets a sign-in prompt and nothing else: no
 navigation, no status strip, not one row of data. This is enforced on
 the <strong>server</strong>, not in the browser - none of those screens
 is rendered for a session that has not signed in, so nothing they would
@@ -344,7 +346,7 @@ had them.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="kw">SELECT</span> <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">FROM</span> information_schema.REFERENTIAL_CONSTRAINTS</span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a> <span class="kw">WHERE</span> CONSTRAINT_SCHEMA <span class="op">=</span> <span class="kw">DATABASE</span>()</span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>   <span class="kw">AND</span> TABLE_NAME <span class="kw">LIKE</span> <span class="st">'episodic\_%'</span>;</span></code></pre></div>
-<p>Anything other than 38 means the schema and the server disagree, and
+<p>Anything other than 42 means the schema and the server disagree, and
 the suite’s own live tests check that same number against a live server
 on every run.</p>
 </div>
@@ -382,6 +384,18 @@ defaults to <code>EPISODIC_DB</code> exactly like
 <code><a href="../reference/episodic_add_user.html">episodic_add_user()</a></code>’s does, so a systemd unit or Docker
 container can configure everything through environment variables alone,
 with no R code to edit between instances.</p>
+<div class="section level3">
+<h3 id="behind-a-reverse-proxy">Behind a reverse proxy<a class="anchor" aria-label="anchor" href="#behind-a-reverse-proxy"></a>
+</h3>
+<p>The dashboard holds its connection open as a WebSocket, not a
+sequence of ordinary HTTP requests, so a proxy in front of it needs the
+<code>Upgrade</code> handshake forwarded, not only <code>/</code>. Give
+that connection a generous idle timeout too: an epidemiologist reading
+one dossier for minutes sends almost nothing over the socket in the
+meantime, and a timeout sized for ordinary HTTP traffic can drop a quiet
+session and grey out the page while the R process behind it is still
+running.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="custom-report-templates">Custom report templates<a class="anchor" aria-label="anchor" href="#custom-report-templates"></a>
@@ -443,7 +457,7 @@ rather than failing when it is absent:</p>
 <tr class="even">
 <td>MEM seasonal thresholds</td>
 <td><code>mem</code></td>
-<td>Detector skipped for <code>mem_applicable</code> organisms</td>
+<td>Detector skipped for pathogens where MEM cannot fit</td>
 </tr>
 <tr class="odd">
 <td>Outbreak reports</td>

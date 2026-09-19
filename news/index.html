@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.19.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.20.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,6 +33,49 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.20.0" id="episodic-0200">EpiSODIC 0.20.0<a class="anchor" aria-label="anchor" href="#episodic-0200"></a></h2>
+<div class="section level3">
+<h3 id="new-0-20-0">New<a class="anchor" aria-label="anchor" href="#new-0-20-0"></a></h3>
+<ul><li>An Epidemics screen with a rail of open epidemics, a dossier with seasonal evidence, and the assessment pane a season is declared in</li>
+<li>The navigation bar carries four links: Outbreaks, Epidemics, Pathogen, Instance</li>
+<li>An outbreak’s dossier header carries a “During E-123” chip for each epidemic it ran during, which opens that epidemic</li>
+<li>The Epidemics screen carries a notes panel and the full assessment form, so an epidemic is assessed and annotated like any other signal</li>
+<li>The epidemic dossier shows weekly case curve with MEM threshold overlay, tests and positivity, contributing institutions with concentration, and linked outbreaks</li>
+<li>The Clusters rail and Performance screen filter to outbreaks only (L1-L3)</li>
+<li>Epidemiologists can record seasonal declarations (<code>season_started</code>, <code>season_not_yet</code>, <code>season_ended</code>) on seasonal epidemics</li>
+<li>Cluster references render as <code>O-{id}</code> for outbreaks and <code>E-{id}</code> for epidemics, uniform across all eight languages</li>
+<li>
+<code>episodic_object_ref()</code> helper renders the scale-aware reference from either a scale string or a lattice level</li>
+<li>User-facing “cluster” wording replaced throughout: outbreak-only contexts say “outbreak”, mixed contexts say “outbreaks and epidemics”, detection contexts say “signal”</li>
+<li>Full i18n vocabulary sweep across all eight language files for the outbreak/epidemic terminology</li>
+<li>Report filenames changed from <code>cluster-{id}</code> to <code>outbreak-{id}</code>
+</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-20-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-20-0"></a></h3>
+<ul><li>The Archive is reached from a card on the Instance screen instead of its own link, so the navigation bar fits on a phone width</li>
+<li>
+<code>access.require_login</code> now ships as <code>false</code>: a freshly installed instance reads open, and an operator closes it deliberately</li>
+<li>The Clusters screen is called Outbreaks</li>
+<li>The Epidemics screen holds its three panes in the app shell, like the Outbreaks screen, so its rail keeps its scroll position and gains the phone-tier pane switcher</li>
+<li>The Epidemics rail is the Outbreaks rail’s markup, with more room per row</li>
+<li>The seasonal declaration is offered inside the epidemic’s assessment form rather than as a form of its own, alongside the ordinary classification verdicts</li>
+<li>The classification form and the notes panel namespace their element ids, so both surveillance screens can carry one</li>
+<li>An outbreak’s “Linked to” chips cover the outbreak scale only; the epidemic it ran during is a “During” chip instead</li>
+<li>The confirmed-outbreak classification’s explanation no longer names one scale while its label names the other</li>
+<li>The mobile pane-switcher’s active tab, the recalculating spinner, the Outbreaks screen’s recommendation box, the epi curve/trend/Rt/map/weekly-cases charts, and every cluster table’s row-link colour now read the current nav section’s own colour instead of always primary; the age/sex pyramid keeps its own colour-coding unchanged, and buttons and chips are untouched</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-20-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-20-0"></a></h3>
+<ul><li>The shared cluster table (Pathogen screen, Archive, and the dossier’s related and similar-clusters panels) always prefixed ids with <code>O-</code>; each row now reads its own scale via <code>episodic_object_ref()</code>, so an epidemic-scale row reads <code>E-{id}</code>
+</li>
+<li>Screen titles (Pathogen activity, Archive, Activity, Performance, Info, Streams) were sized in a fixed pixel value and no longer scaled with the mobile font-size bump; a shared rem-based <code>.episodic-screen-title</code> class replaces the inline style</li>
+<li>
+<code>episodic_geography_nests()</code> no longer fails for region-level epidemics after the generic refactoring removed the L5 fast path</li>
+<li>The Pathogens screen’s weekly-cases chart now uses the section accent colour, consistent with the Rt and geo charts on the same screen</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.19.0" id="episodic-0190">EpiSODIC 0.19.0<a class="anchor" aria-label="anchor" href="#episodic-0190"></a></h2>
 <div class="section level3">
 <h3 id="new-0-19-0">New<a class="anchor" aria-label="anchor" href="#new-0-19-0"></a></h3>
@@ -50,6 +93,17 @@
 <li>Schema version 6: <code>mem_mode</code> column on <code>episodic_pathogen_config</code>
 </li>
 <li>Full-year MEM seasons with no NA off-season period</li>
+<li>Schema version 7: <code>scale</code> discriminator on <code>episodic_cluster</code>, <code>episodic_epidemic_season</code> satellite table, <code>episodic_cluster_link</code> relation table, and declaration verdicts on <code>episodic_assessment_event</code>
+</li>
+<li>Configurable scale boundary (<code>scale.epidemic_levels</code>) determines which lattice levels produce epidemics rather than outbreaks</li>
+<li>Verdict labels derive the outbreak/epidemic boundary from configuration rather than a hardcoded constant</li>
+<li>Clusters opened at epidemic-level streams receive <code>scale = 'epidemic'</code>; all others receive <code>scale = 'outbreak'</code>
+</li>
+<li>A seasonal satellite row (<code>episodic_epidemic_season</code>) is written when a new epidemic cluster opens from a MEM detection</li>
+<li>Seasonal epidemics close automatically when the weekly case count drops below the post-epidemic threshold or the evaluation week enters the trough</li>
+<li>Epidemic identity is preserved across the season anchor rollover</li>
+<li>Outbreaks are linked to epidemics they occur during, based on pathogen, time overlap and geographic nesting (<code>episodic_cluster_link</code>)</li>
+<li>Lattice suppression works across the outbreak/epidemic scale boundary</li>
 </ul></div>
 <div class="section level3">
 <h3 id="changed-0-19-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-19-0"></a></h3>
@@ -80,6 +134,10 @@
 <h3 id="fixed-0-19-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-19-0"></a></h3>
 <ul><li>Saving a cluster note that repeats the note already on file no longer records a version in which nothing changed, and an empty note on a cluster that never had one is not recorded at all</li>
 <li>A cluster id that names nothing viewable no longer selects an absent cluster in the dossier</li>
+<li>The epidemic dossier’s weekly curve errored instead of drawing, its weekly counts carrying no completeness flag</li>
+<li>The epidemic dossier’s statistics stacked vertically instead of forming a row, from a class the stylesheet does not draw</li>
+<li>The screen no longer stays behind when a cluster is opened from the Epidemics screen after the reader has returned to a screen the server already believed they were on</li>
+<li>An outbreak’s “during” links no longer name epidemics that lattice suppression has folded into another</li>
 </ul></div>
 </div>
     <div class="section level2">

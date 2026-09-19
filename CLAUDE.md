@@ -4,9 +4,9 @@ EpiSODIC stands for: Epidemiological Signal Observation, Detection,
 Identification, and Classification.
 
 This is an R package that detects aberrations in laboratory-confirmed
-infections, reconciles them into persistent clusters, and gives
-epidemiologists a Shiny dashboard to assess each one, with a full audit
-trail and outbreak reports.
+infections, reconciles them into persistent outbreaks and epidemics, and
+gives epidemiologists a Shiny dashboard to assess each one, with a full
+audit trail and outbreak reports.
 
 ## What this package is for
 
@@ -53,7 +53,7 @@ so after every change:
   piecemeal.
 
 The operator provides case data in a documented format; EpiSODIC handles
-everything from statistical detection through cluster reconciliation to
+everything from statistical detection through reconciliation to
 dashboard presentation and outbreak reporting.
 
 The dashboard and reports are available in English, Arabic, Dutch,
@@ -76,25 +76,25 @@ because those keys say so, not because anything branches on a language
 code. A `format(x, big.mark = ",")` reaching a screen is a bug;
 `episodic_css_pct()` is the one deliberate exception, and it formats a
 machine-read CSS value rather than a number anyone reads. Identifiers
-are not quantities: a cluster id, a page number, a schema version or a
-report version is rendered as-is, never grouped.
+are not quantities: an outbreak or epidemic id (`O-123`, `E-45`), a page
+number, a schema version or a report version is rendered as-is, never
+grouped.
 
 Regional variants are files of their own that carry **only what
 differs** from the language they belong to
 (`episodic_language_variants`): `en-US.json` is a spelling, a date order
 and a name; `es-419.json` is two number marks and a name. Everything
 else is inherited by `episodic_i18n_load()`. They are deliberately not
-copies - `en` and `en-US` differ in three keys out of six hundred and
-seventy-nine, and two copies would have to be kept in step for ever.
-`en` *is* British English and `es` *is* Spain’s Spanish, so
-`en-GB`/`es-ES` are aliases of those files rather than variants of them,
-and a region that is not shipped (`nl-BE`) resolves to its language
-rather than to English. `episodic_lang()` resolves a code,
-`episodic_lang_base()` gives the language a variant belongs to (which is
-what decides RTL and month names), and the four `date.format.*` keys per
-language are why a date reads “7 January 2025” in British English,
-“January 7, 2025” in American, “7. Januar 2025” in German and
-“2025年1月7日” in Chinese.
+copies - `en` and `en-US` differ in seven keys out of seven hundred and
+forty-six, and two copies would have to be kept in step for ever. `en`
+*is* British English and `es` *is* Spain’s Spanish, so `en-GB`/`es-ES`
+are aliases of those files rather than variants of them, and a region
+that is not shipped (`nl-BE`) resolves to its language rather than to
+English. `episodic_lang()` resolves a code, `episodic_lang_base()` gives
+the language a variant belongs to (which is what decides RTL and month
+names), and the four `date.format.*` keys per language are why a date
+reads “7 January 2025” in British English, “January 7, 2025” in
+American, “7. Januar 2025” in German and “2025年1月7日” in Chinese.
 
 The languages themselves have names, in `misc.language.<code>`, one set
 per file in that file’s own language. A message that would otherwise
@@ -111,12 +111,15 @@ given - see `episodic_language_label()` and
       -> episodic_run_cron()          # scheduled detection run
         -> validate + deduplicate
         -> detect (4 detectors, per stream)
-        -> reconcile (match detections to persistent clusters)
+        -> reconcile (match detections to persistent outbreaks/epidemics)
+        -> route on scale (outbreak at L1-L3, epidemic at L4-L5)
         -> score priority
-        -> suppress lattice duplicates
+        -> link outbreaks to concurrent epidemics
+        -> suppress lattice duplicates (continuous across the scale boundary)
         -> notify (if configured)
       -> episodic_run_app()           # Shiny dashboard
-        -> epidemiologist assesses clusters
+        -> epidemiologist assesses outbreaks (Outbreaks screen)
+        -> epidemiologist assesses epidemics and records declarations (Epidemics screen)
         -> outbreak reports rendered
 
 ### Detectors
@@ -161,7 +164,18 @@ one would measure the import rather than the detectors.
 | Farrington | Improved Farrington (surveillance::farringtonFlexible) | `R/detect_farrington.R` |
 | same_place | Rule-based: N cases at one location within K days | `R/detect_same_place.R` |
 | rare_trigger | Single-case alert for curated rare pathogens | `R/detect_rare_trigger.R` |
-| MEM | Moving Epidemic Method seasonal threshold (mem::memmodel) | `R/detect_mem.R` |
+| MEM | Moving Epidemic Method seasonal threshold (mem::memmodel), derived anchor and eligibility | `R/detect_mem.R` |
+
+MEM derives its season anchor and seasonality eligibility from each
+stream’s own data rather than from a per-pathogen configuration. The
+season anchor is the first week of the longest trough run in a 52-week
+climatology, so a southern-hemisphere instance derives a southern anchor
+with no hemisphere setting anywhere. Eligibility is a peak-concentration
+statistic measuring how seasonal the pathogen actually is in this
+population; `mem_mode` on `episodic_pathogen_config` overrides it per
+pathogen (`auto`, `yes`, `no`). Seasons are full-year, 52 or 53 weeks,
+with no off-season gap: every ISO week belongs to exactly one season.
+MEM runs at L4 and L5 (configurable via `mem.levels`), not only at L5.
 
 Each detector’s config section carries `enabled`, shipped `true`, read
 through `episodic_detector_enabled()` inside the detector itself so
@@ -184,10 +198,25 @@ tuple. Levels form a geographic lattice from finest to coarsest:
 - `pathogen_province`
 - `pathogen_region` (coarsest)
 
-Detection runs against every eligible stream independently. After
-detection, lattice suppression removes redundant signals (a
+Detection runs against every eligible stream independently. A
+configurable boundary (`scale.epidemic_levels`, shipped as
+`pathogen_province` and `pathogen_region`) splits the lattice into two
+scales: streams at or above the boundary produce **epidemics**, those
+below it produce **outbreaks**. The `scale` discriminator is set on each
+cluster at creation time from the stream’s level via
+`episodic_scale_for_level()`.
+
+After detection, lattice suppression removes redundant signals (a
 hospital-level cluster that is entirely explained by a ward-level
-cluster in the same hospital).
+cluster in the same hospital). Suppression is continuous across the
+scale boundary, so an outbreak at `pathogen_area` can still suppress or
+be suppressed by an epidemic at `pathogen_province`.
+
+After reconciliation and before suppression, outbreaks are linked to
+concurrent epidemics they occur **during**, defined on pathogen, time
+overlap and geographic nesting, never on case-set containment. The link
+is a table (`episodic_cluster_link`), not a column: an outbreak may be
+during both a province and a region epidemic at once.
 
 Stream keys are SHA-1 hashes of (pathogen, level, institution_id, ward,
 region_code), computed in `R/lattice_stream_key.R`.
@@ -225,10 +254,12 @@ file). Key tables:
 | `episodic_stream` | cron | Surveillance units |
 | `episodic_detection_run` | cron | One row per cron invocation |
 | `episodic_detection` | cron | Individual detector firings |
-| `episodic_cluster` | cron | Persistent clusters (reconciled) |
+| `episodic_cluster` | cron | Persistent outbreaks and epidemics (reconciled); `scale` discriminates the two |
 | `episodic_cluster_case` | cron | Cases assigned to clusters |
 | `episodic_cluster_state` | cron | Derived state (open/closed/stale) |
-| `episodic_assessment_event` | app | Epidemiologist assessments (append-only) |
+| `episodic_epidemic_season` | cron | Seasonal satellite for epidemic clusters with a season (anchor, thresholds, ended_reason) |
+| `episodic_cluster_link` | cron | The “during” relation: which outbreaks occurred during which epidemics |
+| `episodic_assessment_event` | app | Epidemiologist assessments and declarations (append-only) |
 | `episodic_app_user` | app | Dashboard accounts |
 | `episodic_case` | cron | Deduplicated case records |
 | `episodic_institution` | cron | Institution reference data (`institution_key` is a SHA-1 of the operator’s own key, never the key itself) |
@@ -242,6 +273,18 @@ file). Key tables:
 `episodic_detection_run.is_backfill` mark the first run against a
 database and everything it opened - see the Detectors section above for
 what a backfill is and why it is a flag rather than an `origin`.
+
+`episodic_cluster.scale` is `'outbreak'` or `'epidemic'`, set at
+creation from the stream’s level. `episodic_epidemic_season` is a
+satellite keyed to the cluster: a seasonal epidemic carries one row with
+the anchor, thresholds, intensity bands and closure reason; a
+non-seasonal epidemic has no row, and nothing reads a missing row as a
+zero or as “season not ended”. `episodic_cluster_link` records that an
+outbreak occurred during an epidemic, composite-keyed on
+`(outbreak_cluster_id, epidemic_cluster_id)`.
+`episodic_assessment_event.verdict` includes the five original values
+plus `season_started`, `season_not_yet` and `season_ended` for epidemic
+declarations.
 
 Two things the adapter does that are not cosmetic. It **derives
 table-level `FOREIGN KEY` clauses** from the schema’s inline
@@ -300,8 +343,8 @@ additionally contain secrets that must never reach `config_snapshot`.
 
 Key config sections: `reconciliation`, `eligibility`,
 `effect_size_floor`, `same_place`, `farrington`, `mem`, `rare_trigger`,
-`priority_score`, `geography`, `report`, `notifications`, `suppression`,
-`access`.
+`priority_score`, `scale`, `geography`, `report`, `notifications`,
+`suppression`, `access`.
 
 An instance config is validated against the shipped defaults before
 merging (`episodic_config_validate()`): the defaults document the
@@ -352,15 +395,17 @@ caught and logged, never propagated. Implementation split across
 
 Two roles for dashboard access:
 
-- `epidemiologist`: read + write (assess clusters, classify, close,
-  mute, render reports)
+- `epidemiologist`: read + write (assess outbreaks and epidemics,
+  classify, close, mute, record declarations, render reports)
 - `viewer`: read-only (sees everything including patient-level detail,
-  but cannot record assessments)
+  but cannot record assessments or declarations)
 
-`access.require_login` ships as `true`: an instance is closed to
-anonymous visitors unless an operator deliberately opens it.
-`episodic_app_require_login()` fails closed on anything it cannot read
-as `false`.
+`access.require_login` ships as `false`: a freshly installed instance
+reads open, and an operator who wants it closed to anonymous visitors
+sets it explicitly. `episodic_app_require_login()` still fails closed
+(`true`) on anything it cannot read as `false` - a malformed or partial
+config errs toward requiring a sign-in, never toward opening one that
+was not asked for.
 
 Both sign-in outcomes are recorded: a success as a `login` event on the
 account, a refusal in `episodic_app_login_failure` (which of unknown
@@ -386,8 +431,8 @@ at the R console; there is also in-app account management.
       cases_check.R       # episodic_check_cases() validation
       cases_dedup.R       # episode deduplication (via AMR::get_episode)
       cases_load.R        # loading cases into the database
-      reconcile.R         # match detections to persistent clusters, incl. auto-close of stale unassessed clusters
-      reconcile_suppress.R # lattice suppression
+      reconcile.R         # match detections to persistent outbreaks/epidemics, incl. epidemic closure and auto-close of stale unassessed clusters
+      reconcile_suppress.R # lattice suppression (continuous across the outbreak/epidemic scale boundary)
       cluster_manual.R    # episodic_add_manual_cluster() - clusters from other systems
       detect_*.R          # the four detectors
       notify.R            # notification dispatcher and message building
@@ -400,7 +445,8 @@ at the R console; there is also in-app account management.
       app_server.R        # Shiny server
       app_server_notes.R  # wires the cluster notes save button
       app_ui.R            # Shiny UI
-      app_dossier.R       # cluster dossier (the main assessment screen)
+      app_dossier.R       # outbreak dossier (the main assessment screen)
+      app_epidemic_ui.R   # Epidemics screen: rail, dossier, assessment rail
       app_pathogen.R      # pathogen overview panel
       app_charts.R        # reusable chart components
       app_widgets.R       # reusable UI widgets
@@ -422,7 +468,7 @@ at the R console; there is also in-app account management.
       app/                      # Shiny app assets (CSS, JS)
       i18n/                     # translation JSON files (en, nl, de, fr, es, ar, hi, zh)
       report/                   # Quarto report template
-    tests/testthat/             # ~500 test blocks across 47 files
+    tests/testthat/             # test suite across 67 files
     vignettes/                  # 8 vignettes
     data-raw/validation/        # the full detection validation study (never ships)
 
@@ -605,9 +651,9 @@ from index”.
   call and would have been fine moved to Suggests; the `.data` import is
   the one thing forcing the whole package to stay in Imports.
 - Config hash: the keys in `episodic_config_unhashed_sections`
-  (`notifications`, `access`) are stripped before hashing. Any new
-  config section that contains secrets or is operationally irrelevant to
-  detection should be added there.
+  (`notifications`, `access`, `report`) are stripped before hashing. Any
+  new config section that contains secrets or is operationally
+  irrelevant to detection should be added there.
 - Anonymous access: `access.require_login` closes the app to visitors
   who have not signed in. It is enforced server-side, by not rendering -
   `episodic_app_access_granted()` gates every output and every
@@ -649,6 +695,13 @@ for the full reference.
 - Stream keys are deterministic: same (pathogen, level, institution_id,
   ward, region_code) always produces the same SHA-1 key.
 - Cluster IDs are database-assigned (AUTOINCREMENT); cluster identity is
-  the stream + the case-free-days gap logic, not the ID.
+  the stream + the case-free-days gap logic, not the ID. Rendered as
+  `O-{id}` for outbreaks and `E-{id}` for epidemics.
+- The scale boundary is configuration (`scale.epidemic_levels`), not a
+  constant. Changing it changes what a run computes.
+- A seasonal epidemic closes on the post-epidemic threshold or the
+  trough backstop; a non-seasonal epidemic closes on case-free-days. A
+  declaration (season_started, season_not_yet, season_ended) is a human
+  act, never automatic.
 - The app never writes to cron-owned tables; the cron never writes to
   app-owned tables.
