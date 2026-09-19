@@ -9,6 +9,7 @@ episodic_run_cron(
   denominators = NULL,
   institution_activity = NULL,
   episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
+  pathogen_config_path = Sys.getenv("EPISODIC_PATHOGEN_CONFIG", unset = NA),
   db_path = Sys.getenv("EPISODIC_DB"),
   host = Sys.info()[["nodename"]],
   account = Sys.info()[["user"]],
@@ -39,6 +40,14 @@ already hashed and will match nothing. Leave as \code{NULL} (the default)
 if you have none - detection falls back to raw case counts.}
 
 \item{episodic_config_path}{The config path.}
+
+\item{pathogen_config_path}{Path to an operator's own per-pathogen CSV,
+overlaid row-by-row on the shipped
+\code{inst/config/episodic_default_pathogen_config.csv}. Defaults to the
+\code{EPISODIC_PATHOGEN_CONFIG} environment variable; if unset, only the
+shipped defaults are used. Set to a path that does not exist, this
+stops with an error. See \code{vignette("tuning-detection")} for the
+column reference.}
 
 \item{db_path}{Path to the EpiSODIC database: a SQLite file (created
 automatically if it does not exist yet) or a MariaDB/MySQL DSN (see

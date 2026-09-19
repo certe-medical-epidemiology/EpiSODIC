@@ -157,9 +157,9 @@ Key config sections: `reconciliation`, `eligibility`, `effect_size_floor`, `same
 
 An instance config is validated against the shipped defaults before merging (`episodic_config_validate()`): the defaults document the complete valid key set, so an unknown key, a value of the wrong type, or a null where a value is needed stops the run and names the key path. Adding a new key therefore means adding it to `inst/config/episodic_default_config.yaml`, or, if its children are named by the operator (pathogens, channels), to `episodic_config_open_sections`. A setting documented as "set to ~ to disable" must also be listed in `episodic_config_nullable_keys`.
 
-`EPISODIC_CONFIG`, `EPISODIC_STYLE` and `EPISODIC_QUARTO_REPORT` set to a path that does not exist are errors, not fallbacks - the same rule `EPISODIC_PC_PROVINCE_MAP` already followed.
+`EPISODIC_CONFIG`, `EPISODIC_PATHOGEN_CONFIG`, `EPISODIC_STYLE` and `EPISODIC_QUARTO_REPORT` set to a path that does not exist are errors, not fallbacks - the same rule `EPISODIC_PC_PROVINCE_MAP` already followed.
 
-Pathogen-specific parameters (episode length, serial interval, severity weight) live in `inst/config/episodic_default_pathogen_config.csv`.
+Pathogen-specific parameters (episode length, serial interval, severity weight) live in `inst/config/episodic_default_pathogen_config.csv`. An operator's CSV (pointed at by `EPISODIC_PATHOGEN_CONFIG`) overlays row-by-row: for each pathogen the operator lists, non-NA values override the shipped default; pathogens not listed keep their shipped row. Resolved by `episodic_pathogen_config_resolve()` in `R/config.R`.
 
 ### Keys that must agree across feeds
 
@@ -234,7 +234,7 @@ inst/
   i18n/                     # translation JSON files (en, nl, de, fr, es, ar, hi, zh)
   report/                   # Quarto report template
 tests/testthat/             # test suite across 67 files
-vignettes/                  # 8 vignettes
+vignettes/                  # 9 vignettes
 data-raw/validation/        # the full detection validation study (never ships)
 ```
 
@@ -345,6 +345,7 @@ Yet, `_pkgdown.yml` groups every exported topic into a section. When adding a ne
 |---|---|
 | `EPISODIC_DB` | Database path (SQLite) or DSN (MariaDB) |
 | `EPISODIC_CONFIG` | Instance detection + notification config YAML |
+| `EPISODIC_PATHOGEN_CONFIG` | Per-pathogen parameter CSV overlay |
 | `EPISODIC_STYLE` | Instance colour palette YAML |
 | `EPISODIC_LANGUAGE` | Dashboard/report language (en, ar, nl, fr, de, hi, zh, es, or a regional variant: en-US, es-419) |
 | `EPISODIC_GEO_DATA` | Geographic reference data (.rds, sf object) |

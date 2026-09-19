@@ -404,3 +404,126 @@ test_that("episodic_verdict_outbreak_levels() derives from config", {
   expect_false("pathogen_province" %in% levels)
   expect_false("pathogen_region" %in% levels)
 })
+
+# --- Per-pathogen configuration overlay ---
+
+test_that("episodic_pathogen_config_resolve() with no overlay returns shipped defaults", {
+  pc <- episodic_pathogen_config_resolve(NA)
+  expect_true(is.data.frame(pc))
+  expect_true("pathogen" %in% names(pc))
+  expect_true(nrow(pc) > 0)
+  expect_true("MRSA" %in% pc$pathogen)
+})
+
+test_that("episodic_pathogen_config_merge() overrides a single column for one pathogen", {
+  defaults <- data.frame(
+    pathogen = c("A", "B"),
+    severity_weight = c(0.5, 0.8),
+    case_free_days = c(14, 21),
+    stringsAsFactors = FALSE
+  )
+  overlay <- data.frame(
+    pathogen = "A",
+    severity_weight = 0.9,
+    stringsAsFactors = FALSE
+  )
+  merged <- episodic_pathogen_config_merge(defaults, overlay)
+  expect_equal(merged$severity_weight[merged$pathogen == "A"], 0.9)
+  expect_equal(merged$case_free_days[merged$pathogen == "A"], 14)
+  expect_equal(merged$severity_weight[merged$pathogen == "B"], 0.8)
+})
+
+test_that("episodic_pathogen_config_merge() adds a new pathogen from the overlay", {
+  defaults <- data.frame(
+    pathogen = "A",
+    severity_weight = 0.5,
+    stringsAsFactors = FALSE
+  )
+  overlay <- data.frame(
+    pathogen = "NewBug",
+    severity_weight = 0.3,
+    stringsAsFactors = FALSE
+  )
+  merged <- episodic_pathogen_config_merge(defaults, overlay)
+  expect_equal(nrow(merged), 2)
+  expect_true("NewBug" %in% merged$pathogen)
+  expect_equal(merged$severity_weight[merged$pathogen == "NewBug"], 0.3)
+})
+
+test_that("episodic_pathogen_config_merge() preserves defaults for NA cells in the overlay", {
+  defaults <- data.frame(
+    pathogen = "A",
+    severity_weight = 0.5,
+    case_free_days = 14L,
+    stringsAsFactors = FALSE
+  )
+  overlay <- data.frame(
+    pathogen = "A",
+    severity_weight = NA_real_,
+    case_free_days = 21L,
+    stringsAsFactors = FALSE
+  )
+  merged <- episodic_pathogen_config_merge(defaults, overlay)
+  expect_equal(merged$severity_weight, 0.5)
+  expect_equal(merged$case_free_days, 21L)
+})
+
+test_that("episodic_pathogen_config_merge() returns defaults unchanged for an empty overlay", {
+  defaults <- data.frame(
+    pathogen = "A",
+    severity_weight = 0.5,
+    stringsAsFactors = FALSE
+  )
+  merged <- episodic_pathogen_config_merge(defaults, data.frame())
+  expect_equal(merged, defaults)
+})
+
+test_that("episodic_pathogen_config_merge() refuses unknown columns", {
+  defaults <- data.frame(
+    pathogen = "A",
+    severity_weight = 0.5,
+    stringsAsFactors = FALSE
+  )
+  overlay <- data.frame(
+    pathogen = "A",
+    unknown_col = 1,
+    stringsAsFactors = FALSE
+  )
+  expect_error(
+    episodic_pathogen_config_merge(defaults, overlay),
+    "unknown column"
+  )
+})
+
+test_that("episodic_pathogen_config_merge() refuses an overlay without a pathogen column", {
+  defaults <- data.frame(
+    pathogen = "A",
+    severity_weight = 0.5,
+    stringsAsFactors = FALSE
+  )
+  overlay <- data.frame(severity_weight = 0.9, stringsAsFactors = FALSE)
+  expect_error(
+    episodic_pathogen_config_merge(defaults, overlay),
+    "pathogen"
+  )
+})
+
+test_that("episodic_pathogen_config_resolve() refuses a nonexistent path", {
+  expect_error(
+    episodic_pathogen_config_resolve("/no/such/file.csv"),
+    "does not exist"
+  )
+})
+
+test_that("episodic_pathogen_config_resolve() merges an operator CSV over shipped defaults", {
+  overlay_path <- tempfile(fileext = ".csv")
+  on.exit(unlink(overlay_path))
+  utils::write.csv(
+    data.frame(pathogen = "MRSA", severity_weight = 0.99, stringsAsFactors = FALSE),
+    overlay_path,
+    row.names = FALSE
+  )
+  pc <- episodic_pathogen_config_resolve(overlay_path)
+  expect_equal(pc$severity_weight[pc$pathogen == "MRSA"], 0.99)
+  expect_true(nrow(pc) >= 23)
+})

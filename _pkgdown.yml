@@ -43,8 +43,9 @@ articles:
 
 - title: Configure
   desc: >
-    Set up notifications and other operational knobs.
+    Tune detection behaviour and set up notifications.
   contents:
+  - tuning-detection
   - notifications
   - scheduled-reports
 

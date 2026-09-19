@@ -116,6 +116,11 @@
 #'   It may not set any detector's `enabled` key - that is what
 #'   `detectors` is for, and two mechanisms for one setting is one too
 #'   many.
+#' @param pathogen_config Optional per-pathogen overrides: a data frame
+#'   (or a path to a CSV) with a `pathogen` column and any subset of the
+#'   columns from `inst/config/episodic_default_pathogen_config.csv`.
+#'   Merged row-by-row over the shipped defaults the same way
+#'   `EPISODIC_PATHOGEN_CONFIG` is.
 #' @param quiet If `TRUE` (the default), the per-run progress
 #'   [episodic_run_cron()] writes is suppressed; a replay is hundreds of
 #'   lines of it. Warnings and errors are not suppressed.
@@ -166,6 +171,7 @@ episodic_validate_detection <- function(seeds = 1,
                                         outbreak_offsets = NULL,
                                         detectors = episodic_validation_detectors(),
                                         config = NULL,
+                                        pathogen_config = NULL,
                                         quiet = TRUE) {
   seeds <- episodic_validation_check_seeds(seeds)
   episodic_validation_check_threshold(min_recall, "min_recall")
@@ -184,6 +190,11 @@ episodic_validate_detection <- function(seeds = 1,
   resolved <- episodic_config_resolve(config_path)
   config_hash <- episodic_config_hash(resolved)$hash
 
+  pc_path <- episodic_validation_pathogen_config_file(pathogen_config)
+  if (!is.na(pc_path)) {
+    on.exit(unlink(pc_path), add = TRUE)
+  }
+
   last_run <- episodic_validation_last_run_date(end_date)
   run_dates <- seq(
     last_run - 7 * (as.integer(evaluation_weeks) - 1L),
@@ -201,6 +212,7 @@ episodic_validate_detection <- function(seeds = 1,
       outbreaks = outbreaks,
       outbreak_offsets = outbreak_offsets,
       config_path = config_path,
+      pathogen_config_path = pc_path,
       min_recall = min_recall,
       min_precision = min_precision,
       quiet = quiet
@@ -345,6 +357,7 @@ episodic_validation_replicate <- function(seed,
                                           outbreaks,
                                           outbreak_offsets,
                                           config_path,
+                                          pathogen_config_path = NA,
                                           min_recall,
                                           min_precision,
                                           quiet) {
@@ -377,14 +390,10 @@ episodic_validation_replicate <- function(seed,
         cases = extract,
         db_path = db_path,
         episodic_config_path = config_path,
+        pathogen_config_path = pathogen_config_path,
         run_date = run_date,
         host = "validation",
         account = "validation",
-        # Bounded from the very first replay run. A replay measures how
-        # late a detection was, and the first run of one is the first run
-        # on its throwaway database - left to decide for itself it would
-        # report the whole generated baseline at once, and every delay
-        # measured after that would be a delay from an import.
         backfill = FALSE
       )
     }
@@ -687,6 +696,44 @@ episodic_validation_config_file <- function(detectors, config) {
   path <- file.path(directory, "episodic.yaml")
   writeLines(yaml::as.yaml(settings), path)
   path
+}
+
+#' Resolve the `pathogen_config` argument to a temp CSV path (or NA)
+#'
+#' @param pathogen_config `NULL` (no override), a data frame, or a path.
+#' @return `NA` (no override) or the path to a temp CSV.
+#' @keywords internal
+#' @noRd
+episodic_validation_pathogen_config_file <- function(pathogen_config) {
+  if (is.null(pathogen_config)) {
+    return(NA_character_)
+  }
+  if (is.character(pathogen_config) && length(pathogen_config) == 1) {
+    if (!file.exists(pathogen_config)) {
+      stop(
+        "`pathogen_config` points at '",
+        pathogen_config,
+        "', which does not exist.",
+        call. = FALSE
+      )
+    }
+    return(pathogen_config)
+  }
+  if (is.data.frame(pathogen_config)) {
+    if (!"pathogen" %in% names(pathogen_config)) {
+      stop("`pathogen_config` must have a 'pathogen' column.", call. = FALSE)
+    }
+    path <- tempfile(
+      pattern = "episodic-validation-pathogen-config-",
+      fileext = ".csv"
+    )
+    utils::write.csv(pathogen_config, path, row.names = FALSE)
+    return(path)
+  }
+  stop(
+    "`pathogen_config` must be NULL, a data frame, or a path to a CSV.",
+    call. = FALSE
+  )
 }
 
 #' The last run date of a replay: the end of the last complete week

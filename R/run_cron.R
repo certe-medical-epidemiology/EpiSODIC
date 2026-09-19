@@ -234,6 +234,13 @@ episodic_pkg_versions_extended <- function() {
 #'   already hashed and will match nothing. Leave as `NULL` (the default)
 #'   if you have none - detection falls back to raw case counts.
 #' @param episodic_config_path The config path.
+#' @param pathogen_config_path Path to an operator's own per-pathogen CSV,
+#'   overlaid row-by-row on the shipped
+#'   `inst/config/episodic_default_pathogen_config.csv`. Defaults to the
+#'   `EPISODIC_PATHOGEN_CONFIG` environment variable; if unset, only the
+#'   shipped defaults are used. Set to a path that does not exist, this
+#'   stops with an error. See `vignette("tuning-detection")` for the
+#'   column reference.
 #' @param host,account Recorded with the run for audit purposes; default
 #'   to the current machine and account.
 #' @param run_date The date to treat as "today". Defaults to the system
@@ -290,6 +297,7 @@ episodic_run_cron <- function(cases,
                               denominators = NULL,
                               institution_activity = NULL,
                               episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
+                              pathogen_config_path = Sys.getenv("EPISODIC_PATHOGEN_CONFIG", unset = NA),
                               db_path = Sys.getenv("EPISODIC_DB"),
                               host = Sys.info()[["nodename"]],
                               account = Sys.info()[["user"]],
@@ -470,6 +478,7 @@ episodic_run_cron <- function(cases,
         denominators,
         institution_activity,
         run_date,
+        pathogen_config_path = pathogen_config_path,
         backfill = backfill,
         debug = debug
       )
@@ -791,22 +800,17 @@ episodic_run_cron_body <- function(con,
                                    denominators,
                                    institution_activity,
                                    run_date,
+                                   pathogen_config_path = NA,
                                    backfill = NULL,
                                    debug = FALSE) {
   episodic_trace("Loading pathogen configuration")
-  pathogen_config_path <- system.file(
-    "config",
-    "episodic_default_pathogen_config.csv",
-    package = "EpiSODIC"
-  )
-  if (identical(pathogen_config_path, "")) {
-    pathogen_config_path <- file.path("inst", "config", "episodic_default_pathogen_config.csv")
+  pathogen_config <- episodic_pathogen_config_resolve(pathogen_config_path)
+  if (!is.na(pathogen_config_path) && nzchar(pathogen_config_path)) {
+    episodic_trace(
+      "Pathogen configuration overlaid from ",
+      pathogen_config_path
+    )
   }
-  pathogen_config <- utils::read.csv(
-    pathogen_config_path,
-    stringsAsFactors = FALSE,
-    na.strings = c("", "NA")
-  )
   episodic_db_pathogen_config_load(con, pathogen_config)
   episodic_trace(
     "Pathogen configuration loaded (",
