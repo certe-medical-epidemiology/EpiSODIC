@@ -65,6 +65,7 @@ about, so sensitivity cannot be measured that way at all.</p>
 <span>  outbreak_offsets <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  detectors <span class="op">=</span> <span class="fu">episodic_validation_detectors</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  config <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pathogen_config <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  quiet <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -124,6 +125,14 @@ shipped defaults and validated the same way an operator's file is.
 It may not set any detector's <code>enabled</code> key - that is what
 <code>detectors</code> is for, and two mechanisms for one setting is one too
 many.</p></dd>
+
+
+<dt id="arg-pathogen-config">pathogen_config<a class="anchor" aria-label="anchor" href="#arg-pathogen-config"></a></dt>
+<dd><p>Optional per-pathogen overrides: a data frame
+(or a path to a CSV) with a <code>pathogen</code> column and any subset of the
+columns from <code>inst/config/episodic_default_pathogen_config.csv</code>.
+Merged row-by-row over the shipped defaults the same way
+<code>EPISODIC_PATHOGEN_CONFIG</code> is.</p></dd>
 
 
 <dt id="arg-quiet">quiet<a class="anchor" aria-label="anchor" href="#arg-quiet"></a></dt>

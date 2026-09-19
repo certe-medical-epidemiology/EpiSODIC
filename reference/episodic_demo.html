@@ -210,80 +210,80 @@ own extract first, and <a href="episodic_case_data.html">episodic_case_data</a> 
 <span class="r-in"><span><span class="va">db_path</span> <span class="op">&lt;-</span> <span class="fu">episodic_demo</span><span class="op">(</span>launch <span class="op">=</span> <span class="cn">FALSE</span>, cases <span class="op">=</span> <span class="va">cases</span>, denominators <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Running detection as of 2025-03-31, the last day your case data covers.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Creating synthetic cases...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.716 | episodic_run_cron() starting (host=runnervmlun5p, account=runner)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.716 | Resolving configuration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.723 | Configuration resolved (hash eec18d51a9ba)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.723 | Connecting to database</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.724 | No existing database found - creating one</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.753 | Database connected (dialect: sqlite)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.754 | Run 1 started</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.755 | Resolving and checking case data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.771 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.772 | Beginning transaction</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.774 | Loading pathogen configuration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.777 | Pathogen configuration loaded (23 pathogen(s))</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.777 | Loading case data into the database</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.901 | Case data loaded: supplied=419, deduplicated=410, inserted=410</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.902 | Fetching all known cases and institutions</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.905 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.907 | Case history on file spans 2025-01-01 to 2025-03-31, ending 0 day(s) before this run's date (2025-03-31)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.907 | Enumerating lattice streams</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:30.948 | Running same-place detector</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:31.032 | Same-place detector found 6 detection(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:31.033 | Running rare-trigger detector</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:31.038 | Rare-trigger detector found 1 detection(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:31.038 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:31.040 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.396 | MEM: declined stream Bordetella pertussis/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.408 | MEM: declined stream Campylobacter/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.419 | MEM: declined stream Campylobacter/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.430 | MEM: declined stream Campylobacter/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.437 | MEM: declined stream Clostridioides difficile/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.444 | MEM: declined stream Clostridioides difficile/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.451 | MEM: declined stream Clostridioides difficile/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.458 | MEM: declined stream Giardia lamblia/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.465 | MEM: declined stream Giardia lamblia/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.472 | MEM: declined stream Influenza A/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.480 | MEM: declined stream Influenza A/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.488 | MEM: declined stream Influenza A/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.496 | MEM: declined stream MRSA/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.503 | MEM: declined stream MRSA/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.510 | MEM: declined stream MRSA/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.517 | MEM: declined stream Neisseria meningitidis/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.525 | MEM: declined stream Norovirus/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.533 | MEM: declined stream Norovirus/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.541 | MEM: declined stream Norovirus/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.549 | MEM: declined stream RSV/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.557 | MEM: declined stream RSV/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.565 | MEM: declined stream RSV/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.572 | MEM: declined stream Salmonella/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.580 | MEM: declined stream Salmonella/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.587 | MEM: declined stream Salmonella/pathogen_province, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.592 | MEM: declined stream Bordetella pertussis/pathogen_region, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.596 | MEM: declined stream Campylobacter/pathogen_region, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.601 | MEM: declined stream Clostridioides difficile/pathogen_region, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.605 | MEM: declined stream Giardia lamblia/pathogen_region, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.611 | MEM: declined stream Influenza A/pathogen_region, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.616 | MEM: declined stream MRSA/pathogen_region, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.620 | MEM: declined stream Neisseria meningitidis/pathogen_region, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.625 | MEM: declined stream Norovirus/pathogen_region, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.629 | MEM: declined stream RSV/pathogen_region, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 08:27:31.634 | MEM: declined stream Salmonella/pathogen_region, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:31.682 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:31.683 | Backfill: 7 cluster(s) opened from the case history, 2 of them already closed by the system and in the Archive, 5 left open for assessment</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:31.684 | Suppressing lattice</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:31.690 | Committing transaction</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:31.693 | Finishing run 1 (status: success)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 08:27:33.013 | episodic_run_cron() finished in 2.3s (status: success)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.231 | episodic_run_cron() starting (host=runnervmlun5p, account=runner)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.231 | Resolving configuration</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.238 | Configuration resolved (hash eec18d51a9ba)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.238 | Connecting to database</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.238 | No existing database found - creating one</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.267 | Database connected (dialect: sqlite)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.268 | Run 1 started</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.269 | Resolving and checking case data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.284 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.285 | Beginning transaction</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.287 | Loading pathogen configuration</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.290 | Pathogen configuration loaded (23 pathogen(s))</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.291 | Loading case data into the database</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.414 | Case data loaded: supplied=419, deduplicated=410, inserted=410</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.414 | Fetching all known cases and institutions</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.417 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.419 | Case history on file spans 2025-01-01 to 2025-03-31, ending 0 day(s) before this run's date (2025-03-31)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.420 | Enumerating lattice streams</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.459 | Running same-place detector</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.541 | Same-place detector found 6 detection(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.542 | Running rare-trigger detector</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.547 | Rare-trigger detector found 1 detection(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.547 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:03.549 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:03.897 | MEM: declined stream Bordetella pertussis/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:03.905 | MEM: declined stream Campylobacter/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:03.912 | MEM: declined stream Campylobacter/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:03.919 | MEM: declined stream Campylobacter/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:03.926 | MEM: declined stream Clostridioides difficile/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:03.933 | MEM: declined stream Clostridioides difficile/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:03.940 | MEM: declined stream Clostridioides difficile/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:03.947 | MEM: declined stream Giardia lamblia/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:03.954 | MEM: declined stream Giardia lamblia/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:03.961 | MEM: declined stream Influenza A/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:03.969 | MEM: declined stream Influenza A/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:03.976 | MEM: declined stream Influenza A/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:03.983 | MEM: declined stream MRSA/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:03.990 | MEM: declined stream MRSA/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:03.998 | MEM: declined stream MRSA/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.005 | MEM: declined stream Neisseria meningitidis/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.012 | MEM: declined stream Norovirus/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.020 | MEM: declined stream Norovirus/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.027 | MEM: declined stream Norovirus/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.035 | MEM: declined stream RSV/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.042 | MEM: declined stream RSV/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.050 | MEM: declined stream RSV/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.057 | MEM: declined stream Salmonella/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.064 | MEM: declined stream Salmonella/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.072 | MEM: declined stream Salmonella/pathogen_province, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.076 | MEM: declined stream Bordetella pertussis/pathogen_region, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.080 | MEM: declined stream Campylobacter/pathogen_region, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.085 | MEM: declined stream Clostridioides difficile/pathogen_region, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.089 | MEM: declined stream Giardia lamblia/pathogen_region, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.094 | MEM: declined stream Influenza A/pathogen_region, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.099 | MEM: declined stream MRSA/pathogen_region, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.104 | MEM: declined stream Neisseria meningitidis/pathogen_region, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.108 | MEM: declined stream Norovirus/pathogen_region, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.113 | MEM: declined stream RSV/pathogen_region, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-09-19 15:19:04.118 | MEM: declined stream Salmonella/pathogen_region, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:04.165 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:04.166 | Backfill: 7 cluster(s) opened from the case history, 2 of them already closed by the system and in the Archive, 5 left open for assessment</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:04.168 | Suppressing lattice</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:04.173 | Committing transaction</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:04.176 | Finishing run 1 (status: success)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-09-19 15:19:05.469 | episodic_run_cron() finished in 2.2s (status: success)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> OK</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ===========================================================================</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   EpiSODIC demo account (admin) - username: demo, password: demo</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   To re-open this demo later, with its geography:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>     Sys.setenv(EPISODIC_DB = "/tmp/RtmphfmlKh/file1dd13134b55.sqlite",</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_CONFIG = "/tmp/RtmphfmlKh/file1dd13134b55-config.yaml",</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_PC_PROVINCE_MAP = "/tmp/RtmphfmlKh/file1dd13134b55-pc-province.csv")</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>     Sys.setenv(EPISODIC_DB = "/tmp/Rtmp8jnvNX/file1deb2fc439a4.sqlite",</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_CONFIG = "/tmp/Rtmp8jnvNX/file1deb2fc439a4-config.yaml",</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_PC_PROVINCE_MAP = "/tmp/Rtmp8jnvNX/file1deb2fc439a4-pc-province.csv")</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>     episodic_run_app()</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ===========================================================================</span>

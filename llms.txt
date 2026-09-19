@@ -294,8 +294,10 @@ instance.
 
 ### Configure
 
-Set up notifications and other operational knobs.
+Tune detection behaviour and set up notifications.
 
+- [Tuning detection for your
+  catchment](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.md):
 - [Notifications](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md):
 - [Scheduled
   reports](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.md):

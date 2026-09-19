@@ -278,28 +278,13 @@ the same database.
 **How do I tune detection thresholds or priority score weights for my
 own organisation?**
 
-EpiSODIC contains many options you can tune to alter the behaviour of
-its algorithms.
-
-Through `EPISODIC_CONFIG`, not by editing package code - detection
-thresholds, baseline lengths, `same_place` rules, MEM seasons, and
-priority score weights are all *operational data*, kept out of this
-repository on purpose. Point the environment variable at a YAML file
-with only the keys you want to change:
-
-``` r
-
-Sys.setenv(EPISODIC_CONFIG = "/path/to/my_overrides.yaml")
-```
-
-It is merged key-by-key on top of the
-[`inst/config/episodic_default_config.yaml`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml)’s
-shipped defaults, so you only ever need to write down what differs for
-your organisation. Every run records the resolved configuration’s full
-snapshot and hash on `episodic_detection_run`, so whatever parameters
-were behind any past result stay reproducible from the database alone -
-you can tune with confidence, since nothing about a past run’s meaning
-changes retroactively when you update the file.
+Point `EPISODIC_CONFIG` at a YAML file with only the keys you want to
+change; it is merged key-by-key over the shipped defaults. Per-pathogen
+parameters (severity, episode length, MEM mode) are overlaid via
+`EPISODIC_PATHOGEN_CONFIG` the same way. See
+[`vignette("tuning-detection")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.md)
+for which parameters to adjust for common operational problems, their
+trade-offs, and the complete reference table.
 
 **I have more than one laboratory system or data source - can I combine
 them into one feed?**

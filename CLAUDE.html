@@ -182,8 +182,8 @@
 <p>YAML-based, with recursive merge. <code>inst/config/episodic_default_config.yaml</code> ships documented defaults. An operator’s instance config (pointed at by <code>EPISODIC_CONFIG</code>) overlays key-by-key. The resolved configuration is hashed (SHA-1 over canonical JSON) and stored on every run for reproducibility. <code>notifications</code> and <code>access</code> are deliberately excluded from the hash (see <code>episodic_config_unhashed_sections</code>): both govern how the instance is operated rather than what a run computes, and notification settings additionally contain secrets that must never reach <code>config_snapshot</code>.</p>
 <p>Key config sections: <code>reconciliation</code>, <code>eligibility</code>, <code>effect_size_floor</code>, <code>same_place</code>, <code>farrington</code>, <code>mem</code>, <code>rare_trigger</code>, <code>priority_score</code>, <code>scale</code>, <code>geography</code>, <code>report</code>, <code>notifications</code>, <code>suppression</code>, <code>access</code>.</p>
 <p>An instance config is validated against the shipped defaults before merging (<code>episodic_config_validate()</code>): the defaults document the complete valid key set, so an unknown key, a value of the wrong type, or a null where a value is needed stops the run and names the key path. Adding a new key therefore means adding it to <code>inst/config/episodic_default_config.yaml</code>, or, if its children are named by the operator (pathogens, channels), to <code>episodic_config_open_sections</code>. A setting documented as “set to ~ to disable” must also be listed in <code>episodic_config_nullable_keys</code>.</p>
-<p><code>EPISODIC_CONFIG</code>, <code>EPISODIC_STYLE</code> and <code>EPISODIC_QUARTO_REPORT</code> set to a path that does not exist are errors, not fallbacks - the same rule <code>EPISODIC_PC_PROVINCE_MAP</code> already followed.</p>
-<p>Pathogen-specific parameters (episode length, serial interval, severity weight) live in <code>inst/config/episodic_default_pathogen_config.csv</code>.</p>
+<p><code>EPISODIC_CONFIG</code>, <code>EPISODIC_PATHOGEN_CONFIG</code>, <code>EPISODIC_STYLE</code> and <code>EPISODIC_QUARTO_REPORT</code> set to a path that does not exist are errors, not fallbacks - the same rule <code>EPISODIC_PC_PROVINCE_MAP</code> already followed.</p>
+<p>Pathogen-specific parameters (episode length, serial interval, severity weight) live in <code>inst/config/episodic_default_pathogen_config.csv</code>. An operator’s CSV (pointed at by <code>EPISODIC_PATHOGEN_CONFIG</code>) overlays row-by-row: for each pathogen the operator lists, non-NA values override the shipped default; pathogens not listed keep their shipped row. Resolved by <code>episodic_pathogen_config_resolve()</code> in <code>R/config.R</code>.</p>
 </div>
 <div class="section level3">
 <h3 id="keys-that-must-agree-across-feeds">Keys that must agree across feeds<a class="anchor" aria-label="anchor" href="#keys-that-must-agree-across-feeds"></a></h3>
@@ -257,7 +257,7 @@ inst/
   i18n/                     # translation JSON files (en, nl, de, fr, es, ar, hi, zh)
   report/                   # Quarto report template
 tests/testthat/             # test suite across 67 files
-vignettes/                  # 8 vignettes
+vignettes/                  # 9 vignettes
 data-raw/validation/        # the full detection validation study (never ships)</code></pre>
 </div>
 <div class="section level2">
@@ -322,6 +322,8 @@ data-raw/validation/        # the full detection validation study (never ships)<
 <td>Database path (SQLite) or DSN (MariaDB)</td>
 </tr><tr><td><code>EPISODIC_CONFIG</code></td>
 <td>Instance detection + notification config YAML</td>
+</tr><tr><td><code>EPISODIC_PATHOGEN_CONFIG</code></td>
+<td>Per-pathogen parameter CSV overlay</td>
 </tr><tr><td><code>EPISODIC_STYLE</code></td>
 <td>Instance colour palette YAML</td>
 </tr><tr><td><code>EPISODIC_LANGUAGE</code></td>
