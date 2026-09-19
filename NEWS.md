@@ -26,12 +26,14 @@
 - The classification form and the notes panel namespace their element ids, so both surveillance screens can carry one
 - An outbreak's "Linked to" chips cover the outbreak scale only; the epidemic it ran during is a "During" chip instead
 - The confirmed-outbreak classification's explanation no longer names one scale while its label names the other
-- The mobile pane-switcher's active tab, the recalculating spinner, the Outbreaks screen's recommendation box, the epi curve/trend/Rt/map/weekly-cases charts, and every cluster table's row-link colour now read the current nav section's own colour instead of always primary; the Pathogens screen's weekly-cases chart and the age/sex pyramid keep their own colour-coding unchanged, since the former's bars would otherwise clash with its own MEM threshold lines, and buttons and chips are untouched
+- The mobile pane-switcher's active tab, the recalculating spinner, the Outbreaks screen's recommendation box, the epi curve/trend/Rt/map/weekly-cases charts, and every cluster table's row-link colour now read the current nav section's own colour instead of always primary; the age/sex pyramid keeps its own colour-coding unchanged, and buttons and chips are untouched
 
 ## Fixed
 
 - The shared cluster table (Pathogen screen, Archive, and the dossier's related and similar-clusters panels) always prefixed ids with `O-`; each row now reads its own scale via `episodic_object_ref()`, so an epidemic-scale row reads `E-{id}`
 - Screen titles (Pathogen activity, Archive, Activity, Performance, Info, Streams) were sized in a fixed pixel value and no longer scaled with the mobile font-size bump; a shared rem-based `.episodic-screen-title` class replaces the inline style
+- `episodic_geography_nests()` no longer fails for region-level epidemics after the generic refactoring removed the L5 fast path
+- The Pathogens screen's weekly-cases chart now uses the section accent colour, consistent with the Rt and geo charts on the same screen
 
 
 # EpiSODIC 0.19.0
