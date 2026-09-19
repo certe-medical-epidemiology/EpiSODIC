@@ -450,6 +450,135 @@ episodic_config_merge <- function(base, override) {
   base
 }
 
+#' Resolve per-pathogen configuration, with an optional operator overlay
+#'
+#' Reads the shipped `episodic_default_pathogen_config.csv` and, when
+#' `pathogen_config_path` names a file, overlays the operator's rows on
+#' top. The overlay is row-level by `pathogen`: for each pathogen the
+#' operator lists, every non-NA value replaces the shipped default for
+#' that column; NA cells and columns omitted from the operator's CSV
+#' keep the shipped value. A pathogen not in the shipped defaults is
+#' appended.
+#'
+#' @param pathogen_config_path Path to the operator's CSV, or `NA` /
+#'   empty string for "no overlay". `Sys.getenv("EPISODIC_PATHOGEN_CONFIG")`
+#'   is the typical source. Set to a path that does not exist, this
+#'   stops with an error.
+#' @return A data frame with the resolved pathogen configuration.
+#' @keywords internal
+#' @noRd
+episodic_pathogen_config_resolve <- function(pathogen_config_path = Sys.getenv("EPISODIC_PATHOGEN_CONFIG",
+                                                                               unset = NA)) {
+  defaults_path <- system.file(
+    "config",
+    "episodic_default_pathogen_config.csv",
+    package = "EpiSODIC"
+  )
+  if (identical(defaults_path, "")) {
+    defaults_path <- file.path("inst", "config", "episodic_default_pathogen_config.csv")
+  }
+  defaults <- utils::read.csv(
+    defaults_path,
+    stringsAsFactors = FALSE,
+    na.strings = c("", "NA")
+  )
+
+  if (is.na(pathogen_config_path) || !nzchar(pathogen_config_path)) {
+    return(defaults)
+  }
+
+  if (!file.exists(pathogen_config_path)) {
+    stop(
+      "EPISODIC_PATHOGEN_CONFIG points at '",
+      pathogen_config_path,
+      "', which does not exist.",
+      call. = FALSE
+    )
+  }
+
+  overlay <- tryCatch(
+    utils::read.csv(
+      pathogen_config_path,
+      stringsAsFactors = FALSE,
+      na.strings = c("", "NA")
+    ),
+    error = function(e) {
+      stop(
+        "EPISODIC_PATHOGEN_CONFIG points at '",
+        pathogen_config_path,
+        "', which could not be read: ",
+        conditionMessage(e),
+        call. = FALSE
+      )
+    }
+  )
+
+  episodic_pathogen_config_merge(defaults, overlay, pathogen_config_path)
+}
+
+#' Merge an operator's per-pathogen CSV on top of the shipped defaults
+#'
+#' @param defaults Data frame from the shipped CSV.
+#' @param overlay Data frame from the operator's CSV.
+#' @param source_label File path for error messages.
+#' @return The merged data frame.
+#' @keywords internal
+#' @noRd
+episodic_pathogen_config_merge <- function(defaults, overlay, source_label = "operator CSV") {
+  if (!is.data.frame(overlay) || nrow(overlay) == 0) {
+    return(defaults)
+  }
+  if (!"pathogen" %in% names(overlay)) {
+    stop(
+      "The pathogen configuration overlay at '",
+      source_label,
+      "' has no 'pathogen' column.",
+      call. = FALSE
+    )
+  }
+
+  unknown_cols <- setdiff(names(overlay), names(defaults))
+  if (length(unknown_cols) > 0) {
+    stop(
+      "The pathogen configuration overlay at '",
+      source_label,
+      "' contains unknown column(s): ",
+      paste(unknown_cols, collapse = ", "),
+      ". Valid columns are: ",
+      paste(names(defaults), collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  overlay_cols <- setdiff(names(overlay), "pathogen")
+  for (i in seq_len(nrow(overlay))) {
+    pathogen <- overlay$pathogen[i]
+    if (is.na(pathogen) || !nzchar(pathogen)) next
+    match_row <- match(pathogen, defaults$pathogen)
+
+    if (is.na(match_row)) {
+      new_row <- defaults[1, , drop = FALSE]
+      new_row[1, ] <- NA
+      new_row$pathogen <- pathogen
+      for (col in overlay_cols) {
+        if (!is.na(overlay[[col]][i])) {
+          new_row[[col]] <- overlay[[col]][i]
+        }
+      }
+      defaults <- rbind(defaults, new_row)
+    } else {
+      for (col in overlay_cols) {
+        if (!is.na(overlay[[col]][i])) {
+          defaults[[col]][match_row] <- overlay[[col]][i]
+        }
+      }
+    }
+  }
+  rownames(defaults) <- NULL
+  defaults
+}
+
 #' Configuration sections deliberately left out of `config_hash`
 #'
 #' Detection reproducibility is the guarantee the hash exists for: same

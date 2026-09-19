@@ -16,6 +16,7 @@ episodic_validate_detection(
   outbreak_offsets = NULL,
   detectors = episodic_validation_detectors(),
   config = NULL,
+  pathogen_config = NULL,
   quiet = TRUE
 )
 
@@ -55,6 +56,12 @@ shipped defaults and validated the same way an operator's file is.
 It may not set any detector's \code{enabled} key - that is what
 \code{detectors} is for, and two mechanisms for one setting is one too
 many.}
+
+\item{pathogen_config}{Optional per-pathogen overrides: a data frame
+(or a path to a CSV) with a \code{pathogen} column and any subset of the
+columns from \code{inst/config/episodic_default_pathogen_config.csv}.
+Merged row-by-row over the shipped defaults the same way
+\code{EPISODIC_PATHOGEN_CONFIG} is.}
 
 \item{quiet}{If \code{TRUE} (the default), the per-run progress
 \code{\link[=episodic_run_cron]{episodic_run_cron()}} writes is suppressed; a replay is hundreds of
