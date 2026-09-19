@@ -189,40 +189,55 @@ episodic_ui_picker <- function(input_id, options, selected = NULL) {
   )
 }
 
-#' The phone-tier pane switcher for the clusters screen
+#' The phone-tier pane switcher for a three-pane surveillance screen
 #'
-#' Below 768px the clusters screen shows one of its three panes at a
-#' time, switched by this bar. Which one is showing is `data-pane` on
-#' `.episodic-shell`, and which segment is lit is derived from that by
-#' the stylesheet, so a segment cannot end up marked for a pane that is
-#' not the one on screen and a re-render has no highlight to lose.
+#' Below 768px the Outbreaks and Epidemics screens each show one of
+#' their three panes at a time, switched by this bar. Which one is
+#' showing is `data-pane` on `.episodic-shell`, and which segment is lit
+#' is derived from that by the stylesheet, so a segment cannot end up
+#' marked for a pane that is not the one on screen and a re-render has no
+#' highlight to lose. `data-pane` is one attribute for both screens
+#' because only one screen is ever on top, so which pane of it is showing
+#' is one fact.
 #'
 #' Hidden by CSS at 768px and above, where all three panes are on screen
 #' together and there is nothing to switch between.
 #'
+#' @param scale Which screen this switcher belongs to: `"outbreak"` or
+#'   `"epidemic"`. It decides the first segment's label and which
+#'   `uiOutput()` names the open object, since the two screens hold
+#'   separate selections and each has to name its own.
 #' @param lang Session language.
 #' @return A `shiny::tags$div`.
 #' @keywords internal
 #' @noRd
-episodic_ui_pane_switcher <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_ui_pane_switcher <- function(scale = "outbreak",
+                                      lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  is_epidemic <- identical(scale, "epidemic")
   shiny::tags$div(
     class = "episodic-pane-switcher",
     role = "group",
     `aria-label` = episodic_tr("pane.switcher_label", lang = lang),
-    # Which cluster the other two segments refer to, from the server's
+    # Which object the other two segments refer to, from the server's
     # own selection rather than copied out of the rail's markup. A
     # cluster opened from the Pathogen screen, from a `?cluster=` link or
     # from the open-by-number box is frequently not in the rail at all,
     # and reading the label off a row that is not there leaves it blank -
     # which says "nothing is open" about a cluster that is.
     shiny::uiOutput(
-      "pane_label",
+      if (is_epidemic) "epidemic_pane_label" else "pane_label",
       container = shiny::tags$div,
       class = "episodic-pane-switcher-label"
     ),
     shiny::tags$div(
       class = "episodic-pane-switcher-tabs",
-      episodic_ui_pane_tab("rail", episodic_tr("nav.clusters", lang = lang)),
+      episodic_ui_pane_tab(
+        "rail",
+        episodic_tr(
+          if (is_epidemic) "nav.epidemics" else "nav.outbreaks",
+          lang = lang
+        )
+      ),
       episodic_ui_pane_tab(
         "dossier",
         episodic_tr("pane.dossier", lang = lang)
@@ -352,22 +367,41 @@ episodic_ui_chip <- function(text, colour, filled = FALSE) {
 #' @param colour Chip colour, from [episodic_palette()].
 #' @param cluster_id The cluster to open.
 #' @param lang Session language.
+#' @param scale Which screen the cluster opens on: `"outbreak"` or
+#'   `"epidemic"`. The two are separate screens holding separate
+#'   selections, so a chip has to say which of them it means.
 #' @return A `shiny::tags$span`.
 #' @keywords internal
 #' @noRd
 episodic_ui_chip_link <- function(text,
                                   colour,
                                   cluster_id,
-                                  lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+                                  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                  scale = "outbreak") {
   shiny::tags$span(
     class = "episodic-chip episodic-chip-outline episodic-chip-link",
     style = sprintf("color:%s;border:1px solid %s66;", colour, colour),
     tabindex = "0",
     role = "link",
-    title = episodic_tr("cluster.open_hint", lang = lang),
+    title = episodic_tr(
+      if (identical(scale, "epidemic")) {
+        "epidemic.open_hint"
+      } else {
+        "cluster.open_hint"
+      },
+      lang = lang
+    ),
     # Both the click and Enter/Space are picked up by
-    # `episodic-nav.js`'s delegated listeners, from this one attribute.
-    `data-episodic-cluster` = as.integer(cluster_id),
+    # `episodic-nav.js`'s delegated listeners, from one of these two
+    # attributes. The other is `NULL`, which htmltools drops, so the
+    # chip carries exactly one and no reader of the markup has to work
+    # out which screen it meant.
+    `data-episodic-outbreak` = if (!identical(scale, "epidemic")) {
+      as.integer(cluster_id)
+    },
+    `data-episodic-epidemic` = if (identical(scale, "epidemic")) {
+      as.integer(cluster_id)
+    },
     text
   )
 }
@@ -388,13 +422,22 @@ episodic_ui_chip_link <- function(text,
 #' @noRd
 episodic_ui_cluster_link <- function(text,
                                      cluster_id,
+                                     scale = "outbreak",
                                      lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   shiny::tags$span(
     class = "episodic-cluster-link",
     tabindex = "0",
     role = "link",
-    title = episodic_tr("cluster.open_hint", lang = lang),
-    `data-episodic-cluster` = as.integer(cluster_id),
+    title = episodic_tr(
+      if (identical(scale, "epidemic")) "epidemic.open_hint" else "cluster.open_hint",
+      lang = lang
+    ),
+    `data-episodic-outbreak` = if (!identical(scale, "epidemic")) {
+      as.integer(cluster_id)
+    },
+    `data-episodic-epidemic` = if (identical(scale, "epidemic")) {
+      as.integer(cluster_id)
+    },
     text
   )
 }
@@ -634,28 +677,71 @@ episodic_ui_verdict_colour <- function(verdict) {
     cluster_not_yet = pal$success_dark,
     possible_epidemic = pal$warning_dark,
     confirmed_epidemic = pal$danger,
+    season_started = pal$danger,
+    season_not_yet = pal$success_dark,
+    season_ended = pal$muted,
     pal$muted
   )
 }
 
-#' Stream levels bounded and local enough to call a cluster an "outbreak"
-#' rather than an "epidemic"
+#' The lattice levels that produce outbreaks rather than epidemics
 #'
-#' A ward or an institution is a contained setting - the standard field
-#' term for a confirmed cluster there is "outbreak" (a norovirus outbreak
-#' on a ward, a Legionella outbreak tied to one care home), same as this
-#' codebase's own commentary already says informally throughout
-#' (`R/reconcile.R`, `R/run_cron.R`, ...). From area level up, a cluster
-#' is a population-level statistical excess over baseline - what
-#' "epidemic" means, and already the Moving Epidemic Method's own
-#' vocabulary elsewhere on the same screens ("epidemic start/end
-#' threshold"). `pathogen_area` is not the fuzzy middle case it looks
-#' like: `episodic_case_region_code()` defines it as a multi-town
-#' postcode district, not a single contained setting, so it sits with
-#' province/region rather than with ward/institution.
+#' Derived from the configured scale boundary: every level not in
+#' `config$scale$epidemic_levels` is an outbreak level. The boundary is
+#' configuration so that a deployment whose L3 area covers more ground
+#' than another's province can move the split.
+#'
+#' @param config Resolved configuration. Defaults to the live config so
+#'   callers inside the Shiny app, which pass no config, get the right
+#'   answer without an explicit argument.
+#' @return A character vector of level names.
 #' @keywords internal
 #' @noRd
-episodic_verdict_outbreak_levels <- c("pathogen_ward", "pathogen_institution")
+episodic_verdict_outbreak_levels <- function(config = episodic_config_resolve()) {
+  all_levels <- c(
+    "pathogen_ward",
+    "pathogen_institution",
+    "pathogen_area",
+    "pathogen_province",
+    "pathogen_region"
+  )
+  setdiff(all_levels, config$scale$epidemic_levels)
+}
+
+#' The display reference for a cluster, scale-aware
+#'
+#' Outbreaks render as `O-{id}`, epidemics as `E-{id}`. Both share one
+#' `episodic_cluster.cluster_id` sequence - there is no cluster 12 that
+#' is an outbreak and a separate cluster 12 that is an epidemic - so the
+#' prefix is not decoration: read the scale off the row rather than
+#' assume one from context, or the wrong prefix names a real object that
+#' is not the one on screen. Accepts either a scale string
+#' (`"outbreak"` / `"epidemic"`) or a
+#' level string (resolved via `episodic_scale_for_level()`), so callers
+#' with a level but no scale column can use it directly.
+#'
+#' @param id The cluster id (integer).
+#' @param scale_or_level `"outbreak"`, `"epidemic"`, or a lattice level
+#'   string such as `"pathogen_ward"`.
+#' @param lang Session language.
+#' @return A single string, e.g. `"O-42"` or `"E-7"`.
+#' @keywords internal
+#' @noRd
+episodic_object_ref <- function(id,
+                                scale_or_level,
+                                lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  scale <- if (scale_or_level %in% c("outbreak", "epidemic")) {
+    scale_or_level
+  } else {
+    episodic_scale_for_level(scale_or_level)
+  }
+  key <- if (identical(scale, "epidemic")) {
+    "dossier.epidemic_ref"
+  } else {
+    "dossier.outbreak_ref"
+  }
+  episodic_tr(key, id = id, lang = lang)
+}
 
 #' A verdict's display label, worded for the cluster's own scale
 #'
@@ -664,11 +750,13 @@ episodic_verdict_outbreak_levels <- c("pathogen_ward", "pathogen_institution")
 #' stats all still key off it. Only the wording shown to a reader shifts:
 #' `"cluster_not_yet"`/`"possible_epidemic"`/`"confirmed_epidemic"` read
 #' as "... outbreak" rather than "... epidemic" when the cluster sits at
-#' ward or institution level (see `episodic_verdict_outbreak_levels`).
+#' an outbreak-scale level (see `episodic_verdict_outbreak_levels()`).
 #' `"artefact"`/`"expected_variation"` never mention either word, so
-#' `level` makes no difference to them.
+#' `level` makes no difference to them. The three declaration verdicts
+#' (`"season_started"`, `"season_not_yet"`, `"season_ended"`) are used
+#' only on epidemics and carry no outbreak variant.
 #'
-#' @param verdict One of the five verdict keys, or `NA`.
+#' @param verdict One of the eight verdict keys, or `NA`.
 #' @param level The cluster's stream level (e.g. `"pathogen_ward"`), or
 #'   `NULL` when no single level applies - a bulk action across a mixed
 #'   selection, or a system-wide distribution summed over every level.
@@ -695,7 +783,7 @@ episodic_verdict_label <- function(verdict,
     has_outbreak_variant &&
       !is.null(level) &&
       !is.na(level) &&
-      level %in% episodic_verdict_outbreak_levels
+      level %in% episodic_verdict_outbreak_levels()
   ) {
     key <- paste0(key, ".outbreak")
   }

@@ -241,7 +241,7 @@ test_that("the Activity screen makes a cluster row open that cluster and leaves 
   )
   html <- as.character(episodic_ui_activity_screen(activity, lang = "en"))
 
-  expect_true(grepl('data-episodic-cluster="7"', html, fixed = TRUE))
+  expect_true(grepl('data-episodic-outbreak="7"', html, fixed = TRUE))
   # One link, not two: the run row's host is not a cluster. Counted by
   # the class rather than by the call, which every link makes twice -
   # once on click and once on Enter or Space, so a keyboard reaches it
@@ -466,7 +466,7 @@ test_that("episodic_ui_run_modal() shows what a successful run loaded, and no fa
 
   expect_true(grepl("120", rendered, fixed = TRUE))
   expect_true(grepl("42", rendered, fixed = TRUE))
-  expect_true(grepl("0 clusters auto-closed", rendered, fixed = TRUE))
+  expect_true(grepl("0 auto-closed", rendered, fixed = TRUE))
   expect_false(grepl("Why this run failed", rendered, fixed = TRUE))
   expect_false(grepl("episodic_check_cases()", rendered, fixed = TRUE))
   expect_false(grepl("[[", rendered, fixed = TRUE))

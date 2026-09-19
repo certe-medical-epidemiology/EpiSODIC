@@ -649,10 +649,13 @@ test_that("the signals table leads with the cluster id", {
   screen <- episodic_app_pathogen_screen(env$con, period = "all", lang = "en")
   html <- as.character(episodic_ui_pathogen_clusters_panel(screen, lang = "en"))
 
+  # env's fixture stream is pathogen_region, an epidemic-scale level (see
+  # `scale.epidemic_levels` in the default config), so the row reads
+  # E-{id}, not O-{id}.
   expect_true(grepl(
     paste0(
       ">",
-      episodic_tr("dossier.cluster_ref", id = cluster_id, lang = "en"),
+      episodic_tr("dossier.epidemic_ref", id = cluster_id, lang = "en"),
       "<"
     ),
     html,
@@ -710,8 +713,9 @@ test_that("each cluster row links through to its dossier, by click and by keyboa
   html <- as.character(episodic_ui_pathogen_clusters_panel(screen, lang = "en"))
 
   # The shared opener attribute (see inst/app/www/episodic-nav.js) sets the `open_cluster`
-  # Shiny input and moves the rail's own highlight
-  expect_true(grepl("data-episodic-cluster", html, fixed = TRUE))
+  # Shiny input and moves the rail's own highlight. The stream is at
+  # pathogen_region (epidemic scale), so the row carries -epidemic.
+  expect_true(grepl("data-episodic-epidemic", html, fixed = TRUE))
   expect_true(grepl(as.character(cluster_id), html, fixed = TRUE))
   expect_true(grepl("episodic-row-link", html, fixed = TRUE))
   # a <tr> has no keyboard access of its own; tabindex gives it a stop
@@ -721,15 +725,13 @@ test_that("each cluster row links through to its dossier, by click and by keyboa
   expect_false(grepl("onkeydown", html, fixed = TRUE))
 })
 
-test_that("the clusters panel is titled for clusters, not for signals", {
-  # They carry a verdict and a state; a signal is the detection that
-  # started one, which is a different thing this codebase already names.
+test_that("the clusters panel is titled for outbreaks/epidemics, not for signals", {
   title <- episodic_tr("pathogen.panel.clusters.title", lang = "en")
-  expect_match(title, "[Cc]luster")
+  expect_match(title, "[Oo]utbreak")
   expect_false(grepl("signal", title, ignore.case = TRUE))
   expect_match(
     episodic_tr("pathogen.panel.clusters.title", lang = "nl"),
-    "Clusters",
+    "Uitbraken",
     fixed = TRUE
   )
 })

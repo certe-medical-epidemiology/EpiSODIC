@@ -34,10 +34,11 @@
 #' @noRd
 episodic_app_views <- function() {
   c(
-    "clusters",
-    "pathogen",
-    "archive",
+    "outbreaks",
+    "epidemics",
+    "pathogens",
     "instance",
+    "archive",
     "streams",
     "activity",
     "performance",
@@ -48,7 +49,7 @@ episodic_app_views <- function() {
 
 #' The navigation link a screen lights up
 #'
-#' Four links carry nine screens. The three surveillance screens are
+#' Five links carry ten screens. The four surveillance screens are
 #' their own group; the five that describe the instance rather than a
 #' cluster are reached from the Instance screen and light its link, so a
 #' reader on the Performance screen can still see where they are.
@@ -63,7 +64,7 @@ episodic_app_views <- function() {
 #' @keywords internal
 #' @noRd
 episodic_app_nav_group <- function(view) {
-  if (view %in% c("clusters", "pathogen", "archive")) {
+  if (view %in% c("outbreaks", "epidemics", "pathogens")) {
     return(view)
   }
   "instance"
@@ -123,14 +124,33 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       # left-to-right layout for as long as it took to load. See
       # `episodic_lang_dir()` and the "Right-to-left" section of
       # episodic.css.
+      #
+      # The same block also appends `viewport-fit=cover` to the viewport
+      # meta tag Shiny's own bootstrap dependency injects (it ships
+      # without one), rather than adding a second `<meta name="viewport">`
+      # of our own: two such tags in one document leave which one wins to
+      # the browser, where a plain edit of the existing element does not.
+      # `viewport-fit=cover` is what lets the page draw under the
+      # notch/status-bar safe area at all - without it, every
+      # `env(safe-area-inset-*)` in episodic.css (see the mobile pane
+      # switcher's bottom padding) resolves to zero on an iPhone, not the
+      # real inset.
       shiny::tags$script(shiny::HTML(sprintf(
         paste0(
           "document.documentElement.setAttribute('lang', '%s');",
-          "document.documentElement.setAttribute('dir', '%s');"
+          "document.documentElement.setAttribute('dir', '%s');",
+          "var vp = document.querySelector('meta[name=\"viewport\"]');",
+          "if (vp && vp.content.indexOf('viewport-fit') === -1) {",
+          "vp.content += ', viewport-fit=cover';",
+          "}"
         ),
         resolved_lang,
         episodic_lang_dir(resolved_lang)
       ))),
+      # Tints the browser's own chrome (Safari's toolbar, Android
+      # Chrome's) to the header's colour, so it reads as part of the app
+      # rather than a white bar Safari drew on top of it.
+      shiny::tags$meta(name = "theme-color", content = pal$primary_dark),
       # Only fetched when the resolved palette still uses the shipped
       # default font - the moment an instance overrides `font` in its
       # EPISODIC_STYLE, this Google Fonts request for a face
@@ -159,24 +179,38 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
           )
         )
       },
-      shiny::tags$link(rel = "stylesheet", href = "www/episodic.css"),
+      shiny::tags$link(
+        rel = "stylesheet",
+        href = paste0(
+          "www/episodic.css?v=",
+          episodic_app_asset_version("episodic.css")
+        )
+      ),
       shiny::tags$style(episodic_app_palette_css(pal)),
       # All navigation behaviour, in one cached file rather than in a
       # handful of <script> blocks rebuilt into the page on every render
       # and an `onclick` attribute on every element. See the file's own
       # header for the rule it holds to.
-      shiny::tags$script(src = "www/episodic-nav.js")
+      shiny::tags$script(src = paste0(
+        "www/episodic-nav.js?v=",
+        episodic_app_asset_version("episodic-nav.js")
+      ))
     ),
     shiny::tags$div(
       class = "episodic-shell",
       # The whole of the dashboard's navigation state, and the only
-      # place it is held. `episodic-nav.js` writes these three; the
+      # place it is held. `episodic-nav.js` writes these four; the
       # stylesheet reads the first two; nothing else stores a copy.
       # Shiny never replaces this element, which is the entire reason
       # they live here rather than on anything a `renderUI` produces.
-      `data-view` = "clusters",
-      `data-nav` = "clusters",
-      `data-cluster` = "",
+      #
+      # The two selections are separate because the two screens are: a
+      # reader who opens an outbreak from an epidemic's dossier and
+      # navigates back should find the epidemic they left still marked.
+      `data-view` = "outbreaks",
+      `data-nav` = "outbreaks",
+      `data-outbreak` = "",
+      `data-epidemic` = "",
       # Brand, navigation and status are siblings rather than the
       # navigation being nested inside a left-hand half: below 768px the
       # bar takes a row of its own beneath the other two, and `order`
@@ -220,7 +254,7 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       shiny::tags$div(
         class = "episodic-screens",
         episodic_ui_screen(
-          "clusters",
+          "outbreaks",
           shiny::tags$div(
             class = "episodic-body",
             # Shown only in the 768-1199px tier, where the rail slides
@@ -253,7 +287,12 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
             shiny::uiOutput(
               "rail_pane",
               container = shiny::tags$div,
-              class = "episodic-pane episodic-pane-rail"
+              class = "episodic-pane episodic-pane-rail",
+              # Which rail this is. Both surveillance screens carry one,
+              # each holding its own selection, and `episodic-nav.js`
+              # marks the current row within one of them rather than
+              # across the document.
+              `data-episodic-rail` = "outbreaks"
             ),
             shiny::uiOutput(
               "dossier_pane",
@@ -268,9 +307,48 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
             episodic_ui_pane_switcher(lang = lang)
           )
         ),
-        episodic_ui_screen("pathogen", shiny::uiOutput("pathogen_screen")),
-        episodic_ui_screen("archive", shiny::uiOutput("archive_screen")),
+        # The same three panes, for the coarse scale. Laid out here
+        # rather than inside a screen-wide `uiOutput()`, for the reason
+        # the Outbreaks screen is: an output that renders the whole body
+        # replaces the rail's DOM, and with it its scroll position and
+        # the row `episodic-nav.js` marked, every time the list of open
+        # epidemics changes.
+        episodic_ui_screen(
+          "epidemics",
+          shiny::tags$div(
+            class = "episodic-body episodic-body-epidemics",
+            shiny::tags$button(
+              type = "button",
+              class = "episodic-rail-toggle",
+              `data-episodic-pane` = "rail",
+              episodic_tr("nav.epidemics", lang = lang)
+            ),
+            shiny::tags$div(
+              class = "episodic-pane-backdrop",
+              `data-episodic-pane` = "dossier"
+            ),
+            shiny::uiOutput(
+              "epidemic_rail_pane",
+              container = shiny::tags$div,
+              class = "episodic-pane episodic-pane-rail",
+              `data-episodic-rail` = "epidemics"
+            ),
+            shiny::uiOutput(
+              "epidemic_dossier_pane",
+              container = shiny::tags$div,
+              class = "episodic-pane episodic-pane-dossier"
+            ),
+            shiny::uiOutput(
+              "epidemic_assessment_pane",
+              container = shiny::tags$div,
+              class = "episodic-pane episodic-pane-assessment"
+            ),
+            episodic_ui_pane_switcher(scale = "epidemic", lang = lang)
+          )
+        ),
+        episodic_ui_screen("pathogens", shiny::uiOutput("pathogen_screen")),
         episodic_ui_screen("instance", shiny::uiOutput("instance_screen")),
+        episodic_ui_screen("archive", shiny::uiOutput("archive_screen")),
         episodic_ui_screen("streams", shiny::uiOutput("streams_screen")),
         episodic_ui_screen("activity", shiny::uiOutput("activity_screen")),
         episodic_ui_screen(
@@ -311,7 +389,7 @@ episodic_ui_screen <- function(view, ...) {
 #' @noRd
 episodic_ui_nav_links <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   shiny::tagList(lapply(
-    c("clusters", "pathogen", "archive", "instance"),
+    c("outbreaks", "epidemics", "pathogens", "instance"),
     function(v) {
       episodic_ui_nav_link(v, episodic_tr(paste0("nav.", v), lang = lang))
     }
@@ -357,4 +435,40 @@ episodic_app_palette_css <- function(pal) {
     character(1)
   )
   paste0(":root {\n", paste(vars, collapse = "\n"), "\n}")
+}
+
+#' Cache-busting query string for one file under `inst/app/www`
+#'
+#' `www/episodic.css` and `www/episodic-nav.js` are the same URL across
+#' every request against the same running instance, so a browser that
+#' already cached one keeps serving those bytes until something about
+#' the URL itself changes. A version query string ties that to a
+#' release, but a package reinstall is not the only time these files'
+#' actual bytes change - an edit during development does too, with the
+#' installed version left exactly where it was - so the key here is the
+#' file's own content hash instead (`tools::md5sum()`, a base-R
+#' recommended package rather than an added dependency), read from
+#' wherever `episodic_run_app()`'s `addResourcePath()` call points
+#' `www/` at: the installed copy normally, or the source tree itself
+#' under `devtools::load_all()`. Either way, this is the same file whose
+#' bytes a browser would actually fetch, so the key changes exactly when
+#' they do. A modification time would too, but also on every occasion
+#' those bytes are merely *copied* unchanged - `git checkout`,
+#' `R CMD INSTALL`, a Docker `COPY` - which resets a timestamp without
+#' the content it names having moved at all; a hash of a few hundred
+#' kilobytes, read once per new session rather than per asset request,
+#' costs nothing worth avoiding it for.
+#'
+#' @param filename A file name directly under `inst/app/www`.
+#' @return A short cache-busting string, or the installed package
+#'   version if the file cannot be found (should not happen in a working
+#'   install; a missing asset is not this function's problem to raise).
+#' @keywords internal
+#' @noRd
+episodic_app_asset_version <- function(filename) {
+  path <- system.file("app", "www", filename, package = "EpiSODIC")
+  if (!nzchar(path) || !file.exists(path)) {
+    return(as.character(utils::packageVersion("EpiSODIC")))
+  }
+  unname(tools::md5sum(path))
 }

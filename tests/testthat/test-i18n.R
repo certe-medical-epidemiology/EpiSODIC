@@ -79,32 +79,27 @@ test_that("every shipped language file uses the same {placeholder} tokens per ke
 
 test_that("episodic_tr() substitutes placeholders", {
   expect_equal(
-    episodic_tr("dossier.cluster_ref", id = 1041, lang = "nl"),
-    "#1041"
+    episodic_tr("dossier.outbreak_ref", id = 1041, lang = "nl"),
+    "O-1041"
   )
   expect_equal(
-    episodic_tr("dossier.cluster_ref", id = 1041, lang = "en"),
-    "#1041"
+    episodic_tr("dossier.outbreak_ref", id = 1041, lang = "en"),
+    "O-1041"
   )
 })
 
-test_that("each language marks a cluster reference its own way", {
+test_that("outbreak and epidemic refs are uniform across languages", {
   # "#" is not universal: Spanish writes n.º, French n°, German Nr.,
   # Arabic رقم. Keeping this a translation key rather than a hardcoded
   # "#" is the whole reason it is one.
-  expect_equal(
-    episodic_tr("dossier.cluster_ref", id = 300, lang = "de"),
-    "Nr. 300"
-  )
-  expect_equal(
-    episodic_tr("dossier.cluster_ref", id = 300, lang = "fr"),
-    "n\u00b0 300"
-  )
   for (lang in episodic_shipped_langs) {
-    expect_match(
-      episodic_tr("dossier.cluster_ref", id = 300, lang = lang),
-      "300",
-      fixed = TRUE
+    expect_equal(
+      episodic_tr("dossier.outbreak_ref", id = 300, lang = lang),
+      "O-300"
+    )
+    expect_equal(
+      episodic_tr("dossier.epidemic_ref", id = 42, lang = lang),
+      "E-42"
     )
   }
 })
@@ -178,14 +173,14 @@ test_that("the environment variable alone decides what an internal renderer prod
 
   Sys.unsetenv("EPISODIC_LANGUAGE")
   expect_equal(
-    episodic_tr("nav.clusters"),
-    episodic_tr("nav.clusters", lang = "en")
+    episodic_tr("nav.outbreaks"),
+    episodic_tr("nav.outbreaks", lang = "en")
   )
 
   Sys.setenv(EPISODIC_LANGUAGE = "nl")
   expect_equal(
-    episodic_tr("nav.clusters"),
-    episodic_tr("nav.clusters", lang = "nl")
+    episodic_tr("nav.outbreaks"),
+    episodic_tr("nav.outbreaks", lang = "nl")
   )
 })
 
@@ -326,19 +321,30 @@ test_that("no shipped language still calls the concept an organism", {
 test_that("Dutch does use 'verwekker' for the concept, so the rule above is not vacuous", {
   nl <- episodic_i18n_load("nl")
   expect_true(any(grepl("verwekker", nl, ignore.case = TRUE)))
-  expect_equal(unname(nl[["nav.pathogen"]]), "Verwekker")
+  expect_equal(unname(nl[["nav.pathogens"]]), "Verwekkers")
 })
 
 test_that("every language names the Pathogen screen the same way in its nav entry and its title", {
   # A nav entry reading one thing and the screen it opens reading another
   # is the same class of slip as the Dutch one, just harder to spot.
+  # `nav.pathogens` is plural (it is a menu entry, like nav.outbreaks and
+  # nav.epidemics) while `pathogen.title` names the screen's own subject,
+  # one pathogen at a time, so it stays singular - the two are compared
+  # by stem, not by exact match.
+  #
+  # Stripping a trailing "s" recovers that singular stem in every shipped
+  # language except Arabic: its plural (see nav.pathogens) is a broken
+  # plural, formed by changing the word's internal pattern rather than
+  # appending one, so no suffix rule recovers the singular from it, and
+  # the correct stem is supplied directly instead.
+  irregular_stems <- list(ar = "العامل الممرض")
   for (lang in episodic_shipped_langs) {
     table <- episodic_i18n_load(lang)
-    nav <- table[["nav.pathogen"]]
+    nav <- table[["nav.pathogens"]]
     title <- table[["pathogen.title"]]
     # Singular stem, so an inflected or compounded title still matches
-    # (Verwekker -> Verwekkeractiviteit, Patógeno -> del patógeno).
-    stem <- sub("s$", "", tolower(nav))
+    # (Verwekkers -> Verwekkeractiviteit, Patógenos -> del patógeno).
+    stem <- irregular_stems[[lang]] %||% sub("s$", "", tolower(nav))
     expect_true(
       grepl(stem, tolower(title), fixed = TRUE),
       info = paste0(lang, ": nav '", nav, "' vs title '", title, "'")
@@ -546,13 +552,13 @@ test_that("a region EpiSODIC does not ship falls back to the language, saying so
 test_that("a variant inherits every key it does not carry, and overrides the ones it does", {
   en <- episodic_i18n_load("en")
   us <- episodic_i18n_load("en-US")
-  expect_equal(unname(us[["nav.clusters"]]), unname(en[["nav.clusters"]]))
+  expect_equal(unname(us[["nav.outbreaks"]]), unname(en[["nav.outbreaks"]]))
   expect_equal(unname(en[["info.about.license"]]), "Licence: {license}")
   expect_equal(unname(us[["info.about.license"]]), "License: {license}")
 
   es <- episodic_i18n_load("es")
   latam <- episodic_i18n_load("es-419")
-  expect_equal(unname(latam[["nav.clusters"]]), unname(es[["nav.clusters"]]))
+  expect_equal(unname(latam[["nav.outbreaks"]]), unname(es[["nav.outbreaks"]]))
   expect_equal(unname(es[["misc.decimal.mark"]]), ",")
   expect_equal(unname(latam[["misc.decimal.mark"]]), ".")
 })

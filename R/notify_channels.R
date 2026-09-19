@@ -223,7 +223,7 @@ episodic_notify_mime_message <- function(from,
   # A filename is not a header value and gets no encoded-word: a
   # `filename*` parameter (RFC 2231) is the correct spelling for a
   # non-ASCII one, and EpiSODIC's own render names files
-  # `cluster-<id>-v<n>.html`, which is ASCII by construction.
+  # `outbreak-<id>-v<n>.html`, which is ASCII by construction.
   filename <- gsub('["\r\n]', "", basename(attachment_path))
 
   paste0(

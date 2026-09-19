@@ -194,7 +194,7 @@ test_that("closing a cluster actually updates the rail and the Archief screen wi
     expect_false(grepl("Norovirus", archive_before))
 
     # Closing without ever touching nav_view (input$rail_select stays on
-    # "clusters" throughout), which is how it happens in the app: neither
+    # "outbreaks" throughout), which is how it happens in the app: neither
     # the rail nor the Archief screen has any reason to notice a write
     # unless something explicitly invalidates them. Closure is the
     # assessment form's own checkbox, submitted alongside the (here,
@@ -548,7 +548,7 @@ test_that("the rail's open-by-number box opens a real cluster and answers a numb
     # A number that resolves opens that cluster, from wherever the
     # reader happened to be.
     expect_equal(selected_cluster_id(), as.integer(cluster_id))
-    expect_equal(view(), "clusters")
+    expect_equal(view(), "outbreaks")
 
     # A number that resolves to nothing leaves the selection alone
     # rather than blanking the dossier - and, unlike every other way a
@@ -641,7 +641,7 @@ test_that("input$open_cluster jumps to the Clusters screen on that very cluster"
     # Matched as a text node (">#2<"), never as a bare "#2": the palette
     # ships #20C997 and #1A1A1A, so a loose needle matches any dossier.
     ref <- function(id) {
-      paste0(">", episodic_tr("dossier.cluster_ref", id = id, lang = "en"), "<")
+      paste0(">", episodic_tr("dossier.outbreak_ref", id = id, lang = "en"), "<")
     }
     # the rail auto-selects the cluster with the newest last case day on load
     expect_true(grepl(
@@ -650,7 +650,7 @@ test_that("input$open_cluster jumps to the Clusters screen on that very cluster"
       fixed = TRUE
     ))
 
-    session$setInputs(nav_view = "pathogen")
+    session$setInputs(nav_view = "pathogens")
     session$flushReact()
     session$setInputs(open_cluster = first)
     session$flushReact()
@@ -662,7 +662,7 @@ test_that("input$open_cluster jumps to the Clusters screen on that very cluster"
     # once and which one is shown is `data-view` on the shell, so what
     # proves the switch is view() itself rather than what one renderUI
     # happened to return.
-    expect_equal(view(), "clusters")
+    expect_equal(view(), "outbreaks")
 
     # The factory opened this connection; the mock session does not
     # run onSessionEnded, so close it here. Safe either way - the
@@ -725,7 +725,7 @@ test_that("a deep link to a closed cluster is not redirected to the top of the r
     session$flushReact()
 
     ref <- function(id) {
-      paste0(">", episodic_tr("dossier.cluster_ref", id = id, lang = "en"), "<")
+      paste0(">", episodic_tr("dossier.outbreak_ref", id = id, lang = "en"), "<")
     }
     dossier <- paste(output$dossier_pane, collapse = "\n")
     expect_true(grepl(ref(closed), dossier, fixed = TRUE))
@@ -837,9 +837,9 @@ test_that("the navigation highlight follows a deep link, not just its own clicks
     # there by the stylesheet; what this test holds is the server-side
     # half of it, that view() follows every route and not only a click
     # on the bar.
-    session$setInputs(nav_view = "pathogen")
+    session$setInputs(nav_view = "pathogens")
     session$flushReact()
-    expect_equal(view(), "pathogen")
+    expect_equal(view(), "pathogens")
 
     # A screen reached from the Instance screen is a view of its own,
     # and it lights the Instance link rather than none.
@@ -859,7 +859,7 @@ test_that("the navigation highlight follows a deep link, not just its own clicks
     # current screen has to move with it.
     session$setInputs(open_cluster = cluster_id)
     session$flushReact()
-    expect_equal(view(), "clusters")
+    expect_equal(view(), "outbreaks")
 
     # And through all of it the bar itself is never re-rendered.
     expect_equal(links(paste(output$nav_links, collapse = "\n")), before)
@@ -924,4 +924,170 @@ test_that("the Activity screen's run line carries a failed run's reason, its fir
     episodic_app_run_detail(run, lang = "en"),
     "Case data cannot be used by EpiSODIC: 2 problems."
   )
+})
+
+test_that("opening an object from the other scale moves the screen as well as the selection", {
+  db_path <- tempfile(fileext = ".sqlite")
+  con <- episodic_db_create(db_path)
+  run_id <- episodic_db_run_start(con, "h", "a")
+  stream <- function(level, region_code) {
+    episodic_db_stream_upsert(
+      con,
+      stream_key = episodic_stream_key(level, "RSV", region_code = region_code),
+      level = level,
+      pathogen = "RSV",
+      region_code = region_code,
+      observed_date = "2026-01-15"
+    )
+  }
+  outbreak_id <- episodic_db_cluster_insert(
+    con,
+    stream_id = stream("pathogen_area", "GEBIED-97"),
+    first_day = "2026-01-10",
+    last_day = "2026-01-20",
+    n_cases = 5,
+    priority_score = 40,
+    detector_agreement = 1,
+    run_id = run_id,
+    scale = "outbreak"
+  )
+  epidemic_id <- episodic_db_cluster_insert(
+    con,
+    stream_id = stream("pathogen_region", "NORTH"),
+    first_day = "2026-01-01",
+    last_day = "2026-02-15",
+    n_cases = 80,
+    priority_score = 70,
+    detector_agreement = 1,
+    run_id = run_id,
+    scale = "epidemic"
+  )
+  DBI::dbDisconnect(con)
+
+  server <- episodic_app_server_factory(db_path, lang = "en")
+  shiny::testServer(server, {
+    session$flushReact()
+
+    # The "During E-123" chip on an outbreak's dossier. The reader is on
+    # the Outbreaks screen; the epidemic is on another screen, and a
+    # selection made behind a screen nobody is looking at is the bug
+    # this asserts against.
+    session$setInputs(epidemic_select = epidemic_id)
+    session$flushReact()
+    expect_equal(selected_epidemic_id(), epidemic_id)
+    expect_equal(view(), "epidemics")
+
+    # And back the other way: the "Outbreaks during this epidemic"
+    # table on the Epidemics screen.
+    session$setInputs(open_cluster = outbreak_id)
+    session$flushReact()
+    expect_equal(selected_cluster_id(), outbreak_id)
+    expect_equal(view(), "outbreaks")
+
+    # An id naming nothing leaves both where they were, rather than
+    # blanking a pane that has no empty state for it.
+    session$setInputs(epidemic_select = 999999L)
+    session$flushReact()
+    expect_equal(selected_epidemic_id(), epidemic_id)
+    expect_equal(view(), "outbreaks")
+
+    DBI::dbDisconnect(con)
+  })
+})
+
+test_that("an epidemiologist can record an assessment and a note against an epidemic", {
+  skip_if_not_installed("sodium")
+
+  db_path <- tempfile(fileext = ".sqlite")
+  con <- episodic_db_create(db_path)
+  user_id <- episodic_db_app_user_insert(
+    con,
+    "jdoe",
+    "Jane Doe",
+    "j@x.nl",
+    sodium::password_store("initial123"),
+    role = "epidemiologist"
+  )
+  DBI::dbExecute(
+    con,
+    "UPDATE episodic_app_user SET must_change = 0 WHERE user_id = ?",
+    params = list(user_id)
+  )
+  run_id <- episodic_db_run_start(con, "h", "a")
+  epidemic_id <- episodic_db_cluster_insert(
+    con,
+    stream_id = episodic_db_stream_upsert(
+      con,
+      stream_key = episodic_stream_key(
+        "pathogen_region",
+        "RSV",
+        region_code = "NORTH"
+      ),
+      level = "pathogen_region",
+      pathogen = "RSV",
+      region_code = "NORTH",
+      observed_date = "2026-01-15"
+    ),
+    first_day = "2026-01-01",
+    last_day = "2026-02-15",
+    n_cases = 80,
+    priority_score = 70,
+    detector_agreement = 1,
+    run_id = run_id,
+    scale = "epidemic"
+  )
+  DBI::dbDisconnect(con)
+
+  server <- episodic_app_server_factory(db_path, lang = "en")
+  shiny::testServer(server, {
+    session$setInputs(
+      auth_username_val = "jdoe",
+      auth_password_val = "initial123"
+    )
+    session$setInputs(auth_login_submit = 1)
+    session$setInputs(epidemic_select = epidemic_id)
+    session$flushReact()
+
+    # The assessment pane offers the form, and the form's own input is
+    # what the server listens on.
+    expect_true(grepl(
+      "epidemic_assess_verdict",
+      paste(output$epidemic_assessment_pane, collapse = "\n"),
+      fixed = TRUE
+    ))
+
+    session$setInputs(epidemic_assess_submit = list(
+      cluster_id = epidemic_id,
+      verdict = "confirmed_epidemic",
+      rationale = "Regional rise across eight institutions.",
+      snooze = "",
+      close = FALSE
+    ))
+    session$flushReact()
+    events <- DBI::dbGetQuery(
+      con,
+      "SELECT verdict, rationale FROM episodic_assessment_event
+        WHERE cluster_id = ?",
+      params = list(epidemic_id)
+    )
+    expect_equal(nrow(events), 1)
+    expect_equal(events$verdict[1], "confirmed_epidemic")
+
+    # And the note, through the same handler the Outbreaks panel uses.
+    session$setInputs(note_save_submit = list(
+      cluster_id = epidemic_id,
+      note_text = "Screening policy reviewed with the eight hospitals."
+    ))
+    session$flushReact()
+    note <- episodic_db_cluster_note_current(con, epidemic_id)
+    expect_equal(nrow(note), 1)
+    expect_true(grepl("Screening policy", note$note_text[1], fixed = TRUE))
+    expect_true(grepl(
+      "Screening policy",
+      paste(output$epidemic_notes_pane, collapse = "\n"),
+      fixed = TRUE
+    ))
+
+    DBI::dbDisconnect(con)
+  })
 })

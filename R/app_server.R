@@ -63,7 +63,7 @@ episodic_app_server_factory <- function(db_path,
       episodic_app_access_granted(require_login, current_user())
     })
 
-    view <- shiny::reactiveVal("clusters")
+    view <- shiny::reactiveVal("outbreaks")
     # Checked against the screens that exist rather than trusted: any
     # client can set any input, and a view id naming no screen would
     # leave the shell showing none of them.
@@ -85,7 +85,7 @@ episodic_app_server_factory <- function(db_path,
     # Deliberately not gated on `view()`. A reactive is lazy, so this
     # costs nothing until the rail (or the selection observer below)
     # asks for it; gating it on the view as well made *leaving* the
-    # clusters screen and coming back invalidate the whole open-cluster
+    # outbreaks screen and coming back invalidate the whole open-cluster
     # list, so every return from the Archive or the Pathogen screen
     # rebuilt it from the database before anything could be drawn.
     open_clusters <- shiny::reactive({
@@ -128,19 +128,21 @@ episodic_app_server_factory <- function(db_path,
 
     # Deep link from any cluster table (see `R/app_cluster_table.R`).
     # Setting the selection before the view means the dossier pane has
-    # its cluster ready by the time the clusters view renders, and the
+    # its cluster ready by the time the outbreaks view renders, and the
     # observer above will leave it alone whichever order the two land in.
     shiny::observeEvent(input$open_cluster, {
       requested <- as.integer(input$open_cluster)
-      # An id that names nothing viewable is ignored rather than
-      # selected: `output$dossier_pane` has no empty state for a cluster
-      # that is not there, and a chip pointing at one merged away since
-      # the page was drawn should leave the screen as it is.
       if (!episodic_app_cluster_viewable(con, requested)) {
         return(invisible(NULL))
       }
-      selected_cluster_id(requested)
-      view("clusters")
+      cluster_scale <- episodic_app_cluster_scale(con, requested)
+      if (identical(cluster_scale, "epidemic")) {
+        selected_epidemic_id(requested)
+        view("epidemics")
+      } else {
+        selected_cluster_id(requested)
+        view("outbreaks")
+      }
     })
 
     # The rail header's open-by-number box. Unlike every other way a
@@ -153,20 +155,27 @@ episodic_app_server_factory <- function(db_path,
       requested <- suppressWarnings(as.integer(input$rail_open_cluster))
       if (is.na(requested) || !episodic_app_cluster_viewable(con, requested)) {
         shiny::showNotification(
-          # As typed, ungrouped: a cluster number is an identifier, not
-          # a quantity, and is written the way it is quoted everywhere
-          # else in the app.
           episodic_tr(
             "rail.open_not_found",
-            id = as.character(input$rail_open_cluster),
+            ref = episodic_tr(
+              "dossier.outbreak_ref",
+              id = input$rail_open_cluster,
+              lang = lang
+            ),
             lang = lang
           ),
           type = "warning"
         )
         return(invisible(NULL))
       }
-      selected_cluster_id(requested)
-      view("clusters")
+      cluster_scale <- episodic_app_cluster_scale(con, requested)
+      if (identical(cluster_scale, "epidemic")) {
+        selected_epidemic_id(requested)
+        view("epidemics")
+      } else {
+        selected_cluster_id(requested)
+        view("outbreaks")
+      }
     })
 
     # The same deep link from outside the app: `?cluster=123` opens that
@@ -195,8 +204,14 @@ episodic_app_server_factory <- function(db_path,
         if (!episodic_app_cluster_viewable(con, requested)) {
           return()
         }
-        selected_cluster_id(requested)
-        view("clusters")
+        cluster_scale <- episodic_app_cluster_scale(con, requested)
+        if (identical(cluster_scale, "epidemic")) {
+          selected_epidemic_id(requested)
+          view("epidemics")
+        } else {
+          selected_cluster_id(requested)
+          view("outbreaks")
+        }
       },
       once = TRUE
     )
@@ -287,8 +302,8 @@ episodic_app_server_factory <- function(db_path,
     shiny::observeEvent(
       selected_cluster_id(),
       session$sendCustomMessage(
-        "episodic_cluster",
-        list(cluster = selected_cluster_id())
+        "episodic_outbreak",
+        list(outbreak = selected_cluster_id())
       ),
       ignoreNULL = FALSE
     )
@@ -514,6 +529,176 @@ episodic_app_server_factory <- function(db_path,
         obj = cluster_object()
       )
     })
+
+    # -- Epidemics screen --------------------------------------------------
+
+    open_epidemics <- shiny::reactive({
+      db_version()
+      shiny::req(access_granted())
+      episodic_app_open_epidemics(con, lang = lang)
+    })
+
+    selected_epidemic_id <- shiny::reactiveVal(NULL)
+    shiny::observeEvent(open_epidemics(), {
+      ids <- open_epidemics()$cluster_id
+      if (length(ids) == 0) {
+        return()
+      }
+      if (!isTRUE(selected_epidemic_id() %in% ids)) {
+        selected_epidemic_id(ids[1])
+      }
+    })
+    # One input for both ways an epidemic is opened: a row in the
+    # epidemic rail, and a "During E-123" chip on an outbreak's dossier.
+    # The view is set either way rather than only for the chip - from the
+    # rail it is already "epidemics", so setting it again invalidates
+    # nothing and sends nothing, and there is no second input, no second
+    # attribute and no rule about which of them applies where.
+    shiny::observeEvent(input$epidemic_select, {
+      requested <- suppressWarnings(as.integer(input$epidemic_select))
+      # An id naming nothing viewable leaves the screen as it is, for the
+      # reason `open_cluster` above does: the dossier pane has no empty
+      # state for an epidemic that is not there.
+      if (!episodic_app_cluster_viewable(con, requested)) {
+        return(invisible(NULL))
+      }
+      selected_epidemic_id(requested)
+      view("epidemics")
+    })
+
+    # The epidemic rail's own highlight, and on the phone tier which
+    # epidemic the segmented control's other two segments refer to. The
+    # same contract as `episodic_outbreak` above, on an attribute of its
+    # own: both screens hold a selection at once.
+    shiny::observeEvent(
+      selected_epidemic_id(),
+      session$sendCustomMessage(
+        "episodic_epidemic",
+        list(epidemic = selected_epidemic_id())
+      ),
+      ignoreNULL = FALSE
+    )
+
+    output$epidemic_pane_label <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
+      eid <- selected_epidemic_id()
+      if (is.null(eid)) {
+        return(NULL)
+      }
+      episodic_ui_pane_label(con, eid, lang = lang)
+    })
+
+    epidemic_object <- shiny::reactive({
+      shiny::req(access_granted())
+      eid <- selected_epidemic_id()
+      shiny::req(!is.null(eid))
+      db_version()
+      episodic_epidemic_object(con, eid, lang = lang)
+    })
+
+    # Deliberately not dependent on selected_epidemic_id(), for the
+    # reason output$rail_pane is not dependent on selected_cluster_id():
+    # the row's own `aria-current`, written client-side by
+    # `episodic-nav.js`, carries the highlight, and re-rendering the rail
+    # on every click would replace its DOM and its scroll position.
+    output$epidemic_rail_pane <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
+      episodic_ui_epidemic_rail(
+        open_epidemics(),
+        shiny::isolate(selected_epidemic_id()),
+        lang = lang
+      )
+    })
+
+    output$epidemic_dossier_pane <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
+      eid <- selected_epidemic_id()
+      if (is.null(eid)) {
+        return(shiny::tags$p(
+          class = "episodic-panel-empty",
+          episodic_tr("epidemics.rail_empty", lang = lang)
+        ))
+      }
+      episodic_ui_epidemic_dossier(con, obj = epidemic_object(), lang = lang)
+    })
+
+    # The epidemic's own notes panel. Its own output, like the
+    # Outbreaks dossier's, so that saving a note redraws the panel and
+    # not the seasonal curve beside it.
+    output$epidemic_notes_pane <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
+      eid <- selected_epidemic_id()
+      if (is.null(eid)) {
+        return(NULL)
+      }
+      notes_version()
+      episodic_ui_notes_panel(
+        con,
+        eid,
+        current_user(),
+        lang = lang,
+        prefix = "epidemic-notes"
+      )
+    })
+
+    output$epidemic_assessment_pane <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
+      eid <- selected_epidemic_id()
+      if (is.null(eid)) {
+        return(NULL)
+      }
+      episodic_ui_epidemic_assessment_rail(
+        con,
+        eid,
+        lang = lang,
+        current_user = current_user(),
+        obj = epidemic_object()
+      )
+    })
+
+    # The epidemic form's submit. Its own input rather than
+    # `assess_submit`, because the two forms are in the page together and
+    # the refresh afterwards has to reselect the right one; the write
+    # itself goes through the same `episodic_app_submit_assessment()`,
+    # and is re-checked server-side here for the same reason every other
+    # write handler re-checks it - the DOM is not a trust boundary.
+    shiny::observeEvent(input$epidemic_assess_submit, {
+      user <- episodic_auth_refresh_user(con, current_user())
+      shiny::req(episodic_user_is_epidemiologist(user))
+      payload <- input$epidemic_assess_submit
+      episodic_app_submit_assessment(
+        con,
+        cluster_id = payload$cluster_id,
+        user_id = user$user_id,
+        verdict = if (nzchar(payload$verdict %||% "")) payload$verdict else NA,
+        rationale = trimws(payload$rationale %||% ""),
+        snooze_until = if (nzchar(payload$snooze %||% "")) {
+          payload$snooze
+        } else {
+          NA
+        },
+        close = isTRUE(payload$close)
+      )
+      # Reselecting the same epidemic re-triggers the dossier and
+      # assessment renderers, which read from the database rather than
+      # from this value's identity.
+      eid <- selected_epidemic_id()
+      selected_epidemic_id(NULL)
+      selected_epidemic_id(eid)
+      db_touch()
+    })
+
+    # -- Archive -----------------------------------------------------------
 
     archive_query <- shiny::reactiveVal("")
     shiny::observeEvent(
@@ -1053,14 +1238,14 @@ episodic_ui_rail <- function(open,
           shiny::tags$button(
             type = "button",
             class = "episodic-rail-item-open",
-            `data-episodic-cluster` = row$cluster_id,
+            `data-episodic-outbreak` = row$cluster_id,
             shiny::tags$div(
               class = "episodic-rail-pathogen",
               shiny::HTML(episodic_ui_italicise_taxon(row$pathogen)),
               shiny::tags$span(
                 class = "episodic-rail-id",
                 episodic_tr(
-                  "dossier.cluster_ref",
+                  "dossier.outbreak_ref",
                   id = row$cluster_id,
                   lang = lang
                 )

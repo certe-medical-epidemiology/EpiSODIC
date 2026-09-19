@@ -20,6 +20,7 @@
 cluster_table_frame <- function() {
   data.frame(
     cluster_id = c(11L, 12L, 13L),
+    level = c("pathogen_ward", "pathogen_institution", "pathogen_area"),
     n_cases = c(4L, 9L, 2L),
     case_days = c(3L, 6L, 2L),
     first_day = c("2025-01-02", "2025-02-01", "2025-03-01"),
@@ -93,8 +94,8 @@ test_that("the table carries the whole spine, in order, whatever the screen", {
   # and the rows themselves, sorted, with every value the spine promises
   expect_true(grepl("episodic-cell-id", html, fixed = TRUE))
   expect_lt(
-    regexpr(episodic_tr("dossier.cluster_ref", id = 13L, lang = "en"), html),
-    regexpr(episodic_tr("dossier.cluster_ref", id = 11L, lang = "en"), html)
+    regexpr(episodic_tr("dossier.outbreak_ref", id = 13L, lang = "en"), html),
+    regexpr(episodic_tr("dossier.outbreak_ref", id = 11L, lang = "en"), html)
   )
   # first case and last case as one range, not two separate date columns
   expect_true(grepl(
@@ -163,13 +164,14 @@ test_that("a cluster table refuses to render a column it was not given", {
 test_that("a row opens its dossier, by click and by keyboard", {
   row <- as.character(episodic_ui_cluster_row(
     42L,
+    "pathogen_ward",
     shiny::tags$td("a cell"),
     lang = "en"
   ))
   # The shared opener attribute (see inst/app/www/episodic-nav.js) sets the `open_cluster`
   # Shiny input and moves the rail's own highlight - a row must call it
   # rather than setInputValue directly, or the rail goes stale on click.
-  expect_true(grepl('data-episodic-cluster="42"', row, fixed = TRUE))
+  expect_true(grepl('data-episodic-outbreak="42"', row, fixed = TRUE))
   expect_true(grepl("42", row, fixed = TRUE))
   expect_true(grepl("tabindex", row, fixed = TRUE))
   # Enter and Space reach it through episodic-nav.js's delegated keydown
@@ -184,15 +186,76 @@ test_that("a row opens its dossier, by click and by keyboard", {
   )
 })
 
+test_that("a row's id prefix follows its own level, not an assumption from the caller", {
+  outbreak_row <- as.character(episodic_ui_cluster_row(
+    5L,
+    "pathogen_ward",
+    shiny::tags$td("x"),
+    lang = "en"
+  ))
+  expect_true(grepl(">O-5<", outbreak_row, fixed = TRUE))
+  expect_false(grepl(">E-5<", outbreak_row, fixed = TRUE))
+
+  epidemic_row <- as.character(episodic_ui_cluster_row(
+    5L,
+    "pathogen_region",
+    shiny::tags$td("x"),
+    lang = "en"
+  ))
+  expect_true(grepl(">E-5<", epidemic_row, fixed = TRUE))
+  expect_false(grepl(">O-5<", epidemic_row, fixed = TRUE))
+})
+
+test_that("a cluster table mixing outbreak- and epidemic-scale rows labels each one correctly", {
+  clusters <- cluster_table_frame()
+  clusters$level <- c("pathogen_ward", "pathogen_province", "pathogen_region")
+  html <- as.character(episodic_ui_cluster_table(clusters, lang = "en"))
+  expect_true(grepl(">O-11<", html, fixed = TRUE))
+  expect_true(grepl(">E-12<", html, fixed = TRUE))
+  expect_true(grepl(">E-13<", html, fixed = TRUE))
+  expect_false(grepl(">O-12<", html, fixed = TRUE))
+  expect_false(grepl(">O-13<", html, fixed = TRUE))
+})
+
+test_that("epidemic-scale rows carry data-episodic-epidemic, outbreak-scale rows carry data-episodic-outbreak", {
+  ob_row <- as.character(episodic_ui_cluster_row(
+    10L,
+    "pathogen_ward",
+    shiny::tags$td("x"),
+    lang = "en"
+  ))
+  expect_true(grepl('data-episodic-outbreak="10"', ob_row, fixed = TRUE))
+  expect_false(grepl("data-episodic-epidemic", ob_row, fixed = TRUE))
+
+  ep_row <- as.character(episodic_ui_cluster_row(
+    10L,
+    "pathogen_region",
+    shiny::tags$td("x"),
+    lang = "en"
+  ))
+  expect_true(grepl('data-episodic-epidemic="10"', ep_row, fixed = TRUE))
+  expect_false(grepl("data-episodic-outbreak", ep_row, fixed = TRUE))
+
+  ep_link <- as.character(episodic_ui_cluster_link(
+    "E-10",
+    10L,
+    scale = "epidemic",
+    lang = "en"
+  ))
+  expect_true(grepl('data-episodic-epidemic="10"', ep_link, fixed = TRUE))
+  expect_false(grepl("data-episodic-outbreak", ep_link, fixed = TRUE))
+})
+
 test_that("a cluster that no longer stands on its own says so instead of dead-linking", {
   row <- as.character(episodic_ui_cluster_row(
     42L,
+    "pathogen_ward",
     shiny::tags$td("a cell"),
     unlinked_reason = "it was suppressed",
     lang = "en"
   ))
   # no click target at all, rather than one that goes nowhere
-  expect_false(grepl("data-episodic-cluster", row, fixed = TRUE))
+  expect_false(grepl("data-episodic-outbreak", row, fixed = TRUE))
   expect_false(grepl("episodic-row-link", row, fixed = TRUE))
   expect_false(grepl("tabindex", row, fixed = TRUE))
   # the id is still there, marked, and hovering it explains why
@@ -270,6 +333,7 @@ test_that("a day value that does not parse yields NA rather than taking the scre
   )
   clusters <- data.frame(
     cluster_id = c(1L, 2L),
+    level = c("pathogen_ward", "pathogen_ward"),
     n_cases = c(1L, 1L),
     case_days = c(1L, 1L),
     first_day = c("2025-01-01", "2025-03-01"),

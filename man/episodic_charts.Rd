@@ -7,11 +7,19 @@
 \alias{episodic_ui_rt_chart}
 \title{Draw the Dashboard Charts (Epidemic Curve, Trend, and Rt)}
 \usage{
-episodic_ui_epi_curve_chart(curve, lang = Sys.getenv("EPISODIC_LANGUAGE"))
+episodic_ui_epi_curve_chart(
+  curve,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  accent = NULL
+)
 
-episodic_ui_trend_chart(trend, lang = Sys.getenv("EPISODIC_LANGUAGE"))
+episodic_ui_trend_chart(
+  trend,
+  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+  accent = NULL
+)
 
-episodic_ui_rt_chart(rt, lang = Sys.getenv("EPISODIC_LANGUAGE"))
+episodic_ui_rt_chart(rt, lang = Sys.getenv("EPISODIC_LANGUAGE"), accent = NULL)
 }
 \arguments{
 \item{curve}{A data frame with one row per day: \code{sample_date} (\code{Date}),
@@ -25,6 +33,11 @@ that is really just a reporting lag).}
 one (\code{"en-US"}, \code{"es-419"}). Defaults to the
 \code{EPISODIC_LANGUAGE} environment variable, falling back to \code{"en"} if
 that is unset.}
+
+\item{accent}{Fill colour for the bars. Defaults to the palette's
+\code{primary}; a caller drawing this for a specific nav section passes
+\code{episodic_nav_accent()} instead, so the chart reads as belonging to
+whichever screen it is on.}
 
 \item{trend}{A data frame with one row per week: \code{week_start} (\code{Date}),
 \code{n_cases} (observed count), \code{expected} (the Farrington baseline), and

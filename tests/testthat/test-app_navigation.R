@@ -61,7 +61,12 @@ episodic_nav_page <- function(lang = "en") {
 test_that("the shell carries the navigation state and nothing else does", {
   html <- as.character(episodic_app_ui("en"))
   expect_true(grepl('class="episodic-shell"', html, fixed = TRUE))
-  for (attr in c('data-view="clusters"', 'data-nav="clusters"', 'data-cluster=""')) {
+  for (attr in c(
+    'data-view="outbreaks"',
+    'data-nav="outbreaks"',
+    'data-outbreak=""',
+    'data-epidemic=""'
+  )) {
     expect_true(grepl(attr, html, fixed = TRUE), info = attr)
   }
   # `data-access` is absent until the server says otherwise, so the
@@ -134,7 +139,7 @@ test_that("the stylesheet decides what is visible, for every screen and every pa
       info = pane
     )
   }
-  for (group in c("clusters", "pathogen", "archive", "instance")) {
+  for (group in c("outbreaks", "pathogens", "instance")) {
     expect_true(
       grepl(
         sprintf(
@@ -194,11 +199,17 @@ test_that("the navigation layer carries no inline event handler at all", {
     nav = as.character(episodic_ui_nav_links(lang = "en")),
     rail = as.character(episodic_ui_rail(fixture, selected_id = NULL, lang = "en")),
     switcher = as.character(episodic_ui_pane_switcher(lang = "en")),
+    epidemic_switcher = as.character(
+      episodic_ui_pane_switcher(scale = "epidemic", lang = "en")
+    ),
+    epidemic_rail = as.character(
+      episodic_ui_epidemic_rail(fixture, selected_id = NULL, lang = "en")
+    ),
     card = as.character(
       episodic_ui_instance_card("streams", "Streams", "What it watches.", "12 streams")
     ),
     row = as.character(
-      episodic_ui_cluster_row(7L, shiny::tags$td("x"), lang = "en")
+      episodic_ui_cluster_row(7L, "pathogen_ward", shiny::tags$td("x"), lang = "en")
     ),
     chip = as.character(
       episodic_ui_chip_link("linked", "#123456", 9L, lang = "en")
@@ -221,7 +232,7 @@ test_that("the navigation layer carries no inline event handler at all", {
   }
 })
 
-test_that("everything that navigates says so with one of four data attributes", {
+test_that("everything that navigates says so with one of five data attributes", {
   fixture <- data.frame(
     cluster_id = 3L,
     pathogen = "Norovirus",
@@ -234,9 +245,16 @@ test_that("everything that navigates says so with one of four data attributes", 
     last_day = "2025-01-05",
     stringsAsFactors = FALSE
   )
+  # Archive is reached from a card on the Instance screen now, not from
+  # the bar - see `episodic_ui_instance_card()`.
+  instance <- list(
+    counts = list(streams = 12L, runs = 4L, users = 3L, clusters = 9L),
+    archive_count = 7L,
+    version = "1.2.3"
+  )
   expect_true(grepl(
     'data-episodic-nav="archive"',
-    as.character(episodic_ui_nav_links(lang = "en")),
+    as.character(episodic_ui_instance_screen(instance, lang = "en")),
     fixed = TRUE
   ))
   expect_true(grepl(
@@ -247,8 +265,35 @@ test_that("everything that navigates says so with one of four data attributes", 
   rail <- as.character(
     episodic_ui_rail(fixture, selected_id = NULL, lang = "en")
   )
-  expect_true(grepl('data-episodic-cluster="3"', rail, fixed = TRUE))
+  expect_true(grepl('data-episodic-outbreak="3"', rail, fixed = TRUE))
   expect_true(grepl('data-episodic-action="rail-open"', rail, fixed = TRUE))
+  # The fifth: an epidemic is selected within its own screen, and a
+  # click on one rail must never be read as a click on the other.
+  epidemic_rail <- as.character(
+    episodic_ui_epidemic_rail(fixture, selected_id = NULL, lang = "en")
+  )
+  expect_true(grepl('data-episodic-epidemic="3"', epidemic_rail, fixed = TRUE))
+  expect_false(grepl("data-episodic-outbreak", epidemic_rail, fixed = TRUE))
+})
+
+test_that("each rail is marked within its own container, not across the document", {
+  html <- as.character(episodic_app_ui("en"))
+  for (scope in c("outbreaks", "epidemics")) {
+    expect_true(
+      grepl(sprintf('data-episodic-rail="%s"', scope), html, fixed = TRUE),
+      info = scope
+    )
+  }
+  js <- episodic_nav_js()
+  expect_true(grepl("[data-episodic-rail=", js, fixed = TRUE))
+  # The view is reported as an event, so a click back onto the screen
+  # the server still believes you are on is still heard. As a plain
+  # value it sent nothing, and from then on the two disagreed.
+  expect_true(grepl(
+    'setInputValue("nav_view", view, { priority: "event" })',
+    js,
+    fixed = TRUE
+  ))
 })
 
 test_that("the rail row opens a cluster from a button beside the checkbox, not around it", {
@@ -410,13 +455,14 @@ test_that("right-to-left is expressed logically, with the one transform named", 
 # ---------------------------------------------------------------------
 # The Instance screen
 
-test_that("the Instance screen offers the five screens the bar no longer carries", {
+test_that("the Instance screen offers the six screens the bar no longer carries", {
   instance <- list(
     counts = list(streams = 12L, runs = 4L, users = 3L, clusters = 9L),
-    schema_version = 5L
+    archive_count = 7L,
+    version = "1.2.3"
   )
   html <- as.character(episodic_ui_instance_screen(instance, lang = "en"))
-  for (view in c("streams", "activity", "performance", "info")) {
+  for (view in c("archive", "streams", "activity", "performance", "info")) {
     expect_true(
       grepl(sprintf('data-episodic-nav="%s"', view), html, fixed = TRUE),
       info = view
@@ -450,7 +496,8 @@ test_that("the Instance screen offers the five screens the bar no longer carries
 test_that("the Performance card deliberately carries no number", {
   instance <- list(
     counts = list(streams = 12L, runs = 4L, users = 3L, clusters = 9L),
-    schema_version = 5L
+    archive_count = 7L,
+    version = "1.2.3"
   )
   html <- as.character(episodic_ui_instance_screen(instance, lang = "en"))
   cards <- lengths(regmatches(
@@ -461,19 +508,22 @@ test_that("the Performance card deliberately carries no number", {
     html,
     gregexpr("episodic-instance-card-meta", html, fixed = TRUE)
   ))[[1]]
-  # Four cards, three numbers. Measuring the instance against its
+  # Five cards, four numbers. Measuring the instance against its
   # epidemiologists' verdicts is a real computation, and running it to
   # fill in a line nobody asked for - every time somebody passes through
   # on the way to Settings - would turn opening this screen into a
-  # query.
-  expect_equal(cards, 4)
-  expect_equal(metas, 3)
+  # query. Archive's count is real too, but its cost is what opening the
+  # Archive screen already pays, computed once in
+  # `episodic_app_instance()` rather than repeated here.
+  expect_equal(cards, 5)
+  expect_equal(metas, 4)
 })
 
 test_that("the Instance screen renders in every shipped language with no missing key", {
   instance <- list(
     counts = list(streams = 12L, runs = 4L, users = 3L, clusters = 9L),
-    schema_version = 5L
+    archive_count = 7L,
+    version = "1.2.3"
   )
   for (lang in episodic_nav_shipped_langs) {
     html <- as.character(episodic_ui_instance_screen(instance, lang = lang))
@@ -494,12 +544,15 @@ test_that("every key the new navigation uses exists in every shipped language", 
     "pane.switcher_label",
     "rail.bulk_select",
     "instance.lead",
-    "instance.schema_version",
+    "instance.card.info.version",
+    "instance.card.archive",
     "instance.card.streams",
     "instance.card.activity",
     "instance.card.performance",
     "instance.card.info",
     "instance.card.settings",
+    "unit.outbreak_or_epidemic",
+    "unit.outbreaks_and_epidemics",
     "unit.run",
     "unit.runs",
     "unit.account",
@@ -522,7 +575,10 @@ test_that("episodic_app_ui() assembles without error in every shipped language",
 
 test_that("the page loads its navigation from one cached file rather than inline scripts", {
   html <- episodic_nav_page("en")
-  expect_true(grepl('src="www/episodic-nav.js"', html, fixed = TRUE))
+  # `?v=<package version>` cache-busts across upgrades (see
+  # episodic_app_ui()'s own asset_version); the fixed src is what this
+  # test cares about, so it checks the prefix rather than an exact match.
+  expect_true(grepl('src="www/episodic-nav.js?v=', html, fixed = TRUE))
   # The only script written into the page is the one thing that has to
   # be true before the first paint: an Arabic reader must not see a
   # left-to-right layout while a file loads.
@@ -597,7 +653,7 @@ test_that("the pane label names a cluster the rail does not list", {
     episodic_ui_pane_label(env$con, env$cluster_id, lang = "en")
   )
   expect_true(grepl(
-    episodic_tr("dossier.cluster_ref", id = env$cluster_id, lang = "en"),
+    episodic_tr("dossier.outbreak_ref", id = env$cluster_id, lang = "en"),
     label,
     fixed = TRUE
   ))

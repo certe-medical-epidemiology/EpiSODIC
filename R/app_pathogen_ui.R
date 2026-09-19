@@ -34,7 +34,7 @@ episodic_ui_pathogen_screen <- function(screen,
     return(shiny::tags$div(
       class = "episodic-streams-screen",
       shiny::tags$h1(
-        style = "font-size:22px;font-weight:600;margin-bottom:4px;",
+        class = "episodic-screen-title",
         episodic_tr("pathogen.title", lang = lang)
       ),
       shiny::tags$p(
@@ -47,7 +47,7 @@ episodic_ui_pathogen_screen <- function(screen,
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(
-      style = "font-size:22px;font-weight:600;margin-bottom:4px;",
+      class = "episodic-screen-title",
       episodic_tr("pathogen.title", lang = lang)
     ),
     shiny::tags$p(
@@ -379,7 +379,11 @@ episodic_ui_pathogen_curve_panel <- function(screen,
     ),
     note = shiny::HTML(note),
     shiny::renderPlot(
-      episodic_ui_pathogen_curve_chart(screen$weekly, thresholds, lang = lang),
+      episodic_ui_pathogen_curve_chart(
+        screen$weekly, thresholds,
+        lang = lang,
+        accent = episodic_nav_accent("pathogens")
+      ),
       height = 300
     )
   )
@@ -446,7 +450,7 @@ episodic_ui_pathogen_rt_panel <- function(screen,
     episodic_tr("pathogen.panel.rt.title", lang = lang),
     note = episodic_tr("pathogen.panel.rt.note", lang = lang),
     shiny::renderPlot(
-      episodic_ui_rt_chart(screen$rt, lang = lang),
+      episodic_ui_rt_chart(screen$rt, lang = lang, accent = episodic_nav_accent("pathogens")),
       height = 260
     )
   )
@@ -526,7 +530,7 @@ episodic_ui_pathogen_geo_panel <- function(screen,
       episodic_tr("panel.geo.empty", lang = lang)
     ))
   }
-  map_chart <- episodic_ui_geo_map_chart(concentration$rows)
+  map_chart <- episodic_ui_geo_map_chart(concentration$rows, accent = episodic_nav_accent("pathogens"))
   # A broken chart-rendering environment (see episodic_graphics_probe())
   # cannot draw the map at all - fall back to the bar breakdown exactly as
   # if no geographic data were available, but say why the map itself is

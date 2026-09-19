@@ -320,3 +320,57 @@ test_that("the notes observer writes a version only when the note changed", {
     }
   )
 })
+
+test_that("the notes observer bumps notes_version on every submit, written or not", {
+  # The edit textarea and its buttons are plain client-side
+  # style.display with no cancel path of their own (episodic_ui_notes_panel()):
+  # the panel only ever leaves edit mode by output$notes_pane being
+  # re-rendered, which is keyed on notes_version(). A Save that writes
+  # nothing still has to collapse the panel back to view, so the bump
+  # cannot be conditional on episodic_note_is_new().
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    username = "jdoe",
+    full_name = "Jane Doe",
+    email = "jdoe@example.com",
+    password_hash = "x",
+    role = "epidemiologist"
+  )
+  user <- episodic_db_user_by_id(env$con, user_id)
+  version <- shiny::reactiveVal(0L)
+
+  submit <- function(session, text) {
+    session$setInputs(note_save_submit = list(
+      cluster_id = env$cluster_id,
+      note_text = text
+    ))
+  }
+
+  shiny::testServer(
+    function(input, output, session) {
+      episodic_app_server_notes(
+        input,
+        output,
+        session,
+        env$con,
+        current_user = shiny::reactiveVal(user),
+        notes_version = version,
+        access_granted = shiny::reactive(TRUE),
+        lang = "en"
+      )
+    },
+    {
+      submit(session, "Two rooms on ward B")
+      expect_equal(shiny::isolate(version()), 1L)
+
+      # Repeating the same text writes nothing (see the test above), but
+      # the version still has to move so the panel collapses.
+      submit(session, "Two rooms on ward B")
+      expect_equal(shiny::isolate(version()), 2L)
+      submit(session, "  Two rooms on ward B\n")
+      expect_equal(shiny::isolate(version()), 3L)
+    }
+  )
+})

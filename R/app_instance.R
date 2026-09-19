@@ -19,15 +19,24 @@
 
 #' The Instance screen's own data
 #'
+#' `archive_count` is not one of `episodic_db_instance_counts()`'s cheap
+#' `COUNT(*)`s: "closed" is a state derived from a cluster's assessment
+#' events and closure history (`episodic_app_derive_states_batch()`),
+#' with no indexed column to count directly, so this pays the same cost
+#' opening the Archive screen itself pays rather than pretend a count of
+#' something else (inactive streams, say) stands in for it.
+#'
 #' @param con A [DBI::DBIConnection-class].
 #' @param lang Session language.
-#' @return A list of the counts and the schema version the cards show.
+#' @return A list of the counts, the archive count, and the package
+#'   version the Info card shows.
 #' @keywords internal
 #' @noRd
 episodic_app_instance <- function(con, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   list(
     counts = episodic_db_instance_counts(con),
-    schema_version = episodic_schema_version
+    archive_count = nrow(episodic_app_archive(con, lang = lang)),
+    version = episodic_app_package_meta()$version
   )
 }
 
@@ -61,6 +70,15 @@ episodic_ui_instance_screen <- function(instance,
   counts <- instance$counts
   cards <- list(
     list(
+      view = "archive",
+      meta = episodic_count_phrase(
+        instance$archive_count,
+        episodic_tr("unit.outbreak_or_epidemic", lang = lang),
+        episodic_tr("unit.outbreaks_and_epidemics", lang = lang),
+        lang = lang
+      )
+    ),
+    list(
       view = "streams",
       meta = episodic_count_phrase(
         counts$streams,
@@ -83,13 +101,15 @@ episodic_ui_instance_screen <- function(instance,
     list(view = "performance", meta = NULL),
     list(
       view = "info",
-      # A schema version is an identifier, not a quantity, so it is
+      # A version number is an identifier, not a quantity, so it is
       # written as it is rather than grouped.
-      meta = episodic_tr(
-        "instance.schema_version",
-        version = as.character(instance$schema_version),
-        lang = lang
-      )
+      meta = if (!is.null(instance$version)) {
+        episodic_tr(
+          "instance.card.info.version",
+          version = instance$version,
+          lang = lang
+        )
+      }
     )
   )
   if (isTRUE(episodic_user_is_admin(current_user))) {
@@ -190,7 +210,7 @@ episodic_ui_pane_label <- function(con,
     " ",
     shiny::tags$span(
       class = "episodic-rail-id",
-      episodic_tr("dossier.cluster_ref", id = cluster_id, lang = lang)
+      episodic_object_ref(cluster_id, label$level[1], lang = lang)
     )
   )
 }

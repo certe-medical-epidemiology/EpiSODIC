@@ -59,13 +59,20 @@ episodic_ui_dossier <- function(con,
     level = obj$level
   )
   linked <- episodic_db_clusters_linked_to(con, cluster_id)
+  during <- episodic_db_epidemics_during_for_outbreak(con, cluster_id)
   pal <- episodic_palette()
 
   # A tagList: the dossier's own box is `output$dossier_pane`'s container
   # (see `episodic_app_ui()`), which is what `.episodic-body` lays out
   # and what scrolls.
   shiny::tagList(
-    episodic_ui_dossier_header(obj, state, lang = lang, linked = linked),
+    episodic_ui_dossier_header(
+      obj,
+      state,
+      lang = lang,
+      linked = linked,
+      during = during
+    ),
     episodic_ui_stat_grid(obj, lang = lang),
     episodic_ui_trajectory(obj, timeline, lang = lang),
     shiny::tags$div(
@@ -127,7 +134,8 @@ episodic_ui_linelist_locked_panel <- function(lang = Sys.getenv("EPISODIC_LANGUA
 episodic_ui_dossier_header <- function(obj,
                                        state,
                                        lang = Sys.getenv("EPISODIC_LANGUAGE"),
-                                       linked = NULL) {
+                                       linked = NULL,
+                                       during = NULL) {
   pal <- episodic_palette()
   shiny::tagList(
     shiny::tags$div(
@@ -142,7 +150,7 @@ episodic_ui_dossier_header <- function(obj,
         shiny::HTML(episodic_ui_italicise_taxon(obj$pathogen)),
         shiny::tags$span(
           class = "episodic-dossier-id",
-          episodic_tr("dossier.cluster_ref", id = obj$id, lang = lang)
+          episodic_tr("dossier.outbreak_ref", id = obj$id, lang = lang)
         )
       ),
       episodic_ui_chip(
@@ -169,6 +177,12 @@ episodic_ui_dossier_header <- function(obj,
           pal$tertiary_dark
         )
       },
+      # The epidemic this outbreak ran during, where there is one. It
+      # is the first thing that changes how the rest of the dossier
+      # reads - an influenza ward outbreak in a declared season is a
+      # different reading of the same numbers from one in August - so it
+      # goes in the header rather than in a panel further down.
+      episodic_ui_during_chips(during, lang = lang),
       # Cases this dossier shares with another that stands separately -
       # the same rise seen at a level suppression deliberately does not
       # collapse. In its own colour, and it goes there: an epidemiologist who
@@ -467,18 +481,27 @@ episodic_ui_interpretation_panel <- function(obj,
 #' `episodic_ui_report_panel()`'s render button for the precedent. Saving
 #' fires `note_save_submit`, handled by `episodic_app_server_notes()`,
 #' which re-renders only `output$notes_pane` (see `app_server.R`) on
-#' success, not the rest of the dossier - that redraw is what puts this
-#' panel back in view mode showing the freshly saved note, so no
-#' client-side "cancel" path is needed. Keeping this panel behind its own
+#' every submit, written or not, not the rest of the dossier - that
+#' redraw is what puts this panel back in view mode, showing the freshly
+#' saved note on a real save and the unchanged one on a Save that wrote
+#' nothing, so no client-side "cancel" path is needed. Keeping this panel
+#' behind its own
 #' `uiOutput()` rather than inline in `episodic_ui_dossier()` is what
 #' makes that possible: the dossier's other panels, several of them
 #' plots, are otherwise untouched by a note save.
+#' @param prefix The id prefix for this panel's elements. Both
+#'   surveillance screens are in the page at once (see
+#'   `episodic_app_ui()`), each with a notes panel of its own, and two
+#'   elements sharing an id would give `getElementById()` a choice to
+#'   make that neither panel intends.
 #' @keywords internal
 #' @noRd
 episodic_ui_notes_panel <- function(con,
                                     cluster_id,
                                     current_user,
-                                    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+                                    lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                    prefix = "notes") {
+  id <- function(suffix) paste0(prefix, "-", suffix)
   note <- episodic_db_cluster_note_current(con, cluster_id)
   note_text <- if (nrow(note) > 0) note$note_text[1] else ""
 
@@ -496,7 +519,7 @@ episodic_ui_notes_panel <- function(con,
       )
     },
     shiny::tags$div(
-      id = "notes-view",
+      id = id("view"),
       if (nzchar(trimws(note_text))) {
         episodic_ui_render_markdown(note_text)
       } else {
@@ -509,34 +532,42 @@ episodic_ui_notes_panel <- function(con,
     if (!is.null(current_user)) {
       shiny::tagList(
         shiny::tags$div(
-          id = "notes-edit",
+          id = id("edit"),
           class = "episodic-form-group",
           style = "display:none;",
           shiny::tags$textarea(
-            id = "notes-textarea",
+            id = id("textarea"),
             rows = 6,
             note_text
           )
         ),
         shiny::tags$button(
-          id = "notes-edit-button",
+          id = id("edit-button"),
           class = "episodic-btn",
           style = "margin-top:8px;",
-          onclick = paste0(
-            "document.getElementById('notes-view').style.display='none'; ",
-            "document.getElementById('notes-edit').style.display='block'; ",
-            "this.style.display='none'; ",
-            "document.getElementById('notes-save-button').style.display='inline-block';"
+          onclick = sprintf(
+            paste0(
+              "document.getElementById('%s').style.display='none'; ",
+              "document.getElementById('%s').style.display='block'; ",
+              "this.style.display='none'; ",
+              "document.getElementById('%s').style.display='inline-block';"
+            ),
+            id("view"),
+            id("edit"),
+            id("save-button")
           ),
           episodic_tr("notes.edit_button", lang = lang)
         ),
         shiny::tags$button(
-          id = "notes-save-button",
+          id = id("save-button"),
           class = "episodic-btn episodic-btn-primary",
           style = "display:none;margin-top:8px;",
+          # One input for both panels: the handler is about a cluster,
+          # and which panel named it changes nothing about the write.
           onclick = sprintf(
-            "Shiny.setInputValue('note_save_submit', {cluster_id: %d, note_text: document.getElementById('notes-textarea').value}, {priority: 'event'});",
-            cluster_id
+            "Shiny.setInputValue('note_save_submit', {cluster_id: %d, note_text: document.getElementById('%s').value}, {priority: 'event'});",
+            cluster_id,
+            id("textarea")
           ),
           episodic_tr("notes.save_button", lang = lang)
         )
@@ -649,7 +680,7 @@ episodic_ui_epicurve_panel <- function(con,
     episodic_tr("panel.epicurve.title", lang = lang),
     note = note,
     shiny::renderPlot(
-      episodic_ui_epi_curve_chart(curve, lang = lang),
+      episodic_ui_epi_curve_chart(curve, lang = lang, accent = episodic_nav_accent("outbreaks")),
       height = 210
     )
   )
@@ -682,7 +713,10 @@ episodic_ui_trend_panel <- function(con,
       lang = lang
     ),
     note = shiny::HTML(episodic_tr("panel.trend.note", lang = lang)),
-    shiny::renderPlot(episodic_ui_trend_chart(trend, lang = lang), height = 230)
+    shiny::renderPlot(
+      episodic_ui_trend_chart(trend, lang = lang, accent = episodic_nav_accent("outbreaks")),
+      height = 230
+    )
   )
 }
 
@@ -717,7 +751,10 @@ episodic_ui_rt_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   episodic_ui_panel(
     episodic_tr("panel.rt.title", lang = lang),
     note = episodic_tr("panel.rt.note", lang = lang),
-    shiny::renderPlot(episodic_ui_rt_chart(obj$rt, lang = lang), height = 200)
+    shiny::renderPlot(
+      episodic_ui_rt_chart(obj$rt, lang = lang, accent = episodic_nav_accent("outbreaks")),
+      height = 200
+    )
   )
 }
 
@@ -809,7 +846,8 @@ episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       aside = episodic_tr("panel.geo.aside", lang = lang)
     ))
   }
-  map_chart <- episodic_ui_geo_map_chart(obj$concentration$rows)
+  accent <- episodic_nav_accent("outbreaks")
+  map_chart <- episodic_ui_geo_map_chart(obj$concentration$rows, accent = accent)
   # A second, uncropped map alongside the detail one: the cropped view
   # is deliberately tight around the cases (see panel.geo.map_note), which
   # is exactly what throws away where in the wider region that tight
@@ -817,7 +855,7 @@ episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   # rendered - no point showing region-wide context for a fallback bar
   # breakdown.
   context_chart <- if (!is.null(map_chart)) {
-    episodic_ui_geo_map_chart(obj$concentration$rows, crop = FALSE)
+    episodic_ui_geo_map_chart(obj$concentration$rows, crop = FALSE, accent = accent)
   }
   # A broken chart-rendering environment (see episodic_graphics_probe())
   # cannot draw the map at all - fall back to the bar breakdown exactly as
@@ -1003,9 +1041,9 @@ episodic_ui_linked_chips <- function(linked,
     episodic_ui_chip_link(
       episodic_tr(
         "dossier.linked_badge",
-        ref = episodic_tr(
-          "dossier.cluster_ref",
-          id = shown$cluster_id[i],
+        ref = episodic_object_ref(
+          shown$cluster_id[i],
+          shown$level[i],
           lang = lang
         ),
         lang = lang
@@ -1024,6 +1062,62 @@ episodic_ui_linked_chips <- function(linked,
         lang = lang
       ),
       pal$danger_dark
+    )
+  }
+  shiny::tagList(chips)
+}
+
+#' "During E-123", once per epidemic this outbreak ran during
+#'
+#' Beside `episodic_ui_linked_chips()` and deliberately not folded into
+#' it: the two say different things. "Linked to" means these two dossiers
+#' share cases, which is a statement about the same rise seen at two
+#' levels. "During" means only that this outbreak overlapped an epidemic
+#' in time and sits inside its geography - context for reading the
+#' dossier, and no claim that the one caused the other.
+#'
+#' @param during From `episodic_db_epidemics_during_for_outbreak()`, or
+#'   `NULL`.
+#' @param lang Session language.
+#' @param max_chips How many to name before counting the rest.
+#' @return A `shiny::tagList`, empty when the outbreak ran during none.
+#' @keywords internal
+#' @noRd
+episodic_ui_during_chips <- function(during,
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                     max_chips = 2L) {
+  if (is.null(during) || nrow(during) == 0) {
+    return(NULL)
+  }
+  pal <- episodic_palette()
+  shown <- utils::head(during, max_chips)
+
+  chips <- lapply(seq_len(nrow(shown)), function(i) {
+    episodic_ui_chip_link(
+      episodic_tr(
+        "dossier.during_badge",
+        ref = episodic_object_ref(
+          shown$cluster_id[i],
+          shown$level[i],
+          lang = lang
+        ),
+        lang = lang
+      ),
+      pal$secondary,
+      cluster_id = shown$cluster_id[i],
+      lang = lang,
+      scale = "epidemic"
+    )
+  })
+
+  if (nrow(during) > nrow(shown)) {
+    chips[[length(chips) + 1]] <- episodic_ui_chip(
+      episodic_tr(
+        "dossier.linked_more",
+        n = episodic_format_number(nrow(during) - nrow(shown), lang = lang),
+        lang = lang
+      ),
+      pal$secondary
     )
   }
   shiny::tagList(chips)
@@ -1079,7 +1173,7 @@ episodic_ui_related_panel <- function(con,
         shared_cases = NA_integer_,
         unlinked_reason = episodic_tr(
           "cluster.unlinked.suppressed",
-          ref = episodic_tr("dossier.cluster_ref", id = cluster_id, lang = lang),
+          ref = episodic_tr("dossier.outbreak_ref", id = cluster_id, lang = lang),
           lang = lang
         ),
         stringsAsFactors = FALSE
@@ -1630,16 +1724,50 @@ episodic_ui_timeline_entry <- function(row,
 }
 
 #' The classification form, closure and mute actions for a signed-in user
+#'
+#' One form for both scales. Everything about it is the same for an
+#' outbreak and an epidemic - the verdict picker, the rationale, the
+#' snooze, the closure checkbox and the mute block - so there is one
+#' function rather than two that would have to be kept in step. What
+#' differs is passed in: `extra_verdicts` adds the seasonal declarations
+#' to the epidemic form, and `prefix` namespaces every element id.
+#'
+#' The prefix is not cosmetic. Both screens are in the page at once (see
+#' `episodic_app_ui()`), so a second form carrying this one's ids would
+#' give the document two `assess_verdict` elements, and
+#' `getElementById()` would hand every one of the helpers below whichever
+#' of them the browser reached first.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The cluster this form assesses.
+#' @param obj The cluster or epidemic object.
+#' @param lang Session language.
+#' @param prefix The id prefix for this form's elements and for the input
+#'   it submits on, which is `<prefix>_submit`.
+#' @param extra_verdicts Verdict values offered after the five
+#'   classification verdicts, already valid values of
+#'   `episodic_assessment_event.verdict`.
+#' @param close_suggested Verdicts that pre-tick the closure checkbox. A
+#'   suggestion the epidemiologist can always untick, never an automatic
+#'   closure. Defaults to the two terminal classifications.
+#' @return A `shiny::tags$div`.
 #' @keywords internal
 #' @noRd
 episodic_ui_assessment_form <- function(con,
                                         cluster_id,
                                         obj,
-                                        lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+                                        lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                        prefix = "assess",
+                                        extra_verdicts = character(0),
+                                        close_suggested = c(
+                                          "artefact",
+                                          "expected_variation"
+                                        )) {
   pal <- episodic_palette()
+  id <- function(suffix) paste0(prefix, "_", suffix)
   reopened <- episodic_app_reopened_closure(con, cluster_id, lang = lang)
   # A closed cluster's classification/closure controls stay in the DOM but
-  # hidden ([hidden], not [id="assess_close_wrap"]'s own kind of hidden)
+  # hidden ([hidden], not the closure wrapper's own kind of hidden)
   # behind a "Re-open" button - reachable from a cluster table, the
   # Archive, or the similar/related panels alike, since all of them land
   # on this same form for a given cluster_id. Re-opening is a pure
@@ -1652,13 +1780,16 @@ episodic_ui_assessment_form <- function(con,
     "closed"
   )
   # Ordered mild/terminal to severe - artefact and expected_variation
-  # are both terminal (close immediately), the rest escalate.
+  # are both terminal (close immediately), the rest escalate. Anything
+  # the caller adds follows them, being a different kind of judgement
+  # rather than a further step along the same scale.
   verdicts <- c(
     "artefact",
     "expected_variation",
     "cluster_not_yet",
     "possible_epidemic",
-    "confirmed_epidemic"
+    "confirmed_epidemic",
+    extra_verdicts
   )
   mute_reasons <- c(
     "seasonal",
@@ -1702,13 +1833,16 @@ episodic_ui_assessment_form <- function(con,
         ),
         shiny::tags$button(
           class = "episodic-btn",
-          onclick = "document.getElementById('assess_form_fields').hidden = false; this.hidden = true;",
+          onclick = sprintf(
+            "document.getElementById('%s').hidden = false; this.hidden = true;",
+            id("form_fields")
+          ),
           episodic_tr("assessment.reopen_button", lang = lang)
         )
       )
     },
     shiny::tags$div(
-      id = "assess_form_fields",
+      id = id("form_fields"),
       hidden = if (isTRUE(closed)) NA else NULL,
       if (!is.null(reopened)) {
         shiny::tags$p(
@@ -1733,8 +1867,8 @@ episodic_ui_assessment_form <- function(con,
           episodic_tr("assessment.verdict_label", lang = lang)
         ),
         shiny::tags$div(
-          onclick = "episodicAssessVerdictChanged()",
-          episodic_ui_picker("assess_verdict", verdict_options)
+          onclick = sprintf("episodicAssessVerdictChanged('%s')", prefix),
+          episodic_ui_picker(id("verdict"), verdict_options)
         )
       ),
       shiny::tags$div(
@@ -1744,7 +1878,7 @@ episodic_ui_assessment_form <- function(con,
           episodic_tr("assessment.rationale_label", lang = lang)
         ),
         shiny::tags$textarea(
-          id = "assess_rationale",
+          id = id("rationale"),
           rows = 3,
           disabled = "disabled",
           placeholder = episodic_tr(
@@ -1759,16 +1893,16 @@ episodic_ui_assessment_form <- function(con,
           class = "episodic-form-label",
           episodic_tr("assessment.snooze_label", lang = lang)
         ),
-        shiny::tags$input(type = "date", id = "assess_snooze")
+        shiny::tags$input(type = "date", id = id("snooze"))
       ),
       shiny::tags$div(
         class = "episodic-form-group",
-        id = "assess_close_wrap",
+        id = id("close_wrap"),
         shiny::tags$label(
           style = "display:flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer;",
           shiny::tags$input(
             type = "checkbox",
-            id = "assess_close_checkbox",
+            id = id("close_checkbox"),
             disabled = "disabled"
           ),
           episodic_tr("assessment.close_checkbox_label", lang = lang)
@@ -1778,39 +1912,51 @@ episodic_ui_assessment_form <- function(con,
           episodic_tr("assessment.close_checkbox_hint", lang = lang)
         )
       ),
-      shiny::tags$div(id = "assess_error"),
+      shiny::tags$div(id = id("error")),
       shiny::tags$div(
         class = "episodic-form-actions",
         shiny::tags$button(
-          id = "assess_submit_btn",
+          id = id("submit_btn"),
           class = "episodic-btn episodic-btn-primary",
           disabled = "disabled",
-          onclick = sprintf("episodicSubmitAssessment(%d)", cluster_id),
+          onclick = sprintf(
+            "episodicSubmitAssessment('%s', %d)",
+            prefix,
+            as.integer(cluster_id)
+          ),
           episodic_tr("assessment.submit", lang = lang)
         )
       ),
       # One global helper pair, redefined (harmlessly) on every re-render of
       # this form: episodicAssessVerdictChanged() pre-ticks (and highlights)
-      # the closure checkbox the moment artefact/expected_variation is
-      # picked - a suggestion the epidemiologist can always untick, never an
-      # automatic closure - and episodicSubmitAssessment() confirms in plain
-      # language what submitting will do before it fires assess_submit, since
-      # closing (or not) is a deliberate, one-way-feeling act worth a second
-      # look. Delegated onto the picker's wrapping div (below) rather than a
-      # 'change' listener, since episodic_ui_picker()'s buttons set the
-      # hidden input's value directly with no native change event of their
-      # own; the wrapping div's onclick still fires on bubble, after the
-      # button's own onclick has already updated the value.
+      # the closure checkbox the moment a terminal verdict is picked - a
+      # suggestion the epidemiologist can always untick, never an automatic
+      # closure - and episodicSubmitAssessment() confirms in plain
+      # language what submitting will do before it fires, since closing (or
+      # not) is a deliberate, one-way-feeling act worth a second look.
+      # Both take the prefix and read the rest out of the registry below,
+      # so two forms in one document share the pair rather than each
+      # carrying a copy under a name of its own. Delegated onto the
+      # picker's wrapping div (above) rather than a 'change' listener,
+      # since episodic_ui_picker()'s buttons set the hidden input's value
+      # directly with no native change event of their own; the wrapping
+      # div's onclick still fires on bubble, after the button's own
+      # onclick has already updated the value.
       shiny::tags$script(shiny::HTML(sprintf(
-        "window.episodicAssessVerdictLabels = %s;
-window.episodicAssessCloseConfirm = %s;
-window.episodicAssessOpenConfirm = %s;
-function episodicAssessVerdictChanged() {
-  var v = document.getElementById('assess_verdict').value;
-  var box = document.getElementById('assess_close_checkbox');
-  var wrap = document.getElementById('assess_close_wrap');
-  var rationale = document.getElementById('assess_rationale');
-  var submitBtn = document.getElementById('assess_submit_btn');
+        "window.episodicAssessForms = window.episodicAssessForms || {};
+window.episodicAssessForms[%s] = {
+  labels: %s,
+  closeSuggested: %s,
+  closeConfirm: %s,
+  openConfirm: %s
+};
+function episodicAssessVerdictChanged(prefix) {
+  var form = window.episodicAssessForms[prefix];
+  var v = document.getElementById(prefix + '_verdict').value;
+  var box = document.getElementById(prefix + '_close_checkbox');
+  var wrap = document.getElementById(prefix + '_close_wrap');
+  var rationale = document.getElementById(prefix + '_rationale');
+  var submitBtn = document.getElementById(prefix + '_submit_btn');
   var hasVerdict = !!v;
   rationale.disabled = !hasVerdict;
   box.disabled = !hasVerdict;
@@ -1818,28 +1964,30 @@ function episodicAssessVerdictChanged() {
   if (!hasVerdict) {
     box.checked = false;
   }
-  if (v === 'artefact' || v === 'expected_variation') {
+  if (form.closeSuggested.indexOf(v) >= 0) {
     box.checked = true;
     wrap.classList.add('episodic-close-suggested');
   } else {
     wrap.classList.remove('episodic-close-suggested');
   }
 }
-function episodicSubmitAssessment(clusterId) {
-  var verdict = document.getElementById('assess_verdict').value;
+function episodicSubmitAssessment(prefix, clusterId) {
+  var form = window.episodicAssessForms[prefix];
+  var verdict = document.getElementById(prefix + '_verdict').value;
   if (!verdict) {
     return;
   }
-  var rationale = document.getElementById('assess_rationale').value;
-  var snooze = document.getElementById('assess_snooze').value;
-  var close = document.getElementById('assess_close_checkbox').checked;
-  var label = window.episodicAssessVerdictLabels[verdict] || verdict;
-  var template = close ? window.episodicAssessCloseConfirm : window.episodicAssessOpenConfirm;
+  var rationale = document.getElementById(prefix + '_rationale').value;
+  var snooze = document.getElementById(prefix + '_snooze').value;
+  var close = document.getElementById(prefix + '_close_checkbox').checked;
+  var label = form.labels[verdict] || verdict;
+  var template = close ? form.closeConfirm : form.openConfirm;
   if (!confirm(template.replace('{verdict}', label))) {
     return;
   }
-  Shiny.setInputValue('assess_submit', {cluster_id: clusterId, verdict: verdict, rationale: rationale, snooze: snooze, close: close}, {priority: 'event'});
+  Shiny.setInputValue(prefix + '_submit', {cluster_id: clusterId, verdict: verdict, rationale: rationale, snooze: snooze, close: close}, {priority: 'event'});
 }",
+        jsonlite::toJSON(prefix, auto_unbox = TRUE),
         jsonlite::toJSON(
           stats::setNames(
             vapply(verdict_options[-1], function(o) o$label, character(1)),
@@ -1847,6 +1995,9 @@ function episodicSubmitAssessment(clusterId) {
           ),
           auto_unbox = TRUE
         ),
+        # Never auto_unbox: a single suggested verdict must still reach
+        # indexOf() as an array, not as a bare string.
+        jsonlite::toJSON(intersect(verdicts, close_suggested)),
         jsonlite::toJSON(
           episodic_tr("assessment.confirm_close", lang = lang),
           auto_unbox = TRUE
@@ -1869,7 +2020,7 @@ function episodicSubmitAssessment(clusterId) {
         episodic_tr("assessment.mute_title", lang = lang)
       ),
       episodic_ui_picker(
-        "mute_reason",
+        id("mute_reason"),
         mute_options,
         selected = mute_reasons[1]
       )
@@ -1885,7 +2036,7 @@ function episodicSubmitAssessment(clusterId) {
         ),
         shiny::tags$input(
           type = "date",
-          id = "mute_from",
+          id = id("mute_from"),
           value = as.character(Sys.Date())
         )
       ),
@@ -1896,14 +2047,19 @@ function episodicSubmitAssessment(clusterId) {
           class = "episodic-form-label",
           episodic_tr("assessment.mute_until_label", lang = lang)
         ),
-        shiny::tags$input(type = "date", id = "mute_until")
+        shiny::tags$input(type = "date", id = id("mute_until"))
       )
     ),
+    # One input for both forms: the handler is about a stream, and which
+    # form named it changes nothing about the write.
     shiny::tags$button(
       class = "episodic-btn",
       onclick = sprintf(
-        "Shiny.setInputValue('assess_mute_submit', {stream_id: %d, reason: document.getElementById('mute_reason').value, muted_from: document.getElementById('mute_from').value, muted_until: document.getElementById('mute_until').value}, {priority: 'event'})",
-        obj$stream_id
+        "Shiny.setInputValue('assess_mute_submit', {stream_id: %d, reason: document.getElementById('%s').value, muted_from: document.getElementById('%s').value, muted_until: document.getElementById('%s').value}, {priority: 'event'})",
+        obj$stream_id,
+        id("mute_reason"),
+        id("mute_from"),
+        id("mute_until")
       ),
       episodic_tr("assessment.mute_submit", lang = lang)
     )
@@ -1948,7 +2104,7 @@ episodic_ui_streams_screen <- function(screen,
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(
-      style = "font-size:22px;font-weight:600;margin-bottom:4px;",
+      class = "episodic-screen-title",
       episodic_tr("streams.title", lang = lang)
     ),
     shiny::tags$p(

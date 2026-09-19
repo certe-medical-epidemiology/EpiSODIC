@@ -19,15 +19,15 @@
 
 # The suite's own instance configuration.
 #
-# EpiSODIC ships with `access.require_login: true`, which is the right
-# default for something deployed at laboratories worldwide but the wrong
-# one for a test suite: nearly every server test here reads a rendered
-# output *before* signing in, and behind the login wall the server
-# deliberately renders nothing at all. Rather than sprinkle a sign-in
-# through tests that are not about signing in, the suite pins the wall
-# down here and tests it deliberately where it belongs
-# (test-app_require_login.R, which sets both values explicitly and saves
-# and restores whatever it finds, so it composes with this).
+# Pinned explicitly rather than left to the shipped default, because
+# nearly every server test here reads a rendered output *before* signing
+# in, and behind the login wall the server deliberately renders nothing
+# at all - a test suite that inherited whatever `access.require_login`
+# ships as would break the moment that default changed. Rather than
+# sprinkle a sign-in through tests that are not about signing in, the
+# suite pins the wall down here and tests it deliberately where it
+# belongs (test-app_require_login.R, which sets both values explicitly
+# and saves and restores whatever it finds, so it composes with this).
 #
 # It also pins the geography, so the region and area codes the lattice
 # tests assert on are the ones this file names rather than whatever the

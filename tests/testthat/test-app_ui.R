@@ -90,7 +90,7 @@ test_that("episodic_ui_rail() marks each row with the cluster id every other ope
   html <- as.character(episodic_ui_rail(open, selected_id = NULL, lang = "nl"))
   # A click that opens a cluster from outside the rail (a table row, a
   # "linked to #N" chip) has to be able to find and mark this exact row
-  # - see setCluster() in inst/app/www/episodic-nav.js.
+  # - see setOutbreak() in inst/app/www/episodic-nav.js.
   expect_true(grepl('data-cluster-id="7"', html, fixed = TRUE))
 })
 
@@ -239,7 +239,7 @@ test_that("episodic_ui_chip_link() opens a cluster through the shared attribute"
   chip <- as.character(
     episodic_ui_chip_link("Linked to #9", "#AA4A3F", cluster_id = 9L, lang = "en")
   )
-  expect_true(grepl('data-episodic-cluster="9"', chip, fixed = TRUE))
+  expect_true(grepl('data-episodic-outbreak="9"', chip, fixed = TRUE))
   expect_false(grepl("Shiny.setInputValue", chip, fixed = TRUE))
   expect_false(grepl("onclick", chip, fixed = TRUE))
 })
@@ -323,35 +323,30 @@ test_that("chart builders produce ggplot objects for typical and edge-case input
 
 test_that("episodic_ui_nav_links() renders four links and no highlight of its own", {
   html <- as.character(episodic_ui_nav_links(lang = "en"))
-  for (view in c("clusters", "pathogen", "archive", "instance")) {
+  for (view in c("outbreaks", "epidemics", "pathogens", "instance")) {
     expect_true(
       grepl(sprintf('data-view="%s"', view), html, fixed = TRUE),
       info = view
     )
   }
-  # Four, and only four: every other screen is reached from the Instance
-  # screen, which is what lets the bar fit a narrow viewport with nothing
-  # hidden behind a control that has to be opened first.
   expect_equal(
     lengths(regmatches(html, gregexpr("episodic-nav-link", html)))[[1]],
     4
   )
-  for (view in c("streams", "activity", "performance", "info", "settings")) {
+  # Archive is reached from an Instance card now, not from the bar - see
+  # `episodic_ui_instance_screen()`.
+  for (view in c("archive", "streams", "activity", "performance", "info", "settings")) {
     expect_false(
       grepl(sprintf('data-view="%s"', view), html, fixed = TRUE),
       info = view
     )
   }
-  # Which link is lit lives in one place, `data-nav` on .episodic-shell,
-  # and is derived from there by the stylesheet. Nothing in this markup
-  # says it, so no re-render of the bar can lose it and no second writer
-  # can disagree with the first.
   expect_false(grepl("active", html, fixed = TRUE))
 })
 
 test_that("every nav link carries the group its screen belongs to", {
   html <- as.character(episodic_ui_nav_links(lang = "en"))
-  for (view in c("clusters", "pathogen", "archive", "instance")) {
+  for (view in c("outbreaks", "epidemics", "pathogens", "instance")) {
     expect_true(
       grepl(
         sprintf('data-view="%s" data-episodic-nav="%s" data-nav="%s"', view, view, view),
@@ -364,18 +359,16 @@ test_that("every nav link carries the group its screen belongs to", {
 })
 
 test_that("episodic_app_nav_group() sends every instance-level screen to one link", {
-  expect_equal(episodic_app_nav_group("clusters"), "clusters")
-  expect_equal(episodic_app_nav_group("pathogen"), "pathogen")
-  expect_equal(episodic_app_nav_group("archive"), "archive")
-  for (v in c("instance", "streams", "activity", "performance", "info", "settings")) {
+  expect_equal(episodic_app_nav_group("outbreaks"), "outbreaks")
+  expect_equal(episodic_app_nav_group("epidemics"), "epidemics")
+  expect_equal(episodic_app_nav_group("pathogens"), "pathogens")
+  for (v in c("instance", "archive", "streams", "activity", "performance", "info", "settings")) {
     expect_equal(episodic_app_nav_group(v), "instance", info = v)
   }
-  # Every screen resolves to a group, so no view can leave the bar with
-  # nothing lit.
   for (v in episodic_app_views()) {
     expect_true(
       episodic_app_nav_group(v) %in%
-        c("clusters", "pathogen", "archive", "instance"),
+        c("outbreaks", "epidemics", "pathogens", "instance"),
       info = v
     )
   }
@@ -407,7 +400,10 @@ test_that("episodic_app_ui() loads its navigation from one cached script", {
   # <script> blocks rebuilt into the page on every render. What it
   # contains is held in test-app_navigation.R.
   html <- episodic_test_ui_html()
-  expect_true(grepl('src="www/episodic-nav.js"', html, fixed = TRUE))
+  # `?v=<package version>` cache-busts across upgrades (see
+  # episodic_app_ui()'s own asset_version); the fixed src is what this
+  # test cares about, so it checks the prefix rather than an exact match.
+  expect_true(grepl('src="www/episodic-nav.js?v=', html, fixed = TRUE))
   expect_false(grepl("function episodic", html, fixed = TRUE))
 })
 

@@ -317,6 +317,10 @@ episodic_chart_week_scale <- function(week_starts,
 #'   one (`"en-US"`, `"es-419"`). Defaults to the
 #'   `EPISODIC_LANGUAGE` environment variable, falling back to `"en"` if
 #'   that is unset.
+#' @param accent Fill colour for the bars. Defaults to the palette's
+#'   `primary`; a caller drawing this for a specific nav section passes
+#'   `episodic_nav_accent()` instead, so the chart reads as belonging to
+#'   whichever screen it is on.
 #' @return A [ggplot2::ggplot] object.
 #' @examples
 #' curve <- data.frame(
@@ -327,8 +331,10 @@ episodic_chart_week_scale <- function(week_starts,
 #' episodic_ui_epi_curve_chart(curve, lang = "en")
 #' @export
 episodic_ui_epi_curve_chart <- function(curve,
-                                        lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+                                        lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                        accent = NULL) {
   pal <- episodic_palette()
+  accent <- accent %||% pal$primary
   # `%in% TRUE`, not the bare column: an `NA` there would make the whole
   # bar's alpha `NA` and the bar itself vanish from the chart without a
   # word. The pathogen curve has always read its own flag this way; this
@@ -340,7 +346,7 @@ episodic_ui_epi_curve_chart <- function(curve,
   ) +
     ggplot2::geom_col(
       ggplot2::aes(alpha = .data$alpha),
-      fill = pal$primary,
+      fill = accent,
       width = 0.7,
       show.legend = FALSE
     ) +
@@ -364,8 +370,10 @@ episodic_ui_epi_curve_chart <- function(curve,
 #' episodic_ui_trend_chart(trend, lang = "en")
 #' @export
 episodic_ui_trend_chart <- function(trend,
-                                    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+                                    lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                    accent = NULL) {
   pal <- episodic_palette()
+  accent <- accent %||% pal$primary
   trend$week_start <- as.Date(trend$week_start)
   legend_labels <- c(
     obs = episodic_tr("panel.trend.legend_observed", lang = lang),
@@ -374,8 +382,8 @@ episodic_ui_trend_chart <- function(trend,
   ggplot2::ggplot(trend, ggplot2::aes(x = .data$week_start)) +
     ggplot2::geom_ribbon(
       ggplot2::aes(ymin = 0, ymax = .data$upperbound),
-      fill = pal$primary_tint,
-      alpha = 0.35
+      fill = accent,
+      alpha = 0.2
     ) +
     ggplot2::geom_line(
       ggplot2::aes(y = .data$expected, colour = "exp"),
@@ -387,7 +395,7 @@ episodic_ui_trend_chart <- function(trend,
       linewidth = 0.9
     ) +
     ggplot2::scale_colour_manual(
-      values = c(obs = pal$ink, exp = pal$primary_light),
+      values = c(obs = pal$ink, exp = accent),
       labels = legend_labels
     ) +
     episodic_chart_week_scale(trend$week_start, lang = lang) +
@@ -408,8 +416,11 @@ episodic_ui_trend_chart <- function(trend,
 #' )
 #' episodic_ui_rt_chart(rt)
 #' @export
-episodic_ui_rt_chart <- function(rt, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_ui_rt_chart <- function(rt,
+                                 lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                 accent = NULL) {
   pal <- episodic_palette()
+  accent <- accent %||% pal$primary
   ggplot2::ggplot(rt, ggplot2::aes(x = .data$window_end)) +
     ggplot2::geom_hline(
       yintercept = 1,
@@ -419,12 +430,12 @@ episodic_ui_rt_chart <- function(rt, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     ) +
     ggplot2::geom_ribbon(
       ggplot2::aes(ymin = .data$lower, ymax = .data$upper),
-      fill = pal$primary_tint,
-      alpha = 0.5
+      fill = accent,
+      alpha = 0.25
     ) +
     ggplot2::geom_line(
       ggplot2::aes(y = .data$mean),
-      colour = pal$primary,
+      colour = accent,
       linewidth = 0.9
     ) +
     ggplot2::scale_y_continuous(labels = episodic_chart_number_labels(lang)) +
@@ -481,6 +492,10 @@ episodic_ui_rt_chart <- function(rt, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #'   left unfilled, for a companion "where in the region is this"
 #'   context map; area labels are skipped since a full-region view has
 #'   too many polygons to label legibly.
+#' @param accent Colour for the high end of the case-density gradient.
+#'   Defaults to the palette's `primary`; see
+#'   `episodic_ui_epi_curve_chart()`'s own `accent` for why a caller
+#'   passes `episodic_nav_accent()` instead.
 #' @return A `ggplot` object, or `NULL` if no geographic data is
 #'   available at all, or the join/plot fails for any reason (e.g. a PC
 #'   value not in the reference geometry - synthetic demo postcodes are
@@ -492,11 +507,13 @@ episodic_ui_geo_map_chart <- function(rows,
                                       pad_share = 0.45,
                                       min_pad_share = 0.02,
                                       max_labels = 30L,
-                                      crop = TRUE) {
+                                      crop = TRUE,
+                                      accent = NULL) {
   if (nrow(rows) == 0) {
     return(NULL)
   }
   pal <- episodic_palette()
+  accent <- accent %||% pal$primary
   tryCatch(
     {
       geo <- episodic_geo_join(rows)
@@ -544,8 +561,13 @@ episodic_ui_geo_map_chart <- function(rows,
           linewidth = 0.1
         ) +
         ggplot2::scale_fill_gradient(
-          low = pal$primary_tint,
-          high = pal$primary,
+          # Anchored on the neutral bg_subtle rather than a dedicated
+          # tint step of accent - warning/success/danger, unlike
+          # primary, ship no _tint variant, and a light neutral reads
+          # as "few cases" regardless of which section's hue is at the
+          # dense end.
+          low = pal$bg_subtle,
+          high = accent,
           na.value = pal$bg_subtle
         )
 
@@ -832,13 +854,36 @@ episodic_ui_denominator_chart <- function(series,
 #' @param thresholds `episodic_mem_thresholds_for_season()`'s output, or
 #'   `NULL` to draw the bars alone.
 #' @param lang Language for labels.
+#' @param accent Fill colour for the bars. Defaults to the palette's
+#'   `primary`; the Pathogens screen passes
+#'   `episodic_nav_accent("pathogens")` for visual consistency with its
+#'   other charts. The intensity bands in `episodic_mem_threshold_lines()`
+#'   use `warning_dark`/`danger`/`danger_dark`, so the danger-accented
+#'   bars share the hue of the "high" line, but the dashed-line style
+#'   and the bar fill still read as distinct marks.
 #' @return A [ggplot2::ggplot] object.
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_curve_chart <- function(weekly,
                                              thresholds = NULL,
-                                             lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+                                             lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                             accent = NULL) {
   pal <- episodic_palette()
+  accent <- accent %||% pal$primary
+  # Named rather than assumed. Without the column, `weekly$incomplete`
+  # is NULL, `NULL %in% TRUE` is `logical(0)`, and the assignment below
+  # fails with "replacement has 0 rows" - an arithmetic complaint about
+  # a caller that handed over a frame it had not flagged. Every weekly
+  # frame in the app comes from `episodic_app_pathogen_weekly()`, which
+  # flags it; this says so where it would otherwise be discovered.
+  if (is.null(weekly$incomplete)) {
+    stop(
+      "`weekly` has no `incomplete` column: build it with ",
+      "`episodic_app_pathogen_weekly()`, which flags the weeks still ",
+      "filling.",
+      call. = FALSE
+    )
+  }
   weekly$week_start <- as.Date(weekly$week_start)
   weekly$alpha <- ifelse(weekly$incomplete %in% TRUE, 0.45, 1)
 
@@ -848,7 +893,7 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
   ) +
     ggplot2::geom_col(
       ggplot2::aes(alpha = .data$alpha),
-      fill = pal$primary,
+      fill = accent,
       width = 5.5,
       show.legend = FALSE
     ) +

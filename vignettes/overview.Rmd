@@ -11,13 +11,14 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 ```
 
-EpiSODIC is an automated outbreak cluster detection and assessment system
-for infectious disease epidemiologists. It runs in R, reads
+EpiSODIC is an automated outbreak and epidemic detection and assessment
+system for infectious disease epidemiologists. It runs in R, reads
 laboratory-confirmed infections, detects statistical and rule-based
-aberrations, reconciles them into persistent clusters, and gives
-epidemiologists a dossier to assess each one, with a full audit trail and
-outbreak reports for clinical colleagues (e.g. clinical microbiologists)
-and infection prevention nurses.
+aberrations, reconciles them into persistent outbreaks (localised, at
+ward through area level) and epidemics (regional, at province and
+catchment level), and gives epidemiologists a dossier to assess each one,
+with a full audit trail and outbreak reports for clinical colleagues
+(e.g. clinical microbiologists) and infection prevention nurses.
 
 The dashboard and its outbreak reports are available in English,
 (Modern Standard) Arabic, Dutch, French, German, Hindi, Mandarin
@@ -49,25 +50,24 @@ base grows - see `vignette("detection-reconciliation")` for how the
 detectors themselves work, and the FAQ for how to change the
 configuration.
 
-## Two altitudes
+## Three altitudes
 
-EpiSODIC gives you two different views of the same detected signals,
-because "should we act on this cluster" and "is this pathogen unusual
-this season" are different questions that need different units of
-analysis.
+EpiSODIC gives you three different views of the same detected signals,
+because "should we act on this outbreak", "has the epidemic season
+started" and "is this pathogen unusual this season" are different
+questions that need different units of analysis.
 
-### The Clusters screen: one signal at a time
+### The Outbreaks screen: one outbreak at a time
 
-The **Clusters** screen is operational: a ranked queue of discrete
-signals, each one something a person has to make and record a decision
-about. That is the right unit for triage and the wrong unit for
-surveillance - "is influenza A unusual this season, and where in the
-season are we" is not a question about any one cluster, and cannot be
-answered by reading several dossiers in turn.
+The **Outbreaks** screen is operational: a ranked queue of discrete
+outbreaks (L1 through L3), each one something a person has to make and
+record a decision about. That is the right unit for triage and the wrong
+unit for surveillance, just as a single outbreak dossier cannot tell you
+whether the influenza season has started.
 
-Every cluster opens into a dossier: case statistics, its status
+Every outbreak opens into a dossier: case statistics, its status
 trajectory, an automatically generated plain-language interpretation of
-the evidence, the epidemic curve, similar past clusters and their
+the evidence, the epidemic curve, similar past outbreaks and their
 verdicts as precedent, and the classification panel where an
 epidemiologist records their assessment.
 
@@ -76,15 +76,33 @@ Screenshots below live in man/figures/ (ships with the package, so
 they also render on the CRAN page), regenerated against episodic_demo().
 -->
 <p align="center">
-  <img src="../man/figures/main_screen.png" alt="A cluster dossier: case stats, status trajectory, an automatically generated plain-language interpretation, the epidemic curve, and the classification panel" width="800">
+  <img src="../man/figures/main_screen.png" alt="An outbreak dossier: case stats, status trajectory, an automatically generated plain-language interpretation, the epidemic curve, and the classification panel" width="800">
 </p>
+
+### The Epidemics screen: regional and seasonal
+
+The **Epidemics** screen shows epidemics, the regional-scale signals at
+province (L4) and catchment (L5) level. An epidemic's dossier carries
+the weekly case curve with MEM threshold overlay, tests and positivity,
+contributing institutions with concentration, and a list of outbreaks
+recorded as occurring during it. Each of those outbreaks carries a
+"During E-123" chip on its own dossier, so the relation reads from
+either end.
+
+The screen is laid out exactly like the Outbreaks screen, and an
+epidemic is assessed on the same form: it can be an artefact or expected
+variation like any other signal. Where the epidemic is seasonal, that
+form additionally offers the **declaration** - whether the season has
+started, has not yet started, or has ended. That is an act with policy
+consequences across multiple hospitals, which the system raises but
+never performs automatically, and it is offered only where there is a
+season to declare.
 
 ### The Pathogen screen: one pathogen over a period
 
-Pick a pathogen and a period - a surveillance season (ISO week 40 to week
-20), the last twelve months, the last five years, or an exact date range
-- and it describes that pathogen across the whole catchment over that
-period:
+Pick a pathogen and a period, the last three months, the last twelve
+months, the last five years, or an exact date range, and it describes
+that pathogen across the whole catchment over that period:
 
 - weekly incidence, with the Moving Epidemic Method's pre- and
   post-epidemic thresholds and its medium/high/very high intensity bands
@@ -93,33 +111,32 @@ period:
 - the same period laid over earlier seasons (or, for a non-seasonal
   pathogen, earlier calendar years) on a shared week-within-period axis,
   so "earlier", "later", "bigger", "smaller" can be read directly;
-- Rt for the pathogen as a whole rather than per cluster - which is the
-  population the renewal model assumes it is seeing - conditioned on case
+- Rt for the pathogen as a whole rather than per outbreak, which is the
+  population the renewal model assumes it is seeing, conditioned on case
   history from before the selected period;
 - testing volume and positivity, age and sex against the pathogen's own
   long-run distribution, geography, and care-line and institution
   breakdowns;
-- and the clusters that were raised during the period, with the verdict
+- and the outbreaks that were raised during the period, with the verdict
   each one received, as the way back to the operational view.
 
 <p align="center">
   <img src="../man/figures/pathogen_screen.png" alt="The Pathogen screen" width="800">
 </p>
 
-## Beyond the two altitudes
+## Beyond the three altitudes
 
-The rest of the dashboard - Performance, Archive, Streams, Activity, and
-Info - rounds out these two, each answering a narrower question than
-"should we act on this cluster" or "is this pathogen unusual this
-season":
+The rest of the dashboard, Performance, Archive, Streams, Activity, and
+Info, rounds out these three, each answering a narrower question than
+"should we act on this outbreak" or "has the epidemic season started":
 
 ### The Performance screen: is detection itself working
 
 Detection timeliness and positive predictive value per detector and
-pathogen, computed from stored verdicts. Both fill in as clusters get
-assessed, so tuning `EPISODIC_CONFIG` against your own signal volume is
-an evidence-based exercise rather than a guess, once your board has
-classified enough clusters to have a baseline.
+pathogen, computed from stored verdicts on outbreaks (L1-L3). Both fill
+in as outbreaks get assessed, so tuning `EPISODIC_CONFIG` against your
+own signal volume is an evidence-based exercise rather than a guess,
+once your board has classified enough outbreaks to have a baseline.
 
 <p align="center">
   <img src="../man/figures/performance_screen.png" alt="The Performance screen" width="800">
@@ -127,13 +144,14 @@ classified enough clusters to have a baseline.
 
 ### The Archive screen: last winter's precedent
 
-Every closed cluster, searchable by pathogen and place, sorted by
-period. A closed dossier is not filed away - it stays reachable and
-reasoned exactly the way an open one is, since last winter's assessment
-is often the best prior evidence for judging this winter's cluster.
+Every closed outbreak and epidemic, searchable by pathogen and place,
+sorted by period. A closed dossier is not filed away, it stays reachable
+and reasoned exactly the way an open one is, since last winter's
+assessment is often the best prior evidence for judging this winter's
+outbreak.
 
 <p align="center">
-  <img src="../man/figures/archive_screen.png" alt="The Archive screen: previously detected clusters" width="800">
+  <img src="../man/figures/archive_screen.png" alt="The Archive screen: previously detected outbreaks and epidemics" width="800">
 </p>
 
 ### Streams and Activity: how the machinery is behaving

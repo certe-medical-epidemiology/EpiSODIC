@@ -94,6 +94,155 @@ test_that("migration 4 adds the backfill columns, and adds them once", {
   expect_silent(migration(con, "sqlite"))
 })
 
+test_that("migration 7 adds the scale column and the two new tables", {
+  path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(path))
+  con <- episodic_db_create(path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+
+  expect_true(
+    episodic_db_column_exists(con, "sqlite", "episodic_cluster", "scale")
+  )
+  expect_true(DBI::dbExistsTable(con, "episodic_epidemic_season"))
+  expect_true(DBI::dbExistsTable(con, "episodic_cluster_link"))
+
+  migration <- episodic_db_migrations()[["7"]]
+  expect_silent(migration(con, "sqlite"))
+  expect_silent(migration(con, "sqlite"))
+})
+
+test_that("migration 7 backfills scale from the stream's level", {
+  path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(path))
+  con <- episodic_db_create(path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+
+  ward_stream_id <- episodic_db_stream_upsert(
+    con,
+    stream_key = episodic_stream_key(
+      "pathogen_ward",
+      "Norovirus",
+      institution_id = "i1",
+      ward = "w1"
+    ),
+    level = "pathogen_ward",
+    pathogen = "Norovirus",
+    ward = "w1",
+    observed_date = "2025-01-01"
+  )
+  region_stream_id <- episodic_db_stream_upsert(
+    con,
+    stream_key = episodic_stream_key(
+      "pathogen_region",
+      "Influenza",
+      region_code = "R"
+    ),
+    level = "pathogen_region",
+    pathogen = "Influenza",
+    region_code = "R",
+    observed_date = "2025-01-01"
+  )
+  run_id <- episodic_db_run_start(con, "host", "account")
+
+  ward_cluster_id <- episodic_db_cluster_insert(
+    con,
+    stream_id = ward_stream_id,
+    first_day = "2025-01-01",
+    last_day = "2025-01-10",
+    n_cases = 3L,
+    priority_score = 0.5,
+    detector_agreement = 1L,
+    run_id = run_id
+  )
+  region_cluster_id <- episodic_db_cluster_insert(
+    con,
+    stream_id = region_stream_id,
+    first_day = "2025-01-01",
+    last_day = "2025-01-10",
+    n_cases = 10L,
+    priority_score = 0.7,
+    detector_agreement = 2L,
+    run_id = run_id
+  )
+
+  # A fresh v7 database already carries the column, so all rows default
+  # to 'outbreak'. Simulate a v6 database by resetting every row, then
+  # drop-and-readd the column so the migration's guard lets the backfill
+  # through. SQLite >= 3.35 supports DROP COLUMN.
+  DBI::dbExecute(con, "PRAGMA foreign_keys = OFF")
+  tryCatch(
+    {
+      DBI::dbExecute(con, "ALTER TABLE episodic_cluster DROP COLUMN scale")
+    },
+    error = function(e) {
+      skip("SQLite version does not support DROP COLUMN")
+    }
+  )
+  DBI::dbExecute(con, "PRAGMA foreign_keys = ON")
+
+  migration <- episodic_db_migrations()[["7"]]
+  migration(con, "sqlite")
+
+  rows <- DBI::dbGetQuery(
+    con,
+    "SELECT cluster_id, scale FROM episodic_cluster ORDER BY cluster_id"
+  )
+  expect_equal(rows$scale[rows$cluster_id == ward_cluster_id], "outbreak")
+  expect_equal(rows$scale[rows$cluster_id == region_cluster_id], "epidemic")
+})
+
+test_that("a fresh database and a migrated v6 database have identical structure", {
+  fresh_path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(fresh_path))
+  fresh_con <- episodic_db_create(fresh_path)
+  on.exit(DBI::dbDisconnect(fresh_con), add = TRUE, after = FALSE)
+
+  fresh_tables <- sort(DBI::dbListTables(fresh_con))
+  fresh_columns <- lapply(
+    setNames(fresh_tables, fresh_tables),
+    function(tbl) {
+      info <- DBI::dbGetQuery(fresh_con, paste0("PRAGMA table_info(", tbl, ")"))
+      info[order(info$name), c("name", "type", "notnull", "dflt_value")]
+    }
+  )
+
+  migrated_path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(migrated_path), add = TRUE)
+  migrated_con <- episodic_db_create(migrated_path)
+  DBI::dbDisconnect(migrated_con)
+
+  DBI::dbExecute(
+    DBI::dbConnect(RSQLite::SQLite(), migrated_path),
+    "UPDATE episodic_schema_version SET version = 6 WHERE version = 7"
+  ) -> ignored
+  DBI::dbDisconnect(DBI::dbConnect(RSQLite::SQLite(), migrated_path))
+
+  expect_message(
+    episodic_db_migrate(migrated_path),
+    "version 7"
+  )
+
+  migrated_con <- episodic_db_connect(migrated_path)
+  on.exit(DBI::dbDisconnect(migrated_con), add = TRUE, after = FALSE)
+
+  migrated_tables <- sort(DBI::dbListTables(migrated_con))
+  expect_equal(migrated_tables, fresh_tables)
+
+  for (tbl in fresh_tables) {
+    if (tbl == "episodic_schema_version") next
+    migrated_info <- DBI::dbGetQuery(
+      migrated_con,
+      paste0("PRAGMA table_info(", tbl, ")")
+    )
+    migrated_info <- migrated_info[order(migrated_info$name), c("name", "type", "notnull", "dflt_value")]
+    expect_equal(
+      migrated_info,
+      fresh_columns[[tbl]],
+      info = tbl
+    )
+  }
+})
+
 test_that("a cluster from before the backfill columns existed reads as not backfilled", {
   # NOT NULL DEFAULT 0 is what stamps every row already on file, and it
   # has to say "not a backfill" rather than NULL: no run before this

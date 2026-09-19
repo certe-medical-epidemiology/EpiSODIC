@@ -357,7 +357,7 @@ episodic_db_apply_schema <- function(con, dialect) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 6L
+episodic_schema_version <- 7L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -640,6 +640,127 @@ episodic_db_migrations <- function() {
           )
         }
       }
+      invisible(NULL)
+    },
+    # 7: the epidemic reform's schema additions. A `scale` discriminator
+    # on `episodic_cluster` (backfilled from each cluster's stream
+    # level), the `episodic_epidemic_season` satellite table, the
+    # `episodic_cluster_link` relation table, and three declaration
+    # verdicts on `episodic_assessment_event`.
+    "7" = function(con, dialect) {
+      if (!episodic_db_column_exists(
+        con, dialect, "episodic_cluster", "scale"
+      )) {
+        if (dialect == "mariadb") {
+          DBI::dbExecute(
+            con,
+            paste0(
+              "ALTER TABLE episodic_cluster ADD COLUMN ",
+              "scale VARCHAR(20) NOT NULL DEFAULT 'outbreak'"
+            )
+          )
+        } else {
+          DBI::dbExecute(
+            con,
+            paste0(
+              "ALTER TABLE episodic_cluster ADD COLUMN ",
+              "scale TEXT NOT NULL DEFAULT 'outbreak'",
+              " CHECK (scale IN ('outbreak', 'epidemic'))"
+            )
+          )
+        }
+        config <- tryCatch(
+          episodic_config_resolve(),
+          error = function(e) NULL
+        )
+        epidemic_levels <- if (!is.null(config)) {
+          config$scale$epidemic_levels
+        } else {
+          c("pathogen_province", "pathogen_region")
+        }
+        if (length(epidemic_levels) > 0) {
+          placeholders <- paste(rep("?", length(epidemic_levels)), collapse = ", ")
+          DBI::dbExecute(
+            con,
+            paste0(
+              "UPDATE episodic_cluster SET scale = 'epidemic' ",
+              "WHERE stream_id IN (",
+              "  SELECT stream_id FROM episodic_stream WHERE level IN (",
+              placeholders,
+              "))"
+            ),
+            params = as.list(epidemic_levels)
+          )
+        }
+      }
+
+      if (!DBI::dbExistsTable(con, "episodic_epidemic_season")) {
+        for (statement in episodic_db_schema_statements_for(
+          dialect,
+          "episodic_epidemic_season"
+        )) {
+          DBI::dbExecute(con, statement)
+        }
+      }
+
+      if (!DBI::dbExistsTable(con, "episodic_cluster_link")) {
+        for (statement in episodic_db_schema_statements_for(
+          dialect,
+          "episodic_cluster_link"
+        )) {
+          DBI::dbExecute(con, statement)
+        }
+      }
+
+      # Extend the verdict CHECK on episodic_assessment_event to
+      # include the three declaration verdicts. SQLite cannot ALTER a
+      # CHECK constraint, so the table is recreated with the extended
+      # one (create-copy-drop-rename). MariaDB can MODIFY in place.
+      if (dialect == "mariadb") {
+        DBI::dbExecute(
+          con,
+          paste0(
+            "ALTER TABLE episodic_assessment_event MODIFY COLUMN ",
+            "verdict TEXT CHECK (verdict IS NULL OR verdict IN (",
+            "'artefact', 'expected_variation', 'cluster_not_yet', ",
+            "'possible_epidemic', 'confirmed_epidemic', ",
+            "'season_started', 'season_not_yet', 'season_ended'))"
+          )
+        )
+      } else {
+        DBI::dbExecute(con, paste0(
+          "CREATE TABLE episodic_assessment_event_new (\n",
+          "  event_id       INTEGER PRIMARY KEY AUTOINCREMENT,\n",
+          "  cluster_id     INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),\n",
+          "  user_id        INTEGER NOT NULL REFERENCES episodic_app_user(user_id),\n",
+          "  created_at     TEXT NOT NULL,\n",
+          "  verdict        TEXT CHECK (verdict IS NULL OR verdict IN (\n",
+          "                   'artefact', 'expected_variation', 'cluster_not_yet',\n",
+          "                   'possible_epidemic', 'confirmed_epidemic',\n",
+          "                   'season_started', 'season_not_yet', 'season_ended')),\n",
+          "  rationale      TEXT NOT NULL,\n",
+          "  wpg_notifiable INTEGER CHECK (wpg_notifiable IS NULL OR wpg_notifiable IN (0, 1)),\n",
+          "  ggd_informed   INTEGER CHECK (ggd_informed IS NULL OR ggd_informed IN (0, 1)),\n",
+          "  ggd_note       TEXT,\n",
+          "  snooze_until   TEXT,\n",
+          "  supersedes     INTEGER REFERENCES episodic_assessment_event_new(event_id)\n",
+          ")"
+        ))
+        DBI::dbExecute(con, paste0(
+          "INSERT INTO episodic_assessment_event_new ",
+          "SELECT * FROM episodic_assessment_event"
+        ))
+        DBI::dbExecute(con, "DROP TABLE episodic_assessment_event")
+        DBI::dbExecute(con, paste0(
+          "ALTER TABLE episodic_assessment_event_new ",
+          "RENAME TO episodic_assessment_event"
+        ))
+        DBI::dbExecute(con, paste0(
+          "CREATE INDEX idx_episodic_assessment_event_cluster ",
+          "ON episodic_assessment_event(cluster_id)"
+        ))
+      }
+
       invisible(NULL)
     }
   )
@@ -1427,7 +1548,8 @@ episodic_db_schema_statements <- function(dialect) {
         "  section     TEXT NOT NULL CHECK (section IN ('notifications'))," = "  section     VARCHAR(20) NOT NULL CHECK (section IN ('notifications')),"
       ),
       episodic_cluster = c(
-        "  origin                   TEXT NOT NULL DEFAULT 'detected' CHECK (origin IN ('detected', 'manual'))" = "  origin                   VARCHAR(20) NOT NULL DEFAULT 'detected' CHECK (origin IN ('detected', 'manual'))"
+        "  origin                   TEXT NOT NULL DEFAULT 'detected' CHECK (origin IN ('detected', 'manual'))" = "  origin                   VARCHAR(20) NOT NULL DEFAULT 'detected' CHECK (origin IN ('detected', 'manual'))",
+        "  scale                    TEXT NOT NULL DEFAULT 'outbreak' CHECK (scale IN ('outbreak', 'epidemic'))" = "  scale                    VARCHAR(20) NOT NULL DEFAULT 'outbreak' CHECK (scale IN ('outbreak', 'epidemic'))"
       ),
       episodic_report_subscription_event = c(
         "  created_at       TEXT NOT NULL," = "  created_at       VARCHAR(30) NOT NULL,"

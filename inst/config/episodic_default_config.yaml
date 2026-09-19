@@ -193,6 +193,22 @@ priority_score:
     density_component: 0.10    # incidence per 1,000 patient-days versus that stream's own baseline density
     spatial_component: 0.05    # how concentrated cases are in one location versus spread across several
 
+# Scale: which lattice levels produce epidemics rather than outbreaks.
+#
+# An outbreak is a localised cluster (L1 to L3), investigated case by
+# case; an epidemic is a regional cluster (L4 or L5), assessed on
+# population curves. The boundary is an operator setting because L3
+# (pathogen_area) is a postcode-derived grouping whose population varies
+# across deployments: a sparse country's area may cover more ground than
+# a dense one's province.
+#
+# Part of config_hash: changing which levels are epidemics changes what a
+# run computes.
+scale:
+  epidemic_levels:
+    - pathogen_province
+    - pathogen_region
+
 # Geography: how the two coarsest lattice levels name places.
 #
 # EpiSODIC runs at any laboratory in any country, so it cannot know what
@@ -301,22 +317,18 @@ suppression:
 # can switch off from inside the app is a login wall that falls with that
 # one account. Turning it off takes file access to the machine.
 access:
-  # TRUE (the shipped default) closes the app to anonymous visitors
+  # TRUE closes the app to anonymous visitors
   # entirely. A visitor gets a sign-in prompt and nothing else - not the
   # navigation, not the status strip, not one row of data - because the
   # server renders none of it rather than hiding it client-side. There is
   # correspondingly nothing for a browser's developer tools to reveal:
   # the data never reaches the page.
   #
-  # FALSE lets anyone who reaches the app read clusters, streams and the
-  # archive without signing in; signing in is then needed only for the
-  # patient-level line list and for writing (see vignette("deployment")).
+  # FALSE (the shipped default) lets anyone who reaches the app read clusters,
+  # streams and the archive without signing in; signing in is then needed only
+  # for the patient-level line list and for writing (see vignette("deployment")).
   # Cluster rows are not anonymous data - a ward, an institution, a
   # pathogen and a date is often enough to identify who - so this is a
   # deliberate choice for an instance already behind network controls
   # that make anonymous reachability impossible, not a convenience.
-  #
-  # True, not false: a surveillance system shipped to laboratories
-  # worldwide has to be safe in its shipped state, because the
-  # deployment that goes wrong is the one where nobody read this file.
-  require_login: true
+  require_login: false

@@ -158,7 +158,7 @@ episodic_notify_cluster_details <- function(con, cluster_ids) {
   episodic_db_attach_case_days(con, details)
 }
 
-#' A cluster's deep link into the dashboard's Clusters screen
+#' A cluster's deep link into the dashboard's Outbreaks screen
 #'
 #' The dashboard reads `?cluster=` on load (`R/app_server.R`), so a link
 #' built here opens that cluster's dossier rather than dropping the
@@ -256,7 +256,7 @@ episodic_notify_build_new_clusters <- function(details,
 
   for (i in seq_len(nrow(show))) {
     row <- show[i, ]
-    ref <- episodic_tr("dossier.cluster_ref", id = row$cluster_id, lang = lang)
+    ref <- episodic_object_ref(row$cluster_id, row$level, lang = lang)
     url <- episodic_notify_cluster_url(dashboard_url, row$cluster_id)
     location <- episodic_notify_location(row, lang = lang)
     expected_str <- if (is.na(row$expected)) {
@@ -427,7 +427,7 @@ episodic_notify_build_new_clusters <- function(details,
     paste0(
       "<table style='border-collapse:collapse;width:100%'>",
       "<tr style='background:#f0f0f0'>",
-      header("column.cluster", "left"),
+      header("column.id", "left"),
       header("column.pathogen", "left"),
       header("column.place", "left"),
       header("column.period", "center"),

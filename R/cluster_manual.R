@@ -161,14 +161,15 @@ episodic_add_manual_cluster <- function(db_path = Sys.getenv("EPISODIC_DB", unse
   con <- episodic_db_open(db_path)
   on.exit(DBI::dbDisconnect(con))
 
-  weights <- episodic_config_resolve(con = con)$priority_score$weights
+  config <- episodic_config_resolve(con = con)
+  weights <- config$priority_score$weights
 
   DBI::dbBegin(con)
   cluster_ids <- tryCatch(
     {
       ids <- integer(spec$n)
       for (i in seq_len(spec$n)) {
-        ids[i] <- episodic_add_one_manual_cluster(con, spec, i, user_id, weights)
+        ids[i] <- episodic_add_one_manual_cluster(con, spec, i, user_id, weights, config)
       }
       ids
     },
@@ -186,7 +187,7 @@ episodic_add_manual_cluster <- function(db_path = Sys.getenv("EPISODIC_DB", unse
 #' Write cluster `i` of a validated manual-cluster batch
 #' @keywords internal
 #' @noRd
-episodic_add_one_manual_cluster <- function(con, spec, i, user_id, weights) {
+episodic_add_one_manual_cluster <- function(con, spec, i, user_id, weights, config) {
   stream_key <- episodic_stream_key(
     level = spec$level[i],
     pathogen = spec$pathogen[i],
@@ -258,7 +259,8 @@ episodic_add_one_manual_cluster <- function(con, spec, i, user_id, weights) {
     priority_score = score,
     detector_agreement = spec$detector_agreement[i],
     run_id = NA,
-    origin = "manual"
+    origin = "manual",
+    scale = episodic_scale_for_level(spec$level[i], config)
   )
 
   if (!is.null(cases_i)) {

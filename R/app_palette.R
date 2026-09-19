@@ -140,3 +140,26 @@ episodic_brand_bar <- function() {
   p <- episodic_palette()
   c(p$warning, p$success, p$danger, p$primary, p$secondary)
 }
+
+#' The accent colour for a nav section, matching that section's own
+#' background tint (`--episodic-tint-*` in `episodic.css`) and the
+#' `--episodic-nav-accent` custom property the CSS side reads
+#' automatically from `data-nav`. A chart is not CSS, so it has to be
+#' told explicitly which section it is drawn for.
+#'
+#' @param section One of `"outbreaks"`, `"epidemics"`, `"pathogens"`,
+#'   `"instance"`. Anything else falls back to `primary`, the Instance
+#'   screen's own accent - the same fallback an unrecognised `data-nav`
+#'   gets on the CSS side.
+#' @param pal A palette as returned by `episodic_palette()`.
+#' @return A hex colour string.
+#' @keywords internal
+#' @noRd
+episodic_nav_accent <- function(section, pal = episodic_palette()) {
+  switch(section,
+    outbreaks = pal$warning,
+    epidemics = pal$success,
+    pathogens = pal$danger,
+    pal$primary
+  )
+}

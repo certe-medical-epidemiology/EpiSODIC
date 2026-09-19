@@ -21,7 +21,7 @@
 #'
 #' The dashboard is available in English, (Modern Standard) Arabic,
 #' Dutch, French, German, Hindi, Mandarin Chinese, and Spanish. All user-facing
-#' text is stored as translation keys (e.g. `"nav.clusters"`) rather than
+#' text is stored as translation keys (e.g. `"nav.outbreaks"`) rather than
 #' hardcoded in R code, and `episodic_tr()` looks a key up in the requested
 #' language. A key that does not exist in any language is shown as
 #' `[[key]]` rather than silently left blank, so a missing translation is
@@ -399,7 +399,7 @@ episodic_lang_dir <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' same language, as the dashboard itself.
 #'
 #' @param key A dotted key identifying the piece of text, e.g.
-#'   `"nav.clusters"`. The full set of available keys and their wording in
+#'   `"nav.outbreaks"`. The full set of available keys and their wording in
 #'   every shipped language lives in `inst/i18n/*.json` (one file per
 #'   language: `en`, `ar`, `nl`, `fr`, `de`, `hi`, `zh`, `es`).
 #' @param ... Named values substituted into `{name}` placeholders in the

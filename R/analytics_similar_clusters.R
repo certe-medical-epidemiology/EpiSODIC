@@ -49,12 +49,17 @@
 #' @param lang Session language.
 #' @param n Maximum number of results.
 #' @return A data frame, one row per similar cluster, the `n` most similar
-#'   first: `cluster_id`, `pathogen`, `level_label`, `place`, `first_day`,
-#'   `last_day`, `n_cases`, `case_days`, `priority_score`, `verdict_label`,
-#'   `closed_at`. Zero rows if there is no closed precedent for this
-#'   pathogen. Similarity decides *which* rows come back; the panel that
-#'   renders them re-sorts into `episodic_cluster_table_order()`, like
-#'   every other cluster table.
+#'   first: `cluster_id`, `pathogen`, `level`, `level_label`, `place`,
+#'   `first_day`, `last_day`, `n_cases`, `case_days`, `priority_score`,
+#'   `verdict_label`, `closed_at`. Zero rows if there is no closed
+#'   precedent for this pathogen. Similarity decides *which* rows come
+#'   back; the panel that renders them re-sorts into
+#'   `episodic_cluster_table_order()`, like every other cluster table.
+#'   `level` is not filtered to the target cluster's own scale - the
+#'   scoring rule only rewards a level match, it does not require one -
+#'   so a precedent can be an epidemic where the target is an outbreak,
+#'   and the rendered id has to read `E-` for that row regardless of what
+#'   scale the dossier it appears in belongs to.
 #' @keywords internal
 #' @noRd
 episodic_app_similar_clusters <- function(con,
@@ -64,6 +69,7 @@ episodic_app_similar_clusters <- function(con,
   empty <- data.frame(
     cluster_id = integer(0),
     pathogen = character(0),
+    level = character(0),
     level_label = character(0),
     place = character(0),
     first_day = character(0),
@@ -197,6 +203,7 @@ episodic_app_similar_clusters <- function(con,
   clusters[, c(
     "cluster_id",
     "pathogen",
+    "level",
     "level_label",
     "place",
     "first_day",

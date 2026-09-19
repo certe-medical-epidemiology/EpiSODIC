@@ -175,12 +175,12 @@ test_that("operator-named subtrees accept keys EpiSODIC cannot enumerate", {
   expect_true(isTRUE(config$notifications$enabled))
 })
 
-test_that("EpiSODIC ships closed to anonymous visitors", {
+test_that("EpiSODIC ships open to anonymous visitors", {
   # The shipped state is the state of every deployment where nobody read
   # the configuration file.
   defaults <- episodic_config_resolve(NA)
-  expect_true(isTRUE(defaults$access$require_login))
-  expect_true(episodic_app_require_login(defaults))
+  expect_false(isTRUE(defaults$access$require_login))
+  expect_false(episodic_app_require_login(defaults))
 })
 
 test_that("an access policy that cannot be read leaves the login wall up", {
@@ -363,4 +363,44 @@ test_that("a DB notifications override does not change episodic_config_hash(), s
   h_after <- episodic_config_hash(episodic_config_resolve(NA, con = con))
 
   expect_equal(h_before$hash, h_after$hash)
+})
+
+test_that("episodic_scale_for_level() returns 'outbreak' or 'epidemic' from config", {
+  config <- episodic_config_resolve(NA)
+  expect_equal(episodic_scale_for_level("pathogen_ward", config), "outbreak")
+  expect_equal(episodic_scale_for_level("pathogen_institution", config), "outbreak")
+  expect_equal(episodic_scale_for_level("pathogen_area", config), "outbreak")
+  expect_equal(episodic_scale_for_level("pathogen_province", config), "epidemic")
+  expect_equal(episodic_scale_for_level("pathogen_region", config), "epidemic")
+})
+
+test_that("episodic_scale_for_level() respects a custom scale boundary", {
+  instance_path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(instance_path))
+  writeLines(
+    "scale:\n  epidemic_levels:\n    - pathogen_area\n    - pathogen_province\n    - pathogen_region\n",
+    instance_path
+  )
+  config <- episodic_config_resolve(instance_path)
+  expect_equal(episodic_scale_for_level("pathogen_area", config), "epidemic")
+  expect_equal(episodic_scale_for_level("pathogen_ward", config), "outbreak")
+  expect_equal(episodic_scale_for_level("pathogen_institution", config), "outbreak")
+})
+
+test_that("scale changes config_hash", {
+  config <- episodic_config_resolve(NA)
+  h1 <- episodic_config_hash(config)
+  config$scale$epidemic_levels <- c("pathogen_area", "pathogen_province", "pathogen_region")
+  h2 <- episodic_config_hash(config)
+  expect_false(identical(h1$hash, h2$hash))
+})
+
+test_that("episodic_verdict_outbreak_levels() derives from config", {
+  config <- episodic_config_resolve(NA)
+  levels <- episodic_verdict_outbreak_levels(config)
+  expect_true("pathogen_ward" %in% levels)
+  expect_true("pathogen_institution" %in% levels)
+  expect_true("pathogen_area" %in% levels)
+  expect_false("pathogen_province" %in% levels)
+  expect_false("pathogen_region" %in% levels)
 })

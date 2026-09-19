@@ -1,3 +1,41 @@
+# EpiSODIC 0.20.0
+
+## New
+
+- An Epidemics screen with a rail of open epidemics, a dossier with seasonal evidence, and the assessment pane a season is declared in
+- The navigation bar carries four links: Outbreaks, Epidemics, Pathogen, Instance
+- An outbreak's dossier header carries a "During E-123" chip for each epidemic it ran during, which opens that epidemic
+- The Epidemics screen carries a notes panel and the full assessment form, so an epidemic is assessed and annotated like any other signal
+- The epidemic dossier shows weekly case curve with MEM threshold overlay, tests and positivity, contributing institutions with concentration, and linked outbreaks
+- The Clusters rail and Performance screen filter to outbreaks only (L1-L3)
+- Epidemiologists can record seasonal declarations (`season_started`, `season_not_yet`, `season_ended`) on seasonal epidemics
+- Cluster references render as `O-{id}` for outbreaks and `E-{id}` for epidemics, uniform across all eight languages
+- `episodic_object_ref()` helper renders the scale-aware reference from either a scale string or a lattice level
+- User-facing "cluster" wording replaced throughout: outbreak-only contexts say "outbreak", mixed contexts say "outbreaks and epidemics", detection contexts say "signal"
+- Full i18n vocabulary sweep across all eight language files for the outbreak/epidemic terminology
+- Report filenames changed from `cluster-{id}` to `outbreak-{id}`
+
+## Changed
+
+- The Archive is reached from a card on the Instance screen instead of its own link, so the navigation bar fits on a phone width
+- `access.require_login` now ships as `false`: a freshly installed instance reads open, and an operator closes it deliberately
+- The Clusters screen is called Outbreaks
+- The Epidemics screen holds its three panes in the app shell, like the Outbreaks screen, so its rail keeps its scroll position and gains the phone-tier pane switcher
+- The Epidemics rail is the Outbreaks rail's markup, with more room per row
+- The seasonal declaration is offered inside the epidemic's assessment form rather than as a form of its own, alongside the ordinary classification verdicts
+- The classification form and the notes panel namespace their element ids, so both surveillance screens can carry one
+- An outbreak's "Linked to" chips cover the outbreak scale only; the epidemic it ran during is a "During" chip instead
+- The confirmed-outbreak classification's explanation no longer names one scale while its label names the other
+- The mobile pane-switcher's active tab, the recalculating spinner, the Outbreaks screen's recommendation box, the epi curve/trend/Rt/map/weekly-cases charts, and every cluster table's row-link colour now read the current nav section's own colour instead of always primary; the age/sex pyramid keeps its own colour-coding unchanged, and buttons and chips are untouched
+
+## Fixed
+
+- The shared cluster table (Pathogen screen, Archive, and the dossier's related and similar-clusters panels) always prefixed ids with `O-`; each row now reads its own scale via `episodic_object_ref()`, so an epidemic-scale row reads `E-{id}`
+- Screen titles (Pathogen activity, Archive, Activity, Performance, Info, Streams) were sized in a fixed pixel value and no longer scaled with the mobile font-size bump; a shared rem-based `.episodic-screen-title` class replaces the inline style
+- `episodic_geography_nests()` no longer fails for region-level epidemics after the generic refactoring removed the L5 fast path
+- The Pathogens screen's weekly-cases chart now uses the section accent colour, consistent with the Rt and geo charts on the same screen
+
+
 # EpiSODIC 0.19.0
 
 ## New
@@ -13,6 +51,15 @@
 - `mem_mode` replaces `mem_applicable`: a three-state override (auto, yes, no) per pathogen
 - Schema version 6: `mem_mode` column on `episodic_pathogen_config`
 - Full-year MEM seasons with no NA off-season period
+- Schema version 7: `scale` discriminator on `episodic_cluster`, `episodic_epidemic_season` satellite table, `episodic_cluster_link` relation table, and declaration verdicts on `episodic_assessment_event`
+- Configurable scale boundary (`scale.epidemic_levels`) determines which lattice levels produce epidemics rather than outbreaks
+- Verdict labels derive the outbreak/epidemic boundary from configuration rather than a hardcoded constant
+- Clusters opened at epidemic-level streams receive `scale = 'epidemic'`; all others receive `scale = 'outbreak'`
+- A seasonal satellite row (`episodic_epidemic_season`) is written when a new epidemic cluster opens from a MEM detection
+- Seasonal epidemics close automatically when the weekly case count drops below the post-epidemic threshold or the evaluation week enters the trough
+- Epidemic identity is preserved across the season anchor rollover
+- Outbreaks are linked to epidemics they occur during, based on pathogen, time overlap and geographic nesting (`episodic_cluster_link`)
+- Lattice suppression works across the outbreak/epidemic scale boundary
 
 ## Changed
 
@@ -41,6 +88,10 @@
 
 - Saving a cluster note that repeats the note already on file no longer records a version in which nothing changed, and an empty note on a cluster that never had one is not recorded at all
 - A cluster id that names nothing viewable no longer selects an absent cluster in the dossier
+- The epidemic dossier's weekly curve errored instead of drawing, its weekly counts carrying no completeness flag
+- The epidemic dossier's statistics stacked vertically instead of forming a row, from a class the stylesheet does not draw
+- The screen no longer stays behind when a cluster is opened from the Epidemics screen after the reader has returned to a screen the server already believed they were on
+- An outbreak's "during" links no longer name epidemics that lattice suppression has folded into another
 
 # EpiSODIC 0.18.0
 

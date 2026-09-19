@@ -1065,9 +1065,13 @@ episodic_app_pathogen_institutions <- function(con,
 #' @param pathogen The pathogen.
 #' @param resolved The resolved period.
 #' @param lang Session language.
-#' @return A data frame with `cluster_id`, `level_label`, `place`,
-#'   `first_day`, `last_day`, `n_cases`, `case_days`, `priority_score`,
-#'   `verdict_label` (`NA` when never classified) and `state_label`.
+#' @return A data frame with `cluster_id`, `level`, `level_label`,
+#'   `place`, `first_day`, `last_day`, `n_cases`, `case_days`,
+#'   `priority_score`, `verdict_label` (`NA` when never classified) and
+#'   `state_label`. `level` (not just its translated `level_label`) is
+#'   what lets the rendered table read a row's id as `O-` or `E-`
+#'   correctly, since a pathogen's clusters over a period span every
+#'   level of the lattice, outbreak-scale and epidemic-scale alike.
 #' @keywords internal
 #' @noRd
 episodic_app_pathogen_clusters <- function(con,
@@ -1076,6 +1080,7 @@ episodic_app_pathogen_clusters <- function(con,
                                            lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   empty <- data.frame(
     cluster_id = integer(0),
+    level = character(0),
     level_label = character(0),
     place = character(0),
     first_day = character(0),
@@ -1144,6 +1149,7 @@ episodic_app_pathogen_clusters <- function(con,
 
     data.frame(
       cluster_id = row$cluster_id,
+      level = stream$level,
       level_label = episodic_app_level_label(
         stream$level,
         stream$care_line,

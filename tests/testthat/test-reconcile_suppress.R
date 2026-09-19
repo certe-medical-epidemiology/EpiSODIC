@@ -222,7 +222,7 @@ test_that("the dossier shows what a cluster suppressed", {
   expect_true(grepl(
     episodic_tr(
       "cluster.unlinked.suppressed",
-      ref = episodic_tr("dossier.cluster_ref", id = env$children[1], lang = "en"),
+      ref = episodic_tr("dossier.outbreak_ref", id = env$children[1], lang = "en"),
       lang = "en"
     ),
     rendered,
@@ -260,7 +260,7 @@ test_that("a cluster sharing cases with one that stands separately says so, and 
   # The shared opener attribute (see inst/app/www/episodic-nav.js) sets the `open_cluster`
   # Shiny input and moves the rail's own highlight, so a chip calls it
   # instead of Shiny.setInputValue('open_cluster', ...) directly.
-  opens <- paste0('data-episodic-cluster="', env$children[1], '"')
+  opens <- paste0('data-episodic-outbreak="', env$children[1], '"')
   expect_true(grepl(opens, chips, fixed = TRUE))
   # Keyboard access comes from episodic-nav.js's delegated keydown
   # listener, not an inline handler on every chip.
@@ -290,14 +290,15 @@ test_that("a suppressed cluster is not also advertised as a link", {
 test_that("the header names at most three links and counts the rest", {
   linked <- data.frame(
     cluster_id = 101:105,
+    level = "pathogen_institution",
     n_cases = 5,
     shared_cases = 5,
     stringsAsFactors = FALSE
   )
   chips <- as.character(episodic_ui_linked_chips(linked, lang = "en"))
-  expect_true(grepl("#101", chips, fixed = TRUE))
-  expect_true(grepl("#103", chips, fixed = TRUE))
-  expect_false(grepl("#104", chips, fixed = TRUE))
+  expect_true(grepl("O-101", chips, fixed = TRUE))
+  expect_true(grepl("O-103", chips, fixed = TRUE))
+  expect_false(grepl("O-104", chips, fixed = TRUE))
   expect_true(grepl("+2 more", chips, fixed = TRUE))
   expect_null(episodic_ui_linked_chips(linked[0, ], lang = "en"))
 })

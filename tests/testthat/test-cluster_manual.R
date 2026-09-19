@@ -361,3 +361,38 @@ test_that("a manual cluster and a detected one with the same evidence score the 
   )
   expect_equal(manual$priority_score[1], expected)
 })
+
+test_that("manual cluster at an epidemic-scale level gets scale = 'epidemic'", {
+  db_path <- episodic_test_db_path()
+  con <- episodic_db_connect(db_path)
+  user_id <- episodic_db_app_user_insert(
+    con,
+    username = "tester",
+    full_name = "Tester",
+    email = "t@example.com",
+    password_hash = "x",
+    role = "epidemiologist"
+  )
+  DBI::dbDisconnect(con)
+
+  ids <- episodic_add_manual_cluster(
+    db_path = db_path,
+    user_id = user_id,
+    pathogen = "Influenza A",
+    level = "pathogen_region",
+    first_day = "2025-01-01",
+    last_day = "2025-02-01",
+    n_cases = 10L,
+    region_code = "TEST"
+  )
+
+  con <- episodic_db_connect(db_path)
+  on.exit(DBI::dbDisconnect(con))
+
+  cluster <- DBI::dbGetQuery(
+    con,
+    "SELECT scale FROM episodic_cluster WHERE cluster_id = ?",
+    params = list(ids[1])
+  )
+  expect_equal(cluster$scale[1], "epidemic")
+})

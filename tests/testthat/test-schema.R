@@ -42,7 +42,9 @@ test_that("episodic_db_create() builds every expected table", {
       "episodic_report_render",
       "episodic_report_subscription_event",
       "episodic_report_subscription_send",
-      "episodic_schema_version"
+      "episodic_schema_version",
+      "episodic_epidemic_season",
+      "episodic_cluster_link"
     ) %in%
       tables
   ))
@@ -78,4 +80,55 @@ test_that("WAL mode and foreign keys are enabled on connect", {
   on.exit(DBI::dbDisconnect(con))
   expect_equal(tolower(DBI::dbGetQuery(con, "PRAGMA journal_mode")[[1]]), "wal")
   expect_equal(DBI::dbGetQuery(con, "PRAGMA foreign_keys")[[1]], 1L)
+})
+
+test_that("migrated SQLite accepts the three declaration verdicts", {
+  path <- episodic_test_db_path()
+  on.exit(unlink(path))
+
+  con <- episodic_db_connect(path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+
+  episodic_db_stream_upsert(
+    con,
+    stream_key = episodic_stream_key(
+      level = "pathogen_region",
+      pathogen = "Test pathogen",
+      region_code = "TEST"
+    ),
+    level = "pathogen_region",
+    pathogen = "Test pathogen",
+    region_code = "TEST",
+    observed_date = "2025-01-14"
+  )
+  cluster_id <- episodic_db_cluster_insert(
+    con,
+    stream_id = 1L,
+    first_day = "2025-01-01",
+    last_day = "2025-01-14",
+    n_cases = 5L,
+    priority_score = 1,
+    detector_agreement = 1L,
+    scale = "epidemic"
+  )
+  user_id <- episodic_db_app_user_insert(
+    con,
+    username = "tester",
+    full_name = "Tester",
+    email = "t@example.com",
+    password_hash = "x",
+    role = "epidemiologist"
+  )
+
+  for (verdict in c("season_started", "season_not_yet", "season_ended")) {
+    expect_no_error(DBI::dbExecute(
+      con,
+      paste0(
+        "INSERT INTO episodic_assessment_event ",
+        "(cluster_id, user_id, created_at, verdict, rationale) ",
+        "VALUES (?, ?, datetime('now'), ?, 'test')"
+      ),
+      params = list(cluster_id, user_id, verdict)
+    ))
+  }
 })

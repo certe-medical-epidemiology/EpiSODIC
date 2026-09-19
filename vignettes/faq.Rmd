@@ -222,8 +222,9 @@ The run's own log says which bound you met.
   and the run says on how many of the eligible streams it fitted. Lower
   `farrington.b` (at `b: 1` it needs 104 weeks) or wait for the history
   to accrue.
-- MEM only runs on regional streams, for pathogens flagged
-  `mem_applicable`, and only outside its own pre-epidemic threshold.
+- MEM runs at province and region streams (configurable via
+  `mem.levels`), for pathogens whose own data show a seasonal pattern
+  (or overridden per pathogen via `mem_mode`).
 
 If your extract does not run up to today, a run dated today sees a
 catchment that stopped weeks ago. It says so outright when the newest
