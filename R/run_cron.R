@@ -1591,11 +1591,11 @@ episodic_cases_for_stream <- function(cases,
 
 #' Does an outbreak's geography nest inside an epidemic's?
 #'
-#' Resolved generically via `episodic_case_region_code()` at the
-#' epidemic's own level, so any configured epidemic level works: L5
-#' (region) returns the catchment code for every case, so every
-#' outbreak nests; L4 (province) derives a province and compares; an
-#' L3 area would derive an area code the same way.
+#' An L5 (region) epidemic covers the whole catchment, so every
+#' outbreak nests. An L4 (province) epidemic covers one province; the
+#' outbreak nests if its cases resolve to the same province code.
+#' Other epidemic levels resolve the same way via
+#' `episodic_case_region_code()`.
 #'
 #' @param outbreak One row from `episodic_db_open_outbreaks()`.
 #' @param epidemic One row from `episodic_db_open_epidemics()`.
@@ -1605,6 +1605,9 @@ episodic_cases_for_stream <- function(cases,
 #' @keywords internal
 #' @noRd
 episodic_geography_nests <- function(outbreak, epidemic, cases, geography) {
+  if (epidemic$level == "pathogen_region") {
+    return(TRUE)
+  }
   ob_cases <- episodic_cases_for_stream(cases, outbreak, geography)
   if (nrow(ob_cases) == 0) {
     return(FALSE)

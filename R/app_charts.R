@@ -855,14 +855,12 @@ episodic_ui_denominator_chart <- function(series,
 #'   `NULL` to draw the bars alone.
 #' @param lang Language for labels.
 #' @param accent Fill colour for the bars. Defaults to the palette's
-#'   `primary`. A caller passing `thresholds` should think twice before
-#'   passing `episodic_nav_accent("pathogens")` here too: the intensity
-#'   bands in `episodic_mem_threshold_lines()` are drawn in
-#'   `warning_dark`/`danger`/`danger_dark`, so a danger-coloured bar
-#'   would sit on top of a same-coloured "very high" threshold line and
-#'   the two would stop reading as separate marks. `episodic_nav_accent(
-#'   "epidemics")` (success/green) has no such clash and is what the
-#'   Epidemics screen passes.
+#'   `primary`; the Pathogens screen passes
+#'   `episodic_nav_accent("pathogens")` for visual consistency with its
+#'   other charts. The intensity bands in `episodic_mem_threshold_lines()`
+#'   use `warning_dark`/`danger`/`danger_dark`, so the danger-accented
+#'   bars share the hue of the "high" line, but the dashed-line style
+#'   and the bar fill still read as distinct marks.
 #' @return A [ggplot2::ggplot] object.
 #' @keywords internal
 #' @noRd
