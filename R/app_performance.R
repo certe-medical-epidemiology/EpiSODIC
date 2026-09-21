@@ -231,6 +231,60 @@ episodic_app_performance <- function(con,
   )
 }
 
+#' The verdicts that decide "positive predictive"
+#'
+#' A terminal verdict either confirms a detection (true positive) or
+#' rejects it (false positive). Every other verdict, and no verdict at
+#' all, is not yet a judgement either way and counts as neither.
+#'
+#' @keywords internal
+#' @noRd
+episodic_performance_true_verdicts <- c("possible_epidemic", "confirmed_epidemic")
+
+#' @keywords internal
+#' @noRd
+episodic_performance_false_verdicts <- c("artefact", "expected_variation")
+
+#' The instance's overall positive predictive value, one per outbreak
+#'
+#' The figure the Instance screen's Performance card carries: of the
+#' outbreaks a detector fired on that an epidemiologist has since judged,
+#' the share judged real. It counts each outbreak once, on its latest
+#' verdict, where the per-detector table counts every detector that
+#' flagged it, and it restricts to the same population that table does
+#' (outbreak-scale clusters with at least one detection, suppressed ones
+#' included). It is two indexed reads rather than
+#' `episodic_app_performance()`, so opening the Instance screen stays
+#' close to free.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @return A single number in `[0, 1]`, or `NA_real_` when no such
+#'   outbreak has a terminal verdict yet. That is "nothing to measure",
+#'   never a PPV of zero.
+#' @keywords internal
+#' @noRd
+episodic_app_overall_ppv <- function(con) {
+  verdicts <- DBI::dbGetQuery(
+    con,
+    "SELECT e.cluster_id, e.verdict
+       FROM episodic_assessment_event e
+       JOIN episodic_cluster c ON c.cluster_id = e.cluster_id
+      WHERE e.verdict IS NOT NULL
+        AND c.scale = 'outbreak'
+        AND EXISTS (
+          SELECT 1 FROM episodic_detection d WHERE d.cluster_id = e.cluster_id
+        )
+      ORDER BY e.created_at"
+  )
+  latest <- verdicts$verdict[!duplicated(verdicts$cluster_id, fromLast = TRUE)]
+  n_true <- sum(latest %in% episodic_performance_true_verdicts)
+  n_false <- sum(latest %in% episodic_performance_false_verdicts)
+  if (n_true + n_false == 0) {
+    return(NA_real_)
+  }
+  n_true / (n_true + n_false)
+}
+
 #' @keywords internal
 #' @noRd
 episodic_performance_ppv <- function(detections,
@@ -264,13 +318,13 @@ episodic_performance_ppv <- function(detections,
   )]
   detections$is_true <- ifelse(
     !is.na(detections$verdict) &
-      detections$verdict %in% c("possible_epidemic", "confirmed_epidemic"),
+      detections$verdict %in% episodic_performance_true_verdicts,
     1L,
     0L
   )
   detections$is_false <- ifelse(
     !is.na(detections$verdict) &
-      detections$verdict %in% c("artefact", "expected_variation"),
+      detections$verdict %in% episodic_performance_false_verdicts,
     1L,
     0L
   )

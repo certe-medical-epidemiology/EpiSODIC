@@ -1155,11 +1155,10 @@ episodic_db_cluster_label <- function(con, cluster_id) {
 #' close to nothing: anything here that grew with the size of the
 #' database would turn a navigation into a query.
 #'
-#' The Performance card deliberately has no number. Measuring the
-#' instance against its epidemiologists' verdicts is a real computation
-#' (`episodic_app_performance()`), and running it to fill in a line
-#' nobody asked for, every time somebody passes through on the way to
-#' Settings, is the opposite of what this screen is for.
+#' The Performance card's overall PPV is not here: it is derived from
+#' the latest verdict per outbreak, so it has its own two-read function
+#' (`episodic_app_overall_ppv()`) rather than the full
+#' `episodic_app_performance()` computation.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @return A named list of integers.

@@ -19,23 +19,28 @@
 
 #' The Instance screen's own data
 #'
-#' `archive_count` is not one of `episodic_db_instance_counts()`'s cheap
-#' `COUNT(*)`s: "closed" is a state derived from a cluster's assessment
-#' events and closure history (`episodic_app_derive_states_batch()`),
-#' with no indexed column to count directly, so this pays the same cost
-#' opening the Archive screen itself pays rather than pretend a count of
-#' something else (inactive streams, say) stands in for it.
+#' The archive counts are not among `episodic_db_instance_counts()`'s
+#' cheap `COUNT(*)`s: "closed" is a state derived from a cluster's
+#' assessment events and closure history
+#' (`episodic_app_derive_states_batch()`), with no indexed column to
+#' count directly, so this pays the same cost opening the Archive screen
+#' itself pays rather than pretend a count of something else (inactive
+#' streams, say) stands in for it.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param lang Session language.
-#' @return A list of the counts, the archive count, and the package
-#'   version the Info card shows.
+#' @return A list of the counts, the archive's outbreak and epidemic
+#'   counts, the overall PPV (`NA_real_` when nothing has been judged) and
+#'   the package version the Info card shows.
 #' @keywords internal
 #' @noRd
 episodic_app_instance <- function(con, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  archive <- episodic_app_archive(con, lang = lang)
   list(
     counts = episodic_db_instance_counts(con),
-    archive_count = nrow(episodic_app_archive(con, lang = lang)),
+    archive_outbreaks = sum(archive$scale == "outbreak"),
+    archive_epidemics = sum(archive$scale == "epidemic"),
+    overall_ppv = episodic_app_overall_ppv(con),
     version = episodic_app_package_meta()$version
   )
 }
@@ -71,10 +76,20 @@ episodic_ui_instance_screen <- function(instance,
   cards <- list(
     list(
       view = "archive",
-      meta = episodic_count_phrase(
-        instance$archive_count,
-        episodic_tr("unit.outbreak_or_epidemic", lang = lang),
-        episodic_tr("unit.outbreaks_and_epidemics", lang = lang),
+      meta = episodic_tr(
+        "instance.card.archive.meta",
+        outbreaks = episodic_count_phrase(
+          instance$archive_outbreaks,
+          episodic_tr("unit.outbreak", lang = lang),
+          episodic_tr("unit.outbreaks", lang = lang),
+          lang = lang
+        ),
+        epidemics = episodic_count_phrase(
+          instance$archive_epidemics,
+          episodic_tr("unit.epidemic", lang = lang),
+          episodic_tr("unit.epidemics", lang = lang),
+          lang = lang
+        ),
         lang = lang
       )
     ),
@@ -96,9 +111,26 @@ episodic_ui_instance_screen <- function(instance,
         lang = lang
       )
     ),
-    # No number: see `episodic_db_instance_counts()` for why this one
-    # card deliberately says nothing about how well the instance detects.
-    list(view = "performance", meta = NULL),
+    # Nothing to say until an outbreak has been judged: an unmeasured PPV
+    # is a card without a line, never a PPV of 0.0%.
+    list(
+      view = "performance",
+      meta = if (!is.na(instance$overall_ppv)) {
+        episodic_tr(
+          "instance.card.performance.meta",
+          ppv = paste0(
+            episodic_format_number(
+              instance$overall_ppv * 100,
+              digits = 1,
+              fixed = TRUE,
+              lang = lang
+            ),
+            "%"
+          ),
+          lang = lang
+        )
+      }
+    ),
     list(
       view = "info",
       # A version number is an identifier, not a quantity, so it is

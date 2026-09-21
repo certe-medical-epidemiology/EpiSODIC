@@ -656,7 +656,12 @@ episodic_format_date <- function(d, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @param x A numeric vector.
 #' @param digits Round to this many decimal places first. `NULL` (the
 #'   default) leaves the value as it is. Trailing zeros are dropped
-#'   either way, so `digits = 1` renders 2 as "2" and 2.35 as "2.4".
+#'   unless `fixed` is set, so `digits = 1` renders 2 as "2" and 2.35 as
+#'   "2.4".
+#' @param fixed Keep the trailing zeros `digits` asks for, so
+#'   `digits = 1` renders 2 as "2.0". For a figure whose precision is
+#'   part of what it says, such as a percentage. Ignored without
+#'   `digits`.
 #' @param lang Session language: `"en"`, `"ar"`, `"nl"`, `"fr"`, `"de"`,
 #'   `"hi"`, `"zh"`, or `"es"`, or a regional variant of
 #'   one (`"en-US"`, `"es-419"`). Defaults to the `EPISODIC_LANGUAGE`
@@ -671,6 +676,7 @@ episodic_format_date <- function(d, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #' @noRd
 episodic_format_number <- function(x,
                                    digits = NULL,
+                                   fixed = FALSE,
                                    lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   if (length(x) == 0) {
     return(character(0))
@@ -678,7 +684,7 @@ episodic_format_number <- function(x,
   marks <- episodic_number_marks(lang)
   vapply(
     x,
-    function(one) episodic_format_number_one(one, digits, marks),
+    function(one) episodic_format_number_one(one, digits, marks, fixed),
     character(1),
     USE.NAMES = FALSE
   )
@@ -743,17 +749,25 @@ episodic_number_warned <- new.env(parent = emptyenv())
 #' @param x A single numeric.
 #' @param digits Passed from `episodic_format_number()`.
 #' @param marks From `episodic_number_marks()`.
+#' @param fixed Passed from `episodic_format_number()`.
 #' @return A single string, or `NA_character_`.
 #' @keywords internal
 #' @noRd
-episodic_format_number_one <- function(x, digits, marks) {
+episodic_format_number_one <- function(x, digits, marks, fixed = FALSE) {
   if (is.na(x)) {
     return(NA_character_)
   }
   if (!is.null(digits)) {
     x <- round(x, digits)
   }
-  plain <- format(x, scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+  keep_zeros <- isTRUE(fixed) && !is.null(digits)
+  plain <- format(
+    x,
+    scientific = FALSE,
+    trim = TRUE,
+    nsmall = if (keep_zeros) digits else 0L,
+    drop0trailing = !keep_zeros
+  )
   parts <- regmatches(
     plain,
     regexec("^(-?)([0-9]+)(?:[^0-9]([0-9]+))?$", plain)

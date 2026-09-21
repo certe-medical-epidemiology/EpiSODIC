@@ -130,6 +130,48 @@ test_that("episodic_app_performance() only counts a cluster's latest verdict, no
   expect_equal(perf$by_detector_pathogen$n_false_positive, 0)
 })
 
+test_that("episodic_app_overall_ppv() is NA until a terminal verdict exists, and counts each outbreak once on its latest verdict", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  user_id <- episodic_db_app_user_insert(
+    env$con,
+    "tester",
+    "Test User",
+    "t@example.com",
+    "hash"
+  )
+
+  # nothing to measure is not a PPV of zero
+  expect_true(is.na(episodic_app_overall_ppv(env$con)))
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    verdict = "cluster_not_yet",
+    rationale = "still watching"
+  )
+  expect_true(is.na(episodic_app_overall_ppv(env$con)))
+
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    verdict = "artefact",
+    rationale = "noise"
+  )
+  expect_identical(episodic_app_overall_ppv(env$con), 0)
+
+  Sys.sleep(1.1)
+  episodic_app_submit_assessment(
+    env$con,
+    env$cluster_id,
+    user_id,
+    verdict = "confirmed_epidemic",
+    rationale = "turned out real"
+  )
+  expect_identical(episodic_app_overall_ppv(env$con), 1)
+})
+
 test_that("time-to-detection excludes a cluster the backfill opened, and the rest do not", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))

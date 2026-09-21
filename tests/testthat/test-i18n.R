@@ -352,6 +352,15 @@ test_that("every language names the Pathogen screen the same way in its nav entr
   }
 })
 
+test_that("episodic_format_number(fixed = TRUE) keeps the trailing zeros digits asks for", {
+  expect_equal(episodic_format_number(0, digits = 1, lang = "en"), "0")
+  expect_equal(episodic_format_number(0, digits = 1, fixed = TRUE, lang = "en"), "0.0")
+  expect_equal(episodic_format_number(2.35, digits = 1, fixed = TRUE, lang = "nl"), "2,4")
+  expect_equal(episodic_format_number(1234, digits = 1, fixed = TRUE, lang = "de"), "1.234,0")
+  # without digits there is no precision to keep
+  expect_equal(episodic_format_number(2, fixed = TRUE, lang = "en"), "2")
+})
+
 test_that("episodic_format_number() writes each language's own marks, not the C locale's", {
   # The four languages that swap the two marks round.
   expect_equal(episodic_format_number(1234.5, lang = "en"), "1,234.5")

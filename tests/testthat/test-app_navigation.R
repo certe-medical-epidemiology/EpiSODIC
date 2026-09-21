@@ -249,7 +249,9 @@ test_that("everything that navigates says so with one of five data attributes", 
   # the bar - see `episodic_ui_instance_card()`.
   instance <- list(
     counts = list(streams = 12L, runs = 4L, users = 3L, clusters = 9L),
-    archive_count = 7L,
+    archive_outbreaks = 5L,
+    archive_epidemics = 2L,
+    overall_ppv = 0.5,
     version = "1.2.3"
   )
   expect_true(grepl(
@@ -458,7 +460,9 @@ test_that("right-to-left is expressed logically, with the one transform named", 
 test_that("the Instance screen offers the six screens the bar no longer carries", {
   instance <- list(
     counts = list(streams = 12L, runs = 4L, users = 3L, clusters = 9L),
-    archive_count = 7L,
+    archive_outbreaks = 5L,
+    archive_epidemics = 2L,
+    overall_ppv = 0.5,
     version = "1.2.3"
   )
   html <- as.character(episodic_ui_instance_screen(instance, lang = "en"))
@@ -493,36 +497,40 @@ test_that("the Instance screen offers the six screens the bar no longer carries"
   ))
 })
 
-test_that("the Performance card deliberately carries no number", {
+test_that("the Instance cards carry their counts, and the Performance card only once something is judged", {
   instance <- list(
     counts = list(streams = 12L, runs = 4L, users = 3L, clusters = 9L),
-    archive_count = 7L,
+    archive_outbreaks = 41L,
+    archive_epidemics = 21L,
+    overall_ppv = 0,
     version = "1.2.3"
   )
   html <- as.character(episodic_ui_instance_screen(instance, lang = "en"))
-  cards <- lengths(regmatches(
-    html,
-    gregexpr("episodic-instance-card-title", html, fixed = TRUE)
-  ))[[1]]
-  metas <- lengths(regmatches(
-    html,
-    gregexpr("episodic-instance-card-meta", html, fixed = TRUE)
-  ))[[1]]
-  # Five cards, four numbers. Measuring the instance against its
-  # epidemiologists' verdicts is a real computation, and running it to
-  # fill in a line nobody asked for - every time somebody passes through
-  # on the way to Settings - would turn opening this screen into a
-  # query. Archive's count is real too, but its cost is what opening the
-  # Archive screen already pays, computed once in
-  # `episodic_app_instance()` rather than repeated here.
-  expect_equal(cards, 5)
-  expect_equal(metas, 4)
+  expect_true(grepl("41 outbreaks and 21 epidemics", html, fixed = TRUE))
+  # A measured zero is a finding and is shown as one.
+  expect_true(grepl("0.0% overall PPV", html, fixed = TRUE))
+
+  count_metas <- function(x) {
+    lengths(regmatches(
+      x,
+      gregexpr("episodic-instance-card-meta", x, fixed = TRUE)
+    ))[[1]]
+  }
+  expect_equal(count_metas(html), 5)
+
+  # Nothing judged yet is no line at all, never a PPV of 0.0%.
+  instance$overall_ppv <- NA_real_
+  html_na <- as.character(episodic_ui_instance_screen(instance, lang = "en"))
+  expect_false(grepl("overall PPV", html_na, fixed = TRUE))
+  expect_equal(count_metas(html_na), 4)
 })
 
 test_that("the Instance screen renders in every shipped language with no missing key", {
   instance <- list(
     counts = list(streams = 12L, runs = 4L, users = 3L, clusters = 9L),
-    archive_count = 7L,
+    archive_outbreaks = 5L,
+    archive_epidemics = 2L,
+    overall_ppv = 0.5,
     version = "1.2.3"
   )
   for (lang in episodic_nav_shipped_langs) {
@@ -551,8 +559,12 @@ test_that("every key the new navigation uses exists in every shipped language", 
     "instance.card.performance",
     "instance.card.info",
     "instance.card.settings",
-    "unit.outbreak_or_epidemic",
-    "unit.outbreaks_and_epidemics",
+    "instance.card.archive.meta",
+    "instance.card.performance.meta",
+    "unit.outbreak",
+    "unit.outbreaks",
+    "unit.epidemic",
+    "unit.epidemics",
     "unit.run",
     "unit.runs",
     "unit.account",

@@ -2135,7 +2135,7 @@ dl.episodic-settings dd { margin: 0; }
 }
 .episodic-instance-card-meta {
   font-size: 0.846rem;
-  color: var(--episodic-muted);
+  color: var(--episodic-primary-dark);
   font-variant-numeric: tabular-nums;
   margin-top: 4px;
 }
