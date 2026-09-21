@@ -1911,6 +1911,7 @@ dl.episodic-settings dd { margin: 0; }
     margin-inline-start: 0;
     flex-wrap: wrap;
     row-gap: 4px;
+    justify-content: center;
   }
   /* Hide the "successful run" info in the navbar */
   .episodic-status-strip {

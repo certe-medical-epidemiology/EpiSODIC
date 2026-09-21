@@ -11,44 +11,22 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 ```
 
-This page collects the questions that come up most often when getting
-started with EpiSODIC. Skim the questions first, then click the one you
-need to open its answer - nothing on this page needs to be read start to
-finish. If your question is not here, `vignette("data-format")`,
-`vignette("deployment")`, `vignette("environment-variables")` and
-`vignette("detection-reconciliation")` go deeper on most of these
-topics; and if it still is not answered anywhere, that is worth telling
-us, since it means this page is missing something it should cover.
+This page collects the questions that come up most often when getting started with EpiSODIC. Skim the questions first, then click the one you need to open its answer - nothing on this page needs to be read start to finish. If your question is not here, `vignette("data-format")`, `vignette("deployment")`, `vignette("environment-variables")` and `vignette("detection-reconciliation")` go deeper on most of these topics; and if it still is not answered anywhere, that is worth telling us, since it means this page is missing something it should cover.
 
 ## Getting your data in
 
 <details>
 <summary><strong>How do I prepare my data?</strong></summary>
 
-Do not worry about getting this perfect by hand - that is exactly what
-`episodic_check_cases()` is for. Hand it your extract, however rough:
+Do not worry about getting this perfect by hand - that is exactly what `episodic_check_cases()` is for. Hand it your extract, however rough:
 
 ```r
 EpiSODIC::episodic_check_cases(my_cases)
 ```
 
-No database, no configuration, nothing changed - it just reads your data
-and tells you, in one pass, everything it finds: which column is wrong,
-how many rows are affected, which rows those are, what the offending
-values look like, and what to do about each. It also separates two kinds
-of finding, so you are never left guessing which ones actually block you:
-**problems** (a run refuses to start until these are fixed - a date that
-does not parse, a value outside the allowed set) and **advice** (a run
-proceeds regardless, but it is worth a look - one pathogen spelled two
-ways, no `ward` on any hospital row). Run it, fix what it flags as a
-problem, run it again - most people get to a clean report in two or
-three passes. `vignette("data-format")` has the full column requirements
-this is checking against, including the exact allowed values for
-`care_line`, `institution_type`, and `sex`.
+No database, no configuration, nothing changed - it just reads your data and tells you, in one pass, everything it finds: which column is wrong, how many rows are affected, which rows those are, what the offending values look like, and what to do about each. It also separates two kinds of finding, so you are never left guessing which ones actually block you: **problems** (a run refuses to start until these are fixed - a date that does not parse, a value outside the allowed set) and **advice** (a run proceeds regardless, but it is worth a look - one pathogen spelled two ways, no `ward` on any hospital row). Run it, fix what it flags as a problem, run it again - most people get to a clean report in two or three passes. `vignette("data-format")` has the full column requirements this is checking against, including the exact allowed values for `care_line`, `institution_type`, and `sex`.
 
-If you are also supplying the optional positivity or hospital-activity
-feeds, `episodic_check_denominators()` and
-`episodic_check_institution_activity()` are the same idea, over those:
+If you are also supplying the optional positivity or hospital-activity feeds, `episodic_check_denominators()` and `episodic_check_institution_activity()` are the same idea, over those:
 
 ```r
 EpiSODIC::episodic_check_denominators(my_denominators)
@@ -60,20 +38,9 @@ EpiSODIC::episodic_check_institution_activity(my_institution_activity)
 <details>
 <summary><strong>Do I need to send all of my positives every time, or only new/recent ones?</strong></summary>
 
-Only a recent window, with a couple of weeks of overlap - that is the
-recommended norm, and it is fully supported. You do *not* need to
-re-extract a patient's whole history on every run.
+Only a recent window, with a couple of weeks of overlap - that is the recommended norm, and it is fully supported. You do *not* need to re-extract a patient's whole history on every run.
 
-Here is why that is safe: every run checks each incoming positive against
-the most recent episode EpiSODIC already has on file for that
-patient/pathogen, not just against the other rows in the same batch. So
-if a patient's first positive was loaded last week and a second positive
-for the same episode arrives today in an otherwise-unrelated extract,
-EpiSODIC still recognises it as the same episode and does not create a
-second case for it. A window with, say, two weeks of overlap with your
-previous extract is a sensible default - it gives you a safety margin if
-a run is ever skipped or delayed, without requiring you to resend
-everything.
+Here is why that is safe: every run checks each incoming positive against the most recent episode EpiSODIC already has on file for that patient/pathogen, not just against the other rows in the same batch. So if a patient's first positive was loaded last week and a second positive for the same episode arrives today in an otherwise-unrelated extract, EpiSODIC still recognises it as the same episode and does not create a second case for it. A window with, say, two weeks of overlap with your previous extract is a sensible default - it gives you a safety margin if a run is ever skipped or delayed, without requiring you to resend everything.
 
 Two related things worth knowing:
 
@@ -92,14 +59,7 @@ Two related things worth knowing:
 <details>
 <summary><strong>What do I do when a lab result was rectified or corrected, but EpiSODIC already has the now-false positive?</strong></summary>
 
-First: do not worry, this happens, and it is a normal part of running any
-detection system on live laboratory data - it is not something you did
-wrong. EpiSODIC does not offer a way to delete or edit an individual case
-once it has been loaded, and that is deliberate: the case data is the
-audit trail every dossier and every report is built from, so quietly
-removing a row would make past results harder to explain rather than
-easier. What this means in practice depends on where the correction
-lands:
+First: do not worry, this happens, and it is a normal part of running any detection system on live laboratory data - it is not something you did wrong. EpiSODIC does not offer a way to delete or edit an individual case once it has been loaded, and that is deliberate: the case data is the audit trail every dossier and every report is built from, so quietly removing a row would make past results harder to explain rather than easier. What this means in practice depends on where the correction lands:
 
 - **If the correction arrives before a cluster was raised from it** (or
   before the affected run), you do not need to do anything - it simply
@@ -118,19 +78,14 @@ lands:
   the right tool, with the reason recorded - see the mute action on a
   cluster's dossier.
 
-If this is happening often enough that it is a recurring nuisance rather
-than an occasional correction, that is worth raising with whoever owns
-your extract/transform step - the earlier a correction happens before
-data reaches EpiSODIC, the less cleanup it costs anyone downstream.
+If this is happening often enough that it is a recurring nuisance rather than an occasional correction, that is worth raising with whoever owns your extract/transform step - the earlier a correction happens before data reaches EpiSODIC, the less cleanup it costs anyone downstream.
 
 </details>
 
 <details>
 <summary><strong>What happens to detection if I am missing optional columns - postcode, ward, institution activity - for some or all of my cases?</strong></summary>
 
-You lose only the parts of the picture that specific column feeds, and
-nothing else - EpiSODIC is built so every optional piece degrades
-gracefully rather than blocking anything:
+You lose only the parts of the picture that specific column feeds, and nothing else - EpiSODIC is built so every optional piece degrades gracefully rather than blocking anything:
 
 - No `pc` (postcode) on a row: that case just does not contribute to the
   geography panel/choropleth or the concentration measure for its own
@@ -148,9 +103,7 @@ gracefully rather than blocking anything:
   depends on it, since it is an interpretive aid, never a detection
   input.
 
-In short: send what you reliably have. `episodic_check_cases()` will
-flag missing optional columns as *advice*, not a *problem*, so you will
-always know what you are missing without anything blocking your run.
+In short: send what you reliably have. `episodic_check_cases()` will flag missing optional columns as *advice*, not a *problem*, so you will always know what you are missing without anything blocking your run.
 
 </details>
 
@@ -159,19 +112,7 @@ always know what you are missing without anything blocking your run.
 <details>
 <summary><strong>How do I know whether a scheduled run actually succeeded, partially loaded, or failed?</strong></summary>
 
-You do not have to go near a log file for this - it is recorded on every
-run and surfaced in the dashboard itself. Every `episodic_run_cron()`
-call writes a `status` of `success`, `partial`, or `failed`, along with
-exactly what each feed delivered (`n_cases_supplied`,
-`n_cases_inserted`, and the equivalent for denominators/institution
-activity). The dashboard's Activity screen shows this under each run, so
-"did last night's extract arrive in full?" is answerable at a glance. A
-`failed` run means nothing was written at all (the whole run is one
-transaction, so it is always safe to just retry); a `partial` run means
-everything supplied was validated and detections are valid, but some
-optional-feed rows were skipped (e.g. institution activity for an
-institution EpiSODIC does not know) - both `success` and `partial` are
-usable runs.
+You do not have to go near a log file for this - it is recorded on every run and surfaced in the dashboard itself. Every `episodic_run_cron()` call writes a `status` of `success`, `partial`, or `failed`, along with exactly what each feed delivered (`n_cases_supplied`, `n_cases_inserted`, and the equivalent for denominators/institution activity). The dashboard's Activity screen shows this under each run, so "did last night's extract arrive in full?" is answerable at a glance. A `failed` run means nothing was written at all (the whole run is one transaction, so it is always safe to just retry); a `partial` run means everything supplied was validated and detections are valid, but some optional-feed rows were skipped (e.g. institution activity for an institution EpiSODIC does not know) - both `success` and `partial` are usable runs.
 
 </details>
 
@@ -180,29 +121,13 @@ usable runs.
 
 They are found, opened, and mostly closed again, in that one run.
 
-The **first** run against a database is a backfill: it reports every hit
-in the case history it was given, rather than only what falls inside the
-detectors' lookback windows. Any cluster whose last case is further back
-than `reconciliation.stale_open_days` (60 by default) is closed by the
-same run that opened it and appears in the Archive, complete, with its
-real case period. What is still recent stays open for assessment. The run
-says how the two divided.
+The **first** run against a database is a backfill: it reports every hit in the case history it was given, rather than only what falls inside the detectors' lookback windows. Any cluster whose last case is further back than `reconciliation.stale_open_days` (60 by default) is closed by the same run that opened it and appears in the Archive, complete, with its real case period. What is still recent stays open for assessment. The run says how the two divided.
 
-Every run after the first is bounded again, so none of that is reported
-twice. That bound is why it matters: without it a settled historical hit
-is re-emitted on every run, matches its own long-closed cluster, and
-resets `runs_since_detected`, which stops `reconciliation.close_after_runs`
-from ever firing again.
+Every run after the first is bounded again, so none of that is reported twice. That bound is why it matters: without it a settled historical hit is re-emitted on every run, matches its own long-closed cluster, and resets `runs_since_detected`, which stops `reconciliation.close_after_runs` from ever firing again.
 
-Note what a backfilled cluster's `opened_at` means. It is the day the
-archive was imported, not the day anything was noticed, so the
-Performance screen leaves these clusters out of time-to-detection. They
-still count towards positive predictive value if a person assesses one,
-because that is a judgement about the detectors like any other.
+Note what a backfilled cluster's `opened_at` means. It is the day the archive was imported, not the day anything was noticed, so the Performance screen leaves these clusters out of time-to-detection. They still count towards positive predictive value if a person assesses one, because that is a judgement about the detectors like any other.
 
-To override the decision, pass `backfill` to `episodic_run_cron()`
-explicitly. `FALSE` bounds even the first run, which is what a
-prospective replay needs.
+To override the decision, pass `backfill` to `episodic_run_cron()` explicitly. `FALSE` bounds even the first run, which is what a prospective replay needs.
 
 </details>
 
@@ -226,13 +151,7 @@ The run's own log says which bound you met.
   `mem.levels`), for pathogens whose own data show a seasonal pattern
   (or overridden per pathogen via `mem_mode`).
 
-If your extract does not run up to today, a run dated today sees a
-catchment that stopped weeks ago. It says so outright when the newest
-case on file is older than every rule-based lookback. Give
-`episodic_run_cron()` a `run_date` inside the extract's own window, and
-run it one date at a time if the dates a cluster was opened on need to
-mean anything - which is how `episodic_validate_detection()` replays a
-generated history week by week.
+If your extract does not run up to today, a run dated today sees a catchment that stopped weeks ago. It says so outright when the newest case on file is older than every rule-based lookback. Give `episodic_run_cron()` a `run_date` inside the extract's own window, and run it one date at a time if the dates a cluster was opened on need to mean anything - which is how `episodic_validate_detection()` replays a generated history week by week.
 
 </details>
 
@@ -245,85 +164,44 @@ Yes, and this is the easiest way to get a feel for it. One call:
 EpiSODIC::episodic_demo()
 ```
 
-No data, no credentials, no configuration of your own required - it
-creates a temporary database, runs one detection cycle over bundled
-synthetic data, provisions a demo epidemiologist account (printed to the
-console), and opens the dashboard. Pass `launch = FALSE` if you just
-want a populated database path back for scripting, without opening the
-app. Nothing about this touches a real database or real data, so feel
-free to explore freely.
+No data, no credentials, no configuration of your own required - it creates a temporary database, runs one detection cycle over bundled synthetic data, provisions a demo epidemiologist account (printed to the console), and opens the dashboard. Pass `launch = FALSE` if you just want a populated database path back for scripting, without opening the app. Nothing about this touches a real database or real data, so feel free to explore freely.
 
 </details>
 
 <details>
 <summary><strong>How do I change the dashboard and report language?</strong></summary>
 
-Set the `EPISODIC_LANGUAGE` environment variable to one of `en`, `ar`,
-`nl`, `fr`, `de`, `hi`, `zh`, or `es` before starting the app (it
-defaults to `en` if unset):
+Set the `EPISODIC_LANGUAGE` environment variable to one of `en`, `ar`, `nl`, `fr`, `de`, `hi`, `zh`, or `es` before starting the app (it defaults to `en` if unset):
 
 ```r
 Sys.setenv(EPISODIC_LANGUAGE = "es")
 episodic_run_app()
 ```
 
-Two of those have a regional variant, which differ in the conventions
-rather than the words - what a decimal mark is, which way round a date
-runs:
+Two of those have a regional variant, which differ in the conventions rather than the words - what a decimal mark is, which way round a date runs:
 
 ```r
 Sys.setenv(EPISODIC_LANGUAGE = "es-419") # Latin America: 1,234.5
 Sys.setenv(EPISODIC_LANGUAGE = "en-US")  # January 7, 2025
 ```
 
-`en` is British English and `es` is Spain's Spanish, so `en-GB` and
-`es-ES` name those and are accepted as such. A region that is not
-shipped falls back to its language rather than to English - `nl-BE`
-renders in Dutch - and says so once.
+`en` is British English and `es` is Spain's Spanish, so `en-GB` and `es-ES` name those and are accepted as such. A region that is not shipped falls back to its language rather than to English - `nl-BE` renders in Dutch - and says so once.
 
-This covers the dashboard interface and the outbreak reports it
-generates alike. It is fixed for the whole running instance - there is
-no in-app language switcher - so if different people need different
-languages, that is a case for running more than one instance pointed at
-the same database.
+This covers the dashboard interface and the outbreak reports it generates alike. It is fixed for the whole running instance - there is no in-app language switcher - so if different people need different languages, that is a case for running more than one instance pointed at the same database.
 
 </details>
 
 <details>
 <summary><strong>How do I tune detection thresholds or priority score weights for my own organisation?</strong></summary>
 
-Point `EPISODIC_CONFIG` at a YAML file with only the keys you want to
-change; it is merged key-by-key over the shipped defaults. Per-pathogen
-parameters (severity, episode length, MEM mode) are overlaid via
-`EPISODIC_PATHOGEN_CONFIG` the same way. See
-`vignette("tuning-detection")` for which parameters to adjust for
-common operational problems, their trade-offs, and the complete
-reference table.
+Point `EPISODIC_CONFIG` at a YAML file with only the keys you want to change; it is merged key-by-key over the shipped defaults. Per-pathogen parameters (severity, episode length, MEM mode) are overlaid via `EPISODIC_PATHOGEN_CONFIG` the same way. See `vignette("tuning-detection")` for which parameters to adjust for common operational problems, their trade-offs, and the complete reference table.
 
 </details>
 
 <details>
 <summary><strong>I have more than one laboratory system or data source - can I combine them into one feed?</strong></summary>
 
-Yes - EpiSODIC only ever sees the single data frame (or tibble) your own
-transform step hands to `episodic_run_cron()`, so combining several
-source systems is exactly that: your transform step's job, done before
-EpiSODIC is ever called. Bring each source into the shared column
-requirements, `rbind()` (or `dplyr::bind_rows()`) them together, and check
-the combined result with `episodic_check_cases()` as normal. The one
-thing to get right across sources is `source_key`: it needs to be
-unique *per row of the combined data set*, so if two systems could
-otherwise produce the same key (e.g. both use a simple incrementing lab
-accession number), prefix each system's keys with something that tells
-them apart (e.g. `"LIS1-482910"` vs. `"LIS2-482910"`) before combining,
-so a later re-run cannot collide two genuinely different results into
-one. `lab_number` itself needs no such treatment - unlike `source_key`
-it is never required to be unique, so your lab's own accession number
-can go into it verbatim regardless of how many systems you combine. See
-`vignette("data-format")`'s "`source_key`: one identifier per *result*,
-not per specimen" section for the same idea applied within one source
-system, where a bare accession number repeats for other reasons (e.g.
-one culture yielding more than one reported result).
+Yes - EpiSODIC only ever sees the single data frame (or tibble) your own transform step hands to `episodic_run_cron()`, so combining several source systems is exactly that: your transform step's job, done before EpiSODIC is ever called. Bring each source into the shared column requirements, `rbind()` (or `dplyr::bind_rows()`) them together, and check the combined result with `episodic_check_cases()` as normal. The one thing to get right across sources is `source_key`: it needs to be unique *per row of the combined data set*, so if two systems could otherwise produce the same key (e.g. both use a simple incrementing lab accession number), prefix each system's keys with something that tells them apart (e.g. `"LIS1-482910"` vs. `"LIS2-482910"`) before combining, so a later re-run cannot collide two genuinely different results into one. `lab_number` itself needs no such treatment - unlike `source_key` it is never required to be unique, so your lab's own accession number can go into it verbatim regardless of how many systems you combine. See `vignette("data-format")`'s "`source_key`: one identifier per *result*, not per specimen" section for the same idea applied within one source system, where a bare accession number repeats for other reasons (e.g. one culture yielding more than one reported result).
 
 </details>
 
@@ -332,10 +210,7 @@ one culture yielding more than one reported result).
 <details>
 <summary><strong>How do I create a new account?</strong></summary>
 
-There is no self-service sign-up screen, and that is by design - only
-whoever administers your instance's database provisions accounts, which
-keeps sign-in tied to real board membership rather than being
-open-ended. If that is you, it is one function call:
+There is no self-service sign-up screen, and that is by design - only whoever administers your instance's database provisions accounts, which keeps sign-in tied to real board membership rather than being open-ended. If that is you, it is one function call:
 
 ```r
 Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")  # or your MariaDB/MySQL DSN
@@ -349,43 +224,21 @@ EpiSODIC::episodic_add_user(
 )
 ```
 
-Pick any temporary password you like - the account is created with a
-forced password change, so the new holder is required to set their own
-private password the very first time they sign in, and the temporary
-one you typed never lingers as their real credential. Pass
-`role = "viewer"` instead of the default `"epidemiologist"` for someone who
-should be able to see everything, including patient-level detail, but
-should never record an assessment themselves. If someone forgets their
-password or needs their access removed, that is also a job for whoever
-administers the database (there is no self-service reset either) -
-reach out to them rather than trying to work around it yourself.
+Pick any temporary password you like - the account is created with a forced password change, so the new holder is required to set their own private password the very first time they sign in, and the temporary one you typed never lingers as their real credential. Pass `role = "viewer"` instead of the default `"epidemiologist"` for someone who should be able to see everything, including patient-level detail, but should never record an assessment themselves. If someone forgets their password or needs their access removed, that is also a job for whoever administers the database (there is no self-service reset either) - reach out to them rather than trying to work around it yourself.
 
 </details>
 
 <details>
 <summary><strong>What is the difference between an "epidemiologist" and a "viewer" account, and how do I decide who needs which?</strong></summary>
 
-`epidemiologist` is, by definition, the person who assesses clusters and
-classifies them - the core, shared job of being on the board. An
-epidemiologist can (and should) classify, close and mute clusters, and
-re-render reports on demand. `viewer` is read-only: it sees exactly
-what a signed-in epidemiologist sees, including patient-level line lists, but
-cannot record an assessment. In practice: `epidemiologist` is the right default
-for board members whose job is reviewing and classifying signals;
-reach for `viewer` for anyone who needs full visibility into cluster
-detail without a say in the classification itself (a data-analyst, a manager kept in
-the loop, an auditor, a colleague covering for the board without
-taking assessment responsibility). Neither role needs signing in just
-to see aggregate data - that is anonymous throughout; signing in as
-either role is what unlocks patient-level detail.
+`epidemiologist` is, by definition, the person who assesses clusters and classifies them - the core, shared job of being on the board. An epidemiologist can (and should) classify, close and mute clusters, and re-render reports on demand. `viewer` is read-only: it sees exactly what a signed-in epidemiologist sees, including patient-level line lists, but cannot record an assessment. In practice: `epidemiologist` is the right default for board members whose job is reviewing and classifying signals; reach for `viewer` for anyone who needs full visibility into cluster detail without a say in the classification itself (a data-analyst, a manager kept in the loop, an auditor, a colleague covering for the board without taking assessment responsibility). Neither role needs signing in just to see aggregate data - that is anonymous throughout; signing in as either role is what unlocks patient-level detail.
 
 </details>
 
 <details>
 <summary><strong>Must I run this on my own machine, or must I host it somewhere?</strong></summary>
 
-Either is genuinely fine - EpiSODIC does not assume one or the other, and
-plenty of setups do each:
+Either is genuinely fine - EpiSODIC does not assume one or the other, and plenty of setups do each:
 
 - **On your own machine**: `episodic_run_app()` opens the dashboard
   locally, and you (or a scheduled task on that same machine) run
@@ -401,60 +254,28 @@ plenty of setups do each:
   can reach the app - signing in (as either role) only unlocks
   patient-level detail, and only an `epidemiologist` account can classify.
 
-Both point at the same kind of database (a local SQLite file, or a
-shared MariaDB/MySQL server via `EPISODIC_DB`), so you are not locked
-into your first choice - moving from "trying it out on my laptop" to "a
-shared instance the whole board uses" is a deployment change, not a
-data or code change. See `vignette("deployment")` for the full walk-through.
+Both point at the same kind of database (a local SQLite file, or a shared MariaDB/MySQL server via `EPISODIC_DB`), so you are not locked into your first choice - moving from "trying it out on my laptop" to "a shared instance the whole board uses" is a deployment change, not a data or code change. See `vignette("deployment")` for the full walk-through.
 
 </details>
 
 <details>
 <summary><strong>Can more than one board member review the same cluster, and what happens if they disagree?</strong></summary>
 
-Yes - any signed-in epidemiologist can open and classify any cluster; there is no
-assignment or locking that reserves one to a single person.
-Every classification is recorded as its own event on the cluster's
-audit trail, attributed to the account that made it, rather than
-overwriting a single "current" verdict - so if two people classify the
-same cluster differently, both decisions stay visible with who made
-them and when, rather than one silently replacing the other. In
-practice, most boards settle disagreements the same way they would for
-any shared clinical decision: talk it through and let whoever has the
-final say record the version that stands - EpiSODIC's job is to keep
-that history honest, not to referee it.
+Yes - any signed-in epidemiologist can open and classify any cluster; there is no assignment or locking that reserves one to a single person. Every classification is recorded as its own event on the cluster's audit trail, attributed to the account that made it, rather than overwriting a single "current" verdict - so if two people classify the same cluster differently, both decisions stay visible with who made them and when, rather than one silently replacing the other. In practice, most boards settle disagreements the same way they would for any shared clinical decision: talk it through and let whoever has the final say record the version that stands - EpiSODIC's job is to keep that history honest, not to referee it.
 
 </details>
 
 <details>
 <summary><strong>Is patient-identifying information ever shown in the dashboard or in outbreak reports?</strong></summary>
 
-No, not as long as you have pseudonymised `patient_key` before it reaches
-EpiSODIC - which is your own transform step's job, not EpiSODIC's; a real
-name, BSN, or hospital record number must never be passed through as
-this column. The pseudonym itself *is* shown, to a signed-in user, on a
-cluster's line list (alongside `lab_number`, your lab's specimen/culture
-number - also not itself a patient identifier), together with
-epidemiological context: sex, age, care line, institution/ward,
-specialism, postcode-level geography, and dates. That is enough to
-assess a cluster and to look a case up in your own source system if
-needed, but - given a properly pseudonymised `patient_key` - not enough
-to identify who is in it from the dashboard alone. See
-`vignette("data-format")` for the exact column requirements, including what
-"pseudonymised" needs to mean for this guarantee to hold.
+No, not as long as you have pseudonymised `patient_key` before it reaches EpiSODIC - which is your own transform step's job, not EpiSODIC's; a real name, BSN, or hospital record number must never be passed through as this column. The pseudonym itself *is* shown, to a signed-in user, on a cluster's line list (alongside `lab_number`, your lab's specimen/culture number - also not itself a patient identifier), together with epidemiological context: sex, age, care line, institution/ward, specialism, postcode-level geography, and dates. That is enough to assess a cluster and to look a case up in your own source system if needed, but - given a properly pseudonymised `patient_key` - not enough to identify who is in it from the dashboard alone. See `vignette("data-format")` for the exact column requirements, including what "pseudonymised" needs to mean for this guarantee to hold.
 
 </details>
 
 <details>
 <summary><strong>My organisation is outside the Netherlands - does the geography panel (the choropleth map) still work for us?</strong></summary>
 
-Yes. EpiSODIC is not built for the Netherlands specifically - the
-bundled Dutch postcode data is one worked example, shipped so the demo
-and a first trial run show a real map out of the box, not a statement
-about who this package is for. Nothing about detection, reconciliation,
-or the rest of the dashboard assumes any particular country, coding
-system, or administrative structure; geography is entirely something
-you plug in.
+Yes. EpiSODIC is not built for the Netherlands specifically - the bundled Dutch postcode data is one worked example, shipped so the demo and a first trial run show a real map out of the box, not a statement about who this package is for. Nothing about detection, reconciliation, or the rest of the dashboard assumes any particular country, coding system, or administrative structure; geography is entirely something you plug in.
 
 Two independent things are configurable, and both are optional:
 
@@ -482,7 +303,6 @@ Two independent things are configurable, and both are optional:
   two different situations, and quietly treating the first as the second
   is how a lattice ends up built on somebody else's provinces.
 
-See `vignette("data-format")`'s "Geographic reference data" section for
-the exact requirements these files need to satisfy.
+See `vignette("data-format")`'s "Geographic reference data" section for the exact requirements these files need to satisfy.
 
 </details>
