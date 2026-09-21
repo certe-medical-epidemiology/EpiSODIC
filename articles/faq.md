@@ -312,7 +312,7 @@ how many systems you combine. See
 [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)’s
 “`source_key`: one identifier per *result*, not per specimen” section
 for the same idea applied within one source system, where a bare
-accession number repeats for other reasons (e.g. one culture yielding
+accession number repeats for other reasons (e.g. one culture yielding
 more than one reported result).
 
 ## Accounts and hosting

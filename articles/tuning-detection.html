@@ -88,7 +88,7 @@ retroactively wrong.</p>
 file with only the keys you want to change; everything else keeps its
 shipped default. See <code><a href="../articles/deployment.html">vignette("deployment")</a></code> for the
 mechanics.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># my_instance.yaml - only what differs from the shipped defaults.</span></span>
+<div class="sourceCode" id="cb1"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># my_instance.yaml - only what differs from the defaults.</span></span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">farrington</span><span class="kw">:</span></span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="at">  </span><span class="fu">alpha</span><span class="kw">:</span><span class="at"> </span><span class="fl">0.01</span></span></code></pre></div>
 <p>Three guidelines before you start:</p>
@@ -116,16 +116,16 @@ bound. Lowering it from 0.05 to 0.01 widens the bound, so a run needs a
 larger exceedance before it reports one. This is a
 sensitivity-specificity trade-off: fewer false alarms, but genuine small
 outbreaks take longer to appear or are missed entirely.</p>
-<p><code>effect_size_floor.min_excess_over_upperbound</code> (shipped as
-3) requires at least this many cases above the bound before a
-<em>new</em> cluster is opened. Raising it filters out borderline
-exceedances. A match against an already-open cluster is always merged,
-regardless of this floor.</p>
-<p><code>effect_size_floor.min_ratio_observed_expected</code> (shipped
-as 1.5) requires the observed/expected ratio to reach this level.
-Together with the excess floor, it means a signal must be both
-statistically and practically notable. Either can be set to
-<code>~</code> (null) to disable it.</p>
+<p><code>effect_size_floor.min_excess_over_upperbound</code> default: 3)
+requires at least this many cases above the bound before a <em>new</em>
+cluster is opened. Raising it filters out borderline exceedances. A
+match against an already-open cluster is always merged, regardless of
+this floor.</p>
+<p><code>effect_size_floor.min_ratio_observed_expected</code> default:
+1.5) requires the observed/expected ratio to reach this level. Together
+with the excess floor, it means a signal must be both statistically and
+practically notable. Either can be set to <code>~</code> (null) to
+disable it.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">farrington</span><span class="kw">:</span></span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="at">  </span><span class="fu">alpha</span><span class="kw">:</span><span class="at"> </span><span class="fl">0.01</span></span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">effect_size_floor</span><span class="kw">:</span></span>
@@ -171,14 +171,14 @@ rates.</p>
 <p>If the same real outbreak appears as separate clusters at multiple
 lattice levels (a ward cluster and its parent institution cluster),
 suppression is not aggressive enough.</p>
-<p><code>suppression.child_dominance_threshold</code> (shipped as 0.70)
-is the share of a parent’s cases that a single child must account for to
+<p><code>suppression.child_dominance_threshold</code> default: 0.70) is
+the share of a parent’s cases that a single child must account for to
 suppress the parent. Lowering it makes it easier for a child to absorb
-its parent. <code>suppression.parent_diffuse_threshold</code> (shipped
-as 0.50) and <code>suppression.parent_min_flagged_children</code>
-(shipped as 2) control the reverse: a parent absorbs its children when
-no single child dominates and enough children overlap. A cluster someone
-has already assessed is never suppressed, regardless of these
+its parent. <code>suppression.parent_diffuse_threshold</code> default:
+0.50) and <code>suppression.parent_min_flagged_children</code> default:
+2) control the reverse: a parent absorbs its children when no single
+child dominates and enough children overlap. A cluster someone has
+already assessed is never suppressed, regardless of these
 thresholds.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">suppression</span><span class="kw">:</span></span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="at">  </span><span class="fu">child_dominance_threshold</span><span class="kw">:</span><span class="at"> </span><span class="fl">0.60</span></span>
@@ -197,7 +197,7 @@ that should not have been, raise the thresholds.</p>
 <p>If Farrington reports nothing and the run log says a stream does not
 have enough baseline history, the model cannot fit because the stream’s
 history is shorter than the baseline requirement.</p>
-<p><code>farrington.b</code> (shipped as 2) is the number of reference
+<p><code>farrington.b</code> default: 2) is the number of reference
 years. The model needs <code>(b + 1) * 52</code> weeks before it fits at
 all, so at <code>b: 2</code> a stream needs three years of history.
 Lowering it to 1 reduces the requirement to two years, at the cost of a
@@ -230,10 +230,10 @@ per-pathogen override is the targeted fix:</p>
 <h3 id="the-eligibility-gate-excludes-a-stream">The eligibility gate excludes a stream<a class="anchor" aria-label="anchor" href="#the-eligibility-gate-excludes-a-stream"></a>
 </h3>
 <p>A stream you expect to be watched may fail the eligibility check.
-<code>eligibility.min_nonzero_week_share</code> (shipped as 0.2)
-requires at least 20% of baseline weeks to have at least one case.
-<code>eligibility.min_median_weekly_count</code> (shipped as 1) requires
-a median weekly count of at least 1. For genuinely sparse organisms,
+<code>eligibility.min_nonzero_week_share</code> default: 0.2) requires
+at least 20% of baseline weeks to have at least one case.
+<code>eligibility.min_median_weekly_count</code> default: 1) requires a
+median weekly count of at least 1. For genuinely sparse organisms,
 lowering these lets the stream through, though the statistical model is
 not meaningful on a stream with very few cases.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">eligibility</span><span class="kw">:</span></span>
@@ -250,13 +250,13 @@ not meaningful on a stream with very few cases.</p>
 <p>If a cluster auto-closes and a new one opens for the same ongoing
 outbreak, the case-free interval or the run-count limit is too
 short.</p>
-<p><code>reconciliation.case_free_days_default</code> (shipped as 14) is
+<p><code>reconciliation.case_free_days_default</code> default: 14) is
 the fallback interval: if no case arrives within this many days, the
 cluster’s episode ends. Per-pathogen <code>case_free_days</code> in the
 pathogen configuration CSV overrides this for pathogens with longer
 incubation periods. <code>reconciliation.close_after_runs</code>
-(shipped as 14) closes an unconfirmed cluster after this many
-consecutive runs with no new case.</p>
+default: 14) closes an unconfirmed cluster after this many consecutive
+runs with no new case.</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">reconciliation</span><span class="kw">:</span></span>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="at">  </span><span class="fu">case_free_days_default</span><span class="kw">:</span><span class="at"> </span><span class="dv">21</span></span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="at">  </span><span class="fu">close_after_runs</span><span class="kw">:</span><span class="at"> </span><span class="dv">21</span></span></code></pre></div>
@@ -268,7 +268,7 @@ days.</p>
 <h3 id="clusters-stay-open-long-after-the-last-case">Clusters stay open long after the last case<a class="anchor" aria-label="anchor" href="#clusters-stay-open-long-after-the-last-case"></a>
 </h3>
 <p>If the active queue has stale clusters nobody has looked at,
-<code>reconciliation.stale_open_days</code> (shipped as 60) force-closes
+<code>reconciliation.stale_open_days</code> default: 60) force-closes
 any still-unassessed cluster this many days after its last case.
 <code>reconciliation.autoclose_unassessed</code> must be
 <code>true</code> (the default) for either <code>close_after_runs</code>
@@ -285,8 +285,8 @@ anyone has assessed it.</p>
 <p>After a cluster closes, a cooldown window (per-pathogen
 <code>cooldown_days</code> in the pathogen configuration CSV) absorbs
 nearby cases into the recently-closed cluster rather than opening a new
-one. <code>reconciliation.cooldown_reopen_ratio</code> (shipped as 1.5)
-is an escape hatch: if the absorbed cases are at least 1.5 times the
+one. <code>reconciliation.cooldown_reopen_ratio</code> default: 1.5) is
+an escape hatch: if the absorbed cases are at least 1.5 times the
 cluster’s own size, the absorption is flagged rather than silent. Set to
 <code>~</code> to disable this escape hatch entirely, or shorten
 <code>cooldown_days</code> per pathogen to narrow the absorption
@@ -343,14 +343,13 @@ alone.</li>
 </h3>
 <p>If no epidemics appear even for a pathogen you expect to be seasonal,
 MEM may lack enough history to fit.</p>
-<p><code>mem.min_seasons</code> (shipped as 2) requires two
-fully-observed prior seasons before fitting.
-<code>mem.min_climatology_years</code> (shipped as 3) requires three
-complete ISO years of case history to derive a season anchor. Both are
-“need real history first” dials with the same consequence as
-<code>farrington.b</code>: set beyond what an instance carries, MEM says
-nothing. Lower them for a newer instance, and raise them as history
-accrues.</p>
+<p><code>mem.min_seasons</code> default: 2) requires two fully-observed
+prior seasons before fitting. <code>mem.min_climatology_years</code>
+default: 3) requires three complete ISO years of case history to derive
+a season anchor. Both are “need real history first” dials with the same
+consequence as <code>farrington.b</code>: set beyond what an instance
+carries, MEM says nothing. Lower them for a newer instance, and raise
+them as history accrues.</p>
 <p>Per-pathogen <code>mem_mode</code> in the pathogen configuration CSV
 overrides the automatic seasonality test. Set to <code>yes</code> to
 force MEM for a pathogen that the automatic test (<code>auto</code>)
@@ -365,13 +364,13 @@ that it does.</p>
 </h3>
 <p>If the pre-epidemic threshold crossing does not align with clinical
 reality, adjust the climatology or the seasonality test.</p>
-<p><code>mem.climatology_smooth_weeks</code> (shipped as 5) is the
+<p><code>mem.climatology_smooth_weeks</code> default: 5) is the
 smoothing window for the 52-week climatology used to find the season
-trough. <code>mem.trough_percentile</code> (shipped as 0.25) is the
+trough. <code>mem.trough_percentile</code> default: 0.25) is the
 quantile at or below which a week counts as part of the trough.
-<code>mem.seasonality_peak_weeks</code> (shipped as 8) and
-<code>mem.seasonality_min_peak_share</code> (shipped as 0.40) control
-the automatic seasonality test: a pathogen is seasonal under
+<code>mem.seasonality_peak_weeks</code> default: 8) and
+<code>mem.seasonality_min_peak_share</code> default: 0.40) control the
+automatic seasonality test: a pathogen is seasonal under
 <code>mem_mode = 'auto'</code> if at least 40% of its detrended annual
 cases fall within an 8-week peak window.</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">mem</span><span class="kw">:</span></span>
@@ -386,12 +385,12 @@ automatic. MEM raises the signal; a person declares. See
 <h2 id="per-pathogen-parameters">Per-pathogen parameters<a class="anchor" aria-label="anchor" href="#per-pathogen-parameters"></a>
 </h2>
 <p>Per-pathogen biology lives in a CSV, separate from the YAML
-configuration. The shipped file is <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv" class="external-link"><code>inst/config/episodic_default_pathogen_config.csv</code></a>.</p>
+configuration. The default file is <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv" class="external-link"><code>inst/config/episodic_default_pathogen_config.csv</code></a>.</p>
 <p>To override it, point <code>EPISODIC_PATHOGEN_CONFIG</code> at your
 own CSV containing only the pathogens and columns you want to change.
-For each pathogen you list, non-empty values override the shipped
-default; empty cells keep it. Pathogens not in your file keep their
-shipped row entirely. New pathogens are added.</p>
+For each pathogen you list, non-empty values override the default; empty
+cells keep it. Pathogens not in your file keep their row entirely. New
+pathogens are added.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_PATHOGEN_CONFIG <span class="op">=</span> <span class="st">"/path/to/my_pathogens.csv"</span><span class="op">)</span></span></code></pre></div>
 <p>A minimal overlay that changes only the severity weight for MRSA and
@@ -536,7 +535,7 @@ under the old settings beside the new ones.</p>
 <h2 id="reference">Reference<a class="anchor" aria-label="anchor" href="#reference"></a>
 </h2>
 <p>Every tunable parameter across both the YAML configuration and the
-per-pathogen CSV, with its shipped default and one-line effect.</p>
+per-pathogen CSV, with its default and one-line effect.</p>
 <div class="section level3">
 <h3 id="reconciliation">Reconciliation<a class="anchor" aria-label="anchor" href="#reconciliation"></a>
 </h3>
