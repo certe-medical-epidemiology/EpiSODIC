@@ -179,21 +179,21 @@ settings.
 ## Where to go next
 
 - [**Getting your data
-  in**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/data-format.Rmd) -
+  in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html) -
   the case data requirements: what columns to send, what each means, and
   how to check your extract before you schedule anything.
-- [**Deployment**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/deployment.Rmd) -
+- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) -
   standing up a real instance: accounts, the database backend, and where
   configuration lives.
 - [**Environment
-  variables**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/environment-variables.Rmd) -
+  variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) -
   the full `EPISODIC_*` reference table.
 - [**Detection and
-  reconciliation**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/detection-reconciliation.Rmd) -
+  reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html) -
   how a laboratory result becomes a dossier: the four detectors,
   reconciliation, and suppression.
 - [**Frequently asked
-  questions**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/faq.Rmd) -
+  questions**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html) -
   answers to the questions that come up most often when getting started.
 
 Or skip straight to seeing it work - no data, no credentials, no

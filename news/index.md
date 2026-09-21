@@ -1,5 +1,12 @@
 # Changelog
 
+## EpiSODIC 0.20.3
+
+### Fixed
+
+- Links between vignettes point at the pkgdown articles instead of the
+  repository’s source files
+
 ## EpiSODIC 0.20.2
 
 ### Changed

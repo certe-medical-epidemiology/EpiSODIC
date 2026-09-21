@@ -438,20 +438,20 @@ supported channel.
 ## See also
 
 - [**Getting your data
-  in**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/data-format.Rmd)
+  in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)
   for the case data requirements this vignette’s
   [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
   calls expect.
 - [**Environment
-  variables**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/environment-variables.Rmd)
+  variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html)
   for the full `EPISODIC_*` reference table, including every variable
   named above.
-- [**Notifications**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/notifications.Rmd)
+- [**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html)
   for setting up alerts on new clusters and run failures.
 - [**Scheduled
-  reports**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/scheduled-reports.Rmd)
+  reports**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html)
   for emailing a recurring outbreak report to colleagues without a
   dashboard account.
 - [**Frequently asked
-  questions**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/faq.Rmd)
+  questions**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html)
   for hosting choices, account roles, and other operational questions.

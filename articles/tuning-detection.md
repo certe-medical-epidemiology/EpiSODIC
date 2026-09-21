@@ -588,13 +588,13 @@ per-pathogen CSV, with its default and one-line effect.
 ## See also
 
 - [**Detection and
-  reconciliation**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/detection-reconciliation.Rmd) -
+  reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html) -
   how the detectors, reconciliation, suppression, and MEM work
-- [**Deployment**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/deployment.Rmd) -
+- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) -
   the configuration overlay system and instance setup
 - [**Measuring detection against known
-  truth**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/detection-validation.Rmd) -
+  truth**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html) -
   measuring detection against known truth
 - [**Environment
-  variables**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/environment-variables.Rmd) -
+  variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) -
   all `EPISODIC_*` variables including `EPISODIC_PATHOGEN_CONFIG`
