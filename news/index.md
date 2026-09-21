@@ -1,5 +1,16 @@
 # Changelog
 
+## EpiSODIC 0.20.1
+
+### New
+
+- The Instance screen’s Archive card counts outbreaks and epidemics
+  separately, and its Performance card shows the overall PPV
+
+### Changed
+
+- The Instance cards’ count lines are set in the primary dark colour
+
 ## EpiSODIC 0.20.0
 
 ### New
