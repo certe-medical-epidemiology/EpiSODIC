@@ -1,5 +1,12 @@
 # Changelog
 
+## EpiSODIC 0.20.2
+
+### Changed
+
+- The Chinese outbreak and epidemic unit words carry a measure word
+  (起暴发, 场流行病), like the other zh units
+
 ## EpiSODIC 0.20.1
 
 ### New
