@@ -116,12 +116,12 @@ bound. Lowering it from 0.05 to 0.01 widens the bound, so a run needs a
 larger exceedance before it reports one. This is a
 sensitivity-specificity trade-off: fewer false alarms, but genuine small
 outbreaks take longer to appear or are missed entirely.</p>
-<p><code>effect_size_floor.min_excess_over_upperbound</code> default: 3)
-requires at least this many cases above the bound before a <em>new</em>
-cluster is opened. Raising it filters out borderline exceedances. A
-match against an already-open cluster is always merged, regardless of
-this floor.</p>
-<p><code>effect_size_floor.min_ratio_observed_expected</code> default:
+<p><code>effect_size_floor.min_excess_over_upperbound</code> (default:
+3) requires at least this many cases above the bound before a
+<em>new</em> cluster is opened. Raising it filters out borderline
+exceedances. A match against an already-open cluster is always merged,
+regardless of this floor.</p>
+<p><code>effect_size_floor.min_ratio_observed_expected</code> (default:
 1.5) requires the observed/expected ratio to reach this level. Together
 with the excess floor, it means a signal must be both statistically and
 practically notable. Either can be set to <code>~</code> (null) to
@@ -171,11 +171,11 @@ rates.</p>
 <p>If the same real outbreak appears as separate clusters at multiple
 lattice levels (a ward cluster and its parent institution cluster),
 suppression is not aggressive enough.</p>
-<p><code>suppression.child_dominance_threshold</code> default: 0.70) is
+<p><code>suppression.child_dominance_threshold</code> (default: 0.70) is
 the share of a parent’s cases that a single child must account for to
 suppress the parent. Lowering it makes it easier for a child to absorb
-its parent. <code>suppression.parent_diffuse_threshold</code> default:
-0.50) and <code>suppression.parent_min_flagged_children</code> default:
+its parent. <code>suppression.parent_diffuse_threshold</code> (default:
+0.50) and <code>suppression.parent_min_flagged_children</code> (default:
 2) control the reverse: a parent absorbs its children when no single
 child dominates and enough children overlap. A cluster someone has
 already assessed is never suppressed, regardless of these
@@ -197,7 +197,7 @@ that should not have been, raise the thresholds.</p>
 <p>If Farrington reports nothing and the run log says a stream does not
 have enough baseline history, the model cannot fit because the stream’s
 history is shorter than the baseline requirement.</p>
-<p><code>farrington.b</code> default: 2) is the number of reference
+<p><code>farrington.b</code> (default: 2) is the number of reference
 years. The model needs <code>(b + 1) * 52</code> weeks before it fits at
 all, so at <code>b: 2</code> a stream needs three years of history.
 Lowering it to 1 reduces the requirement to two years, at the cost of a
@@ -230,9 +230,9 @@ per-pathogen override is the targeted fix:</p>
 <h3 id="the-eligibility-gate-excludes-a-stream">The eligibility gate excludes a stream<a class="anchor" aria-label="anchor" href="#the-eligibility-gate-excludes-a-stream"></a>
 </h3>
 <p>A stream you expect to be watched may fail the eligibility check.
-<code>eligibility.min_nonzero_week_share</code> default: 0.2) requires
+<code>eligibility.min_nonzero_week_share</code> (default: 0.2) requires
 at least 20% of baseline weeks to have at least one case.
-<code>eligibility.min_median_weekly_count</code> default: 1) requires a
+<code>eligibility.min_median_weekly_count</code> (default: 1) requires a
 median weekly count of at least 1. For genuinely sparse organisms,
 lowering these lets the stream through, though the statistical model is
 not meaningful on a stream with very few cases.</p>
@@ -250,12 +250,12 @@ not meaningful on a stream with very few cases.</p>
 <p>If a cluster auto-closes and a new one opens for the same ongoing
 outbreak, the case-free interval or the run-count limit is too
 short.</p>
-<p><code>reconciliation.case_free_days_default</code> default: 14) is
+<p><code>reconciliation.case_free_days_default</code> (default: 14) is
 the fallback interval: if no case arrives within this many days, the
 cluster’s episode ends. Per-pathogen <code>case_free_days</code> in the
 pathogen configuration CSV overrides this for pathogens with longer
 incubation periods. <code>reconciliation.close_after_runs</code>
-default: 14) closes an unconfirmed cluster after this many consecutive
+(default: 14) closes an unconfirmed cluster after this many consecutive
 runs with no new case.</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">reconciliation</span><span class="kw">:</span></span>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="at">  </span><span class="fu">case_free_days_default</span><span class="kw">:</span><span class="at"> </span><span class="dv">21</span></span>
@@ -268,7 +268,7 @@ days.</p>
 <h3 id="clusters-stay-open-long-after-the-last-case">Clusters stay open long after the last case<a class="anchor" aria-label="anchor" href="#clusters-stay-open-long-after-the-last-case"></a>
 </h3>
 <p>If the active queue has stale clusters nobody has looked at,
-<code>reconciliation.stale_open_days</code> default: 60) force-closes
+<code>reconciliation.stale_open_days</code> (default: 60) force-closes
 any still-unassessed cluster this many days after its last case.
 <code>reconciliation.autoclose_unassessed</code> must be
 <code>true</code> (the default) for either <code>close_after_runs</code>
@@ -285,7 +285,7 @@ anyone has assessed it.</p>
 <p>After a cluster closes, a cooldown window (per-pathogen
 <code>cooldown_days</code> in the pathogen configuration CSV) absorbs
 nearby cases into the recently-closed cluster rather than opening a new
-one. <code>reconciliation.cooldown_reopen_ratio</code> default: 1.5) is
+one. <code>reconciliation.cooldown_reopen_ratio</code> (default: 1.5) is
 an escape hatch: if the absorbed cases are at least 1.5 times the
 cluster’s own size, the absorption is flagged rather than silent. Set to
 <code>~</code> to disable this escape hatch entirely, or shorten
@@ -343,9 +343,9 @@ alone.</li>
 </h3>
 <p>If no epidemics appear even for a pathogen you expect to be seasonal,
 MEM may lack enough history to fit.</p>
-<p><code>mem.min_seasons</code> default: 2) requires two fully-observed
+<p><code>mem.min_seasons</code> (default: 2) requires two fully-observed
 prior seasons before fitting. <code>mem.min_climatology_years</code>
-default: 3) requires three complete ISO years of case history to derive
+(default: 3) requires three complete ISO years of case history to derive
 a season anchor. Both are “need real history first” dials with the same
 consequence as <code>farrington.b</code>: set beyond what an instance
 carries, MEM says nothing. Lower them for a newer instance, and raise
@@ -364,12 +364,12 @@ that it does.</p>
 </h3>
 <p>If the pre-epidemic threshold crossing does not align with clinical
 reality, adjust the climatology or the seasonality test.</p>
-<p><code>mem.climatology_smooth_weeks</code> default: 5) is the
+<p><code>mem.climatology_smooth_weeks</code> (default: 5) is the
 smoothing window for the 52-week climatology used to find the season
-trough. <code>mem.trough_percentile</code> default: 0.25) is the
+trough. <code>mem.trough_percentile</code> (default: 0.25) is the
 quantile at or below which a week counts as part of the trough.
-<code>mem.seasonality_peak_weeks</code> default: 8) and
-<code>mem.seasonality_min_peak_share</code> default: 0.40) control the
+<code>mem.seasonality_peak_weeks</code> (default: 8) and
+<code>mem.seasonality_min_peak_share</code> (default: 0.40) control the
 automatic seasonality test: a pathogen is seasonal under
 <code>mem_mode = 'auto'</code> if at least 40% of its detrended annual
 cases fall within an 8-week peak window.</p>
@@ -1130,17 +1130,19 @@ prevent re-identification</td>
 </h2>
 <ul>
 <li>
-<code><a href="../articles/detection-reconciliation.html">vignette("detection-reconciliation")</a></code> - how the
-detectors, reconciliation, suppression, and MEM work</li>
+<a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/detection-reconciliation.Rmd" class="external-link"><strong>Detection
+and reconciliation</strong></a> - how the detectors, reconciliation,
+suppression, and MEM work</li>
 <li>
-<code><a href="../articles/deployment.html">vignette("deployment")</a></code> - the configuration overlay
-system and instance setup</li>
+<a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/deployment.Rmd" class="external-link"><strong>Deployment</strong></a>
+- the configuration overlay system and instance setup</li>
 <li>
-<code><a href="../articles/detection-validation.html">vignette("detection-validation")</a></code> - measuring detection
-against known truth</li>
+<a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/detection-validation.Rmd" class="external-link"><strong>Measuring
+detection against known truth</strong></a> - measuring detection against
+known truth</li>
 <li>
-<code><a href="../articles/environment-variables.html">vignette("environment-variables")</a></code> - all
-<code>EPISODIC_*</code> variables including
+<a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/environment-variables.Rmd" class="external-link"><strong>Environment
+variables</strong></a> - all <code>EPISODIC_*</code> variables including
 <code>EPISODIC_PATHOGEN_CONFIG</code>
 </li>
 </ul>

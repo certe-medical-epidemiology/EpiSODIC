@@ -468,14 +468,16 @@ for every argument.
 
 ## See also
 
-- [`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)
+- [**Deployment**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/deployment.Rmd)
   for scheduling
   [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md),
   the database backend, accounts, and custom report templates.
-- [`vignette("environment-variables")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md)
+- [**Environment
+  variables**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/environment-variables.Rmd)
   for `EPISODIC_GEO_DATA`, `EPISODIC_GEO_DATA_OVERLAY` and every other
   `EPISODIC_*` variable mentioned above.
-- [`vignette("faq")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.md)
+- [**Frequently asked
+  questions**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/faq.Rmd)
   for combining more than one source system, resending data safely, and
   handling a rectified/corrected lab result.
 - [`?episodic_add_manual_cluster`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)

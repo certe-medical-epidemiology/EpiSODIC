@@ -103,10 +103,10 @@ it, or to compute its own per-case “new since last time” flag from
 
 ## See also
 
-- [`vignette("notifications")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md)
+- [**Notifications**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/notifications.Rmd)
   for configuring the email-capable channels (`smtp`, `sendmail`,
   `microsoft365`) a schedule sends through.
-- [`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)
+- [**Deployment**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/deployment.Rmd)
   for custom Quarto report templates.
 - [`?episodic_scheduled_reports`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_scheduled_reports.md)
   for the API-level documentation.

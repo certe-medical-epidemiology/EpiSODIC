@@ -178,18 +178,22 @@ settings.
 
 ## Where to go next
 
-- **[`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)** -
+- [**Getting your data
+  in**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/data-format.Rmd) -
   the case data requirements: what columns to send, what each means, and
   how to check your extract before you schedule anything.
-- **[`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)** -
+- [**Deployment**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/deployment.Rmd) -
   standing up a real instance: accounts, the database backend, and where
   configuration lives.
-- **[`vignette("environment-variables")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md)** -
+- [**Environment
+  variables**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/environment-variables.Rmd) -
   the full `EPISODIC_*` reference table.
-- **[`vignette("detection-reconciliation")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.md)** -
+- [**Detection and
+  reconciliation**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/detection-reconciliation.Rmd) -
   how a laboratory result becomes a dossier: the four detectors,
   reconciliation, and suppression.
-- **[`vignette("faq")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.md)** -
+- [**Frequently asked
+  questions**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/faq.Rmd) -
   answers to the questions that come up most often when getting started.
 
 Or skip straight to seeing it work - no data, no credentials, no
