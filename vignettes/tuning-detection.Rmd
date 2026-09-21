@@ -465,7 +465,7 @@ Every tunable parameter across both the YAML configuration and the per-pathogen 
 
 ## See also
 
-- [**Detection and reconciliation**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/detection-reconciliation.Rmd) - how the detectors, reconciliation, suppression, and MEM work
-- [**Deployment**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/deployment.Rmd) - the configuration overlay system and instance setup
-- [**Measuring detection against known truth**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/detection-validation.Rmd) - measuring detection against known truth
-- [**Environment variables**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/environment-variables.Rmd) - all `EPISODIC_*` variables including `EPISODIC_PATHOGEN_CONFIG`
+- [**Detection and reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html) - how the detectors, reconciliation, suppression, and MEM work
+- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) - the configuration overlay system and instance setup
+- [**Measuring detection against known truth**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html) - measuring detection against known truth
+- [**Environment variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) - all `EPISODIC_*` variables including `EPISODIC_PATHOGEN_CONFIG`

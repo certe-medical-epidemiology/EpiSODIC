@@ -65,7 +65,7 @@ If you need a scheduled report to carry more patient-level detail than the shipp
 
 ## See also
 
-- [**Notifications**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/notifications.Rmd) for configuring the email-capable channels (`smtp`, `sendmail`, `microsoft365`) a schedule sends through.
-- [**Deployment**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/deployment.Rmd) for custom Quarto report templates.
+- [**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html) for configuring the email-capable channels (`smtp`, `sendmail`, `microsoft365`) a schedule sends through.
+- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) for custom Quarto report templates.
 - `?episodic_scheduled_reports` for the API-level documentation.
 - `?episodic_report_render` for what a single render produces.

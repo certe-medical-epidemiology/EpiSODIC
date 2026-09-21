@@ -378,9 +378,9 @@ The notification includes the date, the hostname of the server that ran the dete
 
 ## See also
 
-- [**Scheduled reports**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/scheduled-reports.Rmd) for emailing a recurring outbreak report to colleagues without a dashboard account, through these same channels.
-- [**Deployment**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/deployment.Rmd) for how to stand up an instance and configure `EPISODIC_CONFIG`.
-- [**Environment variables**](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/environment-variables.Rmd) for the full reference table of `EPISODIC_*` variables.
+- [**Scheduled reports**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html) for emailing a recurring outbreak report to colleagues without a dashboard account, through these same channels.
+- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) for how to stand up an instance and configure `EPISODIC_CONFIG`.
+- [**Environment variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) for the full reference table of `EPISODIC_*` variables.
 - `?episodic_notifications` for the API-level documentation.
 - `?episodic_notify_test` for the test function.
 - `?episodic_setup_microsoft365` for the Microsoft 365 delegated auth setup helper.
