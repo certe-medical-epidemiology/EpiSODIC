@@ -454,17 +454,17 @@ per-pathogen CSV, with its default and one-line effect.
 ### Reconciliation
 
 | Key | Default | Effect |
-|----|----|----|
+|----|---:|----|
 | `reconciliation.case_free_days_default` | 14 | Fallback days without a case before a cluster episode boundary |
 | `reconciliation.close_after_runs` | 14 | Consecutive runs with no new case before an unconfirmed cluster auto-closes |
 | `reconciliation.cooldown_reopen_ratio` | 1.5 | Absorption escape-hatch ratio; `~` disables |
 | `reconciliation.stale_open_days` | 60 | Force-closes unassessed clusters this many days after last case; `~` disables |
-| `reconciliation.autoclose_unassessed` | true | Whether auto-closure rules apply to clusters nobody assessed |
+| `reconciliation.autoclose_unassessed` | `TRUE` | Whether auto-closure rules apply to clusters nobody assessed |
 
 ### Eligibility
 
 | Key | Default | Effect |
-|----|----|----|
+|----|---:|----|
 | `eligibility.min_baseline_weeks` | 52 | Weeks of history required before statistical detection runs |
 | `eligibility.min_median_weekly_count` | 1 | Median weekly count over baseline; streams below are excluded from Farrington/MEM |
 | `eligibility.min_nonzero_week_share` | 0.2 | Share of baseline weeks with at least one case |
@@ -472,15 +472,15 @@ per-pathogen CSV, with its default and one-line effect.
 ### Effect-size floor
 
 | Key | Default | Effect |
-|----|----|----|
+|----|---:|----|
 | `effect_size_floor.min_excess_over_upperbound` | 3 | Cases above Farrington’s upper bound required to open a new cluster; `~` disables |
 | `effect_size_floor.min_ratio_observed_expected` | 1.5 | Observed/expected ratio required to open a new cluster; `~` disables |
 
 ### same_place detector
 
 | Key | Default | Effect |
-|----|----|----|
-| `same_place.enabled` | true | Master switch |
+|----|---:|----|
+| `same_place.enabled` | `TRUE` | Master switch |
 | `same_place.default_n_cases` | 3 | Cases at one institution within K days to fire |
 | `same_place.default_k_days` | 14 | Time window in days |
 | `same_place.lookback_days` | 90 | How far back a run reports hits; `~` unbounds (not recommended) |
@@ -489,14 +489,14 @@ per-pathogen CSV, with its default and one-line effect.
 ### Farrington detector
 
 | Key | Default | Effect |
-|----|----|----|
-| `farrington.enabled` | true | Master switch; switching off stops the detector, not the Pathogen screen’s baseline |
+|----|---:|----|
+| `farrington.enabled` | `TRUE` | Master switch; switching off stops the detector, not the Pathogen screen’s baseline |
 | `farrington.aggregation` | week | Aggregation unit |
 | `farrington.b` | 2 | Reference years; model needs `(b+1)*52` weeks |
 | `farrington.w` | 3 | Half-window (weeks) around the same calendar week in each reference year |
-| `farrington.reweight` | true | Down-weight past outbreak weeks by Anscombe residual |
+| `farrington.reweight` | `TRUE` | Down-weight past outbreak weeks by Anscombe residual |
 | `farrington.weightsThreshold` | 2.58 | Residual cutoff for reweighting |
-| `farrington.trend` | true | Allow a linear trend term |
+| `farrington.trend` | `TRUE` | Allow a linear trend term |
 | `farrington.pastWeeksNotIncluded` | 26 | Trailing weeks excluded from the noise estimate |
 | `farrington.limit54` | \[5, 4\] | Low-count safeguard |
 | `farrington.alpha` | 0.05 | Significance level; lower = wider bound = fewer alarms |
@@ -505,8 +505,8 @@ per-pathogen CSV, with its default and one-line effect.
 ### MEM detector
 
 | Key | Default | Effect |
-|----|----|----|
-| `mem.enabled` | true | Master switch |
+|----|---:|----|
+| `mem.enabled` | `TRUE` | Master switch |
 | `mem.min_seasons` | 2 | Fully-observed prior seasons required before fitting |
 | `mem.levels` | \[pathogen_province, pathogen_region\] | Lattice levels MEM runs at |
 | `mem.min_climatology_years` | 3 | Complete ISO years required to derive a season anchor |
@@ -518,8 +518,8 @@ per-pathogen CSV, with its default and one-line effect.
 ### rare_trigger detector
 
 | Key | Default | Effect |
-|----|----|----|
-| `rare_trigger.enabled` | true | Master switch |
+|----|---:|----|
+| `rare_trigger.enabled` | `TRUE` | Master switch |
 | `rare_trigger.pathogens` | (4 shipped) | Curated list of raw pathogen strings; a single case fires |
 | `rare_trigger.min_cases` | 1 | Cases in the window to fire |
 | `rare_trigger.lookback_days` | 90 | How far back a run reports hits; `~` unbounds (not recommended) |
@@ -527,7 +527,7 @@ per-pathogen CSV, with its default and one-line effect.
 ### Priority score
 
 | Key | Default | Effect |
-|----|----|----|
+|----|---:|----|
 | `priority_score.weights.excess_component` | 0.25 | Weight for cases above the model’s upper bound |
 | `priority_score.weights.ratio_component` | 0.15 | Weight for observed/expected ratio |
 | `priority_score.weights.severity_component` | 0.20 | Weight for the pathogen’s severity_weight |
@@ -545,7 +545,7 @@ per-pathogen CSV, with its default and one-line effect.
 ### Geography
 
 | Key | Default | Effect |
-|----|----|----|
+|----|:---|----|
 | `geography.region_code` | REGION | L5 whole-catchment code; name your service area |
 | `geography.area_code_prefix` | AREA- | L3 prefix before the leading postcode characters |
 | `geography.area_pc_characters` | 2 | Number of leading postcode characters for L3 grouping |
@@ -553,7 +553,7 @@ per-pathogen CSV, with its default and one-line effect.
 ### Suppression
 
 | Key | Default | Effect |
-|----|----|----|
+|----|---:|----|
 | `suppression.child_dominance_threshold` | 0.70 | Case-overlap share for a child to suppress its parent |
 | `suppression.parent_diffuse_threshold` | 0.50 | Below this per child, the rise counts as diffuse |
 | `suppression.parent_min_flagged_children` | 2 | Minimum overlapping children before the diffuse rule fires |
@@ -561,7 +561,7 @@ per-pathogen CSV, with its default and one-line effect.
 ### Report
 
 | Key | Default | Effect |
-|----|----|----|
+|----|---:|----|
 | `report.small_count_threshold` | 5 | Counts below this in geography/institution tables are suppressed to prevent re-identification |
 | `report.output_dir` | ~ | Base directory for rendered reports; mandatory when `EPISODIC_DB` is a DSN |
 
@@ -569,12 +569,12 @@ per-pathogen CSV, with its default and one-line effect.
 
 | Key | Default | Effect |
 |----|----|----|
-| `access.require_login` | false | Whether the dashboard requires a sign-in to read anything |
+| `access.require_login` | `FALSE` | Whether the dashboard requires a sign-in to read anything |
 
 ### Per-pathogen CSV columns
 
 | Column | Typical default | Effect |
-|----|----|----|
+|----|---:|----|
 | `episode_days` | 30 | Deduplication window for repeated isolates |
 | `incub_min_days`, `incub_max_days` | (varies) | Incubation period bounds for the dossier timeline |
 | `case_free_days` | 14 | Overrides `reconciliation.case_free_days_default` |
