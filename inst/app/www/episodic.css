@@ -235,9 +235,22 @@ body {
 .episodic-shell[data-nav="epidemics"] { --episodic-nav-accent: var(--episodic-success); --episodic-nav-accent-dark: var(--episodic-success-dark); }
 .episodic-shell[data-nav="pathogens"] { --episodic-nav-accent: var(--episodic-danger); --episodic-nav-accent-dark: var(--episodic-danger-dark); }
 .episodic-shell[data-nav="instance"] { --episodic-nav-accent: var(--episodic-primary); --episodic-nav-accent-dark: var(--episodic-primary-dark); }
+/* .episodic-screens (above) is a flex item of .episodic-shell and so has
+   a definite height even though it is not itself a flex container; a
+   percentage-height descendant can resolve against that. Without this
+   height:100%, .episodic-screen has none of its own - it is a plain
+   block box that grows to fit its content - so the flex:1 this file
+   hands its child below (.episodic-body, or a screen's own uiOutput
+   wrapper) has nothing definite to grow within and grows with the
+   content instead. The content then renders past .episodic-screens'
+   own painted box, which stops at the viewport: the scroll that should
+   happen inside the pane happens on the document instead, and every
+   screen's tint (see .episodic-screens above) and every pane's own
+   overflow-y: auto stop covering anything below that edge. */
 .episodic-screen {
   display: none;
   flex-direction: column;
+  height: 100%;
   min-height: 0;
 }
 /* A screen's content arrives inside shiny::uiOutput()'s own wrapper div,
