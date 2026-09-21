@@ -120,7 +120,8 @@ argument), <code><a href="../reference/episodic_run_app.html">episodic_run_app()
 </td>
 <td>Path to an instance override of configuration (pathogen thresholds,
 <code>same_place</code>/<code>rare_trigger</code>/Farrington settings,
-notification channels, and <code>access:   require_login</code>),
+notification channels, and
+<code style="white-space: nowrap;">access:<br>  require_login</code>),
 overlaid key-by-key on the shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml" class="external-link"><code>inst/config/episodic_default_config.yaml</code></a>.
 Set to a path that does not exist, or to a file that is not valid YAML,
 this stops with an error rather than falling back to the defaults; every
@@ -129,7 +130,7 @@ or a value of the wrong type is named rather than silently ignored. See
 <code><a href="../articles/tuning-detection.html">vignette("tuning-detection")</a></code> for the complete reference
 table of tunable keys, and <code><a href="../articles/deployment.html">vignette("deployment")</a></code>’s
 “Opening the app to anonymous visitors” for
-<code>access:   require_login</code>.</td>
+<code style="white-space: nowrap;">access:<br>  require_login</code>.</td>
 </tr>
 <tr class="even">
 <td><code>EPISODIC_PATHOGEN_CONFIG</code></td>
