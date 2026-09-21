@@ -11,13 +11,13 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 ```
 
-This vignette is for someone with a running EpiSODIC instance whose detection behaviour does not quite match their catchment: too many false alarms, missing outbreaks, clusters closing too early, the wrong things at the top of the board. It maps each of those complaints to the parameters that control it, the trade-off each adjustment creates, and how to verify the change helped. It does not re-explain how the detectors work (`vignette("detection-reconciliation")`) or how the configuration overlay system works (`vignette("deployment")`).
+This vignette is for someone with a running EpiSODIC instance whose detection behaviour does not quite match their catchment: too many false alarms, missing outbreaks, clusters closing too early, the wrong things at the top of the board. It maps each of those complaints to the parameters that control it, the trade-off each adjustment creates, and how to verify the change helped. It does not re-explain how the detectors work ([**Detection and reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html)) or how the configuration overlay system works ([**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)).
 
 ## Before you change anything
 
 Every detection run records the exact configuration it used: a SHA-1 hash of the resolved settings (`config_hash`) and a full JSON snapshot (`config_snapshot`), both on the run's own row. A change you make today affects only future runs, never the meaning of a past one. You can tune with confidence, since nothing becomes retroactively wrong.
 
-Point the `EPISODIC_CONFIG` environment variable at a YAML file with only the keys you want to change; everything else keeps its shipped default. See `vignette("deployment")` for the mechanics.
+Point the `EPISODIC_CONFIG` environment variable at a YAML file with only the keys you want to change; everything else keeps its shipped default. See [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) for the mechanics.
 
 ```yaml
 # my_instance.yaml - only what differs from the defaults.
@@ -238,7 +238,7 @@ mem:
   trough_percentile: 0.20
 ```
 
-Declaring the season started or ended is always a human act, never automatic. MEM raises the signal; a person declares. See `vignette("detection-reconciliation")`.
+Declaring the season started or ended is always a human act, never automatic. MEM raises the signal; a person declares. See [**Detection and reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html).
 
 
 ## Per-pathogen parameters
@@ -315,7 +315,7 @@ baseline$summary[baseline$summary$metric %in% c("sensitivity", "ppv"), ]
 adjusted$summary[adjusted$summary$metric %in% c("sensitivity", "ppv"), ]
 ```
 
-This measures the machinery against known truth: does the change improve sensitivity, reduce false alarms, or affect time-to-detection? The defaults are deliberately small (one seed, four weeks) so it returns in seconds; for a proper comparison use more seeds and a longer window. See `vignette("detection-validation")` for the full framework.
+This measures the machinery against known truth: does the change improve sensitivity, reduce false alarms, or affect time-to-detection? The defaults are deliberately small (one seed, four weeks) so it returns in seconds; for a proper comparison use more seeds and a longer window. See [**Measuring detection against known truth**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html) for the full framework.
 
 ### Against your own board's verdicts
 
