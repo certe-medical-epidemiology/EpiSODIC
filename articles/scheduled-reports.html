@@ -66,13 +66,13 @@
 
     
     
-<p><code><a href="../articles/notifications.html">vignette("notifications")</a></code> is for your epidemiologists:
-it alerts them the moment a cluster needs assessing. Scheduled reports
-are for everyone else who needs to follow a cluster without ever opening
-the dashboard - a ward manager, a department head, a referring
-physician, or any colleague with no EpiSODIC account, or only a
-<code>viewer</code> one. An epidemiologist puts a cluster on a recurring
-schedule from its dossier; from then on,
+<p><a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>
+is for your epidemiologists: it alerts them the moment a cluster needs
+assessing. Scheduled reports are for everyone else who needs to follow a
+cluster without ever opening the dashboard - a ward manager, a
+department head, a referring physician, or any colleague with no
+EpiSODIC account, or only a <code>viewer</code> one. An epidemiologist
+puts a cluster on a recurring schedule from its dossier; from then on,
 <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> emails the outbreak report to a list of
 addresses, every N days, for as long as the cluster stays active.</p>
 <div class="section level2">
@@ -90,10 +90,10 @@ by a comma or a new line.</li>
 <li>
 <strong>Send via</strong> - which already-configured, email-capable
 notification channel to deliver through: <code>smtp</code>,
-<code>sendmail</code> or <code>microsoft365</code> (see
-<code><a href="../articles/notifications.html">vignette("notifications")</a></code>). Only channels with
-<code>enabled: true</code> in your instance configuration appear here;
-if none do, the section tells you to configure one first.</li>
+<code>sendmail</code> or <code>microsoft365</code> (see <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>).
+Only channels with <code>enabled: true</code> in your instance
+configuration appear here; if none do, the section tells you to
+configure one first.</li>
 <li>
 <strong>Include the case line list</strong> - off by default. These
 recipients are often outside your own organisation, so patient-level
@@ -153,21 +153,19 @@ whether opening the attachment is urgent.</p>
 <h2 id="custom-report-templates-and-patient-level-detail">Custom report templates and patient-level detail<a class="anchor" aria-label="anchor" href="#custom-report-templates-and-patient-level-detail"></a>
 </h2>
 <p>Scheduled reports render through the same <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd" class="external-link"><code>inst/report/episodic_default_report.qmd</code></a>
-template (or your own, via <code>EPISODIC_QUARTO_REPORT</code> - see
-<code><a href="../articles/deployment.html">vignette("deployment")</a></code>’s “Custom report templates” section)
-as an on-demand render. The “include the case line list” checkbox
-controls only whether <code>d$linelist</code> is populated for that
-particular schedule; everything else in <code>params$data_path</code> is
-always present, snapshot metrics and version-to-version diff
-included.</p>
+template (or your own, via <code>EPISODIC_QUARTO_REPORT</code> - see <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>’s
+“Custom report templates” section) as an on-demand render. The “include
+the case line list” checkbox controls only whether
+<code>d$linelist</code> is populated for that particular schedule;
+everything else in <code>params$data_path</code> is always present,
+snapshot metrics and version-to-version diff included.</p>
 <p>If you need a scheduled report to carry more patient-level detail
 than the shipped template shows even with the line list included - a
 different set of columns, say, or per-case highlighting of what is new
 since the previous version - write your own <code>.qmd</code> reading
-from the same <code>report_data.rds</code> shape documented in
-<code><a href="../articles/deployment.html">vignette("deployment")</a></code>, and point
-<code>EPISODIC_QUARTO_REPORT</code> at it. The line list itself
-(<code>d$linelist</code>) already carries everything
+from the same <code>report_data.rds</code> shape documented in <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>,
+and point <code>EPISODIC_QUARTO_REPORT</code> at it. The line list
+itself (<code>d$linelist</code>) already carries everything
 <code>episodic_case</code> records short of the raw source key: patient
 key, lab number, sample date, sex, age, postcode, ward and specialism -
 a custom template is free to show all of it, or to compute its own

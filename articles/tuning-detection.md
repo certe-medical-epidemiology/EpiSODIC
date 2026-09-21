@@ -6,10 +6,10 @@ alarms, missing outbreaks, clusters closing too early, the wrong things
 at the top of the board. It maps each of those complaints to the
 parameters that control it, the trade-off each adjustment creates, and
 how to verify the change helped. It does not re-explain how the
-detectors work
-([`vignette("detection-reconciliation")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.md))
+detectors work ([**Detection and
+reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html))
 or how the configuration overlay system works
-([`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)).
+([**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)).
 
 ## Before you change anything
 
@@ -22,7 +22,7 @@ with confidence, since nothing becomes retroactively wrong.
 Point the `EPISODIC_CONFIG` environment variable at a YAML file with
 only the keys you want to change; everything else keeps its shipped
 default. See
-[`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)
+[**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)
 for the mechanics.
 
 ``` yaml
@@ -333,8 +333,9 @@ mem:
 ```
 
 Declaring the season started or ended is always a human act, never
-automatic. MEM raises the signal; a person declares. See
-[`vignette("detection-reconciliation")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.md).
+automatic. MEM raises the signal; a person declares. See [**Detection
+and
+reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html).
 
 ## Per-pathogen parameters
 
@@ -418,7 +419,8 @@ This measures the machinery against known truth: does the change improve
 sensitivity, reduce false alarms, or affect time-to-detection? The
 defaults are deliberately small (one seed, four weeks) so it returns in
 seconds; for a proper comparison use more seeds and a longer window. See
-[`vignette("detection-validation")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.md)
+[**Measuring detection against known
+truth**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html)
 for the full framework.
 
 ### Against your own board’s verdicts

@@ -25,8 +25,8 @@ failure never rolls back a successful detection run.
 ## Where to configure
 
 Notification settings go in your instance YAML configuration file, the
-same file that `EPISODIC_CONFIG` points at (see
-[`vignette("environment-variables")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md)).
+same file that `EPISODIC_CONFIG` points at (see [**Environment
+variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html)).
 Add a `notifications` key at the top level. The shipped
 [`inst/config/episodic_default_config.yaml`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml)
 contains commented-out examples for every channel; copy the ones you

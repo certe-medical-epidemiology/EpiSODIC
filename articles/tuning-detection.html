@@ -72,9 +72,9 @@ alarms, missing outbreaks, clusters closing too early, the wrong things
 at the top of the board. It maps each of those complaints to the
 parameters that control it, the trade-off each adjustment creates, and
 how to verify the change helped. It does not re-explain how the
-detectors work (<code><a href="../articles/detection-reconciliation.html">vignette("detection-reconciliation")</a></code>) or
-how the configuration overlay system works
-(<code><a href="../articles/deployment.html">vignette("deployment")</a></code>).</p>
+detectors work (<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html"><strong>Detection
+and reconciliation</strong></a>) or how the configuration overlay system
+works (<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>).</p>
 <div class="section level2">
 <h2 id="before-you-change-anything">Before you change anything<a class="anchor" aria-label="anchor" href="#before-you-change-anything"></a>
 </h2>
@@ -86,8 +86,8 @@ past one. You can tune with confidence, since nothing becomes
 retroactively wrong.</p>
 <p>Point the <code>EPISODIC_CONFIG</code> environment variable at a YAML
 file with only the keys you want to change; everything else keeps its
-shipped default. See <code><a href="../articles/deployment.html">vignette("deployment")</a></code> for the
-mechanics.</p>
+shipped default. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>
+for the mechanics.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># my_instance.yaml - only what differs from the defaults.</span></span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">farrington</span><span class="kw">:</span></span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="at">  </span><span class="fu">alpha</span><span class="kw">:</span><span class="at"> </span><span class="fl">0.01</span></span></code></pre></div>
@@ -377,8 +377,8 @@ cases fall within an 8-week peak window.</p>
 <span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="at">  </span><span class="fu">climatology_smooth_weeks</span><span class="kw">:</span><span class="at"> </span><span class="dv">7</span></span>
 <span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="at">  </span><span class="fu">trough_percentile</span><span class="kw">:</span><span class="at"> </span><span class="fl">0.20</span></span></code></pre></div>
 <p>Declaring the season started or ended is always a human act, never
-automatic. MEM raises the signal; a person declares. See
-<code><a href="../articles/detection-reconciliation.html">vignette("detection-reconciliation")</a></code>.</p>
+automatic. MEM raises the signal; a person declares. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html"><strong>Detection
+and reconciliation</strong></a>.</p>
 </div>
 </div>
 <div class="section level2">
@@ -513,8 +513,8 @@ CSV columns) with the settings you want to test:</p>
 improve sensitivity, reduce false alarms, or affect time-to-detection?
 The defaults are deliberately small (one seed, four weeks) so it returns
 in seconds; for a proper comparison use more seeds and a longer window.
-See <code><a href="../articles/detection-validation.html">vignette("detection-validation")</a></code> for the full
-framework.</p>
+See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html"><strong>Measuring
+detection against known truth</strong></a> for the full framework.</p>
 </div>
 <div class="section level3">
 <h3 id="against-your-own-boards-verdicts">Against your own board’s verdicts<a class="anchor" aria-label="anchor" href="#against-your-own-boards-verdicts"></a>

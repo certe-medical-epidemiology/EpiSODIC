@@ -19,8 +19,8 @@ Spanish.
 EpiSODIC never queries a laboratory information system, data warehouse,
 or any other data source itself - extracting and transforming your data
 into its expected shape is deliberately your own step, run before
-EpiSODIC. See
-[`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
+EpiSODIC. See [**Getting your data
+in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)
 for exactly what that shape is. This keeps the detection engine reusable
 by any laboratory: every dependency is a CRAN-hosted package
 (`surveillance` for Farrington; no private, organisation-specific
@@ -33,9 +33,9 @@ instance by pointing `EPISODIC_STYLE` at a YAML file with an
 organisation’s own colours and font - the same mechanism used for
 detection configuration, a custom report template, and geographic
 reference data (see
-[`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)
-and
-[`vignette("environment-variables")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md)).
+[**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)
+and [**Environment
+variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html)).
 Geography (the choropleth panel) is not tied to any one organisation or
 country either.
 
@@ -43,8 +43,8 @@ Detection thresholds and priority score weights are configurable per
 instance
 ([`inst/config/episodic_default_config.yaml`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml),
 `EPISODIC_CONFIG`), so an organisation can tune them against its own
-signal volume as its evidence base grows - see
-[`vignette("detection-reconciliation")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.md)
+signal volume as its evidence base grows - see [**Detection and
+reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html)
 for how the detectors themselves work, and the FAQ for how to change the
 configuration.
 

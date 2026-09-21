@@ -1,6 +1,6 @@
 # Scheduled reports
 
-[`vignette("notifications")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md)
+[**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html)
 is for your epidemiologists: it alerts them the moment a cluster needs
 assessing. Scheduled reports are for everyone else who needs to follow a
 cluster without ever opening the dashboard - a ward manager, a
@@ -22,7 +22,7 @@ reports” section:
   new line.
 - **Send via** - which already-configured, email-capable notification
   channel to deliver through: `smtp`, `sendmail` or `microsoft365` (see
-  [`vignette("notifications")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md)).
+  [**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html)).
   Only channels with `enabled: true` in your instance configuration
   appear here; if none do, the section tells you to configure one first.
 - **Include the case line list** - off by default. These recipients are
@@ -81,7 +81,7 @@ opening the attachment is urgent.
 Scheduled reports render through the same
 [`inst/report/episodic_default_report.qmd`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd)
 template (or your own, via `EPISODIC_QUARTO_REPORT` - see
-[`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)’s
+[**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)’s
 “Custom report templates” section) as an on-demand render. The “include
 the case line list” checkbox controls only whether `d$linelist` is
 populated for that particular schedule; everything else in
@@ -93,7 +93,7 @@ the shipped template shows even with the line list included - a
 different set of columns, say, or per-case highlighting of what is new
 since the previous version - write your own `.qmd` reading from the same
 `report_data.rds` shape documented in
-[`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md),
+[**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html),
 and point `EPISODIC_QUARTO_REPORT` at it. The line list itself
 (`d$linelist`) already carries everything `episodic_case` records short
 of the raw source key: patient key, lab number, sample date, sex, age,

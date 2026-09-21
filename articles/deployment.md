@@ -27,8 +27,9 @@ episodic_run_cron(
 data frame or tibble, as above - that is what these arguments are
 written for. If producing the data only makes sense at run time (a live
 database query, for instance), a zero-argument function returning one is
-accepted just as well - see `episodic_resolve_data()`.
-[`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
+accepted just as well - see `episodic_resolve_data()`. [**Getting your
+data
+in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)
 documents the exact columns each of the four data sources (cases,
 positivity metadata, institution activity, geographic reference data)
 expects; only cases are mandatory.
@@ -180,8 +181,8 @@ episodic_add_user(
 ```
 
 [`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
-takes `db_path` (defaulting to `EPISODIC_DB`, see
-[`vignette("environment-variables")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md)),
+takes `db_path` (defaulting to `EPISODIC_DB`, see [**Environment
+variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html)),
 not an open connection - it opens and closes its own via
 [`episodic_db_open()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_open.md),
 so adding an account is one call at the console. The account is created
@@ -372,8 +373,8 @@ one does (`obj`, `epi_curve`, `trend`, `linelist`, `timeline`,
 including how it calls `episodic_tr(..., lang = d$lang)` to render in
 any of the dashboard’s supported languages. `diff` is `NULL` for a
 cluster’s first-ever render and otherwise holds what changed since the
-previous version - see
-[`vignette("scheduled-reports")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.md)’s
+previous version - see [**Scheduled
+reports**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html)’s
 “What changed since last time” section for what it contains.
 
 ## Scheduled reports
@@ -382,9 +383,9 @@ A cluster can be put on a recurring email schedule from its dossier -
 every N days, to a list of colleagues without an EpiSODIC account. This
 reuses the report template and the email-capable notification channels
 (`smtp`, `sendmail`, `microsoft365`) described in
-[`vignette("notifications")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md);
-see
-[`vignette("scheduled-reports")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.md)
+[**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html);
+see [**Scheduled
+reports**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html)
 for the full setup guide, including the cadence and automatic-closure
 rules and how to extend a custom template with more patient-level detail
 than the shipped one shows.
@@ -431,7 +432,7 @@ EpiSODIC can notify your team, through ntfy, email, Teams, or Slack,
 whenever new clusters are detected or a cron run fails. Notifications
 are configured in the same YAML file as detection thresholds
 (`EPISODIC_CONFIG`), under a `notifications` key. See
-[`vignette("notifications")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md)
+[**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html)
 for the full setup guide, with step-by-step instructions for every
 supported channel.
 

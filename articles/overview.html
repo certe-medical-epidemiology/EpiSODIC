@@ -84,26 +84,27 @@ Chinese, and Spanish.</p>
 <p>EpiSODIC never queries a laboratory information system, data
 warehouse, or any other data source itself - extracting and transforming
 your data into its expected shape is deliberately your own step, run
-before EpiSODIC. See <code><a href="../articles/data-format.html">vignette("data-format")</a></code> for exactly
-what that shape is. This keeps the detection engine reusable by any
-laboratory: every dependency is a CRAN-hosted package
-(<code>surveillance</code> for Farrington; no private,
-organisation-specific package is required or even referenced).</p>
+before EpiSODIC. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
+your data in</strong></a> for exactly what that shape is. This keeps the
+detection engine reusable by any laboratory: every dependency is a
+CRAN-hosted package (<code>surveillance</code> for Farrington; no
+private, organisation-specific package is required or even
+referenced).</p>
 <p>House colours and typography (<code><a href="../reference/episodic_palette.html">episodic_palette()</a></code>) come
 from a shipped, organisation-neutral default, overridable per instance
 by pointing <code>EPISODIC_STYLE</code> at a YAML file with an
 organisation’s own colours and font - the same mechanism used for
 detection configuration, a custom report template, and geographic
-reference data (see <code><a href="../articles/deployment.html">vignette("deployment")</a></code> and
-<code><a href="../articles/environment-variables.html">vignette("environment-variables")</a></code>). Geography (the
-choropleth panel) is not tied to any one organisation or country
-either.</p>
+reference data (see <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>
+and <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html"><strong>Environment
+variables</strong></a>). Geography (the choropleth panel) is not tied to
+any one organisation or country either.</p>
 <p>Detection thresholds and priority score weights are configurable per
 instance (<a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml" class="external-link"><code>inst/config/episodic_default_config.yaml</code></a>,
 <code>EPISODIC_CONFIG</code>), so an organisation can tune them against
-its own signal volume as its evidence base grows - see
-<code><a href="../articles/detection-reconciliation.html">vignette("detection-reconciliation")</a></code> for how the detectors
-themselves work, and the FAQ for how to change the configuration.</p>
+its own signal volume as its evidence base grows - see <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html"><strong>Detection
+and reconciliation</strong></a> for how the detectors themselves work,
+and the FAQ for how to change the configuration.</p>
 </div>
 <div class="section level2">
 <h2 id="three-altitudes">Three altitudes<a class="anchor" aria-label="anchor" href="#three-altitudes"></a>

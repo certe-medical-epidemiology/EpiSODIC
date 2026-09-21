@@ -69,14 +69,13 @@
 <p>This page collects the questions that come up most often when getting
 started with EpiSODIC. Skim the questions first, then click the one you
 need to open its answer - nothing on this page needs to be read start to
-finish. If your question is not here,
-<code><a href="../articles/data-format.html">vignette("data-format")</a></code>,
-<code><a href="../articles/deployment.html">vignette("deployment")</a></code>,
-<code><a href="../articles/environment-variables.html">vignette("environment-variables")</a></code> and
-<code><a href="../articles/detection-reconciliation.html">vignette("detection-reconciliation")</a></code> go deeper on most of
-these topics; and if it still is not answered anywhere, that is worth
-telling us, since it means this page is missing something it should
-cover.</p>
+finish. If your question is not here, <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
+your data in</strong></a>, <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>,
+<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html"><strong>Environment
+variables</strong></a> and <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html"><strong>Detection
+and reconciliation</strong></a> go deeper on most of these topics; and
+if it still is not answered anywhere, that is worth telling us, since it
+means this page is missing something it should cover.</p>
 <div class="section level2">
 <h2 id="getting-your-data-in">Getting your data in<a class="anchor" aria-label="anchor" href="#getting-your-data-in"></a>
 </h2>
@@ -96,9 +95,9 @@ are fixed - a date that does not parse, a value outside the allowed set)
 and <strong>advice</strong> (a run proceeds regardless, but it is worth
 a look - one pathogen spelled two ways, no <code>ward</code> on any
 hospital row). Run it, fix what it flags as a problem, run it again -
-most people get to a clean report in two or three passes.
-<code><a href="../articles/data-format.html">vignette("data-format")</a></code> has the full column requirements
-this is checking against, including the exact allowed values for
+most people get to a clean report in two or three passes. <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
+your data in</strong></a> has the full column requirements this is
+checking against, including the exact allowed values for
 <code>care_line</code>, <code>institution_type</code>, and
 <code>sex</code>.</p>
 <p>If you are also supplying the optional positivity or
@@ -317,8 +316,8 @@ my own organisation?</strong>
 </summary><p>Point <code>EPISODIC_CONFIG</code> at a YAML file with only the keys
 you want to change; it is merged key-by-key over the shipped defaults.
 Per-pathogen parameters (severity, episode length, MEM mode) are
-overlaid via <code>EPISODIC_PATHOGEN_CONFIG</code> the same way. See
-<code><a href="../articles/tuning-detection.html">vignette("tuning-detection")</a></code> for which parameters to adjust
+overlaid via <code>EPISODIC_PATHOGEN_CONFIG</code> the same way. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.html"><strong>Tuning
+detection for your catchment</strong></a> for which parameters to adjust
 for common operational problems, their trade-offs, and the complete
 reference table.</p>
 </details><details><summary><strong>I have more than one laboratory system or data source - can I
@@ -340,11 +339,12 @@ cannot collide two genuinely different results into one.
 <code>lab_number</code> itself needs no such treatment - unlike
 <code>source_key</code> it is never required to be unique, so your lab’s
 own accession number can go into it verbatim regardless of how many
-systems you combine. See <code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s
-“<code>source_key</code>: one identifier per <em>result</em>, not per
-specimen” section for the same idea applied within one source system,
-where a bare accession number repeats for other reasons (e.g. one
-culture yielding more than one reported result).</p>
+systems you combine. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
+your data in</strong></a>’s “<code>source_key</code>: one identifier per
+<em>result</em>, not per specimen” section for the same idea applied
+within one source system, where a bare accession number repeats for
+other reasons (e.g. one culture yielding more than one reported
+result).</p>
 </details>
 </div>
 <div class="section level2">
@@ -419,8 +419,8 @@ an <code>epidemiologist</code> account can classify.</li>
 shared MariaDB/MySQL server via <code>EPISODIC_DB</code>), so you are
 not locked into your first choice - moving from “trying it out on my
 laptop” to “a shared instance the whole board uses” is a deployment
-change, not a data or code change. See
-<code><a href="../articles/deployment.html">vignette("deployment")</a></code> for the full walk-through.</p>
+change, not a data or code change. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>
+for the full walk-through.</p>
 </details><details><summary><strong>Can more than one board member review the same cluster, and what
 happens if they disagree?</strong>
 </summary><p>Yes - any signed-in epidemiologist can open and classify any cluster;
@@ -447,9 +447,9 @@ sex, age, care line, institution/ward, specialism, postcode-level
 geography, and dates. That is enough to assess a cluster and to look a
 case up in your own source system if needed, but - given a properly
 pseudonymised <code>patient_key</code> - not enough to identify who is
-in it from the dashboard alone. See <code><a href="../articles/data-format.html">vignette("data-format")</a></code>
-for the exact column requirements, including what “pseudonymised” needs
-to mean for this guarantee to hold.</p>
+in it from the dashboard alone. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
+your data in</strong></a> for the exact column requirements, including
+what “pseudonymised” needs to mean for this guarantee to hold.</p>
 </details><details><summary><strong>My organisation is outside the Netherlands - does the geography
 panel (the choropleth map) still work for us?</strong>
 </summary><p>Yes. EpiSODIC is not built for the Netherlands specifically - the
@@ -490,9 +490,9 @@ supplied and a mapping you did not are two different situations, and
 quietly treating the first as the second is how a lattice ends up built
 on somebody else’s provinces.</li>
 </ul>
-<p>See <code><a href="../articles/data-format.html">vignette("data-format")</a></code>’s “Geographic reference
-data” section for the exact requirements these files need to
-satisfy.</p>
+<p>See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
+your data in</strong></a>’s “Geographic reference data” section for the
+exact requirements these files need to satisfy.</p>
 </details>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

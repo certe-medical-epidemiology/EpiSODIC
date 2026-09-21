@@ -3,12 +3,13 @@
 This page collects the questions that come up most often when getting
 started with EpiSODIC. Skim the questions first, then click the one you
 need to open its answer - nothing on this page needs to be read start to
-finish. If your question is not here,
-[`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md),
-[`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md),
-[`vignette("environment-variables")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md)
-and
-[`vignette("detection-reconciliation")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.md)
+finish. If your question is not here, [**Getting your data
+in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html),
+[**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html),
+[**Environment
+variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html)
+and [**Detection and
+reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html)
 go deeper on most of these topics; and if it still is not answered
 anywhere, that is worth telling us, since it means this page is missing
 something it should cover.
@@ -36,8 +37,8 @@ that does not parse, a value outside the allowed set) and **advice** (a
 run proceeds regardless, but it is worth a look - one pathogen spelled
 two ways, no `ward` on any hospital row). Run it, fix what it flags as a
 problem, run it again - most people get to a clean report in two or
-three passes.
-[`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
+three passes. [**Getting your data
+in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)
 has the full column requirements this is checking against, including the
 exact allowed values for `care_line`, `institution_type`, and `sex`.
 
@@ -281,8 +282,9 @@ own organisation?**
 Point `EPISODIC_CONFIG` at a YAML file with only the keys you want to
 change; it is merged key-by-key over the shipped defaults. Per-pathogen
 parameters (severity, episode length, MEM mode) are overlaid via
-`EPISODIC_PATHOGEN_CONFIG` the same way. See
-[`vignette("tuning-detection")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.md)
+`EPISODIC_PATHOGEN_CONFIG` the same way. See [**Tuning detection for
+your
+catchment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.html)
 for which parameters to adjust for common operational problems, their
 trade-offs, and the complete reference table.
 
@@ -308,8 +310,8 @@ vs. `"LIS2-482910"`) before combining, so a later re-run cannot collide
 two genuinely different results into one. `lab_number` itself needs no
 such treatment - unlike `source_key` it is never required to be unique,
 so your lab’s own accession number can go into it verbatim regardless of
-how many systems you combine. See
-[`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)’s
+how many systems you combine. See [**Getting your data
+in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)’s
 “`source_key`: one identifier per *result*, not per specimen” section
 for the same idea applied within one source system, where a bare
 accession number repeats for other reasons (e.g. one culture yielding
@@ -397,7 +399,7 @@ shared MariaDB/MySQL server via `EPISODIC_DB`), so you are not locked
 into your first choice - moving from “trying it out on my laptop” to “a
 shared instance the whole board uses” is a deployment change, not a data
 or code change. See
-[`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)
+[**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)
 for the full walk-through.
 
 **Can more than one board member review the same cluster, and what
@@ -429,7 +431,8 @@ institution/ward, specialism, postcode-level geography, and dates. That
 is enough to assess a cluster and to look a case up in your own source
 system if needed, but - given a properly pseudonymised `patient_key` -
 not enough to identify who is in it from the dashboard alone. See
-[`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
+[**Getting your data
+in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)
 for the exact column requirements, including what “pseudonymised” needs
 to mean for this guarantee to hold.
 
@@ -470,7 +473,7 @@ Two independent things are configurable, and both are optional:
   situations, and quietly treating the first as the second is how a
   lattice ends up built on somebody else’s provinces.
 
-See
-[`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)’s
+See [**Getting your data
+in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)’s
 “Geographic reference data” section for the exact requirements these
 files need to satisfy.

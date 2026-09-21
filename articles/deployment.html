@@ -89,9 +89,9 @@ laboratory rather than tied to one:</p>
 tibble, as above - that is what these arguments are written for. If
 producing the data only makes sense at run time (a live database query,
 for instance), a zero-argument function returning one is accepted just
-as well - see <code>episodic_resolve_data()</code>.
-<code><a href="../articles/data-format.html">vignette("data-format")</a></code> documents the exact columns each of
-the four data sources (cases, positivity metadata, institution activity,
+as well - see <code>episodic_resolve_data()</code>. <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
+your data in</strong></a> documents the exact columns each of the four
+data sources (cases, positivity metadata, institution activity,
 geographic reference data) expects; only cases are mandatory.</p>
 <p>Scope <code>my_extract_and_transform_function()</code> to a recent
 window - the last few weeks, with a couple of weeks of overlap as a
@@ -230,12 +230,12 @@ produced it (see “Configuration” above).</p>
 <span>  password <span class="op">=</span> <span class="st">"a-temporary-password"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/episodic_add_user.html">episodic_add_user()</a></code> takes <code>db_path</code>
-(defaulting to <code>EPISODIC_DB</code>, see
-<code><a href="../articles/environment-variables.html">vignette("environment-variables")</a></code>), not an open connection
-- it opens and closes its own via <code><a href="../reference/episodic_db_open.html">episodic_db_open()</a></code>, so
-adding an account is one call at the console. The account is created
-with <code>must_change = TRUE</code>, so its first real sign-in forces
-the holder to set their own password before continuing. Pass
+(defaulting to <code>EPISODIC_DB</code>, see <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html"><strong>Environment
+variables</strong></a>), not an open connection - it opens and closes
+its own via <code><a href="../reference/episodic_db_open.html">episodic_db_open()</a></code>, so adding an account is one
+call at the console. The account is created with
+<code>must_change = TRUE</code>, so its first real sign-in forces the
+holder to set their own password before continuing. Pass
 <code>is_admin = TRUE</code> to give the new account Settings-screen
 access as well - you need at least one such account to manage anything
 from the dashboard itself; every account after that can be added either
@@ -416,8 +416,9 @@ template for the exact shape, including how it calls
 <code>episodic_tr(..., lang = d$lang)</code> to render in any of the
 dashboard’s supported languages. <code>diff</code> is <code>NULL</code>
 for a cluster’s first-ever render and otherwise holds what changed since
-the previous version - see <code><a href="../articles/scheduled-reports.html">vignette("scheduled-reports")</a></code>’s
-“What changed since last time” section for what it contains.</p>
+the previous version - see <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html"><strong>Scheduled
+reports</strong></a>’s “What changed since last time” section for what
+it contains.</p>
 </div>
 <div class="section level2">
 <h2 id="scheduled-reports">Scheduled reports<a class="anchor" aria-label="anchor" href="#scheduled-reports"></a>
@@ -426,11 +427,11 @@ the previous version - see <code><a href="../articles/scheduled-reports.html">vi
 every N days, to a list of colleagues without an EpiSODIC account. This
 reuses the report template and the email-capable notification channels
 (<code>smtp</code>, <code>sendmail</code>, <code>microsoft365</code>)
-described in <code><a href="../articles/notifications.html">vignette("notifications")</a></code>; see
-<code><a href="../articles/scheduled-reports.html">vignette("scheduled-reports")</a></code> for the full setup guide,
-including the cadence and automatic-closure rules and how to extend a
-custom template with more patient-level detail than the shipped one
-shows.</p>
+described in <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>;
+see <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html"><strong>Scheduled
+reports</strong></a> for the full setup guide, including the cadence and
+automatic-closure rules and how to extend a custom template with more
+patient-level detail than the shipped one shows.</p>
 </div>
 <div class="section level2">
 <h2 id="optional-pieces-and-their-fallbacks">Optional pieces, and their fallbacks<a class="anchor" aria-label="anchor" href="#optional-pieces-and-their-fallbacks"></a>
@@ -507,8 +508,9 @@ the interface - each is additive.</p>
 whenever new clusters are detected or a cron run fails. Notifications
 are configured in the same YAML file as detection thresholds
 (<code>EPISODIC_CONFIG</code>), under a <code>notifications</code> key.
-See <code><a href="../articles/notifications.html">vignette("notifications")</a></code> for the full setup guide,
-with step-by-step instructions for every supported channel.</p>
+See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>
+for the full setup guide, with step-by-step instructions for every
+supported channel.</p>
 </div>
 <div class="section level2">
 <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a>
