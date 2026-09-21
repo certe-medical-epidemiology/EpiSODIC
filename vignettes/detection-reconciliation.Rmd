@@ -17,13 +17,13 @@ This vignette walks through how a laboratory result becomes an outbreak or epide
 
 Every case belongs to several *streams* at once - a ward-level stream, an institution-level stream, an area, a province, the whole catchment - each watched independently. Streams are enumerated automatically from the data every run, so a newly appearing pathogen creates its own streams without any configuration step:
 
-| Level | Unit |
-|---|---|
-| L1 | Ward or specialism |
-| L2 | Hospital or care home |
-| L3 | A contiguous geographic grouping |
-| L4 | Province |
-| L5 | Full catchment |
+| Level | Unit                             |
+| ----- | -------------------------------- |
+| L1    | Ward or specialism               |
+| L2    | Hospital or care home            |
+| L3    | A contiguous geographic grouping |
+| L4    | Province                         |
+| L5    | Full catchment                   |
 
 Each level is a strict partition of the one above it - a ward sits inside exactly one hospital, a hospital inside exactly one area, and so on - which is what makes suppression (below) meaningful.
 

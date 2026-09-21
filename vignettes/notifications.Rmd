@@ -15,14 +15,14 @@ EpiSODIC can notify your team whenever `episodic_run_cron()` detects new cluster
 
 Supported channels:
 
-| Channel | Transport | Needs R package |
-|---|---|---|
-| **ntfy** | HTTP POST to a self-hosted or public ntfy server | `httr2` |
-| **SMTP** | Any SMTP server (Gmail, Outlook, institutional relay, etc.) | `curl` |
-| **sendmail** | The `sendmail` binary on a Linux/Unix server | (none) |
-| **Microsoft 365** | Microsoft Graph API (application or delegated auth) | `Microsoft365R`, `AzureGraph`, `AzureAuth` |
-| **Teams** | Power Automate Workflow webhook (Adaptive Card) | `httr2` |
-| **Slack** | Incoming Webhook | `httr2` |
+| Channel           | Transport                                                   | Needs R package                            |
+| ----------------- | ----------------------------------------------------------- | ------------------------------------------ |
+| **ntfy**          | HTTP POST to a self-hosted or public ntfy server            | `httr2`                                    |
+| **SMTP**          | Any SMTP server (Gmail, Outlook, institutional relay, etc.) | `curl`                                     |
+| **sendmail**      | The `sendmail` binary on a Linux/Unix server                | (none)                                     |
+| **Microsoft 365** | Microsoft Graph API (application or delegated auth)         | `Microsoft365R`, `AzureGraph`, `AzureAuth` |
+| **Teams**         | Power Automate Workflow webhook (Adaptive Card)             | `httr2`                                    |
+| **Slack**         | Incoming Webhook                                            | `httr2`                                    |
 
 You can enable as many channels in parallel as you like. Each channel is independent: if one fails, the others still send, and a notification failure never rolls back a successful detection run.
 
@@ -252,10 +252,10 @@ Requires `httr2` (`install.packages("httr2")`).
 
 Two triggers are available. Both are independently toggleable:
 
-| Trigger | Fires when | Default |
-|---|---|---|
+| Trigger        | Fires when                                    | Default                          |
+| -------------- | --------------------------------------------- | -------------------------------- |
 | `new_clusters` | The cron run created at least one new cluster | Must be explicitly set to `true` |
-| `run_failure` | The cron run's status is `"failed"` | Must be explicitly set to `true` |
+| `run_failure`  | The cron run's status is `"failed"`           | Must be explicitly set to `true` |
 
 ```yaml
 notifications:

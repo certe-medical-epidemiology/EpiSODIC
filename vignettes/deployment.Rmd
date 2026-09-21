@@ -194,13 +194,13 @@ A cluster can be put on a recurring email schedule from its dossier - every N da
 
 Every optional integration point degrades to a documented fallback rather than failing when it is absent:
 
-| Feature | Needs | Fallback |
-|---|---|---|
-| Rt estimation | `EpiEstim` | Panel omitted |
-| MEM seasonal thresholds | `mem` | Detector skipped for pathogens where MEM cannot fit |
-| Outbreak reports | `quarto` R package + the separate Quarto CLI | Render errors clearly instead of silently producing nothing |
-| Choropleth map | `sf` + geographic reference data | Plain bar breakdown by PC value |
-| Notifications | `httr2`, `curl`, `Microsoft365R` + `AzureGraph` + `AzureAuth` (depending on channel) | No alerts; review clusters through the dashboard only |
+| Feature                 | Needs                                                                                | Fallback                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| Rt estimation           | `EpiEstim`                                                                           | Panel omitted                                               |
+| MEM seasonal thresholds | `mem`                                                                                | Detector skipped for pathogens where MEM cannot fit         |
+| Outbreak reports        | `quarto` R package + the separate Quarto CLI                                         | Render errors clearly instead of silently producing nothing |
+| Choropleth map          | `sf` + geographic reference data                                                     | Plain bar breakdown by PC value                             |
+| Notifications           | `httr2`, `curl`, `Microsoft365R` + `AzureGraph` + `AzureAuth` (depending on channel) | No alerts; review clusters through the dashboard only       |
 
 `AMR` is a hard dependency, not an optional integration: episode deduplication (`episodic_cases_deduplicate()`) calls `AMR::get_episode()` directly, and pathogen-name italicisation (`episodic_ui_italicise_taxon()`) reads `AMR::microorganisms`. There is no fallback for either, by design - see the DESCRIPTION for the published methods this package is built on.
 
