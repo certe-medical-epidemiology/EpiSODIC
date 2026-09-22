@@ -68,7 +68,9 @@ episodic_add_manual_cluster(
 
   One of the five lattice levels: `"pathogen_ward"`,
   `"pathogen_institution"`, `"pathogen_area"`, `"pathogen_province"`,
-  `"pathogen_region"` (see `vignette("architecture")`).
+  `"pathogen_region"` (see the "The lattice: streams, not one big feed"
+  section of [**Detection and
+  reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html)).
 
 - first_day, last_day:
 

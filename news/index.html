@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.20.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.20.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,15 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.20.4" id="episodic-0204">EpiSODIC 0.20.4<a class="anchor" aria-label="anchor" href="#episodic-0204"></a></h2>
+<div class="section level3">
+<h3 id="fixed-0-20-4">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-20-4"></a></h3>
+<ul><li>
+<code><a href="../reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code>’s <code>level</code> argument pointed at <code>vignette("architecture")</code>, a vignette that no longer exists; it now links to the pkgdown article that documents the five lattice levels</li>
+<li>The pkgdown deploy step purges the published site before every rebuild (<code>clean: true</code>, plus <code><a href="https://pkgdown.r-lib.org/reference/clean.html" class="external-link">pkgdown::clean_site()</a></code>), so a page whose source vignette is removed no longer lingers on the live site</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.20.3" id="episodic-0203">EpiSODIC 0.20.3<a class="anchor" aria-label="anchor" href="#episodic-0203"></a></h2>
 <div class="section level3">
