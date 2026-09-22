@@ -55,7 +55,9 @@
 #'   fixed list.
 #' @param level One of the five lattice levels: `"pathogen_ward"`,
 #'   `"pathogen_institution"`, `"pathogen_area"`, `"pathogen_province"`,
-#'   `"pathogen_region"` (see `vignette("architecture")`).
+#'   `"pathogen_region"` (see the "The lattice: streams, not one big
+#'   feed" section of [**Detection and
+#'   reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html)).
 #' @param first_day,last_day The cluster's episode window (`Date` or
 #'   `"YYYY-MM-DD"` text).
 #' @param n_cases The case count. Optional if `case_dates` (or any other

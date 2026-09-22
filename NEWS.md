@@ -1,3 +1,10 @@
+# EpiSODIC 0.20.4
+
+## Fixed
+
+- `episodic_add_manual_cluster()`'s `level` argument pointed at `vignette("architecture")`, a vignette that no longer exists; it now links to the pkgdown article that documents the five lattice levels
+- The pkgdown deploy step purges the published site before every rebuild (`clean: true`, plus `pkgdown::clean_site()`), so a page whose source vignette is removed no longer lingers on the live site
+
 # EpiSODIC 0.20.3
 
 ## Fixed

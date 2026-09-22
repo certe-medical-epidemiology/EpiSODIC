@@ -46,7 +46,8 @@ fixed list.}
 
 \item{level}{One of the five lattice levels: \code{"pathogen_ward"},
 \code{"pathogen_institution"}, \code{"pathogen_area"}, \code{"pathogen_province"},
-\code{"pathogen_region"} (see \code{vignette("architecture")}).}
+\code{"pathogen_region"} (see the "The lattice: streams, not one big
+feed" section of \href{https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html}{\strong{Detection and reconciliation}}).}
 
 \item{first_day, last_day}{The cluster's episode window (\code{Date} or
 \code{"YYYY-MM-DD"} text).}
