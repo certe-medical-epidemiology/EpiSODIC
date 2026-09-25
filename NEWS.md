@@ -34,6 +34,7 @@
 - Charts draw their main series in primary, earlier seasons in fading greys, and test volume in a light primary
 - The Archive search box is up to 44rem wide and full width on narrow screens
 - The rails show a care-line chip for 'other'
+- Care-line chips differ in form as well as colour: first line filled, second tinted, third outlined, other dashed
 - The detection-settings card is titled for its outbreak or epidemic and reports the run that last detected it
 - Translation files list their keys in sorted order
 

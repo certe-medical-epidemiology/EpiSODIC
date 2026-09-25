@@ -127,16 +127,7 @@ episodic_ui_epidemic_rail_row <- function(row,
           class = "episodic-rail-id",
           episodic_object_ref(row$cluster_id, "epidemic", lang = lang)
         ),
-        if (!is.na(row$care_line)) {
-          care_line_colour <- episodic_ui_care_line_colour(row$care_line)
-          if (!is.null(care_line_colour)) {
-            episodic_ui_chip(
-              episodic_tr(paste0("careline.short.", row$care_line), lang = lang),
-              care_line_colour,
-              filled = TRUE
-            )
-          }
-        }
+        episodic_ui_care_line_chip(row$care_line, lang = lang)
       ),
       shiny::tags$div(class = "episodic-rail-meta", row$level_label),
       shiny::tags$div(

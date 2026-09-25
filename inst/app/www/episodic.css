@@ -534,6 +534,12 @@ body {
 }
 .episodic-chip-filled { color: #fff; }
 .episodic-chip-outline { background: transparent; border: 1px solid; }
+/* Care-line chips (episodic_ui_care_line_chip()) differ in form as well
+   as colour. The filled and tinted ones carry a transparent border so all
+   four are the same height as the outlined ones beside them. */
+.episodic-chip-care-filled,
+.episodic-chip-care-tinted { border: 1px solid transparent; }
+.episodic-chip-care-tinted { font-weight: 600; }
 
 :focus-visible {
   outline-color: var(--episodic-primary) !important;

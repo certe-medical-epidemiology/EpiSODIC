@@ -335,8 +335,28 @@ test_that("the epidemic dossier carries its detection settings, titled for an ep
 })
 
 test_that("the rails give 'other' a care-line chip and leave 'unknown' without one", {
-  expect_false(is.null(episodic_ui_care_line_colour("other")))
-  expect_null(episodic_ui_care_line_colour("unknown"))
+  expect_false(is.null(episodic_ui_care_line_style("other")))
+  expect_null(episodic_ui_care_line_style("unknown"))
+  expect_null(episodic_ui_care_line_style(NA_character_))
+  expect_null(episodic_ui_care_line_chip("unknown", lang = "nl"))
+})
+
+test_that("each care-line chip differs from the others in form, whatever the palette's colours", {
+  lines <- c("first", "second", "third", "other")
+  forms <- vapply(
+    lines,
+    function(l) episodic_ui_care_line_style(l)$form,
+    character(1)
+  )
+  expect_equal(length(unique(forms)), length(lines))
+  html <- vapply(
+    lines,
+    function(l) as.character(episodic_ui_care_line_chip(l, lang = "nl")),
+    character(1)
+  )
+  expect_match(html[["first"]], "episodic-chip-care-filled", fixed = TRUE)
+  expect_match(html[["other"]], "dashed", fixed = TRUE)
+  expect_match(html[["other"]], "overig", fixed = TRUE)
 })
 
 test_that("breakdown bars take the app's accent unless a caller names one", {

@@ -673,28 +673,71 @@ episodic_ui_state_colour <- function(state) {
   )
 }
 
-#' The rail care-line chip's colour
+#' How the rail's care-line chip for one care line is drawn
 #'
-#' Deliberately not primary/secondary/tertiary in line order: first line
-#' takes primary since it is the one an epidemiologist sees most often,
-#' second takes tertiary and third takes secondary. `"other"` is a care
-#' line like the three - a place cases were found, outside the three the
-#' lattice names - and takes the muted grey, so it reads as one without
-#' competing with them. `"unknown"` (and anything else) gets `NULL`: no
-#' chip, rather than a chip saying nothing was recorded.
+#' Each care line differs from the others in form as well as colour:
+#' first line filled, second tinted, third outlined, `"other"` outlined
+#' with a dashed border. The colours come from the instance's palette,
+#' and nothing guarantees an operator's `primary`, `tertiary`,
+#' `secondary` and `muted` are far enough apart to tell apart at chip
+#' size - a slate primary beside the muted grey is not - so colour alone
+#' would leave the chip carrying no information. Deliberately not
+#' primary/secondary/tertiary in line order: first line takes primary
+#' since it is the one an epidemiologist sees most often. `"unknown"`
+#' (and anything else) gets `NULL`: no chip, rather than a chip saying
+#' nothing was recorded.
 #'
 #' @param care_line A stream `care_line` value, or `NA`.
-#' @return A hex colour, or `NULL`.
+#' @return A list with `colour`, `text_colour` and `form` (`"filled"`,
+#'   `"tinted"`, `"outline"` or `"dashed"`), or `NULL`.
 #' @keywords internal
 #' @noRd
-episodic_ui_care_line_colour <- function(care_line) {
+episodic_ui_care_line_style <- function(care_line) {
+  if (length(care_line) != 1 || is.na(care_line)) {
+    return(NULL)
+  }
   pal <- episodic_palette()
   switch(care_line,
-    first = pal$primary,
-    second = pal$tertiary,
-    third = pal$secondary,
-    other = pal$muted,
+    first = list(colour = pal$primary, text_colour = "#fff", form = "filled"),
+    second = list(
+      colour = pal$tertiary,
+      text_colour = pal$tertiary_dark,
+      form = "tinted"
+    ),
+    third = list(
+      colour = pal$secondary,
+      text_colour = pal$secondary,
+      form = "outline"
+    ),
+    other = list(colour = pal$muted, text_colour = pal$muted, form = "dashed"),
     NULL
+  )
+}
+
+#' The rail's care-line chip
+#'
+#' @param care_line A stream `care_line` value, or `NA`.
+#' @param lang Session language.
+#' @return A chip tag, or `NULL` when the care line is unknown or missing.
+#' @keywords internal
+#' @noRd
+episodic_ui_care_line_chip <- function(care_line,
+                                       lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  style <- episodic_ui_care_line_style(care_line)
+  if (is.null(style)) {
+    return(NULL)
+  }
+  css <- switch(style$form,
+    filled = sprintf("color:%s;background:%s;", style$text_colour, style$colour),
+    # 0x33 alpha on the colour itself: about a fifth of it over the card.
+    tinted = sprintf("color:%s;background:%s33;", style$text_colour, style$colour),
+    outline = sprintf("color:%s;border:1px solid %s;", style$text_colour, style$colour),
+    dashed = sprintf("color:%s;border:1px dashed %s;", style$text_colour, style$colour)
+  )
+  shiny::tags$span(
+    class = paste0("episodic-chip episodic-chip-care-", style$form),
+    style = css,
+    episodic_tr(paste0("careline.short.", care_line), lang = lang)
   )
 }
 
