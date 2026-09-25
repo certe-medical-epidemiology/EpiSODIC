@@ -213,20 +213,11 @@ episodic_reconcile_stream <- function(con,
       )
       metrics <- episodic_reconcile_candidate_metrics(candidate)
 
-      # Forced here, deliberately, rather than left inline as
-      # `priority_score = priority_score_fn(candidate)` in the call below.
-      # The scoring closure runs its own queries on `con`
-      # (`episodic_app_density()`), and an R argument is a promise: inlined,
-      # it is not forced at this call site but inside `dbExecute()`, after
-      # the driver has already prepared the INSERT/UPDATE on that same
-      # connection. RMariaDB allows one active result per connection, so the
-      # nested SELECT closes the half-built statement, and `dbBind()` - which
-      # unlike `dbFetch()` does not check that its result is still active -
-      # then binds into freed memory. That is a native crash, not an R
-      # condition - it takes the whole session down mid-run, and only ever
-      # against MariaDB, since RSQLite allows concurrent results per
-      # connection and the same code is harmless there. Every argument to
-      # a database write must be a plain value before the write begins.
+      # Scored before the write rather than inside its argument list: the
+      # scoring closure runs its own queries on `con`
+      # (`episodic_app_density()`), and keeping them out of the write's
+      # arguments keeps them visibly apart from it (`R/db_query.R` is
+      # what guarantees they never interleave).
       priority_score <- priority_score_fn(candidate)
       episodic_db_cluster_update(
         con,

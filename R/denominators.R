@@ -81,7 +81,7 @@ episodic_denominators_load <- function(con, denominators) {
   # over the wire to look at. ISO 8601 dates compare lexicographically,
   # which is why the schema stores them as text.
   params <- list(min(denominators$sample_date), max(denominators$sample_date))
-  on_file <- DBI::dbGetQuery(
+  on_file <- episodic_db_get_query(
     con,
     "SELECT denominator_id, pathogen, sample_date, care_line, area_code, n_tests
        FROM episodic_denominator
@@ -113,7 +113,7 @@ episodic_denominators_load <- function(con, denominators) {
   moved <- which(!new & on_file$n_tests[known] != denominators$n_tests)
   for (i in moved) {
     params <- list(denominators$n_tests[i], on_file$denominator_id[known[i]])
-    DBI::dbExecute(
+    episodic_db_execute(
       con,
       "UPDATE episodic_denominator SET n_tests = ? WHERE denominator_id = ?",
       params = params

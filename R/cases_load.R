@@ -151,7 +151,7 @@ episodic_institutions_resolve <- function(con, cases) {
   # was that value's bit64::integer64 type - silently flattened to a
   # subnormal double on assignment into an ordinary vector - that once
   # wrote every case's institution_id to the database as 0.
-  on_file <- DBI::dbGetQuery(
+  on_file <- episodic_db_get_query(
     con,
     "SELECT institution_id, institution_key FROM episodic_institution"
   )
@@ -216,7 +216,7 @@ episodic_institutions_resolve <- function(con, cases) {
     )
   }
 
-  on_file <- DBI::dbGetQuery(
+  on_file <- episodic_db_get_query(
     con,
     "SELECT institution_id, institution_key FROM episodic_institution"
   )

@@ -1365,7 +1365,7 @@ episodic_run_cron_body <- function(con,
           simplifyVector = FALSE
         )
         for (new_id in reconcile_result$new_cluster_ids) {
-          linked <- DBI::dbGetQuery(
+          linked <- episodic_db_get_query(
             con,
             paste0(
               "SELECT COUNT(*) AS n FROM episodic_detection ",

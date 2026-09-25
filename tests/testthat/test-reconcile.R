@@ -1077,7 +1077,7 @@ test_that("a scoring closure that queries the database is scored and stored corr
   env <- reconcile_setup()
   on.exit(DBI::dbDisconnect(env$con))
 
-  # The behavioural companion to test-db_write_reentrancy.R. The real
+  # The behavioural companion to test-db_reentrancy.R. The real
   # priority_score_fn (episodic_run_cron()) queries `con` itself, via
   # episodic_app_density(). Passed inline as an argument to the cluster
   # write, that query would be a promise forced inside dbExecute() after

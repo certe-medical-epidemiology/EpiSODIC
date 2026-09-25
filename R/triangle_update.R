@@ -61,7 +61,7 @@ episodic_triangle_completeness <- function(con, stream_id, max_lag_days = 21) {
   # Only runs that committed. A failed run rolls its body back, so it
   # never made a case visible to anyone, and counting it would invent a
   # lag at which nothing had yet been reported.
-  runs <- DBI::dbGetQuery(
+  runs <- episodic_db_get_query(
     con,
     sprintf(
       "SELECT run_id, run_date FROM episodic_detection_run

@@ -45,7 +45,7 @@
 #' @keywords internal
 #' @noRd
 episodic_app_pathogen_options <- function(con) {
-  out <- DBI::dbGetQuery(
+  out <- episodic_db_get_query(
     con,
     "SELECT pathogen, COUNT(*) AS n_cases, MIN(sample_date) AS first_day, MAX(sample_date) AS last_day
        FROM episodic_case GROUP BY pathogen ORDER BY COUNT(*) DESC"
@@ -408,7 +408,7 @@ episodic_app_pathogen_screen <- function(con,
 #' @keywords internal
 #' @noRd
 episodic_app_pathogen_region_stream <- function(con, pathogen) {
-  found <- DBI::dbGetQuery(
+  found <- episodic_db_get_query(
     con,
     "SELECT stream_id FROM episodic_stream WHERE pathogen = ? AND level = 'pathogen_region'
       ORDER BY stream_id LIMIT 1",
@@ -1092,7 +1092,7 @@ episodic_app_pathogen_clusters <- function(con,
     state_label = character(0),
     stringsAsFactors = FALSE
   )
-  clusters <- DBI::dbGetQuery(
+  clusters <- episodic_db_get_query(
     con,
     "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day, c.n_cases,
             c.priority_score, c.changed_since_assessment

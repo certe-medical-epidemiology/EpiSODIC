@@ -82,7 +82,7 @@ episodic_app_similar_clusters <- function(con,
     stringsAsFactors = FALSE
   )
 
-  target <- DBI::dbGetQuery(
+  target <- episodic_db_get_query(
     con,
     "SELECT * FROM episodic_cluster WHERE cluster_id = ?",
     params = list(cluster_id)
@@ -91,7 +91,7 @@ episodic_app_similar_clusters <- function(con,
     return(empty)
   }
   target <- target[1, ]
-  target_stream <- DBI::dbGetQuery(
+  target_stream <- episodic_db_get_query(
     con,
     "SELECT * FROM episodic_stream WHERE stream_id = ?",
     params = list(target$stream_id)
@@ -150,7 +150,7 @@ episodic_app_similar_clusters <- function(con,
   clusters <- clusters[order(-clusters$score), ]
   clusters <- utils::head(clusters, n)
 
-  institutions <- DBI::dbGetQuery(con, "SELECT * FROM episodic_institution")
+  institutions <- episodic_db_get_query(con, "SELECT * FROM episodic_institution")
   clusters$level_label <- vapply(
     seq_len(nrow(clusters)),
     function(i) {

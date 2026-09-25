@@ -141,7 +141,7 @@ episodic_app_actor_label <- function(con,
 episodic_app_reopened_closure <- function(con,
                                           cluster_id,
                                           lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  cluster <- DBI::dbGetQuery(
+  cluster <- episodic_db_get_query(
     con,
     "SELECT changed_since_assessment FROM episodic_cluster WHERE cluster_id = ?",
     params = list(cluster_id)
@@ -213,7 +213,7 @@ episodic_app_archive <- function(con,
     return(empty)
   }
   streams <- episodic_db_streams(con, active_only = FALSE)
-  institutions <- DBI::dbGetQuery(con, "SELECT * FROM episodic_institution")
+  institutions <- episodic_db_get_query(con, "SELECT * FROM episodic_institution")
 
   # Derived for the whole archive in three queries rather than five per
   # cluster. `episodic_app_derive_state_for_cluster()` is the readable form
@@ -493,7 +493,7 @@ episodic_app_activity_log <- function(con,
   rows <- list()
 
   events <- if (include("assessment")) {
-    DBI::dbGetQuery(con, "SELECT * FROM episodic_assessment_event")
+    episodic_db_get_query(con, "SELECT * FROM episodic_assessment_event")
   } else {
     data.frame()
   }
@@ -524,7 +524,7 @@ episodic_app_activity_log <- function(con,
   }
 
   states <- if (include("closure")) {
-    DBI::dbGetQuery(
+    episodic_db_get_query(
       con,
       "SELECT * FROM episodic_cluster_state WHERE `trigger` = 'closure'"
     )
@@ -554,7 +554,7 @@ episodic_app_activity_log <- function(con,
   }
 
   mutes <- if (include("mute")) {
-    DBI::dbGetQuery(con, "SELECT * FROM episodic_stream_mute")
+    episodic_db_get_query(con, "SELECT * FROM episodic_stream_mute")
   } else {
     data.frame()
   }
@@ -593,7 +593,7 @@ episodic_app_activity_log <- function(con,
   signin_visible <- include("signin") && !is.null(user)
 
   logins <- if (signin_visible) {
-    DBI::dbGetQuery(
+    episodic_db_get_query(
       con,
       "SELECT * FROM episodic_app_user_event WHERE event_type = 'login'"
     )

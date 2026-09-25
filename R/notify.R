@@ -154,7 +154,7 @@ episodic_notify_cluster_details <- function(con, cluster_ids) {
     " ORDER BY c.cluster_id"
   )
   params <- as.list(as.integer(cluster_ids))
-  details <- DBI::dbGetQuery(con, sql, params = params)
+  details <- episodic_db_get_query(con, sql, params = params)
   episodic_db_attach_case_days(con, details)
 }
 

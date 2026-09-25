@@ -481,7 +481,7 @@ episodic_validation_capture <- function(db_path, run_id, run_date) {
   con <- episodic_db_connect(db_path)
   on.exit(DBI::dbDisconnect(con), add = TRUE)
 
-  run <- DBI::dbGetQuery(
+  run <- episodic_db_get_query(
     con,
     "SELECT run_id, status, n_streams, n_detections
        FROM episodic_detection_run WHERE run_id = ?",
@@ -498,12 +498,12 @@ episodic_validation_capture <- function(db_path, run_id, run_date) {
       call. = FALSE
     )
   }
-  clusters <- DBI::dbGetQuery(
+  clusters <- episodic_db_get_query(
     con,
     "SELECT cluster_id, n_cases, priority_score, suppressed_by, merged_into
        FROM episodic_cluster WHERE origin = 'detected'"
   )
-  membership <- DBI::dbGetQuery(
+  membership <- episodic_db_get_query(
     con,
     "SELECT cc.cluster_id AS cluster_id, c.source_key AS source_key
        FROM episodic_cluster_case cc
@@ -563,7 +563,7 @@ episodic_validation_cluster_table <- function(db_path, snapshots) {
   con <- episodic_db_connect(db_path)
   on.exit(DBI::dbDisconnect(con), add = TRUE)
 
-  clusters <- DBI::dbGetQuery(
+  clusters <- episodic_db_get_query(
     con,
     "SELECT c.cluster_id, c.n_cases, c.priority_score, c.detector_agreement,
             c.suppressed_by, c.merged_into, s.level, s.pathogen
@@ -571,7 +571,7 @@ episodic_validation_cluster_table <- function(db_path, snapshots) {
        JOIN episodic_stream s ON s.stream_id = c.stream_id
       WHERE c.origin = 'detected'"
   )
-  detections <- DBI::dbGetQuery(
+  detections <- episodic_db_get_query(
     con,
     "SELECT d.cluster_id, d.detector, r.run_date
        FROM episodic_detection d

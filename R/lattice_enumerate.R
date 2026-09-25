@@ -480,7 +480,7 @@ episodic_lattice_upsert_group <- function(con,
     character(1)
   )
 
-  on_file <- DBI::dbGetQuery(
+  on_file <- episodic_db_get_query(
     con,
     "SELECT stream_id, stream_key, first_seen, last_seen FROM episodic_stream"
   )
@@ -548,14 +548,14 @@ episodic_lattice_upsert_group <- function(con,
       last_seen != on_file$last_seen[known])
   for (i in which(moved)) {
     params <- list(first_seen[i], last_seen[i], stream_key[i])
-    DBI::dbExecute(
+    episodic_db_execute(
       con,
       "UPDATE episodic_stream SET first_seen = ?, last_seen = ? WHERE stream_key = ?",
       params = params
     )
   }
 
-  on_file <- DBI::dbGetQuery(
+  on_file <- episodic_db_get_query(
     con,
     "SELECT stream_id, stream_key FROM episodic_stream"
   )
