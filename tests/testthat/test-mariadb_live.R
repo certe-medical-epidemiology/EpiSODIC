@@ -266,11 +266,11 @@ test_that("a scoring closure that queries mid-reconciliation does not kill the s
   # freed memory. The session dies natively: no condition, nothing
   # tryCatch can see, nothing in the R log.
   #
-  # test-db_write_reentrancy.R holds the fix in place by reading source,
-  # because none of it is reproducible on SQLite. Here it can be held in
-  # place by running: if reconciliation ever inlines the closure again,
-  # this test does not fail, it takes the whole R process with it, which
-  # is exactly as loud as this deserves to be.
+  # test-db_reentrancy.R holds the ordering in place on SQLite, where the
+  # crash itself cannot happen. Here it is held in place by running: if a
+  # query ever evaluates its parameters after the statement is prepared
+  # again, this test does not fail, it takes the whole R process with it,
+  # which is exactly as loud as this deserves to be.
   dsn <- mariadb_fresh()
   con <- episodic_db_connect(dsn)
   on.exit(DBI::dbDisconnect(con))
@@ -351,4 +351,52 @@ test_that("a scoring closure that queries mid-reconciliation does not kill the s
     "SELECT priority_score FROM episodic_cluster"
   )$priority_score
   expect_equal(stored, 4)
+})
+
+test_that("a query parameter that queries the same connection does not kill the session", {
+  skip_on_cran()
+  # The general form of every re-entrancy crash this package has had:
+  # a parameter whose evaluation runs its own query on `con`. Passed
+  # straight to DBI, it would be evaluated after RMariaDB had prepared the
+  # outer statement, closing it under dbBind(). Through
+  # episodic_db_get_query() it is evaluated first.
+  dsn <- mariadb_fresh()
+  con <- episodic_db_connect(dsn)
+  on.exit(DBI::dbDisconnect(con))
+
+  delayedAssign(
+    "lazy_value",
+    episodic_db_get_query(con, "SELECT 7 AS a")$a[1]
+  )
+  got <- episodic_db_get_query(con, "SELECT ? AS b", params = list(lazy_value))
+  expect_equal(as.numeric(got$b), 7)
+
+  delayedAssign(
+    "lazy_id",
+    episodic_db_get_query(con, "SELECT 1 AS a")$a[1]
+  )
+  expect_equal(
+    episodic_db_execute(
+      con,
+      "UPDATE episodic_cluster SET n_cases = n_cases WHERE cluster_id = ?",
+      params = list(lazy_id)
+    ),
+    0
+  )
+})
+
+test_that("a lazily built epidemic object does not kill the session on MariaDB", {
+  skip_on_cran()
+  # The epidemic dossier's shape: the server hands it an object that is
+  # built from the database on first use, and the first use is an id
+  # bound into a read.
+  dsn <- mariadb_fresh()
+  con <- episodic_db_connect(dsn)
+  on.exit(DBI::dbDisconnect(con))
+
+  delayedAssign(
+    "lazy_id",
+    as.integer(episodic_db_get_query(con, "SELECT 999 AS id")$id[1])
+  )
+  expect_equal(episodic_app_derive_state_for_cluster(con, lazy_id), "new")
 })

@@ -30,21 +30,13 @@
 # name identifies - see inst/sql/schema.sql for the exact column
 # requirements (nullability, enums, defaults).
 
-# Every function here binds its parameters through a `params` local built
-# immediately before the `DBI` call, never as an inline
-# `params = list(...)` argument. That is deliberate and load-bearing, not
-# a style preference. An R argument is a promise: written inline, the
-# list is not evaluated at the call site but inside `dbExecute()`/
-# `dbGetQuery()`, by which point the driver has already prepared a
-# statement on `con`. If evaluating any element then queries that same
-# connection - which a caller-supplied argument can do without this file
-# knowing, and which `episodic_reconcile_stream()`'s `priority_score_fn`
-# did - RMariaDB cancels and frees the prepared statement, and `dbBind()`
-# binds into freed memory. That is a native crash: no R condition, no
-# `tryCatch`, the session simply dies, and only ever against MariaDB
-# (RSQLite permits concurrent results on one connection, so the same code
-# is harmless there). Building the list first means every element is a
-# plain value before any statement exists.
+# Parameters are built into a `params` local and passed as
+# `params = params`. Every query goes through `episodic_db_get_query()` or
+# `episodic_db_execute()` (`R/db_query.R`), which evaluate their
+# arguments before the driver prepares anything, so a parameter whose
+# evaluation queries the same connection cannot interleave with the
+# statement it belongs to; that file says what interleaving costs on
+# MariaDB.
 
 #' @keywords internal
 #' @noRd
@@ -94,7 +86,7 @@ episodic_db_institution_activity_upsert <- function(con,
   period_start <- episodic_sql_date(period_start)
   period_end <- episodic_sql_date(period_end)
   params <- list(institution_id, period_start)
-  existing <- DBI::dbGetQuery(
+  existing <- episodic_db_get_query(
     con,
     "SELECT 1 FROM episodic_institution_activity WHERE institution_id = ? AND period_start = ?",
     params = params
@@ -109,7 +101,7 @@ episodic_db_institution_activity_upsert <- function(con,
       institution_id,
       period_start
     )
-    DBI::dbExecute(
+    episodic_db_execute(
       con,
       "UPDATE episodic_institution_activity SET period_end = ?, patient_days = ?, admissions = ?,
         n_beds = ?, source = ? WHERE institution_id = ? AND period_start = ?",
@@ -125,7 +117,7 @@ episodic_db_institution_activity_upsert <- function(con,
       n_beds,
       source
     )
-    DBI::dbExecute(
+    episodic_db_execute(
       con,
       "INSERT INTO episodic_institution_activity
         (institution_id, period_start, period_end, patient_days, admissions, n_beds, source)
@@ -155,7 +147,7 @@ episodic_db_stream_upsert <- function(con,
     first_seen <- min(existing$first_seen, observed_date)
     last_seen <- max(existing$last_seen, observed_date)
     params <- list(first_seen, last_seen, stream_key)
-    DBI::dbExecute(
+    episodic_db_execute(
       con,
       "UPDATE episodic_stream SET first_seen = ?, last_seen = ? WHERE stream_key = ?",
       params = params
@@ -176,7 +168,7 @@ episodic_db_stream_upsert <- function(con,
     observed_date,
     episodic_now()
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_stream
       (stream_key, level, pathogen, care_line, region_code, institution_id,
@@ -286,7 +278,7 @@ episodic_db_write_many <- function(con,
         k <- k + 1L
       }
     }
-    DBI::dbExecute(con, sql, params = params)
+    episodic_db_execute(con, sql, params = params)
   }
   invisible(n)
 }
@@ -308,7 +300,7 @@ episodic_db_existing_source_keys <- function(con, keys) {
   chunks <- split(keys, ceiling(seq_along(keys) / episodic_db_chunk_size))
   found <- lapply(chunks, function(chunk) {
     placeholders <- paste(rep("?", length(chunk)), collapse = ", ")
-    DBI::dbGetQuery(
+    episodic_db_get_query(
       con,
       sprintf(
         "SELECT source_key FROM episodic_case WHERE source_key IN (%s)",
@@ -388,14 +380,14 @@ episodic_db_stream_trend_upsert <- function(con,
                                             expected = NA,
                                             upperbound = NA) {
   params <- list(stream_id, week_start)
-  existing <- DBI::dbGetQuery(
+  existing <- episodic_db_get_query(
     con,
     "SELECT 1 FROM episodic_stream_trend WHERE stream_id = ? AND week_start = ?",
     params = params
   )
   if (nrow(existing) > 0) {
     params <- list(n_cases, expected, upperbound, stream_id, week_start)
-    DBI::dbExecute(
+    episodic_db_execute(
       con,
       "UPDATE episodic_stream_trend SET n_cases = ?, expected = ?, upperbound = ?
        WHERE stream_id = ? AND week_start = ?",
@@ -403,7 +395,7 @@ episodic_db_stream_trend_upsert <- function(con,
     )
   } else {
     params <- list(stream_id, week_start, n_cases, expected, upperbound)
-    DBI::dbExecute(
+    episodic_db_execute(
       con,
       "INSERT INTO episodic_stream_trend (stream_id, week_start, n_cases, expected, upperbound)
        VALUES (?, ?, ?, ?, ?)",
@@ -439,7 +431,7 @@ episodic_db_detection_insert <- function(con,
     params_json,
     episodic_now()
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_detection
       (run_id, stream_id, cluster_id, detector, first_day, last_day, n_cases, expected,
@@ -454,7 +446,7 @@ episodic_db_detection_insert <- function(con,
 #' @noRd
 episodic_db_detection_set_cluster <- function(con, detection_id, cluster_id) {
   params <- list(cluster_id, detection_id)
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "UPDATE episodic_detection SET cluster_id = ? WHERE detection_id = ?",
     params = params
@@ -501,7 +493,7 @@ episodic_db_cluster_insert <- function(con,
     if (isTRUE(opened_in_backfill)) 1L else 0L,
     scale
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_cluster
       (stream_id, first_day, last_day, n_cases, expected, excess, ratio, priority_score,
@@ -540,7 +532,7 @@ episodic_db_cluster_update <- function(con,
       run_id,
       cluster_id
     )
-    DBI::dbExecute(
+    episodic_db_execute(
       con,
       "UPDATE episodic_cluster SET first_day = ?, last_day = ?, n_cases = ?, expected = ?,
         excess = ?, ratio = ?, priority_score = ?, detector_agreement = ?,
@@ -561,7 +553,7 @@ episodic_db_cluster_update <- function(con,
       as.integer(changed_since_assessment),
       cluster_id
     )
-    DBI::dbExecute(
+    episodic_db_execute(
       con,
       "UPDATE episodic_cluster SET first_day = ?, last_day = ?, n_cases = ?, expected = ?,
         excess = ?, ratio = ?, priority_score = ?, detector_agreement = ?,
@@ -577,7 +569,7 @@ episodic_db_cluster_update <- function(con,
 #' @noRd
 episodic_db_cluster_increment_runs_since_detected <- function(con, cluster_id) {
   params <- list(cluster_id)
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "UPDATE episodic_cluster SET runs_since_detected = runs_since_detected + 1 WHERE cluster_id = ?",
     params = params
@@ -603,7 +595,7 @@ episodic_db_cluster_set_suppressed_by <- function(con,
     if (is.na(suppressed_by)) NA_integer_ else as.integer(suppressed_by),
     cluster_id
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "UPDATE episodic_cluster SET suppressed_by = ? WHERE cluster_id = ?",
     params = params
@@ -615,7 +607,7 @@ episodic_db_cluster_set_suppressed_by <- function(con,
 #' @noRd
 episodic_db_cluster_set_merged_into <- function(con, cluster_id, merged_into) {
   params <- list(merged_into, cluster_id)
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "UPDATE episodic_cluster SET merged_into = ? WHERE cluster_id = ?",
     params = params
@@ -667,7 +659,7 @@ episodic_db_run_start <- function(con,
     episodic_sql_date(run_date),
     attempt_no
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_detection_run (host, account, started_at, run_date, status, attempt_no)
      VALUES (?, ?, ?, ?, 'running', ?)",
@@ -724,7 +716,7 @@ episodic_db_run_finish <- function(con,
     if (isTRUE(is_backfill)) 1L else 0L,
     run_id
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "UPDATE episodic_detection_run SET finished_at = ?, status = ?, n_streams = ?,
       n_detections = ?, n_signals_new = ?, n_signals_updated = ?,
@@ -781,7 +773,7 @@ episodic_db_report_subscription_send_insert <- function(con,
     error_text,
     as.integer(isTRUE(final))
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_report_subscription_send
       (cluster_id, subscription_event_id, run_id, sent_at, report_id, recipients, status, error_text, final)
@@ -856,7 +848,7 @@ episodic_db_epidemic_season_insert <- function(con,
     intensity_very_high,
     seasons_used
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_epidemic_season
       (cluster_id, season_label, anchor_week, onset_week_start,
@@ -886,7 +878,7 @@ episodic_db_epidemic_season_update_ended <- function(con,
     ended_reason,
     cluster_id
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "UPDATE episodic_epidemic_season
        SET ended_week_start = ?, ended_reason = ?

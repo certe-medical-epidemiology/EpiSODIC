@@ -75,7 +75,7 @@ episodic_suppress_lattice <- function(con, config) {
   # not one per suppressed cluster - the set is exactly what the WHERE
   # clause selects, so there is nothing for a loop to add.
   if (any(!is.na(clusters$suppressed_by))) {
-    DBI::dbExecute(
+    episodic_db_execute(
       con,
       "UPDATE episodic_cluster SET suppressed_by = NULL WHERE suppressed_by IS NOT NULL"
     )

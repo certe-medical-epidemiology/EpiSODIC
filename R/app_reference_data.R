@@ -235,7 +235,7 @@ episodic_app_reference_pc_coverage <- function(con) {
     return(NULL)
   }
   pc <- tryCatch(
-    DBI::dbGetQuery(
+    episodic_db_get_query(
       con,
       "SELECT DISTINCT pc FROM episodic_case WHERE pc IS NOT NULL"
     )$pc,

@@ -26,14 +26,14 @@
 #' @keywords internal
 #' @noRd
 episodic_db_pathogen_config <- function(con) {
-  DBI::dbGetQuery(con, "SELECT * FROM episodic_pathogen_config")
+  episodic_db_get_query(con, "SELECT * FROM episodic_pathogen_config")
 }
 
 #' @param pathogen A single raw pathogen string.
 #' @keywords internal
 #' @noRd
 episodic_db_pathogen_config_get <- function(con, pathogen) {
-  res <- DBI::dbGetQuery(
+  res <- episodic_db_get_query(
     con,
     "SELECT * FROM episodic_pathogen_config WHERE pathogen = ?",
     params = list(pathogen)
@@ -49,14 +49,14 @@ episodic_db_streams <- function(con, active_only = TRUE) {
   if (active_only) {
     sql <- paste(sql, "WHERE is_active = 1")
   }
-  DBI::dbGetQuery(con, sql)
+  episodic_db_get_query(con, sql)
 }
 
 #' @param stream_key A single `stream_key`.
 #' @keywords internal
 #' @noRd
 episodic_db_stream_get <- function(con, stream_key) {
-  res <- DBI::dbGetQuery(
+  res <- episodic_db_get_query(
     con,
     "SELECT * FROM episodic_stream WHERE stream_key = ?",
     params = list(stream_key)
@@ -67,13 +67,13 @@ episodic_db_stream_get <- function(con, stream_key) {
 #' @keywords internal
 #' @noRd
 episodic_db_institutions <- function(con) {
-  DBI::dbGetQuery(con, "SELECT * FROM episodic_institution")
+  episodic_db_get_query(con, "SELECT * FROM episodic_institution")
 }
 
 #' @keywords internal
 #' @noRd
 episodic_db_cases <- function(con) {
-  DBI::dbGetQuery(con, "SELECT * FROM episodic_case")
+  episodic_db_get_query(con, "SELECT * FROM episodic_case")
 }
 
 #' Every case of one pathogen, optionally bounded
@@ -107,7 +107,7 @@ episodic_db_cases_for_pathogen <- function(con,
     where <- paste(where, "AND sample_date <= ?")
     params <- c(params, list(episodic_sql_date(to)))
   }
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     sprintf(
       "SELECT %s FROM episodic_case WHERE %s ORDER BY sample_date",
@@ -151,7 +151,7 @@ episodic_db_last_case_dates <- function(con, patient_keys, pathogens) {
 
   patient_placeholders <- paste(rep("?", length(patient_keys)), collapse = ", ")
   pathogen_placeholders <- paste(rep("?", length(pathogens)), collapse = ", ")
-  res <- DBI::dbGetQuery(
+  res <- episodic_db_get_query(
     con,
     sprintf(
       "SELECT patient_key, pathogen, MAX(sample_date) AS last_date
@@ -197,7 +197,7 @@ episodic_db_clusters <- function(con,
   if (length(where) > 0) {
     sql <- paste(sql, "WHERE", paste(where, collapse = " AND "))
   }
-  DBI::dbGetQuery(con, sql)
+  episodic_db_get_query(con, sql)
 }
 
 #' Everything one cluster suppressed, for its own dossier
@@ -209,7 +209,7 @@ episodic_db_clusters <- function(con,
 #' @keywords internal
 #' @noRd
 episodic_db_clusters_suppressed_by <- function(con, cluster_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT c.*, s.pathogen, s.level
      FROM episodic_cluster c
@@ -240,7 +240,7 @@ episodic_db_clusters_suppressed_by <- function(con, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_clusters_linked_to <- function(con, cluster_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT c.*, s.pathogen, s.level, COUNT(*) AS shared_cases
      FROM episodic_cluster_case mine
@@ -286,7 +286,7 @@ episodic_db_clusters_linked_to <- function(con, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_epidemics_during_for_outbreak <- function(con, cluster_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT c.cluster_id, c.first_day, c.last_day, c.n_cases, c.scale,
             s.pathogen, s.level
@@ -320,7 +320,7 @@ episodic_db_clusters_for_suppression <- function(con) {
   # case data could suppress every real detected cluster that happened to
   # overlap it in time, and could itself be hidden behind one it shares
   # nothing with.
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT c.*, s.pathogen, s.level
      FROM episodic_cluster c
@@ -342,7 +342,7 @@ episodic_db_clusters_for_stream <- function(con, stream_id) {
   # a stream's clusters (e.g. for display) wants every origin and should
   # not call this function.
   params <- list(stream_id)
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT * FROM episodic_cluster
       WHERE stream_id = ? AND merged_into IS NULL AND origin = 'detected'",
@@ -359,7 +359,7 @@ episodic_db_clusters_for_streams <- function(con, stream_ids) {
     return(episodic_db_clusters_for_stream(con, -1L))
   }
   placeholders <- paste(rep("?", length(stream_ids)), collapse = ", ")
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     sprintf(
       "SELECT * FROM episodic_cluster
@@ -407,7 +407,7 @@ episodic_db_cases_for_stream_id <- function(con,
                                             last_day = NULL,
                                             geography = episodic_geography_config()) {
   params <- list(stream_id)
-  stream <- DBI::dbGetQuery(
+  stream <- episodic_db_get_query(
     con,
     "SELECT pathogen, institution_id, ward, region_code, level
      FROM episodic_stream WHERE stream_id = ?",
@@ -415,7 +415,7 @@ episodic_db_cases_for_stream_id <- function(con,
   )
   select <- paste(unique(c(columns, "ward", "pc")), collapse = ", ")
   if (nrow(stream) == 0) {
-    return(DBI::dbGetQuery(
+    return(episodic_db_get_query(
       con,
       sprintf("SELECT %s FROM episodic_case WHERE 0 = 1", select)
     ))
@@ -456,7 +456,7 @@ episodic_db_cases_for_stream_id <- function(con,
     where <- paste(where, "AND sample_date <= ?")
     params <- c(params, list(episodic_sql_date(last_day)))
   }
-  cases <- DBI::dbGetQuery(
+  cases <- episodic_db_get_query(
     con,
     sprintf("SELECT %s FROM episodic_case WHERE %s", select, where),
     params = params
@@ -523,7 +523,7 @@ episodic_stream_area_pc_prefix <- function(stream, geography) {
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_cases <- function(con, cluster_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT c.* FROM episodic_case c
      INNER JOIN episodic_cluster_case cc ON cc.case_id = c.case_id
@@ -542,7 +542,7 @@ episodic_db_cluster_cases <- function(con, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_manual_cases <- function(con, cluster_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT sample_date, pc, sex, age
      FROM episodic_cluster_manual_case
@@ -560,7 +560,7 @@ episodic_db_cluster_manual_cases <- function(con, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_note_current <- function(con, cluster_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT note_id, user_id, created_at, note_text
      FROM episodic_cluster_note
@@ -586,7 +586,7 @@ episodic_db_cluster_note_current <- function(con, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_note_history <- function(con, cluster_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT n.note_id, n.user_id, n.created_at, n.note_text, u.full_name
        FROM episodic_cluster_note n
@@ -629,7 +629,7 @@ episodic_db_case_days_batch <- function(con, cluster_ids) {
     return(empty)
   }
   placeholders <- paste(rep("?", length(cluster_ids)), collapse = ", ")
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     sprintf(
       "SELECT cc.cluster_id, COUNT(DISTINCT c.sample_date) AS case_days
@@ -673,7 +673,7 @@ episodic_db_attach_case_days <- function(con, clusters) {
 #' @keywords internal
 #' @noRd
 episodic_db_assessment_events <- function(con, cluster_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT * FROM episodic_assessment_event WHERE cluster_id = ? ORDER BY created_at, event_id",
     params = list(cluster_id)
@@ -683,7 +683,7 @@ episodic_db_assessment_events <- function(con, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_states <- function(con, cluster_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT * FROM episodic_cluster_state WHERE cluster_id = ? ORDER BY entered_at, state_id",
     params = list(cluster_id)
@@ -707,7 +707,7 @@ episodic_db_assessment_events_batch <- function(con, cluster_ids) {
     return(episodic_db_assessment_events(con, -1L)[0, ])
   }
   placeholders <- paste(rep("?", length(cluster_ids)), collapse = ", ")
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     sprintf(
       "SELECT * FROM episodic_assessment_event WHERE cluster_id IN (%s)
@@ -731,7 +731,7 @@ episodic_db_cluster_states_batch <- function(con, cluster_ids) {
     return(episodic_db_cluster_states(con, -1L)[0, ])
   }
   placeholders <- paste(rep("?", length(cluster_ids)), collapse = ", ")
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     sprintf(
       "SELECT * FROM episodic_cluster_state WHERE cluster_id IN (%s)
@@ -755,7 +755,7 @@ episodic_db_cluster_states_batch <- function(con, cluster_ids) {
 #' @noRd
 episodic_db_muted_stream_ids <- function(con, as_of) {
   params <- list(episodic_sql_date(as_of), episodic_sql_date(as_of))
-  res <- DBI::dbGetQuery(
+  res <- episodic_db_get_query(
     con,
     "SELECT DISTINCT stream_id FROM episodic_stream_mute
       WHERE muted_from <= ? AND muted_until >= ?",
@@ -768,7 +768,7 @@ episodic_db_muted_stream_ids <- function(con, as_of) {
 #' @keywords internal
 #' @noRd
 episodic_db_user_by_username <- function(con, username) {
-  res <- DBI::dbGetQuery(
+  res <- episodic_db_get_query(
     con,
     "SELECT * FROM episodic_app_user WHERE username = ?",
     params = list(username)
@@ -780,7 +780,7 @@ episodic_db_user_by_username <- function(con, username) {
 #' @keywords internal
 #' @noRd
 episodic_db_user_by_id <- function(con, user_id) {
-  res <- DBI::dbGetQuery(
+  res <- episodic_db_get_query(
     con,
     "SELECT * FROM episodic_app_user WHERE user_id = ?",
     params = list(user_id)
@@ -791,7 +791,7 @@ episodic_db_user_by_id <- function(con, user_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_app_user_events <- function(con, user_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT * FROM episodic_app_user_event WHERE user_id = ? ORDER BY created_at, event_id",
     params = list(user_id)
@@ -802,7 +802,7 @@ episodic_db_app_user_events <- function(con, user_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_app_users <- function(con) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT * FROM episodic_app_user ORDER BY username"
   )
@@ -823,7 +823,7 @@ episodic_db_app_users <- function(con) {
 #' @keywords internal
 #' @noRd
 episodic_db_app_login_failures <- function(con, limit = 200) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT * FROM episodic_app_login_failure
       ORDER BY attempted_at DESC, failure_id DESC
@@ -835,7 +835,7 @@ episodic_db_app_login_failures <- function(con, limit = 200) {
 #' @keywords internal
 #' @noRd
 episodic_db_app_config_latest <- function(con, section) {
-  res <- DBI::dbGetQuery(
+  res <- episodic_db_get_query(
     con,
     "SELECT * FROM episodic_app_config_event
       WHERE section = ?
@@ -857,7 +857,7 @@ episodic_db_app_config_latest <- function(con, section) {
 #' @noRd
 episodic_db_app_config_events <- function(con, section = NULL, limit = 200) {
   if (is.null(section)) {
-    DBI::dbGetQuery(
+    episodic_db_get_query(
       con,
       "SELECT e.*, u.full_name AS actor_full_name
         FROM episodic_app_config_event e
@@ -867,7 +867,7 @@ episodic_db_app_config_events <- function(con, section = NULL, limit = 200) {
       params = list(as.integer(limit))
     )
   } else {
-    DBI::dbGetQuery(
+    episodic_db_get_query(
       con,
       "SELECT e.*, u.full_name AS actor_full_name
         FROM episodic_app_config_event e
@@ -889,7 +889,7 @@ episodic_db_runs <- function(con, limit = 200) {
   # "Incorrect arguments to mysqld_stmt_execute", and `limit = 200` is a
   # double in R. SQLite accepts it, so the Activity screen worked
   # everywhere except on the one dialect nothing was testing.
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT * FROM episodic_detection_run ORDER BY run_id DESC LIMIT ?",
     params = list(as.integer(limit))
@@ -903,7 +903,7 @@ episodic_db_runs <- function(con, limit = 200) {
 #' @keywords internal
 #' @noRd
 episodic_db_run <- function(con, run_id) {
-  res <- DBI::dbGetQuery(
+  res <- episodic_db_get_query(
     con,
     "SELECT * FROM episodic_detection_run WHERE run_id = ?",
     params = list(run_id)
@@ -933,7 +933,7 @@ episodic_db_run_autoclosed_count <- function(con, run) {
   } else {
     run$finished_at
   }
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT COUNT(*) n FROM episodic_cluster_state
      WHERE `trigger` = 'system' AND state = 'closed'
@@ -966,7 +966,7 @@ episodic_db_clusters_autoclosed_count <- function(con, cluster_ids) {
     return(0L)
   }
   placeholders <- paste(rep("?", length(cluster_ids)), collapse = ", ")
-  res <- DBI::dbGetQuery(
+  res <- episodic_db_get_query(
     con,
     paste0(
       "SELECT COUNT(DISTINCT cluster_id) AS n FROM episodic_cluster_state
@@ -992,13 +992,13 @@ episodic_db_latest_run <- function(con, status = NULL) {
   if (!is.null(status)) {
     placeholders <- paste(rep("?", length(status)), collapse = ", ")
     sql <- paste0(sql, " WHERE status IN (", placeholders, ")")
-    res <- DBI::dbGetQuery(
+    res <- episodic_db_get_query(
       con,
       paste(sql, "ORDER BY run_id DESC LIMIT 1"),
       params = as.list(status)
     )
   } else {
-    res <- DBI::dbGetQuery(con, paste(sql, "ORDER BY run_id DESC LIMIT 1"))
+    res <- episodic_db_get_query(con, paste(sql, "ORDER BY run_id DESC LIMIT 1"))
   }
   if (nrow(res) == 0) NULL else res[1, ]
 }
@@ -1006,7 +1006,7 @@ episodic_db_latest_run <- function(con, status = NULL) {
 #' @keywords internal
 #' @noRd
 episodic_db_stream_trend <- function(con, stream_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT * FROM episodic_stream_trend WHERE stream_id = ? ORDER BY week_start",
     params = list(stream_id)
@@ -1016,7 +1016,7 @@ episodic_db_stream_trend <- function(con, stream_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_denominator_for_pathogen <- function(con, pathogen) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT * FROM episodic_denominator WHERE pathogen = ? ORDER BY sample_date",
     params = list(pathogen)
@@ -1026,7 +1026,7 @@ episodic_db_denominator_for_pathogen <- function(con, pathogen) {
 #' @keywords internal
 #' @noRd
 episodic_db_reports_for_cluster <- function(con, cluster_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT * FROM episodic_report_render WHERE cluster_id = ? ORDER BY version_no, report_id",
     params = list(cluster_id)
@@ -1046,7 +1046,7 @@ episodic_db_reports_for_cluster <- function(con, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_report_subscription_events <- function(con, cluster_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT * FROM episodic_report_subscription_event
       WHERE cluster_id = ? ORDER BY created_at, event_id",
@@ -1069,7 +1069,7 @@ episodic_db_report_subscription_events <- function(con, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_report_subscription_events_all <- function(con) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT * FROM episodic_report_subscription_event
       ORDER BY cluster_id, created_at, event_id"
@@ -1083,7 +1083,7 @@ episodic_db_report_subscription_events_all <- function(con) {
 #' @keywords internal
 #' @noRd
 episodic_db_report_subscription_sends <- function(con, cluster_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT * FROM episodic_report_subscription_send
       WHERE cluster_id = ? ORDER BY sent_at DESC, send_id DESC",
@@ -1102,7 +1102,7 @@ episodic_db_report_subscription_sends <- function(con, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_report_subscription_sends_all <- function(con) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT * FROM episodic_report_subscription_send
       ORDER BY cluster_id, sent_at, send_id"
@@ -1113,7 +1113,7 @@ episodic_db_report_subscription_sends_all <- function(con) {
 #' @keywords internal
 #' @noRd
 episodic_db_institution_activity <- function(con, institution_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT * FROM episodic_institution_activity WHERE institution_id = ? ORDER BY period_start",
     params = list(institution_id)
@@ -1134,7 +1134,7 @@ episodic_db_institution_activity <- function(con, institution_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_label <- function(con, cluster_id) {
-  found <- DBI::dbGetQuery(
+  found <- episodic_db_get_query(
     con,
     "SELECT s.pathogen AS pathogen, s.level AS level
        FROM episodic_cluster c
@@ -1166,7 +1166,7 @@ episodic_db_cluster_label <- function(con, cluster_id) {
 #' @noRd
 episodic_db_instance_counts <- function(con) {
   one <- function(sql) {
-    as.integer(DBI::dbGetQuery(con, sql)$n[1])
+    as.integer(episodic_db_get_query(con, sql)$n[1])
   }
   list(
     streams = one("SELECT COUNT(*) AS n FROM episodic_stream WHERE is_active = 1"),
@@ -1185,7 +1185,7 @@ episodic_db_instance_counts <- function(con) {
 #' @keywords internal
 #' @noRd
 episodic_db_epidemic_season <- function(con, cluster_id) {
-  res <- DBI::dbGetQuery(
+  res <- episodic_db_get_query(
     con,
     "SELECT * FROM episodic_epidemic_season WHERE cluster_id = ?",
     params = list(cluster_id)
@@ -1205,7 +1205,7 @@ episodic_db_epidemic_season <- function(con, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_open_seasonal_epidemics <- function(con) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day,
             c.scale, c.origin,
@@ -1228,7 +1228,7 @@ episodic_db_open_seasonal_epidemics <- function(con) {
 #' @keywords internal
 #' @noRd
 episodic_db_open_epidemics <- function(con) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day,
             c.scale,
@@ -1249,7 +1249,7 @@ episodic_db_open_epidemics <- function(con) {
 #' @keywords internal
 #' @noRd
 episodic_db_open_outbreaks <- function(con) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day,
             c.scale,
@@ -1270,7 +1270,7 @@ episodic_db_open_outbreaks <- function(con) {
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_links <- function(con, cluster_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT * FROM episodic_cluster_link
       WHERE outbreak_cluster_id = ? OR epidemic_cluster_id = ?",
@@ -1287,7 +1287,7 @@ episodic_db_cluster_links <- function(con, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_outbreaks_during_epidemic <- function(con, epidemic_cluster_id) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day,
             c.n_cases, c.priority_score,
@@ -1316,7 +1316,7 @@ episodic_db_epidemic_contributing_institutions <- function(con,
                                                            pathogen,
                                                            from,
                                                            to) {
-  DBI::dbGetQuery(
+  episodic_db_get_query(
     con,
     "SELECT c.institution_id, i.display_name, COUNT(*) AS n_cases
        FROM episodic_case c

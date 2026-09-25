@@ -258,9 +258,9 @@ episodic_db_create <- function(path, overwrite = FALSE) {
         )
       }
 
-      DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 0")
+      episodic_db_execute(con, "SET FOREIGN_KEY_CHECKS = 0")
       on.exit(
-        DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 1"),
+        episodic_db_execute(con, "SET FOREIGN_KEY_CHECKS = 1"),
         add = TRUE,
         after = FALSE
       )
@@ -336,15 +336,15 @@ episodic_db_create <- function(path, overwrite = FALSE) {
 #' @noRd
 episodic_db_apply_schema <- function(con, dialect) {
   if (dialect == "mariadb") {
-    DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 0")
+    episodic_db_execute(con, "SET FOREIGN_KEY_CHECKS = 0")
     on.exit(
-      DBI::dbExecute(con, "SET FOREIGN_KEY_CHECKS = 1"),
+      episodic_db_execute(con, "SET FOREIGN_KEY_CHECKS = 1"),
       add = TRUE,
       after = FALSE
     )
   }
   for (statement in episodic_db_schema_statements(dialect)) {
-    DBI::dbExecute(con, statement)
+    episodic_db_execute(con, statement)
   }
   invisible(TRUE)
 }
@@ -363,7 +363,7 @@ episodic_schema_version <- 7L
 #' @keywords internal
 #' @noRd
 episodic_db_schema_version_stamp <- function(con, version) {
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_schema_version (version, applied_at, applied_by)
      VALUES (?, ?, ?)",
@@ -391,7 +391,7 @@ episodic_db_schema_version <- function(con) {
   if (!DBI::dbExistsTable(con, "episodic_schema_version")) {
     return(NA_integer_)
   }
-  versions <- DBI::dbGetQuery(
+  versions <- episodic_db_get_query(
     con,
     "SELECT version FROM episodic_schema_version"
   )$version
@@ -440,7 +440,7 @@ episodic_db_migrations <- function() {
         dialect,
         "episodic_app_login_failure"
       )) {
-        DBI::dbExecute(con, statement)
+        episodic_db_execute(con, statement)
       }
       invisible(NULL)
     },
@@ -457,7 +457,7 @@ episodic_db_migrations <- function() {
     # that carries duplicates is refused here, by name, with the two
     # facts an operator needs to reconcile them by hand.
     "3" = function(con, dialect) {
-      duplicates <- DBI::dbGetQuery(
+      duplicates <- episodic_db_get_query(
         con,
         "SELECT cluster_id, version_no, COUNT(*) AS n
            FROM episodic_report_render
@@ -494,14 +494,14 @@ episodic_db_migrations <- function() {
           dialect,
           "episodic_report_version_claim"
         )) {
-          DBI::dbExecute(con, statement)
+          episodic_db_execute(con, statement)
         }
       }
       # Additive, and idempotent by the NOT EXISTS: every version
       # already rendered is a version already taken, and the register
       # has to say so or the first claim after a migration hands out a
       # number a report is using.
-      DBI::dbExecute(
+      episodic_db_execute(
         con,
         "INSERT INTO episodic_report_version_claim
            (cluster_id, version_no, claimed_at, claimed_by)
@@ -520,7 +520,7 @@ episodic_db_migrations <- function() {
         "idx_episodic_report_render_version",
         "episodic_report_render"
       )) {
-        DBI::dbExecute(
+        episodic_db_execute(
           con,
           episodic_db_schema_index_statement(
             dialect,
@@ -556,7 +556,7 @@ episodic_db_migrations <- function() {
         if (episodic_db_column_exists(con, dialect, table, column)) {
           return(invisible(NULL))
         }
-        DBI::dbExecute(
+        episodic_db_execute(
           con,
           paste0("ALTER TABLE ", table, " ADD COLUMN ", column, " ", definition)
         )
@@ -588,7 +588,7 @@ episodic_db_migrations <- function() {
         if (episodic_db_index_exists(con, dialect, index, "episodic_case")) {
           next
         }
-        DBI::dbExecute(
+        episodic_db_execute(
           con,
           episodic_db_schema_index_statement(dialect, index)
         )
@@ -610,7 +610,7 @@ episodic_db_migrations <- function() {
         return(invisible(NULL))
       }
       if (dialect == "mariadb") {
-        DBI::dbExecute(
+        episodic_db_execute(
           con,
           paste0(
             "ALTER TABLE episodic_pathogen_config ADD COLUMN ",
@@ -618,7 +618,7 @@ episodic_db_migrations <- function() {
           )
         )
       } else {
-        DBI::dbExecute(
+        episodic_db_execute(
           con,
           paste0(
             "ALTER TABLE episodic_pathogen_config ADD COLUMN ",
@@ -634,7 +634,7 @@ episodic_db_migrations <- function() {
           # SQLite cannot DROP COLUMN on older versions, but the column
           # is harmless once mem_mode exists: no code reads it.
         } else {
-          DBI::dbExecute(
+          episodic_db_execute(
             con,
             "ALTER TABLE episodic_pathogen_config DROP COLUMN mem_applicable"
           )
@@ -652,7 +652,7 @@ episodic_db_migrations <- function() {
         con, dialect, "episodic_cluster", "scale"
       )) {
         if (dialect == "mariadb") {
-          DBI::dbExecute(
+          episodic_db_execute(
             con,
             paste0(
               "ALTER TABLE episodic_cluster ADD COLUMN ",
@@ -660,7 +660,7 @@ episodic_db_migrations <- function() {
             )
           )
         } else {
-          DBI::dbExecute(
+          episodic_db_execute(
             con,
             paste0(
               "ALTER TABLE episodic_cluster ADD COLUMN ",
@@ -680,7 +680,7 @@ episodic_db_migrations <- function() {
         }
         if (length(epidemic_levels) > 0) {
           placeholders <- paste(rep("?", length(epidemic_levels)), collapse = ", ")
-          DBI::dbExecute(
+          episodic_db_execute(
             con,
             paste0(
               "UPDATE episodic_cluster SET scale = 'epidemic' ",
@@ -699,7 +699,7 @@ episodic_db_migrations <- function() {
           dialect,
           "episodic_epidemic_season"
         )) {
-          DBI::dbExecute(con, statement)
+          episodic_db_execute(con, statement)
         }
       }
 
@@ -708,7 +708,7 @@ episodic_db_migrations <- function() {
           dialect,
           "episodic_cluster_link"
         )) {
-          DBI::dbExecute(con, statement)
+          episodic_db_execute(con, statement)
         }
       }
 
@@ -717,7 +717,7 @@ episodic_db_migrations <- function() {
       # CHECK constraint, so the table is recreated with the extended
       # one (create-copy-drop-rename). MariaDB can MODIFY in place.
       if (dialect == "mariadb") {
-        DBI::dbExecute(
+        episodic_db_execute(
           con,
           paste0(
             "ALTER TABLE episodic_assessment_event MODIFY COLUMN ",
@@ -728,7 +728,7 @@ episodic_db_migrations <- function() {
           )
         )
       } else {
-        DBI::dbExecute(con, paste0(
+        episodic_db_execute(con, paste0(
           "CREATE TABLE episodic_assessment_event_new (\n",
           "  event_id       INTEGER PRIMARY KEY AUTOINCREMENT,\n",
           "  cluster_id     INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),\n",
@@ -746,16 +746,16 @@ episodic_db_migrations <- function() {
           "  supersedes     INTEGER REFERENCES episodic_assessment_event_new(event_id)\n",
           ")"
         ))
-        DBI::dbExecute(con, paste0(
+        episodic_db_execute(con, paste0(
           "INSERT INTO episodic_assessment_event_new ",
           "SELECT * FROM episodic_assessment_event"
         ))
-        DBI::dbExecute(con, "DROP TABLE episodic_assessment_event")
-        DBI::dbExecute(con, paste0(
+        episodic_db_execute(con, "DROP TABLE episodic_assessment_event")
+        episodic_db_execute(con, paste0(
           "ALTER TABLE episodic_assessment_event_new ",
           "RENAME TO episodic_assessment_event"
         ))
-        DBI::dbExecute(con, paste0(
+        episodic_db_execute(con, paste0(
           "CREATE INDEX idx_episodic_assessment_event_cluster ",
           "ON episodic_assessment_event(cluster_id)"
         ))
@@ -782,13 +782,13 @@ episodic_db_migrations <- function() {
 #' @noRd
 episodic_db_column_exists <- function(con, dialect, table, column) {
   if (dialect == "sqlite") {
-    found <- DBI::dbGetQuery(
+    found <- episodic_db_get_query(
       con,
       paste0("PRAGMA table_info(", table, ")")
     )
     return(column %in% found$name)
   }
-  found <- DBI::dbGetQuery(
+  found <- episodic_db_get_query(
     con,
     "SELECT COLUMN_NAME FROM information_schema.COLUMNS
       WHERE TABLE_SCHEMA = DATABASE()
@@ -816,13 +816,13 @@ episodic_db_column_exists <- function(con, dialect, table, column) {
 #' @noRd
 episodic_db_index_exists <- function(con, dialect, index, table) {
   if (dialect == "sqlite") {
-    found <- DBI::dbGetQuery(
+    found <- episodic_db_get_query(
       con,
       "SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?",
       params = list(index)
     )
   } else {
-    found <- DBI::dbGetQuery(
+    found <- episodic_db_get_query(
       con,
       "SELECT INDEX_NAME FROM information_schema.STATISTICS
         WHERE TABLE_SCHEMA = DATABASE()
@@ -970,7 +970,7 @@ episodic_db_migrate <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA))
     # that rather than refusing it or trying to migrate it from nowhere.
     if (!DBI::dbExistsTable(con, "episodic_schema_version")) {
       for (statement in episodic_db_schema_version_statements(dialect)) {
-        DBI::dbExecute(con, statement)
+        episodic_db_execute(con, statement)
       }
     }
     episodic_db_schema_version_stamp(con, 1L)
@@ -1113,7 +1113,7 @@ episodic_db_truncate <- function(path) {
     tables,
     function(tbl) {
       tryCatch(
-        as.numeric(DBI::dbGetQuery(
+        as.numeric(episodic_db_get_query(
           con,
           paste0("SELECT COUNT(*) AS n FROM ", tbl)
         )$n[1]),
@@ -1163,7 +1163,7 @@ episodic_db_truncate <- function(path) {
     # toggle; the pragma is connection-wide.
     "PRAGMA foreign_keys = ON"
   }
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     if (dialect == "mariadb") {
       "SET FOREIGN_KEY_CHECKS = 0"
@@ -1181,7 +1181,7 @@ episodic_db_truncate <- function(path) {
   # not a catchable R error but a C++ bad_weak_ptr abort. `after = FALSE`
   # prepends instead, so this runs before the disconnect even then.
   on.exit(
-    tryCatch(DBI::dbExecute(con, restore_fk), error = function(e) NULL),
+    tryCatch(episodic_db_execute(con, restore_fk), error = function(e) NULL),
     add = TRUE,
     after = FALSE
   )
@@ -1189,9 +1189,9 @@ episodic_db_truncate <- function(path) {
   truncated <- character(0)
   for (tbl in tables) {
     if (dialect == "mariadb") {
-      DBI::dbExecute(con, paste0("TRUNCATE TABLE ", tbl))
+      episodic_db_execute(con, paste0("TRUNCATE TABLE ", tbl))
     } else {
-      DBI::dbExecute(con, paste0("DELETE FROM ", tbl))
+      episodic_db_execute(con, paste0("DELETE FROM ", tbl))
       # DELETE alone leaves AUTOINCREMENT counters where they were;
       # dropping the table's own row from sqlite_sequence is what makes
       # the next insert start back at 1, matching what TRUNCATE does on
@@ -1200,7 +1200,7 @@ episodic_db_truncate <- function(path) {
       # been created, so its absence (a schema with none, or none used
       # yet) is not a real failure.
       tryCatch(
-        DBI::dbExecute(
+        episodic_db_execute(
           con,
           "DELETE FROM sqlite_sequence WHERE name = ?",
           params = list(tbl)
@@ -1211,7 +1211,7 @@ episodic_db_truncate <- function(path) {
     truncated <- c(truncated, tbl)
   }
 
-  DBI::dbExecute(con, restore_fk)
+  episodic_db_execute(con, restore_fk)
 
   message(
     length(truncated),
@@ -1356,11 +1356,11 @@ episodic_db_open <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA),
 #' @noRd
 episodic_db_pragmas <- function(con) {
   if (inherits(con, "SQLiteConnection")) {
-    DBI::dbExecute(con, "PRAGMA journal_mode = WAL")
-    DBI::dbExecute(con, "PRAGMA busy_timeout = 5000")
-    DBI::dbExecute(con, "PRAGMA foreign_keys = ON")
+    episodic_db_execute(con, "PRAGMA journal_mode = WAL")
+    episodic_db_execute(con, "PRAGMA busy_timeout = 5000")
+    episodic_db_execute(con, "PRAGMA foreign_keys = ON")
   } else {
-    DBI::dbExecute(con, "SET SESSION foreign_key_checks = 1")
+    episodic_db_execute(con, "SET SESSION foreign_key_checks = 1")
     # Say what the client speaks rather than inheriting whatever my.cnf
     # happens to set. Left implicit, the connection charset is decided
     # off-host and can differ from the server's own
@@ -1369,7 +1369,7 @@ episodic_db_pragmas <- function(con) {
     # a standing invitation for a string to arrive declaring one encoding
     # while holding bytes for another. Declaring it here makes what comes
     # back deterministic and identical on every machine that connects.
-    DBI::dbExecute(con, "SET NAMES utf8mb4")
+    episodic_db_execute(con, "SET NAMES utf8mb4")
   }
   invisible(con)
 }
@@ -1387,9 +1387,9 @@ episodic_db_pragmas <- function(con) {
 #' @noRd
 episodic_db_last_insert_id <- function(con) {
   id <- if (inherits(con, "SQLiteConnection")) {
-    DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id[1]
+    episodic_db_get_query(con, "SELECT last_insert_rowid() AS id")$id[1]
   } else {
-    DBI::dbGetQuery(con, "SELECT LAST_INSERT_ID() AS id")$id[1]
+    episodic_db_get_query(con, "SELECT LAST_INSERT_ID() AS id")$id[1]
   }
 
   # Returned as a plain integer on purpose. MariaDB's LAST_INSERT_ID() is

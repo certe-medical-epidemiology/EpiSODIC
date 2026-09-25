@@ -189,7 +189,7 @@ episodic_ui_performance_screen <- function(performance,
 #' @noRd
 episodic_app_performance <- function(con,
                                      lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  detections <- DBI::dbGetQuery(
+  detections <- episodic_db_get_query(
     con,
     "SELECT DISTINCT cluster_id, detector FROM episodic_detection WHERE cluster_id IS NOT NULL"
   )
@@ -204,7 +204,7 @@ episodic_app_performance <- function(con,
   streams <- episodic_db_streams(con, active_only = FALSE)
   outbreak_ids <- clusters$cluster_id
   detections <- detections[detections$cluster_id %in% outbreak_ids, , drop = FALSE]
-  events <- DBI::dbGetQuery(
+  events <- episodic_db_get_query(
     con,
     "SELECT cluster_id, created_at, verdict FROM episodic_assessment_event ORDER BY created_at"
   )
@@ -264,7 +264,7 @@ episodic_performance_false_verdicts <- c("artefact", "expected_variation")
 #' @keywords internal
 #' @noRd
 episodic_app_overall_ppv <- function(con) {
-  verdicts <- DBI::dbGetQuery(
+  verdicts <- episodic_db_get_query(
     con,
     "SELECT e.cluster_id, e.verdict
        FROM episodic_assessment_event e

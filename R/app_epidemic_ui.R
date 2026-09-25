@@ -197,14 +197,10 @@ episodic_ui_epidemic_rail_row <- function(row,
 episodic_ui_epidemic_dossier <- function(con,
                                          obj,
                                          lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  # Forced before any query. The server passes `epidemic_object()` here
-  # unevaluated, and building it runs a dozen queries on `con`. Left lazy,
-  # its first use is `obj$id` inside the `params` of the state lookup's
-  # `DBI::dbGetQuery()`, which RMariaDB evaluates only after it has
-  # prepared that statement: the nested queries then close the statement
-  # out from under it, and binding to the closed statement kills the R
-  # process outright, with no R-level error. SQLite tolerates the nesting,
-  # so only a MariaDB/MySQL instance shows it.
+  # Resolved up front, as every other function taking `obj` does: the
+  # server passes `epidemic_object()` unevaluated, and building it here,
+  # before the dossier's own reads, keeps the two sets of queries apart
+  # (`R/db_query.R` says what interleaving them costs on MariaDB).
   force(obj)
   state <- episodic_app_derive_state_for_cluster(con, obj$id)
   shiny::tagList(

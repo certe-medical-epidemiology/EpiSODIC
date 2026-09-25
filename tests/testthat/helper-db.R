@@ -41,7 +41,7 @@ episodic_test_db_path <- function() {
 
 # Locate the package's own R/ sources, for the handful of invariants that
 # are load-bearing but not observable at runtime (see
-# test-insert_only.R and test-db_write_reentrancy.R). An installed
+# test-insert_only.R). An installed
 # package's own system.file("R", ...) is a real directory but holds only
 # the compiled lazy-load database (EpiSODIC.rdb/.rdx), not individual .R
 # source files - so existence alone is not enough to trust a candidate;

@@ -3,6 +3,7 @@
 ## Fixed
 
 - Opening an epidemic dossier on a MariaDB/MySQL instance no longer aborts the R session; the epidemic object is built before the dossier's first query rather than inside it
+- Every query now evaluates its parameters before the statement is prepared, so no query parameter that itself queries the database can abort the R session on MariaDB/MySQL
 
 # EpiSODIC 0.20.4
 

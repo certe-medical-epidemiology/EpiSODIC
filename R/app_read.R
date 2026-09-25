@@ -130,7 +130,7 @@ episodic_app_derive_states_batch <- function(con, clusters) {
 #' @noRd
 episodic_app_derive_state_for_cluster <- function(con, cluster_id) {
   events <- episodic_db_assessment_events(con, cluster_id)
-  cluster <- DBI::dbGetQuery(
+  cluster <- episodic_db_get_query(
     con,
     "SELECT * FROM episodic_cluster WHERE cluster_id = ?",
     params = list(cluster_id)
@@ -275,7 +275,7 @@ episodic_app_closed_by_from <- function(con,
 episodic_cluster_object <- function(con,
                                     cluster_id,
                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  cluster <- DBI::dbGetQuery(
+  cluster <- episodic_db_get_query(
     con,
     "SELECT * FROM episodic_cluster WHERE cluster_id = ?",
     params = list(cluster_id)
@@ -285,13 +285,13 @@ episodic_cluster_object <- function(con,
   }
   cluster <- cluster[1, ]
 
-  stream <- DBI::dbGetQuery(
+  stream <- episodic_db_get_query(
     con,
     "SELECT * FROM episodic_stream WHERE stream_id = ?",
     params = list(cluster$stream_id)
   )[1, ]
   institution <- if (!is.na(stream$institution_id)) {
-    DBI::dbGetQuery(
+    episodic_db_get_query(
       con,
       "SELECT * FROM episodic_institution WHERE institution_id = ?",
       params = list(stream$institution_id)
@@ -314,7 +314,7 @@ episodic_cluster_object <- function(con,
   } else {
     episodic_db_cluster_cases(con, cluster_id)
   }
-  detections <- DBI::dbGetQuery(
+  detections <- episodic_db_get_query(
     con,
     "SELECT DISTINCT detector FROM episodic_detection WHERE cluster_id = ?",
     params = list(cluster_id)
@@ -532,7 +532,7 @@ episodic_app_density <- function(con, stream, cases) {
   # not a fitted model (that is farringtonFlexible's own populationOffset
   # baseline), just the descriptive rate the cluster's own density is
   # being read against.
-  all_cases <- DBI::dbGetQuery(
+  all_cases <- episodic_db_get_query(
     con,
     "SELECT sample_date FROM episodic_case WHERE pathogen = ? AND institution_id = ?",
     params = list(stream$pathogen, stream$institution_id)
@@ -935,7 +935,7 @@ episodic_app_demography_shift <- function(con, stream_id, cases) {
   cluster_band <- band_of(cases$age)
   cluster_dominant <- names(sort(-table(cluster_band)))[1]
 
-  stream_pathogen <- DBI::dbGetQuery(
+  stream_pathogen <- episodic_db_get_query(
     con,
     "SELECT pathogen FROM episodic_stream WHERE stream_id = ?",
     params = list(stream_id)
@@ -956,7 +956,7 @@ episodic_app_demography_shift <- function(con, stream_id, cases) {
   # the same rows, but the correlated form is answered per candidate
   # case through `idx_episodic_cluster_case_case`, where the nested one
   # materialises every case id of every cluster in the stream first.
-  all_cases <- DBI::dbGetQuery(
+  all_cases <- episodic_db_get_query(
     con,
     "SELECT c.age
        FROM episodic_case c
@@ -1086,7 +1086,7 @@ episodic_app_cluster_viewable <- function(con, cluster_id) {
   if (is.null(cluster_id) || length(cluster_id) != 1 || is.na(cluster_id)) {
     return(FALSE)
   }
-  found <- DBI::dbGetQuery(
+  found <- episodic_db_get_query(
     con,
     "SELECT merged_into FROM episodic_cluster WHERE cluster_id = ?",
     params = list(cluster_id)
@@ -1103,7 +1103,7 @@ episodic_app_cluster_viewable <- function(con, cluster_id) {
 #' @keywords internal
 #' @noRd
 episodic_app_cluster_scale <- function(con, cluster_id) {
-  found <- DBI::dbGetQuery(
+  found <- episodic_db_get_query(
     con,
     "SELECT scale FROM episodic_cluster WHERE cluster_id = ?",
     params = list(cluster_id)
@@ -1185,7 +1185,7 @@ episodic_app_data_asof <- function(con) {
 #' @keywords internal
 #' @noRd
 episodic_app_epi_curve <- function(con, cluster_id, completeness = NULL) {
-  cluster <- DBI::dbGetQuery(
+  cluster <- episodic_db_get_query(
     con,
     "SELECT stream_id, origin FROM episodic_cluster WHERE cluster_id = ?",
     params = list(cluster_id)
@@ -1499,7 +1499,7 @@ episodic_app_open_epidemics <- function(con,
 episodic_epidemic_object <- function(con,
                                      cluster_id,
                                      lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  cluster <- DBI::dbGetQuery(
+  cluster <- episodic_db_get_query(
     con,
     "SELECT * FROM episodic_cluster WHERE cluster_id = ?",
     params = list(cluster_id)
@@ -1509,7 +1509,7 @@ episodic_epidemic_object <- function(con,
   }
   cluster <- cluster[1, ]
 
-  stream <- DBI::dbGetQuery(
+  stream <- episodic_db_get_query(
     con,
     "SELECT * FROM episodic_stream WHERE stream_id = ?",
     params = list(cluster$stream_id)
@@ -1517,7 +1517,7 @@ episodic_epidemic_object <- function(con,
   pc <- episodic_db_pathogen_config_get(con, stream$pathogen)
 
   cases <- episodic_db_cluster_cases(con, cluster_id)
-  detections <- DBI::dbGetQuery(
+  detections <- episodic_db_get_query(
     con,
     "SELECT DISTINCT detector FROM episodic_detection WHERE cluster_id = ?",
     params = list(cluster_id)
@@ -1579,7 +1579,7 @@ episodic_epidemic_object <- function(con,
     during_outbreaks$place <- vapply(
       seq_len(nrow(during_outbreaks)),
       function(i) {
-        s <- DBI::dbGetQuery(
+        s <- episodic_db_get_query(
           con,
           "SELECT * FROM episodic_stream WHERE stream_id = ?",
           params = list(during_outbreaks$stream_id[i])

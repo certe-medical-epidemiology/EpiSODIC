@@ -28,21 +28,13 @@
 # inst/sql/schema.sql for the exact column requirements (nullability,
 # enums, defaults).
 
-# Every function here binds its parameters through a `params` local built
-# immediately before the `DBI` call, never as an inline
-# `params = list(...)` argument. That is deliberate and load-bearing, not
-# a style preference. An R argument is a promise: written inline, the
-# list is not evaluated at the call site but inside `dbExecute()`/
-# `dbGetQuery()`, by which point the driver has already prepared a
-# statement on `con`. If evaluating any element then queries that same
-# connection - which a caller-supplied argument can do without this file
-# knowing, and which `episodic_reconcile_stream()`'s `priority_score_fn`
-# did - RMariaDB cancels and frees the prepared statement, and `dbBind()`
-# binds into freed memory. That is a native crash: no R condition, no
-# `tryCatch`, the session simply dies, and only ever against MariaDB
-# (RSQLite permits concurrent results on one connection, so the same code
-# is harmless there). Building the list first means every element is a
-# plain value before any statement exists.
+# Parameters are built into a `params` local and passed as
+# `params = params`. Every query goes through `episodic_db_get_query()` or
+# `episodic_db_execute()` (`R/db_query.R`), which evaluate their
+# arguments before the driver prepares anything, so a parameter whose
+# evaluation queries the same connection cannot interleave with the
+# statement it belongs to; that file says what interleaving costs on
+# MariaDB.
 
 #' @keywords internal
 #' @noRd
@@ -76,7 +68,7 @@ episodic_db_assessment_event_insert <- function(con,
     snooze_until,
     supersedes
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_assessment_event
       (cluster_id, user_id, created_at, verdict, rationale, wpg_notifiable, ggd_informed,
@@ -99,7 +91,7 @@ episodic_db_cluster_note_insert <- function(con,
     episodic_now(),
     as.character(note_text)
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_cluster_note (cluster_id, user_id, created_at, note_text)
      VALUES (?, ?, ?, ?)",
@@ -126,7 +118,7 @@ episodic_db_stream_mute_insert <- function(con,
     user_id,
     episodic_now()
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_stream_mute
       (stream_id, muted_from, muted_until, reason, note, user_id, created_at)
@@ -145,7 +137,7 @@ episodic_db_cluster_state_insert <- function(con,
                                              event_id = NA,
                                              user_id = NA) {
   params <- list(cluster_id, state, episodic_now(), trigger, event_id, user_id)
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_cluster_state (cluster_id, state, entered_at, `trigger`, event_id, user_id)
      VALUES (?, ?, ?, ?, ?, ?)",
@@ -174,7 +166,7 @@ episodic_db_report_render_insert <- function(con,
     case_ids_json,
     version_no
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_report_render
       (cluster_id, user_id, rendered_at, file_path, file_sha256, params, case_ids, version_no)
@@ -224,7 +216,7 @@ episodic_db_report_version_claim <- function(con,
     params <- list(cluster_id, version_no, episodic_now(), claimed_by)
     outcome <- tryCatch(
       {
-        DBI::dbExecute(
+        episodic_db_execute(
           con,
           "INSERT INTO episodic_report_version_claim
             (cluster_id, version_no, claimed_at, claimed_by)
@@ -266,7 +258,7 @@ episodic_db_report_version_claim <- function(con,
 #' @noRd
 episodic_db_report_version_next <- function(con, cluster_id) {
   params <- list(cluster_id, cluster_id)
-  highest <- DBI::dbGetQuery(
+  highest <- episodic_db_get_query(
     con,
     "SELECT MAX(version_no) AS highest FROM (
        SELECT version_no FROM episodic_report_version_claim WHERE cluster_id = ?
@@ -347,7 +339,7 @@ episodic_db_report_subscription_event_insert <- function(con,
     channel,
     as.integer(isTRUE(include_linelist))
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_report_subscription_event
       (cluster_id, user_id, created_at, action, interval_days, recipients, channel, include_linelist)
@@ -377,7 +369,7 @@ episodic_db_app_user_insert <- function(con,
     as.integer(isTRUE(must_change)),
     episodic_now()
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_app_user
       (username, full_name, email, password_hash, role, is_admin, is_active, must_change, created_at)
@@ -414,7 +406,7 @@ episodic_db_app_login_failure_insert <- function(con,
     if (is.na(user_id)) NA_integer_ else as.integer(user_id),
     reason
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_app_login_failure
       (attempted_at, username, user_id, reason)
@@ -444,7 +436,7 @@ episodic_db_app_user_event_insert <- function(con,
     new_is_admin,
     new_is_active
   )
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_app_user_event
       (user_id, created_at, event_type, actor_user_id, password_hash, new_role, new_is_admin, new_is_active)
@@ -463,7 +455,7 @@ episodic_db_app_config_event_insert <- function(con,
                                                 note = NA) {
   section <- match.arg(section, c("notifications"))
   params <- list(user_id, episodic_now(), section, config_json, note)
-  DBI::dbExecute(
+  episodic_db_execute(
     con,
     "INSERT INTO episodic_app_config_event (user_id, created_at, section, config_json, note)
      VALUES (?, ?, ?, ?, ?)",
