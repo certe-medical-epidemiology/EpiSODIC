@@ -714,8 +714,9 @@ test_that("the Archive search is literal text, not a pattern", {
   )
   expect_equal(episodic_app_archive_filter(archive, query = "(h3n2)")$cluster_id, 2L)
   expect_equal(episodic_app_archive_filter(archive, query = "[east]")$cluster_id, 3L)
-  # A lone metacharacter finds nothing rather than stopping the screen.
-  expect_equal(nrow(episodic_app_archive_filter(archive, query = "(")), 0)
+  # Read as a pattern, "(east" is an unclosed group and an error; read as
+  # text it is simply absent.
+  expect_equal(nrow(episodic_app_archive_filter(archive, query = "(east")), 0)
   expect_equal(
     episodic_app_archive_filter(archive, query = "  NORO ")$cluster_id,
     c(1L, 3L)
