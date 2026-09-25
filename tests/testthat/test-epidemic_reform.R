@@ -577,6 +577,84 @@ test_that("closed outbreaks and closed epidemics are linked too", {
   )
 })
 
+test_that("episodic_link_parse_dates() reads each element on its own and leaves the unreadable ones NA", {
+  expect_equal(
+    episodic_link_parse_dates(c("2026-09-08", "2026-09-09 00:00:00", "", NA, "08-09-2026")),
+    as.Date(c("2026-09-08", "2026-09-09", NA, NA, NA))
+  )
+  expect_equal(
+    episodic_link_parse_dates(as.Date("2026-09-08")),
+    as.Date("2026-09-08")
+  )
+})
+
+test_that("a cluster with an unreadable day is left out of the during links, never inserted as NULL", {
+  inserted <- list()
+  local_mocked_bindings(
+    episodic_db_link_epidemics = function(con) {
+      data.frame(
+        cluster_id = 900L,
+        stream_id = 1L,
+        first_day = "2026-09-01",
+        last_day = "2026-09-30",
+        scale = "epidemic",
+        pathogen = "Norovirus",
+        level = "pathogen_region",
+        region_code = "NNL",
+        institution_id = NA_integer_,
+        stringsAsFactors = FALSE
+      )
+    },
+    episodic_db_link_outbreaks = function(con) {
+      data.frame(
+        cluster_id = c(1L, 2L),
+        stream_id = c(2L, 3L),
+        # The second leads with a value as.Date() cannot read: parsed as
+        # one vector it takes the first element's NA down with it too.
+        first_day = c("2026-09-08", ""),
+        last_day = c("2026-09-11", "2026-09-10"),
+        scale = "outbreak",
+        pathogen = "Norovirus",
+        level = "pathogen_institution",
+        region_code = NA_character_,
+        institution_id = c(10L, 11L),
+        ward = NA_character_,
+        stringsAsFactors = FALSE
+      )[c(2, 1), ]
+    },
+    episodic_db_cluster_links_all = function(con) {
+      data.frame(
+        outbreak_cluster_id = integer(0),
+        epidemic_cluster_id = integer(0)
+      )
+    },
+    episodic_db_cluster_link_insert = function(con,
+                                               outbreak_cluster_id,
+                                               epidemic_cluster_id,
+                                               run_id) {
+      inserted[[length(inserted) + 1]] <<- c(outbreak_cluster_id, epidemic_cluster_id)
+      invisible(NULL)
+    }
+  )
+  cases <- data.frame(
+    sample_date = "2026-09-08",
+    pathogen = "Norovirus",
+    institution_id = 10L,
+    ward = NA_character_,
+    pc = "9713AB",
+    care_line = "first",
+    stringsAsFactors = FALSE
+  )
+  n <- episodic_epidemic_link_outbreaks(
+    con = NULL,
+    cases = cases,
+    geography = list(),
+    run_id = 1L
+  )
+  expect_equal(n, 1L)
+  expect_equal(inserted, list(c(1L, 900L)))
+})
+
 test_that("an outbreak outside a province epidemic's province is not linked to it", {
   pc_csv <- tempfile(fileext = ".csv")
   writeLines("pc,province_code\n9713AB,DR", pc_csv)

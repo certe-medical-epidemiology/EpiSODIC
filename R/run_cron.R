@@ -1689,13 +1689,44 @@ episodic_epidemic_link_outbreaks <- function(con, cases, geography, run_id) {
     codes_cache[[key]]
   }
 
+  # Parsed once per cluster, element by element: `as.Date()` on a whole
+  # vector picks its format from the first element and turns anything
+  # else into NA. A cluster whose dates cannot be read has no time span
+  # to overlap with, so it is left out and named, never compared: an NA
+  # in a logical row index makes R return a row of NAs, whose cluster id
+  # then reaches the insert as NULL.
+  outbreaks$first_date <- episodic_link_parse_dates(outbreaks$first_day)
+  outbreaks$last_date <- episodic_link_parse_dates(outbreaks$last_day)
+  epidemics$first_date <- episodic_link_parse_dates(epidemics$first_day)
+  epidemics$last_date <- episodic_link_parse_dates(epidemics$last_day)
+  unreadable <- c(
+    outbreaks$cluster_id[is.na(outbreaks$first_date) | is.na(outbreaks$last_date)],
+    epidemics$cluster_id[is.na(epidemics$first_date) | is.na(epidemics$last_date)]
+  )
+  if (length(unreadable) > 0) {
+    episodic_trace(
+      "During links: ",
+      length(unreadable),
+      " cluster(s) have a first or last day that is not a date and were ",
+      "not linked (cluster id(s) ",
+      paste(utils::head(sort(unreadable), 20), collapse = ", "),
+      if (length(unreadable) > 20) ", ..." else "",
+      ")",
+      severity = "warn"
+    )
+    outbreaks <- outbreaks[!outbreaks$cluster_id %in% unreadable, , drop = FALSE]
+    epidemics <- epidemics[!epidemics$cluster_id %in% unreadable, , drop = FALSE]
+  }
+
   n_linked <- 0L
   for (i in seq_len(nrow(epidemics))) {
     epi <- epidemics[i, ]
     candidates <- outbreaks[
-      outbreaks$pathogen == epi$pathogen &
-        as.Date(outbreaks$first_day) <= as.Date(epi$last_day) &
-        as.Date(outbreaks$last_day) >= as.Date(epi$first_day), ,
+      which(
+        outbreaks$pathogen == epi$pathogen &
+          outbreaks$first_date <= epi$last_date &
+          outbreaks$last_date >= epi$first_date
+      ), ,
       drop = FALSE
     ]
     candidates <- candidates[
@@ -1718,6 +1749,31 @@ episodic_epidemic_link_outbreaks <- function(con, cases, geography, run_id) {
     }
   }
   invisible(n_linked)
+}
+
+#' Cluster day columns as `Date`, one element at a time
+#'
+#' Accepts a `Date`, a `POSIXct`, or text beginning with an ISO date
+#' (`"2026-09-08"`, `"2026-09-08 00:00:00"`), which is what either database
+#' driver can hand back for a day column. Anything else becomes `NA`
+#' rather than taking the rest of the vector with it.
+#'
+#' @param x A vector of day values.
+#' @return A `Date` vector the length of `x`.
+#' @keywords internal
+#' @noRd
+episodic_link_parse_dates <- function(x) {
+  if (inherits(x, "Date")) {
+    return(x)
+  }
+  if (inherits(x, "POSIXt")) {
+    return(as.Date(x))
+  }
+  x <- as.character(x)
+  iso <- !is.na(x) & grepl("^\\d{4}-\\d{2}-\\d{2}", x)
+  out <- rep(as.Date(NA), length(x))
+  out[iso] <- as.Date(substr(x[iso], 1, 10), format = "%Y-%m-%d")
+  out
 }
 
 #' @keywords internal

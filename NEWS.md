@@ -43,6 +43,7 @@
 - The positivity feed is summed per ISO week, so period starts in the same week no longer produce duplicate week labels
 - A positivity above 100% is left out of the chart instead of drawn at 100%
 - Outbreaks are linked to the epidemics they ran during whatever either cluster's state, so historical epidemics get their outbreaks
+- A cluster whose first or last day cannot be read as a date is left out of the during links and named in the run log, instead of failing the run
 - An epidemic's length is counted from its first to its last case instead of to today
 - The line list and outbreak report show sex as a translated word instead of its stored code
 - The Pathogens screen's detection-parameters panel italicises the pathogen name in its title and text
