@@ -29,7 +29,7 @@
 - The phenotypic resistance profile placeholder panel is removed from the Outbreaks dossier
 - The Epidemics dossier shows one map instead of two, and Rt and positivity at full width
 - A closed epidemic's curve ends four weeks after its last case, and its dossier reads its intensity at the peak
-- Every screen shares one neutral background and one accent colour (primary); a section's own colour only underlines its active navigation link
+- Every screen shares one neutral background and one accent colour (primary)
 - Charts draw their main series in primary, earlier seasons in fading greys, and test volume in a light primary
 - The Archive search box is up to 44rem wide and full width on narrow screens
 - The rails show a care-line chip for 'other'
@@ -42,6 +42,7 @@
 - A positivity above 100% is left out of the chart instead of drawn at 100%
 - Outbreaks are linked to the epidemics they ran during whatever either cluster's state, so historical epidemics get their outbreaks
 - An epidemic's length is counted from its first to its last case instead of to today
+- `devtools::load_all()` no longer replaces the session's `EPISODIC_CONFIG` with the test suite's configuration
 
 # EpiSODIC 0.20.6
 

@@ -360,18 +360,8 @@ test_that("one accent colours every screen, and no screen is tinted", {
   expect_false(grepl("\\[data-nav=\"[a-z]+\"\\] \\{ --episodic-accent", css))
   expect_false(grepl("--episodic-tint-", css, fixed = TRUE))
   expect_false(grepl(".episodic-screens { background", css, fixed = TRUE))
-  # A section's colour is left to the active navigation link alone.
-  for (view in c("outbreaks", "epidemics", "pathogens", "instance")) {
-    expect_true(grepl(
-      sprintf(
-        '.episodic-shell[data-nav="%s"] .episodic-nav-link[data-view="%s"] { box-shadow: inset 0 -2px 0',
-        view,
-        view
-      ),
-      css,
-      fixed = TRUE
-    ), info = view)
-  }
+  # Nor does any section colour its navigation link.
+  expect_false(grepl("nav-link[data-view=\"outbreaks\"] { box-shadow", css, fixed = TRUE))
   expect_true(grepl(
     "background: var(--episodic-accent, var(--episodic-primary));",
     css,

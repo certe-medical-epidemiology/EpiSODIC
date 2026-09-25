@@ -328,3 +328,26 @@ test_that("an attached report is base64, wrapped, and named safely", {
   expect_match(mime, "Content-Disposition: attachment", fixed = TRUE)
   expect_true(all(nchar(strsplit(mime, "\r\n")[[1]]) <= 998))
 })
+
+test_that("no test helper changes the session's environment variables", {
+  # `devtools::load_all()` sources every helper-*.R into the interactive
+  # session, so a helper that sets an environment variable sets it for
+  # the operator's console too - and EPISODIC_CONFIG, EPISODIC_DB and the
+  # like decide what every dashboard and detection run started there
+  # reads. What the suite needs set goes in a setup-*.R file, which only
+  # the test runner sources and which restores what it changed.
+  helpers <- list.files(
+    testthat::test_path(),
+    pattern = "^helper.*\\.R$",
+    full.names = TRUE
+  )
+  expect_gt(length(helpers), 0)
+  for (f in helpers) {
+    code <- readLines(f, warn = FALSE)
+    code <- code[!grepl("^\\s*#", code)]
+    expect_false(
+      any(grepl("Sys\\.setenv\\(|Sys\\.unsetenv\\(|local_envvar\\(", code)),
+      info = basename(f)
+    )
+  }
+})

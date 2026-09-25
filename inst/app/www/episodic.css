@@ -41,10 +41,10 @@
   /* One accent for everything interactive or selected - the open rail
      row, hover and focus, links and ids, spinners, breakdown bars - on
      every screen alike. Which screen is being read is carried by the
-     navigation (the active link's underline in its brand-bar segment's
-     colour), not by recolouring the screen: a colour that changes with
-     the screen stops saying anything about what it marks. The status
-     colours (warning, success, danger) are kept for status alone. */
+     navigation's own highlight, not by recolouring the screen: a colour
+     that changes with the screen stops saying anything about what it
+     marks. The status colours (warning, success, danger) are kept for
+     status alone. */
   --episodic-accent: var(--episodic-primary);
   --episodic-accent-dark: var(--episodic-primary-dark);
 }
@@ -128,16 +128,9 @@ body {
 .episodic-shell[data-nav="epidemics"] .episodic-nav-link[data-view="epidemics"],
 .episodic-shell[data-nav="pathogens"] .episodic-nav-link[data-view="pathogens"],
 .episodic-shell[data-nav="instance"] .episodic-nav-link[data-view="instance"] {
-  background: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.16);
   color: #fff;
 }
-/* The one place a section's own colour appears: the active link is
-   underlined in the colour of its segment of the brand bar beneath the
-   header, so the bar reads as a key to the navigation above it. */
-.episodic-shell[data-nav="outbreaks"] .episodic-nav-link[data-view="outbreaks"] { box-shadow: inset 0 -2px 0 var(--episodic-warning); }
-.episodic-shell[data-nav="epidemics"] .episodic-nav-link[data-view="epidemics"] { box-shadow: inset 0 -2px 0 var(--episodic-success); }
-.episodic-shell[data-nav="pathogens"] .episodic-nav-link[data-view="pathogens"] { box-shadow: inset 0 -2px 0 var(--episodic-danger); }
-.episodic-shell[data-nav="instance"] .episodic-nav-link[data-view="instance"] { box-shadow: inset 0 -2px 0 var(--episodic-primary-light, var(--episodic-secondary)); }
 /* A press has to look like it landed before the screen has had time to
    change, or it reads as a press that missed and gets repeated. */
 .episodic-nav-link:active {
