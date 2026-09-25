@@ -760,6 +760,35 @@ episodic_object_ref <- function(id,
   episodic_tr(key, id = id, lang = lang)
 }
 
+#' A stored sex code in the reader's language
+#'
+#' The database holds `episodic_sex_codes` (`"M"`, `"F"`, `"U"`), which
+#' are storage codes rather than words in any language. `NA` stays `NA`,
+#' so a caller's own missing-value dash still marks a value that was
+#' never supplied, apart from one supplied as unknown (`"U"`).
+#'
+#' @param sex Character vector of stored sex codes.
+#' @param lang Session language.
+#' @return A character vector the length of `sex`.
+#' @keywords internal
+#' @noRd
+episodic_sex_label <- function(sex, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  keys <- c(
+    M = "misc.sex.male",
+    F = "misc.sex.female",
+    U = "misc.sex.unknown"
+  )
+  sex <- as.character(sex)
+  out <- rep(NA_character_, length(sex))
+  for (code in names(keys)) {
+    hit <- !is.na(sex) & sex == code
+    if (any(hit)) {
+      out[hit] <- episodic_tr(keys[[code]], lang = lang)
+    }
+  }
+  out
+}
+
 #' A verdict's display label, worded for the cluster's own scale
 #'
 #' The stored verdict value (`"possible_epidemic"`, ...) never changes -

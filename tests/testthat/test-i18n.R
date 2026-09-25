@@ -129,6 +129,41 @@ test_that("outbreak and epidemic refs abbreviate each language's own screen name
   expect_equal(episodic_object_ref(12, "pathogen_ward", lang = "de"), "A-12")
 })
 
+test_that("episodic_sex_label() words each stored code in the reader's language and leaves NA missing", {
+  expect_equal(
+    episodic_sex_label(c("M", "F", "U", NA), lang = "nl"),
+    c("Man", "Vrouw", "Onbekend", NA)
+  )
+  expect_equal(episodic_sex_label(c("F", "M"), lang = "en"), c("Female", "Male"))
+  expect_identical(episodic_sex_label(character(0), lang = "en"), character(0))
+})
+
+test_that("the line list shows sex as a word, not as its stored code", {
+  local_mocked_bindings(
+    episodic_app_linelist = function(con, cluster_id) {
+      data.frame(
+        patient_key = c("p1", "p2"),
+        lab_number = c("L1", "L2"),
+        sample_date = c("2024-01-18", "2024-01-19"),
+        sex = c("F", NA),
+        age = c(94L, 67L),
+        pc = c("925", "925"),
+        ward = c(NA_character_, NA_character_),
+        specialism = c(NA_character_, NA_character_),
+        stringsAsFactors = FALSE
+      )
+    }
+  )
+  html <- as.character(episodic_ui_linelist_panel(
+    con = NULL,
+    cluster_id = 1L,
+    obj = list(n_cases = 2L),
+    lang = "nl"
+  ))
+  expect_match(html, "<td>Vrouw</td>", fixed = TRUE)
+  expect_false(grepl("<td>F</td>", html, fixed = TRUE))
+})
+
 test_that("no code writes an outbreak or epidemic prefix of its own", {
   # Every identifier goes through `episodic_object_ref()`, so none of
   # them can disagree with the language the reader chose.

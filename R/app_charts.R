@@ -578,11 +578,6 @@ episodic_chart_rt_axis <- function(log_values,
 #'   too many polygons to label legibly.
 #' @param accent Colour for the high end of the case-density gradient.
 #'   Defaults to the palette's `primary`.
-#' @param label_areas When `TRUE` (the default), a cropped map labels its
-#'   case-bearing areas with their PC value and count. `FALSE` draws the
-#'   fill alone: an epidemic spread over a whole region has more areas
-#'   than can be labelled without the labels covering the map, and the
-#'   bar breakdown beside it carries the counts.
 #' @return A `ggplot` object, or `NULL` if no geographic data is
 #'   available at all, or the join/plot fails for any reason (e.g. a PC
 #'   value not in the reference geometry - synthetic demo postcodes are
@@ -595,8 +590,7 @@ episodic_ui_geo_map_chart <- function(rows,
                                       min_pad_share = 0.02,
                                       max_labels = 30L,
                                       crop = TRUE,
-                                      accent = NULL,
-                                      label_areas = TRUE) {
+                                      accent = NULL) {
   if (nrow(rows) == 0) {
     return(NULL)
   }
@@ -679,7 +673,7 @@ episodic_ui_geo_map_chart <- function(rows,
         )
       }
 
-      labels <- if (crop && label_areas) {
+      labels <- if (crop) {
         episodic_geo_labels(matched, max_labels = max_labels)
       }
       if (!is.null(labels)) {
@@ -816,10 +810,23 @@ episodic_geo_frame <- function(geo,
     full[["xmax"]] - full[["xmin"]],
     full[["ymax"]] - full[["ymin"]]
   )
-  pad <- max(span * pad_share, full_span * min_pad_share)
+  min_pad <- full_span * min_pad_share
+  pad <- max(span * pad_share, min_pad)
 
-  xlim <- c(bb[["xmin"]] - pad, bb[["xmax"]] + pad)
-  ylim <- c(bb[["ymin"]] - pad, bb[["ymax"]] + pad)
+  # The margin is context, and past the edge of the reference geometry
+  # there is none to show: unclamped, a cluster spanning most of the
+  # reference extent gets a frame nearly twice its size, and coord_sf()
+  # shrinks the map to fit that frame and pads the rest with blank canvas.
+  # Clamped to the extent plus the minimum margin, so an area on the
+  # extent's own edge is still framed wider than itself.
+  xlim <- c(
+    max(bb[["xmin"]] - pad, full[["xmin"]] - min_pad),
+    min(bb[["xmax"]] + pad, full[["xmax"]] + min_pad)
+  )
+  ylim <- c(
+    max(bb[["ymin"]] - pad, full[["ymin"]] - min_pad),
+    min(bb[["ymax"]] + pad, full[["ymax"]] + min_pad)
+  )
 
   bbox <- sf::st_bbox(
     c(xmin = xlim[1], ymin = ylim[1], xmax = xlim[2], ymax = ylim[2]),

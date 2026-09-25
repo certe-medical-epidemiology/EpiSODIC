@@ -847,13 +847,11 @@ episodic_ui_demography_panel <- function(obj,
 #'   a corner of the region, and the second map is where that corner is;
 #'   an epidemic's cases span the region or province, so the cropped
 #'   frame already is the whole of it and a second map repeats it.
-#' @param label_areas Passed to `episodic_ui_geo_map_chart()`.
 #' @keywords internal
 #' @noRd
 episodic_ui_geo_panel <- function(obj,
                                   lang = Sys.getenv("EPISODIC_LANGUAGE"),
-                                  context_map = TRUE,
-                                  label_areas = TRUE) {
+                                  context_map = TRUE) {
   if (is.null(obj$concentration)) {
     return(episodic_ui_panel_empty(
       episodic_tr("panel.geo.title", lang = lang),
@@ -861,10 +859,7 @@ episodic_ui_geo_panel <- function(obj,
       aside = episodic_tr("panel.geo.aside", lang = lang)
     ))
   }
-  map_chart <- episodic_ui_geo_map_chart(
-    obj$concentration$rows,
-    label_areas = label_areas
-  )
+  map_chart <- episodic_ui_geo_map_chart(obj$concentration$rows)
   # A second, uncropped map alongside the detail one: the cropped view
   # is deliberately tight around the cases (see panel.geo.map_note), which
   # is exactly what throws away where in the wider region that tight
@@ -1304,8 +1299,12 @@ episodic_ui_linelist_panel <- function(con,
         lapply(seq_len(nrow(ll)), function(i) {
           row <- ll[i, ]
           shiny::tags$tr(lapply(cols, function(c) {
+            value <- row[[c]]
+            if (identical(c, "sex")) {
+              value <- episodic_sex_label(value, lang = lang)
+            }
             shiny::tags$td(as.character(
-              row[[c]] %||% episodic_tr("misc.dash", lang = lang)
+              value %||% episodic_tr("misc.dash", lang = lang)
             ))
           }))
         })

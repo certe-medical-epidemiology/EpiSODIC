@@ -264,7 +264,7 @@ if (!is.null(d$linelist) && nrow(d$linelist) > 0) {
   for (i in seq_len(nrow(d$linelist))) {
     row <- d$linelist[i, ]
     cat(
-      "|", row$patient_key, "|", row$lab_number, "|", row$sample_date, "|", na_dash(row$sex), "|", na_dash(num(row$age)), "|",
+      "|", row$patient_key, "|", row$lab_number, "|", row$sample_date, "|", na_dash(EpiSODIC:::episodic_sex_label(row$sex, lang = lang)), "|", na_dash(num(row$age)), "|",
       na_dash(row$pc), "|", na_dash(row$ward), "|", na_dash(row$specialism), "|\n"
     )
   }

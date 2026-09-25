@@ -808,12 +808,9 @@ episodic_ui_epidemic_geo_panel <- function(obj,
       }
     ),
     lang = lang,
-    # One map, unlabelled: an epidemic's cases span its region or
-    # province, so the cropped frame is already the whole of it, and
-    # its areas are too many to label legibly - the bars carry the
-    # counts.
-    context_map = FALSE,
-    label_areas = FALSE
+    # One map: an epidemic's cases span its region or province, so the
+    # cropped frame is already the whole of it.
+    context_map = FALSE
   )
 }
 
