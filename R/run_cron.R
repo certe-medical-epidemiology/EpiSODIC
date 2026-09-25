@@ -1084,7 +1084,7 @@ episodic_run_cron_body <- function(con,
           run_date,
           config,
           mem_mode = as.character(pc_mem$mem_mode[1]),
-          stream_label = paste0(stream$pathogen, "/", stream$level)
+          stream_label = episodic_stream_label(stream)
         )
       )
     }
@@ -1756,6 +1756,25 @@ episodic_epidemic_link_outbreaks <- function(con, cases, geography, run_id) {
     }
   }
   invisible(n_linked)
+}
+
+#' A stream as the run log names it
+#'
+#' Pathogen and level alone name every province stream of a pathogen
+#' identically, so a line about one of them cannot be traced to the
+#' province it concerns. The region code is appended whenever the stream
+#' has one.
+#'
+#' @param stream One row of `episodic_db_streams()`.
+#' @return A single string, e.g. `"SARS-CoV-2/pathogen_province/GR"`.
+#' @keywords internal
+#' @noRd
+episodic_stream_label <- function(stream) {
+  label <- paste0(stream$pathogen, "/", stream$level)
+  if (!is.null(stream$region_code) && !is.na(stream$region_code)) {
+    label <- paste0(label, "/", stream$region_code)
+  }
+  label
 }
 
 #' Cluster day columns as `Date`, one element at a time

@@ -577,6 +577,15 @@ test_that("closed outbreaks and closed epidemics are linked too", {
   )
 })
 
+test_that("episodic_stream_label() tells two province streams of one pathogen apart", {
+  gr <- data.frame(pathogen = "SARS-CoV-2", level = "pathogen_province", region_code = "GR")
+  dr <- data.frame(pathogen = "SARS-CoV-2", level = "pathogen_province", region_code = "DR")
+  expect_equal(episodic_stream_label(gr), "SARS-CoV-2/pathogen_province/GR")
+  expect_false(identical(episodic_stream_label(gr), episodic_stream_label(dr)))
+  ward <- data.frame(pathogen = "Norovirus", level = "pathogen_ward", region_code = NA_character_)
+  expect_equal(episodic_stream_label(ward), "Norovirus/pathogen_ward")
+})
+
 test_that("episodic_link_parse_dates() reads each element on its own and leaves the unreadable ones NA", {
   expect_equal(
     episodic_link_parse_dates(c("2026-09-08", "2026-09-09 00:00:00", "", NA, "08-09-2026")),

@@ -8,6 +8,7 @@
 - The Epidemics dossier shows Rt, age and sex against the area's own baseline, and the care lines cases were found in
 - Outbreaks during an epidemic are listed in the cluster table, with their state, row hover and click-through
 - Lattice suppression writes progress lines during a detection run
+- MEM log lines name a stream's region code as well as its pathogen and level
 - The Archive search combines terms with ` AND ` and ` OR `
 - The Epidemics dossier shows its detection settings
 - The Epidemics dossier warns when the area's case history is missing cases linked to the epidemic, naming both catchment codes where they differ
