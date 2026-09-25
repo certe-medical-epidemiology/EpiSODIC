@@ -679,7 +679,7 @@ episodic_ui_epicurve_panel <- function(con,
     episodic_tr("panel.epicurve.title", lang = lang),
     note = note,
     shiny::renderPlot(
-      episodic_ui_epi_curve_chart(curve, lang = lang, accent = episodic_nav_accent("outbreaks")),
+      episodic_ui_epi_curve_chart(curve, lang = lang),
       height = 210
     )
   )
@@ -713,7 +713,7 @@ episodic_ui_trend_panel <- function(con,
     ),
     note = shiny::HTML(episodic_tr("panel.trend.note", lang = lang)),
     shiny::renderPlot(
-      episodic_ui_trend_chart(trend, lang = lang, accent = episodic_nav_accent("outbreaks")),
+      episodic_ui_trend_chart(trend, lang = lang),
       height = 230
     )
   )
@@ -751,7 +751,7 @@ episodic_ui_rt_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     episodic_tr("panel.rt.title", lang = lang),
     note = episodic_tr("panel.rt.note", lang = lang),
     shiny::renderPlot(
-      episodic_ui_rt_chart(obj$rt, lang = lang, accent = episodic_nav_accent("outbreaks")),
+      episodic_ui_rt_chart(obj$rt, lang = lang),
       height = 200
     )
   )
@@ -837,13 +837,11 @@ episodic_ui_demography_panel <- function(obj,
 
 #' Where a cluster's cases are: a detail map, a context map and the bars
 #'
-#' Shared by both dossiers. The Epidemics screen passes its own accent,
-#' so the map reads as belonging to the screen it is on.
+#' Shared by both dossiers.
 #'
 #' @param obj A list with `concentration` (`episodic_app_concentration()`)
 #'   and `n_cases`.
 #' @param lang Session language.
-#' @param accent The colour at the dense end of the map's gradient.
 #' @param context_map Whether to draw the uncropped map of the whole
 #'   reference extent beside the cropped one. An outbreak's cases sit in
 #'   a corner of the region, and the second map is where that corner is;
@@ -854,7 +852,6 @@ episodic_ui_demography_panel <- function(obj,
 #' @noRd
 episodic_ui_geo_panel <- function(obj,
                                   lang = Sys.getenv("EPISODIC_LANGUAGE"),
-                                  accent = episodic_nav_accent("outbreaks"),
                                   context_map = TRUE,
                                   label_areas = TRUE) {
   if (is.null(obj$concentration)) {
@@ -866,7 +863,6 @@ episodic_ui_geo_panel <- function(obj,
   }
   map_chart <- episodic_ui_geo_map_chart(
     obj$concentration$rows,
-    accent = accent,
     label_areas = label_areas
   )
   # A second, uncropped map alongside the detail one: the cropped view
@@ -876,7 +872,7 @@ episodic_ui_geo_panel <- function(obj,
   # rendered - no point showing region-wide context for a fallback bar
   # breakdown.
   context_chart <- if (!is.null(map_chart) && context_map) {
-    episodic_ui_geo_map_chart(obj$concentration$rows, crop = FALSE, accent = accent)
+    episodic_ui_geo_map_chart(obj$concentration$rows, crop = FALSE)
   }
   # A broken chart-rendering environment (see episodic_graphics_probe())
   # cannot draw the map at all - fall back to the bar breakdown exactly as

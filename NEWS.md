@@ -29,7 +29,9 @@
 - The phenotypic resistance profile placeholder panel is removed from the Outbreaks dossier
 - The Epidemics dossier shows one map instead of two, and Rt and positivity at full width
 - A closed epidemic's curve ends four weeks after its last case, and its dossier reads its intensity at the peak
-- The rails, their headers and breakdown bars take the screen's own colour, and screen tints are stronger
+- Every screen shares one neutral background and one accent colour (primary); a section's own colour only underlines its active navigation link
+- Charts draw their main series in primary, earlier seasons in fading greys, and test volume in a light primary
+- The Archive search box is up to 44rem wide and full width on narrow screens
 - The rails show a care-line chip for 'other'
 - The detection-settings card is titled for its outbreak or epidemic and reports the run that last detected it
 - Translation files list their keys in sorted order

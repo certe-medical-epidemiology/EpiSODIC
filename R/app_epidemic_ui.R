@@ -666,8 +666,7 @@ episodic_ui_epidemic_curve_panel <- function(obj,
       episodic_ui_pathogen_curve_chart(
         obj$weekly,
         obj$thresholds,
-        lang = lang,
-        accent = episodic_nav_accent("epidemics")
+        lang = lang
       ),
       height = 300
     )
@@ -747,8 +746,7 @@ episodic_ui_epidemic_rt_panel <- function(obj,
     shiny::renderPlot(
       episodic_ui_rt_chart(
         obj$rt,
-        lang = lang,
-        accent = episodic_nav_accent("epidemics")
+        lang = lang
       ),
       height = 240
     )
@@ -810,7 +808,6 @@ episodic_ui_epidemic_geo_panel <- function(obj,
       }
     ),
     lang = lang,
-    accent = episodic_nav_accent("epidemics"),
     # One map, unlabelled: an epidemic's cases span its region or
     # province, so the cropped frame is already the whole of it, and
     # its areas are too many to label legibly - the bars carry the

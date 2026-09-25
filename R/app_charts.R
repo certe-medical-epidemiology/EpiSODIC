@@ -336,9 +336,9 @@ episodic_chart_week_scale <- function(week_starts,
 #'   `EPISODIC_LANGUAGE` environment variable, falling back to `"en"` if
 #'   that is unset.
 #' @param accent Fill colour for the bars. Defaults to the palette's
-#'   `primary`; a caller drawing this for a specific nav section passes
-#'   `episodic_nav_accent()` instead, so the chart reads as belonging to
-#'   whichever screen it is on.
+#'   `primary`, which every chart in the dashboard uses for its main
+#'   series; the status colours are kept for marks that mean something
+#'   (thresholds, positivity).
 #' @return A [ggplot2::ggplot] object.
 #' @examples
 #' curve <- data.frame(
@@ -577,9 +577,7 @@ episodic_chart_rt_axis <- function(log_values,
 #'   context map; area labels are skipped since a full-region view has
 #'   too many polygons to label legibly.
 #' @param accent Colour for the high end of the case-density gradient.
-#'   Defaults to the palette's `primary`; see
-#'   `episodic_ui_epi_curve_chart()`'s own `accent` for why a caller
-#'   passes `episodic_nav_accent()` instead.
+#'   Defaults to the palette's `primary`.
 #' @param label_areas When `TRUE` (the default), a cropped map labels its
 #'   case-bearing areas with their PC value and count. `FALSE` draws the
 #'   fill alone: an epidemic spread over a whole region has more areas
@@ -651,11 +649,9 @@ episodic_ui_geo_map_chart <- function(rows,
           linewidth = 0.1
         ) +
         ggplot2::scale_fill_gradient(
-          # Anchored on the neutral bg_subtle rather than a dedicated
-          # tint step of accent - warning/success/danger, unlike
-          # primary, ship no _tint variant, and a light neutral reads
-          # as "few cases" regardless of which section's hue is at the
-          # dense end.
+          # Anchored on the neutral bg_subtle rather than a tint of the
+          # accent, so an area with few cases reads as nearly the page
+          # itself and only the dense end carries colour.
           low = pal$bg_subtle,
           high = accent,
           na.value = pal$bg_subtle
@@ -909,9 +905,12 @@ episodic_ui_denominator_chart <- function(series,
   series$positivity_scaled <- positivity * scale_factor
 
   ggplot2::ggplot(series, ggplot2::aes(x = .data$week_start)) +
+    # Test volume is the context the positivity line is read against, so
+    # it is drawn quietly, in a light step of primary.
     ggplot2::geom_col(
       ggplot2::aes(y = .data$n_tests),
-      fill = pal$secondary,
+      fill = pal$primary,
+      alpha = 0.28,
       width = 4,
       na.rm = TRUE
     ) +
@@ -971,12 +970,9 @@ episodic_ui_denominator_chart <- function(series,
 #'   `NULL` to draw the bars alone.
 #' @param lang Language for labels.
 #' @param accent Fill colour for the bars. Defaults to the palette's
-#'   `primary`; the Pathogens screen passes
-#'   `episodic_nav_accent("pathogens")` for visual consistency with its
-#'   other charts. The intensity bands in `episodic_mem_threshold_lines()`
-#'   use `warning_dark`/`danger`/`danger_dark`, so the danger-accented
-#'   bars share the hue of the "high" line, but the dashed-line style
-#'   and the bar fill still read as distinct marks.
+#'   `primary`, which keeps the bars apart from the intensity lines in
+#'   `episodic_mem_threshold_lines()` (`warning_dark`/`danger`/
+#'   `danger_dark`), whose colour is what they mean.
 #' @return A [ggplot2::ggplot] object.
 #' @keywords internal
 #' @noRd
@@ -1102,18 +1098,20 @@ episodic_ui_pathogen_overlay_chart <- function(overlay,
   rows$group <- factor(rows$group, levels = groups)
 
   earlier <- setdiff(groups, overlay$current)
-  pool <- c(
-    pal$primary_light,
-    pal$tertiary,
-    pal$warning,
-    pal$faint,
-    pal$secondary_dark
-  )
-  colours <- stats::setNames(rep(pool, length.out = length(groups)), groups)
+  # The period being read in primary, the earlier ones in greys that
+  # lighten with age: the chart asks how this period compares with the
+  # ones before it, and a distinct hue per earlier period would make
+  # each of them as loud as the one the question is about.
+  colours <- stats::setNames(rep(pal$muted, length(groups)), groups)
   if (length(earlier) > 0) {
-    colours[earlier] <- rep(pool, length.out = length(earlier))
+    # Newest first, so the season just before this one is the darkest.
+    fade <- seq(0.8, 0.3, length.out = max(length(earlier), 2L))
+    colours[rev(earlier)] <- ggplot2::alpha(
+      pal$muted,
+      fade[seq_along(earlier)]
+    )
   }
-  colours[overlay$current] <- pal$danger_dark
+  colours[overlay$current] <- pal$primary
 
   # Week labels run 40..52 then 1..20 for a season, so the x axis is an
   # index and the labels are looked up from it - a numeric week number

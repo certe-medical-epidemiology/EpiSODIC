@@ -381,8 +381,7 @@ episodic_ui_pathogen_curve_panel <- function(screen,
     shiny::renderPlot(
       episodic_ui_pathogen_curve_chart(
         screen$weekly, thresholds,
-        lang = lang,
-        accent = episodic_nav_accent("pathogens")
+        lang = lang
       ),
       height = 300
     )
@@ -450,7 +449,7 @@ episodic_ui_pathogen_rt_panel <- function(screen,
     episodic_tr("pathogen.panel.rt.title", lang = lang),
     note = episodic_tr("pathogen.panel.rt.note", lang = lang),
     shiny::renderPlot(
-      episodic_ui_rt_chart(screen$rt, lang = lang, accent = episodic_nav_accent("pathogens")),
+      episodic_ui_rt_chart(screen$rt, lang = lang),
       height = 260
     )
   )
@@ -530,7 +529,7 @@ episodic_ui_pathogen_geo_panel <- function(screen,
       episodic_tr("panel.geo.empty", lang = lang)
     ))
   }
-  map_chart <- episodic_ui_geo_map_chart(concentration$rows, accent = episodic_nav_accent("pathogens"))
+  map_chart <- episodic_ui_geo_map_chart(concentration$rows)
   # A broken chart-rendering environment (see episodic_graphics_probe())
   # cannot draw the map at all - fall back to the bar breakdown exactly as
   # if no geographic data were available, but say why the map itself is

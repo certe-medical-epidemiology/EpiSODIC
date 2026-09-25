@@ -339,13 +339,15 @@ test_that("the rails give 'other' a care-line chip and leave 'unknown' without o
   expect_null(episodic_ui_care_line_colour("unknown"))
 })
 
-test_that("breakdown bars take the screen's colour unless a caller names one", {
+test_that("breakdown bars take the app's accent unless a caller names one", {
   rows <- data.frame(label = c("9711", "9712"), n = c(3L, 1L))
   plain <- as.character(episodic_ui_bars(rows, lang = "en"))
   expect_false(grepl("background:", plain, fixed = TRUE))
   named <- as.character(episodic_ui_bars(rows, colour = "#123456", lang = "en"))
   expect_true(grepl("background:#123456", named, fixed = TRUE))
+})
 
+test_that("one accent colours every screen, and no screen is tinted", {
   css <- paste(
     readLines(
       system.file("app/www/episodic.css", package = "EpiSODIC"),
@@ -353,16 +355,40 @@ test_that("breakdown bars take the screen's colour unless a caller names one", {
     ),
     collapse = "\n"
   )
+  # The accent is defined once, as primary, and never per screen.
+  expect_true(grepl("--episodic-accent: var(--episodic-primary);", css, fixed = TRUE))
+  expect_false(grepl("\\[data-nav=\"[a-z]+\"\\] \\{ --episodic-accent", css))
+  expect_false(grepl("--episodic-tint-", css, fixed = TRUE))
+  expect_false(grepl(".episodic-screens { background", css, fixed = TRUE))
+  # A section's colour is left to the active navigation link alone.
+  for (view in c("outbreaks", "epidemics", "pathogens", "instance")) {
+    expect_true(grepl(
+      sprintf(
+        '.episodic-shell[data-nav="%s"] .episodic-nav-link[data-view="%s"] { box-shadow: inset 0 -2px 0',
+        view,
+        view
+      ),
+      css,
+      fixed = TRUE
+    ), info = view)
+  }
   expect_true(grepl(
-    "background: var(--episodic-nav-accent, var(--episodic-primary));",
+    "background: var(--episodic-accent, var(--episodic-primary));",
     css,
     fixed = TRUE
   ))
-  expect_true(grepl(
-    ".episodic-rail-item[aria-current=\"true\"] {\n  background: color-mix(in srgb, var(--episodic-nav-accent)",
-    css,
-    fixed = TRUE
-  ))
+})
+
+test_that("charts draw their main series in primary, with no screen's colour", {
+  pal <- episodic_palette()
+  curve <- data.frame(
+    sample_date = as.Date("2025-01-01") + 0:2,
+    n_cases = c(1, 2, 3),
+    incomplete = FALSE
+  )
+  p <- episodic_ui_epi_curve_chart(curve, lang = "en")
+  expect_equal(unique(ggplot2::layer_data(p, 1)$fill), pal$primary)
+  expect_false(exists("episodic_nav_accent", envir = asNamespace("EpiSODIC")))
 })
 
 # ---------------------------------------------------------------------

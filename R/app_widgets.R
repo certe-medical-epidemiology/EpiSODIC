@@ -535,9 +535,9 @@ episodic_ui_bars <- function(rows,
         class = "episodic-bar-track",
         shiny::tags$div(
           class = "episodic-bar-fill",
-          # The screen's own colour unless a caller names one: the
-          # stylesheet gives `.episodic-bar-fill` the section accent the
-          # rail and the charts on the same screen carry.
+          # The app's accent unless a caller names one: the stylesheet
+          # gives `.episodic-bar-fill` the same accent the rail, the
+          # tables and the charts carry.
           style = paste0(
             "width:",
             episodic_css_pct(100 * rows$n[i] / max_n),

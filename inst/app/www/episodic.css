@@ -38,17 +38,15 @@
 :root {
   --episodic-font: "IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
   --episodic-font-size-base: 13px;
-  /* One tint per nav group, strong enough that the screen being read is
-     visible at a glance, and still well short of a colour the cards on
-     it would have to compete with - each
-     mixes that group's own brandbar hue (see episodic_brand_bar()) into
-     the ordinary page background, so the four screens stay visually
-     distinguishable without the cards sitting on them (which keep their
-     own opaque --episodic-surface) looking tinted at all. */
-  --episodic-tint-outbreaks: color-mix(in srgb, var(--episodic-warning) 12%, var(--episodic-bg));
-  --episodic-tint-epidemics: color-mix(in srgb, var(--episodic-success) 12%, var(--episodic-bg));
-  --episodic-tint-pathogens: color-mix(in srgb, var(--episodic-danger) 12%, var(--episodic-bg));
-  --episodic-tint-instance: color-mix(in srgb, var(--episodic-primary) 12%, var(--episodic-bg));
+  /* One accent for everything interactive or selected - the open rail
+     row, hover and focus, links and ids, spinners, breakdown bars - on
+     every screen alike. Which screen is being read is carried by the
+     navigation (the active link's underline in its brand-bar segment's
+     colour), not by recolouring the screen: a colour that changes with
+     the screen stops saying anything about what it marks. The status
+     colours (warning, success, danger) are kept for status alone. */
+  --episodic-accent: var(--episodic-primary);
+  --episodic-accent-dark: var(--episodic-primary-dark);
 }
 
 html {
@@ -130,9 +128,16 @@ body {
 .episodic-shell[data-nav="epidemics"] .episodic-nav-link[data-view="epidemics"],
 .episodic-shell[data-nav="pathogens"] .episodic-nav-link[data-view="pathogens"],
 .episodic-shell[data-nav="instance"] .episodic-nav-link[data-view="instance"] {
-  background: rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.12);
   color: #fff;
 }
+/* The one place a section's own colour appears: the active link is
+   underlined in the colour of its segment of the brand bar beneath the
+   header, so the bar reads as a key to the navigation above it. */
+.episodic-shell[data-nav="outbreaks"] .episodic-nav-link[data-view="outbreaks"] { box-shadow: inset 0 -2px 0 var(--episodic-warning); }
+.episodic-shell[data-nav="epidemics"] .episodic-nav-link[data-view="epidemics"] { box-shadow: inset 0 -2px 0 var(--episodic-success); }
+.episodic-shell[data-nav="pathogens"] .episodic-nav-link[data-view="pathogens"] { box-shadow: inset 0 -2px 0 var(--episodic-danger); }
+.episodic-shell[data-nav="instance"] .episodic-nav-link[data-view="instance"] { box-shadow: inset 0 -2px 0 var(--episodic-primary-light, var(--episodic-secondary)); }
 /* A press has to look like it landed before the screen has had time to
    change, or it reads as a press that missed and gets repeated. */
 .episodic-nav-link:active {
@@ -215,27 +220,6 @@ body {
      .episodic-streams-screen rely on entirely. */
   min-height: 0;
 }
-/* The per-screen tint, keyed on the same `data-nav` the nav-link
-   highlight above reads, so the six Instance-group screens (Archive,
-   Streams, Activity, Performance, Info, Settings) share the Instance
-   screen's own tint rather than going untinted. Set here rather than on
-   .episodic-screen itself, since the hidden screens share this one
-   container and a reader is never shown more than one tint at a time. */
-.episodic-shell[data-nav="outbreaks"] .episodic-screens { background: var(--episodic-tint-outbreaks); }
-.episodic-shell[data-nav="epidemics"] .episodic-screens { background: var(--episodic-tint-epidemics); }
-.episodic-shell[data-nav="pathogens"] .episodic-screens { background: var(--episodic-tint-pathogens); }
-.episodic-shell[data-nav="instance"] .episodic-screens { background: var(--episodic-tint-instance); }
-/* The current nav section's own hue, redefined per `data-nav` so a
-   consumer (the mobile pane-switcher, the interpretation panel's
-   recommendation box, the recalculating spinner) reads one variable
-   instead of repeating a `[data-nav="..."]` selector of its own for
-   every one of the four sections. Buttons and chips are deliberately
-   never keyed to this - a control's colour should not change with
-   which screen it happens to sit on. */
-.episodic-shell[data-nav="outbreaks"] { --episodic-nav-accent: var(--episodic-warning); --episodic-nav-accent-dark: var(--episodic-warning-dark); }
-.episodic-shell[data-nav="epidemics"] { --episodic-nav-accent: var(--episodic-success); --episodic-nav-accent-dark: var(--episodic-success-dark); }
-.episodic-shell[data-nav="pathogens"] { --episodic-nav-accent: var(--episodic-danger); --episodic-nav-accent-dark: var(--episodic-danger-dark); }
-.episodic-shell[data-nav="instance"] { --episodic-nav-accent: var(--episodic-primary); --episodic-nav-accent-dark: var(--episodic-primary-dark); }
 /* .episodic-screens (above) is a flex item of .episodic-shell and so has
    a definite height even though it is not itself a flex container; a
    percentage-height descendant can resolve against that. Without this
@@ -414,25 +398,12 @@ body {
    the server's own selection whichever route it arrived by) and read
    here. A class saying the same thing is a second copy of it. */
 .episodic-rail-item[aria-current="true"] {
-  background: color-mix(in srgb, var(--episodic-nav-accent) 22%, var(--episodic-surface));
-  border-inline-start-color: var(--episodic-nav-accent);
-}
-/* The rail wears the screen's colour: its header carries a band of the
-   section accent and the open row the accent itself, the same one the
-   navigation, the charts, the bars and the cluster tables on that screen
-   use - so which screen is being read is never a question of reading
-   the navigation bar. */
-.episodic-pane-rail .episodic-rail-header {
-  background: color-mix(in srgb, var(--episodic-nav-accent) 12%, var(--episodic-surface));
-  border-block-end: 2px solid var(--episodic-nav-accent);
-}
-.episodic-pane-rail .episodic-rail-title {
-  color: var(--episodic-nav-accent-dark);
-  font-weight: 600;
+  background: color-mix(in srgb, var(--episodic-accent) 9%, var(--episodic-surface));
+  border-inline-start-color: var(--episodic-accent);
 }
 @media (hover: hover) {
   .episodic-rail-item:not([aria-current="true"]):hover {
-    background: color-mix(in srgb, var(--episodic-nav-accent) 8%, var(--episodic-surface));
+    background: color-mix(in srgb, var(--episodic-accent) 4%, var(--episodic-surface));
   }
 }
 .episodic-rail-item-open {
@@ -449,10 +420,10 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 .episodic-rail-item-open:active {
-  background: color-mix(in srgb, var(--episodic-nav-accent) 22%, var(--episodic-surface));
+  background: color-mix(in srgb, var(--episodic-accent) 12%, var(--episodic-surface));
 }
 .episodic-rail-item-open:focus-visible {
-  outline: 2px solid var(--episodic-nav-accent);
+  outline: 2px solid var(--episodic-accent);
   outline-offset: -2px;
 }
 /* Room for the checkbox, which is taken out of flow so that the button
@@ -794,12 +765,8 @@ body {
   gap: 9px;
   margin-top: 14px;
   padding: 12px;
-  /* Only ever shown on the Outbreaks screen (its panel has no epidemic
-     equivalent), so the section's own accent, not a --episodic-nav-
-     accent-tint that would need inventing for roles (warning/success/
-     danger) that, unlike primary, have no shipped _tint step. */
-  background: color-mix(in srgb, var(--episodic-nav-accent) 18%, var(--episodic-surface));
-  border-inline-start: 3px solid var(--episodic-nav-accent);
+  background: color-mix(in srgb, var(--episodic-accent) 7%, var(--episodic-surface));
+  border-inline-start: 3px solid var(--episodic-accent);
   border-radius: 2px;
   font-size: 1rem;
   line-height: 1.6;
@@ -825,12 +792,11 @@ body {
   background: var(--episodic-bg-subtle);
   height: 14px;
 }
-/* The section's accent, so a breakdown reads as part of the screen it is
-   on; primary where no section sets one (a report rendered outside the
-   app shell). */
+/* The app's one accent; primary itself where the accent is not defined
+   (a report rendered outside the app shell). */
 .episodic-bar-fill {
   height: 100%;
-  background: var(--episodic-nav-accent, var(--episodic-primary));
+  background: var(--episodic-accent, var(--episodic-primary));
 }
 .episodic-bar-value {
   width: 30px;
@@ -1241,9 +1207,13 @@ dl.episodic-settings dd { margin: 0; }
   border-radius: 2px;
 }
 
+/* Wide enough for a combined query ("norovirus AND ward OR rsv") and
+   the placeholder that explains it, and never wider than the screen:
+   the full width of a phone, 44rem at most on a desktop. */
 .episodic-search-input {
-  width: 320px;
-  max-width: 100%;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 44rem;
   font-family: var(--episodic-font);
   font-size: 0.962rem;
   padding: 6px 10px;
@@ -1371,19 +1341,15 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-table tr.episodic-row-link { cursor: pointer; }
 .episodic-table tr.episodic-row-link:hover,
 .episodic-table tr.episodic-row-link:focus {
-  /* --episodic-nav-accent, not a fixed primary: this table is shared
-     by the Pathogen screen, Archive and the dossier's related/similar
-     panels, and a row rendered under a different screen's data-nav
-     picks up that screen's own accent without this rule naming it. */
-  background: color-mix(in srgb, var(--episodic-nav-accent) 18%, var(--episodic-surface));
+  background: color-mix(in srgb, var(--episodic-accent) 7%, var(--episodic-surface));
   outline: none;
 }
 .episodic-table tr.episodic-row-link:focus-visible {
-  outline: 2px solid var(--episodic-nav-accent);
+  outline: 2px solid var(--episodic-accent);
   outline-offset: -2px;
 }
 .episodic-id-link {
-  color: var(--episodic-nav-accent-dark);
+  color: var(--episodic-accent-dark);
   font-weight: 500;
 }
 .episodic-table tr.episodic-row-link:hover .episodic-id-link { text-decoration: underline; }
@@ -1645,12 +1611,8 @@ dl.episodic-settings dd { margin: 0; }
   height: var(--episodic-spinner-size);
   margin-inline: auto;
   margin-block-start: calc(var(--episodic-spinner-size) / -2);
-  /* --episodic-nav-accent cascades from .episodic-shell[data-nav], so
-     this needs no [data-nav="..."] selector of its own - a spinner
-     inside the Pathogens screen already sits under that data-nav and
-     reads the danger step without being told to. */
-  border: var(--episodic-spinner-stroke) solid color-mix(in srgb, var(--episodic-nav-accent) 25%, var(--episodic-surface));
-  border-block-start-color: var(--episodic-nav-accent);
+  border: var(--episodic-spinner-stroke) solid color-mix(in srgb, var(--episodic-accent) 25%, var(--episodic-surface));
+  border-block-start-color: var(--episodic-accent);
   border-radius: 50%;
   animation: episodic-spin 0.7s linear infinite;
   pointer-events: none;
@@ -2096,15 +2058,15 @@ dl.episodic-settings dd { margin: 0; }
   .episodic-shell[data-pane="rail"] .episodic-pane-tab[data-episodic-pane="rail"],
   .episodic-shell[data-pane="dossier"] .episodic-pane-tab[data-episodic-pane="dossier"],
   .episodic-shell[data-pane="assessment"] .episodic-pane-tab[data-episodic-pane="assessment"] {
-    color: var(--episodic-nav-accent-dark);
+    color: var(--episodic-accent-dark);
     font-weight: 600;
-    box-shadow: inset 0 2px 0 var(--episodic-nav-accent);
+    box-shadow: inset 0 2px 0 var(--episodic-accent);
   }
   .episodic-pane-tab:active {
-    background: color-mix(in srgb, var(--episodic-nav-accent) 18%, var(--episodic-surface));
+    background: color-mix(in srgb, var(--episodic-accent) 18%, var(--episodic-surface));
   }
   .episodic-pane-tab:focus-visible {
-    outline: 2px solid var(--episodic-nav-accent);
+    outline: 2px solid var(--episodic-accent);
     outline-offset: -2px;
   }
 
