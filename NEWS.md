@@ -43,6 +43,7 @@
 - Outbreaks are linked to the epidemics they ran during whatever either cluster's state, so historical epidemics get their outbreaks
 - An epidemic's length is counted from its first to its last case instead of to today
 - The line list and outbreak report show sex as a translated word instead of its stored code
+- Map areas with the fewest cases are tinted instead of drawn in the case-free colour
 - A map's frame no longer extends past the reference geometry by more than its minimum margin, so a widespread cluster's map fills its box
 - `devtools::load_all()` no longer replaces the session's `EPISODIC_CONFIG` with the test suite's configuration
 

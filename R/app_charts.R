@@ -643,10 +643,11 @@ episodic_ui_geo_map_chart <- function(rows,
           linewidth = 0.1
         ) +
         ggplot2::scale_fill_gradient(
-          # Anchored on the neutral bg_subtle rather than a tint of the
-          # accent, so an area with few cases reads as nearly the page
-          # itself and only the dense end carries colour.
-          low = pal$bg_subtle,
+          # The low end is a visible tint of the accent, not the neutral
+          # bg_subtle that case-free areas (na.value) are drawn in: the
+          # area with the fewest cases maps to the low end exactly, and
+          # in bg_subtle it would read as an area with none.
+          low = episodic_geo_fill_low(pal$bg_subtle, accent),
           high = accent,
           na.value = pal$bg_subtle
         )
@@ -732,6 +733,18 @@ episodic_ui_geo_map_chart <- function(rows,
     },
     error = function(e) NULL
   )
+}
+
+#' The colour a choropleth draws its fewest-cases area in
+#'
+#' @param background The colour case-free areas are drawn in.
+#' @param accent The colour of the densest area.
+#' @param share How far from `background` towards `accent`, 0 to 1.
+#' @return A hex colour string.
+#' @keywords internal
+#' @noRd
+episodic_geo_fill_low <- function(background, accent, share = 0.3) {
+  grDevices::colorRampPalette(c(background, accent))(101)[round(share * 100) + 1]
 }
 
 #' The on-screen width:height ratio a map's frame renders at
