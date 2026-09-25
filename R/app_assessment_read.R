@@ -334,10 +334,15 @@ episodic_app_archive_load <- function(con,
 
 #' Narrow a loaded Archive to a search and a set of levels
 #'
-#' The search is a literal, case-insensitive substring, never a regular
-#' expression: what an epidemiologist types into a search box is text,
-#' and a stray `(` or `[` in it must find nothing rather than stop the
-#' screen with a regex error.
+#' Each search term is a literal, case-insensitive substring of the
+#' pathogen or the place, never a regular expression: what an
+#' epidemiologist types into a search box is text, and a stray `(` or
+#' `[` in it must find nothing rather than stop the screen with a regex
+#' error. Terms combine with ` AND ` and ` OR `, written in capitals with
+#' a space either side so that the words "and" and "or" inside a place
+#' name stay text; `AND` binds tighter, as it does everywhere else these
+#' words are operators (`noro AND ward OR rsv` is "noro in a ward, or
+#' any RSV"). See `episodic_app_archive_match()`.
 #'
 #' @param archive A data frame from `episodic_app_archive_load()`.
 #' @inheritParams episodic_app_archive
@@ -347,16 +352,56 @@ episodic_app_archive_load <- function(con,
 episodic_app_archive_filter <- function(archive, query = NULL, level = NULL) {
   if (!is.null(query) && length(query) == 1 && !is.na(query) &&
     nzchar(trimws(query))) {
-    needle <- tolower(trimws(query))
-    hit <- grepl(needle, tolower(archive$pathogen), fixed = TRUE) |
-      grepl(needle, tolower(archive$place), fixed = TRUE)
-    archive <- archive[hit, , drop = FALSE]
+    archive <- archive[
+      episodic_app_archive_match(archive, query), ,
+      drop = FALSE
+    ]
   }
   if (!is.null(level) && length(level) > 0) {
     archive <- archive[archive$level %in% level, , drop = FALSE]
   }
   rownames(archive) <- NULL
   archive
+}
+
+#' Which Archive rows a search matches
+#'
+#' The query is split on ` OR ` into alternatives and each alternative on
+#' ` AND ` into terms; a row matches when every term of at least one
+#' alternative is in its pathogen or its place. Pathogen and place are
+#' searched as one text joined by a control character, so a term can
+#' match either but never a span running from one into the other.
+#'
+#' A query that is nothing but operators names no term at all, and
+#' narrows nothing, exactly as an empty box does.
+#'
+#' @param archive A data frame with `pathogen` and `place`.
+#' @param query A single non-empty search string.
+#' @return A logical vector, one element per row of `archive`.
+#' @keywords internal
+#' @noRd
+episodic_app_archive_match <- function(archive, query) {
+  haystack <- tolower(paste(archive$pathogen, archive$place, sep = "\u001f"))
+  alternatives <- lapply(
+    strsplit(query, " OR ", fixed = TRUE)[[1]],
+    function(alternative) {
+      terms <- trimws(strsplit(alternative, " AND ", fixed = TRUE)[[1]])
+      tolower(terms[nzchar(terms)])
+    }
+  )
+  alternatives <- alternatives[lengths(alternatives) > 0]
+  if (length(alternatives) == 0) {
+    return(rep(TRUE, nrow(archive)))
+  }
+  hit <- rep(FALSE, nrow(archive))
+  for (terms in alternatives) {
+    all_terms <- rep(TRUE, nrow(archive))
+    for (term in terms) {
+      all_terms <- all_terms & grepl(term, haystack, fixed = TRUE)
+    }
+    hit <- hit | all_terms
+  }
+  hit
 }
 
 #' What a detection run actually took in, as one line

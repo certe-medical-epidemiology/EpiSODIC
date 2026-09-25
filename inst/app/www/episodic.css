@@ -38,16 +38,17 @@
 :root {
   --episodic-font: "IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
   --episodic-font-size-base: 13px;
-  /* One tint per nav group, at an alpha low enough to read as "which
-     screen is this" rather than as a colour anyone would name - each
+  /* One tint per nav group, strong enough that the screen being read is
+     visible at a glance, and still well short of a colour the cards on
+     it would have to compete with - each
      mixes that group's own brandbar hue (see episodic_brand_bar()) into
      the ordinary page background, so the four screens stay visually
      distinguishable without the cards sitting on them (which keep their
      own opaque --episodic-surface) looking tinted at all. */
-  --episodic-tint-outbreaks: color-mix(in srgb, var(--episodic-warning) 6%, var(--episodic-bg));
-  --episodic-tint-epidemics: color-mix(in srgb, var(--episodic-success) 6%, var(--episodic-bg));
-  --episodic-tint-pathogens: color-mix(in srgb, var(--episodic-danger) 6%, var(--episodic-bg));
-  --episodic-tint-instance: color-mix(in srgb, var(--episodic-primary) 6%, var(--episodic-bg));
+  --episodic-tint-outbreaks: color-mix(in srgb, var(--episodic-warning) 12%, var(--episodic-bg));
+  --episodic-tint-epidemics: color-mix(in srgb, var(--episodic-success) 12%, var(--episodic-bg));
+  --episodic-tint-pathogens: color-mix(in srgb, var(--episodic-danger) 12%, var(--episodic-bg));
+  --episodic-tint-instance: color-mix(in srgb, var(--episodic-primary) 12%, var(--episodic-bg));
 }
 
 html {
@@ -413,8 +414,26 @@ body {
    the server's own selection whichever route it arrived by) and read
    here. A class saying the same thing is a second copy of it. */
 .episodic-rail-item[aria-current="true"] {
-  background: var(--episodic-primary-tint);
-  border-inline-start-color: var(--episodic-primary);
+  background: color-mix(in srgb, var(--episodic-nav-accent) 22%, var(--episodic-surface));
+  border-inline-start-color: var(--episodic-nav-accent);
+}
+/* The rail wears the screen's colour: its header carries a band of the
+   section accent and the open row the accent itself, the same one the
+   navigation, the charts, the bars and the cluster tables on that screen
+   use - so which screen is being read is never a question of reading
+   the navigation bar. */
+.episodic-pane-rail .episodic-rail-header {
+  background: color-mix(in srgb, var(--episodic-nav-accent) 12%, var(--episodic-surface));
+  border-block-end: 2px solid var(--episodic-nav-accent);
+}
+.episodic-pane-rail .episodic-rail-title {
+  color: var(--episodic-nav-accent-dark);
+  font-weight: 600;
+}
+@media (hover: hover) {
+  .episodic-rail-item:not([aria-current="true"]):hover {
+    background: color-mix(in srgb, var(--episodic-nav-accent) 8%, var(--episodic-surface));
+  }
 }
 .episodic-rail-item-open {
   display: block;
@@ -430,10 +449,10 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 .episodic-rail-item-open:active {
-  background: var(--episodic-primary-tint);
+  background: color-mix(in srgb, var(--episodic-nav-accent) 22%, var(--episodic-surface));
 }
 .episodic-rail-item-open:focus-visible {
-  outline: 2px solid var(--episodic-primary);
+  outline: 2px solid var(--episodic-nav-accent);
   outline-offset: -2px;
 }
 /* Room for the checkbox, which is taken out of flow so that the button
@@ -703,6 +722,24 @@ body {
    padding the map on both sides - capping the box close to the map's
    rendered width (see episodic_ui_map_render_height()) is what actually
    removes that whitespace, rather than pushing it out to the panel edge. */
+/* A problem with the data a dossier is drawn from, stated above the
+   figures it affects rather than inside one panel of them. */
+.episodic-dossier-problem {
+  margin-block: 4px 14px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--episodic-danger) 10%, var(--episodic-surface));
+  border-inline-start: 3px solid var(--episodic-danger);
+  border-radius: 2px;
+  font-size: 0.962rem;
+  line-height: 1.55;
+  color: var(--episodic-ink);
+}
+.episodic-dossier-problem p {
+  margin: 0;
+}
+.episodic-dossier-problem p + p {
+  margin-block-start: 6px;
+}
 .episodic-geo-single {
   max-width: 640px;
   margin: 0 auto;
@@ -788,9 +825,12 @@ body {
   background: var(--episodic-bg-subtle);
   height: 14px;
 }
+/* The section's accent, so a breakdown reads as part of the screen it is
+   on; primary where no section sets one (a report rendered outside the
+   app shell). */
 .episodic-bar-fill {
   height: 100%;
-  background: var(--episodic-primary);
+  background: var(--episodic-nav-accent, var(--episodic-primary));
 }
 .episodic-bar-value {
   width: 30px;

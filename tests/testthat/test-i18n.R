@@ -40,6 +40,17 @@ test_that("every shipped language file carries exactly the same key set as en.js
   }
 })
 
+test_that("every shipped language file lists its keys in sorted order", {
+  # Sorted by byte (radix), not by the session's collation, so the order
+  # is the same on every machine and a key's place in the file never
+  # depends on who sorted it.
+  for (lang in c(episodic_shipped_langs, episodic_shipped_variants)) {
+    path <- system.file("i18n", paste0(lang, ".json"), package = "EpiSODIC")
+    keys <- names(jsonlite::fromJSON(path, simplifyVector = FALSE))
+    expect_identical(keys, sort(keys, method = "radix"), info = lang)
+  }
+})
+
 test_that("a variant file carries only keys its base has, and only keys that differ", {
   # The point of a variant is that it is small. A key it repeats
   # unchanged is a key that will drift from the base without anyone

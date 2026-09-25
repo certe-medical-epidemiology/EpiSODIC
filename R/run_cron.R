@@ -1600,8 +1600,8 @@ episodic_cases_for_stream <- function(cases,
 #' Other epidemic levels resolve the same way via
 #' `episodic_case_region_code()`.
 #'
-#' @param outbreak One row from `episodic_db_open_outbreaks()`.
-#' @param epidemic One row from `episodic_db_open_epidemics()`.
+#' @param outbreak One row from `episodic_db_link_outbreaks()`.
+#' @param epidemic One row from `episodic_db_link_epidemics()`.
 #' @param cases The run's full case data frame.
 #' @param geography The resolved geography for this run.
 #' @return `TRUE` if the outbreak nests inside the epidemic.
@@ -1611,23 +1611,49 @@ episodic_geography_nests <- function(outbreak, epidemic, cases, geography) {
   if (epidemic$level == "pathogen_region") {
     return(TRUE)
   }
-  ob_cases <- episodic_cases_for_stream(cases, outbreak, geography)
-  if (nrow(ob_cases) == 0) {
-    return(FALSE)
-  }
-  codes <- episodic_case_region_code(
-    ob_cases,
+  codes <- episodic_outbreak_region_codes(
+    outbreak,
     epidemic$level,
-    geography = geography
+    cases,
+    geography
   )
-  any(!is.na(codes) & codes == epidemic$region_code)
+  epidemic$region_code %in% codes
 }
 
-#' Link open outbreaks to open epidemics they occur during
+#' The codes an outbreak's cases resolve to at an epidemic's level
 #'
-#' For each open epidemic, every open outbreak that shares the same
-#' pathogen, overlaps in time, and nests geographically is linked via
-#' `episodic_cluster_link`. Links are additive and idempotent.
+#' @param outbreak One row from `episodic_db_link_outbreaks()`.
+#' @param level The epidemic's lattice level.
+#' @param cases The run's case data frame (all of it, or the outbreak's
+#'   pathogen's share of it).
+#' @param geography The resolved geography for this run.
+#' @return A character vector of distinct codes, possibly empty.
+#' @keywords internal
+#' @noRd
+episodic_outbreak_region_codes <- function(outbreak, level, cases, geography) {
+  ob_cases <- episodic_cases_for_stream(cases, outbreak, geography)
+  if (nrow(ob_cases) == 0) {
+    return(character(0))
+  }
+  codes <- episodic_case_region_code(ob_cases, level, geography = geography)
+  unique(codes[!is.na(codes)])
+}
+
+#' Link outbreaks to the epidemics they occur during
+#'
+#' For each epidemic, every outbreak that shares its pathogen, overlaps
+#' it in time, and nests inside it geographically is linked via
+#' `episodic_cluster_link`. Open or closed, on both sides: the relation
+#' is a fact about pathogen, time and place, and reading only the
+#' clusters still open when a run happens to fire would leave a first
+#' run's historical epidemics - opened and closed in that one run - with
+#' no outbreak linked to them at all.
+#'
+#' Links are additive and idempotent, and a pair already linked is not
+#' weighed again. What an outbreak's cases resolve to at an epidemic's
+#' level is worked out once per outbreak stream and level, since an
+#' outbreak stream holds many clusters over the years and every one of
+#' them resolves the same way.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cases The run's full case data frame.
@@ -1637,45 +1663,50 @@ episodic_geography_nests <- function(outbreak, epidemic, cases, geography) {
 #' @keywords internal
 #' @noRd
 episodic_epidemic_link_outbreaks <- function(con, cases, geography, run_id) {
-  epidemics <- episodic_db_open_epidemics(con)
-  outbreaks <- episodic_db_open_outbreaks(con)
+  epidemics <- episodic_db_link_epidemics(con)
+  outbreaks <- episodic_db_link_outbreaks(con)
   if (nrow(epidemics) == 0 || nrow(outbreaks) == 0) {
     return(invisible(0L))
   }
-
-  epi_open <- !vapply(
-    epidemics$cluster_id,
-    function(id) episodic_reconcile_is_closed(con, id),
-    logical(1)
+  existing <- episodic_db_cluster_links_all(con)
+  existing_keys <- paste(
+    existing$outbreak_cluster_id,
+    existing$epidemic_cluster_id
   )
-  epidemics <- epidemics[epi_open, ]
-  if (nrow(epidemics) == 0) {
-    return(invisible(0L))
-  }
 
-  ob_open <- !vapply(
-    outbreaks$cluster_id,
-    function(id) episodic_reconcile_is_closed(con, id),
-    logical(1)
-  )
-  outbreaks <- outbreaks[ob_open, ]
-  if (nrow(outbreaks) == 0) {
-    return(invisible(0L))
+  cases_by_pathogen <- split(cases, cases$pathogen)
+  codes_cache <- new.env(parent = emptyenv())
+  outbreak_codes <- function(ob, level) {
+    key <- paste(ob$stream_id, level)
+    if (is.null(codes_cache[[key]])) {
+      pathogen_cases <- cases_by_pathogen[[ob$pathogen]]
+      codes_cache[[key]] <- if (is.null(pathogen_cases)) {
+        character(0)
+      } else {
+        episodic_outbreak_region_codes(ob, level, pathogen_cases, geography)
+      }
+    }
+    codes_cache[[key]]
   }
 
   n_linked <- 0L
   for (i in seq_len(nrow(epidemics))) {
     epi <- epidemics[i, ]
-    candidates <- outbreaks[outbreaks$pathogen == epi$pathogen, ]
-    if (nrow(candidates) == 0) next
-    overlapping <- candidates[
-      as.Date(candidates$first_day) <= as.Date(epi$last_day) &
-        as.Date(candidates$last_day) >= as.Date(epi$first_day),
+    candidates <- outbreaks[
+      outbreaks$pathogen == epi$pathogen &
+        as.Date(outbreaks$first_day) <= as.Date(epi$last_day) &
+        as.Date(outbreaks$last_day) >= as.Date(epi$first_day), ,
+      drop = FALSE
     ]
-    if (nrow(overlapping) == 0) next
-    for (j in seq_len(nrow(overlapping))) {
-      ob <- overlapping[j, ]
-      if (episodic_geography_nests(ob, epi, cases, geography)) {
+    candidates <- candidates[
+      !paste(candidates$cluster_id, epi$cluster_id) %in% existing_keys, ,
+      drop = FALSE
+    ]
+    for (j in seq_len(nrow(candidates))) {
+      ob <- candidates[j, ]
+      nests <- identical(epi$level, "pathogen_region") ||
+        epi$region_code %in% outbreak_codes(ob, epi$level)
+      if (nests) {
         episodic_db_cluster_link_insert(
           con,
           outbreak_cluster_id = ob$cluster_id,

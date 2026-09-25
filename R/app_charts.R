@@ -580,6 +580,11 @@ episodic_chart_rt_axis <- function(log_values,
 #'   Defaults to the palette's `primary`; see
 #'   `episodic_ui_epi_curve_chart()`'s own `accent` for why a caller
 #'   passes `episodic_nav_accent()` instead.
+#' @param label_areas When `TRUE` (the default), a cropped map labels its
+#'   case-bearing areas with their PC value and count. `FALSE` draws the
+#'   fill alone: an epidemic spread over a whole region has more areas
+#'   than can be labelled without the labels covering the map, and the
+#'   bar breakdown beside it carries the counts.
 #' @return A `ggplot` object, or `NULL` if no geographic data is
 #'   available at all, or the join/plot fails for any reason (e.g. a PC
 #'   value not in the reference geometry - synthetic demo postcodes are
@@ -592,7 +597,8 @@ episodic_ui_geo_map_chart <- function(rows,
                                       min_pad_share = 0.02,
                                       max_labels = 30L,
                                       crop = TRUE,
-                                      accent = NULL) {
+                                      accent = NULL,
+                                      label_areas = TRUE) {
   if (nrow(rows) == 0) {
     return(NULL)
   }
@@ -677,7 +683,9 @@ episodic_ui_geo_map_chart <- function(rows,
         )
       }
 
-      labels <- if (crop) episodic_geo_labels(matched, max_labels = max_labels)
+      labels <- if (crop && label_areas) {
+        episodic_geo_labels(matched, max_labels = max_labels)
+      }
       if (!is.null(labels)) {
         # Plain geom_text over pre-computed representative points rather
         # than geom_sf_text(): stat_sf_coordinates() emits a warning per

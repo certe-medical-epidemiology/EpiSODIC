@@ -522,8 +522,6 @@ episodic_ui_bars <- function(rows,
   if (nrow(rows) == 0) {
     return(shiny::tags$p(class = "episodic-panel-empty", "..."))
   }
-  pal <- episodic_palette()
-  colour <- colour %||% pal$primary
   max_n <- max(rows$n, 1)
   bars <- lapply(seq_len(nrow(rows)), function(i) {
     shiny::tags$div(
@@ -537,10 +535,14 @@ episodic_ui_bars <- function(rows,
         class = "episodic-bar-track",
         shiny::tags$div(
           class = "episodic-bar-fill",
-          style = sprintf(
-            "width:%s;background:%s;",
+          # The screen's own colour unless a caller names one: the
+          # stylesheet gives `.episodic-bar-fill` the section accent the
+          # rail and the charts on the same screen carry.
+          style = paste0(
+            "width:",
             episodic_css_pct(100 * rows$n[i] / max_n),
-            colour
+            ";",
+            if (!is.null(colour)) paste0("background:", colour, ";")
           )
         )
       ),
@@ -646,9 +648,11 @@ episodic_ui_state_colour <- function(state) {
 #'
 #' Deliberately not primary/secondary/tertiary in line order: first line
 #' takes primary since it is the one an epidemiologist sees most often,
-#' second takes tertiary and third takes secondary. `"other"`/`"unknown"`
-#' (and anything else) get `NULL` - no chip, rather than a chip that
-#' says nothing.
+#' second takes tertiary and third takes secondary. `"other"` is a care
+#' line like the three - a place cases were found, outside the three the
+#' lattice names - and takes the muted grey, so it reads as one without
+#' competing with them. `"unknown"` (and anything else) gets `NULL`: no
+#' chip, rather than a chip saying nothing was recorded.
 #'
 #' @param care_line A stream `care_line` value, or `NA`.
 #' @return A hex colour, or `NULL`.
@@ -660,6 +664,7 @@ episodic_ui_care_line_colour <- function(care_line) {
     first = pal$primary,
     second = pal$tertiary,
     third = pal$secondary,
+    other = pal$muted,
     NULL
   )
 }

@@ -1337,6 +1337,14 @@ episodic_app_linelist <- function(con, cluster_id) {
 
 #' Detection settings for the dossier's settings panel
 #'
+#' The run it reports is the one that last detected this cluster
+#' (`episodic_cluster.last_detected_run`), not the instance's latest run:
+#' the panel describes how this cluster was found, and on an instance
+#' whose runs have moved to a newer build since, the latest run's
+#' package versions would be a statement about a detection that did not
+#' produce it. A cluster no run detected (`origin = 'manual'`) has no
+#' such run, and every run field is `NA`.
+#'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
 #' @param obj The cluster object from `episodic_cluster_object()`, or
@@ -1354,7 +1362,14 @@ episodic_app_detection_settings <- function(con, cluster_id, obj = NULL) {
   } else {
     obj
   }
-  run <- episodic_db_latest_run(con, status = episodic_run_statuses_complete)
+  run_id <- episodic_db_get_query(
+    con,
+    "SELECT last_detected_run FROM episodic_cluster WHERE cluster_id = ?",
+    params = list(cluster_id)
+  )$last_detected_run
+  run <- if (length(run_id) == 1 && !is.na(run_id)) {
+    episodic_db_run(con, run_id)
+  }
   list(
     detectors = cluster_obj$detectors,
     rt_applicable = cluster_obj$rt_applicable,
@@ -1570,13 +1585,16 @@ episodic_app_open_epidemics <- function(con,
 #' @param lang Session language.
 #' @param lead_in_weeks How many weeks before the epidemic's first day
 #'   the curve shows, so the rise into it is on the chart.
+#' @param tail_weeks How many weeks after a closed epidemic's last case
+#'   the curve shows, so its fall is on the chart.
 #' @return A list with elements named for the dossier panels.
 #' @keywords internal
 #' @noRd
 episodic_epidemic_object <- function(con,
                                      cluster_id,
                                      lang = Sys.getenv("EPISODIC_LANGUAGE"),
-                                     lead_in_weeks = 8L) {
+                                     lead_in_weeks = 8L,
+                                     tail_weeks = 4L) {
   cluster <- episodic_db_get_query(
     con,
     "SELECT * FROM episodic_cluster WHERE cluster_id = ?",
@@ -1622,6 +1640,32 @@ episodic_epidemic_object <- function(con,
   history$sample_date <- as.Date(history$sample_date)
   history <- history[!is.na(history$sample_date), , drop = FALSE]
 
+  # Every case linked to the epidemic is, by construction, a case of its
+  # stream. When the history read here does not hold them all, the
+  # dashboard is deciding stream membership under a different geography
+  # from the detection run that linked them - an L5 stream's code, or
+  # the province mapping, differs between the two configurations - and
+  # every panel read against the history would be drawn from a partial
+  # population without a word. Counted, so the dossier says so, and the
+  # curve falls back to the cases the epidemic is known to hold.
+  history_missing <- sum(!(cases$case_id %in% history$case_id))
+  history_problem <- if (history_missing > 0) {
+    dashboard_code <- episodic_geography_config()$region_code
+    list(
+      n_read = nrow(cases) - history_missing,
+      n_linked = nrow(cases),
+      stream_code = stream$region_code,
+      dashboard_code = if (
+        identical(stream$level, "pathogen_region") &&
+          !identical(stream$region_code, dashboard_code)
+      ) {
+        dashboard_code
+      } else {
+        NA_character_
+      }
+    )
+  }
+
   season <- episodic_db_epidemic_season(con, cluster_id)
   place <- episodic_app_place_label(stream, NULL, lang = lang)
   asof <- episodic_app_data_asof(con)
@@ -1639,14 +1683,32 @@ episodic_epidemic_object <- function(con,
     NULL
   }
 
+  # A closed epidemic is read over its own course, with a short tail to
+  # show the fall: drawn to today, a season two years back is a curve
+  # of two years of zeros, and its "latest complete week" a week in
+  # which it had long since ended. An open one is read to today.
+  closed <- identical(
+    episodic_app_derive_state_for_cluster(con, cluster_id),
+    "closed"
+  )
   from <- as.Date(cluster$first_day)
-  to <- max(as.Date(cluster$last_day), asof)
+  to <- if (closed) {
+    min(as.Date(cluster$last_day) + 7L * as.integer(tail_weeks), asof)
+  } else {
+    max(as.Date(cluster$last_day), asof)
+  }
   # `episodic_app_pathogen_weekly()` rather than the bare weekly counts:
   # it carries the `incomplete` flag, which is what shades the weeks
   # still filling. A curve drawn without it tells the reader that this
   # week's dip is a fall in incidence, when what it is is the post.
   weekly <- episodic_app_pathogen_weekly(
-    data.frame(sample_date = history$sample_date),
+    data.frame(
+      sample_date = if (is.null(history_problem)) {
+        history$sample_date
+      } else {
+        cases$sample_date
+      }
+    ),
     list(from = from - 7L * as.integer(lead_in_weeks), to = to),
     incomplete_days,
     asof
@@ -1765,14 +1827,17 @@ episodic_epidemic_object <- function(con,
     origin = cluster$origin,
     asof = asof,
     incomplete_days = incomplete_days,
+    history_problem = history_problem,
     season = season,
     anchor_week = anchor_week,
     weekly = weekly,
     thresholds = thresholds,
+    closed = closed,
     course = episodic_epidemic_course(weekly, from, thresholds),
     overlay = overlay,
     rt = rt,
     rt_applicable = !is.null(pc) && isTRUE(as.logical(pc$rt_applicable)),
+    case_free_days = if (!is.null(pc)) pc$case_free_days else NA_integer_,
     rt_unavailable_reason = episodic_rt_unavailable_reason(
       pc,
       incomplete_days = incomplete_days

@@ -733,6 +733,30 @@ test_that("the Archive search is literal text, not a pattern", {
   expect_equal(nrow(episodic_app_archive_filter(archive, query = "")), 3)
 })
 
+test_that("the Archive search combines terms with AND and OR", {
+  archive <- data.frame(
+    cluster_id = 1:4,
+    pathogen = c("Norovirus", "Norovirus", "RSV", "Influenza A"),
+    place = c("Ward B4", "Region", "Ward C2", "Oranje and Nassau Hospital"),
+    level = "pathogen_ward",
+    stringsAsFactors = FALSE
+  )
+  ids <- function(query) episodic_app_archive_filter(archive, query = query)$cluster_id
+
+  expect_equal(ids("noro AND ward"), 1L)
+  expect_equal(ids("noro OR rsv"), 1:3)
+  # AND binds tighter than OR.
+  expect_equal(ids("noro AND ward OR rsv"), c(1L, 3L))
+  expect_equal(ids("ward AND b4 OR ward AND c2"), c(1L, 3L))
+  # Lower-case "and" is text, so a place name keeps it.
+  expect_equal(ids("oranje and nassau"), 4L)
+  # A term matches the pathogen or the place, never a span across both.
+  expect_equal(length(ids("virusward")), 0)
+  # Operators alone name no term, and narrow nothing.
+  expect_equal(ids(" OR "), 1:4)
+  expect_equal(ids("noro AND  AND ward"), 1L)
+})
+
 test_that("the Archive is drawn a page at a time", {
   archive_of <- function(n) {
     data.frame(

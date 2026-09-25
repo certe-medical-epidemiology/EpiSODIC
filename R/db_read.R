@@ -1286,14 +1286,20 @@ episodic_db_open_seasonal_epidemics <- function(con) {
   )
 }
 
-#' Every open epidemic cluster (seasonal or not), for linking
+#' Every epidemic the "during" relation can link to, open or closed
+#'
+#' Whatever its state: "this outbreak ran during that epidemic" is a
+#' statement about pathogen, time and place, and it stays true after
+#' either of them closes. Read as open clusters only, a first run - which
+#' closes the settled history in the run that opens it - would leave
+#' every historical epidemic with no outbreak linked to it.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @return A data frame of open epidemic clusters with their stream's
-#'   pathogen and geographic identifiers.
+#' @return A data frame of detected, unmerged epidemic clusters with their
+#'   stream's pathogen and geographic identifiers.
 #' @keywords internal
 #' @noRd
-episodic_db_open_epidemics <- function(con) {
+episodic_db_link_epidemics <- function(con) {
   episodic_db_get_query(
     con,
     "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day,
@@ -1307,14 +1313,16 @@ episodic_db_open_epidemics <- function(con) {
   )
 }
 
-#' Every open outbreak cluster, for linking
+#' Every outbreak the "during" relation can link, open or closed
+#'
+#' See `episodic_db_link_epidemics()` for why state plays no part.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @return A data frame of open outbreak clusters with their stream's
-#'   pathogen and geographic identifiers.
+#' @return A data frame of detected, unmerged outbreak clusters with their
+#'   stream's pathogen and geographic identifiers.
 #' @keywords internal
 #' @noRd
-episodic_db_open_outbreaks <- function(con) {
+episodic_db_link_outbreaks <- function(con) {
   episodic_db_get_query(
     con,
     "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day,
@@ -1325,6 +1333,19 @@ episodic_db_open_outbreaks <- function(con) {
       WHERE c.merged_into IS NULL
         AND c.origin = 'detected'
         AND c.scale = 'outbreak'"
+  )
+}
+
+#' Every "during" link already recorded
+#' @param con A [DBI::DBIConnection-class].
+#' @return A data frame with `outbreak_cluster_id` and
+#'   `epidemic_cluster_id`.
+#' @keywords internal
+#' @noRd
+episodic_db_cluster_links_all <- function(con) {
+  episodic_db_get_query(
+    con,
+    "SELECT outbreak_cluster_id, epidemic_cluster_id FROM episodic_cluster_link"
   )
 }
 

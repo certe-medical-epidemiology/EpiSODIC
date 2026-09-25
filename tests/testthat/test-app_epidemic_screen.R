@@ -268,6 +268,103 @@ test_that("an epidemic's institutions are counted from its own cases", {
   expect_equal(nrow(none), 0)
 })
 
+test_that("an epidemic's length is its own course, not the time since it began", {
+  html <- as.character(episodic_ui_epidemic_stat_grid(epidemic_obj(), lang = "en"))
+  # 15 December 2025 to 12 January 2026: five ISO weeks.
+  expect_true(grepl("5 weeks", html, fixed = TRUE))
+})
+
+test_that("a closed epidemic has no 'now': its intensity is read at the peak", {
+  thresholds <- list(
+    pre_epidemic = 5,
+    post_epidemic = 4,
+    intensity = c(medium = 10, high = 20, very_high = 30)
+  )
+  weekly <- course_weekly(c(8, 22, 12))
+  obj <- epidemic_obj(
+    closed = TRUE,
+    course = episodic_epidemic_course(weekly, "2025-12-01", thresholds)
+  )
+  html <- as.character(episodic_ui_epidemic_stat_grid(obj, lang = "en"))
+  expect_false(grepl("Latest complete week", html, fixed = TRUE))
+  expect_false(grepl("Intensity now", html, fixed = TRUE))
+  expect_true(grepl(episodic_tr("pathogen.stat.intensity", lang = "en"), html, fixed = TRUE))
+  expect_true(grepl("High", html, fixed = TRUE))
+
+  header <- as.character(episodic_ui_epidemic_header(obj, "closed", lang = "en"))
+  expect_false(grepl(">High<", header, fixed = TRUE))
+})
+
+test_that("a history missing linked cases is stated, with both codes where they differ", {
+  expect_null(episodic_ui_epidemic_history_problem(epidemic_obj(), lang = "en"))
+
+  obj <- epidemic_obj(history_problem = list(
+    n_read = 0,
+    n_linked = 181,
+    stream_code = "Hele Certe-regio",
+    dashboard_code = "REGION"
+  ))
+  html <- as.character(episodic_ui_epidemic_history_problem(obj, lang = "en"))
+  expect_true(grepl("episodic-dossier-problem", html, fixed = TRUE))
+  expect_true(grepl("holds 0 of the 181 cases", html, fixed = TRUE))
+  expect_true(grepl("Hele Certe-regio", html, fixed = TRUE))
+  expect_true(grepl("REGION", html, fixed = TRUE))
+
+  same_code <- epidemic_obj(history_problem = list(
+    n_read = 3,
+    n_linked = 5,
+    stream_code = "GR",
+    dashboard_code = NA_character_
+  ))
+  html <- as.character(episodic_ui_epidemic_history_problem(same_code, lang = "en"))
+  expect_false(grepl("geography.region_code", html, fixed = TRUE))
+})
+
+test_that("the epidemic dossier carries its detection settings, titled for an epidemic", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  html <- as.character(episodic_ui_settings_panel(
+    env$con,
+    env$cluster_id,
+    lang = "nl",
+    obj = epidemic_obj(case_free_days = 14),
+    scale = "epidemic"
+  ))
+  expect_true(grepl("Detectie-instellingen voor deze epidemie", html, fixed = TRUE))
+  expect_false(grepl("[[", html, fixed = TRUE))
+})
+
+test_that("the rails give 'other' a care-line chip and leave 'unknown' without one", {
+  expect_false(is.null(episodic_ui_care_line_colour("other")))
+  expect_null(episodic_ui_care_line_colour("unknown"))
+})
+
+test_that("breakdown bars take the screen's colour unless a caller names one", {
+  rows <- data.frame(label = c("9711", "9712"), n = c(3L, 1L))
+  plain <- as.character(episodic_ui_bars(rows, lang = "en"))
+  expect_false(grepl("background:", plain, fixed = TRUE))
+  named <- as.character(episodic_ui_bars(rows, colour = "#123456", lang = "en"))
+  expect_true(grepl("background:#123456", named, fixed = TRUE))
+
+  css <- paste(
+    readLines(
+      system.file("app/www/episodic.css", package = "EpiSODIC"),
+      warn = FALSE
+    ),
+    collapse = "\n"
+  )
+  expect_true(grepl(
+    "background: var(--episodic-nav-accent, var(--episodic-primary));",
+    css,
+    fixed = TRUE
+  ))
+  expect_true(grepl(
+    ".episodic-rail-item[aria-current=\"true\"] {\n  background: color-mix(in srgb, var(--episodic-nav-accent)",
+    css,
+    fixed = TRUE
+  ))
+})
+
 # ---------------------------------------------------------------------
 # The rails read what they list, not the whole history
 # ---------------------------------------------------------------------
