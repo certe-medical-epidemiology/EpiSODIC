@@ -371,7 +371,7 @@ episodic_ui_epidemic_header <- function(obj,
       class = "episodic-dossier-meta",
       style = "display:flex;gap:8px;flex-wrap:wrap;",
       shiny::tags$span(obj$place),
-      shiny::tags$span(style = "color:var(--episodic-faint);", "·"),
+      shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
       shiny::tags$span(episodic_tr(
         "dossier.meta.first_last",
         first = episodic_format_date(obj$first_day, lang = lang),
@@ -380,7 +380,7 @@ episodic_ui_epidemic_header <- function(obj,
       )),
       if (length(obj$detectors) > 0) {
         shiny::tagList(
-          shiny::tags$span(style = "color:var(--episodic-faint);", "·"),
+          shiny::tags$span(style = "color:var(--episodic-faint);", "\u00b7"),
           shiny::tags$span(shiny::HTML(episodic_tr(
             "dossier.meta.detected_by",
             detectors = episodic_ui_code_join(
