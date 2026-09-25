@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.20.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.20.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,26 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.20.6" id="episodic-0206">EpiSODIC 0.20.6<a class="anchor" aria-label="anchor" href="#episodic-0206"></a></h2>
+<div class="section level3">
+<h3 id="changed-0-20-6">Changed<a class="anchor" aria-label="anchor" href="#changed-0-20-6"></a></h3>
+<ul><li>The Archive reads the database once per data change; searching and the level chips filter in memory</li>
+<li>The Archive shows closed clusters 100 per page</li>
+<li>The dashboard sends its shell and rail before the first dossier, which follows on the next flush</li>
+<li>Cluster tables resolve the configuration once per table instead of twice per row</li>
+<li>A configuration file is re-read and re-hashed only when its size or modification time changes</li>
+<li>Cluster states for the rail and the Archive are derived in one pass instead of one scan per cluster</li>
+<li>The Archive builds place labels once per stream and closure authors once per user</li>
+<li>Batched reads over many clusters or streams run in chunks</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-20-6">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-20-6"></a></h3>
+<ul><li>The Archive search box keeps what was typed when the results redraw</li>
+<li>An Archive search containing a character such as <code>(</code> or <code>[</code> no longer stops the screen</li>
+<li>Batched reads no longer exceed MySQL’s 65,535-placeholder limit on instances with many clusters</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.20.5" id="episodic-0205">EpiSODIC 0.20.5<a class="anchor" aria-label="anchor" href="#episodic-0205"></a></h2>
 <div class="section level3">
