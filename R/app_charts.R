@@ -41,6 +41,24 @@ NULL
 #' @noRd
 episodic_chart_text_size <- c(axis = 11, title = 11, legend = 11)
 
+#' The expansion every chart's y axis takes
+#'
+#' Nothing below the zero line, and a quarter of the data range of room
+#' above the tallest mark. `ggplot2`'s own default pads both ends by
+#' five per cent, which floats the bars off the axis at the bottom and
+#' leaves the highest bar or point level with, or above, the top grid
+#' line - so the one value a reader most wants to read off the axis is
+#' the one with no label near it.
+#'
+#' A function rather than a constant, so the `ggplot2` call happens when
+#' a chart is drawn and not when the package is built.
+#' @return A `ggplot2::expansion()` vector.
+#' @keywords internal
+#' @noRd
+episodic_chart_y_expand <- function() {
+  ggplot2::expansion(mult = c(0, 0.25))
+}
+
 #' The shared chart theme
 #'
 #' Axis labels are set in the muted grey the rest of the interface uses
@@ -351,7 +369,10 @@ episodic_ui_epi_curve_chart <- function(curve,
       show.legend = FALSE
     ) +
     ggplot2::scale_alpha_identity() +
-    ggplot2::scale_y_continuous(labels = episodic_chart_number_labels(lang)) +
+    ggplot2::scale_y_continuous(
+      labels = episodic_chart_number_labels(lang),
+      expand = episodic_chart_y_expand()
+    ) +
     ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang)) +
     episodic_chart_theme()
 }
@@ -398,6 +419,10 @@ episodic_ui_trend_chart <- function(trend,
       values = c(obs = pal$ink, exp = accent),
       labels = legend_labels
     ) +
+    ggplot2::scale_y_continuous(
+      labels = episodic_chart_number_labels(lang),
+      expand = episodic_chart_y_expand()
+    ) +
     episodic_chart_week_scale(trend$week_start, lang = lang) +
     episodic_chart_theme()
 }
@@ -407,6 +432,8 @@ episodic_ui_trend_chart <- function(trend,
 #'   (`Date`), `mean` (point estimate of \eqn{R_t}), and `lower`/`upper`
 #'   (95% credible interval). A dashed reference line is drawn at
 #'   \eqn{R_t = 1}, the threshold between a shrinking and a growing outbreak.
+#'   The y axis is on a log2 scale, labelled in \eqn{R_t} itself, so that a
+#'   halving and a doubling sit the same distance either side of that line.
 #' @examples
 #' rt <- data.frame(
 #'   window_end = seq(as.Date("2025-01-08"), by = "day", length.out = 5),
@@ -421,26 +448,83 @@ episodic_ui_rt_chart <- function(rt,
                                  accent = NULL) {
   pal <- episodic_palette()
   accent <- accent %||% pal$primary
+  # Plotted as log2(Rt) on a plain continuous axis whose labels are Rt,
+  # rather than through a log transformation of the scale. A credible
+  # interval whose lower end is zero is legitimate - an Rt that cannot be
+  # told apart from nothing - and its logarithm is -Inf, which a plain
+  # axis draws at the panel's edge: the band runs off the bottom, which
+  # is what it means. Through a scale transformation the same zero is a
+  # warning raised at print time and a band silently dropped.
+  log2_or_edge <- function(x) {
+    x <- as.numeric(x)
+    out <- rep(NA_real_, length(x))
+    out[!is.na(x) & x > 0] <- log2(x[!is.na(x) & x > 0])
+    out[!is.na(x) & x <= 0] <- -Inf
+    out
+  }
+  rt$log_mean <- log2_or_edge(rt$mean)
+  rt$log_lower <- log2_or_edge(rt$lower)
+  rt$log_upper <- log2_or_edge(rt$upper)
+  axis <- episodic_chart_rt_axis(
+    c(rt$log_mean, rt$log_lower, rt$log_upper),
+    lang = lang
+  )
+
   ggplot2::ggplot(rt, ggplot2::aes(x = .data$window_end)) +
     ggplot2::geom_hline(
-      yintercept = 1,
+      yintercept = 0,
       colour = pal$faint,
       linewidth = 0.4,
       linetype = "dashed"
     ) +
     ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = .data$lower, ymax = .data$upper),
+      ggplot2::aes(ymin = .data$log_lower, ymax = .data$log_upper),
       fill = accent,
-      alpha = 0.25
+      alpha = 0.25,
+      na.rm = TRUE
     ) +
     ggplot2::geom_line(
-      ggplot2::aes(y = .data$mean),
+      ggplot2::aes(y = .data$log_mean),
       colour = accent,
-      linewidth = 0.9
+      linewidth = 0.9,
+      na.rm = TRUE
     ) +
-    ggplot2::scale_y_continuous(labels = episodic_chart_number_labels(lang)) +
+    ggplot2::scale_y_continuous(
+      breaks = axis$breaks,
+      labels = axis$labels,
+      limits = axis$limits,
+      expand = episodic_chart_y_expand()
+    ) +
     ggplot2::labs(y = "Rt") +
     episodic_chart_theme()
+}
+
+#' Breaks, labels and limits for a log2 Rt axis
+#'
+#' Whole powers of two, so every gridline is a doubling or a halving of
+#' the one below it, and always at least one either side of Rt = 1: an
+#' Rt chart whose axis does not show where growth turns into decline has
+#' lost its reference point. The labels are Rt itself (0.5, 1, 2), not
+#' its logarithm, in the session language's own number format.
+#'
+#' @param log_values The plotted values, already `log2()`-transformed;
+#'   non-finite ones are ignored.
+#' @param lang Session language, for the labels.
+#' @return A list with `breaks`, `labels` and `limits`, all on the log2
+#'   scale except `labels`.
+#' @keywords internal
+#' @noRd
+episodic_chart_rt_axis <- function(log_values,
+                                   lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  finite <- log_values[is.finite(log_values)]
+  lo <- min(c(finite, -1))
+  hi <- max(c(finite, 1))
+  breaks <- seq(floor(lo), ceiling(hi))
+  list(
+    breaks = breaks,
+    labels = episodic_format_number(2^breaks, digits = 3, lang = lang),
+    limits = c(floor(lo), ceiling(hi))
+  )
 }
 
 #' A PC choropleth, cropped to where the cases actually are
@@ -776,6 +860,22 @@ episodic_geo_labels <- function(matched, max_labels = 30L) {
 }
 
 #' Chart of tests performed and positivity rate, by week
+#'
+#' Positivity runs on its own axis, scaled to the highest positivity the
+#' series actually reaches rather than to a fixed 0-100%: a respiratory
+#' or enteric panel runs at a few per cent, and on a 0-100 axis a change
+#' from 2% to 6% - a tripling - is a flat line along the floor. The
+#' primary axis is scaled so the week with the highest positivity sits
+#' level with the tallest bar, and both axes share the quarter of
+#' headroom every chart takes (`episodic_chart_y_expand()`), so the
+#' secondary axis's labels follow from the same range.
+#'
+#' A week whose positivity exceeds 100% is not drawn. It is not a real
+#' reading - the testing-volume feed does not cover every case counted
+#' in that week, a partial-coverage panel say - and drawn at 100% it
+#' would be a number the data never said; drawn as-is it would set the
+#' scale every other week is read against.
+#'
 #' @param series A data frame with `week_start`, `n_tests`, `positivity`.
 #' @keywords internal
 #' @noRd
@@ -785,40 +885,48 @@ episodic_ui_denominator_chart <- function(series,
   # na.rm: a week whose testing volume was never supplied leaves an NA in
   # the column, and an NA maximum makes the whole y scale NA - the chart
   # then fails to draw at all rather than drawing the weeks that do have
-  # a denominator.
-  max_tests <- max(series$n_tests, 1, na.rm = TRUE)
-  scale_factor <- max_tests
-  # A positivity rate above 100% is not a real reading - it means the
-  # supplied testing-volume feed does not cover every case counted (a
-  # partial-coverage panel, say), not that more than every test came back
-  # positive. Clamped here rather than upstream so the underlying numbers
-  # stay available to anyone reading `series` directly; the chart is the
-  # one place a rate has to fit on a percentage axis.
-  series$positivity_scaled <- pmin(series$positivity, 1) * scale_factor
+  # a denominator. The floor of one only keeps the ratio below finite for
+  # a series with no tests at all, whose positivity is NA throughout.
+  max_tests <- max(c(series$n_tests, 1), na.rm = TRUE)
+  positivity <- as.numeric(series$positivity)
+  positivity[!is.finite(positivity) | positivity > 1] <- NA_real_
+  max_positivity <- suppressWarnings(max(positivity, na.rm = TRUE))
+  # A series whose every measured week reads 0% is a measurement, drawn
+  # along the floor against a 0-100% axis; it only has no maximum to
+  # scale to.
+  if (!is.finite(max_positivity) || max_positivity <= 0) {
+    max_positivity <- 1
+  }
+  scale_factor <- max_tests / max_positivity
+  series$positivity_scaled <- positivity * scale_factor
 
   ggplot2::ggplot(series, ggplot2::aes(x = .data$week_start)) +
     ggplot2::geom_col(
       ggplot2::aes(y = .data$n_tests),
       fill = pal$secondary,
-      width = 4
+      width = 4,
+      na.rm = TRUE
     ) +
     ggplot2::geom_line(
       ggplot2::aes(y = .data$positivity_scaled),
       colour = pal$danger,
-      linewidth = 0.9
+      linewidth = 0.9,
+      na.rm = TRUE
     ) +
     ggplot2::geom_point(
       ggplot2::aes(y = .data$positivity_scaled),
       colour = pal$danger,
-      size = 1.6
+      size = 1.6,
+      na.rm = TRUE
     ) +
     ggplot2::scale_y_continuous(
       name = episodic_tr("panel.denominator.legend_tests", lang = lang),
-      limits = c(0, scale_factor),
+      labels = episodic_chart_number_labels(lang),
+      expand = episodic_chart_y_expand(),
       sec.axis = ggplot2::sec_axis(
         ~ . / scale_factor * 100,
         name = episodic_tr("panel.denominator.legend_positivity", lang = lang),
-        breaks = seq(0, 100, by = 25)
+        labels = episodic_chart_number_labels(lang)
       )
     ) +
     episodic_chart_week_scale(series$week_start, lang = lang) +
@@ -898,6 +1006,10 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
       show.legend = FALSE
     ) +
     ggplot2::scale_alpha_identity() +
+    ggplot2::scale_y_continuous(
+      labels = episodic_chart_number_labels(lang),
+      expand = episodic_chart_y_expand()
+    ) +
     episodic_chart_week_scale(weekly$week_start, lang = lang) +
     ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang))
 
@@ -1035,7 +1147,11 @@ episodic_ui_pathogen_overlay_chart <- function(overlay,
 
   p <- p +
     ggplot2::scale_colour_manual(values = colours[as.character(groups)]) +
-    ggplot2::scale_x_continuous(breaks = breaks, labels = labels)
+    ggplot2::scale_x_continuous(breaks = breaks, labels = labels) +
+    ggplot2::scale_y_continuous(
+      labels = episodic_chart_number_labels(lang),
+      expand = episodic_chart_y_expand()
+    )
   if (!is.null(period_range)) {
     p <- p +
       ggplot2::coord_cartesian(xlim = period_range)

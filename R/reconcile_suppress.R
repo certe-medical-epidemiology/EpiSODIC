@@ -54,12 +54,22 @@
 #' has spread this week must be able to change which cluster survives, and
 #' a suppression nothing justifies any more has to lift.
 #'
+#' Everything the comparison needs is read up front, in two batched
+#' queries: which cases each candidate cluster holds, and which of them
+#' somebody has assessed. The comparison itself then runs in memory.
+#' Read per parent and per child instead, a backfill that opens
+#' thousands of clusters asks the database tens of thousands of
+#' questions, one round trip each, inside the run's transaction.
+#'
 #' @param con A [DBI::DBIConnection-class].
 #' @param config The resolved configuration; uses `config$suppression`.
+#' @param progress_every Seconds between progress lines while the pass
+#'   runs. A pass that finishes sooner writes none; one that does not
+#'   says how far it has got, rather than leaving the log silent.
 #' @return Invisibly, the number of clusters suppressed.
 #' @keywords internal
 #' @noRd
-episodic_suppress_lattice <- function(con, config) {
+episodic_suppress_lattice <- function(con, config, progress_every = 30) {
   sup <- config$suppression
   child_dominance <- as.numeric(sup$child_dominance_threshold %||% 0.7)
   parent_diffuse <- as.numeric(sup$parent_diffuse_threshold %||% 0.5)
@@ -67,6 +77,7 @@ episodic_suppress_lattice <- function(con, config) {
 
   clusters <- episodic_db_clusters_for_suppression(con)
   if (nrow(clusters) == 0) {
+    episodic_trace("Suppressing lattice: no cluster to weigh")
     return(invisible(0L))
   }
 
@@ -82,6 +93,31 @@ episodic_suppress_lattice <- function(con, config) {
   }
   clusters$suppressed_by <- NA_integer_
 
+  pathogens <- unique(clusters$pathogen)
+  episodic_trace(
+    "Suppressing lattice: weighing ",
+    nrow(clusters),
+    " cluster(s) across ",
+    length(pathogens),
+    " pathogen(s)"
+  )
+  links <- episodic_db_cluster_case_ids_batch(con, clusters$cluster_id)
+  case_ids_of <- split(links$case_id, links$cluster_id)
+  cases_of <- function(id) {
+    ids <- case_ids_of[[as.character(id)]]
+    if (is.null(ids)) integer(0) else ids
+  }
+  assessed_ids <- episodic_db_assessed_cluster_ids(con, clusters$cluster_id)
+  episodic_trace(
+    "Suppressing lattice: ",
+    nrow(links),
+    " case link(s) read for ",
+    length(case_ids_of),
+    " cluster(s), ",
+    length(assessed_ids),
+    " assessed cluster(s) exempt"
+  )
+
   # Every cluster that has been suppressed this run, and every cluster
   # that has suppressed one. A cluster in either set is out of the
   # running for the other role - see this function's own documentation
@@ -92,7 +128,26 @@ episodic_suppress_lattice <- function(con, config) {
   free_to_be_suppressed <- function(id) !(id %in% suppressor_ids)
 
   n_suppressed <- 0L
-  for (pathogen in unique(clusters$pathogen)) {
+  n_by_child <- 0L
+  n_by_parent <- 0L
+  last_progress <- Sys.time()
+  for (i in seq_along(pathogens)) {
+    pathogen <- pathogens[i]
+    if (
+      as.numeric(difftime(Sys.time(), last_progress, units = "secs")) >=
+        progress_every
+    ) {
+      episodic_trace(
+        "Suppressing lattice: pathogen ",
+        i,
+        " of ",
+        length(pathogens),
+        ", ",
+        n_suppressed,
+        " cluster(s) suppressed so far"
+      )
+      last_progress <- Sys.time()
+    }
     same_pathogen <- clusters[clusters$pathogen == pathogen, ]
     for (pair in episodic_suppression_pairs()) {
       parents <- same_pathogen[same_pathogen$level == pair$parent, ]
@@ -110,13 +165,7 @@ episodic_suppress_lattice <- function(con, config) {
           next
         }
 
-        # Read once per parent, not once per child: the shares are all
-        # measured against the same set, and a parent with twenty
-        # overlapping children was re-fetching it twenty times.
-        parent_cases <- episodic_db_cluster_cases(
-          con,
-          parent$cluster_id
-        )$case_id
+        parent_cases <- cases_of(parent$cluster_id)
         # Nothing to measure a share against. Zero shares would otherwise
         # read as "spread thinly across the children", which is a
         # statement about the data this parent does not have.
@@ -125,13 +174,9 @@ episodic_suppress_lattice <- function(con, config) {
         }
 
         shares <- vapply(
-          seq_len(nrow(overlapping)),
-          function(k) {
-            episodic_suppression_share(
-              con,
-              parent_cases,
-              overlapping$cluster_id[k]
-            )
+          overlapping$cluster_id,
+          function(child_id) {
+            episodic_suppression_share(parent_cases, cases_of(child_id))
           },
           numeric(1)
         )
@@ -149,12 +194,14 @@ episodic_suppress_lattice <- function(con, config) {
             applied <- episodic_suppression_apply(
               con,
               parent$cluster_id,
-              winner
+              winner,
+              assessed_ids
             )
             if (applied > 0L) {
               suppressed_ids <- c(suppressed_ids, parent$cluster_id)
               suppressor_ids <- c(suppressor_ids, winner)
               n_suppressed <- n_suppressed + applied
+              n_by_child <- n_by_child + applied
             }
           }
           next
@@ -170,12 +217,14 @@ episodic_suppress_lattice <- function(con, config) {
             applied <- episodic_suppression_apply(
               con,
               child_id,
-              parent$cluster_id
+              parent$cluster_id,
+              assessed_ids
             )
             if (applied > 0L) {
               suppressed_ids <- c(suppressed_ids, child_id)
               suppressor_ids <- c(suppressor_ids, parent$cluster_id)
               n_suppressed <- n_suppressed + applied
+              n_by_parent <- n_by_parent + applied
             }
           }
         }
@@ -183,6 +232,15 @@ episodic_suppress_lattice <- function(con, config) {
     }
   }
 
+  episodic_trace(
+    "Suppressing lattice done: ",
+    n_suppressed,
+    " cluster(s) suppressed (",
+    n_by_child,
+    " parent(s) behind a dominant child, ",
+    n_by_parent,
+    " child(ren) behind a diffuse parent)"
+  )
   invisible(n_suppressed)
 }
 
@@ -216,19 +274,16 @@ episodic_suppression_overlaps <- function(parent, children) {
 #' unrelated clusters of similar size in the same weeks would otherwise
 #' read as one dominating the other.
 #'
-#' @param con A [DBI::DBIConnection-class].
-#' @param parent_cases The parent's own `case_id`s, already fetched -
-#'   the caller holds them because every child in a parent's group is
-#'   measured against the same set.
-#' @param child_id The child cluster to measure.
-#' @return The share of the parent's cases the child also holds, 0 to 1.
+#' @param parent_cases The parent's own `case_id`s.
+#' @param child_cases The child's own `case_id`s.
+#' @return The share of the parent's cases the child also holds, 0 to 1;
+#'   `NA` for a parent with no cases, which has no share to measure.
 #' @keywords internal
 #' @noRd
-episodic_suppression_share <- function(con, parent_cases, child_id) {
+episodic_suppression_share <- function(parent_cases, child_cases) {
   if (length(parent_cases) == 0) {
-    return(0)
+    return(NA_real_)
   }
-  child_cases <- episodic_db_cluster_cases(con, child_id)$case_id
   length(intersect(parent_cases, child_cases)) / length(parent_cases)
 }
 
@@ -237,10 +292,16 @@ episodic_suppression_share <- function(con, parent_cases, child_id) {
 #' A cluster somebody has already classified stays in the queue whatever
 #' the lattice says about it: the board's own record of a decision is not
 #' something a later run gets to hide.
+#'
+#' @param assessed_ids The `cluster_id`s with at least one assessment
+#'   event, read once for the whole pass.
 #' @keywords internal
 #' @noRd
-episodic_suppression_apply <- function(con, cluster_id, suppressed_by) {
-  if (nrow(episodic_db_assessment_events(con, cluster_id)) > 0) {
+episodic_suppression_apply <- function(con,
+                                       cluster_id,
+                                       suppressed_by,
+                                       assessed_ids) {
+  if (cluster_id %in% assessed_ids) {
     return(0L)
   }
   episodic_db_cluster_set_suppressed_by(con, cluster_id, suppressed_by)

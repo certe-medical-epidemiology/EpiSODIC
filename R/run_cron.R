@@ -1516,8 +1516,7 @@ episodic_run_cron_body <- function(con,
 
   # Suppression is a statement about the lattice as a whole - which level
   # of the same outbreak is the one worth a dossier - so it waits until
-  # every stream in it has reconciled.
-  episodic_trace("Suppressing lattice")
+  # every stream in it has reconciled. It writes its own progress lines.
   episodic_suppress_lattice(con, config)
   episodic_trace_debug(
     debug,

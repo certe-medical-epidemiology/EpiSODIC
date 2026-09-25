@@ -710,7 +710,19 @@ episodic_verdict_outbreak_levels <- function(config = episodic_config_resolve())
 
 #' The display reference for a cluster, scale-aware
 #'
-#' Outbreaks render as `O-{id}`, epidemics as `E-{id}`. Both share one
+#' Outbreaks render as `O-{id}`, epidemics as `E-{id}` - in English. The
+#' prefix is each language's own, carried by `dossier.outbreak_ref` and
+#' `dossier.epidemic_ref`: the first letter, in upper case, of that
+#' language's `nav.outbreaks` and `nav.epidemics` (`U-`/`E-` in Dutch,
+#' `A-`/`E-` in German), so the identifier abbreviates the word on the
+#' screen it is read on. Where that rule gives both scales the same
+#' letter - Arabic writes both nouns with the definite article, so both
+#' begin with alif - the language carries a distinct pair instead, since
+#' two objects with one prefix is the ambiguity the prefix exists to
+#' remove. Kept in the translation files rather than computed, so an
+#' operator's own report template calling `tr("dossier.outbreak_ref")`
+#' writes the same identifier the dashboard does. Nothing stores the
+#' prefix: the database holds the bare `cluster_id`. Both share one
 #' `episodic_cluster.cluster_id` sequence - there is no cluster 12 that
 #' is an outbreak and a separate cluster 12 that is an epidemic - so the
 #' prefix is not decoration: read the scale off the row rather than

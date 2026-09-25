@@ -98,7 +98,6 @@ episodic_ui_dossier <- function(con,
     # whole question it is meant to answer.
     episodic_ui_geo_panel(obj, lang = lang),
     episodic_ui_places_panel(con, cluster_id, obj, lang = lang),
-    episodic_ui_resistance_panel(lang = lang),
     episodic_ui_related_panel(con, cluster_id, lang = lang),
     episodic_ui_similar_clusters_panel(con, cluster_id, lang = lang),
     episodic_ui_report_panel(con, cluster_id, current_user, lang = lang),
@@ -150,7 +149,7 @@ episodic_ui_dossier_header <- function(obj,
         shiny::HTML(episodic_ui_italicise_taxon(obj$pathogen)),
         shiny::tags$span(
           class = "episodic-dossier-id",
-          episodic_tr("dossier.outbreak_ref", id = obj$id, lang = lang)
+          episodic_object_ref(obj$id, "outbreak", lang = lang)
         )
       ),
       episodic_ui_chip(
@@ -836,9 +835,20 @@ episodic_ui_demography_panel <- function(obj,
   )
 }
 
+#' Where a cluster's cases are: a detail map, a context map and the bars
+#'
+#' Shared by both dossiers. The Epidemics screen passes its own accent,
+#' so the map reads as belonging to the screen it is on.
+#'
+#' @param obj A list with `concentration` (`episodic_app_concentration()`)
+#'   and `n_cases`.
+#' @param lang Session language.
+#' @param accent The colour at the dense end of the map's gradient.
 #' @keywords internal
 #' @noRd
-episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_ui_geo_panel <- function(obj,
+                                  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                  accent = episodic_nav_accent("outbreaks")) {
   if (is.null(obj$concentration)) {
     return(episodic_ui_panel_empty(
       episodic_tr("panel.geo.title", lang = lang),
@@ -846,7 +856,6 @@ episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       aside = episodic_tr("panel.geo.aside", lang = lang)
     ))
   }
-  accent <- episodic_nav_accent("outbreaks")
   map_chart <- episodic_ui_geo_map_chart(obj$concentration$rows, accent = accent)
   # A second, uncropped map alongside the detail one: the cropped view
   # is deliberately tight around the cases (see panel.geo.map_note), which
@@ -1173,7 +1182,11 @@ episodic_ui_related_panel <- function(con,
         shared_cases = NA_integer_,
         unlinked_reason = episodic_tr(
           "cluster.unlinked.suppressed",
-          ref = episodic_tr("dossier.outbreak_ref", id = cluster_id, lang = lang),
+          ref = episodic_object_ref(
+            cluster_id,
+            episodic_app_cluster_scale(con, cluster_id),
+            lang = lang
+          ),
           lang = lang
         ),
         stringsAsFactors = FALSE
@@ -1218,17 +1231,6 @@ episodic_ui_related_panel <- function(con,
         lang = lang
       )
     )
-  )
-}
-
-#' @keywords internal
-#' @noRd
-episodic_ui_resistance_panel <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  # Susceptibility data is not part of the case data requirements, so this
-  # panel is always a placeholder.
-  episodic_ui_panel_empty(
-    episodic_tr("panel.resistance.title", lang = lang),
-    episodic_tr("panel.resistance.unavailable", lang = lang)
   )
 }
 

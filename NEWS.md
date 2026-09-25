@@ -1,3 +1,35 @@
+# EpiSODIC 0.21.0
+
+## New
+
+- The Epidemics dossier shows the latest complete week against the week before, the peak so far, the current MEM intensity and the latest Rt
+- The Epidemics dossier has a choropleth of the epidemic's cases, beside the postcode breakdown
+- The Epidemics dossier compares the epidemic's season with earlier seasons on one axis
+- The Epidemics dossier shows Rt, age and sex against the area's own baseline, and the care lines cases were found in
+- Outbreaks during an epidemic are listed in the cluster table, with their state, row hover and click-through
+- Lattice suppression writes progress lines during a detection run
+
+## Changed
+
+- Outbreak and epidemic identifiers take their prefix from the reader's language (e.g. `U-`/`E-` in Dutch, `A-`/`E-` in German)
+- Lattice suppression reads case sets and assessments in two batched queries instead of per cluster
+- The Outbreaks and Epidemics rails leave closed clusters out in the database query
+- The epidemic dossier reads the stream's case history once and its lead-in, thresholds, Rt and baseline come from the epidemic's own area
+- Contributing institutions on the Epidemics dossier are counted from the epidemic's own cases
+- The season overlay assigns season weeks per distinct day instead of per case
+- Positivity is drawn on an axis scaled to the series instead of a fixed 0-100%
+- Every chart's y axis leaves 25% headroom above the highest value and none below the lowest
+- Rt is drawn on a log2 axis everywhere
+- The Pathogens screen's selector lists pathogens alphabetically, case-insensitively
+- Screen-level loading spinners are three to four times larger and are not dimmed with the content
+- `ggplot2` (>= 3.5.0) is required
+- The phenotypic resistance profile placeholder panel is removed from the Outbreaks dossier
+
+## Fixed
+
+- The positivity feed is summed per ISO week, so period starts in the same week no longer produce duplicate week labels
+- A positivity above 100% is left out of the chart instead of drawn at 100%
+
 # EpiSODIC 0.20.6
 
 ## Changed

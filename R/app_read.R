@@ -34,7 +34,7 @@
 #' @noRd
 episodic_app_open_clusters <- function(con,
                                        lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  clusters <- episodic_db_clusters(con, open_only = TRUE)
+  clusters <- episodic_db_clusters_not_closed(con, "outbreak")
   if (nrow(clusters) == 0) {
     return(clusters[, c("cluster_id", "priority_score"), drop = FALSE])
   }
@@ -829,6 +829,45 @@ episodic_week_counts <- function(dates, week_starts) {
   )
 }
 
+#' The positivity feed's test counts, summed per ISO week
+#'
+#' The feed's `sample_date` is a period start, and nothing requires the
+#' operator's periods to be weeks starting on a Monday, or weeks at all -
+#' a feed can arrive daily, or weekly from whatever day the laboratory's
+#' own reporting week begins. Taken as-is, two period starts in the same
+#' ISO week become two bars labelled with the same week number, and a
+#' daily feed becomes seven overlapping "weeks" each counting a week of
+#' cases against one day of tests. Summed to the Monday of the ISO week
+#' each period starts in, every series has exactly one row per week, on
+#' the same weeks the case curves are drawn on, and the cases counted
+#' against it are the cases of that same week.
+#'
+#' @param denom Rows of `episodic_db_denominator_for_pathogen()`.
+#' @return A data frame with `week_start` (`Date`, a Monday) and
+#'   `n_tests`, one row per week, in week order; no rows when no period
+#'   start parses as a date.
+#' @keywords internal
+#' @noRd
+episodic_app_denominator_weekly <- function(denom) {
+  # With an explicit format, so a period start that is not a date is an
+  # NA that is left out, rather than an error that takes the panel down.
+  week_start <- episodic_week_start(
+    as.Date(as.character(denom$sample_date), format = "%Y-%m-%d")
+  )
+  keep <- !is.na(week_start) & !is.na(denom$n_tests)
+  if (!any(keep)) {
+    return(data.frame(week_start = as.Date(character(0)), n_tests = numeric(0)))
+  }
+  weekly <- stats::aggregate(
+    list(n_tests = denom$n_tests[keep]),
+    list(week_start = week_start[keep]),
+    sum
+  )
+  weekly <- weekly[order(weekly$week_start), , drop = FALSE]
+  rownames(weekly) <- NULL
+  weekly
+}
+
 #' Weekly (n_tests, n_cases, positivity) series aligned for charting
 #'
 #' Positivity is *this pathogen's* confirmed cases over *this pathogen's*
@@ -873,13 +912,10 @@ episodic_app_denominator_series <- function(con, pathogen, cases, weeks = 26L) {
     return(empty)
   }
 
-  denom <- stats::aggregate(n_tests ~ sample_date, denom, sum)
-  denom$week_start <- as.Date(denom$sample_date)
-  denom <- denom[!is.na(denom$week_start), , drop = FALSE]
+  denom <- episodic_app_denominator_weekly(denom)
   if (nrow(denom) == 0) {
     return(empty)
   }
-  denom <- denom[order(denom$week_start), ]
 
   cluster_dates <- as.Date(cases$sample_date)
   cluster_dates <- cluster_dates[!is.na(cluster_dates)]
@@ -1466,7 +1502,7 @@ episodic_app_status <- function(con) {
 #' @noRd
 episodic_app_open_epidemics <- function(con,
                                         lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  clusters <- episodic_db_clusters(con, open_only = TRUE)
+  clusters <- episodic_db_clusters_not_closed(con, "epidemic")
   if (nrow(clusters) == 0) {
     return(clusters[, c("cluster_id", "priority_score"), drop = FALSE])
   }
@@ -1499,20 +1535,48 @@ episodic_app_open_epidemics <- function(con,
 
 #' The epidemic dossier object
 #'
-#' Builds the data a single epidemic dossier needs: the cluster itself,
-#' its seasonal satellite (if any), the cases, the weekly curve with MEM
-#' thresholds, tests/positivity, contributing institutions, and the list
-#' of outbreaks occurring during the epidemic.
+#' Builds the data a single epidemic dossier needs, organised around the
+#' questions an epidemiologist brings to an epidemic rather than to an
+#' outbreak: where in its course it is (the latest complete week against
+#' the one before, the peak so far, the MEM intensity now and at the
+#' peak, the latest Rt), how it compares with earlier seasons, where it
+#' is, who it affects, whether the rise is real or a rise in testing,
+#' which institutions carry it, and which outbreaks ran during it.
+#'
+#' Two populations, deliberately. The epidemic's own cases - the ones
+#' linked to the cluster - describe the epidemic itself: its geography,
+#' its age and sex, its care lines, its institutions. The stream's whole
+#' history - every case the lattice counts for this pathogen in this
+#' area, before and during the epidemic - is what the epidemic is read
+#' against: the lead-in weeks of the curve, the MEM thresholds, the
+#' earlier seasons of the overlay, the renewal model behind Rt, and the
+#' age baseline. For a province epidemic the second is the province's
+#' history, not the catchment's; a province's epidemic measured against
+#' the whole catchment's thresholds and age distribution would be
+#' compared with a population it is only part of.
+#'
+#' Positivity is the exception, and says so on the dossier: the testing
+#' volume feed has no geographic stratum the lattice can match to a
+#' province, so it is the catchment's.
+#'
+#' A quantity that cannot be computed is `NULL` (or `NA` in a scalar
+#' slot), never zero: the latest complete week does not exist while
+#' every week is still filling, a change on the week before has no base
+#' when that week had no cases, and an intensity has no meaning without
+#' fitted thresholds.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id A cluster id.
 #' @param lang Session language.
+#' @param lead_in_weeks How many weeks before the epidemic's first day
+#'   the curve shows, so the rise into it is on the chart.
 #' @return A list with elements named for the dossier panels.
 #' @keywords internal
 #' @noRd
 episodic_epidemic_object <- function(con,
                                      cluster_id,
-                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                     lead_in_weeks = 8L) {
   cluster <- episodic_db_get_query(
     con,
     "SELECT * FROM episodic_cluster WHERE cluster_id = ?",
@@ -1531,20 +1595,45 @@ episodic_epidemic_object <- function(con,
   pc <- episodic_db_pathogen_config_get(con, stream$pathogen)
 
   cases <- episodic_db_cluster_cases(con, cluster_id)
+  cases$sample_date <- as.Date(cases$sample_date)
   detections <- episodic_db_get_query(
     con,
     "SELECT DISTINCT detector FROM episodic_detection WHERE cluster_id = ?",
     params = list(cluster_id)
   )$detector
 
+  # The stream's whole history, read once: the curve's lead-in, the MEM
+  # thresholds, the overlay, Rt and the age baseline all need it, and on
+  # an instance with years of history it is the largest read the dossier
+  # makes.
+  history <- episodic_db_cases_for_stream_id(
+    con,
+    cluster$stream_id,
+    columns = c(
+      "case_id",
+      "patient_key",
+      "sample_date",
+      "age",
+      "sex",
+      "care_line",
+      "institution_id"
+    )
+  )
+  history$sample_date <- as.Date(history$sample_date)
+  history <- history[!is.na(history$sample_date), , drop = FALSE]
+
   season <- episodic_db_epidemic_season(con, cluster_id)
   place <- episodic_app_place_label(stream, NULL, lang = lang)
   asof <- episodic_app_data_asof(con)
+  incomplete_days <- episodic_app_completeness(
+    con,
+    cluster$stream_id
+  )$incomplete_days
 
   anchor_week <- if (!is.null(season)) {
     as.integer(season$anchor_week)
-  } else if (!is.null(pc) && !is.null(cases) && nrow(cases) > 0) {
-    anchor <- episodic_mem_season_anchor(cases)
+  } else if (!is.null(pc) && nrow(history) > 0) {
+    anchor <- episodic_mem_season_anchor(history)
     if (!is.null(anchor)) anchor$anchor_week else NULL
   } else {
     NULL
@@ -1557,15 +1646,15 @@ episodic_epidemic_object <- function(con,
   # still filling. A curve drawn without it tells the reader that this
   # week's dip is a fall in incidence, when what it is is the post.
   weekly <- episodic_app_pathogen_weekly(
-    data.frame(sample_date = cases$sample_date),
-    list(from = from - 28, to = to),
-    episodic_app_completeness(con, cluster$stream_id)$incomplete_days,
+    data.frame(sample_date = history$sample_date),
+    list(from = from - 7L * as.integer(lead_in_weeks), to = to),
+    incomplete_days,
     asof
   )
 
   thresholds <- if (!is.null(anchor_week) && !is.null(season)) {
     episodic_mem_thresholds_for_season(
-      episodic_db_cases_for_pathogen(con, stream$pathogen),
+      history,
       season$season_label,
       anchor_week = anchor_week
     )
@@ -1573,33 +1662,55 @@ episodic_epidemic_object <- function(con,
     NULL
   }
 
+  resolved <- list(from = from, to = to)
   denominator <- episodic_app_pathogen_denominator(
     con,
     stream$pathogen,
-    episodic_db_cases_for_pathogen(con, stream$pathogen),
+    # From the Monday of the earliest week the panel can show, so the
+    # first week's positivity counts all seven of its days.
+    episodic_db_cases_for_pathogen(
+      con,
+      stream$pathogen,
+      columns = "sample_date",
+      from = episodic_week_start(from - 28),
+      to = to + 6
+    ),
     list(from = from - 28, to = to)
   )
 
-  institutions <- episodic_db_epidemic_contributing_institutions(
-    con,
-    stream$pathogen,
-    cluster$first_day,
-    cluster$last_day
+  overlay <- episodic_app_pathogen_overlay(
+    history,
+    resolved,
+    seasonal = !is.null(season) && !is.null(anchor_week),
+    asof = asof,
+    anchor_week = anchor_week
   )
+  # Every season's full course, not cropped to this epidemic's weeks:
+  # the overlay is here to show where in an ordinary season this one
+  # started and peaked, which is exactly what cropping to its own weeks
+  # would cut away.
+  if (!is.null(overlay)) {
+    overlay$period_range <- NULL
+  }
+
+  rt <- episodic_app_pathogen_rt(history, pc, resolved, incomplete_days, asof)
+
+  institutions <- episodic_epidemic_institutions(con, cases, lang = lang)
 
   during_outbreaks <- episodic_db_outbreaks_during_epidemic(con, cluster_id)
   if (nrow(during_outbreaks) > 0) {
     inst_lookup <- episodic_db_institutions(con)
+    during_streams <- episodic_db_get_query_in(
+      con,
+      "SELECT * FROM episodic_stream WHERE stream_id IN (%s)",
+      during_outbreaks$stream_id
+    )
     during_outbreaks$place <- vapply(
-      seq_len(nrow(during_outbreaks)),
-      function(i) {
-        s <- episodic_db_get_query(
-          con,
-          "SELECT * FROM episodic_stream WHERE stream_id = ?",
-          params = list(during_outbreaks$stream_id[i])
-        )[1, ]
+      during_outbreaks$stream_id,
+      function(stream_id) {
+        s <- during_streams[match(stream_id, during_streams$stream_id), ]
         inst <- if (!is.na(s$institution_id)) {
-          inst_lookup[inst_lookup$institution_id == s$institution_id, ][1, ]
+          inst_lookup[match(s$institution_id, inst_lookup$institution_id), ]
         } else {
           NULL
         }
@@ -1607,14 +1718,27 @@ episodic_epidemic_object <- function(con,
       },
       character(1)
     )
+    during_outbreaks$level_label <- vapply(
+      during_outbreaks$level,
+      function(lv) episodic_tr(paste0("level.", lv), lang = lang),
+      character(1)
+    )
+    during_outbreaks$state <- episodic_app_derive_states_batch(
+      con,
+      during_outbreaks
+    )
+    during_outbreaks$state_label <- vapply(
+      during_outbreaks$state,
+      function(s) episodic_tr(paste0("state.", s), lang = lang),
+      character(1)
+    )
+    during_outbreaks <- episodic_db_attach_case_days(con, during_outbreaks)
   }
 
-  total_cases <- sum(weekly$n_cases, na.rm = TRUE)
-  concentration <- if (nrow(institutions) > 0 && total_cases > 0) {
-    top_share <- institutions$n_cases[1] / sum(institutions$n_cases)
+  concentration <- if (nrow(institutions) > 0) {
     list(
       top_institution = institutions$display_name[1],
-      top_share = top_share,
+      top_share = institutions$n_cases[1] / sum(institutions$n_cases),
       n_institutions = nrow(institutions)
     )
   } else {
@@ -1640,13 +1764,144 @@ episodic_epidemic_object <- function(con,
     changed_since_assessment = as.logical(cluster$changed_since_assessment),
     origin = cluster$origin,
     asof = asof,
+    incomplete_days = incomplete_days,
     season = season,
     anchor_week = anchor_week,
     weekly = weekly,
     thresholds = thresholds,
+    course = episodic_epidemic_course(weekly, from, thresholds),
+    overlay = overlay,
+    rt = rt,
+    rt_applicable = !is.null(pc) && isTRUE(as.logical(pc$rt_applicable)),
+    rt_unavailable_reason = episodic_rt_unavailable_reason(
+      pc,
+      incomplete_days = incomplete_days
+    ),
     denominator = denominator,
+    denominator_catchment_only = !identical(stream$level, "pathogen_region"),
+    concentration_geo = episodic_app_concentration(cases),
+    demography = episodic_app_pathogen_demography(history, cases),
+    care_lines = episodic_app_pathogen_breakdown(cases, "care_line", lang = lang),
     institutions = institutions,
     concentration = concentration,
     during_outbreaks = during_outbreaks
   )
+}
+
+#' Where an epidemic stands in its own course
+#'
+#' Read off the weekly curve the dossier draws, so the numbers and the
+#' chart cannot disagree. The latest complete week is the most recent
+#' week the reporting delay says is no longer filling (`incomplete` is
+#' `FALSE`); where every week is still filling, or the delay was never
+#' measured, there is no such week and every figure that depends on it
+#' is `NA` - a week still arriving compared against a finished one is a
+#' fall that is really the post.
+#'
+#' @param weekly `episodic_app_pathogen_weekly()`'s output.
+#' @param first_day The epidemic's first day; the peak is looked for from
+#'   its week on, not in the lead-in weeks.
+#' @param thresholds `episodic_mem_thresholds_for_season()`'s output, or
+#'   `NULL`.
+#' @return A list with `latest_week`, `latest_n`, `previous_n`,
+#'   `change_pct` (`NA` against a week with no cases), `peak_week`,
+#'   `peak_n`, `latest_level` and `peak_level` (`NA` without thresholds).
+#' @keywords internal
+#' @noRd
+episodic_epidemic_course <- function(weekly, first_day, thresholds = NULL) {
+  weekly <- weekly[order(weekly$week_start), , drop = FALSE]
+  within <- weekly[
+    weekly$week_start >= episodic_week_start(as.Date(first_day)), ,
+    drop = FALSE
+  ]
+  complete <- which(!(weekly$incomplete %in% TRUE))
+  latest <- if (length(complete) == 0) NA_integer_ else max(complete)
+
+  latest_n <- if (is.na(latest)) NA_integer_ else weekly$n_cases[latest]
+  previous_n <- if (is.na(latest) || latest < 2) {
+    NA_integer_
+  } else {
+    weekly$n_cases[latest - 1]
+  }
+  change_pct <- if (is.na(previous_n) || previous_n == 0) {
+    NA_real_
+  } else {
+    100 * (latest_n - previous_n) / previous_n
+  }
+
+  peak <- if (nrow(within) == 0 || all(within$n_cases == 0)) {
+    NA_integer_
+  } else {
+    which.max(within$n_cases)
+  }
+  peak_n <- if (is.na(peak)) NA_integer_ else within$n_cases[peak]
+
+  level_of <- function(n) {
+    if (is.null(thresholds) || is.na(n)) {
+      return(NA_character_)
+    }
+    episodic_mem_intensity_level(
+      n,
+      thresholds$pre_epidemic,
+      thresholds$intensity
+    )
+  }
+
+  list(
+    latest_week = if (is.na(latest)) as.Date(NA) else weekly$week_start[latest],
+    latest_n = latest_n,
+    previous_n = previous_n,
+    change_pct = change_pct,
+    peak_week = if (is.na(peak)) as.Date(NA) else within$week_start[peak],
+    peak_n = peak_n,
+    latest_level = level_of(latest_n),
+    peak_level = level_of(peak_n)
+  )
+}
+
+#' The institutions an epidemic's own cases came from
+#'
+#' Counted from the cases linked to the epidemic, not from every case of
+#' the pathogen in its weeks: a province epidemic's institutions are the
+#' ones in that province. A case with no institution recorded is counted
+#' under none, rather than under an invented one.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cases The epidemic's own cases, with `institution_id`.
+#' @param lang Session language, for the name of an institution the
+#'   reference table does not hold.
+#' @return A data frame with `institution_id`, `display_name` and
+#'   `n_cases`, largest first; no rows when no case names an institution.
+#' @keywords internal
+#' @noRd
+episodic_epidemic_institutions <- function(con,
+                                           cases,
+                                           lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  empty <- data.frame(
+    institution_id = integer(0),
+    display_name = character(0),
+    n_cases = integer(0),
+    stringsAsFactors = FALSE
+  )
+  ids <- cases$institution_id[!is.na(cases$institution_id)]
+  if (length(ids) == 0) {
+    return(empty)
+  }
+  tab <- table(ids)
+  institutions <- episodic_db_institutions(con)
+  out <- data.frame(
+    institution_id = as.integer(names(tab)),
+    n_cases = as.integer(tab),
+    stringsAsFactors = FALSE
+  )
+  out$display_name <- institutions$display_name[
+    match(out$institution_id, institutions$institution_id)
+  ]
+  out$display_name[is.na(out$display_name)] <- episodic_tr(
+    "misc.unknown",
+    lang = lang
+  )
+  out <- out[order(-out$n_cases, out$display_name), , drop = FALSE]
+  rownames(out) <- NULL
+  out[, c("institution_id", "display_name", "n_cases")]
 }

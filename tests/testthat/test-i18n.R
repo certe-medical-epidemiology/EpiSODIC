@@ -80,7 +80,7 @@ test_that("every shipped language file uses the same {placeholder} tokens per ke
 test_that("episodic_tr() substitutes placeholders", {
   expect_equal(
     episodic_tr("dossier.outbreak_ref", id = 1041, lang = "nl"),
-    "O-1041"
+    "U-1041"
   )
   expect_equal(
     episodic_tr("dossier.outbreak_ref", id = 1041, lang = "en"),
@@ -88,19 +88,53 @@ test_that("episodic_tr() substitutes placeholders", {
   )
 })
 
-test_that("outbreak and epidemic refs are uniform across languages", {
-  # "#" is not universal: Spanish writes n.º, French n°, German Nr.,
-  # Arabic رقم. Keeping this a translation key rather than a hardcoded
-  # "#" is the whole reason it is one.
+test_that("outbreak and epidemic refs abbreviate each language's own screen names", {
+  # The prefix is the first letter, in upper case, of the nav entry the
+  # object is listed under. Where that letter is the same for both
+  # scales, the language carries a distinct pair instead: one prefix for
+  # two kinds of object is the ambiguity the prefix exists to remove.
+  prefix <- function(key, lang) {
+    sub("-300$", "", episodic_tr(key, id = 300, lang = lang))
+  }
   for (lang in episodic_shipped_langs) {
-    expect_equal(
-      episodic_tr("dossier.outbreak_ref", id = 300, lang = lang),
-      "O-300"
+    outbreak <- prefix("dossier.outbreak_ref", lang)
+    epidemic <- prefix("dossier.epidemic_ref", lang)
+    expect_equal(nchar(outbreak), 1, info = lang)
+    expect_equal(nchar(epidemic), 1, info = lang)
+    expect_false(identical(outbreak, epidemic), info = lang)
+
+    derived <- vapply(
+      c("nav.outbreaks", "nav.epidemics"),
+      function(key) toupper(substr(episodic_tr(key, lang = lang), 1, 1)),
+      character(1)
     )
-    expect_equal(
-      episodic_tr("dossier.epidemic_ref", id = 42, lang = lang),
-      "E-42"
+    if (!identical(derived[[1]], derived[[2]])) {
+      expect_equal(outbreak, derived[["nav.outbreaks"]], info = lang)
+      expect_equal(epidemic, derived[["nav.epidemics"]], info = lang)
+    }
+  }
+  expect_equal(episodic_object_ref(12, "outbreak", lang = "nl"), "U-12")
+  expect_equal(episodic_object_ref(12, "pathogen_region", lang = "de"), "E-12")
+  expect_equal(episodic_object_ref(12, "pathogen_ward", lang = "de"), "A-12")
+})
+
+test_that("no code writes an outbreak or epidemic prefix of its own", {
+  # Every identifier goes through `episodic_object_ref()`, so none of
+  # them can disagree with the language the reader chose.
+  r_files <- list.files(
+    file.path(testthat::test_path(), "..", "..", "R"),
+    pattern = "\\.R$",
+    full.names = TRUE
+  )
+  for (f in r_files) {
+    code <- readLines(f, warn = FALSE)
+    code <- code[!grepl("^\\s*#", code)]
+    expect_false(
+      any(grepl('"dossier\\.(outbreak|epidemic)_ref"', code) &
+        !grepl("episodic_object_ref|key <-|^\\s*\"dossier", code)),
+      info = basename(f)
     )
+    expect_false(any(grepl('"[OE]-"', code, fixed = FALSE)), info = basename(f))
   }
 })
 

@@ -175,9 +175,9 @@ episodic_app_server_factory <- function(db_path,
         shiny::showNotification(
           episodic_tr(
             "rail.open_not_found",
-            ref = episodic_tr(
-              "dossier.outbreak_ref",
-              id = input$rail_open_cluster,
+            ref = episodic_object_ref(
+              input$rail_open_cluster,
+              "outbreak",
               lang = lang
             ),
             lang = lang
@@ -1292,11 +1292,7 @@ episodic_ui_rail <- function(open,
               shiny::HTML(episodic_ui_italicise_taxon(row$pathogen)),
               shiny::tags$span(
                 class = "episodic-rail-id",
-                episodic_tr(
-                  "dossier.outbreak_ref",
-                  id = row$cluster_id,
-                  lang = lang
-                )
+                episodic_object_ref(row$cluster_id, "outbreak", lang = lang)
               ),
               if (!is.na(row$care_line)) {
                 care_line_colour <- episodic_ui_care_line_colour(row$care_line)

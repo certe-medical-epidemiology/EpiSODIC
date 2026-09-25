@@ -811,12 +811,15 @@ test_that("the during panel names each linked row by its own scale, not always a
       first_day = "2026-01-10",
       last_day = "2026-01-20",
       n_cases = 5L,
+      case_days = 3L,
       priority_score = 50,
       pathogen = "Norovirus",
       level = level,
+      level_label = "Level",
       institution_id = NA_character_,
       ward = NA_character_,
       place = "Ward B",
+      state_label = "New",
       stringsAsFactors = FALSE
     )
   }

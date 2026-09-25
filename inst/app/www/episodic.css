@@ -1584,6 +1584,15 @@ dl.episodic-settings dd { margin: 0; }
 .shiny-bound-output.recalculating:not(span) {
   min-height: 44px;
 }
+/* The spinner's size is a property of each output, set on the output
+   itself rather than inherited: a chart inside a screen-level output is
+   an output of its own and keeps the small spinner, whatever the screen
+   around it uses. */
+.shiny-bound-output {
+  --episodic-spinner-size: 18px;
+  --episodic-spinner-stroke: 2px;
+  --episodic-spinner-top: 50%;
+}
 .shiny-bound-output.recalculating:not(span)::after {
   content: "";
   position: absolute;
@@ -1591,20 +1600,57 @@ dl.episodic-settings dd { margin: 0; }
      auto" holds in both directions, where a translate off one edge
      would have to be flipped for Arabic. */
   inset-inline: 0;
-  inset-block-start: 50%;
-  width: 18px;
-  height: 18px;
+  inset-block-start: var(--episodic-spinner-top);
+  width: var(--episodic-spinner-size);
+  height: var(--episodic-spinner-size);
   margin-inline: auto;
-  margin-block-start: -9px;
+  margin-block-start: calc(var(--episodic-spinner-size) / -2);
   /* --episodic-nav-accent cascades from .episodic-shell[data-nav], so
      this needs no [data-nav="..."] selector of its own - a spinner
      inside the Pathogens screen already sits under that data-nav and
      reads the danger step without being told to. */
-  border: 2px solid color-mix(in srgb, var(--episodic-nav-accent) 25%, var(--episodic-surface));
+  border: var(--episodic-spinner-stroke) solid color-mix(in srgb, var(--episodic-nav-accent) 25%, var(--episodic-surface));
   border-block-start-color: var(--episodic-nav-accent);
   border-radius: 50%;
   animation: episodic-spin 0.7s linear infinite;
   pointer-events: none;
+}
+/* Screen-level outputs: a whole screen, the dossier pane, the Archive's
+   table. What is being waited for here is the page, and an 18px ring in
+   the middle of it reads as a speck. Sized to the viewport within
+   bounds - three to four times the panel spinner - and held in the
+   upper part of a tall screen rather than at the middle of its full
+   scroll height, where it would sit below the fold. The content
+   underneath dims and the spinner does not: an element's opacity
+   applies to its own pseudo-elements, so dimming the output itself
+   would dim the one thing that says it is working. */
+.episodic-screen > .shiny-bound-output,
+.episodic-streams-screen > .shiny-bound-output,
+.episodic-pane-dossier.shiny-bound-output {
+  --episodic-spinner-size: clamp(3rem, 8vmin, 4.5rem);
+  --episodic-spinner-stroke: clamp(4px, 0.7vmin, 6px);
+  --episodic-spinner-top: min(50%, 40vh);
+}
+.episodic-screen > .shiny-bound-output.recalculating,
+.episodic-streams-screen > .shiny-bound-output.recalculating,
+.episodic-pane-dossier.shiny-bound-output.recalculating {
+  opacity: 1;
+  min-height: calc(var(--episodic-spinner-size) + 8rem);
+}
+.episodic-screen > .shiny-bound-output.recalculating > *,
+.episodic-streams-screen > .shiny-bound-output.recalculating > *,
+.episodic-pane-dossier.shiny-bound-output.recalculating > * {
+  opacity: 0.4;
+  transition: opacity 0.15s linear;
+}
+/* The Archive's controls hold the search box being typed into: dimmed
+   and spun on every keystroke's redraw, it would flicker under the
+   cursor. */
+.episodic-streams-screen > #archive_controls.recalculating::after {
+  content: none;
+}
+.episodic-streams-screen > #archive_controls.recalculating {
+  min-height: 0;
 }
 @media (prefers-reduced-motion: reduce) {
   .shiny-bound-output.recalculating:not(span)::after {
