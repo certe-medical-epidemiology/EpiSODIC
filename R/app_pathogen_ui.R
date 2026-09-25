@@ -678,15 +678,17 @@ episodic_ui_pathogen_clusters_panel <- function(screen,
 episodic_ui_pathogen_config_panel <- function(screen,
                                               lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pc <- screen$config
+  title <- shiny::tagList(
+    episodic_tr("pathogen.panel.config.title", lang = lang),
+    " ",
+    shiny::HTML(episodic_ui_italicise_taxon(screen$pathogen))
+  )
   if (is.null(pc)) {
     return(episodic_ui_panel(
-      paste(
-        episodic_tr("pathogen.panel.config.title", lang = lang),
-        screen$pathogen
-      ),
+      title,
       shiny::tags$p(
         class = "episodic-panel-empty",
-        episodic_tr(
+        episodic_tr_taxon(
           "pathogen.panel.config.none",
           pathogen = screen$pathogen,
           lang = lang
@@ -854,13 +856,10 @@ episodic_ui_pathogen_config_panel <- function(screen,
   }
 
   episodic_ui_panel(
-    paste(
-      episodic_tr("pathogen.panel.config.title", lang = lang),
-      screen$pathogen
-    ),
+    title,
     shiny::tags$p(
       style = "font-size:12.5px;margin:0 0 12px;",
-      episodic_tr(
+      episodic_tr_taxon(
         "pathogen.panel.config.note",
         pathogen = screen$pathogen,
         lang = lang

@@ -579,6 +579,22 @@ test_that("the pathogen config panel dashes a parameter this instance leaves uns
   expect_true(grepl("2,6", html, fixed = TRUE))
 })
 
+test_that("the pathogen config panel italicises a taxon in its title and sentences, and escapes the rest", {
+  screen <- list(pathogen = "Salmonella", config = NULL)
+  html <- as.character(episodic_ui_pathogen_config_panel(screen, lang = "nl"))
+  expect_false(grepl("Salmonella", gsub("<i>Salmonella</i>", "", html, fixed = TRUE), fixed = TRUE))
+  expect_gte(lengths(regmatches(html, gregexpr("<i>Salmonella</i>", html, fixed = TRUE))), 2)
+
+  sentence <- as.character(episodic_tr_taxon(
+    "pathogen.panel.config.none",
+    pathogen = "Influenza A <x>",
+    lang = "en"
+  ))
+  expect_match(sentence, "Influenza A &lt;x&gt;", fixed = TRUE)
+  expect_false(grepl("<i>", sentence, fixed = TRUE))
+  expect_false(grepl("\u0001", sentence, fixed = TRUE))
+})
+
 test_that("episodic_ui_intensity_colour() gives every MEM band a colour and never fails on an unknown one", {
   levels <- c("baseline", "low", "medium", "high", "very_high")
   colours <- vapply(levels, episodic_ui_intensity_colour, character(1))

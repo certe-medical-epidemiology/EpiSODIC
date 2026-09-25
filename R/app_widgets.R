@@ -57,6 +57,35 @@ episodic_ui_italicise_taxon <- function(pathogen) {
   escaped
 }
 
+#' A translated sentence with its `{pathogen}` placeholder italicised
+#'
+#' `episodic_tr()` substitutes plain text, and the result is escaped as a
+#' whole by whatever renders it, so a taxon inside a sentence cannot be
+#' italicised afterwards. The pathogen goes in as a marker instead, the
+#' sentence is escaped, and the marker is replaced by
+#' `episodic_ui_italicise_taxon()`'s (already escaped) rendering.
+#'
+#' @param key Translation key with a `{pathogen}` placeholder.
+#' @param pathogen A single pathogen display name.
+#' @param ... Further placeholders, passed to `episodic_tr()`.
+#' @param lang Session language.
+#' @return A [shiny::HTML()] value.
+#' @keywords internal
+#' @noRd
+episodic_tr_taxon <- function(key,
+                              pathogen,
+                              ...,
+                              lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  marker <- "\u0001pathogen\u0001"
+  text <- episodic_tr(key, pathogen = marker, ..., lang = lang)
+  shiny::HTML(gsub(
+    marker,
+    episodic_ui_italicise_taxon(pathogen),
+    htmltools::htmlEscape(text),
+    fixed = TRUE
+  ))
+}
+
 #' @rdname episodic_ui_italicise_taxon
 #' @param detectors A character vector of detector names.
 #' @param sep Separator between entries.
