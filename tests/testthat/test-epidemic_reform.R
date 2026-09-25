@@ -588,15 +588,18 @@ test_that("episodic_link_parse_dates() reads each element on its own and leaves 
   )
 })
 
-test_that("a cluster with an unreadable day is left out of the during links, never inserted as NULL", {
+test_that("an epidemic no outbreak overlaps, or a cluster with an unreadable day, never reaches the during links as NULL", {
   inserted <- list()
   local_mocked_bindings(
     episodic_db_link_epidemics = function(con) {
       data.frame(
-        cluster_id = 900L,
+        # 899 overlaps no outbreak in time, so it has no candidate at all;
+        # it comes first, so an empty candidate set turned into a row of
+        # NAs would be inserted before 900 is reached.
+        cluster_id = c(899L, 900L),
         stream_id = 1L,
-        first_day = "2026-09-01",
-        last_day = "2026-09-30",
+        first_day = c("2020-01-06", "2026-09-01"),
+        last_day = c("2020-02-02", "2026-09-30"),
         scale = "epidemic",
         pathogen = "Norovirus",
         level = "pathogen_region",

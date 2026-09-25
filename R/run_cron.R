@@ -1729,8 +1729,15 @@ episodic_epidemic_link_outbreaks <- function(con, cases, geography, run_id) {
       ), ,
       drop = FALSE
     ]
+    # Checked before the pairing below, not left to it: `paste()` recycles
+    # an empty vector to "" rather than returning an empty result, so with
+    # no candidate it yields one key, the logical index is TRUE, and a
+    # zero-row data frame indexed with TRUE returns a row of NAs.
+    if (nrow(candidates) == 0) {
+      next
+    }
     candidates <- candidates[
-      !paste(candidates$cluster_id, epi$cluster_id) %in% existing_keys, ,
+      which(!paste(candidates$cluster_id, epi$cluster_id) %in% existing_keys), ,
       drop = FALSE
     ]
     for (j in seq_len(nrow(candidates))) {
