@@ -82,3 +82,40 @@ episodic_db_execute <- function(con, statement, params = NULL) {
     DBI::dbExecute(con, statement, params = params)
   }
 }
+
+#' Run a query over a set of ids, in chunks
+#'
+#' The batch readers ask for every row belonging to a set of clusters or
+#' streams, and on the Archive or the rail that set is every cluster the
+#' instance holds - thousands after a backfill. One placeholder per id
+#' in a single statement stops working at MySQL's 65,535-placeholder
+#' limit and makes every query in between one very long statement to
+#' prepare. Chunked at `episodic_db_chunk_size`, over the ids sorted, so
+#' a query ordered by that id first returns the chunks already in order.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param statement The SQL, with a single `%s` where the `IN` list's
+#'   placeholders go.
+#' @param ids The ids, in any order; duplicates are dropped.
+#' @return A data frame, the chunks' results bound in id order. With no
+#'   ids, the correctly shaped empty result of the statement run for no
+#'   id at all.
+#' @keywords internal
+#' @noRd
+episodic_db_get_query_in <- function(con, statement, ids) {
+  ids <- sort(unique(ids))
+  if (length(ids) == 0) {
+    return(episodic_db_get_query(con, sprintf(statement, "NULL")))
+  }
+  chunks <- split(ids, ceiling(seq_along(ids) / episodic_db_chunk_size))
+  parts <- lapply(chunks, function(chunk) {
+    episodic_db_get_query(
+      con,
+      sprintf(statement, paste(rep("?", length(chunk)), collapse = ", ")),
+      params = as.list(chunk)
+    )
+  })
+  out <- do.call(rbind, unname(parts))
+  rownames(out) <- NULL
+  out
+}

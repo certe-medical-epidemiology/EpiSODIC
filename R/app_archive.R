@@ -33,25 +33,38 @@ episodic_archive_levels <- c(
   "pathogen_region"
 )
 
-#' The Archive screen
+#' How many closed clusters one page of the Archive shows
 #'
-#' @param archive A data frame from `episodic_app_archive()`.
-#' @param selected_levels The levels currently filtered to (a subset of
-#'   `episodic_archive_levels`), or `character(0)` for every level -
-#'   just for drawing the filter chips in their current state; the
-#'   filtering itself already happened in `episodic_app_archive()`.
-#' @param lang Session language.
-#' @return A `shiny::tags` element.
+#' A backfilled instance archives thousands of clusters, and building and
+#' sending every row as HTML is most of what opening the screen would
+#' cost. Search and the level chips narrow the whole archive, not the
+#' page, so nothing is out of reach.
 #' @keywords internal
 #' @noRd
-episodic_ui_archive_screen <- function(archive,
-                                       selected_levels = character(0),
-                                       lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_archive_page_size <- 100L
+
+#' The Archive screen's controls: title, search box and level chips
+#'
+#' Drawn apart from the table (`episodic_ui_archive_table()`), in an
+#' output of its own, so typing a search redraws the rows and never the
+#' box being typed into.
+#'
+#' @param selected_levels The levels currently filtered to (a subset of
+#'   `episodic_archive_levels`), or `character(0)` for every level -
+#'   for drawing the filter chips in their current state.
+#' @param query The search currently applied, so a redraw of the
+#'   controls (a level chip changed) keeps what was typed.
+#' @param lang Session language.
+#' @return A `shiny::tagList`.
+#' @keywords internal
+#' @noRd
+episodic_ui_archive_controls <- function(selected_levels = character(0),
+                                         query = "",
+                                         lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   level_options <- lapply(episodic_archive_levels, function(lvl) {
     list(value = lvl, label = episodic_app_level_label(lvl, lang = lang))
   })
-  shiny::tags$div(
-    class = "episodic-streams-screen",
+  shiny::tagList(
     shiny::tags$h1(
       class = "episodic-screen-title",
       episodic_tr("archive.title", lang = lang)
@@ -64,6 +77,7 @@ episodic_ui_archive_screen <- function(archive,
       type = "text",
       class = "episodic-search-input",
       id = "archive_search_input",
+      value = query,
       placeholder = episodic_tr("archive.search_placeholder", lang = lang),
       oninput = "Shiny.setInputValue('archive_search', this.value, {priority: 'event'})"
     ),
@@ -80,30 +94,57 @@ episodic_ui_archive_screen <- function(archive,
         selected = selected_levels,
         all_label = episodic_tr("archive.filter_all", lang = lang)
       )
+    )
+  )
+}
+
+#' One page of the Archive's table
+#'
+#' @param archive A data frame from `episodic_app_archive()`, already
+#'   filtered.
+#' @param page The page to show, from 1; clamped to the pages there are.
+#' @param lang Session language.
+#' @return A `shiny::tagList`.
+#' @keywords internal
+#' @noRd
+episodic_ui_archive_table <- function(archive,
+                                      page = 1L,
+                                      lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (nrow(archive) == 0) {
+    return(shiny::tags$p(
+      class = "episodic-panel-empty",
+      episodic_tr("archive.empty", lang = lang)
+    ))
+  }
+  n_pages <- as.integer(ceiling(nrow(archive) / episodic_archive_page_size))
+  page <- min(max(1L, as.integer(page)), n_pages)
+  rows <- seq.int(
+    (page - 1L) * episodic_archive_page_size + 1L,
+    min(page * episodic_archive_page_size, nrow(archive))
+  )
+  shiny::tagList(
+    episodic_ui_pager(
+      "archive_page_select",
+      page = page,
+      n_pages = n_pages,
+      lang = lang
     ),
-    if (nrow(archive) == 0) {
-      shiny::tags$p(
-        class = "episodic-panel-empty",
-        episodic_tr("archive.empty", lang = lang)
-      )
-    } else {
-      # Reachable, not just listed. Last winter's assessment is only a
-      # useful precedent if you can open it and read the reasoning, and
-      # the shared cluster table is what makes every row a way in to one.
-      episodic_ui_cluster_table(
-        archive,
-        context = list(
-          episodic_ui_cluster_col_pathogen(lang = lang),
-          episodic_ui_cluster_col_level(lang = lang),
-          episodic_ui_cluster_col_place(lang = lang)
-        ),
-        outcome = list(
-          episodic_ui_cluster_col_closed_at(lang = lang),
-          episodic_ui_cluster_col_closed_by(lang = lang)
-        ),
-        lang = lang
-      )
-    }
+    # Reachable, not just listed. Last winter's assessment is only a
+    # useful precedent if you can open it and read the reasoning, and
+    # the shared cluster table is what makes every row a way in to one.
+    episodic_ui_cluster_table(
+      archive[rows, , drop = FALSE],
+      context = list(
+        episodic_ui_cluster_col_pathogen(lang = lang),
+        episodic_ui_cluster_col_level(lang = lang),
+        episodic_ui_cluster_col_place(lang = lang)
+      ),
+      outcome = list(
+        episodic_ui_cluster_col_closed_at(lang = lang),
+        episodic_ui_cluster_col_closed_by(lang = lang)
+      ),
+      lang = lang
+    )
   )
 }
 

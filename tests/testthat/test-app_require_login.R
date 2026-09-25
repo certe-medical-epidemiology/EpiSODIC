@@ -102,6 +102,7 @@ require_login_screen_outputs <- c(
   "assessment_pane",
   "pane_label",
   "pathogen_screen",
+  "archive_controls",
   "archive_screen",
   "instance_screen",
   "streams_screen",

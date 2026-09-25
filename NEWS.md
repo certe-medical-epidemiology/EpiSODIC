@@ -1,3 +1,22 @@
+# EpiSODIC 0.20.6
+
+## Changed
+
+- The Archive reads the database once per data change; searching and the level chips filter in memory
+- The Archive shows closed clusters 100 per page
+- The dashboard sends its shell and rail before the first dossier, which follows on the next flush
+- Cluster tables resolve the configuration once per table instead of twice per row
+- A configuration file is re-read and re-hashed only when its size or modification time changes
+- Cluster states for the rail and the Archive are derived in one pass instead of one scan per cluster
+- The Archive builds place labels once per stream and closure authors once per user
+- Batched reads over many clusters or streams run in chunks
+
+## Fixed
+
+- The Archive search box keeps what was typed when the results redraw
+- An Archive search containing a character such as `(` or `[` no longer stops the screen
+- Batched reads no longer exceed MySQL's 65,535-placeholder limit on instances with many clusters
+
 # EpiSODIC 0.20.5
 
 ## Fixed

@@ -413,3 +413,35 @@ test_that("case_days counts distinct dates with a case, not the case count or th
 
   expect_equal(nrow(episodic_db_case_days_batch(con, integer(0))), 0)
 })
+
+test_that("a cluster table resolves the configuration once, not once per row", {
+  real <- episodic_config_resolve
+  calls <- 0L
+  local_mocked_bindings(
+    episodic_config_resolve = function(...) {
+      calls <<- calls + 1L
+      real(...)
+    }
+  )
+  clusters <- data.frame(
+    cluster_id = 1:20,
+    level = rep(c("pathogen_ward", "pathogen_region"), 10),
+    n_cases = 3L,
+    case_days = 2L,
+    first_day = "2025-01-01",
+    last_day = "2025-01-05",
+    priority_score = 10,
+    stringsAsFactors = FALSE
+  )
+  html <- as.character(episodic_ui_cluster_table(clusters, lang = "en"))
+  expect_equal(calls, 1L)
+
+  # Each row still reads as its own scale.
+  ref <- function(key, id) {
+    paste0(">", episodic_tr(key, id = id, lang = "en"), "<")
+  }
+  expect_true(grepl(ref("dossier.outbreak_ref", 1), html, fixed = TRUE))
+  expect_true(grepl(ref("dossier.epidemic_ref", 2), html, fixed = TRUE))
+  expect_true(grepl('data-episodic-epidemic="2"', html, fixed = TRUE))
+  expect_true(grepl('data-episodic-outbreak="1"', html, fixed = TRUE))
+})

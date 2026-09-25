@@ -175,6 +175,10 @@ episodic_app_reopened_closure <- function(con,
 #' The Archive screen: closed clusters, searchable
 #'
 #' Last winter's assessment is the best prior for this winter's cluster.
+#' `episodic_app_archive_load()` and `episodic_app_archive_filter()`
+#' composed; the dashboard calls the two separately, so that a search or
+#' a level chip filters the rows it already has rather than reading the
+#' database again.
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param query Free-text search over pathogen and place (case-insensitive
@@ -191,6 +195,45 @@ episodic_app_archive <- function(con,
                                  query = NULL,
                                  level = NULL,
                                  lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  episodic_app_archive_filter(
+    episodic_app_archive_load(con, lang = lang),
+    query = query,
+    level = level
+  )
+}
+
+#' Every closed cluster, as the Archive lists it
+#'
+#' Everything that needs the database, once. Labels are built per stream
+#' and per closing user rather than per cluster, since a backfilled
+#' instance holds thousands of closed clusters on a few hundred streams,
+#' closed by a handful of people or by the system.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param lang Session language.
+#' @return A data frame, one row per closed cluster, in
+#'   `episodic_cluster_table_order()`, with the columns
+#'   `episodic_app_archive()` documents.
+#' @keywords internal
+#' @noRd
+episodic_app_archive_load <- function(con,
+                                      lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  columns <- c(
+    "cluster_id",
+    "pathogen",
+    "scale",
+    "level",
+    "level_label",
+    "place",
+    "first_day",
+    "last_day",
+    "duration_days",
+    "n_cases",
+    "case_days",
+    "priority_score",
+    "closed_at",
+    "closed_by"
+  )
   empty <- data.frame(
     cluster_id = integer(0),
     pathogen = character(0),
@@ -213,32 +256,24 @@ episodic_app_archive <- function(con,
     return(empty)
   }
   streams <- episodic_db_streams(con, active_only = FALSE)
-  institutions <- episodic_db_get_query(con, "SELECT * FROM episodic_institution")
-
-  # Derived for the whole archive in three queries rather than five per
-  # cluster. `episodic_app_derive_state_for_cluster()` is the readable form
-  # but it re-reads the cluster, its stream, the pathogen config, its events
-  # and its states one row at a time; on a networked database that is what
-  # made opening the archive take tens of seconds. The batch form needs
-  # `pathogen` alongside `last_day` and `changed_since_assessment`, so the
-  # stream join moves up here from below.
-  clusters$pathogen <- streams$pathogen[match(
-    clusters$stream_id,
-    streams$stream_id
-  )]
+  stream_row <- match(clusters$stream_id, streams$stream_id)
+  clusters$pathogen <- streams$pathogen[stream_row]
   clusters$state <- episodic_app_derive_states_batch(con, clusters)
-  closed <- clusters[clusters$state == "closed", ]
+  closed <- clusters[clusters$state == "closed", , drop = FALSE]
   if (nrow(closed) == 0) {
     return(empty)
   }
 
-  closed$level <- streams$level[match(closed$stream_id, streams$stream_id)]
-  closed$care_line <- streams$care_line[match(
-    closed$stream_id,
-    streams$stream_id
-  )]
-  closed$level_label <- vapply(
-    seq_len(nrow(closed)),
+  stream_row <- match(closed$stream_id, streams$stream_id)
+  closed$level <- streams$level[stream_row]
+  closed$care_line <- streams$care_line[stream_row]
+
+  # One label per distinct level and care line, and one place per
+  # distinct stream: the labels are functions of those alone.
+  level_key <- paste(closed$level, closed$care_line, sep = "\r")
+  level_first <- !duplicated(level_key)
+  level_labels <- vapply(
+    which(level_first),
     function(i) {
       episodic_app_level_label(
         closed$level[i],
@@ -248,14 +283,20 @@ episodic_app_archive <- function(con,
     },
     character(1)
   )
-  closed$place <- vapply(
-    seq_len(nrow(closed)),
-    function(i) {
-      stream <- streams[streams$stream_id == closed$stream_id[i], ][1, ]
+  closed$level_label <- unname(level_labels[
+    match(level_key, level_key[level_first])
+  ])
+
+  institutions <- episodic_db_get_query(con, "SELECT * FROM episodic_institution")
+  place_streams <- unique(closed$stream_id)
+  places <- vapply(
+    place_streams,
+    function(stream_id) {
+      stream <- streams[streams$stream_id == stream_id, , drop = FALSE][1, ]
       institution <- if (!is.na(stream$institution_id)) {
-        institutions[institutions$institution_id == stream$institution_id, ][
-          1,
-        ]
+        institutions[institutions$institution_id == stream$institution_id, ,
+          drop = FALSE
+        ][1, ]
       } else {
         NULL
       }
@@ -263,6 +304,8 @@ episodic_app_archive <- function(con,
     },
     character(1)
   )
+  closed$place <- unname(places[match(closed$stream_id, place_streams)])
+
   closed_states <- episodic_db_cluster_states_batch(con, closed$cluster_id)
   closed$closed_at <- episodic_app_closed_at_from(closed_states, closed$cluster_id)
   closed$closed_by <- episodic_app_closed_by_from(
@@ -271,19 +314,6 @@ episodic_app_archive <- function(con,
     closed$cluster_id,
     lang = lang
   )
-
-  if (!is.null(query) && nzchar(query)) {
-    hit <- grepl(query, closed$pathogen, ignore.case = TRUE) |
-      grepl(query, closed$place, ignore.case = TRUE)
-    closed <- closed[hit, ]
-  }
-  if (!is.null(level) && length(level) > 0) {
-    closed <- closed[closed$level %in% level, ]
-  }
-  if (nrow(closed) == 0) {
-    return(empty)
-  }
-
   closed$duration_days <- episodic_cluster_duration_days(
     closed$first_day,
     closed$last_day
@@ -297,23 +327,36 @@ episodic_app_archive <- function(con,
   # be closed in. `episodic_ui_cluster_table()` applies the same order
   # again when it renders; doing it here as well means any other caller
   # gets the rows in the order the screen shows them.
-  closed <- closed[episodic_cluster_table_order(closed), ]
-  closed[, c(
-    "cluster_id",
-    "pathogen",
-    "scale",
-    "level",
-    "level_label",
-    "place",
-    "first_day",
-    "last_day",
-    "duration_days",
-    "n_cases",
-    "case_days",
-    "priority_score",
-    "closed_at",
-    "closed_by"
-  )]
+  closed <- closed[episodic_cluster_table_order(closed), columns, drop = FALSE]
+  rownames(closed) <- NULL
+  closed
+}
+
+#' Narrow a loaded Archive to a search and a set of levels
+#'
+#' The search is a literal, case-insensitive substring, never a regular
+#' expression: what an epidemiologist types into a search box is text,
+#' and a stray `(` or `[` in it must find nothing rather than stop the
+#' screen with a regex error.
+#'
+#' @param archive A data frame from `episodic_app_archive_load()`.
+#' @inheritParams episodic_app_archive
+#' @return `archive`, narrowed, in the same order.
+#' @keywords internal
+#' @noRd
+episodic_app_archive_filter <- function(archive, query = NULL, level = NULL) {
+  if (!is.null(query) && length(query) == 1 && !is.na(query) &&
+    nzchar(trimws(query))) {
+    needle <- tolower(trimws(query))
+    hit <- grepl(needle, tolower(archive$pathogen), fixed = TRUE) |
+      grepl(needle, tolower(archive$place), fixed = TRUE)
+    archive <- archive[hit, , drop = FALSE]
+  }
+  if (!is.null(level) && length(level) > 0) {
+    archive <- archive[archive$level %in% level, , drop = FALSE]
+  }
+  rownames(archive) <- NULL
+  archive
 }
 
 #' What a detection run actually took in, as one line
