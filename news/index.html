@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.20.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.20.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,14 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.20.5" id="episodic-0205">EpiSODIC 0.20.5<a class="anchor" aria-label="anchor" href="#episodic-0205"></a></h2>
+<div class="section level3">
+<h3 id="fixed-0-20-5">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-20-5"></a></h3>
+<ul><li>Opening an epidemic dossier on a MariaDB/MySQL instance no longer aborts the R session; the epidemic object is built before the dossier’s first query rather than inside it</li>
+<li>Every query now evaluates its parameters before the statement is prepared, so no query parameter that itself queries the database can abort the R session on MariaDB/MySQL</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.20.4" id="episodic-0204">EpiSODIC 0.20.4<a class="anchor" aria-label="anchor" href="#episodic-0204"></a></h2>
 <div class="section level3">

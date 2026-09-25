@@ -446,6 +446,7 @@ at the R console; there is also in-app account management.
       db_cron_write.R     # all cron-side DB writes
       db_read.R           # all DB reads (shared by cron and app)
       db_app_write.R      # all app-side DB writes (append-only)
+      db_query.R          # the only route to a query: episodic_db_get_query(), episodic_db_execute()
       schema_migrate.R    # schema creation and migration
       app_server.R        # Shiny server
       app_server_notes.R  # wires the cluster notes save button
@@ -633,8 +634,15 @@ from index”.
   or the log becomes a wall of colour in which nothing stands out again.
   The Activity screen’s run modal marks its own lines on the same rule.
 - Database: all SQL is inline (no ORM). Parameterised queries
-  (`DBI::dbGetQuery(con, sql, params = ...)`) throughout, never string
-  interpolation of user values.
+  throughout, never string interpolation of user values. Every query
+  goes through `episodic_db_get_query()` or `episodic_db_execute()`
+  (`R/db_query.R`), never
+  [`DBI::dbGetQuery()`](https://dbi.r-dbi.org/reference/dbGetQuery.html)/[`DBI::dbExecute()`](https://dbi.r-dbi.org/reference/dbExecute.html)
+  directly: they evaluate every argument before the driver prepares the
+  statement, because on MariaDB a parameter whose evaluation queries the
+  same connection closes the prepared statement and kills the R process
+  with no R-level error. `test-db_reentrancy.R` fails on any direct DBI
+  query call in the namespace.
 - Dependencies: hard dependencies in Imports, optional integrations in
   Suggests. Gate optional packages at runtime with
   [`rlang::check_installed()`](https://rlang.r-lib.org/reference/is_installed.html)
