@@ -1,3 +1,9 @@
+# EpiSODIC 0.20.5
+
+## Fixed
+
+- Opening an epidemic dossier on a MariaDB/MySQL instance no longer aborts the R session; the epidemic object is built before the dossier's first query rather than inside it
+
 # EpiSODIC 0.20.4
 
 ## Fixed

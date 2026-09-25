@@ -700,6 +700,49 @@ test_that("the epidemic dossier uses the stat grid the stylesheet draws", {
   expect_true(grepl('class="episodic-statgrid"', html, fixed = TRUE))
 })
 
+test_that("the epidemic dossier resolves its object before querying", {
+  # The server hands the dossier `epidemic_object()` unevaluated, and
+  # building that object queries `con`. Forced from inside another
+  # query's parameters, those queries run while RMariaDB holds that
+  # statement prepared, which closes it and kills the R process on
+  # binding. SQLite tolerates the nesting, so what is asserted here is
+  # the ordering itself: nothing forces the object while a DBI call is
+  # on the stack.
+  env <- epidemic_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  epi_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$province_stream_id,
+    first_day = "2026-01-10",
+    last_day = "2026-01-20",
+    n_cases = 20,
+    priority_score = 60,
+    detector_agreement = 1,
+    run_id = env$run_id,
+    scale = "epidemic"
+  )
+  built <- episodic_epidemic_object(env$con, epi_id, lang = "en")
+
+  forced_inside_query <- NA
+  delayedAssign("lazy_obj", {
+    heads <- vapply(
+      sys.calls(),
+      function(cl) deparse(cl[[1]])[1],
+      character(1)
+    )
+    forced_inside_query <- any(grepl(
+      "^(DBI::)?db(GetQuery|SendQuery|SendStatement|Execute|Bind)$",
+      heads
+    ))
+    built
+  })
+
+  episodic_ui_epidemic_dossier(env$con, obj = lazy_obj, lang = "en")
+  expect_false(is.na(forced_inside_query))
+  expect_false(forced_inside_query)
+})
+
 test_that("an epidemic's weekly curve carries the incomplete flag", {
   env <- epidemic_setup()
   on.exit(DBI::dbDisconnect(env$con))
