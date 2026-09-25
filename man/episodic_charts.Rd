@@ -46,7 +46,9 @@ whichever screen it is on.}
 \item{rt}{A data frame with one row per estimation window: \code{window_end}
 (\code{Date}), \code{mean} (point estimate of \eqn{R_t}), and \code{lower}/\code{upper}
 (95\% credible interval). A dashed reference line is drawn at
-\eqn{R_t = 1}, the threshold between a shrinking and a growing outbreak.}
+\eqn{R_t = 1}, the threshold between a shrinking and a growing outbreak.
+The y axis is on a log2 scale, labelled in \eqn{R_t} itself, so that a
+halving and a doubling sit the same distance either side of that line.}
 }
 \value{
 A \link[ggplot2:ggplot]{ggplot2::ggplot} object.
