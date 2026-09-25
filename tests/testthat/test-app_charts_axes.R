@@ -72,6 +72,38 @@ test_that("every chart's y axis starts at its data and leaves a quarter of headr
   }
 })
 
+test_that("episodic_chart_count_breaks() keeps whole numbers only", {
+  expect_equal(episodic_chart_count_breaks(c(0, 3)), 0:3)
+  expect_equal(episodic_chart_count_breaks(c(0, 1)), 0:1)
+  expect_equal(episodic_chart_count_breaks(c(0, 100)), seq(0, 100, by = 20))
+  expect_equal(episodic_chart_count_breaks(c(NA, 3)), numeric(0))
+})
+
+test_that("a count axis is never labelled with a fraction of a case", {
+  curve <- data.frame(
+    sample_date = as.Date("2025-01-01") + 0:3,
+    n_cases = c(1, 1, 0, 3),
+    incomplete = FALSE
+  )
+  weekly <- data.frame(
+    week_start = as.Date("2025-01-06") + (0:3) * 7,
+    n_cases = c(1, 3, 2, 1),
+    incomplete = FALSE
+  )
+  charts <- list(
+    epi_curve = episodic_ui_epi_curve_chart(curve, lang = "en"),
+    pathogen_curve = episodic_ui_pathogen_curve_chart(weekly, lang = "en"),
+    denominator = episodic_ui_denominator_chart(axes_series(), lang = "en")
+  )
+  for (name in names(charts)) {
+    scale <- y_scale(charts[[name]])
+    breaks <- scale$get_breaks()
+    breaks <- breaks[!is.na(breaks)]
+    expect_gt(length(breaks), 1, label = name)
+    expect_true(all(breaks == round(breaks)), info = name)
+  }
+})
+
 test_that("positivity is scaled to its own maximum, not to a fixed 0-100% axis", {
   series <- axes_series()
   p <- episodic_ui_denominator_chart(series, lang = "en")

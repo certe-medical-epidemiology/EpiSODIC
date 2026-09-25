@@ -22,6 +22,7 @@
 - The season overlay assigns season weeks per distinct day instead of per case
 - Positivity is drawn on an axis scaled to the series instead of a fixed 0-100%
 - Every chart's y axis leaves 25% headroom above the highest value and none below the lowest
+- Axes of case and test counts are labelled in whole numbers only
 - Rt is drawn on a log2 axis everywhere
 - The Pathogens screen's selector lists pathogens alphabetically, case-insensitively
 - Screen-level loading spinners are three to four times larger and are not dimmed with the content

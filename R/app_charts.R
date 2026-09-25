@@ -59,6 +59,28 @@ episodic_chart_y_expand <- function() {
   ggplot2::expansion(mult = c(0, 0.25))
 }
 
+#' Whole-number breaks for an axis of counts
+#'
+#' A count axis labelled 2.5 names a number of cases that cannot occur.
+#' `pretty()` gives the candidate breaks, and only the whole numbers among
+#' them are kept: over a range of 0 to 3 that is 0, 1, 2, 3 rather than
+#' 0, 0.5, ..., 3, and over a wide range `pretty()` already steps in whole
+#' numbers, so nothing is lost there. Passed as the `breaks` function of a
+#' continuous y scale, which calls it with the scale's limits.
+#'
+#' @param limits The axis limits, as passed by `ggplot2`.
+#' @return A numeric vector of whole-number breaks, possibly empty.
+#' @keywords internal
+#' @noRd
+episodic_chart_count_breaks <- function(limits) {
+  limits <- limits[is.finite(limits)]
+  if (length(limits) < 2) {
+    return(numeric(0))
+  }
+  breaks <- pretty(limits, n = 5)
+  breaks[abs(breaks - round(breaks)) < 1e-9]
+}
+
 #' The shared chart theme
 #'
 #' Axis labels are set in the muted grey the rest of the interface uses
@@ -370,6 +392,7 @@ episodic_ui_epi_curve_chart <- function(curve,
     ) +
     ggplot2::scale_alpha_identity() +
     ggplot2::scale_y_continuous(
+      breaks = episodic_chart_count_breaks,
       labels = episodic_chart_number_labels(lang),
       expand = episodic_chart_y_expand()
     ) +
@@ -420,6 +443,7 @@ episodic_ui_trend_chart <- function(trend,
       labels = legend_labels
     ) +
     ggplot2::scale_y_continuous(
+      breaks = episodic_chart_count_breaks,
       labels = episodic_chart_number_labels(lang),
       expand = episodic_chart_y_expand()
     ) +
@@ -948,6 +972,7 @@ episodic_ui_denominator_chart <- function(series,
     ) +
     ggplot2::scale_y_continuous(
       name = episodic_tr("panel.denominator.legend_tests", lang = lang),
+      breaks = episodic_chart_count_breaks,
       labels = episodic_chart_number_labels(lang),
       expand = episodic_chart_y_expand(),
       sec.axis = ggplot2::sec_axis(
@@ -1031,6 +1056,7 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
     ) +
     ggplot2::scale_alpha_identity() +
     ggplot2::scale_y_continuous(
+      breaks = episodic_chart_count_breaks,
       labels = episodic_chart_number_labels(lang),
       expand = episodic_chart_y_expand()
     ) +
@@ -1175,6 +1201,7 @@ episodic_ui_pathogen_overlay_chart <- function(overlay,
     ggplot2::scale_colour_manual(values = colours[as.character(groups)]) +
     ggplot2::scale_x_continuous(breaks = breaks, labels = labels) +
     ggplot2::scale_y_continuous(
+      breaks = episodic_chart_count_breaks,
       labels = episodic_chart_number_labels(lang),
       expand = episodic_chart_y_expand()
     )
