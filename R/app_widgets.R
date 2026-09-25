@@ -789,3 +789,56 @@ episodic_verdict_label <- function(verdict,
   }
   episodic_tr(key, lang = lang)
 }
+
+#' Previous / "page N of M" / next, for a paged table
+#'
+#' Sends the page wanted as `input[[input_id]]`; the server holds the
+#' page and redraws the table and this pager from it. Drawn only when
+#' there is more than one page to move between.
+#'
+#' @param input_id The Shiny input the buttons set.
+#' @param page The current page, from 1.
+#' @param n_pages How many pages there are, or `NULL`.
+#' @param lang Session language.
+#' @return A `shiny::tags$div`, or `NULL` for a single page.
+#' @keywords internal
+#' @noRd
+episodic_ui_pager <- function(input_id,
+                              page,
+                              n_pages,
+                              lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (is.null(n_pages) || n_pages <= 1) {
+    return(NULL)
+  }
+  go_to <- function(target) {
+    sprintf(
+      "Shiny.setInputValue('%s', %d, {priority: 'event'})",
+      input_id,
+      as.integer(target)
+    )
+  }
+  shiny::tags$div(
+    class = "episodic-pager",
+    style = "display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:12.5px;",
+    shiny::tags$button(
+      class = "episodic-btn",
+      type = "button",
+      disabled = if (page <= 1) NA else NULL,
+      onclick = go_to(page - 1L),
+      episodic_tr("pager.prev", lang = lang)
+    ),
+    shiny::tags$span(episodic_tr(
+      "pager.page_of",
+      page = page,
+      n_pages = n_pages,
+      lang = lang
+    )),
+    shiny::tags$button(
+      class = "episodic-btn",
+      type = "button",
+      disabled = if (page >= n_pages) NA else NULL,
+      onclick = go_to(page + 1L),
+      episodic_tr("pager.next", lang = lang)
+    )
+  )
+}

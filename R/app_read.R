@@ -93,21 +93,32 @@ episodic_app_derive_states_batch <- function(con, clusters) {
   }
 
   ids <- clusters$cluster_id
-  events_all <- episodic_db_assessment_events_batch(con, ids)
-  states_all <- episodic_db_cluster_states_batch(con, ids)
+  # Grouped once with split() rather than filtered per cluster: a
+  # per-cluster `events_all[events_all$cluster_id == id, ]` scans every
+  # row for every cluster, which on the Archive - every cluster the
+  # instance holds - grows with the square of their number.
+  # Keyed through as.integer(): as.character() of a double id past
+  # 99999 is "1e+05", which would group nothing if the two sides of the
+  # match arrived as different numeric types.
+  id_key <- function(x) as.character(as.integer(x))
+  groups <- unique(id_key(ids))
+  by_cluster <- function(rows) {
+    split(rows, factor(id_key(rows$cluster_id), levels = groups))
+  }
+  events_by <- by_cluster(episodic_db_assessment_events_batch(con, ids))
+  states_by <- by_cluster(episodic_db_cluster_states_batch(con, ids))
+  changed <- as.logical(clusters$changed_since_assessment)
+  keys <- id_key(ids)
 
   vapply(
-    seq_len(nrow(clusters)),
+    seq_along(ids),
     function(i) {
-      row <- clusters[i, ]
-      events <- events_all[events_all$cluster_id == row$cluster_id, ]
-      states <- states_all[states_all$cluster_id == row$cluster_id, ]
-
+      events <- events_by[[keys[i]]]
       episodic_derive_state(
         events,
-        changed_since_assessment = as.logical(row$changed_since_assessment),
+        changed_since_assessment = changed[i],
         explicitly_closed = episodic_app_explicitly_closed_from(
-          states,
+          states_by[[keys[i]]],
           events
         )
       )
@@ -248,16 +259,19 @@ episodic_app_closed_by_from <- function(con,
   }
   last <- closures[!duplicated(closures$cluster_id, fromLast = TRUE), ]
   idx <- match(cluster_ids, last$cluster_id)
-  vapply(
-    idx,
-    function(i) {
-      if (is.na(i)) {
-        return(NA_character_)
-      }
-      episodic_app_actor_label(con, last$user_id[i], lang = lang)
-    },
+  # One label per distinct closer - a person or the system - rather than
+  # one lookup per cluster: an archive of thousands of clusters was
+  # closed by a handful of people.
+  closers <- unique(last$user_id)
+  labels <- vapply(
+    closers,
+    function(user_id) episodic_app_actor_label(con, user_id, lang = lang),
     character(1)
   )
+  out <- rep(NA_character_, length(cluster_ids))
+  found <- !is.na(idx)
+  out[found] <- unname(labels[match(last$user_id[idx[found]], closers)])
+  out
 }
 
 #' Build the cluster object consumed by the interpretation engine and the dossier

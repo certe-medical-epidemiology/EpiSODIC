@@ -703,3 +703,83 @@ test_that("the Activity screen renders its filter chips in every shipped languag
     expect_true(grepl("activity_category_filter", html, fixed = TRUE), info = lang)
   }
 })
+
+test_that("the Archive search is literal text, not a pattern", {
+  archive <- data.frame(
+    cluster_id = 1:3,
+    pathogen = c("Norovirus", "Influenza A (H3N2)", "Norovirus"),
+    place = c("Ward B4", "Region", "Hospital [east]"),
+    level = c("pathogen_ward", "pathogen_region", "pathogen_institution"),
+    stringsAsFactors = FALSE
+  )
+  expect_equal(episodic_app_archive_filter(archive, query = "(h3n2)")$cluster_id, 2L)
+  expect_equal(episodic_app_archive_filter(archive, query = "[east]")$cluster_id, 3L)
+  # A lone metacharacter finds nothing rather than stopping the screen.
+  expect_equal(nrow(episodic_app_archive_filter(archive, query = "(")), 0)
+  expect_equal(
+    episodic_app_archive_filter(archive, query = "  NORO ")$cluster_id,
+    c(1L, 3L)
+  )
+  expect_equal(
+    episodic_app_archive_filter(
+      archive,
+      query = "noro",
+      level = "pathogen_institution"
+    )$cluster_id,
+    3L
+  )
+  expect_equal(nrow(episodic_app_archive_filter(archive)), 3)
+  expect_equal(nrow(episodic_app_archive_filter(archive, query = "")), 3)
+})
+
+test_that("the Archive is drawn a page at a time", {
+  archive_of <- function(n) {
+    data.frame(
+      cluster_id = seq_len(n),
+      pathogen = "Norovirus",
+      level = "pathogen_ward",
+      level_label = "Ward",
+      place = "Ward B4",
+      n_cases = 3L,
+      case_days = 2L,
+      first_day = "2025-01-01",
+      last_day = "2025-01-05",
+      priority_score = 10,
+      closed_at = "2025-02-01 10:00:00",
+      closed_by = "Test User",
+      stringsAsFactors = FALSE
+    )
+  }
+  rows_in <- function(html) {
+    lengths(regmatches(html, gregexpr("episodic-row-link", html, fixed = TRUE)))
+  }
+  size <- episodic_archive_page_size
+  archive <- archive_of(2L * size + 50L)
+
+  first <- as.character(episodic_ui_archive_table(archive, page = 1L, lang = "en"))
+  expect_equal(rows_in(first), size)
+  expect_true(grepl("archive_page_select", first, fixed = TRUE))
+  expect_true(grepl(
+    episodic_tr("pager.page_of", page = 1, n_pages = 3, lang = "en"),
+    first,
+    fixed = TRUE
+  ))
+
+  last <- as.character(episodic_ui_archive_table(archive, page = 3L, lang = "en"))
+  expect_equal(rows_in(last), 50L)
+  # A page past the end is the last page, not an empty one.
+  expect_equal(
+    as.character(episodic_ui_archive_table(archive, page = 99L, lang = "en")),
+    last
+  )
+
+  short <- as.character(episodic_ui_archive_table(archive_of(5L), lang = "en"))
+  expect_equal(rows_in(short), 5L)
+  expect_false(grepl("archive_page_select", short, fixed = TRUE))
+})
+
+test_that("the Archive's controls keep the search that was typed", {
+  html <- as.character(episodic_ui_archive_controls(query = "noro", lang = "en"))
+  expect_true(grepl('value="noro"', html, fixed = TRUE))
+  expect_true(grepl("archive_level_filter", html, fixed = TRUE))
+})

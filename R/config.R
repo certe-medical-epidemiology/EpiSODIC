@@ -156,11 +156,17 @@ episodic_config_resolve_files <- function(episodic_config_path = Sys.getenv("EPI
 #' A cache key that changes whenever either configuration file does
 #'
 #' The path plus a hash of the file's own bytes, not its modification
-#' time: mtime has one-second resolution on some filesystems, and a
-#' test - or an operator - that rewrites a configuration and resolves it
-#' again within that second would otherwise be handed the previous
-#' file's settings with nothing said. Hashing a few kilobytes costs a
-#' fraction of the parse, validation and merge it saves.
+#' time alone: mtime has one-second resolution on some filesystems, and
+#' a test - or an operator - that rewrites a configuration and resolves
+#' it again within that second would otherwise be handed the previous
+#' file's settings with nothing said.
+#'
+#' The hash itself is reused while the file's size and mtime are
+#' unchanged (`episodic_config_file_hash()`), because this key is built
+#' on every `episodic_config_resolve()`, and table rows, verdict labels
+#' and object references resolve the configuration per row: re-reading
+#' and re-hashing both files each time costs a disk read per call, which
+#' on a network share is most of what drawing a long table takes.
 #'
 #' A path that does not exist contributes its name and `NA`, which keeps
 #' the key distinct and leaves the error to
@@ -176,18 +182,69 @@ episodic_config_cache_key <- function(...) {
   paste(
     vapply(
       paths,
-      function(path) {
-        hash <- if (file.exists(path)) {
-          digest::digest(file = path, algo = "sha1")
-        } else {
-          NA_character_
-        }
-        paste(path, hash, sep = "|")
-      },
+      function(path) paste(path, episodic_config_file_hash(path), sep = "|"),
       character(1)
     ),
     collapse = "||"
   )
+}
+
+# Per path: the size and mtime a file had when it was hashed, the hash,
+# and whether that stat can be trusted to stand for the bytes.
+episodic_config_file_hash_cache <- new.env(parent = emptyenv())
+
+#' How recently a file may have been written for its stat to be distrusted
+#'
+#' A file written within this many seconds of being hashed may be
+#' rewritten again inside the same mtime tick with the same size, which
+#' its stat cannot show. Such a file is re-hashed on every call until it
+#' has settled.
+#' @keywords internal
+#' @noRd
+episodic_config_file_settle_seconds <- 5
+
+#' SHA-1 of a configuration file, re-read only when its stat changes
+#'
+#' Git's "racily clean" rule: a cached hash stands for the file only if
+#' its size and mtime are unchanged *and* the file had already stopped
+#' changing when it was hashed - its mtime at least
+#' `episodic_config_file_settle_seconds` older than the moment of
+#' hashing. A file hashed within that window is hashed again on every
+#' call, so two writes inside one mtime tick are never mistaken for one.
+#' The rule relies on the file's mtime and this machine's clock
+#' agreeing to within that window, which a file server whose clock runs
+#' behind by more than five seconds would break.
+#'
+#' @param path A file path.
+#' @return A single string, or `NA_character_` when the file does not
+#'   exist.
+#' @keywords internal
+#' @noRd
+episodic_config_file_hash <- function(path) {
+  info <- file.info(path, extra_cols = FALSE)
+  if (is.na(info$size) || isTRUE(info$isdir)) {
+    return(NA_character_)
+  }
+  size <- as.numeric(info$size)
+  mtime <- as.numeric(info$mtime)
+  cached <- episodic_config_file_hash_cache[[path]]
+  if (
+    !is.null(cached) &&
+      cached$settled &&
+      identical(cached$size, size) &&
+      identical(cached$mtime, mtime)
+  ) {
+    return(cached$hash)
+  }
+  hashed_at <- as.numeric(Sys.time())
+  hash <- digest::digest(file = path, algo = "sha1")
+  episodic_config_file_hash_cache[[path]] <- list(
+    size = size,
+    mtime = mtime,
+    hash = hash,
+    settled = hashed_at - mtime > episodic_config_file_settle_seconds
+  )
+  hash
 }
 
 #' Configuration subtrees whose child keys an operator names themselves

@@ -638,6 +638,9 @@ test_that("input$open_cluster jumps to the Clusters screen on that very cluster"
   server <- episodic_app_server_factory(db_path, lang = "en")
   shiny::testServer(server, {
     session$flushReact()
+    # The first selection is made once the page has been sent, so the
+    # dossier it opens arrives with the flush after the first.
+    session$flushReact()
     # Matched as a text node (">#2<"), never as a bare "#2": the palette
     # ships #20C997 and #1A1A1A, so a loose needle matches any dossier.
     ref <- function(id) {

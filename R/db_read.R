@@ -354,20 +354,15 @@ episodic_db_clusters_for_stream <- function(con, stream_id) {
 #' @keywords internal
 #' @noRd
 episodic_db_clusters_for_streams <- function(con, stream_ids) {
-  stream_ids <- unique(stream_ids)
   if (length(stream_ids) == 0) {
     return(episodic_db_clusters_for_stream(con, -1L))
   }
-  placeholders <- paste(rep("?", length(stream_ids)), collapse = ", ")
-  episodic_db_get_query(
+  episodic_db_get_query_in(
     con,
-    sprintf(
-      "SELECT * FROM episodic_cluster
-        WHERE stream_id IN (%s) AND merged_into IS NULL
-        ORDER BY stream_id, cluster_id",
-      placeholders
-    ),
-    params = as.list(stream_ids)
+    "SELECT * FROM episodic_cluster
+      WHERE stream_id IN (%s) AND merged_into IS NULL
+      ORDER BY stream_id, cluster_id",
+    stream_ids
   )
 }
 
@@ -624,22 +619,17 @@ episodic_db_case_days_batch <- function(con, cluster_ids) {
     case_days = integer(0),
     stringsAsFactors = FALSE
   )
-  cluster_ids <- unique(cluster_ids)
   if (length(cluster_ids) == 0) {
     return(empty)
   }
-  placeholders <- paste(rep("?", length(cluster_ids)), collapse = ", ")
-  episodic_db_get_query(
+  episodic_db_get_query_in(
     con,
-    sprintf(
-      "SELECT cc.cluster_id, COUNT(DISTINCT c.sample_date) AS case_days
+    "SELECT cc.cluster_id, COUNT(DISTINCT c.sample_date) AS case_days
        FROM episodic_cluster_case cc
        INNER JOIN episodic_case c ON c.case_id = cc.case_id
        WHERE cc.cluster_id IN (%s)
        GROUP BY cc.cluster_id",
-      placeholders
-    ),
-    params = as.list(as.integer(cluster_ids))
+    as.integer(cluster_ids)
   )
 }
 
@@ -706,15 +696,11 @@ episodic_db_assessment_events_batch <- function(con, cluster_ids) {
   if (length(cluster_ids) == 0) {
     return(episodic_db_assessment_events(con, -1L)[0, ])
   }
-  placeholders <- paste(rep("?", length(cluster_ids)), collapse = ", ")
-  episodic_db_get_query(
+  episodic_db_get_query_in(
     con,
-    sprintf(
-      "SELECT * FROM episodic_assessment_event WHERE cluster_id IN (%s)
-       ORDER BY cluster_id, created_at, event_id",
-      placeholders
-    ),
-    params = as.list(cluster_ids)
+    "SELECT * FROM episodic_assessment_event WHERE cluster_id IN (%s)
+     ORDER BY cluster_id, created_at, event_id",
+    cluster_ids
   )
 }
 
@@ -730,15 +716,11 @@ episodic_db_cluster_states_batch <- function(con, cluster_ids) {
   if (length(cluster_ids) == 0) {
     return(episodic_db_cluster_states(con, -1L)[0, ])
   }
-  placeholders <- paste(rep("?", length(cluster_ids)), collapse = ", ")
-  episodic_db_get_query(
+  episodic_db_get_query_in(
     con,
-    sprintf(
-      "SELECT * FROM episodic_cluster_state WHERE cluster_id IN (%s)
-       ORDER BY cluster_id, entered_at, state_id",
-      placeholders
-    ),
-    params = as.list(cluster_ids)
+    "SELECT * FROM episodic_cluster_state WHERE cluster_id IN (%s)
+     ORDER BY cluster_id, entered_at, state_id",
+    cluster_ids
   )
 }
 

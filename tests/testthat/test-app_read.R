@@ -834,7 +834,10 @@ test_that("the archive lists cluster ids and links each row through to its dossi
 
   archive <- episodic_app_archive(env$con, lang = "en")
   expect_equal(nrow(archive), 1)
-  html <- as.character(episodic_ui_archive_screen(archive, lang = "en"))
+  html <- paste(
+    as.character(episodic_ui_archive_controls(lang = "en")),
+    as.character(episodic_ui_archive_table(archive, lang = "en"))
+  )
 
   # last winter's assessment is only a useful precedent if you can open it
   # (the shared opener attribute both sets `open_cluster` and moves the rail

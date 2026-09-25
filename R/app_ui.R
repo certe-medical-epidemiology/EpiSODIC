@@ -348,7 +348,16 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         ),
         episodic_ui_screen("pathogens", shiny::uiOutput("pathogen_screen")),
         episodic_ui_screen("instance", shiny::uiOutput("instance_screen")),
-        episodic_ui_screen("archive", shiny::uiOutput("archive_screen")),
+        # Controls and table in outputs of their own: a search redraws
+        # the rows, never the box being typed into.
+        episodic_ui_screen(
+          "archive",
+          shiny::tags$div(
+            class = "episodic-streams-screen",
+            shiny::uiOutput("archive_controls"),
+            shiny::uiOutput("archive_screen")
+          )
+        ),
         episodic_ui_screen("streams", shiny::uiOutput("streams_screen")),
         episodic_ui_screen("activity", shiny::uiOutput("activity_screen")),
         episodic_ui_screen(

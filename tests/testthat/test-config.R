@@ -527,3 +527,46 @@ test_that("episodic_pathogen_config_resolve() merges an operator CSV over shippe
   expect_equal(pc$severity_weight[pc$pathogen == "MRSA"], 0.99)
   expect_true(nrow(pc) >= 23)
 })
+
+test_that("a configuration file is hashed again while it may still be changing", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path))
+  writeLines("a: 1", path)
+  first <- episodic_config_file_hash(path)
+  # Same size, very likely the same mtime tick: only the bytes differ.
+  writeLines("a: 2", path)
+  expect_false(identical(episodic_config_file_hash(path), first))
+})
+
+test_that("a settled configuration file is read once while its stat is unchanged", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path))
+  writeLines("a: 1", path)
+  Sys.setFileTime(path, Sys.time() - 3600)
+
+  real <- digest::digest
+  reads <- 0L
+  local_mocked_bindings(
+    digest = function(...) {
+      reads <<- reads + 1L
+      real(...)
+    },
+    .package = "digest"
+  )
+  first <- episodic_config_file_hash(path)
+  expect_identical(episodic_config_file_hash(path), first)
+  expect_identical(episodic_config_file_hash(path), first)
+  expect_equal(reads, 1L)
+
+  # An edit changes the stat, and is read.
+  writeLines("a: 100", path)
+  expect_false(identical(episodic_config_file_hash(path), first))
+  expect_equal(reads, 2L)
+})
+
+test_that("a missing configuration file hashes to NA", {
+  expect_identical(
+    episodic_config_file_hash(tempfile(fileext = ".yaml")),
+    NA_character_
+  )
+})

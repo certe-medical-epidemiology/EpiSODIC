@@ -309,6 +309,16 @@ episodic_ui_cluster_table <- function(clusters,
   }
 
   clusters <- clusters[episodic_cluster_table_order(clusters), , drop = FALSE]
+  # Each row's scale, resolved against one configuration for the whole
+  # table: handed to the row as a scale rather than a level, it spares
+  # `episodic_ui_cluster_row()` and `episodic_object_ref()` a
+  # configuration lookup each, per row.
+  epidemic_levels <- episodic_config_resolve()$scale$epidemic_levels
+  row_scales <- ifelse(
+    clusters$level %in% c("outbreak", "epidemic"),
+    clusters$level,
+    ifelse(clusters$level %in% epidemic_levels, "epidemic", "outbreak")
+  )
   duration <- episodic_cluster_duration_days(
     clusters$first_day,
     clusters$last_day
@@ -407,7 +417,7 @@ episodic_ui_cluster_table <- function(clusters,
     do.call(
       episodic_ui_cluster_row,
       c(
-        list(row$cluster_id, row$level),
+        list(row$cluster_id, row_scales[i]),
         cells,
         list(unlinked_reason = reasons[i], lang = lang)
       ),

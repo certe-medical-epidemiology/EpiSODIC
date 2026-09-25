@@ -2072,35 +2072,12 @@ function episodicSubmitAssessment(prefix, clusterId) {
 episodic_ui_streams_screen <- function(screen,
                                        lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   streams <- screen$streams
-  pager <- if (!is.null(screen$n_pages) && screen$n_pages > 1) {
-    shiny::tags$div(
-      style = "display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:12.5px;",
-      shiny::tags$button(
-        class = "episodic-btn",
-        disabled = if (screen$page <= 1) NA else NULL,
-        onclick = sprintf(
-          "Shiny.setInputValue('streams_page_select', %d, {priority: 'event'})",
-          screen$page - 1L
-        ),
-        episodic_tr("streams.page_prev", lang = lang)
-      ),
-      shiny::tags$span(episodic_tr(
-        "streams.page_of",
-        page = screen$page,
-        n_pages = screen$n_pages,
-        lang = lang
-      )),
-      shiny::tags$button(
-        class = "episodic-btn",
-        disabled = if (screen$page >= screen$n_pages) NA else NULL,
-        onclick = sprintf(
-          "Shiny.setInputValue('streams_page_select', %d, {priority: 'event'})",
-          screen$page + 1L
-        ),
-        episodic_tr("streams.page_next", lang = lang)
-      )
-    )
-  }
+  pager <- episodic_ui_pager(
+    "streams_page_select",
+    page = screen$page,
+    n_pages = screen$n_pages,
+    lang = lang
+  )
   shiny::tags$div(
     class = "episodic-streams-screen",
     shiny::tags$h1(

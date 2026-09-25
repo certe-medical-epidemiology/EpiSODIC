@@ -112,12 +112,30 @@ episodic_app_server_factory <- function(db_path,
     # Merged-away clusters are the real exception: their cases now belong
     # to the surviving cluster, so their dossier is stale rather than
     # merely closed, and that is what still forces a re-selection.
+    #
+    # The very first selection is made after the page has been sent
+    # rather than inside the flush that builds it. Made inside it, the
+    # shell and the rail wait for the first dossier - its density
+    # baseline, its completion curve, its Rt fit - before anything at all
+    # reaches the screen; made after it, they arrive at once and the
+    # dossier fills in on the next flush. A selection that got there
+    # first (a `?cluster=` link, or a click) is left alone.
     shiny::observeEvent(open_clusters(), {
       ids <- open_clusters()$cluster_id
       if (length(ids) == 0) {
         return()
       }
-      if (!episodic_app_cluster_viewable(con, selected_cluster_id())) {
+      current <- selected_cluster_id()
+      if (is.null(current)) {
+        session$onFlushed(
+          function() {
+            if (is.null(shiny::isolate(selected_cluster_id()))) {
+              selected_cluster_id(ids[1])
+            }
+          },
+          once = TRUE
+        )
+      } else if (!episodic_app_cluster_viewable(con, current)) {
         selected_cluster_id(ids[1])
       }
     })
@@ -700,10 +718,11 @@ episodic_app_server_factory <- function(db_path,
 
     # -- Archive -----------------------------------------------------------
 
-    archive_query <- shiny::reactiveVal("")
-    shiny::observeEvent(
-      input$archive_search,
-      archive_query(input$archive_search)
+    # Typed text arrives per keystroke; the table follows it once typing
+    # pauses, rather than being rebuilt for every letter of a word.
+    archive_query <- shiny::debounce(
+      shiny::reactive(input$archive_search %||% ""),
+      300
     )
     archive_levels <- shiny::reactiveVal(character(0))
     shiny::observeEvent(input$archive_level_filter, {
@@ -712,20 +731,49 @@ episodic_app_server_factory <- function(db_path,
         if (!nzchar(v)) character(0) else strsplit(v, ",", fixed = TRUE)[[1]]
       )
     })
+    archive_page <- shiny::reactiveVal(1L)
+    shiny::observeEvent(
+      input$archive_page_select,
+      archive_page(as.integer(input$archive_page_select))
+    )
+    # A new search or level selection starts from its first page.
+    shiny::observeEvent(
+      list(archive_query(), archive_levels()),
+      archive_page(1L),
+      ignoreInit = TRUE
+    )
+
+    # Every closed cluster, read once per database change. Searching and
+    # the level chips filter these rows in memory
+    # (`episodic_app_archive_filter()`), so neither reads the database.
+    archive_rows <- shiny::reactive({
+      shiny::req(access_granted())
+      db_version()
+      episodic_app_archive_load(con, lang = lang)
+    })
+
+    output$archive_controls <- shiny::renderUI({
+      if (!access_granted()) {
+        return(NULL)
+      }
+      episodic_ui_archive_controls(
+        selected_levels = archive_levels(),
+        query = shiny::isolate(archive_query()),
+        lang = lang
+      )
+    })
 
     output$archive_screen <- shiny::renderUI({
       if (!access_granted()) {
         return(NULL)
       }
-      db_version()
-      episodic_ui_archive_screen(
-        episodic_app_archive(
-          con,
+      episodic_ui_archive_table(
+        episodic_app_archive_filter(
+          archive_rows(),
           query = archive_query(),
-          level = archive_levels(),
-          lang = lang
+          level = archive_levels()
         ),
-        selected_levels = archive_levels(),
+        page = archive_page(),
         lang = lang
       )
     })
