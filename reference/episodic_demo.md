@@ -171,82 +171,83 @@ cases <- episodic_synthetic_cases(
 db_path <- episodic_demo(launch = FALSE, cases = cases, denominators = NULL)
 #> Running detection as of 2025-03-31, the last day your case data covers.
 #> Creating synthetic cases...
-#> 2026-09-26 06:37:08.686 | episodic_run_cron() starting (host=runnervmtr4k5, account=runner)
-#> 2026-09-26 06:37:08.687 | Resolving configuration
-#> 2026-09-26 06:37:08.693 | Configuration resolved (hash eec18d51a9ba)
-#> 2026-09-26 06:37:08.694 | Connecting to database
-#> 2026-09-26 06:37:08.694 | No existing database found - creating one
-#> 2026-09-26 06:37:08.720 | Database connected (dialect: sqlite)
-#> 2026-09-26 06:37:08.721 | Run 1 started
-#> 2026-09-26 06:37:08.722 | Resolving and checking case data
-#> 2026-09-26 06:37:08.737 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
-#> 2026-09-26 06:37:08.738 | Beginning transaction
-#> 2026-09-26 06:37:08.740 | Loading pathogen configuration
-#> 2026-09-26 06:37:08.743 | Pathogen configuration loaded (23 pathogen(s))
-#> 2026-09-26 06:37:08.743 | Loading case data into the database
-#> 2026-09-26 06:37:08.859 | Case data loaded: supplied=419, deduplicated=410, inserted=410
-#> 2026-09-26 06:37:08.859 | Fetching all known cases and institutions
-#> 2026-09-26 06:37:08.863 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.
-#> 2026-09-26 06:37:08.865 | Case history on file spans 2025-01-01 to 2025-03-31, ending 0 day(s) before this run's date (2025-03-31)
-#> 2026-09-26 06:37:08.865 | Enumerating lattice streams
-#> 2026-09-26 06:37:08.909 | Running same-place detector
-#> 2026-09-26 06:37:08.997 | Same-place detector found 6 detection(s)
-#> 2026-09-26 06:37:08.997 | Running rare-trigger detector
-#> 2026-09-26 06:37:09.003 | Rare-trigger detector found 1 detection(s)
-#> 2026-09-26 06:37:09.004 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to
-#> 2026-09-26 06:37:09.006 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
-#> ! 2026-09-26 06:37:09.371 | MEM: declined stream Bordetella pertussis/pathogen_province/PROV_FRYSLAN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.380 | MEM: declined stream Campylobacter/pathogen_province/PROV_DRENTHE, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.388 | MEM: declined stream Campylobacter/pathogen_province/PROV_FRYSLAN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.396 | MEM: declined stream Campylobacter/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.403 | MEM: declined stream Clostridioides difficile/pathogen_province/PROV_DRENTHE, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.411 | MEM: declined stream Clostridioides difficile/pathogen_province/PROV_FRYSLAN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.419 | MEM: declined stream Clostridioides difficile/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.426 | MEM: declined stream Giardia lamblia/pathogen_province/PROV_DRENTHE, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.434 | MEM: declined stream Giardia lamblia/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.442 | MEM: declined stream Influenza A/pathogen_province/PROV_DRENTHE, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.451 | MEM: declined stream Influenza A/pathogen_province/PROV_FRYSLAN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.460 | MEM: declined stream Influenza A/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.468 | MEM: declined stream MRSA/pathogen_province/PROV_DRENTHE, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.477 | MEM: declined stream MRSA/pathogen_province/PROV_FRYSLAN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.486 | MEM: declined stream MRSA/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.495 | MEM: declined stream Neisseria meningitidis/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.503 | MEM: declined stream Norovirus/pathogen_province/PROV_DRENTHE, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.512 | MEM: declined stream Norovirus/pathogen_province/PROV_FRYSLAN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.520 | MEM: declined stream Norovirus/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.529 | MEM: declined stream RSV/pathogen_province/PROV_DRENTHE, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.537 | MEM: declined stream RSV/pathogen_province/PROV_FRYSLAN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.545 | MEM: declined stream RSV/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.554 | MEM: declined stream Salmonella/pathogen_province/PROV_DRENTHE, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.562 | MEM: declined stream Salmonella/pathogen_province/PROV_FRYSLAN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.578 | MEM: declined stream Salmonella/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.583 | MEM: declined stream Bordetella pertussis/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.587 | MEM: declined stream Campylobacter/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.592 | MEM: declined stream Clostridioides difficile/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.597 | MEM: declined stream Giardia lamblia/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.603 | MEM: declined stream Influenza A/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.608 | MEM: declined stream MRSA/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.613 | MEM: declined stream Neisseria meningitidis/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.618 | MEM: declined stream Norovirus/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.623 | MEM: declined stream RSV/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
-#> ! 2026-09-26 06:37:09.628 | MEM: declined stream Salmonella/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
-#> 2026-09-26 06:37:09.674 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)
-#> 2026-09-26 06:37:09.675 | Backfill: 7 cluster(s) opened from the case history, 2 of them already closed by the system and in the Archive, 5 left open for assessment
-#> 2026-09-26 06:37:09.678 | Suppressing lattice: weighing 7 cluster(s) across 4 pathogen(s)
-#> 2026-09-26 06:37:09.679 | Suppressing lattice: 40 case link(s) read for 7 cluster(s), 0 assessed cluster(s) exempt
-#> 2026-09-26 06:37:09.685 | Suppressing lattice done: 0 cluster(s) suppressed (0 parent(s) behind a dominant child, 0 child(ren) behind a diffuse parent)
-#> 2026-09-26 06:37:09.685 | Committing transaction
-#> 2026-09-26 06:37:09.689 | Finishing run 1 (status: success)
-#> 2026-09-26 06:37:11.085 | episodic_run_cron() finished in 2.4s (status: success)
+#> 2026-09-26 13:23:05.865 | episodic_run_cron() starting (host=runnervmtr4k5, account=runner)
+#> 2026-09-26 13:23:05.865 | Resolving configuration
+#> 2026-09-26 13:23:05.872 | Configuration resolved (hash eec18d51a9ba)
+#> 2026-09-26 13:23:05.872 | Connecting to database
+#> 2026-09-26 13:23:05.873 | No existing database found - creating one
+#> 2026-09-26 13:23:05.899 | Database connected (SQLite 3.53.3)
+#> 2026-09-26 13:23:05.900 | Run 1 started
+#> 2026-09-26 13:23:05.900 | Resolving and checking case data
+#> 2026-09-26 13:23:05.916 | Case data checked: 419 rows, 0 problems, 0 advisory finding(s)
+#> 2026-09-26 13:23:05.916 | Beginning transaction
+#> 2026-09-26 13:23:05.918 | Loading pathogen configuration
+#> 2026-09-26 13:23:05.921 | Pathogen configuration loaded (23 pathogen(s))
+#> 2026-09-26 13:23:05.921 | Loading case data into the database
+#> 2026-09-26 13:23:06.039 | Case data loaded: supplied=419, deduplicated=410, inserted=410
+#> 2026-09-26 13:23:06.040 | Fetching all known cases and institutions
+#> 2026-09-26 13:23:06.043 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.
+#> 2026-09-26 13:23:06.045 | Case history on file spans 2025-01-01 to 2025-03-31, ending 0 day(s) before this run's date (2025-03-31)
+#> 2026-09-26 13:23:06.046 | Enumerating lattice streams
+#> 2026-09-26 13:23:06.088 | Running same-place detector
+#> 2026-09-26 13:23:06.172 | Same-place detector found 6 detection(s)
+#> 2026-09-26 13:23:06.173 | Running rare-trigger detector
+#> 2026-09-26 13:23:06.179 | Rare-trigger detector found 1 detection(s)
+#> 2026-09-26 13:23:06.179 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to
+#> 2026-09-26 13:23:06.181 | Reconciling 393 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
+#> ! 2026-09-26 13:23:06.550 | MEM: declined stream Bordetella pertussis/pathogen_province/PROV_FRYSLAN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.559 | MEM: declined stream Campylobacter/pathogen_province/PROV_DRENTHE, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.563 | MEM: declined stream Campylobacter/pathogen_province/PROV_FRYSLAN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.568 | MEM: declined stream Campylobacter/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.576 | MEM: declined stream Clostridioides difficile/pathogen_province/PROV_DRENTHE, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.580 | MEM: declined stream Clostridioides difficile/pathogen_province/PROV_FRYSLAN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.585 | MEM: declined stream Clostridioides difficile/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.592 | MEM: declined stream Giardia lamblia/pathogen_province/PROV_DRENTHE, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.597 | MEM: declined stream Giardia lamblia/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.605 | MEM: declined stream Influenza A/pathogen_province/PROV_DRENTHE, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.610 | MEM: declined stream Influenza A/pathogen_province/PROV_FRYSLAN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.615 | MEM: declined stream Influenza A/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.623 | MEM: declined stream MRSA/pathogen_province/PROV_DRENTHE, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.628 | MEM: declined stream MRSA/pathogen_province/PROV_FRYSLAN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.632 | MEM: declined stream MRSA/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.640 | MEM: declined stream Neisseria meningitidis/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.648 | MEM: declined stream Norovirus/pathogen_province/PROV_DRENTHE, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.653 | MEM: declined stream Norovirus/pathogen_province/PROV_FRYSLAN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.658 | MEM: declined stream Norovirus/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.666 | MEM: declined stream RSV/pathogen_province/PROV_DRENTHE, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.670 | MEM: declined stream RSV/pathogen_province/PROV_FRYSLAN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.682 | MEM: declined stream RSV/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.690 | MEM: declined stream Salmonella/pathogen_province/PROV_DRENTHE, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.694 | MEM: declined stream Salmonella/pathogen_province/PROV_FRYSLAN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.698 | MEM: declined stream Salmonella/pathogen_province/PROV_GRONINGEN, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.703 | MEM: declined stream Bordetella pertussis/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.708 | MEM: declined stream Campylobacter/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.713 | MEM: declined stream Clostridioides difficile/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.718 | MEM: declined stream Giardia lamblia/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.724 | MEM: declined stream Influenza A/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.729 | MEM: declined stream MRSA/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.734 | MEM: declined stream Neisseria meningitidis/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.739 | MEM: declined stream Norovirus/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.745 | MEM: declined stream RSV/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
+#> ! 2026-09-26 13:23:06.750 | MEM: declined stream Salmonella/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology
+#> 2026-09-26 13:23:06.795 | Stream loop time by stage: cases 0.1s, mem 0.2s, eligibility 0.0s, farrington 0.0s, trend 0.0s, detections 0.0s, reconciliation 0.1s, total 0.4s (393 stream(s))
+#> 2026-09-26 13:23:06.796 | Stream reconciliation done: 7 detection(s), 7 new signal(s), 0 updated signal(s)
+#> 2026-09-26 13:23:06.797 | Backfill: 7 cluster(s) opened from the case history, 2 of them already closed by the system and in the Archive, 5 left open for assessment
+#> 2026-09-26 13:23:06.799 | Suppressing lattice: weighing 7 cluster(s) across 4 pathogen(s)
+#> 2026-09-26 13:23:06.801 | Suppressing lattice: 40 case link(s) read for 7 cluster(s), 0 assessed cluster(s) exempt
+#> 2026-09-26 13:23:06.806 | Suppressing lattice done: 0 cluster(s) suppressed (0 parent(s) behind a dominant child, 0 child(ren) behind a diffuse parent)
+#> 2026-09-26 13:23:06.806 | Committing transaction
+#> 2026-09-26 13:23:06.810 | Finishing run 1 (status: success)
+#> 2026-09-26 13:23:08.197 | episodic_run_cron() finished in 2.3s (status: success)
 #> OK
 #> ===========================================================================
 #> 
 #>   EpiSODIC demo account (admin) - username: demo, password: demo
 #> 
 #>   To re-open this demo later, with its geography:
-#>     Sys.setenv(EPISODIC_DB = "/tmp/Rtmpyva1am/file1def4a294f89.sqlite",
-#>                EPISODIC_CONFIG = "/tmp/Rtmpyva1am/file1def4a294f89-config.yaml",
-#>                EPISODIC_PC_PROVINCE_MAP = "/tmp/Rtmpyva1am/file1def4a294f89-pc-province.csv")
+#>     Sys.setenv(EPISODIC_DB = "/tmp/Rtmpc6XboC/file1e016c36a940.sqlite",
+#>                EPISODIC_CONFIG = "/tmp/Rtmpc6XboC/file1e016c36a940-config.yaml",
+#>                EPISODIC_PC_PROVINCE_MAP = "/tmp/Rtmpc6XboC/file1e016c36a940-pc-province.csv")
 #>     episodic_run_app()
 #> 
 #> ===========================================================================

@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.21.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -414,8 +414,10 @@ dashboard.</p>
 </tr>
 <tr class="even">
 <td><code>run_failure</code></td>
-<td>The cron run’s status is <code>"failed"</code>
-</td>
+<td>The cron run’s status is <code>"failed"</code>, including a run that
+stopped before it began: case data that failed its checks, or a database
+it would not open (see “Upgrading EpiSODIC” in
+<code><a href="../articles/deployment.html">vignette("deployment")</a></code>)</td>
 <td>Must be explicitly set to <code>true</code>
 </td>
 </tr>

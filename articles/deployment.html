@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.21.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -346,7 +346,7 @@ had them.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="kw">SELECT</span> <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">FROM</span> information_schema.REFERENTIAL_CONSTRAINTS</span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a> <span class="kw">WHERE</span> CONSTRAINT_SCHEMA <span class="op">=</span> <span class="kw">DATABASE</span>()</span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>   <span class="kw">AND</span> TABLE_NAME <span class="kw">LIKE</span> <span class="st">'episodic\_%'</span>;</span></code></pre></div>
-<p>Anything other than 42 means the schema and the server disagree, and
+<p>Anything other than 44 means the schema and the server disagree, and
 the suite’s own live tests check that same number against a live server
 on every run.</p>
 </div>
@@ -355,28 +355,106 @@ on every run.</p>
 <h2 id="upgrading-episodic">Upgrading EpiSODIC<a class="anchor" aria-label="anchor" href="#upgrading-episodic"></a>
 </h2>
 <p>The database records which version of EpiSODIC’s schema it was built
-with, and <code><a href="../reference/episodic_db_connect.html">episodic_db_connect()</a></code> refuses one it does not
-recognise rather than failing later with an unexplained SQL error - or,
-worse, not failing and reading a column that has since come to mean
-something else. So when you update the package and its schema has moved
-on, the next run stops with an error naming the fix:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+with. When an upgraded package meets a database whose schema is behind
+it, the next <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> brings the database
+forward itself, before it does anything else, and says so in its
+log:</p>
+<pre><code>Database migrated from schema version 7 to schema version 8</code></pre>
+<p>So upgrading an instance is upgrading the package:
+<code><a href="https://rdrr.io/r/utils/update.packages.html" class="external-link">update.packages()</a></code>, a rebuilt container image, or a
+colleague’s <code><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages()</a></code>, and the next scheduled run
+does the rest. Nothing has to be remembered on the day, which matters
+most for the instance nobody looks after closely.</p>
+<div class="section level3">
+<h3 id="what-a-migration-does-and-does-not-do">What a migration does, and does not do<a class="anchor" aria-label="anchor" href="#what-a-migration-does-and-does-not-do"></a>
+</h3>
+<ul>
+<li>
+<strong>It only adds.</strong> Migrations add tables, add columns
+and backfill values, and never drop or rewrite anything. Your
+surveillance history, your assessments and your audit trail are carried
+forward untouched.</li>
+<li>
+<strong>It runs before the run.</strong> Each step is a transaction
+of its own, applied before the run writes anything, never inside the
+detection run’s own transaction.</li>
+<li>
+<strong>It copies a SQLite database first.</strong> The file is
+copied beside itself as
+<code>&lt;file&gt;.schema-&lt;from&gt;-to-&lt;to&gt;.bak</code> before
+the first step, and the log names the copy. If a copy with that name
+already exists from an earlier attempt at the same upgrade, it is kept
+rather than replaced. A MariaDB or MySQL database is not copied, because
+a server’s backups belong to whoever runs the server; the log says
+so.</li>
+<li>
+<strong>One process migrates at a time.</strong> A scheduled run and
+a manual <code><a href="../reference/episodic_db_migrate.html">episodic_db_migrate()</a></code>, or two servers sharing one
+MariaDB schema, can meet the same out-of-date database at once. One of
+them migrates, the other waits, finds the work done, and carries
+on.</li>
+<li>
+<strong>Old databases are adopted.</strong> A database built by
+EpiSODIC 0.12.x or earlier carries no version at all, since the version
+table postdates it. It is adopted at version 1 and brought forward from
+there.</li>
+<li>
+<strong>Skipped versions are fine.</strong> An instance that skips
+versions (0.19 straight to 0.25) is brought through every step in
+between, in order.</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="when-the-schema-is-not-the-applications-to-change">When the schema is not the application’s to change<a class="anchor" aria-label="anchor" href="#when-the-schema-is-not-the-applications-to-change"></a>
+</h3>
+<p>Many hospitals do not let an application change its own database
+schema: the account EpiSODIC connects with may read and write rows but
+not <code>CREATE</code> or <code>ALTER</code>, and schema changes go
+through a DBA and change control. For such an instance, turn the
+automatic migration off in your <code>EPISODIC_CONFIG</code> YAML:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">database</span><span class="kw">:</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_migrate</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span></code></pre></div>
+<p>A run that then meets a database behind the package does not start.
+The refusal is:</p>
+<ul>
+<li>printed in the run log, naming both schema versions and the command
+to run;</li>
+<li>recorded as a failed run, so the gap is explained on the Activity
+screen once the database has been migrated.</li>
+</ul>
+<p>Until then, the dashboard of the upgraded package cannot open the
+database either: it refuses it with the same explanation rather than
+reading a schema it does not know.</p>
+<p>Whoever holds the privileges then runs, from an account that has
+<code>CREATE</code>, <code>ALTER</code>, <code>INDEX</code> and
+<code>REFERENCES</code> on the database:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/episodic_db_migrate.html">episodic_db_migrate</a></span><span class="op">(</span><span class="op">)</span>   <span class="co"># or episodic_db_migrate(db_path)</span></span></code></pre></div>
-<p>Migrations are additive: they add tables, add columns and backfill
-values, in one transaction per step, and never drop or rewrite anything.
-Your surveillance history, your assessments and your audit trail are
-carried forward untouched. Take a backup first anyway - that advice does
-not stop being good because the code is careful.</p>
-<p>A database built by EpiSODIC 0.12.x or earlier carries no version at
-all, since the version table postdates it.
-<code><a href="../reference/episodic_db_migrate.html">episodic_db_migrate()</a></code> adopts such a database at version 1
-rather than refusing it, then brings it forward from there. Run it once,
-on each instance, after upgrading.</p>
+<p>If <code>auto_migrate</code> is left on and the account lacks those
+privileges, the run fails the same way, and the message says which
+privileges are missing rather than passing on the server’s
+<code>CREATE command denied</code>.</p>
+<p>Under MariaDB and MySQL, a schema change commits on its own, so a
+step that fails part-way may leave part of itself in place. Every step
+skips what it finds already done, so running the migration again once
+the cause is fixed is the correct response.</p>
+</div>
+<div class="section level3">
+<h3 id="going-back">Going back<a class="anchor" aria-label="anchor" href="#going-back"></a>
+</h3>
+<p>Migrations only go forward. A package older than its database refuses
+to open it, and tells you to upgrade the package - or, if the upgrade is
+already installed, to restart the R process still running the old one. A
+dashboard started before the upgrade is the usual case: the scheduled
+run has migrated the database under it.</p>
+<p>To really go back, restore the SQLite copy taken before the
+migration, or your own MariaDB/MySQL backup.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="running-the-app">Running the app<a class="anchor" aria-label="anchor" href="#running-the-app"></a>
 </h2>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>EPISODIC_DB <span class="op">=</span> <span class="st">"/path/to/episodic.sqlite"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/episodic_run_app.html">episodic_run_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/episodic_run_app.html">episodic_run_app()</a></code>’s <code>db_path</code> argument

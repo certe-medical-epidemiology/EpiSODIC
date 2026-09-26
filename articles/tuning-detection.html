@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.21.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -1053,6 +1053,29 @@ prevent re-identification</td>
 <td><code style="white-space: nowrap;">access:<br>  require_login</code></td>
 <td><code>FALSE</code></td>
 <td>Whether the dashboard requires a sign-in to read anything</td>
+</tr></tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="database">Database<a class="anchor" aria-label="anchor" href="#database"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="8%">
+<col width="66%">
+</colgroup>
+<thead><tr class="header">
+<th>Key</th>
+<th>Default</th>
+<th>Effect</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td><code style="white-space: nowrap;">database:<br>  auto_migrate</code></td>
+<td><code>TRUE</code></td>
+<td>Whether a scheduled run brings the database up to the installed
+package’s schema itself; see <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>’s
+“Upgrading EpiSODIC”</td>
 </tr></tbody>
 </table>
 </div>

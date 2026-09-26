@@ -316,7 +316,7 @@ Two triggers are available. Both are independently toggleable:
 | Trigger | Fires when | Default |
 |----|----|----|
 | `new_clusters` | The cron run created at least one new cluster | Must be explicitly set to `true` |
-| `run_failure` | The cron run’s status is `"failed"` | Must be explicitly set to `true` |
+| `run_failure` | The cron run’s status is `"failed"`, including a run that stopped before it began: case data that failed its checks, or a database it would not open (see “Upgrading EpiSODIC” in [`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)) | Must be explicitly set to `true` |
 
 ``` yaml
 notifications:

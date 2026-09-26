@@ -1,5 +1,49 @@
 # Changelog
 
+## EpiSODIC 0.22.0
+
+### New
+
+- A detection run logs the time its stream loop spent per stage
+- MEM fits are cached per stream in `episodic_detector_cache` and reused
+  only when their exact input is unchanged (schema version 8)
+- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  migrates a database behind the installed package before running,
+  unless `database.auto_migrate` is `false`
+- [`episodic_db_migrate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_migrate.md)
+  copies a SQLite database beside itself before the first step
+  (`backup = TRUE`)
+- A run that refuses a database records the refusal as a failed run
+- A run that stops before it begins (database refused, case data failing
+  its checks) sends the `run_failure` notification
+- The run log names the database server and version it connected to
+  (SQLite, MariaDB or MySQL)
+
+### Changed
+
+- The `same_place` scan is linear in a place’s case count instead of
+  quadratic
+- Each stream takes its cases from an index built once per run instead
+  of filtering the whole case table
+- Farrington’s weekly bins, the MEM anchor, seasonality statistic and
+  season matrix are counted per distinct date instead of per case
+- Baseline exclusions, patient-days and trend row counts are read once
+  per run instead of once per stream
+- The Farrington detector and the trend cache share one fit per stream
+  instead of fitting the same week twice
+- Reconciliation reads assessment events once per run and ages a
+  stream’s undetected clusters in one statement
+
+### Fixed
+
+- A case import naming more distinct patients than one SQL statement
+  allows no longer fails the run
+- Farrington with institution patient-days no longer fails the run under
+  `surveillance` 1.26
+- Lattice suppression no longer suppresses a child cluster behind a
+  parent it shares no case with, nor re-suppresses one already
+  suppressed
+
 ## EpiSODIC 0.21.0
 
 ### New

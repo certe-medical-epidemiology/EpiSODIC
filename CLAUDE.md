@@ -8,6 +8,24 @@ infections, reconciles them into persistent outbreaks and epidemics, and
 gives epidemiologists a Shiny dashboard to assess each one, with a full
 audit trail and outbreak reports.
 
+**Status: not released, and not in production anywhere.** EpiSODIC is in
+development. It has not been shipped to any laboratory, no
+epidemiologist relies on it, and no outbreak decision is taken on its
+output. The instances that exist, including the maintainer’s own with
+real case data, are development and test instances. So:
+
+- A change in what the dashboard shows (clusters appearing, disappearing
+  or moving in a queue) affects nobody’s work. Do not frame changes in
+  terms of users, colleagues or deployments that would be affected;
+  there are none.
+- Schema migrations are still required and must still work
+  (`episodic_db_migrations()`, never removing old ones), because the
+  product is built for the day it is released and every instance after
+  it. Their purpose is that future, not protecting existing deployments.
+- The quality standard below applies in full regardless: the package is
+  built to production grade for when it is released, not to “beta grade”
+  because it is not yet.
+
 ## What this package is for
 
 EpiSODIC is a complete and automated outbreak detection and assessment
@@ -274,6 +292,7 @@ file). Key tables:
 | `episodic_app_login_failure` | app | Refused sign-ins (username tried, reason) |
 | `episodic_schema_version` | [`episodic_db_create()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_create.md), [`episodic_db_migrate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_migrate.md) | One row per applied schema version |
 | `episodic_report_version_claim` | [`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md) | The register of report version numbers handed out, taken before the render (see `episodic_db_report_version_claim()`) |
+| `episodic_detector_cache` | cron | A detector’s model fit per stream, keyed on a hash of its exact input (MEM only); one row per stream and detector, replaced in place |
 
 `episodic_cluster.opened_in_backfill` and
 `episodic_detection_run.is_backfill` mark the first run against a
@@ -306,13 +325,24 @@ refuses outright.
 The schema is versioned. `episodic_schema_version` (in
 `R/schema_migrate.R`) is what this build expects;
 [`episodic_db_connect()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_connect.md)
-refuses a database at any other version, naming
-[`episodic_db_migrate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_migrate.md)
-as the fix. Any change to `inst/sql/schema.sql` that an existing
-database has to be brought along for means bumping that constant and
-adding a matching entry to `episodic_db_migrations()` - a function
-`(con, dialect)` that is idempotent, runs inside a transaction, and
-never drops or rewrites data.
+refuses a database at any other version.
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+does not: it connects through `episodic_run_cron_connect()`, which
+migrates a database behind the package before the run row and outside
+the detection transaction (MariaDB/MySQL commit DDL implicitly), unless
+`database.auto_migrate` is `false`; a database it will not open is
+refused with a failed run row. An upgrade lands by
+[`update.packages()`](https://rdrr.io/r/utils/update.packages.html) at
+labs nobody watches closely, and a run that refused would stop
+surveillance there until someone read a cron log. Migrations serialise
+on a server lock (MariaDB) or `BEGIN IMMEDIATE` (SQLite), re-read the
+version inside each step, and copy a SQLite file first. Any change to
+`inst/sql/schema.sql` that an existing database has to be brought along
+for means bumping that constant and adding a matching entry to
+`episodic_db_migrations()` - a function `(con, dialect)` that is
+idempotent, runs inside a transaction, and never drops or rewrites data.
+Never remove an old migration: an instance may skip any number of
+versions.
 
 Write ownership is strict: cron-owned tables are written only by
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md),
@@ -350,7 +380,7 @@ additionally contain secrets that must never reach `config_snapshot`.
 Key config sections: `reconciliation`, `eligibility`,
 `effect_size_floor`, `same_place`, `farrington`, `mem`, `rare_trigger`,
 `priority_score`, `scale`, `geography`, `report`, `notifications`,
-`suppression`, `access`.
+`suppression`, `access`, `database`.
 
 An instance config is validated against the shipped defaults before
 merging (`episodic_config_validate()`): the defaults document the
@@ -670,9 +700,9 @@ from index”.
   call and would have been fine moved to Suggests; the `.data` import is
   the one thing forcing the whole package to stay in Imports.
 - Config hash: the keys in `episodic_config_unhashed_sections`
-  (`notifications`, `access`, `report`) are stripped before hashing. Any
-  new config section that contains secrets or is operationally
-  irrelevant to detection should be added there.
+  (`notifications`, `access`, `report`, `database`) are stripped before
+  hashing. Any new config section that contains secrets or is
+  operationally irrelevant to detection should be added there.
 - Anonymous access: `access.require_login` closes the app to visitors
   who have not signed in. It is enforced server-side, by not rendering -
   `episodic_app_access_granted()` gates every output and every

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.21.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,37 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.22.0" id="episodic-0220">EpiSODIC 0.22.0<a class="anchor" aria-label="anchor" href="#episodic-0220"></a></h2>
+<div class="section level3">
+<h3 id="new-0-22-0">New<a class="anchor" aria-label="anchor" href="#new-0-22-0"></a></h3>
+<ul><li>A detection run logs the time its stream loop spent per stage</li>
+<li>MEM fits are cached per stream in <code>episodic_detector_cache</code> and reused only when their exact input is unchanged (schema version 8)</li>
+<li>
+<code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> migrates a database behind the installed package before running, unless <code>database.auto_migrate</code> is <code>false</code>
+</li>
+<li>
+<code><a href="../reference/episodic_db_migrate.html">episodic_db_migrate()</a></code> copies a SQLite database beside itself before the first step (<code>backup = TRUE</code>)</li>
+<li>A run that refuses a database records the refusal as a failed run</li>
+<li>A run that stops before it begins (database refused, case data failing its checks) sends the <code>run_failure</code> notification</li>
+<li>The run log names the database server and version it connected to (SQLite, MariaDB or MySQL)</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-22-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-22-0"></a></h3>
+<ul><li>The <code>same_place</code> scan is linear in a place’s case count instead of quadratic</li>
+<li>Each stream takes its cases from an index built once per run instead of filtering the whole case table</li>
+<li>Farrington’s weekly bins, the MEM anchor, seasonality statistic and season matrix are counted per distinct date instead of per case</li>
+<li>Baseline exclusions, patient-days and trend row counts are read once per run instead of once per stream</li>
+<li>The Farrington detector and the trend cache share one fit per stream instead of fitting the same week twice</li>
+<li>Reconciliation reads assessment events once per run and ages a stream’s undetected clusters in one statement</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-22-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-22-0"></a></h3>
+<ul><li>A case import naming more distinct patients than one SQL statement allows no longer fails the run</li>
+<li>Farrington with institution patient-days no longer fails the run under <code>surveillance</code> 1.26</li>
+<li>Lattice suppression no longer suppresses a child cluster behind a parent it shares no case with, nor re-suppresses one already suppressed</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.21.0" id="episodic-0210">EpiSODIC 0.21.0<a class="anchor" aria-label="anchor" href="#episodic-0210"></a></h2>
 <div class="section level3">

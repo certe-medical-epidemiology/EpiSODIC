@@ -23,7 +23,7 @@ layers."><meta property="og:image" content="https://certe-medical-epidemiology.g
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.21.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -100,9 +100,9 @@ that is unset.</p></dd>
 
 <dt id="arg-accent">accent<a class="anchor" aria-label="anchor" href="#arg-accent"></a></dt>
 <dd><p>Fill colour for the bars. Defaults to the palette's
-<code>primary</code>; a caller drawing this for a specific nav section passes
-<code>episodic_nav_accent()</code> instead, so the chart reads as belonging to
-whichever screen it is on.</p></dd>
+<code>primary</code>, which every chart in the dashboard uses for its main
+series; the status colours are kept for marks that mean something
+(thresholds, positivity).</p></dd>
 
 
 <dt id="arg-trend">trend<a class="anchor" aria-label="anchor" href="#arg-trend"></a></dt>

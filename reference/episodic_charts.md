@@ -49,10 +49,10 @@ episodic_ui_rt_chart(rt, lang = Sys.getenv("EPISODIC_LANGUAGE"), accent = NULL)
 
 - accent:
 
-  Fill colour for the bars. Defaults to the palette's `primary`; a
-  caller drawing this for a specific nav section passes
-  `episodic_nav_accent()` instead, so the chart reads as belonging to
-  whichever screen it is on.
+  Fill colour for the bars. Defaults to the palette's `primary`, which
+  every chart in the dashboard uses for its main series; the status
+  colours are kept for marks that mean something (thresholds,
+  positivity).
 
 - trend:
 

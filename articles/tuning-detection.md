@@ -494,6 +494,10 @@ per-pathogen CSV, with its default and one-line effect.
 
 [TABLE]
 
+### Database
+
+[TABLE]
+
 ### Per-pathogen CSV columns
 
 [TABLE]

@@ -19,7 +19,7 @@ a failed migration leaves the database exactly as it was."><meta property="og:im
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.21.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -57,7 +57,10 @@ a failed migration leaves the database exactly as it was.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">episodic_db_migrate</span><span class="op">(</span>db_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"EPISODIC_DB"</span>, unset <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">episodic_db_migrate</span><span class="op">(</span></span>
+<span>  db_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"EPISODIC_DB"</span>, unset <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span>,</span>
+<span>  backup <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -69,6 +72,11 @@ a failed migration leaves the database exactly as it was.</p>
 DSN (see <code><a href="episodic_db_dsn_mariadb.html">episodic_db_dsn_mariadb()</a></code>). Defaults to the <code>EPISODIC_DB</code>
 environment variable.</p></dd>
 
+
+<dt id="arg-backup">backup<a class="anchor" aria-label="anchor" href="#arg-backup"></a></dt>
+<dd><p>Whether to copy a SQLite database beside itself before
+the first step. Ignored for MariaDB/MySQL.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -76,17 +84,29 @@ environment variable.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Nothing is ever dropped or rewritten: migrations add tables, add
+    <p>You rarely need to call this yourself: <code><a href="episodic_run_cron.html">episodic_run_cron()</a></code> does it
+at the start of every run that finds the database behind the installed
+package, unless <code>database.auto_migrate</code> is set to <code>false</code> in your
+configuration. Call it directly where schema changes go through change
+control rather than through the application - with that setting off,
+and from an account that holds the privileges to change the schema.</p>
+<p>Nothing is ever dropped or rewritten: migrations add tables, add
 columns, and backfill values. Your surveillance history, your
-assessments and your audit trail are carried forward untouched. Take
-a backup first anyway - that advice does not stop being good because
-the code is careful.</p>
+assessments and your audit trail are carried forward untouched. A
+SQLite database is copied beside itself before the first step
+(<code>&lt;file&gt;.schema-&lt;from&gt;-to-&lt;to&gt;.bak</code>); a MariaDB or MySQL database is
+not, since a server's backups belong to whoever runs the server.</p>
 <p>Each step runs inside a transaction, which under SQLite covers the
 schema changes themselves. MariaDB and MySQL commit implicitly on
 every <code>CREATE</code>/<code>ALTER</code>, so there a failed step can leave its schema
 change in place with no version row recorded; every migration is
 written to skip what it finds already done, so simply running this
 again is the correct response.</p>
+<p>Two processes can safely be asked to migrate the same database at
+once - a scheduled run and a manual call, or two servers sharing one
+MariaDB schema. One migrates; the other waits for it (up to ten
+minutes on MariaDB/MySQL, five seconds per step on SQLite), finds the
+work done, and carries on.</p>
 <p>A database created by EpiSODIC 0.12.x or earlier carries no version
 at all, since the version table postdates it. Such a database is
 adopted at version 1 (which is the shape it already has) rather than
@@ -101,7 +121,7 @@ refused.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># already current: reports so and changes nothing</span></span></span>
 <span class="r-in"><span><span class="fu">episodic_db_migrate</span><span class="op">(</span><span class="va">db_path</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Database is at schema version 7.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Database is at schema version 8.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.remove</a></span><span class="op">(</span><span class="va">db_path</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
