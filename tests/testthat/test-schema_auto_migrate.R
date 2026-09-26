@@ -346,3 +346,24 @@ test_that("a run stopped by its pre-run data checks sends the run_failure notifi
   expect_length(sent, 1L)
   expect_match(sent[[1]]$plain, "pathogen", fixed = TRUE)
 })
+
+test_that("the run log names the database server it connected to", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  expect_match(episodic_db_server_label(con), "^SQLite [0-9]+\\.[0-9]+")
+
+  server <- function(version) {
+    local_mocked_bindings(
+      episodic_db_get_query = function(con, statement, params = NULL) {
+        if (is.null(version)) stop("no VERSION() here")
+        data.frame(v = version)
+      }
+    )
+    episodic_db_server_label(structure(list(), class = "MySQLConnection"))
+  }
+  expect_identical(server("11.4.2-MariaDB-ubu2404"), "MariaDB 11.4.2")
+  expect_identical(server("10.11.6-MariaDB-0+deb12u1-log"), "MariaDB 10.11.6")
+  expect_identical(server("8.0.36"), "MySQL 8.0.36")
+  expect_identical(server("8.4.0-commercial"), "MySQL 8.4.0")
+  expect_identical(server(NULL), "MariaDB/MySQL")
+})

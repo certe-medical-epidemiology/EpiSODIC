@@ -257,6 +257,7 @@ test_that("a run migrates a database one schema version behind, against MariaDB"
     run_date = end_date
   ))
   expect_length(grep("Database migrated from", log), 1L)
+  expect_length(grep("Database connected \\((MariaDB|MySQL) [0-9]", log), 1L)
   expect_length(grep("No copy of a MariaDB/MySQL database", log), 1L)
 
   con <- episodic_db_connect(dsn)

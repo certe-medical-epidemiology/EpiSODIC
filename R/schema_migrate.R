@@ -1627,6 +1627,37 @@ episodic_db_open <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA),
   episodic_db_connect(db_path, check_schema_version = check_schema_version)
 }
 
+#' The database server a connection is talking to, as a log names it
+#'
+#' EpiSODIC has two dialects, and one of them covers two servers that
+#' differ in more than their name (see `vignette("deployment")`), so the
+#' dialect alone does not say which one a run met. MariaDB reports itself
+#' in `VERSION()` (`"11.4.2-MariaDB"`); MySQL reports a bare number.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @return A single string, e.g. `"SQLite 3.46.0"`, `"MariaDB 11.4.2"`,
+#'   `"MySQL 8.0.36"`; `"MariaDB/MySQL"` when the server does not say.
+#' @keywords internal
+#' @noRd
+episodic_db_server_label <- function(con) {
+  if (inherits(con, "SQLiteConnection")) {
+    return(paste("SQLite", RSQLite::rsqliteVersion()[["library"]]))
+  }
+  version <- tryCatch(
+    as.character(episodic_db_get_query(con, "SELECT VERSION() AS v")$v[1]),
+    error = function(e) NA_character_
+  )
+  if (length(version) != 1 || is.na(version) || !nzchar(version)) {
+    return("MariaDB/MySQL")
+  }
+  number <- sub("^([0-9][0-9.]*).*$", "\\1", version)
+  if (grepl("mariadb", version, ignore.case = TRUE)) {
+    paste("MariaDB", number)
+  } else {
+    paste("MySQL", number)
+  }
+}
+
 #' @keywords internal
 #' @noRd
 episodic_db_pragmas <- function(con) {

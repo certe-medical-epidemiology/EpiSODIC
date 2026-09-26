@@ -8,6 +8,7 @@
 - `episodic_db_migrate()` copies a SQLite database beside itself before the first step (`backup = TRUE`)
 - A run that refuses a database records the refusal as a failed run
 - A run that stops before it begins (database refused, case data failing its checks) sends the `run_failure` notification
+- The run log names the database server and version it connected to (SQLite, MariaDB or MySQL)
 
 ## Changed
 

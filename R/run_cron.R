@@ -362,11 +362,7 @@ episodic_run_cron <- function(cases,
     episodic_db_create(db_path)
   }
   on.exit(DBI::dbDisconnect(con), add = TRUE)
-  episodic_trace(
-    "Database connected (dialect: ",
-    episodic_db_dialect(db_path),
-    ")"
-  )
+  episodic_trace("Database connected (", episodic_db_server_label(con), ")")
 
   run_id <- episodic_db_run_start(
     con,
