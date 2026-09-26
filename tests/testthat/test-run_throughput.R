@@ -807,6 +807,7 @@ test_that("a run logs its stream loop time by stage", {
 
 test_that("no table but the run log grows when the same input is run again and again", {
   skip_on_cran()
+  skip_if_not_installed("mem")
   path <- tempfile(fileext = ".sqlite")
   on.exit(unlink(path))
   cases <- episodic_synthetic_cases(
@@ -854,6 +855,7 @@ test_that("no table but the run log grows when the same input is run again and a
 
 test_that("a run that reuses cached MEM fits writes what a run fitting afresh writes", {
   skip_on_cran()
+  skip_if_not_installed("mem")
   cases <- episodic_synthetic_cases(
     start_date = as.Date("2021-01-01"),
     end_date = as.Date("2025-02-16"),
