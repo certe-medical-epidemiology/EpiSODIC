@@ -23,7 +23,7 @@ layers."><meta property="og:image" content="https://certe-medical-epidemiology.g
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.20.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.21.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -115,7 +115,9 @@ whichever screen it is on.</p></dd>
 <dd><p>A data frame with one row per estimation window: <code>window_end</code>
 (<code>Date</code>), <code>mean</code> (point estimate of \(R_t\)), and <code>lower</code>/<code>upper</code>
 (95% credible interval). A dashed reference line is drawn at
-\(R_t = 1\), the threshold between a shrinking and a growing outbreak.</p></dd>
+\(R_t = 1\), the threshold between a shrinking and a growing outbreak.
+The y axis is on a log2 scale, labelled in \(R_t\) itself, so that a
+halving and a doubling sit the same distance either side of that line.</p></dd>
 
 </dl></div>
     <div class="section level2">

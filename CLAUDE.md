@@ -86,7 +86,7 @@ differs** from the language they belong to
 and a name; `es-419.json` is two number marks and a name. Everything
 else is inherited by `episodic_i18n_load()`. They are deliberately not
 copies - `en` and `en-US` differ in seven keys out of seven hundred and
-forty-six, and two copies would have to be kept in step for ever. `en`
+seventy-one, and two copies would have to be kept in step for ever. `en`
 *is* British English and `es` *is* Spain’s Spanish, so `en-GB`/`es-ES`
 are aliases of those files rather than variants of them, and a region
 that is not shipped (`nl-BE`) resolves to its language rather than to
@@ -95,6 +95,12 @@ the language a variant belongs to (which is what decides RTL and month
 names), and the four `date.format.*` keys per language are why a date
 reads “7 January 2025” in British English, “January 7, 2025” in
 American, “7. Januar 2025” in German and “2025年1月7日” in Chinese.
+
+Every language file, variants included, lists its keys sorted by byte
+order (`sort(method = "radix")`, which is also what Python’s `sorted()`
+gives), and `test-i18n.R` fails on a file that does not. A new key goes
+in at its sorted place in every file it belongs to, never at the end of
+the file or beside the key it was written with.
 
 The languages themselves have names, in `misc.language.<code>`, one set
 per file in that file’s own language. A message that would otherwise

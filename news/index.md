@@ -1,5 +1,97 @@
 # Changelog
 
+## EpiSODIC 0.21.0
+
+### New
+
+- The Epidemics dossier shows the latest complete week against the week
+  before, the peak so far, the current MEM intensity and the latest Rt
+- The Epidemics dossier has a choropleth of the epidemic’s cases, beside
+  the postcode breakdown
+- The Epidemics dossier compares the epidemic’s season with earlier
+  seasons on one axis
+- The Epidemics dossier shows Rt, age and sex against the area’s own
+  baseline, and the care lines cases were found in
+- Outbreaks during an epidemic are listed in the cluster table, with
+  their state, row hover and click-through
+- Lattice suppression writes progress lines during a detection run
+- MEM log lines name a stream’s region code as well as its pathogen and
+  level
+- The Archive search combines terms with `AND` and `OR`
+- The Epidemics dossier shows its detection settings
+- The Epidemics dossier warns when the area’s case history is missing
+  cases linked to the epidemic, naming both catchment codes where they
+  differ
+
+### Changed
+
+- Outbreak and epidemic identifiers take their prefix from the reader’s
+  language (e.g. `U-`/`E-` in Dutch, `A-`/`E-` in German)
+- Lattice suppression reads case sets and assessments in two batched
+  queries instead of per cluster
+- The Outbreaks and Epidemics rails leave closed clusters out in the
+  database query
+- The epidemic dossier reads the stream’s case history once and its
+  lead-in, thresholds, Rt and baseline come from the epidemic’s own area
+- Contributing institutions on the Epidemics dossier are counted from
+  the epidemic’s own cases
+- The season overlay assigns season weeks per distinct day instead of
+  per case
+- Positivity is drawn on an axis scaled to the series instead of a fixed
+  0-100%
+- Every chart’s y axis leaves 25% headroom above the highest value and
+  none below the lowest
+- Axes of case and test counts are labelled in whole numbers only
+- Rt is drawn on a log2 axis everywhere
+- The Pathogens screen’s selector lists pathogens alphabetically,
+  case-insensitively
+- Screen-level loading spinners are three to four times larger and are
+  not dimmed with the content
+- `ggplot2` (\>= 3.5.0) is required
+- The phenotypic resistance profile placeholder panel is removed from
+  the Outbreaks dossier
+- The Epidemics dossier shows one map instead of two, labelled with
+  postcode and count, and Rt and positivity at full width
+- A closed epidemic’s curve ends four weeks after its last case, and its
+  dossier reads its intensity at the peak
+- Every screen shares one neutral background and one accent colour
+  (primary)
+- Charts draw their main series in primary, earlier seasons in fading
+  greys, and test volume in a light primary
+- The Archive search box is up to 44rem wide and full width on narrow
+  screens
+- The rails show a care-line chip for ‘other’
+- Care-line chips differ in form as well as colour: first line filled,
+  second tinted, third outlined, other dashed
+- The detection-settings card is titled for its outbreak or epidemic and
+  reports the run that last detected it
+- Translation files list their keys in sorted order
+
+### Fixed
+
+- The positivity feed is summed per ISO week, so period starts in the
+  same week no longer produce duplicate week labels
+- A positivity above 100% is left out of the chart instead of drawn at
+  100%
+- Outbreaks are linked to the epidemics they ran during whatever either
+  cluster’s state, so historical epidemics get their outbreaks
+- A cluster whose first or last day cannot be read as a date is left out
+  of the during links and named in the run log, instead of failing the
+  run
+- An epidemic’s length is counted from its first to its last case
+  instead of to today
+- The line list and outbreak report show sex as a translated word
+  instead of its stored code
+- The Pathogens screen’s detection-parameters panel italicises the
+  pathogen name in its title and text
+- Map areas with the fewest cases are tinted instead of drawn in the
+  case-free colour
+- A map’s frame no longer extends past the reference geometry by more
+  than its minimum margin, so a widespread cluster’s map fills its box
+- [`devtools::load_all()`](https://devtools.r-lib.org/reference/load_all.html)
+  no longer replaces the session’s `EPISODIC_CONFIG` with the test
+  suite’s configuration
+
 ## EpiSODIC 0.20.6
 
 ### Changed

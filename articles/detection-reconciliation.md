@@ -66,9 +66,13 @@ into two scales. Streams below the boundary produce **outbreaks**
 above it produce **epidemics** (regional, L4 and L5), shown on the
 Epidemics screen. Each cluster receives its `scale` at creation.
 
-Outbreaks are identified as `O-{id}` and epidemics as `E-{id}`. The two
-are distinct objects from independent sequences, so `O-12` and `E-12`
-are different things.
+Outbreaks are identified as `O-{id}` and epidemics as `E-{id}` in
+English. Both draw on one `cluster_id` sequence, so a given number is
+either an outbreak or an epidemic, never both. The prefix is not stored:
+it is the first letter of the screen’s own name in the reader’s language
+(`U-12` and `E-12` in Dutch, `A-12` and `E-12` in German), and a
+language whose two names begin with the same letter carries a distinct
+pair instead.
 
 ## Reconciliation: turning detections into outbreaks and epidemics
 

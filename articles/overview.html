@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.20.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.21.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -135,11 +135,16 @@ epidemiologist records their assessment.</p>
 </h3>
 <p>The <strong>Epidemics</strong> screen shows epidemics, the
 regional-scale signals at province (L4) and catchment (L5) level. An
-epidemic’s dossier carries the weekly case curve with MEM threshold
-overlay, tests and positivity, contributing institutions with
-concentration, and a list of outbreaks recorded as occurring during it.
-Each of those outbreaks carries a “During E-123” chip on its own
-dossier, so the relation reads from either end.</p>
+epidemic’s dossier opens with where the epidemic stands: its latest
+complete week against the week before, the peak so far, the MEM
+intensity now and at the peak, and the latest Rt. Below that come the
+weekly case curve with the MEM thresholds drawn on it (the weeks before
+the epidemic began included), the epidemic’s season against earlier
+seasons, Rt on a log2 axis, tests and positivity, a choropleth of its
+cases, age and sex against the area’s own baseline, the care lines cases
+were found in, the contributing institutions, and the outbreaks recorded
+as occurring during it. Each of those outbreaks carries a “During E-123”
+chip on its own dossier, so the relation reads from either end.</p>
 <p>The screen is laid out exactly like the Outbreaks screen, and an
 epidemic is assessed on the same form: it can be an artefact or expected
 variation like any other signal. Where the epidemic is seasonal, that

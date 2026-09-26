@@ -76,12 +76,17 @@ classification panel](../reference/figures/main_screen.png)
 ### The Epidemics screen: regional and seasonal
 
 The **Epidemics** screen shows epidemics, the regional-scale signals at
-province (L4) and catchment (L5) level. An epidemic’s dossier carries
-the weekly case curve with MEM threshold overlay, tests and positivity,
-contributing institutions with concentration, and a list of outbreaks
-recorded as occurring during it. Each of those outbreaks carries a
-“During E-123” chip on its own dossier, so the relation reads from
-either end.
+province (L4) and catchment (L5) level. An epidemic’s dossier opens with
+where the epidemic stands: its latest complete week against the week
+before, the peak so far, the MEM intensity now and at the peak, and the
+latest Rt. Below that come the weekly case curve with the MEM thresholds
+drawn on it (the weeks before the epidemic began included), the
+epidemic’s season against earlier seasons, Rt on a log2 axis, tests and
+positivity, a choropleth of its cases, age and sex against the area’s
+own baseline, the care lines cases were found in, the contributing
+institutions, and the outbreaks recorded as occurring during it. Each of
+those outbreaks carries a “During E-123” chip on its own dossier, so the
+relation reads from either end.
 
 The screen is laid out exactly like the Outbreaks screen, and an
 epidemic is assessed on the same form: it can be an artefact or expected

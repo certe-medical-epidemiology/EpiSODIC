@@ -65,7 +65,9 @@ episodic_ui_rt_chart(rt, lang = Sys.getenv("EPISODIC_LANGUAGE"), accent = NULL)
   A data frame with one row per estimation window: `window_end`
   (`Date`), `mean` (point estimate of \\R_t\\), and `lower`/`upper` (95%
   credible interval). A dashed reference line is drawn at \\R_t = 1\\,
-  the threshold between a shrinking and a growing outbreak.
+  the threshold between a shrinking and a growing outbreak. The y axis
+  is on a log2 scale, labelled in \\R_t\\ itself, so that a halving and
+  a doubling sit the same distance either side of that line.
 
 ## Value
 

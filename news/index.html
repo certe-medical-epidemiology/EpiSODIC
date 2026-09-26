@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.20.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.21.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,64 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.21.0" id="episodic-0210">EpiSODIC 0.21.0<a class="anchor" aria-label="anchor" href="#episodic-0210"></a></h2>
+<div class="section level3">
+<h3 id="new-0-21-0">New<a class="anchor" aria-label="anchor" href="#new-0-21-0"></a></h3>
+<ul><li>The Epidemics dossier shows the latest complete week against the week before, the peak so far, the current MEM intensity and the latest Rt</li>
+<li>The Epidemics dossier has a choropleth of the epidemic’s cases, beside the postcode breakdown</li>
+<li>The Epidemics dossier compares the epidemic’s season with earlier seasons on one axis</li>
+<li>The Epidemics dossier shows Rt, age and sex against the area’s own baseline, and the care lines cases were found in</li>
+<li>Outbreaks during an epidemic are listed in the cluster table, with their state, row hover and click-through</li>
+<li>Lattice suppression writes progress lines during a detection run</li>
+<li>MEM log lines name a stream’s region code as well as its pathogen and level</li>
+<li>The Archive search combines terms with <code>AND</code> and <code>OR</code>
+</li>
+<li>The Epidemics dossier shows its detection settings</li>
+<li>The Epidemics dossier warns when the area’s case history is missing cases linked to the epidemic, naming both catchment codes where they differ</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-21-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-21-0"></a></h3>
+<ul><li>Outbreak and epidemic identifiers take their prefix from the reader’s language (e.g. <code>U-</code>/<code>E-</code> in Dutch, <code>A-</code>/<code>E-</code> in German)</li>
+<li>Lattice suppression reads case sets and assessments in two batched queries instead of per cluster</li>
+<li>The Outbreaks and Epidemics rails leave closed clusters out in the database query</li>
+<li>The epidemic dossier reads the stream’s case history once and its lead-in, thresholds, Rt and baseline come from the epidemic’s own area</li>
+<li>Contributing institutions on the Epidemics dossier are counted from the epidemic’s own cases</li>
+<li>The season overlay assigns season weeks per distinct day instead of per case</li>
+<li>Positivity is drawn on an axis scaled to the series instead of a fixed 0-100%</li>
+<li>Every chart’s y axis leaves 25% headroom above the highest value and none below the lowest</li>
+<li>Axes of case and test counts are labelled in whole numbers only</li>
+<li>Rt is drawn on a log2 axis everywhere</li>
+<li>The Pathogens screen’s selector lists pathogens alphabetically, case-insensitively</li>
+<li>Screen-level loading spinners are three to four times larger and are not dimmed with the content</li>
+<li>
+<code>ggplot2</code> (&gt;= 3.5.0) is required</li>
+<li>The phenotypic resistance profile placeholder panel is removed from the Outbreaks dossier</li>
+<li>The Epidemics dossier shows one map instead of two, labelled with postcode and count, and Rt and positivity at full width</li>
+<li>A closed epidemic’s curve ends four weeks after its last case, and its dossier reads its intensity at the peak</li>
+<li>Every screen shares one neutral background and one accent colour (primary)</li>
+<li>Charts draw their main series in primary, earlier seasons in fading greys, and test volume in a light primary</li>
+<li>The Archive search box is up to 44rem wide and full width on narrow screens</li>
+<li>The rails show a care-line chip for ‘other’</li>
+<li>Care-line chips differ in form as well as colour: first line filled, second tinted, third outlined, other dashed</li>
+<li>The detection-settings card is titled for its outbreak or epidemic and reports the run that last detected it</li>
+<li>Translation files list their keys in sorted order</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-21-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-21-0"></a></h3>
+<ul><li>The positivity feed is summed per ISO week, so period starts in the same week no longer produce duplicate week labels</li>
+<li>A positivity above 100% is left out of the chart instead of drawn at 100%</li>
+<li>Outbreaks are linked to the epidemics they ran during whatever either cluster’s state, so historical epidemics get their outbreaks</li>
+<li>A cluster whose first or last day cannot be read as a date is left out of the during links and named in the run log, instead of failing the run</li>
+<li>An epidemic’s length is counted from its first to its last case instead of to today</li>
+<li>The line list and outbreak report show sex as a translated word instead of its stored code</li>
+<li>The Pathogens screen’s detection-parameters panel italicises the pathogen name in its title and text</li>
+<li>Map areas with the fewest cases are tinted instead of drawn in the case-free colour</li>
+<li>A map’s frame no longer extends past the reference geometry by more than its minimum margin, so a widespread cluster’s map fills its box</li>
+<li>
+<code><a href="https://devtools.r-lib.org/reference/load_all.html" class="external-link">devtools::load_all()</a></code> no longer replaces the session’s <code>EPISODIC_CONFIG</code> with the test suite’s configuration</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.20.6" id="episodic-0206">EpiSODIC 0.20.6<a class="anchor" aria-label="anchor" href="#episodic-0206"></a></h2>
 <div class="section level3">

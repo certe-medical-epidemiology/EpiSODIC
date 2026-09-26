@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.20.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.21.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -161,9 +161,13 @@ screen. Streams at or above it produce <strong>epidemics</strong>
 (regional, L4 and L5), shown on the Epidemics screen. Each cluster
 receives its <code>scale</code> at creation.</p>
 <p>Outbreaks are identified as <code>O-{id}</code> and epidemics as
-<code>E-{id}</code>. The two are distinct objects from independent
-sequences, so <code>O-12</code> and <code>E-12</code> are different
-things.</p>
+<code>E-{id}</code> in English. Both draw on one <code>cluster_id</code>
+sequence, so a given number is either an outbreak or an epidemic, never
+both. The prefix is not stored: it is the first letter of the screen’s
+own name in the reader’s language (<code>U-12</code> and
+<code>E-12</code> in Dutch, <code>A-12</code> and <code>E-12</code> in
+German), and a language whose two names begin with the same letter
+carries a distinct pair instead.</p>
 </div>
 <div class="section level2">
 <h2 id="reconciliation-turning-detections-into-outbreaks-and-epidemics">Reconciliation: turning detections into outbreaks and epidemics<a class="anchor" aria-label="anchor" href="#reconciliation-turning-detections-into-outbreaks-and-epidemics"></a>
