@@ -125,18 +125,9 @@ episodic_ui_epidemic_rail_row <- function(row,
         shiny::HTML(episodic_ui_italicise_taxon(row$pathogen)),
         shiny::tags$span(
           class = "episodic-rail-id",
-          episodic_tr("dossier.epidemic_ref", id = row$cluster_id, lang = lang)
+          episodic_object_ref(row$cluster_id, "epidemic", lang = lang)
         ),
-        if (!is.na(row$care_line)) {
-          care_line_colour <- episodic_ui_care_line_colour(row$care_line)
-          if (!is.null(care_line_colour)) {
-            episodic_ui_chip(
-              episodic_tr(paste0("careline.short.", row$care_line), lang = lang),
-              care_line_colour,
-              filled = TRUE
-            )
-          }
-        }
+        episodic_ui_care_line_chip(row$care_line, lang = lang)
       ),
       shiny::tags$div(class = "episodic-rail-meta", row$level_label),
       shiny::tags$div(
@@ -179,10 +170,25 @@ episodic_ui_epidemic_rail_row <- function(row,
 
 #' The epidemic dossier
 #'
-#' Evidence-centric: seasonal curve with thresholds, tests and
-#' positivity, contributing institutions, and the outbreaks that ran
-#' during it. No patient-level line list: at region level that is the
-#' whole catchment, which is a case register rather than a dossier.
+#' Ordered by the questions an epidemiologist brings to an epidemic, in
+#' the order they are asked:
+#'
+#' 1. Where is it in its course? The stat grid: the latest complete week
+#'    against the one before, the peak so far, the MEM intensity now and
+#'    at the peak, the latest Rt, the season.
+#' 2. What does its curve look like? Weekly cases with the MEM thresholds
+#'    drawn on, the weeks before it began included so the rise is on the
+#'    chart.
+#' 3. Is this season unusual? Every earlier season on one axis.
+#' 4. Is it still growing? Rt, on the area's whole incidence.
+#' 5. Is the rise real? Tests and positivity.
+#' 6. Where is it? The choropleth and the postcode bars.
+#' 7. Who does it affect, and where are they found? Age and sex against
+#'    the area's own baseline, beside the care lines.
+#' 8. Which institutions carry it, and which outbreaks ran during it?
+#'
+#' No patient-level line list: at region level that is the whole
+#' catchment, which is a case register rather than a dossier.
 #'
 #' The notes panel is behind its own `uiOutput()`, for the reason the
 #' Outbreaks dossier's is - saving a note re-renders that one panel and
@@ -205,12 +211,80 @@ episodic_ui_epidemic_dossier <- function(con,
   state <- episodic_app_derive_state_for_cluster(con, obj$id)
   shiny::tagList(
     episodic_ui_epidemic_header(obj, state, lang = lang),
+    episodic_ui_epidemic_history_problem(obj, lang = lang),
     episodic_ui_epidemic_stat_grid(obj, lang = lang),
     shiny::uiOutput("epidemic_notes_pane"),
     episodic_ui_epidemic_curve_panel(obj, lang = lang),
+    episodic_ui_epidemic_overlay_panel(obj, lang = lang),
+    # Both full width: each is a weekly series over months, and at half
+    # width its week axis has no room for the labels it needs.
+    episodic_ui_epidemic_rt_panel(obj, lang = lang),
     episodic_ui_epidemic_denominator_panel(obj, lang = lang),
+    episodic_ui_epidemic_geo_panel(obj, lang = lang),
+    shiny::tags$div(
+      class = "episodic-split-row",
+      shiny::tags$div(
+        class = "episodic-split-col",
+        episodic_ui_epidemic_demography_panel(obj, lang = lang)
+      ),
+      shiny::tags$div(
+        class = "episodic-split-col",
+        episodic_ui_epidemic_care_line_panel(obj, lang = lang)
+      )
+    ),
     episodic_ui_epidemic_institutions_panel(obj, lang = lang),
-    episodic_ui_epidemic_during_panel(obj, lang = lang)
+    episodic_ui_epidemic_during_panel(obj, lang = lang),
+    # The epidemic object carries every field the panel reads (the
+    # detectors, whether Rt applies, the case-free requirement, and no
+    # patient-day density), so it is handed over rather than an outbreak
+    # object being built for an epidemic.
+    episodic_ui_settings_panel(
+      con,
+      obj$id,
+      lang = lang,
+      obj = obj,
+      scale = "epidemic"
+    )
+  )
+}
+
+#' Say so when the stream's history is missing cases the epidemic holds
+#'
+#' See `episodic_epidemic_object()`: the curve then falls back to the
+#' epidemic's own cases, and the panels read against the history - the
+#' comparison with earlier seasons, Rt, the age baseline - are drawn
+#' from part of the population, or not at all. Where the cause is
+#' visible (an L5 stream's code that is not the dashboard's), both codes
+#' are named, since that is what the operator has to reconcile.
+#'
+#' @param obj The epidemic object.
+#' @param lang Session language.
+#' @return A `shiny::tags$div`, or `NULL` when the history is whole.
+#' @keywords internal
+#' @noRd
+episodic_ui_epidemic_history_problem <- function(obj,
+                                                 lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  problem <- obj$history_problem
+  if (is.null(problem)) {
+    return(NULL)
+  }
+  shiny::tags$div(
+    class = "episodic-dossier-problem",
+    role = "alert",
+    shiny::tags$p(episodic_tr(
+      "epidemics.history_problem",
+      read = episodic_format_number(problem$n_read, lang = lang),
+      linked = episodic_format_number(problem$n_linked, lang = lang),
+      lang = lang
+    )),
+    if (!is.na(problem$dashboard_code)) {
+      shiny::tags$p(episodic_tr(
+        "epidemics.history_problem_region",
+        stream_code = problem$stream_code,
+        dashboard_code = problem$dashboard_code,
+        lang = lang
+      ))
+    }
   )
 }
 
@@ -237,6 +311,11 @@ episodic_ui_epidemic_header <- function(obj,
   } else {
     NULL
   }
+  level_now <- if (isTRUE(obj$closed)) {
+    NA_character_
+  } else {
+    obj$course$latest_level %||% NA_character_
+  }
 
   shiny::tagList(
     shiny::tags$div(
@@ -246,7 +325,7 @@ episodic_ui_epidemic_header <- function(obj,
         shiny::HTML(episodic_ui_italicise_taxon(obj$pathogen)),
         shiny::tags$span(
           class = "episodic-dossier-id",
-          episodic_tr("dossier.epidemic_ref", id = obj$id, lang = lang)
+          episodic_object_ref(obj$id, "epidemic", lang = lang)
         )
       ),
       episodic_ui_chip(
@@ -266,6 +345,16 @@ episodic_ui_epidemic_header <- function(obj,
             lang = lang
           ),
           pal$secondary
+        )
+      },
+      # The intensity band this week sits in, where MEM could fit one:
+      # the single word an epidemiologist is most often asked for about
+      # a seasonal epidemic, and the one the header can carry.
+      if (!is.na(level_now)) {
+        episodic_ui_chip(
+          episodic_tr(paste0("pathogen.intensity.", level_now), lang = lang),
+          episodic_ui_intensity_colour(level_now),
+          filled = TRUE
         )
       }
     ),
@@ -297,18 +386,178 @@ episodic_ui_epidemic_header <- function(obj,
   )
 }
 
-#' The epidemic stat grid
+#' The epidemic stat grid: where the epidemic stands
+#'
+#' A tile is shown only for a figure that could be computed. There is no
+#' "latest complete week" while every week is still filling, no change
+#' on the week before when that week had no cases (the tile says so in
+#' words instead of printing a percentage of nothing), no intensity
+#' without fitted thresholds and no Rt where none could be estimated.
 #' @keywords internal
 #' @noRd
 episodic_ui_epidemic_stat_grid <- function(obj,
                                            lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pal <- episodic_palette()
+  course <- obj$course
+  week_date <- function(d) episodic_format_date(d, lang = lang)
+
+  # The weeks the epidemic spans, first case to last: counted to today
+  # instead, a season two years back would read as two years long.
+  n_weeks <- if (
+    !is.null(obj$first_day) && !is.na(obj$first_day) &&
+      !is.null(obj$last_day) && !is.na(obj$last_day)
+  ) {
+    as.integer(
+      (episodic_week_start(as.Date(obj$last_day)) -
+        episodic_week_start(as.Date(obj$first_day))) / 7
+    ) + 1L
+  } else {
+    NA_integer_
+  }
+  # "Now" has no meaning for an epidemic that is over: its latest week
+  # and its current intensity are left out, and its intensity is read
+  # at the peak instead.
+  running <- !isTRUE(obj$closed)
   stats <- list(
     episodic_ui_stat(
       episodic_tr("column.cases", lang = lang),
-      episodic_format_number(obj$n_cases, lang = lang)
+      episodic_format_number(obj$n_cases, lang = lang),
+      if (!is.na(n_weeks)) {
+        episodic_tr(
+          "epidemics.stat.cases_sub",
+          date = week_date(obj$first_day),
+          weeks = episodic_count_phrase(
+            n_weeks,
+            episodic_tr("unit.week", lang = lang),
+            episodic_tr("unit.weeks", lang = lang),
+            lang = lang
+          ),
+          lang = lang
+        )
+      }
     )
   )
+
+  if (running && !is.null(course) && !is.na(course$latest_n)) {
+    sub <- if (is.na(course$previous_n)) {
+      episodic_tr(
+        "epidemics.stat.peak_sub",
+        week = week_date(course$latest_week),
+        lang = lang
+      )
+    } else if (is.na(course$change_pct)) {
+      episodic_tr(
+        "epidemics.stat.latest_week_sub_no_base",
+        week = week_date(course$latest_week),
+        lang = lang
+      )
+    } else {
+      episodic_tr(
+        "epidemics.stat.latest_week_sub",
+        week = week_date(course$latest_week),
+        change = sprintf(
+          "%s%s%%",
+          if (course$change_pct > 0) "+" else "",
+          episodic_format_number(course$change_pct, digits = 0, lang = lang)
+        ),
+        lang = lang
+      )
+    }
+    stats <- c(stats, list(episodic_ui_stat(
+      episodic_tr("epidemics.stat.latest_week", lang = lang),
+      episodic_format_number(course$latest_n, lang = lang),
+      sub,
+      colour = if (!is.na(course$change_pct) && course$change_pct > 0) {
+        pal$danger
+      } else if (!is.na(course$change_pct) && course$change_pct < 0) {
+        pal$success
+      } else {
+        NULL
+      }
+    )))
+  }
+
+  if (!is.null(course) && !is.na(course$peak_n)) {
+    stats <- c(stats, list(episodic_ui_stat(
+      episodic_tr("epidemics.stat.peak", lang = lang),
+      episodic_format_number(course$peak_n, lang = lang),
+      episodic_tr(
+        "epidemics.stat.peak_sub",
+        week = week_date(course$peak_week),
+        lang = lang
+      )
+    )))
+  }
+
+  if (!running && !is.null(course) && !is.na(course$peak_level)) {
+    stats <- c(stats, list(episodic_ui_stat(
+      episodic_tr("pathogen.stat.intensity", lang = lang),
+      episodic_tr(
+        paste0("pathogen.intensity.", course$peak_level),
+        lang = lang
+      ),
+      episodic_tr("pathogen.stat.intensity_sub", lang = lang),
+      colour = episodic_ui_intensity_colour(course$peak_level)
+    )))
+  }
+  if (running && !is.null(course) && !is.na(course$latest_level)) {
+    stats <- c(stats, list(episodic_ui_stat(
+      episodic_tr("epidemics.stat.intensity", lang = lang),
+      episodic_tr(
+        paste0("pathogen.intensity.", course$latest_level),
+        lang = lang
+      ),
+      if (!is.na(course$peak_level)) {
+        episodic_tr(
+          "epidemics.stat.intensity_sub",
+          level = episodic_tr(
+            paste0("pathogen.intensity.", course$peak_level),
+            lang = lang
+          ),
+          lang = lang
+        )
+      },
+      colour = episodic_ui_intensity_colour(course$latest_level)
+    )))
+  }
+
+  rt_latest <- if (!is.null(obj$rt) && nrow(obj$rt) > 0) {
+    obj$rt[nrow(obj$rt), , drop = FALSE]
+  }
+  if (!is.null(rt_latest) && !is.na(rt_latest$mean)) {
+    stats <- c(stats, list(episodic_ui_stat(
+      episodic_tr("epidemics.stat.rt", lang = lang),
+      episodic_format_number(rt_latest$mean, digits = 2, fixed = TRUE, lang = lang),
+      if (!is.na(rt_latest$lower) && !is.na(rt_latest$upper)) {
+        episodic_tr(
+          "epidemics.stat.rt_sub",
+          lower = episodic_format_number(
+            rt_latest$lower,
+            digits = 2,
+            fixed = TRUE,
+            lang = lang
+          ),
+          upper = episodic_format_number(
+            rt_latest$upper,
+            digits = 2,
+            fixed = TRUE,
+            lang = lang
+          ),
+          date = week_date(rt_latest$window_end),
+          lang = lang
+        )
+      },
+      # Coloured only when the interval is on one side of 1: an interval
+      # straddling it has not said which way the epidemic is going.
+      colour = if (!is.na(rt_latest$lower) && rt_latest$lower > 1) {
+        pal$danger
+      } else if (!is.na(rt_latest$upper) && rt_latest$upper < 1) {
+        pal$success
+      } else {
+        NULL
+      }
+    )))
+  }
 
   if (!is.null(obj$concentration)) {
     stats <- c(stats, list(episodic_ui_stat(
@@ -398,15 +647,99 @@ episodic_ui_epidemic_curve_panel <- function(obj,
 
   episodic_ui_panel(
     episodic_tr("epidemics.panel.curve.title", lang = lang),
+    aside = episodic_tr(
+      "pathogen.panel.curve.aside",
+      weeks = episodic_format_number(nrow(obj$weekly), lang = lang),
+      lang = lang
+    ),
     note = shiny::HTML(note),
     shiny::renderPlot(
       episodic_ui_pathogen_curve_chart(
         obj$weekly,
         obj$thresholds,
-        lang = lang,
-        accent = episodic_nav_accent("epidemics")
+        lang = lang
       ),
       height = 300
+    )
+  )
+}
+
+#' This epidemic's season against the earlier ones
+#' @keywords internal
+#' @noRd
+episodic_ui_epidemic_overlay_panel <- function(obj,
+                                               lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  overlay <- obj$overlay
+  if (is.null(overlay)) {
+    return(episodic_ui_panel_empty(
+      episodic_tr("pathogen.panel.overlay.title", lang = lang),
+      episodic_tr("pathogen.panel.overlay.empty", lang = lang)
+    ))
+  }
+  graphics_issue <- episodic_graphics_probe()
+  if (!is.null(graphics_issue)) {
+    return(episodic_ui_panel_empty(
+      episodic_tr("pathogen.panel.overlay.title", lang = lang),
+      episodic_graphics_error_message(graphics_issue, lang = lang)
+    ))
+  }
+  episodic_ui_panel(
+    episodic_tr("pathogen.panel.overlay.title", lang = lang),
+    aside = episodic_tr(
+      paste0("pathogen.panel.overlay.kind.", overlay$kind),
+      lang = lang
+    ),
+    note = episodic_tr("epidemics.panel.overlay.note", lang = lang),
+    shiny::renderPlot(
+      episodic_ui_pathogen_overlay_chart(overlay, lang = lang),
+      height = 280
+    )
+  )
+}
+
+#' Rt on the epidemic area's whole incidence
+#' @keywords internal
+#' @noRd
+episodic_ui_epidemic_rt_panel <- function(obj,
+                                          lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  # Suppressed entirely where Rt does not apply to the pathogen, as on
+  # the Outbreaks dossier: a panel explaining that a food-borne pathogen
+  # has no reproduction number is not something to read on every visit.
+  if (!isTRUE(obj$rt_applicable)) {
+    return(NULL)
+  }
+  if (is.null(obj$rt) || nrow(obj$rt) == 0) {
+    return(episodic_ui_panel_empty(
+      episodic_tr("panel.rt.title", lang = lang),
+      episodic_tr(
+        paste0(
+          "panel.rt.unavailable.",
+          if (is.na(obj$rt_unavailable_reason)) {
+            "insufficient_history"
+          } else {
+            obj$rt_unavailable_reason
+          }
+        ),
+        lang = lang
+      )
+    ))
+  }
+  graphics_issue <- episodic_graphics_probe()
+  if (!is.null(graphics_issue)) {
+    return(episodic_ui_panel_empty(
+      episodic_tr("panel.rt.title", lang = lang),
+      episodic_graphics_error_message(graphics_issue, lang = lang)
+    ))
+  }
+  episodic_ui_panel(
+    episodic_tr("panel.rt.title", lang = lang),
+    note = episodic_tr("epidemics.panel.rt.note", lang = lang),
+    shiny::renderPlot(
+      episodic_ui_rt_chart(
+        obj$rt,
+        lang = lang
+      ),
+      height = 240
     )
   )
 }
@@ -429,16 +762,97 @@ episodic_ui_epidemic_denominator_panel <- function(obj,
       episodic_graphics_error_message(graphics_issue, lang = lang)
     ))
   }
+  note <- episodic_tr("epidemics.panel.denominator.note", lang = lang)
+  if (isTRUE(obj$denominator_catchment_only)) {
+    note <- paste(
+      note,
+      episodic_tr("epidemics.panel.denominator.catchment_only", lang = lang)
+    )
+  }
   episodic_ui_panel(
     episodic_tr("epidemics.panel.denominator.title", lang = lang),
-    note = shiny::HTML(episodic_tr(
-      "epidemics.panel.denominator.note",
-      lang = lang
-    )),
+    aside = episodic_tr("panel.denominator.aside", lang = lang),
+    note = shiny::HTML(note),
     shiny::renderPlot(
       episodic_ui_denominator_chart(obj$denominator, lang = lang),
-      height = 260
+      height = 240
     )
+  )
+}
+
+#' Where the epidemic's cases are: the choropleth
+#'
+#' The Outbreaks dossier's geography panel on the epidemic's own cases:
+#' one map cropped to them, and the postcode bars.
+#' @keywords internal
+#' @noRd
+episodic_ui_epidemic_geo_panel <- function(obj,
+                                           lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  geo <- obj$concentration_geo
+  episodic_ui_geo_panel(
+    list(
+      concentration = geo,
+      n_cases = if (is.null(geo)) {
+        obj$n_cases
+      } else {
+        geo$total + geo$n_unknown_pc
+      }
+    ),
+    lang = lang,
+    # One map: an epidemic's cases span its region or province, so the
+    # cropped frame is already the whole of it.
+    context_map = FALSE
+  )
+}
+
+#' Age and sex, against the area's own baseline
+#' @keywords internal
+#' @noRd
+episodic_ui_epidemic_demography_panel <- function(obj,
+                                                  lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  demo <- obj$demography
+  if (is.null(demo)) {
+    return(episodic_ui_panel_empty(
+      episodic_tr("panel.demography.title", lang = lang),
+      episodic_tr("misc.none", lang = lang)
+    ))
+  }
+  note <- if (is.na(demo$baseline_median_age)) {
+    episodic_tr("panel.demography.note", lang = lang)
+  } else {
+    episodic_tr(
+      "epidemics.panel.demography.note",
+      median = episodic_format_number(demo$median_age, digits = 0, lang = lang),
+      baseline = episodic_format_number(
+        demo$baseline_median_age,
+        digits = 0,
+        lang = lang
+      ),
+      lang = lang
+    )
+  }
+  episodic_ui_panel(
+    episodic_tr("panel.demography.title", lang = lang),
+    note = note,
+    episodic_ui_pyramid(demo$bands, lang = lang)
+  )
+}
+
+#' Which care lines the epidemic's cases were found in
+#' @keywords internal
+#' @noRd
+episodic_ui_epidemic_care_line_panel <- function(obj,
+                                                 lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (is.null(obj$care_lines)) {
+    return(episodic_ui_panel_empty(
+      episodic_tr("pathogen.panel.care_line.title", lang = lang),
+      episodic_tr("misc.none", lang = lang)
+    ))
+  }
+  episodic_ui_panel(
+    episodic_tr("pathogen.panel.care_line.title", lang = lang),
+    note = episodic_tr("pathogen.panel.care_line.note", lang = lang),
+    episodic_ui_bars(obj$care_lines, lang = lang)
   )
 }
 
@@ -457,29 +871,40 @@ episodic_ui_epidemic_institutions_panel <- function(obj,
 
   total <- sum(inst$n_cases)
   rows <- lapply(seq_len(nrow(inst)), function(i) {
-    share <- if (total > 0) inst$n_cases[i] / total else 0
     shiny::tags$tr(
       shiny::tags$td(inst$display_name[i]),
       shiny::tags$td(episodic_format_number(inst$n_cases[i], lang = lang)),
-      shiny::tags$td(episodic_format_number(share * 100, digits = 1, lang = lang))
+      shiny::tags$td(episodic_format_number(
+        inst$n_cases[i] / total * 100,
+        digits = 1,
+        lang = lang
+      ))
     )
   })
 
   episodic_ui_panel(
     episodic_tr("epidemics.panel.institutions.title", lang = lang),
-    shiny::tags$table(
-      class = "episodic-table",
-      shiny::tags$thead(shiny::tags$tr(
-        shiny::tags$th(episodic_tr("epidemics.panel.institutions.col_name", lang = lang)),
-        shiny::tags$th(episodic_tr("column.cases", lang = lang)),
-        shiny::tags$th(episodic_tr("epidemics.panel.institutions.col_share", lang = lang))
-      )),
-      shiny::tags$tbody(rows)
+    shiny::tags$div(
+      style = "overflow-x:auto;",
+      shiny::tags$table(
+        class = "episodic-table",
+        shiny::tags$thead(shiny::tags$tr(
+          shiny::tags$th(episodic_tr("epidemics.panel.institutions.col_name", lang = lang)),
+          shiny::tags$th(episodic_tr("column.cases", lang = lang)),
+          shiny::tags$th(episodic_tr("epidemics.panel.institutions.col_share", lang = lang))
+        )),
+        shiny::tags$tbody(rows)
+      )
     )
   )
 }
 
 #' Outbreaks occurring during this epidemic
+#'
+#' The app's own cluster table, so a row reads, hovers and opens exactly
+#' as it does on the Outbreaks and Pathogens screens, and carries the
+#' outbreak's state: which of the outbreaks that ran during the epidemic
+#' are still open is the question this panel is read for.
 #'
 #' @param obj The epidemic object.
 #' @param lang Session language.
@@ -499,51 +924,35 @@ episodic_ui_epidemic_during_panel <- function(obj,
     ))
   }
 
-  rows <- lapply(seq_len(nrow(during)), function(i) {
-    row <- during[i, ]
-    level_label <- episodic_tr(paste0("level.", row$level), lang = lang)
-    shiny::tags$tr(
-      # The app's one way of linking to an outbreak, rather than an
-      # `onclick` of this panel's own: `episodic_ui_cluster_link()`
-      # carries the keyboard contract with it, and going through
-      # `episodic-nav.js` is what moves the screen as well as the
-      # selection.
-      shiny::tags$td(
-        episodic_ui_cluster_link(
-          episodic_object_ref(row$cluster_id, row$level, lang = lang),
-          cluster_id = row$cluster_id,
-          lang = lang
-        )
-      ),
-      shiny::tags$td(shiny::HTML(episodic_ui_italicise_taxon(row$pathogen))),
-      shiny::tags$td(level_label),
-      shiny::tags$td(
-        if (!is.null(row$place)) row$place else episodic_tr("misc.dash", lang = lang)
-      ),
-      shiny::tags$td(episodic_format_number(row$n_cases, lang = lang)),
-      shiny::tags$td(episodic_format_date_range(
-        row$first_day,
-        row$last_day,
-        lang = lang
-      ))
-    )
-  })
-
   episodic_ui_panel(
     episodic_tr("epidemics.panel.during.title", lang = lang),
+    aside = episodic_count_phrase(
+      nrow(during),
+      episodic_tr("unit.outbreak", lang = lang),
+      episodic_tr("unit.outbreaks", lang = lang),
+      lang = lang
+    ),
     shiny::tags$div(
       style = "overflow-x:auto;",
-      shiny::tags$table(
-        class = "episodic-table",
-        shiny::tags$thead(shiny::tags$tr(
-          shiny::tags$th(episodic_tr("column.id", lang = lang)),
-          shiny::tags$th(episodic_tr("column.pathogen", lang = lang)),
-          shiny::tags$th(episodic_tr("column.level", lang = lang)),
-          shiny::tags$th(episodic_tr("column.place", lang = lang)),
-          shiny::tags$th(episodic_tr("column.cases", lang = lang)),
-          shiny::tags$th(episodic_tr("column.period", lang = lang))
-        )),
-        shiny::tags$tbody(rows)
+      episodic_ui_cluster_table(
+        during,
+        context = list(
+          episodic_ui_cluster_col_level(lang = lang),
+          episodic_ui_cluster_col_place(lang = lang)
+        ),
+        outcome = list(
+          episodic_ui_cluster_col(
+            episodic_tr("column.state", lang = lang),
+            function(row) {
+              if (is.null(row$state_label) || is.na(row$state_label)) {
+                episodic_tr("misc.dash", lang = lang)
+              } else {
+                row$state_label
+              }
+            }
+          )
+        ),
+        lang = lang
       )
     )
   )

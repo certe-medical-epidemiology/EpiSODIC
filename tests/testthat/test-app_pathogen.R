@@ -366,6 +366,38 @@ test_that("episodic_app_pathogen_screen() falls back to the commonest pathogen f
   expect_equal(screen$pathogen, "Influenza A")
 })
 
+test_that("the pathogen selector lists pathogens by name, case-insensitively", {
+  env <- pathogen_screen_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  extra <- data.frame(
+    source_key = c("SORT1", "SORT2"),
+    lab_number = c("LAB-SORT1", "LAB-SORT2"),
+    patient_key = c("PSORT1", "PSORT2"),
+    sample_date = "2025-01-10",
+    receipt_date = "2025-01-10",
+    pathogen = c("adenovirus", "Bordetella pertussis"),
+    care_line = "first",
+    institution_id = NA_integer_,
+    ward = NA_character_,
+    specialism = NA_character_,
+    pc = "9711",
+    sex = "F",
+    age = 30,
+    first_seen_run = env$run_id,
+    stringsAsFactors = FALSE
+  )
+  episodic_db_case_insert_new(env$con, extra, env$run_id)
+
+  options <- episodic_app_pathogen_options(env$con)
+  expect_equal(
+    options$pathogen,
+    c("adenovirus", "Bordetella pertussis", "Campylobacter", "Influenza A")
+  )
+  # The list is alphabetical; what opens first is still the busiest one.
+  screen <- episodic_app_pathogen_screen(env$con, period = "all", lang = "en")
+  expect_equal(screen$pathogen, "Influenza A")
+})
+
 test_that("episodic_app_pathogen_screen() copes with an empty database", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
@@ -545,6 +577,22 @@ test_that("the pathogen config panel dashes a parameter this instance leaves uns
   expect_false(grepl("NA ", html, fixed = TRUE))
   # The measured half of each pair is still written, in Dutch marks.
   expect_true(grepl("2,6", html, fixed = TRUE))
+})
+
+test_that("the pathogen config panel italicises a taxon in its title and sentences, and escapes the rest", {
+  screen <- list(pathogen = "Salmonella", config = NULL)
+  html <- as.character(episodic_ui_pathogen_config_panel(screen, lang = "nl"))
+  expect_false(grepl("Salmonella", gsub("<i>Salmonella</i>", "", html, fixed = TRUE), fixed = TRUE))
+  expect_gte(lengths(regmatches(html, gregexpr("<i>Salmonella</i>", html, fixed = TRUE))), 2)
+
+  sentence <- as.character(episodic_tr_taxon(
+    "pathogen.panel.config.none",
+    pathogen = "Influenza A <x>",
+    lang = "en"
+  ))
+  expect_match(sentence, "Influenza A &lt;x&gt;", fixed = TRUE)
+  expect_false(grepl("<i>", sentence, fixed = TRUE))
+  expect_false(grepl("\u0001", sentence, fixed = TRUE))
 })
 
 test_that("episodic_ui_intensity_colour() gives every MEM band a colour and never fails on an unknown one", {

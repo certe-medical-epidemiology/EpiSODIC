@@ -277,6 +277,51 @@ test_that("episodic_geo_frame() pads by the reference extent when the cluster si
   expect_equal(sf::st_crs(frame$bbox), sf::st_crs(geo))
 })
 
+test_that("episodic_ui_geo_map_chart() draws its fewest-cases area in a colour distinct from case-free areas", {
+  skip_if_not_installed("sf")
+  geo <- episodic_geo_source_default()
+  skip_if(is.null(geo) || nrow(geo) < 50, "shipped geometry unavailable")
+
+  rows <- data.frame(label = as.character(geo$pc[1:3]), n = c(1, 1, 3))
+  plot <- with_geo_data(episodic_ui_geo_map_chart(rows))
+  expect_s3_class(plot, "ggplot")
+  built <- ggplot2::ggplot_build(plot)
+  fills <- built$data[[1]]$fill
+  case_free <- built$plot$scales$get_scales("fill")$na.value
+  # All three case-bearing areas, the two with n = 1 included, are drawn
+  # in something other than the case-free colour, and n = 1 differs from
+  # n = 3.
+  coloured <- fills[fills != case_free]
+  expect_gte(length(coloured), 3)
+  expect_equal(length(unique(coloured)), 2)
+})
+
+test_that("episodic_geo_frame() never pads past the reference extent by more than the minimum margin", {
+  skip_if_not_installed("sf")
+  geo <- episodic_geo_source_default()
+  skip_if(is.null(geo) || nrow(geo) < 50, "shipped geometry unavailable")
+
+  full <- sf::st_bbox(geo)
+  min_pad_share <- 0.02
+  min_pad <- min_pad_share * max(
+    full[["xmax"]] - full[["xmin"]],
+    full[["ymax"]] - full[["ymin"]]
+  )
+  # Cases in every area: a 45% margin on that span would draw a frame
+  # nearly twice the map, and the map would render at half the box.
+  frame <- episodic_geo_frame(
+    geo,
+    geo,
+    pad_share = 0.45,
+    min_pad_share = min_pad_share
+  )
+  tol <- 1e-8
+  expect_gte(frame$xlim[1], full[["xmin"]] - min_pad - tol)
+  expect_lte(frame$xlim[2], full[["xmax"]] + min_pad + tol)
+  expect_gte(frame$ylim[1], full[["ymin"]] - min_pad - tol)
+  expect_lte(frame$ylim[2], full[["ymax"]] + min_pad + tol)
+})
+
 test_that("episodic_geo_labels() labels the biggest areas first and caps how many it draws", {
   skip_if_not_installed("sf")
   geo <- episodic_geo_source_default()

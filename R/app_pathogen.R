@@ -40,15 +40,22 @@
 #' Which pathogens the Pathogen screen can be pointed at
 #'
 #' @param con A [DBI::DBIConnection-class].
+#' Ordered by name, case-insensitively, because the selector is a list
+#' somebody looks a pathogen up in: ordered by volume, an instance with
+#' dozens of pathogens puts the one being looked for wherever this
+#' season's counts happen to have left it, and moves it again next week.
+#' Sorted in R rather than by the database's collation, which differs
+#' between SQLite and MariaDB.
+#'
 #' @return A data frame with `pathogen`, `n_cases`, `first_day`,
-#'   `last_day`, ordered by case count descending.
+#'   `last_day`, ordered by `pathogen`, case-insensitively.
 #' @keywords internal
 #' @noRd
 episodic_app_pathogen_options <- function(con) {
   out <- episodic_db_get_query(
     con,
     "SELECT pathogen, COUNT(*) AS n_cases, MIN(sample_date) AS first_day, MAX(sample_date) AS last_day
-       FROM episodic_case GROUP BY pathogen ORDER BY COUNT(*) DESC"
+       FROM episodic_case GROUP BY pathogen"
   )
   if (nrow(out) == 0) {
     return(data.frame(
@@ -59,6 +66,8 @@ episodic_app_pathogen_options <- function(con) {
       stringsAsFactors = FALSE
     ))
   }
+  out <- out[order(tolower(out$pathogen), out$pathogen), , drop = FALSE]
+  rownames(out) <- NULL
   out
 }
 
@@ -277,8 +286,11 @@ episodic_app_pathogen_screen <- function(con,
       period = episodic_app_resolve_period(period, from, to, asof)
     ))
   }
+  # Opened on the pathogen with the most cases rather than the first in
+  # the alphabet: with nothing asked for yet, the busiest pathogen is the
+  # view most likely to be wanted.
   if (is.null(pathogen) || !pathogen %in% options$pathogen) {
-    pathogen <- options$pathogen[1]
+    pathogen <- options$pathogen[which.max(options$n_cases)]
   }
 
   all_cases <- episodic_db_cases_for_pathogen(con, pathogen)
@@ -658,11 +670,20 @@ episodic_app_pathogen_overlay <- function(all_cases,
   dates <- all_cases$sample_date
 
   if (isTRUE(seasonal) && !is.null(anchor_week)) {
-    assigned <- lapply(seq_along(dates), function(i) {
-      episodic_mem_season_week(dates[i], anchor_week)
+    # Assigned once per distinct day rather than once per case: a
+    # pathogen with years of history has tens of thousands of cases on a
+    # few thousand days, and the assignment is a function call apiece.
+    days <- unique(dates)
+    assigned <- lapply(seq_along(days), function(i) {
+      episodic_mem_season_week(days[i], anchor_week)
     })
-    group <- vapply(assigned, function(a) a$season, character(1))
-    week_label <- vapply(assigned, function(a) a$week_label, character(1))
+    day_of <- match(dates, days)
+    group <- vapply(assigned, function(a) a$season, character(1))[day_of]
+    week_label <- vapply(
+      assigned,
+      function(a) a$week_label,
+      character(1)
+    )[day_of]
     week_order <- episodic_mem_week_order(anchor_week)
     keep <- rep(TRUE, length(dates))
     current <- episodic_season_containing(resolved$to, anchor_week)
@@ -694,11 +715,7 @@ episodic_app_pathogen_overlay <- function(all_cases,
   rows <- do.call(
     rbind,
     lapply(groups, function(g) {
-      counts <- vapply(
-        week_order,
-        function(w) sum(group == g & week_label == w),
-        integer(1)
-      )
+      counts <- table(factor(week_label[group == g], levels = week_order))
       data.frame(
         group = g,
         week_index = seq_along(week_order),
@@ -927,26 +944,20 @@ episodic_app_pathogen_denominator <- function(con,
     return(NULL)
   }
 
-  denom <- stats::aggregate(n_tests ~ sample_date, denom, sum)
-  denom$week_start <- as.Date(denom$sample_date)
+  denom <- episodic_app_denominator_weekly(denom)
   denom <- denom[
-    !is.na(denom$week_start) &
-      denom$week_start <= resolved$to &
+    denom$week_start <= resolved$to &
       denom$week_start + 6 >= resolved$from, ,
     drop = FALSE
   ]
   if (nrow(denom) < 2) {
     return(NULL)
   }
-  denom <- denom[order(denom$week_start), ]
 
-  denom$n_cases <- vapply(
-    seq_len(nrow(denom)),
-    function(i) {
-      ws <- denom$week_start[i]
-      sum(all_cases$sample_date >= ws & all_cases$sample_date < ws + 7)
-    },
-    integer(1)
+  case_dates <- as.Date(all_cases$sample_date)
+  denom$n_cases <- episodic_week_counts(
+    case_dates[!is.na(case_dates)],
+    denom$week_start
   )
   denom$positivity <- ifelse(
     denom$n_tests > 0,

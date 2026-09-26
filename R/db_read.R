@@ -200,6 +200,55 @@ episodic_db_clusters <- function(con,
   episodic_db_get_query(con, sql)
 }
 
+#' The clusters of one scale a rail can list: not merged, not
+#' suppressed, and not closed
+#'
+#' Closed is decided here on the same rule `episodic_derive_state()`
+#' applies - a closure or system closure no assessment event has come
+#' after, on a cluster with nothing new since its last assessment - so
+#' the settled history of an instance never leaves the database. After a
+#' backfill that history is thousands of clusters, and a rail that read
+#' every one of them, and every assessment and state row they carry, to
+#' list the handful still open was paying for the Archive on every
+#' screen. The caller still derives each remaining cluster's state, so
+#' this is a filter in front of that derivation and never a second
+#' opinion about it: a cluster it keeps and the derivation calls closed
+#' is dropped there.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param scale `"outbreak"` or `"epidemic"`.
+#' @return Rows of `episodic_cluster`, as `episodic_db_clusters()` returns
+#'   them.
+#' @keywords internal
+#' @noRd
+episodic_db_clusters_not_closed <- function(con, scale) {
+  scale <- match.arg(scale, c("outbreak", "epidemic"))
+  episodic_db_get_query(
+    con,
+    "SELECT c.* FROM episodic_cluster c
+     LEFT JOIN (
+       SELECT cluster_id, MAX(entered_at) AS closed_at
+       FROM episodic_cluster_state
+       WHERE state = 'closed' AND `trigger` IN ('closure', 'system')
+       GROUP BY cluster_id
+     ) cl ON cl.cluster_id = c.cluster_id
+     LEFT JOIN (
+       SELECT cluster_id, MAX(created_at) AS event_at
+       FROM episodic_assessment_event
+       GROUP BY cluster_id
+     ) ev ON ev.cluster_id = c.cluster_id
+     WHERE c.merged_into IS NULL
+       AND c.suppressed_by IS NULL
+       AND c.scale = ?
+       AND NOT (
+         cl.closed_at IS NOT NULL
+         AND c.changed_since_assessment = 0
+         AND (ev.event_at IS NULL OR cl.closed_at >= ev.event_at)
+       )",
+    params = list(scale)
+  )
+}
+
 #' Everything one cluster suppressed, for its own dossier
 #'
 #' @param con A [DBI::DBIConnection-class].
@@ -525,6 +574,41 @@ episodic_db_cluster_cases <- function(con, cluster_id) {
      WHERE cc.cluster_id = ?",
     params = list(cluster_id)
   )
+}
+
+#' Which cases each of a set of clusters holds, in one batched read
+#'
+#' The case ids only, not the case rows: lattice suppression compares
+#' case sets and needs nothing else, and on a backfill the set is every
+#' cluster the instance holds.
+#' @param cluster_ids A vector of `cluster_id`s.
+#' @return A data frame with `cluster_id` and `case_id`, one row per
+#'   link. Empty (but correctly shaped) if `cluster_ids` is empty.
+#' @keywords internal
+#' @noRd
+episodic_db_cluster_case_ids_batch <- function(con, cluster_ids) {
+  episodic_db_get_query_in(
+    con,
+    "SELECT cluster_id, case_id FROM episodic_cluster_case
+     WHERE cluster_id IN (%s)
+     ORDER BY cluster_id, case_id",
+    as.integer(cluster_ids)
+  )
+}
+
+#' Which of a set of clusters somebody has assessed
+#' @param cluster_ids A vector of `cluster_id`s.
+#' @return An integer vector of the `cluster_id`s with at least one row in
+#'   `episodic_assessment_event`, possibly empty.
+#' @keywords internal
+#' @noRd
+episodic_db_assessed_cluster_ids <- function(con, cluster_ids) {
+  as.integer(episodic_db_get_query_in(
+    con,
+    "SELECT DISTINCT cluster_id FROM episodic_assessment_event
+     WHERE cluster_id IN (%s)",
+    as.integer(cluster_ids)
+  )$cluster_id)
 }
 
 #' Case-level detail for an origin = 'manual' cluster
@@ -1202,14 +1286,20 @@ episodic_db_open_seasonal_epidemics <- function(con) {
   )
 }
 
-#' Every open epidemic cluster (seasonal or not), for linking
+#' Every epidemic the "during" relation can link to, open or closed
+#'
+#' Whatever its state: "this outbreak ran during that epidemic" is a
+#' statement about pathogen, time and place, and it stays true after
+#' either of them closes. Read as open clusters only, a first run - which
+#' closes the settled history in the run that opens it - would leave
+#' every historical epidemic with no outbreak linked to it.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @return A data frame of open epidemic clusters with their stream's
-#'   pathogen and geographic identifiers.
+#' @return A data frame of detected, unmerged epidemic clusters with their
+#'   stream's pathogen and geographic identifiers.
 #' @keywords internal
 #' @noRd
-episodic_db_open_epidemics <- function(con) {
+episodic_db_link_epidemics <- function(con) {
   episodic_db_get_query(
     con,
     "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day,
@@ -1223,14 +1313,16 @@ episodic_db_open_epidemics <- function(con) {
   )
 }
 
-#' Every open outbreak cluster, for linking
+#' Every outbreak the "during" relation can link, open or closed
+#'
+#' See `episodic_db_link_epidemics()` for why state plays no part.
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @return A data frame of open outbreak clusters with their stream's
-#'   pathogen and geographic identifiers.
+#' @return A data frame of detected, unmerged outbreak clusters with their
+#'   stream's pathogen and geographic identifiers.
 #' @keywords internal
 #' @noRd
-episodic_db_open_outbreaks <- function(con) {
+episodic_db_link_outbreaks <- function(con) {
   episodic_db_get_query(
     con,
     "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day,
@@ -1241,6 +1333,19 @@ episodic_db_open_outbreaks <- function(con) {
       WHERE c.merged_into IS NULL
         AND c.origin = 'detected'
         AND c.scale = 'outbreak'"
+  )
+}
+
+#' Every "during" link already recorded
+#' @param con A [DBI::DBIConnection-class].
+#' @return A data frame with `outbreak_cluster_id` and
+#'   `epidemic_cluster_id`.
+#' @keywords internal
+#' @noRd
+episodic_db_cluster_links_all <- function(con) {
+  episodic_db_get_query(
+    con,
+    "SELECT outbreak_cluster_id, epidemic_cluster_id FROM episodic_cluster_link"
   )
 }
 
@@ -1272,7 +1377,7 @@ episodic_db_outbreaks_during_epidemic <- function(con, epidemic_cluster_id) {
   episodic_db_get_query(
     con,
     "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day,
-            c.n_cases, c.priority_score,
+            c.n_cases, c.priority_score, c.changed_since_assessment,
             s.pathogen, s.level, s.institution_id, s.ward
        FROM episodic_cluster_link lnk
        INNER JOIN episodic_cluster c ON c.cluster_id = lnk.outbreak_cluster_id
@@ -1282,32 +1387,5 @@ episodic_db_outbreaks_during_epidemic <- function(con, epidemic_cluster_id) {
         AND c.suppressed_by IS NULL
       ORDER BY c.first_day, c.cluster_id",
     params = list(epidemic_cluster_id)
-  )
-}
-
-#' Institutions contributing cases in an epidemic's window
-#'
-#' @param con A [DBI::DBIConnection-class].
-#' @param pathogen The pathogen.
-#' @param from,to Date range (character, `YYYY-MM-DD`).
-#' @return A data frame with `institution_id`, `display_name`, `n_cases`,
-#'   ordered by `n_cases` descending.
-#' @keywords internal
-#' @noRd
-episodic_db_epidemic_contributing_institutions <- function(con,
-                                                           pathogen,
-                                                           from,
-                                                           to) {
-  episodic_db_get_query(
-    con,
-    "SELECT c.institution_id, i.display_name, COUNT(*) AS n_cases
-       FROM episodic_case c
-       INNER JOIN episodic_institution i ON i.institution_id = c.institution_id
-      WHERE c.pathogen = ?
-        AND c.sample_date >= ?
-        AND c.sample_date <= ?
-      GROUP BY c.institution_id, i.display_name
-      ORDER BY n_cases DESC",
-    params = list(pathogen, as.character(from), as.character(to))
   )
 }

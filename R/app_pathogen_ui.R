@@ -381,8 +381,7 @@ episodic_ui_pathogen_curve_panel <- function(screen,
     shiny::renderPlot(
       episodic_ui_pathogen_curve_chart(
         screen$weekly, thresholds,
-        lang = lang,
-        accent = episodic_nav_accent("pathogens")
+        lang = lang
       ),
       height = 300
     )
@@ -450,7 +449,7 @@ episodic_ui_pathogen_rt_panel <- function(screen,
     episodic_tr("pathogen.panel.rt.title", lang = lang),
     note = episodic_tr("pathogen.panel.rt.note", lang = lang),
     shiny::renderPlot(
-      episodic_ui_rt_chart(screen$rt, lang = lang, accent = episodic_nav_accent("pathogens")),
+      episodic_ui_rt_chart(screen$rt, lang = lang),
       height = 260
     )
   )
@@ -530,7 +529,7 @@ episodic_ui_pathogen_geo_panel <- function(screen,
       episodic_tr("panel.geo.empty", lang = lang)
     ))
   }
-  map_chart <- episodic_ui_geo_map_chart(concentration$rows, accent = episodic_nav_accent("pathogens"))
+  map_chart <- episodic_ui_geo_map_chart(concentration$rows)
   # A broken chart-rendering environment (see episodic_graphics_probe())
   # cannot draw the map at all - fall back to the bar breakdown exactly as
   # if no geographic data were available, but say why the map itself is
@@ -679,15 +678,17 @@ episodic_ui_pathogen_clusters_panel <- function(screen,
 episodic_ui_pathogen_config_panel <- function(screen,
                                               lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   pc <- screen$config
+  title <- shiny::tagList(
+    episodic_tr("pathogen.panel.config.title", lang = lang),
+    " ",
+    shiny::HTML(episodic_ui_italicise_taxon(screen$pathogen))
+  )
   if (is.null(pc)) {
     return(episodic_ui_panel(
-      paste(
-        episodic_tr("pathogen.panel.config.title", lang = lang),
-        screen$pathogen
-      ),
+      title,
       shiny::tags$p(
         class = "episodic-panel-empty",
-        episodic_tr(
+        episodic_tr_taxon(
           "pathogen.panel.config.none",
           pathogen = screen$pathogen,
           lang = lang
@@ -855,13 +856,10 @@ episodic_ui_pathogen_config_panel <- function(screen,
   }
 
   episodic_ui_panel(
-    paste(
-      episodic_tr("pathogen.panel.config.title", lang = lang),
-      screen$pathogen
-    ),
+    title,
     shiny::tags$p(
       style = "font-size:12.5px;margin:0 0 12px;",
-      episodic_tr(
+      episodic_tr_taxon(
         "pathogen.panel.config.note",
         pathogen = screen$pathogen,
         lang = lang

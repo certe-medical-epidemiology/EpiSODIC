@@ -94,7 +94,7 @@ test_that("episodic_ui_rail() marks each row with the cluster id every other ope
   expect_true(grepl('data-cluster-id="7"', html, fixed = TRUE))
 })
 
-test_that("episodic_ui_rail() renders a colour-coded chip only for the first/second/third care lines", {
+test_that("episodic_ui_rail() renders a care-line chip for a recorded care line, and none for an unknown one", {
   open <- data.frame(
     cluster_id = 1L,
     pathogen = "Norovirus",
@@ -111,7 +111,14 @@ test_that("episodic_ui_rail() renders a colour-coded chip only for the first/sec
   html <- as.character(episodic_ui_rail(open, selected_id = NULL, lang = "nl"))
   expect_true(grepl("2e lijn", html, fixed = TRUE))
 
+  # "other" is a care line cases were found in, and says so.
   open$care_line <- "other"
+  html <- as.character(episodic_ui_rail(open, selected_id = NULL, lang = "nl"))
+  expect_true(grepl("episodic-chip", html, fixed = TRUE))
+  expect_true(grepl("overig", html, fixed = TRUE))
+
+  # "unknown" and a missing care line record nothing, so no chip.
+  open$care_line <- "unknown"
   html <- as.character(episodic_ui_rail(open, selected_id = NULL, lang = "nl"))
   expect_false(grepl("episodic-chip", html, fixed = TRUE))
 

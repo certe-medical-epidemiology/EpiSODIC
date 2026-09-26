@@ -57,6 +57,35 @@ episodic_ui_italicise_taxon <- function(pathogen) {
   escaped
 }
 
+#' A translated sentence with its `{pathogen}` placeholder italicised
+#'
+#' `episodic_tr()` substitutes plain text, and the result is escaped as a
+#' whole by whatever renders it, so a taxon inside a sentence cannot be
+#' italicised afterwards. The pathogen goes in as a marker instead, the
+#' sentence is escaped, and the marker is replaced by
+#' `episodic_ui_italicise_taxon()`'s (already escaped) rendering.
+#'
+#' @param key Translation key with a `{pathogen}` placeholder.
+#' @param pathogen A single pathogen display name.
+#' @param ... Further placeholders, passed to `episodic_tr()`.
+#' @param lang Session language.
+#' @return A [shiny::HTML()] value.
+#' @keywords internal
+#' @noRd
+episodic_tr_taxon <- function(key,
+                              pathogen,
+                              ...,
+                              lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  marker <- "\u0001pathogen\u0001"
+  text <- episodic_tr(key, pathogen = marker, ..., lang = lang)
+  shiny::HTML(gsub(
+    marker,
+    episodic_ui_italicise_taxon(pathogen),
+    htmltools::htmlEscape(text),
+    fixed = TRUE
+  ))
+}
+
 #' @rdname episodic_ui_italicise_taxon
 #' @param detectors A character vector of detector names.
 #' @param sep Separator between entries.
@@ -522,8 +551,6 @@ episodic_ui_bars <- function(rows,
   if (nrow(rows) == 0) {
     return(shiny::tags$p(class = "episodic-panel-empty", "..."))
   }
-  pal <- episodic_palette()
-  colour <- colour %||% pal$primary
   max_n <- max(rows$n, 1)
   bars <- lapply(seq_len(nrow(rows)), function(i) {
     shiny::tags$div(
@@ -537,10 +564,14 @@ episodic_ui_bars <- function(rows,
         class = "episodic-bar-track",
         shiny::tags$div(
           class = "episodic-bar-fill",
-          style = sprintf(
-            "width:%s;background:%s;",
+          # The app's accent unless a caller names one: the stylesheet
+          # gives `.episodic-bar-fill` the same accent the rail, the
+          # tables and the charts carry.
+          style = paste0(
+            "width:",
             episodic_css_pct(100 * rows$n[i] / max_n),
-            colour
+            ";",
+            if (!is.null(colour)) paste0("background:", colour, ";")
           )
         )
       ),
@@ -642,25 +673,71 @@ episodic_ui_state_colour <- function(state) {
   )
 }
 
-#' The rail care-line chip's colour
+#' How the rail's care-line chip for one care line is drawn
 #'
-#' Deliberately not primary/secondary/tertiary in line order: first line
-#' takes primary since it is the one an epidemiologist sees most often,
-#' second takes tertiary and third takes secondary. `"other"`/`"unknown"`
-#' (and anything else) get `NULL` - no chip, rather than a chip that
-#' says nothing.
+#' Each care line differs from the others in form as well as colour:
+#' first line filled, second tinted, third outlined, `"other"` outlined
+#' with a dashed border. The colours come from the instance's palette,
+#' and nothing guarantees an operator's `primary`, `tertiary`,
+#' `secondary` and `muted` are far enough apart to tell apart at chip
+#' size - a slate primary beside the muted grey is not - so colour alone
+#' would leave the chip carrying no information. Deliberately not
+#' primary/secondary/tertiary in line order: first line takes primary
+#' since it is the one an epidemiologist sees most often. `"unknown"`
+#' (and anything else) gets `NULL`: no chip, rather than a chip saying
+#' nothing was recorded.
 #'
 #' @param care_line A stream `care_line` value, or `NA`.
-#' @return A hex colour, or `NULL`.
+#' @return A list with `colour`, `text_colour` and `form` (`"filled"`,
+#'   `"tinted"`, `"outline"` or `"dashed"`), or `NULL`.
 #' @keywords internal
 #' @noRd
-episodic_ui_care_line_colour <- function(care_line) {
+episodic_ui_care_line_style <- function(care_line) {
+  if (length(care_line) != 1 || is.na(care_line)) {
+    return(NULL)
+  }
   pal <- episodic_palette()
   switch(care_line,
-    first = pal$primary,
-    second = pal$tertiary,
-    third = pal$secondary,
+    first = list(colour = pal$primary, text_colour = "#fff", form = "filled"),
+    second = list(
+      colour = pal$tertiary,
+      text_colour = pal$tertiary_dark,
+      form = "tinted"
+    ),
+    third = list(
+      colour = pal$secondary,
+      text_colour = pal$secondary,
+      form = "outline"
+    ),
+    other = list(colour = pal$muted, text_colour = pal$muted, form = "dashed"),
     NULL
+  )
+}
+
+#' The rail's care-line chip
+#'
+#' @param care_line A stream `care_line` value, or `NA`.
+#' @param lang Session language.
+#' @return A chip tag, or `NULL` when the care line is unknown or missing.
+#' @keywords internal
+#' @noRd
+episodic_ui_care_line_chip <- function(care_line,
+                                       lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  style <- episodic_ui_care_line_style(care_line)
+  if (is.null(style)) {
+    return(NULL)
+  }
+  css <- switch(style$form,
+    filled = sprintf("color:%s;background:%s;", style$text_colour, style$colour),
+    # 0x33 alpha on the colour itself: about a fifth of it over the card.
+    tinted = sprintf("color:%s;background:%s33;", style$text_colour, style$colour),
+    outline = sprintf("color:%s;border:1px solid %s;", style$text_colour, style$colour),
+    dashed = sprintf("color:%s;border:1px dashed %s;", style$text_colour, style$colour)
+  )
+  shiny::tags$span(
+    class = paste0("episodic-chip episodic-chip-care-", style$form),
+    style = css,
+    episodic_tr(paste0("careline.short.", care_line), lang = lang)
   )
 }
 
@@ -710,7 +787,19 @@ episodic_verdict_outbreak_levels <- function(config = episodic_config_resolve())
 
 #' The display reference for a cluster, scale-aware
 #'
-#' Outbreaks render as `O-{id}`, epidemics as `E-{id}`. Both share one
+#' Outbreaks render as `O-{id}`, epidemics as `E-{id}` - in English. The
+#' prefix is each language's own, carried by `dossier.outbreak_ref` and
+#' `dossier.epidemic_ref`: the first letter, in upper case, of that
+#' language's `nav.outbreaks` and `nav.epidemics` (`U-`/`E-` in Dutch,
+#' `A-`/`E-` in German), so the identifier abbreviates the word on the
+#' screen it is read on. Where that rule gives both scales the same
+#' letter - Arabic writes both nouns with the definite article, so both
+#' begin with alif - the language carries a distinct pair instead, since
+#' two objects with one prefix is the ambiguity the prefix exists to
+#' remove. Kept in the translation files rather than computed, so an
+#' operator's own report template calling `tr("dossier.outbreak_ref")`
+#' writes the same identifier the dashboard does. Nothing stores the
+#' prefix: the database holds the bare `cluster_id`. Both share one
 #' `episodic_cluster.cluster_id` sequence - there is no cluster 12 that
 #' is an outbreak and a separate cluster 12 that is an epidemic - so the
 #' prefix is not decoration: read the scale off the row rather than
@@ -741,6 +830,35 @@ episodic_object_ref <- function(id,
     "dossier.outbreak_ref"
   }
   episodic_tr(key, id = id, lang = lang)
+}
+
+#' A stored sex code in the reader's language
+#'
+#' The database holds `episodic_sex_codes` (`"M"`, `"F"`, `"U"`), which
+#' are storage codes rather than words in any language. `NA` stays `NA`,
+#' so a caller's own missing-value dash still marks a value that was
+#' never supplied, apart from one supplied as unknown (`"U"`).
+#'
+#' @param sex Character vector of stored sex codes.
+#' @param lang Session language.
+#' @return A character vector the length of `sex`.
+#' @keywords internal
+#' @noRd
+episodic_sex_label <- function(sex, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  keys <- c(
+    M = "misc.sex.male",
+    F = "misc.sex.female",
+    U = "misc.sex.unknown"
+  )
+  sex <- as.character(sex)
+  out <- rep(NA_character_, length(sex))
+  for (code in names(keys)) {
+    hit <- !is.na(sex) & sex == code
+    if (any(hit)) {
+      out[hit] <- episodic_tr(keys[[code]], lang = lang)
+    }
+  }
+  out
 }
 
 #' A verdict's display label, worded for the cluster's own scale

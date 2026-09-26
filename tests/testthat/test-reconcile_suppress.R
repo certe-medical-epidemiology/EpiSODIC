@@ -423,3 +423,73 @@ test_that("suppression never chains: a suppressed cluster suppresses nothing fur
   expect_true(is.na(suppressed_by(con, region)))
   expect_true(is.na(suppressed_by(con, area)))
 })
+
+# ---------------------------------------------------------------------
+# How the pass reads and reports
+# ---------------------------------------------------------------------
+
+test_that("the pass reads case sets and assessments in batches, not per cluster", {
+  env <- suppress_setup(child_share = 0.8, n_children = 4)
+  on.exit(DBI::dbDisconnect(env$con))
+  local_mocked_bindings(
+    episodic_db_cluster_cases = function(...) stop("per-cluster case read"),
+    episodic_db_assessment_events = function(...) stop("per-cluster assessment read")
+  )
+
+  expect_no_error(suppressMessages(
+    episodic_suppress_lattice(env$con, episodic_config_resolve())
+  ))
+  for (child in env$children) {
+    expect_equal(suppressed_by(env$con, child), env$parent)
+  }
+})
+
+test_that("the pass says what it weighed and what it suppressed", {
+  env <- suppress_setup(child_share = 0.9)
+  on.exit(DBI::dbDisconnect(env$con))
+
+  lines <- character(0)
+  withCallingHandlers(
+    episodic_suppress_lattice(env$con, episodic_config_resolve()),
+    message = function(m) {
+      lines <<- c(lines, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+  expect_true(any(grepl("weighing 2 cluster(s) across 1 pathogen(s)", lines, fixed = TRUE)))
+  expect_true(any(grepl("19 case link(s) read for 2 cluster(s)", lines, fixed = TRUE)))
+  expect_true(any(grepl("1 cluster(s) suppressed (1 parent(s) behind a dominant child", lines, fixed = TRUE)))
+})
+
+test_that("a long pass writes progress lines while it runs", {
+  env <- suppress_setup(child_share = 0.9)
+  on.exit(DBI::dbDisconnect(env$con))
+
+  lines <- character(0)
+  withCallingHandlers(
+    episodic_suppress_lattice(
+      env$con,
+      episodic_config_resolve(),
+      progress_every = 0
+    ),
+    message = function(m) {
+      lines <<- c(lines, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+  expect_true(any(grepl("pathogen 1 of 1", lines, fixed = TRUE)))
+})
+
+test_that("a parent with no cases has no share, rather than a share of zero", {
+  expect_true(is.na(episodic_suppression_share(integer(0), 1:3)))
+  expect_equal(episodic_suppression_share(1:4, 3:9), 0.5)
+})
+
+test_that("the batch readers return correctly shaped results for no clusters", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  empty <- episodic_db_cluster_case_ids_batch(con, integer(0))
+  expect_equal(nrow(empty), 0)
+  expect_true(all(c("cluster_id", "case_id") %in% names(empty)))
+  expect_identical(episodic_db_assessed_cluster_ids(con, integer(0)), integer(0))
+})

@@ -41,6 +41,46 @@ NULL
 #' @noRd
 episodic_chart_text_size <- c(axis = 11, title = 11, legend = 11)
 
+#' The expansion every chart's y axis takes
+#'
+#' Nothing below the zero line, and a quarter of the data range of room
+#' above the tallest mark. `ggplot2`'s own default pads both ends by
+#' five per cent, which floats the bars off the axis at the bottom and
+#' leaves the highest bar or point level with, or above, the top grid
+#' line - so the one value a reader most wants to read off the axis is
+#' the one with no label near it.
+#'
+#' A function rather than a constant, so the `ggplot2` call happens when
+#' a chart is drawn and not when the package is built.
+#' @return A `ggplot2::expansion()` vector.
+#' @keywords internal
+#' @noRd
+episodic_chart_y_expand <- function() {
+  ggplot2::expansion(mult = c(0, 0.25))
+}
+
+#' Whole-number breaks for an axis of counts
+#'
+#' A count axis labelled 2.5 names a number of cases that cannot occur.
+#' `pretty()` gives the candidate breaks, and only the whole numbers among
+#' them are kept: over a range of 0 to 3 that is 0, 1, 2, 3 rather than
+#' 0, 0.5, ..., 3, and over a wide range `pretty()` already steps in whole
+#' numbers, so nothing is lost there. Passed as the `breaks` function of a
+#' continuous y scale, which calls it with the scale's limits.
+#'
+#' @param limits The axis limits, as passed by `ggplot2`.
+#' @return A numeric vector of whole-number breaks, possibly empty.
+#' @keywords internal
+#' @noRd
+episodic_chart_count_breaks <- function(limits) {
+  limits <- limits[is.finite(limits)]
+  if (length(limits) < 2) {
+    return(numeric(0))
+  }
+  breaks <- pretty(limits, n = 5)
+  breaks[abs(breaks - round(breaks)) < 1e-9]
+}
+
 #' The shared chart theme
 #'
 #' Axis labels are set in the muted grey the rest of the interface uses
@@ -318,9 +358,9 @@ episodic_chart_week_scale <- function(week_starts,
 #'   `EPISODIC_LANGUAGE` environment variable, falling back to `"en"` if
 #'   that is unset.
 #' @param accent Fill colour for the bars. Defaults to the palette's
-#'   `primary`; a caller drawing this for a specific nav section passes
-#'   `episodic_nav_accent()` instead, so the chart reads as belonging to
-#'   whichever screen it is on.
+#'   `primary`, which every chart in the dashboard uses for its main
+#'   series; the status colours are kept for marks that mean something
+#'   (thresholds, positivity).
 #' @return A [ggplot2::ggplot] object.
 #' @examples
 #' curve <- data.frame(
@@ -351,7 +391,11 @@ episodic_ui_epi_curve_chart <- function(curve,
       show.legend = FALSE
     ) +
     ggplot2::scale_alpha_identity() +
-    ggplot2::scale_y_continuous(labels = episodic_chart_number_labels(lang)) +
+    ggplot2::scale_y_continuous(
+      breaks = episodic_chart_count_breaks,
+      labels = episodic_chart_number_labels(lang),
+      expand = episodic_chart_y_expand()
+    ) +
     ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang)) +
     episodic_chart_theme()
 }
@@ -398,6 +442,11 @@ episodic_ui_trend_chart <- function(trend,
       values = c(obs = pal$ink, exp = accent),
       labels = legend_labels
     ) +
+    ggplot2::scale_y_continuous(
+      breaks = episodic_chart_count_breaks,
+      labels = episodic_chart_number_labels(lang),
+      expand = episodic_chart_y_expand()
+    ) +
     episodic_chart_week_scale(trend$week_start, lang = lang) +
     episodic_chart_theme()
 }
@@ -407,6 +456,8 @@ episodic_ui_trend_chart <- function(trend,
 #'   (`Date`), `mean` (point estimate of \eqn{R_t}), and `lower`/`upper`
 #'   (95% credible interval). A dashed reference line is drawn at
 #'   \eqn{R_t = 1}, the threshold between a shrinking and a growing outbreak.
+#'   The y axis is on a log2 scale, labelled in \eqn{R_t} itself, so that a
+#'   halving and a doubling sit the same distance either side of that line.
 #' @examples
 #' rt <- data.frame(
 #'   window_end = seq(as.Date("2025-01-08"), by = "day", length.out = 5),
@@ -421,26 +472,83 @@ episodic_ui_rt_chart <- function(rt,
                                  accent = NULL) {
   pal <- episodic_palette()
   accent <- accent %||% pal$primary
+  # Plotted as log2(Rt) on a plain continuous axis whose labels are Rt,
+  # rather than through a log transformation of the scale. A credible
+  # interval whose lower end is zero is legitimate - an Rt that cannot be
+  # told apart from nothing - and its logarithm is -Inf, which a plain
+  # axis draws at the panel's edge: the band runs off the bottom, which
+  # is what it means. Through a scale transformation the same zero is a
+  # warning raised at print time and a band silently dropped.
+  log2_or_edge <- function(x) {
+    x <- as.numeric(x)
+    out <- rep(NA_real_, length(x))
+    out[!is.na(x) & x > 0] <- log2(x[!is.na(x) & x > 0])
+    out[!is.na(x) & x <= 0] <- -Inf
+    out
+  }
+  rt$log_mean <- log2_or_edge(rt$mean)
+  rt$log_lower <- log2_or_edge(rt$lower)
+  rt$log_upper <- log2_or_edge(rt$upper)
+  axis <- episodic_chart_rt_axis(
+    c(rt$log_mean, rt$log_lower, rt$log_upper),
+    lang = lang
+  )
+
   ggplot2::ggplot(rt, ggplot2::aes(x = .data$window_end)) +
     ggplot2::geom_hline(
-      yintercept = 1,
+      yintercept = 0,
       colour = pal$faint,
       linewidth = 0.4,
       linetype = "dashed"
     ) +
     ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = .data$lower, ymax = .data$upper),
+      ggplot2::aes(ymin = .data$log_lower, ymax = .data$log_upper),
       fill = accent,
-      alpha = 0.25
+      alpha = 0.25,
+      na.rm = TRUE
     ) +
     ggplot2::geom_line(
-      ggplot2::aes(y = .data$mean),
+      ggplot2::aes(y = .data$log_mean),
       colour = accent,
-      linewidth = 0.9
+      linewidth = 0.9,
+      na.rm = TRUE
     ) +
-    ggplot2::scale_y_continuous(labels = episodic_chart_number_labels(lang)) +
+    ggplot2::scale_y_continuous(
+      breaks = axis$breaks,
+      labels = axis$labels,
+      limits = axis$limits,
+      expand = episodic_chart_y_expand()
+    ) +
     ggplot2::labs(y = "Rt") +
     episodic_chart_theme()
+}
+
+#' Breaks, labels and limits for a log2 Rt axis
+#'
+#' Whole powers of two, so every gridline is a doubling or a halving of
+#' the one below it, and always at least one either side of Rt = 1: an
+#' Rt chart whose axis does not show where growth turns into decline has
+#' lost its reference point. The labels are Rt itself (0.5, 1, 2), not
+#' its logarithm, in the session language's own number format.
+#'
+#' @param log_values The plotted values, already `log2()`-transformed;
+#'   non-finite ones are ignored.
+#' @param lang Session language, for the labels.
+#' @return A list with `breaks`, `labels` and `limits`, all on the log2
+#'   scale except `labels`.
+#' @keywords internal
+#' @noRd
+episodic_chart_rt_axis <- function(log_values,
+                                   lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  finite <- log_values[is.finite(log_values)]
+  lo <- min(c(finite, -1))
+  hi <- max(c(finite, 1))
+  breaks <- seq(floor(lo), ceiling(hi))
+  list(
+    breaks = breaks,
+    labels = episodic_format_number(2^breaks, digits = 3, lang = lang),
+    limits = c(floor(lo), ceiling(hi))
+  )
 }
 
 #' A PC choropleth, cropped to where the cases actually are
@@ -493,9 +601,7 @@ episodic_ui_rt_chart <- function(rt,
 #'   context map; area labels are skipped since a full-region view has
 #'   too many polygons to label legibly.
 #' @param accent Colour for the high end of the case-density gradient.
-#'   Defaults to the palette's `primary`; see
-#'   `episodic_ui_epi_curve_chart()`'s own `accent` for why a caller
-#'   passes `episodic_nav_accent()` instead.
+#'   Defaults to the palette's `primary`.
 #' @return A `ggplot` object, or `NULL` if no geographic data is
 #'   available at all, or the join/plot fails for any reason (e.g. a PC
 #'   value not in the reference geometry - synthetic demo postcodes are
@@ -561,12 +667,11 @@ episodic_ui_geo_map_chart <- function(rows,
           linewidth = 0.1
         ) +
         ggplot2::scale_fill_gradient(
-          # Anchored on the neutral bg_subtle rather than a dedicated
-          # tint step of accent - warning/success/danger, unlike
-          # primary, ship no _tint variant, and a light neutral reads
-          # as "few cases" regardless of which section's hue is at the
-          # dense end.
-          low = pal$bg_subtle,
+          # The low end is a visible tint of the accent, not the neutral
+          # bg_subtle that case-free areas (na.value) are drawn in: the
+          # area with the fewest cases maps to the low end exactly, and
+          # in bg_subtle it would read as an area with none.
+          low = episodic_geo_fill_low(pal$bg_subtle, accent),
           high = accent,
           na.value = pal$bg_subtle
         )
@@ -593,7 +698,9 @@ episodic_ui_geo_map_chart <- function(rows,
         )
       }
 
-      labels <- if (crop) episodic_geo_labels(matched, max_labels = max_labels)
+      labels <- if (crop) {
+        episodic_geo_labels(matched, max_labels = max_labels)
+      }
       if (!is.null(labels)) {
         # Plain geom_text over pre-computed representative points rather
         # than geom_sf_text(): stat_sf_coordinates() emits a warning per
@@ -650,6 +757,18 @@ episodic_ui_geo_map_chart <- function(rows,
     },
     error = function(e) NULL
   )
+}
+
+#' The colour a choropleth draws its fewest-cases area in
+#'
+#' @param background The colour case-free areas are drawn in.
+#' @param accent The colour of the densest area.
+#' @param share How far from `background` towards `accent`, 0 to 1.
+#' @return A hex colour string.
+#' @keywords internal
+#' @noRd
+episodic_geo_fill_low <- function(background, accent, share = 0.3) {
+  grDevices::colorRampPalette(c(background, accent))(101)[round(share * 100) + 1]
 }
 
 #' The on-screen width:height ratio a map's frame renders at
@@ -728,10 +847,23 @@ episodic_geo_frame <- function(geo,
     full[["xmax"]] - full[["xmin"]],
     full[["ymax"]] - full[["ymin"]]
   )
-  pad <- max(span * pad_share, full_span * min_pad_share)
+  min_pad <- full_span * min_pad_share
+  pad <- max(span * pad_share, min_pad)
 
-  xlim <- c(bb[["xmin"]] - pad, bb[["xmax"]] + pad)
-  ylim <- c(bb[["ymin"]] - pad, bb[["ymax"]] + pad)
+  # The margin is context, and past the edge of the reference geometry
+  # there is none to show: unclamped, a cluster spanning most of the
+  # reference extent gets a frame nearly twice its size, and coord_sf()
+  # shrinks the map to fit that frame and pads the rest with blank canvas.
+  # Clamped to the extent plus the minimum margin, so an area on the
+  # extent's own edge is still framed wider than itself.
+  xlim <- c(
+    max(bb[["xmin"]] - pad, full[["xmin"]] - min_pad),
+    min(bb[["xmax"]] + pad, full[["xmax"]] + min_pad)
+  )
+  ylim <- c(
+    max(bb[["ymin"]] - pad, full[["ymin"]] - min_pad),
+    min(bb[["ymax"]] + pad, full[["ymax"]] + min_pad)
+  )
 
   bbox <- sf::st_bbox(
     c(xmin = xlim[1], ymin = ylim[1], xmax = xlim[2], ymax = ylim[2]),
@@ -776,6 +908,22 @@ episodic_geo_labels <- function(matched, max_labels = 30L) {
 }
 
 #' Chart of tests performed and positivity rate, by week
+#'
+#' Positivity runs on its own axis, scaled to the highest positivity the
+#' series actually reaches rather than to a fixed 0-100%: a respiratory
+#' or enteric panel runs at a few per cent, and on a 0-100 axis a change
+#' from 2% to 6% - a tripling - is a flat line along the floor. The
+#' primary axis is scaled so the week with the highest positivity sits
+#' level with the tallest bar, and both axes share the quarter of
+#' headroom every chart takes (`episodic_chart_y_expand()`), so the
+#' secondary axis's labels follow from the same range.
+#'
+#' A week whose positivity exceeds 100% is not drawn. It is not a real
+#' reading - the testing-volume feed does not cover every case counted
+#' in that week, a partial-coverage panel say - and drawn at 100% it
+#' would be a number the data never said; drawn as-is it would set the
+#' scale every other week is read against.
+#'
 #' @param series A data frame with `week_start`, `n_tests`, `positivity`.
 #' @keywords internal
 #' @noRd
@@ -785,40 +933,52 @@ episodic_ui_denominator_chart <- function(series,
   # na.rm: a week whose testing volume was never supplied leaves an NA in
   # the column, and an NA maximum makes the whole y scale NA - the chart
   # then fails to draw at all rather than drawing the weeks that do have
-  # a denominator.
-  max_tests <- max(series$n_tests, 1, na.rm = TRUE)
-  scale_factor <- max_tests
-  # A positivity rate above 100% is not a real reading - it means the
-  # supplied testing-volume feed does not cover every case counted (a
-  # partial-coverage panel, say), not that more than every test came back
-  # positive. Clamped here rather than upstream so the underlying numbers
-  # stay available to anyone reading `series` directly; the chart is the
-  # one place a rate has to fit on a percentage axis.
-  series$positivity_scaled <- pmin(series$positivity, 1) * scale_factor
+  # a denominator. The floor of one only keeps the ratio below finite for
+  # a series with no tests at all, whose positivity is NA throughout.
+  max_tests <- max(c(series$n_tests, 1), na.rm = TRUE)
+  positivity <- as.numeric(series$positivity)
+  positivity[!is.finite(positivity) | positivity > 1] <- NA_real_
+  max_positivity <- suppressWarnings(max(positivity, na.rm = TRUE))
+  # A series whose every measured week reads 0% is a measurement, drawn
+  # along the floor against a 0-100% axis; it only has no maximum to
+  # scale to.
+  if (!is.finite(max_positivity) || max_positivity <= 0) {
+    max_positivity <- 1
+  }
+  scale_factor <- max_tests / max_positivity
+  series$positivity_scaled <- positivity * scale_factor
 
   ggplot2::ggplot(series, ggplot2::aes(x = .data$week_start)) +
+    # Test volume is the context the positivity line is read against, so
+    # it is drawn quietly, in a light step of primary.
     ggplot2::geom_col(
       ggplot2::aes(y = .data$n_tests),
-      fill = pal$secondary,
-      width = 4
+      fill = pal$primary,
+      alpha = 0.28,
+      width = 4,
+      na.rm = TRUE
     ) +
     ggplot2::geom_line(
       ggplot2::aes(y = .data$positivity_scaled),
       colour = pal$danger,
-      linewidth = 0.9
+      linewidth = 0.9,
+      na.rm = TRUE
     ) +
     ggplot2::geom_point(
       ggplot2::aes(y = .data$positivity_scaled),
       colour = pal$danger,
-      size = 1.6
+      size = 1.6,
+      na.rm = TRUE
     ) +
     ggplot2::scale_y_continuous(
       name = episodic_tr("panel.denominator.legend_tests", lang = lang),
-      limits = c(0, scale_factor),
+      breaks = episodic_chart_count_breaks,
+      labels = episodic_chart_number_labels(lang),
+      expand = episodic_chart_y_expand(),
       sec.axis = ggplot2::sec_axis(
         ~ . / scale_factor * 100,
         name = episodic_tr("panel.denominator.legend_positivity", lang = lang),
-        breaks = seq(0, 100, by = 25)
+        labels = episodic_chart_number_labels(lang)
       )
     ) +
     episodic_chart_week_scale(series$week_start, lang = lang) +
@@ -855,12 +1015,9 @@ episodic_ui_denominator_chart <- function(series,
 #'   `NULL` to draw the bars alone.
 #' @param lang Language for labels.
 #' @param accent Fill colour for the bars. Defaults to the palette's
-#'   `primary`; the Pathogens screen passes
-#'   `episodic_nav_accent("pathogens")` for visual consistency with its
-#'   other charts. The intensity bands in `episodic_mem_threshold_lines()`
-#'   use `warning_dark`/`danger`/`danger_dark`, so the danger-accented
-#'   bars share the hue of the "high" line, but the dashed-line style
-#'   and the bar fill still read as distinct marks.
+#'   `primary`, which keeps the bars apart from the intensity lines in
+#'   `episodic_mem_threshold_lines()` (`warning_dark`/`danger`/
+#'   `danger_dark`), whose colour is what they mean.
 #' @return A [ggplot2::ggplot] object.
 #' @keywords internal
 #' @noRd
@@ -898,6 +1055,11 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
       show.legend = FALSE
     ) +
     ggplot2::scale_alpha_identity() +
+    ggplot2::scale_y_continuous(
+      breaks = episodic_chart_count_breaks,
+      labels = episodic_chart_number_labels(lang),
+      expand = episodic_chart_y_expand()
+    ) +
     episodic_chart_week_scale(weekly$week_start, lang = lang) +
     ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang))
 
@@ -982,18 +1144,20 @@ episodic_ui_pathogen_overlay_chart <- function(overlay,
   rows$group <- factor(rows$group, levels = groups)
 
   earlier <- setdiff(groups, overlay$current)
-  pool <- c(
-    pal$primary_light,
-    pal$tertiary,
-    pal$warning,
-    pal$faint,
-    pal$secondary_dark
-  )
-  colours <- stats::setNames(rep(pool, length.out = length(groups)), groups)
+  # The period being read in primary, the earlier ones in greys that
+  # lighten with age: the chart asks how this period compares with the
+  # ones before it, and a distinct hue per earlier period would make
+  # each of them as loud as the one the question is about.
+  colours <- stats::setNames(rep(pal$muted, length(groups)), groups)
   if (length(earlier) > 0) {
-    colours[earlier] <- rep(pool, length.out = length(earlier))
+    # Newest first, so the season just before this one is the darkest.
+    fade <- seq(0.8, 0.3, length.out = max(length(earlier), 2L))
+    colours[rev(earlier)] <- ggplot2::alpha(
+      pal$muted,
+      fade[seq_along(earlier)]
+    )
   }
-  colours[overlay$current] <- pal$danger_dark
+  colours[overlay$current] <- pal$primary
 
   # Week labels run 40..52 then 1..20 for a season, so the x axis is an
   # index and the labels are looked up from it - a numeric week number
@@ -1035,7 +1199,12 @@ episodic_ui_pathogen_overlay_chart <- function(overlay,
 
   p <- p +
     ggplot2::scale_colour_manual(values = colours[as.character(groups)]) +
-    ggplot2::scale_x_continuous(breaks = breaks, labels = labels)
+    ggplot2::scale_x_continuous(breaks = breaks, labels = labels) +
+    ggplot2::scale_y_continuous(
+      breaks = episodic_chart_count_breaks,
+      labels = episodic_chart_number_labels(lang),
+      expand = episodic_chart_y_expand()
+    )
   if (!is.null(period_range)) {
     p <- p +
       ggplot2::coord_cartesian(xlim = period_range)

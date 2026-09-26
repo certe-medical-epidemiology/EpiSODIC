@@ -38,16 +38,15 @@
 :root {
   --episodic-font: "IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
   --episodic-font-size-base: 13px;
-  /* One tint per nav group, at an alpha low enough to read as "which
-     screen is this" rather than as a colour anyone would name - each
-     mixes that group's own brandbar hue (see episodic_brand_bar()) into
-     the ordinary page background, so the four screens stay visually
-     distinguishable without the cards sitting on them (which keep their
-     own opaque --episodic-surface) looking tinted at all. */
-  --episodic-tint-outbreaks: color-mix(in srgb, var(--episodic-warning) 6%, var(--episodic-bg));
-  --episodic-tint-epidemics: color-mix(in srgb, var(--episodic-success) 6%, var(--episodic-bg));
-  --episodic-tint-pathogens: color-mix(in srgb, var(--episodic-danger) 6%, var(--episodic-bg));
-  --episodic-tint-instance: color-mix(in srgb, var(--episodic-primary) 6%, var(--episodic-bg));
+  /* One accent for everything interactive or selected - the open rail
+     row, hover and focus, links and ids, spinners, breakdown bars - on
+     every screen alike. Which screen is being read is carried by the
+     navigation's own highlight, not by recolouring the screen: a colour
+     that changes with the screen stops saying anything about what it
+     marks. The status colours (warning, success, danger) are kept for
+     status alone. */
+  --episodic-accent: var(--episodic-primary);
+  --episodic-accent-dark: var(--episodic-primary-dark);
 }
 
 html {
@@ -214,27 +213,6 @@ body {
      .episodic-streams-screen rely on entirely. */
   min-height: 0;
 }
-/* The per-screen tint, keyed on the same `data-nav` the nav-link
-   highlight above reads, so the six Instance-group screens (Archive,
-   Streams, Activity, Performance, Info, Settings) share the Instance
-   screen's own tint rather than going untinted. Set here rather than on
-   .episodic-screen itself, since the hidden screens share this one
-   container and a reader is never shown more than one tint at a time. */
-.episodic-shell[data-nav="outbreaks"] .episodic-screens { background: var(--episodic-tint-outbreaks); }
-.episodic-shell[data-nav="epidemics"] .episodic-screens { background: var(--episodic-tint-epidemics); }
-.episodic-shell[data-nav="pathogens"] .episodic-screens { background: var(--episodic-tint-pathogens); }
-.episodic-shell[data-nav="instance"] .episodic-screens { background: var(--episodic-tint-instance); }
-/* The current nav section's own hue, redefined per `data-nav` so a
-   consumer (the mobile pane-switcher, the interpretation panel's
-   recommendation box, the recalculating spinner) reads one variable
-   instead of repeating a `[data-nav="..."]` selector of its own for
-   every one of the four sections. Buttons and chips are deliberately
-   never keyed to this - a control's colour should not change with
-   which screen it happens to sit on. */
-.episodic-shell[data-nav="outbreaks"] { --episodic-nav-accent: var(--episodic-warning); --episodic-nav-accent-dark: var(--episodic-warning-dark); }
-.episodic-shell[data-nav="epidemics"] { --episodic-nav-accent: var(--episodic-success); --episodic-nav-accent-dark: var(--episodic-success-dark); }
-.episodic-shell[data-nav="pathogens"] { --episodic-nav-accent: var(--episodic-danger); --episodic-nav-accent-dark: var(--episodic-danger-dark); }
-.episodic-shell[data-nav="instance"] { --episodic-nav-accent: var(--episodic-primary); --episodic-nav-accent-dark: var(--episodic-primary-dark); }
 /* .episodic-screens (above) is a flex item of .episodic-shell and so has
    a definite height even though it is not itself a flex container; a
    percentage-height descendant can resolve against that. Without this
@@ -413,8 +391,13 @@ body {
    the server's own selection whichever route it arrived by) and read
    here. A class saying the same thing is a second copy of it. */
 .episodic-rail-item[aria-current="true"] {
-  background: var(--episodic-primary-tint);
-  border-inline-start-color: var(--episodic-primary);
+  background: color-mix(in srgb, var(--episodic-accent) 9%, var(--episodic-surface));
+  border-inline-start-color: var(--episodic-accent);
+}
+@media (hover: hover) {
+  .episodic-rail-item:not([aria-current="true"]):hover {
+    background: color-mix(in srgb, var(--episodic-accent) 4%, var(--episodic-surface));
+  }
 }
 .episodic-rail-item-open {
   display: block;
@@ -430,10 +413,10 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 .episodic-rail-item-open:active {
-  background: var(--episodic-primary-tint);
+  background: color-mix(in srgb, var(--episodic-accent) 12%, var(--episodic-surface));
 }
 .episodic-rail-item-open:focus-visible {
-  outline: 2px solid var(--episodic-primary);
+  outline: 2px solid var(--episodic-accent);
   outline-offset: -2px;
 }
 /* Room for the checkbox, which is taken out of flow so that the button
@@ -551,6 +534,12 @@ body {
 }
 .episodic-chip-filled { color: #fff; }
 .episodic-chip-outline { background: transparent; border: 1px solid; }
+/* Care-line chips (episodic_ui_care_line_chip()) differ in form as well
+   as colour. The filled and tinted ones carry a transparent border so all
+   four are the same height as the outlined ones beside them. */
+.episodic-chip-care-filled,
+.episodic-chip-care-tinted { border: 1px solid transparent; }
+.episodic-chip-care-tinted { font-weight: 600; }
 
 :focus-visible {
   outline-color: var(--episodic-primary) !important;
@@ -703,6 +692,24 @@ body {
    padding the map on both sides - capping the box close to the map's
    rendered width (see episodic_ui_map_render_height()) is what actually
    removes that whitespace, rather than pushing it out to the panel edge. */
+/* A problem with the data a dossier is drawn from, stated above the
+   figures it affects rather than inside one panel of them. */
+.episodic-dossier-problem {
+  margin-block: 4px 14px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--episodic-danger) 10%, var(--episodic-surface));
+  border-inline-start: 3px solid var(--episodic-danger);
+  border-radius: 2px;
+  font-size: 0.962rem;
+  line-height: 1.55;
+  color: var(--episodic-ink);
+}
+.episodic-dossier-problem p {
+  margin: 0;
+}
+.episodic-dossier-problem p + p {
+  margin-block-start: 6px;
+}
 .episodic-geo-single {
   max-width: 640px;
   margin: 0 auto;
@@ -757,12 +764,8 @@ body {
   gap: 9px;
   margin-top: 14px;
   padding: 12px;
-  /* Only ever shown on the Outbreaks screen (its panel has no epidemic
-     equivalent), so the section's own accent, not a --episodic-nav-
-     accent-tint that would need inventing for roles (warning/success/
-     danger) that, unlike primary, have no shipped _tint step. */
-  background: color-mix(in srgb, var(--episodic-nav-accent) 18%, var(--episodic-surface));
-  border-inline-start: 3px solid var(--episodic-nav-accent);
+  background: color-mix(in srgb, var(--episodic-accent) 7%, var(--episodic-surface));
+  border-inline-start: 3px solid var(--episodic-accent);
   border-radius: 2px;
   font-size: 1rem;
   line-height: 1.6;
@@ -788,9 +791,11 @@ body {
   background: var(--episodic-bg-subtle);
   height: 14px;
 }
+/* The app's one accent; primary itself where the accent is not defined
+   (a report rendered outside the app shell). */
 .episodic-bar-fill {
   height: 100%;
-  background: var(--episodic-primary);
+  background: var(--episodic-accent, var(--episodic-primary));
 }
 .episodic-bar-value {
   width: 30px;
@@ -1201,9 +1206,13 @@ dl.episodic-settings dd { margin: 0; }
   border-radius: 2px;
 }
 
+/* Wide enough for a combined query ("norovirus AND ward OR rsv") and
+   the placeholder that explains it, and never wider than the screen:
+   the full width of a phone, 44rem at most on a desktop. */
 .episodic-search-input {
-  width: 320px;
-  max-width: 100%;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 44rem;
   font-family: var(--episodic-font);
   font-size: 0.962rem;
   padding: 6px 10px;
@@ -1331,19 +1340,15 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-table tr.episodic-row-link { cursor: pointer; }
 .episodic-table tr.episodic-row-link:hover,
 .episodic-table tr.episodic-row-link:focus {
-  /* --episodic-nav-accent, not a fixed primary: this table is shared
-     by the Pathogen screen, Archive and the dossier's related/similar
-     panels, and a row rendered under a different screen's data-nav
-     picks up that screen's own accent without this rule naming it. */
-  background: color-mix(in srgb, var(--episodic-nav-accent) 18%, var(--episodic-surface));
+  background: color-mix(in srgb, var(--episodic-accent) 7%, var(--episodic-surface));
   outline: none;
 }
 .episodic-table tr.episodic-row-link:focus-visible {
-  outline: 2px solid var(--episodic-nav-accent);
+  outline: 2px solid var(--episodic-accent);
   outline-offset: -2px;
 }
 .episodic-id-link {
-  color: var(--episodic-nav-accent-dark);
+  color: var(--episodic-accent-dark);
   font-weight: 500;
 }
 .episodic-table tr.episodic-row-link:hover .episodic-id-link { text-decoration: underline; }
@@ -1584,6 +1589,15 @@ dl.episodic-settings dd { margin: 0; }
 .shiny-bound-output.recalculating:not(span) {
   min-height: 44px;
 }
+/* The spinner's size is a property of each output, set on the output
+   itself rather than inherited: a chart inside a screen-level output is
+   an output of its own and keeps the small spinner, whatever the screen
+   around it uses. */
+.shiny-bound-output {
+  --episodic-spinner-size: 18px;
+  --episodic-spinner-stroke: 2px;
+  --episodic-spinner-top: 50%;
+}
 .shiny-bound-output.recalculating:not(span)::after {
   content: "";
   position: absolute;
@@ -1591,20 +1605,53 @@ dl.episodic-settings dd { margin: 0; }
      auto" holds in both directions, where a translate off one edge
      would have to be flipped for Arabic. */
   inset-inline: 0;
-  inset-block-start: 50%;
-  width: 18px;
-  height: 18px;
+  inset-block-start: var(--episodic-spinner-top);
+  width: var(--episodic-spinner-size);
+  height: var(--episodic-spinner-size);
   margin-inline: auto;
-  margin-block-start: -9px;
-  /* --episodic-nav-accent cascades from .episodic-shell[data-nav], so
-     this needs no [data-nav="..."] selector of its own - a spinner
-     inside the Pathogens screen already sits under that data-nav and
-     reads the danger step without being told to. */
-  border: 2px solid color-mix(in srgb, var(--episodic-nav-accent) 25%, var(--episodic-surface));
-  border-block-start-color: var(--episodic-nav-accent);
+  margin-block-start: calc(var(--episodic-spinner-size) / -2);
+  border: var(--episodic-spinner-stroke) solid color-mix(in srgb, var(--episodic-accent) 25%, var(--episodic-surface));
+  border-block-start-color: var(--episodic-accent);
   border-radius: 50%;
   animation: episodic-spin 0.7s linear infinite;
   pointer-events: none;
+}
+/* Screen-level outputs: a whole screen, the dossier pane, the Archive's
+   table. What is being waited for here is the page, and an 18px ring in
+   the middle of it reads as a speck. Sized to the viewport within
+   bounds - three to four times the panel spinner - and held in the
+   upper part of a tall screen rather than at the middle of its full
+   scroll height, where it would sit below the fold. The content
+   underneath dims and the spinner does not: an element's opacity
+   applies to its own pseudo-elements, so dimming the output itself
+   would dim the one thing that says it is working. */
+.episodic-screen > .shiny-bound-output,
+.episodic-streams-screen > .shiny-bound-output,
+.episodic-pane-dossier.shiny-bound-output {
+  --episodic-spinner-size: clamp(3rem, 8vmin, 4.5rem);
+  --episodic-spinner-stroke: clamp(4px, 0.7vmin, 6px);
+  --episodic-spinner-top: min(50%, 40vh);
+}
+.episodic-screen > .shiny-bound-output.recalculating,
+.episodic-streams-screen > .shiny-bound-output.recalculating,
+.episodic-pane-dossier.shiny-bound-output.recalculating {
+  opacity: 1;
+  min-height: calc(var(--episodic-spinner-size) + 8rem);
+}
+.episodic-screen > .shiny-bound-output.recalculating > *,
+.episodic-streams-screen > .shiny-bound-output.recalculating > *,
+.episodic-pane-dossier.shiny-bound-output.recalculating > * {
+  opacity: 0.4;
+  transition: opacity 0.15s linear;
+}
+/* The Archive's controls hold the search box being typed into: dimmed
+   and spun on every keystroke's redraw, it would flicker under the
+   cursor. */
+.episodic-streams-screen > #archive_controls.recalculating::after {
+  content: none;
+}
+.episodic-streams-screen > #archive_controls.recalculating {
+  min-height: 0;
 }
 @media (prefers-reduced-motion: reduce) {
   .shiny-bound-output.recalculating:not(span)::after {
@@ -2010,15 +2057,15 @@ dl.episodic-settings dd { margin: 0; }
   .episodic-shell[data-pane="rail"] .episodic-pane-tab[data-episodic-pane="rail"],
   .episodic-shell[data-pane="dossier"] .episodic-pane-tab[data-episodic-pane="dossier"],
   .episodic-shell[data-pane="assessment"] .episodic-pane-tab[data-episodic-pane="assessment"] {
-    color: var(--episodic-nav-accent-dark);
+    color: var(--episodic-accent-dark);
     font-weight: 600;
-    box-shadow: inset 0 2px 0 var(--episodic-nav-accent);
+    box-shadow: inset 0 2px 0 var(--episodic-accent);
   }
   .episodic-pane-tab:active {
-    background: color-mix(in srgb, var(--episodic-nav-accent) 18%, var(--episodic-surface));
+    background: color-mix(in srgb, var(--episodic-accent) 18%, var(--episodic-surface));
   }
   .episodic-pane-tab:focus-visible {
-    outline: 2px solid var(--episodic-nav-accent);
+    outline: 2px solid var(--episodic-accent);
     outline-offset: -2px;
   }
 

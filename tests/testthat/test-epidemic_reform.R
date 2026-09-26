@@ -523,6 +523,196 @@ test_that("links survive a second run (idempotent)", {
   expect_equal(nrow(links), 1)
 })
 
+test_that("closed outbreaks and closed epidemics are linked too", {
+  # A first run opens and closes a whole history in one go; the "during"
+  # relation is about pathogen, time and place, and holds whatever state
+  # either cluster is in.
+  env <- epidemic_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+
+  epi_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$region_stream_id,
+    first_day = "2024-09-16",
+    last_day = "2024-09-29",
+    n_cases = 181,
+    priority_score = 70,
+    detector_agreement = 1,
+    run_id = env$run_id,
+    scale = "epidemic"
+  )
+  ob_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$inst_stream_id,
+    first_day = "2024-09-18",
+    last_day = "2024-09-25",
+    n_cases = 5,
+    priority_score = 40,
+    detector_agreement = 1,
+    run_id = env$run_id,
+    scale = "outbreak"
+  )
+  for (id in c(epi_id, ob_id)) {
+    episodic_db_cluster_state_insert(env$con, id, state = "closed", trigger = "system")
+  }
+
+  cases <- data.frame(
+    sample_date = "2024-09-20",
+    pathogen = "RSV",
+    institution_id = env$inst_id,
+    ward = NA_character_,
+    pc = "9713AB",
+    care_line = "second",
+    stringsAsFactors = FALSE
+  )
+  geography <- episodic_geography_config(env$config)
+  n <- episodic_epidemic_link_outbreaks(env$con, cases, geography, env$run_id)
+  expect_equal(n, 1L)
+  expect_equal(episodic_db_outbreaks_during_epidemic(env$con, epi_id)$cluster_id, ob_id)
+
+  # A pair already linked is not written again.
+  expect_equal(
+    episodic_epidemic_link_outbreaks(env$con, cases, geography, env$run_id),
+    0L
+  )
+})
+
+test_that("episodic_stream_label() tells two province streams of one pathogen apart", {
+  gr <- data.frame(pathogen = "SARS-CoV-2", level = "pathogen_province", region_code = "GR")
+  dr <- data.frame(pathogen = "SARS-CoV-2", level = "pathogen_province", region_code = "DR")
+  expect_equal(episodic_stream_label(gr), "SARS-CoV-2/pathogen_province/GR")
+  expect_false(identical(episodic_stream_label(gr), episodic_stream_label(dr)))
+  ward <- data.frame(pathogen = "Norovirus", level = "pathogen_ward", region_code = NA_character_)
+  expect_equal(episodic_stream_label(ward), "Norovirus/pathogen_ward")
+})
+
+test_that("episodic_link_parse_dates() reads each element on its own and leaves the unreadable ones NA", {
+  expect_equal(
+    episodic_link_parse_dates(c("2026-09-08", "2026-09-09 00:00:00", "", NA, "08-09-2026")),
+    as.Date(c("2026-09-08", "2026-09-09", NA, NA, NA))
+  )
+  expect_equal(
+    episodic_link_parse_dates(as.Date("2026-09-08")),
+    as.Date("2026-09-08")
+  )
+})
+
+test_that("an epidemic no outbreak overlaps, or a cluster with an unreadable day, never reaches the during links as NULL", {
+  inserted <- list()
+  local_mocked_bindings(
+    episodic_db_link_epidemics = function(con) {
+      data.frame(
+        # 899 overlaps no outbreak in time, so it has no candidate at all;
+        # it comes first, so an empty candidate set turned into a row of
+        # NAs would be inserted before 900 is reached.
+        cluster_id = c(899L, 900L),
+        stream_id = 1L,
+        first_day = c("2020-01-06", "2026-09-01"),
+        last_day = c("2020-02-02", "2026-09-30"),
+        scale = "epidemic",
+        pathogen = "Norovirus",
+        level = "pathogen_region",
+        region_code = "NNL",
+        institution_id = NA_integer_,
+        stringsAsFactors = FALSE
+      )
+    },
+    episodic_db_link_outbreaks = function(con) {
+      data.frame(
+        cluster_id = c(1L, 2L),
+        stream_id = c(2L, 3L),
+        # The second leads with a value as.Date() cannot read: parsed as
+        # one vector it takes the first element's NA down with it too.
+        first_day = c("2026-09-08", ""),
+        last_day = c("2026-09-11", "2026-09-10"),
+        scale = "outbreak",
+        pathogen = "Norovirus",
+        level = "pathogen_institution",
+        region_code = NA_character_,
+        institution_id = c(10L, 11L),
+        ward = NA_character_,
+        stringsAsFactors = FALSE
+      )[c(2, 1), ]
+    },
+    episodic_db_cluster_links_all = function(con) {
+      data.frame(
+        outbreak_cluster_id = integer(0),
+        epidemic_cluster_id = integer(0)
+      )
+    },
+    episodic_db_cluster_link_insert = function(con,
+                                               outbreak_cluster_id,
+                                               epidemic_cluster_id,
+                                               run_id) {
+      inserted[[length(inserted) + 1]] <<- c(outbreak_cluster_id, epidemic_cluster_id)
+      invisible(NULL)
+    }
+  )
+  cases <- data.frame(
+    sample_date = "2026-09-08",
+    pathogen = "Norovirus",
+    institution_id = 10L,
+    ward = NA_character_,
+    pc = "9713AB",
+    care_line = "first",
+    stringsAsFactors = FALSE
+  )
+  n <- episodic_epidemic_link_outbreaks(
+    con = NULL,
+    cases = cases,
+    geography = list(),
+    run_id = 1L
+  )
+  expect_equal(n, 1L)
+  expect_equal(inserted, list(c(1L, 900L)))
+})
+
+test_that("an outbreak outside a province epidemic's province is not linked to it", {
+  pc_csv <- tempfile(fileext = ".csv")
+  writeLines("pc,province_code\n9713AB,DR", pc_csv)
+  withr::local_envvar(EPISODIC_PC_PROVINCE_MAP = pc_csv)
+
+  env <- epidemic_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  epi_id <- episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$province_stream_id,
+    first_day = "2026-01-01",
+    last_day = "2026-02-15",
+    n_cases = 50,
+    priority_score = 60,
+    detector_agreement = 1,
+    run_id = env$run_id,
+    scale = "epidemic"
+  )
+  episodic_db_cluster_insert(
+    env$con,
+    stream_id = env$inst_stream_id,
+    first_day = "2026-01-10",
+    last_day = "2026-01-20",
+    n_cases = 5,
+    priority_score = 40,
+    detector_agreement = 1,
+    run_id = env$run_id,
+    scale = "outbreak"
+  )
+  cases <- data.frame(
+    sample_date = "2026-01-15",
+    pathogen = "RSV",
+    institution_id = env$inst_id,
+    ward = NA_character_,
+    pc = "9713AB",
+    care_line = "second",
+    stringsAsFactors = FALSE
+  )
+  geography <- episodic_geography_config(env$config)
+  expect_equal(
+    episodic_epidemic_link_outbreaks(env$con, cases, geography, env$run_id),
+    0L
+  )
+  expect_equal(nrow(episodic_db_outbreaks_during_epidemic(env$con, epi_id)), 0)
+})
+
 # -- Geographic nesting ------------------------------------------------
 
 test_that("geography_nests returns TRUE for L5 epidemic unconditionally", {
@@ -811,12 +1001,15 @@ test_that("the during panel names each linked row by its own scale, not always a
       first_day = "2026-01-10",
       last_day = "2026-01-20",
       n_cases = 5L,
+      case_days = 3L,
       priority_score = 50,
       pathogen = "Norovirus",
       level = level,
+      level_label = "Level",
       institution_id = NA_character_,
       ward = NA_character_,
       place = "Ward B",
+      state_label = "New",
       stringsAsFactors = FALSE
     )
   }

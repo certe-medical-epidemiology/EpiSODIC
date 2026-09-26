@@ -98,7 +98,6 @@ episodic_ui_dossier <- function(con,
     # whole question it is meant to answer.
     episodic_ui_geo_panel(obj, lang = lang),
     episodic_ui_places_panel(con, cluster_id, obj, lang = lang),
-    episodic_ui_resistance_panel(lang = lang),
     episodic_ui_related_panel(con, cluster_id, lang = lang),
     episodic_ui_similar_clusters_panel(con, cluster_id, lang = lang),
     episodic_ui_report_panel(con, cluster_id, current_user, lang = lang),
@@ -150,7 +149,7 @@ episodic_ui_dossier_header <- function(obj,
         shiny::HTML(episodic_ui_italicise_taxon(obj$pathogen)),
         shiny::tags$span(
           class = "episodic-dossier-id",
-          episodic_tr("dossier.outbreak_ref", id = obj$id, lang = lang)
+          episodic_object_ref(obj$id, "outbreak", lang = lang)
         )
       ),
       episodic_ui_chip(
@@ -680,7 +679,7 @@ episodic_ui_epicurve_panel <- function(con,
     episodic_tr("panel.epicurve.title", lang = lang),
     note = note,
     shiny::renderPlot(
-      episodic_ui_epi_curve_chart(curve, lang = lang, accent = episodic_nav_accent("outbreaks")),
+      episodic_ui_epi_curve_chart(curve, lang = lang),
       height = 210
     )
   )
@@ -714,7 +713,7 @@ episodic_ui_trend_panel <- function(con,
     ),
     note = shiny::HTML(episodic_tr("panel.trend.note", lang = lang)),
     shiny::renderPlot(
-      episodic_ui_trend_chart(trend, lang = lang, accent = episodic_nav_accent("outbreaks")),
+      episodic_ui_trend_chart(trend, lang = lang),
       height = 230
     )
   )
@@ -752,7 +751,7 @@ episodic_ui_rt_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     episodic_tr("panel.rt.title", lang = lang),
     note = episodic_tr("panel.rt.note", lang = lang),
     shiny::renderPlot(
-      episodic_ui_rt_chart(obj$rt, lang = lang, accent = episodic_nav_accent("outbreaks")),
+      episodic_ui_rt_chart(obj$rt, lang = lang),
       height = 200
     )
   )
@@ -836,9 +835,23 @@ episodic_ui_demography_panel <- function(obj,
   )
 }
 
+#' Where a cluster's cases are: a detail map, a context map and the bars
+#'
+#' Shared by both dossiers.
+#'
+#' @param obj A list with `concentration` (`episodic_app_concentration()`)
+#'   and `n_cases`.
+#' @param lang Session language.
+#' @param context_map Whether to draw the uncropped map of the whole
+#'   reference extent beside the cropped one. An outbreak's cases sit in
+#'   a corner of the region, and the second map is where that corner is;
+#'   an epidemic's cases span the region or province, so the cropped
+#'   frame already is the whole of it and a second map repeats it.
 #' @keywords internal
 #' @noRd
-episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_ui_geo_panel <- function(obj,
+                                  lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                  context_map = TRUE) {
   if (is.null(obj$concentration)) {
     return(episodic_ui_panel_empty(
       episodic_tr("panel.geo.title", lang = lang),
@@ -846,16 +859,15 @@ episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       aside = episodic_tr("panel.geo.aside", lang = lang)
     ))
   }
-  accent <- episodic_nav_accent("outbreaks")
-  map_chart <- episodic_ui_geo_map_chart(obj$concentration$rows, accent = accent)
+  map_chart <- episodic_ui_geo_map_chart(obj$concentration$rows)
   # A second, uncropped map alongside the detail one: the cropped view
   # is deliberately tight around the cases (see panel.geo.map_note), which
   # is exactly what throws away where in the wider region that tight
   # frame actually sits. Only rendered when the detail map itself
   # rendered - no point showing region-wide context for a fallback bar
   # breakdown.
-  context_chart <- if (!is.null(map_chart)) {
-    episodic_ui_geo_map_chart(obj$concentration$rows, crop = FALSE, accent = accent)
+  context_chart <- if (!is.null(map_chart) && context_map) {
+    episodic_ui_geo_map_chart(obj$concentration$rows, crop = FALSE)
   }
   # A broken chart-rendering environment (see episodic_graphics_probe())
   # cannot draw the map at all - fall back to the bar breakdown exactly as
@@ -915,10 +927,17 @@ episodic_ui_geo_panel <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
     } else {
       shiny::tagList(
         shiny::tags$div(
-          class = "episodic-geo-maps",
+          class = if (is.null(context_chart)) {
+            "episodic-geo-single"
+          } else {
+            "episodic-geo-maps"
+          },
           shiny::renderPlot(
             map_chart,
-            height = episodic_ui_map_render_height(map_chart, width = 400)
+            height = episodic_ui_map_render_height(
+              map_chart,
+              width = if (is.null(context_chart)) 640 else 400
+            )
           ),
           if (!is.null(context_chart)) {
             shiny::renderPlot(
@@ -1173,7 +1192,11 @@ episodic_ui_related_panel <- function(con,
         shared_cases = NA_integer_,
         unlinked_reason = episodic_tr(
           "cluster.unlinked.suppressed",
-          ref = episodic_tr("dossier.outbreak_ref", id = cluster_id, lang = lang),
+          ref = episodic_object_ref(
+            cluster_id,
+            episodic_app_cluster_scale(con, cluster_id),
+            lang = lang
+          ),
           lang = lang
         ),
         stringsAsFactors = FALSE
@@ -1218,17 +1241,6 @@ episodic_ui_related_panel <- function(con,
         lang = lang
       )
     )
-  )
-}
-
-#' @keywords internal
-#' @noRd
-episodic_ui_resistance_panel <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  # Susceptibility data is not part of the case data requirements, so this
-  # panel is always a placeholder.
-  episodic_ui_panel_empty(
-    episodic_tr("panel.resistance.title", lang = lang),
-    episodic_tr("panel.resistance.unavailable", lang = lang)
   )
 }
 
@@ -1287,8 +1299,12 @@ episodic_ui_linelist_panel <- function(con,
         lapply(seq_len(nrow(ll)), function(i) {
           row <- ll[i, ]
           shiny::tags$tr(lapply(cols, function(c) {
+            value <- row[[c]]
+            if (identical(c, "sex")) {
+              value <- episodic_sex_label(value, lang = lang)
+            }
             shiny::tags$td(as.character(
-              row[[c]] %||% episodic_tr("misc.dash", lang = lang)
+              value %||% episodic_tr("misc.dash", lang = lang)
             ))
           }))
         })
@@ -1550,12 +1566,14 @@ episodic_ui_report_schedule_form <- function(cluster_id, available_channels, lan
 #' @param obj The cluster object from `episodic_cluster_object()`, or
 #'   `NULL` to build one - see `episodic_ui_dossier()`, which passes its
 #'   own rather than having this panel rebuild it.
+#' @param scale `"outbreak"` or `"epidemic"`, for the panel's title.
 #' @keywords internal
 #' @noRd
 episodic_ui_settings_panel <- function(con,
                                        cluster_id,
                                        lang = Sys.getenv("EPISODIC_LANGUAGE"),
-                                       obj = NULL) {
+                                       obj = NULL,
+                                       scale = "outbreak") {
   settings <- episodic_app_detection_settings(con, cluster_id, obj = obj)
   settings$pkg_versions <- episodic_ui_pkg_versions_html(settings$pkg_versions)
   # list(), not c(): a shiny::HTML() value (the detectors row) loses its
@@ -1607,7 +1625,15 @@ episodic_ui_settings_panel <- function(con,
     )
   )
   episodic_ui_panel(
-    episodic_tr("panel.settings.title", lang = lang),
+    episodic_tr(
+      if (identical(scale, "epidemic")) {
+        "panel.settings.title_epidemic"
+      } else {
+        "panel.settings.title_outbreak"
+      },
+      lang = lang
+    ),
+    note = episodic_tr("panel.settings.note", lang = lang),
     shiny::tags$dl(
       class = "episodic-settings",
       lapply(rows, function(r) {

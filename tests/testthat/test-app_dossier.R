@@ -454,7 +454,7 @@ test_that("the dossier title carries the cluster id beside the pathogen name", {
   expect_lt(id_pos, meta_pos)
 })
 
-test_that("the settings panel names the versions the run recorded, and says unknown when it recorded none", {
+test_that("the settings panel names the versions the detecting run recorded, and says unknown when it recorded none", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))
 
@@ -482,12 +482,40 @@ test_that("the settings panel names the versions the run recorded, and says unkn
       auto_unbox = TRUE
     ))
   )
+  # A later run that did not detect this cluster says nothing about how
+  # it was found.
+  html <- as.character(episodic_ui_settings_panel(
+    env$con,
+    env$cluster_id,
+    lang = "en"
+  ))
+  expect_false(grepl("v0.17.1", html, fixed = TRUE))
+
+  DBI::dbExecute(
+    env$con,
+    "UPDATE episodic_cluster SET last_detected_run = ? WHERE cluster_id = ?",
+    params = list(run_id, env$cluster_id)
+  )
   html <- as.character(episodic_ui_settings_panel(
     env$con,
     env$cluster_id,
     lang = "en"
   ))
   expect_true(grepl("<code>EpiSODIC</code> v0.17.1", html, fixed = TRUE))
+  expect_true(grepl("Detection settings for this outbreak", html, fixed = TRUE))
+  expect_true(grepl(
+    episodic_tr("panel.settings.note", lang = "en"),
+    html,
+    fixed = TRUE
+  ))
+
+  epidemic_html <- as.character(episodic_ui_settings_panel(
+    env$con,
+    env$cluster_id,
+    lang = "en",
+    scale = "epidemic"
+  ))
+  expect_true(grepl("Detection settings for this epidemic", epidemic_html, fixed = TRUE))
 })
 
 test_that("the dossier joins detector names with the session language's own word for 'and'", {
