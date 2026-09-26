@@ -652,6 +652,70 @@ test_that("the stream case index hands every stream exactly what the per-stream 
   }
 })
 
+# -- Reconciliation ----------------------------------------------------------
+
+throughput_clusters <- function(con, n) {
+  run_id <- episodic_db_run_start(con, "h", "a", run_date = "2025-01-01")
+  stream_id <- episodic_db_stream_upsert(
+    con,
+    stream_key = digest::digest("reconcile", algo = "sha1"),
+    level = "pathogen_region",
+    pathogen = "P",
+    care_line = NA,
+    region_code = "R",
+    institution_id = NA,
+    ward = NA,
+    denominator = "none",
+    observed_date = "2025-01-01"
+  )
+  vapply(seq_len(n), function(k) {
+    episodic_db_cluster_insert(
+      con,
+      stream_id = stream_id,
+      first_day = "2025-01-01",
+      last_day = "2025-01-10",
+      n_cases = 3,
+      priority_score = 1,
+      detector_agreement = 1,
+      run_id = run_id
+    )
+  }, integer(1))
+}
+
+test_that("the assessment events lookup answers every cluster as the per-cluster read does", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  ids <- throughput_clusters(con, 4)
+  user_id <- episodic_db_app_user_insert(con, "jdoe", "Jane Doe", "j@x.nl", "hash")
+  episodic_app_submit_assessment(con, ids[1], user_id, verdict = "possible_epidemic", rationale = "a")
+  episodic_app_submit_assessment(con, ids[1], user_id, verdict = "confirmed_epidemic", rationale = "b")
+  episodic_app_submit_assessment(con, ids[3], user_id, verdict = "artefact", rationale = "c")
+
+  lookup <- episodic_assessment_events_lookup(con, ids[1:3])
+  # ids[4] is outside the read and answered live.
+  for (id in ids) {
+    expect_equal(lookup(id), episodic_db_assessment_events(con, id), info = id)
+  }
+  expect_identical(nrow(lookup(ids[2])), 0L)
+})
+
+test_that("runs_since_detected is raised once per cluster by one batched update", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  ids <- throughput_clusters(con, 1203)
+  counter <- function() {
+    DBI::dbGetQuery(
+      con,
+      "SELECT cluster_id, runs_since_detected FROM episodic_cluster ORDER BY cluster_id"
+    )$runs_since_detected
+  }
+  before <- counter()
+  episodic_db_cluster_increment_runs_since_detected(con, c(ids[-2], ids[5]))
+  expect_identical(counter() - before, as.integer(seq_along(ids) != 2))
+  episodic_db_cluster_increment_runs_since_detected(con, integer(0))
+  expect_identical(counter() - before, as.integer(seq_along(ids) != 2))
+})
+
 # -- Case loading ------------------------------------------------------------
 
 test_that("stored episode anchors are found for more patients than one statement can name", {

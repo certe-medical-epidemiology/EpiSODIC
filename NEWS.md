@@ -12,6 +12,7 @@
 - Farrington's weekly bins, the MEM anchor, seasonality statistic and season matrix are counted per distinct date instead of per case
 - Baseline exclusions, patient-days and trend row counts are read once per run instead of once per stream
 - The Farrington detector and the trend cache share one fit per stream instead of fitting the same week twice
+- Reconciliation reads assessment events once per run and ages a stream's undetected clusters in one statement
 
 ## Fixed
 

@@ -1115,6 +1115,16 @@ episodic_run_cron_body <- function(con,
   stage$time("mem", {
     mem_cache <- episodic_db_detector_cache(con, "mem")
   })
+  # Assessment events are the app's to write and never the run's, so one
+  # read made here is what every per-cluster read inside the transaction
+  # would have returned. A cluster outside it - one opened during this
+  # run - is read live, and has none.
+  stage$time("reconciliation", {
+    events_for <- episodic_assessment_events_lookup(
+      con,
+      episodic_db_clusters(con, include_suppressed = TRUE)$cluster_id
+    )
+  })
   mem_tally <- new.env(parent = emptyenv())
   mem_tally$reused <- 0L
   mem_tally$fitted <- 0L
@@ -1464,11 +1474,12 @@ episodic_run_cron_body <- function(con,
           weights = weights
         )
       },
+      events_fn = events_for,
       has_assessment_fn = function(cluster_id) {
-        nrow(episodic_db_assessment_events(con, cluster_id)) > 0
+        nrow(events_for(cluster_id)) > 0
       },
       verdict_fn = function(cluster_id) {
-        events <- episodic_db_assessment_events(con, cluster_id)
+        events <- events_for(cluster_id)
         classified <- events[!is.na(events$verdict), ]
         if (nrow(classified) == 0) {
           NA_character_
@@ -1737,6 +1748,35 @@ episodic_cases_for_stream <- function(cases,
     matches <- matches & !is.na(region) & region == stream$region_code
   }
   cases[matches, ]
+}
+
+#' Every cluster's assessment events, from one read
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_ids The clusters to read events for up front.
+#' @return A function `(cluster_id)` returning that cluster's events as
+#'   `episodic_db_assessment_events()` does - same columns, same order -
+#'   answered from the read for a cluster in `cluster_ids` and read live
+#'   for any other.
+#' @keywords internal
+#' @noRd
+episodic_assessment_events_lookup <- function(con, cluster_ids) {
+  cluster_ids <- unique(cluster_ids)
+  events <- episodic_db_assessment_events_batch(con, cluster_ids)
+  by_cluster <- split(seq_len(nrow(events)), events$cluster_id)
+  none <- events[0, , drop = FALSE]
+  function(cluster_id) {
+    if (!cluster_id %in% cluster_ids) {
+      return(episodic_db_assessment_events(con, cluster_id))
+    }
+    rows <- by_cluster[[as.character(cluster_id)]]
+    if (is.null(rows)) {
+      return(none)
+    }
+    out <- events[rows, , drop = FALSE]
+    rownames(out) <- NULL
+    out
+  }
 }
 
 #' Every stream's cases, from one pass over the case table

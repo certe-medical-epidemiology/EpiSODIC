@@ -601,15 +601,32 @@ episodic_db_cluster_update <- function(con,
   invisible(NULL)
 }
 
+#' Add one to `runs_since_detected` for each of a set of clusters
+#'
+#' One statement per chunk of clusters rather than one per cluster:
+#' reconciliation ages every live cluster on a stream that no candidate
+#' matched, and on a board of thousands that is a round trip each.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id One or more cluster ids; none is a no-op.
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_increment_runs_since_detected <- function(con, cluster_id) {
-  params <- list(cluster_id)
-  episodic_db_execute(
-    con,
-    "UPDATE episodic_cluster SET runs_since_detected = runs_since_detected + 1 WHERE cluster_id = ?",
-    params = params
+  cluster_id <- unique(cluster_id)
+  chunks <- split(
+    cluster_id,
+    ceiling(seq_along(cluster_id) / episodic_db_chunk_size)
   )
+  for (chunk in chunks) {
+    episodic_db_execute(
+      con,
+      sprintf(
+        "UPDATE episodic_cluster SET runs_since_detected = runs_since_detected + 1 WHERE cluster_id IN (%s)",
+        paste(rep("?", length(chunk)), collapse = ", ")
+      ),
+      params = as.list(chunk)
+    )
+  }
   invisible(NULL)
 }
 

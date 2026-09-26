@@ -120,6 +120,10 @@
 #'   enumerated under: resolved separately from `EPISODIC_CONFIG` here, a
 #'   run given a different configuration opened area- and region-level
 #'   clusters with no cases linked to them at all, and said nothing.
+#' @param events_fn A function `(cluster_id) -> data frame`, the cluster's
+#'   assessment events as `episodic_db_assessment_events()` returns them.
+#'   Injected so a run can answer it from one batched read; the default
+#'   reads them one cluster at a time.
 #' @param backfill From `episodic_run_is_backfill()`. Stamped on every
 #'   cluster this call opens (`opened_in_backfill`), because such a
 #'   cluster's `opened_at` is the day the archive was imported rather
@@ -150,7 +154,10 @@ episodic_reconcile_stream <- function(con,
                                       today = Sys.Date(),
                                       geography = episodic_geography_config(),
                                       backfill = FALSE,
-                                      scale = "outbreak") {
+                                      scale = "outbreak",
+                                      events_fn = function(cluster_id) {
+                                        episodic_db_assessment_events(con, cluster_id)
+                                      }) {
   n_new <- 0L
   n_updated <- 0L
   n_merged <- 0L
@@ -329,7 +336,7 @@ episodic_reconcile_stream <- function(con,
       # one, which is the single worst thing a surveillance system can
       # do. Flagged, it derives as "reassess" and returns to the board.
       changed <- (has_assessment_fn(cluster_id) ||
-        episodic_reconcile_is_closed(con, cluster_id)) &&
+        episodic_reconcile_is_closed(con, cluster_id, events_fn(cluster_id))) &&
         (as.character(new_first) != existing$first_day ||
           as.character(new_last) != existing$last_day ||
           new_n != existing$n_cases)
@@ -399,7 +406,7 @@ episodic_reconcile_stream <- function(con,
       # different, larger dossier, still showing their verdict as if it
       # had been reached on this evidence.
       survivor_changed <- (has_assessment_fn(survivor_id) ||
-        episodic_reconcile_is_closed(con, survivor_id)) &&
+        episodic_reconcile_is_closed(con, survivor_id, events_fn(survivor_id))) &&
         (as.character(all_first) != open_clusters$first_day[survivor_idx] ||
           as.character(all_last) != open_clusters$last_day[survivor_idx] ||
           combined_n != open_clusters$n_cases[survivor_idx])
@@ -463,9 +470,11 @@ episodic_reconcile_stream <- function(con,
     !as.character(live_clusters$cluster_id) %in% matched_cluster_ids,
   ]
   closed_this_run <- character(0)
+  # One statement for all of them: nothing below reads the counter back
+  # from the database, it works from `undetected`'s own copy plus one.
+  episodic_db_cluster_increment_runs_since_detected(con, undetected$cluster_id)
   for (i in seq_len(nrow(undetected))) {
     cluster_id <- undetected$cluster_id[i]
-    episodic_db_cluster_increment_runs_since_detected(con, cluster_id)
 
     runs_since <- undetected$runs_since_detected[i] + 1L
     verdict <- verdict_fn(cluster_id)
@@ -480,7 +489,7 @@ episodic_reconcile_stream <- function(con,
     if (
       runs_since > close_after_runs &&
         eligible_for_autoclose &&
-        !episodic_reconcile_is_closed(con, cluster_id)
+        !episodic_reconcile_is_closed(con, cluster_id, events_fn(cluster_id))
     ) {
       episodic_db_cluster_state_insert(
         con,
@@ -514,7 +523,7 @@ episodic_reconcile_stream <- function(con,
       # "closed" row on every future run forever (verdict stays NA and
       # last_day stays stale, so nothing above would otherwise ever stop
       # matching this cluster again).
-      if (episodic_reconcile_is_closed(con, cluster_id)) {
+      if (episodic_reconcile_is_closed(con, cluster_id, events_fn(cluster_id))) {
         next
       }
       days_since_last_case <- as.integer(
@@ -552,15 +561,23 @@ episodic_reconcile_stream <- function(con,
 #' time: a closure followed by a re-assessment is a reopened cluster, and
 #' only that function knows it.
 #'
+#' The cluster's states are read here, live, because a run writes them
+#' as it goes; its assessment events only the app writes, so a caller may
+#' pass them in from a read made once for the run.
+#'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cluster_id The cluster to ask about.
+#' @param events The cluster's assessment events, as
+#'   `episodic_db_assessment_events()` returns them.
 #' @return A single logical.
 #' @keywords internal
 #' @noRd
-episodic_reconcile_is_closed <- function(con, cluster_id) {
+episodic_reconcile_is_closed <- function(con,
+                                         cluster_id,
+                                         events = episodic_db_assessment_events(con, cluster_id)) {
   episodic_app_explicitly_closed_from(
     episodic_db_cluster_states(con, cluster_id),
-    episodic_db_assessment_events(con, cluster_id)
+    events
   )
 }
 
