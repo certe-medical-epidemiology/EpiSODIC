@@ -1256,13 +1256,18 @@ episodic_run_cron_body <- function(con,
         " week(s)"
       )
 
+      # One fit per stream, shared with the trend cache below: both fit
+      # the same series, and a week fitted for one is the week the other
+      # would fit.
+      farrington_fit <- episodic_farrington_fit_memo()
       farrington <- episodic_detect_farrington(
         farrington_cases,
         stream$stream_id,
         config,
         run_date,
         population = population,
-        n_weeks = farrington_weeks
+        n_weeks = farrington_weeks,
+        fit = farrington_fit
       )
       shortfall <- episodic_farrington_shortfall(farrington)
       if (!is.null(shortfall)) {
@@ -1294,7 +1299,8 @@ episodic_run_cron_body <- function(con,
         config,
         run_date,
         n_weeks_existing = n_existing_trend,
-        population = population
+        population = population,
+        fit = farrington_fit
       )
       episodic_trace_debug(
         debug,

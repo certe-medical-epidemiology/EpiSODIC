@@ -52,6 +52,9 @@
 #'   `episodic_farrington_population_vector()`. `NULL` (default) fits on
 #'   raw counts, unnormalised - what every stream without institution
 #'   activity data gets.
+#' @param fit The function that fits the tested weeks,
+#'   `episodic_farrington_fit_weeks()` or one returning exactly what it
+#'   would (`episodic_farrington_fit_memo()`).
 #' @return A data frame of detection records (zero or one row: Farrington
 #'   evaluates the trailing `n_weeks` weeks).
 #' @references
@@ -77,7 +80,8 @@ episodic_detect_farrington <- function(cases_for_stream,
                                        config,
                                        run_date = Sys.Date(),
                                        population = NULL,
-                                       n_weeks = 1L) {
+                                       n_weeks = 1L,
+                                       fit = episodic_farrington_fit_weeks) {
   empty <- episodic_detection_none()
 
   if (!episodic_detector_enabled(config, "farrington")) {
@@ -110,7 +114,7 @@ episodic_detect_farrington <- function(cases_for_stream,
   first_idx <- max(min_weeks_required, last_idx - max(1L, n_weeks) + 1L)
   range_idx <- seq(first_idx, last_idx)
 
-  result <- episodic_farrington_fit(
+  result <- fit(
     weekly,
     range_idx = range_idx,
     fc = fc,
@@ -120,7 +124,7 @@ episodic_detect_farrington <- function(cases_for_stream,
     return(empty)
   }
 
-  alarmed <- which(as.logical(result@alarm[, 1]))
+  alarmed <- which(result$alarm)
   if (length(alarmed) == 0) {
     return(empty)
   }
@@ -131,9 +135,9 @@ episodic_detect_farrington <- function(cases_for_stream,
     detector = "farrington",
     first_day = as.character(week_start),
     last_day = as.character(week_start + 6),
-    n_cases = as.integer(result@observed[alarmed, 1]),
-    expected = as.numeric(result@control$expected[alarmed, 1]),
-    upperbound = as.numeric(result@upperbound[alarmed, 1]),
+    n_cases = result$observed[alarmed],
+    expected = result$expected[alarmed],
+    upperbound = result$upperbound[alarmed],
     params = list(b = fc$b, w = fc$w, alpha = fc$alpha)
   )
 }
@@ -164,6 +168,7 @@ episodic_detect_farrington <- function(cases_for_stream,
 #'   (re-)compute, to bound cron run time. Matches the multi-year trend
 #'   panel's own display window.
 #' @param population See `episodic_detect_farrington()`.
+#' @param fit See `episodic_detect_farrington()`.
 #' @return A data frame with `week_start`, `n_cases`, `expected`,
 #'   `upperbound` (zero rows if ineligible).
 #' @keywords internal
@@ -173,7 +178,8 @@ episodic_farrington_trend <- function(cases_for_stream,
                                       run_date = Sys.Date(),
                                       n_weeks_existing = 0L,
                                       max_backfill_weeks = 156L,
-                                      population = NULL) {
+                                      population = NULL,
+                                      fit = episodic_farrington_fit_weeks) {
   empty <- data.frame(
     week_start = as.Date(character(0)),
     n_cases = integer(0),
@@ -205,7 +211,7 @@ episodic_farrington_trend <- function(cases_for_stream,
     length(weekly$counts)
   )
 
-  result <- episodic_farrington_fit(
+  result <- fit(
     weekly,
     range_idx = range_idx,
     fc = fc,
@@ -217,11 +223,105 @@ episodic_farrington_trend <- function(cases_for_stream,
 
   data.frame(
     week_start = weekly$week_start[range_idx],
-    n_cases = as.integer(result@observed[, 1]),
-    expected = as.numeric(result@control$expected[, 1]),
-    upperbound = as.numeric(result@upperbound[, 1]),
+    n_cases = result$observed,
+    expected = result$expected,
+    upperbound = result$upperbound,
     stringsAsFactors = FALSE
   )
+}
+
+#' Fit Farrington to a range of weeks, one row per week
+#'
+#' `episodic_farrington_fit()`'s result reduced to what the detector and
+#' the trend cache read from it.
+#'
+#' @inheritParams episodic_farrington_fit
+#' @return `NULL` when the model cannot be fitted, otherwise a data frame
+#'   with one row per element of `range_idx`, in its order: `range_idx`,
+#'   `observed` (integer), `expected` and `upperbound` (numeric), `alarm`
+#'   (logical, `NA` where the fit could not decide).
+#' @keywords internal
+#' @noRd
+episodic_farrington_fit_weeks <- function(weekly,
+                                          range_idx,
+                                          fc,
+                                          population = NULL) {
+  result <- episodic_farrington_fit(
+    weekly,
+    range_idx = range_idx,
+    fc = fc,
+    population = population
+  )
+  if (is.null(result)) {
+    return(NULL)
+  }
+  data.frame(
+    range_idx = as.integer(range_idx),
+    observed = as.integer(result@observed[, 1]),
+    expected = as.numeric(result@control$expected[, 1]),
+    upperbound = as.numeric(result@upperbound[, 1]),
+    alarm = as.logical(result@alarm[, 1]),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' One stream's Farrington fit, shared by the detector and the trend cache
+#'
+#' On a nightly run the detector tests the last complete week and the
+#' trend cache records the same week, so fitting each separately fits the
+#' same model to the same series twice. `farringtonFlexible()` fits every
+#' week in its range on its own - the model for week k reads the series
+#' and the settings, never another week's result - so a week's row is the
+#' same whichever other weeks it was fitted alongside. This remembers the
+#' rows already fitted and fits only the weeks a later request adds, as
+#' one contiguous range (the function indexes its results from the start
+#' of the range, so a range with a gap in it is fitted whole instead).
+#'
+#' Bound to one series, one configuration and one population vector: a
+#' request with any other is refused rather than answered from the wrong
+#' fit.
+#'
+#' @return A function with `episodic_farrington_fit_weeks()`'s signature
+#'   and result.
+#' @keywords internal
+#' @noRd
+episodic_farrington_fit_memo <- function() {
+  bound <- NULL
+  fitted <- NULL
+  function(weekly, range_idx, fc, population = NULL) {
+    inputs <- list(weekly = weekly, fc = fc, population = population)
+    if (is.null(bound)) {
+      bound <<- inputs
+    } else if (!identical(bound, inputs)) {
+      stop(
+        "episodic_farrington_fit_memo(): asked to fit a different series ",
+        "than the one it holds",
+        call. = FALSE
+      )
+    }
+    range_idx <- as.integer(range_idx)
+    missing <- setdiff(range_idx, fitted$range_idx)
+    if (length(missing) > 0) {
+      missing <- sort(missing)
+      to_fit <- if (all(diff(missing) == 1L)) missing else sort(range_idx)
+      rows <- episodic_farrington_fit_weeks(
+        weekly,
+        range_idx = to_fit,
+        fc = fc,
+        population = population
+      )
+      if (is.null(rows)) {
+        return(NULL)
+      }
+      fitted <<- rbind(
+        fitted[!fitted$range_idx %in% rows$range_idx, , drop = FALSE],
+        rows
+      )
+    }
+    out <- fitted[match(range_idx, fitted$range_idx), , drop = FALSE]
+    rownames(out) <- NULL
+    out
+  }
 }
 
 #' @keywords internal

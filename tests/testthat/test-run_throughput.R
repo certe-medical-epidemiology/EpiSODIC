@@ -244,6 +244,69 @@ test_that("a population offset reaches farringtonFlexible() in a shape sts() acc
   expect_equal(as.numeric(surveillance::population(result)), 1000)
 })
 
+throughput_farrington_series <- function(seed) {
+  set.seed(seed)
+  days <- seq(as.Date("2019-01-07"), as.Date("2024-03-03"), by = "day")
+  week <- as.integer(format(days, "%V"))
+  n <- stats::rpois(length(days), 0.6 + 0.5 * cos(2 * pi * week / 52))
+  n[sample(length(days), 20)] <- n[sample(length(days), 20)] + 6L
+  data.frame(sample_date = as.character(rep(days, n)), stringsAsFactors = FALSE)
+}
+
+test_that("a week's Farrington fit is the same whichever weeks it is fitted with", {
+  fc <- episodic_config_resolve(NA)$farrington
+  for (seed in 1:3) {
+    cases <- throughput_farrington_series(seed)
+    weekly <- episodic_weekly_bins(as.Date(cases$sample_date), as.Date("2024-03-03"))
+    last <- length(weekly$counts)
+    first <- (fc$b + 1) * 52
+    memo <- episodic_farrington_fit_memo()
+    for (range_idx in list(last, seq(last - 3, last), seq(first, last), seq(last - 20, last - 10), last - 5)) {
+      expect_identical(
+        memo(weekly, range_idx, fc),
+        {
+          direct <- episodic_farrington_fit_weeks(weekly, range_idx, fc)
+          rownames(direct) <- NULL
+          direct
+        },
+        info = paste("seed", seed, "weeks", min(range_idx), "to", max(range_idx))
+      )
+    }
+  }
+})
+
+test_that("the detector and the trend cache write the same with a shared fit as with their own", {
+  config <- episodic_config_resolve(NA)
+  run_date <- as.Date("2024-03-03")
+  for (seed in 1:3) {
+    cases <- throughput_farrington_series(seed)
+    for (n_weeks in c(1L, 4L)) {
+      for (existing in c(0L, 10L)) {
+        memo <- episodic_farrington_fit_memo()
+        expect_identical(
+          episodic_detect_farrington(cases, 1L, config, run_date, n_weeks = n_weeks, fit = memo),
+          episodic_detect_farrington(cases, 1L, config, run_date, n_weeks = n_weeks)
+        )
+        expect_identical(
+          episodic_farrington_trend(cases, config, run_date, n_weeks_existing = existing, fit = memo),
+          episodic_farrington_trend(cases, config, run_date, n_weeks_existing = existing)
+        )
+      }
+    }
+  }
+})
+
+test_that("a shared Farrington fit refuses a series it was not fitted on", {
+  fc <- episodic_config_resolve(NA)$farrington
+  cases <- throughput_farrington_series(1)
+  weekly <- episodic_weekly_bins(as.Date(cases$sample_date), as.Date("2024-03-03"))
+  memo <- episodic_farrington_fit_memo()
+  memo(weekly, length(weekly$counts), fc)
+  other <- weekly
+  other$counts[1] <- other$counts[1] + 1L
+  expect_error(memo(other, length(other$counts), fc), "different series")
+})
+
 test_that("the batched activity read gives every institution the vector the per-institution read gives", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
