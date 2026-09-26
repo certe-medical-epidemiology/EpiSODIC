@@ -7,6 +7,7 @@
 - `episodic_run_cron()` migrates a database behind the installed package before running, unless `database.auto_migrate` is `false`
 - `episodic_db_migrate()` copies a SQLite database beside itself before the first step (`backup = TRUE`)
 - A run that refuses a database records the refusal as a failed run
+- A run that stops before it begins (database refused, case data failing its checks) sends the `run_failure` notification
 
 ## Changed
 

@@ -274,3 +274,75 @@ test_that("the dashboard's refusal of a database behind it says the next run fix
     "next episodic_run_cron\\(\\) brings it up to date"
   )
 })
+
+auto_migrate_notifying_config <- function(auto_migrate) {
+  path <- auto_migrate_config(auto_migrate)
+  write(
+    c(
+      "notifications:",
+      "  enabled: true",
+      "  triggers:",
+      "    run_failure: true",
+      "  channels:",
+      "    ntfy:",
+      "      enabled: true",
+      "      server: \"https://ntfy.example.org\"",
+      "      topic: \"episodic-test\""
+    ),
+    path,
+    append = TRUE
+  )
+  path
+}
+
+test_that("a run refused by its database sends the run_failure notification", {
+  path <- auto_migrate_previous_version_db()
+  config <- auto_migrate_notifying_config(FALSE)
+  on.exit(unlink(c(path, config)))
+  sent <- list()
+  local_mocked_bindings(
+    episodic_notify_dispatch = function(channels, message) {
+      sent[[length(sent) + 1L]] <<- message
+      invisible(NULL)
+    }
+  )
+
+  expect_error(
+    suppressMessages(episodic_run_cron(
+      cases = auto_migrate_cases(),
+      db_path = path,
+      episodic_config_path = config,
+      run_date = as.Date("2024-08-31")
+    )),
+    "auto_migrate"
+  )
+  expect_length(sent, 1L)
+  expect_match(sent[[1]]$plain, "auto_migrate", fixed = TRUE)
+})
+
+test_that("a run stopped by its pre-run data checks sends the run_failure notification", {
+  path <- episodic_test_db_path()
+  config <- auto_migrate_notifying_config(TRUE)
+  on.exit(unlink(c(path, config)))
+  sent <- list()
+  local_mocked_bindings(
+    episodic_notify_dispatch = function(channels, message) {
+      sent[[length(sent) + 1L]] <<- message
+      invisible(NULL)
+    }
+  )
+  cases <- auto_migrate_cases()
+  cases$pathogen <- NULL
+
+  expect_error(
+    suppressMessages(episodic_run_cron(
+      cases = cases,
+      db_path = path,
+      episodic_config_path = config,
+      run_date = as.Date("2024-08-31")
+    )),
+    "pathogen"
+  )
+  expect_length(sent, 1L)
+  expect_match(sent[[1]]$plain, "pathogen", fixed = TRUE)
+})
