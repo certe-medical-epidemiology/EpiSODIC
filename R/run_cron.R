@@ -588,6 +588,70 @@ episodic_run_cron <- function(cases,
   invisible(run_id)
 }
 
+#' Wall-clock time spent per stage, summed over many passes
+#'
+#' The stream loop does the same few things for every stream, and a
+#' run's time is the sum of those things over a thousand or more
+#' streams. Which of them dominates on a real instance is what decides
+#' what is worth making faster, so the loop accumulates each stage's
+#' elapsed time here and reports it once, as one line.
+#'
+#' @param stages The stage names, in the order the line reports them.
+#' @return A list of functions: `time(stage, expr)` evaluates `expr` in
+#'   the caller's frame and adds its elapsed time to `stage`;
+#'   `start(stage)` and `stop(stage)` do the same around code that is not
+#'   one expression; `seconds()` returns the named totals; `line()`
+#'   formats them for `episodic_trace()`.
+#' @keywords internal
+#' @noRd
+episodic_stage_timer <- function(stages) {
+  totals <- stats::setNames(numeric(length(stages)), stages)
+  started <- stats::setNames(rep(NA_real_, length(stages)), stages)
+  now <- function() proc.time()[["elapsed"]]
+  check <- function(stage) {
+    if (!stage %in% stages) {
+      stop("episodic_stage_timer(): unknown stage '", stage, "'", call. = FALSE)
+    }
+  }
+  start <- function(stage) {
+    check(stage)
+    started[[stage]] <<- now()
+    invisible(NULL)
+  }
+  stop_stage <- function(stage) {
+    check(stage)
+    if (is.na(started[[stage]])) {
+      stop(
+        "episodic_stage_timer(): stage '",
+        stage,
+        "' stopped without being started",
+        call. = FALSE
+      )
+    }
+    totals[[stage]] <<- totals[[stage]] + (now() - started[[stage]])
+    started[[stage]] <<- NA_real_
+    invisible(NULL)
+  }
+  list(
+    time = function(stage, expr) {
+      start(stage)
+      on.exit(stop_stage(stage))
+      invisible(expr)
+    },
+    start = start,
+    stop = stop_stage,
+    seconds = function() totals,
+    line = function() {
+      paste0(
+        paste0(names(totals), " ", sprintf("%.1f", totals), "s", collapse = ", "),
+        ", total ",
+        sprintf("%.1f", sum(totals)),
+        "s"
+      )
+    }
+  )
+}
+
 #' Whether this run is the one that reports the archive
 #'
 #' A run is a backfill when no run has ever completed against this
@@ -1021,9 +1085,45 @@ episodic_run_cron_body <- function(con,
     " stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)"
   )
 
+  # Everything the loop would otherwise ask of the database or of the full
+  # case table once per stream, asked once for the run. None of it is
+  # written by the loop for any stream other than the one it belongs to,
+  # and each stream reads its own share before writing to it, so a
+  # snapshot taken here is what each stream would have read in its turn.
+  stage <- episodic_stage_timer(c(
+    "cases",
+    "mem",
+    "eligibility",
+    "farrington",
+    "trend",
+    "detections",
+    "reconciliation"
+  ))
+  stage$time("cases", {
+    stream_cases_for <- episodic_stream_case_index(cases_all, geography)
+  })
+  stage$time("farrington", {
+    excluded_by_stream <- stats::setNames(
+      episodic_baseline_excluded_windows_many(con, streams$stream_id),
+      as.character(streams$stream_id)
+    )
+    activity_by_institution <- episodic_db_institution_activity_all(con)
+  })
+  stage$time("trend", {
+    trend_counts <- episodic_db_stream_trend_counts(con)
+  })
+  stage$time("mem", {
+    mem_cache <- episodic_db_detector_cache(con, "mem")
+  })
+  mem_tally <- new.env(parent = emptyenv())
+  mem_tally$reused <- 0L
+  mem_tally$fitted <- 0L
+
   for (i in seq_len(nrow(streams))) {
     stream <- streams[i, ]
-    stream_cases <- episodic_cases_for_stream(cases_all, stream, geography)
+    stage$time("cases", {
+      stream_cases <- stream_cases_for(stream)
+    })
     episodic_trace_debug(
       debug,
       "debug: [",
@@ -1076,37 +1176,51 @@ episodic_run_cron_body <- function(con,
         !muted &&
         stream$level %in% mem_levels
     ) {
-      stream_detections <- rbind(
-        stream_detections,
-        episodic_detect_mem(
-          stream_cases,
-          stream$stream_id,
-          run_date,
-          config,
-          mem_mode = as.character(pc_mem$mem_mode[1]),
-          stream_label = episodic_stream_label(stream)
+      stage$time("mem", {
+        mem_mode <- as.character(pc_mem$mem_mode[1])
+        cached <- mem_cache[mem_cache$stream_id == stream$stream_id, ,
+          drop = FALSE
+        ]
+        stream_detections <- rbind(
+          stream_detections,
+          episodic_detect_mem(
+            stream_cases,
+            stream$stream_id,
+            run_date,
+            config,
+            mem_mode = mem_mode,
+            stream_label = episodic_stream_label(stream),
+            mem_fit = episodic_mem_fit_cached(
+              con,
+              stream_id = stream$stream_id,
+              run_id = run_id,
+              config = config,
+              mem_mode = mem_mode,
+              cached = if (nrow(cached) > 0) cached[1, ] else NULL,
+              tally = mem_tally
+            )
+          )
         )
-      )
+      })
     }
 
-    eligible <- !muted &&
-      nrow(stream_cases) > 0 &&
-      episodic_eligibility_gate(stream_cases, run_date, config)
+    stage$time("eligibility", {
+      eligible <- !muted &&
+        nrow(stream_cases) > 0 &&
+        episodic_eligibility_gate(stream_cases, run_date, config)
+    })
     episodic_trace_debug(debug, "debug:   eligibility gate: ", eligible)
     if (eligible) {
       n_eligible_streams <- n_eligible_streams + 1L
+      stage$start("farrington")
       # A period this stream's own history shows was a confirmed
       # epidemic must not silently raise next winter's baseline.
       # Excluded from the cases fed to Farrington only
       # (same_place/rare_trigger detect on raw counts and do not baseline
       # at all, so they are unaffected).
-      excluded_windows <- episodic_baseline_excluded_windows(
-        con,
-        stream$stream_id
-      )
       farrington_cases <- episodic_baseline_exclude_cases(
         stream_cases,
-        excluded_windows
+        excluded_by_stream[[as.character(stream$stream_id)]]
       )
       episodic_trace_debug(
         debug,
@@ -1124,12 +1238,15 @@ episodic_run_cron_body <- function(con,
         as.Date(farrington_cases$sample_date),
         run_date
       )$week_start
-      population <- episodic_farrington_population_vector(
-        con,
-        stream$institution_id,
-        stream$level,
-        weekly_weeks
-      )
+      population <- if (
+        identical(stream$level, "pathogen_institution") &&
+          !is.na(stream$institution_id)
+      ) {
+        episodic_farrington_population_from_activity(
+          activity_by_institution[[as.character(stream$institution_id)]],
+          weekly_weeks
+        )
+      }
       episodic_trace_debug(
         debug,
         "debug:   ",
@@ -1160,11 +1277,18 @@ episodic_run_cron_body <- function(con,
         )
       }
       stream_detections <- rbind(stream_detections, farrington)
+      stage$stop("farrington")
 
       # trend cache for the multi-year trend panel; see
       # episodic_farrington_trend()'s own docs for the backfill-once,
       # top-up-thereafter strategy.
-      n_existing_trend <- nrow(episodic_db_stream_trend(con, stream$stream_id))
+      stage$start("trend")
+      n_existing_trend <- trend_counts[as.character(stream$stream_id)]
+      n_existing_trend <- if (is.na(n_existing_trend)) {
+        0L
+      } else {
+        unname(n_existing_trend)
+      }
       trend <- episodic_farrington_trend(
         farrington_cases,
         config,
@@ -1188,6 +1312,7 @@ episodic_run_cron_body <- function(con,
           upperbound = trend$upperbound[k]
         )
       }
+      stage$stop("trend")
     }
 
     # A stream with nothing detected this run still has to go through
@@ -1198,6 +1323,7 @@ episodic_run_cron_body <- function(con,
     # cluster on it ineligible for either kind of auto-close for as long
     # as the stream stays quiet, which for a dormant stream is forever.
     if (nrow(stream_detections) > 0) {
+      stage$start("detections")
       detection_ids <- integer(nrow(stream_detections))
       for (j in seq_len(nrow(stream_detections))) {
         d <- stream_detections[j, ]
@@ -1215,6 +1341,7 @@ episodic_run_cron_body <- function(con,
         )
       }
       stream_detections$detection_id <- detection_ids
+      stage$stop("detections")
       n_detections_total <- n_detections_total + nrow(stream_detections)
       episodic_trace_debug(
         debug,
@@ -1252,6 +1379,7 @@ episodic_run_cron_body <- function(con,
       )
       next
     }
+    stage$start("reconciliation")
     stream_scale <- episodic_scale_for_level(stream$level, config)
     reconcile_result <- episodic_reconcile_stream(
       con,
@@ -1401,6 +1529,23 @@ episodic_run_cron_body <- function(con,
         }
       }
     }
+    stage$stop("reconciliation")
+  }
+  episodic_trace(
+    "Stream loop time by stage: ",
+    stage$line(),
+    " (",
+    nrow(streams),
+    " stream(s))"
+  )
+  if (mem_tally$reused + mem_tally$fitted > 0L) {
+    episodic_trace(
+      "MEM fits: ",
+      mem_tally$reused,
+      " reused from the cache (identical input), ",
+      mem_tally$fitted,
+      " fitted"
+    )
   }
   if (n_muted_streams > 0) {
     episodic_trace(
@@ -1464,11 +1609,7 @@ episodic_run_cron_body <- function(con,
       epi <- open_seasonal[j, ]
       stream_row <- streams[streams$stream_id == epi$stream_id, ]
       if (nrow(stream_row) == 0) next
-      epi_cases <- episodic_cases_for_stream(
-        cases_all,
-        stream_row[1, ],
-        geography
-      )
+      epi_cases <- stream_cases_for(stream_row[1, ])
       closure <- episodic_epidemic_closure(
         epi_cases,
         run_date,
@@ -1590,6 +1731,104 @@ episodic_cases_for_stream <- function(cases,
     matches <- matches & !is.na(region) & region == stream$region_code
   }
   cases[matches, ]
+}
+
+#' Every stream's cases, from one pass over the case table
+#'
+#' `episodic_cases_for_stream()` compares every case on file against one
+#' stream, and a run asks it of every stream, so a run's filtering cost is
+#' the number of streams times the number of cases, and a province or
+#' area stream additionally derives a region code for every case of every
+#' pathogen to keep the handful that are its own. This builds the same
+#' answer from row indices partitioned once: by pathogen, then, on first
+#' use, by institution within a pathogen and by region code within a
+#' pathogen and level. Each partition is taken with `split()`, which keeps
+#' the rows of each part in their original order, so a stream receives
+#' the same rows in the same order, with the same row names, as
+#' `episodic_cases_for_stream()` gives it.
+#'
+#' @param cases All currently known cases.
+#' @param geography This run's own resolved geography, as for
+#'   `episodic_cases_for_stream()`.
+#' @return A function taking a single-row stream and returning the subset
+#'   of `cases` belonging to it.
+#' @keywords internal
+#' @noRd
+episodic_stream_case_index <- function(cases, geography) {
+  by_pathogen <- split(seq_len(nrow(cases)), cases$pathogen)
+  by_institution <- new.env(parent = emptyenv())
+  by_region <- new.env(parent = emptyenv())
+  sep <- "\r"
+
+  pathogen_rows <- function(pathogen) {
+    rows <- by_pathogen[[pathogen]]
+    if (is.null(rows)) integer(0) else rows
+  }
+  # Institution ids are whole numbers, but a driver may hand them back as
+  # doubles, and `as.character()` writes a large double in scientific
+  # notation where `split()` did not. Both sides are keyed the same way,
+  # and the part found is then compared on the ids themselves, so the
+  # key only has to group equal ids together, never to decide equality.
+  institution_key <- function(x) sprintf("%.0f", as.numeric(x))
+  institution_rows <- function(pathogen, institution_id) {
+    parts <- by_institution[[pathogen]]
+    if (is.null(parts)) {
+      rows <- pathogen_rows(pathogen)
+      ids <- cases$institution_id[rows]
+      rows <- rows[!is.na(ids)]
+      parts <- split(rows, institution_key(cases$institution_id[rows]))
+      by_institution[[pathogen]] <- parts
+    }
+    rows <- parts[[institution_key(institution_id)]]
+    if (is.null(rows)) {
+      return(integer(0))
+    }
+    rows[cases$institution_id[rows] == institution_id]
+  }
+  region_rows <- function(pathogen, level, region_code) {
+    key <- paste(pathogen, level, sep = sep)
+    parts <- by_region[[key]]
+    if (is.null(parts)) {
+      rows <- pathogen_rows(pathogen)
+      region <- episodic_case_region_code(
+        cases[rows, , drop = FALSE],
+        level,
+        geography = geography
+      )
+      parts <- split(rows, region)
+      by_region[[key]] <- parts
+    }
+    rows <- parts[[as.character(region_code)]]
+    if (is.null(rows)) integer(0) else rows
+  }
+
+  function(stream) {
+    has_institution <- !is.na(stream$institution_id)
+    has_region <- !is.na(stream$region_code)
+    rows <- if (has_institution) {
+      institution_rows(stream$pathogen, stream$institution_id)
+    } else if (has_region) {
+      region_rows(stream$pathogen, stream$level, stream$region_code)
+    } else {
+      pathogen_rows(stream$pathogen)
+    }
+    if (!is.na(stream$ward)) {
+      ward <- cases$ward[rows]
+      rows <- rows[!is.na(ward) & ward == stream$ward]
+    }
+    # A stream carrying both an institution and a region code is not one
+    # enumeration produces, but `episodic_cases_for_stream()` would apply
+    # both conditions to it, so this does too.
+    if (has_institution && has_region) {
+      region <- episodic_case_region_code(
+        cases[rows, , drop = FALSE],
+        stream$level,
+        geography = geography
+      )
+      rows <- rows[!is.na(region) & region == stream$region_code]
+    }
+    cases[rows, , drop = FALSE]
+  }
 }
 
 #' Does an outbreak's geography nest inside an epidemic's?

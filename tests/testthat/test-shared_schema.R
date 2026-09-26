@@ -213,13 +213,14 @@ test_that("a fresh database and a migrated v6 database have identical structure"
 
   DBI::dbExecute(
     DBI::dbConnect(RSQLite::SQLite(), migrated_path),
-    "UPDATE episodic_schema_version SET version = 6 WHERE version = 7"
+    "UPDATE episodic_schema_version SET version = 6 WHERE version = ?",
+    params = list(episodic_schema_version)
   ) -> ignored
   DBI::dbDisconnect(DBI::dbConnect(RSQLite::SQLite(), migrated_path))
 
   expect_message(
     episodic_db_migrate(migrated_path),
-    "version 7"
+    paste("version", episodic_schema_version)
   )
 
   migrated_con <- episodic_db_connect(migrated_path)

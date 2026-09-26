@@ -1,3 +1,22 @@
+# EpiSODIC 0.22.0
+
+## New
+
+- A detection run logs the time its stream loop spent per stage
+- MEM fits are cached per stream in `episodic_detector_cache` and reused only when their exact input is unchanged (schema version 8)
+
+## Changed
+
+- The `same_place` scan is linear in a place's case count instead of quadratic
+- Each stream takes its cases from an index built once per run instead of filtering the whole case table
+- Farrington's weekly bins, the MEM anchor, seasonality statistic and season matrix are counted per distinct date instead of per case
+- Baseline exclusions, patient-days and trend row counts are read once per run instead of once per stream
+
+## Fixed
+
+- A case import naming more distinct patients than one SQL statement allows no longer fails the run
+- Farrington with institution patient-days no longer fails the run under `surveillance` 1.26
+
 # EpiSODIC 0.21.0
 
 ## New

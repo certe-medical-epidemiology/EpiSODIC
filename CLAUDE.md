@@ -129,6 +129,7 @@ Single schema in `inst/sql/schema.sql`, written in SQLite dialect. Adapted at lo
 | `episodic_app_login_failure` | app | Refused sign-ins (username tried, reason) |
 | `episodic_schema_version` | `episodic_db_create()`, `episodic_db_migrate()` | One row per applied schema version |
 | `episodic_report_version_claim` | `episodic_report_render()` | The register of report version numbers handed out, taken before the render (see `episodic_db_report_version_claim()`) |
+| `episodic_detector_cache` | cron | A detector's model fit per stream, keyed on a hash of its exact input (MEM only); one row per stream and detector, replaced in place |
 
 `episodic_cluster.opened_in_backfill` and `episodic_detection_run.is_backfill` mark the first run against a database and everything it opened - see the Detectors section above for what a backfill is and why it is a flag rather than an `origin`.
 

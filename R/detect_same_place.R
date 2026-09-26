@@ -246,8 +246,16 @@ episodic_same_place_rule <- function(config, pathogen) {
 #' Two passes: which cases are part of *any* qualifying k-day window, and
 #' then how those cases divide into episodes. The second is on the gaps
 #' in time between flagged cases, so two separate outbreaks at the same
-#' place are two windows however far apart they are - see the comment
-#' inside for what happened when it was on gaps in index instead.
+#' place are two windows however far apart they are.
+#'
+#' The first pass is linear after sorting. For the window opening at each
+#' case, the cases inside it are a contiguous run of the sorted dates:
+#' from the first case on that date to the last case on or before the
+#' date plus `k_days`, both found with `findInterval()`. Every window
+#' holding at least `n` cases flags its whole run, which a difference
+#' array records in one step per window rather than one comparison per
+#' case per window, so a place with years of history costs its case count
+#' rather than its square.
 #'
 #' @param dates_sorted A sorted `Date` vector (may contain duplicates).
 #' @param n,k_days The rule threshold.
@@ -260,26 +268,29 @@ episodic_same_place_hit_windows <- function(dates_sorted, n, k_days) {
     return(list())
   }
 
-  hit <- logical(length(dates_sorted))
-  for (i in seq_along(dates_sorted)) {
-    in_window <- dates_sorted >= dates_sorted[i] &
-      dates_sorted <= dates_sorted[i] + k_days
-    if (sum(in_window) >= n) hit[in_window] <- TRUE
-  }
-  if (!any(hit)) {
+  day <- as.numeric(dates_sorted)
+  n_dates <- length(day)
+  # `findInterval(x, day)` is the number of dates <= x. The window opening
+  # at case i starts at the first case sharing its date (one past the
+  # number of dates strictly before it) and ends at the last case on or
+  # before its date plus k_days.
+  opens <- findInterval(day, day, left.open = TRUE) + 1L
+  closes <- findInterval(day + k_days, day)
+  qualifying <- (closes - opens + 1L) >= n
+  if (!any(qualifying)) {
     return(list())
   }
+  marks <- integer(n_dates + 1L)
+  marks <- marks + tabulate(opens[qualifying], nbins = n_dates + 1L)
+  marks <- marks - tabulate(closes[qualifying] + 1L, nbins = n_dates + 1L)
+  hit <- cumsum(marks)[seq_len(n_dates)] > 0L
 
   # Split the flagged cases into episodes on the gaps *in time* between
-  # them, not on gaps in their index. Contiguous indices were the merge
-  # unit here, on the reasoning that `dates_sorted` is sorted - but sorted
-  # says nothing about proximity. A ward with a cluster in 2021 and
-  # another in 2025 flags every one of those cases, and every one of them
-  # is index-adjacent to the next, so the two merged into a single
-  # "window" running from 2021 to 2025 with all six cases in it. That
-  # candidate then reached reconciliation, where it overlapped and
-  # absorbed everything else on the stream and had its case count
-  # recomputed over the whole four years.
+  # them, not on gaps in their index: sorted says nothing about
+  # proximity, and a ward with a cluster in 2021 and another in 2025 has
+  # every one of those cases index-adjacent to the next. Merged on index,
+  # the two would reach reconciliation as one candidate running from 2021
+  # to 2025, overlapping and absorbing everything else on the stream.
   #
   # Two flagged cases belong to the same episode when they are within
   # `k_days` of each other, transitively - the detector's own definition
@@ -290,14 +301,16 @@ episodic_same_place_hit_windows <- function(dates_sorted, n, k_days) {
   gaps <- as.numeric(diff(dates_sorted[hit_idx]), units = "days")
   episode <- cumsum(c(TRUE, gaps > k_days))
 
-  windows <- list()
-  for (e in unique(episode)) {
-    idx <- hit_idx[episode == e]
-    windows[[length(windows) + 1]] <- list(
-      first_day = as.character(min(dates_sorted[idx])),
-      last_day = as.character(max(dates_sorted[idx])),
-      n_cases = length(idx)
+  starts <- hit_idx[!duplicated(episode)]
+  ends <- hit_idx[!duplicated(episode, fromLast = TRUE)]
+  first_day <- as.character(dates_sorted[starts])
+  last_day <- as.character(dates_sorted[ends])
+  n_cases <- tabulate(episode)
+  lapply(seq_along(starts), function(e) {
+    list(
+      first_day = first_day[e],
+      last_day = last_day[e],
+      n_cases = n_cases[e]
     )
-  }
-  windows
+  })
 }

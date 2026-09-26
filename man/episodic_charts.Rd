@@ -35,9 +35,9 @@ one (\code{"en-US"}, \code{"es-419"}). Defaults to the
 that is unset.}
 
 \item{accent}{Fill colour for the bars. Defaults to the palette's
-\code{primary}; a caller drawing this for a specific nav section passes
-\code{episodic_nav_accent()} instead, so the chart reads as belonging to
-whichever screen it is on.}
+\code{primary}, which every chart in the dashboard uses for its main
+series; the status colours are kept for marks that mean something
+(thresholds, positivity).}
 
 \item{trend}{A data frame with one row per week: \code{week_start} (\code{Date}),
 \code{n_cases} (observed count), \code{expected} (the Farrington baseline), and

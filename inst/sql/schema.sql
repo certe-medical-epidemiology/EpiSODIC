@@ -424,6 +424,25 @@ CREATE TABLE episodic_stream_trend (
 );
 
 -- ---------------------------------------------------------------------
+-- Detector fit cache (cron). A detector's model fit, kept with a hash of
+-- exactly what went into it, so that a run whose input to that fit is
+-- identical to the one it was fitted on reads the result back instead of
+-- fitting again. Reuse is decided by the hash alone, never by dates. One
+-- row per stream and detector, replaced in place when the input changes,
+-- so the table is bounded by the number of streams, not the number of
+-- runs. `result` is the detector's own encoding of what it reads from
+-- the fit (see episodic_mem_fit_cached()).
+-- ---------------------------------------------------------------------
+CREATE TABLE episodic_detector_cache (
+  stream_id  INTEGER NOT NULL REFERENCES episodic_stream(stream_id),
+  detector   TEXT NOT NULL CHECK (detector IN ('mem')),
+  input_hash TEXT NOT NULL,
+  result     TEXT NOT NULL,
+  run_id     INTEGER NOT NULL REFERENCES episodic_detection_run(run_id),
+  PRIMARY KEY (stream_id, detector)
+);
+
+-- ---------------------------------------------------------------------
 -- 5.7.1 Denominators / positivity metadata (cron)
 --
 -- Deliberately supplied by the operator as pre-aggregated counts, not as a

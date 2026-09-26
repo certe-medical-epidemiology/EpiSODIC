@@ -405,6 +405,42 @@ episodic_db_stream_trend_upsert <- function(con,
   invisible(NULL)
 }
 
+#' Store a detector's fit for one stream, replacing any earlier one
+#'
+#' The cache holds one row per stream and detector, whatever the number
+#' of runs: a fit whose input changed replaces the row rather than
+#' joining it. Deleted and reinserted rather than upserted in a dialect's
+#' own syntax, inside the run's transaction, so both dialects run the
+#' same two statements.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param stream_id,detector The row's key.
+#' @param input_hash The hash of exactly what the fit was computed from.
+#' @param result The detector's encoding of the fit, a single string.
+#' @param run_id The run that computed it.
+#' @keywords internal
+#' @noRd
+episodic_db_detector_cache_put <- function(con,
+                                           stream_id,
+                                           detector,
+                                           input_hash,
+                                           result,
+                                           run_id) {
+  episodic_db_execute(
+    con,
+    "DELETE FROM episodic_detector_cache WHERE stream_id = ? AND detector = ?",
+    params = list(stream_id, detector)
+  )
+  episodic_db_execute(
+    con,
+    "INSERT INTO episodic_detector_cache
+      (stream_id, detector, input_hash, result, run_id)
+     VALUES (?, ?, ?, ?, ?)",
+    params = list(stream_id, detector, input_hash, result, run_id)
+  )
+  invisible(NULL)
+}
+
 #' @keywords internal
 #' @noRd
 episodic_db_detection_insert <- function(con,

@@ -357,7 +357,7 @@ episodic_db_apply_schema <- function(con, dialect) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 7L
+episodic_schema_version <- 8L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -761,6 +761,21 @@ episodic_db_migrations <- function() {
         ))
       }
 
+      invisible(NULL)
+    },
+    # 8: episodic_detector_cache, a detector's model fit kept with a hash
+    # of exactly what went into it. Purely additive, taken from the
+    # schema file; skipped when present for the same reason as 2.
+    "8" = function(con, dialect) {
+      if (DBI::dbExistsTable(con, "episodic_detector_cache")) {
+        return(invisible(NULL))
+      }
+      for (statement in episodic_db_schema_statements_for(
+        dialect,
+        "episodic_detector_cache"
+      )) {
+        episodic_db_execute(con, statement)
+      }
       invisible(NULL)
     }
   )
@@ -1533,6 +1548,9 @@ episodic_db_schema_statements <- function(dialect) {
       ),
       episodic_stream_trend = c(
         "  week_start TEXT NOT NULL," = "  week_start VARCHAR(10) NOT NULL,"
+      ),
+      episodic_detector_cache = c(
+        "  detector   TEXT NOT NULL CHECK (detector IN ('mem'))," = "  detector   VARCHAR(20) NOT NULL CHECK (detector IN ('mem')),"
       ),
       episodic_denominator = c(
         "  pathogen       TEXT NOT NULL," = "  pathogen       VARCHAR(191) NOT NULL,",

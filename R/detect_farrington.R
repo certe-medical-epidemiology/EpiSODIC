@@ -229,11 +229,14 @@ episodic_farrington_trend <- function(cases_for_stream,
 episodic_farrington_fit <- function(weekly, range_idx, fc, population = NULL) {
   use_population <- !is.null(population) &&
     length(population) == length(weekly$counts)
+  # A one-column matrix, the shape `observed` takes inside `sts()`: a
+  # plain vector is read as one population per unit, and with one unit
+  # and hundreds of weeks `sts()` refuses it outright.
   sts_obj <- surveillance::sts(
     observed = weekly$counts,
     start = c(as.integer(format(weekly$week_start[1], "%Y")), 1),
     frequency = 52,
-    population = if (use_population) population else NULL
+    population = if (use_population) matrix(population, ncol = 1) else NULL
   )
   control <- list(
     range = range_idx,
@@ -310,8 +313,30 @@ episodic_farrington_population_vector <- function(con,
   if (!identical(level, "pathogen_institution") || is.na(institution_id)) {
     return(NULL)
   }
-  activity <- episodic_db_institution_activity(con, institution_id)
-  if (nrow(activity) == 0) {
+  episodic_farrington_population_from_activity(
+    episodic_db_institution_activity(con, institution_id),
+    week_start
+  )
+}
+
+#' The patient-days vector, from activity rows already read
+#'
+#' The computation behind `episodic_farrington_population_vector()`,
+#' for a run that reads every institution's activity once
+#' (`episodic_db_institution_activity_all()`) rather than once per
+#' stream.
+#'
+#' @param activity One institution's rows of
+#'   `episodic_institution_activity`, ordered by `period_start`, or
+#'   `NULL`.
+#' @param week_start The `Date` vector from `episodic_weekly_bins()`.
+#' @return A numeric vector the same length as `week_start`, or `NULL`
+#'   when there are no activity rows.
+#' @keywords internal
+#' @noRd
+episodic_farrington_population_from_activity <- function(activity,
+                                                         week_start) {
+  if (is.null(activity) || nrow(activity) == 0) {
     return(NULL)
   }
 
@@ -375,11 +400,12 @@ episodic_weekly_bins <- function(dates, run_date) {
     return(list(week_start = as.Date(character(0)), counts = integer(0)))
   }
   week_start <- seq(first_week, last_week, by = "week")
-  counts <- vapply(
-    week_start,
-    function(ws) sum(dates >= ws & dates < ws + 7),
-    integer(1)
-  )
+  # Each date's bin is its whole number of weeks after the first Monday,
+  # counted once per date rather than once per date per week. A date past
+  # the last complete week falls outside every bin, and `tabulate()`
+  # ignores it.
+  bin <- as.integer(floor(as.numeric(dates - first_week) / 7)) + 1L
+  counts <- tabulate(bin, nbins = length(week_start))
   list(week_start = week_start, counts = counts)
 }
 
