@@ -4,6 +4,12 @@ EpiSODIC stands for: Epidemiological Signal Observation, Detection, Identificati
 
 This is an R package that detects aberrations in laboratory-confirmed infections, reconciles them into persistent outbreaks and epidemics, and gives epidemiologists a Shiny dashboard to assess each one, with a full audit trail and outbreak reports.
 
+**Status: not released, and not in production anywhere.** EpiSODIC is in development. It has not been shipped to any laboratory, no epidemiologist relies on it, and no outbreak decision is taken on its output. The instances that exist, including the maintainer's own with real case data, are development and test instances. So:
+
+- A change in what the dashboard shows (clusters appearing, disappearing or moving in a queue) affects nobody's work. Do not frame changes in terms of users, colleagues or deployments that would be affected; there are none.
+- Schema migrations are still required and must still work (`episodic_db_migrations()`, never removing old ones), because the product is built for the day it is released and every instance after it. Their purpose is that future, not protecting existing deployments.
+- The quality standard below applies in full regardless: the package is built to production grade for when it is released, not to "beta grade" because it is not yet.
+
 ## What this package is for
 
 EpiSODIC is a complete and automated outbreak detection and assessment system. It is designed to run at any laboratory, in any country, against any set of pathogens, with no dependency on any one laboratory information system or data warehouse. Therefore, the aimed quality standard admits no concessions. Every component, from data ingestion to signal detection to reporting, must be production-grade, and must remain so after every change:
