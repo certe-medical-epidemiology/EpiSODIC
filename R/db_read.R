@@ -149,20 +149,33 @@ episodic_db_last_case_dates <- function(con, patient_keys, pathogens) {
     return(empty)
   }
 
-  patient_placeholders <- paste(rep("?", length(patient_keys)), collapse = ", ")
+  # Chunked on patient: an import of years of history names more distinct
+  # patients than either server accepts placeholders in one statement
+  # (32,766 on SQLite, 65,535 on MySQL), and refuses the whole run over
+  # it. Every row of a patient/pathogen group shares its patient key, so
+  # each group falls in exactly one chunk and the chunks' results are
+  # disjoint.
+  pathogens <- unique(pathogens)
   pathogen_placeholders <- paste(rep("?", length(pathogens)), collapse = ", ")
-  res <- episodic_db_get_query(
-    con,
-    sprintf(
-      "SELECT patient_key, pathogen, MAX(sample_date) AS last_date
-       FROM episodic_case
-       WHERE patient_key IN (%s) AND pathogen IN (%s)
-       GROUP BY patient_key, pathogen",
-      patient_placeholders,
-      pathogen_placeholders
-    ),
-    params = c(as.list(patient_keys), as.list(pathogens))
+  patient_keys <- unique(patient_keys)
+  chunks <- split(
+    patient_keys,
+    ceiling(seq_along(patient_keys) / episodic_db_chunk_size)
   )
+  res <- do.call(rbind, lapply(unname(chunks), function(chunk) {
+    episodic_db_get_query(
+      con,
+      sprintf(
+        "SELECT patient_key, pathogen, MAX(sample_date) AS last_date
+         FROM episodic_case
+         WHERE patient_key IN (%s) AND pathogen IN (%s)
+         GROUP BY patient_key, pathogen",
+        paste(rep("?", length(chunk)), collapse = ", "),
+        pathogen_placeholders
+      ),
+      params = c(as.list(chunk), as.list(pathogens))
+    )
+  }))
   if (nrow(res) == 0) {
     return(empty)
   }
@@ -1079,6 +1092,43 @@ episodic_db_stream_trend <- function(con, stream_id) {
   )
 }
 
+#' How many trend weeks each stream has persisted
+#'
+#' `episodic_farrington_trend()` needs only a stream's row count to
+#' decide between backfilling and topping up, and asking it of every
+#' stream in one grouped query replaces reading each stream's whole
+#' trend history to count it.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @return A named integer vector, one element per stream with any trend
+#'   row, named by `stream_id`. A stream absent from it has none.
+#' @keywords internal
+#' @noRd
+episodic_db_stream_trend_counts <- function(con) {
+  res <- episodic_db_get_query(
+    con,
+    "SELECT stream_id, COUNT(*) AS n FROM episodic_stream_trend GROUP BY stream_id"
+  )
+  stats::setNames(as.integer(res$n), as.character(res$stream_id))
+}
+
+#' Every cached fit one detector holds, for all streams
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param detector The detector whose cache to read (`"mem"`).
+#' @return A data frame with `stream_id`, `input_hash` and `result`, one
+#'   row per stream with a cached fit.
+#' @keywords internal
+#' @noRd
+episodic_db_detector_cache <- function(con, detector) {
+  episodic_db_get_query(
+    con,
+    "SELECT stream_id, input_hash, result FROM episodic_detector_cache
+      WHERE detector = ?",
+    params = list(detector)
+  )
+}
+
 #' @keywords internal
 #' @noRd
 episodic_db_denominator_for_pathogen <- function(con, pathogen) {
@@ -1173,6 +1223,29 @@ episodic_db_report_subscription_sends_all <- function(con) {
     "SELECT * FROM episodic_report_subscription_send
       ORDER BY cluster_id, sent_at, send_id"
   )
+}
+
+#' Every institution's activity, in one read
+#'
+#' The same rows `episodic_db_institution_activity()` returns for each
+#' institution, in the same order within each, for a run that needs
+#' them for every institution stream it tests.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @return A list of data frames named by `institution_id`, each ordered
+#'   by `period_start`. An institution with no activity rows is absent.
+#' @keywords internal
+#' @noRd
+episodic_db_institution_activity_all <- function(con) {
+  res <- episodic_db_get_query(
+    con,
+    "SELECT * FROM episodic_institution_activity ORDER BY institution_id, period_start"
+  )
+  parts <- split(res, res$institution_id)
+  lapply(parts, function(part) {
+    rownames(part) <- NULL
+    part
+  })
 }
 
 #' @param institution_id An `episodic_institution` id.

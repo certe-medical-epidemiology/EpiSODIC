@@ -4,12 +4,18 @@
 \alias{episodic_db_migrate}
 \title{Bring an Existing Database up to the Current Schema}
 \usage{
-episodic_db_migrate(db_path = Sys.getenv("EPISODIC_DB", unset = NA))
+episodic_db_migrate(
+  db_path = Sys.getenv("EPISODIC_DB", unset = NA),
+  backup = TRUE
+)
 }
 \arguments{
 \item{db_path}{Path to an existing SQLite database, or a MariaDB/MySQL
 DSN (see \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}). Defaults to the \code{EPISODIC_DB}
 environment variable.}
+
+\item{backup}{Whether to copy a SQLite database beside itself before
+the first step. Ignored for MariaDB/MySQL.}
 }
 \value{
 Invisibly, the schema version the database is at afterwards.
@@ -24,11 +30,19 @@ brings your existing database along - in one transaction per step, so
 a failed migration leaves the database exactly as it was.
 }
 \details{
+You rarely need to call this yourself: \code{\link[=episodic_run_cron]{episodic_run_cron()}} does it
+at the start of every run that finds the database behind the installed
+package, unless \code{database.auto_migrate} is set to \code{false} in your
+configuration. Call it directly where schema changes go through change
+control rather than through the application - with that setting off,
+and from an account that holds the privileges to change the schema.
+
 Nothing is ever dropped or rewritten: migrations add tables, add
 columns, and backfill values. Your surveillance history, your
-assessments and your audit trail are carried forward untouched. Take
-a backup first anyway - that advice does not stop being good because
-the code is careful.
+assessments and your audit trail are carried forward untouched. A
+SQLite database is copied beside itself before the first step
+(\verb{<file>.schema-<from>-to-<to>.bak}); a MariaDB or MySQL database is
+not, since a server's backups belong to whoever runs the server.
 
 Each step runs inside a transaction, which under SQLite covers the
 schema changes themselves. MariaDB and MySQL commit implicitly on
@@ -36,6 +50,12 @@ every \code{CREATE}/\code{ALTER}, so there a failed step can leave its schema
 change in place with no version row recorded; every migration is
 written to skip what it finds already done, so simply running this
 again is the correct response.
+
+Two processes can safely be asked to migrate the same database at
+once - a scheduled run and a manual call, or two servers sharing one
+MariaDB schema. One migrates; the other waits for it (up to ten
+minutes on MariaDB/MySQL, five seconds per step on SQLite), finds the
+work done, and carries on.
 
 A database created by EpiSODIC 0.12.x or earlier carries no version
 at all, since the version table postdates it. Such a database is

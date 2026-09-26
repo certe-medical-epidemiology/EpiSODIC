@@ -405,6 +405,42 @@ episodic_db_stream_trend_upsert <- function(con,
   invisible(NULL)
 }
 
+#' Store a detector's fit for one stream, replacing any earlier one
+#'
+#' The cache holds one row per stream and detector, whatever the number
+#' of runs: a fit whose input changed replaces the row rather than
+#' joining it. Deleted and reinserted rather than upserted in a dialect's
+#' own syntax, inside the run's transaction, so both dialects run the
+#' same two statements.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param stream_id,detector The row's key.
+#' @param input_hash The hash of exactly what the fit was computed from.
+#' @param result The detector's encoding of the fit, a single string.
+#' @param run_id The run that computed it.
+#' @keywords internal
+#' @noRd
+episodic_db_detector_cache_put <- function(con,
+                                           stream_id,
+                                           detector,
+                                           input_hash,
+                                           result,
+                                           run_id) {
+  episodic_db_execute(
+    con,
+    "DELETE FROM episodic_detector_cache WHERE stream_id = ? AND detector = ?",
+    params = list(stream_id, detector)
+  )
+  episodic_db_execute(
+    con,
+    "INSERT INTO episodic_detector_cache
+      (stream_id, detector, input_hash, result, run_id)
+     VALUES (?, ?, ?, ?, ?)",
+    params = list(stream_id, detector, input_hash, result, run_id)
+  )
+  invisible(NULL)
+}
+
 #' @keywords internal
 #' @noRd
 episodic_db_detection_insert <- function(con,
@@ -565,15 +601,32 @@ episodic_db_cluster_update <- function(con,
   invisible(NULL)
 }
 
+#' Add one to `runs_since_detected` for each of a set of clusters
+#'
+#' One statement per chunk of clusters rather than one per cluster:
+#' reconciliation ages every live cluster on a stream that no candidate
+#' matched, and on a board of thousands that is a round trip each.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id One or more cluster ids; none is a no-op.
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_increment_runs_since_detected <- function(con, cluster_id) {
-  params <- list(cluster_id)
-  episodic_db_execute(
-    con,
-    "UPDATE episodic_cluster SET runs_since_detected = runs_since_detected + 1 WHERE cluster_id = ?",
-    params = params
+  cluster_id <- unique(cluster_id)
+  chunks <- split(
+    cluster_id,
+    ceiling(seq_along(cluster_id) / episodic_db_chunk_size)
   )
+  for (chunk in chunks) {
+    episodic_db_execute(
+      con,
+      sprintf(
+        "UPDATE episodic_cluster SET runs_since_detected = runs_since_detected + 1 WHERE cluster_id IN (%s)",
+        paste(rep("?", length(chunk)), collapse = ", ")
+      ),
+      params = as.list(chunk)
+    )
+  }
   invisible(NULL)
 }
 
@@ -664,6 +717,42 @@ episodic_db_run_start <- function(con,
     "INSERT INTO episodic_detection_run (host, account, started_at, run_date, status, attempt_no)
      VALUES (?, ?, ?, ?, 'running', ?)",
     params = params
+  )
+  episodic_db_last_insert_id(con)
+}
+
+#' Record a run that never started, because the database was refused
+#'
+#' Written with only the columns `episodic_detection_run` has had since
+#' its first version, so the row can be recorded in a database whose
+#' schema is behind this build as well as in one ahead of it - which are
+#' exactly the databases a run refuses.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param host,account,run_date As for `episodic_db_run_start()`.
+#' @param error_text Why the run did not start.
+#' @return The new `run_id`.
+#' @keywords internal
+#' @noRd
+episodic_db_run_record_refusal <- function(con,
+                                           host,
+                                           account,
+                                           run_date,
+                                           error_text) {
+  now <- episodic_now()
+  episodic_db_execute(
+    con,
+    "INSERT INTO episodic_detection_run
+      (host, account, started_at, run_date, finished_at, status, error_text)
+     VALUES (?, ?, ?, ?, ?, 'failed', ?)",
+    params = list(
+      host,
+      account,
+      now,
+      episodic_sql_date(run_date),
+      now,
+      error_text
+    )
   )
   episodic_db_last_insert_id(con)
 }

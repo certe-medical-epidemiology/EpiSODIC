@@ -194,6 +194,13 @@ episodic_pkg_versions_extended <- function() {
 #' The exact detection settings used are recorded with the run, so any past
 #' result can always be traced back to the configuration that produced it.
 #'
+#' A database whose schema is behind the installed package is brought up
+#' to date before the run starts, the way [episodic_db_migrate()] would,
+#' so upgrading an instance is upgrading the package. Set
+#' `database.auto_migrate` to `false` in your configuration where schema
+#' changes go through a DBA instead; the run then refuses such a database
+#' and records why. See `vignette("deployment")`, "Upgrading EpiSODIC".
+#'
 #' So is what each feed delivered. Before the run writes anything, your
 #' case data goes through [episodic_check_cases()]. Structural problems -
 #' a missing column, a value outside the allowed set, a date that does not
@@ -342,17 +349,20 @@ episodic_run_cron <- function(cases,
 
   episodic_trace("Connecting to database")
   con <- if (episodic_db_exists(db_path)) {
-    episodic_db_connect(db_path)
+    episodic_run_cron_connect(
+      db_path,
+      config,
+      episodic_config_path = episodic_config_path,
+      host = host,
+      account = account,
+      run_date = run_date
+    )
   } else {
     episodic_trace("No existing database found - creating one")
     episodic_db_create(db_path)
   }
   on.exit(DBI::dbDisconnect(con), add = TRUE)
-  episodic_trace(
-    "Database connected (dialect: ",
-    episodic_db_dialect(db_path),
-    ")"
-  )
+  episodic_trace("Database connected (", episodic_db_server_label(con), ")")
 
   run_id <- episodic_db_run_start(
     con,
@@ -431,11 +441,16 @@ episodic_run_cron <- function(cases,
       conditionMessage(prepared),
       severity = "danger"
     )
-    episodic_run_cron_finish(
+    failure <- episodic_run_cron_failure(conditionMessage(prepared))
+    episodic_run_cron_finish(con, run_id, hashed, failure)
+    episodic_run_cron_notify_failure(
       con,
-      run_id,
-      hashed,
-      episodic_run_cron_failure(conditionMessage(prepared))
+      config,
+      episodic_config_path,
+      failure,
+      run_id = run_id,
+      run_date = run_date,
+      host = host
     )
     stop(conditionMessage(prepared), call. = FALSE)
   }
@@ -497,17 +512,12 @@ episodic_run_cron <- function(cases,
     }
   )
 
-  # Overlaid here, not when `config` was first resolved: an is_admin
-  # account's Settings-screen edits must reach the very next run without a
-  # redeploy, and notifications is excluded from config_hash/
-  # config_snapshot regardless of when this runs, so applying it after the
-  # detection transaction has already committed changes nothing about
-  # reproducibility.
-  notify_config <- config
-  notify_config$notifications <- episodic_config_resolve(
+  # With the Settings-screen overlay; see episodic_run_cron_notify_config().
+  notify_config <- episodic_run_cron_notify_config(
+    config,
     episodic_config_path,
-    con = con
-  )$notifications
+    con
+  )
   tryCatch(
     episodic_notify(con, notify_config, result, run_id, run_date, host),
     error = function(e) {
@@ -586,6 +596,271 @@ episodic_run_cron <- function(cases,
   }
 
   invisible(run_id)
+}
+
+#' Wall-clock time spent per stage, summed over many passes
+#'
+#' The stream loop does the same few things for every stream, and a
+#' run's time is the sum of those things over a thousand or more
+#' streams. Which of them dominates on a real instance is what decides
+#' what is worth making faster, so the loop accumulates each stage's
+#' elapsed time here and reports it once, as one line.
+#'
+#' @param stages The stage names, in the order the line reports them.
+#' @return A list of functions: `time(stage, expr)` evaluates `expr` in
+#'   the caller's frame and adds its elapsed time to `stage`;
+#'   `start(stage)` and `stop(stage)` do the same around code that is not
+#'   one expression; `seconds()` returns the named totals; `line()`
+#'   formats them for `episodic_trace()`.
+#' @keywords internal
+#' @noRd
+episodic_stage_timer <- function(stages) {
+  totals <- stats::setNames(numeric(length(stages)), stages)
+  started <- stats::setNames(rep(NA_real_, length(stages)), stages)
+  now <- function() proc.time()[["elapsed"]]
+  check <- function(stage) {
+    if (!stage %in% stages) {
+      stop("episodic_stage_timer(): unknown stage '", stage, "'", call. = FALSE)
+    }
+  }
+  start <- function(stage) {
+    check(stage)
+    started[[stage]] <<- now()
+    invisible(NULL)
+  }
+  stop_stage <- function(stage) {
+    check(stage)
+    if (is.na(started[[stage]])) {
+      stop(
+        "episodic_stage_timer(): stage '",
+        stage,
+        "' stopped without being started",
+        call. = FALSE
+      )
+    }
+    totals[[stage]] <<- totals[[stage]] + (now() - started[[stage]])
+    started[[stage]] <<- NA_real_
+    invisible(NULL)
+  }
+  list(
+    time = function(stage, expr) {
+      start(stage)
+      on.exit(stop_stage(stage))
+      invisible(expr)
+    },
+    start = start,
+    stop = stop_stage,
+    seconds = function() totals,
+    line = function() {
+      paste0(
+        paste0(names(totals), " ", sprintf("%.1f", totals), "s", collapse = ", "),
+        ", total ",
+        sprintf("%.1f", sum(totals)),
+        "s"
+      )
+    }
+  )
+}
+
+#' Connect a run to an existing database, bringing its schema forward
+#'
+#' An upgrade of the package lands on a server by `update.packages()`,
+#' by an image rebuild, or by a colleague, and the scheduled run is the
+#' first thing to meet the database afterwards. Refusing a database one
+#' schema version behind would stop surveillance at every instance that
+#' upgraded, with the reason in a cron log, until someone ran
+#' `episodic_db_migrate()` by hand; so with `database.auto_migrate` on
+#' (the shipped default) the run migrates it here, before the run row
+#' and before the detection transaction. Before the transaction because
+#' MariaDB and MySQL commit schema changes implicitly, which inside it
+#' would commit half a run; before the run row so the row is written in
+#' the schema this build knows.
+#'
+#' A database the run will not open - newer than this build, or behind it
+#' with `auto_migrate` off, or one whose migration failed - stops the run
+#' with the reason, logged, sent as a `run_failure` notification, and
+#' recorded on a failed run row where the database has a run table to
+#' hold one, so the Activity screen explains
+#' the gap once the database can be opened again rather than simply
+#' showing no run.
+#'
+#' @param db_path The database path or DSN.
+#' @param config The resolved configuration; uses
+#'   `config$database$auto_migrate` and `config$notifications`.
+#' @param episodic_config_path The configuration path, for the
+#'   Settings-screen notification overlay (`episodic_run_cron_notify_config()`).
+#' @param host,account,run_date For the failed run row and the failure
+#'   notification.
+#' @return An open [DBI::DBIConnection-class] at the current schema.
+#' @keywords internal
+#' @noRd
+episodic_run_cron_connect <- function(db_path,
+                                      config,
+                                      episodic_config_path,
+                                      host,
+                                      account,
+                                      run_date) {
+  con <- episodic_db_connect(db_path, check_schema_version = FALSE)
+  version <- episodic_db_schema_version(con)
+  if (!is.na(version) && version == episodic_schema_version) {
+    return(con)
+  }
+  found <- if (is.na(version)) "no schema version" else paste("schema version", version)
+
+  problem <- if (!is.na(version) && version > episodic_schema_version) {
+    episodic_db_schema_newer_message(version)
+  } else if (!isTRUE(config$database$auto_migrate)) {
+    paste0(
+      "The database is at ",
+      found,
+      " and this EpiSODIC expects schema version ",
+      episodic_schema_version,
+      ". `database.auto_migrate` is set to false, so this run does not ",
+      "bring it forward itself: run episodic_db_migrate() on it (nothing ",
+      "is dropped or rewritten), then run again."
+    )
+  } else {
+    episodic_trace(
+      "The database is at ",
+      found,
+      " and this EpiSODIC expects schema version ",
+      episodic_schema_version,
+      ": migrating it before the run (database.auto_migrate)"
+    )
+    migrated <- tryCatch(
+      episodic_db_migrate_con(
+        con,
+        db_path,
+        backup = TRUE,
+        say = function(...) episodic_trace(...)
+      ),
+      error = function(e) e
+    )
+    if (!inherits(migrated, "error")) {
+      episodic_trace(
+        "Database migrated from ",
+        found,
+        " to schema version ",
+        migrated$to
+      )
+      return(con)
+    }
+    conditionMessage(migrated)
+  }
+
+  episodic_trace(problem, severity = "danger")
+  recorded <- tryCatch(
+    episodic_db_run_record_refusal(
+      con,
+      host = host,
+      account = account,
+      run_date = run_date,
+      error_text = problem
+    ),
+    error = function(e) e
+  )
+  if (inherits(recorded, "error")) {
+    episodic_trace(
+      "The refusal could not be recorded on a run row either: ",
+      conditionMessage(recorded),
+      severity = "danger"
+    )
+  }
+  episodic_run_cron_notify_failure(
+    con,
+    config,
+    episodic_config_path,
+    episodic_run_cron_failure(problem),
+    run_id = if (inherits(recorded, "error")) NA_integer_ else recorded,
+    run_date = run_date,
+    host = host
+  )
+  DBI::dbDisconnect(con)
+  stop(problem, call. = FALSE)
+}
+
+#' The configuration notifications are sent with
+#'
+#' The instance YAML's `notifications`, overlaid with what an `is_admin`
+#' account last saved on the Settings screen, so an edit there reaches
+#' the very next run without a redeploy. Overlaid only here, never where
+#' `config` was first resolved: `notifications` is outside `config_hash`
+#' and `config_snapshot` either way, so applying it late changes nothing
+#' about reproducibility.
+#'
+#' The overlay is read from the database, which on a run that refused
+#' the database is a schema this build may not know. A failure to read
+#' it is logged and the YAML's own settings are used, rather than a
+#' failed run going unannounced because the announcement could not be
+#' configured.
+#'
+#' @param config The resolved configuration.
+#' @param episodic_config_path The configuration path.
+#' @param con A [DBI::DBIConnection-class].
+#' @return `config`, with `notifications` overlaid.
+#' @keywords internal
+#' @noRd
+episodic_run_cron_notify_config <- function(config, episodic_config_path, con) {
+  overlaid <- tryCatch(
+    episodic_config_resolve(episodic_config_path, con = con)$notifications,
+    error = function(e) e
+  )
+  if (inherits(overlaid, "error")) {
+    episodic_trace(
+      "The notification settings saved on the Settings screen could not be ",
+      "read (",
+      conditionMessage(overlaid),
+      "); notifying with the configuration file's own",
+      severity = "warn"
+    )
+    return(config)
+  }
+  config$notifications <- overlaid
+  config
+}
+
+#' Announce a run that failed before its detection transaction began
+#'
+#' A run refused by the database, or stopped by its pre-run data checks,
+#' is a failed run like one that fails inside the transaction, and the
+#' `run_failure` trigger promises it: without this it would be the one
+#' kind of failure that reached nobody but the cron log. Dispatch errors
+#' are logged, never raised, so the run still stops with its own reason.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param config The resolved configuration.
+#' @param episodic_config_path The configuration path.
+#' @param failure `episodic_run_cron_failure()`'s output.
+#' @param run_id The failed run's id, or `NA` where none could be written.
+#' @param run_date,host As for `episodic_notify()`.
+#' @return Invisible `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_run_cron_notify_failure <- function(con,
+                                             config,
+                                             episodic_config_path,
+                                             failure,
+                                             run_id,
+                                             run_date,
+                                             host) {
+  tryCatch(
+    episodic_notify(
+      con,
+      episodic_run_cron_notify_config(config, episodic_config_path, con),
+      failure,
+      run_id,
+      run_date,
+      host
+    ),
+    error = function(e) {
+      episodic_trace(
+        "Notification dispatch failed: ",
+        conditionMessage(e),
+        severity = "danger"
+      )
+    }
+  )
+  invisible(NULL)
 }
 
 #' Whether this run is the one that reports the archive
@@ -1021,9 +1296,55 @@ episodic_run_cron_body <- function(con,
     " stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)"
   )
 
+  # Everything the loop would otherwise ask of the database or of the full
+  # case table once per stream, asked once for the run. None of it is
+  # written by the loop for any stream other than the one it belongs to,
+  # and each stream reads its own share before writing to it, so a
+  # snapshot taken here is what each stream would have read in its turn.
+  stage <- episodic_stage_timer(c(
+    "cases",
+    "mem",
+    "eligibility",
+    "farrington",
+    "trend",
+    "detections",
+    "reconciliation"
+  ))
+  stage$time("cases", {
+    stream_cases_for <- episodic_stream_case_index(cases_all, geography)
+  })
+  stage$time("farrington", {
+    excluded_by_stream <- stats::setNames(
+      episodic_baseline_excluded_windows_many(con, streams$stream_id),
+      as.character(streams$stream_id)
+    )
+    activity_by_institution <- episodic_db_institution_activity_all(con)
+  })
+  stage$time("trend", {
+    trend_counts <- episodic_db_stream_trend_counts(con)
+  })
+  stage$time("mem", {
+    mem_cache <- episodic_db_detector_cache(con, "mem")
+  })
+  # Assessment events are the app's to write and never the run's, so one
+  # read made here is what every per-cluster read inside the transaction
+  # would have returned. A cluster outside it - one opened during this
+  # run - is read live, and has none.
+  stage$time("reconciliation", {
+    events_for <- episodic_assessment_events_lookup(
+      con,
+      episodic_db_clusters(con, include_suppressed = TRUE)$cluster_id
+    )
+  })
+  mem_tally <- new.env(parent = emptyenv())
+  mem_tally$reused <- 0L
+  mem_tally$fitted <- 0L
+
   for (i in seq_len(nrow(streams))) {
     stream <- streams[i, ]
-    stream_cases <- episodic_cases_for_stream(cases_all, stream, geography)
+    stage$time("cases", {
+      stream_cases <- stream_cases_for(stream)
+    })
     episodic_trace_debug(
       debug,
       "debug: [",
@@ -1076,37 +1397,51 @@ episodic_run_cron_body <- function(con,
         !muted &&
         stream$level %in% mem_levels
     ) {
-      stream_detections <- rbind(
-        stream_detections,
-        episodic_detect_mem(
-          stream_cases,
-          stream$stream_id,
-          run_date,
-          config,
-          mem_mode = as.character(pc_mem$mem_mode[1]),
-          stream_label = episodic_stream_label(stream)
+      stage$time("mem", {
+        mem_mode <- as.character(pc_mem$mem_mode[1])
+        cached <- mem_cache[mem_cache$stream_id == stream$stream_id, ,
+          drop = FALSE
+        ]
+        stream_detections <- rbind(
+          stream_detections,
+          episodic_detect_mem(
+            stream_cases,
+            stream$stream_id,
+            run_date,
+            config,
+            mem_mode = mem_mode,
+            stream_label = episodic_stream_label(stream),
+            mem_fit = episodic_mem_fit_cached(
+              con,
+              stream_id = stream$stream_id,
+              run_id = run_id,
+              config = config,
+              mem_mode = mem_mode,
+              cached = if (nrow(cached) > 0) cached[1, ] else NULL,
+              tally = mem_tally
+            )
+          )
         )
-      )
+      })
     }
 
-    eligible <- !muted &&
-      nrow(stream_cases) > 0 &&
-      episodic_eligibility_gate(stream_cases, run_date, config)
+    stage$time("eligibility", {
+      eligible <- !muted &&
+        nrow(stream_cases) > 0 &&
+        episodic_eligibility_gate(stream_cases, run_date, config)
+    })
     episodic_trace_debug(debug, "debug:   eligibility gate: ", eligible)
     if (eligible) {
       n_eligible_streams <- n_eligible_streams + 1L
+      stage$start("farrington")
       # A period this stream's own history shows was a confirmed
       # epidemic must not silently raise next winter's baseline.
       # Excluded from the cases fed to Farrington only
       # (same_place/rare_trigger detect on raw counts and do not baseline
       # at all, so they are unaffected).
-      excluded_windows <- episodic_baseline_excluded_windows(
-        con,
-        stream$stream_id
-      )
       farrington_cases <- episodic_baseline_exclude_cases(
         stream_cases,
-        excluded_windows
+        excluded_by_stream[[as.character(stream$stream_id)]]
       )
       episodic_trace_debug(
         debug,
@@ -1124,12 +1459,15 @@ episodic_run_cron_body <- function(con,
         as.Date(farrington_cases$sample_date),
         run_date
       )$week_start
-      population <- episodic_farrington_population_vector(
-        con,
-        stream$institution_id,
-        stream$level,
-        weekly_weeks
-      )
+      population <- if (
+        identical(stream$level, "pathogen_institution") &&
+          !is.na(stream$institution_id)
+      ) {
+        episodic_farrington_population_from_activity(
+          activity_by_institution[[as.character(stream$institution_id)]],
+          weekly_weeks
+        )
+      }
       episodic_trace_debug(
         debug,
         "debug:   ",
@@ -1139,13 +1477,18 @@ episodic_run_cron_body <- function(con,
         " week(s)"
       )
 
+      # One fit per stream, shared with the trend cache below: both fit
+      # the same series, and a week fitted for one is the week the other
+      # would fit.
+      farrington_fit <- episodic_farrington_fit_memo()
       farrington <- episodic_detect_farrington(
         farrington_cases,
         stream$stream_id,
         config,
         run_date,
         population = population,
-        n_weeks = farrington_weeks
+        n_weeks = farrington_weeks,
+        fit = farrington_fit
       )
       shortfall <- episodic_farrington_shortfall(farrington)
       if (!is.null(shortfall)) {
@@ -1160,17 +1503,25 @@ episodic_run_cron_body <- function(con,
         )
       }
       stream_detections <- rbind(stream_detections, farrington)
+      stage$stop("farrington")
 
       # trend cache for the multi-year trend panel; see
       # episodic_farrington_trend()'s own docs for the backfill-once,
       # top-up-thereafter strategy.
-      n_existing_trend <- nrow(episodic_db_stream_trend(con, stream$stream_id))
+      stage$start("trend")
+      n_existing_trend <- trend_counts[as.character(stream$stream_id)]
+      n_existing_trend <- if (is.na(n_existing_trend)) {
+        0L
+      } else {
+        unname(n_existing_trend)
+      }
       trend <- episodic_farrington_trend(
         farrington_cases,
         config,
         run_date,
         n_weeks_existing = n_existing_trend,
-        population = population
+        population = population,
+        fit = farrington_fit
       )
       episodic_trace_debug(
         debug,
@@ -1188,6 +1539,7 @@ episodic_run_cron_body <- function(con,
           upperbound = trend$upperbound[k]
         )
       }
+      stage$stop("trend")
     }
 
     # A stream with nothing detected this run still has to go through
@@ -1198,6 +1550,7 @@ episodic_run_cron_body <- function(con,
     # cluster on it ineligible for either kind of auto-close for as long
     # as the stream stays quiet, which for a dormant stream is forever.
     if (nrow(stream_detections) > 0) {
+      stage$start("detections")
       detection_ids <- integer(nrow(stream_detections))
       for (j in seq_len(nrow(stream_detections))) {
         d <- stream_detections[j, ]
@@ -1215,6 +1568,7 @@ episodic_run_cron_body <- function(con,
         )
       }
       stream_detections$detection_id <- detection_ids
+      stage$stop("detections")
       n_detections_total <- n_detections_total + nrow(stream_detections)
       episodic_trace_debug(
         debug,
@@ -1252,6 +1606,7 @@ episodic_run_cron_body <- function(con,
       )
       next
     }
+    stage$start("reconciliation")
     stream_scale <- episodic_scale_for_level(stream$level, config)
     reconcile_result <- episodic_reconcile_stream(
       con,
@@ -1330,11 +1685,12 @@ episodic_run_cron_body <- function(con,
           weights = weights
         )
       },
+      events_fn = events_for,
       has_assessment_fn = function(cluster_id) {
-        nrow(episodic_db_assessment_events(con, cluster_id)) > 0
+        nrow(events_for(cluster_id)) > 0
       },
       verdict_fn = function(cluster_id) {
-        events <- episodic_db_assessment_events(con, cluster_id)
+        events <- events_for(cluster_id)
         classified <- events[!is.na(events$verdict), ]
         if (nrow(classified) == 0) {
           NA_character_
@@ -1401,6 +1757,23 @@ episodic_run_cron_body <- function(con,
         }
       }
     }
+    stage$stop("reconciliation")
+  }
+  episodic_trace(
+    "Stream loop time by stage: ",
+    stage$line(),
+    " (",
+    nrow(streams),
+    " stream(s))"
+  )
+  if (mem_tally$reused + mem_tally$fitted > 0L) {
+    episodic_trace(
+      "MEM fits: ",
+      mem_tally$reused,
+      " reused from the cache (identical input), ",
+      mem_tally$fitted,
+      " fitted"
+    )
   }
   if (n_muted_streams > 0) {
     episodic_trace(
@@ -1464,11 +1837,7 @@ episodic_run_cron_body <- function(con,
       epi <- open_seasonal[j, ]
       stream_row <- streams[streams$stream_id == epi$stream_id, ]
       if (nrow(stream_row) == 0) next
-      epi_cases <- episodic_cases_for_stream(
-        cases_all,
-        stream_row[1, ],
-        geography
-      )
+      epi_cases <- stream_cases_for(stream_row[1, ])
       closure <- episodic_epidemic_closure(
         epi_cases,
         run_date,
@@ -1590,6 +1959,133 @@ episodic_cases_for_stream <- function(cases,
     matches <- matches & !is.na(region) & region == stream$region_code
   }
   cases[matches, ]
+}
+
+#' Every cluster's assessment events, from one read
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_ids The clusters to read events for up front.
+#' @return A function `(cluster_id)` returning that cluster's events as
+#'   `episodic_db_assessment_events()` does - same columns, same order -
+#'   answered from the read for a cluster in `cluster_ids` and read live
+#'   for any other.
+#' @keywords internal
+#' @noRd
+episodic_assessment_events_lookup <- function(con, cluster_ids) {
+  cluster_ids <- unique(cluster_ids)
+  events <- episodic_db_assessment_events_batch(con, cluster_ids)
+  by_cluster <- split(seq_len(nrow(events)), events$cluster_id)
+  none <- events[0, , drop = FALSE]
+  function(cluster_id) {
+    if (!cluster_id %in% cluster_ids) {
+      return(episodic_db_assessment_events(con, cluster_id))
+    }
+    rows <- by_cluster[[as.character(cluster_id)]]
+    if (is.null(rows)) {
+      return(none)
+    }
+    out <- events[rows, , drop = FALSE]
+    rownames(out) <- NULL
+    out
+  }
+}
+
+#' Every stream's cases, from one pass over the case table
+#'
+#' `episodic_cases_for_stream()` compares every case on file against one
+#' stream, and a run asks it of every stream, so a run's filtering cost is
+#' the number of streams times the number of cases, and a province or
+#' area stream additionally derives a region code for every case of every
+#' pathogen to keep the handful that are its own. This builds the same
+#' answer from row indices partitioned once: by pathogen, then, on first
+#' use, by institution within a pathogen and by region code within a
+#' pathogen and level. Each partition is taken with `split()`, which keeps
+#' the rows of each part in their original order, so a stream receives
+#' the same rows in the same order, with the same row names, as
+#' `episodic_cases_for_stream()` gives it.
+#'
+#' @param cases All currently known cases.
+#' @param geography This run's own resolved geography, as for
+#'   `episodic_cases_for_stream()`.
+#' @return A function taking a single-row stream and returning the subset
+#'   of `cases` belonging to it.
+#' @keywords internal
+#' @noRd
+episodic_stream_case_index <- function(cases, geography) {
+  by_pathogen <- split(seq_len(nrow(cases)), cases$pathogen)
+  by_institution <- new.env(parent = emptyenv())
+  by_region <- new.env(parent = emptyenv())
+  sep <- "\r"
+
+  pathogen_rows <- function(pathogen) {
+    rows <- by_pathogen[[pathogen]]
+    if (is.null(rows)) integer(0) else rows
+  }
+  # Institution ids are whole numbers, but a driver may hand them back as
+  # doubles, and `as.character()` writes a large double in scientific
+  # notation where `split()` did not. Both sides are keyed the same way,
+  # and the part found is then compared on the ids themselves, so the
+  # key only has to group equal ids together, never to decide equality.
+  institution_key <- function(x) sprintf("%.0f", as.numeric(x))
+  institution_rows <- function(pathogen, institution_id) {
+    parts <- by_institution[[pathogen]]
+    if (is.null(parts)) {
+      rows <- pathogen_rows(pathogen)
+      ids <- cases$institution_id[rows]
+      rows <- rows[!is.na(ids)]
+      parts <- split(rows, institution_key(cases$institution_id[rows]))
+      by_institution[[pathogen]] <- parts
+    }
+    rows <- parts[[institution_key(institution_id)]]
+    if (is.null(rows)) {
+      return(integer(0))
+    }
+    rows[cases$institution_id[rows] == institution_id]
+  }
+  region_rows <- function(pathogen, level, region_code) {
+    key <- paste(pathogen, level, sep = sep)
+    parts <- by_region[[key]]
+    if (is.null(parts)) {
+      rows <- pathogen_rows(pathogen)
+      region <- episodic_case_region_code(
+        cases[rows, , drop = FALSE],
+        level,
+        geography = geography
+      )
+      parts <- split(rows, region)
+      by_region[[key]] <- parts
+    }
+    rows <- parts[[as.character(region_code)]]
+    if (is.null(rows)) integer(0) else rows
+  }
+
+  function(stream) {
+    has_institution <- !is.na(stream$institution_id)
+    has_region <- !is.na(stream$region_code)
+    rows <- if (has_institution) {
+      institution_rows(stream$pathogen, stream$institution_id)
+    } else if (has_region) {
+      region_rows(stream$pathogen, stream$level, stream$region_code)
+    } else {
+      pathogen_rows(stream$pathogen)
+    }
+    if (!is.na(stream$ward)) {
+      ward <- cases$ward[rows]
+      rows <- rows[!is.na(ward) & ward == stream$ward]
+    }
+    # A stream carrying both an institution and a region code is not one
+    # enumeration produces, but `episodic_cases_for_stream()` would apply
+    # both conditions to it, so this does too.
+    if (has_institution && has_region) {
+      region <- episodic_case_region_code(
+        cases[rows, , drop = FALSE],
+        stream$level,
+        geography = geography
+      )
+      rows <- rows[!is.na(region) & region == stream$region_code]
+    }
+    cases[rows, , drop = FALSE]
+  }
 }
 
 #' Does an outbreak's geography nest inside an epidemic's?

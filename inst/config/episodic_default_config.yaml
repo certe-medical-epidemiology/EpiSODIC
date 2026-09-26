@@ -132,3 +132,9 @@ suppression:
 # Access.
 access:
   require_login: false
+
+# Database. auto_migrate: whether a scheduled run brings the database up to
+# the installed package's schema on its own. Set to false where schema
+# changes go through a DBA; see vignette("deployment").
+database:
+  auto_migrate: true

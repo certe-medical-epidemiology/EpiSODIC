@@ -39,6 +39,8 @@
 #' @param config The resolved configuration; uses `config$mem`.
 #' @param mem_mode One of `"auto"`, `"yes"`, `"no"`.
 #' @param stream_label Optional label for refusal log messages.
+#' @param mem_fit The function that fits MEM to a matrix of completed
+#'   seasons; see `episodic_mem_status()`.
 #' @return A data frame of detection records (zero or one row).
 #' @references
 #' Vega T, Lozano JE, Meerhoff T, Snacken R, Mott J, Ortiz de Lejarazu R,
@@ -54,7 +56,8 @@ episodic_detect_mem <- function(cases_for_stream,
                                 run_date = Sys.Date(),
                                 config = episodic_config_resolve(),
                                 mem_mode = "auto",
-                                stream_label = NULL) {
+                                stream_label = NULL,
+                                mem_fit = episodic_mem_fit) {
   empty <- episodic_detection_none()
 
   if (!episodic_detector_enabled(config, "mem")) {
@@ -108,7 +111,13 @@ episodic_detect_mem <- function(cases_for_stream,
     seasonality_stat <- seas$statistic
   }
 
-  status <- episodic_mem_status(cases_for_stream, run_date, config, anchor)
+  status <- episodic_mem_status(
+    cases_for_stream,
+    run_date,
+    config,
+    anchor,
+    fit = mem_fit
+  )
   if (is.null(status) || !isTRUE(status$epidemic_started)) {
     return(empty)
   }
@@ -157,9 +166,8 @@ episodic_detect_mem <- function(cases_for_stream,
 #' @noRd
 episodic_mem_season_anchor <- function(cases,
                                        config = episodic_config_resolve()) {
-  dates <- as.Date(cases$sample_date)
-  dates <- dates[!is.na(dates)]
-  if (length(dates) == 0) {
+  days <- episodic_mem_day_counts(cases)
+  if (is.null(days)) {
     return(NULL)
   }
 
@@ -167,38 +175,14 @@ episodic_mem_season_anchor <- function(cases,
   smooth_weeks <- as.integer(config$mem$climatology_smooth_weeks %||% 5L)
   trough_pctl <- as.numeric(config$mem$trough_percentile %||% 0.25)
 
-  data_start <- min(dates)
-  data_end <- max(dates)
-  all_years <- sort(unique(as.integer(format(dates, "%G"))))
-  complete <- vapply(all_years, function(yr) {
-    data_start <= episodic_iso_week_start(yr, 1L) &&
-      data_end >= episodic_iso_week_start(yr, 52L) + 6L
-  }, logical(1))
-  complete_years <- all_years[complete]
-
+  complete_years <- episodic_mem_complete_years(days)
   if (length(complete_years) < min_years) {
     return(NULL)
   }
 
-  iso_weeks <- pmin(as.integer(format(dates, "%V")), 52L)
-  iso_years <- as.integer(format(dates, "%G"))
-  in_complete <- iso_years %in% complete_years
-
-  counts_df <- stats::aggregate(
-    list(n = rep(1L, sum(in_complete))),
-    by = list(
-      year = iso_years[in_complete],
-      week = iso_weeks[in_complete]
-    ),
-    FUN = sum
-  )
-
+  mat <- episodic_mem_year_week_counts(days, complete_years)
   climatology <- vapply(1:52, function(w) {
-    year_counts <- vapply(complete_years, function(yr) {
-      idx <- counts_df$year == yr & counts_df$week == w
-      if (any(idx)) counts_df$n[idx] else 0L
-    }, integer(1))
-    stats::median(year_counts)
+    stats::median(mat[w, ])
   }, numeric(1))
 
   half_w <- smooth_weeks %/% 2L
@@ -272,6 +256,82 @@ episodic_mem_circular_runs <- function(positions, n) {
   runs
 }
 
+#' A stream's cases as counts per distinct sample date
+#'
+#' Everything the anchor and the seasonality statistic compute is a sum
+#' over cases of something that depends on the case's date alone - its
+#' ISO year, its ISO week, whether that year is complete - so it can be
+#' computed once per distinct date and weighted by how many cases fell on
+#' it. Five years of history is under two thousand dates however many
+#' cases a region holds, and formatting a date's ISO week is the costly
+#' step.
+#'
+#' @param cases A data frame with `sample_date`.
+#' @return `NULL` when no case has a readable date, otherwise a list with
+#'   `date` (sorted distinct `Date`s), `n` (integer cases per date),
+#'   `iso_year` and `iso_week` (integer, the week capped at 52, as the
+#'   climatology and the season matrix fold week 53 into week 52).
+#' @keywords internal
+#' @noRd
+episodic_mem_day_counts <- function(cases) {
+  dates <- as.Date(cases$sample_date)
+  dates <- dates[!is.na(dates)]
+  if (length(dates) == 0) {
+    return(NULL)
+  }
+  date <- sort(unique(dates))
+  list(
+    date = date,
+    n = tabulate(match(dates, date), nbins = length(date)),
+    iso_year = as.integer(format(date, "%G")),
+    iso_week = pmin(as.integer(format(date, "%V")), 52L)
+  )
+}
+
+#' The ISO years a stream's case history spans end to end
+#'
+#' @param days `episodic_mem_day_counts()`'s output.
+#' @return The sorted ISO years whose week 1 Monday is on or after the
+#'   first case and whose week 52 Sunday is on or before the last.
+#' @keywords internal
+#' @noRd
+episodic_mem_complete_years <- function(days) {
+  data_start <- days$date[1]
+  data_end <- days$date[length(days$date)]
+  all_years <- sort(unique(days$iso_year))
+  complete <- vapply(all_years, function(yr) {
+    data_start <= episodic_iso_week_start(yr, 1L) &&
+      data_end >= episodic_iso_week_start(yr, 52L) + 6L
+  }, logical(1))
+  all_years[complete]
+}
+
+#' Case counts per ISO week (rows 1-52) and ISO year (columns)
+#'
+#' @param days `episodic_mem_day_counts()`'s output.
+#' @param years The ISO years to tabulate, in column order.
+#' @return An integer matrix, 52 rows by `length(years)` columns named by
+#'   year, zero where no case fell.
+#' @keywords internal
+#' @noRd
+episodic_mem_year_week_counts <- function(days, years) {
+  mat <- matrix(
+    0L,
+    nrow = 52L,
+    ncol = length(years),
+    dimnames = list(NULL, as.character(years))
+  )
+  column <- match(days$iso_year, years)
+  keep <- !is.na(column)
+  if (!any(keep)) {
+    return(mat)
+  }
+  cell <- days$iso_week[keep] + 52L * (column[keep] - 1L)
+  summed <- rowsum(days$n[keep], cell, reorder = FALSE)
+  mat[as.integer(rownames(summed))] <- as.integer(summed[, 1])
+  mat
+}
+
 # -- Seasonality derivation -------------------------------------------
 
 #' Derive whether a stream's pathogen shows a season
@@ -295,9 +355,8 @@ episodic_mem_circular_runs <- function(positions, n) {
 #' @noRd
 episodic_mem_seasonality <- function(cases,
                                      config = episodic_config_resolve()) {
-  dates <- as.Date(cases$sample_date)
-  dates <- dates[!is.na(dates)]
-  if (length(dates) == 0) {
+  days <- episodic_mem_day_counts(cases)
+  if (is.null(days)) {
     return(NULL)
   }
 
@@ -305,42 +364,13 @@ episodic_mem_seasonality <- function(cases,
   peak_weeks <- as.integer(config$mem$seasonality_peak_weeks %||% 8L)
   min_share <- as.numeric(config$mem$seasonality_min_peak_share %||% 0.40)
 
-  iso_weeks <- pmin(as.integer(format(dates, "%V")), 52L)
-  iso_years <- as.integer(format(dates, "%G"))
-
-  data_start <- min(dates)
-  data_end <- max(dates)
-  all_years <- sort(unique(iso_years))
-  complete <- vapply(all_years, function(yr) {
-    data_start <= episodic_iso_week_start(yr, 1L) &&
-      data_end >= episodic_iso_week_start(yr, 52L) + 6L
-  }, logical(1))
-  complete_years <- all_years[complete]
-
+  complete_years <- episodic_mem_complete_years(days)
   if (length(complete_years) < min_years) {
     return(NULL)
   }
 
-  in_complete <- iso_years %in% complete_years
-  counts_df <- stats::aggregate(
-    list(n = rep(1L, sum(in_complete))),
-    by = list(
-      year = iso_years[in_complete],
-      week = iso_weeks[in_complete]
-    ),
-    FUN = sum
-  )
-
   n_years <- length(complete_years)
-  mat <- matrix(0L,
-    nrow = 52L, ncol = n_years,
-    dimnames = list(NULL, as.character(complete_years))
-  )
-  for (i in seq_len(nrow(counts_df))) {
-    w <- counts_df$week[i]
-    y <- as.character(counts_df$year[i])
-    mat[w, y] <- counts_df$n[i]
-  }
+  mat <- episodic_mem_year_week_counts(days, complete_years)
 
   ts_values <- as.numeric(as.vector(mat))
   n_total <- length(ts_values)
@@ -413,6 +443,9 @@ episodic_mem_seasonality <- function(cases,
 #' @param config The resolved configuration.
 #' @param anchor The result of `episodic_mem_season_anchor()`: a list
 #'   with `anchor_week`, `trough_run` and `climatology`.
+#' @param fit The function that fits MEM to the matrix of completed
+#'   seasons, `episodic_mem_fit()` or one returning exactly what it would
+#'   for the same matrix (`episodic_mem_fit_cached()`).
 #' @return `NULL` when MEM cannot compute (no `mem` package, no data,
 #'   or too few fully-observed prior seasons). Otherwise a list:
 #'   `in_trough` (logical), `epidemic_started` (logical),
@@ -425,7 +458,8 @@ episodic_mem_seasonality <- function(cases,
 episodic_mem_status <- function(cases,
                                 run_date = Sys.Date(),
                                 config = episodic_config_resolve(),
-                                anchor = NULL) {
+                                anchor = NULL,
+                                fit = episodic_mem_fit) {
   if (is.null(anchor)) {
     return(NULL)
   }
@@ -454,20 +488,14 @@ episodic_mem_status <- function(cases,
   }
 
   historical <- built$matrix[, prior_seasons, drop = FALSE]
-  fit <- tryCatch(
-    suppressWarnings(suppressMessages(mem::memmodel(
-      as.data.frame(historical),
-      i.mem.info = FALSE
-    ))),
-    error = function(e) NULL
-  )
-  if (is.null(fit)) {
+  fitted <- fit(historical)
+  if (is.null(fitted)) {
     return(NULL)
   }
 
-  pre_threshold <- fit$pre.post.intervals["pre.i", 3]
-  post_threshold <- fit$pre.post.intervals["post.i", 3]
-  intensity <- episodic_mem_intensity_thresholds(fit)
+  pre_threshold <- fitted$pre_epidemic
+  post_threshold <- fitted$post_epidemic
+  intensity <- fitted$intensity
 
   week_label <- evaluated$week_label
   if (!week_label %in% rownames(built$matrix)) {
@@ -499,6 +527,206 @@ episodic_mem_status <- function(cases,
     seasons_used = prior_seasons,
     week_start = evaluated$week_start,
     week_end = evaluated$week_start + 6
+  )
+}
+
+#' Fit MEM to a matrix of completed seasons
+#'
+#' The one place `mem::memmodel()` is called, reduced to the three things
+#' anything downstream reads from its result. `episodic_mem_status()`
+#' takes it as an argument so the cron can hand it
+#' `episodic_mem_fit_cached()` instead, which returns what this would
+#' have returned without fitting again when the matrix is unchanged.
+#'
+#' @param historical A weeks x seasons integer matrix, as built by
+#'   `episodic_mem_seasonal_matrix()` and restricted to the seasons the
+#'   thresholds are for.
+#' @return `NULL` when the model cannot be fitted, otherwise a list with
+#'   `pre_epidemic` and `post_epidemic` (numeric) and `intensity`
+#'   (`episodic_mem_intensity_thresholds()`'s output, possibly `NULL`).
+#' @keywords internal
+#' @noRd
+episodic_mem_fit <- function(historical) {
+  fit <- tryCatch(
+    suppressWarnings(suppressMessages(mem::memmodel(
+      as.data.frame(historical),
+      i.mem.info = FALSE
+    ))),
+    error = function(e) NULL
+  )
+  if (is.null(fit)) {
+    return(NULL)
+  }
+  # Unnamed: `mem` names these after its own interval rows, and nothing
+  # downstream reads the name - every consumer takes `as.numeric()` of
+  # them - so the cache has no name to carry.
+  list(
+    pre_epidemic = unname(fit$pre.post.intervals["pre.i", 3]),
+    post_epidemic = unname(fit$pre.post.intervals["post.i", 3]),
+    intensity = episodic_mem_intensity_thresholds(fit)
+  )
+}
+
+#' A MEM fit that reuses the stored one when its input is identical
+#'
+#' The completed seasons MEM is fitted on are the same from one run to
+#' the next unless something about them changed: a late case in a past
+#' season, a verdict, a configuration value, a new season completing.
+#' Rather than guessing which of those happened, this hashes exactly what
+#' `episodic_mem_fit()` would be given - the matrix, with its week and
+#' season labels - together with the `mem` configuration, the pathogen's
+#' `mem_mode` and the versions of `mem` and EpiSODIC, and reuses the
+#' stored result only when that hash is the one it was stored under. A
+#' reused result is therefore the result a fresh fit returns by
+#' construction, with no assumption about which dates changed. Anything
+#' else fits afresh and replaces the stored row
+#' (`episodic_db_detector_cache_put()`).
+#'
+#' A fit `mem::memmodel()` refuses is not stored: nothing downstream
+#' reads a failure, and it is fitted again next run.
+#'
+#' @param con A [DBI::DBIConnection-class], inside the run's transaction.
+#' @param stream_id The stream the fit belongs to.
+#' @param run_id The current run.
+#' @param config The resolved configuration.
+#' @param mem_mode The pathogen's `mem_mode`.
+#' @param cached This stream's row of `episodic_db_detector_cache()`, or
+#'   `NULL` when it has none.
+#' @param tally An environment with integer `reused` and `fitted`, counted
+#'   up here so the run can say how many fits it was spared.
+#' @return A function of the historical matrix, returning what
+#'   `episodic_mem_fit()` returns for it.
+#' @keywords internal
+#' @noRd
+episodic_mem_fit_cached <- function(con,
+                                    stream_id,
+                                    run_id,
+                                    config,
+                                    mem_mode,
+                                    cached = NULL,
+                                    tally = NULL) {
+  function(historical) {
+    input_hash <- episodic_mem_fit_input_hash(historical, config, mem_mode)
+    if (!is.null(cached) && identical(cached$input_hash, input_hash)) {
+      decoded <- episodic_mem_fit_decode(cached$result)
+      if (!is.null(decoded)) {
+        if (!is.null(tally)) tally$reused <- tally$reused + 1L
+        return(decoded)
+      }
+      episodic_trace(
+        "MEM: the cached fit for stream ",
+        stream_id,
+        " could not be read back and is fitted again",
+        severity = "warn"
+      )
+    }
+    fitted <- episodic_mem_fit(historical)
+    if (!is.null(tally)) tally$fitted <- tally$fitted + 1L
+    if (!is.null(fitted)) {
+      episodic_db_detector_cache_put(
+        con,
+        stream_id = stream_id,
+        detector = "mem",
+        input_hash = input_hash,
+        result = episodic_mem_fit_encode(fitted),
+        run_id = run_id
+      )
+    }
+    fitted
+  }
+}
+
+#' The hash a MEM fit is stored under
+#'
+#' @param historical The weeks x seasons matrix `episodic_mem_fit()` is
+#'   given.
+#' @param config The resolved configuration; `config$mem` enters the hash.
+#' @param mem_mode The pathogen's `mem_mode`.
+#' @return A SHA-1 hex string.
+#' @keywords internal
+#' @noRd
+episodic_mem_fit_input_hash <- function(historical, config, mem_mode) {
+  payload <- list(
+    weeks = as.character(rownames(historical)),
+    seasons = as.character(colnames(historical)),
+    counts = as.integer(historical),
+    mem = episodic_config_canonicalise(config$mem),
+    mem_mode = as.character(mem_mode),
+    mem_version = as.character(utils::packageVersion("mem")),
+    episodic_version = as.character(utils::packageVersion("EpiSODIC"))
+  )
+  digest::digest(
+    as.character(jsonlite::toJSON(
+      payload,
+      auto_unbox = TRUE,
+      null = "null",
+      na = "null",
+      digits = I(17)
+    )),
+    algo = "sha1",
+    serialize = FALSE
+  )
+}
+
+#' Encode a MEM fit for the cache, losslessly
+#'
+#' Each number is written in hexadecimal floating point (`sprintf("%a")`),
+#' which `as.numeric()` reads back to the identical double, `NaN`, `NA`
+#' and infinities included. A decimal rendering would round, and a
+#' threshold read back one unit in the last place away from the one
+#' fitted is a threshold a count can fall on the other side of.
+#'
+#' @param fitted `episodic_mem_fit()`'s output, not `NULL`.
+#' @return A single JSON string.
+#' @keywords internal
+#' @noRd
+episodic_mem_fit_encode <- function(fitted) {
+  hex <- function(x) sprintf("%a", as.numeric(x))
+  as.character(jsonlite::toJSON(
+    list(
+      pre_epidemic = hex(fitted$pre_epidemic),
+      post_epidemic = hex(fitted$post_epidemic),
+      intensity = if (is.null(fitted$intensity)) NULL else hex(fitted$intensity)
+    ),
+    auto_unbox = TRUE,
+    null = "null"
+  ))
+}
+
+#' Decode a cached MEM fit
+#'
+#' @param result The stored string, from `episodic_mem_fit_encode()`.
+#' @return `episodic_mem_fit()`'s output shape, or `NULL` when `result`
+#'   is not a string that encoding produces.
+#' @keywords internal
+#' @noRd
+episodic_mem_fit_decode <- function(result) {
+  parsed <- tryCatch(
+    jsonlite::fromJSON(as.character(result), simplifyVector = TRUE),
+    error = function(e) NULL
+  )
+  scalar <- function(x) is.character(x) && length(x) == 1 && !is.na(x)
+  if (
+    !is.list(parsed) ||
+      !scalar(parsed$pre_epidemic) ||
+      !scalar(parsed$post_epidemic) ||
+      !(is.null(parsed$intensity) ||
+        (is.character(parsed$intensity) && length(parsed$intensity) == 3))
+  ) {
+    return(NULL)
+  }
+  number <- function(x) suppressWarnings(as.numeric(x))
+  list(
+    pre_epidemic = number(parsed$pre_epidemic),
+    post_epidemic = number(parsed$post_epidemic),
+    intensity = if (is.null(parsed$intensity)) {
+      NULL
+    } else {
+      stats::setNames(
+        number(parsed$intensity),
+        c("medium", "high", "very_high")
+      )
+    }
   )
 }
 
@@ -714,23 +942,15 @@ episodic_mem_thresholds_for_season <- function(cases,
     return(NULL)
   }
 
-  fit <- tryCatch(
-    suppressWarnings(suppressMessages(
-      mem::memmodel(
-        as.data.frame(built$matrix[, earlier, drop = FALSE]),
-        i.mem.info = FALSE
-      )
-    )),
-    error = function(e) NULL
-  )
-  if (is.null(fit)) {
+  fitted <- episodic_mem_fit(built$matrix[, earlier, drop = FALSE])
+  if (is.null(fitted)) {
     return(NULL)
   }
 
   list(
-    pre_epidemic = as.numeric(fit$pre.post.intervals["pre.i", 3]),
-    post_epidemic = as.numeric(fit$pre.post.intervals["post.i", 3]),
-    intensity = episodic_mem_intensity_thresholds(fit),
+    pre_epidemic = as.numeric(fitted$pre_epidemic),
+    post_epidemic = as.numeric(fitted$post_epidemic),
+    intensity = fitted$intensity,
     seasons_used = earlier
   )
 }
@@ -788,14 +1008,22 @@ episodic_mem_seasonal_matrix <- function(cases, anchor_week) {
   if (length(dates) == 0) {
     return(NULL)
   }
-  assigned <- lapply(dates, episodic_mem_season_week,
-    anchor_week = anchor_week
-  )
-  seasons <- vapply(assigned, function(a) a$season, character(1))
-  weeks <- vapply(assigned, function(a) a$week_label, character(1))
+  if (anyNA(dates)) {
+    stop(
+      "episodic_mem_seasonal_matrix(): ",
+      sum(is.na(dates)),
+      " case(s) have a sample_date that is not a date",
+      call. = FALSE
+    )
+  }
+  # Assigned once per distinct date and weighted by its case count: the
+  # season and week a case falls in depend on its date alone.
+  date <- sort(unique(dates))
+  n <- tabulate(match(dates, date), nbins = length(date))
+  assigned <- episodic_mem_season_weeks(date, anchor_week)
 
   week_order <- episodic_mem_week_order(anchor_week)
-  season_levels <- sort(unique(seasons))
+  season_levels <- sort(unique(assigned$season))
 
   mat <- matrix(
     0L,
@@ -803,11 +1031,10 @@ episodic_mem_seasonal_matrix <- function(cases, anchor_week) {
     ncol = length(season_levels),
     dimnames = list(week_order, season_levels)
   )
-  tab <- table(
-    factor(weeks, levels = week_order),
-    factor(seasons, levels = season_levels)
-  )
-  mat[rownames(tab), colnames(tab)] <- tab
+  cell <- match(assigned$week_label, week_order) +
+    52L * (match(assigned$season, season_levels) - 1L)
+  summed <- rowsum(n, cell, reorder = FALSE)
+  mat[as.integer(rownames(summed))] <- as.integer(summed[, 1])
 
   list(matrix = mat)
 }
@@ -845,6 +1072,35 @@ episodic_mem_season_week <- function(date, anchor_week) {
     season = season,
     week_label = as.character(week_capped),
     week_start = week_start
+  )
+}
+
+#' Which season and week each of many dates falls in
+#'
+#' `episodic_mem_season_week()` for a vector of dates at once, by the
+#' same rule.
+#'
+#' @param dates A `Date` vector without `NA`.
+#' @param anchor_week Integer 1-52, the ISO week the season starts at.
+#' @return A data frame with one row per date: `season` and `week_label`
+#'   (character), `week_start` (`Date`).
+#' @keywords internal
+#' @noRd
+episodic_mem_season_weeks <- function(dates, anchor_week) {
+  dates <- as.Date(dates)
+  iso_week <- as.integer(format(dates, "%V"))
+  iso_year <- as.integer(format(dates, "%G"))
+  week_capped <- pmin(iso_week, 52L)
+  start_year <- ifelse(
+    week_capped >= as.integer(anchor_week),
+    iso_year,
+    iso_year - 1L
+  )
+  data.frame(
+    season = sprintf("%d/%d", start_year, start_year + 1L),
+    week_label = as.character(week_capped),
+    week_start = dates - (as.integer(format(dates, "%u")) - 1),
+    stringsAsFactors = FALSE
   )
 }
 

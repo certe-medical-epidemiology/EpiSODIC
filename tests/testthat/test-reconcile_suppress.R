@@ -493,3 +493,122 @@ test_that("the batch readers return correctly shaped results for no clusters", {
   expect_true(all(c("cluster_id", "case_id") %in% names(empty)))
   expect_identical(episodic_db_assessed_cluster_ids(con, integer(0)), integer(0))
 })
+
+# A second parent at the same level, over the same weeks, holding the
+# cases given.
+suppress_extra_parent <- function(con, key, case_ids) {
+  stream_id <- episodic_db_stream_upsert(
+    con,
+    stream_key = digest::digest(key, algo = "sha1"),
+    level = "pathogen_institution",
+    pathogen = "Test pathogen",
+    institution_id = NA,
+    ward = NA,
+    observed_date = "2026-07-06"
+  )
+  cluster_id <- episodic_db_cluster_insert(
+    con,
+    stream_id = stream_id,
+    first_day = "2026-07-06",
+    last_day = "2026-07-19",
+    n_cases = length(case_ids),
+    priority_score = 50,
+    detector_agreement = 1,
+    run_id = episodic_db_latest_run(con)$run_id
+  )
+  if (length(case_ids) > 0) {
+    episodic_db_cluster_case_link_many(con, cluster_id, case_ids)
+  }
+  cluster_id
+}
+
+suppress_case_ids <- function(con, cluster_id) {
+  episodic_db_cluster_case_ids_batch(con, cluster_id)$case_id
+}
+
+test_that("a child sharing no case with a parent is not one of its children", {
+  # Two ward clusters of the parent's own, each holding a small share, and
+  # the same parent weighed against a second parent whose cases are all
+  # elsewhere. To that second parent both children overlap in time and
+  # share nothing, which is not a rise spread thinly across it.
+  env <- suppress_setup(child_share = 0.4, n_children = 2)
+  on.exit(DBI::dbDisconnect(env$con))
+  elsewhere <- vapply(1:6, function(i) {
+    DBI::dbExecute(
+      env$con,
+      "INSERT INTO episodic_case
+        (source_key, lab_number, patient_key, sample_date, pathogen, care_line, first_seen_run)
+       VALUES (?, ?, ?, '2026-07-10', 'Test pathogen', 'second', ?)",
+      params = list(sprintf("E%d", i), sprintf("E%d", i), sprintf("Q%d", i), episodic_db_latest_run(env$con)$run_id)
+    )
+    DBI::dbGetQuery(env$con, "SELECT last_insert_rowid() AS id")$id[1]
+  }, numeric(1))
+  stranger <- suppress_extra_parent(env$con, "stranger", elsewhere)
+
+  n <- episodic_suppress_lattice(env$con, episodic_config_resolve())
+
+  # The children are suppressed by their own parent, and only by it.
+  for (child in env$children) {
+    expect_equal(suppressed_by(env$con, child), env$parent)
+  }
+  expect_true(is.na(suppressed_by(env$con, stranger)))
+  expect_identical(n, 2L)
+})
+
+test_that("children that share nothing with a parent do not make its rise diffuse", {
+  # One child of the parent's own, holding 40%: not dominant, and not one
+  # of several. Two more ward clusters overlap in time and share none of
+  # the parent's cases; counted as children, they would make three
+  # children with shares under the diffuse threshold, and all three would
+  # be suppressed behind a cluster two of them have nothing to do with.
+  env <- suppress_setup(child_share = 0.4, n_children = 1)
+  on.exit(DBI::dbDisconnect(env$con))
+  strangers <- vapply(c("W-x", "W-y"), function(ward) {
+    stream_id <- episodic_db_stream_upsert(
+      env$con,
+      stream_key = digest::digest(ward, algo = "sha1"),
+      level = "pathogen_ward",
+      pathogen = "Test pathogen",
+      institution_id = NA,
+      ward = ward,
+      observed_date = "2026-07-06"
+    )
+    episodic_db_cluster_insert(
+      env$con,
+      stream_id = stream_id,
+      first_day = "2026-07-06",
+      last_day = "2026-07-19",
+      n_cases = 3,
+      priority_score = 50,
+      detector_agreement = 1,
+      run_id = episodic_db_latest_run(env$con)$run_id
+    )
+  }, integer(1))
+
+  n <- episodic_suppress_lattice(env$con, episodic_config_resolve())
+
+  expect_identical(n, 0L)
+  for (id in c(env$parent, env$children, strangers)) {
+    expect_true(is.na(suppressed_by(env$con, id)))
+  }
+})
+
+test_that("a cluster already suppressed this pass is not suppressed again by a later parent", {
+  # Two parents holding the same cases, each with the same four children
+  # spread under it. The first parent weighed takes the children; the
+  # second finds them taken, rather than overwriting the first.
+  env <- suppress_setup(child_share = 0.8, n_children = 4)
+  on.exit(DBI::dbDisconnect(env$con))
+  second <- suppress_extra_parent(
+    env$con,
+    "second parent",
+    suppress_case_ids(env$con, env$parent)
+  )
+
+  n <- episodic_suppress_lattice(env$con, episodic_config_resolve())
+
+  for (child in env$children) {
+    expect_equal(suppressed_by(env$con, child), min(env$parent, second))
+  }
+  expect_identical(n, length(env$children))
+})

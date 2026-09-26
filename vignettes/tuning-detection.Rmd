@@ -448,6 +448,12 @@ Every tunable parameter across both the YAML configuration and the per-pathogen 
 | ---------------------- | ------- | --------------------------------------------------------- |
 | <code style="white-space: nowrap;">access:<br>&nbsp;&nbsp;require_login</code> | `FALSE` | Whether the dashboard requires a sign-in to read anything |
 
+### Database
+
+| Key                    | Default | Effect                                                    |
+| ---------------------- | ------- | --------------------------------------------------------- |
+| <code style="white-space: nowrap;">database:<br>&nbsp;&nbsp;auto_migrate</code> | `TRUE` | Whether a scheduled run brings the database up to the installed package's schema itself; see [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)'s "Upgrading EpiSODIC" |
+
 ### Per-pathogen CSV columns
 
 | Column                             | Typical default | Effect                                            |

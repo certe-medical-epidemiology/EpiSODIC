@@ -233,6 +233,53 @@ test_that("a full detection run completes against MariaDB", {
   expect_false(any(ids == 0))
 })
 
+test_that("a run migrates a database one schema version behind, against MariaDB", {
+  skip_on_cran()
+  dsn <- mariadb_fresh()
+  con <- episodic_db_connect(dsn)
+  DBI::dbExecute(con, "DROP TABLE episodic_detector_cache")
+  DBI::dbExecute(
+    con,
+    "DELETE FROM episodic_schema_version WHERE version = ?",
+    params = list(episodic_schema_version)
+  )
+  DBI::dbExecute(
+    con,
+    "INSERT INTO episodic_schema_version (version, applied_at) VALUES (?, '2025-01-01T00:00:00Z')",
+    params = list(episodic_schema_version - 1L)
+  )
+  DBI::dbDisconnect(con)
+
+  end_date <- as.Date("2025-06-29")
+  log <- testthat::capture_messages(episodic_run_cron(
+    cases = mariadb_cases(end_date),
+    db_path = dsn,
+    run_date = end_date
+  ))
+  expect_length(grep("Database migrated from", log), 1L)
+  expect_length(grep("Database connected \\((MariaDB|MySQL) [0-9]", log), 1L)
+  expect_length(grep("No copy of a MariaDB/MySQL database", log), 1L)
+
+  con <- episodic_db_connect(dsn)
+  on.exit(DBI::dbDisconnect(con))
+  expect_equal(episodic_db_schema_version(con), episodic_schema_version)
+  expect_true(DBI::dbExistsTable(con, "episodic_detector_cache"))
+  expect_equal(
+    DBI::dbGetQuery(con, "SELECT status FROM episodic_detection_run")$status,
+    "success"
+  )
+  # The migration lock is released with the migration, not held for the
+  # rest of the connection's life.
+  expect_equal(
+    as.integer(DBI::dbGetQuery(
+      con,
+      "SELECT IS_FREE_LOCK(?) AS free",
+      params = list(episodic_db_migration_lock_name)
+    )$free),
+    1L
+  )
+})
+
 test_that("the dashboard reads what the run wrote, against MariaDB", {
   skip_on_cran()
   dsn <- mariadb_fresh()

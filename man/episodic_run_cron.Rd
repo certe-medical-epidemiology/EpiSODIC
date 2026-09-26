@@ -120,6 +120,13 @@ as well.
 The exact detection settings used are recorded with the run, so any past
 result can always be traced back to the configuration that produced it.
 
+A database whose schema is behind the installed package is brought up
+to date before the run starts, the way \code{\link[=episodic_db_migrate]{episodic_db_migrate()}} would,
+so upgrading an instance is upgrading the package. Set
+\code{database.auto_migrate} to \code{false} in your configuration where schema
+changes go through a DBA instead; the run then refuses such a database
+and records why. See \code{vignette("deployment")}, "Upgrading EpiSODIC".
+
 So is what each feed delivered. Before the run writes anything, your
 case data goes through \code{\link[=episodic_check_cases]{episodic_check_cases()}}. Structural problems -
 a missing column, a value outside the allowed set, a date that does not
