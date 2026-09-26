@@ -121,11 +121,15 @@ episodic_suppress_lattice <- function(con, config, progress_every = 30) {
   # Every cluster that has been suppressed this run, and every cluster
   # that has suppressed one. A cluster in either set is out of the
   # running for the other role - see this function's own documentation
-  # for why chains are refused rather than resolved.
+  # for why chains are refused rather than resolved - and a cluster
+  # already suppressed is not suppressed again: the first writer wins,
+  # rather than whichever parent happens to be weighed last.
   suppressed_ids <- integer(0)
   suppressor_ids <- integer(0)
   free_to_suppress <- function(id) !(id %in% suppressed_ids)
-  free_to_be_suppressed <- function(id) !(id %in% suppressor_ids)
+  free_to_be_suppressed <- function(id) {
+    !(id %in% suppressor_ids) && !(id %in% suppressed_ids)
+  }
 
   n_suppressed <- 0L
   n_by_child <- 0L
@@ -180,6 +184,19 @@ episodic_suppress_lattice <- function(con, config, progress_every = 30) {
           },
           numeric(1)
         )
+        # Overlapping in time at the child level is not being one of the
+        # parent's children: a ward cluster in another hospital overlaps
+        # every institution cluster of the same weeks and shares none of
+        # its cases. Its share of zero is not a measurement of a rise
+        # spread thinly across this parent - there is nothing of the
+        # parent in it to measure - so it is no child of this parent,
+        # neither counted towards a diffuse rise nor suppressed by one.
+        own <- shares > 0
+        overlapping <- overlapping[own, , drop = FALSE]
+        shares <- shares[own]
+        if (length(shares) == 0) {
+          next
+        }
 
         dominant <- which(shares >= child_dominance)
         if (length(dominant) > 0) {

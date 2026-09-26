@@ -16,6 +16,7 @@
 
 - A case import naming more distinct patients than one SQL statement allows no longer fails the run
 - Farrington with institution patient-days no longer fails the run under `surveillance` 1.26
+- Lattice suppression no longer suppresses a child cluster behind a parent it shares no case with, nor re-suppresses one already suppressed
 
 # EpiSODIC 0.21.0
 
