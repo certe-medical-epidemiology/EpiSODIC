@@ -525,7 +525,8 @@ episodic_config_merge <- function(base, override) {
 #' @keywords internal
 #' @noRd
 episodic_pathogen_config_resolve <- function(pathogen_config_path = Sys.getenv("EPISODIC_PATHOGEN_CONFIG",
-                                                                               unset = NA)) {
+                                               unset = NA
+                                             )) {
   defaults_path <- system.file(
     "config",
     "episodic_default_pathogen_config.csv",
@@ -653,13 +654,17 @@ episodic_pathogen_config_merge <- function(defaults, overlay, source_label = "op
 #' detection run computes, and each render records the threshold it
 #' actually used in its own `params` anyway.
 #'
+#' `database` is here for the same reason as `access`: whether a run may
+#' bring the schema forward decides how the instance is maintained, and
+#' a migrated schema computes what the unmigrated one would have.
+#'
 #' `geography` is deliberately *not* here. `region_code` and the area
 #' rule both feed `episodic_stream_key()`, so a change to either changes
 #' every geographic stream's identity - which is exactly the kind of
 #' difference the hash exists to make visible.
 #' @keywords internal
 #' @noRd
-episodic_config_unhashed_sections <- c("notifications", "access", "report")
+episodic_config_unhashed_sections <- c("notifications", "access", "report", "database")
 
 #' The scale a lattice level belongs to
 #'

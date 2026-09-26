@@ -194,6 +194,13 @@ episodic_pkg_versions_extended <- function() {
 #' The exact detection settings used are recorded with the run, so any past
 #' result can always be traced back to the configuration that produced it.
 #'
+#' A database whose schema is behind the installed package is brought up
+#' to date before the run starts, the way [episodic_db_migrate()] would,
+#' so upgrading an instance is upgrading the package. Set
+#' `database.auto_migrate` to `false` in your configuration where schema
+#' changes go through a DBA instead; the run then refuses such a database
+#' and records why. See `vignette("deployment")`, "Upgrading EpiSODIC".
+#'
 #' So is what each feed delivered. Before the run writes anything, your
 #' case data goes through [episodic_check_cases()]. Structural problems -
 #' a missing column, a value outside the allowed set, a date that does not
@@ -342,7 +349,13 @@ episodic_run_cron <- function(cases,
 
   episodic_trace("Connecting to database")
   con <- if (episodic_db_exists(db_path)) {
-    episodic_db_connect(db_path)
+    episodic_run_cron_connect(
+      db_path,
+      config,
+      host = host,
+      account = account,
+      run_date = run_date
+    )
   } else {
     episodic_trace("No existing database found - creating one")
     episodic_db_create(db_path)
@@ -650,6 +663,112 @@ episodic_stage_timer <- function(stages) {
       )
     }
   )
+}
+
+#' Connect a run to an existing database, bringing its schema forward
+#'
+#' An upgrade of the package lands on a server by `update.packages()`,
+#' by an image rebuild, or by a colleague, and the scheduled run is the
+#' first thing to meet the database afterwards. Refusing a database one
+#' schema version behind would stop surveillance at every instance that
+#' upgraded, with the reason in a cron log, until someone ran
+#' `episodic_db_migrate()` by hand; so with `database.auto_migrate` on
+#' (the shipped default) the run migrates it here, before the run row
+#' and before the detection transaction. Before the transaction because
+#' MariaDB and MySQL commit schema changes implicitly, which inside it
+#' would commit half a run; before the run row so the row is written in
+#' the schema this build knows.
+#'
+#' A database the run will not open - newer than this build, or behind it
+#' with `auto_migrate` off, or one whose migration failed - stops the run
+#' with the reason, logged and recorded on a failed run row where the
+#' database has a run table to hold one, so the Activity screen explains
+#' the gap once the database can be opened again rather than simply
+#' showing no run.
+#'
+#' @param db_path The database path or DSN.
+#' @param config The resolved configuration; uses
+#'   `config$database$auto_migrate`.
+#' @param host,account,run_date For the failed run row.
+#' @return An open [DBI::DBIConnection-class] at the current schema.
+#' @keywords internal
+#' @noRd
+episodic_run_cron_connect <- function(db_path,
+                                      config,
+                                      host,
+                                      account,
+                                      run_date) {
+  con <- episodic_db_connect(db_path, check_schema_version = FALSE)
+  version <- episodic_db_schema_version(con)
+  if (!is.na(version) && version == episodic_schema_version) {
+    return(con)
+  }
+  found <- if (is.na(version)) "no schema version" else paste("schema version", version)
+
+  problem <- if (!is.na(version) && version > episodic_schema_version) {
+    episodic_db_schema_newer_message(version)
+  } else if (!isTRUE(config$database$auto_migrate)) {
+    paste0(
+      "The database is at ",
+      found,
+      " and this EpiSODIC expects schema version ",
+      episodic_schema_version,
+      ". `database.auto_migrate` is set to false, so this run does not ",
+      "bring it forward itself: run episodic_db_migrate() on it (nothing ",
+      "is dropped or rewritten), then run again."
+    )
+  } else {
+    episodic_trace(
+      "The database is at ",
+      found,
+      " and this EpiSODIC expects schema version ",
+      episodic_schema_version,
+      ": migrating it before the run (database.auto_migrate)"
+    )
+    migrated <- tryCatch(
+      episodic_db_migrate_con(
+        con,
+        db_path,
+        backup = TRUE,
+        say = function(...) episodic_trace(...)
+      ),
+      error = function(e) e
+    )
+    if (!inherits(migrated, "error")) {
+      episodic_trace(
+        "Database migrated from ",
+        found,
+        " to schema version ",
+        migrated$to
+      )
+      return(con)
+    }
+    conditionMessage(migrated)
+  }
+
+  episodic_trace(problem, severity = "danger")
+  recorded <- tryCatch(
+    {
+      episodic_db_run_record_refusal(
+        con,
+        host = host,
+        account = account,
+        run_date = run_date,
+        error_text = problem
+      )
+      TRUE
+    },
+    error = function(e) e
+  )
+  if (!isTRUE(recorded)) {
+    episodic_trace(
+      "The refusal could not be recorded on a run row either: ",
+      conditionMessage(recorded),
+      severity = "danger"
+    )
+  }
+  DBI::dbDisconnect(con)
+  stop(problem, call. = FALSE)
 }
 
 #' Whether this run is the one that reports the archive

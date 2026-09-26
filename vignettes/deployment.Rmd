@@ -159,15 +159,54 @@ Anything other than `r EpiSODIC:::doc_foreign_key_count()` means the schema and 
 
 ## Upgrading EpiSODIC
 
-The database records which version of EpiSODIC's schema it was built with, and `episodic_db_connect()` refuses one it does not recognise rather than failing later with an unexplained SQL error - or, worse, not failing and reading a column that has since come to mean something else. So when you update the package and its schema has moved on, the next run stops with an error naming the fix:
+The database records which version of EpiSODIC's schema it was built with. When an upgraded package meets a database whose schema is behind it, the next `episodic_run_cron()` brings the database forward itself, before it does anything else, and says so in its log:
+
+```
+Database migrated from schema version 7 to schema version 8
+```
+
+So upgrading an instance is upgrading the package: `update.packages()`, a rebuilt container image, or a colleague's `install.packages()`, and the next scheduled run does the rest. Nothing has to be remembered on the day, which matters most for the instance nobody looks after closely.
+
+### What a migration does, and does not do
+
+- **It only adds.** Migrations add tables, add columns and backfill values, and never drop or rewrite anything. Your surveillance history, your assessments and your audit trail are carried forward untouched.
+- **It runs before the run.** Each step is a transaction of its own, applied before the run writes anything, never inside the detection run's own transaction.
+- **It copies a SQLite database first.** The file is copied beside itself as `<file>.schema-<from>-to-<to>.bak` before the first step, and the log names the copy. If a copy with that name already exists from an earlier attempt at the same upgrade, it is kept rather than replaced. A MariaDB or MySQL database is not copied, because a server's backups belong to whoever runs the server; the log says so.
+- **One process migrates at a time.** A scheduled run and a manual `episodic_db_migrate()`, or two servers sharing one MariaDB schema, can meet the same out-of-date database at once. One of them migrates, the other waits, finds the work done, and carries on.
+- **Old databases are adopted.** A database built by EpiSODIC 0.12.x or earlier carries no version at all, since the version table postdates it. It is adopted at version 1 and brought forward from there.
+- **Skipped versions are fine.** An instance that skips versions (0.19 straight to 0.25) is brought through every step in between, in order.
+
+### When the schema is not the application's to change
+
+Many hospitals do not let an application change its own database schema: the account EpiSODIC connects with may read and write rows but not `CREATE` or `ALTER`, and schema changes go through a DBA and change control. For such an instance, turn the automatic migration off in your `EPISODIC_CONFIG` YAML:
+
+```yaml
+database:
+  auto_migrate: false
+```
+
+A run that then meets a database behind the package does not start. The refusal is:
+
+- printed in the run log, naming both schema versions and the command to run;
+- recorded as a failed run, so the gap is explained on the Activity screen once the database has been migrated.
+
+Until then, the dashboard of the upgraded package cannot open the database either: it refuses it with the same explanation rather than reading a schema it does not know.
+
+Whoever holds the privileges then runs, from an account that has `CREATE`, `ALTER`, `INDEX` and `REFERENCES` on the database:
 
 ```r
 episodic_db_migrate()   # or episodic_db_migrate(db_path)
 ```
 
-Migrations are additive: they add tables, add columns and backfill values, in one transaction per step, and never drop or rewrite anything. Your surveillance history, your assessments and your audit trail are carried forward untouched. Take a backup first anyway - that advice does not stop being good because the code is careful.
+If `auto_migrate` is left on and the account lacks those privileges, the run fails the same way, and the message says which privileges are missing rather than passing on the server's `CREATE command denied`.
 
-A database built by EpiSODIC 0.12.x or earlier carries no version at all, since the version table postdates it. `episodic_db_migrate()` adopts such a database at version 1 rather than refusing it, then brings it forward from there. Run it once, on each instance, after upgrading.
+Under MariaDB and MySQL, a schema change commits on its own, so a step that fails part-way may leave part of itself in place. Every step skips what it finds already done, so running the migration again once the cause is fixed is the correct response.
+
+### Going back
+
+Migrations only go forward. A package older than its database refuses to open it, and tells you to upgrade the package - or, if the upgrade is already installed, to restart the R process still running the old one. A dashboard started before the upgrade is the usual case: the scheduled run has migrated the database under it.
+
+To really go back, restore the SQLite copy taken before the migration, or your own MariaDB/MySQL backup.
 
 ## Running the app
 

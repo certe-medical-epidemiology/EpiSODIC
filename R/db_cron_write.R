@@ -721,6 +721,42 @@ episodic_db_run_start <- function(con,
   episodic_db_last_insert_id(con)
 }
 
+#' Record a run that never started, because the database was refused
+#'
+#' Written with only the columns `episodic_detection_run` has had since
+#' its first version, so the row can be recorded in a database whose
+#' schema is behind this build as well as in one ahead of it - which are
+#' exactly the databases a run refuses.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param host,account,run_date As for `episodic_db_run_start()`.
+#' @param error_text Why the run did not start.
+#' @return The new `run_id`.
+#' @keywords internal
+#' @noRd
+episodic_db_run_record_refusal <- function(con,
+                                           host,
+                                           account,
+                                           run_date,
+                                           error_text) {
+  now <- episodic_now()
+  episodic_db_execute(
+    con,
+    "INSERT INTO episodic_detection_run
+      (host, account, started_at, run_date, finished_at, status, error_text)
+     VALUES (?, ?, ?, ?, ?, 'failed', ?)",
+    params = list(
+      host,
+      account,
+      now,
+      episodic_sql_date(run_date),
+      now,
+      error_text
+    )
+  )
+  episodic_db_last_insert_id(con)
+}
+
 #' @keywords internal
 #' @noRd
 episodic_db_run_finish <- function(con,
