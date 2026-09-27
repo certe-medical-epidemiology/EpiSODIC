@@ -4,6 +4,7 @@
   "date.format.range_year": "{month_from} {day_from} - {month_to} {day_to}, {year}",
   "date.format.single": "{month} {day}, {year}",
   "info.about.license": "License: {license}",
+  "info.reference.style.invalid_colour": "`{key}` is set to \"{value}\", which is not a hex color (#RGB, #RRGGBB or #RRGGBBAA, in quotes: a bare # starts a YAML comment), so the shipped {default} is used instead.",
   "interpretation.fragment.demography.shifted": "The age distribution has shifted toward the {dominant_band} group, against a baseline of {baseline_band}.",
   "misc.language.en": "British English"
 }

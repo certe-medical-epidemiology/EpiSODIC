@@ -256,10 +256,13 @@ episodic_scheduled_report_send_one <- function(con,
 #' need is the attached report, not a second copy of it retyped into the
 #' email body. What the body does add is the one thing the attachment
 #' cannot show on its own - that this is a recurring, automated update,
-#' at what cadence, and (the "banger" bit - see
-#' `episodic_report_diff()`) a one-line summary of what changed since
-#' the previous one, so a reader can tell at a glance whether opening the
-#' attachment is urgent.
+#' at what cadence, and (see `episodic_report_diff()`) a one-line summary
+#' of what changed since the previous one, so a reader can tell at a
+#' glance whether opening the attachment is urgent.
+#'
+#' The body is the operator's own template when
+#' `EPISODIC_MAIL_TEMPLATE_REPORT` names one (`episodic_mail_body()`),
+#' and the built-in one otherwise or when that template fails to render.
 #' @param con A [DBI::DBIConnection-class].
 #' @param subscription One entry from
 #'   `episodic_report_subscription_current_all()`.
@@ -273,6 +276,81 @@ episodic_scheduled_report_send_one <- function(con,
 #' @noRd
 episodic_scheduled_report_message <- function(con, subscription, final, attachment_path, lang) {
   details <- episodic_notify_cluster_details(con, subscription$cluster_id)[1, ]
+  diff <- episodic_scheduled_report_latest_diff(con, subscription$cluster_id)
+  built <- episodic_scheduled_report_build(
+    details,
+    diff = diff,
+    final = final,
+    interval_days = subscription$interval_days,
+    lang = lang
+  )
+  html <- built$html
+  if (!is.na(episodic_mail_template_env("report"))) {
+    html <- episodic_mail_body(
+      "report",
+      episodic_mail_data_report(
+        details,
+        diff = diff,
+        final = final,
+        interval_days = subscription$interval_days,
+        attachment_path = attachment_path,
+        title = built$title,
+        default_html = built$html,
+        default_content = built$html_content,
+        lang = lang
+      )
+    )
+  }
+  list(
+    title = built$title,
+    html = html,
+    attachment_path = attachment_path
+  )
+}
+
+#' What changed since the previous report, as that render recorded it
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id A single cluster id.
+#' @return The `diff` list from the latest render's parameters, or `NULL`
+#'   when there is no render, its parameters cannot be read, or it had
+#'   nothing to compare against.
+#' @keywords internal
+#' @noRd
+episodic_scheduled_report_latest_diff <- function(con, cluster_id) {
+  reports_so_far <- episodic_db_reports_for_cluster(con, cluster_id)
+  latest_report <- episodic_report_latest_render(reports_so_far)
+  if (is.null(latest_report)) {
+    return(NULL)
+  }
+  params <- tryCatch(
+    jsonlite::fromJSON(latest_report$params),
+    error = function(e) NULL
+  )
+  params$diff
+}
+
+#' The built-in body of a scheduled report's email
+#'
+#' No database access, so the same body can be built for a preview
+#' (`episodic_mail_template_preview()`) as for a real send.
+#'
+#' @param details One row of `episodic_notify_cluster_details()`.
+#' @param diff As from `episodic_scheduled_report_latest_diff()`.
+#' @param final,interval_days As for `episodic_scheduled_report_message()`
+#'   and the subscription.
+#' @param lang Language for the email text.
+#' @param style Inline styles, from `episodic_mail_style()`.
+#' @return A list with `title`, `html` and `html_content` (the inside of
+#'   `html`'s `<body>`).
+#' @keywords internal
+#' @noRd
+episodic_scheduled_report_build <- function(details,
+                                            diff,
+                                            final,
+                                            interval_days,
+                                            lang,
+                                            style = episodic_mail_style()) {
   location <- episodic_notify_location(details, lang = lang)
   period_str <- episodic_format_date_range(
     details$first_day,
@@ -280,7 +358,7 @@ episodic_scheduled_report_message <- function(con, subscription, final, attachme
     lang = lang
   )
   ref <- episodic_object_ref(
-    subscription$cluster_id,
+    details$cluster_id,
     details$level,
     lang = lang
   )
@@ -293,9 +371,12 @@ episodic_scheduled_report_message <- function(con, subscription, final, attachme
     lang = lang
   )
 
+  p_open <- function(extra = "") {
+    paste0("<p", episodic_mail_style_attr(paste0(extra, style$paragraph)), ">")
+  }
   lines <- character(0)
   lines <- c(lines, paste0(
-    "<p>",
+    p_open(),
     episodic_tr(
       "scheduled_report.email_intro",
       pathogen = episodic_html_escape(details$pathogen),
@@ -306,20 +387,9 @@ episodic_scheduled_report_message <- function(con, subscription, final, attachme
     "</p>"
   ))
 
-  reports_so_far <- episodic_db_reports_for_cluster(con, subscription$cluster_id)
-  latest_report <- episodic_report_latest_render(reports_so_far)
-  params <- if (is.null(latest_report)) {
-    NULL
-  } else {
-    tryCatch(
-      jsonlite::fromJSON(latest_report$params),
-      error = function(e) NULL
-    )
-  }
-  diff <- params$diff
   if (!is.null(diff) && isTRUE(diff$n_new_cases > 0)) {
     lines <- c(lines, paste0(
-      "<p>",
+      p_open(),
       episodic_tr(
         "scheduled_report.email_new_cases",
         cases_phrase = episodic_count_phrase(
@@ -336,17 +406,18 @@ episodic_scheduled_report_message <- function(con, subscription, final, attachme
 
   if (isTRUE(final)) {
     lines <- c(lines, paste0(
-      "<p><strong>",
+      p_open(),
+      "<strong>",
       episodic_tr("scheduled_report.email_final", lang = lang),
       "</strong></p>"
     ))
   } else {
     lines <- c(lines, paste0(
-      "<p style='color:#666'>",
+      p_open(paste0(style$muted, ";")),
       episodic_tr(
         "scheduled_report.email_recurrence",
         interval = episodic_count_phrase(
-          subscription$interval_days,
+          interval_days,
           episodic_tr("unit.day", lang = lang),
           episodic_tr("unit.days", lang = lang),
           lang = lang
@@ -357,14 +428,16 @@ episodic_scheduled_report_message <- function(con, subscription, final, attachme
     ))
   }
 
+  html_content <- episodic_notify_html_content(
+    title,
+    paste(lines, collapse = "\n"),
+    dashboard_url = NULL,
+    lang = lang,
+    style = style
+  )
   list(
     title = title,
-    html = episodic_notify_html_wrap(
-      title,
-      paste(lines, collapse = "\n"),
-      dashboard_url = NULL,
-      lang = lang
-    ),
-    attachment_path = attachment_path
+    html = episodic_notify_html_document(html_content, style = style),
+    html_content = html_content
   )
 }

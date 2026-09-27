@@ -218,7 +218,7 @@ test_that("episodic_notify_build_new_clusters() centre-aligns everything after t
   )
   msg <- episodic_notify_build_new_clusters(details, 1L, "2026-08-15", NULL)
   header <- sub(
-    ".*(<tr style='background:#f0f0f0'>.*?</tr>).*",
+    ".*(<tr style='background-color:[^']*'>.*?</tr>).*",
     "\\1",
     msg$html,
     perl = TRUE

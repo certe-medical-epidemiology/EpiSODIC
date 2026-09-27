@@ -126,16 +126,7 @@ episodic_app_reference_data <- function(con = NULL,
       }),
       path = env("EPISODIC_CONFIG")
     )),
-    list(episodic_reference_row(
-      "EPISODIC_STYLE",
-      if (is.na(env("EPISODIC_STYLE"))) "default" else "in_use",
-      tr(if (is.na(env("EPISODIC_STYLE"))) {
-        "info.reference.file.default"
-      } else {
-        "info.reference.file.custom"
-      }),
-      path = env("EPISODIC_STYLE")
-    )),
+    list(episodic_app_reference_style(lang = lang)),
     list(episodic_reference_row(
       "EPISODIC_QUARTO_REPORT",
       if (is.na(env("EPISODIC_QUARTO_REPORT"))) "default" else "in_use",
@@ -145,7 +136,84 @@ episodic_app_reference_data <- function(con = NULL,
         "info.reference.file.custom"
       }),
       path = env("EPISODIC_QUARTO_REPORT")
+    )),
+    lapply(
+      names(episodic_mail_template_variables),
+      episodic_app_reference_mail_template,
+      lang = lang
+    )
+  )
+}
+
+#' An email template's own row
+#'
+#' A template that cannot be used never stops an email (see
+#' `episodic_mail_body()`), which is exactly why it has to be said here:
+#' the email arrives, in EpiSODIC's layout rather than the operator's, and
+#' nothing else on any screen says why.
+#' @param kind `"new_clusters"` or `"report"`.
+#' @keywords internal
+#' @noRd
+episodic_app_reference_mail_template <- function(kind,
+                                                 lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  variable <- episodic_mail_template_variables[[kind]]
+  path <- episodic_mail_template_env(kind)
+  if (is.na(path)) {
+    return(episodic_reference_row(
+      variable,
+      "default",
+      episodic_tr("info.reference.mail_template.default", lang = lang)
     ))
+  }
+  reason <- episodic_mail_template_problem(kind, path)
+  if (!is.na(reason)) {
+    return(episodic_reference_row(
+      variable,
+      if (identical(reason, "no_quarto")) "unavailable" else "problem",
+      episodic_mail_template_problem_text(reason, lang = lang),
+      path = path
+    ))
+  }
+  episodic_reference_row(
+    variable,
+    "in_use",
+    episodic_tr("info.reference.mail_template.custom", lang = lang),
+    path = path
+  )
+}
+
+#' The palette's own row
+#'
+#' A palette the app cannot fully use never stops it (see
+#' `episodic_palette_config_resolve()`); this row is where that is said
+#' instead, naming each rejected value and what stands in for it. So a
+#' file with one mistyped colour reads as a problem here, not as "in use",
+#' even though every other role in it is.
+#' @keywords internal
+#' @noRd
+episodic_app_reference_style <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  path <- Sys.getenv("EPISODIC_STYLE", unset = NA)
+  if (is.na(path) || !nzchar(path)) {
+    return(episodic_reference_row(
+      "EPISODIC_STYLE",
+      "default",
+      episodic_tr("info.reference.file.default", lang = lang)
+    ))
+  }
+  problems <- episodic_palette_problems(path)
+  if (length(problems) > 0) {
+    return(episodic_reference_row(
+      "EPISODIC_STYLE",
+      "problem",
+      paste(episodic_palette_problem_texts(problems, lang = lang), collapse = " "),
+      path = path
+    ))
+  }
+  episodic_reference_row(
+    "EPISODIC_STYLE",
+    "in_use",
+    episodic_tr("info.reference.file.custom", lang = lang),
+    path = path
   )
 }
 

@@ -1,0 +1,93 @@
+---
+# A starting point for EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS: the body of the
+# email sent when a detection run finds new clusters. Copy it, adapt it,
+# and point the environment variable at your copy; preview it with
+# episodic_mail_template_preview("new_clusters", template_path = "...").
+#
+# An email is not a web page. Email clients drop <style> blocks and
+# scripts, so every style here is inline, taken from d$mail_style (built
+# from the instance palette, the dashboard's own colours and font), and
+# `minimal: true` keeps Quarto from adding Bootstrap and JavaScript that
+# no inbox would run. Images embedded in the HTML are blocked by Gmail and
+# Outlook, so this template carries text and tables only.
+pagetitle: "EpiSODIC"
+format:
+  html:
+    minimal: true
+    embed-resources: true
+params:
+  data_path: "mail_data.rds"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+d <- readRDS(params$data_path)
+lang <- d$lang
+s <- d$mail_style
+tr <- function(key, ...) EpiSODIC:::episodic_tr(key, lang = lang, ...)
+esc <- function(x) EpiSODIC:::episodic_html_escape(x)
+at <- function(css) EpiSODIC:::episodic_mail_style_attr(css)
+# Every number is written the way `lang` writes one; a value that was not
+# measured is NA and shows as a dash, never as a zero.
+num <- function(x, digits = NULL) {
+  if (is.na(x)) tr("misc.dash") else EpiSODIC:::episodic_format_number(x, digits = digits, lang = lang)
+}
+```
+
+```{r body, results='asis'}
+rows <- vapply(seq_len(nrow(d$clusters)), function(i) {
+  row <- d$clusters[i, ]
+  ref <- if (is.na(row$url)) {
+    esc(row$ref)
+  } else {
+    paste0("<a href='", esc(row$url), "'", at(s$link), ">", esc(row$ref), "</a>")
+  }
+  centre <- paste0("<td", at(paste0("text-align:center;", s$td)), ">")
+  paste0(
+    "<tr>",
+    "<td", at(s$td), ">", ref, "</td>",
+    "<td", at(s$td), ">", esc(row$pathogen), "</td>",
+    "<td", at(s$td), ">", esc(row$location), "</td>",
+    centre, esc(row$period), "</td>",
+    centre, num(row$n_cases), "</td>",
+    centre, num(row$priority_score, digits = 0), "</td>",
+    "</tr>"
+  )
+}, character(1))
+
+header <- function(key, align) {
+  paste0("<th", at(paste0("text-align:", align, ";", s$th)), ">", esc(tr(key)), "</th>")
+}
+
+footer <- if (is.null(d$dashboard_url)) {
+  ""
+} else {
+  paste0(
+    "<p", at(s$paragraph), "><a href='", esc(d$dashboard_url), "'", at(s$link), ">",
+    esc(tr("notif.open_dashboard")), "</a></p>"
+  )
+}
+
+cat(
+  "```{=html}\n",
+  "<div", at(s$body), ">",
+  # Your organisation's letterhead goes here.
+  "<h2", at(s$heading), ">", esc(d$title), "</h2>",
+  "<table", at(s$table), ">",
+  "<tr", at(s$head_row), ">",
+  header("column.id", "left"),
+  header("column.pathogen", "left"),
+  header("column.place", "left"),
+  header("column.period", "center"),
+  header("column.cases", "center"),
+  header("column.priority", "center"),
+  "</tr>",
+  paste(rows, collapse = "\n"),
+  "</table>",
+  footer,
+  "<p", at(s$muted), ">EpiSODIC ", esc(d$package_version), "</p>",
+  "</div>\n",
+  "```\n",
+  sep = ""
+)
+```

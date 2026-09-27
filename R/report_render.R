@@ -37,6 +37,13 @@
 #' the default `r doc_system_file("inst/report/episodic_default_report.qmd")`
 #' is a good starting point to copy and adapt.
 #'
+#' The report is styled from the instance palette ([episodic_palette()]),
+#' the same colours and font as the dashboard: its charts are drawn in it,
+#' and an `episodic.scss` theme built from it is written beside the
+#' template, which the shipped template names as its `theme`. A custom
+#' template receives the palette as `palette` in its data and can name the
+#' same theme file.
+#'
 #' Rendering requires [Quarto](https://quarto.org) to be installed
 #' separately (both the `quarto` R package and the Quarto command-line
 #' tool) - this function raises an informative error if it is not found.
@@ -139,6 +146,9 @@ episodic_report_render <- function(con,
   snapshot <- episodic_report_snapshot(obj)
   diff <- episodic_report_diff(existing, snapshot, case_ids)
 
+  # Resolved here, by the process asking for the render, and handed to
+  # the template - see `episodic_palette_use()`.
+  palette <- episodic_palette()
   report_data <- list(
     obj = obj,
     epi_curve = epi_curve,
@@ -150,6 +160,7 @@ episodic_report_render <- function(con,
     small_count_threshold = threshold,
     rendered_at = episodic_now(),
     lang = lang,
+    palette = palette,
     package_version = as.character(utils::packageVersion("EpiSODIC"))
   )
 
@@ -166,6 +177,13 @@ episodic_report_render <- function(con,
   }
   data_path <- file.path(work_dir, "report_data.rds")
   saveRDS(report_data, data_path)
+  # Beside the template whichever template it is: the shipped one names it
+  # as its theme, and an operator's own can do the same.
+  writeLines(
+    episodic_report_scss(palette),
+    file.path(work_dir, "episodic.scss"),
+    useBytes = TRUE
+  )
 
   tryCatch(
     {
@@ -329,6 +347,55 @@ episodic_report_output_dir <- function(config, db_path, subdir) {
   }
 
   file.path(dirname(db_path), subdir)
+}
+
+#' A report's Bootstrap theme, from the instance palette
+#'
+#' Written beside the template as `episodic.scss` for every render, and
+#' named by the shipped template as `theme: [default, episodic.scss]`, so
+#' the report's text, headings, links, tables and callouts are in the same
+#' colours and font as the dashboard that asked for it. Bootstrap's own
+#' variables rather than rules of our own, so every component Bootstrap
+#' draws follows them without being listed here.
+#'
+#' Every value has already been validated by
+#' `episodic_palette_config_resolve()`: a colour is a hex colour and the
+#' font stack carries nothing that could end a Sass declaration.
+#'
+#' @param palette A palette, as returned by `episodic_palette()`.
+#' @return A single string: a Quarto theme file.
+#' @keywords internal
+#' @noRd
+episodic_report_scss <- function(palette) {
+  vars <- c(
+    `font-family-sans-serif` = palette$font,
+    `font-size-root` = palette$font_size_base,
+    `body-color` = palette$ink,
+    `body-bg` = palette$surface,
+    `primary` = palette$primary,
+    `secondary` = palette$secondary,
+    `success` = palette$success,
+    `info` = palette$tertiary,
+    `warning` = palette$warning,
+    `danger` = palette$danger,
+    `light` = palette$bg,
+    `dark` = palette$secondary_dark,
+    `border-color` = palette$border,
+    `table-border-color` = palette$border,
+    `link-color` = palette$primary,
+    `headings-color` = palette$primary_dark,
+    `text-muted` = palette$muted,
+    `callout-color-note` = palette$primary,
+    `callout-color-tip` = palette$success,
+    `callout-color-caution` = palette$warning,
+    `callout-color-warning` = palette$warning,
+    `callout-color-important` = palette$danger
+  )
+  paste0(
+    "/*-- scss:defaults --*/\n",
+    paste0("$", names(vars), ": ", vars, ";", collapse = "\n"),
+    "\n\n/*-- scss:rules --*/\n"
+  )
 }
 
 #' Resolve the Quarto report template to use

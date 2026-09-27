@@ -191,6 +191,161 @@ test_that("an instance palette override can change typography without touching c
   expect_true(grepl("--episodic-font-size-base: 15px;", css, fixed = TRUE))
 })
 
+test_that("an invalid palette value keeps the shipped value for that role alone, and says so", {
+  shipped <- episodic_palette_shipped()
+  override_path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(override_path))
+  writeLines(
+    c(
+      "primary: \"blue-ish\"",
+      "secondary: \"#123456\"",
+      "font_size_base: \"13\""
+    ),
+    override_path
+  )
+
+  expect_warning(
+    pal <- episodic_palette_config_resolve(override_path),
+    "EPISODIC_STYLE"
+  )
+  expect_equal(pal$primary, shipped$primary)
+  expect_equal(pal$font_size_base, shipped$font_size_base)
+  expect_equal(pal$secondary, "#123456")
+
+  problems <- episodic_palette_problems(override_path)
+  reasons <- vapply(problems, function(p) p$reason, character(1))
+  keys <- vapply(problems, function(p) p$key, character(1))
+  expect_setequal(reasons, c("invalid_colour", "invalid_size"))
+  expect_setequal(keys, c("primary", "font_size_base"))
+})
+
+test_that("an unquoted hex colour, read by YAML as a comment, is reported rather than taken as empty", {
+  override_path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(override_path))
+  writeLines("primary: #123456", override_path)
+
+  expect_warning(pal <- episodic_palette_config_resolve(override_path))
+  expect_equal(pal$primary, episodic_palette_shipped()$primary)
+  problem <- episodic_palette_problems(override_path)[[1]]
+  expect_equal(problem$reason, "invalid_colour")
+  expect_equal(problem$value, "~")
+})
+
+test_that("a three-digit hex colour is accepted and written out in full", {
+  override_path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(override_path))
+  yaml::write_yaml(list(primary = "#1a2", danger = "#11223380"), override_path)
+
+  expect_no_warning(pal <- episodic_palette_config_resolve(override_path))
+  expect_equal(pal$primary, "#11aa22")
+  expect_equal(pal$danger, "#11223380")
+  expect_length(episodic_palette_problems(override_path), 0)
+})
+
+test_that("a font stack that could end a CSS declaration is refused", {
+  for (font in c("Arial; color: red", "Arial} body {", "<b>Arial</b>", "")) {
+    override_path <- tempfile(fileext = ".yaml")
+    yaml::write_yaml(list(font = font), override_path)
+    expect_warning(pal <- episodic_palette_config_resolve(override_path))
+    expect_equal(pal$font, episodic_palette_shipped()$font, info = font)
+    expect_equal(episodic_palette_problems(override_path)[[1]]$reason, "invalid_font")
+    unlink(override_path)
+  }
+})
+
+test_that("an unknown palette key is reported and ignored", {
+  override_path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(override_path))
+  yaml::write_yaml(list(primry = "#123456"), override_path)
+
+  expect_warning(pal <- episodic_palette_config_resolve(override_path))
+  expect_null(pal$primry)
+  problem <- episodic_palette_problems(override_path)[[1]]
+  expect_equal(problem$reason, "unknown_key")
+  expect_equal(problem$key, "primry")
+})
+
+test_that("a palette file that is missing, unreadable or not a mapping keeps the shipped palette without stopping", {
+  shipped <- episodic_palette_shipped()
+
+  missing <- tempfile(fileext = ".yaml")
+  expect_warning(pal <- episodic_palette_config_resolve(missing), "does not exist")
+  expect_equal(pal, shipped)
+  expect_equal(episodic_palette_problems(missing)[[1]]$reason, "missing_file")
+
+  unreadable <- tempfile(fileext = ".yaml")
+  writeLines("primary: [unclosed", unreadable)
+  expect_warning(pal <- episodic_palette_config_resolve(unreadable))
+  expect_equal(pal, shipped)
+  expect_equal(episodic_palette_problems(unreadable)[[1]]$reason, "unreadable")
+
+  scalar <- tempfile(fileext = ".yaml")
+  writeLines("just a sentence", scalar)
+  expect_warning(pal <- episodic_palette_config_resolve(scalar))
+  expect_equal(pal, shipped)
+  expect_equal(episodic_palette_problems(scalar)[[1]]$reason, "not_a_mapping")
+
+  empty <- tempfile(fileext = ".yaml")
+  file.create(empty)
+  expect_no_warning(pal <- episodic_palette_config_resolve(empty))
+  expect_equal(pal, shipped)
+
+  unlink(c(unreadable, scalar, empty))
+})
+
+test_that("a palette problem is described in every shipped language", {
+  problems <- list(
+    list(reason = "invalid_colour", key = "primary", value = "blue"),
+    list(reason = "invalid_font", key = "font", value = ""),
+    list(reason = "invalid_size", key = "font_size_base", value = "13"),
+    list(reason = "missing_file", key = NA_character_, value = NA_character_),
+    list(reason = "unreadable", key = NA_character_, value = "bad"),
+    list(reason = "not_a_mapping", key = NA_character_, value = NA_character_),
+    list(reason = "unknown_key", key = "primry", value = "#123456")
+  )
+  for (lang in c("en", "en-US", "nl", "de", "fr", "es", "ar", "hi", "zh")) {
+    texts <- episodic_palette_problem_texts(problems, lang = lang)
+    expect_length(texts, length(problems))
+    expect_false(any(grepl("[[", texts, fixed = TRUE)), info = lang)
+    expect_false(any(grepl("{", gsub("\\{ \\}", "", texts), fixed = TRUE)), info = lang)
+  }
+  # the shipped value that stands in is named
+  expect_match(
+    episodic_palette_problem_texts(problems[1], lang = "en"),
+    episodic_palette_shipped()$primary,
+    fixed = TRUE
+  )
+})
+
+test_that("a render process draws in the palette it is handed, not one it resolves itself", {
+  override_path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(override_path))
+  yaml::write_yaml(list(primary = "#123456"), override_path)
+  withr::local_envvar(EPISODIC_STYLE = override_path)
+
+  handed <- episodic_palette_shipped()
+  handed$primary <- "#654321"
+  episodic_palette_use(handed)
+  expect_equal(episodic_palette()$primary, "#654321")
+
+  # NULL, from a template written before `palette` was in its data,
+  # leaves the process resolving its own
+  expect_null(episodic_palette_use(NULL))
+})
+
+test_that("the cron run log names what is wrong with the palette, as a warning line", {
+  override_path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(override_path))
+  yaml::write_yaml(list(primary = "blue"), override_path)
+  withr::local_envvar(EPISODIC_STYLE = override_path)
+  suppressWarnings(episodic_palette())
+
+  expect_message(episodic_palette_trace(), "EPISODIC_STYLE: .*primary")
+
+  withr::local_envvar(EPISODIC_STYLE = NA)
+  expect_silent(episodic_palette_trace())
+})
+
 test_that("episodic_ui_code_join() wraps each item in <code> and escapes, HTML-safe", {
   expect_equal(
     episodic_ui_code_join(c("same_place", "farrington"), sep = " en "),

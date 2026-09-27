@@ -1,0 +1,43 @@
+---
+# A starting point for EPISODIC_MAIL_TEMPLATE_REPORT: the body of the email
+# a scheduled outbreak report is attached to. Copy it, adapt it, and point
+# the environment variable at your copy; preview it with
+# episodic_mail_template_preview("report", template_path = "...").
+#
+# This one keeps EpiSODIC's own message (d$default_content: the subject as
+# a heading, what the report is about, how many cases are new, and when
+# the next one follows) and places it inside a letterhead and signature of
+# your own. Every style is inline and taken from d$mail_style, built from
+# the instance palette; see the new-clusters template for why an email
+# needs `minimal: true` and carries no images.
+pagetitle: "EpiSODIC"
+format:
+  html:
+    minimal: true
+    embed-resources: true
+params:
+  data_path: "mail_data.rds"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+d <- readRDS(params$data_path)
+s <- d$mail_style
+esc <- function(x) EpiSODIC:::episodic_html_escape(x)
+at <- function(css) EpiSODIC:::episodic_mail_style_attr(css)
+```
+
+```{r body, results='asis'}
+cat(
+  "```{=html}\n",
+  "<div", at(s$body), ">",
+  # Your organisation's letterhead goes here.
+  d$default_content,
+  # And your signature here. d$attachment_name is the attached file's name.
+  "<p", at(s$muted), ">", esc(d$attachment_name), " &middot; EpiSODIC ",
+  esc(d$package_version), "</p>",
+  "</div>\n",
+  "```\n",
+  sep = ""
+)
+```
