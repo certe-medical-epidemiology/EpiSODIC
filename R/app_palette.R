@@ -309,9 +309,11 @@ episodic_palette_value_label <- function(value) {
 episodic_palette_problem_texts <- function(problems, lang = episodic_lang()) {
   shipped <- episodic_palette_shipped()
   vapply(problems, function(p) {
+    # `role`, not `key`: `key` is episodic_tr()'s own first argument, the
+    # translation key, and a placeholder of that name would replace it.
     episodic_tr(
       paste0("info.reference.style.", p$reason),
-      key = p$key,
+      role = p$key,
       value = p$value,
       default = if (!is.na(p$key) && p$key %in% names(shipped)) shipped[[p$key]] else "",
       lang = lang

@@ -347,7 +347,7 @@ test_that("a preview with no template writes the built-in body the email would g
       "built-in body"
     )
     expect_equal(path, out)
-    html <- paste(readLines(out, encoding = "UTF-8"), collapse = "\n")
+    html <- paste(readLines(out, encoding = "UTF-8", warn = FALSE), collapse = "\n")
     expect_match(html, "<html><body", fixed = TRUE)
     expect_match(html, episodic_palette()$primary_dark, fixed = TRUE)
     unlink(out)
@@ -373,7 +373,7 @@ test_that("both shipped templates render, in the instance palette", {
       output_file = out,
       lang = "en"
     ))
-    html <- paste(readLines(out, encoding = "UTF-8"), collapse = "\n")
+    html <- paste(readLines(out, encoding = "UTF-8", warn = FALSE), collapse = "\n")
     expect_match(html, episodic_palette()$primary_dark, fixed = TRUE, info = kind)
     expect_false(grepl("<script", html, fixed = TRUE), info = kind)
     unlink(out)

@@ -450,7 +450,12 @@ test_that("a rendered report carries the instance palette's colours and font", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con), add = TRUE)
   rendered <- episodic_report_render(env$con, env$cluster_id, output_dir = tempfile())
-  html <- paste(readLines(rendered$file_path, encoding = "UTF-8"), collapse = "\n")
-  expect_match(tolower(html), "#123456", fixed = TRUE)
+  html <- paste(
+    readLines(rendered$file_path, encoding = "UTF-8", warn = FALSE),
+    collapse = "\n"
+  )
+  # The embedded stylesheet is a URL-encoded data URI, in which `#` is
+  # written `%23`.
+  expect_match(tolower(html), "(#|%23)123456")
   expect_match(html, "Georgia", fixed = TRUE)
 })
