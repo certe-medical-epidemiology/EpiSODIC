@@ -76,6 +76,28 @@ For a scheduled report specifically, the email body itself also mentions
 the new-case count, so a reader can judge from the inbox alone whether
 opening the attachment is urgent.
 
+The comparison is kept as `diff`, a list with `previous_version_no`,
+`previous_rendered_at`, `n_new_cases`, `n_cases_delta`,
+`priority_score_delta`, `ratio_delta` (`NA` when either version had no
+ratio) and `period_extended`. A report template reads it as `d$diff`,
+and an email template as `diff` in its own data; both get `NULL` when
+there is no previous version to compare against.
+
+## The email itself
+
+The email is styled from the instance palette, the same colours and font
+as the dashboard and the attached report. Its body can be replaced by a
+template of your own: point `EPISODIC_MAIL_TEMPLATE_REPORT` at a Quarto
+(`.qmd`) file. The shipped starting point,
+`system.file("mail", "episodic_default_mail_report.qmd", package = "EpiSODIC")`,
+keeps EpiSODIC’s own message and places it inside a letterhead and
+signature of yours. See
+[**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html)’s
+“Your own email layout” for the data a template receives and what an
+email template has to respect. A template that cannot be used never
+holds a report back: the email goes out with the built-in body, and the
+run log says why.
+
 ## Custom report templates and patient-level detail
 
 Scheduled reports render through the same

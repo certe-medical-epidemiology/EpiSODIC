@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -156,8 +156,14 @@ argument)</td>
 <td>Path to an instance override of the UI colour palette and typography
 (<code>font</code>, <code>font_size_base</code>), overlaid key-by-key on
 the shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_style.yaml" class="external-link"><code>inst/config/episodic_default_style.yaml</code></a>.
-Set to a path that does not exist, or to a file that is not valid YAML,
-this stops with an error rather than quietly using the shipped palette.
+The same palette styles the outbreak reports and the emails EpiSODIC
+sends. Each value is checked: a colour must be a quoted hex colour,
+<code>font</code> a CSS font-family stack and
+<code>font_size_base</code> a CSS length. A value that fails keeps the
+shipped value for that role only, and a path that does not exist or a
+file that is not valid YAML keeps the whole shipped palette - neither
+stops the dashboard, a report or an email, and both are shown on the
+Info screen, written to every run’s log and raised once as a warning.
 Deliberately separate from <code>EPISODIC_CONFIG</code>: colour and
 typography are display concerns, never part of the
 detection-reproducibility guarantee.</td>
@@ -213,6 +219,33 @@ shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/mai
 Set to a path that does not exist, this stops with an error rather than
 silently sending reports out under EpiSODIC’s own layout instead of
 yours. See “Custom report templates” above.</td>
+</tr>
+<tr class="even">
+<td><code>EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS</code></td>
+<td>
+<code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code>,
+<code><a href="../reference/episodic_mail_template_preview.html">episodic_mail_template_preview()</a></code>
+</td>
+<td>Path to an operator’s own Quarto (<code>.qmd</code>) template for
+the body of the email sent when a run detects new clusters. Unset, the
+built-in body is used. Only the email channels (<code>smtp</code>,
+<code>sendmail</code>, <code>microsoft365</code>) are affected; ntfy,
+Teams and Slack keep their own messages. A template that cannot be used
+(no such file, not a <code>.qmd</code>, Quarto not installed, or a
+render that fails) never costs an alert: the email goes out with the
+built-in body, and the run log, the Info screen and
+<code><a href="../reference/episodic_notify_test.html">episodic_notify_test()</a></code> say why. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>’s
+“Your own email layout”.</td>
+</tr>
+<tr class="odd">
+<td><code>EPISODIC_MAIL_TEMPLATE_REPORT</code></td>
+<td>
+<code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code>,
+<code><a href="../reference/episodic_mail_template_preview.html">episodic_mail_template_preview()</a></code>
+</td>
+<td>The same, for the body of the email a scheduled outbreak report is
+attached to. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html"><strong>Scheduled
+reports</strong></a>.</td>
 </tr>
 </tbody>
 </table>

@@ -438,13 +438,30 @@ letterhead, section order, or house style. A custom template only needs
 to `readRDS(params$data_path)` and read from the same list the shipped
 one does (`obj`, `epi_curve`, `trend`, `linelist`, `timeline`,
 `similar`, `diff`, `small_count_threshold`, `rendered_at`, `lang`,
-`package_version`); see the shipped template for the exact shape,
-including how it calls `episodic_tr(..., lang = d$lang)` to render in
-any of the dashboard’s supported languages. `diff` is `NULL` for a
-cluster’s first-ever render and otherwise holds what changed since the
-previous version - see [**Scheduled
+`palette`, `package_version`); see the shipped template for the exact
+shape, including how it calls `episodic_tr(..., lang = d$lang)` to
+render in any of the dashboard’s supported languages. `diff` is `NULL`
+for a cluster’s first-ever render and otherwise holds what changed since
+the previous version - see [**Scheduled
 reports**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html)’s
 “What changed since last time” section for what it contains.
+
+The report is styled from the instance palette, the same colours and
+font as the dashboard (`EPISODIC_STYLE`). The process asking for the
+render resolves the palette and hands it to the template as `palette`;
+the shipped template passes it to `EpiSODIC:::episodic_palette_use()` in
+its setup chunk, so its charts are drawn in those colours, and names
+`episodic.scss` as its theme - a Bootstrap theme built from the palette
+and written beside the template for every render. A custom template can
+do both. The font is named in the report’s stylesheet only: a reader
+sees it if it is installed on their machine, and otherwise the next font
+in the `font` stack.
+
+Emails have templates of their own,
+`EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS` and
+`EPISODIC_MAIL_TEMPLATE_REPORT`; see
+[**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html)’s
+“Your own email layout”.
 
 ## Scheduled reports
 

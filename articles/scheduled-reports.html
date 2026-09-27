@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -148,6 +148,31 @@ to compare against, so the box is simply omitted.</p>
 <p>For a scheduled report specifically, the email body itself also
 mentions the new-case count, so a reader can judge from the inbox alone
 whether opening the attachment is urgent.</p>
+<p>The comparison is kept as <code>diff</code>, a list with
+<code>previous_version_no</code>, <code>previous_rendered_at</code>,
+<code>n_new_cases</code>, <code>n_cases_delta</code>,
+<code>priority_score_delta</code>, <code>ratio_delta</code>
+(<code>NA</code> when either version had no ratio) and
+<code>period_extended</code>. A report template reads it as
+<code>d$diff</code>, and an email template as <code>diff</code> in its
+own data; both get <code>NULL</code> when there is no previous version
+to compare against.</p>
+</div>
+<div class="section level2">
+<h2 id="the-email-itself">The email itself<a class="anchor" aria-label="anchor" href="#the-email-itself"></a>
+</h2>
+<p>The email is styled from the instance palette, the same colours and
+font as the dashboard and the attached report. Its body can be replaced
+by a template of your own: point
+<code>EPISODIC_MAIL_TEMPLATE_REPORT</code> at a Quarto
+(<code>.qmd</code>) file. The shipped starting point,
+<code>system.file("mail", "episodic_default_mail_report.qmd", package = "EpiSODIC")</code>,
+keeps EpiSODIC’s own message and places it inside a letterhead and
+signature of yours. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>’s
+“Your own email layout” for the data a template receives and what an
+email template has to respect. A template that cannot be used never
+holds a report back: the email goes out with the built-in body, and the
+run log says why.</p>
 </div>
 <div class="section level2">
 <h2 id="custom-report-templates-and-patient-level-detail">Custom report templates and patient-level detail<a class="anchor" aria-label="anchor" href="#custom-report-templates-and-patient-level-detail"></a>

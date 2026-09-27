@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -489,14 +489,29 @@ shipped one does (<code>obj</code>, <code>epi_curve</code>,
 <code>trend</code>, <code>linelist</code>, <code>timeline</code>,
 <code>similar</code>, <code>diff</code>,
 <code>small_count_threshold</code>, <code>rendered_at</code>,
-<code>lang</code>, <code>package_version</code>); see the shipped
-template for the exact shape, including how it calls
+<code>lang</code>, <code>palette</code>, <code>package_version</code>);
+see the shipped template for the exact shape, including how it calls
 <code>episodic_tr(..., lang = d$lang)</code> to render in any of the
 dashboard’s supported languages. <code>diff</code> is <code>NULL</code>
 for a cluster’s first-ever render and otherwise holds what changed since
 the previous version - see <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html"><strong>Scheduled
 reports</strong></a>’s “What changed since last time” section for what
 it contains.</p>
+<p>The report is styled from the instance palette, the same colours and
+font as the dashboard (<code>EPISODIC_STYLE</code>). The process asking
+for the render resolves the palette and hands it to the template as
+<code>palette</code>; the shipped template passes it to
+<code>EpiSODIC:::episodic_palette_use()</code> in its setup chunk, so
+its charts are drawn in those colours, and names
+<code>episodic.scss</code> as its theme - a Bootstrap theme built from
+the palette and written beside the template for every render. A custom
+template can do both. The font is named in the report’s stylesheet only:
+a reader sees it if it is installed on their machine, and otherwise the
+next font in the <code>font</code> stack.</p>
+<p>Emails have templates of their own,
+<code>EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS</code> and
+<code>EPISODIC_MAIL_TEMPLATE_REPORT</code>; see <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>’s
+“Your own email layout”.</p>
 </div>
 <div class="section level2">
 <h2 id="scheduled-reports">Scheduled reports<a class="anchor" aria-label="anchor" href="#scheduled-reports"></a>

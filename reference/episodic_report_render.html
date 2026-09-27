@@ -17,7 +17,7 @@ dashboard, and (optionally) the case line list."><meta property="og:image" conte
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -135,6 +135,12 @@ organisation needs its own layout or branding, set the
 <code>EPISODIC_QUARTO_REPORT</code> environment variable to your own <code>.qmd</code> file;
 the default <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd" class="external-link"><code>inst/report/episodic_default_report.qmd</code></a>
 is a good starting point to copy and adapt.</p>
+<p>The report is styled from the instance palette (<code><a href="episodic_palette.html">episodic_palette()</a></code>),
+the same colours and font as the dashboard: its charts are drawn in it,
+and an <code>episodic.scss</code> theme built from it is written beside the
+template, which the shipped template names as its <code>theme</code>. A custom
+template receives the palette as <code>palette</code> in its data and can name the
+same theme file.</p>
 <p>Rendering requires <a href="https://quarto.org" class="external-link">Quarto</a> to be installed
 separately (both the <code>quarto</code> R package and the Quarto command-line
 tool) - this function raises an informative error if it is not found.</p>

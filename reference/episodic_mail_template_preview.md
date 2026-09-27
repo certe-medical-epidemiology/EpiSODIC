@@ -1,0 +1,84 @@
+# Preview an Email Template
+
+Renders the body of one of EpiSODIC's emails against example data and
+writes it to an HTML file to open in a browser, so an email template can
+be checked without waiting for a detection run to send one.
+
+## Usage
+
+``` r
+episodic_mail_template_preview(
+  kind = c("new_clusters", "report"),
+  template_path = NULL,
+  output_file = tempfile(fileext = ".html"),
+  lang = Sys.getenv("EPISODIC_LANGUAGE")
+)
+```
+
+## Arguments
+
+- kind:
+
+  `"new_clusters"` or `"report"`.
+
+- template_path:
+
+  Path to the `.qmd` template to preview. Defaults to the one the
+  matching environment variable names; with neither, the built-in body
+  is written, which is what the email would go out with.
+
+- output_file:
+
+  Where to write the HTML.
+
+- lang:
+
+  Language to render in. Defaults to `EPISODIC_LANGUAGE`.
+
+## Value
+
+The path to the written HTML file, invisibly.
+
+## Details
+
+Two emails can be given a template of their own, each with its own
+environment variable pointing at a Quarto (`.qmd`) file:
+
+- `EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS` for the alert sent when a run
+  detects new clusters;
+
+- `EPISODIC_MAIL_TEMPLATE_REPORT` for the email a scheduled outbreak
+  report is attached to.
+
+A template changes the HTML body sent through the email channels
+(`smtp`, `sendmail`, `microsoft365`); the subject line, the ntfy, Teams
+and Slack messages and the run-failure email are unchanged. Two starting
+points ship with the package, in
+`system.file("mail", package = "EpiSODIC")`. Every template receives the
+instance palette
+([`episodic_palette()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.md))
+and the inline styles built from it, so it can carry the dashboard's own
+colours and font. See
+[`vignette("notifications")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md)
+for the data a template receives.
+
+A template that cannot be used when an email is due never stops the
+email: it goes out with the built-in body, and the run log says why.
+This function, by contrast, stops with the error, which is what a
+preview is for.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# the shipped starting point for the new-clusters alert
+episodic_mail_template_preview(
+  "new_clusters",
+  template_path = system.file(
+    "mail",
+    "episodic_default_mail_new_clusters.qmd",
+    package = "EpiSODIC"
+  )
+)
+} # }
+```

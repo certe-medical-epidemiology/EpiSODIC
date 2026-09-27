@@ -117,6 +117,8 @@ Slack.
   : How notifications work
 - [`episodic_notify_test()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notify_test.md)
   : Send a Test Notification Through All Configured Channels
+- [`episodic_mail_template_preview()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_mail_template_preview.md)
+  : Preview an Email Template
 - [`episodic_setup_microsoft365()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_setup_microsoft365.md)
   : Set Up Microsoft 365 Authentication for Notifications
 

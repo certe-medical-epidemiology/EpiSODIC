@@ -11,7 +11,7 @@ reports to the house style, or check what colour a given status uses."><meta pro
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,6 +64,20 @@ each with <code>_dark</code>/<code>_light</code>/<code>_tint</code> variants whe
 point the <code>EPISODIC_STYLE</code> environment variable at a YAML file
 that overrides only the roles you want to change - anything you do not set
 keeps its shipped default.</p>
+<p>The same palette governs everything EpiSODIC draws: the dashboard, the
+outbreak reports rendered by <code><a href="episodic_report_render.html">episodic_report_render()</a></code> (their charts,
+text, headings, links and tables) and the emails it sends. The process
+doing the render resolves it and hands it to the template, so a report
+or an email always carries the colours and font of the instance that
+produced it.</p>
+<p>Each value in the <code>EPISODIC_STYLE</code> file is checked: a colour must be a
+quoted hex colour (<code>"#RGB"</code>, <code>"#RRGGBB"</code> or <code>"#RRGGBBAA"</code>), <code>font</code> a CSS
+font-family stack and <code>font_size_base</code> a CSS length (<code>px</code>, <code>pt</code>, <code>rem</code>
+or <code>em</code>). A value that fails keeps the shipped value for that role only,
+and a file that does not exist or cannot be read keeps the whole shipped
+palette. Neither stops the dashboard, a report or an email: the problem
+is shown on the Info screen's reference-data panel, written to every
+detection run's log, and raised once as a warning.</p>
 <p>This is independent of <code>episodic_config_resolve()</code>
 on purpose: colours and typography never affect the <code>config_hash</code> recorded
 with a detection run, since they have no bearing on reproducibility.</p>

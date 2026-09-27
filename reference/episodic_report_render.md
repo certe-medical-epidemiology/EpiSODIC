@@ -93,6 +93,14 @@ the default
 [`inst/report/episodic_default_report.qmd`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd)
 is a good starting point to copy and adapt.
 
+The report is styled from the instance palette
+([`episodic_palette()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.md)),
+the same colours and font as the dashboard: its charts are drawn in it,
+and an `episodic.scss` theme built from it is written beside the
+template, which the shipped template names as its `theme`. A custom
+template receives the palette as `palette` in its data and can name the
+same theme file.
+
 Rendering requires [Quarto](https://quarto.org) to be installed
 separately (both the `quarto` R package and the Quarto command-line
 tool) - this function raises an informative error if it is not found.

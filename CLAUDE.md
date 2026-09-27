@@ -103,16 +103,17 @@ differs** from the language they belong to
 (`episodic_language_variants`): `en-US.json` is a spelling, a date order
 and a name; `es-419.json` is two number marks and a name. Everything
 else is inherited by `episodic_i18n_load()`. They are deliberately not
-copies - `en` and `en-US` differ in seven keys out of seven hundred and
-seventy-one, and two copies would have to be kept in step for ever. `en`
-*is* British English and `es` *is* Spain’s Spanish, so `en-GB`/`es-ES`
-are aliases of those files rather than variants of them, and a region
-that is not shipped (`nl-BE`) resolves to its language rather than to
-English. `episodic_lang()` resolves a code, `episodic_lang_base()` gives
-the language a variant belongs to (which is what decides RTL and month
-names), and the four `date.format.*` keys per language are why a date
-reads “7 January 2025” in British English, “January 7, 2025” in
-American, “7. Januar 2025” in German and “2025年1月7日” in Chinese.
+copies - `en` and `en-US` differ in eight keys out of seven hundred and
+eighty-three, and two copies would have to be kept in step for ever.
+`en` *is* British English and `es` *is* Spain’s Spanish, so
+`en-GB`/`es-ES` are aliases of those files rather than variants of them,
+and a region that is not shipped (`nl-BE`) resolves to its language
+rather than to English. `episodic_lang()` resolves a code,
+`episodic_lang_base()` gives the language a variant belongs to (which is
+what decides RTL and month names), and the four `date.format.*` keys per
+language are why a date reads “7 January 2025” in British English,
+“January 7, 2025” in American, “7. Januar 2025” in German and
+“2025年1月7日” in Chinese.
 
 Every language file, variants included, lists its keys sorted by byte
 order (`sort(method = "radix")`, which is also what Python’s `sorted()`
@@ -392,10 +393,35 @@ named by the operator (pathogens, channels), to
 `episodic_config_open_sections`. A setting documented as “set to ~ to
 disable” must also be listed in `episodic_config_nullable_keys`.
 
-`EPISODIC_CONFIG`, `EPISODIC_PATHOGEN_CONFIG`, `EPISODIC_STYLE` and
+`EPISODIC_CONFIG`, `EPISODIC_PATHOGEN_CONFIG` and
 `EPISODIC_QUARTO_REPORT` set to a path that does not exist are errors,
 not fallbacks - the same rule `EPISODIC_PC_PROVINCE_MAP` already
 followed.
+
+`EPISODIC_STYLE` is the one file that is announced rather than refused,
+because the palette is display-only and every process that draws
+anything resolves it, the cron included: refusing would stop the
+dashboard for every epidemiologist, and every alert and scheduled report
+with it, over a colour. `episodic_palette_config_resolve()` validates
+each value (a quoted hex colour, a font stack that cannot end a CSS
+declaration, a CSS length) and keeps the shipped value for any role that
+fails, or the whole shipped palette for a file that is missing or not
+YAML. The problem is shown on the Info screen’s `EPISODIC_STYLE` row,
+written to every run’s log as a `warn` line (`episodic_palette_trace()`)
+and raised once per process as a
+[`warning()`](https://rdrr.io/r/base/warning.html). The shipped value
+standing in is the defined default for that role, not an unmeasured
+quantity read as zero.
+
+The same palette styles everything EpiSODIC draws. A report or an email
+is rendered by Quarto in an R process of its own, so the renderer
+resolves the palette and hands it to the template as `palette`; the
+shipped report template passes it to `episodic_palette_use()` before any
+chart is drawn and names `episodic.scss` (`episodic_report_scss()`,
+written beside the template for every render) as its theme. Emails are
+styled inline from `episodic_mail_style()`, since a mail client drops
+`<style>` blocks; a colour written literally into an email or report is
+a bug.
 
 Pathogen-specific parameters (episode length, serial interval, severity
 weight) live in `inst/config/episodic_default_pathogen_config.csv`. An
@@ -431,6 +457,25 @@ after the detection transaction commits, never inside it. Errors are
 caught and logged, never propagated. Implementation split across
 `R/notify.R` (dispatcher, message building) and `R/notify_channels.R`
 (per-channel send functions).
+
+The HTML body of the two routine emails can be an operator’s own Quarto
+template: `EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS` for the new-clusters
+alert, `EPISODIC_MAIL_TEMPLATE_REPORT` for the email a scheduled report
+is attached to (`R/mail_template.R`). Two variables rather than one,
+because the two carry different data. Only `.qmd` is accepted: Quarto is
+already what reports need, and an `.Rmd` rendered by Quarto has its
+`output:` options silently dropped. A template changes only what the
+email channels (`smtp`, `sendmail`, `microsoft365`) send; ntfy, Teams,
+Slack, the subject line and the run-failure email are untouched. A
+template that cannot be used (missing, not `.qmd`, no Quarto, a failed
+render) never costs an email: `episodic_mail_body()` sends the built-in
+body and logs a `danger` line naming the variable and the reason, and
+the same problem is on the Info screen, in
+[`episodic_notify_test()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notify_test.md)
+and in a `warn` line at the start of every run. Starting templates ship
+in `inst/mail/`;
+[`episodic_mail_template_preview()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_mail_template_preview.md)
+renders one against example data.
 
 ### Roles
 
@@ -478,6 +523,7 @@ at the R console; there is also in-app account management.
       detect_*.R          # the four detectors
       notify.R            # notification dispatcher and message building
       notify_channels.R   # per-channel send functions (ntfy, smtp, etc.)
+      mail_template.R     # operator email templates, inline email styles from the palette
       score_priority.R    # composite priority score
       db_cron_write.R     # all cron-side DB writes
       db_read.R           # all DB reads (shared by cron and app)
@@ -510,7 +556,8 @@ at the R console; there is also in-app account management.
       app/                      # Shiny app assets (CSS, JS)
       i18n/                     # translation JSON files (en, nl, de, fr, es, ar, hi, zh)
       report/                   # Quarto report template
-    tests/testthat/             # test suite across 67 files
+      mail/                     # starting templates for the two email bodies
+    tests/testthat/             # test suite across 73 files
     vignettes/                  # 9 vignettes
     data-raw/validation/        # the full detection validation study (never ships)
 
@@ -730,6 +777,8 @@ from index”.
 | `EPISODIC_GEO_DATA_OVERLAY` | Optional region-outline overlay (.rds) |
 | `EPISODIC_PC_PROVINCE_MAP` | Postcode-to-province CSV mapping |
 | `EPISODIC_QUARTO_REPORT` | Custom Quarto report template path |
+| `EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS` | Quarto template for the new-clusters email body |
+| `EPISODIC_MAIL_TEMPLATE_REPORT` | Quarto template for the scheduled-report email body |
 
 See
 [`vignette("environment-variables")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md)

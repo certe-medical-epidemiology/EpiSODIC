@@ -29,6 +29,23 @@ To use your own institute's colours or fonts instead, point the
 the roles you want to change - anything you do not set keeps its shipped
 default.
 
+The same palette governs everything EpiSODIC draws: the dashboard, the
+outbreak reports rendered by
+[`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md)
+(their charts, text, headings, links and tables) and the emails it
+sends. The process doing the render resolves it and hands it to the
+template, so a report or an email always carries the colours and font of
+the instance that produced it.
+
+Each value in the `EPISODIC_STYLE` file is checked: a colour must be a
+quoted hex colour (`"#RGB"`, `"#RRGGBB"` or `"#RRGGBBAA"`), `font` a CSS
+font-family stack and `font_size_base` a CSS length (`px`, `pt`, `rem`
+or `em`). A value that fails keeps the shipped value for that role only,
+and a file that does not exist or cannot be read keeps the whole shipped
+palette. Neither stops the dashboard, a report or an email: the problem
+is shown on the Info screen's reference-data panel, written to every
+detection run's log, and raised once as a warning.
+
 This is independent of `episodic_config_resolve()` on purpose: colours
 and typography never affect the `config_hash` recorded with a detection
 run, since they have no bearing on reproducibility.

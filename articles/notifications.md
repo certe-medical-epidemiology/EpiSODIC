@@ -438,6 +438,103 @@ the detection, and the error message. This lets you triage whether the
 failure is a data problem, a configuration problem, or a server issue
 before you check any logs.
 
+### Colours and font
+
+Every email is styled from the instance palette, the same colours and
+font the dashboard uses
+([`episodic_palette()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.md),
+overridden per instance with `EPISODIC_STYLE`). The styles are written
+inline on each element, since Outlook drops a `<style>` block and Gmail
+restricts one. A mail client does not load web fonts, so the email shows
+the first font in the `font` stack that the reader has installed, which
+makes the stack’s fallbacks what most readers see.
+
+## Your own email layout
+
+Two emails can be given a layout of your own, each with its own
+environment variable pointing at a Quarto (`.qmd`) template:
+
+| Variable | Email |
+|----|----|
+| `EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS` | The alert sent when a run detects new clusters |
+| `EPISODIC_MAIL_TEMPLATE_REPORT` | The email a scheduled outbreak report is attached to |
+
+A template changes only the HTML body sent through the email channels
+(`smtp`, `sendmail`, `microsoft365`). The subject line, the ntfy, Teams
+and Slack messages, and the run-failure email are unchanged: a message
+saying a run failed should not itself depend on a render succeeding.
+Rendering needs the Quarto CLI, the same as outbreak reports do.
+
+Only `.qmd` is accepted. Quarto would render an `.Rmd` as well, but it
+reads `format:` where an R Markdown author wrote `output:` and drops
+those options without a word; renaming the file and rewriting `output:`
+as `format:` is all it takes.
+
+Two starting points ship with the package. Copy one and adapt it:
+
+``` r
+
+system.file("mail", "episodic_default_mail_new_clusters.qmd", package = "EpiSODIC")
+system.file("mail", "episodic_default_mail_report.qmd", package = "EpiSODIC")
+```
+
+Then check it against example data before pointing the variable at it:
+
+``` r
+
+episodic_mail_template_preview("new_clusters", template_path = "~/templates/new_clusters.qmd")
+```
+
+A template reads its data with `readRDS(params$data_path)`. Both kinds
+receive:
+
+- `kind` (`"new_clusters"` or `"report"`), `title` (the subject line),
+  `lang` and `package_version`;
+- `palette`, the instance palette, and `mail_style`, the inline styles
+  built from it (`body`, `heading`, `paragraph`, `table`, `head_row`,
+  `th`, `td`, `link`, `muted`), each a CSS declaration string to put in
+  a `style` attribute;
+- `default_html`, the built-in body as a whole HTML document, and
+  `default_content`, the inside of its `<body>`, so a template can place
+  EpiSODIC’s own message inside a letterhead and signature without
+  rebuilding it.
+
+The new-clusters template also receives `n_new`, `run_date`,
+`dashboard_url` (`NULL` when none is configured) and `clusters`, a data
+frame with one row per new cluster, ordered as every cluster table on
+screen is: `cluster_id`, `ref` (`O-12`), `url` (the cluster’s dossier,
+`NA` without a `dashboard_url`), `pathogen`, `level`, `location`,
+`first_day`, `last_day`, `period`, `duration_days`, `n_cases`,
+`case_days`, `expected`, `ratio` and `priority_score`. A value that was
+not measured is `NA`, never `0`.
+
+The report template also receives `cluster_id`, `ref`, `pathogen`,
+`level`, `location`, `first_day`, `last_day`, `period`, `n_cases`,
+`final` (whether this send ends the schedule), `interval_days`,
+`attachment_name`, and `diff`: what changed since the previous report,
+in the shape described in [**Scheduled
+reports**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html),
+or `NULL` when there is nothing to compare against.
+
+An email is not a web page, and a template has to be written for an
+inbox:
+
+- Keep `minimal: true` and `embed-resources: true` in its `format: html`
+  options, as the shipped ones do, so Quarto adds no Bootstrap or
+  JavaScript that no inbox would run.
+- Style inline, from `mail_style`, since a `<style>` block does not
+  survive Outlook.
+- Use text and tables only. Gmail and Outlook block images embedded in
+  the HTML, so a chart would reach most readers as a broken image.
+
+A template that cannot be used never costs an email. When the file is
+missing, is not a `.qmd`, Quarto is not installed, or the render fails,
+the email goes out with the built-in body and the run log carries a line
+saying why. The same problems are shown beside each variable on the
+dashboard’s Info screen and reported by
+[`episodic_notify_test()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notify_test.md),
+so they can be fixed before the next alert.
+
 ## Troubleshooting
 
 **“Notifications are not enabled in the configuration”** when calling

@@ -54,7 +54,7 @@ result <- episodic_validate_detection()
 strict <- episodic_validate_rethreshold(result, min_recall = 0.8)
 strict$summary[strict$summary$metric == "sensitivity", ]
 #>         metric     group_type         group n_seeds    median       q25
-#> 1  sensitivity        overall all outbreaks       1 0.6666667 0.6666667
+#> 1  sensitivity        overall all outbreaks       1 0.8333333 0.8333333
 #> 2  sensitivity outbreak_shape           LTC       1        NA        NA
 #> 3  sensitivity outbreak_shape          PROP       1        NA        NA
 #> 4  sensitivity outbreak_shape            PS       1        NA        NA
@@ -63,18 +63,18 @@ strict$summary[strict$summary$metric == "sensitivity", ]
 #> 7  sensitivity outbreak_shape          WAVE       1        NA        NA
 #> 8  sensitivity design_channel    farrington       1        NA        NA
 #> 9  sensitivity design_channel  rare_trigger       1        NA        NA
-#> 10 sensitivity design_channel    same_place       1 0.7500000 0.7500000
+#> 10 sensitivity design_channel    same_place       1 1.0000000 1.0000000
 #>          q75 numerator denominator  estimate    ci_low   ci_high interval
-#> 1  0.6666667         4           6 0.6666667 0.2999933 0.9032286   wilson
+#> 1  0.8333333         5           6 0.8333333 0.4364972 0.9699466   wilson
 #> 2         NA         1           1 1.0000000 0.2065493 1.0000000   wilson
-#> 3         NA         0           1 0.0000000 0.0000000 0.7934507   wilson
+#> 3         NA         1           1 1.0000000 0.2065493 1.0000000   wilson
 #> 4         NA         1           1 1.0000000 0.2065493 1.0000000   wilson
 #> 5         NA         1           1 1.0000000 0.2065493 1.0000000   wilson
 #> 6         NA         1           1 1.0000000 0.2065493 1.0000000   wilson
 #> 7         NA         0           1 0.0000000 0.0000000 0.7934507   wilson
 #> 8         NA         0           1 0.0000000 0.0000000 0.7934507   wilson
 #> 9         NA         1           1 1.0000000 0.2065493 1.0000000   wilson
-#> 10 0.7500000         3           4 0.7500000 0.3006418 0.9544127   wilson
+#> 10 1.0000000         4           4 1.0000000 0.5101092 1.0000000   wilson
 #>          unit
 #> 1  proportion
 #> 2  proportion

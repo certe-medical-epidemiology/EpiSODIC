@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -545,6 +545,124 @@ ran the detection, and the error message. This lets you triage whether
 the failure is a data problem, a configuration problem, or a server
 issue before you check any logs.</p>
 </div>
+<div class="section level3">
+<h3 id="colours-and-font">Colours and font<a class="anchor" aria-label="anchor" href="#colours-and-font"></a>
+</h3>
+<p>Every email is styled from the instance palette, the same colours and
+font the dashboard uses (<code><a href="../reference/episodic_palette.html">episodic_palette()</a></code>, overridden per
+instance with <code>EPISODIC_STYLE</code>). The styles are written
+inline on each element, since Outlook drops a <code>&lt;style&gt;</code>
+block and Gmail restricts one. A mail client does not load web fonts, so
+the email shows the first font in the <code>font</code> stack that the
+reader has installed, which makes the stack’s fallbacks what most
+readers see.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="your-own-email-layout">Your own email layout<a class="anchor" aria-label="anchor" href="#your-own-email-layout"></a>
+</h2>
+<p>Two emails can be given a layout of your own, each with its own
+environment variable pointing at a Quarto (<code>.qmd</code>)
+template:</p>
+<table class="table">
+<colgroup>
+<col width="40%">
+<col width="59%">
+</colgroup>
+<thead><tr class="header">
+<th>Variable</th>
+<th>Email</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS</code></td>
+<td>The alert sent when a run detects new clusters</td>
+</tr>
+<tr class="even">
+<td><code>EPISODIC_MAIL_TEMPLATE_REPORT</code></td>
+<td>The email a scheduled outbreak report is attached to</td>
+</tr>
+</tbody>
+</table>
+<p>A template changes only the HTML body sent through the email channels
+(<code>smtp</code>, <code>sendmail</code>, <code>microsoft365</code>).
+The subject line, the ntfy, Teams and Slack messages, and the
+run-failure email are unchanged: a message saying a run failed should
+not itself depend on a render succeeding. Rendering needs the Quarto
+CLI, the same as outbreak reports do.</p>
+<p>Only <code>.qmd</code> is accepted. Quarto would render an
+<code>.Rmd</code> as well, but it reads <code>format:</code> where an R
+Markdown author wrote <code>output:</code> and drops those options
+without a word; renaming the file and rewriting <code>output:</code> as
+<code>format:</code> is all it takes.</p>
+<p>Two starting points ship with the package. Copy one and adapt it:</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"mail"</span>, <span class="st">"episodic_default_mail_new_clusters.qmd"</span>, package <span class="op">=</span> <span class="st">"EpiSODIC"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"mail"</span>, <span class="st">"episodic_default_mail_report.qmd"</span>, package <span class="op">=</span> <span class="st">"EpiSODIC"</span><span class="op">)</span></span></code></pre></div>
+<p>Then check it against example data before pointing the variable at
+it:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/episodic_mail_template_preview.html">episodic_mail_template_preview</a></span><span class="op">(</span><span class="st">"new_clusters"</span>, template_path <span class="op">=</span> <span class="st">"~/templates/new_clusters.qmd"</span><span class="op">)</span></span></code></pre></div>
+<p>A template reads its data with
+<code>readRDS(params$data_path)</code>. Both kinds receive:</p>
+<ul>
+<li>
+<code>kind</code> (<code>"new_clusters"</code> or
+<code>"report"</code>), <code>title</code> (the subject line),
+<code>lang</code> and <code>package_version</code>;</li>
+<li>
+<code>palette</code>, the instance palette, and
+<code>mail_style</code>, the inline styles built from it
+(<code>body</code>, <code>heading</code>, <code>paragraph</code>,
+<code>table</code>, <code>head_row</code>, <code>th</code>,
+<code>td</code>, <code>link</code>, <code>muted</code>), each a CSS
+declaration string to put in a <code>style</code> attribute;</li>
+<li>
+<code>default_html</code>, the built-in body as a whole HTML
+document, and <code>default_content</code>, the inside of its
+<code>&lt;body&gt;</code>, so a template can place EpiSODIC’s own
+message inside a letterhead and signature without rebuilding it.</li>
+</ul>
+<p>The new-clusters template also receives <code>n_new</code>,
+<code>run_date</code>, <code>dashboard_url</code> (<code>NULL</code>
+when none is configured) and <code>clusters</code>, a data frame with
+one row per new cluster, ordered as every cluster table on screen is:
+<code>cluster_id</code>, <code>ref</code> (<code>O-12</code>),
+<code>url</code> (the cluster’s dossier, <code>NA</code> without a
+<code>dashboard_url</code>), <code>pathogen</code>, <code>level</code>,
+<code>location</code>, <code>first_day</code>, <code>last_day</code>,
+<code>period</code>, <code>duration_days</code>, <code>n_cases</code>,
+<code>case_days</code>, <code>expected</code>, <code>ratio</code> and
+<code>priority_score</code>. A value that was not measured is
+<code>NA</code>, never <code>0</code>.</p>
+<p>The report template also receives <code>cluster_id</code>,
+<code>ref</code>, <code>pathogen</code>, <code>level</code>,
+<code>location</code>, <code>first_day</code>, <code>last_day</code>,
+<code>period</code>, <code>n_cases</code>, <code>final</code> (whether
+this send ends the schedule), <code>interval_days</code>,
+<code>attachment_name</code>, and <code>diff</code>: what changed since
+the previous report, in the shape described in <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html"><strong>Scheduled
+reports</strong></a>, or <code>NULL</code> when there is nothing to
+compare against.</p>
+<p>An email is not a web page, and a template has to be written for an
+inbox:</p>
+<ul>
+<li>Keep <code>minimal: true</code> and
+<code>embed-resources: true</code> in its <code>format: html</code>
+options, as the shipped ones do, so Quarto adds no Bootstrap or
+JavaScript that no inbox would run.</li>
+<li>Style inline, from <code>mail_style</code>, since a
+<code>&lt;style&gt;</code> block does not survive Outlook.</li>
+<li>Use text and tables only. Gmail and Outlook block images embedded in
+the HTML, so a chart would reach most readers as a broken image.</li>
+</ul>
+<p>A template that cannot be used never costs an email. When the file is
+missing, is not a <code>.qmd</code>, Quarto is not installed, or the
+render fails, the email goes out with the built-in body and the run log
+carries a line saying why. The same problems are shown beside each
+variable on the dashboard’s Info screen and reported by
+<code><a href="../reference/episodic_notify_test.html">episodic_notify_test()</a></code>, so they can be fixed before the
+next alert.</p>
 </div>
 <div class="section level2">
 <h2 id="troubleshooting">Troubleshooting<a class="anchor" aria-label="anchor" href="#troubleshooting"></a>
