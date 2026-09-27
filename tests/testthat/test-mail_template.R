@@ -171,7 +171,8 @@ test_that("a new-clusters template receives every cluster, with an unmeasured va
 
   with_url <- episodic_mail_data_new_clusters(
     details, 2L, "2026-08-15", "https://episodic.example.org",
-    "Title", "<html></html>", "", lang = "en"
+    "Title", "<html></html>", "",
+    lang = "en"
   )
   expect_equal(with_url$dashboard_url, "https://episodic.example.org")
   expect_equal(with_url$clusters$url[1], "https://episodic.example.org?cluster=1")
