@@ -1,3 +1,15 @@
+# EpiSODIC 0.22.1
+
+## New
+
+- `EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS` and `EPISODIC_MAIL_TEMPLATE_REPORT` set a Quarto template for the body of the new-clusters and scheduled-report emails
+- `episodic_mail_template_preview()` renders an email template against example data
+
+## Changed
+
+- Outbreak reports and emails take their colours and font from the instance palette
+- An unusable `EPISODIC_STYLE` file or value falls back to the shipped palette and is reported instead of stopping the app
+
 # EpiSODIC 0.22.0
 
 ## New
@@ -9,8 +21,6 @@
 - A run that refuses a database records the refusal as a failed run
 - A run that stops before it begins (database refused, case data failing its checks) sends the `run_failure` notification
 - The run log names the database server and version it connected to (SQLite, MariaDB or MySQL)
-- `EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS` and `EPISODIC_MAIL_TEMPLATE_REPORT` set a Quarto template for the body of the new-clusters and scheduled-report emails
-- `episodic_mail_template_preview()` renders an email template against example data
 
 ## Changed
 
@@ -20,8 +30,6 @@
 - Baseline exclusions, patient-days and trend row counts are read once per run instead of once per stream
 - The Farrington detector and the trend cache share one fit per stream instead of fitting the same week twice
 - Reconciliation reads assessment events once per run and ages a stream's undetected clusters in one statement
-- Outbreak reports and emails take their colours and font from the instance palette
-- An unusable `EPISODIC_STYLE` file or value falls back to the shipped palette and is reported instead of stopping the app
 
 ## Fixed
 
