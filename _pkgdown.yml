@@ -140,6 +140,7 @@ reference:
   contents:
   - episodic_notifications
   - episodic_notify_test
+  - episodic_mail_template_preview
   - episodic_setup_microsoft365
 
 - title: Customise the look and feel

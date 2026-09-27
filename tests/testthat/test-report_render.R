@@ -79,6 +79,34 @@ test_that("episodic_report_qmd_path() honours an operator-supplied path that act
   expect_equal(episodic_report_qmd_path(custom), custom)
 })
 
+test_that("the report theme is built from the palette, as Bootstrap's own variables", {
+  pal <- episodic_palette_shipped()
+  pal$primary <- "#123456"
+  pal$primary_dark <- "#0A0B0C"
+  pal$ink <- "#010203"
+  pal$font <- "\"Noto Sans\", Arial, sans-serif"
+  pal$font_size_base <- "15px"
+  scss <- episodic_report_scss(pal)
+
+  expect_match(scss, "^/\\*-- scss:defaults --\\*/")
+  expect_match(scss, "/*-- scss:rules --*/", fixed = TRUE)
+  expect_match(scss, "$font-family-sans-serif: \"Noto Sans\", Arial, sans-serif;", fixed = TRUE)
+  expect_match(scss, "$font-size-root: 15px;", fixed = TRUE)
+  expect_match(scss, "$body-color: #010203;", fixed = TRUE)
+  expect_match(scss, "$primary: #123456;", fixed = TRUE)
+  expect_match(scss, "$link-color: #123456;", fixed = TRUE)
+  expect_match(scss, "$headings-color: #0A0B0C;", fixed = TRUE)
+  # no role left unfilled, which Sass would read as the end of the file
+  expect_false(grepl(": ;", scss, fixed = TRUE))
+})
+
+test_that("the shipped report template takes its theme and chart colours from the renderer", {
+  template <- paste(readLines(episodic_report_qmd_path(NA)), collapse = "\n")
+  expect_match(template, "theme: [default, episodic.scss]", fixed = TRUE)
+  expect_match(template, "episodic_palette_use(d$palette)", fixed = TRUE)
+  expect_false(grepl("cosmo", template, fixed = TRUE))
+})
+
 test_that("episodic_report_output_dir() derives a sibling directory from a SQLite db_path when unset", {
   db_path <- file.path(tempdir(), "episodic_test.sqlite")
   config <- list(report = list(output_dir = NULL))
@@ -404,4 +432,30 @@ test_that("episodic_report_render() stores a diffable snapshot that a later rend
   expect_false(is.null(latest_params$snapshot))
   expect_false(is.null(latest_params$diff))
   expect_equal(latest_params$diff$previous_version_no, first$version_no)
+})
+
+test_that("a rendered report carries the instance palette's colours and font", {
+  skip_if_not(
+    episodic_test_can_render_report(),
+    "needs the quarto CLI and an installed EpiSODIC (the template library()s it)"
+  )
+  override_path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(override_path), add = TRUE)
+  yaml::write_yaml(
+    list(primary = "#123456", font = "Georgia, serif"),
+    override_path
+  )
+  withr::local_envvar(EPISODIC_STYLE = override_path)
+
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con), add = TRUE)
+  rendered <- episodic_report_render(env$con, env$cluster_id, output_dir = tempfile())
+  html <- paste(
+    readLines(rendered$file_path, encoding = "UTF-8", warn = FALSE),
+    collapse = "\n"
+  )
+  # The embedded stylesheet is a URL-encoded data URI, in which `#` is
+  # written `%23`.
+  expect_match(tolower(html), "(#|%23)123456")
+  expect_match(html, "Georgia", fixed = TRUE)
 })

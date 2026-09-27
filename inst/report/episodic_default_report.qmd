@@ -4,7 +4,10 @@ format:
   html:
     embed-resources: true
     toc: false
-    theme: cosmo
+    # episodic.scss is written beside this file for every render, from
+    # the instance palette (see episodic_report_scss()): the report reads
+    # in the dashboard's own colours and font.
+    theme: [default, episodic.scss]
 params:
   data_path: "report_data.rds"
 ---
@@ -15,6 +18,9 @@ library(EpiSODIC)
 library(ggplot2)
 d <- readRDS(params$data_path)
 obj <- d$obj
+# The palette of the process that asked for this render, so every chart
+# below is drawn in the colours the dashboard is showing.
+EpiSODIC:::episodic_palette_use(d$palette)
 # Same rule as the rest of EpiSODIC: the instance sets its language once,
 # in EPISODIC_LANGUAGE, and an unset variable means English (episodic_tr()
 # resolves the empty string itself). A template must not have a language

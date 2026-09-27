@@ -59,7 +59,7 @@ To measure the effect before deploying it:
 
 ```{r}
 result_before <- episodic_validate_detection(history_years = 4)
-result_after  <- episodic_validate_detection(
+result_after <- episodic_validate_detection(
   history_years = 4,
   config = list(
     farrington = list(alpha = 0.01),

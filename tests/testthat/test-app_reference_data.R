@@ -174,7 +174,9 @@ test_that("every reference variable gets a row, with a known status", {
       "EPISODIC_LANGUAGE",
       "EPISODIC_CONFIG",
       "EPISODIC_STYLE",
-      "EPISODIC_QUARTO_REPORT"
+      "EPISODIC_QUARTO_REPORT",
+      "EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS",
+      "EPISODIC_MAIL_TEMPLATE_REPORT"
     )
   )
   for (row in rows) {
@@ -253,4 +255,64 @@ test_that("the reference-data screen names the language rather than printing its
   )
   expect_true(grepl("Nederlands", dutch$detail, fixed = TRUE))
   expect_true(grepl("(nl)", dutch$detail, fixed = TRUE))
+})
+
+test_that("a palette with a rejected value reads as a problem, naming the value and what stands in", {
+  override_path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(override_path))
+  yaml::write_yaml(list(primary = "blue", secondary = "#123456"), override_path)
+  withr::local_envvar(EPISODIC_STYLE = override_path)
+
+  row <- suppressWarnings(episodic_app_reference_style(lang = "en"))
+  expect_equal(row$status, "problem")
+  expect_match(row$detail, "`primary` is set to \"blue\"", fixed = TRUE)
+  expect_match(row$detail, episodic_palette_shipped()$primary, fixed = TRUE)
+  expect_equal(row$path, override_path)
+
+  yaml::write_yaml(list(secondary = "#123456"), override_path)
+  fine_path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(fine_path), add = TRUE)
+  file.copy(override_path, fine_path)
+  withr::local_envvar(EPISODIC_STYLE = fine_path)
+  expect_equal(episodic_app_reference_style(lang = "en")$status, "in_use")
+
+  withr::local_envvar(EPISODIC_STYLE = NA)
+  expect_equal(episodic_app_reference_style(lang = "en")$status, "default")
+})
+
+test_that("each email template variable has a row saying whether the template can be used", {
+  withr::local_envvar(
+    EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS = NA,
+    EPISODIC_MAIL_TEMPLATE_REPORT = NA
+  )
+  row <- episodic_app_reference_mail_template("new_clusters", lang = "en")
+  expect_equal(row$variable, "EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS")
+  expect_equal(row$status, "default")
+
+  missing <- tempfile(fileext = ".qmd")
+  withr::local_envvar(EPISODIC_MAIL_TEMPLATE_REPORT = missing)
+  row <- episodic_app_reference_mail_template("report", lang = "en")
+  expect_equal(row$status, "problem")
+  expect_match(row$detail, "does not exist", fixed = TRUE)
+
+  rmd <- tempfile(fileext = ".Rmd")
+  writeLines("---\n---", rmd)
+  on.exit(unlink(rmd), add = TRUE)
+  withr::local_envvar(EPISODIC_MAIL_TEMPLATE_REPORT = rmd)
+  row <- episodic_app_reference_mail_template("report", lang = "en")
+  expect_equal(row$status, "problem")
+  expect_match(row$detail, "not a Quarto (.qmd) template", fixed = TRUE)
+
+  qmd <- tempfile(fileext = ".qmd")
+  writeLines("---\n---", qmd)
+  on.exit(unlink(qmd), add = TRUE)
+  withr::local_envvar(EPISODIC_MAIL_TEMPLATE_REPORT = qmd)
+  local_mocked_bindings(episodic_quarto_available = function() FALSE)
+  row <- episodic_app_reference_mail_template("report", lang = "en")
+  expect_equal(row$status, "unavailable")
+  expect_equal(row$path, qmd)
+
+  local_mocked_bindings(episodic_quarto_available = function() TRUE)
+  row <- episodic_app_reference_mail_template("report", lang = "en")
+  expect_equal(row$status, "in_use")
 })

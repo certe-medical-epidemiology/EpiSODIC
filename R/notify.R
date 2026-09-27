@@ -89,6 +89,27 @@ episodic_notify <- function(con, config, result, run_id, run_date, host) {
       dashboard_url,
       lang = lang
     )
+    # Rendered only when a template is configured and an email channel
+    # will carry it: an instance alerting through ntfy alone never starts
+    # Quarto for a body nobody receives.
+    if (
+      !is.na(episodic_mail_template_env("new_clusters")) &&
+        episodic_notify_email_enabled(channels)
+    ) {
+      message$email_html <- episodic_mail_body(
+        "new_clusters",
+        episodic_mail_data_new_clusters(
+          cluster_details,
+          n_new = n_new,
+          run_date = run_date,
+          dashboard_url = dashboard_url,
+          title = message$title,
+          default_html = message$html,
+          default_content = message$html_content,
+          lang = lang
+        )
+      )
+    }
     episodic_notify_dispatch(channels, message)
   }
 
@@ -216,14 +237,18 @@ episodic_notify_location <- function(row, lang = episodic_lang()) {
 #' @param lang Language to render the message in. Defaults to
 #'   `EPISODIC_LANGUAGE`, falling back to `"en"`, the same as the
 #'   dashboard.
-#' @return A list with `title`, `plain`, `html`, `teams_card`, `slack_blocks`.
+#' @param style Inline styles for the email body, from
+#'   `episodic_mail_style()`.
+#' @return A list with `title`, `plain`, `html`, `html_content` (the
+#'   inside of `html`'s `<body>`), `teams_card`, `slack_text`.
 #' @keywords internal
 #' @noRd
 episodic_notify_build_new_clusters <- function(details,
                                                n_new,
                                                run_date,
                                                dashboard_url = NULL,
-                                               lang = episodic_lang()) {
+                                               lang = episodic_lang(),
+                                               style = episodic_mail_style()) {
   count_phrase <- episodic_count_phrase(
     n_new,
     episodic_tr("notif.new_cluster.singular", lang = lang),
@@ -322,43 +347,51 @@ episodic_notify_build_new_clusters <- function(details,
       paste0(
         "<a href='",
         episodic_html_escape(url),
-        "'>",
+        "'",
+        episodic_mail_style_attr(style$link),
+        ">",
         episodic_html_escape(ref),
         "</a>"
       )
     }
+    td_text <- paste0("<td", episodic_mail_style_attr(style$td), ">")
+    td_centre <- paste0(
+      "<td",
+      episodic_mail_style_attr(paste0("text-align:center;", style$td)),
+      ">"
+    )
     html_rows <- c(
       html_rows,
       paste0(
         "<tr>",
-        "<td>",
+        td_text,
         id_cell,
         "</td>",
-        "<td>",
+        td_text,
         episodic_html_escape(row$pathogen),
         "</td>",
-        "<td>",
+        td_text,
         episodic_html_escape(location),
         "</td>",
-        "<td style='text-align:center'>",
+        td_centre,
         episodic_html_escape(period_str),
         "</td>",
-        "<td style='text-align:center'>",
+        td_centre,
         cases_str,
         "</td>",
-        "<td style='text-align:center'>",
+        td_centre,
         episodic_format_number(row$case_days, lang = lang),
         "</td>",
-        "<td style='text-align:center'>",
+        td_centre,
         episodic_html_escape(duration_str),
         "</td>",
-        "<td style='text-align:center'>",
+        td_centre,
         priority_str,
         "</td>",
-        "<td style='text-align:center'>",
+        td_centre,
         expected_str,
         "</td>",
-        "<td style='text-align:center'>",
+        td_centre,
         ratio_str,
         "</td>",
         "</tr>"
@@ -395,7 +428,9 @@ episodic_notify_build_new_clusters <- function(details,
     html_rows <- c(
       html_rows,
       paste0(
-        "<tr><td colspan='10' style='font-style:italic'>",
+        "<tr><td colspan='10'",
+        episodic_mail_style_attr(paste0("font-style:italic;", style$muted)),
+        ">",
         episodic_html_escape(more),
         "</td></tr>"
       )
@@ -415,18 +450,22 @@ episodic_notify_build_new_clusters <- function(details,
   # a screen does not.
   header <- function(key, align) {
     paste0(
-      "<th style='text-align:",
-      align,
-      ";padding:4px'>",
+      "<th",
+      episodic_mail_style_attr(paste0("text-align:", align, ";", style$th)),
+      ">",
       episodic_html_escape(episodic_tr(key, lang = lang)),
       "</th>"
     )
   }
-  html <- episodic_notify_html_wrap(
+  html_content <- episodic_notify_html_content(
     title,
     paste0(
-      "<table style='border-collapse:collapse;width:100%'>",
-      "<tr style='background:#f0f0f0'>",
+      "<table",
+      episodic_mail_style_attr(style$table),
+      ">",
+      "<tr",
+      episodic_mail_style_attr(style$head_row),
+      ">",
       header("column.id", "left"),
       header("column.pathogen", "left"),
       header("column.place", "left"),
@@ -442,8 +481,10 @@ episodic_notify_build_new_clusters <- function(details,
       "</table>"
     ),
     dashboard_url,
-    lang = lang
+    lang = lang,
+    style = style
   )
+  html <- episodic_notify_html_document(html_content, style = style)
 
   teams_card <- episodic_notify_teams_card(
     title,
@@ -470,6 +511,7 @@ episodic_notify_build_new_clusters <- function(details,
     title = title,
     plain = plain,
     html = html,
+    html_content = html_content,
     teams_card = teams_card,
     slack_text = slack_text
   )
@@ -488,7 +530,8 @@ episodic_notify_build_new_clusters <- function(details,
 episodic_notify_build_failure <- function(error_text,
                                           run_date,
                                           host,
-                                          lang = episodic_lang()) {
+                                          lang = episodic_lang(),
+                                          style = episodic_mail_style()) {
   title <- episodic_tr("notif.title_failed", lang = lang)
   label_date <- episodic_tr("notif.label.date", lang = lang)
   label_host <- episodic_tr("notif.label.host", lang = lang)
@@ -510,21 +553,23 @@ episodic_notify_build_failure <- function(error_text,
     ": ",
     error_str
   )
+  p_open <- paste0("<p", episodic_mail_style_attr(style$paragraph), ">")
   html <- episodic_notify_html_wrap(
     title,
     paste0(
-      "<p><strong>", episodic_html_escape(label_date), ":</strong> ",
+      p_open, "<strong>", episodic_html_escape(label_date), ":</strong> ",
       run_date,
       "</p>",
-      "<p><strong>", episodic_html_escape(label_host), ":</strong> ",
+      p_open, "<strong>", episodic_html_escape(label_host), ":</strong> ",
       episodic_html_escape(host),
       "</p>",
-      "<p><strong>", episodic_html_escape(label_error), ":</strong> ",
+      p_open, "<strong>", episodic_html_escape(label_error), ":</strong> ",
       episodic_html_escape(error_str),
       "</p>"
     ),
     NULL,
-    lang = lang
+    lang = lang,
+    style = style
   )
   teams_card <- episodic_notify_teams_card(
     title,
@@ -584,29 +629,76 @@ episodic_html_escape <- function(x) {
 }
 
 #' Wrap HTML notification body in a minimal document
+#'
+#' Styled inline, from the instance palette (`episodic_mail_style()`): an
+#' email client drops a `<style>` block (Outlook) or restricts it (Gmail),
+#' and an inline `style` attribute is the one form every client honours.
 #' @keywords internal
 #' @noRd
 episodic_notify_html_wrap <- function(title,
                                       body_html,
                                       dashboard_url,
-                                      lang = episodic_lang()) {
+                                      lang = episodic_lang(),
+                                      style = episodic_mail_style()) {
+  episodic_notify_html_document(
+    episodic_notify_html_content(
+      title,
+      body_html,
+      dashboard_url,
+      lang = lang,
+      style = style
+    ),
+    style = style
+  )
+}
+
+#' The inside of a notification email's `<body>`: heading, body, footer
+#'
+#' Separate from the document around it so an email template
+#' (`episodic_mail_body()`) can place the built-in content inside a
+#' letterhead of its own, as `default_content`, without nesting one HTML
+#' document inside another.
+#' @keywords internal
+#' @noRd
+episodic_notify_html_content <- function(title,
+                                         body_html,
+                                         dashboard_url,
+                                         lang = episodic_lang(),
+                                         style = episodic_mail_style()) {
   footer <- ""
   if (!is.null(dashboard_url) && nzchar(dashboard_url)) {
     footer <- paste0(
-      "<p style='margin-top:16px'><a href='",
+      "<p",
+      episodic_mail_style_attr(paste0("margin-top:16px;", style$paragraph)),
+      "><a href='",
       episodic_html_escape(dashboard_url),
-      "'>",
+      "'",
+      episodic_mail_style_attr(style$link),
+      ">",
       episodic_html_escape(episodic_tr("notif.open_dashboard", lang = lang)),
       "</a></p>"
     )
   }
   paste0(
-    "<html><body style='font-family:sans-serif;font-size:14px'>",
-    "<h2 style='margin:0 0 12px'>",
+    "<h2",
+    episodic_mail_style_attr(style$heading),
+    ">",
     episodic_html_escape(title),
     "</h2>",
     body_html,
-    footer,
+    footer
+  )
+}
+
+#' The document around a notification email's content
+#' @keywords internal
+#' @noRd
+episodic_notify_html_document <- function(content, style = episodic_mail_style()) {
+  paste0(
+    "<html><body",
+    episodic_mail_style_attr(style$body),
+    ">",
+    content,
     "</body></html>"
   )
 }
@@ -656,7 +748,24 @@ episodic_notify_teams_card <- function(title,
   jsonlite::toJSON(card, auto_unbox = TRUE, null = "null")
 }
 
+#' Whether any email-capable channel is enabled
+#' @param channels `config$notifications$channels`.
+#' @return A single logical.
+#' @keywords internal
+#' @noRd
+episodic_notify_email_enabled <- function(channels) {
+  any(vapply(
+    episodic_report_subscription_email_channels,
+    function(name) isTRUE(channels[[name]]$enabled),
+    logical(1)
+  ))
+}
+
 #' Dispatch a message through all enabled channels
+#'
+#' A message carrying `email_html` (the body an email template rendered,
+#' see `episodic_mail_body()`) sends that to the email channels and its
+#' `html` to everything else; one without it sends `html` everywhere.
 #' @keywords internal
 #' @noRd
 episodic_notify_dispatch <- function(channels, message) {
@@ -674,10 +783,17 @@ episodic_notify_dispatch <- function(channels, message) {
     if (is.null(ch) || !isTRUE(ch$enabled)) {
       next
     }
+    channel_message <- message
+    if (
+      name %in% episodic_report_subscription_email_channels &&
+        !is.null(message$email_html)
+    ) {
+      channel_message$html <- message$email_html
+    }
     tryCatch(
       {
         episodic_trace("Sending notification via ", name)
-        channel_fns[[name]](ch, message)
+        channel_fns[[name]](ch, channel_message)
         episodic_trace("Notification sent via ", name)
       },
       error = function(e) {
@@ -839,6 +955,23 @@ episodic_notify_validate_config <- function(config) {
       problems <- c(
         problems,
         "slack: package 'httr2' is required but not installed"
+      )
+    }
+  }
+
+  # Reported here as well as at send time, so an operator running
+  # episodic_notify_test() hears about a template that cannot be used
+  # before an alert goes out with the built-in body instead.
+  for (kind in names(episodic_mail_template_variables)) {
+    reason <- episodic_mail_template_problem(kind)
+    if (!is.na(reason)) {
+      problems <- c(
+        problems,
+        paste0(
+          episodic_mail_template_variables[[kind]],
+          ": ",
+          episodic_mail_template_problem_text(reason, lang = episodic_language_fallback)
+        )
       )
     }
   }

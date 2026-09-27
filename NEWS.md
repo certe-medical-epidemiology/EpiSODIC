@@ -1,3 +1,15 @@
+# EpiSODIC 0.22.1
+
+## New
+
+- `EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS` and `EPISODIC_MAIL_TEMPLATE_REPORT` set a Quarto template for the body of the new-clusters and scheduled-report emails
+- `episodic_mail_template_preview()` renders an email template against example data
+
+## Changed
+
+- Outbreak reports and emails take their colours and font from the instance palette
+- An unusable `EPISODIC_STYLE` file or value falls back to the shipped palette and is reported instead of stopping the app
+
 # EpiSODIC 0.22.0
 
 ## New

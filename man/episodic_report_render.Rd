@@ -71,6 +71,13 @@ organisation needs its own layout or branding, set the
 the default \href{https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd}{\code{inst/report/episodic_default_report.qmd}}
 is a good starting point to copy and adapt.
 
+The report is styled from the instance palette (\code{\link[=episodic_palette]{episodic_palette()}}),
+the same colours and font as the dashboard: its charts are drawn in it,
+and an \code{episodic.scss} theme built from it is written beside the
+template, which the shipped template names as its \code{theme}. A custom
+template receives the palette as \code{palette} in its data and can name the
+same theme file.
+
 Rendering requires \href{https://quarto.org}{Quarto} to be installed
 separately (both the \code{quarto} R package and the Quarto command-line
 tool) - this function raises an informative error if it is not found.

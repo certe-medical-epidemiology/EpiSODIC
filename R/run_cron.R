@@ -371,6 +371,8 @@ episodic_run_cron <- function(cases,
     run_date = run_date
   )
   episodic_trace("Run ", run_id, " started")
+  episodic_palette_trace()
+  episodic_mail_template_trace()
 
   # Data problems are the operator's to fix, so they must reach the
   # operator: resolve every feed and check it here, before the run has
