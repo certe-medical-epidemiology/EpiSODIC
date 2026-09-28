@@ -69,6 +69,7 @@
   "assessment.mute_submit": "Registrar silencio",
   "assessment.mute_title": "Silenciar serie",
   "assessment.mute_until_label": "Silenciado hasta",
+  "assessment.part_of": "Forma parte del mismo aumento que {ref}. Este dosier quedaría integrado en ese, pero sigue en la lista porque ya ha sido evaluado.",
   "assessment.rationale_label": "Justificación",
   "assessment.rationale_placeholder": "Opcional: justifique esta evaluación.",
   "assessment.rationale_required": "Se requiere una justificación.",

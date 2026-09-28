@@ -1024,11 +1024,20 @@ test_that("the intensity bands are shaded from the epidemic threshold up, each i
   expect_equal(fill$name, "Epidemic Severity:")
   expect_equal(unname(as.character(fill$get_labels())), c("Very high", "High", "Medium", "Low"))
   expect_equal(p$theme$legend.position, "right")
-  hline <- p$layers[vapply(p$layers, function(l) inherits(l$geom, "GeomHline"), logical(1))][[1]]
-  expect_equal(hline$aes_params$linetype, 1)
-  expect_lte(hline$aes_params$linewidth, 0.3)
-  expect_false(isTRUE(hline$show.legend))
+  hlines <- p$layers[vapply(p$layers, function(l) inherits(l$geom, "GeomHline"), logical(1))]
+  expect_length(hlines, 2)
+  for (h in hlines) {
+    expect_equal(h$aes_params$linetype, 1)
+    expect_lte(h$aes_params$linewidth, 0.3)
+  }
   expect_null(p$scales$get_scales("linetype"))
+  # The end of an epidemic is the one line with a key, below the squares,
+  # in the palette's teal.
+  colour <- built$plot$scales$get_scales("colour")
+  expect_equal(unname(as.character(colour$get_labels())), "Epidemic end threshold")
+  expect_equal(unname(colour$palette(1)), pal$tertiary)
+  expect_equal(p$guides$guides$fill$params$order, 1)
+  expect_equal(p$guides$guides$colour$params$order, 2)
   # Without bands there is no legend to place.
   expect_false(identical(bare$theme$legend.position, "right"))
 })

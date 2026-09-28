@@ -7,12 +7,16 @@
 - Each seasonal epidemic in the Epidemics list shows its current MEM band as an "Intensity" chip
 - Text on a filled chip or selected picker button takes ink, white or black, whichever reads on the fill
 - The Pathogen and Epidemics weekly curves shade the MEM intensity bands behind the bars
+- Each detection run stores every open seasonal epidemic's weekly counts and intensity bands in `episodic_epidemic_week` (schema version 10)
+- An assessed cluster's assessment pane says which cluster it would otherwise be filed under, with a link to it
 
 ## Changed
 
 - Verdicts, intensity chips, intensity stats and the Pathogen chart's intensity lines take their colours from the severity scale
 - Synthetic Influenza A and RSV come in winter waves of varying size and timing, so the demo always has a MEM season with intensity bands
-- MEM threshold lines are thin and solid, and the weekly curve's legend names the shaded intensity bands on the right
+- MEM threshold lines are thin and solid, and the weekly curve's legend names the shaded intensity bands on the right, with the epidemic end threshold below them
+- The Epidemics dossier and list read a seasonal epidemic's thresholds, latest week and bands from what the detection runs stored instead of refitting MEM
+- `suppression.parent_min_flagged_children` ships as 1, so a parent absorbs a single flagged child holding under half its cases
 
 ## Fixed
 

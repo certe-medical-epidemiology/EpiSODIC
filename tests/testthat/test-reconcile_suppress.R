@@ -176,6 +176,26 @@ test_that("a cluster somebody has assessed is never suppressed out of the queue"
   episodic_suppress_lattice(env$con, episodic_config_resolve())
 
   expect_true(is.na(suppressed_by(env$con, env$parent)))
+  # What it would have been filed under is recorded instead, so its
+  # dossier can say that the two are the same rise.
+  would_be <- function() {
+    DBI::dbGetQuery(
+      env$con,
+      "SELECT would_be_suppressed_by FROM episodic_cluster WHERE cluster_id = ?",
+      params = list(env$parent)
+    )$would_be_suppressed_by
+  }
+  expect_equal(would_be(), env$children[1])
+
+  # Recomputed every run: once the child no longer explains the parent,
+  # the relation lifts.
+  DBI::dbExecute(
+    env$con,
+    "DELETE FROM episodic_cluster_case WHERE cluster_id = ?",
+    params = list(env$children[1])
+  )
+  episodic_suppress_lattice(env$con, episodic_config_resolve())
+  expect_true(is.na(would_be()))
 })
 
 test_that("suppression lifts when the picture that justified it changes", {
@@ -556,11 +576,10 @@ test_that("a child sharing no case with a parent is not one of its children", {
 })
 
 test_that("children that share nothing with a parent do not make its rise diffuse", {
-  # One child of the parent's own, holding 40%: not dominant, and not one
-  # of several. Two more ward clusters overlap in time and share none of
-  # the parent's cases; counted as children, they would make three
-  # children with shares under the diffuse threshold, and all three would
-  # be suppressed behind a cluster two of them have nothing to do with.
+  # One child of the parent's own, holding 40%, which the parent absorbs.
+  # Two more ward clusters overlap in time and share none of the
+  # parent's cases; counted as children, they would be suppressed behind
+  # a cluster they have nothing to do with.
   env <- suppress_setup(child_share = 0.4, n_children = 1)
   on.exit(DBI::dbDisconnect(env$con))
   strangers <- vapply(c("W-x", "W-y"), function(ward) {
@@ -587,10 +606,29 @@ test_that("children that share nothing with a parent do not make its rise diffus
 
   n <- episodic_suppress_lattice(env$con, episodic_config_resolve())
 
-  expect_identical(n, 0L)
-  for (id in c(env$parent, env$children, strangers)) {
+  expect_identical(n, 1L)
+  expect_equal(suppressed_by(env$con, env$children[1]), env$parent)
+  for (id in c(env$parent, strangers)) {
     expect_true(is.na(suppressed_by(env$con, id)))
   }
+})
+
+test_that("a single flagged child holding under half its parent is part of the parent's rise", {
+  # A region whose rise lies mostly outside the one province that crossed
+  # its own threshold: one epidemic, filed once, under the region.
+  env <- suppress_setup(child_share = 0.3, n_children = 1)
+  on.exit(DBI::dbDisconnect(env$con))
+
+  episodic_suppress_lattice(env$con, episodic_config_resolve())
+
+  expect_true(is.na(suppressed_by(env$con, env$parent)))
+  expect_equal(suppressed_by(env$con, env$children[1]), env$parent)
+
+  # An instance can still ask for the rise to be seen in several children.
+  config <- episodic_config_resolve()
+  config$suppression$parent_min_flagged_children <- 2L
+  episodic_suppress_lattice(env$con, config)
+  expect_true(is.na(suppressed_by(env$con, env$children[1])))
 })
 
 test_that("a cluster already suppressed this pass is not suppressed again by a later parent", {
@@ -611,4 +649,26 @@ test_that("a cluster already suppressed this pass is not suppressed again by a l
     expect_equal(suppressed_by(env$con, child), min(env$parent, second))
   }
   expect_identical(n, length(env$children))
+})
+
+test_that("an assessed cluster's pane says what it would have been filed under, with a link to it", {
+  env <- suppress_setup(child_share = 0.9)
+  on.exit(DBI::dbDisconnect(env$con))
+  expect_null(episodic_ui_part_of_note(env$con, env$parent, lang = "en"))
+
+  user_id <- episodic_db_app_user_insert(env$con, "jdoe", "Jane Doe", "j@x.nl", "hash")
+  episodic_app_submit_assessment(
+    env$con,
+    env$parent,
+    user_id,
+    verdict = "possible_epidemic",
+    rationale = "looked at this one"
+  )
+  episodic_suppress_lattice(env$con, episodic_config_resolve())
+
+  note <- as.character(episodic_ui_part_of_note(env$con, env$parent, lang = "en"))
+  expect_match(note, "Part of the same rise as", fixed = TRUE)
+  expect_match(note, "episodic-chip-link", fixed = TRUE)
+  expect_match(note, sprintf("O-%d", env$children[1]), fixed = TRUE)
+  expect_null(episodic_ui_part_of_note(env$con, env$children[1], lang = "en"))
 })

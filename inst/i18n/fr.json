@@ -69,6 +69,7 @@
   "assessment.mute_submit": "Enregistrer la mise en sourdine",
   "assessment.mute_title": "Mettre le flux en sourdine",
   "assessment.mute_until_label": "En sourdine jusqu'à",
+  "assessment.part_of": "Fait partie de la même hausse que {ref}. Ce dossier y serait rattaché, mais reste dans la liste parce qu’il a déjà été évalué.",
   "assessment.rationale_label": "Justification",
   "assessment.rationale_placeholder": "Facultatif : justifiez cette évaluation.",
   "assessment.rationale_required": "Une justification est requise.",

@@ -69,6 +69,7 @@
   "assessment.mute_submit": "Stummschaltung erfassen",
   "assessment.mute_title": "Meldereihe stummschalten",
   "assessment.mute_until_label": "Stummgeschaltet bis",
+  "assessment.part_of": "Teil desselben Anstiegs wie {ref}. Dieses Dossier würde dort eingeordnet, bleibt aber in der Liste, weil es bereits bewertet wurde.",
   "assessment.rationale_label": "Begründung",
   "assessment.rationale_placeholder": "Optional: Begründen Sie diese Bewertung.",
   "assessment.rationale_required": "Eine Begründung ist erforderlich.",

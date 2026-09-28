@@ -69,6 +69,7 @@
   "assessment.mute_submit": "تسجيل الكتم",
   "assessment.mute_title": "كتم السلسلة الرصدية",
   "assessment.mute_until_label": "مكتوم حتى",
+  "assessment.part_of": "جزء من الارتفاع نفسه في {ref}. كان هذا الملف سيُدرج تحته، لكنه يبقى في القائمة لأنه قُيِّم بالفعل.",
   "assessment.rationale_label": "المبرر",
   "assessment.rationale_placeholder": "اختياري: برِّر هذا التقييم.",
   "assessment.rationale_required": "المبرر مطلوب.",

@@ -445,6 +445,17 @@ body {
 .episodic-rail-item .episodic-rail-intensity {
   margin-block-start: 6px;
 }
+/* "Part of the same rise as E-11", at the top of an assessment pane
+   (episodic_ui_part_of_note()). */
+.episodic-part-of {
+  font-size: 0.923rem;
+  color: var(--episodic-ink);
+  background: var(--episodic-primary-tint);
+  border-inline-start: 3px solid var(--episodic-primary);
+  padding: 8px 12px;
+  margin-block-end: 12px;
+  line-height: 1.5;
+}
 .episodic-rail-item .episodic-rail-pathogen {
   font-size: 1rem;
   font-weight: 500;

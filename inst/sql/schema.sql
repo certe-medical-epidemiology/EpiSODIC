@@ -264,6 +264,11 @@ CREATE TABLE episodic_cluster (
   runs_since_detected      INTEGER NOT NULL DEFAULT 0,
   changed_since_assessment INTEGER NOT NULL DEFAULT 0 CHECK (changed_since_assessment IN (0, 1)),
   suppressed_by            INTEGER REFERENCES episodic_cluster(cluster_id),
+  -- The cluster that would have suppressed this one had somebody not
+  -- assessed it: an assessed cluster is never suppressed, and this is
+  -- how its dossier says what it is part of. Recomputed every run, like
+  -- suppressed_by.
+  would_be_suppressed_by   INTEGER REFERENCES episodic_cluster(cluster_id),
   merged_into              INTEGER REFERENCES episodic_cluster(cluster_id),
   -- 'detected': produced by episodic_reconcile_stream() from real
   -- detector output, the only kind that existed before this column.
@@ -343,6 +348,27 @@ CREATE TABLE episodic_epidemic_season (
   ended_week_start        TEXT,
   ended_reason            TEXT CHECK (ended_reason IS NULL OR ended_reason IN (
                             'post_epidemic_threshold', 'trough'))
+);
+
+-- ---------------------------------------------------------------------
+-- 5.5.1b Epidemic weeks (cron)
+--
+-- A seasonal epidemic's weekly counts and MEM intensity bands, one row
+-- per week from its onset to the week each run evaluates, read against
+-- the thresholds stored on its episodic_epidemic_season row. Every run
+-- rewrites the rows of every epidemic still open, so a late report
+-- reaches the week it belongs to; a closed epidemic keeps the rows of
+-- the last run that saw it open. intensity_level is NULL where the
+-- season has no intensity thresholds - never a band nobody measured.
+-- ---------------------------------------------------------------------
+CREATE TABLE episodic_epidemic_week (
+  cluster_id      INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
+  week_start      TEXT NOT NULL,
+  n_cases         INTEGER NOT NULL,
+  intensity_level TEXT CHECK (intensity_level IS NULL OR intensity_level IN (
+                    'baseline', 'low', 'medium', 'high', 'very_high')),
+  run_id          INTEGER NOT NULL REFERENCES episodic_detection_run(run_id),
+  PRIMARY KEY (cluster_id, week_start)
 );
 
 -- ---------------------------------------------------------------------

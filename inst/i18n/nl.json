@@ -69,6 +69,7 @@
   "assessment.mute_submit": "Dempen vastleggen",
   "assessment.mute_title": "Signaleringsreeks dempen",
   "assessment.mute_until_label": "Gedempt tot",
+  "assessment.part_of": "Onderdeel van dezelfde stijging als {ref}. Dit dossier zou daaronder vallen, maar blijft in de lijst staan omdat het al beoordeeld is.",
   "assessment.rationale_label": "Onderbouwing",
   "assessment.rationale_placeholder": "Optioneel: licht deze beoordeling toe.",
   "assessment.rationale_required": "Onderbouwing is verplicht.",

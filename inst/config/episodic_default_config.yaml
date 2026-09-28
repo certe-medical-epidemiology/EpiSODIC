@@ -127,7 +127,7 @@ notifications: ~
 suppression:
   child_dominance_threshold: 0.70
   parent_diffuse_threshold: 0.50
-  parent_min_flagged_children: 2
+  parent_min_flagged_children: 1
 
 # Access.
 access:

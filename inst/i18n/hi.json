@@ -69,6 +69,7 @@
   "assessment.mute_submit": "म्यूट दर्ज करें",
   "assessment.mute_title": "स्ट्रीम म्यूट करें",
   "assessment.mute_until_label": "इस तिथि तक म्यूट",
+  "assessment.part_of": "{ref} जैसी ही वृद्धि का हिस्सा। यह डोज़ियर उसके अंतर्गत रखा जाता, पर इसका मूल्यांकन हो चुका है, इसलिए यह सूची में बना रहता है।",
   "assessment.rationale_label": "औचित्य",
   "assessment.rationale_placeholder": "वैकल्पिक: इस मूल्यांकन को उचित ठहराएँ।",
   "assessment.rationale_required": "औचित्य आवश्यक है।",

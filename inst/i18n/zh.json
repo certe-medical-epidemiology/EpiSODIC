@@ -69,6 +69,7 @@
   "assessment.mute_submit": "提交静音设置",
   "assessment.mute_title": "静音监测序列",
   "assessment.mute_until_label": "静音至",
+  "assessment.part_of": "与 {ref} 属于同一次上升。本档案本应归入该档案，但因已评估而继续保留在列表中。",
   "assessment.rationale_label": "评估依据",
   "assessment.rationale_placeholder": "可选：请说明本次评估的依据。",
   "assessment.rationale_required": "必须填写评估依据。",

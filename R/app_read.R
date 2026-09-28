@@ -1546,14 +1546,13 @@ episodic_app_open_epidemics <- function(con,
   )
 
   open <- clusters[clusters$state != "closed" & clusters$scale == "epidemic", ]
-  # The band the dossier would show for each, read the dossier's way
-  # (`episodic_epidemic_intensity_now()`); `NA` for a non-seasonal one.
-  asof <- episodic_app_data_asof(con)
-  open$intensity_level <- vapply(
-    seq_len(nrow(open)),
-    function(i) episodic_epidemic_intensity_now(con, open[i, ], asof = asof),
-    character(1)
-  )
+  # The band of the latest week the last run counted, the one its
+  # dossier shows; `NA` for a non-seasonal epidemic, which has no weeks.
+  latest <- episodic_db_epidemic_latest_weeks(con, open$cluster_id)
+  open$intensity_level <- latest$intensity_level[
+    match(open$cluster_id, latest$cluster_id)
+  ]
+  open$intensity_level <- as.character(open$intensity_level)
   open[order(as.Date(open$last_day), decreasing = TRUE), ]
 }
 
@@ -1701,7 +1700,6 @@ episodic_epidemic_object <- function(con,
     history = history,
     cases = cases,
     season = season,
-    anchor_week = anchor_week,
     closed = closed,
     asof = asof,
     incomplete_days = incomplete_days,
@@ -1822,7 +1820,12 @@ episodic_epidemic_object <- function(con,
     weekly = weekly,
     thresholds = thresholds,
     closed = closed,
-    course = episodic_epidemic_course(weekly, from, thresholds),
+    course = episodic_epidemic_course(
+      weekly,
+      from,
+      thresholds,
+      weeks = episodic_db_epidemic_weeks(con, cluster_id)
+    ),
     overlay = overlay,
     rt = rt,
     rt_applicable = !is.null(pc) && isTRUE(as.logical(pc$rt_applicable)),
@@ -1844,9 +1847,9 @@ episodic_epidemic_object <- function(con,
 
 #' An epidemic's weekly curve and the MEM thresholds it is read against
 #'
-#' The one place both are built, for the epidemic dossier and for the
-#' band on the epidemic's rail row alike, so the two cannot disagree
-#' about which week is the latest complete one or which band it sits in.
+#' The thresholds are the ones the epidemic was opened against, stored
+#' by the run (`episodic_epidemic_stored_thresholds()`), not fitted again
+#' here: they are an attribute of the epidemic.
 #'
 #' A closed epidemic is read over its own course, with a short tail to
 #' show the fall: drawn to today, a season two years back is a curve of
@@ -1866,7 +1869,6 @@ episodic_epidemic_object <- function(con,
 #'   `sample_date` (`Date`).
 #' @param season Its `episodic_epidemic_season` row, or `NULL` for a
 #'   non-seasonal epidemic, which has no thresholds.
-#' @param anchor_week The season anchor, or `NULL`.
 #' @param closed Whether the epidemic is closed.
 #' @param asof The date the data is current as of.
 #' @param incomplete_days The stream's reporting delay, from
@@ -1874,14 +1876,13 @@ episodic_epidemic_object <- function(con,
 #' @param lead_in_weeks,tail_weeks As for `episodic_epidemic_object()`.
 #' @return A list with `from`, `to`, `weekly`
 #'   (`episodic_app_pathogen_weekly()`'s output) and `thresholds`
-#'   (`episodic_mem_thresholds_for_season()`'s output, or `NULL`).
+#'   (`episodic_epidemic_stored_thresholds()`'s output, or `NULL`).
 #' @keywords internal
 #' @noRd
 episodic_epidemic_curve <- function(cluster,
                                     history,
                                     cases,
                                     season,
-                                    anchor_week,
                                     closed,
                                     asof,
                                     incomplete_days,
@@ -1910,90 +1911,74 @@ episodic_epidemic_curve <- function(cluster,
     incomplete_days,
     asof
   )
-  thresholds <- if (!is.null(anchor_week) && !is.null(season)) {
-    episodic_mem_thresholds_for_season(
-      history,
-      season$season_label,
-      anchor_week = anchor_week
-    )
-  } else {
-    NULL
-  }
-  list(from = from, to = to, weekly = weekly, thresholds = thresholds)
-}
-
-#' The MEM intensity band an open seasonal epidemic's latest complete week
-#' sits in
-#'
-#' The band its dossier shows in the header and the stat grid, built
-#' through the same `episodic_epidemic_curve()` and
-#' `episodic_epidemic_course()`, for its row in the epidemic rail.
-#'
-#' @param con A [DBI::DBIConnection-class].
-#' @param cluster The epidemic's `episodic_cluster` row; it must be open.
-#' @param asof The date the data is current as of.
-#' @return One of `episodic_mem_intensity_level()`'s values, or
-#'   `NA_character_` for a non-seasonal epidemic, one whose thresholds
-#'   cannot be fitted, or one with no complete week yet.
-#' @keywords internal
-#' @noRd
-episodic_epidemic_intensity_now <- function(con,
-                                            cluster,
-                                            asof = episodic_app_data_asof(con)) {
-  season <- episodic_db_epidemic_season(con, cluster$cluster_id)
-  if (is.null(season)) {
-    return(NA_character_)
-  }
-  history <- episodic_db_cases_for_stream_id(
-    con,
-    cluster$stream_id,
-    columns = c("case_id", "sample_date")
+  list(
+    from = from,
+    to = to,
+    weekly = weekly,
+    thresholds = episodic_epidemic_stored_thresholds(season)
   )
-  history$sample_date <- as.Date(history$sample_date)
-  history <- history[!is.na(history$sample_date), , drop = FALSE]
-  cases <- episodic_db_cluster_cases(con, cluster$cluster_id)
-  cases$sample_date <- as.Date(cases$sample_date)
-  curve <- episodic_epidemic_curve(
-    cluster,
-    history = history,
-    cases = cases,
-    season = season,
-    anchor_week = as.integer(season$anchor_week),
-    closed = FALSE,
-    asof = asof,
-    incomplete_days = episodic_app_completeness(
-      con,
-      cluster$stream_id
-    )$incomplete_days
-  )
-  episodic_epidemic_course(
-    curve$weekly,
-    curve$from,
-    curve$thresholds
-  )$latest_level
 }
 
 #' Where an epidemic stands in its own course
 #'
-#' Read off the weekly curve the dossier draws, so the numbers and the
-#' chart cannot disagree. The latest complete week is the most recent
-#' week the reporting delay says is no longer filling (`incomplete` is
-#' `FALSE`); where every week is still filling, or the delay was never
-#' measured, there is no such week and every figure that depends on it
-#' is `NA` - a week still arriving compared against a finished one is a
-#' fall that is really the post.
+#' A seasonal epidemic's course is the record the detection runs keep
+#' (`weeks`, from `episodic_db_epidemic_weeks()`): its latest week is the
+#' one the last run evaluated, the same week MEM detects and closes on,
+#' and its bands were set against the thresholds it was opened against.
+#' Read from that record, the dossier, the epidemic rail and the run that
+#' will close the epidemic all speak of the same week.
+#'
+#' An epidemic with no such record - a non-seasonal one, or a seasonal
+#' one no run has counted since it was stored - is read off the weekly
+#' curve the dossier draws instead. There the latest complete week is
+#' the most recent one the reporting delay says is no longer filling
+#' (`incomplete` is `FALSE`); where every week is still filling, or the
+#' delay was never measured, there is no such week and every figure that
+#' depends on it is `NA` - a week still arriving compared against a
+#' finished one is a fall that is really the post.
 #'
 #' @param weekly `episodic_app_pathogen_weekly()`'s output.
 #' @param first_day The epidemic's first day; the peak is looked for from
 #'   its week on, not in the lead-in weeks.
-#' @param thresholds `episodic_mem_thresholds_for_season()`'s output, or
-#'   `NULL`.
+#' @param thresholds `episodic_epidemic_stored_thresholds()`'s output, or
+#'   `NULL`; bands the curve when there is no record of weeks.
+#' @param weeks `episodic_db_epidemic_weeks()`'s output, or `NULL`.
 #' @return A list with `latest_week`, `latest_n`, `previous_n`,
 #'   `change_pct` (`NA` against a week with no cases), `peak_week`,
 #'   `peak_n`, `latest_level` and `peak_level` (`NA` without thresholds).
 #' @keywords internal
 #' @noRd
-episodic_epidemic_course <- function(weekly, first_day, thresholds = NULL) {
+episodic_epidemic_course <- function(weekly,
+                                     first_day,
+                                     thresholds = NULL,
+                                     weeks = NULL) {
+  if (!is.null(weeks) && nrow(weeks) > 0) {
+    weeks <- weeks[order(weeks$week_start), , drop = FALSE]
+    last <- nrow(weeks)
+    latest_week <- as.Date(weeks$week_start[last])
+    latest_n <- as.integer(weeks$n_cases[last])
+    previous <- which(as.Date(weeks$week_start) == latest_week - 7)
+    previous_n <- if (length(previous) == 1) {
+      as.integer(weeks$n_cases[previous])
+    } else {
+      NA_integer_
+    }
+    peak <- if (all(weeks$n_cases == 0)) NA_integer_ else which.max(weeks$n_cases)
+    return(list(
+      latest_week = latest_week,
+      latest_n = latest_n,
+      previous_n = previous_n,
+      change_pct = if (is.na(previous_n) || previous_n == 0) {
+        NA_real_
+      } else {
+        100 * (latest_n - previous_n) / previous_n
+      },
+      peak_week = if (is.na(peak)) as.Date(NA) else as.Date(weeks$week_start[peak]),
+      peak_n = if (is.na(peak)) NA_integer_ else as.integer(weeks$n_cases[peak]),
+      latest_level = as.character(weeks$intensity_level[last]),
+      peak_level = episodic_mem_intensity_max(weeks$intensity_level)
+    ))
+  }
   weekly <- weekly[order(weekly$week_start), , drop = FALSE]
   within <- weekly[
     weekly$week_start >= episodic_week_start(as.Date(first_day)), ,

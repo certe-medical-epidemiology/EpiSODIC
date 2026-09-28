@@ -302,4 +302,14 @@ test_that("the epidemic rail shows each seasonal epidemic's band as its dossier 
   row <- as.character(episodic_ui_epidemic_rail_row(seasonal[1, ], lang = "en"))
   expect_match(row, "episodic-rail-intensity", fixed = TRUE)
   expect_match(row, "Intensity:", fixed = TRUE)
+
+  # The run stored the weeks from onset to the one it evaluated, and the
+  # band read back is that week's.
+  id <- seasonal$cluster_id[1]
+  season <- episodic_db_epidemic_season(con, id)
+  weeks <- episodic_db_epidemic_weeks(con, id)
+  evaluated <- episodic_mem_evaluation_week(run_date, season$anchor_week)$week_start
+  expect_equal(weeks$week_start[1], as.Date(season$onset_week_start))
+  expect_equal(max(weeks$week_start), evaluated)
+  expect_identical(seasonal$intensity_level[1], weeks$intensity_level[nrow(weeks)])
 })

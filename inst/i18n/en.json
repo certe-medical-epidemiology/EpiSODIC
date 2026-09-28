@@ -69,6 +69,7 @@
   "assessment.mute_submit": "Record mute",
   "assessment.mute_title": "Mute stream",
   "assessment.mute_until_label": "Muted until",
+  "assessment.part_of": "Part of the same rise as {ref}. This dossier would be filed under that one, but stays in the list because it has been assessed.",
   "assessment.rationale_label": "Rationale",
   "assessment.rationale_placeholder": "Optional: explain this assessment.",
   "assessment.rationale_required": "A rationale is required.",

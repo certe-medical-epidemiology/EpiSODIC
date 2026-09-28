@@ -1147,6 +1147,126 @@ episodic_mem_season_weeks <- function(dates, anchor_week) {
   )
 }
 
+# -- Epidemic weeks -----------------------------------------------------
+
+#' The MEM thresholds a seasonal epidemic was opened against
+#'
+#' An attribute of the epidemic, fixed when the run that opened it fitted
+#' them on the seasons before its own, and stored on its
+#' `episodic_epidemic_season` row. Read from there rather than fitted
+#' again: a season's thresholds are set at its start, and a refit would
+#' move them whenever a late report reached an earlier season.
+#'
+#' @param season An `episodic_epidemic_season` row, or `NULL`.
+#' @return `NULL` for `NULL`, otherwise a list with `pre_epidemic`,
+#'   `post_epidemic`, `intensity` (a named numeric of length 3, or `NULL`
+#'   unless all three are stored, finite and non-decreasing) and
+#'   `seasons_used`, the shape `episodic_mem_thresholds_for_season()`
+#'   returns.
+#' @keywords internal
+#' @noRd
+episodic_epidemic_stored_thresholds <- function(season) {
+  if (is.null(season) || nrow(as.data.frame(season)) == 0) {
+    return(NULL)
+  }
+  intensity <- suppressWarnings(as.numeric(c(
+    season$intensity_medium %||% NA,
+    season$intensity_high %||% NA,
+    season$intensity_very_high %||% NA
+  )))
+  intensity <- if (all(is.finite(intensity)) && !is.unsorted(intensity)) {
+    stats::setNames(intensity, c("medium", "high", "very_high"))
+  } else {
+    NULL
+  }
+  seasons_used <- as.character(season$seasons_used %||% NA)
+  list(
+    pre_epidemic = suppressWarnings(as.numeric(season$pre_epidemic_threshold %||% NA)),
+    post_epidemic = suppressWarnings(as.numeric(season$post_epidemic_threshold %||% NA)),
+    intensity = intensity,
+    seasons_used = if (is.na(seasons_used)) {
+      character(0)
+    } else {
+      trimws(strsplit(seasons_used, ",", fixed = TRUE)[[1]])
+    }
+  )
+}
+
+#' A seasonal epidemic's weekly counts and intensity bands, as of a run
+#'
+#' One row per week from the epidemic's onset week to the week the run
+#' evaluates - the last fully elapsed one (`episodic_mem_evaluation_week()`),
+#' the same week MEM detects and closes on - each counted from the
+#' stream's cases and banded against the thresholds the epidemic was
+#' opened against (`episodic_epidemic_stored_thresholds()`).
+#'
+#' @param cases_for_stream A data frame with `sample_date`, the stream's
+#'   cases.
+#' @param satellite A one-row data frame from
+#'   `episodic_db_open_seasonal_epidemics()`.
+#' @param run_date The date to treat as "today".
+#' @return A data frame with `week_start` (character), `n_cases` and
+#'   `intensity_level` (`NA` where the season has no intensity
+#'   thresholds); no rows when the onset week is unknown or the run
+#'   evaluates a week before it.
+#' @keywords internal
+#' @noRd
+episodic_epidemic_weeks <- function(cases_for_stream, satellite, run_date) {
+  empty <- data.frame(
+    week_start = character(0),
+    n_cases = integer(0),
+    intensity_level = character(0),
+    stringsAsFactors = FALSE
+  )
+  onset <- suppressWarnings(as.Date(satellite$onset_week_start %||% NA))
+  if (length(onset) != 1 || is.na(onset)) {
+    return(empty)
+  }
+  evaluated <- episodic_mem_evaluation_week(
+    as.Date(run_date),
+    as.integer(satellite$anchor_week)
+  )$week_start
+  if (evaluated < onset) {
+    return(empty)
+  }
+  weeks <- seq(onset, evaluated, by = 7)
+  dates <- as.Date(cases_for_stream$sample_date)
+  dates <- dates[!is.na(dates) & dates >= onset & dates <= evaluated + 6]
+  counts <- tabulate(
+    as.integer(dates - onset) %/% 7L + 1L,
+    nbins = length(weeks)
+  )
+  thresholds <- episodic_epidemic_stored_thresholds(satellite)
+  data.frame(
+    week_start = as.character(weeks),
+    n_cases = as.integer(counts),
+    intensity_level = vapply(
+      counts,
+      function(n) {
+        episodic_mem_intensity_level(n, thresholds$pre_epidemic, thresholds$intensity)
+      },
+      character(1)
+    ),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' The most severe of a set of intensity bands
+#'
+#' @param levels Values of `episodic_mem_intensity_level()`, `NA`
+#'   allowed.
+#' @return The highest band present, or `NA_character_` when none is.
+#' @keywords internal
+#' @noRd
+episodic_mem_intensity_max <- function(levels) {
+  steps <- c("baseline", "low", "medium", "high", "very_high")
+  ranks <- match(levels, steps)
+  if (all(is.na(ranks))) {
+    return(NA_character_)
+  }
+  steps[max(ranks, na.rm = TRUE)]
+}
+
 # -- Epidemic closure ---------------------------------------------------
 
 #' Check whether an open seasonal epidemic should close

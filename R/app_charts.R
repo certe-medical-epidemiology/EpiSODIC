@@ -1100,21 +1100,53 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
     ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang))
 
   # Thin and solid: the lines mark where the bands meet, and the shades
-  # say what each band is.
+  # say what each band is. The end of an epidemic is the one line no
+  # band edge explains, so it alone gets a key, below the squares.
   lines <- episodic_mem_threshold_lines(thresholds, lang = lang)
+  end_line <- NULL
   if (!is.null(lines)) {
+    end_line <- lines[lines$key == "post_epidemic", , drop = FALSE]
+    edges <- lines[lines$key != "post_epidemic", , drop = FALSE]
+    if (nrow(edges) > 0) {
+      p <- p +
+        ggplot2::geom_hline(
+          data = edges,
+          ggplot2::aes(yintercept = .data$value),
+          colour = edges$colour,
+          linewidth = 0.25,
+          linetype = 1
+        )
+    }
+    if (nrow(end_line) > 0) {
+      p <- p +
+        ggplot2::geom_hline(
+          data = end_line,
+          ggplot2::aes(yintercept = .data$value, colour = .data$key),
+          linewidth = 0.25,
+          linetype = 1
+        ) +
+        ggplot2::scale_colour_manual(
+          name = NULL,
+          values = stats::setNames(end_line$colour, end_line$key),
+          labels = stats::setNames(end_line$label, end_line$key)
+        )
+    } else {
+      end_line <- NULL
+    }
+  }
+  if (!is.null(bands) || !is.null(end_line)) {
     p <- p +
-      ggplot2::geom_hline(
-        data = lines,
-        ggplot2::aes(yintercept = .data$value, colour = .data$colour),
-        linewidth = 0.25,
-        linetype = 1,
-        show.legend = FALSE
-      ) +
-      ggplot2::scale_colour_identity()
+      ggplot2::guides(
+        fill = ggplot2::guide_legend(order = 1),
+        # A key line thick enough to read as a line at legend size.
+        colour = ggplot2::guide_legend(
+          order = 2,
+          override.aes = list(linewidth = 0.8)
+        )
+      )
   }
   p <- p + episodic_chart_theme()
-  if (!is.null(bands)) {
+  if (!is.null(bands) || !is.null(end_line)) {
     p <- p +
       ggplot2::theme(
         legend.position = "right",

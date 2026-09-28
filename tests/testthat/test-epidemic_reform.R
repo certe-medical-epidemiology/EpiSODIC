@@ -870,10 +870,7 @@ test_that("epidemic_object has no season for a non-seasonal epidemic", {
   obj <- episodic_epidemic_object(env$con, epi_id, lang = "en")
   expect_null(obj$season)
   # No season, no band: the rail row carries no intensity chip for it.
-  expect_true(is.na(episodic_epidemic_intensity_now(
-    env$con,
-    episodic_db_get_query(env$con, "SELECT * FROM episodic_cluster WHERE cluster_id = ?", params = list(epi_id))
-  )))
+  expect_equal(nrow(episodic_db_epidemic_weeks(env$con, epi_id)), 0)
   rail <- episodic_app_open_epidemics(env$con, lang = "en")
   expect_true(is.na(rail$intensity_level[rail$cluster_id == epi_id]))
   row <- as.character(episodic_ui_epidemic_rail_row(rail[rail$cluster_id == epi_id, ], lang = "en"))
@@ -1497,4 +1494,93 @@ test_that("the case-sharing relation stops at the scale boundary", {
   # and says nothing. The during link is what carries that relation.
   linked <- episodic_db_clusters_linked_to(env$con, ob_id)
   expect_equal(nrow(linked), 0)
+})
+
+# -- Epidemic weeks ------------------------------------------------------
+
+weeks_satellite <- function(...) {
+  base <- list(
+    anchor_week = 30L,
+    onset_week_start = "2026-01-05",
+    pre_epidemic_threshold = 5,
+    post_epidemic_threshold = 4,
+    intensity_medium = 10,
+    intensity_high = 20,
+    intensity_very_high = 30,
+    seasons_used = "2022/2023, 2023/2024"
+  )
+  as.data.frame(utils::modifyList(base, list(...)), stringsAsFactors = FALSE)
+}
+
+test_that("an epidemic's weeks run from its onset to the week the run evaluates, each banded", {
+  # 2, 12, 25 and 40 cases in the four weeks from onset; the run on
+  # Wednesday 4 February evaluates the week of 26 January, the last one
+  # fully elapsed.
+  cases <- data.frame(sample_date = as.character(c(
+    rep(as.Date("2026-01-05"), 2),
+    rep(as.Date("2026-01-12"), 12),
+    rep(as.Date("2026-01-19"), 25),
+    rep(as.Date("2026-01-26"), 40),
+    rep(as.Date("2026-02-02"), 7),
+    as.Date("2025-12-29")
+  )))
+  weeks <- episodic_epidemic_weeks(cases, weeks_satellite(), as.Date("2026-02-04"))
+  expect_equal(
+    weeks$week_start,
+    c("2026-01-05", "2026-01-12", "2026-01-19", "2026-01-26")
+  )
+  expect_equal(weeks$n_cases, c(2L, 12L, 25L, 40L))
+  expect_equal(weeks$intensity_level, c("baseline", "medium", "high", "very_high"))
+
+  # No intensity thresholds stored: counted, but no band anybody measured.
+  bare <- weeks_satellite(intensity_medium = NA_real_)
+  weeks <- episodic_epidemic_weeks(cases, bare, as.Date("2026-02-04"))
+  expect_equal(weeks$n_cases, c(2L, 12L, 25L, 40L))
+  expect_true(all(is.na(weeks$intensity_level)))
+
+  # Nothing to count without an onset, or before it.
+  expect_equal(nrow(episodic_epidemic_weeks(
+    cases, weeks_satellite(onset_week_start = NA_character_), as.Date("2026-02-04")
+  )), 0)
+  expect_equal(nrow(episodic_epidemic_weeks(cases, weeks_satellite(), as.Date("2026-01-06"))), 0)
+})
+
+test_that("the stored thresholds are the epidemic's own, with bands only when all three are usable", {
+  stored <- episodic_epidemic_stored_thresholds(weeks_satellite())
+  expect_equal(stored$pre_epidemic, 5)
+  expect_equal(stored$post_epidemic, 4)
+  expect_equal(stored$intensity, c(medium = 10, high = 20, very_high = 30))
+  expect_equal(stored$seasons_used, c("2022/2023", "2023/2024"))
+
+  expect_null(episodic_epidemic_stored_thresholds(weeks_satellite(intensity_high = NA_real_))$intensity)
+  expect_null(episodic_epidemic_stored_thresholds(weeks_satellite(intensity_high = 5))$intensity)
+  expect_null(episodic_epidemic_stored_thresholds(NULL))
+})
+
+test_that("the most severe band is the highest one reached, and none when none was measured", {
+  expect_equal(episodic_mem_intensity_max(c("low", "very_high", "medium")), "very_high")
+  expect_equal(episodic_mem_intensity_max(c(NA, "baseline")), "baseline")
+  expect_true(is.na(episodic_mem_intensity_max(c(NA_character_, NA_character_))))
+})
+
+test_that("a seasonal epidemic's course is the runs' record of its weeks, not the curve", {
+  weekly <- data.frame(
+    week_start = seq(as.Date("2026-01-05"), by = "week", length.out = 5),
+    n_cases = c(2, 12, 25, 41, 3),
+    incomplete = c(FALSE, FALSE, FALSE, FALSE, TRUE)
+  )
+  weeks <- data.frame(
+    week_start = seq(as.Date("2026-01-05"), by = "week", length.out = 4),
+    n_cases = c(2L, 12L, 25L, 40L),
+    intensity_level = c("baseline", "medium", "high", "very_high"),
+    stringsAsFactors = FALSE
+  )
+  course <- episodic_epidemic_course(weekly, "2026-01-05", weeks = weeks)
+  expect_equal(course$latest_week, as.Date("2026-01-26"))
+  expect_equal(course$latest_n, 40L)
+  expect_equal(course$previous_n, 25L)
+  expect_equal(course$change_pct, 60)
+  expect_equal(course$peak_n, 40L)
+  expect_equal(course$latest_level, "very_high")
+  expect_equal(course$peak_level, "very_high")
 })

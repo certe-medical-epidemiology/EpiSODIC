@@ -357,7 +357,7 @@ episodic_db_apply_schema <- function(con, dialect) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 9L
+episodic_schema_version <- 10L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -816,6 +816,43 @@ episodic_db_migrations <- function() {
         )
       }
       notes
+    },
+    # 10: a seasonal epidemic's weekly counts and bands
+    # (episodic_epidemic_week), and the cluster an assessed cluster would
+    # have been suppressed behind (episodic_cluster.would_be_suppressed_by).
+    # Purely additive: one table taken from the schema file, one nullable
+    # column. Both are filled by the next detection run, which recomputes
+    # them from scratch; nothing here reads or rewrites a row.
+    "10" = function(con, dialect) {
+      if (!DBI::dbExistsTable(con, "episodic_epidemic_week")) {
+        for (statement in episodic_db_schema_statements_for(
+          dialect,
+          "episodic_epidemic_week"
+        )) {
+          episodic_db_execute(con, statement)
+        }
+      }
+      if (!episodic_db_column_exists(
+        con, dialect, "episodic_cluster", "would_be_suppressed_by"
+      )) {
+        # MySQL parses an inline column reference and discards it, so the
+        # foreign key is declared as a clause of its own there.
+        episodic_db_execute(
+          con,
+          if (dialect == "mariadb") {
+            paste0(
+              "ALTER TABLE episodic_cluster ADD COLUMN would_be_suppressed_by INTEGER, ",
+              "ADD FOREIGN KEY (would_be_suppressed_by) REFERENCES episodic_cluster(cluster_id)"
+            )
+          } else {
+            paste0(
+              "ALTER TABLE episodic_cluster ADD COLUMN would_be_suppressed_by INTEGER ",
+              "REFERENCES episodic_cluster(cluster_id)"
+            )
+          }
+        )
+      }
+      invisible(NULL)
     }
   )
 }
@@ -1986,6 +2023,9 @@ episodic_db_schema_statements <- function(dialect) {
       ),
       episodic_stream_trend = c(
         "  week_start TEXT NOT NULL," = "  week_start VARCHAR(10) NOT NULL,"
+      ),
+      episodic_epidemic_week = c(
+        "  week_start      TEXT NOT NULL," = "  week_start      VARCHAR(10) NOT NULL,"
       ),
       episodic_detector_cache = c(
         "  detector   TEXT NOT NULL CHECK (detector IN ('mem'))," = "  detector   VARCHAR(20) NOT NULL CHECK (detector IN ('mem')),"

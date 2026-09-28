@@ -1007,6 +1007,7 @@ episodic_ui_epidemic_assessment_rail <- function(con,
   }
 
   shiny::tagList(
+    episodic_ui_part_of_note(con, cluster_id, lang = lang),
     shiny::tags$div(
       class = "episodic-timeline",
       shiny::tags$div(

@@ -808,6 +808,53 @@ episodic_ui_care_line_chip <- function(care_line,
   )
 }
 
+#' "Part of the same rise as E-11", for an assessed cluster left in the list
+#'
+#' An assessed cluster is never suppressed, so when the lattice would
+#' file it under another - a province epidemic under the regional one it
+#' has become part of - both stay in their lists. This says so at the
+#' top of its assessment pane, with a link to the other, so the two are
+#' not read as two events. `NULL` when the cluster would be filed under
+#' nothing (`episodic_cluster.would_be_suppressed_by`, recomputed every
+#' run).
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The cluster whose pane this is.
+#' @param lang Session language.
+#' @return A `shiny::tags$div`, or `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_ui_part_of_note <- function(con,
+                                     cluster_id,
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  target <- episodic_db_get_query(
+    con,
+    "SELECT t.cluster_id, t.scale
+       FROM episodic_cluster c
+       JOIN episodic_cluster t ON t.cluster_id = c.would_be_suppressed_by
+      WHERE c.cluster_id = ? AND t.merged_into IS NULL",
+    params = list(cluster_id)
+  )
+  if (nrow(target) == 0) {
+    return(NULL)
+  }
+  chip <- episodic_ui_chip_link(
+    episodic_object_ref(target$cluster_id[1], target$scale[1], lang = lang),
+    episodic_palette()$primary,
+    cluster_id = target$cluster_id[1],
+    lang = lang,
+    scale = target$scale[1]
+  )
+  shiny::tags$div(
+    class = "episodic-part-of",
+    shiny::HTML(episodic_tr(
+      "assessment.part_of",
+      ref = as.character(chip),
+      lang = lang
+    ))
+  )
+}
+
 #' The palette colour of one step on the severity scale
 #'
 #' One ordinal scale for everything EpiSODIC grades: an epidemiologist's
