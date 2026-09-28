@@ -442,6 +442,9 @@ body {
 .episodic-body-epidemics .episodic-rail-item .episodic-rail-state {
   margin-top: 9px;
 }
+.episodic-rail-item .episodic-rail-intensity {
+  margin-block-start: 6px;
+}
 .episodic-rail-item .episodic-rail-pathogen {
   font-size: 1rem;
   font-weight: 500;

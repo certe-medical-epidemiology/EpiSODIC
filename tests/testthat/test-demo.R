@@ -265,3 +265,41 @@ test_that("a db_path that does not exist yet is accepted silently", {
     expect_null(episodic_demo_check_db_path(tempfile(fileext = ".sqlite")))
   )
 })
+
+test_that("the epidemic rail shows each seasonal epidemic's band as its dossier does", {
+  skip_if_not_installed("sodium")
+  skip_if_not_installed("mem")
+  # Influenza A alone, so the demo's geography and a real detection run
+  # produce a seasonal region epidemic in a third of the whole demo's
+  # time.
+  run_date <- as.Date("2026-09-27")
+  cases <- episodic_synthetic_cases(end_date = run_date)
+  cases <- cases[cases$pathogen == "Influenza A", , drop = FALSE]
+  db_path <- tempfile(fileext = ".sqlite")
+  files <- episodic_demo_files(db_path)
+  on.exit(unlink(c(db_path, files$config, files$pc_province_map)))
+  suppressMessages(episodic_demo(
+    db_path = db_path,
+    launch = FALSE,
+    cases = cases,
+    denominators = NULL,
+    run_date = run_date
+  ))
+  withr::local_envvar(
+    EPISODIC_CONFIG = files$config,
+    EPISODIC_PC_PROVINCE_MAP = files$pc_province_map
+  )
+  con <- episodic_db_connect(db_path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+
+  epidemics <- episodic_app_open_epidemics(con, lang = "en")
+  seasonal <- epidemics[!is.na(epidemics$intensity_level), , drop = FALSE]
+  expect_gt(nrow(seasonal), 0)
+  for (i in seq_len(nrow(epidemics))) {
+    obj <- episodic_epidemic_object(con, epidemics$cluster_id[i], lang = "en")
+    expect_identical(epidemics$intensity_level[i], obj$course$latest_level)
+  }
+  row <- as.character(episodic_ui_epidemic_rail_row(seasonal[1, ], lang = "en"))
+  expect_match(row, "episodic-rail-intensity", fixed = TRUE)
+  expect_match(row, "Intensity:", fixed = TRUE)
+})

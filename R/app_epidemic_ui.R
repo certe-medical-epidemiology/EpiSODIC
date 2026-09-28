@@ -111,6 +111,7 @@ episodic_ui_epidemic_rail_row <- function(row,
   # rather than returning FALSE.
   row$care_line <- row$care_line %||% NA_character_
   row$priority_score <- row$priority_score %||% NA_real_
+  row$intensity_level <- row$intensity_level %||% NA_character_
 
   shiny::tags$div(
     class = "episodic-rail-item",
@@ -163,7 +164,15 @@ episodic_ui_epidemic_rail_row <- function(row,
         class = "episodic-rail-state",
         episodic_ui_state_dot(row$state),
         row$state_label
-      )
+      ),
+      # The band its dossier shows, so the most intense epidemic is found
+      # without opening each one; absent for a non-seasonal epidemic.
+      if (!is.na(row$intensity_level)) {
+        shiny::tags$div(
+          class = "episodic-rail-intensity",
+          episodic_ui_intensity_chip(row$intensity_level, lang = lang)
+        )
+      }
     )
   )
 }

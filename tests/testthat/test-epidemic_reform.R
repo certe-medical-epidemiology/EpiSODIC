@@ -828,6 +828,15 @@ test_that("epidemic_object has no season for a non-seasonal epidemic", {
 
   obj <- episodic_epidemic_object(env$con, epi_id, lang = "en")
   expect_null(obj$season)
+  # No season, no band: the rail row carries no intensity chip for it.
+  expect_true(is.na(episodic_epidemic_intensity_now(
+    env$con,
+    episodic_db_get_query(env$con, "SELECT * FROM episodic_cluster WHERE cluster_id = ?", params = list(epi_id))
+  )))
+  rail <- episodic_app_open_epidemics(env$con, lang = "en")
+  expect_true(is.na(rail$intensity_level[rail$cluster_id == epi_id]))
+  row <- as.character(episodic_ui_epidemic_rail_row(rail[rail$cluster_id == epi_id, ], lang = "en"))
+  expect_false(grepl("episodic-rail-intensity", row, fixed = TRUE))
 })
 
 test_that("epidemic UI renders without error for a seasonal epidemic", {

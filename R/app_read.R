@@ -1512,7 +1512,8 @@ episodic_app_status <- function(con) {
 #' @param con A [DBI::DBIConnection-class].
 #' @param lang Session language, for level/state labels.
 #' @return A data frame, one row per open epidemic, ordered by `last_day`
-#'   descending.
+#'   descending, with `intensity_level` the MEM band its latest complete
+#'   week sits in (`NA` where it has none).
 #' @keywords internal
 #' @noRd
 episodic_app_open_epidemics <- function(con,
@@ -1545,6 +1546,14 @@ episodic_app_open_epidemics <- function(con,
   )
 
   open <- clusters[clusters$state != "closed" & clusters$scale == "epidemic", ]
+  # The band the dossier would show for each, read the dossier's way
+  # (`episodic_epidemic_intensity_now()`); `NA` for a non-seasonal one.
+  asof <- episodic_app_data_asof(con)
+  open$intensity_level <- vapply(
+    seq_len(nrow(open)),
+    function(i) episodic_epidemic_intensity_now(con, open[i, ], asof = asof),
+    character(1)
+  )
   open[order(as.Date(open$last_day), decreasing = TRUE), ]
 }
 
@@ -1683,46 +1692,26 @@ episodic_epidemic_object <- function(con,
     NULL
   }
 
-  # A closed epidemic is read over its own course, with a short tail to
-  # show the fall: drawn to today, a season two years back is a curve
-  # of two years of zeros, and its "latest complete week" a week in
-  # which it had long since ended. An open one is read to today.
   closed <- identical(
     episodic_app_derive_state_for_cluster(con, cluster_id),
     "closed"
   )
-  from <- as.Date(cluster$first_day)
-  to <- if (closed) {
-    min(as.Date(cluster$last_day) + 7L * as.integer(tail_weeks), asof)
-  } else {
-    max(as.Date(cluster$last_day), asof)
-  }
-  # `episodic_app_pathogen_weekly()` rather than the bare weekly counts:
-  # it carries the `incomplete` flag, which is what shades the weeks
-  # still filling. A curve drawn without it tells the reader that this
-  # week's dip is a fall in incidence, when what it is is the post.
-  weekly <- episodic_app_pathogen_weekly(
-    data.frame(
-      sample_date = if (is.null(history_problem)) {
-        history$sample_date
-      } else {
-        cases$sample_date
-      }
-    ),
-    list(from = from - 7L * as.integer(lead_in_weeks), to = to),
-    incomplete_days,
-    asof
+  curve <- episodic_epidemic_curve(
+    cluster,
+    history = history,
+    cases = cases,
+    season = season,
+    anchor_week = anchor_week,
+    closed = closed,
+    asof = asof,
+    incomplete_days = incomplete_days,
+    lead_in_weeks = lead_in_weeks,
+    tail_weeks = tail_weeks
   )
-
-  thresholds <- if (!is.null(anchor_week) && !is.null(season)) {
-    episodic_mem_thresholds_for_season(
-      history,
-      season$season_label,
-      anchor_week = anchor_week
-    )
-  } else {
-    NULL
-  }
+  from <- curve$from
+  to <- curve$to
+  weekly <- curve$weekly
+  thresholds <- curve$thresholds
 
   resolved <- list(from = from, to = to)
   denominator <- episodic_app_pathogen_denominator(
@@ -1851,6 +1840,137 @@ episodic_epidemic_object <- function(con,
     concentration = concentration,
     during_outbreaks = during_outbreaks
   )
+}
+
+#' An epidemic's weekly curve and the MEM thresholds it is read against
+#'
+#' The one place both are built, for the epidemic dossier and for the
+#' band on the epidemic's rail row alike, so the two cannot disagree
+#' about which week is the latest complete one or which band it sits in.
+#'
+#' A closed epidemic is read over its own course, with a short tail to
+#' show the fall: drawn to today, a season two years back is a curve of
+#' two years of zeros, and its "latest complete week" a week in which it
+#' had long since ended. An open one is read to today.
+#'
+#' The curve is counted from the stream's history, unless that history
+#' does not hold every case linked to the epidemic - the dashboard then
+#' decides stream membership under a different geography from the run
+#' that linked them, and the curve falls back to the cases the epidemic
+#' is known to hold (`episodic_epidemic_object()` says so on the dossier).
+#'
+#' @param cluster The epidemic's `episodic_cluster` row.
+#' @param history The stream's cases, with `case_id` and `sample_date`
+#'   (`Date`).
+#' @param cases The epidemic's own cases, with `case_id` and
+#'   `sample_date` (`Date`).
+#' @param season Its `episodic_epidemic_season` row, or `NULL` for a
+#'   non-seasonal epidemic, which has no thresholds.
+#' @param anchor_week The season anchor, or `NULL`.
+#' @param closed Whether the epidemic is closed.
+#' @param asof The date the data is current as of.
+#' @param incomplete_days The stream's reporting delay, from
+#'   `episodic_app_completeness()`.
+#' @param lead_in_weeks,tail_weeks As for `episodic_epidemic_object()`.
+#' @return A list with `from`, `to`, `weekly`
+#'   (`episodic_app_pathogen_weekly()`'s output) and `thresholds`
+#'   (`episodic_mem_thresholds_for_season()`'s output, or `NULL`).
+#' @keywords internal
+#' @noRd
+episodic_epidemic_curve <- function(cluster,
+                                    history,
+                                    cases,
+                                    season,
+                                    anchor_week,
+                                    closed,
+                                    asof,
+                                    incomplete_days,
+                                    lead_in_weeks = 8L,
+                                    tail_weeks = 4L) {
+  from <- as.Date(cluster$first_day)
+  to <- if (closed) {
+    min(as.Date(cluster$last_day) + 7L * as.integer(tail_weeks), asof)
+  } else {
+    max(as.Date(cluster$last_day), asof)
+  }
+  history_complete <- all(cases$case_id %in% history$case_id)
+  # `episodic_app_pathogen_weekly()` rather than the bare weekly counts:
+  # it carries the `incomplete` flag, which is what shades the weeks
+  # still filling. A curve drawn without it tells the reader that this
+  # week's dip is a fall in incidence, when what it is is the post.
+  weekly <- episodic_app_pathogen_weekly(
+    data.frame(
+      sample_date = if (history_complete) {
+        history$sample_date
+      } else {
+        cases$sample_date
+      }
+    ),
+    list(from = from - 7L * as.integer(lead_in_weeks), to = to),
+    incomplete_days,
+    asof
+  )
+  thresholds <- if (!is.null(anchor_week) && !is.null(season)) {
+    episodic_mem_thresholds_for_season(
+      history,
+      season$season_label,
+      anchor_week = anchor_week
+    )
+  } else {
+    NULL
+  }
+  list(from = from, to = to, weekly = weekly, thresholds = thresholds)
+}
+
+#' The MEM intensity band an open seasonal epidemic's latest complete week
+#' sits in
+#'
+#' The band its dossier shows in the header and the stat grid, built
+#' through the same `episodic_epidemic_curve()` and
+#' `episodic_epidemic_course()`, for its row in the epidemic rail.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster The epidemic's `episodic_cluster` row; it must be open.
+#' @param asof The date the data is current as of.
+#' @return One of `episodic_mem_intensity_level()`'s values, or
+#'   `NA_character_` for a non-seasonal epidemic, one whose thresholds
+#'   cannot be fitted, or one with no complete week yet.
+#' @keywords internal
+#' @noRd
+episodic_epidemic_intensity_now <- function(con,
+                                            cluster,
+                                            asof = episodic_app_data_asof(con)) {
+  season <- episodic_db_epidemic_season(con, cluster$cluster_id)
+  if (is.null(season)) {
+    return(NA_character_)
+  }
+  history <- episodic_db_cases_for_stream_id(
+    con,
+    cluster$stream_id,
+    columns = c("case_id", "sample_date")
+  )
+  history$sample_date <- as.Date(history$sample_date)
+  history <- history[!is.na(history$sample_date), , drop = FALSE]
+  cases <- episodic_db_cluster_cases(con, cluster$cluster_id)
+  cases$sample_date <- as.Date(cases$sample_date)
+  curve <- episodic_epidemic_curve(
+    cluster,
+    history = history,
+    cases = cases,
+    season = season,
+    anchor_week = as.integer(season$anchor_week),
+    closed = FALSE,
+    asof = asof,
+    incomplete_days = episodic_app_completeness(
+      con,
+      cluster$stream_id
+    )$incomplete_days
+  )
+  episodic_epidemic_course(
+    curve$weekly,
+    curve$from,
+    curve$thresholds
+  )$latest_level
 }
 
 #' Where an epidemic stands in its own course

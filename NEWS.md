@@ -4,6 +4,7 @@
 
 - Five `severity_*` palette roles colour both verdicts and MEM intensity bands, overridable through `EPISODIC_STYLE`
 - The Epidemics dossier header shows the current MEM band as an "Intensity" chip
+- Each seasonal epidemic in the Epidemics list shows its current MEM band as an "Intensity" chip
 - Text on a filled chip or selected picker button takes ink, white or black, whichever reads on the fill
 
 ## Changed
