@@ -881,19 +881,25 @@ episodic_db_drop_empty_column <- function(con, dialect, table, column) {
       error = function(e) e
     )
     if (!is.null(refused)) {
-      checks <- episodic_db_get_query(
-        con,
-        "SELECT tc.CONSTRAINT_NAME AS name
-           FROM information_schema.TABLE_CONSTRAINTS tc
-           JOIN information_schema.CHECK_CONSTRAINTS cc
-             ON cc.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
-            AND cc.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
-          WHERE tc.TABLE_SCHEMA = DATABASE()
-            AND tc.TABLE_NAME = ?
-            AND tc.CONSTRAINT_TYPE = 'CHECK'
-            AND cc.CHECK_CLAUSE LIKE ?",
-        params = list(table, paste0("%", column, "%"))
-      )$name
+      # A server without `information_schema.CHECK_CONSTRAINTS` (MySQL
+      # before 8.0.16) enforces no CHECK, so none can be what refused the
+      # drop: the original refusal is the one to report.
+      checks <- tryCatch(
+        episodic_db_get_query(
+          con,
+          "SELECT tc.CONSTRAINT_NAME AS name
+             FROM information_schema.TABLE_CONSTRAINTS tc
+             JOIN information_schema.CHECK_CONSTRAINTS cc
+               ON cc.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
+              AND cc.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
+            WHERE tc.TABLE_SCHEMA = DATABASE()
+              AND tc.TABLE_NAME = ?
+              AND tc.CONSTRAINT_TYPE = 'CHECK'
+              AND cc.CHECK_CLAUSE LIKE ?",
+          params = list(table, paste0("%", column, "%"))
+        )$name,
+        error = function(e) character(0)
+      )
       if (length(checks) == 0) {
         stop(refused)
       }
