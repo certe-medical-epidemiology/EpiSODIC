@@ -504,7 +504,7 @@
   "pathogen.intensity.medium": "Mittel",
   "pathogen.intensity.very_high": "Sehr hoch",
   "pathogen.intensity_chip": "Intensität: {level}",
-  "pathogen.legend.severity": "Epidemischer Schweregrad",
+  "pathogen.legend.severity": "Epidemischer Schweregrad:",
   "pathogen.note": "Ein Erreger im gesamten Einzugsgebiet, über einen von Ihnen gewählten Zeitraum. Dies ist die epidemiologische Ansicht: wo eine Saison im Vergleich zu ihrer eigenen Geschichte steht, wie schnell die Übertragung regionalweit verläuft, und welche Signale während des Verlaufs ausgelöst wurden. Der Ausbrüche-Bildschirm beantwortet, was heute zu tun ist; dieser beantwortet, was vor sich geht.",
   "pathogen.panel.care_line.note": "Primär- gegenüber Sekundärversorgung sagt Ihnen, ob Sie Zirkulation in der Bevölkerung sehen oder das, was das Krankenhaus erreicht hat.",
   "pathogen.panel.care_line.title": "Wo die Fälle gefunden wurden",

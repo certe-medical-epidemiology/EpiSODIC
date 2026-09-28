@@ -504,7 +504,7 @@
   "pathogen.intensity.medium": "Moyenne",
   "pathogen.intensity.very_high": "Très élevée",
   "pathogen.intensity_chip": "Intensité : {level}",
-  "pathogen.legend.severity": "Gravité épidémique",
+  "pathogen.legend.severity": "Gravité épidémique :",
   "pathogen.note": "Un agent pathogène sur l'ensemble du bassin, sur une période que vous choisissez. C'est la vue épidémiologique : où en est une saison par rapport à son propre historique, à quelle vitesse la transmission progresse à l'échelle régionale, et quels signaux ont été relevés pendant ce temps. L'écran Flambées répond à ce qu'il faut faire aujourd'hui ; celui-ci répond à ce qui se passe.",
   "pathogen.panel.care_line.note": "Soins primaires ou hospitaliers : cela indique si vous observez une circulation communautaire ou ce qui est parvenu à l'hôpital.",
   "pathogen.panel.care_line.title": "Où les cas ont été trouvés",
