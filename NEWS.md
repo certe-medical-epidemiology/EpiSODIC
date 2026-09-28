@@ -4,6 +4,11 @@
 
 - A generated outbreak report version in the dossier links to its report in a new tab for signed-in users, while its file still exists
 
+## Changed
+
+- `episodic_check_cases()` advises on `pc` values missing from the configured `EPISODIC_GEO_DATA` instead of on `pc` values that are not four digits
+- Country-specific terms (BSN, GGD, Gesundheitsamt) replaced by generic ones in messages, translations and documentation
+
 # EpiSODIC 0.22.1
 
 ## New

@@ -104,9 +104,9 @@
 #'     patient identifier, the same for the same patient across results.
 #'     Deduplication and episode grouping key on it: without it every
 #'     positive becomes its own case. Do pseudonymise it before it
-#'     reaches EpiSODIC - a BSN or hospital number must not be passed
-#'     through - but the pseudonym itself is shown in the dashboard's
-#'     case tables, same as `lab_number`.}
+#'     reaches EpiSODIC - a national identification number or hospital
+#'     number must not be passed through - but the pseudonym itself is
+#'     shown in the dashboard's case tables, same as `lab_number`.}
 #'   \item{`sample_date`}{Date, or character in `YYYY-MM-DD` (ISO 8601)
 #'     form. Required, no `NA`. The date the sample was taken, and the
 #'     anchor every detector, trend and report is built against. If your
@@ -164,11 +164,10 @@
 #'     specialism. Context for the epidemiologist, not a detection input.}
 #'   \item{`pc`}{Character; `NA` allowed. The *patient's* postcode area,
 #'     not the institution's - it is what the geography panel and
-#'     area-level (L3) detection use. Four digits as a string for the
-#'     shipped Netherlands reference data (`"9713"`, leading zeros
-#'     preserved, so store it as character and not as a number). With your
-#'     own `EPISODIC_GEO_DATA`, it must match that file's `pc` column
-#'     instead.}
+#'     area-level (L3) detection use, in whatever form your country's
+#'     postcodes take. Store it as character, not as a number, so a
+#'     leading zero survives. With `EPISODIC_GEO_DATA` configured, it must
+#'     match that file's `pc` column exactly for a case to reach the map.}
 #'   \item{`sex`}{Character; `NA` allowed. Exactly one of `"M"`, `"F"`, or
 #'     `"U"` (unknown) when present.
 #'     Anything else is rejected, so map your own coding (`1`/`2`,

@@ -239,12 +239,34 @@ test_that("a sample date in the future is advice, not a problem", {
   expect_true("sample_date_in_future" %in% advice_of(report)$issue)
 })
 
-test_that("a postcode the shipped map cannot place is advice, not a problem", {
-  cases <- check_case()
-  cases$pc <- "9713 AB"
+test_that("with no EPISODIC_GEO_DATA, no postcode form is advised about", {
+  withr::local_envvar(EPISODIC_GEO_DATA = NA)
+  cases <- rbind(
+    check_case("K1", "P1"),
+    check_case("K2", "P2"),
+    check_case("K3", "P3")
+  )
+  cases$pc <- c("28013", "9713 AB", "SW1A")
   report <- episodic_check_cases(cases)
   expect_equal(nrow(problems_of(report)), 0)
-  expect_true("pc_not_four_digits" %in% advice_of(report)$issue)
+  expect_false(any(grepl("^pc_", advice_of(report)$issue)))
+  expect_false(any(grepl("Netherlands", report$fix, fixed = TRUE)))
+})
+
+test_that("a postcode the configured geographic reference data cannot place is advice, not a problem", {
+  geo <- data.frame(pc = c("28013", "28014"), stringsAsFactors = FALSE)
+  pc <- c("28013", "9713", NA, "", "28014", "08001")
+
+  found <- episodic_check_pc_geo_advice(pc, geo_data = geo)
+  expect_length(found, 1)
+  expect_identical(found[[1]]$severity, "advice")
+  expect_identical(found[[1]]$issue, "pc_not_in_geo_data")
+  expect_identical(found[[1]]$n_rows, 2L)
+
+  expect_length(
+    episodic_check_pc_geo_advice(c("28013", NA, "28014"), geo_data = geo),
+    0
+  )
 })
 
 test_that("an institution keyed to two names is advised about", {

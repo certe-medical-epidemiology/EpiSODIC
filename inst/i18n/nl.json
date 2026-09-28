@@ -314,7 +314,7 @@
   "interpretation.fragment.magnitude.moderate_ratio": "{obs_phrase} tegen een verwachting van {expected}, een ratio van {ratio} en daarmee een gematigde overschrijding van de basislijn.",
   "interpretation.fragment.magnitude.rare_trigger": "{obs_phrase} gemeld binnen deze uitbraak. Er geldt geen statistische signaaldrempel voor deze verwekker: detectie komt van de samengestelde triggerlijst, die elk gemeld geval oppikt ongeacht de basislijn.",
   "interpretation.fragment.recommendation.default": "Beoordeel deze uitbraak op basis van bovenstaande gegevens; er is nog onvoldoende bewijs voor dringende opvolging.",
-  "interpretation.fragment.recommendation.high_priority": "De combinatie van omvang en concentratie rechtvaardigt overweging van classificatie als (mogelijke) epidemie en afstemming met infectiepreventie of de GGD.",
+  "interpretation.fragment.recommendation.high_priority": "De combinatie van omvang en concentratie rechtvaardigt overweging van classificatie als (mogelijke) epidemie en afstemming met infectiepreventie of de openbare gezondheidszorg.",
   "interpretation.fragment.recommendation.moderate_priority": "Volg de ontwikkeling van deze uitbraak; een classificatie als nog geen uitbraak kan passend zijn zolang er geen verdere tekenen van verspreiding opduiken.",
   "interpretation.fragment.recommendation.rare_trigger": "Dit betreft een verwekker van de curatieve triggerlijst; beoordeel per direct en toets de meldingsplicht op grond van de Wet publieke gezondheid.",
   "level.pathogen_area": "L3 · gebied",

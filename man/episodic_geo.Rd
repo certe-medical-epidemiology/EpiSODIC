@@ -30,11 +30,11 @@ either, the dashboard still works fine - it just falls back to a bar
 chart of case counts by area instead of a map.
 }
 \details{
-EpiSODIC ships with Dutch four-digit postcode geometry as a working
-default, but is not tied to the Netherlands or to postcodes: point the
-\code{EPISODIC_GEO_DATA} environment variable at your own \code{.rds} file (an
-\code{sf} object with a \code{pc} column matching your case data's area codes, and
-a \code{geometry} column) to map your own region instead.
+There is no default map. Point the \code{EPISODIC_GEO_DATA} environment
+variable at your own \code{.rds} file (an \code{sf} object with a \code{pc} column
+matching your case data's area codes, and a \code{geometry} column) to map
+your own region. The Dutch postcode geometry bundled with the package
+is used only by \code{episodic_demo()}.
 
 You can optionally add a second, purely visual layer of outlines - e.g.
 province or municipality borders - drawn on top of the choropleth for

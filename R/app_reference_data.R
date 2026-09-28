@@ -220,9 +220,8 @@ episodic_app_reference_style <- function(lang = Sys.getenv("EPISODIC_LANGUAGE"))
 #' The postcode-to-province mapping's own row
 #'
 #' The one that prompted this panel. Three separable failures, and the
-#' row says which: not configured at all (the shipped demo ranges stand
-#' in, and outside the northern Netherlands they match nothing);
-#' configured but unusable (`episodic_pc_province_map_problem()` says
+#' row says which: not configured at all (no province is derived, so L4
+#' stays empty); configured but unusable (`episodic_pc_province_map_problem()` says
 #' exactly why); or configured, usable, and matching none of the
 #' postcodes actually in the case data - a formatting mismatch
 #' (`"9713"` against `"9713 AB"`), which looks identical from the

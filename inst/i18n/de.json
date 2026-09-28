@@ -314,7 +314,7 @@
   "interpretation.fragment.magnitude.moderate_ratio": "{obs_phrase} gegenüber einer Erwartung von {expected}, ein Verhältnis von {ratio}, ein moderater Überschuss gegenüber der Basislinie.",
   "interpretation.fragment.magnitude.rare_trigger": "{obs_phrase} innerhalb dieses Ausbruchs gemeldet. Für diesen Erreger gilt kein statistischer Signalschwellenwert: die Erkennung erfolgt über die kuratierte Triggerliste, die jeden gemeldeten Fall unabhängig von der Basislinie erfasst.",
   "interpretation.fragment.recommendation.default": "Bewerten Sie diesen Ausbruch anhand der obigen Daten; es gibt noch keine ausreichenden Belege für eine dringende Nachverfolgung.",
-  "interpretation.fragment.recommendation.high_priority": "Die Kombination aus Größe und Konzentration rechtfertigt es, eine Einstufung als (mögliche) Epidemie sowie eine Abstimmung mit der Infektionsprävention oder dem Gesundheitsamt in Betracht zu ziehen.",
+  "interpretation.fragment.recommendation.high_priority": "Die Kombination aus Größe und Konzentration rechtfertigt es, eine Einstufung als (mögliche) Epidemie sowie eine Abstimmung mit der Infektionsprävention oder den Gesundheitsbehörden in Betracht zu ziehen.",
   "interpretation.fragment.recommendation.moderate_priority": "Verfolgen Sie die Entwicklung dieses Ausbruchs; eine Klassifizierung als noch kein Ausbruch kann angemessen sein, solange keine weiteren Anzeichen einer Ausbreitung auftreten.",
   "interpretation.fragment.recommendation.rare_trigger": "Dies ist ein Erreger der kuratierten Trigger-Liste; umgehend bewerten und die gesetzliche Meldepflicht prüfen.",
   "level.pathogen_area": "E3 · Gebiet",

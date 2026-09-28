@@ -251,7 +251,7 @@ inst/
   i18n/                     # translation JSON files (en, nl, de, fr, es, ar, hi, zh)
   report/                   # Quarto report template
   mail/                     # starting templates for the two email bodies
-tests/testthat/             # test suite across 74 files
+tests/testthat/             # test suite across 75 files
 vignettes/                  # 9 vignettes
 data-raw/validation/        # the full detection validation study (never ships)
 ```
