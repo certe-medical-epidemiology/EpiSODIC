@@ -1026,7 +1026,7 @@ test_that("the intensity bands are shaded from the epidemic threshold up, each i
   expect_equal(nl$plot$scales$get_scales("fill")$name, "Epidemische ernst:")
   fr <- ggplot2::ggplot_build(episodic_ui_pathogen_curve_chart(weekly, thresholds, lang = "fr"))
   expect_equal(fr$plot$scales$get_scales("fill")$name, "Gravit\u00e9 \u00e9pid\u00e9mique :")
-  expect_equal(unname(as.character(fill$get_labels())), c("Very high", "High", "Medium", "Low"))
+  expect_equal(unname(as.character(fill$get_labels())), c("Very high", "High", "Medium", "Low \u00b7 Start threshold"))
   expect_equal(p$theme$legend.position, "right")
   hlines <- p$layers[vapply(p$layers, function(l) inherits(l$geom, "GeomHline"), logical(1))]
   expect_length(hlines, 2)
@@ -1042,6 +1042,21 @@ test_that("the intensity bands are shaded from the epidemic threshold up, each i
   expect_equal(unname(colour$palette(1)), pal$tertiary)
   expect_equal(p$guides$guides$fill$params$order, 1)
   expect_equal(p$guides$guides$colour$params$order, 2)
+  # No line is drawn at the start threshold: it is the Low band's floor,
+  # named in that band's key.
+  drawn <- unlist(lapply(hlines, function(h) h$data$value))
+  expect_false(thresholds$pre_epidemic %in% drawn)
+  expect_true(thresholds$post_epidemic %in% drawn)
+
+  # Without bands the start threshold has no floor to be, so it is drawn
+  # and keyed like the end threshold.
+  no_bands <- thresholds
+  no_bands$intensity <- NULL
+  plain <- ggplot2::ggplot_build(episodic_ui_pathogen_curve_chart(weekly, no_bands, lang = "en"))
+  expect_equal(
+    unname(as.character(plain$plot$scales$get_scales("colour")$get_labels())),
+    c("Start threshold", "End threshold")
+  )
   # Without bands there is no legend to place.
   expect_false(identical(bare$theme$legend.position, "right"))
 })

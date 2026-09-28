@@ -1055,6 +1055,18 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
     # Dates, not bare numbers, on a date axis: the band spans it whole.
     bands$xmin <- as.Date(-Inf)
     bands$xmax <- as.Date(Inf)
+    band_labels <- vapply(
+      bands$key,
+      function(k) episodic_tr(paste0("pathogen.intensity.", k), lang = lang),
+      character(1)
+    )
+    # The start threshold is the lowest band's floor, so that band names
+    # it rather than a line of its own being drawn and keyed.
+    band_labels[1] <- paste0(
+      band_labels[1],
+      " \u00b7 ",
+      episodic_tr("pathogen.threshold.pre_epidemic", lang = lang)
+    )
     p <- p +
       ggplot2::geom_rect(
         data = bands,
@@ -1074,14 +1086,7 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
         # Chinese a full-width one).
         name = episodic_tr("pathogen.legend.severity", lang = lang),
         values = stats::setNames(bands$colour, bands$key),
-        labels = stats::setNames(
-          vapply(
-            bands$key,
-            function(k) episodic_tr(paste0("pathogen.intensity.", k), lang = lang),
-            character(1)
-          ),
-          bands$key
-        ),
+        labels = stats::setNames(band_labels, bands$key),
         # Very high on top, in the order the bands are stacked.
         breaks = rev(bands$key)
       )
@@ -1103,13 +1108,20 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
     ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang))
 
   # Thin and solid: the lines mark where the bands meet, and the shades
-  # say what each band is. The end of an epidemic is the one line no
-  # band edge explains, so it alone gets a key, below the squares.
+  # say what each band is. The start threshold is the lowest band's floor
+  # and named in its key, so no line is drawn for it; the end threshold
+  # is the one line no band edge explains, so it gets a key of its own,
+  # below the squares. Without bands the start threshold has no floor to
+  # be, and is drawn and keyed like the end threshold.
   lines <- episodic_mem_threshold_lines(thresholds, lang = lang)
   end_line <- NULL
   if (!is.null(lines)) {
-    end_line <- lines[lines$key == "post_epidemic", , drop = FALSE]
-    edges <- lines[lines$key != "post_epidemic", , drop = FALSE]
+    keyed <- if (is.null(bands)) c("pre_epidemic", "post_epidemic") else "post_epidemic"
+    if (!is.null(bands)) {
+      lines <- lines[lines$key != "pre_epidemic", , drop = FALSE]
+    }
+    end_line <- lines[lines$key %in% keyed, , drop = FALSE]
+    edges <- lines[!lines$key %in% keyed, , drop = FALSE]
     if (nrow(edges) > 0) {
       p <- p +
         ggplot2::geom_hline(
@@ -1131,7 +1143,8 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
         ggplot2::scale_colour_manual(
           name = NULL,
           values = stats::setNames(end_line$colour, end_line$key),
-          labels = stats::setNames(end_line$label, end_line$key)
+          labels = stats::setNames(end_line$label, end_line$key),
+          breaks = intersect(c("pre_epidemic", "post_epidemic"), end_line$key)
         )
     } else {
       end_line <- NULL
