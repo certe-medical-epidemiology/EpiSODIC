@@ -104,3 +104,101 @@ episodic_app_server_report <- function(input,
 
   invisible(NULL)
 }
+
+#' A link builder for the dossier's rendered report versions
+#'
+#' Rendered reports live outside the app's static resources, wherever
+#' `episodic_report_output_dir()` put them, and carry the case line list
+#' by default. They are therefore served through this session rather than
+#' through `addResourcePath()`: a static path would hand any rendered
+#' report to anyone who knows or guesses its URL, with no sign-in behind
+#' it. Each request is answered by `episodic_app_report_response()`,
+#' which re-checks the session's account at the time of the request.
+#'
+#' The data object is registered on the first call rather than when the
+#' session starts, so a session that never shows a rendered report never
+#' opens the route.
+#'
+#' @param session The Shiny session.
+#' @param con A [DBI::DBIConnection-class].
+#' @param current_user A `shiny::reactiveVal` holding the signed-in user's
+#'   account row, or `NULL`.
+#' @param lang Session language.
+#' @return A function of one `report_id`, returning the URL (relative to
+#'   the app) that serves that report version.
+#' @keywords internal
+#' @noRd
+episodic_app_report_href <- function(session,
+                                     con,
+                                     current_user,
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  base_url <- NULL
+  function(report_id) {
+    if (is.null(base_url)) {
+      base_url <<- session$registerDataObj(
+        "episodic_report",
+        NULL,
+        function(data, req) {
+          query <- shiny::parseQueryString(req$QUERY_STRING %||% "")
+          episodic_app_report_response(
+            con,
+            user = shiny::isolate(current_user()),
+            report_id = query$report_id,
+            lang = lang
+          )
+        }
+      )
+    }
+    paste0(base_url, "&report_id=", as.integer(report_id))
+  }
+}
+
+#' The HTTP response for one rendered report version
+#'
+#' Serves the report only to a signed-in account that is still active,
+#' the same condition the dossier's line list is shown on, since a
+#' rendered report carries that line list by default. The file is served
+#' only when its bytes still hash to the `file_sha256` recorded at render
+#' time: a report whose file has been replaced or altered since is
+#' refused, never shown under a version number it no longer matches.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param user The session's account row, or `NULL`.
+#' @param report_id The requested report id, as a string from the query.
+#' @param lang Session language.
+#' @return A `shiny::httpResponse()`.
+#' @keywords internal
+#' @noRd
+episodic_app_report_response <- function(con,
+                                         user,
+                                         report_id,
+                                         lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  refuse <- function(status, key) {
+    shiny::httpResponse(
+      status,
+      "text/plain; charset=UTF-8",
+      episodic_tr(key, lang = lang)
+    )
+  }
+  if (is.null(episodic_auth_refresh_user(con, user))) {
+    return(refuse(403L, "panel.report.forbidden"))
+  }
+  if (length(report_id) != 1 || is.na(report_id) ||
+    !grepl("^[0-9]+$", report_id)) {
+    return(refuse(404L, "panel.report.not_found"))
+  }
+  row <- episodic_db_report_render_by_id(con, as.integer(report_id))
+  if (is.null(row)) {
+    return(refuse(404L, "panel.report.not_found"))
+  }
+  path <- row$file_path[1]
+  if (!file.exists(path)) {
+    return(refuse(410L, "panel.report.file_missing"))
+  }
+  bytes <- readBin(path, what = "raw", n = file.size(path))
+  sha256 <- digest::digest(bytes, algo = "sha256", serialize = FALSE)
+  if (!identical(sha256, row$file_sha256[1])) {
+    return(refuse(409L, "panel.report.file_changed"))
+  }
+  shiny::httpResponse(200L, "text/html; charset=UTF-8", bytes)
+}

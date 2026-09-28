@@ -1,3 +1,9 @@
+# EpiSODIC 0.22.2
+
+## New
+
+- A generated outbreak report version in the dossier links to its report in a new tab for signed-in users, while its file still exists
+
 # EpiSODIC 0.22.1
 
 ## New
