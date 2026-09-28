@@ -152,7 +152,7 @@ the schema with `FOREIGN_KEY_CHECKS = 0`, because the tables are declared
 in the order they read best rather than in foreign-key order, which MariaDB
 refuses outright.
 
-The schema is versioned. `episodic_schema_version` (in `R/schema_migrate.R`) is what this build expects; `episodic_db_connect()` refuses a database at any other version. `episodic_run_cron()` does not: it connects through `episodic_run_cron_connect()`, which migrates a database behind the package before the run row and outside the detection transaction (MariaDB/MySQL commit DDL implicitly), unless `database.auto_migrate` is `false`; a database it will not open is refused with a failed run row. An upgrade lands by `update.packages()` at labs nobody watches closely, and a run that refused would stop surveillance there until someone read a cron log. Migrations serialise on a server lock (MariaDB) or `BEGIN IMMEDIATE` (SQLite), re-read the version inside each step, and copy a SQLite file first. Any change to `inst/sql/schema.sql` that an existing database has to be brought along for means bumping that constant and adding a matching entry to `episodic_db_migrations()` - a function `(con, dialect)` that is idempotent, runs inside a transaction, and never drops or rewrites data. Never remove an old migration: an instance may skip any number of versions.
+The schema is versioned. `episodic_schema_version` (in `R/schema_migrate.R`) is what this build expects; `episodic_db_connect()` refuses a database at any other version. `episodic_run_cron()` does not: it connects through `episodic_run_cron_connect()`, which migrates a database behind the package before the run row and outside the detection transaction (MariaDB/MySQL commit DDL implicitly), unless `database.auto_migrate` is `false`; a database it will not open is refused with a failed run row. An upgrade lands by `update.packages()` at labs nobody watches closely, and a run that refused would stop surveillance there until someone read a cron log. Migrations serialise on a server lock (MariaDB) or `BEGIN IMMEDIATE` (SQLite), re-read the version inside each step, and copy a SQLite file first. Any change to `inst/sql/schema.sql` that an existing database has to be brought along for means bumping that constant and adding a matching entry to `episodic_db_migrations()` - a function `(con, dialect)` that is idempotent, runs inside a transaction, and never drops or rewrites data. The one exception is a column nothing needs any more that holds exactly no data: it is dropped through `episodic_db_drop_empty_column()`, which keeps a column holding a value on any row and says so. Never remove an old migration: an instance may skip any number of versions.
 
 Write ownership is strict: cron-owned tables are written only by `episodic_run_cron()`, app-owned tables only by the Shiny app. The app never updates or deletes, only inserts (event-sourced).
 
@@ -251,7 +251,7 @@ inst/
   i18n/                     # translation JSON files (en, nl, de, fr, es, ar, hi, zh)
   report/                   # Quarto report template
   mail/                     # starting templates for the two email bodies
-tests/testthat/             # test suite across 75 files
+tests/testthat/             # test suite across 76 files
 vignettes/                  # 9 vignettes
 data-raw/validation/        # the full detection validation study (never ships)
 ```

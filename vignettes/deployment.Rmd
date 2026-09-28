@@ -162,14 +162,14 @@ Anything other than `r EpiSODIC:::doc_foreign_key_count()` means the schema and 
 The database records which version of EpiSODIC's schema it was built with. When an upgraded package meets a database whose schema is behind it, the next `episodic_run_cron()` brings the database forward itself, before it does anything else, and says so in its log:
 
 ```
-Database migrated from schema version 7 to schema version 8
+Database migrated from schema version 8 to schema version 9
 ```
 
 So upgrading an instance is upgrading the package: `update.packages()`, a rebuilt container image, or a colleague's `install.packages()`, and the next scheduled run does the rest. Nothing has to be remembered on the day, which matters most for the instance nobody looks after closely.
 
 ### What a migration does, and does not do
 
-- **It only adds.** Migrations add tables, add columns and backfill values, and never drop or rewrite anything. Your surveillance history, your assessments and your audit trail are carried forward untouched.
+- **It never deletes data.** Migrations add tables, add columns and backfill values, and never rewrite anything. A column is dropped only when EpiSODIC no longer uses it and it holds no value on any row; a column holding data is kept, and the log says so. Your surveillance history, your assessments and your audit trail are carried forward untouched.
 - **It runs before the run.** Each step is a transaction of its own, applied before the run writes anything, never inside the detection run's own transaction.
 - **It copies a SQLite database first.** The file is copied beside itself as `<file>.schema-<from>-to-<to>.bak` before the first step, and the log names the copy. If a copy with that name already exists from an earlier attempt at the same upgrade, it is kept rather than replaced. A MariaDB or MySQL database is not copied, because a server's backups belong to whoever runs the server; the log says so.
 - **One process migrates at a time.** A scheduled run and a manual `episodic_db_migrate()`, or two servers sharing one MariaDB schema, can meet the same out-of-date database at once. One of them migrates, the other waits, finds the work done, and carries on.

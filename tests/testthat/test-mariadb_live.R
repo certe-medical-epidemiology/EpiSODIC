@@ -237,7 +237,7 @@ test_that("a run migrates a database one schema version behind, against MariaDB"
   skip_on_cran()
   dsn <- mariadb_fresh()
   con <- episodic_db_connect(dsn)
-  DBI::dbExecute(con, "DROP TABLE episodic_detector_cache")
+  schema_v8_assessment_columns(con)
   DBI::dbExecute(
     con,
     "DELETE FROM episodic_schema_version WHERE version = ?",
@@ -263,7 +263,12 @@ test_that("a run migrates a database one schema version behind, against MariaDB"
   con <- episodic_db_connect(dsn)
   on.exit(DBI::dbDisconnect(con))
   expect_equal(episodic_db_schema_version(con), episodic_schema_version)
-  expect_true(DBI::dbExistsTable(con, "episodic_detector_cache"))
+  expect_false(episodic_db_column_exists(
+    con,
+    "mariadb",
+    "episodic_assessment_event",
+    "wpg_notifiable"
+  ))
   expect_equal(
     DBI::dbGetQuery(con, "SELECT status FROM episodic_detection_run")$status,
     "success"
@@ -446,4 +451,38 @@ test_that("a lazily built epidemic object does not kill the session on MariaDB",
     as.integer(episodic_db_get_query(con, "SELECT 999 AS id")$id[1])
   )
   expect_equal(episodic_app_derive_state_for_cluster(con, lazy_id), "new")
+})
+
+test_that("migration 9 drops the three empty assessment columns, CHECK constraints included", {
+  dsn <- mariadb_fresh()
+  con <- episodic_db_connect(dsn)
+  # Declared the way schema version 8 declared them, so the server
+  # records the same CHECK constraints a version-8 database carries.
+  schema_v8_assessment_columns(con)
+  DBI::dbExecute(
+    con,
+    "UPDATE episodic_schema_version SET version = 8 WHERE version = ?",
+    params = list(episodic_schema_version)
+  )
+  DBI::dbDisconnect(con)
+
+  expect_message(
+    episodic_db_migrate(dsn),
+    "Dropped episodic_assessment_event.wpg_notifiable"
+  )
+
+  con <- episodic_db_connect(dsn)
+  on.exit(DBI::dbDisconnect(con))
+  for (column in c("wpg_notifiable", "ggd_informed", "ggd_note")) {
+    expect_false(
+      episodic_db_column_exists(
+        con,
+        "mariadb",
+        "episodic_assessment_event",
+        column
+      ),
+      info = column
+    )
+  }
+  expect_equal(episodic_db_schema_version(con), episodic_schema_version)
 })
