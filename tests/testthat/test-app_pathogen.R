@@ -1026,30 +1026,35 @@ test_that("the intensity bands are shaded from the epidemic threshold up, each i
   expect_equal(nl$plot$scales$get_scales("fill")$name, "Epidemische ernst:")
   fr <- ggplot2::ggplot_build(episodic_ui_pathogen_curve_chart(weekly, thresholds, lang = "fr"))
   expect_equal(fr$plot$scales$get_scales("fill")$name, "Gravit\u00e9 \u00e9pid\u00e9mique :")
-  expect_equal(unname(as.character(fill$get_labels())), c("Very high", "High", "Medium", "Low \u00b7 Start threshold"))
+  expect_equal(unname(as.character(fill$get_labels())), c("Very high", "High", "Medium", "Low"))
   expect_equal(p$theme$legend.position, "right")
   hlines <- p$layers[vapply(p$layers, function(l) inherits(l$geom, "GeomHline"), logical(1))]
   expect_length(hlines, 2)
+  # Every line one width, the legend's keys included.
   for (h in hlines) {
     expect_equal(h$aes_params$linetype, 1)
+    expect_equal(h$aes_params$linewidth, hlines[[1]]$aes_params$linewidth)
     expect_lte(h$aes_params$linewidth, 0.3)
   }
+  expect_null(p$guides$guides$colour$params$override.aes$linewidth)
   expect_null(p$scales$get_scales("linetype"))
-  # The end of an epidemic is the one line with a key, below the squares,
-  # in the palette's teal.
+  # The start and end thresholds are the keyed lines, below the squares:
+  # the start in the palette's secondary, the end in its tertiary teal.
   colour <- built$plot$scales$get_scales("colour")
-  expect_equal(unname(as.character(colour$get_labels())), "End threshold")
-  expect_equal(unname(colour$palette(1)), pal$tertiary)
+  expect_equal(
+    unname(as.character(colour$get_labels())),
+    c("Start threshold", "End threshold")
+  )
+  expect_equal(
+    unname(colour$map(c("pre_epidemic", "post_epidemic"))),
+    c(pal$secondary, pal$tertiary)
+  )
   expect_equal(p$guides$guides$fill$params$order, 1)
   expect_equal(p$guides$guides$colour$params$order, 2)
-  # No line is drawn at the start threshold: it is the Low band's floor,
-  # named in that band's key.
   drawn <- unlist(lapply(hlines, function(h) h$data$value))
-  expect_false(thresholds$pre_epidemic %in% drawn)
-  expect_true(thresholds$post_epidemic %in% drawn)
+  expect_true(all(c(thresholds$pre_epidemic, thresholds$post_epidemic) %in% drawn))
 
-  # Without bands the start threshold has no floor to be, so it is drawn
-  # and keyed like the end threshold.
+  # Without bands the two thresholds are still drawn and keyed.
   no_bands <- thresholds
   no_bands$intensity <- NULL
   plain <- ggplot2::ggplot_build(episodic_ui_pathogen_curve_chart(weekly, no_bands, lang = "en"))
