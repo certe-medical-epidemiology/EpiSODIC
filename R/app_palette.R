@@ -57,6 +57,7 @@
 #' Of note:
 #'
 #' * `primary_dark` is the background colour of the navigation bar.
+#' * `severity_baseline` to `severity_very_high` are one ordinal scale, shared by an epidemiologist's verdicts and the Moving Epidemic Method's intensity bands, so a step has one colour on every screen. Text on them is set to whichever of `ink`, white or black reads.
 #' * `font` is a CSS font-family stack, and `font_size_base` is the app's base font size.
 #'   * Every other font size in the dashboard is set in `rem` relative to it, so changing `font_size_base` scales the whole app's type proportionally (useful when swapping in a font that reads naturally smaller or larger than the default at the same pixel size).
 #'   * Changing `font` only changes the CSS declaration; if it names a webfont rather than a system font, delivering that font (a self-hosted `@font-face` or a link to its provider) is the operator's own concern.
@@ -65,7 +66,9 @@
 #'   `ink` (default text), `muted` (secondary text), `faint` (tertiary text),
 #'   `border`, `bg_subtle`, `bg`, and `surface`. The semantic roles are
 #'   `primary`, `secondary`, `tertiary`, `success`, `warning`, and `danger`,
-#'   each with `_dark`/`_light`/`_tint` variants where used. `font` and
+#'   each with `_dark`/`_light`/`_tint` variants where used. The severity
+#'   scale is `severity_baseline`, `severity_low`, `severity_medium`,
+#'   `severity_high` and `severity_very_high`. `font` and
 #'   `font_size_base` hold the app's typography, not a colour.
 #' @examples
 #' pal <- episodic_palette()

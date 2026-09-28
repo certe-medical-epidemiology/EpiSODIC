@@ -1351,6 +1351,63 @@ episodic_db_epidemic_season <- function(con, cluster_id) {
   if (nrow(res) == 0) NULL else res[1, ]
 }
 
+#' A seasonal epidemic's weekly counts and bands, as the last run left them
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The epidemic.
+#' @return A data frame with `week_start` (`Date`), `n_cases` and
+#'   `intensity_level`, oldest first; no rows for a non-seasonal epidemic
+#'   or one no run has counted yet.
+#' @keywords internal
+#' @noRd
+episodic_db_epidemic_weeks <- function(con, cluster_id) {
+  out <- episodic_db_get_query(
+    con,
+    "SELECT week_start, n_cases, intensity_level
+       FROM episodic_epidemic_week
+      WHERE cluster_id = ?
+      ORDER BY week_start",
+    params = list(cluster_id)
+  )
+  out$week_start <- as.Date(out$week_start)
+  out
+}
+
+#' The latest counted week of each of several epidemics, in one read
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_ids The epidemics.
+#' @return A data frame with `cluster_id`, `week_start` and
+#'   `intensity_level`, one row per epidemic that has any week counted.
+#' @keywords internal
+#' @noRd
+episodic_db_epidemic_latest_weeks <- function(con, cluster_ids) {
+  cluster_ids <- as.integer(cluster_ids)
+  if (length(cluster_ids) == 0) {
+    return(data.frame(
+      cluster_id = integer(0),
+      week_start = character(0),
+      intensity_level = character(0),
+      stringsAsFactors = FALSE
+    ))
+  }
+  placeholders <- paste(rep("?", length(cluster_ids)), collapse = ", ")
+  episodic_db_get_query(
+    con,
+    paste0(
+      "SELECT w.cluster_id, w.week_start, w.intensity_level
+         FROM episodic_epidemic_week w
+         JOIN (SELECT cluster_id, MAX(week_start) AS week_start
+                 FROM episodic_epidemic_week
+                WHERE cluster_id IN (", placeholders, ")
+                GROUP BY cluster_id) latest
+           ON latest.cluster_id = w.cluster_id
+          AND latest.week_start = w.week_start"
+    ),
+    params = as.list(cluster_ids)
+  )
+}
+
 #' Every open epidemic cluster with a seasonal satellite
 #'
 #' Used by the epidemic closure step: every open, unmerged, seasonal
@@ -1367,8 +1424,10 @@ episodic_db_open_seasonal_epidemics <- function(con) {
     con,
     "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day,
             c.scale, c.origin,
-            es.season_label, es.anchor_week,
-            es.post_epidemic_threshold, es.ended_week_start
+            es.season_label, es.anchor_week, es.onset_week_start,
+            es.pre_epidemic_threshold, es.post_epidemic_threshold,
+            es.intensity_medium, es.intensity_high, es.intensity_very_high,
+            es.seasons_used, es.ended_week_start
        FROM episodic_cluster c
        INNER JOIN episodic_epidemic_season es ON es.cluster_id = c.cluster_id
       WHERE c.merged_into IS NULL

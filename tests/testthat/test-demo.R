@@ -37,6 +37,46 @@ small_denominator <- function() {
   )
 }
 
+test_that("the demo's Influenza A always has a MEM season with intensity bands, whatever day it is built", {
+  skip_if_not_installed("mem")
+  # The demo's own data, built as `episodic_demo()` builds it: the
+  # default five-year window ending on the last complete week. Which week
+  # that is depends on the day the demo is run, so the data are checked at
+  # run dates spread over a whole year rather than on one. At each, the
+  # Pathogen screen's MEM panel (`episodic_app_pathogen_screen()`) needs
+  # exactly this: the pathogen judged seasonal, and thresholds for the
+  # current season fitted on the seasons before it, all three intensity
+  # bands included.
+  config <- episodic_config_resolve(NA)
+  run_dates <- episodic_synthetic_week_end(
+    as.Date("2026-01-05") + seq(0, 364, by = 28)
+  )
+  for (i in seq_along(run_dates)) {
+    run_date <- run_dates[i]
+    cases <- episodic_synthetic_cases(end_date = run_date)
+    flu <- cases[cases$pathogen == "Influenza A", , drop = FALSE]
+    anchor <- episodic_mem_season_anchor(flu, config)
+    expect_false(is.null(anchor), info = format(run_date))
+    expect_true(isTRUE(episodic_mem_seasonality(flu, config)$seasonal), info = format(run_date))
+    thresholds <- episodic_mem_thresholds_for_season(
+      flu,
+      episodic_season_containing(run_date, anchor$anchor_week),
+      config,
+      anchor$anchor_week
+    )
+    expect_length(thresholds$intensity, 3)
+    expect_false(is.unsorted(thresholds$intensity), info = format(run_date))
+    expect_true(thresholds$intensity[["medium"]] > thresholds$pre_epidemic, info = format(run_date))
+
+    # The regional wave rises into the run date, so the region's
+    # Influenza A epidemic is open with a band for its current week: the
+    # Epidemics screen's intensity chip has something to show.
+    status <- episodic_mem_status(flu, run_date, config, anchor)
+    expect_true(isTRUE(status$epidemic_started), info = format(run_date))
+    expect_false(is.na(status$intensity_level), info = format(run_date))
+  }
+})
+
 test_that("episodic_demo(launch = FALSE) sets up a working demo database in one call", {
   skip_if_not_installed("sodium")
   db_path <- tempfile(fileext = ".sqlite")
@@ -224,4 +264,52 @@ test_that("a db_path that does not exist yet is accepted silently", {
   expect_silent(
     expect_null(episodic_demo_check_db_path(tempfile(fileext = ".sqlite")))
   )
+})
+
+test_that("the epidemic rail shows each seasonal epidemic's band as its dossier does", {
+  skip_if_not_installed("sodium")
+  skip_if_not_installed("mem")
+  # Influenza A alone, so the demo's geography and a real detection run
+  # produce a seasonal region epidemic in a third of the whole demo's
+  # time.
+  run_date <- as.Date("2026-09-27")
+  cases <- episodic_synthetic_cases(end_date = run_date)
+  cases <- cases[cases$pathogen == "Influenza A", , drop = FALSE]
+  db_path <- tempfile(fileext = ".sqlite")
+  files <- episodic_demo_files(db_path)
+  on.exit(unlink(c(db_path, files$config, files$pc_province_map)))
+  suppressMessages(episodic_demo(
+    db_path = db_path,
+    launch = FALSE,
+    cases = cases,
+    denominators = NULL,
+    run_date = run_date
+  ))
+  withr::local_envvar(
+    EPISODIC_CONFIG = files$config,
+    EPISODIC_PC_PROVINCE_MAP = files$pc_province_map
+  )
+  con <- episodic_db_connect(db_path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+
+  epidemics <- episodic_app_open_epidemics(con, lang = "en")
+  seasonal <- epidemics[!is.na(epidemics$intensity_level), , drop = FALSE]
+  expect_gt(nrow(seasonal), 0)
+  for (i in seq_len(nrow(epidemics))) {
+    obj <- episodic_epidemic_object(con, epidemics$cluster_id[i], lang = "en")
+    expect_identical(epidemics$intensity_level[i], obj$course$latest_level)
+  }
+  row <- as.character(episodic_ui_epidemic_rail_row(seasonal[1, ], lang = "en"))
+  expect_match(row, "episodic-rail-intensity", fixed = TRUE)
+  expect_match(row, "Intensity:", fixed = TRUE)
+
+  # The run stored the weeks from onset to the one it evaluated, and the
+  # band read back is that week's.
+  id <- seasonal$cluster_id[1]
+  season <- episodic_db_epidemic_season(con, id)
+  weeks <- episodic_db_epidemic_weeks(con, id)
+  evaluated <- episodic_mem_evaluation_week(run_date, season$anchor_week)$week_start
+  expect_equal(weeks$week_start[1], as.Date(season$onset_week_start))
+  expect_equal(max(weeks$week_start), evaluated)
+  expect_identical(seasonal$intensity_level[1], weeks$intensity_level[nrow(weeks)])
 })

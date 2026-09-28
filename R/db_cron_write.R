@@ -656,6 +656,28 @@ episodic_db_cluster_set_suppressed_by <- function(con,
   invisible(NULL)
 }
 
+#' Record the cluster an assessed cluster would have been suppressed behind
+#'
+#' Cleared for every cluster at the start of each suppression pass and
+#' set again only where it still holds, like `suppressed_by`.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The assessed cluster, left on the board.
+#' @param would_be_suppressed_by The cluster it would have been filed
+#'   under.
+#' @keywords internal
+#' @noRd
+episodic_db_cluster_set_would_be_suppressed_by <- function(con,
+                                                           cluster_id,
+                                                           would_be_suppressed_by) {
+  episodic_db_execute(
+    con,
+    "UPDATE episodic_cluster SET would_be_suppressed_by = ? WHERE cluster_id = ?",
+    params = list(as.integer(would_be_suppressed_by), cluster_id)
+  )
+  invisible(NULL)
+}
+
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_set_merged_into <- function(con, cluster_id, merged_into) {
@@ -947,6 +969,44 @@ episodic_db_epidemic_season_insert <- function(con,
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     params = params
   )
+  invisible(NULL)
+}
+
+#' Replace a seasonal epidemic's weekly counts and bands
+#'
+#' Every run recomputes an open epidemic's weeks from onset to the week
+#' it evaluates, so the rows are replaced whole: a late report moves the
+#' count of the week it belongs to, and nothing is left from a week the
+#' previous run counted differently.
+#'
+#' @param con A [DBI::DBIConnection-class], inside the run's transaction.
+#' @param cluster_id The epidemic.
+#' @param weeks `episodic_epidemic_weeks()`'s output.
+#' @param run_id The current run.
+#' @return Invisible `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_db_epidemic_weeks_replace <- function(con, cluster_id, weeks, run_id) {
+  episodic_db_execute(
+    con,
+    "DELETE FROM episodic_epidemic_week WHERE cluster_id = ?",
+    params = list(cluster_id)
+  )
+  for (i in seq_len(nrow(weeks))) {
+    episodic_db_execute(
+      con,
+      "INSERT INTO episodic_epidemic_week
+         (cluster_id, week_start, n_cases, intensity_level, run_id)
+       VALUES (?, ?, ?, ?, ?)",
+      params = list(
+        cluster_id,
+        weeks$week_start[i],
+        as.integer(weeks$n_cases[i]),
+        weeks$intensity_level[i],
+        run_id
+      )
+    )
+  }
   invisible(NULL)
 }
 

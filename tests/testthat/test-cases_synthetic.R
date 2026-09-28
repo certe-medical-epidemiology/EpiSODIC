@@ -317,3 +317,33 @@ test_that("a window too short to produce a single baseline case still returns a 
       names(baseline)
   ))
 })
+
+test_that("an epidemic-shaped season concentrates its year in a short winter wave, a sinusoid does not", {
+  profiles <- episodic_synthetic_pathogen_profiles()
+  dates <- seq(as.Date("2020-01-01"), as.Date("2024-12-31"), by = "day")
+  set.seed(3)
+  flu <- episodic_synthetic_seasonal_mean(dates, profiles[profiles$pathogen == "Influenza A", ])
+  noro <- episodic_synthetic_seasonal_mean(dates, profiles[profiles$pathogen == "Norovirus", ])
+
+  expect_length(flu, length(dates))
+  expect_true(all(flu > 0))
+  # The random peak heights average out over years to the profile's mean.
+  expect_equal(mean(flu), 0.20, tolerance = 0.25)
+  expect_equal(mean(noro), 0.47, tolerance = 0.05)
+
+  # Share of each year in its busiest eight weeks: what MEM's
+  # seasonality test measures, and what a sinusoid cannot reach.
+  peak_share <- function(x) {
+    years <- format(dates, "%Y")
+    mean(vapply(split(x, years), function(y) {
+      weekly <- colSums(matrix(y[seq_len(364)], nrow = 7))
+      max(stats::filter(c(weekly, weekly[1:7]), rep(1, 8), sides = 1), na.rm = TRUE) / sum(weekly)
+    }, numeric(1)))
+  }
+  expect_gt(peak_share(flu), 0.40)
+  expect_lt(peak_share(noro), 0.40)
+
+  bad <- profiles[1, ]
+  bad$shape <- "triangle"
+  expect_error(episodic_synthetic_seasonal_mean(dates, bad), "Unknown synthetic season shape")
+})

@@ -1840,6 +1840,15 @@ episodic_run_cron_body <- function(con,
       stream_row <- streams[streams$stream_id == epi$stream_id, ]
       if (nrow(stream_row) == 0) next
       epi_cases <- stream_cases_for(stream_row[1, ])
+      # Its weeks up to the one this run evaluates, the week closure
+      # below is decided on: the band the dashboard shows is read from
+      # here rather than fitted again on every render.
+      episodic_db_epidemic_weeks_replace(
+        con,
+        epi$cluster_id,
+        episodic_epidemic_weeks(epi_cases, epi, run_date),
+        run_id
+      )
       closure <- episodic_epidemic_closure(
         epi_cases,
         run_date,

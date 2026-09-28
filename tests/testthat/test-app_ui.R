@@ -219,6 +219,110 @@ test_that("an invalid palette value keeps the shipped value for that role alone,
   expect_setequal(keys, c("primary", "font_size_base"))
 })
 
+test_that("the severity scale ships five roles, as Bootswatch Yeti's own colours", {
+  pal <- episodic_palette_shipped()
+  expect_equal(
+    unlist(pal[paste0("severity_", episodic_severity_steps)], use.names = FALSE),
+    c("#ADB5BD", "#43AC6A", "#E99002", "#F04124", "#222222")
+  )
+  # From medium up, each step is darker than the one before it, so the
+  # top of the scale still reads in order without colour vision and in
+  # greyscale print. Yeti's green and amber are close in lightness, so
+  # low and medium are told apart by hue and by the words on the chip.
+  ramp <- vapply(
+    pal[paste0("severity_", c("medium", "high", "very_high"))],
+    episodic_colour_luminance,
+    numeric(1)
+  )
+  expect_false(is.unsorted(rev(ramp)))
+  expect_equal(length(unique(unlist(pal[paste0("severity_", episodic_severity_steps)]))), 5)
+})
+
+test_that("every verdict and every intensity band is a step on one severity scale", {
+  pal <- episodic_palette()
+  expect_equal(episodic_ui_verdict_severity("artefact"), "baseline")
+  expect_equal(episodic_ui_verdict_severity("expected_variation"), "baseline")
+  expect_equal(episodic_ui_verdict_severity("season_ended"), "baseline")
+  expect_equal(episodic_ui_verdict_severity("cluster_not_yet"), "low")
+  expect_equal(episodic_ui_verdict_severity("season_not_yet"), "low")
+  expect_equal(episodic_ui_verdict_severity("possible_epidemic"), "medium")
+  expect_equal(episodic_ui_verdict_severity("confirmed_epidemic"), "high")
+  expect_equal(episodic_ui_verdict_severity("season_started"), "high")
+  expect_equal(episodic_ui_verdict_colour("confirmed_epidemic"), pal$severity_high)
+  expect_equal(episodic_ui_verdict_colour("possible_epidemic"), pal$severity_medium)
+  expect_equal(episodic_ui_verdict_colour("artefact"), pal$severity_baseline)
+  # The top step is a measured intensity, never a judgement.
+  verdicts <- c(
+    "artefact", "expected_variation", "cluster_not_yet", "possible_epidemic",
+    "confirmed_epidemic", "season_started", "season_not_yet", "season_ended"
+  )
+  expect_false("very_high" %in% vapply(verdicts, episodic_ui_verdict_severity, character(1)))
+
+  # Something that is not a step - no verdict, an unknown one, no
+  # intensity measured - is muted, never drawn as the baseline step.
+  expect_true(is.na(episodic_ui_verdict_severity(NA_character_)))
+  expect_true(is.na(episodic_ui_verdict_severity("not_a_verdict")))
+  expect_equal(episodic_ui_verdict_colour("not_a_verdict"), pal$muted)
+  expect_equal(episodic_ui_severity_colour(NA_character_), pal$muted)
+  expect_equal(episodic_ui_severity_colour(character(0)), pal$muted)
+  expect_equal(episodic_ui_severity_colour("extreme"), pal$muted)
+})
+
+test_that("an instance recolours the severity scale for verdicts and intensity bands at once", {
+  override_path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(override_path))
+  yaml::write_yaml(list(severity_high = "#7F0000"), override_path)
+  withr::local_envvar(EPISODIC_STYLE = override_path)
+
+  expect_equal(episodic_ui_verdict_colour("confirmed_epidemic"), "#7F0000")
+  expect_equal(episodic_ui_intensity_colour("high"), "#7F0000")
+  expect_equal(episodic_ui_severity_colour("medium"), episodic_palette_shipped()$severity_medium)
+  expect_length(episodic_palette_problems(override_path), 0)
+})
+
+test_that("text on a filled colour is whichever of ink, white and black reads on it", {
+  pal <- episodic_palette()
+  expect_equal(episodic_colour_contrast("#000000", "#FFFFFF"), 21)
+  expect_equal(episodic_colour_contrast("#777777", "#777777"), 1)
+  expect_equal(episodic_ui_text_on("#222222"), "#FFFFFF")
+  expect_equal(episodic_ui_text_on("#FFD43B"), pal$ink)
+  # A mid-tone neither ink nor white reaches 4.5:1 on takes black.
+  expect_equal(episodic_ui_text_on("#F04124"), "#000000")
+  for (step in episodic_severity_steps) {
+    fill <- episodic_ui_severity_colour(step)
+    expect_gte(episodic_colour_contrast(fill, episodic_ui_text_on(fill)), 4.5)
+  }
+  # The alpha of an eight-digit colour is not part of its luminance.
+  expect_equal(episodic_colour_luminance("#22222280"), episodic_colour_luminance("#222222"))
+})
+
+test_that("a filled chip and a selected picker button carry text that reads on their fill", {
+  pal <- episodic_palette()
+  chip <- as.character(episodic_ui_chip("x", pal$severity_baseline, filled = TRUE))
+  expect_match(
+    chip,
+    sprintf("color:%s;background:%s;", pal$ink, pal$severity_baseline),
+    fixed = TRUE
+  )
+
+  options <- list(
+    list(value = "a", label = "A", colour = pal$severity_very_high),
+    list(value = "b", label = "B", colour = pal$severity_baseline)
+  )
+  picker <- as.character(episodic_ui_picker("verdict", options, selected = "a"))
+  expect_match(
+    picker,
+    sprintf("color:%s;", episodic_ui_text_on(pal$severity_very_high)),
+    fixed = TRUE
+  )
+  expect_match(
+    picker,
+    sprintf("data-text-colour=\"%s\"", episodic_ui_text_on(pal$severity_baseline)),
+    fixed = TRUE
+  )
+  expect_match(picker, "this.style.color=this.dataset.textColour", fixed = TRUE)
+})
+
 test_that("an unquoted hex colour, read by YAML as a comment, is reported rather than taken as empty", {
   override_path <- tempfile(fileext = ".yaml")
   on.exit(unlink(override_path))

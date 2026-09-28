@@ -595,11 +595,36 @@ test_that("the pathogen config panel italicises a taxon in its title and sentenc
   expect_false(grepl("\u0001", sentence, fixed = TRUE))
 })
 
-test_that("episodic_ui_intensity_colour() gives every MEM band a colour and never fails on an unknown one", {
+test_that("episodic_ui_intensity_colour() reads every MEM band onto the severity scale, and never fails on an unknown one", {
+  pal <- episodic_palette()
   levels <- c("baseline", "low", "medium", "high", "very_high")
   colours <- vapply(levels, episodic_ui_intensity_colour, character(1))
+  expect_equal(unname(colours), unlist(pal[paste0("severity_", levels)], use.names = FALSE))
   expect_equal(length(unique(colours)), length(levels))
-  expect_true(is.character(episodic_ui_intensity_colour(NA_character_)))
+  # No intensity measured is not the baseline band.
+  expect_equal(episodic_ui_intensity_colour(NA_character_), pal$muted)
+})
+
+test_that("the intensity chip names its band in words on the band's colour, and is absent without a band", {
+  pal <- episodic_palette()
+  chip <- as.character(episodic_ui_intensity_chip("high", lang = "en"))
+  expect_match(chip, "Intensity: High", fixed = TRUE)
+  expect_match(chip, sprintf("background:%s;", pal$severity_high), fixed = TRUE)
+  expect_match(chip, "episodic-chip-filled", fixed = TRUE)
+  expect_match(
+    as.character(episodic_ui_intensity_chip("very_high", lang = "nl")),
+    "Intensiteit: Zeer hoog",
+    fixed = TRUE
+  )
+  expect_null(episodic_ui_intensity_chip(NA_character_, lang = "en"))
+
+  stat <- as.character(episodic_ui_intensity_stat("Label", "medium", lang = "en"))
+  expect_match(stat, "episodic-stat-badge", fixed = TRUE)
+  expect_match(
+    stat,
+    sprintf("color:%s;background:%s;", episodic_ui_text_on(pal$severity_medium), pal$severity_medium),
+    fixed = TRUE
+  )
 })
 
 test_that("episodic_mem_threshold_lines() orders thresholds by value and labels each one", {
@@ -613,6 +638,17 @@ test_that("episodic_mem_threshold_lines() orders thresholds by value and labels 
   expect_equal(nrow(lines), 5)
   expect_false(is.unsorted(lines$value))
   expect_false(any(grepl("^\\[\\[", lines$label)))
+  # The intensity lines are drawn in the colours of the bands they open.
+  pal <- episodic_palette()
+  expect_equal(
+    lines$colour[match(c("medium", "high", "very_high"), lines$key)],
+    c(pal$severity_medium, pal$severity_high, pal$severity_very_high)
+  )
+  # The end of an epidemic is not drawn like the top intensity band.
+  expect_false(identical(
+    lines$colour[lines$key == "post_epidemic"],
+    lines$colour[lines$key == "very_high"]
+  ))
 
   expect_null(episodic_mem_threshold_lines(NULL))
   # A fit that produced no usable numbers leaves the bands off rather
@@ -936,4 +972,143 @@ test_that("episodic_app_pathogen_summary() withholds the comparison when the pre
   )
   expect_equal(covered$n_previous, 0L)
   expect_true(is.na(covered$change_pct))
+})
+
+test_that("the intensity bands are shaded from the epidemic threshold up, each in its severity colour", {
+  pal <- episodic_palette()
+  thresholds <- list(
+    pre_epidemic = 5,
+    post_epidemic = 4,
+    intensity = c(medium = 10, high = 20, very_high = 40)
+  )
+  bands <- episodic_mem_intensity_bands(thresholds)
+  expect_equal(bands$key, c("low", "medium", "high", "very_high"))
+  expect_equal(bands$ymin, c(5, 10, 20, 40))
+  expect_equal(bands$ymax, c(10, 20, 40, Inf))
+  expect_equal(
+    bands$colour,
+    unlist(pal[paste0("severity_", bands$key)], use.names = FALSE)
+  )
+
+  # MEM can place medium at or below the epidemic threshold; the low band
+  # then has no height and is left out rather than drawn upside down.
+  squeezed <- thresholds
+  squeezed$intensity[["medium"]] <- 3
+  expect_equal(episodic_mem_intensity_bands(squeezed)$key, c("medium", "high", "very_high"))
+  expect_equal(episodic_mem_intensity_bands(squeezed)$ymin[1], 5)
+
+  # Nothing to shade without bands or without an epidemic threshold.
+  expect_null(episodic_mem_intensity_bands(NULL))
+  expect_null(episodic_mem_intensity_bands(list(pre_epidemic = 5, post_epidemic = 4)))
+  expect_null(episodic_mem_intensity_bands(modifyList(thresholds, list(pre_epidemic = NA_real_))))
+
+  weekly <- data.frame(
+    week_start = seq(as.Date("2025-01-06"), by = "week", length.out = 6),
+    n_cases = c(2, 6, 12, 25, 45, 8),
+    incomplete = c(rep(FALSE, 5), TRUE)
+  )
+  p <- episodic_ui_pathogen_curve_chart(weekly, thresholds, lang = "en")
+  # Bands are the first layer, behind the bars (`geom_col()` is itself a
+  # subclass of GeomRect, hence the exact class).
+  is_band <- function(layer) identical(class(layer$geom)[1], "GeomRect")
+  expect_true(is_band(p$layers[[1]]))
+  expect_false(any(vapply(p$layers[-1], is_band, logical(1))))
+  expect_no_warning(ggplot2::ggplot_build(p))
+  bare <- episodic_ui_pathogen_curve_chart(weekly, NULL, lang = "en")
+  expect_false(any(vapply(bare$layers, is_band, logical(1))))
+
+  # The bands carry the only legend, on the right, as squares named by
+  # band; the lines are thin, solid and unlabelled.
+  built <- ggplot2::ggplot_build(p)
+  fill <- built$plot$scales$get_scales("fill")
+  expect_equal(fill$name, "Epidemic Severity:")
+  nl <- ggplot2::ggplot_build(episodic_ui_pathogen_curve_chart(weekly, thresholds, lang = "nl"))
+  expect_equal(nl$plot$scales$get_scales("fill")$name, "Epidemische ernst:")
+  fr <- ggplot2::ggplot_build(episodic_ui_pathogen_curve_chart(weekly, thresholds, lang = "fr"))
+  expect_equal(fr$plot$scales$get_scales("fill")$name, "Gravit\u00e9 \u00e9pid\u00e9mique :")
+  expect_equal(unname(as.character(fill$get_labels())), c("Very high", "High", "Medium", "Low"))
+  expect_equal(p$theme$legend.position, "right")
+  hlines <- p$layers[vapply(p$layers, function(l) inherits(l$geom, "GeomHline"), logical(1))]
+  # One layer of lines, the start and end thresholds; the bands are
+  # areas with no line of their own.
+  expect_length(hlines, 1)
+  expect_setequal(hlines[[1]]$data$key, c("pre_epidemic", "post_epidemic"))
+  # Every line one width, the legend's keys included.
+  for (h in hlines) {
+    expect_equal(h$aes_params$linetype, 1)
+    expect_equal(h$aes_params$linewidth, hlines[[1]]$aes_params$linewidth)
+    expect_equal(h$aes_params$linewidth, 0.5)
+  }
+  expect_null(p$guides$guides$colour$params$override.aes$linewidth)
+  expect_null(p$scales$get_scales("linetype"))
+  # The start and end thresholds are the keyed lines, below the squares:
+  # the start in the palette's secondary, the end in its tertiary teal.
+  colour <- built$plot$scales$get_scales("colour")
+  expect_equal(
+    unname(as.character(colour$get_labels())),
+    c("Start threshold", "End threshold")
+  )
+  expect_equal(
+    unname(colour$map(c("pre_epidemic", "post_epidemic"))),
+    c(pal$secondary, pal$tertiary)
+  )
+  expect_equal(p$guides$guides$fill$params$order, 1)
+  expect_equal(p$guides$guides$colour$params$order, 2)
+  drawn <- unlist(lapply(hlines, function(h) h$data$value))
+  expect_true(all(c(thresholds$pre_epidemic, thresholds$post_epidemic) %in% drawn))
+
+  # Without bands the two thresholds are still drawn and keyed.
+  no_bands <- thresholds
+  no_bands$intensity <- NULL
+  plain <- ggplot2::ggplot_build(episodic_ui_pathogen_curve_chart(weekly, no_bands, lang = "en"))
+  expect_equal(
+    unname(as.character(plain$plot$scales$get_scales("colour")$get_labels())),
+    c("Start threshold", "End threshold")
+  )
+  # Without bands there is no legend to place.
+  expect_false(identical(bare$theme$legend.position, "right"))
+})
+
+test_that("a curve with no Low band says why, and one with a Low band says nothing", {
+  thresholds <- list(
+    pre_epidemic = 5,
+    post_epidemic = 4,
+    intensity = c(medium = 10, high = 20, very_high = 40)
+  )
+  expect_null(episodic_ui_mem_no_low_band_note(thresholds, lang = "en"))
+  expect_null(episodic_ui_mem_no_low_band_note(NULL, lang = "en"))
+  expect_null(episodic_ui_mem_no_low_band_note(
+    list(pre_epidemic = 5, post_epidemic = 4),
+    lang = "en"
+  ))
+
+  squeezed <- thresholds
+  squeezed$intensity[["medium"]] <- 3.25
+  note <- episodic_ui_mem_no_low_band_note(squeezed, lang = "en")
+  expect_match(note, "The medium threshold (3.2) is at or below the start threshold (5)", fixed = TRUE)
+  expect_match(note, "no Low band", fixed = TRUE)
+  # Numbers are written the way the language writes them.
+  expect_match(episodic_ui_mem_no_low_band_note(squeezed, lang = "nl"), "(3,2)", fixed = TRUE)
+  # At the start threshold exactly, there is still no Low band.
+  squeezed$intensity[["medium"]] <- 5
+  expect_false(is.null(episodic_ui_mem_no_low_band_note(squeezed, lang = "en")))
+})
+
+test_that("the weekly curve is titled as a count of confirmed cases, not an incidence, and has no axis title", {
+  for (lang in c("en", "nl")) {
+    for (key in c("pathogen.panel.curve.title", "epidemics.panel.curve.title")) {
+      expect_false(grepl("incid", episodic_tr(key, lang = lang), ignore.case = TRUE), info = paste(lang, key))
+    }
+  }
+  expect_equal(episodic_tr("pathogen.panel.curve.title", lang = "en"), "Confirmed cases per week")
+  expect_equal(
+    episodic_tr("epidemics.panel.curve.title", lang = "en"),
+    episodic_tr("pathogen.panel.curve.title", lang = "en")
+  )
+  weekly <- data.frame(
+    week_start = seq(as.Date("2025-01-06"), by = "week", length.out = 3),
+    n_cases = c(1, 2, 3),
+    incomplete = FALSE
+  )
+  expect_null(episodic_ui_pathogen_curve_chart(weekly, lang = "en")$labels$y)
 })

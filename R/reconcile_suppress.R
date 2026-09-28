@@ -27,10 +27,15 @@
 #'
 #' - A child suppresses its parent when it accounts for most of the
 #'   parent's cases. The rise is local; the wider view is a restatement.
-#' - A parent suppresses its children when the rise is spread across
-#'   several of them and no single one dominates. The rise is diffuse;
-#'   separate dossiers per area would be the same outbreak, filed five
-#'   times.
+#' - A parent suppresses its children when each of them holds under half
+#'   of its cases. The rise is diffuse; separate dossiers per area would
+#'   be the same outbreak, filed five times. That holds for a single
+#'   flagged child as much as for several: a region whose rise lies
+#'   mostly outside the one province that crossed its own threshold is a
+#'   regional rise, and the province is part of it.
+#' - Between the two - a child holding more than half of its parent but
+#'   not dominating it - both stay, since neither view clearly explains
+#'   the other.
 #'
 #' Nothing is discarded. A suppressed cluster keeps its cases, its
 #' history and its assessment, and is attached to the cluster that
@@ -73,7 +78,7 @@ episodic_suppress_lattice <- function(con, config, progress_every = 30) {
   sup <- config$suppression
   child_dominance <- as.numeric(sup$child_dominance_threshold %||% 0.7)
   parent_diffuse <- as.numeric(sup$parent_diffuse_threshold %||% 0.5)
-  min_children <- as.integer(sup$parent_min_flagged_children %||% 2L)
+  min_children <- as.integer(sup$parent_min_flagged_children %||% 1L)
 
   clusters <- episodic_db_clusters_for_suppression(con)
   if (nrow(clusters) == 0) {
@@ -89,6 +94,15 @@ episodic_suppress_lattice <- function(con, config, progress_every = 30) {
     episodic_db_execute(
       con,
       "UPDATE episodic_cluster SET suppressed_by = NULL WHERE suppressed_by IS NOT NULL"
+    )
+  }
+  if (any(!is.na(clusters$would_be_suppressed_by))) {
+    episodic_db_execute(
+      con,
+      paste0(
+        "UPDATE episodic_cluster SET would_be_suppressed_by = NULL ",
+        "WHERE would_be_suppressed_by IS NOT NULL"
+      )
     )
   }
   clusters$suppressed_by <- NA_integer_
@@ -308,7 +322,10 @@ episodic_suppression_share <- function(parent_cases, child_cases) {
 #'
 #' A cluster somebody has already classified stays in the queue whatever
 #' the lattice says about it: the board's own record of a decision is not
-#' something a later run gets to hide.
+#' something a later run gets to hide. What it would have been filed
+#' under is recorded instead (`would_be_suppressed_by`), so its dossier
+#' can say that it and that cluster are the same rise, rather than
+#' leaving two dossiers that read as two events.
 #'
 #' @param assessed_ids The `cluster_id`s with at least one assessment
 #'   event, read once for the whole pass.
@@ -319,6 +336,7 @@ episodic_suppression_apply <- function(con,
                                        suppressed_by,
                                        assessed_ids) {
   if (cluster_id %in% assessed_ids) {
+    episodic_db_cluster_set_would_be_suppressed_by(con, cluster_id, suppressed_by)
     return(0L)
   }
   episodic_db_cluster_set_suppressed_by(con, cluster_id, suppressed_by)

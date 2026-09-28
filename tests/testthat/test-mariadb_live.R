@@ -233,11 +233,33 @@ test_that("a full detection run completes against MariaDB", {
   expect_false(any(ids == 0))
 })
 
-test_that("a run migrates a database one schema version behind, against MariaDB", {
+# The foreign key MariaDB gave episodic_cluster.would_be_suppressed_by,
+# by its generated name; none when the column has no constraint.
+mariadb_would_be_fk <- function(con) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT CONSTRAINT_NAME AS name
+       FROM information_schema.KEY_COLUMN_USAGE
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'episodic_cluster'
+        AND COLUMN_NAME = 'would_be_suppressed_by'
+        AND REFERENCED_TABLE_NAME = 'episodic_cluster'"
+  )$name
+}
+
+test_that("a run migrates a database from an earlier schema version, against MariaDB", {
+  # A version-8 database: the assessment columns version 9 drops, and
+  # neither of the additions version 10 makes, so both migrations do
+  # their real work against the server rather than finding it done.
   skip_on_cran()
   dsn <- mariadb_fresh()
   con <- episodic_db_connect(dsn)
   schema_v8_assessment_columns(con)
+  DBI::dbExecute(con, "DROP TABLE episodic_epidemic_week")
+  for (fk in mariadb_would_be_fk(con)) {
+    DBI::dbExecute(con, paste0("ALTER TABLE episodic_cluster DROP FOREIGN KEY ", fk))
+  }
+  DBI::dbExecute(con, "ALTER TABLE episodic_cluster DROP COLUMN would_be_suppressed_by")
   DBI::dbExecute(
     con,
     "DELETE FROM episodic_schema_version WHERE version = ?",
@@ -245,8 +267,7 @@ test_that("a run migrates a database one schema version behind, against MariaDB"
   )
   DBI::dbExecute(
     con,
-    "INSERT INTO episodic_schema_version (version, applied_at) VALUES (?, '2025-01-01T00:00:00Z')",
-    params = list(episodic_schema_version - 1L)
+    "INSERT INTO episodic_schema_version (version, applied_at) VALUES (8, '2025-01-01T00:00:00Z')"
   )
   DBI::dbDisconnect(con)
 
@@ -269,6 +290,15 @@ test_that("a run migrates a database one schema version behind, against MariaDB"
     "episodic_assessment_event",
     "wpg_notifiable"
   ))
+  expect_true(DBI::dbExistsTable(con, "episodic_epidemic_week"))
+  expect_true(episodic_db_column_exists(
+    con,
+    "mariadb",
+    "episodic_cluster",
+    "would_be_suppressed_by"
+  ))
+  # Declared as a clause of its own, since MySQL discards an inline one.
+  expect_length(mariadb_would_be_fk(con), 1L)
   expect_equal(
     DBI::dbGetQuery(con, "SELECT status FROM episodic_detection_run")$status,
     "success"

@@ -288,14 +288,11 @@ episodic_ui_pathogen_stats <- function(screen,
   if (!is.null(screen$mem) && !is.na(screen$mem$peak_level)) {
     stats <- c(
       stats,
-      list(episodic_ui_stat(
+      list(episodic_ui_intensity_stat(
         episodic_tr("pathogen.stat.intensity", lang = lang),
-        episodic_tr(
-          paste0("pathogen.intensity.", screen$mem$peak_level),
-          lang = lang
-        ),
+        screen$mem$peak_level,
         episodic_tr("pathogen.stat.intensity_sub", lang = lang),
-        colour = episodic_ui_intensity_colour(screen$mem$peak_level)
+        lang = lang
       ))
     )
   }
@@ -304,22 +301,109 @@ episodic_ui_pathogen_stats <- function(screen,
 
 #' Colour for a MEM intensity band
 #'
-#' Baseline through very high on the palette's own warning/danger ramp,
-#' so intensity reads as a severity scale rather than as five unrelated
-#' categories.
+#' MEM's five bands are the five steps of the severity scale, by the same
+#' names, so an intensity reads in the colours a verdict does.
 #'
 #' @param level One of `episodic_mem_intensity_level()`'s values.
 #' @keywords internal
 #' @noRd
 episodic_ui_intensity_colour <- function(level) {
-  pal <- episodic_palette()
-  switch(as.character(level),
-    baseline = pal$muted,
-    low = pal$success,
-    medium = pal$warning_dark,
-    high = pal$danger,
-    very_high = pal$danger_dark,
-    pal$muted
+  episodic_ui_severity_colour(level)
+}
+
+#' A MEM intensity band as a filled chip: "Intensity: high"
+#'
+#' Filled in the band's severity colour and written in words, so the band
+#' is read at a glance from the colour and confirmed by the text, and
+#' never carried by colour alone.
+#'
+#' @param level One of `episodic_mem_intensity_level()`'s values.
+#' @param lang Session language.
+#' @return A chip tag, or `NULL` when `level` is `NA` (no intensity bands
+#'   could be fitted).
+#' @keywords internal
+#' @noRd
+episodic_ui_intensity_chip <- function(level,
+                                       lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (length(level) != 1 || is.na(level)) {
+    return(NULL)
+  }
+  episodic_ui_chip(
+    episodic_tr(
+      "pathogen.intensity_chip",
+      level = episodic_tr(paste0("pathogen.intensity.", level), lang = lang),
+      lang = lang
+    ),
+    episodic_ui_intensity_colour(level),
+    filled = TRUE
+  )
+}
+
+#' Why a weekly curve has no Low band, when it has none
+#'
+#' MEM sets the start threshold from the weeks before past epidemics
+#' took off and the intensity levels from how high past epidemics
+#' peaked, so after modest seasons the medium level can sit at or below
+#' the start threshold. The chart then shades no Low band while its
+#' legend still lists one, and every week above the start threshold is
+#' already Medium or higher; this says so in words a reader who is not
+#' an epidemiologist can follow. `NULL` whenever the Low band is drawn,
+#' or there are no intensity bands at all.
+#'
+#' @param thresholds `episodic_mem_thresholds_for_season()`'s or
+#'   `episodic_epidemic_stored_thresholds()`'s output, or `NULL`.
+#' @param lang Session language.
+#' @return A single string, or `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_ui_mem_no_low_band_note <- function(thresholds,
+                                             lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (is.null(thresholds) || is.null(thresholds$intensity)) {
+    return(NULL)
+  }
+  pre <- as.numeric(thresholds$pre_epidemic)
+  medium <- as.numeric(thresholds$intensity[["medium"]])
+  if (length(pre) != 1 || !is.finite(pre) || !is.finite(medium) || medium > pre) {
+    return(NULL)
+  }
+  episodic_tr(
+    "pathogen.panel.curve.mem_no_low_band",
+    medium = episodic_format_number(medium, digits = 1, lang = lang),
+    pre = episodic_format_number(pre, digits = 1, lang = lang),
+    lang = lang
+  )
+}
+
+#' A stat tile whose value is a MEM intensity band
+#'
+#' The band is written on a fill of its severity colour rather than in
+#' it: text in the colour itself is unreadable for the light steps (a
+#' pale baseline, a yellow medium) against the tile.
+#'
+#' @param label,sub As for `episodic_ui_stat()`.
+#' @param level One of `episodic_mem_intensity_level()`'s values, not
+#'   `NA`.
+#' @param lang Session language.
+#' @return A stat tile.
+#' @keywords internal
+#' @noRd
+episodic_ui_intensity_stat <- function(label,
+                                       level,
+                                       sub = NULL,
+                                       lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  colour <- episodic_ui_intensity_colour(level)
+  episodic_ui_stat(
+    label,
+    shiny::tags$span(
+      class = "episodic-stat-badge",
+      style = sprintf(
+        "color:%s;background:%s;",
+        episodic_ui_text_on(colour),
+        colour
+      ),
+      episodic_tr(paste0("pathogen.intensity.", level), lang = lang)
+    ),
+    sub
   )
 }
 
@@ -369,6 +453,10 @@ episodic_ui_pathogen_curve_panel <- function(screen,
   } else {
     episodic_tr("pathogen.panel.curve.note", lang = lang)
   }
+  note <- paste(
+    c(note, episodic_ui_mem_no_low_band_note(thresholds, lang = lang)),
+    collapse = "<br>"
+  )
 
   episodic_ui_panel(
     episodic_tr("pathogen.panel.curve.title", lang = lang),

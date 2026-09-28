@@ -84,7 +84,7 @@ Detection alone produces a burst of raised signals every run, the same underlyin
 
 ### Epidemic closure
 
-Seasonal epidemics close automatically when the weekly case count drops below the post-epidemic threshold (`ended_reason = 'post_epidemic_threshold'`). As a backstop for noisy series that never cross cleanly, closure also fires when the evaluated week enters the pathogen's derived trough (`ended_reason = 'trough'`). Non-seasonal epidemics close on the same `case_free_days` and `stale_open_days` rules as outbreaks.
+Seasonal epidemics close automatically when the weekly case count drops below the post-epidemic threshold (`ended_reason = 'post_epidemic_threshold'`). As a backstop for noisy series that never cross cleanly, closure also fires when the evaluated week's count is back at or below the pre-epidemic threshold in a week inside the pathogen's derived trough (`ended_reason = 'trough'`). The trough on its own is a calendar rather than a measurement: an epidemic running out of season, with its count still above the pre-epidemic threshold, stays open until the post-epidemic threshold or an epidemiologist's declaration ends it. Non-seasonal epidemics close on the same `case_free_days` and `stale_open_days` rules as outbreaks.
 
 An epidemic's identity is preserved across the season anchor rollover: a rise that has not been closed keeps its cluster ID when the season label changes, and no spurious second epidemic is opened.
 

@@ -111,6 +111,7 @@ episodic_ui_epidemic_rail_row <- function(row,
   # rather than returning FALSE.
   row$care_line <- row$care_line %||% NA_character_
   row$priority_score <- row$priority_score %||% NA_real_
+  row$intensity_level <- row$intensity_level %||% NA_character_
 
   shiny::tags$div(
     class = "episodic-rail-item",
@@ -163,7 +164,15 @@ episodic_ui_epidemic_rail_row <- function(row,
         class = "episodic-rail-state",
         episodic_ui_state_dot(row$state),
         row$state_label
-      )
+      ),
+      # The band its dossier shows, so the most intense epidemic is found
+      # without opening each one; absent for a non-seasonal epidemic.
+      if (!is.na(row$intensity_level)) {
+        shiny::tags$div(
+          class = "episodic-rail-intensity",
+          episodic_ui_intensity_chip(row$intensity_level, lang = lang)
+        )
+      }
     )
   )
 }
@@ -350,13 +359,7 @@ episodic_ui_epidemic_header <- function(obj,
       # The intensity band this week sits in, where MEM could fit one:
       # the single word an epidemiologist is most often asked for about
       # a seasonal epidemic, and the one the header can carry.
-      if (!is.na(level_now)) {
-        episodic_ui_chip(
-          episodic_tr(paste0("pathogen.intensity.", level_now), lang = lang),
-          episodic_ui_intensity_colour(level_now),
-          filled = TRUE
-        )
-      }
+      episodic_ui_intensity_chip(level_now, lang = lang)
     ),
     shiny::tags$div(
       class = "episodic-dossier-meta",
@@ -490,23 +493,17 @@ episodic_ui_epidemic_stat_grid <- function(obj,
   }
 
   if (!running && !is.null(course) && !is.na(course$peak_level)) {
-    stats <- c(stats, list(episodic_ui_stat(
+    stats <- c(stats, list(episodic_ui_intensity_stat(
       episodic_tr("pathogen.stat.intensity", lang = lang),
-      episodic_tr(
-        paste0("pathogen.intensity.", course$peak_level),
-        lang = lang
-      ),
+      course$peak_level,
       episodic_tr("pathogen.stat.intensity_sub", lang = lang),
-      colour = episodic_ui_intensity_colour(course$peak_level)
+      lang = lang
     )))
   }
   if (running && !is.null(course) && !is.na(course$latest_level)) {
-    stats <- c(stats, list(episodic_ui_stat(
+    stats <- c(stats, list(episodic_ui_intensity_stat(
       episodic_tr("epidemics.stat.intensity", lang = lang),
-      episodic_tr(
-        paste0("pathogen.intensity.", course$latest_level),
-        lang = lang
-      ),
+      course$latest_level,
       if (!is.na(course$peak_level)) {
         episodic_tr(
           "epidemics.stat.intensity_sub",
@@ -517,7 +514,7 @@ episodic_ui_epidemic_stat_grid <- function(obj,
           lang = lang
         )
       },
-      colour = episodic_ui_intensity_colour(course$latest_level)
+      lang = lang
     )))
   }
 
@@ -644,6 +641,10 @@ episodic_ui_epidemic_curve_panel <- function(obj,
   } else {
     episodic_tr("epidemics.panel.curve.not_seasonal", lang = lang)
   }
+  note <- paste(
+    c(note, episodic_ui_mem_no_low_band_note(obj$thresholds, lang = lang)),
+    collapse = "<br>"
+  )
 
   episodic_ui_panel(
     episodic_tr("epidemics.panel.curve.title", lang = lang),
@@ -1010,6 +1011,7 @@ episodic_ui_epidemic_assessment_rail <- function(con,
   }
 
   shiny::tagList(
+    episodic_ui_part_of_note(con, cluster_id, lang = lang),
     shiny::tags$div(
       class = "episodic-timeline",
       shiny::tags$div(

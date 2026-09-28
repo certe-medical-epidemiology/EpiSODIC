@@ -19,3 +19,13 @@
     #333333 80% 100%
   ) 1;
 }
+
+/* Callouts written in GitHub's alert syntax, turned into Bootstrap
+   alerts by extra.js: the lead-in in bold as on GitHub, and no margin
+   under the last paragraph inside the box. */
+.alert strong {
+  font-weight: 600;
+}
+.alert > p:last-child {
+  margin-bottom: 0;
+}

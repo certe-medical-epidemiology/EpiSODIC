@@ -62,7 +62,10 @@ worked example of the shape your own data should have (see
 A seasonal Poisson baseline for eight endemic pathogens, deliberately
 thin per place: a demo whose baseline keeps tripping the rule-based
 detectors by coincidence buries the outbreaks it is meant to
-demonstrate. Patients recur - roughly one case in six is a repeat
+demonstrate. Influenza A and RSV come in short winter waves of varying
+size and timing, as they do in life, so the Moving Epidemic Method has
+seasons to fit its thresholds and intensity bands to; the others rise
+and fall gently through the year. Patients recur - roughly one case in six is a repeat
 positive from a patient already in the data - so deduplication and
 episode grouping have something to do.
 

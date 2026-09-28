@@ -123,6 +123,13 @@ episodic_detect_mem <- function(cases_for_stream,
   }
 
   intensity <- status$intensity_thresholds
+  if (is.null(intensity)) {
+    episodic_trace(
+      "MEM: stream ", tag, " has no intensity bands, ",
+      status$intensity_unavailable %||% "for a reason the fit did not give",
+      severity = "warn"
+    )
+  }
   episodic_detection_record(
     stream_id = stream_id,
     detector = "mem",
@@ -421,8 +428,9 @@ episodic_mem_seasonality <- function(cases,
 #'
 #' Used by `episodic_detect_mem()` (fires on `epidemic_started`) and by
 #' `episodic_epidemic_closure()` (fires when the evaluated count has
-#' fallen back at or below `post_epidemic_threshold`, or when the
-#' evaluated week is inside the pathogen's derived trough).
+#' fallen back at or below `post_epidemic_threshold`, or at or below the
+#' pre-epidemic threshold in a week inside the pathogen's derived
+#' trough).
 #'
 #' Which week to evaluate: the last *complete* epidemiological week,
 #' never the one in progress. The week containing the run date is
@@ -451,6 +459,7 @@ episodic_mem_seasonality <- function(cases,
 #'   `in_trough` (logical), `epidemic_started` (logical),
 #'   `current_week_count`, `pre_epidemic_threshold`,
 #'   `post_epidemic_threshold`, `intensity_thresholds`,
+#'   `intensity_unavailable` (`NULL`, or why `intensity_thresholds` is),
 #'   `intensity_level`, `anchor_week`, `season`, `seasons_used`,
 #'   `week_start`, `week_end`.
 #' @keywords internal
@@ -517,6 +526,7 @@ episodic_mem_status <- function(cases,
     pre_epidemic_threshold = as.numeric(pre_threshold),
     post_epidemic_threshold = as.numeric(post_threshold),
     intensity_thresholds = intensity,
+    intensity_unavailable = fitted$intensity_unavailable,
     intensity_level = episodic_mem_intensity_level(
       current_count,
       pre_threshold,
@@ -542,8 +552,9 @@ episodic_mem_status <- function(cases,
 #'   `episodic_mem_seasonal_matrix()` and restricted to the seasons the
 #'   thresholds are for.
 #' @return `NULL` when the model cannot be fitted, otherwise a list with
-#'   `pre_epidemic` and `post_epidemic` (numeric) and `intensity`
-#'   (`episodic_mem_intensity_thresholds()`'s output, possibly `NULL`).
+#'   `pre_epidemic` and `post_epidemic` (numeric), `intensity` (the
+#'   thresholds from `episodic_mem_intensity_thresholds()`, possibly
+#'   `NULL`) and `intensity_unavailable` (`NULL`, or why `intensity` is).
 #' @keywords internal
 #' @noRd
 episodic_mem_fit <- function(historical) {
@@ -557,13 +568,15 @@ episodic_mem_fit <- function(historical) {
   if (is.null(fit)) {
     return(NULL)
   }
+  intensity <- episodic_mem_intensity_thresholds(fit)
   # Unnamed: `mem` names these after its own interval rows, and nothing
   # downstream reads the name - every consumer takes `as.numeric()` of
   # them - so the cache has no name to carry.
   list(
     pre_epidemic = unname(fit$pre.post.intervals["pre.i", 3]),
     post_epidemic = unname(fit$pre.post.intervals["post.i", 3]),
-    intensity = episodic_mem_intensity_thresholds(fit)
+    intensity = intensity$thresholds,
+    intensity_unavailable = intensity$unavailable
   )
 }
 
@@ -686,7 +699,8 @@ episodic_mem_fit_encode <- function(fitted) {
     list(
       pre_epidemic = hex(fitted$pre_epidemic),
       post_epidemic = hex(fitted$post_epidemic),
-      intensity = if (is.null(fitted$intensity)) NULL else hex(fitted$intensity)
+      intensity = if (is.null(fitted$intensity)) NULL else hex(fitted$intensity),
+      intensity_unavailable = fitted$intensity_unavailable
     ),
     auto_unbox = TRUE,
     null = "null"
@@ -706,12 +720,19 @@ episodic_mem_fit_decode <- function(result) {
     error = function(e) NULL
   )
   scalar <- function(x) is.character(x) && length(x) == 1 && !is.na(x)
+  # Exactly one of the two intensity fields is set: thresholds, or the
+  # reason there are none. A row carrying neither was written without
+  # the reason, and is fitted again rather than read as bands that
+  # silently went missing.
   if (
     !is.list(parsed) ||
       !scalar(parsed$pre_epidemic) ||
       !scalar(parsed$post_epidemic) ||
       !(is.null(parsed$intensity) ||
-        (is.character(parsed$intensity) && length(parsed$intensity) == 3))
+        (is.character(parsed$intensity) && length(parsed$intensity) == 3)) ||
+      !(is.null(parsed$intensity_unavailable) ||
+        scalar(parsed$intensity_unavailable)) ||
+      is.null(parsed$intensity) == is.null(parsed$intensity_unavailable)
   ) {
     return(NULL)
   }
@@ -726,33 +747,53 @@ episodic_mem_fit_decode <- function(result) {
         number(parsed$intensity),
         c("medium", "high", "very_high")
       )
-    }
+    },
+    intensity_unavailable = parsed$intensity_unavailable
   )
 }
 
-#' MEM's medium/high/very high intensity thresholds, if this `mem` build
-#' reports them in the shape expected
+#' MEM's medium/high/very high intensity thresholds
 #'
-#' Read defensively rather than indexed straight: `mem::memmodel()`'s
-#' return shape for the intensity thresholds is not part of a stable
-#' documented interface the way `pre.post.intervals` is, and a shape
-#' this does not recognise must leave the intensity bands unavailable
-#' rather than take the whole seasonal panel down with it.
+#' `mem::memmodel()` returns them as `intensity.thresholds`: the upper
+#' limits of its three intensity intervals (`i.level.intensity`, shipped
+#' as 40%, 90% and 97.5%), in that order. `epidemic.thresholds` is a
+#' different vector - the pre- and post-epidemic thresholds - and holds
+#' two values, never three.
+#'
+#' Anything but three finite, non-decreasing values is refused rather
+#' than repaired: sorting or trimming a vector of another shape would
+#' produce bands that look like MEM's and are not. A refusal leaves the
+#' intensity bands unavailable and says so; the pre- and post-epidemic
+#' thresholds, which are read separately, are unaffected.
 #'
 #' @param fit A `mem::memmodel()` result.
-#' @return A named numeric of length 3 (`medium`, `high`, `very_high`),
-#'   or `NULL`.
+#' @return A list with `thresholds`, a named numeric of length 3
+#'   (`medium`, `high`, `very_high`) or `NULL`, and `unavailable`, `NULL`
+#'   when `thresholds` is set and otherwise a sentence saying why not.
 #' @keywords internal
 #' @noRd
 episodic_mem_intensity_thresholds <- function(fit) {
-  raw <- tryCatch(fit$epidemic.thresholds, error = function(e) NULL)
+  raw <- tryCatch(fit$intensity.thresholds, error = function(e) NULL)
   values <- suppressWarnings(as.numeric(raw))
-  values <- values[is.finite(values)]
-  if (length(values) < 3) {
-    return(NULL)
+  if (length(values) != 3 || !all(is.finite(values))) {
+    return(list(
+      thresholds = NULL,
+      unavailable = sprintf(
+        "mem::memmodel() returned %d intensity threshold(s) rather than three finite values",
+        length(raw)
+      )
+    ))
   }
-  values <- sort(values)[seq_len(3)]
-  stats::setNames(values, c("medium", "high", "very_high"))
+  if (is.unsorted(values)) {
+    return(list(
+      thresholds = NULL,
+      unavailable = "mem::memmodel() returned intensity thresholds that do not increase"
+    ))
+  }
+  list(
+    thresholds = stats::setNames(values, c("medium", "high", "very_high")),
+    unavailable = NULL
+  )
 }
 
 #' Which MEM intensity band a weekly count falls in
@@ -909,8 +950,9 @@ episodic_season_shift <- function(season, n = 1L) {
 #' @param season The season label the thresholds are for.
 #' @param config The resolved configuration.
 #' @param anchor_week Integer 1-52, the ISO week the season starts at.
-#' @return A list with `pre_epidemic`, `post_epidemic`, `intensity` and
-#'   `seasons_used`, or `NULL` when `mem` is unavailable or too little
+#' @return A list with `pre_epidemic`, `post_epidemic`, `intensity`,
+#'   `intensity_unavailable` and `seasons_used`, or `NULL` when `mem` is
+#'   unavailable or too little
 #'   earlier history exists.
 #' @keywords internal
 #' @noRd
@@ -951,6 +993,7 @@ episodic_mem_thresholds_for_season <- function(cases,
     pre_epidemic = as.numeric(fitted$pre_epidemic),
     post_epidemic = as.numeric(fitted$post_epidemic),
     intensity = fitted$intensity,
+    intensity_unavailable = fitted$intensity_unavailable,
     seasons_used = earlier
   )
 }
@@ -1104,6 +1147,126 @@ episodic_mem_season_weeks <- function(dates, anchor_week) {
   )
 }
 
+# -- Epidemic weeks -----------------------------------------------------
+
+#' The MEM thresholds a seasonal epidemic was opened against
+#'
+#' An attribute of the epidemic, fixed when the run that opened it fitted
+#' them on the seasons before its own, and stored on its
+#' `episodic_epidemic_season` row. Read from there rather than fitted
+#' again: a season's thresholds are set at its start, and a refit would
+#' move them whenever a late report reached an earlier season.
+#'
+#' @param season An `episodic_epidemic_season` row, or `NULL`.
+#' @return `NULL` for `NULL`, otherwise a list with `pre_epidemic`,
+#'   `post_epidemic`, `intensity` (a named numeric of length 3, or `NULL`
+#'   unless all three are stored, finite and non-decreasing) and
+#'   `seasons_used`, the shape `episodic_mem_thresholds_for_season()`
+#'   returns.
+#' @keywords internal
+#' @noRd
+episodic_epidemic_stored_thresholds <- function(season) {
+  if (is.null(season) || nrow(as.data.frame(season)) == 0) {
+    return(NULL)
+  }
+  intensity <- suppressWarnings(as.numeric(c(
+    season$intensity_medium %||% NA,
+    season$intensity_high %||% NA,
+    season$intensity_very_high %||% NA
+  )))
+  intensity <- if (all(is.finite(intensity)) && !is.unsorted(intensity)) {
+    stats::setNames(intensity, c("medium", "high", "very_high"))
+  } else {
+    NULL
+  }
+  seasons_used <- as.character(season$seasons_used %||% NA)
+  list(
+    pre_epidemic = suppressWarnings(as.numeric(season$pre_epidemic_threshold %||% NA)),
+    post_epidemic = suppressWarnings(as.numeric(season$post_epidemic_threshold %||% NA)),
+    intensity = intensity,
+    seasons_used = if (is.na(seasons_used)) {
+      character(0)
+    } else {
+      trimws(strsplit(seasons_used, ",", fixed = TRUE)[[1]])
+    }
+  )
+}
+
+#' A seasonal epidemic's weekly counts and intensity bands, as of a run
+#'
+#' One row per week from the epidemic's onset week to the week the run
+#' evaluates - the last fully elapsed one (`episodic_mem_evaluation_week()`),
+#' the same week MEM detects and closes on - each counted from the
+#' stream's cases and banded against the thresholds the epidemic was
+#' opened against (`episodic_epidemic_stored_thresholds()`).
+#'
+#' @param cases_for_stream A data frame with `sample_date`, the stream's
+#'   cases.
+#' @param satellite A one-row data frame from
+#'   `episodic_db_open_seasonal_epidemics()`.
+#' @param run_date The date to treat as "today".
+#' @return A data frame with `week_start` (character), `n_cases` and
+#'   `intensity_level` (`NA` where the season has no intensity
+#'   thresholds); no rows when the onset week is unknown or the run
+#'   evaluates a week before it.
+#' @keywords internal
+#' @noRd
+episodic_epidemic_weeks <- function(cases_for_stream, satellite, run_date) {
+  empty <- data.frame(
+    week_start = character(0),
+    n_cases = integer(0),
+    intensity_level = character(0),
+    stringsAsFactors = FALSE
+  )
+  onset <- suppressWarnings(as.Date(satellite$onset_week_start %||% NA))
+  if (length(onset) != 1 || is.na(onset)) {
+    return(empty)
+  }
+  evaluated <- episodic_mem_evaluation_week(
+    as.Date(run_date),
+    as.integer(satellite$anchor_week)
+  )$week_start
+  if (evaluated < onset) {
+    return(empty)
+  }
+  weeks <- seq(onset, evaluated, by = 7)
+  dates <- as.Date(cases_for_stream$sample_date)
+  dates <- dates[!is.na(dates) & dates >= onset & dates <= evaluated + 6]
+  counts <- tabulate(
+    as.integer(dates - onset) %/% 7L + 1L,
+    nbins = length(weeks)
+  )
+  thresholds <- episodic_epidemic_stored_thresholds(satellite)
+  data.frame(
+    week_start = as.character(weeks),
+    n_cases = as.integer(counts),
+    intensity_level = vapply(
+      counts,
+      function(n) {
+        episodic_mem_intensity_level(n, thresholds$pre_epidemic, thresholds$intensity)
+      },
+      character(1)
+    ),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' The most severe of a set of intensity bands
+#'
+#' @param levels Values of `episodic_mem_intensity_level()`, `NA`
+#'   allowed.
+#' @return The highest band present, or `NA_character_` when none is.
+#' @keywords internal
+#' @noRd
+episodic_mem_intensity_max <- function(levels) {
+  steps <- c("baseline", "low", "medium", "high", "very_high")
+  ranks <- match(levels, steps)
+  if (all(is.na(ranks))) {
+    return(NA_character_)
+  }
+  steps[max(ranks, na.rm = TRUE)]
+}
+
 # -- Epidemic closure ---------------------------------------------------
 
 #' Check whether an open seasonal epidemic should close
@@ -1111,10 +1274,19 @@ episodic_mem_season_weeks <- function(dates, anchor_week) {
 #' The primary criterion is the post-epidemic threshold stored on the
 #' satellite: the epidemic closes when the evaluated week's count falls
 #' at or below it. The backstop is the derived trough: when the count
-#' has fallen but never crosses the threshold cleanly on a noisy series,
-#' the epidemic closes once the evaluated week enters the pathogen's own
+#' has fallen back to non-epidemic activity - at or below the
+#' pre-epidemic threshold, MEM's own line between the two - but never
+#' crosses the post-epidemic threshold cleanly on a noisy series, the
+#' epidemic closes once the evaluated week is inside the pathogen's own
 #' trough. These are two different pieces of evidence, and the audit
 #' trail records which one fired.
+#'
+#' The trough alone is a calendar, not a measurement: an epidemic
+#' running out of season - influenza in late summer - is in the trough
+#' weeks while its count is still rising, and closing it there would
+#' close it in the run that opened it. Without a pre-epidemic threshold
+#' to tell a fallen count from a rising one, the backstop does not fire
+#' and the post-epidemic threshold alone decides.
 #'
 #' @param cases_for_stream A data frame with `sample_date`, the stream's
 #'   full case history (needed to derive the anchor and count the
@@ -1123,7 +1295,8 @@ episodic_mem_season_weeks <- function(dates, anchor_week) {
 #' @param config The resolved configuration.
 #' @param satellite A one-row data frame from
 #'   `episodic_db_open_seasonal_epidemics()`, carrying
-#'   `post_epidemic_threshold` and `anchor_week`.
+#'   `pre_epidemic_threshold`, `post_epidemic_threshold` and
+#'   `anchor_week`.
 #' @return `NULL` if the epidemic should stay open, otherwise a list
 #'   with `ended_week_start` (Date) and `ended_reason` (character).
 #' @keywords internal
@@ -1156,8 +1329,13 @@ episodic_epidemic_closure <- function(cases_for_stream,
     ))
   }
 
+  pre_threshold <- as.numeric(satellite$pre_epidemic_threshold %||% NA_real_)
   eval_iso_week <- as.integer(evaluated$week_label)
-  if (eval_iso_week %in% anchor$trough_run) {
+  if (
+    eval_iso_week %in% anchor$trough_run &&
+      !is.na(pre_threshold) &&
+      week_count <= pre_threshold
+  ) {
     return(list(
       ended_week_start = as.character(week_start),
       ended_reason = "trough"

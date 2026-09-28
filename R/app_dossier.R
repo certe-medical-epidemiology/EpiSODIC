@@ -1710,6 +1710,7 @@ episodic_ui_assessment_rail <- function(con,
   # As with the dossier: the box belongs to `output$assessment_pane`'s
   # own container, not to another div inside it.
   shiny::tagList(
+    episodic_ui_part_of_note(con, cluster_id, lang = lang),
     shiny::tags$div(
       class = "episodic-timeline",
       shiny::tags$div(

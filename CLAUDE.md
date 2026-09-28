@@ -125,6 +125,7 @@ Single schema in `inst/sql/schema.sql`, written in SQLite dialect. Adapted at lo
 | `episodic_cluster_case` | cron | Cases assigned to clusters |
 | `episodic_cluster_state` | cron | Derived state (open/closed/stale) |
 | `episodic_epidemic_season` | cron | Seasonal satellite for epidemic clusters with a season (anchor, thresholds, ended_reason) |
+| `episodic_epidemic_week` | cron | A seasonal epidemic's weekly counts and MEM intensity bands, rewritten by every run while its season is open |
 | `episodic_cluster_link` | cron | The "during" relation: which outbreaks occurred during which epidemics |
 | `episodic_assessment_event` | app | Epidemiologist assessments and declarations (append-only) |
 | `episodic_app_user` | app | Dashboard accounts |

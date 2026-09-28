@@ -442,6 +442,20 @@ body {
 .episodic-body-epidemics .episodic-rail-item .episodic-rail-state {
   margin-top: 9px;
 }
+.episodic-rail-item .episodic-rail-intensity {
+  margin-block-start: 6px;
+}
+/* "Part of the same rise as E-11", at the top of an assessment pane
+   (episodic_ui_part_of_note()). */
+.episodic-part-of {
+  font-size: 0.923rem;
+  color: var(--episodic-ink);
+  background: var(--episodic-primary-tint);
+  border-inline-start: 3px solid var(--episodic-primary);
+  padding: 8px 12px;
+  margin-block-end: 12px;
+  line-height: 1.5;
+}
 .episodic-rail-item .episodic-rail-pathogen {
   font-size: 1rem;
   font-weight: 500;
@@ -590,6 +604,16 @@ body {
   font-variant-numeric: tabular-nums;
   color: var(--episodic-ink);
   line-height: 1.15;
+}
+/* A stat whose value is a step on the severity scale (a MEM intensity
+   band), written on a fill of its colour; the text colour is set inline
+   from the fill (episodic_ui_text_on()). */
+.episodic-stat-badge {
+  display: inline-block;
+  font-size: 1.231rem;
+  padding: 2px 10px;
+  border-radius: 3px;
+  margin-block-start: 2px;
 }
 .episodic-stat-sub {
   font-size: 0.885rem;
