@@ -89,9 +89,9 @@ cases <- episodic_synthetic_cases(
 )
 episodic_check_cases(cases)
 #> -- EpiSODIC case data check ------------------------------------------------
-#>    206 rows, 16 columns
+#>    204 rows, 16 columns
 #>    sample_date from 2025-01-01 to 2025-01-31
-#>    10 pathogens, 62 institutions, 200 patients
+#>    9 pathogens, 59 institutions, 199 patients
 #> 
 #> v This data set satisfies the case data requirements, and is ready for
 #>   episodic_run_cron(). See ?episodic_case_data (`?EpiSODIC::episodic_case_data()`) for what each
@@ -104,24 +104,24 @@ broken$sex <- ifelse(broken$sex == "M", "male", "female")
 report <- episodic_check_cases(broken)
 report
 #> -- EpiSODIC case data check ------------------------------------------------
-#>    206 rows, 16 columns
-#>    10 pathogens, 62 institutions, 200 patients
+#>    204 rows, 16 columns
+#>    9 pathogens, 59 institutions, 199 patients
 #> 
 #> x 2 problems - a detection run refuses to start until these are fixed:
 #> 
-#>   1. `sex` has 206 of 206 rows with a value outside the allowed set ("M",
+#>   1. `sex` has 204 of 204 rows with a value outside the allowed set ("M",
 #>      "F", "U", or NA).
 #>      values: female, male
-#>      rows:   1, 2, 3, 4, 5 (and 201 more)
+#>      rows:   1, 2, 3, 4, 5 (and 199 more)
 #>      fix:    Map your own coding onto the allowed values in your extract
 #>              step; they are in `episodic_sex_codes`, so you need not copy
 #>              the strings by hand.
 #> 
-#>   2. `sample_date` has 206 of 206 rows that are not a Date and do not read
+#>   2. `sample_date` has 204 of 204 rows that are not a Date and do not read
 #>      as YYYY-MM-DD.
 #>      values: 01-01-2025, 02-01-2025, 03-01-2025, 04-01-2025, 05-01-2025
 #>              (and 26 more)
-#>      rows:   1, 2, 3, 4, 5 (and 201 more)
+#>      rows:   1, 2, 3, 4, 5 (and 199 more)
 #>      fix:    These look day-first (e.g. 31-12-2025): convert with
 #>              as.Date(x, format = "%d-%m-%Y"). EpiSODIC accepts a Date
 #>              column, or text in ISO 8601 YYYY-MM-DD form, and nothing else

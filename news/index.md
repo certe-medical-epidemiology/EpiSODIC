@@ -1,5 +1,55 @@
 # Changelog
 
+## EpiSODIC 0.23.0
+
+### New
+
+- Five `severity_*` palette roles colour both verdicts and MEM intensity
+  bands, overridable through `EPISODIC_STYLE`
+- The Epidemics dossier header shows the current MEM band as an
+  “Intensity” chip
+- Each seasonal epidemic in the Epidemics list shows its current MEM
+  band as an “Intensity” chip
+- Text on a filled chip or selected picker button takes ink, white or
+  black, whichever reads on the fill
+- The Pathogen and Epidemics weekly curves shade the MEM intensity bands
+  behind the bars
+- Each detection run stores every open seasonal epidemic’s weekly counts
+  and intensity bands in `episodic_epidemic_week` (schema version 10)
+- An assessed cluster’s assessment pane says which cluster it would
+  otherwise be filed under, with a link to it
+- The weekly curve’s note explains why there is no Low band when MEM’s
+  medium threshold is at or below the start threshold
+
+### Changed
+
+- The weekly curve on the Pathogen screen and the Epidemics dossier is
+  titled “Confirmed cases per week” instead of “Weekly incidence”, with
+  no y-axis title
+- Verdicts, intensity chips, intensity stats and the Pathogen chart’s
+  intensity lines take their colours from the severity scale
+- Synthetic Influenza A and RSV come in winter waves of varying size and
+  timing, so the demo always has a MEM season with intensity bands
+- MEM threshold lines are thin and solid, and the weekly curve’s legend,
+  titled “Epidemic Severity” in every language, names the shaded
+  intensity bands on the right, with the start and end thresholds, the
+  only lines drawn, below them at one width
+- The Epidemics dossier and list read a seasonal epidemic’s thresholds,
+  latest week and bands from what the detection runs stored instead of
+  refitting MEM
+- `suppression.parent_min_flagged_children` ships as 1, so a parent
+  absorbs a single flagged child holding under half its cases
+
+### Fixed
+
+- MEM intensity bands are read from
+  [`mem::memmodel()`](https://rdrr.io/pkg/mem/man/memmodel.html)’s
+  `intensity.thresholds`, so they are no longer always missing
+- A MEM fit without intensity bands says why in the run log
+- A seasonal epidemic closes on the trough backstop only once its count
+  is back at or below the pre-epidemic threshold, so an out-of-season
+  epidemic is no longer closed while still rising
+
 ## EpiSODIC 0.22.2
 
 ### New

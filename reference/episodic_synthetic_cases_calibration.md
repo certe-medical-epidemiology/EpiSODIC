@@ -64,5 +64,5 @@ cases <- episodic_synthetic_cases_calibration(
   n_bumps_per_month = 4
 )
 sum(startsWith(cases$patient_key, "PT-VOL-"))
-#> [1] 141
+#> [1] 100
 ```

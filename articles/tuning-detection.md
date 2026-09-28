@@ -123,10 +123,13 @@ suppression is not aggressive enough.
 a parent’s cases that a single child must account for to suppress the
 parent. Lowering it makes it easier for a child to absorb its parent.
 `suppression.parent_diffuse_threshold` (default: 0.50) and
-`suppression.parent_min_flagged_children` (default: 2) control the
-reverse: a parent absorbs its children when no single child dominates
-and enough children overlap. A cluster someone has already assessed is
-never suppressed, regardless of these thresholds.
+`suppression.parent_min_flagged_children` (default: 1) control the
+reverse: a parent absorbs its children when each holds less than that
+share of its cases and at least that many children overlap it. The
+default of 1 lets a region absorb a single flagged province whose rise
+is mostly outside it; raise it to require the rise to be seen in several
+children first. A cluster someone has already assessed is never
+suppressed, regardless of these thresholds.
 
 ``` yaml
 suppression:

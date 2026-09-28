@@ -17,7 +17,7 @@
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
-<meta property="og:title" content="Tuning detection for your catchment">
+<script src="../extra.js"></script><meta property="og:title" content="Tuning detection for your catchment">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.23.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -176,10 +176,12 @@ the share of a parent’s cases that a single child must account for to
 suppress the parent. Lowering it makes it easier for a child to absorb
 its parent. <code>suppression.parent_diffuse_threshold</code> (default:
 0.50) and <code>suppression.parent_min_flagged_children</code> (default:
-2) control the reverse: a parent absorbs its children when no single
-child dominates and enough children overlap. A cluster someone has
-already assessed is never suppressed, regardless of these
-thresholds.</p>
+1) control the reverse: a parent absorbs its children when each holds
+less than that share of its cases and at least that many children
+overlap it. The default of 1 lets a region absorb a single flagged
+province whose rise is mostly outside it; raise it to require the rise
+to be seen in several children first. A cluster someone has already
+assessed is never suppressed, regardless of these thresholds.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">suppression</span><span class="kw">:</span></span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="at">  </span><span class="fu">child_dominance_threshold</span><span class="kw">:</span><span class="at"> </span><span class="fl">0.60</span></span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="at">  </span><span class="fu">parent_min_flagged_children</span><span class="kw">:</span><span class="at"> </span><span class="dv">3</span></span></code></pre></div>
@@ -999,7 +1001,7 @@ recommended)</td>
 </tr>
 <tr class="odd">
 <td><code style="white-space: nowrap;">suppression:<br>  parent_min_flagged_children</code></td>
-<td align="right">2</td>
+<td align="right">1</td>
 <td>Minimum overlapping children before the diffuse rule fires</td>
 </tr>
 </tbody>

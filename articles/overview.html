@@ -17,7 +17,7 @@
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
-<meta property="og:title" content="Overview">
+<script src="../extra.js"></script><meta property="og:title" content="Overview">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.23.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -137,14 +137,18 @@ epidemiologist records their assessment.</p>
 regional-scale signals at province (L4) and catchment (L5) level. An
 epidemic’s dossier opens with where the epidemic stands: its latest
 complete week against the week before, the peak so far, the MEM
-intensity now and at the peak, and the latest Rt. Below that come the
-weekly case curve with the MEM thresholds drawn on it (the weeks before
-the epidemic began included), the epidemic’s season against earlier
-seasons, Rt on a log2 axis, tests and positivity, a choropleth of its
-cases, age and sex against the area’s own baseline, the care lines cases
-were found in, the contributing institutions, and the outbreaks recorded
-as occurring during it. Each of those outbreaks carries a “During E-123”
-chip on its own dossier, so the relation reads from either end.</p>
+intensity now and at the peak, and the latest Rt. The current intensity
+band is also a chip in the dossier’s header (“Intensity: high”),
+coloured on the same five-step severity scale as an epidemiologist’s
+verdicts, so a band and a verdict of the same weight share a colour on
+every screen. Below that come the weekly case curve with the MEM
+thresholds drawn on it (the weeks before the epidemic began included),
+the epidemic’s season against earlier seasons, Rt on a log2 axis, tests
+and positivity, a choropleth of its cases, age and sex against the
+area’s own baseline, the care lines cases were found in, the
+contributing institutions, and the outbreaks recorded as occurring
+during it. Each of those outbreaks carries a “During E-123” chip on its
+own dossier, so the relation reads from either end.</p>
 <p>The screen is laid out exactly like the Outbreaks screen, and an
 epidemic is assessed on the same form: it can be an artefact or expected
 variation like any other signal. Where the epidemic is seasonal, that

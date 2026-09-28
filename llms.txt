@@ -2,6 +2,13 @@
 
 [![R-CMD-check](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml)
 
+> \[!WARNING\] **Under very intensive development.** EpiSODIC has not
+> been released and is not ready for use. Its functions, database
+> schema, configuration and output change substantially from one version
+> to the next, and it has not yet been validated for taking outbreak
+> decisions. Please do not deploy it in a laboratory or rely on its
+> output until a first release is announced.
+
 **An early warning system for infectious disease outbreaks, built to run
 in any laboratory, in any country.**
 

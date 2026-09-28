@@ -17,7 +17,7 @@
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
-<meta property="og:title" content="Detection and reconciliation">
+<script src="../extra.js"></script><meta property="og:title" content="Detection and reconciliation">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.23.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -203,10 +203,14 @@ checkbox.</li>
 drops below the post-epidemic threshold
 (<code>ended_reason = 'post_epidemic_threshold'</code>). As a backstop
 for noisy series that never cross cleanly, closure also fires when the
-evaluated week enters the pathogen’s derived trough
-(<code>ended_reason = 'trough'</code>). Non-seasonal epidemics close on
-the same <code>case_free_days</code> and <code>stale_open_days</code>
-rules as outbreaks.</p>
+evaluated week’s count is back at or below the pre-epidemic threshold in
+a week inside the pathogen’s derived trough
+(<code>ended_reason = 'trough'</code>). The trough on its own is a
+calendar rather than a measurement: an epidemic running out of season,
+with its count still above the pre-epidemic threshold, stays open until
+the post-epidemic threshold or an epidemiologist’s declaration ends it.
+Non-seasonal epidemics close on the same <code>case_free_days</code> and
+<code>stale_open_days</code> rules as outbreaks.</p>
 <p>An epidemic’s identity is preserved across the season anchor
 rollover: a rise that has not been closed keeps its cluster ID when the
 season label changes, and no spurious second epidemic is opened.</p>

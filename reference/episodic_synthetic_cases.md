@@ -72,9 +72,12 @@ carrying the ground truth of what was injected as an attribute - see
 A seasonal Poisson baseline for eight endemic pathogens, deliberately
 thin per place: a demo whose baseline keeps tripping the rule-based
 detectors by coincidence buries the outbreaks it is meant to
-demonstrate. Patients recur - roughly one case in six is a repeat
-positive from a patient already in the data - so deduplication and
-episode grouping have something to do.
+demonstrate. Influenza A and RSV come in short winter waves of varying
+size and timing, as they do in life, so the Moving Epidemic Method has
+seasons to fit its thresholds and intensity bands to; the others rise
+and fall gently through the year. Patients recur - roughly one case in
+six is a repeat positive from a patient already in the data - so
+deduplication and episode grouping have something to do.
 
 On top of that, six outbreaks, sized from a single case to a regional
 wave, each shaped for a different detector:
@@ -127,34 +130,34 @@ cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
 nrow(cases)
-#> [1] 419
+#> [1] 421
 head(cases)
 #>                          patient_key sample_date receipt_date
 #> 1                PT-Norovirus-000044  2025-01-01   2025-01-01
-#> 2              PT-Influenza.A-000105  2025-01-01   2025-01-01
-#> 3                      PT-RSV-000072  2025-01-01   2025-01-01
-#> 4 PT-Clostridioides.difficile-000055  2025-01-01   2025-01-02
-#> 5              PT-Influenza.A-000162  2025-01-02   2025-01-02
-#> 6              PT-Influenza.A-000047  2025-01-02   2025-01-02
+#> 2              PT-Influenza.A-000019  2025-01-01   2025-01-01
+#> 3              PT-Influenza.A-000183  2025-01-01   2025-01-01
+#> 4                      PT-RSV-000009  2025-01-01   2025-01-01
+#> 5 PT-Clostridioides.difficile-000062  2025-01-01   2025-01-01
+#> 6                PT-Norovirus-000098  2025-01-03   2025-01-03
 #>                   pathogen care_line institution_key institution_display_name
 #> 1                Norovirus    second         HOSP-07               Hospital G
-#> 2              Influenza A     first          LTC-10           Zorgcentrum 10
-#> 3                      RSV    second         HOSP-03               Hospital C
-#> 4 Clostridioides difficile    second         HOSP-07               Hospital G
-#> 5              Influenza A    second         HOSP-01               Hospital A
-#> 6              Influenza A    second         HOSP-02               Hospital B
-#>   institution_type municipality              ward          specialism   pc sex
-#> 1         hospital         <NA> Internal Medicine   Internal Medicine 7384   F
-#> 2  ltc_institution         <NA>              <NA>                <NA> 8524   M
-#> 3         hospital         <NA>        Cardiology          Cardiology 9800   M
-#> 4         hospital         <NA>       Pulmonology         Pulmonology 7600   M
-#> 5         hospital         <NA>        Geriatrics Clinical Geriatrics 9930   F
-#> 6         hospital         <NA>           Surgery             Surgery 9021   F
-#>   age   source_key      lab_number
-#> 1  33 SYN-00000001 LABSYN-00000001
-#> 2  37 SYN-00000060 LABSYN-00000060
-#> 3  76 SYN-00000159 LABSYN-00000159
-#> 4   8 SYN-00000203 LABSYN-00000203
-#> 5  79 SYN-00000061 LABSYN-00000061
-#> 6  14 SYN-00000062 LABSYN-00000062
+#> 2              Influenza A    second         HOSP-01               Hospital A
+#> 3              Influenza A     first           GP-15         De Fryske Marren
+#> 4                      RSV     first          LTC-17           Zorgcentrum 17
+#> 5 Clostridioides difficile     first           GP-14          Súdwest-Fryslân
+#> 6                Norovirus    second         HOSP-05               Hospital E
+#>   institution_type     municipality              ward        specialism   pc
+#> 1         hospital             <NA> Internal Medicine Internal Medicine 7384
+#> 2         hospital             <NA>         Neurology         Neurology 8870
+#> 3  gp_municipality De Fryske Marren              <NA>              <NA> 8732
+#> 4  ltc_institution             <NA>              <NA>              <NA> 9553
+#> 5  gp_municipality  Súdwest-Fryslân              <NA>              <NA> 8741
+#> 6         hospital             <NA>           Surgery           Surgery 8615
+#>   sex age   source_key      lab_number
+#> 1   F  33 SYN-00000001 LABSYN-00000001
+#> 2   M  47 SYN-00000060 LABSYN-00000060
+#> 3   F  38 SYN-00000061 LABSYN-00000061
+#> 4   F  16 SYN-00000188 LABSYN-00000188
+#> 5   M  56 SYN-00000208 LABSYN-00000208
+#> 6   F  42 SYN-00000002 LABSYN-00000002
 ```

@@ -17,8 +17,10 @@ A named list. The greyscale neutrals are `ink` (default text), `muted`
 (secondary text), `faint` (tertiary text), `border`, `bg_subtle`, `bg`,
 and `surface`. The semantic roles are `primary`, `secondary`,
 `tertiary`, `success`, `warning`, and `danger`, each with
-`_dark`/`_light`/`_tint` variants where used. `font` and
-`font_size_base` hold the app's typography, not a colour.
+`_dark`/`_light`/`_tint` variants where used. The severity scale is
+`severity_baseline`, `severity_low`, `severity_medium`, `severity_high`
+and `severity_very_high`. `font` and `font_size_base` hold the app's
+typography, not a colour.
 
 ## Details
 
@@ -55,33 +57,43 @@ run, since they have no bearing on reproducibility.
 These are all the default values, and all can be changed using a custom
 YAML file.
 
-    font:            '"IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif'
-    font_size_base:  "13px"
-    ink:             "#222222"
-    muted:           "#495057"
-    faint:           "#ADB5BD"
-    border:          "#DEE2E6"
-    bg_subtle:       "#EBEBEB"
-    bg:              "#F8F9FA"
-    surface:         "#FFFFFF"
-    primary:         "#008CBA"
-    primary_dark:    "#005F7A"
-    primary_light:   "#66BAD6"
-    primary_tint:    "#D9EDF5"
-    secondary:       "#333333"
-    secondary_dark:  "#1A1A1A"
-    tertiary:        "#20C997"
-    tertiary_dark:   "#168D6A"
-    success:         "#43AC6A"
-    success_dark:    "#2F784A"
-    warning:         "#F8AC59"
-    warning_dark:    "#AE783E"
-    danger:          "#F36A5A"
-    danger_dark:     "#AA4A3F"
+    font:                '"IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif'
+    font_size_base:      "13px"
+    ink:                 "#222222"
+    muted:               "#495057"
+    faint:               "#ADB5BD"
+    border:              "#DEE2E6"
+    bg_subtle:           "#EBEBEB"
+    bg:                  "#F8F9FA"
+    surface:             "#FFFFFF"
+    primary:             "#008CBA"
+    primary_dark:        "#005F7A"
+    primary_light:       "#66BAD6"
+    primary_tint:        "#D9EDF5"
+    secondary:           "#333333"
+    secondary_dark:      "#1A1A1A"
+    tertiary:            "#20C997"
+    tertiary_dark:       "#168D6A"
+    success:             "#43AC6A"
+    success_dark:        "#2F784A"
+    warning:             "#F8AC59"
+    warning_dark:        "#AE783E"
+    danger:              "#F36A5A"
+    danger_dark:         "#AA4A3F"
+    severity_baseline:   "#ADB5BD"
+    severity_low:        "#43AC6A"
+    severity_medium:     "#E99002"
+    severity_high:       "#F04124"
+    severity_very_high:  "#222222"
 
 Of note:
 
 - `primary_dark` is the background colour of the navigation bar.
+
+- `severity_baseline` to `severity_very_high` are one ordinal scale,
+  shared by an epidemiologist's verdicts and the Moving Epidemic
+  Method's intensity bands, so a step has one colour on every screen.
+  Text on them is set to whichever of `ink`, white or black reads.
 
 - `font` is a CSS font-family stack, and `font_size_base` is the app's
   base font size.
