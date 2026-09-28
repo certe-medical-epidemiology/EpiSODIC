@@ -1079,7 +1079,8 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
           ),
           bands$key
         ),
-        breaks = bands$key
+        # Very high on top, in the order the bands are stacked.
+        breaks = rev(bands$key)
       )
   }
   p <- p +

@@ -1022,7 +1022,7 @@ test_that("the intensity bands are shaded from the epidemic threshold up, each i
   built <- ggplot2::ggplot_build(p)
   fill <- built$plot$scales$get_scales("fill")
   expect_equal(fill$name, "Epidemic Severity:")
-  expect_equal(unname(as.character(fill$get_labels())), c("Low", "Medium", "High", "Very high"))
+  expect_equal(unname(as.character(fill$get_labels())), c("Very high", "High", "Medium", "Low"))
   expect_equal(p$theme$legend.position, "right")
   hline <- p$layers[vapply(p$layers, function(l) inherits(l$geom, "GeomHline"), logical(1))][[1]]
   expect_equal(hline$aes_params$linetype, 1)
