@@ -1149,6 +1149,25 @@ episodic_db_reports_for_cluster <- function(con, cluster_id) {
   )
 }
 
+#' One rendered report version by its id
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param report_id A report id.
+#' @return A one-row data frame, or `NULL` when no such report exists.
+#' @keywords internal
+#' @noRd
+episodic_db_report_render_by_id <- function(con, report_id) {
+  out <- episodic_db_get_query(
+    con,
+    "SELECT * FROM episodic_report_render WHERE report_id = ?",
+    params = list(report_id)
+  )
+  if (nrow(out) == 0) {
+    return(NULL)
+  }
+  out
+}
+
 #' A cluster's scheduled-report subscription history, oldest first
 #'
 #' The current schedule (or "no schedule") is the last row - see

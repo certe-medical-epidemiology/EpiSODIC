@@ -91,9 +91,9 @@ patient identifier and carries no reason to hide it.}
 patient identifier, the same for the same patient across results.
 Deduplication and episode grouping key on it: without it every
 positive becomes its own case. Do pseudonymise it before it
-reaches EpiSODIC - a BSN or hospital number must not be passed
-through - but the pseudonym itself is shown in the dashboard's
-case tables, same as \code{lab_number}.}
+reaches EpiSODIC - a national identification number or hospital
+number must not be passed through - but the pseudonym itself is
+shown in the dashboard's case tables, same as \code{lab_number}.}
 \item{\code{sample_date}}{Date, or character in \code{YYYY-MM-DD} (ISO 8601)
 form. Required, no \code{NA}. The date the sample was taken, and the
 anchor every detector, trend and report is built against. If your
@@ -151,11 +151,10 @@ one ward into two streams.}
 specialism. Context for the epidemiologist, not a detection input.}
 \item{\code{pc}}{Character; \code{NA} allowed. The \emph{patient's} postcode area,
 not the institution's - it is what the geography panel and
-area-level (L3) detection use. Four digits as a string for the
-shipped Netherlands reference data (\code{"9713"}, leading zeros
-preserved, so store it as character and not as a number). With your
-own \code{EPISODIC_GEO_DATA}, it must match that file's \code{pc} column
-instead.}
+area-level (L3) detection use, in whatever form your country's
+postcodes take. Store it as character, not as a number, so a
+leading zero survives. With \code{EPISODIC_GEO_DATA} configured, it must
+match that file's \code{pc} column exactly for a case to reach the map.}
 \item{\code{sex}}{Character; \code{NA} allowed. Exactly one of \code{"M"}, \code{"F"}, or
 \code{"U"} (unknown) when present.
 Anything else is rejected, so map your own coding (\code{1}/\code{2},

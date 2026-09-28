@@ -376,9 +376,6 @@ CREATE TABLE episodic_assessment_event (
                    'possible_epidemic', 'confirmed_epidemic',
                    'season_started', 'season_not_yet', 'season_ended')),
   rationale      TEXT NOT NULL,
-  wpg_notifiable INTEGER CHECK (wpg_notifiable IS NULL OR wpg_notifiable IN (0, 1)),
-  ggd_informed   INTEGER CHECK (ggd_informed IS NULL OR ggd_informed IN (0, 1)),
-  ggd_note       TEXT,
   snooze_until   TEXT,
   supersedes     INTEGER REFERENCES episodic_assessment_event(event_id)
 );

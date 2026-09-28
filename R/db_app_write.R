@@ -43,9 +43,6 @@ episodic_db_assessment_event_insert <- function(con,
                                                 user_id,
                                                 verdict = NA,
                                                 rationale = "",
-                                                wpg_notifiable = NA,
-                                                ggd_informed = NA,
-                                                ggd_note = NA,
                                                 snooze_until = NA,
                                                 supersedes = NA) {
   # Optional: `rationale` is free text, not a required justification - the
@@ -62,18 +59,15 @@ episodic_db_assessment_event_insert <- function(con,
     episodic_now(),
     verdict,
     rationale,
-    if (is.na(wpg_notifiable)) NA else as.integer(wpg_notifiable),
-    if (is.na(ggd_informed)) NA else as.integer(ggd_informed),
-    ggd_note,
     snooze_until,
     supersedes
   )
   episodic_db_execute(
     con,
     "INSERT INTO episodic_assessment_event
-      (cluster_id, user_id, created_at, verdict, rationale, wpg_notifiable, ggd_informed,
-       ggd_note, snooze_until, supersedes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      (cluster_id, user_id, created_at, verdict, rationale, snooze_until,
+       supersedes)
+     VALUES (?, ?, ?, ?, ?, ?, ?)",
     params = params
   )
   episodic_db_last_insert_id(con)

@@ -40,8 +40,6 @@
 #'   rationale-only note with no classification yet).
 #' @param rationale Optional free-text rationale; `NA` or `""` records no
 #'   rationale rather than blocking the assessment.
-#' @param wpg_notifiable,ggd_informed Logical or `NA`.
-#' @param ggd_note Free text, or `NA`.
 #' @param snooze_until A date, or `NA`.
 #' @param supersedes An earlier `event_id` this event supersedes, or `NA`.
 #' @param close If `TRUE`, close the cluster in the same action as
@@ -54,9 +52,6 @@ episodic_app_submit_assessment <- function(con,
                                            user_id,
                                            verdict = NA,
                                            rationale = "",
-                                           wpg_notifiable = NA,
-                                           ggd_informed = NA,
-                                           ggd_note = NA,
                                            snooze_until = NA,
                                            supersedes = NA,
                                            close = FALSE) {
@@ -68,9 +63,6 @@ episodic_app_submit_assessment <- function(con,
     user_id = user_id,
     verdict = verdict,
     rationale = rationale,
-    wpg_notifiable = wpg_notifiable,
-    ggd_informed = ggd_informed,
-    ggd_note = ggd_note,
     snooze_until = snooze_until,
     supersedes = supersedes
   )

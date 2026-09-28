@@ -499,6 +499,13 @@ episodic_app_server_factory <- function(db_path,
       episodic_cluster_object(con, cluster_id, lang = lang)
     })
 
+    report_href <- episodic_app_report_href(
+      session,
+      con,
+      current_user = current_user,
+      lang = lang
+    )
+
     output$dossier_pane <- shiny::renderUI({
       if (!access_granted()) {
         return(NULL)
@@ -513,7 +520,8 @@ episodic_app_server_factory <- function(db_path,
         cluster_id,
         lang = lang,
         current_user = current_user(),
-        obj = cluster_object()
+        obj = cluster_object(),
+        report_href = report_href
       )
     })
 

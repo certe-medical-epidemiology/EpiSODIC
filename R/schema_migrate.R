@@ -357,7 +357,7 @@ episodic_db_apply_schema <- function(con, dialect) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 8L
+episodic_schema_version <- 9L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -414,8 +414,15 @@ episodic_db_schema_version <- function(con) {
 #' A migration must be idempotent per version (it runs exactly once,
 #' inside a transaction, and the version row is written in the same
 #' transaction) and must never destroy data: adding a column, adding a
-#' table, backfilling a value. A change that cannot be made that way is
-#' a change that needs a documented export/reimport, not a silent one.
+#' table, backfilling a value. A column may be dropped only when nothing
+#' reads it any more and it holds no value on any row
+#' (`episodic_db_drop_empty_column()`); one that holds data is kept. A
+#' change that cannot be made that way is a change that needs a
+#' documented export/reimport, not a silent one.
+#'
+#' A step may return a character vector of lines to report, which
+#' `episodic_db_migration_step()` passes to `say` once the step has
+#' committed.
 #' @keywords internal
 #' @noRd
 episodic_db_migrations <- function() {
@@ -746,9 +753,22 @@ episodic_db_migrations <- function() {
           "  supersedes     INTEGER REFERENCES episodic_assessment_event_new(event_id)\n",
           ")"
         ))
+        # Named rather than `SELECT *`: the copy carries the columns the
+        # two tables share, whatever the source table has since lost.
+        shared <- intersect(
+          episodic_db_get_query(
+            con,
+            "PRAGMA table_info(episodic_assessment_event_new)"
+          )$name,
+          episodic_db_get_query(
+            con,
+            "PRAGMA table_info(episodic_assessment_event)"
+          )$name
+        )
+        columns <- paste(shared, collapse = ", ")
         episodic_db_execute(con, paste0(
-          "INSERT INTO episodic_assessment_event_new ",
-          "SELECT * FROM episodic_assessment_event"
+          "INSERT INTO episodic_assessment_event_new (", columns, ") ",
+          "SELECT ", columns, " FROM episodic_assessment_event"
         ))
         episodic_db_execute(con, "DROP TABLE episodic_assessment_event")
         episodic_db_execute(con, paste0(
@@ -777,8 +797,122 @@ episodic_db_migrations <- function() {
         episodic_db_execute(con, statement)
       }
       invisible(NULL)
+    },
+    # 9: three assessment columns for country-specific notification
+    # bookkeeping that no form collects and nothing reads. Each is
+    # dropped only when it holds no value on any row; a column that does
+    # is kept, since this table is the record of what was decided.
+    "9" = function(con, dialect) {
+      notes <- character(0)
+      for (column in c("wpg_notifiable", "ggd_informed", "ggd_note")) {
+        notes <- c(
+          notes,
+          episodic_db_drop_empty_column(
+            con,
+            dialect,
+            "episodic_assessment_event",
+            column
+          )
+        )
+      }
+      notes
     }
   )
+}
+
+#' Drop a column that holds no data
+#'
+#' The one way a migration removes a column: only when it exists and
+#' every row holds `NULL` in it. A column with a value on any row is kept
+#' and said so, never emptied first. SQLite before 3.35 has no
+#' `DROP COLUMN`, and there the column is kept and said so too; it is
+#' harmless, since nothing reads it.
+#'
+#' A server that records a column's `CHECK` as a table constraint can
+#' refuse to drop a column one still names. So on MariaDB/MySQL a refused
+#' drop is retried once after dropping the `CHECK` constraints on the
+#' table that name the column; a drop refused again, or refused with no
+#' such constraint to blame, fails the step. A refused `ALTER TABLE`
+#' changes nothing, so the retry starts from the same table.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param dialect `"sqlite"` or `"mariadb"`.
+#' @param table The table.
+#' @param column The column to drop.
+#' @return A character vector of lines to report: empty when the column
+#'   was already absent, otherwise one line saying it was dropped or why
+#'   it was kept.
+#' @keywords internal
+#' @noRd
+episodic_db_drop_empty_column <- function(con, dialect, table, column) {
+  if (!episodic_db_column_exists(con, dialect, table, column)) {
+    return(character(0))
+  }
+  qualified <- paste0(table, ".", column)
+  held <- as.numeric(episodic_db_get_query(
+    con,
+    paste0(
+      "SELECT COUNT(*) AS n FROM ", table,
+      " WHERE ", column, " IS NOT NULL"
+    )
+  )$n)
+  if (held > 0) {
+    return(paste0(
+      "Kept ", qualified, ": it holds a value on ", held,
+      " row(s), and a migration never deletes data."
+    ))
+  }
+  drop <- paste0("ALTER TABLE ", table, " DROP COLUMN ", column)
+  if (dialect == "sqlite") {
+    version <- episodic_db_get_query(con, "SELECT sqlite_version() AS v")$v
+    if (numeric_version(version) < numeric_version("3.35.0")) {
+      return(paste0(
+        "Kept ", qualified, ", which holds no data: SQLite ", version,
+        " cannot drop a column (3.35.0 or later can). Nothing reads it."
+      ))
+    }
+    episodic_db_execute(con, drop)
+  } else {
+    refused <- tryCatch(
+      {
+        episodic_db_execute(con, drop)
+        NULL
+      },
+      error = function(e) e
+    )
+    if (!is.null(refused)) {
+      # A server without `information_schema.CHECK_CONSTRAINTS` (MySQL
+      # before 8.0.16) enforces no CHECK, so none can be what refused the
+      # drop: the original refusal is the one to report.
+      checks <- tryCatch(
+        episodic_db_get_query(
+          con,
+          "SELECT tc.CONSTRAINT_NAME AS name
+             FROM information_schema.TABLE_CONSTRAINTS tc
+             JOIN information_schema.CHECK_CONSTRAINTS cc
+               ON cc.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
+              AND cc.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
+            WHERE tc.TABLE_SCHEMA = DATABASE()
+              AND tc.TABLE_NAME = ?
+              AND tc.CONSTRAINT_TYPE = 'CHECK'
+              AND cc.CHECK_CLAUSE LIKE ?",
+          params = list(table, paste0("%", column, "%"))
+        )$name,
+        error = function(e) character(0)
+      )
+      if (length(checks) == 0) {
+        stop(refused)
+      }
+      for (name in unique(checks)) {
+        episodic_db_execute(con, paste0(
+          "ALTER TABLE ", table, " DROP CONSTRAINT `",
+          gsub("`", "``", name, fixed = TRUE), "`"
+        ))
+      }
+      episodic_db_execute(con, drop)
+    }
+  }
+  paste0("Dropped ", qualified, ", which held no data and nothing reads.")
 }
 
 #' Whether a column already exists on a table
@@ -1080,7 +1214,7 @@ episodic_db_migrate_con <- function(con,
       )
     }
     say("Applying schema version ", version, "...")
-    episodic_db_migration_step(con, dialect, version, step)
+    episodic_db_migration_step(con, dialect, version, step, say = say)
   }
 
   final <- episodic_db_schema_version(con)
@@ -1102,11 +1236,17 @@ episodic_db_migrate_con <- function(con,
 #' @param dialect `"sqlite"` or `"mariadb"`.
 #' @param version The version this step brings the database to.
 #' @param step The migration function, `(con, dialect)`.
+#' @param say A function taking `...`, called once the step has committed
+#'   with each line the step returned.
 #' @return Invisibly, `TRUE` when the step was applied, `FALSE` when it
 #'   was already in place.
 #' @keywords internal
 #' @noRd
-episodic_db_migration_step <- function(con, dialect, version, step) {
+episodic_db_migration_step <- function(con,
+                                       dialect,
+                                       version,
+                                       step,
+                                       say = function(...) message(...)) {
   if (dialect == "sqlite") {
     episodic_db_execute(con, "BEGIN IMMEDIATE")
   } else {
@@ -1121,13 +1261,17 @@ episodic_db_migration_step <- function(con, dialect, version, step) {
       DBI::dbRollback(con)
     }
   }
+  notes <- character(0)
   applied <- tryCatch(
     {
       at <- episodic_db_schema_version(con)
       if (!is.na(at) && at >= version) {
         FALSE
       } else {
-        step(con, dialect)
+        returned <- step(con, dialect)
+        if (is.character(returned)) {
+          notes <- returned
+        }
         episodic_db_schema_version_stamp(con, version)
         TRUE
       }
@@ -1146,6 +1290,9 @@ episodic_db_migration_step <- function(con, dialect, version, step) {
     )
   }
   finish("COMMIT")
+  for (note in notes) {
+    say(note)
+  }
   invisible(applied)
 }
 

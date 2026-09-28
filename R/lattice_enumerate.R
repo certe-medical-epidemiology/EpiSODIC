@@ -97,7 +97,7 @@ episodic_lattice_enumerate <- function(con,
   # matched no case and the statistical detectors had nothing to run on.
   geography <- episodic_geography_config(config)
 
-  # L3: pathogen x gebied (coarse PC grouping: first 2 digits)
+  # L3: pathogen x area (coarse PC grouping: the configured prefix length)
   l3 <- cases[!is.na(cases$pc), ]
   if (nrow(l3) > 0) {
     l3$.region_code <- episodic_case_region_code(

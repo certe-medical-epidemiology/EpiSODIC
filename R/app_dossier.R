@@ -40,6 +40,9 @@
 #'   cluster. Built once per selection by the server and handed to each
 #'   of them, it is computed once rather than three times; the default
 #'   keeps every other caller working unchanged.
+#' @param report_href A function of one `report_id` returning the URL that
+#'   serves that rendered report (`episodic_app_report_href()`), or `NULL`
+#'   to list report versions without links.
 #' @return A `shiny::tagList`.
 #' @keywords internal
 #' @noRd
@@ -47,7 +50,8 @@ episodic_ui_dossier <- function(con,
                                 cluster_id,
                                 lang = Sys.getenv("EPISODIC_LANGUAGE"),
                                 current_user = NULL,
-                                obj = NULL) {
+                                obj = NULL,
+                                report_href = NULL) {
   if (is.null(obj)) {
     obj <- episodic_cluster_object(con, cluster_id, lang = lang)
   }
@@ -100,7 +104,13 @@ episodic_ui_dossier <- function(con,
     episodic_ui_places_panel(con, cluster_id, obj, lang = lang),
     episodic_ui_related_panel(con, cluster_id, lang = lang),
     episodic_ui_similar_clusters_panel(con, cluster_id, lang = lang),
-    episodic_ui_report_panel(con, cluster_id, current_user, lang = lang),
+    episodic_ui_report_panel(
+      con,
+      cluster_id,
+      current_user,
+      lang = lang,
+      report_href = report_href
+    ),
     if (is.null(current_user)) {
       episodic_ui_linelist_locked_panel(lang = lang)
     } else {
@@ -1320,14 +1330,20 @@ episodic_ui_linelist_panel <- function(con,
 #' a new version". The button only renders for a signed-in epidemiologist,
 #' matching every other write action; the version list itself is visible
 #' to anyone, since a rendered report's existence is not sensitive the
-#' way its line-list *contents* are.
+#' way its line-list *contents* are. A version links to its report, in a
+#' new tab, only for a signed-in visitor and only while its file exists.
 #' @keywords internal
 #' @noRd
 episodic_ui_report_panel <- function(con,
                                      cluster_id,
                                      current_user,
-                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                     report_href = NULL) {
   reports <- episodic_db_reports_for_cluster(con, cluster_id)
+  # The same condition the line list is shown on, since a rendered report
+  # carries it by default; `episodic_app_report_response()` checks it again
+  # when the link is followed.
+  linkable <- !is.null(report_href) && !is.null(current_user)
   episodic_ui_panel(
     episodic_tr("panel.report.title", lang = lang),
     if (nrow(reports) == 0) {
@@ -1340,12 +1356,21 @@ episodic_ui_report_panel <- function(con,
         style = "font-size:12.5px;padding-inline-start:18px;",
         lapply(rev(seq_len(nrow(reports))), function(i) {
           row <- reports[i, ]
-          shiny::tags$li(episodic_tr(
+          line <- episodic_tr(
             "panel.report.version_line",
             version = row$version_no,
             when = episodic_ui_format_stamp(row$rendered_at, lang = lang),
             lang = lang
-          ))
+          )
+          if (linkable && file.exists(row$file_path)) {
+            line <- shiny::tags$a(
+              href = report_href(row$report_id),
+              target = "_blank",
+              rel = "noopener",
+              line
+            )
+          }
+          shiny::tags$li(line)
         })
       )
     },

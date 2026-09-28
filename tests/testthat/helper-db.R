@@ -39,6 +39,23 @@ episodic_test_db_path <- function() {
   path
 }
 
+# The three assessment columns schema version 8 carried and version 9
+# drops, put back on a database created at the current version, so it
+# has the shape of a version-8 database.
+schema_v8_assessment_columns <- function(con) {
+  for (definition in c(
+    "wpg_notifiable INTEGER CHECK (wpg_notifiable IS NULL OR wpg_notifiable IN (0, 1))",
+    "ggd_informed INTEGER CHECK (ggd_informed IS NULL OR ggd_informed IN (0, 1))",
+    "ggd_note TEXT"
+  )) {
+    DBI::dbExecute(
+      con,
+      paste0("ALTER TABLE episodic_assessment_event ADD COLUMN ", definition)
+    )
+  }
+  invisible(NULL)
+}
+
 # Locate the package's own R/ sources, for the handful of invariants that
 # are load-bearing but not observable at runtime (see
 # test-insert_only.R). An installed

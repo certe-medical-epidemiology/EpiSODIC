@@ -185,11 +185,6 @@ test_that("episodic_ui_assessment_rail() renders the classification and mute pic
     fixed = TRUE
   ))
 
-  # Wpg/GGD are Netherlands-specific and out of scope for a general
-  # deployment; removed from the form entirely.
-  expect_false(grepl("assess_wpg", rendered, fixed = TRUE))
-  expect_false(grepl("assess_ggd", rendered, fixed = TRUE))
-
   # verdict buttons ordered mild/terminal to severe: artefact and
   # expected_variation (both terminal) before the escalating verdicts.
   pos <- function(needle) regexpr(needle, rendered, fixed = TRUE)

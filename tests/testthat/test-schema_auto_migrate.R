@@ -22,11 +22,12 @@
 # on a run row - a database it will not open.
 
 # A SQLite database at the schema version before the current one: the
-# current version's own table dropped and its version row removed.
+# three columns the current version drops put back, and its version row
+# removed.
 auto_migrate_previous_version_db <- function() {
   path <- episodic_test_db_path()
   con <- episodic_db_connect(path)
-  DBI::dbExecute(con, "DROP TABLE episodic_detector_cache")
+  schema_v8_assessment_columns(con)
   DBI::dbExecute(
     con,
     "DELETE FROM episodic_schema_version WHERE version = ?",
@@ -110,7 +111,12 @@ test_that("a run migrates a database one schema version behind, then runs", {
   expect_identical(auto_migrate_version(backup), episodic_schema_version - 1L)
   con <- episodic_db_connect(backup, check_schema_version = FALSE)
   on.exit(DBI::dbDisconnect(con), add = TRUE)
-  expect_false(DBI::dbExistsTable(con, "episodic_detector_cache"))
+  expect_true(episodic_db_column_exists(
+    con,
+    "sqlite",
+    "episodic_assessment_event",
+    "wpg_notifiable"
+  ))
   expect_identical(
     DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM episodic_detection_run")$n,
     0L

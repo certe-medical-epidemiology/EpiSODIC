@@ -517,7 +517,8 @@ episodic_check_advice <- function(cases) {
           " rows."
         ),
         fix = paste0(
-          "That is the shape of a BSN or hospital number. Pseudonymise ",
+          "That is the shape of a national identification number or a ",
+          "hospital number. Pseudonymise ",
           "before the data reaches EpiSODIC - it only needs a value that ",
           "is the same for the same patient, never the number itself."
         )
@@ -533,31 +534,7 @@ episodic_check_advice <- function(cases) {
   }
   if (has("pc")) {
     pc <- episodic_check_chr(cases$pc)
-    odd <- which(!is.na(pc) & nzchar(pc) & !grepl("^[0-9]{4}$", pc))
-    if (length(odd) > 0) {
-      found[[length(found) + 1]] <- episodic_check_finding(
-        severity = "advice",
-        issue = "pc_not_four_digits",
-        column = "pc",
-        n_rows = length(odd),
-        rows = odd,
-        values = pc[odd],
-        message = paste0(
-          "`pc` is not four digits in ",
-          length(odd),
-          " of ",
-          n,
-          " rows."
-        ),
-        fix = paste0(
-          "The shipped Netherlands reference data keys on four-digit ",
-          "postcode areas, as text so a leading zero survives (\"0",
-          "123\"). Values it cannot place fall out of the geography ",
-          "panel and out of area-level detection. Ignore this if you ",
-          "supply your own EPISODIC_GEO_DATA with a different `pc`."
-        )
-      )
-    }
+    found <- c(found, episodic_check_pc_geo_advice(pc))
     if (all(is.na(pc) | !nzchar(pc))) {
       found[[length(found) + 1]] <- episodic_check_finding(
         severity = "advice",
@@ -600,6 +577,60 @@ episodic_check_advice <- function(cases) {
   }
 
   found
+}
+
+#' Postcodes the configured geographic reference data cannot place
+#'
+#' Only an operator's own `EPISODIC_GEO_DATA` says what a valid `pc` looks
+#' like: five digits, four digits, letters and digits, or a region name
+#' are all postcode areas somewhere. So the check is membership in that
+#' file's `pc` column, and with no file configured there is nothing to
+#' check against - area-level (L3) detection and the bar-chart fallback
+#' take any value as it comes.
+#'
+#' @param pc The `pc` column, as character.
+#' @param geo_data An `sf` object with a `pc` column, or `NULL` to resolve
+#'   the configured one via `episodic_geo_source_resolve()`.
+#' @return A list of findings, empty when nothing is configured or every
+#'   filled `pc` is placed.
+#' @keywords internal
+#' @noRd
+episodic_check_pc_geo_advice <- function(pc, geo_data = NULL) {
+  filled <- which(!is.na(pc) & nzchar(pc))
+  if (length(filled) == 0) {
+    return(list())
+  }
+  if (is.null(geo_data)) {
+    geo_data <- episodic_geo_source_resolve()
+  }
+  if (is.null(geo_data)) {
+    return(list())
+  }
+  odd <- filled[!pc[filled] %in% as.character(geo_data$pc)]
+  if (length(odd) == 0) {
+    return(list())
+  }
+  list(episodic_check_finding(
+    severity = "advice",
+    issue = "pc_not_in_geo_data",
+    column = "pc",
+    n_rows = length(odd),
+    rows = odd,
+    values = pc[odd],
+    message = paste0(
+      "`pc` has no area in EPISODIC_GEO_DATA in ",
+      length(odd),
+      " of ",
+      length(pc),
+      " rows."
+    ),
+    fix = paste0(
+      "The map joins cases on the `pc` column of the file EPISODIC_GEO_DATA ",
+      "points at, exactly as written there (as text, so a leading zero ",
+      "survives). Values it cannot place are left off the map. Supply ",
+      "`pc` in the same form as that file, or extend the file."
+    )
+  ))
 }
 
 #' One pathogen spelled two ways is two streams, not one

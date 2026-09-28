@@ -568,12 +568,11 @@ episodic_chart_rt_axis <- function(log_values,
 #' `episodic_geo_join()` keeps every reference polygon, not only the ones
 #' with cases, which is right - a cluster has to be read against the
 #' areas around it, not floating in white space - but drawing all of them
-#' meant the map was always framed on the entire reference dataset. With
-#' the shipped Netherlands default that is some four thousand PC4
-#' polygons: a five-postcode cluster rendered as a handful of tinted
-#' specks somewhere inside a whole country, at which scale the one
-#' question the panel exists to answer - *which* postcodes, and are they
-#' adjacent - cannot be answered at all. So the frame is cropped to the
+#' frames the map on the entire reference dataset. With a national
+#' postcode file of some four thousand polygons, a five-postcode cluster
+#' renders as a handful of tinted specks somewhere inside a whole
+#' country, at which scale the one question the panel exists to answer -
+#' *which* postcodes, and are they adjacent - cannot be answered at all. So the frame is cropped to the
 #' case-bearing areas plus a margin of context around them, and each of
 #' those areas is labelled with its own PC value and case count. What was
 #' a shape you could only squint at becomes something you can read.

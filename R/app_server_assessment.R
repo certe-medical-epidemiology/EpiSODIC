@@ -79,10 +79,6 @@ episodic_app_server_assessment_actions <- function(input,
       user_id = user$user_id,
       verdict = if (nzchar(payload$verdict %||% "")) payload$verdict else NA,
       rationale = rationale,
-      # wpg_notifiable/ggd_informed are left at episodic_app_submit_assessment()'s
-      # own NA default: the form does not collect them, Wpg and GGD being
-      # Netherlands-specific and out of scope for a general-purpose
-      # deployment.
       snooze_until = if (nzchar(payload$snooze %||% "")) payload$snooze else NA,
       close = isTRUE(payload$close)
     )
