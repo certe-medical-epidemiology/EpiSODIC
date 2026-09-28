@@ -1037,7 +1037,7 @@ test_that("the intensity bands are shaded from the epidemic threshold up, each i
   for (h in hlines) {
     expect_equal(h$aes_params$linetype, 1)
     expect_equal(h$aes_params$linewidth, hlines[[1]]$aes_params$linewidth)
-    expect_lte(h$aes_params$linewidth, 0.3)
+    expect_equal(h$aes_params$linewidth, 0.5)
   }
   expect_null(p$guides$guides$colour$params$override.aes$linewidth)
   expect_null(p$scales$get_scales("linetype"))

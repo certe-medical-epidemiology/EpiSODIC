@@ -1103,7 +1103,7 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
   # Two lines only, the start and end thresholds, thin, solid and one
   # width, each with a key below the squares. The intensity bands are
   # areas alone: their shades and names say where each begins.
-  line_width <- 0.25
+  line_width <- 0.5
   lines <- episodic_mem_threshold_lines(thresholds, lang = lang)
   end_line <- NULL
   if (!is.null(lines)) {
