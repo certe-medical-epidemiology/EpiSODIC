@@ -1098,7 +1098,10 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
       expand = episodic_chart_y_expand()
     ) +
     episodic_chart_week_scale(weekly$week_start, lang = lang) +
-    ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang))
+    # No axis title: the panel's title says what is counted - confirmed
+    # cases per week, not a rate per population - and a second name on
+    # the axis could only repeat it or blur it.
+    ggplot2::labs(y = NULL)
 
   # Two lines only, the start and end thresholds, thin, solid and one
   # width, each with a key below the squares. The intensity bands are

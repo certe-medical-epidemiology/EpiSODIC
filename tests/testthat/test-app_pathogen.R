@@ -1093,3 +1093,22 @@ test_that("a curve with no Low band says why, and one with a Low band says nothi
   squeezed$intensity[["medium"]] <- 5
   expect_false(is.null(episodic_ui_mem_no_low_band_note(squeezed, lang = "en")))
 })
+
+test_that("the weekly curve is titled as a count of confirmed cases, not an incidence, and has no axis title", {
+  for (lang in c("en", "nl")) {
+    for (key in c("pathogen.panel.curve.title", "epidemics.panel.curve.title")) {
+      expect_false(grepl("incid", episodic_tr(key, lang = lang), ignore.case = TRUE), info = paste(lang, key))
+    }
+  }
+  expect_equal(episodic_tr("pathogen.panel.curve.title", lang = "en"), "Confirmed cases per week")
+  expect_equal(
+    episodic_tr("epidemics.panel.curve.title", lang = "en"),
+    episodic_tr("pathogen.panel.curve.title", lang = "en")
+  )
+  weekly <- data.frame(
+    week_start = seq(as.Date("2025-01-06"), by = "week", length.out = 3),
+    n_cases = c(1, 2, 3),
+    incomplete = FALSE
+  )
+  expect_null(episodic_ui_pathogen_curve_chart(weekly, lang = "en")$labels$y)
+})

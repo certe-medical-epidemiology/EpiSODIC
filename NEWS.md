@@ -13,6 +13,7 @@
 
 ## Changed
 
+- The weekly curve on the Pathogen screen and the Epidemics dossier is titled "Confirmed cases per week" instead of "Weekly incidence", with no y-axis title
 - Verdicts, intensity chips, intensity stats and the Pathogen chart's intensity lines take their colours from the severity scale
 - Synthetic Influenza A and RSV come in winter waves of varying size and timing, so the demo always has a MEM season with intensity bands
 - MEM threshold lines are thin and solid, and the weekly curve's legend, titled "Epidemic Severity" in every language, names the shaded intensity bands on the right, with the start and end thresholds, the only lines drawn, below them at one width
