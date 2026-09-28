@@ -645,7 +645,6 @@ test_that("episodic_mem_threshold_lines() orders thresholds by value and labels 
     c(pal$severity_medium, pal$severity_high, pal$severity_very_high)
   )
   # The end of an epidemic is not drawn like the top intensity band.
-  expect_equal(lines$linetype[lines$key == "post_epidemic"], "dotted")
   expect_false(identical(
     lines$colour[lines$key == "post_epidemic"],
     lines$colour[lines$key == "very_high"]
@@ -1017,4 +1016,19 @@ test_that("the intensity bands are shaded from the epidemic threshold up, each i
   expect_no_warning(ggplot2::ggplot_build(p))
   bare <- episodic_ui_pathogen_curve_chart(weekly, NULL, lang = "en")
   expect_false(any(vapply(bare$layers, is_band, logical(1))))
+
+  # The bands carry the only legend, on the right, as squares named by
+  # band; the lines are thin, solid and unlabelled.
+  built <- ggplot2::ggplot_build(p)
+  fill <- built$plot$scales$get_scales("fill")
+  expect_equal(fill$name, "Epidemic Severity:")
+  expect_equal(unname(as.character(fill$get_labels())), c("Low", "Medium", "High", "Very high"))
+  expect_equal(p$theme$legend.position, "right")
+  hline <- p$layers[vapply(p$layers, function(l) inherits(l$geom, "GeomHline"), logical(1))][[1]]
+  expect_equal(hline$aes_params$linetype, 1)
+  expect_lte(hline$aes_params$linewidth, 0.3)
+  expect_false(isTRUE(hline$show.legend))
+  expect_null(p$scales$get_scales("linetype"))
+  # Without bands there is no legend to place.
+  expect_false(identical(bare$theme$legend.position, "right"))
 })

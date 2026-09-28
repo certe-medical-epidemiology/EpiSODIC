@@ -12,7 +12,7 @@
 
 - Verdicts, intensity chips, intensity stats and the Pathogen chart's intensity lines take their colours from the severity scale
 - Synthetic Influenza A and RSV come in winter waves of varying size and timing, so the demo always has a MEM season with intensity bands
-- The MEM epidemic end threshold is drawn as a dotted teal line, apart from the near-black very high intensity line
+- MEM threshold lines are thin and solid, and the weekly curve's legend names the shaded intensity bands on the right
 
 ## Fixed
 
