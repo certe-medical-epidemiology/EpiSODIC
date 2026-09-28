@@ -504,6 +504,7 @@
   "pathogen.intensity.medium": "Media",
   "pathogen.intensity.very_high": "Muy alta",
   "pathogen.intensity_chip": "Intensidad: {level}",
+  "pathogen.legend.severity": "Gravedad epidémica",
   "pathogen.note": "Un patógeno en toda el área de cobertura, durante un período que usted elija. Esta es la vista epidemiológica: dónde se sitúa una temporada respecto a su propia historia, qué tan rápido avanza la transmisión a nivel regional, y qué señales se produjeron mientras tanto. La pantalla de Brotes responde qué hacer hoy; esta responde qué está pasando.",
   "pathogen.panel.care_line.note": "Atención primaria frente a hospitalaria indica si está viendo circulación comunitaria o lo que llegó al hospital.",
   "pathogen.panel.care_line.title": "Dónde se encontraron los casos",

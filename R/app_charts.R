@@ -1069,7 +1069,9 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
         alpha = 0.16
       ) +
       ggplot2::scale_fill_manual(
-        name = "Epidemic Severity:",
+        # The colon is the legend's, not the phrase's, so it is added
+        # here rather than carried by every translation.
+        name = paste0(episodic_tr("pathogen.legend.severity", lang = lang), ":"),
         values = stats::setNames(bands$colour, bands$key),
         labels = stats::setNames(
           vapply(

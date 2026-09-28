@@ -14,7 +14,7 @@
 
 - Verdicts, intensity chips, intensity stats and the Pathogen chart's intensity lines take their colours from the severity scale
 - Synthetic Influenza A and RSV come in winter waves of varying size and timing, so the demo always has a MEM season with intensity bands
-- MEM threshold lines are thin and solid, and the weekly curve's legend names the shaded intensity bands on the right, with the epidemic end threshold below them
+- MEM threshold lines are thin and solid, and the weekly curve's legend, titled "Epidemic Severity" in every language, names the shaded intensity bands on the right, with the epidemic end threshold below them
 - The Epidemics dossier and list read a seasonal epidemic's thresholds, latest week and bands from what the detection runs stored instead of refitting MEM
 - `suppression.parent_min_flagged_children` ships as 1, so a parent absorbs a single flagged child holding under half its cases
 

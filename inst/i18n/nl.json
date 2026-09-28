@@ -504,6 +504,7 @@
   "pathogen.intensity.medium": "Matig",
   "pathogen.intensity.very_high": "Zeer hoog",
   "pathogen.intensity_chip": "Intensiteit: {level}",
+  "pathogen.legend.severity": "Epidemische ernst",
   "pathogen.note": "Eén verwekker over het hele verzorgingsgebied, over een door u gekozen periode. Dit is de epidemiologische weergave: waar een seizoen staat ten opzichte van zijn eigen geschiedenis, hoe snel transmissie regionaal verloopt, en welke signalen werden gegeven terwijl het liep. Het Uitbraken-scherm beantwoordt wat er vandaag te doen is; dit scherm beantwoordt wat er gaande is.",
   "pathogen.panel.care_line.note": "Eerste versus tweede lijn vertelt of u naar circulatie in de gemeenschap kijkt of naar wat het ziekenhuis heeft bereikt.",
   "pathogen.panel.care_line.title": "Waar casussen zijn gevonden",
