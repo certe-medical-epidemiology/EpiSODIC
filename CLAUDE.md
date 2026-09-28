@@ -104,7 +104,7 @@ differs** from the language they belong to
 and a name; `es-419.json` is two number marks and a name. Everything
 else is inherited by `episodic_i18n_load()`. They are deliberately not
 copies - `en` and `en-US` differ in eight keys out of seven hundred and
-eighty-three, and two copies would have to be kept in step for ever.
+eighty-seven, and two copies would have to be kept in step for ever.
 `en` *is* British English and `es` *is* Spain’s Spanish, so
 `en-GB`/`es-ES` are aliases of those files rather than variants of them,
 and a region that is not shipped (`nl-BE`) resolves to its language
@@ -342,8 +342,10 @@ version inside each step, and copy a SQLite file first. Any change to
 for means bumping that constant and adding a matching entry to
 `episodic_db_migrations()` - a function `(con, dialect)` that is
 idempotent, runs inside a transaction, and never drops or rewrites data.
-Never remove an old migration: an instance may skip any number of
-versions.
+The one exception is a column nothing needs any more that holds exactly
+no data: it is dropped through `episodic_db_drop_empty_column()`, which
+keeps a column holding a value on any row and says so. Never remove an
+old migration: an instance may skip any number of versions.
 
 Write ownership is strict: cron-owned tables are written only by
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md),
@@ -557,7 +559,7 @@ at the R console; there is also in-app account management.
       i18n/                     # translation JSON files (en, nl, de, fr, es, ar, hi, zh)
       report/                   # Quarto report template
       mail/                     # starting templates for the two email bodies
-    tests/testthat/             # test suite across 73 files
+    tests/testthat/             # test suite across 76 files
     vignettes/                  # 9 vignettes
     data-raw/validation/        # the full detection validation study (never ships)
 

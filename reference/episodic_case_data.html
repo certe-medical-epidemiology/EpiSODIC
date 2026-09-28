@@ -19,7 +19,7 @@ is, your own extract step is the only place that needs to know about it."><meta 
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -119,9 +119,9 @@ patient identifier and carries no reason to hide it.</p></dd>
 patient identifier, the same for the same patient across results.
 Deduplication and episode grouping key on it: without it every
 positive becomes its own case. Do pseudonymise it before it
-reaches EpiSODIC - a BSN or hospital number must not be passed
-through - but the pseudonym itself is shown in the dashboard's
-case tables, same as <code>lab_number</code>.</p></dd>
+reaches EpiSODIC - a national identification number or hospital
+number must not be passed through - but the pseudonym itself is
+shown in the dashboard's case tables, same as <code>lab_number</code>.</p></dd>
 
 <dt><code>sample_date</code></dt>
 <dd><p>Date, or character in <code>YYYY-MM-DD</code> (ISO 8601)
@@ -201,11 +201,10 @@ specialism. Context for the epidemiologist, not a detection input.</p></dd>
 <dt><code>pc</code></dt>
 <dd><p>Character; <code>NA</code> allowed. The <em>patient's</em> postcode area,
 not the institution's - it is what the geography panel and
-area-level (L3) detection use. Four digits as a string for the
-shipped Netherlands reference data (<code>"9713"</code>, leading zeros
-preserved, so store it as character and not as a number). With your
-own <code>EPISODIC_GEO_DATA</code>, it must match that file's <code>pc</code> column
-instead.</p></dd>
+area-level (L3) detection use, in whatever form your country's
+postcodes take. Store it as character, not as a number, so a
+leading zero survives. With <code>EPISODIC_GEO_DATA</code> configured, it must
+match that file's <code>pc</code> column exactly for a case to reach the map.</p></dd>
 
 <dt><code>sex</code></dt>
 <dd><p>Character; <code>NA</code> allowed. Exactly one of <code>"M"</code>, <code>"F"</code>, or

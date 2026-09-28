@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -359,7 +359,7 @@ with. When an upgraded package meets a database whose schema is behind
 it, the next <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> brings the database
 forward itself, before it does anything else, and says so in its
 log:</p>
-<pre><code>Database migrated from schema version 7 to schema version 8</code></pre>
+<pre><code>Database migrated from schema version 8 to schema version 9</code></pre>
 <p>So upgrading an instance is upgrading the package:
 <code><a href="https://rdrr.io/r/utils/update.packages.html" class="external-link">update.packages()</a></code>, a rebuilt container image, or a
 colleague’s <code><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages()</a></code>, and the next scheduled run
@@ -370,8 +370,10 @@ most for the instance nobody looks after closely.</p>
 </h3>
 <ul>
 <li>
-<strong>It only adds.</strong> Migrations add tables, add columns
-and backfill values, and never drop or rewrite anything. Your
+<strong>It never deletes data.</strong> Migrations add tables, add
+columns and backfill values, and never rewrite anything. A column is
+dropped only when EpiSODIC no longer uses it and it holds no value on
+any row; a column holding data is kept, and the log says so. Your
 surveillance history, your assessments and your audit trail are carried
 forward untouched.</li>
 <li>

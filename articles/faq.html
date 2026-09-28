@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -438,16 +438,16 @@ to referee it.</p>
 or in outbreak reports?</strong>
 </summary><p>No, not as long as you have pseudonymised <code>patient_key</code>
 before it reaches EpiSODIC - which is your own transform step’s job, not
-EpiSODIC’s; a real name, BSN, or hospital record number must never be
-passed through as this column. The pseudonym itself <em>is</em> shown,
-to a signed-in user, on a cluster’s line list (alongside
-<code>lab_number</code>, your lab’s specimen/culture number - also not
-itself a patient identifier), together with epidemiological context:
-sex, age, care line, institution/ward, specialism, postcode-level
-geography, and dates. That is enough to assess a cluster and to look a
-case up in your own source system if needed, but - given a properly
-pseudonymised <code>patient_key</code> - not enough to identify who is
-in it from the dashboard alone. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
+EpiSODIC’s; a real name, national identification number, or hospital
+record number must never be passed through as this column. The pseudonym
+itself <em>is</em> shown, to a signed-in user, on a cluster’s line list
+(alongside <code>lab_number</code>, your lab’s specimen/culture number -
+also not itself a patient identifier), together with epidemiological
+context: sex, age, care line, institution/ward, specialism,
+postcode-level geography, and dates. That is enough to assess a cluster
+and to look a case up in your own source system if needed, but - given a
+properly pseudonymised <code>patient_key</code> - not enough to identify
+who is in it from the dashboard alone. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
 your data in</strong></a> for the exact column requirements, including
 what “pseudonymised” needs to mean for this guarantee to hold.</p>
 </details><details><summary><strong>My organisation is outside the Netherlands - does the geography

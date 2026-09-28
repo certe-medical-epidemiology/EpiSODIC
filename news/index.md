@@ -1,5 +1,25 @@
 # Changelog
 
+## EpiSODIC 0.22.2
+
+### New
+
+- A generated outbreak report version in the dossier links to its report
+  in a new tab for signed-in users, while its file still exists
+
+### Changed
+
+- [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+  advises on `pc` values missing from the configured `EPISODIC_GEO_DATA`
+  instead of on `pc` values that are not four digits
+- Country-specific terms (BSN, GGD, Gesundheitsamt) replaced by generic
+  ones in messages, translations and documentation
+- The unused `wpg_notifiable`, `ggd_informed` and `ggd_note` columns are
+  dropped from `episodic_assessment_event` where they hold no data
+  (schema version 9)
+- A schema migration drops a column only when nothing uses it and it
+  holds no data
+
 ## EpiSODIC 0.22.1
 
 ### New

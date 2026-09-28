@@ -422,16 +422,16 @@ outbreak reports?**
 
 No, not as long as you have pseudonymised `patient_key` before it
 reaches EpiSODIC - which is your own transform step’s job, not
-EpiSODIC’s; a real name, BSN, or hospital record number must never be
-passed through as this column. The pseudonym itself *is* shown, to a
-signed-in user, on a cluster’s line list (alongside `lab_number`, your
-lab’s specimen/culture number - also not itself a patient identifier),
-together with epidemiological context: sex, age, care line,
-institution/ward, specialism, postcode-level geography, and dates. That
-is enough to assess a cluster and to look a case up in your own source
-system if needed, but - given a properly pseudonymised `patient_key` -
-not enough to identify who is in it from the dashboard alone. See
-[**Getting your data
+EpiSODIC’s; a real name, national identification number, or hospital
+record number must never be passed through as this column. The pseudonym
+itself *is* shown, to a signed-in user, on a cluster’s line list
+(alongside `lab_number`, your lab’s specimen/culture number - also not
+itself a patient identifier), together with epidemiological context:
+sex, age, care line, institution/ward, specialism, postcode-level
+geography, and dates. That is enough to assess a cluster and to look a
+case up in your own source system if needed, but - given a properly
+pseudonymised `patient_key` - not enough to identify who is in it from
+the dashboard alone. See [**Getting your data
 in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)
 for the exact column requirements, including what “pseudonymised” needs
 to mean for this guarantee to hold.

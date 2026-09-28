@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,21 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.22.2" id="episodic-0222">EpiSODIC 0.22.2<a class="anchor" aria-label="anchor" href="#episodic-0222"></a></h2>
+<div class="section level3">
+<h3 id="new-0-22-2">New<a class="anchor" aria-label="anchor" href="#new-0-22-2"></a></h3>
+<ul><li>A generated outbreak report version in the dossier links to its report in a new tab for signed-in users, while its file still exists</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-22-2">Changed<a class="anchor" aria-label="anchor" href="#changed-0-22-2"></a></h3>
+<ul><li>
+<code><a href="../reference/episodic_check_cases.html">episodic_check_cases()</a></code> advises on <code>pc</code> values missing from the configured <code>EPISODIC_GEO_DATA</code> instead of on <code>pc</code> values that are not four digits</li>
+<li>Country-specific terms (BSN, GGD, Gesundheitsamt) replaced by generic ones in messages, translations and documentation</li>
+<li>The unused <code>wpg_notifiable</code>, <code>ggd_informed</code> and <code>ggd_note</code> columns are dropped from <code>episodic_assessment_event</code> where they hold no data (schema version 9)</li>
+<li>A schema migration drops a column only when nothing uses it and it holds no data</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.22.1" id="episodic-0221">EpiSODIC 0.22.1<a class="anchor" aria-label="anchor" href="#episodic-0221"></a></h2>
 <div class="section level3">

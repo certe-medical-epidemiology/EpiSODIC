@@ -313,7 +313,7 @@ it, the next
 brings the database forward itself, before it does anything else, and
 says so in its log:
 
-    Database migrated from schema version 7 to schema version 8
+    Database migrated from schema version 8 to schema version 9
 
 So upgrading an instance is upgrading the package:
 [`update.packages()`](https://rdrr.io/r/utils/update.packages.html), a
@@ -325,9 +325,12 @@ closely.
 
 ### What a migration does, and does not do
 
-- **It only adds.** Migrations add tables, add columns and backfill
-  values, and never drop or rewrite anything. Your surveillance history,
-  your assessments and your audit trail are carried forward untouched.
+- **It never deletes data.** Migrations add tables, add columns and
+  backfill values, and never rewrite anything. A column is dropped only
+  when EpiSODIC no longer uses it and it holds no value on any row; a
+  column holding data is kept, and the log says so. Your surveillance
+  history, your assessments and your audit trail are carried forward
+  untouched.
 - **It runs before the run.** Each step is a transaction of its own,
   applied before the run writes anything, never inside the detection
   run’s own transaction.
