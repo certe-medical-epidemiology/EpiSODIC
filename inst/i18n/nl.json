@@ -541,6 +541,7 @@
   "pathogen.panel.config.title": "Detectieparameters",
   "pathogen.panel.curve.aside": "{weeks} weken",
   "pathogen.panel.curve.empty": "Geen casussen van deze verwekker in de gekozen periode.",
+  "pathogen.panel.curve.mem_no_low_band": "De drempel voor Matig ({medium}) ligt hier op of onder de startdrempel ({pre}), dus de grafiek heeft geen band Laag: elke week boven de startdrempel is al Matig of hoger. Dit gebeurt wanneer eerdere seizoenen maar weinig boven hun beginniveau piekten. MEM bepaalt de startdrempel uit de weken vlak voordat eerdere epidemieën op gang kwamen, en de intensiteitsniveaus uit hoe hoog eerdere epidemieën piekten; waren die pieken bescheiden, dan kan het niveau Matig onder de start uitkomen.",
   "pathogen.panel.curve.mem_note": "Drempels volgens de Moving Epidemic Method, geschat op de {seasons} volledig waargenomen seizoenen vóór dit seizoen en nooit op dit seizoen zelf: epidemiestart bij {pre} en einde bij {post} casussen per week. Het overschrijden van de startdrempel is waar de <code>mem</code>-detector op afgaat.",
   "pathogen.panel.curve.mem_unavailable": "De gegevens van deze verwekker tonen een seizoen, maar er zijn nog niet genoeg volledig waargenomen eerdere seizoenen om drempels op te schatten, dus die worden niet getekend.",
   "pathogen.panel.curve.note": "Bevestigde casussen per week over het hele verzorgingsgebied. Weken die nog vollopen worden vervaagd getekend, zodat de staart niet als een daling wordt gelezen.",

@@ -9,6 +9,7 @@
 - The Pathogen and Epidemics weekly curves shade the MEM intensity bands behind the bars
 - Each detection run stores every open seasonal epidemic's weekly counts and intensity bands in `episodic_epidemic_week` (schema version 10)
 - An assessed cluster's assessment pane says which cluster it would otherwise be filed under, with a link to it
+- The weekly curve's note explains why there is no Low band when MEM's medium threshold is at or below the start threshold
 
 ## Changed
 

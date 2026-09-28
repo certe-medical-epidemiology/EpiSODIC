@@ -541,6 +541,7 @@
   "pathogen.panel.config.title": "Detection parameters",
   "pathogen.panel.curve.aside": "{weeks} weeks",
   "pathogen.panel.curve.empty": "No cases of this pathogen in the selected period.",
+  "pathogen.panel.curve.mem_no_low_band": "The medium threshold ({medium}) is at or below the start threshold ({pre}) here, so the chart has no Low band: any week above the start threshold is already Medium or higher. This happens when earlier seasons peaked only a little above their starting level. MEM sets the start threshold from the weeks just before past epidemics took off, and the intensity levels from how high past epidemics peaked, so when those peaks were modest, the medium level can fall below the start.",
   "pathogen.panel.curve.mem_note": "Moving Epidemic Method thresholds, fitted on the {seasons} fully observed seasons before this one and never on this one: epidemic start at {pre} and end at {post} cases per week. Crossing the start threshold is what the <code>mem</code> detector fires on.",
   "pathogen.panel.curve.mem_unavailable": "This pathogen’s data show a season, but there are not yet enough fully observed earlier seasons to fit thresholds on, so none are drawn.",
   "pathogen.panel.curve.note": "Confirmed cases per week across the whole catchment. Weeks still filling up are drawn faded, so the tail is not read as a decline.",

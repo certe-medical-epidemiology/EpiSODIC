@@ -541,6 +541,7 @@
   "pathogen.panel.config.title": "Parámetros de detección",
   "pathogen.panel.curve.aside": "{weeks} semanas",
   "pathogen.panel.curve.empty": "No hay casos de este patógeno en el periodo seleccionado.",
+  "pathogen.panel.curve.mem_no_low_band": "Aquí el umbral Media ({medium}) está en el umbral de inicio ({pre}) o por debajo, así que el gráfico no tiene banda Baja: cualquier semana por encima del umbral de inicio ya es Media o superior. Ocurre cuando las temporadas anteriores alcanzaron picos solo un poco por encima de su nivel de partida. MEM fija el umbral de inicio a partir de las semanas justo antes de que despegaran las epidemias pasadas, y los niveles de intensidad a partir de la altura de sus picos; cuando esos picos fueron modestos, el nivel Media puede quedar por debajo del inicio.",
   "pathogen.panel.curve.mem_note": "Umbrales del Método Epidémico Móvil, ajustados sobre las {seasons} temporadas completamente observadas anteriores a esta y nunca sobre esta: inicio de epidemia en {pre} y fin en {post} casos por semana. Cruzar el umbral de inicio es lo que dispara el detector <code>mem</code>.",
   "pathogen.panel.curve.mem_unavailable": "Los datos de este patógeno muestran una temporada, pero aún no hay suficientes temporadas anteriores completamente observadas sobre las que ajustar umbrales, así que no se dibuja ninguno.",
   "pathogen.panel.curve.note": "Casos confirmados por semana en toda el área de cobertura. Las semanas que aún se están completando se dibujan atenuadas, para que la cola no se lea como un descenso.",

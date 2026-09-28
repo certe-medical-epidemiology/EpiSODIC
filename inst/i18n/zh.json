@@ -541,6 +541,7 @@
   "pathogen.panel.config.title": "检测参数",
   "pathogen.panel.curve.aside": "{weeks} 周",
   "pathogen.panel.curve.empty": "所选时间段内没有该病原体的病例。",
+  "pathogen.panel.curve.mem_no_low_band": "此处“中”强度阈值（{medium}）等于或低于开始阈值（{pre}），因此图中没有“低”带：高于开始阈值的任何一周都已是“中”或更高。当以往流行季的高峰仅略高于其起始水平时，就会出现这种情况。MEM 根据以往流行开始前数周确定开始阈值，根据以往流行高峰的高度确定强度水平；若这些高峰较低，“中”水平就可能低于开始阈值。",
   "pathogen.panel.curve.mem_note": "移动流行方法（MEM）阈值，基于本季之前 {seasons} 个完整观察到的流行季拟合，绝不使用本季自身数据：流行开始阈值为每周 {pre} 例，结束阈值为 {post} 例。越过开始阈值即触发 <code>mem</code> 探测器。",
   "pathogen.panel.curve.mem_unavailable": "该病原体的数据显示出季节性，但尚无足够的完整观察到的既往流行季可用于拟合阈值，因此不绘制阈值线。",
   "pathogen.panel.curve.note": "整个服务区域每周的确诊病例数。仍在补报中的周以淡色绘制，以免把末端读成下降。",

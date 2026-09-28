@@ -541,6 +541,7 @@
   "pathogen.panel.config.title": "Erkennungsparameter",
   "pathogen.panel.curve.aside": "{weeks} Wochen",
   "pathogen.panel.curve.empty": "Keine Fälle dieses Erregers im gewählten Zeitraum.",
+  "pathogen.panel.curve.mem_no_low_band": "Die Schwelle für Mittel ({medium}) liegt hier auf oder unter der Startschwelle ({pre}), daher zeigt die Grafik kein Band Niedrig: Jede Woche über der Startschwelle ist bereits Mittel oder höher. Das kommt vor, wenn frühere Saisons nur wenig über ihr Ausgangsniveau hinaus gipfelten. MEM leitet die Startschwelle aus den Wochen unmittelbar vor dem Anstieg früherer Epidemien ab und die Intensitätsstufen aus der Höhe ihrer Gipfel; waren diese Gipfel bescheiden, kann die Stufe Mittel unter den Start fallen.",
   "pathogen.panel.curve.mem_note": "Schwellenwerte der Moving Epidemic Method, geschätzt auf den {seasons} vollständig beobachteten Saisons vor dieser und nie auf dieser selbst: Epidemiebeginn bei {pre} und Ende bei {post} Fällen pro Woche. Das Überschreiten der Startschwelle ist es, worauf der <code>mem</code>-Detektor anspricht.",
   "pathogen.panel.curve.mem_unavailable": "Die Daten dieses Erregers zeigen eine Saison, es gibt aber noch nicht genügend vollständig beobachtete frühere Saisons, auf denen sich Schwellenwerte schätzen ließen; deshalb werden keine gezeichnet.",
   "pathogen.panel.curve.note": "Bestätigte Fälle pro Woche im gesamten Einzugsgebiet. Noch nicht vollständige Wochen werden blasser gezeichnet, damit das Ende der Kurve nicht als Rückgang gelesen wird.",

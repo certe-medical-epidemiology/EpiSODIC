@@ -1068,3 +1068,28 @@ test_that("the intensity bands are shaded from the epidemic threshold up, each i
   # Without bands there is no legend to place.
   expect_false(identical(bare$theme$legend.position, "right"))
 })
+
+test_that("a curve with no Low band says why, and one with a Low band says nothing", {
+  thresholds <- list(
+    pre_epidemic = 5,
+    post_epidemic = 4,
+    intensity = c(medium = 10, high = 20, very_high = 40)
+  )
+  expect_null(episodic_ui_mem_no_low_band_note(thresholds, lang = "en"))
+  expect_null(episodic_ui_mem_no_low_band_note(NULL, lang = "en"))
+  expect_null(episodic_ui_mem_no_low_band_note(
+    list(pre_epidemic = 5, post_epidemic = 4),
+    lang = "en"
+  ))
+
+  squeezed <- thresholds
+  squeezed$intensity[["medium"]] <- 3.25
+  note <- episodic_ui_mem_no_low_band_note(squeezed, lang = "en")
+  expect_match(note, "The medium threshold (3.2) is at or below the start threshold (5)", fixed = TRUE)
+  expect_match(note, "no Low band", fixed = TRUE)
+  # Numbers are written the way the language writes them.
+  expect_match(episodic_ui_mem_no_low_band_note(squeezed, lang = "nl"), "(3,2)", fixed = TRUE)
+  # At the start threshold exactly, there is still no Low band.
+  squeezed$intensity[["medium"]] <- 5
+  expect_false(is.null(episodic_ui_mem_no_low_band_note(squeezed, lang = "en")))
+})
