@@ -1038,7 +1038,7 @@ test_that("the intensity bands are shaded from the epidemic threshold up, each i
   # The end of an epidemic is the one line with a key, below the squares,
   # in the palette's teal.
   colour <- built$plot$scales$get_scales("colour")
-  expect_equal(unname(as.character(colour$get_labels())), "Epidemic end threshold")
+  expect_equal(unname(as.character(colour$get_labels())), "End threshold")
   expect_equal(unname(colour$palette(1)), pal$tertiary)
   expect_equal(p$guides$guides$fill$params$order, 1)
   expect_equal(p$guides$guides$colour$params$order, 2)
