@@ -1100,27 +1100,14 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
     episodic_chart_week_scale(weekly$week_start, lang = lang) +
     ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang))
 
-  # Thin and solid, every line one width, the legend's keys included:
-  # the lines mark where the bands meet, and the shades say what each
-  # band is. The start and end thresholds are the lines no band name
-  # explains, so they alone get keys, below the squares.
+  # Two lines only, the start and end thresholds, thin, solid and one
+  # width, each with a key below the squares. The intensity bands are
+  # areas alone: their shades and names say where each begins.
   line_width <- 0.25
   lines <- episodic_mem_threshold_lines(thresholds, lang = lang)
   end_line <- NULL
   if (!is.null(lines)) {
-    keyed <- c("pre_epidemic", "post_epidemic")
-    end_line <- lines[lines$key %in% keyed, , drop = FALSE]
-    edges <- lines[!lines$key %in% keyed, , drop = FALSE]
-    if (nrow(edges) > 0) {
-      p <- p +
-        ggplot2::geom_hline(
-          data = edges,
-          ggplot2::aes(yintercept = .data$value),
-          colour = edges$colour,
-          linewidth = line_width,
-          linetype = 1
-        )
-    }
+    end_line <- lines[lines$key %in% c("pre_epidemic", "post_epidemic"), , drop = FALSE]
     if (nrow(end_line) > 0) {
       p <- p +
         ggplot2::geom_hline(

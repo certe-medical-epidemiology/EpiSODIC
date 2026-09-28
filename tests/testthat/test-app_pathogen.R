@@ -1029,7 +1029,10 @@ test_that("the intensity bands are shaded from the epidemic threshold up, each i
   expect_equal(unname(as.character(fill$get_labels())), c("Very high", "High", "Medium", "Low"))
   expect_equal(p$theme$legend.position, "right")
   hlines <- p$layers[vapply(p$layers, function(l) inherits(l$geom, "GeomHline"), logical(1))]
-  expect_length(hlines, 2)
+  # One layer of lines, the start and end thresholds; the bands are
+  # areas with no line of their own.
+  expect_length(hlines, 1)
+  expect_setequal(hlines[[1]]$data$key, c("pre_epidemic", "post_epidemic"))
   # Every line one width, the legend's keys included.
   for (h in hlines) {
     expect_equal(h$aes_params$linetype, 1)
