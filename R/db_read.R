@@ -1368,7 +1368,8 @@ episodic_db_open_seasonal_epidemics <- function(con) {
     "SELECT c.cluster_id, c.stream_id, c.first_day, c.last_day,
             c.scale, c.origin,
             es.season_label, es.anchor_week,
-            es.post_epidemic_threshold, es.ended_week_start
+            es.pre_epidemic_threshold, es.post_epidemic_threshold,
+            es.ended_week_start
        FROM episodic_cluster c
        INNER JOIN episodic_epidemic_season es ON es.cluster_id = c.cluster_id
       WHERE c.merged_into IS NULL

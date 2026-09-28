@@ -1,4 +1,4 @@
-# EpiSODIC 0.22.3
+# EpiSODIC 0.23.0
 
 ## New
 
@@ -6,16 +6,19 @@
 - The Epidemics dossier header shows the current MEM band as an "Intensity" chip
 - Each seasonal epidemic in the Epidemics list shows its current MEM band as an "Intensity" chip
 - Text on a filled chip or selected picker button takes ink, white or black, whichever reads on the fill
+- The Pathogen and Epidemics weekly curves shade the MEM intensity bands behind the bars
 
 ## Changed
 
 - Verdicts, intensity chips, intensity stats and the Pathogen chart's intensity lines take their colours from the severity scale
 - Synthetic Influenza A and RSV come in winter waves of varying size and timing, so the demo always has a MEM season with intensity bands
+- The MEM epidemic end threshold is drawn as a dotted teal line, apart from the near-black very high intensity line
 
 ## Fixed
 
 - MEM intensity bands are read from `mem::memmodel()`'s `intensity.thresholds`, so they are no longer always missing
 - A MEM fit without intensity bands says why in the run log
+- A seasonal epidemic closes on the trough backstop only once its count is back at or below the pre-epidemic threshold, so an out-of-season epidemic is no longer closed while still rising
 
 # EpiSODIC 0.22.2
 

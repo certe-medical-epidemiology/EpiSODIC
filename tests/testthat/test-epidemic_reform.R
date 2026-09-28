@@ -215,6 +215,7 @@ test_that("seasonal epidemic closes on trough backstop", {
 
   satellite <- data.frame(
     anchor_week = anchor$anchor_week,
+    pre_epidemic_threshold = 999,
     post_epidemic_threshold = NA_real_
   )
   result <- episodic_epidemic_closure(
@@ -225,6 +226,46 @@ test_that("seasonal epidemic closes on trough backstop", {
   )
   expect_false(is.null(result))
   expect_equal(result$ended_reason, "trough")
+})
+
+test_that("an epidemic still above its pre-epidemic threshold stays open in the trough weeks", {
+  # An out-of-season wave sits in the trough weeks by the calendar while
+  # its count is still epidemic; the trough is only a backstop for a
+  # count that has already fallen back.
+  config <- episodic_config_resolve(NA)
+  cases <- epidemic_synthetic_seasons(n_seasons = 5, peak_month = 1)
+  anchor <- episodic_mem_season_anchor(cases, config)
+  skip_if(is.null(anchor), "synthetic data produced no anchor")
+
+  trough_start <- episodic_iso_week_start(2024L, anchor$trough_run[1])
+  run_date <- trough_start + 8
+  wave <- data.frame(sample_date = as.character(rep(trough_start + 0:6, each = 5)))
+  rising <- rbind(cases, wave)
+  week_count <- sum(
+    as.Date(rising$sample_date) >= trough_start &
+      as.Date(rising$sample_date) <= trough_start + 6
+  )
+
+  above <- data.frame(
+    anchor_week = anchor$anchor_week,
+    pre_epidemic_threshold = week_count - 1,
+    post_epidemic_threshold = week_count - 2
+  )
+  expect_null(episodic_epidemic_closure(rising, run_date, config, above))
+
+  # Without a pre-epidemic threshold a fallen count cannot be told from a
+  # rising one, so the trough does not close it either.
+  unknown <- above
+  unknown$pre_epidemic_threshold <- NA_real_
+  expect_null(episodic_epidemic_closure(rising, run_date, config, unknown))
+
+  # The post-epidemic threshold still closes it, trough or not.
+  fallen <- above
+  fallen$post_epidemic_threshold <- week_count
+  expect_equal(
+    episodic_epidemic_closure(rising, run_date, config, fallen)$ended_reason,
+    "post_epidemic_threshold"
+  )
 })
 
 test_that("seasonal epidemic stays open when neither criterion is met", {

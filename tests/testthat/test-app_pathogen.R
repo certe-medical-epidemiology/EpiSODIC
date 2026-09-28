@@ -644,6 +644,12 @@ test_that("episodic_mem_threshold_lines() orders thresholds by value and labels 
     lines$colour[match(c("medium", "high", "very_high"), lines$key)],
     c(pal$severity_medium, pal$severity_high, pal$severity_very_high)
   )
+  # The end of an epidemic is not drawn like the top intensity band.
+  expect_equal(lines$linetype[lines$key == "post_epidemic"], "dotted")
+  expect_false(identical(
+    lines$colour[lines$key == "post_epidemic"],
+    lines$colour[lines$key == "very_high"]
+  ))
 
   expect_null(episodic_mem_threshold_lines(NULL))
   # A fit that produced no usable numbers leaves the bands off rather
@@ -967,4 +973,48 @@ test_that("episodic_app_pathogen_summary() withholds the comparison when the pre
   )
   expect_equal(covered$n_previous, 0L)
   expect_true(is.na(covered$change_pct))
+})
+
+test_that("the intensity bands are shaded from the epidemic threshold up, each in its severity colour", {
+  pal <- episodic_palette()
+  thresholds <- list(
+    pre_epidemic = 5,
+    post_epidemic = 4,
+    intensity = c(medium = 10, high = 20, very_high = 40)
+  )
+  bands <- episodic_mem_intensity_bands(thresholds)
+  expect_equal(bands$key, c("low", "medium", "high", "very_high"))
+  expect_equal(bands$ymin, c(5, 10, 20, 40))
+  expect_equal(bands$ymax, c(10, 20, 40, Inf))
+  expect_equal(
+    bands$colour,
+    unlist(pal[paste0("severity_", bands$key)], use.names = FALSE)
+  )
+
+  # MEM can place medium at or below the epidemic threshold; the low band
+  # then has no height and is left out rather than drawn upside down.
+  squeezed <- thresholds
+  squeezed$intensity[["medium"]] <- 3
+  expect_equal(episodic_mem_intensity_bands(squeezed)$key, c("medium", "high", "very_high"))
+  expect_equal(episodic_mem_intensity_bands(squeezed)$ymin[1], 5)
+
+  # Nothing to shade without bands or without an epidemic threshold.
+  expect_null(episodic_mem_intensity_bands(NULL))
+  expect_null(episodic_mem_intensity_bands(list(pre_epidemic = 5, post_epidemic = 4)))
+  expect_null(episodic_mem_intensity_bands(modifyList(thresholds, list(pre_epidemic = NA_real_))))
+
+  weekly <- data.frame(
+    week_start = seq(as.Date("2025-01-06"), by = "week", length.out = 6),
+    n_cases = c(2, 6, 12, 25, 45, 8),
+    incomplete = c(rep(FALSE, 5), TRUE)
+  )
+  p <- episodic_ui_pathogen_curve_chart(weekly, thresholds, lang = "en")
+  # Bands are the first layer, behind the bars (`geom_col()` is itself a
+  # subclass of GeomRect, hence the exact class).
+  is_band <- function(layer) identical(class(layer$geom)[1], "GeomRect")
+  expect_true(is_band(p$layers[[1]]))
+  expect_false(any(vapply(p$layers[-1], is_band, logical(1))))
+  expect_no_warning(ggplot2::ggplot_build(p))
+  bare <- episodic_ui_pathogen_curve_chart(weekly, NULL, lang = "en")
+  expect_false(any(vapply(bare$layers, is_band, logical(1))))
 })

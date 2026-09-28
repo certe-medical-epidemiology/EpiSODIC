@@ -428,8 +428,9 @@ episodic_mem_seasonality <- function(cases,
 #'
 #' Used by `episodic_detect_mem()` (fires on `epidemic_started`) and by
 #' `episodic_epidemic_closure()` (fires when the evaluated count has
-#' fallen back at or below `post_epidemic_threshold`, or when the
-#' evaluated week is inside the pathogen's derived trough).
+#' fallen back at or below `post_epidemic_threshold`, or at or below the
+#' pre-epidemic threshold in a week inside the pathogen's derived
+#' trough).
 #'
 #' Which week to evaluate: the last *complete* epidemiological week,
 #' never the one in progress. The week containing the run date is
@@ -1153,10 +1154,19 @@ episodic_mem_season_weeks <- function(dates, anchor_week) {
 #' The primary criterion is the post-epidemic threshold stored on the
 #' satellite: the epidemic closes when the evaluated week's count falls
 #' at or below it. The backstop is the derived trough: when the count
-#' has fallen but never crosses the threshold cleanly on a noisy series,
-#' the epidemic closes once the evaluated week enters the pathogen's own
+#' has fallen back to non-epidemic activity - at or below the
+#' pre-epidemic threshold, MEM's own line between the two - but never
+#' crosses the post-epidemic threshold cleanly on a noisy series, the
+#' epidemic closes once the evaluated week is inside the pathogen's own
 #' trough. These are two different pieces of evidence, and the audit
 #' trail records which one fired.
+#'
+#' The trough alone is a calendar, not a measurement: an epidemic
+#' running out of season - influenza in late summer - is in the trough
+#' weeks while its count is still rising, and closing it there would
+#' close it in the run that opened it. Without a pre-epidemic threshold
+#' to tell a fallen count from a rising one, the backstop does not fire
+#' and the post-epidemic threshold alone decides.
 #'
 #' @param cases_for_stream A data frame with `sample_date`, the stream's
 #'   full case history (needed to derive the anchor and count the
@@ -1165,7 +1175,8 @@ episodic_mem_season_weeks <- function(dates, anchor_week) {
 #' @param config The resolved configuration.
 #' @param satellite A one-row data frame from
 #'   `episodic_db_open_seasonal_epidemics()`, carrying
-#'   `post_epidemic_threshold` and `anchor_week`.
+#'   `pre_epidemic_threshold`, `post_epidemic_threshold` and
+#'   `anchor_week`.
 #' @return `NULL` if the epidemic should stay open, otherwise a list
 #'   with `ended_week_start` (Date) and `ended_reason` (character).
 #' @keywords internal
@@ -1198,8 +1209,13 @@ episodic_epidemic_closure <- function(cases_for_stream,
     ))
   }
 
+  pre_threshold <- as.numeric(satellite$pre_epidemic_threshold %||% NA_real_)
   eval_iso_week <- as.integer(evaluated$week_label)
-  if (eval_iso_week %in% anchor$trough_run) {
+  if (
+    eval_iso_week %in% anchor$trough_run &&
+      !is.na(pre_threshold) &&
+      week_count <= pre_threshold
+  ) {
     return(list(
       ended_week_start = as.character(week_start),
       ended_reason = "trough"

@@ -1046,7 +1046,30 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
   p <- ggplot2::ggplot(
     weekly,
     ggplot2::aes(x = .data$week_start, y = .data$n_cases)
-  ) +
+  )
+  # Behind the bars, so each week's bar is read against the band it
+  # reached without matching its height to a dashed line and a legend.
+  bands <- episodic_mem_intensity_bands(thresholds)
+  if (!is.null(bands)) {
+    # Dates, not bare numbers, on a date axis: the band spans it whole.
+    bands$xmin <- as.Date(-Inf)
+    bands$xmax <- as.Date(Inf)
+    p <- p +
+      ggplot2::geom_rect(
+        data = bands,
+        ggplot2::aes(
+          xmin = .data$xmin,
+          xmax = .data$xmax,
+          ymin = .data$ymin,
+          ymax = .data$ymax,
+          fill = .data$colour
+        ),
+        inherit.aes = FALSE,
+        alpha = 0.16
+      ) +
+      ggplot2::scale_fill_identity()
+  }
+  p <- p +
     ggplot2::geom_col(
       ggplot2::aes(alpha = .data$alpha),
       fill = accent,
@@ -1067,17 +1090,71 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
     p <- p +
       ggplot2::geom_hline(
         data = lines,
-        ggplot2::aes(yintercept = .data$value, colour = .data$key),
-        linewidth = 0.7,
-        linetype = "dashed"
+        ggplot2::aes(
+          yintercept = .data$value,
+          colour = .data$key,
+          linetype = .data$key
+        ),
+        linewidth = 0.7
       ) +
       ggplot2::scale_colour_manual(
         values = stats::setNames(lines$colour, lines$key),
         labels = stats::setNames(lines$label, lines$key),
         breaks = lines$key
+      ) +
+      # The same labels and breaks as the colour scale, so the two merge
+      # into one legend.
+      ggplot2::scale_linetype_manual(
+        values = stats::setNames(lines$linetype, lines$key),
+        labels = stats::setNames(lines$label, lines$key),
+        breaks = lines$key
+      ) +
+      # Five entries do not fit one row of a dashboard panel, and ggplot2
+      # clips a legend row rather than wrapping it.
+      ggplot2::guides(
+        colour = ggplot2::guide_legend(ncol = 3, byrow = TRUE),
+        linetype = ggplot2::guide_legend(ncol = 3, byrow = TRUE)
       )
   }
   p + episodic_chart_theme()
+}
+
+#' The MEM intensity bands to shade behind a weekly curve
+#'
+#' Each epidemic band from the pre-epidemic threshold up - low, medium,
+#' high and very high, the last open-ended - in its severity colour.
+#' Below the pre-epidemic threshold is not shaded: that is non-epidemic
+#' activity, and a tint there would give every quiet week a colour. A
+#' band with no height (MEM can place `medium` at or below the
+#' pre-epidemic threshold) is left out rather than drawn upside down.
+#'
+#' @param thresholds `episodic_mem_thresholds_for_season()`'s output, or
+#'   `NULL`.
+#' @return A data frame with `key`, `ymin`, `ymax` and `colour`, or
+#'   `NULL` without a finite pre-epidemic threshold and intensity bands.
+#' @keywords internal
+#' @noRd
+episodic_mem_intensity_bands <- function(thresholds) {
+  if (is.null(thresholds) || is.null(thresholds$intensity)) {
+    return(NULL)
+  }
+  pre <- as.numeric(thresholds$pre_epidemic)
+  intensity <- as.numeric(thresholds$intensity)
+  if (length(pre) != 1 || !is.finite(pre) || !all(is.finite(intensity))) {
+    return(NULL)
+  }
+  keys <- c("low", "medium", "high", "very_high")
+  bands <- data.frame(
+    key = keys,
+    ymin = c(pre, intensity),
+    ymax = c(intensity, Inf),
+    colour = vapply(keys, episodic_ui_severity_colour, character(1), USE.NAMES = FALSE),
+    stringsAsFactors = FALSE
+  )
+  bands$ymin <- pmax(bands$ymin, pre)
+  bands <- bands[bands$ymax > bands$ymin, , drop = FALSE]
+  rownames(bands) <- NULL
+  bands
 }
 
 #' The MEM threshold lines to draw, in ascending order
@@ -1085,7 +1162,8 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
 #' @param thresholds `episodic_mem_thresholds_for_season()`'s output, or
 #'   `NULL`.
 #' @param lang Language for the line labels.
-#' @return A data frame with `key`, `value`, `label`, `colour`, or `NULL`.
+#' @return A data frame with `key`, `value`, `label`, `colour` and
+#'   `linetype`, or `NULL`.
 #' @keywords internal
 #' @noRd
 episodic_mem_threshold_lines <- function(thresholds,
@@ -1095,9 +1173,13 @@ episodic_mem_threshold_lines <- function(thresholds,
   }
   pal <- episodic_palette()
 
+  # The start and end of an epidemic in the tertiary hue, told apart by
+  # line as well as shade, so neither can be mistaken for an intensity
+  # line: those take the severity scale, whose top step is near-black.
   keys <- c("pre_epidemic", "post_epidemic")
   values <- c(thresholds$pre_epidemic, thresholds$post_epidemic)
-  colours <- c(pal$tertiary_dark, pal$secondary)
+  colours <- c(pal$tertiary_dark, pal$tertiary)
+  linetypes <- c("dashed", "dotted")
 
   if (!is.null(thresholds$intensity)) {
     bands <- c("medium", "high", "very_high")
@@ -1107,6 +1189,7 @@ episodic_mem_threshold_lines <- function(thresholds,
       colours,
       vapply(bands, episodic_ui_severity_colour, character(1), USE.NAMES = FALSE)
     )
+    linetypes <- c(linetypes, rep("dashed", length(bands)))
   }
 
   keep <- is.finite(values)
@@ -1117,6 +1200,7 @@ episodic_mem_threshold_lines <- function(thresholds,
     key = keys[keep],
     value = values[keep],
     colour = colours[keep],
+    linetype = linetypes[keep],
     label = vapply(
       keys[keep],
       function(k) episodic_tr(paste0("pathogen.threshold.", k), lang = lang),
