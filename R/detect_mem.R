@@ -123,6 +123,13 @@ episodic_detect_mem <- function(cases_for_stream,
   }
 
   intensity <- status$intensity_thresholds
+  if (is.null(intensity)) {
+    episodic_trace(
+      "MEM: stream ", tag, " has no intensity bands, ",
+      status$intensity_unavailable %||% "for a reason the fit did not give",
+      severity = "warn"
+    )
+  }
   episodic_detection_record(
     stream_id = stream_id,
     detector = "mem",
@@ -451,6 +458,7 @@ episodic_mem_seasonality <- function(cases,
 #'   `in_trough` (logical), `epidemic_started` (logical),
 #'   `current_week_count`, `pre_epidemic_threshold`,
 #'   `post_epidemic_threshold`, `intensity_thresholds`,
+#'   `intensity_unavailable` (`NULL`, or why `intensity_thresholds` is),
 #'   `intensity_level`, `anchor_week`, `season`, `seasons_used`,
 #'   `week_start`, `week_end`.
 #' @keywords internal
@@ -517,6 +525,7 @@ episodic_mem_status <- function(cases,
     pre_epidemic_threshold = as.numeric(pre_threshold),
     post_epidemic_threshold = as.numeric(post_threshold),
     intensity_thresholds = intensity,
+    intensity_unavailable = fitted$intensity_unavailable,
     intensity_level = episodic_mem_intensity_level(
       current_count,
       pre_threshold,
@@ -542,8 +551,9 @@ episodic_mem_status <- function(cases,
 #'   `episodic_mem_seasonal_matrix()` and restricted to the seasons the
 #'   thresholds are for.
 #' @return `NULL` when the model cannot be fitted, otherwise a list with
-#'   `pre_epidemic` and `post_epidemic` (numeric) and `intensity`
-#'   (`episodic_mem_intensity_thresholds()`'s output, possibly `NULL`).
+#'   `pre_epidemic` and `post_epidemic` (numeric), `intensity` (the
+#'   thresholds from `episodic_mem_intensity_thresholds()`, possibly
+#'   `NULL`) and `intensity_unavailable` (`NULL`, or why `intensity` is).
 #' @keywords internal
 #' @noRd
 episodic_mem_fit <- function(historical) {
@@ -557,13 +567,15 @@ episodic_mem_fit <- function(historical) {
   if (is.null(fit)) {
     return(NULL)
   }
+  intensity <- episodic_mem_intensity_thresholds(fit)
   # Unnamed: `mem` names these after its own interval rows, and nothing
   # downstream reads the name - every consumer takes `as.numeric()` of
   # them - so the cache has no name to carry.
   list(
     pre_epidemic = unname(fit$pre.post.intervals["pre.i", 3]),
     post_epidemic = unname(fit$pre.post.intervals["post.i", 3]),
-    intensity = episodic_mem_intensity_thresholds(fit)
+    intensity = intensity$thresholds,
+    intensity_unavailable = intensity$unavailable
   )
 }
 
@@ -686,7 +698,8 @@ episodic_mem_fit_encode <- function(fitted) {
     list(
       pre_epidemic = hex(fitted$pre_epidemic),
       post_epidemic = hex(fitted$post_epidemic),
-      intensity = if (is.null(fitted$intensity)) NULL else hex(fitted$intensity)
+      intensity = if (is.null(fitted$intensity)) NULL else hex(fitted$intensity),
+      intensity_unavailable = fitted$intensity_unavailable
     ),
     auto_unbox = TRUE,
     null = "null"
@@ -706,12 +719,19 @@ episodic_mem_fit_decode <- function(result) {
     error = function(e) NULL
   )
   scalar <- function(x) is.character(x) && length(x) == 1 && !is.na(x)
+  # Exactly one of the two intensity fields is set: thresholds, or the
+  # reason there are none. A row carrying neither was written without
+  # the reason, and is fitted again rather than read as bands that
+  # silently went missing.
   if (
     !is.list(parsed) ||
       !scalar(parsed$pre_epidemic) ||
       !scalar(parsed$post_epidemic) ||
       !(is.null(parsed$intensity) ||
-        (is.character(parsed$intensity) && length(parsed$intensity) == 3))
+        (is.character(parsed$intensity) && length(parsed$intensity) == 3)) ||
+      !(is.null(parsed$intensity_unavailable) ||
+        scalar(parsed$intensity_unavailable)) ||
+      is.null(parsed$intensity) == is.null(parsed$intensity_unavailable)
   ) {
     return(NULL)
   }
@@ -726,33 +746,53 @@ episodic_mem_fit_decode <- function(result) {
         number(parsed$intensity),
         c("medium", "high", "very_high")
       )
-    }
+    },
+    intensity_unavailable = parsed$intensity_unavailable
   )
 }
 
-#' MEM's medium/high/very high intensity thresholds, if this `mem` build
-#' reports them in the shape expected
+#' MEM's medium/high/very high intensity thresholds
 #'
-#' Read defensively rather than indexed straight: `mem::memmodel()`'s
-#' return shape for the intensity thresholds is not part of a stable
-#' documented interface the way `pre.post.intervals` is, and a shape
-#' this does not recognise must leave the intensity bands unavailable
-#' rather than take the whole seasonal panel down with it.
+#' `mem::memmodel()` returns them as `intensity.thresholds`: the upper
+#' limits of its three intensity intervals (`i.level.intensity`, shipped
+#' as 40%, 90% and 97.5%), in that order. `epidemic.thresholds` is a
+#' different vector - the pre- and post-epidemic thresholds - and holds
+#' two values, never three.
+#'
+#' Anything but three finite, non-decreasing values is refused rather
+#' than repaired: sorting or trimming a vector of another shape would
+#' produce bands that look like MEM's and are not. A refusal leaves the
+#' intensity bands unavailable and says so; the pre- and post-epidemic
+#' thresholds, which are read separately, are unaffected.
 #'
 #' @param fit A `mem::memmodel()` result.
-#' @return A named numeric of length 3 (`medium`, `high`, `very_high`),
-#'   or `NULL`.
+#' @return A list with `thresholds`, a named numeric of length 3
+#'   (`medium`, `high`, `very_high`) or `NULL`, and `unavailable`, `NULL`
+#'   when `thresholds` is set and otherwise a sentence saying why not.
 #' @keywords internal
 #' @noRd
 episodic_mem_intensity_thresholds <- function(fit) {
-  raw <- tryCatch(fit$epidemic.thresholds, error = function(e) NULL)
+  raw <- tryCatch(fit$intensity.thresholds, error = function(e) NULL)
   values <- suppressWarnings(as.numeric(raw))
-  values <- values[is.finite(values)]
-  if (length(values) < 3) {
-    return(NULL)
+  if (length(values) != 3 || !all(is.finite(values))) {
+    return(list(
+      thresholds = NULL,
+      unavailable = sprintf(
+        "mem::memmodel() returned %d intensity threshold(s) rather than three finite values",
+        length(raw)
+      )
+    ))
   }
-  values <- sort(values)[seq_len(3)]
-  stats::setNames(values, c("medium", "high", "very_high"))
+  if (is.unsorted(values)) {
+    return(list(
+      thresholds = NULL,
+      unavailable = "mem::memmodel() returned intensity thresholds that do not increase"
+    ))
+  }
+  list(
+    thresholds = stats::setNames(values, c("medium", "high", "very_high")),
+    unavailable = NULL
+  )
 }
 
 #' Which MEM intensity band a weekly count falls in
@@ -909,8 +949,9 @@ episodic_season_shift <- function(season, n = 1L) {
 #' @param season The season label the thresholds are for.
 #' @param config The resolved configuration.
 #' @param anchor_week Integer 1-52, the ISO week the season starts at.
-#' @return A list with `pre_epidemic`, `post_epidemic`, `intensity` and
-#'   `seasons_used`, or `NULL` when `mem` is unavailable or too little
+#' @return A list with `pre_epidemic`, `post_epidemic`, `intensity`,
+#'   `intensity_unavailable` and `seasons_used`, or `NULL` when `mem` is
+#'   unavailable or too little
 #'   earlier history exists.
 #' @keywords internal
 #' @noRd
@@ -951,6 +992,7 @@ episodic_mem_thresholds_for_season <- function(cases,
     pre_epidemic = as.numeric(fitted$pre_epidemic),
     post_epidemic = as.numeric(fitted$post_epidemic),
     intensity = fitted$intensity,
+    intensity_unavailable = fitted$intensity_unavailable,
     seasons_used = earlier
   )
 }

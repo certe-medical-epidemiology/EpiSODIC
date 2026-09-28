@@ -311,6 +311,96 @@ test_that("episodic_detect_mem() fires a detection during peak season", {
   expect_equal(det_peak$stream_id[1], 1L)
 })
 
+test_that("a real mem::memmodel() fit yields three increasing intensity thresholds, apart from the epidemic ones", {
+  skip_if_not_installed("mem")
+  cases <- episodic_mem_synthetic_seasons(n_seasons = 6)
+  built <- episodic_mem_seasonal_matrix(cases, 30L)
+  historical <- built$matrix[, 1:4, drop = FALSE]
+  raw <- mem::memmodel(as.data.frame(historical), i.mem.info = FALSE)
+
+  fitted <- episodic_mem_fit(historical)
+  expect_named(fitted$intensity, c("medium", "high", "very_high"))
+  expect_true(all(is.finite(fitted$intensity)))
+  expect_false(is.unsorted(fitted$intensity))
+  expect_null(fitted$intensity_unavailable)
+  # MEM's intensity bands, not its pre/post-epidemic pair.
+  expect_equal(unname(fitted$intensity), as.numeric(raw$intensity.thresholds))
+  expect_false(isTRUE(all.equal(
+    unname(fitted$intensity)[1:2],
+    as.numeric(raw$epidemic.thresholds)
+  )))
+})
+
+test_that("episodic_mem_intensity_thresholds() refuses a shape it cannot read as MEM's bands, and says why", {
+  two <- episodic_mem_intensity_thresholds(list(intensity.thresholds = c(1, 2)))
+  expect_null(two$thresholds)
+  expect_match(two$unavailable, "2 intensity threshold")
+
+  absent <- episodic_mem_intensity_thresholds(list(epidemic.thresholds = c(1, 2)))
+  expect_null(absent$thresholds)
+  expect_match(absent$unavailable, "0 intensity threshold")
+
+  not_finite <- episodic_mem_intensity_thresholds(list(intensity.thresholds = c(1, NA, 3)))
+  expect_null(not_finite$thresholds)
+
+  # Refused rather than sorted into order: sorted, they would be bands
+  # that look like MEM's and are not.
+  falling <- episodic_mem_intensity_thresholds(list(intensity.thresholds = c(3, 2, 1)))
+  expect_null(falling$thresholds)
+  expect_match(falling$unavailable, "do not increase")
+
+  ok <- episodic_mem_intensity_thresholds(list(intensity.thresholds = c(1, 2, 3)))
+  expect_equal(ok$thresholds, c(medium = 1, high = 2, very_high = 3))
+  expect_null(ok$unavailable)
+})
+
+test_that("a MEM detection carries its intensity thresholds, and a fit without them says so in the log", {
+  skip_if_not_installed("mem")
+  cases <- episodic_mem_synthetic_seasons(n_seasons = 6)
+  det <- episodic_detect_mem(cases, stream_id = 1L, run_date = as.Date("2024-01-15"))
+  expect_equal(nrow(det), 1)
+  params <- jsonlite::fromJSON(det$params)
+  expect_true(all(is.finite(c(
+    params$intensity_medium,
+    params$intensity_high,
+    params$intensity_very_high
+  ))))
+  expect_false(is.unsorted(c(
+    params$intensity_medium,
+    params$intensity_high,
+    params$intensity_very_high
+  )))
+
+  without_bands <- function(historical) {
+    fitted <- episodic_mem_fit(historical)
+    fitted["intensity"] <- list(NULL)
+    fitted$intensity_unavailable <- "a stated reason"
+    fitted
+  }
+  expect_message(
+    det <- episodic_detect_mem(
+      cases,
+      stream_id = 1L,
+      run_date = as.Date("2024-01-15"),
+      mem_fit = without_bands
+    ),
+    "no intensity bands, a stated reason"
+  )
+  expect_equal(nrow(det), 1)
+  expect_null(jsonlite::fromJSON(det$params)$intensity_medium)
+})
+
+test_that("episodic_mem_intensity_level() places a count in its band, and has no band without thresholds", {
+  bands <- c(medium = 10, high = 20, very_high = 30)
+  expect_equal(episodic_mem_intensity_level(4, 5, bands), "baseline")
+  expect_equal(episodic_mem_intensity_level(7, 5, bands), "low")
+  expect_equal(episodic_mem_intensity_level(10, 5, bands), "medium")
+  expect_equal(episodic_mem_intensity_level(25, 5, bands), "high")
+  expect_equal(episodic_mem_intensity_level(30, 5, bands), "very_high")
+  expect_true(is.na(episodic_mem_intensity_level(30, 5, NULL)))
+  expect_true(is.na(episodic_mem_intensity_level(NA, 5, bands)))
+})
+
 test_that("episodic_detect_mem() returns an empty record with no cases", {
   expect_equal(
     nrow(episodic_detect_mem(data.frame(sample_date = character(0)), 1L)),

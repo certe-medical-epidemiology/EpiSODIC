@@ -350,13 +350,7 @@ episodic_ui_epidemic_header <- function(obj,
       # The intensity band this week sits in, where MEM could fit one:
       # the single word an epidemiologist is most often asked for about
       # a seasonal epidemic, and the one the header can carry.
-      if (!is.na(level_now)) {
-        episodic_ui_chip(
-          episodic_tr(paste0("pathogen.intensity.", level_now), lang = lang),
-          episodic_ui_intensity_colour(level_now),
-          filled = TRUE
-        )
-      }
+      episodic_ui_intensity_chip(level_now, lang = lang)
     ),
     shiny::tags$div(
       class = "episodic-dossier-meta",
@@ -490,23 +484,17 @@ episodic_ui_epidemic_stat_grid <- function(obj,
   }
 
   if (!running && !is.null(course) && !is.na(course$peak_level)) {
-    stats <- c(stats, list(episodic_ui_stat(
+    stats <- c(stats, list(episodic_ui_intensity_stat(
       episodic_tr("pathogen.stat.intensity", lang = lang),
-      episodic_tr(
-        paste0("pathogen.intensity.", course$peak_level),
-        lang = lang
-      ),
+      course$peak_level,
       episodic_tr("pathogen.stat.intensity_sub", lang = lang),
-      colour = episodic_ui_intensity_colour(course$peak_level)
+      lang = lang
     )))
   }
   if (running && !is.null(course) && !is.na(course$latest_level)) {
-    stats <- c(stats, list(episodic_ui_stat(
+    stats <- c(stats, list(episodic_ui_intensity_stat(
       episodic_tr("epidemics.stat.intensity", lang = lang),
-      episodic_tr(
-        paste0("pathogen.intensity.", course$latest_level),
-        lang = lang
-      ),
+      course$latest_level,
       if (!is.na(course$peak_level)) {
         episodic_tr(
           "epidemics.stat.intensity_sub",
@@ -517,7 +505,7 @@ episodic_ui_epidemic_stat_grid <- function(obj,
           lang = lang
         )
       },
-      colour = episodic_ui_intensity_colour(course$latest_level)
+      lang = lang
     )))
   }
 

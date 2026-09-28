@@ -1015,8 +1015,8 @@ episodic_ui_denominator_chart <- function(series,
 #' @param lang Language for labels.
 #' @param accent Fill colour for the bars. Defaults to the palette's
 #'   `primary`, which keeps the bars apart from the intensity lines in
-#'   `episodic_mem_threshold_lines()` (`warning_dark`/`danger`/
-#'   `danger_dark`), whose colour is what they mean.
+#'   `episodic_mem_threshold_lines()` (`severity_medium`/`severity_high`/
+#'   `severity_very_high`), whose colour is what they mean.
 #' @return A [ggplot2::ggplot] object.
 #' @keywords internal
 #' @noRd
@@ -1100,9 +1100,13 @@ episodic_mem_threshold_lines <- function(thresholds,
   colours <- c(pal$tertiary_dark, pal$secondary)
 
   if (!is.null(thresholds$intensity)) {
-    keys <- c(keys, "medium", "high", "very_high")
+    bands <- c("medium", "high", "very_high")
+    keys <- c(keys, bands)
     values <- c(values, as.numeric(thresholds$intensity))
-    colours <- c(colours, pal$warning_dark, pal$danger, pal$danger_dark)
+    colours <- c(
+      colours,
+      vapply(bands, episodic_ui_severity_colour, character(1), USE.NAMES = FALSE)
+    )
   }
 
   keep <- is.finite(values)

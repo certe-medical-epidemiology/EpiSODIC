@@ -502,6 +502,7 @@
   "pathogen.intensity.low": "低",
   "pathogen.intensity.medium": "中",
   "pathogen.intensity.very_high": "极高",
+  "pathogen.intensity_chip": "强度：{level}",
   "pathogen.note": "一个病原体，覆盖整个服务区域，在您选择的时间段内。这是流行病学视图：一个季节相对于自身历史的位置，区域范围内传播的速度，以及期间产生了哪些信号。暴发界面回答今天该做什么；此界面回答正在发生什么。",
   "pathogen.panel.care_line.note": "基层医疗与二级医疗之别，可以告诉您所看到的是社区传播，还是已经到达医院的部分。",
   "pathogen.panel.care_line.title": "病例的发现场所",

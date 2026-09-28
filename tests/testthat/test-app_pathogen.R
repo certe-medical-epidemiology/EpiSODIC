@@ -595,11 +595,36 @@ test_that("the pathogen config panel italicises a taxon in its title and sentenc
   expect_false(grepl("\u0001", sentence, fixed = TRUE))
 })
 
-test_that("episodic_ui_intensity_colour() gives every MEM band a colour and never fails on an unknown one", {
+test_that("episodic_ui_intensity_colour() reads every MEM band onto the severity scale, and never fails on an unknown one", {
+  pal <- episodic_palette()
   levels <- c("baseline", "low", "medium", "high", "very_high")
   colours <- vapply(levels, episodic_ui_intensity_colour, character(1))
+  expect_equal(unname(colours), unlist(pal[paste0("severity_", levels)], use.names = FALSE))
   expect_equal(length(unique(colours)), length(levels))
-  expect_true(is.character(episodic_ui_intensity_colour(NA_character_)))
+  # No intensity measured is not the baseline band.
+  expect_equal(episodic_ui_intensity_colour(NA_character_), pal$muted)
+})
+
+test_that("the intensity chip names its band in words on the band's colour, and is absent without a band", {
+  pal <- episodic_palette()
+  chip <- as.character(episodic_ui_intensity_chip("high", lang = "en"))
+  expect_match(chip, "Intensity: High", fixed = TRUE)
+  expect_match(chip, sprintf("background:%s;", pal$severity_high), fixed = TRUE)
+  expect_match(chip, "episodic-chip-filled", fixed = TRUE)
+  expect_match(
+    as.character(episodic_ui_intensity_chip("very_high", lang = "nl")),
+    "Intensiteit: Zeer hoog",
+    fixed = TRUE
+  )
+  expect_null(episodic_ui_intensity_chip(NA_character_, lang = "en"))
+
+  stat <- as.character(episodic_ui_intensity_stat("Label", "medium", lang = "en"))
+  expect_match(stat, "episodic-stat-badge", fixed = TRUE)
+  expect_match(
+    stat,
+    sprintf("color:%s;background:%s;", episodic_ui_text_on(pal$severity_medium), pal$severity_medium),
+    fixed = TRUE
+  )
 })
 
 test_that("episodic_mem_threshold_lines() orders thresholds by value and labels each one", {
@@ -613,6 +638,12 @@ test_that("episodic_mem_threshold_lines() orders thresholds by value and labels 
   expect_equal(nrow(lines), 5)
   expect_false(is.unsorted(lines$value))
   expect_false(any(grepl("^\\[\\[", lines$label)))
+  # The intensity lines are drawn in the colours of the bands they open.
+  pal <- episodic_palette()
+  expect_equal(
+    lines$colour[match(c("medium", "high", "very_high"), lines$key)],
+    c(pal$severity_medium, pal$severity_high, pal$severity_very_high)
+  )
 
   expect_null(episodic_mem_threshold_lines(NULL))
   # A fit that produced no usable numbers leaves the bands off rather

@@ -11,7 +11,9 @@ A named list. The greyscale neutrals are
 \code{ink} (default text), \code{muted} (secondary text), \code{faint} (tertiary text),
 \code{border}, \code{bg_subtle}, \code{bg}, and \code{surface}. The semantic roles are
 \code{primary}, \code{secondary}, \code{tertiary}, \code{success}, \code{warning}, and \code{danger},
-each with \verb{_dark}/\verb{_light}/\verb{_tint} variants where used. \code{font} and
+each with \verb{_dark}/\verb{_light}/\verb{_tint} variants where used. The severity
+scale is \code{severity_baseline}, \code{severity_low}, \code{severity_medium},
+\code{severity_high} and \code{severity_very_high}. \code{font} and
 \code{font_size_base} hold the app's typography, not a colour.
 }
 \description{
@@ -50,34 +52,40 @@ with a detection run, since they have no bearing on reproducibility.
 
 These are all the default values, and all can be changed using a custom YAML file.
 
-\if{html}{\out{<div class="sourceCode yaml">}}\preformatted{font:            '"IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif'
-font_size_base:  "13px"
-ink:             "#222222"
-muted:           "#495057"
-faint:           "#ADB5BD"
-border:          "#DEE2E6"
-bg_subtle:       "#EBEBEB"
-bg:              "#F8F9FA"
-surface:         "#FFFFFF"
-primary:         "#008CBA"
-primary_dark:    "#005F7A"
-primary_light:   "#66BAD6"
-primary_tint:    "#D9EDF5"
-secondary:       "#333333"
-secondary_dark:  "#1A1A1A"
-tertiary:        "#20C997"
-tertiary_dark:   "#168D6A"
-success:         "#43AC6A"
-success_dark:    "#2F784A"
-warning:         "#F8AC59"
-warning_dark:    "#AE783E"
-danger:          "#F36A5A"
-danger_dark:     "#AA4A3F"
+\if{html}{\out{<div class="sourceCode yaml">}}\preformatted{font:                '"IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif'
+font_size_base:      "13px"
+ink:                 "#222222"
+muted:               "#495057"
+faint:               "#ADB5BD"
+border:              "#DEE2E6"
+bg_subtle:           "#EBEBEB"
+bg:                  "#F8F9FA"
+surface:             "#FFFFFF"
+primary:             "#008CBA"
+primary_dark:        "#005F7A"
+primary_light:       "#66BAD6"
+primary_tint:        "#D9EDF5"
+secondary:           "#333333"
+secondary_dark:      "#1A1A1A"
+tertiary:            "#20C997"
+tertiary_dark:       "#168D6A"
+success:             "#43AC6A"
+success_dark:        "#2F784A"
+warning:             "#F8AC59"
+warning_dark:        "#AE783E"
+danger:              "#F36A5A"
+danger_dark:         "#AA4A3F"
+severity_baseline:   "#ADB5BD"
+severity_low:        "#43AC6A"
+severity_medium:     "#E99002"
+severity_high:       "#F04124"
+severity_very_high:  "#222222"
 }\if{html}{\out{</div>}}
 
 Of note:
 \itemize{
 \item \code{primary_dark} is the background colour of the navigation bar.
+\item \code{severity_baseline} to \code{severity_very_high} are one ordinal scale, shared by an epidemiologist's verdicts and the Moving Epidemic Method's intensity bands, so a step has one colour on every screen. Text on them is set to whichever of \code{ink}, white or black reads.
 \item \code{font} is a CSS font-family stack, and \code{font_size_base} is the app's base font size.
 \itemize{
 \item Every other font size in the dashboard is set in \code{rem} relative to it, so changing \code{font_size_base} scales the whole app's type proportionally (useful when swapping in a font that reads naturally smaller or larger than the default at the same pixel size).

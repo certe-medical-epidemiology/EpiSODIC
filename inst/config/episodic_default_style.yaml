@@ -85,3 +85,22 @@ warning_dark: "#AE783E"
 
 danger: "#F36A5A"
 danger_dark: "#AA4A3F"
+
+# Severity: one ordinal scale, read wherever EpiSODIC grades how serious
+# something is - an epidemiologist's verdict on a cluster and MEM's
+# intensity band for an epidemic alike - so a colour means the same step
+# on the same scale on every screen, in every report and in every email.
+# Kept apart from the semantic roles above, which also colour buttons,
+# form states and trends: an instance can recolour the severity scale
+# without recolouring those, and the other way round. Each step must read
+# as more severe than the one before it at a glance. The defaults are
+# Bootswatch Yeti's own: $gray-500, $success, $warning, $danger and
+# $gray-900; from medium up each is darker than the last, while Yeti's
+# green and amber are close in lightness and differ by hue. Text on a severity colour is ink, white or black, whichever
+# reads (the rule of Bootstrap's own color-contrast()), so any colour set
+# here stays readable.
+severity_baseline: "#ADB5BD"
+severity_low: "#43AC6A"
+severity_medium: "#E99002"
+severity_high: "#F04124"
+severity_very_high: "#222222"

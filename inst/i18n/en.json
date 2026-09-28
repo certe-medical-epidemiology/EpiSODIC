@@ -502,6 +502,7 @@
   "pathogen.intensity.low": "Low",
   "pathogen.intensity.medium": "Medium",
   "pathogen.intensity.very_high": "Very high",
+  "pathogen.intensity_chip": "Intensity: {level}",
   "pathogen.note": "One pathogen across the whole catchment, over a period you choose. This is the epidemiological view: where a season stands against its own history, how fast transmission is running region-wide, and which signals were raised while it ran. The Outbreaks screen answers what to do today; this one answers what is going on.",
   "pathogen.panel.care_line.note": "Primary versus secondary care tells you whether you are looking at community circulation or at what reached hospital.",
   "pathogen.panel.care_line.title": "Where cases were found",

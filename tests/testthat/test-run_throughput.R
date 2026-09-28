@@ -453,15 +453,27 @@ test_that("a cached MEM fit decodes to exactly the fresh fit", {
   historical <- built$matrix[, 1:4, drop = FALSE]
   fresh <- episodic_mem_fit(historical)
   expect_false(is.null(fresh))
+  expect_length(fresh$intensity, 3)
   expect_identical(episodic_mem_fit_decode(episodic_mem_fit_encode(fresh)), fresh)
 
-  no_intensity <- list(pre_epidemic = NaN, post_epidemic = NA_real_, intensity = NULL)
+  no_intensity <- list(
+    pre_epidemic = NaN,
+    post_epidemic = NA_real_,
+    intensity = NULL,
+    intensity_unavailable = "mem::memmodel() returned 0 intensity threshold(s) rather than three finite values"
+  )
   expect_identical(
     episodic_mem_fit_decode(episodic_mem_fit_encode(no_intensity)),
     no_intensity
   )
   expect_null(episodic_mem_fit_decode("{\"pre_epidemic\": 1}"))
   expect_null(episodic_mem_fit_decode("not json"))
+  # A stored fit carries its intensity thresholds or the reason there are
+  # none, never neither: a row with neither is refitted rather than read
+  # as bands that silently went missing.
+  expect_null(episodic_mem_fit_decode(
+    "{\"pre_epidemic\": \"0x1p+1\", \"post_epidemic\": \"0x1p+1\", \"intensity\": null}"
+  ))
 })
 
 test_that("a MEM fit is reused only for an identical input, and any changed input refits", {

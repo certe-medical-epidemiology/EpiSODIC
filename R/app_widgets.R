@@ -177,7 +177,9 @@ episodic_ui_render_markdown <- function(text) {
 #'
 #' @param input_id The id of the hidden input the selected value is
 #'   written to.
-#' @param options A list of `list(value, label, colour, hint = NULL)`.
+#' @param options A list of `list(value, label, colour, hint = NULL)`. A
+#'   selected button is filled with its `colour` and written in the text
+#'   colour that reads on it (`episodic_ui_text_on()`).
 #' @param selected The initially-selected value, or `NULL`/`""` for none.
 #' @return A `shiny::tags$div`.
 #' @keywords internal
@@ -189,6 +191,7 @@ episodic_ui_picker <- function(input_id, options, selected = NULL) {
     shiny::tags$input(type = "hidden", id = input_id, value = selected),
     lapply(options, function(opt) {
       active <- identical(opt$value, selected) && nzchar(selected)
+      text_colour <- episodic_ui_text_on(opt$colour)
       shiny::tags$button(
         type = "button",
         class = if (active) {
@@ -197,15 +200,21 @@ episodic_ui_picker <- function(input_id, options, selected = NULL) {
           "episodic-picker-btn"
         },
         style = if (active) {
-          sprintf("background:%s;border-color:%s;", opt$colour, opt$colour)
+          sprintf(
+            "background:%s;border-color:%s;color:%s;",
+            opt$colour,
+            opt$colour,
+            text_colour
+          )
         } else {
           ""
         },
         `data-value` = opt$value,
         `data-colour` = opt$colour,
+        `data-text-colour` = text_colour,
         `data-input` = input_id,
         onclick = sprintf(
-          "document.getElementById('%s').value=this.dataset.value; document.querySelectorAll('[data-input=\"%s\"]').forEach(function(b){b.classList.remove('active');b.style.background='';b.style.borderColor='';}); this.classList.add('active'); this.style.background=this.dataset.colour; this.style.borderColor=this.dataset.colour;",
+          "document.getElementById('%s').value=this.dataset.value; document.querySelectorAll('[data-input=\"%s\"]').forEach(function(b){b.classList.remove('active');b.style.background='';b.style.borderColor='';b.style.color='';}); this.classList.add('active'); this.style.background=this.dataset.colour; this.style.borderColor=this.dataset.colour; this.style.color=this.dataset.textColour;",
           input_id,
           input_id
         ),
@@ -366,14 +375,72 @@ episodic_ui_multi_picker <- function(input_id,
   shiny::tags$div(class = "episodic-picker episodic-picker-inline", chips)
 }
 
+#' WCAG relative luminance of a hex colour
+#'
+#' @param colour A hex colour, `#RRGGBB` or `#RRGGBBAA` (the alpha is not
+#'   part of the colour's own luminance and is ignored).
+#' @return A single number between 0 (black) and 1 (white).
+#' @keywords internal
+#' @noRd
+episodic_colour_luminance <- function(colour) {
+  channels <- strtoi(substring(colour, c(2, 4, 6), c(3, 5, 7)), base = 16L) / 255
+  linear <- ifelse(
+    channels <= 0.04045,
+    channels / 12.92,
+    ((channels + 0.055) / 1.055)^2.4
+  )
+  sum(c(0.2126, 0.7152, 0.0722) * linear)
+}
+
+#' The WCAG contrast ratio between two hex colours
+#' @keywords internal
+#' @noRd
+episodic_colour_contrast <- function(a, b) {
+  l <- sort(c(episodic_colour_luminance(a), episodic_colour_luminance(b)))
+  (l[2] + 0.05) / (l[1] + 0.05)
+}
+
+#' The text colour to write on a filled background
+#'
+#' The palette's `ink` or white, whichever contrasts more with
+#' `background`, as long as that reaches WCAG's 4.5:1 for small text;
+#' where neither does - a mid-tone such as Bootswatch Yeti's own red sits
+#' between them - black, which reaches further than `ink` on any fill
+#' light enough to defeat white. The same rule as Bootstrap's
+#' `color-contrast()`. Every palette colour is an operator's to set, so a
+#' fixed white on a fill is unreadable the moment that fill is light: a
+#' yellow `severity_medium` or a pale grey `severity_baseline` would carry
+#' text nobody can read.
+#'
+#' @param background A hex colour.
+#' @return A hex colour.
+#' @keywords internal
+#' @noRd
+episodic_ui_text_on <- function(background) {
+  candidates <- c(episodic_palette()$ink, "#FFFFFF")
+  contrast <- vapply(
+    candidates,
+    function(fg) episodic_colour_contrast(background, fg),
+    numeric(1)
+  )
+  if (max(contrast) >= 4.5) {
+    return(unname(candidates[which.max(contrast)]))
+  }
+  if (episodic_colour_contrast(background, "#000000") > max(contrast)) {
+    return("#000000")
+  }
+  unname(candidates[which.max(contrast)])
+}
+
 #' @param text Chip text.
 #' @param colour A hex colour.
-#' @param filled If `TRUE`, filled background; otherwise an outline chip.
+#' @param filled If `TRUE`, filled background, with text in the colour
+#'   that reads on it (`episodic_ui_text_on()`); otherwise an outline chip.
 #' @keywords internal
 #' @noRd
 episodic_ui_chip <- function(text, colour, filled = FALSE) {
   style <- if (filled) {
-    sprintf("color:#fff;background:%s;", colour)
+    sprintf("color:%s;background:%s;", episodic_ui_text_on(colour), colour)
   } else {
     sprintf("color:%s;border:1px solid %s66;", colour, colour)
   }
@@ -741,24 +808,71 @@ episodic_ui_care_line_chip <- function(care_line,
   )
 }
 
+#' The palette colour of one step on the severity scale
+#'
+#' One ordinal scale for everything EpiSODIC grades: an epidemiologist's
+#' verdict (`episodic_ui_verdict_severity()`) and MEM's intensity band
+#' (`episodic_mem_intensity_level()`) are both read onto it, so a colour
+#' is the same step wherever it appears. Anything that is not a step -
+#' no verdict yet, no intensity measured - is `muted`, never
+#' `severity_baseline`: an absent judgement or measurement drawn as the
+#' lowest step would read as a finding of baseline.
+#'
+#' @param step One of `episodic_severity_steps`, or anything else.
+#' @return A hex colour.
+#' @keywords internal
+#' @noRd
+episodic_ui_severity_colour <- function(step) {
+  pal <- episodic_palette()
+  if (length(step) != 1 || is.na(step) || !step %in% episodic_severity_steps) {
+    return(pal$muted)
+  }
+  pal[[paste0("severity_", step)]]
+}
+
+#' The steps of the severity scale, least to most severe
+#' @keywords internal
+#' @noRd
+episodic_severity_steps <- c("baseline", "low", "medium", "high", "very_high")
+
+#' Which severity step a verdict sits on
+#'
+#' Terminal verdicts - nothing here, or nothing unusual - are the
+#' baseline; "not yet" is low, "possible" medium, and a confirmed or
+#' declared epidemic high. No verdict reaches `very_high`: that step is a
+#' measured intensity, not a judgement.
+#'
+#' @param verdict An `episodic_assessment_event.verdict` value.
+#' @return A step from `episodic_severity_steps`, or `NA_character_` for
+#'   anything that is not a verdict.
+#' @keywords internal
+#' @noRd
+episodic_ui_verdict_severity <- function(verdict) {
+  if (length(verdict) != 1 || is.na(verdict)) {
+    return(NA_character_)
+  }
+  switch(verdict,
+    artefact = "baseline",
+    expected_variation = "baseline",
+    season_ended = "baseline",
+    cluster_not_yet = "low",
+    season_not_yet = "low",
+    possible_epidemic = "medium",
+    confirmed_epidemic = "high",
+    season_started = "high",
+    NA_character_
+  )
+}
+
 #' @param verdict One of `episodic_ui_assessment_form()`'s verdict keys
 #'   (`"artefact"`, `"expected_variation"`, `"cluster_not_yet"`,
-#'   `"possible_epidemic"`, `"confirmed_epidemic"`).
+#'   `"possible_epidemic"`, `"confirmed_epidemic"`) or an epidemic
+#'   declaration (`"season_started"`, `"season_not_yet"`,
+#'   `"season_ended"`).
 #' @keywords internal
 #' @noRd
 episodic_ui_verdict_colour <- function(verdict) {
-  pal <- episodic_palette()
-  switch(verdict,
-    artefact = pal$muted,
-    expected_variation = pal$muted,
-    cluster_not_yet = pal$success_dark,
-    possible_epidemic = pal$warning_dark,
-    confirmed_epidemic = pal$danger,
-    season_started = pal$danger,
-    season_not_yet = pal$success_dark,
-    season_ended = pal$muted,
-    pal$muted
-  )
+  episodic_ui_severity_colour(episodic_ui_verdict_severity(verdict))
 }
 
 #' The lattice levels that produce outbreaks rather than epidemics

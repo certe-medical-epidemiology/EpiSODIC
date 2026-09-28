@@ -37,6 +37,46 @@ small_denominator <- function() {
   )
 }
 
+test_that("the demo's Influenza A always has a MEM season with intensity bands, whatever day it is built", {
+  skip_if_not_installed("mem")
+  # The demo's own data, built as `episodic_demo()` builds it: the
+  # default five-year window ending on the last complete week. Which week
+  # that is depends on the day the demo is run, so the data are checked at
+  # run dates spread over a whole year rather than on one. At each, the
+  # Pathogen screen's MEM panel (`episodic_app_pathogen_screen()`) needs
+  # exactly this: the pathogen judged seasonal, and thresholds for the
+  # current season fitted on the seasons before it, all three intensity
+  # bands included.
+  config <- episodic_config_resolve(NA)
+  run_dates <- episodic_synthetic_week_end(
+    as.Date("2026-01-05") + seq(0, 364, by = 28)
+  )
+  for (i in seq_along(run_dates)) {
+    run_date <- run_dates[i]
+    cases <- episodic_synthetic_cases(end_date = run_date)
+    flu <- cases[cases$pathogen == "Influenza A", , drop = FALSE]
+    anchor <- episodic_mem_season_anchor(flu, config)
+    expect_false(is.null(anchor), info = format(run_date))
+    expect_true(isTRUE(episodic_mem_seasonality(flu, config)$seasonal), info = format(run_date))
+    thresholds <- episodic_mem_thresholds_for_season(
+      flu,
+      episodic_season_containing(run_date, anchor$anchor_week),
+      config,
+      anchor$anchor_week
+    )
+    expect_length(thresholds$intensity, 3)
+    expect_false(is.unsorted(thresholds$intensity), info = format(run_date))
+    expect_true(thresholds$intensity[["medium"]] > thresholds$pre_epidemic, info = format(run_date))
+
+    # The regional wave rises into the run date, so the region's
+    # Influenza A epidemic is open with a band for its current week: the
+    # Epidemics screen's intensity chip has something to show.
+    status <- episodic_mem_status(flu, run_date, config, anchor)
+    expect_true(isTRUE(status$epidemic_started), info = format(run_date))
+    expect_false(is.na(status$intensity_level), info = format(run_date))
+  }
+})
+
 test_that("episodic_demo(launch = FALSE) sets up a working demo database in one call", {
   skip_if_not_installed("sodium")
   db_path <- tempfile(fileext = ".sqlite")

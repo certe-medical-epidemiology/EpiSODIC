@@ -1,3 +1,21 @@
+# EpiSODIC 0.22.3
+
+## New
+
+- Five `severity_*` palette roles colour both verdicts and MEM intensity bands, overridable through `EPISODIC_STYLE`
+- The Epidemics dossier header shows the current MEM band as an "Intensity" chip
+- Text on a filled chip or selected picker button takes ink, white or black, whichever reads on the fill
+
+## Changed
+
+- Verdicts, intensity chips, intensity stats and the Pathogen chart's intensity lines take their colours from the severity scale
+- Synthetic Influenza A and RSV come in winter waves of varying size and timing, so the demo always has a MEM season with intensity bands
+
+## Fixed
+
+- MEM intensity bands are read from `mem::memmodel()`'s `intensity.thresholds`, so they are no longer always missing
+- A MEM fit without intensity bands says why in the run log
+
 # EpiSODIC 0.22.2
 
 ## New

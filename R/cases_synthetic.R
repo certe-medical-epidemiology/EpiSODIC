@@ -32,7 +32,10 @@
 #' A seasonal Poisson baseline for eight endemic pathogens, deliberately
 #' thin per place: a demo whose baseline keeps tripping the rule-based
 #' detectors by coincidence buries the outbreaks it is meant to
-#' demonstrate. Patients recur - roughly one case in six is a repeat
+#' demonstrate. Influenza A and RSV come in short winter waves of varying
+#' size and timing, as they do in life, so the Moving Epidemic Method has
+#' seasons to fit its thresholds and intensity bands to; the others rise
+#' and fall gently through the year. Patients recur - roughly one case in six is a repeat
 #' positive from a patient already in the data - so deduplication and
 #' episode grouping have something to do.
 #'
@@ -395,8 +398,26 @@ episodic_synthetic_pc_pool <- function() {
 #' is deliberately modest: spread over a hundred-odd reporting places, it
 #' leaves each one far below what the rule-based detectors trigger on, so
 #' the clusters in the demo are the injected ones rather than coincidence.
-#' amplitude/phase_day describe a sinusoidal season, phase_day being the
-#' day-of-year of peak incidence. `pathogen` values match
+#' `phase_day` is the day-of-year of peak incidence.
+#'
+#' Two shapes of season (`shape`). A `"sinusoid"` rises and falls
+#' gently all year, by `amplitude` around the mean: the shape of a
+#' pathogen with a preference for one half of the year. An `"epidemic"`
+#' is what influenza and RSV actually do - a short, sharp winter wave on
+#' a low sporadic background - drawn as a von Mises bump of
+#' `concentration` on a `background` share of the mean, with each
+#' season's peak moved and scaled at random (`peak_shift_sd` days,
+#' `peak_height_sdlog`) so that no two seasons are the same size or fall
+#' in the same week. A sinusoid of any amplitude concentrates too little
+#' of a year in its peak weeks to be a season in MEM's sense
+#' (`episodic_mem_seasonality()`), so the respiratory viruses the Moving
+#' Epidemic Method was built for are the epidemic ones here. Their
+#' means are lower than a sinusoid's would be for the same reason the
+#' others are modest: a wave packs a year into a few weeks, and at a
+#' higher mean its peak alone trips `same_place` at wards, practices and
+#' care homes by coincidence.
+#'
+#' `pathogen` values match
 #' `inst/config/episodic_default_pathogen_config.csv` exactly, as raw lab-provided strings.
 #' @keywords internal
 #' @noRd
@@ -412,11 +433,64 @@ episodic_synthetic_pathogen_profiles <- function() {
       "MRSA",
       "Giardia lamblia"
     ),
-    mean_daily = c(0.47, 0.42, 0.38, 0.17, 0.30, 0.21, 0.07, 0.09),
-    amplitude = c(0.5, 0.7, 0.4, 0.3, 0.7, 0.1, 0.05, 0.1),
-    phase_day = c(15, 15, 200, 210, 350, 180, 180, 200), # ~mid-Jan, mid-Jul etc.
+    mean_daily = c(0.47, 0.20, 0.38, 0.17, 0.20, 0.21, 0.07, 0.09),
+    shape = c(
+      "sinusoid", "epidemic", "sinusoid", "sinusoid",
+      "epidemic", "sinusoid", "sinusoid", "sinusoid"
+    ),
+    amplitude = c(0.5, NA, 0.4, 0.3, NA, 0.1, 0.05, 0.1),
+    concentration = c(NA, 3, NA, NA, 3, NA, NA, NA),
+    background = c(NA, 0.08, NA, NA, 0.10, NA, NA, NA),
+    peak_shift_sd = c(NA, 14, NA, NA, 10, NA, NA, NA),
+    peak_height_sdlog = c(NA, 0.35, NA, NA, 0.25, NA, NA, NA),
+    phase_day = c(15, 30, 200, 210, 350, 180, 180, 200), # ~mid-Jan, end Jan, mid-Jul etc.
     stringsAsFactors = FALSE
   )
+}
+
+#' The expected daily count of one pathogen, before Poisson noise
+#'
+#' @param dates The days to generate, a `Date` vector.
+#' @param profile One row of `episodic_synthetic_pathogen_profiles()`.
+#' @return A numeric vector the length of `dates`, averaging
+#'   `profile$mean_daily` over a year (an epidemic profile's random peak
+#'   heights make any one year larger or smaller than that).
+#' @keywords internal
+#' @noRd
+episodic_synthetic_seasonal_mean <- function(dates, profile) {
+  if (identical(profile$shape, "sinusoid")) {
+    doy <- as.integer(format(dates, "%j"))
+    return(profile$mean_daily *
+      (1 + profile$amplitude * cos(2 * pi * (doy - profile$phase_day) / 365.25)))
+  }
+  if (!identical(profile$shape, "epidemic")) {
+    stop("Unknown synthetic season shape: ", profile$shape, call. = FALSE)
+  }
+  # One peak per year the window touches, plus one either side, so every
+  # day lies within half a year of exactly one peak.
+  years <- seq(
+    as.integer(format(min(dates), "%Y")) - 1L,
+    as.integer(format(max(dates), "%Y")) + 1L
+  )
+  peaks <- as.Date(sprintf("%d-01-01", years)) + (profile$phase_day - 1L) +
+    round(stats::rnorm(length(years), sd = profile$peak_shift_sd))
+  heights <- stats::rlnorm(
+    length(years),
+    meanlog = -profile$peak_height_sdlog^2 / 2,
+    sdlog = profile$peak_height_sdlog
+  )
+  kappa <- profile$concentration
+  # Normalised to a mean of one over a whole cycle: exp(kappa) / I0(kappa)
+  # is the von Mises density at its peak relative to its mean.
+  wave <- numeric(length(dates))
+  for (i in seq_along(peaks)) {
+    offset <- as.numeric(dates - peaks[i])
+    near <- abs(offset) <= 365.25 / 2
+    wave[near] <- wave[near] + heights[i] *
+      exp(kappa * (cos(2 * pi * offset[near] / 365.25) - 1)) *
+      exp(kappa) / besselI(kappa, 0)
+  }
+  profile$mean_daily * (profile$background + (1 - profile$background) * wave)
 }
 
 #' One case row, however it was generated
@@ -526,9 +600,7 @@ episodic_synthetic_baseline_cases <- function(dates,
   rows <- list()
   for (i in seq_len(nrow(pathogens))) {
     org <- pathogens[i, ]
-    doy <- as.integer(format(dates, "%j"))
-    seasonal_mean <- org$mean_daily *
-      (1 + org$amplitude * cos(2 * pi * (doy - org$phase_day) / 365.25))
+    seasonal_mean <- episodic_synthetic_seasonal_mean(dates, org)
     n_per_day <- stats::rpois(length(dates), lambda = pmax(seasonal_mean, 0.01))
     n_total <- sum(n_per_day)
     if (n_total == 0) {
