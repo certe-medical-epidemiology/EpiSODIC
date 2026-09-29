@@ -439,6 +439,22 @@ Every run estimates, for each open epidemic, its stream's weekly growth rate ove
 | <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;epidemic_direction:<br>&nbsp;&nbsp;&nbsp;&nbsp;min_cases</code>    | 20      | Reported cases those weeks need before a rate is estimated      |
 | <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;epidemic_direction:<br>&nbsp;&nbsp;&nbsp;&nbsp;n_samples</code>    | 1000    | Draws the interval and probabilities are computed from (at least 100) |
 
+### Epidemic outlook
+
+Every run forecasts, for each open epidemic, its stream's weekly count in each of the `horizon_weeks` weeks after the last complete week. The model is `surveillance::hhh4()` with a negative binomial count: each week's expected count is an endemic level, seasonal (one sine-cosine pair of period 52 weeks) for a seasonal epidemic and constant otherwise, plus an autoregressive share of the week before. It is fitted on the stream's fully reported weeks, of which it needs `min_history_weeks`. When the autoregressive share is not identified (its log-scale standard error above 1, as when the counts show no week-to-week dependence), the endemic level alone is used rather than a share whose uncertainty would produce runaway paths.
+
+Paths are simulated from the last fully reported week with parameters drawn from the fit's approximate sampling distribution, so the intervals carry the uncertainty of the estimates as well as the counts' noise. Weeks still being reported are taken from the nowcast, or, without one, drawn from the model but never below what has already been reported; the week in progress likewise. For a seasonal epidemic, each week ahead also gets the chance of reaching each MEM band it was opened against, and each band the chance of being reached in any of the weeks.
+
+The Epidemics dossier shows the outlook, as a table and as marks after the weekly curve's bars, only once that pathogen's outlooks have been scored on `min_scored` weeks and, over those, beat expecting no change (the last complete week's count carried forward): their interval score relative to it is below 1. It states that record, with the share inside the 90% interval. Until then it says how far the record has come, or that it does not beat expecting no change: a model that fits past seasons can still miss an unusual one, which is what the record is there to show. Each run's outlook is stored and scored on the Performance screen as its weeks are reported.
+
+| Key                                  | Default | Effect                                                          |
+| ------------------------------------ | ------: | --------------------------------------------------------------- |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;epidemic_outlook:<br>&nbsp;&nbsp;&nbsp;&nbsp;enabled</code>           | `TRUE`  | Master switch                                                   |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;epidemic_outlook:<br>&nbsp;&nbsp;&nbsp;&nbsp;horizon_weeks</code>     | 4       | Weeks ahead forecast (1 to 8)                                   |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;epidemic_outlook:<br>&nbsp;&nbsp;&nbsp;&nbsp;min_history_weeks</code> | 104     | Fully reported weeks the model is fitted on at least (at least 26) |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;epidemic_outlook:<br>&nbsp;&nbsp;&nbsp;&nbsp;n_samples</code>         | 1000    | Simulated paths per outlook (at least 100)                      |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;epidemic_outlook:<br>&nbsp;&nbsp;&nbsp;&nbsp;min_scored</code>        | 20      | Scored weeks a pathogen's outlooks need, and must beat expecting no change over, before the dossier shows them |
+
 ### Typical past season
 
 When MEM opens a seasonal epidemic, the fit that set its thresholds also gives the typical course of the past seasons' epidemics (`mem::memmodel()`'s typical curve, with its 95% interval), the week they typically started, and their typical length. These are stored with the epidemic and fixed, like its thresholds. The Epidemics dossier draws the typical curve on the weekly curve with its start at this epidemic's onset, and gives the typical length and how many weeks earlier or later this epidemic started. It describes past seasons and is labelled as such; it is not a forecast.

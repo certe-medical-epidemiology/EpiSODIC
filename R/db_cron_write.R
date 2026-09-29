@@ -25,7 +25,7 @@
 # episodic_epidemic_season, episodic_epidemic_typical_week,
 # episodic_cluster_link, episodic_forecast, episodic_forecast_value,
 # episodic_cluster_forecast, episodic_cluster_forecast_value,
-# episodic_cluster_forecast_estimate,
+# episodic_cluster_forecast_estimate, episodic_cluster_forecast_week,
 # episodic_detection_run, episodic_report_subscription_send and (for
 # pre-renders) episodic_report_render. See
 # R/db_app_write.R for the insert-only counterparts. Parameters
@@ -1150,7 +1150,7 @@ episodic_db_forecast_insert <- function(con,
 #' As `episodic_forecast_kinds`, for forecasts about one cluster.
 #' @keywords internal
 #' @noRd
-episodic_cluster_forecast_kinds <- c("outbreak_end", "epidemic_direction")
+episodic_cluster_forecast_kinds <- c("outbreak_end", "epidemic_direction", "epidemic_outlook")
 
 #' The quantities each kind of cluster forecast may estimate
 #'
@@ -1159,7 +1159,8 @@ episodic_cluster_forecast_kinds <- c("outbreak_end", "epidemic_direction")
 #' @noRd
 episodic_cluster_forecast_quantities <- list(
   outbreak_end = character(0),
-  epidemic_direction = c("growth_rate_week", "p_growing", "p_past_peak")
+  epidemic_direction = c("growth_rate_week", "p_growing", "p_past_peak"),
+  epidemic_outlook = c("p_reach_low", "p_reach_medium", "p_reach_high", "p_reach_very_high")
 )
 
 #' Record one run's forecast about a cluster, and its values
@@ -1180,6 +1181,11 @@ episodic_cluster_forecast_quantities <- list(
 #'   kind's `episodic_cluster_forecast_quantities`), `estimate`, `lower`,
 #'   `upper` and `interval_level`; must be empty unless `status` is
 #'   `"computed"`.
+#' @param weeks `NULL`, or a data frame in
+#'   `episodic_cluster_forecast_week`'s shape (`target_date`, `horizon`,
+#'   `mean`, a column per `episodic_forecast_probs`, and `p_low`,
+#'   `p_medium`, `p_high`, `p_very_high`); must be empty unless `status`
+#'   is `"computed"`.
 #' @return The new `cluster_forecast_id`.
 #' @keywords internal
 #' @noRd
@@ -1192,13 +1198,15 @@ episodic_db_cluster_forecast_insert <- function(con,
                                                 detail,
                                                 params,
                                                 values = NULL,
-                                                estimates = NULL) {
+                                                estimates = NULL,
+                                                weeks = NULL) {
   if (!kind %in% episodic_cluster_forecast_kinds) {
     stop("Unknown cluster forecast kind \"", kind, "\".", call. = FALSE)
   }
   n_values <- if (is.null(values)) 0L else nrow(values)
   n_estimates <- if (is.null(estimates)) 0L else nrow(estimates)
-  if (!identical(status, "computed") && n_values + n_estimates > 0) {
+  n_weeks <- if (is.null(weeks)) 0L else nrow(weeks)
+  if (!identical(status, "computed") && n_values + n_estimates + n_weeks > 0) {
     stop(
       "A cluster forecast with status \"",
       status,
@@ -1249,6 +1257,20 @@ episodic_db_cluster_forecast_insert <- function(con,
         target_date = format(as.Date(values$target_date)),
         probability = as.numeric(values$probability)
       )
+    )
+  }
+  if (n_weeks > 0) {
+    cols <- c(
+      "target_date", "horizon", "mean", names(episodic_forecast_probs),
+      paste0("p_", episodic_outlook_bands)
+    )
+    rows <- as.list(weeks[cols])
+    rows$horizon <- as.integer(rows$horizon)
+    episodic_db_write_many(
+      con,
+      table = "episodic_cluster_forecast_week",
+      cols = c("cluster_forecast_id", cols),
+      values = c(list(cluster_forecast_id = rep(cluster_forecast_id, n_weeks)), rows)
     )
   }
   if (n_estimates > 0) {

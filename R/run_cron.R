@@ -1923,6 +1923,15 @@ episodic_run_cron_body <- function(con,
     stream_cases_for = stream_cases_for,
     week_pmfs = nowcast$week_pmfs
   )
+  episodic_epidemic_outlook_run(
+    con,
+    run_id = run_id,
+    run_date = run_date,
+    config = config,
+    streams = streams,
+    stream_cases_for = stream_cases_for,
+    week_pmfs = nowcast$week_pmfs
+  )
   episodic_outbreak_end_run(
     con,
     run_id = run_id,

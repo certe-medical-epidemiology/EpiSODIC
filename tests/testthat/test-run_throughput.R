@@ -871,7 +871,8 @@ test_that("no table but the run log grows when the same input is run again and a
     "episodic_forecast_value",
     "episodic_cluster_forecast",
     "episodic_cluster_forecast_value",
-    "episodic_cluster_forecast_estimate"
+    "episodic_cluster_forecast_estimate",
+    "episodic_cluster_forecast_week"
   )
   expect_identical(
     after_five[["episodic_detection_run"]] - after_two[["episodic_detection_run"]],

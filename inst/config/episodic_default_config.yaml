@@ -122,6 +122,17 @@ forecast:
     window_weeks: 4
     min_cases: 20
     n_samples: 1000
+  # epidemic_outlook: every open epidemic's stream's weekly counts in the
+  # horizon_weeks weeks ahead, and the chance of reaching each MEM band,
+  # from a model fitted on at least min_history_weeks fully reported
+  # weeks. The dossier shows a pathogen's outlook only once min_scored of
+  # its forecast weeks have been scored.
+  epidemic_outlook:
+    enabled: true
+    horizon_weeks: 4
+    min_history_weeks: 104
+    n_samples: 1000
+    min_scored: 20
 
 # Priority score.
 priority_score:

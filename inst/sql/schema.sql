@@ -592,6 +592,33 @@ CREATE TABLE episodic_cluster_forecast_value (
   PRIMARY KEY (cluster_forecast_id, target_date)
 );
 
+-- A cluster forecast's predictive distribution of one week's count, e.g.
+-- an epidemic's outlook: the week's Monday, how many weeks after the last
+-- complete week it is, its mean and quantiles as episodic_forecast_value
+-- stores them, and the chance the week's count reaches each MEM band
+-- (above the pre-epidemic threshold for low), NULL where the band has no
+-- threshold.
+CREATE TABLE episodic_cluster_forecast_week (
+  cluster_forecast_id INTEGER NOT NULL REFERENCES episodic_cluster_forecast(cluster_forecast_id),
+  target_date         TEXT NOT NULL,
+  horizon             INTEGER NOT NULL CHECK (horizon >= 1),
+  mean                REAL NOT NULL,
+  q025                REAL NOT NULL,
+  q05                 REAL NOT NULL,
+  q10                 REAL NOT NULL,
+  q25                 REAL NOT NULL,
+  q50                 REAL NOT NULL,
+  q75                 REAL NOT NULL,
+  q90                 REAL NOT NULL,
+  q95                 REAL NOT NULL,
+  q975                REAL NOT NULL,
+  p_low               REAL CHECK (p_low IS NULL OR (p_low >= 0 AND p_low <= 1)),
+  p_medium            REAL CHECK (p_medium IS NULL OR (p_medium >= 0 AND p_medium <= 1)),
+  p_high              REAL CHECK (p_high IS NULL OR (p_high >= 0 AND p_high <= 1)),
+  p_very_high         REAL CHECK (p_very_high IS NULL OR (p_very_high >= 0 AND p_very_high <= 1)),
+  PRIMARY KEY (cluster_forecast_id, target_date)
+);
+
 -- A cluster forecast's estimate of one quantity, e.g. an epidemic's
 -- weekly growth rate or the probability that its peak has passed, with
 -- the limits of its interval where it has one (interval_level, e.g. 0.9)

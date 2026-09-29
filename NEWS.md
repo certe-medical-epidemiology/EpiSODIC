@@ -20,6 +20,10 @@
 - The Epidemics dossier draws the typical past season on the weekly curve, aligned to the epidemic's onset, and shows the typical length and how much earlier or later this epidemic started
 - The typical past season's curve is the median of the past seasons by default, set by `mem.typical_curve` (`median`, `geometric_mean` or `arithmetic_mean`)
 - The tuning vignette's reference covers the `notifications` keys
+- Each detection run forecasts every open epidemic's weekly counts over the next weeks, with the chance of reaching each MEM band, from a negative binomial `surveillance::hhh4()` model on the fully reported weeks and the nowcast, configured under `forecast.epidemic_outlook`
+- Each run's epidemic outlook is stored in `episodic_cluster_forecast_week` (schema version 14)
+- The Epidemics dossier shows a pathogen's outlook, as a table and on the weekly curve, only once its outlooks have been scored on `forecast.epidemic_outlook.min_scored` weeks and beat expecting no change, and states that record
+- The Performance screen scores stored outlooks per horizon: interval coverage, weighted interval score, and the score relative to expecting no change
 
 ## Changed
 

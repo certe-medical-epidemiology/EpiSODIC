@@ -505,3 +505,172 @@ episodic_epidemic_direction_performance <- function(con, geography = episodic_ge
   })
   rbind(empty, do.call(rbind, rows))
 }
+
+#' Every stored epidemic outlook week, scored where its week is reported
+#'
+#' Each computed outlook's forecast of a week's count is set against that
+#' count once the week has passed the reporting horizon the outlook was
+#' made with (`max_delay_days`), read through the same membership rule
+#' the runs use; until then it is pending, neither scored nor dropped.
+#'
+#' Besides its interval coverage and weighted interval score
+#' (`episodic_forecast_wis()`), each is scored against the forecast that
+#' expects no change: the last complete week's count as the outlook's
+#' paths had it (`baseline_count`), with Poisson quantiles. The ratio of
+#' the two scores says whether the model earns its complexity.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param geography The geography stream membership is decided under.
+#' @param pathogen `NULL` for every pathogen, or the one pathogen to
+#'   score, as the dossier's track record needs.
+#' @return A data frame, one row per computed forecast and target week:
+#'   `cluster_forecast_id`, `run_id`, `cluster_id`, `pathogen`,
+#'   `horizon`, `target_date`, `final` (logical), and, `NA` unless
+#'   `final`, `observed`, `in_50`, `in_90`, `wis` and `wis_baseline`.
+#' @keywords internal
+#' @noRd
+episodic_epidemic_outlook_scores <- function(con,
+                                             geography = episodic_geography_config(),
+                                             pathogen = NULL) {
+  forecasts <- episodic_db_get_query(
+    con,
+    paste(
+      "SELECT f.cluster_forecast_id, f.run_id, f.cluster_id, f.params,
+            c.stream_id, s.pathogen, w.target_date, w.horizon,
+            w.q025, w.q05, w.q10, w.q25, w.q50, w.q75, w.q90, w.q95, w.q975
+       FROM episodic_cluster_forecast f
+       JOIN episodic_cluster c ON c.cluster_id = f.cluster_id
+       JOIN episodic_stream s ON s.stream_id = c.stream_id
+       JOIN episodic_cluster_forecast_week w
+         ON w.cluster_forecast_id = f.cluster_forecast_id
+      WHERE f.kind = 'epidemic_outlook' AND f.status = 'computed'",
+      if (is.null(pathogen)) "" else "AND s.pathogen = ?",
+      "ORDER BY f.cluster_forecast_id, w.target_date"
+    ),
+    params = if (is.null(pathogen)) NULL else list(pathogen)
+  )
+  n <- nrow(forecasts)
+  out <- data.frame(
+    cluster_forecast_id = forecasts$cluster_forecast_id,
+    run_id = forecasts$run_id,
+    cluster_id = forecasts$cluster_id,
+    pathogen = forecasts$pathogen,
+    horizon = as.integer(forecasts$horizon),
+    target_date = as.Date(forecasts$target_date),
+    final = logical(n),
+    observed = rep(NA_integer_, n),
+    in_50 = rep(NA, n),
+    in_90 = rep(NA, n),
+    wis = rep(NA_real_, n),
+    wis_baseline = rep(NA_real_, n),
+    stringsAsFactors = FALSE
+  )
+  run <- episodic_db_latest_run(con, status = episodic_run_statuses_complete)
+  if (n == 0 || is.null(run)) {
+    return(out)
+  }
+  asof <- as.Date(substr(run$run_date, 1, 10))
+  ids <- unique(forecasts$cluster_forecast_id)
+  params <- lapply(
+    forecasts$params[match(ids, forecasts$cluster_forecast_id)],
+    jsonlite::fromJSON,
+    simplifyVector = TRUE
+  )
+  at <- match(forecasts$cluster_forecast_id, ids)
+  horizon_days <- vapply(params, function(p) as.integer(p$max_delay_days), integer(1))[at]
+  baseline <- vapply(params, function(p) as.numeric(p$baseline_count), numeric(1))[at]
+  out$final <- out$target_date + 6L + horizon_days <= asof
+
+  for (stream_id in unique(forecasts$stream_id[out$final])) {
+    rows <- which(out$final & forecasts$stream_id == stream_id)
+    dates <- as.Date(episodic_db_cases_for_stream_id(
+      con,
+      stream_id,
+      columns = "sample_date",
+      first_day = format(min(out$target_date[rows])),
+      last_day = format(max(out$target_date[rows]) + 6L),
+      geography = geography
+    )$sample_date)
+    out$observed[rows] <- vapply(
+      out$target_date[rows],
+      function(w) sum(dates >= w & dates <= w + 6L),
+      integer(1)
+    )
+  }
+  scored <- which(out$final)
+  if (length(scored) > 0) {
+    y <- out$observed[scored]
+    quantiles <- forecasts[scored, names(episodic_forecast_probs), drop = FALSE]
+    out$in_50[scored] <- y >= quantiles$q25 & y <= quantiles$q75
+    out$in_90[scored] <- y >= quantiles$q05 & y <= quantiles$q95
+    out$wis[scored] <- episodic_forecast_wis(quantiles, y)
+    persistence <- as.data.frame(lapply(
+      episodic_forecast_probs,
+      function(p) stats::qpois(p, baseline[scored])
+    ))
+    out$wis_baseline[scored] <- episodic_forecast_wis(persistence, y)
+  }
+  out
+}
+
+#' How well the epidemic outlooks have done, per pathogen and horizon
+#'
+#' The Performance screen's outlook section, and the track record the
+#' dossier requires before it shows a pathogen's outlook: how many target
+#' weeks are scored and pending, the share inside the 50% and 90%
+#' intervals, the mean weighted interval score, and that score relative
+#' to the no-change forecast (below 1: the model does better). Every rate
+#' has the scored weeks as its denominator, so a row with none scored has
+#' `NA` for each, and so does the relative score when the no-change
+#' forecast scored zero throughout.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param geography,pathogen See `episodic_epidemic_outlook_scores()`.
+#' @return A data frame with `pathogen`, `horizon`, `n_scored`,
+#'   `n_pending`, `coverage_50`, `coverage_90`, `mean_wis` and
+#'   `relative_wis`; zero rows when nothing has been forecast.
+#' @keywords internal
+#' @noRd
+episodic_epidemic_outlook_performance <- function(con,
+                                                  geography = episodic_geography_config(),
+                                                  pathogen = NULL) {
+  scores <- episodic_epidemic_outlook_scores(con, geography = geography, pathogen = pathogen)
+  empty <- data.frame(
+    pathogen = character(0),
+    horizon = integer(0),
+    n_scored = integer(0),
+    n_pending = integer(0),
+    coverage_50 = numeric(0),
+    coverage_90 = numeric(0),
+    mean_wis = numeric(0),
+    relative_wis = numeric(0),
+    stringsAsFactors = FALSE
+  )
+  if (nrow(scores) == 0) {
+    return(empty)
+  }
+  mean_or_na <- function(x) if (length(x) == 0) NA_real_ else mean(x)
+  groups <- unique(scores[c("pathogen", "horizon")])
+  groups <- groups[order(groups$pathogen, groups$horizon), , drop = FALSE]
+  rows <- lapply(seq_len(nrow(groups)), function(g) {
+    of <- scores$pathogen == groups$pathogen[g] & scores$horizon == groups$horizon[g]
+    scored <- scores[of & scores$final, , drop = FALSE]
+    baseline <- sum(scored$wis_baseline)
+    data.frame(
+      pathogen = groups$pathogen[g],
+      horizon = groups$horizon[g],
+      n_scored = nrow(scored),
+      n_pending = sum(of & !scores$final),
+      coverage_50 = mean_or_na(scored$in_50),
+      coverage_90 = mean_or_na(scored$in_90),
+      mean_wis = mean_or_na(scored$wis),
+      relative_wis = if (nrow(scored) == 0 || baseline == 0) {
+        NA_real_
+      } else {
+        sum(scored$wis) / baseline
+      },
+      stringsAsFactors = FALSE
+    )
+  })
+  rbind(empty, do.call(rbind, rows))
+}
