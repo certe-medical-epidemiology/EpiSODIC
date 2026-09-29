@@ -851,13 +851,16 @@ test_that("no table but the run log grows when the same input is run again and a
   expect_gt(after_five[["episodic_stream_trend"]], 0L)
   expect_gt(after_five[["episodic_detector_cache"]], 0L)
   # One row per run, and one per detector firing per run: the run log.
-  # A run's forecasts belong to it too: each run's nowcast is kept, so
-  # it can be shown and scored as it was made.
+  # A run's forecasts belong to it too: each run's nowcast and
+  # outbreak-end probability is kept, so it can be shown and scored as
+  # it was made.
   run_log <- c(
     "episodic_detection_run",
     "episodic_detection",
     "episodic_forecast",
-    "episodic_forecast_value"
+    "episodic_forecast_value",
+    "episodic_cluster_forecast",
+    "episodic_cluster_forecast_value"
   )
   expect_identical(
     after_five[["episodic_detection_run"]] - after_two[["episodic_detection_run"]],

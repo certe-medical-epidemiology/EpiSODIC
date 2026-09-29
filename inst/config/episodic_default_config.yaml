@@ -103,6 +103,12 @@ forecast:
     prior_window_days: 28
     delay_window_days: ~
     n_samples: 500
+  # outbreak_end: the probability that an open outbreak is over, for
+  # pathogens with a serial interval and an offspring distribution
+  # (end_r, end_k) in the pathogen configuration.
+  outbreak_end:
+    enabled: true
+    probability_threshold: 0.95
 
 # Priority score.
 priority_score:

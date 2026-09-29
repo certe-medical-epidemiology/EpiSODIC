@@ -543,7 +543,7 @@ episodic_pathogen_config_resolve <- function(pathogen_config_path = Sys.getenv("
   )
 
   if (is.na(pathogen_config_path) || !nzchar(pathogen_config_path)) {
-    return(defaults)
+    return(episodic_pathogen_config_check(defaults, defaults_path))
   }
 
   if (!file.exists(pathogen_config_path)) {
@@ -572,7 +572,61 @@ episodic_pathogen_config_resolve <- function(pathogen_config_path = Sys.getenv("
     }
   )
 
-  episodic_pathogen_config_merge(defaults, overlay, pathogen_config_path)
+  episodic_pathogen_config_check(
+    episodic_pathogen_config_merge(defaults, overlay, pathogen_config_path),
+    pathogen_config_path
+  )
+}
+
+#' Refuse an offspring distribution that cannot mean what it says
+#'
+#' `end_r` and `end_k` are the mean and dispersion of a negative binomial
+#' and describe one distribution together, so a pathogen has both or
+#' neither: one without the other is a half-filled row, and reading it as
+#' "not configured" would hide the mistake. The mean may be zero (no
+#' onward transmission); the dispersion must be positive. The database
+#' checks the ranges too, but only once the run is under way; this names
+#' the pathogen and the file before anything is loaded.
+#'
+#' @param pathogen_config The resolved pathogen configuration.
+#' @param source_label The file it came from, for the error message.
+#' @return `pathogen_config`, unchanged; throws otherwise.
+#' @keywords internal
+#' @noRd
+episodic_pathogen_config_check <- function(pathogen_config, source_label) {
+  end_r <- suppressWarnings(as.numeric(pathogen_config$end_r))
+  end_k <- suppressWarnings(as.numeric(pathogen_config$end_k))
+  problems <- character(0)
+  unreadable <- (!is.na(pathogen_config$end_r) & is.na(end_r)) |
+    (!is.na(pathogen_config$end_k) & is.na(end_k))
+  half <- !unreadable & xor(is.na(end_r), is.na(end_k))
+  out_of_range <- !unreadable & !half & !is.na(end_r) &
+    (end_r < 0 | end_k <= 0)
+  for (i in which(unreadable)) {
+    problems <- c(problems, paste0(
+      pathogen_config$pathogen[i], ": end_r and end_k must be numbers"
+    ))
+  }
+  for (i in which(half)) {
+    problems <- c(problems, paste0(
+      pathogen_config$pathogen[i], ": end_r and end_k are set together or not at all"
+    ))
+  }
+  for (i in which(out_of_range)) {
+    problems <- c(problems, paste0(
+      pathogen_config$pathogen[i], ": end_r must be at least 0 and end_k above 0"
+    ))
+  }
+  if (length(problems) > 0) {
+    stop(
+      "The pathogen configuration from '",
+      source_label,
+      "' cannot be used:\n",
+      paste0("  - ", problems, collapse = "\n"),
+      call. = FALSE
+    )
+  }
+  pathogen_config
 }
 
 #' Merge an operator's per-pathogen CSV on top of the shipped defaults

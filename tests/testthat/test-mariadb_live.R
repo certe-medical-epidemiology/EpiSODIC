@@ -249,7 +249,7 @@ mariadb_would_be_fk <- function(con) {
 
 test_that("a run migrates a database from an earlier schema version, against MariaDB", {
   # A version-8 database: the assessment columns version 9 drops, and
-  # none of the additions versions 10 and 11 make, so every migration
+  # none of the additions versions 10 to 12 make, so every migration
   # does its real work against the server rather than finding it done.
   skip_on_cran()
   dsn <- mariadb_fresh()
@@ -258,6 +258,13 @@ test_that("a run migrates a database from an earlier schema version, against Mar
   DBI::dbExecute(con, "DROP TABLE episodic_epidemic_week")
   DBI::dbExecute(con, "DROP TABLE episodic_forecast_value")
   DBI::dbExecute(con, "DROP TABLE episodic_forecast")
+  DBI::dbExecute(con, "DROP TABLE episodic_cluster_forecast_value")
+  DBI::dbExecute(con, "DROP TABLE episodic_cluster_forecast")
+  # Empty on a fresh database, and dropped the way a migration would drop
+  # them, CHECK constraints included.
+  for (column in c("end_r", "end_k")) {
+    episodic_db_drop_empty_column(con, "mariadb", "episodic_pathogen_config", column)
+  }
   for (fk in mariadb_would_be_fk(con)) {
     DBI::dbExecute(con, paste0("ALTER TABLE episodic_cluster DROP FOREIGN KEY ", fk))
   }
@@ -295,6 +302,10 @@ test_that("a run migrates a database from an earlier schema version, against Mar
   expect_true(DBI::dbExistsTable(con, "episodic_epidemic_week"))
   expect_true(DBI::dbExistsTable(con, "episodic_forecast"))
   expect_true(DBI::dbExistsTable(con, "episodic_forecast_value"))
+  expect_true(DBI::dbExistsTable(con, "episodic_cluster_forecast"))
+  expect_true(DBI::dbExistsTable(con, "episodic_cluster_forecast_value"))
+  expect_true(episodic_db_column_exists(con, "mariadb", "episodic_pathogen_config", "end_r"))
+  expect_true(episodic_db_column_exists(con, "mariadb", "episodic_pathogen_config", "end_k"))
   expect_true(episodic_db_column_exists(
     con,
     "mariadb",
@@ -319,9 +330,13 @@ test_that("a run migrates a database from an earlier schema version, against Mar
   )
 })
 
-test_that("nowcasts are written, read and scored against MariaDB", {
+test_that("nowcasts and outbreak-end probabilities are written, read and scored against MariaDB", {
   skip_on_cran()
-  db <- nowcast_cron_database(n_runs = 8L, path = mariadb_fresh())
+  db <- nowcast_cron_database(
+    n_runs = 8L,
+    path = mariadb_fresh(),
+    pathogen_lines = outbreak_end_pathogen_lines()
+  )
   on.exit(unlink(db$config_path))
   con <- episodic_db_connect(db$path)
   on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
@@ -338,6 +353,13 @@ test_that("nowcasts are written, read and scored against MariaDB", {
   expect_true(is.numeric(latest$values$q50))
   scores <- episodic_nowcast_scores(con)
   expect_gt(sum(scores$final), 0)
+
+  cluster_id <- episodic_db_clusters_not_closed(con, "outbreak")$cluster_id[1]
+  end <- episodic_db_cluster_forecast_latest(con, cluster_id, "outbreak_end")
+  expect_identical(end$status, "computed")
+  expect_true(inherits(end$values$target_date, "Date"))
+  expect_true(all(end$values$probability >= 0 & end$values$probability <= 1))
+  expect_gt(nrow(episodic_outbreak_end_scores(con)), 0)
 })
 
 test_that("the dashboard reads what the run wrote, against MariaDB", {

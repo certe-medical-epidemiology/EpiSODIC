@@ -1133,6 +1133,52 @@ episodic_db_forecast_latest <- function(con, stream_id, kind) {
   )
 }
 
+#' The latest run's forecast of one kind about a cluster
+#'
+#' As `episodic_db_forecast_latest()`, for a cluster: only a forecast the
+#' latest completed run made is returned, so a cluster the latest run did
+#' not forecast (closed, or forecasting switched off) has none.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The cluster.
+#' @param kind One of `episodic_cluster_forecast_kinds`.
+#' @return `NULL`, or a list with `run_id`, `status`, `detail`, `params`
+#'   (the parsed JSON) and `values` (a data frame with `target_date`
+#'   (`Date`) and `probability`, ordered by date; empty unless `status`
+#'   is `"computed"`).
+#' @keywords internal
+#' @noRd
+episodic_db_cluster_forecast_latest <- function(con, cluster_id, kind) {
+  run <- episodic_db_latest_run(con, status = episodic_run_statuses_complete)
+  if (is.null(run)) {
+    return(NULL)
+  }
+  forecast <- episodic_db_get_query(
+    con,
+    "SELECT cluster_forecast_id, run_id, status, detail, params
+       FROM episodic_cluster_forecast
+      WHERE run_id = ? AND cluster_id = ? AND kind = ?",
+    params = list(run$run_id, cluster_id, kind)
+  )
+  if (nrow(forecast) == 0) {
+    return(NULL)
+  }
+  values <- episodic_db_get_query(
+    con,
+    "SELECT target_date, probability FROM episodic_cluster_forecast_value
+      WHERE cluster_forecast_id = ? ORDER BY target_date",
+    params = list(forecast$cluster_forecast_id[1])
+  )
+  values$target_date <- as.Date(values$target_date)
+  list(
+    run_id = forecast$run_id[1],
+    status = forecast$status[1],
+    detail = forecast$detail[1],
+    params = jsonlite::fromJSON(forecast$params[1], simplifyVector = TRUE),
+    values = values
+  )
+}
+
 #' @keywords internal
 #' @noRd
 episodic_db_stream_trend <- function(con, stream_id) {

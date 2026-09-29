@@ -1909,6 +1909,12 @@ episodic_run_cron_body <- function(con,
     streams = streams,
     stream_cases_for = stream_cases_for
   )
+  episodic_outbreak_end_run(
+    con,
+    run_id = run_id,
+    run_date = run_date,
+    config = config
+  )
   episodic_trace_debug(
     debug,
     "debug: memory before finishing: ",

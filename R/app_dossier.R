@@ -329,6 +329,17 @@ episodic_ui_stat_grid <- function(obj, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       ))
     )
   }
+  # Next to the case-free rule, as a second reading of the same
+  # question, never in its place: closure stays the rule's and the
+  # epidemiologist's.
+  stats <- c(
+    stats,
+    list(episodic_ui_outbreak_end_stat(
+      obj$outbreak_end,
+      obj$outbreak_end_threshold,
+      lang = lang
+    ))
+  )
   stats <- c(
     stats,
     list(episodic_ui_stat(
@@ -708,6 +719,85 @@ episodic_ui_epicurve_panel <- function(con,
       height = 210
     )
   )
+}
+
+#' The dossier tile for the probability that an outbreak is over
+#'
+#' The probability as of the latest run, and when it reaches the
+#' configured threshold if no further case is reported before then. When
+#' the latest run recorded why there is no probability, the tile says so
+#' in place of a number. No tile when the latest run made no forecast for
+#' this cluster: its pathogen is not one the method applies to, the
+#' cluster is closed, or the forecast is switched off.
+#'
+#' A probability is shown as a whole percentage, and never as 0% or 100%:
+#' the model approaches both without reaching them, and a rounded 100%
+#' would read as certainty.
+#'
+#' @param forecast `episodic_db_cluster_forecast_latest()`'s output, or
+#'   `NULL`.
+#' @param threshold `forecast.outbreak_end.probability_threshold`.
+#' @param lang Session language.
+#' @return A stat tile, or `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_ui_outbreak_end_stat <- function(forecast,
+                                          threshold,
+                                          lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (is.null(forecast)) {
+    return(NULL)
+  }
+  label <- episodic_tr("dossier.stat.outbreak_end", lang = lang)
+  lead <- episodic_tr("dossier.stat.outbreak_end_lead", lang = lang)
+  if (!identical(forecast$status, "computed")) {
+    reason <- switch(forecast$status,
+      not_applicable = ,
+      insufficient_data = paste0("dossier.stat.outbreak_end_", forecast$detail),
+      failed = "dossier.stat.outbreak_end_failed",
+      stop("Unknown forecast status \"", forecast$status, "\".", call. = FALSE)
+    )
+    return(episodic_ui_stat(
+      label,
+      episodic_tr("misc.dash", lang = lang),
+      episodic_tr(reason, lang = lang),
+      lead = lead
+    ))
+  }
+  values <- forecast$values
+  pct <- function(p) {
+    paste0(episodic_format_number(p * 100, digits = 0, lang = lang), "%")
+  }
+  today <- values$probability[1]
+  value <- if (today < 0.01) {
+    paste0("< ", pct(0.01))
+  } else if (today > 0.99) {
+    paste0("> ", pct(0.99))
+  } else {
+    pct(today)
+  }
+  reached <- which(values$probability >= threshold)
+  sub <- if (length(reached) > 0 && reached[1] == 1L) {
+    episodic_tr(
+      "dossier.stat.outbreak_end_reached",
+      threshold = pct(threshold),
+      lang = lang
+    )
+  } else if (length(reached) > 0) {
+    episodic_tr(
+      "dossier.stat.outbreak_end_date",
+      threshold = pct(threshold),
+      date = episodic_format_date(values$target_date[reached[1]], lang = lang),
+      lang = lang
+    )
+  } else {
+    episodic_tr(
+      "dossier.stat.outbreak_end_later",
+      threshold = pct(threshold),
+      date = episodic_format_date(max(values$target_date), lang = lang),
+      lang = lang
+    )
+  }
+  episodic_ui_stat(label, value, sub, lead = lead)
 }
 
 #' What a curve's nowcast note says

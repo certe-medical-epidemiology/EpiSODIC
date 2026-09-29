@@ -598,6 +598,14 @@ body {
   text-transform: uppercase;
   color: var(--episodic-muted);
 }
+/* What the value below measures, when the uppercase caption alone does
+   not say: between caption and value, in sentence case so it reads as
+   an explanation rather than a second caption. */
+.episodic-stat-lead {
+  font-size: 0.846rem;
+  color: var(--episodic-muted);
+  margin-block-start: 2px;
+}
 .episodic-stat-value {
   font-size: 1.846rem;
   font-weight: 600;

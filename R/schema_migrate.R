@@ -357,7 +357,7 @@ episodic_db_apply_schema <- function(con, dialect) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 11L
+episodic_schema_version <- 12L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -860,6 +860,39 @@ episodic_db_migrations <- function() {
     # from the next detection run on.
     "11" = function(con, dialect) {
       for (table in c("episodic_forecast", "episodic_forecast_value")) {
+        if (DBI::dbExistsTable(con, table)) {
+          next
+        }
+        for (statement in episodic_db_schema_statements_for(dialect, table)) {
+          episodic_db_execute(con, statement)
+        }
+      }
+      invisible(NULL)
+    },
+    # 12: the offspring distribution of an outbreak's cases
+    # (episodic_pathogen_config.end_r and end_k), and forecasts about one
+    # cluster per run (episodic_cluster_forecast and its values). Purely
+    # additive: two nullable columns, filled from the pathogen CSV by the
+    # next run, which loads it whole, and two tables taken from the schema
+    # file, each skipped when present for the same reason as 2.
+    "12" = function(con, dialect) {
+      columns <- c(
+        end_r = "REAL CHECK (end_r IS NULL OR end_r >= 0)",
+        end_k = "REAL CHECK (end_k IS NULL OR end_k > 0)"
+      )
+      for (column in names(columns)) {
+        if (!episodic_db_column_exists(con, dialect, "episodic_pathogen_config", column)) {
+          episodic_db_execute(
+            con,
+            paste(
+              "ALTER TABLE episodic_pathogen_config ADD COLUMN",
+              column,
+              columns[[column]]
+            )
+          )
+        }
+      }
+      for (table in c("episodic_cluster_forecast", "episodic_cluster_forecast_value")) {
         if (DBI::dbExistsTable(con, table)) {
           next
         }
@@ -2048,6 +2081,12 @@ episodic_db_schema_statements <- function(dialect) {
       episodic_forecast_value = c(
         "  resolution  TEXT NOT NULL CHECK (resolution IN ('day', 'week'))," = "  resolution  VARCHAR(4) NOT NULL CHECK (resolution IN ('day', 'week')),",
         "  target_date TEXT NOT NULL," = "  target_date VARCHAR(10) NOT NULL,"
+      ),
+      episodic_cluster_forecast = c(
+        "  kind                TEXT NOT NULL," = "  kind                VARCHAR(20) NOT NULL,"
+      ),
+      episodic_cluster_forecast_value = c(
+        "  target_date         TEXT NOT NULL," = "  target_date         VARCHAR(10) NOT NULL,"
       ),
       episodic_detector_cache = c(
         "  detector   TEXT NOT NULL CHECK (detector IN ('mem'))," = "  detector   VARCHAR(20) NOT NULL CHECK (detector IN ('mem')),"

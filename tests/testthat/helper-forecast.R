@@ -35,9 +35,19 @@ nowcast_line_list <- function(from, to, per_day = 4, seed = 1) {
 # A ward's cases, sampled daily and each loaded by the run on its
 # reporting date, over daily runs: a stream with an open same_place
 # cluster and a reporting history the nowcast can learn from.
+#
+# `pathogen_lines`, when given, is a pathogen configuration overlay (a
+# header and rows) for the runs, so "Test pathogen" can be given the
+# serial interval and offspring distribution of a transmissible one.
 nowcast_cron_database <- function(config_lines = character(0),
                                   n_runs = 16L,
-                                  path = tempfile(fileext = ".sqlite")) {
+                                  path = tempfile(fileext = ".sqlite"),
+                                  pathogen_lines = NULL) {
+  pathogen_config_path <- NA
+  if (!is.null(pathogen_lines)) {
+    pathogen_config_path <- tempfile(fileext = ".csv")
+    writeLines(pathogen_lines, pathogen_config_path)
+  }
   config_path <- tempfile(fileext = ".yaml")
   writeLines(
     c(
@@ -81,8 +91,30 @@ nowcast_cron_database <- function(config_lines = character(0),
       db_path = path,
       cases = as_cases(truth[truth$report_date <= run_dates[i], ]),
       episodic_config_path = config_path,
+      pathogen_config_path = pathogen_config_path,
       run_date = run_dates[i]
     )))
   }
-  list(path = path, config_path = config_path, log = log)
+  list(
+    path = path,
+    config_path = c(config_path, if (!is.na(pathogen_config_path)) pathogen_config_path),
+    log = log
+  )
+}
+
+# "Test pathogen" as a transmissible pathogen with a norovirus-like serial
+# interval, with or without an offspring distribution.
+outbreak_end_pathogen_lines <- function(end_r = 0.8, end_k = 0.5) {
+  c(
+    paste0(
+      "pathogen,episode_days,case_free_days,rt_applicable,si_mean_days,",
+      "si_sd_days,si_dist,mem_mode,severity_weight,end_r,end_k"
+    ),
+    paste0(
+      "Test pathogen,30,14,1,3.6,1.9,gamma,no,1,",
+      if (is.na(end_r)) "" else end_r,
+      ",",
+      if (is.na(end_k)) "" else end_k
+    )
+  )
 }

@@ -32,6 +32,8 @@ pathogen_screen_setup <- function() {
     si_mean_days = c(2.6, NA),
     si_sd_days = c(1.1, NA),
     si_dist = c("gamma", NA),
+    end_r = NA_real_,
+    end_k = NA_real_,
     mem_mode = c("auto", "auto"),
     severity_weight = c(0.6, 0.7),
     source_ref = NA,
@@ -545,6 +547,47 @@ test_that("the pathogen config panel writes its numbers in the session language'
   english <- as.character(episodic_ui_pathogen_config_panel(screen, lang = "en"))
   expect_true(grepl("2.6", english, fixed = TRUE))
   expect_true(grepl("1.1", english, fixed = TRUE))
+})
+
+test_that("the pathogen config panel shows the offspring distribution, or that it is not configured", {
+  screen <- list(
+    pathogen = "Test pathogen",
+    config = data.frame(
+      pathogen = "Test pathogen",
+      episode_days = 14,
+      incub_min_days = 2,
+      incub_max_days = 3,
+      case_free_days = 14,
+      cooldown_days = 14,
+      rt_applicable = 1,
+      si_mean_days = 2.6,
+      si_sd_days = 1.1,
+      si_dist = "gamma",
+      end_r = 0.8,
+      end_k = 0.5,
+      mem_mode = "auto",
+      severity_weight = 0.6,
+      source_ref = NA_character_,
+      stringsAsFactors = FALSE
+    )
+  )
+  expect_match(
+    as.character(episodic_ui_pathogen_config_panel(screen, lang = "en")),
+    "R 0.8, k 0.5",
+    fixed = TRUE
+  )
+  expect_match(
+    as.character(episodic_ui_pathogen_config_panel(screen, lang = "nl")),
+    "R 0,8, k 0,5",
+    fixed = TRUE
+  )
+  screen$config$end_r <- NA_real_
+  screen$config$end_k <- NA_real_
+  expect_match(
+    as.character(episodic_ui_pathogen_config_panel(screen, lang = "en")),
+    "not configured",
+    fixed = TRUE
+  )
 })
 
 test_that("the pathogen config panel dashes a parameter this instance leaves unset", {

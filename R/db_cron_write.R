@@ -23,7 +23,8 @@
 # episodic_case, episodic_denominator,
 # episodic_detection, episodic_cluster, episodic_cluster_case,
 # episodic_epidemic_season, episodic_cluster_link, episodic_forecast,
-# episodic_forecast_value,
+# episodic_forecast_value, episodic_cluster_forecast,
+# episodic_cluster_forecast_value,
 # episodic_detection_run, episodic_report_subscription_send and (for
 # pre-renders) episodic_report_render. See
 # R/db_app_write.R for the insert-only counterparts. Parameters
@@ -56,13 +57,28 @@ episodic_db_pathogen_config_load <- function(con, pathogen_config) {
     "si_mean_days",
     "si_sd_days",
     "si_dist",
+    "end_r",
+    "end_k",
     "mem_mode",
     "severity_weight",
     "source_ref"
   )
+  missing <- setdiff(cols, names(pathogen_config))
+  if (length(missing) > 0) {
+    stop(
+      "The pathogen configuration has no column(s) ",
+      paste(missing, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
   values <- as.list(pathogen_config[, cols, drop = FALSE])
   values$rt_applicable <- as.integer(values$rt_applicable)
   values$mem_mode <- as.character(values$mem_mode)
+  # Read from a CSV column that may be empty throughout, which R reads as
+  # logical.
+  values$end_r <- as.numeric(values$end_r)
+  values$end_k <- as.numeric(values$end_k)
   episodic_db_write_many(
     con,
     table = "episodic_pathogen_config",
@@ -1097,6 +1113,87 @@ episodic_db_forecast_insert <- function(con,
     )
   }
   forecast_id
+}
+
+#' The kinds of forecast `episodic_cluster_forecast` may hold
+#'
+#' As `episodic_forecast_kinds`, for forecasts about one cluster.
+#' @keywords internal
+#' @noRd
+episodic_cluster_forecast_kinds <- c("outbreak_end")
+
+#' Record one run's forecast about a cluster, and its values
+#'
+#' @param con A [DBI::DBIConnection-class], inside the run's transaction.
+#' @param run_id The current run.
+#' @param cluster_id The cluster.
+#' @param kind One of `episodic_cluster_forecast_kinds`.
+#' @param method The method.
+#' @param status `"computed"`, `"not_applicable"`, `"insufficient_data"`
+#'   or `"failed"`.
+#' @param detail `NA`, a reason code, or an error message.
+#' @param params A list of what the forecast was computed from, stored as
+#'   JSON.
+#' @param values A data frame with `target_date` and `probability`; must
+#'   be empty unless `status` is `"computed"`.
+#' @return The new `cluster_forecast_id`.
+#' @keywords internal
+#' @noRd
+episodic_db_cluster_forecast_insert <- function(con,
+                                                run_id,
+                                                cluster_id,
+                                                kind,
+                                                method,
+                                                status,
+                                                detail,
+                                                params,
+                                                values) {
+  if (!kind %in% episodic_cluster_forecast_kinds) {
+    stop("Unknown cluster forecast kind \"", kind, "\".", call. = FALSE)
+  }
+  if (!identical(status, "computed") && nrow(values) > 0) {
+    stop(
+      "A cluster forecast with status \"",
+      status,
+      "\" cannot carry values.",
+      call. = FALSE
+    )
+  }
+  episodic_db_execute(
+    con,
+    "INSERT INTO episodic_cluster_forecast
+       (run_id, cluster_id, kind, method, status, detail, params, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    params = list(
+      run_id,
+      cluster_id,
+      kind,
+      method,
+      status,
+      if (is.null(detail)) NA_character_ else as.character(detail),
+      as.character(jsonlite::toJSON(
+        params,
+        auto_unbox = TRUE,
+        null = "null",
+        digits = NA
+      )),
+      episodic_now()
+    )
+  )
+  cluster_forecast_id <- episodic_db_last_insert_id(con)
+  if (nrow(values) > 0) {
+    episodic_db_write_many(
+      con,
+      table = "episodic_cluster_forecast_value",
+      cols = c("cluster_forecast_id", "target_date", "probability"),
+      values = list(
+        cluster_forecast_id = rep(cluster_forecast_id, nrow(values)),
+        target_date = format(as.Date(values$target_date)),
+        probability = as.numeric(values$probability)
+      )
+    )
+  }
+  cluster_forecast_id
 }
 
 #' Record the end of a seasonal epidemic

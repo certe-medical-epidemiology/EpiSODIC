@@ -174,6 +174,11 @@ CREATE TABLE episodic_pathogen_config (
   si_mean_days    REAL,
   si_sd_days      REAL,
   si_dist         TEXT CHECK (si_dist IS NULL OR si_dist IN ('gamma', 'lognormal', 'weibull')),
+  -- Mean (end_r) and dispersion (end_k) of the negative binomial number
+  -- of cases each case of an outbreak goes on to cause, for the
+  -- probability that an outbreak is over. Both or neither.
+  end_r           REAL CHECK (end_r IS NULL OR end_r >= 0),
+  end_k           REAL CHECK (end_k IS NULL OR end_k > 0),
   mem_mode        TEXT NOT NULL DEFAULT 'auto' CHECK (mem_mode IN ('auto', 'yes', 'no')),
   severity_weight REAL NOT NULL DEFAULT 1.00,
   source_ref      TEXT
@@ -519,6 +524,40 @@ CREATE TABLE episodic_forecast_value (
   q95         REAL NOT NULL,
   q975        REAL NOT NULL,
   PRIMARY KEY (forecast_id, resolution, target_date)
+);
+
+-- ---------------------------------------------------------------------
+-- Cluster forecasts (cron). A forecast about one cluster rather than
+-- about its stream's counts, kept per run for the reasons given above
+-- episodic_forecast: to show what a run estimated when an assessment was
+-- made, and to score it once its outcome is known. Written for every
+-- open outbreak whose pathogen the forecast applies to at all; status
+-- says why a row carries no values. kind is unconstrained for the same
+-- reason as episodic_forecast.kind; episodic_db_cluster_forecast_insert()
+-- is its one writer and refuses a kind it does not know.
+-- ---------------------------------------------------------------------
+CREATE TABLE episodic_cluster_forecast (
+  cluster_forecast_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id              INTEGER NOT NULL REFERENCES episodic_detection_run(run_id),
+  cluster_id          INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
+  kind                TEXT NOT NULL,
+  method              TEXT NOT NULL,
+  status              TEXT NOT NULL CHECK (status IN ('computed', 'not_applicable', 'insufficient_data', 'failed')),
+  detail              TEXT,
+  params              TEXT NOT NULL,
+  created_at          TEXT NOT NULL,
+  UNIQUE (run_id, cluster_id, kind)
+);
+
+CREATE INDEX idx_episodic_cluster_forecast_cluster ON episodic_cluster_forecast(cluster_id, kind);
+
+-- A cluster forecast's probability for one date, e.g. that an outbreak
+-- is over by then if no further case is reported before it.
+CREATE TABLE episodic_cluster_forecast_value (
+  cluster_forecast_id INTEGER NOT NULL REFERENCES episodic_cluster_forecast(cluster_forecast_id),
+  target_date         TEXT NOT NULL,
+  probability         REAL NOT NULL CHECK (probability >= 0 AND probability <= 1),
+  PRIMARY KEY (cluster_forecast_id, target_date)
 );
 
 -- ---------------------------------------------------------------------
