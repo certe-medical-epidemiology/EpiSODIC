@@ -365,6 +365,19 @@ episodic_cluster_object <- function(con,
     asof = asof,
     demography = episodic_app_demography_shift(con, stream$stream_id, cases),
     completeness = completeness,
+    # A manual cluster's cases are not this instance's case data, and
+    # its stream's nowcast is not about them. A closed cluster's is not
+    # either: the runs nowcast a stream for the clusters still open on
+    # it, and a closed one's curve would be stretched to today by days
+    # that belong to whatever is open there now.
+    nowcast = if (
+      is_manual ||
+        identical(episodic_app_derive_state_for_cluster(con, cluster_id), "closed")
+    ) {
+      NULL
+    } else {
+      episodic_db_forecast_latest(con, stream$stream_id, "nowcast")
+    },
     # No patient_key to dedup on for a manual cluster - each row is
     # assumed to already be one distinct case, exactly as reported.
     unique_patients = if (is_manual) nrow(cases) else length(unique(cases$patient_key)),
@@ -1231,10 +1244,20 @@ episodic_app_data_asof <- function(con) {
 #'   costs a reporting triangle over the stream's whole case history -
 #'   so the panel passes that rather than building a second identical
 #'   one for the same stream in the same render.
-#' @return A data frame with `sample_date`, `n_cases`, `incomplete`.
+#' @param nowcast The stream's latest nowcast
+#'   (`episodic_db_forecast_latest()`), or `NULL`. Its days from the
+#'   cluster's first case on are added to the curve, including days after
+#'   its last case: those are days on which cases of this stream may still
+#'   be reported.
+#' @return A data frame with `sample_date`, `n_cases`, `incomplete`, and
+#'   `nowcast_low`, `nowcast_mid` and `nowcast_high` (the 5%, 50% and 95%
+#'   quantiles of the expected final count, `NA` on a day not nowcast).
 #' @keywords internal
 #' @noRd
-episodic_app_epi_curve <- function(con, cluster_id, completeness = NULL) {
+episodic_app_epi_curve <- function(con,
+                                   cluster_id,
+                                   completeness = NULL,
+                                   nowcast = NULL) {
   cluster <- episodic_db_get_query(
     con,
     "SELECT stream_id, origin FROM episodic_cluster WHERE cluster_id = ?",
@@ -1252,7 +1275,10 @@ episodic_app_epi_curve <- function(con, cluster_id, completeness = NULL) {
     return(data.frame(
       sample_date = as.Date(character(0)),
       n_cases = integer(0),
-      incomplete = logical(0)
+      incomplete = logical(0),
+      nowcast_low = numeric(0),
+      nowcast_mid = numeric(0),
+      nowcast_high = numeric(0)
     ))
   }
   # Reporting-delay completeness is a cron-computed property of a stream's
@@ -1268,7 +1294,13 @@ episodic_app_epi_curve <- function(con, cluster_id, completeness = NULL) {
   asof <- episodic_app_data_asof(con)
 
   dates <- as.Date(cases$sample_date)
-  all_days <- seq(min(dates), max(dates), by = "day")
+  nowcast_days <- episodic_app_nowcast_values(nowcast, "day")
+  nowcast_days <- nowcast_days[nowcast_days$target_date >= min(dates), , drop = FALSE]
+  all_days <- seq(
+    min(dates),
+    max(c(dates, nowcast_days$target_date)),
+    by = "day"
+  )
   counts <- vapply(all_days, function(d) sum(dates == d), integer(1))
   # An unmeasured reporting delay (`NA`, see `episodic_app_completeness()`)
   # gets the same treatment as a stream that never reaches 95%: every day
@@ -1283,11 +1315,34 @@ episodic_app_epi_curve <- function(con, cluster_id, completeness = NULL) {
   } else {
     all_days > (asof - incomplete_days)
   }
+  at <- match(all_days, nowcast_days$target_date)
   data.frame(
     sample_date = all_days,
     n_cases = counts,
-    incomplete = incomplete
+    incomplete = incomplete,
+    nowcast_low = nowcast_days$q05[at],
+    nowcast_mid = nowcast_days$q50[at],
+    nowcast_high = nowcast_days$q95[at]
   )
+}
+
+#' A nowcast's values at one resolution, with dates as `Date`
+#'
+#' @param nowcast `episodic_db_forecast_latest()`'s output, or `NULL`.
+#' @param resolution `"day"` or `"week"`.
+#' @return The matching rows of `nowcast$values`, `target_date` as a
+#'   `Date`; zero rows when there is no computed nowcast.
+#' @keywords internal
+#' @noRd
+episodic_app_nowcast_values <- function(nowcast, resolution) {
+  values <- if (is.null(nowcast)) {
+    episodic_forecast_values_empty()
+  } else {
+    nowcast$values
+  }
+  values <- values[values$resolution == resolution, , drop = FALSE]
+  values$target_date <- as.Date(values$target_date)
+  values
 }
 
 #' Multi-year trend data for a stream (the cron-persisted chart cache)
@@ -1711,6 +1766,25 @@ episodic_epidemic_object <- function(con,
   weekly <- curve$weekly
   thresholds <- curve$thresholds
 
+  # The nowcast counts the stream's cases, and so does the curve, unless
+  # the history read here is not the stream the run nowcast: then the
+  # curve is drawn from the epidemic's own cases, and the nowcast is not
+  # about them. A manual cluster has no case data of this instance, and
+  # a closed epidemic is not what its stream is nowcast for (see
+  # `episodic_cluster_object()`).
+  nowcast <- if (
+    identical(cluster$origin, "manual") || !is.null(history_problem) || closed
+  ) {
+    NULL
+  } else {
+    episodic_db_forecast_latest(con, cluster$stream_id, "nowcast")
+  }
+  nowcast_weeks <- episodic_app_nowcast_values(nowcast, "week")
+  at <- match(as.Date(weekly$week_start), nowcast_weeks$target_date)
+  weekly$nowcast_low <- nowcast_weeks$q05[at]
+  weekly$nowcast_mid <- nowcast_weeks$q50[at]
+  weekly$nowcast_high <- nowcast_weeks$q95[at]
+
   resolved <- list(from = from, to = to)
   denominator <- episodic_app_pathogen_denominator(
     con,
@@ -1815,6 +1889,7 @@ episodic_epidemic_object <- function(con,
     asof = asof,
     incomplete_days = incomplete_days,
     history_problem = history_problem,
+    nowcast = nowcast,
     season = season,
     anchor_week = anchor_week,
     weekly = weekly,

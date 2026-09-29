@@ -466,6 +466,62 @@ CREATE TABLE episodic_detector_cache (
 );
 
 -- ---------------------------------------------------------------------
+-- Forecasts (cron). One row per run, stream and kind of forecast, with
+-- the values in episodic_forecast_value. Kept per run rather than
+-- replaced, for two reasons: the dossier must be able to show what a
+-- run estimated when an assessment was made, and a forecast can only be
+-- scored honestly against what it said at the time, once the counts it
+-- estimated have been fully reported. Written for every stream carrying
+-- an open cluster, so the table grows with the runs and the open
+-- clusters, not with the case history.
+--
+-- A stream the run could not forecast has a row all the same, with
+-- status saying why and no values: "no forecast" and "a forecast of
+-- nothing" must not look alike. detail is the reason code for
+-- insufficient_data and the error text for failed. kind carries no
+-- CHECK: its set grows with each kind of forecast added, and SQLite
+-- cannot change a CHECK without rebuilding the table; the one writer,
+-- episodic_db_forecast_insert(), refuses a kind it does not know.
+-- ---------------------------------------------------------------------
+CREATE TABLE episodic_forecast (
+  forecast_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id      INTEGER NOT NULL REFERENCES episodic_detection_run(run_id),
+  stream_id   INTEGER NOT NULL REFERENCES episodic_stream(stream_id),
+  kind        TEXT NOT NULL,
+  method      TEXT NOT NULL,
+  status      TEXT NOT NULL CHECK (status IN ('computed', 'insufficient_data', 'failed')),
+  detail      TEXT,
+  params      TEXT NOT NULL,
+  created_at  TEXT NOT NULL,
+  UNIQUE (run_id, stream_id, kind)
+);
+
+CREATE INDEX idx_episodic_forecast_stream ON episodic_forecast(stream_id, kind);
+
+-- A forecast's predictive distribution for one day or week, as its mean
+-- and the quantiles of the central 50%, 80%, 90% and 95% intervals:
+-- enough to draw it and to compute its weighted interval score.
+-- n_observed is what had been reported for the target when the forecast
+-- was made. target_date is the day, or the Monday of the week.
+CREATE TABLE episodic_forecast_value (
+  forecast_id INTEGER NOT NULL REFERENCES episodic_forecast(forecast_id),
+  resolution  TEXT NOT NULL CHECK (resolution IN ('day', 'week')),
+  target_date TEXT NOT NULL,
+  n_observed  INTEGER NOT NULL,
+  mean        REAL NOT NULL,
+  q025        REAL NOT NULL,
+  q05         REAL NOT NULL,
+  q10         REAL NOT NULL,
+  q25         REAL NOT NULL,
+  q50         REAL NOT NULL,
+  q75         REAL NOT NULL,
+  q90         REAL NOT NULL,
+  q95         REAL NOT NULL,
+  q975        REAL NOT NULL,
+  PRIMARY KEY (forecast_id, resolution, target_date)
+);
+
+-- ---------------------------------------------------------------------
 -- 5.7.1 Denominators / positivity metadata (cron)
 --
 -- Deliberately supplied by the operator as pre-aggregated counts, not as a

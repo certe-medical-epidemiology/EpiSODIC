@@ -660,7 +660,8 @@ episodic_ui_epicurve_panel <- function(con,
   curve <- episodic_app_epi_curve(
     con,
     cluster_id,
-    completeness = obj$completeness
+    completeness = obj$completeness,
+    nowcast = obj$nowcast
   )
   # Not `%||% 0`: `%||%` swallows `NA` as well as `NULL` (see
   # `R/interpretation.R`), and `NA` here is the one case that has to be
@@ -684,6 +685,20 @@ episodic_ui_epicurve_panel <- function(con,
   } else {
     NULL
   }
+  nowcast_note <- episodic_ui_nowcast_note(
+    obj$nowcast,
+    drawn = any(!is.na(curve$nowcast_mid)),
+    lang = lang
+  )
+  if (!is.null(nowcast_note)) {
+    note <- shiny::HTML(paste(
+      c(
+        if (!is.null(note)) htmltools::htmlEscape(note),
+        htmltools::htmlEscape(nowcast_note)
+      ),
+      collapse = "<br>"
+    ))
+  }
 
   episodic_ui_panel(
     episodic_tr("panel.epicurve.title", lang = lang),
@@ -692,6 +707,37 @@ episodic_ui_epicurve_panel <- function(con,
       episodic_ui_epi_curve_chart(curve, lang = lang),
       height = 210
     )
+  )
+}
+
+#' What a curve's nowcast note says
+#'
+#' One sentence under a curve: what its nowcast marks mean when some are
+#' drawn, or why there are none when the latest run tried and could not
+#' make one. Nothing when the latest run did not try (no open cluster on
+#' the stream, or forecasting switched off), and nothing when a computed
+#' nowcast has no day or week inside what this curve shows.
+#'
+#' @param nowcast `episodic_db_forecast_latest()`'s output, or `NULL`.
+#' @param drawn Whether the curve draws any nowcast mark.
+#' @param lang Session language.
+#' @return A character string, or `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_ui_nowcast_note <- function(nowcast,
+                                     drawn,
+                                     lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (is.null(nowcast)) {
+    return(NULL)
+  }
+  switch(nowcast$status,
+    computed = if (drawn) episodic_tr("nowcast.note.drawn", lang = lang),
+    insufficient_data = episodic_tr(
+      paste0("nowcast.note.", nowcast$detail),
+      lang = lang
+    ),
+    failed = episodic_tr("nowcast.note.failed", lang = lang),
+    stop("Unknown nowcast status \"", nowcast$status, "\".", call. = FALSE)
   )
 }
 

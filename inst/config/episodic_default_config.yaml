@@ -92,6 +92,18 @@ rare_trigger:
   min_cases: 1
   lookback_days: 90
 
+# Forecasting. nowcast: the expected final counts of a stream's most
+# recent days and weeks, for every stream carrying an open cluster.
+forecast:
+  nowcast:
+    enabled: true
+    max_delay_days: 21
+    min_completeness: 0.25
+    min_reported_cases: 20
+    prior_window_days: 28
+    delay_window_days: ~
+    n_samples: 500
+
 # Priority score.
 priority_score:
   weights:

@@ -1898,6 +1898,17 @@ episodic_run_cron_body <- function(con,
   # of the same outbreak is the one worth a dossier - so it waits until
   # every stream in it has reconciled. It writes its own progress lines.
   episodic_suppress_lattice(con, config)
+
+  # After suppression, so the streams nowcast are the ones whose clusters
+  # this run leaves in the queue.
+  episodic_nowcast_run(
+    con,
+    run_id = run_id,
+    run_date = run_date,
+    config = config,
+    streams = streams,
+    stream_cases_for = stream_cases_for
+  )
   episodic_trace_debug(
     debug,
     "debug: memory before finishing: ",

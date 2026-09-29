@@ -26,7 +26,11 @@ episodic_ui_rt_chart(rt, lang = Sys.getenv("EPISODIC_LANGUAGE"), accent = NULL)
 \code{n_cases} (case count), and \code{incomplete} (logical, \code{TRUE} for the most
 recent day(s) where reporting is still catching up - these are drawn at
 reduced opacity as a visual reminder not to over-interpret a downturn
-that is really just a reporting lag).}
+that is really just a reporting lag). Optionally \code{nowcast_low},
+\code{nowcast_mid} and \code{nowcast_high}: the 5\%, 50\% and 95\% quantiles of a
+day's expected final count once reporting is complete, drawn as a
+line with an open point at the median on the days that have them
+(\code{NA} elsewhere).}
 
 \item{lang}{Language for axis labels: \code{"en"}, \code{"ar"}, \code{"nl"}, \code{"fr"},
 \code{"de"}, \code{"hi"}, \code{"zh"}, or \code{"es"}, or a regional variant of
