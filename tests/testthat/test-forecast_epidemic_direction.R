@@ -455,6 +455,7 @@ test_that("the typical past season is placed on the epidemic's own weeks, and sa
   season <- data.frame(
     onset_week_start = "2025-01-06",
     seasons_used = "2021/2022, 2022/2023, 2023/2024",
+    typical_curve = "median",
     typical_onset_week = 51L,
     typical_onset_shift_weeks = 2L,
     typical_length_weeks = 10,
@@ -472,6 +473,29 @@ test_that("the typical past season is placed on the epidemic's own weeks, and sa
   # A count cannot be below zero, and neither can its interval.
   expect_identical(typical$curve$lower[1], 0)
   expect_identical(typical$n_seasons, 3L)
+  expect_identical(typical$statistic, "median")
+  # The chart note names the statistic, in every language.
+  for (lang in c("en", "nl", "de", "fr", "es", "ar", "hi", "zh")) {
+    for (statistic in names(episodic_mem_typical_curves)) {
+      note <- episodic_tr(
+        "epidemics.panel.curve.typical_note",
+        seasons = "3",
+        statistic = episodic_tr(paste0("epidemics.typical_statistic.", statistic), lang = lang),
+        lang = lang
+      )
+      expect_false(grepl("{", note, fixed = TRUE), info = paste(lang, statistic))
+    }
+  }
+  expect_match(
+    episodic_tr(
+      "epidemics.panel.curve.typical_note",
+      seasons = "3",
+      statistic = episodic_tr("epidemics.typical_statistic.median", lang = "en"),
+      lang = "en"
+    ),
+    "3 past seasons (median)",
+    fixed = TRUE
+  )
 
   html <- as.character(episodic_ui_epidemic_typical_stat(typical, lang = "en"))
   expect_match(html, "Typical epidemic", fixed = TRUE)
@@ -505,8 +529,11 @@ test_that("the weekly curve draws the typical season behind its bars only when i
   weekly$typical_high <- c(NA, 7, 14, 10)
   with <- episodic_ui_pathogen_curve_chart(weekly, lang = "en")
   geoms <- function(p) vapply(p$layers, function(l) class(l$geom)[1], character(1))
-  expect_false("GeomRibbon" %in% geoms(plain))
-  expect_identical(unname(head(geoms(with), 3)), c("GeomRibbon", "GeomLine", "GeomCol"))
+  expect_false("GeomLine" %in% geoms(plain))
+  # Behind the bars, each line with its key.
+  expect_identical(unname(head(geoms(with), 4)), c("GeomLine", "GeomLine", "GeomLine", "GeomCol"))
+  keys <- as.character(ggplot2::get_guide_data(with, "linetype")$.label)
+  expect_identical(keys, c("Typical season", "95% interval"))
 })
 
 test_that("the Performance screen lists the direction's scores, or says there are none", {

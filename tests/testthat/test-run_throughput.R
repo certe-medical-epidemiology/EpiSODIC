@@ -916,6 +916,7 @@ test_that("a run that reuses cached MEM fits writes what a run fitting afresh wr
   expect_gt(nrow(seasons), 0)
   expect_false(anyNA(seasons$typical_length_weeks))
   expect_false(anyNA(seasons$typical_onset_week))
+  expect_true(all(seasons$typical_curve == "median"))
   expect_setequal(typical_weeks$cluster_id, seasons$cluster_id)
   expect_true(all(typical_weeks$n == 52L & typical_weeks$n_start == 1L))
 

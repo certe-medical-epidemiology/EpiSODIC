@@ -80,6 +80,10 @@ mem:
   trough_percentile: 0.25
   seasonality_peak_weeks: 8
   seasonality_min_peak_share: 0.40
+  # The statistic the typical past season is summarised by: median,
+  # geometric_mean or arithmetic_mean. Only the typical curve changes;
+  # the thresholds do not.
+  typical_curve: median
 
 # rare_trigger detector.
 rare_trigger:

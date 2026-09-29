@@ -833,6 +833,10 @@ episodic_ui_epidemic_curve_panel <- function(obj,
     episodic_tr(
       "epidemics.panel.curve.typical_note",
       seasons = episodic_format_number(obj$typical$n_seasons, lang = lang),
+      statistic = episodic_tr(
+        paste0("epidemics.typical_statistic.", obj$typical$statistic),
+        lang = lang
+      ),
       lang = lang
     )
   }

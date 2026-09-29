@@ -902,7 +902,7 @@ episodic_db_migrations <- function() {
       }
       invisible(NULL)
     },
-    # 13: the typical past season of a seasonal epidemic (five nullable
+    # 13: the typical past season of a seasonal epidemic (six nullable
     # typical_* columns on episodic_epidemic_season, and
     # episodic_epidemic_typical_week) and a cluster forecast's estimates
     # (episodic_cluster_forecast_estimate). Purely additive: an epidemic
@@ -911,6 +911,10 @@ episodic_db_migrations <- function() {
     # each skipped when present for the same reason as 2.
     "13" = function(con, dialect) {
       columns <- c(
+        typical_curve = paste(
+          "TEXT CHECK (typical_curve IS NULL OR typical_curve IN",
+          "('median', 'geometric_mean', 'arithmetic_mean'))"
+        ),
         typical_onset_week = paste(
           "INTEGER CHECK (typical_onset_week IS NULL OR",
           "(typical_onset_week >= 1 AND typical_onset_week <= 53))"

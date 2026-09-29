@@ -353,6 +353,8 @@ CREATE TABLE episodic_epidemic_season (
   ended_week_start        TEXT,
   ended_reason            TEXT CHECK (ended_reason IS NULL OR ended_reason IN (
                             'post_epidemic_threshold', 'trough')),
+  typical_curve             TEXT CHECK (typical_curve IS NULL OR typical_curve IN (
+                              'median', 'geometric_mean', 'arithmetic_mean')),
   typical_onset_week        INTEGER CHECK (typical_onset_week IS NULL OR
                               (typical_onset_week >= 1 AND typical_onset_week <= 53)),
   typical_onset_shift_weeks INTEGER,
@@ -370,7 +372,8 @@ CREATE TABLE episodic_epidemic_season (
 -- offset 0 at this epidemic's onset_week_start compares its course with
 -- past seasons'; it describes past seasons, never a forecast of this
 -- one. The typical_* columns of episodic_epidemic_season carry the rest:
--- the ISO week the typical epidemic starts in, how many weeks later this
+-- the statistic the curve summarises the past seasons by
+-- (mem.typical_curve), the ISO week the typical epidemic starts in, how many weeks later this
 -- one started (negative: earlier), and the typical epidemic length with
 -- its interval. An epidemic whose fit gave no typical season has none of
 -- them, never a curve of zeros.

@@ -357,6 +357,6 @@ app_read_setup <- function() {
 # The typical-season columns schema version 13 adds to
 # episodic_epidemic_season.
 v13_typical_columns <- c(
-  "typical_onset_week", "typical_onset_shift_weeks", "typical_length_weeks",
+  "typical_curve", "typical_onset_week", "typical_onset_shift_weeks", "typical_length_weeks",
   "typical_length_lower", "typical_length_upper"
 )

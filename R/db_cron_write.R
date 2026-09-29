@@ -983,6 +983,7 @@ episodic_db_epidemic_season_insert <- function(con,
     intensity_high,
     intensity_very_high,
     seasons_used,
+    field("statistic", as.character),
     field("onset_week", as.integer),
     field("onset_shift_weeks", as.integer),
     field("length", as.numeric),
@@ -995,9 +996,10 @@ episodic_db_epidemic_season_insert <- function(con,
       (cluster_id, season_label, anchor_week, onset_week_start,
        pre_epidemic_threshold, post_epidemic_threshold,
        intensity_medium, intensity_high, intensity_very_high,
-       seasons_used, typical_onset_week, typical_onset_shift_weeks,
-       typical_length_weeks, typical_length_lower, typical_length_upper)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+       seasons_used, typical_curve, typical_onset_week,
+       typical_onset_shift_weeks, typical_length_weeks,
+       typical_length_lower, typical_length_upper)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     params = params
   )
   if (!is.null(typical)) {

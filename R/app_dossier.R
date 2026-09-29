@@ -727,8 +727,9 @@ episodic_ui_epicurve_panel <- function(con,
 #' configured threshold if no further case is reported before then. When
 #' the latest run recorded why there is no probability, the tile says so
 #' in place of a number. No tile when the latest run made no forecast for
-#' this cluster: its pathogen is not one the method applies to, the
-#' cluster is closed, or the forecast is switched off.
+#' this cluster (its pathogen is not one the method applies to, the
+#' cluster is closed, or the forecast is switched off), nor when the
+#' pathogen has no offspring distribution configured.
 #'
 #' A probability is shown as a whole percentage, and never as 0% or 100%:
 #' the model approaches both without reaching them, and a rounded 100%
@@ -744,7 +745,14 @@ episodic_ui_epicurve_panel <- function(con,
 episodic_ui_outbreak_end_stat <- function(forecast,
                                           threshold,
                                           lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  if (is.null(forecast)) {
+  # Without an offspring distribution the tile could only say that the
+  # operator has not set one, which is configuration, not a finding about
+  # this outbreak: the Pathogen screen's parameter panel says it instead.
+  if (
+    is.null(forecast) ||
+      (identical(forecast$status, "insufficient_data") &&
+        identical(forecast$detail, "parameters"))
+  ) {
     return(NULL)
   }
   label <- episodic_tr("dossier.stat.outbreak_end", lang = lang)

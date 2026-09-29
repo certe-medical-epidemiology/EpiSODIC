@@ -18,6 +18,8 @@
 - The Performance screen scores stored epidemic directions once their weeks are fully reported: mean probability, share true, and Brier score
 - A seasonal epidemic stores the typical past season from the MEM fit that set its thresholds: its curve, start week and length, in `episodic_epidemic_season` and `episodic_epidemic_typical_week` (schema version 13)
 - The Epidemics dossier draws the typical past season on the weekly curve, aligned to the epidemic's onset, and shows the typical length and how much earlier or later this epidemic started
+- The typical past season's curve is the median of the past seasons by default, set by `mem.typical_curve` (`median`, `geometric_mean` or `arithmetic_mean`)
+- The tuning vignette's reference covers the `notifications` keys
 
 ## Changed
 

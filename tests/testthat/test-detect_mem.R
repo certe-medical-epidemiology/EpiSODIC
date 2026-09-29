@@ -395,10 +395,17 @@ test_that("a real mem::memmodel() fit yields its typical season, curve, start an
   cases <- episodic_mem_synthetic_seasons(n_seasons = 6)
   built <- episodic_mem_seasonal_matrix(cases, 30L)
   historical <- built$matrix[, 1:4, drop = FALSE]
-  raw <- mem::memmodel(as.data.frame(historical), i.mem.info = FALSE)
+  # The median curve, and the median start and length.
+  raw <- mem::memmodel(
+    as.data.frame(historical),
+    i.type.curve = 3,
+    i.type.other = 3,
+    i.mem.info = FALSE
+  )
 
   typical <- episodic_mem_fit(historical)$typical
   expect_null(episodic_mem_fit(historical)$typical_unavailable)
+  expect_identical(typical$statistic, "median")
   expect_identical(typical$start, as.integer(raw$mean.start))
   expect_equal(typical$length, as.numeric(raw$mean.length))
   expect_equal(c(typical$length_lower, typical$length_upper), as.numeric(raw$ci.length[1, c(1, 3)]))
@@ -410,10 +417,46 @@ test_that("a real mem::memmodel() fit yields its typical season, curve, start an
   expect_length(typical$middle, nrow(historical))
 })
 
+test_that("the typical curve's statistic is configurable and changes nothing but the curve", {
+  skip_if_not_installed("mem")
+  cases <- episodic_mem_synthetic_seasons(n_seasons = 6)
+  historical <- episodic_mem_seasonal_matrix(cases, 30L)$matrix[, 1:4, drop = FALSE]
+  median <- episodic_mem_fit(historical, typical_curve = "median")
+  geometric <- episodic_mem_fit(historical, typical_curve = "geometric_mean")
+  arithmetic <- episodic_mem_fit(historical, typical_curve = "arithmetic_mean")
+  expect_identical(geometric$typical$statistic, "geometric_mean")
+  raw <- mem::memmodel(as.data.frame(historical), i.type.curve = 1, i.mem.info = FALSE)
+  expect_equal(arithmetic$typical$middle, unname(raw$typ.curve[, 2]))
+  expect_false(isTRUE(all.equal(median$typical$middle, geometric$typical$middle)))
+  for (other in list(geometric, arithmetic)) {
+    expect_identical(other$pre_epidemic, median$pre_epidemic)
+    expect_identical(other$post_epidemic, median$post_epidemic)
+    expect_identical(other$intensity, median$intensity)
+    expect_identical(other$typical$start, median$typical$start)
+    expect_identical(other$typical$length, median$typical$length)
+  }
+  # The median is the same on every fit, which is what lets the cache
+  # reuse one.
+  expect_identical(episodic_mem_fit(historical), median)
+
+  expect_error(episodic_mem_fit(historical, typical_curve = "mean"), "Unknown typical curve")
+  config <- episodic_config_resolve(NA)
+  expect_identical(episodic_mem_typical_curve(config), "median")
+  config$mem$typical_curve <- "bootstrap_median"
+  expect_error(episodic_mem_typical_curve(config), "`mem.typical_curve` must be one of")
+  # A detection run with it refuses rather than detecting nothing.
+  expect_error(
+    episodic_detect_mem(cases, stream_id = 1L, run_date = as.Date("2024-01-15"), config = config),
+    "`mem.typical_curve` must be one of"
+  )
+  expect_identical(episodic_mem_typical_curve(list()), "median")
+})
+
 test_that("episodic_mem_typical_season() refuses what it cannot read as MEM's typical season, and says why", {
   curve <- matrix(c(1, 2, 3, 2, 3, 4, 3, 4, 5), nrow = 3)
   good <- list(typ.curve = curve, mean.start = 2, mean.length = 1, ci.length = matrix(c(1, 1, 2), nrow = 1))
-  ok <- episodic_mem_typical_season(good, 3)
+  ok <- episodic_mem_typical_season(good, 3, "geometric_mean")
+  expect_identical(ok$typical$statistic, "geometric_mean")
   expect_identical(ok$typical$start, 2L)
   expect_equal(ok$typical$middle, c(2, 3, 4))
   expect_null(ok$unavailable)
@@ -441,6 +484,7 @@ test_that("a MEM detection carries its typical season, which lines up with the e
     anchor_week = params$anchor_week
   )
   week_order <- episodic_mem_week_order(params$anchor_week)
+  expect_identical(typical$statistic, "median")
   expect_equal(nrow(typical$weeks), 52)
   # Offset 0 is the typical start, the ISO week it names.
   expect_equal(typical$weeks$week_offset[params$typical_start], 0)
@@ -458,6 +502,12 @@ test_that("a MEM detection carries its typical season, which lines up with the e
   expect_null(episodic_epidemic_typical_from_params(without, det$first_day, params$anchor_week))
   # One whose curve does not fit its season is a broken record, not a
   # season to shorten or pad.
+  unnamed <- params
+  unnamed$typical_statistic <- NULL
+  expect_error(
+    episodic_epidemic_typical_from_params(unnamed, det$first_day, params$anchor_week),
+    "without the statistic"
+  )
   short <- params
   short$typical_middle <- short$typical_middle[-1]
   expect_error(

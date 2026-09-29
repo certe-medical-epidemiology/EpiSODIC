@@ -392,6 +392,7 @@ Every tunable parameter across both the YAML configuration and the per-pathogen 
 | <code style="white-space: nowrap;">mem:<br>&nbsp;&nbsp;trough_percentile</code>          | 0.25                                 | Quantile at or below which a week is part of the trough                     |
 | <code style="white-space: nowrap;">mem:<br>&nbsp;&nbsp;seasonality_peak_weeks</code>     | 8                                    | Peak-concentration window width for the seasonality test                    |
 | <code style="white-space: nowrap;">mem:<br>&nbsp;&nbsp;seasonality_min_peak_share</code> | 0.40                                 | Minimum share of detrended cases in the peak window for `mem_mode = 'auto'` |
+| <code style="white-space: nowrap;">mem:<br>&nbsp;&nbsp;typical_curve</code>              | `median`                             | Statistic the typical past season is summarised by: `median`, `geometric_mean` or `arithmetic_mean`; see "Typical past season" below |
 
 ### rare_trigger detector
 
@@ -440,7 +441,17 @@ Every run estimates, for each open epidemic, its stream's weekly growth rate ove
 
 ### Typical past season
 
-When MEM opens a seasonal epidemic, the fit that set its thresholds also gives the typical course of the past seasons' epidemics (`mem::memmodel()`'s typical curve, a geometric mean of the aligned seasons, with its 95% interval), the week they typically started, and their typical length. These are stored with the epidemic and fixed, like its thresholds. The Epidemics dossier draws the typical curve on the weekly curve with its start at this epidemic's onset, and gives the typical length and how many weeks earlier or later this epidemic started. It describes past seasons and is labelled as such; it is not a forecast. It has no settings of its own: it comes from the same `mem` configuration as the thresholds.
+When MEM opens a seasonal epidemic, the fit that set its thresholds also gives the typical course of the past seasons' epidemics (`mem::memmodel()`'s typical curve, with its 95% interval), the week they typically started, and their typical length. These are stored with the epidemic and fixed, like its thresholds. The Epidemics dossier draws the typical curve on the weekly curve with its start at this epidemic's onset, and gives the typical length and how many weeks earlier or later this epidemic started. It describes past seasons and is labelled as such; it is not a forecast.
+
+`mem.typical_curve` sets the statistic the curve summarises the aligned past seasons by, week by week. It changes only the curve: the thresholds, the intensity bands, and the typical start and length are the same whichever it is. The start and length are always medians.
+
+| Value             | Curve                                                                                          | Interval                                                                 |
+| ----------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `median`          | The middle past season in each week: one extreme season does not move it. Equal to the arithmetic mean with two seasons | Hettmansperger-Sheather/Nyblom, normal approximation with few seasons    |
+| `geometric_mean`  | `exp(mean(log(x + 1))) - 1`: less pulled up by one large season than the arithmetic mean, pulled down by one quiet one, and always below it | Normal on the log scale                                                  |
+| `arithmetic_mean` | The average: a single severe season raises the whole curve                                      | Normal, symmetric, so its lower limit can fall below zero in quiet weeks |
+
+`mem`'s median with a bootstrap interval (`i.type.curve = 4`) is deliberately not offered: it samples at random, so the same seasons give a different curve on each fit and the fit could not be reused from run to run; it takes some thirty seconds per fit; and it fails on two seasons. The dossier names the statistic under the curve, and a limit below zero is drawn at zero. Changing the value refits every stream's MEM model on the next run, but an epidemic already open keeps the curve it opened with.
 
 ### Priority score
 
@@ -475,6 +486,20 @@ When MEM opens a seasonal epidemic, the fit that set its thresholds also gives t
 | <code style="white-space: nowrap;">suppression:<br>&nbsp;&nbsp;child_dominance_threshold</code>   | 0.70    | Case-overlap share for a child to suppress its parent      |
 | <code style="white-space: nowrap;">suppression:<br>&nbsp;&nbsp;parent_diffuse_threshold</code>    | 0.50    | Below this per child, the rise counts as diffuse           |
 | <code style="white-space: nowrap;">suppression:<br>&nbsp;&nbsp;parent_min_flagged_children</code> | 1       | Minimum overlapping children before the diffuse rule fires |
+
+### Notifications
+
+`notifications` ships empty (`~`): nothing is sent until it is configured. Its keys are about delivery, not detection, and are left out of `config_hash`.
+
+| Key                    | Default | Effect                                                    |
+| ---------------------- | ------- | --------------------------------------------------------- |
+| <code style="white-space: nowrap;">notifications:<br>&nbsp;&nbsp;enabled</code> | (unset) | Master switch for every channel |
+| <code style="white-space: nowrap;">notifications:<br>&nbsp;&nbsp;dashboard_url</code> | (unset) | Address of the dashboard, linked from each message |
+| <code style="white-space: nowrap;">notifications:<br>&nbsp;&nbsp;triggers:<br>&nbsp;&nbsp;&nbsp;&nbsp;new_clusters</code> | (unset) | Send when a run opens at least one new cluster; must be set to `true` explicitly |
+| <code style="white-space: nowrap;">notifications:<br>&nbsp;&nbsp;triggers:<br>&nbsp;&nbsp;&nbsp;&nbsp;run_failure</code> | (unset) | Send when a run fails, including one that stops before it begins; must be set to `true` explicitly |
+| <code style="white-space: nowrap;">notifications:<br>&nbsp;&nbsp;channels:<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;channel&gt;</code> | (unset) | One block per channel (`ntfy`, `smtp`, `sendmail`, `microsoft365`, `teams`, `slack`), each with its own `enabled` and settings |
+
+Every channel's settings, and how to test them, are in [**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html).
 
 ### Report
 

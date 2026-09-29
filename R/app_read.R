@@ -1971,7 +1971,7 @@ episodic_epidemic_object <- function(con,
 #'   `NULL`.
 #' @param weeks `episodic_db_epidemic_typical_weeks()`'s output.
 #' @return `NULL` when the epidemic has no typical season or no onset
-#'   week, otherwise a list with `onset_week`, `onset_shift_weeks`,
+#'   week, otherwise a list with `statistic`, `onset_week`, `onset_shift_weeks`,
 #'   `length`, `length_lower`, `length_upper`, `n_seasons` and `curve`, a
 #'   data frame of `week_start` (`Date`), `lower`, `middle` and `upper`.
 #' @keywords internal
@@ -1986,6 +1986,7 @@ episodic_epidemic_typical <- function(season, weeks) {
     return(NULL)
   }
   list(
+    statistic = as.character(season$typical_curve),
     onset_week = as.integer(season$typical_onset_week),
     onset_shift_weeks = as.integer(season$typical_onset_shift_weeks),
     length = length_weeks,
