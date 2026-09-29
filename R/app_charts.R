@@ -405,6 +405,52 @@ episodic_ui_epi_curve_chart <- function(curve,
     episodic_chart_theme()
 }
 
+#' The typical past season drawn behind a weekly curve's bars
+#'
+#' A dashed line at the middle of the typical curve and dotted lines at
+#' the limits of its interval, behind the bars: it is what the weeks are
+#' compared against, not a mark about them. Lines in the palette's ink
+#' rather than a shaded area, which the intensity bands behind it would
+#' swallow. Nothing for a curve without the typical columns, or with none
+#' filled.
+#'
+#' @param curve The weekly curve, with `typical_low`, `typical_mid` and
+#'   `typical_high` when it has a typical season.
+#' @param x The name of the curve's date column.
+#' @return A list of `ggplot2` layers, possibly empty.
+#' @keywords internal
+#' @noRd
+episodic_chart_typical_layers <- function(curve, x) {
+  if (is.null(curve$typical_mid) || all(is.na(curve$typical_mid))) {
+    return(list())
+  }
+  pal <- episodic_palette()
+  marks <- curve[!is.na(curve$typical_mid), , drop = FALSE]
+  list(
+    ggplot2::geom_ribbon(
+      data = marks,
+      ggplot2::aes(
+        x = .data[[x]],
+        ymin = .data$typical_low,
+        ymax = .data$typical_high
+      ),
+      inherit.aes = FALSE,
+      fill = NA,
+      colour = pal$ink,
+      linewidth = 0.35,
+      linetype = 3
+    ),
+    ggplot2::geom_line(
+      data = marks,
+      ggplot2::aes(x = .data[[x]], y = .data$typical_mid),
+      inherit.aes = FALSE,
+      colour = pal$ink,
+      linewidth = 0.6,
+      linetype = 2
+    )
+  )
+}
+
 #' The nowcast marks drawn over a curve's bars
 #'
 #' A line from the 5% to the 95% quantile of each nowcast day's or week's
@@ -1060,7 +1106,9 @@ episodic_ui_denominator_chart <- function(series,
 #'
 #' @param weekly A data frame with `week_start` (`Date`), `n_cases` and
 #'   `incomplete`, and optionally the nowcast columns
-#'   `episodic_ui_epi_curve_chart()` draws.
+#'   `episodic_ui_epi_curve_chart()` draws and `typical_low`,
+#'   `typical_mid` and `typical_high`: a typical past season, drawn
+#'   behind the bars as a dashed line with dotted interval limits.
 #' @param thresholds `episodic_mem_thresholds_for_season()`'s output, or
 #'   `NULL` to draw the bars alone.
 #' @param lang Language for labels.
@@ -1136,6 +1184,7 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
       )
   }
   p <- p +
+    episodic_chart_typical_layers(weekly, x = "week_start") +
     ggplot2::geom_col(
       ggplot2::aes(alpha = .data$alpha),
       fill = accent,

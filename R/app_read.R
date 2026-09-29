@@ -1799,6 +1799,28 @@ episodic_epidemic_object <- function(con,
   weekly$nowcast_mid <- nowcast_weeks$q50[at]
   weekly$nowcast_high <- nowcast_weeks$q95[at]
 
+  # The direction is estimated on the stream the run nowcast, so it is
+  # withheld on the same grounds as the nowcast. The typical season is in
+  # the stream's counts too, and is not drawn against a curve that is
+  # not the stream's.
+  direction <- if (
+    identical(cluster$origin, "manual") || !is.null(history_problem) || closed
+  ) {
+    NULL
+  } else {
+    episodic_db_cluster_forecast_latest(con, cluster_id, "epidemic_direction")
+  }
+  typical <- if (is.null(history_problem)) {
+    episodic_epidemic_typical(
+      season,
+      episodic_db_epidemic_typical_weeks(con, cluster_id)
+    )
+  }
+  at <- match(as.Date(weekly$week_start), typical$curve$week_start)
+  weekly$typical_low <- typical$curve$lower[at]
+  weekly$typical_mid <- typical$curve$middle[at]
+  weekly$typical_high <- typical$curve$upper[at]
+
   resolved <- list(from = from, to = to)
   denominator <- episodic_app_pathogen_denominator(
     con,
@@ -1904,6 +1926,8 @@ episodic_epidemic_object <- function(con,
     incomplete_days = incomplete_days,
     history_problem = history_problem,
     nowcast = nowcast,
+    direction = direction,
+    typical = typical,
     season = season,
     anchor_week = anchor_week,
     weekly = weekly,
@@ -1931,6 +1955,49 @@ episodic_epidemic_object <- function(con,
     institutions = institutions,
     concentration = concentration,
     during_outbreaks = during_outbreaks
+  )
+}
+
+#' An epidemic's typical past season, placed on its own weeks
+#'
+#' The typical curve stored when the epidemic opened
+#' (`episodic_epidemic_typical_week`) has its offset 0 at the typical
+#' epidemic start; placing that at this epidemic's onset week compares
+#' their courses. The curve and its interval are floored at zero, since
+#' `mem::memmodel()` can give an interval limit below zero and a weekly
+#' count cannot be.
+#'
+#' @param season The epidemic's `episodic_epidemic_season` row, or
+#'   `NULL`.
+#' @param weeks `episodic_db_epidemic_typical_weeks()`'s output.
+#' @return `NULL` when the epidemic has no typical season or no onset
+#'   week, otherwise a list with `onset_week`, `onset_shift_weeks`,
+#'   `length`, `length_lower`, `length_upper`, `n_seasons` and `curve`, a
+#'   data frame of `week_start` (`Date`), `lower`, `middle` and `upper`.
+#' @keywords internal
+#' @noRd
+episodic_epidemic_typical <- function(season, weeks) {
+  if (is.null(season) || nrow(weeks) == 0) {
+    return(NULL)
+  }
+  onset <- suppressWarnings(as.Date(season$onset_week_start))
+  length_weeks <- suppressWarnings(as.numeric(season$typical_length_weeks))
+  if (is.na(onset) || is.na(length_weeks)) {
+    return(NULL)
+  }
+  list(
+    onset_week = as.integer(season$typical_onset_week),
+    onset_shift_weeks = as.integer(season$typical_onset_shift_weeks),
+    length = length_weeks,
+    length_lower = as.numeric(season$typical_length_lower),
+    length_upper = as.numeric(season$typical_length_upper),
+    n_seasons = length(episodic_epidemic_stored_thresholds(season)$seasons_used),
+    curve = data.frame(
+      week_start = onset + 7L * as.integer(weeks$week_offset),
+      lower = pmax(0, weeks$lower),
+      middle = pmax(0, weeks$middle),
+      upper = pmax(0, weeks$upper)
+    )
   )
 }
 

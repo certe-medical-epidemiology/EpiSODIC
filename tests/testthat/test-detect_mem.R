@@ -390,6 +390,104 @@ test_that("a MEM detection carries its intensity thresholds, and a fit without t
   expect_null(jsonlite::fromJSON(det$params)$intensity_medium)
 })
 
+test_that("a real mem::memmodel() fit yields its typical season, curve, start and length", {
+  skip_if_not_installed("mem")
+  cases <- episodic_mem_synthetic_seasons(n_seasons = 6)
+  built <- episodic_mem_seasonal_matrix(cases, 30L)
+  historical <- built$matrix[, 1:4, drop = FALSE]
+  raw <- mem::memmodel(as.data.frame(historical), i.mem.info = FALSE)
+
+  typical <- episodic_mem_fit(historical)$typical
+  expect_null(episodic_mem_fit(historical)$typical_unavailable)
+  expect_identical(typical$start, as.integer(raw$mean.start))
+  expect_equal(typical$length, as.numeric(raw$mean.length))
+  expect_equal(c(typical$length_lower, typical$length_upper), as.numeric(raw$ci.length[1, c(1, 3)]))
+  expect_equal(
+    cbind(typical$lower, typical$middle, typical$upper),
+    unname(raw$typ.curve),
+    ignore_attr = TRUE
+  )
+  expect_length(typical$middle, nrow(historical))
+})
+
+test_that("episodic_mem_typical_season() refuses what it cannot read as MEM's typical season, and says why", {
+  curve <- matrix(c(1, 2, 3, 2, 3, 4, 3, 4, 5), nrow = 3)
+  good <- list(typ.curve = curve, mean.start = 2, mean.length = 1, ci.length = matrix(c(1, 1, 2), nrow = 1))
+  ok <- episodic_mem_typical_season(good, 3)
+  expect_identical(ok$typical$start, 2L)
+  expect_equal(ok$typical$middle, c(2, 3, 4))
+  expect_null(ok$unavailable)
+
+  expect_match(episodic_mem_typical_season(good, 52)$unavailable, "not 52 weeks")
+  not_finite <- good
+  not_finite$typ.curve[2, 2] <- NaN
+  expect_match(episodic_mem_typical_season(not_finite, 3)$unavailable, "not finite")
+  outside <- good
+  outside$mean.start <- 4
+  expect_match(episodic_mem_typical_season(outside, 3)$unavailable, "not a week of the season")
+  no_length <- good
+  no_length$mean.length <- NA
+  expect_null(episodic_mem_typical_season(no_length, 3)$typical)
+})
+
+test_that("a MEM detection carries its typical season, which lines up with the epidemic's onset", {
+  skip_if_not_installed("mem")
+  cases <- episodic_mem_synthetic_seasons(n_seasons = 6)
+  det <- episodic_detect_mem(cases, stream_id = 1L, run_date = as.Date("2024-01-15"))
+  params <- jsonlite::fromJSON(det$params, simplifyVector = FALSE)
+  typical <- episodic_epidemic_typical_from_params(
+    params,
+    onset_week_start = det$first_day,
+    anchor_week = params$anchor_week
+  )
+  week_order <- episodic_mem_week_order(params$anchor_week)
+  expect_equal(nrow(typical$weeks), 52)
+  # Offset 0 is the typical start, the ISO week it names.
+  expect_equal(typical$weeks$week_offset[params$typical_start], 0)
+  expect_identical(typical$onset_week, as.integer(week_order[params$typical_start]))
+  onset_label <- episodic_mem_season_week(as.Date(det$first_day), params$anchor_week)$week_label
+  expect_identical(
+    typical$onset_shift_weeks,
+    as.integer(match(onset_label, week_order) - params$typical_start)
+  )
+  expect_true(all(typical$weeks$lower <= typical$weeks$upper))
+
+  # A detection without a typical season has none to store.
+  without <- params
+  without$typical_start <- NULL
+  expect_null(episodic_epidemic_typical_from_params(without, det$first_day, params$anchor_week))
+  # One whose curve does not fit its season is a broken record, not a
+  # season to shorten or pad.
+  short <- params
+  short$typical_middle <- short$typical_middle[-1]
+  expect_error(
+    episodic_epidemic_typical_from_params(short, det$first_day, params$anchor_week),
+    "does not match"
+  )
+})
+
+test_that("a MEM fit without a typical season still detects, and says why in the log", {
+  skip_if_not_installed("mem")
+  cases <- episodic_mem_synthetic_seasons(n_seasons = 6)
+  without_typical <- function(historical) {
+    fitted <- episodic_mem_fit(historical)
+    fitted["typical"] <- list(NULL)
+    fitted$typical_unavailable <- "a stated reason"
+    fitted
+  }
+  expect_message(
+    det <- episodic_detect_mem(
+      cases,
+      stream_id = 1L,
+      run_date = as.Date("2024-01-15"),
+      mem_fit = without_typical
+    ),
+    "no typical season to compare with, a stated reason"
+  )
+  expect_equal(nrow(det), 1)
+  expect_null(jsonlite::fromJSON(det$params)$typical_start)
+})
+
 test_that("episodic_mem_intensity_level() places a count in its band, and has no band without thresholds", {
   bands <- c(medium = 10, high = 20, very_high = 30)
   expect_equal(episodic_mem_intensity_level(4, 5, bands), "baseline")

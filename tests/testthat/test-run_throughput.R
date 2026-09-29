@@ -460,12 +460,22 @@ test_that("a cached MEM fit decodes to exactly the fresh fit", {
     pre_epidemic = NaN,
     post_epidemic = NA_real_,
     intensity = NULL,
-    intensity_unavailable = "mem::memmodel() returned 0 intensity threshold(s) rather than three finite values"
+    intensity_unavailable = "mem::memmodel() returned 0 intensity threshold(s) rather than three finite values",
+    typical = NULL,
+    typical_unavailable = "mem::memmodel() returned a typical curve with values that are not finite"
   )
   expect_identical(
     episodic_mem_fit_decode(episodic_mem_fit_encode(no_intensity)),
     no_intensity
   )
+  expect_length(fresh$typical$middle, nrow(historical))
+  # A row stored without the typical season, or its reason, is fitted
+  # again rather than read as a fit whose typical season went missing.
+  expect_null(episodic_mem_fit_decode(sub(
+    ",\"typical_unavailable\":[^}]*",
+    "",
+    episodic_mem_fit_encode(no_intensity)
+  )))
   expect_null(episodic_mem_fit_decode("{\"pre_epidemic\": 1}"))
   expect_null(episodic_mem_fit_decode("not json"))
   # A stored fit carries its intensity thresholds or the reason there are
@@ -860,7 +870,8 @@ test_that("no table but the run log grows when the same input is run again and a
     "episodic_forecast",
     "episodic_forecast_value",
     "episodic_cluster_forecast",
-    "episodic_cluster_forecast_value"
+    "episodic_cluster_forecast_value",
+    "episodic_cluster_forecast_estimate"
   )
   expect_identical(
     after_five[["episodic_detection_run"]] - after_two[["episodic_detection_run"]],
@@ -892,6 +903,22 @@ test_that("a run that reuses cached MEM fits writes what a run fitting afresh wr
     pathogen_config_path = pathogen_config,
     run_date = as.Date("2025-02-09")
   ))
+  # Each seasonal epidemic it opened carries its typical past season: the
+  # length and start on its season row, and the curve's 52 weeks.
+  con <- episodic_db_connect(base)
+  seasons <- DBI::dbGetQuery(con, "SELECT * FROM episodic_epidemic_season")
+  typical_weeks <- DBI::dbGetQuery(
+    con,
+    "SELECT cluster_id, COUNT(*) AS n, SUM(week_offset = 0) AS n_start
+       FROM episodic_epidemic_typical_week GROUP BY cluster_id"
+  )
+  DBI::dbDisconnect(con)
+  expect_gt(nrow(seasons), 0)
+  expect_false(anyNA(seasons$typical_length_weeks))
+  expect_false(anyNA(seasons$typical_onset_week))
+  expect_setequal(typical_weeks$cluster_id, seasons$cluster_id)
+  expect_true(all(typical_weeks$n == 52L & typical_weeks$n_start == 1L))
+
   with_cache <- tempfile(fileext = ".sqlite")
   without_cache <- tempfile(fileext = ".sqlite")
   on.exit(unlink(c(with_cache, without_cache)), add = TRUE)
@@ -928,6 +955,7 @@ test_that("a run that reuses cached MEM fits writes what a run fitting afresh wr
        FROM episodic_cluster ORDER BY cluster_id",
     "SELECT cluster_id, case_id FROM episodic_cluster_case ORDER BY cluster_id, case_id",
     "SELECT * FROM episodic_epidemic_season ORDER BY cluster_id",
+    "SELECT * FROM episodic_epidemic_typical_week ORDER BY cluster_id, week_offset",
     "SELECT * FROM episodic_stream_trend ORDER BY stream_id, week_start",
     "SELECT stream_id, detector, input_hash, result FROM episodic_detector_cache ORDER BY stream_id"
   )) {

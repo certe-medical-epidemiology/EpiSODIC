@@ -118,3 +118,22 @@ outbreak_end_pathogen_lines <- function(end_r = 0.8, end_k = 0.5) {
     )
   )
 }
+
+# Configuration lines for `nowcast_cron_database()` that make every level
+# epidemic scale, so its stream carries an open epidemic, and let the
+# direction be estimated from its three observed weeks.
+direction_cron_config <- function() {
+  c(
+    "  epidemic_direction:",
+    "    window_weeks: 3",
+    "    min_cases: 5",
+    "    n_samples: 200",
+    "scale:",
+    "  epidemic_levels:",
+    "    - pathogen_ward",
+    "    - pathogen_institution",
+    "    - pathogen_area",
+    "    - pathogen_province",
+    "    - pathogen_region"
+  )
+}

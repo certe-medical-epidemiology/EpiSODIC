@@ -345,3 +345,163 @@ episodic_outbreak_end_performance <- function(con, geography = episodic_geograph
   })
   rbind(empty, do.call(rbind, rows))
 }
+
+#' Every stored epidemic direction, scored where its outcome is known
+#'
+#' The direction's probabilities are about the weeks it was estimated
+#' over, some of them still being reported when it was made. Once the
+#' last of those weeks has passed its reporting horizon
+#' (`max_delay_days`), the same growth rate is fitted to their counts as
+#' now reported (`episodic_growth_rate_fit()`), and each probability is
+#' set against what that fit says: the epidemic was growing when its rate
+#' is above zero, and past its peak when its rate is below zero and the
+#' window's last week is below the highest week since the epidemic's
+#' first. Until then a forecast is pending, neither scored nor dropped;
+#' one whose counts now give no finite rate has no outcome and is not
+#' scored.
+#'
+#' The score is the Brier score, lower is better. The outcome is itself
+#' an estimate from the final counts, so the score measures what the
+#' nowcast weeks and the sampling added, not a prediction of the future.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param geography The geography stream membership is decided under.
+#' @return A data frame, one row per computed forecast and quantity
+#'   (`"p_growing"`, `"p_past_peak"`): `cluster_forecast_id`, `run_id`,
+#'   `cluster_id`, `pathogen`, `quantity`, `probability`, `final`
+#'   (logical), and, `NA` unless an outcome is known, `outcome` (logical)
+#'   and `brier`.
+#' @keywords internal
+#' @noRd
+episodic_epidemic_direction_scores <- function(con, geography = episodic_geography_config()) {
+  forecasts <- episodic_db_get_query(
+    con,
+    "SELECT f.cluster_forecast_id, f.run_id, f.cluster_id, f.params,
+            c.stream_id, s.pathogen, e.quantity, e.estimate
+       FROM episodic_cluster_forecast f
+       JOIN episodic_cluster c ON c.cluster_id = f.cluster_id
+       JOIN episodic_stream s ON s.stream_id = c.stream_id
+       JOIN episodic_cluster_forecast_estimate e
+         ON e.cluster_forecast_id = f.cluster_forecast_id
+      WHERE f.kind = 'epidemic_direction' AND f.status = 'computed'
+        AND e.quantity IN ('p_growing', 'p_past_peak')
+      ORDER BY f.cluster_forecast_id, e.quantity"
+  )
+  out <- data.frame(
+    cluster_forecast_id = forecasts$cluster_forecast_id,
+    run_id = forecasts$run_id,
+    cluster_id = forecasts$cluster_id,
+    pathogen = forecasts$pathogen,
+    quantity = forecasts$quantity,
+    probability = forecasts$estimate,
+    final = logical(nrow(forecasts)),
+    outcome = rep(NA, nrow(forecasts)),
+    brier = rep(NA_real_, nrow(forecasts)),
+    stringsAsFactors = FALSE
+  )
+  run <- episodic_db_latest_run(con, status = episodic_run_statuses_complete)
+  if (nrow(forecasts) == 0 || is.null(run)) {
+    return(out)
+  }
+  asof <- as.Date(substr(run$run_date, 1, 10))
+  ids <- unique(forecasts$cluster_forecast_id)
+  params <- lapply(
+    forecasts$params[match(ids, forecasts$cluster_forecast_id)],
+    jsonlite::fromJSON,
+    simplifyVector = TRUE
+  )
+  window_end <- as.Date(vapply(params, function(p) p$window_end, character(1)))
+  horizon <- vapply(params, function(p) as.integer(p$max_delay_days), integer(1))
+  final <- window_end + 6L + horizon <= asof
+  out$final <- final[match(out$cluster_forecast_id, ids)]
+
+  for (stream_id in unique(forecasts$stream_id[out$final])) {
+    stream_ids <- ids[final & ids %in% forecasts$cluster_forecast_id[forecasts$stream_id == stream_id]]
+    of <- match(stream_ids, ids)
+    earliest <- min(as.Date(vapply(params[of], function(p) {
+      min(p$window_start, p$first_week)
+    }, character(1))))
+    dates <- as.Date(episodic_db_cases_for_stream_id(
+      con,
+      stream_id,
+      columns = "sample_date",
+      first_day = format(earliest),
+      last_day = format(max(window_end[of]) + 6L),
+      geography = geography
+    )$sample_date)
+    for (j in of) {
+      p <- params[[j]]
+      weeks_of <- function(from, to) {
+        weeks <- seq(as.Date(from), as.Date(to), by = 7)
+        vapply(weeks, function(w) sum(dates >= w & dates <= w + 6L), integer(1))
+      }
+      fit <- episodic_growth_rate_fit(weeks_of(p$window_start, p$window_end))
+      if (is.null(fit)) {
+        next
+      }
+      rows <- which(out$cluster_forecast_id == ids[j])
+      for (row in rows) {
+        out$outcome[row] <- if (identical(out$quantity[row], "p_growing")) {
+          fit[["rate"]] > 0
+        } else {
+          since <- weeks_of(p$first_week, p$window_end)
+          fit[["rate"]] < 0 && since[length(since)] < max(since)
+        }
+      }
+    }
+  }
+  known <- !is.na(out$outcome)
+  out$brier[known] <- (out$probability[known] - as.numeric(out$outcome[known]))^2
+  out
+}
+
+#' How well the epidemic directions have done, per pathogen
+#'
+#' The Performance screen's epidemic-direction section: for each pathogen
+#' and each probability (`"p_growing"`, `"p_past_peak"`), how many are
+#' scored and pending, the mean probability given, the share that turned
+#' out true, and the mean Brier score. Every rate has the scored
+#' forecasts as its denominator, so a row with none scored has `NA` for
+#' each.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param geography See `episodic_epidemic_direction_scores()`.
+#' @return A data frame with `pathogen`, `quantity`, `n_scored`,
+#'   `n_pending`, `mean_probability`, `share_true` and `mean_brier`; zero
+#'   rows when nothing has been estimated.
+#' @keywords internal
+#' @noRd
+episodic_epidemic_direction_performance <- function(con, geography = episodic_geography_config()) {
+  scores <- episodic_epidemic_direction_scores(con, geography = geography)
+  empty <- data.frame(
+    pathogen = character(0),
+    quantity = character(0),
+    n_scored = integer(0),
+    n_pending = integer(0),
+    mean_probability = numeric(0),
+    share_true = numeric(0),
+    mean_brier = numeric(0),
+    stringsAsFactors = FALSE
+  )
+  if (nrow(scores) == 0) {
+    return(empty)
+  }
+  mean_or_na <- function(x) if (length(x) == 0) NA_real_ else mean(x)
+  groups <- unique(scores[c("pathogen", "quantity")])
+  groups <- groups[order(groups$pathogen, groups$quantity), , drop = FALSE]
+  rows <- lapply(seq_len(nrow(groups)), function(g) {
+    of <- scores$pathogen == groups$pathogen[g] & scores$quantity == groups$quantity[g]
+    scored <- scores[of & !is.na(scores$outcome), , drop = FALSE]
+    data.frame(
+      pathogen = groups$pathogen[g],
+      quantity = groups$quantity[g],
+      n_scored = nrow(scored),
+      n_pending = sum(of & !scores$final),
+      mean_probability = mean_or_na(scored$probability),
+      share_true = mean_or_na(scored$outcome),
+      mean_brier = mean_or_na(scored$brier),
+      stringsAsFactors = FALSE
+    )
+  })
+  rbind(empty, do.call(rbind, rows))
+}

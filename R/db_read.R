@@ -1144,8 +1144,9 @@ episodic_db_forecast_latest <- function(con, stream_id, kind) {
 #' @param kind One of `episodic_cluster_forecast_kinds`.
 #' @return `NULL`, or a list with `run_id`, `status`, `detail`, `params`
 #'   (the parsed JSON) and `values` (a data frame with `target_date`
-#'   (`Date`) and `probability`, ordered by date; empty unless `status`
-#'   is `"computed"`).
+#'   (`Date`) and `probability`, ordered by date) and `estimates` (a data
+#'   frame with `quantity`, `estimate`, `lower`, `upper` and
+#'   `interval_level`); both empty unless `status` is `"computed"`.
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_forecast_latest <- function(con, cluster_id, kind) {
@@ -1170,12 +1171,20 @@ episodic_db_cluster_forecast_latest <- function(con, cluster_id, kind) {
     params = list(forecast$cluster_forecast_id[1])
   )
   values$target_date <- as.Date(values$target_date)
+  estimates <- episodic_db_get_query(
+    con,
+    "SELECT quantity, estimate, lower, upper, interval_level
+       FROM episodic_cluster_forecast_estimate
+      WHERE cluster_forecast_id = ? ORDER BY quantity",
+    params = list(forecast$cluster_forecast_id[1])
+  )
   list(
     run_id = forecast$run_id[1],
     status = forecast$status[1],
     detail = forecast$detail[1],
     params = jsonlite::fromJSON(forecast$params[1], simplifyVector = TRUE),
-    values = values
+    values = values,
+    estimates = estimates
   )
 }
 
@@ -1446,6 +1455,26 @@ episodic_db_epidemic_season <- function(con, cluster_id) {
     params = list(cluster_id)
   )
   if (nrow(res) == 0) NULL else res[1, ]
+}
+
+#' A seasonal epidemic's typical past season, by week
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The epidemic.
+#' @return A data frame with `week_offset` (from the typical epidemic
+#'   start), `lower`, `middle` and `upper`, in offset order; no rows when
+#'   the epidemic has no typical season.
+#' @keywords internal
+#' @noRd
+episodic_db_epidemic_typical_weeks <- function(con, cluster_id) {
+  episodic_db_get_query(
+    con,
+    "SELECT week_offset, lower, middle, upper
+       FROM episodic_epidemic_typical_week
+      WHERE cluster_id = ?
+      ORDER BY week_offset",
+    params = list(cluster_id)
+  )
 }
 
 #' A seasonal epidemic's weekly counts and bands, as the last run left them

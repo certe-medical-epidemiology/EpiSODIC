@@ -130,6 +130,14 @@ episodic_detect_mem <- function(cases_for_stream,
       severity = "warn"
     )
   }
+  typical <- status$typical
+  if (is.null(typical)) {
+    episodic_trace(
+      "MEM: stream ", tag, " has no typical season to compare with, ",
+      status$typical_unavailable %||% "for a reason the fit did not give",
+      severity = "warn"
+    )
+  }
   episodic_detection_record(
     stream_id = stream_id,
     detector = "mem",
@@ -146,7 +154,14 @@ episodic_detect_mem <- function(cases_for_stream,
       post_epidemic_threshold = status$post_epidemic_threshold,
       intensity_medium = if (!is.null(intensity)) intensity[["medium"]] else NA,
       intensity_high = if (!is.null(intensity)) intensity[["high"]] else NA,
-      intensity_very_high = if (!is.null(intensity)) intensity[["very_high"]] else NA
+      intensity_very_high = if (!is.null(intensity)) intensity[["very_high"]] else NA,
+      typical_start = if (!is.null(typical)) typical$start else NA,
+      typical_length = if (!is.null(typical)) typical$length else NA,
+      typical_length_lower = if (!is.null(typical)) typical$length_lower else NA,
+      typical_length_upper = if (!is.null(typical)) typical$length_upper else NA,
+      typical_lower = if (!is.null(typical)) I(typical$lower) else NA,
+      typical_middle = if (!is.null(typical)) I(typical$middle) else NA,
+      typical_upper = if (!is.null(typical)) I(typical$upper) else NA
     )
   )
 }
@@ -460,8 +475,9 @@ episodic_mem_seasonality <- function(cases,
 #'   `current_week_count`, `pre_epidemic_threshold`,
 #'   `post_epidemic_threshold`, `intensity_thresholds`,
 #'   `intensity_unavailable` (`NULL`, or why `intensity_thresholds` is),
-#'   `intensity_level`, `anchor_week`, `season`, `seasons_used`,
-#'   `week_start`, `week_end`.
+#'   `intensity_level`, `typical` and `typical_unavailable` (as
+#'   `episodic_mem_fit()` returns them), `anchor_week`, `season`,
+#'   `seasons_used`, `week_start`, `week_end`.
 #' @keywords internal
 #' @noRd
 episodic_mem_status <- function(cases,
@@ -532,6 +548,8 @@ episodic_mem_status <- function(cases,
       pre_threshold,
       intensity
     ),
+    typical = fitted$typical,
+    typical_unavailable = fitted$typical_unavailable,
     anchor_week = anchor_week,
     season = evaluated$season,
     seasons_used = prior_seasons,
@@ -554,7 +572,10 @@ episodic_mem_status <- function(cases,
 #' @return `NULL` when the model cannot be fitted, otherwise a list with
 #'   `pre_epidemic` and `post_epidemic` (numeric), `intensity` (the
 #'   thresholds from `episodic_mem_intensity_thresholds()`, possibly
-#'   `NULL`) and `intensity_unavailable` (`NULL`, or why `intensity` is).
+#'   `NULL`), `intensity_unavailable` (`NULL`, or why `intensity` is),
+#'   `typical` (the typical season from `episodic_mem_typical_season()`,
+#'   possibly `NULL`) and `typical_unavailable` (`NULL`, or why `typical`
+#'   is).
 #' @keywords internal
 #' @noRd
 episodic_mem_fit <- function(historical) {
@@ -569,6 +590,7 @@ episodic_mem_fit <- function(historical) {
     return(NULL)
   }
   intensity <- episodic_mem_intensity_thresholds(fit)
+  typical <- episodic_mem_typical_season(fit, nrow(historical))
   # Unnamed: `mem` names these after its own interval rows, and nothing
   # downstream reads the name - every consumer takes `as.numeric()` of
   # them - so the cache has no name to carry.
@@ -576,7 +598,81 @@ episodic_mem_fit <- function(historical) {
     pre_epidemic = unname(fit$pre.post.intervals["pre.i", 3]),
     post_epidemic = unname(fit$pre.post.intervals["post.i", 3]),
     intensity = intensity$thresholds,
-    intensity_unavailable = intensity$unavailable
+    intensity_unavailable = intensity$unavailable,
+    typical = typical$typical,
+    typical_unavailable = typical$unavailable
+  )
+}
+
+#' MEM's typical season: its curve, epidemic start and epidemic length
+#'
+#' `mem::memmodel()` aligns the past seasons on their epidemic periods
+#' and summarises them as `typ.curve`, one row per week of the season in
+#' the matrix's row order and three columns: the lower limit, the
+#' typical value and the upper limit of its interval (`i.level.curve`,
+#' shipped as 95%). The epidemic period of that curve begins at the
+#' season week `mean.start` and lasts `mean.length` weeks, the rounded
+#' mean start and the mean length of the past seasons' epidemics;
+#' `ci.length` holds the interval of that length (`i.level.other`,
+#' shipped as 95%) in its first row.
+#'
+#' It describes past seasons, not this one: it is what this season is
+#' compared against, never a forecast of it. Anything but a finite curve
+#' of the matrix's length, a start inside it and a finite positive
+#' length is refused rather than repaired, as
+#' `episodic_mem_intensity_thresholds()` refuses its thresholds.
+#'
+#' @param fit A `mem::memmodel()` result.
+#' @param n_weeks The number of rows of the matrix it was fitted on.
+#' @return A list with `typical`, `NULL` or a list of `start` (integer,
+#'   the season week the typical epidemic starts at, counted from 1),
+#'   `length`, `length_lower` and `length_upper` (numeric, in weeks) and
+#'   `lower`, `middle` and `upper` (numeric of length `n_weeks`, the
+#'   curve), and `unavailable`, `NULL` when `typical` is set and otherwise
+#'   a sentence saying why not.
+#' @keywords internal
+#' @noRd
+episodic_mem_typical_season <- function(fit, n_weeks) {
+  refuse <- function(why) list(typical = NULL, unavailable = why)
+  curve <- tryCatch(fit$typ.curve, error = function(e) NULL)
+  if (
+    !is.matrix(curve) || !is.numeric(curve) || ncol(curve) != 3 ||
+      nrow(curve) != n_weeks
+  ) {
+    return(refuse(sprintf(
+      "mem::memmodel() returned a typical curve that is not %d weeks by 3 columns",
+      as.integer(n_weeks)
+    )))
+  }
+  if (!all(is.finite(curve))) {
+    return(refuse("mem::memmodel() returned a typical curve with values that are not finite"))
+  }
+  start <- suppressWarnings(as.numeric(tryCatch(fit$mean.start, error = function(e) NULL)))
+  if (
+    length(start) != 1 || !is.finite(start) || start != round(start) ||
+      start < 1 || start > n_weeks
+  ) {
+    return(refuse("mem::memmodel() returned a mean epidemic start that is not a week of the season"))
+  }
+  length_mean <- suppressWarnings(as.numeric(tryCatch(fit$mean.length, error = function(e) NULL)))
+  length_ci <- suppressWarnings(as.numeric(tryCatch(fit$ci.length[1, c(1, 3)], error = function(e) NULL)))
+  if (
+    length(length_mean) != 1 || !is.finite(length_mean) || length_mean <= 0 ||
+      length(length_ci) != 2 || !all(is.finite(length_ci))
+  ) {
+    return(refuse("mem::memmodel() returned an epidemic length that is not a finite positive number of weeks"))
+  }
+  list(
+    typical = list(
+      start = as.integer(start),
+      length = length_mean,
+      length_lower = length_ci[1],
+      length_upper = length_ci[2],
+      lower = unname(as.numeric(curve[, 1])),
+      middle = unname(as.numeric(curve[, 2])),
+      upper = unname(as.numeric(curve[, 3]))
+    ),
+    unavailable = NULL
   )
 }
 
@@ -665,6 +761,10 @@ episodic_mem_fit_input_hash <- function(historical, config, mem_mode) {
     counts = as.integer(historical),
     mem = episodic_config_canonicalise(config$mem),
     mem_mode = as.character(mem_mode),
+    # The shape of what is stored under the hash: a change to it is a
+    # change of input, so rows of the previous shape are fitted again
+    # rather than read back as a fit with fields missing.
+    cache_format = 2L,
     mem_version = as.character(utils::packageVersion("mem")),
     episodic_version = as.character(utils::packageVersion("EpiSODIC"))
   )
@@ -695,12 +795,27 @@ episodic_mem_fit_input_hash <- function(historical, config, mem_mode) {
 #' @noRd
 episodic_mem_fit_encode <- function(fitted) {
   hex <- function(x) sprintf("%a", as.numeric(x))
+  typical <- fitted$typical
   as.character(jsonlite::toJSON(
     list(
       pre_epidemic = hex(fitted$pre_epidemic),
       post_epidemic = hex(fitted$post_epidemic),
       intensity = if (is.null(fitted$intensity)) NULL else hex(fitted$intensity),
-      intensity_unavailable = fitted$intensity_unavailable
+      intensity_unavailable = fitted$intensity_unavailable,
+      typical = if (is.null(typical)) {
+        NULL
+      } else {
+        list(
+          start = typical$start,
+          length = hex(typical$length),
+          length_lower = hex(typical$length_lower),
+          length_upper = hex(typical$length_upper),
+          lower = I(hex(typical$lower)),
+          middle = I(hex(typical$middle)),
+          upper = I(hex(typical$upper))
+        )
+      },
+      typical_unavailable = fitted$typical_unavailable
     ),
     auto_unbox = TRUE,
     null = "null"
@@ -720,10 +835,24 @@ episodic_mem_fit_decode <- function(result) {
     error = function(e) NULL
   )
   scalar <- function(x) is.character(x) && length(x) == 1 && !is.na(x)
+  typical <- if (is.list(parsed)) parsed$typical else NULL
+  typical_ok <- is.null(typical) || (
+    is.list(typical) &&
+      is.numeric(typical$start) && length(typical$start) == 1 &&
+      scalar(typical$length) && scalar(typical$length_lower) &&
+      scalar(typical$length_upper) &&
+      all(vapply(
+        typical[c("lower", "middle", "upper")],
+        function(x) is.character(x) && length(x) > 0,
+        logical(1)
+      )) &&
+      length(unique(lengths(typical[c("lower", "middle", "upper")]))) == 1
+  )
   # Exactly one of the two intensity fields is set: thresholds, or the
-  # reason there are none. A row carrying neither was written without
-  # the reason, and is fitted again rather than read as bands that
-  # silently went missing.
+  # reason there are none; and likewise of the two typical-season
+  # fields. A row carrying neither was written without the reason, and
+  # is fitted again rather than read as a result that silently went
+  # missing.
   if (
     !is.list(parsed) ||
       !scalar(parsed$pre_epidemic) ||
@@ -732,7 +861,11 @@ episodic_mem_fit_decode <- function(result) {
         (is.character(parsed$intensity) && length(parsed$intensity) == 3)) ||
       !(is.null(parsed$intensity_unavailable) ||
         scalar(parsed$intensity_unavailable)) ||
-      is.null(parsed$intensity) == is.null(parsed$intensity_unavailable)
+      is.null(parsed$intensity) == is.null(parsed$intensity_unavailable) ||
+      !typical_ok ||
+      !(is.null(parsed$typical_unavailable) ||
+        scalar(parsed$typical_unavailable)) ||
+      is.null(typical) == is.null(parsed$typical_unavailable)
   ) {
     return(NULL)
   }
@@ -748,7 +881,21 @@ episodic_mem_fit_decode <- function(result) {
         c("medium", "high", "very_high")
       )
     },
-    intensity_unavailable = parsed$intensity_unavailable
+    intensity_unavailable = parsed$intensity_unavailable,
+    typical = if (is.null(typical)) {
+      NULL
+    } else {
+      list(
+        start = as.integer(typical$start),
+        length = number(typical$length),
+        length_lower = number(typical$length_lower),
+        length_upper = number(typical$length_upper),
+        lower = number(typical$lower),
+        middle = number(typical$middle),
+        upper = number(typical$upper)
+      )
+    },
+    typical_unavailable = parsed$typical_unavailable
   )
 }
 
@@ -1248,6 +1395,66 @@ episodic_epidemic_weeks <- function(cases_for_stream, satellite, run_date) {
       character(1)
     ),
     stringsAsFactors = FALSE
+  )
+}
+
+#' An epidemic's typical past season, from its MEM detection
+#'
+#' Turns the typical season a MEM detection carries in its parameters
+#' (`episodic_detect_mem()`) into what `episodic_epidemic_season` and
+#' `episodic_epidemic_typical_week` store: the curve by week offset from
+#' the typical epidemic start, the ISO week that start falls in, and how
+#' many weeks after it this epidemic's onset came.
+#'
+#' @param mem_params The detection's parameters, parsed from JSON with
+#'   `simplifyVector = FALSE`.
+#' @param onset_week_start The Monday of the epidemic's onset week.
+#' @param anchor_week The season's anchor week.
+#' @return `NULL` when the detection carries no typical season, otherwise
+#'   a list with `onset_week` (integer ISO week), `onset_shift_weeks`
+#'   (integer; negative when this epidemic started earlier), `length`,
+#'   `length_lower`, `length_upper` and `weeks`, a data frame of
+#'   `week_offset`, `lower`, `middle` and `upper`.
+#' @keywords internal
+#' @noRd
+episodic_epidemic_typical_from_params <- function(mem_params,
+                                                  onset_week_start,
+                                                  anchor_week) {
+  start <- suppressWarnings(as.integer(mem_params$typical_start %||% NA))
+  if (length(start) != 1 || is.na(start)) {
+    return(NULL)
+  }
+  curve <- lapply(
+    mem_params[c("typical_lower", "typical_middle", "typical_upper")],
+    function(x) suppressWarnings(as.numeric(unlist(x)))
+  )
+  week_order <- episodic_mem_week_order(anchor_week)
+  n_weeks <- length(curve[[1]])
+  if (
+    any(lengths(curve) != n_weeks) || n_weeks != length(week_order) ||
+      !all(is.finite(unlist(curve))) || start < 1 || start > n_weeks
+  ) {
+    stop(
+      "A MEM detection carries a typical season that does not match its ",
+      length(week_order),
+      "-week season.",
+      call. = FALSE
+    )
+  }
+  onset <- episodic_mem_season_week(as.Date(onset_week_start), anchor_week)
+  onset_index <- match(onset$week_label, week_order)
+  list(
+    onset_week = as.integer(week_order[start]),
+    onset_shift_weeks = as.integer(onset_index - start),
+    length = as.numeric(mem_params$typical_length),
+    length_lower = as.numeric(mem_params$typical_length_lower),
+    length_upper = as.numeric(mem_params$typical_length_upper),
+    weeks = data.frame(
+      week_offset = seq_len(n_weeks) - start,
+      lower = curve$typical_lower,
+      middle = curve$typical_middle,
+      upper = curve$typical_upper
+    )
   )
 }
 

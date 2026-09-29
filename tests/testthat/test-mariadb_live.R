@@ -249,7 +249,7 @@ mariadb_would_be_fk <- function(con) {
 
 test_that("a run migrates a database from an earlier schema version, against MariaDB", {
   # A version-8 database: the assessment columns version 9 drops, and
-  # none of the additions versions 10 to 12 make, so every migration
+  # none of the additions versions 10 to 13 make, so every migration
   # does its real work against the server rather than finding it done.
   skip_on_cran()
   dsn <- mariadb_fresh()
@@ -258,12 +258,17 @@ test_that("a run migrates a database from an earlier schema version, against Mar
   DBI::dbExecute(con, "DROP TABLE episodic_epidemic_week")
   DBI::dbExecute(con, "DROP TABLE episodic_forecast_value")
   DBI::dbExecute(con, "DROP TABLE episodic_forecast")
+  DBI::dbExecute(con, "DROP TABLE episodic_cluster_forecast_estimate")
   DBI::dbExecute(con, "DROP TABLE episodic_cluster_forecast_value")
   DBI::dbExecute(con, "DROP TABLE episodic_cluster_forecast")
+  DBI::dbExecute(con, "DROP TABLE episodic_epidemic_typical_week")
   # Empty on a fresh database, and dropped the way a migration would drop
   # them, CHECK constraints included.
   for (column in c("end_r", "end_k")) {
     episodic_db_drop_empty_column(con, "mariadb", "episodic_pathogen_config", column)
+  }
+  for (column in v13_typical_columns) {
+    episodic_db_drop_empty_column(con, "mariadb", "episodic_epidemic_season", column)
   }
   for (fk in mariadb_would_be_fk(con)) {
     DBI::dbExecute(con, paste0("ALTER TABLE episodic_cluster DROP FOREIGN KEY ", fk))
@@ -306,6 +311,11 @@ test_that("a run migrates a database from an earlier schema version, against Mar
   expect_true(DBI::dbExistsTable(con, "episodic_cluster_forecast_value"))
   expect_true(episodic_db_column_exists(con, "mariadb", "episodic_pathogen_config", "end_r"))
   expect_true(episodic_db_column_exists(con, "mariadb", "episodic_pathogen_config", "end_k"))
+  expect_true(DBI::dbExistsTable(con, "episodic_cluster_forecast_estimate"))
+  expect_true(DBI::dbExistsTable(con, "episodic_epidemic_typical_week"))
+  for (column in v13_typical_columns) {
+    expect_true(episodic_db_column_exists(con, "mariadb", "episodic_epidemic_season", column))
+  }
   expect_true(episodic_db_column_exists(
     con,
     "mariadb",
@@ -360,6 +370,27 @@ test_that("nowcasts and outbreak-end probabilities are written, read and scored 
   expect_true(inherits(end$values$target_date, "Date"))
   expect_true(all(end$values$probability >= 0 & end$values$probability <= 1))
   expect_gt(nrow(episodic_outbreak_end_scores(con)), 0)
+})
+
+test_that("epidemic directions are written, read and scored against MariaDB", {
+  skip_on_cran()
+  db <- nowcast_cron_database(
+    direction_cron_config(),
+    n_runs = 28L,
+    path = mariadb_fresh()
+  )
+  on.exit(unlink(db$config_path))
+  con <- episodic_db_connect(db$path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+
+  cluster_id <- episodic_db_clusters_not_closed(con, "epidemic")$cluster_id[1]
+  direction <- episodic_db_cluster_forecast_latest(con, cluster_id, "epidemic_direction")
+  expect_identical(direction$status, "computed")
+  expect_setequal(direction$estimates$quantity, c("growth_rate_week", "p_growing"))
+  expect_true(is.numeric(direction$estimates$estimate))
+  scores <- episodic_epidemic_direction_scores(con)
+  expect_gt(sum(!is.na(scores$outcome)), 0)
+  expect_gt(nrow(episodic_epidemic_direction_performance(con)), 0)
 })
 
 test_that("the dashboard reads what the run wrote, against MariaDB", {

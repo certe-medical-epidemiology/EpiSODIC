@@ -352,7 +352,36 @@ CREATE TABLE episodic_epidemic_season (
   seasons_used            TEXT,
   ended_week_start        TEXT,
   ended_reason            TEXT CHECK (ended_reason IS NULL OR ended_reason IN (
-                            'post_epidemic_threshold', 'trough'))
+                            'post_epidemic_threshold', 'trough')),
+  typical_onset_week        INTEGER CHECK (typical_onset_week IS NULL OR
+                              (typical_onset_week >= 1 AND typical_onset_week <= 53)),
+  typical_onset_shift_weeks INTEGER,
+  typical_length_weeks      REAL CHECK (typical_length_weeks IS NULL OR typical_length_weeks > 0),
+  typical_length_lower      REAL,
+  typical_length_upper      REAL
+);
+
+-- ---------------------------------------------------------------------
+-- 5.5.1a The typical past season (cron)
+--
+-- The typical epidemic curve MEM summarises the seasons in seasons_used
+-- into, fixed with the thresholds when the epidemic opens and aligned so
+-- that week_offset 0 is the week the typical epidemic starts. Placing
+-- offset 0 at this epidemic's onset_week_start compares its course with
+-- past seasons'; it describes past seasons, never a forecast of this
+-- one. The typical_* columns of episodic_epidemic_season carry the rest:
+-- the ISO week the typical epidemic starts in, how many weeks later this
+-- one started (negative: earlier), and the typical epidemic length with
+-- its interval. An epidemic whose fit gave no typical season has none of
+-- them, never a curve of zeros.
+-- ---------------------------------------------------------------------
+CREATE TABLE episodic_epidemic_typical_week (
+  cluster_id  INTEGER NOT NULL REFERENCES episodic_cluster(cluster_id),
+  week_offset INTEGER NOT NULL,
+  lower       REAL NOT NULL,
+  middle      REAL NOT NULL,
+  upper       REAL NOT NULL,
+  PRIMARY KEY (cluster_id, week_offset)
 );
 
 -- ---------------------------------------------------------------------
@@ -558,6 +587,22 @@ CREATE TABLE episodic_cluster_forecast_value (
   target_date         TEXT NOT NULL,
   probability         REAL NOT NULL CHECK (probability >= 0 AND probability <= 1),
   PRIMARY KEY (cluster_forecast_id, target_date)
+);
+
+-- A cluster forecast's estimate of one quantity, e.g. an epidemic's
+-- weekly growth rate or the probability that its peak has passed, with
+-- the limits of its interval where it has one (interval_level, e.g. 0.9)
+-- and NULL limits where it has none. quantity is unconstrained for the
+-- same reason as kind; episodic_db_cluster_forecast_insert() refuses a
+-- quantity it does not know for the kind.
+CREATE TABLE episodic_cluster_forecast_estimate (
+  cluster_forecast_id INTEGER NOT NULL REFERENCES episodic_cluster_forecast(cluster_forecast_id),
+  quantity            TEXT NOT NULL,
+  estimate            REAL NOT NULL,
+  lower               REAL,
+  upper               REAL,
+  interval_level      REAL CHECK (interval_level IS NULL OR (interval_level > 0 AND interval_level < 1)),
+  PRIMARY KEY (cluster_forecast_id, quantity)
 );
 
 -- ---------------------------------------------------------------------

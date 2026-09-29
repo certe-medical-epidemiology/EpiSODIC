@@ -357,7 +357,7 @@ episodic_db_apply_schema <- function(con, dialect) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 12L
+episodic_schema_version <- 13L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -893,6 +893,48 @@ episodic_db_migrations <- function() {
         }
       }
       for (table in c("episodic_cluster_forecast", "episodic_cluster_forecast_value")) {
+        if (DBI::dbExistsTable(con, table)) {
+          next
+        }
+        for (statement in episodic_db_schema_statements_for(dialect, table)) {
+          episodic_db_execute(con, statement)
+        }
+      }
+      invisible(NULL)
+    },
+    # 13: the typical past season of a seasonal epidemic (five nullable
+    # typical_* columns on episodic_epidemic_season, and
+    # episodic_epidemic_typical_week) and a cluster forecast's estimates
+    # (episodic_cluster_forecast_estimate). Purely additive: an epidemic
+    # opened before it has no typical season, which is what the columns
+    # and the empty table say; the tables are taken from the schema file,
+    # each skipped when present for the same reason as 2.
+    "13" = function(con, dialect) {
+      columns <- c(
+        typical_onset_week = paste(
+          "INTEGER CHECK (typical_onset_week IS NULL OR",
+          "(typical_onset_week >= 1 AND typical_onset_week <= 53))"
+        ),
+        typical_onset_shift_weeks = "INTEGER",
+        typical_length_weeks = paste(
+          "REAL CHECK (typical_length_weeks IS NULL OR typical_length_weeks > 0)"
+        ),
+        typical_length_lower = "REAL",
+        typical_length_upper = "REAL"
+      )
+      for (column in names(columns)) {
+        if (!episodic_db_column_exists(con, dialect, "episodic_epidemic_season", column)) {
+          episodic_db_execute(
+            con,
+            paste(
+              "ALTER TABLE episodic_epidemic_season ADD COLUMN",
+              column,
+              columns[[column]]
+            )
+          )
+        }
+      }
+      for (table in c("episodic_epidemic_typical_week", "episodic_cluster_forecast_estimate")) {
         if (DBI::dbExistsTable(con, table)) {
           next
         }
@@ -2087,6 +2129,9 @@ episodic_db_schema_statements <- function(dialect) {
       ),
       episodic_cluster_forecast_value = c(
         "  target_date         TEXT NOT NULL," = "  target_date         VARCHAR(10) NOT NULL,"
+      ),
+      episodic_cluster_forecast_estimate = c(
+        "  quantity            TEXT NOT NULL," = "  quantity            VARCHAR(40) NOT NULL,"
       ),
       episodic_detector_cache = c(
         "  detector   TEXT NOT NULL CHECK (detector IN ('mem'))," = "  detector   VARCHAR(20) NOT NULL CHECK (detector IN ('mem')),"

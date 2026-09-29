@@ -427,6 +427,21 @@ Every run gives each open outbreak of a transmissible pathogen (`rt_applicable` 
 | <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;outbreak_end:<br>&nbsp;&nbsp;&nbsp;&nbsp;enabled</code>               | `TRUE`  | Master switch                                                   |
 | <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;outbreak_end:<br>&nbsp;&nbsp;&nbsp;&nbsp;probability_threshold</code> | 0.95    | Probability whose date the dossier reports (above 0, below 1)   |
 
+### Epidemic direction
+
+Every run estimates, for each open epidemic, its stream's weekly growth rate over the last `window_weeks` weeks: a log-linear Poisson regression on the weekly counts, its standard error scaled by the Pearson dispersion (never below Poisson). The weeks still inside the nowcast's reporting horizon (`forecast.nowcast.max_delay_days`) are taken from the nowcast, their uncertainty carried through by sampling; a week neither fully reported nor nowcast ends the window before it rather than being read as final, so without a nowcast the window ends some weeks back, and the dossier names the weeks it covers. Weeks that begin before the earliest sample date in the case data are left out, never counted as weeks without cases. The dossier shows the change in weekly cases the trend implies, the doubling or halving time when the 90% interval is on one side of zero, the chance the epidemic is growing, and the chance it is past its peak so far: declining, with its last week below its highest since its first week. That last says nothing about whether it will rise again. Each run's estimate is stored and scored on the Performance screen once its weeks have passed the reporting horizon, against the same trend fitted to their counts as then reported.
+
+| Key                                  | Default | Effect                                                          |
+| ------------------------------------ | ------: | --------------------------------------------------------------- |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;epidemic_direction:<br>&nbsp;&nbsp;&nbsp;&nbsp;enabled</code>      | `TRUE`  | Master switch                                                   |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;epidemic_direction:<br>&nbsp;&nbsp;&nbsp;&nbsp;window_weeks</code> | 4       | Weeks the growth rate is estimated over (at least 3)            |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;epidemic_direction:<br>&nbsp;&nbsp;&nbsp;&nbsp;min_cases</code>    | 20      | Reported cases those weeks need before a rate is estimated      |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;epidemic_direction:<br>&nbsp;&nbsp;&nbsp;&nbsp;n_samples</code>    | 1000    | Draws the interval and probabilities are computed from (at least 100) |
+
+### Typical past season
+
+When MEM opens a seasonal epidemic, the fit that set its thresholds also gives the typical course of the past seasons' epidemics (`mem::memmodel()`'s typical curve, a geometric mean of the aligned seasons, with its 95% interval), the week they typically started, and their typical length. These are stored with the epidemic and fixed, like its thresholds. The Epidemics dossier draws the typical curve on the weekly curve with its start at this epidemic's onset, and gives the typical length and how many weeks earlier or later this epidemic started. It describes past seasons and is labelled as such; it is not a forecast. It has no settings of its own: it comes from the same `mem` configuration as the thresholds.
+
 ### Priority score
 
 | Key                                          | Default | Effect                                                      |
