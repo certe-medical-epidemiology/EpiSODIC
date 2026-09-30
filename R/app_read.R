@@ -378,14 +378,28 @@ episodic_cluster_object <- function(con,
     } else {
       episodic_db_forecast_latest(con, stream$stream_id, "nowcast")
     },
+    # Made only for open detected outbreaks, so a closed or manual
+    # cluster has none from the latest run.
+    outbreak_end = episodic_db_cluster_forecast_latest(
+      con,
+      cluster_id,
+      "outbreak_end"
+    ),
+    outbreak_end_threshold = episodic_outbreak_end_settings(
+      episodic_config_resolve()
+    )$probability_threshold,
     # No patient_key to dedup on for a manual cluster - each row is
     # assumed to already be one distinct case, exactly as reported.
     unique_patients = if (is_manual) nrow(cases) else length(unique(cases$patient_key)),
     n_positives = nrow(cases),
     origin = cluster$origin,
     case_free = list(
+      # From the date the data is current as of, not from today: the
+      # latest run is what has seen the cases, and counted from the wall
+      # clock a day without a run reads as a case-free day, and a replay
+      # or backfill as months of them.
       since = if (nrow(cases) > 0) {
-        as.integer(Sys.Date() - max(as.Date(cases$sample_date)))
+        as.integer(asof - max(as.Date(cases$sample_date)))
       } else {
         NA_integer_
       },

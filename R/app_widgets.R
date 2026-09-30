@@ -575,13 +575,19 @@ episodic_ui_panel_empty <- function(title, message, aside = NULL) {
 
 #' @param label Stat label (uppercase caption).
 #' @param value Stat value (large number/text).
-#' @param sub Optional sub-label.
+#' @param sub Optional sub-label, below the value: its context (a date, a
+#'   denominator, a threshold).
 #' @param colour Optional value colour.
+#' @param lead Optional line between the label and the value, saying what
+#'   the value measures, for a stat whose caption alone cannot: "chance it
+#'   is over" above a percentage that the caption "End of outbreak" does
+#'   not explain.
 #' @keywords internal
 #' @noRd
-episodic_ui_stat <- function(label, value, sub = NULL, colour = NULL) {
+episodic_ui_stat <- function(label, value, sub = NULL, colour = NULL, lead = NULL) {
   shiny::tags$div(
     shiny::tags$div(class = "episodic-stat-label", label),
+    if (!is.null(lead)) shiny::tags$div(class = "episodic-stat-lead", lead),
     shiny::tags$div(
       class = "episodic-stat-value",
       style = if (!is.null(colour)) sprintf("color:%s;", colour),

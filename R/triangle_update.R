@@ -17,6 +17,15 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
+#' The longest reporting lag the completion curve measures
+#'
+#' Beyond it a sample date's reporting is taken as complete: by the
+#' completion curve itself, and by the outbreak-end forecast when it
+#' decides whether an outcome is known yet.
+#' @keywords internal
+#' @noRd
+episodic_triangle_max_lag_days <- 21L
+
 #' Empirical completion curve for a stream
 #'
 #' The proportion of eventually-reported cases for a given sample date
@@ -47,7 +56,9 @@
 #'   zero).
 #' @keywords internal
 #' @noRd
-episodic_triangle_completeness <- function(con, stream_id, max_lag_days = 21) {
+episodic_triangle_completeness <- function(con,
+                                           stream_id,
+                                           max_lag_days = episodic_triangle_max_lag_days) {
   empty <- data.frame(lag_days = integer(0), completeness = numeric(0))
 
   cases <- episodic_db_cases_for_stream_id(

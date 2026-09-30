@@ -247,6 +247,8 @@ app_read_setup <- function() {
     si_mean_days = 3,
     si_sd_days = 1.5,
     si_dist = "gamma",
+    end_r = NA_real_,
+    end_k = NA_real_,
     mem_mode = "auto",
     severity_weight = 0.6,
     source_ref = NA,

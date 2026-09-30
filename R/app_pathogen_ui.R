@@ -891,6 +891,23 @@ episodic_ui_pathogen_config_panel <- function(screen,
         meaning = episodic_tr("pathogen.panel.config.si.meaning", lang = lang)
       ))
     )
+    rows <- c(
+      rows,
+      list(list(
+        label = episodic_tr("pathogen.panel.config.end.label", lang = lang),
+        value = if (is.null(pc$end_r) || is.na(pc$end_r)) {
+          episodic_tr("pathogen.panel.config.end.unset", lang = lang)
+        } else {
+          episodic_tr(
+            "pathogen.panel.config.end.value",
+            mean = num(pc$end_r),
+            dispersion = num(pc$end_k),
+            lang = lang
+          )
+        },
+        meaning = episodic_tr("pathogen.panel.config.end.meaning", lang = lang)
+      ))
+    )
   }
 
   rows <- c(

@@ -148,7 +148,75 @@ episodic_ui_performance_screen <- function(performance,
         }))
       )
     },
-    episodic_ui_performance_nowcast(performance$nowcast, lang = lang)
+    episodic_ui_performance_nowcast(performance$nowcast, lang = lang),
+    episodic_ui_performance_outbreak_end(performance$outbreak_end, lang = lang)
+  )
+}
+
+#' The Performance screen's outbreak-end section
+#'
+#' @param outbreak_end `episodic_outbreak_end_performance()`'s output.
+#' @param lang Session language.
+#' @return A tag list.
+#' @keywords internal
+#' @noRd
+episodic_ui_performance_outbreak_end <- function(outbreak_end,
+                                                 lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  dash <- episodic_tr("misc.dash", lang = lang)
+  pct <- function(x) {
+    if (is.na(x)) {
+      dash
+    } else {
+      paste0(episodic_format_number(x * 100, digits = 0, lang = lang), "%")
+    }
+  }
+  shiny::tagList(
+    shiny::tags$h2(
+      style = "font-size:15px;font-weight:600;margin:20px 0 6px;",
+      episodic_tr("performance.outbreak_end_title", lang = lang)
+    ),
+    shiny::tags$p(
+      style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:8px;",
+      episodic_tr("performance.outbreak_end_note", lang = lang)
+    ),
+    if (nrow(outbreak_end) == 0) {
+      shiny::tags$p(
+        class = "episodic-panel-empty",
+        episodic_tr("performance.outbreak_end_empty", lang = lang)
+      )
+    } else {
+      shiny::tags$table(
+        class = "episodic-table",
+        shiny::tags$thead(shiny::tags$tr(
+          shiny::tags$th(episodic_tr("performance.col.pathogen", lang = lang)),
+          shiny::tags$th(episodic_tr("performance.col.scored", lang = lang)),
+          shiny::tags$th(episodic_tr("performance.col.mean_probability", lang = lang)),
+          shiny::tags$th(episodic_tr("performance.col.share_over", lang = lang)),
+          shiny::tags$th(episodic_tr("performance.col.brier", lang = lang))
+        )),
+        shiny::tags$tbody(lapply(seq_len(nrow(outbreak_end)), function(i) {
+          row <- outbreak_end[i, ]
+          shiny::tags$tr(
+            shiny::tags$td(shiny::HTML(episodic_ui_italicise_taxon(row$pathogen))),
+            shiny::tags$td(episodic_tr(
+              "performance.scored_value",
+              n = episodic_format_number(row$n_scored, lang = lang),
+              pending = episodic_format_number(row$n_pending, lang = lang),
+              lang = lang
+            )),
+            shiny::tags$td(pct(row$mean_probability)),
+            shiny::tags$td(pct(row$share_over)),
+            shiny::tags$td(
+              if (is.na(row$mean_brier)) {
+                dash
+              } else {
+                episodic_format_number(row$mean_brier, digits = 3, lang = lang)
+              }
+            )
+          )
+        }))
+      )
+    }
   )
 }
 
@@ -258,7 +326,8 @@ episodic_ui_performance_nowcast <- function(nowcast,
 #'   `to_first_assessment`, `to_classification` - `median_days` is `NA`
 #'   when `n` is `0`), and `nowcast` (`episodic_nowcast_performance()`,
 #'   over outbreaks and epidemics alike: a nowcast is made for a stream,
-#'   whichever scale its cluster has).
+#'   whichever scale its cluster has), and `outbreak_end`
+#'   (`episodic_outbreak_end_performance()`).
 #' @keywords internal
 #' @noRd
 episodic_app_performance <- function(con,
@@ -302,7 +371,8 @@ episodic_app_performance <- function(con,
       lang = lang
     ),
     timeliness = episodic_performance_timeliness(clusters, events, verdicts),
-    nowcast = episodic_nowcast_performance(con)
+    nowcast = episodic_nowcast_performance(con),
+    outbreak_end = episodic_outbreak_end_performance(con)
   )
 }
 

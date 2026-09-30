@@ -6,10 +6,22 @@
 - Each run's nowcast is stored in `episodic_forecast` and `episodic_forecast_value` (schema version 11), with the reason when a stream could not be nowcast
 - The outbreak and Epidemics dossier curves draw the nowcast's median and 90% interval on the days and weeks still being reported
 - The Performance screen scores stored nowcasts once reporting is complete: interval coverage, weighted interval score, and the error of taking the reported count as final
+- Each detection run gives every open outbreak of a transmissible pathogen the probability that it is over, from the serial interval, the pathogen's offspring distribution and the stream's reporting completeness, configured under `forecast.outbreak_end`
+- The pathogen CSV takes `end_r` and `end_k`, the offspring mean and dispersion, shipped empty for every pathogen
+- The outbreak dossier shows the probability beside the case-free days, with the date it reaches `forecast.outbreak_end.probability_threshold`, or why there is none
+- Each run's outbreak-end probability is stored in `episodic_cluster_forecast` and `episodic_cluster_forecast_value` (schema version 12)
+- The Performance screen scores stored outbreak-end probabilities once the case-free window after the last case is reported: mean probability, share over, and Brier score
+- The Pathogen screen's parameter panel shows a transmissible pathogen's offspring distribution
 
 ## Changed
 
 - The Performance screen's outbreaks-only note is limited to its detection and assessment metrics, since its nowcast section covers epidemics too
+- A stat tile can carry a line between its caption and its value saying what the value measures
+- The Epidemics dossier's "Outbreaks during" tile is "Linked outbreaks", with a line saying what links them
+
+## Fixed
+
+- The outbreak dossier's case-free days count from the latest run's date instead of today, so a day without a run, a replay or a backfill no longer adds case-free days
 
 # EpiSODIC 0.23.0
 

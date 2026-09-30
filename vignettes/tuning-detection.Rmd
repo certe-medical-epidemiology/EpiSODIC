@@ -271,6 +271,7 @@ The columns and what they control:
 | `rt_applicable`                    | Whether Rt estimation applies (0 or 1)                                                                         |
 | `si_mean_days`, `si_sd_days`       | Serial interval parameters for Rt estimation                                                                   |
 | `si_dist`                          | Serial interval distribution: `gamma`, `lognormal`, or `weibull`                                               |
+| `end_r`, `end_k`                   | Mean and dispersion of the negative binomial number of cases each outbreak case goes on to cause, for the probability that an outbreak is over; both or neither, `end_r` at least 0 and `end_k` above 0. Shipped empty for every pathogen |
 | `mem_mode`                         | MEM seasonal detection: `auto` (derive from data), `yes` (force on), `no` (force off)                          |
 | `severity_weight`                  | Clinical severity weight (0 to 1) feeding the priority score's severity component                              |
 
@@ -415,6 +416,17 @@ Every run nowcasts each stream that carries an open cluster: the expected final 
 | <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;nowcast:<br>&nbsp;&nbsp;&nbsp;&nbsp;delay_window_days</code>  | `~`     | Days of reports the delay is estimated from; `~` uses the whole history, a value must be at least `max_delay_days` |
 | <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;nowcast:<br>&nbsp;&nbsp;&nbsp;&nbsp;n_samples</code>          | 500     | Delay-distribution samples per nowcast (at least 100)                                           |
 
+### Outbreak-end probability
+
+Every run gives each open outbreak of a transmissible pathogen (`rt_applicable` 1, with a complete serial interval) the probability that it is over: that none of its cases goes on to cause a case not yet reported (Nishiura et al. 2016, with the negative binomial offspring distribution of Linton et al. 2022). Its inputs are the pathogen's serial interval and its offspring mean and dispersion (`end_r`, `end_k` in the pathogen CSV), and the stream's reporting completeness, so quiet days whose cases may still be on their way count for less. It is not computed for an outbreak whose cases all fall within one maximum incubation period, which points to a common source rather than transmission. The dossier shows it beside the case-free days, with the date it reaches `probability_threshold` if no further case is reported; it never closes an outbreak. Each run's probability is stored and scored on the Performance screen once the case-free window after the last case has passed and been reported.
+
+`end_r` and `end_k` ship empty for every pathogen: set them in your pathogen CSV from a source you have checked for your setting. Until they are set, the dossier says so instead of showing a probability.
+
+| Key                                  | Default | Effect                                                          |
+| ------------------------------------ | ------: | --------------------------------------------------------------- |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;outbreak_end:<br>&nbsp;&nbsp;&nbsp;&nbsp;enabled</code>               | `TRUE`  | Master switch                                                   |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;outbreak_end:<br>&nbsp;&nbsp;&nbsp;&nbsp;probability_threshold</code> | 0.95    | Probability whose date the dossier reports (above 0, below 1)   |
+
 ### Priority score
 
 | Key                                          | Default | Effect                                                      |
@@ -479,6 +491,7 @@ Every run nowcasts each stream that carries an open cluster: the expected final 
 | `rt_applicable`                    | 0               | Whether Rt estimation applies (0 or 1)            |
 | `si_mean_days`, `si_sd_days`       | (varies)        | Serial interval for Rt                            |
 | `si_dist`                          | (varies)        | Serial interval distribution                      |
+| `end_r`, `end_k`                   | (empty)         | Offspring mean and dispersion for the outbreak-end probability |
 | `mem_mode`                         | auto            | MEM: `auto`, `yes`, or `no`                       |
 | `severity_weight`                  | 1.00            | Clinical severity for priority scoring (0 to 1)   |
 

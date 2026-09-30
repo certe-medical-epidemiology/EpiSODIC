@@ -300,6 +300,16 @@ test_that("episodic_cluster_object() populates concentration, density and case_f
   expect_true(obj$rt_applicable)
 })
 
+test_that("case-free days count from the latest run's date, not from today", {
+  env <- app_read_setup()
+  on.exit(DBI::dbDisconnect(env$con))
+  # The fixture's last case is on 2025-01-13; its run is dated a week on,
+  # which is long before the day the suite runs.
+  DBI::dbExecute(env$con, "UPDATE episodic_detection_run SET run_date = '2025-01-20'")
+  obj <- episodic_cluster_object(env$con, env$cluster_id)
+  expect_identical(obj$case_free$since, 7L)
+})
+
 test_that("episodic_cluster_object() feeds directly into episodic_interpretation_generate() without error", {
   env <- app_read_setup()
   on.exit(DBI::dbDisconnect(env$con))

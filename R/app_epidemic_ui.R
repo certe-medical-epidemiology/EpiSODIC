@@ -595,7 +595,8 @@ episodic_ui_epidemic_stat_grid <- function(obj,
       episodic_tr("epidemics.none_detected", lang = lang)
     } else {
       episodic_format_number(n_during, lang = lang)
-    }
+    },
+    lead = episodic_tr("epidemics.stat.outbreaks_during_lead", lang = lang)
   )))
 
   shiny::tags$div(class = "episodic-statgrid", stats)
