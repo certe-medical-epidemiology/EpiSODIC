@@ -724,12 +724,14 @@ episodic_ui_epicurve_panel <- function(con,
 #' The dossier tile for the probability that an outbreak is over
 #'
 #' The probability as of the latest run, and when it reaches the
-#' configured threshold if no further case is reported before then. When
-#' the latest run recorded why there is no probability, the tile says so
-#' in place of a number. No tile when the latest run made no forecast for
-#' this cluster (its pathogen is not one the method applies to, the
-#' cluster is closed, or the forecast is switched off), nor when the
-#' pathogen has no offspring distribution configured.
+#' configured threshold if no further case is reported before then. No
+#' tile when the latest run made no forecast for this cluster (its
+#' pathogen is not one the method applies to, the cluster is closed, or
+#' the forecast is switched off), nor when it recorded why there is no
+#' probability: a point source, no offspring distribution configured, no
+#' reporting delay measured yet. A tile without a number tells the reader
+#' nothing about the outbreak; the reason stays in the stored forecast.
+#' A forecast that failed keeps its tile, since that is a fault to see.
 #'
 #' A probability is shown as a whole percentage, and never as 0% or 100%:
 #' the model approaches both without reaching them, and a rounded 100%
@@ -745,31 +747,21 @@ episodic_ui_epicurve_panel <- function(con,
 episodic_ui_outbreak_end_stat <- function(forecast,
                                           threshold,
                                           lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  # Without an offspring distribution the tile could only say that the
-  # operator has not set one, which is configuration, not a finding about
-  # this outbreak: the Pathogen screen's parameter panel says it instead.
-  if (
-    is.null(forecast) ||
-      (identical(forecast$status, "insufficient_data") &&
-        identical(forecast$detail, "parameters"))
-  ) {
+  if (is.null(forecast) || forecast$status %in% c("not_applicable", "insufficient_data")) {
     return(NULL)
   }
   label <- episodic_tr("dossier.stat.outbreak_end", lang = lang)
   lead <- episodic_tr("dossier.stat.outbreak_end_lead", lang = lang)
-  if (!identical(forecast$status, "computed")) {
-    reason <- switch(forecast$status,
-      not_applicable = ,
-      insufficient_data = paste0("dossier.stat.outbreak_end_", forecast$detail),
-      failed = "dossier.stat.outbreak_end_failed",
-      stop("Unknown forecast status \"", forecast$status, "\".", call. = FALSE)
-    )
+  if (identical(forecast$status, "failed")) {
     return(episodic_ui_stat(
       label,
       episodic_tr("misc.dash", lang = lang),
-      episodic_tr(reason, lang = lang),
+      episodic_tr("dossier.stat.outbreak_end_failed", lang = lang),
       lead = lead
     ))
+  }
+  if (!identical(forecast$status, "computed")) {
+    stop("Unknown forecast status \"", forecast$status, "\".", call. = FALSE)
   }
   values <- forecast$values
   pct <- function(p) {

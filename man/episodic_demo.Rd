@@ -12,6 +12,7 @@ episodic_demo(
   password = "demo",
   launch = TRUE,
   run_date = NULL,
+  replay_days = 14L,
   lang = Sys.getenv("EPISODIC_LANGUAGE"),
   cases = NULL,
   denominators = NULL,
@@ -52,6 +53,17 @@ a scheduled run and useless for someone trying the system out on a
 historical export. \code{\link[=episodic_run_cron]{episodic_run_cron()}} therefore keeps dating its
 runs from the system date, as a real surveillance run must.}
 
+\item{replay_days}{For the bundled synthetic data, how many of its
+last days are replayed as daily runs, each loading only the cases
+received by its date, after a first run over everything before them.
+A scheduled instance learns its reporting delays this way, one run
+at a time, and the delays are what the reporting completeness, the
+nowcast and the end-of-outbreak probability are computed from: with
+a single run there are none to learn from. Each replayed day adds a
+few seconds; \code{0} builds the demo in one run, without them. A \code{cases}
+extract you supply is always run once, as of \code{run_date}: its receipt
+dates are not necessarily the dates its cases were reported.}
+
 \item{lang}{Dashboard language when \code{launch = TRUE}: \code{"en"}, \code{"ar"},
 \code{"nl"}, \code{"fr"}, \code{"de"}, \code{"hi"}, \code{"zh"}, or \code{"es"}, or a regional variant of
 one (\code{"en-US"}, \code{"es-419"}). Defaults to the
@@ -71,7 +83,7 @@ with nothing in it. Run \code{\link[=episodic_check_cases]{episodic_check_cases(
 yourself to see the same findings, plus the advisory ones.}
 
 \item{overwrite}{If \code{TRUE}, an existing demo database at \code{db_path} and
-the two configuration files beside it are deleted and rebuilt.
+the three configuration files beside it are deleted and rebuilt.
 \code{FALSE} (the default) refuses instead. This deletes whatever is at
 that path, so it is deliberately not something the demo decides for
 you.}
@@ -86,8 +98,9 @@ The fastest way to see what EpiSODIC does: this single call creates a
 fresh database, generates several years of synthetic laboratory data,
 runs detection over it, creates a demo epidemiologist account, and opens the
 dashboard - all without needing access to any real laboratory system or
-an instance configuration file. Everything used here is a shipped
-default, so it works right after installing the package.
+an instance configuration file. It needs nothing but the package: the
+shipped defaults, plus the few files it writes beside the database
+(see below).
 }
 \section{What the demo writes beside the database}{
 
@@ -97,12 +110,16 @@ either would be a default for one country. The demo therefore
 configures its own, exactly the way a real deployment does: two files
 named after \code{db_path} (\verb{<name>-config.yaml} and
 \verb{<name>-pc-province.csv}), plus the Netherlands postcode geometry
-bundled with the package.
+bundled with the package. A third, \verb{<name>-pathogens.csv}, gives the
+transmissible pathogens in the synthetic data an offspring
+distribution (\code{end_r}, \code{end_k}), which ships empty, so the outbreak
+dossier can show its end-of-outbreak probability. Its values are
+illustrative, chosen for the demo, not estimates for any setting.
 
 They are left in place, so a database built with \code{launch = FALSE} can
 be re-opened later with the same geography by setting \code{EPISODIC_DB},
-\code{EPISODIC_CONFIG}, \code{EPISODIC_PC_PROVINCE_MAP} and \code{EPISODIC_GEO_DATA}
-back to them - the paths are printed when the demo finishes. Without
+\code{EPISODIC_CONFIG}, \code{EPISODIC_PC_PROVINCE_MAP},
+\code{EPISODIC_PATHOGEN_CONFIG} and \code{EPISODIC_GEO_DATA} back to them - the paths are printed when the demo finishes. Without
 them the database still opens; it simply shows no map and no
 provinces.
 }

@@ -505,7 +505,10 @@ episodic_ui_epidemic_stat_grid <- function(obj,
     stats <- c(stats, list(episodic_ui_intensity_stat(
       episodic_tr("epidemics.stat.intensity", lang = lang),
       course$latest_level,
-      if (!is.na(course$peak_level)) {
+      # The peak only when its band is not the one the value shows.
+      if (is.na(course$peak_level) || identical(course$peak_level, course$latest_level)) {
+        episodic_tr("epidemics.stat.intensity_sub_latest", lang = lang)
+      } else {
         episodic_tr(
           "epidemics.stat.intensity_sub",
           level = episodic_tr(

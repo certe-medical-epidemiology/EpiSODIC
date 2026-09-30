@@ -394,12 +394,17 @@ episodic_outlook_fit <- function(history, seasonal, autoregressive) {
   if (autoregressive) {
     control$ar <- list(f = ~1)
   }
-  fit <- tryCatch(
-    suppressWarnings(surveillance::hhh4(
-      surveillance::sts(observed = matrix(history), frequency = 52),
-      control = control
-    )),
-    error = function(e) NULL
+  # `surveillance` reports an optimiser that did not converge with
+  # `cat()`; captured, since the convergence flag below decides it.
+  fit <- NULL
+  utils::capture.output(
+    fit <- tryCatch(
+      suppressWarnings(surveillance::hhh4(
+        surveillance::sts(observed = matrix(history), frequency = 52),
+        control = control
+      )),
+      error = function(e) NULL
+    )
   )
   if (is.null(fit) || !isTRUE(fit$convergence)) {
     return(NULL)

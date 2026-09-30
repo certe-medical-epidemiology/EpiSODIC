@@ -27,6 +27,10 @@
 
 ## Changed
 
+- `episodic_demo()` replays the last `replay_days` days of its synthetic data as daily runs, so the demo has measured reporting delays, and gives its transmissible pathogens an illustrative offspring distribution, so an outbreak shows its end-of-outbreak probability
+- The outbreak dossier shows the end-of-outbreak tile only with a probability, or when the forecast failed
+- The Epidemics dossier's intensity tile names the peak so far only when its band differs from the current week's
+
 - The Performance screen's outbreaks-only note is limited to its detection and assessment metrics, since its nowcast section covers epidemics too
 - A stat tile can carry a line between its caption and its value saying what the value measures
 - The Epidemics dossier's "Outbreaks during" tile is "Linked outbreaks", with a line saying what links them

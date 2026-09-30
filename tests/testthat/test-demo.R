@@ -237,6 +237,59 @@ test_that("the demo refuses a MariaDB DSN outright", {
   )
 })
 
+test_that("a replayed demo records each case in the run that received it, so its delays are learned", {
+  cases <- small_cases()
+  db_path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(db_path))
+  run_dates <- as.Date("2024-06-26") + 0:4
+  suppressMessages(episodic_demo_detect(db_path, cases, small_denominator(), run_dates))
+  con <- episodic_db_connect(db_path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+  runs <- DBI::dbGetQuery(con, "SELECT run_id, run_date FROM episodic_detection_run ORDER BY run_id")
+  expect_identical(as.Date(substr(runs$run_date, 1, 10)), run_dates)
+  seen <- DBI::dbGetQuery(
+    con,
+    "SELECT c.receipt_date, r.run_date
+       FROM episodic_case c JOIN episodic_detection_run r ON r.run_id = c.first_seen_run"
+  )
+  first <- as.Date(substr(seen$run_date, 1, 10))
+  received <- as.Date(seen$receipt_date)
+  # Received before the first run: seen by it; after: by the run on the
+  # day it was received.
+  expect_true(all(first == pmax(received, run_dates[1])))
+  stream <- DBI::dbGetQuery(con, "SELECT stream_id FROM episodic_cluster LIMIT 1")$stream_id
+  expect_gt(nrow(episodic_triangle_completeness(con, stream)), 0)
+})
+
+test_that("the demo shows an end-of-outbreak probability for at least one outbreak", {
+  skip_on_cran()
+  skip_if_not_installed("sodium")
+  db_path <- tempfile(fileext = ".sqlite")
+  files <- episodic_demo_files(db_path)
+  on.exit(unlink(c(db_path, unlist(files))))
+  suppressMessages(episodic_demo(db_path = db_path, launch = FALSE, run_date = as.Date("2026-09-27")))
+  withr::local_envvar(
+    EPISODIC_CONFIG = files$config,
+    EPISODIC_PC_PROVINCE_MAP = files$pc_province_map,
+    EPISODIC_PATHOGEN_CONFIG = files$pathogen_config
+  )
+  con <- episodic_db_connect(db_path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+  computed <- DBI::dbGetQuery(
+    con,
+    "SELECT cluster_id FROM episodic_cluster_forecast
+      WHERE kind = 'outbreak_end' AND status = 'computed'
+        AND run_id = (SELECT MAX(run_id) FROM episodic_detection_run)"
+  )
+  expect_gt(nrow(computed), 0)
+  html <- as.character(episodic_ui_stat_grid(
+    episodic_cluster_object(con, computed$cluster_id[1], lang = "en"),
+    lang = "en"
+  ))
+  expect_match(html, "End of outbreak", fixed = TRUE)
+  expect_match(html, "[0-9]+%")
+})
+
 test_that("episodic_demo_check_db_path() rejects a db_path that is not a single path", {
   expect_error(episodic_demo_check_db_path(character(0)), "single non-empty path")
   expect_error(episodic_demo_check_db_path(NA_character_), "single non-empty path")
@@ -246,10 +299,11 @@ test_that("episodic_demo_check_db_path() rejects a db_path that is not a single 
 test_that("overwrite = TRUE removes the existing demo and its configuration files first", {
   db_path <- tempfile(fileext = ".sqlite")
   demo <- episodic_demo_files(db_path)
-  on.exit(unlink(c(db_path, demo$config, demo$pc_province_map)))
+  on.exit(unlink(c(db_path, demo$config, demo$pc_province_map, demo$pathogen_config)))
   writeLines("old database", db_path)
   writeLines("old config", demo$config)
   writeLines("old map", demo$pc_province_map)
+  writeLines("old pathogens", demo$pathogen_config)
 
   expect_message(
     episodic_demo_check_db_path(db_path, overwrite = TRUE),
@@ -258,6 +312,7 @@ test_that("overwrite = TRUE removes the existing demo and its configuration file
   expect_false(file.exists(db_path))
   expect_false(file.exists(demo$config))
   expect_false(file.exists(demo$pc_province_map))
+  expect_false(file.exists(demo$pathogen_config))
 })
 
 test_that("a db_path that does not exist yet is accepted silently", {
@@ -277,7 +332,7 @@ test_that("the epidemic rail shows each seasonal epidemic's band as its dossier 
   cases <- cases[cases$pathogen == "Influenza A", , drop = FALSE]
   db_path <- tempfile(fileext = ".sqlite")
   files <- episodic_demo_files(db_path)
-  on.exit(unlink(c(db_path, files$config, files$pc_province_map)))
+  on.exit(unlink(c(db_path, files$config, files$pc_province_map, files$pathogen_config)))
   suppressMessages(episodic_demo(
     db_path = db_path,
     launch = FALSE,
