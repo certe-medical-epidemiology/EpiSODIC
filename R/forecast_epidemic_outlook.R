@@ -114,8 +114,17 @@ episodic_outlook_band_reached <- function(counts, thresholds) {
 
 #' An open epidemic's outlook: its stream's weekly counts in the weeks ahead
 #'
-#' An endemic-epidemic model (`surveillance::hhh4()`, negative binomial)
-#' is fitted to the stream's fully reported weeks: each week's expected
+#' The outlook is an equally weighted ensemble of two models, combined by
+#' averaging their quantiles, as the European and US COVID-19 forecast
+#' hubs combine theirs: a statistical model of the stream's whole
+#' history, which knows its seasons and levels, and the extrapolated
+#' trend of its last weeks, which follows a rise or fall the history has
+#' not seen. Averaging quantiles keeps the combined forecast as sharp as
+#' its components are on average, where pooling their draws would widen
+#' it to cover both.
+#'
+#' The first model is an endemic-epidemic model (`surveillance::hhh4()`,
+#' negative binomial), fitted to the stream's fully reported weeks: each week's expected
 #' count is the endemic level, seasonal (one sine-cosine pair of period
 #' 52 weeks) for a seasonal epidemic and constant otherwise, plus an
 #' autoregressive share of the week before. A week is fully reported
@@ -133,10 +142,25 @@ episodic_outlook_band_reached <- function(counts, thresholds) {
 #' The targets are the `horizon_weeks` weeks after the last complete
 #' week.
 #'
+#' The second extrapolates, along each of those paths, the log-linear
+#' trend of its last `trend_window_weeks` weeks to the target weeks
+#' (`episodic_outlook_trend_paths()`), the trend the direction tile
+#' reports (`episodic_growth_rate_fit()`). It takes part only when every
+#' week of that window, up to the last complete week, is data: fully
+#' reported, or from the nowcast. A trend is a short-range forecast:
+#' extended from a window that ended weeks back, it would carry its
+#' growth rate over far more weeks than it was measured on. Where a week
+#' of the window is not data, or the trend cannot be fitted, as when
+#' every case of the window fell in one week, the outlook is the first
+#' model's alone, and says so in `components`.
+#'
 #' For each target the result gives the mean and the quantiles of
 #' `episodic_forecast_probs`, and, for a seasonal epidemic with stored
-#' thresholds, the chance of reaching each MEM band that week; and the
-#' chance of reaching each band in at least one target week.
+#' thresholds, the chance of reaching each MEM band that week, all read
+#' from the averaged quantiles; and the chance of reaching each band in
+#' at least one target week, read likewise from the averaged
+#' distribution of each path's highest target week
+#' (`episodic_outlook_combine()`).
 #'
 #' @param case_dates The sample dates of the stream's cases.
 #' @param observed_from The earliest sample date in the case data.
@@ -148,6 +172,9 @@ episodic_outlook_band_reached <- function(counts, thresholds) {
 #'   a seasonal epidemic, or `NULL`; a seasonal epidemic's model has the
 #'   seasonal terms.
 #' @param settings `episodic_epidemic_outlook_settings()`'s output.
+#' @param trend_window_weeks The weeks the trend is fitted over:
+#'   `forecast.epidemic_direction.window_weeks`, so it is the trend the
+#'   direction tile reports.
 #' @param seed Seed for the simulation; the session's own random stream
 #'   is restored afterwards.
 #' @return A list with `status` (`"computed"` or `"insufficient_data"`),
@@ -169,6 +196,7 @@ episodic_epidemic_outlook_forecast <- function(case_dates,
                                                max_delay_days,
                                                thresholds,
                                                settings,
+                                               trend_window_weeks,
                                                seed) {
   asof <- as.Date(asof)
   observed_from <- as.Date(observed_from)
@@ -277,9 +305,14 @@ episodic_epidemic_outlook_forecast <- function(case_dates,
   paths <- matrix(NA_real_, nrow = n, ncol = length(all_weeks))
   paths[, seq_len(n_final)] <- rep(history, each = n)
   n_nowcast <- 0L
+  # Weeks whose count is data: fully reported, or estimated by the
+  # nowcast from what has been reported, as opposed to drawn from the
+  # model.
+  known <- final
   for (i in (n_final + 1L):length(all_weeks)) {
     pmf <- week_pmfs[[format(all_weeks[i])]]
     if (!is.null(pmf)) {
+      known[i] <- TRUE
       paths[, i] <- sample.int(length(pmf), n, replace = TRUE, prob = pmf) - 1L
       n_nowcast <- n_nowcast + 1L
       next
@@ -294,41 +327,175 @@ episodic_epidemic_outlook_forecast <- function(case_dates,
   params$baseline_count <- stats::median(paths[, length(weeks)])
 
   target_cols <- length(weeks) + seq_len(horizon)
-  counts <- paths[, target_cols, drop = FALSE]
-  reached <- episodic_outlook_band_reached(counts, thresholds)
+  components <- list(hhh4 = paths[, target_cols, drop = FALSE])
+  # The trend is extrapolated from current data only: its window ends at
+  # the last complete week, and every week in it is fully reported or
+  # nowcast. Fitted to weeks the model drew, it would extrapolate the
+  # model rather than the epidemic; ending weeks back, it would carry
+  # a growth rate over far more weeks than it was measured on, which a
+  # log-linear trend does not survive.
+  last_known <- length(weeks)
+  trend_cols <- last_known - rev(seq_len(trend_window_weeks)) + 1L
+  if (min(trend_cols) >= 1L && all(known[trend_cols])) {
+    trend <- episodic_outlook_trend_paths(
+      paths[, trend_cols, drop = FALSE],
+      ahead = target_cols - last_known,
+      floors = reported[target_cols]
+    )
+    if (!is.null(trend)) {
+      components$trend <- trend
+      params$trend_window_end <- format(all_weeks[last_known])
+    }
+  }
+  params$components <- names(components)
+  params$trend_window_weeks <- as.integer(trend_window_weeks)
+  combined <- episodic_outlook_combine(components, thresholds)
   week_rows <- data.frame(
     target_date = format(targets),
     horizon = seq_len(horizon),
-    mean = colMeans(counts),
     stringsAsFactors = FALSE
   )
-  for (q in names(episodic_forecast_probs)) {
-    week_rows[[q]] <- apply(counts, 2, stats::quantile, probs = episodic_forecast_probs[[q]], names = FALSE, type = 1)
+  list(
+    status = "computed",
+    detail = NA_character_,
+    params = params,
+    weeks = cbind(week_rows, combined$weeks),
+    estimates = combined$estimates
+  )
+}
+
+#' Extrapolate the trend of each path's last weeks
+#'
+#' Along each simulated path, the log-linear trend of its last weeks
+#' (`episodic_growth_rate_fit()`) is extended to the target weeks: an
+#' intercept and rate drawn from the fit's sampling distribution, and a
+#' count drawn around the trend with the fit's dispersion (negative
+#' binomial with the variance `dispersion` times the mean; Poisson at a
+#' dispersion of 1), never below what the target week has already
+#' reported (`episodic_outlook_draw_at_least()`). Paths that agree on
+#' their window share one fit.
+#'
+#' @param window A matrix of counts, one row per path and one column per
+#'   week of the trend's window, oldest first.
+#' @param ahead How many weeks after the window's last week each target
+#'   week is.
+#' @param floors What each target week has already reported, in order.
+#' @return A matrix, one row per path and one column per target week, or
+#'   `NULL` when a path's trend cannot be fitted or its extrapolation is
+#'   not a finite count.
+#' @keywords internal
+#' @noRd
+episodic_outlook_trend_paths <- function(window, ahead, floors) {
+  n <- nrow(window)
+  key <- apply(window, 1, paste, collapse = ",")
+  distinct <- unique(key)
+  fits <- lapply(distinct, function(k) {
+    episodic_growth_rate_fit(as.numeric(strsplit(k, ",", fixed = TRUE)[[1]]))
+  })
+  if (any(vapply(fits, is.null, logical(1)))) {
+    return(NULL)
   }
-  estimates <- none_estimates
+  fits <- do.call(rbind, fits)[match(key, distinct), , drop = FALSE]
+  # The intercept and rate drawn jointly: a bivariate normal from two
+  # independent draws and the fit's correlation between them.
+  z1 <- stats::rnorm(n)
+  z2 <- stats::rnorm(n)
+  correlation <- fits[, "covariance"] / (fits[, "se_intercept"] * fits[, "se"])
+  correlation <- pmin(pmax(correlation, -1), 1)
+  intercept <- fits[, "intercept"] + fits[, "se_intercept"] * z1
+  rate <- fits[, "rate"] + fits[, "se"] * (correlation * z1 + sqrt(1 - correlation^2) * z2)
+  last <- ncol(window) - 1L
+  excess <- fits[, "dispersion"] - 1
+  out <- matrix(NA_real_, nrow = n, ncol = length(floors))
+  for (h in seq_along(floors)) {
+    mu <- exp(intercept + rate * (last + ahead[h]))
+    if (!all(is.finite(mu))) {
+      return(NULL)
+    }
+    # Variance `dispersion` times the mean: a negative binomial whose size
+    # is the mean over the excess dispersion, Poisson without any.
+    size <- ifelse(excess > 0, mu / excess, Inf)
+    out[, h] <- episodic_outlook_draw_at_least(mu, size, floors[h])
+  }
+  if (!all(is.finite(out))) {
+    return(NULL)
+  }
+  out
+}
+
+#' Combine outlook models by averaging their quantiles
+#'
+#' Each component's simulated counts give its quantile function for each
+#' target week, and for the highest target week along each path; the
+#' combined forecast's quantile function is their average. The stored
+#' quantiles and the mean are read from it directly, and the chance of
+#' reaching each band as the share of a fine grid of its quantiles (every
+#' thousandth) at or above the band's threshold: for a week's count, and
+#' for the highest week, which is the chance of reaching the band in any
+#' target week. With one component this is that component's forecast.
+#'
+#' @param components A named list of matrices, one row per path and one
+#'   column per target week.
+#' @param thresholds `episodic_epidemic_stored_thresholds()`'s output, or
+#'   `NULL`.
+#' @return A list with `weeks` (a data frame, one row per target week:
+#'   `mean`, a column per `episodic_forecast_probs`, and `p_low`,
+#'   `p_medium`, `p_high`, `p_very_high`, `NA` where the band has no
+#'   threshold) and `estimates` (`p_reach_<band>` for each band with one).
+#' @keywords internal
+#' @noRd
+episodic_outlook_combine <- function(components, thresholds) {
+  grid <- seq_len(999) / 1000
+  averaged <- function(values, probs) {
+    Reduce(`+`, lapply(values, stats::quantile, probs = probs, names = FALSE, type = 1)) /
+      length(values)
+  }
+  horizon <- ncol(components[[1]])
+  weeks <- data.frame(
+    mean = vapply(seq_len(horizon), function(h) {
+      mean(vapply(components, function(m) mean(m[, h]), numeric(1)))
+    }, numeric(1))
+  )
+  for (q in names(episodic_forecast_probs)) {
+    weeks[[q]] <- vapply(seq_len(horizon), function(h) {
+      averaged(lapply(components, function(m) m[, h]), episodic_forecast_probs[[q]])
+    }, numeric(1))
+  }
+  week_grid <- lapply(seq_len(horizon), function(h) {
+    averaged(lapply(components, function(m) m[, h]), grid)
+  })
+  highest_grid <- averaged(
+    lapply(components, function(m) apply(m, 1, max)),
+    grid
+  )
+  estimates <- data.frame(
+    quantity = character(0),
+    estimate = numeric(0),
+    lower = numeric(0),
+    upper = numeric(0),
+    interval_level = numeric(0),
+    stringsAsFactors = FALSE
+  )
   for (band in episodic_outlook_bands) {
     column <- paste0("p_", band)
-    if (is.null(reached[[band]])) {
-      week_rows[[column]] <- NA_real_
+    reached <- episodic_outlook_band_reached(highest_grid, thresholds)[[band]]
+    if (is.null(reached)) {
+      weeks[[column]] <- NA_real_
       next
     }
-    week_rows[[column]] <- colMeans(reached[[band]])
+    weeks[[column]] <- vapply(week_grid, function(g) {
+      mean(episodic_outlook_band_reached(g, thresholds)[[band]])
+    }, numeric(1))
     estimates <- rbind(estimates, data.frame(
       quantity = paste0("p_reach_", band),
-      estimate = mean(apply(reached[[band]], 1, any)),
+      estimate = mean(reached),
       lower = NA_real_,
       upper = NA_real_,
       interval_level = NA_real_,
       stringsAsFactors = FALSE
     ))
   }
-  list(
-    status = "computed",
-    detail = NA_character_,
-    params = params,
-    weeks = week_rows,
-    estimates = estimates
-  )
+  list(weeks = weeks, estimates = estimates)
 }
 
 #' The largest log-scale standard error of the autoregressive share an
@@ -469,6 +636,7 @@ episodic_epidemic_outlook_run <- function(con,
     return(invisible(counts))
   }
   max_delay_days <- episodic_nowcast_settings(config)$max_delay_days
+  trend_window_weeks <- episodic_epidemic_direction_settings(config)$window_weeks
   open <- episodic_db_clusters_not_closed(con, "epidemic")
   open <- open[open$origin == "detected", , drop = FALSE]
   if (nrow(open) == 0) {
@@ -502,6 +670,7 @@ episodic_epidemic_outlook_run <- function(con,
         max_delay_days = max_delay_days,
         thresholds = episodic_epidemic_stored_thresholds(season),
         settings = settings,
+        trend_window_weeks = trend_window_weeks,
         seed = cluster_id
       ),
       error = function(e) {

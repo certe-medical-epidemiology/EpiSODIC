@@ -1309,7 +1309,12 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
         legend.position = "right",
         legend.title = ggplot2::element_text(
           size = episodic_chart_text_size[["legend"]]
-        )
+        ),
+        # Up to four groups of keys share the chart's height: packed
+        # closely, so the first one's title is not pushed off the top.
+        legend.spacing.y = ggplot2::unit(6, "pt"),
+        legend.key.height = ggplot2::unit(14, "pt"),
+        legend.margin = ggplot2::margin(0, 0, 0, 0)
       )
   }
   p

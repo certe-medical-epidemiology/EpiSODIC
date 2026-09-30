@@ -74,6 +74,7 @@ test_that("a seasonal epidemic's outlook gives each week ahead a distribution an
     max_delay_days = 21,
     thresholds = outlook_thresholds,
     settings = outlook_settings(),
+    trend_window_weeks = 4L,
     seed = 1
   )
   expect_identical(result$status, "computed")
@@ -105,6 +106,7 @@ test_that("weeks still being reported come from the nowcast, or never below what
     max_delay_days = 21,
     thresholds = NULL,
     settings = outlook_settings(n_samples = 200),
+    trend_window_weeks = 4L,
     seed = 1
   )
   expect_identical(nowcast$params$n_nowcast_weeks, 1L)
@@ -120,6 +122,7 @@ test_that("weeks still being reported come from the nowcast, or never below what
     max_delay_days = 21,
     thresholds = NULL,
     settings = outlook_settings(n_samples = 200),
+    trend_window_weeks = 4L,
     seed = 1
   )
   expect_gte(floored$weeks$q025[1], 500)
@@ -139,6 +142,97 @@ test_that("a draw is never below its floor, and a floor beyond the model's reach
   expect_true(all(is.finite(episodic_outlook_draw_at_least(rep(50, 100), rep(20, 100), 500))))
 })
 
+test_that("the ensemble averages the models' quantiles, and reads the band chances from them", {
+  set.seed(1)
+  low <- matrix(stats::rpois(2000, 10), ncol = 2)
+  high <- matrix(stats::rpois(2000, 30), ncol = 2)
+  alone <- episodic_outlook_combine(list(hhh4 = low), outlook_thresholds)
+  expect_equal(alone$weeks$q50, apply(low, 2, stats::quantile, probs = 0.5, names = FALSE, type = 1))
+  expect_equal(alone$weeks$mean, colMeans(low))
+  # One model's band chance is the share of its paths in the band, to
+  # the grid's thousandth.
+  expect_equal(alone$weeks$p_low, colMeans(low > 20), tolerance = 0.002)
+  both <- episodic_outlook_combine(list(hhh4 = low, trend = high), outlook_thresholds)
+  for (q in names(episodic_forecast_probs)) {
+    expect_equal(
+      both$weeks[[q]],
+      (apply(low, 2, stats::quantile, probs = episodic_forecast_probs[[q]], names = FALSE, type = 1) +
+        apply(high, 2, stats::quantile, probs = episodic_forecast_probs[[q]], names = FALSE, type = 1)) / 2
+    )
+  }
+  expect_equal(both$weeks$mean, (colMeans(low) + colMeans(high)) / 2)
+  # The median of the averaged forecast lies between the two models'.
+  expect_true(all(both$weeks$q50 > alone$weeks$q50))
+  reach <- both$estimates$estimate[both$estimates$quantity == "p_reach_low"]
+  expect_gte(reach, max(both$weeks$p_low))
+})
+
+test_that("the trend joins the outlook only when its window is data, up to the last complete week", {
+  dates <- outlook_case_dates()
+  # Everything fully reported: both models.
+  both <- episodic_epidemic_outlook_forecast(
+    dates,
+    observed_from = as.Date("2021-01-04"),
+    asof = as.Date("2025-02-16"),
+    week_pmfs = list(),
+    max_delay_days = 0,
+    thresholds = outlook_thresholds,
+    settings = outlook_settings(n_samples = 200),
+    trend_window_weeks = 4L,
+    seed = 1
+  )
+  expect_identical(both$params$components, c("hhh4", "trend"))
+  expect_identical(both$params$trend_window_end, "2025-02-10")
+  # The last weeks still being reported without a nowcast: the history
+  # model alone, rather than a trend fitted to its draws or extended from
+  # weeks back.
+  alone <- episodic_epidemic_outlook_forecast(
+    dates,
+    observed_from = as.Date("2021-01-04"),
+    asof = as.Date("2025-02-16"),
+    week_pmfs = list(),
+    max_delay_days = 21,
+    thresholds = outlook_thresholds,
+    settings = outlook_settings(n_samples = 200),
+    trend_window_weeks = 4L,
+    seed = 1
+  )
+  expect_identical(alone$params$components, "hhh4")
+  # With a nowcast of those weeks, both again.
+  pmfs <- stats::setNames(
+    rep(list(stats::dpois(0:200, 60)), 3),
+    format(as.Date("2025-01-27") + 7 * 0:2)
+  )
+  nowcast <- episodic_epidemic_outlook_forecast(
+    dates,
+    observed_from = as.Date("2021-01-04"),
+    asof = as.Date("2025-02-16"),
+    week_pmfs = pmfs,
+    max_delay_days = 21,
+    thresholds = outlook_thresholds,
+    settings = outlook_settings(n_samples = 200),
+    trend_window_weeks = 4L,
+    seed = 1
+  )
+  expect_identical(nowcast$params$components, c("hhh4", "trend"))
+})
+
+test_that("a trend that cannot be fitted is left out, and a fitted one respects what is reported", {
+  one_week <- matrix(c(0, 0, 0, 25), nrow = 10, ncol = 4, byrow = TRUE)
+  expect_null(episodic_outlook_trend_paths(one_week, ahead = 1:2, floors = c(0, 0)))
+  set.seed(1)
+  steady <- matrix(c(20, 22, 19, 21), nrow = 200, ncol = 4, byrow = TRUE)
+  paths <- episodic_outlook_trend_paths(steady, ahead = 1:2, floors = c(40, 0))
+  expect_true(all(paths[, 1] >= 40))
+  expect_equal(stats::median(paths[, 2]), 21, tolerance = 0.3)
+  # Extended further, the same trend is less certain.
+  set.seed(1)
+  near <- episodic_outlook_trend_paths(steady, ahead = 1, floors = 0)
+  set.seed(1)
+  far <- episodic_outlook_trend_paths(steady, ahead = 6, floors = 0)
+  expect_gt(diff(stats::quantile(far, c(0.05, 0.95))), diff(stats::quantile(near, c(0.05, 0.95))))
+})
+
 test_that("an epidemic without thresholds has no band chances, and too little history gives a reason", {
   plain <- episodic_epidemic_outlook_forecast(
     outlook_case_dates(),
@@ -148,6 +242,7 @@ test_that("an epidemic without thresholds has no band chances, and too little hi
     max_delay_days = 21,
     thresholds = NULL,
     settings = outlook_settings(n_samples = 200),
+    trend_window_weeks = 4L,
     seed = 1
   )
   expect_identical(plain$status, "computed")
@@ -163,6 +258,7 @@ test_that("an epidemic without thresholds has no band chances, and too little hi
     max_delay_days = 21,
     thresholds = NULL,
     settings = outlook_settings(),
+    trend_window_weeks = 4L,
     seed = 1
   )
   expect_identical(short$status, "insufficient_data")
@@ -187,6 +283,7 @@ test_that("a series with no week-to-week dependence falls back to the endemic mo
     max_delay_days = 21,
     thresholds = NULL,
     settings = outlook_settings(n_samples = 200),
+    trend_window_weeks = 4L,
     seed = 1
   )
   expect_identical(result$status, "computed")
@@ -194,8 +291,8 @@ test_that("a series with no week-to-week dependence falls back to the endemic mo
     result$params$autoregressive,
     fit$se[["ar.1"]] <= episodic_outlook_max_ar_se
   )
-  # Whichever model, no path runs away from a stable series.
-  expect_lt(max(result$weeks$q975), 40)
+  # Whichever model, a stable series keeps its level.
+  expect_equal(result$weeks$q50, rep(10, 4), tolerance = 0.3)
 })
 
 test_that("an outlook is reproducible and leaves the session's random stream alone", {
@@ -208,6 +305,7 @@ test_that("an outlook is reproducible and leaves the session's random stream alo
       max_delay_days = 21,
       thresholds = outlook_thresholds,
       settings = outlook_settings(n_samples = 200),
+      trend_window_weeks = 4L,
       seed = 5
     )
   }
@@ -336,7 +434,7 @@ test_that("the dossier shows an outlook with a track record as a table, its note
   obj <- list(outlook = list(
     forecast = list(
       status = "computed",
-      params = list(n_history_weeks = 212),
+      params = list(n_history_weeks = 212, components = c("hhh4", "trend"), trend_window_weeks = 4L),
       weeks = weeks,
       estimates = data.frame(
         quantity = paste0("p_reach_", episodic_outlook_bands),
@@ -356,6 +454,14 @@ test_that("the dossier shows an outlook with a track record as a table, its note
   expect_match(html, "High or above", fixed = TRUE)
   expect_match(html, "&lt; 1%", fixed = TRUE)
   expect_match(html, "Any of these weeks", fixed = TRUE)
+  expect_match(html, "the average of two forecasts", fixed = TRUE)
+  history_only <- obj
+  history_only$outlook$forecast$params$components <- "hhh4"
+  expect_match(
+    as.character(episodic_ui_epidemic_outlook_panel(history_only, lang = "en")),
+    "trend of the last weeks is left out",
+    fixed = TRUE
+  )
   expect_match(html, "scored on 40 weeks: 88% fell inside the 90% interval, and their interval score was 0.80 times", fixed = TRUE)
 
   withheld <- obj
@@ -386,6 +492,7 @@ test_that("the dossier shows an outlook with a track record as a table, its note
   for (lang in c("en", "nl", "de", "fr", "es", "ar", "hi", "zh")) {
     expect_no_error(episodic_ui_epidemic_outlook_panel(obj, lang = lang))
     expect_no_error(episodic_ui_epidemic_outlook_panel(worse, lang = lang))
+    expect_no_error(episodic_ui_epidemic_outlook_panel(history_only, lang = lang))
     for (detail in c("history", "model")) {
       insufficient$outlook$forecast$detail <- detail
       expect_no_error(episodic_ui_epidemic_outlook_panel(insufficient, lang = lang))

@@ -86,7 +86,10 @@ episodic_epidemic_direction_settings <- function(config) {
 #' @param y Weekly counts, oldest first, at least three.
 #' @return `NULL` when there are no cases or the fit does not converge to
 #'   a finite slope, as when every case falls in one week, otherwise a
-#'   numeric vector with `rate` and `se`.
+#'   numeric vector with `rate` and `se`, and `intercept` (the log
+#'   expected count of the first week), `se_intercept`, `covariance`
+#'   (of intercept and rate) and `dispersion`, for extrapolating the
+#'   trend (`episodic_outlook_trend_paths()`).
 #' @keywords internal
 #' @noRd
 episodic_growth_rate_fit <- function(y) {
@@ -113,7 +116,14 @@ episodic_growth_rate_fit <- function(y) {
   if (!is.finite(rate) || !is.finite(se)) {
     return(NULL)
   }
-  c(rate = rate, se = se)
+  c(
+    rate = rate,
+    se = se,
+    intercept = unname(fit$coefficients[1]),
+    se_intercept = sqrt(dispersion * unscaled[1, 1]),
+    covariance = dispersion * unscaled[1, 2],
+    dispersion = dispersion
+  )
 }
 
 #' The direction of one epidemic: growth rate and whether it is past its peak

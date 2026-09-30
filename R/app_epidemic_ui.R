@@ -1002,11 +1002,20 @@ episodic_ui_epidemic_outlook_panel <- function(obj,
   covered <- outlook$coverage_90
   relative <- outlook$relative_wis
   notes <- c(
-    episodic_tr(
-      "epidemics.panel.outlook.note",
-      weeks = number(forecast$params$n_history_weeks),
-      lang = lang
-    ),
+    if ("trend" %in% forecast$params$components) {
+      episodic_tr(
+        "epidemics.panel.outlook.note",
+        weeks = number(forecast$params$n_history_weeks),
+        trend = number(forecast$params$trend_window_weeks),
+        lang = lang
+      )
+    } else {
+      episodic_tr(
+        "epidemics.panel.outlook.note_history_only",
+        weeks = number(forecast$params$n_history_weeks),
+        lang = lang
+      )
+    },
     if (!is.na(relative)) {
       episodic_tr(
         "epidemics.panel.outlook.track",

@@ -453,7 +453,9 @@ episodic_demo_pathogen_config <- function() {
 #'
 #' The shipped defaults plus the demo's own geography: the synthetic data
 #' covers the northern Netherlands, and naming that in a config file is
-#' how any instance names its own.
+#' how any instance names its own. And a nowcast reporting horizon of a
+#' week, which the synthetic data's receipt delays stay within, so the
+#' replayed days (`replay_days`) observe delays in full.
 #' @return A character vector of YAML lines.
 #' @keywords internal
 #' @noRd
@@ -462,7 +464,14 @@ episodic_demo_config_yaml <- function() {
     "geography:",
     "  region_code: NORTHERN_NETHERLANDS",
     "  area_code_prefix: \"AREA-\"",
-    "  area_pc_characters: 2"
+    "  area_pc_characters: 2",
+    # The synthetic cases are received within days of sampling, so a week
+    # covers their reporting delays; with the shipped three weeks, the
+    # replayed days would not yet have observed one delay in full, and
+    # the demo would have no nowcast to show.
+    "forecast:",
+    "  nowcast:",
+    "    max_delay_days: 7"
   )
 }
 
