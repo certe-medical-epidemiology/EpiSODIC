@@ -80,6 +80,10 @@ mem:
   trough_percentile: 0.25
   seasonality_peak_weeks: 8
   seasonality_min_peak_share: 0.40
+  # The statistic the typical past season is summarised by: median,
+  # geometric_mean or arithmetic_mean. Only the typical curve changes;
+  # the thresholds do not.
+  typical_curve: median
 
 # rare_trigger detector.
 rare_trigger:
@@ -109,6 +113,15 @@ forecast:
   outbreak_end:
     enabled: true
     probability_threshold: 0.95
+  # epidemic_direction: the growth rate of every open epidemic's stream
+  # over its last window_weeks weeks, the most recent of them corrected
+  # for late reports by the nowcast, and the probability that the
+  # epidemic is growing and that it is past its peak so far.
+  epidemic_direction:
+    enabled: true
+    window_weeks: 4
+    min_cases: 20
+    n_samples: 1000
 
 # Priority score.
 priority_score:

@@ -190,8 +190,11 @@ episodic_nowcast_settings <- function(config) {
 #'   nowcast), `params` (a list of what the nowcast was computed from) and
 #'   `values` (a data frame with `resolution` (`"day"` or `"week"`),
 #'   `target_date` (text), `n_observed` and `mean`, and one column per
-#'   `episodic_forecast_probs`; zero rows unless `"computed"`). An error
-#'   inside `surveillance::nowcast()` is not caught here.
+#'   `episodic_forecast_probs`; zero rows unless `"computed"`), and, when
+#'   `"computed"`, `week_pmfs`: each nowcast week's predictive
+#'   distribution of its final count over `0, 1, ...`, named by its Monday,
+#'   for a later step to sample from. An error inside
+#'   `surveillance::nowcast()` is not caught here.
 #' @keywords internal
 #' @noRd
 episodic_nowcast_stream <- function(cases,
@@ -398,6 +401,7 @@ episodic_nowcast_stream <- function(cases,
   first_week <- episodic_week_start(min(when))
   last_week <- episodic_last_complete_week_start(asof)
   week_rows <- list()
+  week_pmfs <- list()
   if (last_week >= first_week) {
     weeks <- seq(first_week, last_week, by = "week")
     for (w in seq_along(weeks)) {
@@ -413,6 +417,7 @@ episodic_nowcast_stream <- function(cases,
       for (i in nowcast_idx) {
         pmf <- episodic_pmf_convolve(pmf, pmfs[[i]])
       }
+      week_pmfs[[format(week)]] <- pmf / sum(pmf)
       week_rows[[length(week_rows) + 1L]] <- episodic_forecast_value_row(
         "week",
         week,
@@ -426,7 +431,8 @@ episodic_nowcast_stream <- function(cases,
     status = "computed",
     detail = NA_character_,
     params = params,
-    values = do.call(rbind, c(day_rows, week_rows))
+    values = do.call(rbind, c(day_rows, week_rows)),
+    week_pmfs = week_pmfs
   )
 }
 
@@ -524,8 +530,10 @@ episodic_pmf_convolve <- function(a, b) {
 #' @param streams Every stream, from `episodic_db_streams()`.
 #' @param stream_cases_for `episodic_stream_case_index()`'s function over
 #'   this run's cases.
-#' @return Invisibly, a named integer vector: how many streams were
-#'   `computed`, `insufficient_data` and `failed`.
+#' @return Invisibly, a list with `counts`, a named integer vector of how
+#'   many streams were `computed`, `insufficient_data` and `failed`, and
+#'   `week_pmfs`, the computed streams' weekly predictive distributions
+#'   (`episodic_nowcast_stream()`), named by stream ID.
 #' @keywords internal
 #' @noRd
 episodic_nowcast_run <- function(con,
@@ -535,10 +543,11 @@ episodic_nowcast_run <- function(con,
                                  streams,
                                  stream_cases_for) {
   counts <- c(computed = 0L, insufficient_data = 0L, failed = 0L)
+  week_pmfs <- list()
   settings <- episodic_nowcast_settings(config)
   if (!settings$enabled) {
     episodic_trace("Nowcast switched off (forecast.nowcast.enabled)")
-    return(invisible(counts))
+    return(invisible(list(counts = counts, week_pmfs = week_pmfs)))
   }
   open <- rbind(
     episodic_db_clusters_not_closed(con, "outbreak"),
@@ -547,7 +556,7 @@ episodic_nowcast_run <- function(con,
   stream_ids <- sort(unique(open$stream_id[open$origin == "detected"]))
   if (length(stream_ids) == 0) {
     episodic_trace("Nowcast: no stream carries an open cluster")
-    return(invisible(counts))
+    return(invisible(list(counts = counts, week_pmfs = week_pmfs)))
   }
 
   runs <- episodic_db_get_query(
@@ -631,6 +640,9 @@ episodic_nowcast_run <- function(con,
       values = result$values
     )
     counts[[result$status]] <- counts[[result$status]] + 1L
+    if (identical(result$status, "computed")) {
+      week_pmfs[[as.character(stream_id)]] <- result$week_pmfs
+    }
   }
   episodic_trace(
     "Nowcast: ",
@@ -643,5 +655,5 @@ episodic_nowcast_run <- function(con,
     counts[["failed"]],
     " failed"
   )
-  invisible(counts)
+  invisible(list(counts = counts, week_pmfs = week_pmfs))
 }

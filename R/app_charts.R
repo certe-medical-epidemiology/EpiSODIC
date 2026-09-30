@@ -405,6 +405,56 @@ episodic_ui_epi_curve_chart <- function(curve,
     episodic_chart_theme()
 }
 
+#' The typical past season drawn behind a weekly curve's bars
+#'
+#' A dashed line at the middle of the typical curve and dotted lines at
+#' the limits of its interval, behind the bars: it is what the weeks are
+#' compared against, not a mark about them. Lines in the palette's ink
+#' rather than a shaded area, which the intensity bands behind it would
+#' swallow, each with a key of its own. Nothing for a curve without the
+#' typical columns, or with none filled.
+#'
+#' @param curve The weekly curve, with `typical_low`, `typical_mid` and
+#'   `typical_high` when it has a typical season.
+#' @param x The name of the curve's date column.
+#' @param lang Language for the keys.
+#' @return A list of `ggplot2` layers and the linetype scale, possibly
+#'   empty.
+#' @keywords internal
+#' @noRd
+episodic_chart_typical_layers <- function(curve, x, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (is.null(curve$typical_mid) || all(is.na(curve$typical_mid))) {
+    return(list())
+  }
+  pal <- episodic_palette()
+  marks <- curve[!is.na(curve$typical_mid), , drop = FALSE]
+  line <- function(y, key, width) {
+    marks$y <- marks[[y]]
+    marks$key <- key
+    ggplot2::geom_line(
+      data = marks,
+      ggplot2::aes(x = .data[[x]], y = .data$y, linetype = .data$key),
+      inherit.aes = FALSE,
+      colour = pal$ink,
+      linewidth = width
+    )
+  }
+  list(
+    line("typical_low", "typical_interval", 0.35),
+    line("typical_high", "typical_interval", 0.35),
+    line("typical_mid", "typical", 0.6),
+    ggplot2::scale_linetype_manual(
+      name = NULL,
+      values = c(typical = 2, typical_interval = 3),
+      labels = c(
+        typical = episodic_tr("pathogen.legend.typical", lang = lang),
+        typical_interval = episodic_tr("pathogen.legend.typical_interval", lang = lang)
+      ),
+      breaks = c("typical", "typical_interval")
+    )
+  )
+}
+
 #' The nowcast marks drawn over a curve's bars
 #'
 #' A line from the 5% to the 95% quantile of each nowcast day's or week's
@@ -1060,7 +1110,10 @@ episodic_ui_denominator_chart <- function(series,
 #'
 #' @param weekly A data frame with `week_start` (`Date`), `n_cases` and
 #'   `incomplete`, and optionally the nowcast columns
-#'   `episodic_ui_epi_curve_chart()` draws.
+#'   `episodic_ui_epi_curve_chart()` draws and `typical_low`,
+#'   `typical_mid` and `typical_high`: a typical past season, drawn
+#'   behind the bars as a dashed line with dotted interval limits, each
+#'   with a key.
 #' @param thresholds `episodic_mem_thresholds_for_season()`'s output, or
 #'   `NULL` to draw the bars alone.
 #' @param lang Language for labels.
@@ -1135,7 +1188,9 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
         breaks = rev(bands$key)
       )
   }
+  typical <- episodic_chart_typical_layers(weekly, x = "week_start", lang = lang)
   p <- p +
+    typical +
     ggplot2::geom_col(
       ggplot2::aes(alpha = .data$alpha),
       fill = accent,
@@ -1181,15 +1236,17 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
       end_line <- NULL
     }
   }
-  if (!is.null(bands) || !is.null(end_line)) {
+  legend <- !is.null(bands) || !is.null(end_line) || length(typical) > 0
+  if (legend) {
     p <- p +
       ggplot2::guides(
         fill = ggplot2::guide_legend(order = 1),
-        colour = ggplot2::guide_legend(order = 2)
+        colour = ggplot2::guide_legend(order = 2),
+        linetype = ggplot2::guide_legend(order = 3)
       )
   }
   p <- p + episodic_chart_theme()
-  if (!is.null(bands) || !is.null(end_line)) {
+  if (legend) {
     p <- p +
       ggplot2::theme(
         legend.position = "right",

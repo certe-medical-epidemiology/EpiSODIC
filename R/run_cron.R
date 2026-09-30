@@ -1753,7 +1753,12 @@ episodic_run_cron_body <- function(con,
               intensity_very_high = as.numeric(
                 mem_params$intensity_very_high %||% NA
               ),
-              seasons_used = mem_params$seasons_used %||% NA
+              seasons_used = mem_params$seasons_used %||% NA,
+              typical = episodic_epidemic_typical_from_params(
+                mem_params,
+                onset_week_start = mem_dets$first_day[nrow(mem_dets)],
+                anchor_week = mem_params$anchor_week
+              )
             )
           }
         }
@@ -1901,13 +1906,22 @@ episodic_run_cron_body <- function(con,
 
   # After suppression, so the streams nowcast are the ones whose clusters
   # this run leaves in the queue.
-  episodic_nowcast_run(
+  nowcast <- episodic_nowcast_run(
     con,
     run_id = run_id,
     run_date = run_date,
     config = config,
     streams = streams,
     stream_cases_for = stream_cases_for
+  )
+  episodic_epidemic_direction_run(
+    con,
+    run_id = run_id,
+    run_date = run_date,
+    config = config,
+    streams = streams,
+    stream_cases_for = stream_cases_for,
+    week_pmfs = nowcast$week_pmfs
   )
   episodic_outbreak_end_run(
     con,

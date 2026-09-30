@@ -556,6 +556,12 @@ episodic_ui_epidemic_stat_grid <- function(obj,
     )))
   }
 
+  stats <- c(
+    stats,
+    episodic_ui_epidemic_direction_stats(obj$direction, lang = lang),
+    list(episodic_ui_epidemic_typical_stat(obj$typical, lang = lang))
+  )
+
   if (!is.null(obj$concentration)) {
     stats <- c(stats, list(episodic_ui_stat(
       episodic_tr("epidemics.stat.institutions", lang = lang),
@@ -600,6 +606,182 @@ episodic_ui_epidemic_stat_grid <- function(obj,
   )))
 
   shiny::tags$div(class = "episodic-statgrid", stats)
+}
+
+#' The epidemic's direction as stat tiles
+#'
+#' The weekly growth, as the change in weekly cases the trend implies,
+#' with the doubling or halving time when its interval is on one side of
+#' zero, and the chance that the epidemic is past its peak so far. The
+#' weeks the trend is estimated over are named, since without a nowcast
+#' they can end some weeks back. When the latest run could not estimate
+#' it, one tile says why.
+#'
+#' @param direction `episodic_db_cluster_forecast_latest()`'s output for
+#'   `"epidemic_direction"`, or `NULL`.
+#' @param lang Session language.
+#' @return A list of tiles, empty for `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_ui_epidemic_direction_stats <- function(direction,
+                                                 lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (is.null(direction)) {
+    return(list())
+  }
+  label <- episodic_tr("epidemics.stat.growth", lang = lang)
+  if (!identical(direction$status, "computed")) {
+    reason <- switch(direction$status,
+      insufficient_data = paste0("epidemics.stat.growth_", direction$detail),
+      failed = "epidemics.stat.growth_failed",
+      stop("Unknown forecast status \"", direction$status, "\".", call. = FALSE)
+    )
+    return(list(episodic_ui_stat(
+      label,
+      episodic_tr("misc.dash", lang = lang),
+      episodic_tr(reason, lang = lang)
+    )))
+  }
+  pal <- episodic_palette()
+  estimate <- function(quantity) {
+    direction$estimates[direction$estimates$quantity == quantity, , drop = FALSE]
+  }
+  pct <- function(p) {
+    paste0(episodic_format_number(p * 100, digits = 0, lang = lang), "%")
+  }
+  probability <- function(p) {
+    if (p < 0.01) {
+      paste0("< ", pct(0.01))
+    } else if (p > 0.99) {
+      paste0("> ", pct(0.99))
+    } else {
+      pct(p)
+    }
+  }
+  change <- function(rate) {
+    x <- (exp(rate) - 1) * 100
+    paste0(
+      if (x > 0) "+" else "",
+      episodic_format_number(x, digits = 0, lang = lang),
+      "%"
+    )
+  }
+  rate <- estimate("growth_rate_week")
+  days <- function(r) episodic_format_number(7 * log(2) / abs(r), digits = 0, lang = lang)
+  growing <- probability(estimate("p_growing")$estimate)
+  sub <- if (rate$lower > 0) {
+    episodic_tr(
+      "epidemics.stat.growth_doubling",
+      days = days(rate$estimate),
+      pct = growing,
+      lang = lang
+    )
+  } else if (rate$upper < 0) {
+    episodic_tr(
+      "epidemics.stat.growth_halving",
+      days = days(rate$estimate),
+      pct = growing,
+      lang = lang
+    )
+  } else {
+    episodic_tr(
+      "epidemics.stat.growth_unclear",
+      lower = change(rate$lower),
+      upper = change(rate$upper),
+      pct = growing,
+      lang = lang
+    )
+  }
+  params <- direction$params
+  tiles <- list(episodic_ui_stat(
+    label,
+    change(rate$estimate),
+    sub,
+    colour = if (rate$lower > 0) {
+      pal$danger
+    } else if (rate$upper < 0) {
+      pal$success
+    } else {
+      NULL
+    },
+    lead = episodic_tr(
+      "epidemics.stat.growth_lead",
+      period = episodic_format_date_range(
+        as.Date(params$window_start),
+        as.Date(params$window_end) + 6L,
+        lang = lang
+      ),
+      lang = lang
+    )
+  ))
+  past_peak <- estimate("p_past_peak")
+  if (nrow(past_peak) == 1) {
+    tiles <- c(tiles, list(episodic_ui_stat(
+      episodic_tr("epidemics.stat.past_peak", lang = lang),
+      probability(past_peak$estimate),
+      lead = episodic_tr("epidemics.stat.past_peak_lead", lang = lang)
+    )))
+  }
+  tiles
+}
+
+#' The typical past season as a stat tile
+#'
+#' How long the epidemics of the past seasons typically lasted, and
+#' whether this one started earlier or later than they usually did.
+#' Labelled as past seasons: it is the comparison, not a forecast.
+#'
+#' @param typical `episodic_epidemic_typical()`'s output, or `NULL`.
+#' @param lang Session language.
+#' @return A tile, or `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_ui_epidemic_typical_stat <- function(typical,
+                                              lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (is.null(typical)) {
+    return(NULL)
+  }
+  weeks <- function(n) {
+    episodic_count_phrase(
+      n,
+      episodic_tr("unit.week", lang = lang),
+      episodic_tr("unit.weeks", lang = lang),
+      lang = lang
+    )
+  }
+  shift <- typical$onset_shift_weeks
+  lower <- episodic_format_number(floor(typical$length_lower), lang = lang)
+  upper <- episodic_format_number(ceiling(typical$length_upper), lang = lang)
+  sub <- if (is.na(shift)) {
+    NULL
+  } else if (shift == 0) {
+    episodic_tr("epidemics.stat.typical_usual", lower = lower, upper = upper, lang = lang)
+  } else if (shift < 0) {
+    episodic_tr(
+      "epidemics.stat.typical_earlier",
+      lower = lower,
+      upper = upper,
+      weeks = weeks(-shift),
+      lang = lang
+    )
+  } else {
+    episodic_tr(
+      "epidemics.stat.typical_later",
+      lower = lower,
+      upper = upper,
+      weeks = weeks(shift),
+      lang = lang
+    )
+  }
+  episodic_ui_stat(
+    episodic_tr("epidemics.stat.typical", lang = lang),
+    weeks(round(typical$length)),
+    sub,
+    lead = episodic_tr(
+      "epidemics.stat.typical_lead",
+      seasons = episodic_format_number(typical$n_seasons, lang = lang),
+      lang = lang
+    )
+  )
 }
 
 #' The seasonal curve panel with MEM thresholds
@@ -647,10 +829,22 @@ episodic_ui_epidemic_curve_panel <- function(obj,
     drawn = any(!is.na(obj$weekly$nowcast_mid)),
     lang = lang
   )
+  typical_note <- if (any(!is.na(obj$weekly$typical_mid))) {
+    episodic_tr(
+      "epidemics.panel.curve.typical_note",
+      seasons = episodic_format_number(obj$typical$n_seasons, lang = lang),
+      statistic = episodic_tr(
+        paste0("epidemics.typical_statistic.", obj$typical$statistic),
+        lang = lang
+      ),
+      lang = lang
+    )
+  }
   note <- paste(
     c(
       note,
       episodic_ui_mem_no_low_band_note(obj$thresholds, lang = lang),
+      if (!is.null(typical_note)) htmltools::htmlEscape(typical_note),
       if (!is.null(nowcast_note)) htmltools::htmlEscape(nowcast_note)
     ),
     collapse = "<br>"

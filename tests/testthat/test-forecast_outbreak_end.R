@@ -247,7 +247,7 @@ test_that("a run forecasts the end of each open outbreak of a transmissible path
   expect_match(html, "Case-free", fixed = TRUE)
 })
 
-test_that("an outbreak without a configured offspring distribution says so, and one of another pathogen says nothing", {
+test_that("an outbreak without a configured offspring distribution records why, and neither it nor one of another pathogen shows a tile", {
   unset <- nowcast_cron_database(
     n_runs = 4L,
     pathogen_lines = outbreak_end_pathogen_lines(end_r = NA, end_k = NA)
@@ -264,7 +264,7 @@ test_that("an outbreak without a configured offspring distribution says so, and 
     episodic_cluster_object(con, cluster_id, lang = "en"),
     lang = "en"
   ))
-  expect_match(html, "R and k not configured", fixed = TRUE)
+  expect_no_match(html, "End of outbreak", fixed = TRUE)
 
   # "Test pathogen" with no configuration row is not transmissible.
   plain <- nowcast_cron_database(n_runs = 4L)
