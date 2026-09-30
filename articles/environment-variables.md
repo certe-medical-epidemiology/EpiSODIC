@@ -11,7 +11,8 @@ them picks the setting up automatically.
 
 None of these need to be set to run the demo -
 [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
-uses a temporary SQLite file and every shipped default. See
+uses a temporary SQLite file and the shipped defaults, and writes its
+own geography and an illustrative pathogen overlay beside it. See
 [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)
 for `EPISODIC_DB` and `EPISODIC_CONFIG`/`EPISODIC_STYLE` in context
 (database backend, custom report templates), and [**Getting your data
