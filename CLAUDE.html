@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.23.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,26 +37,20 @@
 <p>EpiSODIC stands for: Epidemiological Signal Observation, Detection, Identification, and Classification.</p>
 <p>This is an R package that detects aberrations in laboratory-confirmed infections, reconciles them into persistent outbreaks and epidemics, and gives epidemiologists a Shiny dashboard to assess each one, with a full audit trail and outbreak reports.</p>
 <p><strong>Status: not released, and not in production anywhere.</strong> EpiSODIC is in development. It has not been shipped to any laboratory, no epidemiologist relies on it, and no outbreak decision is taken on its output. The instances that exist, including the maintainer’s own with real case data, are development and test instances. So:</p>
-<ul><li>A change in what the dashboard shows (clusters appearing, disappearing or moving in a queue) affects nobody’s work. Do not frame changes in terms of users, colleagues or deployments that would be affected; there are none.</li>
-<li>Schema migrations are still required and must still work (<code>episodic_db_migrations()</code>, never removing old ones), because the product is built for the day it is released and every instance after it. Their purpose is that future, not protecting existing deployments.</li>
+<ul><li>A change in what the dashboard shows affects nobody’s work. Do not frame changes in terms of users, colleagues or deployments that would be affected; there are none.</li>
+<li>Schema migrations are still required and must still work (<code>episodic_db_migrations()</code>, never removing old ones), because the product is built for the day it is released and every instance after it.</li>
 <li>The quality standard below applies in full regardless: the package is built to production grade for when it is released, not to “beta grade” because it is not yet.</li>
 </ul><div class="section level2">
-<h2 id="what-this-package-is-for">What this package is for<a class="anchor" aria-label="anchor" href="#what-this-package-is-for"></a></h2>
-<p>EpiSODIC is a complete and automated outbreak detection and assessment system. It is designed to run at any laboratory, in any country, against any set of pathogens, with no dependency on any one laboratory information system or data warehouse. Therefore, the aimed quality standard admits no concessions. Every component, from data ingestion to signal detection to reporting, must be production-grade, and must remain so after every change:</p>
+<h2 id="quality-standard">Quality standard<a class="anchor" aria-label="anchor" href="#quality-standard"></a></h2>
+<p>EpiSODIC is designed to run at any laboratory, in any country, against any set of pathogens, with no dependency on any one laboratory information system or data warehouse:</p>
 <ul><li>No shortcuts, no placeholder logic, no “good enough for now”. If a proper implementation is more effort than a shortcut, implement it properly or check with the user.</li>
 <li>No silent failures. Every error path must be handled explicitly and must fail loudly, never fail quietly and produce a plausible-looking wrong result.</li>
 <li>
-<strong>Absence of a measurement is never a measurement of zero.</strong> This is the failure mode this codebase is most prone to, and it wears the same disguise every time: a zero is a legal value of the quantity, so substituting one for “cannot be computed” produces a number that reads as a finding. A zero case-overlap becomes “the rise is spread thinly” rather than “there is nothing here to measure”; a lag at which nothing has arrived yet becomes a completion of zero rather than a lag with no denominator; a component that a stream structurally cannot produce becomes a score of zero carrying its full weight; an <code>NA</code> positivity becomes a sentence about a positivity of nought. Watch <code>%||%</code> in particular: this package’s own (<code>R/interpretation.R</code>) swallows <code>NA</code> as well as <code>NULL</code>, so <code>x %||% 0</code> turns an unmeasured quantity into a measured zero without a word. When a quantity cannot be computed, drop the component, skip the fragment, or return <code>NULL</code> - never substitute a zero and carry on.</li>
+<strong>Absence of a measurement is never a measurement of zero.</strong> This is the failure mode this codebase is most prone to. A zero is a legal value of the quantity, so substituting one for “cannot be computed” produces a number that reads as a finding. Watch <code>%||%</code> in particular: this package’s own (<code>R/interpretation.R</code>) swallows <code>NA</code> as well as <code>NULL</code>, so <code>x %||% 0</code> turns an unmeasured quantity into a measured zero. When a quantity cannot be computed, drop the component, skip the fragment, or return <code>NULL</code>, never substitute a zero and carry on.</li>
 <li>No hidden assumptions about a specific laboratory’s data structure, coding system, or naming convention. Anything laboratory-specific must be configurable, not hardcoded.</li>
-<li>No untested code paths merged into main. Every function that touches detection logic, data transformation, or reporting must have accompanying tests before it is considered complete, and must be placed in a separate branch WITH a PR, so every change regarding these items must automatically be put into a PR.</li>
-<li>No inconsistent interfaces. Function signatures, argument naming, return types, and error conventions must be uniform across the entire codebase, as if written by a single disciplined author, not accreted piecemeal.</li>
-</ul><p>The operator provides case data in a documented format; EpiSODIC handles everything from statistical detection through reconciliation to dashboard presentation and outbreak reporting.</p>
-<p>The dashboard and reports are available in English, Arabic, Dutch, French, German, Hindi, Mandarin Chinese, and Spanish. The app sets <code>lang</code> and <code>dir</code> on the document from the resolved language, and <code>inst/app/www/episodic.css</code> uses CSS <em>logical</em> properties throughout (<code>margin-inline-start</code>, <code>border-inline-start</code>, <code>text-align: start</code>, <code>inset-inline-start</code>) rather than physical <code>left</code>/<code>right</code> ones, so Arabic mirrors correctly. A <code>margin-left</code> added to that stylesheet is a bug.</p>
-<p>Numbers are part of that. Every number a reader sees goes through <code>episodic_format_number()</code>, which takes its decimal mark, thousands mark, group sizes and minimum grouping from four <code>misc.decimal.mark</code>/<code>misc.thousands.*</code> keys per language - never from <code>options(OutDec)</code> or the system locale, which are properties of whoever started R rather than of the instance. Hindi groups by the Indian lakh/crore rule and Spanish leaves four-digit numbers unseparated because those keys say so, not because anything branches on a language code. A <code>format(x, big.mark = ",")</code> reaching a screen is a bug; <code>episodic_css_pct()</code> is the one deliberate exception, and it formats a machine-read CSS value rather than a number anyone reads. Identifiers are not quantities: an outbreak or epidemic id (<code>O-123</code>, <code>E-45</code>), a page number, a schema version or a report version is rendered as-is, never grouped.</p>
-<p>Regional variants are files of their own that carry <strong>only what differs</strong> from the language they belong to (<code>episodic_language_variants</code>): <code>en-US.json</code> is a spelling, a date order and a name; <code>es-419.json</code> is two number marks and a name. Everything else is inherited by <code>episodic_i18n_load()</code>. They are deliberately not copies - <code>en</code> and <code>en-US</code> differ in eight keys out of seven hundred and eighty-seven, and two copies would have to be kept in step for ever. <code>en</code> <em>is</em> British English and <code>es</code> <em>is</em> Spain’s Spanish, so <code>en-GB</code>/<code>es-ES</code> are aliases of those files rather than variants of them, and a region that is not shipped (<code>nl-BE</code>) resolves to its language rather than to English. <code>episodic_lang()</code> resolves a code, <code>episodic_lang_base()</code> gives the language a variant belongs to (which is what decides RTL and month names), and the four <code>date.format.*</code> keys per language are why a date reads “7 January 2025” in British English, “January 7, 2025” in American, “7. Januar 2025” in German and “2025年1月7日” in Chinese.</p>
-<p>Every language file, variants included, lists its keys sorted by byte order (<code>sort(method = "radix")</code>, which is also what Python’s <code>sorted()</code> gives), and <code>test-i18n.R</code> fails on a file that does not. A new key goes in at its sorted place in every file it belongs to, never at the end of the file or beside the key it was written with.</p>
-<p>The languages themselves have names, in <code>misc.language.&lt;code&gt;</code>, one set per file in that file’s own language. A message that would otherwise print <code>nl</code> at a human says “Dutch” in English and “Nederlands” in Dutch; where the reader has to <em>type</em> the code (<code>EPISODIC_LANGUAGE</code>), both are given - see <code>episodic_language_label()</code> and <code>episodic_language_choices()</code>.</p>
-</div>
+<li>No untested code paths merged into main. Every function that touches detection logic, data transformation, or reporting must have accompanying tests before it is considered complete, and must be placed in a separate branch WITH a PR.</li>
+<li>No inconsistent interfaces. Function signatures, argument naming, return types, and error conventions must be uniform across the entire codebase.</li>
+</ul></div>
 <div class="section level2">
 <h2 id="architecture">Architecture<a class="anchor" aria-label="anchor" href="#architecture"></a></h2>
 <div class="section level3">
@@ -79,8 +73,6 @@
 <div class="section level3">
 <h3 id="detectors">Detectors<a class="anchor" aria-label="anchor" href="#detectors"></a></h3>
 <p>Four independent detectors, each producing detections per stream:</p>
-<p>Both rule-based detectors (<code>same_place</code>, <code>rare_trigger</code>) are bounded by a configured <code>lookback_days</code> and report only hits whose most recent case falls inside it. Unbounded, they re-emit the whole case history on every run, which resets <code>runs_since_detected</code> and makes <code>reconciliation.close_after_runs</code> unreachable. Farrington is bounded the same way, by <code>farrington.max_weeks_tested</code>, and aggregates to the last <em>complete</em> week relative to <code>run_date</code> - never the partial week <code>run_date</code> falls in.</p>
-<p>Every bound in that paragraph is lifted for exactly one run: the first one against a database (<code>episodic_run_is_backfill()</code>). The pathology those bounds prevent is <em>re-emission</em> - a settled hit matching its own long-closed cluster and resetting its clock - and re-emission begins at the second run. On the first there is no cluster on the board and no clock to reset, so an operator importing three years of history gets three years of clusters, the settled ones closed by <code>reconciliation.stale_open_days</code> in that same run and so straight into the Archive. Withholding them instead is what leaves a first run looking indistinguishable from a broken instance. A backfilled cluster carries <code>opened_in_backfill</code>, because its <code>opened_at</code> is the day the archive was imported: the Performance screen’s time-to-detection drops it, while PPV keeps it, since a cluster a person judged is evidence about the detectors whatever run opened it. It is a flag rather than a third <code>origin</code> deliberately - <code>episodic_db_clusters_for_stream()</code> and <code>episodic_db_clusters_for_suppression()</code> both select on <code>origin = 'detected'</code>, so a third value would exclude such a cluster from reconciliation and suppression, and the next run to detect on that stream would open a duplicate beside it. <code>episodic_run_cron(backfill =)</code> overrides the decision; <code><a href="reference/episodic_validate_detection.html">episodic_validate_detection()</a></code> passes <code>FALSE</code>, since a replay that reported its whole baseline on run one would measure the import rather than the detectors.</p>
 <table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>Detector</th>
 <th>Method</th>
 <th>File</th>
@@ -96,279 +88,131 @@
 </tr><tr><td>MEM</td>
 <td>Moving Epidemic Method seasonal threshold (mem::memmodel), derived anchor and eligibility</td>
 <td><code>R/detect_mem.R</code></td>
-</tr></tbody></table><p>MEM derives its season anchor and seasonality eligibility from each stream’s own data rather than from a per-pathogen configuration. The season anchor is the first week of the longest trough run in a 52-week climatology, so a southern-hemisphere instance derives a southern anchor with no hemisphere setting anywhere. Eligibility is a peak-concentration statistic measuring how seasonal the pathogen actually is in this population; <code>mem_mode</code> on <code>episodic_pathogen_config</code> overrides it per pathogen (<code>auto</code>, <code>yes</code>, <code>no</code>). Seasons are full-year, 52 or 53 weeks, with no off-season gap: every ISO week belongs to exactly one season. MEM runs at L4 and L5 (configurable via <code>mem.levels</code>), not only at L5.</p>
-<p>Each detector’s config section carries <code>enabled</code>, shipped <code>true</code>, read through <code>episodic_detector_enabled()</code> inside the detector itself so every caller respects it. It lives in the config rather than in an argument to <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> because which detectors ran changes what a run computes, and so has to be inside <code>config_hash</code>. <code>farrington.enabled: false</code> stops the detector, not the multi-year baseline cached for the Pathogen screen, which is a display of the same model rather than a detection.</p>
+</tr></tbody></table><p>Both rule-based detectors and Farrington are bounded by configured lookback windows and report only hits whose most recent case falls inside. Unbounded, they re-emit the whole case history on every run, resetting <code>runs_since_detected</code> and making <code>reconciliation.close_after_runs</code> unreachable.</p>
+<p>All bounds are lifted for exactly one run: the first against a database (<code>episodic_run_is_backfill()</code>). A backfilled cluster carries <code>opened_in_backfill</code> as a flag, deliberately not a third <code>origin</code>, because <code>episodic_db_clusters_for_stream()</code> and <code>episodic_db_clusters_for_suppression()</code> select on <code>origin = 'detected'</code> and a third value would exclude them from reconciliation and suppression.</p>
+<p>MEM derives its season anchor and seasonality eligibility from each stream’s own data rather than from per-pathogen configuration. Seasons are full-year (52 or 53 weeks) with no off-season gap. MEM runs at L4 and L5 (configurable via <code>mem.levels</code>).</p>
+<p>Each detector’s config section carries <code>enabled</code>, read through <code>episodic_detector_enabled()</code>. It lives in config rather than as an argument because which detectors ran changes what a run computes, and so must be inside <code>config_hash</code>.</p>
 </div>
 <div class="section level3">
 <h3 id="streams-and-the-lattice">Streams and the lattice<a class="anchor" aria-label="anchor" href="#streams-and-the-lattice"></a></h3>
-<p>A “stream” is a unique surveillance unit: a (pathogen, level, location) tuple. Levels form a geographic lattice from finest to coarsest:</p>
-<ul><li>
-<code>pathogen_ward</code> (finest)</li>
-<li><code>pathogen_institution</code></li>
-<li><code>pathogen_area</code></li>
-<li><code>pathogen_province</code></li>
-<li>
-<code>pathogen_region</code> (coarsest)</li>
-</ul><p>Detection runs against every eligible stream independently. A configurable boundary (<code>scale.epidemic_levels</code>, shipped as <code>pathogen_province</code> and <code>pathogen_region</code>) splits the lattice into two scales: streams at or above the boundary produce <strong>epidemics</strong>, those below it produce <strong>outbreaks</strong>. The <code>scale</code> discriminator is set on each cluster at creation time from the stream’s level via <code>episodic_scale_for_level()</code>.</p>
-<p>After detection, lattice suppression removes redundant signals (a hospital-level cluster that is entirely explained by a ward-level cluster in the same hospital). Suppression is continuous across the scale boundary, so an outbreak at <code>pathogen_area</code> can still suppress or be suppressed by an epidemic at <code>pathogen_province</code>.</p>
-<p>After reconciliation and before suppression, outbreaks are linked to concurrent epidemics they occur <strong>during</strong>, defined on pathogen, time overlap and geographic nesting, never on case-set containment. The link is a table (<code>episodic_cluster_link</code>), not a column: an outbreak may be during both a province and a region epidemic at once.</p>
-<p>Stream keys are SHA-1 hashes of (pathogen, level, institution_id, ward, region_code), computed in <code>R/lattice_stream_key.R</code>.</p>
-<p>The geography a run uses is resolved once, from that run’s own config, and passed down: <code>episodic_lattice_enumerate()</code>, <code>episodic_cases_for_stream()</code>, <code>episodic_db_cases_for_stream_id()</code> and <code>episodic_reconcile_stream()</code> all take it as an argument. Resolved separately at each site, a run given <code>episodic_config_path</code> names its L5 catchment from one configuration and its L3 areas from another, then tests case membership against a third - so every geographic stream matches no case however many arrive, and any cluster opened there is written with none linked to it, silently. The default resolves <code>EPISODIC_CONFIG</code>, which is the right answer on the dashboard side, where there is no run to take it from.</p>
-<p>Nothing about the lattice’s geography is hardcoded to one country. The whole-catchment code (L5) and the area-code rule (L3) are <code>config$geography</code>, resolved by <code>episodic_geography_config()</code>; the province level (L4) is an operator-supplied <code>pc</code> -&gt; <code>province_code</code> CSV pointed at by <code>EPISODIC_PC_PROVINCE_MAP</code>, with no built-in rule at all, since deriving a province from a postcode is country-specific. Unconfigured, L4 stays empty and says so on the dashboard’s Info screen. Likewise <code>EPISODIC_GEO_DATA</code> has no default: without it there is no map, never another country’s.</p>
+<p>A “stream” is a unique surveillance unit: a (pathogen, level, location) tuple. Levels form a geographic lattice from finest to coarsest: <code>pathogen_ward</code>, <code>pathogen_institution</code>, <code>pathogen_area</code>, <code>pathogen_province</code>, <code>pathogen_region</code>.</p>
+<p>A configurable boundary (<code>scale.epidemic_levels</code>) splits the lattice: streams at or above the boundary produce <strong>epidemics</strong>, those below produce <strong>outbreaks</strong>. Suppression is continuous across the scale boundary. Outbreaks are linked to concurrent epidemics via <code>episodic_cluster_link</code>, defined on pathogen, time overlap and geographic nesting, never on case-set containment.</p>
+<p>Stream keys are SHA-1 hashes computed in <code>R/lattice_stream_key.R</code>.</p>
+<p>The geography a run uses is resolved once from that run’s own config and passed down. Nothing is hardcoded to one country: L5 and L3 come from <code>config$geography</code>; L4 is an operator-supplied postcode-to-province CSV (<code>EPISODIC_PC_PROVINCE_MAP</code>); <code>EPISODIC_GEO_DATA</code> has no default.</p>
 </div>
 <div class="section level3">
 <h3 id="database">Database<a class="anchor" aria-label="anchor" href="#database"></a></h3>
-<p>Single schema in <code>inst/sql/schema.sql</code>, written in SQLite dialect. Adapted at load time for MariaDB/MySQL (there is no separate schema file). Key tables:</p>
-<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>Table</th>
-<th>Owner</th>
-<th>Purpose</th>
-</tr></thead><tbody><tr><td><code>episodic_stream</code></td>
-<td>cron</td>
-<td>Surveillance units</td>
-</tr><tr><td><code>episodic_detection_run</code></td>
-<td>cron</td>
-<td>One row per cron invocation</td>
-</tr><tr><td><code>episodic_detection</code></td>
-<td>cron</td>
-<td>Individual detector firings</td>
-</tr><tr><td><code>episodic_cluster</code></td>
-<td>cron</td>
-<td>Persistent outbreaks and epidemics (reconciled); <code>scale</code> discriminates the two</td>
-</tr><tr><td><code>episodic_cluster_case</code></td>
-<td>cron</td>
-<td>Cases assigned to clusters</td>
-</tr><tr><td><code>episodic_cluster_state</code></td>
-<td>cron</td>
-<td>Derived state (open/closed/stale)</td>
-</tr><tr><td><code>episodic_epidemic_season</code></td>
-<td>cron</td>
-<td>Seasonal satellite for epidemic clusters with a season (anchor, thresholds, ended_reason)</td>
-</tr><tr><td><code>episodic_epidemic_week</code></td>
-<td>cron</td>
-<td>A seasonal epidemic’s weekly counts and MEM intensity bands, rewritten by every run while its season is open</td>
-</tr><tr><td><code>episodic_cluster_link</code></td>
-<td>cron</td>
-<td>The “during” relation: which outbreaks occurred during which epidemics</td>
-</tr><tr><td><code>episodic_assessment_event</code></td>
-<td>app</td>
-<td>Epidemiologist assessments and declarations (append-only)</td>
-</tr><tr><td><code>episodic_app_user</code></td>
-<td>app</td>
-<td>Dashboard accounts</td>
-</tr><tr><td><code>episodic_case</code></td>
-<td>cron</td>
-<td>Deduplicated case records</td>
-</tr><tr><td><code>episodic_institution</code></td>
-<td>cron</td>
-<td>Institution reference data (<code>institution_key</code> is a SHA-1 of the operator’s own key, never the key itself)</td>
-</tr><tr><td><code>episodic_cluster_note</code></td>
-<td>app</td>
-<td>Per-cluster free-text notes (append-only)</td>
-</tr><tr><td><code>episodic_cluster_manual_case</code></td>
-<td><code><a href="reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code></td>
-<td>Case-level detail for <code>origin = 'manual'</code> clusters only</td>
-</tr><tr><td><code>episodic_app_login_failure</code></td>
-<td>app</td>
-<td>Refused sign-ins (username tried, reason)</td>
-</tr><tr><td><code>episodic_schema_version</code></td>
-<td>
-<code><a href="reference/episodic_db_create.html">episodic_db_create()</a></code>, <code><a href="reference/episodic_db_migrate.html">episodic_db_migrate()</a></code>
-</td>
-<td>One row per applied schema version</td>
-</tr><tr><td><code>episodic_report_version_claim</code></td>
-<td><code><a href="reference/episodic_report_render.html">episodic_report_render()</a></code></td>
-<td>The register of report version numbers handed out, taken before the render (see <code>episodic_db_report_version_claim()</code>)</td>
-</tr><tr><td><code>episodic_detector_cache</code></td>
-<td>cron</td>
-<td>A detector’s model fit per stream, keyed on a hash of its exact input (MEM only); one row per stream and detector, replaced in place</td>
-</tr></tbody></table><p><code>episodic_cluster.opened_in_backfill</code> and <code>episodic_detection_run.is_backfill</code> mark the first run against a database and everything it opened - see the Detectors section above for what a backfill is and why it is a flag rather than an <code>origin</code>.</p>
-<p><code>episodic_cluster.scale</code> is <code>'outbreak'</code> or <code>'epidemic'</code>, set at creation from the stream’s level. <code>episodic_epidemic_season</code> is a satellite keyed to the cluster: a seasonal epidemic carries one row with the anchor, thresholds, intensity bands and closure reason; a non-seasonal epidemic has no row, and nothing reads a missing row as a zero or as “season not ended”. <code>episodic_cluster_link</code> records that an outbreak occurred during an epidemic, composite-keyed on <code>(outbreak_cluster_id, epidemic_cluster_id)</code>. <code>episodic_assessment_event.verdict</code> includes the five original values plus <code>season_started</code>, <code>season_not_yet</code> and <code>season_ended</code> for epidemic declarations.</p>
-<p>Two things the adapter does that are not cosmetic. It <strong>derives table-level <code>FOREIGN KEY</code> clauses</strong> from the schema’s inline column-level <code>REFERENCES</code>, because MySQL parses an inline reference and discards it: relying on them gives a MySQL instance all its tables and not one constraint, silently. Derived rather than listed, so a reference added to <code>schema.sql</code> is converted without anyone remembering to, and <code>test-schema_mariadb.R</code> asserts the counts match. And it applies the schema with <code>FOREIGN_KEY_CHECKS = 0</code>, because the tables are declared in the order they read best rather than in foreign-key order, which MariaDB refuses outright.</p>
-<p>The schema is versioned. <code>episodic_schema_version</code> (in <code>R/schema_migrate.R</code>) is what this build expects; <code><a href="reference/episodic_db_connect.html">episodic_db_connect()</a></code> refuses a database at any other version. <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> does not: it connects through <code>episodic_run_cron_connect()</code>, which migrates a database behind the package before the run row and outside the detection transaction (MariaDB/MySQL commit DDL implicitly), unless <code>database.auto_migrate</code> is <code>false</code>; a database it will not open is refused with a failed run row. An upgrade lands by <code><a href="https://rdrr.io/r/utils/update.packages.html" class="external-link">update.packages()</a></code> at labs nobody watches closely, and a run that refused would stop surveillance there until someone read a cron log. Migrations serialise on a server lock (MariaDB) or <code>BEGIN IMMEDIATE</code> (SQLite), re-read the version inside each step, and copy a SQLite file first. Any change to <code>inst/sql/schema.sql</code> that an existing database has to be brought along for means bumping that constant and adding a matching entry to <code>episodic_db_migrations()</code> - a function <code>(con, dialect)</code> that is idempotent, runs inside a transaction, and never drops or rewrites data. The one exception is a column nothing needs any more that holds exactly no data: it is dropped through <code>episodic_db_drop_empty_column()</code>, which keeps a column holding a value on any row and says so. Never remove an old migration: an instance may skip any number of versions.</p>
-<p>Write ownership is strict: cron-owned tables are written only by <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code>, app-owned tables only by the Shiny app. The app never updates or deletes, only inserts (event-sourced).</p>
-<p>One deliberate exception: <code><a href="reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code> (in <code>R/cluster_manual.R</code>) is a third, console-invoked write path into <code>episodic_stream</code>, <code>episodic_cluster</code> and <code>episodic_cluster_manual_case</code> (all otherwise cron-owned), for clusters detected by another algorithm or system rather than by <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> itself - exactly the same kind of exception <code><a href="reference/episodic_add_user.html">episodic_add_user()</a></code> already is for the app-owned <code>episodic_app_user</code> table. Such a cluster gets <code>origin = 'manual'</code> on <code>episodic_cluster</code> and is excluded from <code>episodic_reconcile_stream()</code>’s matching and auto-closure (see <code>episodic_db_clusters_for_stream()</code>); its case-level detail, if any, lives in <code>episodic_cluster_manual_case</code>, never in <code>episodic_case</code>, so it can never reach denominators, line lists or patient search.</p>
+<p>Single schema in <code>inst/sql/schema.sql</code> (SQLite dialect), adapted at load time for MariaDB/MySQL. The MariaDB adapter derives table-level <code>FOREIGN KEY</code> clauses from inline <code>REFERENCES</code> (MySQL silently discards inline references), and applies the schema with <code>FOREIGN_KEY_CHECKS = 0</code>.</p>
+<p>The schema is versioned (<code>episodic_schema_version</code> in <code>R/schema_migrate.R</code>). <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> auto-migrates via <code>episodic_run_cron_connect()</code> unless <code>database.auto_migrate</code> is <code>false</code>. Any change to <code>inst/sql/schema.sql</code> means bumping the version constant and adding a matching entry to <code>episodic_db_migrations()</code>, a function <code>(con, dialect)</code> that is idempotent, runs inside a transaction, and never drops or rewrites data. Exception: a column holding no data on any row may be dropped via <code>episodic_db_drop_empty_column()</code>. Never remove an old migration.</p>
+<p>Write ownership is strict: cron-owned tables are written only by <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code>, app-owned tables only by the Shiny app (append-only, event-sourced). Two deliberate exceptions: <code><a href="reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code> writes to cron-owned tables for <code>origin = 'manual'</code> clusters, and <code><a href="reference/episodic_add_user.html">episodic_add_user()</a></code> writes to <code>episodic_app_user</code>.</p>
 </div>
 <div class="section level3">
 <h3 id="configuration">Configuration<a class="anchor" aria-label="anchor" href="#configuration"></a></h3>
-<p>YAML-based, with recursive merge. <code>inst/config/episodic_default_config.yaml</code> ships documented defaults. An operator’s instance config (pointed at by <code>EPISODIC_CONFIG</code>) overlays key-by-key. The resolved configuration is hashed (SHA-1 over canonical JSON) and stored on every run for reproducibility. <code>notifications</code> and <code>access</code> are deliberately excluded from the hash (see <code>episodic_config_unhashed_sections</code>): both govern how the instance is operated rather than what a run computes, and notification settings additionally contain secrets that must never reach <code>config_snapshot</code>.</p>
-<p>Key config sections: <code>reconciliation</code>, <code>eligibility</code>, <code>effect_size_floor</code>, <code>same_place</code>, <code>farrington</code>, <code>mem</code>, <code>rare_trigger</code>, <code>priority_score</code>, <code>scale</code>, <code>geography</code>, <code>report</code>, <code>notifications</code>, <code>suppression</code>, <code>access</code>, <code>database</code>.</p>
-<p>An instance config is validated against the shipped defaults before merging (<code>episodic_config_validate()</code>): the defaults document the complete valid key set, so an unknown key, a value of the wrong type, or a null where a value is needed stops the run and names the key path. Adding a new key therefore means adding it to <code>inst/config/episodic_default_config.yaml</code>, or, if its children are named by the operator (pathogens, channels), to <code>episodic_config_open_sections</code>. A setting documented as “set to ~ to disable” must also be listed in <code>episodic_config_nullable_keys</code>.</p>
-<p><code>EPISODIC_CONFIG</code>, <code>EPISODIC_PATHOGEN_CONFIG</code> and <code>EPISODIC_QUARTO_REPORT</code> set to a path that does not exist are errors, not fallbacks - the same rule <code>EPISODIC_PC_PROVINCE_MAP</code> already followed.</p>
-<p><code>EPISODIC_STYLE</code> is the one file that is announced rather than refused, because the palette is display-only and every process that draws anything resolves it, the cron included: refusing would stop the dashboard for every epidemiologist, and every alert and scheduled report with it, over a colour. <code>episodic_palette_config_resolve()</code> validates each value (a quoted hex colour, a font stack that cannot end a CSS declaration, a CSS length) and keeps the shipped value for any role that fails, or the whole shipped palette for a file that is missing or not YAML. The problem is shown on the Info screen’s <code>EPISODIC_STYLE</code> row, written to every run’s log as a <code>warn</code> line (<code>episodic_palette_trace()</code>) and raised once per process as a <code><a href="https://rdrr.io/r/base/warning.html" class="external-link">warning()</a></code>. The shipped value standing in is the defined default for that role, not an unmeasured quantity read as zero.</p>
-<p>The same palette styles everything EpiSODIC draws. A report or an email is rendered by Quarto in an R process of its own, so the renderer resolves the palette and hands it to the template as <code>palette</code>; the shipped report template passes it to <code>episodic_palette_use()</code> before any chart is drawn and names <code>episodic.scss</code> (<code>episodic_report_scss()</code>, written beside the template for every render) as its theme. Emails are styled inline from <code>episodic_mail_style()</code>, since a mail client drops <code>&lt;style&gt;</code> blocks; a colour written literally into an email or report is a bug.</p>
-<p>Pathogen-specific parameters (episode length, serial interval, severity weight) live in <code>inst/config/episodic_default_pathogen_config.csv</code>. An operator’s CSV (pointed at by <code>EPISODIC_PATHOGEN_CONFIG</code>) overlays row-by-row: for each pathogen the operator lists, non-NA values override the shipped default; pathogens not listed keep their shipped row. Resolved by <code>episodic_pathogen_config_resolve()</code> in <code>R/config.R</code>.</p>
+<p>YAML-based with recursive merge. <code>inst/config/episodic_default_config.yaml</code> ships defaults; an operator’s config (<code>EPISODIC_CONFIG</code>) overlays key-by-key. The resolved config is hashed (SHA-1 over canonical JSON) and stored per run. <code>episodic_config_unhashed_sections</code> (<code>notifications</code>, <code>access</code>, <code>report</code>, <code>database</code>) are stripped before hashing.</p>
+<p>Validation (<code>episodic_config_validate()</code>) checks against shipped defaults: unknown keys, wrong types, or nulls where values are needed stop the run. Adding a new key means adding it to the defaults, or to <code>episodic_config_open_sections</code> for operator-named children. A nullable setting must be listed in <code>episodic_config_nullable_keys</code>.</p>
+<p><code>EPISODIC_CONFIG</code>, <code>EPISODIC_PATHOGEN_CONFIG</code> and <code>EPISODIC_QUARTO_REPORT</code> set to a nonexistent path are errors. <code>EPISODIC_STYLE</code> is the exception: a missing or invalid palette is announced (Info screen, log warning) but falls back to shipped defaults, because refusing would stop the dashboard over a colour.</p>
+<p>The same palette styles everything: dashboard, reports, emails. A colour written literally into an email or report is a bug. Emails are styled inline from <code>episodic_mail_style()</code>.</p>
+<p>Pathogen-specific parameters live in <code>inst/config/episodic_default_pathogen_config.csv</code>. An operator’s CSV (<code>EPISODIC_PATHOGEN_CONFIG</code>) overlays row-by-row: non-NA values override, unlisted pathogens keep shipped defaults.</p>
+</div>
+<div class="section level3">
+<h3 id="internationalisation">Internationalisation<a class="anchor" aria-label="anchor" href="#internationalisation"></a></h3>
+<p>Eight languages (en, ar, nl, fr, de, hi, zh, es) plus regional variants. The CSS uses logical properties throughout (<code>margin-inline-start</code>, not <code>margin-left</code>); a physical <code>left</code>/<code>right</code> in <code>episodic.css</code> is a bug.</p>
+<p>Every number a reader sees goes through <code>episodic_format_number()</code>, driven by per-language <code>misc.decimal.mark</code>/<code>misc.thousands.*</code> keys, never <code>options(OutDec)</code> or the system locale. A <code>format(x, big.mark = ",")</code> reaching a screen is a bug; <code>episodic_css_pct()</code> is the one exception (machine-read CSS value). Identifiers (<code>O-123</code>, <code>E-45</code>, page numbers, versions) are rendered as-is, never grouped.</p>
+<p>Regional variants carry <strong>only what differs</strong> from their base language. <code>en</code> is British English, <code>es</code> is Spain’s Spanish; <code>en-GB</code>/<code>es-ES</code> are aliases. Unshipped regions (<code>nl-BE</code>) resolve to their language.</p>
+<p>Every language file lists keys sorted by byte order (<code>sort(method = "radix")</code>); <code>test-i18n.R</code> enforces this. A new key goes at its sorted place in every file it belongs to.</p>
 </div>
 <div class="section level3">
 <h3 id="keys-that-must-agree-across-feeds">Keys that must agree across feeds<a class="anchor" aria-label="anchor" href="#keys-that-must-agree-across-feeds"></a></h3>
-<p>Two identifiers are transformed on the way in, and every feed that names one has to transform it the same way or it silently matches nothing:</p>
 <ul><li>
-<strong><code>institution_key</code></strong> is hashed by <code>episodic_institution_key_hash()</code> before it is stored, so the case feed and the institution-activity feed both supply the operator’s own key and both are hashed to match. A loader comparing the raw key against the stored hash matches nothing on any correctly prepared deployment, and patient-day normalisation simply never engages.</li>
+<strong><code>institution_key</code></strong> is hashed by <code>episodic_institution_key_hash()</code> before storage; every feed must supply the raw key and have it hashed to match.</li>
 <li>
-<strong>The patient-and-pathogen episode key</strong> is built by <code>episodic_case_group_key()</code>, which separates its parts with a control character rather than concatenating them. <code>episodic_cases_deduplicate()</code> groups on it and <code>episodic_db_last_case_dates()</code> names its anchor dates with it; if the two ever disagree, a stored episode is never matched and an incoming positive arrives as a spurious second case.</li>
+<strong>The episode key</strong> is built by <code>episodic_case_group_key()</code> with a control-character separator. <code>episodic_cases_deduplicate()</code> and <code>episodic_db_last_case_dates()</code> must agree on it.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="notifications">Notifications<a class="anchor" aria-label="anchor" href="#notifications"></a></h3>
-<p>Configured under the <code>notifications</code> key in the instance YAML. Six channels: ntfy, SMTP, sendmail, Microsoft 365, Teams, Slack. Dispatched after the detection transaction commits, never inside it. Errors are caught and logged, never propagated. Implementation split across <code>R/notify.R</code> (dispatcher, message building) and <code>R/notify_channels.R</code> (per-channel send functions).</p>
-<p>The HTML body of the two routine emails can be an operator’s own Quarto template: <code>EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS</code> for the new-clusters alert, <code>EPISODIC_MAIL_TEMPLATE_REPORT</code> for the email a scheduled report is attached to (<code>R/mail_template.R</code>). Two variables rather than one, because the two carry different data. Only <code>.qmd</code> is accepted: Quarto is already what reports need, and an <code>.Rmd</code> rendered by Quarto has its <code>output:</code> options silently dropped. A template changes only what the email channels (<code>smtp</code>, <code>sendmail</code>, <code>microsoft365</code>) send; ntfy, Teams, Slack, the subject line and the run-failure email are untouched. A template that cannot be used (missing, not <code>.qmd</code>, no Quarto, a failed render) never costs an email: <code>episodic_mail_body()</code> sends the built-in body and logs a <code>danger</code> line naming the variable and the reason, and the same problem is on the Info screen, in <code><a href="reference/episodic_notify_test.html">episodic_notify_test()</a></code> and in a <code>warn</code> line at the start of every run. Starting templates ship in <code>inst/mail/</code>; <code><a href="reference/episodic_mail_template_preview.html">episodic_mail_template_preview()</a></code> renders one against example data.</p>
+<p>Six channels: ntfy, SMTP, sendmail, Microsoft 365, Teams, Slack. Dispatched after the detection transaction commits, never inside it. Errors caught and logged, never propagated.</p>
+<p>Email bodies can be operator Quarto templates (<code>EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS</code>, <code>EPISODIC_MAIL_TEMPLATE_REPORT</code>); only <code>.qmd</code> accepted. A template that fails falls back to the built-in body and logs a <code>danger</code> line.</p>
 </div>
 <div class="section level3">
 <h3 id="roles">Roles<a class="anchor" aria-label="anchor" href="#roles"></a></h3>
-<p>Two roles for dashboard access:</p>
 <ul><li>
-<code>epidemiologist</code>: read + write (assess outbreaks and epidemics, classify, close, mute, record declarations, render reports)</li>
+<code>epidemiologist</code>: read + write (assess, classify, close, mute, declare, render reports)</li>
 <li>
-<code>viewer</code>: read-only (sees everything including patient-level detail, but cannot record assessments or declarations)</li>
-</ul><p><code>access.require_login</code> ships as <code>false</code>: a freshly installed instance reads open, and an operator who wants it closed to anonymous visitors sets it explicitly. <code>episodic_app_require_login()</code> still fails closed (<code>true</code>) on anything it cannot read as <code>false</code> - a malformed or partial config errs toward requiring a sign-in, never toward opening one that was not asked for.</p>
-<p>Both sign-in outcomes are recorded: a success as a <code>login</code> event on the account, a refusal in <code>episodic_app_login_failure</code> (which of unknown username / wrong password / deactivated account, plus the username as typed - a failure may name no account, which is why it is not an <code>episodic_app_user_event</code>). Both surface on the Activity screen under the <code>signin</code> category, and are withheld from a reader who has not signed in - on an instance running open, “who has an account here” is not for a stranger. <code>episodic_auth_login()</code> still tells the visitor nothing about which of the three it was.</p>
-<p>Accounts are added via <code><a href="reference/episodic_add_user.html">episodic_add_user()</a></code> at the R console; there is also in-app account management.</p>
+<code>viewer</code>: read-only (sees everything but cannot record assessments or declarations)</li>
+</ul><p><code>access.require_login</code> ships <code>false</code>; fails closed on anything it cannot read as <code>false</code>. Both sign-in outcomes are recorded (success as event, failure in <code>episodic_app_login_failure</code>). The auth endpoint reveals nothing about which failure reason applied.</p>
 </div>
+<div class="section level3">
+<h3 id="measuring-detection">Measuring detection<a class="anchor" aria-label="anchor" href="#measuring-detection"></a></h3>
+<p><code><a href="reference/episodic_validate_detection.html">episodic_validate_detection()</a></code> replays synthetic cases week by week against a throwaway SQLite database, matching clusters to seeded outbreaks <strong>on case sets, in both directions</strong>. Ground truth comes from <code><a href="reference/episodic_synthetic_ground_truth.html">episodic_synthetic_ground_truth()</a></code>, not naming conventions.</p>
+<p>Rules: a metric with no denominator is <code>NA</code>, never 0; an undetected outbreak is right-censored, never dropped; a threshold sweep re-matches a finished replay (<code><a href="reference/episodic_validate_rethreshold.html">episodic_validate_rethreshold()</a></code>) rather than re-running detection. If a result is unflattering, it is reported.</p>
+<p>The multi-seed study and operating-point sweep live in <code>data-raw/validation/run_study.R</code> (in <code>.Rbuildignore</code>): nothing that takes minutes may reach the suite, CI, an example or a vignette.</p>
 </div>
-<div class="section level2">
-<h2 id="file-layout">File layout<a class="anchor" aria-label="anchor" href="#file-layout"></a></h2>
-<pre><code>R/
-  run_cron.R          # cron entry point, episodic_trace(), the full pipeline
-  run_app.R           # Shiny app entry point
-  config.R            # YAML config: resolve, merge, canonicalise, hash
-  cases.R             # case data requirements and deduplication entry
-  cases_check.R       # episodic_check_cases() validation
-  cases_dedup.R       # episode deduplication (via AMR::get_episode)
-  cases_load.R        # loading cases into the database
-  reconcile.R         # match detections to persistent outbreaks/epidemics, incl. epidemic closure and auto-close of stale unassessed clusters
-  reconcile_suppress.R # lattice suppression (continuous across the outbreak/epidemic scale boundary)
-  cluster_manual.R    # episodic_add_manual_cluster() - clusters from other systems
-  detect_*.R          # the four detectors
-  notify.R            # notification dispatcher and message building
-  notify_channels.R   # per-channel send functions (ntfy, smtp, etc.)
-  mail_template.R     # operator email templates, inline email styles from the palette
-  score_priority.R    # composite priority score
-  db_cron_write.R     # all cron-side DB writes
-  db_read.R           # all DB reads (shared by cron and app)
-  db_app_write.R      # all app-side DB writes (append-only)
-  db_query.R          # the only route to a query: episodic_db_get_query(), episodic_db_execute()
-  schema_migrate.R    # schema creation and migration
-  app_server.R        # Shiny server
-  app_server_notes.R  # wires the cluster notes save button
-  app_ui.R            # Shiny UI
-  app_dossier.R       # outbreak dossier (the main assessment screen)
-  app_epidemic_ui.R   # Epidemics screen: rail, dossier, assessment rail
-  app_pathogen.R      # pathogen overview panel
-  app_charts.R        # reusable chart components
-  app_widgets.R       # reusable UI widgets
-  app_read.R          # data loading for the dashboard
-  i18n.R              # translation system (episodic_tr)
-  interpretation.R    # AI/template-based narrative summaries
-  report_render.R     # Quarto outbreak report rendering
-  validate_detection.R  # episodic_validate_detection(): the prospective replay
-  validate_match.R      # matching clusters to seeded outbreaks on case sets
-  validate_metrics.R    # Wilson/Poisson intervals, Kaplan-Meier, AUC
-  validate_summary.R    # the headline numbers, as one long table
-  validate_comparator.R # naive rules measured the same way
-  validate_rethreshold.R # re-match a finished replay at other thresholds
-inst/
-  config/episodic_default_config.yaml       # shipped detection defaults
-  config/episodic_default_style.yaml       # shipped colour palette defaults
-  config/episodic_default_pathogen_config.csv # per-pathogen parameters
-  sql/schema.sql            # database schema (SQLite dialect)
-  app/                      # Shiny app assets (CSS, JS)
-  i18n/                     # translation JSON files (en, nl, de, fr, es, ar, hi, zh)
-  report/                   # Quarto report template
-  mail/                     # starting templates for the two email bodies
-tests/testthat/             # test suite across 76 files
-vignettes/                  # 9 vignettes
-data-raw/validation/        # the full detection validation study (never ships)</code></pre>
-</div>
-<div class="section level2">
-<h2 id="measuring-detection">Measuring detection<a class="anchor" aria-label="anchor" href="#measuring-detection"></a></h2>
-<p>The Performance screen measures the instance against its own epidemiologists’ verdicts, which is a good operational metric and a circular one for a paper: sensitivity is structurally unmeasurable that way, because an outbreak the detectors miss never becomes a cluster for anyone to judge.</p>
-<p><code><a href="reference/episodic_validate_detection.html">episodic_validate_detection()</a></code> measures against known truth instead. It generates history with <code><a href="reference/episodic_synthetic_cases.html">episodic_synthetic_cases()</a></code>, replays it week by week through <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> against a throwaway SQLite database handing each run only the cases sampled by that date, and matches clusters to seeded outbreaks <strong>on case sets, in both directions</strong> - an endemic winter cluster overlaps a seeded outbreak perfectly in time and shares not one case with it, so interval overlap decides nothing here.</p>
-<p>Ground truth is data, not a naming convention: <code><a href="reference/episodic_synthetic_ground_truth.html">episodic_synthetic_ground_truth()</a></code> returns what was injected. The <code>PT-OUTBREAK-*</code> patient keys are a convenience for a human reading a line list; nothing measures against them.</p>
-<p>Rules that hold throughout: a metric with no denominator is <code>NA</code>, never 0 (a negative control has no sensitivity, not a sensitivity of zero); an outbreak nothing found is right-censored at the time it was watched for, never dropped from the median; and a threshold sweep re-matches a finished replay (<code><a href="reference/episodic_validate_rethreshold.html">episodic_validate_rethreshold()</a></code>) rather than running detection again.</p>
-<p>The exported entry point defaults to one seed and a short window so it returns in seconds. The multi-seed study, the negative control, the drop-one analysis, the comparators and the operating-point sweep live in <code>data-raw/validation/run_study.R</code>, which is in <code>.Rbuildignore</code> and must stay there: nothing that takes minutes may reach the suite, CI, an example or a vignette.</p>
-<p>If a result is unflattering, it is reported. Tuning <code>inst/config/episodic_default_config.yaml</code> until a number looks better and then quoting the number is fitting the evaluation to the answer.</p>
 </div>
 <div class="section level2">
 <h2 id="development">Development<a class="anchor" aria-label="anchor" href="#development"></a></h2>
 <p>If R is available, find the appropriate functions below. If not, consult the user on whether the user will run the functions themselves on their computers instead.</p>
 <div class="section level3">
 <h3 id="running-tests">Running tests<a class="anchor" aria-label="anchor" href="#running-tests"></a></h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'devtools::test()'</span></span></code></pre></div>
-<p>All tests run against temporary SQLite databases created in <code>helper-db.R</code>. No external services or credentials are needed.</p>
-<p>Except <code>tests/testthat/test-mariadb_live.R</code>, which skips itself unless <code>EPISODIC_TEST_MARIADB_DSN</code> names a scratch MariaDB/MySQL database it may create and drop tables in. <code>.github/workflows/mariadb.yaml</code> runs the suite against a service container on one Linux job and fails the build if those tests skipped themselves, because the MariaDB dialect is produced by rewriting the SQLite schema and nothing else proves a server accepts the result.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'devtools::test()'</span></span></code></pre></div>
+<p>All tests run against temporary SQLite databases (<code>helper-db.R</code>). <code>test-mariadb_live.R</code> skips unless <code>EPISODIC_TEST_MARIADB_DSN</code> is set.</p>
 </div>
 <div class="section level3">
 <h3 id="building-documentation">Building documentation<a class="anchor" aria-label="anchor" href="#building-documentation"></a></h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'devtools::document()'</span></span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co"># for linting:</span></span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'styler::style_pkg()'</span></span></code></pre></div>
-<p>This regenerates <code>man/</code> and <code>NAMESPACE</code> from roxygen2 comments. The package uses <code>Authors@R</code> in DESCRIPTION (not separate Author/Maintainer fields).</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'devtools::document()'</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'styler::style_pkg()'</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="r-cmd-check">R CMD check<a class="anchor" aria-label="anchor" href="#r-cmd-check"></a></h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="ex">R</span> CMD build . <span class="kw">&amp;&amp;</span> <span class="ex">R</span> CMD check EpiSODIC_<span class="pp">*</span>.tar.gz</span></code></pre></div>
-<p>There is a pre-existing NOTE about Author/Maintainer fields because the package uses <code>Authors@R</code>, which requires building first. This is not a real problem.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="ex">R</span> CMD build . <span class="kw">&amp;&amp;</span> <span class="ex">R</span> CMD check EpiSODIC_<span class="pp">*</span>.tar.gz</span></code></pre></div>
+<p>There is a pre-existing NOTE about Author/Maintainer fields because the package uses <code>Authors@R</code>. This is not a real problem.</p>
 </div>
 <div class="section level3">
 <h3 id="newsmd">NEWS.md<a class="anchor" aria-label="anchor" href="#newsmd"></a></h3>
-<p>Keep entries the way they already are: one version heading, then <code>## New</code>/<code>## Changed</code>/<code>## Fixed</code> sections, each a flat list of single-line bullets. No sub-bullets, no elaboration, no multi-sentence entries - one short line per change, stating what changed, not why.</p>
+<p>One version heading, then <code>## New</code>/<code>## Changed</code>/<code>## Fixed</code> sections, each a flat list of single-line bullets. No sub-bullets, no elaboration, no multi-sentence entries.</p>
 </div>
 <div class="section level3">
-<h3 id="pkgdown-site">pkgdown site<a class="anchor" aria-label="anchor" href="#pkgdown-site"></a></h3>
-<p>Do not regenerate the site; a GitHub Action will do that, available in .github/workflows.</p>
-<p>Yet, <code>_pkgdown.yml</code> groups every exported topic into a section. When adding a new exported function, it must be added to the appropriate section in <code>_pkgdown.yml</code> or the build will fail with “topics missing from index”.</p>
+<h3 id="pkgdown">pkgdown<a class="anchor" aria-label="anchor" href="#pkgdown"></a></h3>
+<p>Do not regenerate the site; a GitHub Action does that. But <code>_pkgdown.yml</code> groups every exported topic, so new exports must be added to it or the build fails.</p>
 </div>
 <div class="section level3">
 <h3 id="code-style">Code style<a class="anchor" aria-label="anchor" href="#code-style"></a></h3>
-<ul><li>File header: the standard Certe GPL-2 banner (17-line comment block) goes at the top of every R file.</li>
-<li>Multi-line function signatures: use hanging-indent, not single-indent - the first argument stays on the same line as <code>function(</code>, continuation lines align under it, and <code>) {</code> shares the line with the last argument (never on its own line). Both are permitted by the tidyverse style guide (style.tidyverse.org/functions.html), but styler &gt;= 1.11.0 defaults to single-indent with <code>) {</code> isolated, which this project does not want. Styler cannot be configured to prefer one over the other (raised and declined upstream: github.com/r-lib/styler/pull/1235) - it detects the shape per function from the source itself (<code>is_single_indent_function_declaration()</code> in styler’s <code>R/rules-indention.R</code>: first argument on a new line after <code>function(</code> means single-indent; first argument sharing that line, with continuation lines indented more than <code>2 * indent_by</code> i.e. more than 4 spaces by default, means hanging-indent) and preserves whichever you wrote, so writing it this way is stable across <code>styler::style_pkg()</code> runs regardless of styler version. One real cost: renaming a function invalidates every continuation line’s alignment in its own signature, since styler will not recompute it for you - realign by hand when that happens.</li>
+<ul><li>
+<strong>File header</strong>: the standard Certe GPL-2 banner (17-line comment block) at the top of every R file.</li>
 <li>
-<strong>Comments describe the code as it is, never as it was.</strong> No “this used to”, “was wrong until”, “the earlier version”, “the exact bug report this fixes”, “which is how the first deployment ended up with”. A file whose comments narrate their own defect history reads as a pile of bandages rather than a design, and every one of those sentences ages into a scar nobody can see any more. Keep the <em>reason</em> and drop the incident: name the alternative and what it costs, in the present tense, as a property of the design - “filtering on pathogen and institution alone would count every case in the hospital for a ward cluster, and <code>n_cases</code> drives the priority score”. The same applies to test comments: state the invariant the test holds, not the regression that prompted it. History belongs in the commit message, the pull request and <code>NEWS.md</code>, which are the records built to carry it.</li>
-<li>Internal functions: use <code>@keywords internal</code> and <code>@noRd</code> for functions that should not have a man page. Also, don’t reference functions as <code>[some_function()]</code> there, but use `some_function()` instead, as otherwise roxygen2 gives a warning.</li>
-<li>Logging: use <code>episodic_trace()</code> (defined in <code>run_cron.R</code>) for cron-side logging, <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code> for interactive functions. Its <code>severity</code> (<code>plain</code>, <code>warn</code>, <code>danger</code>) is for a line saying a component produced nothing it structurally could not have produced, or that a setting means it never will, or that failed outright - never a phase heading, a count or decoration, or the log becomes a wall of colour in which nothing stands out again. The Activity screen’s run modal marks its own lines on the same rule.</li>
-<li>Database: all SQL is inline (no ORM). Parameterised queries throughout, never string interpolation of user values. Every query goes through <code>episodic_db_get_query()</code> or <code>episodic_db_execute()</code> (<code>R/db_query.R</code>), never <code><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">DBI::dbGetQuery()</a></code>/<code><a href="https://dbi.r-dbi.org/reference/dbExecute.html" class="external-link">DBI::dbExecute()</a></code> directly: they evaluate every argument before the driver prepares the statement, because on MariaDB a parameter whose evaluation queries the same connection closes the prepared statement and kills the R process with no R-level error. <code>test-db_reentrancy.R</code> fails on any direct DBI query call in the namespace.</li>
-<li>Dependencies: hard dependencies in Imports, optional integrations in Suggests. Gate optional packages at runtime with <code><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">rlang::check_installed()</a></code> or <code><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace()</a></code>. Exception: <code>bslib</code>, <code>cli</code>, <code>commonmark</code>, <code>htmltools</code> and <code>jsonlite</code> are used unconditionally but live in Suggests, not Imports - <code>shiny</code> (a hard Import) already Imports every one of them, so they are guaranteed present whenever EpiSODIC is, without EpiSODIC also declaring them. Always call them with <code>pkg::fun()</code>, never <code>@importFrom</code>, since no NAMESPACE import backs them. <code>rlang</code> itself stays a real Import, not this exception: <code>R/app_charts.R</code> imports its <code>.data</code> pronoun (<code>@importFrom rlang .data</code>), which <code><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">ggplot2::aes()</a></code> only recognises as a data-mask pronoun when referenced by the bare symbol <code>.data</code> - <code>rlang::.data$col</code> is a different expression to <code>aes()</code>’s NSE and errors with “Can’t subset <code>.data</code> outside of a data mask context”. Every other <code>rlang::</code> call in the codebase (<code>check_installed()</code>, <code>cnd_message()</code>, etc.) is an ordinary function call and would have been fine moved to Suggests; the <code>.data</code> import is the one thing forcing the whole package to stay in Imports.</li>
-<li>Config hash: the keys in <code>episodic_config_unhashed_sections</code> (<code>notifications</code>, <code>access</code>, <code>report</code>, <code>database</code>) are stripped before hashing. Any new config section that contains secrets or is operationally irrelevant to detection should be added there.</li>
-<li>Anonymous access: <code>access.require_login</code> closes the app to visitors who have not signed in. It is enforced server-side, by not rendering - <code>episodic_app_access_granted()</code> gates every output and every data-bearing observer, so nothing reaches the page to be uncovered client-side. Any new output or observer that reads surveillance data must go behind the same gate. It is YAML-only, with no Settings-screen override, on purpose.</li>
-<li>Error handling: notification and report-rendering errors must not propagate to the cron pipeline. Wrap in <code>tryCatch</code> and log via <code>episodic_trace()</code>.</li>
-<li>Event sourcing: the app only inserts into <code>episodic_assessment_event</code>, never updates or deletes. Current state is derived from the event stream.</li>
+<strong>Multi-line function signatures</strong>: hanging-indent, not single-indent. First argument on the same line as <code>function(</code>, continuation lines align under it, <code>) {</code> on the last argument’s line. This is stable across <code>styler::style_pkg()</code> runs. Renaming a function means realigning its continuation lines by hand.</li>
+<li>
+<strong>Comments describe the code as it is, never as it was.</strong> No “this used to”, “was wrong until”, “the exact bug this fixes”. Name the alternative and its cost, present tense. Test comments state the invariant, not the regression. History belongs in the commit message, PR and <code>NEWS.md</code>.</li>
+<li>
+<strong>Internal functions</strong>: use <code>@keywords internal</code> and <code>@noRd</code>. Reference functions as `some_function()`, not <code>[some_function()]</code>.</li>
+<li>
+<strong>Logging</strong>: <code>episodic_trace()</code> for cron-side, <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code> for interactive. Severity (<code>plain</code>, <code>warn</code>, <code>danger</code>) is for structural problems only, never phase headings, counts or decoration.</li>
+<li>
+<strong>Database</strong>: all SQL inline, parameterised, through <code>episodic_db_get_query()</code>/<code>episodic_db_execute()</code> only, never <code><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">DBI::dbGetQuery()</a></code>/<code><a href="https://dbi.r-dbi.org/reference/dbExecute.html" class="external-link">DBI::dbExecute()</a></code> directly (MariaDB re-entrancy kills the R process). <code>test-db_reentrancy.R</code> enforces this.</li>
+<li>
+<strong>Dependencies</strong>: hard dependencies in Imports, optional in Suggests. <code>bslib</code>, <code>cli</code>, <code>commonmark</code>, <code>htmltools</code>, <code>jsonlite</code> live in Suggests (guaranteed by <code>shiny</code>’s own Imports) but must be called as <code>pkg::fun()</code>, never <code>@importFrom</code>. <code>rlang</code> stays in Imports because <code>R/app_charts.R</code> imports <code>.data</code> for <code><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">ggplot2::aes()</a></code>.</li>
+<li>
+<strong>Config hash</strong>: <code>episodic_config_unhashed_sections</code> strips secrets and operationally irrelevant sections before hashing. New sections with secrets or no detection relevance must be added there.</li>
+<li>
+<strong>Anonymous access</strong>: <code>episodic_app_access_granted()</code> gates every output and data-bearing observer server-side. Any new output reading surveillance data must go behind the same gate.</li>
+<li>
+<strong>Error handling</strong>: notification and report-rendering errors must not propagate to the cron pipeline. Wrap in <code>tryCatch</code> and log via <code>episodic_trace()</code>.</li>
+<li>
+<strong>Event sourcing</strong>: the app only inserts into <code>episodic_assessment_event</code>, never updates or deletes.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="environment-variables">Environment variables<a class="anchor" aria-label="anchor" href="#environment-variables"></a></h3>
-<table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>Variable</th>
-<th>Purpose</th>
-</tr></thead><tbody><tr><td><code>EPISODIC_DB</code></td>
-<td>Database path (SQLite) or DSN (MariaDB)</td>
-</tr><tr><td><code>EPISODIC_CONFIG</code></td>
-<td>Instance detection + notification config YAML</td>
-</tr><tr><td><code>EPISODIC_PATHOGEN_CONFIG</code></td>
-<td>Per-pathogen parameter CSV overlay</td>
-</tr><tr><td><code>EPISODIC_STYLE</code></td>
-<td>Instance colour palette YAML</td>
-</tr><tr><td><code>EPISODIC_LANGUAGE</code></td>
-<td>Dashboard/report language (en, ar, nl, fr, de, hi, zh, es, or a regional variant: en-US, es-419)</td>
-</tr><tr><td><code>EPISODIC_GEO_DATA</code></td>
-<td>Geographic reference data (.rds, sf object)</td>
-</tr><tr><td><code>EPISODIC_GEO_DATA_OVERLAY</code></td>
-<td>Optional region-outline overlay (.rds)</td>
-</tr><tr><td><code>EPISODIC_PC_PROVINCE_MAP</code></td>
-<td>Postcode-to-province CSV mapping</td>
-</tr><tr><td><code>EPISODIC_QUARTO_REPORT</code></td>
-<td>Custom Quarto report template path</td>
-</tr><tr><td><code>EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS</code></td>
-<td>Quarto template for the new-clusters email body</td>
-</tr><tr><td><code>EPISODIC_MAIL_TEMPLATE_REPORT</code></td>
-<td>Quarto template for the scheduled-report email body</td>
-</tr></tbody></table><p>See <code><a href="articles/environment-variables.html">vignette("environment-variables")</a></code> for the full reference.</p>
+<p>See <code><a href="articles/environment-variables.html">vignette("environment-variables")</a></code> for the full reference.</p>
 </div>
 <div class="section level3">
 <h3 id="key-invariants">Key invariants<a class="anchor" aria-label="anchor" href="#key-invariants"></a></h3>
-<ul><li>Detection runs are transactional: either the full run commits or nothing does.</li>
+<ul><li>Detection runs are transactional: full commit or nothing.</li>
 <li>Notifications fire after commit, never inside the transaction.</li>
 <li>
-<code>config_hash</code> is deterministic: same config in, same hash out, regardless of key order or platform.</li>
-<li>Stream keys are deterministic: same (pathogen, level, institution_id, ward, region_code) always produces the same SHA-1 key.</li>
-<li>Cluster IDs are database-assigned (AUTOINCREMENT); cluster identity is the stream + the case-free-days gap logic, not the ID. Rendered as <code>O-{id}</code> for outbreaks and <code>E-{id}</code> for epidemics.</li>
-<li>The scale boundary is configuration (<code>scale.epidemic_levels</code>), not a constant. Changing it changes what a run computes.</li>
-<li>A seasonal epidemic closes on the post-epidemic threshold or the trough backstop; a non-seasonal epidemic closes on case-free-days. A declaration (season_started, season_not_yet, season_ended) is a human act, never automatic.</li>
+<code>config_hash</code> is deterministic regardless of key order or platform.</li>
+<li>Stream keys are deterministic SHA-1 hashes.</li>
+<li>Cluster IDs are database-assigned; cluster identity is stream + case-free-days gap logic. Rendered as <code>O-{id}</code> / <code>E-{id}</code>.</li>
+<li>The scale boundary is configuration, not a constant.</li>
+<li>A seasonal epidemic closes on post-epidemic threshold or trough backstop; non-seasonal on case-free-days. Declarations are human acts, never automatic.</li>
 <li>The app never writes to cron-owned tables; the cron never writes to app-owned tables.</li>
 </ul></div>
 </div>

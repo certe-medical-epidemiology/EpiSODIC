@@ -14,27 +14,22 @@ epidemiologist relies on it, and no outbreak decision is taken on its
 output. The instances that exist, including the maintainer’s own with
 real case data, are development and test instances. So:
 
-- A change in what the dashboard shows (clusters appearing, disappearing
-  or moving in a queue) affects nobody’s work. Do not frame changes in
-  terms of users, colleagues or deployments that would be affected;
-  there are none.
+- A change in what the dashboard shows affects nobody’s work. Do not
+  frame changes in terms of users, colleagues or deployments that would
+  be affected; there are none.
 - Schema migrations are still required and must still work
   (`episodic_db_migrations()`, never removing old ones), because the
   product is built for the day it is released and every instance after
-  it. Their purpose is that future, not protecting existing deployments.
+  it.
 - The quality standard below applies in full regardless: the package is
   built to production grade for when it is released, not to “beta grade”
   because it is not yet.
 
-## What this package is for
+## Quality standard
 
-EpiSODIC is a complete and automated outbreak detection and assessment
-system. It is designed to run at any laboratory, in any country, against
+EpiSODIC is designed to run at any laboratory, in any country, against
 any set of pathogens, with no dependency on any one laboratory
-information system or data warehouse. Therefore, the aimed quality
-standard admits no concessions. Every component, from data ingestion to
-signal detection to reporting, must be production-grade, and must remain
-so after every change:
+information system or data warehouse:
 
 - No shortcuts, no placeholder logic, no “good enough for now”. If a
   proper implementation is more effort than a shortcut, implement it
@@ -43,90 +38,23 @@ so after every change:
   must fail loudly, never fail quietly and produce a plausible-looking
   wrong result.
 - **Absence of a measurement is never a measurement of zero.** This is
-  the failure mode this codebase is most prone to, and it wears the same
-  disguise every time: a zero is a legal value of the quantity, so
-  substituting one for “cannot be computed” produces a number that reads
-  as a finding. A zero case-overlap becomes “the rise is spread thinly”
-  rather than “there is nothing here to measure”; a lag at which nothing
-  has arrived yet becomes a completion of zero rather than a lag with no
-  denominator; a component that a stream structurally cannot produce
-  becomes a score of zero carrying its full weight; an `NA` positivity
-  becomes a sentence about a positivity of nought. Watch `%||%` in
-  particular: this package’s own (`R/interpretation.R`) swallows `NA` as
-  well as `NULL`, so `x %||% 0` turns an unmeasured quantity into a
-  measured zero without a word. When a quantity cannot be computed, drop
-  the component, skip the fragment, or return `NULL` - never substitute
-  a zero and carry on.
+  the failure mode this codebase is most prone to. A zero is a legal
+  value of the quantity, so substituting one for “cannot be computed”
+  produces a number that reads as a finding. Watch `%||%` in particular:
+  this package’s own (`R/interpretation.R`) swallows `NA` as well as
+  `NULL`, so `x %||% 0` turns an unmeasured quantity into a measured
+  zero. When a quantity cannot be computed, drop the component, skip the
+  fragment, or return `NULL`, never substitute a zero and carry on.
 - No hidden assumptions about a specific laboratory’s data structure,
   coding system, or naming convention. Anything laboratory-specific must
   be configurable, not hardcoded.
 - No untested code paths merged into main. Every function that touches
   detection logic, data transformation, or reporting must have
   accompanying tests before it is considered complete, and must be
-  placed in a separate branch WITH a PR, so every change regarding these
-  items must automatically be put into a PR.
+  placed in a separate branch WITH a PR.
 - No inconsistent interfaces. Function signatures, argument naming,
   return types, and error conventions must be uniform across the entire
-  codebase, as if written by a single disciplined author, not accreted
-  piecemeal.
-
-The operator provides case data in a documented format; EpiSODIC handles
-everything from statistical detection through reconciliation to
-dashboard presentation and outbreak reporting.
-
-The dashboard and reports are available in English, Arabic, Dutch,
-French, German, Hindi, Mandarin Chinese, and Spanish. The app sets
-`lang` and `dir` on the document from the resolved language, and
-`inst/app/www/episodic.css` uses CSS *logical* properties throughout
-(`margin-inline-start`, `border-inline-start`, `text-align: start`,
-`inset-inline-start`) rather than physical `left`/`right` ones, so
-Arabic mirrors correctly. A `margin-left` added to that stylesheet is a
-bug.
-
-Numbers are part of that. Every number a reader sees goes through
-`episodic_format_number()`, which takes its decimal mark, thousands
-mark, group sizes and minimum grouping from four
-`misc.decimal.mark`/`misc.thousands.*` keys per language - never from
-`options(OutDec)` or the system locale, which are properties of whoever
-started R rather than of the instance. Hindi groups by the Indian
-lakh/crore rule and Spanish leaves four-digit numbers unseparated
-because those keys say so, not because anything branches on a language
-code. A `format(x, big.mark = ",")` reaching a screen is a bug;
-`episodic_css_pct()` is the one deliberate exception, and it formats a
-machine-read CSS value rather than a number anyone reads. Identifiers
-are not quantities: an outbreak or epidemic id (`O-123`, `E-45`), a page
-number, a schema version or a report version is rendered as-is, never
-grouped.
-
-Regional variants are files of their own that carry **only what
-differs** from the language they belong to
-(`episodic_language_variants`): `en-US.json` is a spelling, a date order
-and a name; `es-419.json` is two number marks and a name. Everything
-else is inherited by `episodic_i18n_load()`. They are deliberately not
-copies - `en` and `en-US` differ in eight keys out of seven hundred and
-eighty-seven, and two copies would have to be kept in step for ever.
-`en` *is* British English and `es` *is* Spain’s Spanish, so
-`en-GB`/`es-ES` are aliases of those files rather than variants of them,
-and a region that is not shipped (`nl-BE`) resolves to its language
-rather than to English. `episodic_lang()` resolves a code,
-`episodic_lang_base()` gives the language a variant belongs to (which is
-what decides RTL and month names), and the four `date.format.*` keys per
-language are why a date reads “7 January 2025” in British English,
-“January 7, 2025” in American, “7. Januar 2025” in German and
-“2025年1月7日” in Chinese.
-
-Every language file, variants included, lists its keys sorted by byte
-order (`sort(method = "radix")`, which is also what Python’s `sorted()`
-gives), and `test-i18n.R` fails on a file that does not. A new key goes
-in at its sorted place in every file it belongs to, never at the end of
-the file or beside the key it was written with.
-
-The languages themselves have names, in `misc.language.<code>`, one set
-per file in that file’s own language. A message that would otherwise
-print `nl` at a human says “Dutch” in English and “Nederlands” in Dutch;
-where the reader has to *type* the code (`EPISODIC_LANGUAGE`), both are
-given - see `episodic_language_label()` and
-`episodic_language_choices()`.
+  codebase.
 
 ## Architecture
 
@@ -151,39 +79,6 @@ given - see `episodic_language_label()` and
 
 Four independent detectors, each producing detections per stream:
 
-Both rule-based detectors (`same_place`, `rare_trigger`) are bounded by
-a configured `lookback_days` and report only hits whose most recent case
-falls inside it. Unbounded, they re-emit the whole case history on every
-run, which resets `runs_since_detected` and makes
-`reconciliation.close_after_runs` unreachable. Farrington is bounded the
-same way, by `farrington.max_weeks_tested`, and aggregates to the last
-*complete* week relative to `run_date` - never the partial week
-`run_date` falls in.
-
-Every bound in that paragraph is lifted for exactly one run: the first
-one against a database (`episodic_run_is_backfill()`). The pathology
-those bounds prevent is *re-emission* - a settled hit matching its own
-long-closed cluster and resetting its clock - and re-emission begins at
-the second run. On the first there is no cluster on the board and no
-clock to reset, so an operator importing three years of history gets
-three years of clusters, the settled ones closed by
-`reconciliation.stale_open_days` in that same run and so straight into
-the Archive. Withholding them instead is what leaves a first run looking
-indistinguishable from a broken instance. A backfilled cluster carries
-`opened_in_backfill`, because its `opened_at` is the day the archive was
-imported: the Performance screen’s time-to-detection drops it, while PPV
-keeps it, since a cluster a person judged is evidence about the
-detectors whatever run opened it. It is a flag rather than a third
-`origin` deliberately - `episodic_db_clusters_for_stream()` and
-`episodic_db_clusters_for_suppression()` both select on
-`origin = 'detected'`, so a third value would exclude such a cluster
-from reconciliation and suppression, and the next run to detect on that
-stream would open a duplicate beside it. `episodic_run_cron(backfill =)`
-overrides the decision;
-[`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
-passes `FALSE`, since a replay that reported its whole baseline on run
-one would measure the import rather than the detectors.
-
 | Detector | Method | File |
 |----|----|----|
 | Farrington | Improved Farrington (surveillance::farringtonFlexible) | `R/detect_farrington.R` |
@@ -191,422 +86,182 @@ one would measure the import rather than the detectors.
 | rare_trigger | Single-case alert for curated rare pathogens | `R/detect_rare_trigger.R` |
 | MEM | Moving Epidemic Method seasonal threshold (mem::memmodel), derived anchor and eligibility | `R/detect_mem.R` |
 
-MEM derives its season anchor and seasonality eligibility from each
-stream’s own data rather than from a per-pathogen configuration. The
-season anchor is the first week of the longest trough run in a 52-week
-climatology, so a southern-hemisphere instance derives a southern anchor
-with no hemisphere setting anywhere. Eligibility is a peak-concentration
-statistic measuring how seasonal the pathogen actually is in this
-population; `mem_mode` on `episodic_pathogen_config` overrides it per
-pathogen (`auto`, `yes`, `no`). Seasons are full-year, 52 or 53 weeks,
-with no off-season gap: every ISO week belongs to exactly one season.
-MEM runs at L4 and L5 (configurable via `mem.levels`), not only at L5.
+Both rule-based detectors and Farrington are bounded by configured
+lookback windows and report only hits whose most recent case falls
+inside. Unbounded, they re-emit the whole case history on every run,
+resetting `runs_since_detected` and making
+`reconciliation.close_after_runs` unreachable.
 
-Each detector’s config section carries `enabled`, shipped `true`, read
-through `episodic_detector_enabled()` inside the detector itself so
-every caller respects it. It lives in the config rather than in an
-argument to
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
-because which detectors ran changes what a run computes, and so has to
-be inside `config_hash`. `farrington.enabled: false` stops the detector,
-not the multi-year baseline cached for the Pathogen screen, which is a
-display of the same model rather than a detection.
+All bounds are lifted for exactly one run: the first against a database
+(`episodic_run_is_backfill()`). A backfilled cluster carries
+`opened_in_backfill` as a flag, deliberately not a third `origin`,
+because `episodic_db_clusters_for_stream()` and
+`episodic_db_clusters_for_suppression()` select on `origin = 'detected'`
+and a third value would exclude them from reconciliation and
+suppression.
+
+MEM derives its season anchor and seasonality eligibility from each
+stream’s own data rather than from per-pathogen configuration. Seasons
+are full-year (52 or 53 weeks) with no off-season gap. MEM runs at L4
+and L5 (configurable via `mem.levels`).
+
+Each detector’s config section carries `enabled`, read through
+`episodic_detector_enabled()`. It lives in config rather than as an
+argument because which detectors ran changes what a run computes, and so
+must be inside `config_hash`.
 
 ### Streams and the lattice
 
 A “stream” is a unique surveillance unit: a (pathogen, level, location)
 tuple. Levels form a geographic lattice from finest to coarsest:
+`pathogen_ward`, `pathogen_institution`, `pathogen_area`,
+`pathogen_province`, `pathogen_region`.
 
-- `pathogen_ward` (finest)
-- `pathogen_institution`
-- `pathogen_area`
-- `pathogen_province`
-- `pathogen_region` (coarsest)
+A configurable boundary (`scale.epidemic_levels`) splits the lattice:
+streams at or above the boundary produce **epidemics**, those below
+produce **outbreaks**. Suppression is continuous across the scale
+boundary. Outbreaks are linked to concurrent epidemics via
+`episodic_cluster_link`, defined on pathogen, time overlap and
+geographic nesting, never on case-set containment.
 
-Detection runs against every eligible stream independently. A
-configurable boundary (`scale.epidemic_levels`, shipped as
-`pathogen_province` and `pathogen_region`) splits the lattice into two
-scales: streams at or above the boundary produce **epidemics**, those
-below it produce **outbreaks**. The `scale` discriminator is set on each
-cluster at creation time from the stream’s level via
-`episodic_scale_for_level()`.
+Stream keys are SHA-1 hashes computed in `R/lattice_stream_key.R`.
 
-After detection, lattice suppression removes redundant signals (a
-hospital-level cluster that is entirely explained by a ward-level
-cluster in the same hospital). Suppression is continuous across the
-scale boundary, so an outbreak at `pathogen_area` can still suppress or
-be suppressed by an epidemic at `pathogen_province`.
-
-After reconciliation and before suppression, outbreaks are linked to
-concurrent epidemics they occur **during**, defined on pathogen, time
-overlap and geographic nesting, never on case-set containment. The link
-is a table (`episodic_cluster_link`), not a column: an outbreak may be
-during both a province and a region epidemic at once.
-
-Stream keys are SHA-1 hashes of (pathogen, level, institution_id, ward,
-region_code), computed in `R/lattice_stream_key.R`.
-
-The geography a run uses is resolved once, from that run’s own config,
-and passed down: `episodic_lattice_enumerate()`,
-`episodic_cases_for_stream()`, `episodic_db_cases_for_stream_id()` and
-`episodic_reconcile_stream()` all take it as an argument. Resolved
-separately at each site, a run given `episodic_config_path` names its L5
-catchment from one configuration and its L3 areas from another, then
-tests case membership against a third - so every geographic stream
-matches no case however many arrive, and any cluster opened there is
-written with none linked to it, silently. The default resolves
-`EPISODIC_CONFIG`, which is the right answer on the dashboard side,
-where there is no run to take it from.
-
-Nothing about the lattice’s geography is hardcoded to one country. The
-whole-catchment code (L5) and the area-code rule (L3) are
-`config$geography`, resolved by `episodic_geography_config()`; the
-province level (L4) is an operator-supplied `pc` -\> `province_code` CSV
-pointed at by `EPISODIC_PC_PROVINCE_MAP`, with no built-in rule at all,
-since deriving a province from a postcode is country-specific.
-Unconfigured, L4 stays empty and says so on the dashboard’s Info screen.
-Likewise `EPISODIC_GEO_DATA` has no default: without it there is no map,
-never another country’s.
+The geography a run uses is resolved once from that run’s own config and
+passed down. Nothing is hardcoded to one country: L5 and L3 come from
+`config$geography`; L4 is an operator-supplied postcode-to-province CSV
+(`EPISODIC_PC_PROVINCE_MAP`); `EPISODIC_GEO_DATA` has no default.
 
 ### Database
 
-Single schema in `inst/sql/schema.sql`, written in SQLite dialect.
-Adapted at load time for MariaDB/MySQL (there is no separate schema
-file). Key tables:
+Single schema in `inst/sql/schema.sql` (SQLite dialect), adapted at load
+time for MariaDB/MySQL. The MariaDB adapter derives table-level
+`FOREIGN KEY` clauses from inline `REFERENCES` (MySQL silently discards
+inline references), and applies the schema with
+`FOREIGN_KEY_CHECKS = 0`.
 
-| Table | Owner | Purpose |
-|----|----|----|
-| `episodic_stream` | cron | Surveillance units |
-| `episodic_detection_run` | cron | One row per cron invocation |
-| `episodic_detection` | cron | Individual detector firings |
-| `episodic_cluster` | cron | Persistent outbreaks and epidemics (reconciled); `scale` discriminates the two |
-| `episodic_cluster_case` | cron | Cases assigned to clusters |
-| `episodic_cluster_state` | cron | Derived state (open/closed/stale) |
-| `episodic_epidemic_season` | cron | Seasonal satellite for epidemic clusters with a season (anchor, thresholds, ended_reason) |
-| `episodic_epidemic_week` | cron | A seasonal epidemic’s weekly counts and MEM intensity bands, rewritten by every run while its season is open |
-| `episodic_cluster_link` | cron | The “during” relation: which outbreaks occurred during which epidemics |
-| `episodic_assessment_event` | app | Epidemiologist assessments and declarations (append-only) |
-| `episodic_app_user` | app | Dashboard accounts |
-| `episodic_case` | cron | Deduplicated case records |
-| `episodic_institution` | cron | Institution reference data (`institution_key` is a SHA-1 of the operator’s own key, never the key itself) |
-| `episodic_cluster_note` | app | Per-cluster free-text notes (append-only) |
-| `episodic_cluster_manual_case` | [`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md) | Case-level detail for `origin = 'manual'` clusters only |
-| `episodic_app_login_failure` | app | Refused sign-ins (username tried, reason) |
-| `episodic_schema_version` | [`episodic_db_create()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_create.md), [`episodic_db_migrate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_migrate.md) | One row per applied schema version |
-| `episodic_report_version_claim` | [`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md) | The register of report version numbers handed out, taken before the render (see `episodic_db_report_version_claim()`) |
-| `episodic_detector_cache` | cron | A detector’s model fit per stream, keyed on a hash of its exact input (MEM only); one row per stream and detector, replaced in place |
-
-`episodic_cluster.opened_in_backfill` and
-`episodic_detection_run.is_backfill` mark the first run against a
-database and everything it opened - see the Detectors section above for
-what a backfill is and why it is a flag rather than an `origin`.
-
-`episodic_cluster.scale` is `'outbreak'` or `'epidemic'`, set at
-creation from the stream’s level. `episodic_epidemic_season` is a
-satellite keyed to the cluster: a seasonal epidemic carries one row with
-the anchor, thresholds, intensity bands and closure reason; a
-non-seasonal epidemic has no row, and nothing reads a missing row as a
-zero or as “season not ended”. `episodic_cluster_link` records that an
-outbreak occurred during an epidemic, composite-keyed on
-`(outbreak_cluster_id, epidemic_cluster_id)`.
-`episodic_assessment_event.verdict` includes the five original values
-plus `season_started`, `season_not_yet` and `season_ended` for epidemic
-declarations.
-
-Two things the adapter does that are not cosmetic. It **derives
-table-level `FOREIGN KEY` clauses** from the schema’s inline
-column-level `REFERENCES`, because MySQL parses an inline reference and
-discards it: relying on them gives a MySQL instance all its tables and
-not one constraint, silently. Derived rather than listed, so a reference
-added to `schema.sql` is converted without anyone remembering to, and
-`test-schema_mariadb.R` asserts the counts match. And it applies the
-schema with `FOREIGN_KEY_CHECKS = 0`, because the tables are declared in
-the order they read best rather than in foreign-key order, which MariaDB
-refuses outright.
-
-The schema is versioned. `episodic_schema_version` (in
-`R/schema_migrate.R`) is what this build expects;
-[`episodic_db_connect()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_connect.md)
-refuses a database at any other version.
+The schema is versioned (`episodic_schema_version` in
+`R/schema_migrate.R`).
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
-does not: it connects through `episodic_run_cron_connect()`, which
-migrates a database behind the package before the run row and outside
-the detection transaction (MariaDB/MySQL commit DDL implicitly), unless
-`database.auto_migrate` is `false`; a database it will not open is
-refused with a failed run row. An upgrade lands by
-[`update.packages()`](https://rdrr.io/r/utils/update.packages.html) at
-labs nobody watches closely, and a run that refused would stop
-surveillance there until someone read a cron log. Migrations serialise
-on a server lock (MariaDB) or `BEGIN IMMEDIATE` (SQLite), re-read the
-version inside each step, and copy a SQLite file first. Any change to
-`inst/sql/schema.sql` that an existing database has to be brought along
-for means bumping that constant and adding a matching entry to
-`episodic_db_migrations()` - a function `(con, dialect)` that is
+auto-migrates via `episodic_run_cron_connect()` unless
+`database.auto_migrate` is `false`. Any change to `inst/sql/schema.sql`
+means bumping the version constant and adding a matching entry to
+`episodic_db_migrations()`, a function `(con, dialect)` that is
 idempotent, runs inside a transaction, and never drops or rewrites data.
-The one exception is a column nothing needs any more that holds exactly
-no data: it is dropped through `episodic_db_drop_empty_column()`, which
-keeps a column holding a value on any row and says so. Never remove an
-old migration: an instance may skip any number of versions.
+Exception: a column holding no data on any row may be dropped via
+`episodic_db_drop_empty_column()`. Never remove an old migration.
 
 Write ownership is strict: cron-owned tables are written only by
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md),
-app-owned tables only by the Shiny app. The app never updates or
-deletes, only inserts (event-sourced).
-
-One deliberate exception:
+app-owned tables only by the Shiny app (append-only, event-sourced). Two
+deliberate exceptions:
 [`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
-(in `R/cluster_manual.R`) is a third, console-invoked write path into
-`episodic_stream`, `episodic_cluster` and `episodic_cluster_manual_case`
-(all otherwise cron-owned), for clusters detected by another algorithm
-or system rather than by
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
-itself - exactly the same kind of exception
+writes to cron-owned tables for `origin = 'manual'` clusters, and
 [`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
-already is for the app-owned `episodic_app_user` table. Such a cluster
-gets `origin = 'manual'` on `episodic_cluster` and is excluded from
-`episodic_reconcile_stream()`’s matching and auto-closure (see
-`episodic_db_clusters_for_stream()`); its case-level detail, if any,
-lives in `episodic_cluster_manual_case`, never in `episodic_case`, so it
-can never reach denominators, line lists or patient search.
+writes to `episodic_app_user`.
 
 ### Configuration
 
-YAML-based, with recursive merge.
-`inst/config/episodic_default_config.yaml` ships documented defaults. An
-operator’s instance config (pointed at by `EPISODIC_CONFIG`) overlays
-key-by-key. The resolved configuration is hashed (SHA-1 over canonical
-JSON) and stored on every run for reproducibility. `notifications` and
-`access` are deliberately excluded from the hash (see
-`episodic_config_unhashed_sections`): both govern how the instance is
-operated rather than what a run computes, and notification settings
-additionally contain secrets that must never reach `config_snapshot`.
+YAML-based with recursive merge.
+`inst/config/episodic_default_config.yaml` ships defaults; an operator’s
+config (`EPISODIC_CONFIG`) overlays key-by-key. The resolved config is
+hashed (SHA-1 over canonical JSON) and stored per run.
+`episodic_config_unhashed_sections` (`notifications`, `access`,
+`report`, `database`) are stripped before hashing.
 
-Key config sections: `reconciliation`, `eligibility`,
-`effect_size_floor`, `same_place`, `farrington`, `mem`, `rare_trigger`,
-`priority_score`, `scale`, `geography`, `report`, `notifications`,
-`suppression`, `access`, `database`.
-
-An instance config is validated against the shipped defaults before
-merging (`episodic_config_validate()`): the defaults document the
-complete valid key set, so an unknown key, a value of the wrong type, or
-a null where a value is needed stops the run and names the key path.
-Adding a new key therefore means adding it to
-`inst/config/episodic_default_config.yaml`, or, if its children are
-named by the operator (pathogens, channels), to
-`episodic_config_open_sections`. A setting documented as “set to ~ to
-disable” must also be listed in `episodic_config_nullable_keys`.
+Validation (`episodic_config_validate()`) checks against shipped
+defaults: unknown keys, wrong types, or nulls where values are needed
+stop the run. Adding a new key means adding it to the defaults, or to
+`episodic_config_open_sections` for operator-named children. A nullable
+setting must be listed in `episodic_config_nullable_keys`.
 
 `EPISODIC_CONFIG`, `EPISODIC_PATHOGEN_CONFIG` and
-`EPISODIC_QUARTO_REPORT` set to a path that does not exist are errors,
-not fallbacks - the same rule `EPISODIC_PC_PROVINCE_MAP` already
-followed.
+`EPISODIC_QUARTO_REPORT` set to a nonexistent path are errors.
+`EPISODIC_STYLE` is the exception: a missing or invalid palette is
+announced (Info screen, log warning) but falls back to shipped defaults,
+because refusing would stop the dashboard over a colour.
 
-`EPISODIC_STYLE` is the one file that is announced rather than refused,
-because the palette is display-only and every process that draws
-anything resolves it, the cron included: refusing would stop the
-dashboard for every epidemiologist, and every alert and scheduled report
-with it, over a colour. `episodic_palette_config_resolve()` validates
-each value (a quoted hex colour, a font stack that cannot end a CSS
-declaration, a CSS length) and keeps the shipped value for any role that
-fails, or the whole shipped palette for a file that is missing or not
-YAML. The problem is shown on the Info screen’s `EPISODIC_STYLE` row,
-written to every run’s log as a `warn` line (`episodic_palette_trace()`)
-and raised once per process as a
-[`warning()`](https://rdrr.io/r/base/warning.html). The shipped value
-standing in is the defined default for that role, not an unmeasured
-quantity read as zero.
+The same palette styles everything: dashboard, reports, emails. A colour
+written literally into an email or report is a bug. Emails are styled
+inline from `episodic_mail_style()`.
 
-The same palette styles everything EpiSODIC draws. A report or an email
-is rendered by Quarto in an R process of its own, so the renderer
-resolves the palette and hands it to the template as `palette`; the
-shipped report template passes it to `episodic_palette_use()` before any
-chart is drawn and names `episodic.scss` (`episodic_report_scss()`,
-written beside the template for every render) as its theme. Emails are
-styled inline from `episodic_mail_style()`, since a mail client drops
-`<style>` blocks; a colour written literally into an email or report is
-a bug.
+Pathogen-specific parameters live in
+`inst/config/episodic_default_pathogen_config.csv`. An operator’s CSV
+(`EPISODIC_PATHOGEN_CONFIG`) overlays row-by-row: non-NA values
+override, unlisted pathogens keep shipped defaults.
 
-Pathogen-specific parameters (episode length, serial interval, severity
-weight) live in `inst/config/episodic_default_pathogen_config.csv`. An
-operator’s CSV (pointed at by `EPISODIC_PATHOGEN_CONFIG`) overlays
-row-by-row: for each pathogen the operator lists, non-NA values override
-the shipped default; pathogens not listed keep their shipped row.
-Resolved by `episodic_pathogen_config_resolve()` in `R/config.R`.
+### Internationalisation
+
+Eight languages (en, ar, nl, fr, de, hi, zh, es) plus regional variants.
+The CSS uses logical properties throughout (`margin-inline-start`, not
+`margin-left`); a physical `left`/`right` in `episodic.css` is a bug.
+
+Every number a reader sees goes through `episodic_format_number()`,
+driven by per-language `misc.decimal.mark`/`misc.thousands.*` keys,
+never `options(OutDec)` or the system locale. A
+`format(x, big.mark = ",")` reaching a screen is a bug;
+`episodic_css_pct()` is the one exception (machine-read CSS value).
+Identifiers (`O-123`, `E-45`, page numbers, versions) are rendered
+as-is, never grouped.
+
+Regional variants carry **only what differs** from their base language.
+`en` is British English, `es` is Spain’s Spanish; `en-GB`/`es-ES` are
+aliases. Unshipped regions (`nl-BE`) resolve to their language.
+
+Every language file lists keys sorted by byte order
+(`sort(method = "radix")`); `test-i18n.R` enforces this. A new key goes
+at its sorted place in every file it belongs to.
 
 ### Keys that must agree across feeds
 
-Two identifiers are transformed on the way in, and every feed that names
-one has to transform it the same way or it silently matches nothing:
-
 - **`institution_key`** is hashed by `episodic_institution_key_hash()`
-  before it is stored, so the case feed and the institution-activity
-  feed both supply the operator’s own key and both are hashed to match.
-  A loader comparing the raw key against the stored hash matches nothing
-  on any correctly prepared deployment, and patient-day normalisation
-  simply never engages.
-- **The patient-and-pathogen episode key** is built by
-  `episodic_case_group_key()`, which separates its parts with a control
-  character rather than concatenating them.
-  `episodic_cases_deduplicate()` groups on it and
-  `episodic_db_last_case_dates()` names its anchor dates with it; if the
-  two ever disagree, a stored episode is never matched and an incoming
-  positive arrives as a spurious second case.
+  before storage; every feed must supply the raw key and have it hashed
+  to match.
+- **The episode key** is built by `episodic_case_group_key()` with a
+  control-character separator. `episodic_cases_deduplicate()` and
+  `episodic_db_last_case_dates()` must agree on it.
 
 ### Notifications
 
-Configured under the `notifications` key in the instance YAML. Six
-channels: ntfy, SMTP, sendmail, Microsoft 365, Teams, Slack. Dispatched
-after the detection transaction commits, never inside it. Errors are
-caught and logged, never propagated. Implementation split across
-`R/notify.R` (dispatcher, message building) and `R/notify_channels.R`
-(per-channel send functions).
+Six channels: ntfy, SMTP, sendmail, Microsoft 365, Teams, Slack.
+Dispatched after the detection transaction commits, never inside it.
+Errors caught and logged, never propagated.
 
-The HTML body of the two routine emails can be an operator’s own Quarto
-template: `EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS` for the new-clusters
-alert, `EPISODIC_MAIL_TEMPLATE_REPORT` for the email a scheduled report
-is attached to (`R/mail_template.R`). Two variables rather than one,
-because the two carry different data. Only `.qmd` is accepted: Quarto is
-already what reports need, and an `.Rmd` rendered by Quarto has its
-`output:` options silently dropped. A template changes only what the
-email channels (`smtp`, `sendmail`, `microsoft365`) send; ntfy, Teams,
-Slack, the subject line and the run-failure email are untouched. A
-template that cannot be used (missing, not `.qmd`, no Quarto, a failed
-render) never costs an email: `episodic_mail_body()` sends the built-in
-body and logs a `danger` line naming the variable and the reason, and
-the same problem is on the Info screen, in
-[`episodic_notify_test()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notify_test.md)
-and in a `warn` line at the start of every run. Starting templates ship
-in `inst/mail/`;
-[`episodic_mail_template_preview()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_mail_template_preview.md)
-renders one against example data.
+Email bodies can be operator Quarto templates
+(`EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS`,
+`EPISODIC_MAIL_TEMPLATE_REPORT`); only `.qmd` accepted. A template that
+fails falls back to the built-in body and logs a `danger` line.
 
 ### Roles
 
-Two roles for dashboard access:
+- `epidemiologist`: read + write (assess, classify, close, mute,
+  declare, render reports)
+- `viewer`: read-only (sees everything but cannot record assessments or
+  declarations)
 
-- `epidemiologist`: read + write (assess outbreaks and epidemics,
-  classify, close, mute, record declarations, render reports)
-- `viewer`: read-only (sees everything including patient-level detail,
-  but cannot record assessments or declarations)
+`access.require_login` ships `false`; fails closed on anything it cannot
+read as `false`. Both sign-in outcomes are recorded (success as event,
+failure in `episodic_app_login_failure`). The auth endpoint reveals
+nothing about which failure reason applied.
 
-`access.require_login` ships as `false`: a freshly installed instance
-reads open, and an operator who wants it closed to anonymous visitors
-sets it explicitly. `episodic_app_require_login()` still fails closed
-(`true`) on anything it cannot read as `false` - a malformed or partial
-config errs toward requiring a sign-in, never toward opening one that
-was not asked for.
-
-Both sign-in outcomes are recorded: a success as a `login` event on the
-account, a refusal in `episodic_app_login_failure` (which of unknown
-username / wrong password / deactivated account, plus the username as
-typed - a failure may name no account, which is why it is not an
-`episodic_app_user_event`). Both surface on the Activity screen under
-the `signin` category, and are withheld from a reader who has not signed
-in - on an instance running open, “who has an account here” is not for a
-stranger. `episodic_auth_login()` still tells the visitor nothing about
-which of the three it was.
-
-Accounts are added via
-[`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
-at the R console; there is also in-app account management.
-
-## File layout
-
-    R/
-      run_cron.R          # cron entry point, episodic_trace(), the full pipeline
-      run_app.R           # Shiny app entry point
-      config.R            # YAML config: resolve, merge, canonicalise, hash
-      cases.R             # case data requirements and deduplication entry
-      cases_check.R       # episodic_check_cases() validation
-      cases_dedup.R       # episode deduplication (via AMR::get_episode)
-      cases_load.R        # loading cases into the database
-      reconcile.R         # match detections to persistent outbreaks/epidemics, incl. epidemic closure and auto-close of stale unassessed clusters
-      reconcile_suppress.R # lattice suppression (continuous across the outbreak/epidemic scale boundary)
-      cluster_manual.R    # episodic_add_manual_cluster() - clusters from other systems
-      detect_*.R          # the four detectors
-      notify.R            # notification dispatcher and message building
-      notify_channels.R   # per-channel send functions (ntfy, smtp, etc.)
-      mail_template.R     # operator email templates, inline email styles from the palette
-      score_priority.R    # composite priority score
-      db_cron_write.R     # all cron-side DB writes
-      db_read.R           # all DB reads (shared by cron and app)
-      db_app_write.R      # all app-side DB writes (append-only)
-      db_query.R          # the only route to a query: episodic_db_get_query(), episodic_db_execute()
-      schema_migrate.R    # schema creation and migration
-      app_server.R        # Shiny server
-      app_server_notes.R  # wires the cluster notes save button
-      app_ui.R            # Shiny UI
-      app_dossier.R       # outbreak dossier (the main assessment screen)
-      app_epidemic_ui.R   # Epidemics screen: rail, dossier, assessment rail
-      app_pathogen.R      # pathogen overview panel
-      app_charts.R        # reusable chart components
-      app_widgets.R       # reusable UI widgets
-      app_read.R          # data loading for the dashboard
-      i18n.R              # translation system (episodic_tr)
-      interpretation.R    # AI/template-based narrative summaries
-      report_render.R     # Quarto outbreak report rendering
-      validate_detection.R  # episodic_validate_detection(): the prospective replay
-      validate_match.R      # matching clusters to seeded outbreaks on case sets
-      validate_metrics.R    # Wilson/Poisson intervals, Kaplan-Meier, AUC
-      validate_summary.R    # the headline numbers, as one long table
-      validate_comparator.R # naive rules measured the same way
-      validate_rethreshold.R # re-match a finished replay at other thresholds
-    inst/
-      config/episodic_default_config.yaml       # shipped detection defaults
-      config/episodic_default_style.yaml       # shipped colour palette defaults
-      config/episodic_default_pathogen_config.csv # per-pathogen parameters
-      sql/schema.sql            # database schema (SQLite dialect)
-      app/                      # Shiny app assets (CSS, JS)
-      i18n/                     # translation JSON files (en, nl, de, fr, es, ar, hi, zh)
-      report/                   # Quarto report template
-      mail/                     # starting templates for the two email bodies
-    tests/testthat/             # test suite across 76 files
-    vignettes/                  # 9 vignettes
-    data-raw/validation/        # the full detection validation study (never ships)
-
-## Measuring detection
-
-The Performance screen measures the instance against its own
-epidemiologists’ verdicts, which is a good operational metric and a
-circular one for a paper: sensitivity is structurally unmeasurable that
-way, because an outbreak the detectors miss never becomes a cluster for
-anyone to judge.
+### Measuring detection
 
 [`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
-measures against known truth instead. It generates history with
-[`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md),
-replays it week by week through
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
-against a throwaway SQLite database handing each run only the cases
-sampled by that date, and matches clusters to seeded outbreaks **on case
-sets, in both directions** - an endemic winter cluster overlaps a seeded
-outbreak perfectly in time and shares not one case with it, so interval
-overlap decides nothing here.
+replays synthetic cases week by week against a throwaway SQLite
+database, matching clusters to seeded outbreaks **on case sets, in both
+directions**. Ground truth comes from
+[`episodic_synthetic_ground_truth()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md),
+not naming conventions.
 
-Ground truth is data, not a naming convention:
-[`episodic_synthetic_ground_truth()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md)
-returns what was injected. The `PT-OUTBREAK-*` patient keys are a
-convenience for a human reading a line list; nothing measures against
-them.
-
-Rules that hold throughout: a metric with no denominator is `NA`, never
-0 (a negative control has no sensitivity, not a sensitivity of zero); an
-outbreak nothing found is right-censored at the time it was watched for,
-never dropped from the median; and a threshold sweep re-matches a
-finished replay
+Rules: a metric with no denominator is `NA`, never 0; an undetected
+outbreak is right-censored, never dropped; a threshold sweep re-matches
+a finished replay
 ([`episodic_validate_rethreshold()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_rethreshold.md))
-rather than running detection again.
+rather than re-running detection. If a result is unflattering, it is
+reported.
 
-The exported entry point defaults to one seed and a short window so it
-returns in seconds. The multi-seed study, the negative control, the
-drop-one analysis, the comparators and the operating-point sweep live in
-`data-raw/validation/run_study.R`, which is in `.Rbuildignore` and must
-stay there: nothing that takes minutes may reach the suite, CI, an
-example or a vignette.
-
-If a result is unflattering, it is reported. Tuning
-`inst/config/episodic_default_config.yaml` until a number looks better
-and then quoting the number is fitting the evaluation to the answer.
+The multi-seed study and operating-point sweep live in
+`data-raw/validation/run_study.R` (in `.Rbuildignore`): nothing that
+takes minutes may reach the suite, CI, an example or a vignette.
 
 ## Development
 
@@ -620,28 +275,15 @@ computers instead.
 Rscript -e 'devtools::test()'
 ```
 
-All tests run against temporary SQLite databases created in
-`helper-db.R`. No external services or credentials are needed.
-
-Except `tests/testthat/test-mariadb_live.R`, which skips itself unless
-`EPISODIC_TEST_MARIADB_DSN` names a scratch MariaDB/MySQL database it
-may create and drop tables in. `.github/workflows/mariadb.yaml` runs the
-suite against a service container on one Linux job and fails the build
-if those tests skipped themselves, because the MariaDB dialect is
-produced by rewriting the SQLite schema and nothing else proves a server
-accepts the result.
+All tests run against temporary SQLite databases (`helper-db.R`).
+`test-mariadb_live.R` skips unless `EPISODIC_TEST_MARIADB_DSN` is set.
 
 ### Building documentation
 
 ``` bash
 Rscript -e 'devtools::document()'
-# for linting:
 Rscript -e 'styler::style_pkg()'
 ```
-
-This regenerates `man/` and `NAMESPACE` from roxygen2 comments. The
-package uses `Authors@R` in DESCRIPTION (not separate Author/Maintainer
-fields).
 
 ### R CMD check
 
@@ -650,138 +292,64 @@ R CMD build . && R CMD check EpiSODIC_*.tar.gz
 ```
 
 There is a pre-existing NOTE about Author/Maintainer fields because the
-package uses `Authors@R`, which requires building first. This is not a
-real problem.
+package uses `Authors@R`. This is not a real problem.
 
 ### NEWS.md
 
-Keep entries the way they already are: one version heading, then
-`## New`/`## Changed`/`## Fixed` sections, each a flat list of
-single-line bullets. No sub-bullets, no elaboration, no multi-sentence
-entries - one short line per change, stating what changed, not why.
+One version heading, then `## New`/`## Changed`/`## Fixed` sections,
+each a flat list of single-line bullets. No sub-bullets, no elaboration,
+no multi-sentence entries.
 
-### pkgdown site
+### pkgdown
 
-Do not regenerate the site; a GitHub Action will do that, available in
-.github/workflows.
-
-Yet, `_pkgdown.yml` groups every exported topic into a section. When
-adding a new exported function, it must be added to the appropriate
-section in `_pkgdown.yml` or the build will fail with “topics missing
-from index”.
+Do not regenerate the site; a GitHub Action does that. But
+`_pkgdown.yml` groups every exported topic, so new exports must be added
+to it or the build fails.
 
 ### Code style
 
-- File header: the standard Certe GPL-2 banner (17-line comment block)
-  goes at the top of every R file.
-- Multi-line function signatures: use hanging-indent, not
-  single-indent - the first argument stays on the same line as
-  `function(`, continuation lines align under it, and `) {` shares the
-  line with the last argument (never on its own line). Both are
-  permitted by the tidyverse style guide
-  (style.tidyverse.org/functions.html), but styler \>= 1.11.0 defaults
-  to single-indent with `) {` isolated, which this project does not
-  want. Styler cannot be configured to prefer one over the other (raised
-  and declined upstream: github.com/r-lib/styler/pull/1235) - it detects
-  the shape per function from the source itself
-  (`is_single_indent_function_declaration()` in styler’s
-  `R/rules-indention.R`: first argument on a new line after `function(`
-  means single-indent; first argument sharing that line, with
-  continuation lines indented more than `2 * indent_by` i.e. more than 4
-  spaces by default, means hanging-indent) and preserves whichever you
-  wrote, so writing it this way is stable across `styler::style_pkg()`
-  runs regardless of styler version. One real cost: renaming a function
-  invalidates every continuation line’s alignment in its own signature,
-  since styler will not recompute it for you - realign by hand when that
-  happens.
+- **File header**: the standard Certe GPL-2 banner (17-line comment
+  block) at the top of every R file.
+- **Multi-line function signatures**: hanging-indent, not single-indent.
+  First argument on the same line as `function(`, continuation lines
+  align under it, `) {` on the last argument’s line. This is stable
+  across `styler::style_pkg()` runs. Renaming a function means
+  realigning its continuation lines by hand.
 - **Comments describe the code as it is, never as it was.** No “this
-  used to”, “was wrong until”, “the earlier version”, “the exact bug
-  report this fixes”, “which is how the first deployment ended up with”.
-  A file whose comments narrate their own defect history reads as a pile
-  of bandages rather than a design, and every one of those sentences
-  ages into a scar nobody can see any more. Keep the *reason* and drop
-  the incident: name the alternative and what it costs, in the present
-  tense, as a property of the design - “filtering on pathogen and
-  institution alone would count every case in the hospital for a ward
-  cluster, and `n_cases` drives the priority score”. The same applies to
-  test comments: state the invariant the test holds, not the regression
-  that prompted it. History belongs in the commit message, the pull
-  request and `NEWS.md`, which are the records built to carry it.
-- Internal functions: use `@keywords internal` and `@noRd` for functions
-  that should not have a man page. Also, don’t reference functions as
-  `[some_function()]` there, but use \`some_function()\` instead, as
-  otherwise roxygen2 gives a warning.
-- Logging: use `episodic_trace()` (defined in `run_cron.R`) for
-  cron-side logging, [`message()`](https://rdrr.io/r/base/message.html)
-  for interactive functions. Its `severity` (`plain`, `warn`, `danger`)
-  is for a line saying a component produced nothing it structurally
-  could not have produced, or that a setting means it never will, or
-  that failed outright - never a phase heading, a count or decoration,
-  or the log becomes a wall of colour in which nothing stands out again.
-  The Activity screen’s run modal marks its own lines on the same rule.
-- Database: all SQL is inline (no ORM). Parameterised queries
-  throughout, never string interpolation of user values. Every query
-  goes through `episodic_db_get_query()` or `episodic_db_execute()`
-  (`R/db_query.R`), never
+  used to”, “was wrong until”, “the exact bug this fixes”. Name the
+  alternative and its cost, present tense. Test comments state the
+  invariant, not the regression. History belongs in the commit message,
+  PR and `NEWS.md`.
+- **Internal functions**: use `@keywords internal` and `@noRd`.
+  Reference functions as \`some_function()\`, not `[some_function()]`.
+- **Logging**: `episodic_trace()` for cron-side,
+  [`message()`](https://rdrr.io/r/base/message.html) for interactive.
+  Severity (`plain`, `warn`, `danger`) is for structural problems only,
+  never phase headings, counts or decoration.
+- **Database**: all SQL inline, parameterised, through
+  `episodic_db_get_query()`/`episodic_db_execute()` only, never
   [`DBI::dbGetQuery()`](https://dbi.r-dbi.org/reference/dbGetQuery.html)/[`DBI::dbExecute()`](https://dbi.r-dbi.org/reference/dbExecute.html)
-  directly: they evaluate every argument before the driver prepares the
-  statement, because on MariaDB a parameter whose evaluation queries the
-  same connection closes the prepared statement and kills the R process
-  with no R-level error. `test-db_reentrancy.R` fails on any direct DBI
-  query call in the namespace.
-- Dependencies: hard dependencies in Imports, optional integrations in
-  Suggests. Gate optional packages at runtime with
-  [`rlang::check_installed()`](https://rlang.r-lib.org/reference/is_installed.html)
-  or [`requireNamespace()`](https://rdrr.io/r/base/ns-load.html).
-  Exception: `bslib`, `cli`, `commonmark`, `htmltools` and `jsonlite`
-  are used unconditionally but live in Suggests, not Imports - `shiny`
-  (a hard Import) already Imports every one of them, so they are
-  guaranteed present whenever EpiSODIC is, without EpiSODIC also
-  declaring them. Always call them with `pkg::fun()`, never
-  `@importFrom`, since no NAMESPACE import backs them. `rlang` itself
-  stays a real Import, not this exception: `R/app_charts.R` imports its
-  `.data` pronoun (`@importFrom rlang .data`), which
-  [`ggplot2::aes()`](https://ggplot2.tidyverse.org/reference/aes.html)
-  only recognises as a data-mask pronoun when referenced by the bare
-  symbol `.data` - `rlang::.data$col` is a different expression to
-  `aes()`’s NSE and errors with “Can’t subset `.data` outside of a data
-  mask context”. Every other `rlang::` call in the codebase
-  (`check_installed()`, `cnd_message()`, etc.) is an ordinary function
-  call and would have been fine moved to Suggests; the `.data` import is
-  the one thing forcing the whole package to stay in Imports.
-- Config hash: the keys in `episodic_config_unhashed_sections`
-  (`notifications`, `access`, `report`, `database`) are stripped before
-  hashing. Any new config section that contains secrets or is
-  operationally irrelevant to detection should be added there.
-- Anonymous access: `access.require_login` closes the app to visitors
-  who have not signed in. It is enforced server-side, by not rendering -
-  `episodic_app_access_granted()` gates every output and every
-  data-bearing observer, so nothing reaches the page to be uncovered
-  client-side. Any new output or observer that reads surveillance data
-  must go behind the same gate. It is YAML-only, with no Settings-screen
-  override, on purpose.
-- Error handling: notification and report-rendering errors must not
+  directly (MariaDB re-entrancy kills the R process).
+  `test-db_reentrancy.R` enforces this.
+- **Dependencies**: hard dependencies in Imports, optional in Suggests.
+  `bslib`, `cli`, `commonmark`, `htmltools`, `jsonlite` live in Suggests
+  (guaranteed by `shiny`’s own Imports) but must be called as
+  `pkg::fun()`, never `@importFrom`. `rlang` stays in Imports because
+  `R/app_charts.R` imports `.data` for
+  [`ggplot2::aes()`](https://ggplot2.tidyverse.org/reference/aes.html).
+- **Config hash**: `episodic_config_unhashed_sections` strips secrets
+  and operationally irrelevant sections before hashing. New sections
+  with secrets or no detection relevance must be added there.
+- **Anonymous access**: `episodic_app_access_granted()` gates every
+  output and data-bearing observer server-side. Any new output reading
+  surveillance data must go behind the same gate.
+- **Error handling**: notification and report-rendering errors must not
   propagate to the cron pipeline. Wrap in `tryCatch` and log via
   `episodic_trace()`.
-- Event sourcing: the app only inserts into `episodic_assessment_event`,
-  never updates or deletes. Current state is derived from the event
-  stream.
+- **Event sourcing**: the app only inserts into
+  `episodic_assessment_event`, never updates or deletes.
 
 ### Environment variables
-
-| Variable | Purpose |
-|----|----|
-| `EPISODIC_DB` | Database path (SQLite) or DSN (MariaDB) |
-| `EPISODIC_CONFIG` | Instance detection + notification config YAML |
-| `EPISODIC_PATHOGEN_CONFIG` | Per-pathogen parameter CSV overlay |
-| `EPISODIC_STYLE` | Instance colour palette YAML |
-| `EPISODIC_LANGUAGE` | Dashboard/report language (en, ar, nl, fr, de, hi, zh, es, or a regional variant: en-US, es-419) |
-| `EPISODIC_GEO_DATA` | Geographic reference data (.rds, sf object) |
-| `EPISODIC_GEO_DATA_OVERLAY` | Optional region-outline overlay (.rds) |
-| `EPISODIC_PC_PROVINCE_MAP` | Postcode-to-province CSV mapping |
-| `EPISODIC_QUARTO_REPORT` | Custom Quarto report template path |
-| `EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS` | Quarto template for the new-clusters email body |
-| `EPISODIC_MAIL_TEMPLATE_REPORT` | Quarto template for the scheduled-report email body |
 
 See
 [`vignette("environment-variables")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md)
@@ -789,21 +357,15 @@ for the full reference.
 
 ### Key invariants
 
-- Detection runs are transactional: either the full run commits or
-  nothing does.
+- Detection runs are transactional: full commit or nothing.
 - Notifications fire after commit, never inside the transaction.
-- `config_hash` is deterministic: same config in, same hash out,
-  regardless of key order or platform.
-- Stream keys are deterministic: same (pathogen, level, institution_id,
-  ward, region_code) always produces the same SHA-1 key.
-- Cluster IDs are database-assigned (AUTOINCREMENT); cluster identity is
-  the stream + the case-free-days gap logic, not the ID. Rendered as
-  `O-{id}` for outbreaks and `E-{id}` for epidemics.
-- The scale boundary is configuration (`scale.epidemic_levels`), not a
-  constant. Changing it changes what a run computes.
-- A seasonal epidemic closes on the post-epidemic threshold or the
-  trough backstop; a non-seasonal epidemic closes on case-free-days. A
-  declaration (season_started, season_not_yet, season_ended) is a human
-  act, never automatic.
+- `config_hash` is deterministic regardless of key order or platform.
+- Stream keys are deterministic SHA-1 hashes.
+- Cluster IDs are database-assigned; cluster identity is stream +
+  case-free-days gap logic. Rendered as `O-{id}` / `E-{id}`.
+- The scale boundary is configuration, not a constant.
+- A seasonal epidemic closes on post-epidemic threshold or trough
+  backstop; non-seasonal on case-free-days. Declarations are human acts,
+  never automatic.
 - The app never writes to cron-owned tables; the cron never writes to
   app-owned tables.

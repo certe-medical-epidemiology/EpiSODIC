@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.23.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,34 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.24.0" id="episodic-0240">EpiSODIC 0.24.0<a class="anchor" aria-label="anchor" href="#episodic-0240"></a></h2>
+<div class="section level3">
+<h3 id="new-0-24-0">New<a class="anchor" aria-label="anchor" href="#new-0-24-0"></a></h3>
+<ul><li>Each detection run nowcasts every stream carrying an open cluster, from the stream’s own reporting delays (<code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">surveillance::nowcast()</a></code>, <code>bayes.trunc</code>), configured under <code>forecast.nowcast</code>
+</li>
+<li>Each run’s nowcast is stored in <code>episodic_forecast</code> and <code>episodic_forecast_value</code> (schema version 11), with the reason when a stream could not be nowcast</li>
+<li>The outbreak and Epidemics dossier curves draw the nowcast’s median and 90% interval on the days and weeks still being reported</li>
+<li>The Performance screen scores stored nowcasts once reporting is complete: interval coverage, weighted interval score, and the error of taking the reported count as final</li>
+<li>Each detection run gives every open outbreak of a transmissible pathogen the probability that it is over, from the serial interval, the pathogen’s offspring distribution and the stream’s reporting completeness, configured under <code>forecast.outbreak_end</code>
+</li>
+<li>The pathogen CSV takes <code>end_r</code> and <code>end_k</code>, the offspring mean and dispersion, shipped empty for every pathogen</li>
+<li>The outbreak dossier shows the probability beside the case-free days, with the date it reaches <code>forecast.outbreak_end.probability_threshold</code>, or why there is none</li>
+<li>Each run’s outbreak-end probability is stored in <code>episodic_cluster_forecast</code> and <code>episodic_cluster_forecast_value</code> (schema version 12)</li>
+<li>The Performance screen scores stored outbreak-end probabilities once the case-free window after the last case is reported: mean probability, share over, and Brier score</li>
+<li>The Pathogen screen’s parameter panel shows a transmissible pathogen’s offspring distribution</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-24-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-24-0"></a></h3>
+<ul><li>The Performance screen’s outbreaks-only note is limited to its detection and assessment metrics, since its nowcast section covers epidemics too</li>
+<li>A stat tile can carry a line between its caption and its value saying what the value measures</li>
+<li>The Epidemics dossier’s “Outbreaks during” tile is “Linked outbreaks”, with a line saying what links them</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-24-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-24-0"></a></h3>
+<ul><li>The outbreak dossier’s case-free days count from the latest run’s date instead of today, so a day without a run, a replay or a backfill no longer adds case-free days</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.23.0" id="episodic-0230">EpiSODIC 0.23.0<a class="anchor" aria-label="anchor" href="#episodic-0230"></a></h2>
 <div class="section level3">

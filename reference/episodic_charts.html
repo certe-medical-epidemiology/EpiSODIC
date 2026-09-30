@@ -23,7 +23,7 @@ layers."><meta property="og:image" content="https://certe-medical-epidemiology.g
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.23.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -87,7 +87,11 @@ layers.</p>
 <code>n_cases</code> (case count), and <code>incomplete</code> (logical, <code>TRUE</code> for the most
 recent day(s) where reporting is still catching up - these are drawn at
 reduced opacity as a visual reminder not to over-interpret a downturn
-that is really just a reporting lag).</p></dd>
+that is really just a reporting lag). Optionally <code>nowcast_low</code>,
+<code>nowcast_mid</code> and <code>nowcast_high</code>: the 5%, 50% and 95% quantiles of a
+day's expected final count once reporting is complete, drawn as a
+line with an open point at the median on the days that have them
+(<code>NA</code> elsewhere).</p></dd>
 
 
 <dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>

@@ -473,6 +473,45 @@ per-pathogen CSV, with its default and one-line effect.
 
 [TABLE]
 
+### Nowcast
+
+Every run nowcasts each stream that carries an open cluster: the
+expected final count of its most recent days and weeks, once reporting
+is complete, from the stream’s own reporting delays
+([`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html),
+method `bayes.trunc`). A case’s reporting date is the date of the run
+that first loaded it, so the delay’s resolution is the cron schedule.
+Only cases sampled on or after the first run on the database carry an
+observed delay; a backfilled archive does not. Each run’s nowcast is
+stored, drawn on the dossier curves, and scored on the Performance
+screen once its targets are past `max_delay_days`.
+
+[TABLE]
+
+### Outbreak-end probability
+
+Every run gives each open outbreak of a transmissible pathogen
+(`rt_applicable` 1, with a complete serial interval) the probability
+that it is over: that none of its cases goes on to cause a case not yet
+reported (Nishiura et al. 2016, with the negative binomial offspring
+distribution of Linton et al. 2022). Its inputs are the pathogen’s
+serial interval and its offspring mean and dispersion (`end_r`, `end_k`
+in the pathogen CSV), and the stream’s reporting completeness, so quiet
+days whose cases may still be on their way count for less. It is not
+computed for an outbreak whose cases all fall within one maximum
+incubation period, which points to a common source rather than
+transmission. The dossier shows it beside the case-free days, with the
+date it reaches `probability_threshold` if no further case is reported;
+it never closes an outbreak. Each run’s probability is stored and scored
+on the Performance screen once the case-free window after the last case
+has passed and been reported.
+
+`end_r` and `end_k` ship empty for every pathogen: set them in your
+pathogen CSV from a source you have checked for your setting. Until they
+are set, the dossier says so instead of showing a probability.
+
+[TABLE]
+
 ### Priority score
 
 [TABLE]

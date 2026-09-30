@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.23.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -455,11 +455,20 @@ rather than opening a new cluster</td>
 </td>
 </tr>
 <tr class="odd">
+<td>
+<code>end_r</code>, <code>end_k</code>
+</td>
+<td>Mean and dispersion of the negative binomial number of cases each
+outbreak case goes on to cause, for the probability that an outbreak is
+over; both or neither, <code>end_r</code> at least 0 and
+<code>end_k</code> above 0. Shipped empty for every pathogen</td>
+</tr>
+<tr class="even">
 <td><code>mem_mode</code></td>
 <td>MEM seasonal detection: <code>auto</code> (derive from data),
 <code>yes</code> (force on), <code>no</code> (force off)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>severity_weight</code></td>
 <td>Clinical severity weight (0 to 1) feeding the priority score’s
 severity component</td>
@@ -868,6 +877,122 @@ recommended)</td>
 </table>
 </div>
 <div class="section level3">
+<h3 id="nowcast">Nowcast<a class="anchor" aria-label="anchor" href="#nowcast"></a>
+</h3>
+<p>Every run nowcasts each stream that carries an open cluster: the
+expected final count of its most recent days and weeks, once reporting
+is complete, from the stream’s own reporting delays
+(<code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">surveillance::nowcast()</a></code>, method <code>bayes.trunc</code>).
+A case’s reporting date is the date of the run that first loaded it, so
+the delay’s resolution is the cron schedule. Only cases sampled on or
+after the first run on the database carry an observed delay; a
+backfilled archive does not. Each run’s nowcast is stored, drawn on the
+dossier curves, and scored on the Performance screen once its targets
+are past <code>max_delay_days</code>.</p>
+<table class="table">
+<colgroup>
+<col width="24%">
+<col width="5%">
+<col width="70%">
+</colgroup>
+<thead><tr class="header">
+<th>Key</th>
+<th align="right">Default</th>
+<th>Effect</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code style="white-space: nowrap;">forecast:<br>  nowcast:<br>    enabled</code></td>
+<td align="right"><code>TRUE</code></td>
+<td>Master switch</td>
+</tr>
+<tr class="even">
+<td><code style="white-space: nowrap;">forecast:<br>  nowcast:<br>    max_delay_days</code></td>
+<td align="right">21</td>
+<td>Reporting horizon in days: the longest delay allowed for, and the
+days nowcast</td>
+</tr>
+<tr class="odd">
+<td><code style="white-space: nowrap;">forecast:<br>  nowcast:<br>    min_completeness</code></td>
+<td align="right">0.25</td>
+<td>Expected share already reported below which a day is not
+nowcast</td>
+</tr>
+<tr class="even">
+<td><code style="white-space: nowrap;">forecast:<br>  nowcast:<br>    min_reported_cases</code></td>
+<td align="right">20</td>
+<td>Cases with a fully observed delay a stream needs before it is
+nowcast</td>
+</tr>
+<tr class="odd">
+<td><code style="white-space: nowrap;">forecast:<br>  nowcast:<br>    prior_window_days</code></td>
+<td align="right">28</td>
+<td>Fully reported days whose mean daily count centres the prior</td>
+</tr>
+<tr class="even">
+<td><code style="white-space: nowrap;">forecast:<br>  nowcast:<br>    delay_window_days</code></td>
+<td align="right"><code>~</code></td>
+<td>Days of reports the delay is estimated from; <code>~</code> uses the
+whole history, a value must be at least <code>max_delay_days</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code style="white-space: nowrap;">forecast:<br>  nowcast:<br>    n_samples</code></td>
+<td align="right">500</td>
+<td>Delay-distribution samples per nowcast (at least 100)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="outbreak-end-probability">Outbreak-end probability<a class="anchor" aria-label="anchor" href="#outbreak-end-probability"></a>
+</h3>
+<p>Every run gives each open outbreak of a transmissible pathogen
+(<code>rt_applicable</code> 1, with a complete serial interval) the
+probability that it is over: that none of its cases goes on to cause a
+case not yet reported (Nishiura et al. 2016, with the negative binomial
+offspring distribution of Linton et al. 2022). Its inputs are the
+pathogen’s serial interval and its offspring mean and dispersion
+(<code>end_r</code>, <code>end_k</code> in the pathogen CSV), and the
+stream’s reporting completeness, so quiet days whose cases may still be
+on their way count for less. It is not computed for an outbreak whose
+cases all fall within one maximum incubation period, which points to a
+common source rather than transmission. The dossier shows it beside the
+case-free days, with the date it reaches
+<code>probability_threshold</code> if no further case is reported; it
+never closes an outbreak. Each run’s probability is stored and scored on
+the Performance screen once the case-free window after the last case has
+passed and been reported.</p>
+<p><code>end_r</code> and <code>end_k</code> ship empty for every
+pathogen: set them in your pathogen CSV from a source you have checked
+for your setting. Until they are set, the dossier says so instead of
+showing a probability.</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="6%">
+<col width="59%">
+</colgroup>
+<thead><tr class="header">
+<th>Key</th>
+<th align="right">Default</th>
+<th>Effect</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code style="white-space: nowrap;">forecast:<br>  outbreak_end:<br>    enabled</code></td>
+<td align="right"><code>TRUE</code></td>
+<td>Master switch</td>
+</tr>
+<tr class="even">
+<td><code style="white-space: nowrap;">forecast:<br>  outbreak_end:<br>    probability_threshold</code></td>
+<td align="right">0.95</td>
+<td>Probability whose date the dossier reports (above 0, below 1)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
 <h3 id="priority-score">Priority score<a class="anchor" aria-label="anchor" href="#priority-score"></a>
 </h3>
 <table class="table">
@@ -1138,12 +1263,19 @@ package’s schema itself; see <a href="https://certe-medical-epidemiology.githu
 <td>Serial interval distribution</td>
 </tr>
 <tr class="even">
+<td>
+<code>end_r</code>, <code>end_k</code>
+</td>
+<td align="right">(empty)</td>
+<td>Offspring mean and dispersion for the outbreak-end probability</td>
+</tr>
+<tr class="odd">
 <td><code>mem_mode</code></td>
 <td align="right">auto</td>
 <td>MEM: <code>auto</code>, <code>yes</code>, or <code>no</code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>severity_weight</code></td>
 <td align="right">1.00</td>
 <td>Clinical severity for priority scoring (0 to 1)</td>
