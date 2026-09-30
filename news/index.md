@@ -33,6 +33,29 @@
   probability, share over, and Brier score
 - The Pathogen screen’s parameter panel shows a transmissible pathogen’s
   offspring distribution
+- Each detection run estimates every open epidemic’s weekly growth rate,
+  the chance it is growing and the chance it is past its peak so far, on
+  the nowcast-corrected weekly counts, configured under
+  `forecast.epidemic_direction`
+- The Epidemics dossier shows the weekly growth with its doubling or
+  halving time and the weeks it covers, and the chance the epidemic is
+  past its peak, or why there is none
+- Each run’s epidemic direction is stored in `episodic_cluster_forecast`
+  and `episodic_cluster_forecast_estimate` (schema version 13)
+- The Performance screen scores stored epidemic directions once their
+  weeks are fully reported: mean probability, share true, and Brier
+  score
+- A seasonal epidemic stores the typical past season from the MEM fit
+  that set its thresholds: its curve, start week and length, in
+  `episodic_epidemic_season` and `episodic_epidemic_typical_week`
+  (schema version 13)
+- The Epidemics dossier draws the typical past season on the weekly
+  curve, aligned to the epidemic’s onset, and shows the typical length
+  and how much earlier or later this epidemic started
+- The typical past season’s curve is the median of the past seasons by
+  default, set by `mem.typical_curve` (`median`, `geometric_mean` or
+  `arithmetic_mean`)
+- The tuning vignette’s reference covers the `notifications` keys
 
 ### Changed
 

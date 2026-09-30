@@ -512,6 +512,62 @@ are set, the dossier says so instead of showing a probability.
 
 [TABLE]
 
+### Epidemic direction
+
+Every run estimates, for each open epidemic, its stream’s weekly growth
+rate over the last `window_weeks` weeks: a log-linear Poisson regression
+on the weekly counts, its standard error scaled by the Pearson
+dispersion (never below Poisson). The weeks still inside the nowcast’s
+reporting horizon (`forecast.nowcast.max_delay_days`) are taken from the
+nowcast, their uncertainty carried through by sampling; a week neither
+fully reported nor nowcast ends the window before it rather than being
+read as final, so without a nowcast the window ends some weeks back, and
+the dossier names the weeks it covers. Weeks that begin before the
+earliest sample date in the case data are left out, never counted as
+weeks without cases. The dossier shows the change in weekly cases the
+trend implies, the doubling or halving time when the 90% interval is on
+one side of zero, the chance the epidemic is growing, and the chance it
+is past its peak so far: declining, with its last week below its highest
+since its first week. That last says nothing about whether it will rise
+again. Each run’s estimate is stored and scored on the Performance
+screen once its weeks have passed the reporting horizon, against the
+same trend fitted to their counts as then reported.
+
+[TABLE]
+
+### Typical past season
+
+When MEM opens a seasonal epidemic, the fit that set its thresholds also
+gives the typical course of the past seasons’ epidemics
+([`mem::memmodel()`](https://rdrr.io/pkg/mem/man/memmodel.html)’s
+typical curve, with its 95% interval), the week they typically started,
+and their typical length. These are stored with the epidemic and fixed,
+like its thresholds. The Epidemics dossier draws the typical curve on
+the weekly curve with its start at this epidemic’s onset, and gives the
+typical length and how many weeks earlier or later this epidemic
+started. It describes past seasons and is labelled as such; it is not a
+forecast.
+
+`mem.typical_curve` sets the statistic the curve summarises the aligned
+past seasons by, week by week. It changes only the curve: the
+thresholds, the intensity bands, and the typical start and length are
+the same whichever it is. The start and length are always medians.
+
+| Value | Curve | Interval |
+|----|----|----|
+| `median` | The middle past season in each week: one extreme season does not move it. Equal to the arithmetic mean with two seasons | Hettmansperger-Sheather/Nyblom, normal approximation with few seasons |
+| `geometric_mean` | `exp(mean(log(x + 1))) - 1`: less pulled up by one large season than the arithmetic mean, pulled down by one quiet one, and always below it | Normal on the log scale |
+| `arithmetic_mean` | The average: a single severe season raises the whole curve | Normal, symmetric, so its lower limit can fall below zero in quiet weeks |
+
+`mem`’s median with a bootstrap interval (`i.type.curve = 4`) is
+deliberately not offered: it samples at random, so the same seasons give
+a different curve on each fit and the fit could not be reused from run
+to run; it takes some thirty seconds per fit; and it fails on two
+seasons. The dossier names the statistic under the curve, and a limit
+below zero is drawn at zero. Changing the value refits every stream’s
+MEM model on the next run, but an epidemic already open keeps the curve
+it opened with.
+
 ### Priority score
 
 [TABLE]
@@ -527,6 +583,17 @@ are set, the dossier says so instead of showing a probability.
 ### Suppression
 
 [TABLE]
+
+### Notifications
+
+`notifications` ships empty (`~`): nothing is sent until it is
+configured. Its keys are about delivery, not detection, and are left out
+of `config_hash`.
+
+[TABLE]
+
+Every channel’s settings, and how to test them, are in
+[**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html).
 
 ### Report
 

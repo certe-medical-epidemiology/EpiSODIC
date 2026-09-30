@@ -48,6 +48,15 @@
 <li>Each run’s outbreak-end probability is stored in <code>episodic_cluster_forecast</code> and <code>episodic_cluster_forecast_value</code> (schema version 12)</li>
 <li>The Performance screen scores stored outbreak-end probabilities once the case-free window after the last case is reported: mean probability, share over, and Brier score</li>
 <li>The Pathogen screen’s parameter panel shows a transmissible pathogen’s offspring distribution</li>
+<li>Each detection run estimates every open epidemic’s weekly growth rate, the chance it is growing and the chance it is past its peak so far, on the nowcast-corrected weekly counts, configured under <code>forecast.epidemic_direction</code>
+</li>
+<li>The Epidemics dossier shows the weekly growth with its doubling or halving time and the weeks it covers, and the chance the epidemic is past its peak, or why there is none</li>
+<li>Each run’s epidemic direction is stored in <code>episodic_cluster_forecast</code> and <code>episodic_cluster_forecast_estimate</code> (schema version 13)</li>
+<li>The Performance screen scores stored epidemic directions once their weeks are fully reported: mean probability, share true, and Brier score</li>
+<li>A seasonal epidemic stores the typical past season from the MEM fit that set its thresholds: its curve, start week and length, in <code>episodic_epidemic_season</code> and <code>episodic_epidemic_typical_week</code> (schema version 13)</li>
+<li>The Epidemics dossier draws the typical past season on the weekly curve, aligned to the epidemic’s onset, and shows the typical length and how much earlier or later this epidemic started</li>
+<li>The typical past season’s curve is the median of the past seasons by default, set by <code>mem.typical_curve</code> (<code>median</code>, <code>geometric_mean</code> or <code>arithmetic_mean</code>)</li>
+<li>The tuning vignette’s reference covers the <code>notifications</code> keys</li>
 </ul></div>
 <div class="section level3">
 <h3 id="changed-0-24-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-24-0"></a></h3>

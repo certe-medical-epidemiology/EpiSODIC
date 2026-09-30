@@ -834,6 +834,13 @@ year</td>
 <code>mem_mode = 'auto'</code>
 </td>
 </tr>
+<tr class="odd">
+<td><code style="white-space: nowrap;">mem:<br>  typical_curve</code></td>
+<td align="right"><code>median</code></td>
+<td>Statistic the typical past season is summarised by:
+<code>median</code>, <code>geometric_mean</code> or
+<code>arithmetic_mean</code>; see “Typical past season” below</td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -993,6 +1000,125 @@ showing a probability.</p>
 </table>
 </div>
 <div class="section level3">
+<h3 id="epidemic-direction">Epidemic direction<a class="anchor" aria-label="anchor" href="#epidemic-direction"></a>
+</h3>
+<p>Every run estimates, for each open epidemic, its stream’s weekly
+growth rate over the last <code>window_weeks</code> weeks: a log-linear
+Poisson regression on the weekly counts, its standard error scaled by
+the Pearson dispersion (never below Poisson). The weeks still inside the
+nowcast’s reporting horizon
+(<code>forecast.nowcast.max_delay_days</code>) are taken from the
+nowcast, their uncertainty carried through by sampling; a week neither
+fully reported nor nowcast ends the window before it rather than being
+read as final, so without a nowcast the window ends some weeks back, and
+the dossier names the weeks it covers. Weeks that begin before the
+earliest sample date in the case data are left out, never counted as
+weeks without cases. The dossier shows the change in weekly cases the
+trend implies, the doubling or halving time when the 90% interval is on
+one side of zero, the chance the epidemic is growing, and the chance it
+is past its peak so far: declining, with its last week below its highest
+since its first week. That last says nothing about whether it will rise
+again. Each run’s estimate is stored and scored on the Performance
+screen once its weeks have passed the reporting horizon, against the
+same trend fitted to their counts as then reported.</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="6%">
+<col width="59%">
+</colgroup>
+<thead><tr class="header">
+<th>Key</th>
+<th align="right">Default</th>
+<th>Effect</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code style="white-space: nowrap;">forecast:<br>  epidemic_direction:<br>    enabled</code></td>
+<td align="right"><code>TRUE</code></td>
+<td>Master switch</td>
+</tr>
+<tr class="even">
+<td><code style="white-space: nowrap;">forecast:<br>  epidemic_direction:<br>    window_weeks</code></td>
+<td align="right">4</td>
+<td>Weeks the growth rate is estimated over (at least 3)</td>
+</tr>
+<tr class="odd">
+<td><code style="white-space: nowrap;">forecast:<br>  epidemic_direction:<br>    min_cases</code></td>
+<td align="right">20</td>
+<td>Reported cases those weeks need before a rate is estimated</td>
+</tr>
+<tr class="even">
+<td><code style="white-space: nowrap;">forecast:<br>  epidemic_direction:<br>    n_samples</code></td>
+<td align="right">1000</td>
+<td>Draws the interval and probabilities are computed from (at least
+100)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="typical-past-season">Typical past season<a class="anchor" aria-label="anchor" href="#typical-past-season"></a>
+</h3>
+<p>When MEM opens a seasonal epidemic, the fit that set its thresholds
+also gives the typical course of the past seasons’ epidemics
+(<code><a href="https://rdrr.io/pkg/mem/man/memmodel.html" class="external-link">mem::memmodel()</a></code>’s typical curve, with its 95% interval),
+the week they typically started, and their typical length. These are
+stored with the epidemic and fixed, like its thresholds. The Epidemics
+dossier draws the typical curve on the weekly curve with its start at
+this epidemic’s onset, and gives the typical length and how many weeks
+earlier or later this epidemic started. It describes past seasons and is
+labelled as such; it is not a forecast.</p>
+<p><code>mem.typical_curve</code> sets the statistic the curve
+summarises the aligned past seasons by, week by week. It changes only
+the curve: the thresholds, the intensity bands, and the typical start
+and length are the same whichever it is. The start and length are always
+medians.</p>
+<table class="table">
+<colgroup>
+<col width="9%">
+<col width="51%">
+<col width="39%">
+</colgroup>
+<thead><tr class="header">
+<th>Value</th>
+<th>Curve</th>
+<th>Interval</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>median</code></td>
+<td>The middle past season in each week: one extreme season does not
+move it. Equal to the arithmetic mean with two seasons</td>
+<td>Hettmansperger-Sheather/Nyblom, normal approximation with few
+seasons</td>
+</tr>
+<tr class="even">
+<td><code>geometric_mean</code></td>
+<td>
+<code>exp(mean(log(x + 1))) - 1</code>: less pulled up by one large
+season than the arithmetic mean, pulled down by one quiet one, and
+always below it</td>
+<td>Normal on the log scale</td>
+</tr>
+<tr class="odd">
+<td><code>arithmetic_mean</code></td>
+<td>The average: a single severe season raises the whole curve</td>
+<td>Normal, symmetric, so its lower limit can fall below zero in quiet
+weeks</td>
+</tr>
+</tbody>
+</table>
+<p><code>mem</code>’s median with a bootstrap interval
+(<code>i.type.curve = 4</code>) is deliberately not offered: it samples
+at random, so the same seasons give a different curve on each fit and
+the fit could not be reused from run to run; it takes some thirty
+seconds per fit; and it fails on two seasons. The dossier names the
+statistic under the curve, and a limit below zero is drawn at zero.
+Changing the value refits every stream’s MEM model on the next run, but
+an epidemic already open keeps the curve it opened with.</p>
+</div>
+<div class="section level3">
 <h3 id="priority-score">Priority score<a class="anchor" aria-label="anchor" href="#priority-score"></a>
 </h3>
 <table class="table">
@@ -1131,6 +1257,58 @@ showing a probability.</p>
 </tr>
 </tbody>
 </table>
+</div>
+<div class="section level3">
+<h3 id="notifications">Notifications<a class="anchor" aria-label="anchor" href="#notifications"></a>
+</h3>
+<p><code>notifications</code> ships empty (<code>~</code>): nothing is
+sent until it is configured. Its keys are about delivery, not detection,
+and are left out of <code>config_hash</code>.</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="8%">
+<col width="66%">
+</colgroup>
+<thead><tr class="header">
+<th>Key</th>
+<th>Default</th>
+<th>Effect</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code style="white-space: nowrap;">notifications:<br>  enabled</code></td>
+<td>(unset)</td>
+<td>Master switch for every channel</td>
+</tr>
+<tr class="even">
+<td><code style="white-space: nowrap;">notifications:<br>  dashboard_url</code></td>
+<td>(unset)</td>
+<td>Address of the dashboard, linked from each message</td>
+</tr>
+<tr class="odd">
+<td><code style="white-space: nowrap;">notifications:<br>  triggers:<br>    new_clusters</code></td>
+<td>(unset)</td>
+<td>Send when a run opens at least one new cluster; must be set to
+<code>true</code> explicitly</td>
+</tr>
+<tr class="even">
+<td><code style="white-space: nowrap;">notifications:<br>  triggers:<br>    run_failure</code></td>
+<td>(unset)</td>
+<td>Send when a run fails, including one that stops before it begins;
+must be set to <code>true</code> explicitly</td>
+</tr>
+<tr class="odd">
+<td><code style="white-space: nowrap;">notifications:<br>  channels:<br>    &lt;channel&gt;</code></td>
+<td>(unset)</td>
+<td>One block per channel (<code>ntfy</code>, <code>smtp</code>,
+<code>sendmail</code>, <code>microsoft365</code>, <code>teams</code>,
+<code>slack</code>), each with its own <code>enabled</code> and
+settings</td>
+</tr>
+</tbody>
+</table>
+<p>Every channel’s settings, and how to test them, are in <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>.</p>
 </div>
 <div class="section level3">
 <h3 id="report">Report<a class="anchor" aria-label="anchor" href="#report"></a>
