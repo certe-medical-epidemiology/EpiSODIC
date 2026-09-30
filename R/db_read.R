@@ -1082,6 +1082,57 @@ episodic_db_latest_run <- function(con, status = NULL) {
   if (nrow(res) == 0) NULL else res[1, ]
 }
 
+#' The latest run's forecast of one kind for a stream
+#'
+#' Only a forecast made by the latest completed run is returned. An older
+#' one estimated days whose reporting has since moved on, and drawn today
+#' it would present counts that are now known as though they were still
+#' uncertain. A stream the latest run did not forecast - it carried no
+#' open cluster, or forecasting is switched off - has none.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param stream_id The stream.
+#' @param kind One of `episodic_forecast_kinds`.
+#' @return `NULL`, or a list with `run_id`, `status`, `detail`, `params`
+#'   (the parsed JSON) and `values` (a data frame shaped like
+#'   `episodic_forecast_values_empty()`, ordered by resolution and date;
+#'   empty unless `status` is `"computed"`).
+#' @keywords internal
+#' @noRd
+episodic_db_forecast_latest <- function(con, stream_id, kind) {
+  run <- episodic_db_latest_run(con, status = episodic_run_statuses_complete)
+  if (is.null(run)) {
+    return(NULL)
+  }
+  forecast <- episodic_db_get_query(
+    con,
+    "SELECT forecast_id, run_id, status, detail, params
+       FROM episodic_forecast
+      WHERE run_id = ? AND stream_id = ? AND kind = ?",
+    params = list(run$run_id, stream_id, kind)
+  )
+  if (nrow(forecast) == 0) {
+    return(NULL)
+  }
+  values <- episodic_db_get_query(
+    con,
+    paste0(
+      "SELECT resolution, target_date, n_observed, mean, ",
+      paste(names(episodic_forecast_probs), collapse = ", "),
+      " FROM episodic_forecast_value WHERE forecast_id = ?",
+      " ORDER BY resolution, target_date"
+    ),
+    params = list(forecast$forecast_id[1])
+  )
+  list(
+    run_id = forecast$run_id[1],
+    status = forecast$status[1],
+    detail = forecast$detail[1],
+    params = jsonlite::fromJSON(forecast$params[1], simplifyVector = TRUE),
+    values = values
+  )
+}
+
 #' @keywords internal
 #' @noRd
 episodic_db_stream_trend <- function(con, stream_id) {

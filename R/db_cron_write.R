@@ -22,7 +22,8 @@
 # episodic_stream, episodic_institution, episodic_institution_activity,
 # episodic_case, episodic_denominator,
 # episodic_detection, episodic_cluster, episodic_cluster_case,
-# episodic_epidemic_season, episodic_cluster_link,
+# episodic_epidemic_season, episodic_cluster_link, episodic_forecast,
+# episodic_forecast_value,
 # episodic_detection_run, episodic_report_subscription_send and (for
 # pre-renders) episodic_report_render. See
 # R/db_app_write.R for the insert-only counterparts. Parameters
@@ -1008,6 +1009,94 @@ episodic_db_epidemic_weeks_replace <- function(con, cluster_id, weeks, run_id) {
     )
   }
   invisible(NULL)
+}
+
+#' The kinds of forecast `episodic_forecast` may hold
+#'
+#' The table leaves `kind` unconstrained, since SQLite cannot widen a
+#' `CHECK` without rebuilding the table; this is the constraint instead,
+#' applied by the table's one writer.
+#' @keywords internal
+#' @noRd
+episodic_forecast_kinds <- c("nowcast")
+
+#' Record one run's forecast for a stream, and its values
+#'
+#' @param con A [DBI::DBIConnection-class], inside the run's transaction.
+#' @param run_id The current run.
+#' @param stream_id The stream forecast.
+#' @param kind One of `episodic_forecast_kinds`.
+#' @param method The method, e.g. `"bayes.trunc"`.
+#' @param status `"computed"`, `"insufficient_data"` or `"failed"`.
+#' @param detail `NA`, a reason code, or an error message.
+#' @param params A list of what the forecast was computed from, stored as
+#'   JSON.
+#' @param values A data frame shaped like
+#'   `episodic_forecast_values_empty()`; must be empty unless `status` is
+#'   `"computed"`.
+#' @return The new `forecast_id`.
+#' @keywords internal
+#' @noRd
+episodic_db_forecast_insert <- function(con,
+                                        run_id,
+                                        stream_id,
+                                        kind,
+                                        method,
+                                        status,
+                                        detail,
+                                        params,
+                                        values) {
+  if (!kind %in% episodic_forecast_kinds) {
+    stop("Unknown forecast kind \"", kind, "\".", call. = FALSE)
+  }
+  if (!identical(status, "computed") && nrow(values) > 0) {
+    stop(
+      "A forecast with status \"",
+      status,
+      "\" cannot carry values.",
+      call. = FALSE
+    )
+  }
+  episodic_db_execute(
+    con,
+    "INSERT INTO episodic_forecast
+       (run_id, stream_id, kind, method, status, detail, params, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    params = list(
+      run_id,
+      stream_id,
+      kind,
+      method,
+      status,
+      if (is.null(detail)) NA_character_ else as.character(detail),
+      as.character(jsonlite::toJSON(
+        params,
+        auto_unbox = TRUE,
+        null = "null",
+        digits = NA
+      )),
+      episodic_now()
+    )
+  )
+  forecast_id <- episodic_db_last_insert_id(con)
+  if (nrow(values) > 0) {
+    cols <- c(
+      "forecast_id",
+      "resolution",
+      "target_date",
+      "n_observed",
+      "mean",
+      names(episodic_forecast_probs)
+    )
+    values$forecast_id <- forecast_id
+    episodic_db_write_many(
+      con,
+      table = "episodic_forecast_value",
+      cols = cols,
+      values = as.list(values[cols])
+    )
+  }
+  forecast_id
 }
 
 #' Record the end of a seasonal epidemic

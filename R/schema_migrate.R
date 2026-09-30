@@ -357,7 +357,7 @@ episodic_db_apply_schema <- function(con, dialect) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 10L
+episodic_schema_version <- 11L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -851,6 +851,21 @@ episodic_db_migrations <- function() {
             )
           }
         )
+      }
+      invisible(NULL)
+    },
+    # 11: forecasts per run (episodic_forecast) and their values
+    # (episodic_forecast_value). Purely additive, taken from the schema
+    # file; each skipped when present for the same reason as 2. Filled
+    # from the next detection run on.
+    "11" = function(con, dialect) {
+      for (table in c("episodic_forecast", "episodic_forecast_value")) {
+        if (DBI::dbExistsTable(con, table)) {
+          next
+        }
+        for (statement in episodic_db_schema_statements_for(dialect, table)) {
+          episodic_db_execute(con, statement)
+        }
       }
       invisible(NULL)
     }
@@ -2026,6 +2041,13 @@ episodic_db_schema_statements <- function(dialect) {
       ),
       episodic_epidemic_week = c(
         "  week_start      TEXT NOT NULL," = "  week_start      VARCHAR(10) NOT NULL,"
+      ),
+      episodic_forecast = c(
+        "  kind        TEXT NOT NULL," = "  kind        VARCHAR(20) NOT NULL,"
+      ),
+      episodic_forecast_value = c(
+        "  resolution  TEXT NOT NULL CHECK (resolution IN ('day', 'week'))," = "  resolution  VARCHAR(4) NOT NULL CHECK (resolution IN ('day', 'week')),",
+        "  target_date TEXT NOT NULL," = "  target_date VARCHAR(10) NOT NULL,"
       ),
       episodic_detector_cache = c(
         "  detector   TEXT NOT NULL CHECK (detector IN ('mem'))," = "  detector   VARCHAR(20) NOT NULL CHECK (detector IN ('mem')),"

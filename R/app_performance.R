@@ -147,6 +147,78 @@ episodic_ui_performance_screen <- function(performance,
           )
         }))
       )
+    },
+    episodic_ui_performance_nowcast(performance$nowcast, lang = lang)
+  )
+}
+
+#' The Performance screen's nowcast section
+#'
+#' @param nowcast `episodic_nowcast_performance()`'s output.
+#' @param lang Session language.
+#' @return A tag list.
+#' @keywords internal
+#' @noRd
+episodic_ui_performance_nowcast <- function(nowcast,
+                                            lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  dash <- episodic_tr("misc.dash", lang = lang)
+  pct <- function(x) {
+    if (is.na(x)) {
+      dash
+    } else {
+      paste0(episodic_format_number(x * 100, digits = 0, lang = lang), "%")
+    }
+  }
+  num <- function(x) {
+    if (is.na(x)) dash else episodic_format_number(x, digits = 2, lang = lang)
+  }
+  shiny::tagList(
+    shiny::tags$h2(
+      style = "font-size:15px;font-weight:600;margin:20px 0 6px;",
+      episodic_tr("performance.nowcast_title", lang = lang)
+    ),
+    shiny::tags$p(
+      style = "font-size:12.5px;color:var(--episodic-muted);margin-bottom:8px;",
+      episodic_tr("performance.nowcast_note", lang = lang)
+    ),
+    if (nrow(nowcast) == 0) {
+      shiny::tags$p(
+        class = "episodic-panel-empty",
+        episodic_tr("performance.nowcast_empty", lang = lang)
+      )
+    } else {
+      shiny::tags$table(
+        class = "episodic-table",
+        shiny::tags$thead(shiny::tags$tr(
+          shiny::tags$th(episodic_tr("performance.col.level", lang = lang)),
+          shiny::tags$th(episodic_tr("performance.col.resolution", lang = lang)),
+          shiny::tags$th(episodic_tr("performance.col.scored", lang = lang)),
+          shiny::tags$th(episodic_tr("performance.col.in_50", lang = lang)),
+          shiny::tags$th(episodic_tr("performance.col.in_90", lang = lang)),
+          shiny::tags$th(episodic_tr("performance.col.wis", lang = lang)),
+          shiny::tags$th(episodic_tr("performance.col.ae_reported", lang = lang))
+        )),
+        shiny::tags$tbody(lapply(seq_len(nrow(nowcast)), function(i) {
+          row <- nowcast[i, ]
+          shiny::tags$tr(
+            shiny::tags$td(episodic_tr(paste0("level.", row$level), lang = lang)),
+            shiny::tags$td(episodic_tr(
+              paste0("nowcast.resolution.", row$resolution),
+              lang = lang
+            )),
+            shiny::tags$td(episodic_tr(
+              "performance.scored_value",
+              n = episodic_format_number(row$n_scored, lang = lang),
+              pending = episodic_format_number(row$n_pending, lang = lang),
+              lang = lang
+            )),
+            shiny::tags$td(pct(row$coverage_50)),
+            shiny::tags$td(pct(row$coverage_90)),
+            shiny::tags$td(num(row$mean_wis)),
+            shiny::tags$td(num(row$mean_ae_reported))
+          )
+        }))
+      )
     }
   )
 }
@@ -184,7 +256,9 @@ episodic_ui_performance_screen <- function(performance,
 #'   `verdict_label`, `n`), and `timeliness` (a list of three
 #'   `list(median_days, n)` entries: `to_detection`,
 #'   `to_first_assessment`, `to_classification` - `median_days` is `NA`
-#'   when `n` is `0`).
+#'   when `n` is `0`), and `nowcast` (`episodic_nowcast_performance()`,
+#'   over outbreaks and epidemics alike: a nowcast is made for a stream,
+#'   whichever scale its cluster has).
 #' @keywords internal
 #' @noRd
 episodic_app_performance <- function(con,
@@ -227,7 +301,8 @@ episodic_app_performance <- function(con,
       latest_verdict,
       lang = lang
     ),
-    timeliness = episodic_performance_timeliness(clusters, events, verdicts)
+    timeliness = episodic_performance_timeliness(clusters, events, verdicts),
+    nowcast = episodic_nowcast_performance(con)
   )
 }
 

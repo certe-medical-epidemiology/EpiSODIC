@@ -351,7 +351,11 @@ episodic_chart_week_scale <- function(week_starts,
 #'   `n_cases` (case count), and `incomplete` (logical, `TRUE` for the most
 #'   recent day(s) where reporting is still catching up - these are drawn at
 #'   reduced opacity as a visual reminder not to over-interpret a downturn
-#'   that is really just a reporting lag).
+#'   that is really just a reporting lag). Optionally `nowcast_low`,
+#'   `nowcast_mid` and `nowcast_high`: the 5%, 50% and 95% quantiles of a
+#'   day's expected final count once reporting is complete, drawn as a
+#'   line with an open point at the median on the days that have them
+#'   (`NA` elsewhere).
 #' @param lang Language for axis labels: `"en"`, `"ar"`, `"nl"`, `"fr"`,
 #'   `"de"`, `"hi"`, `"zh"`, or `"es"`, or a regional variant of
 #'   one (`"en-US"`, `"es-419"`). Defaults to the
@@ -391,6 +395,7 @@ episodic_ui_epi_curve_chart <- function(curve,
       show.legend = FALSE
     ) +
     ggplot2::scale_alpha_identity() +
+    episodic_chart_nowcast_layers(curve, x = "sample_date") +
     ggplot2::scale_y_continuous(
       breaks = episodic_chart_count_breaks,
       labels = episodic_chart_number_labels(lang),
@@ -398,6 +403,51 @@ episodic_ui_epi_curve_chart <- function(curve,
     ) +
     ggplot2::labs(y = episodic_tr("panel.epicurve.ylab", lang = lang)) +
     episodic_chart_theme()
+}
+
+#' The nowcast marks drawn over a curve's bars
+#'
+#' A line from the 5% to the 95% quantile of each nowcast day's or week's
+#' expected final count, and an open point at its median, in the
+#' palette's dark primary so they read apart from the bars they sit on.
+#' Nothing for a curve without the nowcast columns, or with none filled:
+#' the pathogen screen's curves carry no nowcast.
+#'
+#' @param curve The curve's data frame, with `nowcast_low`, `nowcast_mid`
+#'   and `nowcast_high` when it has a nowcast.
+#' @param x The name of the curve's date column.
+#' @return A list of `ggplot2` layers, possibly empty.
+#' @keywords internal
+#' @noRd
+episodic_chart_nowcast_layers <- function(curve, x) {
+  if (is.null(curve$nowcast_mid) || all(is.na(curve$nowcast_mid))) {
+    return(list())
+  }
+  pal <- episodic_palette()
+  marks <- curve[!is.na(curve$nowcast_mid), , drop = FALSE]
+  list(
+    ggplot2::geom_linerange(
+      data = marks,
+      ggplot2::aes(
+        x = .data[[x]],
+        ymin = .data$nowcast_low,
+        ymax = .data$nowcast_high
+      ),
+      inherit.aes = FALSE,
+      colour = pal$primary_dark,
+      linewidth = 0.6
+    ),
+    ggplot2::geom_point(
+      data = marks,
+      ggplot2::aes(x = .data[[x]], y = .data$nowcast_mid),
+      inherit.aes = FALSE,
+      shape = 21,
+      size = 1.8,
+      stroke = 0.8,
+      colour = pal$primary_dark,
+      fill = pal$surface
+    )
+  )
 }
 
 #' @rdname episodic_charts
@@ -1009,7 +1059,8 @@ episodic_ui_denominator_chart <- function(series,
 #' as a downturn.
 #'
 #' @param weekly A data frame with `week_start` (`Date`), `n_cases` and
-#'   `incomplete`.
+#'   `incomplete`, and optionally the nowcast columns
+#'   `episodic_ui_epi_curve_chart()` draws.
 #' @param thresholds `episodic_mem_thresholds_for_season()`'s output, or
 #'   `NULL` to draw the bars alone.
 #' @param lang Language for labels.
@@ -1092,6 +1143,7 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
       show.legend = FALSE
     ) +
     ggplot2::scale_alpha_identity() +
+    episodic_chart_nowcast_layers(weekly, x = "week_start") +
     ggplot2::scale_y_continuous(
       breaks = episodic_chart_count_breaks,
       labels = episodic_chart_number_labels(lang),

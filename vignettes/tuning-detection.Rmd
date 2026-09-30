@@ -401,6 +401,20 @@ Every tunable parameter across both the YAML configuration and the per-pathogen 
 | <code style="white-space: nowrap;">rare_trigger:<br>&nbsp;&nbsp;min_cases</code>     | 1           | Cases in the window to fire                                     |
 | <code style="white-space: nowrap;">rare_trigger:<br>&nbsp;&nbsp;lookback_days</code> | 90          | How far back a run reports hits; `~` unbounds (not recommended) |
 
+### Nowcast
+
+Every run nowcasts each stream that carries an open cluster: the expected final count of its most recent days and weeks, once reporting is complete, from the stream's own reporting delays (`surveillance::nowcast()`, method `bayes.trunc`). A case's reporting date is the date of the run that first loaded it, so the delay's resolution is the cron schedule. Only cases sampled on or after the first run on the database carry an observed delay; a backfilled archive does not. Each run's nowcast is stored, drawn on the dossier curves, and scored on the Performance screen once its targets are past `max_delay_days`.
+
+| Key                               | Default | Effect                                                                                          |
+| --------------------------------- | ------: | ----------------------------------------------------------------------------------------------- |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;nowcast:<br>&nbsp;&nbsp;&nbsp;&nbsp;enabled</code>            | `TRUE`  | Master switch                                                                                   |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;nowcast:<br>&nbsp;&nbsp;&nbsp;&nbsp;max_delay_days</code>     | 21      | Reporting horizon in days: the longest delay allowed for, and the days nowcast                   |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;nowcast:<br>&nbsp;&nbsp;&nbsp;&nbsp;min_completeness</code>   | 0.25    | Expected share already reported below which a day is not nowcast                                |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;nowcast:<br>&nbsp;&nbsp;&nbsp;&nbsp;min_reported_cases</code> | 20      | Cases with a fully observed delay a stream needs before it is nowcast                           |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;nowcast:<br>&nbsp;&nbsp;&nbsp;&nbsp;prior_window_days</code>  | 28      | Fully reported days whose mean daily count centres the prior                                    |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;nowcast:<br>&nbsp;&nbsp;&nbsp;&nbsp;delay_window_days</code>  | `~`     | Days of reports the delay is estimated from; `~` uses the whole history, a value must be at least `max_delay_days` |
+| <code style="white-space: nowrap;">forecast:<br>&nbsp;&nbsp;nowcast:<br>&nbsp;&nbsp;&nbsp;&nbsp;n_samples</code>          | 500     | Delay-distribution samples per nowcast (at least 100)                                           |
+
 ### Priority score
 
 | Key                                          | Default | Effect                                                      |

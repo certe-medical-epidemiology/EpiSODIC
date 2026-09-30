@@ -1,3 +1,16 @@
+# EpiSODIC 0.24.0
+
+## New
+
+- Each detection run nowcasts every stream carrying an open cluster, from the stream's own reporting delays (`surveillance::nowcast()`, `bayes.trunc`), configured under `forecast.nowcast`
+- Each run's nowcast is stored in `episodic_forecast` and `episodic_forecast_value` (schema version 11), with the reason when a stream could not be nowcast
+- The outbreak and Epidemics dossier curves draw the nowcast's median and 90% interval on the days and weeks still being reported
+- The Performance screen scores stored nowcasts once reporting is complete: interval coverage, weighted interval score, and the error of taking the reported count as final
+
+## Changed
+
+- The Performance screen's outbreaks-only note is limited to its detection and assessment metrics, since its nowcast section covers epidemics too
+
 # EpiSODIC 0.23.0
 
 ## New

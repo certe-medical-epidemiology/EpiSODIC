@@ -277,7 +277,8 @@ episodic_config_nullable_keys <- c(
   "effect_size_floor.min_excess_over_upperbound",
   "effect_size_floor.min_ratio_observed_expected",
   "same_place.lookback_days",
-  "rare_trigger.lookback_days"
+  "rare_trigger.lookback_days",
+  "forecast.nowcast.delay_window_days"
 )
 
 #' Refuse an instance configuration that cannot mean what it says

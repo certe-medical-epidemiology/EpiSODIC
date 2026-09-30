@@ -641,8 +641,17 @@ episodic_ui_epidemic_curve_panel <- function(obj,
   } else {
     episodic_tr("epidemics.panel.curve.not_seasonal", lang = lang)
   }
+  nowcast_note <- episodic_ui_nowcast_note(
+    obj$nowcast,
+    drawn = any(!is.na(obj$weekly$nowcast_mid)),
+    lang = lang
+  )
   note <- paste(
-    c(note, episodic_ui_mem_no_low_band_note(obj$thresholds, lang = lang)),
+    c(
+      note,
+      episodic_ui_mem_no_low_band_note(obj$thresholds, lang = lang),
+      if (!is.null(nowcast_note)) htmltools::htmlEscape(nowcast_note)
+    ),
     collapse = "<br>"
   )
 

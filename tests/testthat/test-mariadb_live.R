@@ -249,13 +249,15 @@ mariadb_would_be_fk <- function(con) {
 
 test_that("a run migrates a database from an earlier schema version, against MariaDB", {
   # A version-8 database: the assessment columns version 9 drops, and
-  # neither of the additions version 10 makes, so both migrations do
-  # their real work against the server rather than finding it done.
+  # none of the additions versions 10 and 11 make, so every migration
+  # does its real work against the server rather than finding it done.
   skip_on_cran()
   dsn <- mariadb_fresh()
   con <- episodic_db_connect(dsn)
   schema_v8_assessment_columns(con)
   DBI::dbExecute(con, "DROP TABLE episodic_epidemic_week")
+  DBI::dbExecute(con, "DROP TABLE episodic_forecast_value")
+  DBI::dbExecute(con, "DROP TABLE episodic_forecast")
   for (fk in mariadb_would_be_fk(con)) {
     DBI::dbExecute(con, paste0("ALTER TABLE episodic_cluster DROP FOREIGN KEY ", fk))
   }
@@ -291,6 +293,8 @@ test_that("a run migrates a database from an earlier schema version, against Mar
     "wpg_notifiable"
   ))
   expect_true(DBI::dbExistsTable(con, "episodic_epidemic_week"))
+  expect_true(DBI::dbExistsTable(con, "episodic_forecast"))
+  expect_true(DBI::dbExistsTable(con, "episodic_forecast_value"))
   expect_true(episodic_db_column_exists(
     con,
     "mariadb",
@@ -313,6 +317,27 @@ test_that("a run migrates a database from an earlier schema version, against Mar
     )$free),
     1L
   )
+})
+
+test_that("nowcasts are written, read and scored against MariaDB", {
+  skip_on_cran()
+  db <- nowcast_cron_database(n_runs = 8L, path = mariadb_fresh())
+  on.exit(unlink(db$config_path))
+  con <- episodic_db_connect(db$path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+
+  forecasts <- episodic_db_get_query(
+    con,
+    "SELECT stream_id, status FROM episodic_forecast WHERE run_id = ?",
+    params = list(episodic_db_latest_run(con)$run_id)
+  )
+  expect_gt(nrow(forecasts), 0)
+  expect_true(all(forecasts$status == "computed"))
+  latest <- episodic_db_forecast_latest(con, forecasts$stream_id[1], "nowcast")
+  expect_gt(nrow(latest$values), 0)
+  expect_true(is.numeric(latest$values$q50))
+  scores <- episodic_nowcast_scores(con)
+  expect_gt(sum(scores$final), 0)
 })
 
 test_that("the dashboard reads what the run wrote, against MariaDB", {
