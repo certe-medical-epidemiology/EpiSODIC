@@ -20,8 +20,16 @@
 - The Epidemics dossier draws the typical past season on the weekly curve, aligned to the epidemic's onset, and shows the typical length and how much earlier or later this epidemic started
 - The typical past season's curve is the median of the past seasons by default, set by `mem.typical_curve` (`median`, `geometric_mean` or `arithmetic_mean`)
 - The tuning vignette's reference covers the `notifications` keys
+- Each detection run forecasts every open epidemic's weekly counts over the next weeks, with the chance of reaching each MEM band, as the quantile average of a negative binomial `surveillance::hhh4()` model of the stream's history and the extended trend of its last weeks, configured under `forecast.epidemic_outlook`
+- Each run's epidemic outlook is stored in `episodic_cluster_forecast_week` (schema version 14)
+- The Epidemics dossier shows a pathogen's outlook, as a table and on the weekly curve, only once its outlooks have been scored on `forecast.epidemic_outlook.min_scored` weeks and beat expecting no change, and states that record
+- The Performance screen scores stored outlooks per horizon: interval coverage, weighted interval score, and the score relative to expecting no change
 
 ## Changed
+
+- `episodic_demo()` replays the last `replay_days` days of its synthetic data as daily runs with a one-week reporting horizon, so the demo has measured reporting delays and a nowcast, and gives its transmissible pathogens an illustrative offspring distribution, so an outbreak shows its end-of-outbreak probability
+- The outbreak dossier shows the end-of-outbreak tile only with a probability, or when the forecast failed
+- The Epidemics dossier's intensity tile names the peak so far only when its band differs from the current week's
 
 - The Performance screen's outbreaks-only note is limited to its detection and assessment metrics, since its nowcast section covers epidemics too
 - A stat tile can carry a line between its caption and its value saying what the value measures

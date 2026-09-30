@@ -1810,6 +1810,13 @@ episodic_epidemic_object <- function(con,
   } else {
     episodic_db_cluster_forecast_latest(con, cluster_id, "epidemic_direction")
   }
+  # Withheld on the same grounds as the direction: it is a forecast of
+  # the stream's counts.
+  outlook <- if (
+    !identical(cluster$origin, "manual") && is.null(history_problem) && !closed
+  ) {
+    episodic_app_epidemic_outlook(con, cluster_id, stream$pathogen)
+  }
   typical <- if (is.null(history_problem)) {
     episodic_epidemic_typical(
       season,
@@ -1927,6 +1934,7 @@ episodic_epidemic_object <- function(con,
     history_problem = history_problem,
     nowcast = nowcast,
     direction = direction,
+    outlook = outlook,
     typical = typical,
     season = season,
     anchor_week = anchor_week,
@@ -1955,6 +1963,51 @@ episodic_epidemic_object <- function(con,
     institutions = institutions,
     concentration = concentration,
     during_outbreaks = during_outbreaks
+  )
+}
+
+#' An epidemic's outlook, with the track record that decides whether it
+#' is shown
+#'
+#' The latest run's outlook, and how its pathogen's outlooks have scored
+#' so far over every horizon (`episodic_epidemic_outlook_scores()`): the
+#' share of scored weeks inside the 90% interval, and the summed interval
+#' score relative to the no-change forecast's. It is shown only once
+#' they have been scored on `forecast.epidemic_outlook.min_scored` weeks
+#' and, over those, did better than expecting no change (a relative score
+#' below 1): a forecast of weeks to come is read as a prediction, and one
+#' without a record of beating the naive one is not one to act on.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param cluster_id The epidemic.
+#' @param pathogen Its stream's pathogen.
+#' @return `NULL` when the latest run made no outlook for it, otherwise
+#'   a list with `forecast` (`episodic_db_cluster_forecast_latest()`),
+#'   `n_scored`, `coverage_90` and `relative_wis` (`NA` without scored
+#'   weeks, or when the no-change forecast scored zero throughout),
+#'   `min_scored`, `min_history_weeks` and `shown` (logical).
+#' @keywords internal
+#' @noRd
+episodic_app_epidemic_outlook <- function(con, cluster_id, pathogen) {
+  forecast <- episodic_db_cluster_forecast_latest(con, cluster_id, "epidemic_outlook")
+  if (is.null(forecast)) {
+    return(NULL)
+  }
+  settings <- episodic_epidemic_outlook_settings(episodic_config_resolve())
+  scores <- episodic_epidemic_outlook_scores(con, pathogen = pathogen)
+  scored <- scores[scores$final, , drop = FALSE]
+  n_scored <- nrow(scored)
+  baseline <- sum(scored$wis_baseline)
+  relative_wis <- if (n_scored == 0 || baseline == 0) NA_real_ else sum(scored$wis) / baseline
+  list(
+    forecast = forecast,
+    n_scored = n_scored,
+    coverage_90 = if (n_scored == 0) NA_real_ else mean(scored$in_90),
+    relative_wis = relative_wis,
+    min_scored = settings$min_scored,
+    min_history_weeks = settings$min_history_weeks,
+    shown = identical(forecast$status, "computed") && n_scored >= settings$min_scored &&
+      isTRUE(relative_wis < 1)
   )
 }
 

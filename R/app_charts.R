@@ -455,6 +455,51 @@ episodic_chart_typical_layers <- function(curve, x, lang = Sys.getenv("EPISODIC_
   )
 }
 
+#' The outlook drawn after a weekly curve's bars
+#'
+#' Each week ahead as a line over its 90% interval and an open point at
+#' its median, in the palette's secondary colour so it reads apart from
+#' the counts and the nowcast marks, with a key. Nothing without an
+#' outlook.
+#'
+#' @param outlook `NULL`, or a data frame with `target_date` (`Date`),
+#'   `q05`, `q50` and `q95`.
+#' @param lang Language for the key.
+#' @return A list of `ggplot2` layers and the shape scale, possibly empty.
+#' @keywords internal
+#' @noRd
+episodic_chart_outlook_layers <- function(outlook, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (is.null(outlook) || nrow(outlook) == 0) {
+    return(list())
+  }
+  pal <- episodic_palette()
+  outlook$target_date <- as.Date(outlook$target_date)
+  outlook$key <- "outlook"
+  list(
+    ggplot2::geom_linerange(
+      data = outlook,
+      ggplot2::aes(x = .data$target_date, ymin = .data$q05, ymax = .data$q95),
+      inherit.aes = FALSE,
+      colour = pal$secondary_dark,
+      linewidth = 0.6
+    ),
+    ggplot2::geom_point(
+      data = outlook,
+      ggplot2::aes(x = .data$target_date, y = .data$q50, shape = .data$key),
+      inherit.aes = FALSE,
+      size = 1.8,
+      stroke = 0.8,
+      colour = pal$secondary_dark,
+      fill = pal$surface
+    ),
+    ggplot2::scale_shape_manual(
+      name = NULL,
+      values = c(outlook = 21),
+      labels = c(outlook = episodic_tr("pathogen.legend.outlook", lang = lang))
+    )
+  )
+}
+
 #' The nowcast marks drawn over a curve's bars
 #'
 #' A line from the 5% to the 95% quantile of each nowcast day's or week's
@@ -1121,13 +1166,18 @@ episodic_ui_denominator_chart <- function(series,
 #'   `primary`, which keeps the bars apart from the intensity lines in
 #'   `episodic_mem_threshold_lines()` (`severity_medium`/`severity_high`/
 #'   `severity_very_high`), whose colour is what they mean.
+#' @param outlook `NULL`, or the weeks ahead to draw after the bars
+#'   (`episodic_cluster_forecast_week`'s `target_date` (`Date`), `q05`,
+#'   `q50` and `q95`), each as a line over its 90% interval and a point
+#'   at its median, with a key.
 #' @return A [ggplot2::ggplot] object.
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_curve_chart <- function(weekly,
                                              thresholds = NULL,
                                              lang = Sys.getenv("EPISODIC_LANGUAGE"),
-                                             accent = NULL) {
+                                             accent = NULL,
+                                             outlook = NULL) {
   pal <- episodic_palette()
   accent <- accent %||% pal$primary
   # Named rather than assumed. Without the column, `weekly$incomplete`
@@ -1189,6 +1239,7 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
       )
   }
   typical <- episodic_chart_typical_layers(weekly, x = "week_start", lang = lang)
+  outlook_layers <- episodic_chart_outlook_layers(outlook, lang = lang)
   p <- p +
     typical +
     ggplot2::geom_col(
@@ -1199,12 +1250,16 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
     ) +
     ggplot2::scale_alpha_identity() +
     episodic_chart_nowcast_layers(weekly, x = "week_start") +
+    outlook_layers +
     ggplot2::scale_y_continuous(
       breaks = episodic_chart_count_breaks,
       labels = episodic_chart_number_labels(lang),
       expand = episodic_chart_y_expand()
     ) +
-    episodic_chart_week_scale(weekly$week_start, lang = lang) +
+    episodic_chart_week_scale(
+      c(weekly$week_start, if (!is.null(outlook)) as.Date(outlook$target_date)),
+      lang = lang
+    ) +
     # No axis title: the panel's title says what is counted - confirmed
     # cases per week, not a rate per population - and a second name on
     # the axis could only repeat it or blur it.
@@ -1236,13 +1291,15 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
       end_line <- NULL
     }
   }
-  legend <- !is.null(bands) || !is.null(end_line) || length(typical) > 0
+  legend <- !is.null(bands) || !is.null(end_line) || length(typical) > 0 ||
+    length(outlook_layers) > 0
   if (legend) {
     p <- p +
       ggplot2::guides(
         fill = ggplot2::guide_legend(order = 1),
         colour = ggplot2::guide_legend(order = 2),
-        linetype = ggplot2::guide_legend(order = 3)
+        linetype = ggplot2::guide_legend(order = 3),
+        shape = ggplot2::guide_legend(order = 4)
       )
   }
   p <- p + episodic_chart_theme()
@@ -1252,7 +1309,12 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
         legend.position = "right",
         legend.title = ggplot2::element_text(
           size = episodic_chart_text_size[["legend"]]
-        )
+        ),
+        # Up to four groups of keys share the chart's height: packed
+        # closely, so the first one's title is not pushed off the top.
+        legend.spacing.y = ggplot2::unit(6, "pt"),
+        legend.key.height = ggplot2::unit(14, "pt"),
+        legend.margin = ggplot2::margin(0, 0, 0, 0)
       )
   }
   p

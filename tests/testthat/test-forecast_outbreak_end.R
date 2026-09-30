@@ -298,11 +298,9 @@ test_that("the dossier tile gives the probability and when it reaches the thresh
   # Never a rounded 0% or 100%.
   expect_match(html(forecast(0.996)), "&gt; 99%", fixed = TRUE)
   expect_match(html(forecast(c(0.001, 0.99))), "&lt; 1%", fixed = TRUE)
-  expect_match(
-    html(list(status = "not_applicable", detail = "point_source")),
-    "point source, not modelled",
-    fixed = TRUE
-  )
+  # No number, no tile: the reason stays in the stored forecast.
+  expect_null(episodic_ui_outbreak_end_stat(list(status = "not_applicable", detail = "point_source"), 0.95, lang = "en"))
+  expect_null(episodic_ui_outbreak_end_stat(list(status = "insufficient_data", detail = "reporting_delay"), 0.95, lang = "en"))
   expect_match(html(list(status = "failed", detail = "boom")), "see the run log", fixed = TRUE)
   expect_null(episodic_ui_outbreak_end_stat(NULL, 0.95, lang = "en"))
 })

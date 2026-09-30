@@ -357,7 +357,7 @@ episodic_db_apply_schema <- function(con, dialect) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 13L
+episodic_schema_version <- 14L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -943,6 +943,20 @@ episodic_db_migrations <- function() {
           next
         }
         for (statement in episodic_db_schema_statements_for(dialect, table)) {
+          episodic_db_execute(con, statement)
+        }
+      }
+      invisible(NULL)
+    },
+    # 14: an epidemic's outlook by week (episodic_cluster_forecast_week).
+    # Purely additive: one table taken from the schema file, skipped when
+    # present for the same reason as 2.
+    "14" = function(con, dialect) {
+      if (!DBI::dbExistsTable(con, "episodic_cluster_forecast_week")) {
+        for (statement in episodic_db_schema_statements_for(
+          dialect,
+          "episodic_cluster_forecast_week"
+        )) {
           episodic_db_execute(con, statement)
         }
       }
@@ -2132,6 +2146,9 @@ episodic_db_schema_statements <- function(dialect) {
         "  kind                TEXT NOT NULL," = "  kind                VARCHAR(20) NOT NULL,"
       ),
       episodic_cluster_forecast_value = c(
+        "  target_date         TEXT NOT NULL," = "  target_date         VARCHAR(10) NOT NULL,"
+      ),
+      episodic_cluster_forecast_week = c(
         "  target_date         TEXT NOT NULL," = "  target_date         VARCHAR(10) NOT NULL,"
       ),
       episodic_cluster_forecast_estimate = c(

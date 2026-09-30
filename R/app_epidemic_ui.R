@@ -224,6 +224,7 @@ episodic_ui_epidemic_dossier <- function(con,
     episodic_ui_epidemic_stat_grid(obj, lang = lang),
     shiny::uiOutput("epidemic_notes_pane"),
     episodic_ui_epidemic_curve_panel(obj, lang = lang),
+    episodic_ui_epidemic_outlook_panel(obj, lang = lang),
     episodic_ui_epidemic_overlay_panel(obj, lang = lang),
     # Both full width: each is a weekly series over months, and at half
     # width its week axis has no room for the labels it needs.
@@ -504,7 +505,10 @@ episodic_ui_epidemic_stat_grid <- function(obj,
     stats <- c(stats, list(episodic_ui_intensity_stat(
       episodic_tr("epidemics.stat.intensity", lang = lang),
       course$latest_level,
-      if (!is.na(course$peak_level)) {
+      # The peak only when its band is not the one the value shows.
+      if (is.na(course$peak_level) || identical(course$peak_level, course$latest_level)) {
+        episodic_tr("epidemics.stat.intensity_sub_latest", lang = lang)
+      } else {
         episodic_tr(
           "epidemics.stat.intensity_sub",
           level = episodic_tr(
@@ -862,10 +866,178 @@ episodic_ui_epidemic_curve_panel <- function(obj,
       episodic_ui_pathogen_curve_chart(
         obj$weekly,
         obj$thresholds,
+        lang = lang,
+        outlook = if (isTRUE(obj$outlook$shown)) obj$outlook$forecast$weeks
+      ),
+      # Taller with the outlook's key, so the legend's four groups fit.
+      height = if (isTRUE(obj$outlook$shown)) 360 else 300
+    )
+  )
+}
+
+#' The epidemic's outlook for the weeks ahead
+#'
+#' Each week ahead with its expected count and 90% interval, and, for an
+#' epidemic with MEM thresholds, the chance of reaching each band that
+#' week and in any of them. Shown only once the pathogen's outlooks have
+#' a track record that beats expecting no change
+#' (`episodic_app_epidemic_outlook()`), which the note gives; until then
+#' the panel says how far along that record is, or that it does not beat
+#' it. When
+#' the latest run could not make one, it says why. No panel when the
+#' latest run made none.
+#'
+#' @param obj The epidemic object.
+#' @param lang Session language.
+#' @return A panel, or `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_ui_epidemic_outlook_panel <- function(obj,
+                                               lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  outlook <- obj$outlook
+  if (is.null(outlook)) {
+    return(NULL)
+  }
+  title <- episodic_tr("epidemics.panel.outlook.title", lang = lang)
+  forecast <- outlook$forecast
+  number <- function(x) episodic_format_number(x, lang = lang)
+  if (!identical(forecast$status, "computed")) {
+    message <- switch(forecast$status,
+      insufficient_data = episodic_tr(
+        paste0("epidemics.panel.outlook.", forecast$detail),
+        weeks = number(outlook$min_history_weeks),
         lang = lang
       ),
-      height = 300
+      failed = episodic_tr("epidemics.panel.outlook.failed", lang = lang),
+      stop("Unknown forecast status \"", forecast$status, "\".", call. = FALSE)
     )
+    return(episodic_ui_panel_empty(title, message))
+  }
+  if (!isTRUE(outlook$shown)) {
+    return(episodic_ui_panel_empty(
+      title,
+      if (outlook$n_scored < outlook$min_scored) {
+        episodic_tr(
+          "epidemics.panel.outlook.withheld",
+          required = number(outlook$min_scored),
+          scored = number(outlook$n_scored),
+          lang = lang
+        )
+      } else {
+        episodic_tr(
+          "epidemics.panel.outlook.worse",
+          scored = number(outlook$n_scored),
+          relative = if (is.na(outlook$relative_wis)) {
+            episodic_tr("misc.dash", lang = lang)
+          } else {
+            episodic_format_number(outlook$relative_wis, digits = 2, fixed = TRUE, lang = lang)
+          },
+          lang = lang
+        )
+      }
+    ))
+  }
+  pct <- function(p) {
+    if (is.na(p)) {
+      episodic_tr("misc.dash", lang = lang)
+    } else if (p < 0.01) {
+      paste0("< ", episodic_format_number(1, lang = lang), "%")
+    } else if (p > 0.99) {
+      paste0("> ", episodic_format_number(99, lang = lang), "%")
+    } else {
+      paste0(episodic_format_number(p * 100, digits = 0, lang = lang), "%")
+    }
+  }
+  weeks <- forecast$weeks
+  bands <- episodic_outlook_bands[vapply(
+    episodic_outlook_bands,
+    function(band) any(!is.na(weeks[[paste0("p_", band)]])),
+    logical(1)
+  )]
+  reach <- forecast$estimates
+  band_header <- function(band) {
+    episodic_tr(
+      "epidemics.panel.outlook.col.band",
+      band = episodic_tr(paste0("pathogen.intensity.", band), lang = lang),
+      lang = lang
+    )
+  }
+  table <- shiny::tags$table(
+    class = "episodic-table",
+    shiny::tags$thead(shiny::tags$tr(
+      shiny::tags$th(episodic_tr("epidemics.panel.outlook.col.week", lang = lang)),
+      shiny::tags$th(episodic_tr("epidemics.panel.outlook.col.expected", lang = lang)),
+      lapply(bands, function(band) shiny::tags$th(band_header(band)))
+    )),
+    shiny::tags$tbody(
+      lapply(seq_len(nrow(weeks)), function(i) {
+        shiny::tags$tr(
+          shiny::tags$td(episodic_format_date(weeks$target_date[i], lang = lang)),
+          shiny::tags$td(episodic_tr(
+            "epidemics.panel.outlook.expected_value",
+            median = number(weeks$q50[i]),
+            lower = number(weeks$q05[i]),
+            upper = number(weeks$q95[i]),
+            lang = lang
+          )),
+          lapply(bands, function(band) {
+            shiny::tags$td(pct(weeks[[paste0("p_", band)]][i]))
+          })
+        )
+      }),
+      if (length(bands) > 0) {
+        shiny::tags$tr(
+          shiny::tags$td(
+            colspan = 2,
+            episodic_tr("epidemics.panel.outlook.any_week", lang = lang)
+          ),
+          lapply(bands, function(band) {
+            shiny::tags$td(pct(reach$estimate[reach$quantity == paste0("p_reach_", band)]))
+          })
+        )
+      }
+    )
+  )
+  scored <- outlook$n_scored
+  covered <- outlook$coverage_90
+  relative <- outlook$relative_wis
+  notes <- c(
+    if ("trend" %in% forecast$params$components) {
+      episodic_tr(
+        "epidemics.panel.outlook.note",
+        weeks = number(forecast$params$n_history_weeks),
+        trend = number(forecast$params$trend_window_weeks),
+        lang = lang
+      )
+    } else {
+      episodic_tr(
+        "epidemics.panel.outlook.note_history_only",
+        weeks = number(forecast$params$n_history_weeks),
+        lang = lang
+      )
+    },
+    if (!is.na(relative)) {
+      episodic_tr(
+        "epidemics.panel.outlook.track",
+        scored = number(scored),
+        coverage = number(round(covered * 100)),
+        relative = episodic_format_number(relative, digits = 2, fixed = TRUE, lang = lang),
+        lang = lang
+      )
+    } else {
+      episodic_tr(
+        "epidemics.panel.outlook.track_no_relative",
+        scored = number(scored),
+        coverage = number(round(covered * 100)),
+        lang = lang
+      )
+    },
+    if (length(bands) == 0) episodic_tr("epidemics.panel.outlook.no_bands", lang = lang)
+  )
+  episodic_ui_panel(
+    title,
+    note = paste(notes, collapse = " "),
+    table
   )
 }
 

@@ -1146,7 +1146,9 @@ episodic_db_forecast_latest <- function(con, stream_id, kind) {
 #'   (the parsed JSON) and `values` (a data frame with `target_date`
 #'   (`Date`) and `probability`, ordered by date) and `estimates` (a data
 #'   frame with `quantity`, `estimate`, `lower`, `upper` and
-#'   `interval_level`); both empty unless `status` is `"computed"`.
+#'   `interval_level`) and `weeks` (`episodic_cluster_forecast_week`'s
+#'   columns but its key, `target_date` a `Date`); all empty unless
+#'   `status` is `"computed"`.
 #' @keywords internal
 #' @noRd
 episodic_db_cluster_forecast_latest <- function(con, cluster_id, kind) {
@@ -1178,13 +1180,22 @@ episodic_db_cluster_forecast_latest <- function(con, cluster_id, kind) {
       WHERE cluster_forecast_id = ? ORDER BY quantity",
     params = list(forecast$cluster_forecast_id[1])
   )
+  weeks <- episodic_db_get_query(
+    con,
+    "SELECT * FROM episodic_cluster_forecast_week
+      WHERE cluster_forecast_id = ? ORDER BY target_date",
+    params = list(forecast$cluster_forecast_id[1])
+  )
+  weeks$cluster_forecast_id <- NULL
+  weeks$target_date <- as.Date(weeks$target_date)
   list(
     run_id = forecast$run_id[1],
     status = forecast$status[1],
     detail = forecast$detail[1],
     params = jsonlite::fromJSON(forecast$params[1], simplifyVector = TRUE),
     values = values,
-    estimates = estimates
+    estimates = estimates,
+    weeks = weeks
   )
 }
 

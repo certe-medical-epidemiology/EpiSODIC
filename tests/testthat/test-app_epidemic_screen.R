@@ -295,6 +295,22 @@ test_that("a closed epidemic has no 'now': its intensity is read at the peak", {
   expect_false(grepl(">High<", header, fixed = TRUE))
 })
 
+test_that("the intensity tile names the peak only when its band differs from this week's", {
+  thresholds <- list(
+    pre_epidemic = 5,
+    post_epidemic = 4,
+    intensity = c(medium = 10, high = 20, very_high = 30)
+  )
+  at_peak <- epidemic_obj(course = episodic_epidemic_course(course_weekly(c(8, 22, 25)), "2025-12-01", thresholds))
+  html <- as.character(episodic_ui_epidemic_stat_grid(at_peak, lang = "en"))
+  expect_true(grepl("latest complete week (MEM)<", html, fixed = TRUE))
+  expect_false(grepl("peak so far", html, fixed = TRUE))
+
+  past_peak <- epidemic_obj(course = episodic_epidemic_course(course_weekly(c(8, 22, 12)), "2025-12-01", thresholds))
+  html <- as.character(episodic_ui_epidemic_stat_grid(past_peak, lang = "en"))
+  expect_true(grepl("latest complete week (MEM); peak so far: High", html, fixed = TRUE))
+})
+
 test_that("a history missing linked cases is stated, with both codes where they differ", {
   expect_null(episodic_ui_epidemic_history_problem(epidemic_obj(), lang = "en"))
 

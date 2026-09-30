@@ -23,8 +23,9 @@
 #' fresh database, generates several years of synthetic laboratory data,
 #' runs detection over it, creates a demo epidemiologist account, and opens the
 #' dashboard - all without needing access to any real laboratory system or
-#' an instance configuration file. Everything used here is a shipped
-#' default, so it works right after installing the package.
+#' an instance configuration file. It needs nothing but the package: the
+#' shipped defaults, plus the few files it writes beside the database
+#' (see below).
 #'
 #' @param db_path Path to the SQLite database to create. Defaults to a
 #'   temporary file, so repeated calls never collide and nothing is left
@@ -33,7 +34,7 @@
 #'   generates synthetic cases and runs detection over them, which is
 #'   contamination anywhere but a throwaway database.
 #' @param overwrite If `TRUE`, an existing demo database at `db_path` and
-#'   the two configuration files beside it are deleted and rebuilt.
+#'   the three configuration files beside it are deleted and rebuilt.
 #'   `FALSE` (the default) refuses instead. This deletes whatever is at
 #'   that path, so it is deliberately not something the demo decides for
 #'   you.
@@ -59,6 +60,16 @@
 #'   a scheduled run and useless for someone trying the system out on a
 #'   historical export. [episodic_run_cron()] therefore keeps dating its
 #'   runs from the system date, as a real surveillance run must.
+#' @param replay_days For the bundled synthetic data, how many of its
+#'   last days are replayed as daily runs, each loading only the cases
+#'   received by its date, after a first run over everything before them.
+#'   A scheduled instance learns its reporting delays this way, one run
+#'   at a time, and the delays are what the reporting completeness, the
+#'   nowcast and the end-of-outbreak probability are computed from: with
+#'   a single run there are none to learn from. Each replayed day adds a
+#'   few seconds; `0` builds the demo in one run, without them. A `cases`
+#'   extract you supply is always run once, as of `run_date`: its receipt
+#'   dates are not necessarily the dates its cases were reported.
 #' @param lang Dashboard language when `launch = TRUE`: `"en"`, `"ar"`,
 #'   `"nl"`, `"fr"`, `"de"`, `"hi"`, `"zh"`, or `"es"`, or a regional variant of
 #'   one (`"en-US"`, `"es-419"`). Defaults to the
@@ -84,12 +95,16 @@
 #' configures its own, exactly the way a real deployment does: two files
 #' named after `db_path` (`<name>-config.yaml` and
 #' `<name>-pc-province.csv`), plus the Netherlands postcode geometry
-#' bundled with the package.
+#' bundled with the package. A third, `<name>-pathogens.csv`, gives the
+#' transmissible pathogens in the synthetic data an offspring
+#' distribution (`end_r`, `end_k`), which ships empty, so the outbreak
+#' dossier can show its end-of-outbreak probability. Its values are
+#' illustrative, chosen for the demo, not estimates for any setting.
 #'
 #' They are left in place, so a database built with `launch = FALSE` can
 #' be re-opened later with the same geography by setting `EPISODIC_DB`,
-#' `EPISODIC_CONFIG`, `EPISODIC_PC_PROVINCE_MAP` and `EPISODIC_GEO_DATA`
-#' back to them - the paths are printed when the demo finishes. Without
+#' `EPISODIC_CONFIG`, `EPISODIC_PC_PROVINCE_MAP`,
+#' `EPISODIC_PATHOGEN_CONFIG` and `EPISODIC_GEO_DATA` back to them - the paths are printed when the demo finishes. Without
 #' them the database still opens; it simply shows no map and no
 #' provinces.
 #' @inheritSection episodic_case_data Check your data before you run anything
@@ -118,12 +133,19 @@ episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
                           password = "demo",
                           launch = TRUE,
                           run_date = NULL,
+                          replay_days = 14L,
                           lang = Sys.getenv("EPISODIC_LANGUAGE"),
                           cases = NULL,
                           denominators = NULL,
                           overwrite = FALSE,
                           ...) {
   episodic_demo_check_db_path(db_path, overwrite = overwrite)
+  if (
+    !is.numeric(replay_days) || length(replay_days) != 1 || is.na(replay_days) ||
+      replay_days < 0 || replay_days != round(replay_days)
+  ) {
+    stop("`replay_days` must be a whole number of at least 0.", call. = FALSE)
+  }
 
   # Resolved here rather than in the signature, because each of these
   # defaults depends on the others and R cannot express that: the
@@ -162,16 +184,24 @@ episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
     run_date <- episodic_synthetic_week_end()
   }
   if (!supplied_cases) {
-    cases <- function() episodic_synthetic_cases(end_date = run_date)
+    message("Creating synthetic cases...", appendLF = FALSE)
+    cases <- episodic_synthetic_cases(end_date = run_date)
+    message("OK")
   }
   if (!supplied_denominators) {
-    denominators <- function() episodic_synthetic_denominators(end_date = run_date)
+    denominators <- episodic_synthetic_denominators(end_date = run_date)
+  }
+  run_dates <- if (supplied_cases) {
+    as.Date(run_date)
+  } else {
+    as.Date(run_date) - rev(seq_len(replay_days + 1L) - 1L)
   }
 
   EPISODIC_CONFIG.old <- Sys.getenv("EPISODIC_CONFIG")
   EPISODIC_DB.old <- Sys.getenv("EPISODIC_DB")
   EPISODIC_GEO_DATA.old <- Sys.getenv("EPISODIC_GEO_DATA")
   EPISODIC_PC_PROVINCE_MAP.old <- Sys.getenv("EPISODIC_PC_PROVINCE_MAP")
+  EPISODIC_PATHOGEN_CONFIG.old <- Sys.getenv("EPISODIC_PATHOGEN_CONFIG")
 
   # The demo configures its own geography exactly the way a real
   # deployment does, through the documented environment variables, rather
@@ -193,11 +223,17 @@ episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
     row.names = FALSE,
     quote = FALSE
   )
+  utils::write.csv(
+    episodic_demo_pathogen_config(),
+    demo$pathogen_config,
+    row.names = FALSE
+  )
   geo_path <- episodic_geo_source_default_path()
   Sys.setenv(
     EPISODIC_CONFIG = demo$config,
     EPISODIC_DB = db_path,
-    EPISODIC_PC_PROVINCE_MAP = demo$pc_province_map
+    EPISODIC_PC_PROVINCE_MAP = demo$pc_province_map,
+    EPISODIC_PATHOGEN_CONFIG = demo$pathogen_config
   )
   if (file.exists(geo_path)) {
     Sys.setenv(EPISODIC_GEO_DATA = geo_path)
@@ -207,17 +243,26 @@ episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
       EPISODIC_CONFIG = EPISODIC_CONFIG.old,
       EPISODIC_DB = EPISODIC_DB.old,
       EPISODIC_GEO_DATA = EPISODIC_GEO_DATA.old,
-      EPISODIC_PC_PROVINCE_MAP = EPISODIC_PC_PROVINCE_MAP.old
+      EPISODIC_PC_PROVINCE_MAP = EPISODIC_PC_PROVINCE_MAP.old,
+      EPISODIC_PATHOGEN_CONFIG = EPISODIC_PATHOGEN_CONFIG.old
     )
   )
 
-  message("Creating synthetic cases...", appendLF = FALSE)
-  episodic_run_cron(
-    cases = cases,
-    db_path = db_path,
-    denominators = denominators,
-    run_date = run_date
+  cases <- episodic_resolve_data(cases)
+  denominators <- episodic_resolve_data(denominators)
+  message(
+    if (length(run_dates) > 1) {
+      paste0(
+        "Running detection over the history, then as of each of the last ",
+        replay_days,
+        " days..."
+      )
+    } else {
+      "Running detection..."
+    },
+    appendLF = FALSE
   )
+  episodic_demo_detect(db_path, cases, denominators, run_dates)
   message("OK")
 
   episodic_add_user(
@@ -248,6 +293,8 @@ episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
     demo$config,
     "\",\n               EPISODIC_PC_PROVINCE_MAP = \"",
     demo$pc_province_map,
+    "\",\n               EPISODIC_PATHOGEN_CONFIG = \"",
+    demo$pathogen_config,
     "\")\n    episodic_run_app()\n\n",
     strrep("=", 75)
   ))
@@ -259,6 +306,41 @@ episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
   invisible(db_path)
 }
 
+#' Run the demo's detection, once or as a replay of daily runs
+#'
+#' With one date, one run over all of `cases`. With several, one run per
+#' date, oldest first, each over the cases received by that date and the
+#' denominators sampled by it, as a scheduled instance would have loaded
+#' them: the first run sees the history, and each later one what arrived
+#' since, so the runs record when each case was first seen.
+#'
+#' @param db_path The demo database.
+#' @param cases,denominators Data frames; `denominators` may be `NULL`.
+#' @param run_dates The dates to run as of, oldest first.
+#' @return Invisible `NULL`.
+#' @keywords internal
+#' @noRd
+episodic_demo_detect <- function(db_path, cases, denominators, run_dates) {
+  replay <- length(run_dates) > 1
+  for (day in as.list(as.Date(run_dates))) {
+    episodic_run_cron(
+      cases = if (replay) {
+        cases[which(as.Date(cases$receipt_date) <= day), , drop = FALSE]
+      } else {
+        cases
+      },
+      db_path = db_path,
+      denominators = if (replay && !is.null(denominators)) {
+        denominators[which(as.Date(denominators$sample_date) <= day), , drop = FALSE]
+      } else {
+        denominators
+      },
+      run_date = day
+    )
+  }
+  invisible(NULL)
+}
+
 #' Refuse to build a demo anywhere but a throwaway database
 #'
 #' `episodic_demo()` generates synthetic cases and runs detection over
@@ -267,7 +349,7 @@ episodic_demo <- function(db_path = tempfile(fileext = ".sqlite"),
 #' ones, reach every denominator, line list and patient search, and
 #' cannot be told apart afterwards without knowing which run wrote them.
 #' A MariaDB/MySQL DSN is refused whatever it contains, since the demo
-#' writes two configuration files named after `db_path` and a DSN is a
+#' writes three configuration files named after `db_path` and a DSN is a
 #' server instance rather than a scratch file.
 #'
 #' @param db_path The path the demo was asked to build at.
@@ -311,7 +393,7 @@ episodic_demo_check_db_path <- function(db_path, overwrite = FALSE) {
   }
 
   demo <- episodic_demo_files(db_path)
-  existing <- c(db_path, demo$config, demo$pc_province_map)
+  existing <- c(db_path, demo$config, demo$pc_province_map, demo$pathogen_config)
   existing <- existing[file.exists(existing)]
   removed <- unlink(existing)
   if (removed != 0 || any(file.exists(existing))) {
@@ -329,17 +411,41 @@ episodic_demo_check_db_path <- function(db_path, overwrite = FALSE) {
 #' Where `episodic_demo()` writes the configuration it runs against
 #'
 #' Beside the database, named after it, so a demo built with
-#' `launch = FALSE` can be re-opened later by pointing `EPISODIC_CONFIG`
-#' and `EPISODIC_PC_PROVINCE_MAP` back at these two files.
+#' `launch = FALSE` can be re-opened later by pointing `EPISODIC_CONFIG`,
+#' `EPISODIC_PC_PROVINCE_MAP` and `EPISODIC_PATHOGEN_CONFIG` back at these
+#' three files.
 #' @param db_path The demo database's path.
-#' @return A list with `config` and `pc_province_map` paths.
+#' @return A list with `config`, `pc_province_map` and `pathogen_config`
+#'   paths.
 #' @keywords internal
 #' @noRd
 episodic_demo_files <- function(db_path) {
   base <- tools::file_path_sans_ext(db_path)
   list(
     config = paste0(base, "-config.yaml"),
-    pc_province_map = paste0(base, "-pc-province.csv")
+    pc_province_map = paste0(base, "-pc-province.csv"),
+    pathogen_config = paste0(base, "-pathogens.csv")
+  )
+}
+
+#' The pathogen configuration overlay `episodic_demo()` runs against
+#'
+#' An offspring distribution for each transmissible pathogen the
+#' synthetic generator draws, which the shipped configuration leaves
+#' empty, so the demo's outbreaks of them get an end-of-outbreak
+#' probability. The values are illustrative, chosen so the demo has
+#' something to show: a mean below one and strong overdispersion, not an
+#' estimate for any pathogen or setting. An instance sets its own, from a
+#' source it has checked.
+#' @return A data frame with `pathogen`, `end_r` and `end_k`.
+#' @keywords internal
+#' @noRd
+episodic_demo_pathogen_config <- function() {
+  data.frame(
+    pathogen = c("Bordetella pertussis", "Influenza A", "Norovirus", "RSV"),
+    end_r = 0.8,
+    end_k = 0.5,
+    stringsAsFactors = FALSE
   )
 }
 
@@ -347,7 +453,9 @@ episodic_demo_files <- function(db_path) {
 #'
 #' The shipped defaults plus the demo's own geography: the synthetic data
 #' covers the northern Netherlands, and naming that in a config file is
-#' how any instance names its own.
+#' how any instance names its own. And a nowcast reporting horizon of a
+#' week, which the synthetic data's receipt delays stay within, so the
+#' replayed days (`replay_days`) observe delays in full.
 #' @return A character vector of YAML lines.
 #' @keywords internal
 #' @noRd
@@ -356,7 +464,14 @@ episodic_demo_config_yaml <- function() {
     "geography:",
     "  region_code: NORTHERN_NETHERLANDS",
     "  area_code_prefix: \"AREA-\"",
-    "  area_pc_characters: 2"
+    "  area_pc_characters: 2",
+    # The synthetic cases are received within days of sampling, so a week
+    # covers their reporting delays; with the shipped three weeks, the
+    # replayed days would not yet have observed one delay in full, and
+    # the demo would have no nowcast to show.
+    "forecast:",
+    "  nowcast:",
+    "    max_delay_days: 7"
   )
 }
 

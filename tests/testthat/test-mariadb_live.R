@@ -249,7 +249,7 @@ mariadb_would_be_fk <- function(con) {
 
 test_that("a run migrates a database from an earlier schema version, against MariaDB", {
   # A version-8 database: the assessment columns version 9 drops, and
-  # none of the additions versions 10 to 13 make, so every migration
+  # none of the additions versions 10 to 14 make, so every migration
   # does its real work against the server rather than finding it done.
   skip_on_cran()
   dsn <- mariadb_fresh()
@@ -258,6 +258,7 @@ test_that("a run migrates a database from an earlier schema version, against Mar
   DBI::dbExecute(con, "DROP TABLE episodic_epidemic_week")
   DBI::dbExecute(con, "DROP TABLE episodic_forecast_value")
   DBI::dbExecute(con, "DROP TABLE episodic_forecast")
+  DBI::dbExecute(con, "DROP TABLE episodic_cluster_forecast_week")
   DBI::dbExecute(con, "DROP TABLE episodic_cluster_forecast_estimate")
   DBI::dbExecute(con, "DROP TABLE episodic_cluster_forecast_value")
   DBI::dbExecute(con, "DROP TABLE episodic_cluster_forecast")
@@ -312,6 +313,7 @@ test_that("a run migrates a database from an earlier schema version, against Mar
   expect_true(episodic_db_column_exists(con, "mariadb", "episodic_pathogen_config", "end_r"))
   expect_true(episodic_db_column_exists(con, "mariadb", "episodic_pathogen_config", "end_k"))
   expect_true(DBI::dbExistsTable(con, "episodic_cluster_forecast_estimate"))
+  expect_true(DBI::dbExistsTable(con, "episodic_cluster_forecast_week"))
   expect_true(DBI::dbExistsTable(con, "episodic_epidemic_typical_week"))
   for (column in v13_typical_columns) {
     expect_true(episodic_db_column_exists(con, "mariadb", "episodic_epidemic_season", column))
@@ -372,7 +374,7 @@ test_that("nowcasts and outbreak-end probabilities are written, read and scored 
   expect_gt(nrow(episodic_outbreak_end_scores(con)), 0)
 })
 
-test_that("epidemic directions are written, read and scored against MariaDB", {
+test_that("epidemic directions and outlooks are written, read and scored against MariaDB", {
   skip_on_cran()
   db <- nowcast_cron_database(
     direction_cron_config(),
@@ -391,6 +393,43 @@ test_that("epidemic directions are written, read and scored against MariaDB", {
   scores <- episodic_epidemic_direction_scores(con)
   expect_gt(sum(!is.na(scores$outcome)), 0)
   expect_gt(nrow(episodic_epidemic_direction_performance(con)), 0)
+
+  # A month of history is too little for an outlook, and says so.
+  outlook <- episodic_db_cluster_forecast_latest(con, cluster_id, "epidemic_outlook")
+  expect_identical(outlook$status, "insufficient_data")
+  expect_identical(outlook$detail, "history")
+  # One written as an earlier run would have, for a week now reported.
+  run_id <- episodic_db_get_query(con, "SELECT MIN(run_id) AS id FROM episodic_detection_run")$id
+  episodic_db_execute(
+    con,
+    "DELETE FROM episodic_cluster_forecast
+      WHERE run_id = ? AND cluster_id = ? AND kind = 'epidemic_outlook'",
+    params = list(run_id, cluster_id)
+  )
+  week <- data.frame(target_date = "2025-01-06", horizon = 1L, mean = 10)
+  for (q in names(episodic_forecast_probs)) week[[q]] <- 10
+  week[paste0("p_", episodic_outlook_bands)] <- c(0.9, 0.5, 0.2, NA)
+  episodic_db_cluster_forecast_insert(
+    con,
+    run_id = run_id,
+    cluster_id = cluster_id,
+    kind = "epidemic_outlook",
+    method = "hhh4_negbin",
+    status = "computed",
+    detail = NA,
+    params = list(max_delay_days = 3L, baseline_count = 5),
+    weeks = week,
+    estimates = data.frame(quantity = "p_reach_high", estimate = 0.3, lower = NA, upper = NA, interval_level = NA)
+  )
+  scores <- episodic_epidemic_outlook_scores(con)
+  expect_identical(sum(scores$final), 1L)
+  expect_true(is.numeric(scores$wis[scores$final]))
+  stored <- episodic_db_get_query(
+    con,
+    "SELECT p_high, p_very_high FROM episodic_cluster_forecast_week"
+  )
+  expect_equal(stored$p_high, 0.2)
+  expect_true(is.na(stored$p_very_high))
 })
 
 test_that("the dashboard reads what the run wrote, against MariaDB", {
