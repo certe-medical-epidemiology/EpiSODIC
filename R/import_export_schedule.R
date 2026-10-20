@@ -20,8 +20,8 @@
 # Export schedules and import sources: registered on the dashboard by an
 # admin, carried out by episodic_run_cron().
 #
-# Both are app-owned and event-sourced (episodic_exchange_schedule_event,
-# episodic_exchange_source_event), the pattern scheduled reports follow:
+# Both are app-owned and event-sourced (episodic_export_schedule_event,
+# episodic_import_source_event), the pattern scheduled reports follow:
 # the current schedule or source under a name is the latest row for it,
 # and a "cancel" row ends it. Neither stores a secret; every key,
 # passphrase and credential is the name of an environment variable,
@@ -39,7 +39,7 @@
 #' @return The name, trimmed.
 #' @keywords internal
 #' @noRd
-episodic_exchange_name_check <- function(name) {
+episodic_import_export_name_check <- function(name) {
   if (!is.character(name) || length(name) != 1L || is.na(name)) {
     stop("A name is needed.", call. = FALSE)
   }
@@ -53,7 +53,7 @@ episodic_exchange_name_check <- function(name) {
 #' Read an optional value from a form or a call: `NA` when blank
 #' @keywords internal
 #' @noRd
-episodic_exchange_blank_na <- function(x) {
+episodic_import_export_blank_na <- function(x) {
   if (is.null(x) || length(x) == 0 || is.na(x[1]) || !nzchar(trimws(as.character(x[1])))) {
     NA_character_
   } else {
@@ -64,12 +64,12 @@ episodic_exchange_blank_na <- function(x) {
 #' Refuse a missing or malformed environment variable name
 #' @keywords internal
 #' @noRd
-episodic_exchange_env_required <- function(x, what) {
-  x <- episodic_exchange_blank_na(x)
+episodic_import_export_env_required <- function(x, what) {
+  x <- episodic_import_export_blank_na(x)
   if (is.na(x)) {
     stop(what, " is read from an environment variable; name it.", call. = FALSE)
   }
-  if (!episodic_exchange_env_name_valid(x)) {
+  if (!episodic_import_export_env_name_valid(x)) {
     stop("\"", x, "\" is not an environment variable name.", call. = FALSE)
   }
   x
@@ -83,13 +83,13 @@ episodic_exchange_env_required <- function(x, what) {
 #' @return The key line.
 #' @keywords internal
 #' @noRd
-episodic_exchange_public_key_line <- function(text, kind, what) {
+episodic_import_export_public_key_line <- function(text, kind, what) {
   lines <- trimws(unlist(strsplit(as.character(text), "\n", fixed = TRUE)))
   lines <- lines[nzchar(lines) & !startsWith(lines, "#")]
   if (length(lines) != 1L) {
-    stop(what, " must be one key: the line of its .pub file that starts with \"episodic-exchange-\".", call. = FALSE)
+    stop(what, " must be one key: the line of its .pub file that starts with \"episodic-import-export-\".", call. = FALSE)
   }
-  episodic_exchange_key_parse(lines, kind, "public", what)
+  episodic_import_export_key_parse(lines, kind, "public", what)
   lines
 }
 
@@ -116,33 +116,33 @@ episodic_exchange_public_key_line <- function(text, kind, what) {
 #' @param signing_key_env The variable holding the secret signing key (its
 #'   text or its file's path).
 #' @param fields The optional columns to export, or `NULL` for the
-#'   configured `exchange.export_fields`.
+#'   configured `export.fields`.
 #' @param pc_characters Postcode truncation, or `NA` for the configured.
 #' @param destination_type,destination,destination_env,username_env,password_env,token_env
-#'   Where the file goes; see `episodic_exchange_endpoint()`.
+#'   Where the file goes; see `episodic_import_export_endpoint()`.
 #' @param config A resolved configuration, to validate `fields` against.
 #' @return The new `event_id`.
 #' @keywords internal
 #' @noRd
-episodic_exchange_schedule_set <- function(con,
-                                           user_id,
-                                           name,
-                                           interval_days,
-                                           window_days,
-                                           mode,
-                                           recipients = character(0),
-                                           passphrase_env = NA_character_,
-                                           signing_key_env,
-                                           fields = NULL,
-                                           pc_characters = NA_integer_,
-                                           destination_type,
-                                           destination = NA_character_,
-                                           destination_env = NA_character_,
-                                           username_env = NA_character_,
-                                           password_env = NA_character_,
-                                           token_env = NA_character_,
-                                           config = episodic_config_resolve()) {
-  name <- episodic_exchange_name_check(name)
+episodic_export_schedule_set <- function(con,
+                                         user_id,
+                                         name,
+                                         interval_days,
+                                         window_days,
+                                         mode,
+                                         recipients = character(0),
+                                         passphrase_env = NA_character_,
+                                         signing_key_env,
+                                         fields = NULL,
+                                         pc_characters = NA_integer_,
+                                         destination_type,
+                                         destination = NA_character_,
+                                         destination_env = NA_character_,
+                                         username_env = NA_character_,
+                                         password_env = NA_character_,
+                                         token_env = NA_character_,
+                                         config = episodic_config_resolve()) {
+  name <- episodic_import_export_name_check(name)
   whole <- function(x, what) {
     number <- suppressWarnings(as.numeric(x))
     if (length(number) != 1L || is.na(number) || number < 1 || number != round(number)) {
@@ -169,7 +169,7 @@ episodic_exchange_schedule_set <- function(con,
       stop("Public-key mode needs at least one recipient's public encryption key.", call. = FALSE)
     }
     lines <- vapply(seq_along(recipients), function(i) {
-      episodic_exchange_public_key_line(recipients[[i]], "encryption", paste0("Recipient key ", i))
+      episodic_import_export_public_key_line(recipients[[i]], "encryption", paste0("Recipient key ", i))
     }, character(1))
     if (anyDuplicated(lines)) {
       stop("The same recipient key is listed more than once.", call. = FALSE)
@@ -177,21 +177,21 @@ episodic_exchange_schedule_set <- function(con,
     recipients_json <- as.character(jsonlite::toJSON(lines))
     passphrase_env <- NA_character_
   } else {
-    passphrase_env <- episodic_exchange_env_required(passphrase_env, "The passphrase")
+    passphrase_env <- episodic_import_export_env_required(passphrase_env, "The passphrase")
   }
-  signing_key_env <- episodic_exchange_env_required(signing_key_env, "The signing key")
+  signing_key_env <- episodic_import_export_env_required(signing_key_env, "The signing key")
   fields_json <- NA_character_
   if (!is.null(fields)) {
-    selection <- episodic_exchange_fields(fields, config)
+    selection <- episodic_export_fields(fields, config)
     fields_json <- as.character(jsonlite::toJSON(
       setdiff(selection$fields, episodic_case_columns_required)
     ))
   }
-  pc <- episodic_exchange_blank_na(pc_characters)
+  pc <- episodic_import_export_blank_na(pc_characters)
   if (!is.na(pc)) {
-    pc <- episodic_exchange_pc_characters(pc, config)
+    pc <- episodic_export_pc_characters(pc, config)
   }
-  endpoint <- episodic_exchange_endpoint(
+  endpoint <- episodic_import_export_endpoint(
     destination_type,
     location = destination,
     location_env = destination_env,
@@ -200,7 +200,7 @@ episodic_exchange_schedule_set <- function(con,
     token_env = token_env,
     direction = "export"
   )
-  episodic_db_exchange_schedule_event_insert(
+  episodic_db_export_schedule_event_insert(
     con,
     schedule_name = name,
     user_id = user_id,
@@ -236,34 +236,34 @@ episodic_exchange_schedule_set <- function(con,
 #'   passphrase.
 #' @param trusted_sender The partner's public signing key, as its text.
 #' @param location_type,location,location_env,username_env,password_env,token_env
-#'   Where the file comes from; see `episodic_exchange_endpoint()`.
+#'   Where the file comes from; see `episodic_import_export_endpoint()`.
 #' @return The new `event_id`.
 #' @keywords internal
 #' @noRd
-episodic_exchange_source_set <- function(con,
-                                         user_id,
-                                         name,
-                                         mode,
-                                         key_env = NA_character_,
-                                         passphrase_env = NA_character_,
-                                         trusted_sender,
-                                         location_type,
-                                         location = NA_character_,
-                                         location_env = NA_character_,
-                                         username_env = NA_character_,
-                                         password_env = NA_character_,
-                                         token_env = NA_character_) {
-  name <- episodic_exchange_name_check(name)
+episodic_import_source_set <- function(con,
+                                       user_id,
+                                       name,
+                                       mode,
+                                       key_env = NA_character_,
+                                       passphrase_env = NA_character_,
+                                       trusted_sender,
+                                       location_type,
+                                       location = NA_character_,
+                                       location_env = NA_character_,
+                                       username_env = NA_character_,
+                                       password_env = NA_character_,
+                                       token_env = NA_character_) {
+  name <- episodic_import_export_name_check(name)
   mode <- match.arg(mode, c("public_key", "passphrase"))
   if (identical(mode, "public_key")) {
-    key_env <- episodic_exchange_env_required(key_env, "The secret encryption key")
+    key_env <- episodic_import_export_env_required(key_env, "The secret encryption key")
     passphrase_env <- NA_character_
   } else {
-    passphrase_env <- episodic_exchange_env_required(passphrase_env, "The passphrase")
+    passphrase_env <- episodic_import_export_env_required(passphrase_env, "The passphrase")
     key_env <- NA_character_
   }
-  trusted_line <- episodic_exchange_public_key_line(trusted_sender, "signing", "The sender's public signing key")
-  endpoint <- episodic_exchange_endpoint(
+  trusted_line <- episodic_import_export_public_key_line(trusted_sender, "signing", "The sender's public signing key")
+  endpoint <- episodic_import_export_endpoint(
     location_type,
     location = location,
     location_env = location_env,
@@ -272,7 +272,7 @@ episodic_exchange_source_set <- function(con,
     token_env = token_env,
     direction = "import"
   )
-  episodic_db_exchange_source_event_insert(
+  episodic_db_import_source_event_insert(
     con,
     source_name = name,
     user_id = user_id,
@@ -300,39 +300,39 @@ episodic_exchange_source_set <- function(con,
 #' @return The new `event_id`.
 #' @keywords internal
 #' @noRd
-episodic_exchange_cancel <- function(con, user_id, name, kind = c("schedule", "source")) {
+episodic_import_export_cancel <- function(con, user_id, name, kind = c("schedule", "source")) {
   kind <- match.arg(kind)
   current <- if (identical(kind, "schedule")) {
-    episodic_exchange_schedules_current(con)
+    episodic_export_schedules_current(con)
   } else {
-    episodic_exchange_sources_current(con)
+    episodic_import_sources_current(con)
   }
   if (is.null(current[[name]])) {
     stop("There is no current ", kind, " named \"", name, "\".", call. = FALSE)
   }
   if (identical(kind, "schedule")) {
-    episodic_db_exchange_schedule_event_insert(con, name, user_id, "cancel")
+    episodic_db_export_schedule_event_insert(con, name, user_id, "cancel")
   } else {
-    episodic_db_exchange_source_event_insert(con, name, user_id, "cancel")
+    episodic_db_import_source_event_insert(con, name, user_id, "cancel")
   }
 }
 
 #' Every schedule or source event, oldest first
 #' @keywords internal
 #' @noRd
-episodic_db_exchange_schedule_events <- function(con) {
+episodic_db_export_schedule_events <- function(con) {
   episodic_db_get_query(
     con,
-    "SELECT * FROM episodic_exchange_schedule_event ORDER BY created_at, event_id"
+    "SELECT * FROM episodic_export_schedule_event ORDER BY created_at, event_id"
   )
 }
 
 #' @keywords internal
 #' @noRd
-episodic_db_exchange_source_events <- function(con) {
+episodic_db_import_source_events <- function(con) {
   episodic_db_get_query(
     con,
-    "SELECT * FROM episodic_exchange_source_event ORDER BY created_at, event_id"
+    "SELECT * FROM episodic_import_source_event ORDER BY created_at, event_id"
   )
 }
 
@@ -342,7 +342,7 @@ episodic_db_exchange_source_events <- function(con) {
 #' @return A named list of one-row lists, keyed by name.
 #' @keywords internal
 #' @noRd
-episodic_exchange_current <- function(events, name_col) {
+episodic_import_export_current <- function(events, name_col) {
   if (nrow(events) == 0) {
     return(list())
   }
@@ -358,22 +358,22 @@ episodic_exchange_current <- function(events, name_col) {
 #' The current export schedules, keyed by name
 #' @keywords internal
 #' @noRd
-episodic_exchange_schedules_current <- function(con) {
-  episodic_exchange_current(episodic_db_exchange_schedule_events(con), "schedule_name")
+episodic_export_schedules_current <- function(con) {
+  episodic_import_export_current(episodic_db_export_schedule_events(con), "schedule_name")
 }
 
 #' The current import sources, keyed by name
 #' @keywords internal
 #' @noRd
-episodic_exchange_sources_current <- function(con) {
-  episodic_exchange_current(episodic_db_exchange_source_events(con), "source_name")
+episodic_import_sources_current <- function(con) {
+  episodic_import_export_current(episodic_db_import_source_events(con), "source_name")
 }
 
 #' The endpoint a schedule or source names
 #' @keywords internal
 #' @noRd
-episodic_exchange_schedule_endpoint <- function(schedule) {
-  episodic_exchange_endpoint(
+episodic_export_schedule_endpoint <- function(schedule) {
+  episodic_import_export_endpoint(
     schedule$destination_type,
     location = schedule$destination,
     location_env = schedule$destination_env,
@@ -386,8 +386,8 @@ episodic_exchange_schedule_endpoint <- function(schedule) {
 
 #' @keywords internal
 #' @noRd
-episodic_exchange_source_endpoint <- function(source) {
-  episodic_exchange_endpoint(
+episodic_import_source_endpoint <- function(source) {
+  episodic_import_export_endpoint(
     source$location_type,
     location = source$location,
     location_env = source$location_env,
@@ -406,13 +406,13 @@ episodic_exchange_source_endpoint <- function(source) {
 #' back, so a server that was down costs one run, not a full interval.
 #' Pure, taking already-read rows, the way
 #' `episodic_report_subscription_due()` is.
-#' @param schedule One entry of `episodic_exchange_schedules_current()`.
-#' @param exports `episodic_exchange_export_event` rows.
+#' @param schedule One entry of `episodic_export_schedules_current()`.
+#' @param exports `episodic_export_event` rows.
 #' @param run_date The run's date.
 #' @return A single logical.
 #' @keywords internal
 #' @noRd
-episodic_exchange_schedule_due <- function(schedule, exports, run_date) {
+episodic_export_schedule_due <- function(schedule, exports, run_date) {
   written <- exports[
     !is.na(exports$schedule_event_id) &
       exports$schedule_event_id == schedule$event_id &
@@ -426,10 +426,10 @@ episodic_exchange_schedule_due <- function(schedule, exports, run_date) {
   as.numeric(as.Date(run_date) - last) >= as.integer(schedule$interval_days)
 }
 
-#' What a schedule hands `episodic_exchange_build()`, read from the environment now
+#' What a schedule hands `episodic_import_export_build()`, read from the environment now
 #' @keywords internal
 #' @noRd
-episodic_exchange_schedule_inputs <- function(schedule) {
+episodic_export_schedule_inputs <- function(schedule) {
   list(
     recipients = if (identical(schedule$mode, "public_key")) {
       as.character(jsonlite::fromJSON(schedule$recipients))
@@ -437,11 +437,11 @@ episodic_exchange_schedule_inputs <- function(schedule) {
       NULL
     },
     passphrase = if (identical(schedule$mode, "passphrase")) {
-      episodic_exchange_env_value(schedule$passphrase_env, "The passphrase")
+      episodic_import_export_env_value(schedule$passphrase_env, "The passphrase")
     } else {
       NULL
     },
-    signing_key = episodic_exchange_env_value(schedule$signing_key_env, "The signing key"),
+    signing_key = episodic_import_export_env_value(schedule$signing_key_env, "The signing key"),
     fields = if (is.na(schedule$fields)) NULL else as.character(jsonlite::fromJSON(schedule$fields)),
     pc_characters = if (is.na(schedule$pc_characters)) NULL else as.integer(schedule$pc_characters)
   )
@@ -450,26 +450,26 @@ episodic_exchange_schedule_inputs <- function(schedule) {
 #' Carry out one export schedule now
 #'
 #' @param con A [DBI::DBIConnection-class].
-#' @param schedule One entry of `episodic_exchange_schedules_current()`.
+#' @param schedule One entry of `episodic_export_schedules_current()`.
 #' @param config A resolved configuration.
 #' @param run_date The run's date: the window ends on it.
 #' @param run_id The run, recorded on the export, or `NA`.
 #' @return The new `export_id`. Raises after recording a failure.
 #' @keywords internal
 #' @noRd
-episodic_exchange_schedule_run <- function(con, schedule, config, run_date, run_id = NA_integer_) {
+episodic_export_schedule_run <- function(con, schedule, config, run_date, run_id = NA_integer_) {
   to <- as.Date(run_date)
   from <- to - as.integer(schedule$window_days) + 1L
-  endpoint <- tryCatch(episodic_exchange_schedule_endpoint(schedule), error = function(e) e)
-  label <- if (inherits(endpoint, "error")) NA_character_ else episodic_exchange_endpoint_label(endpoint)
+  endpoint <- tryCatch(episodic_export_schedule_endpoint(schedule), error = function(e) e)
+  label <- if (inherits(endpoint, "error")) NA_character_ else episodic_import_export_endpoint_label(endpoint)
   built <- NULL
   outcome <- tryCatch(
     {
       if (inherits(endpoint, "error")) {
         stop(endpoint)
       }
-      inputs <- episodic_exchange_schedule_inputs(schedule)
-      built <- episodic_exchange_build(
+      inputs <- episodic_export_schedule_inputs(schedule)
+      built <- episodic_import_export_build(
         con,
         from = from,
         to = to,
@@ -480,12 +480,12 @@ episodic_exchange_schedule_run <- function(con, schedule, config, run_date, run_
         pc_characters = inputs$pc_characters,
         config = config
       )
-      episodic_exchange_endpoint_write(endpoint, built$bytes)
+      episodic_import_export_endpoint_write(endpoint, built$bytes)
       NULL
     },
     error = function(e) e
   )
-  export_id <- episodic_db_exchange_export_record(
+  export_id <- episodic_db_export_record(
     con,
     initiated_by = "schedule",
     status = if (is.null(outcome)) "written" else "failed",
@@ -515,19 +515,19 @@ episodic_exchange_schedule_run <- function(con, schedule, config, run_date, run_
 #' @return Invisibly, the number of exports written.
 #' @keywords internal
 #' @noRd
-episodic_exchange_exports_dispatch <- function(con, config, run_id, run_date) {
-  schedules <- episodic_exchange_schedules_current(con)
+episodic_export_schedules_dispatch <- function(con, config, run_id, run_date) {
+  schedules <- episodic_export_schedules_current(con)
   if (length(schedules) == 0) {
     return(invisible(0L))
   }
-  exports <- episodic_db_get_query(con, "SELECT * FROM episodic_exchange_export_event")
+  exports <- episodic_db_get_query(con, "SELECT * FROM episodic_export_event")
   written <- 0L
   for (schedule in schedules) {
-    if (!episodic_exchange_schedule_due(schedule, exports, run_date)) {
+    if (!episodic_export_schedule_due(schedule, exports, run_date)) {
       next
     }
     result <- tryCatch(
-      episodic_exchange_schedule_run(con, schedule, config, run_date, run_id = run_id),
+      episodic_export_schedule_run(con, schedule, config, run_date, run_id = run_id),
       error = function(e) e
     )
     if (inherits(result, "error")) {
@@ -547,16 +547,16 @@ episodic_exchange_exports_dispatch <- function(con, config, run_id, run_date) {
 #' The secret a source opens its files with, read from the environment now
 #' @keywords internal
 #' @noRd
-episodic_exchange_source_secret <- function(source) {
+episodic_import_source_secret <- function(source) {
   if (identical(source$mode, "passphrase")) {
     list(
       secret_key = NULL,
-      passphrase = episodic_exchange_env_value(source$passphrase_env, "The passphrase")
+      passphrase = episodic_import_export_env_value(source$passphrase_env, "The passphrase")
     )
   } else {
     list(
-      secret_key = episodic_exchange_key_read(
-        episodic_exchange_env_value(source$key_env, "The secret encryption key"),
+      secret_key = episodic_import_export_key_read(
+        episodic_import_export_env_value(source$key_env, "The secret encryption key"),
         "encryption",
         "secret",
         paste0("The secret encryption key in ", source$key_env)
@@ -573,25 +573,25 @@ episodic_exchange_source_secret <- function(source) {
 #' goes on with the others and finishes `partial`.
 #' @param con A [DBI::DBIConnection-class].
 #' @param config A resolved configuration.
-#' @return A list of `episodic_exchange_entry()` results.
+#' @return A list of `episodic_import_export_entry()` results.
 #' @keywords internal
 #' @noRd
-episodic_exchange_sources_fetch <- function(con, config) {
-  sources <- episodic_exchange_sources_current(con)
+episodic_import_sources_fetch <- function(con, config) {
+  sources <- episodic_import_sources_current(con)
   lapply(sources, function(source) {
     label <- tryCatch(
-      episodic_exchange_endpoint_label(episodic_exchange_source_endpoint(source)),
+      episodic_import_export_endpoint_label(episodic_import_source_endpoint(source)),
       error = function(e) NA_character_
     )
     imported <- tryCatch(
       {
-        secret <- episodic_exchange_source_secret(source)
-        bytes <- episodic_exchange_endpoint_read(episodic_exchange_source_endpoint(source))
-        episodic_exchange_import_bytes(
+        secret <- episodic_import_source_secret(source)
+        bytes <- episodic_import_export_endpoint_read(episodic_import_source_endpoint(source))
+        episodic_cases_import_bytes(
           bytes,
           secret_key = secret$secret_key,
           passphrase = secret$passphrase,
-          trusted = list(episodic_exchange_key_parse(source$trusted_sender, "signing", "public", "The trusted sender key")),
+          trusted = list(episodic_import_export_key_parse(source$trusted_sender, "signing", "public", "The trusted sender key")),
           config = config
         )
       },
@@ -603,13 +603,13 @@ episodic_exchange_sources_fetch <- function(con, config) {
         "taken in this run: ", conditionMessage(imported),
         severity = "warn"
       )
-      return(episodic_exchange_entry(
+      return(episodic_import_export_entry(
         source_name = source$source_name,
         location = label,
         error = imported
       ))
     }
-    meta <- attr(imported, "exchange")
+    meta <- attr(imported, "import")
     episodic_trace(
       "Import source \"", source$source_name, "\": ", nrow(imported),
       " case(s) from instance ", meta$sender_instance_id, " (", meta$from,
@@ -618,7 +618,7 @@ episodic_exchange_sources_fetch <- function(con, config) {
     for (w in meta$warnings) {
       episodic_trace("Import source \"", source$source_name, "\": ", w, severity = "warn")
     }
-    episodic_exchange_entry(cases = imported, source_name = source$source_name, location = label)
+    episodic_import_export_entry(cases = imported, source_name = source$source_name, location = label)
   })
 }
 
@@ -627,73 +627,73 @@ episodic_exchange_sources_fetch <- function(con, config) {
 #' Reads the key or passphrase variable, fetches the file and imports it
 #' in full - decryption, signature, hashes - without writing anything, so
 #' a green test means the next run takes the file in.
-#' @param source One entry of `episodic_exchange_sources_current()`.
+#' @param source One entry of `episodic_import_sources_current()`.
 #' @param config A resolved configuration.
-#' @return A list of `episodic_exchange_test_line()` results.
+#' @return A list of `episodic_import_export_test_line()` results.
 #' @keywords internal
 #' @noRd
-episodic_exchange_test_source <- function(source, config) {
-  lines <- list(episodic_exchange_test_line("environment", NA, "exchange.test.environment_note"))
-  add <- function(...) lines[[length(lines) + 1L]] <<- episodic_exchange_test_line(...)
+episodic_import_export_test_source <- function(source, config) {
+  lines <- list(episodic_import_export_test_line("environment", NA, "import_export.test.environment_note"))
+  add <- function(...) lines[[length(lines) + 1L]] <<- episodic_import_export_test_line(...)
   variable <- if (identical(source$mode, "passphrase")) source$passphrase_env else source$key_env
-  secret <- tryCatch(episodic_exchange_source_secret(source), error = function(e) e)
+  secret <- tryCatch(episodic_import_source_secret(source), error = function(e) e)
   if (inherits(secret, "error")) {
-    add("key", FALSE, "exchange.test.secret_failed", variable = variable, detail = conditionMessage(secret))
+    add("key", FALSE, "import_export.test.secret_failed", variable = variable, detail = conditionMessage(secret))
     return(lines)
   }
   if (is.null(secret$secret_key)) {
-    add("key", TRUE, "exchange.test.passphrase_ok", variable = variable)
+    add("key", TRUE, "import_export.test.passphrase_ok", variable = variable)
   } else {
     add(
-      "key", TRUE, "exchange.test.key_ok",
+      "key", TRUE, "import_export.test.key_ok",
       variable = variable,
-      fingerprint = episodic_exchange_fingerprint_short(
-        episodic_exchange_fingerprint(sodium::pubkey(secret$secret_key))
+      fingerprint = episodic_import_export_fingerprint_short(
+        episodic_import_export_fingerprint(sodium::pubkey(secret$secret_key))
       )
     )
   }
-  endpoint <- episodic_exchange_source_endpoint(source)
-  reached <- episodic_exchange_endpoint_test(endpoint)
+  endpoint <- episodic_import_source_endpoint(source)
+  reached <- episodic_import_export_endpoint_test(endpoint)
   lines <- c(lines, reached$lines)
   if (is.null(reached$bytes)) {
     return(lines)
   }
   imported <- tryCatch(
-    episodic_exchange_import_bytes(
+    episodic_cases_import_bytes(
       reached$bytes,
       secret_key = secret$secret_key,
       passphrase = secret$passphrase,
-      trusted = list(episodic_exchange_key_parse(source$trusted_sender, "signing", "public", "The trusted sender key")),
+      trusted = list(episodic_import_export_key_parse(source$trusted_sender, "signing", "public", "The trusted sender key")),
       config = config
     ),
     error = function(e) e
   )
   if (inherits(imported, "error")) {
-    add("import", FALSE, "exchange.test.import_failed", detail = conditionMessage(imported))
+    add("import", FALSE, "import_export.test.import_failed", detail = conditionMessage(imported))
   } else {
-    meta <- attr(imported, "exchange")
+    meta <- attr(imported, "import")
     add(
-      "import", TRUE, "exchange.test.import_ok",
+      "import", TRUE, "import_export.test.import_ok",
       n = nrow(imported), instance = meta$sender_instance_id, from = meta$from, to = meta$to
     )
     for (w in meta$warnings) {
-      add("import", NA, "exchange.test.import_warning", detail = w)
+      add("import", NA, "import_export.test.import_warning", detail = w)
     }
   }
   lines
 }
 
 #' Test a registered export schedule without exporting anything
-#' @param schedule One entry of `episodic_exchange_schedules_current()`.
-#' @return A list of `episodic_exchange_test_line()` results.
+#' @param schedule One entry of `episodic_export_schedules_current()`.
+#' @return A list of `episodic_import_export_test_line()` results.
 #' @keywords internal
 #' @noRd
-episodic_exchange_test_schedule <- function(schedule) {
-  lines <- list(episodic_exchange_test_line("environment", NA, "exchange.test.environment_note"))
-  add <- function(...) lines[[length(lines) + 1L]] <<- episodic_exchange_test_line(...)
+episodic_import_export_test_schedule <- function(schedule) {
+  lines <- list(episodic_import_export_test_line("environment", NA, "import_export.test.environment_note"))
+  add <- function(...) lines[[length(lines) + 1L]] <<- episodic_import_export_test_line(...)
   signing <- tryCatch(
-    episodic_exchange_key_read(
-      episodic_exchange_env_value(schedule$signing_key_env, "The signing key"),
+    episodic_import_export_key_read(
+      episodic_import_export_env_value(schedule$signing_key_env, "The signing key"),
       "signing",
       "secret",
       paste0("The signing key in ", schedule$signing_key_env)
@@ -701,32 +701,32 @@ episodic_exchange_test_schedule <- function(schedule) {
     error = function(e) e
   )
   if (inherits(signing, "error")) {
-    add("key", FALSE, "exchange.test.secret_failed", variable = schedule$signing_key_env, detail = conditionMessage(signing))
+    add("key", FALSE, "import_export.test.secret_failed", variable = schedule$signing_key_env, detail = conditionMessage(signing))
   } else {
     add(
-      "key", TRUE, "exchange.test.signing_ok",
+      "key", TRUE, "import_export.test.signing_ok",
       variable = schedule$signing_key_env,
-      fingerprint = episodic_exchange_fingerprint_short(
-        episodic_exchange_fingerprint(sodium::sig_pubkey(signing))
+      fingerprint = episodic_import_export_fingerprint_short(
+        episodic_import_export_fingerprint(sodium::sig_pubkey(signing))
       )
     )
   }
   if (identical(schedule$mode, "passphrase")) {
     value <- Sys.getenv(schedule$passphrase_env, unset = NA)
     if (is.na(value) || !nzchar(value)) {
-      add("passphrase", FALSE, "exchange.test.env_missing", variable = schedule$passphrase_env)
-    } else if (nchar(value, type = "chars") < episodic_exchange_passphrase_min_chars) {
-      add("passphrase", FALSE, "exchange.test.passphrase_short", variable = schedule$passphrase_env, n = episodic_exchange_passphrase_min_chars)
+      add("passphrase", FALSE, "import_export.test.env_missing", variable = schedule$passphrase_env)
+    } else if (nchar(value, type = "chars") < episodic_import_export_passphrase_min_chars) {
+      add("passphrase", FALSE, "import_export.test.passphrase_short", variable = schedule$passphrase_env, n = episodic_import_export_passphrase_min_chars)
     } else {
-      add("passphrase", TRUE, "exchange.test.passphrase_ok", variable = schedule$passphrase_env)
+      add("passphrase", TRUE, "import_export.test.passphrase_ok", variable = schedule$passphrase_env)
     }
   } else {
-    add("recipients", TRUE, "exchange.test.recipients", n = length(jsonlite::fromJSON(schedule$recipients)))
+    add("recipients", TRUE, "import_export.test.recipients", n = length(jsonlite::fromJSON(schedule$recipients)))
   }
-  c(lines, episodic_exchange_endpoint_test(episodic_exchange_schedule_endpoint(schedule))$lines)
+  c(lines, episodic_import_export_endpoint_test(episodic_export_schedule_endpoint(schedule))$lines)
 }
 
-#' Test an Exchange Import Source or Export Schedule
+#' Test an Import Source or Export Schedule
 #'
 #' Checks a source or schedule registered on the dashboard's Instance
 #' screen the way the next scheduled run will use it, and writes nothing.
@@ -749,42 +749,42 @@ episodic_exchange_test_schedule <- function(schedule) {
 #'   environment variable.
 #' @param episodic_config_path The configuration path. Defaults to the
 #'   `EPISODIC_CONFIG` environment variable.
-#' @return An object of class `episodic_exchange_test`: a list with
+#' @return An object of class `episodic_import_export_test`: a list with
 #'   `name`, `kind`, `ok` (`TRUE` when no check failed) and `lines`, one
 #'   per check. Printing it lists the checks.
-#' @seealso `vignette("exchange")`
+#' @seealso `vignette("import-export")`
 #' @examples
 #' \dontrun{
-#' episodic_exchange_test_connection("Partner lab", kind = "source")
+#' episodic_import_export_test_connection("Partner lab", kind = "source")
 #' }
 #' @export
-episodic_exchange_test_connection <- function(name,
-                                              kind = c("source", "schedule"),
-                                              db_path = Sys.getenv("EPISODIC_DB", unset = NA),
-                                              episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
+episodic_import_export_test_connection <- function(name,
+                                                   kind = c("source", "schedule"),
+                                                   db_path = Sys.getenv("EPISODIC_DB", unset = NA),
+                                                   episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
   kind <- match.arg(kind)
   con <- episodic_db_open(db_path)
   on.exit(DBI::dbDisconnect(con), add = TRUE)
-  episodic_exchange_test_named(con, name, kind, episodic_config_resolve(episodic_config_path))
+  episodic_import_export_test_named(con, name, kind, episodic_config_resolve(episodic_config_path))
 }
 
-#' The work behind `episodic_exchange_test_connection()`, on an open connection
+#' The work behind `episodic_import_export_test_connection()`, on an open connection
 #' @keywords internal
 #' @noRd
-episodic_exchange_test_named <- function(con, name, kind, config) {
+episodic_import_export_test_named <- function(con, name, kind, config) {
   current <- if (identical(kind, "source")) {
-    episodic_exchange_sources_current(con)
+    episodic_import_sources_current(con)
   } else {
-    episodic_exchange_schedules_current(con)
+    episodic_export_schedules_current(con)
   }
   entry <- current[[name]]
   if (is.null(entry)) {
     stop("There is no current ", kind, " named \"", name, "\".", call. = FALSE)
   }
   lines <- if (identical(kind, "source")) {
-    episodic_exchange_test_source(entry, config)
+    episodic_import_export_test_source(entry, config)
   } else {
-    episodic_exchange_test_schedule(entry)
+    episodic_import_export_test_schedule(entry)
   }
   structure(
     list(
@@ -793,17 +793,17 @@ episodic_exchange_test_named <- function(con, name, kind, config) {
       ok = !any(vapply(lines, function(l) identical(l$ok, FALSE), logical(1))),
       lines = lines
     ),
-    class = "episodic_exchange_test"
+    class = "episodic_import_export_test"
   )
 }
 
 #' One connection test line, in a language
-#' @param line An `episodic_exchange_test_line()` result.
+#' @param line An `episodic_import_export_test_line()` result.
 #' @param lang The language.
 #' @return A single string.
 #' @keywords internal
 #' @noRd
-episodic_exchange_test_text <- function(line, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_import_export_test_text <- function(line, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   params <- lapply(line$params, function(v) {
     if (is.numeric(v)) episodic_format_number(v, lang = lang) else as.character(v)
   })
@@ -811,17 +811,17 @@ episodic_exchange_test_text <- function(line, lang = Sys.getenv("EPISODIC_LANGUA
 }
 
 #' Print a connection test
-#' @param x An `episodic_exchange_test`.
+#' @param x An `episodic_import_export_test`.
 #' @param ... Ignored.
 #' @return `x`, invisibly.
 #' @keywords internal
 #' @noRd
 #' @export
-print.episodic_exchange_test <- function(x, ...) {
-  cat("Exchange ", x$kind, " \"", x$name, "\": ", if (x$ok) "passed" else "FAILED", "\n", sep = "")
+print.episodic_import_export_test <- function(x, ...) {
+  cat("Import/export ", x$kind, " \"", x$name, "\": ", if (x$ok) "passed" else "FAILED", "\n", sep = "")
   for (line in x$lines) {
     mark <- if (isTRUE(line$ok)) "[ok]  " else if (identical(line$ok, FALSE)) "[FAIL]" else "[info]"
-    cat(mark, " ", episodic_exchange_test_text(line), "\n", sep = "")
+    cat(mark, " ", episodic_import_export_test_text(line), "\n", sep = "")
   }
   invisible(x)
 }
@@ -832,10 +832,10 @@ print.episodic_exchange_test <- function(x, ...) {
 #' @return A data frame.
 #' @keywords internal
 #' @noRd
-episodic_db_exchange_export_events <- function(con, limit = 200L) {
+episodic_db_export_events <- function(con, limit = 200L) {
   episodic_db_get_query(
     con,
-    "SELECT * FROM episodic_exchange_export_event
+    "SELECT * FROM episodic_export_event
       ORDER BY exported_at DESC, export_id DESC LIMIT ?",
     params = list(as.integer(limit))
   )
@@ -843,10 +843,10 @@ episodic_db_exchange_export_events <- function(con, limit = 200L) {
 
 #' @keywords internal
 #' @noRd
-episodic_db_exchange_import_events <- function(con, limit = 200L) {
+episodic_db_import_events <- function(con, limit = 200L) {
   episodic_db_get_query(
     con,
-    "SELECT * FROM episodic_exchange_import_event
+    "SELECT * FROM episodic_import_event
       ORDER BY imported_at DESC, import_id DESC LIMIT ?",
     params = list(as.integer(limit))
   )

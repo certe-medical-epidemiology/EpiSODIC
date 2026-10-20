@@ -179,8 +179,8 @@ episodic_ui_info_screen <- function(con = NULL,
 
 #' The Info screen's instance identifier line
 #'
-#' The identifier an operator gives a partner to exchange data with (see
-#' `vignette("exchange")`), shown where anyone running the instance can
+#' The identifier an operator gives a partner to import and export data with (see
+#' `vignette("import-export")`), shown where anyone running the instance can
 #' read it off. A database whose identifier cannot be read says so, with
 #' the reason, rather than leaving the line out: an absent line reads as
 #' "this instance has none", which is never true of a database this

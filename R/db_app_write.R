@@ -458,33 +458,33 @@ episodic_db_app_config_event_insert <- function(con,
   episodic_db_last_insert_id(con)
 }
 
-#' Set or cancel an exchange export schedule
+#' Set or cancel an export schedule
 #'
 #' Event-sourced: always an insert. The current schedule under a name is
-#' the latest row for it (`episodic_exchange_schedules_current()`). The
-#' values arrive validated by `episodic_exchange_schedule_set()`; every
+#' the latest row for it (`episodic_export_schedules_current()`). The
+#' values arrive validated by `episodic_export_schedule_set()`; every
 #' column but the name is `NA` on a `"cancel"` row.
 #' @param con A [DBI::DBIConnection-class].
 #' @param schedule_name The schedule's name.
 #' @param user_id The admin account recording it.
 #' @param action `"set"` or `"cancel"`.
 #' @param values A named list of the remaining columns of
-#'   `episodic_exchange_schedule_event`, or `list()` for a cancel.
+#'   `episodic_export_schedule_event`, or `list()` for a cancel.
 #' @return The new `event_id`.
 #' @keywords internal
 #' @noRd
-episodic_db_exchange_schedule_event_insert <- function(con,
-                                                       schedule_name,
-                                                       user_id,
-                                                       action,
-                                                       values = list()) {
+episodic_db_export_schedule_event_insert <- function(con,
+                                                     schedule_name,
+                                                     user_id,
+                                                     action,
+                                                     values = list()) {
   get <- function(name, na = NA_character_) {
     value <- values[[name]]
     if (is.null(value) || length(value) == 0) na else value
   }
   episodic_db_execute(
     con,
-    "INSERT INTO episodic_exchange_schedule_event
+    "INSERT INTO episodic_export_schedule_event
       (schedule_name, user_id, created_at, action, interval_days, window_days,
        mode, recipients, passphrase_env, signing_key_env, fields,
        pc_characters, destination_type, destination, destination_env,
@@ -514,32 +514,32 @@ episodic_db_exchange_schedule_event_insert <- function(con,
   episodic_db_last_insert_id(con)
 }
 
-#' Set or cancel an exchange import source
+#' Set or cancel an import source
 #'
 #' Event-sourced: always an insert, as
-#' `episodic_db_exchange_schedule_event_insert()`. The values arrive
-#' validated by `episodic_exchange_source_set()`.
+#' `episodic_db_export_schedule_event_insert()`. The values arrive
+#' validated by `episodic_import_source_set()`.
 #' @param con A [DBI::DBIConnection-class].
 #' @param source_name The source's name.
 #' @param user_id The admin account recording it.
 #' @param action `"set"` or `"cancel"`.
 #' @param values A named list of the remaining columns of
-#'   `episodic_exchange_source_event`, or `list()` for a cancel.
+#'   `episodic_import_source_event`, or `list()` for a cancel.
 #' @return The new `event_id`.
 #' @keywords internal
 #' @noRd
-episodic_db_exchange_source_event_insert <- function(con,
-                                                     source_name,
-                                                     user_id,
-                                                     action,
-                                                     values = list()) {
+episodic_db_import_source_event_insert <- function(con,
+                                                   source_name,
+                                                   user_id,
+                                                   action,
+                                                   values = list()) {
   get <- function(name) {
     value <- values[[name]]
     if (is.null(value) || length(value) == 0) NA_character_ else as.character(value)
   }
   episodic_db_execute(
     con,
-    "INSERT INTO episodic_exchange_source_event
+    "INSERT INTO episodic_import_source_event
       (source_name, user_id, created_at, action, mode, key_env,
        passphrase_env, trusted_sender, location_type, location,
        location_env, username_env, password_env, token_env)

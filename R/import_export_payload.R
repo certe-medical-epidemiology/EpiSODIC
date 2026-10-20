@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-# The payload inside an exchange file's envelope (R/exchange_crypto.R).
+# The payload inside an export file's envelope (R/import_export_crypto.R).
 #
 # A plain, documented format, deliberately not R's own serialisation:
 # `unserialize()` on bytes from another party is a code-execution surface
@@ -26,13 +26,13 @@
 # (`memCompress(type = "gzip")`) before it is encrypted. Its tables are
 # carried as JSON text of their own, so the SHA-256 the manifest records
 # for each is a hash of exact bytes rather than of a structure two JSON
-# writers could print differently. `vignette("exchange")` documents every
+# writers could print differently. `vignette("import-export")` documents every
 # field.
 
 #' The payload format version this build writes and reads
 #' @keywords internal
 #' @noRd
-episodic_exchange_payload_version <- 1L
+episodic_import_export_payload_version <- 1L
 
 #' The columns of the `cases` table in payload version 1, and their types
 #'
@@ -41,7 +41,7 @@ episodic_exchange_payload_version <- 1L
 #' one integer column; every other is text, dates as `YYYY-MM-DD`.
 #' @keywords internal
 #' @noRd
-episodic_exchange_case_types <- function() {
+episodic_import_export_case_types <- function() {
   types <- stats::setNames(
     rep("character", length(episodic_case_columns)),
     episodic_case_columns
@@ -58,7 +58,7 @@ episodic_exchange_case_types <- function() {
 #' case the receiving run can load.
 #' @keywords internal
 #' @noRd
-episodic_exchange_omittable_fields <- function() {
+episodic_import_export_omittable_fields <- function() {
   setdiff(episodic_case_columns, episodic_case_columns_required)
 }
 
@@ -73,7 +73,7 @@ episodic_exchange_omittable_fields <- function() {
 #' @return A single string.
 #' @keywords internal
 #' @noRd
-episodic_exchange_table_json <- function(df, types) {
+episodic_import_export_table_json <- function(df, types) {
   columns <- lapply(stats::setNames(names(types), names(types)), function(column) {
     values <- df[[column]]
     if (identical(types[[column]], "integer")) {
@@ -94,14 +94,14 @@ episodic_exchange_table_json <- function(df, types) {
 #' SHA-256 of a string's UTF-8 bytes, in hexadecimal
 #' @keywords internal
 #' @noRd
-episodic_exchange_sha256_text <- function(text) {
+episodic_import_export_sha256_text <- function(text) {
   sodium::bin2hex(sodium::sha256(charToRaw(enc2utf8(text))))
 }
 
 #' Build a compressed payload
 #'
 #' @param manifest A named list of the manifest fields (see
-#'   `vignette("exchange")`), without `tables`. A field that is a list of
+#'   `vignette("import-export")`), without `tables`. A field that is a list of
 #'   values is wrapped in `I()`, so a list of one is still written as an
 #'   array.
 #' @param tables A named list of data frames.
@@ -109,20 +109,20 @@ episodic_exchange_sha256_text <- function(text) {
 #' @return The compressed payload bytes.
 #' @keywords internal
 #' @noRd
-episodic_exchange_payload_build <- function(manifest, tables, types) {
+episodic_import_export_payload_build <- function(manifest, tables, types) {
   table_entries <- lapply(stats::setNames(names(tables), names(tables)), function(name) {
-    text <- episodic_exchange_table_json(tables[[name]], types[[name]])
+    text <- episodic_import_export_table_json(tables[[name]], types[[name]])
     list(
       rows = nrow(tables[[name]]),
       columns = as.list(types[[name]]),
-      sha256 = episodic_exchange_sha256_text(text),
+      sha256 = episodic_import_export_sha256_text(text),
       data = text
     )
   })
   document <- c(
     list(
-      payload_format = "episodic-exchange-payload",
-      payload_version = episodic_exchange_payload_version
+      payload_format = "episodic-cases-payload",
+      payload_version = episodic_import_export_payload_version
     ),
     manifest,
     list(tables = table_entries)
@@ -139,7 +139,7 @@ episodic_exchange_payload_build <- function(manifest, tables, types) {
 
 #' Read a payload back, verifying every table before converting any
 #'
-#' @param body The compressed payload bytes, as `episodic_exchange_open()`
+#' @param body The compressed payload bytes, as `episodic_import_export_open()`
 #'   returns them.
 #' @param types A named list, per table this build reads, of the column
 #'   types it accepts.
@@ -151,12 +151,12 @@ episodic_exchange_payload_build <- function(manifest, tables, types) {
 #'   columns its file carried).
 #' @keywords internal
 #' @noRd
-episodic_exchange_payload_read <- function(body, types, required = list()) {
+episodic_import_export_payload_read <- function(body, types, required = list()) {
   json <- tryCatch(memDecompress(body, type = "gzip"), error = function(e) NULL)
   if (is.null(json)) {
-    episodic_exchange_fail(
+    episodic_import_export_fail(
       "bad_payload",
-      "This exchange file's payload does not decompress, although its ",
+      "This export file's payload does not decompress, although its ",
       "signature verified: the sender's EpiSODIC wrote something this one ",
       "cannot read."
     )
@@ -164,44 +164,44 @@ episodic_exchange_payload_read <- function(body, types, required = list()) {
   text <- rawToChar(json)
   Encoding(text) <- "UTF-8"
   if (!validUTF8(text)) {
-    episodic_exchange_fail("bad_payload", "This exchange file's payload is not valid UTF-8.")
+    episodic_import_export_fail("bad_payload", "This export file's payload is not valid UTF-8.")
   }
   document <- tryCatch(
     jsonlite::fromJSON(text, simplifyVector = FALSE),
     error = function(e) NULL
   )
-  if (!is.list(document) || !identical(document$payload_format, "episodic-exchange-payload")) {
-    episodic_exchange_fail("bad_payload", "This exchange file's payload is not an EpiSODIC exchange payload.")
+  if (!is.list(document) || !identical(document$payload_format, "episodic-cases-payload")) {
+    episodic_import_export_fail("bad_payload", "This export file's payload is not an EpiSODIC export payload.")
   }
   version <- suppressWarnings(as.integer(document$payload_version))
   if (length(version) != 1L || is.na(version) || version < 1L) {
-    episodic_exchange_fail("bad_payload", "This exchange file's payload names no valid payload version.")
+    episodic_import_export_fail("bad_payload", "This export file's payload names no valid payload version.")
   }
-  if (version > episodic_exchange_payload_version) {
-    episodic_exchange_fail(
+  if (version > episodic_import_export_payload_version) {
+    episodic_import_export_fail(
       "unsupported_version",
-      "This exchange file's payload is version ", version, ", written by a ",
+      "This export file's payload is version ", version, ", written by a ",
       "newer EpiSODIC; this one reads payload version ",
-      episodic_exchange_payload_version, " and older. Upgrade EpiSODIC to ",
+      episodic_import_export_payload_version, " and older. Upgrade EpiSODIC to ",
       "import it."
     )
   }
   if (!is.list(document$tables)) {
-    episodic_exchange_fail("bad_payload", "This exchange file's payload carries no tables.")
+    episodic_import_export_fail("bad_payload", "This export file's payload carries no tables.")
   }
   unknown <- setdiff(names(document$tables), names(types))
   if (length(unknown) > 0) {
-    episodic_exchange_fail(
+    episodic_import_export_fail(
       "bad_payload",
-      "This exchange file carries table(s) this EpiSODIC does not read: ",
+      "This export file carries table(s) this EpiSODIC does not read: ",
       paste(unknown, collapse = ", "), "."
     )
   }
   missing <- setdiff(names(types), names(document$tables))
   if (length(missing) > 0) {
-    episodic_exchange_fail(
+    episodic_import_export_fail(
       "bad_payload",
-      "This exchange file lacks the table(s) ", paste(missing, collapse = ", "), "."
+      "This export file lacks the table(s) ", paste(missing, collapse = ", "), "."
     )
   }
 
@@ -211,12 +211,12 @@ episodic_exchange_payload_read <- function(body, types, required = list()) {
     entry <- document$tables[[name]]
     data <- entry$data
     if (!is.character(data) || length(data) != 1L) {
-      episodic_exchange_fail("bad_payload", "Table `", name, "` in this exchange file carries no data.")
+      episodic_import_export_fail("bad_payload", "Table `", name, "` in this export file carries no data.")
     }
-    if (!identical(entry$sha256, episodic_exchange_sha256_text(data))) {
-      episodic_exchange_fail(
+    if (!identical(entry$sha256, episodic_import_export_sha256_text(data))) {
+      episodic_import_export_fail(
         "hash_mismatch",
-        "Table `", name, "` in this exchange file does not match the SHA-256 ",
+        "Table `", name, "` in this export file does not match the SHA-256 ",
         "its manifest records. Nothing in the file was read."
       )
     }
@@ -226,7 +226,7 @@ episodic_exchange_payload_read <- function(body, types, required = list()) {
     entry <- document$tables[[name]]
     declared <- unlist(entry$columns)
     if (!is.character(declared) || is.null(names(declared)) || anyDuplicated(names(declared))) {
-      episodic_exchange_fail("bad_payload", "Table `", name, "` in this exchange file declares no columns.")
+      episodic_import_export_fail("bad_payload", "Table `", name, "` in this export file declares no columns.")
     }
     unknown_columns <- setdiff(names(declared), names(types[[name]]))
     missing_columns <- setdiff(required[[name]], names(declared))
@@ -236,9 +236,9 @@ episodic_exchange_payload_read <- function(body, types, required = list()) {
         length(missing_columns) > 0 ||
         !identical(declared[names(expected)], expected)
     ) {
-      episodic_exchange_fail(
+      episodic_import_export_fail(
         "bad_payload",
-        "Table `", name, "` in this exchange file does not have the columns ",
+        "Table `", name, "` in this export file does not have the columns ",
         "and types payload version ", version, " defines",
         if (length(unknown_columns) > 0) {
           paste0(" (unknown: ", paste(unknown_columns, collapse = ", "), ")")
@@ -258,22 +258,22 @@ episodic_exchange_payload_read <- function(body, types, required = list()) {
       error = function(e) NULL
     )
     if (!is.list(columns) || !setequal(names(columns), names(expected))) {
-      episodic_exchange_fail("bad_payload", "Table `", name, "` in this exchange file is malformed.")
+      episodic_import_export_fail("bad_payload", "Table `", name, "` in this export file is malformed.")
     }
     rows <- suppressWarnings(as.integer(entry$rows))
     if (length(rows) != 1L || is.na(rows) || rows < 0L) {
-      episodic_exchange_fail("bad_payload", "Table `", name, "` in this exchange file names no row count.")
+      episodic_import_export_fail("bad_payload", "Table `", name, "` in this export file names no row count.")
     }
     out <- lapply(stats::setNames(names(expected), names(expected)), function(column) {
       values <- columns[[column]]
       if (length(values) != rows) {
-        episodic_exchange_fail(
+        episodic_import_export_fail(
           "bad_payload",
           "Column `", column, "` of table `", name, "` holds ", length(values),
           " values for ", rows, " rows."
         )
       }
-      episodic_exchange_column_values(values, expected[[column]], column, name)
+      episodic_import_export_column_values(values, expected[[column]], column, name)
     })
     df <- as.data.frame(out, stringsAsFactors = FALSE, optional = TRUE)
     names(df) <- names(expected)
@@ -291,9 +291,9 @@ episodic_exchange_payload_read <- function(body, types, required = list()) {
 #' whole number belongs is not something to coerce quietly.
 #' @keywords internal
 #' @noRd
-episodic_exchange_column_values <- function(values, type, column, table) {
+episodic_import_export_column_values <- function(values, type, column, table) {
   bad <- function() {
-    episodic_exchange_fail(
+    episodic_import_export_fail(
       "bad_payload",
       "Column `", column, "` of table `", table, "` holds a value that is ",
       "not ", if (identical(type, "integer")) "a whole number" else "text", "."

@@ -241,13 +241,13 @@ episodic_pkg_versions_extended <- function() {
 #'   already hashed and will match nothing. Leave as `NULL` (the default)
 #'   if you have none - detection falls back to raw case counts.
 #' @param imports Optional: cases from a partner instance, as
-#'   [episodic_exchange_import()] returns them, or a list of those. They
+#'   [episodic_cases_import()] returns them, or a list of those. They
 #'   are combined with `cases` before anything is written and loaded in
 #'   the same transaction, their keys already carrying the sender's
 #'   instance identifier as a prefix; each is recorded against this run in
-#'   `episodic_exchange_import_event`. Import sources registered on the
+#'   `episodic_import_event`. Import sources registered on the
 #'   dashboard's Instance screen are fetched by every run on top of these.
-#'   See `vignette("exchange")`.
+#'   See `vignette("import-export")`.
 #' @param episodic_config_path The config path.
 #' @param pathogen_config_path Path to an operator's own per-pathogen CSV,
 #'   overlaid row-by-row on the shipped
@@ -444,21 +444,21 @@ episodic_run_cron <- function(cases,
       }
       entries <- c(
         lapply(
-          episodic_exchange_imports_normalise(imports),
-          function(x) episodic_exchange_entry(cases = x)
+          episodic_cases_imports_normalise(imports),
+          function(x) episodic_import_export_entry(cases = x)
         ),
-        unname(episodic_exchange_sources_fetch(con, config))
+        unname(episodic_import_sources_fetch(con, config))
       )
-      exchange <- episodic_exchange_combine(con, cases, entries)
-      if (length(exchange$entries) > 0) {
+      combined <- episodic_import_export_combine(con, cases, entries)
+      if (length(combined$entries) > 0) {
         episodic_trace(
           "Imports combined: ",
-          sum(vapply(exchange$entries, function(e) identical(e$status, "imported"), logical(1))),
+          sum(vapply(combined$entries, function(e) identical(e$status, "imported"), logical(1))),
           " file(s), ",
-          sum(!is.na(exchange$origin_instance_id)),
+          sum(!is.na(combined$origin_instance_id)),
           " imported case row(s)",
-          if (exchange$n_repeated > 0) {
-            paste0(", ", exchange$n_repeated, " repeated in more than one file and kept once")
+          if (combined$n_repeated > 0) {
+            paste0(", ", combined$n_repeated, " repeated in more than one file and kept once")
           } else {
             ""
           }
@@ -505,7 +505,7 @@ episodic_run_cron <- function(cases,
 
   # Not a failure - an empty extract is a legitimate thing to hand over -
   # but never something to discover from an empty dashboard either.
-  if (nrow(exchange$cases) == 0) {
+  if (nrow(combined$cases) == 0) {
     warning(
       "The case data supplied to episodic_run_cron() has no rows, so this ",
       "run has nothing to detect on and writes no cases. Check the date ",
@@ -522,15 +522,15 @@ episodic_run_cron <- function(cases,
         con,
         run_id,
         config,
-        exchange$cases,
+        combined$cases,
         denominators,
         institution_activity,
         run_date,
         pathogen_config_path = pathogen_config_path,
         backfill = backfill,
         debug = debug,
-        origin_instance_id = exchange$origin_instance_id,
-        exchange_entries = exchange$entries
+        origin_instance_id = combined$origin_instance_id,
+        import_entries = combined$entries
       )
       episodic_trace("Committing transaction")
       DBI::dbCommit(con)
@@ -596,7 +596,7 @@ episodic_run_cron <- function(cases,
   # the cases on file are what an export sends, and a rolled-back run
   # changed none of them.
   tryCatch(
-    episodic_exchange_exports_dispatch(con, config, run_id, run_date),
+    episodic_export_schedules_dispatch(con, config, run_id, run_date),
     error = function(e) {
       episodic_trace(
         "Scheduled export dispatch failed: ",
@@ -1130,7 +1130,7 @@ episodic_run_cron_body <- function(con,
                                    backfill = NULL,
                                    debug = FALSE,
                                    origin_instance_id = NA_character_,
-                                   exchange_entries = list()) {
+                                   import_entries = list()) {
   episodic_trace("Loading pathogen configuration")
   pathogen_config <- episodic_pathogen_config_resolve(pathogen_config_path)
   if (!is.na(pathogen_config_path) && nzchar(pathogen_config_path)) {
@@ -1163,8 +1163,8 @@ episodic_run_cron_body <- function(con,
     ", inserted=",
     case_counts$n_inserted
   )
-  episodic_db_exchange_import_record(con, run_id, exchange_entries)
-  imports_failed <- Filter(function(e) identical(e$status, "failed"), exchange_entries)
+  episodic_db_import_record(con, run_id, import_entries)
+  imports_failed <- Filter(function(e) identical(e$status, "failed"), import_entries)
 
   denominators <- episodic_resolve_data(denominators)
   if (!is.null(denominators)) {

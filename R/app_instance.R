@@ -62,9 +62,9 @@ episodic_app_instance <- function(con, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
 #'
 #' @param instance The list from `episodic_app_instance()`.
 #' @param current_user The session's signed-in user row, or `NULL`. The
-#'   Settings and Exchange cards are omitted for anyone who is not an
+#'   Settings and Import and export cards are omitted for anyone who is not an
 #'   admin, the same gate `episodic_app_server_settings()` and
-#'   `episodic_app_server_exchange()` re-check server-side before they
+#'   `episodic_app_server_import_export()` re-check server-side before they
 #'   render those screens at all.
 #' @param lang Session language.
 #' @return A `shiny::tags$div`.
@@ -160,8 +160,8 @@ episodic_ui_instance_screen <- function(instance,
         ),
         # Admin-only for the same reason as Settings: it sends this
         # instance's cases elsewhere and decides what it takes in. The
-        # screen itself re-checks server-side (episodic_app_server_exchange()).
-        list(view = "exchange", meta = NULL)
+        # screen itself re-checks server-side (episodic_app_server_import_export()).
+        list(view = "import_export", meta = NULL)
       )
     )
   }

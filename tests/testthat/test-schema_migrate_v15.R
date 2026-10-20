@@ -18,13 +18,13 @@
 # ===================================================================== #
 
 # Schema version 15 adds the instance's identity (episodic_instance), the
-# tables of the exchange between instances, and the instance an imported
+# tables of import and export between instances, and the instance an imported
 # case came from (episodic_case.origin_instance_id).
 
 v15_fixture <- function() {
   path <- episodic_test_db_path()
   con <- episodic_db_connect(path)
-  for (table in rev(episodic_db_exchange_tables())) {
+  for (table in rev(episodic_db_import_export_tables())) {
     DBI::dbExecute(con, paste("DROP TABLE", table))
   }
   DBI::dbExecute(con, "ALTER TABLE episodic_case DROP COLUMN origin_instance_id")
@@ -37,7 +37,7 @@ v15_fixture <- function() {
   path
 }
 
-test_that("migration 15 adds the exchange tables and gives the database an identifier", {
+test_that("migration 15 adds the import and export tables and gives the database an identifier", {
   path <- v15_fixture()
   on.exit(unlink(c(path, Sys.glob(paste0(path, ".schema-*.bak")))))
   log <- testthat::capture_messages(episodic_db_migrate(path))
@@ -45,7 +45,7 @@ test_that("migration 15 adds the exchange tables and gives the database an ident
   con <- episodic_db_connect(path)
   on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
   expect_equal(episodic_db_schema_version(con), episodic_schema_version)
-  for (table in episodic_db_exchange_tables()) {
+  for (table in episodic_db_import_export_tables()) {
     expect_true(DBI::dbExistsTable(con, table), info = table)
   }
   expect_true(episodic_instance_id_valid(episodic_db_instance_id(con)))

@@ -18,9 +18,9 @@
 # ===================================================================== #
 
 # The instance's own identity: ten lowercase hexadecimal characters,
-# generated once per database and never changed. An exchange file names
+# generated once per database and never changed. An export file names
 # its sender by it, and an importing instance prefixes the sender's keys
-# with it (see R/exchange_import.R).
+# with it (see R/import_export_import.R).
 
 #' The tables schema version 15 adds
 #'
@@ -30,13 +30,13 @@
 #' @return A character vector of table names, parents before children.
 #' @keywords internal
 #' @noRd
-episodic_db_exchange_tables <- function() {
+episodic_db_import_export_tables <- function() {
   c(
     "episodic_instance",
-    "episodic_exchange_schedule_event",
-    "episodic_exchange_source_event",
-    "episodic_exchange_import_event",
-    "episodic_exchange_export_event"
+    "episodic_export_schedule_event",
+    "episodic_import_source_event",
+    "episodic_import_event",
+    "episodic_export_event"
   )
 }
 
@@ -147,7 +147,7 @@ episodic_db_instance_id <- function(con) {
 #' Every EpiSODIC database carries an identifier of its own: ten
 #' hexadecimal characters, generated once from a cryptographic random
 #' source when the database is created (or brought up to schema version
-#' 15) and never changed afterwards. It is what an exchange file names
+#' 15) and never changed afterwards. It is what an export file names
 #' its sender by, and what an importing instance prefixes the sender's
 #' `source_key`, `patient_key` and `lab_number` with, so that two
 #' laboratories' keys can never be mistaken for one another. Give it to
@@ -158,7 +158,7 @@ episodic_db_instance_id <- function(con) {
 #'   DSN (see [episodic_db_dsn_mariadb()]). Defaults to the
 #'   `EPISODIC_DB` environment variable.
 #' @return A single string of ten lowercase hexadecimal characters.
-#' @seealso `vignette("exchange")`
+#' @seealso `vignette("import-export")`
 #' @examples
 #' db_path <- tempfile(fileext = ".sqlite")
 #' DBI::dbDisconnect(episodic_db_create(db_path))

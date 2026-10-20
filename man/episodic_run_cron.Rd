@@ -41,13 +41,13 @@ already hashed and will match nothing. Leave as \code{NULL} (the default)
 if you have none - detection falls back to raw case counts.}
 
 \item{imports}{Optional: cases from a partner instance, as
-\code{\link[=episodic_exchange_import]{episodic_exchange_import()}} returns them, or a list of those. They
+\code{\link[=episodic_cases_import]{episodic_cases_import()}} returns them, or a list of those. They
 are combined with \code{cases} before anything is written and loaded in
 the same transaction, their keys already carrying the sender's
 instance identifier as a prefix; each is recorded against this run in
-\code{episodic_exchange_import_event}. Import sources registered on the
+\code{episodic_import_event}. Import sources registered on the
 dashboard's Instance screen are fetched by every run on top of these.
-See \code{vignette("exchange")}.}
+See \code{vignette("import-export")}.}
 
 \item{episodic_config_path}{The config path.}
 

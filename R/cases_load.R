@@ -43,7 +43,7 @@
 #' @param run_id The `run_id` of the current detection run
 #'   (`episodic_case.first_seen_run`).
 #' @param origin_instance_id The instance each row was imported from, as
-#'   `episodic_exchange_import()` stamps it, or `NA` for this instance's
+#'   `episodic_cases_import()` stamps it, or `NA` for this instance's
 #'   own cases: one value per row, or one for all. An imported row's
 #'   `institution_key` is already the stored hash (the exporting instance
 #'   hashed it, and its file declares so), so it is used as it is; hashing
@@ -90,8 +90,8 @@ episodic_cases_load <- function(con,
     stop(
       sum(bad_hash), " imported case row(s) carry an institution_key that ",
       "is not a stored SHA-1 hash (40 lowercase hexadecimal characters); ",
-      "an exchange file always carries the hash, so these rows did not come ",
-      "from episodic_exchange_import().",
+      "an export file always carries the hash, so these rows did not come ",
+      "from episodic_cases_import().",
       call. = FALSE
     )
   }

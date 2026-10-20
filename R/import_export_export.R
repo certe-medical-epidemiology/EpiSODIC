@@ -17,13 +17,13 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-# Exporting a date range of this instance's own cases to an exchange file.
+# Exporting a date range of this instance's own cases to an export file.
 #
-# Three callers build the same file: episodic_exchange_export() from a
-# script, the cron's scheduled exports (R/exchange_schedule.R) and the
-# dashboard's download button (R/app_exchange.R). All three go through
-# episodic_exchange_build() for the file and
-# episodic_db_exchange_export_record() for its audit row, so what an
+# Three callers build the same file: episodic_cases_export() from a
+# script, the cron's scheduled exports (R/import_export_schedule.R) and the
+# dashboard's download button (R/app_import_export.R). All three go through
+# episodic_import_export_build() for the file and
+# episodic_db_export_record() for its audit row, so what an
 # export contains and what the audit trail says about it cannot differ by
 # who asked for it.
 
@@ -33,7 +33,7 @@
 #' @return A `Date`.
 #' @keywords internal
 #' @noRd
-episodic_exchange_date <- function(x, what) {
+episodic_import_export_date <- function(x, what) {
   if (inherits(x, "Date") && length(x) == 1L && !is.na(x)) {
     return(x)
   }
@@ -49,7 +49,7 @@ episodic_exchange_date <- function(x, what) {
 #' Whether a value names an environment variable
 #' @keywords internal
 #' @noRd
-episodic_exchange_env_name_valid <- function(x) {
+episodic_import_export_env_name_valid <- function(x) {
   is.character(x) && length(x) == 1L && !is.na(x) && grepl("^[A-Za-z_][A-Za-z0-9_]*$", x)
 }
 
@@ -57,7 +57,7 @@ episodic_exchange_env_name_valid <- function(x) {
 #'
 #' The required case columns always, plus the optional ones `fields`
 #' names, or, when `fields` is `NULL`, the configured
-#' `exchange.export_fields` (`~` there meaning none of them). A name that
+#' `export.fields` (`~` there meaning none of them). A name that
 #' is not an optional case column is refused: a typo in a field list must
 #' not quietly export more, or less, than was asked for.
 #'
@@ -67,14 +67,14 @@ episodic_exchange_env_name_valid <- function(x) {
 #'   case data order) and `omitted` (the optional columns it leaves out).
 #' @keywords internal
 #' @noRd
-episodic_exchange_fields <- function(fields, config) {
+episodic_export_fields <- function(fields, config) {
   chosen <- if (is.null(fields)) {
-    unlist(config$exchange$export_fields)
+    unlist(config$export$fields)
   } else {
     fields
   }
   chosen <- as.character(chosen)
-  omittable <- episodic_exchange_omittable_fields()
+  omittable <- episodic_import_export_omittable_fields()
   required <- episodic_case_columns_required
   named_required <- intersect(chosen, required)
   unknown <- setdiff(chosen, c(omittable, required))
@@ -100,15 +100,15 @@ episodic_exchange_fields <- function(fields, config) {
 #' @return An integer, or `NULL`.
 #' @keywords internal
 #' @noRd
-episodic_exchange_pc_characters <- function(pc_characters, config) {
-  value <- pc_characters %||% config$exchange$pc_characters
+episodic_export_pc_characters <- function(pc_characters, config) {
+  value <- pc_characters %||% config$export$pc_characters
   if (is.null(value)) {
     return(NULL)
   }
   number <- suppressWarnings(as.numeric(value))
   if (length(number) != 1L || is.na(number) || number < 1 || number != round(number)) {
     stop(
-      "`pc_characters` (or exchange.pc_characters) must be a whole number ",
+      "`pc_characters` (or export.pc_characters) must be a whole number ",
       "of at least 1, or left unset to export postcodes as stored, not ",
       paste(format(value), collapse = ", "), ".",
       call. = FALSE
@@ -131,7 +131,7 @@ episodic_exchange_pc_characters <- function(pc_characters, config) {
 #'   date.
 #' @keywords internal
 #' @noRd
-episodic_db_exchange_cases <- function(con, from, to) {
+episodic_db_export_cases <- function(con, from, to) {
   cases <- episodic_db_get_query(
     con,
     "SELECT c.source_key, c.lab_number, c.patient_key, c.sample_date,
@@ -149,7 +149,7 @@ episodic_db_exchange_cases <- function(con, from, to) {
   if (any(is.na(cases$institution_key))) {
     stop(
       sum(is.na(cases$institution_key)), " case(s) in this range have no ",
-      "institution on file, and an exchange file carries the institution ",
+      "institution on file, and an export file carries the institution ",
       "of every case. The database is inconsistent; this export was not ",
       "written.",
       call. = FALSE
@@ -158,7 +158,7 @@ episodic_db_exchange_cases <- function(con, from, to) {
   cases[, episodic_case_columns, drop = FALSE]
 }
 
-#' Build an exchange file's bytes from the database
+#' Build an export file's bytes from the database
 #'
 #' Everything an export decides happens here: which cases, which columns,
 #' how coarse the postcodes, to whom, signed by whom. Writing the bytes
@@ -170,24 +170,24 @@ episodic_db_exchange_cases <- function(con, from, to) {
 #'   or `NULL` for passphrase mode.
 #' @param passphrase The passphrase, or `NULL` for public-key mode.
 #' @param signing_key The sender's secret signing key (text or path).
-#' @param fields,pc_characters See `episodic_exchange_export()`.
+#' @param fields,pc_characters See `episodic_cases_export()`.
 #' @param config A resolved configuration.
 #' @return A list with `bytes`, `file_sha256`, `n_cases`, `mode`,
 #'   `fields`, `omitted`, `pc_characters`, `recipient_fingerprints`,
 #'   `signer_fingerprint`, `from` and `to`.
 #' @keywords internal
 #' @noRd
-episodic_exchange_build <- function(con,
-                                    from,
-                                    to,
-                                    recipients,
-                                    passphrase,
-                                    signing_key,
-                                    fields,
-                                    pc_characters,
-                                    config) {
-  from <- episodic_exchange_date(from, "from")
-  to <- episodic_exchange_date(to, "to")
+episodic_import_export_build <- function(con,
+                                         from,
+                                         to,
+                                         recipients,
+                                         passphrase,
+                                         signing_key,
+                                         fields,
+                                         pc_characters,
+                                         config) {
+  from <- episodic_import_export_date(from, "from")
+  to <- episodic_import_export_date(to, "to")
   if (from > to) {
     stop("`from` (", from, ") is after `to` (", to, ").", call. = FALSE)
   }
@@ -205,11 +205,11 @@ episodic_exchange_build <- function(con,
     if (!is.character(passphrase) || length(passphrase) != 1L || is.na(passphrase)) {
       stop("`passphrase` must be a single string.", call. = FALSE)
     }
-    if (nchar(passphrase, type = "chars") < episodic_exchange_passphrase_min_chars) {
+    if (nchar(passphrase, type = "chars") < episodic_import_export_passphrase_min_chars) {
       stop(
         "The passphrase has ", nchar(passphrase, type = "chars"), " ",
         "characters, and an export needs at least ",
-        episodic_exchange_passphrase_min_chars, ": a file kept in a public ",
+        episodic_import_export_passphrase_min_chars, ": a file kept in a public ",
         "place can be guessed at offline for as long as anyone likes. ",
         "Prefer recipients' public keys where you can.",
         call. = FALSE
@@ -218,7 +218,7 @@ episodic_exchange_build <- function(con,
   }
   recipient_raw <- if (has_recipients) {
     lapply(seq_along(recipients), function(i) {
-      episodic_exchange_key_read(
+      episodic_import_export_key_read(
         recipients[[i]],
         "encryption",
         "public",
@@ -229,24 +229,24 @@ episodic_exchange_build <- function(con,
     NULL
   }
   if (has_recipients) {
-    fingerprints <- vapply(recipient_raw, episodic_exchange_fingerprint, character(1))
+    fingerprints <- vapply(recipient_raw, episodic_import_export_fingerprint, character(1))
     if (anyDuplicated(fingerprints)) {
       stop("The same recipient key is listed more than once.", call. = FALSE)
     }
   } else {
     fingerprints <- character(0)
   }
-  signing_secret <- episodic_exchange_key_read(
+  signing_secret <- episodic_import_export_key_read(
     signing_key,
     "signing",
     "secret",
     "The signing key",
-    env = "EPISODIC_EXCHANGE_SIGNING_KEY"
+    env = "EPISODIC_EXPORT_SIGNING_KEY"
   )
-  selection <- episodic_exchange_fields(fields, config)
-  pc_n <- episodic_exchange_pc_characters(pc_characters, config)
+  selection <- episodic_export_fields(fields, config)
+  pc_n <- episodic_export_pc_characters(pc_characters, config)
 
-  cases <- episodic_db_exchange_cases(con, from, to)
+  cases <- episodic_db_export_cases(con, from, to)
   if (!is.null(pc_n) && "pc" %in% selection$fields) {
     cases$pc <- ifelse(is.na(cases$pc), NA_character_, substr(cases$pc, 1L, pc_n))
   }
@@ -255,7 +255,7 @@ episodic_exchange_build <- function(con,
   cases$age <- as.integer(cases$age)
   cases <- cases[, selection$fields, drop = FALSE]
 
-  types <- episodic_exchange_case_types()[selection$fields]
+  types <- episodic_import_export_case_types()[selection$fields]
   manifest <- list(
     sender_instance_id = episodic_db_instance_id(con),
     episodic_version = as.character(utils::packageVersion("EpiSODIC")),
@@ -269,8 +269,8 @@ episodic_exchange_build <- function(con,
     hashed_columns = I("institution_key"),
     own_cases_only = TRUE
   )
-  body <- episodic_exchange_payload_build(manifest, list(cases = cases), list(cases = types))
-  bytes <- episodic_exchange_seal(
+  body <- episodic_import_export_payload_build(manifest, list(cases = cases), list(cases = types))
+  bytes <- episodic_import_export_seal(
     body,
     recipients = recipient_raw,
     passphrase = if (has_passphrase) passphrase else NULL,
@@ -285,7 +285,7 @@ episodic_exchange_build <- function(con,
     omitted = selection$omitted,
     pc_characters = pc_n,
     recipient_fingerprints = unname(fingerprints),
-    signer_fingerprint = episodic_exchange_fingerprint(sodium::sig_pubkey(signing_secret)),
+    signer_fingerprint = episodic_import_export_fingerprint(sodium::sig_pubkey(signing_secret)),
     from = from,
     to = to
   )
@@ -301,12 +301,12 @@ episodic_exchange_build <- function(con,
 #' @return Invisibly, `file`.
 #' @keywords internal
 #' @noRd
-episodic_exchange_write_file <- function(bytes, file) {
+episodic_import_export_write_file <- function(bytes, file) {
   dir <- dirname(file)
   if (!dir.exists(dir)) {
     stop("The directory ", dir, " does not exist.", call. = FALSE)
   }
-  partial <- tempfile(".episodic-exchange-", tmpdir = dir)
+  partial <- tempfile(".episodic-import-export-", tmpdir = dir)
   on.exit(if (file.exists(partial)) unlink(partial), add = TRUE)
   writeBin(bytes, partial)
   if (!file.rename(partial, file)) {
@@ -321,7 +321,7 @@ episodic_exchange_write_file <- function(bytes, file) {
 
 #' Record an export in the audit trail
 #'
-#' The one writer of `episodic_exchange_export_event`, called for every
+#' The one writer of `episodic_export_event`, called for every
 #' export whichever process ran it, and for a failed one as well. It only
 #' inserts.
 #'
@@ -329,7 +329,7 @@ episodic_exchange_write_file <- function(bytes, file) {
 #' @param initiated_by `"headless"`, `"schedule"` or `"download"`.
 #' @param status `"written"` or `"failed"`.
 #' @param from,to The range asked for.
-#' @param built `episodic_exchange_build()`'s result, or `NULL` when the
+#' @param built `episodic_import_export_build()`'s result, or `NULL` when the
 #'   export failed before a file existed.
 #' @param destination Where the file went: a path, a URL, or
 #'   `"env:<VARIABLE>"`.
@@ -339,28 +339,28 @@ episodic_exchange_write_file <- function(bytes, file) {
 #' @return The new `export_id`.
 #' @keywords internal
 #' @noRd
-episodic_db_exchange_export_record <- function(con,
-                                               initiated_by,
-                                               status,
-                                               from,
-                                               to,
-                                               built = NULL,
-                                               destination = NA_character_,
-                                               schedule_name = NA_character_,
-                                               schedule_event_id = NA_integer_,
-                                               user_id = NA_integer_,
-                                               run_id = NA_integer_,
-                                               error_text = NA_character_) {
+episodic_db_export_record <- function(con,
+                                      initiated_by,
+                                      status,
+                                      from,
+                                      to,
+                                      built = NULL,
+                                      destination = NA_character_,
+                                      schedule_name = NA_character_,
+                                      schedule_event_id = NA_integer_,
+                                      user_id = NA_integer_,
+                                      run_id = NA_integer_,
+                                      error_text = NA_character_) {
   json <- function(x) {
     if (is.null(x)) NA_character_ else as.character(jsonlite::toJSON(as.character(x)))
   }
   as_day <- function(x) {
-    parsed <- tryCatch(episodic_exchange_date(x, "date"), error = function(e) NULL)
+    parsed <- tryCatch(episodic_import_export_date(x, "date"), error = function(e) NULL)
     if (is.null(parsed)) as.character(x)[1] else format(parsed, "%Y-%m-%d")
   }
   episodic_db_execute(
     con,
-    "INSERT INTO episodic_exchange_export_event
+    "INSERT INTO episodic_export_event
        (exported_at, initiated_by, schedule_name, schedule_event_id, user_id,
         run_id, host, account, status, mode, date_from, date_to, n_cases,
         fields, omitted_fields, pc_characters, recipient_fingerprints,
@@ -394,11 +394,11 @@ episodic_db_exchange_export_record <- function(con,
   episodic_db_last_insert_id(con)
 }
 
-#' Export a Date Range of Cases to an Encrypted Exchange File
+#' Export a Date Range of Cases to an Encrypted Export File
 #'
 #' Writes this instance's own cases with a sample date from `from` to
 #' `to` into one encrypted, signed file that another EpiSODIC instance
-#' imports with [episodic_exchange_import()]. The file is safe to keep in
+#' imports with [episodic_cases_import()]. The file is safe to keep in
 #' a public place (a public bucket, a shared drive, a Git repository):
 #' without a recipient's key it reveals nothing beyond its own size, and
 #' without your signing key nobody can forge or alter it. It works
@@ -424,14 +424,14 @@ episodic_db_exchange_export_record <- function(con,
 #' senders they have pinned.
 #'
 #' **What leaves the instance.** Cases are exported as this instance
-#' stores them: one row per episode (see `vignette("exchange")`), with the
+#' stores them: one row per episode (see `vignette("import-export")`), with the
 #' institution as its stored SHA-1 hash, never the raw key. Cases this
 #' instance itself imported from a partner are never exported. Only the
 #' optional columns in `fields` are included; the others are left out of
 #' the file entirely, the file records which, and an importer receives
 #' them as not recorded (`NA`), never as a default value.
 #'
-#' Every export is recorded in the database (`episodic_exchange_export_event`):
+#' Every export is recorded in the database (`episodic_export_event`):
 #' when, by which host and account, the range, the columns, the
 #' recipients' key fingerprints, the signing key's fingerprint, the number
 #' of cases and the SHA-256 of the file. A failed export is recorded too.
@@ -446,23 +446,23 @@ episodic_db_exchange_export_record <- function(con,
 #' @param recipients For public-key mode: one or more recipients' public
 #'   encryption keys, each as its text or as the path of its `.pub` file.
 #' @param signing_key Your secret signing key, as its text or as the path
-#'   of the file [episodic_exchange_keygen()] wrote. Defaults to the
-#'   `EPISODIC_EXCHANGE_SIGNING_KEY` environment variable.
+#'   of the file [episodic_import_export_keygen()] wrote. Defaults to the
+#'   `EPISODIC_EXPORT_SIGNING_KEY` environment variable.
 #' @param passphrase For passphrase mode: the passphrase. Give either
 #'   `recipients` or `passphrase`, not both.
 #' @param fields The optional case columns to include (any of
 #'   `receipt_date`, `care_line`, `municipality`, `ward`, `specialism`,
 #'   `pc`, `sex`, `age`). `NULL` (the default) uses the configured
-#'   `exchange.export_fields`. The required columns are always included.
+#'   `export.fields`. The required columns are always included.
 #' @param pc_characters Keep only the first this many characters of each
 #'   postcode. `NULL` (the default) uses the configured
-#'   `exchange.pc_characters`, which ships unset: postcodes as stored.
+#'   `export.pc_characters`, which ships unset: postcodes as stored.
 #' @param episodic_config_path The configuration path. Defaults to the
 #'   `EPISODIC_CONFIG` environment variable.
 #' @return Invisibly, a list with `file`, `file_sha256`, `n_cases`,
 #'   `fields`, `omitted_fields` and `export_id` (the audit row).
-#' @seealso [episodic_exchange_import()], [episodic_exchange_keygen()],
-#'   `vignette("exchange")`
+#' @seealso [episodic_cases_import()], [episodic_import_export_keygen()],
+#'   `vignette("import-export")`
 #' @examples
 #' \donttest{
 #' db_path <- tempfile(fileext = ".sqlite")
@@ -473,10 +473,10 @@ episodic_db_exchange_export_record <- function(con,
 #'   db_path = db_path,
 #'   run_date = as.Date("2025-03-31")
 #' )
-#' sender <- episodic_exchange_keygen(tempfile())
-#' receiver <- episodic_exchange_keygen(tempfile())
+#' sender <- episodic_import_export_keygen(tempfile())
+#' receiver <- episodic_import_export_keygen(tempfile())
 #' file <- tempfile(fileext = ".episodic")
-#' episodic_exchange_export(
+#' episodic_cases_export(
 #'   db_path = db_path,
 #'   from = "2025-03-01",
 #'   to = "2025-03-31",
@@ -486,16 +486,16 @@ episodic_db_exchange_export_record <- function(con,
 #' )
 #' }
 #' @export
-episodic_exchange_export <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA),
-                                     from,
-                                     to,
-                                     file,
-                                     recipients = NULL,
-                                     signing_key = Sys.getenv("EPISODIC_EXCHANGE_SIGNING_KEY", unset = NA),
-                                     passphrase = NULL,
-                                     fields = NULL,
-                                     pc_characters = NULL,
-                                     episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
+episodic_cases_export <- function(db_path = Sys.getenv("EPISODIC_DB", unset = NA),
+                                  from,
+                                  to,
+                                  file,
+                                  recipients = NULL,
+                                  signing_key = Sys.getenv("EPISODIC_EXPORT_SIGNING_KEY", unset = NA),
+                                  passphrase = NULL,
+                                  fields = NULL,
+                                  pc_characters = NULL,
+                                  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
   if (!is.character(file) || length(file) != 1L || is.na(file) || !nzchar(file)) {
     stop("`file` must be a single path.", call. = FALSE)
   }
@@ -505,7 +505,7 @@ episodic_exchange_export <- function(db_path = Sys.getenv("EPISODIC_DB", unset =
 
   outcome <- tryCatch(
     {
-      built <- episodic_exchange_build(
+      built <- episodic_import_export_build(
         con,
         from = from,
         to = to,
@@ -516,14 +516,14 @@ episodic_exchange_export <- function(db_path = Sys.getenv("EPISODIC_DB", unset =
         pc_characters = pc_characters,
         config = config
       )
-      episodic_exchange_write_file(built$bytes, file)
+      episodic_import_export_write_file(built$bytes, file)
       built
     },
     error = function(e) e
   )
   if (inherits(outcome, "error")) {
     recorded <- tryCatch(
-      episodic_db_exchange_export_record(
+      episodic_db_export_record(
         con,
         initiated_by = "headless",
         status = "failed",
@@ -543,7 +543,7 @@ episodic_exchange_export <- function(db_path = Sys.getenv("EPISODIC_DB", unset =
     }
     stop(outcome)
   }
-  export_id <- episodic_db_exchange_export_record(
+  export_id <- episodic_db_export_record(
     con,
     initiated_by = "headless",
     status = "written",

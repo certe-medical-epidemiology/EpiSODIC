@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-# Importing an exchange file as case data.
+# Importing an export file as case data.
 #
 # An import never writes to the database. The case tables are cron-owned,
 # so imported cases reach them the way every other case does: through
@@ -27,12 +27,12 @@
 # taken for this instance's own, and that their institution key is
 # already the stored hash.
 
-#' Read an exchange file's bytes
+#' Read an export file's bytes
 #' @param file A path, or the file's bytes as a raw vector.
 #' @return A raw vector.
 #' @keywords internal
 #' @noRd
-episodic_exchange_read_bytes <- function(file) {
+episodic_import_export_read_bytes <- function(file) {
   if (is.raw(file)) {
     return(file)
   }
@@ -40,7 +40,7 @@ episodic_exchange_read_bytes <- function(file) {
     stop("`file` must be a single path, or the file's bytes as a raw vector.", call. = FALSE)
   }
   if (!file.exists(file)) {
-    episodic_exchange_fail("no_file", "No exchange file exists at ", file, ".")
+    episodic_import_export_fail("no_file", "No export file exists at ", file, ".")
   }
   size <- file.info(file)$size
   readBin(file, what = "raw", n = size)
@@ -61,7 +61,7 @@ episodic_exchange_read_bytes <- function(file) {
 #' @return `cases` with the three columns prefixed.
 #' @keywords internal
 #' @noRd
-episodic_exchange_prefix_keys <- function(cases, instance_id) {
+episodic_import_export_prefix_keys <- function(cases, instance_id) {
   for (column in c("source_key", "patient_key", "lab_number")) {
     cases[[column]] <- paste0(instance_id, ":", cases[[column]])
   }
@@ -86,10 +86,10 @@ episodic_exchange_prefix_keys <- function(cases, instance_id) {
 #'   cannot place; empty when every case can be placed everywhere.
 #' @keywords internal
 #' @noRd
-episodic_exchange_geography_warnings <- function(cases,
-                                                 config,
-                                                 pc_characters,
-                                                 province_map_path = Sys.getenv("EPISODIC_PC_PROVINCE_MAP", unset = NA)) {
+episodic_import_export_geography_warnings <- function(cases,
+                                                      config,
+                                                      pc_characters,
+                                                      province_map_path = Sys.getenv("EPISODIC_PC_PROVINCE_MAP", unset = NA)) {
   n <- nrow(cases)
   if (n == 0) {
     return(character(0))
@@ -137,9 +137,9 @@ episodic_exchange_geography_warnings <- function(cases,
   warnings
 }
 
-#' Import an Encrypted Exchange File as Case Data
+#' Import an Encrypted Export File as Case Data
 #'
-#' Opens a file written by [episodic_exchange_export()] at another
+#' Opens a file written by [episodic_cases_export()] at another
 #' instance, verifies it in full, and returns its cases as a validated
 #' data frame in the case data format. It does **not** write to the
 #' database: hand the result to [episodic_run_cron()] as `imports`, and
@@ -147,7 +147,7 @@ episodic_exchange_geography_warnings <- function(cases,
 #' every other case, with the import itself recorded against that run.
 #'
 #' ```r
-#' partner <- episodic_exchange_import(
+#' partner <- episodic_cases_import(
 #'   "partner.episodic",
 #'   trusted_senders = "keys/partner_signing.pub"
 #' )
@@ -161,7 +161,7 @@ episodic_exchange_geography_warnings <- function(cases,
 #' tampered or truncated file, a format version this EpiSODIC does not
 #' read, and a hash mismatch each stop with an error that says which; a
 #' partially readable file is never partially imported. The error carries
-#' class `episodic_exchange_error` and a `reason` code.
+#' class `episodic_import_export_error` and a `reason` code.
 #'
 #' What is returned:
 #'
@@ -177,20 +177,20 @@ episodic_exchange_geography_warnings <- function(cases,
 #'     place at some level are kept, with a warning per level.
 #' }
 #'
-#' The data frame carries class `episodic_exchange_cases` and an
-#' `"exchange"` attribute describing the file (sender, signer
+#' The data frame carries class `episodic_imported_cases` and an
+#' `"import"` attribute describing the file (sender, signer
 #' fingerprint, range, omitted columns, the file's SHA-256, the
 #' warnings), which the run records.
 #'
 #' Imports are append-only: a case the sender later corrects or retracts
-#' stays as it was first imported. See `vignette("exchange")` for this
+#' stays as it was first imported. See `vignette("import-export")` for this
 #' and the other limits (patient linkage across laboratories, pathogen
 #' naming, history imported after the first run).
 #'
-#' @param file The exchange file: a path, or its bytes as a raw vector.
+#' @param file The export file: a path, or its bytes as a raw vector.
 #' @param key Your secret encryption key, as its text or as the path of
-#'   the file [episodic_exchange_keygen()] wrote. Defaults to the
-#'   `EPISODIC_EXCHANGE_KEY` environment variable. Not used for a
+#'   the file [episodic_import_export_keygen()] wrote. Defaults to the
+#'   `EPISODIC_IMPORT_KEY` environment variable. Not used for a
 #'   passphrase file.
 #' @param trusted_senders The public signing keys of the partners whose
 #'   files you accept, each as its text or as the path of its `.pub`
@@ -200,46 +200,46 @@ episodic_exchange_geography_warnings <- function(cases,
 #' @param episodic_config_path The configuration path, for the geography
 #'   the warnings are measured against. Defaults to the `EPISODIC_CONFIG`
 #'   environment variable.
-#' @return A data frame of class `episodic_exchange_cases`, with exactly
-#'   the case data columns, and the `"exchange"` attribute.
-#' @seealso [episodic_exchange_export()], [episodic_run_cron()],
-#'   `vignette("exchange")`
+#' @return A data frame of class `episodic_imported_cases`, with exactly
+#'   the case data columns, and the `"import"` attribute.
+#' @seealso [episodic_cases_export()], [episodic_run_cron()],
+#'   `vignette("import-export")`
 #' @examples
 #' \dontrun{
-#' partner <- episodic_exchange_import(
+#' partner <- episodic_cases_import(
 #'   "partner.episodic",
 #'   trusted_senders = "keys/partner_signing.pub"
 #' )
-#' attr(partner, "exchange")$omitted_fields
+#' attr(partner, "import")$omitted_fields
 #' episodic_run_cron(cases = my_cases, imports = partner)
 #' }
 #' @export
-episodic_exchange_import <- function(file,
-                                     key = Sys.getenv("EPISODIC_EXCHANGE_KEY", unset = NA),
-                                     trusted_senders,
-                                     passphrase = NULL,
-                                     episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
+episodic_cases_import <- function(file,
+                                  key = Sys.getenv("EPISODIC_IMPORT_KEY", unset = NA),
+                                  trusted_senders,
+                                  passphrase = NULL,
+                                  episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
   if (missing(trusted_senders)) {
     trusted_senders <- character(0)
   }
-  imported <- episodic_exchange_import_bytes(
-    episodic_exchange_read_bytes(file),
+  imported <- episodic_cases_import_bytes(
+    episodic_import_export_read_bytes(file),
     secret_key = if (is.null(passphrase)) {
-      episodic_exchange_key_read(
+      episodic_import_export_key_read(
         key,
         "encryption",
         "secret",
         "The secret encryption key",
-        env = "EPISODIC_EXCHANGE_KEY"
+        env = "EPISODIC_IMPORT_KEY"
       )
     } else {
       NULL
     },
     passphrase = passphrase,
-    trusted = episodic_exchange_trusted_read(trusted_senders),
+    trusted = episodic_import_export_trusted_read(trusted_senders),
     config = episodic_config_resolve(episodic_config_path)
   )
-  for (w in attr(imported, "exchange")$warnings) {
+  for (w in attr(imported, "import")$warnings) {
     warning(w, call. = FALSE)
   }
   imported
@@ -250,16 +250,16 @@ episodic_exchange_import <- function(file,
 #' @return A list of raw keys.
 #' @keywords internal
 #' @noRd
-episodic_exchange_trusted_read <- function(trusted_senders) {
+episodic_import_export_trusted_read <- function(trusted_senders) {
   if (length(trusted_senders) == 0) {
-    episodic_exchange_fail(
+    episodic_import_export_fail(
       "untrusted_sender",
       "`trusted_senders` is empty, so no file can be accepted: name the ",
       "public signing key of every partner whose files you import."
     )
   }
   lapply(seq_along(trusted_senders), function(i) {
-    episodic_exchange_key_read(
+    episodic_import_export_key_read(
       trusted_senders[[i]],
       "signing",
       "public",
@@ -268,12 +268,12 @@ episodic_exchange_trusted_read <- function(trusted_senders) {
   })
 }
 
-#' Import an exchange file's bytes: the work behind `episodic_exchange_import()`
+#' Import an export file's bytes: the work behind `episodic_cases_import()`
 #'
 #' Shared with the cron, which fetches registered import sources, and with
 #' the connection test, which imports what it fetched to prove the next
 #' run will be able to. Raises no R warning: the geography warnings are
-#' returned in the `"exchange"` attribute, and each caller reports them
+#' returned in the `"import"` attribute, and each caller reports them
 #' its own way (`warning()` at the console, the run log in a run).
 #'
 #' @param bytes The file's bytes.
@@ -282,19 +282,19 @@ episodic_exchange_trusted_read <- function(trusted_senders) {
 #' @param passphrase The passphrase, or `NULL`.
 #' @param trusted A list of raw signing public keys.
 #' @param config A resolved configuration.
-#' @return As `episodic_exchange_import()`.
+#' @return As `episodic_cases_import()`.
 #' @keywords internal
 #' @noRd
-episodic_exchange_import_bytes <- function(bytes, secret_key, passphrase, trusted, config) {
-  opened <- episodic_exchange_open(
+episodic_cases_import_bytes <- function(bytes, secret_key, passphrase, trusted, config) {
+  opened <- episodic_import_export_open(
     bytes,
     secret_key = secret_key,
     passphrase = passphrase,
     trusted_senders = trusted
   )
-  payload <- episodic_exchange_payload_read(
+  payload <- episodic_import_export_payload_read(
     opened$body,
-    types = list(cases = episodic_exchange_case_types()),
+    types = list(cases = episodic_import_export_case_types()),
     required = list(cases = episodic_case_columns_required)
   )
   manifest <- payload$manifest
@@ -302,25 +302,25 @@ episodic_exchange_import_bytes <- function(bytes, secret_key, passphrase, truste
 
   sender <- manifest$sender_instance_id
   if (!episodic_instance_id_valid(sender)) {
-    episodic_exchange_fail(
+    episodic_import_export_fail(
       "bad_payload",
-      "This exchange file names no valid sender instance identifier, so ",
+      "This export file names no valid sender instance identifier, so ",
       "its keys cannot be told apart from anyone else's."
     )
   }
   hashed <- unlist(manifest$hashed_columns)
   if (!"institution_key" %in% hashed) {
-    episodic_exchange_fail(
+    episodic_import_export_fail(
       "bad_payload",
-      "This exchange file does not declare its institution_key hashed. ",
+      "This export file does not declare its institution_key hashed. ",
       "Hashing it here would produce a key that matches no institution, ",
       "and using it unhashed would put a raw identifier in the database."
     )
   }
   if (!all(grepl("^[0-9a-f]{40}$", cases$institution_key))) {
-    episodic_exchange_fail(
+    episodic_import_export_fail(
       "bad_payload",
-      "This exchange file declares its institution_key hashed, but not ",
+      "This export file declares its institution_key hashed, but not ",
       "every value is a SHA-1 hash."
     )
   }
@@ -328,9 +328,9 @@ episodic_exchange_import_bytes <- function(bytes, secret_key, passphrase, truste
   omitted <- unlist(manifest$omitted_fields) %||% character(0)
   absent <- setdiff(episodic_case_columns, carried)
   if (!setequal(absent, omitted)) {
-    episodic_exchange_fail(
+    episodic_import_export_fail(
       "bad_payload",
-      "This exchange file's manifest says it left out ",
+      "This export file's manifest says it left out ",
       if (length(omitted)) paste(omitted, collapse = ", ") else "nothing",
       ", but its case table lacks ",
       if (length(absent)) paste(absent, collapse = ", ") else "nothing",
@@ -341,29 +341,29 @@ episodic_exchange_import_bytes <- function(bytes, secret_key, passphrase, truste
   # column's own type, which the case data format reads as "not
   # recorded", and nothing that could be read as a value.
   for (column in absent) {
-    cases[[column]] <- if (identical(episodic_exchange_case_types()[[column]], "integer")) {
+    cases[[column]] <- if (identical(episodic_import_export_case_types()[[column]], "integer")) {
       rep(NA_integer_, nrow(cases))
     } else {
       rep(NA_character_, nrow(cases))
     }
   }
   cases <- cases[, episodic_case_columns, drop = FALSE]
-  cases <- episodic_exchange_prefix_keys(cases, sender)
+  cases <- episodic_import_export_prefix_keys(cases, sender)
 
   # The same checks a run applies to any case data, so a file a run would
   # refuse is refused here, where the operator is looking.
   report <- episodic_check_cases(cases, stop_on_problem = TRUE)
 
   pc_characters <- manifest$pc_characters
-  warnings <- episodic_exchange_geography_warnings(
+  warnings <- episodic_import_export_geography_warnings(
     cases,
     config,
     pc_characters = if (is.null(pc_characters)) NULL else as.integer(pc_characters)
   )
   structure(
     cases,
-    class = c("episodic_exchange_cases", "data.frame"),
-    exchange = list(
+    class = c("episodic_imported_cases", "data.frame"),
+    import = list(
       sender_instance_id = sender,
       signer_fingerprint = opened$signer_fingerprint,
       mode = opened$mode,
@@ -386,21 +386,21 @@ episodic_exchange_import_bytes <- function(bytes, secret_key, passphrase, truste
   )
 }
 
-#' Print an imported exchange file's cases
+#' Print an imported export file's cases
 #'
 #' Says whose cases they are, for which range, and what the sender left
 #' out, before the first rows: the provenance is the part of an import a
 #' bare data frame print would hide.
-#' @param x An `episodic_exchange_cases` data frame.
+#' @param x An `episodic_imported_cases` data frame.
 #' @param ... Ignored.
 #' @return `x`, invisibly.
 #' @keywords internal
 #' @noRd
 #' @export
-print.episodic_exchange_cases <- function(x, ...) {
-  meta <- attr(x, "exchange")
+print.episodic_imported_cases <- function(x, ...) {
+  meta <- attr(x, "import")
   cat(
-    "<episodic_exchange_cases> ", nrow(x), " case(s) from instance ",
+    "<episodic_imported_cases> ", nrow(x), " case(s) from instance ",
     meta$sender_instance_id, " (", meta$from, " to ", meta$to, ")\n",
     sep = ""
   )
@@ -409,7 +409,7 @@ print.episodic_exchange_cases <- function(x, ...) {
   }
   plain <- x
   class(plain) <- "data.frame"
-  attr(plain, "exchange") <- NULL
+  attr(plain, "import") <- NULL
   print(utils::head(plain))
   invisible(x)
 }

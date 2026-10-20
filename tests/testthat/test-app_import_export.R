@@ -17,11 +17,11 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-# The Exchange screen: admin-only in the card, in the render and in every
+# The Import and export screen: admin-only in the card, in the render and in every
 # handler, exercised through the real server with shiny::testServer().
-# Helpers in helper-exchange.R.
+# Helpers in helper-import_export.R.
 
-app_exchange_setup <- function(db_path = episodic_test_db_path()) {
+app_import_export_setup <- function(db_path = episodic_test_db_path()) {
   con <- episodic_db_connect(db_path)
   on.exit(DBI::dbDisconnect(con))
   admin_id <- episodic_db_app_user_insert(
@@ -42,15 +42,15 @@ app_exchange_setup <- function(db_path = episodic_test_db_path()) {
   list(db_path = db_path, admin_id = admin_id, viewer_id = viewer_id)
 }
 
-app_exchange_sign_in <- function(session, username, password) {
+app_import_export_sign_in <- function(session, username, password) {
   session$setInputs(auth_username_val = username, auth_password_val = password)
   session$setInputs(auth_login_submit = 1)
   session$flushReact()
-  session$setInputs(nav_view = "exchange")
+  session$setInputs(nav_view = "import_export")
   session$flushReact()
 }
 
-test_that("the Exchange card is an admin's only", {
+test_that("the Import and export card is an admin's only", {
   instance <- list(
     counts = list(streams = 1L, runs = 1L, users = 1L, clusters = 0L),
     archive_outbreaks = 0L,
@@ -58,96 +58,96 @@ test_that("the Exchange card is an admin's only", {
     overall_ppv = NA_real_,
     version = "1.0.0"
   )
-  expect_false(grepl('data-episodic-nav="exchange"', as.character(episodic_ui_instance_screen(instance, lang = "en")), fixed = TRUE))
+  expect_false(grepl('data-episodic-nav="import_export"', as.character(episodic_ui_instance_screen(instance, lang = "en")), fixed = TRUE))
   admin <- data.frame(user_id = 1L, is_admin = 1L)
   html <- as.character(episodic_ui_instance_screen(instance, current_user = admin, lang = "en"))
-  expect_true(grepl('data-episodic-nav="exchange"', html, fixed = TRUE))
-  expect_identical(episodic_app_nav_group("exchange"), "instance")
+  expect_true(grepl('data-episodic-nav="import_export"', html, fixed = TRUE))
+  expect_identical(episodic_app_nav_group("import_export"), "instance")
 })
 
-test_that("a non-admin sees no Exchange screen and can record nothing", {
+test_that("a non-admin sees no Import and export screen and can record nothing", {
   skip_if_not_installed("sodium")
-  sender <- exchange_test_party()
-  setup <- app_exchange_setup()
+  sender <- import_export_test_party()
+  setup <- app_import_export_setup()
   on.exit(unlink(c(sender$dir, setup$db_path), recursive = TRUE))
   server <- episodic_app_server_factory(setup$db_path, lang = "en")
   shiny::testServer(server, {
-    app_exchange_sign_in(session, "viewer1", "viewerpass1")
-    rendered <- paste(output$exchange_screen, collapse = "\n")
+    app_import_export_sign_in(session, "viewer1", "viewerpass1")
+    rendered <- paste(output$import_export_screen, collapse = "\n")
     expect_true(grepl(episodic_tr("settings.no_access", lang = "en"), rendered, fixed = TRUE))
     session$setInputs(
-      exch_so_name = "Sneaky",
-      exch_so_sender = paste(readLines(sender$signing_public), collapse = "\n"),
-      exch_so_loc = tempfile()
+      impexp_so_name = "Sneaky",
+      impexp_so_sender = paste(readLines(sender$signing_public), collapse = "\n"),
+      impexp_so_loc = tempfile()
     )
-    session$setInputs(exch_source_save = 1)
+    session$setInputs(impexp_source_save = 1)
     session$flushReact()
-    expect_error(output$exch_download)
+    expect_error(output$impexp_download)
     DBI::dbDisconnect(con)
   })
   con <- episodic_db_connect(setup$db_path)
   on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
-  expect_equal(nrow(episodic_db_exchange_source_events(con)), 0L)
-  expect_equal(DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM episodic_exchange_export_event")$n, 0L)
+  expect_equal(nrow(episodic_db_import_source_events(con)), 0L)
+  expect_equal(DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM episodic_export_event")$n, 0L)
 })
 
 test_that("an admin registers, tests and cancels an import source", {
   skip_if_not_installed("sodium")
-  sender <- exchange_test_party()
-  setup <- app_exchange_setup()
+  sender <- import_export_test_party()
+  setup <- app_import_export_setup()
   file <- tempfile(fileext = ".episodic")
   on.exit(unlink(c(sender$dir, setup$db_path), recursive = TRUE))
   server <- episodic_app_server_factory(setup$db_path, lang = "en")
   shiny::testServer(server, {
-    app_exchange_sign_in(session, "admin1", "adminpass1")
-    rendered <- paste(output$exchange_screen, collapse = "\n")
+    app_import_export_sign_in(session, "admin1", "adminpass1")
+    rendered <- paste(output$import_export_screen, collapse = "\n")
     expect_false(grepl(episodic_tr("settings.no_access", lang = "en"), rendered, fixed = TRUE))
     session$setInputs(
-      exch_so_name = "From partner",
-      exch_so_sender = paste(readLines(sender$signing_public), collapse = "\n"),
-      exch_so_loc = file
+      impexp_so_name = "From partner",
+      impexp_so_sender = paste(readLines(sender$signing_public), collapse = "\n"),
+      impexp_so_loc = file
     )
-    session$setInputs(exch_source_save = 1)
+    session$setInputs(impexp_source_save = 1)
     session$flushReact()
-    rendered <- paste(output$exchange_screen, collapse = "\n")
+    rendered <- paste(output$import_export_screen, collapse = "\n")
     expect_true(grepl("From partner", rendered, fixed = TRUE))
 
-    session$setInputs(exch_action = list(action = "source_test", name = "From partner", nonce = 1))
+    session$setInputs(impexp_action = list(action = "source_test", name = "From partner", nonce = 1))
     session$flushReact()
-    rendered <- paste(output$exchange_screen, collapse = "\n")
+    rendered <- paste(output$import_export_screen, collapse = "\n")
     # The file is not there yet, and the screen says so.
-    expect_true(grepl(episodic_tr("exchange.test.failed", name = "From partner", lang = "en"), rendered, fixed = TRUE))
+    expect_true(grepl(episodic_tr("import_export.test.failed", name = "From partner", lang = "en"), rendered, fixed = TRUE))
 
-    session$setInputs(exch_action = list(action = "source_cancel", name = "From partner", nonce = 2))
+    session$setInputs(impexp_action = list(action = "source_cancel", name = "From partner", nonce = 2))
     session$flushReact()
     DBI::dbDisconnect(con)
   })
   con <- episodic_db_connect(setup$db_path)
   on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
-  events <- episodic_db_exchange_source_events(con)
+  events <- episodic_db_import_source_events(con)
   expect_identical(events$action, c("set", "cancel"))
   expect_identical(events$user_id, rep(setup$admin_id, 2))
-  expect_length(episodic_exchange_sources_current(con), 0L)
+  expect_length(episodic_import_sources_current(con), 0L)
 })
 
-test_that("an admin's download is an exchange file, recorded as theirs", {
+test_that("an admin's download is an export file, recorded as theirs", {
   skip_if_not_installed("sodium")
-  sender <- exchange_test_party()
-  receiver <- exchange_test_party()
-  setup <- app_exchange_setup(exchange_test_sender_db())
+  sender <- import_export_test_party()
+  receiver <- import_export_test_party()
+  setup <- app_import_export_setup(import_export_test_sender_db())
   on.exit(unlink(c(sender$dir, receiver$dir, setup$db_path), recursive = TRUE))
-  withr::local_envvar(EPISODIC_EXCHANGE_SIGNING_KEY = sender$signing_secret)
+  withr::local_envvar(EPISODIC_EXPORT_SIGNING_KEY = sender$signing_secret)
   server <- episodic_app_server_factory(setup$db_path, lang = "en")
   shiny::testServer(server, {
-    app_exchange_sign_in(session, "admin1", "adminpass1")
+    app_import_export_sign_in(session, "admin1", "adminpass1")
     session$setInputs(
-      exch_dl_from = "2025-03-01",
-      exch_dl_to = "2025-03-31",
-      exch_dl_mode = "public_key",
-      exch_dl_recipients = paste(readLines(receiver$encryption_public), collapse = "\n")
+      impexp_dl_from = "2025-03-01",
+      impexp_dl_to = "2025-03-31",
+      impexp_dl_mode = "public_key",
+      impexp_dl_recipients = paste(readLines(receiver$encryption_public), collapse = "\n")
     )
-    path <- output$exch_download
-    imported <- suppressWarnings(episodic_exchange_import(
+    path <- output$impexp_download
+    imported <- suppressWarnings(episodic_cases_import(
       path,
       key = receiver$encryption_secret,
       trusted_senders = sender$signing_public
@@ -157,14 +157,14 @@ test_that("an admin's download is an exchange file, recorded as theirs", {
   })
   con <- episodic_db_connect(setup$db_path)
   on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
-  row <- DBI::dbGetQuery(con, "SELECT initiated_by, status, user_id FROM episodic_exchange_export_event")
+  row <- DBI::dbGetQuery(con, "SELECT initiated_by, status, user_id FROM episodic_export_event")
   expect_identical(row$initiated_by, "download")
   expect_identical(row$status, "written")
   expect_identical(row$user_id, setup$admin_id)
 })
 
-test_that("the Exchange screen renders in every shipped language, with its records", {
-  sender <- exchange_test_party()
+test_that("the Import and export screen renders in every shipped language, with its records", {
+  sender <- import_export_test_party()
   on.exit(unlink(sender$dir, recursive = TRUE))
   data <- list(
     instance_id = "abcdef0123",
@@ -175,7 +175,7 @@ test_that("the Exchange screen renders in every shipped language, with its recor
     )),
     sources = list(`From partner` = list(
       source_name = "From partner", mode = "passphrase",
-      trusted_sender = exchange_test_key_line(sender$signing_public),
+      trusted_sender = import_export_test_key_line(sender$signing_public),
       location = NA_character_, location_env = "PARTNER_URL"
     )),
     exports = data.frame(
@@ -198,13 +198,13 @@ test_that("the Exchange screen renders in every shipped language, with its recor
   )
   test <- structure(
     list(name = "To partner", kind = "schedule", ok = FALSE, lines = list(
-      episodic_exchange_test_line("env", FALSE, "exchange.test.env_missing", variable = "X"),
-      episodic_exchange_test_line("upload", NA, "exchange.test.upload_unknown")
+      episodic_import_export_test_line("env", FALSE, "import_export.test.env_missing", variable = "X"),
+      episodic_import_export_test_line("upload", NA, "import_export.test.upload_unknown")
     )),
-    class = "episodic_exchange_test"
+    class = "episodic_import_export_test"
   )
   for (lang in c("en", "nl", "de", "fr", "es", "zh", "hi", "ar", "en-US", "es-419")) {
-    html <- as.character(episodic_ui_exchange_screen(
+    html <- as.character(episodic_ui_import_export_screen(
       data,
       episodic_config_resolve(),
       lang = lang,
@@ -222,8 +222,8 @@ test_that("the Exchange screen renders in every shipped language, with its recor
 
 test_that("pasted recipient keys are read one per key line, comments dropped", {
   expect_identical(
-    episodic_app_exchange_key_lines("# comment\nepisodic-exchange-encryption-public-v1:aa\n\n  episodic-exchange-encryption-public-v1:bb  "),
-    c("episodic-exchange-encryption-public-v1:aa", "episodic-exchange-encryption-public-v1:bb")
+    episodic_app_import_export_key_lines("# comment\nepisodic-import-export-encryption-public-v1:aa\n\n  episodic-import-export-encryption-public-v1:bb  "),
+    c("episodic-import-export-encryption-public-v1:aa", "episodic-import-export-encryption-public-v1:bb")
   )
-  expect_identical(episodic_app_exchange_key_lines(NULL), character(0))
+  expect_identical(episodic_app_import_export_key_lines(NULL), character(0))
 })

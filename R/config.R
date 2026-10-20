@@ -279,7 +279,7 @@ episodic_config_nullable_keys <- c(
   "same_place.lookback_days",
   "rare_trigger.lookback_days",
   "forecast.nowcast.delay_window_days",
-  "exchange.export_fields"
+  "export.fields"
 )
 
 #' Refuse an instance configuration that cannot mean what it says
@@ -714,7 +714,7 @@ episodic_pathogen_config_merge <- function(defaults, overlay, source_label = "op
 #' bring the schema forward decides how the instance is maintained, and
 #' a migrated schema computes what the unmigrated one would have.
 #'
-#' `exchange` is here on the same test as `report`: which columns an
+#' `export` is here on the same test as `report`: which columns an
 #' export carries to a partner, and how coarse its postcodes are, change
 #' what leaves the instance, never what a detection run computes. Each
 #' export records the field set it actually used in its own audit row.
@@ -725,7 +725,7 @@ episodic_pathogen_config_merge <- function(defaults, overlay, source_label = "op
 #' difference the hash exists to make visible.
 #' @keywords internal
 #' @noRd
-episodic_config_unhashed_sections <- c("notifications", "access", "report", "database", "exchange")
+episodic_config_unhashed_sections <- c("notifications", "access", "report", "database", "export")
 
 #' The scale a lattice level belongs to
 #'

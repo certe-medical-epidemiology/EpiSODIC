@@ -965,7 +965,7 @@ episodic_db_migrations <- function() {
     },
     # 15: the instance's own identity (episodic_instance), generated here
     # once for a database that has none, the tables of the encrypted
-    # exchange between instances, and the instance an imported case came
+    # import and export between instances, and the instance an imported case came
     # from (episodic_case.origin_instance_id: NULL on every case already
     # on file, which is true of all of them, since no case could be
     # imported before this version). Purely additive: one nullable
@@ -983,7 +983,7 @@ episodic_db_migrations <- function() {
           )
         )
       }
-      for (table in episodic_db_exchange_tables()) {
+      for (table in episodic_db_import_export_tables()) {
         if (DBI::dbExistsTable(con, table)) {
           next
         }
@@ -1656,7 +1656,7 @@ episodic_db_schema_version_statements <- function(dialect) {
 #' migration. This includes `episodic_app_user`: dashboard accounts are
 #' data too, and are deleted along with everything else - there is
 #' nothing this function leaves behind to sign in with afterwards. The
-#' one row kept is the instance identifier (see `vignette("exchange")`):
+#' one row kept is the instance identifier (see `vignette("import-export")`):
 #' partners already know the instance by it, so it stays the same
 #' instance after a reset.
 #'

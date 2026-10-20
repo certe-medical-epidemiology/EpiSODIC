@@ -17,14 +17,14 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-# Fixtures for the exchange tests: two instances' worth of keys, a small
+# Fixtures for the import and export tests: two instances' worth of keys, a small
 # hand-made case set whose keys collide with another laboratory's on
 # purpose, and a sender database holding it.
 
 # A key directory per party, removed by the caller.
-exchange_test_party <- function() {
-  dir <- tempfile("exchange-party-")
-  keys <- episodic_exchange_keygen(dir)
+import_export_test_party <- function() {
+  dir <- tempfile("import-export-party-")
+  keys <- episodic_import_export_keygen(dir)
   keys$dir <- dir
   keys
 }
@@ -32,7 +32,7 @@ exchange_test_party <- function() {
 # Four cases at four different patients, so none is folded into
 # another's episode. Keys that another laboratory might just as well use,
 # and NA where the case data format allows it.
-exchange_test_cases <- function(prefix = "") {
+import_export_test_cases <- function(prefix = "") {
   data.frame(
     source_key = paste0(prefix, c("12345", "12346", "12347", "12348")),
     lab_number = paste0(prefix, c("L-1", "L-2", "L-3", "L-4")),
@@ -56,7 +56,7 @@ exchange_test_cases <- function(prefix = "") {
 
 # A sender's database holding `cases` as its own, loaded the way a run
 # loads them. The caller unlinks the returned path.
-exchange_test_sender_db <- function(cases = exchange_test_cases()) {
+import_export_test_sender_db <- function(cases = import_export_test_cases()) {
   path <- episodic_test_db_path()
   con <- episodic_db_connect(path)
   on.exit(DBI::dbDisconnect(con))
@@ -72,11 +72,11 @@ exchange_test_sender_db <- function(cases = exchange_test_cases()) {
 }
 
 # An admin account to record schedules and sources under.
-exchange_test_admin <- function(con) {
+import_export_test_admin <- function(con) {
   episodic_db_app_user_insert(
     con,
     username = paste0("admin-", episodic_instance_id_generate()),
-    full_name = "Exchange Admin",
+    full_name = "Import Export Admin",
     email = "admin@example.org",
     password_hash = "x",
     role = "epidemiologist"
@@ -84,7 +84,7 @@ exchange_test_admin <- function(con) {
 }
 
 # The text of a public key file's key line.
-exchange_test_key_line <- function(path) {
+import_export_test_key_line <- function(path) {
   lines <- readLines(path)
   lines[!startsWith(lines, "#")]
 }

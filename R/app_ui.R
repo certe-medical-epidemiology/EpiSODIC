@@ -44,7 +44,7 @@ episodic_app_views <- function() {
     "performance",
     "info",
     "settings",
-    "exchange"
+    "import_export"
   )
 }
 
@@ -367,7 +367,7 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
         ),
         episodic_ui_screen("info", shiny::uiOutput("info_screen")),
         episodic_ui_screen("settings", shiny::uiOutput("settings_screen")),
-        episodic_ui_screen("exchange", shiny::uiOutput("exchange_screen"))
+        episodic_ui_screen("import_export", shiny::uiOutput("import_export_screen"))
       )
     )
   )

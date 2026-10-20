@@ -162,15 +162,15 @@ report:
   small_count_threshold: 5
   output_dir: ~
 
-# Exchange with other EpiSODIC instances. See vignette("exchange").
-# export_fields: the optional case columns an export carries; a column
+# Export to other EpiSODIC instances. See vignette("import-export").
+# fields: the optional case columns an export carries; a column
 # left out arrives at the partner as not recorded (NA), never as a
 # default value. The required columns are always exported. Set to ~ to
 # export the required columns only.
 # pc_characters: keep only the first N characters of each postcode in an
 # export, e.g. 2 for a coarser area; ~ exports the postcode as stored.
-exchange:
-  export_fields: [receipt_date, care_line, municipality, ward, specialism, pc, sex, age]
+export:
+  fields: [receipt_date, care_line, municipality, ward, specialism, pc, sex, age]
   pc_characters: ~
 
 # Notifications. See vignette("notifications") for setup.

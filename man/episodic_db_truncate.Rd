@@ -24,7 +24,7 @@ immediately ready for a new \code{\link[=episodic_run_cron]{episodic_run_cron()}
 migration. This includes \code{episodic_app_user}: dashboard accounts are
 data too, and are deleted along with everything else - there is
 nothing this function leaves behind to sign in with afterwards. The
-one row kept is the instance identifier (see \code{vignette("exchange")}):
+one row kept is the instance identifier (see \code{vignette("import-export")}):
 partners already know the instance by it, so it stays the same
 instance after a reset.
 }

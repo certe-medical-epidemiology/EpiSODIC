@@ -917,7 +917,7 @@ CREATE INDEX idx_episodic_app_login_failure_at ON episodic_app_login_failure(att
 -- instance's: ten lowercase hexadecimal characters drawn from a
 -- cryptographic random source (episodic_instance_id_generate()), so two
 -- laboratories that never coordinated still hold different ones. An
--- exchange file carries it as its provenance, and an importing instance
+-- export file carries it as its provenance, and an importing instance
 -- prefixes the sender's source_key, patient_key and lab_number with it,
 -- which is what keeps laboratory A's "12345" from being taken for
 -- laboratory B's.
@@ -933,11 +933,11 @@ CREATE TABLE episodic_instance (
 );
 
 -- ---------------------------------------------------------------------
--- 5.11b Exchange with other instances (see vignette("exchange"))
+-- 5.11b Import and export between instances (see vignette("import-export"))
 --
 -- Four tables, with three kinds of ownership.
 --
--- episodic_exchange_schedule_event and episodic_exchange_source_event
+-- episodic_export_schedule_event and episodic_import_source_event
 -- are app-owned and event-sourced, the same shape as
 -- episodic_report_subscription_event: an is_admin account "sets" an
 -- export schedule or an import source under a name, or "cancels" it, and
@@ -950,13 +950,13 @@ CREATE TABLE episodic_instance (
 -- `location` carries no credentials (no user:password@, no query
 -- string); one that needs them is named by its variable instead.
 --
--- episodic_exchange_import_event is cron-owned: the run that consumed a
+-- episodic_import_event is cron-owned: the run that consumed a
 -- file records it, inside its own transaction, so an import is recorded
 -- exactly when its cases are, and a source that failed is recorded with
 -- why.
 --
--- episodic_exchange_export_event is written by the export itself,
--- whichever process runs it - episodic_exchange_export() from a script,
+-- episodic_export_event is written by the export itself,
+-- whichever process runs it - episodic_cases_export() from a script,
 -- the cron's scheduled exports, the dashboard's download button - and
 -- only ever inserted into. An export is neither a detection run nor an
 -- assessment, and a record of what left the instance cannot depend on
@@ -964,7 +964,7 @@ CREATE TABLE episodic_instance (
 -- `destination` is the path or URL written to, or "env:<VARIABLE>" when
 -- the URL itself is a secret.
 -- ---------------------------------------------------------------------
-CREATE TABLE episodic_exchange_schedule_event (
+CREATE TABLE episodic_export_schedule_event (
   event_id         INTEGER PRIMARY KEY AUTOINCREMENT,
   schedule_name    TEXT NOT NULL,
   user_id          INTEGER NOT NULL REFERENCES episodic_app_user(user_id),
@@ -976,7 +976,7 @@ CREATE TABLE episodic_exchange_schedule_event (
   recipients       TEXT,  -- JSON array of public encryption key texts
   passphrase_env   TEXT,
   signing_key_env  TEXT,
-  fields           TEXT,  -- JSON array; NULL = the configured exchange.export_fields
+  fields           TEXT,  -- JSON array; NULL = the configured export.fields
   pc_characters    INTEGER CHECK (pc_characters IS NULL OR pc_characters >= 1),
   destination_type TEXT CHECK (destination_type IS NULL OR destination_type IN ('file', 'http_put')),
   destination      TEXT,
@@ -986,7 +986,7 @@ CREATE TABLE episodic_exchange_schedule_event (
   token_env        TEXT
 );
 
-CREATE TABLE episodic_exchange_source_event (
+CREATE TABLE episodic_import_source_event (
   event_id         INTEGER PRIMARY KEY AUTOINCREMENT,
   source_name      TEXT NOT NULL,
   user_id          INTEGER NOT NULL REFERENCES episodic_app_user(user_id),
@@ -1004,7 +1004,7 @@ CREATE TABLE episodic_exchange_source_event (
   token_env        TEXT
 );
 
-CREATE TABLE episodic_exchange_import_event (
+CREATE TABLE episodic_import_event (
   import_id               INTEGER PRIMARY KEY AUTOINCREMENT,
   run_id                  INTEGER NOT NULL REFERENCES episodic_detection_run(run_id),
   imported_at             TEXT NOT NULL,
@@ -1028,14 +1028,14 @@ CREATE TABLE episodic_exchange_import_event (
   warnings                TEXT   -- JSON array
 );
 
-CREATE TABLE episodic_exchange_export_event (
+CREATE TABLE episodic_export_event (
   export_id              INTEGER PRIMARY KEY AUTOINCREMENT,
   exported_at            TEXT NOT NULL,
   initiated_by           TEXT NOT NULL CHECK (initiated_by IN ('headless', 'schedule', 'download')),
   schedule_name          TEXT,
   -- The schedule's settings in effect when it ran, as
   -- episodic_report_subscription_send.subscription_event_id pins a send.
-  schedule_event_id      INTEGER REFERENCES episodic_exchange_schedule_event(event_id),
+  schedule_event_id      INTEGER REFERENCES episodic_export_schedule_event(event_id),
   user_id                INTEGER REFERENCES episodic_app_user(user_id),
   run_id                 INTEGER REFERENCES episodic_detection_run(run_id),
   host                   TEXT NOT NULL,

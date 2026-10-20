@@ -17,74 +17,74 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-# Where an exchange file goes and comes from: a path, or HTTP(S) PUT and
+# Where an export file goes and comes from: a path, or HTTP(S) PUT and
 # GET with credentials read from named environment variables. HTTP is
 # exercised against httr2's own mocked responses, never the network.
 
 transport_reason <- function(expr) {
-  tryCatch(expr, episodic_exchange_error = function(e) e$reason)
+  tryCatch(expr, episodic_import_export_error = function(e) e$reason)
 }
 
 test_that("an endpoint is refused unless it is unambiguous", {
-  expect_error(episodic_exchange_endpoint("file", direction = "export"), "needs a path")
+  expect_error(episodic_import_export_endpoint("file", direction = "export"), "needs a path")
   expect_error(
-    episodic_exchange_endpoint("http_get", direction = "export"),
+    episodic_import_export_endpoint("http_get", direction = "export"),
     "one of: file, http_put"
   )
   expect_error(
-    episodic_exchange_endpoint("http_put", "https://x.example/f", "URL_VAR", direction = "export"),
+    episodic_import_export_endpoint("http_put", "https://x.example/f", "URL_VAR", direction = "export"),
     "not both and not neither"
   )
   expect_error(
-    episodic_exchange_endpoint("http_put", "https://x.example/f", username_env = "U", direction = "export"),
+    episodic_import_export_endpoint("http_put", "https://x.example/f", username_env = "U", direction = "export"),
     "both a user name variable and a password variable"
   )
   expect_error(
-    episodic_exchange_endpoint("http_put", "https://x.example/f", token_env = "not a name", direction = "export"),
+    episodic_import_export_endpoint("http_put", "https://x.example/f", token_env = "not a name", direction = "export"),
     "not an environment variable name"
   )
   expect_error(
-    episodic_exchange_endpoint("file", "/tmp/x", token_env = "TOKEN", direction = "export"),
+    episodic_import_export_endpoint("file", "/tmp/x", token_env = "TOKEN", direction = "export"),
     "path only"
   )
 })
 
 test_that("a URL carrying credentials is never stored", {
   expect_identical(
-    transport_reason(episodic_exchange_endpoint("http_put", "https://user:pw@x.example/f", direction = "export")),
+    transport_reason(episodic_import_export_endpoint("http_put", "https://user:pw@x.example/f", direction = "export")),
     "transport_config"
   )
   expect_identical(
-    transport_reason(episodic_exchange_endpoint("http_get", "https://x.example/f?X-Amz-Signature=abc", direction = "import")),
+    transport_reason(episodic_import_export_endpoint("http_get", "https://x.example/f?X-Amz-Signature=abc", direction = "import")),
     "transport_config"
   )
   expect_identical(
-    transport_reason(episodic_exchange_endpoint("http_get", "ftp://x.example/f", direction = "import")),
+    transport_reason(episodic_import_export_endpoint("http_get", "ftp://x.example/f", direction = "import")),
     "transport_config"
   )
   # Named by its variable instead, it is recorded and shown as the name.
-  endpoint <- episodic_exchange_endpoint("http_get", location_env = "PARTNER_URL", direction = "import")
-  expect_identical(episodic_exchange_endpoint_label(endpoint), "env:PARTNER_URL")
+  endpoint <- episodic_import_export_endpoint("http_get", location_env = "PARTNER_URL", direction = "import")
+  expect_identical(episodic_import_export_endpoint_label(endpoint), "env:PARTNER_URL")
 })
 
 test_that("a file endpoint writes in one step and reads back the same bytes", {
   path <- tempfile(fileext = ".episodic")
   on.exit(unlink(path))
-  out <- episodic_exchange_endpoint("file", path, direction = "export")
-  inn <- episodic_exchange_endpoint("file", path, direction = "import")
+  out <- episodic_import_export_endpoint("file", path, direction = "export")
+  inn <- episodic_import_export_endpoint("file", path, direction = "import")
   bytes <- as.raw(0:255)
-  episodic_exchange_endpoint_write(out, bytes)
-  expect_identical(episodic_exchange_endpoint_read(inn), bytes)
-  expect_length(list.files(dirname(path), pattern = "^\\.episodic-exchange-"), 0L)
+  episodic_import_export_endpoint_write(out, bytes)
+  expect_identical(episodic_import_export_endpoint_read(inn), bytes)
+  expect_length(list.files(dirname(path), pattern = "^\\.episodic-import-export-"), 0L)
 })
 
 test_that("an upload is a PUT of the file's bytes with the named credentials", {
   skip_if_not_installed("httr2", "1.2.0")
   seen <- NULL
-  withr::local_envvar(EXCHANGE_TEST_TOKEN = "s3cr3t")
-  endpoint <- episodic_exchange_endpoint(
-    "http_put", "https://dav.example/exchange/file.episodic",
-    token_env = "EXCHANGE_TEST_TOKEN", direction = "export"
+  withr::local_envvar(IMPORT_EXPORT_TEST_TOKEN = "s3cr3t")
+  endpoint <- episodic_import_export_endpoint(
+    "http_put", "https://dav.example/partner/file.episodic",
+    token_env = "IMPORT_EXPORT_TEST_TOKEN", direction = "export"
   )
   bytes <- as.raw(1:10)
   httr2::with_mocked_responses(
@@ -92,7 +92,7 @@ test_that("an upload is a PUT of the file's bytes with the named credentials", {
       seen <<- req
       httr2::response(201)
     },
-    episodic_exchange_endpoint_write(endpoint, bytes)
+    episodic_import_export_endpoint_write(endpoint, bytes)
   )
   expect_identical(httr2::req_get_method(seen), "PUT")
   expect_identical(httr2::req_get_body(seen), bytes)
@@ -104,11 +104,11 @@ test_that("an upload is a PUT of the file's bytes with the named credentials", {
 
 test_that("an upload the server refuses fails loudly, with the status", {
   skip_if_not_installed("httr2", "1.2.0")
-  endpoint <- episodic_exchange_endpoint("http_put", "https://dav.example/f", direction = "export")
+  endpoint <- episodic_import_export_endpoint("http_put", "https://dav.example/f", direction = "export")
   expect_error(
     httr2::with_mocked_responses(
       function(req) httr2::response(403),
-      episodic_exchange_endpoint_write(endpoint, raw(1))
+      episodic_import_export_endpoint_write(endpoint, raw(1))
     ),
     "HTTP 403 \\(check the credentials\\)"
   )
@@ -116,17 +116,17 @@ test_that("an upload the server refuses fails loudly, with the status", {
 
 test_that("a fetch is a GET that returns the body, and a missing file fails loudly", {
   skip_if_not_installed("httr2", "1.2.0")
-  endpoint <- episodic_exchange_endpoint("http_get", "https://dav.example/f", direction = "import")
+  endpoint <- episodic_import_export_endpoint("http_get", "https://dav.example/f", direction = "import")
   body <- as.raw(c(1, 2, 3))
   got <- httr2::with_mocked_responses(
     function(req) httr2::response(200, body = body),
-    episodic_exchange_endpoint_read(endpoint)
+    episodic_import_export_endpoint_read(endpoint)
   )
   expect_identical(got, body)
   expect_identical(
     transport_reason(httr2::with_mocked_responses(
       function(req) httr2::response(404),
-      episodic_exchange_endpoint_read(endpoint)
+      episodic_import_export_endpoint_read(endpoint)
     )),
     "transport"
   )
@@ -134,77 +134,77 @@ test_that("a fetch is a GET that returns the body, and a missing file fails loud
 
 test_that("a URL held in a variable is read at use, and never repeated in an error", {
   skip_if_not_installed("httr2", "1.2.0")
-  endpoint <- episodic_exchange_endpoint("http_get", location_env = "EXCHANGE_TEST_URL", direction = "import")
-  withr::local_envvar(EXCHANGE_TEST_URL = NA)
-  expect_identical(transport_reason(episodic_exchange_endpoint_read(endpoint)), "environment")
-  withr::local_envvar(EXCHANGE_TEST_URL = "https://bucket.example/f?X-Amz-Signature=SECRETSIG")
+  endpoint <- episodic_import_export_endpoint("http_get", location_env = "IMPORT_EXPORT_TEST_URL", direction = "import")
+  withr::local_envvar(IMPORT_EXPORT_TEST_URL = NA)
+  expect_identical(transport_reason(episodic_import_export_endpoint_read(endpoint)), "environment")
+  withr::local_envvar(IMPORT_EXPORT_TEST_URL = "https://bucket.example/f?X-Amz-Signature=SECRETSIG")
   condition <- tryCatch(
     httr2::with_mocked_responses(
       function(req) stop("Could not resolve https://bucket.example/f?X-Amz-Signature=SECRETSIG"),
-      episodic_exchange_endpoint_read(endpoint)
+      episodic_import_export_endpoint_read(endpoint)
     ),
-    episodic_exchange_error = function(e) e
+    episodic_import_export_error = function(e) e
   )
   expect_identical(condition$reason, "transport")
   expect_false(grepl("SECRETSIG", conditionMessage(condition), fixed = TRUE))
-  expect_match(conditionMessage(condition), "env:EXCHANGE_TEST_URL", fixed = TRUE)
+  expect_match(conditionMessage(condition), "env:IMPORT_EXPORT_TEST_URL", fixed = TRUE)
 })
 
 test_that("a connection test reports a missing variable before trying anything", {
-  endpoint <- episodic_exchange_endpoint(
+  endpoint <- episodic_import_export_endpoint(
     "http_put", "https://dav.example/f",
-    username_env = "EXCHANGE_TEST_USER", password_env = "EXCHANGE_TEST_PASS",
+    username_env = "IMPORT_EXPORT_TEST_USER", password_env = "IMPORT_EXPORT_TEST_PASS",
     direction = "export"
   )
-  withr::local_envvar(EXCHANGE_TEST_USER = "me", EXCHANGE_TEST_PASS = NA)
-  result <- episodic_exchange_endpoint_test(endpoint)
+  withr::local_envvar(IMPORT_EXPORT_TEST_USER = "me", IMPORT_EXPORT_TEST_PASS = NA)
+  result <- episodic_import_export_endpoint_test(endpoint)
   keys <- vapply(result$lines, function(l) l$key, character(1))
-  expect_identical(keys, c("exchange.test.env_set", "exchange.test.env_missing"))
-  expect_identical(result$lines[[2]]$params$variable, "EXCHANGE_TEST_PASS")
+  expect_identical(keys, c("import_export.test.env_set", "import_export.test.env_missing"))
+  expect_identical(result$lines[[2]]$params$variable, "IMPORT_EXPORT_TEST_PASS")
 })
 
 test_that("a connection test of an export path checks the directory and writes nothing", {
-  dir <- tempfile("exchange-out-")
-  endpoint <- episodic_exchange_endpoint("file", file.path(dir, "f.episodic"), direction = "export")
-  missing <- episodic_exchange_endpoint_test(endpoint)
-  expect_identical(missing$lines[[1]]$key, "exchange.test.dir_missing")
+  dir <- tempfile("export-out-")
+  endpoint <- episodic_import_export_endpoint("file", file.path(dir, "f.episodic"), direction = "export")
+  missing <- episodic_import_export_endpoint_test(endpoint)
+  expect_identical(missing$lines[[1]]$key, "import_export.test.dir_missing")
   dir.create(dir)
   on.exit(unlink(dir, recursive = TRUE))
-  present <- episodic_exchange_endpoint_test(endpoint)
-  expect_identical(present$lines[[1]]$key, "exchange.test.dir_ok")
+  present <- episodic_import_export_endpoint_test(endpoint)
+  expect_identical(present$lines[[1]]$key, "import_export.test.dir_ok")
   expect_true(isTRUE(present$lines[[1]]$ok))
   expect_length(list.files(dir), 0L)
 })
 
 test_that("a connection test of an upload says what it cannot know", {
   skip_if_not_installed("httr2", "1.2.0")
-  endpoint <- episodic_exchange_endpoint("http_put", "https://dav.example/f", direction = "export")
+  endpoint <- episodic_import_export_endpoint("http_put", "https://dav.example/f", direction = "export")
   result <- httr2::with_mocked_responses(
     function(req) {
       expect_identical(httr2::req_get_method(req), "OPTIONS")
       httr2::response(405)
     },
-    episodic_exchange_endpoint_test(endpoint)
+    episodic_import_export_endpoint_test(endpoint)
   )
   keys <- vapply(result$lines, function(l) l$key, character(1))
-  expect_identical(keys, c("exchange.test.reachable", "exchange.test.upload_unknown"))
+  expect_identical(keys, c("import_export.test.reachable", "import_export.test.upload_unknown"))
   expect_true(is.na(result$lines[[2]]$ok))
   refused <- httr2::with_mocked_responses(
     function(req) httr2::response(401),
-    episodic_exchange_endpoint_test(endpoint)
+    episodic_import_export_endpoint_test(endpoint)
   )
-  expect_identical(refused$lines[[1]]$key, "exchange.test.refused")
+  expect_identical(refused$lines[[1]]$key, "import_export.test.refused")
 })
 
 test_that("a connection test of an import reads the file the next run will read", {
   path <- tempfile(fileext = ".episodic")
-  endpoint <- episodic_exchange_endpoint("file", path, direction = "import")
-  failed <- episodic_exchange_endpoint_test(endpoint)
-  expect_identical(failed$lines[[1]]$key, "exchange.test.read_failed")
+  endpoint <- episodic_import_export_endpoint("file", path, direction = "import")
+  failed <- episodic_import_export_endpoint_test(endpoint)
+  expect_identical(failed$lines[[1]]$key, "import_export.test.read_failed")
   expect_null(failed$bytes)
   writeBin(as.raw(1:4), path)
   on.exit(unlink(path))
-  ok <- episodic_exchange_endpoint_test(endpoint)
-  expect_identical(ok$lines[[1]]$key, "exchange.test.read_ok")
+  ok <- episodic_import_export_endpoint_test(endpoint)
+  expect_identical(ok$lines[[1]]$key, "import_export.test.read_ok")
   expect_identical(ok$bytes, as.raw(1:4))
 })

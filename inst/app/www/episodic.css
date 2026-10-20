@@ -249,7 +249,7 @@ body {
 .episodic-shell[data-view="performance"] .episodic-screen[data-screen="performance"],
 .episodic-shell[data-view="info"] .episodic-screen[data-screen="info"],
 .episodic-shell[data-view="settings"] .episodic-screen[data-screen="settings"],
-.episodic-shell[data-view="exchange"] .episodic-screen[data-screen="exchange"] {
+.episodic-shell[data-view="import_export"] .episodic-screen[data-screen="import_export"] {
   display: flex;
 }
 
@@ -2250,14 +2250,14 @@ dl.episodic-settings dd { margin: 0; }
   flex-direction: row-reverse;
 }
 
-/* The Exchange screen's connection test: one line per check, its mark
+/* The Import and export screen's connection test: one line per check, its mark
    first. */
-.episodic-exchange-test {
+.episodic-import-export-test {
   list-style: none;
   padding-inline-start: 0;
   margin: 0;
 }
-.episodic-exchange-test li {
+.episodic-import-export-test li {
   margin-block-end: 6px;
   font-size: 12.5px;
 }
