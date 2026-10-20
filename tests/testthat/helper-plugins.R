@@ -1,0 +1,73 @@
+# ===================================================================== #
+#  An R package by Certe:                                               #
+#  https://github.com/certe-medical-epidemiology                        #
+#                                                                       #
+#  Licensed as GPL-v2.0.                                                #
+#                                                                       #
+#  Developed at non-profit organisation Certe Medical Diagnostics &     #
+#  Advice, department of Medical Epidemiology.                          #
+#                                                                       #
+#  This R package is free software; you can freely use and distribute   #
+#  it for both personal and commercial purposes under the terms of the  #
+#  GNU General Public License version 2.0 (GNU GPL-2), as published by  #
+#  the Free Software Foundation.                                        #
+#                                                                       #
+#  We created this package for both routine data analysis and academic  #
+#  research and it was publicly released in the hope that it will be    #
+#  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
+
+# Fixtures for the plugin tests: a configuration file and plugin folder
+# of the calling test's own, and plugin files written from a header.
+
+plugin_test_instance <- function(env = parent.frame()) {
+  root <- tempfile("episodic_plugins_")
+  dir.create(root)
+  config_path <- file.path(root, "episodic.yaml")
+  writeLines(c("# Test instance", "plugins:", "  enabled: {}"), config_path)
+  withr::defer(unlink(root, recursive = TRUE), envir = env)
+  withr::local_envvar(EPISODIC_CONFIG = config_path, EPISODIC_PLUGIN_DIR = NA, .local_envir = env)
+  list(root = root, config_path = config_path, dir = file.path(root, "plugins"))
+}
+
+plugin_test_header <- function(...) {
+  episodic <- list(
+    api = 1L,
+    trigger = "button",
+    placement = "outbreak",
+    label = list(en = "Share", nl = "Delen"),
+    permissions = list("cluster_summary")
+  )
+  # Assigned one by one: utils::modifyList() leaves an unnamed list as it was.
+  overrides <- list(...)
+  for (name in names(overrides)) {
+    episodic[name] <- list(overrides[[name]])
+  }
+  list(
+    title = "Share with the regional platform",
+    version = "0.1.0",
+    engine = "knitr",
+    episodic = episodic,
+    params = list(payload_path = "", result_path = "")
+  )
+}
+
+plugin_test_write <- function(dir, id, header = plugin_test_header(), body = plugin_test_body()) {
+  dir.create(dir, showWarnings = FALSE, recursive = TRUE)
+  path <- file.path(dir, paste0(id, ".qmd"))
+  writeLines(c("---", sub("\n$", "", yaml::as.yaml(header)), "---", "", body), path)
+  path
+}
+
+plugin_test_body <- function() {
+  c(
+    "```{r}",
+    "payload <- jsonlite::read_json(params$payload_path)",
+    "jsonlite::write_json(list(status = \"success\", message = \"Shared.\"), params$result_path, auto_unbox = TRUE)",
+    "```"
+  )
+}
+
+plugin_test_codes <- function(plugin) {
+  vapply(plugin$problems, function(p) p$code, character(1))
+}
