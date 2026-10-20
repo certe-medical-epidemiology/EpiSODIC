@@ -50,7 +50,7 @@ test_that("an institution_key appearing twice in one batch resolves to one insti
 
   ids <- episodic_institutions_resolve(con, episodic_test_two_care_lines())
 
-  expect_named(ids, c("HOSP-01", "LTC-01"))
+  expect_named(ids, episodic_institution_key_hash(c("HOSP-01", "LTC-01")))
   expect_false(anyNA(ids))
   expect_equal(
     DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM episodic_institution")$n,

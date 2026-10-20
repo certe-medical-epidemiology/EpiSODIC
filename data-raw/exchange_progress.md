@@ -6,3 +6,5 @@ Temporary; removed before the PR leaves draft.
 - 2026-10-20 M1 instance identity: done
 - 2026-10-20 M2 envelope and cryptography: started
 - 2026-10-20 M2 envelope and cryptography: done
+- 2026-10-20 M3 headless export/import: started
+- 2026-10-20 M3 headless export/import: done

@@ -42,6 +42,12 @@
 #' @param pathogen_config A data frame from `episodic_db_pathogen_config()`.
 #' @param run_id The `run_id` of the current detection run
 #'   (`episodic_case.first_seen_run`).
+#' @param origin_instance_id The instance each row was imported from, as
+#'   `episodic_exchange_import()` stamps it, or `NA` for this instance's
+#'   own cases: one value per row, or one for all. An imported row's
+#'   `institution_key` is already the stored hash (the exporting instance
+#'   hashed it, and its file declares so), so it is used as it is; hashing
+#'   it again would match no institution anywhere.
 #' @return Invisibly, a list with `n_supplied`, `n_deduplicated` and `n_inserted`.
 #'
 #' Not exported: an operator's own transform step supplies the case data
@@ -50,7 +56,11 @@
 #' - never something a caller assembles by hand.
 #' @keywords internal
 #' @noRd
-episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
+episodic_cases_load <- function(con,
+                                cases,
+                                pathogen_config,
+                                run_id,
+                                origin_instance_id = NA_character_) {
   # Validated by episodic_run_cron() before the run starts, so that a
   # data problem reaches the operator who can fix it rather than only the
   # run row - kept here as the last guard for any other caller.
@@ -62,6 +72,29 @@ episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
   # asking every operator's extract step to do it, and rather than letting
   # a NOT NULL violation surface mid-run.
   cases$care_line[is.na(cases$care_line)] <- "unknown"
+
+  # Added after validation: the case data interface is an allow-list, and
+  # the origin is the run's knowledge about a row, not a column a feed
+  # supplies.
+  if (!length(origin_instance_id) %in% c(1L, nrow(cases))) {
+    stop(
+      "`origin_instance_id` must have one value, or one per case row ",
+      "(", nrow(cases), "), not ", length(origin_instance_id), ".",
+      call. = FALSE
+    )
+  }
+  cases$origin_instance_id <- rep_len(as.character(origin_instance_id), nrow(cases))
+  own <- is.na(cases$origin_instance_id)
+  bad_hash <- !own & !grepl("^[0-9a-f]{40}$", cases$institution_key)
+  if (any(bad_hash)) {
+    stop(
+      sum(bad_hash), " imported case row(s) carry an institution_key that ",
+      "is not a stored SHA-1 hash (40 lowercase hexadecimal characters); ",
+      "an exchange file always carries the hash, so these rows did not come ",
+      "from episodic_exchange_import().",
+      call. = FALSE
+    )
+  }
 
   existing <- episodic_db_last_case_dates(
     con,
@@ -77,7 +110,9 @@ episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
   institution_lookup <- episodic_institutions_resolve(con, deduped)
 
   to_insert <- deduped
-  to_insert$institution_id <- institution_lookup[to_insert$institution_key]
+  to_insert$institution_id <- unname(institution_lookup[
+    episodic_institution_key_stored(to_insert)
+  ])
   to_insert <- to_insert[, c(
     "source_key",
     "lab_number",
@@ -91,7 +126,8 @@ episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
     "specialism",
     "pc",
     "sex",
-    "age"
+    "age",
+    "origin_instance_id"
   )]
 
   n_inserted <- episodic_db_case_insert_new(con, to_insert, run_id)
@@ -105,12 +141,21 @@ episodic_cases_load <- function(con, cases, pathogen_config, run_id) {
 
 #' Upsert every distinct institution referenced in a batch of cases
 #'
+#' An imported row may add an institution this instance has never seen,
+#' and never rename or retype one it already knows: an institution's
+#' name and type are this instance's own record of it, and a partner who
+#' spells a shared hospital differently must not change what the
+#' dashboard calls it. Where one key arrives on both a local and an
+#' imported row, the local row is the one kept.
+#'
 #' @param con A [DBI::DBIConnection-class].
 #' @param cases A data frame with the case data's
 #'   `institution_key`/`institution_display_name`/`institution_type`/
-#'   `care_line`/`municipality` columns.
-#' @return A named integer vector mapping the supplied `institution_key` to the
-#'   database `institution_id`.
+#'   `care_line`/`municipality` columns, and optionally
+#'   `origin_instance_id` (`NA`, or the column absent, for a local row).
+#' @return A named integer vector mapping each institution's stored key
+#'   (`episodic_institution_key_stored()`) to the database
+#'   `institution_id`.
 #' @keywords internal
 #' @noRd
 episodic_institutions_resolve <- function(con, cases) {
@@ -125,10 +170,23 @@ episodic_institutions_resolve <- function(con, cases) {
   # rejects the second copy on institution_key's UNIQUE index and the whole
   # run rolls back before a single case is written. The loop tolerated it
   # because each iteration was its own statement.
-  distinct <- cases[
-    !duplicated(cases$institution_key, fromLast = TRUE),
+  imported <- if ("origin_instance_id" %in% names(cases)) {
+    !is.na(cases$origin_instance_id)
+  } else {
+    rep(FALSE, nrow(cases))
+  }
+  # Imported rows first, so that the last row per key - the one kept -
+  # is a local one wherever a local one exists.
+  ordering <- order(!imported)
+  ordered <- cases[ordering, , drop = FALSE]
+  ordered_imported <- imported[ordering]
+  ordered$hashed_key <- episodic_institution_key_stored(ordered)
+  keep <- !duplicated(ordered$hashed_key, fromLast = TRUE)
+  distinct <- ordered[
+    keep,
     c(
       "institution_key",
+      "hashed_key",
       "institution_display_name",
       "institution_type",
       "care_line",
@@ -136,10 +194,7 @@ episodic_institutions_resolve <- function(con, cases) {
     ),
     drop = FALSE
   ]
-
-  distinct$hashed_key <- episodic_institution_key_hash(
-    distinct$institution_key
-  )
+  distinct_imported <- ordered_imported[keep]
 
   # Read what is on file once, write the batch once, then read the ids
   # back once - rather than a SELECT, an INSERT or UPDATE and a
@@ -183,7 +238,8 @@ episodic_institutions_resolve <- function(con, cases) {
       )
     )
   }
-  if (any(!new)) {
+  update <- !new & !distinct_imported
+  if (any(update)) {
     episodic_db_write_many(
       con,
       table = "episodic_institution",
@@ -197,13 +253,13 @@ episodic_institutions_resolve <- function(con, cases) {
         "is_active"
       ),
       values = list(
-        institution_key = distinct$hashed_key[!new],
-        display_name = distinct$institution_display_name[!new],
-        institution_type = distinct$institution_type[!new],
-        care_line = distinct$care_line[!new],
-        municipality = distinct$municipality[!new],
-        is_monitored = is_monitored[!new],
-        is_active = rep(1L, sum(!new))
+        institution_key = distinct$hashed_key[update],
+        display_name = distinct$institution_display_name[update],
+        institution_type = distinct$institution_type[update],
+        care_line = distinct$care_line[update],
+        municipality = distinct$municipality[update],
+        is_monitored = is_monitored[update],
+        is_active = rep(1L, sum(update))
       ),
       key_cols = "institution_key",
       update_cols = c(
@@ -223,7 +279,33 @@ episodic_institutions_resolve <- function(con, cases) {
   ids <- as.integer(
     on_file$institution_id[match(distinct$hashed_key, on_file$institution_key)]
   )
-  stats::setNames(ids, distinct$institution_key)
+  stats::setNames(ids, distinct$hashed_key)
+}
+
+#' The stored form of each row's institution key
+#'
+#' A local row's key is the operator's own identifier, hashed here; an
+#' imported row's is already the hash the sending instance stored, and is
+#' used as it is. Matching on the stored form rather than on what the
+#' row carries matters where the two could look alike: an operator who
+#' hashes their own codes before handing them over supplies, as a raw
+#' key, exactly the string a partner's file carries as a stored one, and
+#' the two are different institutions here.
+#'
+#' @param cases A data frame with `institution_key` and optionally
+#'   `origin_instance_id`.
+#' @return A character vector of 40-character SHA-1 hex digests.
+#' @keywords internal
+#' @noRd
+episodic_institution_key_stored <- function(cases) {
+  imported <- if ("origin_instance_id" %in% names(cases)) {
+    !is.na(cases$origin_instance_id)
+  } else {
+    rep(FALSE, nrow(cases))
+  }
+  stored <- as.character(cases$institution_key)
+  stored[!imported] <- episodic_institution_key_hash(stored[!imported])
+  stored
 }
 
 #' The stored form of an operator's own institution identifier

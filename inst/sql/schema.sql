@@ -202,7 +202,14 @@ CREATE TABLE episodic_case (
   pc             TEXT,
   sex            TEXT CHECK (sex IS NULL OR sex IN ('M', 'F', 'U')),
   age            INTEGER,
-  first_seen_run INTEGER NOT NULL REFERENCES episodic_detection_run(run_id)
+  first_seen_run INTEGER NOT NULL REFERENCES episodic_detection_run(run_id),
+  -- The instance this case was imported from (episodic_instance.instance_id
+  -- at that instance), NULL for this instance's own. An imported case's
+  -- source_key, patient_key and lab_number carry the same identifier as a
+  -- prefix; this column is what says so explicitly, rather than leaving it
+  -- to be inferred from the shape of a key, and what keeps an export from
+  -- forwarding one partner's cases to another.
+  origin_instance_id TEXT CHECK (origin_instance_id IS NULL OR length(origin_instance_id) = 10)
 );
 
 CREATE INDEX idx_episodic_case_sample_date ON episodic_case(sample_date);
@@ -923,6 +930,127 @@ CREATE TABLE episodic_instance (
   instance_row INTEGER PRIMARY KEY CHECK (instance_row = 1),
   instance_id  TEXT NOT NULL CHECK (length(instance_id) = 10),
   created_at   TEXT NOT NULL
+);
+
+-- ---------------------------------------------------------------------
+-- 5.11b Exchange with other instances (see vignette("exchange"))
+--
+-- Four tables, with three kinds of ownership.
+--
+-- episodic_exchange_schedule_event and episodic_exchange_source_event
+-- are app-owned and event-sourced, the same shape as
+-- episodic_report_subscription_event: an is_admin account "sets" an
+-- export schedule or an import source under a name, or "cancels" it, and
+-- the current one is the latest row for that name. Neither ever holds a
+-- secret. A key, a passphrase, an upload password, a token or a signed
+-- URL is named by the environment variable that holds it (*_env), and
+-- read from the environment when the cron uses it; the public keys of
+-- recipients and the pinned public signing key of a sender are not
+-- secrets and are stored as their text. A URL stored in `destination` or
+-- `location` carries no credentials (no user:password@, no query
+-- string); one that needs them is named by its variable instead.
+--
+-- episodic_exchange_import_event is cron-owned: the run that consumed a
+-- file records it, inside its own transaction, so an import is recorded
+-- exactly when its cases are, and a source that failed is recorded with
+-- why.
+--
+-- episodic_exchange_export_event is written by the export itself,
+-- whichever process runs it - episodic_exchange_export() from a script,
+-- the cron's scheduled exports, the dashboard's download button - and
+-- only ever inserted into. An export is neither a detection run nor an
+-- assessment, and a record of what left the instance cannot depend on
+-- which of the three sent it. A failed export is recorded as well.
+-- `destination` is the path or URL written to, or "env:<VARIABLE>" when
+-- the URL itself is a secret.
+-- ---------------------------------------------------------------------
+CREATE TABLE episodic_exchange_schedule_event (
+  event_id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  schedule_name    TEXT NOT NULL,
+  user_id          INTEGER NOT NULL REFERENCES episodic_app_user(user_id),
+  created_at       TEXT NOT NULL,
+  action           TEXT NOT NULL CHECK (action IN ('set', 'cancel')),
+  interval_days    INTEGER CHECK (interval_days IS NULL OR interval_days >= 1),
+  window_days      INTEGER CHECK (window_days IS NULL OR window_days >= 1),
+  mode             TEXT CHECK (mode IS NULL OR mode IN ('public_key', 'passphrase')),
+  recipients       TEXT,  -- JSON array of public encryption key texts
+  passphrase_env   TEXT,
+  signing_key_env  TEXT,
+  fields           TEXT,  -- JSON array; NULL = the configured exchange.export_fields
+  pc_characters    INTEGER CHECK (pc_characters IS NULL OR pc_characters >= 1),
+  destination_type TEXT CHECK (destination_type IS NULL OR destination_type IN ('file', 'http_put')),
+  destination      TEXT,
+  destination_env  TEXT,
+  username_env     TEXT,
+  password_env     TEXT,
+  token_env        TEXT
+);
+
+CREATE TABLE episodic_exchange_source_event (
+  event_id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  source_name      TEXT NOT NULL,
+  user_id          INTEGER NOT NULL REFERENCES episodic_app_user(user_id),
+  created_at       TEXT NOT NULL,
+  action           TEXT NOT NULL CHECK (action IN ('set', 'cancel')),
+  mode             TEXT CHECK (mode IS NULL OR mode IN ('public_key', 'passphrase')),
+  key_env          TEXT,
+  passphrase_env   TEXT,
+  trusted_sender   TEXT,  -- the sender's public signing key text
+  location_type    TEXT CHECK (location_type IS NULL OR location_type IN ('file', 'http_get')),
+  location         TEXT,
+  location_env     TEXT,
+  username_env     TEXT,
+  password_env     TEXT,
+  token_env        TEXT
+);
+
+CREATE TABLE episodic_exchange_import_event (
+  import_id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id                  INTEGER NOT NULL REFERENCES episodic_detection_run(run_id),
+  imported_at             TEXT NOT NULL,
+  -- The registered source, NULL for a file handed to episodic_run_cron()
+  -- through `imports`.
+  source_name             TEXT,
+  location                TEXT,
+  status                  TEXT NOT NULL CHECK (status IN ('imported', 'failed')),
+  failure_reason          TEXT,
+  error_text              TEXT,
+  mode                    TEXT CHECK (mode IS NULL OR mode IN ('public_key', 'passphrase')),
+  sender_instance_id      TEXT CHECK (sender_instance_id IS NULL OR length(sender_instance_id) = 10),
+  signer_fingerprint      TEXT CHECK (signer_fingerprint IS NULL OR length(signer_fingerprint) = 64),
+  file_sha256             TEXT CHECK (file_sha256 IS NULL OR length(file_sha256) = 64),
+  date_from               TEXT,
+  date_to                 TEXT,
+  file_created_at         TEXT,
+  sender_episodic_version TEXT,
+  n_cases                 INTEGER,
+  omitted_fields          TEXT,  -- JSON array
+  warnings                TEXT   -- JSON array
+);
+
+CREATE TABLE episodic_exchange_export_event (
+  export_id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  exported_at            TEXT NOT NULL,
+  initiated_by           TEXT NOT NULL CHECK (initiated_by IN ('headless', 'schedule', 'download')),
+  schedule_name          TEXT,
+  user_id                INTEGER REFERENCES episodic_app_user(user_id),
+  run_id                 INTEGER REFERENCES episodic_detection_run(run_id),
+  host                   TEXT NOT NULL,
+  account                TEXT NOT NULL,
+  status                 TEXT NOT NULL CHECK (status IN ('written', 'failed')),
+  mode                   TEXT CHECK (mode IS NULL OR mode IN ('public_key', 'passphrase')),
+  date_from              TEXT NOT NULL,
+  date_to                TEXT NOT NULL,
+  n_cases                INTEGER,
+  fields                 TEXT,  -- JSON array
+  omitted_fields         TEXT,  -- JSON array
+  pc_characters          INTEGER,
+  recipient_fingerprints TEXT,  -- JSON array
+  signer_fingerprint     TEXT CHECK (signer_fingerprint IS NULL OR length(signer_fingerprint) = 64),
+  file_sha256            TEXT CHECK (file_sha256 IS NULL OR length(file_sha256) = 64),
+  file_bytes             INTEGER,
+  destination            TEXT,
+  error_text             TEXT
 );
 
 -- ---------------------------------------------------------------------

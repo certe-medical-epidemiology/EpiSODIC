@@ -142,12 +142,16 @@ episodic_exchange_payload_build <- function(manifest, tables, types) {
 #' @param body The compressed payload bytes, as `episodic_exchange_open()`
 #'   returns them.
 #' @param types A named list, per table this build reads, of the column
-#'   types it expects.
+#'   types it accepts.
+#' @param required A named list, per table, of the columns it must carry;
+#'   any other accepted column may be absent, which is how an export
+#'   leaves a field out.
 #' @return A list with `manifest` (everything but the tables) and
-#'   `tables` (a named list of data frames).
+#'   `tables` (a named list of data frames, each holding exactly the
+#'   columns its file carried).
 #' @keywords internal
 #' @noRd
-episodic_exchange_payload_read <- function(body, types) {
+episodic_exchange_payload_read <- function(body, types, required = list()) {
   json <- tryCatch(memDecompress(body, type = "gzip"), error = function(e) NULL)
   if (is.null(json)) {
     episodic_exchange_fail(
@@ -220,13 +224,33 @@ episodic_exchange_payload_read <- function(body, types) {
 
   tables <- lapply(stats::setNames(names(types), names(types)), function(name) {
     entry <- document$tables[[name]]
-    expected <- types[[name]]
     declared <- unlist(entry$columns)
-    if (!identical(declared[names(expected)], expected) || length(declared) != length(expected)) {
+    if (!is.character(declared) || is.null(names(declared)) || anyDuplicated(names(declared))) {
+      episodic_exchange_fail("bad_payload", "Table `", name, "` in this exchange file declares no columns.")
+    }
+    unknown_columns <- setdiff(names(declared), names(types[[name]]))
+    missing_columns <- setdiff(required[[name]], names(declared))
+    expected <- types[[name]][intersect(names(types[[name]]), names(declared))]
+    if (
+      length(unknown_columns) > 0 ||
+        length(missing_columns) > 0 ||
+        !identical(declared[names(expected)], expected)
+    ) {
       episodic_exchange_fail(
         "bad_payload",
         "Table `", name, "` in this exchange file does not have the columns ",
-        "and types payload version ", version, " defines."
+        "and types payload version ", version, " defines",
+        if (length(unknown_columns) > 0) {
+          paste0(" (unknown: ", paste(unknown_columns, collapse = ", "), ")")
+        } else {
+          ""
+        },
+        if (length(missing_columns) > 0) {
+          paste0(" (missing: ", paste(missing_columns, collapse = ", "), ")")
+        } else {
+          ""
+        },
+        "."
       )
     }
     columns <- tryCatch(

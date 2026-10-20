@@ -212,7 +212,7 @@ episodic_exchange_key_line <- function(x, what, env = NULL) {
   if (is.null(x) || length(x) != 1L || is.na(x) || !nzchar(trimws(x))) {
     episodic_exchange_fail(
       "no_key",
-      "No ", what, " given",
+      what, " was not given",
       if (!is.null(env)) paste0(", and ", env, " is not set") else "",
       ". Pass the key text or the path of its key file."
     )

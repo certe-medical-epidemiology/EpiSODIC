@@ -17,8 +17,9 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-# Schema version 15 adds the instance's identity (episodic_instance) and
-# the tables of the exchange between instances.
+# Schema version 15 adds the instance's identity (episodic_instance), the
+# tables of the exchange between instances, and the instance an imported
+# case came from (episodic_case.origin_instance_id).
 
 v15_fixture <- function() {
   path <- episodic_test_db_path()
@@ -26,6 +27,7 @@ v15_fixture <- function() {
   for (table in rev(episodic_db_exchange_tables())) {
     DBI::dbExecute(con, paste("DROP TABLE", table))
   }
+  DBI::dbExecute(con, "ALTER TABLE episodic_case DROP COLUMN origin_instance_id")
   DBI::dbExecute(
     con,
     "UPDATE episodic_schema_version SET version = 14 WHERE version = ?",
@@ -47,6 +49,7 @@ test_that("migration 15 adds the exchange tables and gives the database an ident
     expect_true(DBI::dbExistsTable(con, table), info = table)
   }
   expect_true(episodic_instance_id_valid(episodic_db_instance_id(con)))
+  expect_true(episodic_db_column_exists(con, "sqlite", "episodic_case", "origin_instance_id"))
 })
 
 test_that("a second pass of migration 15 keeps the identifier it gave", {

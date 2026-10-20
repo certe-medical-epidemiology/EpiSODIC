@@ -964,13 +964,25 @@ episodic_db_migrations <- function() {
       invisible(NULL)
     },
     # 15: the instance's own identity (episodic_instance), generated here
-    # once for a database that has none, and the tables of the encrypted
-    # exchange between instances. Purely additive: tables taken from the
-    # schema file, each skipped when present for the same reason as 2, and
-    # one row written only when episodic_instance holds none, so a second
-    # pass neither adds a row nor replaces the identity a partner may
-    # already have been given.
+    # once for a database that has none, the tables of the encrypted
+    # exchange between instances, and the instance an imported case came
+    # from (episodic_case.origin_instance_id: NULL on every case already
+    # on file, which is true of all of them, since no case could be
+    # imported before this version). Purely additive: one nullable
+    # column, tables taken from the schema file, each skipped when present
+    # for the same reason as 2, and one row written only when
+    # episodic_instance holds none, so a second pass neither adds a row
+    # nor replaces the identity a partner may already have been given.
     "15" = function(con, dialect) {
+      if (!episodic_db_column_exists(con, dialect, "episodic_case", "origin_instance_id")) {
+        episodic_db_execute(
+          con,
+          paste(
+            "ALTER TABLE episodic_case ADD COLUMN origin_instance_id TEXT",
+            "CHECK (origin_instance_id IS NULL OR length(origin_instance_id) = 10)"
+          )
+        )
+      }
       for (table in episodic_db_exchange_tables()) {
         if (DBI::dbExistsTable(con, table)) {
           next

@@ -31,7 +31,13 @@
 #' @keywords internal
 #' @noRd
 episodic_db_exchange_tables <- function() {
-  c("episodic_instance")
+  c(
+    "episodic_instance",
+    "episodic_exchange_schedule_event",
+    "episodic_exchange_source_event",
+    "episodic_exchange_import_event",
+    "episodic_exchange_export_event"
+  )
 }
 
 #' A fresh instance identifier
