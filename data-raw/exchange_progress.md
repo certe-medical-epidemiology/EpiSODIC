@@ -16,3 +16,4 @@ Temporary; removed before the PR leaves draft.
 - 2026-10-20 M6 app Exchange screen: done
 - 2026-10-20 M7 documentation: started
 - 2026-10-20 M7 documentation: done
+- 2026-10-20 M8 finish (draft PR, issue comment): started
