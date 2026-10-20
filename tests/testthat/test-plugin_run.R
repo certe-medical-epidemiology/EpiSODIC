@@ -145,3 +145,24 @@ test_that("a plugin without secrets is given no secrets, not the whole environme
   expect_false("UNRELATED_SECRET" %in% names(env))
   expect_true(all(nzchar(names(env))))
 })
+
+test_that("a step's env placeholders are filled from the payload, as data and never as code", {
+  outcome <- plugin_run_test(
+    list(plugin_test_step(
+      "cat('message=', Sys.getenv('LABEL'), '\\n', sep = '', file = Sys.getenv('EPISODIC_RESULT'))",
+      env = list(LABEL = "Cluster ${{ cluster.cluster_id }}: ${{ cluster.note }}")
+    )),
+    payload = list(cluster = list(cluster_id = 7L, note = "'); stop('injected"))
+  )
+  expect_identical(outcome$status, "success")
+  expect_identical(outcome$message, "Cluster 7: '); stop('injected")
+})
+
+test_that("a placeholder with no value in the payload stops the run, naming it", {
+  outcome <- plugin_run_test(
+    list(plugin_test_step(env = list(WARD = "${{ cluster.ward }}"))),
+    payload = list(cluster = list(cluster_id = 7L, ward = NA))
+  )
+  expect_identical(outcome$status, "failed")
+  expect_match(outcome$detail, "${{ cluster.ward }}", fixed = TRUE)
+})

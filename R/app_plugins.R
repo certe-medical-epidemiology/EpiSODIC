@@ -454,11 +454,13 @@ episodic_ui_plugin_confirm_modal <- function(plugin, cluster_id, lang = Sys.gete
 #' The result of a plugin run, as the person who ran it sees it
 #'
 #' The plugin's message and link are shown as text and as a plain link:
-#' nothing a plugin returns is rendered as markup. Error output is shown
-#' only to an admin; anyone else is told it is on the Plugins screen.
+#' nothing a plugin returns is rendered as markup. When it did not
+#' succeed, the end of its error output is shown too, with the values of
+#' its secrets masked, so whoever pushed the button can see what went
+#' wrong.
 #' @keywords internal
 #' @noRd
-episodic_ui_plugin_result_modal <- function(plugin, outcome, is_admin, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_ui_plugin_result_modal <- function(plugin, outcome, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   ok <- identical(outcome$status, "success")
   shiny::modalDialog(
     title = episodic_tr("plugins.result.title", name = episodic_plugin_label(plugin, lang = lang), lang = lang),
@@ -479,12 +481,8 @@ episodic_ui_plugin_result_modal <- function(plugin, outcome, is_admin, lang = Sy
         episodic_tr("plugins.result.link", lang = lang)
       ))
     },
-    if (!ok) {
-      if (isTRUE(is_admin) && !is.na(outcome$detail)) {
-        shiny::tags$pre(class = "episodic-plugins-detail", outcome$detail)
-      } else if (!isTRUE(is_admin)) {
-        shiny::tags$p(class = "episodic-form-hint", episodic_tr("plugins.result.ask_admin", lang = lang))
-      }
+    if (!ok && !is.na(outcome$detail)) {
+      shiny::tags$pre(class = "episodic-plugins-detail", outcome$detail)
     }
   )
 }
@@ -667,10 +665,7 @@ episodic_app_server_plugins <- function(input,
         )
       }
     )
-    shiny::showModal(episodic_ui_plugin_result_modal(
-      target$plugin, outcome, episodic_user_is_admin(target$user),
-      lang = lang
-    ))
+    shiny::showModal(episodic_ui_plugin_result_modal(target$plugin, outcome, lang = lang))
     touch()
   }
 

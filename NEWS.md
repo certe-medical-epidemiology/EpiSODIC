@@ -42,6 +42,7 @@
 - `episodic_plugin_install()`, `episodic_plugin_enable()`, `episodic_plugin_disable()`, `episodic_plugin_uninstall()`, `episodic_plugin_list()` and `episodic_plugin_run()` manage and run plugins headless
 - The admin-only Plugins screen, reached from the Instance screen, installs, enables, disables, updates and uninstalls plugins and shows every plugin run
 - A plugin step runs in a process of its own with a timeout and an environment holding only its granted secrets, never EpiSODIC's own variables
+- A plugin step's `env` can take values from the payload with `${{ }}` placeholders, never filled into code
 - A plugin receives only the parts of the data it holds permission for, and a cluster's cases only after a confirmation naming their destination
 - Every plugin run is recorded in `episodic_plugin_run_event` (schema version 16)
 - `EPISODIC_PLUGIN_DIR` sets the plugin folder, by default a `plugins` folder beside the configuration file
@@ -51,7 +52,8 @@
 ## Changed
 
 - `episodic_case` records the instance an imported case came from (`origin_instance_id`, schema version 15)
-- The Settings screen writes notification settings to the configuration file, which is the only record of an instance's settings, and says when settings it once saved to the database differ from the file
+- The Settings screen writes notification settings to the configuration file, which is the only record of an instance's settings
+- Notification settings the Settings screen once saved in the database move into the configuration file once, when the dashboard starts
 - `episodic_config_resolve()` no longer takes a database connection
 - The Settings screen no longer lists a configuration change history, since settings saved in the database are no longer applied
 - Which plugins are enabled is written to the configuration file (`plugins.enabled`), outside `config_hash`

@@ -144,3 +144,17 @@ test_that("without a configuration file or plugin folder there are no plugins, a
   withr::local_envvar(EPISODIC_CONFIG = NA, EPISODIC_PLUGIN_DIR = NA)
   expect_identical(nrow(episodic_plugin_list(NA)), 0L)
 })
+
+test_that("placeholders are allowed only in a step's env, and only for parts the payload holds", {
+  instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
+  ok <- plugin_test_spec(steps = list(plugin_test_step(env = list(LABEL = "Outbreak ${{ cluster.label }} by ${{user.username}}"))))
+  expect_identical(episodic_plugin_read(plugin_test_write(instance$dir, "ok", ok))$problems, list())
+
+  bad <- plugin_test_spec(steps = list(
+    plugin_test_step(env = list(A = "${{ Cluster label }}", B = "${{ run.run_id }}", C = "${{ cases.0 }}")),
+    plugin_test_step(run = "cat('${{ cluster.label }}')")
+  ))
+  codes <- plugin_test_codes(episodic_plugin_read(plugin_test_write(instance$dir, "bad", bad)))
+  expect_identical(codes, c("bad_placeholder", "placeholder_part", "placeholder_part", "placeholder_in_run"))
+})

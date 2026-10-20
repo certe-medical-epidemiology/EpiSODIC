@@ -163,7 +163,19 @@ steps:
 
 `r` runs with the same R installation and packages as EpiSODIC; `bash` and `python` use the programs on the server. Steps share one working folder, so one step can leave a file for the next. A step that fails ends the plugin there, and its error is recorded.
 
-Values from the data are never pasted into your code: a step reads them from the payload file. That way a ward or pathogen name can never change what the code does.
+### Placeholders
+
+A step's `env` can take values from the payload with placeholders, which saves reading the payload file for a value or two:
+
+```yaml
+    env:
+      TITLE: "Outbreak ${{ cluster.label }}: ${{ cluster.pathogen }}"
+      SENT_BY: ${{ user.username }}
+```
+
+A placeholder names a path in the payload (below), and only parts the plugin receives: `cluster` needs `cluster_summary`, `run` needs `run_summary`, and `cases`, being a list, cannot be used. A placeholder whose value is missing in a run stops that run and says which one, rather than passing an empty value.
+
+Placeholders work in `env` only, never in `run`. The filled value reaches your code as an environment variable, as data, so a ward or pathogen name can never change what the code does. A `${{ }}` in `run` is reported as a mistake.
 
 ### What a step receives
 
@@ -205,7 +217,20 @@ The dashboard shows the message as plain text and the link as a plain link, neve
 
 ### When something goes wrong
 
-A plugin that fails, or runs longer than its `timeout`, is stopped and recorded, with the end of its error output. An administrator sees that output on the Plugins screen, with the values of the plugin's secrets masked; an epidemiologist is told where to find it. A plugin that runs after detection runs can never make a run fail, and one failing plugin never stops the others.
+A plugin that fails, or runs longer than its `timeout`, is stopped and recorded, with the end of its error output. Whoever pushed the button sees that output straight away, and an administrator finds it on the Plugins screen, always with the values of the plugin's secrets masked. A plugin that runs after detection runs can never make a run fail, and one failing plugin never stops the others.
+
+### Limitations
+
+What a plugin cannot do, by design:
+
+- It never receives EpiSODIC's own settings or credentials (the database, mail, Microsoft 365 or the import and export keys), so it cannot read or write the database, send mail through EpiSODIC's channels, or create an export file of its own.
+- It works with what its permissions put in the payload: a cluster's summary and cases, or a run's summary. Anything else EpiSODIC holds is out of its reach.
+- It cannot change what EpiSODIC detects, how clusters are reconciled or how they are assessed: it acts on results, never on detection.
+- It cannot add screens or panels to the dashboard; a button plugin adds a button and shows a message and a link.
+- It cannot install software: what it `requires` must already be on the server.
+- It runs for at most 600 seconds, and a button plugin keeps the person who pushed it waiting until it finishes.
+- Every secret it names must be set on the server; there are no optional secrets.
+- It cannot be trusted further than its own code: EpiSODIC narrows what a plugin receives and records what it did, but cannot stop it sending what it received somewhere other than its `destination` says.
 
 ### Versions
 

@@ -440,6 +440,26 @@ episodic_db_app_user_event_insert <- function(con,
   episodic_db_last_insert_id(con)
 }
 
+#' Record that the saved notification settings moved into the file
+#'
+#' An empty overlay with `episodic_app_settings_migrated_note`, inserted
+#' after the row it supersedes, so that row is never applied again. The
+#' one row this table still receives; see `episodic_app_settings_migrate()`.
+#' @param con A [DBI::DBIConnection-class].
+#' @param user_id The account that saved the row it supersedes.
+#' @return The new row's `event_id`.
+#' @keywords internal
+#' @noRd
+episodic_db_app_config_migrated_insert <- function(con, user_id) {
+  episodic_db_execute(
+    con,
+    "INSERT INTO episodic_app_config_event (user_id, created_at, section, config_json, note)
+     VALUES (?, ?, 'notifications', '{}', ?)",
+    params = list(as.integer(user_id), episodic_now(), episodic_app_settings_migrated_note)
+  )
+  episodic_db_last_insert_id(con)
+}
+
 #' Set or cancel an export schedule
 #'
 #' Event-sourced: always an insert. The current schedule under a name is

@@ -222,6 +222,75 @@ episodic_app_settings_build_notifications <- function(input, existing) {
   )
 }
 
+#' Move notification settings once saved to the database into the file
+#'
+#' The Settings screen used to save notification settings as rows in
+#' `episodic_app_config_event`, applied on top of the configuration file.
+#' The file is now the only record of settings, so the last such row is
+#' merged into the file's `notifications` section once, when the
+#' dashboard starts, and a row noting that it was moved is added after
+#' it. From then on the old row never applies again, so an operator who
+#' later edits the file by hand is not overruled by a setting saved long
+#' before.
+#'
+#' Without a writable configuration file nothing can be moved: that is
+#' said, and the Settings screen keeps saying so, until the dashboard
+#' starts with one.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param episodic_config_path The configuration file.
+#' @return Invisibly, `"none"` (nothing to move), `"moved"`, `"unchanged"`
+#'   (the file already said the same) or `"not_moved"`.
+#' @keywords internal
+#' @noRd
+episodic_app_settings_migrate <- function(con,
+                                          episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
+  latest <- episodic_db_app_config_latest(con, "notifications")
+  if (is.null(latest) || identical(latest$note, episodic_app_settings_migrated_note)) {
+    return(invisible("none"))
+  }
+  saved <- tryCatch(
+    jsonlite::fromJSON(latest$config_json, simplifyVector = FALSE),
+    error = function(e) e
+  )
+  if (inherits(saved, "error") || !is.list(saved)) {
+    message(
+      "Notification settings saved in the database on ", latest$created_at,
+      " could not be read, so they were not moved into the configuration file."
+    )
+    return(invisible("not_moved"))
+  }
+  current <- episodic_config_resolve(episodic_config_path)$notifications %||% list()
+  merged <- episodic_config_merge(current, saved)
+  if (episodic_config_same(merged, current)) {
+    episodic_db_app_config_migrated_insert(con, latest$user_id)
+    return(invisible("unchanged"))
+  }
+  moved <- tryCatch(
+    episodic_config_set("notifications", merged, episodic_config_path),
+    error = function(e) e
+  )
+  if (inherits(moved, "error")) {
+    message(
+      "Notification settings saved in the database on ", latest$created_at,
+      " were not moved into the configuration file, and are not in force: ",
+      conditionMessage(moved)
+    )
+    return(invisible("not_moved"))
+  }
+  episodic_db_app_config_migrated_insert(con, latest$user_id)
+  message(
+    "Notification settings saved in the database on ", latest$created_at,
+    " were moved into the configuration file (", episodic_config_path, ")."
+  )
+  invisible("moved")
+}
+
+#' The note on the row that records the move into the configuration file
+#' @keywords internal
+#' @noRd
+episodic_app_settings_migrated_note <- "moved to the configuration file"
+
 #' Wire the Settings screen's server-side logic
 #'
 #' Every handler re-resolves the signed-in account with

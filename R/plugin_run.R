@@ -64,10 +64,11 @@ episodic_plugin_getenv <- function(names) {
 #' @param step The step.
 #' @param work_dir The run's working directory.
 #' @param lang The language a plugin should write its message in.
+#' @param payload The payload, for the placeholders in the step's `env`.
 #' @return A named character vector.
 #' @keywords internal
 #' @noRd
-episodic_plugin_environment <- function(plugin, grant, step, work_dir, lang) {
+episodic_plugin_environment <- function(plugin, grant, step, work_dir, lang, payload = list()) {
   inherited <- episodic_plugin_getenv(episodic_plugin_env_allowlist)
   env <- inherited[!is.na(inherited)]
   secrets <- intersect(plugin$secrets, grant$secrets)
@@ -84,7 +85,7 @@ episodic_plugin_environment <- function(plugin, grant, step, work_dir, lang) {
   dir.create(tmp, showWarnings = FALSE)
   c(
     env,
-    step$env,
+    if (length(step$env) == 0) character(0) else vapply(step$env, episodic_plugin_fill, character(1), payload = payload),
     values,
     R_LIBS = paste(.libPaths(), collapse = .Platform$path.sep),
     TMPDIR = tmp, TMP = tmp, TEMP = tmp,
@@ -93,6 +94,46 @@ episodic_plugin_environment <- function(plugin, grant, step, work_dir, lang) {
     EPISODIC_PLUGIN_ID = plugin$id,
     EPISODIC_LANGUAGE = lang
   )
+}
+
+#' Fill the placeholders in a step variable from the payload
+#'
+#' `${{ cluster.label }}` becomes that value of the payload. A placeholder
+#' whose value is absent or missing stops the run, naming it: an empty
+#' string would pass for a value the plugin then acts on. The filled text
+#' reaches the step as an environment variable, never as code.
+#'
+#' @param value The variable's text.
+#' @param payload The payload.
+#' @return The text with every placeholder filled.
+#' @keywords internal
+#' @noRd
+episodic_plugin_fill <- function(value, payload) {
+  for (path in episodic_plugin_placeholders(value)) {
+    found <- payload
+    for (part in strsplit(path, ".", fixed = TRUE)[[1]]) {
+      found <- if (is.list(found) && part %in% names(found)) found[[part]] else NULL
+    }
+    if (is.null(found) || is.list(found) || length(found) != 1 || is.na(found)) {
+      stop("The placeholder ${{ ", path, " }} has no value in this run's payload.", call. = FALSE)
+    }
+    text <- if (is.logical(found)) {
+      tolower(as.character(found))
+    } else if (is.numeric(found)) {
+      format(found, scientific = FALSE, trim = TRUE, digits = 15)
+    } else {
+      as.character(found)
+    }
+    # Backslashes doubled: in a replacement they are references, and a
+    # value from the data has to arrive exactly as it is.
+    value <- gsub(
+      paste0("\\$\\{\\{\\s*", gsub(".", "\\.", path, fixed = TRUE), "\\s*\\}\\}"),
+      gsub("\\", "\\\\", text, fixed = TRUE),
+      value,
+      perl = TRUE
+    )
+  }
+  value
 }
 
 #' Read what a plugin reported
@@ -204,7 +245,7 @@ episodic_plugin_execute <- function(plugin, grant, payload, lang = Sys.getenv("E
     if (remaining <= 0) {
       return(outcome("timeout", step = step$name))
     }
-    env <- tryCatch(episodic_plugin_environment(plugin, grant, step, work_dir, episodic_lang(lang)), error = function(e) e)
+    env <- tryCatch(episodic_plugin_environment(plugin, grant, step, work_dir, episodic_lang(lang), payload), error = function(e) e)
     if (inherits(env, "error")) {
       return(outcome("failed", step = step$name, detail = conditionMessage(env)))
     }

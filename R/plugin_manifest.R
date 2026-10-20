@@ -342,6 +342,8 @@ episodic_plugin_read <- function(path) {
         }
         if (!episodic_plugin_is_text(step$run)) {
           add("bad_field", field = paste0(where, ".run"))
+        } else if (grepl("${{", step$run, fixed = TRUE)) {
+          add("placeholder_in_run", field = paste0(where, ".run"))
         }
         if (!is.null(step$name) && !episodic_plugin_is_text(step$name)) {
           add("bad_field", field = paste0(where, ".name"))
@@ -354,6 +356,12 @@ episodic_plugin_read <- function(path) {
           add("bad_field", field = paste0(where, ".env"))
         } else if (any(grepl("^EPISODIC_", names(env)))) {
           add("episodic_secret", variable = paste(grep("^EPISODIC_", names(env), value = TRUE), collapse = ", "))
+        } else {
+          for (name in names(env)) {
+            for (problem in episodic_plugin_placeholder_problems(env[[name]], paste0(where, ".env.", name), plugin)) {
+              problems[[length(problems) + 1L]] <<- problem
+            }
+          }
         }
         list(
           name = if (episodic_plugin_is_text(step$name)) trimws(step$name) else paste("Step", i),
@@ -369,6 +377,53 @@ episodic_plugin_read <- function(path) {
     problems <- episodic_plugin_requirements(plugin)
   }
   done()
+}
+
+#' The placeholders in a text: `${{ cluster.label }}` gives `cluster.label`
+#' @keywords internal
+#' @noRd
+episodic_plugin_placeholders <- function(text) {
+  if (!is.character(text) || length(text) != 1 || is.na(text)) {
+    return(character(0))
+  }
+  found <- regmatches(text, gregexpr("\\$\\{\\{[^}]*\\}\\}", text))[[1]]
+  trimws(gsub("^\\$\\{\\{|\\}\\}$", "", found))
+}
+
+#' The payload parts a placeholder may start from, for a plugin
+#'
+#' What the payload of that plugin always holds, plus the parts its
+#' permissions add; never `cases`, which is a list of cases rather than
+#' one value.
+#' @keywords internal
+#' @noRd
+episodic_plugin_placeholder_roots <- function(plugin) {
+  roots <- c("api", "plugin", "trigger", "instance_id", "language", "dashboard_url")
+  if (identical(plugin$trigger, "button")) {
+    roots <- c(roots, "user")
+  }
+  if ("cluster_summary" %in% plugin$permissions) {
+    roots <- c(roots, "cluster")
+  }
+  if ("run_summary" %in% plugin$permissions) {
+    roots <- c(roots, "run")
+  }
+  roots
+}
+
+#' What is wrong with the placeholders in one step variable
+#' @keywords internal
+#' @noRd
+episodic_plugin_placeholder_problems <- function(value, field, plugin) {
+  problems <- list()
+  for (path in episodic_plugin_placeholders(value)) {
+    if (!grepl("^[a-z_]+(\\.[a-z0-9_]+)*$", path)) {
+      problems[[length(problems) + 1L]] <- episodic_plugin_problem("bad_placeholder", field = field, placeholder = path)
+    } else if (!(sub("\\..*$", "", path) %in% episodic_plugin_placeholder_roots(plugin))) {
+      problems[[length(problems) + 1L]] <- episodic_plugin_problem("placeholder_part", field = field, part = sub("\\..*$", "", path))
+    }
+  }
+  problems
 }
 
 #' The program that runs a step written in `shell`, or `""` if absent

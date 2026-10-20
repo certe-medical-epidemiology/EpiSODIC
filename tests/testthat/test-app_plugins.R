@@ -227,16 +227,15 @@ test_that("a plugin that sends cases runs only after the confirmation naming its
   expect_identical(events$destination, "https://regional.example")
 })
 
-test_that("a plugin's result is shown as text, never as markup, and its error output only to an admin", {
+test_that("a plugin's result is shown as text, never as markup, with its masked error output", {
   plugin <- list(id = "p", name = "P", label = list(en = "Share"))
-  outcome <- list(status = "failed", message = "<script>alert(1)</script>", link = "https://x.example/1", step = "Send", detail = "stack trace")
-  for_epi <- as.character(episodic_ui_plugin_result_modal(plugin, outcome, is_admin = FALSE, lang = "en"))
-  expect_false(grepl("<script>alert(1)</script>", for_epi, fixed = TRUE))
-  expect_true(grepl("&lt;script&gt;", for_epi, fixed = TRUE))
-  expect_false(grepl("stack trace", for_epi, fixed = TRUE))
-  expect_true(grepl(episodic_tr("plugins.result.ask_admin", lang = "en"), for_epi, fixed = TRUE))
-  for_admin <- as.character(episodic_ui_plugin_result_modal(plugin, outcome, is_admin = TRUE, lang = "en"))
-  expect_true(grepl("stack trace", for_admin, fixed = TRUE))
+  outcome <- list(status = "failed", message = "<script>alert(1)</script>", link = "https://x.example/1", step = "Send", detail = "Exit status 1. token ***")
+  html <- as.character(episodic_ui_plugin_result_modal(plugin, outcome, lang = "en"))
+  expect_false(grepl("<script>alert(1)</script>", html, fixed = TRUE))
+  expect_true(grepl("&lt;script&gt;", html, fixed = TRUE))
+  expect_true(grepl("Exit status 1. token ***", html, fixed = TRUE))
+  succeeded <- as.character(episodic_ui_plugin_result_modal(plugin, utils::modifyList(outcome, list(status = "success")), lang = "en"))
+  expect_false(grepl("Exit status", succeeded, fixed = TRUE))
 })
 
 test_that("the Plugins screen renders in every shipped language, with plugins and runs", {
