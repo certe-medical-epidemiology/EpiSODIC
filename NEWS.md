@@ -23,7 +23,6 @@
 - `episodic_db_truncate()` keeps the instance identifier
 - An imported case's institution adds an institution the receiver does not know, and never renames or retypes one it does
 
-
 # EpiSODIC 0.24.0
 
 ## New
