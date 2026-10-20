@@ -27,9 +27,9 @@
 # every other write action in this app applies.
 #
 # Three things live here:
-#  - notification channels/recipients/toggles: read/write, stored as an
-#    episodic_app_config_event (append-only; episodic_config_resolve()
-#    overlays the latest one on top of the YAML config)
+#  - notification channels/recipients/toggles: read/write, written to the
+#    `notifications` section of the configuration file itself
+#    (episodic_config_set()), which stays the only record of settings
 #  - detection configuration: read-only, straight from
 #    episodic_config_resolve() - changing it deliberately still requires
 #    editing EPISODIC_CONFIG
@@ -160,7 +160,7 @@ episodic_settings_set_path <- function(x, path, value) {
 #'
 #' @param input The Shiny server function's `input`.
 #' @param existing The `notifications` section currently in effect (from
-#'   `episodic_config_resolve(con = con)$notifications`), used only so a
+#'   `episodic_config_resolve()$notifications`), used only so a
 #'   `"secret"` field left blank on screen keeps its stored value instead
 #'   of being wiped - the screen never round-trips a real secret value
 #'   back into the browser (`episodic_ui_settings_notif_channel()` renders
@@ -267,22 +267,31 @@ episodic_app_server_settings <- function(input,
     user <- episodic_auth_refresh_user(con, current_user())
     shiny::req(episodic_user_is_admin(user))
 
-    existing <- episodic_config_resolve(con = con)$notifications
-    notif <- episodic_app_settings_build_notifications(input, existing)
-    episodic_db_app_config_event_insert(
-      con,
-      user_id = user$user_id,
-      section = "notifications",
-      config_json = as.character(jsonlite::toJSON(
-        notif,
-        auto_unbox = TRUE,
-        null = "null"
-      ))
+    result <- tryCatch(
+      {
+        existing <- episodic_config_resolve()$notifications
+        notif <- episodic_app_settings_build_notifications(input, existing)
+        episodic_config_set("notifications", notif)
+      },
+      error = function(e) e
     )
-    settings_message(list(
-      type = "success",
-      text = episodic_tr("settings.notif.saved", lang = lang)
-    ))
+    settings_message(
+      if (inherits(result, "error")) {
+        list(
+          type = "error",
+          text = episodic_tr(
+            "settings.notif.save_failed",
+            error = conditionMessage(result),
+            lang = lang
+          )
+        )
+      } else {
+        list(
+          type = "success",
+          text = episodic_tr("settings.notif.saved", lang = lang)
+        )
+      }
+    )
     settings_touch()
   })
 

@@ -163,7 +163,7 @@ episodic_add_manual_cluster <- function(db_path = Sys.getenv("EPISODIC_DB", unse
   con <- episodic_db_open(db_path)
   on.exit(DBI::dbDisconnect(con))
 
-  config <- episodic_config_resolve(con = con)
+  config <- episodic_config_resolve()
   weights <- config$priority_score$weights
 
   DBI::dbBegin(con)

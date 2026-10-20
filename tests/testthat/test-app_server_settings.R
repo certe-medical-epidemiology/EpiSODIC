@@ -50,7 +50,12 @@ app_settings_test_setup <- function() {
     params = list(admin_id, viewer_id)
   )
   DBI::dbDisconnect(con)
-  list(db_path = db_path, admin_id = admin_id, viewer_id = viewer_id)
+  # The configuration file the Settings screen writes, for the calling test only.
+  config_path <- tempfile(fileext = ".yaml")
+  writeLines("notifications: ~", config_path)
+  withr::defer(unlink(config_path), envir = parent.frame())
+  withr::local_envvar(EPISODIC_CONFIG = config_path, .local_envir = parent.frame())
+  list(db_path = db_path, admin_id = admin_id, viewer_id = viewer_id, config_path = config_path)
 }
 
 test_that("a non-admin signed-in account sees settings.no_access and cannot save notification settings", {
@@ -78,12 +83,10 @@ test_that("a non-admin signed-in account sees settings.no_access and cannot save
     DBI::dbDisconnect(con)
   })
 
-  con <- episodic_db_connect(setup$db_path)
-  on.exit(DBI::dbDisconnect(con))
-  expect_null(episodic_db_app_config_latest(con, "notifications"))
+  expect_identical(readLines(setup$config_path), "notifications: ~")
 })
 
-test_that("an is_admin account can save notification settings, which round-trip through episodic_config_resolve(con = ...)", {
+test_that("an is_admin account can save notification settings, which are written to the configuration file", {
   skip_if_not_installed("sodium")
   setup <- app_settings_test_setup()
 
@@ -114,9 +117,7 @@ test_that("an is_admin account can save notification settings, which round-trip 
     DBI::dbDisconnect(con)
   })
 
-  con <- episodic_db_connect(setup$db_path)
-  on.exit(DBI::dbDisconnect(con))
-  saved_config <- episodic_config_resolve(NA, con = con)
+  saved_config <- episodic_config_resolve(setup$config_path)
   expect_true(saved_config$notifications$enabled)
   expect_equal(saved_config$notifications$channels$ntfy$topic, "episodic-test")
 })
@@ -225,7 +226,5 @@ test_that("a signed-in admin session cannot keep writing settings after being de
     DBI::dbDisconnect(con)
   })
 
-  con <- episodic_db_connect(setup$db_path)
-  on.exit(DBI::dbDisconnect(con))
-  expect_null(episodic_db_app_config_latest(con, "notifications"))
+  expect_identical(readLines(setup$config_path), "notifications: ~")
 })

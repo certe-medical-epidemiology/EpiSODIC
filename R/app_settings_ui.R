@@ -34,7 +34,7 @@
 episodic_ui_settings_screen <- function(con,
                                         lang = Sys.getenv("EPISODIC_LANGUAGE"),
                                         message = NULL) {
-  config <- episodic_config_resolve(con = con)
+  config <- episodic_config_resolve()
   users <- episodic_db_app_users(con)
   # role/is_admin/is_active are insert-only attributes (see R/auth.R); the
   # raw episodic_app_user row only carries each account's *original*
@@ -49,11 +49,6 @@ episodic_ui_settings_screen <- function(con,
       })
     )
   }
-  audit <- episodic_db_app_config_events(
-    con,
-    section = "notifications",
-    limit = 20
-  )
 
   shiny::tags$div(
     class = "episodic-streams-screen",
@@ -71,9 +66,12 @@ episodic_ui_settings_screen <- function(con,
     episodic_ui_settings_users_panel(users, lang = lang),
     episodic_ui_settings_access_panel(config, lang = lang),
     episodic_ui_settings_detection_panel(config, lang = lang),
-    episodic_ui_settings_notif_panel(config$notifications, lang = lang),
+    episodic_ui_settings_notif_panel(
+      config$notifications,
+      notices = episodic_ui_settings_file_notices(con, config, lang = lang),
+      lang = lang
+    ),
     episodic_ui_settings_export_panel(lang = lang),
-    episodic_ui_settings_audit_panel(audit, lang = lang),
     shiny::tags$script(shiny::HTML(episodic_ui_settings_bind_script()))
   )
 }
@@ -81,11 +79,13 @@ episodic_ui_settings_screen <- function(con,
 #' @keywords internal
 #' @noRd
 episodic_ui_settings_notif_panel <- function(notif,
+                                             notices = NULL,
                                              lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   notif <- notif %||% list()
   episodic_ui_panel(
     episodic_tr("settings.notif.title", lang = lang),
     note = episodic_tr("settings.notif.note", lang = lang),
+    notices,
     shiny::tags$div(
       class = "episodic-settings-notif-master",
       episodic_ui_settings_toggle(
@@ -597,40 +597,53 @@ episodic_ui_settings_export_panel <- function(lang = Sys.getenv("EPISODIC_LANGUA
   )
 }
 
+#' Why the notification settings cannot be saved, or are not what was saved
+#'
+#' Two situations a reader of the form needs to know about before using
+#' it. Without a writable configuration file the form can show settings
+#' but not save them. And notification settings saved from this screen
+#' before it wrote the configuration file sit in the database, which is
+#' no longer read: while they would still change something, the screen
+#' says so, so they do not lapse unannounced.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param config The resolved configuration.
+#' @param lang Session language.
+#' @return A `shiny::tagList` of notices, empty when there is nothing to say.
 #' @keywords internal
 #' @noRd
-episodic_ui_settings_audit_panel <- function(audit,
-                                             lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  episodic_ui_panel(
-    episodic_tr("settings.audit.title", lang = lang),
-    if (nrow(audit) == 0) {
-      shiny::tags$p(
-        class = "episodic-panel-empty",
-        episodic_tr("settings.audit.empty", lang = lang)
-      )
-    } else {
-      shiny::tags$table(
-        class = "episodic-table",
-        shiny::tags$thead(shiny::tags$tr(
-          shiny::tags$th(episodic_tr("settings.audit.col.when", lang = lang)),
-          shiny::tags$th(episodic_tr("settings.audit.col.who", lang = lang)),
-          shiny::tags$th(episodic_tr("settings.audit.col.section", lang = lang))
-        )),
-        shiny::tags$tbody(lapply(seq_len(nrow(audit)), function(i) {
-          row <- audit[i, ]
-          shiny::tags$tr(
-            shiny::tags$td(
-              episodic_ui_format_stamp(row$created_at, lang = lang)
-            ),
-            shiny::tags$td(
-              row$actor_full_name %||% episodic_tr("misc.unknown", lang = lang)
-            ),
-            shiny::tags$td(row$section)
-          )
-        }))
-      )
+episodic_ui_settings_file_notices <- function(con,
+                                              config,
+                                              lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  notices <- list()
+  notice <- function(key, ...) {
+    shiny::tags$div(
+      class = "episodic-form-error",
+      style = "margin-bottom:12px;",
+      episodic_tr(key, ..., lang = lang)
+    )
+  }
+  path <- Sys.getenv("EPISODIC_CONFIG", unset = NA)
+  if (is.na(path) || !nzchar(path)) {
+    notices <- c(notices, list(notice("settings.notif.no_file")))
+  } else if (file.access(path, mode = 2) != 0) {
+    notices <- c(notices, list(notice("settings.notif.not_writable", path = path)))
+  }
+  latest <- episodic_db_app_config_latest(con, "notifications")
+  if (!is.null(latest)) {
+    saved <- tryCatch(
+      jsonlite::fromJSON(latest$config_json, simplifyVector = FALSE),
+      error = function(e) NULL
+    )
+    current <- config$notifications %||% list()
+    if (is.null(saved) || !episodic_config_same(episodic_config_merge(current, saved), current)) {
+      notices <- c(notices, list(notice(
+        "settings.notif.retired_overlay",
+        date = episodic_ui_format_stamp(latest$created_at, lang = lang)
+      )))
     }
-  )
+  }
+  shiny::tagList(notices)
 }
 
 #' The client-side script binding every dynamic Settings-screen input

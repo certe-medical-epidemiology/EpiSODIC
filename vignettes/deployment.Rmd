@@ -80,7 +80,7 @@ There are exactly two roles:
 - `"viewer"` - read-only. Sees exactly what a signed-in epidemiologist sees,
   including patient-level detail, but cannot record an assessment.
 
-Independent of role, an account can additionally be flagged `is_admin`, which unlocks the Settings screen: managing notification channels and recipients, creating accounts and changing their role/admin/active state, and exporting the resolved configuration. Detection parameters themselves stay read-only there deliberately - changing them is still a `EPISODIC_CONFIG` YAML change, so every past result stays traceable to the exact configuration that produced it (see "Configuration" above).
+Independent of role, an account can additionally be flagged `is_admin`, which unlocks the Settings screen: managing notification channels and recipients, creating accounts and changing their role/admin/active state, and exporting the resolved configuration. Notification settings saved there are written into the `EPISODIC_CONFIG` file itself, by replacing only the `notifications` section and leaving every other line and comment as it was, so that file stays the only record of an instance's settings; it must therefore be writable by the account the dashboard runs as. Detection parameters themselves stay read-only there deliberately - changing them is still a `EPISODIC_CONFIG` YAML change, so every past result stays traceable to the exact configuration that produced it (see "Configuration" above).
 
 ```r
 Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")  # or pass db_path explicitly below

@@ -361,7 +361,6 @@ episodic_run_cron <- function(cases,
     episodic_run_cron_connect(
       db_path,
       config,
-      episodic_config_path = episodic_config_path,
       host = host,
       account = account,
       run_date = run_date
@@ -479,7 +478,6 @@ episodic_run_cron <- function(cases,
     episodic_run_cron_notify_failure(
       con,
       config,
-      episodic_config_path,
       failure,
       run_id = run_id,
       run_date = run_date,
@@ -547,14 +545,8 @@ episodic_run_cron <- function(cases,
     }
   )
 
-  # With the Settings-screen overlay; see episodic_run_cron_notify_config().
-  notify_config <- episodic_run_cron_notify_config(
-    config,
-    episodic_config_path,
-    con
-  )
   tryCatch(
-    episodic_notify(con, notify_config, result, run_id, run_date, host),
+    episodic_notify(con, config, result, run_id, run_date, host),
     error = function(e) {
       episodic_trace(
         "Notification dispatch failed: ",
@@ -738,8 +730,6 @@ episodic_stage_timer <- function(stages) {
 #' @param db_path The database path or DSN.
 #' @param config The resolved configuration; uses
 #'   `config$database$auto_migrate` and `config$notifications`.
-#' @param episodic_config_path The configuration path, for the
-#'   Settings-screen notification overlay (`episodic_run_cron_notify_config()`).
 #' @param host,account,run_date For the failed run row and the failure
 #'   notification.
 #' @return An open [DBI::DBIConnection-class] at the current schema.
@@ -747,7 +737,6 @@ episodic_stage_timer <- function(stages) {
 #' @noRd
 episodic_run_cron_connect <- function(db_path,
                                       config,
-                                      episodic_config_path,
                                       host,
                                       account,
                                       run_date) {
@@ -820,7 +809,6 @@ episodic_run_cron_connect <- function(db_path,
   episodic_run_cron_notify_failure(
     con,
     config,
-    episodic_config_path,
     episodic_run_cron_failure(problem),
     run_id = if (inherits(recorded, "error")) NA_integer_ else recorded,
     run_date = run_date,
@@ -828,46 +816,6 @@ episodic_run_cron_connect <- function(db_path,
   )
   DBI::dbDisconnect(con)
   stop(problem, call. = FALSE)
-}
-
-#' The configuration notifications are sent with
-#'
-#' The instance YAML's `notifications`, overlaid with what an `is_admin`
-#' account last saved on the Settings screen, so an edit there reaches
-#' the very next run without a redeploy. Overlaid only here, never where
-#' `config` was first resolved: `notifications` is outside `config_hash`
-#' and `config_snapshot` either way, so applying it late changes nothing
-#' about reproducibility.
-#'
-#' The overlay is read from the database, which on a run that refused
-#' the database is a schema this build may not know. A failure to read
-#' it is logged and the YAML's own settings are used, rather than a
-#' failed run going unannounced because the announcement could not be
-#' configured.
-#'
-#' @param config The resolved configuration.
-#' @param episodic_config_path The configuration path.
-#' @param con A [DBI::DBIConnection-class].
-#' @return `config`, with `notifications` overlaid.
-#' @keywords internal
-#' @noRd
-episodic_run_cron_notify_config <- function(config, episodic_config_path, con) {
-  overlaid <- tryCatch(
-    episodic_config_resolve(episodic_config_path, con = con)$notifications,
-    error = function(e) e
-  )
-  if (inherits(overlaid, "error")) {
-    episodic_trace(
-      "The notification settings saved on the Settings screen could not be ",
-      "read (",
-      conditionMessage(overlaid),
-      "); notifying with the configuration file's own",
-      severity = "warn"
-    )
-    return(config)
-  }
-  config$notifications <- overlaid
-  config
 }
 
 #' Announce a run that failed before its detection transaction began
@@ -880,7 +828,6 @@ episodic_run_cron_notify_config <- function(config, episodic_config_path, con) {
 #'
 #' @param con A [DBI::DBIConnection-class].
 #' @param config The resolved configuration.
-#' @param episodic_config_path The configuration path.
 #' @param failure `episodic_run_cron_failure()`'s output.
 #' @param run_id The failed run's id, or `NA` where none could be written.
 #' @param run_date,host As for `episodic_notify()`.
@@ -889,7 +836,6 @@ episodic_run_cron_notify_config <- function(config, episodic_config_path, con) {
 #' @noRd
 episodic_run_cron_notify_failure <- function(con,
                                              config,
-                                             episodic_config_path,
                                              failure,
                                              run_id,
                                              run_date,
@@ -897,7 +843,7 @@ episodic_run_cron_notify_failure <- function(con,
   tryCatch(
     episodic_notify(
       con,
-      episodic_run_cron_notify_config(config, episodic_config_path, con),
+      config,
       failure,
       run_id,
       run_date,

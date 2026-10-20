@@ -440,24 +440,6 @@ episodic_db_app_user_event_insert <- function(con,
   episodic_db_last_insert_id(con)
 }
 
-#' @keywords internal
-#' @noRd
-episodic_db_app_config_event_insert <- function(con,
-                                                user_id,
-                                                section,
-                                                config_json,
-                                                note = NA) {
-  section <- match.arg(section, c("notifications"))
-  params <- list(user_id, episodic_now(), section, config_json, note)
-  episodic_db_execute(
-    con,
-    "INSERT INTO episodic_app_config_event (user_id, created_at, section, config_json, note)
-     VALUES (?, ?, ?, ?, ?)",
-    params = params
-  )
-  episodic_db_last_insert_id(con)
-}
-
 #' Set or cancel an export schedule
 #'
 #' Event-sourced: always an insert. The current schedule under a name is

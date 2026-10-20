@@ -1557,7 +1557,7 @@ episodic_ui_report_panel <- function(con,
 episodic_ui_report_schedule_section <- function(con,
                                                 cluster_id,
                                                 lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  config <- episodic_config_resolve(con = con)
+  config <- episodic_config_resolve()
   available_channels <- episodic_report_subscription_available_channels(config)
   subscription <- episodic_report_subscription_current(con, cluster_id)
   sends <- episodic_db_report_subscription_sends(con, cluster_id)

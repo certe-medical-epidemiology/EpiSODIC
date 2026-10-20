@@ -72,7 +72,7 @@ episodic_app_server_report_subscription <- function(input,
 
     interval_days <- suppressWarnings(as.integer(payload$interval_days))
     parsed <- episodic_report_subscription_parse_recipients(payload$recipients)
-    config <- episodic_config_resolve(con = con)
+    config <- episodic_config_resolve()
     available_channels <- episodic_report_subscription_available_channels(config)
     channel <- payload$channel
 

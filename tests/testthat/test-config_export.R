@@ -65,36 +65,18 @@ test_that("episodic_config_export() writes a zip containing the resolved config,
 
 test_that("episodic_config_export() masks notification secrets by default, and can include them on request", {
   skip_if_not_installed("zip")
-  con <- episodic_test_db()
-  on.exit(DBI::dbDisconnect(con))
-  db_path <- tempfile(fileext = ".sqlite")
-  DBI::dbDisconnect(episodic_db_create(db_path))
-  con2 <- episodic_db_connect(db_path)
-  user_id <- episodic_db_app_user_insert(
-    con2,
-    "admin1",
-    "Admin One",
-    "a@x.nl",
-    sodium::password_store("pw12345678"),
-    is_admin = TRUE
-  )
-  episodic_db_app_config_event_insert(
-    con2,
-    user_id,
+  config_path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(config_path))
+  writeLines("notifications: ~", config_path)
+  episodic_config_set(
     "notifications",
-    jsonlite::toJSON(
-      list(
-        channels = list(
-          teams = list(webhook_url = "https://hooks.example/real-secret")
-        )
-      ),
-      auto_unbox = TRUE
-    )
+    list(channels = list(teams = list(webhook_url = "https://hooks.example/real-secret"))),
+    config_path
   )
-  DBI::dbDisconnect(con2)
+  db_path <- NA
 
   out_dir <- tempfile("episodic_export_")
-  masked_path <- episodic_config_export(db_path = db_path, output_dir = out_dir)
+  masked_path <- episodic_config_export(db_path = db_path, episodic_config_path = config_path, output_dir = out_dir)
   extract_masked <- tempfile("episodic_export_extract_")
   zip::unzip(masked_path, exdir = extract_masked)
   resolved_masked <- yaml::read_yaml(file.path(
@@ -105,6 +87,7 @@ test_that("episodic_config_export() masks notification secrets by default, and c
 
   unmasked_path <- episodic_config_export(
     db_path = db_path,
+    episodic_config_path = config_path,
     output_dir = out_dir,
     include_secrets = TRUE
   )
