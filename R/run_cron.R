@@ -442,9 +442,12 @@ episodic_run_cron <- function(cases,
         )
         episodic_validate_institution_activity(institution_activity)
       }
-      entries <- lapply(
-        episodic_exchange_imports_normalise(imports),
-        function(x) episodic_exchange_entry(cases = x)
+      entries <- c(
+        lapply(
+          episodic_exchange_imports_normalise(imports),
+          function(x) episodic_exchange_entry(cases = x)
+        ),
+        unname(episodic_exchange_sources_fetch(con, config))
       )
       exchange <- episodic_exchange_combine(con, cases, entries)
       if (length(exchange$entries) > 0) {
@@ -581,6 +584,22 @@ episodic_run_cron <- function(cases,
     error = function(e) {
       episodic_trace(
         "Scheduled report dispatch failed: ",
+        conditionMessage(e),
+        severity = "danger"
+      )
+    }
+  )
+
+  # After the commit, on the same footing: an export that fails is
+  # recorded and logged by the dispatcher itself, and never fails the run.
+  # Independent of whether this run's detection succeeded, as reports are:
+  # the cases on file are what an export sends, and a rolled-back run
+  # changed none of them.
+  tryCatch(
+    episodic_exchange_exports_dispatch(con, config, run_id, run_date),
+    error = function(e) {
+      episodic_trace(
+        "Scheduled export dispatch failed: ",
         conditionMessage(e),
         severity = "danger"
       )

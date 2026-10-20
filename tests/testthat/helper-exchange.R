@@ -70,3 +70,21 @@ exchange_test_sender_db <- function(cases = exchange_test_cases()) {
   episodic_db_run_finish(con, run_id, status = "success")
   path
 }
+
+# An admin account to record schedules and sources under.
+exchange_test_admin <- function(con) {
+  episodic_db_app_user_insert(
+    con,
+    username = paste0("admin-", episodic_instance_id_generate()),
+    full_name = "Exchange Admin",
+    email = "admin@example.org",
+    password_hash = "x",
+    role = "epidemiologist"
+  )
+}
+
+# The text of a public key file's key line.
+exchange_test_key_line <- function(path) {
+  lines <- readLines(path)
+  lines[!startsWith(lines, "#")]
+}

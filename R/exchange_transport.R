@@ -170,7 +170,7 @@ episodic_exchange_env_value <- function(variable, what) {
   value <- Sys.getenv(variable, unset = NA)
   if (is.na(value) || !nzchar(value)) {
     episodic_exchange_fail(
-      "transport_config",
+      "environment",
       what, " is read from the environment variable ", variable,
       ", which is not set in the environment this process runs in."
     )
@@ -384,9 +384,9 @@ episodic_exchange_endpoint_test <- function(endpoint) {
     } else {
       status <- httr2::resp_status(resp)
       if (status %in% c(401L, 407L)) {
-        add("reach", FALSE, "exchange.test.refused", location = label, status = status)
+        add("reach", FALSE, "exchange.test.refused", location = label, status = as.character(status))
       } else {
-        add("reach", TRUE, "exchange.test.reachable", location = label, status = status)
+        add("reach", TRUE, "exchange.test.reachable", location = label, status = as.character(status))
         add("upload", NA, "exchange.test.upload_unknown")
       }
     }

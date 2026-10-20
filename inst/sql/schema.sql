@@ -1033,6 +1033,9 @@ CREATE TABLE episodic_exchange_export_event (
   exported_at            TEXT NOT NULL,
   initiated_by           TEXT NOT NULL CHECK (initiated_by IN ('headless', 'schedule', 'download')),
   schedule_name          TEXT,
+  -- The schedule's settings in effect when it ran, as
+  -- episodic_report_subscription_send.subscription_event_id pins a send.
+  schedule_event_id      INTEGER REFERENCES episodic_exchange_schedule_event(event_id),
   user_id                INTEGER REFERENCES episodic_app_user(user_id),
   run_id                 INTEGER REFERENCES episodic_detection_run(run_id),
   host                   TEXT NOT NULL,

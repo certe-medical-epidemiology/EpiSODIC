@@ -10,3 +10,5 @@ Temporary; removed before the PR leaves draft.
 - 2026-10-20 M3 headless export/import: done
 - 2026-10-20 M4 transport: started
 - 2026-10-20 M4 transport: done
+- 2026-10-20 M5 scheduling and audit: started
+- 2026-10-20 M5 scheduling and audit: done

@@ -136,7 +136,7 @@ test_that("a URL held in a variable is read at use, and never repeated in an err
   skip_if_not_installed("httr2", "1.2.0")
   endpoint <- episodic_exchange_endpoint("http_get", location_env = "EXCHANGE_TEST_URL", direction = "import")
   withr::local_envvar(EXCHANGE_TEST_URL = NA)
-  expect_identical(transport_reason(episodic_exchange_endpoint_read(endpoint)), "transport_config")
+  expect_identical(transport_reason(episodic_exchange_endpoint_read(endpoint)), "environment")
   withr::local_envvar(EXCHANGE_TEST_URL = "https://bucket.example/f?X-Amz-Signature=SECRETSIG")
   condition <- tryCatch(
     httr2::with_mocked_responses(

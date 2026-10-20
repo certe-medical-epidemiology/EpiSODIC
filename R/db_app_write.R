@@ -457,3 +457,109 @@ episodic_db_app_config_event_insert <- function(con,
   )
   episodic_db_last_insert_id(con)
 }
+
+#' Set or cancel an exchange export schedule
+#'
+#' Event-sourced: always an insert. The current schedule under a name is
+#' the latest row for it (`episodic_exchange_schedules_current()`). The
+#' values arrive validated by `episodic_exchange_schedule_set()`; every
+#' column but the name is `NA` on a `"cancel"` row.
+#' @param con A [DBI::DBIConnection-class].
+#' @param schedule_name The schedule's name.
+#' @param user_id The admin account recording it.
+#' @param action `"set"` or `"cancel"`.
+#' @param values A named list of the remaining columns of
+#'   `episodic_exchange_schedule_event`, or `list()` for a cancel.
+#' @return The new `event_id`.
+#' @keywords internal
+#' @noRd
+episodic_db_exchange_schedule_event_insert <- function(con,
+                                                       schedule_name,
+                                                       user_id,
+                                                       action,
+                                                       values = list()) {
+  get <- function(name, na = NA_character_) {
+    value <- values[[name]]
+    if (is.null(value) || length(value) == 0) na else value
+  }
+  episodic_db_execute(
+    con,
+    "INSERT INTO episodic_exchange_schedule_event
+      (schedule_name, user_id, created_at, action, interval_days, window_days,
+       mode, recipients, passphrase_env, signing_key_env, fields,
+       pc_characters, destination_type, destination, destination_env,
+       username_env, password_env, token_env)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    params = list(
+      schedule_name,
+      as.integer(user_id),
+      episodic_now(),
+      action,
+      as.integer(get("interval_days", NA_integer_)),
+      as.integer(get("window_days", NA_integer_)),
+      as.character(get("mode")),
+      as.character(get("recipients")),
+      as.character(get("passphrase_env")),
+      as.character(get("signing_key_env")),
+      as.character(get("fields")),
+      as.integer(get("pc_characters", NA_integer_)),
+      as.character(get("destination_type")),
+      as.character(get("destination")),
+      as.character(get("destination_env")),
+      as.character(get("username_env")),
+      as.character(get("password_env")),
+      as.character(get("token_env"))
+    )
+  )
+  episodic_db_last_insert_id(con)
+}
+
+#' Set or cancel an exchange import source
+#'
+#' Event-sourced: always an insert, as
+#' `episodic_db_exchange_schedule_event_insert()`. The values arrive
+#' validated by `episodic_exchange_source_set()`.
+#' @param con A [DBI::DBIConnection-class].
+#' @param source_name The source's name.
+#' @param user_id The admin account recording it.
+#' @param action `"set"` or `"cancel"`.
+#' @param values A named list of the remaining columns of
+#'   `episodic_exchange_source_event`, or `list()` for a cancel.
+#' @return The new `event_id`.
+#' @keywords internal
+#' @noRd
+episodic_db_exchange_source_event_insert <- function(con,
+                                                     source_name,
+                                                     user_id,
+                                                     action,
+                                                     values = list()) {
+  get <- function(name) {
+    value <- values[[name]]
+    if (is.null(value) || length(value) == 0) NA_character_ else as.character(value)
+  }
+  episodic_db_execute(
+    con,
+    "INSERT INTO episodic_exchange_source_event
+      (source_name, user_id, created_at, action, mode, key_env,
+       passphrase_env, trusted_sender, location_type, location,
+       location_env, username_env, password_env, token_env)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    params = list(
+      source_name,
+      as.integer(user_id),
+      episodic_now(),
+      action,
+      get("mode"),
+      get("key_env"),
+      get("passphrase_env"),
+      get("trusted_sender"),
+      get("location_type"),
+      get("location"),
+      get("location_env"),
+      get("username_env"),
+      get("password_env"),
+      get("token_env")
+    )
+  )
+  episodic_db_last_insert_id(con)
+}

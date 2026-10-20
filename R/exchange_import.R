@@ -219,14 +219,46 @@ episodic_exchange_import <- function(file,
                                      trusted_senders,
                                      passphrase = NULL,
                                      episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
-  if (missing(trusted_senders) || length(trusted_senders) == 0) {
+  if (missing(trusted_senders)) {
+    trusted_senders <- character(0)
+  }
+  imported <- episodic_exchange_import_bytes(
+    episodic_exchange_read_bytes(file),
+    secret_key = if (is.null(passphrase)) {
+      episodic_exchange_key_read(
+        key,
+        "encryption",
+        "secret",
+        "The secret encryption key",
+        env = "EPISODIC_EXCHANGE_KEY"
+      )
+    } else {
+      NULL
+    },
+    passphrase = passphrase,
+    trusted = episodic_exchange_trusted_read(trusted_senders),
+    config = episodic_config_resolve(episodic_config_path)
+  )
+  for (w in attr(imported, "exchange")$warnings) {
+    warning(w, call. = FALSE)
+  }
+  imported
+}
+
+#' Read the pinned sender keys, refusing an empty list
+#' @param trusted_senders Public signing keys, as texts or paths.
+#' @return A list of raw keys.
+#' @keywords internal
+#' @noRd
+episodic_exchange_trusted_read <- function(trusted_senders) {
+  if (length(trusted_senders) == 0) {
     episodic_exchange_fail(
       "untrusted_sender",
       "`trusted_senders` is empty, so no file can be accepted: name the ",
       "public signing key of every partner whose files you import."
     )
   }
-  trusted <- lapply(seq_along(trusted_senders), function(i) {
+  lapply(seq_along(trusted_senders), function(i) {
     episodic_exchange_key_read(
       trusted_senders[[i]],
       "signing",
@@ -234,19 +266,26 @@ episodic_exchange_import <- function(file,
       paste0("Trusted sender key ", i)
     )
   })
-  secret_key <- if (is.null(passphrase)) {
-    episodic_exchange_key_read(
-      key,
-      "encryption",
-      "secret",
-      "The secret encryption key",
-      env = "EPISODIC_EXCHANGE_KEY"
-    )
-  } else {
-    NULL
-  }
-  config <- episodic_config_resolve(episodic_config_path)
-  bytes <- episodic_exchange_read_bytes(file)
+}
+
+#' Import an exchange file's bytes: the work behind `episodic_exchange_import()`
+#'
+#' Shared with the cron, which fetches registered import sources, and with
+#' the connection test, which imports what it fetched to prove the next
+#' run will be able to. Raises no R warning: the geography warnings are
+#' returned in the `"exchange"` attribute, and each caller reports them
+#' its own way (`warning()` at the console, the run log in a run).
+#'
+#' @param bytes The file's bytes.
+#' @param secret_key A raw encryption secret key, or `NULL` for a
+#'   passphrase file.
+#' @param passphrase The passphrase, or `NULL`.
+#' @param trusted A list of raw signing public keys.
+#' @param config A resolved configuration.
+#' @return As `episodic_exchange_import()`.
+#' @keywords internal
+#' @noRd
+episodic_exchange_import_bytes <- function(bytes, secret_key, passphrase, trusted, config) {
   opened <- episodic_exchange_open(
     bytes,
     secret_key = secret_key,
@@ -321,10 +360,6 @@ episodic_exchange_import <- function(file,
     config,
     pc_characters = if (is.null(pc_characters)) NULL else as.integer(pc_characters)
   )
-  for (w in warnings) {
-    warning(w, call. = FALSE)
-  }
-
   structure(
     cases,
     class = c("episodic_exchange_cases", "data.frame"),

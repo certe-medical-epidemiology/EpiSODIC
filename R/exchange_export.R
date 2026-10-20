@@ -333,8 +333,8 @@ episodic_exchange_write_file <- function(bytes, file) {
 #'   export failed before a file existed.
 #' @param destination Where the file went: a path, a URL, or
 #'   `"env:<VARIABLE>"`.
-#' @param schedule_name,user_id,run_id Who or what asked for it, where
-#'   applicable; `NA` otherwise.
+#' @param schedule_name,schedule_event_id,user_id,run_id Who or what
+#'   asked for it, where applicable; `NA` otherwise.
 #' @param error_text Why it failed, or `NA`.
 #' @return The new `export_id`.
 #' @keywords internal
@@ -347,6 +347,7 @@ episodic_db_exchange_export_record <- function(con,
                                                built = NULL,
                                                destination = NA_character_,
                                                schedule_name = NA_character_,
+                                               schedule_event_id = NA_integer_,
                                                user_id = NA_integer_,
                                                run_id = NA_integer_,
                                                error_text = NA_character_) {
@@ -360,15 +361,16 @@ episodic_db_exchange_export_record <- function(con,
   episodic_db_execute(
     con,
     "INSERT INTO episodic_exchange_export_event
-       (exported_at, initiated_by, schedule_name, user_id, run_id, host,
-        account, status, mode, date_from, date_to, n_cases, fields,
-        omitted_fields, pc_characters, recipient_fingerprints,
+       (exported_at, initiated_by, schedule_name, schedule_event_id, user_id,
+        run_id, host, account, status, mode, date_from, date_to, n_cases,
+        fields, omitted_fields, pc_characters, recipient_fingerprints,
         signer_fingerprint, file_sha256, file_bytes, destination, error_text)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     params = list(
       episodic_now(),
       initiated_by,
       as.character(schedule_name),
+      as.integer(schedule_event_id),
       as.integer(user_id),
       as.integer(run_id),
       Sys.info()[["nodename"]],
