@@ -8,3 +8,5 @@ Temporary; removed before the PR leaves draft.
 - 2026-10-20 M2 envelope and cryptography: done
 - 2026-10-20 M3 headless export/import: started
 - 2026-10-20 M3 headless export/import: done
+- 2026-10-20 M4 transport: started
+- 2026-10-20 M4 transport: done
