@@ -11,11 +11,85 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 ```
 
-A plugin extends EpiSODIC without changing the package. It is one YAML file that says what it is, what it needs and which steps it runs, in R, Bash or Python. A plugin can put a button on the outbreak or epidemic dossier, for example to share an outbreak with a regional platform, open a ticket or notify a public health service, or it can run after every detection run.
+EpiSODIC supports plugins: small add-ons, written by other developers or by yourself, that let EpiSODIC work with the rest of your world. Every laboratory and public health service has its own systems, its own partners and its own way of working, and no single package can know them all. A plugin closes that gap without anyone having to change EpiSODIC itself.
 
-Plugins act on what EpiSODIC has already computed. They never take part in detection, so which plugins are enabled does not change a run's result, and the `plugins` section of the configuration is outside `config_hash`.
+## What a plugin can do
 
-## What a plugin is
+A plugin can put a button on an outbreak or epidemic dossier, or quietly do its work after every detection run. A few examples of what that makes possible:
+
+- **Share an outbreak with a regional platform** in one click, straight from its dossier.
+- **Open a ticket** in your organisation's service desk for every outbreak that needs follow-up.
+- **Notify the public health service** in the format their own system expects.
+- **Post a summary of each night's run** to a team chat or an internal dashboard.
+- **Copy figures to a data warehouse** for your own reporting.
+
+Plugins can be written in R, Python or Bash, so whoever in your team knows any of these can make one. And because a plugin only uses what EpiSODIC has already found, it never changes what EpiSODIC detects.
+
+EpiSODIC ships with one ready-made plugin, which sends an outbreak's summary to a web address of your choice. It is a good first plugin to try, and a good template for a plugin of your own:
+
+```r
+file.show(system.file("plugins", "share-outbreak-http.yaml", package = "EpiSODIC"))
+```
+
+## Using plugins
+
+### Installing and switching on
+
+Everything happens on the **Plugins** screen, which an administrator reaches from its card on the Instance screen.
+
+1. **Install** a plugin by pasting its address (a file page on GitHub will do) or the path of a file on the server. EpiSODIC checks the file before saving it, and tells you plainly if something is wrong with it.
+2. **Read what it asks for.** The screen lists what each plugin receives, which settings it reads and where it sends data.
+3. **Enable** it. EpiSODIC shows once more what you are about to allow, and the plugin is ready.
+
+From then on, a button plugin appears on the dossiers it belongs to, for every epidemiologist. A plugin that runs after each detection run simply starts doing its work.
+
+Disabling, updating and uninstalling are one click each on the same screen. An update that asks for more than you allowed before waits for your approval rather than quietly taking it.
+
+### What you see
+
+Each plugin on the Plugins screen has a status:
+
+- **Enabled**: it is switched on and works.
+- **Disabled**: installed, but switched off.
+- **Needs approval**: a newer version asks for more than you allowed. Enable it again once you agree.
+- **Unavailable**: something is missing, such as an R package or a program it needs, and the screen says what.
+- **File missing**: it is switched on, but its file is gone. Nothing else is affected; the plugin simply does not run.
+
+The same screen keeps a record of every time a plugin ran: who started it, on which outbreak, and how it went.
+
+### Pushing a plugin's button
+
+On a dossier, a plugin's button does what its label says. If the plugin sends the outbreak's case list out of EpiSODIC, it first asks you to confirm and names where the data goes. Afterwards you see the plugin's message, often with a link to the result, such as the new ticket or the shared outbreak.
+
+Only epidemiologists see plugin buttons; viewers and visitors who have not signed in do not.
+
+### Keeping it safe
+
+A plugin runs its own code on your server, so treat installing one the way you would treat installing any software:
+
+- Install plugins only from sources you trust, and have someone read a plugin before you enable it.
+- EpiSODIC gives each plugin only what it asked for and you allowed. It never gives a plugin EpiSODIC's own passwords or database access.
+- Every run is recorded, including what was sent and where.
+- Sending case-level data to another organisation is processing of personal data under the GDPR, plugin or not, so it needs the usual legal basis and agreement.
+
+### Working from a script
+
+Everything the Plugins screen does is also available from R, for an administrator who prefers scripts:
+
+```r
+episodic_plugin_install("https://github.com/org/plugins/blob/v1.0.0/share-regional.yaml")
+episodic_plugin_list()
+episodic_plugin_enable("share-regional")
+episodic_plugin_run("share-regional", cluster_id = 12)
+episodic_plugin_disable("share-regional")
+episodic_plugin_uninstall("share-regional")
+```
+
+Plugins are kept in a folder: the one named by `EPISODIC_PLUGIN_DIR`, or otherwise a `plugins` folder beside your configuration file. Which plugins are switched on is written in that configuration file, under `plugins`, so it is visible and editable in the same place as all your other settings.
+
+## Developing a plugin
+
+A plugin is one YAML file. It says what the plugin is, what it needs, and which steps it runs. Here is a complete one:
 
 ```yaml
 name: Share outbreak with a regional platform
@@ -41,17 +115,13 @@ steps:
           sep = "", file = Sys.getenv("EPISODIC_RESULT"))
 ```
 
-The file's name is the plugin's id: `share-outbreak-http.yaml` is the plugin `share-outbreak-http`. An id is lowercase letters, digits and hyphens.
+The file's name is the plugin's id: `share-outbreak-http.yaml` is the plugin `share-outbreak-http`. An id uses lowercase letters, digits and hyphens.
 
-A complete, tested example ships with the package and is the best starting point for a plugin of your own:
+The easiest way to start is to copy the shipped plugin, give it a name of its own and change its steps. Install it from its path on the server, enable it, and push its button.
 
-```r
-file.show(system.file("plugins", "share-outbreak-http.yaml", package = "EpiSODIC"))
-```
+### Every key
 
-## The format
-
-Every key is checked. A key the format does not define is refused, so a misspelt key is named rather than ignored, and a plugin with any problem is listed with its reasons and cannot run.
+EpiSODIC checks every key. A key it does not know is reported rather than ignored, so a typo shows up on the Plugins screen straight away.
 
 | Key | Required | What it holds |
 |---|---|---|
@@ -59,9 +129,9 @@ Every key is checked. A key the format does not define is refused, so a misspelt
 | `version` | yes | The plugin's own version |
 | `api` | yes | The plugin API version it was written for; this EpiSODIC provides `1` |
 | `trigger` | yes | `button`, or `run_committed` to run after every detection run |
-| `steps` | yes | The steps it runs, in order (see below) |
+| `steps` | yes | The steps it runs, in order |
 | `placement` | for a button | `outbreak` or `epidemic`: the dossier the button is on |
-| `label` | for a button | The button's text per language; `en` is required and the fallback |
+| `label` | for a button | The button's text per language; `en` is required and used when a language is missing |
 | `description` | no | A description per language, with `en` |
 | `permissions` | no | The parts of the data it receives (see below) |
 | `destination` | with `cluster_cases` | Where it sends data, in words, shown before every send |
@@ -70,11 +140,11 @@ Every key is checked. A key the format does not define is refused, so a misspelt
 | `timeout` | no | Seconds the whole plugin may run, 1 to 600; 60 by default |
 | `source` | no | An `https://` address of the plugin itself, from which the Plugins screen updates it |
 
-Requirements are checked and never installed. A plugin whose package or program is missing is installed but unavailable, with the reason, until the operator installs what it needs.
+Requirements are checked, never installed: a plugin whose package or program is missing is listed as unavailable, with the reason, until the server has what it needs.
 
 ### Steps
 
-Each step has a `shell` and the code it `run`s, and may have a `name` and plain environment variables in `env`:
+Each step has a `shell` (`r`, `bash` or `python`) and the code it `run`s, and may have a `name` and plain settings in `env`:
 
 ```yaml
 steps:
@@ -87,41 +157,41 @@ steps:
     env:
       MODE: production
     run: |
-      curl --fail --silent -T state.txt "$SFTP_TARGET"
+      curl --fail --silent -T state.txt "$UPLOAD_TARGET"
       echo "message=Uploaded" >> "$EPISODIC_RESULT"
 ```
 
-`r` runs with this R installation's own `Rscript`, so a plugin sees the same packages EpiSODIC does; `bash` and `python` run with the programs on the server's `PATH`. Steps share one working directory, so one step can leave a file for the next. A step that exits with an error ends the plugin there, and the end of its error output is recorded.
+`r` runs with the same R installation and packages as EpiSODIC; `bash` and `python` use the programs on the server. Steps share one working folder, so one step can leave a file for the next. A step that fails ends the plugin there, and its error is recorded.
 
-Nothing from the data is ever pasted into a step's code. A step reads its input from files and environment variables only, so a ward or pathogen name cannot change what the code does.
+Values from the data are never pasted into your code: a step reads them from the payload file. That way a ward or pathogen name can never change what the code does.
 
 ### What a step receives
 
-A step runs with an environment of its own, not the server's:
+Each step runs in a fresh process with:
 
-- **`EPISODIC_PAYLOAD`**: the path of a JSON file with what the plugin was granted (below).
+- **`EPISODIC_PAYLOAD`**: the path of a JSON file with the data the plugin may see (below).
 - **`EPISODIC_RESULT`**: the path of the file it reports back to (below).
-- **`EPISODIC_PLUGIN_ID`** and **`EPISODIC_LANGUAGE`**: the plugin's id, and the language of whoever ran it, for a message in that language.
-- The plugin's own `secrets`, once granted, and the step's `env`.
-- What a program needs to start and to reach the network: `PATH`, `HOME`, the locale, proxy variables (`https_proxy` and the like) and certificate stores (`SSL_CERT_FILE`, `CURL_CA_BUNDLE` and the like).
+- **`EPISODIC_PLUGIN_ID`** and **`EPISODIC_LANGUAGE`**: the plugin's id, and the language of whoever pushed the button, so a message can be written in that language.
+- The plugin's `secrets`, once enabled, and the step's own `env`.
+- What a program needs to start and to reach the network: `PATH`, `HOME`, the locale, proxy settings and certificate stores.
 
-Nothing else. None of EpiSODIC's own variables (database, mail and Microsoft 365 credentials) is ever passed, and a plugin cannot ask for one: a secret whose name starts with `EPISODIC_` is refused.
+Nothing else from the server's environment is passed, and none of EpiSODIC's own variables ever is: a secret whose name starts with `EPISODIC_` is refused.
 
 ### The payload
 
-The payload always carries `api`, `plugin` (`id`, `version`), `trigger`, `instance_id`, `language` and `dashboard_url`, and for a button `user` (`username`, `role`). The rest depends on the permissions, and a part the plugin holds no permission for is absent, not empty:
+The payload always holds `api`, `plugin` (`id`, `version`), `trigger`, `instance_id`, `language` and `dashboard_url`, and for a button the `user` who pushed it (`username`, `role`). The rest depends on the plugin's permissions; a part it has no permission for is simply absent:
 
-| Permission | Trigger | Adds to the payload |
+| Permission | Trigger | Adds |
 |---|---|---|
-| `cluster_summary` | button | `cluster`: its id and `label` (`O-12`, in the reader's language), scale, origin, pathogen, level, care line, region, institution, ward, first and last day, counts, expected, excess, ratio, priority score, detector agreement, opening time, and the latest classification |
+| `cluster_summary` | button | `cluster`: its id and `label` (`O-12`, in the reader's language), scale, origin, pathogen, level, care line, region, institution, ward, first and last day, counts, expected, excess, ratio, priority score, detector agreement, opening time and the latest classification |
 | `cluster_cases` | button | `cases`: the cluster's cases as stored, pseudonymised, one object per case |
-| `run_summary` | run_committed | `run`: its id, date, status, whether it was a backfill, its counts, and `new_clusters`, the summary of each cluster it opened |
+| `run_summary` | run_committed | `run`: its id, date, status, whether it was the first run on the database, its counts, and `new_clusters` with the summary of each cluster it opened |
 
-`cluster_cases` is the one permission that sends case-level data. A plugin that asks for it must name its `destination`, and the dashboard asks for confirmation, naming that destination, every time its button is pushed.
+`cluster_cases` is the one permission that sends case-level data. A plugin that asks for it must say where the data goes in `destination`, and EpiSODIC asks for confirmation, naming that destination, every time its button is pushed.
 
-### The result
+### Reporting back
 
-A step reports by appending `key=value` lines to the file in `EPISODIC_RESULT`:
+A step reports by adding lines to the file in `EPISODIC_RESULT`:
 
 ```
 status=success
@@ -129,74 +199,22 @@ message=O-12 was shared.
 link=https://regional.example/outbreaks/123
 ```
 
-`status` is `success` (the default) or `error`, when the plugin wants to say that what it tried did not work; `message` is one line of text; `link` is an `http` or `https` address. A later line overrides an earlier one. Any other line is a mistake in the plugin and is reported as one. A plugin that writes nothing and exits cleanly has succeeded without a message.
+`status` is `success` (the default) or `error`, when the plugin wants to say that what it tried did not work. `message` is one line of text, and `link` an `http` or `https` address the dashboard offers as a link. A later line overrides an earlier one, and any other line is reported as a mistake in the plugin. A plugin that reports nothing and finishes cleanly has succeeded without a message.
 
-The dashboard shows the message as text and the link as a plain link: nothing a plugin returns is rendered as markup.
+The dashboard shows the message as plain text and the link as a plain link, never as markup.
 
-## Installing and enabling
+### When something goes wrong
 
-Plugins live in a folder: `EPISODIC_PLUGIN_DIR`, or, when that is unset, a `plugins` folder beside the configuration file (`EPISODIC_CONFIG`). Which plugins are enabled, and what each is granted, is written in the configuration file itself, under `plugins.enabled`:
+A plugin that fails, or runs longer than its `timeout`, is stopped and recorded, with the end of its error output. An administrator sees that output on the Plugins screen, with the values of the plugin's secrets masked; an epidemiologist is told where to find it. A plugin that runs after detection runs can never make a run fail, and one failing plugin never stops the others.
 
-```yaml
-plugins:
-  enabled:
-    share-outbreak-http:
-      permissions: [cluster_summary]
-      secrets: [SHARE_ENDPOINT_URL, SHARE_ENDPOINT_TOKEN]
-```
+### Versions
 
-That section is the only record of which plugins may run. The Plugins screen writes it by replacing only that section and leaving every other line and comment in the file as it was; it can equally be edited by hand. Nothing about plugins is kept in the database except the record of their runs.
-
-An admin account reaches the **Plugins** screen from its card on the Instance screen. It shows every plugin with its status and, when it cannot run, why; installs a plugin from an `https://` address (a file page on GitHub will do) or a path on the server; and enables, disables, updates and uninstalls. Enabling first shows what the plugin will receive, which secrets it will read and how many steps it runs. Installing never enables.
-
-The same is possible from a script:
-
-```r
-episodic_plugin_install("https://github.com/org/plugins/blob/v1.0.0/share-regional.yaml")
-episodic_plugin_list()
-episodic_plugin_enable("share-regional")
-episodic_plugin_run("share-regional", cluster_id = 12)
-episodic_plugin_disable("share-regional")
-episodic_plugin_uninstall("share-regional")
-```
-
-A plugin's status is one of:
-
-- **Enabled**: it runs.
-- **Disabled**: installed, not enabled.
-- **Needs approval**: enabled, but the file now asks for a permission or secret it was not granted, for example after an update. It does not run until it is enabled again, so an update can never quietly widen what a plugin receives.
-- **Unavailable**: the file has a problem, or this server lacks what it requires.
-- **File missing**: the configuration enables it, but its file is not in the folder. Nothing else breaks: the plugin simply does not run.
-
-## Running
-
-A **button** plugin appears on the dossier it names, for an epidemiologist only: never for a viewer, and never for a visitor who has not signed in. The server checks the role, the plugin's status and that the cluster is the one on screen before it runs anything.
-
-A **run_committed** plugin runs after every detection run whose transaction committed, once its notifications, scheduled reports and exports have gone out. Each plugin's outcome is in the run log; a plugin that fails or runs past its timeout is logged and never fails the run or stops the plugins after it.
-
-Every run, from a dossier, after a detection run or from a script, is recorded in `episodic_plugin_run_event`: which plugin, its version and the SHA-256 of the exact file that ran, who or what ran it, on which cluster or run, what the payload carried, where it sends data, and the outcome. The Plugins screen shows these records. Error output is shown only to an admin, with every granted secret's value masked.
-
-## Security
-
-A plugin runs code on the server with the account EpiSODIC runs as. R has no sandbox for code in its own process, so EpiSODIC does not try to contain a plugin; it narrows what a plugin is given, and records what it did:
-
-- Each step runs in a separate process, with an environment built from an allowlist plus only the secrets the plugin was granted, under a timeout that stops whatever the plugin started.
-- A plugin receives only the parts of the data it holds permission for, and case-level data only after a confirmation naming where it goes.
-- Installing, enabling and everything else on the Plugins screen is for an admin account only, and enabling names what is granted.
-- Every run is recorded.
-
-What EpiSODIC cannot do is stop a plugin from reading a file the server's account can read, or from sending what it received elsewhere than its `destination` says. Install only plugins from a source you trust, read a plugin's steps before enabling it, and prefer a `source` pinned to a release tag or commit over a branch, so an update is a decision rather than whatever the branch holds that day.
-
-Sending pseudonymised case-level data to another organisation is processing of personal data under the GDPR. A plugin that does so needs the same legal basis and agreement as any other disclosure.
-
-## Versions
-
-The plugin API version changes only when the file format, the payload or the result contract changes incompatibly. A plugin that names another version than this EpiSODIC provides is refused with the reason, rather than handed a payload it may misread.
+The plugin API version changes only when the file format, the payload or the result changes incompatibly. A plugin written for another version is listed as unavailable with the reason, rather than handed data it might misread. When you publish a plugin, point its `source` at a release tag or commit rather than a branch, so an update is a deliberate step for everyone who uses it.
 
 ## See also
 
 - [**Importing and exporting data between instances**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html) for sharing case data with another EpiSODIC instance, which needs no plugin.
 - [**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html) for alerts on new clusters through the built-in channels.
-- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) for the configuration file and admin accounts.
+- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) for the configuration file and administrator accounts.
 - [**Environment variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) for `EPISODIC_PLUGIN_DIR` and every other `EPISODIC_*` variable.
-- `?episodic_plugin_install`, `?episodic_plugin_enable` and `?episodic_plugin_run` for the API-level documentation.
+- `?episodic_plugin_install`, `?episodic_plugin_enable` and `?episodic_plugin_run` for the details of each function.
