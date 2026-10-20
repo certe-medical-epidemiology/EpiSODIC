@@ -859,6 +859,17 @@ episodic_app_server_factory <- function(db_path,
       lang = lang,
       current_user = current_user
     )
+    episodic_app_server_plugins(
+      input,
+      output,
+      session,
+      con,
+      lang = lang,
+      current_user = current_user,
+      access_granted = access_granted,
+      selected_cluster_id = selected_cluster_id,
+      selected_epidemic_id = selected_epidemic_id
+    )
   }
 }
 

@@ -104,6 +104,9 @@ episodic_ui_dossier <- function(con,
     episodic_ui_places_panel(con, cluster_id, obj, lang = lang),
     episodic_ui_related_panel(con, cluster_id, lang = lang),
     episodic_ui_similar_clusters_panel(con, cluster_id, lang = lang),
+    # Its own output, filled by episodic_app_server_plugins(), so the
+    # dossier itself knows nothing about plugins.
+    shiny::uiOutput("plugin_buttons_outbreak"),
     episodic_ui_report_panel(
       con,
       cluster_id,

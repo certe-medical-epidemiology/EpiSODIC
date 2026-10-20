@@ -17,7 +17,7 @@ A data frame with one row per plugin: \code{id}, \code{name},
 \code{version}, \code{trigger}, \code{placement}, \code{status} (\code{"enabled"},
 \code{"disabled"}, \code{"needs_approval"}, \code{"unavailable"} or \code{"missing"}),
 \code{permissions}, \code{secrets}, \code{destination} and \code{problems} (the reasons,
-as text, separated by \code{"; "}).
+as text in the \code{EPISODIC_LANGUAGE} language, separated by \code{"; "}).
 }
 \description{
 Lists every plugin in the plugin folder and every plugin the

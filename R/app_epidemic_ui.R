@@ -244,6 +244,9 @@ episodic_ui_epidemic_dossier <- function(con,
     ),
     episodic_ui_epidemic_institutions_panel(obj, lang = lang),
     episodic_ui_epidemic_during_panel(obj, lang = lang),
+    # Its own output, filled by episodic_app_server_plugins(), so the
+    # dossier itself knows nothing about plugins.
+    shiny::uiOutput("plugin_buttons_epidemic"),
     # The epidemic object carries every field the panel reads (the
     # detectors, whether Rt applies, the case-free requirement, and no
     # patient-day density), so it is handed over rather than an outbreak
