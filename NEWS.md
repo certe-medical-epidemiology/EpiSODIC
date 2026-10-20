@@ -1,29 +1,7 @@
-# EpiSODIC 0.24.0
+# EpiSODIC 0.25.0
 
 ## New
 
-- Each detection run nowcasts every stream carrying an open cluster, from the stream's own reporting delays (`surveillance::nowcast()`, `bayes.trunc`), configured under `forecast.nowcast`
-- Each run's nowcast is stored in `episodic_forecast` and `episodic_forecast_value` (schema version 11), with the reason when a stream could not be nowcast
-- The outbreak and Epidemics dossier curves draw the nowcast's median and 90% interval on the days and weeks still being reported
-- The Performance screen scores stored nowcasts once reporting is complete: interval coverage, weighted interval score, and the error of taking the reported count as final
-- Each detection run gives every open outbreak of a transmissible pathogen the probability that it is over, from the serial interval, the pathogen's offspring distribution and the stream's reporting completeness, configured under `forecast.outbreak_end`
-- The pathogen CSV takes `end_r` and `end_k`, the offspring mean and dispersion, shipped empty for every pathogen
-- The outbreak dossier shows the probability beside the case-free days, with the date it reaches `forecast.outbreak_end.probability_threshold`, or why there is none
-- Each run's outbreak-end probability is stored in `episodic_cluster_forecast` and `episodic_cluster_forecast_value` (schema version 12)
-- The Performance screen scores stored outbreak-end probabilities once the case-free window after the last case is reported: mean probability, share over, and Brier score
-- The Pathogen screen's parameter panel shows a transmissible pathogen's offspring distribution
-- Each detection run estimates every open epidemic's weekly growth rate, the chance it is growing and the chance it is past its peak so far, on the nowcast-corrected weekly counts, configured under `forecast.epidemic_direction`
-- The Epidemics dossier shows the weekly growth with its doubling or halving time and the weeks it covers, and the chance the epidemic is past its peak, or why there is none
-- Each run's epidemic direction is stored in `episodic_cluster_forecast` and `episodic_cluster_forecast_estimate` (schema version 13)
-- The Performance screen scores stored epidemic directions once their weeks are fully reported: mean probability, share true, and Brier score
-- A seasonal epidemic stores the typical past season from the MEM fit that set its thresholds: its curve, start week and length, in `episodic_epidemic_season` and `episodic_epidemic_typical_week` (schema version 13)
-- The Epidemics dossier draws the typical past season on the weekly curve, aligned to the epidemic's onset, and shows the typical length and how much earlier or later this epidemic started
-- The typical past season's curve is the median of the past seasons by default, set by `mem.typical_curve` (`median`, `geometric_mean` or `arithmetic_mean`)
-- The tuning vignette's reference covers the `notifications` keys
-- Each detection run forecasts every open epidemic's weekly counts over the next weeks, with the chance of reaching each MEM band, as the quantile average of a negative binomial `surveillance::hhh4()` model of the stream's history and the extended trend of its last weeks, configured under `forecast.epidemic_outlook`
-- Each run's epidemic outlook is stored in `episodic_cluster_forecast_week` (schema version 14)
-- The Epidemics dossier shows a pathogen's outlook, as a table and on the weekly curve, only once its outlooks have been scored on `forecast.epidemic_outlook.min_scored` weeks and beat expecting no change, and states that record
-- The Performance screen scores stored outlooks per horizon: interval coverage, weighted interval score, and the score relative to expecting no change
 - Every database carries an instance identifier of ten hexadecimal characters, in the new `episodic_instance` table (schema version 15), shown on the Info screen and read with `episodic_instance_id()`
 - `episodic_import_export_keygen()` writes an instance's encryption and signing key pairs, the secret halves readable by their owner only
 - `episodic_cases_export()` writes this instance's own cases for a sample-date range to an encrypted, signed export file, to recipients' public keys or with a passphrase
@@ -52,13 +30,43 @@
 ## Changed
 
 - `episodic_case` records the instance an imported case came from (`origin_instance_id`, schema version 15)
+- `episodic_db_truncate()` keeps the instance identifier
+- An imported case's institution adds an institution the receiver does not know, and never renames or retypes one it does
 - The Settings screen writes notification settings to the configuration file, which is the only record of an instance's settings
 - Notification settings the Settings screen once saved in the database move into the configuration file once, when the dashboard starts
 - `episodic_config_resolve()` no longer takes a database connection
 - The Settings screen no longer lists a configuration change history, since settings saved in the database are no longer applied
 - Which plugins are enabled is written to the configuration file (`plugins.enabled`), outside `config_hash`
-- `episodic_db_truncate()` keeps the instance identifier
-- An imported case's institution adds an institution the receiver does not know, and never renames or retypes one it does
+
+# EpiSODIC 0.24.0
+
+## New
+
+- Each detection run nowcasts every stream carrying an open cluster, from the stream's own reporting delays (`surveillance::nowcast()`, `bayes.trunc`), configured under `forecast.nowcast`
+- Each run's nowcast is stored in `episodic_forecast` and `episodic_forecast_value` (schema version 11), with the reason when a stream could not be nowcast
+- The outbreak and Epidemics dossier curves draw the nowcast's median and 90% interval on the days and weeks still being reported
+- The Performance screen scores stored nowcasts once reporting is complete: interval coverage, weighted interval score, and the error of taking the reported count as final
+- Each detection run gives every open outbreak of a transmissible pathogen the probability that it is over, from the serial interval, the pathogen's offspring distribution and the stream's reporting completeness, configured under `forecast.outbreak_end`
+- The pathogen CSV takes `end_r` and `end_k`, the offspring mean and dispersion, shipped empty for every pathogen
+- The outbreak dossier shows the probability beside the case-free days, with the date it reaches `forecast.outbreak_end.probability_threshold`, or why there is none
+- Each run's outbreak-end probability is stored in `episodic_cluster_forecast` and `episodic_cluster_forecast_value` (schema version 12)
+- The Performance screen scores stored outbreak-end probabilities once the case-free window after the last case is reported: mean probability, share over, and Brier score
+- The Pathogen screen's parameter panel shows a transmissible pathogen's offspring distribution
+- Each detection run estimates every open epidemic's weekly growth rate, the chance it is growing and the chance it is past its peak so far, on the nowcast-corrected weekly counts, configured under `forecast.epidemic_direction`
+- The Epidemics dossier shows the weekly growth with its doubling or halving time and the weeks it covers, and the chance the epidemic is past its peak, or why there is none
+- Each run's epidemic direction is stored in `episodic_cluster_forecast` and `episodic_cluster_forecast_estimate` (schema version 13)
+- The Performance screen scores stored epidemic directions once their weeks are fully reported: mean probability, share true, and Brier score
+- A seasonal epidemic stores the typical past season from the MEM fit that set its thresholds: its curve, start week and length, in `episodic_epidemic_season` and `episodic_epidemic_typical_week` (schema version 13)
+- The Epidemics dossier draws the typical past season on the weekly curve, aligned to the epidemic's onset, and shows the typical length and how much earlier or later this epidemic started
+- The typical past season's curve is the median of the past seasons by default, set by `mem.typical_curve` (`median`, `geometric_mean` or `arithmetic_mean`)
+- The tuning vignette's reference covers the `notifications` keys
+- Each detection run forecasts every open epidemic's weekly counts over the next weeks, with the chance of reaching each MEM band, as the quantile average of a negative binomial `surveillance::hhh4()` model of the stream's history and the extended trend of its last weeks, configured under `forecast.epidemic_outlook`
+- Each run's epidemic outlook is stored in `episodic_cluster_forecast_week` (schema version 14)
+- The Epidemics dossier shows a pathogen's outlook, as a table and on the weekly curve, only once its outlooks have been scored on `forecast.epidemic_outlook.min_scored` weeks and beat expecting no change, and states that record
+- The Performance screen scores stored outlooks per horizon: interval coverage, weighted interval score, and the score relative to expecting no change
+
+## Changed
+
 - `episodic_demo()` replays the last `replay_days` days of its synthetic data as daily runs with a one-week reporting horizon, so the demo has measured reporting delays and a nowcast, and gives its transmissible pathogens an illustrative offspring distribution, so an outbreak shows its end-of-outbreak probability
 - The outbreak dossier shows the end-of-outbreak tile only with a probability, or when the forecast failed
 - The Epidemics dossier's intensity tile names the peak so far only when its band differs from the current week's
