@@ -1,3 +1,29 @@
+# EpiSODIC 0.25.0
+
+## New
+
+- Every database carries an instance identifier of ten hexadecimal characters, in the new `episodic_instance` table (schema version 15), shown on the Info screen and read with `episodic_instance_id()`
+- `episodic_import_export_keygen()` writes an instance's encryption and signing key pairs, the secret halves readable by their owner only
+- `episodic_cases_export()` writes this instance's own cases for a sample-date range to an encrypted, signed export file, to recipients' public keys or with a passphrase
+- An export carries the optional case columns in `export.fields` and cuts postcodes to `export.pc_characters`; a column left out is absent from the file and recorded in it
+- `episodic_cases_import()` verifies an export file in full and returns its cases with `source_key`, `patient_key` and `lab_number` prefixed by the sender's instance identifier
+- `episodic_run_cron()` takes imported cases through its new `imports` argument and records each import against the run in `episodic_import_event`
+- An import warns, per lattice level, about cases whose postcode this instance's reference data cannot place, and keeps them
+- Export files go to and come from a file path or HTTP(S) `PUT` and `GET`, with credentials named by environment variable only
+- The admin-only Import and export screen, reached from the Instance screen, downloads an export, registers export schedules and import sources, tests their connections and shows the audit trail of every export and import
+- Every run fetches the registered import sources before detection, and carries out due export schedules after its commit over a rolling window
+- Every export is recorded in `episodic_export_event`, failed ones included
+- `episodic_import_export_test_connection()` tests an import source or export schedule the way the next run uses it, writing nothing
+- `episodic_import_export_key_fingerprint()` gives the fingerprint of a public key, to compare with a partner
+- The new vignette "Importing and exporting data between instances" covers keys, exporting, importing, scheduling, transport, the limits of importing and exporting, data protection and the file format
+
+## Changed
+
+- `episodic_case` records the instance an imported case came from (`origin_instance_id`, schema version 15)
+- `episodic_db_truncate()` keeps the instance identifier
+- An imported case's institution adds an institution the receiver does not know, and never renames or retypes one it does
+
+
 # EpiSODIC 0.24.0
 
 ## New
@@ -24,26 +50,9 @@
 - Each run's epidemic outlook is stored in `episodic_cluster_forecast_week` (schema version 14)
 - The Epidemics dossier shows a pathogen's outlook, as a table and on the weekly curve, only once its outlooks have been scored on `forecast.epidemic_outlook.min_scored` weeks and beat expecting no change, and states that record
 - The Performance screen scores stored outlooks per horizon: interval coverage, weighted interval score, and the score relative to expecting no change
-- Every database carries an instance identifier of ten hexadecimal characters, in the new `episodic_instance` table (schema version 15), shown on the Info screen and read with `episodic_instance_id()`
-- `episodic_import_export_keygen()` writes an instance's encryption and signing key pairs, the secret halves readable by their owner only
-- `episodic_cases_export()` writes this instance's own cases for a sample-date range to an encrypted, signed export file, to recipients' public keys or with a passphrase
-- An export carries the optional case columns in `export.fields` and cuts postcodes to `export.pc_characters`; a column left out is absent from the file and recorded in it
-- `episodic_cases_import()` verifies an export file in full and returns its cases with `source_key`, `patient_key` and `lab_number` prefixed by the sender's instance identifier
-- `episodic_run_cron()` takes imported cases through its new `imports` argument and records each import against the run in `episodic_import_event`
-- An import warns, per lattice level, about cases whose postcode this instance's reference data cannot place, and keeps them
-- Export files go to and come from a file path or HTTP(S) `PUT` and `GET`, with credentials named by environment variable only
-- The admin-only Import and export screen, reached from the Instance screen, downloads an export, registers export schedules and import sources, tests their connections and shows the audit trail of every export and import
-- Every run fetches the registered import sources before detection, and carries out due export schedules after its commit over a rolling window
-- Every export is recorded in `episodic_export_event`, failed ones included
-- `episodic_import_export_test_connection()` tests an import source or export schedule the way the next run uses it, writing nothing
-- `episodic_import_export_key_fingerprint()` gives the fingerprint of a public key, to compare with a partner
-- The new vignette "Importing and exporting data between instances" covers keys, exporting, importing, scheduling, transport, the limits of importing and exporting, data protection and the file format
 
 ## Changed
 
-- `episodic_case` records the instance an imported case came from (`origin_instance_id`, schema version 15)
-- `episodic_db_truncate()` keeps the instance identifier
-- An imported case's institution adds an institution the receiver does not know, and never renames or retypes one it does
 - `episodic_demo()` replays the last `replay_days` days of its synthetic data as daily runs with a one-week reporting horizon, so the demo has measured reporting delays and a nowcast, and gives its transmissible pathogens an illustrative offspring distribution, so an outbreak shows its end-of-outbreak probability
 - The outbreak dossier shows the end-of-outbreak tile only with a probability, or when the forecast failed
 - The Epidemics dossier's intensity tile names the peak so far only when its band differs from the current week's
