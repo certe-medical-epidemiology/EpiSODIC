@@ -219,10 +219,10 @@ episodic_plugin_read <- function(path) {
   }
 
   for (key in setdiff(names(spec), episodic_plugin_keys)) {
-    add("unknown_key", key = key)
+    add("unknown_key", field = key)
   }
   for (key in setdiff(episodic_plugin_keys_required, names(spec))) {
-    add("missing_key", key = key)
+    add("missing_key", field = key)
   }
 
   if (!is.null(spec$name)) {
@@ -267,7 +267,7 @@ episodic_plugin_read <- function(path) {
     if (episodic_plugin_label_valid(spec$label)) plugin$label <- spec$label else add("bad_field", field = "label")
   } else if (!is.na(plugin$trigger)) {
     for (key in intersect(c("placement", "label"), names(spec))) {
-      add("button_only", key = key)
+      add("button_only", field = key)
     }
   }
 
@@ -314,7 +314,7 @@ episodic_plugin_read <- function(path) {
     add("bad_field", field = "requires")
   } else {
     for (key in setdiff(names(requires), c("packages", "commands"))) {
-      add("unknown_key", key = paste0("requires.", key))
+      add("unknown_key", field = paste0("requires.", key))
     }
     packages <- episodic_plugin_strings(requires$packages)
     commands <- episodic_plugin_strings(requires$commands)
@@ -335,7 +335,7 @@ episodic_plugin_read <- function(path) {
           return(NULL)
         }
         for (key in setdiff(names(step), episodic_plugin_step_keys)) {
-          add("unknown_key", key = paste0(where, ".", key))
+          add("unknown_key", field = paste0(where, ".", key))
         }
         if (!(episodic_plugin_is_text(step$shell) && step$shell %in% episodic_plugin_shells)) {
           add("bad_field", field = paste0(where, ".shell"))
@@ -538,7 +538,7 @@ episodic_plugin_label <- function(plugin, lang = Sys.getenv("EPISODIC_LANGUAGE")
 #'   `version`, `trigger`, `placement`, `status` (`"enabled"`,
 #'   `"disabled"`, `"needs_approval"`, `"unavailable"` or `"missing"`),
 #'   `permissions`, `secrets`, `destination` and `problems` (the reasons,
-#'   as text, separated by `"; "`).
+#'   as text in the `EPISODIC_LANGUAGE` language, separated by `"; "`).
 #' @seealso [episodic_plugin_install()], [episodic_plugin_enable()],
 #'   [episodic_plugin_run()], `vignette("plugins")`
 #' @examples
@@ -566,7 +566,7 @@ episodic_plugin_list <- function(episodic_config_path = Sys.getenv("EPISODIC_CON
       if (length(p$problems) == 0) {
         NA_character_
       } else {
-        paste(vapply(p$problems, episodic_plugin_problem_text, character(1), lang = "en"), collapse = "; ")
+        paste(vapply(p$problems, episodic_plugin_problem_text, character(1)), collapse = "; ")
       }
     }, character(1)),
     stringsAsFactors = FALSE,

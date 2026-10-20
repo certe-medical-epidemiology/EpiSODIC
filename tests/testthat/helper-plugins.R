@@ -26,7 +26,7 @@ plugin_test_instance <- function(env = parent.frame()) {
   config_path <- file.path(root, "episodic.yaml")
   writeLines(c("# Test instance", "plugins:", "  enabled: {}"), config_path)
   withr::defer(unlink(root, recursive = TRUE), envir = env)
-  withr::local_envvar(EPISODIC_CONFIG = config_path, EPISODIC_PLUGIN_DIR = NA, .local_envir = env)
+  withr::local_envvar(EPISODIC_CONFIG = config_path, EPISODIC_PLUGIN_DIR = NA, EPISODIC_LANGUAGE = "en", .local_envir = env)
   list(root = root, config_path = config_path, dir = file.path(root, "plugins"))
 }
 

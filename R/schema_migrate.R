@@ -358,7 +358,7 @@ episodic_db_apply_schema <- function(con, dialect) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 15L
+episodic_schema_version <- 16L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -993,6 +993,18 @@ episodic_db_migrations <- function() {
       }
       id <- episodic_db_instance_ensure(con)
       paste0("This instance's identifier is ", id, ".")
+    },
+    # 16: the record of plugin runs (episodic_plugin_run_event). Purely
+    # additive: one table taken from the schema file, skipped when present
+    # for the same reason as 2. Plugins themselves and whether they are
+    # enabled live in files, not in the database.
+    "16" = function(con, dialect) {
+      if (!DBI::dbExistsTable(con, "episodic_plugin_run_event")) {
+        for (statement in episodic_db_schema_statements_for(dialect, "episodic_plugin_run_event")) {
+          episodic_db_execute(con, statement)
+        }
+      }
+      invisible(NULL)
     }
   )
 }

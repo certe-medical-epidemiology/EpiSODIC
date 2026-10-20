@@ -13,11 +13,11 @@ episodic_plugin_list(
 \code{EPISODIC_CONFIG} environment variable.}
 }
 \value{
-A data frame with one row per plugin: \code{id}, \code{title},
+A data frame with one row per plugin: \code{id}, \code{name},
 \code{version}, \code{trigger}, \code{placement}, \code{status} (\code{"enabled"},
 \code{"disabled"}, \code{"needs_approval"}, \code{"unavailable"} or \code{"missing"}),
-\code{permissions}, \code{env}, \code{destination} and \code{problems} (the reasons, as
-text, separated by \code{"; "}).
+\code{permissions}, \code{secrets}, \code{destination} and \code{problems} (the reasons,
+as text, separated by \code{"; "}).
 }
 \description{
 Lists every plugin in the plugin folder and every plugin the

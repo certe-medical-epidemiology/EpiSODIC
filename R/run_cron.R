@@ -567,7 +567,7 @@ episodic_run_cron <- function(cases,
   tryCatch(
     episodic_scheduled_reports_dispatch(
       con,
-      notify_config,
+      config,
       run_id,
       run_date,
       db_path,
@@ -606,6 +606,18 @@ episodic_run_cron <- function(cases,
     ")"
   )
   episodic_run_cron_finish(con, run_id, hashed, result)
+
+  # After the run row is final, so a plugin is told the run's own status,
+  # and only for a run whose transaction committed: a plugin acts on what
+  # a run computed, and a failed run computed nothing.
+  if (!identical(result$status, "failed")) {
+    tryCatch(
+      episodic_plugin_run_hooks(con, config, run_id, result, episodic_config_path, host, account),
+      error = function(e) {
+        episodic_trace("Plugins after the run failed: ", conditionMessage(e), severity = "danger")
+      }
+    )
+  }
 
   # The run row records this, but a scheduled run nobody reads the row of
   # must still say so where it ran.
