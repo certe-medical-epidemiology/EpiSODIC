@@ -49,6 +49,7 @@ articles:
   - notifications
   - scheduled-reports
   - import-export
+  - plugins
 
 - title: Reference
   desc: >
@@ -114,6 +115,18 @@ reference:
   - episodic_cases_export
   - episodic_cases_import
   - episodic_import_export_test_connection
+
+- title: Extend EpiSODIC with plugins
+  desc: >
+    Install, enable and run plugins: YAML files whose steps run on a
+    dossier button or after a detection run - headless, or from the
+    dashboard's Plugins screen.
+  contents:
+  - episodic_plugin_list
+  - episodic_plugin_install
+  - episodic_plugin_enable
+  - episodic_plugin_uninstall
+  - episodic_plugin_run
 
 - title: Add clusters from another system
   desc: >

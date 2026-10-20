@@ -539,6 +539,14 @@ Which columns an export to a partner instance carries, and how coarse its postco
 | <code style="white-space: nowrap;">export:<br>&nbsp;&nbsp;fields</code> | [receipt_date, care_line, municipality, ward, specialism, pc, sex, age] | The optional case columns an export carries; the required ones always go. `~` exports the required columns only |
 | <code style="white-space: nowrap;">export:<br>&nbsp;&nbsp;pc_characters</code> | ~ | Keep only this many leading postcode characters in an export; `~` exports postcodes as stored |
 
+### Plugins
+
+Which plugins may run, and what each was granted. Plugins act on what a run has computed and never take part in detection, so this section is left out of `config_hash`. The Plugins screen writes it; it can also be edited by hand. See [**Plugins**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.html).
+
+| Key                    | Default | Effect                                                    |
+| ---------------------- | ------- | --------------------------------------------------------- |
+| <code style="white-space: nowrap;">plugins:<br>&nbsp;&nbsp;enabled</code> | {} | One entry per enabled plugin, named by its id, holding the `permissions` and `secrets` it was granted. A plugin not listed does not run |
+
 ### Access
 
 | Key                    | Default | Effect                                                    |

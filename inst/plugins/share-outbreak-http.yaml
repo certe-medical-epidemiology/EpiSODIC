@@ -1,0 +1,63 @@
+# EpiSODIC reference plugin: send an outbreak's summary to an HTTP(S)
+# endpoint as JSON. Copy it, change the steps, and give the copy a name
+# of its own. See vignette("plugins") for every key.
+#
+# The address and a bearer token are environment variables of the
+# server, named under `secrets` and granted when the plugin is enabled.
+# Every secret a plugin names must be set when it runs; a platform that
+# takes no token needs a copy of this plugin without it. To also send the outbreak's cases, add cluster_cases to
+# `permissions`; the dashboard then asks for confirmation, naming the
+# destination, before every send.
+
+name: Share outbreak with a regional platform
+version: 1.0.0
+api: 1
+description:
+  en: Sends the outbreak's summary as JSON to the address in SHARE_ENDPOINT_URL.
+  nl: Stuurt de samenvatting van de uitbraak als JSON naar het adres in SHARE_ENDPOINT_URL.
+trigger: button
+placement: outbreak
+label:
+  en: Share with regional platform
+  nl: Delen met regionaal platform
+  de: Mit regionaler Plattform teilen
+  fr: Partager avec la plateforme régionale
+  es: Compartir con la plataforma regional
+permissions: [cluster_summary]
+destination: The address in SHARE_ENDPOINT_URL
+secrets: [SHARE_ENDPOINT_URL, SHARE_ENDPOINT_TOKEN]
+requires:
+  packages: [httr2, jsonlite]
+timeout: 60
+steps:
+  - name: Send the outbreak
+    shell: r
+    run: |
+      payload <- jsonlite::read_json(Sys.getenv("EPISODIC_PAYLOAD"))
+      result <- function(...) cat(..., sep = "", file = Sys.getenv("EPISODIC_RESULT"), append = TRUE)
+
+      url <- Sys.getenv("SHARE_ENDPOINT_URL")
+      if (!nzchar(url)) stop("SHARE_ENDPOINT_URL is empty.")
+      body <- list(
+        source_instance = payload$instance_id,
+        shared_by = payload$user$username,
+        outbreak = payload$cluster,
+        cases = payload$cases
+      )
+      body <- body[!vapply(body, is.null, logical(1))]
+
+      request <- httr2::request(url)
+      request <- httr2::req_body_json(request, body, auto_unbox = TRUE, null = "null", na = "null")
+      request <- httr2::req_timeout(request, 30)
+      request <- httr2::req_error(request, is_error = function(response) FALSE)
+      request <- httr2::req_auth_bearer_token(request, Sys.getenv("SHARE_ENDPOINT_TOKEN"))
+      response <- httr2::req_perform(request)
+
+      status <- httr2::resp_status(response)
+      if (status >= 200 && status < 300) {
+        result("status=success\n", "message=", payload$cluster$label, " was shared (HTTP ", status, ").\n")
+        location <- httr2::resp_header(response, "Location")
+        if (!is.null(location) && grepl("^https?://", location)) result("link=", location, "\n")
+      } else {
+        result("status=error\n", "message=The platform answered HTTP ", status, ".\n")
+      }

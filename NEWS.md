@@ -38,10 +38,23 @@
 - `episodic_import_export_test_connection()` tests an import source or export schedule the way the next run uses it, writing nothing
 - `episodic_import_export_key_fingerprint()` gives the fingerprint of a public key, to compare with a partner
 - The new vignette "Importing and exporting data between instances" covers keys, exporting, importing, scheduling, transport, the limits of importing and exporting, data protection and the file format
+- Plugins: one YAML file each, with steps in R, Bash or Python, run from a button on the outbreak or epidemic dossier or after every detection run
+- `episodic_plugin_install()`, `episodic_plugin_enable()`, `episodic_plugin_disable()`, `episodic_plugin_uninstall()`, `episodic_plugin_list()` and `episodic_plugin_run()` manage and run plugins headless
+- The admin-only Plugins screen, reached from the Instance screen, installs, enables, disables, updates and uninstalls plugins and shows every plugin run
+- A plugin step runs in a process of its own with a timeout and an environment holding only its granted secrets, never EpiSODIC's own variables
+- A plugin receives only the parts of the data it holds permission for, and a cluster's cases only after a confirmation naming their destination
+- Every plugin run is recorded in `episodic_plugin_run_event` (schema version 16)
+- `EPISODIC_PLUGIN_DIR` sets the plugin folder, by default a `plugins` folder beside the configuration file
+- A reference plugin, `share-outbreak-http.yaml`, sends an outbreak's summary to an HTTP(S) endpoint
+- The new vignette "Plugins" covers the plugin format, the payload and result, installing, enabling, running and security
 
 ## Changed
 
 - `episodic_case` records the instance an imported case came from (`origin_instance_id`, schema version 15)
+- The Settings screen writes notification settings to the configuration file, which is the only record of an instance's settings, and says when settings it once saved to the database differ from the file
+- `episodic_config_resolve()` no longer takes a database connection
+- The Settings screen no longer lists a configuration change history, since settings saved in the database are no longer applied
+- Which plugins are enabled is written to the configuration file (`plugins.enabled`), outside `config_hash`
 - `episodic_db_truncate()` keeps the instance identifier
 - An imported case's institution adds an institution the receiver does not know, and never renames or retypes one it does
 - `episodic_demo()` replays the last `replay_days` days of its synthetic data as daily runs with a one-week reporting horizon, so the demo has measured reporting delays and a nowcast, and gives its transmissible pathogens an illustrative offspring distribution, so an outbreak shows its end-of-outbreak probability

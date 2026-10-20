@@ -328,10 +328,14 @@ episodic_config_set_lines <- function(lines, key_path, value, parsed, from = 1L,
 
   if (length(key_path) == 1 || !is_block) {
     current <- if (is.list(parsed)) parsed[[key]] else NULL
-    nested <- if (length(key_path) == 1) value else episodic_config_set_value(
-      if (is.list(current) && (length(current) == 0 || !is.null(names(current)))) current else list(),
-      key_path[-1], value
-    )
+    nested <- if (length(key_path) == 1) {
+      value
+    } else {
+      episodic_config_set_value(
+        if (is.list(current) && (length(current) == 0 || !is.null(names(current)))) current else list(),
+        key_path[-1], value
+      )
+    }
     new <- episodic_config_emit(key, nested, indent)
     # Keep an end-of-line comment on a scalar written without quotes.
     comment <- regmatches(lines[i], regexec("^[^'\"#]*?(\\s+#.*)$", lines[i]))[[1]]
