@@ -271,6 +271,8 @@
   "epidemics.typical_statistic.arithmetic_mean": "media aritmética",
   "epidemics.typical_statistic.geometric_mean": "media geométrica",
   "epidemics.typical_statistic.median": "mediana",
+  "info.about.instance": "Identificador de la instancia:",
+  "info.about.instance_unreadable": "No se pudo leer el identificador de la instancia: {error}",
   "info.about.license": "Licencia: {license}",
   "info.about.website": "Sitio web",
   "info.access.body": "La lectura es anónima: cualquiera que acceda a la aplicación puede ver brotes, epidemias, flujos y el archivo sin iniciar sesión. Iniciar sesión solo es necesario para clasificar un brote, cerrarlo o silenciar un flujo, cada escritura se atribuye al usuario autenticado.",

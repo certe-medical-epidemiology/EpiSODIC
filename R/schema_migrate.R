@@ -301,6 +301,7 @@ episodic_db_create <- function(path, overwrite = FALSE) {
   episodic_db_pragmas(con)
   episodic_db_apply_schema(con, dialect)
   episodic_db_schema_version_stamp(con, episodic_schema_version)
+  episodic_db_instance_ensure(con)
 
   invisible(con)
 }
@@ -357,7 +358,7 @@ episodic_db_apply_schema <- function(con, dialect) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 14L
+episodic_schema_version <- 15L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -961,6 +962,25 @@ episodic_db_migrations <- function() {
         }
       }
       invisible(NULL)
+    },
+    # 15: the instance's own identity (episodic_instance), generated here
+    # once for a database that has none, and the tables of the encrypted
+    # exchange between instances. Purely additive: tables taken from the
+    # schema file, each skipped when present for the same reason as 2, and
+    # one row written only when episodic_instance holds none, so a second
+    # pass neither adds a row nor replaces the identity a partner may
+    # already have been given.
+    "15" = function(con, dialect) {
+      for (table in episodic_db_exchange_tables()) {
+        if (DBI::dbExistsTable(con, table)) {
+          next
+        }
+        for (statement in episodic_db_schema_statements_for(dialect, table)) {
+          episodic_db_execute(con, statement)
+        }
+      }
+      id <- episodic_db_instance_ensure(con)
+      paste0("This instance's identifier is ", id, ".")
     }
   )
 }
@@ -1623,7 +1643,10 @@ episodic_db_schema_version_statements <- function(dialect) {
 #' immediately ready for a new [episodic_run_cron()] without a schema
 #' migration. This includes `episodic_app_user`: dashboard accounts are
 #' data too, and are deleted along with everything else - there is
-#' nothing this function leaves behind to sign in with afterwards.
+#' nothing this function leaves behind to sign in with afterwards. The
+#' one row kept is the instance identifier (see `vignette("exchange")`):
+#' partners already know the instance by it, so it stays the same
+#' instance after a reset.
 #'
 #' Deliberately hard to trigger by accident:
 #'
@@ -1668,10 +1691,13 @@ episodic_db_truncate <- function(path) {
   # leaves a database that is structurally intact and that
   # `episodic_db_connect()` then refuses as unversioned. "The schema
   # itself is kept" is what this function promises, and the recorded
-  # version is part of the schema.
+  # version is part of the schema. `episodic_instance` is kept for a
+  # reason of its own: the identifier has been handed to partners, and
+  # the files and prefixed keys they hold name it, so an emptied
+  # database is still the same instance to them.
   tables <- setdiff(
     intersect(episodic_db_schema_tables(), DBI::dbListTables(con)),
-    "episodic_schema_version"
+    c("episodic_schema_version", "episodic_instance")
   )
   if (length(tables) == 0) {
     message(

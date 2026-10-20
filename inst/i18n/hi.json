@@ -271,6 +271,8 @@
   "epidemics.typical_statistic.arithmetic_mean": "अंकगणितीय माध्य",
   "epidemics.typical_statistic.geometric_mean": "ज्यामितीय माध्य",
   "epidemics.typical_statistic.median": "माध्यिका",
+  "info.about.instance": "इंस्टेंस पहचानकर्ता:",
+  "info.about.instance_unreadable": "इंस्टेंस पहचानकर्ता पढ़ा नहीं जा सका: {error}",
   "info.about.license": "लाइसेंस: {license}",
   "info.about.website": "वेबसाइट",
   "info.access.body": "पठन गुमनाम है: ऐप तक पहुँचने वाला कोई भी व्यक्ति साइन इन किए बिना प्रकोप, महामारी, स्ट्रीम और संग्रह देख सकता है। साइन इन केवल प्रकोप को वर्गीकृत करने, बंद करने या स्ट्रीम को म्यूट करने के लिए आवश्यक है, हर लेखन साइन-इन उपयोगकर्ता को श्रेय दिया जाता है।",

@@ -120,6 +120,7 @@ episodic_ui_info_screen <- function(con = NULL,
           class = "episodic-info-about-links",
           shiny::tags$p("Developed by Matthijs Berends et al, 2026.")
         ),
+        episodic_ui_info_instance(con, lang = lang),
         if (!is.null(meta)) {
           shiny::tags$div(
             class = "episodic-info-about-links",
@@ -176,9 +177,47 @@ episodic_ui_info_screen <- function(con = NULL,
   )
 }
 
+#' The Info screen's instance identifier line
+#'
+#' The identifier an operator gives a partner to exchange data with (see
+#' `vignette("exchange")`), shown where anyone running the instance can
+#' read it off. A database whose identifier cannot be read says so, with
+#' the reason, rather than leaving the line out: an absent line reads as
+#' "this instance has none", which is never true of a database this
+#' version opens.
+#'
+#' @param con A [DBI::DBIConnection-class], or `NULL`, for which nothing
+#'   is shown: there is no database to read the identifier from.
+#' @param lang Session language.
+#' @return A `shiny::tags$div`, or `NULL`.
 #' @keywords internal
 #' @noRd
-episodic_ui_info_algorithms_table <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_ui_info_instance <- function(con, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  if (is.null(con)) {
+    return(NULL)
+  }
+  id <- tryCatch(episodic_db_instance_id(con), error = function(e) e)
+  shiny::tags$div(
+    class = "episodic-info-about-links",
+    if (inherits(id, "error")) {
+      shiny::tags$span(episodic_tr(
+        "info.about.instance_unreadable",
+        error = conditionMessage(id),
+        lang = lang
+      ))
+    } else {
+      shiny::tags$span(
+        episodic_tr("info.about.instance", lang = lang),
+        " ",
+        shiny::tags$code(id)
+      )
+    }
+  )
+}
+
+#' @keywords internal
+#' @noRd
+episodic_ui_info_algorithms_table <-function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   rows <- list(
     list(
       name = "farringtonFlexible",

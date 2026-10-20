@@ -271,6 +271,8 @@
   "epidemics.typical_statistic.arithmetic_mean": "moyenne arithmétique",
   "epidemics.typical_statistic.geometric_mean": "moyenne géométrique",
   "epidemics.typical_statistic.median": "médiane",
+  "info.about.instance": "Identifiant de l'instance :",
+  "info.about.instance_unreadable": "L'identifiant de l'instance n'a pas pu être lu : {error}",
   "info.about.license": "Licence : {license}",
   "info.about.website": "Site web",
   "info.access.body": "La lecture est anonyme : toute personne qui accède à l'application peut consulter les flambées, épidémies, flux et l'archive sans se connecter. La connexion n'est nécessaire que pour classer une flambée, la clôturer ou mettre un flux en sourdine, chaque écriture est attribuée à l'utilisateur connecté.",

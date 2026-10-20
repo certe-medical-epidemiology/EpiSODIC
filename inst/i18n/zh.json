@@ -271,6 +271,8 @@
   "epidemics.typical_statistic.arithmetic_mean": "算术均值",
   "epidemics.typical_statistic.geometric_mean": "几何均值",
   "epidemics.typical_statistic.median": "中位数",
+  "info.about.instance": "实例标识符：",
+  "info.about.instance_unreadable": "无法读取实例标识符：{error}",
   "info.about.license": "许可证：{license}",
   "info.about.website": "网站",
   "info.access.body": "阅读是匿名的：任何访问应用的人都可以在不登录的情况下查看暴发、流行事件、数据流和存档。登录仅在分类暴发、结案或静音数据流时需要，每次写入都归属于已登录的用户。",

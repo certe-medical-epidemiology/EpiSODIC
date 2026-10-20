@@ -271,6 +271,8 @@
   "epidemics.typical_statistic.arithmetic_mean": "arithmetisches Mittel",
   "epidemics.typical_statistic.geometric_mean": "geometrisches Mittel",
   "epidemics.typical_statistic.median": "Median",
+  "info.about.instance": "Instanzkennung:",
+  "info.about.instance_unreadable": "Die Instanzkennung konnte nicht gelesen werden: {error}",
   "info.about.license": "Lizenz: {license}",
   "info.about.website": "Website",
   "info.access.body": "Lesen ist anonym: jeder, der die App erreicht, kann Ausbrüche, Epidemien, Ströme und das Archiv einsehen, ohne sich anzumelden. Die Anmeldung ist nur erforderlich, um einen Ausbruch zu klassifizieren, abzuschließen oder einen Strom stummzuschalten, jede Schreibaktion wird dem angemeldeten Benutzer zugeordnet.",

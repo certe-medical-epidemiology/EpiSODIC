@@ -271,6 +271,8 @@
   "epidemics.typical_statistic.arithmetic_mean": "arithmetic mean",
   "epidemics.typical_statistic.geometric_mean": "geometric mean",
   "epidemics.typical_statistic.median": "median",
+  "info.about.instance": "Instance identifier:",
+  "info.about.instance_unreadable": "The instance identifier could not be read: {error}",
   "info.about.license": "Licence: {license}",
   "info.about.website": "Website",
   "info.access.body": "Reading is anonymous: anyone who reaches the app can view outbreaks, epidemics, streams and the archive without signing in. Signing in is only needed to classify an outbreak, close it, or mute a stream, every write is attributed to the signed-in user.",

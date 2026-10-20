@@ -271,6 +271,8 @@
   "epidemics.typical_statistic.arithmetic_mean": "المتوسط الحسابي",
   "epidemics.typical_statistic.geometric_mean": "المتوسط الهندسي",
   "epidemics.typical_statistic.median": "الوسيط",
+  "info.about.instance": "معرّف النسخة:",
+  "info.about.instance_unreadable": "تعذّرت قراءة معرّف النسخة: {error}",
   "info.about.license": "الترخيص: {license}",
   "info.about.website": "الموقع الإلكتروني",
   "info.access.body": "القراءة مجهولة: يمكن لأي شخص يصل إلى التطبيق عرض حالات التفشي والأوبئة والتدفقات والأرشيف دون تسجيل الدخول. تسجيل الدخول مطلوب فقط لتصنيف تفشي أو إغلاقه أو كتم تدفق، وكل عملية كتابة تُنسب إلى المستخدم المسجّل.",

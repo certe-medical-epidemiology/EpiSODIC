@@ -903,6 +903,29 @@ CREATE TABLE episodic_app_login_failure (
 CREATE INDEX idx_episodic_app_login_failure_at ON episodic_app_login_failure(attempted_at);
 
 -- ---------------------------------------------------------------------
+-- 5.11a Instance identity (created by episodic_db_create() and by the
+-- migration to schema version 15, never written afterwards)
+--
+-- The one identifier that tells this instance's data apart from another
+-- instance's: ten lowercase hexadecimal characters drawn from a
+-- cryptographic random source (episodic_instance_id_generate()), so two
+-- laboratories that never coordinated still hold different ones. An
+-- exchange file carries it as its provenance, and an importing instance
+-- prefixes the sender's source_key, patient_key and lab_number with it,
+-- which is what keeps laboratory A's "12345" from being taken for
+-- laboratory B's.
+--
+-- Exactly one row, held to that by the CHECK on instance_row rather than
+-- by convention. Neither the cron nor the app writes it: like
+-- episodic_schema_version, it belongs to the database itself.
+-- ---------------------------------------------------------------------
+CREATE TABLE episodic_instance (
+  instance_row INTEGER PRIMARY KEY CHECK (instance_row = 1),
+  instance_id  TEXT NOT NULL CHECK (length(instance_id) = 10),
+  created_at   TEXT NOT NULL
+);
+
+-- ---------------------------------------------------------------------
 -- 5.12 Schema version (created by episodic_db_create(), advanced by
 -- episodic_db_migrate())
 --
