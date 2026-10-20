@@ -20,6 +20,7 @@
 plugin_run_test <- function(steps, ..., grant = list(permissions = "cluster_summary", secrets = character(0)), payload = list(cluster = list(cluster_id = 7L))) {
   skip_if_not_installed("processx")
   instance <- plugin_test_instance(env = parent.frame())
+  withr::local_envvar(instance$env, .local_envir = parent.frame())
   plugin <- episodic_plugin_read(plugin_test_write(instance$dir, "test-plugin", plugin_test_spec(steps = steps, ...)))
   expect_identical(plugin$problems, list())
   episodic_plugin_execute(plugin, grant, payload, lang = "nl")

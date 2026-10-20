@@ -224,7 +224,7 @@ episodic_ui_plugins_row <- function(plugin, lang = Sys.getenv("EPISODIC_LANGUAGE
       shiny::tags$div(
         class = "episodic-form-hint",
         shiny::tags$code(plugin$id),
-        if (!is.na(plugin$version %||% NA)) paste0(" · ", plugin$version)
+        if (!is.na(plugin$version %||% NA)) paste0(" \u00b7 ", plugin$version)
       )
     ),
     shiny::tags$td(episodic_plugin_trigger_text(plugin, lang = lang)),
@@ -344,7 +344,7 @@ episodic_ui_plugins_runs_panel <- function(data, lang = Sys.getenv("EPISODIC_LAN
             shiny::tags$td(episodic_tr(paste0("plugins.run_status.", row$status), lang = lang)),
             shiny::tags$td(
               class = "episodic-plugins-outcome",
-              if (length(outcome) > 0) paste(outcome, collapse = " · "),
+              if (length(outcome) > 0) paste(outcome, collapse = " \u00b7 "),
               if (!is.na(row$link)) {
                 shiny::tags$div(shiny::tags$a(href = row$link, target = "_blank", rel = "noopener noreferrer", row$link))
               }

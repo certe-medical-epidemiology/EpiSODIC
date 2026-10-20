@@ -25,6 +25,7 @@ plugin_source_file <- function(id, spec = plugin_test_spec()) {
 
 test_that("a plugin is installed from a local file, checked first, and never over another without overwrite", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   episodic_plugin_install(plugin_source_file("share-regional"), episodic_config_path = instance$config_path)
   expect_true(file.exists(file.path(instance$dir, "share-regional.yaml")))
   expect_identical(episodic_plugin_list(instance$config_path)$status, "disabled")
@@ -40,17 +41,19 @@ test_that("a plugin is installed from a local file, checked first, and never ove
 
 test_that("a file that is not a valid plugin is refused and nothing is written", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   bad <- plugin_source_file("typo", plugin_test_spec(permisions = list("cluster_summary")))
   expect_error(episodic_plugin_install(bad, episodic_config_path = instance$config_path), "permisions is not a key")
   expect_false(file.exists(file.path(instance$dir, "typo.yaml")))
   wrong_name <- file.path(tempdir(), "Share.yaml")
   writeLines("name: x", wrong_name)
-  on.exit(unlink(wrong_name))
+  withr::defer(unlink(wrong_name))
   expect_error(episodic_plugin_install(wrong_name, episodic_config_path = instance$config_path), "not a valid plugin file name")
 })
 
 test_that("a plugin whose requirements are not met yet is installed, and listed as unavailable", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   spec <- plugin_test_spec(requires = list(packages = list("no.such.package.episodic")))
   episodic_plugin_install(plugin_source_file("needs-package", spec), episodic_config_path = instance$config_path)
   listed <- episodic_plugin_list(instance$config_path)
@@ -61,6 +64,7 @@ test_that("a plugin whose requirements are not met yet is installed, and listed 
 
 test_that("a plugin is fetched over https, from a GitHub page address by its raw address", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   bytes <- readBin(plugin_source_file("share-regional"), "raw", 1e5)
   fetched <- NULL
   local_mocked_bindings(episodic_import_export_endpoint_read = function(endpoint) {
@@ -81,6 +85,7 @@ test_that("a plugin is fetched over https, from a GitHub page address by its raw
 
 test_that("enabling writes exactly what the plugin declares into the configuration, and disabling removes it", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   spec <- plugin_test_spec(secrets = list("REGIONAL_TOKEN"))
   episodic_plugin_install(plugin_source_file("share-regional", spec), episodic_config_path = instance$config_path)
   episodic_plugin_enable("share-regional", instance$config_path)
@@ -97,6 +102,7 @@ test_that("enabling writes exactly what the plugin declares into the configurati
 
 test_that("an update that asks for more than was granted needs approval before it runs again", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   episodic_plugin_install(plugin_source_file("share-regional"), episodic_config_path = instance$config_path)
   episodic_plugin_enable("share-regional", instance$config_path)
   grown <- plugin_source_file("share-regional", plugin_test_spec(secrets = list("REGIONAL_TOKEN")))
@@ -108,6 +114,7 @@ test_that("an update that asks for more than was granted needs approval before i
 
 test_that("uninstalling disables the plugin and removes its file", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   episodic_plugin_install(plugin_source_file("share-regional"), episodic_config_path = instance$config_path)
   episodic_plugin_enable("share-regional", instance$config_path)
   episodic_plugin_uninstall("share-regional", instance$config_path)
@@ -117,7 +124,7 @@ test_that("uninstalling disables the plugin and removes its file", {
 
 test_that("a plugin receives only the parts of the data it holds permission for", {
   setup <- app_read_setup()
-  on.exit(DBI::dbDisconnect(setup$con))
+  withr::defer(DBI::dbDisconnect(setup$con))
   plugin <- list(id = "p", version = "1", trigger = "button")
   config <- episodic_config_resolve(NA)
   context <- list(cluster_id = setup$cluster_id, user = list(username = "epi", role = "epidemiologist"))
@@ -140,9 +147,10 @@ test_that("a plugin receives only the parts of the data it holds permission for"
 
 test_that("a headless run is recorded with the exact file, what it was sent and what came back", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   setup <- app_read_setup()
   db_path <- setup$con@dbname
-  on.exit(DBI::dbDisconnect(setup$con))
+  withr::defer(DBI::dbDisconnect(setup$con))
   spec <- plugin_test_spec(steps = list(plugin_test_step(paste(
     "p <- jsonlite::read_json(Sys.getenv('EPISODIC_PAYLOAD'))",
     "cat('message=Shared ', p$cluster$label, '\\nlink=https://regional.example/1\\n', sep = '', file = Sys.getenv('EPISODIC_RESULT'))",
@@ -169,8 +177,9 @@ test_that("a headless run is recorded with the exact file, what it was sent and 
 
 test_that("a headless run that does not succeed is recorded and raised as a warning", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   setup <- app_read_setup()
-  on.exit(DBI::dbDisconnect(setup$con))
+  withr::defer(DBI::dbDisconnect(setup$con))
   spec <- plugin_test_spec(steps = list(plugin_test_step("stop('platform unreachable')")))
   episodic_plugin_install(plugin_source_file("share-regional", spec), episodic_config_path = instance$config_path)
   episodic_plugin_enable("share-regional", instance$config_path)
@@ -184,6 +193,7 @@ test_that("a headless run that does not succeed is recorded and raised as a warn
 
 test_that("plugins enabled for after a run run once the run has committed, and cannot fail it", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   writes_status <- plugin_test_spec(
     trigger = "run_committed", placement = NULL, label = NULL, permissions = list("run_summary"),
     steps = list(plugin_test_step(paste(
@@ -202,7 +212,7 @@ test_that("plugins enabled for after a run run once the run has committed, and c
   episodic_plugin_enable("broken-after-run", instance$config_path)
 
   path <- tempfile(fileext = ".sqlite")
-  on.exit(unlink(path))
+  withr::defer(unlink(path))
   log <- testthat::capture_messages(run_id <- episodic_run_cron(
     db_path = path,
     cases = function() episodic_synthetic_cases(start_date = as.Date("2024-06-01"), end_date = as.Date("2024-08-31"), seed = 3),
@@ -210,7 +220,7 @@ test_that("plugins enabled for after a run run once the run has committed, and c
     episodic_config_path = instance$config_path
   ))
   con <- episodic_db_connect(path)
-  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+  withr::defer(DBI::dbDisconnect(con), priority = "first")
   expect_identical(episodic_db_latest_run(con)$status, "success")
   events <- DBI::dbGetQuery(con, "SELECT * FROM episodic_plugin_run_event ORDER BY plugin_id")
   expect_identical(events$plugin_id, c("after-run", "broken-after-run"))

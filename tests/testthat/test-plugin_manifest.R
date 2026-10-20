@@ -27,6 +27,7 @@ test_that("the plugin folder is EPISODIC_PLUGIN_DIR, else beside the configurati
 
 test_that("a well-formed plugin reads with everything it declares and no problems", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   spec <- plugin_test_spec(
     permissions = list("cluster_summary", "cluster_cases"),
     secrets = list("REGIONAL_TOKEN"),
@@ -51,6 +52,7 @@ test_that("a well-formed plugin reads with everything it declares and no problem
 
 test_that("every problem with a plugin file is named, not only the first", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   spec <- plugin_test_spec(
     api = 2L,
     placement = "report",
@@ -74,6 +76,7 @@ test_that("every problem with a plugin file is named, not only the first", {
 
 test_that("a hook cannot carry a button's placement or label", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   spec <- plugin_test_spec(trigger = "run_committed", permissions = list("run_summary"))
   codes <- plugin_test_codes(episodic_plugin_read(plugin_test_write(instance$dir, "hook", spec)))
   expect_identical(codes, c("button_only", "button_only"))
@@ -81,6 +84,7 @@ test_that("a hook cannot carry a button's placement or label", {
 
 test_that("a file that is not YAML, or not a mapping, is not a plugin", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   dir.create(instance$dir)
   writeLines("name: [unclosed", file.path(instance$dir, "broken.yaml"))
   expect_identical(plugin_test_codes(episodic_plugin_read(file.path(instance$dir, "broken.yaml"))), "bad_yaml")
@@ -90,6 +94,7 @@ test_that("a file that is not YAML, or not a mapping, is not a plugin", {
 
 test_that("what a plugin requires is checked and never installed", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   local_mocked_bindings(episodic_plugin_shell_program = function(shell) if (shell == "bash") "" else "/usr/bin/true")
   spec <- plugin_test_spec(
     requires = list(packages = list("no.such.package.episodic"), commands = list("no-such-command-episodic")),
@@ -102,6 +107,7 @@ test_that("what a plugin requires is checked and never installed", {
 
 test_that("a plugin's status follows from its file and from what the configuration grants it", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   plugin_test_write(instance$dir, "off")
   plugin_test_write(instance$dir, "on")
   plugin_test_write(instance$dir, "grew", plugin_test_spec(secrets = list("REGIONAL_TOKEN")))
@@ -124,6 +130,7 @@ test_that("a plugin's status follows from its file and from what the configurati
 
 test_that("episodic_plugin_list() lists every plugin with its status and its problems as text", {
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   plugin_test_write(instance$dir, "share-regional")
   plugin_test_write(instance$dir, "old-api", plugin_test_spec(api = 0L))
   listed <- episodic_plugin_list(instance$config_path)

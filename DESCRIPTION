@@ -49,6 +49,7 @@ Suggests:
     curl,
     EpiEstim,
     htmltools,
+    httpuv,
     httr2,
     jsonlite,
     knitr,

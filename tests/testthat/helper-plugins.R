@@ -20,14 +20,22 @@
 # Fixtures for the plugin tests: a configuration file and plugin folder
 # of the calling test's own, and plugin files written from a list.
 
+# `env` is what a test sets with withr::local_envvar() when the code it
+# exercises reads the configuration path from the environment, as the
+# dashboard does; a helper never sets it itself (see
+# test-shipping_readiness.R).
 plugin_test_instance <- function(env = parent.frame()) {
   root <- tempfile("episodic_plugins_")
   dir.create(root)
   config_path <- file.path(root, "episodic.yaml")
   writeLines(c("# Test instance", "plugins:", "  enabled: {}"), config_path)
   withr::defer(unlink(root, recursive = TRUE), envir = env)
-  withr::local_envvar(EPISODIC_CONFIG = config_path, EPISODIC_PLUGIN_DIR = NA, EPISODIC_LANGUAGE = "en", .local_envir = env)
-  list(root = root, config_path = config_path, dir = file.path(root, "plugins"))
+  list(
+    root = root,
+    config_path = config_path,
+    dir = file.path(root, "plugins"),
+    env = c(EPISODIC_CONFIG = config_path, EPISODIC_PLUGIN_DIR = NA, EPISODIC_LANGUAGE = "en")
+  )
 }
 
 plugin_test_spec <- function(...) {

@@ -65,6 +65,7 @@ reference_plugin_server <- function(status, env = parent.frame()) {
 
 reference_plugin_run <- function(env = parent.frame()) {
   instance <- plugin_test_instance(env = env)
+  withr::local_envvar(instance$env, .local_envir = env)
   episodic_plugin_install(reference_plugin_path(), episodic_config_path = instance$config_path)
   episodic_plugin_enable("share-outbreak-http", instance$config_path)
   setup <- app_read_setup()

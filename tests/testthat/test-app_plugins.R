@@ -24,6 +24,7 @@
 
 app_plugins_setup <- function(env = parent.frame()) {
   instance <- plugin_test_instance(env = env)
+  withr::local_envvar(instance$env, .local_envir = env)
   setup <- app_read_setup()
   db_path <- setup$con@dbname
   users <- list(
@@ -240,8 +241,9 @@ test_that("a plugin's result is shown as text, never as markup, and its error ou
 
 test_that("the Plugins screen renders in every shipped language, with plugins and runs", {
   setup <- app_read_setup()
-  on.exit(DBI::dbDisconnect(setup$con))
+  withr::defer(DBI::dbDisconnect(setup$con))
   instance <- plugin_test_instance()
+  withr::local_envvar(instance$env)
   plugin_test_write(instance$dir, "share-regional", plugin_test_spec(secrets = list("TOKEN"), source = "https://example.org/share-regional.yaml"))
   plugin_test_write(instance$dir, "broken", plugin_test_spec(trigger = "never"))
   episodic_config_set(c("plugins", "enabled", "gone"), list(permissions = list("cluster_summary")), instance$config_path)

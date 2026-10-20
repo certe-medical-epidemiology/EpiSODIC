@@ -125,6 +125,7 @@ reference:
   - episodic_plugin_list
   - episodic_plugin_install
   - episodic_plugin_enable
+  - episodic_plugin_disable
   - episodic_plugin_uninstall
   - episodic_plugin_run
 
