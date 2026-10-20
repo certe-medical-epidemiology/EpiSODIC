@@ -48,6 +48,7 @@ articles:
   - tuning-detection
   - notifications
   - scheduled-reports
+  - exchange
 
 - title: Reference
   desc: >
@@ -100,6 +101,19 @@ reference:
   - episodic_validate_detection
   - episodic_validate_comparator
   - episodic_validate_rethreshold
+
+- title: Exchange data with partner instances
+  desc: >
+    Share this instance's cases with a partner instance, and take theirs
+    in, as encrypted and signed files - headless, or scheduled from the
+    dashboard's Exchange screen.
+  contents:
+  - episodic_instance_id
+  - episodic_exchange_keygen
+  - episodic_exchange_key_fingerprint
+  - episodic_exchange_export
+  - episodic_exchange_import
+  - episodic_exchange_test_connection
 
 - title: Add clusters from another system
   desc: >
