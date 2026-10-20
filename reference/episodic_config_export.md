@@ -1,13 +1,11 @@
 # Export the Resolved Configuration as a Zip File
 
-Bundles the fully-resolved configuration (shipped defaults, your
-`EPISODIC_CONFIG` YAML overlay, and - if `db_path` points at a
-database - any Settings-screen `notifications` override) together with
-the pathogen configuration and, if set, the colour palette override,
-into a single zip file. This is the Settings screen's "export
-configuration" button; it is also just a plain function you can call
-from the console to snapshot an instance's configuration for backup or
-migration.
+Bundles the fully-resolved configuration (shipped defaults with your
+`EPISODIC_CONFIG` YAML on top) together with the pathogen configuration
+and, if set, the colour palette override, into a single zip file. This
+is the Settings screen's "export configuration" button; it is also just
+a plain function you can call from the console to snapshot an instance's
+configuration for backup or migration.
 
 ## Usage
 
@@ -27,9 +25,8 @@ episodic_config_export(
   Path to the EpiSODIC database: an existing SQLite file, or a
   MariaDB/MySQL DSN (see
   [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
-  Defaults to the `EPISODIC_DB` environment variable. Only used to read
-  a Settings-screen `notifications` override, if one exists - `NA`/unset
-  skips this and exports the YAML-resolved configuration only.
+  Defaults to the `EPISODIC_DB` environment variable. Only used to place
+  the zip beside the database's reports when `output_dir` is not given.
 
 - episodic_config_path:
 

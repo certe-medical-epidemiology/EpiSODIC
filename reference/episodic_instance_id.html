@@ -90,7 +90,7 @@ DSN (see <code><a href="episodic_db_dsn_mariadb.html">episodic_db_dsn_mariadb()<
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">db_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".sqlite"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbDisconnect.html" class="external-link">dbDisconnect</a></span><span class="op">(</span><span class="fu"><a href="episodic_db_create.html">episodic_db_create</a></span><span class="op">(</span><span class="va">db_path</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">episodic_instance_id</span><span class="op">(</span><span class="va">db_path</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "abeb3997fb"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "427e953460"</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.remove</a></span><span class="op">(</span><span class="va">db_path</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 </code></pre></div>

@@ -72,6 +72,7 @@ information system or data warehouse:
         -> suppress lattice duplicates (continuous across the scale boundary)
         -> notify (if configured)
         -> dispatch due scheduled reports and scheduled exports (after commit)
+        -> run plugins triggered by run_committed (after the run row is final)
       -> episodic_run_app()           # Shiny dashboard
         -> epidemiologist assesses outbreaks (Outbreaks screen)
         -> epidemiologist assesses epidemics and records declarations (Epidemics screen)
@@ -164,6 +165,10 @@ the export itself, whichever process runs it
 ([`episodic_cases_export()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_export.md)
 from a script, the cron’s scheduled exports, the dashboard’s download
 button), insert-only, through `episodic_db_export_record()`.
+`episodic_plugin_run_event` is the same kind of exception: written by
+whichever process ran the plugin (a dossier button, the cron’s hook,
+[`episodic_plugin_run()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_run.md)),
+insert-only, through `episodic_db_plugin_run_record()`.
 `episodic_instance` belongs to the database: written once by
 [`episodic_db_create()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_create.md)
 or the migration to version 15, never by either process.
@@ -188,6 +193,27 @@ and import sources (`episodic_export_schedule_event`,
 secret: every key, passphrase, credential and secret URL is an
 environment variable’s name.
 
+### Plugins
+
+`R/plugin_*.R`, `R/app_plugins.R`; see
+[`vignette("plugins")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.md).
+A plugin is one `<id>.yaml` in `EPISODIC_PLUGIN_DIR` (default: a
+`plugins` folder beside `EPISODIC_CONFIG`), parsed strictly by
+`episodic_plugin_read()`: unknown keys are problems, and a plugin with
+any problem cannot run. Its steps (`r`, `bash`, `python`) run through
+`processx` in a process of their own, under one timeout, with an
+environment from `episodic_plugin_env_allowlist` plus only granted
+secrets; nothing from the data is pasted into code (`${{ }}`
+placeholders are filled into a step’s `env` values only, and an absent
+value stops the run), and `EPISODIC_*` variables are never passed. Input
+is `EPISODIC_PAYLOAD` (JSON, only the parts granted by `permissions`),
+output is `key=value` lines in `EPISODIC_RESULT`. Which plugins are
+enabled, and what each was granted, lives only in `plugins.enabled` in
+the configuration file; the database holds only the run record. A plugin
+acts on what a run computed and never takes part in detection. Note
+`Sys.getenv(character(0))` returns the whole environment: look secrets
+up through `episodic_plugin_getenv()`.
+
 ### Configuration
 
 YAML-based with recursive merge.
@@ -195,7 +221,18 @@ YAML-based with recursive merge.
 config (`EPISODIC_CONFIG`) overlays key-by-key. The resolved config is
 hashed (SHA-1 over canonical JSON) and stored per run.
 `episodic_config_unhashed_sections` (`notifications`, `access`,
-`report`, `database`) are stripped before hashing.
+`report`, `database`, `export`, `plugins`) are stripped before hashing.
+
+The operator’s configuration file is the only record of an instance’s
+settings. When the dashboard changes one (notification settings, enabled
+plugins), it writes that file through `episodic_config_set()`, which
+replaces one key on the text, keeps every other line and comment, proves
+the edit by reading it back and validating it, and writes atomically
+under a lock. Never add a database overlay for settings;
+`episodic_app_config_event` is retired, kept only because it holds data:
+`episodic_app_settings_migrate()` moves its last row into the file once,
+at dashboard start, and records the move with a marker row so that row
+never applies again.
 
 Validation (`episodic_config_validate()`) checks against shipped
 defaults: unknown keys, wrong types, or nulls where values are needed

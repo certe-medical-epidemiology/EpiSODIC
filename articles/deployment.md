@@ -162,10 +162,15 @@ There are exactly two roles:
 Independent of role, an account can additionally be flagged `is_admin`,
 which unlocks the Settings screen: managing notification channels and
 recipients, creating accounts and changing their role/admin/active
-state, and exporting the resolved configuration. Detection parameters
-themselves stay read-only there deliberately - changing them is still a
-`EPISODIC_CONFIG` YAML change, so every past result stays traceable to
-the exact configuration that produced it (see “Configuration” above).
+state, and exporting the resolved configuration. Notification settings
+saved there are written into the `EPISODIC_CONFIG` file itself, by
+replacing only the `notifications` section and leaving every other line
+and comment as it was, so that file stays the only record of an
+instance’s settings; it must therefore be writable by the account the
+dashboard runs as. Detection parameters themselves stay read-only there
+deliberately - changing them is still a `EPISODIC_CONFIG` YAML change,
+so every past result stays traceable to the exact configuration that
+produced it (see “Configuration” above).
 
 ``` r
 
@@ -300,7 +305,7 @@ SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS
    AND TABLE_NAME LIKE 'episodic\_%';
 ```
 
-Anything other than 62 means the schema and the server disagree, and the
+Anything other than 65 means the schema and the server disagree, and the
 suite’s own live tests check that same number against a live server on
 every run.
 
@@ -546,6 +551,8 @@ supported channel.
   instances**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html)
   for exporting cases to, and importing them from, partner instances on
   a schedule.
+- [**Plugins**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.html)
+  for extending the dashboard with buttons and run hooks of your own.
 - [**Frequently asked
   questions**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html)
   for hosting choices, account roles, and other operational questions.

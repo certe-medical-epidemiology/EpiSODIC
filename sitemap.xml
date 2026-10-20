@@ -12,6 +12,7 @@
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/index.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/overview.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/authors.html</loc></url>
@@ -45,6 +46,11 @@
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notifications.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notify_test.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_enable.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_install.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_list.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_run.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_uninstall.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.html</loc></url>

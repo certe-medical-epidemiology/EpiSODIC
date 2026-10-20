@@ -272,6 +272,20 @@ an export stops and records why, and the dashboard offers no download.
 See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html"><strong>Importing
 and exporting data between instances</strong></a>.</td>
 </tr>
+<tr class="even">
+<td><code>EPISODIC_PLUGIN_DIR</code></td>
+<td>
+<code><a href="../reference/episodic_plugin_install.html">episodic_plugin_install()</a></code>,
+<code><a href="../reference/episodic_plugin_list.html">episodic_plugin_list()</a></code> and the other plugin functions, the
+Plugins screen, <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code>
+</td>
+<td>The folder plugins live in. Unset, it is a <code>plugins</code>
+folder beside the configuration file (<code>EPISODIC_CONFIG</code>);
+with neither set there is no plugin folder, and the Plugins screen says
+so rather than writing anywhere else. Set it to keep plugins apart from
+the configuration, for example on a read-only volume the operator
+manages. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.html"><strong>Plugins</strong></a>.</td>
+</tr>
 </tbody>
 </table>
 <p>Export schedules and import sources registered on the Import and

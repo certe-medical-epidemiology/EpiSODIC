@@ -1471,6 +1471,33 @@ always go. <code>~</code> exports the required columns only</td>
 </table>
 </div>
 <div class="section level3">
+<h3 id="plugins">Plugins<a class="anchor" aria-label="anchor" href="#plugins"></a>
+</h3>
+<p>Which plugins may run, and what each was granted. Plugins act on what
+a run has computed and never take part in detection, so this section is
+left out of <code>config_hash</code>. The Plugins screen writes it; it
+can also be edited by hand. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.html"><strong>Plugins</strong></a>.</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="8%">
+<col width="66%">
+</colgroup>
+<thead><tr class="header">
+<th>Key</th>
+<th>Default</th>
+<th>Effect</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td><code style="white-space: nowrap;">plugins:<br>  enabled</code></td>
+<td>{}</td>
+<td>One entry per enabled plugin, named by its id, holding the
+<code>permissions</code> and <code>secrets</code> it was granted. A
+plugin not listed does not run</td>
+</tr></tbody>
+</table>
+</div>
+<div class="section level3">
 <h3 id="access">Access<a class="anchor" aria-label="anchor" href="#access"></a>
 </h3>
 <table class="table">

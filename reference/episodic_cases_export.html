@@ -180,54 +180,54 @@ of cases and the SHA-256 of the file. A failed export is recorded too.</p>
 <span class="r-in"><span>  db_path <span class="op">=</span> <span class="va">db_path</span>,</span></span>
 <span class="r-in"><span>  run_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2025-03-31"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.840 | episodic_run_cron() starting (host=runnervmxehtw, account=runner)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.840 | Resolving configuration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.845 | Configuration resolved (hash 7fef366a6991)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.845 | Connecting to database</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.845 | No existing database found - creating one</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.864 | Database connected (SQLite 3.53.3)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.864 | Run 1 started</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.865 | Resolving and checking case data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.905 | Case data checked: 421 rows, 0 problems, 0 advisory finding(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.906 | Beginning transaction</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.907 | Loading pathogen configuration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.909 | Pathogen configuration loaded (39 pathogen(s))</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.910 | Loading case data into the database</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.973 | Case data loaded: supplied=421, deduplicated=403, inserted=403</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.973 | Fetching all known cases and institutions</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.975 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.976 | Case history on file spans 2025-01-01 to 2025-03-31, ending 0 day(s) before this run's date (2025-03-31)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.976 | Enumerating lattice streams</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:54:02.991 | no province could be resolved for any of the 105 postcode values in this run - province-level (L4) detection has nothing to run on. EPISODIC_PC_PROVINCE_MAP is unset, and there is no built-in rule to fall back on - deriving a province from a postcode is country-specific. Point it at your own pc/province_code CSV, or leave it unset and the province level stays empty.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:02.995 | Running same-place detector</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.037 | Same-place detector found 5 detection(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.037 | Running rare-trigger detector</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.040 | Rare-trigger detector found 1 detection(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.040 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.041 | Reconciling 320 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:54:03.226 | MEM: declined stream Bordetella pertussis/pathogen_region/REGION, disabled by mem_mode</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:54:03.230 | MEM: declined stream Campylobacter/pathogen_region/REGION, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:54:03.232 | MEM: declined stream Clostridioides difficile/pathogen_region/REGION, disabled by mem_mode</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:54:03.235 | MEM: declined stream Giardia lamblia/pathogen_region/REGION, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:54:03.238 | MEM: declined stream Influenza A/pathogen_region/REGION, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:54:03.241 | MEM: declined stream MRSA/pathogen_region/REGION, disabled by mem_mode</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:54:03.243 | MEM: declined stream Neisseria meningitidis/pathogen_region/REGION, disabled by mem_mode</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:54:03.246 | MEM: declined stream Norovirus/pathogen_region/REGION, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:54:03.249 | MEM: declined stream RSV/pathogen_region/REGION, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:54:03.251 | MEM: declined stream Salmonella/pathogen_region/REGION, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.267 | Stream loop time by stage: cases 0.0s, mem 0.0s, eligibility 0.0s, farrington 0.0s, trend 0.0s, detections 0.0s, reconciliation 0.0s, total 0.1s (320 stream(s))</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.267 | Stream reconciliation done: 6 detection(s), 6 new signal(s), 0 updated signal(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.268 | Backfill: 6 cluster(s) opened from the case history, 1 of them already closed by the system and in the Archive, 5 left open for assessment</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.269 | Suppressing lattice: weighing 6 cluster(s) across 5 pathogen(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.270 | Suppressing lattice: 42 case link(s) read for 6 cluster(s), 0 assessed cluster(s) exempt</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.273 | Suppressing lattice done: 0 cluster(s) suppressed (0 parent(s) behind a dominant child, 0 child(ren) behind a diffuse parent)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.282 | Nowcast: 0 of 5 stream(s) with an open cluster nowcast, 5 without enough reported yet to nowcast from, 0 failed</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.283 | Epidemic direction: no open epidemic</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.284 | Epidemic outlook: no open epidemic</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.296 | Outbreak-end forecast: 0 of 4 open outbreak(s) of a transmissible pathogen computed, 1 point source, 3 without the parameters or reporting history, 0 failed</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.296 | Committing transaction</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:03.299 | Finishing run 1 (status: success)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:54:04.161 | episodic_run_cron() finished in 1.3s (status: success)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.491 | episodic_run_cron() starting (host=runnervmxehtw, account=runner)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.491 | Resolving configuration</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.496 | Configuration resolved (hash 7fef366a6991)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.496 | Connecting to database</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.497 | No existing database found - creating one</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.515 | Database connected (SQLite 3.53.3)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.516 | Run 1 started</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.516 | Resolving and checking case data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.556 | Case data checked: 421 rows, 0 problems, 0 advisory finding(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.557 | Beginning transaction</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.558 | Loading pathogen configuration</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.560 | Pathogen configuration loaded (39 pathogen(s))</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.560 | Loading case data into the database</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.625 | Case data loaded: supplied=421, deduplicated=403, inserted=403</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.626 | Fetching all known cases and institutions</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.627 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.629 | Case history on file spans 2025-01-01 to 2025-03-31, ending 0 day(s) before this run's date (2025-03-31)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.629 | Enumerating lattice streams</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:58:10.644 | no province could be resolved for any of the 105 postcode values in this run - province-level (L4) detection has nothing to run on. EPISODIC_PC_PROVINCE_MAP is unset, and there is no built-in rule to fall back on - deriving a province from a postcode is country-specific. Point it at your own pc/province_code CSV, or leave it unset and the province level stays empty.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.648 | Running same-place detector</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.692 | Same-place detector found 5 detection(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.692 | Running rare-trigger detector</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.695 | Rare-trigger detector found 1 detection(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.695 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:10.697 | Reconciling 320 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:58:11.053 | MEM: declined stream Bordetella pertussis/pathogen_region/REGION, disabled by mem_mode</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:58:11.057 | MEM: declined stream Campylobacter/pathogen_region/REGION, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:58:11.060 | MEM: declined stream Clostridioides difficile/pathogen_region/REGION, disabled by mem_mode</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:58:11.062 | MEM: declined stream Giardia lamblia/pathogen_region/REGION, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:58:11.066 | MEM: declined stream Influenza A/pathogen_region/REGION, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:58:11.068 | MEM: declined stream MRSA/pathogen_region/REGION, disabled by mem_mode</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:58:11.071 | MEM: declined stream Neisseria meningitidis/pathogen_region/REGION, disabled by mem_mode</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:58:11.074 | MEM: declined stream Norovirus/pathogen_region/REGION, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:58:11.076 | MEM: declined stream RSV/pathogen_region/REGION, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-10-20 21:58:11.079 | MEM: declined stream Salmonella/pathogen_region/REGION, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:11.096 | Stream loop time by stage: cases 0.0s, mem 0.0s, eligibility 0.0s, farrington 0.0s, trend 0.0s, detections 0.0s, reconciliation 0.0s, total 0.1s (320 stream(s))</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:11.096 | Stream reconciliation done: 6 detection(s), 6 new signal(s), 0 updated signal(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:11.096 | Backfill: 6 cluster(s) opened from the case history, 1 of them already closed by the system and in the Archive, 5 left open for assessment</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:11.098 | Suppressing lattice: weighing 6 cluster(s) across 5 pathogen(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:11.099 | Suppressing lattice: 42 case link(s) read for 6 cluster(s), 0 assessed cluster(s) exempt</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:11.103 | Suppressing lattice done: 0 cluster(s) suppressed (0 parent(s) behind a dominant child, 0 child(ren) behind a diffuse parent)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:11.112 | Nowcast: 0 of 5 stream(s) with an open cluster nowcast, 5 without enough reported yet to nowcast from, 0 failed</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:11.113 | Epidemic direction: no open epidemic</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:11.113 | Epidemic outlook: no open epidemic</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:11.122 | Outbreak-end forecast: 0 of 4 open outbreak(s) of a transmissible pathogen computed, 1 point source, 3 without the parameters or reporting history, 0 failed</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:11.122 | Committing transaction</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:11.124 | Finishing run 1 (status: success)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-10-20 21:58:12.109 | episodic_run_cron() finished in 1.6s (status: success)</span>
 <span class="r-in"><span><span class="va">sender</span> <span class="op">&lt;-</span> <span class="fu"><a href="episodic_import_export_keygen.html">episodic_import_export_keygen</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">receiver</span> <span class="op">&lt;-</span> <span class="fu"><a href="episodic_import_export_keygen.html">episodic_import_export_keygen</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".episodic"</span><span class="op">)</span></span></span>

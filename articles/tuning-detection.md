@@ -668,6 +668,16 @@ instances**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/impo
 
 [TABLE]
 
+### Plugins
+
+Which plugins may run, and what each was granted. Plugins act on what a
+run has computed and never take part in detection, so this section is
+left out of `config_hash`. The Plugins screen writes it; it can also be
+edited by hand. See
+[**Plugins**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.html).
+
+[TABLE]
+
 ### Access
 
 [TABLE]

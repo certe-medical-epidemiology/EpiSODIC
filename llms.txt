@@ -218,6 +218,24 @@ dashboard’s Import and export screen.
 - [`episodic_import_export_test_connection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_test_connection.md)
   : Test an Import Source or Export Schedule
 
+## Extend EpiSODIC with plugins
+
+Install, enable and run plugins: YAML files whose steps run on a dossier
+button or after a detection run - headless, or from the dashboard’s
+Plugins screen.
+
+- [`episodic_plugin_list()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_list.md)
+  : List the Installed Plugins
+- [`episodic_plugin_install()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_install.md)
+  : Install a Plugin
+- [`episodic_plugin_enable()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_enable.md)
+  [`episodic_plugin_disable()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_enable.md)
+  : Enable or Disable a Plugin
+- [`episodic_plugin_uninstall()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_uninstall.md)
+  : Uninstall a Plugin
+- [`episodic_plugin_run()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_run.md)
+  : Run a Plugin
+
 ## Add clusters from another system
 
 Add clusters detected by another algorithm or system - never connected
@@ -330,6 +348,7 @@ Tune detection behaviour and set up notifications.
   reports](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.md):
 - [Importing and exporting data between
   instances](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.md):
+- [Plugins](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.md):
 
 ### Reference
 

@@ -37,7 +37,7 @@ A single string of ten lowercase hexadecimal characters.
 db_path <- tempfile(fileext = ".sqlite")
 DBI::dbDisconnect(episodic_db_create(db_path))
 episodic_instance_id(db_path)
-#> [1] "abeb3997fb"
+#> [1] "427e953460"
 file.remove(db_path)
 #> [1] TRUE
 ```
