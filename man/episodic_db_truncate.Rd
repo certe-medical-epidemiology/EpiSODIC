@@ -23,7 +23,10 @@ stay exactly as \code{\link[=episodic_db_create]{episodic_db_create()}} built th
 immediately ready for a new \code{\link[=episodic_run_cron]{episodic_run_cron()}} without a schema
 migration. This includes \code{episodic_app_user}: dashboard accounts are
 data too, and are deleted along with everything else - there is
-nothing this function leaves behind to sign in with afterwards.
+nothing this function leaves behind to sign in with afterwards. The
+one row kept is the instance identifier (see \code{vignette("import-export")}):
+partners already know the instance by it, so it stays the same
+instance after a reset.
 }
 \details{
 Deliberately hard to trigger by accident:

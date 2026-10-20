@@ -530,6 +530,15 @@ Every channel's settings, and how to test them, are in [**Notifications**](https
 | <code style="white-space: nowrap;">report:<br>&nbsp;&nbsp;small_count_threshold</code> | 5       | Counts below this in geography/institution tables are suppressed to prevent re-identification |
 | <code style="white-space: nowrap;">report:<br>&nbsp;&nbsp;output_dir</code>            | ~       | Base directory for rendered reports; mandatory when `EPISODIC_DB` is a DSN                    |
 
+### Export
+
+Which columns an export to a partner instance carries, and how coarse its postcodes are. They change what leaves the instance, never what a run computes, and are left out of `config_hash`. See [**Importing and exporting data between instances**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html).
+
+| Key                    | Default | Effect                                                    |
+| ---------------------- | ------- | --------------------------------------------------------- |
+| <code style="white-space: nowrap;">export:<br>&nbsp;&nbsp;fields</code> | [receipt_date, care_line, municipality, ward, specialism, pc, sex, age] | The optional case columns an export carries; the required ones always go. `~` exports the required columns only |
+| <code style="white-space: nowrap;">export:<br>&nbsp;&nbsp;pc_characters</code> | ~ | Keep only this many leading postcode characters in an export; `~` exports postcodes as stored |
+
 ### Access
 
 | Key                    | Default | Effect                                                    |

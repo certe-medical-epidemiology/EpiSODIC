@@ -48,6 +48,7 @@ articles:
   - tuning-detection
   - notifications
   - scheduled-reports
+  - import-export
 
 - title: Reference
   desc: >
@@ -100,6 +101,19 @@ reference:
   - episodic_validate_detection
   - episodic_validate_comparator
   - episodic_validate_rethreshold
+
+- title: Import and export data with partner instances
+  desc: >
+    Export this instance's cases to a partner instance, and import theirs,
+    as encrypted and signed files - headless, or scheduled from the
+    dashboard's Import and export screen.
+  contents:
+  - episodic_instance_id
+  - episodic_import_export_keygen
+  - episodic_import_export_key_fingerprint
+  - episodic_cases_export
+  - episodic_cases_import
+  - episodic_import_export_test_connection
 
 - title: Add clusters from another system
   desc: >

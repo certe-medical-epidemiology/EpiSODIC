@@ -261,4 +261,5 @@ EpiSODIC can notify your team, through ntfy, email, Teams, or Slack, whenever ne
 - [**Environment variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) for the full `EPISODIC_*` reference table, including every variable named above.
 - [**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html) for setting up alerts on new clusters and run failures.
 - [**Scheduled reports**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html) for emailing a recurring outbreak report to colleagues without a dashboard account.
+- [**Importing and exporting data between instances**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html) for exporting cases to, and importing them from, partner instances on a schedule.
 - [**Frequently asked questions**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html) for hosting choices, account roles, and other operational questions.

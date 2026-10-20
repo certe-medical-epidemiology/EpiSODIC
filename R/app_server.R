@@ -851,6 +851,14 @@ episodic_app_server_factory <- function(db_path,
       lang = lang,
       current_user = current_user
     )
+    episodic_app_server_import_export(
+      input,
+      output,
+      session,
+      con,
+      lang = lang,
+      current_user = current_user
+    )
   }
 }
 

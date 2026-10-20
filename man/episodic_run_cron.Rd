@@ -8,6 +8,7 @@ episodic_run_cron(
   cases,
   denominators = NULL,
   institution_activity = NULL,
+  imports = NULL,
   episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
   pathogen_config_path = Sys.getenv("EPISODIC_PATHOGEN_CONFIG", unset = NA),
   db_path = Sys.getenv("EPISODIC_DB"),
@@ -38,6 +39,15 @@ identifier your case data uses - EpiSODIC hashes both on load, so a
 key taken from the institutions table this passes a function is
 already hashed and will match nothing. Leave as \code{NULL} (the default)
 if you have none - detection falls back to raw case counts.}
+
+\item{imports}{Optional: cases from a partner instance, as
+\code{\link[=episodic_cases_import]{episodic_cases_import()}} returns them, or a list of those. They
+are combined with \code{cases} before anything is written and loaded in
+the same transaction, their keys already carrying the sender's
+instance identifier as a prefix; each is recorded against this run in
+\code{episodic_import_event}. Import sources registered on the
+dashboard's Instance screen are fetched by every run on top of these.
+See \code{vignette("import-export")}.}
 
 \item{episodic_config_path}{The config path.}
 

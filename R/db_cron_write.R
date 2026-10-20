@@ -365,7 +365,8 @@ episodic_db_case_insert_new <- function(con, cases, run_id) {
       "pc",
       "sex",
       "age",
-      "first_seen_run"
+      "first_seen_run",
+      "origin_instance_id"
     ),
     values = list(
       source_key = to_insert$source_key,
@@ -381,7 +382,12 @@ episodic_db_case_insert_new <- function(con, cases, run_id) {
       pc = to_insert$pc,
       sex = to_insert$sex,
       age = to_insert$age,
-      first_seen_run = rep(run_id, n_inserted)
+      first_seen_run = rep(run_id, n_inserted),
+      origin_instance_id = if ("origin_instance_id" %in% names(to_insert)) {
+        as.character(to_insert$origin_instance_id)
+      } else {
+        rep(NA_character_, n_inserted)
+      }
     )
   )
   n_inserted

@@ -43,14 +43,15 @@ episodic_app_views <- function() {
     "activity",
     "performance",
     "info",
-    "settings"
+    "settings",
+    "import_export"
   )
 }
 
 #' The navigation link a screen lights up
 #'
-#' Five links carry ten screens. The four surveillance screens are
-#' their own group; the five that describe the instance rather than a
+#' Five links carry eleven screens. The four surveillance screens are
+#' their own group; the seven that describe the instance rather than a
 #' cluster are reached from the Instance screen and light its link, so a
 #' reader on the Performance screen can still see where they are.
 #'
@@ -365,7 +366,8 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
           shiny::uiOutput("performance_screen")
         ),
         episodic_ui_screen("info", shiny::uiOutput("info_screen")),
-        episodic_ui_screen("settings", shiny::uiOutput("settings_screen"))
+        episodic_ui_screen("settings", shiny::uiOutput("settings_screen")),
+        episodic_ui_screen("import_export", shiny::uiOutput("import_export_screen"))
       )
     )
   )

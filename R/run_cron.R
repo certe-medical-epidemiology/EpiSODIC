@@ -240,6 +240,14 @@ episodic_pkg_versions_extended <- function() {
 #'   key taken from the institutions table this passes a function is
 #'   already hashed and will match nothing. Leave as `NULL` (the default)
 #'   if you have none - detection falls back to raw case counts.
+#' @param imports Optional: cases from a partner instance, as
+#'   [episodic_cases_import()] returns them, or a list of those. They
+#'   are combined with `cases` before anything is written and loaded in
+#'   the same transaction, their keys already carrying the sender's
+#'   instance identifier as a prefix; each is recorded against this run in
+#'   `episodic_import_event`. Import sources registered on the
+#'   dashboard's Instance screen are fetched by every run on top of these.
+#'   See `vignette("import-export")`.
 #' @param episodic_config_path The config path.
 #' @param pathogen_config_path Path to an operator's own per-pathogen CSV,
 #'   overlaid row-by-row on the shipped
@@ -303,6 +311,7 @@ episodic_pkg_versions_extended <- function() {
 episodic_run_cron <- function(cases,
                               denominators = NULL,
                               institution_activity = NULL,
+                              imports = NULL,
                               episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
                               pathogen_config_path = Sys.getenv("EPISODIC_PATHOGEN_CONFIG", unset = NA),
                               db_path = Sys.getenv("EPISODIC_DB"),
@@ -433,6 +442,28 @@ episodic_run_cron <- function(cases,
         )
         episodic_validate_institution_activity(institution_activity)
       }
+      entries <- c(
+        lapply(
+          episodic_cases_imports_normalise(imports),
+          function(x) episodic_import_export_entry(cases = x)
+        ),
+        unname(episodic_import_sources_fetch(con, config))
+      )
+      combined <- episodic_import_export_combine(con, cases, entries)
+      if (length(combined$entries) > 0) {
+        episodic_trace(
+          "Imports combined: ",
+          sum(vapply(combined$entries, function(e) identical(e$status, "imported"), logical(1))),
+          " file(s), ",
+          sum(!is.na(combined$origin_instance_id)),
+          " imported case row(s)",
+          if (combined$n_repeated > 0) {
+            paste0(", ", combined$n_repeated, " repeated in more than one file and kept once")
+          } else {
+            ""
+          }
+        )
+      }
       report
     },
     error = function(e) e
@@ -474,7 +505,7 @@ episodic_run_cron <- function(cases,
 
   # Not a failure - an empty extract is a legitimate thing to hand over -
   # but never something to discover from an empty dashboard either.
-  if (nrow(cases) == 0) {
+  if (nrow(combined$cases) == 0) {
     warning(
       "The case data supplied to episodic_run_cron() has no rows, so this ",
       "run has nothing to detect on and writes no cases. Check the date ",
@@ -491,13 +522,15 @@ episodic_run_cron <- function(cases,
         con,
         run_id,
         config,
-        cases,
+        combined$cases,
         denominators,
         institution_activity,
         run_date,
         pathogen_config_path = pathogen_config_path,
         backfill = backfill,
-        debug = debug
+        debug = debug,
+        origin_instance_id = combined$origin_instance_id,
+        import_entries = combined$entries
       )
       episodic_trace("Committing transaction")
       DBI::dbCommit(con)
@@ -551,6 +584,22 @@ episodic_run_cron <- function(cases,
     error = function(e) {
       episodic_trace(
         "Scheduled report dispatch failed: ",
+        conditionMessage(e),
+        severity = "danger"
+      )
+    }
+  )
+
+  # After the commit, on the same footing: an export that fails is
+  # recorded and logged by the dispatcher itself, and never fails the run.
+  # Independent of whether this run's detection succeeded, as reports are:
+  # the cases on file are what an export sends, and a rolled-back run
+  # changed none of them.
+  tryCatch(
+    episodic_export_schedules_dispatch(con, config, run_id, run_date),
+    error = function(e) {
+      episodic_trace(
+        "Scheduled export dispatch failed: ",
         conditionMessage(e),
         severity = "danger"
       )
@@ -1079,7 +1128,9 @@ episodic_run_cron_body <- function(con,
                                    run_date,
                                    pathogen_config_path = NA,
                                    backfill = NULL,
-                                   debug = FALSE) {
+                                   debug = FALSE,
+                                   origin_instance_id = NA_character_,
+                                   import_entries = list()) {
   episodic_trace("Loading pathogen configuration")
   pathogen_config <- episodic_pathogen_config_resolve(pathogen_config_path)
   if (!is.na(pathogen_config_path) && nzchar(pathogen_config_path)) {
@@ -1097,7 +1148,13 @@ episodic_run_cron_body <- function(con,
 
   episodic_trace("Loading case data into the database")
   cases <- episodic_resolve_data(cases)
-  case_counts <- episodic_cases_load(con, cases, pathogen_config, run_id)
+  case_counts <- episodic_cases_load(
+    con,
+    cases,
+    pathogen_config,
+    run_id,
+    origin_instance_id = origin_instance_id
+  )
   episodic_trace(
     "Case data loaded: supplied=",
     case_counts$n_supplied,
@@ -1106,6 +1163,8 @@ episodic_run_cron_body <- function(con,
     ", inserted=",
     case_counts$n_inserted
   )
+  episodic_db_import_record(con, run_id, import_entries)
+  imports_failed <- Filter(function(e) identical(e$status, "failed"), import_entries)
 
   denominators <- episodic_resolve_data(denominators)
   if (!is.null(denominators)) {
@@ -1945,7 +2004,7 @@ episodic_run_cron_body <- function(con,
   )
 
   list(
-    status = if (isTRUE(activity_counts$n_skipped > 0)) {
+    status = if (isTRUE(activity_counts$n_skipped > 0) || length(imports_failed) > 0) {
       "partial"
     } else {
       "success"
@@ -1963,7 +2022,21 @@ episodic_run_cron_body <- function(con,
     n_activity_skipped = activity_counts$n_skipped,
     new_cluster_ids = new_cluster_ids_all,
     is_backfill = backfill,
-    error_text = NA
+    # A run that finished but could not take in a registered import source
+    # says which and why on its own row, not only in the import records.
+    error_text = if (length(imports_failed) > 0) {
+      paste0(
+        "Import source(s) failed, their cases not taken in: ",
+        paste(
+          vapply(imports_failed, function(e) {
+            paste0(e$source_name, " (", e$error_text, ")")
+          }, character(1)),
+          collapse = "; "
+        )
+      )
+    } else {
+      NA
+    }
   )
 }
 
