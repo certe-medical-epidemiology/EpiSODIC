@@ -8,6 +8,7 @@
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/index.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/articles/overview.html</loc></url>
@@ -21,6 +22,8 @@
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_auth.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_export.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_import.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_charts.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.html</loc></url>
@@ -34,6 +37,10 @@
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_truncate.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_geo.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_key_fingerprint.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_keygen.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_test_connection.html</loc></url>
+<url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_instance_id.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_mail_template_preview.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notifications.html</loc></url>
 <url><loc>https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notify_test.html</loc></url>

@@ -300,7 +300,7 @@ SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS
    AND TABLE_NAME LIKE 'episodic\_%';
 ```
 
-Anything other than 56 means the schema and the server disagree, and the
+Anything other than 62 means the schema and the server disagree, and the
 suite’s own live tests check that same number against a live server on
 every run.
 
@@ -542,6 +542,10 @@ supported channel.
   reports**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html)
   for emailing a recurring outbreak report to colleagues without a
   dashboard account.
+- [**Importing and exporting data between
+  instances**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html)
+  for exporting cases to, and importing them from, partner instances on
+  a schedule.
 - [**Frequently asked
   questions**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html)
   for hosting choices, account roles, and other operational questions.

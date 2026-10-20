@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.24.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.25.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -57,7 +57,8 @@
 <h3 id="pipeline">Pipeline<a class="anchor" aria-label="anchor" href="#pipeline"></a></h3>
 <pre><code>case data (data frame)
   -&gt; episodic_run_cron()          # scheduled detection run
-    -&gt; validate + deduplicate
+    -&gt; fetch registered import sources (a failing source marks the run partial)
+    -&gt; validate + deduplicate (own cases and imported ones together)
     -&gt; detect (4 detectors, per stream)
     -&gt; reconcile (match detections to persistent outbreaks/epidemics)
     -&gt; route on scale (outbreak at L1-L3, epidemic at L4-L5)
@@ -65,6 +66,7 @@
     -&gt; link outbreaks to concurrent epidemics
     -&gt; suppress lattice duplicates (continuous across the scale boundary)
     -&gt; notify (if configured)
+    -&gt; dispatch due scheduled reports and scheduled exports (after commit)
   -&gt; episodic_run_app()           # Shiny dashboard
     -&gt; epidemiologist assesses outbreaks (Outbreaks screen)
     -&gt; epidemiologist assesses epidemics and records declarations (Epidemics screen)
@@ -104,7 +106,11 @@
 <h3 id="database">Database<a class="anchor" aria-label="anchor" href="#database"></a></h3>
 <p>Single schema in <code>inst/sql/schema.sql</code> (SQLite dialect), adapted at load time for MariaDB/MySQL. The MariaDB adapter derives table-level <code>FOREIGN KEY</code> clauses from inline <code>REFERENCES</code> (MySQL silently discards inline references), and applies the schema with <code>FOREIGN_KEY_CHECKS = 0</code>.</p>
 <p>The schema is versioned (<code>episodic_schema_version</code> in <code>R/schema_migrate.R</code>). <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code> auto-migrates via <code>episodic_run_cron_connect()</code> unless <code>database.auto_migrate</code> is <code>false</code>. Any change to <code>inst/sql/schema.sql</code> means bumping the version constant and adding a matching entry to <code>episodic_db_migrations()</code>, a function <code>(con, dialect)</code> that is idempotent, runs inside a transaction, and never drops or rewrites data. Exception: a column holding no data on any row may be dropped via <code>episodic_db_drop_empty_column()</code>. Never remove an old migration.</p>
-<p>Write ownership is strict: cron-owned tables are written only by <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code>, app-owned tables only by the Shiny app (append-only, event-sourced). Two deliberate exceptions: <code><a href="reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code> writes to cron-owned tables for <code>origin = 'manual'</code> clusters, and <code><a href="reference/episodic_add_user.html">episodic_add_user()</a></code> writes to <code>episodic_app_user</code>.</p>
+<p>Write ownership is strict: cron-owned tables are written only by <code><a href="reference/episodic_run_cron.html">episodic_run_cron()</a></code>, app-owned tables only by the Shiny app (append-only, event-sourced). Three deliberate exceptions: <code><a href="reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code> writes to cron-owned tables for <code>origin = 'manual'</code> clusters, <code><a href="reference/episodic_add_user.html">episodic_add_user()</a></code> writes to <code>episodic_app_user</code>, and <code>episodic_export_event</code> is written by the export itself, whichever process runs it (<code><a href="reference/episodic_cases_export.html">episodic_cases_export()</a></code> from a script, the cron’s scheduled exports, the dashboard’s download button), insert-only, through <code>episodic_db_export_record()</code>. <code>episodic_instance</code> belongs to the database: written once by <code><a href="reference/episodic_db_create.html">episodic_db_create()</a></code> or the migration to version 15, never by either process.</p>
+</div>
+<div class="section level3">
+<h3 id="import-and-export-between-instances">Import and export between instances<a class="anchor" aria-label="anchor" href="#import-and-export-between-instances"></a></h3>
+<p><code>R/import_export_*.R</code>; see <code><a href="articles/import-export.html">vignette("import-export")</a></code>. An export file is a versioned envelope (<code>episodic_import_export_format_version</code>) around a plain JSON payload (<code>episodic_import_export_payload_version</code>), never RDS. Every failure raises an <code>episodic_import_export_error</code> with a <code>reason</code> code; nothing is returned from a file that does not verify in full. <code><a href="reference/episodic_cases_import.html">episodic_cases_import()</a></code> never writes: imported cases enter only through <code>episodic_run_cron(imports = ...)</code> or a registered source, with <code>source_key</code>, <code>patient_key</code> and <code>lab_number</code> prefixed <code>&lt;instance_id&gt;:</code>, <code>episodic_case.origin_instance_id</code> set, and <code>institution_key</code> used as the stored hash (<code>episodic_institution_key_stored()</code>). Export schedules and import sources (<code>episodic_export_schedule_event</code>, <code>episodic_import_source_event</code>) are app-owned, admin-only, and store no secret: every key, passphrase, credential and secret URL is an environment variable’s name.</p>
 </div>
 <div class="section level3">
 <h3 id="configuration">Configuration<a class="anchor" aria-label="anchor" href="#configuration"></a></h3>

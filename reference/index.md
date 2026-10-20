@@ -58,6 +58,25 @@ your board’s own verdicts.
 - [`episodic_validate_rethreshold()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_rethreshold.md)
   : Re-Match a Validation Result at Different Thresholds
 
+## Import and export data with partner instances
+
+Export this instance’s cases to a partner instance, and import theirs,
+as encrypted and signed files - headless, or scheduled from the
+dashboard’s Import and export screen.
+
+- [`episodic_instance_id()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_instance_id.md)
+  : This Instance's Identifier
+- [`episodic_import_export_keygen()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_keygen.md)
+  : Generate the Keys for Importing and Exporting Data with Partners
+- [`episodic_import_export_key_fingerprint()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_key_fingerprint.md)
+  : Fingerprint of an Import/Export Public Key
+- [`episodic_cases_export()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_export.md)
+  : Export a Date Range of Cases to an Encrypted Export File
+- [`episodic_cases_import()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_import.md)
+  : Import an Encrypted Export File as Case Data
+- [`episodic_import_export_test_connection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_test_connection.md)
+  : Test an Import Source or Export Schedule
+
 ## Add clusters from another system
 
 Add clusters detected by another algorithm or system - never connected

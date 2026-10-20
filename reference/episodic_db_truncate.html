@@ -5,13 +5,19 @@ stay exactly as episodic_db_create() built them, so the database is
 immediately ready for a new episodic_run_cron() without a schema
 migration. This includes episodic_app_user: dashboard accounts are
 data too, and are deleted along with everything else - there is
-nothing this function leaves behind to sign in with afterwards.'><meta property="og:description" content='A hard reset back to "freshly created, no data" - every row in every
+nothing this function leaves behind to sign in with afterwards. The
+one row kept is the instance identifier (see vignette("import-export")):
+partners already know the instance by it, so it stays the same
+instance after a reset.'><meta property="og:description" content='A hard reset back to "freshly created, no data" - every row in every
 EpiSODIC table is deleted, but the tables, indexes and constraints
 stay exactly as episodic_db_create() built them, so the database is
 immediately ready for a new episodic_run_cron() without a schema
 migration. This includes episodic_app_user: dashboard accounts are
 data too, and are deleted along with everything else - there is
-nothing this function leaves behind to sign in with afterwards.'><meta property="og:image" content="https://certe-medical-epidemiology.github.io/EpiSODIC/logo.svg"></head><body>
+nothing this function leaves behind to sign in with afterwards. The
+one row kept is the instance identifier (see vignette("import-export")):
+partners already know the instance by it, so it stays the same
+instance after a reset.'><meta property="og:image" content="https://certe-medical-epidemiology.github.io/EpiSODIC/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -19,7 +25,7 @@ nothing this function leaves behind to sign in with afterwards.'><meta property=
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.24.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.25.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,7 +58,10 @@ stay exactly as <code><a href="episodic_db_create.html">episodic_db_create()</a>
 immediately ready for a new <code><a href="episodic_run_cron.html">episodic_run_cron()</a></code> without a schema
 migration. This includes <code>episodic_app_user</code>: dashboard accounts are
 data too, and are deleted along with everything else - there is
-nothing this function leaves behind to sign in with afterwards.</p>
+nothing this function leaves behind to sign in with afterwards. The
+one row kept is the instance identifier (see <code><a href="../articles/import-export.html">vignette("import-export")</a></code>):
+partners already know the instance by it, so it stays the same
+instance after a reset.</p>
     </div>
 
     <div class="section level2">

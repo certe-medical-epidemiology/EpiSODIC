@@ -1,5 +1,61 @@
 # Changelog
 
+## EpiSODIC 0.25.0
+
+### New
+
+- Every database carries an instance identifier of ten hexadecimal
+  characters, in the new `episodic_instance` table (schema version 15),
+  shown on the Info screen and read with
+  [`episodic_instance_id()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_instance_id.md)
+- [`episodic_import_export_keygen()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_keygen.md)
+  writes an instance’s encryption and signing key pairs, the secret
+  halves readable by their owner only
+- [`episodic_cases_export()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_export.md)
+  writes this instance’s own cases for a sample-date range to an
+  encrypted, signed export file, to recipients’ public keys or with a
+  passphrase
+- An export carries the optional case columns in `export.fields` and
+  cuts postcodes to `export.pc_characters`; a column left out is absent
+  from the file and recorded in it
+- [`episodic_cases_import()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_import.md)
+  verifies an export file in full and returns its cases with
+  `source_key`, `patient_key` and `lab_number` prefixed by the sender’s
+  instance identifier
+- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  takes imported cases through its new `imports` argument and records
+  each import against the run in `episodic_import_event`
+- An import warns, per lattice level, about cases whose postcode this
+  instance’s reference data cannot place, and keeps them
+- Export files go to and come from a file path or HTTP(S) `PUT` and
+  `GET`, with credentials named by environment variable only
+- The admin-only Import and export screen, reached from the Instance
+  screen, downloads an export, registers export schedules and import
+  sources, tests their connections and shows the audit trail of every
+  export and import
+- Every run fetches the registered import sources before detection, and
+  carries out due export schedules after its commit over a rolling
+  window
+- Every export is recorded in `episodic_export_event`, failed ones
+  included
+- [`episodic_import_export_test_connection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_test_connection.md)
+  tests an import source or export schedule the way the next run uses
+  it, writing nothing
+- [`episodic_import_export_key_fingerprint()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_key_fingerprint.md)
+  gives the fingerprint of a public key, to compare with a partner
+- The new vignette “Importing and exporting data between instances”
+  covers keys, exporting, importing, scheduling, transport, the limits
+  of importing and exporting, data protection and the file format
+
+### Changed
+
+- `episodic_case` records the instance an imported case came from
+  (`origin_instance_id`, schema version 15)
+- [`episodic_db_truncate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_truncate.md)
+  keeps the instance identifier
+- An imported case’s institution adds an institution the receiver does
+  not know, and never renames or retypes one it does
+
 ## EpiSODIC 0.24.0
 
 ### New
@@ -322,9 +378,8 @@
   case-free colour
 - A map’s frame no longer extends past the reference geometry by more
   than its minimum margin, so a widespread cluster’s map fills its box
-- [`devtools::load_all()`](https://devtools.r-lib.org/reference/load_all.html)
-  no longer replaces the session’s `EPISODIC_CONFIG` with the test
-  suite’s configuration
+- `devtools::load_all()` no longer replaces the session’s
+  `EPISODIC_CONFIG` with the test suite’s configuration
 
 ## EpiSODIC 0.20.6
 

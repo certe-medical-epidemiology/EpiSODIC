@@ -19,6 +19,8 @@ Tune detection behaviour and set up notifications.
 - [Notifications](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md):
 - [Scheduled
   reports](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.md):
+- [Importing and exporting data between
+  instances](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.md):
 
 ### Reference
 

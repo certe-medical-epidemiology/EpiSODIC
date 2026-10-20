@@ -476,6 +476,10 @@ for every argument.
   variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html)
   for `EPISODIC_GEO_DATA`, `EPISODIC_GEO_DATA_OVERLAY` and every other
   `EPISODIC_*` variable mentioned above.
+- [**Importing and exporting data between
+  instances**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html)
+  for taking in the cases of a partner EpiSODIC instance alongside your
+  own.
 - [**Frequently asked
   questions**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html)
   for combining more than one source system, resending data safely, and

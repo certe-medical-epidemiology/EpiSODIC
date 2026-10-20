@@ -9,6 +9,10 @@ built them, so the database is immediately ready for a new
 without a schema migration. This includes `episodic_app_user`: dashboard
 accounts are data too, and are deleted along with everything else -
 there is nothing this function leaves behind to sign in with afterwards.
+The one row kept is the instance identifier (see
+[`vignette("import-export")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.md)):
+partners already know the instance by it, so it stays the same instance
+after a reset.
 
 ## Usage
 

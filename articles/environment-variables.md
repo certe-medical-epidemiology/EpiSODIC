@@ -9,6 +9,16 @@ them picks the setting up automatically.
 
 [TABLE]
 
+Export schedules and import sources registered on the Import and export
+screen name further variables of the operator’s choosing: one for a
+passphrase, a user name and password or a bearer token for an HTTP(S)
+destination, and one for a URL that is itself a secret, such as a
+pre-signed upload URL. The database stores those names, never the
+values. Each is read by
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+when it carries out the export or fetches the source, so set them in the
+environment the scheduled run starts in.
+
 None of these need to be set to run the demo -
 [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
 uses a temporary SQLite file and the shipped defaults, and writes its

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.24.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.25.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,42 @@
       <small>Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.25.0" id="episodic-0250">EpiSODIC 0.25.0<a class="anchor" aria-label="anchor" href="#episodic-0250"></a></h2>
+<div class="section level3">
+<h3 id="new-0-25-0">New<a class="anchor" aria-label="anchor" href="#new-0-25-0"></a></h3>
+<ul><li>Every database carries an instance identifier of ten hexadecimal characters, in the new <code>episodic_instance</code> table (schema version 15), shown on the Info screen and read with <code><a href="../reference/episodic_instance_id.html">episodic_instance_id()</a></code>
+</li>
+<li>
+<code><a href="../reference/episodic_import_export_keygen.html">episodic_import_export_keygen()</a></code> writes an instance’s encryption and signing key pairs, the secret halves readable by their owner only</li>
+<li>
+<code><a href="../reference/episodic_cases_export.html">episodic_cases_export()</a></code> writes this instance’s own cases for a sample-date range to an encrypted, signed export file, to recipients’ public keys or with a passphrase</li>
+<li>An export carries the optional case columns in <code>export.fields</code> and cuts postcodes to <code>export.pc_characters</code>; a column left out is absent from the file and recorded in it</li>
+<li>
+<code><a href="../reference/episodic_cases_import.html">episodic_cases_import()</a></code> verifies an export file in full and returns its cases with <code>source_key</code>, <code>patient_key</code> and <code>lab_number</code> prefixed by the sender’s instance identifier</li>
+<li>
+<code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code> takes imported cases through its new <code>imports</code> argument and records each import against the run in <code>episodic_import_event</code>
+</li>
+<li>An import warns, per lattice level, about cases whose postcode this instance’s reference data cannot place, and keeps them</li>
+<li>Export files go to and come from a file path or HTTP(S) <code>PUT</code> and <code>GET</code>, with credentials named by environment variable only</li>
+<li>The admin-only Import and export screen, reached from the Instance screen, downloads an export, registers export schedules and import sources, tests their connections and shows the audit trail of every export and import</li>
+<li>Every run fetches the registered import sources before detection, and carries out due export schedules after its commit over a rolling window</li>
+<li>Every export is recorded in <code>episodic_export_event</code>, failed ones included</li>
+<li>
+<code><a href="../reference/episodic_import_export_test_connection.html">episodic_import_export_test_connection()</a></code> tests an import source or export schedule the way the next run uses it, writing nothing</li>
+<li>
+<code><a href="../reference/episodic_import_export_key_fingerprint.html">episodic_import_export_key_fingerprint()</a></code> gives the fingerprint of a public key, to compare with a partner</li>
+<li>The new vignette “Importing and exporting data between instances” covers keys, exporting, importing, scheduling, transport, the limits of importing and exporting, data protection and the file format</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-0-25-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-25-0"></a></h3>
+<ul><li>
+<code>episodic_case</code> records the instance an imported case came from (<code>origin_instance_id</code>, schema version 15)</li>
+<li>
+<code><a href="../reference/episodic_db_truncate.html">episodic_db_truncate()</a></code> keeps the instance identifier</li>
+<li>An imported case’s institution adds an institution the receiver does not know, and never renames or retypes one it does</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.24.0" id="episodic-0240">EpiSODIC 0.24.0<a class="anchor" aria-label="anchor" href="#episodic-0240"></a></h2>
 <div class="section level3">
@@ -224,7 +260,7 @@
 <li>Map areas with the fewest cases are tinted instead of drawn in the case-free colour</li>
 <li>A map’s frame no longer extends past the reference geometry by more than its minimum margin, so a widespread cluster’s map fills its box</li>
 <li>
-<code><a href="https://devtools.r-lib.org/reference/load_all.html" class="external-link">devtools::load_all()</a></code> no longer replaces the session’s <code>EPISODIC_CONFIG</code> with the test suite’s configuration</li>
+<code>devtools::load_all()</code> no longer replaces the session’s <code>EPISODIC_CONFIG</code> with the test suite’s configuration</li>
 </ul></div>
 </div>
     <div class="section level2">

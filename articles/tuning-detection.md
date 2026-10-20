@@ -658,6 +658,16 @@ Every channel’s settings, and how to test them, are in
 
 [TABLE]
 
+### Export
+
+Which columns an export to a partner instance carries, and how coarse
+its postcodes are. They change what leaves the instance, never what a
+run computes, and are left out of `config_hash`. See [**Importing and
+exporting data between
+instances**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html).
+
+[TABLE]
+
 ### Access
 
 [TABLE]

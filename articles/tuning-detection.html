@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.24.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.25.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -1431,6 +1431,41 @@ prevent re-identification</td>
 <td align="right">~</td>
 <td>Base directory for rendered reports; mandatory when
 <code>EPISODIC_DB</code> is a DSN</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="export">Export<a class="anchor" aria-label="anchor" href="#export"></a>
+</h3>
+<p>Which columns an export to a partner instance carries, and how coarse
+its postcodes are. They change what leaves the instance, never what a
+run computes, and are left out of <code>config_hash</code>. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html"><strong>Importing
+and exporting data between instances</strong></a>.</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="8%">
+<col width="66%">
+</colgroup>
+<thead><tr class="header">
+<th>Key</th>
+<th>Default</th>
+<th>Effect</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code style="white-space: nowrap;">export:<br>  fields</code></td>
+<td>[receipt_date, care_line, municipality, ward, specialism, pc, sex,
+age]</td>
+<td>The optional case columns an export carries; the required ones
+always go. <code>~</code> exports the required columns only</td>
+</tr>
+<tr class="even">
+<td><code style="white-space: nowrap;">export:<br>  pc_characters</code></td>
+<td>~</td>
+<td>Keep only this many leading postcode characters in an export;
+<code>~</code> exports postcodes as stored</td>
 </tr>
 </tbody>
 </table>

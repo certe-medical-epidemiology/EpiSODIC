@@ -62,7 +62,8 @@ information system or data warehouse:
 
     case data (data frame)
       -> episodic_run_cron()          # scheduled detection run
-        -> validate + deduplicate
+        -> fetch registered import sources (a failing source marks the run partial)
+        -> validate + deduplicate (own cases and imported ones together)
         -> detect (4 detectors, per stream)
         -> reconcile (match detections to persistent outbreaks/epidemics)
         -> route on scale (outbreak at L1-L3, epidemic at L4-L5)
@@ -70,6 +71,7 @@ information system or data warehouse:
         -> link outbreaks to concurrent epidemics
         -> suppress lattice duplicates (continuous across the scale boundary)
         -> notify (if configured)
+        -> dispatch due scheduled reports and scheduled exports (after commit)
       -> episodic_run_app()           # Shiny dashboard
         -> epidemiologist assesses outbreaks (Outbreaks screen)
         -> epidemiologist assesses epidemics and records declarations (Epidemics screen)
@@ -152,12 +154,39 @@ Exception: a column holding no data on any row may be dropped via
 
 Write ownership is strict: cron-owned tables are written only by
 [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md),
-app-owned tables only by the Shiny app (append-only, event-sourced). Two
-deliberate exceptions:
+app-owned tables only by the Shiny app (append-only, event-sourced).
+Three deliberate exceptions:
 [`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
-writes to cron-owned tables for `origin = 'manual'` clusters, and
+writes to cron-owned tables for `origin = 'manual'` clusters,
 [`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
-writes to `episodic_app_user`.
+writes to `episodic_app_user`, and `episodic_export_event` is written by
+the export itself, whichever process runs it
+([`episodic_cases_export()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_export.md)
+from a script, the cron’s scheduled exports, the dashboard’s download
+button), insert-only, through `episodic_db_export_record()`.
+`episodic_instance` belongs to the database: written once by
+[`episodic_db_create()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_create.md)
+or the migration to version 15, never by either process.
+
+### Import and export between instances
+
+`R/import_export_*.R`; see
+[`vignette("import-export")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.md).
+An export file is a versioned envelope
+(`episodic_import_export_format_version`) around a plain JSON payload
+(`episodic_import_export_payload_version`), never RDS. Every failure
+raises an `episodic_import_export_error` with a `reason` code; nothing
+is returned from a file that does not verify in full.
+[`episodic_cases_import()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_import.md)
+never writes: imported cases enter only through
+`episodic_run_cron(imports = ...)` or a registered source, with
+`source_key`, `patient_key` and `lab_number` prefixed `<instance_id>:`,
+`episodic_case.origin_instance_id` set, and `institution_key` used as
+the stored hash (`episodic_institution_key_stored()`). Export schedules
+and import sources (`episodic_export_schedule_event`,
+`episodic_import_source_event`) are app-owned, admin-only, and store no
+secret: every key, passphrase, credential and secret URL is an
+environment variable’s name.
 
 ### Configuration
 
