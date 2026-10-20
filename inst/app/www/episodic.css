@@ -248,7 +248,8 @@ body {
 .episodic-shell[data-view="activity"] .episodic-screen[data-screen="activity"],
 .episodic-shell[data-view="performance"] .episodic-screen[data-screen="performance"],
 .episodic-shell[data-view="info"] .episodic-screen[data-screen="info"],
-.episodic-shell[data-view="settings"] .episodic-screen[data-screen="settings"] {
+.episodic-shell[data-view="settings"] .episodic-screen[data-screen="settings"],
+.episodic-shell[data-view="exchange"] .episodic-screen[data-screen="exchange"] {
   display: flex;
 }
 
@@ -2247,4 +2248,16 @@ dl.episodic-settings dd { margin: 0; }
    same direction. */
 [dir="rtl"] .episodic-brandbar {
   flex-direction: row-reverse;
+}
+
+/* The Exchange screen's connection test: one line per check, its mark
+   first. */
+.episodic-exchange-test {
+  list-style: none;
+  padding-inline-start: 0;
+  margin: 0;
+}
+.episodic-exchange-test li {
+  margin-block-end: 6px;
+  font-size: 12.5px;
 }
