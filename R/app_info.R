@@ -217,7 +217,7 @@ episodic_ui_info_instance <- function(con, lang = Sys.getenv("EPISODIC_LANGUAGE"
 
 #' @keywords internal
 #' @noRd
-episodic_ui_info_algorithms_table <-function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+episodic_ui_info_algorithms_table <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   rows <- list(
     list(
       name = "farringtonFlexible",

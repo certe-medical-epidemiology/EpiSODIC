@@ -237,6 +237,10 @@ episodic_exchange_http_request <- function(endpoint, method) {
 #' @noRd
 episodic_exchange_http_perform <- function(req, endpoint) {
   label <- episodic_exchange_endpoint_label(endpoint)
+  # Forced before the tryCatch: building the request raises its own
+  # reasons (an unset variable, a missing package), which a lazy `req`
+  # would surface inside it as a connection failure.
+  force(req)
   resp <- tryCatch(httr2::req_perform(req), error = function(e) e)
   if (inherits(resp, "error")) {
     detail <- conditionMessage(resp)

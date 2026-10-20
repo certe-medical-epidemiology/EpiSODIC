@@ -215,3 +215,12 @@ Nothing else is in plaintext. The sender, the range, the row counts and the sche
 | `tables.cases` | `rows`, `columns` (name to `"character"` or `"integer"`), `sha256`, and `data`: the table as JSON text of its own, an object of equal-length arrays with `null` for a missing value |
 
 `sha256` is the SHA-256 of `data`'s exact UTF-8 bytes, checked for every table before any table is read. A newer EpiSODIC reads older files; an older EpiSODIC refuses a newer envelope or payload by name rather than misreading it.
+
+## See also
+
+- [**Getting your data in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html) for the case data format an import returns, and the geographic reference data that decides where a partner's cases can be placed.
+- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) for scheduling `episodic_run_cron()`, which fetches the import sources and carries out the export schedules, and for admin accounts.
+- [**Environment variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) for `EPISODIC_EXCHANGE_KEY`, `EPISODIC_EXCHANGE_SIGNING_KEY` and every other `EPISODIC_*` variable.
+- [**Tuning detection for your catchment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.html) for the `exchange.export_fields` and `exchange.pc_characters` configuration keys.
+- `?episodic_exchange_export` and `?episodic_exchange_import` for the API-level documentation.
+- `?episodic_exchange_test_connection` for testing a schedule or source headless.
